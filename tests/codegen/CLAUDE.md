@@ -13,8 +13,16 @@ or it has no regression net at all.
 - **run_codegen_tests.sh** — greps generated output for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
   patterns and its ABSENCE for partially-anchored ones, memchr prefilter,
-  a table-size ceiling that only holds if minimization ran). Part of
-  `make test`; env: PCREC, KEEP=1.
+  a table-size ceiling that only holds if minimization ran, engine selection
+  for `$` vs `^`, and the M2.12 EOL-path checks: skips present and bounded at
+  n-1, reverse skip entry guard, memchr bounded at n-1, and an ORDER check
+  that accept/EOL evaluation follows the skips). Part of `make test`;
+  env: PCREC, KEEP=1.
+
+The M2.12 additions are the sharpest illustration of why this directory
+exists: reverting the EOL path to its M2.7 state (no prefilter, no skips —
+~76x slower on `$` patterns) fails 6 checks here while the .rxt corpus still
+passes 53/53, because the change is behavior-preserving by construction.
 
 ## Conventions
 

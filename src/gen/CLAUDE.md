@@ -8,6 +8,13 @@ attempt loop with EOL-variant states. Table emission exists because gcc compile
 time on huge computed-goto functions is superlinear (R1 A-3). Generated code
 has zero dependency on pcrec at build or run time.
 
+`emit_unanchored` handles EOL and non-EOL machines in ONE function on purpose
+(M2.12): M2.7 forked a second copy for `$` patterns, and that fork is how the
+prefilter and skip loops silently went missing from the `$` path for an entire
+milestone. Under EOL every skip is bounded at n-1 and scan avoidance runs
+BEFORE the accept/EOL evaluation — see D11, and note the ordering rule is the
+subtle half.
+
 ## Files
 
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), shared table/label helpers, header/comment/prologue emission

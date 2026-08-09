@@ -107,6 +107,54 @@ if gen dollar 'a*b$'; then
         ok "M2.7: no per-start attempt loop for a \$-bearing pattern"
     fi
 fi
+# ---- M2.12: scan avoidance must be PRESENT on the `$` path too ----------
+# M2.7 traded the prefilter and skip loops away for correctness on the EOL
+# path and left `$` patterns at ~291 MB/s where the same pattern without `$`
+# ran at ~22 GB/s. Nothing in the corpus or the budgets could see that.
+if gen eolskip '.*=.*$'; then
+    if grep -qE 'rx_fs[0-9]+\[256\]' "$WORKDIR/eolskip.c"; then
+        ok "M2.12: '.*=.*\$' emits a skip table on the EOL path"
+    else
+        bad "M2.12: '.*=.*\$' emitted NO skip table (EOL path lost scan avoidance again?)"
+    fi
+    # bounded at n-1, never n: a state may accept at an EOL position
+    if grep -qE 'while \(pos \+ 1 < n && rx_fs[0-9]+\[s\[pos\]\]\) pos\+\+;' "$WORKDIR/eolskip.c"; then
+        ok "M2.12: EOL forward skip loop is bounded at n-1"
+    else
+        bad "M2.12: EOL forward skip loop missing or not bounded at n-1"
+    fi
+    if grep -qE 'rst == [0-9]+ && pp \+ 1 < n' "$WORKDIR/eolskip.c"; then
+        ok "M2.12: EOL reverse skip loop carries the pp+1<n entry guard"
+    else
+        bad "M2.12: EOL reverse skip loop missing its pp+1<n entry guard"
+    fi
+    # ORDER MATTERS, and getting it wrong is what the first M2.12 attempt did:
+    # a skip landing on n-1 must not consume that byte before the EOL view of
+    # it has been taken. So the accept evaluation must come AFTER the skips.
+    skip_line=$(grep -nE 'while \(pos \+ 1 < n && rx_fs[0-9]+' "$WORKDIR/eolskip.c" | tail -1 | cut -d: -f1)
+    acc_line=$(grep -nE 'if \(rx_facc\[est\]\) last = pos;' "$WORKDIR/eolskip.c" | head -1 | cut -d: -f1)
+    if [ -n "${skip_line:-}" ] && [ -n "${acc_line:-}" ] && [ "$acc_line" -gt "$skip_line" ]; then
+        ok "M2.12: EOL accept/eolvar evaluation happens after the skip loops"
+    else
+        bad "M2.12: EOL accept evaluated BEFORE the skip loops (skip can land on n-1 and lose the match)"
+    fi
+fi
+# the memchr prefilter must survive on the EOL path as well
+if gen eolpre 'a*b$'; then
+    if grep -q 'memchr' "$WORKDIR/eolpre.c"; then
+        ok "M2.12: 'a*b\$' keeps the memchr prefilter on the EOL path"
+    else
+        bad "M2.12: 'a*b\$' lost its memchr prefilter"
+    fi
+    # ...but WITHOUT the non-EOL early `return 0`, since the start state's EOL
+    # view may still accept at n-1 or n
+    if grep -qE 'memchr\(s \+ pos, [0-9]+, n - 1 - pos\)' "$WORKDIR/eolpre.c"; then
+        ok "M2.12: EOL memchr is bounded at n-1"
+    else
+        bad "M2.12: EOL memchr not bounded at n-1"
+    fi
+fi
+
 # ^ patterns legitimately stay on the attempt engine (documented limitation)
 if gen caret '^a|b'; then
     if grep -q 'for (start = startpos' "$WORKDIR/caret.c"; then

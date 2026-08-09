@@ -451,3 +451,66 @@ inventing a check that would pass either way.
 Two design critics were dispatched before implementation and had not reported
 by the time the work was verified and landed; their findings will be folded
 into the R3 checkpoint review rather than held up against this commit.
+
+## 2026-08-09 — M2.12: scan avoidance restored on the `$` path (D11)
+
+M2.7 had put `$` patterns on the O(n) engine but traded away the memchr
+prefilter and the self-loop skip loops to get there, because both advance
+`pos` without consulting accept flags. The plan entry said the fix was to
+bound skips at n-1 instead of n. That is half of it, and the other half cost
+me a wrong build.
+
+**The half that was written down.** Bound every skip at n-1; drop the forward
+memchr's `return 0` early-out, since the start state's EOL view can still
+accept at n-1 or n; give the reverse skip a `pp + 1 < n` entry guard (pp only
+decreases, so one guard covers the whole loop).
+
+**The half that was not.** I implemented exactly that, and a differential
+sweep of 27 `$` patterns x 69 subjects found **53 divergences** — including
+matches lost outright (`.*=.*$` on "xyz=abc\n" -> nomatch, python [0,7)).
+Bounding a skip at n-1 means the skip can LAND on n-1, and the loop then
+consumed that byte without ever taking its EOL view. I had convinced myself
+this couldn't happen — I reasoned that `est == st` whenever a skip could run,
+which is true of the PRE-skip position and says nothing about where the skip
+stops. Another instance of the R2 lesson: my own argument is not evidence.
+
+Fix: run scan avoidance BEFORE the accept/EOL evaluation rather than after.
+That is also correct without EOL — every position a skip passes has the same
+state and so the same accept bit, and `last`/`sfound` want the extreme
+position, which is exactly where the skip stops — so the per-skip-state
+`last = pos` line becomes redundant and is gone.
+
+Crucially, I ran the sweep against the PRE-M2.12 binary first and got 0
+divergences, which is what established that I had introduced these rather than
+uncovered them. That baseline step is the only reason the diagnosis was quick.
+
+**The two emitters are now one.** M2.7 forked `emit_unanchored_eol` as a
+near-copy, and the fork is precisely how the `$` path lost these optimizations
+for a whole milestone with nothing failing. Merged back into a single
+EOL-aware `emit_unanchored`; non-EOL output is byte-identical across 8 probe
+patterns, so the merge is a no-op there.
+
+Measured, 7 trials each, load ~0.95, over 8 MB of log text:
+
+| pattern | before | after |
+|---|---|---|
+| `ERROR: .*$` | 289-292 (median 291) | 18151-24440 (median 22248) |
+| `ERROR: .*` | 13840-24282 (median 23245) | 15242-24439 (median 22797) |
+
+So ~76x on the `$` pattern, with non-overlapping ranges across all 7 runs, and
+`$` is now at parity with the same pattern without it. The non-`$` path is a
+statistical TIE — an early single-sample reading showed 14443 -> 20471 and I
+nearly wrote it up as a 1.4x bonus; repeating the trial killed that claim.
+Note the 1.8x spread on the non-`$` rows, which is most of the argument for
+M2.9.
+
+**Regression net.** tests/base/eol_scan_avoidance.rxt (53 cases, all shapes
+the sweep found, python-verified) and 6 new structural checks in
+tests/codegen. Both sabotage-validated, and the contrast is the best argument
+for structural tests I have seen on this project: reverting the EOL path to
+its M2.7 state fails 6 codegen checks while the corpus still passes 53/53,
+because the regression is behavior-preserving by construction. Sabotaging the
+ORDER instead (accept before skips) fails the order check AND 7 corpus cases.
+
+Suite after: 607 corpus + 41 CLI + 15 codegen green; oracle 100%; fuzz seeds
+1/2/3/5/7/11 clean; bench 0 budget failures.

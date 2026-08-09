@@ -89,9 +89,9 @@ with and without a trailing `$` is now at parity (69 vs 66 MB/s, same method)
 where it was 14.3x apart. Revisit-when: the reverse BOT variant is built
 (would let `^` join too, closing DD-7's engine-unification item).
 
-The EOL path deliberately omits the memchr prefilter and skip loops — both
+The EOL path deliberately omitted the memchr prefilter and skip loops — both
 advance past positions without consulting accept flags, unsound when a state
-can accept at EOL. Re-enabling them there is plan M2.12.
+can accept at EOL. SUPERSEDED by M2.12/D11, which restored them.
 
 ## D9 — 2026-08-09 — alternation prefix trie: the two soundness rules
 
@@ -153,3 +153,39 @@ depended on the optimisation level. All tail-position edges are now explicit
 loop iterations, leaving only a split's preferred branch recursive; verified
 at -O0 on a 1,000,000-branch alternation. Revisit-when: a pattern shape is
 found whose PREFERRED-branch nesting is deep.
+
+## D11 — 2026-08-09 — scan avoidance under EOL: bound the skip AND order it first
+
+M2.12, restoring what D8/M2.7 traded away. Two rules, and the second is the
+one that is easy to miss:
+
+1. **Bound every skip at n-1, not n.** A prefilter or self-loop skip advances
+   `pos` without consulting accept flags, which is unsound exactly when a
+   state can accept at an EOL position. Stopping at n-1 leaves the last two
+   positions — the only ones where an EOL view can apply — to the stepped
+   loop. The forward memchr additionally loses its `return 0` early-out, since
+   the start state's EOL view may still accept at n-1 or n.
+
+2. **Run scan avoidance BEFORE the accept/EOL evaluation, not after.** The
+   first attempt at M2.12 got rule 1 right and still produced 53 divergences
+   over a sweep of 27 `$` patterns x 69 subjects, including whole matches
+   lost (`.*=.*$` on "xyz=abc\n" -> nomatch). Bounding a skip at n-1 means it
+   can LAND on n-1, and the loop then consumed that byte without ever taking
+   its EOL view. Evaluating after the skip fixes it, and is equally correct
+   without EOL: every position a skip passes has the same state and therefore
+   the same accept bit, and `last` (forward) / `sfound` (reverse) want the
+   extreme position, which is exactly where the skip stops. That also makes
+   the per-skip-state `last = pos` line redundant, so it is gone.
+
+Rule 2 is why the two emitters M2.7 forked are now merged back into one
+EOL-aware `emit_unanchored`: the fork is how the `$` path lost scan avoidance
+for a whole milestone without any test noticing. Non-EOL output is
+byte-identical across 8 probe patterns, so the merge is a no-op there.
+
+Measured (7 trials each, load avg ~0.95): `ERROR: .*$` over 8 MB of log text
+went 291 -> 22248 MB/s median, with non-overlapping ranges, and is now at
+parity with `ERROR: .*` (22797 median). The non-EOL path is a statistical TIE
+before vs after (13840-24282 vs 15242-24439) — an early single-sample reading
+suggested a 1.4x gain there and was noise. Revisit-when: `^` joins this engine
+(D8/DD-7), since a reverse BOT variant would add a second position-dependent
+view with the same ordering hazard.

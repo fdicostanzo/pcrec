@@ -12,6 +12,8 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **alternation.rxt** — | alternation and precedence
 - **alternation_trie.rxt** — priority hazards of M2.8 prefix-trie factoring (D9): shorter-branch-first shapes, overlapping-but-distinct classes, mixed eligible/ineligible runs. Each guard is sabotage-validated — disabling the disjointness guard fails 2 cases, disabling index-range partitioning fails 7
 - **anchors.rxt** — ^ and $ anchors
+- **eol_engine.rxt** — M2.7 regressions: `$` patterns on the O(n) unanchored engine
+- **eol_scan_avoidance.rxt** — M2.12 regressions: prefilter/skip loops restored on the `$` path (D11). Every case here failed the first M2.12 attempt, which bounded skips at n-1 but still evaluated the EOL view before the skip ran
 - **groups.rxt** — (...) capturing and (?:...) non-capturing groups
 - **escapes.rxt** — \\ \" \n \t metachar and control escapes
 - **empty_matches.rxt** — patterns matching empty strings

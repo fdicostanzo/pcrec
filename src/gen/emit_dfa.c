@@ -158,92 +158,33 @@ static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
     emit_u8_table(c, p, name, stay, 256);
 }
 
-/* M2.7: `$`-bearing patterns on the O(n) engine.
+/* M2.7 put `$`-bearing patterns on this engine; M2.12 gave them back the
+ * scan-avoidance M2.7 had traded away. Both live in ONE emitter on purpose:
+ * M2.7 forked a second copy, and the fork is exactly how the prefilter and
+ * skip loops went missing from the `$` path for a whole milestone.
  *
- * Both machines switch to a state's EOL variant exactly at EOL positions
- * (end of subject, or before a final newline). The check is guarded by
- * `pos + 1 >= n`, which is false for every byte but the last two, so the
- * scan stays a tight table walk.
+ * EOL handling: both machines switch to a state's EOL variant exactly at EOL
+ * positions (end of subject, or before a final newline), guarded by
+ * `pos + 1 >= n` — false for every byte but the last two, so the scan stays a
+ * tight table walk.
  *
- * This path deliberately omits the memchr/bitmap prefilter and the self-loop
- * skip loops: both advance `pos` past positions without consulting accept
- * flags, which is safe only when no state can accept at an EOL position.
- * Re-enabling them for EOL machines (skipping to n-1 rather than n, then
- * resuming the stepped loop) is a follow-up (plan M2.12). The point of M2.7
- * is removing the O(n^2) per-start restart, which this does. */
-static void emit_unanchored_eol(Ctx *cx)
-{
-    Job *job = cx->job;
-    Dfa *fd = &job->dfa, *rd = &job->rdfa;
-    StrBuf *c = &job->csb;
-    const char *p = cx->opt->prefix;
-    int fs = fd->s0, rs = rd->s0;
-
-    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
-                 "size_t startpos, %s_span *m)\n{\n", p, p);
-    if (fs < 0 || rs < 0) {
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
-                   "    return 0;\n}\n");
-        return;
-    }
-
-    emit_u8_table(c, p, "fcls", fd->clsmap, 256);
-    emit_tr_table(c, p, "ftr", fd);
-    emit_acc_table(c, p, "facc", fd);
-    emit_eol_table(c, p, "fev", fd);
-    emit_u8_table(c, p, "rcls", rd->clsmap, 256);
-    emit_tr_table(c, p, "rtr", rd);
-    emit_acc_table(c, p, "racc", rd);
-    emit_eol_table(c, p, "rev", rd);
-
-    sb_puts(c,   "    size_t pos = startpos;\n"
-                 "    size_t last = (size_t)-1;\n");
-    sb_printf(c, "    int st = %d;\n", fs);
-    sb_puts(c,   "    if (startpos > n) return 0;\n"
-                 "    for (;;) {\n"
-                 "        int est = st;\n");
-    sb_printf(c, "        if (__builtin_expect(pos + 1 >= n, 0) && %s_fev[st] >= 0 &&\n"
-                 "            (pos == n || (pos + 1 == n && s[pos] == '\\n')))\n"
-                 "            est = %s_fev[st];\n", p, p);
-    sb_printf(c, "        if (%s_facc[est]) last = pos;\n", p);
-    sb_puts(c,   "        if (pos >= n) break;\n");
-    sb_printf(c, "        st = %s_ftr[est * %d + %s_fcls[s[pos++]]];\n", p, fd->ncls, p);
-    sb_puts(c,   "        if (st < 0) break;\n"
-                 "    }\n"
-                 "    if (last == (size_t)-1) return 0;\n"
-                 "    {\n"
-                 "        size_t end = last;\n"
-                 "        size_t sfound = (size_t)-1;\n"
-                 "        size_t pp = end;\n");
-    sb_printf(c, "        int rst = %d;\n", rs);
-    sb_puts(c,   "        for (;;) {\n"
-                 "            int erst = rst;\n");
-    sb_printf(c, "            if (__builtin_expect(pp + 1 >= n, 0) && %s_rev[rst] >= 0 &&\n"
-                 "                (pp == n || (pp + 1 == n && s[pp] == '\\n')))\n"
-                 "                erst = %s_rev[rst];\n", p, p);
-    sb_printf(c, "            if (%s_racc[erst]) sfound = pp;\n", p);
-    sb_puts(c,   "            if (pp <= startpos) break;\n");
-    sb_printf(c, "            rst = %s_rtr[erst * %d + %s_rcls[s[--pp]]];\n", p, rd->ncls, p);
-    sb_puts(c,   "            if (rst < 0) break;\n"
-                 "        }\n"
-                 "        if (sfound == (size_t)-1) return 0;\n"
-                 "        if (m) { m->start = sfound; m->end = end; }\n"
-                 "        return 1;\n"
-                 "    }\n"
-                 "}\n");
-}
-
+ * Scan avoidance under EOL (M2.12): a prefilter or self-loop skip advances
+ * `pos` WITHOUT consulting accept flags, which is unsound when a state can
+ * accept at an EOL position. The fix is to bound every skip at `n - 1` rather
+ * than `n` and let the stepped loop handle the last two positions. That also
+ * keeps the EOL-variant lookup correct for free: a skip can only run when
+ * `pos + 1 < n`, and in that case `est == st` by construction, so the state
+ * used for the transition is never stale. The forward prefilter additionally
+ * must NOT keep its `return 0` early-out, since the start state's EOL variant
+ * may still accept at n-1 or n. */
 static void emit_unanchored(Ctx *cx)
 {
-    if (dfa_has_eolvar(&cx->job->dfa) || dfa_has_eolvar(&cx->job->rdfa)) {
-        emit_unanchored_eol(cx);
-        return;
-    }
-
     Job *job = cx->job;
     Dfa *fd = &job->dfa, *rd = &job->rdfa;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
+
+    bool eol = dfa_has_eolvar(fd) || dfa_has_eolvar(rd);
 
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
@@ -266,12 +207,18 @@ static void emit_unanchored(Ctx *cx)
         first[b] = (uint8_t)(t != fs);
         if (first[b]) { esc_count++; esc_byte = b; }
     }
-    if (esc_count == 0 && !start_acc) {
-        /* the machine can neither accept nor ever leave its start state */
+    /* "can neither accept nor ever leave the start state" is only a proof
+     * that nothing matches when the start state has no EOL view. `$` alone is
+     * exactly the counter-example: it never leaves fs and facc[fs] is 0, but
+     * its EOL variant accepts. */
+    if (esc_count == 0 && !start_acc && fd->st[fs].eolvar < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
                    "    return 0;\n}\n");
         return;
     }
+    /* The prefilter stays valid under EOL because it is bounded at n-1 and
+     * gated on `last == -1`: it only ever skips non-EOL positions at which
+     * the machine provably stays parked in fs. */
     bool prefilter = !start_acc && esc_count > 0 && esc_count < 256;
     bool use_memchr = prefilter && esc_count == 1;
 
@@ -282,6 +229,7 @@ static void emit_unanchored(Ctx *cx)
     emit_u8_table(c, p, "fcls", fd->clsmap, 256);
     emit_tr_table(c, p, "ftr", fd);
     emit_acc_table(c, p, "facc", fd);
+    if (eol) emit_eol_table(c, p, "fev", fd);
     if (prefilter && !use_memchr)
         emit_u8_table(c, p, "first", first, 256);
     for (int k = 0; k < nfskip; k++)
@@ -289,26 +237,52 @@ static void emit_unanchored(Ctx *cx)
     emit_u8_table(c, p, "rcls", rd->clsmap, 256);
     emit_tr_table(c, p, "rtr", rd);
     emit_acc_table(c, p, "racc", rd);
+    if (eol) emit_eol_table(c, p, "rev", rd);
     for (int k = 0; k < nrskip; k++)
         emit_stay_table(c, p, "rs", rskip[k], rd);
+
+    /* Under EOL the scan reads the accept flag and the transition row through
+     * `est`/`erst` (the EOL view at the last two positions); otherwise those
+     * collapse to `st`/`rst` and gcc sees exactly the pre-M2.7 loop. */
+    const char *fsrc = eol ? "est" : "st";
+    const char *rsrc = eol ? "erst" : "rst";
+    /* Every skip must stop at n-1 so a state that accepts only at EOL is
+     * never skipped past; below n-1 the EOL view is unreachable, which is
+     * also why `est` cannot be stale after a skip. */
+    const char *fbound = eol ? "pos + 1 < n" : "pos < n";
 
     sb_puts(c,   "    size_t pos = startpos;\n"
                  "    size_t last = (size_t)-1;\n");
     sb_printf(c, "    int st = %d;\n", fs);
     sb_puts(c,   "    if (startpos > n) return 0;\n"
                  "    for (;;) {\n");
-    sb_printf(c, "        if (%s_facc[st]) last = pos;\n", p);
+    /* Scan avoidance runs BEFORE the accept/EOL evaluation, so the evaluation
+     * always sees the position the loop is really at. Doing it the other way
+     * round is wrong under EOL: a skip that lands on n-1 would then consume
+     * that byte without ever taking the EOL view of it. It is equally correct
+     * without EOL — every position a skip passes has the same state and so
+     * the same accept bit, and `last` wants the largest such position anyway,
+     * which is exactly where the skip stops. */
     {
         const char *kw = "if";
         if (prefilter) {
             sb_printf(c, "        if (st == %d && last == (size_t)-1) {\n", fs);
             if (use_memchr) {
-                sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
-                sb_puts(c,   "            if (!q) return 0;\n"
-                             "            pos = (size_t)((const unsigned char *)q - s);\n");
+                if (eol) {
+                    /* no early `return 0`: the EOL view may still accept at
+                     * n-1 or n, so fall through to the stepped loop instead */
+                    sb_puts(c,   "            if (pos + 1 < n) {\n");
+                    sb_printf(c, "                const void *q = memchr(s + pos, %d, n - 1 - pos);\n", esc_byte);
+                    sb_puts(c,   "                pos = q ? (size_t)((const unsigned char *)q - s) : n - 1;\n"
+                                 "            }\n");
+                } else {
+                    sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
+                    sb_puts(c,   "            if (!q) return 0;\n"
+                                 "            pos = (size_t)((const unsigned char *)q - s);\n");
+                }
             } else {
-                sb_printf(c, "            while (pos < n && !%s_first[s[pos]]) pos++;\n", p);
-                sb_puts(c,   "            if (pos >= n) return 0;\n");
+                sb_printf(c, "            while (%s && !%s_first[s[pos]]) pos++;\n", fbound, p);
+                if (!eol) sb_puts(c, "            if (pos >= n) return 0;\n");
             }
             sb_puts(c, "        }\n");
             kw = "else if";
@@ -316,15 +290,21 @@ static void emit_unanchored(Ctx *cx)
         for (int k = 0; k < nfskip; k++) {
             int K = fskip[k];
             sb_printf(c, "        %s (st == %d) {\n", kw, K);
-            sb_printf(c, "            while (pos < n && %s_fs%d[s[pos]]) pos++;\n", p, K);
-            if (fd->st[K].accept)
-                sb_puts(c, "            last = pos;\n");
+            sb_printf(c, "            while (%s && %s_fs%d[s[pos]]) pos++;\n", fbound, p, K);
             sb_puts(c, "        }\n");
             kw = "else if";
         }
     }
+    if (eol) {
+        sb_puts(c,   "        int est = st;\n");
+        sb_printf(c, "        if (__builtin_expect(pos + 1 >= n, 0) && %s_fev[st] >= 0 &&\n"
+                     "            (pos == n || (pos + 1 == n && s[pos] == '\\n')))\n"
+                     "            est = %s_fev[st];\n", p, p);
+    }
+    sb_printf(c, "        if (%s_facc[%s]) last = pos;\n", p, fsrc);
     sb_puts(c,   "        if (pos >= n) break;\n");
-    sb_printf(c, "        st = %s_ftr[st * %d + %s_fcls[s[pos++]]];\n", p, fd->ncls, p);
+    sb_printf(c, "        st = %s_ftr[%s * %d + %s_fcls[s[pos++]]];\n",
+              p, fsrc, fd->ncls, p);
     sb_puts(c,   "        if (st < 0) break;\n"
                  "    }\n"
                  "    if (last == (size_t)-1) return 0;\n"
@@ -334,21 +314,30 @@ static void emit_unanchored(Ctx *cx)
                  "        size_t pp = end;\n");
     sb_printf(c, "        int rst = %d;\n", rs);
     sb_puts(c,   "        for (;;) {\n");
-    sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
-    {
+    {   /* same ordering rule as the forward loop, and `sfound` wants the
+         * SMALLEST accepting position, which is where a reverse skip stops */
         const char *kw = "if";
         for (int k = 0; k < nrskip; k++) {
             int K = rskip[k];
-            sb_printf(c, "            %s (rst == %d) {\n", kw, K);
+            /* pp only ever DECREASES, so one entry guard is enough to keep the
+             * whole skip below the EOL region */
+            sb_printf(c, "            %s (rst == %d%s) {\n", kw, K,
+                      eol ? " && pp + 1 < n" : "");
             sb_printf(c, "                while (pp > startpos && %s_rs%d[s[pp - 1]]) pp--;\n", p, K);
-            if (rd->st[K].accept)
-                sb_puts(c, "                sfound = pp;\n");
             sb_puts(c, "            }\n");
             kw = "else if";
         }
     }
+    if (eol) {
+        sb_puts(c,   "            int erst = rst;\n");
+        sb_printf(c, "            if (__builtin_expect(pp + 1 >= n, 0) && %s_rev[rst] >= 0 &&\n"
+                     "                (pp == n || (pp + 1 == n && s[pp] == '\\n')))\n"
+                     "                erst = %s_rev[rst];\n", p, p);
+    }
+    sb_printf(c, "            if (%s_racc[%s]) sfound = pp;\n", p, rsrc);
     sb_puts(c,   "            if (pp <= startpos) break;\n");
-    sb_printf(c, "            rst = %s_rtr[rst * %d + %s_rcls[s[--pp]]];\n", p, rd->ncls, p);
+    sb_printf(c, "            rst = %s_rtr[%s * %d + %s_rcls[s[--pp]]];\n",
+              p, rsrc, rd->ncls, p);
     sb_puts(c,   "            if (rst < 0) break;\n"
                  "        }\n"
                  "        if (sfound == (size_t)-1) return 0;\n"

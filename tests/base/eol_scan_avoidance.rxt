@@ -1,0 +1,100 @@
+# M2.12: scan avoidance restored on the `$` (EOL-variant) engine path.
+#
+# M2.7 removed the memchr/bitmap prefilter and the self-loop skip loops from
+# the `$` path because both advance `pos` without consulting accept flags,
+# which is unsound when a state can accept at an EOL position. M2.12 puts them
+# back, bounded at n-1.
+#
+# Every case here failed on the FIRST M2.12 attempt, which bounded the skips
+# correctly but still evaluated the EOL view BEFORE the skip ran — so a skip
+# landing on n-1 consumed that byte without ever taking its EOL view. A sweep
+# of 27 `$` patterns x 69 subjects found 53 divergences; these are the shapes
+# that produced them. All expectations verified against python3 `re`.
+
+# --- the case that lost the match entirely: skip lands exactly on n-1 ---
+pattern .*=.*$
+m "xyz=abc" 0 7
+m "xyz=abc\n" 0 7
+m "a=b\n" 0 3
+n "noequals\n"
+
+# --- two nullable stars: the empty match at EOF outranked the real one ---
+pattern a*b*$
+m "a" 0 1
+m "a\n" 0 1
+m "aa\n" 0 2
+m "\n\n" 1 1
+m "aaab\n" 0 4
+m "bar\n" 3 3
+
+# --- a skip state that itself accepts only at EOL ---
+pattern [a-z]*$
+m "abc" 0 3
+m "abc\n" 0 3
+m "abc\ndef" 4 7
+m "" 0 0
+
+pattern [^\n]*$
+m "hello" 0 5
+m "hello\n" 0 5
+
+# --- memchr prefilter on the EOL path (single escape byte) ---
+pattern a*b$
+m "aaab" 0 4
+m "aaab\n" 0 4
+# `a*` can match zero 'a', so the leftmost START is the 'b' itself
+m "xxxxxxxxxxxxxxxxxxxxb" 20 21
+m "xxxxxxxxxxxxxxxxxxxxb\n" 20 21
+n "xxxxxxxxxxxxxxxxxxxxbx"
+n "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+# --- prefilter must not early-return: the EOL view can still accept ---
+pattern b*$
+m "aaaa" 4 4
+m "aaaa\n" 4 4
+m "aaab" 3 4
+m "aaab\n" 3 4
+
+pattern $
+m "" 0 0
+m "abc" 3 3
+m "abc\n" 3 3
+m "\n" 0 0
+
+# --- dot-star shapes where the skip covers almost the whole subject ---
+pattern a.*$
+m "abbbbbbbbbb" 0 11
+m "abbbbbbbbbb\n" 0 11
+n "bbbbbbbbbb"
+
+pattern .*$
+m "" 0 0
+m "abc" 0 3
+m "abc\n" 0 3
+m "\n" 0 0
+
+# --- reverse-machine skip: the match START must not be skipped past ---
+pattern [a-z]+@[a-z]+$
+m "aaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbb" 0 41
+m "aaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbb\n" 0 41
+m "..aa@bb" 2 7
+
+# --- short subjects: n = 0, 1, 2 exercise the pos+1 bounds directly ---
+pattern a$
+m "a" 0 1
+m "a\n" 0 1
+n ""
+n "\n"
+
+pattern .$
+m "a" 0 1
+m "ab" 1 2
+m "a\n" 0 1
+n "\n"
+
+pattern a*$
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "ba" 1 2
