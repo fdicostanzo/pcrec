@@ -1109,8 +1109,40 @@ that row has no runtime-checked variant at all. It lands squarely on D21's
 OPT-A lead — memchr2/memchr3 covers exactly this two-escape-byte gap, and this
 is now a second measured customer for it alongside case (d).
 
-**Scope.** ASCII only: in the C locale bytes >= 0x80 have no case, and Unicode
-folding stays with DD-1/M5. The fold is applied at each site that builds a
+**Scope, and the two boundaries where "it folds" stops being true.** The claim
+above is unconditional about the CLASS-BASED tier and must not be read wider
+than that. Two constructs can defeat it, and neither is shipped, so this is a
+note for whoever implements them rather than a correction:
+
+1. **Backreferences (M6/backrefs, and the M4 VM before them).** `(?i)(a)\1`
+   compares captured SUBJECT text against subject text. That is not a
+   class-membership test, so there is no bitmap to fold it into: a caseless
+   backreference needs a case-insensitive comparison at MATCH time. It is the
+   one place where caselessness could still cost something at run time, and it
+   is where this dimension would have to be re-examined against D18's rule.
+2. **Unicode folding (DD-1/M5).** ASCII folding is a bijection on 52 bytes, so
+   it is a bitmap OR. Unicode folding is not: it has one-to-many foldings
+   (`ß` -> `ss`), multi-byte fold pairs that cross byte-class boundaries, and
+   pairs whose members have different UTF-8 lengths. None of that is a
+   256-bit-bitmap operation, so the "it is just `bitmap |= swapcase(bitmap)`"
+   argument does NOT carry over and DD-1 must settle it on its own evidence.
+
+Everything else in the base tier folds: literals, classes, ranges, negated
+classes, `.`, quantifiers, alternation and anchors are all built from class
+bitmaps or carry no case at all.
+
+**Scoped modifiers cost nothing extra, which is worth knowing before M6.**
+`(?i)`, `(?i:...)` and `(?-i)` currently fail cleanly with "requires module
+'modifiers'". When that module lands, the fold does not need redesigning: it is
+applied per-class at CONSTRUCTION time, so a scoped flag means "whichever
+setting is in effect where this class is parsed" — a parser state variable
+saved and restored at group boundaries, with `options.caseless` as its initial
+value. The option and the inline syntax become two spellings of the same
+front-end change, and scoped case-insensitivity is still one engine with no
+runtime cost. Scoping strengthens this decision rather than complicating it.
+
+ASCII only: in the C locale bytes >= 0x80 have no case, and Unicode folding
+stays with DD-1/M5 per boundary 2 above. The fold is applied at each site that builds a
 positive class set — `char_node` and `p_class` — and NOT as a post-parse AST
 walk, because AST depth is unbounded in pattern length and such a walk would
 add exactly the recursion DD-10/TS-4 is trying to remove.

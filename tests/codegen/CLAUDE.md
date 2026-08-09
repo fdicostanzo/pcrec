@@ -92,6 +92,37 @@ logic down paths the unfolded corpus never reaches.
 | `if (cls_has(b, c) \|\| cls_has(b, c + 32))` -> `if (cls_has(b, c + 32))` (fold one direction only) | 1 codegen check + 8 caseless.rxt cases |
 | in run.sh, drop the `-i` mapping so `flags i` becomes a no-op | 21 of 56 caseless.rxt cases |
 
+## TS-1 guards a property NOTHING else in the repo can see
+
+D19's rule is "usable FROM threads, never threaded". For generated code that
+reduces to two mechanical facts — every emitted `static` is `const` (so it is
+.rodata with a constant initialiser: no lazy init, nothing to race on) and the
+output references no non-reentrant or allocating libc. Both hold today by
+construction, and both are invisible to correctness testing.
+
+The sabotage numbers make the point better than the prose. Making every emitted
+table a NON-CONST static fails 8 TS-1 checks and **zero** corpus cases: the code
+compiles, matches identically, and passes the entire suite while being
+thread-hostile. That is the memoisation-cache / hoisted-scratch-buffer /
+diagnostics-counter failure mode, and under D18 also a selector that caches its
+choice in a global.
+
+The sweep covers 18 emitted files across 9 emission shapes (both engines, EOL
+and non-EOL, both prefilter kinds, skip states, the never-matches path,
+case-folded, and `--emit-main`), plus the paired `.h`. The file count is itself
+asserted, so a sweep that quietly stops generating stops passing.
+
+| sabotage (exact edit) | result |
+|---|---|
+| `static const unsigned char %s_%s[%d]` -> `static unsigned char %s_%s[%d]` in `emit_u8_table` | 8 TS-1 checks, **0 corpus cases** |
+| `size_t pos = startpos;` -> `size_t pos = startpos; (void)errno;` in `emit_unanchored` | 6 TS-1 checks (+ the OS-0b compile check, incidentally, because `errno` also needs a header it does not get) |
+
+Line 1 of each file is stripped before scanning — it echoes the user's pattern
+verbatim, so a pattern named `malloc` would otherwise fail its own denylist.
+The scan does not strip C comments, so an emitted comment that merely mentions
+a denylisted symbol will trip it; that is deliberate, and the fix is to reword
+the comment rather than to weaken the list.
+
 The M2.12 additions are the sharpest illustration of why this directory
 exists: reverting the EOL path to its M2.7 state (no prefilter, no skips —
 ~76x slower on `$` patterns) fails 6 checks here while the .rxt corpus still

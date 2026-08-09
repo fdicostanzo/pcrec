@@ -1601,3 +1601,62 @@ Verification: 787 corpus (+56) + 49 CLI (+7) + 28 codegen (+6) + 7 trie-identity
 byte-identical) green, ratchet clean, oracle 100% (779 cases). Measurements
 taken with no critic running, load 0.59 before / 1.01 after, and reproduced in
 a second run.
+
+## 2026-08-09 — TS-1, and two boundaries added to a decision I had just committed
+
+Two small pieces, one of which is a correction to my own work from an hour
+earlier.
+
+**D23 was stated more broadly than it is true, and Frank's question found it.**
+The entry said ASCII case-insensitivity folds, full stop. It folds for the
+CLASS-BASED tier, which is everything shipped — but two constructs defeat the
+argument and neither was named. Backreferences: `(?i)(a)\1` compares captured
+SUBJECT text against subject text, which is not a class-membership test, so
+there is no bitmap to fold it into and a caseless backref needs a comparison at
+MATCH time. That is the one place this dimension could still cost something at
+run time, and where it would have to be re-examined against D18's rule. And
+Unicode folding: ASCII folding is a bijection on 52 bytes so it is a bitmap OR,
+while Unicode has one-to-many foldings (`ß` -> `ss`) and fold pairs of
+different UTF-8 lengths — none of which is a bitmap operation, so DD-1 must
+settle it on its own evidence rather than inheriting D23's.
+
+Both are now in D23. Neither is shipped, so nothing is wrong in the code; what
+was wrong was a decision entry that a future reader would have reasoned from.
+That is the same failure mode as R3's "the generation counter is file-scope" —
+a wrong description of correct work still costs, because the next person
+reasons from the description rather than the code.
+
+Also recorded there, because it came up and is worth knowing before M6: scoped
+modifiers cost nothing extra. `(?i)`, `(?i:...)` and `(?-i)` fail cleanly today
+with "requires module 'modifiers'", and when that module lands the fold does
+not need redesigning — it is applied per-class at CONSTRUCTION time, so a
+scoped flag just means "whichever setting is in effect where this class is
+parsed": a parser state variable saved and restored at group boundaries, with
+`options.caseless` as its initial value. The option and the inline syntax are
+two spellings of one front-end change.
+
+**TS-1 — the cheapest guard on the board, and its sabotage number is the
+argument for it.** D19's property for generated code reduces to two mechanical
+facts: every emitted `static` is `const` (so it is .rodata with a constant
+initialiser — no lazy init, nothing to race on) and the output references no
+non-reentrant or allocating libc. Both hold today by construction. The sweep
+covers 18 emitted files across 9 emission shapes — both engines, EOL and
+non-EOL, both prefilter kinds, skip states, the never-matches path,
+case-folded, `--emit-main` — plus the paired headers, and the file count is
+itself asserted so a sweep that quietly stops generating stops passing.
+
+The number that justifies the whole thing: making every emitted table a
+NON-CONST static fails 8 TS-1 checks and **zero** corpus cases. The code
+compiles, matches identically, and passes the entire suite while being
+thread-hostile. That is precisely the memoisation-cache and
+hoisted-scratch-buffer failure mode D19 predicted, and under D18 it is also a
+selector that caches its choice in a global. No gcc needed, ~60 lines.
+
+One deliberate sharp edge, documented in place: the scan is textual and does
+not strip C comments, so an emitted comment that merely mentions `malloc` will
+trip it. Keeping it that way — a denylist that tolerates its own words in some
+contexts is one nobody can reason about, and rewording a comment is cheaper
+than the ambiguity.
+
+Verification: 787 corpus + 49 CLI + 29 codegen (+1) + 7 trie-identity green,
+ratchet clean.
