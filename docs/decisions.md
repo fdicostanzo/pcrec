@@ -289,8 +289,35 @@ happened, not the choice it landed on. The mechanism is that a data-dependent
 indirect jump mispredicts on essentially every byte, while a small transition
 table is an L1 hit with no misprediction at all.
 
-Caveat, stated because it bounds the claim: this measures DATA-DEPENDENT
-transitions on random input. A machine that sits in one state for long runs
-would predict well — but that shape is exactly what the skip loops above
-already handle better than either dispatch style. Revisit-when: a workload
-appears with long, highly predictable state runs that skip loops cannot cover.
+CORRECTION (same day, from my own follow-up measurement — no critic needed to
+catch this, only a second experiment): "there is no crossover" is WRONG as a
+blanket statement. The crossover is not in DFA SIZE, it is in transition
+PREDICTABILITY, and it is large:
+
+| input to the same 6-state DFA | table | computed goto | goto/table |
+|---|---|---|---|
+| random bytes (data-dependent) | 350-374 MB/s | 140-144 MB/s | 2.48-2.65 |
+| alternating bytes (predictable) | 372-373 MB/s | 1318-1342 MB/s | **0.28** |
+
+So computed goto is ~3.5x FASTER when the transition sequence is predictable,
+because the indirect-branch predictor runs ahead; and ~2.5x slower when it is
+not, because it mispredicts on nearly every byte. The table is flat across
+both, which is its real virtue.
+
+The decision stands — unconditional table — because general regex scanning
+over real subjects is the data-dependent case, and the predictable case is
+largely what the skip loops already cover. But the reason is "unpredictable
+transitions dominate", not "goto is simply slower", and anyone reading the
+original wording would have been misled.
+
+Second caveat on the same benchmark: at -O1 the table version measures 7234
+MB/s against 350 MB/s at -O2, a 20x swing that no property of the DFA
+explains. Something in the micro-benchmark's accumulator loop is being
+optimised in a way that does not reflect real scanning, so treat the ABSOLUTE
+numbers here as untrustworthy and only the within-level ratios as meaningful.
+The direction is robust across -O1/-O2/-O3 (58.5x / 2.48x / 2.65x, all
+favouring the table on random input).
+
+Revisit-when: a workload appears with long, highly predictable state runs that
+skip loops cannot cover — that is now a MEASURED opportunity rather than a
+hypothetical one.
