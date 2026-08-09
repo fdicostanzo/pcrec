@@ -217,7 +217,8 @@ easy to scan.
   clamping for nullable patterns (python clamps; pcrec/PCRE2 reject). Blocks
   that are correct-for-PCRE but not python-verifiable carry a `# pcre2-only`
   comment line immediately before `pattern`; the verifier skips them and reports
-  the skip count. Keep such cases rare and justified.
+  the skip count. Keep such cases rare and justified; every exclusion must
+  have a corresponding entry in docs/upstream_issues.md.
 - **Harness hardening**: `perr` passes only on exit code 1 (clean rejection) — a
   crash or timeout (>=124) is a failure; unparseable non-comment lines are hard
   errors; a file with zero pattern blocks fails; a run with zero total cases exits

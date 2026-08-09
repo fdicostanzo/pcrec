@@ -18,5 +18,9 @@ Process and status documents for pcrec. The architecture itself lives in
   exclusions, and how to add a per-module test directory.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
+- `upstream_issues.md` — suspected bugs and divergences in OTHER engines
+  (PCRE2, python re) found by our differential tooling; the citable
+  rationale behind oracle exclusions. Add an entry whenever tooling
+  implicates another engine.
 
 Maintenance: update this file when files are added/removed or their roles change.

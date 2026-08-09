@@ -152,3 +152,14 @@ Subagent deliverables (sonnet x3, all green):
 
 Remaining in M2: M2.1 tail (anchored fast path, interior-literal memmem),
 M2.2 (Hopcroft + trie factoring), then checkpoint review R2.
+
+## 2026-08-09 — Upstream-issues tracker + cross-engine perf comparison started
+
+- Created docs/upstream_issues.md (Frank's request): U1 PCRE2 {0}-anchor
+  optimizer quirk (suspected-bug, candidate upstream report), U2 python {,}
+  divergence, U3 python pos-clamping, U4 PCRE2 match-limit (not-a-bug, oracle
+  hazard). Linked from docs/CLAUDE.md and testing.md exclusions.
+- Launched compare subagent (sonnet): tests/bench/compare/ — pcrec vs
+  pcre2-interp vs pcre2-jit (if available) vs python-re on identical buffers,
+  9-case matrix incl. pathological and short-subject regimes; agreement check
+  before timing; results snapshot per machine.
