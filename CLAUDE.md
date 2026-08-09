@@ -34,7 +34,7 @@ generated code uses computed goto and other GNU C extensions.
 - `docs/decisions.md` — ADR-lite decision log (D1..).
 - `docs/testing.md` — .rxt test format and harness usage.
 - `lib/pcrec.h` — the only public header. `src/` is internal (core/, parse/,
-  ir/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
+  ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
 
 ## Conventions
 

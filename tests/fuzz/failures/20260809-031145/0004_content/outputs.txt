@@ -1,6 +1,0 @@
-kind: content
-pattern: '(\\n(?:(c{2,})(?:b{0,2}\\n{5,10}?c*a|b0{28,30}?c0{0}).{2}?)|^$\\n{0,30}){0}(?:1|[a-]{0}?a10)[abc]'
-subject (hex): 38325e5b5e0a3524636e090a7c30623261320a6eff28633a62300a2c0a622a3f2a5e325e09805d0a622cc8382c0a0a6163612a283a63635e242c615d2e5e0a7d5d612d31620a6e5d2429c85e246e305dff337b632a3861357d3f320a30305b3162617b62625e612c6e323528286261282cff097b337cc8
-subject (repr): b'82^[^\n5$cn\t\n|0b2a2\nn\xff(c:b0\n,\nb*?*^2^\t\x80]\nb,\xc88,\n\naca*(:cc^$,a].^\n}]a-1b\nn]$)\xc8^$n0]\xff3{c*8a5}?2\n00[1ba{bb^a,n25((ba(,\xff\t{3|\xc8'
-pcrec:  match 67 69
-pcre2:  nomatch

@@ -8,6 +8,8 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
 - **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
+- **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/known_issues.md); excluded from `make test` so the suite stays honest. Currently empty (all known bugs fixed at R2)
+- **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal)
 - **fuzz/** — PCRE2-oracle differential fuzzer (`make fuzz`), run manually and at checkpoints
 
 ## Conventions

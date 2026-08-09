@@ -75,6 +75,7 @@ typedef struct pcre2_real_general_context_8 pcre2_general_context_8;
 typedef struct pcre2_real_compile_context_8 pcre2_compile_context_8;
 typedef struct pcre2_real_match_context_8 pcre2_match_context_8;
 
+typedef int (*fn_config)(unsigned int, void *);
 typedef pcre2_code_8 *(*fn_compile)(PCRE2_SPTR pattern, PCRE2_SIZE length,
     uint32_t options, int *errorcode, PCRE2_SIZE *erroroffset,
     pcre2_compile_context_8 *ccontext);
@@ -123,11 +124,14 @@ static void *load_symbol(void *handle, const char *name)
     return sym;
 }
 
+static void *g_lib;   /* retained so --version can query pcre2_config_8 */
+
 static void load_pcre2(void)
 {
     void *handle = NULL;
     for (int i = 0; CANDIDATE_LIBS[i] != NULL; i++) {
         handle = dlopen(CANDIDATE_LIBS[i], RTLD_NOW | RTLD_LOCAL);
+        g_lib = handle;
         if (handle) break;
     }
     if (!handle) {
@@ -174,8 +178,28 @@ static unsigned char *read_file(const char *path, size_t *out_len)
     return buf;
 }
 
+/* R2-PR5: the oracle previously verified only that symbols RESOLVED. If
+ * dlopen picked up a different libpcre2-8 (e.g. pre-10.43, where {,n}
+ * semantics differ — see docs/upstream_issues.md U2), it would have produced
+ * silently wrong "ground truth". Callers can now query the version and record
+ * it alongside results. */
+static void print_version(void)
+{
+    fn_config cfg = (fn_config)dlsym(g_lib, "pcre2_config_8");
+    char buf[64] = {0};
+    if (cfg && cfg(11 /* PCRE2_CONFIG_VERSION */, buf) >= 0)
+        printf("%s\n", buf);
+    else
+        printf("unknown\n");
+}
+
 int main(int argc, char **argv)
 {
+    if (argc == 2 && strcmp(argv[1], "--version") == 0) {
+        load_pcre2();
+        print_version();
+        return 0;
+    }
     if (argc < 3 || argc > 4) {
         fprintf(stderr, "usage: %s 'PATTERN' <subject-file> [startpos]\n", argv[0]);
         return 2;
@@ -224,7 +248,7 @@ int main(int argc, char **argv)
         unsigned char buf[256];
         p_get_error_message(rc, buf, sizeof buf);
         fprintf(stderr, "pcre2_oracle: match-time limit hit (rc=%d): %s\n", rc, buf);
-        printf("mlimit %d\n", rc);
+        printf("inconclusive %d\n", rc);
     } else {
         PCRE2_SIZE *ov = p_get_ovector_pointer(md);
         printf("match %zu %zu\n", (size_t)ov[0], (size_t)ov[1]);

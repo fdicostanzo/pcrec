@@ -199,6 +199,32 @@ def gen_alt(depth):
     return Node("alt", branches)
 
 
+# Preference-trap templates (checkpoint review R2). R2-M1
+# ('(?:ab|a){0,2}?b' -> wrong span) needed THREE things at once: an
+# alternation whose branches overlap by prefix, a LAZY quantifier over it, and
+# a following atom that forces backtracking. Measured joint probability from
+# the unbiased generator: ~1% of patterns have the alternation shape, and only
+# a fraction of those also get the continuation and an exposing subject — so
+# 4 seeded runs missed a real bug. These templates make that class routine
+# instead of lucky. Keep them cheap and shape-focused; the general generator
+# still produces everything else.
+TRAP_TEMPLATES = [
+    "(?:{a}{b}|{a}){q}{b}",     # overlapping-prefix branches, R2-M1 shape
+    "(?:{a}|{a}{b}){q}{b}",     # same, preferred branch is the SHORT one
+    "(?:|{a}){q}",              # nullable PREFERRED branch (R2-S1 shape)
+    "(?:{a}|){q}{b}",           # nullable trailing branch
+    "(?:{a}{a}|{a}){q}{a}",     # overlapping same-letter runs
+    "{a}(?:{b}|{b}{a}){q}{a}",  # trap behind a literal prefix
+]
+TRAP_QUANTS = ["*", "+", "?", "*?", "+?", "{0,2}", "{0,2}?", "{1,3}?", "{2,}?"]
+
+
+def gen_trap():
+    a, b = random.sample("abc01xy", 2)
+    return random.choice(TRAP_TEMPLATES).format(
+        a=a, b=b, q=random.choice(TRAP_QUANTS))
+
+
 def gen_pattern():
     return gen_alt(3)
 
@@ -255,6 +281,35 @@ def sample(node):
     if node.kind == "alt":
         return sample(random.choice(node.data))
     raise AssertionError(node.kind)
+
+
+def sample_straddle(node):
+    """Like sample(), but for alternations it concatenates TWO DIFFERENT
+    branches, and for repeats it emits a run built from differing branch
+    choices.
+
+    WHY (checkpoint review R2, finding R2-PR2): plain sample() picks ONE
+    alternation branch and repeats it, so it never produces a subject that
+    crosses a branch boundary — precisely where backtrack-PREFERENCE bugs
+    live. That blind spot is why 4 seeded fuzz runs missed R2-M1
+    ('(?:ab|a){0,2}?b' on "abab": the exposing subject needs "ab" then "a",
+    two different branches of the same alternation). Subjects from this
+    sampler are what would have caught it."""
+    if node.kind == "alt" and len(node.data) >= 2:
+        a, b = random.sample(list(node.data), 2)
+        return sample(a) + sample(b)
+    if node.kind == "grp":
+        inner, _capturing = node.data
+        return sample_straddle(inner)
+    if node.kind == "rep":
+        atom, _qtext, lo, hi = node.data
+        cap = lo + 3 if hi is None else hi
+        count = max(2, random.randint(lo, max(lo, min(cap, lo + 3))))
+        return "".join(sample_straddle(atom) if i % 2 == 0 else sample(atom)
+                       for i in range(count))
+    if node.kind == "cat":
+        return "".join(sample_straddle(p) for p in node.data)
+    return sample(node)
 
 
 RANDOM_BYTE_ALPHABET = [bytes([b]) for b in b"abc\n"] + \
@@ -463,9 +518,39 @@ def main():
     for _ in range(args.patterns):
         node = gen_pattern()
         pat = render(node)
+        is_trap = random.random() < 0.08     # ~8% preference traps (R2)
+        if is_trap:
+            pat = gen_trap()
         alpha = pattern_alphabet(pat)
-        subs = [derived_subject(node, alpha) if random.random() < 0.4
-                else random_subject(alpha) for _ in range(args.subjects)]
+        if is_trap:
+            # Trap patterns are raw text, not an AST node, so the node-based
+            # samplers do not apply. Preference bugs surface on SHORT subjects
+            # over the pattern's own alphabet, so enumerate those exhaustively
+            # (this is what actually exposes '(?:|a)*' vs "a").
+            # pattern_alphabet() includes the pattern's METAcharacters, which
+            # make useless subjects for a trap; keep only literal alphanumerics
+            letters = sorted(c for c in alpha if c.isalnum())[:5] or [b"a"]
+            subs = [b""]
+            for L in (1, 2, 3, 4):
+                for _ in range(max(1, args.subjects // 5)):
+                    subs.append(b"".join(random.choice(letters) for _ in range(L)))
+            subs = subs[:args.subjects] if len(subs) > args.subjects else subs
+            work.append((pat, subs))
+            continue
+        subs = []
+        for _ in range(args.subjects):
+            r = random.random()
+            if r < 0.30:
+                subs.append(derived_subject(node, alpha))
+            elif r < 0.50:
+                # branch-straddling subjects (R2-PR2): the shape that exposes
+                # backtrack-preference bugs
+                try:
+                    subs.append(sample_straddle(node).encode("latin-1", "ignore"))
+                except Exception:
+                    subs.append(random_subject(alpha))
+            else:
+                subs.append(random_subject(alpha))
         work.append((pat, subs))
 
     def process_one(i):
@@ -530,7 +615,7 @@ def main():
             write_subject(subj_path, subj)
             pr = pcrec_run(exe, subj_path)
             orr = oracle_run(oracle_bin, pattern, subj_path)
-            if orr.startswith("mlimit"):
+            if orr.startswith("inconclusive"):
                 # PCRE2 hit its own backtracking/resource safeguard, not a
                 # match/no-match verdict -- not comparable to pcrec's
                 # (backtracking-free) DFA result. See pcre2_oracle.c's
@@ -604,7 +689,14 @@ def main():
         for pattern, subj, pr, orr in content_divergences:
             write_failure_bundle(run_failures_dir, "content", pattern, subj, pr, orr)
 
+    try:
+        ver = subprocess.run([oracle_bin, "--version"], capture_output=True,
+                             text=True, timeout=10).stdout.strip()
+    except Exception:
+        ver = "unknown"
     print("\n=== pcrec vs PCRE2 differential fuzz summary ===")
+    print(f"oracle: PCRE2 {ver}   (R2-PR5: recorded so results are attributable"
+          f" to a specific library version)")
     print(f"seed={args.seed} patterns={args.patterns} subjects/pattern={args.subjects} elapsed={elapsed:.1f}s")
     print(f"patterns generated:   {stats['patterns']}")
     print(f"  both accept:        {stats['both_accept']}")

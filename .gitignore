@@ -3,3 +3,6 @@ build/
 *.a
 core
 core.*
+__pycache__/
+*.pyc
+tests/fuzz/failures/

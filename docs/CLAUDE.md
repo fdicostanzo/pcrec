@@ -18,6 +18,9 @@ Process and status documents for pcrec. The architecture itself lives in
   exclusions, and how to add a per-module test directory.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
+- `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
+  than fixed immediately; each has a minimal repro and a scheduled milestone.
+  Failing regressions live in tests/known_fail/ (excluded from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable
   rationale behind oracle exclusions. Add an entry whenever tooling

@@ -257,3 +257,42 @@ otherwise), M2.8 NFA-level trie (hard-fails at ~2000 alternations), M2.9 bench
 rigor (no pinning; budgets 9x-300,000x loose), M2.10 dense-pattern codegen
 (case f: serial dependency chain, not cache/branch — both ruled out by
 measurement), M3.0 now a DESIGN GATE (reverse start-finding cannot stream).
+
+## 2026-08-09 — R2 process critic reported late; findings folded in
+
+The fifth critic delivered after I had closed the triage — strongest report of
+the panel. Corrected my review doc (it wrongly recorded the lens as uncovered).
+
+Its headline finding (R2-PR3): SABOTAGE TESTING showed 3 of 6 M2 features
+could be completely disabled with ZERO signal — skip states, anchored fast
+path, and minimization all left `make test` and `make bench` fully green.
+FIXED: new tests/codegen/run_codegen_tests.sh asserts each optimization's
+signature in emitted code, and every check was validated by re-running the
+critic's exact sabotages (all 3 now FAIL the codegen suite while the
+correctness corpus correctly stays green).
+
+Also fixed: git hygiene (tests/fuzz/failures/ and __pycache__ were committed
+despite docs saying otherwise; .gitignore updated), 4 doc mismatches
+(testing.md claimed the CLI tests weren't in the Makefile — they are;
+docs/CLAUDE.md omitted known_issues.md; root CLAUDE.md omitted src/opt/;
+tests/CLAUDE.md omitted known_fail/), the oracle now reports its PCRE2 version
+(--version) and records it in every fuzz run — previously a different
+libpcre2 could have become silently wrong ground truth — and the "mlimit"
+bucket is renamed "inconclusive" since it covered any rc != -1, not just
+match-limit.
+
+Fuzzer strengthened against the class that produced R2-M1: branch-straddling
+subject sampler + preference-trap templates (~8%). My first two attempts at
+this were WRONG (subjects taken from the discarded AST node; then drawn from
+pattern_alphabet(), which includes metacharacters, so traps were tested
+against ":" and "|"). Validated properly at the end: against a build with the
+loop-entry fix reverted the improved fuzzer finds 13 divergences where it
+previously found 0, and stays clean on the fixed build.
+
+Measurement also partly REFUTED the critic's (explicitly SUSPECTED) diagnosis
+of why fuzzing missed R2-M1: the sampler could produce the exposing subject
+and the generator does produce the shape ~1% of the time, so the miss was
+joint probability, not one structural blind spot.
+
+Accepted process critique: I closed known_issues.md to "no open confirmed
+bugs" while 4 of 5 lenses were still outstanding — premature framing.
