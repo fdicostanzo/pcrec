@@ -185,3 +185,26 @@ M2.2 (Hopcroft + trie factoring), then checkpoint review R2.
   new docs/known_issues.md; failing regressions in tests/known_fail/ (excluded
   from `make test` so the suite stays honest); fuzz.py excludes the shape;
   scheduled as plan step M2.6 with the M6 assertions work.
+
+## 2026-08-09 — Clean-box cross-engine BASELINE after M2.1/M2.2
+
+compare tool fixes landed (per-engine DNF no longer drops a case; early-match
+metric honesty note at <80% buffer scanned; case (d) subject made wordy so
+[a-z]+ can't backtrack over the whole buffer; CASES= subsetting env var).
+Agent correctly pushed back that case (h)'s match genuinely spans the full
+buffer, so the early-match rule rightly doesn't fire there — my grouping of
+(d) and (h) was wrong.
+
+Full 9-case run on a QUIET box (load 0.85), engine = post-M2.1/M2.2:
+- vs PCRE2 interpreter: pcrec faster on 7 of 8 comparable cases (3.6x planted
+  literal, 11x alternation-absent, 13x email class, 1.8x .*=.*, 7.4x latency);
+  interpreter DNF'd (>90 s) on case (e) `a*b`/all-'a' where pcrec does
+  24 GB/s. Loses only case (f) (state-heavy [01]*1[01]{8}, 0.15x).
+- vs PCRE2 JIT: pcrec WINS latency (61 ns vs 76 ns/call) and case (e) (7.9x).
+  JIT still ahead on long-text raw scanning (a/b ~0.15x, d 0.5x, c 0.68x).
+- vs python re: ahead everywhere except (f) and (h).
+- M2.1 impact visible: (h) `.*=.*` 128 -> 1314 MB/s vs the provisional run.
+- Open perf item: case (f) is our weakest — big-table cache behavior on
+  state-heavy patterns; minimization alone didn't fix it. Candidate for M2
+  follow-up or M3+ (worth an entry when scoped).
+Snapshot committed as the baseline (supersedes the load-compromised one).
