@@ -59,3 +59,9 @@ m "aaxbbx" 0 6
 
 pattern .*?x
 m "aaxbbx" 0 3
+
+# `{}` is not a valid quantifier, so PCRE treats it as literal text. Compiled
+# correctly but untested until the 2026-08-09 compliance survey.
+pattern a{}
+m "a{}" 0 3
+n "a"

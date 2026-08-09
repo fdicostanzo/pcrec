@@ -108,6 +108,28 @@ done
 reject '[[:alpha:]]' "POSIX class [:...:] requires module 'classes'"
 reject '\x{41}'      "\\x{...} requires module 'unicode-props'"
 
+# POSIX collating elements / equivalence classes. PCRE2 REJECTS these rather
+# than treating them as literals, so rejecting them IS compliance and the
+# message deliberately mirrors PCRE2's own. pcrec accepted all of these
+# silently until 2026-08-09, as a class of literal `[` `.` `a` characters —
+# a pattern PCRE2 refuses, given a meaning PCRE2 never assigns it.
+#
+# The trigger requires a matching `.]` / `=]` terminator, so the forms without
+# one are ORDINARY class members and must still compile. Those live in the
+# accept list below, and they matter more than the rejections: over-rejecting
+# here would break patterns that PCRE2 accepts, which is the opposite failure
+# and just as wrong. Every row on both sides was checked against libpcre2 10.46.
+for p in '[.a.]' '[=a=]' '[[.a.]]' '[[=a=]]' '[..]' '[.a.b.]' '[x[.a.]y]' '[a[=b=]c]'; do
+    reject "$p" "POSIX collating elements are not supported"
+done
+accept '[.a]'    # no terminator -> ordinary members
+accept '[=a]'
+accept '[.]'
+accept '[[.]'
+accept '[a[.b]'
+accept '[^.a.]'  # `^` sits between the bracket and the delimiter
+accept '[a.b.]'  # the `.` is not preceded by `[`
+
 echo
 echo "== assertions =="
 for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
@@ -175,7 +197,7 @@ echo "rejections checked: $nrej"
 echo "accept controls:    $naccept"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
-if [ "$nrej" -lt 60 ] || [ "$naccept" -lt 8 ]; then
+if [ "$nrej" -lt 90 ] || [ "$naccept" -lt 18 ]; then
     echo "reject: TABLE SHRANK — $nrej rejections / $naccept controls is below the floor; coverage was removed" >&2
     exit 1
 fi

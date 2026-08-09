@@ -1745,3 +1745,57 @@ status.
 Verification: 786 corpus (-1: the wrong `\v` block removed) + 49 CLI + 97
 reject (new) + 29 codegen + 7 trie-identity green, ratchet clean, oracle 100%
 (778 cases).
+
+## 2026-08-09 — the survey's second divergence, found by the subagents' own reports
+
+The two compliance subagents' closing reports arrived after I had already
+committed the survey. Most of what they flagged I had found independently and
+fixed in the same pass — the `(*...)` non-routing, `\K`/`\c` unattributed,
+`(?&name)` misrouted to 'modifiers'. Three items were new, and one of them was
+a second silent divergence.
+
+**POSIX collating elements were accepted, and PCRE2 rejects them.** `[[.a.]]`
+and `[[=a=]]` are collating-element and equivalence-class syntax. PCRE2 does
+not implement them and errors out; pcrec compiled them into a class of literal
+`[`, `.`, `a` characters. A pattern PCRE2 refuses, given a meaning PCRE2 never
+assigns it — and python `re` accepts them too (with a FutureWarning), so the
+base-tier oracle was blind again. Identical shape to `\v`, found the same way.
+
+**The fix was worth slowing down for, and the reason is the interesting part.**
+The obvious rule — "reject any `[.` inside a class" — is wrong and would have
+broken working patterns. PCRE2 only treats `[.` as a collating opener when the
+matching `.]` terminator actually appears later, so `[.a]`, `[.]`, `[[.]`,
+`[a[.b]` and `[a.b.]` are ordinary classes that compile, and a leading `^`
+suppresses the rule entirely because it sits between the bracket and the
+delimiter (`[^.a.]` compiles). I probed 18 forms against libpcre2 before
+writing a line of the fix; pcrec now agrees with PCRE2 on all 18.
+
+Six of those are accept-controls in tests/reject rather than notes in a comment,
+because **over-rejection is the opposite failure and just as wrong**. A naive
+implementation would have passed every rejection row in the table while
+silently breaking patterns that work today. That asymmetry is worth remembering
+whenever a "reject it cleanly" fix goes in: the rejection is the easy half.
+
+**Also closed: three accepted-but-untested gaps** the surface agent surfaced,
+which is the section of its report I asked it to treat as most load-bearing and
+which duly earned its place. `\a`, `\e` and `[\b]` (backspace inside a class,
+which is a real PCRE rule) compiled correctly and had zero corpus coverage;
+`a{}` as literal text and `[]]`/`[^]]` (a `]` first in a class is a member, not
+a terminator) likewise. All now covered and oracle-verified. `\e` needed a
+`# pcre2-only` marker: python `re` rejects it outright ("bad escape \e"), so it
+was checked against libpcre2 directly — a third small instance of the same
+theme.
+
+**On the subagent method.** Both were told to write incrementally and both did;
+both delivered complete files. What made the difference on quality, though, was
+the division of labour rather than the count: the agents gathered FACTS (what
+the spec says, what the binary does) and every judgement about feasibility
+stayed in the main session, where the D7 two-pass design and the M4 VM plan
+actually live. The one thing I did not anticipate was the spec agent adding a
+`pcre2_dfa_match` compatibility cross-reference on its own initiative — PCRE2's
+own non-backtracking matcher is the best available prior art for what pcrec can
+reach, and its exclusion list matched my independent feasibility judgements
+almost row for row.
+
+Verification: 805 corpus (+19) + 49 CLI + 112 reject (+15) + 29 codegen + 7
+trie-identity green, ratchet clean, oracle 100% (796 python-verified cases).

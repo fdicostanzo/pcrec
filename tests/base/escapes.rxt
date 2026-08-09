@@ -78,3 +78,23 @@ m "()" 0 2
 pattern a\{2\}
 m "a{2}" 0 4
 n "aa"
+
+# Control escapes that compiled but had NO corpus coverage until the
+# 2026-08-09 PCRE2 compliance survey found them in the accepted-but-untested
+# list. Both verified against libpcre2 10.46 directly, not just python.
+
+pattern \a
+m "\x07" 0 1
+n "a"
+
+# pcre2-only
+# python `re` rejects \e outright ("bad escape \e"), so this block cannot be
+# python-verified. PCRE2 defines it as ESC 0x1b, confirmed against libpcre2.
+pattern \e
+m "\x1b" 0 1
+
+# \b inside a class is BACKSPACE, not a word boundary (PCRE rule); pcrec
+# implements it and nothing exercised it.
+pattern [\b]
+m "\x08" 0 1
+n "b"

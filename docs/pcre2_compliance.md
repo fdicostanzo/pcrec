@@ -7,7 +7,7 @@ judgements additionally draw on
 PCRE2's OWN non-backtracking matcher (`pcre2_dfa_match`) can and cannot do —
 useful prior art, since pcrec is also non-backtracking by construction.
 
-**Last surveyed: 2026-08-09** against pcrec at `77fabc5`+.
+**Last surveyed: 2026-08-09** against pcrec at `ddb73a2`+ and libpcre2 10.46.
 This is a living document; see "Keeping this current" at the end.
 
 ## What the statuses mean
@@ -45,13 +45,16 @@ pcrec implements a deliberately small base tier and rejects the rest by design.
 Of PCRE2's syntax surface:
 
 - The base tier (literals, `.`, classes, ranges, quantifiers incl. lazy,
-  alternation, groups, `^`, `$`, the character escapes) is `OK`, with 787
-  corpus cases at 100% oracle agreement.
-- Everything else is `REJECTED` — 85 constructs are individually asserted to
-  exit 1 and name their owning module, with 12 accept-controls proving the
+  alternation, groups, `^`, `$`, the character escapes) is `OK`, with 805
+  corpus cases at 100% oracle agreement (796 of them python-verified; the rest
+  are `# pcre2-only` blocks checked against libpcre2 directly).
+- Everything else is `REJECTED` — 93 constructs are individually asserted to
+  exit 1 and name their owning module, with 19 accept-controls proving the
   table cannot pass by rejecting everything (`tests/reject/`).
-- **One proven divergence has ever been found, and it is fixed:** `\v`. See
-  the `DIVERGENCE-PROVEN` row under Character types.
+- **Two proven divergences have been found, both fixed:** `\v` (Character
+  types) and POSIX collating elements (Character classes). Both were silent —
+  pcrec compiled something PCRE2 does not — and in both cases python `re`
+  agreed with pcrec, so the base-tier oracle was blind to them.
 
 The single most useful thing this survey produced was not the table. It was
 finding that the mandate's central guarantee had no test at all (see "How this
@@ -117,6 +120,7 @@ commits to. The blocker is table generation and size, not matching.
 |---|---|---|
 | `[...]`, `[^...]`, `[x-y]` | `OK` | corpus-covered incl. `]` first, `-` last, high bytes, out-of-order range rejection |
 | `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `REJECTED` | module `classes`. `PLANNED`, easy |
+| `[[.ch.]]` collating elements, `[[=ch=]]` equivalence classes | `DIVERGENCE-PROVEN`, **fixed 2026-08-09** | PCRE2 does not support these and REJECTS them ("POSIX collating elements are not supported"); pcrec silently accepted them as a class of literal `[` `.` `a` characters. Now rejected with PCRE2's own wording, so rejecting IS compliance here. The trigger was pinned against libpcre2 rather than guessed: `[` + `.`/`=` opens a collating element ONLY when the matching `.]`/`=]` terminator appears later, and a negated class suppresses it — so `[.a]`, `[.]`, `[[.]`, `[a[.b]`, `[^.a.]` and `[a.b.]` must all still COMPILE. Over-rejecting here would break patterns PCRE2 accepts, which is why those six are accept-controls in `tests/reject/` |
 | `\Q...\E` inside a class | `REJECTED` | module `quoting` |
 | `[x&&y]`, `[x--y]`, `[x~~y]` (UTS#18 set ops) | `PLANNED` | pure bitmap algebra at parse time; no engine implication at all |
 | `(?[...])` Perl extended classes, `& - ^ ! +` operators | `PLANNED` | same — a parser feature that produces one bitmap. Note `^` means XOR here, not negation; a spelling trap worth a test when implemented |
@@ -254,7 +258,7 @@ or it will silently miscompile ambiguous patterns.
 
 ## How this survey earned its keep
 
-Two findings, both of which existed before the survey and neither of which any
+Three findings, all of which existed before the survey and none of which any
 test could see.
 
 **1. `\v` was miscompiled, and the oracle agreed with the bug.** PCRE2's `\v` is
@@ -272,6 +276,22 @@ disagree, a python-verified corpus certifies the divergence instead of catching
 it.** That is the argument for the M7 libpcre2 differential work, restated with
 a concrete casualty.
 
+**1b. POSIX collating elements were accepted, and PCRE2 rejects them.**
+`[[.a.]]` and `[[=a=]]` are collating-element and equivalence-class syntax.
+PCRE2 does not implement them and errors out; pcrec compiled them into a class
+of literal `[`, `.`, `a` characters — a pattern PCRE2 refuses, given a meaning
+PCRE2 never assigns it. python `re` accepts them too (with a FutureWarning), so
+again the base-tier oracle could not see it.
+
+The fix was worth doing carefully rather than quickly. The naive reading —
+"reject any `[.` inside a class" — over-rejects: PCRE2 only treats it as a
+collating element when the matching `.]` terminator actually appears, so
+`[.a]`, `[.]`, `[[.]`, `[a[.b]` and `[a.b.]` are ordinary classes that must keep
+compiling, and a leading `^` suppresses the rule entirely (`[^.a.]` compiles).
+All 18 forms were checked against libpcre2 and pcrec now agrees with it on
+every one. The six that must still compile are accept-controls, because
+over-rejection is the opposite failure and just as wrong.
+
 **2. The mandate's central guarantee had no test.** "Unsupported constructs
 must fail with a clean `requires module 'X'` error, never miscompile" is the
 project's core promise, and nothing checked it. It could not live in the .rxt
@@ -282,7 +302,7 @@ hatch does not apply because `verify_rxt.py`'s `perr` branch never consults it.
 
 `tests/reject/run_reject_tests.sh` now asserts, per construct, that pcrec exits
 exactly 1 (not 0, not a crash), names the expected module, and writes no output
-file — 85 constructs, plus 12 accept-controls so the table cannot pass by
+file — 93 constructs, plus 19 accept-controls so the table cannot pass by
 rejecting everything. Reproducing the `\v` bug's exact shape on a different
 escape (silently decoding `\d` to a literal `d`) fails 2 reject checks and
 **zero** corpus and codegen checks.

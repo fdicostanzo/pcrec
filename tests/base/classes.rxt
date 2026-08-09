@@ -57,3 +57,35 @@ n "d"
 pattern x[abc]y
 m "xay" 0 3
 n "xdy"
+
+# `]` as the FIRST class member is a literal, not the class terminator.
+# Compiled correctly but was untested until the 2026-08-09 compliance survey.
+pattern []]
+m "]" 0 1
+n "a"
+
+pattern [^]]
+m "x" 0 1
+n "]"
+
+# POSIX collating elements [.ch.] and equivalence classes [=ch=]: PCRE2
+# REJECTS these rather than treating them as literals, and pcrec silently
+# accepted them as a class of `[` `.` `a` until 2026-08-09. The trigger needs
+# a matching terminator, so the forms WITHOUT one stay legal class members --
+# those are the interesting cases, because over-rejecting here would break
+# ordinary patterns. Rejection itself is asserted in tests/reject/.
+pattern [.a]
+m "." 0 1
+m "a" 0 1
+
+pattern [[.]
+m "[" 0 1
+m "." 0 1
+
+pattern [^.a.]
+m "x" 0 1
+n "."
+
+pattern [a.b.]
+m "." 0 1
+m "b" 0 1

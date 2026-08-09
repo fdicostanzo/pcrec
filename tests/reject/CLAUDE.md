@@ -6,7 +6,7 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 85 constructs asserted to be rejected, plus 12
+- **run_reject_tests.sh** — 93 constructs asserted to be rejected, plus 19
   accept-controls. Part of `make test`; env: PCREC, KEEP=1.
 
 ## Why it cannot live in the .rxt corpus
@@ -34,12 +34,22 @@ what would implement the construct.
 ## The accept-controls are not optional
 
 A parser that rejected EVERYTHING would score 100% on a table made only of
-rejections. The 12 `accept` rows (literals, alternation, groups, every
+rejections. The 19 `accept` rows (literals, alternation, groups, every
 quantifier form, classes, `.`, anchors, the character escapes, escaped
 punctuation) are what stop that, and they are the same lesson the trie
 identity check learned the hard way — a control has to sit inside the range of
 what it certifies. The summary also enforces a floor on both counts, so
 deleting coverage fails rather than quietly shrinking the table.
+
+## Over-rejection is the opposite failure, and just as wrong
+
+The POSIX collating rows are the reason the accept-controls are not decoration.
+PCRE2 rejects `[[.a.]]`, but only when a matching `.]` terminator is present —
+`[.a]`, `[.]`, `[[.]`, `[a[.b]`, `[^.a.]` and `[a.b.]` are all ordinary classes
+that PCRE2 compiles. A naive "reject any `[.` in a class" would have passed
+every rejection row here while silently breaking patterns that work today. All
+18 forms were checked against libpcre2 10.46 and pcrec now agrees on every one;
+the six that must compile are accept-controls for exactly that reason.
 
 ## The bug that motivated this
 

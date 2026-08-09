@@ -184,6 +184,34 @@ static int esc_class_value(Ctx *cx)
 
 /* ---- [...] classes ---- */
 
+/* POSIX collating elements `[.ch.]` and equivalence classes `[=ch=]`. PCRE2
+ * does not support them and REJECTS them outright ("POSIX collating elements
+ * are not supported"); it does not fall back to treating them as literals.
+ *
+ * The trigger is narrower than it looks and was pinned against libpcre2 10.46
+ * rather than guessed: `[` followed by `.` or `=` opens a collating element
+ * ONLY when the matching `.]` / `=]` terminator appears later. Without one the
+ * characters are ordinary members — `[[.]`, `[a[.b]`, `[.a]` and `[.]` all
+ * compile — while `[..]`, `[.a.]`, `[.a.b.]`, `[[.a.]]`, `[x[.a.]y]` and
+ * `[a[=b=]c]` are all errors. The class-opening bracket itself can be the
+ * opener (`[.a.]` errors at offset 0), but a negated class suppresses that
+ * because `^` sits between the bracket and the delimiter (`[^.a.]` compiles).
+ *
+ * pcrec used to accept every one of these silently, as a class of literal
+ * `[` `.` `a` characters: a pattern PCRE2 refuses, given a meaning PCRE2 never
+ * assigns it. python `re` also accepts them (with a FutureWarning), so the
+ * base-tier oracle was blind to it — the same shape as the `\v` bug, and found
+ * the same way, by reading the syntax reference against the parser.
+ *
+ * `at` is the offset to report, `delim` is '.' or '=', `from` is the offset
+ * just past the delimiter. */
+static void reject_collating(Ctx *cx, size_t at, int delim, size_t from)
+{
+    for (size_t i = from; i + 1 < cx->patlen; i++)
+        if (cx->pat[i] == (char)delim && cx->pat[i + 1] == ']')
+            ctx_fail(cx, at, "POSIX collating elements are not supported");
+}
+
 static Ast *p_class(Ctx *cx)
 {
     size_t opening = cx->pos - 1; /* at '[' */
@@ -191,6 +219,8 @@ static Ast *p_class(Ctx *cx)
     bool neg = false;
 
     if (peekc(cx) == '^') { neg = true; cx->pos++; }
+    if (!neg && (peekc(cx) == '.' || peekc(cx) == '='))
+        reject_collating(cx, opening, peekc(cx), cx->pos + 1);
     bool first = true;
 
     for (;;) {
@@ -201,6 +231,8 @@ static Ast *p_class(Ctx *cx)
 
         if (c == '[' && peekc2(cx) == ':')
             ctx_fail(cx, cx->pos, "POSIX class [:...:] requires module 'classes'");
+        if (c == '[' && (peekc2(cx) == '.' || peekc2(cx) == '='))
+            reject_collating(cx, cx->pos, peekc2(cx), cx->pos + 2);
 
         int lo;
         cx->pos++;
