@@ -213,6 +213,73 @@ fi
 echo
 
 # =========================================================================
+# SECTION 1b: KEYWORD-SCALE (R2-A4 / M2.8 regression guard)
+# =========================================================================
+# Large flat alternations are the ordinary shape for keyword and blocklist
+# patterns. Before M2.8 they were quadratic in branch count and then failed
+# outright: 500/1000/2000 random words took 0.72/2.94/11.09 s and 3600 words
+# hard-failed with "NFA exceeds 20000 states". The cause was closure fan-out,
+# not state count -- nfa_wrap_unanchored's self-loop keeps the whole branch
+# chain live at every position, so every epsilon closure walked every branch
+# (measured 4045 NFA visits per closure at 2000 branches, 2.36 billion total).
+# The prefix trie in src/ir/nfa.c collapses that to the node fan-out.
+#
+# This guard is deliberately about pcrec's OWN compile time. gcc's time on the
+# emitted table source is a separate, larger constant (~1.6x pcrec's, and flat
+# across -O0/-O1/-O2 by the R1 A-3 table design) and is covered by GCC-TIME.
+
+echo "== KEYWORD-SCALE (R2-A4) =="
+
+KEYWORD_COUNT="${KEYWORD_COUNT:-3600}"
+KEYWORD_BUDGET_SECS="${KEYWORD_BUDGET_SECS:-4}"
+
+kw_dir="$WORKDIR/keyword_scale"
+mkdir -p "$kw_dir"
+kw_pat_file="$kw_dir/pattern.txt"
+
+kw_gen_err="$(python3 - "$KEYWORD_COUNT" "$kw_pat_file" 2>&1 <<'PYEOF'
+import random, sys
+count = int(sys.argv[1])
+random.seed(20260809)
+alpha = "abcdefghijklmnopqrstuvwxyz"
+words = set()
+while len(words) < count:
+    words.add("".join(random.choice(alpha) for _ in range(random.randint(4, 12))))
+with open(sys.argv[2], "w") as f:
+    f.write("|".join(sorted(words)))
+PYEOF
+)"
+if [ $? -ne 0 ]; then
+    record_hard_error "python3 keyword-list generation failed: $kw_gen_err"
+else
+    kw_pat="$(cat "$kw_pat_file")"
+    kw_t0=$(now_ns)
+    kw_err="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen.c" -- "$kw_pat" 2>&1 >/dev/null)"
+    kw_rc=$?
+    kw_t1=$(now_ns)
+    kw_secs=$(elapsed_secs "$kw_t0" "$kw_t1")
+
+    echo "  ${KEYWORD_COUNT}-word flat alternation ($(wc -c <"$kw_pat_file") pattern bytes)"
+    if [ $kw_rc -eq 124 ]; then
+        echo "    pcrec: DNF (exceeded ${PCREC_TIMEOUT}s timeout) (budget < ${KEYWORD_BUDGET_SECS}s)"
+        record_budget "KEYWORD-SCALE" "FAIL"
+    elif [ $kw_rc -ne 0 ]; then
+        # A hard failure here is the exact R2-A4 regression, so it is a budget
+        # failure with a named cause rather than a harness error.
+        echo "    pcrec FAILED to compile: $kw_err"
+        record_budget "KEYWORD-SCALE" "FAIL"
+    else
+        echo "    pcrec: ${kw_secs}s, gen.c size: $(wc -c <"$kw_dir/gen.c") bytes (budget < ${KEYWORD_BUDGET_SECS}s)"
+        if num_lt "$kw_secs" "$KEYWORD_BUDGET_SECS"; then
+            record_budget "KEYWORD-SCALE" "PASS"
+        else
+            record_budget "KEYWORD-SCALE" "FAIL"
+        fi
+    fi
+fi
+echo
+
+# =========================================================================
 # SECTION 2: GCC-TIME (R1 A-3 regression guard)
 # =========================================================================
 # [01]*1[01]{8}  -> 512 states  (2^(n+1) is provably minimal for this family)

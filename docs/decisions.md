@@ -92,3 +92,64 @@ where it was 14.3x apart. Revisit-when: the reverse BOT variant is built
 The EOL path deliberately omits the memchr prefilter and skip loops — both
 advance past positions without consulting accept flags, unsound when a state
 can accept at EOL. Re-enabling them there is plan M2.12.
+
+## D9 — 2026-08-09 — alternation prefix trie: the two soundness rules
+
+M2.8, closing checkpoint review R2 finding A-4. `src/ir/nfa.c` now factors
+shared prefixes of flat alternations instead of emitting one class chain per
+branch.
+
+Naive trie factoring is WRONG, and wrong in a way that changes the reported
+SPAN, not merely which branch "won". Two independent hazards, each confirmed
+against python3 `re` and against pcrec's own unfactored construction, each
+guarded separately, and each validated by sabotage (disable the guard and
+named cases in tests/base/alternation_trie.rxt fail):
+
+1. A branch that ENDS at a trie node competes with longer branches continuing
+   through it, and no single accept-vs-descend order serves every subject:
+   `abc|a|abd` on "abd" is [0,1), but `a(?:bc|bd)|a` is [0,3). Guard: at such
+   a node, partition the branch list by INDEX around the ending branch —
+   everything before it, its accept, everything after — and recurse into each
+   part at the same depth. Parts may duplicate shared structure but never
+   duplicate a branch, so the total stays bounded by the flat construction.
+
+2. Branches merge only on bit-IDENTICAL class bitmaps, but two DISTINCT groups
+   can still OVERLAP, and overlapping groups are not mutually exclusive:
+   `[ab]p|[bc]x|[ab]xy` on "bxy" is [0,2), but `[ab](?:p|xy)|[bc]x` is [0,3).
+   Guard: reorder groups only when their bitmaps are pairwise disjoint (fast
+   path: all singletons, which is the keyword case); otherwise emit that
+   node's list unfactored.
+
+Mixed lists are handled by trie-ing only maximal runs of CONSECUTIVE eligible
+branches: "first matching branch in index order wins" survives replacing an
+index RANGE with a sub-alternation that picks its own first matching member.
+A branch is eligible iff it is a left-leaning A_CAT chain of A_CLASS leaves;
+notably a nested group inside a branch (`x(?:yz)|xy`) makes it ineligible,
+which is conservative rather than wrong.
+
+The argument above proves the strong property (same winning BRANCH), not just
+the weak one (same span). Today only spans are observable, so the weak
+property would suffice — do not let anyone "simplify" this to a span-only
+argument, because M4 capture groups make branch identity observable and the
+weak argument would then silently be a landmine. Revisit-when: captures land.
+
+## D10 — 2026-08-09 — the NFA state cap is a memory backstop, not the ceiling
+
+`PCREC_MAX_NFA_STATES` went 20000 -> 131072 in M2.8. The old value was simply
+the wrong limiter: it fired before the DFA caps, which are the ones grounded
+in measured emitter cost (R1 A-3). Measured at the new value: a 6000-word
+keyword list compiles (1.46 s, 56 MB RSS); a 10000-word list fails on the DFA
+cap with its actionable "VM engine arrives in M4"; a 20000-word list fails
+fast (0.05 s) on the NFA cap. That is the intended ordering.
+
+The arithmetic: sizeof(NState) is 48 B, two machines are built (forward and
+reverse), so 131072 states is ~12.6 MB of NFA plus ~2 MB of closure scratch.
+
+Stack depth deliberately does NOT appear in that derivation any more. It used
+to: `clo_visit` recursed on a split's t2 edge, so an alternation chain nested
+one frame per branch. gcc turned that into a jump at -O2 but NOT at -O0, where
+a 200000-branch alternation segfaulted and 100000 survived — i.e. the safe cap
+depended on the optimisation level. All tail-position edges are now explicit
+loop iterations, leaving only a split's preferred branch recursive; verified
+at -O0 on a 1,000,000-branch alternation. Revisit-when: a pattern shape is
+found whose PREFERRED-branch nesting is deep.

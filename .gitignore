@@ -1,8 +1,12 @@
 build/
 *.o
 *.a
-core
-core.*
+# Core dumps only — anchored, because an unanchored `core` also matches the
+# DIRECTORY src/core/, which silently kept the whole pipeline driver
+# (arena.c, compile.c, sb.c, internal.h) out of every commit. A fresh clone
+# of this repo did not build until M2.8 caught it.
+/core
+/core.*
 __pycache__/
 *.pyc
 tests/fuzz/failures/

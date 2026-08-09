@@ -360,3 +360,94 @@ Next session: read docs/wake.md first (uncommitted, written for exactly this),
 then this journal's tail and `grep STATE:not-started docs/plan.md`.
 Recommended next step is M2.8 (alternation trie) or M2.12 (restore prefilters
 on the EOL path); M3 must not start before its design gate (M3.0) is resolved.
+
+## 2026-08-09 — M2.8: alternation prefix trie (R2-A4 closed) + a repo-fatal .gitignore bug
+
+Session goal from Frank: finish all of M2, with critic passes on new code and
+designs as I go, autonomous operation.
+
+**The headline number.** A 3600-word flat alternation went from a hard failure
+("NFA exceeds 20000 states") to compiling in 0.93 s. 500/1000/2000-word lists
+went 0.72/2.94/11.09 s -> 0.10/0.21/0.46 s.
+
+**My first diagnosis was wrong, and measuring is what caught it.** I wrote a
+design note asserting the quadratic was the per-closure
+`memset(seen, 0, nfa->n*2)` in dfa.c. I implemented the fix (generation
+stamps), measured, and 2000-branch compile time went 11.09 s -> 11.14 s. No
+effect whatsoever.
+
+Instrumenting the closure (perf is unusable here — perf_event_paranoid=4)
+found the real cost model. `nfa_wrap_unanchored`'s self-loop keeps the entire
+branch-selection split chain live at EVERY subject position, so every epsilon
+closure walks every branch:
+
+| branches | visits/closure | total visits |
+|---|---|---|
+| 500  | 1012.9 | 150 M |
+| 1000 | 2023.7 | 601 M |
+| 2000 | 4044.9 | 2.36 BILLION |
+
+Exactly 2*nbr, doubling with nbr. The correct model is
+Theta(|DFA| * ncls * start-closure size), NOT Theta(|DFA| * ncls * |NFA|).
+With a trie: 103.5 visits/closure. NFA state count barely moves (18241 ->
+14824, 19%) — the trie's win is fan-out, not size, which is the opposite of
+what the M2.2 deferral rationale and my own design note both assumed. The
+generation-stamp change is still worth keeping, but only as a second-order
+effect once the trie lands (1.08 s -> 0.44 s at 2000 branches).
+
+**Two real soundness bugs in my own design, found before shipping.** I caught
+the second while drafting the code, which is the only reason it isn't in the
+tree. Both confirmed against python3 `re` AND pcrec's own unfactored output:
+
+- `abc|a|abd` on "abd" is [0,1); naive factoring `a(?:bc|bd)|a` gives [0,3).
+- `[ab]p|[bc]x|[ab]xy` on "bxy" is [0,2); `[ab](?:p|xy)|[bc]x` gives [0,3).
+
+The second killed my stated correctness argument. I had written that trie
+children are "byte-disjoint, so they can never both match" — false: branches
+merge only on bit-IDENTICAL bitmaps, but two DISTINCT groups can still
+overlap. Guards and full argument are D9. Both are sabotage-validated: with
+the disjointness guard disabled tests/base/alternation_trie.rxt fails 2 cases;
+with index-range partitioning disabled it fails 7.
+
+**The NFA cap (D10).** 20000 was simply the wrong limiter — it fired before
+the DFA caps, which are the ones grounded in measured emitter cost. Raised to
+131072, chosen so the DFA cap binds first across the realistic range: 6000
+words compile, 10000 fail on the DFA cap with its actionable message, 20000
+fail fast on the NFA cap.
+
+Stack depth used to constrain that number and now doesn't. `clo_visit`
+recursed on a split's t2 edge, so an alternation nested one frame per branch;
+gcc turned it into a jump at -O2 but NOT at -O0, where 200000 branches
+segfaulted and 100000 survived. The safe cap literally depended on the
+optimisation level. All tail edges are now explicit loop iterations — verified
+at -O0 on a 1,000,000-branch alternation.
+
+**A repo-fatal bug found by accident.** Trying to build a pre-M2.8 binary via
+`git archive` kept failing with "No rule to make target build/obj/parse/parse.o".
+Cause: `.gitignore` line 4 was an unanchored `core`, which matches the
+DIRECTORY `src/core/`. arena.c, compile.c, sb.c and internal.h — the entire
+pipeline driver — were never committed. **A fresh clone of the public repo did
+not build, and had not since M0.** Fixed to `/core` + `/core.*` and the four
+files are now tracked. Worth noting that neither checkpoint review caught this,
+because both reviewed the working tree, never a clean clone.
+
+**gcc time, measured because a critic brief asked whether it reframes the
+milestone.** It does not: gcc is ~1.6x pcrec's own time and flat across
+-O0/-O1/-O2 (3600 words: pcrec 0.82 s, gcc 1.36 s), which is the R1 A-3 table
+design working as intended.
+
+Verification: 554 corpus (+43 new) + 41 CLI + 9 codegen green; python oracle
+100% (546 cases); fuzz seeds 1/2/3/5/7 clean vs PCRE2; bench 0 budget
+failures. New KEYWORD-SCALE bench section guards R2-A4 — validated by running
+it against a reconstructed pre-M2.8 build, where it correctly FAILs.
+
+Process note: the emitted C for a flat vs trie-factored 2000-word alternation
+is the same size (2594238 B) with the same DFA state count (10796), i.e. the
+machines are isomorphic. So M2.8 gets no structural codegen test — there is
+nothing structural to assert. Its regression net is the .rxt priority corpus
+plus the KEYWORD-SCALE compile budget, which is the honest answer rather than
+inventing a check that would pass either way.
+
+Two design critics were dispatched before implementation and had not reported
+by the time the work was verified and landed; their findings will be folded
+into the R3 checkpoint review rather than held up against this commit.

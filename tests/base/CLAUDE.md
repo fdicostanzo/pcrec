@@ -10,6 +10,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **quantifiers.rxt** — *, +, ? quantifiers
 - **bounded_repeats.rxt** — {m,n} repeat syntax
 - **alternation.rxt** — | alternation and precedence
+- **alternation_trie.rxt** — priority hazards of M2.8 prefix-trie factoring (D9): shorter-branch-first shapes, overlapping-but-distinct classes, mixed eligible/ineligible runs. Each guard is sabotage-validated — disabling the disjointness guard fails 2 cases, disabling index-range partitioning fails 7
 - **anchors.rxt** — ^ and $ anchors
 - **groups.rxt** — (...) capturing and (?:...) non-capturing groups
 - **escapes.rxt** — \\ \" \n \t metachar and control escapes

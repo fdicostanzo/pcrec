@@ -49,53 +49,84 @@ static void eqclasses(Nfa *nfa, Dfa *d)
 
 /* ---- epsilon closure ---- */
 
+/* Closure visit marks. Stamping with a monotone generation makes a closure
+ * cost O(states actually visited) instead of O(|NFA|): the pre-M2.8 code
+ * memset both mark arrays on every call, and closure() runs once per
+ * (DFA state x byte class) x2, so total work was Theta(|DFA|*ncls*|NFA|) --
+ * the quadratic behind R2-A4's "200 -> 25.6 ms, 1000 -> 239 ms". */
 typedef struct {
-    Nfa     *nfa;
-    uint8_t *seen;
-    uint8_t *reent;
-    int     *out;
-    int      nout;
-    bool     accept;
-    bool     eol_ok;
-    bool     bot_ok;
-    bool     prune;
+    uint32_t *mark;   /* [0,n) = seen, [n,2n) = reent */
+    uint32_t  gen;
+    int       n;
+} Marks;
+
+static void marks_next(Marks *mk)
+{
+    if (++mk->gen == 0) {   /* wrap: stale stamps could alias, so clear */
+        memset(mk->mark, 0, (size_t)mk->n * 2 * sizeof(uint32_t));
+        mk->gen = 1;
+    }
+}
+
+typedef struct {
+    Nfa      *nfa;
+    uint32_t *seen;
+    uint32_t *reent;
+    uint32_t  gen;
+    int      *out;
+    int       nout;
+    bool      accept;
+    bool      eol_ok;
+    bool      bot_ok;
+    bool      prune;
 } Clo;
 
+/* Every tail-position edge is a loop iteration rather than a call, so only a
+ * split's PREFERRED branch still recurses. This matters because split chains
+ * (alternations, bounded repeats) nest through t2: at -O2 gcc turned that into
+ * a jump anyway, but at -O0 it did not, and a 200000-branch alternation
+ * segfaulted where 100000 survived. Making it explicit lets the NFA cap be
+ * derived from memory rather than from the optimiser's mood (M2.8). */
 static void clo_visit(Clo *cl, int s)
 {
-    if (s < 0) return;
-    if (cl->prune && cl->accept) return;
-    if (cl->seen[s]) {
-        /* PCRE empty-iteration rule: reaching a loop entry again by epsilon
-         * means the iteration consumed nothing, which ENDS the loop. Follow
-         * the exit edge once, here — at this priority position, ahead of the
-         * loop body's lower-priority consuming alternatives. Without this the
-         * exit/ACCEPT is only reached after them and loses priority
-         * (R2 findings R2-S1 and K1). */
-        const NState *ls = &cl->nfa->st[s];
-        if (ls->loop && !cl->reent[s]) {
-            cl->reent[s] = 1;
-            clo_visit(cl, ls->exit_is_t2 ? ls->t2 : ls->t1);
+    for (;;) {
+        if (s < 0) return;
+        if (cl->prune && cl->accept) return;
+        if (cl->seen[s] == cl->gen) {
+            /* PCRE empty-iteration rule: reaching a loop entry again by
+             * epsilon means the iteration consumed nothing, which ENDS the
+             * loop. Follow the exit edge once, here — at this priority
+             * position, ahead of the loop body's lower-priority consuming
+             * alternatives. Without this the exit/ACCEPT is only reached after
+             * them and loses priority (R2 findings R2-S1 and K1). */
+            const NState *ls = &cl->nfa->st[s];
+            if (ls->loop && cl->reent[s] != cl->gen) {
+                cl->reent[s] = cl->gen;
+                s = ls->exit_is_t2 ? ls->t2 : ls->t1;
+                continue;
+            }
+            return;
+        }
+        cl->seen[s] = cl->gen;
+        const NState *st = &cl->nfa->st[s];
+        switch (st->k) {
+        case N_CLASS:  cl->out[cl->nout++] = s; return;
+        case N_ACCEPT: cl->accept = true; return;
+        case N_EPS:    s = st->t1; continue;
+        case N_SPLIT:  clo_visit(cl, st->t1); s = st->t2; continue;
+        case N_BOT:    if (!cl->bot_ok) return; s = st->t1; continue;
+        case N_EOL:    if (!cl->eol_ok) return; s = st->t1; continue;
         }
         return;
-    }
-    cl->seen[s] = 1;
-    const NState *st = &cl->nfa->st[s];
-    switch (st->k) {
-    case N_CLASS:  cl->out[cl->nout++] = s; break;
-    case N_ACCEPT: cl->accept = true; break;
-    case N_EPS:    clo_visit(cl, st->t1); break;
-    case N_SPLIT:  clo_visit(cl, st->t1); clo_visit(cl, st->t2); break;
-    case N_BOT:    if (cl->bot_ok) clo_visit(cl, st->t1); break;
-    case N_EOL:    if (cl->eol_ok) clo_visit(cl, st->t1); break;
     }
 }
 
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
-                    bool prune, uint8_t *seen, int *out, int *nout, bool *accept)
+                    bool prune, Marks *mk, int *out, int *nout, bool *accept)
 {
-    Clo cl = { nfa, seen, seen + nfa->n, out, 0, false, eol_ok, bot_ok, prune };
-    memset(seen, 0, (size_t)nfa->n * 2);
+    marks_next(mk);
+    Clo cl = { nfa, mk->mark, mk->mark + nfa->n, mk->gen,
+               out, 0, false, eol_ok, bot_ok, prune };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_visit(&cl, pre[i]);
@@ -177,14 +208,14 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolv
 /* Build (and intern) the DFA state for pre-closure set `pre`; -1 = dead. */
 static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, bool prune,
                       const int *pre, int npre, bool bot_ok,
-                      uint8_t *seen, int *scratch)
+                      Marks *mk, int *scratch)
 {
     int *scratch2 = scratch + nfa->n;
     int nout, nout2;
     bool accept, accept2;
 
-    closure(nfa, pre, npre, bot_ok, false, prune, seen, scratch, &nout, &accept);
-    closure(nfa, pre, npre, bot_ok, true, prune, seen, scratch2, &nout2, &accept2);
+    closure(nfa, pre, npre, bot_ok, false, prune, mk, scratch, &nout, &accept);
+    closure(nfa, pre, npre, bot_ok, true, prune, mk, scratch2, &nout2, &accept2);
 
     if (!accept && !accept2 && nout == 0 && nout2 == 0) return -1;
 
@@ -205,13 +236,15 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
     if (d->maxstates > PCREC_MAX_TABLE_ENTRIES / d->ncls)
         d->maxstates = PCREC_MAX_TABLE_ENTRIES / d->ncls;
 
-    uint8_t *seen = arena_alloc(&cx->arena, (size_t)nfa->n * 2); /* seen | reent */
+    Marks marks = {
+        arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(uint32_t)), 0, nfa->n
+    };  /* arena memory is zeroed, so generation 1 starts clean */
     int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     int root = nfa->start;
-    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, seen, scratch);
-    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, seen, scratch);
+    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, &marks, scratch);
+    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, &marks, scratch);
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
@@ -224,7 +257,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
                 int ns = d->st[si].list[j];
                 if (cls_has(nfa->st[ns].cls, b)) pre[npre++] = nfa->st[ns].t1;
             }
-            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, seen, scratch);
+            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, &marks, scratch);
             d->st[si].tr[c] = tgt;
         }
     }

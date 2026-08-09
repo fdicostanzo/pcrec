@@ -1,0 +1,114 @@
+# Alternation prefix-trie factoring (M2.8, closes R2-A4)
+#
+# The trie in src/ir/nfa.c merges shared prefixes of flat alternations. Naive
+# trie DFS order is NOT alternation index order, and getting it wrong changes
+# the MATCH SPAN, not just which branch "won". Two independent hazards, each
+# guarded separately in the code and each verified by sabotage (disable the
+# guard, and specific cases below start failing):
+#
+#   rule 1 (index-range partitioning) -- a branch that ENDS at a trie node
+#   competes with longer branches continuing through it.
+#
+#   rule 2 (pairwise-disjointness guard) -- branches merge only on
+#   bit-IDENTICAL class bitmaps, but two DISTINCT groups can still OVERLAP
+#   ([ab] vs [bc]), so they are not mutually exclusive and cannot be reordered.
+#
+# Every expectation here is oracle-verified against python3 `re`.
+
+# ---- rule 1: shorter branch listed before a longer one sharing its prefix ----
+# Sabotaging rule 1 turns these into the LONGER span.
+
+pattern abc|a|abd
+m "abd" 0 1
+m "abc" 0 3
+m "ab" 0 1
+n "xyz"
+
+pattern a|ab|abc
+m "abc" 0 1
+m "ab" 0 1
+
+pattern abc|ab|a
+m "abc" 0 3
+m "ab" 0 2
+m "a" 0 1
+
+pattern ab|a|ac
+m "ac" 0 1
+m "ab" 0 2
+
+pattern abx|a|aby
+m "aby" 0 1
+m "abx" 0 3
+
+# duplicate branches: the later copy is unreachable, exactly as when unfactored
+pattern foo|foo
+m "foo" 0 3
+
+pattern catfish|cat|dog
+m "catfish" 0 7
+
+pattern cat|dog|bird|catfish
+m "catfish" 0 3
+
+# ---- rule 2: distinct but OVERLAPPING classes must not be reordered ----
+# Sabotaging the disjointness guard turns these into [0,3).
+
+pattern [ab]p|[bc]x|[ab]xy
+m "bxy" 0 2
+m "axy" 0 3
+m "ap" 0 2
+
+pattern [a-c]x|[b-d]y|[a-c]yz
+m "byz" 0 2
+m "ayz" 0 3
+
+# disjoint classes CAN be factored; these must keep working
+pattern [ab]foo|[cd]foo
+m "afoo" 0 4
+m "dfoo" 0 4
+n "efoo"
+
+# ---- mixed lists: ineligible branches split the eligible runs ----
+# 'b+' contains a repeat, so it is not trie-eligible; the runs around it must
+# keep their original priority.
+
+pattern a|b+|ab
+m "ab" 0 1
+
+pattern ab|b+|a
+m "ab" 0 2
+
+pattern abc|x+|abd|a
+m "abd" 0 3
+m "abz" 0 1
+m "xxx" 0 3
+
+# a branch containing a nested group is not eligible either
+pattern x(?:yz)|xy
+m "xyz" 0 3
+m "xy" 0 2
+
+# ---- factoring must survive quantification and anchoring ----
+pattern (cat|car|cart)s
+m "carts" 0 5
+m "cats" 0 4
+
+pattern (?:foo|foobar)+
+m "foobarfoo" 0 3
+
+pattern ^(alpha|alps|alp)
+m "alps" 0 4
+m "alpha" 0 5
+m "alp" 0 3
+
+pattern (log|login|logout)$
+m "login" 0 5
+m "logout" 0 6
+m "log" 0 3
+
+# ---- shared prefix where the branch order forces the longer match ----
+pattern (?:abcd|abc|ab|a)z
+m "abcdz" 0 5
+m "abz" 0 3
+m "az" 0 2

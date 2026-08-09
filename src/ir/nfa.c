@@ -111,6 +111,224 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
     return f;
 }
 
+/* ---- M2.8: priority-preserving prefix trie for flat alternations ----
+ *
+ * Motivation (R2-A4) is compile TIME more than NFA size. `nfa_wrap_unanchored`
+ * keeps the whole branch-selection split chain live at every subject position,
+ * so a flat alternation makes every epsilon closure walk all `nbr` branches:
+ * measured 4045 NFA visits per closure at 2000 branches (2*nbr), 2.36 billion
+ * visits total, 11 s. Factoring shared prefixes collapses the start closure to
+ * the node fan-out — measured 103.5 visits per closure on the same input.
+ * State count alone falls only ~19% on prefix-poor inputs, which is why the
+ * NFA cap is re-derived separately rather than being fixed by this.
+ *
+ * The hazard is priority: naive trie DFS order is NOT alternation index order.
+ * Two independent counter-examples, both CONFIRMED against python `re` and
+ * against pcrec's own flat construction:
+ *
+ *   abc|a|abd            on "abd" -> [0,1)   but  a(?:bc|bd)|a   -> [0,3)
+ *   [ab]p|[bc]x|[ab]xy   on "bxy" -> [0,2)   but  [ab](?:p|xy)|[bc]x -> [0,3)
+ *
+ * The first is fixed by rule 1 (partition the branch list by index around a
+ * branch that ends here), the second by the disjointness guard on rule 2
+ * (branches merge only on bit-IDENTICAL classes, but two distinct groups can
+ * still overlap, and then they are not mutually exclusive). */
+
+/* One trie-eligible branch: its class bitmaps in match order (already
+ * reversed by the caller in reverse mode) plus its alternation index, which
+ * exists only to keep rule 1's partitions in priority order. */
+typedef struct { const uint8_t *seq; int len; } TItem;
+
+enum { TRIE_MAX_RDEPTH = 4096 };  /* nested branch points; flat beyond */
+
+/* Chain fragments into a priority-ordered alternation; fr[0] is preferred.
+ * Same shape the flat A_ALT path builds, so it is order-for-order identical
+ * when the trie degenerates. */
+static Frag chain_alts(NB *b, Frag *fr, int n)
+{
+    int cur = fr[n - 1].start;
+    for (int j = n - 2; j >= 0; j--) {
+        int s = nst(b, N_SPLIT);
+        Nfa *nfa = b->nfa;
+        nfa->st[s].t1 = fr[j].start;
+        nfa->st[s].t2 = cur;
+        cur = s;
+    }
+    Frag f = { cur, {0} };
+    for (int j = 0; j < n; j++) patch_join(b, &f.out, &fr[j].out);
+    return f;
+}
+
+/* Emit items[k].seq[depth..len) as a class chain; len == depth yields N_EPS
+ * (the branch accepts here, so its out-edge dangles immediately). */
+static Frag trie_tail(NB *b, const TItem *it, int depth)
+{
+    if (it->len == depth) return frag_single(b, N_EPS);
+    Frag f = { -1, {0} };
+    for (int k = depth; k < it->len; k++) {
+        int s = nst(b, N_CLASS);
+        memcpy(b->nfa->st[s].cls, it->seq + (size_t)k * 32, 32);
+        Frag c = { s, {0} };
+        patch_push(b, &c.out, s * 2);
+        f = (f.start < 0) ? c : frag_cat2(b, f, c);
+    }
+    return f;
+}
+
+/* The pre-M2.8 shape for a sub-list: a split chain over unfactored suffixes.
+ * Always safe, so it is the escape hatch for both the recursion cap and the
+ * disjointness guard. */
+static Frag trie_flat(NB *b, const TItem *items, int n, int depth)
+{
+    Frag *fr = arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
+    for (int j = 0; j < n; j++) fr[j] = trie_tail(b, &items[j], depth);
+    return n == 1 ? fr[0] : chain_alts(b, fr, n);
+}
+
+/* True iff every group's class bitmap is pairwise disjoint from every other's.
+ * Singletons (one bit set) are distinct by construction — that is the keyword
+ * case and the only one that has to be fast. */
+static bool groups_disjoint(const TItem *sorted, const int *gstart, int ng, int depth)
+{
+    bool all_singleton = true;
+    for (int g = 0; g < ng && all_singleton; g++) {
+        const uint8_t *bits = sorted[gstart[g]].seq + (size_t)depth * 32;
+        int pop = 0;
+        for (int i = 0; i < 32 && pop < 2; i++) pop += __builtin_popcount(bits[i]);
+        if (pop != 1) all_singleton = false;
+    }
+    if (all_singleton) return true;
+    if (ng > 64) return false;   /* quadratic check not worth it; use flat */
+    for (int g = 0; g < ng; g++)
+        for (int h = g + 1; h < ng; h++) {
+            const uint8_t *x = sorted[gstart[g]].seq + (size_t)depth * 32;
+            const uint8_t *y = sorted[gstart[h]].seq + (size_t)depth * 32;
+            for (int i = 0; i < 32; i++)
+                if (x[i] & y[i]) return false;
+        }
+    return true;
+}
+
+static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
+{
+    Frag head = { -1, {0} };
+    if (rdepth >= TRIE_MAX_RDEPTH) return trie_flat(b, items, n, depth);
+
+    for (;;) {
+        if (n == 1) {
+            Frag t = trie_tail(b, &items[0], depth);
+            return (head.start < 0) ? t : frag_cat2(b, head, t);
+        }
+
+        /* rule 1: some branch ENDS here. Partition the list by index around
+         * it — everything before it, its accept, then everything after — so
+         * no ordering has to serve two different matching chains at once. */
+        int acc = -1;
+        for (int k = 0; k < n; k++)
+            if (items[k].len == depth) { acc = k; break; }
+        if (acc >= 0) {
+            Frag parts[3];
+            int np = 0;
+            if (acc > 0)
+                parts[np++] = trie_build(b, items, acc, depth, rdepth + 1);
+            parts[np++] = frag_single(b, N_EPS);
+            if (acc < n - 1)
+                parts[np++] = trie_build(b, items + acc + 1, n - acc - 1,
+                                         depth, rdepth + 1);
+            Frag body = (np == 1) ? parts[0] : chain_alts(b, parts, np);
+            return (head.start < 0) ? body : frag_cat2(b, head, body);
+        }
+
+        /* rule 2: group by the class bitmap at `depth`, stable in index order
+         * so groups come out ordered by their lowest index. */
+        int *gstart = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
+        int *gcount = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
+        TItem *sorted = arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
+        bool *used = arena_alloc(&b->cx->arena, (size_t)n);
+        int ng = 0, m = 0;
+        for (int k = 0; k < n; k++) {
+            if (used[k]) continue;
+            const uint8_t *key = items[k].seq + (size_t)depth * 32;
+            gstart[ng] = m;
+            int cnt = 0;
+            for (int j = k; j < n; j++) {
+                if (used[j]) continue;
+                if (memcmp(items[j].seq + (size_t)depth * 32, key, 32) != 0) continue;
+                used[j] = true;
+                sorted[m++] = items[j];
+                cnt++;
+            }
+            gcount[ng++] = cnt;
+        }
+
+        /* Distinct groups may still OVERLAP (`[ab]` vs `[bc]`), and then they
+         * are not mutually exclusive, so no fixed order between them is right
+         * for every subject. Only disjoint groups may be reordered. */
+        if (ng > 1 && !groups_disjoint(sorted, gstart, ng, depth)) {
+            Frag body = trie_flat(b, items, n, depth);
+            return (head.start < 0) ? body : frag_cat2(b, head, body);
+        }
+
+        if (ng == 1) {   /* unbranched run: descend iteratively, no recursion */
+            int s = nst(b, N_CLASS);
+            memcpy(b->nfa->st[s].cls, items[0].seq + (size_t)depth * 32, 32);
+            Frag c = { s, {0} };
+            patch_push(b, &c.out, s * 2);
+            head = (head.start < 0) ? c : frag_cat2(b, head, c);
+            items = sorted;
+            depth++;
+            continue;
+        }
+
+        Frag *fr = arena_alloc(&b->cx->arena, (size_t)ng * sizeof(Frag));
+        for (int g = 0; g < ng; g++) {
+            const TItem *gi = sorted + gstart[g];
+            int s = nst(b, N_CLASS);
+            memcpy(b->nfa->st[s].cls, gi[0].seq + (size_t)depth * 32, 32);
+            Frag sub = trie_build(b, gi, gcount[g], depth + 1, rdepth + 1);
+            b->nfa->st[s].t1 = sub.start;
+            Frag c = { s, sub.out };
+            fr[g] = c;
+        }
+        Frag body = chain_alts(b, fr, ng);
+        return (head.start < 0) ? body : frag_cat2(b, head, body);
+    }
+}
+
+/* A branch is trie-eligible iff it is a left-leaning A_CAT chain (or a single
+ * node) whose every leaf is A_CLASS — i.e. a fixed-length sequence of byte
+ * classes. A_REP/A_ALT/A_EMPTY/A_BOL/A_EOL branches are not, and are chained
+ * around the eligible runs at their original priority. Returns false and
+ * leaves *out untouched when ineligible. In reverse mode the step order is
+ * flipped, since rev(X.Y) = rev(Y).rev(X). */
+static bool trie_key(NB *b, const Ast *a, TItem *out)
+{
+    int nsp = 0;
+    for (const Ast *t = a; ; t = t->l) {
+        nsp++;
+        if (t->k != A_CAT) break;
+    }
+    /* nsp counts the spine head plus one per A_CAT node */
+    const Ast **leaf = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
+    int i = nsp;
+    const Ast *t = a;
+    while (t->k == A_CAT) { leaf[--i] = t->r; t = t->l; }
+    leaf[--i] = t;
+    if (i != 0) return false;   /* defensive: spine walk must be exact */
+
+    for (int k = 0; k < nsp; k++)
+        if (leaf[k]->k != A_CLASS) return false;
+
+    uint8_t *seq = arena_alloc(&b->cx->arena, (size_t)nsp * 32);
+    for (int k = 0; k < nsp; k++) {
+        const uint8_t *src = leaf[b->rev ? (nsp - 1 - k) : k]->cls;
+        memcpy(seq + (size_t)k * 32, src, 32);
+    }
+    out->seq = seq;
+    out->len = nsp;
+    return true;
+}
+
 static Frag compile_ast(NB *b, const Ast *a)
 {
     switch (a->k) {
@@ -155,19 +373,29 @@ static Frag compile_ast(NB *b, const Ast *a)
         const Ast *t2 = a;
         while (t2->k == A_ALT) { br[--i] = t2->r; t2 = t2->l; }
         br[0] = t2;
+
+        /* M2.8: factor shared prefixes. Eligible branches are grouped into
+         * maximal runs of CONSECUTIVE indices; each run of 2+ becomes a trie,
+         * everything else compiles as before. Contiguity is what keeps this
+         * sound: "the first matching branch in index order wins" survives
+         * replacing an index RANGE with a sub-alternation that itself picks
+         * its first matching member. */
+        TItem *keys = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
+        bool *elig = arena_alloc(&b->cx->arena, (size_t)nbr);
+        for (int j = 0; j < nbr; j++)
+            elig[j] = trie_key(b, br[j], &keys[j]);
+
         Frag *fr = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
-        for (int j = 0; j < nbr; j++) fr[j] = compile_ast(b, br[j]);
-        int cur = fr[nbr - 1].start;
-        for (int j = nbr - 2; j >= 0; j--) {
-            int s = nst(b, N_SPLIT);
-            Nfa *nfa = b->nfa;
-            nfa->st[s].t1 = fr[j].start;   /* earlier branch preferred */
-            nfa->st[s].t2 = cur;
-            cur = s;
+        int nf = 0;
+        for (int j = 0; j < nbr; ) {
+            if (!elig[j]) { fr[nf++] = compile_ast(b, br[j]); j++; continue; }
+            int e = j;
+            while (e < nbr && elig[e]) e++;
+            if (e - j == 1) fr[nf++] = compile_ast(b, br[j]);
+            else            fr[nf++] = trie_build(b, keys + j, e - j, 0, 0);
+            j = e;
         }
-        Frag f = { cur, {0} };
-        for (int j = 0; j < nbr; j++) patch_join(b, &f.out, &fr[j].out);
-        return f;
+        return nf == 1 ? fr[0] : chain_alts(b, fr, nf);
     }
     case A_REP: {
         int rmin = a->rmin, rmax = a->rmax;
