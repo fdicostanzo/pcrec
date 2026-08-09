@@ -112,3 +112,39 @@ pattern (?:abcd|abc|ab|a)z
 m "abcdz" 0 5
 m "abz" 0 3
 m "az" 0 2
+
+# ---- R3 critic panel repros (all CONFIRMED against python re and PCRE2) ----
+# These came from an adversarial review of the SHIPPED trie. Each targets a
+# different way the rule-2 disjointness guard could be got wrong.
+
+# uses `.` rather than an explicit class — the overlap an author is least
+# likely to notice, since `.` does not look like a character class
+pattern foo.x|foobar|foo.
+m "foobar" 0 6
+m "fooax" 0 5
+
+# divergence at a NON-ZERO start position
+pattern [ac]b|[bc]c|[ac]
+m "dccba" 1 3
+m "ab" 0 2
+
+# proves the guard is NECESSARY, not merely sufficient: "axyy" and "azyy"
+# demand opposite group orders, so no fixed ordering could have been correct
+pattern [ab]xy|a[xz]yy|[ab]
+m "axyy" 0 3
+m "azyy" 0 4
+m "bxy" 0 3
+
+pattern [ab]z|abc|[ab]
+m "abc" 0 3
+m "az" 0 2
+
+# duplicate branches are inert, and are the worst case for trie_build's stack
+pattern fo|foo|fo|foo
+m "foo" 0 2
+
+# mixed eligible/ineligible runs: order must survive the run split
+pattern q||a
+m "a" 0 0
+pattern q|a+|ab
+m "ab" 0 1

@@ -121,8 +121,13 @@ named cases in tests/base/alternation_trie.rxt fail):
    node's list unfactored.
 
 Mixed lists are handled by trie-ing only maximal runs of CONSECUTIVE eligible
-branches: "first matching branch in index order wins" survives replacing an
-index RANGE with a sub-alternation that picks its own first matching member.
+branches. CORRECTION (R3 critic): the invariant this rests on is not the loose
+"first matching branch in index order wins" — D3 keeps lower-priority threads
+alive past an accept precisely so a later higher-priority one can override.
+The property a run fragment must have is stronger: its DFS leaf order,
+restricted to any set of branches that can match at one start, must equal
+index order. The composition step is sound given that, but it is CONDITIONAL
+on rule 2 being right rather than an independent argument.
 A branch is eligible iff it is a left-leaning A_CAT chain of A_CLASS leaves;
 notably a nested group inside a branch (`x(?:yz)|xy`) makes it ineligible,
 which is conservative rather than wrong.
@@ -321,3 +326,47 @@ favouring the table on random input).
 Revisit-when: a workload appears with long, highly predictable state runs that
 skip loops cannot cover — that is now a MEASURED opportunity rather than a
 hypothetical one.
+
+## D14 — 2026-08-09 — `make bench` distinguishes "clean" from "not measured"
+
+R3 critic finding against my own M2.9/D12 work. The LOAD_LIMIT downgrade added
+earlier that day reported a budget miss as INCONCLUSIVE on a busy box — which
+was right — and then exited 0, which was not. A build with a 3.4x/68x/5.5x
+regression exited GREEN whenever the box was loaded, and with the default limit
+at cores/2 against observed loads of 5-24, loaded was the normal case rather
+than a corner. The guard against flakiness had become a guard against detection.
+
+Exit codes are now three-valued: 0 = gated and clean, 1 = gated and failed,
+2 = NOT GATED (one or more budgets inconclusive). Automation cannot read "I
+could not measure" as "nothing regressed", and a human sees it in the summary.
+
+Known limitation, stated rather than fixed: the load average is sampled ONCE
+before a multi-minute run, so it describes the load before measurement, not
+during it. Revisit-when: budgets start flapping between 0 and 2 on a box whose
+load changes mid-run.
+
+## D15 — 2026-08-09 — every optimization needs a bench case that EXERCISES it
+
+R3 critic finding, and the sharpest one of the checkpoint. Deleting the bitmap
+half of the start prefilter — keeping only the memchr fast path, a plausible
+"simplify the special case away" edit — costs ~1.5x on multi-first-byte
+patterns (452 -> 303 MB/s here, ~20% on the critic's own subject), and passed
+`make test`, `make bench`, the python oracle, the differential fuzzer AND
+`gate.sh`. Five nets, all green, on a real regression.
+
+Root cause: all four THROUGHPUT patterns had exactly ONE escape byte, so every
+one of them took the memchr branch. The feature was half-covered and D12's
+"sabotage-validated" claim covered only that half. `gate.sh` missed it too
+because emitted code is byte-identical for 7 of 9 compare cases, and one of the
+two that changed measured FASTER (it is an early-exit case — see below).
+
+Case (d), `(alpha|beta|gamma|delta|epsilon)` over an 8 MB alphabet with no
+'a', now covers the bitmap branch. Its budget is deliberately tighter than the
+others' /1.75: the regression it guards is only ~1.5x, so a 1.75x margin would
+let exactly this through again. Measured spread on it is 1.03-1.08x, among the
+tightest in the suite.
+
+The general rule this establishes: a sabotage validation must disable the
+SPECIFIC branch under test, not the feature that contains it, and a feature
+with two code paths needs a case that reaches each. Revisit-when: any new
+scan-avoidance path is added.

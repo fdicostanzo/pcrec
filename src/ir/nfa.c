@@ -119,8 +119,18 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
  * measured 4045 NFA visits per closure at 2000 branches (2*nbr), 2.36 billion
  * visits total, 11 s. Factoring shared prefixes collapses the start closure to
  * the node fan-out — measured 103.5 visits per closure on the same input.
- * State count alone falls only ~19% on prefix-poor inputs, which is why the
- * NFA cap is re-derived separately rather than being fixed by this.
+ *
+ * That collapse is a property of the INPUT, not a guarantee: with no shared
+ * prefix at all the root fan-out IS nbr and the split chain is exactly as long
+ * as the unfactored one. Do not cite it to justify a state-count bound
+ * (R3 critic correction).
+ *
+ * State count alone falls only ~19% (18241 -> 14824 NFA states, measured
+ * end-to-end on the 2000-branch random-word case), which is why the NFA cap is
+ * re-derived separately rather than being fixed by this. An independent critic
+ * measurement over realistic keyword sets puts the node saving at 25-40%
+ * (English word samples 28-42%, the Public Suffix List 28.8%), so no realistic
+ * 3600-word list drops under the old 20000 cap by factoring alone.
  *
  * The hazard is priority: naive trie DFS order is NOT alternation index order.
  * Two independent counter-examples, both CONFIRMED against python `re` and
@@ -139,7 +149,23 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
  * exists only to keep rule 1's partitions in priority order. */
 typedef struct { const uint8_t *seq; int len; } TItem;
 
-enum { TRIE_MAX_RDEPTH = 4096 };  /* nested branch points; flat beyond */
+/* Nested branch points before falling back to the unfactored construction.
+ * This constant IS A STACK BUDGET and is stated as one, which is what D10
+ * demanded for clo_visit and what the first version of this file failed to do
+ * for itself (R3 critic finding F3).
+ *
+ * Measured frame for trie_build at -O2/gcc 15.2.0: 6 callee-saved pushes
+ * (48 B) + `sub $0xd8` (216 B) + return address (8 B) = 272 B. 256 frames is
+ * therefore ~68 KB, which fits inside a musl default 128 KB thread stack with
+ * room to spare — the case that matters, since pcrec is a library and a
+ * caller's thread stack is not ours to assume. 4096 would have been 1.1 MB.
+ *
+ * Reaching depth 256 needs 256 nested BRANCH POINTS on one root-to-leaf path;
+ * unbranched runs descend iteratively and cost no stack, and duplicate
+ * accepts are handled in one pass. Real keyword lists branch in the first few
+ * bytes, so this is generous. Beyond it trie_flat is used: correct, merely
+ * unfactored. */
+enum { TRIE_MAX_RDEPTH = 256 };
 
 /* Chain fragments into a priority-ordered alternation; fr[0] is preferred.
  * Same shape the flat A_ALT path builds, so it is order-for-order identical
@@ -220,20 +246,41 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
             return (head.start < 0) ? t : frag_cat2(b, head, t);
         }
 
-        /* rule 1: some branch ENDS here. Partition the list by index around
-         * it — everything before it, its accept, then everything after — so
-         * no ordering has to serve two different matching chains at once. */
-        int acc = -1;
+        /* rule 1: some branch ENDS here. Split the list by index around EVERY
+         * branch that ends at this depth — segment, accept, segment, accept,
+         * ... — so no ordering has to serve two different matching chains at
+         * once.
+         *
+         * Done in one pass rather than by recursing on the tail. Recursing
+         * cost one frame per accept, so `a|a|...|a` (9000 duplicate branches,
+         * every one of them ending at depth 1) recursed 9000 deep and
+         * SEGFAULTED at a 1 MB stack — where the pre-trie construction
+         * handled the same pattern at 128 KB, because its deep recursion was
+         * in tail position and gcc turned it into a jump. That was a
+         * regression against this file's own R-2 hardening ("flat
+         * alternations of any length cannot overflow the C stack"), found by
+         * the R3 critic panel. Each segment contains NO branch ending at this
+         * depth, so it goes to rule 2 and its recursion is bounded by branch
+         * points, not by branch count. */
+        bool has_acc = false;
         for (int k = 0; k < n; k++)
-            if (items[k].len == depth) { acc = k; break; }
-        if (acc >= 0) {
-            Frag parts[3];
-            int np = 0;
-            if (acc > 0)
-                parts[np++] = trie_build(b, items, acc, depth, rdepth + 1);
-            parts[np++] = frag_single(b, N_EPS);
-            if (acc < n - 1)
-                parts[np++] = trie_build(b, items + acc + 1, n - acc - 1,
+            if (items[k].len == depth) { has_acc = true; break; }
+        if (has_acc) {
+            /* at most one accept and one segment per item, plus a trailing
+             * segment */
+            Frag *parts = arena_alloc(&b->cx->arena,
+                                      (size_t)(2 * n + 1) * sizeof(Frag));
+            int np = 0, seg = 0;
+            for (int k = 0; k < n; k++) {
+                if (items[k].len != depth) continue;
+                if (k > seg)
+                    parts[np++] = trie_build(b, items + seg, k - seg,
+                                             depth, rdepth + 1);
+                parts[np++] = frag_single(b, N_EPS);
+                seg = k + 1;
+            }
+            if (seg < n)
+                parts[np++] = trie_build(b, items + seg, n - seg,
                                          depth, rdepth + 1);
             Frag body = (np == 1) ? parts[0] : chain_alts(b, parts, np);
             return (head.start < 0) ? body : frag_cat2(b, head, body);
@@ -244,6 +291,10 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
         int *gstart = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
         int *gcount = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
         TItem *sorted = arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
+        /* relies on arena_alloc zeroing (src/core/arena.c); read below
+         * before any explicit write. If a "skip the memset for large
+         * allocations" fast path is ever added there, this grouping
+         * silently corrupts and miscompiles — R3 critic latent finding. */
         bool *used = arena_alloc(&b->cx->arena, (size_t)n);
         int ng = 0, m = 0;
         for (int k = 0; k < n; k++) {
@@ -377,9 +428,16 @@ static Frag compile_ast(NB *b, const Ast *a)
         /* M2.8: factor shared prefixes. Eligible branches are grouped into
          * maximal runs of CONSECUTIVE indices; each run of 2+ becomes a trie,
          * everything else compiles as before. Contiguity is what keeps this
-         * sound: "the first matching branch in index order wins" survives
-         * replacing an index RANGE with a sub-alternation that itself picks
-         * its first matching member. */
+         * sound. Note the invariant is NOT the loose "first matching branch
+         * in index order wins" — D3 deliberately keeps lower-priority threads
+         * alive past an accept so a later higher-priority one can override.
+         * The property a run fragment must have is stronger: its DFS leaf
+         * order, restricted to any set of branches that can match at one
+         * start, must equal index order. Composition is sound GIVEN that, so
+         * this rule is conditional on rule 2 being right, not independent of
+         * it (R3 critic correction). Contiguity is safe against empty
+         * branches for a structural reason: every eligible branch consumes at
+         * least one byte, since all its leaves are A_CLASS. */
         TItem *keys = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
         bool *elig = arena_alloc(&b->cx->arena, (size_t)nbr);
         for (int j = 0; j < nbr; j++)

@@ -10,10 +10,18 @@ against the expectation encoded in the test file.
 
 ```sh
 make test                                  # everything under tests/
-bash tests/harness/run.sh                  # equivalent, no args
+bash tests/harness/run.sh                  # the .rxt corpus ONLY (see below)
 bash tests/harness/run.sh tests/base        # one component directory
 bash tests/harness/run.sh tests/base/quantifiers.rxt   # one file
 ```
+
+`make test` is NOT equivalent to `run.sh`: since M2 it runs FOUR scripts — the
+.rxt corpus, `tests/cli/run_cli_tests.sh`, `tests/codegen/run_codegen_tests.sh`
+(structural assertions that behaviour-preserving optimizations are actually
+PRESENT in the emitted C — see that directory's CLAUDE.md), and
+`tests/known_fail/run_known_fail.sh` (the ratchet that flags a deferred-bug
+regression which has started passing). `run.sh` alone certifies only the first
+of the four.
 
 With no arguments, `run.sh` discovers and runs every `*.rxt` file under
 `tests/` (recursively). Arguments may mix individual `.rxt` files and
@@ -253,6 +261,8 @@ Closes R1's PLAN findings P-M1, P-M2, P-N1, P-N2.
   validation (60/61 chars, leading digit, empty), `-o subdir/out.c`, `--`
   end-of-options, missing-value and unknown-option diagnostics, and a direct
   `lib/pcrec.h` + `build/libpcrec.a` smoke test of `pcrec_compile`/
-  `pcrec_output_free` NULL-argument and double-free safety. It is not wired
-  into the Makefile (run directly: `bash tests/cli/run_cli_tests.sh`); the
-  main build integrates it separately.
+  `pcrec_output_free`, plus a 512 KB-stack compile of a 9000-branch
+  alternation (M2.8's trie regressed that to >1 MB and no correctness test
+  could see it). It is part of `make test` since M2 — it was standalone when
+  first written, and the stale claim that it is not wired in survived two
+  checkpoint reviews before an R3 critic grepped for it.

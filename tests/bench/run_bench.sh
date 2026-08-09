@@ -41,6 +41,10 @@
 #     THROUGHPUT_NEEDLE_MIN_MBPS   (default 1200)  subject (a), THROUGHPUT
 #     THROUGHPUT_NOMATCH_MIN_MBPS  (default 12000) subject (b), THROUGHPUT
 #     THROUGHPUT_ALT_MIN_MBPS      (default 1000)  subject (c), THROUGHPUT
+#     THROUGHPUT_BITMAP_MIN_MBPS   (default 330)   subject (d), THROUGHPUT --
+#                     the BITMAP half of the start prefilter; (a)-(c) all take
+#                     the memchr branch, so without this the bitmap branch has
+#                     no coverage anywhere in the suite
 #     LINEARITY_MAX_RATIO          (default 6.0)   64MB/16MB time ratio, THROUGHPUT
 #     LOAD_LIMIT      (default max(2.0, cores/2))  1-minute load average above
 #                     which a budget MISS is reported as INCONCLUSIVE rather
@@ -90,6 +94,14 @@ GCC_O2_BUDGET_SECS="${GCC_O2_BUDGET_SECS:-2}"            # measured 0.219
 THROUGHPUT_NEEDLE_MIN_MBPS="${THROUGHPUT_NEEDLE_MIN_MBPS:-1200}"   # measured 2160
 THROUGHPUT_NOMATCH_MIN_MBPS="${THROUGHPUT_NOMATCH_MIN_MBPS:-12000}" # measured 21910
 THROUGHPUT_ALT_MIN_MBPS="${THROUGHPUT_ALT_MIN_MBPS:-1000}"         # measured 1753
+# Deliberately tighter than the /1.75 the others use: the regression this
+# case exists to catch (deleting the bitmap branch, keeping memchr) is only
+# ~1.5x — 452 -> 303 MB/s — so a 1.75x margin would let it through, which
+# is how it went unnoticed in the first place. Measured spread here is
+# 1.03-1.08x, among the tightest in the suite, and the LOAD_LIMIT guard
+# covers busy boxes. Healthy observed 429-457, sabotaged 303-305, so 330 sits
+# between them with ~1.3x headroom either side.
+THROUGHPUT_BITMAP_MIN_MBPS="${THROUGHPUT_BITMAP_MIN_MBPS:-330}"   # measured 429-457
 LINEARITY_MAX_RATIO="${LINEARITY_MAX_RATIO:-6.0}"        # measured 2.883, linear 4.0
 
 PCREC_TIMEOUT="${PCREC_TIMEOUT:-60}"
@@ -507,6 +519,18 @@ alpha_nod = b"abcefghijklmnopqrstuvwxyz"
 with open(os.path.join(outdir, "altd_nomatch_8mb.bin"), "wb") as f:
     f.write(bytes(random.choices(alpha_nod, k=n)))
 
+# (d) 8 MB of text over an alphabet with NO 'a', so `(alpha|beta|gamma|delta|
+# epsilon)` cannot match and the scan is real. This case exists to cover the
+# BITMAP half of the start prefilter: cases (a)-(c) all have exactly one
+# escape byte and take the memchr branch, so before this every bench pattern
+# exercised the same half of the feature. An R3 critic demonstrated the gap by
+# deleting the bitmap branch entirely (keeping memchr) for a 20% loss on this
+# shape, with make test, make bench, the oracle, the fuzzer AND gate.sh all
+# staying green.
+alpha_noa = b"bcdefghijklmnopqrstuvwxyz"
+with open(os.path.join(outdir, "bitmap_8mb.bin"), "wb") as f:
+    f.write(bytes(random.choices(alpha_noa, k=n)))
+
 # linearity subjects. R2-B4: the old pair was 1 MB vs 4 MB, which on the
 # current engine takes ~46 us vs ~337 us — below the script's own anti-blowup
 # floor, i.e. the check was reading timer noise. 16 MB vs 64 MB puts both
@@ -644,6 +668,26 @@ if [ $py_rc -eq 0 ]; then
         fi
     fi
 
+    # ---- (d) bitmap prefilter: 5 distinct first bytes, no match ----
+    tdir="$WORKDIR/tp_bitmap"
+    build_bench_bin "$tdir" '(alpha|beta|gamma|delta|epsilon)'
+    if [ "$BB_OK" = "1" ]; then
+        run_bdriver "$tdir/t" "$subj_dir/bitmap_8mb.bin" 10 "$RUN_TIMEOUT"
+        if [ "$RB_RC" = "ok" ]; then
+            echo "  (d) (alpha|beta|...)  over bitmap_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_BITMAP_MIN_MBPS} MB/s)"
+            if num_gt "$RB_MBPS" "$THROUGHPUT_BITMAP_MIN_MBPS"; then
+                record_budget "THROUGHPUT (d) bitmap prefilter" "PASS"
+            else
+                record_budget "THROUGHPUT (d) bitmap prefilter" "FAIL"
+            fi
+        elif [ "$RB_RC" = "dnf" ]; then
+            echo "  (d) (alpha|beta|...)  over bitmap_8mb.bin: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
+            record_budget "THROUGHPUT (d) bitmap prefilter" "FAIL"
+        else
+            record_hard_error "bdriver crashed/errored on subject (d): $RB_RAW"
+        fi
+    fi
+
     echo
     echo "  -- linearity check (R1 A-2): a*b over 16 MB vs 64 MB of 'a' --"
     # Reuses the (b) binary (same pattern 'a*b'); a fresh binary is built in
@@ -712,7 +756,7 @@ echo "budget failures: $budget_failures"
 if [ "$budget_inconclusive" -gt 0 ]; then
     echo "budget INCONCLUSIVE: $budget_inconclusive (1-min load $LOAD_NOW > $LOAD_LIMIT)"
     echo "  This run did NOT gate those budgets. Re-run on a quiet box before"
-    echo "  treating a green exit code as evidence of no regression."
+    echo "  treating this as evidence of no regression."
 fi
 [ "$SKIP_BUDGETS" = "1" ] && echo "SKIP_BUDGETS=1: budget failures do not affect exit code"
 
@@ -721,5 +765,16 @@ if [ "$hard_errors" -gt 0 ]; then
 fi
 if [ "$budget_failures" -gt 0 ] && [ "$SKIP_BUDGETS" != "1" ]; then
     exit 1
+fi
+# "I could not measure" must not be reportable as "nothing regressed". The
+# first version of the LOAD_LIMIT downgrade exited 0 here, which meant a build
+# with a 3.4x/68x/5.5x regression exited GREEN whenever the box was busy — and
+# with a default limit of cores/2 against observed loads of 5-24, busy was the
+# normal case, not a corner (R3 critic finding). Exit 2 instead: distinct from
+# both 0 (gated, clean) and 1 (gated, failed), so automation can tell "no
+# regression" apart from "no measurement".
+if [ "$budget_inconclusive" -gt 0 ] && [ "$SKIP_BUDGETS" != "1" ]; then
+    echo "run_bench.sh: exiting 2 — $budget_inconclusive budget(s) were not gated" >&2
+    exit 2
 fi
 exit 0

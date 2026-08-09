@@ -691,3 +691,76 @@ Recommended order: R3.2 (the missing adversarial pass) before anything else,
 then M3.0 — which is a DESIGN GATE, not code: match-START finding under
 bounded memory is an unsolved problem and the reverse pass as built cannot
 stream.
+
+## 2026-08-09 — R3 critic panel reports (late), and what they found
+
+All five critics dispatched across M2 eventually reported — every one of them
+AFTER I had compiled R3 as "no adversarial coverage" and pushed it. The reports
+were worth waiting for. They produced one live wrong-behaviour finding in
+shipped code, one live hole in a guard I had added hours earlier, and the best
+unguarded-change finding of the project so far.
+
+**F3 — the trie put a 1.3 MB stack requirement where 128 KB used to do.**
+`trie_build`'s rule 1 recursed once per branch ending at a node, so
+`a|a|...|a` with 9000 duplicate branches recursed 9000 deep and SEGFAULTED at a
+1 MB stack. The pre-trie construction handled the same pattern at 128 KB —
+its deep recursion was in tail position and gcc turned it into a jump. This
+walked back nfa.c's own R-2 hardening, and matters because pcrec is a LIBRARY:
+musl's default thread stack is 128 KB. Rule 1 now splits on every accept in one
+pass, so recursion is bounded by branch points rather than branch count;
+TRIE_MAX_RDEPTH went 4096 -> 256 and is documented AS a stack budget with the
+measured 272 B frame behind it. 9000 branches now compile at 64 KB. Guarded by
+a new tests/cli case at 512 KB, validated by restoring the recursive form.
+
+The irony is exact: D10 says the NFA cap must be derived from a stated frame
+budget rather than the optimiser's mood. I wrote that, then shipped a function
+in the same commit whose stack cost I never measured.
+
+**`make bench` exited 0 while gating nothing.** My own LOAD_LIMIT change from
+that morning downgraded a budget miss to INCONCLUSIVE on a busy box — correct —
+and then exited 0, which was not. A build with a 3.4x/68x/5.5x regression
+exited GREEN whenever the box was loaded, and at a default of cores/2 against
+observed loads of 5–24, loaded was the normal case. Exit codes are now
+three-valued (0 clean / 1 failed / 2 not gated). D14.
+
+**Five nets, all green, on a real regression.** Deleting the bitmap half of the
+start prefilter costs ~1.5x on multi-first-byte patterns and passed make test,
+make bench, the oracle, the fuzzer and gate.sh. Every bench pattern had exactly
+one escape byte, so the bitmap branch had no coverage anywhere — D12's
+"sabotage-validated" claim covered half a feature. New case (d) with a
+deliberately tighter budget, validated against the critic's exact edit. D15.
+
+**Also settled, from the critics:**
+- Skip states have NO throughput guard at all — all four bench patterns emit
+  zero skip tables, so bench is byte-identical with pick_skip_states returning
+  0. That settles the R3.1 "re-measure on a quiet box" question: no measurement
+  was possible. And the cap of 4 buys nothing (730.8 vs 740.1 at cap 1), so
+  asserting a COUNT would pin a number no measurement supports. R3.1 reframed.
+- My "large for blocklists" claim was overstated: real lists save 25–40%
+  (Public Suffix List 28.8%), not "large". This strengthens the conclusion —
+  no realistic 3600-word list drops under the old cap by factoring — and the
+  corrected figures and their method are now in nfa.c.
+- The gcc-time disagreement reconciles: on FLAT patterns pcrec is 14–35x gcc;
+  after the trie, gcc becomes the LARGER half (0.79 s vs 1.36 s). My number
+  described the shipped state, the critic's the pre-trie one. Consequence
+  recorded: M2.9's compile budgets measure only pcrec's half.
+- Two comments of mine were simply wrong and are fixed: the contiguous-run rule
+  does NOT rest on "first matching branch in index order wins" (D3 keeps
+  lower-priority threads alive past an accept on purpose), and "the trie caps
+  alternation chains at node fan-out" is false with no shared prefix.
+- docs/testing.md still claimed the CLI tests were not wired into the Makefile.
+  R2 recorded that as FIXED and it was not; it survived two reviews until a
+  critic grepped for it.
+
+**Process lesson, and it is not the one I expected.** I closed the milestone on
+self-audit because the panel had not reported, and I was right to record that
+as a gap — but I was wrong to treat the gap as merely procedural. The panel
+found a live segfault, a hole in a guard I had just built, and a regression
+five independent nets missed. Self-audit found the things I was already looking
+for. The fix for R4 is not "chase critics harder" but "do not declare a
+milestone reviewed until the reports are in hand", which is now written into
+the review.
+
+Verification after all fixes: 619 corpus + 42 CLI + 17 codegen green; oracle
+100% (611); fuzz seeds 1/2/3/5/7 clean; 27x69 EOL sweep clean; 11,760-case trie
+sweep clean; bench 0 budget failures with the new case (d).

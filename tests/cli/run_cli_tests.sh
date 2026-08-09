@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # tests/cli/run_cli_tests.sh — CLI surface + library-API regression tests.
 #
-# Standalone (not wired into the Makefile — the main build integrates it
-# separately). Covers the CLI surface beyond the plain `-p rx -o tmp/gen.c`
+# Part of `make test` since M2. Covers the CLI surface beyond the plain `-p rx -o tmp/gen.c`
 # path the .rxt harness exercises: -o -, --emit-main, prefix boundary
 # validation, subdirectory output, `--` end-of-options, missing-value and
 # unknown-option diagnostics, and a direct library-API (pcrec_compile /
@@ -380,6 +379,41 @@ EOF
 
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# 8. Compiling must not need a big C stack (R3 critic finding F3).
+#
+# pcrec is a LIBRARY, so a caller's thread stack is not ours to assume: musl's
+# default pthread stack is 128 KB and embedders routinely use 256-512 KB. The
+# M2.8 trie regressed this badly and silently — trie_build recursed once per
+# duplicate branch, so `a|a|...|a` with 9000 branches needed >1 MB, where the
+# pre-trie construction handled the same pattern in 128 KB because ITS deep
+# recursion sat in tail position and gcc turned it into a jump. Nothing in the
+# suite noticed: stack depth is invisible to every correctness test.
+#
+# The assertion is 512 KB rather than the default 8 MB, because the point is to
+# fail on a REGRESSION; a limit only just above today's requirement would flake.
+# ---------------------------------------------------------------------------
+case8() {
+    local pat out rc
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "case8: SKIP (needs python3 to build the pattern)" >&2
+        return 0
+    fi
+    pat="$(python3 -c 'print("|".join(["a"]*9000))')"
+    out="$(bash -c "ulimit -s 512; exec \"$PCREC\" -p rx -o \"$WORKDIR/deep.c\" -- \"$pat\"" 2>&1)"
+    rc=$?
+    if [ $rc -ge 128 ]; then
+        fail "case8: 9000-branch alternation within a 512 KB stack" \
+             "pcrec died with signal $((rc - 128)) (trie_build recursion depth regression?)"
+    elif [ $rc -ne 0 ]; then
+        fail "case8: 9000-branch alternation within a 512 KB stack" \
+             "pcrec exited $rc" "output: $out"
+    else
+        pass "case8: 9000-branch alternation compiles within a 512 KB stack"
+    fi
+}
+
+
 case1
 case2
 case3
@@ -387,6 +421,7 @@ case4
 case5
 case6
 case7
+case8
 
 echo
 echo "== Summary =="

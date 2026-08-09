@@ -62,6 +62,7 @@ schedutil, turbo on, load ~0.9, `BENCH_TRIALS=7`):
 | (a) `needleXYZW` 8 MB | 1918 MB/s | 1.15x | > 1200 MB/s |
 | (b) `a*b` 8 MB all-'a' | 21910 MB/s | 1.21x | > 12000 MB/s |
 | (c) `a(b\|c)+d` 8 MB no-match | 1794 MB/s | 1.35x | > 1000 MB/s |
+| (d) `(alpha\|beta\|...)` 8 MB no-match | 429–457 MB/s | 1.03–1.08x | > 330 MB/s |
 | linearity 64MB/16MB | 3.63 | 1.06–1.14x | < 6.0 (linear 4.0) |
 
 Every value is env-overridable; retune on slower hardware by setting the env
@@ -223,6 +224,34 @@ counted as a failure, and the summary states that the run gated nothing. A
 PASS under load is still reported as a PASS, since beating a floor on a busy
 box is if anything stronger evidence.
 
-The consequence worth internalising: **a green `make bench` on a loaded box is
-not evidence of no regression.** Check the summary for an INCONCLUSIVE count
-before believing it.
+That is reported through the EXIT CODE, not just the summary, because the
+first version of this downgrade exited 0 and turned a flakiness guard into a
+detection hole — a build with a 3.4x/68x/5.5x regression exited green whenever
+the box was busy, which at a default limit of cores/2 was the normal case:
+
+| exit | meaning |
+|---|---|
+| 0 | gated, and clean |
+| 1 | gated, and a budget failed |
+| 2 | **NOT gated** — one or more budgets inconclusive |
+
+So a green `make bench` on a loaded box is not evidence of no regression, and
+now says so in a way automation can read (D14).
+
+## Case (d), and why every optimization needs a case that EXERCISES it
+
+Case (d) exists because of the sharpest R3 finding: deleting the BITMAP half of
+the start prefilter (keeping only the memchr fast path — a plausible "simplify
+the special case away" edit) costs ~1.5x on multi-first-byte patterns and
+passed `make test`, `make bench`, the python oracle, the differential fuzzer
+AND `compare/gate.sh`. Five nets, all green, on a real regression.
+
+The cause was coverage, not margins: cases (a)–(c) all have exactly ONE escape
+byte, so every one of them took the memchr branch and the bitmap branch was
+unexercised anywhere in the suite. D12's claim that the prefilter was
+"sabotage-validated" was true of half of it.
+
+Case (d)'s budget is deliberately tighter than the /1.75 used elsewhere —
+healthy measures 429–457, the sabotage 296–305, so 330 sits between them with
+~1.3x headroom either way. A 1.75x margin would have let exactly this through
+again.
