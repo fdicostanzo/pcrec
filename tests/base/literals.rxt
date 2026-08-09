@@ -1,0 +1,32 @@
+# Literal character matching
+
+pattern a
+m "a" 0 1
+m "ba" 1 2
+m "aa" 0 1
+n "b"
+n ""
+
+pattern abc
+m "abc" 0 3
+m "xabcx" 1 4
+n "ab"
+n "abx"
+
+pattern hello world
+m "hello world" 0 11
+m "say hello world now" 4 15
+
+pattern A
+m "A" 0 1
+n "a"
+
+pattern 123
+m "0123456" 1 4
+
+pattern x
+m "xxxxx" 0 1
+
+pattern zzz
+n "zz"
+m "zzzzz" 0 3

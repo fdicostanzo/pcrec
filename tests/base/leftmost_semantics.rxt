@@ -1,0 +1,67 @@
+# Leftmost-first (PCRE) semantics: alternation order preference,
+# greedy vs lazy span, matches starting mid-subject.
+
+# alternation prefers first matching branch, not longest
+pattern a|ab
+m "ab" 0 1
+m "a" 0 1
+
+pattern ab|a
+m "ab" 0 2
+m "a" 0 1
+
+pattern a|ab
+m "xab" 1 2
+
+pattern ab|a
+m "xab" 1 3
+
+# greedy vs lazy quantifier span
+pattern a+
+m "aaa" 0 3
+
+pattern a+?
+m "aaa" 0 1
+
+pattern .*b
+m "aabab" 0 5
+
+pattern .*?b
+m "aabab" 0 3
+
+pattern a.*b
+m "axbxbxb" 0 7
+
+pattern a.*?b
+m "axbxbxb" 0 3
+
+# leftmost: earliest start position wins even if a later position
+# would give a longer or equally valid match
+pattern a|ba
+m "ba" 0 2
+
+pattern ba|a
+m "ba" 0 2
+
+pattern b
+m "aaab" 3 4
+
+pattern ab
+m "xxxabxxx" 3 5
+
+# greedy group repetition backs off to allow overall match
+pattern a*a
+m "aaaa" 0 4
+
+pattern a*ab
+m "aaaab" 0 5
+
+# lazy group prefers fewest repetitions first
+pattern a*?a
+m "aaaa" 0 1
+
+pattern (a|ab)(c|bcd)
+m "abcd" 0 4
+
+pattern (ab|a)(b|bcd)
+m "abcd" 0 2

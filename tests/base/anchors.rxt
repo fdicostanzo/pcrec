@@ -1,0 +1,58 @@
+# Anchors ^ and $
+
+pattern ^a
+m "a" 0 1
+m "abc" 0 1
+n "ba"
+
+pattern a$
+m "a" 0 1
+m "ba" 1 2
+n "ab"
+
+pattern a$
+m "a\n" 0 1
+
+pattern ^abc$
+m "abc" 0 3
+n "abcd"
+n "xabc"
+
+pattern ^$
+m "" 0 0
+n "a"
+
+pattern ^$
+m "\n" 0 0
+
+pattern ^a$
+m "a\n" 0 1
+n "aa"
+
+pattern ^abc
+n "xabc"
+m "abcxyz" 0 3
+
+pattern abc$
+n "abcx"
+m "xabc" 1 4
+
+pattern ^
+m "abc" 0 0
+m "" 0 0
+
+pattern $
+m "abc" 3 3
+m "" 0 0
+
+pattern $
+m "abc\n" 3 3
+
+pattern a|^b
+m "ba" 0 1
+m "ab" 0 1
+
+pattern ^a|b$
+m "abc" 0 1
+m "xyb" 2 3
+n "xyz"

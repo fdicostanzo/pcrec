@@ -1,0 +1,83 @@
+# Escapes: metachar escapes, control escapes, \xHH
+
+pattern \.
+m "." 0 1
+n "a"
+
+pattern \*
+m "*" 0 1
+
+pattern \+
+m "+" 0 1
+
+pattern \?
+m "?" 0 1
+
+pattern \(
+m "(" 0 1
+
+pattern \)
+m ")" 0 1
+
+pattern \[
+m "[" 0 1
+
+pattern \]
+m "]" 0 1
+
+pattern \{
+m "{" 0 1
+
+pattern \|
+m "|" 0 1
+
+pattern \\
+m "\\" 0 1
+
+pattern \^
+m "^" 0 1
+
+pattern \$
+m "$" 0 1
+
+pattern \-
+m "-" 0 1
+
+pattern a\.b
+m "a.b" 0 3
+n "axb"
+
+pattern \n
+m "\n" 0 1
+
+pattern \t
+m "\t" 0 1
+
+pattern \r
+m "\r" 0 1
+
+pattern \f
+m "\f" 0 1
+
+pattern \v
+m "\v" 0 1
+
+pattern \x41
+m "A" 0 1
+
+pattern \x2e
+m "." 0 1
+
+pattern \x41\x42\x43
+m "ABC" 0 3
+
+pattern [\x09\x0a]
+m "\t" 0 1
+m "\n" 0 1
+
+pattern \(\)
+m "()" 0 2
+
+pattern a\{2\}
+m "a{2}" 0 4
+n "aa"

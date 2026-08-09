@@ -1,0 +1,61 @@
+# Unbounded quantifiers: * + ? and lazy variants
+
+pattern a*
+m "" 0 0
+m "aaa" 0 3
+m "baaa" 0 0
+
+pattern a+
+m "aaa" 0 3
+n ""
+m "baaa" 1 4
+
+pattern a?
+m "" 0 0
+m "a" 0 1
+
+pattern a*?
+m "aaa" 0 0
+
+pattern a+?
+m "aaa" 0 1
+n ""
+
+pattern a??
+m "a" 0 0
+m "" 0 0
+
+pattern ab*
+m "a" 0 1
+m "abbb" 0 4
+
+pattern ab+
+m "abbb" 0 4
+n "a"
+
+pattern ab?c
+m "ac" 0 2
+m "abc" 0 3
+n "abbc"
+
+pattern (ab)*
+m "ababab" 0 6
+m "" 0 0
+m "aba" 0 2
+
+pattern (ab)+
+m "ababab" 0 6
+n ""
+
+pattern a*b
+m "aaab" 0 4
+m "b" 0 1
+
+pattern a*?b
+m "aaab" 0 4
+
+pattern .*x
+m "aaxbbx" 0 6
+
+pattern .*?x
+m "aaxbbx" 0 3

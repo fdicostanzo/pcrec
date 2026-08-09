@@ -1,0 +1,59 @@
+# Character classes
+
+pattern [abc]
+m "a" 0 1
+n "d"
+
+pattern [a-z]
+m "m" 0 1
+n "M"
+
+pattern [a-z0-9]
+m "5" 0 1
+m "q" 0 1
+
+pattern [^abc]
+m "d" 0 1
+m "\n" 0 1
+n "a"
+
+pattern []abc]
+m "]" 0 1
+m "a" 0 1
+
+pattern [^]abc]
+m "d" 0 1
+n "]"
+
+pattern [a-]
+m "a" 0 1
+m "-" 0 1
+n "b"
+
+pattern [-a]
+m "-" 0 1
+
+pattern [a\-z]
+m "a" 0 1
+m "-" 0 1
+
+pattern [\]]
+m "]" 0 1
+n "["
+
+pattern [\n\t]
+m "\n" 0 1
+m "\t" 0 1
+
+pattern [\x41-\x43]
+m "A" 0 1
+n "D"
+
+pattern [a-c-e]
+m "a" 0 1
+m "e" 0 1
+n "d"
+
+pattern x[abc]y
+m "xay" 0 3
+n "xdy"

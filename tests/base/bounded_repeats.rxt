@@ -1,0 +1,57 @@
+# Bounded repeats {m} {m,} {m,n} greedy and lazy; literal { fallback
+
+pattern a{3}
+m "aaa" 0 3
+m "aaaa" 0 3
+n "aa"
+
+pattern a{2,4}
+m "aaaa" 0 4
+m "aaaaaa" 0 4
+m "aa" 0 2
+
+pattern a{2,}
+m "aaaaaa" 0 6
+m "aa" 0 2
+
+pattern a{0,3}
+m "" 0 0
+m "aaaa" 0 3
+
+pattern a{0}
+m "aaa" 0 0
+m "" 0 0
+
+pattern a{2,4}?
+m "aaaa" 0 2
+m "aa" 0 2
+
+pattern a{2,}?
+m "aaaaaa" 0 2
+
+pattern a{1,3}?
+m "aaa" 0 1
+n ""
+
+pattern ab{2,3}c
+m "abbc" 0 4
+m "abbbc" 0 5
+n "abc"
+n "abbbbc"
+
+pattern (ab){2,3}
+m "ababab" 0 6
+m "abab" 0 4
+n "ab"
+
+pattern a{
+m "a{" 0 2
+n "a"
+
+pattern a{2
+m "a{2" 0 3
+n "aa"
+
+pattern x{1,2}y
+m "xy" 0 2
+m "xxy" 0 3

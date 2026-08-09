@@ -1,0 +1,31 @@
+# Dot metacharacter: matches any char except \n
+
+pattern .
+m "a" 0 1
+m "Z" 0 1
+m " " 0 1
+n ""
+
+pattern .
+n "\n"
+
+pattern a.c
+m "abc" 0 3
+m "axc" 0 3
+n "a\nc"
+
+pattern ...
+m "abcdef" 0 3
+n "ab"
+
+pattern a.
+n "a\n"
+
+pattern ..
+n "a\nb"
+
+pattern .*
+m "abc\ndef" 0 3
+
+pattern .+
+m "hello\nworld" 0 5

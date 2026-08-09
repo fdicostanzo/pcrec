@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""Cross-verify .rxt corpus files against python's `re` module (the base-tier
+oracle, decisions.md D4). Usage: verify_rxt.py [files-or-dirs...]; default is
+<repo>/tests/base. A comment line `# pcre2-only` immediately before a
+`pattern` line skips python verification for that block (used where python re
+diverges from real PCRE, e.g. quantified anchors — see docs/testing.md)."""
+import re
+import sys
+import glob
+import os
+
+BASE_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "base"))
+
+def decode_subject(s):
+    # s is the raw text between the outer quotes (quotes already stripped)
+    out = []
+    i = 0
+    n = len(s)
+    while i < n:
+        c = s[i]
+        if c == '\\':
+            if i + 1 >= n:
+                raise ValueError("trailing backslash in subject")
+            nc = s[i+1]
+            if nc == '"':
+                out.append('"'); i += 2
+            elif nc == '\\':
+                out.append('\\'); i += 2
+            elif nc == 'n':
+                out.append('\n'); i += 2
+            elif nc == 't':
+                out.append('\t'); i += 2
+            elif nc == 'r':
+                out.append('\r'); i += 2
+            elif nc == 'f':
+                out.append('\f'); i += 2
+            elif nc == 'v':
+                out.append('\v'); i += 2
+            elif nc == 'x':
+                if i + 3 >= n:
+                    raise ValueError("bad \\xHH escape")
+                hexpart = s[i+2:i+4]
+                out.append(chr(int(hexpart, 16)))
+                i += 4
+            else:
+                raise ValueError(f"unknown subject escape \\{nc}")
+        else:
+            out.append(c)
+            i += 1
+    return ''.join(out)
+
+def parse_quoted(line):
+    """line starts with a double-quote; return (decoded_subject, rest_of_line_after_closing_quote)."""
+    assert line[0] == '"'
+    i = 1
+    raw = []
+    n = len(line)
+    while i < n:
+        c = line[i]
+        if c == '\\':
+            if i + 1 >= n:
+                raise ValueError("trailing backslash before end of line in subject")
+            raw.append(line[i:i+2])
+            i += 2
+        elif c == '"':
+            # end of quoted subject
+            rest = line[i+1:]
+            return decode_subject(''.join(raw)), rest
+        else:
+            raw.append(c)
+            i += 1
+    raise ValueError("unterminated quoted subject: " + line)
+
+
+def parse_rxt(path):
+    """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','perr'}."""
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    results = []
+    pcre2_only_next = False
+    for lineno, raw_line in enumerate(lines, 1):
+        line = raw_line.rstrip('\n')
+        if line.strip() == '# pcre2-only':
+            pcre2_only_next = True
+            continue
+        if line == '' or line.startswith('#'):
+            continue
+        if line.startswith('pattern '):
+            pat = line[len('pattern '):]
+            results.append((lineno, 'pattern', (pat, pcre2_only_next)))
+            pcre2_only_next = False
+        elif line == 'perr':
+            results.append((lineno, 'perr', None))
+        elif line.startswith('m "'):
+            rest = line[2:]  # keep leading quote
+            subj, tail = parse_quoted(rest)
+            tail = tail.strip()
+            parts = tail.split()
+            if len(parts) != 2:
+                raise ValueError(f"{path}:{lineno}: bad m line tail {tail!r}")
+            start, end = int(parts[0]), int(parts[1])
+            results.append((lineno, 'm', (subj, start, end)))
+        elif line.startswith('n "'):
+            rest = line[2:]
+            subj, tail = parse_quoted(rest)
+            tail = tail.strip()
+            if tail != '':
+                raise ValueError(f"{path}:{lineno}: unexpected trailing content on n line: {tail!r}")
+            results.append((lineno, 'n', subj))
+        else:
+            raise ValueError(f"{path}:{lineno}: unrecognized line: {line!r}")
+    return results
+
+
+def main():
+    args = sys.argv[1:]
+    if args:
+        files = []
+        for a in args:
+            if os.path.isdir(a):
+                files += sorted(glob.glob(os.path.join(a, "*.rxt")))
+            else:
+                files.append(a)
+    else:
+        files = sorted(glob.glob(os.path.join(BASE_DIR, "*.rxt")))
+    if not files:
+        print("No .rxt files found")
+        sys.exit(1)
+
+    total_pass = 0
+    total_fail = 0
+    per_file_counts = {}
+
+    for path in files:
+        fname = os.path.basename(path)
+        entries = parse_rxt(path)
+        cur_pattern = None
+        cur_pattern_lineno = None
+        compiled = None
+        compile_error = None
+        m_count = n_count = perr_count = 0
+        skipped = 0
+        cur_skip = False
+        file_failures = []
+
+        for lineno, kind, data in entries:
+            if kind == 'pattern':
+                cur_pattern, cur_skip = data
+                cur_pattern_lineno = lineno
+                compile_error = None
+                compiled = None
+                if not cur_skip:
+                    try:
+                        compiled = re.compile(cur_pattern)
+                    except re.error as e:
+                        compile_error = e
+                continue
+
+            if cur_pattern is None:
+                file_failures.append((lineno, f"{kind} line with no preceding pattern block"))
+                continue
+
+            if cur_skip:
+                skipped += 1
+                continue
+
+            if kind == 'perr':
+                perr_count += 1
+                if compile_error is None:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} (from line {cur_pattern_lineno}) was expected to fail to compile, but it compiled fine"))
+                else:
+                    total_pass += 1
+                    continue
+            elif kind == 'm':
+                m_count += 1
+                subj, start, end = data
+                if compiled is None:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check m line"))
+                else:
+                    mo = compiled.search(subj)
+                    if mo is None:
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected match [{start},{end}) but got no match"))
+                    elif mo.span() != (start, end):
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected span ({start},{end}) but got {mo.span()}"))
+                    else:
+                        total_pass += 1
+                        continue
+            elif kind == 'n':
+                n_count += 1
+                subj = data
+                if compiled is None:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check n line"))
+                else:
+                    mo = compiled.search(subj)
+                    if mo is not None:
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r}: expected no match but got {mo.span()}"))
+                    else:
+                        total_pass += 1
+                        continue
+            total_fail += 1
+
+        per_file_counts[fname] = (m_count, n_count, perr_count, len(file_failures))
+        if skipped:
+            print(f"  {fname}: {skipped} case(s) in '# pcre2-only' blocks skipped (not python-verifiable)")
+        if file_failures:
+            print(f"=== {fname}: {len(file_failures)} FAILURES ===")
+            for lineno, msg in file_failures:
+                print(f"  line {lineno}: {msg}")
+
+    print()
+    print("=== Summary ===")
+    grand_m = grand_n = grand_p = grand_f = 0
+    for fname in sorted(per_file_counts):
+        m_count, n_count, perr_count, fails = per_file_counts[fname]
+        grand_m += m_count; grand_n += n_count; grand_p += perr_count; grand_f += fails
+        status = "OK" if fails == 0 else f"{fails} FAIL"
+        print(f"  {fname:28s} m={m_count:3d} n={n_count:3d} perr={perr_count:3d} total={m_count+n_count+perr_count:3d}  [{status}]")
+    print()
+    print(f"TOTAL: m={grand_m} n={grand_n} perr={grand_p} cases={grand_m+grand_n+grand_p}")
+    print(f"PASS={total_pass} FAIL={total_fail}")
+    if grand_f == 0:
+        print("ALL CHECKS PASSED (100%)")
+    else:
+        print(f"{grand_f} FAILURES REMAIN")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,73 @@
+# Patterns that must fail to compile (syntax errors)
+
+pattern a**
+perr
+
+pattern a{2}{3}
+perr
+
+pattern a??+
+perr
+
+pattern *a
+perr
+
+pattern +a
+perr
+
+pattern ?a
+perr
+
+pattern (a
+perr
+
+pattern a)
+perr
+
+pattern (a))
+perr
+
+pattern ((a)
+perr
+
+pattern [abc
+perr
+
+pattern [^abc
+perr
+
+pattern a\
+perr
+
+pattern (?
+perr
+
+pattern (?:a
+perr
+
+pattern a{2,1}
+perr
+
+pattern a{
+m "a{" 0 2
+
+pattern (
+perr
+
+pattern )
+perr
+
+pattern []
+perr
+
+pattern a{2,3,4}
+m "a{2,3,4}" 0 8
+
+pattern (*)
+perr
+
+pattern a|*b
+perr
+
+pattern (?:)?*
+perr
