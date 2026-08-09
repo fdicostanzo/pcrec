@@ -686,3 +686,80 @@ make. A guard should state its own blind spot in its own output.
 Revisit-when: BENCH_TRIALS rises (a tighter median justifies a higher ceiling),
 the matrix moves to different hardware, or a case's recorded spread stops
 matching what it measures in practice.
+
+## D18 — 2026-08-09 — hyperspecialization: options are compiled away, and every option dimension must EARN its engine
+
+Stated by Frank 2026-08-09 as perspective that should have been set at the
+start, and recorded here because it resolves trade-offs the earlier entries
+left open.
+
+**Priority order, explicit.** pcrec's reason to exist is SPEED OF EXECUTION
+first, speed of COMPILATION second. Other regex libraries offer other benefits;
+this one offers those. Where a decision trades generality, binary size, or
+elegance against execution speed, execution speed wins unless something else
+is stated. D12/D15's insistence on measured budgets is downstream of this.
+
+**Hyperspecialization is the mechanism.** Anything fixed at compile time is
+compiled AWAY, never tested at run time. If case-insensitivity is given as a
+pattern option, the whole compilation assumes it — no runtime flag, no branch
+in the hot loop. Same for encoding. The generated matcher is a bespoke tool for
+exactly one configuration, which is the same principle that already makes the
+whole project an AOT compiler rather than an interpreter.
+
+**"OPEN" MEANS EXPLICITLY REQUESTED OPEN — not "not yet decided".** This is
+the load-bearing definition and it is easy to misread (Frank corrected exactly
+that misreading when this entry was drafted). By DEFAULT every option is
+CLOSED: fixed at compile time, compiled away, one specialized engine. An option
+becomes open only when the CALLER asks for it to stay variable at run time. The
+cartesian product is over the explicitly-opened set ONLY, never over the option
+space pcrec happens to support.
+
+So the product is small because it is opt-in, not because we prune it. A caller
+who opens nothing gets one engine. A caller who opens (case-sensitive |
+insensitive) x (ascii | utf8) gets up to four specialized backends plus a thin
+dispatch — not one engine carrying four runtime switches, and not sixteen
+engines covering options nobody asked about.
+
+**And the test that keeps that from exploding: every dimension must EARN its
+place.** Before a dimension becomes a product axis, measure whether
+specializing to it actually buys anything. A dimension can fail that test three
+ways, and all three are wins:
+
+1. **It folds into the front end.** The option changes what the automaton is
+   built FROM, not how it runs, so there is one engine and no axis.
+2. **It is free at run time.** Handling it with a runtime check costs nothing
+   measurable, so a shared engine is strictly better than two.
+3. **It is a wrapper.** The option is a shell around an unchanged backend.
+
+Only a dimension that survives all three becomes a real axis. The product is
+then over the SURVIVORS, which is what keeps 4 options from meaning 16 engines.
+
+**Predictions, to be tested rather than assumed** — recorded now so the results
+can be checked against them:
+
+- **ASCII case-insensitivity: predicted to FOLD (case 1), completely.** The DFA
+  already runs on class bitmaps over byte equivalence classes; folding is
+  `bitmap |= swapcase(bitmap)` at class-construction time. Zero runtime cost,
+  no second engine, and byte-class merging may even SHRINK the tables. If this
+  holds, DD-1 is not an engine question at all for the ASCII tier.
+- **Encoding ascii/utf8: predicted to FOLD (case 1).** APPROACH §4 and §10
+  already commit to byte-wise UTF-8 automata with "no runtime decode step in
+  the hot path", explicitly so that "ASCII and UTF-8 share one DFA emitter".
+  Unicode classes become byte-range trees at construction time. If that holds
+  as built, encoding is a front-end axis, not an engine axis.
+- **Streaming: predicted NOT to be a wrapper (fails case 3).** This is the one
+  where evidence already contradicts the optimistic answer, and M3.0 exists
+  because of it: the D7 engine finds the match END forward and then rescans
+  BACKWARD for the start, over bytes a stream may no longer hold. That is not
+  a shell around an unchanged backend; it is a constraint on the backend.
+- **Anchoring: an EXISTING axis that has never passed this test.** ENG_UNANCH
+  vs ENG_ATTEMPT is already a cartesian split in the shipped compiler, and it
+  exists for an IMPLEMENTATION reason — the reverse machine cannot check `^`
+  at pp == 0 — not because anyone measured a per-start attempt loop to be
+  faster. By this criterion it is an unjustified dimension, which is exactly
+  what DD-7 was opened to close. Note the cost is not hypothetical: `^` on only
+  SOME branches is the known slow shape (D8).
+
+**Revisit-when:** a new option is proposed (multiline, dotall, ungreedy,
+`\G`), or any of the four predictions above is measured. Each measurement
+belongs in the plan step for its dimension, with the number attached.
