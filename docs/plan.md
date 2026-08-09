@@ -85,6 +85,18 @@ Known M1 limitations (tracked for later milestones):
 
 - [M7.0] STATE:not-started — milestone (expand on arrival): differential fuzzing vs libpcre2, freestanding/embedded build profile, PCRE2 testdata import
 
+## Beyond M7 — long-term vision (Frank, 2026-08-09)
+
+Direction, not scheduled work. Recorded so the architecture is not painted into
+a corner that would make these expensive later. Each becomes a milestone only
+after the current ladder is complete and the result is something we are happy
+with.
+
+- [V-A] STATE:not-started — PCRE2 compatibility layer: a drop-in surface for callers who already speak PCRE2, so adopting pcrec does not mean rewriting call sites. Interacts with DD-3 (generated-API versioning) — a compat layer is a second consumer of the generated contract
+- [V-B] STATE:not-started — usage libraries for other languages: bindings over the generated C. Note the generated code already has no runtime dependency on pcrec, which is what makes this cheap; keep it that way
+- [V-C] STATE:not-started — a grep CLI built on pcrec, the natural end-user demonstration that the speed mandate (D18) actually shows up in a real tool
+- [V-D] STATE:not-started — translators from other regex syntaxes into the base tier: grep/egrep (BRE/ERE), python `re`, and PCRE2-flavour differences. Pairs with V-C (a grep CLI needs BRE/ERE) and with V-A. Design note: these are FRONT-END modules that lower into the existing AST, exactly the shape APPROACH §3's parser extension points already anticipate — no engine work, which is what makes the direction affordable
+
 ## Checkpoint review gates (D6)
 
 Every milestone ends with an adversarial critic-panel review of the work since
@@ -97,7 +109,7 @@ the last checkpoint; compiled results live in docs/reviews/.
 ## Design-debt ledger (from R1; resolve before the milestone that hits each)
 
 - [DD-1] STATE:not-started — case-insensitivity design incl. Unicode folding vs byte-wise automata (before M5) (R1 A-7)
-- [DD-2] STATE:not-started — VM engine match/step limits — ReDoS stance (with M4 design) (R1 A-8)
+- [DD-2] STATE:not-started — VM engine match/step limits (with M4 design) (R1 A-8). DOWNGRADED by D22: adversarial patterns are out of scope, so this is a ROBUSTNESS feature (a pathological pattern should fail honestly rather than hang), NOT a security boundary, and it must not be designed as one or traded against execution speed
 - [DD-3] STATE:not-started — generated-API versioning/compat policy for vendored consumers (before M3) (R1 A-10)
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-5] STATE:not-started — --std-c portable emitter fallback (switch-based) (R1 R-5)
@@ -121,12 +133,22 @@ anything, since a dimension that folds into the front end, is free at run time,
 or is a pure wrapper is NOT an axis even when the caller names it plural. Predictions are in D18 — record the measurement against
 the prediction, including when the prediction was wrong.
 
-- [OS-0] STATE:not-started — the request surface cannot express a set, and the generated contract cannot express selection (D18). COMPILE side: `pcrec_options` holds scalars (`int encoding`; case-insensitivity has no field at all), so a caller can say "utf8" but not "{ascii, utf8}". EXECUTE side: lib/pcrec.h fixes the generated contract at `<prefix>_search(s, n, startpos, m)`, with no way to pass a value per plural dimension. Design both, plus the named-per-combination entry points (`rx_search_ci_utf8`) that let a statically-known caller skip dispatch entirely. Two non-negotiables from D18: dispatch resolves ONCE per search call and never reaches the hot loop, and the all-singleton case emits byte-for-byte what pcrec emits today — no dispatcher, no extra parameter, no indirection. A structural check should assert that second property, since it is exactly the kind of behaviour-preserving claim this project has repeatedly got wrong. Interacts with DD-3, already marked "before M3"; settle before any OS dimension is built or each will invent its own convention
+- [OS-0] STATE:not-started — the optional ENGINE FINDER module (D20). Given the SETS, drive the engine generator once per point of the product and emit the selector over the results. Its set-valued request surface lives HERE, not in `pcrec_options` — D20 deletes the API-change half of this step, because a generator that only ever compiles one point is correctly served by scalars. Two properties from D18 to preserve and to test structurally: dispatch resolves ONCE per search call and never reaches the hot loop, and a request with no plural dimension emits byte-for-byte what pcrec emits today (no dispatcher, no extra parameter, no indirection). Emit named per-combination entry points (`rx_search_ci_utf8`) as well as the selector, so a statically-known caller pays no dispatch at all. DEFERRED BY DESIGN: build this only once a dimension has actually survived D18's earn-its-axis test with a measurement behind it — if the OS-1/OS-2 predictions hold, it has no customer yet, and that is a good outcome rather than a stalled one
 - [OS-0b] STATE:not-started — multi-engine output prep, and it is SMALL (D18, measured): of the 15 identifiers the emitter produces, 12 are FUNCTION-LOCAL statics (fcls ftr facc fev fs<N> rcls rtr racc rev rs<N> first) that cannot collide between engines in separate functions. Only three are file-scope: the `<prefix>_span` typedef and the declaration + definition of `<prefix>_search`. So multi-engine needs (a) `<prefix>_span` emitted ONCE and shared — emitting it twice declares two distinct anonymous struct types, which are incompatible rather than a benign redefinition — and (b) a distinct function name per engine, which the named-entry-point scheme already supplies. Do this prep before anything needs two engines; it is cheap and it blocks everything if left. ALSO in the same change: tests/codegen/run_codegen_tests.sh hardcodes 9 symbol patterns that are unambiguous only while there is one engine per file — with several, `rx_fs[0-9]+\[256\]` can be satisfied by ANY engine, so the check degrades from "this pattern emits a skip table" to "some engine here does" WITHOUT failing. Scope those greps per engine or they quietly stop guarding
 - [OS-1] STATE:not-started — ASCII case-insensitivity: PREDICTED to fold entirely into class construction (`bitmap |= swapcase(bitmap)` at parse time), giving zero runtime cost, no second engine, and possibly SMALLER tables via byte-class merging. Measure: table size and throughput, folded vs a hypothetical runtime-checked variant, on a case-heavy pattern set. If the prediction holds, DD-1 stops being an engine question for the ASCII tier and becomes a parser change. Unicode folding is a separate question and stays with DD-1/M5
 - [OS-2] STATE:not-started — encoding ascii/utf8: PREDICTED to fold, since APPROACH §4/§10 already commit to byte-wise UTF-8 automata with no hot-path decode, explicitly so ASCII and UTF-8 share one DFA emitter. Measure when M5 lands: is the emitted hot loop byte-identical in SHAPE between the two encodings for an equivalent pattern? If yes the axis collapses; if the UTF-8 path needs its own loop, that is a real axis and a surprise worth recording
 - [OS-3] STATE:not-started — streaming: PREDICTED NOT to be a wrapper, and this is the one prediction with evidence already against the optimistic answer — the reverse pass rescans backward over bytes a stream may no longer hold. Feeds M3.0's design gate; do not write streaming code before it is settled
 - [OS-4] STATE:not-started — anchoring: ENG_UNANCH vs ENG_ATTEMPT is ALREADY a cartesian split, and it has never passed this test. It exists because the reverse machine cannot check `^` at pp == 0, not because a per-start attempt loop was measured to be faster. Measure the cost of the split on the known-slow shape (`^` on only some branches, D8) and decide whether to close it by building the reverse BOT variant (DD-7) or to keep it with a number attached. An unjustified axis in the shipped compiler is the strongest possible test case for D18's own rule
+
+## Optimization waves (D21) — algorithmic, then profiled code, then compile time
+
+Not a milestone: a shape applied at appropriate points, in this ORDER. Profiling
+a bad algorithm optimizes the wrong loop, and optimizing compile time before
+execution speed trades the primary goal (D18) for the secondary one.
+
+- [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it
+- [OPT-B] STATE:not-started — PROFILED code-level optimization, only after OPT-A. D13's correction says throughput here is dominated by transition PREDICTABILITY, so target branch behaviour and memory layout rather than instruction count. Every number under D12's rules and the R3.10 load guard
+- [OPT-C] STATE:not-started — COMPILE-TIME optimization, last. Must include what gcc does with our output, not only what pcrec does: after M2.8, gcc is the LARGER half (0.79 s vs 1.36 s at 3600 words) and M2.9's budgets measure only pcrec's
 
 ## Thread-safety (D19) — usable FROM threads; guards, not prose
 

@@ -852,6 +852,12 @@ ns/call. That is the case where an indirect call and lost inlining would be
 measurable; the throughput cases would not see it. So it is already
 instrumented, and it is the case to watch when the selector lands.
 
+**SUPERSEDED IN PART BY D20:** the product machinery is a separate, OPTIONAL
+MODULE layered on the compiler — an engine FINDER driving an engine GENERATOR
+that knows nothing about dimensions. Read D20 before implementing any of this;
+in particular the set-valued request surface belongs to the finder and never
+enters `pcrec_options`, which correctly stays scalar.
+
 **Revisit-when:** a new option is proposed (multiline, dotall, ungreedy,
 `\G`), or any of the four predictions above is measured. Each measurement
 belongs in the plan step for its dimension, with the number attached.
@@ -920,3 +926,119 @@ shape; what it lacks is a sibling that binds `compile_ast`.
 **Revisit-when:** generated code ever needs mutable state (a captures buffer in
 M4 is the first candidate — it must be caller-provided or stack-local, never
 static), or the library gains anything at file scope.
+
+## D20 — 2026-08-09 — the engine GENERATOR and the engine FINDER are separate modules; the finder is optional
+
+Refines D18 (Frank, 2026-08-09). The cartesian-product machinery is a MODULE
+layered on top of the compiler, not a change to it.
+
+- **Engine generator** — what pcrec is today. Given a fully-CLOSED option set
+  (every dimension a singleton) it emits one engine. It knows nothing about
+  dimensions, products, selection or dispatch. Its only obligation to the layer
+  above is to respect constraints on how the engine is emitted — above all
+  NAMING, so several engines can coexist in one file (OS-0b).
+- **Engine finder** — optional. Given the SETS, it drives the generator once
+  per point of the product and emits the selector over the results.
+
+Three consequences, and the third is the one that changes the plan:
+
+1. **You pay for the product only if you use it.** No dispatcher, no selector,
+   no extra symbol when nobody asked for one — which is D18's "the
+   all-singleton case pays nothing", now true by construction rather than by
+   care.
+2. **The core API never becomes set-valued.** OS-0 was written as "`pcrec_options`
+   holds scalars and cannot express {ascii, utf8}". Under this split it never
+   needs to: scalars are exactly right for a generator that only ever compiles
+   one point. The set-valued surface belongs to the finder module and lives
+   entirely there. That deletes the API-change half of OS-0 and shrinks what
+   has to be settled before the OS dimensions can be worked.
+3. **The finder can be built MUCH later, or never.** Because the coupling is
+   one naming constraint, nothing about it has to be decided now. Frank's
+   point: use build notes and experience to determine (a) which dimensions
+   would actually benefit and (b) whether the feature is needed at all. A
+   dimension that folds (D18 case 1) never reaches the finder, so if the
+   predictions hold the finder may have no customer for a long time — which is
+   a good outcome, not a stalled one.
+
+**Revisit-when:** a dimension survives D18's earn-its-axis test with a
+measurement behind it, i.e. the finder acquires its first real customer.
+
+## D21 — 2026-08-09 — optimization happens in WAVES, in this order: algorithmic, then profiled code, then compile time
+
+Frank, 2026-08-09. Not a milestone but a shape to apply at the appropriate
+points, and the ORDER is the decision:
+
+**A. Algorithmic search optimization first, and RESEARCH IS PART OF IT.**
+pcrec is open source and pulling from other open-source work is the point, not
+a compromise. Before hand-tuning anything, survey what the good engines do that
+we do not. Candidates worth investigating, recorded as leads rather than
+commitments:
+
+- *rare-byte prefilter selection* — pcrec picks memchr only when there is
+  exactly ONE escape byte and otherwise falls to a bitmap; ripgrep/Hyperscan
+  choose the RAREST byte by frequency table, which is a different and usually
+  better decision. Our case (d) bitmap path is the one this would attack.
+- *memchr2/memchr3* for 2-3 escape bytes, the gap between our memchr and
+  bitmap paths.
+- *multi-byte literal search* — Two-Way/Boyer-Moore or memmem for literal
+  prefixes, instead of scanning to a single byte then stepping.
+- *Teddy / SIMD multi-pattern prefilter* (Hyperscan, used by rust-regex) for
+  the keyword-alternation shape M2.8 already targets.
+- *reverse-inner and suffix literal* optimizations (rust-regex) — pick a
+  literal from the middle or end when the prefix is weak.
+- *shift-or / bitap* bit-parallel simulation for short patterns.
+- *transition-table compression* (row displacement) — we already do alphabet
+  compression via byte equivalence classes, but not table packing.
+
+**B. Then profiling for code-level optimization.** Only after the algorithm is
+right, because profiling a bad algorithm optimizes the wrong loop. This is
+where D13's finding lives: throughput here is dominated by transition
+PREDICTABILITY, so profile-driven work should target branch behaviour and
+memory layout rather than instruction count.
+
+**C. Compile-time optimization last.** It is the second priority (D18) and
+optimizing it before execution speed is settled risks trading the primary goal
+for the secondary one. Note also that M2.9's compile budgets measure only
+pcrec's half; after M2.8 gcc is the LARGER half (0.79 s vs 1.36 s at 3600
+words), so a compile-time wave has to include what gcc does with our output,
+not just what we do.
+
+**Revisit-when:** each wave is scheduled; record the survey results even for
+techniques rejected, because "we looked at Teddy and it does not fit because X"
+is worth as much as adopting it.
+
+## D22 — 2026-08-09 — adversarial patterns are OUT OF SCOPE; correctness is not
+
+Frank, 2026-08-09, and it resolves a question the earlier entries left drifting.
+
+**pcrec does not have to be hardened against deliberately hostile patterns.**
+It is a compiler that a developer runs over patterns they control, ahead of
+time. It is not a service accepting untrusted regex from the internet. We check
+what we can cheaply, but contorting the design to survive an attacker is not a
+goal and should not be traded against execution speed (D18).
+
+What this DOES and does NOT change:
+
+- **DD-2 (ReDoS stance, VM match/step limits) is downgraded.** With the M4 VM
+  it stays worth having a bound so a pathological pattern fails honestly rather
+  than hanging, but it is a robustness feature, not a security boundary, and it
+  should not be designed as one.
+- **The NFA and DFA caps stay exactly as they are.** They already do the right
+  thing — a clean, attributable error instead of an OOM or a hang. That is good
+  engineering for a legitimate too-big pattern, and it is enough.
+- **The stack budgets STAY, and their justification changes.** trie_build's
+  256-frame budget and DD-10/TS-4's unbounded `compile_ast` are NOT about
+  attackers. They are about a legitimate deeply-nested pattern from a trusted
+  source on a 128 KB musl thread stack (D19). That is an ordinary correctness
+  bug for a threaded caller and it keeps its priority.
+- **Differential fuzzing stays, and its purpose is sharpened.** `tests/fuzz`
+  exists to find places where pcrec and PCRE2 DISAGREE — a correctness tool. It
+  is not a security fuzzer and should not be justified as one.
+- **Correctness on weird-but-legitimate input is untouched.** Empty subjects,
+  embedded NULs, 0xFF bytes, subjects that are all newlines, `startpos == n` —
+  all still have to be right, and the R3.2 sweeps covering them were the right
+  work.
+
+**Revisit-when:** someone proposes running pcrec on patterns from an untrusted
+source, at which point this entry is the thing to reopen rather than quietly
+work around.
