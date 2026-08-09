@@ -1,9 +1,9 @@
 # src/gen — C code generation
 
 Emits self-contained gcc-dialect C from the DFA machines. Two engines (D7):
-ENG_UNANCH for assertion-free patterns — table-driven O(n) forward scan
+ENG_UNANCH for patterns without `^` (including `$`-bearing ones since M2.7/D8) — table-driven O(n) forward scan
 (leftmost-first match end) + reverse scan (match start), with a memchr/bitmap
-start-state prefilter; ENG_ATTEMPT for ^/$ patterns — per-start computed-goto
+start-state prefilter; ENG_ATTEMPT for `^` patterns — per-start computed-goto
 attempt loop with EOL-variant states. Table emission exists because gcc compile
 time on huge computed-goto functions is superlinear (R1 A-3). Generated code
 has zero dependency on pcrec at build or run time.

@@ -296,3 +296,36 @@ joint probability, not one structural blind spot.
 
 Accepted process critique: I closed known_issues.md to "no open confirmed
 bugs" while 4 of 5 lenses were still outstanding — premature framing.
+
+## 2026-08-09 — M2.7: `$` patterns moved to the O(n) engine (R2-A2 closed)
+
+The largest gap R2 found is fixed. Engine selection is now nfa_has_bot()
+instead of nfa_has_asserts(): `$` only needs the per-state EOL variant the
+subset construction already computes, applied in BOTH machines at EOL
+positions, guarded by `pos + 1 >= n` so the hot loop stays a tight table walk.
+`^` still needs a position-dependent BOT variant in the REVERSE machine
+(checked at pp == 0), which we don't build — so `^` patterns stay on
+ENG_ATTEMPT (fully-anchored ones already have the start_max=0 fast path, so
+the remaining slow shape is `^` on only SOME branches). Recorded as D8.
+
+Measured:
+- `a*b$` over all-'a': 0.199 / 0.738 / 2.886 s at 20/40/80 KB (textbook
+  quadratic) -> flat ~0.011 s through 160 KB. ~250x at 160 KB, quadratic gone.
+- Realistic log pattern with vs without a trailing `$`: 69 vs 66 MB/s (same
+  measurement method) — parity, where R2 measured a 14.3x penalty.
+
+Tradeoff taken deliberately: the EOL path omits the memchr prefilter and
+self-loop skip loops, because both advance `pos` without consulting accept
+flags, which is unsound when a state can accept at an EOL position. Restoring
+them there is plan M2.12. Removing the O(n^2) restart was the point of M2.7
+and is done.
+
+Verification: 511 corpus + 41 CLI + 9 codegen checks green; python oracle
+471+32/100%; fuzz seeds 1/2/3/5 clean; bench budgets pass. New regressions in
+tests/base/eol_engine.rxt (32 cases) and two codegen structural checks that
+would catch a silent revert to the attempt engine (plus one asserting `^`
+patterns correctly still use it).
+
+An amusing note: the first attempt to measure this hung, and the culprit was
+quadratic behaviour in my own throughput-test generator (`while sum(len(x)
+for x in L)`), not in pcrec.

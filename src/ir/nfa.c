@@ -239,6 +239,17 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
     nfa->start = sp;
 }
 
+/* `^` in the REVERSE machine would need a position-dependent bot-variant
+ * (checked at pp == 0), which the DFA does not build; `$` only needs the
+ * eolvar the construction already computes. So ENG_UNANCH accepts EOL-only
+ * patterns and `^` patterns stay on ENG_ATTEMPT (M2.7). */
+bool nfa_has_bot(const Nfa *nfa)
+{
+    for (int i = 0; i < nfa->n; i++)
+        if (nfa->st[i].k == N_BOT) return true;
+    return false;
+}
+
 bool nfa_has_asserts(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)

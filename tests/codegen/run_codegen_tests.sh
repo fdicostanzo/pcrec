@@ -94,6 +94,28 @@ if gen minim '(get|post|put|delete|patch)'; then
     fi
 fi
 
+# ---- M2.7: `$` patterns must use the O(n) engine, not per-start attempts ----
+if gen dollar 'a*b$'; then
+    if grep -q 'rx_fev\[' "$WORKDIR/dollar.c"; then
+        ok "M2.7: 'a*b\$' uses the unanchored engine with EOL variants"
+    else
+        bad "M2.7: 'a*b\$' did NOT use the unanchored engine (reverted to O(n^2) attempts?)"
+    fi
+    if grep -q 'for (start = startpos' "$WORKDIR/dollar.c"; then
+        bad "M2.7: 'a*b\$' still emits a per-start-position attempt loop"
+    else
+        ok "M2.7: no per-start attempt loop for a \$-bearing pattern"
+    fi
+fi
+# ^ patterns legitimately stay on the attempt engine (documented limitation)
+if gen caret '^a|b'; then
+    if grep -q 'for (start = startpos' "$WORKDIR/caret.c"; then
+        ok "engine selection: partially-^-anchored pattern uses the attempt engine"
+    else
+        bad "engine selection: '^a|b' unexpectedly on the unanchored engine (^ needs a reverse BOT variant)"
+    fi
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

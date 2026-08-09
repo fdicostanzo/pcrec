@@ -67,3 +67,28 @@ with a memchr (single escape byte) or bitmap skip loop while parked in the start
 state. Patterns containing ^/$ remain on the M1 computed-goto attempt engine
 until the fast path learns assertions. Computed-goto vs table for SMALL
 assertion-free DFAs is deliberately unresolved: M2.3 benchmarks arbitrate.
+
+## D8 — 2026-08-09 — `$` patterns run on the O(n) engine; `^` still does not
+
+M2.7, forced by checkpoint review R2 finding A-2 (R1's "A-2 fixed" was only
+true for assertion-free patterns; `$`-without-`^` still restarted the DFA at
+every start position and measured textbook O(n^2)).
+
+Engine selection is now `nfa_has_bot()` rather than `nfa_has_asserts()`:
+`$` (N_EOL) needs only the per-state EOL variant the subset construction
+already computes, applied in BOTH the forward and reverse machines at
+end-of-subject / before-final-newline positions. `^` (N_BOT) needs a
+position-dependent BOT variant in the REVERSE machine (checked at pp == 0),
+which the DFA does not build — so `^` patterns stay on ENG_ATTEMPT. Fully
+`^`-anchored patterns already get the start_max=0 fast path, so the remaining
+slow shape is `^` on only SOME branches.
+
+Measured: `a*b$` over all-'a' went from 0.199/0.738/2.886 s at 20/40/80 KB
+(4x per doubling) to flat ~0.011 s through 160 KB; a realistic log pattern
+with and without a trailing `$` is now at parity (69 vs 66 MB/s, same method)
+where it was 14.3x apart. Revisit-when: the reverse BOT variant is built
+(would let `^` join too, closing DD-7's engine-unification item).
+
+The EOL path deliberately omits the memchr prefilter and skip loops — both
+advance past positions without consulting accept flags, unsound when a state
+can accept at EOL. Re-enabling them there is plan M2.12.

@@ -1,6 +1,7 @@
 /* DFA -> C code generation, two engines (see docs/decisions.md D3/D7):
  *
- * ENG_UNANCH (assertion-free patterns): one O(n) forward pass over the
+ * ENG_UNANCH (patterns without `^`, including `$`-bearing ones since M2.7):
+ * one O(n) forward pass over the
  * subject with the unanchored priority DFA (finds the leftmost-first match
  * END), then a backward pass with the non-pruning reverse DFA (earliest
  * accepting position = match START). Emitted TABLE-DRIVEN — int16 transition
@@ -9,9 +10,11 @@
  * memchr (single escape byte) or bitmap skip loop runs while the machine is
  * parked in the start state (M2.1 prefilter).
  *
- * ENG_ATTEMPT (patterns with ^/$): per-start-position computed-goto attempt
- * loop with EOL-variant states (R1 S-C1/S-C2). Assertion-aware fast path is
- * future work (plan M2).
+ * ENG_ATTEMPT (patterns containing `^`): per-start-position computed-goto
+ * attempt loop with EOL-variant states (R1 S-C1/S-C2). `^` needs a
+ * position-dependent BOT variant in the REVERSE machine, which the DFA does
+ * not build yet, so these stay here; fully-anchored patterns get the
+ * start_max=0 fast path, so the slow shape is `^` on only SOME branches.
  *
  * Generated code is self-contained: no dependency on pcrec at build or run
  * time. */
@@ -87,6 +90,23 @@ static void emit_tr_table(StrBuf *c, const char *p, const char *tag, const Dfa *
     sb_puts(c, "\n    };\n");
 }
 
+static bool dfa_has_eolvar(const Dfa *d)
+{
+    for (int i = 0; i < d->n; i++)
+        if (d->st[i].eolvar >= 0) return true;
+    return false;
+}
+
+static void emit_eol_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+{
+    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n);
+    for (int i = 0; i < d->n; i++) {
+        if (i % 16 == 0) sb_puts(c, "\n       ");
+        sb_printf(c, " %d,", d->st[i].eolvar);
+    }
+    sb_puts(c, "\n    };\n");
+}
+
 static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
 {
     sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag, d->n);
@@ -138,8 +158,88 @@ static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
     emit_u8_table(c, p, name, stay, 256);
 }
 
+/* M2.7: `$`-bearing patterns on the O(n) engine.
+ *
+ * Both machines switch to a state's EOL variant exactly at EOL positions
+ * (end of subject, or before a final newline). The check is guarded by
+ * `pos + 1 >= n`, which is false for every byte but the last two, so the
+ * scan stays a tight table walk.
+ *
+ * This path deliberately omits the memchr/bitmap prefilter and the self-loop
+ * skip loops: both advance `pos` past positions without consulting accept
+ * flags, which is safe only when no state can accept at an EOL position.
+ * Re-enabling them for EOL machines (skipping to n-1 rather than n, then
+ * resuming the stepped loop) is a follow-up (plan M2.12). The point of M2.7
+ * is removing the O(n^2) per-start restart, which this does. */
+static void emit_unanchored_eol(Ctx *cx)
+{
+    Job *job = cx->job;
+    Dfa *fd = &job->dfa, *rd = &job->rdfa;
+    StrBuf *c = &job->csb;
+    const char *p = cx->opt->prefix;
+    int fs = fd->s0, rs = rd->s0;
+
+    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
+                 "size_t startpos, %s_span *m)\n{\n", p, p);
+    if (fs < 0 || rs < 0) {
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+                   "    return 0;\n}\n");
+        return;
+    }
+
+    emit_u8_table(c, p, "fcls", fd->clsmap, 256);
+    emit_tr_table(c, p, "ftr", fd);
+    emit_acc_table(c, p, "facc", fd);
+    emit_eol_table(c, p, "fev", fd);
+    emit_u8_table(c, p, "rcls", rd->clsmap, 256);
+    emit_tr_table(c, p, "rtr", rd);
+    emit_acc_table(c, p, "racc", rd);
+    emit_eol_table(c, p, "rev", rd);
+
+    sb_puts(c,   "    size_t pos = startpos;\n"
+                 "    size_t last = (size_t)-1;\n");
+    sb_printf(c, "    int st = %d;\n", fs);
+    sb_puts(c,   "    if (startpos > n) return 0;\n"
+                 "    for (;;) {\n"
+                 "        int est = st;\n");
+    sb_printf(c, "        if (__builtin_expect(pos + 1 >= n, 0) && %s_fev[st] >= 0 &&\n"
+                 "            (pos == n || (pos + 1 == n && s[pos] == '\\n')))\n"
+                 "            est = %s_fev[st];\n", p, p);
+    sb_printf(c, "        if (%s_facc[est]) last = pos;\n", p);
+    sb_puts(c,   "        if (pos >= n) break;\n");
+    sb_printf(c, "        st = %s_ftr[est * %d + %s_fcls[s[pos++]]];\n", p, fd->ncls, p);
+    sb_puts(c,   "        if (st < 0) break;\n"
+                 "    }\n"
+                 "    if (last == (size_t)-1) return 0;\n"
+                 "    {\n"
+                 "        size_t end = last;\n"
+                 "        size_t sfound = (size_t)-1;\n"
+                 "        size_t pp = end;\n");
+    sb_printf(c, "        int rst = %d;\n", rs);
+    sb_puts(c,   "        for (;;) {\n"
+                 "            int erst = rst;\n");
+    sb_printf(c, "            if (__builtin_expect(pp + 1 >= n, 0) && %s_rev[rst] >= 0 &&\n"
+                 "                (pp == n || (pp + 1 == n && s[pp] == '\\n')))\n"
+                 "                erst = %s_rev[rst];\n", p, p);
+    sb_printf(c, "            if (%s_racc[erst]) sfound = pp;\n", p);
+    sb_puts(c,   "            if (pp <= startpos) break;\n");
+    sb_printf(c, "            rst = %s_rtr[erst * %d + %s_rcls[s[--pp]]];\n", p, rd->ncls, p);
+    sb_puts(c,   "            if (rst < 0) break;\n"
+                 "        }\n"
+                 "        if (sfound == (size_t)-1) return 0;\n"
+                 "        if (m) { m->start = sfound; m->end = end; }\n"
+                 "        return 1;\n"
+                 "    }\n"
+                 "}\n");
+}
+
 static void emit_unanchored(Ctx *cx)
 {
+    if (dfa_has_eolvar(&cx->job->dfa) || dfa_has_eolvar(&cx->job->rdfa)) {
+        emit_unanchored_eol(cx);
+        return;
+    }
+
     Job *job = cx->job;
     Dfa *fd = &job->dfa, *rd = &job->rdfa;
     StrBuf *c = &job->csb;
