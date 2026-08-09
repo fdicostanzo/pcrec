@@ -86,11 +86,13 @@ fi
 
 fails=0
 checked=0
+expected=0
 echo "== COMPARE GATE (pcrec headline performance) =="
 printf "  %-5s %-11s %12s %12s %s\n" "case" "metric" "measured" "floor" "verdict"
 
 while IFS=$'\t' read -r id metric ref; do
     case "$id" in ''|\#*) continue ;; esac
+    expected=$((expected + 1))
     actual="$(awk -F'\t' -v c="$id" '$1==c {print $3}' "$WORK/actual.tsv")"
     if [ -z "$actual" ]; then
         printf "  %-5s %-11s %12s %12s %s\n" "$id" "$metric" "-" "$ref" "SKIP (not measured this run)"
@@ -113,7 +115,23 @@ while IFS=$'\t' read -r id metric ref; do
 done < "$FLOORS"
 
 echo
-echo "  cases checked: $checked   failures: $fails   (margin ${MARGIN}, floors: $(basename "$FLOORS"))"
+echo "  cases checked: $checked/$expected   failures: $fails   (margin ${MARGIN}, floors: $(basename "$FLOORS"))"
+
+# A case that did not get measured is SKIPped, and skipping everything used to
+# read as success: a run where pcrec errored on 8 of 9 cases reported
+# "checked: 1, failures: 0" and exited 0, i.e. total breakage passed the
+# ratchet (R3 critic). Missing coverage is now a failure in its own right.
+if [ "$checked" -lt "$expected" ]; then
+    echo >&2
+    echo "compare gate: only $checked of $expected floor cases were measured." >&2
+    echo "The rest did not produce a usable pcrec row — they were not slow, they" >&2
+    echo "were ABSENT, which this gate cannot distinguish from success. Fix the" >&2
+    echo "run, or use CASES= deliberately and read the result as partial." >&2
+    if [ "${GATE_ALLOW_PARTIAL:-0}" != "1" ]; then
+        exit 1
+    fi
+    echo "GATE_ALLOW_PARTIAL=1: continuing anyway" >&2
+fi
 if [ "$fails" -gt 0 ]; then
     echo >&2
     echo "compare gate: pcrec got measurably slower on $fails case(s)." >&2

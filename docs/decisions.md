@@ -111,14 +111,31 @@ named cases in tests/base/alternation_trie.rxt fail):
    a node, partition the branch list by INDEX around the ending branch —
    everything before it, its accept, everything after — and recurse into each
    part at the same depth. Parts may duplicate shared structure but never
-   duplicate a branch, so the total stays bounded by the flat construction.
+   duplicate a branch, so the total stays bounded by flat + O(branches).
+   CORRECTION (R3 critic): the original wording said "bounded by the flat
+   construction" and was used as a proof. It is false — the trie can use MORE
+   NFA states than flat, by one extra N_EPS per branch ending exactly at a
+   node (`bb|a|ba` is 10 vs 8). The excess is additive, not multiplicative
+   (aggregate ratio 0.999 over 1212 sampled patterns), so D10's cap arithmetic
+   is unaffected, but the bound is flat + O(branches), not flat.
 
 2. Branches merge only on bit-IDENTICAL class bitmaps, but two DISTINCT groups
    can still OVERLAP, and overlapping groups are not mutually exclusive:
    `[ab]p|[bc]x|[ab]xy` on "bxy" is [0,2), but `[ab](?:p|xy)|[bc]x` is [0,3).
-   Guard: reorder groups only when their bitmaps are pairwise disjoint (fast
-   path: all singletons, which is the keyword case); otherwise emit that
-   node's list unfactored.
+   Guard: reorder groups only within a maximal RUN of contiguous branches
+   whose distinct bitmaps are pairwise disjoint; where a run ends, chain the
+   runs in index order (sound for the same reason the eligible/ineligible run
+   rule is).
+
+   CORRECTION (R3 critic): the first version bailed the WHOLE node to the
+   unfactored construction on any overlap, and D9 called that "conservative
+   rather than wrong". It is not wrong, but it is a CLIFF — one branch of a
+   3600-word keyword list beginning `[ab]` instead of a literal took compile
+   time from 0.80 s to 44.9 s, losing the entire M2.8 win to one character,
+   and KEYWORD-SCALE could not see it because its word list has no classes.
+   Run-splitting recovers it (0.82 s; the 2%-classes variant 35.6 s -> 2.9 s),
+   and the disjointness test is now an exact O(n) running-union check rather
+   than an O(ng^2) one that additionally gave up outright above 64 groups.
 
 Mixed lists are handled by trie-ing only maximal runs of CONSECUTIVE eligible
 branches. CORRECTION (R3 critic): the invariant this rests on is not the loose
@@ -155,9 +172,20 @@ to: `clo_visit` recursed on a split's t2 edge, so an alternation chain nested
 one frame per branch. gcc turned that into a jump at -O2 but NOT at -O0, where
 a 200000-branch alternation segfaulted and 100000 survived — i.e. the safe cap
 depended on the optimisation level. All tail-position edges are now explicit
-loop iterations, leaving only a split's preferred branch recursive; verified
-at -O0 on a 1,000,000-branch alternation. Revisit-when: a pattern shape is
-found whose PREFERRED-branch nesting is deep.
+loop iterations, leaving only a split's preferred branch recursive.
+
+CORRECTION (R3 critics, twice): "verified at -O0 on a 1,000,000-branch
+alternation" is true but VACUOUS as evidence about `clo_visit` — at 1M branches
+the build fails on the NFA cap during CONSTRUCTION and never computes a
+closure. The largest alternation that actually reaches the DFA is ~65k
+branches. The conclusion still holds (nothing segfaults at -O0), but the
+experiment quoted did not demonstrate it. And the entry's own "revisit-when"
+is already answered: deep PREFERRED-branch nesting is bounded by the parser's
+250-deep group-nesting cap (src/parse/parse.c), which is the guard to cite.
+
+Still open, and now tracked as DD-10: `compile_ast` and `clo_visit`'s t1 edge
+have no stated frame budget. A 400-nested-branch-point alternation needs
+~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one.
 
 ## D11 — 2026-08-09 — scan avoidance under EOL: bound the skip AND order it first
 

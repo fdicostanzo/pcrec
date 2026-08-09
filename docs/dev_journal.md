@@ -764,3 +764,78 @@ the review.
 Verification after all fixes: 619 corpus + 42 CLI + 17 codegen green; oracle
 100% (611); fuzz seeds 1/2/3/5/7 clean; 27x69 EOL sweep clean; 11,760-case trie
 sweep clean; bench 0 budget failures with the new case (d).
+
+## 2026-08-09 — R3 round 2: a 56x compile cliff, and five false claims
+
+The last two critics (semantics, claim-audit) reported after everything above
+was pushed. Between them they found one real functional cliff and refuted five
+claims I had written. Everything below is fixed and verified.
+
+**The cliff (56x).** `groups_disjoint` was all-or-nothing PER NODE: one
+overlapping class pair among the branches at a node sent the whole list to the
+unfactored construction. At the root of a keyword list that means zero
+factoring for everything. Changing ONE character of ONE branch in a 3600-word
+list from `x` to `[ab]` took compile time from **0.80 s to 44.9 s** — the
+entire M2.8 win lost to one character, and invisible to KEYWORD-SCALE because
+its generated word list contains no classes. D9 had called the fallback
+"conservative rather than wrong": correct, and it read as a mild loss when it
+is a cliff.
+
+Fixed by splitting the node into maximal contiguous RUNS whose distinct
+bitmaps are pairwise disjoint, and chaining the runs in index order — sound for
+the same reason the eligible/ineligible run rule is. The offending branch
+becomes a run of its own and the other 3599 still factor: 44.9 s -> 0.82 s,
+identical to the class-free baseline. The 2%-classes variant went 35.6 s ->
+2.9 s. The disjointness test is now an exact O(n) running-union check
+(pairwise-disjoint iff each group is disjoint from the union of the earlier
+ones), which also removes an `ng > 64` bail that degenerated correct inputs for
+no reason.
+
+Verified hard, because this makes overlapping classes factor MORE
+aggressively: 619 corpus + 42 CLI + 17 codegen, oracle 100%, fuzz 5 seeds, the
+EOL/startpos/trie sweeps, and a new overlap-heavy sweep (31,350 cases over an
+alphabet where every class pair intersects) — all clean. Sabotage-verified:
+disabling the run split gives 6 corpus failures and 64 sweep divergences.
+Guarded by a second KEYWORD-SCALE case carrying 2% classes, which FAILS against
+the wholesale-bail build while the class-free case still passes.
+
+**Five claims refuted, all corrected in place:**
+1. "Bounded by the flat construction" (D9) is false — the trie can use MORE
+   NFA states, one extra N_EPS per branch ending at a node (`bb|a|ba` 10 vs 8).
+   Additive, aggregate ratio 0.999, so D10's arithmetic survives; the bound is
+   flat + O(branches).
+2. My fan-out constants were exactly 2x high (4045 -> 2022 = 1.01*nbr, 103.5 ->
+   51.7) from a counter that also counted -1 targets. The 39.1x ratio, and
+   every conclusion, is unchanged.
+3. D10's "verified at -O0 on a 1,000,000-branch alternation" is VACUOUS: at 1M
+   branches the build fails on the NFA cap before any closure runs. The
+   conclusion holds; the experiment quoted didn't demonstrate it. The entry's
+   own revisit-when is already answered by the parser's 250-deep group cap.
+4. "The gate, one commit old, caught two regressions" — wrong twice. gate.sh
+   was added in the SAME commit as the fix, and its 0.70 margin fires only
+   below 1.43x, so the 27% case was NOT caught by it (I caught that one by
+   eye, comparing a floor against R2's published baseline). It caught one.
+5. "Every budget is measured-median/1.75" — only 3 of 8. The GCC budgets sit at
+   9.13x, inside the "9x-300,000x loose" band D12 opens by condemning.
+
+**Two more holes in my own guards, both fixed.** gate.sh treated an unmeasured
+case as SKIP and exited green, so pcrec erroring on 8 of 9 cases reported
+"checked: 1, failures: 0" and PASSED — total breakage passing the ratchet. It
+now fails when coverage is incomplete. And case (b)'s budget flakes under load
+by a shifted distribution rather than variance, which more trials cannot fix.
+
+**What held.** Both critics hammered semantics and found no wrong answer:
+~9.5M oracle-checked comparisons between them, four independent sabotage builds
+proving each probe had detection power, `clo_visit` equivalence proven by
+byte-identical codegen on 4429 patterns, and non-EOL byte-identity confirmed at
+**1827** patterns rather than the 8 I claimed. python `re` and PCRE2 agreed on
+all 16,568 patterns tested, so the base-tier oracle transfers.
+
+**The pattern across this whole checkpoint**, stated plainly because it recurred
+four times: every failure was a MEASUREMENT CLAIM ABOUT A SAFEGUARD, not a
+defect in the compiler. The engineering held under 9.5M oracle comparisons. What
+did not hold was what I wrote about the things meant to protect it — a gate
+credited with a catch it could not make, budgets that did not match their stated
+derivation, constants off by 2x, and a guard that read as a mild loss and was a
+cliff. Claims about safeguards need the same evidence as claims about code, and
+they are exactly where I stopped applying it.

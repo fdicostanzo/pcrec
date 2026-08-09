@@ -116,9 +116,15 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
  * Motivation (R2-A4) is compile TIME more than NFA size. `nfa_wrap_unanchored`
  * keeps the whole branch-selection split chain live at every subject position,
  * so a flat alternation makes every epsilon closure walk all `nbr` branches:
- * measured 4045 NFA visits per closure at 2000 branches (2*nbr), 2.36 billion
- * visits total, 11 s. Factoring shared prefixes collapses the start closure to
- * the node fan-out — measured 103.5 visits per closure on the same input.
+ * measured 2022 NFA visits per closure at 2000 branches (1.01*nbr), 2.27
+ * billion visits total, 11 s. Factoring shared prefixes collapses the start
+ * closure to the node fan-out — measured 51.7 visits per closure on the same
+ * input, a 39.1x reduction.
+ *
+ * (An R3 critic re-instrumented both builds and found my original per-closure
+ * figures — 4045 and 103.5 — were exactly 2x high, from a counter that also
+ * counted -1 targets. The RATIO, and therefore every conclusion, is unchanged
+ * at 39.1x either way; the constants above are the corrected ones.)
  *
  * That collapse is a property of the INPUT, not a guarantee: with no shared
  * prefix at all the root fan-out IS nbr and the split chain is exactly as long
@@ -140,9 +146,11 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
  *   [ab]p|[bc]x|[ab]xy   on "bxy" -> [0,2)   but  [ab](?:p|xy)|[bc]x -> [0,3)
  *
  * The first is fixed by rule 1 (partition the branch list by index around a
- * branch that ends here), the second by the disjointness guard on rule 2
- * (branches merge only on bit-IDENTICAL classes, but two distinct groups can
- * still overlap, and then they are not mutually exclusive). */
+ * branch that ends here), the second by rule 2's run split: branches merge
+ * only on bit-IDENTICAL classes, but two distinct groups can still OVERLAP,
+ * and overlapping groups are not mutually exclusive so their order cannot be
+ * changed. See disjoint_run_len for why that is a run split rather than a
+ * whole-node bail — the bail version was a 56x compile-time cliff. */
 
 /* One trie-eligible branch: its class bitmaps in match order (already
  * reversed by the caller in reverse mode) plus its alternation index, which
@@ -211,28 +219,51 @@ static Frag trie_flat(NB *b, const TItem *items, int n, int depth)
     return n == 1 ? fr[0] : chain_alts(b, fr, n);
 }
 
-/* True iff every group's class bitmap is pairwise disjoint from every other's.
- * Singletons (one bit set) are distinct by construction — that is the keyword
- * case and the only one that has to be fast. */
-static bool groups_disjoint(const TItem *sorted, const int *gstart, int ng, int depth)
+/* Length of the longest PREFIX of `items` whose distinct class bitmaps at
+ * `depth` are pairwise disjoint — i.e. the longest run that rule 2 may safely
+ * group and reorder.
+ *
+ * Rule 2 orders groups by lowest index, which hoists every member of a group
+ * to that index. That is only sound when two groups can never both match, and
+ * bitmaps that OVERLAP can. The first version of this bailed the whole node to
+ * `trie_flat` on any overlap, which is correct but is a CLIFF: one branch of a
+ * 3600-word keyword list starting `[ab]` instead of a literal took compile
+ * time from 0.80 s to 44.9 s — the entire M2.8 win lost to one character, and
+ * invisible to KEYWORD-SCALE because its word list has no classes (R3 critic
+ * finding). Splitting into maximal disjoint RUNS instead recovers it: the
+ * offending branch becomes a run of its own and the other 3599 still factor.
+ * Runs are contiguous index ranges chained in order, which is the same
+ * argument that makes the eligible/ineligible run rule sound.
+ *
+ * O(n * 32) via a running union — group i is disjoint from all earlier groups
+ * iff it is disjoint from their union. The previous O(ng^2) form additionally
+ * gave up outright above 64 groups, which degenerated correct-and-disjoint
+ * inputs for no reason; that cut is gone. */
+static int disjoint_run_len(const TItem *items, int n, int depth)
 {
-    bool all_singleton = true;
-    for (int g = 0; g < ng && all_singleton; g++) {
-        const uint8_t *bits = sorted[gstart[g]].seq + (size_t)depth * 32;
-        int pop = 0;
-        for (int i = 0; i < 32 && pop < 2; i++) pop += __builtin_popcount(bits[i]);
-        if (pop != 1) all_singleton = false;
+    /* 257 is a HARD bound, not a heuristic: every bitmap in `known` is
+     * non-empty and disjoint from all the others, and a 256-bit universe holds
+     * at most 256 such sets, plus at most one empty bitmap (duplicates of
+     * which are caught as duplicates). So the array can never overflow. */
+    enum { MAX_GROUPS = 257 };
+    uint8_t seen[32] = {0};              /* union of the distinct bitmaps */
+    uint8_t known[MAX_GROUPS][32];
+    int nknown = 0;
+
+    for (int k = 0; k < n; k++) {
+        const uint8_t *b = items[k].seq + (size_t)depth * 32;
+        bool dup = false;
+        for (int g = 0; g < nknown && !dup; g++)
+            dup = memcmp(known[g], b, 32) == 0;
+        if (dup) continue;               /* same group: no new overlap */
+        bool clash = false;
+        for (int i = 0; i < 32 && !clash; i++) clash = (seen[i] & b[i]) != 0;
+        if (clash) return k;             /* run ends just before this item */
+        if (nknown >= MAX_GROUPS) return k;   /* unreachable; cheap belt */
+        memcpy(known[nknown++], b, 32);
+        for (int i = 0; i < 32; i++) seen[i] |= b[i];
     }
-    if (all_singleton) return true;
-    if (ng > 64) return false;   /* quadratic check not worth it; use flat */
-    for (int g = 0; g < ng; g++)
-        for (int h = g + 1; h < ng; h++) {
-            const uint8_t *x = sorted[gstart[g]].seq + (size_t)depth * 32;
-            const uint8_t *y = sorted[gstart[h]].seq + (size_t)depth * 32;
-            for (int i = 0; i < 32; i++)
-                if (x[i] & y[i]) return false;
-        }
-    return true;
+    return n;
 }
 
 static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
@@ -286,8 +317,30 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
             return (head.start < 0) ? body : frag_cat2(b, head, body);
         }
 
+        /* Rule 2 may only reorder groups that can never both match, so before
+         * grouping, cut the list into maximal runs whose distinct bitmaps are
+         * pairwise disjoint. Runs are contiguous index ranges chained in
+         * order, which preserves priority for the same reason the
+         * eligible/ineligible run rule does. Bailing the whole node instead
+         * (the first version) cost 0.80 s -> 44.9 s on a 3600-word list when a
+         * single branch began `[ab]`. */
+        int runlen = disjoint_run_len(items, n, depth);
+        if (runlen < n) {
+            Frag *runs = arena_alloc(&b->cx->arena, (size_t)n * sizeof(Frag));
+            int nr = 0, off = 0;
+            while (off < n) {
+                int len = disjoint_run_len(items + off, n - off, depth);
+                if (len <= 0) len = 1;   /* always make progress */
+                runs[nr++] = trie_build(b, items + off, len, depth, rdepth + 1);
+                off += len;
+            }
+            Frag body = (nr == 1) ? runs[0] : chain_alts(b, runs, nr);
+            return (head.start < 0) ? body : frag_cat2(b, head, body);
+        }
+
         /* rule 2: group by the class bitmap at `depth`, stable in index order
-         * so groups come out ordered by their lowest index. */
+         * so groups come out ordered by their lowest index. Every group here
+         * is pairwise disjoint from every other by the run cut above. */
         int *gstart = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
         int *gcount = arena_alloc(&b->cx->arena, (size_t)n * sizeof(int));
         TItem *sorted = arena_alloc(&b->cx->arena, (size_t)n * sizeof(TItem));
@@ -310,14 +363,6 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
                 cnt++;
             }
             gcount[ng++] = cnt;
-        }
-
-        /* Distinct groups may still OVERLAP (`[ab]` vs `[bc]`), and then they
-         * are not mutually exclusive, so no fixed order between them is right
-         * for every subject. Only disjoint groups may be reordered. */
-        if (ng > 1 && !groups_disjoint(sorted, gstart, ng, depth)) {
-            Frag body = trie_flat(b, items, n, depth);
-            return (head.start < 0) ? body : frag_cat2(b, head, body);
         }
 
         if (ng == 1) {   /* unbranched run: descend iteratively, no recursion */

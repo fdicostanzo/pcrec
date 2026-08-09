@@ -348,12 +348,22 @@ echo "== KEYWORD-SCALE (R2-A4) =="
 
 KEYWORD_COUNT="${KEYWORD_COUNT:-3600}"
 KEYWORD_BUDGET_SECS="${KEYWORD_BUDGET_SECS:-4}"
+# The class-bearing variant is inherently slower (more byte classes, so a
+# wider DFA): 2.87 s measured, against 44.9 s before the run-splitting fix.
+KEYWORD_CLS_BUDGET_SECS="${KEYWORD_CLS_BUDGET_SECS:-8}"
 
 kw_dir="$WORKDIR/keyword_scale"
 mkdir -p "$kw_dir"
 kw_pat_file="$kw_dir/pattern.txt"
 
-kw_gen_err="$(python3 - "$KEYWORD_COUNT" "$kw_pat_file" 2>&1 <<'PYEOF'
+# Two variants. The class-free one is the original R2-A4 guard. The second
+# sprinkles 2-element CHARACTER CLASSES through 2% of the characters,
+# because the trie may only reorder branches whose class bitmaps are
+# disjoint — and the first version of that check bailed the WHOLE node on
+# any overlap, so a single branch beginning `[ab]` took a 3600-word list
+# from 0.80 s to 44.9 s. A class-free word list cannot see that cliff,
+# which is exactly why it went unnoticed (R3 critic finding).
+kw_gen_err="$(python3 - "$KEYWORD_COUNT" "$kw_pat_file" "$kw_dir/pattern_cls.txt" 2>&1 <<'PYEOF'
 import random, sys
 count = int(sys.argv[1])
 random.seed(20260809)
@@ -361,8 +371,22 @@ alpha = "abcdefghijklmnopqrstuvwxyz"
 words = set()
 while len(words) < count:
     words.add("".join(random.choice(alpha) for _ in range(random.randint(4, 12))))
+words = sorted(words)
 with open(sys.argv[2], "w") as f:
-    f.write("|".join(sorted(words)))
+    f.write("|".join(words))
+
+random.seed(5)
+out = []
+for w in words:
+    y = ""
+    for ch in w:
+        if random.random() < 0.02:
+            y += "[" + ch + chr((ord(ch) - 97 + 1) % 26 + 97) + "]"
+        else:
+            y += ch
+    out.append(y)
+with open(sys.argv[3], "w") as f:
+    f.write("|".join(out))
 PYEOF
 )"
 if [ $? -ne 0 ]; then
@@ -390,6 +414,29 @@ else
             record_budget "KEYWORD-SCALE" "PASS"
         else
             record_budget "KEYWORD-SCALE" "FAIL"
+        fi
+    fi
+
+    # same list with 2% of characters turned into 2-element classes
+    kw_cls_pat="$(cat "$kw_dir/pattern_cls.txt")"
+    kwc_t0=$(now_ns)
+    kwc_err="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen_cls.c" -- "$kw_cls_pat" 2>&1 >/dev/null)"
+    kwc_rc=$?
+    kwc_t1=$(now_ns)
+    kwc_secs=$(elapsed_secs "$kwc_t0" "$kwc_t1")
+    echo "  ${KEYWORD_COUNT}-word list with 2% character classes"
+    if [ $kwc_rc -eq 124 ]; then
+        echo "    pcrec: DNF (exceeded ${PCREC_TIMEOUT}s timeout) (budget < ${KEYWORD_CLS_BUDGET_SECS}s)"
+        record_budget "KEYWORD-SCALE (classes)" "FAIL"
+    elif [ $kwc_rc -ne 0 ]; then
+        echo "    pcrec FAILED to compile: $kwc_err"
+        record_budget "KEYWORD-SCALE (classes)" "FAIL"
+    else
+        echo "    pcrec: ${kwc_secs}s (budget < ${KEYWORD_CLS_BUDGET_SECS}s)"
+        if num_lt "$kwc_secs" "$KEYWORD_CLS_BUDGET_SECS"; then
+            record_budget "KEYWORD-SCALE (classes)" "PASS"
+        else
+            record_budget "KEYWORD-SCALE (classes)" "FAIL"
         fi
     fi
 fi
