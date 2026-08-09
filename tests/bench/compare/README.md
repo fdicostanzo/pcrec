@@ -332,3 +332,49 @@ CAN do, which is narrower than what the other engines do:
 - **Determinism**: subjects are generated from a fixed seed (`random.Random(1729)`).
   A fixed seed only guarantees reproducibility while the draws are consumed in
   a fixed order — keep generation single-threaded and ahead of any worker pool.
+
+## gate.sh — the headline-performance ratchet (M2.11, R2-PR7)
+
+`compare.sh` produces the numbers this project quotes about itself, and until
+M2.11 nothing checked them: it printed a table, a human read it, and a
+regression in a case nobody happened to look at simply became the new
+published baseline.
+
+```sh
+bash tests/bench/compare/gate.sh            # run compare.sh, then gate the result
+COMPARE_TSV=path bash .../gate.sh           # gate a TSV you already have
+UPDATE=1 bash tests/bench/compare/gate.sh   # rewrite the floors from this run
+```
+
+`floors.tsv` holds one reference value per case for **pcrec only**. That is a
+deliberate choice: the `ratio-vs-pcrec` column moves when PCRE2, python, or
+the box changes, and R2-B1 already documented those ratios swinging enough to
+flip sign between runs — gating on them would fail for reasons that are not a
+pcrec regression, and would bury the ones that are. Absolute per-case values
+answer "did WE get slower", which is the only question a ratchet can answer
+honestly.
+
+A run fails when a throughput case drops below `reference * GATE_MARGIN`
+(default 0.70) or a latency case rises above `reference / GATE_MARGIN`. The
+0.70 comes from the measured per-trial spread on the reference box (1.03x to
+1.49x, tighter at the median of `BENCH_TRIALS`), so it fires on a real ~1.4x
+regression without firing on noise. Tighten it only together with a higher
+`BENCH_TRIALS`.
+
+**When the gate fails**, the fix is a diagnosis, not a wider margin. If the
+slowdown is a deliberate trade, say so in `docs/dev_journal.md` and regenerate
+with `UPDATE=1`. It earned its keep immediately: within an hour of existing it
+caught a 43% regression on case (f) that `make test`, the python oracle, and
+the fuzzer were all green on, because the regression was behaviour-preserving.
+
+**Caveat — the floors are machine-specific.** They were captured on the
+development box named in the results snapshot. On different hardware,
+regenerate them (`UPDATE=1`) and treat that as re-baselining rather than as a
+comparison against the recorded numbers; a cross-machine comparison of these
+absolute values is meaningless. This is the main thing standing between
+`gate.sh` and CI use.
+
+**Snapshot safety.** `compare.sh` names its report `results-<host>-<date>.md`,
+so two runs on one day used to overwrite each other — including the annotated
+baseline other documents cite. It now writes `-2`, `-3`, ... instead unless
+`REPORT_FORCE=1`.
