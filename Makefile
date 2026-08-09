@@ -7,7 +7,8 @@ WARN     = -Wall -Wextra
 ALLFLAGS = $(CFLAGS) $(WARN) -std=gnu11 -Ilib -Isrc
 
 LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
-           $(wildcard src/ir/*.c) $(wildcard src/gen/*.c)
+           $(wildcard src/ir/*.c) $(wildcard src/opt/*.c) \
+           $(wildcard src/gen/*.c)
 LIBOBJS := $(patsubst src/%.c,build/obj/%.o,$(LIBSRCS))
 
 all: build/pcrec build/libpcrec.a

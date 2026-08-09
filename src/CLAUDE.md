@@ -1,12 +1,13 @@
 # src — internal compiler implementation
 
-The compilation pipeline: pattern → parser (parse/) → AST → NFA → priority DFA (ir/) → C codegen (gen/). Core utilities and shared data structures in core/; pipeline driver is pcrec_compile() in core/compile.c.
+The compilation pipeline: pattern → parser (parse/) → AST → NFA → priority DFA (ir/) → optimization passes (opt/) → C codegen (gen/). Core utilities and shared data structures in core/; pipeline driver is pcrec_compile() in core/compile.c.
 
 ## Files
 
 - **core/** — pipeline driver, arena allocator, string buffer, shared type definitions
 - **parse/** — base-tier PCRE parser with module lookup hooks
 - **ir/** — NFA construction and priority subset construction (DFA)
+- **opt/** — IR/DFA optimization passes (APPROACH §5): minimization
 - **gen/** — DFA to gcc-dialect C code emission
 
 ## Conventions

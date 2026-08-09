@@ -163,3 +163,25 @@ M2.2 (Hopcroft + trie factoring), then checkpoint review R2.
   pcre2-interp vs pcre2-jit (if available) vs python-re on identical buffers,
   9-case matrix incl. pathological and short-subject regimes; agreement check
   before timing; results snapshot per machine.
+
+## 2026-08-09 — M2.1 tail + M2.2 complete; K1 bug found, documented, deferred
+
+- M2.1: self-loop skip states (up to 4 per machine, forward AND reverse) —
+  any state that stays put on >=192/256 bytes gets a SIMD-friendly skip loop,
+  generalizing the start-state prefilter. Motivated by compare case h.
+  Measured: `.*=.*` over 1 MB key=value 128 -> 1423 MB/s (11x). Anchored fast
+  path: `^`-only patterns emit start_max=0 (no start-position loop).
+- M2.2: src/opt/minimize.c (Moore signature refinement; EOL-view as an extra
+  alphabet symbol). `[01]*1[01]{8}` 512 -> 768 states listed post-merge across
+  fwd+rev machines; `.*=.*` collapses to 2 states. Alternation-to-trie
+  deferred with rationale (subset construction already merges prefixes).
+- Suite 463 + 41 green; bench budgets pass; ASan clean; fuzz seeds 1-4 zero
+  divergences.
+- K1 FOUND (fuzz seed 3, minimized): `(?:$|[^abc]){2,}` on "XY$\n" -> pcrec
+  [0,4), PCRE2/python [0,3). Zero-width `$` loses priority to a consuming
+  alternative inside a quantified group; root cause is the ε-cycle guard
+  cutting the empty iteration before group-exit ACCEPT. Verified PRE-EXISTING
+  (reproduces with minimization disabled), ENG_ATTEMPT-only. Documented in
+  new docs/known_issues.md; failing regressions in tests/known_fail/ (excluded
+  from `make test` so the suite stays honest); fuzz.py excludes the shape;
+  scheduled as plan step M2.6 with the M6 assertions work.

@@ -1,0 +1,6 @@
+kind: content
+pattern: 'c{1,}?(?:$|[\\n\\t]+?01{1,2}|[^abc]){2,}'
+subject (hex): 0a3f7b28c86130622c2c636363635831240a
+subject (repr): b'\n?{(\xc8a0b,,ccccX1$\n'
+pcrec:  match 10 18
+pcre2:  match 10 17

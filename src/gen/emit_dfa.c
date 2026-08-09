@@ -17,6 +17,7 @@
  * time. */
 
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -98,6 +99,45 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
+/* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
+ * put on >= 192 of 256 bytes — their scan degenerates to a SIMD-friendly
+ * skip loop. Motivated by compare case h (`.*=.*`): the post-'=' state
+ * self-loops on everything but '\n' in both machines. */
+static int pick_skip_states(const Dfa *d, int exclude, int out[4])
+{
+    int cls_size[256] = {0};
+    for (int b = 0; b < 256; b++) cls_size[d->clsmap[b]]++;
+    int nout = 0;
+    for (int pass = 0; pass < 4; pass++) {
+        int best = -1, bestcnt = 191;
+        for (int i = 0; i < d->n; i++) {
+            if (i == exclude) continue;
+            bool taken = false;
+            for (int k = 0; k < nout; k++)
+                if (out[k] == i) taken = true;
+            if (taken) continue;
+            int stay = 0;
+            for (int cl = 0; cl < d->ncls; cl++)
+                if (d->st[i].tr[cl] == i) stay += cls_size[cl];
+            if (stay > bestcnt) { bestcnt = stay; best = i; }
+        }
+        if (best < 0) break;
+        out[nout++] = best;
+    }
+    return nout;
+}
+
+static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
+                            int idx, const Dfa *d)
+{
+    uint8_t stay[256];
+    for (int b = 0; b < 256; b++)
+        stay[b] = (uint8_t)(d->st[idx].tr[d->clsmap[b]] == idx);
+    char name[32];
+    snprintf(name, sizeof(name), "%s%d", tag, idx);
+    emit_u8_table(c, p, name, stay, 256);
+}
+
 static void emit_unanchored(Ctx *cx)
 {
     Job *job = cx->job;
@@ -135,14 +175,22 @@ static void emit_unanchored(Ctx *cx)
     bool prefilter = !start_acc && esc_count > 0 && esc_count < 256;
     bool use_memchr = prefilter && esc_count == 1;
 
+    int fskip[4], rskip[4];
+    int nfskip = pick_skip_states(fd, fs, fskip);
+    int nrskip = pick_skip_states(rd, -1, rskip);
+
     emit_u8_table(c, p, "fcls", fd->clsmap, 256);
     emit_tr_table(c, p, "ftr", fd);
     emit_acc_table(c, p, "facc", fd);
     if (prefilter && !use_memchr)
         emit_u8_table(c, p, "first", first, 256);
+    for (int k = 0; k < nfskip; k++)
+        emit_stay_table(c, p, "fs", fskip[k], fd);
     emit_u8_table(c, p, "rcls", rd->clsmap, 256);
     emit_tr_table(c, p, "rtr", rd);
     emit_acc_table(c, p, "racc", rd);
+    for (int k = 0; k < nrskip; k++)
+        emit_stay_table(c, p, "rs", rskip[k], rd);
 
     sb_puts(c,   "    size_t pos = startpos;\n"
                  "    size_t last = (size_t)-1;\n");
@@ -150,17 +198,30 @@ static void emit_unanchored(Ctx *cx)
     sb_puts(c,   "    if (startpos > n) return 0;\n"
                  "    for (;;) {\n");
     sb_printf(c, "        if (%s_facc[st]) last = pos;\n", p);
-    if (prefilter) {
-        sb_printf(c, "        if (st == %d && last == (size_t)-1) {\n", fs);
-        if (use_memchr) {
-            sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
-            sb_puts(c,   "            if (!q) return 0;\n"
-                         "            pos = (size_t)((const unsigned char *)q - s);\n");
-        } else {
-            sb_printf(c, "            while (pos < n && !%s_first[s[pos]]) pos++;\n", p);
-            sb_puts(c,   "            if (pos >= n) return 0;\n");
+    {
+        const char *kw = "if";
+        if (prefilter) {
+            sb_printf(c, "        if (st == %d && last == (size_t)-1) {\n", fs);
+            if (use_memchr) {
+                sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
+                sb_puts(c,   "            if (!q) return 0;\n"
+                             "            pos = (size_t)((const unsigned char *)q - s);\n");
+            } else {
+                sb_printf(c, "            while (pos < n && !%s_first[s[pos]]) pos++;\n", p);
+                sb_puts(c,   "            if (pos >= n) return 0;\n");
+            }
+            sb_puts(c, "        }\n");
+            kw = "else if";
         }
-        sb_puts(c, "        }\n");
+        for (int k = 0; k < nfskip; k++) {
+            int K = fskip[k];
+            sb_printf(c, "        %s (st == %d) {\n", kw, K);
+            sb_printf(c, "            while (pos < n && %s_fs%d[s[pos]]) pos++;\n", p, K);
+            if (fd->st[K].accept)
+                sb_puts(c, "            last = pos;\n");
+            sb_puts(c, "        }\n");
+            kw = "else if";
+        }
     }
     sb_puts(c,   "        if (pos >= n) break;\n");
     sb_printf(c, "        st = %s_ftr[st * %d + %s_fcls[s[pos++]]];\n", p, fd->ncls, p);
@@ -174,6 +235,18 @@ static void emit_unanchored(Ctx *cx)
     sb_printf(c, "        int rst = %d;\n", rs);
     sb_puts(c,   "        for (;;) {\n");
     sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
+    {
+        const char *kw = "if";
+        for (int k = 0; k < nrskip; k++) {
+            int K = rskip[k];
+            sb_printf(c, "            %s (rst == %d) {\n", kw, K);
+            sb_printf(c, "                while (pp > startpos && %s_rs%d[s[pp - 1]]) pp--;\n", p, K);
+            if (rd->st[K].accept)
+                sb_puts(c, "                sfound = pp;\n");
+            sb_puts(c, "            }\n");
+            kw = "else if";
+        }
+    }
     sb_puts(c,   "            if (pp <= startpos) break;\n");
     sb_printf(c, "            rst = %s_rtr[rst * %d + %s_rcls[s[--pp]]];\n", p, rd->ncls, p);
     sb_puts(c,   "            if (rst < 0) break;\n"
@@ -222,8 +295,12 @@ static void emit_attempt(Ctx *cx)
         sb_puts(c, " };\n");
     }
 
-    sb_puts(c, "    size_t start;\n"
-               "    for (start = startpos; start <= n; start++) {\n"
+    /* anchored fast path (M2.1): if the interior start state is dead, every
+     * branch requires ^, so only start == 0 can ever match */
+    sb_printf(c, "    size_t start;\n"
+                 "    const size_t start_max = %s;\n",
+              d->s1 < 0 ? "0 /* fully ^-anchored */" : "n");
+    sb_puts(c, "    for (start = startpos; start <= start_max; start++) {\n"
                "        size_t pos = start;\n"
                "        size_t last = (size_t)-1;\n");
 

@@ -112,6 +112,18 @@ now_ns() { date +%s%N; }
 elapsed_secs() { awk -v a="$1" -v b="$2" 'BEGIN{printf "%.3f", (b-a)/1000000000.0}'; }
 num_lt() { awk -v a="$1" -v b="$2" 'BEGIN{exit !(a+0 < b+0)}'; }
 
+# join_semi <arr...> -> prints args joined with "; ". (Not `IFS='; '`
+# + "${arr[*]}": bash's `[*]` expansion only uses the FIRST character of
+# IFS as the join separator, which would silently join with ";" and no
+# space -- this loops explicitly instead.)
+join_semi() {
+    local out="" a
+    for a in "$@"; do
+        if [ -z "$out" ]; then out="$a"; else out="$out; $a"; fi
+    done
+    printf '%s' "$out"
+}
+
 # extract_field <text> <key> -> prints the value of the first "key=value"
 # token in <text> (value = run of non-whitespace), or empty if absent.
 extract_field() {
@@ -254,6 +266,33 @@ LOWER = b"abcdefghijklmnopqrstuvwxyz"
 def rand_lower(rng, n):
     return bytes(rng.choices(LOWER, k=n))
 
+DIGITS = b"0123456789"
+
+def rand_wordy(rng, n):
+    """~n bytes of space-separated lowercase "words" (length 3-12) with an
+    occasional digit run, i.e. text that behaves like real prose/log
+    content rather than one giant run of [a-z]. Used for case (d): a pure
+    rand_lower() filler lets '[a-z]+' at the start of the pattern greedily
+    match the ENTIRE lowercase prefix of the buffer and land on the FIRST
+    '@' anywhere in it (the first planted token, wherever that is), which
+    is correct leftmost-match behavior but defeats the point of the case
+    (measuring a scan through realistic text before finding a token) --
+    see README.md's case (d) caveat. Word/digit boundaries here bound every
+    '[a-z]+' run to at most 12 bytes outside the deliberately planted
+    tokens, so the leftmost match genuinely lands at the first planted
+    token instead of at buffer offset 0."""
+    parts = []
+    total = 0
+    while total < n:
+        if rng.random() < 0.15:
+            chunk = bytes(rng.choices(DIGITS, k=rng.randint(1, 6)))
+        else:
+            chunk = rand_lower(rng, rng.randint(3, 12))
+        parts.append(chunk)
+        parts.append(b" ")
+        total += len(chunk) + 1
+    return b"".join(parts)[:n]
+
 def purge_words(buf, words):
     """In-place: mutate any occurrence of any word in `words` inside `buf`
     (a bytearray of lowercase letters) so none remain. Used for subjects
@@ -321,10 +360,15 @@ purge_words(buf, words)
 with open(os.path.join(outdir, "c_alt_absent.bin"), "wb") as f:
     f.write(buf)
 
-# (d) '[a-z]+@[a-z]+\.[a-z]{2,3}' over random text with ~100 planted
-# email-ish tokens (match). '@' and '.' never occur in the pure-lowercase
-# filler, so the only possible matches are at the planted positions.
-buf = bytearray(rand_lower(rng, n))
+# (d) '[a-z]+@[a-z]+\.[a-z]{2,3}' over mixed word/digit text with ~100
+# planted email-ish tokens (match). '@' and '.' never occur in the filler,
+# so the only possible matches are at the planted positions; the filler
+# uses rand_wordy() (not rand_lower()) specifically so '[a-z]+' runs stay
+# short (word-length) outside the plants -- see rand_wordy()'s docstring
+# and README.md's case (d) caveat for why a pure-lowercase filler was
+# wrong here (it let the leftmost match land at buffer offset 0 instead of
+# at the first planted token, like it would on real mixed text).
+buf = bytearray(rand_wordy(rng, n))
 n_tokens = 100
 step = n // (n_tokens + 1)
 tlds = [b"com", b"net", b"org", b"io", b"co"]
@@ -401,6 +445,14 @@ echo
 # =========================================================================
 
 CASE_IDS=(a b c d e f g h i)
+# CASES=<comma-separated case ids> restricts which cases process_case runs,
+# e.g. CASES=e,d for a fast mechanics smoke-test instead of the full
+# 9-case/~4-engine run. Subjects for ALL cases are still generated (cheap
+# relative to the per-case build+measure work), so this only trims the
+# expensive part.
+if [ -n "${CASES:-}" ]; then
+    IFS=',' read -r -a CASE_IDS <<<"$CASES"
+fi
 
 declare -A CASE_DESC=(
     [a]="literal 'needleXYZW' planted at 90% of 8 MB random text (match)"
@@ -569,7 +621,7 @@ process_case() {
 
     if [ $invalid -eq 1 ]; then
         local reason_str
-        reason_str="$(IFS='; '; echo "${reasons[*]}")"
+        reason_str="$(join_semi "${reasons[@]}")"
         echo "   VERDICT: INVALID -- not timed. $reason_str"
         echo "   (check docs/upstream_issues.md for a known divergence before assuming a pcrec bug)"
         CASE_VALID[$id]="invalid"
@@ -579,6 +631,7 @@ process_case() {
         return
     fi
 
+    local early_match_note=""
     if [ -n "$ref_eng" ]; then
         CASE_VALID[$id]="valid"
         local ref_match="${base_match[$ref_eng]}" ref_start="${base_start[$ref_eng]}" ref_end="${base_end[$ref_eng]}"
@@ -588,6 +641,24 @@ process_case() {
             CASE_REF_VERDICT[$id]="nomatch (oracle: $ref_eng)"
         fi
         echo "   agreement: OK vs $ref_eng (${CASE_REF_VERDICT[$id]})"
+
+        # ---- early-match honesty guard: if the leftmost match ends well
+        # before the end of the buffer, MB/s (buffer_bytes / time) reflects
+        # how little of the buffer had to be scanned before an early exit,
+        # not a steady-state scan rate. Every engine's MB/s figure in this
+        # case is inflated by the same effect, so the numbers are still
+        # fair to compare WITHIN this case's rows, but not comparable
+        # across cases or to a genuine full-scan measurement. Threshold:
+        # match ends before 80% of the buffer. ----
+        if [ "$ref_match" = "1" ] && [ "${CASE_METRIC[$id]:-throughput}" = "throughput" ]; then
+            local buf_n="${base_bytes[pcrec]:-0}"
+            if awk -v e="$ref_end" -v n="$buf_n" 'BEGIN{exit !(n>0 && e < 0.8*n)}'; then
+                local pct
+                pct=$(awk -v e="$ref_end" -v n="$buf_n" 'BEGIN{printf "%.1f", (e/n)*100}')
+                early_match_note="early match at byte $ref_end of $buf_n (${pct}% of buffer scanned) -- MB/s reflects early exit, not steady-state scan rate; compare within this case's rows only, not across cases"
+                echo "   note: $early_match_note"
+            fi
+        fi
     else
         CASE_VALID[$id]="unverified"
         if [ "${base_match[pcrec]}" = "1" ]; then
@@ -595,8 +666,7 @@ process_case() {
         else
             CASE_REF_VERDICT[$id]="pcrec reports nomatch -- UNVERIFIED, no oracle finished"
         fi
-        CASE_REASON[$id]="$(IFS='; '; echo "${notes[*]}")"
-        echo "   agreement: UNVERIFIED -- ${CASE_REASON[$id]}"
+        echo "   agreement: UNVERIFIED -- $(join_semi "${notes[@]}")"
     fi
     for note in "${notes[@]}"; do
         echo "   note: $note"
@@ -606,6 +676,18 @@ process_case() {
             echo "   note: pcre2-jit could not JIT-compile this specific pattern; omitted for this case"
         fi
     done
+
+    # Fold every note (partial-DNF among non-reference engines, JIT
+    # unavailable for this pattern, early-match) into the case's stored
+    # annotation so it surfaces in the verdict column of both the streamed
+    # summary and the markdown report -- a DNF'd non-reference engine or an
+    # early-match subject still needs to be visible even on an otherwise
+    # "valid" case, not just logged and forgotten.
+    local -a all_notes=("${notes[@]}")
+    [ -n "$early_match_note" ] && all_notes+=("$early_match_note")
+    if [ ${#all_notes[@]} -gt 0 ]; then
+        CASE_REASON[$id]="$(join_semi "${all_notes[@]}")"
+    fi
 
     # ---- scale + measure: reuse each engine's baseline iters=1 result if
     # it already cleared TARGET_SECS, otherwise re-run once with a scaled
@@ -684,8 +766,15 @@ process_case() {
     for eng in "${engines[@]}"; do
         local st="${f_status[$eng]:-n/a}"
         if [ "$st" != "ok" ]; then
-            printf "   %-14s %-6s %10s %10s %14s\n" "$eng" "$st" "-" "-" "-"
-            ALL_ROWS+=("$id"$'\t'"$eng"$'\t'"$st"$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-)
+            local st_val
+            case "$st" in
+                dnf) st_val="DNF>${RUN_TIMEOUT}s" ;;
+                jit_unavailable) st_val="n/a (pattern not JIT-compilable)" ;;
+                error) st_val="ERROR" ;;
+                *) st_val="$st" ;;
+            esac
+            printf "   %-14s %-6s %10s %10s %14s\n" "$eng" "$st" "-" "-" "$st_val"
+            ALL_ROWS+=("$id"$'\t'"$eng"$'\t'"$st"$'\t'-$'\t'-$'\t'-$'\t'"$metric"$'\t'"$st_val"$'\t'-)
             continue
         fi
         local val ratio_str row_val
@@ -825,7 +914,10 @@ REPORT="$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD.md"
     for id in "${CASE_IDS[@]}"; do
         local_verdict="${CASE_VALID[$id]:-error}"
         case "$local_verdict" in
-            valid) local_verdict="VALID (${CASE_REF_VERDICT[$id]:-})" ;;
+            valid)
+                local_verdict="VALID (${CASE_REF_VERDICT[$id]:-})"
+                [ -n "${CASE_REASON[$id]:-}" ] && local_verdict="$local_verdict -- note: ${CASE_REASON[$id]}"
+                ;;
             invalid) local_verdict="**INVALID**: ${CASE_REASON[$id]}" ;;
             unverified) local_verdict="**UNVERIFIED**: ${CASE_REF_VERDICT[$id]:-}; ${CASE_REASON[$id]:-}" ;;
             *) local_verdict="**ERROR**: ${CASE_REASON[$id]:-mechanical failure}" ;;

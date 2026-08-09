@@ -51,8 +51,9 @@ Known M1 limitations (tracked for later milestones):
 ## M2 — Optimizer & long-text performance (seeded by R1 findings)
 
 - [M2.0] STATE:completed — DESIGN GATE (R1 A-2/A-3): adopt the search-from-anywhere self-loop automaton (kills O(n²), same shape M3 streaming needs) and the hybrid emitter (computed goto for small DFAs, table-driven for large); re-ground the state cap in measured gcc compile time
-- [M2.1] STATE:started — scan-avoidance passes: literal/memchr prefilters, first-byte sets, anchoring fast path (APPROACH §5)
-- [M2.2] STATE:not-started — Hopcroft minimization + alternation-to-trie factoring
+- [M2.1] STATE:completed — scan-avoidance: memchr/bitmap start prefilter, self-loop skip states (fwd+rev), anchored fast path (^-only patterns skip the start loop)
+- [M2.2] STATE:completed — DFA minimization (Moore signature refinement, EOL-view as extra symbol); alternation-to-trie DEFERRED with rationale: subset construction already merges alternation prefixes in the final DFA, so a trie pass would only shrink the intermediate NFA (compile-speed win with no current budget pressure)
+- [M2.6] STATE:not-started — K1 fix (docs/known_issues.md): empty-iteration handling so zero-width $ keeps priority in quantified groups (scheduled with M6 assertions)
 - [M2.3] STATE:completed — tests/bench: throughput budgets AND gcc-compile-time budgets on generated code as regression tests (R1 A-3)
 - [M2.4] STATE:completed — coverage breadth (R1 P-M1/P-M2/P-N1/P-N2): CLI surface, library API direct, startpos != 0, long subjects, high bytes/NUL
 - [M2.5] STATE:completed — PCRE2-oracle differential fuzzer committed to tests/ (pulled forward from M7; R1 lesson — semantics critic's libpcre2 binding)

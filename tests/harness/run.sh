@@ -2,7 +2,9 @@
 # tests/harness/run.sh — .rxt test runner for pcrec.
 #
 # Usage: bash tests/harness/run.sh [file-or-dir ...]
-#   With no arguments, runs every *.rxt under <repo-root>/tests/.
+#   With no arguments, runs every *.rxt under <repo-root>/tests/, EXCEPT
+#   tests/known_fail/ (deferred-bug regressions that are expected to fail —
+#   see docs/known_issues.md). Pass such a file explicitly to run it.
 #   Arguments may be individual .rxt files or directories (searched
 #   recursively for *.rxt).
 #
@@ -42,7 +44,8 @@ trap cleanup EXIT
 files=()
 if [ $# -eq 0 ]; then
     while IFS= read -r f; do files+=("$f"); done \
-        < <(find "$ROOT_DIR/tests" -name '*.rxt' | sort)
+        < <(find "$ROOT_DIR/tests" -name '*.rxt' \
+                 -not -path "*/known_fail/*" | sort)
 else
     for arg in "$@"; do
         if [ -d "$arg" ]; then

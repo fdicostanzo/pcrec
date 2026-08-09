@@ -83,16 +83,43 @@ levels:
   **INVALID** and is **not timed** — never silently dropped. Check
   `docs/upstream_issues.md` first before assuming an INVALID case is a
   pcrec bug; it might be a known other-engine divergence.
-- **Oracle DNF is a result, not a harness failure.** If *neither*
-  `pcre2-interp` nor `python-re` returns a verdict within `RUN_TIMEOUT`
-  (this genuinely happens — see case (e) below), the case is marked
-  **UNVERIFIED** rather than discarded: pcrec's own result is still
-  measured and reported standalone, clearly labeled as unverified, and the
-  oracle timeout itself is reported as data (a backtracking engine
-  genuinely failing to finish a catastrophic-backtracking-shaped input in
-  90+ seconds is exactly the kind of result this suite exists to surface).
-  The one engine that's truly mandatory for a case to proceed at all is
-  `pcrec` itself — if it fails to run, that's a genuine harness problem.
+- **A single engine's DNF never kills the case.** Every engine's baseline
+  is attempted independently; a DNF or error on ANY one engine (reference
+  or not) is recorded as that engine's own row (`status=dnf`, value
+  `DNF>RUN_TIMEOUTs`) and does not stop the other engines from being
+  measured. This matters most for case (e) (`a*b` over 8 MB of all-`a`,
+  the R1 A-2 pathological shape): a naive backtracking interpreter with no
+  JIT can genuinely be quadratic on this input, just like the *old* pcrec
+  emitter was — `pcre2-interp` (and often `python-re`) simply not
+  finishing in `RUN_TIMEOUT` is real data (this is precisely the shape
+  pcrec's DFA architecture exists to avoid), not a mechanical failure, and
+  earlier revisions of this script wrongly treated it as the latter,
+  discarding pcrec's best result along with the failed engine's.
+- **Oracle DNF specifically.** If *neither* `pcre2-interp` nor `python-re`
+  (the two possible reference engines) returns a verdict within
+  `RUN_TIMEOUT`, the case as a whole is marked **UNVERIFIED** rather than
+  INVALID or discarded: pcrec's own result is still measured and reported
+  standalone, clearly labeled as unverified. When exactly one of the two
+  finishes, agreement is checked against whichever one did, and the DNF'd
+  one is just another `status=dnf` row. The one engine that's truly
+  mandatory for a case to proceed at all is `pcrec` itself — if it fails
+  to run, that's a genuine harness problem, not a result.
+- **Early-match honesty guard.** MB/s is computed as
+  `buffer_bytes / wall_time`, which is only a genuine scan-rate figure if
+  the engine actually had to look at most of the buffer. When the
+  reference engine's leftmost match ends before 80% of the buffer length,
+  every engine's MB/s in that case is inflated by the same early-exit
+  effect (less work happened than the byte count implies) — `compare.sh`
+  detects this from the reference engine's match span and appends an
+  explicit note (`early match at byte N of M (X% of buffer scanned) --
+  MB/s reflects early exit, not steady-state scan rate; compare within
+  this case's rows only, not across cases`) to that case's verdict, in
+  both the streamed log and the markdown report's case-matrix table. This
+  is a **within-case, cross-engine** comparison caveat, not a per-engine
+  correction: ratios between engines in the same (flagged) case are still
+  meaningful, since all of them paid the same early-exit shortcut; the
+  absolute MB/s number just shouldn't be read as "how fast this engine
+  scans 8 MB" the way an un-flagged case's number can be.
 - **Auto-scaled iterations.** Each engine's `iters=1` baseline call
   supplies a per-engine time-per-call estimate; if that's already
   `>= TARGET_SECS` (default 0.3s) the baseline measurement is reused
@@ -168,23 +195,32 @@ accidental occurrence before writing the file. Case (g)'s filler alphabet
 deliberately excludes `x` and `y` entirely so no accidental x-run (of any
 length) can occur anywhere except the one deliberate plant.
 
-### A subject-design caveat worth knowing about (case d)
+### A subject-design pitfall, fixed (case d)
 
-Case (d)'s filler text is pure `[a-z]` random lowercase with no `@` or `.`
-characters anywhere except at the ~100 planted email-ish tokens. Because
-of that, `[a-z]+` at the very start of the pattern can greedily match the
-*entire* lowercase prefix of the buffer, back off just enough to let `@`
-match, and land on the **first** `@` in the whole buffer — which is the
-first planted token, wherever it is. All four engines agree on this (it's
-correct leftmost-match behavior, not a bug), but it means the match's
-start offset is `0`, not the position of the first planted token, and the
-measured MB/s is inflated because so little of the buffer actually needs
-scanning before the engine can start trying to satisfy the rest of the
-pattern. A future revision should use a mixed-character filler (letters +
-digits/punctuation/spaces, i.e. not exclusively `[a-z]`) so `[a-z]+` runs
-stay naturally short outside the planted tokens, making this case a
-genuine "scan a lot of data before finding a token" measurement instead of
-an accidental best-case one.
+An earlier revision of case (d) used pure `[a-z]` random lowercase filler
+with no `@` or `.` characters anywhere except at the ~100 planted
+email-ish tokens. Because of that, `[a-z]+` at the very start of the
+pattern could greedily match the *entire* lowercase prefix of the buffer,
+back off just enough to let `@` match, and land on the **first** `@` in
+the whole buffer — which is the first planted token, wherever it is. All
+four engines agreed on this (it was correct leftmost-match behavior, not a
+bug), but it meant the match's start offset was always `0`, not the
+position of the first planted token, and the measured MB/s was inflated
+because so little of the buffer actually needed scanning before the
+engine could start trying to satisfy the rest of the pattern — not
+representative of how this pattern behaves on real (mixed) text.
+
+Fixed by `rand_wordy()` in `compare.sh`'s subject-generation script: case
+(d)'s filler is now space-separated "words" of 3–12 lowercase letters with
+an occasional digit run, instead of one unbroken run of `[a-z]`. Every
+`[a-z]+` run outside the deliberately planted tokens is now bounded to at
+most 12 bytes, so the leftmost match genuinely lands at the first planted
+token, and the case now measures what it was meant to: scanning through a
+realistic amount of text before finding a token. (The general lesson —
+watch what a pattern's own metacharacters can do to a naive filler
+alphabet, not just whether the filler could accidentally spell out a
+literal target — applies to any future case using an unbounded repeat
+like `+` or `*` at the start of the pattern.)
 
 ## Adding a case
 

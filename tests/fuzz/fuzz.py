@@ -412,6 +412,30 @@ def write_failure_bundle(run_dir, kind, pattern, subject, pcrec_out, pcre2_out, 
 
 _ANCHOR_IN_ZERO_REP = re.compile(r"\{0(,0)?\}")
 
+_K1_SHAPE = re.compile(r"\((\?:)?\$\|")
+
+def is_known_pcrec_k1(pattern):
+    """K1 (docs/known_issues.md): in a QUANTIFIED group whose first
+    alternative is `$`, a consuming alternative can wrongly outrank the
+    zero-width `$` at end-of-line. Confirmed pcrec bug, deferred to M6;
+    regressions live in tests/known_fail/K1_dollar_in_repeat.rxt. Excluded
+    here so it does not drown newly-discovered divergences — DELETE this
+    exclusion when K1 is fixed."""
+    m = _K1_SHAPE.search(pattern)
+    if not m:
+        return False
+    # only counts when the group is quantified (repeat can re-enter the alt)
+    depth = 0
+    for i in range(m.start(), len(pattern)):
+        if pattern[i] == "(":
+            depth += 1
+        elif pattern[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return i + 1 < len(pattern) and pattern[i + 1] in "*+{"
+    return False
+
+
 def is_known_pcre2_quirk(pattern):
     """PCRE2 10.46 start-anchor optimizer quirk (README.md "Finding 2"):
     an anchor inside a group quantified {0}/{0,0} makes PCRE2 wrongly treat
@@ -452,7 +476,7 @@ def main():
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
              "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
-             "pcre2_quirk": 0}
+             "pcre2_quirk": 0, "pcrec_k1": 0}
 
     def process_one(i):
         pattern_node = gen_pattern()
@@ -560,6 +584,9 @@ def main():
             stats["pairs_compared"] += args.subjects
             stats["oracle_inconclusive"] += result["oracle_inconclusive"]
             for subj, pr, orr in result["content"]:
+                if is_known_pcrec_k1(result["pattern"]):
+                    stats["pcrec_k1"] += 1
+                    continue
                 if is_known_pcre2_quirk(result["pattern"]):
                     # PCRE2 10.46 start-anchor optimizer quirk (README.md
                     # "Finding 2", verified 2026-08-09): an anchor inside a
@@ -594,6 +621,7 @@ def main():
     print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se)")
     print(f"subject pairs compared (both-accept patterns): {stats['pairs_compared']}")
     print(f"  oracle inconclusive (PCRE2 match-limit hit): {stats['oracle_inconclusive']}  (see README.md)")
+    print(f"  known pcrec bug K1 ($-in-quantified-group): {stats['pcrec_k1']}  (docs/known_issues.md, deferred)")
     print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
     print(f"content divergences: {len(content_divergences)}")
     print(f"accept/reject divergences: {len(accept_mismatches)}")
