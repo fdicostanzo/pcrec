@@ -5,6 +5,41 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 ## Files
 
 - **parse.c** — base-tier PCRE parser; module hook points for escapes and (?X...) constructs; produces AST
+- **registry.c** — the syntax construct registry (D24/SR-1): every non-base
+  construct as one `static const` row. Not yet consumed by parse.c — SR-2
+  routes the four doorways through it and must emit byte-identical output
+
+## The construct registry (registry.c, D24)
+
+One declarative home per non-base construct, replacing knowledge that lived in
+up to five places at once. `\v` shipped decoding as vertical tab because
+`esc_modules[]` and `esc_char_value`'s switch disagreed ten lines apart with
+nothing enforcing agreement; a construct with two homes will drift.
+
+Everything non-base enters through exactly **four doorways** — after `\`, after
+`(?`, after `(*`, after `[` inside a class. The base tier reaches exactly one
+of them, once, for `(?:`, which is why "the common path is fast" holds by
+construction rather than by optimisation (SR-5 will guard it with an
+instrumented build).
+
+Four axes stay apart on purpose: **flavour** (which construct a byte MEANS) /
+**option** (what it DENOTES) / **enablement** (is it available) / **engine**
+(can it LOWER). A flavour change rebinds a row; it cannot reach inside another
+construct's handler. One flavour exists today, by design.
+
+Rules when touching it:
+
+- **Add a row here and nowhere else.** `syntax` must be a pattern that really
+  reaches that doorway — tests/registry/ uses it as the probe, so a new row
+  covers itself with no test edit.
+- **`RS_MODULE` with no handler is a complete outcome**, not a stub: the
+  construct is named, cleanly rejected and queryable.
+- **The `engines` column is design intent, not measurement.** Nothing consumes
+  it until SR-8/M4; do not build on its values without checking them.
+- **Two "requires module" diagnostics deliberately stay in parse.c**: `\x{...}`
+  (a sub-case of the base `\x` handler) and the possessive `+` suffix (a
+  quantifier suffix, not an atom). Neither is a doorway, and giving them one
+  would cost the base tier a lookup.
 
 ## Case folding (OS-1 / D23)
 

@@ -148,7 +148,7 @@ after waits for a forcing function. Frank's priority stands throughout: the
 95% path stays fast and simple, and exotic constructs earn only the right to be
 named, cleanly rejected and queried.
 
-- [SR-1] STATE:not-started — the CONSTRUCT TABLE. `static const` rows in
+- [SR-1] STATE:completed — the CONSTRUCT TABLE. `static const` rows in
   src/parse/registry.c: {kind (ESC|GROUP|VERB|CLASSBRACKET), selector byte,
   feature bit, flavour mask, engines mask, module name, one-line PCRE2
   semantics, handler fn or NULL}. Indexed [256] per kind, short chain for the
@@ -157,7 +157,15 @@ named, cleanly rejected and queried.
   knows about non-base syntax moves here: `esc_modules[]`, `esc_char_value`'s
   non-base cases, the `(?X` ternary chain, the `(*` catch, the `[[.`/`[[=`
   rule. THE POINT is that a construct stops having two homes — `\v` was the
-  declarative table and the imperative switch disagreeing ten lines apart
+  declarative table and the imperative switch disagreeing ten lines apart.
+  BUILT 2026-08-09 as src/parse/registry.c: 67 rows (39 escape, 24 group, 1
+  verb, 3 class-bracket), guarded by tests/registry/ (116 checks, five sabotage
+  edits, all caught). Two departures from the text above, both recorded under
+  D24: the [256]-per-kind index was NOT built (a linear scan over rows the base
+  tier never reaches; an index would be an unmeasured axis AND a second home for
+  the selector bytes), and the handler field waits for SR-2, where its four
+  signatures are actually determined. parse.c is unchanged, so behaviour is
+  bit-identical by construction
 - [SR-2] STATE:not-started — FOUR DISPATCH POINTS in parse.c and nothing else:
   `pcrec_ext_escape(cx, c, in_class)`, `pcrec_ext_group(cx, c2)`,
   `pcrec_ext_verb(cx)`, `pcrec_ext_class_bracket(cx, c2, cls)`. parse.c keeps

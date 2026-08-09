@@ -1264,6 +1264,33 @@ implement exotic constructs — it is the mechanism that lets them be NAMED,
 REJECTED CLEANLY and QUERIED at near-zero cost while effort goes to the common
 path. A row with a NULL handler is a complete, correct, tested outcome.
 
+**SR-1 AS BUILT (2026-08-09), two departures from the plan text.** Both are
+small, both would surprise a reader who took the step description literally.
+
+1. **No [256] index per kind — a linear scan over the rows.** The plan said
+   indexed. The index has no customer: SR-5's own claim is that a base-tier
+   pattern performs ZERO lookups at these doorways, so the scan runs only for a
+   construct that is about to stop the compile with a diagnostic. Building an
+   index for that is the unmeasured axis D18 forbids, and in C it would need
+   either a hand-maintained parallel array — a SECOND HOME FOR THE SELECTOR
+   BYTES, which is the exact failure this table exists to end — or an X-macro
+   the codebase uses nowhere else. Revisit if a doorway ever lands on a hot
+   path, which today nothing suggests.
+2. **No handler field yet.** Its four signatures are determined by SR-2's
+   dispatch functions, not by the table; a field that is NULL in all 67 rows
+   and whose type is a guess is worse than one added when its type is known.
+   `RS_MODULE` carries the "known but unimplemented" meaning meanwhile, and the
+   third status `RS_REJECTED` had to be added for constructs PCRE2 rejects TOO
+   (POSIX collating elements), where there is no module to name and agreement
+   is compliance — a state the handler pointer alone could not express.
+
+Also as built: the table describes NON-BASE constructs only, so `\n` `\t` `\xHH`
+and friends never reach it, and two "requires module" diagnostics stay in
+parse.c because they are sub-cases of base constructs rather than doorways —
+`\x{...}` (reached only from the base `\x` handler) and the possessive `+`
+suffix. Giving either one a doorway would cost the base tier a lookup for
+nothing. They are the two known outstanding second homes.
+
 **Revisit when:** a second flavour earns its axis; or M4's VM makes the
 `engines` column load-bearing; or the base grammar itself needs to vary
 (BRE/ERE under V-D), which is the one case that genuinely needs a second

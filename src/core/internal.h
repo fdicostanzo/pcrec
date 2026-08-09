@@ -139,6 +139,115 @@ typedef struct {
 void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
      __attribute__((noreturn, format(printf, 3, 4)));
 
+/* ---- syntax construct registry (D24 / SR-1) ----
+ *
+ * ONE declarative home per non-base construct. Before this table a single
+ * construct's identity lived in up to five places (esc_modules[],
+ * esc_char_value's switch, the (?X ternary chain, tests/reject/, the
+ * compliance report); `\v` shipped wrong because the first two disagreed ten
+ * lines apart with nothing enforcing that they agree.
+ *
+ * The table describes constructs OUTSIDE the base tier only. Base syntax
+ * (literals, `.`, classes, quantifiers, `|`, `(...)`, `^`, `$`, and the plain
+ * character escapes \n \t \r \f \a \e \xHH) stays in parse.c and never
+ * consults the registry — which is what makes "the 95% path is fast" true by
+ * construction rather than by optimisation (SR-5 guards it). The single
+ * exception, and the only registry row the base tier reaches, is `(?:`.
+ *
+ * Rows are pure `static const` data; SELECTION (flavour/feature mask) is
+ * resolved per compile. A runtime-mutable registry is rejected: it would be
+ * exactly the file-scope mutable state D19/TS-1 forbid. */
+
+typedef enum {
+    RK_ESC,           /* doorway 1: after '\'             — one byte decides */
+    RK_GROUP,         /* doorway 2: after '(?'            — one byte decides */
+    RK_VERB,          /* doorway 3: after '(*'            — a NAME decides   */
+    RK_CLASSBRACKET,  /* doorway 4: after '[' in a class  — one byte decides */
+    RK_COUNT
+} RegKind;
+
+/* Which module owns the construct. A mask, not an index: `(?<` is genuinely
+ * two constructs sharing one byte (lookbehind and named group). */
+enum {
+    FEAT_CLASSES       = 1u << 0,
+    FEAT_ASSERTIONS    = 1u << 1,
+    FEAT_BACKREFS      = 1u << 2,
+    FEAT_UNICODE_PROPS = 1u << 3,
+    FEAT_QUOTING       = 1u << 4,
+    FEAT_MISC          = 1u << 5,
+    FEAT_LOOKAROUND    = 1u << 6,
+    FEAT_NAMED_GROUPS  = 1u << 7,
+    FEAT_ATOMIC_GROUPS = 1u << 8,
+    FEAT_COMMENTS      = 1u << 9,
+    FEAT_CALLOUTS      = 1u << 10,
+    FEAT_BRANCH_RESET  = 1u << 11,
+    FEAT_CONDITIONALS  = 1u << 12,
+    FEAT_RECURSION     = 1u << 13,
+    FEAT_MODIFIERS     = 1u << 14,
+    FEAT_VERBS         = 1u << 15
+};
+
+/* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
+ * earn-its-axis rule applied to the front end. SR-7 adds the rest; the column
+ * exists now so a second flavour REBINDS A ROW instead of adding a branch
+ * inside a handler. */
+enum { FLAV_PCRE2 = 1u << 0 };
+
+/* Engine capability: which engine the construct can LOWER to. NOT a parsing
+ * question — `\1` parses fine and simply cannot become a DFA. NOTHING CONSUMES
+ * THIS COLUMN YET; it turns on at SR-8, when M4's VM gives the parser a second
+ * engine to choose between. Until then the values are recorded DESIGN INTENT,
+ * not measured behaviour, and no test may assert on them beyond well-formedness. */
+enum {
+    ENGM_DFA = 1u << 0,   /* the shipped DFA engines (ENG_UNANCH, ENG_ATTEMPT) */
+    ENGM_VM  = 1u << 1    /* the backtracking VM (M4, not built) */
+};
+
+typedef enum {
+    RS_BASE,      /* implemented today, by the base grammar */
+    RS_MODULE,    /* known and unimplemented; `module` names what would implement
+                     it. A complete, tested outcome — not a stub */
+    RS_REJECTED   /* PCRE2 rejects it too, so agreement IS compliance and there
+                     is no module to name (POSIX collating elements) */
+} RegStatus;
+
+/* Which diagnostic the construct produces. Kept as data so SR-2's dispatch is
+ * a mechanical substitution and byte-identity is provable. */
+typedef enum {
+    RD_NONE,          /* compiles; no diagnostic */
+    RD_MODULE,        /* the doorway's template + `module` */
+    RD_MODULE_OCTAL,  /* atom form only: "\N (backreference/octal) requires ..." */
+    RD_FIXED          /* `msg`, verbatim */
+} RegDiag;
+
+enum {
+    RF_CLASS_BASE = 1u << 0   /* inside a class this byte is BASE syntax and the
+                                 doorway is not taken (\b is backspace there) */
+};
+
+#define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
+
+typedef struct {
+    RegKind     kind;
+    int         sel;       /* the deciding byte, or REG_SEL_ANY */
+    const char *syntax;    /* how it is written — also a valid probe pattern,
+                              which is what lets the conformance test cover new
+                              rows without being edited */
+    unsigned    feature;   /* FEAT_* mask; 0 for RS_BASE/RS_REJECTED */
+    unsigned    flavours;  /* FLAV_* mask */
+    unsigned    engines;   /* ENGM_* mask — design intent, unconsumed until SR-8 */
+    const char *module;    /* module name AS IT APPEARS IN DIAGNOSTICS, or NULL */
+    RegStatus   status;
+    RegDiag     diag;
+    const char *msg;       /* RD_FIXED only, else NULL */
+    unsigned    flags;     /* RF_* */
+    const char *note;      /* one-line PCRE2 semantics (SR-3/SR-4 render this) */
+} RegRow;
+
+/* src/parse/registry.c */
+const RegRow *pcrec_registry(RegKind k, size_t *n);
+const RegRow *pcrec_registry_find(RegKind k, int sel);
+
 /* ---- stage entry points ---- */
 
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */

@@ -7,7 +7,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 - **compile.c** — pcrec_compile() pipeline driver (parse → NFA → DFA → emit); ctx_fail error handler; pcrec_default_options defaults
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf
-- **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa, and module-level declarations
+- **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa, the syntax construct registry types (RegRow and its FEAT_/FLAV_/ENGM_/RS_/RD_ vocabulary, D24), and module-level declarations
 
 ## Conventions
 

@@ -1911,3 +1911,95 @@ itself immediately — it collapses the five-way duplication that produced `\v`
 before starting; the four-doorway argument is what makes the design small, and
 the four-axes table is what keeps it from becoming the `if flavour else if
 flavour` cascade Frank was right to worry about.
+
+## 2026-08-09 — SR-1: the syntax construct registry, built
+
+Baseline verified green before touching anything, and it matched the hand-off
+brief exactly: 805 corpus / 49 CLI / 112 reject / 29 codegen / 7 trie-identity,
+verify_rxt 796/796, fuzz seed 1 with zero divergences, `make bench` with zero
+budget failures (linearity ratio 4.06). Worth saying plainly because the brief
+asked for it as a stop condition: nothing about this environment differs.
+
+**What landed.** `src/parse/registry.c` — 67 rows describing every non-base
+construct as `static const` data: 39 escapes, 24 `(?X` groups, 1 verb catch-all,
+3 class brackets. The row vocabulary (RegRow, FEAT_/FLAV_/ENGM_ masks,
+RS_/RD_/RF_ enums) lives in core/internal.h, which is also what makes rebuilds
+correct — the Makefile's object rule already depends on that header, and a
+separate registry.h would have been invisible to it.
+
+**parse.c is untouched.** SR-1 is the table; SR-2 is the dispatch. So this
+commit cannot change behaviour, and the 805-case corpus passing is a
+consistency check rather than evidence. The evidence that matters is the new
+tests/registry/ check.
+
+**The table alone would have been a sixth copy, not a fix.** That is the thing
+worth remembering from this step. Five scattered descriptions of each construct
+is what produced `\v`; adding a sixth — the newest, therefore the first to
+drift — improves nothing by itself. So SR-1 shipped with the conformance check
+rather than deferring it, and the check asserts in BOTH directions:
+
+- **table → parser**: every row's own `syntax` field is compiled for real and
+  the diagnostic must match EXACTLY. Substring matching would let a row name
+  the wrong module and pass.
+- **parser → table**: a 255-byte sweep of each doorway. If the parser says
+  "requires module" for a byte, a row must exist and name the same module.
+  **This is the direction that catches a construct added to parse.c with no
+  row**, which is precisely the `\v` drift, and direction one is structurally
+  blind to it. The sweep reports what it covered: 39 bytes routed after `\`,
+  38 inside a class (one fewer — `\b` is backspace there), 254 after `(?`.
+
+Probes come from each row's `syntax` field, so a new row covers itself with no
+test edit. That is safe here and would not be in tests/reject/: this is a
+conformance check between two descriptions, asserting they AGREE, never that
+the rejection is correct. The moment a check asserts correctness it must not
+share a source with what it checks — the trie-identity lesson, and why SR-4
+keeps the accept-controls hand-written.
+
+**Sabotage-validated, five edits, all caught** (exact edits, not just counts,
+per the house rule; each reverted after measuring):
+
+| edit to src/parse/registry.c | failures |
+|---|---|
+| `\v` row's module `"classes"` → `"assertions"` | 4 |
+| delete the `\K` row entirely | 2 (both sweeps) |
+| insert a row for `\n`, a BASE escape the parser compiles | 4 |
+| collating message → "POSIX collating elements are unsupported" | 2 |
+| drop `RF_CLASS_BASE` from the `\b` row | 2 |
+
+The `\n` sabotage is the one I would keep: it is the only one that tests the
+boundary the design rests on, that the table describes NON-BASE syntax and the
+base tier never consults it.
+
+**A real bug in the check, found by sabotaging it rather than by writing it.**
+The S2 run reported two failures but printed only one, because `bad()` writes
+to unbuffered stderr while PASS lines sit in a block-buffered stdout pipe, so a
+PASS and a FAIL spliced into one line and stopped matching a line-anchored
+grep. Fixed with `fflush(stdout)`. Nothing was wrong with the assertions; the
+REPORTING was lossy, which is the failure mode that makes a test lie quietly.
+
+**Two departures from SR-1's plan text**, both now under D24 as "SR-1 as built":
+no [256] index (a linear scan over rows the base tier never reaches — an index
+would be an unmeasured axis, and in C would need either a hand-maintained
+parallel array, i.e. a second home for the selector bytes, or an X-macro used
+nowhere else), and no handler field until SR-2 determines its four signatures.
+
+**One thing the design needed that D24 did not name:** a third status. The plan
+had "handler or NULL" carrying the whole meaning, but POSIX collating elements
+are not awaiting a module — PCRE2 rejects them too, so agreement IS compliance
+and there is no module to name. `RS_REJECTED` is now distinct from `RS_MODULE`,
+which also matches the `AGREES-REJECT` status the compliance report grew for
+the same constructs on the same day. The two documents converging on the same
+distinction independently is mild evidence it is a real one.
+
+**The `engines` column is recorded design intent, not measurement**, and the
+file says so in its header. Nothing consumes it until SR-8/M4. It is the one
+part of this table a future reader could mistake for established fact, so it is
+labelled in the data, in src/parse/CLAUDE.md and here. When the VM lands, treat
+those values as claims to check, not as a spec.
+
+**Next: SR-2** — route the four doorways in parse.c through the table and
+shrink parse.c to the base grammar. Its acceptance bar is byte-identical
+emitted output across the corpus, proved the way OS-0b proved it (167 patterns
+x 3 prefixes x 4 emission modes = 1980 hashed outputs; the script pattern is in
+that session's entry). tests/registry/ was built to be SR-2's safety net as
+much as SR-1's: it already pins every diagnostic string SR-2 must reproduce.
