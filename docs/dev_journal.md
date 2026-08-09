@@ -1298,3 +1298,136 @@ sabotage; the critic re-verified all of that file's expectations against PCRE2
 directly rather than against python `re`.
 
 Verification: 731 corpus + 42 CLI + 17 codegen + 5 trie-identity green.
+
+## 2026-08-09 — strategy session: D18-D22, and a priority that should have been set at M0
+
+Frank set direction that reframes several open gates. No code changed; five
+decision entries and a plan restructuring. Recording the reasoning, not just the
+conclusions, because the conclusions are cheap to restate and the reasoning is
+what makes them applicable to the next question.
+
+**The priority, stated explicitly for the first time (D18).** pcrec exists for
+SPEED OF EXECUTION first and speed of COMPILATION second. Other regex libraries
+offer other benefits; this one offers those. That single sentence resolves
+trade-offs the earlier entries left drifting, and D12/D15's insistence on
+measured budgets turns out to be downstream of it rather than a process
+preference.
+
+**Hyperspecialization, and the shape took three drafts to get right.** My first
+version framed options as open/closed booleans. Wrong. The caller names a SET of
+values per dimension and the product is over those sets; a singleton set is
+fully specialized and compiled away INCLUDING when its element is not the
+default. Asking for case-insensitive only is not "opening" case sensitivity — it
+is hyperspecializing to the insensitive point, with no flag and no dispatch,
+exactly as if sensitive-only had been asked for. Both are singletons; only the
+specialized value differs. A dimension is an axis only at |set| >= 2.
+
+**And every axis must EARN itself.** Before a dimension becomes a product axis,
+measure whether specializing buys anything. It can fail three ways and all three
+are wins: it folds into the front end, it is free at run time, or it is a pure
+wrapper. Four predictions are recorded so results can be checked against them —
+ASCII case-insensitivity folds to `bitmap |= swapcase(bitmap)`; encoding folds,
+which APPROACH §4/§10 already commits to; streaming is NOT a wrapper and the
+reverse pass is why; and anchoring is an axis that ALREADY EXISTS in the shipped
+compiler and has never passed the test, since ENG_UNANCH/ENG_ATTEMPT split for
+an implementation reason rather than a measured one. That last one is the
+sharpest thing to come out of the discussion: D18's rule condemns something we
+already ship, which makes DD-7 the first application of the principle rather
+than cleanup.
+
+**Execution side (D18).** Selection and execution are two steps: resolve the
+engine once, execute it many times, so selection amortises. The selector is
+itself generated and specialized — with case sensitivity as the only plural
+dimension it is `if (ci) return engine1; else return engine2;`, not a registry.
+Two properties are the whole point and both need structural tests: dispatch
+resolves once per search call and never reaches the hot loop, and the
+all-singleton case pays NOTHING — no dispatcher, no parameter, no indirection,
+byte-for-byte what we emit today.
+
+**The naming worry was smaller than I assumed, and measuring said so.** I was
+about to write that multi-engine output needs everything namespaced. Checking
+the emitter first: of 15 emitted identifiers, 12 are FUNCTION-LOCAL statics that
+cannot collide across engines in separate functions. Only three are file-scope —
+the `<prefix>_span` typedef and `<prefix>_search`'s declaration and definition.
+So the work is emit the typedef once and share it, plus a distinct function name
+per engine, which the named-entry-point scheme already supplies. The naming
+answer and the API answer are the same answer. Worth noting the near-miss: I
+nearly recorded a much larger problem from memory of how the emitter "must" work.
+
+**Then D20 made even that mostly optional.** The product machinery is a separate
+MODULE: an engine FINDER driving an engine GENERATOR that knows nothing about
+dimensions and owes the layer above only naming constraints. Consequences: you
+pay for the product only if you use it (D18's "all-singleton pays nothing"
+becomes true by construction rather than by care); the CORE API never becomes
+set-valued, since scalars are exactly right for something that compiles one
+point, which deletes the API-change half of OS-0; and the finder can be built
+much later or never. If the folding predictions hold it has no customer yet, and
+that is a good outcome rather than a stalled one.
+
+**D21 — optimization in waves, and the ORDER is the decision.** Algorithmic
+first, then profiled code work, then compile time. Profiling a bad algorithm
+optimizes the wrong loop, and optimizing compile time before execution speed
+trades the primary goal for the secondary one. Research into other open-source
+engines is explicitly part of the algorithmic wave and not a compromise. The
+lead with the most obvious target: we use memchr only at exactly ONE escape byte
+and otherwise fall to a bitmap, where ripgrep and Hyperscan choose the RAREST
+byte by frequency — a different DECISION, not a faster implementation of ours —
+and case (d) exists precisely because that bitmap path had no coverage.
+memchr2/memchr3 covers the gap between our two paths and is probably the
+cheapest real win available. Rejections get recorded with reasons.
+
+**D22 — adversarial patterns are out of scope, and it cuts one way worth
+stating.** pcrec compiles patterns a developer controls, ahead of time; it is
+not a service taking untrusted regex, and contorting the design to survive an
+attacker is not a goal. DD-2 drops to robustness. But the STACK budgets keep
+their priority with a changed justification: DD-10/TS-4 is not attack hardening,
+it is a legitimate deeply-nested pattern from a trusted source on a 128 KB musl
+thread stack, which under D19 is an ordinary correctness bug for a threaded
+caller. Written into the entry so nobody later reads "adversarial is out of
+scope" and deletes the stack work as security theatre. The NFA/DFA caps also
+stay exactly as they are — an attributable error was always the right answer for
+an honestly-too-big pattern, never an anti-attack measure.
+
+**D19 — thread-safety, audited rather than assumed, and both properties already
+hold.** Usable FROM threads, never threaded: no worker pools, no parallel subset
+construction. Generated code has 12 statics, all `const` with constant
+initialisers, so load-time .rodata with no lazy init and nothing to race on; no
+malloc, no errno, no locale, no non-reentrant libc; all working state
+stack-local. The library has NO file-scope mutable state anywhere in src/, and
+Ctx including its jmp_buf is a local of pcrec_compile so the longjmp path is
+per-thread.
+
+That audit also corrected R3: the review recorded "the generation counter is
+file-scope while the marks are per-build arena memory". It is not — `gen` is a
+member of `Marks` and `Marks marks` is a LOCAL of `pcrec_build_dfa`. The hazard
+R3 described is real and handled; the scope claim was wrong. Had it been TRUE it
+would have been exactly the thread-safety defect D19 is about, and I went
+looking for that bug because a committed document said it was there. A wrong
+description of correct code still costs, because the next reader reasons from
+the description.
+
+Guards rather than prose, because this is the invariant shape the project keeps
+losing — true by construction, invisible to every test, killed by a plausible
+one-liner (a memoisation cache, a hoisted scratch buffer, an errno-setting call,
+a diagnostics counter, or under D18 a selector that caches its choice in a
+global). TS-1 is the cheap one: assert every emitted static is const plus a
+non-reentrant-symbol denylist, no gcc needed. The M4 landmine is captures — a
+capture buffer is mutable per-search state and the tempting place to put it is a
+static; it must be caller-provided or stack-local.
+
+**Long-term vision (Beyond M7), recorded so the architecture is not painted into
+a corner:** a PCRE2 compatibility layer, other-language usage libraries, a grep
+CLI, and translators from other regex syntaxes. The last are FRONT-END modules
+lowering into the existing AST — the shape APPROACH §3's parser extension points
+already anticipate — which is what makes the direction affordable rather than a
+rewrite. And the bindings are cheap for a reason that is easy to erode: the
+generated code has ZERO runtime dependency on pcrec. Protect that deliberately.
+
+**Working order agreed for the option work:** OS-0b (naming prep — cheap,
+mechanical, blocks everything if left) -> OS-1 (case-insensitivity folding —
+parser-only, no API work, the cheapest possible test of D18's own rule) -> the
+finder only once a dimension has actually earned an axis. That ordering tests
+the rule before building the machinery the rule implies.
+
+No source changed this session; 731 corpus + 42 CLI + 17 codegen + 5
+trie-identity remain green from the last verification.
