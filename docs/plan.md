@@ -112,14 +112,16 @@ the last checkpoint; compiled results live in docs/reviews/.
 
 ## Option-specialization dimensions (D18) — each must EARN its engine
 
-"Open" means the CALLER explicitly asked for that option to stay variable at
-run time (D18). Everything else is closed by default and compiled away, so the
-common case is ONE engine. Each dimension below is a candidate axis for when
-someone does open it. Before it becomes one, measure whether specializing buys
-anything; a dimension that folds into the front end, is free at run time, or is
-a pure wrapper is NOT an axis even when opened. Predictions are in D18 — record the measurement against
+The caller names a SET of values per dimension and the product is over those
+sets (D18). A singleton set is fully specialized and compiled away — asking for
+case-insensitive ONLY is hyperspecialization, not an axis. A dimension is an
+axis only when its set has 2+ elements. Each dimension below is a candidate for
+that case; before it becomes an axis, measure whether specializing buys
+anything, since a dimension that folds into the front end, is free at run time,
+or is a pure wrapper is NOT an axis even when the caller names it plural. Predictions are in D18 — record the measurement against
 the prediction, including when the prediction was wrong.
 
+- [OS-0] STATE:not-started — the request surface cannot express a set (D18). `pcrec_options` holds scalars (`int encoding`, and case-insensitivity has no field at all), so a caller can say "utf8" but not "{ascii, utf8}". Design the set-valued option request and the generated entry point for a plural product — the dispatcher's signature depends on WHICH dimensions are plural, which is why this interacts with DD-3 (generated-API versioning, already marked "before M3"). Settle this before any OS dimension is built, or each one invents its own convention
 - [OS-1] STATE:not-started — ASCII case-insensitivity: PREDICTED to fold entirely into class construction (`bitmap |= swapcase(bitmap)` at parse time), giving zero runtime cost, no second engine, and possibly SMALLER tables via byte-class merging. Measure: table size and throughput, folded vs a hypothetical runtime-checked variant, on a case-heavy pattern set. If the prediction holds, DD-1 stops being an engine question for the ASCII tier and becomes a parser change. Unicode folding is a separate question and stays with DD-1/M5
 - [OS-2] STATE:not-started — encoding ascii/utf8: PREDICTED to fold, since APPROACH §4/§10 already commit to byte-wise UTF-8 automata with no hot-path decode, explicitly so ASCII and UTF-8 share one DFA emitter. Measure when M5 lands: is the emitted hot loop byte-identical in SHAPE between the two encodings for an equivalent pattern? If yes the axis collapses; if the UTF-8 path needs its own loop, that is a real axis and a surprise worth recording
 - [OS-3] STATE:not-started — streaming: PREDICTED NOT to be a wrapper, and this is the one prediction with evidence already against the optimistic answer — the reverse pass rescans backward over bytes a stream may no longer hold. Feeds M3.0's design gate; do not write streaming code before it is settled

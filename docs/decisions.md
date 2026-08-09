@@ -706,19 +706,35 @@ in the hot loop. Same for encoding. The generated matcher is a bespoke tool for
 exactly one configuration, which is the same principle that already makes the
 whole project an AOT compiler rather than an interpreter.
 
-**"OPEN" MEANS EXPLICITLY REQUESTED OPEN — not "not yet decided".** This is
-the load-bearing definition and it is easy to misread (Frank corrected exactly
-that misreading when this entry was drafted). By DEFAULT every option is
-CLOSED: fixed at compile time, compiled away, one specialized engine. An option
-becomes open only when the CALLER asks for it to stay variable at run time. The
-cartesian product is over the explicitly-opened set ONLY, never over the option
-space pcrec happens to support.
+**THE INTERFACE TAKES A SET PER DIMENSION, and the product is over those
+sets.** This is the load-bearing shape and it is easy to get subtly wrong
+(Frank corrected two drafts of this paragraph). It is NOT a boolean
+"open/closed" per option. The caller names, for each dimension, the set of
+values it wants that compilation to serve:
 
-So the product is small because it is opt-in, not because we prune it. A caller
-who opens nothing gets one engine. A caller who opens (case-sensitive |
-insensitive) x (ascii | utf8) gets up to four specialized backends plus a thin
-dispatch — not one engine carrying four runtime switches, and not sixteen
-engines covering options nobody asked about.
+    case:     {insensitive}                -> |set| = 1
+    encoding: {ascii, utf8}                -> |set| = 2
+                                              => product = 2 backends
+
+A dimension whose set has ONE element is fully specialized and compiled away —
+including when that element is not the default. Asking for case-insensitive
+ONLY is not "opening" case-sensitivity; it is hyperspecializing to the
+insensitive point, with no runtime flag and no dispatch, exactly as if the
+caller had asked for sensitive only. Both are singletons; only the specialized
+value differs.
+
+A dimension is an AXIS only when its set has two or more elements, and the
+cartesian product is over those sets alone — never over the option space pcrec
+happens to support. So the product is small because it is requested small, not
+because we prune it afterwards. A caller naming a singleton everywhere gets
+exactly one engine.
+
+Consequence for the API, and it is not the shape `pcrec_options` has today:
+the option fields are currently scalars (`int encoding`), which can express
+"utf8" but not "{ascii, utf8}". A set-valued request surface is a real design
+change and it interacts with DD-3 (generated-API versioning) — the generated
+entry point for a multi-element product is a dispatcher whose signature depends
+on which dimensions are plural.
 
 **And the test that keeps that from exploding: every dimension must EARN its
 place.** Before a dimension becomes a product axis, measure whether
