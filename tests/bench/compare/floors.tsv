@@ -4,17 +4,28 @@
 # A run fails when it is worse than reference*margin (throughput) or
 # better-is-lower reference/margin (latency). Journal every change here.
 #
-# VALUES are the quiet-box baseline of 2026-08-09 (results-ubuntubudu-20260809.md),
-# deliberately NOT re-baselined: the 2026-08-09 re-run that produced the margins
-# below reproduced every one of them within 2% (a 2201 vs 2192, b 1968 vs 1970,
-# c 390 vs 389, f 158 vs 159, h 1323 vs 1303), so there was nothing to move and
-# moving them would have quietly ratcheted the baseline down.
+# PROVENANCE OF THE VALUES — stated correctly on the second attempt, because the
+# first version of this header got it wrong in both halves (R3 guards critic F11).
+# The values were written at commit b66ad67 and have not moved since. They come
+# from a run that is NOT in this repository: they match neither
+# results-ubuntubudu-20260809.md (a 2130.050) nor results-ubuntubudu-20260809-2.md
+# (a 2201.356). Do not cite either file as their source.
 #
-# MARGINS are per case, from that run's trial spread (R3.5, D17):
+# They were left in place rather than re-baselined, which is still the right call
+# — the 2026-08-09-2 re-run that produced the margins below reproduced eight of
+# the nine within 3.3%. NOT all nine: case (i) came back at 77.00 against a
+# recorded 69.72, which is 10.4% worse. That is the one case whose 0.700 margin
+# means this gate cannot see it move, so the discrepancy is self-concealing and
+# is written down here instead. [R3.6] tracks resolving it.
+#
+# MARGINS are per case, from the 2026-08-09-2 run's trial spread (R3.5, D17):
 #   margin = clamp(1/(spread*1.05), 0.70, 0.90)
-# The ceiling is fixed, not derived — the box's noise floor is ~10% even at
-# median-of-7, so no single run's tightness justifies gating below it.
-# Observed spreads: a 1.01x, b 1.01x, c 1.02x, d 1.06x, e 1.26x, f 1.09x, g 1.22x, h 1.04x, i 2.04x
+# Observed spreads: a 1.01x, b 1.01x, c 1.02x, d 1.06x, e 1.26x, f 1.09x,
+# g 1.22x, h 1.04x, i 2.04x
+#
+# The 0.90 CEILING is over-conservative and known to be so: see D17: the "~10%
+# noise floor" it was justified by is not backed by any measurement in this
+# repo, and the three recorded runs move by <=3.3% on eight of nine cases.
 # Regenerate both columns together with:
 #   UPDATE=1 bash tests/bench/compare/gate.sh
 a	throughput	2192.358	0.900

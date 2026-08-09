@@ -46,9 +46,18 @@ and on ~14 patterns in 500 here).
 An equivalence check has its own trap, and the fix for it is not optional: if
 BOTH builds had the optimization off, every comparison would agree and the
 script would certify a deleted optimization. `run_trie_identity.sh` therefore
-carries a POSITIVE CONTROL — a pattern whose NFA fits the cap only when
-factored, so the two builds fail at different stages — and that control is
-itself sabotage-validated.
+carries POSITIVE CONTROLS — patterns whose NFA fits the cap only when factored,
+so the two builds fail at different stages — and they are sabotage-validated.
+
+**There are three of them, at 4, 8 and 256 branches, and the small ones are the
+important ones.** The first version had only the 256-branch control while every
+generated pattern had 3..8 branches, and a critic broke it in one clause:
+`elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)` left all three checks
+green, `make bench`'s KEYWORD-SCALE green, and the whole `make test` suite green
+with the trie deleted for every hand-written pattern. A control that only proves
+the optimization fires OUTSIDE the corpus's own range proves nothing about the
+corpus. When adding an equivalence check, put a control inside the range of the
+inputs it actually compares.
 
 ## Conventions
 
@@ -59,9 +68,23 @@ while looking like coverage. Sabotage the SPECIFIC branch under test, not the
 feature containing it. When adding an optimization to src/gen or src/opt, add
 its check here in the same change.
 
-Validated sabotages for run_trie_identity.sh (at TRIE_N=200): disjointness
-guard disabled -> 21/200 differ; rule 1's accept split disabled -> 132/200
-differ; trie disabled in the shipped build -> identity passes 200/200 and the
-POSITIVE CONTROL is the only thing that fires.
+Validated sabotages for run_trie_identity.sh. **Record the exact edit, not just
+the count** — the first version of this table carried a number produced by a
+contaminated tree (two sabotages stacked, because a `git checkout` revert
+silently failed inside a non-git tarball copy) and another that was never
+measured at all:
+
+| sabotage (exact edit) | .rxt | @200 | @500 |
+|---|---|---|---|
+| `return n;` as the first statement of `disjoint_run_len` | 2 | 21 | 64 |
+| in rule 1, hoist every accept to the front instead of partitioning the list around each (keep removing them from the list) | 16 | 38 | 94 |
+| `TRIE_ENABLED = 0` in the shipped build | 0 | 0 | 0 — only the CONTROLS fire |
+| `elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)` | 0 | 0 | 0 — only the 4- and 8-branch controls fire |
+
+Do NOT use the naive rule-1 sabotage (skip the accept split, change nothing
+else): it leaves items with `len == depth` in the list for rule 2, which then
+reads `seq + depth*32` past the allocated key — a 32-byte arena over-read, so
+the count is unstable between builds (171 and 176 observed for the same edit).
+The hoist form above is memory-safe by construction.
 
 Maintenance: update this file when checks are added/removed.

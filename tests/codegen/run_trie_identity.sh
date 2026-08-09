@@ -60,7 +60,8 @@ gen_b() { "$REF"   -p rx -o - -- "$1" 2>/dev/null; }
 # measured, only diffed, and -O0 keeps it under half a second. Warnings stay on
 # so #ifdef rot is loud rather than silent.
 REF="$WORKDIR/pcrec_notrie"
-if ! $CC -O0 -std=gnu11 -Wall -Wextra -Ilib -Isrc -DPCREC_NO_TRIE \
+if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -DPCREC_NO_TRIE \
         -o "$REF" "$ROOT_DIR"/cli/main.c "$ROOT_DIR"/src/*/*.c \
         2>"$WORKDIR/refbuild.log"; then
     echo "FAIL: could not build the -DPCREC_NO_TRIE reference compiler:" >&2
@@ -73,21 +74,68 @@ if [ -s "$WORKDIR/refbuild.log" ]; then
     fail=$((fail + 1))
 fi
 
-# ---- POSITIVE CONTROL ----------------------------------------------------
-# Without this the script is a guard that cannot fail: if the trie were
+# ---- POSITIVE CONTROLS ---------------------------------------------------
+# Without these the script is a guard that cannot fail: if the trie were
 # disabled in the SHIPPED build too, every pattern below would trivially agree
 # and this would report a clean bill of health for a deleted optimization.
 # That is the exact failure mode R3 found in two guards written the same day.
 #
-# The control is DETERMINISTIC, not timing-based. `(<all 256 8-bit binary
-# strings>){100}` needs ~230k NFA states unfactored — over PCREC_MAX_NFA_STATES
-# (131072) — and ~51k factored, comfortably under it. So the two builds fail at
-# DIFFERENT STAGES, and the stage is visible in the error text:
+# THERE ARE THREE, AT DIFFERENT BRANCH COUNTS, and that is the whole point.
+# The first version of this script had only the 256-branch control, and a critic
+# broke it in one clause: `elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)`
+# — a plausible "only factor when it is worth it" heuristic — left all three
+# checks green and `make test` entirely green, because every generated pattern
+# has 3..8 branches (so both builds were unfactored and agreed) while the
+# control has 256 (so it still factored). A control that only proves the
+# optimization fires OUTSIDE the corpus's own range proves nothing about the
+# corpus. Two of the three controls now sit INSIDE it.
+#
+# Each control is DETERMINISTIC, not timing-based: it is sized so the two builds
+# fail at DIFFERENT STAGES, and the stage is visible in the error text:
 #   unfactored -> "pattern too large (NFA exceeds ...)"   (never reaches the DFA)
-#   factored   -> "pattern too complex for the DFA engine" (got past the NFA cap)
-# Both margins are ~1.75x and ~2.5x, so this is not knife-edge. If either cap
-# in src/core/internal.h moves, this fails loudly instead of going quiet.
-ctl_pat=$(awk 'BEGIN {
+#   factored   -> "pattern too complex for the DFA engine" (cleared the NFA cap)
+# If either cap in src/core/internal.h moves, these fail loudly, not quietly.
+#
+# The two small-branch controls are `^`-ANCHORED on purpose. Without `^` the
+# engine also builds a REVERSE machine, and a shared PREFIX barely factors in
+# reverse (the reverse trie factors the branches' shared SUFFIX, which here is
+# 2 bytes) — so the reverse NFA blows the cap in both builds and the control
+# degenerates to unfactored/unfactored. `^` selects ENG_ATTEMPT, which builds no
+# reverse machine, so the forward saving is what the cap sees. Measured
+# forward NFA for the 4-branch shape: 213 states factored vs 812 unfactored.
+check_control() { # check_control <label> <pattern>
+    local lbl="$1" pat="$2" oa ob sa sb
+    oa="$("$PCREC" -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+    ob="$("$REF"   -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+    case "$oa" in *"DFA engine"*) sa=factored ;; *"NFA exceeds"*) sa=unfactored ;;
+                  "") sa=compiled ;; *) sa="other:$oa" ;; esac
+    case "$ob" in *"DFA engine"*) sb=factored ;; *"NFA exceeds"*) sb=unfactored ;;
+                  "") sb=compiled ;; *) sb="other:$ob" ;; esac
+    if [ "$sa" = factored ] && [ "$sb" = unfactored ]; then
+        ok "positive control ($lbl): the shipped build really factors here"
+    else
+        bad "positive control ($lbl): shipped=$sa reference=$sb (expected factored/unfactored). Either the trie is disabled or thresholded OFF at this branch count — in which case the identity comparisons below are vacuous for it — or an NFA/DFA cap moved and this control needs re-sizing."
+    fi
+}
+
+# nbr inside the corpus's own 3..8 range. `^(<nbr> branches sharing a 200- or
+# 100-byte prefix){r}`: unfactored ~812/copy vs ~213/copy factored.
+ctl_small() { # ctl_small <nbr> <prefix len> <repeat>
+    awk -v NB="$1" -v PL="$2" -v R="$3" 'BEGIN {
+        p = ""
+        for (k = 0; k < PL; k++) p = p sprintf("%c", 97 + k % 26)
+        s = ""
+        for (i = 0; i < NB; i++)
+            s = s (i ? "|" : "") p sprintf("%c%c", 97 + int(i / 26), 97 + i % 26)
+        printf "^(%s){%d}", s, R
+    }'
+}
+check_control "4 branches"   "$(ctl_small 4 200 300)"
+check_control "8 branches"   "$(ctl_small 8 100 300)"
+
+# The original large-branch control: all 256 8-bit binary strings, x100.
+# ~230k NFA states unfactored against the 131072 cap, ~51k factored.
+check_control "256 branches" "$(awk 'BEGIN {
     p = ""
     for (i = 0; i < 256; i++) {
         w = ""; v = i
@@ -95,16 +143,7 @@ ctl_pat=$(awk 'BEGIN {
         p = p (i ? "|" : "") w
     }
     printf "(%s){100}", p
-}')
-ctl_a="$("$PCREC" -p rx -o - -- "$ctl_pat" 2>&1 >/dev/null | head -1)"
-ctl_b="$("$REF"   -p rx -o - -- "$ctl_pat" 2>&1 >/dev/null | head -1)"
-case "$ctl_a" in *"DFA engine"*) ca=factored ;; *"NFA exceeds"*) ca=unfactored ;; *) ca="other:$ctl_a" ;; esac
-case "$ctl_b" in *"DFA engine"*) cb=factored ;; *"NFA exceeds"*) cb=unfactored ;; *) cb="other:$ctl_b" ;; esac
-if [ "$ca" = factored ] && [ "$cb" = unfactored ]; then
-    ok "positive control: the shipped build really factors (its NFA clears the cap the unfactored build dies on)"
-else
-    bad "positive control: shipped=$ca reference=$cb (expected factored/unfactored). Either the trie is disabled in the shipped build — in which case every comparison below is vacuous — or an NFA/DFA cap moved and this control needs re-sizing."
-fi
+}')"
 
 # ---- deterministic pattern corpus ---------------------------------------
 # Generated in awk from a fixed seed, so any failure is reproducible from the
@@ -124,8 +163,19 @@ fi
 #   5 a literal wrapped around the alternation — trie inside a concatenation
 #   6 two alternations concatenated — independent tries in sequence
 #   7 `$`- and `^`-bearing variants — EOL variant states and the attempt engine
-#   8 shared SUFFIXES — the reverse machine factors these and the forward one
-#     does not, so this is the only family exercising trie_key's rev path
+#   8 words carrying a shared suffix as well as a shared prefix
+#
+# NOTE on the reverse path, because the first version of this comment was wrong
+# in both directions (R3 critic): family 8 is NOT "the only family exercising
+# trie_key's rev path", and it is not forward-unfactored either. Every pattern
+# without `^` builds a reverse machine (src/core/compile.c), so 8 of the 9
+# families drive the rev path at full strength — instrumenting trie_build over
+# these 500 patterns shows 55-56 of 56 per family building a reverse trie, the
+# sole exception being family 7's `^`-anchored half (23 of 55), which is
+# ENG_ATTEMPT and has no reverse machine at all. Family 8 also builds a FORWARD
+# trie in 55 of 55, because its words are drawn from a 3-letter alphabet and
+# share prefixes by accident. The rev path is well covered; it is just not
+# covered by the family that used to be credited with it.
 awk -v n="$N" -v seed="$SEED" '
 function rnd(m) { s = (s * 48271) % 2147483647; return int(s / 65536) % m }
 BEGIN {

@@ -188,3 +188,109 @@ m "aaa;bbb" 3 4
 m "aaa\n=v" 4 6
 m ";" 0 1
 m "=;" 0 2
+
+# --- R3.4 second gap: a forward skip state that is BOTH plain-accepting AND ---
+# --- has an EOL variant                                                    ---
+#
+# Found by an R3.2 critic sweep after the block above was committed. The file now
+# had two shapes and still not their intersection: the original 13 patterns give
+# EOL-varianted skip states that do NOT plain-accept, the R3.4 block gives
+# plain-accepting skip states with NO EOL variant, and nothing had both at once.
+# That intersection is the only place where the two orderings D11 arbitrates can
+# actually disagree about the same state, so it is the case the file most needed.
+#
+# `a(?:$|.)*` emits rx_fs2 with rx_facc[2] == 1 and rx_fev[2] >= 0 — verified in
+# the emitted C, not assumed. The critic swept 244 patterns of this shape against
+# PCRE2 and all held, so these are a regression net, not a bug report.
+#
+# All expectations from python3 `re`.
+
+pattern a(?:$|.)*
+m "axxxxxxxxxx" 0 11
+m "axxxxxxxxxx\n" 0 11
+m "a" 0 1
+m "a\n" 0 1
+n ""
+n "\n"
+m "zzza\nbbb" 3 4
+n "xxx"
+n "xxx\n"
+
+pattern x(?:$|[^\n])*
+m "axxxxxxxxxx" 1 11
+m "axxxxxxxxxx\n" 1 11
+n "a"
+n "a\n"
+n ""
+m "xxx" 0 3
+m "xxx\n" 0 3
+m "x=v\n" 0 3
+
+pattern (?:=|$)(?:.|$)*
+m "axxxxxxxxxx" 11 11
+m "a" 1 1
+m "" 0 0
+m "\n" 0 0
+m "xxx\n" 3 3
+m "x=v\n" 1 3
+m "k=v" 1 3
+m "k=v\n" 1 3
+
+# --- R3.2 critic: the REVERSE `pp + 1 < n` entry guard, made falsifiable ------
+#
+# The critic that found this reported that NO .rxt case could distinguish the
+# guarded from the unguarded reverse skip. That is overstated, and the measured
+# numbers are these — deleting `&& pp + 1 < n` from emit_dfa.c's reverse skip:
+#
+#   the 19 patterns above this block ....  3 cases fail
+#   this block ..........................  14 cases fail
+#   all of tests/base/ ..................  17 cases fail
+#
+# So the guard was already falsifiable, but only just, and by cases that were
+# not written for it. The critic's underlying point stands: it found ZERO
+# divergences from removing this guard over 7.7 million oracle-checked
+# comparisons on a family where `$` always ends a branch, because in that shape
+# no REVERSE skip state ever carries an EOL variant.
+# The guard is only load-bearing for a MID-PATTERN `$` with content after it:
+# reversed, the `$` sits after the first consumed bytes, so a self-looping
+# reverse state can sit behind it. With the guard removed, the reverse skip runs
+# from the end straight through n-1, never takes the EOL view at the one
+# accepting position, and `sfound` stays -1 — the whole match is lost.
+#
+# The subject must be long enough for the skip to have somewhere to run (>= 7
+# bytes here), which is why short-subject corpora miss this entirely.
+#
+# All expectations from python3 `re`.
+
+pattern x$.*
+m "xxxxxxx" 6 7
+m "xxxxxxx\n" 6 7
+m "\nxxxxxxx" 7 8
+m "x" 0 1
+m "x\n" 0 1
+n ""
+n "\n"
+n "aaaaaaaa"
+n "abcdefgh"
+
+pattern a$.*
+m "aaaaaaaa" 7 8
+m "aaaaaaaa\n" 7 8
+n "xxxxxxx"
+n "abcdefgh"
+n ""
+
+pattern .*$.*
+m "xxxxxxx" 0 7
+m "xxxxxxx\n" 0 7
+m "\nxxxxxxx" 1 8
+m "" 0 0
+m "\n" 0 0
+m "aaaaaaaa" 0 8
+
+pattern $[^\n]*
+m "xxxxxxx" 7 7
+m "xxxxxxx\n" 7 7
+m "" 0 0
+m "\n" 0 0
+m "aaaaaaaa" 8 8

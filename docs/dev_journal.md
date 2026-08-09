@@ -1030,3 +1030,138 @@ as they confirm them, rather than reporting only at the end. That mechanism has
 already produced a report file for the guards critic while it is still working.
 Building the mechanism beats repeating the instruction — the same lesson R3's
 reflection drew about tooling versus remembered principles.
+
+## 2026-08-09 — critics on my own R3 work: 12 findings, most of them my claims
+
+Two critics, this time required to append findings to disk as they confirmed
+them. Both delivered. Between them they produced one real hole in a guard I had
+just built, one real coverage gap, and eight corrections to claims I had written
+that same day. R3's headline lesson — every failure was a measurement claim
+about a safeguard rather than a compiler defect — reproduced inside the commit
+that quotes it.
+
+**The one that matters: my positive control was satisfied only in the letter.**
+`run_trie_identity.sh` had ONE control, at 256 branches, while every generated
+pattern had 3..8. A critic broke it in a single clause —
+`elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)`, the shape of a
+plausible "only factor when it's worth it" heuristic — and got the identity
+check green, all three checks green, KEYWORD-SCALE green and the ENTIRE
+`make test` green with M2.8 effectively deleted for every hand-written pattern.
+The control proved the trie fired for one 256-branch pattern and nothing proved
+it fired for anything a user would write.
+
+Fixed with controls at 4, 8 and 256 branches. The small ones have to be
+`^`-anchored: without `^` the engine also builds a reverse machine, a shared
+PREFIX barely factors in reverse (the reverse trie factors the reversed
+branches' prefix, i.e. the original SUFFIX, which is 2 bytes here), so the
+reverse NFA blows the cap in both builds and the control degenerates to
+unfactored/unfactored. Verified: the critic's sabotage now fails the 4- and
+8-branch controls while the shipped tree stays green. D16 now states the rule as
+"the control must fire INSIDE the corpus's own range", which is the transferable
+half.
+
+**Two sabotage numbers I published were wrong, in two different ways.**
+- "~14 patterns in 500" was never measured by me. It was the original R3
+  critic's figure for a different corpus, repeated without re-running. The real
+  number is 64 — the check is 4.5x stronger than I advertised.
+- "rule 1 off -> 132 of 200" came from a CONTAMINATED TREE. My sabotage loop
+  reverted between runs with `git checkout` inside a tarball copy that is not a
+  git repo; the failure was swallowed by `|| true`, so rule 1's sabotage landed
+  on top of rule 2's. 132 is the both-guards-off number. I had already noticed
+  and fixed exactly this bug in a different sabotage block earlier the same
+  session and did not go back to check the first one.
+- Worse, the natural rule-1 sabotage is UB: skipping the accept split leaves
+  items with `len == depth` in the list, and rule 2 then reads `seq[depth]` past
+  the allocated key — a 32-byte arena over-read, so the count is unstable
+  between builds (171 mine, 176 the critic's, same edit). The citable form is a
+  memory-safe variant that removes the accepts but hoists them instead of
+  partitioning around each: 38 of 200, 94 of 500, and 16 .rxt cases. The recipes
+  are now in tests/codegen/CLAUDE.md so every number can be replayed.
+
+**`floors.tsv`'s provenance header was wrong in both halves.** I wrote that the
+values come from `results-ubuntubudu-20260809.md`; they match neither recorded
+results file (a: 2192.358 vs 2130.050 vs 2201.356) and come from a run not in
+the repository. And "reproduced every one of them within 2%" named the five
+cases that supported it while case (i) was 10.4% off — the one case whose 0.700
+margin means this gate cannot see it move, so the miss was self-concealing.
+Carried as [R3.6].
+
+**The "~10% noise floor" that justifies the 0.90 ceiling is not measured
+anywhere in this repo.** It appears in D17, gate.sh and floors.tsv. The three
+runs the repo does contain move by <=3.3% run-to-run on eight of nine cases.
+Writing an unmeasured constant into the decision entry whose subject is not
+gating on unmeasured constants is the joke telling itself. The ceiling STAYS at
+0.90 — three runs is too thin a basis to tighten a gate on, and tightening on it
+would repeat the error rather than fix it — but the justification is now the
+recorded data plus an admission of over-conservatism. [R3.7].
+
+**And I re-asserted a claim the previous commit had refuted.** The new
+`tests/bench/CLAUDE.md` said "budgets are measured-median/1.75 (D12)". Four of
+nine are not (COMPILE 3.60x, GCC_O1/O2 9.13x each, LINEARITY 2.08x); 080d02c
+recorded exactly this refutation one commit earlier. The table is now in the
+file and [R3.8] carries fixing the budgets. The same sentence still stands
+unfixed in run_bench.sh's header and in D12 itself.
+
+Also corrected: the claim that family 8 is "the only family exercising
+trie_key's rev path" is false in both directions — every pattern without `^`
+builds a reverse machine, so 8 of 9 families are on it at full strength, and
+family 8 builds a forward trie too. And the reference build's `-Ilib -Isrc` were
+relative while the sources were absolute, so the script only worked from the
+repo root.
+
+**What HELD.** The identity check's detection power is real (64/500 and 94/500
+against the two guards); the `-Wall -Wextra` check on the reference build does
+fire; the "27% regression fails 8 of 9" claim was independently reproduced —
+with the caveat, now recorded next to it, that case (e) fails by only 3.4% and
+that headline is a property of one sampled spread, not of the design.
+
+## 2026-08-09 — R3.2 fully closed: D11 swept to 25.8M comparisons and held
+
+The second critic delivered the sweep R3.2 had been asking for since the
+checkpoint: **25,834,470 oracle-checked comparisons against PCRE2 10.46 over
+6432 patterns, 0 divergences** on the shipped compiler, including under
+ASan+UBSan with exact-size buffers, every startpos, and the boundary subjects
+(empty, single `\n`, all-`\n`, trailing `\n`). It also derived the emitted
+order from the generated C and confirmed the prose matches on all four halves.
+
+Both directions of the asymmetry were sabotage-tested with a switch that moves
+ONLY the order and is byte-identical to the shipped compiler when neutral.
+Forcing the non-EOL order onto the EOL path: 238,144 divergences — the rule is
+right, and by a much wider margin than the 53 D11 cites. Forcing the EOL order
+onto the non-EOL path: 0 divergences. So the asymmetry is purely a performance
+decision, and three things it says about that are wrong:
+
+1. **The speed win is one pattern family, not the non-EOL path.** Across all six
+   throughput cases, the EOL order is a tie or 1.5-4.1% FASTER on five of them.
+   Only `[01]*1[01]{8}` loses, and it reproduces (156-159 -> 87-91 MB/s).
+2. **The 43% is a gcc -O level artifact.** No gap at -O0, no gap at **-Os**
+   (90.7 vs 91.7), gap at -O1/-O2/-O3. The decision stands — the harness builds
+   at -O1, the bench at -O2 — but an embedder at -Os gets the slow number from
+   both orders.
+3. **The load-bearing premise was never written down.** Accept monotonicity: no
+   state has plain accept 1 with a non-accepting EOL variant (verified over 6432
+   patterns; it follows from clo_visit exploring a superset of edges in the same
+   order). That is what makes "evaluate the accept once, at the landing
+   position" sound. D11 argued "same state, same accept bit", which covers the
+   positions a skip PASSES and says nothing about the one it LANDS on — the same
+   shape of gap as the M2.12 ordering bug it was written to prevent.
+
+**Coverage gap closed, with the critic's own claim corrected.** It reported that
+NO .rxt case could catch removal of the reverse `pp + 1 < n` guard. Measured:
+the pre-existing corpus catches 3, the new mid-pattern-`$` block catches 14, 17
+across tests/base/. Overstated, not wrong in substance — on a family where `$`
+always ends a branch, guard removal gives 0 divergences over 7.7M comparisons,
+because no reverse skip state carries an EOL variant in that shape. The guard is
+only load-bearing for a mid-pattern `$` with content after it, and the subject
+has to be long enough for the skip to have somewhere to run.
+
+**The process change worked, and it is the reusable result.** Four critics were
+dispatched at these two targets across the session. The two told only to report
+at the end delivered nothing, twice. The two required to append findings to a
+file as they confirmed them delivered everything above. Build the mechanism
+rather than repeating the instruction — the same conclusion R3's reflection drew
+about tooling versus remembered principles, arrived at again from the other side.
+
+Verification: 713 corpus + 42 CLI + 17 codegen + 5 trie-identity green; oracle
+100% (705 cases); every new guard sabotage-validated with the exact edit
+recorded.

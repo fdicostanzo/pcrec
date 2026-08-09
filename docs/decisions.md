@@ -234,6 +234,68 @@ suggested a 1.4x gain there and was noise. Revisit-when: `^` joins this engine
 (D8/DD-7), since a reverse BOT variant would add a second position-dependent
 view with the same ordering hazard.
 
+### D11 addendum — 2026-08-09 (R3.2 critic): probed to 25.8M comparisons, held, and three claims corrected
+
+R3.2's remaining unprobed item was the EOL vs non-EOL ordering asymmetry. It has
+now been swept hard: **25,834,470 oracle-checked comparisons against PCRE2
+10.46 across 6432 patterns, 0 divergences** on the shipped compiler, including
+under ASan+UBSan with exact-size subject buffers. Boundaries covered: empty
+subject, single `\n`, all-`\n` subjects, every subject of length <= 5 over
+{a,b,=,\n}, every startpos including `startpos == n`, and subjects ending in
+`\n`. The emitted C was also checked against the prose on all four halves
+(forward/reverse x EOL/non-EOL) and matches it.
+
+**Both directions of the asymmetry were sabotage-tested**, via a switch that
+moves ONLY the order and is byte-identical to the shipped compiler when neutral:
+
+- Forcing the NON-EOL order onto the EOL path: **238,144 divergences**. The rule
+  is confirmed by a far wider margin than the 53 divergences cited above, e.g.
+  `ab[a-z]*b$|[^\n]*$` on "ba\n" gives [3,3) where PCRE2 gives [0,2).
+- Forcing the EOL order onto the NON-EOL path: **0 divergences** over 7.85M
+  comparisons. So the EOL-safe order is semantically fine everywhere and the
+  asymmetry buys nothing but speed.
+
+**CORRECTION 1 — the speed claim rests on ONE pattern family, not on the
+non-EOL path in general.** Measured across all six throughput cases, median of
+7 interleaved, the EOL order is a tie or SLIGHTLY FASTER on five of them
+(1.5-4.1%, consistently signed): needle 1.018, `a*b` 1.041, `a(b|c)+d` 1.015,
+bitmap 0.996, `=[^\n]*!` 1.040. Only `[01]*1[01]{8}` shows the loss, and it
+reproduces almost exactly (156-159 -> 87-91 MB/s, non-overlapping ranges).
+"Both orders are correct, only one is fast" is true of case (f) and is not a
+general property. The asymmetry is bought for one pattern family; keep it, but
+do not defend it as a broad win.
+
+**CORRECTION 2 — the 43% is a gcc optimisation-level artifact, not an
+algorithmic cost.** Same two matchers, same subject, gcc 15.2.0: `-O0` 54.3 vs
+53.9 (no gap), `-O1`/`-O2`/`-O3` ~156 vs ~90 (gap), **`-Os` 90.7 vs 91.7 (no
+gap — the "fast" order is not fast at -Os)**. The decision still stands, since
+the harness builds at -O1 and the bench at -O2, but D11 presents the gap as a
+property of the loop and it is a property of THIS gcc at THESE levels. A
+different compiler, or an embedder building at -Os, gets the slow number from
+both orders.
+
+**The load-bearing premise was never written down: ACCEPT MONOTONICITY.** Over
+6432 patterns analysed, no DFA state anywhere has plain accept 1 with a
+NON-accepting EOL variant. That is what makes "evaluate the accept once, at the
+position the skip lands on" safe, and it is the premise the whole ordering rule
+depends on. It follows from `clo_visit`: the EOL closure explores a superset of
+the plain closure's edges in the same DFS order, so it reaches `N_ACCEPT`
+whenever the plain closure does. D11 argued only "same state, therefore same
+accept bit" — true for the positions a skip PASSES, and silent about the
+position it LANDS on, which is the one position that can take a different view.
+That is the same shape of gap as the M2.12 ordering bug (a proof about the
+position before a skip, saying nothing about where the skip lands).
+
+**Guard coverage, measured.** Deleting the reverse `pp + 1 < n` entry guard is
+caught by 3 cases in the pre-existing corpus and by 14 in the mid-pattern-`$`
+block added for it (17 across tests/base/). The critic reported that NO .rxt
+case could catch it; that was overstated, and the corrected numbers are above.
+Its underlying point holds: on a family where `$` always ends a branch, guard
+removal gives 0 divergences over 7.7M comparisons, because no REVERSE skip
+state carries an EOL variant in that shape. Both order sabotages are also
+caught by tests/codegen/run_codegen_tests.sh, so the asymmetry has a structural
+test as well as a behavioural one — rare for a performance decision here.
+
 ## D12 — 2026-08-09 — benchmark budgets are set from measured medians, not vibes
 
 M2.9, closing R2-B3/B4. The old budgets were 9x-300,000x looser than the
@@ -498,21 +560,60 @@ signature greps. `-DPCREC_NO_TRIE` is the switch for M2.8;
 `tests/codegen/run_trie_identity.sh` is the check. 500 patterns in ~4 s.
 
 Why this is worth a decision entry rather than just a test: the detection power
-is not comparable to what we had. Disabling the disjointness guard fails 2
-cases in the entire 663-case .rxt corpus; it fails ~14 patterns in 500 here, at
-TRIE_N=200 21 of 200, and each failure names the pattern rather than a subject
-that happened to hit it. Disabling rule 1's accept split fails 132 of 200.
+is not comparable to what we had. Measured, with the recipe recorded in
+tests/codegen/CLAUDE.md so every number here can be replayed:
+
+| sabotage | .rxt corpus | identity @200 | identity @500 |
+|---|---|---|---|
+| disjointness guard off (`return n` first in `disjoint_run_len`) | 2 cases | 21 | 64 |
+| rule 1's accept split hoisted instead of index-partitioned | 16 cases | 38 | 94 |
+
+CORRECTION (R3 guards critic F6/F7). The first version of this entry said "~14
+patterns in 500" and "rule 1 off -> 132 of 200". Both were wrong, in different
+ways, and both are the failure mode this project keeps repeating:
+
+- "14 in 500" was never measured. It was the original R3 critic's figure for a
+  DIFFERENT corpus, copied across without re-running. The real number is 64 —
+  the check is 4.5x stronger than it was advertised as.
+- "132 of 200" came from a contaminated tree. The sabotage loop that produced it
+  used `git checkout` to revert between runs inside a tarball copy that was not
+  a git repo, so the failure was swallowed by `|| true` and rule 1's sabotage
+  was applied ON TOP of rule 2's. 132 is the two-guards-off number. Worse, the
+  natural rule-1 sabotage (skip the accept split, leave everything else) makes
+  rule 2 read `seq[depth]` for an item with `len == depth` — a 32-byte arena
+  over-read — so its count is not stable between builds (171 here, 176 for the
+  critic). The citable form is the memory-safe one in the table, which removes
+  the accepts from the list but hoists them instead of partitioning around each.
+
+The lesson is the recipe, not the number: a sabotage figure without the exact
+edit that produced it cannot be checked, and this one was wrong for two
+independent reasons before anyone tried.
 
 The trap, and the non-optional part: an equivalence check is vacuous if BOTH
 builds have the optimization off. Then everything agrees and the script
 certifies a deleted optimization — the exact "guard that cannot fail" shape R3
 found twice in guards written the same day. So every equivalence check MUST
-carry a positive control proving the shipped build still does the thing. Here
-it is deterministic rather than timing-based: `(<256 8-bit binary
-strings>){100}` needs ~230k NFA states unfactored and ~51k factored against a
-131072 cap, so the two builds fail at different STAGES and the stage is visible
-in the error text. Sabotage-validated: with the trie disabled in the shipped
-build, identity passes 200/200 and the control is the only thing that fires.
+carry a positive control proving the shipped build still does the thing.
+
+AND THE CONTROL MUST FIRE INSIDE THE CORPUS'S OWN RANGE. This is the part the
+first version got wrong, and it is the more useful half of the rule. That
+version had ONE control, at 256 branches, while every generated pattern had
+3..8. A critic broke it in one clause —
+`elig[j] = TRIE_ENABLED && nbr >= 100 && trie_key(...)`, the shape of a
+plausible "only factor when it is worth it" heuristic — and left the identity
+check, the control, `make bench`'s KEYWORD-SCALE budget and the entire
+`make test` suite green with M2.8 effectively deleted for every hand-written
+pattern. The control proved the trie fired for one 256-branch pattern; nothing
+proved it fired for anything a user would write.
+
+There are now three controls, at 4, 8 and 256 branches. Each is deterministic
+rather than timing-based: sized so the two builds fail at DIFFERENT STAGES, with
+the stage visible in the error text. The two small ones are `^`-anchored on
+purpose — without `^` the engine also builds a reverse machine, a shared PREFIX
+barely factors in reverse, and the control degenerates to unfactored/unfactored.
+Validated against both sabotages: with the trie disabled outright, identity
+passes 200/200 and only the controls fire; with the critic's `nbr >= 100`
+threshold, the 4- and 8-branch controls fail and the 256 one still passes.
 
 Cost: the check builds a second compiler at -O0 on every `make test` (~0.4 s).
 Accepted. Revisit-when: another output-preserving optimization lands (the
@@ -537,12 +638,35 @@ Decision: `floors.tsv` carries a fourth column, a per-case margin, and
     margin = clamp(1 / (spread * 1.05), 0.70, 0.90)
 
 The floor keeps a noisy case no looser than the old global default, so this is
-never a regression in strictness. The CEILING is the part that needs stating:
-it is NOT derived from the spread. A single run's within-run trial spread is a
-sample, not a distribution, and this box's noise floor is ~10% even at
-median-of-7 — gating tighter than 0.90 would manufacture failures out of noise
-no matter how tight one run happened to look. The 1.05 safety factor pays for
-the sample-vs-distribution gap; the ceiling pays for the floor being real.
+never a regression in strictness. The CEILING is NOT derived from the spread: a
+single run's within-run trial spread is a sample, not a distribution, so the
+1.05 safety factor pays for that gap and the ceiling caps how far one lucky run
+can tighten the gate.
+
+CORRECTION (R3 guards critic F12): the ceiling was justified here, in gate.sh
+and in floors.tsv by "this box's noise floor is ~10% even at median-of-7", and
+THAT NUMBER IS NOT BACKED BY ANY MEASUREMENT IN THIS REPOSITORY. The three runs
+the repo does contain (floors.tsv, results-…-20260809, results-…-20260809-2)
+move run-to-run by <= 3.3% on eight of the nine cases — a third of the claimed
+floor — and the one case that moves 26% is the latency case, which sits at the
+0.700 FLOOR and gets no benefit from the ceiling argument at all. Writing an
+unmeasured constant into the decision entry whose subject is not gating on
+unmeasured constants is the joke telling itself.
+
+The ceiling STAYS at 0.90 for now, and deliberately: three runs is a thin basis
+for tightening a gate, and tightening on it would repeat the error rather than
+fix it. What changed is that the justification is now the recorded data plus an
+admission of over-conservatism, instead of a number nobody measured. Cases a-h
+would tolerate 0.95 with 1.5-3x headroom over their observed movement, and
+[R3.7] carries collecting enough runs to earn it.
+
+Validated: a uniform 27% regression fails 8 of 9 cases where it previously
+failed 0 (independently reproduced by a critic). CAVEAT, and it belongs next to
+the headline: case (e) fails that test by only 3.4%, and its margin came from
+one run's spread of 1.26x — the noisiest throughput case in the matrix. Had that
+run measured 1.31x, the derived margin would catch 1.375x rather than 1.32x and
+the headline would read "7 of 9". The figure is a property of one sampled spread
+of the two noisiest cases, not of the design. At 20% the result is already 6 of 9.
 
 Each run now also prints, per case, the smallest regression its margin can
 actually fail on, and a summary line naming the weakest case in the matrix.

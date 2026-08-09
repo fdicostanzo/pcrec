@@ -163,8 +163,11 @@ typedef struct { const uint8_t *seq; int len; } TItem;
  * it changes the NFA, and subset construction plus minimization must erase
  * the difference, so the two builds must emit byte-identical C. That is what
  * tests/codegen/run_trie_identity.sh checks, and it is a far stronger net
- * than sampling subjects — the .rxt corpus catches a broken disjointness
- * guard with 2 cases, the diff catches it on 14 patterns in 500 (R3.3).
+ * than sampling subjects: the .rxt corpus catches a broken disjointness guard
+ * with 2 cases, the diff catches it on 64 of 500 (R3.3). The "14 of 500" that
+ * stood here was never measured -- it was the original critic's figure for a
+ * different corpus, repeated without re-running. 21 of 200 and 64 of 500 are
+ * measured; the recipes are in tests/codegen/CLAUDE.md so they can be replayed.
  *
  * Never defined in a shipped build. TRIE_ENABLED is a constant 1 there, so
  * `1 && trie_key(...)` is the original expression: verified by rebuilding and
