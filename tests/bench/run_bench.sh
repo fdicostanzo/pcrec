@@ -42,6 +42,14 @@
 #     THROUGHPUT_NOMATCH_MIN_MBPS  (default 12000) subject (b), THROUGHPUT
 #     THROUGHPUT_ALT_MIN_MBPS      (default 1000)  subject (c), THROUGHPUT
 #     LINEARITY_MAX_RATIO          (default 6.0)   64MB/16MB time ratio, THROUGHPUT
+#     LOAD_LIMIT      (default max(2.0, cores/2))  1-minute load average above
+#                     which a budget MISS is reported as INCONCLUSIVE rather
+#                     than FAIL. Budgets tight enough to catch a 1.75x
+#                     regression are also tight enough for a busy box to fail
+#                     them: a known-good build measured 8572 MB/s on case (b)
+#                     against a 12000 floor at load 24.4. A flaky gate gets
+#                     loosened permanently, so this run says "I could not
+#                     measure" instead. A PASS under load is still a PASS.
 #
 #   Hang-protection timeouts (all overridable; a run that hits its timeout
 #   is reported as DNF and counted as a budget FAIL, never as a hang):
@@ -179,11 +187,38 @@ describe_env() {
     echo "load average: $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
 }
 
+# Budgets tight enough to catch a 1.75x regression are also tight enough to be
+# FAILED BY A BUSY MACHINE. Measured: at 1-minute load 24.4 on 12 cores, a
+# known-good build reported 8572 MB/s on case (b) against a 12000 floor, and
+# per-trial spreads widened from 1.15-1.35x to 1.38-1.53x.
+#
+# A flaky gate is worse than a loose one, because the fix people reach for is
+# to loosen the budget permanently. So when the box is too busy to measure, we
+# say so instead of guessing: verdicts become INCONCLUSIVE, they do not count
+# as failures, and the summary states plainly that the run gated nothing. A
+# green that means nothing is the outcome this whole section exists to avoid.
+LOAD_LIMIT="${LOAD_LIMIT:-}"
+if [ -z "$LOAD_LIMIT" ]; then
+    LOAD_LIMIT="$(awk -v c="$(nproc 2>/dev/null || echo 4)" \
+        'BEGIN{ v = c * 0.5; if (v < 2.0) v = 2.0; printf "%.2f", v }')"
+fi
+LOAD_NOW="$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || echo 0)"
+LOADED=0
+if num_gt "$LOAD_NOW" "$LOAD_LIMIT"; then LOADED=1; fi
+budget_inconclusive=0
+
 # record_budget <label> <verdict PASS|FAIL>
 # Prints the verdict and, on FAIL, bumps budget_failures (which only
-# affects the exit code when SKIP_BUDGETS != 1).
+# affects the exit code when SKIP_BUDGETS != 1). Under high load a FAIL is
+# downgraded to INCONCLUSIVE — a PASS is still reported as a PASS, since
+# beating a floor on a busy box is if anything stronger evidence.
 record_budget() {
     local label="$1" verdict="$2"
+    if [ "$verdict" = "FAIL" ] && [ "$LOADED" = "1" ]; then
+        echo "  $label -> INCONCLUSIVE (1-min load $LOAD_NOW > $LOAD_LIMIT; not counted)"
+        budget_inconclusive=$((budget_inconclusive + 1))
+        return 0
+    fi
     echo "  $label -> $verdict"
     [ "$verdict" = "FAIL" ] && budget_failures=$((budget_failures + 1))
     return 0
@@ -674,6 +709,11 @@ echo
 echo "== Summary =="
 echo "hard errors (harness/mechanical failures): $hard_errors"
 echo "budget failures: $budget_failures"
+if [ "$budget_inconclusive" -gt 0 ]; then
+    echo "budget INCONCLUSIVE: $budget_inconclusive (1-min load $LOAD_NOW > $LOAD_LIMIT)"
+    echo "  This run did NOT gate those budgets. Re-run on a quiet box before"
+    echo "  treating a green exit code as evidence of no regression."
+fi
 [ "$SKIP_BUDGETS" = "1" ] && echo "SKIP_BUDGETS=1: budget failures do not affect exit code"
 
 if [ "$hard_errors" -gt 0 ]; then

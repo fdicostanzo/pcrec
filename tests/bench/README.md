@@ -204,3 +204,21 @@ performance targets: subjects get generated, `pcrec` and `$CC` get
 invoked, `bdriver` builds and runs, numbers get printed — useful when
 iterating on the emitter itself, or when re-baselining budgets after a
 deliberate architecture change.
+
+### When the box is busy
+
+Budgets tight enough to catch a 1.75x regression are also tight enough for a
+loaded machine to fail them: a known-good build measured 8572 MB/s on case (b)
+against its 12000 floor at 1-minute load 24.4 on 12 cores, with per-trial
+spreads widening from 1.15–1.35x to 1.38–1.53x.
+
+Rather than loosen the budgets — which is what anyone would eventually do to
+stop a flaky gate — the suite refuses to judge. Above `LOAD_LIMIT` (default
+`max(2.0, cores/2)`) a budget MISS is reported as `INCONCLUSIVE`, is not
+counted as a failure, and the summary states that the run gated nothing. A
+PASS under load is still reported as a PASS, since beating a floor on a busy
+box is if anything stronger evidence.
+
+The consequence worth internalising: **a green `make bench` on a loaded box is
+not evidence of no regression.** Check the summary for an INCONCLUSIVE count
+before believing it.
