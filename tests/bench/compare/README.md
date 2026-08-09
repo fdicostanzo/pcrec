@@ -378,3 +378,26 @@ absolute values is meaningless. This is the main thing standing between
 so two runs on one day used to overwrite each other — including the annotated
 baseline other documents cite. It now writes `-2`, `-3`, ... instead unless
 `REPORT_FORCE=1`.
+
+**Report header is now conditioned on measured load, not always "provisional".**
+The markdown report used to open with a hardcoded
+`# ... -- PROVISIONAL (load-compromised)` title and warning paragraph on
+*every* run, regardless of whether the box was actually busy — actively
+misleading once pinning/`BENCH_TRIALS`/`spread` were in place, since the
+report separately surfaces load, governor, and turbo anyway. `compare.sh` now
+compares the 1-minute load average against the same `LOAD_LIMIT` threshold
+`tests/bench/run_bench.sh`'s `LOADED`/`INCONCLUSIVE` gate uses
+(`max(2.0, cores/2)`, overridable via `LOAD_LIMIT`) and picks one of two
+honest headers:
+
+- **Loaded** (1-min load > `LOAD_LIMIT`): keeps the `PROVISIONAL
+  (load-compromised)` title and warning, now naming the actual load figure
+  and threshold instead of asserting it unconditionally, and noting that
+  pinning + the trial median narrow (but do not eliminate) load
+  contamination.
+- **Quiet** (1-min load <= `LOAD_LIMIT`): a plain title with no provisional
+  caveat, stating that absolute MB/s/ns-call figures — not just the
+  cross-engine ratios — should be trustworthy.
+
+The "Machine context" table also gets a `busy-box verdict` row spelling out
+which branch fired and the numbers behind it.
