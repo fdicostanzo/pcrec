@@ -1880,3 +1880,34 @@ model). Added `AGREES-REJECT` for constructs where PCRE2 refuses too and
 matching it IS compliance — the POSIX collating row was misrepresented as a
 divergence when the divergence is now fixed and agreement is the current state.
 Those columns are deliberately the prototype of the registry's own fields.
+
+## 2026-08-09 — session close
+
+Six commits, all pushed (`13e649b..a23d4be`). Working tree clean apart from the
+uncommitted docs/wake.md hand-off. Nothing left in `STATE:started`, so there is
+no half-finished work to reconstruct.
+
+Landed: **OS-0b** (multi-engine naming prep, engine-scoped codegen greps),
+**OS-1/D23** (ASCII case-insensitivity folds — the first of D18's four
+predictions settled, and it held), **TS-1** (no mutable statics, no
+non-reentrant libc in generated code), **PC-1** (the PCRE2 compliance survey),
+and **D24 + SR-1..SR-8** (the syntax construct registry, designed not built).
+
+Two real bugs found and fixed, both silent, both by reading the PCRE2 syntax
+reference against the parser rather than by any test: `\v` decoded as vertical
+tab when PCRE2 means vertical whitespace, and POSIX collating elements accepted
+when PCRE2 rejects them. Both survived because python `re` agreed with pcrec,
+which is the session's most transferable finding — the base-tier oracle
+certifies flavour divergences instead of catching them.
+
+Test surface grew from 731 corpus + 42 CLI + 17 codegen + 5 trie-identity to
+805 corpus + 49 CLI + 112 reject + 29 codegen + 7 trie-identity, with
+tests/reject/ as a new directory guarding the "never miscompile" mandate that
+previously had no coverage at all.
+
+**Next session: SR-1**, the construct table. It is the step that pays for
+itself immediately — it collapses the five-way duplication that produced `\v`
+— and D24 records the reasoning so it does not need re-deriving. Read D24
+before starting; the four-doorway argument is what makes the design small, and
+the four-axes table is what keeps it from becoming the `if flavour else if
+flavour` cascade Frank was right to worry about.
