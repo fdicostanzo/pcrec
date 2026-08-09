@@ -4,8 +4,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 
 ## Files
 
-- **harness/** — test runner (run.sh), test driver template (driver.c), and execution logic
-- **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re
+- **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
+- **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
+- **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
+- **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
+- **fuzz/** — PCRE2-oracle differential fuzzer (`make fuzz`), run manually and at checkpoints
 
 ## Conventions
 

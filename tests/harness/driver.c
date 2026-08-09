@@ -1,17 +1,21 @@
 /*
  * driver.c — runs a single generated matcher against one subject string.
  *
- * Usage: t <subject>
- *   <subject> is the inner text of a .rxt `m`/`n` line's double-quoted
- *   subject, with surrounding quotes already stripped by run.sh but its
- *   escapes (\" \\ \n \t \r \f \v \xHH) still encoded as literal
- *   backslash sequences — this program decodes them.
+ * Usage: t <subject> [startpos]
+ *   <subject> is the inner text of a .rxt `m`/`n`/`ms`/`ns` line's
+ *   double-quoted subject, with surrounding quotes already stripped by
+ *   run.sh but its escapes (\" \\ \n \t \r \f \v \xHH) still encoded as
+ *   literal backslash sequences — this program decodes them.
+ *   [startpos] is an optional non-negative decimal integer passed as
+ *   rx_search's startpos argument; if omitted, startpos defaults to 0
+ *   (the `m`/`n` directives always mean startpos 0; `ms`/`ns` pass it
+ *   explicitly — see docs/testing.md).
  *
  * Prints exactly one line to stdout:
  *   "match %zu %zu\n"   (rx_search found a match: start, end)
  *   "nomatch\n"         (rx_search found no match)
- * and exits 0. On a malformed escape in argv[1], prints a message to
- * stderr and exits 2.
+ * and exits 0. On a malformed escape in argv[1] or a malformed [startpos],
+ * prints a message to stderr and exits 2.
  */
 
 #include <stdio.h>
@@ -92,18 +96,43 @@ static unsigned char *decode(const char *src, size_t *out_len) {
     return buf;
 }
 
+/*
+ * Parse a startpos argument: must be all decimal digits (at least one),
+ * fitting in a size_t. Returns 0 on success with *out set, -1 on a
+ * malformed argument (message already printed to stderr).
+ */
+static int parse_startpos(const char *s, size_t *out) {
+    if (!s || !*s) {
+        fprintf(stderr, "driver: empty startpos argument\n");
+        return -1;
+    }
+    size_t v = 0;
+    for (const char *q = s; *q; q++) {
+        if (*q < '0' || *q > '9') {
+            fprintf(stderr, "driver: invalid startpos argument '%s'\n", s);
+            return -1;
+        }
+        v = v * 10 + (size_t)(*q - '0');
+    }
+    *out = v;
+    return 0;
+}
+
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s <subject>\n", argc > 0 ? argv[0] : "t");
+    if (argc != 2 && argc != 3) {
+        fprintf(stderr, "usage: %s <subject> [startpos]\n", argc > 0 ? argv[0] : "t");
         return 2;
     }
+
+    size_t startpos = 0;
+    if (argc == 3 && parse_startpos(argv[2], &startpos) != 0) return 2;
 
     size_t len = 0;
     unsigned char *buf = decode(argv[1], &len);
     if (!buf) return 2;
 
     rx_span m;
-    int found = rx_search(buf, len, 0, &m);
+    int found = rx_search(buf, len, startpos, &m);
     if (found) {
         printf("match %zu %zu\n", m.start, m.end);
     } else {

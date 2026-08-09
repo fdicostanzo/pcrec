@@ -1,23 +1,21 @@
 /* Priority subset construction (leftmost-first, see docs/decisions.md D3).
  *
- * A DFA state is a priority-ordered list of N_CLASS NFA states. Epsilon
- * closure walks split edges in preference order; the moment ACCEPT is
- * reached, closure stops — lower-priority threads are pruned and the state
- * is marked accepting.
+ * A DFA state is a priority-ordered list of N_CLASS NFA states. With
+ * `prune` on (forward machines), epsilon closure walks split edges in
+ * preference order and stops the instant ACCEPT is reached — lower-priority
+ * threads are pruned and the state is marked accepting. With `prune` off
+ * (the D7 reverse machine), ACCEPT is recorded but closure continues: the
+ * reverse scan must keep every thread alive to find the EARLIEST accepting
+ * position (the match start), so priority pruning would be wrong there.
  *
- * `$` (end of subject or before a final newline) is handled by EOL-variant
- * states (checkpoint review R1, S-C1/S-C2): every pre-set is closed twice,
- * once with EOL assertions blocked (the interior view) and once with them
- * passable (the EOL view). When the views differ, the EOL view is interned
- * as its own state and recorded in `eolvar`; the generated code switches to
- * the variant's accept flag and transition table exactly at EOL positions.
- * This keeps the priority-pruning invariant across the EOL boundary and
- * makes mid-pattern `$` (e.g. `a$\n`) compile correctly.
+ * `$` is handled by EOL-variant states (R1 S-C1/S-C2): every pre-set is
+ * closed twice, once with EOL assertions blocked and once passable; when the
+ * views differ, the EOL view is interned as its own state (`eolvar`) and the
+ * generated code switches to it exactly at EOL positions.
  *
- * Byte equivalence classes are computed first so DFA transition tables are
- * ncls-wide instead of 256-wide.
- *
- * All scratch memory is arena-owned so ctx_fail/longjmp cannot leak (R-3a). */
+ * Byte equivalence classes are computed per machine so transition tables are
+ * ncls-wide instead of 256-wide. All scratch memory is arena-owned so
+ * ctx_fail/longjmp cannot leak (R1 R-3a). */
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,10 +24,8 @@
 
 /* ---- byte equivalence classes ---- */
 
-static void eqclasses(Ctx *cx)
+static void eqclasses(Nfa *nfa, Dfa *d)
 {
-    Dfa *d = &cx->job->dfa;
-    Nfa *nfa = &cx->job->nfa;
     memset(d->clsmap, 0, 256);
     int ncls = 1;
 
@@ -51,23 +47,25 @@ static void eqclasses(Ctx *cx)
     for (int c = 255; c >= 0; c--) d->rep[d->clsmap[c]] = (uint8_t)c;
 }
 
-/* ---- epsilon closure with priority pruning ---- */
+/* ---- epsilon closure ---- */
 
 typedef struct {
-    Ctx     *cx;
+    Nfa     *nfa;
     uint8_t *seen;
     int     *out;
     int      nout;
     bool     accept;
-    bool     eol_ok;   /* whether N_EOL assertions pass in this closure */
+    bool     eol_ok;
     bool     bot_ok;
+    bool     prune;
 } Clo;
 
 static void clo_visit(Clo *cl, int s)
 {
-    if (cl->accept || s < 0 || cl->seen[s]) return;
+    if (s < 0 || cl->seen[s]) return;
+    if (cl->prune && cl->accept) return;
     cl->seen[s] = 1;
-    const NState *st = &cl->cx->job->nfa.st[s];
+    const NState *st = &cl->nfa->st[s];
     switch (st->k) {
     case N_CLASS:  cl->out[cl->nout++] = s; break;
     case N_ACCEPT: cl->accept = true; break;
@@ -78,12 +76,15 @@ static void clo_visit(Clo *cl, int s)
     }
 }
 
-static void closure(Ctx *cx, const int *pre, int npre, bool bot_ok, bool eol_ok,
-                    uint8_t *seen, int *out, int *nout, bool *accept)
+static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
+                    bool prune, uint8_t *seen, int *out, int *nout, bool *accept)
 {
-    Clo cl = { cx, seen, out, 0, false, eol_ok, bot_ok };
-    memset(seen, 0, (size_t)cx->job->nfa.n);
-    for (int i = 0; i < npre && !cl.accept; i++) clo_visit(&cl, pre[i]);
+    Clo cl = { nfa, seen, out, 0, false, eol_ok, bot_ok, prune };
+    memset(seen, 0, (size_t)nfa->n);
+    for (int i = 0; i < npre; i++) {
+        if (prune && cl.accept) break;
+        clo_visit(&cl, pre[i]);
+    }
     *nout = cl.nout;
     *accept = cl.accept;
 }
@@ -125,10 +126,8 @@ static void tab_grow(Dfa *d)
 }
 
 /* Intern a closed state (list must already be a closure result). */
-static int intern(Ctx *cx, const int *list, int n, bool accept, int eolvar)
+static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolvar)
 {
-    Dfa *d = &cx->job->dfa;
-
     if (d->tabcap == 0 || (size_t)d->n * 2 >= d->tabcap) tab_grow(d);
     uint32_t h = dhash(list, n, accept, eolvar);
     size_t i = h & (d->tabcap - 1);
@@ -140,9 +139,9 @@ static int intern(Ctx *cx, const int *list, int n, bool accept, int eolvar)
         i = (i + 1) & (d->tabcap - 1);
     }
 
-    if (d->n >= PCREC_MAX_DFA_STATES)
+    if (d->n >= d->maxstates)
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
-                 "VM engine arrives in M4)", PCREC_MAX_DFA_STATES);
+                 "VM engine arrives in M4)", d->maxstates);
     if (d->n == d->cap) {
         d->cap = d->cap ? d->cap * 2 : 64;
         d->st = realloc(d->st, (size_t)d->cap * sizeof(DState));
@@ -161,41 +160,43 @@ static int intern(Ctx *cx, const int *list, int n, bool accept, int eolvar)
 }
 
 /* Build (and intern) the DFA state for pre-closure set `pre`; -1 = dead. */
-static int make_state(Ctx *cx, const int *pre, int npre, bool bot_ok,
+static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, bool prune,
+                      const int *pre, int npre, bool bot_ok,
                       uint8_t *seen, int *scratch)
 {
-    Nfa *nfa = &cx->job->nfa;
     int *scratch2 = scratch + nfa->n;
     int nout, nout2;
     bool accept, accept2;
 
-    closure(cx, pre, npre, bot_ok, false, seen, scratch, &nout, &accept);
-    closure(cx, pre, npre, bot_ok, true, seen, scratch2, &nout2, &accept2);
+    closure(nfa, pre, npre, bot_ok, false, prune, seen, scratch, &nout, &accept);
+    closure(nfa, pre, npre, bot_ok, true, prune, seen, scratch2, &nout2, &accept2);
 
     if (!accept && !accept2 && nout == 0 && nout2 == 0) return -1;
 
     int eolvar = -1;
     if (accept2 != accept || nout2 != nout ||
         memcmp(scratch, scratch2, (size_t)nout * sizeof(int)) != 0)
-        eolvar = intern(cx, scratch2, nout2, accept2, -1);
+        eolvar = intern(cx, d, scratch2, nout2, accept2, -1);
 
-    return intern(cx, scratch, nout, accept, eolvar);
+    return intern(cx, d, scratch, nout, accept, eolvar);
 }
 
-void pcrec_build_dfa(Ctx *cx)
+void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
 {
-    Dfa *d = &cx->job->dfa;
-    Nfa *nfa = &cx->job->nfa;
-
-    eqclasses(cx);
+    eqclasses(nfa, d);
+    /* R1 A-3: the binding constraint for table machines is total emitted
+     * table entries (gcc time is flat in data size), not state count alone */
+    d->maxstates = maxstates;
+    if (d->maxstates > PCREC_MAX_TABLE_ENTRIES / d->ncls)
+        d->maxstates = PCREC_MAX_TABLE_ENTRIES / d->ncls;
 
     uint8_t *seen = arena_alloc(&cx->arena, (size_t)nfa->n);
     int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     int root = nfa->start;
-    d->s0 = make_state(cx, &root, 1, true, seen, scratch);
-    d->s1 = make_state(cx, &root, 1, false, seen, scratch);
+    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, seen, scratch);
+    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, seen, scratch);
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
@@ -208,7 +209,7 @@ void pcrec_build_dfa(Ctx *cx)
                 int ns = d->st[si].list[j];
                 if (cls_has(nfa->st[ns].cls, b)) pre[npre++] = nfa->st[ns].t1;
             }
-            int tgt = make_state(cx, pre, npre, false, seen, scratch);
+            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, seen, scratch);
             d->st[si].tr[c] = tgt;
         }
     }

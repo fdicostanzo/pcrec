@@ -252,9 +252,11 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
         if (m > 65535) { cx->pos = save; return false; }
         ndig++;
     }
-    if (ndig == 0) { cx->pos = save; return false; }
+    bool have_min = ndig > 0;   /* {,n} == {0,n} since PCRE2 10.43 (M2 fuzzer
+                                   finding); bare {,} and {} stay literal */
 
     if (peekc(cx) == '}') {
+        if (!have_min) { cx->pos = save; return false; }
         cx->pos++;
         *rmin = (int)m; *rmax = (int)m;
         return true;
@@ -263,6 +265,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     cx->pos++; /* ',' */
 
     if (peekc(cx) == '}') {
+        if (!have_min) { cx->pos = save; return false; }
         cx->pos++;
         *rmin = (int)m; *rmax = -1;
         return true;

@@ -50,12 +50,12 @@ Known M1 limitations (tracked for later milestones):
 
 ## M2 — Optimizer & long-text performance (seeded by R1 findings)
 
-- [M2.0] STATE:not-started — DESIGN GATE (R1 A-2/A-3): adopt the search-from-anywhere self-loop automaton (kills O(n²), same shape M3 streaming needs) and the hybrid emitter (computed goto for small DFAs, table-driven for large); re-ground the state cap in measured gcc compile time
-- [M2.1] STATE:not-started — scan-avoidance passes: literal/memchr prefilters, first-byte sets, anchoring fast path (APPROACH §5)
+- [M2.0] STATE:completed — DESIGN GATE (R1 A-2/A-3): adopt the search-from-anywhere self-loop automaton (kills O(n²), same shape M3 streaming needs) and the hybrid emitter (computed goto for small DFAs, table-driven for large); re-ground the state cap in measured gcc compile time
+- [M2.1] STATE:started — scan-avoidance passes: literal/memchr prefilters, first-byte sets, anchoring fast path (APPROACH §5)
 - [M2.2] STATE:not-started — Hopcroft minimization + alternation-to-trie factoring
-- [M2.3] STATE:not-started — tests/bench: throughput budgets AND gcc-compile-time budgets on generated code as regression tests (R1 A-3)
-- [M2.4] STATE:not-started — coverage breadth (R1 P-M1/P-M2/P-N1/P-N2): CLI surface, library API direct, startpos != 0, long subjects, high bytes/NUL
-- [M2.5] STATE:not-started — PCRE2-oracle differential fuzzer committed to tests/ (pulled forward from M7; R1 lesson — semantics critic's libpcre2 binding)
+- [M2.3] STATE:completed — tests/bench: throughput budgets AND gcc-compile-time budgets on generated code as regression tests (R1 A-3)
+- [M2.4] STATE:completed — coverage breadth (R1 P-M1/P-M2/P-N1/P-N2): CLI surface, library API direct, startpos != 0, long subjects, high bytes/NUL
+- [M2.5] STATE:completed — PCRE2-oracle differential fuzzer committed to tests/ (pulled forward from M7; R1 lesson — semantics critic's libpcre2 binding)
 
 ## M3 — Streaming input
 

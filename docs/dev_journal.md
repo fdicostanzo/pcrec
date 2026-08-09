@@ -117,3 +117,38 @@ fixed same-day, rest became plan steps / design-debt ledger entries. Highlights:
 Public repo: https://github.com/fdicostanzo/pcrec (MIT license). Initial commit
 = M0+M1+R1 state, 43 files. Root CLAUDE.md now carries the repository-scope
 mandate: this project touches only this repo; subagent briefs must restate it.
+
+## 2026-08-09 — M2 core: O(n) engine + table emission + bench/coverage/fuzzer
+
+Engine rework (M2.0 design gate executed per D7):
+- Assertion-free patterns → new ENG_UNANCH: one forward pass (priority DFA
+  wrapped in lowest-priority self-loop → leftmost-first match END), one reverse
+  pass (non-pruning reversed-pattern DFA → match START). Emission table-driven
+  (short tables + generic loop) with memchr/bitmap start-state prefilter.
+  ^/$ patterns remain on the M1 computed-goto attempt engine (documented gap).
+- Measured: R1 A-2's `a*b` worst case 7.8 s/160 KB → 136 µs/4 MB (~25 GB/s via
+  autovectorized skip loop; the reverse pass recovers exact spans). Literal
+  search 2.1 GB/s on 8 MB (memchr). R1 A-3's `[01]*1[01]{12}`: gcc 29 s/DNF →
+  0.11 s at -O1 AND -O2 (~270x). Caps now per-engine (goto 10k / table 32k,
+  bounded by table entries). ASan clean on new paths.
+- Suite green throughout: 463 harness + 41 CLI cases; python oracle 455/455.
+
+Subagent deliverables (sonnet x3, all green):
+- M2.3 bench (tests/bench/): compile-speed, gcc-time (A-3 guard), throughput +
+  linearity (A-2 guard) budgets — all PASS on new engine. Known nit: sub-ms
+  samples make ratios noisy; drivers support iterations, script should use them.
+- M2.4 coverage (tests/cli/ + 3 corpus files + ms/ns startpos directives in the
+  harness/driver/verifier). New oracle divergence found: python re clamps
+  past-end pos for nullable patterns; pcrec/PCRE2 reject (pcre2-only cases).
+- M2.5 fuzzer (tests/fuzz/): PCRE2 oracle via dlopen (no -dev package), its own
+  mlimit handling (PCRE2 match-limit ≠ nomatch — subtle oracle bug the agent
+  caught itself). Findings: (1) REAL pcrec bug — {,n} is {0,n} since PCRE2
+  10.43; FIXED in parse.c same-day + tests/base/fuzz_regressions.rxt. (2) PCRE2
+  10.46 optimizer quirk — anchor inside a {0}-quantified group wrongly anchors
+  the whole pattern; pcrec + python follow declared semantics; classified as
+  intentional divergence bucket in fuzz.py, candidate upstream report to PCRE2.
+- Final differential runs: seeds 1/2/3 x 300 patterns, ~5600 pairs, ZERO
+  divergences against real PCRE2 on the new engine.
+
+Remaining in M2: M2.1 tail (anchored fast path, interior-literal memmem),
+M2.2 (Hopcroft + trie factoring), then checkpoint review R2.

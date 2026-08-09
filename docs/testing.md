@@ -58,6 +58,14 @@ lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
   byte offset 0 finds a match spanning bytes `[<start>, <end>)`.
 - `n "<subject>"` — asserts that searching `<subject>` from byte offset 0
   finds **no** match.
+- `ms <P> "<subject>" <start> <end>` — asserts that searching `<subject>`
+  with `startpos = <P>` finds a match spanning bytes `[<start>, <end>)`.
+  `<P>` is a non-negative decimal integer, given before the quoted subject.
+- `ns <P> "<subject>"` — asserts that searching `<subject>` with
+  `startpos = <P>` finds **no** match.
+
+`m`/`n` are exactly `ms`/`ns` with `<P>` fixed at 0; see "startpos support"
+below for the `rx_search` contract these exercise.
 
 `<subject>` is double-quoted text. Inside the quotes, these escapes are
 recognized (no others are):
@@ -117,9 +125,10 @@ For each pattern block, `run.sh`:
    A failure here is a **harness-level failure** (broken codegen or a
    driver/compiler mismatch, not a single bad test case) and is reported
    clearly, separately from ordinary case failures.
-5. For each `m`/`n` case, runs `<tmp>/t '<subject>'` (quotes stripped,
-   escapes still encoded — the driver decodes them) and compares stdout
-   exactly against `match <start> <end>` or `nomatch`.
+5. For each `m`/`n`/`ms`/`ns` case, runs `<tmp>/t '<subject>' '<P>'` (quotes
+   stripped, escapes still encoded — the driver decodes them; `<P>` is `0`
+   for `m`/`n`) and compares stdout exactly against `match <start> <end>` or
+   `nomatch`.
 
 Failures are printed as `file:line: expected ... got ...` along with the
 pattern under test, so a failure can be traced straight back to the
@@ -133,18 +142,21 @@ failed to compile.
 case, that adapts the generated `rx_search` API to a simple CLI:
 
 ```
-t <subject>
+t <subject> [startpos]
 ```
 
 `<subject>` is the case's subject text with escapes still encoded as literal
 backslash sequences (exactly as they appear inside the `.rxt` file's
-quotes). The driver:
+quotes). `[startpos]` is optional (defaults to `0`) — `run.sh` always passes
+it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
 
 1. Decodes escapes into a byte buffer, tracking the length explicitly (the
    decoded bytes may include `\0`, so the driver never uses `strlen` on the
    result). An invalid escape prints a message to stderr and exits `2`.
-2. Calls `rx_search(buf, len, 0, &m)`.
-3. Prints exactly one line to stdout: `match %zu %zu\n` (using `m.start`,
+2. Parses `[startpos]`, if given, as a non-negative decimal integer; a
+   malformed value prints a message to stderr and exits `2`.
+3. Calls `rx_search(buf, len, startpos, &m)`.
+4. Prints exactly one line to stdout: `match %zu %zu\n` (using `m.start`,
    `m.end`) if a match was found, or `nomatch\n` otherwise, and exits `0`.
 
 The driver includes `"gen.h"`, so it must be compiled with `-I<dir>`
@@ -197,9 +209,12 @@ easy to scan.
 - The python-re verification oracle is committed at `tests/harness/verify_rxt.py`
   (run: `python3 tests/harness/verify_rxt.py [files-or-dirs]`; default tests/base).
   Run it whenever corpus files change.
-- **Oracle exclusions**: python `re` diverges from real PCRE on `{,n}` (python:
-  quantifier; PCRE: literal), possessive quantifiers (python 3.11+ accepts), and
-  quantified bare anchors (`^*` — python accepts, PCRE2 rejects error 109). Blocks
+- **Oracle exclusions**: python `re` diverges from real PCRE2 on bare `{,}`
+  (python: {0,}; PCRE2 and pcrec: literal — note `{,n}` WITH a digit is a
+  quantifier {0,n} in both since PCRE2 10.43, implemented in pcrec 2026-08-09),
+  possessive quantifiers (python 3.11+ accepts), quantified bare anchors
+  (`^*` — python accepts, PCRE2 rejects error 109), and past-end `pos`
+  clamping for nullable patterns (python clamps; pcrec/PCRE2 reject). Blocks
   that are correct-for-PCRE but not python-verifiable carry a `# pcre2-only`
   comment line immediately before `pattern`; the verifier skips them and reports
   the skip count. Keep such cases rare and justified.
@@ -208,3 +223,35 @@ easy to scan.
   errors; a file with zero pattern blocks fails; a run with zero total cases exits
   nonzero; generated code + driver compile with `-Wall -Wextra -Werror` by
   default; timeouts: pcrec 60 s, compiler 120 s, test binary 10 s per case.
+
+## M2.4 coverage breadth (2026-08-09)
+
+Closes R1's PLAN findings P-M1, P-M2, P-N1, P-N2.
+
+- **`startpos` support (P-M2)**: the `.rxt` format gained `ms <P> "<subject>"
+  <start> <end>` and `ns <P> "<subject>"` directives (documented above under
+  "The `.rxt` format"), exercising `rx_search`'s `startpos` parameter — the
+  contract documented in `lib/pcrec.h` (`^` anchors to absolute offset 0
+  regardless of `startpos`; `startpos > n` returns no match). `driver.c` now
+  takes an optional `argv[2]` startpos (default `0`); `run.sh` passes it for
+  every case (`0` for `m`/`n`); `verify_rxt.py` checks `ms`/`ns` cases with
+  `compiled.search(subject, P)` — python's `pos` parameter has the same `^`
+  semantics as pcrec's `startpos` (absolute-offset anchoring unless
+  MULTILINE), so no oracle exclusion is needed for this feature.
+  `tests/base/startpos.rxt` is the new corpus file.
+- **Long-subject and high-byte breadth (P-N1, P-N2)**: `tests/base/long_subjects.rxt`
+  (200–900 byte subjects: end-of-subject matches, near-miss long scans, greedy
+  `.*` spans, bounded `{50,60}`-style repeats over long runs) and
+  `tests/base/high_bytes.rxt` (`\x80`–`\xFF` in both patterns — literals and
+  classes like `[\x80-\xbf]` — and subjects) are new corpus files, both
+  100%-verified by `verify_rxt.py`.
+- **CLI + library-API regression net (P-M1)**: `tests/cli/run_cli_tests.sh` is
+  a standalone bash script (same conventions as `tests/harness/run.sh`:
+  `set -u`, repo-root detection, PASS/FAIL counts, nonzero exit on failure,
+  temp dir via `mktemp -d`) covering `-o -`, `--emit-main`, prefix boundary
+  validation (60/61 chars, leading digit, empty), `-o subdir/out.c`, `--`
+  end-of-options, missing-value and unknown-option diagnostics, and a direct
+  `lib/pcrec.h` + `build/libpcrec.a` smoke test of `pcrec_compile`/
+  `pcrec_output_free` NULL-argument and double-free safety. It is not wired
+  into the Makefile (run directly: `bash tests/cli/run_cli_tests.sh`); the
+  main build integrates it separately.

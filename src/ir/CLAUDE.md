@@ -4,8 +4,8 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
 
 ## Files
 
-- **nfa.c** — Thompson NFA construction from AST; split edge order encodes choice preference (see docs/decisions.md D3)
-- **dfa.c** — priority subset construction with byte equivalence classes; leftmost-first semantics and EOL assertions ($ accept flag)
+- **nfa.c** — Thompson NFA construction from AST; split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2)
+- **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start); EOL-variant states for `$` (R1 S-C1/S-C2); per-engine state caps grounded in emitter cost (R1 A-3)
 
 ## Conventions
 

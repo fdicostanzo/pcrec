@@ -1,0 +1,6 @@
+kind: content
+pattern: '(\\n(?:(c{2,})(?:b{0,2}\\n{5,10}?c*a|b0{28,30}?c0{0}).{2}?)|^$\\n{0,30}){0}(?:1|[a-]{0}?a10)[abc]'
+subject (hex): 63247dc87b5d33636131306263310a32
+subject (repr): b'c$}\xc8{]3ca10bc1\n2'
+pcrec:  match 8 12
+pcre2:  nomatch

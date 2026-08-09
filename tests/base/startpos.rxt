@@ -1,0 +1,152 @@
+# startpos coverage (docs/reviews/2026-08-09-m1.md P-M2; plan M2.4).
+# `ms <P> "<subject>" <start> <end>` / `ns <P> "<subject>"` exercise
+# rx_search's startpos parameter — see docs/testing.md.
+
+# Two non-overlapping occurrences: startpos selects which one is found,
+# and a startpos strictly between them skips the first entirely.
+pattern abc
+ms 0 "xxabcxxabcxx" 2 5
+ms 2 "xxabcxxabcxx" 2 5
+ms 3 "xxabcxxabcxx" 7 10
+ms 7 "xxabcxxabcxx" 7 10
+ns 8 "xxabcxxabcxx"
+ns 11 "xxabcxxabcxx"
+
+# A run of a+ matches: startpos partway into the first run still finds it
+# (leftmost from startpos, not leftmost overall); startpos past both runs
+# finds nothing.
+pattern a+
+m "aaabaaa" 0 3
+ms 0 "aaabaaa" 0 3
+ms 1 "aaabaaa" 1 3
+ms 2 "aaabaaa" 2 3
+ms 3 "aaabaaa" 4 7
+ms 4 "aaabaaa" 4 7
+ns 7 "aaabaaa"
+
+# Empty-match quantifier: startpos equal to subject length (P == n) still
+# yields the empty match at the end; every startpos in between yields the
+# empty match right there.
+pattern a*
+ms 0 "bb" 0 0
+ms 1 "bb" 1 1
+ms 2 "bb" 2 2
+
+# startpos > n on a nullable pattern: pcrec's documented contract (lib/pcrec.h)
+# is "startpos > n returns 0" unconditionally. python's `pos` parameter
+# instead silently clamps to len(string) when pos > len, so
+# compiled.search("bb", 3) matches empty at (2,2) instead of failing — not
+# python-verifiable; PCRE2's start-offset semantics reject an offset past
+# the subject like pcrec does.
+# pcre2-only
+pattern a*
+ns 3 "bb"
+
+# ^ must anchor to absolute offset 0 regardless of startpos: a startpos > 0
+# must NOT match even though the literal text repeats later in the subject.
+pattern ^abc
+ms 0 "abcabc" 0 3
+ns 1 "abcabc"
+ns 3 "abcabc"
+ns 6 "abcabc"
+
+# Bare ^ (empty match at absolute 0 only) — the sharpest form of the
+# anchor-vs-startpos contract: every P > 0 must fail even though ^ would
+# trivially match an empty string at any position if it obeyed startpos.
+pattern ^
+ms 0 "xyz" 0 0
+ns 1 "xyz"
+ns 2 "xyz"
+ns 3 "xyz"
+
+# $ is unaffected by startpos except in which occurrence is reachable: it
+# anchors to the real end of the subject, so startpos only changes whether
+# a preceding 'a' is still available to match before it.
+pattern a$
+m "aaa" 2 3
+ms 0 "aaa" 2 3
+ms 2 "aaa" 2 3
+ns 3 "aaa"
+
+# startpos > n (past the end entirely) must cleanly return no match, for
+# both a pattern requiring a literal character and one that could
+# otherwise match empty.
+pattern .
+ms 0 "abc" 0 1
+ns 3 "abc"
+ns 4 "abc"
+ns 100 "abc"
+
+pattern x*
+ms 3 "abc" 3 3
+
+# Same pos > n vs. nullable-pattern clamping divergence as above (python
+# clamps pos down to len("abc")=3, matching empty there instead of failing).
+# pcre2-only
+pattern x*
+ns 4 "abc"
+ns 100 "abc"
+
+# A literal-anchored startpos exactly at n: a pattern requiring >=1 byte
+# cannot match (no bytes remain), matching the P > n behavior at the
+# boundary rather than differing from it.
+pattern abc
+ns 12 "xxabcxxabcxx"
+
+# Combining ^ with an interior startpos and an otherwise-matchable
+# continuation, across an alternation — the anchored branch must never
+# fire once startpos > 0, but the other branch still can.
+pattern ^a|b
+ms 0 "abc" 0 1
+ms 1 "abc" 1 2
+ns 2 "abc"
+
+# Bounded repeat with startpos landing inside vs. before the repeated run.
+pattern a{2,4}
+m "xaaaay" 1 5
+ms 0 "xaaaay" 1 5
+ms 1 "xaaaay" 1 5
+ms 2 "xaaaay" 2 5
+ns 5 "xaaaay"
+
+# Alternation where the later branch is only reachable once startpos moves
+# past the point where the earlier branch's match would have started.
+pattern cat|dog
+m "cat and dog" 0 3
+ms 0 "cat and dog" 0 3
+ms 1 "cat and dog" 8 11
+ms 4 "cat and dog" 8 11
+ns 9 "cat and dog"
+
+# Empty subject: startpos 0 (P == n == 0) is a valid, in-range position;
+# an empty-matching pattern matches there.
+pattern x*
+ms 0 "" 0 0
+
+# startpos 1 on an empty subject is already past the end (P > n); same
+# python pos-clamping divergence as above (python treats pos=1 as pos=0 on
+# an empty string and matches empty there instead of failing).
+# pcre2-only
+pattern x*
+ns 1 ""
+
+# Groups/backreference-free capture pattern with startpos skipping the
+# first candidate entirely (its start position, not just its match, must
+# be >= startpos).
+pattern (ab)+
+m "ababxxabab" 0 4
+ms 0 "ababxxabab" 0 4
+ms 1 "ababxxabab" 2 4
+ms 4 "ababxxabab" 6 10
+ms 6 "ababxxabab" 6 10
+ms 7 "ababxxabab" 8 10
+ns 9 "ababxxabab"
+ns 10 "ababxxabab"
+
+# Dot-star greedy scan interacting with startpos: the match always starts
+# at the first startpos-reachable position and extends to the true end.
+pattern a.*z
+m "axxxz" 0 5
+ms 0 "axxxz" 0 5
+ms 1 "byyyaxxxz" 4 9
+ns 5 "axxxz"

@@ -1,8 +1,20 @@
-/* DFA -> gcc-dialect C: one computed-goto label per DFA state, per-state
- * jump tables over byte equivalence classes. ASCII/byte encoding (the UTF-8
- * backend compiles Unicode ranges into byte-wise automata upstream and will
- * share this emitter). The generated code is self-contained: no dependency
- * on pcrec at build or run time. */
+/* DFA -> C code generation, two engines (see docs/decisions.md D3/D7):
+ *
+ * ENG_UNANCH (assertion-free patterns): one O(n) forward pass over the
+ * subject with the unanchored priority DFA (finds the leftmost-first match
+ * END), then a backward pass with the non-pruning reverse DFA (earliest
+ * accepting position = match START). Emitted TABLE-DRIVEN — int16 transition
+ * tables + a generic loop — because gcc's compile time on huge computed-goto
+ * functions is superlinear (R1 A-3) while data initializers stay flat. A
+ * memchr (single escape byte) or bitmap skip loop runs while the machine is
+ * parked in the start state (M2.1 prefilter).
+ *
+ * ENG_ATTEMPT (patterns with ^/$): per-start-position computed-goto attempt
+ * loop with EOL-variant states (R1 S-C1/S-C2). Assertion-aware fast path is
+ * future work (plan M2).
+ *
+ * Generated code is self-contained: no dependency on pcrec at build or run
+ * time. */
 
 #include <ctype.h>
 #include <string.h>
@@ -48,17 +60,229 @@ static void emit_header(Ctx *cx)
     sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
 }
 
-/* label operand for a transition target */
+/* ---- shared table emitters ---- */
+
+static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
+                          const uint8_t *v, int n)
+{
+    sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag, n);
+    for (int i = 0; i < n; i++) {
+        if (i % 16 == 0) sb_puts(c, "\n       ");
+        sb_printf(c, " %3d,", v[i]);
+    }
+    sb_puts(c, "\n    };\n");
+}
+
+static void emit_tr_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+{
+    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n * d->ncls);
+    int k = 0;
+    for (int i = 0; i < d->n; i++) {
+        for (int cl = 0; cl < d->ncls; cl++, k++) {
+            if (k % 16 == 0) sb_puts(c, "\n       ");
+            sb_printf(c, " %d,", d->st[i].tr[cl]);
+        }
+    }
+    sb_puts(c, "\n    };\n");
+}
+
+static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+{
+    sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag, d->n);
+    for (int i = 0; i < d->n; i++) {
+        if (i % 16 == 0) sb_puts(c, "\n       ");
+        sb_printf(c, " %d,", d->st[i].accept ? 1 : 0);
+    }
+    sb_puts(c, "\n    };\n");
+}
+
+/* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
+
+static void emit_unanchored(Ctx *cx)
+{
+    Job *job = cx->job;
+    Dfa *fd = &job->dfa, *rd = &job->rdfa;
+    StrBuf *c = &job->csb;
+    const char *p = cx->opt->prefix;
+
+    int fs = fd->s0;   /* no asserts -> s0 == s1 */
+    int rs = rd->s0;
+
+    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
+                 "size_t startpos, %s_span *m)\n{\n", p, p);
+
+    if (fs < 0 || rs < 0) {
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+                   "    return 0;\n}\n");
+        return;
+    }
+
+    /* start-state prefilter analysis: bytes that advance the pattern */
+    bool start_acc = fd->st[fs].accept;
+    uint8_t first[256];
+    int esc_count = 0, esc_byte = 0;
+    for (int b = 0; b < 256; b++) {
+        int t = fd->st[fs].tr[fd->clsmap[b]];
+        first[b] = (uint8_t)(t != fs);
+        if (first[b]) { esc_count++; esc_byte = b; }
+    }
+    if (esc_count == 0 && !start_acc) {
+        /* the machine can neither accept nor ever leave its start state */
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+                   "    return 0;\n}\n");
+        return;
+    }
+    bool prefilter = !start_acc && esc_count > 0 && esc_count < 256;
+    bool use_memchr = prefilter && esc_count == 1;
+
+    emit_u8_table(c, p, "fcls", fd->clsmap, 256);
+    emit_tr_table(c, p, "ftr", fd);
+    emit_acc_table(c, p, "facc", fd);
+    if (prefilter && !use_memchr)
+        emit_u8_table(c, p, "first", first, 256);
+    emit_u8_table(c, p, "rcls", rd->clsmap, 256);
+    emit_tr_table(c, p, "rtr", rd);
+    emit_acc_table(c, p, "racc", rd);
+
+    sb_puts(c,   "    size_t pos = startpos;\n"
+                 "    size_t last = (size_t)-1;\n");
+    sb_printf(c, "    int st = %d;\n", fs);
+    sb_puts(c,   "    if (startpos > n) return 0;\n"
+                 "    for (;;) {\n");
+    sb_printf(c, "        if (%s_facc[st]) last = pos;\n", p);
+    if (prefilter) {
+        sb_printf(c, "        if (st == %d && last == (size_t)-1) {\n", fs);
+        if (use_memchr) {
+            sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
+            sb_puts(c,   "            if (!q) return 0;\n"
+                         "            pos = (size_t)((const unsigned char *)q - s);\n");
+        } else {
+            sb_printf(c, "            while (pos < n && !%s_first[s[pos]]) pos++;\n", p);
+            sb_puts(c,   "            if (pos >= n) return 0;\n");
+        }
+        sb_puts(c, "        }\n");
+    }
+    sb_puts(c,   "        if (pos >= n) break;\n");
+    sb_printf(c, "        st = %s_ftr[st * %d + %s_fcls[s[pos++]]];\n", p, fd->ncls, p);
+    sb_puts(c,   "        if (st < 0) break;\n"
+                 "    }\n"
+                 "    if (last == (size_t)-1) return 0;\n"
+                 "    {\n"
+                 "        size_t end = last;\n"
+                 "        size_t sfound = (size_t)-1;\n"
+                 "        size_t pp = end;\n");
+    sb_printf(c, "        int rst = %d;\n", rs);
+    sb_puts(c,   "        for (;;) {\n");
+    sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
+    sb_puts(c,   "            if (pp <= startpos) break;\n");
+    sb_printf(c, "            rst = %s_rtr[rst * %d + %s_rcls[s[--pp]]];\n", p, rd->ncls, p);
+    sb_puts(c,   "            if (rst < 0) break;\n"
+                 "        }\n"
+                 "        if (sfound == (size_t)-1) return 0;\n"
+                 "        if (m) { m->start = sfound; m->end = end; }\n"
+                 "        return 1;\n"
+                 "    }\n"
+                 "}\n");
+}
+
+/* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
+
 static void emit_target(StrBuf *c, const char *p, int tgt)
 {
     if (tgt < 0) sb_printf(c, "&&%s_dead", p);
     else         sb_printf(c, "&&%s_s%d", p, tgt);
 }
 
-void pcrec_emit_dfa(Ctx *cx)
+static void emit_attempt(Ctx *cx)
 {
     Job *job = cx->job;
     Dfa *d = &job->dfa;
+    StrBuf *c = &job->csb;
+    const char *p = cx->opt->prefix;
+
+    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
+                 "size_t startpos, %s_span *m)\n{\n", p, p);
+
+    if (d->n == 0) {
+        /* no live start state: the pattern matches nothing */
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+                   "    return 0;\n}\n");
+        return;
+    }
+
+    emit_u8_table(c, p, "cls", d->clsmap, 256);
+
+    for (int i = 0; i < d->n; i++) {
+        sb_printf(c, "    static const void *const %s_t%d[%d] = { ",
+                  p, i, d->ncls);
+        for (int cl = 0; cl < d->ncls; cl++) {
+            if (cl) sb_puts(c, ", ");
+            emit_target(c, p, d->st[i].tr[cl]);
+        }
+        sb_puts(c, " };\n");
+    }
+
+    sb_puts(c, "    size_t start;\n"
+               "    for (start = startpos; start <= n; start++) {\n"
+               "        size_t pos = start;\n"
+               "        size_t last = (size_t)-1;\n");
+
+    if (d->s0 == d->s1) {
+        sb_puts(c, "        goto ");
+        if (d->s0 < 0) sb_printf(c, "*&&%s_dead;\n", p);
+        else           sb_printf(c, "*&&%s_s%d;\n", p, d->s0);
+    } else {
+        sb_puts(c, "        goto *((start == 0) ? ");
+        emit_target(c, p, d->s0);
+        sb_puts(c, " : ");
+        emit_target(c, p, d->s1);
+        sb_puts(c, ");\n");
+    }
+
+    for (int i = 0; i < d->n; i++) {
+        const DState *st = &d->st[i];
+        /* labels marked unused: EOL-variant states are entered via their
+         * transition tables only, never their own label */
+        sb_printf(c, "%s_s%d: __attribute__((unused));\n", p, i);
+        if (st->eolvar >= 0) {
+            const DState *v = &d->st[st->eolvar];
+            /* at an EOL position ($ passable), use the EOL-view state:
+             * its accept is correctly priority-pruned and its table
+             * carries the $-gated continuations */
+            sb_puts(c, "        if (pos == n || (pos + 1 == n && "
+                       "s[pos] == '\\n')) {\n");
+            if (v->accept)
+                sb_puts(c, "            last = pos;\n");
+            sb_printf(c, "            if (pos >= n) goto %s_done;\n", p);
+            sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                      p, st->eolvar, p);
+            sb_puts(c, "        }\n");
+            if (st->accept)
+                sb_puts(c, "        last = pos;\n");
+            /* not an EOL position implies pos < n: consume directly */
+            sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
+        } else {
+            if (st->accept)
+                sb_puts(c, "        last = pos;\n");
+            sb_printf(c, "        if (pos >= n) goto %s_done;\n", p);
+            sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
+        }
+    }
+
+    sb_printf(c, "%s_dead: __attribute__((unused));\n", p);
+    sb_printf(c, "%s_done:\n", p);
+    sb_puts(c, "        if (__builtin_expect(last != (size_t)-1, 0)) {\n"
+               "            if (m) { m->start = start; m->end = last; }\n"
+               "            return 1;\n"
+               "        }\n"
+               "    }\n"
+               "    return 0;\n"
+               "}\n");
+}
+
+void pcrec_emit_dfa(Ctx *cx)
+{
+    Job *job = cx->job;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
@@ -71,92 +295,16 @@ void pcrec_emit_dfa(Ctx *cx)
         sb_puts(c, "#include <stddef.h>\n\n");
         emit_decls(c, p);
     }
+    if (job->engine == PCREC_ENG_UNANCH)
+        sb_puts(c, "#include <string.h>\n");
     if (cx->opt->emit_main)
         sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
     sb_puts(c, "\n");
 
-    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
-                 "size_t startpos, %s_span *m)\n{\n", p, p);
-
-    if (d->n == 0) {
-        /* no live start state: the pattern matches nothing */
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
-                   "    return 0;\n}\n");
-    } else {
-        sb_printf(c, "    static const unsigned char %s_cls[256] = {", p);
-        for (int i = 0; i < 256; i++) {
-            if (i % 16 == 0) sb_puts(c, "\n       ");
-            sb_printf(c, " %3d,", d->clsmap[i]);
-        }
-        sb_puts(c, "\n    };\n");
-
-        for (int i = 0; i < d->n; i++) {
-            sb_printf(c, "    static const void *const %s_t%d[%d] = { ",
-                      p, i, d->ncls);
-            for (int cl = 0; cl < d->ncls; cl++) {
-                if (cl) sb_puts(c, ", ");
-                emit_target(c, p, d->st[i].tr[cl]);
-            }
-            sb_puts(c, " };\n");
-        }
-
-        sb_puts(c, "    size_t start;\n"
-                   "    for (start = startpos; start <= n; start++) {\n"
-                   "        size_t pos = start;\n"
-                   "        size_t last = (size_t)-1;\n");
-
-        if (d->s0 == d->s1) {
-            sb_puts(c, "        goto ");
-            if (d->s0 < 0) sb_printf(c, "*&&%s_dead;\n", p);
-            else           sb_printf(c, "*&&%s_s%d;\n", p, d->s0);
-        } else {
-            sb_puts(c, "        goto *((start == 0) ? ");
-            emit_target(c, p, d->s0);
-            sb_puts(c, " : ");
-            emit_target(c, p, d->s1);
-            sb_puts(c, ");\n");
-        }
-
-        for (int i = 0; i < d->n; i++) {
-            const DState *st = &d->st[i];
-            /* labels marked unused: EOL-variant states are entered via their
-             * transition tables only, never their own label */
-            sb_printf(c, "%s_s%d: __attribute__((unused));\n", p, i);
-            if (st->eolvar >= 0) {
-                const DState *v = &d->st[st->eolvar];
-                /* at an EOL position ($ passable), use the EOL-view state:
-                 * its accept is correctly priority-pruned and its table
-                 * carries the $-gated continuations */
-                sb_puts(c, "        if (pos == n || (pos + 1 == n && "
-                           "s[pos] == '\\n')) {\n");
-                if (v->accept)
-                    sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            if (pos >= n) goto %s_done;\n", p);
-                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
-                          p, st->eolvar, p);
-                sb_puts(c, "        }\n");
-                if (st->accept)
-                    sb_puts(c, "        last = pos;\n");
-                /* not an EOL position implies pos < n: consume directly */
-                sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
-            } else {
-                if (st->accept)
-                    sb_puts(c, "        last = pos;\n");
-                sb_printf(c, "        if (pos >= n) goto %s_done;\n", p);
-                sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
-            }
-        }
-
-        sb_printf(c, "%s_dead: __attribute__((unused));\n", p);
-        sb_printf(c, "%s_done:\n", p);
-        sb_puts(c, "        if (__builtin_expect(last != (size_t)-1, 0)) {\n"
-                   "            if (m) { m->start = start; m->end = last; }\n"
-                   "            return 1;\n"
-                   "        }\n"
-                   "    }\n"
-                   "    return 0;\n"
-                   "}\n");
-    }
+    if (job->engine == PCREC_ENG_UNANCH)
+        emit_unanchored(cx);
+    else
+        emit_attempt(cx);
 
     if (cx->opt->emit_main) {
         sb_puts(c, "\n");

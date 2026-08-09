@@ -150,16 +150,17 @@ flush_block() {
     local i
     for i in "${!case_kind[@]}"; do
         local kind="${case_kind[$i]}" line="${case_line[$i]}" subj="${case_subject[$i]}"
+        local pos="${case_startpos[$i]}"
         local out expect trc
-        out="$(timeout 10 "$bdir/t" "$subj")"
+        out="$(timeout 10 "$bdir/t" "$subj" "$pos")"
         trc=$?
         if [ $trc -eq 124 ]; then
             record_fail "$cur_file" "$line" \
-                "test binary TIMED OUT (>10s) for pattern '$cur_pattern' subject \"$subj\""
+                "test binary TIMED OUT (>10s) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
             continue
         elif [ $trc -ge 126 ]; then
             record_fail "$cur_file" "$line" \
-                "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\""
+                "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
             continue
         fi
         if [ "$kind" = "m" ]; then
@@ -168,11 +169,11 @@ flush_block() {
             expect="nomatch"
         fi
         if [ "$out" = "$expect" ]; then
-            [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: '$cur_pattern' subject=\"$subj\""
+            [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: '$cur_pattern' subject=\"$subj\" startpos=$pos"
             record_pass
         else
             record_fail "$cur_file" "$line" \
-                "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\""
+                "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
         fi
     done
 }
@@ -188,7 +189,7 @@ for file in "${files[@]}"; do
     cur_pattern=""
     cur_pattern_line=0
     cur_is_perr=0
-    case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=()
+    case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     have_block=0
     blocks_in_file=0
 
@@ -204,7 +205,7 @@ for file in "${files[@]}"; do
             cur_pattern="${BASH_REMATCH[1]}"
             cur_pattern_line=$lineno
             cur_is_perr=0
-            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=()
+            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
             have_block=1
         elif [[ "$line" =~ ^perr[[:space:]]*$ ]]; then
             cur_is_perr=1
@@ -214,10 +215,26 @@ for file in "${files[@]}"; do
             case_subject+=("${BASH_REMATCH[1]}")
             case_start+=("${BASH_REMATCH[2]}")
             case_end+=("${BASH_REMATCH[3]}")
+            case_startpos+=("0")
         elif [[ "$line" =~ ^n[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
             case_subject+=("${BASH_REMATCH[1]}")
+            case_start+=("")
+            case_end+=("")
+            case_startpos+=("0")
+        elif [[ "$line" =~ ^ms[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
+            case_kind+=("m")
+            case_line+=("$lineno")
+            case_startpos+=("${BASH_REMATCH[1]}")
+            case_subject+=("${BASH_REMATCH[2]}")
+            case_start+=("${BASH_REMATCH[3]}")
+            case_end+=("${BASH_REMATCH[4]}")
+        elif [[ "$line" =~ ^ns[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
+            case_kind+=("n")
+            case_line+=("$lineno")
+            case_startpos+=("${BASH_REMATCH[1]}")
+            case_subject+=("${BASH_REMATCH[2]}")
             case_start+=("")
             case_end+=("")
         else

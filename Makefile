@@ -25,8 +25,15 @@ build/pcrec: cli/main.c build/libpcrec.a lib/pcrec.h
 
 test: all
 	bash tests/harness/run.sh
+	bash tests/cli/run_cli_tests.sh
+
+bench: all
+	bash tests/bench/run_bench.sh
+
+fuzz: all
+	python3 tests/fuzz/fuzz.py
 
 clean:
 	rm -rf build
 
-.PHONY: all test clean
+.PHONY: all test bench fuzz clean

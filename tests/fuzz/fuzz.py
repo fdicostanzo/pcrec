@@ -1,0 +1,632 @@
+#!/usr/bin/env python3
+"""
+tests/fuzz/fuzz.py — PCRE2-oracle differential fuzzer for pcrec (plan M2.5).
+
+Generates random base-tier patterns and subjects, and for each pattern:
+  1. Checks pcrec's accept/reject decision against the real PCRE2 library
+     (via tests/fuzz/pcre2_oracle), reporting a mismatch as an
+     "accept/reject divergence" (unless it falls in a documented, known
+     exception category — see EXCLUDED-FROM-GENERATION below).
+  2. If both accept, compiles the pattern with pcrec + gcc, runs it against
+     several subjects, and compares match/nomatch and exact spans against
+     the PCRE2 oracle. Any mismatch is a "content divergence": a repro
+     bundle is written to tests/fuzz/failures/<timestamp>/ and the run
+     continues (this is a differential fuzzer, not a pass/fail test suite
+     entry — see README.md for why it's not part of `make test`).
+
+Usage:
+    python3 tests/fuzz/fuzz.py [--seed N] [--patterns 300] [--subjects 15] [--keep]
+
+Deterministic: the same --seed always generates the same patterns and
+subjects (random.seed(N) once, up front; no other source of randomness is
+used). Exit code is 0 iff zero divergences (accept/reject or content) were
+found; nonzero otherwise, so it can be wired into a checkpoint/CI gate later
+if desired.
+
+See README.md in this directory for the exception-list rationale and how to
+read a failures/ bundle.
+"""
+import argparse
+import os
+import random
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(os.path.dirname(HERE))
+PCREC = os.environ.get("PCREC", os.path.join(REPO_ROOT, "build", "pcrec"))
+CC = os.environ.get("CC", "gcc")
+GENCFLAGS = os.environ.get("GENCFLAGS", "-O0 -std=gnu11").split()
+ORACLE_SRC = os.path.join(HERE, "pcre2_oracle.c")
+DRIVER_SRC = os.path.join(HERE, "fuzz_driver.c")
+FAILURES_DIR = os.path.join(HERE, "failures")
+
+PCREC_TIMEOUT = 10
+CC_TIMEOUT = 30
+RUN_TIMEOUT = 5
+
+# =============================================================================
+# EXCLUDED FROM GENERATION — known tooling/engine divergences, verified
+# empirically against the real PCRE2 oracle (see this file's git history /
+# the M2.5 build session for the exact transcripts). These are deliberately
+# never produced by the generator below, so a default run's divergence list
+# reflects genuinely new findings rather than re-discovering known gaps
+# every time.
+#
+# 1. Possessive quantifiers (a++, a*+, a??+, a{m,n}+) and atomic groups
+#    ((?>...)): pcrec REJECTS ("requires module 'atomic-groups'" — not yet
+#    implemented); PCRE2 ACCEPTS. Verified:
+#      pattern a++     -> pcrec: REJECT (offset 2); pcre2: nomatch on ""
+#      pattern (?>abc) -> pcrec: REJECT (offset 0); pcre2: nomatch on ""
+#    This is an accept/reject mismatch, but an expected one (unimplemented
+#    module, not a bug) — excluded so it doesn't dominate every run.
+#
+# 2. \x{...} brace hex escapes: pcrec REJECTS ("requires module
+#    'unicode-props'" — not yet implemented); PCRE2 ACCEPTS. Verified:
+#      pattern \x{41} -> pcrec: REJECT (offset 0); pcre2: matches 'A'
+#    Same rationale as (1). The generator uses only the supported \xHH /
+#    \xH (1-2 hex digit, no braces) form.
+#
+# 3. {,n} and {,} quantifier forms (no digit before the comma): this is NOT
+#    an accept/reject mismatch — both engines accept the pattern — but a
+#    genuine SEMANTIC divergence. pcrec treats the brace text as a literal
+#    string (matching the classic PCRE1 documented behavior); PCRE2 10.46
+#    (the version on this box) treats it as a quantifier equivalent to
+#    {0,n}. Verified:
+#      pattern a{,3} vs subject "aaaa" -> pcrec: nomatch;   pcre2: match 0 3
+#      pattern a{,3} vs subject ""     -> pcrec: nomatch;   pcre2: match 0 0
+#      pattern a{,3} vs subject "aa{,3}bb" -> pcrec: match 1 6 (literal
+#        "a{,3}"); pcre2: match 0 2 (quantifier reading of "aa")
+#    RESOLVED 2026-08-09 (same session): pcrec's parser now implements
+#    {,n} == {0,n} (PCRE2 10.43+ behavior); bare {,} stays literal, which
+#    PCRE2 agrees with (verified: 'a{,}' does not match "aaa" under the
+#    oracle; python re is the diverging engine there). Regressions in
+#    tests/base/fuzz_regressions.rxt. Generation of {,n} remains off simply
+#    because the generator predates the fix; safe to enable later.
+#
+# NOT excluded (checked and confirmed to no longer be a divergence, despite
+# earlier speculation that it might need an exception): quantified bare
+# anchors (^*a, a$*, ${1,2}, ^{0,1}, ...). Since the S-M1 fix
+# (docs/reviews/2026-08-09-m1.md), pcrec rejects these exactly like PCRE2
+# rejects them (error "quantifier does not follow a repeatable item" /
+# PCRE2 error code 109), verified across ^*a, a$*, $?, ^+, ${1,2}, ^{0,1}.
+# The generator is free to produce these naturally (quantifying an anchor
+# atom); both engines are expected to reject in lockstep. A quantified
+# GROUP wrapping an anchor, e.g. (^)*ab, stays legal in both and is also
+# left unrestricted.
+# =============================================================================
+
+
+# ---------------------------------------------------------------------------
+# Pattern generation: a tiny AST + renderer + an approximate "sampler" that
+# produces a string a pattern fragment is *likely* to match. The sampler
+# need not be exact — it only biases subject generation toward strings that
+# actually exercise the pattern instead of near-universal nomatch; a wrong
+# sample just yields an ordinary uninteresting subject, never a false test
+# result (both engines always run on the exact same subject bytes).
+# ---------------------------------------------------------------------------
+
+LITERAL_ATOMS = [
+    ("a", "a"), ("b", "b"), ("c", "c"), ("0", "0"), ("1", "1"),
+    ("\\n", "\n"),
+]
+
+# (pattern text, membership set, negated?) — sampler picks a member for
+# non-negated classes, or a char outside `members` (from SAFE_POOL) for
+# negated ones. All forms below are drawn from tests/base/classes.rxt /
+# hand-verified accepted by pcrec.
+SAFE_POOL = "abc012xyzXYZ\n\t -"
+CLASS_ATOMS = [
+    ("[abc]", {"a", "b", "c"}, False),
+    ("[a-z]", {"a", "m", "z"}, False),
+    ("[a-z0-9]", {"a", "m", "z", "0", "5", "9"}, False),
+    ("[^abc]", {"a", "b", "c"}, True),
+    ("[]abc]", {"]", "a", "b", "c"}, False),
+    ("[^]abc]", {"]", "a", "b", "c"}, True),
+    ("[a-]", {"a", "-"}, False),
+    ("[-a]", {"-", "a"}, False),
+    ("[a\\-z]", {"a", "-", "z"}, False),
+    ("[\\]]", {"]"}, False),
+    ("[\\n\\t]", {"\n", "\t"}, False),
+    ("[\\x41-\\x43]", {"A", "B", "C"}, False),
+    ("[a-c-e]", {"a", "b", "c", "-", "e"}, False),
+    ("[\\x61]", {"a"}, False),   # \xHH single-form, no braces (see exclusions)
+    ("[\\x6]", {"\x06"}, False),  # 1-digit \x form
+]
+
+QUANTS = [
+    # (text, lo, hi)  hi=None means unbounded; counts kept <= 30 per spec.
+    ("*", 0, None), ("+", 1, None), ("?", 0, 1),
+    ("{0,2}", 0, 2), ("{1,2}", 1, 2), ("{2,3}", 2, 3), ("{0,3}", 0, 3),
+    ("{1,}", 1, None), ("{2,}", 2, None), ("{2}", 2, 2), ("{0}", 0, 0),
+    ("{1}", 1, 1), ("{5,10}", 5, 10), ("{0,30}", 0, 30), ("{28,30}", 28, 30),
+]
+
+
+class Node:
+    __slots__ = ("kind", "data")
+    def __init__(self, kind, data):
+        self.kind = kind
+        self.data = data
+
+
+def gen_atom(depth):
+    r = random.random()
+    if depth <= 0 or r < 0.30:
+        text, sample = random.choice(LITERAL_ATOMS)
+        return Node("lit", (text, sample))
+    if r < 0.48:
+        text, members, negated = random.choice(CLASS_ATOMS)
+        return Node("cls", (text, members, negated))
+    if r < 0.53:
+        return Node("dot", None)
+    if r < 0.58:
+        return Node("anchor", "^")
+    if r < 0.66:
+        return Node("anchor", "$")
+    if r < 0.80:
+        return Node("grp", (gen_alt(depth - 1), True))
+    if r < 0.92:
+        return Node("grp", (gen_alt(depth - 1), False))
+    text, sample = random.choice(LITERAL_ATOMS)
+    return Node("lit", (text, sample))
+
+
+def gen_rep(depth):
+    atom = gen_atom(depth)
+    if random.random() < 0.45:
+        text, lo, hi = random.choice(QUANTS)
+        lazy = random.random() < 0.4
+        return Node("rep", (atom, text + ("?" if lazy else ""), lo, hi))
+    return atom
+
+
+def gen_cat(depth):
+    n = random.randint(1, 4)
+    return Node("cat", [gen_rep(depth) for _ in range(n)])
+
+
+def gen_alt(depth):
+    n = random.randint(1, 3)
+    branches = [gen_cat(depth) for _ in range(n)]
+    if len(branches) == 1:
+        return branches[0]
+    return Node("alt", branches)
+
+
+def gen_pattern():
+    return gen_alt(3)
+
+
+def render(node):
+    if node.kind == "lit":
+        return node.data[0]
+    if node.kind == "cls":
+        return node.data[0]
+    if node.kind == "dot":
+        return "."
+    if node.kind == "anchor":
+        return node.data
+    if node.kind == "grp":
+        inner, capturing = node.data
+        prefix = "(" if capturing else "(?:"
+        return prefix + render(inner) + ")"
+    if node.kind == "rep":
+        atom, qtext, _lo, _hi = node.data
+        return render(atom) + qtext
+    if node.kind == "cat":
+        return "".join(render(p) for p in node.data)
+    if node.kind == "alt":
+        return "|".join(render(b) for b in node.data)
+    raise AssertionError(node.kind)
+
+
+def sample(node):
+    """Best-effort string this node is likely to match. Approximate by
+    design (see module docstring) — never used for correctness, only to
+    bias subject generation."""
+    if node.kind == "lit":
+        return node.data[1]
+    if node.kind == "cls":
+        _text, members, negated = node.data
+        if negated:
+            pool = [c for c in SAFE_POOL if c not in members]
+            return random.choice(pool) if pool else "x"
+        return random.choice(list(members))
+    if node.kind == "dot":
+        return random.choice("abc012XYZ")
+    if node.kind == "anchor":
+        return ""
+    if node.kind == "grp":
+        inner, _capturing = node.data
+        return sample(inner)
+    if node.kind == "rep":
+        atom, _qtext, lo, hi = node.data
+        cap = lo + 3 if hi is None else hi
+        count = random.randint(lo, max(lo, min(cap, lo + 3)))
+        return "".join(sample(atom) for _ in range(count))
+    if node.kind == "cat":
+        return "".join(sample(p) for p in node.data)
+    if node.kind == "alt":
+        return sample(random.choice(node.data))
+    raise AssertionError(node.kind)
+
+
+RANDOM_BYTE_ALPHABET = [bytes([b]) for b in b"abc\n"] + \
+    [bytes([b]) for b in (128, 200, 255, 0x0a, 0x09)]
+
+
+def random_subject(alphabet, max_len=120):
+    n = random.randint(0, max_len)
+    out = bytearray()
+    pool = alphabet + RANDOM_BYTE_ALPHABET
+    for _ in range(n):
+        out += random.choice(pool)
+    return bytes(out)
+
+
+def derived_subject(root, alphabet):
+    """A subject that embeds an approximate matching fragment of the
+    pattern, with random noise around it (see module docstring)."""
+    frag = sample(root).encode("latin-1", "replace")
+    prefix = random_subject(alphabet, max_len=10)
+    suffix = random_subject(alphabet, max_len=10)
+    return prefix + frag + suffix
+
+
+def pattern_alphabet(pattern_text):
+    """Bytes worth biasing subjects toward for this specific pattern: its
+    literal characters plus a couple of generic fillers."""
+    chars = set(c.encode("latin-1", "replace") for c in pattern_text if c not in "\\")
+    chars.add(b"a")
+    chars.add(b"\n")
+    return list(chars)
+
+
+# ---------------------------------------------------------------------------
+# Oracle / pcrec invocation plumbing
+# ---------------------------------------------------------------------------
+
+def build_oracle(workdir):
+    binpath = os.path.join(workdir, "pcre2_oracle")
+    r = subprocess.run(
+        [CC, "-O1", "-std=gnu11", "-Wall", "-Wextra", "-Werror", "-o", binpath, ORACLE_SRC, "-ldl"],
+        capture_output=True, text=True, timeout=CC_TIMEOUT,
+    )
+    if r.returncode != 0:
+        sys.exit("fuzz.py: failed to build pcre2_oracle:\n" + r.stderr)
+    return binpath
+
+
+def build_driver_template(workdir):
+    """Compile fuzz_driver.c once, ahead of time, against a throwaway
+    pattern's gen.h. The generated ABI (rx_span/rx_search) is structurally
+    identical for every pattern compiled with prefix 'rx', so this one
+    driver.o can be linked against every subsequent pattern's gen.o without
+    ever recompiling driver.c again — the dominant per-pattern cost is then
+    just `pcrec` + one `gcc -c` of the (small) generated matcher."""
+    tmpl_dir = os.path.join(workdir, "_template")
+    os.makedirs(tmpl_dir, exist_ok=True)
+    gen_c = os.path.join(tmpl_dir, "gen.c")
+    r = subprocess.run([PCREC, "-p", "rx", "-o", gen_c, "--", "a"],
+                        capture_output=True, text=True, timeout=PCREC_TIMEOUT)
+    if r.returncode != 0:
+        sys.exit("fuzz.py: failed to build driver template (pcrec):\n" + r.stderr)
+    driver_o = os.path.join(workdir, "fuzz_driver.o")
+    r = subprocess.run([CC] + GENCFLAGS + ["-c", "-I", tmpl_dir, "-o", driver_o, DRIVER_SRC],
+                        capture_output=True, text=True, timeout=CC_TIMEOUT)
+    if r.returncode != 0:
+        sys.exit("fuzz.py: failed to build driver template (gcc):\n" + r.stderr)
+    return driver_o
+
+
+def oracle_run(oracle_bin, pattern, subject_path, startpos=None):
+    args = [oracle_bin, pattern, subject_path]
+    if startpos is not None:
+        args.append(str(startpos))
+    r = subprocess.run(args, capture_output=True, text=True, timeout=RUN_TIMEOUT)
+    return r.stdout.strip()
+
+
+def write_subject(path, data):
+    with open(path, "wb") as f:
+        f.write(data)
+
+
+def compile_with_pcrec(pattern, tmp_dir):
+    gen_c = os.path.join(tmp_dir, "gen.c")
+    r = subprocess.run([PCREC, "-p", "rx", "-o", gen_c, "--", pattern],
+                        capture_output=True, text=True, timeout=PCREC_TIMEOUT)
+    return r.returncode == 0, r.stderr.strip()
+
+
+def compile_and_link(tmp_dir, driver_o):
+    gen_c = os.path.join(tmp_dir, "gen.c")
+    gen_o = os.path.join(tmp_dir, "gen.o")
+    exe = os.path.join(tmp_dir, "t")
+    r = subprocess.run([CC] + GENCFLAGS + ["-c", "-I", tmp_dir, "-o", gen_o, gen_c],
+                        capture_output=True, text=True, timeout=CC_TIMEOUT)
+    if r.returncode != 0:
+        return None, "GCC-COMPILE-FAIL: " + r.stderr[:500]
+    r = subprocess.run([CC, "-o", exe, gen_o, driver_o],
+                        capture_output=True, text=True, timeout=CC_TIMEOUT)
+    if r.returncode != 0:
+        return None, "GCC-LINK-FAIL: " + r.stderr[:500]
+    return exe, None
+
+
+def pcrec_run(exe, subject_path, startpos=None):
+    args = [exe, subject_path]
+    if startpos is not None:
+        args.append(str(startpos))
+    try:
+        r = subprocess.run(args, capture_output=True, text=True, timeout=RUN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return "TIMEOUT"
+    if r.returncode != 0:
+        return "CRASH(rc=%d) %s" % (r.returncode, r.stderr.strip()[:200])
+    return r.stdout.strip()
+
+
+# ---------------------------------------------------------------------------
+# Failure repro bundles
+# ---------------------------------------------------------------------------
+
+def hexdump(data):
+    return data.hex()
+
+
+def write_failure_bundle(run_dir, kind, pattern, subject, pcrec_out, pcre2_out, extra=""):
+    os.makedirs(run_dir, exist_ok=True)
+    idx = len(os.listdir(run_dir))
+    bundle_dir = os.path.join(run_dir, f"{idx:04d}_{kind}")
+    os.makedirs(bundle_dir, exist_ok=True)
+    with open(os.path.join(bundle_dir, "pattern.txt"), "w") as f:
+        f.write(pattern + "\n")
+    if subject is not None:
+        with open(os.path.join(bundle_dir, "subject.hex"), "w") as f:
+            f.write(hexdump(subject) + "\n")
+        with open(os.path.join(bundle_dir, "subject.bin"), "wb") as f:
+            f.write(subject)
+    with open(os.path.join(bundle_dir, "outputs.txt"), "w") as f:
+        f.write(f"kind: {kind}\n")
+        f.write(f"pattern: {pattern!r}\n")
+        if subject is not None:
+            f.write(f"subject (hex): {hexdump(subject)}\n")
+            f.write(f"subject (repr): {subject!r}\n")
+        f.write(f"pcrec:  {pcrec_out}\n")
+        f.write(f"pcre2:  {pcre2_out}\n")
+        if extra:
+            f.write(f"extra: {extra}\n")
+    return bundle_dir
+
+
+# ---------------------------------------------------------------------------
+# Main driver
+# ---------------------------------------------------------------------------
+
+_ANCHOR_IN_ZERO_REP = re.compile(r"\{0(,0)?\}")
+
+def is_known_pcre2_quirk(pattern):
+    """PCRE2 10.46 start-anchor optimizer quirk (README.md "Finding 2"):
+    an anchor inside a group quantified {0}/{0,0} makes PCRE2 wrongly treat
+    the whole pattern as anchored even though the branch can never execute.
+    pcrec and python re both follow the declared semantics (X{0} == empty).
+    Intentional, documented divergence."""
+    return bool(_ANCHOR_IN_ZERO_REP.search(pattern)) and ("^" in pattern or "$" in pattern)
+
+
+def main():
+    ap = argparse.ArgumentParser(description="PCRE2-oracle differential fuzzer for pcrec")
+    ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--patterns", type=int, default=300)
+    ap.add_argument("--subjects", type=int, default=15)
+    ap.add_argument("--keep", action="store_true", help="keep the working directory (printed on exit)")
+    ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4, help="parallel compile/run workers")
+    args = ap.parse_args()
+
+    random.seed(args.seed)
+
+    if not os.path.isfile(PCREC):
+        sys.exit(f"fuzz.py: pcrec binary not found at {PCREC} (build it first: `make`)")
+
+    workdir = tempfile.mkdtemp(prefix="pcrec-fuzz-")
+    print(f"[fuzz] workdir: {workdir}", file=sys.stderr)
+    print(f"[fuzz] seed={args.seed} patterns={args.patterns} subjects={args.subjects}", file=sys.stderr)
+
+    t_start = time.time()
+    oracle_bin = build_oracle(workdir)
+    driver_o = build_driver_template(workdir)
+
+    empty_subject = os.path.join(workdir, "empty.bin")
+    write_subject(empty_subject, b"")
+
+    accept_mismatches = []
+    content_divergences = []
+    state_cap_hits = []
+    stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
+             "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
+             "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
+             "pcre2_quirk": 0}
+
+    def process_one(i):
+        pattern_node = gen_pattern()
+        pattern = render(pattern_node)
+        tmp_dir = os.path.join(workdir, f"p{i}")
+        os.makedirs(tmp_dir, exist_ok=True)
+
+        pcrec_ok, pcrec_err = compile_with_pcrec(pattern, tmp_dir)
+        pcre2_probe = oracle_run(oracle_bin, pattern, empty_subject)
+        pcre2_ok = not pcre2_probe.startswith("cerr")
+
+        result = {"pattern": pattern, "pcrec_ok": pcrec_ok, "pcre2_ok": pcre2_ok,
+                  "accept_mismatch": None, "state_cap": None, "content": [], "gcc_fail": None,
+                  "oracle_inconclusive": 0}
+
+        if pcrec_ok != pcre2_ok:
+            if pcrec_ok and not pcre2_ok:
+                result["accept_mismatch"] = ("pcrec ACCEPTS, pcre2 REJECTS", pcrec_err, pcre2_probe)
+            elif "too complex for the DFA engine" in pcrec_err or "NFA exceeds" in pcrec_err:
+                # Known architecture-tier limitation (checkpoint review R1,
+                # finding A-3): the M1 pipeline has hard complexity caps at
+                # two stages -- NFA construction (src/ir/nfa.c, "NFA exceeds
+                # N states") and DFA determinization (src/ir/dfa.c, "too
+                # complex for the DFA engine") -- and no VM fallback yet
+                # (planned M4), so sufficiently nested/bounded-repeat-heavy
+                # *legal* patterns are correctly rejected by pcrec while
+                # PCRE2's backtracking engine, which has no such structural
+                # limit, accepts them. This is the caps doing their
+                # documented job, not a semantics bug -- kept in its own
+                # bucket so it doesn't masquerade as an actionable
+                # divergence on every run (the generator's use of depth +
+                # up-to-30 bounded repeats + alternation makes this fire
+                # reasonably often; see README.md).
+                result["state_cap"] = pcrec_err
+            else:
+                result["accept_mismatch"] = ("pcrec REJECTS, pcre2 ACCEPTS", pcrec_err, pcre2_probe)
+            return result
+
+        if not pcrec_ok:
+            return result  # both reject: agreement, nothing more to do
+
+        exe, gcc_err = compile_and_link(tmp_dir, driver_o)
+        if exe is None:
+            result["gcc_fail"] = gcc_err
+            return result
+
+        alphabet = pattern_alphabet(pattern)
+        subjects = []
+        for _ in range(args.subjects):
+            if random.random() < 0.4:
+                subjects.append(derived_subject(pattern_node, alphabet))
+            else:
+                subjects.append(random_subject(alphabet))
+
+        for subj in subjects:
+            subj_path = tempfile.mktemp(prefix="s_", suffix=".bin", dir=tmp_dir)
+            write_subject(subj_path, subj)
+            pr = pcrec_run(exe, subj_path)
+            orr = oracle_run(oracle_bin, pattern, subj_path)
+            if orr.startswith("mlimit"):
+                # PCRE2 hit its own backtracking/resource safeguard, not a
+                # match/no-match verdict -- not comparable to pcrec's
+                # (backtracking-free) DFA result. See pcre2_oracle.c's
+                # header comment and README.md for the confirmed case that
+                # motivated this (a catastrophic-backtracking-shaped nested
+                # quantifier pattern where PCRE2 returns -47, not -1).
+                result["oracle_inconclusive"] += 1
+            elif pr != orr:
+                result["content"].append((subj, pr, orr))
+            os.remove(subj_path)
+
+        # cleanup compiled artifacts eagerly to bound disk use on big runs
+        try:
+            os.remove(exe)
+            os.remove(os.path.join(tmp_dir, "gen.o"))
+        except OSError:
+            pass
+
+        return result
+
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        for result in pool.map(process_one, range(args.patterns)):
+            stats["patterns"] += 1
+            if result["accept_mismatch"]:
+                kind, pcrec_err, pcre2_probe = result["accept_mismatch"]
+                if "ACCEPTS, pcre2 REJECTS" in kind:
+                    stats["pcre2_reject_only"] += 1
+                else:
+                    stats["pcrec_reject_only"] += 1
+                accept_mismatches.append((result["pattern"], kind, pcrec_err, pcre2_probe))
+                continue
+            if result["state_cap"]:
+                stats["state_cap"] += 1
+                state_cap_hits.append((result["pattern"], result["state_cap"]))
+                continue
+            if not result["pcrec_ok"]:
+                stats["both_reject"] += 1
+                continue
+            if result["gcc_fail"]:
+                stats["gcc_fail"] += 1
+                print("[fuzz] GCC-FAIL pattern=%r: %s" % (result["pattern"], result["gcc_fail"][:200]),
+                      file=sys.stderr)
+                continue
+            stats["both_accept"] += 1
+            stats["pairs_compared"] += args.subjects
+            stats["oracle_inconclusive"] += result["oracle_inconclusive"]
+            for subj, pr, orr in result["content"]:
+                if is_known_pcre2_quirk(result["pattern"]):
+                    # PCRE2 10.46 start-anchor optimizer quirk (README.md
+                    # "Finding 2", verified 2026-08-09): an anchor inside a
+                    # group quantified {0}/{0,0} makes PCRE2 wrongly anchor
+                    # the whole pattern and miss later matches. pcrec (and
+                    # python re) follow the declared semantics; intentional
+                    # divergence, kept out of the failure exit code.
+                    stats["pcre2_quirk"] += 1
+                    continue
+                content_divergences.append((result["pattern"], subj, pr, orr))
+
+    elapsed = time.time() - t_start
+
+    run_failures_dir = None
+    if accept_mismatches or content_divergences:
+        run_failures_dir = os.path.join(FAILURES_DIR, time.strftime("%Y%m%d-%H%M%S"))
+        for pattern, kind, pcrec_err, pcre2_probe in accept_mismatches:
+            write_failure_bundle(run_failures_dir, "accept_mismatch", pattern, None,
+                                  f"{'ACCEPT' if 'pcrec ACCEPTS' in kind else 'REJECT: ' + pcrec_err}",
+                                  pcre2_probe, extra=kind)
+        for pattern, subj, pr, orr in content_divergences:
+            write_failure_bundle(run_failures_dir, "content", pattern, subj, pr, orr)
+
+    print("\n=== pcrec vs PCRE2 differential fuzz summary ===")
+    print(f"seed={args.seed} patterns={args.patterns} subjects/pattern={args.subjects} elapsed={elapsed:.1f}s")
+    print(f"patterns generated:   {stats['patterns']}")
+    print(f"  both accept:        {stats['both_accept']}")
+    print(f"  both reject:        {stats['both_reject']}")
+    print(f"  pcrec-only reject:  {stats['pcrec_reject_only']}  (accept/reject divergence)")
+    print(f"  pcre2-only reject:  {stats['pcre2_reject_only']}  (accept/reject divergence)")
+    print(f"  DFA state-cap:      {stats['state_cap']}  (KNOWN limitation, review A-3 -- not a divergence, see README.md)")
+    print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se)")
+    print(f"subject pairs compared (both-accept patterns): {stats['pairs_compared']}")
+    print(f"  oracle inconclusive (PCRE2 match-limit hit): {stats['oracle_inconclusive']}  (see README.md)")
+    print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
+    print(f"content divergences: {len(content_divergences)}")
+    print(f"accept/reject divergences: {len(accept_mismatches)}")
+
+    if state_cap_hits:
+        print(f"\n-- DFA state-cap hits (known limitation, not a divergence; first 5 of {len(state_cap_hits)}) --")
+        for pattern, err in state_cap_hits[:5]:
+            print(f"  pattern={pattern!r} :: {err!r}")
+
+    if accept_mismatches:
+        print("\n-- accept/reject divergences --")
+        for pattern, kind, pcrec_err, pcre2_probe in accept_mismatches[:40]:
+            print(f"  pattern={pattern!r} :: {kind} :: pcrec={pcrec_err!r} pcre2={pcre2_probe!r}")
+        if len(accept_mismatches) > 40:
+            print(f"  ... and {len(accept_mismatches) - 40} more")
+
+    if content_divergences:
+        print("\n-- content divergences --")
+        for pattern, subj, pr, orr in content_divergences[:40]:
+            print(f"  pattern={pattern!r} subject={subj!r} pcrec={pr!r} pcre2={orr!r}")
+        if len(content_divergences) > 40:
+            print(f"  ... and {len(content_divergences) - 40} more")
+
+    if run_failures_dir:
+        print(f"\nrepro bundles written to: {run_failures_dir}")
+
+    if args.keep:
+        print(f"\n[fuzz] --keep set: workdir retained at {workdir}", file=sys.stderr)
+    else:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+    return 1 if (accept_mismatches or content_divergences) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

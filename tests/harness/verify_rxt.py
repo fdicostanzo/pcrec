@@ -72,8 +72,23 @@ def parse_quoted(line):
     raise ValueError("unterminated quoted subject: " + line)
 
 
+def parse_startpos_tail(line, prefix):
+    """line starts with `<prefix> ` (e.g. 'ms '); return (P, rest_of_line)
+    where rest_of_line starts at the quoted subject."""
+    rest = line[len(prefix):].lstrip()
+    i = 0
+    n = len(rest)
+    while i < n and rest[i].isdigit():
+        i += 1
+    if i == 0:
+        raise ValueError(f"missing startpos in {prefix!r} line: {line!r}")
+    p = int(rest[:i])
+    tail = rest[i:].lstrip()
+    return p, tail
+
+
 def parse_rxt(path):
-    """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','perr'}."""
+    """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','ms','ns','perr'}."""
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     results = []
@@ -107,6 +122,22 @@ def parse_rxt(path):
             if tail != '':
                 raise ValueError(f"{path}:{lineno}: unexpected trailing content on n line: {tail!r}")
             results.append((lineno, 'n', subj))
+        elif line.startswith('ms '):
+            p, rest = parse_startpos_tail(line, 'ms ')
+            subj, tail = parse_quoted(rest)
+            tail = tail.strip()
+            parts = tail.split()
+            if len(parts) != 2:
+                raise ValueError(f"{path}:{lineno}: bad ms line tail {tail!r}")
+            start, end = int(parts[0]), int(parts[1])
+            results.append((lineno, 'ms', (p, subj, start, end)))
+        elif line.startswith('ns '):
+            p, rest = parse_startpos_tail(line, 'ns ')
+            subj, tail = parse_quoted(rest)
+            tail = tail.strip()
+            if tail != '':
+                raise ValueError(f"{path}:{lineno}: unexpected trailing content on ns line: {tail!r}")
+            results.append((lineno, 'ns', (p, subj)))
         else:
             raise ValueError(f"{path}:{lineno}: unrecognized line: {line!r}")
     return results
@@ -138,7 +169,7 @@ def main():
         cur_pattern_lineno = None
         compiled = None
         compile_error = None
-        m_count = n_count = perr_count = 0
+        m_count = n_count = ms_count = ns_count = perr_count = 0
         skipped = 0
         cur_skip = False
         file_failures = []
@@ -197,9 +228,35 @@ def main():
                     else:
                         total_pass += 1
                         continue
+            elif kind == 'ms':
+                ms_count += 1
+                p, subj, start, end = data
+                if compiled is None:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check ms line"))
+                else:
+                    mo = compiled.search(subj, p)
+                    if mo is None:
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected match [{start},{end}) but got no match"))
+                    elif mo.span() != (start, end):
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected span ({start},{end}) but got {mo.span()}"))
+                    else:
+                        total_pass += 1
+                        continue
+            elif kind == 'ns':
+                ns_count += 1
+                p, subj = data
+                if compiled is None:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check ns line"))
+                else:
+                    mo = compiled.search(subj, p)
+                    if mo is not None:
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {subj!r} startpos {p}: expected no match but got {mo.span()}"))
+                    else:
+                        total_pass += 1
+                        continue
             total_fail += 1
 
-        per_file_counts[fname] = (m_count, n_count, perr_count, len(file_failures))
+        per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, len(file_failures))
         if skipped:
             print(f"  {fname}: {skipped} case(s) in '# pcre2-only' blocks skipped (not python-verifiable)")
         if file_failures:
@@ -209,14 +266,18 @@ def main():
 
     print()
     print("=== Summary ===")
-    grand_m = grand_n = grand_p = grand_f = 0
+    grand_m = grand_n = grand_ms = grand_ns = grand_p = grand_f = 0
     for fname in sorted(per_file_counts):
-        m_count, n_count, perr_count, fails = per_file_counts[fname]
-        grand_m += m_count; grand_n += n_count; grand_p += perr_count; grand_f += fails
+        m_count, n_count, ms_count, ns_count, perr_count, fails = per_file_counts[fname]
+        grand_m += m_count; grand_n += n_count
+        grand_ms += ms_count; grand_ns += ns_count
+        grand_p += perr_count; grand_f += fails
+        total = m_count + n_count + ms_count + ns_count + perr_count
         status = "OK" if fails == 0 else f"{fails} FAIL"
-        print(f"  {fname:28s} m={m_count:3d} n={n_count:3d} perr={perr_count:3d} total={m_count+n_count+perr_count:3d}  [{status}]")
+        print(f"  {fname:28s} m={m_count:3d} n={n_count:3d} ms={ms_count:3d} ns={ns_count:3d} perr={perr_count:3d} total={total:3d}  [{status}]")
     print()
-    print(f"TOTAL: m={grand_m} n={grand_n} perr={grand_p} cases={grand_m+grand_n+grand_p}")
+    grand_total = grand_m + grand_n + grand_ms + grand_ns + grand_p
+    print(f"TOTAL: m={grand_m} n={grand_n} ms={grand_ms} ns={grand_ns} perr={grand_p} cases={grand_total}")
     print(f"PASS={total_pass} FAIL={total_fail}")
     if grand_f == 0:
         print("ALL CHECKS PASSED (100%)")

@@ -1,0 +1,33 @@
+# Regressions from the M2.5 differential fuzzer (tests/fuzz/, PCRE2 oracle).
+
+# {,n} means {0,n} since PCRE2 10.43 — pcrec previously treated it as literal
+pattern a{,3}
+m "aaaa" 0 3
+m "" 0 0
+m "baa" 0 0
+
+pattern a{,3}b
+m "aaab" 0 4
+m "b" 0 1
+m "xaaaab" 2 6
+
+pattern (?:ab){,2}c
+m "ababc" 0 5
+m "c" 0 1
+
+# bare {,} stays LITERAL in PCRE2 (python re disagrees — treats it as {0,});
+# verified against pcre2_oracle: 'a{,}' does not match "aaa"
+# pcre2-only
+pattern a{,}
+m "xa{,}y" 1 5
+n "aaa"
+
+# PCRE2 10.46 optimizer quirk (fuzzer finding 2): an anchor inside a group
+# quantified {0} makes PCRE2 wrongly anchor the whole pattern and miss the
+# match. pcrec (and python re) follow the declared semantics: X{0} is empty.
+# Intentional divergence, documented in tests/fuzz/README.md.
+pattern (()|^){0}[b]
+m "0b" 1 2
+
+pattern (()|$){0}b
+m "abc" 1 2

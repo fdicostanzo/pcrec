@@ -1,13 +1,19 @@
 # src/gen — C code generation
 
-Emits DFA as self-contained gcc-dialect C using computed goto, per-state jump tables over byte equivalence classes. The generated code has zero dependency on pcrec at build or run time; ASCII/byte encoding is implemented here; future backends (UTF-8, VM engine) will be siblings in this directory.
+Emits self-contained gcc-dialect C from the DFA machines. Two engines (D7):
+ENG_UNANCH for assertion-free patterns — table-driven O(n) forward scan
+(leftmost-first match end) + reverse scan (match start), with a memchr/bitmap
+start-state prefilter; ENG_ATTEMPT for ^/$ patterns — per-start computed-goto
+attempt loop with EOL-variant states. Table emission exists because gcc compile
+time on huge computed-goto functions is superlinear (R1 A-3). Generated code
+has zero dependency on pcrec at build or run time.
 
 ## Files
 
-- **emit_dfa.c** — DFA → C: computed-goto labels, per-state jump tables, pattern comment, function prologue/epilogue
+- **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), shared table/label helpers, header/comment/prologue emission
 
 ## Conventions
 
-Generated code uses computed goto for state dispatch and inline jump tables indexed by equivalence class. The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Future encoding backends will coexist here as separate emitters (e.g., emit_utf8.c).
+The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this). Future encoding backends (UTF-8) and the VM engine emitter will coexist here as separate files.
 
 Maintenance: update this file when files are added/removed or their roles change.

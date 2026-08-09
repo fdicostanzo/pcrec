@@ -51,3 +51,19 @@ list of what was probed-and-held so clean areas are distinguishable from
 unprobed ones. Findings are compiled + triaged into docs/reviews/<date>-<milestone>.md;
 confirmed criticals are fixed before the next milestone starts, the rest become
 plan.md steps. Requested by Frank 2026-08-09.
+
+## D7 — 2026-08-09 — M2 engine shape: unanchored forward + reverse DFA, table-driven
+
+For assertion-free patterns: forward search runs ONE pass over the subject using
+the D3 priority construction over an NFA wrapped in a lowest-priority self-loop
+(threads from earlier starts outrank later starts; accept-pruning kills the loop
+on first match) — this yields the leftmost-first match END in O(n). A second,
+NON-pruning reverse DFA (reversed concatenation order) scans backward from that
+end; the earliest accepting position is the match START (no earlier start can
+accept, else it would have owned the forward match). Emission for this engine is
+table-driven (int16 transition tables + generic loop) — data initializers keep
+gcc compile time flat where per-state computed goto was superlinear (R1 A-3) —
+with a memchr (single escape byte) or bitmap skip loop while parked in the start
+state. Patterns containing ^/$ remain on the M1 computed-goto attempt engine
+until the fast path learns assertions. Computed-goto vs table for SMALL
+assertion-free DFAs is deliberately unresolved: M2.3 benchmarks arbitrate.
