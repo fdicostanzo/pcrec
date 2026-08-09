@@ -810,6 +810,48 @@ can be checked against them:
   what DD-7 was opened to close. Note the cost is not hypothetical: `^` on only
   SOME branches is the known slow shape (D8).
 
+**SELECTION AND EXECUTION ARE TWO STEPS, and selection is itself generated.**
+The caller resolves the engine once and then executes it one or more times, so
+selection cost is amortised over every subsequent search rather than paid per
+call. And because the dimensions are known at COMPILE time, the selector is not
+a general-purpose routine — it is emitted specialized to the product that was
+actually requested. If the only plural dimension is case sensitivity, selection
+is literally `if (ci) return engine1; else return engine2;`. No table, no
+registry, no lookup by name. A caller that already knows its engine skips the
+step entirely and calls the named entry point directly.
+
+**Multi-engine output: the naming constraint, measured rather than assumed.**
+More than one engine in one source file means symbols must not clash. Checking
+what the emitter actually produces (`.*=.*$`, 15 distinct emitted identifiers):
+
+- **12 of them are FUNCTION-LOCAL statics** — `fcls ftr facc fev fs<N> rcls rtr
+  racc rev rs<N> first` — declared inside `<prefix>_search`'s body. Two engines
+  in two functions do not collide on any of these, and they need no change.
+- **Only three are file-scope**: the `<prefix>_span` typedef, and the
+  declaration and definition of `<prefix>_search`.
+
+So the work is much smaller than "namespace everything": emit `<prefix>_span`
+ONCE and share it (emitting it twice would declare two distinct anonymous
+struct types, which are incompatible, not a benign redefinition), and give each
+engine a distinct function name. The named-entry-point scheme
+(`rx_search_ci_utf8`) supplies exactly that, so the naming answer and the
+API answer are the same answer.
+
+**One consequence for the tests, worth knowing before it bites.**
+`tests/codegen/run_codegen_tests.sh` hardcodes 9 symbol patterns
+(`rx_ftr[`, `rx_fs[0-9]+\[256\]`, ...). With one engine per file those are
+unambiguous. With several, a grep for `rx_fs[0-9]+\[256\]` can be satisfied by
+ANY engine in the file, so a check that means "this pattern emits a skip table"
+silently degrades into "some engine here does" — it gets WEAKER without ever
+failing, which is this project's signature failure mode. Those checks need
+per-engine scoping in the same change that first emits two engines.
+
+**Where the dispatch cost would show up, if it shows up at all.** The compare
+matrix already has case (i), a short-subject per-call-overhead regime at ~70
+ns/call. That is the case where an indirect call and lost inlining would be
+measurable; the throughput cases would not see it. So it is already
+instrumented, and it is the case to watch when the selector lands.
+
 **Revisit-when:** a new option is proposed (multiline, dotall, ungreedy,
 `\G`), or any of the four predictions above is measured. Each measurement
 belongs in the plan step for its dimension, with the number attached.
