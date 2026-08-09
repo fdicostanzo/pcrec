@@ -1165,3 +1165,85 @@ about tooling versus remembered principles, arrived at again from the other side
 Verification: 713 corpus + 42 CLI + 17 codegen + 5 trie-identity green; oracle
 100% (705 cases); every new guard sabotage-validated with the exact edit
 recorded.
+
+## 2026-08-09 — the guards critic's second half: 13 more findings
+
+The guards critic kept going after the batch already folded in, to 25 findings.
+Thirteen new ones. The pattern is the same and worth stating once more plainly:
+the compiler was not wrong anywhere. Every finding was about a guard being
+weaker than its description, or a number I wrote being wrong.
+
+**Three more places the "~14 in 500" error had propagated.** I fixed D16 and
+nfa.c and thought I was done; it was also in `run_trie_identity.sh`'s own header
+comment and in `tests/codegen/CLAUDE.md`, and plan.md still carried the old
+"one positive control / 132 of 200" description. A wrong number copied into
+four files is not four mistakes, it is one mistake with a propagation delay, and
+the only reliable fix is to grep for it rather than to fix the place you
+remember writing it.
+
+**My .rxt header understated its own block, and contradicted its sibling.** The
+header said the non-EOL sabotage "fails 3 cases of `[a-z].*|q$`". Measured over
+the whole corpus: 11 — ten in this file (`[a-z].*|q$` 3, `a.*|b` 3, `=.*|;` 4)
+and one in `tests/base/dot.rxt`. `tests/base/CLAUDE.md`, written in the same
+commit, said 10. Two documents produced to record the same measurement,
+disagreeing about it.
+
+**And the gap I claimed was not empty.** "The forward half had no committed
+case" is false: `dot.rxt`'s `.+` on "hello\nworld" already caught it. The R3.4
+block is still a real improvement — 1 case to 11, and the EOL half genuinely had
+nothing — but the claim was checkable by running the sabotage against the whole
+corpus, which is precisely the operation that produced the numbers I quoted
+next to it. I ran the sabotage against the two halves of one file and never
+against everything else.
+
+**A real gap, and it was hiding behind the file's own title.** `emit_dfa.c` has
+the same post-skip accept rule twice, forty lines apart — forward
+`last = pos`, reverse `sfound = pp`. This file covered the forward one ten times
+and the reverse one ZERO times, while advertising itself as the home of D11's
+coverage and containing a section literally headed "reverse-machine skip: the
+match START must not be skipped past" that does not fire on the sabotage.
+Disabling the reverse line fails 6 cases across tests/base (dot 2,
+leftmost_semantics 2, quantifiers 2) and none here. Four patterns added
+(`[a-z]*=`, `.*=`, `x.*y`, `[^\n]*=`); the file now catches it with 10.
+
+**The bench case I added is a presence check, not a gate.** The critic graded
+the regression instead of deleting the feature: capping the skip run at 8 bytes
+discards 93% of the loop's reach on this subject and still measures 1.15-1.45x
+ABOVE the 1000 MB/s budget. Only near-total deletion (3.1-4.1x) fails it — and
+the case's own `grep rx_fs[0-9]+\[256\]` hard error already catches deletion for
+free. So the budget adds approximately nothing over the grep. D12's sentence
+applies to my own work: "a budget that cannot fail is documentation, not a
+gate". [R3.9]. It also covers exactly one forward, non-accepting skip state; the
+second table it emits is entered zero times, and its reverse skip table never
+executes because the pattern cannot match — so reverse skip loops still have no
+throughput coverage anywhere, which is awkward given M2.10/D13's negative result
+rests on a suspicion about exactly that loop.
+
+**A harness bug that is not mine but bites everything.** `run_bench.sh` samples
+/proc/loadavg ONCE, before measuring, and that single reading decides LOADED for
+the whole run. This box moved 1.94 -> 16.04 inside four minutes while critics
+were working. A run starting at 5.9 against a limit of 6.0 is judged quiet and
+then measures under a load of 13 — the critic watched a HEALTHY build median
+575.5 MB/s on case (e) in such a window, a clean tree failing its own gate.
+[R3.10]. This also explains the load swings I was working around all session.
+
+**What held, and one thing worth keeping.** Case (e)'s 92% claim reproduces to
+92.19% and its 1741.8 MB/s to a median of 1726.4 (spread 1.086x vs the recorded
+1.081x). The `-Wall` check fires; the hard error fires; the EOL sabotage counts
+are exact; `tests/bench/CLAUDE.md`'s prefilter/skip coverage table is right in
+every cell; the self-reported EOL-skip-bound blind spot is accurate to the case
+count. And the critic tried to break byte-identity the honest way — reversing
+the order of provably-disjoint groups in trie_build, a change sound by the
+code's own argument — and got 500/500 still identical. Subset construction plus
+minimization absorbs it, so the "a correct change could produce
+different-but-equivalent output" objection to D16 does not hold for that class.
+
+One finding is recorded as NOT a finding, deliberately: the prefilter's
+`last == -1` re-entry gate survives its own removal with zero corpus signal, and
+the critic could not construct a witness. D3's accept-pruning means a machine
+that has accepted cannot fall back to the pure start state, and every
+empty-matching pattern checked emits no prefilter at all. Defensive, probably
+unreachable — recorded so it is not re-attempted as a coverage hole.
+
+Verification: 731 corpus + 42 CLI + 17 codegen + 5 trie-identity green; oracle
+100% (723 cases).

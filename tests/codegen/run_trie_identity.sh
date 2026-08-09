@@ -11,9 +11,13 @@
 # with no subject strings and no gcc.
 #
 # It is also a far stronger net than sampling subjects. Breaking the
-# disjointness guard shows up on 2 cases in the whole .rxt corpus; here it
-# shows up on ~14 patterns in 500, and each failure names the exact pattern
-# rather than a subject that happened to hit it.
+# disjointness guard shows up on 2 cases in the whole .rxt corpus and on 64 of
+# these 500 patterns; breaking rule 1's accept split shows up on 16 .rxt cases
+# and 94 of 500 — and each failure names the exact pattern rather than a subject
+# that happened to hit it. (Measured; the exact sabotage edits are recorded in
+# tests/codegen/CLAUDE.md so they can be replayed. An earlier version of this
+# comment said "~14 in 500", which was another corpus's figure repeated without
+# re-running.)
 #
 # WHAT THIS DOES AND DOES NOT GUARD. It guards the trie's SOUNDNESS. The
 # trie's PRESENCE is guarded by the KEYWORD-SCALE compile-time budget in

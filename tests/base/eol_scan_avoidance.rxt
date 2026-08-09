@@ -104,23 +104,37 @@ m "ba" 1 2
 # Everything above this line has a hole, found by the R3 semantics critic: in
 # none of those 13 patterns does a forward skip state have its plain (non-EOL)
 # accept flag set. D11 is written about ordering scan avoidance against ACCEPT
-# EVALUATION, and the forward half of that interaction — a skip loop running
-# across positions where the state ALREADY accepts — had no committed case.
-# The EOL-only accept states above exercise the other half.
+# EVALUATION, and this is the forward half of that interaction — a skip loop
+# running across positions where the state ALREADY accepts. The EOL-only accept
+# states above exercise the other half.
+#
+# (The first version of this comment said that half "had no committed case".
+# That was false and is corrected below: tests/base/dot.rxt caught it with one.
+# It was checkable by running the sabotage against the whole corpus, which is
+# exactly what produced the numbers quoted alongside the claim.)
 #
 # The shape that produces it is an alternation with one unanchored self-looping
 # branch: the `.*`/`[^\n]*` state both self-loops (so it gets a skip table) and
 # accepts (so `last` must survive the skip). Confirmed from the emitted C
 # rather than assumed — `a.*|b$` emits rx_fs1[256] with rx_facc[1] == 1.
 #
-# SABOTAGE-VALIDATED, and the two halves need different patterns:
+# SABOTAGE-VALIDATED, and the two halves need different patterns. Counts are
+# whole-corpus and were re-measured after an R3.2 critic showed the first
+# version of this header understated its own block (it said 3 where the real
+# figure is 10) and claimed a gap that did not exist:
 #   * emitting the EOL accept only at the boundary (`if (pos + 1 >= n &&
-#     facc[est])`) fails 2 cases of `a.*|b$` and 1 of `a[^\n]*|\n$`;
-#   * dropping the non-EOL post-skip `last = pos` in emit_dfa.c (the
-#     `!eol && fd->st[K].accept` line) fails 3 cases of `[a-z].*|q$`.
-# The 13 cases above catch NEITHER. Note also that neither half catches
-# relaxing the EOL forward skip bound from n-1 back to n — other files in
-# tests/base/ catch that one (3 cases); this file does not, despite its header.
+#     facc[est])`) fails 3 cases, all here: 2 of `a.*|b$`, 1 of `a[^\n]*|\n$`.
+#     Nothing else in the corpus sees it, so this half genuinely had no case.
+#   * dropping the non-EOL post-skip `last = pos` (the `!eol &&
+#     fd->st[K].accept` line) fails 11 cases: 10 here (`[a-z].*|q$` 3,
+#     `a.*|b` 3, `=.*|;` 4) and 1 in tests/base/dot.rxt.
+# That last case matters: `dot.rxt`'s `.+` on "hello\nworld" ALREADY caught the
+# non-EOL half before this block existed, so the original claim that "the
+# forward half had no committed case" was false as written. This block takes it
+# from 1 case to 11, which is the honest improvement.
+# Note also that neither half catches relaxing the EOL forward skip bound from
+# n-1 back to n — other files in tests/base/ catch that one (3 cases:
+# eol_engine.rxt and review_r2.rxt); this file does not, despite its header.
 #
 # `[a-z].*|q$` is a NON-EOL machine even though it is written with a `$`:
 # `[a-z].*` subsumes `q$`, so no EOL-variant state survives (no rx_fev table is
@@ -294,3 +308,51 @@ m "xxxxxxx\n" 7 7
 m "" 0 0
 m "\n" 0 0
 m "aaaaaaaa" 8 8
+
+# --- R3.2 critic F16: the REVERSE mirror of the rule this file is about ------
+#
+# emit_dfa.c has the same post-skip accept rule twice, 40 lines apart:
+#   forward:  if (!eol && fd->st[K].accept) last   = pos;
+#   reverse:  if (!eol && rd->st[K].accept) sfound = pp;
+# This file covered the FORWARD one 10 times over and the REVERSE one ZERO
+# times, while its header presents it as the home of D11's scan-avoidance-vs-
+# accept-evaluation coverage. It even has a section titled "reverse-machine
+# skip: the match START must not be skipped past" which does not fire on this
+# sabotage at all.
+#
+# Measured, disabling the reverse line only: 6 cases across tests/base/ fail
+# (dot.rxt 2, leftmost_semantics.rxt 2, quantifiers.rxt 2) and 0 of them are
+# here. With the four patterns below the file catches it with 10.
+#
+# The shape needed is a reverse skip state that ACCEPTS: reversed, `[a-z]*=`
+# becomes `=[a-z]*`, whose post-`=` state self-loops over the letters and
+# accepts at each one, so the match START is exactly the position a reverse
+# skip would run past.
+#
+# All expectations from python3 `re`.
+
+pattern [a-z]*=
+m "aaaaaaaaaa=bbb" 0 11
+m "aaaaaaaaaa=bbb\n" 0 11
+m "zz=" 0 3
+m "=" 0 1
+n "xaaaaaaaaay"
+m "abc\nxyz=q" 4 8
+m "k=v=w" 0 2
+
+pattern .*=
+m "aaaaaaaaaa=bbb" 0 11
+m "zz=" 0 3
+m "abc\nxyz=q" 4 8
+m "k=v=w" 0 4
+
+pattern x.*y
+m "xaaaaaaaaay" 0 11
+m "xaaaaaaaaayzzz" 0 11
+m "abc\nxyz=q" 4 6
+n "k=v=w"
+
+pattern [^\n]*=
+m "aaaaaaaaaa=bbb\n" 0 11
+m "=" 0 1
+m "k=v=w" 0 4

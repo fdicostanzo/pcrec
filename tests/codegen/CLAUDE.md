@@ -41,7 +41,8 @@ Prefer the second shape whenever an optimization is supposed to be
 output-preserving; the M2 journal wrongly concluded M2.8 was not structurally
 testable, and the equivalence check turned out to be both possible and far
 stronger than the corpus (a broken disjointness guard shows up on 2 .rxt cases
-and on ~14 patterns in 500 here).
+and on 64 of 500 patterns here — the measured figures and the exact edits behind
+them are in the sabotage table below).
 
 An equivalence check has its own trap, and the fix for it is not optional: if
 BOTH builds had the optimization off, every comparison would agree and the
