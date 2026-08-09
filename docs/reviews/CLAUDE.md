@@ -12,6 +12,11 @@ most of the odd-looking test cases trace to a finding recorded here.
 - **2026-08-09-m2-close.md** — R3, M2 close. The largest: a live stack
   regression, a 56x compile-time cliff, two holes in guards written the same
   day, and five refuted claims.
+- **2026-08-09-sr1-registry.md** — R4, SR-1 (the syntax construct registry).
+  Nine rows asserting a PCRE2 semantic that does not exist, a row deletion that
+  was invisible to a 116-check suite, a sweep covering two of the four doorways
+  it claimed, and a citation of a guard (TS-1) that does not guard what was
+  claimed — already copied into two source files before it was caught.
 
 ## Conventions
 
