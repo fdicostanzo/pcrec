@@ -1799,3 +1799,84 @@ almost row for row.
 
 Verification: 805 corpus (+19) + 49 CLI + 112 reject (+15) + 29 codegen + 7
 trie-identity green, ratchet clean, oracle 100% (796 python-verified cases).
+
+## 2026-08-09 — D24: the syntax construct registry, designed rather than built
+
+Frank asked whether a single parse.c is the right long-term shape, given
+PCRE2's flavours, options and "exists but only on certain engines" caveats. His
+stated fear was the codebase that fills with `if python-compat do X else if
+pcre2-dfa do Y else Z`, where every change cascades. Written up as D24 with
+plan steps SR-1..SR-8; no code moved.
+
+**The answer I gave, and the part I had to resist.** File size is not the
+problem. parse.c is 467 lines and neither bug found today was caused by that,
+nor would have been caught by splitting it. Saying so mattered more than the
+proposal that followed — a refactor that looks like a fix for a problem it does
+not address is worse than no refactor, because it spends the credibility you
+would need for the real one.
+
+The real defect is that one construct's identity lives in up to FIVE places:
+esc_modules (10 rows), esc_char_value's switch (8 cases), the `(?X` chain (11
+branches), the reject table (60 sites), the compliance report (90 rows). `\v`
+was places 1 and 2 disagreeing ten lines apart with nothing enforcing
+agreement. Uncomfortable follow-on: writing the reject table and the report
+today MANUFACTURED two more copies, so I increased the duplication in the same
+session that its cost became visible. The registry is as much a correction of
+my own work as of the parser's.
+
+**Frank's structural insight is the load-bearing one and the data backed it
+harder than I expected.** He said syntax should drive, keep core syntax in
+parse, farm the weird stuff to specialists, and that most weird stuff is a
+variant of `\x` or `(?W)`. Checking the full inventory: every non-base
+construct in PCRE2 enters through exactly FOUR doorways — after `\`, after
+`(?`, after `(*`, and after `[[` inside a class — each decided by a single byte
+or a name. The base tier reaches exactly one of them, once, for `(?:`.
+
+That makes his performance principle — normal stuff fast, weird stuff can cost
+lookups — true BY CONSTRUCTION rather than by optimisation: a 95% pattern does
+zero registry lookups. SR-5 guards it with an instrumented build rather than
+leaving it as a claim, because "true by construction and invisible to every
+test" is the exact shape this project keeps losing.
+
+**Four axes, kept apart, is the whole answer to the cascade fear.** Flavour
+(which construct a byte MEANS), option (what it DENOTES), enablement (is it
+available), engine (can it LOWER). The bloat comes from answering all four with
+one mechanism. Give each its own and a flavour change merely REBINDS A ROW — it
+cannot reach inside another construct's handler, because PCRE2's `\v` handler
+and python's are different functions, not one function with a branch. That is
+D18's hyperspecialization applied to the front end, which is the reassuring
+part: it is the rule the project already committed to, not a new one.
+
+**Where I pushed back.** Frank worried the registry would have to be dynamic or
+we would be "compiling the compiler to compile regex". I split the concern: the
+table stays `static const`, SELECTION is dynamic per compile. A runtime-mutable
+registry buys nothing (handlers are C functions; a new construct means
+rebuilding either way) and costs the thread-safety property D19 established and
+TS-1 now guards — a mutable global registry is precisely the file-scope mutable
+state that check forbids. Nice that a guard written this morning already earned
+its keep by settling a design argument this evening.
+
+**Where I soft-pushed to the tail.** Flavours themselves. The column exists
+from SR-1; the machinery waits. D18's earn-its-axis rule applies verbatim — we
+know of exactly ONE flavour-varying row (`\v`), so building selection for a set
+of size one is the mistake OS-0 is deliberately not making. SR-7 is deferred by
+design, the same way OS-0 is, and for the same reason.
+
+**The thing I like most in the design is not mine.** Families as named masks
+make `pcre2-dfa` a FAMILY — so PCRE2's own DFA exclusion list stops being prose
+in my compliance report and becomes a definition the compiler can be pointed
+at. The "only on certain engines" problem dissolves into the same mechanism as
+flavours, and SR-8 becomes a column gaining teeth rather than a retrofit.
+
+**Report fix, from Frank's review.** He noted the status column was
+inconsistent — sometimes `REJECTED -> PLANNED`, sometimes the trajectory buried
+in notes. Split into two columns: `status` (today, one value, greppable) and
+`becomes` (intended end state, or `—`). 78 rows rewritten. Two statuses were
+genuinely wrong rather than just badly formatted, and the split is what exposed
+them: `\C` was labelled `PLANNED` when it is REJECTED today, and `[x&&y]` was
+labelled `PLANNED` when pcrec already agrees with default PCRE2 (both accept it
+as a literal class; the set-operator reading needs a PCRE2 option we do not
+model). Added `AGREES-REJECT` for constructs where PCRE2 refuses too and
+matching it IS compliance — the POSIX collating row was misrepresented as a
+divergence when the divergence is now fixed and agreement is the current state.
+Those columns are deliberately the prototype of the registry's own fields.

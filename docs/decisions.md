@@ -1156,3 +1156,115 @@ structural property and no equivalence check distinguishes them — only
 behaviour does. tests/base/caseless.rxt pins it with `n "A"` lines, and
 run_codegen_tests.sh pins the shape by requiring `-i '[^a]'` to equal
 `'[^aA]'` and to DIFFER from `'[^A]'`.
+
+## D24 — 2026-08-09 — the syntax construct REGISTRY: one declarative table, four dispatch doorways, static data with dynamic selection
+
+Raised by Frank after reviewing the PCRE2 compliance report: is a single
+parse.c the right long-term shape, given that PCRE2 has flavours, options, and
+"exists but only on certain engines" caveats? The stated fear is the failure
+mode where a codebase fills with `if python-compat do X else if pcre2-dfa do Y
+else Z`, and every change cascades.
+
+**The file size is not the problem, and splitting by size would be a refactor
+masquerading as a fix.** parse.c is 467 lines and neither bug found on
+2026-08-09 (`\v`, POSIX collating elements) was caused by that, nor would have
+been caught by making it five files.
+
+**The problem is that one construct's identity lives in up to five places.**
+Measured: `esc_modules[]` (10 rows), `esc_char_value()`'s switch (8 cases), the
+`(?X` dispatch chain (11 branches), the reject table (60 call sites), the
+compliance report (90 rows). `\v` was places 1 and 2 disagreeing — the
+declarative table said "class escape, module classes", the imperative switch
+said "control character 0x0B", ten lines apart, with nothing enforcing that
+they agree. Writing the reject table and the report then MANUFACTURED two more
+copies of the same knowledge, so the drift clock is already running on work
+done the same day.
+
+**Frank's structural insight, which the data supports and which the design now
+rests on: syntax is the driver, and the weird stuff arrives through a tiny
+number of doorways.** Every non-base construct in PCRE2's entire surface enters
+through exactly four:
+
+    after `\`             one byte decides    \d \v \p \K \g \Q \R \1
+    after `(?`            one byte decides    (?= (?< (?> (?# (?C (?| (?( (?R (?& (?i
+    after `(*`            a NAME decides      (*SKIP) (*CR) (*script_run:
+    after `[[` in a class one byte decides    [[:alpha:]] [[.a.]] [[=a=]]
+
+The base tier reaches exactly ONE of them, once: `(?:`. So Frank's principle —
+"make the normal stuff compile fast, the weird stuff can cost a few lookups" —
+is satisfied BY CONSTRUCTION rather than by optimisation: a 95% pattern
+performs zero registry lookups. That property is worth a guard, not just a
+claim (SR-5).
+
+**FOUR AXES, KEPT APART ON PURPOSE.** The `if flavour else if flavour` bloat
+comes from answering four different questions with one mechanism:
+
+| axis | question | mechanism | resolved |
+|---|---|---|---|
+| flavour | which construct does this byte MEAN? (`\v` = vertical whitespace or VT) | which table row the dispatch byte binds to | once per compile |
+| option | what does the construct DENOTE? (`(?i)`, UCP) | scalar parameter to the handler (D18/D20) | once per compile |
+| enablement | is it available at all? | one bit test at dispatch -> clean rejection | at dispatch |
+| engine | can it LOWER to the selected engine? | a lowering-time check, NOT parse-time | after parse |
+
+The load-bearing property: a flavour change REBINDS A ROW. It cannot reach
+inside another construct's handler, because PCRE2's `\v` handler and python's
+`\v` handler are different functions rather than one function with a branch.
+That is D18's hyperspecialization applied to the front end, and it is why the
+cascade Frank is worried about cannot form.
+
+The fourth axis also fixes a conflation shipped today: pcrec's parser rejects
+`\1` with "requires module 'backrefs'", but backreferences are not a PARSING
+problem — they parse fine and cannot LOWER to a DFA. When M4's VM lands, `\1`
+becomes parseable, lowerable-to-VM and not-lowerable-to-DFA simultaneously, and
+"requires module X" and "requires engine Y" become different sentences with
+different owners. The registry carries an `engines` column from the start so
+this is a column gaining teeth rather than a retrofit.
+
+**STATIC TABLE, DYNAMIC SELECTION.** Frank's concern was that a registry would
+have to be dynamic, or "we would be compiling the compiler to compile regex".
+Resolved by splitting those:
+
+- The table is `static const` C data, authored once. Handlers are C functions,
+  so a genuinely new construct means rebuilding pcrec regardless — that is
+  unavoidable for a compiler written in C and is not what the concern is about.
+- SELECTION is fully dynamic: flavour and feature mask are resolved at
+  pattern-compile time, per call, from `pcrec_options`.
+- A runtime-MUTABLE registry is rejected. It buys nothing over the above and
+  costs the thread-safety property D19 established and TS-1 now guards: a
+  mutable global registry is exactly the file-scope mutable state that guard
+  forbids.
+
+**The registry generates DOCUMENTATION AND TESTS, never the compiler** — and
+better than generating them, it is DUMPED and they consume the dump:
+`pcrec --list-syntax` emits the table, `tests/reject/` iterates that dump
+instead of its hand-written 93 entries, and docs/pcre2_compliance.md is
+rendered from it. Add a row and both the test and the report cover it with no
+edit. That permanently kills the five-way duplication that produced `\v`.
+
+**FAMILIES ARE NAMED MASKS**, which is where the "only on certain engines"
+problem dissolves:
+
+    { "pcre2-10.46", FLAV_PCRE2,  FEAT_STABLE }
+    { "pcre2-dfa",   FLAV_PCRE2,  FEAT_STABLE & ~(BACKREFS|RECURSION|COND_CAPTURE) }
+    { "python-re",   FLAV_PYTHON, ... }
+
+`pcre2-dfa` is the engine-capability axis expressed as a family. PCRE2's own
+DFA exclusion list stops being prose in a report and becomes a definition.
+
+**DEFERRED BY DESIGN: build the registry now, the FLAVOURS later.** Ship with
+the flavour column present and exactly ONE flavour. D18's earn-its-axis rule
+applies verbatim to the front end: we have precisely one known flavour-varying
+row (`\v`), and building selection machinery for a set of one is the mistake
+OS-0 is deliberately not making. The registry pays for itself immediately by
+collapsing the duplication; flavours turn on when a second one earns it.
+
+**Scope discipline, stated because the report tempts otherwise.** Frank's
+priority is the 95% people actually use. The registry is not licence to
+implement exotic constructs — it is the mechanism that lets them be NAMED,
+REJECTED CLEANLY and QUERIED at near-zero cost while effort goes to the common
+path. A row with a NULL handler is a complete, correct, tested outcome.
+
+**Revisit when:** a second flavour earns its axis; or M4's VM makes the
+`engines` column load-bearing; or the base grammar itself needs to vary
+(BRE/ERE under V-D), which is the one case that genuinely needs a second
+grammar file rather than a second table.

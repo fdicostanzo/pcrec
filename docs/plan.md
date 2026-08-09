@@ -140,6 +140,64 @@ the prediction, including when the prediction was wrong.
 - [OS-3] STATE:not-started — streaming: PREDICTED NOT to be a wrapper, and this is the one prediction with evidence already against the optimistic answer — the reverse pass rescans backward over bytes a stream may no longer hold. Feeds M3.0's design gate; do not write streaming code before it is settled
 - [OS-4] STATE:not-started — anchoring: ENG_UNANCH vs ENG_ATTEMPT is ALREADY a cartesian split, and it has never passed this test. It exists because the reverse machine cannot check `^` at pp == 0, not because a per-start attempt loop was measured to be faster. Measure the cost of the split on the known-slow shape (`^` on only some branches, D8) and decide whether to close it by building the reverse BOT variant (DD-7) or to keep it with a number attached. An unjustified axis in the shipped compiler is the strongest possible test case for D18's own rule
 
+## Parser structure — the syntax construct registry (D24)
+
+Sequenced so each step pays for itself before the next is justified. SR-1/SR-2
+collapse a duplication that has already produced one shipped bug; everything
+after waits for a forcing function. Frank's priority stands throughout: the
+95% path stays fast and simple, and exotic constructs earn only the right to be
+named, cleanly rejected and queried.
+
+- [SR-1] STATE:not-started — the CONSTRUCT TABLE. `static const` rows in
+  src/parse/registry.c: {kind (ESC|GROUP|VERB|CLASSBRACKET), selector byte,
+  feature bit, flavour mask, engines mask, module name, one-line PCRE2
+  semantics, handler fn or NULL}. Indexed [256] per kind, short chain for the
+  rare flavour-varying byte. NULL handler = known-but-unimplemented, which is a
+  complete and tested outcome, not a stub. Everything the parser currently
+  knows about non-base syntax moves here: `esc_modules[]`, `esc_char_value`'s
+  non-base cases, the `(?X` ternary chain, the `(*` catch, the `[[.`/`[[=`
+  rule. THE POINT is that a construct stops having two homes — `\v` was the
+  declarative table and the imperative switch disagreeing ten lines apart
+- [SR-2] STATE:not-started — FOUR DISPATCH POINTS in parse.c and nothing else:
+  `pcrec_ext_escape(cx, c, in_class)`, `pcrec_ext_group(cx, c2)`,
+  `pcrec_ext_verb(cx)`, `pcrec_ext_class_bracket(cx, c2, cls)`. parse.c keeps
+  ONLY the base grammar (literals, `.`, classes/ranges, quantifiers, `|`,
+  `(...)`, `(?:...)`, `^`, `$`) and stops growing. Emitted output must be
+  BYTE-IDENTICAL across the corpus before and after — this is a pure
+  restructure, prove it the way OS-0b did (167 patterns x 3 prefixes x 4 modes)
+- [SR-3] STATE:not-started — `pcrec --list-syntax [--flavour F]` dumps the
+  table (TSV: syntax, module, feature, flavours, engines, status, note), and
+  `pcrec --explain '\v'` answers for one construct. This is the anti-drift
+  mechanism, not a convenience: SR-4 depends on it
+- [SR-4] STATE:not-started — tests/reject/ ITERATES the dump instead of its
+  hand-written 93 entries, and docs/pcre2_compliance.md is RENDERED from it.
+  Adding a row then covers itself in both. Keep the accept-controls
+  hand-written — they must not come from the same source as the thing they
+  control, or the control is vacuous (the trie-identity lesson)
+- [SR-5] STATE:not-started — guard the fast path CLAIM, do not just assert it:
+  base-tier patterns must perform ZERO registry lookups (`(?:` excepted). Use
+  an instrumented build with a lookup counter, the way run_trie_identity.sh
+  uses `-DPCREC_NO_TRIE`, so no counter exists in the shipped build (TS-1 would
+  reject one anyway). Pair with the M2.9 compile-time budgets
+- [SR-6] STATE:not-started — MODULE HANDLERS move to src/parse/ext/*.c as each
+  module lands (esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc,
+  grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier,
+  grp_callout, verbs, cls_posix). Not a step to schedule — a rule to follow
+  when a module is implemented. The registry row already names the handler
+- [SR-7] STATE:deferred — FLAVOURS (families as named masks: `pcre2-10.46`,
+  `pcre2-dfa`, `python-re`, `ere`). Deferred by D18's earn-its-axis rule
+  applied to the front end: exactly ONE flavour-varying row is known (`\v`), so
+  the selection machinery has a set of size one and no customer. The column
+  exists from SR-1; it turns on when a second flavour earns it. Note
+  `pcre2-dfa` is the ENGINE-capability axis expressed as a family, so this step
+  and DD-7/M4 are related
+- [SR-8] STATE:deferred — ENGINE-capability check moves OUT of the parser.
+  Today `\1` is rejected by the PARSER as "requires module 'backrefs'", but
+  backrefs parse fine and simply cannot LOWER to a DFA. When M4's VM exists the
+  honest diagnostic becomes "requires the VM engine", which is a lowering-time
+  check against the registry's `engines` column. Blocked on M4 having a second
+  engine to choose between
+
 ## Optimization waves (D21) — algorithmic, then profiled code, then compile time
 
 Not a milestone: a shape applied at appropriate points, in this ORDER. Profiling
