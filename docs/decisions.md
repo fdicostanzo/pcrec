@@ -189,3 +189,83 @@ before vs after (13840-24282 vs 15242-24439) — an early single-sample reading
 suggested a 1.4x gain there and was noise. Revisit-when: `^` joins this engine
 (D8/DD-7), since a reverse BOT variant would add a second position-dependent
 view with the same ordering hazard.
+
+## D12 — 2026-08-09 — benchmark budgets are set from measured medians, not vibes
+
+M2.9, closing R2-B3/B4. The old budgets were 9x-300,000x looser than the
+numbers they guarded, so none of them could fail. Concretely: a sabotage build
+with the memchr prefilter and skip states disabled measures 354/319/318 MB/s
+on throughput cases (a)/(b)/(c) — a 5.4x/68x/5.6x regression — and the OLD
+budgets of 200/50/50 MB/s would have passed all three.
+
+Every budget is now the measured median on the reference box divided by ~1.75,
+so a ~1.75x regression fails. Under the new budgets that same sabotage fails
+all three, which is how the numbers were chosen and is the check to repeat
+whenever they are retuned.
+
+Supporting rules, because a tight budget on a noisy measurement is just a
+flaky test:
+- Every timed run is pinned (`taskset -c $BENCH_CPU`; `chrt -f 50` is probed
+  and used only if permitted, which it is not on this box).
+- Every measurement is BENCH_TRIALS repeats (default 5), judged on the MEDIAN,
+  with the max/min spread printed on the row so noise is visible rather than
+  averaged away. Observed per-trial spread here is 1.03x-1.49x.
+- Governor, turbo, core count, pinning status and load average are printed
+  with every run.
+- No measurement may be sub-millisecond. Case (b) and the linearity subjects
+  were being timed at 0.75 ms and 1.4 ms, i.e. mostly timer and startup cost;
+  raising their iteration counts to 20 moved (b) from an apparent 10534 MB/s
+  to a real 21910 MB/s and the linearity ratio from 2.70 to 3.63 against a
+  theoretical 4.0.
+- Case (c) measured EARLY EXIT, not throughput: its subject planted a match
+  4 KB into 8 MB. Its subject is now match-free so the scan is real, which
+  moved it from a meaningless 5,547,850 MB/s to 1794 MB/s.
+
+Revisit-when: the reference box changes (every value is env-overridable, which
+is the intended way to retune), or a budget starts failing on noise rather
+than on a regression — in which case raise BENCH_TRIALS before loosening the
+budget.
+
+## D13 — 2026-08-09 — skip eligibility is a fraction of LIVE bytes; and the D7 arbitration is resolved: table always
+
+M2.10, from R2-A5. Two separate things, both settled by measurement.
+
+**Skip eligibility.** `pick_skip_states` required a state to self-loop on >=192
+of 256 bytes. That rule silently assumed subjects are wide-alphabet text. It
+admits the `.*` state of `.*=.*` (255 live, 255 stay) and rejects the `[01]`
+state of `[01]*1[01]{8}` (2 live, 2 stay) — even though the latter stays on
+100% of the bytes that pattern can ever see. That rejection is most of what
+R2-A5 described as case (f) having "no skip-eligible states".
+
+The criterion is now stay/live >= 75%, where live counts bytes whose
+transition is not dead. A skip loop pays off exactly when the machine, once in
+a state, tends to remain there, and that is a property of the live alphabet,
+not of the byte space; dead bytes end the run either way, so counting them
+against the state measures the wrong thing.
+
+Measured (median of 7, pinned, interleaved old/new): case (f) 83.7 -> 116.8
+MB/s (+40%). Every other probe pattern is unchanged, and for `.*=.*`,
+`needleXYZW`, `ERROR: .*`, `ERROR: .*$`, `a(b|c)+d` and `x{40,60}y` the emitted
+C is byte-IDENTICAL, so "unchanged" there is a fact about the codegen rather
+than a reading of the timer.
+
+**The D7 arbitration.** D7 promised, and M2.3 claimed to have delivered, an
+arbitration between computed-goto and table dispatch for small DFAs;
+`emit_unanchored` has always been unconditionally table-driven. R2-A5 caught
+the false claim. Resolved now by direct micro-benchmark
+(scratchpad `dispatch.c`, both dispatch styles over the same 6-state DFA, same
+subject, same flags): **computed goto is 2.59x SLOWER** (144 vs 374 MB/s),
+stable to within 0.5% over 5 runs.
+
+Six states is about as small as a useful DFA gets, so there is no crossover to
+arbitrate — the table wins across the whole range, and the unconditional table
+emitter was right all along. M2.3's error was claiming an arbitration had
+happened, not the choice it landed on. The mechanism is that a data-dependent
+indirect jump mispredicts on essentially every byte, while a small transition
+table is an L1 hit with no misprediction at all.
+
+Caveat, stated because it bounds the claim: this measures DATA-DEPENDENT
+transitions on random input. A machine that sits in one state for long runs
+would predict well — but that shape is exactly what the skip loops above
+already handle better than either dispatch style. Revisit-when: a workload
+appears with long, highly predictable state runs that skip loops cannot cover.

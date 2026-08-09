@@ -25,6 +25,48 @@ Both were triaged into the M2.0 design gate (new automaton/emitter shape)
 with this bench suite as the thing that proves the fix and stays green
 against future regressions.
 
+## Measurement rigor (M2.9, decision D12)
+
+Checkpoint review R2 found the first version of this suite could not fail:
+budgets were 9x–300,000x looser than the numbers they guarded, measurements
+were single samples on an unpinned `schedutil` box with turbo on, one case
+measured early exit rather than throughput, and the linearity check was
+computed from times below its own anti-blowup floor.
+
+What that means in practice: a sabotage build with the memchr prefilter and
+self-loop skip states disabled runs 5.4x/68x/5.6x slower on cases (a)/(b)/(c)
+— and the ORIGINAL budgets of 200/50/50 MB/s passed all three.
+
+So now:
+
+- every timed run is pinned with `taskset -c $BENCH_CPU` (`chrt -f 50` is
+  probed and used only where permitted);
+- every measurement is `BENCH_TRIALS` repeats (default 5) judged on the
+  **median**, with the max/min **spread** printed on the row;
+- the run header records cores, pinning, trial count, governor, turbo and
+  load average;
+- budgets are the measured median divided by ~1.75, so a ~1.75x regression
+  fails, and they are re-validated against the sabotage above whenever
+  retuned;
+- no measurement is allowed to be sub-millisecond — iteration counts were
+  raised where they were.
+
+Reference medians on the development box (AMD Ryzen 5 1600, 12 cores,
+schedutil, turbo on, load ~0.9, `BENCH_TRIALS=7`):
+
+| measurement | median | per-trial spread | budget |
+|---|---|---|---|
+| COMPILE-SPEED (20 patterns) | 0.111 s | — | < 0.4 s |
+| KEYWORD-SCALE (3600 words) | 0.92 s | — | < 4 s |
+| GCC-TIME, 8192 states, -O2 | 0.219 s | — | < 2 s |
+| (a) `needleXYZW` 8 MB | 1918 MB/s | 1.15x | > 1200 MB/s |
+| (b) `a*b` 8 MB all-'a' | 21910 MB/s | 1.21x | > 12000 MB/s |
+| (c) `a(b\|c)+d` 8 MB no-match | 1794 MB/s | 1.35x | > 1000 MB/s |
+| linearity 64MB/16MB | 3.63 | 1.06–1.14x | < 6.0 (linear 4.0) |
+
+Every value is env-overridable; retune on slower hardware by setting the env
+vars, not by editing the defaults.
+
 ## Running
 
 ```

@@ -107,6 +107,28 @@ if gen dollar 'a*b$'; then
         ok "M2.7: no per-start attempt loop for a \$-bearing pattern"
     fi
 fi
+# ---- M2.10: skip eligibility is relative to LIVE bytes -------------------
+# '[01]*1[01]{8}' self-loops on 2 of 256 bytes but on 100% of the bytes it can
+# ever see. The old ">= 192 of 256" rule rejected it, which is why compare
+# case (f) had "no skip-eligible states" (R2-A5). Reverting to an absolute
+# byte-count rule removes this table and costs ~40% on that case.
+if gen dense '[01]*1[01]{8}'; then
+    if grep -qE 'rx_(fs|rs)[0-9]+\[256\]' "$WORKDIR/dense.c"; then
+        ok "M2.10: narrow-alphabet dense pattern gets a skip table"
+    else
+        bad "M2.10: '[01]*1[01]{8}' got NO skip table (eligibility back to an absolute byte count?)"
+    fi
+fi
+# ...without admitting states that mostly LEAVE. A literal's interior states
+# advance on one byte and die on the rest, so none of them may qualify.
+if gen litnoskip 'needleXYZW'; then
+    if grep -qE 'rx_(fs|rs)[0-9]+\[256\]' "$WORKDIR/litnoskip.c"; then
+        bad "M2.10: 'needleXYZW' emitted a skip table (eligibility threshold too loose)"
+    else
+        ok "M2.10: pure-literal pattern still gets no skip tables"
+    fi
+fi
+
 # ---- M2.12: scan avoidance must be PRESENT on the `$` path too ----------
 # M2.7 traded the prefilter and skip loops away for correctness on the EOL
 # path and left `$` patterns at ~291 MB/s where the same pattern without `$`

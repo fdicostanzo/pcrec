@@ -28,6 +28,7 @@ test: all
 	bash tests/harness/run.sh
 	bash tests/cli/run_cli_tests.sh
 	bash tests/codegen/run_codegen_tests.sh
+	bash tests/known_fail/run_known_fail.sh
 
 bench: all
 	bash tests/bench/run_bench.sh

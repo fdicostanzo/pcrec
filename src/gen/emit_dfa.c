@@ -119,26 +119,45 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
-/* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
- * put on >= 192 of 256 bytes — their scan degenerates to a SIMD-friendly
- * skip loop. Motivated by compare case h (`.*=.*`): the post-'=' state
- * self-loops on everything but '\n' in both machines. */
+/* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that tend to
+ * stay put — their scan degenerates to a SIMD-friendly skip loop. Motivated by
+ * compare case h (`.*=.*`), where the post-'=' state self-loops on everything
+ * but '\n' in both machines.
+ *
+ * Eligibility is the fraction of a state's LIVE bytes that keep it in place,
+ * not the fraction of all 256 (M2.10). The old absolute ">= 192 of 256" rule
+ * silently encoded an assumption that subjects are wide-alphabet text: it
+ * admits the `.*` state of `.*=.*` (255 live, 255 stay) but rejects the `[01]`
+ * state of `[01]*1[01]{8}` (2 live, 2 stay), even though the latter stays on
+ * 100% of the bytes that pattern will ever see. That rejection is most of why
+ * compare case (f) had "no skip-eligible states" (R2-A5).
+ *
+ * A skip loop is worth having exactly when the machine, once in this state,
+ * tends to remain there — which is a property of the live alphabet, not of
+ * the byte space. Dead bytes leave the state entirely and end the run either
+ * way, so counting them against the state is measuring the wrong thing. */
+enum { SKIP_STAY_NUM = 3, SKIP_STAY_DEN = 4 };   /* admit at >= 75% of live */
+
 static int pick_skip_states(const Dfa *d, int exclude, int out[4])
 {
     int cls_size[256] = {0};
     for (int b = 0; b < 256; b++) cls_size[d->clsmap[b]]++;
     int nout = 0;
     for (int pass = 0; pass < 4; pass++) {
-        int best = -1, bestcnt = 191;
+        int best = -1, bestcnt = 0;
         for (int i = 0; i < d->n; i++) {
             if (i == exclude) continue;
             bool taken = false;
             for (int k = 0; k < nout; k++)
                 if (out[k] == i) taken = true;
             if (taken) continue;
-            int stay = 0;
-            for (int cl = 0; cl < d->ncls; cl++)
+            int stay = 0, live = 0;
+            for (int cl = 0; cl < d->ncls; cl++) {
                 if (d->st[i].tr[cl] == i) stay += cls_size[cl];
+                if (d->st[i].tr[cl] >= 0)  live += cls_size[cl];
+            }
+            if (live == 0) continue;
+            if (stay * SKIP_STAY_DEN < live * SKIP_STAY_NUM) continue;
             if (stay > bestcnt) { bestcnt = stay; best = i; }
         }
         if (best < 0) break;

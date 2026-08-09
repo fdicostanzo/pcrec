@@ -514,3 +514,72 @@ ORDER instead (accept before skips) fails the order check AND 7 corpus cases.
 
 Suite after: 607 corpus + 41 CLI + 15 codegen green; oracle 100%; fuzz seeds
 1/2/3/5/7/11 clean; bench 0 budget failures.
+
+## 2026-08-09 — M2.9 benchmark rigor, M2.10 dense codegen, M2.11 (part)
+
+### M2.9 — the budgets could not fail (D12)
+
+R2-B4 said the budgets were 9x-300,000x loose. The concrete demonstration: a
+build with the memchr prefilter and skip states disabled measures 354/319/318
+MB/s on throughput cases (a)/(b)/(c) — 5.4x/68x/5.6x regressions — and the old
+budgets of 200/50/50 MB/s **pass all three**. Every budget is now
+measured-median/1.75, and that same sabotage now fails all three. That
+sabotage is the procedure to repeat whenever the budgets are retuned.
+
+Supporting work, because a tight budget on a noisy measurement is a flaky
+test, not a gate: `taskset` pinning (chrt probed, unprivileged here);
+BENCH_TRIALS repeats judged on the median with max/min spread printed;
+governor/turbo/cores/loadavg captured in the run header.
+
+Two measurements were not measuring what they claimed:
+- Case (c) planted a match 4 KB into an 8 MB subject, so a correct engine
+  early-exited after 0.05% of the buffer. Its "5,547,850 MB/s" was exit
+  latency. The subject is now match-free: 1794 MB/s of real scanning.
+- Case (b) and the linearity pair were timed at 0.75 ms and 1.4 ms — mostly
+  timer and startup. At 20 iterations case (b) reads 21910 MB/s rather than an
+  apparent 10534, and the linearity ratio moved from 2.70 to 3.63 against a
+  theoretical 4.0.
+
+### M2.10 — the criterion was wrong, not the opportunity (D13)
+
+R2-A5 reported case (f) as having "no skip-eligible states". True, but the
+reason was that `pick_skip_states` demanded a state self-loop on >=192 of 256
+BYTES — a rule that quietly assumes wide-alphabet subjects. `[01]*1[01]{8}`'s
+hot state self-loops on 2 bytes, which is 100% of the bytes that pattern can
+ever encounter. Changing eligibility to stay/live >= 75% gives case (f) +40%
+(83.7 -> 116.8 MB/s) and leaves everything else alone — verifiably so: for six
+other probe patterns the emitted C is byte-IDENTICAL, which is a much stronger
+statement than "the timings looked the same".
+
+Getting there involved a false alarm worth recording. A first experiment
+(threshold lowered to 1) appeared to cost the log pattern 24%. Re-measuring
+with old/new INTERLEAVED showed completely overlapping ranges — it was noise.
+Interleaving is one of the things R2-B3 asked for in M2.9, and it earned its
+keep within the hour. It also calibrated the noise floor: `ERROR: .*$` showed
+a "-9%" between two builds whose emitted C is byte-identical, so ~10% is not a
+signal on this box even at median-of-7.
+
+D7's promised computed-goto-vs-table arbitration, which M2.3 claimed and never
+built, is now RESOLVED — by measurement rather than by writing more code.
+Micro-benchmark of both dispatch styles over the same 6-state DFA: computed
+goto is **2.59x slower** (144 vs 374 MB/s), stable to 0.5% over 5 runs. Six
+states is about as small as a useful DFA gets, so there is no crossover to
+arbitrate; the unconditional table emitter was right, and M2.3's error was the
+claim, not the choice. A data-dependent indirect jump mispredicts on nearly
+every byte; a small table is an L1 hit that never mispredicts.
+
+### M2.11 — half done
+
+`tests/known_fail/run_known_fail.sh` (R2-PR8) inverts the verdict on deferred-
+bug regressions: still-failing is expected, and a file that starts PASSING is
+flagged with instructions to promote it into the live corpus and close its
+known_issues.md entry. Wired into `make test`, validated in all three states
+(empty directory exits 0, now-passing exits 1, still-failing exits 0). The
+directory had ceased to exist after R2 fixed every deferred bug; it is back
+with its contract documented.
+
+The other half — a pass/fail gate over tests/bench/compare (R2-PR7) — waits on
+M2.9's compare.sh rework, which is in flight.
+
+Suite: 607 corpus + 41 CLI + 17 codegen green; oracle 100%; fuzz 1/2/3/5
+clean; bench 0 budget failures under the tightened budgets.

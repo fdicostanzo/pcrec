@@ -26,14 +26,22 @@
 #                   still fail the exit code regardless)
 #   KEEP=1          keep the temp working directory instead of deleting it
 #
-#   Budgets (all overridable):
-#     COMPILE_BUDGET_SECS          (default 2)     total pcrec time, COMPILE-SPEED
-#     GCC_O1_BUDGET_SECS           (default 5)     per-pattern, GCC-TIME
-#     GCC_O2_BUDGET_SECS           (default 10)    per-pattern, GCC-TIME
-#     THROUGHPUT_NEEDLE_MIN_MBPS   (default 200)   subject (a), THROUGHPUT
-#     THROUGHPUT_NOMATCH_MIN_MBPS  (default 50)    subject (b), THROUGHPUT
-#     THROUGHPUT_ALT_MIN_MBPS      (default 50)    subject (c), THROUGHPUT
-#     LINEARITY_MAX_RATIO          (default 8.0)   4MB/1MB time ratio, THROUGHPUT
+#   Measurement rigor (M2.9, R2-B3):
+#     BENCH_CPU       (default 2)    core to pin every timed run to (taskset)
+#     BENCH_TRIALS    (default 5)    repeats per measurement; the MEDIAN is
+#                     what budgets are judged against, and max/min spread is
+#                     printed alongside so a noisy result is visible
+#
+#   Budgets (all overridable; set to fail on a ~1.75x regression -- see the
+#   block where they are defined for the measured medians behind them):
+#     COMPILE_BUDGET_SECS          (default 0.4)   total pcrec time, COMPILE-SPEED
+#     KEYWORD_BUDGET_SECS          (default 4)     3600-word list, KEYWORD-SCALE
+#     GCC_O1_BUDGET_SECS           (default 2)     per-pattern, GCC-TIME
+#     GCC_O2_BUDGET_SECS           (default 2)     per-pattern, GCC-TIME
+#     THROUGHPUT_NEEDLE_MIN_MBPS   (default 1200)  subject (a), THROUGHPUT
+#     THROUGHPUT_NOMATCH_MIN_MBPS  (default 12000) subject (b), THROUGHPUT
+#     THROUGHPUT_ALT_MIN_MBPS      (default 1000)  subject (c), THROUGHPUT
+#     LINEARITY_MAX_RATIO          (default 6.0)   64MB/16MB time ratio, THROUGHPUT
 #
 #   Hang-protection timeouts (all overridable; a run that hits its timeout
 #   is reported as DNF and counted as a budget FAIL, never as a hang):
@@ -58,13 +66,23 @@ CC="${CC:-gcc}"
 SKIP_BUDGETS="${SKIP_BUDGETS:-0}"
 KEEP="${KEEP:-0}"
 
-COMPILE_BUDGET_SECS="${COMPILE_BUDGET_SECS:-2}"
-GCC_O1_BUDGET_SECS="${GCC_O1_BUDGET_SECS:-5}"
-GCC_O2_BUDGET_SECS="${GCC_O2_BUDGET_SECS:-10}"
-THROUGHPUT_NEEDLE_MIN_MBPS="${THROUGHPUT_NEEDLE_MIN_MBPS:-200}"
-THROUGHPUT_NOMATCH_MIN_MBPS="${THROUGHPUT_NOMATCH_MIN_MBPS:-50}"
-THROUGHPUT_ALT_MIN_MBPS="${THROUGHPUT_ALT_MIN_MBPS:-50}"
-LINEARITY_MAX_RATIO="${LINEARITY_MAX_RATIO:-8.0}"
+# Budgets (M2.9 / R2-B4). The old values were 9x-300,000x looser than the
+# measured numbers, so none of them would have caught a 2x regression — a
+# budget that cannot fail is documentation, not a gate.
+#
+# Each is now the measured MEDIAN on the reference box divided by ~1.75, i.e.
+# tuned to fail on a ~1.75x regression. Individual trials on that box spread
+# 1.20-1.43x (printed on every row), and the median of BENCH_TRIALS is much
+# tighter than that, so the margin is real but not generous. Reference medians
+# are in the table in README.md; every value here is env-overridable, which is
+# how you retune on slower hardware rather than by editing this file.
+COMPILE_BUDGET_SECS="${COMPILE_BUDGET_SECS:-0.4}"        # measured 0.111
+GCC_O1_BUDGET_SECS="${GCC_O1_BUDGET_SECS:-2}"            # measured 0.219
+GCC_O2_BUDGET_SECS="${GCC_O2_BUDGET_SECS:-2}"            # measured 0.219
+THROUGHPUT_NEEDLE_MIN_MBPS="${THROUGHPUT_NEEDLE_MIN_MBPS:-1200}"   # measured 2160
+THROUGHPUT_NOMATCH_MIN_MBPS="${THROUGHPUT_NOMATCH_MIN_MBPS:-12000}" # measured 21910
+THROUGHPUT_ALT_MIN_MBPS="${THROUGHPUT_ALT_MIN_MBPS:-1000}"         # measured 1753
+LINEARITY_MAX_RATIO="${LINEARITY_MAX_RATIO:-6.0}"        # measured 2.883, linear 4.0
 
 PCREC_TIMEOUT="${PCREC_TIMEOUT:-60}"
 GCC_O1_TIMEOUT="${GCC_O1_TIMEOUT:-60}"
@@ -111,6 +129,56 @@ num_lt() { awk -v a="$1" -v b="$2" 'BEGIN{exit !(a+0 < b+0)}'; }
 # num_gt <a> <b> -> true (exit 0) iff a > b, numeric
 num_gt() { awk -v a="$1" -v b="$2" 'BEGIN{exit !(a+0 > b+0)}'; }
 
+# ---- M2.9 measurement rigor (R2-B3/B4) -------------------------------------
+# R2 found no CPU pinning or governor control on a schedutil box with turbo,
+# every measurement taken once, and pcrec always measured first. Single
+# samples on this box swing ~1.8x run to run, which is wider than most of the
+# regressions these budgets are supposed to catch. So: pin, repeat, and judge
+# on the MEDIAN.
+
+BENCH_CPU="${BENCH_CPU:-2}"        # which core to pin to
+BENCH_TRIALS="${BENCH_TRIALS:-5}"  # repeats per measurement; median is judged
+PIN=""
+PIN_NOTE="none"
+if command -v taskset >/dev/null 2>&1 && taskset -c "$BENCH_CPU" true 2>/dev/null; then
+    PIN="taskset -c $BENCH_CPU"
+    PIN_NOTE="taskset -c $BENCH_CPU"
+    # SCHED_FIFO removes scheduler jitter but usually needs privileges; it is
+    # a bonus, never a requirement, so probe once and degrade quietly.
+    if command -v chrt >/dev/null 2>&1 && chrt -f 50 true 2>/dev/null; then
+        PIN="chrt -f 50 $PIN"
+        PIN_NOTE="chrt -f 50 + $PIN_NOTE"
+    fi
+fi
+
+# median <values...> -> prints the median (lower of the two for even counts)
+median() {
+    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
+}
+# spread <values...> -> prints max/min as a ratio, "n/a" if min is 0
+spread() {
+    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.2f", v[NR]/v[1] }'
+}
+
+# Environment capture — a number without the machine state behind it is not a
+# measurement, and R2 caught exactly this omission.
+describe_env() {
+    local gov turbo
+    gov="$(cat /sys/devices/system/cpu/cpu${BENCH_CPU}/cpufreq/scaling_governor 2>/dev/null || echo unknown)"
+    if [ -r /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
+        turbo=$([ "$(cat /sys/devices/system/cpu/intel_pstate/no_turbo)" = "1" ] && echo off || echo on)
+    elif [ -r /sys/devices/system/cpu/cpufreq/boost ]; then
+        turbo=$([ "$(cat /sys/devices/system/cpu/cpufreq/boost)" = "1" ] && echo on || echo off)
+    else
+        turbo="unknown"
+    fi
+    echo "cores:   $(nproc 2>/dev/null || echo '?')"
+    echo "pinning: $PIN_NOTE"
+    echo "trials:  $BENCH_TRIALS (budgets judged on the median)"
+    echo "governor: $gov (cpu$BENCH_CPU)   turbo: $turbo"
+    echo "load average: $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
+}
+
 # record_budget <label> <verdict PASS|FAIL>
 # Prints the verdict and, on FAIL, bumps budget_failures (which only
 # affects the exit code when SKIP_BUDGETS != 1).
@@ -127,6 +195,7 @@ record_hard_error() {
     hard_errors=$((hard_errors + 1))
 }
 
+describe_env
 echo "pcrec:  $PCREC"
 echo "cc:     $CC ($("$CC" --version 2>&1 | head -n1))"
 echo "workdir: $WORKDIR"
@@ -393,25 +462,25 @@ with open(os.path.join(outdir, "needle_8mb.bin"), "wb") as f:
 with open(os.path.join(outdir, "alla_8mb.bin"), "wb") as f:
     f.write(b"a" * n)
 
-# (c) 8 MB random text, a(b|c)+d matches planted every 256 KB, first one
-# close to the start so a correct (linear, early-exit) engine stays fast
-# here too.
-buf = bytearray(rand_lower(n))
-step = 256 * 1024
-p = 4096
-while p < n - 16:
-    run = bytes(random.choice(b"bc") for _ in range(random.randint(1, 6)))
-    match = b"a" + run + b"d"
-    buf[p:p + len(match)] = match
-    p += step
-with open(os.path.join(outdir, "altd_8mb.bin"), "wb") as f:
-    f.write(buf)
+# (c) 8 MB random text with NO a(b|c)+d match anywhere, so this measures a
+# full scan. R2-B4: the old version planted a match 4 KB in, so a correct
+# early-exiting engine scanned 0.05% of the buffer and the "throughput"
+# budget was measuring exit latency. 'd' is removed from the alphabet, which
+# makes a match impossible without changing the byte-class structure the
+# pattern's DFA actually walks.
+alpha_nod = b"abcefghijklmnopqrstuvwxyz"
+with open(os.path.join(outdir, "altd_nomatch_8mb.bin"), "wb") as f:
+    f.write(bytes(random.choices(alpha_nod, k=n)))
 
-# linearity subjects
-with open(os.path.join(outdir, "alla_1mb.bin"), "wb") as f:
-    f.write(b"a" * (1 * MB))
-with open(os.path.join(outdir, "alla_4mb.bin"), "wb") as f:
-    f.write(b"a" * (4 * MB))
+# linearity subjects. R2-B4: the old pair was 1 MB vs 4 MB, which on the
+# current engine takes ~46 us vs ~337 us — below the script's own anti-blowup
+# floor, i.e. the check was reading timer noise. 16 MB vs 64 MB puts both
+# sides in the milliseconds where the ratio means something, and the floor
+# hack is gone.
+with open(os.path.join(outdir, "alla_16mb.bin"), "wb") as f:
+    f.write(b"a" * (16 * MB))
+with open(os.path.join(outdir, "alla_64mb.bin"), "wb") as f:
+    f.write(b"a" * (64 * MB))
 
 print("subjects generated in", outdir)
 PYEOF
@@ -425,29 +494,33 @@ fi
 echo
 
 # run_bdriver <bin> <subject> <iters> <timeout_secs> -> sets RB_SECS, RB_MBPS,
-# RB_RC ("ok", "dnf", or "error")
+# RB_RC ("ok", "dnf", or "error").
+# Repeats BENCH_TRIALS times under the pinning wrapper and reports the MEDIAN;
+# RB_SPREAD carries max/min so a wide result is visible rather than silently
+# averaged away. A single trial that DNFs or errors fails the whole
+# measurement — a flaky run is a result, not something to retry past.
 run_bdriver() {
     local bin="$1" subj="$2" iters="$3" tmo="$4"
-    local out rc
-    out="$(timeout "$tmo" "$bin" "$subj" "$iters" 2>&1)"
-    rc=$?
-    RB_SECS=""; RB_MBPS=""
-    if [ $rc -eq 124 ]; then
-        RB_RC="dnf"
-        RB_RAW="$out"
-    elif [ $rc -ne 0 ]; then
-        RB_RC="error"
-        RB_RAW="$out"
-    else
-        RB_RC="ok"
-        RB_RAW="$out"
+    local out rc i
+    local secs_all=() mbps_all=()
+    RB_SECS=""; RB_MBPS=""; RB_SPREAD=""
+    for ((i = 0; i < BENCH_TRIALS; i++)); do
+        out="$(timeout "$tmo" $PIN "$bin" "$subj" "$iters" 2>&1)"
+        rc=$?
+        if [ $rc -eq 124 ]; then RB_RC="dnf"; RB_RAW="$out"; return; fi
+        if [ $rc -ne 0 ]; then RB_RC="error"; RB_RAW="$out"; return; fi
         if [[ "$out" =~ secs=([0-9.]+)\ mbps=([0-9.]+) ]]; then
-            RB_SECS="${BASH_REMATCH[1]}"
-            RB_MBPS="${BASH_REMATCH[2]}"
+            secs_all+=("${BASH_REMATCH[1]}")
+            mbps_all+=("${BASH_REMATCH[2]}")
         else
-            RB_RC="error"
+            RB_RC="error"; RB_RAW="$out"; return
         fi
-    fi
+    done
+    RB_RC="ok"
+    RB_RAW="$out"
+    RB_SECS="$(median "${secs_all[@]}")"
+    RB_MBPS="$(median "${mbps_all[@]}")"
+    RB_SPREAD="$(spread "${mbps_all[@]}")"
 }
 
 # build_bench_bin <patdir> <pattern> -> compiles gen.c + bdriver.c into
@@ -480,7 +553,7 @@ if [ $py_rc -eq 0 ]; then
     if [ "$BB_OK" = "1" ]; then
         run_bdriver "$tdir/t" "$subj_dir/needle_8mb.bin" 20 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
-            echo "  (a) needleXYZW  over needle_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (budget > ${THROUGHPUT_NEEDLE_MIN_MBPS} MB/s)"
+            echo "  (a) needleXYZW  over needle_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_NEEDLE_MIN_MBPS} MB/s)"
             if num_gt "$RB_MBPS" "$THROUGHPUT_NEEDLE_MIN_MBPS"; then
                 record_budget "THROUGHPUT (a) needle" "PASS"
             else
@@ -498,9 +571,11 @@ if [ $py_rc -eq 0 ]; then
     tdir="$WORKDIR/tp_nomatch"
     build_bench_bin "$tdir" 'a*b'
     if [ "$BB_OK" = "1" ]; then
-        run_bdriver "$tdir/t" "$subj_dir/alla_8mb.bin" 1 "$RUN_TIMEOUT"
+        # 20 iterations, not 1: a single 8 MB pass here is ~0.75 ms, which is
+        # too short to time honestly on this box.
+        run_bdriver "$tdir/t" "$subj_dir/alla_8mb.bin" 20 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
-            echo "  (b) a*b         over alla_8mb.bin:  ${RB_SECS}s, ${RB_MBPS} MB/s (budget > ${THROUGHPUT_NOMATCH_MIN_MBPS} MB/s)"
+            echo "  (b) a*b         over alla_8mb.bin:  ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_NOMATCH_MIN_MBPS} MB/s)"
             if num_gt "$RB_MBPS" "$THROUGHPUT_NOMATCH_MIN_MBPS"; then
                 record_budget "THROUGHPUT (b) no-match" "PASS"
             else
@@ -514,20 +589,20 @@ if [ $py_rc -eq 0 ]; then
         fi
     fi
 
-    # ---- (c) a(b|c)+d over 8 MB random text, matches planted ----
+    # ---- (c) a(b|c)+d over 8 MB random text with NO match: full scan ----
     tdir="$WORKDIR/tp_alt"
     build_bench_bin "$tdir" 'a(b|c)+d'
     if [ "$BB_OK" = "1" ]; then
-        run_bdriver "$tdir/t" "$subj_dir/altd_8mb.bin" 10 "$RUN_TIMEOUT"
+        run_bdriver "$tdir/t" "$subj_dir/altd_nomatch_8mb.bin" 10 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
-            echo "  (c) a(b|c)+d    over altd_8mb.bin:  ${RB_SECS}s, ${RB_MBPS} MB/s (budget > ${THROUGHPUT_ALT_MIN_MBPS} MB/s)"
+            echo "  (c) a(b|c)+d    over altd_nomatch_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_ALT_MIN_MBPS} MB/s)"
             if num_gt "$RB_MBPS" "$THROUGHPUT_ALT_MIN_MBPS"; then
                 record_budget "THROUGHPUT (c) alternation" "PASS"
             else
                 record_budget "THROUGHPUT (c) alternation" "FAIL"
             fi
         elif [ "$RB_RC" = "dnf" ]; then
-            echo "  (c) a(b|c)+d    over altd_8mb.bin:  DNF (exceeded ${RUN_TIMEOUT}s timeout)"
+            echo "  (c) a(b|c)+d    over altd_nomatch_8mb.bin: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
             record_budget "THROUGHPUT (c) alternation" "FAIL"
         else
             record_hard_error "bdriver crashed/errored on subject (c): $RB_RAW"
@@ -535,7 +610,7 @@ if [ $py_rc -eq 0 ]; then
     fi
 
     echo
-    echo "  -- linearity check (R1 A-2): a*b over 1 MB vs 4 MB of 'a' --"
+    echo "  -- linearity check (R1 A-2): a*b over 16 MB vs 64 MB of 'a' --"
     # Reuses the (b) binary (same pattern 'a*b'); a fresh binary is built in
     # case (b)'s build failed for some pattern-specific reason.
     tdir="$WORKDIR/tp_linearity"
@@ -543,24 +618,24 @@ if [ $py_rc -eq 0 ]; then
     lin_ok=1
     secs_1mb=""; secs_4mb=""
     if [ "$BB_OK" = "1" ]; then
-        run_bdriver "$tdir/t" "$subj_dir/alla_1mb.bin" 1 "$RUN_TIMEOUT"
+        run_bdriver "$tdir/t" "$subj_dir/alla_16mb.bin" 20 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
             secs_1mb="$RB_SECS"
-            echo "    1 MB: ${secs_1mb}s"
+            echo "    16 MB: ${secs_1mb}s (spread ${RB_SPREAD}x)"
         elif [ "$RB_RC" = "dnf" ]; then
-            echo "    1 MB: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
+            echo "    16 MB: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
             lin_ok=0
         else
             record_hard_error "bdriver crashed/errored on linearity 1MB subject: $RB_RAW"
             lin_ok=0
         fi
 
-        run_bdriver "$tdir/t" "$subj_dir/alla_4mb.bin" 1 "$RUN_TIMEOUT"
+        run_bdriver "$tdir/t" "$subj_dir/alla_64mb.bin" 20 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
             secs_4mb="$RB_SECS"
-            echo "    4 MB: ${secs_4mb}s"
+            echo "    64 MB: ${secs_4mb}s (spread ${RB_SPREAD}x)"
         elif [ "$RB_RC" = "dnf" ]; then
-            echo "    4 MB: DNF (exceeded ${RUN_TIMEOUT}s timeout -- expected on the old O(n^2) emitter, see A-2)"
+            echo "    64 MB: DNF (exceeded ${RUN_TIMEOUT}s timeout -- expected on the old O(n^2) emitter, see A-2)"
             lin_ok=0
         else
             record_hard_error "bdriver crashed/errored on linearity 4MB subject: $RB_RAW"
@@ -571,11 +646,15 @@ if [ $py_rc -eq 0 ]; then
     fi
 
     if [ "$lin_ok" = "1" ]; then
-        # Guard against a near-zero 1MB timing (division blowup) on a very
-        # fast engine; a sub-millisecond 1MB scan is linear by construction.
-        ratio=$(awk -v s1="$secs_1mb" -v s4="$secs_4mb" \
-            'BEGIN{ if (s1 < 0.0005) s1 = 0.0005; printf "%.3f", s4/s1 }')
-        echo "    ratio (4MB/1MB): $ratio (budget < ${LINEARITY_MAX_RATIO}, linear ~4.0, quadratic ~16.0)"
+        # No anti-blowup floor any more: at 16/64 MB both sides are
+        # milliseconds, so the ratio is a real measurement rather than a timer
+        # artifact (R2-B4). If the 16 MB side ever does land under a
+        # millisecond again, say so instead of silently clamping.
+        if num_lt "$secs_1mb" "0.005"; then
+            record_hard_error "linearity: 16 MB x20 measured ${secs_1mb}s (<5ms) — too short for this timer, raise the subject size or the iteration count"
+        fi
+        ratio=$(awk -v s1="$secs_1mb" -v s4="$secs_4mb" 'BEGIN{ printf "%.3f", s4/s1 }')
+        echo "    ratio (64MB/16MB): $ratio (budget < ${LINEARITY_MAX_RATIO}, linear ~4.0, quadratic ~16.0)"
         if num_lt "$ratio" "$LINEARITY_MAX_RATIO"; then
             record_budget "THROUGHPUT linearity" "PASS"
         else
