@@ -227,20 +227,28 @@ enum {
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
 
+/* Field groups are ordered identity / ownership / selection / outcome / doc.
+ * `feature` and `module` are ADJACENT on purpose: they are two halves of one
+ * fact, and registry.c's M_* macros emit them as a pair so a row cannot carry
+ * a feature bit that disagrees with the module name it prints. */
 typedef struct {
     RegKind     kind;
     int         sel;       /* the deciding byte, or REG_SEL_ANY */
     const char *syntax;    /* how it is written — also a valid probe pattern,
                               which is what lets the conformance test cover new
                               rows without being edited */
+
     unsigned    feature;   /* FEAT_* mask; 0 for RS_BASE/RS_REJECTED */
+    const char *module;    /* module name AS IT APPEARS IN DIAGNOSTICS, or NULL */
+
     unsigned    flavours;  /* FLAV_* mask */
     unsigned    engines;   /* ENGM_* mask — design intent, unconsumed until SR-8 */
-    const char *module;    /* module name AS IT APPEARS IN DIAGNOSTICS, or NULL */
+
     RegStatus   status;
     RegDiag     diag;
     const char *msg;       /* RD_FIXED only, else NULL */
     unsigned    flags;     /* RF_* */
+
     const char *note;      /* one-line PCRE2 semantics (SR-3/SR-4 render this) */
 } RegRow;
 

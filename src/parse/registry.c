@@ -53,166 +53,172 @@
 
 #include "core/internal.h"
 
+/* ---- row shapes ---------------------------------------------------------
+ * The macros below fix the fields that are CONSTANT for a shape and leave the
+ * varying ones explicit, so a row reads as its own content rather than as
+ * twelve positional fields. Three things this buys beyond brevity:
+ *
+ *   - `M_<module>` emits the feature bit and the diagnostic name AS A PAIR, so
+ *     a row cannot carry FEAT_CLASSES while printing "assertions". That
+ *     pairing was previously unchecked by anything.
+ *   - a misspelled module is a COMPILE error (no such M_ macro), not a wrong
+ *     string in a diagnostic nobody reads until a user hits it.
+ *   - FLAV_PCRE2 lives here instead of being repeated 67 times. When SR-7 adds
+ *     a second flavour, a row that genuinely VARIES by flavour must be written
+ *     out longhand — so the exceptional row LOOKS exceptional in the source.
+ *
+ * A row with a shape of its own stays longhand. `(?:` is the only construct
+ * here the base grammar implements, and it should not be able to hide inside a
+ * macro that means "rejected". */
+
+#define M_classes        FEAT_CLASSES,       "classes"
+#define M_assertions     FEAT_ASSERTIONS,    "assertions"
+#define M_backrefs       FEAT_BACKREFS,      "backrefs"
+#define M_unicode_props  FEAT_UNICODE_PROPS, "unicode-props"
+#define M_quoting        FEAT_QUOTING,       "quoting"
+#define M_misc           FEAT_MISC,          "misc"
+#define M_lookaround     FEAT_LOOKAROUND,    "lookaround"
+#define M_named_groups   FEAT_NAMED_GROUPS,  "named-groups"
+#define M_atomic_groups  FEAT_ATOMIC_GROUPS, "atomic-groups"
+#define M_comments       FEAT_COMMENTS,      "comments"
+#define M_callouts       FEAT_CALLOUTS,      "callouts"
+#define M_branch_reset   FEAT_BRANCH_RESET,  "branch-reset"
+#define M_conditionals   FEAT_CONDITIONALS,  "conditionals"
+#define M_recursion      FEAT_RECURSION,     "recursion"
+#define M_modifiers      FEAT_MODIFIERS,     "modifiers"
+#define M_verbs          FEAT_VERBS,         "verbs"
+/* One byte, two constructs: `(?<` is lookbehind OR a named group. The compound
+ * name is the diagnostic PCREC prints today and SR-2 must reproduce it. */
+#define M_lookaround_named \
+    FEAT_LOOKAROUND | FEAT_NAMED_GROUPS, "lookaround/named-groups"
+
+#define ANY_ENGINE  (ENGM_DFA | ENGM_VM)
+#define VM_ONLY     ENGM_VM
+
+/* \x outside a class -> "\x requires module 'M'" */
+#define ESC(sel, syn, mod, eng, note) \
+    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, 0, (note)}
+/* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
+#define ESC_CLASS_BASE(sel, syn, mod, eng, note) \
+    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, RF_CLASS_BASE, (note)}
+/* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'" */
+#define ESC_OCTAL(sel, syn, eng, note) \
+    {RK_ESC, (sel), (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, 0, (note)}
+/* (?X -> "(?X...) requires module 'M'" */
+#define GROUP(sel, syn, mod, eng, note) \
+    {RK_GROUP, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, 0, (note)}
+/* a construct whose entire diagnostic is fixed text rather than a template */
+#define FIXED(kind, sel, syn, mod, eng, msg, note) \
+    {(kind), (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), 0, (note)}
+/* PCRE2 rejects it too: no module to name, no feature to enable, no engine to
+ * lower to. Agreement IS compliance. */
+#define REJECTED(kind, sel, syn, msg, note) \
+    {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), 0, (note)}
+
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
  * arrive here. */
 static const RegRow esc_rows[] = {
-{RK_ESC, 'd', "\\d", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any decimal digit"},
-{RK_ESC, 'D', "\\D", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any character that is not a decimal digit"},
-{RK_ESC, 's', "\\s", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any whitespace character"},
-{RK_ESC, 'S', "\\S", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any character that is not whitespace"},
-{RK_ESC, 'w', "\\w", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any word character (letter, digit or underscore)"},
-{RK_ESC, 'W', "\\W", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any character that is not a word character"},
-{RK_ESC, 'h', "\\h", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any horizontal whitespace character"},
-{RK_ESC, 'H', "\\H", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any character that is not horizontal whitespace"},
+ESC('d', "\\d", classes, ANY_ENGINE, "any decimal digit"),
+ESC('D', "\\D", classes, ANY_ENGINE, "any character that is not a decimal digit"),
+ESC('s', "\\s", classes, ANY_ENGINE, "any whitespace character"),
+ESC('S', "\\S", classes, ANY_ENGINE, "any character that is not whitespace"),
+ESC('w', "\\w", classes, ANY_ENGINE, "any word character (letter, digit or underscore)"),
+ESC('W', "\\W", classes, ANY_ENGINE, "any character that is not a word character"),
+ESC('h', "\\h", classes, ANY_ENGINE, "any horizontal whitespace character"),
+ESC('H', "\\H", classes, ANY_ENGINE, "any character that is not horizontal whitespace"),
 /* THE ROW THIS WHOLE FILE EXISTS FOR. PCRE2's `\v` is vertical WHITESPACE —
  * 0x0a 0x0b 0x0c 0x0d 0x85 — not the vertical tab 0x0B. pcrec decoded it as
- * 0x0B until 2026-08-09; the corpus certified the bug because python `re`,
- * the base-tier oracle, reads `\v` as 0x0B too. It is also the only known
+ * 0x0B until 2026-08-09; the corpus certified the bug because python `re`, the
+ * base-tier oracle, reads `\v` as 0x0B too. It is also the only known
  * flavour-varying row, i.e. the single member of the set SR-7 is deferred for. */
-{RK_ESC, 'v', "\\v", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any vertical whitespace character (NOT vertical tab; python re disagrees)"},
-{RK_ESC, 'V', "\\V", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any character that is not vertical whitespace"},
-{RK_ESC, 'N', "\\N", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_MODULE, NULL, 0,
- "any character except newline (PCRE2 forbids it inside a class)"},
+ESC('v', "\\v", classes, ANY_ENGINE, "any vertical whitespace character (NOT vertical tab; python re disagrees)"),
+ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitespace"),
+ESC('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)"),
 
-{RK_ESC, 'b', "\\b", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL,
- RF_CLASS_BASE, "word boundary — but inside a class it is BASE syntax: backspace (0x08)"},
-{RK_ESC, 'B', "\\B", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL, 0,
- "not a word boundary"},
-{RK_ESC, 'A', "\\A", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL, 0,
- "start of subject"},
-{RK_ESC, 'Z', "\\Z", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL, 0,
- "end of subject, or before a final newline"},
-{RK_ESC, 'z', "\\z", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL, 0,
- "end of subject"},
-{RK_ESC, 'G', "\\G", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL, 0,
- "first matching position in the subject"},
-{RK_ESC, 'K', "\\K", FEAT_ASSERTIONS, FLAV_PCRE2, ENGM_VM, "assertions", RS_MODULE, RD_MODULE, NULL, 0,
- "reset the reported start of the match"},
+ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
+               "word boundary — but inside a class it is BASE syntax: backspace (0x08)"),
+ESC('B', "\\B", assertions, ANY_ENGINE, "not a word boundary"),
+ESC('A', "\\A", assertions, ANY_ENGINE, "start of subject"),
+ESC('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline"),
+ESC('z', "\\z", assertions, ANY_ENGINE, "end of subject"),
+ESC('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject"),
+ESC('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match"),
 
-{RK_ESC, 'k', "\\k<name>", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE, NULL, 0,
- "backreference by name: \\k<n> \\k'n' \\k{n}"},
-{RK_ESC, 'g', "\\g{-1}", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE, NULL, 0,
- "backreference by number or relative position: \\g1 \\g{-1} \\g{name}"},
+ESC('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n}"),
+ESC('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name}"),
 
-{RK_ESC, 'p', "\\p{L}", FEAT_UNICODE_PROPS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "unicode-props", RS_MODULE, RD_MODULE, NULL, 0,
- "a character with the given Unicode property"},
-{RK_ESC, 'P', "\\P{L}", FEAT_UNICODE_PROPS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "unicode-props", RS_MODULE, RD_MODULE, NULL, 0,
- "a character without the given Unicode property"},
+ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property"),
+ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property"),
 
-{RK_ESC, 'Q', "\\Q", FEAT_QUOTING, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "quoting", RS_MODULE, RD_MODULE, NULL, 0,
- "begin literal quoting, until \\E"},
-{RK_ESC, 'E', "\\E", FEAT_QUOTING, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "quoting", RS_MODULE, RD_MODULE, NULL, 0,
- "end literal quoting begun by \\Q"},
+ESC('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E"),
+ESC('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q"),
 
-{RK_ESC, 'R', "\\R", FEAT_MISC, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "misc", RS_MODULE, RD_MODULE, NULL, 0,
- "any Unicode newline sequence"},
-{RK_ESC, 'X', "\\X", FEAT_MISC, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "misc", RS_MODULE, RD_MODULE, NULL, 0,
- "a Unicode extended grapheme cluster"},
-{RK_ESC, 'C', "\\C", FEAT_MISC, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "misc", RS_MODULE, RD_MODULE, NULL, 0,
- "one data unit (byte), even in UTF mode"},
-{RK_ESC, 'c', "\\cX", FEAT_MISC, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "misc", RS_MODULE, RD_MODULE, NULL, 0,
- "control character: \\cX is X xor 0x40"},
-{RK_ESC, 'o', "\\o{101}", FEAT_MISC, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "misc", RS_MODULE, RD_MODULE, NULL, 0,
- "character with the given octal code"},
+ESC('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence"),
+ESC('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster"),
+ESC('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode"),
+ESC('c', "\\cX",     misc, ANY_ENGINE, "control character: \\cX is X xor 0x40"),
+ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code"),
 
 /* Digits. `\0` is octal; `\1`..`\9` are a backreference, or an octal escape
  * when no such capture group exists — an ambiguity resolved against the group
- * count, which is why the backreference reading is VM-only. pcrec gives all
- * ten the same diagnostic today, and SR-2 must not change that. */
-{RK_ESC, '0', "\\0", FEAT_BACKREFS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "octal escape \\0dd"},
-{RK_ESC, '1', "\\1", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 1 (octal escape if no such group)"},
-{RK_ESC, '2', "\\2", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 2 (octal escape if no such group)"},
-{RK_ESC, '3', "\\3", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 3 (octal escape if no such group)"},
-{RK_ESC, '4', "\\4", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 4 (octal escape if no such group)"},
-{RK_ESC, '5', "\\5", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 5 (octal escape if no such group)"},
-{RK_ESC, '6', "\\6", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 6 (octal escape if no such group)"},
-{RK_ESC, '7', "\\7", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 7 (octal escape if no such group)"},
-{RK_ESC, '8', "\\8", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 8 (octal escape if no such group)"},
-{RK_ESC, '9', "\\9", FEAT_BACKREFS, FLAV_PCRE2, ENGM_VM, "backrefs", RS_MODULE, RD_MODULE_OCTAL, NULL, 0,
- "backreference to capture group 9 (octal escape if no such group)"},
+ * count, which is why the backreference reading is VM-only. pcrec gives all ten
+ * the same diagnostic today, and SR-2 must not change that. */
+ESC_OCTAL('0', "\\0", ANY_ENGINE, "octal escape \\0dd"),
+ESC_OCTAL('1', "\\1", VM_ONLY, "backreference to capture group 1 (octal escape if no such group)"),
+ESC_OCTAL('2', "\\2", VM_ONLY, "backreference to capture group 2 (octal escape if no such group)"),
+ESC_OCTAL('3', "\\3", VM_ONLY, "backreference to capture group 3 (octal escape if no such group)"),
+ESC_OCTAL('4', "\\4", VM_ONLY, "backreference to capture group 4 (octal escape if no such group)"),
+ESC_OCTAL('5', "\\5", VM_ONLY, "backreference to capture group 5 (octal escape if no such group)"),
+ESC_OCTAL('6', "\\6", VM_ONLY, "backreference to capture group 6 (octal escape if no such group)"),
+ESC_OCTAL('7', "\\7", VM_ONLY, "backreference to capture group 7 (octal escape if no such group)"),
+ESC_OCTAL('8', "\\8", VM_ONLY, "backreference to capture group 8 (octal escape if no such group)"),
+ESC_OCTAL('9', "\\9", VM_ONLY, "backreference to capture group 9 (octal escape if no such group)"),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */
 static const RegRow group_rows[] = {
-/* The one registry row the base tier reaches, and it must stay that way:
- * SR-5's fast-path guard is exactly "a base pattern performs no lookup other
- * than this one". */
-{RK_GROUP, ':', "(?:...)", 0, FLAV_PCRE2, ENGM_DFA|ENGM_VM, NULL, RS_BASE, RD_NONE, NULL, 0,
+/* The one registry row the base tier reaches, and it must stay that way: SR-5's
+ * fast-path guard is exactly "a base pattern performs no lookup other than this
+ * one". Written longhand deliberately — the only supported construct in the
+ * file should not be able to hide inside a macro that means "rejected". */
+{RK_GROUP, ':', "(?:...)",
+ 0, NULL,
+ FLAV_PCRE2, ANY_ENGINE,
+ RS_BASE, RD_NONE, NULL, 0,
  "non-capturing group"},
 
-{RK_GROUP, '=', "(?=...)", FEAT_LOOKAROUND, FLAV_PCRE2, ENGM_VM, "lookaround", RS_MODULE, RD_MODULE, NULL, 0,
- "positive lookahead"},
-{RK_GROUP, '!', "(?!...)", FEAT_LOOKAROUND, FLAV_PCRE2, ENGM_VM, "lookaround", RS_MODULE, RD_MODULE, NULL, 0,
- "negative lookahead"},
-/* One byte, two constructs — which is why `feature` is a mask and the module
- * name is a compound string rather than a single owner. */
-{RK_GROUP, '<', "(?<=...)", FEAT_LOOKAROUND|FEAT_NAMED_GROUPS, FLAV_PCRE2, ENGM_VM,
- "lookaround/named-groups", RS_MODULE, RD_MODULE, NULL, 0,
- "lookbehind (?<=...) (?<!...), or named capture group (?<name>...)"},
-{RK_GROUP, '\'', "(?'name'...)", FEAT_NAMED_GROUPS, FLAV_PCRE2, ENGM_VM, "named-groups", RS_MODULE, RD_MODULE, NULL, 0,
- "named capture group, Perl-style quoting"},
-{RK_GROUP, 'P', "(?P<name>...)", FEAT_NAMED_GROUPS, FLAV_PCRE2, ENGM_VM, "named-groups", RS_MODULE, RD_MODULE, NULL, 0,
- "python-style named group (?P<n>...), backreference (?P=n), recursion (?P>n)"},
-{RK_GROUP, '>', "(?>...)", FEAT_ATOMIC_GROUPS, FLAV_PCRE2, ENGM_VM, "atomic-groups", RS_MODULE, RD_MODULE, NULL, 0,
- "atomic (non-backtracking) group"},
-{RK_GROUP, '#', "(?#...)", FEAT_COMMENTS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "comments", RS_MODULE, RD_MODULE, NULL, 0,
- "comment, discarded up to the next ')'"},
-{RK_GROUP, 'C', "(?C1)", FEAT_CALLOUTS, FLAV_PCRE2, ENGM_VM, "callouts", RS_MODULE, RD_MODULE, NULL, 0,
- "callout to user code: (?C) (?C1) (?C{text})"},
-{RK_GROUP, '|', "(?|...)", FEAT_BRANCH_RESET, FLAV_PCRE2, ENGM_VM, "branch-reset", RS_MODULE, RD_MODULE, NULL, 0,
- "branch reset group: alternatives reuse the same capture numbers"},
-{RK_GROUP, '(', "(?(1)a|b)", FEAT_CONDITIONALS, FLAV_PCRE2, ENGM_VM, "conditionals", RS_MODULE, RD_MODULE, NULL, 0,
- "conditional group (?(condition)yes|no)"},
-{RK_GROUP, '&', "(?&name)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into the named group"},
-{RK_GROUP, 'R', "(?R)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse the whole pattern"},
-{RK_GROUP, '0', "(?0)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse the whole pattern (synonym for (?R))"},
-{RK_GROUP, '1', "(?1)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 1"},
-{RK_GROUP, '2', "(?2)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 2"},
-{RK_GROUP, '3', "(?3)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 3"},
-{RK_GROUP, '4', "(?4)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 4"},
-{RK_GROUP, '5', "(?5)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 5"},
-{RK_GROUP, '6', "(?6)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 6"},
-{RK_GROUP, '7', "(?7)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 7"},
-{RK_GROUP, '8', "(?8)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 8"},
-{RK_GROUP, '9', "(?9)", FEAT_RECURSION, FLAV_PCRE2, ENGM_VM, "recursion", RS_MODULE, RD_MODULE, NULL, 0,
- "recurse into capture group 9"},
+GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead"),
+GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead"),
+GROUP('<',  "(?<=...)",      lookaround_named, VM_ONLY,
+      "lookbehind (?<=...) (?<!...), or named capture group (?<name>...)"),
+GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Perl-style quoting"),
+GROUP('P',  "(?P<name>...)", named_groups,     VM_ONLY,
+      "python-style named group (?P<n>...), backreference (?P=n), recursion (?P>n)"),
+GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group"),
+GROUP('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
+GROUP('C',  "(?C1)",         callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text})"),
+GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
+      "branch reset group: alternatives reuse the same capture numbers"),
+GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)"),
+GROUP('&',  "(?&name)",      recursion,        VM_ONLY, "recurse into the named group"),
+GROUP('R',  "(?R)",          recursion,        VM_ONLY, "recurse the whole pattern"),
+GROUP('0',  "(?0)",          recursion,        VM_ONLY, "recurse the whole pattern (synonym for (?R))"),
+GROUP('1',  "(?1)",          recursion,        VM_ONLY, "recurse into capture group 1"),
+GROUP('2',  "(?2)",          recursion,        VM_ONLY, "recurse into capture group 2"),
+GROUP('3',  "(?3)",          recursion,        VM_ONLY, "recurse into capture group 3"),
+GROUP('4',  "(?4)",          recursion,        VM_ONLY, "recurse into capture group 4"),
+GROUP('5',  "(?5)",          recursion,        VM_ONLY, "recurse into capture group 5"),
+GROUP('6',  "(?6)",          recursion,        VM_ONLY, "recurse into capture group 6"),
+GROUP('7',  "(?7)",          recursion,        VM_ONLY, "recurse into capture group 7"),
+GROUP('8',  "(?8)",          recursion,        VM_ONLY, "recurse into capture group 8"),
+GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture group 9"),
 /* Catch-all, and it must stay last: everything else after `(?` is an inline
  * option setting. Options DENOTE rather than MEAN (D24's second axis), and
- * OS-1/D23 already showed one folding entirely into the automaton, which is
- * why this row is DFA-lowerable while most of its neighbours are not. */
-{RK_GROUP, REG_SEL_ANY, "(?i)", FEAT_MODIFIERS, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "modifiers", RS_MODULE, RD_MODULE, NULL, 0,
- "inline option setting or scoping: (?i) (?im-sx:...) (?^) (?-i)"},
+ * OS-1/D23 already showed one folding entirely into the automaton, which is why
+ * this row is DFA-lowerable while most of its neighbours are not. */
+GROUP(REG_SEL_ANY, "(?i)", modifiers, ANY_ENGINE,
+      "inline option setting or scoping: (?i) (?im-sx:...) (?^) (?-i)"),
 };
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
@@ -222,41 +228,44 @@ static const RegRow group_rows[] = {
  * nothing distinguishes and no test exercises would be fiction in a file whose
  * whole purpose is to stop syntax knowledge from being fiction. */
 static const RegRow verb_rows[] = {
-{RK_VERB, REG_SEL_ANY, "(*...)", FEAT_VERBS, FLAV_PCRE2, ENGM_VM, "verbs", RS_MODULE, RD_FIXED,
- "(*...) requires module 'verbs'", 0,
- "backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...))"},
+FIXED(RK_VERB, REG_SEL_ANY, "(*...)", verbs, VM_ONLY,
+      "(*...) requires module 'verbs'",
+      "backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) "
+      "or script run ((*script_run:...))"),
 };
 
 /* ---- doorway 4: after '[' inside a class -------------------------------- */
 static const RegRow classbracket_rows[] = {
-{RK_CLASSBRACKET, ':', "[[:alpha:]]", FEAT_CLASSES, FLAV_PCRE2, ENGM_DFA|ENGM_VM, "classes", RS_MODULE, RD_FIXED,
- "POSIX class [:...:] requires module 'classes'", 0,
- "POSIX character class"},
+FIXED(RK_CLASSBRACKET, ':', "[[:alpha:]]", classes, ANY_ENGINE,
+      "POSIX class [:...:] requires module 'classes'",
+      "POSIX character class"),
 /* PCRE2 REJECTS these outright rather than treating them as literals, so
  * agreeing is compliance and there is no module to name — the reason RS_REJECTED
- * exists as a status distinct from RS_MODULE. pcrec accepted them silently
- * until 2026-08-09 (python `re` accepts them too, so the oracle was blind).
- * The trigger is narrower than it looks and was pinned against libpcre2 rather
- * than guessed: the delimiter opens a collating element ONLY when a matching
- * `.]` / `=]` appears later — see reject_collating() in parse.c, which owns the
+ * exists as a status distinct from RS_MODULE. pcrec accepted them silently until
+ * 2026-08-09 (python `re` accepts them too, so the oracle was blind). The
+ * trigger is narrower than it looks and was pinned against libpcre2 rather than
+ * guessed: the delimiter opens a collating element ONLY when a matching `.]` /
+ * `=]` appears later — see reject_collating() in parse.c, which owns the
  * lookahead. Over-rejecting here would break patterns PCRE2 accepts. */
-{RK_CLASSBRACKET, '.', "[[.a.]]", 0, FLAV_PCRE2, 0, NULL, RS_REJECTED, RD_FIXED,
- "POSIX collating elements are not supported", 0,
- "POSIX collating element — PCRE2 rejects it, and so must we"},
-{RK_CLASSBRACKET, '=', "[[=a=]]", 0, FLAV_PCRE2, 0, NULL, RS_REJECTED, RD_FIXED,
- "POSIX collating elements are not supported", 0,
- "POSIX equivalence class — PCRE2 rejects it, and so must we"},
+REJECTED(RK_CLASSBRACKET, '.', "[[.a.]]", "POSIX collating elements are not supported",
+         "POSIX collating element — PCRE2 rejects it, and so must we"),
+REJECTED(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are not supported",
+         "POSIX equivalence class — PCRE2 rejects it, and so must we"),
 };
 
 /* ---- lookup -------------------------------------------------------------
  * A linear scan, deliberately, where SR-1's plan text said a [256] index per
- * kind. The index has no customer: SR-5's own claim is that a base-tier
- * pattern performs ZERO lookups here, so the scan runs only for constructs
- * that are about to produce a diagnostic and stop the compile. Building an
- * index for that would be the unmeasured axis D18 forbids, and it would need
- * either a hand-maintained parallel array (a second home for the selector
- * bytes — the exact failure this file exists to end) or an X-macro the rest of
- * the codebase does not use. Revisit if a doorway ever lands on a hot path. */
+ * kind. Measured: a full 39-row miss costs 33.6 ns against a 90 us floor for
+ * the cheapest compile pcrec can perform, on a path taken at most ONCE per
+ * compile today (every hit but `(?:` ends the compile with a diagnostic), and
+ * bounded by pattern length once modules land. An index would buy ~23 ns of a
+ * 0.03% slice — the unmeasured axis D18 forbids.
+ *
+ * Callers use pcrec_registry_find and do not depend on how it searches;
+ * pcrec_registry exposes the rows for ITERATION only (SR-3's dump). Swapping in
+ * a byte-indexed table later is a change to this function alone. SR-6 is the
+ * forcing function: doorway hits go from once-per-compile to once-per-construct
+ * then, which is the first time the cost is measurable against M2.9's budgets. */
 
 const RegRow *pcrec_registry(RegKind k, size_t *n)
 {
