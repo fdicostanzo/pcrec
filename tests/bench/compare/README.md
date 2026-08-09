@@ -243,3 +243,28 @@ like `+` or `*` at the start of the pattern.)
 4. Nothing else needs to change — `process_case` in `compare.sh` is
    pattern-agnostic and drives all four engines generically off the case
    matrix.
+
+
+## Scope disclosure (added after checkpoint review R2)
+
+Read the ratios with these limits in mind — the comparison measures what pcrec
+CAN do, which is narrower than what the other engines do:
+
+- **No capture groups.** pcrec compiles span-only matching today. Every case
+  here avoids captures, so PCRE2/python are never charged for populating them
+  — but equally, a large slice of real-world regexes cannot run on pcrec at
+  all yet. (Measured: ovector size makes <1% difference on these patterns, so
+  this is a scope gap, not a timing thumb on the scale.)
+- **No case-insensitive matching.** pcrec's only option is class expansion
+  (`[Nn][Ee]...`), which loses ~11x to PCRE2-JIT's native CASELESS. It still
+  beats pcre2-interp (2.8x) and python (7.9x) — and pcre2-interp forced onto
+  the same class-expanded pattern is 663x slower than pcrec — but the honest
+  headline is that pcrec loses this workload to JIT for want of a feature.
+- **"Beats JIT" / "beats interp" are per-pattern-and-size claims**, not a
+  ranking: PCRE2 JIT is itself slower than plain interp on some shapes/sizes.
+- **Precision**: single-shot numbers on this harness carry run-to-run noise of
+  up to ~30% on short-latency cases; ratios near 1.0 are ties, not wins. The
+  harness does not yet pin CPUs or control the frequency governor (plan M2.9).
+- **Determinism**: subjects are generated from a fixed seed (`random.Random(1729)`).
+  A fixed seed only guarantees reproducibility while the draws are consumed in
+  a fixed order — keep generation single-threaded and ahead of any worker pool.

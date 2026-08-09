@@ -9,40 +9,18 @@ Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
 ---
 
-## K1 — zero-width `$` loses priority to a consuming alternative in a repeated group
+## K1 — FIXED 2026-08-09 (R2)
 
-- **Status**: deferred → fix with the assertions module (M6), or a dedicated
-  empty-width-iteration correctness pass, whichever lands first.
-- **Minimal repro**: pattern `(?:$|[^abc]){2,}` on subject `XY$\n` (4 bytes,
-  trailing newline) → pcrec: match [0,4); PCRE2 10.46 and python `re`: match
-  [0,3). At the final `\n` (an EOL position) the group's first/highest-priority
-  `$` alternative matches zero-width and must win; pcrec instead takes the
-  lower-priority `[^abc]` consuming the `\n`.
-- **Trigger shape (precise)**: a quantified group `(?:$|C){m,}` (or `+`/`*`)
-  where alternative `C` can match the subject's final newline, applied to a
-  subject ending in `\n`. If `C` cannot match `\n` (e.g. `.`), both engines
-  agree — so `(?:$|.){2,}` on `bb\n` is NOT affected.
-- **Root cause**: `src/ir/dfa.c` closure. `(?:...){m,}` builds an ε-cycle
-  through the star-split; the zero-width `$` iteration loops back to the
-  already-`seen` star-split and is cut off before reaching the group-exit
-  ACCEPT. So the closure never learns the `$` path accepts (higher priority),
-  and the lower-priority consuming thread wrongly survives pruning. This is the
-  classic empty-iteration-in-repeat problem (PCRE allows one empty iteration to
-  terminate the loop); pcrec's priority-DFA lacks empty-loop handling.
-- **Scope**: pre-existing (present since the M1 attempt engine; NOT a
-  regression from M2). Confined to the ENG_ATTEMPT engine (mid-pattern `$`);
-  assertion-free patterns are unaffected. Sits squarely in two areas already
-  documented as deferred: empty-capable groups under quantifiers (see
-  tests/base generation restrictions) and full mid-pattern `$` generality (M6).
-- **Found**: 2026-08-09 by the M2.5 differential fuzzer (seed 3), minimized to
-  the case above.
-- **Detection**: the fuzzer excludes this shape from generation (documented in
-  tests/fuzz/fuzz.py) so it doesn't drown newly-discovered divergences; remove
-  that exclusion when K1 is fixed.
+Zero-width `$` lost priority to a consuming alternative in a repeated group.
+Root cause turned out to be general, not `$`-specific: `clo_visit` cut the
+ε-path re-entering a loop-entry split, so an empty iteration never reached the
+loop exit and never took its rightful priority. Same defect as R2-S1.
+**Fix:** loop-entry states are marked in the NFA; on ε re-entry the closure
+follows the loop EXIT once (PCRE's empty-iteration rule). Regressions moved to
+tests/base/review_r2.rxt (passing). Note the original entry's scoping claim
+("ENG_ATTEMPT only") was WRONG — the bug was live in both engines.
 
 ---
 
-Maintenance: add an entry when a confirmed pcrec bug is deferred rather than
-fixed immediately; move it to a passing regression and delete the entry (or
-mark `fixed`) once resolved. Cross-reference the scheduling milestone in
-docs/plan.md.
+_No open confirmed bugs. Performance and architecture debt lives in
+docs/plan.md; other engines' bugs in docs/upstream_issues.md._

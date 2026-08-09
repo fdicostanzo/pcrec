@@ -28,7 +28,8 @@ static void patch_push(NB *b, Patch *p, int enc)
     if (p->n == p->cap) {
         int ncap = p->cap ? p->cap * 2 : 8;
         int *nv = arena_alloc(&b->cx->arena, (size_t)ncap * sizeof(int));
-        memcpy(nv, p->v, (size_t)p->n * sizeof(int));
+        if (p->n) memcpy(nv, p->v, (size_t)p->n * sizeof(int)); /* memcpy from
+                    NULL is UB even with length 0 (R2 robustness NIT-1) */
         p->v = nv;
         p->cap = ncap;
     }
@@ -83,24 +84,6 @@ static Frag frag_single(NB *b, NKind k)
     return f;
 }
 
-/* one X: split(preferred: X | skip) for greedy; reversed for lazy */
-static Frag frag_opt(NB *b, const Ast *sub, bool greedy)
-{
-    Frag body = compile_ast(b, sub);
-    int s = nst(b, N_SPLIT);
-    Nfa *nfa = b->nfa;
-    Frag f = { s, {0} };
-    if (greedy) {
-        nfa->st[s].t1 = body.start;
-        patch_push(b, &f.out, s * 2 + 1);   /* skip edge dangles */
-    } else {
-        nfa->st[s].t2 = body.start;
-        patch_push(b, &f.out, s * 2);
-    }
-    patch_join(b, &f.out, &body.out);
-    return f;
-}
-
 /* X* : split(preferred: body | exit); body loops back to split */
 static Frag frag_star(NB *b, const Ast *sub, bool greedy)
 {
@@ -109,6 +92,8 @@ static Frag frag_star(NB *b, const Ast *sub, bool greedy)
     Nfa *nfa = b->nfa;
     patch_to(b, &body.out, s);
     Frag f = { s, {0} };
+    nfa->st[s].loop = 1;
+    nfa->st[s].exit_is_t2 = greedy;
     if (greedy) {
         nfa->st[s].t1 = body.start;
         patch_push(b, &f.out, s * 2 + 1);
@@ -197,14 +182,31 @@ static Frag compile_ast(NB *b, const Ast *a)
             Frag s = frag_star(b, a->l, a->greedy);
             f = (f.start < 0) ? s : frag_cat2(b, f, s);
         } else {
-            /* X{r,n} tail = chained optionals X?X?... — language-equivalent to
-             * the nested form for span-only matching (captures revisit in M4) */
+            /* X{m,n} tail is NESTED — (X(X(X)?)?)? — NOT chained optionals.
+             * The two accept the same language but differ in BACKTRACK
+             * PREFERENCE: with chained optionals a later copy's alternation
+             * choice outranks an earlier copy's, so lazy bounded repeats pick
+             * the wrong span (R2: '(?:ab|a){0,2}?b' on "abab" gave [0,2),
+             * PCRE2/python give [0,4)). Built innermost-first and
+             * iteratively, so depth cannot overflow the C stack. */
+            Frag tail = frag_single(b, N_EPS);
             for (int i = rmin; i < rmax; i++) {
-                Frag o = frag_opt(b, a->l, a->greedy);
-                if (f.start < 0) { f = o; continue; }
-                patch_to(b, &f.out, o.start);
-                f.out = o.out;
+                Frag body = compile_ast(b, a->l);
+                Frag cat = frag_cat2(b, body, tail);
+                int s = nst(b, N_SPLIT);
+                Nfa *nfa = b->nfa;
+                Frag w = { s, {0} };
+                if (a->greedy) {
+                    nfa->st[s].t1 = cat.start;
+                    patch_push(b, &w.out, s * 2 + 1);
+                } else {
+                    nfa->st[s].t2 = cat.start;
+                    patch_push(b, &w.out, s * 2);
+                }
+                patch_join(b, &w.out, &cat.out);
+                tail = w;
             }
+            f = (f.start < 0) ? tail : frag_cat2(b, f, tail);
         }
         return f;
     }

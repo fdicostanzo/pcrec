@@ -412,30 +412,6 @@ def write_failure_bundle(run_dir, kind, pattern, subject, pcrec_out, pcre2_out, 
 
 _ANCHOR_IN_ZERO_REP = re.compile(r"\{0(,0)?\}")
 
-_K1_SHAPE = re.compile(r"\((\?:)?\$\|")
-
-def is_known_pcrec_k1(pattern):
-    """K1 (docs/known_issues.md): in a QUANTIFIED group whose first
-    alternative is `$`, a consuming alternative can wrongly outrank the
-    zero-width `$` at end-of-line. Confirmed pcrec bug, deferred to M6;
-    regressions live in tests/known_fail/K1_dollar_in_repeat.rxt. Excluded
-    here so it does not drown newly-discovered divergences — DELETE this
-    exclusion when K1 is fixed."""
-    m = _K1_SHAPE.search(pattern)
-    if not m:
-        return False
-    # only counts when the group is quantified (repeat can re-enter the alt)
-    depth = 0
-    for i in range(m.start(), len(pattern)):
-        if pattern[i] == "(":
-            depth += 1
-        elif pattern[i] == ")":
-            depth -= 1
-            if depth == 0:
-                return i + 1 < len(pattern) and pattern[i + 1] in "*+{"
-    return False
-
-
 def is_known_pcre2_quirk(pattern):
     """PCRE2 10.46 start-anchor optimizer quirk (README.md "Finding 2"):
     an anchor inside a group quantified {0}/{0,0} makes PCRE2 wrongly treat
@@ -476,11 +452,24 @@ def main():
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
              "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
-             "pcre2_quirk": 0, "pcrec_k1": 0}
+             "pcre2_quirk": 0, "engine_limit": 0}
+
+    # Patterns AND subjects are generated up-front in the MAIN thread: the
+    # worker pool shares the global `random`, so generating inside workers made
+    # results depend on thread interleaving and broke the per-seed determinism
+    # this tool promises (R2: identical seeds produced different corpora, so a
+    # reported divergence could not be reproduced by rerunning the seed).
+    work = []
+    for _ in range(args.patterns):
+        node = gen_pattern()
+        pat = render(node)
+        alpha = pattern_alphabet(pat)
+        subs = [derived_subject(node, alpha) if random.random() < 0.4
+                else random_subject(alpha) for _ in range(args.subjects)]
+        work.append((pat, subs))
 
     def process_one(i):
-        pattern_node = gen_pattern()
-        pattern = render(pattern_node)
+        pattern, presubjects = work[i]
         tmp_dir = os.path.join(workdir, f"p{i}")
         os.makedirs(tmp_dir, exist_ok=True)
 
@@ -489,8 +478,12 @@ def main():
         pcre2_ok = not pcre2_probe.startswith("cerr")
 
         result = {"pattern": pattern, "pcrec_ok": pcrec_ok, "pcre2_ok": pcre2_ok,
-                  "accept_mismatch": None, "state_cap": None, "content": [], "gcc_fail": None,
+                  "accept_mismatch": None, "state_cap": None, "engine_limit": None, "content": [], "gcc_fail": None,
                   "oracle_inconclusive": 0}
+
+        if pcrec_ok and not pcre2_ok and pcre2_probe.startswith("cerr 120"):
+            result["engine_limit"] = pcre2_probe
+            return result
 
         if pcrec_ok != pcre2_ok:
             if pcrec_ok and not pcre2_ok:
@@ -515,6 +508,15 @@ def main():
                 result["accept_mismatch"] = ("pcrec REJECTS, pcre2 ACCEPTS", pcrec_err, pcre2_probe)
             return result
 
+        if pcrec_ok and pcre2_probe.startswith("cerr 120"):
+            # PCRE2 error 120 = "regular expression is too large": PCRE2's own
+            # internal size limit, the mirror image of pcrec's state caps.
+            # Both engines have complexity ceilings, just in different places;
+            # neither is a semantic divergence. Own bucket, like state_cap.
+            result["engine_limit"] = pcre2_probe
+            return result
+            return result
+
         if not pcrec_ok:
             return result  # both reject: agreement, nothing more to do
 
@@ -523,15 +525,7 @@ def main():
             result["gcc_fail"] = gcc_err
             return result
 
-        alphabet = pattern_alphabet(pattern)
-        subjects = []
-        for _ in range(args.subjects):
-            if random.random() < 0.4:
-                subjects.append(derived_subject(pattern_node, alphabet))
-            else:
-                subjects.append(random_subject(alphabet))
-
-        for subj in subjects:
+        for subj in presubjects:
             subj_path = tempfile.mktemp(prefix="s_", suffix=".bin", dir=tmp_dir)
             write_subject(subj_path, subj)
             pr = pcrec_run(exe, subj_path)
@@ -568,6 +562,9 @@ def main():
                     stats["pcrec_reject_only"] += 1
                 accept_mismatches.append((result["pattern"], kind, pcrec_err, pcre2_probe))
                 continue
+            if result.get("engine_limit"):
+                stats["engine_limit"] += 1
+                continue
             if result["state_cap"]:
                 stats["state_cap"] += 1
                 state_cap_hits.append((result["pattern"], result["state_cap"]))
@@ -584,9 +581,6 @@ def main():
             stats["pairs_compared"] += args.subjects
             stats["oracle_inconclusive"] += result["oracle_inconclusive"]
             for subj, pr, orr in result["content"]:
-                if is_known_pcrec_k1(result["pattern"]):
-                    stats["pcrec_k1"] += 1
-                    continue
                 if is_known_pcre2_quirk(result["pattern"]):
                     # PCRE2 10.46 start-anchor optimizer quirk (README.md
                     # "Finding 2", verified 2026-08-09): an anchor inside a
@@ -617,11 +611,11 @@ def main():
     print(f"  both reject:        {stats['both_reject']}")
     print(f"  pcrec-only reject:  {stats['pcrec_reject_only']}  (accept/reject divergence)")
     print(f"  pcre2-only reject:  {stats['pcre2_reject_only']}  (accept/reject divergence)")
+    print(f"  PCRE2 size-limit:   {stats['engine_limit']}  (PCRE2 err 120, its own ceiling -- not a divergence)")
     print(f"  DFA state-cap:      {stats['state_cap']}  (KNOWN limitation, review A-3 -- not a divergence, see README.md)")
     print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se)")
     print(f"subject pairs compared (both-accept patterns): {stats['pairs_compared']}")
     print(f"  oracle inconclusive (PCRE2 match-limit hit): {stats['oracle_inconclusive']}  (see README.md)")
-    print(f"  known pcrec bug K1 ($-in-quantified-group): {stats['pcrec_k1']}  (docs/known_issues.md, deferred)")
     print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
     print(f"content divergences: {len(content_divergences)}")
     print(f"accept/reject divergences: {len(accept_mismatches)}")

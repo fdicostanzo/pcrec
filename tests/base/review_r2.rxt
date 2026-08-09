@@ -1,0 +1,53 @@
+# Regressions from checkpoint review R2 (docs/reviews/2026-08-09-m2.md).
+# All PCRE2- and python-verified.
+#
+# Group 1 (was K1, now FIXED): an empty iteration ends a repeat, so a
+# zero-width alternative outranks a consuming one at that position.
+
+pattern (?:$|[^abc]){2,}
+m "XY$\n" 0 3
+
+pattern X(?:$|[^abc])+
+m "XY$\n" 0 3
+
+# the exact fuzzer-minimized origin (search finds the match at offset 10)
+pattern c{1,}?(?:$|[\n\t]+?01{1,2}|[^abc]){2,}
+m "\n?{(\xc8a0b,,ccccX1$\n" 10 17
+
+# Group 2 (R2-S1, same root cause): nullable PREFERRED alternative under a
+# quantifier must not over-consume.
+pattern (?:|a)*
+m "a" 0 0
+m "" 0 0
+m "b" 0 0
+
+pattern (?:|a)+
+m "a" 0 0
+
+pattern (?:()|a)*
+m "a" 0 0
+
+pattern a(?:|b)*
+m "ab" 0 1
+
+pattern (?:|[^a])*
+m "bb" 0 0
+
+# ...but a nullable LOWER-priority alternative still consumes greedily
+pattern (?:a|)*
+m "a" 0 1
+m "aa" 0 2
+
+# Group 3 (R2-M1): lazy bounded repeats need the NESTED {m,n} encoding —
+# chained optionals ordered backtrack preference wrongly.
+pattern (?:ab|a){0,2}?b
+m "abab" 0 4
+
+pattern (?:ab|a){0,2}b
+m "abab" 0 4
+
+pattern (?:ab|a){1,2}?b
+m "abab" 0 4
+
+pattern a{2,4}?b
+m "aaaab" 0 5

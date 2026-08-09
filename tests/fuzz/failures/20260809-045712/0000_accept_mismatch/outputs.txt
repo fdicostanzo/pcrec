@@ -1,0 +1,5 @@
+kind: accept_mismatch
+pattern: '\\n{0,2}(?:[\\x61]{2,3}|0(0|[a-z0-9]{0}[\\x41-\\x43]){0,30}1){28,30}a|($\\n){1,}'
+pcrec:  ACCEPT
+pcre2:  cerr 120
+extra: pcrec ACCEPTS, pcre2 REJECTS

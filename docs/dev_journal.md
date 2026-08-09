@@ -208,3 +208,52 @@ Full 9-case run on a QUIET box (load 0.85), engine = post-M2.1/M2.2:
   state-heavy patterns; minimization alone didn't fix it. Candidate for M2
   follow-up or M3+ (worth an entry when scoped).
 Snapshot committed as the baseline (supersedes the load-compromised one).
+
+## 2026-08-09 — Checkpoint review R2 launched (D6)
+
+Five adversarial critics over everything since R1: (1) engine semantics —
+attack the D7 forward+reverse construction, minimization behavior-preservation,
+skip states, anchored fast path, {,n}; (2) robustness — ASan/UBSan on new
+paths, minimize.c allocation, short-typed tables, generated-code boundaries;
+(3) benchmark methodology — attack the just-published baseline claims and the
+bench budgets; (4) architecture — D7 vs M3 streaming readiness, deferred trie
+rationale, case (f) weakness; (5) process/tests/docs — known_fail exclusion,
+coverage of new features, doc accuracy. Results → docs/reviews/2026-08-09-m2.md
+
+## 2026-08-09 — R2 complete: 3 wrong-answer bugs fixed, perf claims corrected
+
+Full review + triage: docs/reviews/2026-08-09-m2.md. 4 of 5 critics reported
+(process/tests/docs critic died without delivering — lens carried to R3).
+
+FIXED (all verified: 479 harness + 41 CLI, 471/471 oracle, 6 fuzz seeds, bench
+budgets, ASan clean):
+- R2-S1 + K1 + R2-A1 — ONE closure fix. Loop-entry states are marked; on ε
+  re-entry the closure follows the loop EXIT once (PCRE's empty-iteration
+  rule). `(?:|a)*` on "a" now [0,0) like PCRE2/python. K1 landed 4 milestones
+  early; its regressions moved from tests/known_fail/ to tests/base/ PASSING.
+  My K1 scoping claim ("ENG_ATTEMPT only") was FALSE — two critics falsified it.
+- R2-M1 (found by me while validating) — lazy bounded repeats with an
+  alternation body picked the wrong span; `{m,n}` chained-optionals encoding is
+  language-equivalent but NOT preference-equivalent to PCRE's nested form. Now
+  nested (iterative). This falsifies a claim R1's critic had cleared.
+- R2-R1 memcpy-from-NULL UB (unblocks -fsanitize=undefined).
+- R2-P1 fuzzer was NOT deterministic per seed despite documenting it: seeded
+  generation ran inside worker threads sharing global random, so interleaving
+  chose the corpus. A reported divergence could be unreproducible — it happened
+  to me mid-review. Now pre-generated in the main thread; seeds reproduce
+  exactly. (All three tools already used fixed seeds — the seed was never the
+  problem, the consumption order was.)
+- R2-P2 fuzzer bucketed PCRE2 err 120 "regex too large" (PCRE2's own ceiling)
+  as a divergence; now its own bucket like our state cap.
+- DOC honesty: the "7 of 8 cases" headline was wrong (case g is a TIE — ratio
+  0.820-1.113 over 7 runs); "61ns vs 76ns" carried false precision (direction
+  robust, magnitude ~1.0-2.0x); capture + case-insensitivity scope gaps now
+  disclosed in the compare README.
+
+NOT FIXED — new plan steps: M2.7 engine unification (R2-A2 FATAL: `$` without
+`^` routes to ENG_ATTEMPT, no scan-avoidance, still O(n²) — measured 14.3x
+slower and quadratic on `a*b$`; R1's A-2 is only HALF fixed and our docs said
+otherwise), M2.8 NFA-level trie (hard-fails at ~2000 alternations), M2.9 bench
+rigor (no pinning; budgets 9x-300,000x loose), M2.10 dense-pattern codegen
+(case f: serial dependency chain, not cache/branch — both ruled out by
+measurement), M3.0 now a DESIGN GATE (reverse start-finding cannot stream).

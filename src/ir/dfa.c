@@ -52,6 +52,7 @@ static void eqclasses(Nfa *nfa, Dfa *d)
 typedef struct {
     Nfa     *nfa;
     uint8_t *seen;
+    uint8_t *reent;
     int     *out;
     int      nout;
     bool     accept;
@@ -62,8 +63,22 @@ typedef struct {
 
 static void clo_visit(Clo *cl, int s)
 {
-    if (s < 0 || cl->seen[s]) return;
+    if (s < 0) return;
     if (cl->prune && cl->accept) return;
+    if (cl->seen[s]) {
+        /* PCRE empty-iteration rule: reaching a loop entry again by epsilon
+         * means the iteration consumed nothing, which ENDS the loop. Follow
+         * the exit edge once, here — at this priority position, ahead of the
+         * loop body's lower-priority consuming alternatives. Without this the
+         * exit/ACCEPT is only reached after them and loses priority
+         * (R2 findings R2-S1 and K1). */
+        const NState *ls = &cl->nfa->st[s];
+        if (ls->loop && !cl->reent[s]) {
+            cl->reent[s] = 1;
+            clo_visit(cl, ls->exit_is_t2 ? ls->t2 : ls->t1);
+        }
+        return;
+    }
     cl->seen[s] = 1;
     const NState *st = &cl->nfa->st[s];
     switch (st->k) {
@@ -79,8 +94,8 @@ static void clo_visit(Clo *cl, int s)
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
                     bool prune, uint8_t *seen, int *out, int *nout, bool *accept)
 {
-    Clo cl = { nfa, seen, out, 0, false, eol_ok, bot_ok, prune };
-    memset(seen, 0, (size_t)nfa->n);
+    Clo cl = { nfa, seen, seen + nfa->n, out, 0, false, eol_ok, bot_ok, prune };
+    memset(seen, 0, (size_t)nfa->n * 2);
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_visit(&cl, pre[i]);
@@ -190,7 +205,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
     if (d->maxstates > PCREC_MAX_TABLE_ENTRIES / d->ncls)
         d->maxstates = PCREC_MAX_TABLE_ENTRIES / d->ncls;
 
-    uint8_t *seen = arena_alloc(&cx->arena, (size_t)nfa->n);
+    uint8_t *seen = arena_alloc(&cx->arena, (size_t)nfa->n * 2); /* seen | reent */
     int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
