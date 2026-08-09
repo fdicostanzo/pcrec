@@ -101,11 +101,10 @@ override rather than have this suite silently miscalibrated.
 
 Runs pcrec over ~20 varied base-tier patterns (plain literals, alternation,
 character classes, bounded repeats `{m,n}`, and a realistic log-line
-pattern combining all of those) and sums pcrec's own wall time. Budget:
-**under 2s total**. This is the basic "pcrec itself stays fast to invoke"
-sanity check — the R1 review's probed-and-held section already measured
-~1.1 ms/pattern for the M1 compiler, so 2s for 20 patterns is a loose
-ceiling, not a tight one.
+pattern combining all of those) and sums pcrec's own wall time. Budget: **under 0.4s total** (measured
+0.111s). Originally 2s, which was ~18x looser than the measurement and could
+not have failed — see "Measurement rigor" above for why every budget on this
+page was re-derived in M2.9.
 
 Implementation note: the whole loop is wrapped in a single outer `timeout`
 rather than one `timeout` per pattern. On the box this suite was built and
@@ -128,9 +127,10 @@ Compiles two DFAs known to be large by construction — `[01]*1[01]{8}`
 (512 states) and `[01]*1[01]{12}` (8192 states), both from A-3's own
 measurements — with `$CC -O1 -c` and `-O2 -c` (compile only, no link; a
 `main()` isn't emitted, and only the compiler's own front/middle/back-end
-time is in scope here, not the linker's). Budgets: **`-O1` under 5s,
-`-O2` under 10s**, per pattern. These are the thresholds A-3 recommended
-after watching the old emitter blow through both (62.7s and >120s DNF).
+time is in scope here, not the linker's). Budgets: **2s each** for `-O1` and `-O2`, per pattern (measured 0.219s).
+A-3 originally recommended 5s/10s after watching the old emitter blow through
+both (62.7s and >120s DNF); the table emitter is so far inside that envelope
+that the loose values could not fail, so M2.9 tightened them.
 On the old computed-goto emitter this section is *expected* to fail — that
 was the whole point of measuring it; on the new table-driven emitter it
 should pass with room to spare.
@@ -146,25 +146,29 @@ compile would actually take.
 Three subjects, 8 MB each, generated with `python3`:
 
 - **(a)** random lowercase text with `needleXYZW` planted at the 90% mark,
-  pattern `needleXYZW`. Budget: **> 200 MB/s**.
+  pattern `needleXYZW`. Budget: **> 1200 MB/s** (measured 1918).
 - **(b)** 8 MB of `'a'` repeated, pattern `a*b` — guaranteed no match. This
   is A-2's exact pathological shape (DFA state advances maximally at every
-  restart position with nothing to prefilter on). Budget: **> 50 MB/s**.
-- **(c)** random lowercase text with `a(b|c)+d`-style matches planted every
-  256 KB (first plant near the very start, so a correct engine's
-  leftmost-match early exit keeps this measurement about steady-state
-  scan speed rather than an accident of where the first match happens to
-  land). Budget: **> 50 MB/s**.
+  restart position with nothing to prefilter on). Budget: **> 12000 MB/s**
+  (measured 21910, at 20 iterations — a single 8 MB pass is ~0.75 ms, too
+  short to time honestly).
+- **(c)** random lowercase text over an alphabet with no `d` in it, so
+  `a(b|c)+d` CANNOT match and the engine scans the whole buffer. Budget:
+  **> 1000 MB/s** (measured 1794). This case used to plant a match 4 KB into
+  8 MB, which meant a correct early-exiting engine scanned 0.05% of the buffer
+  and the "throughput" figure — 5,547,850 MB/s — was really exit latency
+  (R2-B4).
 
-(a)'s floor is set higher because it's the "happy path" (literal needle,
-mostly-linear scan to the match); (b) and (c)'s floors are deliberately
-loose — they're a regression trip-wire ("did this fall off a cliff"), not
-a tight performance target.
+None of these floors is loose any more. The old 50 MB/s values were a
+"did this fall off a cliff" trip-wire that a 68x regression could pass; see
+"Measurement rigor" above.
 
-**Linearity check**: `a*b` over 1 MB vs 4 MB of all-`'a'` — the same shape
-as A-2's measurement, just re-run at two sizes so the suite can compute a
-ratio instead of relying on a single absolute-time budget. Budget: **ratio
-(4 MB time / 1 MB time) under 8.0**. A linear-time engine gives ~4.0 (4x
+**Linearity check**: `a*b` over 16 MB vs 64 MB of all-`'a'` (x20 iterations)
+— the same shape as A-2's measurement, re-run at two sizes so the suite can
+compute a ratio instead of relying on a single absolute-time budget. Budget:
+**ratio (64 MB time / 16 MB time) under 6.0** (measured 3.63). It was 1 MB vs
+4 MB at a ratio budget of 8.0, which put both sides below the script's own
+anti-blowup floor — it was reading timer noise (R2-B4). A linear-time engine gives ~4.0 (4x
 the data, 4x the time); A-2's measured behavior was ~4x time per *2x*
 size, i.e. ~16x per 4x size — so 8.0 sits at the geometric midpoint,
 comfortably rejecting anything with real quadratic character while still

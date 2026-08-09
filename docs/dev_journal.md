@@ -647,3 +647,47 @@ Verification after both fixes: 607 corpus + 41 CLI + 17 codegen green; oracle
 100%; fuzz seeds 1/2/3/5/7 clean; the 27x69 EOL divergence sweep clean; bench
 0 budget failures; compare floors regenerated (case f = 159.070, matching the
 R2 baseline's 159.056) and the gate validated in both directions.
+
+## 2026-08-09 — Session close: M2 complete, R3 compiled, hand-off written
+
+**All of M2 is done** — M2.8 through M2.12, no steps left open. Six commits
+this session: the alternation trie, EOL scan avoidance, benchmark rigor, the
+process ratchets, the corrections to the two regressions those ratchets found,
+and the load-aware budget verdicts.
+
+State at close: working tree clean, everything pushed. Suite: 607 corpus + 41
+CLI + 17 codegen checks green, known-fail ratchet clean; python oracle 100%
+(599 cases); fuzz seeds 1/2/3/5/7 clean vs PCRE2; `make bench` 0 budget
+failures on a quiet box; `git clone && make && make test` verified from
+scratch.
+
+**R3 is compiled but is self-audit only.** All three dispatched critics failed
+to report despite four requests including an explicit final call for partial
+findings. That is recorded in docs/reviews/2026-08-09-m2-close.md as a process
+finding, and it means the M2 close has NO independent adversarial coverage —
+the four areas needing attack are listed there and as plan step R3.2. The
+process change for R4 is to dispatch critics at the START of the last work
+item rather than after it, and to treat a missing report as blocking rather
+than as a footnote.
+
+**The session's real story, in one line each:**
+- The two most valuable things built (the compare gate, the tightened budgets)
+  immediately caught two regressions I had shipped, one of which I had written
+  up as a 40% improvement.
+- Every regression this session was behaviour-preserving, and therefore
+  invisible to the corpus, the oracle and the fuzzer. That is now three
+  consecutive checkpoints where behaviour-preserving change is the blind spot.
+- The most serious defect was in packaging, not code: `src/core/` had been
+  untracked since M0 and a fresh clone did not build. Two adversarial reviews
+  missed it because both reviewed the working tree.
+- Two of the milestone's results are NEGATIVE (M2.10's skip eligibility, and
+  the shape of D7's dispatch arbitration). Both are recorded with numbers and
+  one is protected by a codegen check so it cannot be re-landed on
+  plausibility. A milestone that records only wins is not recording honestly.
+
+**Next session**: read docs/wake.md first (uncommitted, rewritten for exactly
+this), then this journal's tail and `grep STATE:not-started docs/plan.md`.
+Recommended order: R3.2 (the missing adversarial pass) before anything else,
+then M3.0 — which is a DESIGN GATE, not code: match-START finding under
+bounded memory is an unsolved problem and the reverse pass as built cannot
+stream.
