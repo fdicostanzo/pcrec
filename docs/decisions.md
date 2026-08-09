@@ -256,14 +256,23 @@ moves ONLY the order and is byte-identical to the shipped compiler when neutral:
   asymmetry buys nothing but speed.
 
 **CORRECTION 1 — the speed claim rests on ONE pattern family, not on the
-non-EOL path in general.** Measured across all six throughput cases, median of
-7 interleaved, the EOL order is a tie or SLIGHTLY FASTER on five of them
-(1.5-4.1%, consistently signed): needle 1.018, `a*b` 1.041, `a(b|c)+d` 1.015,
-bitmap 0.996, `=[^\n]*!` 1.040. Only `[01]*1[01]{8}` shows the loss, and it
-reproduces almost exactly (156-159 -> 87-91 MB/s, non-overlapping ranges).
-"Both orders are correct, only one is fast" is true of case (f) and is not a
-general property. The asymmetry is bought for one pattern family; keep it, but
-do not defend it as a broad win.
+non-EOL path in general.** Only `[01]*1[01]{8}` shows the loss, and it
+reproduces solidly: 156-159 -> 87-91 MB/s, non-overlapping ranges over 9+7
+interleaved trials at two different times and at three -O levels. On the other
+five throughput cases the EOL order measured a tie or slightly faster (needle
+1.018, `a*b` 1.041, `a(b|c)+d` 1.015, bitmap 0.996, `=[^\n]*!` 1.040,
+consistently signed across 7 interleaved trials each).
+
+Be careful with those five numbers, and this entry originally was not: they were
+taken at 1-min load 4.5-9.7 against tests/bench's own LOAD_LIMIT of 6.0, and the
+critic could not re-run them on a quiet box (it reached load 26.7 by session
+end). 1.5-4.1% is inside the band where this box's load matters, so the positive
+claim "the EOL order is FASTER there" is SUGGESTIVE, not established. What IS
+established is the negative, and it is all the correction needs: the EOL order
+is not materially SLOWER on (a)-(e). So "both orders are correct, only one is
+fast" is true of case (f) and is not a general property. Keep the asymmetry; do
+not defend it as a broad win. Re-measuring the five on an idle box would settle
+it.
 
 **CORRECTION 2 — the 43% is a gcc optimisation-level artifact, not an
 algorithmic cost.** Same two matchers, same subject, gcc 15.2.0: `-O0` 54.3 vs

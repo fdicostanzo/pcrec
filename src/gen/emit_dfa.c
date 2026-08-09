@@ -228,9 +228,24 @@ static void emit_unanchored(Ctx *cx)
                    "    return 0;\n}\n");
         return;
     }
-    /* The prefilter stays valid under EOL because it is bounded at n-1 and
-     * gated on `last == -1`: it only ever skips non-EOL positions at which
-     * the machine provably stays parked in fs. */
+    /* The prefilter stays valid under EOL because it is BOUNDED AT n-1: it
+     * only ever skips non-EOL positions at which the machine provably stays
+     * parked in fs.
+     *
+     * The `last == (size_t)-1` gate on the emitted `if` is NOT part of that
+     * argument, and this comment used to present the two as jointly
+     * load-bearing (R3.2 critic). The gate is redundant given D3's priority
+     * pruning: the unanchored start self-loop is the LOWEST-priority thread,
+     * so it is pruned out of every accepting state, an accepting state's
+     * successors can therefore never be `fs`, and `last` is only ever set from
+     * an accepting view — so `st == fs` already implies `last == -1`. Two
+     * independent critics attacked the gate and neither could build a witness:
+     * deleting it produced 0 divergences over 8.0M oracle-checked comparisons
+     * and 0 failures across the whole .rxt corpus.
+     *
+     * Keep the gate — it is free belt-and-braces — but do not cite it as a
+     * premise. Presenting a redundant condition and a load-bearing one as the
+     * same claim is how someone eventually "simplifies away" the wrong half. */
     bool prefilter = !start_acc && esc_count > 0 && esc_count < 256;
     bool use_memchr = prefilter && esc_count == 1;
 

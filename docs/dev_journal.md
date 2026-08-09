@@ -1247,3 +1247,54 @@ unreachable — recorded so it is not re-attempted as a coverage hole.
 
 Verification: 731 corpus + 42 CLI + 17 codegen + 5 trie-identity green; oracle
 100% (723 cases).
+
+## 2026-08-09 — D11 critic's final sections: a redundant premise, and a claim of mine that outran its measurement
+
+The D11 critic closed out at 28.5 million oracle-checked comparisons across six
+pattern families and four case alphabets, plus an ASan/UBSan pass with
+exact-size subject buffers: zero divergences, zero sanitizer reports. It could
+not break the shipped code. Two things came out of the last sections.
+
+**A premise in emit_dfa.c that carries no weight, and says it does.** The
+comment justified the EOL prefilter's validity on TWO conditions — bounded at
+n-1 AND gated on `last == -1`. Only the first is load-bearing. The gate is
+redundant given D3's priority pruning: the unanchored start self-loop is the
+lowest-priority thread, so it is pruned out of every accepting state, an
+accepting state's successors can never BE `fs`, and `last` is only ever set from
+an accepting view — so `st == fs` already implies `last == -1`. Deleting the
+gate produced 0 divergences over 8.0M comparisons and 0 corpus failures.
+
+Two critics reached this independently from opposite directions: the guards
+critic sabotaged the gate, found zero signal, and correctly declined to call it
+a coverage hole; the D11 critic worked out WHY there is no signal and traced the
+one shape that would break it if the invariant failed (`ab|a` on "axx"),
+confirming from the emitted table that state 1's row is dead rather than `fs`.
+The code is fine and stays as it is — the gate is free belt-and-braces. The
+comment is fixed, because presenting a redundant condition and a load-bearing
+one as a single claim is exactly how someone later simplifies away the wrong
+half.
+
+**And a claim of mine that outran its measurement, in the entry where I was
+correcting someone else's.** My D11 addendum said the EOL order is "a tie or
+SLIGHTLY FASTER" on five of six throughput cases at 1.5-4.1%. Those numbers were
+taken at 1-min load 4.5-9.7 against tests/bench's own LOAD_LIMIT of 6.0, and the
+critic flagged in its own hygiene note that it could not re-run them quiet (the
+box hit load 26.7). 1.5-4.1% is inside the band where this box's load matters,
+so the positive claim is SUGGESTIVE, not established. The negative — that the
+EOL order is not materially slower there — IS established, and it is all the
+correction needed. Softened in place.
+
+That one stings in a useful way. I wrote it while cataloguing a critic's
+load-contaminated numbers as "direction, not precision", and then stated my own
+small deltas as fact in the same entry. The rule is not hard to remember; it is
+hard to apply to the sentence you are currently writing.
+
+**Also confirmed independently:** the corpus header's claim about the forward
+skip bound is exact — relaxing n-1 to n fails 3 cases, in eol_engine.rxt (1) and
+review_r2.rxt (2), and 0 in eol_scan_avoidance.rxt, precisely as the header
+says. And the mid-pattern-`$` block added this session takes the reverse
+`pp + 1 < n` guard from behaviourally unfalsifiable to 17 failing cases under
+sabotage; the critic re-verified all of that file's expectations against PCRE2
+directly rather than against python `re`.
+
+Verification: 731 corpus + 42 CLI + 17 codegen + 5 trie-identity green.
