@@ -329,3 +329,34 @@ patterns correctly still use it).
 An amusing note: the first attempt to measure this hung, and the culprit was
 quadratic behaviour in my own throughput-test generator (`while sum(len(x)
 for x in L)`), not in pcrec.
+
+## 2026-08-09 — Session close (context exhausted); handoff written
+
+State at close: M0, M1, M2.0–M2.7 complete; R1 and R2 checkpoint reviews
+complete and triaged. Working tree clean, everything pushed through commit
+3249d8f. Suite: 511 corpus + 41 CLI + 9 codegen checks green; python oracle
+100%; differential fuzz clean vs PCRE2 10.46 across seeds; bench budgets pass.
+
+Session arc: built the whole project from the approved APPROACH in one
+sitting — base compiler (M1), the O(n) forward+reverse engine with
+table-driven emission (M2.0/M2.1), DFA minimization (M2.2), the test/bench/
+compare/fuzz tooling (M2.3–M2.5), and two adversarial review rounds that
+between them found and fixed 5 wrong-answer bugs, 3 crash classes, a leak
+class, and several false claims in our own docs.
+
+What the reviews taught, in one line each (full versions in docs/reviews/):
+- A "probed and held" verdict is evidence about the probes, not a proof —
+  R2 broke a claim R1 had explicitly cleared.
+- Scope claims about a bug need evidence too; my K1 "ENG_ATTEMPT only" note
+  was false and two critics proved it.
+- "Fixed" needs a population, not a checkmark (R1's A-2 was fixed for
+  assertion-free patterns only; that took until M2.7 to actually close).
+- Behavior-preserving optimizations need structural tests or they have no
+  regression net at all (3 of 6 could be silently disabled).
+- A test-improvement not validated against a known bug is just a nicer green:
+  two of my fuzzer improvements reported "0 divergences" while broken.
+
+Next session: read docs/wake.md first (uncommitted, written for exactly this),
+then this journal's tail and `grep STATE:not-started docs/plan.md`.
+Recommended next step is M2.8 (alternation trie) or M2.12 (restore prefilters
+on the EOL path); M3 must not start before its design gate (M3.0) is resolved.

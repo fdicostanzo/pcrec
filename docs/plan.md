@@ -53,16 +53,16 @@ Known M1 limitations (tracked for later milestones):
 - [M2.0] STATE:completed — DESIGN GATE (R1 A-2/A-3): adopt the search-from-anywhere self-loop automaton (kills O(n²), same shape M3 streaming needs) and the hybrid emitter (computed goto for small DFAs, table-driven for large); re-ground the state cap in measured gcc compile time
 - [M2.1] STATE:completed — scan-avoidance: memchr/bitmap start prefilter, self-loop skip states (fwd+rev), anchored fast path (^-only patterns skip the start loop)
 - [M2.2] STATE:completed — DFA minimization (Moore signature refinement, EOL-view as extra symbol); alternation-to-trie DEFERRED with rationale: subset construction already merges alternation prefixes in the final DFA, so a trie pass would only shrink the intermediate NFA (compile-speed win with no current budget pressure)
+- [M2.3] STATE:completed — tests/bench: throughput budgets AND gcc-compile-time budgets on generated code as regression tests (R1 A-3)
+- [M2.4] STATE:completed — coverage breadth (R1 P-M1/P-M2/P-N1/P-N2): CLI surface, library API direct, startpos != 0, long subjects, high bytes/NUL
+- [M2.5] STATE:completed — PCRE2-oracle differential fuzzer committed to tests/ (pulled forward from M7; R1 lesson — semantics critic's libpcre2 binding)
 - [M2.6] STATE:completed — K1 fix (landed early at R2: loop-entry empty-iteration rule; also fixed R2-S1 in BOTH engines)
 - [M2.7] STATE:completed — engine unification for `$` (D8; `^` deferred, needs a reverse BOT variant) — engine unification (R2-A2, FATAL): `$`-without-`^` patterns route to ENG_ATTEMPT which has NO scan-avoidance and is still O(n²) — measured 14.3x slower on a log pattern, quadratic on `a*b$`. Either fold `^`/`$` into ENG_UNANCH (EOL-variant switching in fwd+rev, BOT handling in reverse) or give ENG_ATTEMPT prefilters. R1's A-2 is only half-fixed until this lands
 - [M2.8] STATE:not-started — NFA-level alternation trie (R2-A4): flat alternations HARD-FAIL at ~2000 alternatives ("NFA exceeds 20000 states"); ordinary for keyword/blocklist patterns. DFA-level rationale for deferring was correct; the compile-time/cap rationale was not
 - [M2.9] STATE:not-started — benchmark rigor (R2-B3/B4): taskset/chrt pinning + governor capture, repeat trials with variance reporting, engine-order interleaving, tighten budgets (currently 9x-300,000x loose; none would catch a 2x regression), fix case (c)'s early-exit budget and the sub-millisecond linearity check
-- [M2.12] STATE:not-started — restore prefilter/skip loops on the EOL engine path (M2.7 traded them for correctness; they must skip to n-1 rather than n and resume the stepped loop)
-- [M2.11] STATE:not-started — process ratchets (R2-PR7/PR8): a pass/fail gate for tests/bench/compare so headline performance can't silently regress; an automatic check that flags a tests/known_fail case which starts PASSING (a bug fixed by accident should not sit unnoticed)
 - [M2.10] STATE:not-started — dense/counting-pattern codegen (R2-A5): case (f) is bound by the serial load-to-load dependency chain (NOT cache footprint, NOT branch prediction — both ruled out by measurement); no skip-eligible states. Also build the computed-goto-vs-table arbitration D7 promised and M2.3 never delivered (docs/known_issues.md): empty-iteration handling so zero-width $ keeps priority in quantified groups (scheduled with M6 assertions)
-- [M2.3] STATE:completed — tests/bench: throughput budgets AND gcc-compile-time budgets on generated code as regression tests (R1 A-3)
-- [M2.4] STATE:completed — coverage breadth (R1 P-M1/P-M2/P-N1/P-N2): CLI surface, library API direct, startpos != 0, long subjects, high bytes/NUL
-- [M2.5] STATE:completed — PCRE2-oracle differential fuzzer committed to tests/ (pulled forward from M7; R1 lesson — semantics critic's libpcre2 binding)
+- [M2.11] STATE:not-started — process ratchets (R2-PR7/PR8): a pass/fail gate for tests/bench/compare so headline performance can't silently regress; an automatic check that flags a tests/known_fail case which starts PASSING (a bug fixed by accident should not sit unnoticed)
+- [M2.12] STATE:not-started — restore prefilter/skip loops on the EOL engine path (M2.7 traded them for correctness; they must skip to n-1 rather than n and resume the stepped loop)
 
 ## M3 — Streaming input
 
