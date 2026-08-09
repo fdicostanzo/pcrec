@@ -4,7 +4,7 @@ Entry point: pcrec command-line tool. Parses flags, calls pcrec_compile(), write
 
 ## Files
 
-- **main.c** — CLI: option parsing ([-p PREFIX] [-e ascii|utf8] [--emit-main] -o OUT.c 'PATTERN'); output file writing
+- **main.c** — CLI: option parsing ([-p PREFIX] [-e ascii|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'; -i is ASCII case-insensitive, folded into the automaton at parse time — see OS-1/D23); output file writing
 
 ## Conventions
 

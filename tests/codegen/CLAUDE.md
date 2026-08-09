@@ -62,6 +62,36 @@ was built:
 | duplicate the call: `emit_span_typedef(c, p);` -> `emit_span_typedef(c, p); emit_span_typedef(c, p);` | 2 fail — typedef-count and compile |
 | in the fixture's rename, `s/\brx_search\b/rx_search_b/g` -> `.../rx_search/g` (engines keep one name) | 1 fail — compile, `error: redefinition of 'rx_search'` |
 
+## The OS-1 checks assert an ABSENCE, which the corpus cannot
+
+Case folding (D23) is behaviour-preserving in the direction that matters here:
+a corpus can prove `-i abc` matches `ABC`, but nothing in it can prove the
+match cost nothing. The OS-1 checks assert the emitted shape instead — that
+`-i 'aBc'` is byte-identical to `'[aA][bB][cC]'`, that a letter-free pattern is
+untouched by `-i`, that no `tolower`/`0x20`-style conversion appears anywhere,
+and that the entry-point signature is unchanged (a compiled-away option must
+not surface at run time, D18). Implement caselessness as a runtime check and
+every one of them fails while the corpus stays green.
+
+These comparisons use `-o -` and strip line 1. That is not tidiness: writing
+two files emits two different `#include "<name>.h"` lines, so every comparison
+would differ for a reason unrelated to folding — the same trap
+`run_trie_identity.sh` documents at its `gen_a`/`gen_b`. The first version of
+these checks used `gen` and failed for exactly that reason.
+
+`run_trie_identity.sh` also sweeps its 500-pattern corpus TWICE, once
+case-sensitive and once with `-i`. Folding rewrites the bitmaps the trie keys
+on — `Cat|CAT|cat` goes from three unrelated branches to three identical ones —
+so the folded sweep drives rule 1's accept split and rule 2's disjoint-run
+logic down paths the unfolded corpus never reaches.
+
+| sabotage (exact edit) | result |
+|---|---|
+| move the `cls_casefold` call in `p_class` from before the negation to after it | 1 codegen check (`-i '[^a]'` is not `'[^aA]'`) + 6 caseless.rxt cases |
+| delete the `cls_casefold` call in `char_node` (classes still fold, literals do not) | 1 codegen check + 14 caseless.rxt cases |
+| `if (cls_has(b, c) \|\| cls_has(b, c + 32))` -> `if (cls_has(b, c + 32))` (fold one direction only) | 1 codegen check + 8 caseless.rxt cases |
+| in run.sh, drop the `-i` mapping so `flags i` becomes a no-op | 21 of 56 caseless.rxt cases |
+
 The M2.12 additions are the sharpest illustration of why this directory
 exists: reverting the EOL path to its M2.7 state (no prefilter, no skips —
 ~76x slower on `$` patterns) fails 6 checks here while the .rxt corpus still

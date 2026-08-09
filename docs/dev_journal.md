@@ -1507,3 +1507,97 @@ Verification: 731 corpus + 42 CLI + 22 codegen (the 17 pre-existing, unchanged,
 + 5 new) + 5 trie-identity green, ratchet clean, oracle 100% (723 cases). Box
 was quiet throughout (1-min load 0.73-0.90); no performance claim is made here
 and none is needed, since the emitted code is byte-identical.
+
+## 2026-08-09 — OS-1: case-insensitivity folds, the prediction held, and two things it did not say
+
+D18 wrote down four predictions specifically so results could be checked
+against them instead of remembered favourably. This is the first one settled,
+and the checking part turned out to matter: the headline prediction held
+cleanly, and the two details around it were both wrong in ways worth keeping.
+
+**The implementation is as small as predicted.** `cls_casefold` adds each ASCII
+letter's other case to a class bitmap at parse time. NFA construction, subset
+construction, byte equivalence classes, minimization and emission are untouched
+and never learn the option exists. The API change is one scalar field
+(`options.caseless`) plus `pcrec -i` — exactly the shape D20 argued for, since a
+generator that compiles one point is correctly served by scalars.
+
+The evidence that it is a FOLD rather than an engine: `-i 'aBc'` emits
+byte-identical C to `'[aA][bB][cC]'`. Not equivalent, not similar — the same
+bytes. There is nothing to dispatch between, so case does not become an axis,
+and the ASCII half of DD-1 is now closed as a parser change.
+
+**Measured against the design being rejected.** I built the runtime-checked
+variant by transforming pcrec's own emitted C — same DFA, same emitter, same
+gcc flags, with every subject byte routed through an `lc[]` table in the hot
+loop — so the two differ only in WHERE case is handled. Folding wins on every
+pattern that can be compared: 511.7 vs 458.9 MB/s on a keyword alternation
+(spreads 505-520 and 453-463, no overlap), and 2650 vs 1964 on a pattern with
+no letters at all. That last one is the useful control: it prices the `lc[]`
+indirection alone at 26%, on a pattern where it can never change an answer.
+`[a-z]+@[a-z]+` came in ~3% ahead with the ranges just touching — direction
+established, magnitude not, and I am writing it that way this time rather than
+after someone points at it.
+
+The transform script refuses to emit a file it cannot justify: it counts the
+rewritten sites and hard-errors on a memchr prefilter rather than quietly
+comparing two different prefilters and calling the difference "case handling".
+That refusal fired, which is how the next finding surfaced.
+
+**Correction 1: the tables do not shrink.** D18 said byte-class merging "may
+even SHRINK the tables". Almost never. Folding adds a letter's other case to an
+existing class, so `ncls` is unchanged and the tables come out the same size —
+192/192 entries on the keyword pattern, 12/12 on the class pattern. Shrinking
+needs the pattern to already mention both cases: `aA` goes 9 entries to 6. True
+but rare; "same size" is the honest expectation.
+
+**Correction 2, and it is the biggest number in the whole exercise: folding a
+leading letter destroys the memchr prefilter.** `hello` has one escape byte
+from the start state; `-i hello` has two (`h` and `H`), so the emitter drops to
+the bitmap loop. 2606 -> 1245 MB/s, a 52% loss. Nobody predicted it, and it is
+larger than everything the comparison was set up to measure.
+
+It does not change the verdict, and the reason is the part worth keeping: this
+is a cost of CASELESSNESS, not of folding. A runtime-checked engine cannot use
+memchr either — a single-byte search cannot see both cases — which is precisely
+why that row has no runtime-checked variant to compare against. Both designs
+pay it; only one of them also pays for the indirection. And it lands exactly on
+D21's OPT-A lead: memchr2/memchr3 covers the two-escape-byte gap, and this is
+now its second measured customer alongside case (d).
+
+**The subtle half is the negation order, and nothing downstream can catch it.**
+A negated class must be folded on the positive set and then complemented.
+`[^a]` caseless is "neither a nor A"; fold after negating and you get every
+byte. Both orders produce a case-CLOSED set, so no invariant, no structural
+property, no equivalence check distinguishes them — only behaviour does. So it
+is pinned twice: `n "A"` lines in tests/base/caseless.rxt, and a shape check
+requiring `-i '[^a]'` to equal `'[^aA]'` AND to differ from `'[^A]'`. The
+second half of that pair exists because the first alone would also pass if the
+fold dropped a case instead of adding one.
+
+**Where the fold is applied, and where it deliberately is not.** At the sites
+that build a positive class set — `char_node` and `p_class`. NOT as a
+post-parse AST walk, which is the tidier design and would cover future
+constructs automatically: AST depth is unbounded in pattern length (a long
+concatenation is a left-deep A_CAT chain), so that walk would add exactly the
+recursion DD-10/TS-4 is trying to remove. Recorded in the code, because "why
+didn't you just walk the AST" is a question this will attract.
+
+**Test-format change.** `.rxt` blocks gained a `flags` directive (only `i`), and
+both run.sh and verify_rxt.py honour it. The oracle maps it to
+`re.IGNORECASE | re.ASCII` — the `re.ASCII` is load-bearing, since python's
+IGNORECASE folds Unicode and would silently disagree with pcrec's ASCII-only
+fold on exactly the cases a careless corpus would not cover. An unknown flag
+letter is a hard error rather than a no-op; a silently dropped flag would
+compile a different automaton and then verify the block against it.
+
+Four sabotages recorded in tests/codegen/CLAUDE.md, each on a fresh tree with
+the edit asserted to have landed. Worth noting the harness one: removing the
+`-i` mapping from run.sh fails 21 of 56 caseless cases, which is what proves
+the `flags` plumbing is real rather than decoratively present.
+
+Verification: 787 corpus (+56) + 49 CLI (+7) + 28 codegen (+6) + 7 trie-identity
+(500 patterns swept twice, case-sensitive and folded, 1000 comparisons all
+byte-identical) green, ratchet clean, oracle 100% (779 cases). Measurements
+taken with no critic running, load 0.59 before / 1.01 after, and reproduced in
+a second run.

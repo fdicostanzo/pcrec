@@ -1,0 +1,151 @@
+# ASCII case-insensitive matching (OS-1, D18).
+#
+# `flags i` compiles the block with pcrec -i. Caselessness is NOT a runtime
+# mode: it folds into class construction (`bitmap |= swapcase(bitmap)`), so the
+# automaton itself is case-blind and the generated code carries no flag, no
+# branch and no tolower(). See src/parse/parse.c cls_casefold.
+#
+# THE ORDER-OF-OPERATIONS CASES ARE THE POINT OF THIS FILE. Folding a NEGATED
+# class must happen on the positive set BEFORE complementing: `[^a]` caseless
+# is "neither a nor A". Fold after negating and you get {all but a} |
+# swapcase{all but a} = every byte, so `[^a]` matches everything — including
+# 'A', and including 'a'. Both orders produce a case-CLOSED set, so no
+# downstream stage, invariant or structural check can tell them apart. The
+# `n "A"` lines below are the only thing standing between the two.
+#
+# ASCII only, deliberately: bytes >= 0x80 have no case here (Unicode folding is
+# DD-1/M5), which the high-byte block at the end pins.
+
+# ---- literals ----
+
+pattern abc
+flags i
+m "abc" 0 3
+m "ABC" 0 3
+m "AbC" 0 3
+m "xxAbC" 2 5
+n "abd"
+n "ab"
+
+pattern aBc
+flags i
+m "AbC" 0 3
+m "abc" 0 3
+
+# a pattern with no letters must behave identically folded or not
+pattern [0-9]+-[0-9]+
+flags i
+m "12-34" 0 5
+n "ab-cd"
+
+# ---- character escapes fold too: \x41 is 'A' however it was written ----
+
+pattern \x41\x42
+flags i
+m "ab" 0 2
+m "AB" 0 2
+m "aB" 0 2
+
+# ---- classes and ranges ----
+
+pattern [a-z]+
+flags i
+m "HELLO" 0 5
+m "hello" 0 5
+m "HeLLo" 0 5
+n "123"
+
+pattern [A-Z]+
+flags i
+m "hello" 0 5
+m "HELLO" 0 5
+
+pattern [a-f0-9]+
+flags i
+m "DEADbeef01" 0 10
+n "ghi"
+
+# ---- NEGATED classes: fold the positives, THEN complement ----
+
+pattern [^a]
+flags i
+n "a"
+n "A"
+m "b" 0 1
+m "B" 0 1
+
+pattern [^A]
+flags i
+n "A"
+n "a"
+m "z" 0 1
+
+pattern [^a-z]+
+flags i
+n "abc"
+n "ABC"
+m "123" 0 3
+m "!@#" 0 3
+
+# a negated class that excludes a non-letter is unaffected by folding
+pattern [^0-9]+
+flags i
+m "abc" 0 3
+m "ABC" 0 3
+n "123"
+
+# ---- interaction with the rest of the base tier ----
+
+pattern (cat|DOG)s?
+flags i
+m "CATS" 0 4
+m "dog" 0 3
+m "Dogs" 0 4
+n "cow"
+
+pattern ^err
+flags i
+m "ERROR" 0 3
+n "an ERROR"
+
+pattern log$
+flags i
+m "app.LOG" 4 7
+n "LOG.txt"
+
+pattern a.c
+flags i
+m "AxC" 0 3
+m "abc" 0 3
+n "A\nC"
+
+pattern (ab)+
+flags i
+m "ABabAB" 0 6
+
+# ---- high bytes have no case in the ASCII tier ----
+
+pattern \xe9
+flags i
+m "\xe9" 0 1
+n "\xc9"
+
+pattern [\x80-\xff]+
+flags i
+m "\x80\xc9\xe9" 0 3
+
+# ---- unfolded controls: the SAME patterns without `flags i` ----
+# If the fold ever leaked into the default path, these would start passing
+# their case-mismatched subjects.
+
+pattern abc
+n "ABC"
+m "abc" 0 3
+
+pattern [^a]
+m "A" 0 1
+n "a"
+
+pattern [a-z]+
+n "HELLO"
+m "hello" 0 5

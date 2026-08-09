@@ -413,6 +413,52 @@ case8() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# 9. -i (ASCII case-insensitive, OS-1/D23) end to end through the CLI, and the
+#    library field behind it. The .rxt corpus covers the matching semantics;
+#    what is CLI surface, and therefore this file's job, is that the flag is
+#    accepted, reaches pcrec_options.caseless, composes with `--` and
+#    --emit-main, and does not leak into a build that did not ask for it.
+# ---------------------------------------------------------------------------
+case9() {
+    local d="$WORKDIR/case9"
+    mkdir -p "$d"
+    local rc build_log runout
+
+    "$PCREC" -i --emit-main -o - -- 'aBc' > "$d/gen.c" 2>"$d/stderr.txt"
+    rc=$?
+    assert_eq "case9: -i exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
+
+    build_log="$("$CC" $CFLAGS -o "$d/t" "$d/gen.c" 2>&1)"
+    if [ $? -ne 0 ]; then
+        fail "case9: -i output compiles" "$build_log"
+        return
+    fi
+    pass "case9: -i output compiles warning-clean"
+
+    runout="$("$d/t" xxABCxx)"
+    assert_eq "case9: -i 'aBc' matches 'ABC'" "match 2 5" "$runout"
+    runout="$("$d/t" xxabcxx)"
+    assert_eq "case9: -i 'aBc' still matches 'abc'" "match 2 5" "$runout"
+
+    # ...and the same pattern WITHOUT -i must not: a compile option must not
+    # leak into builds that did not request it
+    "$PCREC" --emit-main -o - -- 'aBc' > "$d/gens.c" 2>/dev/null
+    if "$CC" $CFLAGS -o "$d/ts" "$d/gens.c" 2>/dev/null; then
+        runout="$("$d/ts" xxABCxx)"
+        assert_eq "case9: without -i, 'aBc' does NOT match 'ABC'" "nomatch" "$runout"
+    else
+        fail "case9: case-sensitive control build" "compile failed"
+    fi
+
+    # -i is listed in --help (an undiscoverable flag is a half-shipped one)
+    assert_contains "case9: --help documents -i" "$("$PCREC" --help)" "-i "
+
+    # a pattern starting with '-' after `--` still parses as a pattern, not a flag
+    "$PCREC" -i -o "$d/dash.c" -- '-i' 2>"$d/e_dash.txt"; rc=$?
+    assert_eq "case9: -i composes with -- and a '-i'-looking pattern" "0" "$rc" \
+        "stderr: $(cat "$d/e_dash.txt")"
+}
 
 case1
 case2
@@ -422,6 +468,7 @@ case5
 case6
 case7
 case8
+case9
 
 echo
 echo "== Summary =="

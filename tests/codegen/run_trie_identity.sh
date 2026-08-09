@@ -55,8 +55,17 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # stdout. Writing to two different paths would emit two different
 # `#include "<name>.h"` lines and every single comparison would "differ" for a
 # reason that has nothing to do with the trie.
-gen_a() { "$PCREC" -p rx -o - -- "$1" 2>/dev/null; }
-gen_b() { "$REF"   -p rx -o - -- "$1" 2>/dev/null; }
+#
+# FLAGS carries the per-sweep compile options; the corpus is swept once
+# case-sensitive and once with -i (OS-1). Folding is not cosmetic here: it
+# rewrites the class bitmaps the trie keys on, so `Cat|CAT|cat` goes from three
+# unrelated branches to three IDENTICAL ones, and patterns that shared no
+# prefix at all start sharing a full one. That drives rule 1's accept split and
+# rule 2's disjoint-run logic down paths the unfolded corpus never reaches, and
+# the identity requirement is exactly as strong there.
+FLAGS=()
+gen_a() { "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
+gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 
 # ---- the reference compiler ---------------------------------------------
 # -DPCREC_NO_TRIE forces `elig[j] = false` in nfa.c's A_ALT path, i.e. the
@@ -221,47 +230,54 @@ BEGIN {
     }
 }' > "$WORKDIR/patterns.txt"
 
-npat=0; nboth_fail=0; ndiff=0; nsplit=0
-while IFS= read -r pat; do
-    npat=$((npat + 1))
-    a_ok=1; b_ok=1
-    gen_a "$pat" > "$WORKDIR/a.c" || a_ok=0
-    gen_b "$pat" > "$WORKDIR/b.c" || b_ok=0
-    if [ "$a_ok" != "$b_ok" ]; then
-        nsplit=$((nsplit + 1))
-        [ "$nsplit" -le 3 ] && bad "pattern #$npat '$pat': shipped ok=$a_ok, unfactored reference ok=$b_ok — factoring changed whether the pattern COMPILES"
-        continue
-    fi
-    if [ "$a_ok" = 0 ]; then nboth_fail=$((nboth_fail + 1)); continue; fi
-    if ! cmp -s "$WORKDIR/a.c" "$WORKDIR/b.c"; then
-        ndiff=$((ndiff + 1))
-        if [ "$ndiff" -le 3 ]; then
-            bad "pattern #$npat '$pat': emitted C DIFFERS from the unfactored construction — the trie is not output-preserving, i.e. a rule-1/rule-2 soundness bug. Reference vs shipped:"
-            diff "$WORKDIR/b.c" "$WORKDIR/a.c" | head -12 >&2
+sweep() { # sweep <label>; compares every pattern under the current FLAGS
+    local lbl="$1"
+    npat=0; nboth_fail=0; ndiff=0; nsplit=0
+    while IFS= read -r pat; do
+        npat=$((npat + 1))
+        a_ok=1; b_ok=1
+        gen_a "$pat" > "$WORKDIR/a.c" || a_ok=0
+        gen_b "$pat" > "$WORKDIR/b.c" || b_ok=0
+        if [ "$a_ok" != "$b_ok" ]; then
+            nsplit=$((nsplit + 1))
+            [ "$nsplit" -le 3 ] && bad "[$lbl] pattern #$npat '$pat': shipped ok=$a_ok, unfactored reference ok=$b_ok — factoring changed whether the pattern COMPILES"
+            continue
         fi
-    fi
-done < "$WORKDIR/patterns.txt"
+        if [ "$a_ok" = 0 ]; then nboth_fail=$((nboth_fail + 1)); continue; fi
+        if ! cmp -s "$WORKDIR/a.c" "$WORKDIR/b.c"; then
+            ndiff=$((ndiff + 1))
+            if [ "$ndiff" -le 3 ]; then
+                bad "[$lbl] pattern #$npat '$pat': emitted C DIFFERS from the unfactored construction — the trie is not output-preserving, i.e. a rule-1/rule-2 soundness bug. Reference vs shipped:"
+                diff "$WORKDIR/b.c" "$WORKDIR/a.c" | head -12 >&2
+            fi
+        fi
+    done < "$WORKDIR/patterns.txt"
 
-# A corpus that compiles nothing proves nothing. This is a coverage FLOOR, the
-# thing gate.sh was found to be missing (R3 process critic).
-compiled=$((npat - nboth_fail - nsplit))
-if [ "$compiled" -ge $((N / 2)) ]; then
-    ok "coverage: $compiled of $npat generated patterns compiled and were compared"
-else
-    bad "only $compiled of $npat patterns compiled at all (expected >= $((N / 2))) — the generated corpus is not exercising the compiler"
-fi
-if [ "$ndiff" -eq 0 ] && [ "$compiled" -gt 0 ]; then
-    ok "trie identity: $compiled patterns emit byte-identical C with and without prefix factoring"
-elif [ "$ndiff" -gt 0 ]; then
-    bad "trie identity: $ndiff of $compiled patterns differ (only the first 3 are shown above)"
-fi
+    # A corpus that compiles nothing proves nothing. This is a coverage FLOOR,
+    # the thing gate.sh was found to be missing (R3 process critic).
+    compiled=$((npat - nboth_fail - nsplit))
+    if [ "$compiled" -ge $((N / 2)) ]; then
+        ok "coverage [$lbl]: $compiled of $npat generated patterns compiled and were compared"
+    else
+        bad "only $compiled of $npat patterns compiled at all under $lbl (expected >= $((N / 2))) — the generated corpus is not exercising the compiler"
+    fi
+    if [ "$ndiff" -eq 0 ] && [ "$compiled" -gt 0 ]; then
+        ok "trie identity [$lbl]: $compiled patterns emit byte-identical C with and without prefix factoring"
+    elif [ "$ndiff" -gt 0 ]; then
+        bad "trie identity [$lbl]: $ndiff of $compiled patterns differ (only the first 3 are shown above)"
+    fi
+    summary="$summary
+$(printf '  %-22s compared %4d  identical %4d  differing %3d  rejected-by-both %3d' \
+        "$lbl" "$npat" "$((compiled - ndiff))" "$ndiff" "$nboth_fail")"
+}
+
+summary=""
+FLAGS=();   sweep "case-sensitive"
+FLAGS=(-i); sweep "case-folded (-i)"
 
 echo
 echo "== Summary =="
-echo "patterns compared:        $npat (seed $SEED)"
-echo "byte-identical:           $((compiled - ndiff))"
-echo "differing:                $ndiff"
-echo "rejected by both builds:  $nboth_fail"
+echo "seed $SEED$summary"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ] && exit 0

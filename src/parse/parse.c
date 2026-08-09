@@ -47,10 +47,48 @@ static Ast *node(Ctx *cx, AKind k)
     return a;
 }
 
+/* ---- ASCII case folding (OS-1, D18 case 1: the option folds into the front
+ * end and never reaches run time) ----
+ *
+ * Caselessness is not a mode the matcher is in; it changes what the automaton
+ * is built FROM. Every literal and every class is a 256-bit membership bitmap
+ * already, so folding is "add the other case of every ASCII letter present"
+ * and everything downstream — NFA, subset construction, byte equivalence
+ * classes, minimization, emission — is unchanged and unaware. The generated
+ * code has no flag, no branch and no tolower().
+ *
+ * ASCII only, deliberately: in the C locale bytes >= 0x80 have no case, and
+ * Unicode folding is DD-1/M5's question, not this one.
+ *
+ * ORDER MATTERS, AND IT IS EASY TO GET BACKWARDS: fold the POSITIVE set,
+ * BEFORE negation. `[^a]` caseless means "neither a nor A" — fold {a} to
+ * {a,A}, then complement. Folding the COMPLEMENT instead yields
+ * {all but a} | swapcase{all but a} = every byte, so `[^a]` would match 'A'
+ * and in fact everything. Both results are closed under case swapping, so no
+ * later stage and no invariant check can tell them apart; only doing it in the
+ * right order distinguishes them. tests/base/caseless.rxt pins this directly.
+ *
+ * Every site that builds an A_CLASS must fold. There are three: char_node
+ * (literals and character escapes), p_class, and `.` — which needs no call
+ * because "every byte but \n" is already case-closed. A post-parse walk over
+ * the AST would catch future sites automatically and is deliberately NOT used:
+ * AST depth is unbounded in pattern length (a long concatenation is a left-deep
+ * A_CAT chain), so it would add exactly the recursion DD-10/TS-4 is trying to
+ * remove. A new class-producing construct must call this itself. */
+static void cls_casefold(uint8_t *b)
+{
+    for (unsigned c = 'A'; c <= 'Z'; c++)
+        if (cls_has(b, c) || cls_has(b, c + 32)) {
+            cls_set(b, c);
+            cls_set(b, c + 32);
+        }
+}
+
 static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
     cls_set(a->cls, c & 0xff);
+    if (cx->opt->caseless) cls_casefold(a->cls);
     return a;
 }
 
@@ -167,6 +205,9 @@ static Ast *p_class(Ctx *cx)
         }
     }
 
+    /* fold BEFORE negating — see cls_casefold's comment; the other order is
+     * silently wrong and downstream cannot detect it */
+    if (cx->opt->caseless) cls_casefold(a->cls);
     if (neg)
         for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
     return a;

@@ -94,8 +94,13 @@ flush_block() {
     local bdir="$WORKDIR/b$block_counter"
     mkdir -p "$bdir"
 
+    # per-block compile options (the `flags` directive); an unsupported letter
+    # is rejected at parse time, so this can only hold letters we map here
+    local pflags=()
+    [[ "$cur_flags" == *i* ]] && pflags+=(-i)
+
     local pcrec_err
-    pcrec_err="$(timeout 60 "$PCREC" -p rx -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_err="$(timeout 60 "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
     local pcrec_rc=$?
 
     if [ "$cur_is_perr" = "1" ]; then
@@ -192,6 +197,7 @@ for file in "${files[@]}"; do
     cur_pattern=""
     cur_pattern_line=0
     cur_is_perr=0
+    cur_flags=""
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     have_block=0
     blocks_in_file=0
@@ -208,8 +214,26 @@ for file in "${files[@]}"; do
             cur_pattern="${BASH_REMATCH[1]}"
             cur_pattern_line=$lineno
             cur_is_perr=0
+            cur_flags=""
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
             have_block=1
+        elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
+            # per-block compile options. Only `i` (case-insensitive, OS-1) is
+            # defined; an unknown letter is a HARD error rather than a silent
+            # no-op, because a silently-dropped flag would compile the wrong
+            # automaton and the block's expectations would then be verified
+            # against something nobody asked for.
+            # capture BEFORE any further [[ =~ ]] — that would clobber
+            # BASH_REMATCH out from under us
+            flag_letters="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'flags' line before any pattern block"
+            elif [ "$flag_letters" != "i" ]; then
+                record_fail "$file" "$lineno" \
+                    "unknown flag letter(s) '$flag_letters' (only 'i' is defined)"
+            else
+                cur_flags="$flag_letters"
+            fi
         elif [[ "$line" =~ ^perr[[:space:]]*$ ]]; then
             cur_is_perr=1
         elif [[ "$line" =~ ^m[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then

@@ -14,6 +14,12 @@ enum {
 typedef struct {
     const char *prefix;      /* C identifier prefix for generated symbols; default "rx" */
     int         encoding;    /* PCREC_ENC_* */
+    int         caseless;    /* nonzero: match case-insensitively (ASCII letters
+                                only — Unicode folding is module 'utf8', M5).
+                                Compiled AWAY into the automaton's byte classes:
+                                the generated code carries no flag, no branch and
+                                no case conversion, and its entry point has the
+                                same signature either way (D18). */
     int         emit_main;   /* nonzero: append a standalone main() to the .c */
     const char *header_name; /* name used in the generated #include "...";
                                 NULL = self-contained .c (declarations inlined,

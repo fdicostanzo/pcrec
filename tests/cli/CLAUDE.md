@@ -6,12 +6,15 @@ Part of `make test` since M2.
 
 ## Files
 
-- **run_cli_tests.sh** — eight cases: (1) `-o -` self-contained C that compiles
+- **run_cli_tests.sh** — nine cases: (1) `-o -` self-contained C that compiles
   standalone, (2) `--emit-main` producing a runnable binary, (3) prefix boundary
   validation, (4) `-o subdir/out.c` writing and compiling both files, (5) `--`
   before a pattern starting with `-` plus missing-value diagnostics, (6) error
   cases (no pattern, two patterns, unknown option), (7) a library-API smoke test
-  for NULL arguments and double free, (8) a compile-time C STACK budget.
+  for NULL arguments and double free, (8) a compile-time C STACK budget,
+  (9) `-i` (OS-1/D23) end to end — accepted, reaches `options.caseless`,
+  composes with `--` and `--emit-main`, documented in `--help`, and does NOT
+  leak into a build that did not ask for it (the case-sensitive control).
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
 
 ## Conventions

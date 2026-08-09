@@ -1056,3 +1056,71 @@ What this DOES and does NOT change:
 **Revisit-when:** someone proposes running pcrec on patterns from an untrusted
 source, at which point this entry is the thing to reopen rather than quietly
 work around.
+
+## D23 — 2026-08-09 — ASCII case-insensitivity FOLDS: the first dimension put through D18's earn-its-axis test, and it fails to earn one
+
+D18 recorded four predictions so results could be checked against them rather
+than remembered favourably. This is the first one settled (OS-1), and it is
+also the first use of the earn-its-axis rule on a real dimension.
+
+**Prediction: case 1, folds into the front end, completely. HELD.** Every
+literal and class is already a 256-bit bitmap, so caselessness is
+`bitmap |= swapcase(bitmap)` at parse time (`cls_casefold` in src/parse). NFA
+construction, subset construction, byte equivalence classes, minimization and
+emission are unchanged and unaware. Structurally: `-i 'aBc'` emits C
+BYTE-IDENTICAL to `'[aA][bB][cC]'`, `-i '[^a]'` byte-identical to `'[^aA]'`,
+and a letter-free pattern is byte-identical with and without `-i`. There is no
+second engine to dispatch between, so **case is not an axis** and the ASCII
+half of DD-1 becomes a parser change rather than an engine question.
+
+**Measured against the design being rejected** — a runtime-checked engine that
+compiles the lowercased pattern and maps every subject byte through `lc[]` in
+the hot loop, built by transforming pcrec's own output so the two differ only
+in where case is handled (7 interleaved trials, 8 MB no-match subject, load
+0.59 before / 1.01 after, reproduced in a second run):
+
+| pattern | folded | runtime-checked | table entries |
+|---|---|---|---|
+| `(error\|warning\|fatal)` | **511.7 MB/s** (505-520) | 458.9 (453-463) | 192 both |
+| `[a-z]+@[a-z]+` | **226.5** (221-229) | 219.9 (218-222) | 12 both |
+| `[0-9]+-[0-9]+` (no letters) | **2650** (2476-2703) | 1964 (1576-2008) | 12 both |
+
+Folding wins everywhere. The keyword and letter-free gaps are outside their
+spreads; the `[a-z]+@` gap is ~3% with ranges just touching, so treat its
+DIRECTION as established and its size as not. The letter-free row is the
+useful control: the runtime variant pays 26% for the `lc[]` indirection on a
+pattern with no letters at all, i.e. that tax is the mechanism's, not
+case's.
+
+**One prediction was too optimistic, and it is worth correcting.** D18 said
+byte-class merging "may even SHRINK the tables". Almost never: folding adds
+each letter's other case to an existing class, so `ncls` is normally unchanged
+and the tables come out the SAME size (192/192 and 12/12 above). Shrinking
+needs the pattern to already mention both cases — `aA` goes 9 entries to 6 —
+which is rare in real patterns. "Same size" is the honest expectation.
+
+**And one cost nobody predicted, which is the largest number here.** Folding a
+pattern that STARTS with a letter destroys the single-byte memchr prefilter:
+`hello` has one escape byte from the start state, `-i hello` has two (`h` and
+`H`), so the emitter falls to the bitmap loop — 2606 MB/s to 1245, a 52% loss.
+That is a cost of CASELESSNESS, not of folding: a runtime-checked engine cannot
+use memchr either (a single-byte search cannot see both cases), which is why
+that row has no runtime-checked variant at all. It lands squarely on D21's
+OPT-A lead — memchr2/memchr3 covers exactly this two-escape-byte gap, and this
+is now a second measured customer for it alongside case (d).
+
+**Scope.** ASCII only: in the C locale bytes >= 0x80 have no case, and Unicode
+folding stays with DD-1/M5. The fold is applied at each site that builds a
+positive class set — `char_node` and `p_class` — and NOT as a post-parse AST
+walk, because AST depth is unbounded in pattern length and such a walk would
+add exactly the recursion DD-10/TS-4 is trying to remove.
+
+**The subtle half, recorded because nothing downstream can catch it.** A
+negated class must be folded on the POSITIVE set and then complemented.
+`[^a]` caseless is "neither a nor A"; folding after negating gives
+{all but a} | swapcase{all but a} = every byte, so `[^a]` would match
+everything. Both orders produce a case-CLOSED set, so no invariant, no
+structural property and no equivalence check distinguishes them — only
+behaviour does. tests/base/caseless.rxt pins it with `n "A"` lines, and
+run_codegen_tests.sh pins the shape by requiring `-i '[^a]'` to equal
+`'[^aA]'` and to DIFFER from `'[^A]'`.

@@ -59,6 +59,16 @@ lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
   first space on the line, taken verbatim through to the end of the line
   (no quoting, no escaping — write the pattern exactly as PCRE would see
   it).
+- `flags <letters>` — compile options for the current block, given after its
+  `pattern` line. Only `i` is defined (case-insensitive, `pcrec -i`; OS-1).
+  A block with no `flags` line compiles with defaults, and the setting does
+  **not** carry to the next block. An unknown letter is a hard error, not a
+  silent no-op: a dropped flag would compile a different automaton and the
+  block's expectations would then be verified against something nobody asked
+  for. `tests/harness/verify_rxt.py` honours the same directive, mapping `i`
+  to `re.IGNORECASE | re.ASCII` — the `re.ASCII` is required, since python's
+  IGNORECASE otherwise folds Unicode and would disagree with pcrec's
+  deliberately ASCII-only fold.
 - `perr` — asserts that the current pattern **fails to compile** (`pcrec`
   must exit nonzero). A block using `perr` has no `m`/`n` lines — the
   pattern text itself is the entire test.

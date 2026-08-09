@@ -106,6 +106,8 @@ def parse_rxt(path):
             pcre2_only_next = False
         elif line == 'perr':
             results.append((lineno, 'perr', None))
+        elif line.startswith('flags '):
+            results.append((lineno, 'flags', line[len('flags '):].strip()))
         elif line.startswith('m "'):
             rest = line[2:]  # keep leading quote
             subj, tail = parse_quoted(rest)
@@ -172,6 +174,7 @@ def main():
         m_count = n_count = ms_count = ns_count = perr_count = 0
         skipped = 0
         cur_skip = False
+        cur_reflags = 0
         file_failures = []
 
         for lineno, kind, data in entries:
@@ -180,9 +183,30 @@ def main():
                 cur_pattern_lineno = lineno
                 compile_error = None
                 compiled = None
+                cur_reflags = 0
                 if not cur_skip:
                     try:
                         compiled = re.compile(cur_pattern)
+                    except re.error as e:
+                        compile_error = e
+                continue
+
+            if kind == 'flags':
+                # per-block compile options; re-compile the current block's
+                # pattern under them. re.ASCII is not optional here: without it
+                # python's IGNORECASE folds Unicode (K/Kelvin sign, long s),
+                # which would make this oracle disagree with pcrec's
+                # deliberately ASCII-only fold and silently mis-verify the
+                # base tier. Unicode folding is DD-1/M5.
+                if data != 'i':
+                    file_failures.append((lineno, f"unknown flag letter(s) {data!r} (only 'i' is defined)"))
+                    continue
+                cur_reflags = re.IGNORECASE | re.ASCII
+                if not cur_skip:
+                    compile_error = None
+                    compiled = None
+                    try:
+                        compiled = re.compile(cur_pattern, cur_reflags)
                     except re.error as e:
                         compile_error = e
                 continue

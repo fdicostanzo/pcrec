@@ -1,6 +1,6 @@
 /* pcrec command-line interface.
  *
- *   pcrec [-p PREFIX] [-e ascii|utf8] [--emit-main] -o OUT.c 'PATTERN'
+ *   pcrec [-p PREFIX] [-e ascii|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'
  *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
  */
 
@@ -18,6 +18,8 @@ static void usage(FILE *f)
           "                 stdout with no header file\n"
           "  -p PREFIX      symbol prefix for generated identifiers (default rx)\n"
           "  -e ENCODING    subject encoding: ascii (default) or utf8\n"
+          "  -i             match case-insensitively (ASCII letters); folded\n"
+          "                 into the automaton, no run-time cost\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
           "  -h, --help     this help\n", f);
 }
@@ -53,6 +55,7 @@ int main(int argc, char **argv)
             return 0;
         }
         else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.emit_main = 1;
+        else if (!no_more_opts && !strcmp(a, "-i")) opt.caseless = 1;
         else if (!no_more_opts &&
                  (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e"))) {
             if (i + 1 >= argc) {
