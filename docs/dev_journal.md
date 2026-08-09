@@ -968,3 +968,65 @@ Verification: 663 corpus + 42 CLI + 17 codegen + 3 trie-identity green; python
 oracle 100% (655 cases); `make bench` 0 budget failures with the new case (e);
 compare gate 9/9 with the new margins; and every new guard sabotage-validated
 individually, with the sabotage that each one FAILS to catch recorded next to it.
+
+## 2026-08-09 — R3.2, half closed: D13 probed against the real emitter and HELD
+
+The D13 critic dispatched at the top of the session reported after the R3.1/3/4/5
+work was already committed — the same late-report pattern as R3, but this time
+the report arrived. It closes item (2) of R3.2. Item (1), the D11 ordering
+asymmetry, is still open: that is now TWO critics dispatched at it with no
+report, and a third running.
+
+**The micro-benchmark behind D13 does not exist and never did here.** CONFIRMED
+myself, not taken on trust: `git log --all -S "dispatch.c"` returns exactly one
+commit, and it is the one that added the D13 prose mentioning the file. The
+measurement that arbitrated computed-goto vs table dispatch was never checked
+in, so it cannot be re-run — only re-derived. Worth generalising: a
+decision-critical measurement kept in a scratchpad has a half-life, and this one
+had already expired before anyone asked to see it.
+
+**It also does not represent the emitter.** A 6-state single dispatch loop
+models neither the forward+reverse double scan, nor the per-iteration
+accept/prefilter/skip-branch side work, nor the `fcls[]` equivalence-class
+indirection — and for prefilter-eligible patterns most bytes never reach the
+dispatch loop at all, which is the whole point of the prefilter. The synthetic
+loop measures the path emit_dfa.c works hardest to avoid.
+
+**Re-derived on real emitter output, and the decision holds.** The critic
+transformed the emitter's own generated C into computed-goto form (emitter
+untouched, results verified identical before timing), 3 patterns, median of 9
+interleaved: goto/table 0.35-0.91 on random input, 2.75-3.07 on predictable
+input, across a 4x range of both ncls and state count with the direction never
+flipping. That reproduces R3-SELF-4's "predictability, not size" correction at
+realistic scale instead of on a toy. The critic disclosed that box load ran
+0.44 -> 14.49 during its runs, which by D14's own rule is INCONCLUSIVE; I am
+recording direction, not precision, and said so in the decision.
+
+**The decisive argument is one D13 never makes.** D13 arbitrates on runtime
+alone, but emit_dfa.c and D7 chose tables for compile-time reasons (R1 A-3),
+leaving runtime open only for SMALL DFAs. Verified independently on a quiet box
+(load 0.95, `gcc -c` only): computed goto costs **10.9x / 35.6x / 319x** more
+compile time than tables at 6075 / 2304 / 78705 table entries. The 300-word
+alternation takes 0.29 s as a table and **91 s** as computed goto. For large
+keyword/dictionary alternations — a normal use of this compiler, not an edge
+case — computed goto is disqualified before the runtime question is reached.
+
+My numbers are larger than the critic's (it reported 5.7x/16x/210x); the
+difference is full builds vs compile-only, and constant link overhead dilutes
+the ratio. Both directions agree, and I recorded which is which rather than
+picking the more impressive number.
+
+Two corrections applied to D13: "six states is about as small as a useful DFA
+gets, so there is no crossover" overstates what was shown — direction never
+flips, but magnitude moves with ncls (0.91 at ncls 3 vs 0.35-0.42 at ncls 27) —
+and its revisit-when is widened to name the shape that actually stresses the
+question: large alternations with a wide first-byte escape set, whose bitmap
+prefilters skip almost nothing, so the disputed loop runs on every byte.
+
+**Process note.** The two critics dispatched at the start of this session were
+given no way to deliver partial work, and one of them again produced nothing.
+The two dispatched afterwards are required to append findings to a file on disk
+as they confirm them, rather than reporting only at the end. That mechanism has
+already produced a report file for the guards critic while it is still working.
+Building the mechanism beats repeating the instruction — the same lesson R3's
+reflection drew about tooling versus remembered principles.

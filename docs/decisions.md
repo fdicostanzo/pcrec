@@ -355,6 +355,84 @@ Revisit-when: a workload appears with long, highly predictable state runs that
 skip loops cannot cover — that is now a MEASURED opportunity rather than a
 hypothetical one.
 
+### D13 addendum — 2026-08-09 (R3.2 critic): probed against the REAL emitter, and HELD
+
+R3.2 carried "whether D13's dispatch micro-benchmark represents the real
+emitter shape" as unprobed. It has now been probed, and the answer is: **the
+benchmark does NOT represent the emitter, and the decision it supports is right
+anyway — for a reason D13 does not give.**
+
+**The benchmark is gone and never existed here.** D13 cites "scratchpad
+`dispatch.c`". CONFIRMED (`git log --all -S "dispatch.c"`): the only occurrence
+of that filename anywhere in this repository's history is the D13 prose above
+that introduced it. The measurement was never checked in, so it can never be
+re-run — only re-derived, which is what this addendum is. A decision-critical
+measurement that lives in a scratchpad is a measurement with a half-life.
+
+**Structural gaps between a 6-state single loop and what emit_dfa.c emits:**
+every real match runs TWO scans (forward for the end, non-pruning reverse for
+the start), each with its own dispatch loop; each iteration also does
+`if (facc[st]) last = pos;`, a `st == fs` prefilter branch and up to four
+skip-state branches BEFORE the transition step; and the transition is
+`ftr[st*ncls + fcls[s[pos]]]`, an extra dependent load through the byte
+equivalence-class table that a 6-state toy has no reason to model. Most
+importantly, for prefilter-eligible patterns most bytes never reach the
+dispatch loop at all — the prefilter and skip loops exist precisely to avoid
+it — so a synthetic loop that dispatches on every byte measures the path the
+emitter works hardest to skip.
+
+**Re-derived on real emitter output.** A critic transformed emit_dfa.c's OWN
+generated C into a computed-goto equivalent (emitter untouched, `cls[]` lookup
+preserved on both sides, results verified identical before timing) for three
+patterns at real bench flags, median of 9 interleaved runs:
+
+| pattern | states | random input | predictable input |
+|---|---|---|---|
+| `[01]*1[01]{8}` | 768, ncls 3, memchr | 0.91 | 2.75 |
+| 50-word alternation | 225, ncls 27, bitmap | 0.42 | 2.87 |
+| 300-word alternation | 2915, ncls 27, bitmap | 0.35 | 3.07 |
+
+(goto/table; >1 means goto faster.) This reproduces the R3 self-correction —
+predictability, not size, is the crossover variable — at realistic scale rather
+than on a 6-state toy, across a 4x range of both ncls and state count, with the
+direction never flipping. Treat the exact ratios as approximate: the critic
+disclosed that box load ran from 0.44 to 14.49 during its runs, which under
+D14's own rule would be INCONCLUSIVE. The effect sizes are far larger than the
+per-arm spreads (<=1.43x), so direction is credible; precision is not claimed.
+
+**The decisive argument is compile time, and D13 does not make it.** D13
+arbitrates purely on runtime. But emit_dfa.c's own header and D7 chose tables
+for ENG_UNANCH because of R1 A-3's superlinear gcc time, leaving runtime open
+only for SMALL DFAs. Verified independently on a quiet box (load 0.95, gcc -c
+only, so no link-time dilution):
+
+| pattern | table | computed goto | ratio |
+|---|---|---|---|
+| 50-word alternation (6075 entries) | 0.07 s | 0.77 s | 10.9x |
+| `[01]*1[01]{8}` (2304 entries) | 0.06 s | 2.22 s | 35.6x |
+| 300-word alternation (78705 entries) | 0.29 s | **91.08 s** | **319x** |
+
+The critic measured 5.7x / 16x / 210x on full builds; measuring compile only
+removes constant link overhead and the ratios grow. Either way: for large
+keyword/dictionary alternations — a common real use of this compiler, not an
+edge case — computed goto is disqualified on compile time alone, before the
+runtime question is reached.
+
+**Corrections to the text above:** "Six states is about as small as a useful
+DFA gets, so there is no crossover to arbitrate" overstates what was shown. The
+DIRECTION never flips, but the magnitude on random input moves with ncls (0.91
+at ncls 3 vs 0.35-0.42 at ncls 27), so 6 states is not representative along
+that axis. And D13 reads as though runtime settles the question; it does not,
+and for the large-alternation case compile time is both dominant and more
+decisive.
+
+**Revisit-when (widened):** was "long predictable state runs that skip loops
+cannot cover". Add: this is now confirmed safe for LARGE KEYWORD/DICTIONARY
+ALTERNATIONS WITH A WIDE FIRST-BYTE ESCAPE SET, which get bitmap prefilters
+that skip almost nothing (nearly every byte is an escape byte) and therefore
+run the disputed dispatch loop on every byte — the case where the question
+actually bites, measured here, and where table wins on both axes.
+
 ## D14 — 2026-08-09 — `make bench` distinguishes "clean" from "not measured"
 
 R3 critic finding against my own M2.9/D12 work. The LOAD_LIMIT downgrade added
