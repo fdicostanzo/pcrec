@@ -1431,3 +1431,79 @@ the rule before building the machinery the rule implies.
 
 No source changed this session; 731 corpus + 42 CLI + 17 codegen + 5
 trie-identity remain green from the last verification.
+
+## 2026-08-09 — OS-0b: multi-engine naming prep, and a test that can tell WHICH engine
+
+First code since the D18-D22 strategy session, and the working order held: do
+the cheap mechanical prep before anything needs it. The change is small in the
+emitter and larger in the test, which is the correct ratio for this one.
+
+**The emitter.** `emit_decls` did two unrelated jobs in one function — the
+`<prefix>_span` typedef, which is FILE-scope and must be emitted once no matter
+how many engines share the file, and the `<prefix>_search` declaration, which
+is PER ENGINE. Split into `emit_span_typedef` and `emit_search_decl`, with
+`emit_search_head` next to the latter so a declaration and its definition
+cannot drift. The entry-point name now comes from `engine_entry_name()` and is
+read nowhere else; the five sites that hardcoded `%s_search` (header decl,
+inline decl, both engine definitions, the emitted `main`) consume it. That is
+the whole seam a finder needs: hand each engine a different name and the
+emitters never learn that options have a product (D20).
+
+Output verified BYTE-IDENTICAL: 167 corpus patterns x 3 prefixes x 4 emission
+modes (self-contained, paired .c, paired .h, --emit-main) = 1980 hashed
+outputs, zero differences. A refactor that claims to change nothing should be
+made to prove it rather than asked to be believed.
+
+**The premise was checked, not assumed.** The plan line asserted that emitting
+the typedef twice declares two distinct anonymous struct types and is an error
+rather than a benign redefinition. It is: `error: conflicting types for
+'rx_span'; have 'struct <anonymous>'`, under -std=gnu11 and -std=c99 both. Two
+minutes to confirm, and it is now the thing the test asserts instead of a claim
+in a comment. Same habit that paid off twice last session.
+
+**A number in the plan was wrong, and it was wrong in my favour.** The OS-0b
+line said run_codegen_tests.sh hardcodes "9 symbol patterns". It is 19 grep
+sites across 11 generated files. Corrected in the plan line rather than left to
+be re-derived by whoever reads it next.
+
+**The test is the part worth describing.** All 19 sites now grep an engine BODY
+extracted by entry name, not the whole file — with several engines,
+`rx_fs[0-9]+\[256\]` is satisfied by any of them, so "this pattern emits a skip
+table" quietly becomes "some engine in here does" without ever failing. But an
+extractor is exactly the kind of thing that breaks silently, so it is not
+trusted on inspection. The suite builds a two-engine file by applying the
+transformation the finder will apply — one shared typedef, a distinct entry
+name per engine, every other identifier untouched — and then requires a scoped
+grep to find the skip table in the engine that has one ('.*=.*') and NOT in the
+engine that does not ('^a|b'). A `body()` returning the whole file fails the
+second check; one returning nothing fails the first. Neither failure mode can
+pass by accident. That is the 4-and-8-branch-control lesson from the trie work
+applied at the point of writing rather than after a critic finds the hole.
+
+The fixture is also compiled under GENCFLAGS, which is what actually proves the
+multi-engine output contract, and duplicating the typedef in it is asserted to
+BREAK the build — the emit-once rule is a requirement with a demonstration
+attached, not a tidiness preference.
+
+**Five sabotages, each on a fresh tree with the edit asserted to have landed
+before the tree was built** (MECH-2's lesson applied by hand; the helper is
+scratchpad-only, since MECH-1/MECH-2 remain open and building them properly is
+their own item). Exact edits and counts are in tests/codegen/CLAUDE.md. The one
+worth repeating here: turning off `pick_skip_states` still fails the same 6
+pre-existing checks it failed before the scoping change, which is the evidence
+that scoping TIGHTENED coverage without weakening any of it. And isolating the
+attribution step alone — `cp` instead of `body()` for engine B only — fails
+exactly one check, so the new guard is load-bearing on its own rather than
+riding on the fixture construction.
+
+**What this does NOT do, stated so it is not mistaken for done.** pcrec still
+emits exactly one engine per file; nothing generates two. The contract is
+proven at the OUTPUT level (a file in that shape compiles and is greppable per
+engine), not at the emitter level. Building the thing that emits several is
+OS-0, and D20 deliberately leaves it unbuilt until a dimension has actually
+earned an axis — which is OS-1's job next.
+
+Verification: 731 corpus + 42 CLI + 22 codegen (the 17 pre-existing, unchanged,
++ 5 new) + 5 trie-identity green, ratchet clean, oracle 100% (723 cases). Box
+was quiet throughout (1-min load 0.73-0.90); no performance claim is made here
+and none is needed, since the emitted code is byte-identical.

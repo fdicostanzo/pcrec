@@ -831,20 +831,34 @@ what the emitter actually produces (`.*=.*$`, 15 distinct emitted identifiers):
   declaration and definition of `<prefix>_search`.
 
 So the work is much smaller than "namespace everything": emit `<prefix>_span`
-ONCE and share it (emitting it twice would declare two distinct anonymous
-struct types, which are incompatible, not a benign redefinition), and give each
-engine a distinct function name. The named-entry-point scheme
-(`rx_search_ci_utf8`) supplies exactly that, so the naming answer and the
-API answer are the same answer.
+ONCE and share it, and give each engine a distinct function name. The
+named-entry-point scheme (`rx_search_ci_utf8`) supplies exactly that, so the
+naming answer and the API answer are the same answer.
+
+*Confirmed when OS-0b landed (2026-08-09):* the parenthetical above — emitting
+the typedef twice declares two distinct anonymous struct types rather than
+benignly redefining one — was written from the standard and is correct. gcc
+says `error: conflicting types for 'rx_span'; have 'struct <anonymous>'`, under
+-std=gnu11 and -std=c99 alike. It is now asserted by a test that compiles a
+duplicated-typedef file and requires the build to FAIL, so the rule has a
+demonstration rather than a citation.
 
 **One consequence for the tests, worth knowing before it bites.**
-`tests/codegen/run_codegen_tests.sh` hardcodes 9 symbol patterns
-(`rx_ftr[`, `rx_fs[0-9]+\[256\]`, ...). With one engine per file those are
-unambiguous. With several, a grep for `rx_fs[0-9]+\[256\]` can be satisfied by
-ANY engine in the file, so a check that means "this pattern emits a skip table"
-silently degrades into "some engine here does" — it gets WEAKER without ever
-failing, which is this project's signature failure mode. Those checks need
-per-engine scoping in the same change that first emits two engines.
+`tests/codegen/run_codegen_tests.sh` hardcodes symbol patterns (`rx_ftr[`,
+`rx_fs[0-9]+\[256\]`, ...). With one engine per file those are unambiguous.
+With several, a grep for `rx_fs[0-9]+\[256\]` can be satisfied by ANY engine in
+the file, so a check that means "this pattern emits a skip table" silently
+degrades into "some engine here does" — it gets WEAKER without ever failing,
+which is this project's signature failure mode.
+
+*Done in OS-0b (2026-08-09), ahead of anything emitting two engines.* The count
+in the sentence above was originally "9 symbol patterns" and was wrong: it is
+19 grep sites across 11 generated files, all now scoped to one engine's body,
+extracted by entry name. The scoping is controlled by a two-engine fixture the
+suite builds and compiles, which requires a scoped grep to attribute a skip
+table to the engine that has one and not to the engine that does not — so a
+broken extractor fails rather than certifies. See tests/codegen/CLAUDE.md for
+the five validated sabotages.
 
 **Where the dispatch cost would show up, if it shows up at all.** The compare
 matrix already has case (i), a short-subject per-call-overhead regime at ~70

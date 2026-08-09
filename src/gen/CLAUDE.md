@@ -15,9 +15,31 @@ milestone. Under EOL every skip is bounded at n-1 and scan avoidance runs
 BEFORE the accept/EOL evaluation — see D11, and note the ordering rule is the
 subtle half.
 
+## The multi-engine naming surface (OS-0b)
+
+One output file may eventually carry several engines, one per point of the
+option product, behind a generated selector (D18/D20). Of the 15 identifiers
+this emitter produces, 12 are FUNCTION-LOCAL statics, so two engines in two
+functions cannot collide on them. Exactly two things are file-scope and both
+have their own emitter:
+
+- `emit_span_typedef` — ONCE PER FILE, shared by every engine in it. Emitting
+  it per engine is not a benign redefinition: each occurrence declares a fresh
+  anonymous struct type, so gcc rejects the file with `error: conflicting
+  types for 'rx_span'` (verified, -std=gnu11 and -std=c99).
+- `emit_search_decl` / `emit_search_head` — ONCE PER ENGINE, under that
+  engine's own entry name, kept adjacent so the declaration and the definition
+  cannot drift apart.
+
+The entry name comes from `engine_entry_name()` and is read nowhere else, so a
+finder can hand each engine a distinct name without any emitter learning that
+options have a product. Today there is one engine per file and the name is
+`<prefix>_search`. Both properties are enforced by the multi-engine block in
+tests/codegen/run_codegen_tests.sh, which compiles a two-engine file.
+
 ## Files
 
-- **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), shared table/label helpers, header/comment/prologue emission
+- **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission
 
 ## Conventions
 

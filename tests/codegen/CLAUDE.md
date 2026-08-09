@@ -17,14 +17,50 @@ or it has no regression net at all.
   required to be OUTPUT-PRESERVING — subset construction plus minimization must
   erase it — so any difference is a rule-1/rule-2 soundness bug. No subjects, no
   gcc, ~4 s. Env: PCREC, CC, TRIE_N, TRIE_SEED, KEEP=1.
-- **run_codegen_tests.sh** — greps generated output for each optimization's
+- **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
+  see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
   patterns and its ABSENCE for partially-anchored ones, memchr prefilter,
   a table-size ceiling that only holds if minimization ran, engine selection
   for `$` vs `^`, and the M2.12 EOL-path checks: skips present and bounded at
   n-1, reverse skip entry guard, memchr bounded at n-1, and an ORDER check
-  that accept/EOL evaluation follows the skips). Part of `make test`;
-  env: PCREC, KEEP=1.
+  that accept/EOL evaluation follows the skips), plus the OS-0b multi-engine
+  block. Part of `make test`; env: PCREC, CC, GENCFLAGS, KEEP=1.
+
+## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)
+
+Every symbol these checks look for is a function-local static or a statement
+inside the engine function — that is the measured finding OS-0b rests on, and
+it is what lets several engines share one file under D18/D20. It is also what
+makes a whole-file grep wrong as soon as there IS more than one engine:
+`rx_fs[0-9]+\[256\]` would be satisfied by ANY engine present, so a check
+reading "this pattern emits a skip table" degrades to "some engine in here
+does" while still passing. All 19 grep sites across 11 generated files now run
+against a body extracted by entry name (`body()`).
+
+An extractor is itself a thing that can silently break, so it is not trusted on
+inspection. The multi-engine block builds a two-engine file by hand — one
+shared span typedef, a distinct entry name per engine, every other identifier
+untouched, i.e. exactly the transformation an engine finder (OS-0) will apply —
+and requires a scoped grep to find the skip table in the engine that HAS one
+('.*=.*') and NOT in the engine that does not ('^a|b'). A `body()` returning
+the whole file fails the second; one returning nothing fails the first. The
+block also compiles the fixture under GENCFLAGS, and asserts that DUPLICATING
+the typedef breaks the build — the emit-once rule is verified, not folklore
+(gcc: `error: conflicting types for 'rx_span'`, since each occurrence declares
+a fresh anonymous struct; confirmed under -std=gnu11 and -std=c99).
+
+Validated sabotages for run_codegen_tests.sh (22 checks pass clean). Each was
+applied to a FRESH tree, with the edit asserted to have landed before the tree
+was built:
+
+| sabotage (exact edit) | result |
+|---|---|
+| `int nout = 0;` -> `int nout = 0; return 0;` in `pick_skip_states` (skip states off) | 7 fail — the 6 pre-OS-0b skip checks, unchanged by the scoping, plus the multi-engine control reporting its fixture can no longer discriminate |
+| in `body()`, `$0 ~ "^int " fn "\\(" { inside = 1 }` -> `{ inside = 1 }` (extractor returns the whole file) | 3 fail, incl. "scoped grep attributed engine A's skip table to engine B" |
+| replace only the attribution-step extraction: `&& body "$WORKDIR/multi.c" rx_search_b ...` -> `&& cp "$WORKDIR/multi.c" ...` (isolates scoping from fixture construction) | 1 fail — the attribution check alone |
+| duplicate the call: `emit_span_typedef(c, p);` -> `emit_span_typedef(c, p); emit_span_typedef(c, p);` | 2 fail — typedef-count and compile |
+| in the fixture's rename, `s/\brx_search\b/rx_search_b/g` -> `.../rx_search/g` (engines keep one name) | 1 fail — compile, `error: redefinition of 'rx_search'` |
 
 The M2.12 additions are the sharpest illustration of why this directory
 exists: reverting the EOL path to its M2.7 state (no prefilter, no skips —

@@ -40,14 +40,61 @@ static void emit_pattern_comment(StrBuf *sb, const char *pat)
     sb_puts(sb, " */\n");
 }
 
-static void emit_decls(StrBuf *sb, const char *p)
+/* ---- the multi-engine naming surface (OS-0b; D18 measured, D20 owns it) ----
+ *
+ * One output file may eventually carry SEVERAL engines — one per point of the
+ * option product, chosen by a generated selector (D18/D20). Almost nothing
+ * here needs to change for that, because every identifier either emitter
+ * produces is a FUNCTION-LOCAL static except the two named below: the
+ * unanchored engine's fcls/ftr/facc/fev/first/fs<N>/rcls/rtr/racc/rev/rs<N>
+ * and the attempt engine's cls/t<N> are all declared inside the engine
+ * function, so two engines in two functions cannot collide on them however
+ * similar their patterns. (D18 measured this on `.*=.*$`: 15 emitted
+ * identifiers, 12 function-local.)
+ *
+ * That leaves TWO file-scope names — the span type and the entry point — and
+ * both go through the helpers below:
+ *
+ *   emit_span_typedef  ONCE PER FILE, shared by every engine in it. Emitting
+ *                      it per engine is NOT a benign redefinition — each
+ *                      occurrence declares a fresh anonymous struct type, so
+ *                      gcc rejects the file with "conflicting types for
+ *                      'rx_span'" (verified under -std=gnu11 and -std=c99).
+ *   emit_search_decl   ONCE PER ENGINE, under that engine's own entry name.
+ *
+ * The entry name is produced by engine_entry_name() and read from nowhere
+ * else, so a finder can hand each engine a distinct name (`rx_search_ci`)
+ * without any emitter knowing that options have a product. Today there is one
+ * engine per file and the name is "<prefix>_search". */
+
+static void emit_span_typedef(StrBuf *sb, const char *p)
 {
     sb_printf(sb, "typedef struct { size_t start, end; } %s_span;\n", p);
-    sb_printf(sb, "int %s_search(const unsigned char *s, size_t n, "
-                  "size_t startpos, %s_span *m);\n", p, p);
 }
 
-static void emit_header(Ctx *cx)
+static void emit_search_decl(StrBuf *sb, const char *p, const char *fn)
+{
+    sb_printf(sb, "int %s(const unsigned char *s, size_t n, "
+                  "size_t startpos, %s_span *m);\n", fn, p);
+}
+
+/* The definition's signature, kept next to the declaration it must match. */
+static void emit_search_head(StrBuf *c, const char *p, const char *fn)
+{
+    sb_printf(c, "int %s(const unsigned char *s, size_t n, "
+                 "size_t startpos, %s_span *m)\n{\n", fn, p);
+}
+
+static const char *engine_entry_name(Ctx *cx)
+{
+    const char *p = cx->opt->prefix;
+    size_t sz = strlen(p) + sizeof("_search");
+    char *fn = arena_alloc(&cx->arena, sz);
+    snprintf(fn, sz, "%s_search", p);
+    return fn;
+}
+
+static void emit_header(Ctx *cx, const char *fn)
 {
     StrBuf *h = &cx->job->hsb;
     const char *p = cx->opt->prefix;
@@ -60,7 +107,8 @@ static void emit_header(Ctx *cx)
     emit_pattern_comment(h, cx->pat);
     sb_printf(h, "#ifndef PCREC_GEN_%s_H\n#define PCREC_GEN_%s_H\n\n", guard, guard);
     sb_puts(h, "#include <stddef.h>\n\n");
-    emit_decls(h, p);
+    emit_span_typedef(h, p);
+    emit_search_decl(h, p, fn);
     sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
 }
 
@@ -189,7 +237,7 @@ static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
  * used for the transition is never stale. The forward prefilter additionally
  * must NOT keep its `return 0` early-out, since the start state's EOL variant
  * may still accept at n-1 or n. */
-static void emit_unanchored(Ctx *cx)
+static void emit_unanchored(Ctx *cx, const char *fn)
 {
     Job *job = cx->job;
     Dfa *fd = &job->dfa, *rd = &job->rdfa;
@@ -201,8 +249,7 @@ static void emit_unanchored(Ctx *cx)
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
 
-    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
-                 "size_t startpos, %s_span *m)\n{\n", p, p);
+    emit_search_head(c, p, fn);
 
     if (fs < 0 || rs < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
@@ -397,15 +444,14 @@ static void emit_target(StrBuf *c, const char *p, int tgt)
     else         sb_printf(c, "&&%s_s%d", p, tgt);
 }
 
-static void emit_attempt(Ctx *cx)
+static void emit_attempt(Ctx *cx, const char *fn)
 {
     Job *job = cx->job;
     Dfa *d = &job->dfa;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
-    sb_printf(c, "int %s_search(const unsigned char *s, size_t n, "
-                 "size_t startpos, %s_span *m)\n{\n", p, p);
+    emit_search_head(c, p, fn);
 
     if (d->n == 0) {
         /* no live start state: the pattern matches nothing */
@@ -493,15 +539,18 @@ void pcrec_emit_dfa(Ctx *cx)
     Job *job = cx->job;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
+    const char *fn = engine_entry_name(cx);
 
-    if (cx->opt->header_name) emit_header(cx);
+    if (cx->opt->header_name) emit_header(cx, fn);
 
     emit_pattern_comment(c, cx->pat);
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {
         sb_puts(c, "#include <stddef.h>\n\n");
-        emit_decls(c, p);
+        /* file-scope, shared by every engine here; per-engine below */
+        emit_span_typedef(c, p);
+        emit_search_decl(c, p, fn);
     }
     if (job->engine == PCREC_ENG_UNANCH)
         sb_puts(c, "#include <string.h>\n");
@@ -510,9 +559,9 @@ void pcrec_emit_dfa(Ctx *cx)
     sb_puts(c, "\n");
 
     if (job->engine == PCREC_ENG_UNANCH)
-        emit_unanchored(cx);
+        emit_unanchored(cx, fn);
     else
-        emit_attempt(cx);
+        emit_attempt(cx, fn);
 
     if (cx->opt->emit_main) {
         sb_puts(c, "\n");
@@ -520,12 +569,12 @@ void pcrec_emit_dfa(Ctx *cx)
             "int main(int argc, char **argv)\n{\n"
             "    %s_span m = { 0, 0 };\n"
             "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
-            "    if (%s_search((const unsigned char *)argv[1], strlen(argv[1]), 0, &m)) {\n"
+            "    if (%s((const unsigned char *)argv[1], strlen(argv[1]), 0, &m)) {\n"
             "        printf(\"match %%zu %%zu\\n\", m.start, m.end);\n"
             "        return 0;\n"
             "    }\n"
             "    printf(\"nomatch\\n\");\n"
             "    return 1;\n"
-            "}\n", p, p);
+            "}\n", p, fn);
     }
 }
