@@ -1,5 +1,14 @@
 # pcrec — PCRE-to-C regex compiler
 
+## MANDATE: repository scope
+
+Work in this project touches ONLY this repository (/home/duxevents/pcrec and
+its git remote github.com/fdicostanzo/pcrec). Do not create, modify, or delete
+files anywhere else on this machine — no other directories, no home-directory
+or system config, no other repos. Session-temporary files go in the session
+scratchpad, never committed. Subagents inherit this mandate; state it in
+their task briefs.
+
 Ahead-of-time compiler: takes a PCRE pattern, emits specialized, self-contained
 gcc-dialect C source that matches exactly that pattern (no runtime interpreter,
 no dependency on pcrec in the generated code). Design: APPROACH.md.

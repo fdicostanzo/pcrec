@@ -111,3 +111,9 @@ fixed same-day, rest became plan steps / design-debt ledger entries. Highlights:
   Suite: 353/353 green; python oracle 351/351 (2 justified skips).
 - RECOMMENDED to Frank (not done unilaterally): git init + initial commit — the
   process critic is right that there is no history safety net.
+
+## 2026-08-09 — Published to GitHub
+
+Public repo: https://github.com/fdicostanzo/pcrec (MIT license). Initial commit
+= M0+M1+R1 state, 43 files. Root CLAUDE.md now carries the repository-scope
+mandate: this project touches only this repo; subagent briefs must restate it.
