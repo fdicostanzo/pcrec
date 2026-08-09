@@ -41,6 +41,22 @@
 # timed measurement accumulates at least TARGET_SECS (default 0.3s) of
 # wall time.
 #
+# Measurement rigor (R2-B1/B2/B3, checkpoint review docs/reviews/2026-08-09-m2.md):
+# the same box runs `schedutil` with turbo on, and per-measurement wall
+# times sat inside a frequency-ramp window; every measurement used to be a
+# SINGLE sample (published ratios swung 0.82-1.11 across 7 repeat runs,
+# flipping sign in 4 of 7); and pcrec was always measured FIRST in every
+# case, a systematic confound. So, styled after tests/bench/run_bench.sh's
+# equivalent fix (M2.9):
+#   - every timed engine invocation is wrapped in a probed taskset (+chrt if
+#     it actually works, degrading quietly otherwise) pin, BENCH_CPU/PIN below;
+#   - every engine/case measurement repeats BENCH_TRIALS times and reports
+#     the MEDIAN, with max/min spread carried into its own results column
+#     (a DNF or error on any one trial fails the whole measurement -- never
+#     silently retried past or averaged away);
+#   - engine order is rotated per trial (trial i starts the engine list at
+#     index i mod N and wraps around) instead of always running pcrec first.
+#
 # Env vars:
 #   PCREC          path to the pcrec binary          (default: <repo-root>/build/pcrec)
 #   CC             C compiler                          (default: gcc)
@@ -49,6 +65,11 @@
 #   RUN_TIMEOUT    per engine-invocation hang timeout   (default: 90)
 #   PCREC_TIMEOUT  per pcrec-invocation hang timeout    (default: 60)
 #   BUILD_TIMEOUT  per $CC-invocation hang timeout      (default: 60)
+#   BENCH_CPU      core to pin every timed run to (taskset) (default: 2)
+#   BENCH_TRIALS   repeats per engine/case measurement;
+#                  the MEDIAN is reported, max/min spread alongside (default: 5)
+#   CASES          comma-separated case-id subset, e.g. CASES=e,d for a fast
+#                  mechanics smoke-test instead of the full matrix
 #
 # Output: a streamed per-case log, a consolidated human-readable results
 # table, a machine-readable TSV block (between "BEGIN TSV"/"END TSV"
@@ -57,7 +78,8 @@
 #
 # See tests/bench/run_bench.sh for the sibling suite this one is styled
 # after (same hang-protection-via-timeout, same mktemp workdir + KEEP=1
-# convention, same awk-based numeric-comparison helpers).
+# convention, same awk-based numeric-comparison helpers, and now the same
+# PIN/BENCH_TRIALS/median()/spread() measurement-rigor machinery, M2.9).
 
 set -u
 
@@ -71,6 +93,27 @@ TARGET_SECS="${TARGET_SECS:-0.3}"
 RUN_TIMEOUT="${RUN_TIMEOUT:-90}"
 PCREC_TIMEOUT="${PCREC_TIMEOUT:-60}"
 BUILD_TIMEOUT="${BUILD_TIMEOUT:-60}"
+
+# ---- measurement rigor (R2-B1/B2/B3) -----------------------------------
+# Pin every timed run to one core, repeat each measurement, judge on the
+# median. Lifted verbatim in approach from tests/bench/run_bench.sh's M2.9
+# fix -- same probe, same degrade-quietly-if-unprivileged behavior (chrt
+# has no permission on this box; taskset alone still works).
+
+BENCH_CPU="${BENCH_CPU:-2}"        # which core to pin to
+BENCH_TRIALS="${BENCH_TRIALS:-5}"  # repeats per measurement; median is judged
+PIN=""
+PIN_NOTE="none"
+if command -v taskset >/dev/null 2>&1 && taskset -c "$BENCH_CPU" true 2>/dev/null; then
+    PIN="taskset -c $BENCH_CPU"
+    PIN_NOTE="taskset -c $BENCH_CPU"
+    # SCHED_FIFO removes scheduler jitter but usually needs privileges; it is
+    # a bonus, never a requirement, so probe once and degrade quietly.
+    if command -v chrt >/dev/null 2>&1 && chrt -f 50 true 2>/dev/null; then
+        PIN="chrt -f 50 $PIN"
+        PIN_NOTE="chrt -f 50 + $PIN_NOTE"
+    fi
+fi
 
 if [ ! -x "$PCREC" ]; then
     echo "compare.sh: pcrec binary not found or not executable: $PCREC (build it first, e.g. 'make')" >&2
@@ -112,6 +155,15 @@ now_ns() { date +%s%N; }
 elapsed_secs() { awk -v a="$1" -v b="$2" 'BEGIN{printf "%.3f", (b-a)/1000000000.0}'; }
 num_lt() { awk -v a="$1" -v b="$2" 'BEGIN{exit !(a+0 < b+0)}'; }
 
+# median <values...> -> prints the median (lower of the two for even counts)
+median() {
+    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
+}
+# spread <values...> -> prints max/min as a ratio, "n/a" if min is 0
+spread() {
+    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.2f", v[NR]/v[1] }'
+}
+
 # join_semi <arr...> -> prints args joined with "; ". (Not `IFS='; '`
 # + "${arr[*]}": bash's `[*]` expansion only uses the FIRST character of
 # IFS as the join separator, which would silently join with ";" and no
@@ -138,10 +190,13 @@ extract_field() {
 # also DRV_STATUS/DRV_BYTES/DRV_ITERS/DRV_SECS/DRV_MBPS/DRV_MATCH/DRV_START/DRV_END
 # parsed from the driver's one-line `status=... key=value ...` output
 # (shared format across eng_pcrec.c / eng_pcre2.c / eng_py.py).
+# Every invocation runs under $PIN (R2-B3; empty string when unavailable,
+# word-split so it contributes zero argv elements in that case -- see
+# run_bench.sh's run_bdriver for the same pattern).
 run_driver() {
     local tmo="$1"; shift
     local out rc
-    out="$(timeout "$tmo" "$@" 2>&1)"
+    out="$(timeout "$tmo" $PIN "$@" 2>&1)"
     rc=$?
     DRV_RAW="$out"
     if [ $rc -eq 124 ]; then
@@ -237,14 +292,28 @@ HOSTNAME_STR="$(hostname 2>/dev/null || echo unknown-host)"
 DATE_YMD="$(date +%Y%m%d)"
 DATE_ISO="$(date -Iseconds 2>/dev/null || date)"
 
+# Governor/turbo capture (R2-B3) -- a number without the machine state
+# behind it is not a measurement. Same probe as run_bench.sh's describe_env.
+GOVERNOR="$(cat /sys/devices/system/cpu/cpu${BENCH_CPU}/cpufreq/scaling_governor 2>/dev/null || echo unknown)"
+if [ -r /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
+    TURBO=$([ "$(cat /sys/devices/system/cpu/intel_pstate/no_turbo)" = "1" ] && echo off || echo on)
+elif [ -r /sys/devices/system/cpu/cpufreq/boost ]; then
+    TURBO=$([ "$(cat /sys/devices/system/cpu/cpufreq/boost)" = "1" ] && echo on || echo off)
+else
+    TURBO="unknown"
+fi
+
 echo "== MACHINE CONTEXT =="
-echo "  host:    $HOSTNAME_STR"
-echo "  date:    $DATE_ISO"
-echo "  cpu:     $CPU_MODEL"
-echo "  load:    $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown) (1/5/15 min, $(nproc 2>/dev/null || echo '?') cores)"
-echo "  gcc:     $GCC_VER"
-echo "  pcre2:   $PCRE2_VERSION (jit: $([ "$JIT_LIB_AVAILABLE" = "1" ] && echo available || echo unavailable))"
-echo "  python3: $PY_VER"
+echo "  host:     $HOSTNAME_STR"
+echo "  date:     $DATE_ISO"
+echo "  cpu:      $CPU_MODEL"
+echo "  load:     $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown) (1/5/15 min, $(nproc 2>/dev/null || echo '?') cores)"
+echo "  pinning:  $PIN_NOTE (cpu $BENCH_CPU)"
+echo "  trials:   $BENCH_TRIALS per engine/case measurement (reported: median, spread column: max/min)"
+echo "  governor: $GOVERNOR (cpu$BENCH_CPU)   turbo: $TURBO"
+echo "  gcc:      $GCC_VER"
+echo "  pcre2:    $PCRE2_VERSION (jit: $([ "$JIT_LIB_AVAILABLE" = "1" ] && echo available || echo unavailable))"
+echo "  python3:  $PY_VER"
 echo
 
 # =========================================================================
@@ -496,7 +565,7 @@ declare -A CASE_METRIC=( [i]="latency" )
 
 # Global result accumulators, filled in by process_case, read by the
 # Results section below.
-declare -a ALL_ROWS=()          # tab-joined: case engine status bytes iters secs mbps ns_per_call ratio
+declare -a ALL_ROWS=()          # tab-joined: case engine status bytes iters secs metric value ratio_vs_pcrec spread
 declare -A CASE_VALID=()        # id -> "valid" | "invalid" | "error"
 declare -A CASE_REASON=()       # id -> human reason (invalid/error cases)
 declare -A CASE_REF_VERDICT=()  # id -> "nomatch" | "match [s,e)"
@@ -626,7 +695,7 @@ process_case() {
         echo "   (check docs/upstream_issues.md for a known divergence before assuming a pcrec bug)"
         CASE_VALID[$id]="invalid"
         CASE_REASON[$id]="$reason_str"
-        ALL_ROWS+=("$id"$'\t'"*"$'\t'"INVALID"$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-)
+        ALL_ROWS+=("$id"$'\t'"*"$'\t'"INVALID"$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-)
         echo
         return
     fi
@@ -689,15 +758,32 @@ process_case() {
         CASE_REASON[$id]="$(join_semi "${all_notes[@]}")"
     fi
 
-    # ---- scale + measure: reuse each engine's baseline iters=1 result if
-    # it already cleared TARGET_SECS, otherwise re-run once with a scaled
-    # iteration count. Engines whose BASELINE already failed (dnf/error)
-    # are reported as such directly -- never retried with a larger
-    # iteration count, since a baseline that already didn't finish in
-    # RUN_TIMEOUT at iters=1 would only be MORE likely to time out again
-    # at a larger iters, wasting a full second timeout for no new
-    # information. ----
-    local -A f_status f_secs f_iters f_bytes f_mbps
+    # ---- scale + measure (R2-B1/B2/B3): compute each engine's target
+    # iteration count from its baseline iters=1 sample (same formula as
+    # before -- if the baseline already cleared TARGET_SECS the target
+    # clamps to 1), then run BENCH_TRIALS independent, pinned trials at that
+    # target and report the MEDIAN, carrying max/min spread alongside. A
+    # single baseline sample is no longer treated as itself the
+    # measurement, even when it already cleared TARGET_SECS -- BENCH_TRIALS
+    # fresh process launches give a genuine spread instead of one sample
+    # standing in for all of them.
+    #
+    # Engines whose BASELINE already failed (dnf/error) are reported as such
+    # directly and never enter the trial loop -- a baseline that didn't
+    # finish in RUN_TIMEOUT at iters=1 would only be MORE likely to time out
+    # again at a larger iters, wasting BENCH_TRIALS full timeouts for no new
+    # information. A DNF or error DURING the trial loop stops that engine's
+    # remaining trials and reports DNF/error for the whole measurement --
+    # never silently retried past or averaged away (whatever trials already
+    # succeeded are discarded, not partially reported).
+    #
+    # Order interleaving (R2-B3: pcrec was always measured FIRST, a
+    # systematic confound): trial i starts the per-trial engine list at
+    # index (i mod N) and wraps around, so across BENCH_TRIALS trials every
+    # engine leads roughly once. This is a genuine rotation across trials,
+    # not a one-time shuffle -- it changes only invocation ORDER, never
+    # which engines run or which engine a result is attributed to.
+    local -A f_status f_secs f_iters f_bytes f_mbps f_spread target_iters
     for eng in "${engines[@]}"; do
         if [ "${base_rc[$eng]:-}" != "ok" ]; then
             f_status[$eng]="${base_rc[$eng]:-error}"
@@ -712,29 +798,44 @@ process_case() {
             continue
         fi
         local secs1="${base_secs[$eng]}"
-        if num_lt "$secs1" "$TARGET_SECS"; then
-            local target
-            target=$(awk -v s="$secs1" -v t="$TARGET_SECS" \
-                'BEGIN{ if (s < 0.000001) s = 0.000001; v = (t / s) * 1.2; if (v < 1) v = 1; if (v > 50000000) v = 50000000; printf "%d", v }')
-            build_engine_argv "$eng" "$cdir" "$pattern" "$subject" "$target"
+        target_iters[$eng]=$(awk -v s="$secs1" -v t="$TARGET_SECS" \
+            'BEGIN{ if (s < 0.000001) s = 0.000001; v = (t / s) * 1.2; if (v < 1) v = 1; if (v > 50000000) v = 50000000; printf "%d", v }')
+    done
+
+    local n_engines=${#engines[@]}
+    local -A trial_secs trial_mbps    # eng -> space-separated values across trials
+    local trial
+    for ((trial = 0; trial < BENCH_TRIALS; trial++)); do
+        local rot_start=$((trial % n_engines))
+        local order=() k
+        for ((k = 0; k < n_engines; k++)); do
+            order+=("${engines[$(((rot_start + k) % n_engines))]}")
+        done
+        for eng in "${order[@]}"; do
+            [ -n "${f_status[$eng]:-}" ] && continue  # baseline-skipped (dnf/error/jit_unavailable) or a prior trial in this loop already failed
+            local iters="${target_iters[$eng]}"
+            build_engine_argv "$eng" "$cdir" "$pattern" "$subject" "$iters"
             run_driver "$RUN_TIMEOUT" "${ENGINE_ARGV[@]}"
             if [ "$DRV_RC" != "ok" ] || [ "$DRV_STATUS" != "ok" ]; then
-                record_hard_error "case $id: engine $eng failed on scaled timing run (iters=$target, rc=$DRV_RC): ${DRV_RAW:-}"
+                record_hard_error "case $id: engine $eng failed on trial $trial (iters=$iters, rc=$DRV_RC): ${DRV_RAW:-}"
                 f_status[$eng]="error"
                 continue
             fi
-            f_status[$eng]="ok"
-            f_secs[$eng]="$DRV_SECS"
-            f_iters[$eng]="$DRV_ITERS"
+            f_iters[$eng]="$iters"
             f_bytes[$eng]="$DRV_BYTES"
-            f_mbps[$eng]="$DRV_MBPS"
-        else
-            f_status[$eng]="ok"
-            f_secs[$eng]="$secs1"
-            f_iters[$eng]=1
-            f_bytes[$eng]="${base_bytes[$eng]}"
-            f_mbps[$eng]=$(awk -v b="${base_bytes[$eng]}" -v s="$secs1" 'BEGIN{ mb=b/1048576.0; printf "%.3f", (s>0)? mb/s : 0 }')
-        fi
+            trial_secs[$eng]="${trial_secs[$eng]:-}${trial_secs[$eng]:+ }$DRV_SECS"
+            trial_mbps[$eng]="${trial_mbps[$eng]:-}${trial_mbps[$eng]:+ }$DRV_MBPS"
+        done
+    done
+    for eng in "${engines[@]}"; do
+        [ -n "${f_status[$eng]:-}" ] && continue  # already dnf/error/jit_unavailable
+        f_status[$eng]="ok"
+        f_secs[$eng]="$(median ${trial_secs[$eng]})"
+        f_mbps[$eng]="$(median ${trial_mbps[$eng]})"
+        # spread of secs and spread of mbps are the same ratio (mbps is a
+        # constant/secs for a fixed iters, and max/min is invariant under
+        # reciprocal), so one spread column covers both metrics honestly.
+        f_spread[$eng]="$(spread ${trial_secs[$eng]})"
     done
 
     # ---- report this case's rows, compute ratio vs best-other-engine ----
@@ -761,8 +862,8 @@ process_case() {
         fi
     done
 
-    printf "   %-14s %-6s %10s %10s %14s\n" "engine" "status" "bytes" "iters" \
-        "$([ "$metric" = "latency" ] && echo "ns/call" || echo "MB/s")"
+    printf "   %-14s %-6s %10s %10s %14s %8s\n" "engine" "status" "bytes" "iters" \
+        "$([ "$metric" = "latency" ] && echo "ns/call" || echo "MB/s")" "spread"
     for eng in "${engines[@]}"; do
         local st="${f_status[$eng]:-n/a}"
         if [ "$st" != "ok" ]; then
@@ -773,19 +874,19 @@ process_case() {
                 error) st_val="ERROR" ;;
                 *) st_val="$st" ;;
             esac
-            printf "   %-14s %-6s %10s %10s %14s\n" "$eng" "$st" "-" "-" "$st_val"
-            ALL_ROWS+=("$id"$'\t'"$eng"$'\t'"$st"$'\t'-$'\t'-$'\t'-$'\t'"$metric"$'\t'"$st_val"$'\t'-)
+            printf "   %-14s %-6s %10s %10s %14s %8s\n" "$eng" "$st" "-" "-" "$st_val" "-"
+            ALL_ROWS+=("$id"$'\t'"$eng"$'\t'"$st"$'\t'-$'\t'-$'\t'-$'\t'"$metric"$'\t'"$st_val"$'\t'-$'\t'-)
             continue
         fi
-        local val ratio_str row_val
+        local val ratio_str row_val spr="${f_spread[$eng]:-n/a}x"
         if [ "$metric" = "latency" ]; then
             val=$(awk -v s="${f_secs[$eng]}" -v i="${f_iters[$eng]}" 'BEGIN{ printf "%.2f", (s*1e9)/i }')
             row_val="$val"
-            printf "   %-14s %-6s %10s %10s %14s\n" "$eng" "$st" "${f_bytes[$eng]}" "${f_iters[$eng]}" "$val"
+            printf "   %-14s %-6s %10s %10s %14s %8s\n" "$eng" "$st" "${f_bytes[$eng]}" "${f_iters[$eng]}" "$val" "$spr"
         else
             val="${f_mbps[$eng]}"
             row_val="$val"
-            printf "   %-14s %-6s %10s %10s %14s\n" "$eng" "$st" "${f_bytes[$eng]}" "${f_iters[$eng]}" "$val"
+            printf "   %-14s %-6s %10s %10s %14s %8s\n" "$eng" "$st" "${f_bytes[$eng]}" "${f_iters[$eng]}" "$val" "$spr"
         fi
         if [ "$eng" = "pcrec" ]; then
             ratio_str="1.000 (baseline)"
@@ -804,7 +905,7 @@ process_case() {
         else
             ratio_str="-"
         fi
-        ALL_ROWS+=("$id"$'\t'"$eng"$'\t'"$st"$'\t'"${f_bytes[$eng]}"$'\t'"${f_iters[$eng]}"$'\t'"${f_secs[$eng]}"$'\t'"$metric"$'\t'"$row_val"$'\t'"$ratio_str")
+        ALL_ROWS+=("$id"$'\t'"$eng"$'\t'"$st"$'\t'"${f_bytes[$eng]}"$'\t'"${f_iters[$eng]}"$'\t'"${f_secs[$eng]}"$'\t'"$metric"$'\t'"$row_val"$'\t'"$ratio_str"$'\t'"$spr")
     done
 
     if [ "$metric" = "throughput" ] && [ -n "$best_other_mbps" ] && [ -n "$pcrec_mbps" ]; then
@@ -829,17 +930,18 @@ done
 
 echo "== RESULTS =="
 echo
-printf "%-4s %-13s %-8s %12s %10s %14s %10s %s\n" \
-    "case" "engine" "status" "bytes" "iters" "value" "metric" "ratio-vs-pcrec"
-printf '%s\n' "----------------------------------------------------------------------------------------------"
+echo "spread = max/min across BENCH_TRIALS ($BENCH_TRIALS) trials of the value column; 'n/a' means fewer than 2 successful trials."
+printf "%-4s %-13s %-8s %12s %10s %14s %10s %-22s %s\n" \
+    "case" "engine" "status" "bytes" "iters" "value" "metric" "ratio-vs-pcrec" "spread"
+printf '%s\n' "------------------------------------------------------------------------------------------------------------------"
 for row in "${ALL_ROWS[@]}"; do
-    IFS=$'\t' read -r c e st b i s m v r <<<"$row"
-    printf "%-4s %-13s %-8s %12s %10s %14s %10s %s\n" "$c" "$e" "$st" "$b" "$i" "$v" "$m" "$r"
+    IFS=$'\t' read -r c e st b i s m v r sp <<<"$row"
+    printf "%-4s %-13s %-8s %12s %10s %14s %10s %-22s %s\n" "$c" "$e" "$st" "$b" "$i" "$v" "$m" "$r" "$sp"
 done
 echo
 
 echo "== BEGIN TSV =="
-printf 'case\tengine\tstatus\tbytes\titers\tsecs\tmetric\tvalue\tratio_vs_pcrec\n'
+printf 'case\tengine\tstatus\tbytes\titers\tsecs\tmetric\tvalue\tratio_vs_pcrec\tspread\n'
 for row in "${ALL_ROWS[@]}"; do
     printf '%s\n' "$row"
 done
@@ -879,7 +981,23 @@ fi
 LOAD_AVG="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || uptime | sed -n 's/.*load average:\s*//p')"
 NPROC="$(nproc 2>/dev/null || echo unknown)"
 
+# Never silently clobber an existing snapshot. The report name is only
+# host+date, so a second run on the same day used to overwrite the first —
+# and the first is typically the ANNOTATED baseline other documents cite
+# (the current one carries checkpoint review R2's corrections). Losing the
+# baseline is precisely how a performance regression goes unnoticed, which
+# is the thing M2.11's gate exists to prevent. Set REPORT_FORCE=1 to
+# overwrite deliberately.
 REPORT="$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD.md"
+if [ -e "$REPORT" ] && [ "${REPORT_FORCE:-0}" != "1" ]; then
+    report_n=2
+    while [ -e "$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD-$report_n.md" ]; do
+        report_n=$((report_n + 1))
+    done
+    REPORT="$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD-$report_n.md"
+    echo "compare.sh: a snapshot for $HOSTNAME_STR/$DATE_YMD already exists;" >&2
+    echo "compare.sh: writing to $(basename "$REPORT") instead (REPORT_FORCE=1 to overwrite)" >&2
+fi
 {
     echo "# pcrec cross-engine performance comparison -- PROVISIONAL (load-compromised)"
     echo
@@ -903,6 +1021,10 @@ REPORT="$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD.md"
     echo "| cpu | $CPU_MODEL |"
     echo "| cores | $NPROC |"
     echo "| load average (1/5/15 min) | $LOAD_AVG |"
+    echo "| pinning | $PIN_NOTE (cpu $BENCH_CPU) |"
+    echo "| trials per measurement | $BENCH_TRIALS (median reported, spread column = max/min) |"
+    echo "| governor (cpu$BENCH_CPU) | $GOVERNOR |"
+    echo "| turbo | $TURBO |"
     echo "| gcc | $GCC_VER |"
     echo "| pcre2 | $PCRE2_VERSION (JIT: $([ "$JIT_LIB_AVAILABLE" = "1" ] && echo available || echo unavailable)) |"
     echo "| python3 | $PY_VER |"
@@ -932,12 +1054,15 @@ REPORT="$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD.md"
     echo "pcrec MB/s / best-other MB/s; the one latency case, (i): best-other ns/call /"
     echo "pcrec ns/call). Values > 1 mean pcrec is faster. \`status=dnf\` means that"
     echo "engine did not finish within RUN_TIMEOUT (${RUN_TIMEOUT}s) and was not timed."
+    echo "\`value\` is the MEDIAN of \`BENCH_TRIALS\` ($BENCH_TRIALS) independent, pinned"
+    echo "trials; \`spread\` is that same trial set's max/min ratio -- a wide spread means"
+    echo "the median is noisier than it looks, read it before trusting a close ratio."
     echo
-    echo "| case | engine | status | bytes | iters | value | metric | ratio-vs-pcrec |"
-    echo "|---|---|---|---|---|---|---|---|"
+    echo "| case | engine | status | bytes | iters | value | metric | ratio-vs-pcrec | spread |"
+    echo "|---|---|---|---|---|---|---|---|---|"
     for row in "${ALL_ROWS[@]}"; do
-        IFS=$'\t' read -r c e st b i s m v r <<<"$row"
-        printf '| %s | %s | %s | %s | %s | %s | %s | %s |\n' "$c" "$e" "$st" "$b" "$i" "$v" "$m" "$r"
+        IFS=$'\t' read -r c e st b i s m v r sp <<<"$row"
+        printf '| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n' "$c" "$e" "$st" "$b" "$i" "$v" "$m" "$r" "$sp"
     done
     echo
     echo "## Notes"
@@ -946,6 +1071,10 @@ REPORT="$SCRIPT_DIR/results-$HOSTNAME_STR-$DATE_YMD.md"
     echo "  time by design; PCRE2 JIT pays it once before the timed loop; see README.md)."
     echo "- Iteration counts are auto-scaled per engine so each timed measurement"
     echo "  accumulates at least ${TARGET_SECS}s of wall time."
+    echo "- Every timed invocation is pinned ($PIN_NOTE) and repeated \`BENCH_TRIALS\`"
+    echo "  ($BENCH_TRIALS) times with the engine order rotated per trial (trial i starts"
+    echo "  at engine index i mod N, wraps around) so no one engine is always first;"
+    echo "  reported values are the median, spread is that trial set's max/min ratio."
     echo "- INVALID cases were NOT timed (agreement check ran, timing did not)."
     if [ $invalid_count -gt 0 ]; then
         echo "- INVALID case detail:"

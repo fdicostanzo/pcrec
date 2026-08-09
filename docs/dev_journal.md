@@ -583,3 +583,67 @@ M2.9's compare.sh rework, which is in flight.
 
 Suite: 607 corpus + 41 CLI + 17 codegen green; oracle 100%; fuzz 1/2/3/5
 clean; bench 0 budget failures under the tightened budgets.
+
+## 2026-08-09 — CORRECTION: M2.10 reverted, and M2.12 shipped a 43% regression
+
+The M2.11 compare gate caught two regressions within an hour of existing, one
+of which I had written up in this journal as a 40% IMPROVEMENT. Recording both
+in full, because the entry above is wrong and the process failure is the more
+useful artifact.
+
+**What the gate found.** Generating its floors produced case (f) = 118.6 MB/s
+where the R2 baseline said 159.1. Chasing that:
+
+| build | case (f) |
+|---|---|
+| pre-session (pre-M2.8) | 158.0 |
+| M2.8 | 158.6 / 159.1 |
+| M2.8 + M2.12 | 90.8 / 90.9 |
+| + M2.10 | 118.7 / 115.9 |
+| after both fixes | 158.7 / 158.0 |
+
+So M2.12 cost 43%, and M2.10 recovered part of it while I recorded the partial
+recovery as a gain. Every number above has spread 1.01-1.02x — none of this
+was noise, and all of it was measurable the moment anyone looked.
+
+**M2.10 reverted.** Widening skip eligibility to a fraction of LIVE bytes is
+27% SLOWER on the case it targeted (158.6/159.1 -> 118.7 compare, 159.1/157.5
+-> 115.9/115.8 bdriver). My +40% came from a "before" sample of 83.7 where the
+true value is ~158 — taken un-interleaved, at load 1.69, never repeated. Two
+independent harnesses now agree. I had ALREADY written "a single sample is not
+a measurement" twice in this journal, built the interleaving machinery for
+exactly this in M2.9 that same session, and then failed to use it on my own
+result. Reverted; a codegen check asserts the state stays skip-ineligible so
+the idea cannot come back on plausibility alone.
+
+**M2.12's regression, and a false claim.** I wrote that non-EOL output was
+"byte-identical across 8 probe patterns". That was true of my FIRST M2.12
+draft and false of what I committed: after the divergence sweep I moved the
+accept evaluation after the skips UNCONDITIONALLY and never re-ran the
+identity check. It hoisted the memchr prefilter above the accept check on the
+non-EOL path and cost 43%. Both orders are equally correct without EOL; only
+one is fast. The emitter now reorders only when `eol` is set, keeps the in-skip
+`last`/`sfound` recording on the non-EOL path, and the 8 patterns are NOW
+genuinely byte-identical to pre-M2.12. D11 and D13 carry corrections.
+
+**What actually worked here.** The M2.11 gate is one session old and has
+already paid for itself twice. Its design choice — gate pcrec's OWN absolute
+per-case numbers rather than cross-engine ratios — is what made the signal
+legible; a ratio against PCRE2 would have moved for unrelated reasons and
+buried a 25% self-regression in the noise R2-B1 already documented.
+
+**What did not.** Every safeguard that caught this was one I built in the same
+session; none of the pre-existing tests noticed, because both regressions were
+behaviour-preserving. And the thing that produced the false claim was writing
+a verification result into a commit message from memory of an earlier run
+rather than re-running it against the code actually being committed.
+
+Standing lesson, now stated as a rule rather than a reflection: a performance
+number that appears in a commit message, a decision entry, or this journal
+must come from an interleaved, repeated measurement taken against the exact
+build being described. If it does not, do not write the number.
+
+Verification after both fixes: 607 corpus + 41 CLI + 17 codegen green; oracle
+100%; fuzz seeds 1/2/3/5/7 clean; the 27x69 EOL divergence sweep clean; bench
+0 budget failures; compare floors regenerated (case f = 159.070, matching the
+R2 baseline's 159.056) and the gate validated in both directions.

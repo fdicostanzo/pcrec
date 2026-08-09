@@ -107,25 +107,35 @@ if gen dollar 'a*b$'; then
         ok "M2.7: no per-start attempt loop for a \$-bearing pattern"
     fi
 fi
-# ---- M2.10: skip eligibility is relative to LIVE bytes -------------------
-# '[01]*1[01]{8}' self-loops on 2 of 256 bytes but on 100% of the bytes it can
-# ever see. The old ">= 192 of 256" rule rejected it, which is why compare
-# case (f) had "no skip-eligible states" (R2-A5). Reverting to an absolute
-# byte-count rule removes this table and costs ~40% on that case.
+# ---- M2.10 (NEGATIVE result): narrow-alphabet states stay skip-INELIGIBLE --
+# M2.10 tried admitting skip states by fraction-of-LIVE-bytes instead of the
+# absolute ">= 192 of 256" rule, so that '[01]*1[01]{8}' (2 live bytes, 100%
+# stay) would qualify — R2-A5 had called that case "no skip-eligible states".
+# It MEASURED 27% SLOWER on exactly that case (158.6/159.1 -> 118.7 MB/s
+# compare, 159.1/157.5 -> 115.9/115.8 bdriver) and was reverted. This check
+# exists so the idea cannot be re-landed on plausibility alone: if you change
+# eligibility, this fails, and you owe a measurement of the REVERSE machine
+# before deciding the new numbers are better.
 if gen dense '[01]*1[01]{8}'; then
     if grep -qE 'rx_(fs|rs)[0-9]+\[256\]' "$WORKDIR/dense.c"; then
-        ok "M2.10: narrow-alphabet dense pattern gets a skip table"
+        bad "M2.10: '[01]*1[01]{8}' now emits a skip table — eligibility was widened; re-measure case (f) (it was 27% SLOWER when this last changed) before accepting"
     else
-        bad "M2.10: '[01]*1[01]{8}' got NO skip table (eligibility back to an absolute byte count?)"
+        ok "M2.10: narrow-alphabet dense pattern stays skip-ineligible (measured regression)"
     fi
 fi
-# ...without admitting states that mostly LEAVE. A literal's interior states
-# advance on one byte and die on the rest, so none of them may qualify.
-if gen litnoskip 'needleXYZW'; then
-    if grep -qE 'rx_(fs|rs)[0-9]+\[256\]' "$WORKDIR/litnoskip.c"; then
-        bad "M2.10: 'needleXYZW' emitted a skip table (eligibility threshold too loose)"
+
+# ---- M2.12 ordering is ASYMMETRIC, and deliberately so ------------------
+# EOL machines must evaluate accept AFTER scan avoidance (checked below).
+# Non-EOL machines must NOT: hoisting the prefilter above the accept check
+# cost 43% on '[01]*1[01]{8}' (158.4 -> 90.8 MB/s). Both orders are correct;
+# only one is fast, and which one depends on the path.
+if gen ordnoeol '[01]*1[01]{8}'; then
+    acc_line=$(grep -nE 'if \(rx_facc\[st\]\) last = pos;' "$WORKDIR/ordnoeol.c" | head -1 | cut -d: -f1)
+    pre_line=$(grep -nE 'const void \*q = memchr' "$WORKDIR/ordnoeol.c" | head -1 | cut -d: -f1)
+    if [ -n "${acc_line:-}" ] && [ -n "${pre_line:-}" ] && [ "$acc_line" -lt "$pre_line" ]; then
+        ok "M2.12: non-EOL path keeps accept BEFORE scan avoidance (the fast order)"
     else
-        ok "M2.10: pure-literal pattern still gets no skip tables"
+        bad "M2.12: non-EOL path moved accept after the prefilter (measured 43% slower on '[01]*1[01]{8}')"
     fi
 fi
 

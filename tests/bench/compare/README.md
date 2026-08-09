@@ -23,11 +23,70 @@ that is deleted on exit unless `KEEP=1`.
 
 Env vars (see the header comment in `compare.sh` for the full list):
 `PCREC`, `CC`, `KEEP`, `TARGET_SECS` (per-measurement minimum wall time,
-default 0.3s), `RUN_TIMEOUT`, `PCREC_TIMEOUT`, `BUILD_TIMEOUT`.
+default 0.3s), `RUN_TIMEOUT`, `PCREC_TIMEOUT`, `BUILD_TIMEOUT`,
+`BENCH_CPU` (core to pin to, default 2), `BENCH_TRIALS` (repeats per
+engine/case measurement, default 5), `CASES` (comma-separated case-id
+subset, e.g. `CASES=e,d`, for a fast mechanics check instead of the full
+9-case matrix).
 
 Output: a streamed per-case log, a consolidated human-readable results
 table, a machine-readable TSV block, and a full copy of both written to
 `tests/bench/compare/results-<hostname>-<yyyymmdd>.md`.
+
+## Measurement rigor (pinning, trials, order — R2-B1/B2/B3)
+
+Checkpoint review R2 (`docs/reviews/2026-08-09-m2.md`) found this script's
+cross-engine numbers untrustworthy for three compounding reasons, all now
+fixed, styled after `tests/bench/run_bench.sh`'s equivalent fix (M2.9):
+
+- **No CPU pinning.** The box runs the `schedutil` governor with turbo on,
+  and per-measurement wall times (15–160 ms) sat inside a frequency-ramp
+  window. Every timed engine invocation is now wrapped in a probed `$PIN`
+  prefix — `taskset -c $BENCH_CPU`, plus `chrt -f 50` only if that actually
+  succeeds (it does not have permission on this box; the probe degrades
+  quietly and the script still runs, pinned via `taskset` alone). Untimed
+  setup work (subject generation, `pcrec`/`$CC` builds) is not pinned —
+  only work whose wall time is reported.
+- **Single-sample measurements.** A published "0.944 ratio" ranged
+  0.820–1.113 across 7 repeat runs and flipped sign in 4 of 7; a headline
+  "61 ns vs 76 ns" latency pair ranged 1.013–1.982. Every engine/case
+  measurement now runs `BENCH_TRIALS` (default 5) independent, pinned
+  trials. The reported `value` column is the **median**; a new **`spread`**
+  column carries the max/min ratio across those trials alongside it, so a
+  noisy result is visible instead of silently hidden behind one lucky (or
+  unlucky) sample. `spread` near `1.00x` means the trials agreed closely;
+  a wide spread (e.g. `2.11x`) means read the ratio-vs-pcrec column with
+  caution — differences smaller than the spread are not distinguishable
+  from noise. A DNF or error on *any single trial* fails that whole
+  engine+case measurement, reported as `status=dnf`/`error` exactly as a
+  single-shot failure would be — a flaky run is a result, never silently
+  retried past or averaged away.
+- **pcrec always measured first.** Every case previously ran pcrec, then
+  pcre2-interp, then pcre2-jit, then python-re, in that fixed order, every
+  single time — whichever engine runs first in a process-scheduling
+  environment systematically pays or benefits from cold-cache/cold-frequency
+  effects (direction depends on the box), and pcrec paid or benefited from
+  that on every case. Engine order is now **rotated per trial**: trial `i`
+  starts the engine list at index `i mod N` (N = number of engines active
+  for that case) and wraps around, so across `BENCH_TRIALS` trials every
+  engine leads roughly once. This is a genuine rotation across trials, not
+  a one-time shuffle, and it only changes invocation *order* — it never
+  changes which engines run for a case or which result gets attributed to
+  which engine.
+
+The `spread` column and the per-engine `value` (median) both come from the
+same `BENCH_TRIALS`-trial set; `secs` in the TSV is that same median. The
+one-shot `iters=1` baseline call used for the pre-timing agreement check is
+a separate call from the timed trials (also pinned) — its own timing is no
+longer reused as a measurement even when it already cleared `TARGET_SECS`,
+so a genuine independent-process spread is always available.
+
+Machine context output (streamed header and the markdown report's
+"Machine context" table) now also records: whether pinning was actually
+applied and how (`taskset` only vs `taskset`+`chrt`, or `none` if `taskset`
+itself is unavailable/unprivileged), the trial count, the CPU governor and
+turbo state for the pinned core, and the load average — R2's complaint was
+partly that machine state wasn't captured alongside the numbers it affects.
 
 ## Engines measured
 
@@ -121,21 +180,24 @@ levels:
   absolute MB/s number just shouldn't be read as "how fast this engine
   scans 8 MB" the way an un-flagged case's number can be.
 - **Auto-scaled iterations.** Each engine's `iters=1` baseline call
-  supplies a per-engine time-per-call estimate; if that's already
-  `>= TARGET_SECS` (default 0.3s) the baseline measurement is reused
-  as-is, otherwise one additional run is made with a scaled-up iteration
-  count so the reported measurement accumulates at least `TARGET_SECS` of
-  wall time. An engine whose *baseline* already failed to finish
-  (DNF/error) is never retried at a larger iteration count — a call that
-  didn't finish at `iters=1` within `RUN_TIMEOUT` would only be more
-  likely to time out again at a larger count, for no new information.
+  supplies a per-engine time-per-call estimate, used to compute an
+  iteration count targeting at least `TARGET_SECS` (default 0.3s) of wall
+  time (clamped to `iters=1` if the baseline alone already cleared it).
+  That target iteration count is then run `BENCH_TRIALS` times (see
+  "Measurement rigor" above) — the baseline's own timing is calibration
+  input only, never itself reused as the reported measurement. An engine
+  whose *baseline* already failed to finish (DNF/error) is never entered
+  into the trial loop — a call that didn't finish at `iters=1` within
+  `RUN_TIMEOUT` would only be more likely to time out again at a larger
+  count, for no new information.
 - **Compile time excluded from every measurement.** See "Fairness" below.
-- **MB/s per engine, plus a ratio column.** For throughput cases, the
-  ratio is `pcrec MB/s / best-other-engine MB/s` (>1 means pcrec is
-  faster). For the one latency case (short-subject regime, case i), the
-  ratio is `best-other-engine ns/call / pcrec ns/call` (again >1 means
-  pcrec is faster) — same sign convention, since for that metric lower is
-  better.
+- **MB/s (or ns/call) per engine, a ratio column, and a spread column.**
+  `value` is the median across `BENCH_TRIALS` trials; `spread` is that same
+  trial set's max/min ratio. For throughput cases, the ratio is
+  `pcrec MB/s / best-other-engine MB/s` (>1 means pcrec is faster). For the
+  one latency case (short-subject regime, case i), the ratio is
+  `best-other-engine ns/call / pcrec ns/call` (again >1 means pcrec is
+  faster) — same sign convention, since for that metric lower is better.
 
 ## Fairness notes (what each engine's measurement includes/excludes)
 
@@ -262,9 +324,11 @@ CAN do, which is narrower than what the other engines do:
   headline is that pcrec loses this workload to JIT for want of a feature.
 - **"Beats JIT" / "beats interp" are per-pattern-and-size claims**, not a
   ranking: PCRE2 JIT is itself slower than plain interp on some shapes/sizes.
-- **Precision**: single-shot numbers on this harness carry run-to-run noise of
-  up to ~30% on short-latency cases; ratios near 1.0 are ties, not wins. The
-  harness does not yet pin CPUs or control the frequency governor (plan M2.9).
+- **Precision**: every reported value is now the median of `BENCH_TRIALS`
+  pinned trials (previously single-shot; see "Measurement rigor" above),
+  with a `spread` column carrying the max/min ratio across those trials —
+  check `spread` before trusting a close ratio; values within the spread of
+  1.0 are ties, not wins.
 - **Determinism**: subjects are generated from a fixed seed (`random.Random(1729)`).
   A fixed seed only guarantees reproducibility while the draws are consumed in
   a fixed order — keep generation single-threaded and ahead of any worker pool.

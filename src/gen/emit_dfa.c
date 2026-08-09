@@ -119,45 +119,38 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
-/* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that tend to
- * stay put — their scan degenerates to a SIMD-friendly skip loop. Motivated by
- * compare case h (`.*=.*`), where the post-'=' state self-loops on everything
- * but '\n' in both machines.
+/* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
+ * put on >= 192 of 256 bytes — their scan degenerates to a SIMD-friendly
+ * skip loop. Motivated by compare case h (`.*=.*`): the post-'=' state
+ * self-loops on everything but '\n' in both machines.
  *
- * Eligibility is the fraction of a state's LIVE bytes that keep it in place,
- * not the fraction of all 256 (M2.10). The old absolute ">= 192 of 256" rule
- * silently encoded an assumption that subjects are wide-alphabet text: it
- * admits the `.*` state of `.*=.*` (255 live, 255 stay) but rejects the `[01]`
- * state of `[01]*1[01]{8}` (2 live, 2 stay), even though the latter stays on
- * 100% of the bytes that pattern will ever see. That rejection is most of why
- * compare case (f) had "no skip-eligible states" (R2-A5).
- *
- * A skip loop is worth having exactly when the machine, once in this state,
- * tends to remain there — which is a property of the live alphabet, not of
- * the byte space. Dead bytes leave the state entirely and end the run either
- * way, so counting them against the state is measuring the wrong thing. */
-enum { SKIP_STAY_NUM = 3, SKIP_STAY_DEN = 4 };   /* admit at >= 75% of live */
-
+ * M2.10 tried replacing this absolute byte count with a fraction of the
+ * state's LIVE bytes, so that narrow-alphabet patterns like `[01]*1[01]{8}`
+ * (2 live bytes, 100% stay) would qualify — R2-A5 had described that case as
+ * having "no skip-eligible states". The reasoning was sound and the result
+ * was a REGRESSION: it gives case (f) one reverse skip table and measures
+ * 158.6/159.1 -> 118.7 MB/s on the compare harness and 159.1/157.5 ->
+ * 115.9/115.8 MB/s on bdriver, spreads 1.01-1.02x, i.e. ~27% slower on the
+ * exact case it was meant to fix. Reverted; see D13 and the 2026-08-09
+ * journal entry. Do not re-attempt without measuring the REVERSE machine
+ * specifically — the suspicion is that a backward byte-at-a-time skip loop
+ * loses to the reverse table walk, but that is untested. */
 static int pick_skip_states(const Dfa *d, int exclude, int out[4])
 {
     int cls_size[256] = {0};
     for (int b = 0; b < 256; b++) cls_size[d->clsmap[b]]++;
     int nout = 0;
     for (int pass = 0; pass < 4; pass++) {
-        int best = -1, bestcnt = 0;
+        int best = -1, bestcnt = 191;
         for (int i = 0; i < d->n; i++) {
             if (i == exclude) continue;
             bool taken = false;
             for (int k = 0; k < nout; k++)
                 if (out[k] == i) taken = true;
             if (taken) continue;
-            int stay = 0, live = 0;
-            for (int cl = 0; cl < d->ncls; cl++) {
+            int stay = 0;
+            for (int cl = 0; cl < d->ncls; cl++)
                 if (d->st[i].tr[cl] == i) stay += cls_size[cl];
-                if (d->st[i].tr[cl] >= 0)  live += cls_size[cl];
-            }
-            if (live == 0) continue;
-            if (stay * SKIP_STAY_DEN < live * SKIP_STAY_NUM) continue;
             if (stay > bestcnt) { bestcnt = stay; best = i; }
         }
         if (best < 0) break;
@@ -275,13 +268,19 @@ static void emit_unanchored(Ctx *cx)
     sb_printf(c, "    int st = %d;\n", fs);
     sb_puts(c,   "    if (startpos > n) return 0;\n"
                  "    for (;;) {\n");
-    /* Scan avoidance runs BEFORE the accept/EOL evaluation, so the evaluation
-     * always sees the position the loop is really at. Doing it the other way
-     * round is wrong under EOL: a skip that lands on n-1 would then consume
-     * that byte without ever taking the EOL view of it. It is equally correct
-     * without EOL — every position a skip passes has the same state and so
-     * the same accept bit, and `last` wants the largest such position anyway,
-     * which is exactly where the skip stops. */
+    /* Under EOL, scan avoidance must run BEFORE the accept/EOL evaluation, so
+     * that evaluation sees the position the loop is really at: a skip bounded
+     * at n-1 can LAND on n-1, and evaluating first would consume that byte
+     * without ever taking its EOL view (53 divergences, see D11).
+     *
+     * Without EOL the order is a free choice semantically — every position a
+     * skip passes has the same state and so the same accept bit — but NOT a
+     * free choice in speed. Hoisting the prefilter above the accept check
+     * costs 43% on `[01]*1[01]{8}` (158.4 -> 90.8 MB/s, 0 skip states, tight
+     * spreads), so the non-EOL path keeps the original order. This asymmetry
+     * is the whole reason the flag exists; do not "simplify" it away. */
+    if (!eol)
+        sb_printf(c, "        if (%s_facc[st]) last = pos;\n", p);
     {
         const char *kw = "if";
         if (prefilter) {
@@ -310,6 +309,11 @@ static void emit_unanchored(Ctx *cx)
             int K = fskip[k];
             sb_printf(c, "        %s (st == %d) {\n", kw, K);
             sb_printf(c, "            while (%s && %s_fs%d[s[pos]]) pos++;\n", fbound, p, K);
+            /* With the accept check ahead of us (non-EOL order) the skipped
+             * run's final position would otherwise go unrecorded; under EOL
+             * the check runs after the skip and already covers it. */
+            if (!eol && fd->st[K].accept)
+                sb_puts(c, "            last = pos;\n");
             sb_puts(c, "        }\n");
             kw = "else if";
         }
@@ -319,8 +323,8 @@ static void emit_unanchored(Ctx *cx)
         sb_printf(c, "        if (__builtin_expect(pos + 1 >= n, 0) && %s_fev[st] >= 0 &&\n"
                      "            (pos == n || (pos + 1 == n && s[pos] == '\\n')))\n"
                      "            est = %s_fev[st];\n", p, p);
+        sb_printf(c, "        if (%s_facc[%s]) last = pos;\n", p, fsrc);
     }
-    sb_printf(c, "        if (%s_facc[%s]) last = pos;\n", p, fsrc);
     sb_puts(c,   "        if (pos >= n) break;\n");
     sb_printf(c, "        st = %s_ftr[%s * %d + %s_fcls[s[pos++]]];\n",
               p, fsrc, fd->ncls, p);
@@ -333,6 +337,8 @@ static void emit_unanchored(Ctx *cx)
                  "        size_t pp = end;\n");
     sb_printf(c, "        int rst = %d;\n", rs);
     sb_puts(c,   "        for (;;) {\n");
+    if (!eol)
+        sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
     {   /* same ordering rule as the forward loop, and `sfound` wants the
          * SMALLEST accepting position, which is where a reverse skip stops */
         const char *kw = "if";
@@ -343,6 +349,8 @@ static void emit_unanchored(Ctx *cx)
             sb_printf(c, "            %s (rst == %d%s) {\n", kw, K,
                       eol ? " && pp + 1 < n" : "");
             sb_printf(c, "                while (pp > startpos && %s_rs%d[s[pp - 1]]) pp--;\n", p, K);
+            if (!eol && rd->st[K].accept)
+                sb_puts(c, "                sfound = pp;\n");
             sb_puts(c, "            }\n");
             kw = "else if";
         }
@@ -352,8 +360,8 @@ static void emit_unanchored(Ctx *cx)
         sb_printf(c, "            if (__builtin_expect(pp + 1 >= n, 0) && %s_rev[rst] >= 0 &&\n"
                      "                (pp == n || (pp + 1 == n && s[pp] == '\\n')))\n"
                      "                erst = %s_rev[rst];\n", p, p);
+        sb_printf(c, "            if (%s_racc[%s]) sfound = pp;\n", p, rsrc);
     }
-    sb_printf(c, "            if (%s_racc[%s]) sfound = pp;\n", p, rsrc);
     sb_puts(c,   "            if (pp <= startpos) break;\n");
     sb_printf(c, "            rst = %s_rtr[%s * %d + %s_rcls[s[--pp]]];\n",
               p, rsrc, rd->ncls, p);

@@ -177,10 +177,21 @@ one that is easy to miss:
    extreme position, which is exactly where the skip stops. That also makes
    the per-skip-state `last = pos` line redundant, so it is gone.
 
-Rule 2 is why the two emitters M2.7 forked are now merged back into one
+Rule 2 applies to the EOL path ONLY, and that asymmetry is load-bearing.
+CORRECTION (same day): the first version of this entry claimed non-EOL output
+was byte-identical across 8 probe patterns. That was true of an EARLIER draft
+of M2.12 and false of what shipped — the reorder was applied unconditionally,
+which changed the non-EOL loop and cost **43%** on `[01]*1[01]{8}`
+(158.4 -> 90.8 MB/s, tight spreads). The prefilter got hoisted above the
+accept check, and while both orders are equally CORRECT without EOL, only one
+is fast. The emitter now reorders only when `eol` is set, the in-skip
+`last`/`sfound` recording is retained on the non-EOL path where the accept
+check precedes the skip, and non-EOL output is now genuinely byte-identical to
+pre-M2.12 across those 8 patterns.
+
+Rule 2 is also why the two emitters M2.7 forked are merged back into one
 EOL-aware `emit_unanchored`: the fork is how the `$` path lost scan avoidance
-for a whole milestone without any test noticing. Non-EOL output is
-byte-identical across 8 probe patterns, so the merge is a no-op there.
+for a whole milestone without any test noticing.
 
 Measured (7 trials each, load avg ~0.95): `ERROR: .*$` over 8 MB of log text
 went 291 -> 22248 MB/s median, with non-overlapping ranges, and is now at
@@ -243,11 +254,25 @@ a state, tends to remain there, and that is a property of the live alphabet,
 not of the byte space; dead bytes end the run either way, so counting them
 against the state measures the wrong thing.
 
-Measured (median of 7, pinned, interleaved old/new): case (f) 83.7 -> 116.8
-MB/s (+40%). Every other probe pattern is unchanged, and for `.*=.*`,
-`needleXYZW`, `ERROR: .*`, `ERROR: .*$`, `a(b|c)+d` and `x{40,60}y` the emitted
-C is byte-IDENTICAL, so "unchanged" there is a fact about the codegen rather
-than a reading of the timer.
+**REVERTED, same day, by its own measurement.** The reasoning above is sound
+and the result was a regression. Admitting the `[01]` state gives case (f) one
+REVERSE skip table and measures ~27% SLOWER on the case it was meant to fix:
+158.6/159.1 -> 118.7 MB/s on the compare harness, 159.1/157.5 ->
+115.9/115.8 MB/s on bdriver, spreads 1.01-1.02x.
+
+The +40% originally recorded here was a bad measurement: the "before" sample
+read 83.7 MB/s where the true value is ~158, taken un-interleaved at load 1.69
+and never repeated. Interleaved repeats on two independent harnesses agree it
+was noise. The lesson is not subtle and had already been written down twice in
+this journal — a single sample is not a measurement — and it still cost a
+shipped regression.
+
+Mechanism unknown and deliberately left so rather than guessed at: the
+suspicion is that a backward byte-at-a-time skip loop loses to the reverse
+table walk, which would mean skip loops are worth less in the REVERSE machine
+than the forward one. Untested. `tests/codegen/run_codegen_tests.sh` now
+asserts the state stays skip-INELIGIBLE, so the idea cannot be re-landed on
+plausibility alone.
 
 **The D7 arbitration.** D7 promised, and M2.3 claimed to have delivered, an
 arbitration between computed-goto and table dispatch for small DFAs;
