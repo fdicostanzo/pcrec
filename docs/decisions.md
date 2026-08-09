@@ -729,12 +729,46 @@ happens to support. So the product is small because it is requested small, not
 because we prune it afterwards. A caller naming a singleton everywhere gets
 exactly one engine.
 
+**At EXECUTION time the caller supplies the specific value for each PLURAL
+dimension, and the dispatcher selects the matching engine.** Singleton
+dimensions do not appear in the runtime signature at all — they were compiled
+away, so there is nothing to pass. The generated entry point therefore carries
+exactly one selector per plural dimension and nothing else:
+
+    case {insensitive}, encoding {ascii, utf8}
+      -> rx_search(s, n, startpos, m, RX_ENC_UTF8)      /* one selector */
+
+    case {sensitive, insensitive}, encoding {ascii, utf8}
+      -> rx_search(s, n, startpos, m, RX_CASE_CI, RX_ENC_ASCII)
+
+    everything singleton
+      -> rx_search(s, n, startpos, m)                   /* today's signature */
+
+Two properties this has to preserve, and they are the whole point:
+
+1. **Dispatch is once per SEARCH CALL, never per byte.** Selecting the engine
+   is a table index or a switch on a small tuple, resolved before the scan
+   starts. A selector that reached the hot loop would reintroduce exactly the
+   runtime branch hyperspecialization exists to remove, and would make the
+   plural case slower than compiling twice.
+2. **The all-singleton case pays NOTHING for the mechanism.** No dispatcher, no
+   indirection, no extra parameter — the entry point IS the specialized
+   function, byte for byte what pcrec emits today. The general mechanism must
+   not tax the common case; that would invert D18's own priority.
+
+Worth building both surfaces, because they cost the same: a NAMED entry point
+per combination (`rx_search_ci_utf8`) alongside the selector-taking dispatcher.
+A caller who knows its configuration statically calls the named one and pays no
+dispatch at all — even an indirect call — while a caller choosing at run time
+uses the dispatcher, which is then a thin switch over the same named functions.
+
 Consequence for the API, and it is not the shape `pcrec_options` has today:
 the option fields are currently scalars (`int encoding`), which can express
 "utf8" but not "{ascii, utf8}". A set-valued request surface is a real design
-change and it interacts with DD-3 (generated-API versioning) — the generated
-entry point for a multi-element product is a dispatcher whose signature depends
-on which dimensions are plural.
+change, and the generated searcher contract in lib/pcrec.h — currently a fixed
+`<prefix>_search(s, n, startpos, m)` — becomes a signature that DEPENDS on
+which dimensions are plural. That is squarely DD-3's territory (generated-API
+versioning/compat policy, already marked "before M3").
 
 **And the test that keeps that from exploding: every dimension must EARN its
 place.** Before a dimension becomes a product axis, measure whether
