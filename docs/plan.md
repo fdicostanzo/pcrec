@@ -156,7 +156,8 @@ named, cleanly rejected and queried.
   complete and tested outcome, not a stub. Everything the parser currently
   knows about non-base syntax moves here: `esc_modules[]`, `esc_char_value`'s
   non-base cases, the `(?X` ternary chain, the `(*` catch, the `[[.`/`[[=`
-  rule. THE POINT is that a construct stops having two homes — `\v` was the
+  rule. (NOT "everything", as built: `\x{...}` and the possessive `+` are
+  sub-cases of BASE constructs, not doorways, and stay in parse.c — see D24.) THE POINT is that a construct stops having two homes — `\v` was the
   declarative table and the imperative switch disagreeing ten lines apart.
   BUILT 2026-08-09 as src/parse/registry.c: 67 rows (39 escape, 24 group, 1
   verb, 3 class-bracket), guarded by tests/registry/ (116 checks, five sabotage
@@ -181,7 +182,11 @@ named, cleanly rejected and queried.
   hand-written 93 entries, and docs/pcre2_compliance.md is RENDERED from it.
   Adding a row then covers itself in both. Keep the accept-controls
   hand-written — they must not come from the same source as the thing they
-  control, or the control is vacuous (the trie-identity lesson)
+  control, or the control is vacuous (the trie-identity lesson). WARNING (R4
+  critic finding): `\x{...}` and the possessive `+` have NO registry row, so
+  iterating the dump silently drops their existing tests/reject/ coverage unless
+  SR-4 special-cases them explicitly. Same for any construct rejected with fixed
+  text rather than a "requires module" diagnostic
 - [SR-5] STATE:not-started — guard the fast path CLAIM, do not just assert it:
   base-tier patterns must perform ZERO registry lookups (`(?:` excepted). Use
   an instrumented build with a lookup counter, the way run_trie_identity.sh
@@ -191,14 +196,23 @@ named, cleanly rejected and queried.
   module lands (esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc,
   grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier,
   grp_callout, verbs, cls_posix). Not a step to schedule — a rule to follow
-  when a module is implemented. The registry row already names the handler
+  when a module is implemented. NOTE (R4 critic finding): the row does NOT yet
+  name a handler — that field arrives with SR-2 — and the status vocabulary has
+  no value meaning "implemented by module X"; RS_MODULE unconditionally implies
+  rejection today. SR-6 therefore carries an unwritten schema change, not just a
+  file move
 - [SR-7] STATE:deferred — FLAVOURS (families as named masks: `pcre2-10.46`,
   `pcre2-dfa`, `python-re`, `ere`). Deferred by D18's earn-its-axis rule
   applied to the front end: exactly ONE flavour-varying row is known (`\v`), so
   the selection machinery has a set of size one and no customer. The column
   exists from SR-1; it turns on when a second flavour earns it. Note
   `pcre2-dfa` is the ENGINE-capability axis expressed as a family, so this step
-  and DD-7/M4 are related
+  and DD-7/M4 are related. BLOCKER TO PLAN FOR (R4 critic finding):
+  `pcrec_registry_find(kind, sel)` takes no flavour argument and returns the
+  first row matching a byte, so SR-1's "short chain for the rare flavour-varying
+  byte" is not expressible in the shipped shape — SR-7 must change that
+  signature. Today a duplicate selector is caught loudly by tests/registry/
+  rather than silently shadowing, so this is a design debt, not a live bug
 - [SR-8] STATE:deferred — ENGINE-capability check moves OUT of the parser.
   Today `\1` is rejected by the PARSER as "requires module 'backrefs'", but
   backrefs parse fine and simply cannot LOWER to a DFA. When M4's VM exists the

@@ -1227,12 +1227,24 @@ Resolved by splitting those:
 - The table is `static const` C data, authored once. Handlers are C functions,
   so a genuinely new construct means rebuilding pcrec regardless — that is
   unavoidable for a compiler written in C and is not what the concern is about.
-- SELECTION is fully dynamic: flavour and feature mask are resolved at
-  pattern-compile time, per call, from `pcrec_options`.
+- SELECTION is to be fully dynamic: flavour and feature mask resolved at
+  pattern-compile time, per call, from `pcrec_options`. **Stated as intent, not
+  as description (R4 correction):** as of SR-1 `pcrec_options` has no flavour or
+  enablement field, and nothing outside tests/registry/ reads the
+  feature/flavour/engine columns at all. The separation of the four axes is real
+  in the DATA and still nominal in the CODE; it becomes load-bearing at SR-7.
 - A runtime-MUTABLE registry is rejected. It buys nothing over the above and
-  costs the thread-safety property D19 established and TS-1 now guards: a
-  mutable global registry is exactly the file-scope mutable state that guard
-  forbids.
+  costs the thread-safety property D19 established: a mutable global registry is
+  exactly the file-scope mutable state D19's compiler-side property forbids.
+  **Correction (R4 critic pass, same day).** This bullet originally read "D19
+  established and TS-1 now guards". TS-1 does not guard it. TS-1 scans EMITTED
+  OUTPUT only — the .c/.h pcrec generates for a pattern — and would not notice a
+  mutable global added to src/. D19's compiler-side property is AUDITED BY HAND
+  and mechanized by nothing. The conclusion stands; the guarantee cited for it
+  did not exist, and the miscitation had already been copied into
+  src/parse/registry.c and src/core/internal.h before a critic caught it. This
+  is the same failure mode as D19's own correction to R3 — a wrong description
+  of correct code, which the next reader reasons from.
 
 **The registry generates DOCUMENTATION AND TESTS, never the compiler** — and
 better than generating them, it is DUMPED and they consume the dump:

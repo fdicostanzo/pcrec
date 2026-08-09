@@ -2003,3 +2003,100 @@ emitted output across the corpus, proved the way OS-0b proved it (167 patterns
 x 3 prefixes x 4 emission modes = 1980 hashed outputs; the script pattern is in
 that session's entry). tests/registry/ was built to be SR-2's safety net as
 much as SR-1's: it already pins every diagnostic string SR-2 must reproduce.
+
+## 2026-08-09 — R4: adversarial review of SR-1, and what it cost me
+
+Frank asked whether SR-1 had had a critic pass. It had not — R1–R3 covered
+earlier checkpoints, and a design conceived (D24) and built (SR-1) on the same
+day had faced nobody. D6 requires a panel at every major checkpoint, so this was
+a straightforward process miss, and the pass paid for itself within the hour.
+
+Three critics, deliberately different lenses, all required to write findings
+incrementally (the R3 lesson holds: batching critics deliver nothing). Compiled
+review: docs/reviews/2026-08-09-sr1-registry.md. Twelve findings; eight fixed,
+two recorded as forward work, two rebutted in part.
+
+**The finding that matters.** Nine rows — `\1`..`\9` — documented "octal escape
+if no such group". PCRE2 10.46 raises error 115 "reference to non-existent
+subpattern" unconditionally; the octal fallback is Perl/PCRE1 and does not
+survive into PCRE2. I re-measured it myself against libpcre2 before accepting
+the finding, and the critic was right. So the file built to be the ONE TRUE HOME
+for PCRE2 semantics shipped with nine rows asserting a false one, on day one,
+because I wrote the notes from memory instead of checking. The wake brief's
+"measure before describing" was on the screen when I did it.
+
+That is the fifth consecutive checkpoint where reading a spec against pcrec beat
+running pcrec: ~54M oracle-checked comparisons across five checkpoints have
+found zero compiler defects, while afternoons of reading PCRE2's syntax
+reference have now found three real errors. The registry exists BECAUSE of that
+pattern and immediately demonstrated it.
+
+**Two of the three worst findings were in the TEST, not the artifact.** Deleting
+both collating rows was 100% invisible — 116/116 green. Not the empty-kind check
+(the POSIX row survived), not the coverage floor (65 >= 60), not table->parser
+(it iterates rows that EXIST, so absence is unobservable), not even the two
+hand-written `[.a.]` probes, because those exercise the parser rather than table
+membership. The registry could silently lose its record of the very incident it
+was built to prevent. And the sweep — the direction I called "the whole point"
+in three separate documents — covered two of the four doorways. VERB and
+CLASSBRACKET were never swept at all.
+
+Both now fixed: all four doorways swept, fixed-text rows checked against their
+exact message (the class-bracket sweep validated 1 of 3 rows until I noticed the
+"requires module" marker excluded them), and a hand-written required-rows
+manifest that catches deletion. Sabotage battery grown from five edits to seven;
+the two new ones were invisible before. 116 -> 126 checks.
+
+The critic's framing of the floor is the keeper: *a floor answers "did someone
+delete a lot", never "did someone delete the right ones"*, and no floor loose
+enough to tolerate ordinary churn can catch a two-row deletion. The fix is a
+manifest, not a tighter number.
+
+**A wrong citation I had already propagated.** D24 justified rejecting a mutable
+registry with "the thread-safety property TS-1 guards". TS-1 scans EMITTED
+OUTPUT only; it would not see a mutable global in src/. The honest guard is
+D19's compiler-side property, which D19 itself records as audited by hand and
+mechanized by nothing. The conclusion was right, the cited guarantee did not
+exist, and I had already copied it into registry.c and internal.h. Corrected in
+all three. Exactly the shape of D19's own correction to R3 — a wrong description
+of correct code, which the next reader reasons from. The cost of a bad citation
+scales with how quotable it is.
+
+**Verifying the mitigation beat finding the hole.** The tests critic proved the
+probe-from-syntax circularity is real (the same wrong module in BOTH parse.c and
+registry.c passes 116/116), then ran tests/reject/ against its own sabotage and
+found that IT catches the case, because its 93 expectations are hand-written
+literals. That turned "the check is circular" from an alarm into a precise
+statement of residual risk: a NEW construct, wrong in both files, with no
+reject-table row, is caught by nothing. Brief future critics to attack the
+defence, not just the target.
+
+**Frank's macro suggestion turned out to be a correctness fix.** He asked for
+the row details behind a light abstraction. The `M_<module>` macros emit the
+feature bit and the diagnostic name as a PAIR — which closed a critic finding
+that the feature mask's VALUE was never checked, only its zeroness, and made an
+invented module name a compile error (verified: `M_wrongmodule` undeclared,
+build fails). A readability change that independently killed a HIGH finding's
+attack path.
+
+**Also recorded:** K2 in known_issues.md (pcrec prints "(backreference/octal)"
+for `\1`..`\9`, describing PCRE2 behaviour that does not exist — cosmetic today,
+wrong advice once module 'backrefs' lands, deliberately NOT fixed because SR-2's
+bar is byte-identical output). The `engines` column now states why it disagrees
+with PCRE2's own DFA: pcre2_dfa_match supports lookaround, atomic groups and
+recursion because it is a breadth-first bytecode simulation, not a classical
+automaton like ours. plan.md corrected in four places, including SR-6's claim
+that rows "already name the handler" (they do not) and the deeper gap it hides:
+no status value means "implemented by module X", so SR-6 carries an unwritten
+schema change.
+
+**Still open, deliberately.** `pcrec_registry_find` takes no flavour argument,
+so SR-1's "short chain for the rare flavour-varying byte" is not expressible in
+the shipped shape — recorded on SR-7 as a signature change, not fixed, since a
+duplicate selector fails loudly today. And the "sixth copy" objection stands as
+strategy: the answer is to do SR-2, not to argue.
+
+**Next: SR-2**, unchanged. Its acceptance bar is byte-identical emitted output
+across the corpus (167 patterns x 3 prefixes x 4 modes = 1980 hashed outputs),
+and tests/registry/ now pins 126 checks worth of the diagnostics it must
+reproduce.

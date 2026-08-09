@@ -287,24 +287,102 @@ static void check_table_to_parser(void)
                "[=a=]", "POSIX collating elements are not supported");
 }
 
+/* ---- part 2b: rows that MUST exist -------------------------------------
+ * Everything above iterates the rows that are present, so it is structurally
+ * blind to a row being DELETED — and a critic pass demonstrated exactly that:
+ * removing both collating rows left all 116 checks green. The per-kind empty
+ * check did not fire (the POSIX ':' row survived), the coverage floor did not
+ * fire (65 >= 60), and the two probes above kept passing because they exercise
+ * the PARSER, not table membership.
+ *
+ * A coverage floor answers "did someone delete a lot", never "did someone
+ * delete the right ones", and no floor low enough to tolerate ordinary row
+ * churn can catch a two-row deletion. So this is a hand-written manifest, and
+ * hand-written is the point: a control must not come from the same source as
+ * the thing it controls. Keep it small — it names constructs whose ABSENCE
+ * would be a silent regression of a specific past incident, not every row. */
+static void check_required_rows(void)
+{
+    static const struct {
+        RegKind     kind;
+        int         sel;
+        RegStatus   status;
+        const char *why;
+    } required[] = {
+        {RK_CLASSBRACKET, '.', RS_REJECTED,
+         "POSIX collating element — pcrec accepted these silently until 2026-08-09"},
+        {RK_CLASSBRACKET, '=', RS_REJECTED,
+         "POSIX equivalence class — same incident"},
+        {RK_CLASSBRACKET, ':', RS_MODULE, "POSIX class [[:alpha:]]"},
+        {RK_ESC,          'v', RS_MODULE,
+         "\\v — the vertical-whitespace miscompile this whole file exists for"},
+        {RK_ESC,          'b', RS_MODULE, "\\b — word boundary, and backspace in a class"},
+        {RK_GROUP,        ':', RS_BASE,
+         "(?: — the ONE doorway the base tier reaches; SR-5's guard is about this row"},
+        {RK_VERB,  REG_SEL_ANY, RS_MODULE, "the (*...) verb catch-all"},
+        {RK_GROUP, REG_SEL_ANY, RS_MODULE, "the (?...) inline-option catch-all"},
+    };
+    char label[192];
+
+    for (size_t i = 0; i < sizeof required / sizeof required[0]; i++) {
+        const RegRow *r = pcrec_registry_find(required[i].kind, required[i].sel);
+
+        /* find() falls back to the catch-all, so an exact-selector row must be
+         * confirmed to be exactly that row and not the fallback standing in */
+        if (!r || (required[i].sel != REG_SEL_ANY && r->sel != required[i].sel)) {
+            bad("required row MISSING: %s '%c' — %s",
+                kind_name(required[i].kind),
+                required[i].sel == REG_SEL_ANY ? '*' : required[i].sel, required[i].why);
+            continue;
+        }
+        if (r->status != required[i].status) {
+            bad("required row %s '%c' changed status — %s",
+                kind_name(required[i].kind),
+                required[i].sel == REG_SEL_ANY ? '*' : required[i].sel, required[i].why);
+            continue;
+        }
+        snprintf(label, sizeof label, "required row present: %s (%s)", r->syntax, required[i].why);
+        ok(label);
+    }
+}
+
 /* ---- part 3: parser -> table (the sweep) -------------------------------- */
 
 /* For every byte, ask the parser what it does at each doorway. Anything the
  * parser routes to a module MUST have a row naming that same module; anything
  * the table calls RS_MODULE must really be routed. This is the direction that
  * catches a construct with no row at all. */
+/* `fmt` receives the byte TWICE, so a doorway needing the selector in two
+ * places can ask for it ("[[%ca%c]]" builds the collating form). Formats using
+ * one %c simply ignore the second argument, which C defines as well-formed. */
 static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_flag)
 {
-    char pat[8], got[256], label[192];
+    char pat[16], got[256], label[192];
     int mismatches = 0, routed = 0;
 
     for (int c = 1; c < 256; c++) {
         const RegRow *r;
         int rejected;
 
-        snprintf(pat, sizeof pat, fmt, c);
+        snprintf(pat, sizeof pat, fmt, c, c);
         rejected = try_compile(pat, got, sizeof got) != 0;
         r = pcrec_registry_find(k, c);
+
+        /* A row whose whole diagnostic is fixed text carries no "requires
+         * module" marker, so the generic branches below cannot see it. Check it
+         * directly: this is what makes the collating rows visible to the sweep
+         * rather than to their two hand-written probes alone. */
+        if (r && r->sel == c && r->diag == RD_FIXED) {
+            if (!rejected || strcmp(got, r->msg) != 0) {
+                bad("%s: byte 0x%02x ('%c') — the row promises \"%s\", parser %s",
+                    what, c, c >= 32 && c < 127 ? c : '?', r->msg,
+                    rejected ? got : "COMPILED it");
+                mismatches++;
+            } else {
+                routed++;
+            }
+            continue;
+        }
 
         if (rejected && strstr(got, "requires module")) {
             routed++;
@@ -341,10 +419,19 @@ int main(void)
     printf("\n== table -> parser (every row's own syntax) ==\n");
     check_table_to_parser();
 
-    printf("\n== parser -> table (255-byte sweep of each doorway) ==\n");
-    sweep(RK_ESC,   "\\%c",   "after a backslash", 0);
-    sweep(RK_ESC,   "[\\%c]", "after a backslash inside a class", RF_CLASS_BASE);
-    sweep(RK_GROUP, "(?%c",   "after (?", 0);
+    printf("\n== rows that must exist (hand-written manifest) ==\n");
+    check_required_rows();
+
+    /* ALL FOUR doorways, not two. The first version of this file swept only the
+     * escape and group doorways while its own documentation claimed the sweep
+     * caught "a construct added to parse.c with no row" — true for half the
+     * doorways it was written to describe. A critic pass found it. */
+    printf("\n== parser -> table (255-byte sweep of ALL FOUR doorways) ==\n");
+    sweep(RK_ESC,          "\\%c",      "after a backslash", 0);
+    sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class", RF_CLASS_BASE);
+    sweep(RK_GROUP,        "(?%c",      "after (?", 0);
+    sweep(RK_VERB,         "(*%c)",     "after (*", 0);
+    sweep(RK_CLASSBRACKET, "[[%ca%c]]", "after [ inside a class", 0);
 
     printf("\n== Summary ==\n");
     printf("checks passed: %d\n", pass);

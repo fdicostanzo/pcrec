@@ -154,9 +154,15 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
  * construction rather than by optimisation (SR-5 guards it). The single
  * exception, and the only registry row the base tier reaches, is `(?:`.
  *
- * Rows are pure `static const` data; SELECTION (flavour/feature mask) is
- * resolved per compile. A runtime-mutable registry is rejected: it would be
- * exactly the file-scope mutable state D19/TS-1 forbid. */
+ * Rows are pure `static const` data. A runtime-mutable registry is rejected
+ * because it would be file-scope mutable state in the compiler, which D19's
+ * "usable FROM threads" property forbids. Note what actually guards that:
+ * D19's COMPILER-side property is audited by hand, NOT mechanized — TS-1 scans
+ * emitted output only and would not notice a mutable global added here.
+ *
+ * Per-compile SELECTION of flavour and feature mask is the DESIGN (D24), not
+ * the present tense: pcrec_options carries no flavour or enablement field, and
+ * nothing outside tests/registry/ reads the feature/flavour/engine columns. */
 
 typedef enum {
     RK_ESC,           /* doorway 1: after '\'             — one byte decides */

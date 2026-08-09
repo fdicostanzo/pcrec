@@ -31,7 +31,12 @@
  * BASE constructs rather than doorways, and inventing a doorway for them would
  * cost the base tier a lookup: `\x{...}` (reached only from the base `\x`
  * handler) and the possessive `+` suffix (a quantifier suffix, not an atom).
- * They are the registry's two known outstanding second homes.
+ * A third is a sub-case of a row rather than of the base tier: `\N{U+hhhh}` is
+ * a distinct PCRE2 construct sharing the `N` selector byte with bare `\N`, and
+ * whoever implements module 'classes' owns splitting it out. These three are
+ * the registry's known outstanding second homes; SR-4 must special-case the
+ * first two or silently drop their tests/reject/ coverage, since neither has a
+ * row to iterate.
  *
  * FOUR AXES, KEPT APART. flavour (which construct a byte MEANS) / option (what
  * it DENOTES) / enablement (is it available) / engine (can it LOWER). Answering
@@ -39,11 +44,26 @@
  * pcre2-dfa Y else Z` cascade. Kept apart, a flavour change REBINDS A ROW and
  * cannot reach inside another construct's handler.
  *
- * THE `engines` COLUMN IS DESIGN INTENT, NOT MEASUREMENT. It records which
- * PCREC engine could lower each construct — not what PCRE2's own DFA supports.
- * Nothing consumes it until SR-8/M4, and the conformance test asserts only
- * that it is well-formed. Treat the values as a claim to be checked when the
- * VM lands, not as an established fact.
+ * THE `engines` COLUMN IS DESIGN INTENT, NOT MEASUREMENT, and it is NOT a
+ * statement about what a DFA can do in general. It records which PCREC engine
+ * could lower each construct. Nothing consumes it until SR-8/M4, and the
+ * conformance test asserts only that it is well-formed.
+ *
+ * That distinction is load-bearing, because PCRE2's own DFA matcher disagrees
+ * with several rows here. Measured against pcre2_dfa_match_8 in libpcre2 10.46:
+ * it SUPPORTS lookaround, atomic groups and recursion — all marked VM_ONLY
+ * below — and correctly enforces their semantics ((?>a+)a does not match "aaa"
+ * while a+a does). It rejects \K, backreferences and conditionals (errors -42
+ * and -40), agreeing with those rows.
+ *
+ * The rows are still right FOR PCREC, for a reason worth stating rather than
+ * leaving a reader to infer: PCRE2's "DFA" is not a classical automaton. It is
+ * a breadth-first simulation of compiled bytecode that can consult live capture
+ * state and re-enter itself, which is exactly why recursion is possible in it.
+ * pcrec's Dfa is a determinized transition table with no side channel for
+ * capture state or re-entry, so those constructs genuinely cannot be
+ * represented in THIS automaton even though they can be in PCRE2's. Treat every
+ * value in this column as a claim to be re-checked when the VM lands.
  *
  * ADDING A ROW: fill it in here and nowhere else. `syntax` must be a pattern
  * that actually reaches this doorway — tests/registry/ uses it as the probe,
@@ -101,8 +121,11 @@
 /* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
 #define ESC_CLASS_BASE(sel, syn, mod, eng, note) \
     {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, RF_CLASS_BASE, (note)}
-/* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'" */
-#define ESC_OCTAL(sel, syn, eng, note) \
+/* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
+ * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
+ * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
+ * which is a different thing from the construct's semantics. */
+#define ESC_DIGIT(sel, syn, eng, note) \
     {RK_ESC, (sel), (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, 0, (note)}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note) \
@@ -160,20 +183,39 @@ ESC('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode")
 ESC('c', "\\cX",     misc, ANY_ENGINE, "control character: \\cX is X xor 0x40"),
 ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code"),
 
-/* Digits. `\0` is octal; `\1`..`\9` are a backreference, or an octal escape
- * when no such capture group exists — an ambiguity resolved against the group
- * count, which is why the backreference reading is VM-only. pcrec gives all ten
- * the same diagnostic today, and SR-2 must not change that. */
-ESC_OCTAL('0', "\\0", ANY_ENGINE, "octal escape \\0dd"),
-ESC_OCTAL('1', "\\1", VM_ONLY, "backreference to capture group 1 (octal escape if no such group)"),
-ESC_OCTAL('2', "\\2", VM_ONLY, "backreference to capture group 2 (octal escape if no such group)"),
-ESC_OCTAL('3', "\\3", VM_ONLY, "backreference to capture group 3 (octal escape if no such group)"),
-ESC_OCTAL('4', "\\4", VM_ONLY, "backreference to capture group 4 (octal escape if no such group)"),
-ESC_OCTAL('5', "\\5", VM_ONLY, "backreference to capture group 5 (octal escape if no such group)"),
-ESC_OCTAL('6', "\\6", VM_ONLY, "backreference to capture group 6 (octal escape if no such group)"),
-ESC_OCTAL('7', "\\7", VM_ONLY, "backreference to capture group 7 (octal escape if no such group)"),
-ESC_OCTAL('8', "\\8", VM_ONLY, "backreference to capture group 8 (octal escape if no such group)"),
-ESC_OCTAL('9', "\\9", VM_ONLY, "backreference to capture group 9 (octal escape if no such group)"),
+/* Digits. THESE NOTES WERE WRONG WHEN FIRST WRITTEN, from memory, and an
+ * adversarial review caught it — which is the whole reason this file exists, so
+ * the correction is recorded rather than quietly applied.
+ *
+ * The wrong claim was that `\1`..`\9` fall back to an OCTAL escape when no such
+ * capture group exists. That is Perl/PCRE1 behaviour and it does NOT survive
+ * into PCRE2. Measured against libpcre2 10.46:
+ *
+ *     \1  \7  \8  \9        -> REJECTED, error 115 "reference to non-existent
+ *                              subpattern"  (no groups in the pattern at all)
+ *     (a)\1   (a)(b)(c)\3   -> ACCEPTED
+ *     (a)\2                 -> REJECTED, error 115
+ *     \0   \012   \o{101}   -> ACCEPTED  (the genuine octal forms)
+ *
+ * So `\1`..`\9` are UNCONDITIONALLY backreferences, and only `\0` is octal.
+ * `\0` can never be a backreference either — there is no group 0 to address —
+ * which makes it the odd row here: it shares the digit doorway and pcrec's
+ * diagnostic, but none of the semantics.
+ *
+ * pcrec still PRINTS "(backreference/octal)" for all ten. That wording is
+ * parse.c's today and SR-2 must reproduce it byte-identically, so the fix
+ * belongs to the backrefs module rather than to this table; the note is where
+ * the truth lives until then. Recorded in docs/known_issues.md. */
+ESC_DIGIT('0', "\\0", ANY_ENGINE, "octal escape \\0dd — never a backreference (there is no group 0)"),
+ESC_DIGIT('1', "\\1", VM_ONLY, "backreference to capture group 1 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('2', "\\2", VM_ONLY, "backreference to capture group 2 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('3', "\\3", VM_ONLY, "backreference to capture group 3 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('4', "\\4", VM_ONLY, "backreference to capture group 4 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('5', "\\5", VM_ONLY, "backreference to capture group 5 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('6', "\\6", VM_ONLY, "backreference to capture group 6 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('7', "\\7", VM_ONLY, "backreference to capture group 7 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('8', "\\8", VM_ONLY, "backreference to capture group 8 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 115 if no such group)"),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */
