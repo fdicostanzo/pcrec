@@ -2130,3 +2130,57 @@ Both are in the review as F13 and F14. The lesson worth keeping is narrower than
 either finding: BOTH were cases where I accepted a structural argument ("the
 macro makes it impossible", "the doorway is swept") in place of a test, having
 spent the whole day arguing that this project loses exactly those.
+
+## 2026-08-09 — session close (SR-1 + R4)
+
+Five commits, `25a2383..092f08c`, all pushed. Working tree clean apart from the
+uncommitted docs/wake.md hand-off. Nothing in `STATE:started`, so there is no
+half-finished work to reconstruct.
+
+**Landed:** SR-1 (the syntax construct registry — 67 rows, one declarative home
+per non-base construct), its conformance check (tests/registry/, 127 checks,
+eight sabotage validations), the M_<module> row-shape macros, and R4, the first
+adversarial panel over any of it.
+
+**Baseline at session start matched the hand-off brief exactly** and is
+unchanged at close except where deliberately grown: 805 corpus / 49 CLI / 112
+reject / **127 registry (new)** / 29 codegen / 7 trie-identity, verify_rxt
+796/796, fuzz seed 1 zero divergences, `make bench` zero budget failures.
+Verified from a fresh `git clone` three times during the session.
+
+**The session in one line:** the registry was built to stop PCRE2 knowledge from
+drifting, and within hours it had itself drifted — nine rows asserting a PCRE2
+semantic that does not exist — which is the strongest argument for the thing it
+is, and the strongest argument for running the panel before believing any of it.
+
+**What I would tell the next session about my own errors**, since they were all
+the same error:
+
+1. Nine rows written from MEMORY (`\1`..`\9` "octal escape if no such group";
+   PCRE2 raises error 115 unconditionally). The wake brief said "measure before
+   describing" and I did not.
+2. A test whose documentation described what it was MEANT to do — the sweep
+   covered two of four doorways while three documents claimed four.
+3. Two findings I argued away structurally ("the macro makes it impossible",
+   "the doorway is swept") instead of testing, on the very day I spent arguing
+   that this project loses exactly those claims.
+
+All three are the same failure: asserting instead of measuring, in a session
+whose entire subject was the cost of asserting instead of measuring.
+
+**What went right and is worth repeating.** Writing the conformance test BEFORE
+the macro refactor meant a 331-line restructure was proved behaviour-identical
+for free. Dispatching three critics with deliberately different lenses caught
+things no single lens would have. Requiring incremental writes worked again —
+all three delivered, and the one that batched its final summary had already
+banked everything in its file. And the tests critic ran the SUITE against its
+own sabotage rather than just its target, which is what turned "circular" from
+an alarm into a precise residual risk. Brief future critics to attack the
+defence, not just the artifact.
+
+**Frank's steer this session:** do not early-optimise the registry lookup (a
+linear scan over rows the base tier never reaches, 33.6 ns against a 90 us
+compile floor), and hide the row details behind a light abstraction. The second
+turned out to be a correctness fix, not a cosmetic one — the M_<module> macros
+pair each feature bit with its diagnostic name and make an invented module a
+compile error.
