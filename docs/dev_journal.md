@@ -2100,3 +2100,33 @@ strategy: the answer is to do SR-2, not to argue.
 across the corpus (167 patterns x 3 prefixes x 4 modes = 1980 hashed outputs),
 and tests/registry/ now pins 126 checks worth of the diagnostics it must
 reproduce.
+
+### R4 addendum — two findings I under-triaged on the first pass
+
+The tests critic's final report landed after I had already committed the R4
+fixes, and two of its items deserved more than I gave them.
+
+**E1, which I had waved off as closed-by-construction.** A row carrying
+FEAT_CLASSES while printing "assertions" passed 116/116. I claimed the M_<module>
+macros closed it, and they do — for macro-built rows. A row written LONGHAND
+still mismatches silently, and "correct by construction" with nothing testing it
+is the precise shape of claim this project keeps losing. Now tested, without
+introducing an external module list (which would be another second home):
+across the table, feature mask and module name must be a BIJECTION, so a single
+mismatched row necessarily collides both with rows using its mask and with rows
+using its name. Validated by reproducing the critic's exact edit in longhand
+form — 4+ failures naming the colliding rows. 126 -> 127 checks.
+
+**The verb sweep is weaker than "all four doorways swept" implies, and I said
+that sentence to Frank without qualifying it.** `(*...)` is decided by a NAME;
+my sweep probes one byte after `(*`. It proves every single byte reaches the
+catch-all, and proves nothing about a name-conditional branch — which is exactly
+what the critic added to parse.c to defeat it. Not fixable without per-verb
+rows, which belong to module 'verbs' (SR-6). Recorded as a named limitation in
+the test, in tests/registry/CLAUDE.md and in the review, because an unqualified
+"swept" reads as coverage it does not have.
+
+Both are in the review as F13 and F14. The lesson worth keeping is narrower than
+either finding: BOTH were cases where I accepted a structural argument ("the
+macro makes it impossible", "the doorway is swept") in place of a test, having
+spent the whole day arguing that this project loses exactly those.

@@ -211,6 +211,58 @@ static void check_wellformed(void)
     }
 }
 
+/* Feature bit and module name are two halves of one fact, and a row carrying
+ * FEAT_CLASSES while printing "assertions" passed every check until a critic
+ * tried it. registry.c's `M_<module>` macros now emit the pair together, so a
+ * macro-built row cannot mismatch — but a row written LONGHAND still can, and
+ * "correct by construction" is exactly the kind of claim this project keeps
+ * losing when nothing tests it.
+ *
+ * Checked without an external list of modules, which would itself be a second
+ * home: across the whole table the mask and the name must be a BIJECTION. One
+ * mismatched row necessarily collides with the rows that use its mask and with
+ * those that use its name, so it cannot hide. */
+static void check_feature_module_bijection(void)
+{
+    const RegRow *all[4];
+    size_t counts[4], nkinds = 0, total = 0;
+    char label[128];
+    int bad_pairs = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        all[nkinds] = pcrec_registry((RegKind)k, &counts[nkinds]);
+        if (all[nkinds]) { total += counts[nkinds]; nkinds++; }
+    }
+
+    for (size_t ki = 0; ki < nkinds; ki++)
+        for (size_t i = 0; i < counts[ki]; i++) {
+            const RegRow *a = &all[ki][i];
+            if (!a->module || !a->feature) continue;
+
+            for (size_t kj = 0; kj < nkinds; kj++)
+                for (size_t j = 0; j < counts[kj]; j++) {
+                    const RegRow *b = &all[kj][j];
+                    if (!b->module || !b->feature || a == b) continue;
+
+                    if (a->feature == b->feature && strcmp(a->module, b->module) != 0) {
+                        bad("feature/module mismatch: %s and %s share a feature bit but print "
+                            "'%s' and '%s'", a->syntax, b->syntax, a->module, b->module);
+                        bad_pairs++;
+                    } else if (strcmp(a->module, b->module) == 0 && a->feature != b->feature) {
+                        bad("feature/module mismatch: %s and %s both print '%s' but carry "
+                            "different feature bits", a->syntax, b->syntax, a->module);
+                        bad_pairs++;
+                    }
+                }
+        }
+
+    if (bad_pairs == 0) {
+        snprintf(label, sizeof label,
+                 "feature bit <-> module name is a bijection across all %zu rows", total);
+        ok(label);
+    }
+}
+
 /* ---- part 2: table -> parser ------------------------------------------- */
 
 /* The exact diagnostic a row claims, at the atom (outside-a-class) site. */
@@ -415,6 +467,7 @@ int main(void)
 {
     printf("== registry well-formedness ==\n");
     check_wellformed();
+    check_feature_module_bijection();
 
     printf("\n== table -> parser (every row's own syntax) ==\n");
     check_table_to_parser();
@@ -430,7 +483,15 @@ int main(void)
     sweep(RK_ESC,          "\\%c",      "after a backslash", 0);
     sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class", RF_CLASS_BASE);
     sweep(RK_GROUP,        "(?%c",      "after (?", 0);
-    sweep(RK_VERB,         "(*%c)",     "after (*", 0);
+    /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
+     * doorway is decided by a NAME, and a byte sweep can only prove that every
+     * single byte after `(*` reaches the catch-all row. A name-conditional
+     * branch added to parse.c — `(*script_run:` routed somewhere new, say —
+     * would NOT be caught here. A critic demonstrated exactly that. Closing it
+     * needs per-verb rows, which arrive with module 'verbs' (SR-6); until then
+     * this sweep is weaker than its three neighbours and should be described
+     * that way. */
+    sweep(RK_VERB,         "(*%c)",     "after (* [single byte only — see note]", 0);
     sweep(RK_CLASSBRACKET, "[[%ca%c]]", "after [ inside a class", 0);
 
     printf("\n== Summary ==\n");

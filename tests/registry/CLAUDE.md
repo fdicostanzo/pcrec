@@ -32,7 +32,15 @@ directory asserts that the description and the shipped parser actually agree.
    *R4 correction:* the first version swept only two of the four doorways while
    this file already claimed all of them, and validated 1 of 3 class-bracket
    rows because fixed-text rejections carry no "requires module" marker.
-4. **required rows** — a small hand-written manifest of constructs whose
+4. **feature/module bijection** — a row carrying `FEAT_CLASSES` while printing
+   "assertions" passed everything until a critic tried it. `registry.c`'s
+   `M_<module>` macros now emit the pair together so a macro-built row cannot
+   mismatch, but a LONGHAND row still can, and "correct by construction" is the
+   kind of claim this project keeps losing when nothing tests it. Checked
+   without an external module list (which would be a second home): across the
+   table, mask and name must be a bijection, so one mismatched row necessarily
+   collides with both the rows using its mask and those using its name.
+5. **required rows** — a small hand-written manifest of constructs whose
    ABSENCE would silently regress a specific past incident (both collating
    rows, `\v`, `\b`, `(?:`, the two catch-alls). Everything above iterates the
    rows that exist and is therefore structurally blind to deletion: a critic
@@ -56,16 +64,18 @@ parse.c and registry.c passes 116/116 here. It was caught by tests/reject/,
 whose 93 expectations are hand-written literals — so tests/reject/ is not
 decoration, it is the control this file deliberately is not. Two things narrow
 the gap further: `registry.c`'s `M_<module>` macros make an invented module name
-a compile error, and they pair each feature bit with its diagnostic name so the
-two cannot disagree. **Residual risk, open:** a NEW construct given the same
+a compile error, and they pair each feature bit with its diagnostic name so a
+macro-built row cannot mismatch (a longhand one still can — hence the bijection
+check above). **Residual risk, open:** a NEW construct given the same
 wrong module in both files, with no tests/reject/ row added, is caught by
 nothing.
 
 ## Sabotage validation
 
-The check was validated by seven edits to `src/parse/registry.c`, each reverted
-after measuring; every one was caught. The last two exist because a critic
-proved the first five could all pass while the table lost rows:
+The check was validated by eight edits to `src/parse/registry.c`, each reverted
+after measuring; every one was caught. The last three exist because a critic
+proved the first five could all pass while the table lost rows or mismatched a
+module:
 
 | sabotage edit | failures |
 |---|---|
@@ -76,6 +86,17 @@ proved the first five could all pass while the table lost rows:
 | drop `RF_CLASS_BASE` from the `\b` row | 2 |
 | delete BOTH collating rows (R4 F2 — was **invisible** before the manifest) | 2 |
 | delete the `(?:` base row | 1 |
+| `\b` row longhand with `FEAT_CLASSES` but module `"assertions"` (R4 E1) | many |
+
+## Known limitation: the verb doorway
+
+`(*...)` is decided by a NAME, not a byte, so its sweep can only prove that
+every single byte after `(*` reaches the catch-all row. **A name-conditional
+branch added to parse.c would not be caught** — a critic demonstrated it by
+routing one verb name elsewhere with no row, and all checks stayed green. This
+sweep is genuinely weaker than its three neighbours; closing the gap needs
+per-verb rows, which arrive with module 'verbs' (SR-6). Do not read "all four
+doorways swept" as "all four equally guarded".
 
 Maintenance: update this file when files are added/removed or their roles
 change. Re-run the sabotage battery if the check's structure changes — a

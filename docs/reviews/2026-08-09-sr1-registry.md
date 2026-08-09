@@ -101,6 +101,14 @@ whereas pcrec's is a determinized transition table with no such side channel.
 Now stated explicitly, because a reader would otherwise take the column to mean
 "what a DFA can do in general", which PCRE2's own matcher disproves.
 
+**F13 — the feature bitmask's VALUE was never checked, only its zeroness.**
+(tests, MEDIUM-HIGH) `\b` carrying `FEAT_CLASSES` while printing "assertions"
+passed 116/116. Initially judged closed-by-construction by the `M_<module>`
+macros; that is true only for macro-built rows, so a test was added instead —
+across the table, mask and name must be a BIJECTION, which needs no external
+module list to check and catches a longhand mismatch too. Validated by
+reproducing the critic's exact edit in longhand form.
+
 ### Accepted, not fixed — recorded as forward work
 
 **F9 — `pcrec_registry_find` cannot rebind by flavour.** (design, HIGH) It takes
@@ -110,6 +118,14 @@ shipped shape. Recorded on SR-7 as a signature change it must make. The critic
 called this "a latent miscompile"; that half is **overstated** — a duplicate
 selector is caught loudly by the well-formedness check, so it is design debt,
 not a live bug.
+
+**F14 — the verb doorway's sweep is byte-keyed, the doorway is name-keyed.**
+(tests, HIGH) A critic added a name-conditional branch to the `(*` dispatch with
+no row; all checks stayed green. Sweeping every byte after `(*` proves only that
+the catch-all is reached, never that a NAME was not routed elsewhere. Closing it
+requires per-verb rows, which belong to module 'verbs' (SR-6). Stated as a known
+limitation in the test and its CLAUDE.md rather than papered over: "all four
+doorways swept" must not be read as "all four equally guarded".
 
 **F10 — residual circularity.** (tests, HIGH, partly mitigated) Probes derive
 from the table's own `syntax`, so the check cannot distinguish "both right" from
@@ -167,6 +183,6 @@ writing the *reason* for a decision, not just the decision.
 
 ## Post-review state
 
-805 corpus / 49 CLI / 112 reject / **126 registry** (was 116) / 29 codegen /
-7 trie-identity, all green. Two new sabotage validations recorded in
+805 corpus / 49 CLI / 112 reject / **127 registry** (was 116) / 29 codegen /
+7 trie-identity, all green. Three new sabotage validations recorded in
 `tests/registry/CLAUDE.md`.
