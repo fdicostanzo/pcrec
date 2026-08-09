@@ -855,3 +855,68 @@ instrumented, and it is the case to watch when the selector lands.
 **Revisit-when:** a new option is proposed (multiline, dotall, ungreedy,
 `\G`), or any of the four predictions above is measured. Each measurement
 belongs in the plan step for its dimension, with the number attached.
+
+## D19 — 2026-08-09 — thread-safety: usable FROM threads, never threaded
+
+Requested by Frank 2026-08-09, with the scope stated sharply and worth keeping
+that way: **neither the compiler nor the generated matchers are internally
+parallel, and there is no plan for them to be.** No worker pools, no parallel
+subset construction, no threads in generated code. The requirement is only that
+a caller may USE them from a multi-threaded program:
+
+- concurrent `pcrec_compile()` calls on different patterns in different threads;
+- concurrent `<prefix>_search()` calls against the SAME generated matcher.
+
+**Audited state (measured 2026-08-09, not assumed). Both properties already
+hold.**
+
+*Generated code* — for a representative pattern the emitter produces 12
+statics and every one is `static const` with a constant initialiser, so they
+land in .rodata and are initialised at load time: no lazy initialisation, no
+guard variable, nothing to race on. There is no `malloc`/`free`, no `errno`, no
+locale dependency, and no non-reentrant libc call. All working state (`pos`,
+`st`, `last`, `est`, ...) is stack-local, and the only write through a caller
+pointer is `*m`. Reentrant by construction.
+
+*Compiler library* — there is NO file-scope mutable state anywhere in `src/`.
+Every file-scope static is either a function or `static const EscMod
+esc_modules[]`. `Ctx` — including its `jmp_buf` — is a LOCAL of
+`pcrec_compile`, so the setjmp/longjmp error path is per-call and per-thread.
+All per-build state is arena memory owned by the Job.
+
+**Correction to R3 while auditing this.** The R3 review recorded that "the
+generation counter is file-scope while the marks are per-build arena memory".
+It is not file-scope: `gen` is a member of `Marks`, and `Marks marks` is a local
+of `pcrec_build_dfa`. The hazard the review described (the wrap path must clear
+the CURRENT build's array) is real and the code handles it correctly — but the
+scope claim was wrong, and had it been TRUE it would have been exactly the
+thread-safety defect this entry is about. A wrong description of correct code
+is still worth fixing, because the next reader reasons from the description.
+
+**Why this gets mechanized rather than documented.** Thread-safety here is the
+same shape of invariant this project has repeatedly lost: true by construction,
+invisible to every existing test, and destroyable by a plausible one-line
+change that passes everything. Concretely, each of these would break it and
+none would fail a current test:
+
+- a memoisation cache or lazily-built table in emitted output — one `static`
+  that is not `const`;
+- a scratch buffer hoisted to file scope to avoid a stack allocation;
+- an `errno`-setting or locale-dependent libc call reaching generated code;
+- a statistics or diagnostics counter added at file scope in the compiler;
+- and, under D18, a selector that CACHES its choice in a global. The two-step
+  "resolve the engine, then execute it many times" shape must keep the resolve
+  step pure — the caller holds the result, the library does not.
+
+**Stack is part of this, and it is already open.** Running under threads is not
+only about data races: a thread stack is typically far smaller than the main
+thread's 8 MB, and musl's default is 128 KB. DD-10 (unbounded C-stack recursion
+in `compile_ast` and `clo_visit`'s t1 edge — a 400-nested-branch-point
+alternation needs ~192 KB) is therefore a THREAD-SAFETY item and not merely a
+robustness one, and this requirement raises its priority. The existing
+`tests/cli` case-8 budget (9000 branches under `ulimit -s 512`) is the right
+shape; what it lacks is a sibling that binds `compile_ast`.
+
+**Revisit-when:** generated code ever needs mutable state (a captures buffer in
+M4 is the first candidate — it must be caller-provided or stack-local, never
+static), or the library gains anything at file scope.

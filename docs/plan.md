@@ -128,6 +128,19 @@ the prediction, including when the prediction was wrong.
 - [OS-3] STATE:not-started — streaming: PREDICTED NOT to be a wrapper, and this is the one prediction with evidence already against the optimistic answer — the reverse pass rescans backward over bytes a stream may no longer hold. Feeds M3.0's design gate; do not write streaming code before it is settled
 - [OS-4] STATE:not-started — anchoring: ENG_UNANCH vs ENG_ATTEMPT is ALREADY a cartesian split, and it has never passed this test. It exists because the reverse machine cannot check `^` at pp == 0, not because a per-start attempt loop was measured to be faster. Measure the cost of the split on the known-slow shape (`^` on only some branches, D8) and decide whether to close it by building the reverse BOT variant (DD-7) or to keep it with a number attached. An unjustified axis in the shipped compiler is the strongest possible test case for D18's own rule
 
+## Thread-safety (D19) — usable FROM threads; guards, not prose
+
+Audited 2026-08-09: generated code and the library are BOTH thread-safe today
+(every emitted static is const, no file-scope mutable state anywhere in src/,
+Ctx and its jmp_buf are locals of pcrec_compile). These steps exist to keep
+that true, because it is invisible to every current test and a one-line change
+can destroy it.
+
+- [TS-1] STATE:not-started — codegen structural check: every `static` in emitted output must be `const`, and the output must not reference a denylist of non-reentrant or allocating symbols (malloc/calloc/realloc/free, errno, getenv, setlocale, strtok, rand, asctime/ctime/gmtime/localtime). Cheap, needs no gcc, and directly sabotage-validatable — add one non-const static to the emitter and it must fail. This is the guard that catches the memoisation-cache and hoisted-scratch-buffer failure modes
+- [TS-2] STATE:not-started — concurrency test for GENERATED code: N threads sharing one compiled matcher over different subjects, results required identical to the single-threaded run, executed under `-fsanitize=thread`. Establishes the property empirically rather than by reading the emitter
+- [TS-3] STATE:not-started — concurrency test for the LIBRARY: concurrent `pcrec_compile()` on different patterns in different threads under TSan. Guards against a future file-scope counter or cache in the compiler
+- [TS-4] STATE:not-started — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points). Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH
+
 ## Process mechanization (session 2026-08-09) — turn recurring lessons into tools
 
 Four consecutive checkpoints have found the same failure class: not compiler
