@@ -38,3 +38,7 @@ feature set as drop-in modules.
 
 gcc (or clang) and GNU make. Generated code uses GNU C extensions
 (computed goto); a portable fallback emitter is on the roadmap.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
