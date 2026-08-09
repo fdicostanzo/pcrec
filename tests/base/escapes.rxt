@@ -59,9 +59,6 @@ m "\r" 0 1
 pattern \f
 m "\f" 0 1
 
-pattern \v
-m "\v" 0 1
-
 pattern \x41
 m "A" 0 1
 

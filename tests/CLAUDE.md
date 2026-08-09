@@ -7,6 +7,7 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
+- **reject/** — the "unsupported constructs fail cleanly, never miscompile" mandate, asserted per construct (85 rejections + 12 accept-controls). Cannot live in .rxt: a `perr` block requires the PYTHON oracle to fail too, and python compiles `\d`, `\b`, `(?i)` and most of the rest
 - **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
 - **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/known_issues.md); excluded from `make test` so the suite stays honest. Currently empty (all known bugs fixed at R2)
 - **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal), plus a differential check that the M2.8 trie is output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3)

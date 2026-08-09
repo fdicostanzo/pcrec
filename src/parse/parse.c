@@ -16,13 +16,25 @@ typedef struct { unsigned char ch; const char *module; } EscMod;
 static const EscMod esc_modules[] = {
     {'d', "classes"}, {'D', "classes"}, {'s', "classes"}, {'S', "classes"},
     {'w', "classes"}, {'W', "classes"}, {'h', "classes"}, {'H', "classes"},
-    {'V', "classes"}, {'N', "classes"},
+    /* `\v` is VERTICAL WHITESPACE in PCRE2, not vertical tab. It was decoded
+     * as 0x0B here until 2026-08-09 — the only silent semantic divergence in
+     * the escape table, and it survived because python `re` (the base-tier
+     * oracle) also reads `\v` as 0x0B, so the corpus agreed with the bug.
+     * Measured against libpcre2: `\v` matches 0x0a 0x0b 0x0c 0x0d 0x85, six
+     * bytes where pcrec matched one. `\V` was already routed here, which is
+     * what made the asymmetry visible. */
+    {'v', "classes"}, {'V', "classes"}, {'N', "classes"},
     {'b', "assertions"}, {'B', "assertions"}, {'A', "assertions"},
     {'Z', "assertions"}, {'z', "assertions"}, {'G', "assertions"},
     {'k', "backrefs"}, {'g', "backrefs"},
     {'p', "unicode-props"}, {'P', "unicode-props"},
     {'Q', "quoting"}, {'E', "quoting"},
     {'R', "misc"}, {'X', "misc"}, {'C', "misc"},
+    /* real PCRE2 constructs that used to fall through to "unknown escape
+     * \x" — a clean rejection, but one that told the caller the syntax was
+     * nonsense rather than naming what would implement it. `\K` sets the
+     * reported match start; `\c` is a control escape; `\o{...}` is octal. */
+    {'K', "assertions"}, {'c', "misc"}, {'o', "misc"},
     {0, NULL},
 };
 
@@ -113,7 +125,9 @@ static int esc_char_value(Ctx *cx, size_t epos)
     case 't': return '\t';
     case 'r': return '\r';
     case 'f': return '\f';
-    case 'v': return '\v';
+    /* no `case 'v'` — see the esc_modules note: PCRE2's `\v` is a vertical
+     * whitespace CLASS, so it routes to module 'classes' rather than
+     * decoding to 0x0B */
     case 'a': return '\a';
     case 'e': return 0x1b;
     case 'x': {
@@ -227,6 +241,15 @@ static Ast *p_atom(Ctx *cx)
         if (++cx->depth > 250) /* PCRE2-like nesting cap; also bounds parser
                                   and AST recursion depth (R1 review R-1) */
             ctx_fail(cx, apos, "parentheses are too deeply nested");
+        /* `(*...)`: backtracking verbs ((*SKIP), (*ACCEPT)), pattern-start
+         * option settings ((*CR), (*UTF)) and script runs ((*script_run:...)).
+         * Three different PCRE2 features sharing one syntax; they are caught
+         * here as a family because otherwise `(` starts a group, `*` is a
+         * quantifier with nothing to quantify, and the caller is told
+         * "quantifier does not follow a repeatable item" — a clean rejection
+         * of a construct that is not a quantifier at all. */
+        if (peekc(cx) == '*')
+            ctx_fail(cx, apos, "(*...) requires module 'verbs'");
         if (peekc(cx) == '?') {
             int c2 = peekc2(cx);
             if (c2 == ':') {
@@ -238,9 +261,12 @@ static Ast *p_atom(Ctx *cx)
                     (c2 == '<')              ? "lookaround/named-groups" :
                     (c2 == '\'' || c2 == 'P')? "named-groups" :
                     (c2 == '>')              ? "atomic-groups" :
-                    (c2 == '#')              ? "modifiers" :
+                    (c2 == '#')              ? "comments" :
+                    (c2 == 'C')              ? "callouts" :
+                    (c2 == '|')              ? "branch-reset" :
                     (c2 == '(')              ? "conditionals" :
-                    (c2 == 'R' || (c2 >= '0' && c2 <= '9')) ? "recursion" :
+                    (c2 == '&' || c2 == 'R' || (c2 >= '0' && c2 <= '9'))
+                                             ? "recursion" :
                     "modifiers";
                 ctx_fail(cx, apos, "(?%c...) requires module '%s'",
                          c2 < 0 ? '?' : c2, mod);

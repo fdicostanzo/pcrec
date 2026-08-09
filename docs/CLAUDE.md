@@ -14,6 +14,10 @@ Process and status documents for pcrec. The architecture itself lives in
   restart/status-recovery record.
 - `decisions.md` — ADR-lite decision log (D1, D2, ...): decision, why,
   revisit-when. Add an entry whenever a choice would surprise a future reader.
+- `pcre2_compliance.md` — construct-by-construct compliance against PCRE2's
+  syntax reference, with a status vocabulary that separates verified from
+  believed and clean-rejection from miscompile. Periodically re-surveyed;
+  its `REJECTED` rows are backed by tests/reject/ rather than asserted.
 - `testing.md` — .rxt test-file format, harness usage, env vars, oracle
   exclusions, and how to add a per-module test directory.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per

@@ -27,6 +27,7 @@ build/pcrec: cli/main.c build/libpcrec.a lib/pcrec.h
 test: all
 	bash tests/harness/run.sh
 	bash tests/cli/run_cli_tests.sh
+	bash tests/reject/run_reject_tests.sh
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
 	bash tests/known_fail/run_known_fail.sh

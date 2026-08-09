@@ -65,3 +65,33 @@ oracles) | `not-a-bug` (looked suspicious, resolved as correct behavior).
 Maintenance: add an entry whenever differential tooling implicates another
 engine; update status when reported/resolved upstream. Cross-reference from
 docs/testing.md (oracle exclusions) and tests/fuzz/README.md.
+
+## python `re` vs PCRE2: `\v` is a different construct in each (2026-08-09)
+
+Not a bug in either engine — a flavour difference, recorded because it defeated
+our base-tier oracle.
+
+- **PCRE2**: `\v` is a character TYPE, "vertical white space". Measured against
+  libpcre2 10.46 via `tests/fuzz/pcre2_oracle.c`, it matches 0x0a, 0x0b, 0x0c,
+  0x0d and 0x85.
+- **python `re`**: `\v` is a character ESCAPE for vertical tab, 0x0b alone
+  (verified: `re.search(rb'\v', b'\x0a')` is None).
+
+pcrec followed python and decoded `\v` as 0x0B. Because `verify_rxt.py` uses
+python `re`, the corpus expectation `pattern \v / m "\v" 0 1` was oracle-VERIFIED
+and wrong against the engine pcrec claims compatibility with. Fixed by routing
+`\v` to module 'classes' alongside `\V`, which was already routed there.
+
+**Consequence for the oracle strategy, which is the reason this entry exists:**
+where python `re` and PCRE2 disagree on what a construct MEANS, a
+python-verified corpus certifies the divergence instead of catching it. The
+base tier is still the right first oracle — it is fast, dependency-free and
+catches the overwhelming majority — but it cannot be the last word on PCRE
+semantics. This is a concrete casualty in support of the M7 libpcre2
+differential work, and a reason to run `tests/fuzz/fuzz.py` (which uses the
+PCRE2 oracle) against any newly supported construct rather than only against
+generated patterns.
+
+Other escapes were checked at the same time against libpcre2 and all agree
+exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
+`\v` was the only divergence in the escape table.

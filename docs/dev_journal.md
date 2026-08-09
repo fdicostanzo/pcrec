@@ -1660,3 +1660,88 @@ than the ambiguity.
 
 Verification: 787 corpus + 49 CLI + 29 codegen (+1) + 7 trie-identity green,
 ratchet clean.
+
+## 2026-08-09 — the PCRE2 compliance survey, which found a miscompile and a missing guard
+
+Frank asked for a compliance report against pcre2syntax.html. The report is in
+docs/pcre2_compliance.md; what follows is what the exercise turned up, which
+was more than a table.
+
+**Method.** Two lesser-model subagents in parallel, both required to append to
+a scratchpad file AS THEY CONFIRMED THINGS rather than report at the end (the
+lesson from R3's four critics: the two that reported at the end delivered
+nothing, twice). Both delivered — 33 sections of extracted PCRE2 syntax, and an
+evidence-based probe of pcrec's actual accept/reject surface. Judgement calls
+about feasibility stayed in the main session, since they depend on the D7
+two-pass design and the M4 VM plan that a fresh agent does not hold. Aim
+subagents at FACTS, keep the CLAIMS.
+
+One unplanned bonus: the spec agent appended a `pcre2_dfa_match` compatibility
+cross-reference from pcre2matching.html. PCRE2's own non-backtracking matcher
+is exactly the right prior art for judging what pcrec can reach, and its
+documented exclusion list (no backrefs, no recursion, no capture-conditionals,
+no `\K`, only `(*FAIL)` of the control verbs) matched my independent
+feasibility judgements almost row for row.
+
+**Finding 1: `\v` was miscompiled, and the oracle agreed with the bug.** PCRE2
+defines `\v` as vertical WHITESPACE. pcrec decoded it as vertical tab. Measured
+against libpcre2 10.46: PCRE2 matches 0x0a 0x0b 0x0c 0x0d 0x85, pcrec matched
+0x0b alone — six bytes against one, inside classes as well as outside.
+
+It survived because python `re` ALSO reads `\v` as 0x0B, so
+tests/base/escapes.rxt asserted the wrong answer and was oracle-VERIFIED wrong.
+The tell was inside the parser: `\V` routed to module 'classes' while `\v` was
+decoded as a control character — the same construct handled two different ways
+ten lines apart. I checked every other escape against libpcre2 while I was
+there; `\a \e \f \n \r \t` all agree exactly, so `\v` was the only one.
+
+The generalisable lesson, now in upstream_issues.md: **where python `re` and
+PCRE2 disagree on what a construct MEANS, a python-verified corpus certifies
+the divergence instead of catching it.** The base tier is still the right first
+oracle. It cannot be the last word on PCRE semantics, and this is a concrete
+casualty in support of M7's differential work.
+
+**Finding 2, the bigger one: the mandate's central guarantee had no test.**
+"Unsupported constructs must fail with a clean 'requires module X' error, never
+miscompile" is the project's core promise, and nothing checked it. It could not
+live in the corpus — a `perr` block requires the PYTHON oracle to fail to
+compile too, and python accepts `\d`, `\b`, `(?i)` and nearly everything else,
+so every module-routed construct was untestable there. `# pcre2-only` does not
+rescue it either: verify_rxt.py consults cur_skip only on m/n lines, never in
+its perr branch. Nor could a perr block express the part that matters most —
+that the diagnostic names the RIGHT module.
+
+tests/reject/ now asserts per construct: exit exactly 1 (not 0, not a crash),
+the expected module name, and no output file left behind. 85 constructs, plus
+12 accept-controls so a parser that rejected everything could not score 100% —
+the same control lesson the trie identity check learned the hard way — and a
+floor on both counts so deleting coverage fails rather than shrinking quietly.
+
+The sabotage that makes the case: reproducing the `\v` bug's exact shape on a
+different escape (`\d` silently decoding to a literal `d`) fails 2 reject checks
+and ZERO corpus and codegen checks. The bug class that just bit us was
+invisible to everything else in the repo.
+
+**Diagnostics fixed on the way.** Every one was already a clean rejection — none
+was a miscompile — but several failed to name a module, telling the caller
+their syntax was nonsense rather than what would implement it. `(*ACCEPT)`,
+`(*SKIP)`, `(*CR)`, `(*script_run:...)` and every other `(*...)` reported
+"quantifier does not follow a repeatable item", which is a correct rejection of
+something that is not a quantifier; they now name module 'verbs'. `\K` and `\c`
+and `\o` were "unknown escape"; they now name 'assertions' and 'misc'. `(?#`
+was attributed to 'modifiers' rather than 'comments', `(?C` to 'modifiers'
+rather than 'callouts', `(?&` to 'modifiers' rather than 'recursion', `(?|` to
+'modifiers' rather than 'branch-reset'.
+
+**On the report's own honesty.** The status vocabulary splits Frank's five
+categories into seven, for two reasons the survey forced. Verified and believed
+are different claims and this project has been burned by conflating them. And a
+clean rejection is a DESIGNED state, not a gap — lumping it in with
+non-compliance would misrepresent the majority of the surface. Every REJECTED
+row is true only because tests/reject says so; the report says that explicitly,
+so a row without a counterpart there is visibly an assertion rather than a
+status.
+
+Verification: 786 corpus (-1: the wrong `\v` block removed) + 49 CLI + 97
+reject (new) + 29 codegen + 7 trie-identity green, ratchet clean, oracle 100%
+(778 cases).
