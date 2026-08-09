@@ -1,0 +1,31 @@
+# tests/cli — CLI surface and library-API tests
+
+Covers what the .rxt corpus cannot: argument parsing, output-file behavior,
+error text and exit codes, and library-level properties such as stack usage.
+Part of `make test` since M2.
+
+## Files
+
+- **run_cli_tests.sh** — eight cases: (1) `-o -` self-contained C that compiles
+  standalone, (2) `--emit-main` producing a runnable binary, (3) prefix boundary
+  validation, (4) `-o subdir/out.c` writing and compiling both files, (5) `--`
+  before a pattern starting with `-` plus missing-value diagnostics, (6) error
+  cases (no pattern, two patterns, unknown option), (7) a library-API smoke test
+  for NULL arguments and double free, (8) a compile-time C STACK budget.
+  Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
+
+## Conventions
+
+Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation
+compiled under `ulimit -s 512`. It exists because M2.8's trie recursed once per
+branch and segfaulted at a 1 MB stack — a regression against hardening this
+project had already done once (R3 critic F3). pcrec is a library and musl's
+default thread stack is 128 KB, so "it works on the main thread" is not the bar.
+Keep the limit low enough that the recursive form fails it.
+
+Note that case 8 SKIPS itself when python3 is absent (it uses python3 only to
+build the 9000-branch pattern string). python3 is therefore not a hard
+dependency of `make test`, but on a box without it this case silently stops
+guarding anything — the skip goes to stderr and the suite still exits 0.
+
+Maintenance: update this file when cases or covered surfaces change.

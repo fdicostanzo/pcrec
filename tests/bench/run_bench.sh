@@ -45,6 +45,10 @@
 #                     the BITMAP half of the start prefilter; (a)-(c) all take
 #                     the memchr branch, so without this the bitmap branch has
 #                     no coverage anywhere in the suite
+#     THROUGHPUT_SKIP_MIN_MBPS     (default 1000)  subject (e), THROUGHPUT --
+#                     SELF-LOOP SKIP STATES; (a)-(d) emit ZERO skip tables, so
+#                     without this the whole optimization has no throughput
+#                     coverage anywhere in the suite (R3.1)
 #     LINEARITY_MAX_RATIO          (default 6.0)   64MB/16MB time ratio, THROUGHPUT
 #     LOAD_LIMIT      (default max(2.0, cores/2))  1-minute load average above
 #                     which a budget MISS is reported as INCONCLUSIVE rather
@@ -102,6 +106,25 @@ THROUGHPUT_ALT_MIN_MBPS="${THROUGHPUT_ALT_MIN_MBPS:-1000}"         # measured 17
 # covers busy boxes. Healthy observed 429-457, sabotaged 303-305, so 330 sits
 # between them with ~1.3x headroom either side.
 THROUGHPUT_BITMAP_MIN_MBPS="${THROUGHPUT_BITMAP_MIN_MBPS:-330}"   # measured 429-457
+# R3.1: self-loop skip states had NO throughput guard anywhere. Cases (a)-(d)
+# emit zero skip tables, so `pick_skip_states` returning 0 produced BYTE-
+# IDENTICAL generated code for every bench pattern — the suite could not detect
+# the optimization's total removal, let alone a regression in it.
+#
+# The shape R3 proposed for this, `.*=.*` over key=value text, is WRONG and is
+# recorded here so it does not get tried again: it MATCHES at offset 0 and ends
+# at 127, so an 8 MB run exits after 127 bytes and reports 32 GB/s. That is
+# R2-B4's exit-latency mistake exactly. `=[^\n]*!` over the same subject cannot
+# match (no '!' in the alphabet), so the scan is real and ~92% of the bytes are
+# consumed inside the skip loop.
+#
+# Budget per D12, stated exactly rather than approximately, because R3 found
+# only 3 of 8 budgets actually matched the "/1.75" they claimed. Interleaved
+# median-of-9, pinned, 1-min load 0.79: healthy 1741.8 MB/s (spread 1.081x),
+# sabotaged 360.6 MB/s (spread 1.030x, pick_skip_states returning 0) — 4.83x.
+# 1741.8/1000 = median/1.74, i.e. this is /1.75 rounded to a round number
+# (995.3), not a different rule. The sabotaged build fails it by 2.8x.
+THROUGHPUT_SKIP_MIN_MBPS="${THROUGHPUT_SKIP_MIN_MBPS:-1000}"      # measured 1741.8
 LINEARITY_MAX_RATIO="${LINEARITY_MAX_RATIO:-6.0}"        # measured 2.883, linear 4.0
 
 PCREC_TIMEOUT="${PCREC_TIMEOUT:-60}"
@@ -578,6 +601,20 @@ alpha_noa = b"bcdefghijklmnopqrstuvwxyz"
 with open(os.path.join(outdir, "bitmap_8mb.bin"), "wb") as f:
     f.write(bytes(random.choices(alpha_noa, k=n)))
 
+# (e) 8 MB of 128-byte "key=value\n" records, for the SELF-LOOP SKIP STATE
+# case. Pattern '=[^\n]*!': the alphabet is alphanumeric only, so no '!'
+# exists and the scan is full. Per record the machine memchr's to the '=' (8
+# bytes), then sits in the [^\n]* self-loop for 118 bytes before dying at the
+# newline — so ~92% of the buffer is consumed inside the skip loop, which is
+# what makes this measure skip states rather than the prefilter.
+kv_alpha = b"abcdefghijklmnopqrstuvwxyz0123456789"
+rec = bytearray()
+while len(rec) < n:
+    rec += bytes(random.choices(kv_alpha, k=8)) + b"=" \
+         + bytes(random.choices(kv_alpha, k=118)) + b"\n"
+with open(os.path.join(outdir, "kv_8mb.bin"), "wb") as f:
+    f.write(bytes(rec[:n]))
+
 # linearity subjects. R2-B4: the old pair was 1 MB vs 4 MB, which on the
 # current engine takes ~46 us vs ~337 us — below the script's own anti-blowup
 # floor, i.e. the check was reading timer noise. 16 MB vs 64 MB puts both
@@ -732,6 +769,34 @@ if [ $py_rc -eq 0 ]; then
             record_budget "THROUGHPUT (d) bitmap prefilter" "FAIL"
         else
             record_hard_error "bdriver crashed/errored on subject (d): $RB_RAW"
+        fi
+    fi
+
+    # ---- (e) self-loop skip states: full scan, ~92% of bytes inside the ----
+    # ---- skip loop. Without this case the suite is byte-identical with  ----
+    # ---- pick_skip_states returning 0 (R3.1).                           ----
+    tdir="$WORKDIR/tp_skip"
+    build_bench_bin "$tdir" '=[^\n]*!'
+    if [ "$BB_OK" = "1" ]; then
+        # A skip table must actually be present, or this case silently
+        # degenerates into a second prefilter measurement and the guard it
+        # exists to be stops guarding anything.
+        if ! grep -qE 'rx_fs[0-9]+\[256\]' "$tdir/gen.c"; then
+            record_hard_error "THROUGHPUT (e) emitted NO forward skip table for '=[^\\n]*!' — this case can no longer measure skip states, which is the only thing it is for"
+        fi
+        run_bdriver "$tdir/t" "$subj_dir/kv_8mb.bin" 10 "$RUN_TIMEOUT"
+        if [ "$RB_RC" = "ok" ]; then
+            echo "  (e) =[^\\n]*!    over kv_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_SKIP_MIN_MBPS} MB/s)"
+            if num_gt "$RB_MBPS" "$THROUGHPUT_SKIP_MIN_MBPS"; then
+                record_budget "THROUGHPUT (e) skip states" "PASS"
+            else
+                record_budget "THROUGHPUT (e) skip states" "FAIL"
+            fi
+        elif [ "$RB_RC" = "dnf" ]; then
+            echo "  (e) =[^\\n]*!    over kv_8mb.bin: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
+            record_budget "THROUGHPUT (e) skip states" "FAIL"
+        else
+            record_hard_error "bdriver crashed/errored on subject (e): $RB_RAW"
         fi
     fi
 

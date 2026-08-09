@@ -839,3 +839,132 @@ credited with a catch it could not make, budgets that did not match their stated
 derivation, constants off by 2x, and a guard that read as a mild loss and was a
 cliff. Claims about safeguards need the same evidence as claims about code, and
 they are exactly where I stopped applying it.
+
+## 2026-08-09 — R3 follow-ups: R3.1, R3.3, R3.4, R3.5 closed
+
+Worked the open items the R3 checkpoint created. Four closed. Each one changed
+shape once it was probed rather than reasoned about, and in TWO of them the fix
+the review prescribed would not have worked — recorded below, because "the
+review said to do X" turned out not to be evidence that X measures anything.
+
+**R3.3 — the trie IS structurally testable, and the check is now the strongest
+net in the project.** The M2 journal concluded M2.8 could not have a structural
+test, because the trie changes the NFA and the NFA is not an output. That
+inverts the actual situation: the trie is required to be OUTPUT-PRESERVING, so a
+compiler built with factoring off must emit byte-identical C, and diffing the
+two builds tests the soundness rules directly — no subjects, no gcc.
+`-DPCREC_NO_TRIE` plus `tests/codegen/run_trie_identity.sh`, 500 generated
+alternation patterns in ~4 s, wired into `make test`. D16.
+
+Detection power is not in the same class as what existed. Breaking the
+disjointness guard fails 2 cases in the entire 663-case corpus, and 21 of 200
+patterns here; breaking rule 1's accept split fails 132 of 200. Each failure
+names the pattern rather than a subject that happened to hit it.
+
+The part that mattered most is the part the review did not ask for. An
+equivalence check is VACUOUS if both builds have the optimization off — then
+everything agrees and the script certifies a deleted optimization, which is
+exactly the "guard that cannot fail" shape R3 found twice in guards written the
+same day. So there is a POSITIVE CONTROL, deterministic rather than
+timing-based: `(<256 8-bit binary strings>){100}` needs ~230k NFA states
+unfactored and ~51k factored against a 131072 cap, so the two builds fail at
+different STAGES and the stage is visible in the error text. Sabotage-validated
+three ways, and the third is the one worth keeping: with the trie disabled in
+the shipped build, identity passes 200/200 and the positive control is the ONLY
+thing that fires.
+
+Two false starts worth not repeating. The first positive control — 4000 branches
+sharing a 30-byte prefix — does not work: the DFA cap bites before the NFA cap
+so both builds fail identically, and at 136 KB the pattern also exceeds Linux's
+128 KB single-argv limit. And the first differ compared `-o a.c` against
+`-o b.c`, so all 500 patterns "differed" on the `#include "a.h"` line. Both
+builds now emit to stdout. The second one is the useful lesson: a differential
+harness can be 100% wrong in a way that still looks like a finding.
+
+**R3.4 — the hole was real, and the load-bearing case is on the other path.**
+The review asked for one pattern from the `a.*|b$` family. Added six (44 cases,
+oracle-verified), because measuring which sabotage each pattern catches showed
+the named family is not where the detection power is:
+
+- restricting the EOL accept to the boundary fails 3 cases, all `a.*|b$` and
+  `a[^\n]*|\n$`;
+- dropping the non-EOL post-skip `last = pos` fails 10 cases, all `[a-z].*|q$`,
+  `a.*|b` and `=.*|;`;
+- the original 13 patterns catch NEITHER.
+
+`[a-z].*|q$` is the interesting one: written with a `$`, it compiles to a
+machine with NO EOL variants, because `[a-z].*` subsumes `q$` and no eolvar
+survives. That accident is what gives it reach into the non-EOL path — so
+`a.*|b` and `=.*|;` were added carrying no `$` at all, and that coverage cannot
+evaporate under a construction change.
+
+Also found while validating, and fixed in the file header: this file does NOT
+catch relaxing the EOL forward skip bound from n-1 back to n, despite claiming
+every case in it failed the first M2.12 attempt. Other tests/base files catch
+that one (3 cases).
+
+**R3.1 — the shape the review prescribed measures the wrong thing.** R3 proposed
+`.*=.*` over a key=value subject. It matches at offset 0 and ends at 127, so an
+8 MB run exits after 127 bytes and reports **32 GB/s** — R2-B4's exit-latency
+mistake, inside the very item written to close a coverage gap. Recorded in the
+source so it is not tried again.
+
+THROUGHPUT case (e) is `=[^\n]*!` over 8 MB of 128-byte key=value records: no
+`!` exists in the alphabet so the scan is full, and ~92% of bytes are consumed
+inside the skip loop. Interleaved median-of-9, pinned, load 0.79: healthy 1741.8
+MB/s (spread 1.081x), sabotaged 360.6 MB/s (spread 1.030x) — **4.83x**. Budget
+1000 MB/s, which is median/1.74 and is stated that way rather than as "/1.75",
+because R3 found only 3 of 8 budgets matched the derivation they claimed. The
+case also hard-errors if its own pattern ever stops emitting a skip table, so it
+cannot quietly decay into a second prefilter measurement — which is precisely
+how cases (a)-(d) came to have zero skip coverage.
+
+**R3.5 — per-case margins, and the gate now prints its own blind spot.** One
+global 0.70 margin fires only below 1.43x, which is why M2.10's 27% regression
+passed this gate while the review credited the gate with catching it. Margins
+are now per case, derived from that case's own trial spread as
+`clamp(1/(spread*1.05), 0.70, 0.90)`. D17.
+
+The ceiling is the part that needed thinking about: it is NOT derived from the
+spread. One run's within-run spread is a sample, not a distribution, and this
+box's noise floor is ~10% even at median-of-7 — gating tighter than 0.90 would
+manufacture failures out of noise however tight a single run looked. The floor
+keeps a noisy case no looser than the old default, so this is never a loss of
+strictness.
+
+Measured spreads: a 1.01x, b 1.01x, c 1.02x, d 1.06x, e 1.26x, f 1.09x, g 1.22x,
+h 1.04x, i 2.04x — a 2x range that one global margin had to cover with its
+loosest member. Validated: a uniform 27% regression now fails **8 of 9** cases
+where it previously failed 0. Case (i) (latency, spread 2.04x) still cannot see
+it, and the gate now prints `weakest case: a uniform regression must exceed
+1.43x to fail this gate` on every run, so that limit is stated by the tool
+instead of waiting for a critic to compute it.
+
+Floor VALUES were deliberately NOT re-baselined. The full compare run taken for
+the spreads reproduced every recorded value within 2% (a 2201 vs 2192, b 1968 vs
+1970, c 390 vs 389, f 158 vs 159, h 1323 vs 1303), so there was nothing to move,
+and moving them would have quietly ratcheted the baseline down for no reason.
+
+**Also cleared from R3's NOTED list:** the four directories with no CLAUDE.md
+(`tests/bench`, `tests/bench/compare`, `tests/cli`, `docs/reviews`) now have
+one. Writing `tests/cli/CLAUDE.md` immediately produced a correction to itself:
+the first draft claimed python3 was a hard dependency of `make test` and that
+the suite covered the NFA/DFA caps. Neither is true — python3 is used only by
+case 8, which SKIPS itself when python3 is absent, and that skip goes to stderr
+while the suite still exits 0. Another guard that stops guarding without saying
+so; recorded in the file.
+
+**R3.2 remains open and is now the oldest unresolved item.** Two critics were
+dispatched at the start of this session against the two areas R3 left unprobed
+(the D11 EOL/non-EOL ordering asymmetry, and whether D13's dispatch
+micro-benchmark represents the real emitter). Both ran — their oracle sweeps
+were visible in the process table — and neither reported. That is the third
+consecutive checkpoint at which dispatched critics have failed to deliver, and
+it is now clearly a process defect rather than bad luck: the work gets done and
+the findings are lost. R4 should not dispatch a critic without a mechanism that
+makes a partial report recoverable.
+
+Verification: 663 corpus + 42 CLI + 17 codegen + 3 trie-identity green; python
+oracle 100% (655 cases); `make bench` 0 budget failures with the new case (e);
+compare gate 9/9 with the new margins; and every new guard sabotage-validated
+individually, with the sabotage that each one FAILS to catch recorded next to it.

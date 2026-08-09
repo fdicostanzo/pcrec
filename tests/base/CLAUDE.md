@@ -13,7 +13,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **alternation_trie.rxt** — priority hazards of M2.8 prefix-trie factoring (D9): shorter-branch-first shapes, overlapping-but-distinct classes, mixed eligible/ineligible runs. Each guard is sabotage-validated — disabling the disjointness guard fails 2 cases, disabling index-range partitioning fails 7
 - **anchors.rxt** — ^ and $ anchors
 - **eol_engine.rxt** — M2.7 regressions: `$` patterns on the O(n) unanchored engine
-- **eol_scan_avoidance.rxt** — M2.12 regressions: prefilter/skip loops restored on the `$` path (D11). Every case here failed the first M2.12 attempt, which bounded skips at n-1 but still evaluated the EOL view before the skip ran
+- **eol_scan_avoidance.rxt** — M2.12 regressions: prefilter/skip loops restored on the `$` path (D11). The original 13 patterns all failed the first M2.12 attempt, which bounded skips at n-1 but still evaluated the EOL view before the skip ran. R3.4 adds the other half of D11's interaction, which had no case at all: a forward skip state whose PLAIN accept flag is set, so `last` must survive a skip that crosses already-accepting positions. Both halves are sabotage-validated and need different patterns — restricting the EOL accept to the boundary fails 3 cases of `a.*|b$` / `a[^\n]*|\n$`, dropping the non-EOL post-skip `last = pos` fails 10 cases of `[a-z].*|q$` / `a.*|b` / `=.*|;`, and the original 13 catch NEITHER
 - **groups.rxt** — (...) capturing and (?:...) non-capturing groups
 - **escapes.rxt** — \\ \" \n \t metachar and control escapes
 - **empty_matches.rxt** — patterns matching empty strings

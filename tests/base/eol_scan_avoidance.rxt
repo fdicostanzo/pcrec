@@ -98,3 +98,93 @@ m "a" 0 1
 m "\n" 0 0
 m "a\n" 0 1
 m "ba" 1 2
+
+# --- R3.4: a FORWARD skip state whose PLAIN accept flag is set --------------
+#
+# Everything above this line has a hole, found by the R3 semantics critic: in
+# none of those 13 patterns does a forward skip state have its plain (non-EOL)
+# accept flag set. D11 is written about ordering scan avoidance against ACCEPT
+# EVALUATION, and the forward half of that interaction — a skip loop running
+# across positions where the state ALREADY accepts — had no committed case.
+# The EOL-only accept states above exercise the other half.
+#
+# The shape that produces it is an alternation with one unanchored self-looping
+# branch: the `.*`/`[^\n]*` state both self-loops (so it gets a skip table) and
+# accepts (so `last` must survive the skip). Confirmed from the emitted C
+# rather than assumed — `a.*|b$` emits rx_fs1[256] with rx_facc[1] == 1.
+#
+# SABOTAGE-VALIDATED, and the two halves need different patterns:
+#   * emitting the EOL accept only at the boundary (`if (pos + 1 >= n &&
+#     facc[est])`) fails 2 cases of `a.*|b$` and 1 of `a[^\n]*|\n$`;
+#   * dropping the non-EOL post-skip `last = pos` in emit_dfa.c (the
+#     `!eol && fd->st[K].accept` line) fails 3 cases of `[a-z].*|q$`.
+# The 13 cases above catch NEITHER. Note also that neither half catches
+# relaxing the EOL forward skip bound from n-1 back to n — other files in
+# tests/base/ catch that one (3 cases); this file does not, despite its header.
+#
+# `[a-z].*|q$` is a NON-EOL machine even though it is written with a `$`:
+# `[a-z].*` subsumes `q$`, so no EOL-variant state survives (no rx_fev table is
+# emitted). That is what gives it detection power on the non-EOL path — and it
+# is an accident of this pattern, so `a.*|b` and `=.*|;` below carry no `$` at
+# all and cannot lose that coverage to a construction change.
+#
+# All expectations from python3 `re`.
+
+pattern a.*|b$
+m "axxxxxxxxxxxxxxxxxxxx" 0 21
+m "axxxxxxxxxxxxxxxxxxxx\n" 0 21
+m "xxxxxxxxxxb" 10 11
+m "xxxxxxxxxxb\n" 10 11
+n "xxxxxxxxxxbx"
+m "ba" 1 2
+m "b" 0 1
+m "\nb" 1 2
+m "a" 0 1
+m "a\n" 0 1
+# the skip stops at the \n, well before n-1, and the `b$` branch must not win
+m "axxx\nb" 0 4
+m "axxx\nb\n" 0 4
+
+pattern =.*|x$
+m "k=vvvvvvvvvv" 1 12
+m "k=vvvvvvvvvv\n" 1 12
+m "abcx" 3 4
+m "abcx\n" 3 4
+n "abcxy"
+m "=" 0 1
+m "=\n" 0 1
+
+# `[^\n]*` self-loops on 255 of 256 bytes, so the skip table is near-total
+pattern a[^\n]*|\n$
+m "aXXXXXXXXXX\nYYY" 0 11
+m "XXXXXXXXXX\n" 10 11
+m "aaa" 0 3
+m "aaa\n" 0 3
+m "\n" 0 1
+m "XX\nYY\n" 5 6
+
+pattern [a-z].*|q$
+m "zzzzzzzzzz" 0 10
+m "zzzzzzzzzz\n" 0 10
+m "1234q" 4 5
+m "1234q\n" 4 5
+m "1234q5" 4 6
+
+# no `$` anywhere: guaranteed non-EOL machines with an accepting skip state
+pattern a.*|b
+m "axxxxxxxxxxxxxxxxxxxx" 0 21
+m "axxxxxxxxxxxxxxxxxxxx\n" 0 21
+m "xxxxxxxxxxb" 10 11
+m "bxxxx" 0 1
+m "a\nb" 0 1
+m "xxxa\nyyy" 3 4
+m "b\n" 0 1
+m "ab" 0 2
+
+pattern =.*|;
+m "k=vvvvvvvvvv" 1 12
+m "k=vvvvvvvvvv\n" 1 12
+m "aaa;bbb" 3 4
+m "aaa\n=v" 4 6
+m ";" 0 1
+m "=;" 0 2

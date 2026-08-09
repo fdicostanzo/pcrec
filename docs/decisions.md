@@ -398,3 +398,80 @@ The general rule this establishes: a sabotage validation must disable the
 SPECIFIC branch under test, not the feature that contains it, and a feature
 with two code paths needs a case that reaches each. Revisit-when: any new
 scan-avoidance path is added.
+
+## D16 — 2026-08-09 — behaviour-preserving optimizations get an EQUIVALENCE check, not just a signature check
+
+`tests/codegen/` was built on the premise that a behaviour-preserving
+optimization can only be guarded by asserting its SIGNATURE appears in the
+emitted C — a skip table exists, `start_max = 0` is present, a table is under N
+entries. That premise is what led the M2 journal to conclude M2.8 (the
+alternation prefix trie) was not structurally testable at all, since the trie
+changes the NFA and the NFA is not an output.
+
+That was wrong, and an R3 critic showed why. The trie is required to be
+OUTPUT-PRESERVING: subset construction plus minimization must erase the
+difference completely. So building a second compiler with the optimization off
+and diffing the emitted C is a direct test of the optimization's SOUNDNESS,
+across as many patterns as you care to generate, with no subjects and no gcc.
+
+Decision: when an optimization is supposed to be output-preserving, guard it
+with an equivalence diff against a reference build, and prefer that to
+signature greps. `-DPCREC_NO_TRIE` is the switch for M2.8;
+`tests/codegen/run_trie_identity.sh` is the check. 500 patterns in ~4 s.
+
+Why this is worth a decision entry rather than just a test: the detection power
+is not comparable to what we had. Disabling the disjointness guard fails 2
+cases in the entire 663-case .rxt corpus; it fails ~14 patterns in 500 here, at
+TRIE_N=200 21 of 200, and each failure names the pattern rather than a subject
+that happened to hit it. Disabling rule 1's accept split fails 132 of 200.
+
+The trap, and the non-optional part: an equivalence check is vacuous if BOTH
+builds have the optimization off. Then everything agrees and the script
+certifies a deleted optimization — the exact "guard that cannot fail" shape R3
+found twice in guards written the same day. So every equivalence check MUST
+carry a positive control proving the shipped build still does the thing. Here
+it is deterministic rather than timing-based: `(<256 8-bit binary
+strings>){100}` needs ~230k NFA states unfactored and ~51k factored against a
+131072 cap, so the two builds fail at different STAGES and the stage is visible
+in the error text. Sabotage-validated: with the trie disabled in the shipped
+build, identity passes 200/200 and the control is the only thing that fires.
+
+Cost: the check builds a second compiler at -O0 on every `make test` (~0.4 s).
+Accepted. Revisit-when: another output-preserving optimization lands (the
+reverse machine's unconditional factoring, F5, is the obvious next one), or the
+NFA/DFA caps move and the positive control needs re-sizing.
+
+## D17 — 2026-08-09 — the compare gate's margin is per case, derived from that case's own spread
+
+`gate.sh` used one global margin of 0.70 for all nine cases, which fires only
+below 1.43x. R3's claims critic pointed out the consequence: M2.10's 27%
+regression could NOT have been caught by this gate, and the review had credited
+it with catching that case anyway. Only the 43% one was in range.
+
+A single margin has to be sized for the noisiest case in the matrix, so every
+quiet case is gated far more loosely than its own measurement supports —
+spreads across the matrix run 1.03x to 1.49x, a 15x difference in how much
+headroom each case actually needs.
+
+Decision: `floors.tsv` carries a fourth column, a per-case margin, and
+`UPDATE=1` derives it from that case's observed trial spread as
+
+    margin = clamp(1 / (spread * 1.05), 0.70, 0.90)
+
+The floor keeps a noisy case no looser than the old global default, so this is
+never a regression in strictness. The CEILING is the part that needs stating:
+it is NOT derived from the spread. A single run's within-run trial spread is a
+sample, not a distribution, and this box's noise floor is ~10% even at
+median-of-7 — gating tighter than 0.90 would manufacture failures out of noise
+no matter how tight one run happened to look. The 1.05 safety factor pays for
+the sample-vs-distribution gap; the ceiling pays for the floor being real.
+
+Each run now also prints, per case, the smallest regression its margin can
+actually fail on, and a summary line naming the weakest case in the matrix.
+That number was always computable and for two checkpoints nobody computed it —
+which is precisely how the gate came to be credited with a catch it could not
+make. A guard should state its own blind spot in its own output.
+
+Revisit-when: BENCH_TRIALS rises (a tighter median justifies a higher ceiling),
+the matrix moves to different hardware, or a case's recorded spread stops
+matching what it measures in practice.

@@ -157,6 +157,32 @@ static Frag frag_cat2(NB *b, Frag a, Frag c)
  * exists only to keep rule 1's partitions in priority order. */
 typedef struct { const uint8_t *seq; int len; } TItem;
 
+/* Compile-time off switch for the whole factoring path, used to build a
+ * REFERENCE compiler that emits the pre-M2.8 unfactored construction
+ * (`gcc -DPCREC_NO_TRIE ...`). The trie is required to be output-preserving:
+ * it changes the NFA, and subset construction plus minimization must erase
+ * the difference, so the two builds must emit byte-identical C. That is what
+ * tests/codegen/run_trie_identity.sh checks, and it is a far stronger net
+ * than sampling subjects — the .rxt corpus catches a broken disjointness
+ * guard with 2 cases, the diff catches it on 14 patterns in 500 (R3.3).
+ *
+ * Never defined in a shipped build. TRIE_ENABLED is a constant 1 there, so
+ * `1 && trie_key(...)` is the original expression: verified by rebuilding and
+ * comparing nfa.o's .text/.rodata/.data/.bss against the pre-R3.3 object —
+ * all four byte-identical, with the disassembly differing only in the object
+ * filename. (The .o as a whole is NOT byte-identical, because adding this
+ * comment moved DWARF line numbers. Stating that precisely rather than
+ * "the object is identical" is the R3 lesson about claims made for guards.)
+ *
+ * Writing the switch as `&&` rather than #ifdef'ing the functions out is what
+ * keeps -Wunused-function quiet in the reference build: trie_key and
+ * trie_build are still REFERENCED, just never reached. */
+#ifdef PCREC_NO_TRIE
+enum { TRIE_ENABLED = 0 };
+#else
+enum { TRIE_ENABLED = 1 };
+#endif
+
 /* Nested branch points before falling back to the unfactored construction.
  * This constant IS A STACK BUDGET and is stated as one, which is what D10
  * demanded for clo_visit and what the first version of this file failed to do
@@ -486,7 +512,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         TItem *keys = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(TItem));
         bool *elig = arena_alloc(&b->cx->arena, (size_t)nbr);
         for (int j = 0; j < nbr; j++)
-            elig[j] = trie_key(b, br[j], &keys[j]);
+            elig[j] = TRIE_ENABLED && trie_key(b, br[j], &keys[j]);
 
         Frag *fr = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Frag));
         int nf = 0;
