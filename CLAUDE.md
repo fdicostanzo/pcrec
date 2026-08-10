@@ -20,10 +20,25 @@ no dependency on pcrec in the generated code). Design: APPROACH.md.
                     # (including PC-3, the registry against libpcre2 — SKIPS
                     # loudly if libpcre2-8-0 is absent) + codegen structural
                     # checks + the known-fail ratchet (see docs/testing.md)
+    make strict     # warnings-as-errors check (opt-in, writes nothing)
     build/pcrec -p rx --emit-main -o out.c 'a(b|c)+d'   # try it
 
 Plain GNU make on purpose (docs/decisions.md D2). gcc is the target compiler;
 generated code uses computed goto and other GNU C extensions.
+
+`-Werror` is deliberately NOT the default (R5-Q1, answered 2026-08-10): a
+stranger's `make` must not fail on a newer gcc's new opinion. `make strict` is
+the opt-in gate, it writes nothing, and it is safe to run alongside `make test`.
+
+## Compatibility standard (D26)
+
+PCRE2 is the SOURCE OF TRUTH for syntax and semantics, not a build to reproduce
+byte for byte. Effort is tiered by distance from the core: what a pattern
+MATCHES and whether a construct is REAL (and which module owns it) are exact;
+the WORDING of a diagnostic for something pcrec does not implement is not.
+"Requires module 'X'" discharges that obligation in full. Read D26 before
+spending effort on matching a PCRE2 error message — it is probably the wrong
+tier, and PCRE2 is a moving target with no specification.
 
 ## Where things are
 

@@ -7,6 +7,14 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 - **compile.c** — pcrec_compile() pipeline driver (parse → NFA → DFA → emit); ctx_fail error handler; pcrec_default_options defaults
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf
+- **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
+  PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2
+  syntax (exact, and measured — the 65535 repeat ceiling, the 250 nesting cap),
+  and PCRE2 internals (minimums we honour, not contracts we owe). The
+  provenance is the point: a bare `250` and a bare `60` look alike and are not.
+  Structural constants (256 byte values, block sizes, growth factors) and local
+  algorithmic bounds with proofs beside them stay where they are, deliberately —
+  see the file's own inclusion rule before adding to it
 - **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa, the
   syntax construct registry types (RegRow and its FEAT_/FLAV_/ENGM_/RS_/RD_
   vocabulary, D24), the `(*` doorway's NAME tables (VerbName/VerbTable and the

@@ -219,8 +219,9 @@ static Ast *p_atom(Ctx *cx)
 
     switch (c) {
     case '(': {
-        if (++cx->depth > 250) /* PCRE2-like nesting cap; also bounds parser
-                                  and AST recursion depth (R1 review R-1) */
+        if (++cx->depth > PCREC_MAX_GROUP_DEPTH) /* PCRE2's exact cap, measured;
+                                  also bounds parser and AST recursion depth
+                                  (R1 review R-1). See core/limits.h */
             ctx_fail(cx, apos, "parentheses are too deeply nested");
         /* Doorway 3. `(*...)` is caught as a family — backtracking verbs,
          * pattern-start options and script runs — because otherwise `(` starts
@@ -364,7 +365,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
         if (!big_m) {           /* stop accumulating once it is already too
                                    big, so a 20-digit count cannot overflow */
             m = m * 10 + d;
-            if (m > 65535) big_m = true;
+            if (m > PCREC_MAX_REPEAT) big_m = true;
         }
         ndig++;
     }
@@ -396,7 +397,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
         int d = nextc(cx) - '0';
         if (!big_n) {
             n = n * 10 + d;
-            if (n > 65535) big_n = true;
+            if (n > PCREC_MAX_REPEAT) big_n = true;
         }
         ndig++;
     }

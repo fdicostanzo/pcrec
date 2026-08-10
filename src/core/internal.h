@@ -8,6 +8,9 @@
 #include <stdint.h>
 
 #include "pcrec.h"
+/* Every number that decides what pcrec accepts, rejects or promises, with its
+ * provenance — ours, PCRE2 syntax, or a PCRE2 internal (D26). */
+#include "core/limits.h"
 
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
@@ -408,19 +411,5 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
                      bool prune, int maxstates);
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
-
-enum {
-    /* M2.8 raised this from 20000. It is a MEMORY backstop (48 B/state, two
-     * machines, so ~12.6 MB), not the real ceiling: the DFA caps below are
-     * grounded in emitter cost (R1 A-3) and now bind first across the
-     * realistic keyword range — 6000-word lists compile, 10000-word lists
-     * fail on the DFA cap with its actionable "VM engine arrives in M4".
-     * Stack depth is no longer a constraint here: clo_visit's tail edges are
-     * iterative (verified at -O0 on a 1,000,000-branch alternation). */
-    PCREC_MAX_NFA_STATES       = 131072,
-    PCREC_MAX_DFA_STATES_GOTO  = 10000,   /* computed-goto attempt engine */
-    PCREC_MAX_DFA_STATES_TABLE = 32000,   /* table engine; must fit in short */
-    PCREC_MAX_TABLE_ENTRIES    = 2000000  /* states*ncls bound (~12 MB source) */
-};
 
 #endif /* PCREC_INTERNAL_H */

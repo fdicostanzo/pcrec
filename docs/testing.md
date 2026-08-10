@@ -25,7 +25,17 @@ PRESENT in the emitted C — see that directory's CLAUDE.md), and
 regression which has started passing). `run.sh` alone certifies only the first
 of the six.
 
-**One of them can SKIP, and the skip is loud.** `run_registry_tests.sh` builds
+`make strict` is separate and opt-in: it recompiles every source with
+`-Werror`, writes nothing, links nothing, and touches `build/` not at all, so it
+is safe to run while `make test` is in flight. It exists because the project
+already had a warnings-as-errors gate BY ACCIDENT —
+`tests/codegen/run_trie_identity.sh` compiles the whole tree and fails on any
+warning, and R7 measured that this accident was for a while the only thing
+catching a class of offset bug. Now it is a gate someone chose. Validated the
+way any gate should be: adding one unused variable to `src/core/sb.c` leaves
+plain `make` succeeding and makes `make strict` fail.
+
+**One of the six can SKIP, and the skip is loud.** `run_registry_tests.sh` builds
 and runs `tests/registry/pcre2_check.c` (PC-3), which dlopens libpcre2 at
 runtime — the only external authority in the suite. Without the PCRE2 8-bit
 runtime installed (Debian/Ubuntu `libpcre2-8-0`) it prints three `SKIP:` lines

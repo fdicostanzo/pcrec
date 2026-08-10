@@ -218,7 +218,7 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
         unsigned long long acc = 0;
         bool fits = true;
         while (j < n && pat[j] >= '0' && pat[j] <= '9') {
-            if (acc > 429496728ull) fits = false;   /* UINT32_MAX/10 - 1 */
+            if (acc > PCREC_VERB_LIMIT_ACC_MAX) fits = false;
             /* `acc` keeps accumulating past that point and WRAPS on a long
              * enough digit run. That is defined behaviour for an unsigned type
              * and the wrapped value is never read, because `fits` is sticky —

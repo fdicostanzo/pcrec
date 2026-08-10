@@ -32,7 +32,7 @@ void pcrec_default_options(pcrec_options *opt)
 
 static bool valid_prefix(const char *p)
 {
-    if (!p || !*p || strlen(p) > 60) return false;
+    if (!p || !*p || strlen(p) > PCREC_MAX_PREFIX_LEN) return false;
     if (!isalpha((unsigned char)p[0]) && p[0] != '_') return false;
     for (const char *q = p + 1; *q; q++)
         if (!isalnum((unsigned char)*q) && *q != '_') return false;
@@ -84,7 +84,8 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
     }
 
     if (!valid_prefix(defo.prefix))
-        ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= 60 chars)");
+        ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
+                 PCREC_MAX_PREFIX_LEN);
     if (defo.encoding == PCREC_ENC_UTF8)
         ctx_fail(&cx, 0, "encoding 'utf8' requires module 'utf8' (milestone M5)");
     if (defo.encoding != PCREC_ENC_ASCII)

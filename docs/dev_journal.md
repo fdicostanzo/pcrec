@@ -2929,3 +2929,73 @@ illustration — the legitimate path and the attack are the same path.
 
 Registry is 68 rows. Suite: 876 / 83 / 181+67 reject / 128 registry / 76 PC-3 /
 29 codegen / 7 trie-identity.
+
+## 2026-08-10 — D26: functional compatibility, not bit-exact; plus limits.h and `make strict`
+
+Frank's steer, and it is a course correction worth recording in his own terms:
+*"my focus on pcre2 was to use it as the source of regex syntax and semantics
+but I see a lot of effort making sure error messages are compliant... we should
+be fully aligned at the core and expend less effort the further from the core we
+get, particularly with regard to features we have not yet implemented, and
+especially wrt features we never will."*
+
+He is right, and the clearest evidence is mine from this session.
+`(*LIMIT_MATCH=N)` has been marked OUT-OF-SCOPE in docs/pcre2_compliance.md
+since the 2026-08-09 survey — it bounds a backtracking search, pcrec is O(n) by
+construction, and D22 removes the adversarial-input motivation. I reproduced
+PCRE2's 32-bit accumulator overflow for it to the exact digit (boundary
+4294967290, not 4294967296) and pinned it in the suite. **Tier-4 work done to a
+tier-1 standard, on a row we had already decided not to build** — and I did not
+check our own compliance survey before spending it, which is the part worth
+remembering.
+
+**D26 records four tiers**: what a pattern MATCHES (exact), whether a construct
+is REAL and which module owns it (exact), the WORDING of a diagnostic for
+something unimplemented (functional — "requires module 'X'" discharges it), and
+constructs the architecture rules out (clean rejection and a name, nothing
+more). Two arguments make it right rather than merely cheaper: PCRE2 is a moving
+target with no specification — everything R8 measured came from 10.46 and 10.47
+is already out — and PCRE2 itself ships a document listing where it diverges
+from Perl, so the most compatible regex library in wide use does not reach 100%
+with its own namesake.
+
+**Nothing was removed.** Frank was explicit: *"don't rip anything out — let's
+just set our focus going forward."* So D26 also says what to do when an upgrade
+makes a check red: tier 1/2 disagreements are findings, tier 3/4 disagreements
+are DRIFT — record and demote the assertion, do not chase the new wording. That
+defers the change to the moment it is needed and costs nothing now.
+
+**It immediately paid for itself on FIX-2.** The proposed fifth doorway kind
+`RK_CLASSOPEN` existed for exactly one reason: PCRE2 uses different WORDING at a
+class's own bracket than inside one, so one row could not carry both. Under tier
+3 one message serves, so FIX-2 now gives the `:` row `RF_CLASS_DELIM` like its
+two neighbours — one flag, zero schema change — which leaves `at_class_open`
+used by nothing and deletes it anyway. That was the entire benefit the expensive
+option was justified by.
+
+**src/core/limits.h.** Every number that decides what pcrec accepts, rejects or
+promises, in three sections that ARE the tiers. The provenance is the point: a
+bare `250` in parse.c and a bare `60` in compile.c look alike and are not — one
+is PCRE2's boundary and the other is a choice we may change on a Tuesday. Both
+PCRE2-derived numbers were MEASURED rather than copied from their old comments:
+`a{65535}` compiles and `a{65536}` is error 105; 250 nested groups compile and
+251 is error 119. parse.c called the second "a PCRE2-like nesting cap", which
+undersold it — it is PCRE2's exact number. Structural constants and local
+bounds with proofs beside them stay where they are; the file states its own
+inclusion rule so it does not become a junk drawer.
+
+**`make strict` (R5-Q1, answered).** Opt-in, never default — a stranger's `make`
+must not fail on a newer gcc's new opinion, which is D26's argument one level
+down. The project's only warnings-as-errors gate was previously ACCIDENTAL
+(`run_trie_identity.sh` compiles the tree and fails on any warning) and R7
+measured that accident catching a class of offset bug.
+
+**And I broke a running test suite while adding it.** The first `strict` did
+`make clean` first, which deleted `build/pcrec` out from under an in-flight
+`make test` and produced a screenful of exit-126 HARNESS FAILURE lines that
+looked exactly like a real regression. Rewritten to compile to `/dev/null` and
+touch `build/` not at all. Validated the way any gate should be: one unused
+variable in `src/core/sb.c` leaves plain `make` green and makes `make strict`
+fail.
+
+**Next: FIX-2**, built under D26 rather than retrofitted to it.

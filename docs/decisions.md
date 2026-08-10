@@ -1429,3 +1429,87 @@ and real handlers; or SR-9's `tail` selector arrives, at which point the upper
 table's shape should be re-examined against it (they are orthogonal — §7 of the
 selector design says so — but they touch the same doorway); or a libpcre2
 upgrade makes `pcre2_check.c` fail, which is the table doing its job.
+
+## D26 — 2026-08-10 — FUNCTIONAL compatibility with PCRE2, not bit-exact compatibility: effort tiers by distance from the core
+
+**Decision.** pcrec takes PCRE2 as the SOURCE OF TRUTH for regex syntax and
+semantics. It does not take one installed build of PCRE2 as a specification to
+be reproduced byte for byte. Effort is spent in four tiers, and the tier decides
+how much a divergence costs:
+
+| tier | what | standard |
+|---|---|---|
+| 1. CORE | what a pattern MATCHES, for syntax pcrec implements | **exact.** A divergence is a bug, always |
+| 2. RECOGNITION | is this real PCRE2 syntax, and which module owns it | **exact.** Naming a module that will never implement a construct is a defect; so is rejecting syntax PCRE2 accepts |
+| 3. DIAGNOSTICS | the WORDING, error number and offset for constructs pcrec does not implement | **functional.** "requires module 'X'" or "not supported" discharges the obligation in full |
+| 4. NEVER-IMPLEMENTING | constructs the architecture rules out (backtracking verbs, callouts, substitution) | **clean rejection and a name.** Nothing further |
+
+**Why, in Frank's words (2026-08-10):** *"I think we are getting a bit
+overconcerned about exact pcre2 compatibility. My focus on pcre2 was to use it
+as the source of regex syntax and semantics but I see a lot of effort making
+sure error messages are compliant... we have a limited effort resource and we
+should expend it appropriately. We should be fully aligned at the core and
+expend less effort the further from the core we get, particularly with regard to
+features we have not yet implemented, and especially wrt features we never
+will."*
+
+**The argument that makes this correct rather than merely cheaper.**
+
+1. **PCRE2 is a moving target and there is no specification.** Everything
+   measured in R8 came from libpcre2 **10.46**; 10.47 is already out. Error
+   numbers, message wording, the verb list and the option set all move between
+   releases. A test suite that asserts 10.46's wording is asserting a fact with
+   a shelf life, and it will go red for reasons that mean nothing.
+2. **PCRE2 does not do this either.** It is the *Perl* Compatible Regular
+   Expressions library and it ships a document listing where it diverges from
+   Perl. The most compatible regex library in wide use does not reach 100% with
+   its own namesake. "The closest we can achieve" was never the target; it is
+   not even PCRE2's target.
+3. **The effort was going to the wrong end.** R8 spent real work making pcrec
+   reproduce PCRE2's exact wording for constructs pcrec's own compliance survey
+   already marks `OUT-OF-SCOPE`. The clearest case: `(*LIMIT_MATCH=N)` and its
+   two siblings, which docs/pcre2_compliance.md has recorded as OUT-OF-SCOPE
+   since the 2026-08-09 survey — *"these bound a BACKTRACKING search. pcrec is
+   O(n) by construction, so there is nothing to limit. D22 also removes the
+   adversarial-input motivation."* pcrec now reproduces PCRE2's 32-bit
+   accumulator overflow for those options to the exact digit (boundary
+   4294967290, not 4294967296) and pins it in the suite. **Tier 4 work done to a
+   tier 1 standard, on a row we had already decided not to build.**
+
+**What does NOT change, and this is most of the value already built.** Tier 2 is
+where Q1, PC-3 and the registry live, and it is exact. The `\v` bug, the `(?*`
+wrong-module bug, `(*NOTAVERB)` being promised a module, `[a[:b]` being rejected
+when PCRE2 compiles it — every one of those is a tier 1 or tier 2 defect and
+this decision makes none of them cheaper. **Knowing which constructs are real
+is precisely what Frank wanted PCRE2 for.**
+
+**Nothing is removed.** Frank was explicit: *"don't rip anything out — let's
+just set our focus going forward."* The exact wording already pinned in
+`tests/reject/`, the verb tables' form bits and PC-3's identity assertions all
+stay. They pass, they cost nothing per run, and deleting them is its own spend.
+
+**What to do when a PCRE2 upgrade makes a check red** — the case this decision
+exists to answer before it happens:
+
+- a **tier 1 or 2** disagreement (a construct appeared, vanished, or changed
+  meaning) is a real finding: investigate and follow it.
+- a **tier 3 or 4** disagreement — new wording, a renumbered error, a new verb
+  name for a construct pcrec will not implement — is DRIFT. Record it in the
+  journal, reclassify that assertion as informational, and move on. **Do not
+  chase the new wording.** `tests/registry/pcre2_check.c` asserts message
+  identity today; the correct response to an upgrade making that red is to
+  demote the assertion, not to re-measure PCRE2.
+
+**Consequences already taken:** `src/core/limits.h` sorts every policy number
+into three sections — ours, PCRE2 syntax (exact), PCRE2 internals (minimums we
+honour, not contracts we owe) — so a reader can tell which tier a number is in
+before deciding whether a divergence matters. FIX-2 drops its proposed fifth
+doorway kind (`RK_CLASSOPEN`), which existed only to reproduce PCRE2's two
+different wordings at one doorway; under tier 3 one message serves, and the
+cheap `RF_CLASS_DELIM` fix deletes the same dead parameter the expensive option
+was justified by.
+
+**Revisit when:** a user reports that a wording difference actually cost them
+something; or pcrec grows a PCRE2-compatibility mode as a product feature rather
+than as an internal standard; or the module set grows far enough that tier 4 is
+nearly empty, at which point the gradient matters less than it does now.

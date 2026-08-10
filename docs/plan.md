@@ -198,7 +198,18 @@ CLAUDE.md files, commit, push.
   `tests/registry/pcre2_check.c` finds K3 and all four K4 cases MECHANICALLY,
   and the four known-wrong pins in tests/reject/ have moved into the normal
   tables. Also add the `"[%ca%c]"` sweep template registry_check.c is missing —
-  its current `"[[%ca%c]]"` only tests doorway 4b. R6's testability critic showed the "the fix would be thrown away"
+  its current `"[[%ca%c]]"` only tests doorway 4b.
+  **SCHEMA CALL MADE, 2026-08-10 (Frank + D26): NO fifth doorway kind.**
+  `RK_CLASSOPEN` was proposed because PCRE2 uses different WORDING at a
+  class's own bracket than inside one, so one row could not carry both.
+  Under D26 that is TIER 3 and one message serves. Give the `:` row
+  `RF_CLASS_DELIM` like its two neighbours — one flag, zero schema change —
+  which makes both positions answer alike and leaves `at_class_open` used by
+  nothing, so the parameter is deleted anyway. That was the entire benefit
+  `RK_CLASSOPEN` was justified by, at a fraction of the blast radius. Still
+  to get right: the message must not promise that module `classes` will make
+  `[:alpha:]` legal, because it never will.
+  R6's testability critic showed the "the fix would be thrown away"
   premise was wrong (K4 is untouched by any selector scheme, and its structural
   scan must exist under every design), and fixing them first gives the registry
   change a correctness target at the doorway it changes most. The four
@@ -212,8 +223,19 @@ CLAUDE.md files, commit, push.
   doorway 217x wider, and the escape doorway is the control that proves it is
   not inherent — 39 rows, zero over-promises. Needs the measured set of bytes
   PCRE2 actually accepts after `(?`; PC-3 then covers it with no new
-  infrastructure. Sequence AFTER FIX-2 and probably WITH SR-9, whose `tail`
-  field touches the same rows
+  infrastructure. **Sequenced WITH SR-9, not before it** (Frank, 2026-08-10):
+  they touch the same rows, and SR-9's `tail` field is what `(?P=` vs `(?P<`
+  needs anyway — doing them apart means opening the same doorway twice
+- [MECH-3] STATE:completed 2026-08-10 — `make strict`, answering R5-Q1. Frank's
+  call: OPT-IN, never the default, because a stranger's `make` must not fail on
+  a newer gcc's new opinion (the same moving-target argument D26 makes about
+  PCRE2). It recompiles every source with `-Werror`, writes nothing and touches
+  `build/` not at all, so it cannot break a concurrent `make test` — the first
+  version ran `make clean` and did exactly that. Validated: one unused variable
+  in `src/core/sb.c` leaves plain `make` green and makes `make strict` fail.
+  The project's only warnings-as-errors gate was previously ACCIDENTAL
+  (run_trie_identity.sh), and R7 measured that accident catching a class of
+  offset bug
 - [PC-4] STATE:not-started — a SEMANTIC differential, R8/C4-2. PC-3 compares
   compile VERDICTS only and calls none of the match API it already links, so
   `\v`'s row — the incident this registry was built for — is unverified: the

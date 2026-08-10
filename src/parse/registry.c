@@ -475,7 +475,7 @@ const char *pcrec_registry_verb_name_limit(size_t *max)
     /* 128 is the ONLY length boundary, and it is table-independent: swept over
      * every length 1..319 in both tables (R8/C2-9), there are exactly two
      * transitions in 638 probes and both are at 129. */
-    *max = 128;
+    *max = PCREC_VERB_NAME_MAX;
     return "subpattern name is too long (maximum 128 code units)";
 }
 

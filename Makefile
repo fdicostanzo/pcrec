@@ -13,7 +13,7 @@ LIBOBJS := $(patsubst src/%.c,build/obj/%.o,$(LIBSRCS))
 
 all: build/pcrec build/libpcrec.a
 
-build/obj/%.o: src/%.c src/core/internal.h lib/pcrec.h
+build/obj/%.o: src/%.c src/core/internal.h src/core/limits.h lib/pcrec.h
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 
@@ -33,6 +33,35 @@ test: all
 	bash tests/codegen/run_trie_identity.sh
 	bash tests/known_fail/run_known_fail.sh
 
+# `make strict` — R5-Q1, answered 2026-08-10: OPT-IN, never the default.
+#
+# The question was whether to adopt -Werror. The reason it matters is that the
+# project already HAS a warnings-as-errors gate and acquired it by ACCIDENT:
+# tests/codegen/run_trie_identity.sh compiles the whole tree and fails on any
+# warning, and R7 measured that this accident was, for a while, the only thing
+# catching one class of offset bug. A guard nobody chose is a guard nobody
+# maintains.
+#
+# Not the default, because gcc's warning set moves between releases and a
+# stranger's `make` must not fail on their newer compiler's new opinion — the
+# same moving-target argument D26 makes about PCRE2. So: a target you ask for.
+#
+# It also promotes the ONE warning ext.c's header cares about. Every doorway
+# function is `noreturn` today and that is TRUE today; when SR-6 lands the first
+# module handler one of them starts returning and gcc warns. Under `make strict`
+# that becomes an error at the exact moment the claim stops being true, which is
+# what that comment has wanted since R5 disproved its "this fails the build".
+# It writes NOTHING and touches build/ not at all — objects go to /dev/null. The
+# first version ran `make clean` first, which deleted build/pcrec out from under
+# a `make test` running in another shell and turned that suite into a screenful
+# of exit-126 "HARNESS FAILURE" lines. A diagnostic target that can break a
+# concurrent run is a trap; this one is safe to invoke at any time.
+strict:
+	@set -e; for f in $(LIBSRCS) cli/main.c; do \
+	    $(CC) $(ALLFLAGS) -Werror -c -o /dev/null $$f; \
+	done
+	@echo "strict: whole tree compiles clean with -Werror"
+
 bench: all
 	bash tests/bench/run_bench.sh
 
@@ -42,4 +71,4 @@ fuzz: all
 clean:
 	rm -rf build
 
-.PHONY: all test bench fuzz clean
+.PHONY: all test strict bench fuzz clean
