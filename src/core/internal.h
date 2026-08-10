@@ -293,9 +293,19 @@ void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
      __attribute__((noreturn));
 void pcrec_ext_group(Ctx *cx, int c2, size_t at) __attribute__((noreturn));
 void pcrec_ext_verb(Ctx *cx, size_t at) __attribute__((noreturn));
-/* The one doorway that can decline: `[` is an ordinary class member most of the
- * time. Returns false to mean "no construct here". */
-bool pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
+/* The one doorway that can DECLINE: `[` is an ordinary class member most of the
+ * time, so this returns normally to mean "no construct here" and the caller
+ * carries on with member parsing.
+ *
+ * `void`, not `bool`. It returned bool until an R5 critic pointed out that no
+ * path could ever produce `true` and both callers discarded the value — a
+ * return type that cannot take its second value is a lie of the same kind the
+ * `noreturn`s above are honest about, and a worse one, because when SR-6 gives
+ * a class-bracket row a handler returning "consumed, carry on", both callers
+ * would ignore it and fall straight through to member parsing with nothing in
+ * the build objecting. Adding the value back is SR-6's job, at which point the
+ * signature change forces both call sites to be looked at. */
+void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                              bool at_class_open);
 
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both

@@ -128,21 +128,35 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
  * not decoration: `[.a.]` is an error at offset 0 while `[:alpha:]` is a
  * perfectly ordinary class of five characters, pinned against libpcre2 10.46.
  * RF_CLASS_DELIM is what separates them — see its definition in internal.h. */
-bool pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
+void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                              bool at_class_open)
 {
-    if (c2 < 0) return false;                 /* nothing follows the bracket */
+    if (c2 < 0) return;                       /* nothing follows the bracket */
 
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2);
-    if (!r) return false;
+    if (!r) return;
 
     if (r->flags & RF_CLASS_DELIM) {
+        /* KNOWN WRONG, and deliberately unchanged here: this scan runs to the
+         * end of the PATTERN rather than the end of the character class, so a
+         * `.]` outside the class makes an ordinary `[.` look closed and pcrec
+         * rejects patterns PCRE2 compiles. Carried across verbatim by SR-2 —
+         * which is why the byte-identity proof correctly saw no change, an
+         * identity proof being unable to see a bug both sides share. Measured
+         * and recorded as K4, with PCRE2's three missing scan rules and the
+         * warning that they must land together. */
         bool closed = false;
         for (size_t i = from; i + 1 < cx->patlen; i++)
             if (cx->pat[i] == (char)c2 && cx->pat[i + 1] == ']') { closed = true; break; }
-        if (!closed) return false;
+        if (!closed) return;
     } else if (at_class_open) {
-        return false;                         /* needs a bracket of its own */
+        /* The class's own bracket cannot open a `[X...X]` construct. This is
+         * what keeps `[:alpha:]` compiling — which is K3's over-acceptance,
+         * preserved on purpose so SR-2 stayed byte-identical. Its only live
+         * consumer is the `:` row, and until R5 nothing in the repo entered
+         * this doorway at all; `accept '[:]'` and `accept '[:a]'` in
+         * tests/reject/ are what guard it now. */
+        return;                               /* needs a bracket of its own */
     }
 
     if (r->diag != RD_FIXED)

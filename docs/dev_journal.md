@@ -2386,3 +2386,51 @@ was wrong. And when a design decision cut against the plan text (SR-4's
 **Next:** K5 and K6, the two miscompiles. Then K3+K4, which need a D24 call on
 whether the class-open position becomes a fifth doorway kind. Then MECH-1.
 R5-Q1 (-Werror) and the push are Frank's.
+
+### R5 addendum — the critics' later findings, and a claim of mine they corrected
+
+Both remaining critics finished after I had already written the session close,
+and their later sections deserved more than the triage I had given them.
+
+**The `at_class_open` framing in SR-2's commit message is wrong, and the
+behaviour critic proved it.** I wrote that deleting the guard "changes 0 of 4173
+cases and breaks no test", and called it an invisible branch. The second half is
+true of the repo's tests; the first half is a property of MY HARNESS. Five
+one-line patterns expose it — any class whose first member is `:`. The critic
+then verified WHY nothing saw them instead of guessing: no corpus pattern opens
+a class with `:`, the reject suite's only `[:` row is `[[:alpha:]]`, and
+registry_check's sweep template is `"[[%ca%c]]"`. Every probe of that doorway in
+the entire repo puts a literal `[` between the class bracket and the delimiter,
+so all of them test 4b and none tests 4a — which is exactly the distinction the
+argument encodes.
+
+Closed with `accept '[:]'` and `accept '[:a]'`, both accepted by libpcre2 too.
+Deliberately not `[::]` or `[:a:]`, which PCRE2 rejects and pcrec wrongly
+accepts (K3) — pinning those would cement the bug. The sabotage that was
+undetected now fails 2 checks.
+
+**And the pure-restructure claim held against 137,378 more cases** than I ran:
+97,818 EXHAUSTIVE short strings (every string of length <=3 over a 30-byte
+metacharacter alphabet, so no human chose what to try) and 30,770 structural
+ones — the paren cap straddled at 245..255 with a doorway inside the nest, a
+delimiter pair whose closer sits 20000 bytes from its opener, real verb NAMES
+(the first name-level probe of a doorway everything else tests byte-wise), real
+.c/.h files diffed on disk, raw newlines and high bytes. Zero differences.
+
+**One latent trap in my own shape, now fixed.** `pcrec_ext_class_bracket`
+returned `bool` and no path could produce `true`, while both callers discarded
+it. That is a worse lie than the noreturns are honest about: when SR-6 gives a
+class-bracket row a handler meaning "consumed, carry on", both callers would
+ignore it and fall through to member parsing with nothing objecting — in the
+doorway with the weakest coverage. Now `void`, so adding a value forces both
+call sites to be read.
+
+Byte-identity re-verified after every change above: 4179 cases against a
+pre-SR-2 build, zero differences. Suite 805/73/194/127+2/29/7.
+
+**The lesson, and it is not the one I would have guessed.** I had recorded "ask
+which branches no test can see" as the session's best question. The critic
+showed the follow-up matters as much: *when a sabotage comes back clean, do not
+conclude the branch is unreachable — find the input that reaches it, then ask
+why nothing in the repo supplies one.* I stopped at the first half and wrote the
+weaker conclusion into a commit message.

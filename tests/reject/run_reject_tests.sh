@@ -129,6 +129,17 @@ accept '[[.]'
 accept '[a[.b]'
 accept '[^.a.]'  # `^` sits between the bracket and the delimiter
 accept '[a.b.]'  # the `.` is not preceded by `[`
+# DOORWAY 4a — the class's OWN bracket as the opener. Every other probe of this
+# doorway in the whole repo (the corpus, the rows above, and registry_check's
+# `[[%ca%c]]` sweep template) puts a literal `[` between the class bracket and
+# the delimiter byte, so all of them test 4b and NONE tests 4a. That is why
+# deleting SR-2's `at_class_open` guard changed 0 of 4173 hashed cases and broke
+# no test: the guard was not invisible, it was simply never entered (R5
+# behaviour critic, FINDING 1). These two enter it, and both are accepted by
+# libpcre2 10.46 as well — deliberately not `[::]` or `[:a:]`, which PCRE2
+# REJECTS and pcrec wrongly accepts (K3); pinning those would cement the bug.
+accept '[:]'
+accept '[:a]'
 
 # A letter with NO registry row falls through to "unknown escape", and the
 # IN-CLASS spelling is a separate message that no test reached before R5 —
