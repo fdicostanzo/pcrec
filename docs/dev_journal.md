@@ -2184,3 +2184,70 @@ compile floor), and hide the row details behind a light abstraction. The second
 turned out to be a correctness fix, not a cosmetic one — the M_<module> macros
 pair each feature bit with its diagnostic name and make an invented module a
 compile error.
+
+## 2026-08-10 — SR-2: the registry stops being a sixth copy
+
+parse.c is the base grammar and nothing else now. Every non-base construct
+leaves it through one of four calls in the new `src/parse/ext.c` — after `\`,
+after `(?`, after `(*`, after `[` inside a class — and registry.c answers.
+`esc_modules[]`, the `(?X` ternary chain, the `(*` catch and `reject_collating`
+are gone from parse.c; the file lost 90 lines and, more to the point, lost the
+property of growing whenever a construct is added.
+
+**The acceptance bar, met: 4173 hashed emission cases, zero differences.** The
+baseline is a pristine `git archive HEAD` build rather than "the binary I had
+before I started", which is the only version of that sentence worth trusting.
+Wider than OS-0b's 1980: the corpus (179 patterns x 3 prefixes x 3 modes, plus
+`-i` and `-e utf8`), a 255-byte sweep across eight doorway contexts, and
+tests/reject/'s own strings — which set A misses entirely, because they live in
+a `.sh` and not in any `.rxt`. Each case hashes stdout, stderr, exit status,
+the paired `.c` AND the `.h`. A restructure that reroutes REJECTION paths has to
+be proved on rejections, and OS-0b's proof only covered emitted C.
+
+**Then the sabotage battery found something the proof could not.** Seven edits,
+each on a fresh tree. Six were detected (20 to 192 cases each; one fails the
+build, which counts). The seventh — deleting the `at_class_open` guard I had
+just written — changed 0 of 4173 cases and broke no test in the suite.
+
+An invisible branch is a question, not a conclusion, so I went looking for what
+sat behind it, and it was a real bug: **pcrec accepts `[:alpha:]`; PCRE2 rejects
+it** ("POSIX named classes are supported only within a class"). Measured against
+libpcre2 10.46 across twelve probes: at a class's own opening bracket, `:`
+behaves exactly like `.` and `=` — delimiter-pair, conditional on a later `:]`,
+suppressed by `^`. pcrec has RF_CLASS_DELIM rows for two of the three
+delimiters. Recorded as K3, NOT fixed here, because SR-2's whole claim is
+byte-identity and a behaviour change would dissolve it.
+
+**Third time this exact shape has appeared** — after `\v` and the collating
+elements — and the third time python `re`, the base-tier oracle, accepted the
+divergence rather than catching it. The corpus is structurally incapable of
+finding this class of bug. Only libpcre2 or reading the spec can.
+
+**Two departures from the plan text, both recorded in D24.** The handler field
+is deferred AGAIN, and the reason inverted: SR-1 deferred it because its type
+was a guess, and ext.c has now fixed all four signatures — but every row is
+RS_MODULE or RS_REJECTED, so every handler would be NULL and the branch calling
+one would be dead code no test can reach. That is precisely the shape R4's F13
+and F14 both turned out to be. SR-6 gets the field with a customer attached, at
+no extra cost. And `RF_CLASS_DELIM` joined the schema, because the collating
+elements' recognition rule is the construct's, not the base grammar's, and
+leaving it behind would have half-moved the doorway.
+
+**My own tooling failed twice, in the way this project's docs keep warning
+about.** The first sabotage script checked its edit with `grep -F` on a
+multi-line pattern — which greps each LINE independently, so a successfully
+removed block still "matched" via a stray `}`. And an empty replacement string
+made the post-edit guard vacuously true while the editor had already failed, so
+two sabotages that never applied reported "0 cases differ" — indistinguishable
+from "the test cannot detect this". MECH-2 exists in the plan because of exactly
+this failure a session ago, and I rebuilt it rather than reaching for it. Both
+guards now live in one language, as exact substring tests, and abort with no
+number rather than printing a reassuring zero.
+
+The lesson worth generalising is narrower than "write sabotage tests", which I
+already believed: **after a change, ask which of the branches you just added no
+test can see.** The byte-identity proof was the deliverable; the question about
+its blind spot was what found the bug.
+
+Baseline unchanged and green: 805 corpus / 49 CLI / 112 reject / 127 registry /
+29 codegen / 7 trie-identity, fuzz seed 1 zero divergences.

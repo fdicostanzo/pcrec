@@ -227,8 +227,19 @@ typedef enum {
 } RegDiag;
 
 enum {
-    RF_CLASS_BASE = 1u << 0   /* inside a class this byte is BASE syntax and the
+    RF_CLASS_BASE = 1u << 0,  /* inside a class this byte is BASE syntax and the
                                  doorway is not taken (\b is backspace there) */
+
+    /* A DELIMITER-PAIR construct: the selector byte opens it only when the
+     * matching `<sel>]` appears later in the pattern, and the character class's
+     * OWN opening bracket can serve as its `[`. Both halves are true of exactly
+     * the POSIX collating rows and false of `[:...:]`, which is why one flag
+     * carries them: `[.a.]` is an error at offset 0 while `[:alpha:]` is an
+     * ordinary five-character class, and `[[.]` compiles because nothing closes
+     * the pair. Measured against libpcre2 10.46, not inferred. If a third row
+     * ever needs one half without the other, split the flag — the two
+     * behaviours coincide here, they are not the same statement. */
+    RF_CLASS_DELIM = 1u << 1
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -261,6 +272,24 @@ typedef struct {
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
 const RegRow *pcrec_registry_find(RegKind k, int sel);
+
+/* src/parse/ext.c — the four doorways out of the base grammar (SR-2). Each is
+ * called only after parse.c's own switch has declined, so a base-tier pattern
+ * reaches none of them.
+ *
+ * The three `noreturn`s are TODAY's truth, not the design's: every row is
+ * RS_MODULE or RS_REJECTED, so every dispatch ends in a diagnostic. When SR-6
+ * lands the first module handler one of them starts returning a value and the
+ * attribute becomes a compile error at exactly that moment — which is the point
+ * of writing it down. */
+void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
+     __attribute__((noreturn));
+void pcrec_ext_group(Ctx *cx, int c2, size_t at) __attribute__((noreturn));
+void pcrec_ext_verb(Ctx *cx, size_t at) __attribute__((noreturn));
+/* The one doorway that can decline: `[` is an ordinary class member most of the
+ * time. Returns false to mean "no construct here". */
+bool pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
+                             bool at_class_open);
 
 /* ---- stage entry points ---- */
 

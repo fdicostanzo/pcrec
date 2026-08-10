@@ -1,49 +1,19 @@
 /* Base-tier PCRE parser: literals, '.', [...] classes, '|', * + ? {m,n}
  * (greedy/lazy), ^ $, (...) and (?:...) groups, metachar/control escapes.
  *
- * Module hook points: escapes and "(?X" constructs outside the base tier are
- * routed through lookup tables below; a future drop-in module fills in real
- * handlers, and until then the tables yield a precise "requires module"
- * diagnostic instead of a miscompile. */
-
-#include <string.h>
+ * AND NOTHING ELSE (D24, step SR-2). Every construct outside the base tier
+ * leaves this file through one of four calls into src/parse/ext.c — after `\`,
+ * after `(?`, after `(*`, after `[` inside a class — and the registry answers
+ * for it. The base switch runs FIRST and returns in every one of those places,
+ * so a base-tier pattern performs no lookup at all; this file is meant to stop
+ * growing, and a new construct should need no edit here.
+ *
+ * Two "requires module" diagnostics stay, deliberately: `\x{...}` and the
+ * possessive `+` suffix are sub-cases of BASE constructs (the `\x` decoder and
+ * the quantifier suffix), not doorways, and giving them a doorway would cost
+ * the base tier a lookup for nothing. */
 
 #include "core/internal.h"
-
-/* ---- future-module maps: construct -> owning module name ---- */
-
-typedef struct { unsigned char ch; const char *module; } EscMod;
-static const EscMod esc_modules[] = {
-    {'d', "classes"}, {'D', "classes"}, {'s', "classes"}, {'S', "classes"},
-    {'w', "classes"}, {'W', "classes"}, {'h', "classes"}, {'H', "classes"},
-    /* `\v` is VERTICAL WHITESPACE in PCRE2, not vertical tab. It was decoded
-     * as 0x0B here until 2026-08-09 — the only silent semantic divergence in
-     * the escape table, and it survived because python `re` (the base-tier
-     * oracle) also reads `\v` as 0x0B, so the corpus agreed with the bug.
-     * Measured against libpcre2: `\v` matches 0x0a 0x0b 0x0c 0x0d 0x85, six
-     * bytes where pcrec matched one. `\V` was already routed here, which is
-     * what made the asymmetry visible. */
-    {'v', "classes"}, {'V', "classes"}, {'N', "classes"},
-    {'b', "assertions"}, {'B', "assertions"}, {'A', "assertions"},
-    {'Z', "assertions"}, {'z', "assertions"}, {'G', "assertions"},
-    {'k', "backrefs"}, {'g', "backrefs"},
-    {'p', "unicode-props"}, {'P', "unicode-props"},
-    {'Q', "quoting"}, {'E', "quoting"},
-    {'R', "misc"}, {'X', "misc"}, {'C', "misc"},
-    /* real PCRE2 constructs that used to fall through to "unknown escape
-     * \x" — a clean rejection, but one that told the caller the syntax was
-     * nonsense rather than naming what would implement it. `\K` sets the
-     * reported match start; `\c` is a control escape; `\o{...}` is octal. */
-    {'K', "assertions"}, {'c', "misc"}, {'o', "misc"},
-    {0, NULL},
-};
-
-static const char *esc_module_for(unsigned char c)
-{
-    for (const EscMod *e = esc_modules; e->module; e++)
-        if (e->ch == c) return e->module;
-    return NULL;
-}
 
 /* ---- cursor helpers ---- */
 
@@ -149,7 +119,9 @@ static int esc_char_value(Ctx *cx, size_t epos)
     }
 }
 
-/* Escape outside a class -> AST atom. */
+/* Escape outside a class -> AST atom. Doorway 1: anything esc_char_value
+ * declines (a digit, or a letter that is not a plain character escape) belongs
+ * to the registry, which owns both the module name and the wording. */
 static Ast *esc_atom(Ctx *cx)
 {
     size_t epos = cx->pos - 1; /* at '\' */
@@ -157,15 +129,12 @@ static Ast *esc_atom(Ctx *cx)
     int v = esc_char_value(cx, epos);
     if (v >= 0) return char_node(cx, (unsigned)v);
     cx->pos = save;
-    int c = nextc(cx);
-    if (v == -2)
-        ctx_fail(cx, epos, "\\%c (backreference/octal) requires module 'backrefs'", c);
-    const char *mod = esc_module_for((unsigned char)c);
-    if (mod) ctx_fail(cx, epos, "\\%c requires module '%s'", c, mod);
-    ctx_fail(cx, epos, "unknown escape \\%c", c);
+    pcrec_ext_escape(cx, nextc(cx), false, epos);
 }
 
-/* Escape inside a class -> byte value. */
+/* Escape inside a class -> byte value. `\b` is BASE syntax here — backspace,
+ * not a word boundary — so the base decode answers before the doorway is
+ * reached (the row records that with RF_CLASS_BASE). */
 static int esc_class_value(Ctx *cx)
 {
     size_t epos = cx->pos - 1;
@@ -174,43 +143,11 @@ static int esc_class_value(Ctx *cx)
     if (v >= 0) return v;
     cx->pos = save;
     int c = nextc(cx);
-    if (c == 'b') return '\b';  /* PCRE: \b inside a class is backspace */
-    const char *mod = esc_module_for((unsigned char)c);
-    if (v == -2 || mod)
-        ctx_fail(cx, epos, "\\%c in a class requires module '%s'",
-                 c, mod ? mod : "backrefs");
-    ctx_fail(cx, epos, "unknown escape \\%c in class", c);
+    if (c == 'b') return '\b';
+    pcrec_ext_escape(cx, c, true, epos);
 }
 
 /* ---- [...] classes ---- */
-
-/* POSIX collating elements `[.ch.]` and equivalence classes `[=ch=]`. PCRE2
- * does not support them and REJECTS them outright ("POSIX collating elements
- * are not supported"); it does not fall back to treating them as literals.
- *
- * The trigger is narrower than it looks and was pinned against libpcre2 10.46
- * rather than guessed: `[` followed by `.` or `=` opens a collating element
- * ONLY when the matching `.]` / `=]` terminator appears later. Without one the
- * characters are ordinary members — `[[.]`, `[a[.b]`, `[.a]` and `[.]` all
- * compile — while `[..]`, `[.a.]`, `[.a.b.]`, `[[.a.]]`, `[x[.a.]y]` and
- * `[a[=b=]c]` are all errors. The class-opening bracket itself can be the
- * opener (`[.a.]` errors at offset 0), but a negated class suppresses that
- * because `^` sits between the bracket and the delimiter (`[^.a.]` compiles).
- *
- * pcrec used to accept every one of these silently, as a class of literal
- * `[` `.` `a` characters: a pattern PCRE2 refuses, given a meaning PCRE2 never
- * assigns it. python `re` also accepts them (with a FutureWarning), so the
- * base-tier oracle was blind to it — the same shape as the `\v` bug, and found
- * the same way, by reading the syntax reference against the parser.
- *
- * `at` is the offset to report, `delim` is '.' or '=', `from` is the offset
- * just past the delimiter. */
-static void reject_collating(Ctx *cx, size_t at, int delim, size_t from)
-{
-    for (size_t i = from; i + 1 < cx->patlen; i++)
-        if (cx->pat[i] == (char)delim && cx->pat[i + 1] == ']')
-            ctx_fail(cx, at, "POSIX collating elements are not supported");
-}
 
 static Ast *p_class(Ctx *cx)
 {
@@ -219,8 +156,11 @@ static Ast *p_class(Ctx *cx)
     bool neg = false;
 
     if (peekc(cx) == '^') { neg = true; cx->pos++; }
-    if (!neg && (peekc(cx) == '.' || peekc(cx) == '='))
-        reject_collating(cx, opening, peekc(cx), cx->pos + 1);
+    /* Doorway 4a: the class's OWN bracket can open a delimiter-pair construct
+     * (`[.a.]` is an error at offset 0). A negated class suppresses it because
+     * `^` sits between the bracket and the delimiter — `[^.a.]` compiles. */
+    if (!neg)
+        pcrec_ext_class_bracket(cx, peekc(cx), opening, cx->pos + 1, true);
     bool first = true;
 
     for (;;) {
@@ -229,10 +169,11 @@ static Ast *p_class(Ctx *cx)
         if (c == ']' && !first) { cx->pos++; break; }
         first = false;
 
-        if (c == '[' && peekc2(cx) == ':')
-            ctx_fail(cx, cx->pos, "POSIX class [:...:] requires module 'classes'");
-        if (c == '[' && (peekc2(cx) == '.' || peekc2(cx) == '='))
-            reject_collating(cx, cx->pos, peekc2(cx), cx->pos + 2);
+        /* Doorway 4b: a bracket INSIDE the class. It declines far more often
+         * than it fires — `[` is an ordinary member — and then falls through
+         * to the member handling below. */
+        if (c == '[')
+            pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos, cx->pos + 2, false);
 
         int lo;
         cx->pos++;
@@ -273,36 +214,20 @@ static Ast *p_atom(Ctx *cx)
         if (++cx->depth > 250) /* PCRE2-like nesting cap; also bounds parser
                                   and AST recursion depth (R1 review R-1) */
             ctx_fail(cx, apos, "parentheses are too deeply nested");
-        /* `(*...)`: backtracking verbs ((*SKIP), (*ACCEPT)), pattern-start
-         * option settings ((*CR), (*UTF)) and script runs ((*script_run:...)).
-         * Three different PCRE2 features sharing one syntax; they are caught
-         * here as a family because otherwise `(` starts a group, `*` is a
-         * quantifier with nothing to quantify, and the caller is told
-         * "quantifier does not follow a repeatable item" — a clean rejection
-         * of a construct that is not a quantifier at all. */
+        /* Doorway 3. `(*...)` is caught as a family — backtracking verbs,
+         * pattern-start options and script runs — because otherwise `(` starts
+         * a group, `*` is a quantifier with nothing to quantify, and the caller
+         * is told "quantifier does not follow a repeatable item" about a
+         * construct that is not a quantifier at all. */
         if (peekc(cx) == '*')
-            ctx_fail(cx, apos, "(*...) requires module 'verbs'");
+            pcrec_ext_verb(cx, apos);
+        /* Doorway 2, with the base grammar answering first: `(?:` is the one
+         * construct here the base tier implements, so it never reaches the
+         * registry even though it has a row there. */
         if (peekc(cx) == '?') {
             int c2 = peekc2(cx);
-            if (c2 == ':') {
-                cx->pos += 2;
-            } else {
-                /* module hook: (?X constructs owned by future modules */
-                const char *mod =
-                    (c2 == '=' || c2 == '!') ? "lookaround" :
-                    (c2 == '<')              ? "lookaround/named-groups" :
-                    (c2 == '\'' || c2 == 'P')? "named-groups" :
-                    (c2 == '>')              ? "atomic-groups" :
-                    (c2 == '#')              ? "comments" :
-                    (c2 == 'C')              ? "callouts" :
-                    (c2 == '|')              ? "branch-reset" :
-                    (c2 == '(')              ? "conditionals" :
-                    (c2 == '&' || c2 == 'R' || (c2 >= '0' && c2 <= '9'))
-                                             ? "recursion" :
-                    "modifiers";
-                ctx_fail(cx, apos, "(?%c...) requires module '%s'",
-                         c2 < 0 ? '?' : c2, mod);
-            }
+            if (c2 == ':') cx->pos += 2;
+            else           pcrec_ext_group(cx, c2, apos);
         }
         /* plain '(' : capturing group — parsed as a group; capture spans are
          * reported starting with the VM engine (M4) */

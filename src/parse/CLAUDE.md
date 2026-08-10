@@ -4,10 +4,17 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 
 ## Files
 
-- **parse.c** — base-tier PCRE parser; module hook points for escapes and (?X...) constructs; produces AST
+- **parse.c** — the base grammar AND NOTHING ELSE (SR-2): literals, `.`,
+  classes, quantifiers, `|`, `(...)`, `(?:...)`, `^`, `$`, the plain character
+  escapes. Produces the AST. Meant to stop growing: a new construct needs a
+  registry row, not an edit here
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
-  construct as one `static const` row. Not yet consumed by parse.c — SR-2
-  routes the four doorways through it and must emit byte-identical output
+  construct as one `static const` row, plus the lookup
+- **ext.c** — the four doorways (SR-2): `pcrec_ext_escape`, `pcrec_ext_group`,
+  `pcrec_ext_verb`, `pcrec_ext_class_bracket`. The edge that makes the registry
+  the ONLY home rather than a sixth copy — parse.c calls these once its own
+  switch has declined, and they render the row's diagnostic. SR-6's module
+  handlers become their callees
 
 ## The construct registry (registry.c, D24)
 
@@ -17,10 +24,13 @@ up to five places at once. `\v` shipped decoding as vertical tab because
 nothing enforcing agreement; a construct with two homes will drift.
 
 Everything non-base enters through exactly **four doorways** — after `\`, after
-`(?`, after `(*`, after `[` inside a class. The base tier reaches exactly one
-of them, once, for `(?:`, which is why "the common path is fast" holds by
-construction rather than by optimisation (SR-5 will guard it with an
-instrumented build).
+`(?`, after `(*`, after `[` inside a class — and since SR-2 those doorways are
+four real function calls in ext.c. parse.c's own switch answers first and
+returns in every one of them, so a base-tier pattern performs no lookup at all;
+`(?:` is the single construct sharing a doorway with non-base syntax, and the
+base grammar answers it before the registry is consulted. Its row exists so the
+table is COMPLETE for SR-3's dump, not because anything looks it up. SR-5 turns
+that from a claim into an instrumented measurement.
 
 Four axes stay apart on purpose: **flavour** (which construct a byte MEANS) /
 **option** (what it DENOTES) / **enablement** (is it available) / **engine**
@@ -39,7 +49,13 @@ Rules when touching it:
 - **Two "requires module" diagnostics deliberately stay in parse.c**: `\x{...}`
   (a sub-case of the base `\x` handler) and the possessive `+` suffix (a
   quantifier suffix, not an atom). Neither is a doorway, and giving them one
-  would cost the base tier a lookup.
+  would cost the base tier a lookup. `\b` inside a class is a third thing
+  parse.c still answers, but as BASE syntax — it decodes to backspace, which is
+  what the row's `RF_CLASS_BASE` flag records.
+- **`RF_CLASS_DELIM` carries a construct's own recognition rule**, not just its
+  diagnostic: a delimiter-pair construct opens only when its matching `X]`
+  appears later, and the class's own bracket can serve as its `[`. SR-2 moved
+  that out of parse.c because it is the construct's rule, not base grammar.
 
 ## Case folding (OS-1 / D23)
 
@@ -68,6 +84,6 @@ stays with DD-1/M5.
 
 ## Conventions
 
-The parser builds an expression AST using recursive descent. Split edges in the AST preserve choice order for greedy/lazy and alternation preference. Module lookups are statically defined: add new entries to esc_modules and atom_modules arrays when a module registers. Unsupported syntax routes through lookup to produce an actionable error.
+The parser builds an expression AST using recursive descent. Split edges in the AST preserve choice order for greedy/lazy and alternation preference. Non-base syntax is described once, in registry.c, and reached through ext.c's four doorways: adding a construct means adding a row, not editing parse.c. Unsupported syntax produces an actionable "requires module 'X'" error rather than a miscompile.
 
 Maintenance: update this file when files are added/removed or their roles change.

@@ -1303,6 +1303,43 @@ parse.c because they are sub-cases of base constructs rather than doorways —
 suffix. Giving either one a doorway would cost the base tier a lookup for
 nothing. They are the two known outstanding second homes.
 
+**SR-2 AS BUILT (2026-08-10), and the handler field is deferred AGAIN.** The
+four doorways are real function calls now, in src/parse/ext.c, and parse.c is
+the base grammar and nothing else. Three things a reader of the step text would
+not expect:
+
+1. **Still no handler field**, and the reason has inverted. SR-1 deferred it
+   because its type was a guess; ext.c now fixes all four signatures, so that
+   objection is gone — and a better one replaced it. Every row today is
+   `RS_MODULE` or `RS_REJECTED`, so every handler would be NULL and the branch
+   that calls one would be DEAD CODE no test can reach. This project has lost
+   more to unexercised structure than to missing structure: R4's F13 and F14
+   were both "correct by construction" claims with nothing testing them, and
+   both were holes. SR-6 adds the field alongside its first real handler, at
+   which point the branch has a customer on its first day. The cost of waiting
+   is now zero, because the signatures are written down in ext.c.
+2. **`RF_CLASS_DELIM` joined the row schema.** The POSIX collating elements are
+   recognised conditionally — the delimiter opens the construct only when the
+   matching `X]` appears later, and the character class's own bracket can serve
+   as its `[`. That is the CONSTRUCT's recognition rule, not base grammar, so
+   leaving it in parse.c would have left the doorway half-moved. One flag
+   carries both halves because they coincide on exactly the two collating rows;
+   the flag's comment says so and says to split it if a third row disagrees.
+3. **The dispatch functions are `noreturn`, deliberately as a tripwire.** Every
+   row ends the compile with a diagnostic today, so the attribute is TRUE. When
+   SR-6's first handler returns a value, gcc rejects the attribute at that exact
+   moment. A claim that fails the build when it stops being true is worth more
+   than a comment restating the plan.
+
+**And the step earned its keep in a way the plan did not predict.** The
+byte-identity proof (4173 hashed cases, zero differences) certified the
+restructure; the SABOTAGE battery run against that proof found something better.
+Deleting the new `at_class_open` guard changes nothing — 0 of 4173 cases, and no
+test in the suite fails. Behind that invisible branch was a real over-acceptance:
+pcrec compiles `[:alpha:]`, PCRE2 rejects it (K3). The generalisable habit is
+not "write sabotage tests" but **ask which of the branches you just added no
+test can see, and look at what is hiding behind each one.**
+
 **Revisit when:** a second flavour earns its axis; or M4's VM makes the
 `engines` column load-bearing; or the base grammar itself needs to vary
 (BRE/ERE under V-D), which is the one case that genuinely needs a second

@@ -56,5 +56,51 @@ not a wrong match, so there is no failing regression to ratchet.
 
 ---
 
-_One open cosmetic issue (K2). Performance and architecture debt lives in
-docs/plan.md; other engines' bugs in docs/upstream_issues.md._
+## K3 — OPEN, found 2026-08-10 (SR-2 sabotage validation)
+
+pcrec ACCEPTS `[:alpha:]` as an ordinary five-character class. PCRE2 rejects it.
+
+    $ build/pcrec -p rx -o /dev/null '[:alpha:]'     # accepted
+    pcre2:  compile error at offset 0: POSIX named classes are supported
+            only within a class
+
+**This is the third find of one shape**, after `\v` and the POSIX collating
+elements: pcrec assigns a meaning to a pattern PCRE2 refuses, and python `re` —
+the base-tier oracle — accepts it too, so the corpus is structurally unable to
+notice. Measured against libpcre2 10.46, not inferred:
+
+    [:alpha:]  [::]  [:ab:]c  [:^alpha:]  [:a:]  [:foo:]  -> ERROR at offset 0
+    [:alpha]   [:alpha:x]  [:a.]  [=a:]  [:]              -> accepted
+    [^:alpha:]                                            -> accepted
+    [x[:alpha:]]  [[:alpha:]]                             -> accepted (POSIX class)
+
+The rule is one pcrec already implements for the two other delimiters: at a
+class's OWN opening bracket, `:` behaves exactly like `.` and `=` — it opens a
+delimiter-pair construct when the matching `:]` appears later, and a negated
+class suppresses it because `^` sits between the bracket and the delimiter.
+pcrec has `RF_CLASS_DELIM` rows for `.` and `=` and none for `:`. The 2026-08-09
+survey that found the collating bug read `[[.` and `[[=` and did not read `[:`
+at class open.
+
+**How it surfaced is the part worth keeping.** Nothing found this by reading the
+spec. SR-2 introduced an `at_class_open` guard to preserve existing behaviour,
+and the sabotage battery reported that DELETING that guard changes 0 of 4173
+hashed emission cases and breaks no test in the suite. A branch no test can see
+was the signal; the divergence was what sat behind it. "Which of my new branches
+is invisible?" is a question worth asking of every change.
+
+**Severity: over-acceptance**, which D24 rates as seriously as under-acceptance —
+pcrec compiles a matcher for a pattern PCRE2 would refuse, so a caller migrating
+from PCRE2 gets silent behaviour where they expected a compile error. It cannot
+miscompile a pattern PCRE2 accepts.
+
+**Not fixed in SR-2 on purpose:** SR-2's acceptance bar is byte-identical output,
+and this is a behaviour change. **Fix:** its own commit, immediately after —
+including the open question of whether the inner-bracket `[[:` case needs the
+same terminator condition (`[a[:b]` is unmeasured).
+
+---
+
+_Two open issues: K2 (cosmetic) and K3 (over-acceptance). Performance and
+architecture debt lives in docs/plan.md; other engines' bugs in
+docs/upstream_issues.md._

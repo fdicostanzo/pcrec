@@ -167,13 +167,30 @@ named, cleanly rejected and queried.
   the selector bytes), and the handler field waits for SR-2, where its four
   signatures are actually determined. parse.c is unchanged, so behaviour is
   bit-identical by construction
-- [SR-2] STATE:not-started — FOUR DISPATCH POINTS in parse.c and nothing else:
+- [SR-2] STATE:completed — FOUR DISPATCH POINTS in parse.c and nothing else:
   `pcrec_ext_escape(cx, c, in_class)`, `pcrec_ext_group(cx, c2)`,
   `pcrec_ext_verb(cx)`, `pcrec_ext_class_bracket(cx, c2, cls)`. parse.c keeps
   ONLY the base grammar (literals, `.`, classes/ranges, quantifiers, `|`,
   `(...)`, `(?:...)`, `^`, `$`) and stops growing. Emitted output must be
   BYTE-IDENTICAL across the corpus before and after — this is a pure
-  restructure, prove it the way OS-0b did (167 patterns x 3 prefixes x 4 modes)
+  restructure, prove it the way OS-0b did (167 patterns x 3 prefixes x 4 modes).
+  BUILT 2026-08-10 as src/parse/ext.c. Proved on 4173 hashed cases against a
+  pristine `git archive HEAD` build — the corpus (179 patterns x 3 prefixes x 3
+  modes, plus -i and utf8), a 255-byte sweep of eight doorway contexts, and
+  tests/reject/'s own strings, comparing stdout, stderr, exit status, the paired
+  .c AND the .h. Zero differences. Four departures from the text above, each
+  with its own reason: (1) the HANDLER FIELD IS NOT BUILT — every row's handler
+  would be NULL and the branch calling it would be dead code no test can reach,
+  which is the exact shape of unexercised structure this project keeps losing;
+  the four signatures are now FIXED by ext.c, so SR-6 adds the field with a real
+  first customer at no extra cost. (2) each dispatch takes an explicit `at`
+  offset, since cx->pos has moved past the selector by then and recomputing it
+  inside would be a second home for the cursor arithmetic. (3) `RF_CLASS_DELIM`
+  was added to the row schema: the collating elements' recognition rule (opens
+  only when the matching `X]` follows; the class's own bracket can be the
+  opener) is the CONSTRUCT's rule, not base grammar, so it had to move with it.
+  (4) `pcrec_ext_class_bracket` also takes `at_class_open`, which is the only
+  branch of the four the suite CANNOT see — see K3
 - [SR-3] STATE:not-started — `pcrec --list-syntax [--flavour F]` dumps the
   table (TSV: syntax, module, feature, flavours, engines, status, note), and
   `pcrec --explain '\v'` answers for one construct. This is the anti-drift

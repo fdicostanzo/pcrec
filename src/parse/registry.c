@@ -137,6 +137,11 @@
  * lower to. Agreement IS compliance. */
 #define REJECTED(kind, sel, syn, msg, note) \
     {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), 0, (note)}
+/* as REJECTED, but a delimiter-pair construct: RF_CLASS_DELIM carries the two
+ * recognition rules that SR-2 moved out of parse.c — see internal.h. */
+#define REJECTED_DELIM(kind, sel, syn, msg, note) \
+    {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
+     RF_CLASS_DELIM, (note)}
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
@@ -287,12 +292,14 @@ FIXED(RK_CLASSBRACKET, ':', "[[:alpha:]]", classes, ANY_ENGINE,
  * 2026-08-09 (python `re` accepts them too, so the oracle was blind). The
  * trigger is narrower than it looks and was pinned against libpcre2 rather than
  * guessed: the delimiter opens a collating element ONLY when a matching `.]` /
- * `=]` appears later — see reject_collating() in parse.c, which owns the
- * lookahead. Over-rejecting here would break patterns PCRE2 accepts. */
-REJECTED(RK_CLASSBRACKET, '.', "[[.a.]]", "POSIX collating elements are not supported",
-         "POSIX collating element — PCRE2 rejects it, and so must we"),
-REJECTED(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are not supported",
-         "POSIX equivalence class — PCRE2 rejects it, and so must we"),
+ * `=]` appears later, and the class's own bracket can be the opener. Both rules
+ * used to live in parse.c as reject_collating(); SR-2 moved them here as
+ * RF_CLASS_DELIM, because they are the construct's own recognition rule and not
+ * base grammar. Over-rejecting would break patterns PCRE2 accepts. */
+REJECTED_DELIM(RK_CLASSBRACKET, '.', "[[.a.]]", "POSIX collating elements are not supported",
+               "POSIX collating element — PCRE2 rejects it, and so must we"),
+REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are not supported",
+               "POSIX equivalence class — PCRE2 rejects it, and so must we"),
 };
 
 /* ---- lookup -------------------------------------------------------------
