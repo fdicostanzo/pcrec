@@ -32,7 +32,10 @@ nothing enforcing agreement; a construct with two homes will drift.
 Everything non-base enters through exactly **four doorways** — after `\`, after
 `(?`, after `(*`, after `[` inside a class — and since SR-2 those doorways are
 four real function calls in ext.c. parse.c's own switch answers first and
-returns in every one of them, so a base-tier pattern performs no lookup at all;
+returns in every one of them. A base-tier pattern still reaches the
+class-bracket doorway once per non-negated `[` — measured 2026-08-10, `[abc]`
+costs 1 lookup and `[a-z]+@[a-z]+\.[a-z]{2,4}` costs 3 — so "no lookup at all"
+was wrong; the cost is small, not absent.
 `(?:` is the single construct sharing a doorway with non-base syntax, and the
 base grammar answers it before the registry is consulted. Its row exists so the
 table is COMPLETE for SR-3's dump, not because anything looks it up. SR-5 turns

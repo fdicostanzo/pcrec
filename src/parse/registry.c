@@ -19,10 +19,22 @@
  *     after `(*`             (*SKIP) (*CR) (*script_run:
  *     after `[` in a class   [[:alpha:]] [[.a.]] [[=a=]]
  *
- * The base tier reaches exactly ONE of them, once, for `(?:`. So Frank's
- * performance principle — normal stuff fast, weird stuff may cost lookups — is
- * satisfied BY CONSTRUCTION, not by optimisation. SR-5 guards that claim with
- * an instrumented build rather than leaving it asserted.
+ * WHAT THE BASE TIER ACTUALLY COSTS, measured 2026-08-10 with an instrumented
+ * build (R6), because the claim that stood here was wrong in both directions:
+ *
+ *     abc  a(b|c)+d  (?:ab)+           0 lookups
+ *     [abc]                            1
+ *     [a-z]+@[a-z]+\.[a-z]{2,4}        3
+ *
+ * `(?:` costs ZERO, not "one, once" — parse.c answers it before the registry is
+ * reached, and its row exists so the table is complete for the dump. But the
+ * CLASS-BRACKET doorway is a base-tier path: every non-negated `[` and every
+ * `[` inside a class consults it, and a miss scans all rows because that kind
+ * has no catch-all. So the cost is proportional to the number of character
+ * classes, not zero. Frank's principle still holds — 3 lookups over 3 rows is
+ * nothing against a 90 us compile floor — but it holds by SIZE, not BY
+ * CONSTRUCTION, and SR-5 must assert the measured property rather than the
+ * claimed one.
  *
  * WHAT IS NOT HERE, DELIBERATELY. Base syntax: literals, `.`, classes and
  * ranges, quantifiers, `|`, `(...)`, `^`, `$`, and the plain character escapes
@@ -226,8 +238,9 @@ ESC_DIGIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 11
 /* ---- doorway 2: after '(?' ---------------------------------------------- */
 static const RegRow group_rows[] = {
 /* The one registry row the base tier reaches, and it must stay that way: SR-5's
- * fast-path guard is exactly "a base pattern performs no lookup other than this
- * one". Written longhand deliberately — the only supported construct in the
+ * fast-path guard concerns this row. NOTE (R6): a base pattern does not in fact
+ * reach it — parse.c answers `(?:` first, so this row costs zero lookups and the
+ * ones a base pattern DOES perform are all at the class-bracket doorway. Written longhand deliberately — the only supported construct in the
  * file should not be able to hide inside a macro that means "rejected". */
 {RK_GROUP, ':', "(?:...)",
  0, NULL,

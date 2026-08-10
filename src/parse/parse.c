@@ -5,8 +5,15 @@
  * leaves this file through one of four calls into src/parse/ext.c — after `\`,
  * after `(?`, after `(*`, after `[` inside a class — and the registry answers
  * for it. The base switch runs FIRST and returns in every one of those places,
- * so a base-tier pattern performs no lookup at all; this file is meant to stop
- * growing, and a new construct should need no edit here.
+ * this file is meant to stop growing, and a new construct should need no edit
+ * here.
+ *
+ * NOT "a base-tier pattern performs no lookup at all" — that claim stood here
+ * and in five other places until it was MEASURED on 2026-08-10 (R6). `[abc]`
+ * performs one registry lookup and `[a-z]+@[a-z]+\.[a-z]{2,4}` performs three,
+ * because the class-bracket doorway is reached from ordinary class parsing.
+ * `(?:` performs ZERO, not one, because the line below answers it first. See
+ * D24's R6 correction.
  *
  * Two "requires module" diagnostics stay, deliberately: `\x{...}` and the
  * possessive `+` suffix are sub-cases of BASE constructs (the `\x` decoder and

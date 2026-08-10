@@ -14,7 +14,9 @@
  *
  * THE BASE SWITCH RUNS FIRST AND RETURNS. Every one of these is called only
  * after parse.c's own switch has declined, which is what keeps the common path
- * free of lookups: a base-tier pattern reaches none of them. `(?:` is the one
+ * cheap: a base-tier pattern reaches only the class-bracket one, once per
+ * non-negated `[` (measured, R6 — the older claim of "none at all" was wrong).
+ * `(?:` is the one
  * construct that shares a doorway with non-base syntax, and parse.c answers it
  * before the call — its registry row exists so the table is COMPLETE for SR-3's
  * dump, not because anything looks it up. SR-5 turns that from a claim into an

@@ -1190,11 +1190,13 @@ through exactly four:
     after `(*`            a NAME decides      (*SKIP) (*CR) (*script_run:
     after `[[` in a class one byte decides    [[:alpha:]] [[.a.]] [[=a=]]
 
-The base tier reaches exactly ONE of them, once: `(?:`. So Frank's principle —
+The base tier reaches these doorways rarely and cheaply. Frank's principle —
 "make the normal stuff compile fast, the weird stuff can cost a few lookups" —
-is satisfied BY CONSTRUCTION rather than by optimisation: a 95% pattern
-performs zero registry lookups. That property is worth a guard, not just a
-claim (SR-5).
+holds, but by SIZE rather than BY CONSTRUCTION, which is not what this paragraph
+said until R6 measured it (see the R6 CORRECTION at the end of this entry). A
+95% pattern does not perform zero lookups; it performs one per non-negated
+character class. That property is worth a guard, not just a claim (SR-5) — and
+SR-5 must guard the measured property, not the one asserted here.
 
 **FOUR AXES, KEPT APART ON PURPOSE.** The `if flavour else if flavour` bloat
 comes from answering four different questions with one mechanism:
@@ -1280,9 +1282,10 @@ path. A row with a NULL handler is a complete, correct, tested outcome.
 small, both would surprise a reader who took the step description literally.
 
 1. **No [256] index per kind — a linear scan over the rows.** The plan said
-   indexed. The index has no customer: SR-5's own claim is that a base-tier
-   pattern performs ZERO lookups at these doorways, so the scan runs only for a
-   construct that is about to stop the compile with a diagnostic. Building an
+   indexed. The index has no customer WORTH BUYING: the scan runs once per
+   non-negated character class over 3 rows (R6 measurement; the original text
+   here said a base-tier pattern performs ZERO lookups, which is false), and
+   otherwise only for a construct about to stop the compile with a diagnostic. Building an
    index for that is the unmeasured axis D18 forbids, and in C it would need
    either a hand-maintained parallel array — a SECOND HOME FOR THE SELECTOR
    BYTES, which is the exact failure this table exists to end — or an X-macro

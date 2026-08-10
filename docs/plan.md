@@ -235,8 +235,16 @@ named, cleanly rejected and queried.
   generated construct INDEX is spliced into it between markers, and two
   make-test checks hold the seam (index matches the dump; every module named in
   the prose exists in the registry). Both positive-controlled
-- [SR-5] STATE:not-started — guard the fast path CLAIM, do not just assert it:
-  base-tier patterns must perform ZERO registry lookups (`(?:` excepted). Use
+- [SR-5] STATE:not-started — guard the fast path CLAIM, do not just assert it.
+  REWRITE THE ASSERTION FIRST (R6): the claim as written here — "base-tier
+  patterns must perform ZERO registry lookups (`(?:` excepted)" — is FALSE in
+  both directions, measured with an instrumented build on 2026-08-10. `(?:`
+  performs zero (parse.c answers it before the registry), while `[abc]` performs
+  one and `[a-z]+@[a-z]+\.[a-z]{2,4}` performs three, because the class-bracket
+  doorway is on the base-tier path. Written as specified, SR-5 would fail the
+  moment it was built, or would have to assert something untrue. The property
+  actually worth guarding is a BOUND: lookups <= one per non-negated `[` plus
+  one per `[` inside a class, and zero for a pattern with no character class. Use
   an instrumented build with a lookup counter, the way run_trie_identity.sh
   uses `-DPCREC_NO_TRIE`, so no counter exists in the shipped build (TS-1 would
   reject one anyway). Pair with the M2.9 compile-time budgets
@@ -330,11 +338,16 @@ document). Mechanize instead.
   invisible to it (measured under SR-4: a new row with a wrong module and no
   hand-written entry is caught by nothing). Module NAMES are pcrec's own
   taxonomy and no outside authority can check them — but two things about every
-  row ARE externally checkable against libpcre2, and nothing checks them today:
-  (a) every `RS_REJECTED` row claims "PCRE2 rejects this too", which is a
-  measurable claim, and (b) every row's `syntax` field claims to be a valid
-  probe for a construct PCRE2 actually has, so libpcre2 accepting it as ordinary
-  syntax means the row describes something that does not exist. tests/fuzz/
+  row ARE externally checkable against libpcre2, and nothing checks them today.
+  BOTH RESTATED 2026-08-10 (R6): check (b) was written with the POLARITY
+  BACKWARDS here, and as written would have passed every fabricated row it
+  exists to catch. (a) every `RS_REJECTED` row claims "PCRE2 rejects this too" —
+  libpcre2 must reject the row's `syntax`, AND with a matching error identity,
+  not merely reject it for some other reason. (b) every `RS_MODULE` row claims
+  PCRE2 HAS the construct and pcrec has not implemented it — so libpcre2 must
+  COMPILE the row's `syntax`. A row naming a construct PCRE2 does not have will
+  fail to compile there, which is the fabrication check. Note `syntax` cannot be
+  handed to libpcre2 unchanged in every case; some probes need a context wrapper. tests/fuzz/
   already links libpcre2 through a dlopen probe, so the machinery exists. This
   is the natural home for the finding that pcrec accepts `[:alpha:]` (K3) —
   found by hand, and findable mechanically

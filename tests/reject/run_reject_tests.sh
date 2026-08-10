@@ -106,6 +106,13 @@ for e in d D s S w W h H v V N; do
     reject "[\\$e]"   "\\$e in a class requires module 'classes'"
 done
 reject '[[:alpha:]]' "POSIX class [:...:] requires module 'classes'"
+# Names PCRE2 does not know. It rejects all three ("unknown POSIX class name")
+# and so do we, so the VERDICT agrees and only the wording differs — but nothing
+# covered them, and they are exactly the rows a name-keyed table would have to
+# get right (R6 fidelity critic F13: the list is 14 names and case-sensitive).
+reject '[[:foo:]]'   "POSIX class [:...:] requires module 'classes'"
+reject '[[::]]'      "POSIX class [:...:] requires module 'classes'"
+reject '[[:AlPhA:]]' "POSIX class [:...:] requires module 'classes'"
 reject '\x{41}'      "\\x{...} requires module 'unicode-props'"
 
 # POSIX collating elements / equivalence classes. PCRE2 REJECTS these rather
@@ -212,6 +219,13 @@ echo "== (*...) verbs, option settings and script runs =="
 # These used to report "quantifier does not follow a repeatable item", which is
 # a clean rejection of something that is not a quantifier — technically correct
 # behaviour, useless diagnosis.
+# Not verb names at all. PCRE2 rejects both ("(*VERB) not recognized or
+# malformed"); pcrec rejects them through the catch-all row. R6 measured that
+# the verb doorway is TWO name tables selected by the CASE of the first byte,
+# which nothing here can see — these at least pin the verdict.
+reject '(*MARKx)'    "requires module 'verbs'"
+reject '(*NOTAVERB)' "requires module 'verbs'"
+
 for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)' \
          '(*MARK:x)' '(*CR)' '(*LF)' '(*CRLF)' '(*ANYCRLF)' '(*UTF)' '(*UCP)' \
          '(*script_run:a)' '(*sr:a)' '(*atomic:a)'; do
@@ -246,12 +260,22 @@ echo "== KNOWN-WRONG, pinned so a change is VISIBLE (K3, K4) =="
 # check it against libpcre2, then move the line. It does not mean "you broke
 # something".
 nwrong=0
-pinned() { # pinned <pattern> <accept|reject> <what PCRE2 does, and why it is wrong>
-    local pat="$1" want="$2" why="$3" rc
+pinned() { # pinned <pattern> <accept|reject> <expected-msg-or-dash> <why it is wrong>
+    local pat="$1" want="$2" msg="$3" why="$4" rc out
     nwrong=$((nwrong + 1))
-    "$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" >/dev/null 2>&1; rc=$?
+    out="$("$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
     if { [ "$want" = accept ] && [ "$rc" -eq 0 ]; } || \
        { [ "$want" = reject ] && [ "$rc" -eq 1 ]; }; then
+        # verdict pinned; also pin the MESSAGE where one was given. A
+        # verdict-only pin says something moved, not that it moved somewhere
+        # right (R6 testability critic, T-9).
+        if [ "$msg" != "-" ]; then
+            case "$out" in
+                *"$msg"*) ;;
+                *) bad "known-wrong '$pat': verdict unchanged but the DIAGNOSTIC changed. want: $msg ; got: $out"
+                   return ;;
+            esac
+        fi
         ok "known-wrong '$pat' still ${want}s — $why"
     else
         bad "known-wrong '$pat': behaviour CHANGED (expected to $want, rc=$rc). $why. If you fixed K3/K4, move this line into the tables above; if not, you have regressed something"
@@ -259,12 +283,21 @@ pinned() { # pinned <pattern> <accept|reject> <what PCRE2 does, and why it is wr
 }
 # K3 — over-acceptance. PCRE2: "POSIX named classes are supported only within a
 # class". pcrec compiles it as a five-character class.
-pinned '[:alpha:]' accept "PCRE2 REJECTS it; the ':' row lacks the class-open half of RF_CLASS_DELIM"
+pinned '[:alpha:]' accept - \
+    "PCRE2 REJECTS it; the ':' row lacks the class-open half of RF_CLASS_DELIM"
 # K3 — over-rejection, the same missing row flag seen from the other side.
-pinned '[a[:b]'    reject "PCRE2 ACCEPTS it; ':' fires without checking for a later ':]'"
-pinned '[[:alpha]' reject "PCRE2 ACCEPTS it; same missing terminator condition"
+pinned '[a[:b]'    reject "POSIX class [:...:] requires module 'classes'" \
+    "PCRE2 ACCEPTS it; ':' fires without checking for a later ':]'"
+pinned '[[:alpha]' reject "POSIX class [:...:] requires module 'classes'" \
+    "PCRE2 ACCEPTS it; same missing terminator condition"
+# Found 2026-08-10 while adding R6's cheap pins: same family, previously
+# unrecorded. `[[:]]` has no ':]' terminator, so PCRE2 reads '[' and ':' as
+# ordinary class members and compiles it.
+pinned '[[:]]'     reject "POSIX class [:...:] requires module 'classes'" \
+    "PCRE2 ACCEPTS it; no ':]' terminator, so the '[:' is ordinary members"
 # K4 — the terminator scan runs to the end of the PATTERN, not the class.
-pinned '[.a]x.]'   reject "PCRE2 ACCEPTS it; the '.]' matched is outside the class"
+pinned '[.a]x.]'   reject "POSIX collating elements are not supported" \
+    "PCRE2 ACCEPTS it; the '.]' matched is outside the class"
 
 echo
 echo "== every registry row covers itself (SR-4) =="
@@ -352,7 +385,9 @@ else
     # The loop must have seen every non-base row: a `read` that silently stops
     # early would make this whole section quietly shrink to nothing.
     nexpected=$(awk -F'\t' '!/^#/ && NF == 12 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
-    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -ge 60 ]; then
+    # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
+    # what slack buys — see the summary block below.
+    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 66 ]; then
         ok "iterated every non-base row in the dump ($niter)"
     else
         bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
@@ -379,8 +414,8 @@ echo "checks failed: $fail"
 # not give you the set either, but they make every deletion deliberate and
 # visible in the diff, which is what the slack removed. If you added or removed
 # coverage on purpose, update these three numbers in the same commit.
-if [ "$nrej" -ne 106 ] || [ "$naccept" -ne 22 ] || [ "$nwrong" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 106 / 22 / 4." >&2
+if [ "$nrej" -ne 111 ] || [ "$naccept" -ne 22 ] || [ "$nwrong" -ne 5 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 111 / 22 / 5." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

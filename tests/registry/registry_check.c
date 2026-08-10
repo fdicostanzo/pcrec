@@ -151,7 +151,11 @@ static void check_wellformed(void)
             if (r->sel == REG_SEL_ANY) {
                 nany++;
                 if (i != n - 1)
-                    bad("%s row %zu (%s): the catch-all row must be LAST, or it shadows rows after it",
+                    bad("%s row %zu (%s): the catch-all row must be LAST — as a "
+                        "READABILITY invariant, not a correctness one (R6 F8: "
+                        "moving it to first position leaves dispatch unchanged, "
+                        "because find() returns an exact match immediately and "
+                        "only falls back to the catch-all after the full scan)",
                         kn, i, r->syntax);
             } else {
                 /* the selector byte must actually appear in the example */

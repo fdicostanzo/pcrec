@@ -150,9 +150,11 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
  * The table describes constructs OUTSIDE the base tier only. Base syntax
  * (literals, `.`, classes, quantifiers, `|`, `(...)`, `^`, `$`, and the plain
  * character escapes \n \t \r \f \a \e \xHH) stays in parse.c and never
- * consults the registry — which is what makes "the 95% path is fast" true by
- * construction rather than by optimisation (SR-5 guards it). The single
- * exception, and the only registry row the base tier reaches, is `(?:`.
+ * consults the registry. MEASURED 2026-08-10 (R6): that makes the base tier
+ * CHEAP, not lookup-free — `[abc]` costs one lookup at the class-bracket
+ * doorway and three for a typical class-heavy pattern, while `(?:` costs zero
+ * because parse.c answers it before the registry. SR-5 must guard the measured
+ * property, not the claimed one.
  *
  * Rows are pure `static const` data. A runtime-mutable registry is rejected
  * because it would be file-scope mutable state in the compiler, which D19's
