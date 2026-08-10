@@ -16,8 +16,10 @@ no dependency on pcrec in the generated code). Design: APPROACH.md.
 ## Build & test
 
     make            # builds build/pcrec (CLI) and build/libpcrec.a (library)
-    make test       # .rxt corpus + CLI tests + codegen structural checks
-                    # + the known-fail ratchet (four scripts, see docs/testing.md)
+    make test       # .rxt corpus + CLI tests + reject table + registry checks
+                    # (including PC-3, the registry against libpcre2 — SKIPS
+                    # loudly if libpcre2-8-0 is absent) + codegen structural
+                    # checks + the known-fail ratchet (see docs/testing.md)
     build/pcrec -p rx --emit-main -o out.c 'a(b|c)+d'   # try it
 
 Plain GNU make on purpose (docs/decisions.md D2). gcc is the target compiler;

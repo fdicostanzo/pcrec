@@ -102,18 +102,160 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
 }
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
- * A NAME decides here, but pcrec does not yet distinguish the names: a single
- * catch-all row carries the one blanket diagnostic. The sweep in
- * tests/registry/ is byte-keyed while this doorway is name-keyed, so it proves
- * every BYTE after `(*` reaches this call and proves nothing about a
- * name-conditional branch — per-verb rows arrive with module 'verbs' (SR-6). */
+ * A NAME decides here, and since Q1 pcrec reads it. Until Q1 this function
+ * ignored the name entirely and answered "requires module 'verbs'" for all of
+ * them, which was wrong in three separate ways at once:
+ *
+ *   `(*NOTAVERB)`  was promised a module that will never implement it, because
+ *                  PCRE2 has no such verb (error 160)
+ *   `(*)`          was called a verb, when PCRE2 reads `(` then a `*` that
+ *                  quantifies nothing (error 109)
+ *   `a(*CR)`       was called a verb, when a start-of-pattern option anywhere
+ *                  but the start is error 160
+ *
+ * and, worse than any single wrong answer, it made pcrec's answer INDEPENDENT
+ * of the name — so no differential against libpcre2 over names could say
+ * anything. That is what Q1 unlocks and PC-3 spends: see D25 and
+ * tests/registry/pcre2_check.c.
+ *
+ * WHAT THIS FUNCTION DECIDES, and it is only ever one of four things: the
+ * quantifier error, the table's "no such name" message, a name's own message
+ * (`MARK` alone has one), or the row's "requires module 'verbs'". It does NOT
+ * parse the argument — an accepted form still ends the compile here.
+ *
+ * The forms are read from the VerbName table in registry.c, every bit of which
+ * is measured against libpcre2 rather than read from documentation. */
 void pcrec_ext_verb(Ctx *cx, size_t at)
 {
     const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY);
+    const char *pat = cx->pat;
+    size_t n = cx->patlen;
+    size_t star = at + 1;           /* the '*'; `at` is the '(' */
+    size_t nstart = star + 1;
+    size_t i = nstart;
 
     if (!r) ctx_fail(cx, at, "internal error: no registry row for (*");
     if (r->diag != RD_FIXED)
         BAD_ROW(cx, at, "a (* verb");
+
+    /* The name runs to the first of `)`, `:`, `=` or the end of the pattern.
+     * Nothing else terminates it: `(*NO_JIT )` is not `NO_JIT` with a trailing
+     * space, it is the name `NO_JIT ` and PCRE2 rejects it. */
+    while (i < n && pat[i] != ')' && pat[i] != ':' && pat[i] != '=') i++;
+    size_t nlen = i - nstart;
+    int next = i < n ? (unsigned char)pat[i] : -1;
+
+    /* An EMPTY name has three different answers, and the first version of this
+     * code got one of them wrong until the PC-3 differential said so on its
+     * first run — over a thousand probes, all of this shape.
+     *
+     *   `(*)`, `(*`     not this doorway at all: `(` followed by a quantifier
+     *                   with nothing to quantify (PCRE2 error 109, and what
+     *                   parse.c's own `case '*'` says for a bare `*`). Reported
+     *                   at the `*`, matching both.
+     *   `(*:NAME)`      a synonym for `(*MARK:NAME)`. It resolves to the MARK
+     *                   row and inherits its rules, which is why `(*:)` reports
+     *                   "(*MARK) must have an argument" and not a "no such name".
+     *   `(*=1)`         an ordinary unrecognised name that happens to be empty:
+     *                   PCRE2 error 160. Falling through with a zero-length name
+     *                   gets that for free — no table contains "" — which is why
+     *                   there is no third branch here. */
+    const char *name;
+    size_t      namelen;
+    if (nlen)              { name = pat + nstart; namelen = nlen; }
+    else if (next == ':')  { name = "MARK";       namelen = 4;    }
+    else if (next == '=')  { name = "";           namelen = 0;    }
+    else ctx_fail(cx, star, "quantifier does not follow a repeatable item");
+
+    /* A name too long to be a name at all is a LENGTH complaint in PCRE2, not a
+     * "no such name" one, and it is the same complaint in both tables. Measured
+     * on libpcre2 10.46 (R8/C2-4): 128 bytes is error 160/195 as usual, 129 is
+     * error 148, in every form and in both tables. The limit is on the NAME —
+     * `(*MARK:` followed by 200 bytes of argument compiles fine. */
+    size_t maxname;
+    const char *toolong = pcrec_registry_verb_name_limit(&maxname);
+    if (namelen > maxname) ctx_fail(cx, at, "%s", toolong);
+
+    const VerbTable *t =
+        pcrec_registry_verb_table(namelen ? (unsigned char)name[0] : -1);
+    const VerbName  *v = pcrec_registry_verb_find(t, name, namelen);
+    if (!v) ctx_fail(cx, at, "%s", t->unknown_msg);
+
+    /* Which FORM was written. A form of 0 means "none of them", which is what a
+     * truncated construct produces — and PCRE2 agrees: `(*CR` and `(*ACCEPT:x`
+     * are both error 160, the same as an unknown name. */
+    unsigned form = 0;
+    if (next == ')') {
+        form = VF_BARE;
+    } else if (next == ':') {
+        if (v->forms & VF_GROUPARG) {
+            /* A subpattern argument. The doorway does not require the closing
+             * `)` to be present — PCRE2 recognises `(*pla:x` and then reports a
+             * missing parenthesis (error 114), a different complaint entirely. */
+            form = (i + 1 < n && pat[i + 1] == ')') ? VF_EMPTYARG : VF_ARG;
+        } else {
+            /* A name-run argument, terminated by `)`, which must exist: without
+             * it PCRE2 does not recognise the construct at all. `:` is an
+             * ordinary character inside it (`(*MARK:a:b)` compiles). */
+            size_t j = i + 1;
+            while (j < n && pat[j] != ')') j++;
+            if (j < n) form = (j == i + 1) ? VF_EMPTYARG : VF_ARG;
+        }
+    } else if (next == '=') {
+        /* Digits only, at least one, then `)`. `(*LIMIT_MATCH= 1)` and
+         * `(*LIMIT_MATCH=x)` are both error 160; `=01` is accepted.
+         *
+         * AND A MAGNITUDE RULE, which the first version of this code did not
+         * have because the probes that measured it were one and two digits long
+         * (R8/C2-3 — the sweep agreed because the axis it varied was the NAME).
+         * PCRE2 refuses while ACCUMULATING, one digit before its 32-bit
+         * accumulator would overflow, so the boundary is 4294967290 and not
+         * 4294967296: `(*LIMIT_MATCH=4294967289)` compiles and
+         * `(*LIMIT_MATCH=4294967290)` is error 160. LENGTH is not the rule —
+         * `=00000000000000000001` compiles, because leading zeros never move
+         * the accumulator. Reproduced here exactly, including that. */
+        size_t j = i + 1;
+        unsigned long long acc = 0;
+        bool fits = true;
+        while (j < n && pat[j] >= '0' && pat[j] <= '9') {
+            if (acc > 429496728ull) fits = false;   /* UINT32_MAX/10 - 1 */
+            /* `acc` keeps accumulating past that point and WRAPS on a long
+             * enough digit run. That is defined behaviour for an unsigned type
+             * and the wrapped value is never read, because `fits` is sticky —
+             * it is only ever cleared. Said out loud rather than left for a
+             * reader to re-derive, or for someone to "fix" by resetting it. */
+            acc = acc * 10 + (unsigned)(pat[j] - '0');
+            j++;
+        }
+        if (fits && j > i + 1 && j < n && pat[j] == ')') form = VF_EQNUM;
+    }
+
+    if (!(v->forms & form))
+        ctx_fail(cx, at, "%s",
+                 (v->own_forms & form) ? v->own_msg : t->unknown_msg);
+
+    /* Start-of-pattern options are valid only at the start. PCRE2 allows a RUN
+     * of them — `(*UTF)(*CR)` compiles — and pcrec's rule is `at == 0` exactly.
+     *
+     * That is equivalent TO THE GENERAL PREFIX-RUN RULE, as an implementation
+     * choice inside pcrec, and to nothing else: any earlier verb would already
+     * have ended this compile with "requires module 'verbs'", so a run can
+     * never reach here with a non-zero offset, and the two rules cannot differ
+     * on any pattern. Writing the general scan now would be code whose only
+     * interesting branch nothing can execute. When module 'verbs' lands and
+     * these constructs start being ACCEPTED, that stops being true and the scan
+     * is what replaces this line.
+     *
+     * IT DOES NOT MEAN pcrec's message matches PCRE2's on every pattern with an
+     * option in it (R8/C2). `(*UTF)a(*UTF)` is PCRE2 error 160 — about the
+     * SECOND one — while pcrec answers about the first, because pcrec reports
+     * the leftmost construct it cannot handle and stops. That is pcrec's rule
+     * at every doorway (`\d{3,1}` is "requires module 'classes'" here and
+     * "numbers out of order" in PCRE2), and the general prefix scan would not
+     * change it. */
+    if ((v->forms & VF_ATSTART) && at != 0)
+        ctx_fail(cx, at, "%s", t->unknown_msg);
+
     ctx_fail(cx, at, "%s", r->msg);
 }
 

@@ -104,6 +104,8 @@
  * (SR-2 introduces the field) and RS_MODULE status is a COMPLETE outcome: the
  * construct is named, cleanly rejected and queryable. It is not a stub. */
 
+#include <string.h>
+
 #include "core/internal.h"
 
 /* ---- row shapes ---------------------------------------------------------
@@ -303,17 +305,182 @@ GROUP(REG_SEL_ANY, "(?i)", modifiers, ANY_ENGINE,
 };
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
- * A NAME decides here, but pcrec does not yet distinguish the names: one
- * catch-all row reproduces today's single blanket diagnostic exactly. Per-verb
- * rows arrive with the module (SR-6), not before — naming forty verbs that
- * nothing distinguishes and no test exercises would be fiction in a file whose
- * whole purpose is to stop syntax knowledge from being fiction. */
+ * A NAME decides here. The ROW below still carries the doorway's module and
+ * its one diagnostic; the NAMES are in the two VerbName tables further down
+ * (Q1). Splitting them is deliberate — see the VerbName comment in internal.h
+ * and D25.
+ *
+ * `syntax` was `"(*...)"` until PC-3, and PC-3 is exactly what caught it: an
+ * RS_MODULE row claims PCRE2 HAS the construct, so the row's probe must COMPILE
+ * under libpcre2 — and `(*...)` does not (error 160, "(*VERB) not recognized or
+ * malformed"). The probe was a fabrication in PCRE2's eyes, one that no check
+ * reading only pcrec's own files could see. `(*ACCEPT)` is a real verb,
+ * compiles there, and reaches this doorway here. */
 static const RegRow verb_rows[] = {
-FIXED(RK_VERB, REG_SEL_ANY, "(*...)", verbs, VM_ONLY,
+FIXED(RK_VERB, REG_SEL_ANY, "(*ACCEPT)", verbs, VM_ONLY,
       "(*...) requires module 'verbs'",
       "backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) "
       "or script run ((*script_run:...))"),
 };
+
+/* ---- doorway 3's NAME tables (Q1) ---------------------------------------
+ *
+ * EVERY BIT IN THESE TWO TABLES IS A MEASUREMENT, not a reading of PCRE2's
+ * documentation: taken 2026-08-10 against libpcre2 10.46 with options = 0, and
+ * re-taken on every run by tests/registry/pcre2_check.c, which fails if any
+ * entry has drifted from what the installed libpcre2 actually does. If you
+ * change a row here without measuring, that check tells you.
+ *
+ * The candidate NAMES did not come from memory either. They were generated
+ * from the ASCII runs in libpcre2's own shared object — PCRE2's compiled-in
+ * name tables — and every candidate was then compiled to decide whether it is
+ * real. pcre2_check.c regenerates that pool on every run, which is what turns
+ * "did we forget a verb" from unanswerable into a test result.
+ *
+ * The shapes are strikingly regular, and the regularity is the point: five
+ * groups, and no name deviates from its group except `MARK`.
+ *
+ * Order within a table does not matter (lookup is exact-match), but the groups
+ * are kept together and in PCRE2's own documented order so a reader can diff
+ * this against pcre2syntax. */
+static const VerbName verb_upper[] = {
+/* Backtracking control verbs. An argument is optional and may be empty:
+ * `(*ACCEPT)`, `(*ACCEPT:x)` and `(*ACCEPT:)` all compile. */
+{"ACCEPT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"FAIL",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"F",      VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"COMMIT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"PRUNE",  VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"SKIP",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"THEN",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+
+/* The one irregular name in either table, and the reason `own_forms`/`own_msg`
+ * exist. `(*MARK)` and `(*MARK:)` are error 166 with a message of their own;
+ * `(*MARK=1)` and a truncated `(*MARK` are the ordinary 160. The empty name in
+ * `(*:x)` is a MARK synonym and reaches this row — see pcrec_ext_verb. */
+{"MARK",   VF_ARG, VF_BARE | VF_EMPTYARG, "(*MARK) must have an argument"},
+
+/* Start-of-pattern options. Bare form only, and only at offset 0:
+ * `a(*CR)` is error 160. */
+{"UTF",               VF_BARE | VF_ATSTART, 0, NULL},
+{"UTF8",              VF_BARE | VF_ATSTART, 0, NULL},
+{"UCP",               VF_BARE | VF_ATSTART, 0, NULL},
+{"NOTEMPTY",          VF_BARE | VF_ATSTART, 0, NULL},
+{"NOTEMPTY_ATSTART",  VF_BARE | VF_ATSTART, 0, NULL},
+{"NO_AUTO_POSSESS",   VF_BARE | VF_ATSTART, 0, NULL},
+{"NO_DOTSTAR_ANCHOR", VF_BARE | VF_ATSTART, 0, NULL},
+{"NO_JIT",            VF_BARE | VF_ATSTART, 0, NULL},
+{"NO_START_OPT",      VF_BARE | VF_ATSTART, 0, NULL},
+{"CASELESS_RESTRICT", VF_BARE | VF_ATSTART, 0, NULL},
+/* Recognised, and this build cannot honour it: `(*TURKISH_CASING)` is error
+ * 204, "require Unicode (UTF or UCP) mode" — a capability refusal, not a
+ * syntax one, and our oracle compiles with options = 0 so it can never be in
+ * that mode. pcre2_check.c buckets 204 with "PCRE2 recognised the construct",
+ * which is why this row needs no exclusion. */
+{"TURKISH_CASING",    VF_BARE | VF_ATSTART, 0, NULL},
+{"CR",                VF_BARE | VF_ATSTART, 0, NULL},
+{"LF",                VF_BARE | VF_ATSTART, 0, NULL},
+{"CRLF",              VF_BARE | VF_ATSTART, 0, NULL},
+{"ANYCRLF",           VF_BARE | VF_ATSTART, 0, NULL},
+{"ANY",               VF_BARE | VF_ATSTART, 0, NULL},
+{"NUL",               VF_BARE | VF_ATSTART, 0, NULL},
+{"BSR_ANYCRLF",       VF_BARE | VF_ATSTART, 0, NULL},
+{"BSR_UNICODE",       VF_BARE | VF_ATSTART, 0, NULL},
+
+/* `=digits` only, and at offset 0.
+ *
+ * THE RULE, swept to exhaustion (R8/C2-9: 209 digit strings x 4 names, 836
+ * probes, all four names agreeing on every one): strip leading zeros, then
+ * reject if what remains has MORE THAN TEN DIGITS, or has exactly ten and its
+ * first nine exceed 429496728. That is PCRE2 refusing one digit BEFORE its
+ * uint32_t accumulator would overflow, which is why the boundary is
+ * 4294967290 and not 4294967295.
+ *
+ * This comment used to read "`(*LIMIT_MATCH=x)` and `(*LIMIT_MATCH= 1)` are
+ * both error 160; `(*LIMIT_MATCH=01)` compiles" — three true facts, measured on
+ * one- and two-digit inputs, that induce the WRONG rule ("digits, at least
+ * one") and left `ext.c` accepting `=99999999999`. Examples are not a rule.
+ * `ext.c` implements the paragraph above. */
+{"LIMIT_MATCH",     VF_EQNUM | VF_ATSTART, 0, NULL},
+{"LIMIT_DEPTH",     VF_EQNUM | VF_ATSTART, 0, NULL},
+{"LIMIT_HEAP",      VF_EQNUM | VF_ATSTART, 0, NULL},
+{"LIMIT_RECURSION", VF_EQNUM | VF_ATSTART, 0, NULL},
+};
+
+/* The lower table. Every name here takes a SUBPATTERN argument — these are
+ * group constructs spelled as verbs — so the bare form is an error and the
+ * argument may be empty. Position-free, unlike the options above.
+ * `(*scs:x)` is error 115 (a subpattern reference that does not resolve),
+ * which is PCRE2 recognising the name and rejecting the reference. */
+static const VerbName verb_lower[] = {
+{"pla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"plb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"napla",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"naplb",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"nla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"nlb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"positive_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"positive_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"non_atomic_positive_lookahead",  VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"non_atomic_positive_lookbehind", VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"negative_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"negative_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"atomic",                         VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"sr",                             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"asr",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"script_run",                     VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"atomic_script_run",              VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"scs",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"scan_substring",                 VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+};
+
+/* The two "no such name" messages are PCRE2's own wording, byte for byte, for
+ * the same reason the collating rows use PCRE2's: where AGREEMENT is the whole
+ * claim, saying it in different words makes the claim harder to check and no
+ * clearer to a reader. Error 160 and error 195 respectively. */
+static const VerbTable verb_tables[2] = {
+    {"(*VERB) not recognized or malformed",
+     verb_upper, sizeof verb_upper / sizeof verb_upper[0]},
+    {"(*alpha_assertion) not recognized",
+     verb_lower, sizeof verb_lower / sizeof verb_lower[0]},
+};
+
+/* PCRE2's cap on a NAME, and the complaint it makes past it. Both tables share
+ * one limit and one message, so it lives beside them rather than inside either.
+ * Measured (R8/C2-4) on libpcre2 10.46: a 128-byte name is the ordinary "not
+ * recognized" for its table, a 129-byte one is error 148, in every form. The
+ * cap is on the name only — a 200-byte ARGUMENT compiles. */
+const char *pcrec_registry_verb_name_limit(size_t *max)
+{
+    /* 128 is the ONLY length boundary, and it is table-independent: swept over
+     * every length 1..319 in both tables (R8/C2-9), there are exactly two
+     * transitions in 638 probes and both are at 129. */
+    *max = 128;
+    return "subpattern name is too long (maximum 128 code units)";
+}
+
+const VerbTable *pcrec_registry_verb_tables(int which)
+{
+    return (which == 0 || which == 1) ? &verb_tables[which] : NULL;
+}
+
+/* Which table PCRE2 consults, decided by the case of the FIRST name byte and
+ * nothing else. Measured over all 256 bytes: only 'a'..'z' select the lower
+ * table. A name starting with a digit, an underscore or any high byte goes to
+ * the upper one and gets error 160. */
+const VerbTable *pcrec_registry_verb_table(int first)
+{
+    return (first >= 'a' && first <= 'z') ? &verb_tables[1] : &verb_tables[0];
+}
+
+const VerbName *pcrec_registry_verb_find(const VerbTable *t,
+                                         const char *name, size_t len)
+{
+    for (size_t i = 0; i < t->n; i++)
+        if (strlen(t->rows[i].name) == len && memcmp(t->rows[i].name, name, len) == 0)
+            return &t->rows[i];
+    return NULL;
+}
 
 /* ---- doorway 4: after '[' inside a class -------------------------------- */
 static const RegRow classbracket_rows[] = {

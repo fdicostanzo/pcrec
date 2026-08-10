@@ -528,6 +528,102 @@ static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_fl
     }
 }
 
+/* The `(*` doorway needs its own sweep since Q1, and the reason is a measured
+ * near-miss worth recording rather than quietly fixing.
+ *
+ * The generic sweep asks "did the parser say 'requires module', and if so does
+ * a row agree". Before Q1 all 255 bytes after `(*` said exactly that, so the
+ * sweep exercised all 255. Q1 made most of them say "not recognized" instead —
+ * correctly — and the generic sweep went from 255 bytes asserted to ONE, while
+ * staying green and still printing a PASS line reading "all 255 bytes agree".
+ * A check that narrows to nothing without failing is the exact shape this
+ * directory keeps warning about, one level down.
+ *
+ * So this asserts what is now true for every byte: the doorway is REACHED, it
+ * rejects, and its answer is one the registry can account for — the row's own
+ * "requires module", one of the two tables' "not recognized" messages, MARK's
+ * message, or the quantifier error for an empty name. Plus the case rule:
+ * PCRE2's lower table is selected by a lowercase first byte and nothing else,
+ * which is the one thing the byte sweep is genuinely well shaped to prove.
+ *
+ * It does NOT check which name is which — a byte sweep never could, since names
+ * are longer than a byte. That is tests/registry/pcre2_check.c's job (PC-3),
+ * and it does it against libpcre2 over ~75k generated names.
+ *
+ * AND IT READS THE MESSAGES FROM THE TABLE IT IS CHECKING, so SWAPPING the two
+ * `unknown_msg` strings moves both sides together and this sweep stays green
+ * (measured, R8/C3-F2). The case rule is therefore proved relative to the
+ * table, not against PCRE2's wording — PC-3 and tests/reject/ are what catch
+ * the swap. That is this whole file's standing limitation, not a new one, but
+ * the sentence above would otherwise read as more than it is. */
+static void sweep_verb(void)
+{
+    const RegRow    *row   = pcrec_registry_find(RK_VERB, REG_SEL_ANY);
+    const VerbTable *upper = pcrec_registry_verb_tables(0);
+    const VerbTable *lower = pcrec_registry_verb_tables(1);
+    const VerbName  *mark  = pcrec_registry_verb_find(upper, "MARK", 4);
+    const char *quant = "quantifier does not follow a repeatable item";
+    int n_module = 0, n_upper = 0, n_lower = 0, n_other = 0, mismatches = 0;
+    char label[192];
+
+    if (!row || !upper || !lower || !mark || !mark->own_msg) {
+        bad("sweep after (*: the registry no longer supplies the rows this sweep "
+            "reads (row=%p upper=%p lower=%p MARK=%p)",
+            (void *)row, (void *)upper, (void *)lower, (void *)mark);
+        return;
+    }
+
+    for (int c = 1; c < 256; c++) {
+        char pat[16], got[256];
+        snprintf(pat, sizeof pat, "(*%c)", c);
+        if (try_compile(pat, got, sizeof got) == 0) {
+            bad("sweep after (*: byte 0x%02x ('%c') COMPILED — the doorway was "
+                "not reached at all", c, c >= 32 && c < 127 ? c : '?');
+            mismatches++;
+            continue;
+        }
+        if      (strcmp(got, row->msg)          == 0) n_module++;
+        else if (strcmp(got, upper->unknown_msg) == 0) n_upper++;
+        else if (strcmp(got, lower->unknown_msg) == 0) n_lower++;
+        else if (strcmp(got, mark->own_msg)      == 0) n_other++;
+        else if (strcmp(got, quant)              == 0) n_other++;
+        else {
+            bad("sweep after (*: byte 0x%02x ('%c') produced \"%s\", which is not "
+                "any answer this doorway is supposed to have", c,
+                c >= 32 && c < 127 ? c : '?', got);
+            mismatches++;
+            continue;
+        }
+        /* The case rule, both ways. */
+        int is_lower_byte = c >= 'a' && c <= 'z';
+        if (!is_lower_byte && strcmp(got, lower->unknown_msg) == 0) {
+            bad("sweep after (*: byte 0x%02x ('%c') is not lowercase but was "
+                "answered from the LOWER name table", c, c >= 32 && c < 127 ? c : '?');
+            mismatches++;
+        }
+        if (is_lower_byte && strcmp(got, upper->unknown_msg) == 0) {
+            bad("sweep after (*: byte 0x%02x ('%c') is lowercase but was answered "
+                "from the UPPER name table", c, c >= 32 && c < 127 ? c : '?');
+            mismatches++;
+        }
+    }
+
+    /* Liveness. Without these the sweep could pass by producing one answer for
+     * everything — which is precisely what it did before Q1. */
+    if (!n_module) { bad("sweep after (*: no byte reached a module — the doorway "
+                         "never routes anywhere"); mismatches++; }
+    if (!n_upper)  { bad("sweep after (*: no byte was an unknown UPPER-table name"); mismatches++; }
+    if (!n_lower)  { bad("sweep after (*: no byte was an unknown LOWER-table name"); mismatches++; }
+
+    if (mismatches == 0) {
+        snprintf(label, sizeof label,
+                 "sweep after (*: all 255 bytes accounted for (%d module, "
+                 "%d unknown-upper, %d unknown-lower, %d other)",
+                 n_module, n_upper, n_lower, n_other);
+        ok(label);
+    }
+}
+
 int main(void)
 {
     printf("== registry well-formedness ==\n");
@@ -549,14 +645,13 @@ int main(void)
     sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class", RF_CLASS_BASE);
     sweep(RK_GROUP,        "(?%c",      "after (?", 0);
     /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
-     * doorway is decided by a NAME, and a byte sweep can only prove that every
-     * single byte after `(*` reaches the catch-all row. A name-conditional
-     * branch added to parse.c — `(*script_run:` routed somewhere new, say —
-     * would NOT be caught here. A critic demonstrated exactly that. Closing it
-     * needs per-verb rows, which arrive with module 'verbs' (SR-6); until then
-     * this sweep is weaker than its three neighbours and should be described
-     * that way. */
-    sweep(RK_VERB,         "(*%c)",     "after (* [single byte only — see note]", 0);
+     * doorway is decided by a NAME and a byte sweep varies one byte. It proves
+     * the doorway is reached and that PCRE2's two name tables are selected by
+     * CASE; it says nothing about which name means what. Since Q1 the doorway
+     * really does branch on the whole name, and the per-name coverage lives in
+     * pcre2_check.c (PC-3) against libpcre2 — not here, and not in a byte
+     * sweep, which could never have supplied it. */
+    sweep_verb();
     sweep(RK_CLASSBRACKET, "[[%ca%c]]", "after [ inside a class", 0);
 
     printf("\n== Summary ==\n");

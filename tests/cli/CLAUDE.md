@@ -15,7 +15,8 @@ Part of `make test` since M2.
   (9) `-i` (OS-1/D23) end to end — accepted, reaches `options.caseless`,
   composes with `--` and `--emit-main`, documented in `--help`, and does NOT
   leak into a build that did not ask for it (the case-sensitive control),
-  (10) the SR-3 syntax queries — `--list-syntax`, `--explain`, `--flavour`.
+  (10) the SR-3 syntax queries — `--list-syntax`, `--explain`, `--flavour`, and
+  since Q1 `--list-verbs`.
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
 
 ## Conventions
@@ -26,6 +27,14 @@ branch and segfaulted at a 1 MB stack — a regression against hardening this
 project had already done once (R3 critic F3). pcrec is a library and musl's
 default thread stack is 128 KB, so "it works on the main thread" is not the bar.
 Keep the limit low enough that the recursive form fails it.
+
+`--list-verbs` (Q1/D25) is a SECOND dump rather than new columns on the first,
+and the reason is `--list-syntax`'s consumers: SR-4 generates a section of
+docs/pcre2_compliance.md from it, so widening it churns a document for a table
+that has nothing to do with RegRows. Its own assertions are a floor plus named
+rows from BOTH tables plus the four-field count — a bare count would be
+satisfied by any fifty rows, and a dump of one table would silently lose the
+case distinction that is the whole point of there being two.
 
 Case 10's load-bearing assertion is the FIELD COUNT, not the content. SR-4 makes
 tests/reject/ iterate `--list-syntax` and renders docs/pcre2_compliance.md from

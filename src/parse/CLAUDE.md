@@ -13,14 +13,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `try_quant` for K5/K6, both of which are the base tier being wrong about
   syntax it already owned, with no registry row involved
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
-  construct as one `static const` row, plus the lookup
+  construct as one `static const` row, plus the lookup. Since Q1 (D25) it also
+  holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by
+  the CASE of the first name byte exactly as libpcre2 chooses between its own
+  two. Every bit of those tables is measured against libpcre2 and re-measured on
+  every run by tests/registry/pcre2_check.c
 - **ext.c** — the four doorways (SR-2): `pcrec_ext_escape`, `pcrec_ext_group`,
   `pcrec_ext_verb`, `pcrec_ext_class_bracket`. The edge that makes the registry
   the ONLY home rather than a sixth copy — parse.c calls these once its own
   switch has declined, and they render the row's diagnostic. SR-6's module
-  handlers become their callees
+  handlers become their callees. `pcrec_ext_verb` is the one that reads more
+  than a byte: since Q1 it parses the verb NAME and the FORM it was written in,
+  and has four possible answers rather than one (D25)
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
-  (TSV, 12 columns) and `--explain`. Internal, not public API — the CLI and the
+  (TSV, 12 columns), `--list-verbs` (TSV, 4 columns — the Q1 name tables, which
+  are not RegRows and so cannot appear in the 12-column dump whose format SR-4
+  froze) and `--explain`. Internal, not public API — the CLI and the
   test suite are the only consumers, and promoting a function into lib/pcrec.h
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which
@@ -69,6 +77,45 @@ Rules when touching it:
   diagnostic: a delimiter-pair construct opens only when its matching `X]`
   appears later, and the class's own bracket can serve as its `[`. SR-2 moved
   that out of parse.c because it is the construct's rule, not base grammar.
+- **A verb NAME goes in the VerbName tables, not in a RegRow** (Q1/D25), and
+  its form bits are a MEASUREMENT: add the name, then run
+  `bash tests/registry/run_registry_tests.sh` and let libpcre2 tell you which
+  of VF_BARE / VF_ARG / VF_EMPTYARG / VF_EQNUM / VF_GROUPARG / VF_ATSTART are
+  right. Do not reason them out from the PCRE2 documentation; the check will
+  disagree with you and it will be correct.
+
+## The `(*` doorway's NAME tables (Q1 / D25)
+
+Doorway 3 is the only one decided by a NAME rather than a byte, and until Q1
+pcrec did not read it: one catch-all row answered "requires module 'verbs'" for
+everything, which promised a module for `(*NOTAVERB)`, called `(*)` a verb when
+PCRE2 reads it as a quantifier with nothing to quantify, and accepted `a(*CR)`
+when a start-of-pattern option away from the start is an error.
+
+Four answers now, and which one is chosen is entirely table-driven:
+
+| written | answer |
+|---|---|
+| a known name in a form libpcre2 accepts | `(*...) requires module 'verbs'` |
+| a name the selected table does not have | `(*VERB) not recognized or malformed` (upper) / `(*alpha_assertion) not recognized` (lower) |
+| `MARK` bare or with an empty argument | `(*MARK) must have an argument` |
+| an empty name (`(*)`, a truncated `(*`) | `quantifier does not follow a repeatable item` |
+
+Three things that are easy to get wrong here, all measured rather than reasoned:
+
+- **The table is chosen by the CASE of the first name byte**, and by nothing
+  else. `(*accept)` is not `(*ACCEPT)` misspelt — it is a lookup in a table that
+  contains no `ACCEPT`, and PCRE2 gives it a different error.
+- **The terminator set is PER-NAME.** `(*ACCEPT:x)` compiles and `(*CR:x)` does
+  not; `(*MARK:)` is an error and `(*ACCEPT:)` is not; only `LIMIT_*` takes
+  `=digits`. That is what the VF_* bits record.
+- **`VF_GROUPARG` is the difference between two truncations.** `(*pla:x` is
+  PCRE2 "missing closing parenthesis" — the name WAS recognised — while
+  `(*ACCEPT:x` is "not recognized". A subpattern argument does not need its `)`
+  at the doorway; a name-run argument does.
+
+None of these names is implemented. Every one still ends the compile — the
+tables record what libpcre2 ACCEPTS, not what pcrec does.
 
 ## Case folding (OS-1 / D23)
 

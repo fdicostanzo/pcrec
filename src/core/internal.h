@@ -275,6 +275,79 @@ typedef struct {
 const RegRow *pcrec_registry(RegKind k, size_t *n);
 const RegRow *pcrec_registry_find(RegKind k, int sel);
 
+/* ---- doorway 3's NAME tables (Q1) --------------------------------------
+ *
+ * The other three doorways are decided by a BYTE and a RegRow can carry the
+ * whole answer. `(*` is decided by a NAME, and until Q1 pcrec had no name
+ * table at all: one catch-all row answered "requires module 'verbs'" for every
+ * name, including names PCRE2 does not have. That was a live over-promise —
+ * `(*NOTAVERB)` was told a module would implement it — and it made an external
+ * name differential impossible, because pcrec's answer did not depend on the
+ * name. See docs/decisions.md D25.
+ *
+ * THESE ARE NOT RegRows, deliberately. A RegRow names a module, a feature bit,
+ * an engine mask and a diagnostic template; fifty verb rows would repeat one
+ * module fifty times and carry fifty hand-written notes nobody has measured —
+ * the fiction SR-1 refused to write. A VerbName answers exactly one question,
+ * "does PCRE2 have this name and in which forms", and EVERY BIT OF IT IS
+ * VERIFIED against libpcre2 by tests/registry/pcre2_check.c (PC-3). Nothing
+ * here is asserted; it is all recorded measurement.
+ *
+ * PCRE2 keeps TWO tables and picks between them by the CASE of the name's
+ * first byte, with a different "not recognized" error for each. Measured
+ * against libpcre2 10.46 with options = 0 (no PCRE2_UTF, no PCRE2_UCP):
+ * `(*accept)` is error 195 and `(*Accept)` is error 160. */
+enum {
+    VF_BARE     = 1u << 0,  /* (*NAME)                                       */
+    VF_ARG      = 1u << 1,  /* (*NAME:arg) with a non-empty arg              */
+    VF_EMPTYARG = 1u << 2,  /* (*NAME:)                                      */
+    VF_EQNUM    = 1u << 3,  /* (*NAME=digits), at least one digit            */
+
+    /* The argument is a SUBPATTERN, not a name run, so the doorway does not
+       require a `)` to be present: `(*pla:x` is PCRE2 error 114 "missing
+       closing parenthesis" (the name WAS recognised) while `(*ACCEPT:x` is
+       error 160 (it was not). One bit, two measured behaviours. */
+    VF_GROUPARG = 1u << 4,
+
+    /* Valid only at the very start of the pattern: `a(*CR)` is error 160.
+       PCRE2 allows a RUN of these (`(*UTF)(*CR)` compiles); pcrec's rule is
+       offset 0 exactly — see pcrec_ext_verb for why that is currently
+       equivalent and what would change it. */
+    VF_ATSTART  = 1u << 5
+};
+
+typedef struct {
+    const char *name;      /* exact, case-sensitive                          */
+    unsigned    forms;     /* VF_* mask: the forms libpcre2 ACCEPTS          */
+
+    /* A form outside `forms` normally produces the table's generic "not
+       recognized" message, because that is what PCRE2 produces. `(*MARK)` and
+       `(*MARK:)` are the measured exception (error 166), so the row carries
+       its own message and the mask of forms it applies to. Both NULL/0 for
+       every other name. */
+    unsigned    own_forms;
+    const char *own_msg;
+} VerbName;
+
+typedef struct {
+    const char     *unknown_msg;  /* PCRE2's wording for a name not in `rows` */
+    const VerbName *rows;
+    size_t          n;
+} VerbTable;
+
+/* The table PCRE2 would consult for a name whose first byte is `first`. Never
+ * NULL: every byte selects one of the two. */
+const VerbTable *pcrec_registry_verb_table(int first);
+/* Exact lookup within that table, or NULL. */
+const VerbName  *pcrec_registry_verb_find(const VerbTable *t,
+                                          const char *name, size_t len);
+/* Iteration for tests and for --list-verbs; `which` is 0 (the upper table) or
+ * 1 (the lower one), matching the order docs and dumps present them in. */
+const VerbTable *pcrec_registry_verb_tables(int which);
+/* PCRE2's cap on a verb NAME and the complaint past it — shared by both
+ * tables, so it is not a VerbTable field. Returns the message; sets *max. */
+const char *pcrec_registry_verb_name_limit(size_t *max);
+
 /* src/parse/ext.c — the four doorways out of the base grammar (SR-2). Each is
  * called only after parse.c's own switch has declined, so a base-tier pattern
  * reaches none of them.
@@ -316,6 +389,9 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
  * the only consumers today, and promoting one function into lib/pcrec.h later
  * is easy in a way that un-promoting it is not. */
 char *pcrec_syntax_tsv(unsigned flavours);
+/* `--list-verbs`: the Q1 name tables, which are not RegRows and so cannot
+ * appear in the TSV above. Caller frees. */
+char *pcrec_syntax_verbs(void);
 /* NULL when no construct matches the query. */
 char *pcrec_syntax_explain(const char *query, unsigned flavours);
 unsigned pcrec_flavour_by_name(const char *name);

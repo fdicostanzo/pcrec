@@ -169,20 +169,51 @@ CLAUDE.md files, commit, push.
   unreachable; and the exact-count hazard was measured disarming the boundary
   row in a two-line diff, answered with a MANIFEST that names irreplaceable rows
   by pattern. See docs/reviews/2026-08-10-r7-fix1.md
-- [PC-3] see "PCRE2 compliance tracking" below — SECOND, and it now carries Q1
-  (a distinct "recognised but not a known name" outcome). Q1 is what makes an
-  external name differential possible at all; without it the catch-all answers
-  for every name and every assertion collapses. Building PC-3 against the
-  CURRENT 67-row table is what turns that table into an externally verified
-  baseline, so later changes are diffs against a known-good reference
+- [PC-3] STATE:completed 2026-08-10, WITH Q1 — the first external check in the
+  project. `tests/registry/pcre2_check.c`: every row against libpcre2, plus a
+  ~824,000-probe differential over ~75,000 verb names generated from libpcre2's
+  OWN BINARY. Q1 (D25) gave the `(*` doorway two name tables so pcrec's answer
+  depends on the name, which is what makes that differential mean anything.
+  **THE "EXTERNALLY VERIFIED BASELINE" CLAIM WAS TOO BIG AND R8 MEASURED HOW
+  MUCH**: 65 of the 67 rows are verified by ONE BIT ("libpcre2 compiled a string
+  containing this row's syntax"); seven of `RegRow`'s twelve columns —
+  `feature`, `module`, `flavours`, `engines`, `diag`, `flags`, `note` — are read
+  by no external check at all; and `\v`, the row the registry exists for, is NOT
+  verified, because libpcre2 compiles `\v` under either semantics. What IS
+  externally verified: no row names a construct PCRE2 lacks, the two RS_REJECTED
+  rows agree with PCRE2's error identity, and the verb doorway's whole name
+  surface. See docs/reviews/2026-08-10-r8-pc3-q1.md, and PC-4 and Q2 below,
+  which are what the panel turned up
 - [FIX-2] STATE:not-started — K3 and K4, the class-bracket doorway. THIRD, not
-  last: R6's testability critic showed the "the fix would be thrown away"
+  last, and R8 gave it a SECOND job (C4-7): this doorway is NAME-keyed like the
+  verb one and has the same over-promise Q1 just removed, 900x wider. Measured
+  2026-08-10: libpcre2 recognises 14 POSIX class names and pcrec answers
+  "requires module 'classes'" for all 12531 candidates — its answer does not
+  depend on the name at all. Land the 14-name table with the K3/K4 fix; PC-3's
+  machinery then differentials it the same way it does verbs, for free. R6's testability critic showed the "the fix would be thrown away"
   premise was wrong (K4 is untouched by any selector scheme, and its structural
   scan must exist under every design), and fixing them first gives the registry
   change a correctness target at the doorway it changes most. The four
   KNOWN-WRONG pinned lines in tests/reject/ WILL FAIL when this lands — that is
   the signal working; check each against libpcre2 and move it into the normal
   tables in the same commit
+- [Q2] STATE:not-started — the `(?` doorway's over-promise, R8/C4-7. 217 of 255
+  bytes after `(?` are told a pcrec module will implement a construct libpcre2
+  rejects outright (error 111, "unrecognized character after (?"), because the
+  catch-all `modifiers` row answers for every byte. Same defect as Q1's, at a
+  doorway 217x wider, and the escape doorway is the control that proves it is
+  not inherent — 39 rows, zero over-promises. Needs the measured set of bytes
+  PCRE2 actually accepts after `(?`; PC-3 then covers it with no new
+  infrastructure. Sequence AFTER FIX-2 and probably WITH SR-9, whose `tail`
+  field touches the same rows
+- [PC-4] STATE:not-started — a SEMANTIC differential, R8/C4-2. PC-3 compares
+  compile VERDICTS only and calls none of the match API it already links, so
+  `\v`'s row — the incident this registry was built for — is unverified: the
+  critic rewrote its note to the pre-PC-1 wrong semantics and PC-3 stayed green.
+  Not buildable yet, and the reason is the schedule rather than the effort:
+  every registry row is REJECTED today, so pcrec has no semantics to differ.
+  The forcing function is module `classes` landing (M5), and this step must land
+  WITH it, not after
 - [SR-9] STATE:not-started — the registry selector change, LAST and least
   urgent. Build the `byte + tail` design in §7 of
   docs/design_registry_selectors.md — NOT the string-selector version in §2,
@@ -393,7 +424,7 @@ document). Mechanize instead.
 - [PC-2] STATE:not-started — periodic re-survey: re-read pcre2syntax.html,
   re-run tests/reject, move landed modules from REJECTED to OK, re-stamp the
   date. Do this whenever a module lands and at each checkpoint review
-- [PC-3] STATE:not-started — AN EXTERNAL SOURCE OF TRUTH FOR THE REGISTRY, which
+- [PC-3] STATE:completed — AN EXTERNAL SOURCE OF TRUTH FOR THE REGISTRY, which
   is the one thing SR-4 could not provide. Iteration reads the same table the
   parser renders from, so a row that is plausibly wrong in the single home is
   invisible to it (measured under SR-4: a new row with a wrong module and no

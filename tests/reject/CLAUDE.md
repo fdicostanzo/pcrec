@@ -6,12 +6,41 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 144 rows asserted by hand (124 naming a module, 20
-  the base-grammar brace errors K5/K6/K8), 66 more reached by iterating
-  `pcrec --list-syntax`, 45 accept-controls, and 5 known-wrong pins. Ends with
-  a MANIFEST naming the handful of rows whose deletion an exact count would not
-  catch, plus the exact counts themselves. Part of `make test`; env: PCREC,
-  KEEP=1.
+- **run_reject_tests.sh** — 180 rows asserted by hand (naming a module, or the
+  base-grammar brace errors K5/K6/K8, or since Q1 the verb doorway's four
+  outcomes), 66 more reached by iterating `pcrec --list-syntax`, 45
+  accept-controls, and 5 known-wrong pins. Ends with a MANIFEST naming the
+  handful of rows whose deletion an exact count would not catch, plus the exact
+  counts themselves. Part of `make test`; env: PCREC, KEEP=1.
+
+## What the verb rows do and do not pin (Q1, and R8 measured the difference)
+
+`tests/registry/pcre2_check.c` sweeps ~75,000 generated verb names against
+libpcre2 and is a far wider net than anything here — but it SKIPS when
+libpcre2-8-0 is absent, so these rows are what still holds on such a box.
+
+**That claim was checked rather than asserted.** A critic deleted verb rows one
+at a time with PC-3 disabled: deleting `F`, `NO_JIT` or `scs` fails here;
+deleting `LIMIT_HEAP` or `naplb` failed NOTHING. So the rows pin one name per
+FORM GROUP — there are five — and the honest statement is that the remaining 26
+names are covered by PC-3 alone. Do not read the block as "the verb tables are
+pinned".
+
+Five rules get a row of their own because each is the only check of itself: an
+unknown name is not promised a module (`(*NOTAVERB)`), the lower table exists
+and is chosen by case (`(*accept)`), one name carries its own message
+(`(*MARK)`), an option away from the start is invalid (`a(*CR)`), and an empty
+name is a quantifier error (`(*)`). All five are in the MANIFEST.
+
+**Two boundaries are pinned on BOTH sides**, because a boundary row on one side
+says a number exists, not where it is: `(*LIMIT_MATCH=4294967289)` compiles-side
+against `=4294967290` rejected, and a 128-byte name against a 129-byte one.
+
+**And one row pins a NON-defect on purpose.** `(*FAIL)*` is libpcre2 error 109
+and pcrec says "requires module 'verbs'", because pcrec reports the leftmost
+construct it cannot handle and stops. `\d{3,1}` beside it is the same shape at
+a different doorway and has been true since the registry existed. Both are here
+so that changing that rule has to be deliberate rather than accidental.
 
 ## Two layers, and why neither replaces the other (SR-4)
 

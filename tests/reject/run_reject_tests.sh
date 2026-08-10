@@ -319,7 +319,12 @@ done
 # the lookup lands on the catch-all twice over, and parse.c has always printed
 # '?' for the missing byte. Nothing covered this before R5.
 reject '(?'       "(??...) requires module 'modifiers'"
-reject '(*'       "requires module 'verbs'"
+# `(*` used to be answered "requires module 'verbs'" here. Q1 changed it, and
+# the change is a correction: PCRE2 reads a bare `(*` as `(` followed by a
+# quantifier with nothing to quantify (error 109), and there is no verb name at
+# all to route to a module. Pinned as its own row rather than merged with the
+# other quantifier rows because THIS one is the doorway declining.
+reject '(*'       "quantifier does not follow a repeatable item"
 reject '(?i)a'    "requires module 'modifiers'"
 reject '(?-i)a'   "requires module 'modifiers'"
 reject '(?i:a)'   "requires module 'modifiers'"
@@ -332,16 +337,79 @@ echo "== (*...) verbs, option settings and script runs =="
 # These used to report "quantifier does not follow a repeatable item", which is
 # a clean rejection of something that is not a quantifier — technically correct
 # behaviour, useless diagnosis.
-# Not verb names at all. PCRE2 rejects both ("(*VERB) not recognized or
-# malformed"); pcrec rejects them through the catch-all row. R6 measured that
-# the verb doorway is TWO name tables selected by the CASE of the first byte,
-# which nothing here can see — these at least pin the verdict.
-reject '(*MARKx)'    "requires module 'verbs'"
-reject '(*NOTAVERB)' "requires module 'verbs'"
+#
+# THE TWO ROWS BELOW CHANGED THEIR EXPECTED TEXT AT Q1, and the old text was
+# the bug. `(*MARKx)` and `(*NOTAVERB)` are not verb names; PCRE2 rejects both
+# with "(*VERB) not recognized or malformed", and pcrec used to answer
+# "requires module 'verbs'" — promising a module that will never implement them,
+# because there is nothing to implement. R6 recorded that the doorway is TWO
+# name tables selected by the CASE of the first byte and that nothing here could
+# see it. Q1 built the tables; these rows now pin which one answered.
+#
+# Everything below is hand-written on purpose. tests/registry/pcre2_check.c
+# sweeps ~75k generated names against libpcre2 and is a far wider net — but it
+# is a net woven from libpcre2's own binary, and if that library is missing it
+# SKIPS. These rows are what still holds when it does.
+#
+# MEASURE THAT CLAIM RATHER THAN BELIEVING IT (R8/C3-F1). A critic deleted verb
+# rows one at a time on a box with PC-3 disabled: deleting `F`, `NO_JIT` or
+# `scs` fails here, and deleting `LIMIT_HEAP` or `naplb` failed NOTHING. So the
+# rows below pin one name per FORM GROUP — there are five — rather than one per
+# name, and the honest statement is that the other 26 names are covered by PC-3
+# alone. Do not read this block as "the verb tables are pinned".
+reject '(*MARKx)'    "(*VERB) not recognized or malformed"
+reject '(*NOTAVERB)' "(*VERB) not recognized or malformed"
+reject '(*ACCPET)'   "(*VERB) not recognized or malformed"
+reject '(*)'         "quantifier does not follow a repeatable item"
+# The lower table: PCRE2 picks it by the case of the first byte and says
+# something different. `(*accept)` is not `(*ACCEPT)` misspelt — it is a lookup
+# in a table that has no ACCEPT.
+reject '(*accept)'   "(*alpha_assertion) not recognized"
+reject '(*pla)'      "(*alpha_assertion) not recognized"
+reject '(*SCRIPT_RUN:a)' "(*VERB) not recognized or malformed"
+# Real names in a form PCRE2 does not accept. Each of these is a DIFFERENT rule
+# in the table, and each was measured against libpcre2 10.46 rather than read:
+reject '(*MARK)'          "(*MARK) must have an argument"   # the one name with its own message
+reject '(*:)'             "(*MARK) must have an argument"   # (*:...) is a MARK synonym
+reject 'a(*CR)'           "(*VERB) not recognized or malformed"  # options are start-only
+reject '(*CR:x)'          "(*VERB) not recognized or malformed"  # ... and take no argument
+reject '(*LIMIT_MATCH)'   "(*VERB) not recognized or malformed"  # ... but LIMIT_* needs =n
+reject '(*LIMIT_MATCH=x)' "(*VERB) not recognized or malformed"  # ... and n must be digits
+reject '(*ACCEPT:x'       "(*VERB) not recognized or malformed"  # a name-run arg needs its ')'
+reject '(*ACCEPT'         "(*VERB) not recognized or malformed"
+# LEFTMOST ERROR WINS, pinned deliberately rather than left to be rediscovered
+# (R8/C2). libpcre2 rejects `(*FAIL)*` with "quantifier does not follow a
+# repeatable item" — the verb is real, but PCRE2 will not quantify it — while
+# pcrec answers about the construct it met FIRST and never reads the `*`. That
+# is pcrec's rule at every doorway, not a verb-doorway defect: `\d{3,1}` is
+# "requires module 'classes'" here and "numbers out of order" in PCRE2, and has
+# been since the registry existed. Both rows are here so that if anyone ever
+# changes it, they change it ON PURPOSE.
+reject '(*FAIL)*'         "requires module 'verbs'"
+reject '\d{3,1}'          "requires module 'classes'"
+# THE TWO BOUNDARIES, both found by the R8 panel and both pinned on BOTH SIDES.
+# A boundary row on one side only says a number exists, not where it is.
+# `=digits` has a MAGNITUDE rule, not a length one: libpcre2 refuses while
+# accumulating, one digit before its 32-bit counter would overflow.
+reject '(*LIMIT_MATCH=4294967289)' "requires module 'verbs'"
+reject '(*LIMIT_MATCH=4294967290)' "(*VERB) not recognized or malformed"
+reject '(*LIMIT_MATCH=00000000000000000001)' "requires module 'verbs'"
+# A verb NAME over 128 bytes is a LENGTH complaint in PCRE2, not a "no such
+# name" one, and it is the same complaint from both name tables.
+name128="$(printf 'A%.0s' $(seq 1 128))"
+name129="$(printf 'A%.0s' $(seq 1 129))"
+lname129="$(printf 'a%.0s' $(seq 1 129))"
+reject "(*$name128)"  "(*VERB) not recognized or malformed"
+reject "(*$name129)"  "subpattern name is too long (maximum 128 code units)"
+reject "(*$lname129)" "subpattern name is too long (maximum 128 code units)"
 
 for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)' \
-         '(*MARK:x)' '(*CR)' '(*LF)' '(*CRLF)' '(*ANYCRLF)' '(*UTF)' '(*UCP)' \
-         '(*script_run:a)' '(*sr:a)' '(*atomic:a)'; do
+         '(*MARK:x)' '(*:x)' '(*ACCEPT:)' '(*CR)' '(*LF)' '(*CRLF)' '(*ANYCRLF)' \
+         '(*UTF)' '(*UCP)' '(*NUL)' '(*BSR_UNICODE)' '(*NO_JIT)' '(*NOTEMPTY)' \
+         '(*LIMIT_MATCH=1)' '(*LIMIT_HEAP=1)' '(*TURKISH_CASING)' \
+         '(*script_run:a)' '(*sr:a)' '(*atomic:a)' '(*pla:a)' '(*scs:x)' \
+         '(*naplb:a)' '(*negative_lookbehind:a)' \
+         '(*atomic:)' 'a(*ACCEPT)'; do
     reject "$v" "requires module 'verbs'"
 done
 
@@ -654,6 +722,24 @@ must_have '[:alpha:]' \
     "the K3 known-wrong pin; losing it makes a fixed-or-unfixed K3 invisible"
 must_have 'a{2,3,4}' \
     "the only malformed-brace control with a SECOND comma"
+# Q1's outcomes. Each of these five is the ONLY hand-written check of one rule,
+# and all five are answered far more broadly by tests/registry/pcre2_check.c —
+# which SKIPS without libpcre2 installed. That is exactly when a manifest earns
+# its keep: it names what stops being covered on a box the wide net cannot run.
+must_have '(*NOTAVERB)' \
+    "the only pin that a name PCRE2 does not have is NOT promised a module (Q1)"
+must_have '(*accept)' \
+    "the only pin of the LOWER verb table — the case of the first byte picks it"
+must_have '(*MARK)' \
+    "the only pin of a verb name carrying its own message rather than the generic one"
+must_have 'a(*CR)' \
+    "the only pin that a start-of-pattern option is invalid away from the start"
+must_have '(*)' \
+    "the only pin that an empty verb name is a quantifier error, not a verb"
+must_have '(*FAIL)*' \
+    "the only pin that pcrec reports the LEFTMOST error, where libpcre2 reports a later one"
+must_have '(*LIMIT_MATCH=4294967290)' \
+    "the only pin of the =digits MAGNITUDE boundary; 4294967289 beside it is the control"
 if [ "$manifest_missing" -ne 0 ]; then
     echo "reject: one or more irreplaceable checks are gone — see above" >&2
     exit 1
@@ -663,8 +749,8 @@ fi
 # deliberate and visible in the diff, which is what the slack removed. If you
 # added or removed coverage on purpose, update these three numbers in the same
 # commit — and check first whether the row belongs in the manifest above.
-if [ "$nrej" -ne 144 ] || [ "$naccept" -ne 45 ] || [ "$nwrong" -ne 5 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 144 / 45 / 5." >&2
+if [ "$nrej" -ne 180 ] || [ "$naccept" -ne 45 ] || [ "$nwrong" -ne 5 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 180 / 45 / 5." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

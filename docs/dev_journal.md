@@ -2796,3 +2796,99 @@ for it), and `accept()` in tests/reject/ now asserts that output was actually
 emitted rather than only that pcrec exited 0.
 
 **Next session: PC-3, with Q1.** See docs/wake.md.
+
+## 2026-08-10 — PC-3 + Q1: the first external check, and the panel that took it apart
+
+Second of the four steps in plan.md's AGREED ORDER. Baseline verified green
+before touching anything (876 / 73 / 261 / 127 / 29 / 7, verify_rxt 844/844).
+
+**What landed.** Q1 — the `(*` doorway now reads the NAME. Two `VerbName` tables
+in registry.c, 31 upper + 19 lower, chosen by the CASE of the first byte exactly
+as libpcre2 chooses between its own two, with per-name form bits recording which
+spellings libpcre2 accepts. Four possible answers where there was one. And PC-3
+— `tests/registry/pcre2_check.c`, the first check in this project that is not
+pcrec reading pcrec: every registry row against libpcre2, plus a differential
+over ~75,000 verb names in 13 forms, ~824k probes in 2.3s, with the candidate
+names generated from **libpcre2's own shared object** rather than from pcrec's
+table. Decision D25. Review R8.
+
+**PC-3 found something before any critic ran.** The verb row's probe was
+`(*...)`, which libpcre2 rejects — an RS_MODULE row claiming PCRE2 has a
+construct it does not have. Nothing that reads only pcrec's own files could have
+seen it, which is the entire argument for the step in one row.
+
+**The panel found more than the step did, for the fourth checkpoint running, and
+this time the findings were about the INSTRUMENT.** Three of the new file's four
+headline claims did not survive measurement, and all three failed the same way —
+a control sharing a source with the thing it controls:
+
+- the "external" candidate pool could contribute ZERO names with nothing
+  failing. 84% of the probes still ran, from mutations seeded by pcrec's own
+  table; all four liveness assertions passed; the "every verb name was reached"
+  guard passed; and **deleting a real verb row became invisible.** Fixed with
+  provenance — every name is tagged with the source that produced it, and every
+  name pcrec claims must come from libpcre2's binary independently. The critic's
+  own sabotage now yields 51 failures.
+- the fabrication check was defeated by one line: hide the row's syntax inside a
+  PCRE2 comment. Fixed by requiring the syntax to be LOAD-BEARING — substitute
+  it for `\Y` and the wrapper must stop compiling.
+- `check_rows` never ran pcrec at all, so a row that had started miscompiling
+  passed. Fixed; validated with a real `\K` miscompile.
+- and `required_answer()` had quietly made the test file the authority on a
+  question libpcre2 was never asked, certifying `(*atomic:a)` and `(*UTF)` as
+  module 'verbs'. Worse, it ratcheted the wrong way: the day SR-6 routes them
+  correctly the conformance test FAILS. Now: identity where libpcre2 supplies
+  one, SHAPE where it supplies only a verdict.
+
+**Two real pcrec bugs, both on axes the sweep held fixed.** `VF_EQNUM` had no
+MAGNITUDE rule — the differential wrote exactly two `=` bodies, `=1` and `=x` —
+and `(*LIMIT_MATCH=4294967290)` is libpcre2 error 160. The boundary is
+4294967290 rather than 4294967296 because PCRE2 refuses while accumulating, one
+digit early, and it is magnitude not length: `=00000000000000000001` compiles.
+And a verb NAME over 128 bytes is a different complaint entirely (error 148),
+which the candidate pool's 64-byte cap sat below — the cap's justification, "no
+real name is longer than 30 bytes", was true and bounded the wrong thing.
+
+**And a fix without a probe is not a fix.** Reverting the magnitude rule scored
+ZERO failures in the sabotage battery: the code was right and nothing generated
+an input that could see it. Two forms added; it scores 4 now. Adding the guard
+is not the last step of a fix, it is the step that tells you whether you made
+one.
+
+**The silent narrowing I caught mid-work, which is the same shape one level
+down.** The generic 255-byte doorway sweep asks "did the parser say *requires
+module*". Before Q1 every byte after `(*` said exactly that, so it exercised
+255. Q1 made most of them say "not recognized" — correctly — and the sweep
+dropped to **ONE byte asserted** while still printing `PASS: all 255 bytes
+agree`. Replaced by `sweep_verb()`.
+
+**The finding I did not fix, and it is the headline.** T-12 promised the wall
+comes down for the TWO name-keyed doorways. One was built. Measured: 217 of 255
+bytes after `(?` are told a pcrec module will implement a construct libpcre2
+rejects outright, and pcrec answers "requires module 'classes'" for all 12531
+candidate POSIX class names where libpcre2 recognises 14. That is *character for
+character* the `(*NOTAVERB)` over-promise D25 was built to end, at doorways 217x
+and 900x wider than the one that got fixed. The escape doorway is clean — 39
+rows, zero over-promises — which proves the asymmetry is not inherent but
+specific to the two catch-all rows. Recorded as a second job for FIX-2 (which
+already owns that doorway) and a new step Q2.
+
+**Two claims in the plan were too big and are now corrected there.** 65 of the
+67 rows are externally verified by ONE BIT; seven of RegRow's twelve columns are
+read by no external check at all; and `\v` — the row this registry exists for —
+is NOT verified, because libpcre2 compiles `\v` under either semantics. A critic
+rewrote its note to the pre-PC-1 wrong semantics and PC-3 stayed green. That
+needs a MATCH differential, which is new plan step PC-4 and cannot be built
+before module `classes` lands, because every registry row is rejected today and
+pcrec has no semantics to differ.
+
+**Suite at close:** 876 corpus / 83 CLI / 180+66 reject / 127 registry + 2 SR-4
+doc checks + 75 PC-3 / 29 codegen / 7 trie-identity, verify_rxt 844/844, ratchet
+clean. 20 sabotages, each reverted after measuring, each caught.
+
+**One process note.** Two of four critics again wrote a header and went quiet;
+both produced their best material within minutes of a prod. The prod is now
+worth budgeting for rather than treating as an exception — it has happened at
+every panel since R3.
+
+**Next: FIX-2** (K3 and K4, plus C4-7's POSIX name table), then Q2, then SR-9.

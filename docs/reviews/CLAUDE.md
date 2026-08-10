@@ -40,6 +40,17 @@ most of the odd-looking test cases trace to a finding recorded here.
   new MANIFEST answers. Four of my claims were false, one of them a number I had
   inferred from an error message and copied into four files.
 
+- **2026-08-10-r8-pc3-q1.md** — R8, PC-3 and Q1 (the first EXTERNAL check).
+  Three of the new instrument's four headline claims failed the same way — a
+  control sharing a source with the thing it controls: the "external" candidate
+  pool could contribute zero names with nothing failing, the fabrication check
+  was defeated by hiding a row's syntax in a PCRE2 comment, and the row check
+  never ran pcrec at all. Two real bugs on axes the sweep held fixed (a missing
+  magnitude rule, a name-length boundary the candidate cap sat below), a fix
+  whose guard scored ZERO until two probe forms were added, and the headline:
+  the over-promise Q1 removed at the doorway with ONE row is still open at the
+  doorways with 24 and 3, which are 217x and 900x wider.
+
 ## Conventions
 
 Findings are labelled CONFIRMED (reproduced, with the repro) or SUSPECTED, and

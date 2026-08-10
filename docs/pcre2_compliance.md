@@ -277,6 +277,22 @@ or it will silently miscompile ambiguous patterns.
 
 ## Backtracking control verbs
 
+**Since Q1 (2026-08-10, D25) the `(*` doorway distinguishes NAMES.** Everything
+in this section is still `REJECTED`, but a name PCRE2 does not have is now told
+so — `(*NOTAVERB)` gets PCRE2's own "(*VERB) not recognized or malformed"
+instead of a promise that module `verbs` will one day implement it. The
+distinction runs deeper than the table below shows: PCRE2 keeps TWO name tables
+selected by the CASE of the first byte, with a different error for each, and its
+argument rules are PER-NAME (`(*ACCEPT:x)` compiles, `(*CR:x)` does not,
+`(*MARK)` alone is an error, `LIMIT_*` takes `=digits` with a magnitude limit,
+and a name over 128 bytes is a third complaint again). pcrec reproduces all of
+it, and `tests/registry/pcre2_check.c` re-measures every bit of it against
+libpcre2 on each run. `pcrec --list-verbs` prints the tables.
+
+What pcrec does NOT yet claim is which MODULE owns each name: `(*atomic:…)` and
+`(*pla:…)` are answered "requires module 'verbs'" though they are atomic groups
+and lookarounds, and correcting that belongs to SR-6 with the module itself.
+
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `(*FAIL)` `(*F)` | `REJECTED` | `PLANNED` | module `verbs`. The one verb PCRE2's DFA matcher DOES support: in a priority simulation it is simply a path that never reaches an accept state |
@@ -365,7 +381,7 @@ their syntax was nonsense rather than what would implement it):
 
 | construct | was | now |
 |---|---|---|---|
-| `(*ACCEPT)`, `(*SKIP)`, `(*CR)`, `(*script_run:…)`, all `(*…)` | `quantifier does not follow a repeatable item` | `(*...) requires module 'verbs'` |
+| `(*ACCEPT)`, `(*SKIP)`, `(*CR)`, `(*script_run:…)`, all `(*…)` | `quantifier does not follow a repeatable item` | `(*...) requires module 'verbs'` — and since Q1, only for names PCRE2 actually has; `(*)` went back to the quantifier error, which is what PCRE2 says |
 | `\K` | `unknown escape \K` | module `assertions` |
 | `\c`, `\o` | `unknown escape` | module `misc` |
 | `(?#…)` | module `modifiers` | module `comments` |
@@ -474,7 +490,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 67 rows f
 | after `(?` | `(?8)` | `REJECTED` | `recursion` | vm | recurse into capture group 8 |
 | after `(?` | `(?9)` | `REJECTED` | `recursion` | vm | recurse into capture group 9 |
 | after `(?` | `(?i)` | `REJECTED` | `modifiers` | dfa|vm | inline option setting or scoping: (?i) (?im-sx:...) (?^) (?-i) |
-| after `(*` | `(*...)` | `REJECTED` | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
+| after `(*` | `(*ACCEPT)` | `REJECTED` | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | — | POSIX collating element — PCRE2 rejects it, and so must we |
 | after `[` in a class | `[[=a=]]` | `AGREES-REJECT` | — | — | POSIX equivalence class — PCRE2 rejects it, and so must we |

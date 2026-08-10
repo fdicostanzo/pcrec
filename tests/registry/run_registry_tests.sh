@@ -54,4 +54,19 @@ if [ ! -x "$PCREC" ]; then
 fi
 if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --check; then rc=1; fi
 if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --names; then rc=1; fi
+
+# PC-3: the same table against libpcre2, which is the one authority none of the
+# above is. It links the same library and includes the same header, then dlopens
+# libpcre2 at runtime — and SKIPS LOUDLY if that library is absent, so a clone
+# on a box without libpcre2-8-0 still gets a green suite. `-ldl` is the only
+# extra link requirement.
+PC3BIN="$WORKDIR/pcre2_check"
+if ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -o "$PC3BIN" "$SCRIPT_DIR/pcre2_check.c" "$LIB" -ldl; then
+    echo "registry: FAILED TO BUILD pcre2_check.c (PC-3)" >&2
+    exit 1
+fi
+echo
+if ! "$PC3BIN"; then rc=1; fi
 exit $rc

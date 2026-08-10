@@ -15,13 +15,24 @@ bash tests/harness/run.sh tests/base        # one component directory
 bash tests/harness/run.sh tests/base/quantifiers.rxt   # one file
 ```
 
-`make test` is NOT equivalent to `run.sh`: since M2 it runs FOUR scripts — the
-.rxt corpus, `tests/cli/run_cli_tests.sh`, `tests/codegen/run_codegen_tests.sh`
+`make test` is NOT equivalent to `run.sh`: it runs SIX scripts — the .rxt
+corpus, `tests/cli/run_cli_tests.sh`, `tests/reject/run_reject_tests.sh` (the
+"never miscompile" mandate, per construct),
+`tests/registry/run_registry_tests.sh`, `tests/codegen/run_codegen_tests.sh`
 (structural assertions that behaviour-preserving optimizations are actually
 PRESENT in the emitted C — see that directory's CLAUDE.md), and
 `tests/known_fail/run_known_fail.sh` (the ratchet that flags a deferred-bug
 regression which has started passing). `run.sh` alone certifies only the first
-of the four.
+of the six.
+
+**One of them can SKIP, and the skip is loud.** `run_registry_tests.sh` builds
+and runs `tests/registry/pcre2_check.c` (PC-3), which dlopens libpcre2 at
+runtime — the only external authority in the suite. Without the PCRE2 8-bit
+runtime installed (Debian/Ubuntu `libpcre2-8-0`) it prints three `SKIP:` lines
+saying exactly what stopped being checked, and exits 0, because a stranger who
+clones this repo must still get a green `make test`. A green run on a box
+without libpcre2 is a WEAKER result than a green run with it; the skip lines
+are how you tell which one you got.
 
 With no arguments, `run.sh` discovers and runs every `*.rxt` file under
 `tests/` (recursively). Arguments may mix individual `.rxt` files and

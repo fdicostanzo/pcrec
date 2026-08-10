@@ -8,8 +8,14 @@ fuzz`), not part of `make test` — see README.md for why.
 
 ## Files
 
-- **pcre2_oracle.c** — hand-declared PCRE2 8-bit ABI CLI oracle (see its
-  header comment for the dlopen rationale). `pcre2_oracle 'PATTERN'
+- **pcre2_abi.h** — the hand-declared slice of the PCRE2 8-bit ABI and its
+  dlopen loader, shared. Extracted from pcre2_oracle.c by PC-3, when
+  tests/registry/pcre2_check.c became a second consumer and would otherwise
+  have copied it — two descriptions of somebody else's ABI is the shape of the
+  `\v` bug this project already paid for. The loader returns a status instead
+  of exiting, because the two consumers need opposite policies: the fuzz oracle
+  must fail hard, and pcre2_check.c (inside `make test`) must skip loudly.
+- **pcre2_oracle.c** — the PCRE2 8-bit CLI oracle, now built on pcre2_abi.h. `pcre2_oracle 'PATTERN'
   <subject-file> [startpos]` → `match S E` / `nomatch` / `cerr <code>` /
   `mlimit <code>` (PCRE2 match-limit safeguard tripped — not a verdict).
 - **fuzz_driver.c** — subject-from-file driver template for pcrec-generated

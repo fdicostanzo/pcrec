@@ -538,9 +538,46 @@ case10() {
     assert_contains "case10: ...with a missing-value diagnostic" \
         "$(cat "$d/e9.txt")" "missing value for --explain"
 
+    # --list-verbs (Q1). A separate dump because the fifty verb NAMES are not
+    # RegRows and --list-syntax's format is frozen by SR-4's generated doc
+    # section. Four columns, and the row count is asserted as a FLOOR with a
+    # named row required: a count alone would be satisfied by any fifty rows.
+    out="$("$PCREC" --list-verbs 2>"$d/ev.txt")"; rc=$?
+    assert_eq "case10: --list-verbs exits 0" "0" "$rc" "stderr: $(cat "$d/ev.txt")"
+    assert_contains "case10: --list-verbs emits the column header" "$out" \
+        "#table	name	forms	unknown"
+    nverbs="$(printf '%s\n' "$out" | grep -vc '^#')"
+    if [ "$nverbs" -lt 40 ]; then
+        fail "case10: --list-verbs printed $nverbs rows, floor 40 — the verb tables have shrunk"
+    else
+        pass "case10: --list-verbs printed $nverbs verb names (floor 40)"
+    fi
+    # Both tables must be present. A dump of one is how the case distinction
+    # would silently disappear.
+    assert_contains "case10: --list-verbs carries the upper table" "$out" \
+        "upper	ACCEPT	"
+    assert_contains "case10: --list-verbs carries the lower table" "$out" \
+        "lower	script_run	"
+    assert_contains "case10: --list-verbs records the start-of-pattern rule" "$out" \
+        "start-of-pattern-only"
+    # Every line must have exactly 4 tab-separated fields: the format is an
+    # interface, and a field containing a tab would corrupt it (case10's rule
+    # for --list-syntax, applied to the second dump).
+    badfields="$(printf '%s\n' "$out" | grep -v '^#' | awk -F'\t' 'NF != 4' | head -3)"
+    if [ -n "$badfields" ]; then
+        fail "case10: --list-verbs rows without exactly 4 fields" "$badfields"
+    else
+        pass "case10: every --list-verbs row has exactly 4 tab-separated fields"
+    fi
+    "$PCREC" --list-verbs --list-syntax >/dev/null 2>"$d/ev2.txt"; rc=$?
+    assert_eq "case10: --list-verbs with --list-syntax exits 1" "1" "$rc"
+    "$PCREC" --list-verbs -o - -- 'abc' >/dev/null 2>"$d/ev3.txt"; rc=$?
+    assert_eq "case10: --list-verbs with -o and a pattern exits 1" "1" "$rc"
+
     # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
     out="$("$PCREC" --help)"
     assert_contains "case10: --help documents --list-syntax" "$out" "--list-syntax"
+    assert_contains "case10: --help documents --list-verbs" "$out" "--list-verbs"
     assert_contains "case10: --help documents --explain" "$out" "--explain"
 
     # `--` still ends options: a pattern that looks like a query is a pattern

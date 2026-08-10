@@ -173,6 +173,51 @@ char *pcrec_syntax_tsv(unsigned flavours)
     return sb_take(&sb);
 }
 
+/* `--list-verbs`. Q1 added fifty verb NAMES that no dump could show: they are
+ * not RegRows, so `--list-syntax` cannot carry them and its format is frozen
+ * (SR-4 generates a section of docs/pcre2_compliance.md from it, and the
+ * compliance index would churn). A separate dump keeps that format byte-stable
+ * and still gives the names an external view — which matters because a
+ * stranger reading `--list-syntax` would otherwise see one `(*ACCEPT)` row and
+ * conclude the doorway knows one thing.
+ *
+ * The `forms` column is the whole point and is worth reading carefully: it is
+ * what libpcre2 ACCEPTS, measured, not what pcrec implements. pcrec implements
+ * none of these — every row here still ends a compile. */
+char *pcrec_syntax_verbs(void)
+{
+    StrBuf sb = {0};
+
+    sb_puts(&sb, "# pcrec verb-name tables for the `(*` doorway (Q1, D25).\n"
+                 "# PCRE2 keeps TWO tables and selects by the CASE of the first\n"
+                 "# name byte; `table` is which, and `unknown` is what pcrec says\n"
+                 "# for a name that table does not have.\n"
+                 "# `forms` is what libpcre2 ACCEPTS, measured, not what pcrec\n"
+                 "# implements — pcrec implements none of these yet.\n"
+                 "#table\tname\tforms\tunknown\n");
+
+    for (int w = 0; w < 2; w++) {
+        const VerbTable *t = pcrec_registry_verb_tables(w);
+        for (size_t i = 0; i < t->n; i++) {
+            const VerbName *v = &t->rows[i];
+            unsigned f = v->forms;
+            sb_puts(&sb, w == 0 ? "upper" : "lower"); sb_putc(&sb, '\t');
+            sb_puts(&sb, v->name);                    sb_putc(&sb, '\t');
+            if (f & VF_BARE)     sb_puts(&sb, "(*N)");
+            if (f & VF_ARG)      sb_puts(&sb, (f & VF_BARE) ? "|(*N:a)" : "(*N:a)");
+            if (f & VF_EMPTYARG) sb_puts(&sb, "|(*N:)");
+            if (f & VF_EQNUM)    sb_puts(&sb, (f & (VF_BARE|VF_ARG|VF_EMPTYARG))
+                                              ? "|(*N=d)" : "(*N=d)");
+            if (f & VF_GROUPARG) sb_puts(&sb, "|arg-is-subpattern");
+            if (f & VF_ATSTART)  sb_puts(&sb, "|start-of-pattern-only");
+            sb_putc(&sb, '\t');
+            sb_puts(&sb, t->unknown_msg);
+            sb_putc(&sb, '\n');
+        }
+    }
+    return sb_take(&sb);
+}
+
 /* `--explain '\v'`. A row matches when the query and the row's `syntax` are a
  * prefix of one another, so `\k` finds `\k<name>` and `(?=...)` finds `(?=`.
  * Every match is printed: `(?<` is genuinely two constructs, and answering with

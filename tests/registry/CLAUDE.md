@@ -9,8 +9,13 @@ directory asserts that the description and the shipped parser actually agree.
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output
-- **run_registry_tests.sh** — builds and runs it; part of `make test`.
-  Env: CC, KEEP=1
+- **pcre2_check.c** — the same table against **libpcre2** (PC-3): the first
+  check in this project that is not pcrec reading pcrec. Same link, plus a
+  runtime `dlopen` through `../fuzz/pcre2_abi.h`. SKIPS LOUDLY and exits 0 when
+  libpcre2-8-0 is absent, so a stranger's clone stays green. See its own
+  section below
+- **run_registry_tests.sh** — builds and runs both, plus compliance_section.py;
+  part of `make test`. Env: CC, KEEP=1
 
 ## What it asserts
 
@@ -32,6 +37,18 @@ directory asserts that the description and the shipped parser actually agree.
    *R4 correction:* the first version swept only two of the four doorways while
    this file already claimed all of them, and validated 1 of 3 class-bracket
    rows because fixed-text rejections carry no "requires module" marker.
+   *Q1 correction (2026-08-10):* the `(*` doorway has its own `sweep_verb()`
+   now, and the reason is a measured near-miss. The generic sweep asks "did the
+   parser say *requires module*"; before Q1 all 255 bytes after `(*` said
+   exactly that, so it exercised 255. Q1 made most of them say "not recognized"
+   — correctly — and the generic sweep dropped from **255 bytes asserted to
+   ONE** while still printing `PASS: sweep ... all 255 bytes agree`. A check
+   that narrows to nothing without failing is this directory's own warning, one
+   level down. `sweep_verb()` asserts instead that every byte REACHES the
+   doorway, that its answer is one the registry can account for, and that
+   PCRE2's two name tables are selected by CASE and nothing else — with
+   liveness counters, because "one answer for everything" is exactly what the
+   old sweep was reduced to.
 4. **feature/module bijection** — a row carrying `FEAT_CLASSES` while printing
    "assertions" passed everything until a critic tried it. `registry.c`'s
    `M_<module>` macros now emit the pair together so a macro-built row cannot
@@ -90,6 +107,130 @@ module:
 | delete the `(?:` base row | 1 |
 | `\b` row longhand with `FEAT_CLASSES` but module `"assertions"` (R4 E1) | many |
 
+## pcre2_check.c — the external check (PC-3)
+
+Everything else in this directory, and in tests/reject/, is **pcrec checking
+pcrec**. That is not a criticism of those checks; it is their measured limit,
+recorded three separate times (R4, R5, R6): a row that is plausibly WRONG in the
+single home is invisible, because the wrongness is what both sides read.
+
+`pcre2_check.c` asks libpcre2 instead. Three parts:
+
+1. **Every row's claim.** An `RS_MODULE` row says "PCRE2 HAS this and pcrec has
+   not implemented it", so libpcre2 must COMPILE the probe — a row naming a
+   construct PCRE2 does not have fails there. An `RS_REJECTED` row says
+   "agreement IS compliance", so libpcre2 must REJECT it *and pcrec's message
+   must be PCRE2's message*, not merely some rejection. **Mind the polarity:**
+   docs/plan.md had check (b) backwards until R6, and as written it would have
+   passed every fabricated row it exists to catch.
+2. **22 context wrappers.** A row's `syntax` reaches pcrec's DOORWAY, which is a
+   weaker contract than "libpcre2 will compile this": `\3` needs three groups,
+   `(?1)` needs one, `\k<name>` needs the name declared. Two guards keep the
+   wrappers from becoming a way to paper over a bad row — a wrapper must CONTAIN
+   the row's `syntax` verbatim, and a wrapper that is not NECESSARY is an error.
+   A row with no wrapper whose syntax will not compile is a FAILURE, never a
+   skip.
+3. **The verb NAME differential**, and this is the part that scales. Candidate
+   names are generated from **libpcre2's own shared object** — its compiled-in
+   name tables, read via `dlinfo`, expanded to every prefix and suffix — plus
+   single-character mutations of the names pcrec claims, plus all 255 bytes.
+   ~75,000 candidates in 11 forms, ~823,000 probes, about 3 seconds. libpcre2's
+   verdict on each decides what pcrec owes.
+
+The prefix/suffix expansion is not decoration: `ANYCRLF`, `CRLF` and `LF` are
+real PCRE2 option names that appear in the binary only INSIDE `BSR_ANYCRLF`, so
+a pool of whole runs would have missed three names this check exists to notice.
+
+**This is the first mechanism in the project that can see a MISSING row.**
+Everything else iterates what exists. Delete the `ACCEPT` name, misspell it
+`ACCPET`, or invent a verb PCRE2 does not have, and none of that is detectable
+by anything else in this repo at any effort. It works only because of Q1 (D25):
+while one catch-all answered "requires module 'verbs'" for every name, pcrec's
+answer did not depend on the name and the comparison was vacuous. Measured —
+reverting the doorway to its pre-Q1 behaviour produces 21 failures here and,
+before this file existed, produced none anywhere.
+
+### What it does NOT establish
+
+- **Module names are pcrec's own taxonomy** and no outside authority can check
+  them. libpcre2 can say a construct exists; it cannot say `\d` belongs to a
+  module called `classes`. tests/reject/'s hand-written rows remain the only
+  check of that, exactly as before.
+- **options = 0.** No `PCRE2_UTF`, no `PCRE2_UCP`, no `PCRE2_CASELESS`. Every
+  claim is about default 8-bit mode; no UTF conformance is measured anywhere in
+  this repo, and `-i` has never been run against `PCRE2_CASELESS`.
+- **Only the `(*` doorway gets a name differential.** The other three are
+  byte-keyed and their rows are checked one probe each. `(?P=` versus `(?P<`,
+  and `\N{U+hhhh}` versus `\N`, are still unswept — that is SR-9's `tail`.
+- **A compiling probe is not a semantic check.** `\v` compiles in libpcre2 and
+  in python `re`, and they mean different things by it. PC-3 proves the row
+  names a construct PCRE2 has; the corpus and the fuzzer are what test meaning.
+
+### Sabotage validation
+
+20 edits, each reverted after measuring, each caught. Record the EDIT, not just
+the count. The last six exist because the R8 panel proved the first fourteen
+could all pass while the check was doing much less than it claimed.
+
+| sabotage (exact edit, in a scratch copy) | PC-3 failures |
+|---|---|
+| delete the `{"ACCEPT", ...}` row from `verb_upper` | 6 |
+| `{"ACCEPT",` → `{"ACCPET",` | 21 (capped) |
+| drop `VF_ATSTART` from the `CR` row | 10 |
+| reword `"(*MARK) must have an argument"` | 20 (capped) |
+| insert `{"NOTAVERB", VF_BARE, 0, NULL}` | 17 |
+| verb row `syntax` `"(*ACCEPT)"` → `"(*...)"` (its pre-PC-3 value) | 1 |
+| reword the collating rejection message (2 rows) | 2 |
+| wrapper `"(a)\\1"` → `"(a)b"` (no longer contains its row's syntax) | 1 |
+| drop `VF_GROUPARG` from `pla` | 3 |
+| drop `VF_EMPTYARG` from `ACCEPT` | 4 |
+| reword the lower table's "not recognized" | 20 (capped) |
+| delete the `at != 0` start-of-pattern check in ext.c | 20 (capped) |
+| **restore pre-Q1 behaviour: the doorway ignores the name** | 21 (capped) |
+| swap the two tables' "not recognized" messages | 21 (capped) |
+| **`pool_from_library` succeeds and yields ZERO names** (R8/C1-F4) | **51** |
+| wrapper hides its syntax inside `(?#...)` (R8/C1-F3) | 1 |
+| fabricate an `ESC('y', "\\y", ...)` row (R8/C1-F3) | 1 |
+| revert the `=digits` magnitude rule (R8/C2-3) | 4 |
+| revert the 128-byte name-length rule (R8/C2-4) | 20 (capped) |
+| `case 'K': return 0x4b;` in `esc_char_value` — a real miscompile (R8/C1-F5) | 1 |
+
+Three are load-bearing beyond the others. The pre-Q1 sabotage was detectable by
+NOTHING in this repo before this change — and it also fails `sweep_verb()` now,
+which is why that sweep was rewritten rather than left to narrow silently. The
+empty-external-pool sabotage is the one that measures whether "external" is
+still true. And the `\K` miscompile is the one proving `check_rows` looks at
+pcrec at all, which it did not until R8.
+
+**The battery lied once, and the lesson is one level down from the usual.** The
+first `\K` sabotage reported 0 failures — it inserted `return;` into a function
+declared `noreturn`, so nothing was sabotaged. *Prove your instrument is live
+before trusting a negative result* applies to the sabotage as much as to the
+check.
+
+The SKIP path is validated the same way: pointing `PCRE2_ABI_LIBS` at a
+nonexistent SONAME produces three `SKIP:` lines and exit 0, with zero failures.
+
+### What R8 changed about this file, and why it is worth reading before editing
+
+Four of `pcre2_check.c`'s guards exist because the panel defeated their first
+versions, all in the same way — **a control sharing a source with the thing it
+controls**:
+
+- the candidate pool is tagged with the SOURCE that produced each name, and
+  every name pcrec claims must come from libpcre2's binary INDEPENDENTLY.
+  Without that, neutering the external source left 84% of the probes running
+  (from mutations of pcrec's own table), every liveness check green, and a
+  deleted verb row invisible.
+- a wrapper's syntax must be LOAD-BEARING where it sits, tested by substituting
+  it for `\Y` and requiring the wrapper to stop compiling. "Contains the
+  syntax" was satisfied by hiding it in a PCRE2 comment.
+- `check_rows` runs pcrec as well as libpcre2. It used to run only libpcre2, so
+  a row that had started miscompiling passed.
+- the accept and default buckets require the diagnostic's SHAPE, not pcrec's
+  own catch-all STRING, which had quietly made this file the authority on which
+  module owns `(*atomic:a)`.
+
 ## Known limitation: ONE BYTE of lookahead is all any sweep here has
 
 This was previously written as "the verb doorway is weaker than its three
@@ -117,9 +258,17 @@ selector with bare `\N`) and calls it a known outstanding second home — it is
 not one instance, it is **the shape of every doorway that is keyed by one byte
 while PCRE2 keys by a string.**
 
-Per-verb rows arrive with module 'verbs' (SR-6); the sub-construct rows arrive
-with their own modules. Until then: do not read "all four doorways swept" as
-"every construct behind them is guarded".
+**One of the two rows above is now closed, and by the differential rather than
+by a sweep.** `(*NO_S…` — a branch four bytes into a verb name — is caught by
+`pcre2_check.c`, because names are compared whole against libpcre2 over ~75,000
+candidates. `(?P=` versus `(?P<` is NOT: the `(?` doorway has no name
+differential and is still keyed by one byte. That asymmetry is the honest
+statement of where PC-3 reached and where SR-9's `tail` still has to.
+
+Per-verb MODULES still arrive with SR-6 (`(*pla:...)` is a lookahead and will
+not belong to module `verbs`); Q1 gave the names an existence and a form, not a
+module. Until then: do not read "all four doorways swept" as "every construct
+behind them is guarded".
 
 Maintenance: update this file when files are added/removed or their roles
 change. Re-run the sabotage battery if the check's structure changes — a

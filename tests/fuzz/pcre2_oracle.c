@@ -1,21 +1,17 @@
 /*
  * pcre2_oracle — minimal PCRE2 8-bit CLI oracle for differential fuzzing.
  *
- * WHY the hand-declared ABI: this box has the PCRE2 8-bit runtime library
- * (libpcre2-8-0, providing /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0.*) but
- * NOT the -dev package: there is no pcre2.h, no unversioned libpcre2-8.so
- * symlink, and no pkg-config file (verified: `pkg-config --exists
- * libpcre2-8` fails, and `gcc -lpcre2-8` fails to find the library at link
- * time — only the .so.0 SONAME file exists). We cannot #include <pcre2.h>
- * or link with -lpcre2-8. Instead we hand-declare the small slice of the
- * PCRE2 8-bit ABI we need (opaque struct pointers + extern function
- * prototypes matching the documented/stable PCRE2 8-bit API) and load the
- * library at runtime with dlopen()/dlsym(), which requires neither headers
- * nor a dev symlink. This also lets us fail with our own clear diagnostic
- * if the library is ever missing, instead of a cryptic dynamic-linker error
- * at process startup. Adapted from the R1 semantics critic's ad-hoc
- * pcre2try.c (session scratchpad), which established this same approach
+ * WHY the hand-declared ABI: this box has the PCRE2 8-bit runtime but not the
+ * -dev package, so we cannot #include <pcre2.h> or link -lpcre2-8. The full
+ * rationale, the declarations and the dlopen loader now live in pcre2_abi.h —
+ * moved there by PC-3, when a second consumer (tests/registry/pcre2_check.c)
+ * would otherwise have COPIED them. Adapted from the R1 semantics critic's
+ * ad-hoc pcre2try.c (session scratchpad), which established this approach
  * against the same PCRE2 10.46 runtime.
+ *
+ * ALL COMPILES HERE USE options = 0. No PCRE2_UTF, no PCRE2_UCP, no
+ * PCRE2_CASELESS. Anything this oracle says is a statement about default
+ * 8-bit mode only; it measures no UTF conformance whatsoever.
  *
  * Usage: pcre2_oracle 'PATTERN' <subject-file> [startpos]
  *   PATTERN      the regex, taken verbatim from argv (a C string — argv
@@ -57,100 +53,28 @@
  * Exit codes: 0 normal (any of the three outcomes above was printed),
  * 2 usage error, 3 failed to load/resolve the PCRE2 library at runtime.
  */
-#define _GNU_SOURCE
-#include <dlfcn.h>
+/* FIRST: pcre2_abi.h defines _GNU_SOURCE, which must precede every libc
+ * header in the translation unit or dlinfo() is not declared. */
+#include "pcre2_abi.h"
+
 #include <errno.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-/* ---- Hand-declared PCRE2 8-bit ABI (see header comment for why) ---- */
+static Pcre2Abi pcre2;
 
-typedef size_t PCRE2_SIZE;
-typedef const unsigned char *PCRE2_SPTR;
-typedef struct pcre2_real_code_8 pcre2_code_8;
-typedef struct pcre2_real_match_data_8 pcre2_match_data_8;
-typedef struct pcre2_real_general_context_8 pcre2_general_context_8;
-typedef struct pcre2_real_compile_context_8 pcre2_compile_context_8;
-typedef struct pcre2_real_match_context_8 pcre2_match_context_8;
-
-typedef int (*fn_config)(unsigned int, void *);
-typedef pcre2_code_8 *(*fn_compile)(PCRE2_SPTR pattern, PCRE2_SIZE length,
-    uint32_t options, int *errorcode, PCRE2_SIZE *erroroffset,
-    pcre2_compile_context_8 *ccontext);
-typedef pcre2_match_data_8 *(*fn_match_data_create)(uint32_t ovecsize,
-    pcre2_general_context_8 *gcontext);
-typedef int (*fn_match)(const pcre2_code_8 *code, PCRE2_SPTR subject,
-    PCRE2_SIZE length, PCRE2_SIZE startoffset, uint32_t options,
-    pcre2_match_data_8 *match_data, pcre2_match_context_8 *mcontext);
-typedef PCRE2_SIZE *(*fn_get_ovector_pointer)(pcre2_match_data_8 *match_data);
-typedef void (*fn_match_data_free)(pcre2_match_data_8 *match_data);
-typedef void (*fn_code_free)(pcre2_code_8 *code);
-typedef int (*fn_get_error_message)(int errorcode, unsigned char *buffer,
-    PCRE2_SIZE bufflen);
-
-static fn_compile             p_compile;
-static fn_match_data_create   p_match_data_create;
-static fn_match               p_match;
-static fn_get_ovector_pointer p_get_ovector_pointer;
-static fn_match_data_free     p_match_data_free;
-static fn_code_free           p_code_free;
-static fn_get_error_message   p_get_error_message;
-
-/* Candidate names to dlopen: the SONAME first (always present with the
- * runtime package), then the unversioned name in case a -dev package is
- * installed on some other box this is run on. */
-static const char *CANDIDATE_LIBS[] = {
-    "libpcre2-8.so.0",
-    "libpcre2-8.so",
-    NULL
-};
-
-static void *load_symbol(void *handle, const char *name)
-{
-    dlerror(); /* clear any existing error */
-    void *sym = dlsym(handle, name);
-    const char *err = dlerror();
-    if (err != NULL) {
-        fprintf(stderr,
-            "pcre2_oracle: PCRE2 library is missing expected symbol '%s': %s\n"
-            "  This oracle hand-declares the PCRE2 8-bit ABI against PCRE2\n"
-            "  10.46 (libpcre2-8-0 on this box); a different PCRE2 version\n"
-            "  or build may not export this symbol. See the header comment\n"
-            "  in tests/fuzz/pcre2_oracle.c.\n", name, err);
-        exit(3);
-    }
-    return sym;
-}
-
-static void *g_lib;   /* retained so --version can query pcre2_config_8 */
-
+/* This consumer's policy on a missing library is FAIL HARD: an absent oracle
+ * means no ground truth, and a fuzz run that silently proceeded without one
+ * would report agreement it never measured. tests/registry/pcre2_check.c takes
+ * the opposite policy for the opposite reason — see pcre2_abi.h. */
 static void load_pcre2(void)
 {
-    void *handle = NULL;
-    for (int i = 0; CANDIDATE_LIBS[i] != NULL; i++) {
-        handle = dlopen(CANDIDATE_LIBS[i], RTLD_NOW | RTLD_LOCAL);
-        g_lib = handle;
-        if (handle) break;
-    }
-    if (!handle) {
-        fprintf(stderr,
-            "pcre2_oracle: could not load the PCRE2 8-bit runtime library.\n"
-            "  Tried: libpcre2-8.so.0, libpcre2-8.so\n"
-            "  dlopen error: %s\n"
-            "  Install the PCRE2 8-bit runtime (Debian/Ubuntu package\n"
-            "  'libpcre2-8-0') to use this oracle.\n", dlerror());
-        exit(3);
-    }
-
-    p_compile             = (fn_compile)load_symbol(handle, "pcre2_compile_8");
-    p_match_data_create   = (fn_match_data_create)load_symbol(handle, "pcre2_match_data_create_8");
-    p_match               = (fn_match)load_symbol(handle, "pcre2_match_8");
-    p_get_ovector_pointer = (fn_get_ovector_pointer)load_symbol(handle, "pcre2_get_ovector_pointer_8");
-    p_match_data_free     = (fn_match_data_free)load_symbol(handle, "pcre2_match_data_free_8");
-    p_code_free            = (fn_code_free)load_symbol(handle, "pcre2_code_free_8");
-    p_get_error_message   = (fn_get_error_message)load_symbol(handle, "pcre2_get_error_message_8");
+    char why[512];
+    if (pcre2_abi_load(&pcre2, why, sizeof why) == PCRE2_ABI_OK) return;
+    fprintf(stderr,
+        "pcre2_oracle: %s\n"
+        "  Install the PCRE2 8-bit runtime (Debian/Ubuntu package\n"
+        "  'libpcre2-8-0') to use this oracle.\n", why);
+    exit(3);
 }
 
 static unsigned char *read_file(const char *path, size_t *out_len)
@@ -185,12 +109,9 @@ static unsigned char *read_file(const char *path, size_t *out_len)
  * it alongside results. */
 static void print_version(void)
 {
-    fn_config cfg = (fn_config)dlsym(g_lib, "pcre2_config_8");
-    char buf[64] = {0};
-    if (cfg && cfg(11 /* PCRE2_CONFIG_VERSION */, buf) >= 0)
-        printf("%s\n", buf);
-    else
-        printf("unknown\n");
+    char buf[64];
+    pcre2_abi_version(&pcre2, buf, sizeof buf);
+    printf("%s\n", buf);
 }
 
 int main(int argc, char **argv)
@@ -224,11 +145,11 @@ int main(int argc, char **argv)
 
     int errorcode;
     PCRE2_SIZE erroffset;
-    pcre2_code_8 *re = p_compile((PCRE2_SPTR)pat, strlen(pat), 0,
+    pcre2_code_8 *re = pcre2.compile((PCRE2_SPTR)pat, strlen(pat), 0,
                                   &errorcode, &erroffset, NULL);
     if (!re) {
         unsigned char buf[256];
-        p_get_error_message(errorcode, buf, sizeof buf);
+        pcre2.get_error_message(errorcode, buf, sizeof buf);
         fprintf(stderr, "pcre2_oracle: compile error at offset %zu: %s\n",
                 (size_t)erroffset, buf);
         printf("cerr %d\n", errorcode);
@@ -236,8 +157,8 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    pcre2_match_data_8 *md = p_match_data_create(16, NULL);
-    int rc = p_match(re, (PCRE2_SPTR)subj, subjlen, startpos, 0, md, NULL);
+    pcre2_match_data_8 *md = pcre2.match_data_create(16, NULL);
+    int rc = pcre2.match(re, (PCRE2_SPTR)subj, subjlen, startpos, 0, md, NULL);
     if (rc == -1) {
         /* PCRE2_ERROR_NOMATCH: a genuine verdict. */
         printf("nomatch\n");
@@ -246,16 +167,16 @@ int main(int argc, char **argv)
          * own safeguard tripped, not a match/no-match verdict. See the
          * header comment's "mlimit" documentation. */
         unsigned char buf[256];
-        p_get_error_message(rc, buf, sizeof buf);
+        pcre2.get_error_message(rc, buf, sizeof buf);
         fprintf(stderr, "pcre2_oracle: match-time limit hit (rc=%d): %s\n", rc, buf);
         printf("inconclusive %d\n", rc);
     } else {
-        PCRE2_SIZE *ov = p_get_ovector_pointer(md);
+        PCRE2_SIZE *ov = pcre2.get_ovector_pointer(md);
         printf("match %zu %zu\n", (size_t)ov[0], (size_t)ov[1]);
     }
 
-    p_match_data_free(md);
-    p_code_free(re);
+    pcre2.match_data_free(md);
+    pcre2.code_free(re);
     free(subj);
     return 0;
 }

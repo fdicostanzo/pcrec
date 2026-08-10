@@ -1359,3 +1359,73 @@ test can see, and look at what is hiding behind each one.**
 `engines` column load-bearing; or the base grammar itself needs to vary
 (BRE/ERE under V-D), which is the one case that genuinely needs a second
 grammar file rather than a second table.
+
+## D25 — 2026-08-10 — the `(*` doorway gets NAME tables, and a "not a known name" outcome distinct from "requires a module" (Q1)
+
+**Decision.** Doorway 3 (`(*`) reads the verb NAME and answers with one of four
+things instead of one: the quantifier error for an empty name, the name table's
+"not recognized" message, a name's own message (`MARK` alone has one), or the
+row's "requires module 'verbs'". The names live in `src/parse/registry.c` as two
+`VerbName` tables — not as `RegRow`s — selected by the CASE of the first name
+byte, exactly as libpcre2 selects between its own two tables.
+
+**Why the old answer was wrong, not merely coarse.** One catch-all row answered
+"requires module 'verbs'" for every name. `(*NOTAVERB)` was therefore promised
+that a module would one day implement it, and no module ever will, because PCRE2
+has no such verb. `(*)` was called a verb when PCRE2 reads `(` followed by a `*`
+that quantifies nothing. `a(*CR)` was called a verb when a start-of-pattern
+option away from the start is an error. Three wrong answers, all shipped.
+
+**The reason it is worth building NOW rather than with module 'verbs' (SR-6),
+which is where SR-1 put it.** SR-1's argument was sound at the time: naming
+forty verbs that nothing distinguishes and no test exercises is fiction in a
+file whose purpose is to stop syntax knowledge from being fiction. What changed
+is the second half of that sentence. `docs/design_registry_selectors.md` §9
+(T-12) is the strongest argument any review in this project has produced: every
+finding in R4, R5 and R6 ran into "a check that iterates what EXISTS cannot see
+what is MISSING", and for a NAME-keyed doorway that wall comes down the moment
+an outside authority can be asked about a name pcrec has never heard of. That
+check is worthless while pcrec's answer does not depend on the name. So Q1 is
+not per-verb rows arriving early — it is the precondition for PC-3's only
+mechanism that scales coverage without scaling human transcription.
+
+**Why VerbName and not RegRow.** A `RegRow` carries a module, a feature bit, an
+engine mask, a diagnostic template and a hand-written note. Fifty of them would
+repeat one module fifty times and carry fifty notes nobody had measured — SR-1's
+objection, still correct. A `VerbName` answers exactly one question ("does PCRE2
+have this name, and in which forms") and **every bit of it is verified against
+libpcre2 on every run** by `tests/registry/pcre2_check.c`. Nothing in those
+tables is asserted; it is recorded measurement, and a measurement that has a
+test is not fiction. The two are different KINDS of claim and they get different
+schemas rather than one schema stretched over both.
+
+**The form bits are the measurement, not a theory.** `VF_BARE`, `VF_ARG`,
+`VF_EMPTYARG`, `VF_EQNUM`, `VF_GROUPARG`, `VF_ATSTART` were chosen because they
+are what varies across libpcre2's actual behaviour, measured over the whole verb
+surface: `(*ACCEPT:)` compiles and `(*MARK:)` does not; `(*pla:x` is "missing
+closing parenthesis" (the name WAS recognised) while `(*ACCEPT:x` is "not
+recognized"; `a(*CR)` is an error and `a(*ACCEPT)` is not. An earlier draft
+tried to name five verb CATEGORIES instead; the categories were a theory about
+PCRE2 and the bits are PCRE2's answer.
+
+**Messages are PCRE2's own wording, byte for byte** — "(*VERB) not recognized or
+malformed", "(*alpha_assertion) not recognized", "(*MARK) must have an argument"
+— for the same reason the POSIX collating rows already were: where AGREEMENT is
+the entire claim, saying it in different words makes the claim harder to check
+and no clearer to read.
+
+**What this deliberately does NOT do.** It does not implement any verb; every
+name here still ends the compile. It does not give the lower table's names their
+real modules (`(*pla:...)` is a lookahead and will belong to module
+`lookaround`, not `verbs`) — that is SR-6's call, made with the module, and
+answering it now would be the fiction all over again. And the at-start rule is
+implemented as `offset == 0` rather than as a general "preceded only by at-start
+verbs" scan, because any earlier verb ends the compile first, so the general
+scan's only interesting branch is unreachable today; `pcrec_ext_verb` says so
+and says what makes it wrong later.
+
+**Revisit when:** SR-6 lands module 'verbs' and these names need real modules
+and real handlers; or SR-9's `tail` selector arrives, at which point the upper
+table's shape should be re-examined against it (they are orthogonal — §7 of the
+selector design says so — but they touch the same doorway); or a libpcre2
+upgrade makes `pcre2_check.c` fail, which is the table doing its job.

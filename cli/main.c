@@ -30,6 +30,7 @@ static void usage(FILE *f)
           "\n"
           "syntax queries (no pattern, no -o):\n"
           "  --list-syntax     TSV of every non-base construct pcrec knows\n"
+          "  --list-verbs      TSV of the (*VERB) names pcrec recognises\n"
           "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
           "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
           "                    exists today; a second one arrives with SR-7)\n", f);
@@ -58,6 +59,7 @@ int main(int argc, char **argv)
     const char *pattern = NULL;
     int list_syntax = 0;
     const char *explain = NULL, *flavour = NULL;
+    int list_verbs = 0;
 
     int no_more_opts = 0;
     for (int i = 1; i < argc; i++) {
@@ -70,6 +72,7 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.emit_main = 1;
         else if (!no_more_opts && !strcmp(a, "-i")) opt.caseless = 1;
         else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
         else if (!no_more_opts &&
                  (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
             if (i + 1 >= argc) {
@@ -108,16 +111,31 @@ int main(int argc, char **argv)
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
      * half of it. */
-    if (list_syntax || explain) {
-        if (list_syntax && explain) {
-            fprintf(stderr, "pcrec: --list-syntax and --explain are separate "
-                            "queries; use one\n");
+    if (list_syntax || explain || list_verbs) {
+        if (list_syntax + list_verbs + (explain != NULL) > 1) {
+            fprintf(stderr, "pcrec: --list-syntax, --list-verbs and --explain are "
+                            "separate queries; use one\n");
             return 1;
         }
         if (pattern || outpath) {
             fprintf(stderr, "pcrec: %s takes no pattern and no -o\n",
-                    list_syntax ? "--list-syntax" : "--explain");
+                    list_syntax ? "--list-syntax" :
+                    list_verbs  ? "--list-verbs"  : "--explain");
             return 1;
+        }
+        /* --list-verbs has no flavour axis: the verb tables record what libpcre2
+         * accepts, and there is exactly one PCRE2. When SR-7 adds a flavour that
+         * genuinely differs here, this is where it grows one. */
+        if (list_verbs && flavour) {
+            fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
+                            "--explain only\n");
+            return 1;
+        }
+        if (list_verbs) {
+            char *v = pcrec_syntax_verbs();
+            fputs(v, stdout);
+            free(v);
+            return 0;
         }
         unsigned fl = 0;
         if (flavour && !(fl = pcrec_flavour_by_name(flavour))) {
