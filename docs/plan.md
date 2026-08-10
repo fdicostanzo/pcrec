@@ -142,6 +142,39 @@ the prediction, including when the prediction was wrong.
 
 ## Parser structure — the syntax construct registry (D24)
 
+**THE AGREED ORDER (R6, 2026-08-10). Work these four in sequence.** Each is a
+checkpoint: critic panel (D6), journal entry, plan STATE update, touched
+CLAUDE.md files, commit, push.
+
+- [FIX-1] STATE:not-started — K5 and K6, the two MISCOMPILES, first because they
+  are the class the charter forbids ("never miscompile") and both are small.
+  `a{65536}` and `{1}` are each silently reinterpreted as literal text and
+  compile a matcher for the wrong language. docs/known_issues.md carries the
+  measured probes and, for K6, the malformed brace forms that must KEEP
+  compiling (`a{`, `a{}`, `a{,}`, `a{1`, `}`) so the fix does not over-reach.
+  Oracle-verified corpus cases in the same commit
+- [PC-3] see "PCRE2 compliance tracking" below — SECOND, and it now carries Q1
+  (a distinct "recognised but not a known name" outcome). Q1 is what makes an
+  external name differential possible at all; without it the catch-all answers
+  for every name and every assertion collapses. Building PC-3 against the
+  CURRENT 67-row table is what turns that table into an externally verified
+  baseline, so later changes are diffs against a known-good reference
+- [FIX-2] STATE:not-started — K3 and K4, the class-bracket doorway. THIRD, not
+  last: R6's testability critic showed the "the fix would be thrown away"
+  premise was wrong (K4 is untouched by any selector scheme, and its structural
+  scan must exist under every design), and fixing them first gives the registry
+  change a correctness target at the doorway it changes most. The four
+  KNOWN-WRONG pinned lines in tests/reject/ WILL FAIL when this lands — that is
+  the signal working; check each against libpcre2 and move it into the normal
+  tables in the same commit
+- [SR-9] STATE:not-started — the registry selector change, LAST and least
+  urgent. Build the `byte + tail` design in §7 of
+  docs/design_registry_selectors.md — NOT the string-selector version in §2,
+  which R6 rejected with measurements (§0). One new field, five new rows, zero
+  changes to parse.c, base-tier cost unchanged, the 255-byte sweep provably
+  identical. A critic prototyped and measured it
+
+
 Sequenced so each step pays for itself before the next is justified. SR-1/SR-2
 collapse a duplication that has already produced one shipped bug; everything
 after waits for a forcing function. Frank's priority stands throughout: the

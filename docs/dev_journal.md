@@ -2527,3 +2527,77 @@ R6 measured at both the `(?` and `(*` doorways. **Q1 + PC-3 are the load-bearing
 pair, both buildable against today's 67-row table.** The selector change is
 secondary. That is worth knowing before anyone reaches for the interesting
 refactor first.
+
+## 2026-08-10 — session close: SR-2/3/4, R5, R6, and an order for next time
+
+Ten commits, `cc125b6..HEAD`, all pushed. Working tree clean apart from the
+uncommitted (and now gitignored) docs/wake.md. Nothing in `STATE:started`.
+
+**Landed:** the whole SR arc — SR-2 (parse.c is the base grammar and nothing
+else), SR-3 (`--list-syntax` / `--explain`), SR-4 (the dump made load-bearing) —
+plus R5, the first adversarial panel over all three, and R6, a design review of
+a proposal that came out of R5.
+
+**Baseline at close, green from a fresh clone as well as in place:** 805 corpus
+/ 73 CLI / 211 reject / 127 registry + 2 SR-4 doc checks / 29 codegen / 7
+trie-identity, verify_rxt 796/796, fuzz seed 1 zero divergences, bench zero
+budget failures.
+
+**Six critics across two panels, and they found more than the work did.** Four
+confirmed bugs (K3–K6, two of them miscompiles), one design proposal rejected
+with measurements, and — the part worth carrying — **four false claims of mine,
+three of which I had propagated into multiple files:**
+
+1. "The base tier performs zero registry lookups." In six places, in D24 and
+   three source files. FALSE: `[abc]` costs one, `(?:` costs zero rather than
+   the documented "one, once". SR-5 was scheduled to encode it.
+2. The `noreturn` attributes "fail the build". They warn. No -Werror, and no -W
+   option controls that warning.
+3. My byte-identity harness claimed "every byte 0x01..0xff" while `$(...)`
+   silently made byte 0x0A the empty string.
+4. K2's own note generalised from single digits: `(a)\12` IS octal, so
+   "(backreference/octal)" is right for `\ddd` and wrong only for a bare digit.
+
+Every one took a single measurement to check and none of them had been measured.
+
+**The two questions that actually found things**, neither of which was on any
+checklist:
+
+- *Which of the branches I just added can no test see?* Asked because a sabotage
+  returned zero. K3 was behind the answer.
+- *When a sabotage comes back clean, do not conclude the branch is unreachable —
+  find the input that reaches it, then ask why nothing in the repo supplies one.*
+  I stopped at the first half and wrote the weaker conclusion into a commit
+  message; a critic corrected it.
+
+**An identity proof cannot see a bug both sides share.** SR-2's 4173-case proof
+was correct and reported "no change" for K4 because K4 was carried across
+faithfully. "Did I change anything" and "was it right to begin with" need
+different instruments.
+
+**My tooling failed four times with one signature: a check that reports success
+when it has not run.** Multi-line `grep -F`; an empty replacement making a guard
+vacuously true; the newline strip; and exact counts that disarm themselves for
+anyone who follows the failure message's own instructions. MECH-1/MECH-2 have
+been in the plan for three sessions for exactly this.
+
+**The design conversation, and where it ended.** Frank proposed keying the
+registry on whole words rather than single bytes (`(*VERB`, `[:name:]`), noted
+that `^` can just be part of a POSIX name, and suggested longest-match to
+separate `\N` from `\N{`. I wrote it up as SR-9; three critics rejected the
+mechanism and kept the diagnosis. Adopted instead: `byte + tail`, prototyped and
+measured — one field, five rows, zero parse.c changes. The reprioritisation
+matters more than the design: name-keyed rows would make a MISSING row
+externally falsifiable, which is the first mechanism here that scales coverage
+without scaling human transcription — but that depends on **Q1**, not on the
+selector shape. So Q1 and PC-3 are load-bearing and the selector change is last.
+
+Frank also asked the forward question about `\p{...}`: nested registry tables,
+canonicalised entities, handlers calling other tables. The measurements support
+it — `(*` is genuinely two tables, `(?C` is a delimiter class — and the answer
+for now is to build the SHAPE (a handler's currency is a SET; a row can name a
+denotation) and let module `classes` prove it, since it needs `\d`/`\w`/`\s` AND
+`[:...:]` and therefore needs two levels on day one.
+
+**Next session: work docs/plan.md's four steps in order** — FIX-1 (K5/K6), PC-3
+(with Q1), FIX-2 (K3/K4), SR-9 (byte+tail). See docs/wake.md.
