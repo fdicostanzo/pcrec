@@ -2251,3 +2251,94 @@ its blind spot was what found the bug.
 
 Baseline unchanged and green: 805 corpus / 49 CLI / 112 reject / 127 registry /
 29 codegen / 7 trie-identity, fuzz seed 1 zero divergences.
+
+## 2026-08-10 — SR-3, SR-4, and R5: the arc lands, and the panel finds four bugs
+
+Three commits after SR-2: `--list-syntax`/`--explain` (SR-3), the dump made
+load-bearing (SR-4), and the R5 fixes. Suite grew 805/49/112/127/29/7 ->
+805/73/192/127/29/7, all green, plus two SR-4 doc checks.
+
+**SR-3** renders the 67 rows as 12-column TSV and answers for one construct
+through the same helpers, so the two cannot disagree. Twelve columns, not the
+plan's seven: SR-4 needs to know how to PROBE a row and what text to expect, and
+deriving those from the rest would put ext.c's diagnostic templates in a second
+home. Kept INTERNAL rather than public API — the CLI includes core/internal.h
+for two functions returning finished text. Promoting into lib/pcrec.h later is
+the reversible direction; the reverse is not.
+
+**SR-4 did not do what its plan line said, deliberately.** The text says
+tests/reject/ should iterate the dump INSTEAD of its 93 hand-written entries.
+That trade gives away the property it is protecting: since SR-2 the module names
+live in ONE place and the parser renders from it, so a test reading the same
+table cannot see a WRONG name. I did not argue this — I measured it on sabotaged
+trees:
+
+    \d's row classes -> misc            hand-written 2 fail, iterated 0
+    \s's syntax -> "zz" (not a probe)   hand-written 0,      iterated 1 fail
+    the dump returns empty              the vacuity guard fires
+    a NEW row, wrong module, no hand-written entry     caught by NEITHER
+
+So iteration was ADDED (66 checks) and the hand-written rows KEPT. The last line
+is the honest limit and it is in the plan and the CLAUDE.md: **SR-4 did not close
+R4's residual circularity.** The only external source of truth for those rows is
+libpcre2, which is now PC-3.
+
+pcre2_compliance.md is NOT rendered wholesale. Doing that would replace a survey
+— DFA-feasibility judgements, PLANNED vs PLANNED-HARD reasoning, the divergence
+post-mortems, every row about BASE syntax — with an inventory the registry can
+already print. A generated construct index is spliced between markers, and two
+checks hold the seam. The `--names` one catches the realistic failure: a module
+renamed in registry.c leaving the prose describing something that no longer
+exists.
+
+**R5: three critics, three lenses, four confirmed bugs — none of them mine.**
+
+K3 grew a second half and K4, K5, K6 are new. Two are MISCOMPILES of exactly the
+class the charter forbids: `a{65536}` and `{1}` both silently become literal
+text and compile a matcher for a different language. The other two are the
+class-bracket doorway getting PCRE2's delimiter-pair rule wrong in both
+directions. All four are pre-existing; none is an SR-2/3/4 regression. Two
+critics converged independently on the class-bracket pair, which is the
+strongest signal in the review.
+
+**SR-2's byte-identity claim held under a better instrument than mine.** The
+behaviour critic built its own driver, PROVED ITS SENSITIVITY FIRST (it catches
+the at_class_open sabotage my 4173-case harness could not), enumerated eight
+classes my harness structurally could not reach, and closed them with 8790
+further cases. Zero differences. That is how a claim should be checked.
+
+**Two findings were against my own work, and both were the same shape as the
+bugs.** I documented SR-2's `noreturn` attributes in three places as a forcing
+function that "fails the build". It warns. There is no -Werror and no -W option
+controls that warning. And my sweep header claimed "every byte 0x01..0xff" while
+`b="$(printf ...)"` silently made byte 0x0A the empty string — eight cases
+testing a shorter pattern and reporting as passes, on the byte most likely to
+behave specially in a regex parser. Reworded the first; closed the second with
+240 byte-exact python-driven cases across ten doorway contexts (zero
+differences), so the claim is now true rather than merely corrected.
+
+**The question that actually found things**, and it was not on any checklist:
+*which of the branches I just added can no test see?* I asked it because a
+sabotage returned zero, and K3 was sitting behind the answer. Every other bug in
+R5 came from pointing the same question at something else — at the accept
+controls (all seven put the class at the end of the pattern, which is why K4
+survived), at the ratchet (empty, and structurally unable to hold any of these),
+at the drift detector (whose remedy regenerates the sabotage).
+
+**An identity proof cannot see a bug that both sides share.** SR-2's proof was
+correct and reported "no change" for K4 because K4 was carried across
+faithfully. It answers "did I change anything", never "was it right to begin
+with". This session needed both instruments and only had one until the critics
+brought the other.
+
+**My tooling failed three times, all with one signature: a check that reports
+success when it has not run.** A multi-line `grep -F` guard (grep splits the
+pattern per line, so a removed block still "matched" via a stray `}`); an empty
+replacement making a post-edit guard vacuously true while the editor had already
+failed; and the newline strip above. MECH-1/MECH-2 have been in the plan for two
+sessions for precisely this, and I hand-rolled the machinery again instead of
+building them. That is now the highest-value process item by a distance.
+
+**Left for next time, in order:** K5 and K6 (the miscompiles), then K3+K4 (one
+fix, but it needs a D24 schema call on whether class-open becomes a fifth
+doorway kind), then MECH-1. R5-Q1 — whether to adopt -Werror — is Frank's.

@@ -194,9 +194,58 @@ static void check_wellformed(void)
             }
             if (r->diag == RD_MODULE_OCTAL && k != RK_ESC)
                 bad("%s (%s): the octal/backref diagnostic shape is escape-only", kn, r->syntax);
+
+            /* Which diagnostic SHAPES a row may carry is a property of its
+             * DOORWAY, since ext.c renders each doorway's own template and
+             * knows nothing of the others'. ext.c also carries a BAD_ROW guard
+             * for the mismatch — a branch nothing can currently reach, which an
+             * R5 critic correctly reported as untested. Asserting the invariant
+             * is the right level to test it at: the runtime guard stays as
+             * defence, and this is what keeps it unreachable. */
+            switch ((RegKind)k) {
+            case RK_ESC:
+                if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL)
+                    bad("%s (%s): the escape doorway renders only the module "
+                        "templates; this row's diagnostic shape has no renderer",
+                        kn, r->syntax);
+                break;
+            case RK_GROUP:
+                if (r->diag != RD_MODULE && r->diag != RD_NONE)
+                    bad("%s (%s): the (? doorway renders only the module "
+                        "template; this row's diagnostic shape has no renderer",
+                        kn, r->syntax);
+                break;
+            case RK_VERB:
+            case RK_CLASSBRACKET:
+                if (r->diag != RD_FIXED)
+                    bad("%s (%s): this doorway has no module template — its rows "
+                        "must carry fixed text", kn, r->syntax);
+                break;
+            default:
+                break;
+            }
         }
 
         if (nany > 1) bad("%s: %d catch-all rows; at most one can ever be reached", kind_name((RegKind)k), nany);
+
+        /* Whether a doorway HAS a catch-all is load-bearing in both directions,
+         * and both directions are dispatch behaviour rather than bookkeeping.
+         * `(?` and `(*` must always resolve, which is why ext.c can treat a
+         * missing row as an internal error; `\` and `[` must be able to DECLINE,
+         * because an unknown escape is "unknown escape" and a `[` inside a class
+         * is usually an ordinary member. A catch-all added to either of the
+         * latter would silently turn every unmatched byte into a construct. */
+        {
+            int wants_any = (k == RK_GROUP || k == RK_VERB);
+            if (wants_any && nany != 1)
+                bad("%s: %d catch-all rows, needs exactly 1 — this doorway must "
+                    "always resolve, and ext.c has no other answer for an "
+                    "unrecognised byte", kind_name((RegKind)k), nany);
+            if (!wants_any && nany != 0)
+                bad("%s: %d catch-all rows, needs 0 — this doorway must be able "
+                    "to DECLINE, or every unmatched byte becomes a construct",
+                    kind_name((RegKind)k), nany);
+        }
         snprintf(label, sizeof label, "well-formed: %s rows (%zu)", kind_name((RegKind)k), n);
         ok(label);
     }

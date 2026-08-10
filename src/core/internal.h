@@ -279,9 +279,16 @@ const RegRow *pcrec_registry_find(RegKind k, int sel);
  *
  * The three `noreturn`s are TODAY's truth, not the design's: every row is
  * RS_MODULE or RS_REJECTED, so every dispatch ends in a diagnostic. When SR-6
- * lands the first module handler one of them starts returning a value and the
- * attribute becomes a compile error at exactly that moment — which is the point
- * of writing it down. */
+ * lands the first module handler one of them starts returning a value and gcc
+ * WARNS ("'noreturn' function does return").
+ *
+ * It warns; it does not fail the build. An earlier version of this comment
+ * claimed a compile error, and an R5 critic disproved it by writing SR-6's
+ * shape and watching `make` succeed: WARN is `-Wall -Wextra` with no -Werror,
+ * and this particular warning has no controlling -W option, so only a blanket
+ * -Werror would promote it. Whether to adopt one is a live question (R5-Q1),
+ * and until it is answered this is a loud hint, not a guard. A comment that
+ * asserts a guard which does not exist is worse than no comment. */
 void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
      __attribute__((noreturn));
 void pcrec_ext_group(Ctx *cx, int c2, size_t at) __attribute__((noreturn));

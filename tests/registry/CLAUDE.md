@@ -127,3 +127,28 @@ markers and the analysis is left to humans.
 Both checks are positive-controlled: renaming a module in the prose
 (`quoting` → `quotingx`) fails `--names`; editing one status cell in the
 generated index fails `--check`.
+
+**`--check` is a DRIFT detector, not a control, and the difference matters.**
+Its own failure message names the remedy — `--write` — which regenerates the doc
+from whatever the table now says and turns the suite green. It catches "someone
+changed the table and forgot the doc". It cannot catch "someone changed the
+table on purpose and regenerated". An R5 critic demonstrated exactly that:
+mis-assigning `(?0)`'s module fails `--check`, and one `--write` makes it pass.
+The control for a wrong module name is the hand-written table in tests/reject/,
+never this.
+
+## Two hand-written assertions that must not be tidied away (R5 N-1)
+
+`check_table_to_parser` ends with two hand-written `expect_msg` calls for the
+class-open entry to the collating rows, added because the doorway model does not
+describe that position so nothing derives them.
+
+After SR-2 they are **the only non-circular assertion about message TEXT left in
+this file.** Every other message check now reads the expected string from the
+row that the parser also renders from. An R5 critic predicted SR-2 had made the
+documented "reword the collating message → 2 failures" sabotage stale, measured
+it, and found those two calls still catch it.
+
+If they are ever folded into the derived loop as a tidy-up, `registry` loses the
+ability to see any message change at all and tests/reject/ becomes the sole
+guard. That would look like a simplification. It is not one.

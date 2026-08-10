@@ -17,6 +17,16 @@ most of the odd-looking test cases trace to a finding recorded here.
   was invisible to a 116-check suite, a sweep covering two of the four doorways
   it claimed, and a citation of a guard (TS-1) that does not guard what was
   claimed — already copied into two source files before it was caught.
+- **2026-08-10-r5-sr2-sr4.md** — R5, the SR-2/SR-3/SR-4 arc. SR-2's
+  byte-identity claim HELD under a stronger instrument than the one that made
+  it; everything else found was pre-existing, and there was a lot of it. Four
+  confirmed bugs (K3–K6), **two of them miscompiles of the exact class the
+  charter forbids**, plus a false "this fails the build" claim in three of my
+  own comments and a silent hole in my own harness where byte 0x0A became the
+  empty string. Two critics converged independently on the class-bracket bugs.
+  The most productive question was "which of the branches I just added can no
+  test see?" — asked because a sabotage returned zero, and every other bug came
+  from pointing it somewhere else.
 
 ## Conventions
 

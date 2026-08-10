@@ -130,6 +130,12 @@ accept '[a[.b]'
 accept '[^.a.]'  # `^` sits between the bracket and the delimiter
 accept '[a.b.]'  # the `.` is not preceded by `[`
 
+# A letter with NO registry row falls through to "unknown escape", and the
+# IN-CLASS spelling is a separate message that no test reached before R5 —
+# deleting it changed nothing anywhere in the suite.
+reject '\q'   "unknown escape \\q"
+reject '[\q]' "unknown escape \\q in class"
+
 echo
 echo "== assertions =="
 for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
@@ -165,8 +171,19 @@ reject '(?C1)'    "requires module 'callouts'"
 reject '(?|a)'    "requires module 'branch-reset'"
 reject '(?(1)a)'  "requires module 'conditionals'"
 reject '(?R)'     "requires module 'recursion'"
-reject '(?1)'     "requires module 'recursion'"
 reject '(?&n)'    "requires module 'recursion'"
+# All ten numeric recursion rows, by hand. Iterating the dump probes them, but
+# reads the module name from the same row the parser renders from, so it cannot
+# see a wrong name — these nine were the largest block of rows with no
+# independent human source (R5 tests critic).
+for d in 0 1 2 3 4 5 6 7 8 9; do
+    reject "(?$d)" "requires module 'recursion'"
+done
+# The pattern ENDS at the doorway. `c2 == -1` is also REG_SEL_ANY's value, so
+# the lookup lands on the catch-all twice over, and parse.c has always printed
+# '?' for the missing byte. Nothing covered this before R5.
+reject '(?'       "(??...) requires module 'modifiers'"
+reject '(*'       "requires module 'verbs'"
 reject '(?i)a'    "requires module 'modifiers'"
 reject '(?-i)a'   "requires module 'modifiers'"
 reject '(?i:a)'   "requires module 'modifiers'"

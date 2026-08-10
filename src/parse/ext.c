@@ -29,9 +29,12 @@
  * THESE FUNCTIONS DO NOT RETURN, TODAY. Every row is RS_MODULE or RS_REJECTED,
  * so every dispatch ends in a diagnostic. The `noreturn` attributes state
  * today's truth rather than the design's: when SR-6 lands the first real module
- * handler, one of these starts returning a value and gcc will reject the
- * attribute at that moment. That is the intended forcing function — a lie that
- * fails the build is better than a comment nobody reads. */
+ * handler, one of these starts returning a value and gcc warns.
+ *
+ * WARNS, not errors — this comment claimed otherwise until an R5 critic
+ * compiled SR-6's shape and watched `make` succeed. There is no -Werror in the
+ * Makefile and no -W option controls this particular warning. Treat the
+ * attribute as a loud hint whose promotion to a guard is R5-Q1. */
 
 #include "core/internal.h"
 
