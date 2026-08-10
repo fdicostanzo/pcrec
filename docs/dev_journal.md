@@ -2342,3 +2342,47 @@ building them. That is now the highest-value process item by a distance.
 **Left for next time, in order:** K5 and K6 (the miscompiles), then K3+K4 (one
 fix, but it needs a D24 schema call on whether class-open becomes a fifth
 doorway kind), then MECH-1. R5-Q1 — whether to adopt -Werror — is Frank's.
+
+### Session close — 2026-08-10
+
+Five commits, `cc125b6..5a0a9e7`, **NOT pushed** (the previous session ended
+pushed; this one was not asked to). Working tree clean apart from the
+uncommitted docs/wake.md hand-off, which is now in .gitignore because I staged
+it twice with `git add -A` after a brief that warned about exactly that in prose.
+
+**Landed:** SR-2, SR-3, SR-4, and R5 — the first adversarial panel over all
+three. The SR arc's point is delivered: parse.c is the base grammar and nothing
+else, and adding a construct means adding a row.
+
+**Baseline at close, all green from a fresh clone as well as in place:** 805
+corpus / 73 CLI / 192 reject / 127 registry + 2 SR-4 doc checks / 29 codegen /
+7 trie-identity, verify_rxt 796/796, fuzz seed 1 zero divergences, bench zero
+budget failures at load 1.5.
+
+**The session in one line:** three steps of pure restructuring, proved
+behaviour-identical on 4173 cases — and the four real bugs were all found by
+asking what the proof could not see.
+
+**What I would tell the next session about my own errors.** They were not the
+same error this time; they were the same SIGNATURE, three times, and all in
+tooling rather than code: a check that reports success when it has not run.
+Multi-line `grep -F` (greps each line independently, so a removed block still
+"matched"). An empty replacement string making a post-edit guard vacuously true
+while the editor had already failed. `$(printf ...)` stripping the trailing
+newline so byte 0x0A became the empty string, and eight sweep cases tested a
+shorter pattern and passed. MECH-1 and MECH-2 have been in the plan for two
+sessions to prevent precisely this and I hand-rolled the machinery again.
+
+**What went right and is worth repeating.** Capturing the baseline from a
+pristine `git archive HEAD` build rather than "the binary I had before I
+started". Requiring critics to write findings incrementally — six for six over
+two sessions. Briefing them to attack the DEFENCE: two independently converged
+on the class-bracket bugs, one disproved a claim in my own comments, and one
+predicted a sabotage result would be stale, measured it, and reported that it
+was wrong. And when a design decision cut against the plan text (SR-4's
+"instead of"), measuring both options on sabotaged trees rather than arguing —
+2 failures vs 0 settled it in a way no amount of reasoning would have.
+
+**Next:** K5 and K6, the two miscompiles. Then K3+K4, which need a D24 call on
+whether the class-open position becomes a fifth doorway kind. Then MECH-1.
+R5-Q1 (-Werror) and the push are Frank's.
