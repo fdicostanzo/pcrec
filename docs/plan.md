@@ -209,7 +209,7 @@ named, cleanly rejected and queried.
   and newlines in a field rather than escaping them (an escaping scheme is a
   thing every SR-4 consumer would have to reimplement identically); tests/cli
   case 10 asserts it by counting fields, 49 -> 73 CLI checks
-- [SR-4] STATE:not-started — tests/reject/ ITERATES the dump instead of its
+- [SR-4] STATE:completed — tests/reject/ ITERATES the dump instead of its
   hand-written 93 entries, and docs/pcre2_compliance.md is RENDERED from it.
   Adding a row then covers itself in both. Keep the accept-controls
   hand-written — they must not come from the same source as the thing they
@@ -217,7 +217,24 @@ named, cleanly rejected and queried.
   critic finding): `\x{...}` and the possessive `+` have NO registry row, so
   iterating the dump silently drops their existing tests/reject/ coverage unless
   SR-4 special-cases them explicitly. Same for any construct rejected with fixed
-  text rather than a "requires module" diagnostic
+  text rather than a "requires module" diagnostic.
+  BUILT 2026-08-10, with the word INSTEAD deliberately not honoured. Iteration
+  was ADDED (66 checks, 112 -> 179) and the 93 hand-written rows KEPT, because
+  the trade the step text asks for gives away the property it is trying to
+  protect: since SR-2 the module names live in ONE place and the parser renders
+  its diagnostics from it, so a test that reads the same table cannot see a
+  WRONG name. MEASURED rather than argued — changing `\d`'s row from `classes`
+  to `misc` fails 2 hand-written checks and 0 iterated ones; changing a row's
+  `syntax` to something that does not reach its doorway fails 1 iterated check
+  and 0 hand-written. The two layers answer different questions. Also measured
+  and worth carrying: a NEW row with a plausible-but-wrong module and no
+  hand-written entry is caught by NEITHER — R4's residual circularity is
+  UNCHANGED by SR-4, not closed by it, and the only external source of truth
+  for those rows is libpcre2 (see PC-3). docs/pcre2_compliance.md is NOT
+  rendered wholesale — that would replace a survey with an inventory; a
+  generated construct INDEX is spliced into it between markers, and two
+  make-test checks hold the seam (index matches the dump; every module named in
+  the prose exists in the registry). Both positive-controlled
 - [SR-5] STATE:not-started — guard the fast path CLAIM, do not just assert it:
   base-tier patterns must perform ZERO registry lookups (`(?:` excepted). Use
   an instrumented build with a lookup counter, the way run_trie_identity.sh
@@ -307,3 +324,17 @@ document). Mechanize instead.
 - [PC-2] STATE:not-started — periodic re-survey: re-read pcre2syntax.html,
   re-run tests/reject, move landed modules from REJECTED to OK, re-stamp the
   date. Do this whenever a module lands and at each checkpoint review
+- [PC-3] STATE:not-started — AN EXTERNAL SOURCE OF TRUTH FOR THE REGISTRY, which
+  is the one thing SR-4 could not provide. Iteration reads the same table the
+  parser renders from, so a row that is plausibly wrong in the single home is
+  invisible to it (measured under SR-4: a new row with a wrong module and no
+  hand-written entry is caught by nothing). Module NAMES are pcrec's own
+  taxonomy and no outside authority can check them — but two things about every
+  row ARE externally checkable against libpcre2, and nothing checks them today:
+  (a) every `RS_REJECTED` row claims "PCRE2 rejects this too", which is a
+  measurable claim, and (b) every row's `syntax` field claims to be a valid
+  probe for a construct PCRE2 actually has, so libpcre2 accepting it as ordinary
+  syntax means the row describes something that does not exist. tests/fuzz/
+  already links libpcre2 through a dlopen probe, so the machinery exists. This
+  is the natural home for the finding that pcrec accepts `[:alpha:]` (K3) —
+  found by hand, and findable mechanically

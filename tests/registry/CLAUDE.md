@@ -102,3 +102,28 @@ Maintenance: update this file when files are added/removed or their roles
 change. Re-run the sabotage battery if the check's structure changes — a
 conformance test that cannot fail is worse than none, because it reads as
 coverage.
+
+## compliance_section.py (SR-4)
+
+Connects the registry to `docs/pcre2_compliance.md`. Run from
+`run_registry_tests.sh` after `registry_check`, so its two results are printed
+*outside* the C harness's "checks passed: N" summary — the count in that line is
+registry_check.c's alone.
+
+- `--check` — the generated construct INDEX in the compliance doc must match
+  `pcrec --list-syntax`. Regenerate with `--write` after adding a row.
+- `--names` — every ``module `X` `` named in the doc's hand-written prose must
+  be a module the registry knows. This is the check that catches the realistic
+  failure: a module renamed in registry.c leaves the prose confidently
+  describing something that no longer exists, and nothing else would notice.
+
+The document is NOT rendered wholesale, which the SR-4 plan text asked for.
+Doing that would replace a survey — DFA-feasibility judgements, the
+`PLANNED`/`PLANNED-HARD` reasoning, the divergence post-mortems, and every row
+about BASE syntax, which the registry deliberately does not describe — with an
+inventory the registry can already print. So the inventory is generated between
+markers and the analysis is left to humans.
+
+Both checks are positive-controlled: renaming a module in the prose
+(`quoting` → `quotingx`) fails `--names`; editing one status cell in the
+generated index fails `--check`.

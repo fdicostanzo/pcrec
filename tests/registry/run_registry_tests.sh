@@ -39,3 +39,19 @@ if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
 fi
 
 "$BIN"
+rc=$?
+
+# SR-4: the dump is load-bearing for docs/pcre2_compliance.md. The construct
+# INDEX in that file is generated from `pcrec --list-syntax`, so it cannot drift
+# from the compiler; the surrounding analysis is hand-written and left alone.
+# The names check is the one that catches the realistic failure — a module
+# renamed in registry.c leaving the prose describing something that no longer
+# exists.
+PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+if [ ! -x "$PCREC" ]; then
+    echo "FAIL: registry: pcrec binary not found at $PCREC (SR-4 checks skipped)" >&2
+    exit 1
+fi
+if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --check; then rc=1; fi
+if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --names; then rc=1; fi
+exit $rc

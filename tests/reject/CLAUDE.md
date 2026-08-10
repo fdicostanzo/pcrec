@@ -6,8 +6,49 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 93 constructs asserted to be rejected, plus 19
-  accept-controls. Part of `make test`; env: PCREC, KEEP=1.
+- **run_reject_tests.sh** — 93 constructs asserted to be rejected by hand, 66
+  more reached by iterating `pcrec --list-syntax`, plus 19 accept-controls.
+  Part of `make test`; env: PCREC, KEEP=1.
+
+## Two layers, and why neither replaces the other (SR-4)
+
+SR-4's plan text said to iterate the dump INSTEAD of the hand-written rows.
+That trade was not taken, and the reason is measurable rather than aesthetic.
+
+Since SR-2, module names live in exactly ONE place — `src/parse/registry.c` —
+and the parser renders its diagnostics from it. A test that reads that same
+table and asks "does the diagnostic match the table" therefore cannot see a
+WRONG name: change `\d`'s row from `classes` to `misc` and the parser and the
+loop agree, in unison, about the wrong answer.
+
+Measured on a sabotaged copy of the tree:
+
+| sabotage (exact edit) | hand-written | iterated |
+|---|---|---|
+| `ESC('d', "\d", classes, ...)` → `ESC('d', "\d", misc, ...)` | **2 fail** | 0 |
+| `ESC('s', "\s", ...)` → `ESC('s', "zz", ...)` (a `syntax` that does not reach its doorway) | 0 | **1 fail** |
+| `pcrec_syntax_tsv` returns an empty string | 0 | 0, but the vacuity guard fires |
+| a NEW row with a plausible wrong module and no hand-written entry | 0 | 0 |
+
+The last row is the honest limit: **SR-4 did not close R4's residual
+circularity.** Iteration guarantees COVERAGE — no row escapes a probe, and
+adding a row needs no edit here. The hand-written rows are an independent HUMAN
+source for the name a caller is actually given. The maintenance cost of the
+second one IS the check; that is the same rule the accept-controls follow and
+the same lesson the trie-identity check learned. An external answer for the
+remaining gap needs libpcre2, not another reading of our own table — see PC-3.
+
+## What iteration structurally cannot reach
+
+Three things, so "the dump covers it" is never read as more than it is:
+
+- `\x{...}` and the possessive `+` have **no registry row** — they are
+  sub-cases of base constructs, deliberately (D24) — so they are hand-written
+  and always will be.
+- the **in-class spelling** of an escape (`[\d]`) is a different diagnostic
+  from the atom spelling that the `syntax` field probes.
+- anything rejected by the **base grammar** (`a{1,2`, unmatched `)`, an
+  out-of-order range) has no row at all.
 
 ## Why it cannot live in the .rxt corpus
 

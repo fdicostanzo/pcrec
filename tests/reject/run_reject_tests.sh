@@ -192,8 +192,102 @@ reject 'a++' "possessive quantifier requires module 'atomic-groups'"
 reject 'a?+' "possessive quantifier requires module 'atomic-groups'"
 
 echo
+echo "== every registry row covers itself (SR-4) =="
+# Iterate `pcrec --list-syntax` and probe EVERY non-base row with its own
+# `syntax` field. This is the half of SR-4 that makes the table load-bearing:
+# a construct added to src/parse/registry.c is tested here the moment its row
+# exists, with no edit to this file, so coverage cannot lag the table.
+#
+# WHAT THIS CANNOT DO, and why the hand-written rows above are still here.
+# SR-4's plan text said to iterate the dump INSTEAD of them. That trade was not
+# taken, because it gives away the property that matters most. Since SR-2 the
+# module names live in exactly ONE place — the registry — and the parser renders
+# its diagnostics from it. A test that reads the same table and asks "does the
+# diagnostic match the table" therefore cannot see a WRONG module name: change
+# `\d`'s row from `classes` to `misc` and the parser and this loop agree
+# perfectly, in unison, about the wrong answer.
+#
+# The hand-written rows are a SECOND, HUMAN source for that name. That is the
+# same rule the accept-controls follow and the same lesson the trie-identity
+# check learned: a control must not share a source with the thing it controls.
+# So the two layers do different jobs — iteration guarantees COVERAGE (no row
+# escapes a probe), the hand-written table guarantees CORRECTNESS (the name a
+# caller is given is one a human wrote down independently). Neither subsumes
+# the other, and the maintenance cost of the second one IS the check.
+#
+# Three things iteration structurally cannot reach, which is the R4 warning
+# restated with its consequence: `\x{...}` and the possessive `+` have NO row
+# (they are sub-cases of base constructs, deliberately — see D24), and the
+# in-class spelling of an escape (`[\d]`) is a different diagnostic from the
+# atom spelling that the `syntax` field probes. All three are covered above,
+# by hand, and iteration must never be read as covering them.
+niter=0
+row_reject() { # like reject(), but counted separately so the floors stay honest
+    local pat="$1" want="$2" out rc
+    niter=$((niter + 1))
+    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
+    out="$("$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    if [ "$rc" -ne 1 ]; then
+        bad "row '$pat': exit $rc, not a clean exit-1 rejection"
+        return
+    fi
+    case "$out" in
+        *"$want"*) ;;
+        *) bad "row '$pat': diagnostic does not contain the dump's own 'expect' text. want: $want ; got: $out"
+           return ;;
+    esac
+    if [ -f "$WORKDIR/out.c" ] || [ -f "$WORKDIR/out.h" ]; then
+        bad "row '$pat': rejected but still wrote an output file"
+        return
+    fi
+    ok "row '$pat' -> $want"
+}
+
+"$PCREC" --list-syntax > "$WORKDIR/syntax.tsv" 2>"$WORKDIR/syntax.err"
+if [ ! -s "$WORKDIR/syntax.tsv" ]; then
+    bad "--list-syntax produced no dump ($(cat "$WORKDIR/syntax.err")) — every check below would pass vacuously"
+else
+    # Field extraction goes through awk, NOT `IFS=$'\t' read -r a b c...`.
+    # Tab is IFS *whitespace*, so bash collapses runs of it and strips leading
+    # and trailing ones: any row with an empty field shifts every column after
+    # it, and the loop then compares the wrong strings while still reporting
+    # PASS/FAIL as though it were working. That is precisely how this section
+    # first "ran" — it read each row's `note` as its `expect` and iterated the
+    # one base row it was supposed to skip.
+    #
+    # Two columns are enough, and neither may be empty. A row whose `syntax` or
+    # `expect` is blank is reported as a bad row rather than silently probed
+    # with an empty pattern or matched against an empty substring — the latter
+    # matches ANY diagnostic and would pass while testing nothing.
+    awk -F'\t' '
+        /^#/ || NF != 12 || $8 == "base" { next }
+        $3 == "" || $11 == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
+        { print $3 "\t" $11 }
+    ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
+
+    if [ -s "$WORKDIR/badrows.txt" ]; then
+        bad "dump rows with an empty syntax or expect field: $(wc -l < "$WORKDIR/badrows.txt")"
+        cat "$WORKDIR/badrows.txt" >&2
+    fi
+
+    while IFS=$'\t' read -r syntax expect; do
+        row_reject "$syntax" "$expect"
+    done < "$WORKDIR/probe.tsv"
+
+    # The loop must have seen every non-base row: a `read` that silently stops
+    # early would make this whole section quietly shrink to nothing.
+    nexpected=$(awk -F'\t' '!/^#/ && NF == 12 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
+    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -ge 60 ]; then
+        ok "iterated every non-base row in the dump ($niter)"
+    else
+        bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
+    fi
+fi
+
+echo
 echo "== Summary =="
 echo "rejections checked: $nrej"
+echo "rows iterated:      $niter"
 echo "accept controls:    $naccept"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
