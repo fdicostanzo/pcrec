@@ -19,7 +19,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **empty_matches.rxt** — patterns matching empty strings
 - **precedence.rxt** — operator precedence and grouping
 - **leftmost_semantics.rxt** — leftmost-first match semantics (greedy/lazy precedence)
-- **syntax_errors.rxt** — malformed patterns and diagnostic accuracy
+- **syntax_errors.rxt** — malformed patterns and diagnostic accuracy, including the K5/K6 brace miscompiles fixed 2026-08-10 (FIX-1). Two halves that must be read together: the `perr` blocks assert the rejections, and the literal-match blocks below them assert what must KEEP compiling (`a{`, `{}`, `{,}`, `a{65536x}`, …) — without those, the obvious over-reach of either fix passes every rejection. The seven K5 blocks carry `# pcre2-only` because python `re` accepts counts up to 4294967296 (U5); `tests/reject/` pins the DIAGNOSTIC for all of them, which `perr` cannot express
 
 ## Conventions
 

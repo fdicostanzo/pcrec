@@ -73,11 +73,13 @@ pcrec implements a deliberately small base tier and rejects the rest by design.
 Of PCRE2's syntax surface:
 
 - The base tier (literals, `.`, classes, ranges, quantifiers incl. lazy,
-  alternation, groups, `^`, `$`, the character escapes) is `OK`, with 805
-  corpus cases at 100% oracle agreement (796 of them python-verified; the rest
+  alternation, groups, `^`, `$`, the character escapes) is `OK`, with 842
+  corpus cases at 100% oracle agreement (824 of them python-verified; the rest
   are `# pcre2-only` blocks checked against libpcre2 directly).
-- Everything else is `REJECTED` — 93 constructs are individually asserted by
-  hand to exit 1 and name their owning module, with 19 accept-controls proving
+- Everything else is `REJECTED` — 137 rows in `tests/reject/` individually
+  assert exit 1 and the right diagnostic (117 of them a module name; the other
+  20 are the base-grammar brace errors K5/K6 landed on 2026-08-10, which name a
+  PCRE2 error instead), with 37 accept-controls proving
   the table cannot pass by rejecting everything, and (SR-4) a further 66 checks
   that iterate `pcrec --list-syntax` so no registry row can escape a probe
   (`tests/reject/`). The two layers answer different questions and neither
@@ -167,7 +169,11 @@ commits to. The blocker is table generation and size, not matching.
 | `?? *? +? {n,m}? {n,}? {,m}?` lazy | `OK` | — | priority subset construction preserves greedy/lazy preference (D3) |
 | `?+ *+ ++ {n,m}+ {n,}+ {,m}+` possessive | `REJECTED` | `PLANNED-HARD` | module `atomic-groups`. Possessiveness prunes alternatives that a priority simulation explores in parallel, so it is a real semantic change needing explicit cut support, not a no-op |
 | quantifier on `^`/`$` | `OK` | — | rejected as PCRE2 error 109 does; `(^)*` is accepted because a group wrapper makes it quantifiable, matching PCRE2 |
-| double quantifier `a**`, `a{2}{3}` | `OK` | — | rejected, corpus-covered |
+| double quantifier `a**`, `a{2}{3}` | `OK` | — | rejected, corpus-covered. Note the WORDING differs on `a{1}{2}`: PCRE2 says error 109, pcrec says "multiple quantifiers on the same item". Same verdict, and the offset agrees |
+| count above 65535, `a{65536}` | `AGREES-REJECT` | — | PCRE2 error 105. **Was a MISCOMPILE until 2026-08-10 (K5, FIX-1)** — silently reinterpreted as literal text, so the emitted matcher accepted a different language than the pattern named. The overflow is judged only once the form is CONFIRMED to be a quantifier, which is what PCRE2 does: `a{65536x}`, `a{65536,x}` and `a{65536` all stay literal in both engines |
+| `{m,n}` with nothing to quantify, `{1}` | `AGREES-REJECT` | — | PCRE2 error 109. **Was a MISCOMPILE until 2026-08-10 (K6, FIX-1)**; `*`, `+` and `?` had always been rejected in this position and only `{` was missed, because `try_quant` is reached from `p_rep`, i.e. after an atom. Malformed braces (`{}`, `{,}`, `{1`, `a{`) stay literal in both engines, and the reject suite's accept-controls pin that |
+| brace diagnostic PRECEDENCE | `OK` | — | measured, not assumed: in atom position PCRE2 answers 105 for `{65536}` and 104 for `{3,1}`, not 109; and too-big beats out-of-order, so `a{65536,1}` is 105. pcrec agrees on all three, offsets included |
+| large bounded repeat, `a{0,65535}` | `OK-LIMITED` | `PLANNED` | correct up to roughly `{0,20000}`. Above that the NFA/DFA build exhausts memory and the process is SIGKILLed instead of reaching the 32000-state cap that exists to prevent exactly this — see **K7**. `a{65535}` (the exact-count form) does hit the cap cleanly. Not a miscompile; no wrong code is emitted |
 
 ## Anchors and simple assertions
 

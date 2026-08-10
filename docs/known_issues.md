@@ -177,7 +177,7 @@ same change.
 
 ---
 
-## K5 — OPEN, found 2026-08-10 (R5 spec critic) — a MISCOMPILE
+## K5 — FIXED 2026-08-10 (FIX-1) — was a MISCOMPILE
 
 A `{m,n}` count above 65535 is silently reinterpreted as literal text.
 `try_quant` treats the overflow as "not a quantifier", restores the cursor, and
@@ -195,9 +195,38 @@ The boundary is correctly placed on the other side — `a{65535}` is a quantifie
 to both engines. Base-tier defect: no registry row and no "requires module"
 diagnostic stands between the user and it.
 
+**Fix (FIX-1).** `try_quant` now REMEMBERS the overflow instead of declining on
+it, and raises "number too big in {m,n} quantifier" only where it would have
+returned true. That two-phase shape is not a nicety — it is what PCRE2 does, and
+skipping it over-reaches. Measured against libpcre2 10.46:
+
+    a{65536}  a{100000}  a{0,65536}  a{65536,}  a{,65536}
+    a{65535,65536}  a{65536,1}  a{99999999999999999999}   -> error 105
+    a{65536   a{65536x}  a{65536,x}                       -> COMPILE, literal
+
+Two orderings that had to be measured rather than guessed: **too-big beats
+out-of-order** (`a{65536,1}` is 105, not 104 — and the clamped accumulator makes
+it look out-of-order internally, so getting this backwards is a live mistake),
+and the reported offset is where the offending number's digits ran out, which
+is why each number's end position is kept separately. pcrec's offsets now match
+PCRE2's exactly on all eight.
+
+**One inconsistency this introduces, deliberately left alone:** the neighbouring
+"numbers out of order" error still reports the `{`, where PCRE2 reports the
+closing `}` (`a{3,1}` → pcrec offset 1, PCRE2 offset 5). Aligning it is a
+behaviour change to a message that predates this work and wants its own
+decision, not a silent ride-along.
+
+**Coverage:** 8 rows in `tests/reject/` pinning the DIAGNOSTIC, 8 corpus `perr`
+blocks (7 marked `# pcre2-only` — see U5), 3 over-reach accept-controls, and
+`(?:){65535}` pinning the boundary itself. Sabotage-validated: reverting the fix
+costs 9 reject + 9 corpus checks; raising the overflow where it is DETECTED
+rather than CONFIRMED costs 3 + 5; moving the ceiling to 65534 costs exactly
+1 — the boundary pin, and nothing else in the repo.
+
 ---
 
-## K6 — OPEN, found 2026-08-10 (R5 spec critic) — a MISCOMPILE
+## K6 — FIXED 2026-08-10 (FIX-1) — was a MISCOMPILE
 
 A well-formed `{m,n}` with nothing to quantify is silently literal text.
 `try_quant` is only ever called from `p_rep`, AFTER an atom has been parsed, so
@@ -215,10 +244,66 @@ pcrec already has the correct behaviour for `*`, `+` and `?` in that position
 **The fix must not over-reach.** The MALFORMED brace forms are literal in both
 engines and must keep compiling: `a{`, `a{}`, `a{,}`, `a{1`, `}`.
 
+**Fix (FIX-1).** `p_atom` gained a `case '{'` beside the existing `* + ?` case.
+It rewinds to the `{`, asks `try_quant`, and fails with error 109 only if the
+answer is yes; otherwise the `{` is consumed as a literal exactly as before. The
+over-reach guard is structural rather than a second list: "malformed" IS
+"`try_quant` declined", so the two rules cannot drift apart.
+
+`try_quant` may also fail from inside, and that turns out to be the order PCRE2
+uses — measured, `{65536}` is 105 and `{3,1}` is 104, neither is 109. A fix that
+asked "is anything repeatable" first would answer all twelve plain cases
+correctly and both of these wrongly. Offsets match PCRE2 throughout, because
+PCRE2 reports the closing `}` and that is where `try_quant` leaves the cursor.
+
+**Coverage:** 12 rows in `tests/reject/` (10 plain + the two precedence cases),
+12 corpus `perr` blocks — python `re` calls these "nothing to repeat", so no
+oracle exclusion was needed — and 11 malformed-brace accept-controls with
+literal-match corpus cases behind them. Sabotage-validated: reverting the fix
+costs 12 reject + 12 corpus checks; the over-reach ("any `{` in atom position is
+an error") costs 13 + 18.
+
 ---
 
-_Five open issues: K2 (cosmetic), K3 and K4 (over-rejection / over-acceptance in
-the class-bracket doorway, one fix), K5 and K6 (base-tier MISCOMPILES, the class
-the charter forbids). K5 and K6 are the two to fix first. Performance and
+## K7 — OPEN, found 2026-08-10 (FIX-1, while probing the 65535 boundary)
+
+A large BOUNDED repeat exhausts memory and the process is SIGKILLed, instead of
+reaching the DFA state cap that exists to prevent exactly this.
+
+    $ build/pcrec -p rx -o /tmp/o.c 'a{0,65535}'
+    Killed                                          # rc 137, empty stderr
+
+Measured on a pinned build of `c38934c`, so it PREDATES FIX-1 and is not a
+regression from it:
+
+    a{0,65535}   a{,65535}   a{1,65535}   a{0,40000}   -> SIGKILL (rc 137)
+    a{0,20000}                                         -> compiles, rc 0
+    a{65535}                                           -> clean rc 1,
+        "pattern too complex for the DFA engine (>32000 states)"
+
+So the EXACT-count form degrades cleanly and the bounded-optional form does not:
+`{0,n}` builds an optional chain that blows past the memory the cap was meant to
+bound, before the cap is ever consulted. The threshold sits between 20000 and
+40000 and was not narrowed further.
+
+**Severity: not a miscompile.** No wrong code is emitted and nothing is silently
+accepted; the failure is loud, just not clean. It still violates the softer half
+of the mandate — a caller gets no diagnostic, no exit code they can interpret,
+and on a memory-constrained machine the OOM killer may pick a different victim
+entirely.
+
+**Not fixed now on purpose:** FIX-1's scope is the two miscompiles, and the fix
+here is a size estimate BEFORE construction (or the M4 VM engine), which is a
+design decision about where the cap lives rather than a parser bug. No
+`tests/known_fail/` repro: a SIGKILL is not a `perr` (the harness correctly
+treats rc >= 124 as a crash, not a rejection), so pinning it needs a
+purpose-built check. **Fix with:** M4, or a bounded-repeat pre-estimate.
+
+---
+
+_Four open issues: K2 (cosmetic), K3 and K4 (over-rejection / over-acceptance in
+the class-bracket doorway, one fix — FIX-2), K7 (a large bounded repeat is
+SIGKILLed rather than diagnosed; not a miscompile). **No open MISCOMPILE
+remains** — K5 and K6 were fixed on 2026-08-10 by FIX-1. Performance and
 architecture debt lives in docs/plan.md; other engines' bugs in
 docs/upstream_issues.md._

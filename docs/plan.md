@@ -146,13 +146,19 @@ the prediction, including when the prediction was wrong.
 checkpoint: critic panel (D6), journal entry, plan STATE update, touched
 CLAUDE.md files, commit, push.
 
-- [FIX-1] STATE:not-started — K5 and K6, the two MISCOMPILES, first because they
-  are the class the charter forbids ("never miscompile") and both are small.
-  `a{65536}` and `{1}` are each silently reinterpreted as literal text and
-  compile a matcher for the wrong language. docs/known_issues.md carries the
-  measured probes and, for K6, the malformed brace forms that must KEEP
-  compiling (`a{`, `a{}`, `a{,}`, `a{1`, `}`) so the fix does not over-reach.
-  Oracle-verified corpus cases in the same commit
+- [FIX-1] STATE:completed — K5 and K6, the two MISCOMPILES. Landed 2026-08-10.
+  `try_quant` now REMEMBERS a count above 65535 and raises PCRE2's error 105
+  only where it would have returned true; `p_atom` gained a `case '{'` that
+  asks try_quant and raises error 109 when the answer is yes. Both fixes are
+  two-phase for the same reason: the malformed braces that must keep compiling
+  (`a{`, `a{}`, `a{,}`, `a{1`, `}`, `a{65536x}`) are exactly the forms
+  try_quant declines, so the over-reach guard is structural rather than a
+  second list. 49 forms differentially probed against libpcre2 10.46 — all
+  agree on verdict AND offset. Coverage: +20 tests/reject rows (the
+  DIAGNOSTIC, which `perr` cannot express), +15 accept-controls, +37 corpus
+  cases. Five sabotages, all caught; the off-by-one is caught by exactly ONE
+  check (`(?:){65535}`) and nothing else. Found K7 (a large bounded repeat is
+  SIGKILLed, pre-existing) and U5 (python accepts counts PCRE2 rejects)
 - [PC-3] see "PCRE2 compliance tracking" below — SECOND, and it now carries Q1
   (a distinct "recognised but not a known name" outcome). Q1 is what makes an
   external name differential possible at all; without it the catch-all answers

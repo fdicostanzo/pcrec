@@ -60,6 +60,25 @@ oracles) | `not-a-bug` (looked suspicious, resolved as correct behavior).
   other negative codes (`mlimit`, treated as inconclusive, never compared).
   Any oracle comparing against a backtracker must do the same.
 
+## U5 — python `re`: repeat counts above 65535 are accepted (PCRE2 error 105)
+
+- **Status**: divergence-by-design (the two engines simply have different
+  ceilings). PCRE2's is 65535; python's is 4294967296, and above THAT it
+  raises `OverflowError` rather than `re.error`.
+- **Repro**: `re.compile('a{65536}')`, `a{100000}`, `a{0,65536}`, `a{,65536}`
+  and `a{99999999999999999999}` all compile in python 3.14; libpcre2 10.46
+  answers error 105 "number too big in {} quantifier" to every one. pcrec
+  follows PCRE2 (K5, fixed 2026-08-10).
+- **Found**: 2026-08-10, FIX-1, while looking for a corpus home for K5.
+- **Impact**: python cannot oracle these, so the seven K5 blocks in
+  `tests/base/syntax_errors.rxt` carry `# pcre2-only` and are verified against
+  libpcre2 by hand plus `tests/reject/` for the diagnostic. `a{65536,1}` is
+  the one exception and needs no marker — python rejects it too, though for a
+  different reason (its clamp makes the pair look out-of-order).
+- **A second-order hazard worth naming**: the 20-digit form raises
+  `OverflowError`, which is NOT an `re.error`, so an unmarked block would
+  crash `verify_rxt.py` rather than fail it. The marker also avoids that.
+
 ---
 
 Maintenance: add an entry whenever differential tooling implicates another

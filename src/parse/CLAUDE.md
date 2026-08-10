@@ -7,7 +7,11 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 - **parse.c** — the base grammar AND NOTHING ELSE (SR-2): literals, `.`,
   classes, quantifiers, `|`, `(...)`, `(?:...)`, `^`, `$`, the plain character
   escapes. Produces the AST. Meant to stop growing: a new construct needs a
-  registry row, not an edit here
+  registry row, not an edit here. "Stops growing" means stops gaining
+  CONSTRUCTS — it does not freeze the base grammar's own correctness. FIX-1
+  (2026-08-10) added a `case '{'` to `p_atom` and a two-phase overflow rule to
+  `try_quant` for K5/K6, both of which are the base tier being wrong about
+  syntax it already owned, with no registry row involved
 - **registry.c** — the syntax construct registry (D24/SR-1): every non-base
   construct as one `static const` row, plus the lookup
 - **ext.c** — the four doorways (SR-2): `pcrec_ext_escape`, `pcrec_ext_group`,

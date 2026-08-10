@@ -210,6 +210,7 @@ static Ast *p_class(Ctx *cx)
 /* ---- grammar: alt -> cat ('|' cat)* ; cat -> rep* ; rep -> atom quant? ---- */
 
 static Ast *p_alt(Ctx *cx);
+static bool try_quant(Ctx *cx, int *rmin, int *rmax);
 
 static Ast *p_atom(Ctx *cx)
 {
@@ -264,13 +265,53 @@ static Ast *p_atom(Ctx *cx)
     case '\\': return esc_atom(cx);
     case '*': case '+': case '?':
         ctx_fail(cx, apos, "quantifier does not follow a repeatable item");
+    case '{': {
+        /* K6. `*`, `+` and `?` above have always been rejected here; `{` was
+         * not, because try_quant is only ever called from p_rep — AFTER an atom
+         * — so a `{` reaching atom position was never asked whether it is a
+         * quantifier. It became literal text, and `{1}` compiled a matcher for
+         * the literal three characters instead of failing. Measured against
+         * libpcre2 10.46: `{1}` `{2,3}` `{,5}` `{1,}` `{1}a` `a|{1}` `({1})`
+         * `(?:{1})` are all error 109.
+         *
+         * The discriminator is exactly "did it parse as a quantifier", which
+         * try_quant already computes, so the fix cannot over-reach: the
+         * MALFORMED braces that stay literal in both engines (`a{`, `{}`,
+         * `{,}`, `{1`, `}`) are precisely the ones try_quant declines.
+         *
+         * try_quant may also fail from inside, and that is the order PCRE2
+         * uses — `{65536}` is 105 "too big" and `{3,1}` is 104 "out of order",
+         * neither is 109. The offset matches PCRE2's too: it reports the
+         * closing `}`, which is where try_quant leaves the cursor. */
+        int rmin, rmax;
+        cx->pos = apos;
+        if (try_quant(cx, &rmin, &rmax))
+            ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
+        cx->pos = apos + 1;
+        return char_node(cx, (unsigned)c);
+    }
     default:
         return char_node(cx, (unsigned)c);
     }
 }
 
 /* Try to parse {m}, {m,}, {m,n} at '{'. Returns false (cursor restored) when
- * it is not a valid quantifier — PCRE then treats '{' as a literal. */
+ * it is not a valid quantifier — PCRE then treats '{' as a literal.
+ *
+ * A count above 65535 is an ERROR (K5), not a reason to decline — declining
+ * used to compile a matcher for a DIFFERENT LANGUAGE, the one class the
+ * charter forbids. But the decision is TWO-PHASE, exactly as PCRE2 makes it:
+ * the form must be a quantifier at all before its numbers are judged. Measured
+ * against libpcre2 10.46:
+ *
+ *     a{65536}  a{65536,}  a{1,65536}  a{,65536}   -> error 105 (too big)
+ *     a{65536   a{65536x}  a{65536,x}              -> compile, literal text
+ *
+ * so an overflow is REMEMBERED and raised only where this function would have
+ * returned true; every `return false` still wins over it. Two further orderings
+ * are measured, not guessed: too-big beats out-of-order (`a{65536,1}` is 105,
+ * not 104), and the reported offset is where the offending number's digits ran
+ * out, which is why each number's end position is kept separately. */
 static bool try_quant(Ctx *cx, int *rmin, int *rmax)
 {
     size_t save = cx->pos;
@@ -278,17 +319,26 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
 
     long m = 0, n;
     int ndig = 0;
+    bool big_m = false, big_n = false;
+    size_t end_m, end_n;
+
     while (peekc(cx) >= '0' && peekc(cx) <= '9') {
-        m = m * 10 + (nextc(cx) - '0');
-        if (m > 65535) { cx->pos = save; return false; }
+        int d = nextc(cx) - '0';
+        if (!big_m) {           /* stop accumulating once it is already too
+                                   big, so a 20-digit count cannot overflow */
+            m = m * 10 + d;
+            if (m > 65535) big_m = true;
+        }
         ndig++;
     }
+    end_m = cx->pos;
     bool have_min = ndig > 0;   /* {,n} == {0,n} since PCRE2 10.43 (M2 fuzzer
                                    finding); bare {,} and {} stay literal */
 
     if (peekc(cx) == '}') {
         if (!have_min) { cx->pos = save; return false; }
         cx->pos++;
+        if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
         *rmin = (int)m; *rmax = (int)m;
         return true;
     }
@@ -298,17 +348,24 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     if (peekc(cx) == '}') {
         if (!have_min) { cx->pos = save; return false; }
         cx->pos++;
+        if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
         *rmin = (int)m; *rmax = -1;
         return true;
     }
     n = 0; ndig = 0;
     while (peekc(cx) >= '0' && peekc(cx) <= '9') {
-        n = n * 10 + (nextc(cx) - '0');
-        if (n > 65535) { cx->pos = save; return false; }
+        int d = nextc(cx) - '0';
+        if (!big_n) {
+            n = n * 10 + d;
+            if (n > 65535) big_n = true;
+        }
         ndig++;
     }
+    end_n = cx->pos;
     if (ndig == 0 || peekc(cx) != '}') { cx->pos = save; return false; }
     cx->pos++;
+    if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
+    if (big_n) ctx_fail(cx, end_n, "number too big in {m,n} quantifier");
     if (m > n) ctx_fail(cx, save, "numbers out of order in {m,n} quantifier");
     *rmin = (int)m; *rmax = (int)n;
     return true;

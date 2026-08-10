@@ -4,10 +4,19 @@
 # WHY THIS EXISTS. The project rule is that a construct outside the base tier
 # must "fail with a clean 'requires module X' error, never miscompile". Until
 # this file, NOTHING checked that. The .rxt corpus cannot: a `perr` block
-# requires the python oracle to ALSO fail to compile the pattern, and python
-# happily compiles `\d`, `\b`, `(?i)` and most of the rest — so every
-# module-routed construct was untestable there, and `# pcre2-only` does not
-# help because verify_rxt.py's perr branch does not consult it.
+# asserts only THAT the pattern is rejected, never WHY, and the module name is
+# the whole point (assertion 2 below).
+#
+# CORRECTED 2026-08-10 (FIX-1). This comment used to add a second reason — that
+# a `perr` block also needs the PYTHON oracle to fail, and that `# pcre2-only`
+# cannot rescue it "because verify_rxt.py's perr branch does not consult it".
+# The first half is true; the second is FALSE, and it was never measured. The
+# skip test at verify_rxt.py:218 sits BEFORE the perr branch at :222, so a
+# `# pcre2-only` block's perr line is skipped like any other case. Measured:
+# tests/base/syntax_errors.rxt now carries seven such blocks for K5 and
+# verify_rxt.py reports them as skipped while run.sh still asserts every one
+# against pcrec. So the mechanism exists — it just cannot assert a NAME, which
+# is why this file is still the only home for that.
 #
 # The gap was not hypothetical. `\v` was decoded as vertical tab (0x0B) when
 # PCRE2 defines it as vertical WHITESPACE (0x0a 0x0b 0x0c 0x0d 0x85) — a silent
@@ -98,6 +107,38 @@ accept '^a$'
 accept '\n\t\r\f\a\e'
 accept '\x41\x2e'   # \x{...} is NOT base tier — it is in the reject table below
 accept '\.\*\+\?\[\]\(\)\{\}\|\^\$\\'
+
+# The MALFORMED braces, and they are load-bearing rather than decorative.
+# K6's fix rejects a `{` in ATOM position only when it parses as a quantifier;
+# the obvious over-reach — "a `{` where no atom precedes it is an error" —
+# passes every K6 rejection row below and breaks all of these. Every one
+# compiles as ordinary literal text in libpcre2 10.46, measured, not assumed.
+accept 'a{'
+accept 'a{}'
+accept 'a{,}'
+accept 'a{1'
+accept 'a{2,3,4}'
+accept '}'
+accept '{'
+accept '{}'
+accept '{,}'
+accept '{1'
+accept '{}{1}'      # literal `{`, then a `}` quantified by {1} — PCRE2 compiles it
+# K5's over-reach guard, the same shape one level down: a count above 65535 in
+# a form that is NOT a quantifier stays literal. If the overflow were judged
+# where it is DETECTED rather than where the quantifier is CONFIRMED, these
+# three would become errors and PCRE2 accepts all three.
+accept 'a{65536'
+accept 'a{65536x}'
+accept 'a{65536,x}'
+# The BOUNDARY itself, which nothing else pins: 65535 is a legal count, so an
+# off-by-one in K5's ceiling turns this into "number too big". The empty group
+# is what makes it cheap — `a{65535}` would need 65535 NFA states and dies on
+# the DFA cap long before it could say anything about the parser. libpcre2
+# answers error 120 "regular expression is too large" here, which is PCRE2's
+# own size ceiling rather than a syntax verdict (the same class tests/fuzz/
+# already excludes), so the comparison legitimately stops at pcrec's parser.
+accept '(?:){65535}'
 
 echo
 echo "== character-type escapes -> module 'classes' =="
@@ -245,6 +286,54 @@ echo "== possessive quantifiers =="
 reject 'a*+' "possessive quantifier requires module 'atomic-groups'"
 reject 'a++' "possessive quantifier requires module 'atomic-groups'"
 reject 'a?+' "possessive quantifier requires module 'atomic-groups'"
+
+echo
+echo "== base-grammar MISCOMPILES, fixed 2026-08-10 (K5, K6) =="
+# The only rows in this file with no registry row behind them, and the reason
+# they are here rather than only in the corpus is worth stating: a `.rxt` `perr`
+# block asserts a REJECTION, and for these two the REASON is the whole fix.
+# Both were the class the charter forbids — a quantifier silently reinterpreted
+# as literal text, compiling a matcher for a different language than the pattern
+# named, with no diagnostic at all. Being base-grammar errors they carry PCRE2's
+# own wording rather than a "requires module" name.
+#
+# Every verdict below was measured against libpcre2 10.46.
+
+# K5 — a count above 65535 is PCRE2 error 105. The overflow is remembered and
+# raised only where try_quant would have succeeded, so it must reach all three
+# of its return paths, not just `{m}`.
+reject 'a{65536}'       "number too big in {m,n} quantifier"
+reject 'a{100000}'      "number too big in {m,n} quantifier"
+reject 'a{0,65536}'     "number too big in {m,n} quantifier"
+reject 'a{65536,}'      "number too big in {m,n} quantifier"
+reject 'a{,65536}'      "number too big in {m,n} quantifier"
+reject 'a{65535,65536}' "number too big in {m,n} quantifier"
+# Too-big beats out-of-order — measured: PCRE2 answers 105 here, not 104. The
+# clamped accumulator makes `a{65536,1}` look out-of-order internally, so
+# checking in the other order is a live mistake, not a hypothetical one.
+reject 'a{65536,1}'     "number too big in {m,n} quantifier"
+# Twenty digits: the accumulator must stop growing once it is already too big.
+reject 'a{99999999999999999999}' "number too big in {m,n} quantifier"
+
+# K6 — a well-formed quantifier with nothing to quantify is PCRE2 error 109.
+# `*`, `+` and `?` were always rejected in this position; `{` was not, because
+# try_quant is only reached from p_rep, AFTER an atom.
+reject '{1}'      "quantifier does not follow a repeatable item"
+reject '{2,3}'    "quantifier does not follow a repeatable item"
+reject '{,5}'     "quantifier does not follow a repeatable item"
+reject '{1,}'     "quantifier does not follow a repeatable item"
+reject '{0}'      "quantifier does not follow a repeatable item"
+reject '{1}a'     "quantifier does not follow a repeatable item"
+reject 'a|{1}'    "quantifier does not follow a repeatable item"
+reject '({1})'    "quantifier does not follow a repeatable item"
+reject '(?:{1})'  "quantifier does not follow a repeatable item"
+reject '{1}{2}'   "quantifier does not follow a repeatable item"
+# The ORDER between the three brace diagnostics in atom position, which is also
+# measured: PCRE2 answers 105 for a too-big count and 104 for an out-of-order
+# pair, NOT 109. A fix that asked "is anything repeatable" first would pass
+# every K6 row above and get both of these wrong.
+reject '{65536}'  "number too big in {m,n} quantifier"
+reject '{3,1}'    "numbers out of order in {m,n} quantifier"
 
 echo
 echo "== KNOWN-WRONG, pinned so a change is VISIBLE (K3, K4) =="
@@ -422,8 +511,8 @@ echo "checks failed: $fail"
 # not give you the set either, but they make every deletion deliberate and
 # visible in the diff, which is what the slack removed. If you added or removed
 # coverage on purpose, update these three numbers in the same commit.
-if [ "$nrej" -ne 117 ] || [ "$naccept" -ne 22 ] || [ "$nwrong" -ne 5 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 117 / 22 / 5." >&2
+if [ "$nrej" -ne 137 ] || [ "$naccept" -ne 37 ] || [ "$nwrong" -ne 5 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 137 / 37 / 5." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

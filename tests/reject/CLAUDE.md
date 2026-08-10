@@ -52,16 +52,25 @@ Three things, so "the dump covers it" is never read as more than it is:
 
 ## Why it cannot live in the .rxt corpus
 
-A `.rxt` `perr` block requires the python oracle to ALSO fail to compile the
-pattern (`verify_rxt.py` fails the block if `re.compile` succeeds). Python
-happily compiles `\d`, `\b`, `(?i)`, `\p{L}` and nearly every other
-module-routed construct, so none of them could be asserted there. The
-`# pcre2-only` escape hatch does not help either: `verify_rxt.py` consults
-`cur_skip` only on `m`/`n` lines, never in its `perr` branch.
+A `perr` block cannot express the part that matters most — that the diagnostic
+names the RIGHT module. That name is the caller's only pointer to what would
+implement the construct, and `perr` asserts only that compilation failed.
 
-A `perr` block also could not express the part that matters most — that the
-diagnostic names the RIGHT module. That name is the caller's only pointer to
-what would implement the construct.
+There is a second, weaker reason: a `perr` block normally requires the python
+oracle to ALSO fail (`verify_rxt.py` fails the block if `re.compile`
+succeeds), and python happily compiles `\d`, `\b`, `(?i)`, `\p{L}` and nearly
+every other module-routed construct.
+
+**CORRECTED 2026-08-10 (FIX-1).** This section used to say the `# pcre2-only`
+escape hatch "does not help either: `verify_rxt.py` consults `cur_skip` only on
+`m`/`n` lines, never in its `perr` branch." That is FALSE and had never been
+measured. The `cur_skip` test at `verify_rxt.py:218` comes BEFORE the `perr`
+branch at `:222`, so a marked block's `perr` line is skipped like any other
+case, while `run.sh` — which does not read the marker at all — still asserts
+the rejection against pcrec. Measured: `tests/base/syntax_errors.rxt` carries
+seven `# pcre2-only` `perr` blocks for K5, `verify_rxt.py` reports 9 skipped,
+and `run.sh` runs all 61 cases. So the escape hatch works for `perr`; it just
+still cannot assert a name.
 
 ## What each row asserts
 

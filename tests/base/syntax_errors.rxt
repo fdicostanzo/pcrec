@@ -71,3 +71,145 @@ perr
 
 pattern (?:)?*
 perr
+
+# ---- K5 and K6: the two brace MISCOMPILES, fixed 2026-08-10 ----
+#
+# Both used to compile silently and match a DIFFERENT LANGUAGE than the pattern
+# named: the quantifier was reinterpreted as literal text with no diagnostic.
+# The rejections below are asserted against python `re` by verify_rxt.py and
+# against libpcre2 10.46 by hand; tests/reject/ additionally pins the DIAGNOSTIC
+# for each, which a `perr` block cannot express.
+
+# K6 — a well-formed {m,n} with nothing to quantify (PCRE2 error 109). python
+# `re` calls it "nothing to repeat", so no oracle exclusion is needed.
+
+pattern {1}
+perr
+
+pattern {2,3}
+perr
+
+pattern {,5}
+perr
+
+pattern {1,}
+perr
+
+pattern {0}
+perr
+
+pattern {1}a
+perr
+
+pattern a|{1}
+perr
+
+pattern ({1})
+perr
+
+pattern (?:{1})
+perr
+
+pattern {1}{2}
+perr
+
+# atom position does not make every brace a 109: a too-big count is still 105
+# and an out-of-order pair is still 104, in PCRE2 and now in pcrec.
+
+pattern {65536}
+perr
+
+pattern {3,1}
+perr
+
+# K5 — a count above 65535 (PCRE2 error 105). python `re` ACCEPTS all of these
+# (its own ceiling is 4294967296), so it cannot oracle them — see U5 in
+# docs/upstream_issues.md. Verified against libpcre2 10.46 by hand instead.
+
+# pcre2-only
+pattern a{65536}
+perr
+
+# pcre2-only
+pattern a{100000}
+perr
+
+# pcre2-only
+pattern a{0,65536}
+perr
+
+# pcre2-only
+pattern a{65536,}
+perr
+
+# pcre2-only
+pattern a{,65536}
+perr
+
+# pcre2-only
+pattern a{65535,65536}
+perr
+
+# pcre2-only
+pattern a{99999999999999999999}
+perr
+
+# python rejects this one, for a different reason (its clamp makes it look
+# out-of-order); pcrec and PCRE2 both answer "too big", so it needs no marker.
+
+pattern a{65536,1}
+perr
+
+# ---- the other side of the same fix: what must KEEP compiling ----
+#
+# A `{` becomes an error only where it parses as a quantifier. These are the
+# forms that do not, and each one still matches as literal text. Without them
+# the natural over-reach of either fix passes every rejection above.
+
+pattern a{}
+m "a{}" 0 3
+n "aaa"
+
+pattern a{1
+m "a{1" 0 3
+
+pattern }
+m "}" 0 1
+
+pattern {
+m "{" 0 1
+
+pattern {}
+m "{}" 0 2
+n "x"
+
+pattern {1
+m "{1" 0 2
+
+pattern {}{1}
+m "{}" 0 2
+
+pattern a{}{1}
+m "a{}" 0 3
+
+pattern a{65536
+m "a{65536" 0 7
+
+pattern a{65536x}
+m "a{65536x}" 0 9
+n "aaaaaaaaa"
+
+pattern a{65536,x}
+m "a{65536,x}" 0 10
+n "aaaaaaaaaa"
+
+# bare `{,}` is python's documented divergence (U2), not ours: it reads the
+# brace as {0,} where PCRE2 and pcrec read four literal characters.
+
+# pcre2-only
+pattern a{,}
+m "a{,}" 0 4
+
+# pcre2-only
+pattern {,}
+m "{,}" 0 3
