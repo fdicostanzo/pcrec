@@ -9,6 +9,11 @@
 #include <string.h>
 
 #include "pcrec.h"
+/* The syntax-query modes read the construct registry, which is internal: the
+ * CLI and the test suite are its only consumers, so it is not part of the
+ * public surface (see src/parse/syntax_dump.c). main.c touches no registry
+ * type — it calls two functions that hand back finished text. */
+#include "core/internal.h"
 
 static void usage(FILE *f)
 {
@@ -21,7 +26,13 @@ static void usage(FILE *f)
           "  -i             match case-insensitively (ASCII letters); folded\n"
           "                 into the automaton, no run-time cost\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
-          "  -h, --help     this help\n", f);
+          "  -h, --help     this help\n"
+          "\n"
+          "syntax queries (no pattern, no -o):\n"
+          "  --list-syntax     TSV of every non-base construct pcrec knows\n"
+          "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
+          "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
+          "                    exists today; a second one arrives with SR-7)\n", f);
 }
 
 static const char *base_name(const char *path)
@@ -45,6 +56,8 @@ int main(int argc, char **argv)
     pcrec_default_options(&opt);
     const char *outpath = NULL;
     const char *pattern = NULL;
+    int list_syntax = 0;
+    const char *explain = NULL, *flavour = NULL;
 
     int no_more_opts = 0;
     for (int i = 1; i < argc; i++) {
@@ -56,6 +69,16 @@ int main(int argc, char **argv)
         }
         else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.emit_main = 1;
         else if (!no_more_opts && !strcmp(a, "-i")) opt.caseless = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
+        else if (!no_more_opts &&
+                 (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            const char *v = argv[++i];
+            if (a[2] == 'e') explain = v; else flavour = v;
+        }
         else if (!no_more_opts &&
                  (!strcmp(a, "-o") || !strcmp(a, "-p") || !strcmp(a, "-e"))) {
             if (i + 1 >= argc) {
@@ -79,6 +102,46 @@ int main(int argc, char **argv)
         }
         else if (!pattern) pattern = a;
         else { fprintf(stderr, "pcrec: exactly one pattern expected\n"); return 1; }
+    }
+
+    /* Syntax queries answer from the registry and compile nothing, so they take
+     * neither a pattern nor -o. They are checked before the pattern/-o
+     * requirement and reject a mixed invocation rather than silently ignoring
+     * half of it. */
+    if (list_syntax || explain) {
+        if (list_syntax && explain) {
+            fprintf(stderr, "pcrec: --list-syntax and --explain are separate "
+                            "queries; use one\n");
+            return 1;
+        }
+        if (pattern || outpath) {
+            fprintf(stderr, "pcrec: %s takes no pattern and no -o\n",
+                    list_syntax ? "--list-syntax" : "--explain");
+            return 1;
+        }
+        unsigned fl = 0;
+        if (flavour && !(fl = pcrec_flavour_by_name(flavour))) {
+            fprintf(stderr, "pcrec: unknown flavour '%s' (only 'pcre2' exists; "
+                            "more arrive with SR-7)\n", flavour);
+            return 1;
+        }
+        char *text = list_syntax ? pcrec_syntax_tsv(fl)
+                                 : pcrec_syntax_explain(explain, fl);
+        if (!text) {
+            /* --explain only; the TSV always has rows */
+            fprintf(stderr, "pcrec: no construct matches '%s' — it is either "
+                            "base syntax or not a construct pcrec knows\n",
+                    explain);
+            return 1;
+        }
+        fputs(text, stdout);
+        free(text);
+        return 0;
+    }
+    if (flavour) {
+        fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
+                        "--explain only\n");
+        return 1;
     }
 
     if (!pattern || !outpath) {

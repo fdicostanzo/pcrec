@@ -15,6 +15,12 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   the ONLY home rather than a sixth copy — parse.c calls these once its own
   switch has declined, and they render the row's diagnostic. SR-6's module
   handlers become their callees
+- **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
+  (TSV, 12 columns) and `--explain`. Internal, not public API — the CLI and the
+  test suite are the only consumers, and promoting a function into lib/pcrec.h
+  later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
+  its FORMAT is an interface: no field may contain a tab or a newline, which
+  tests/cli case 10 asserts by counting fields
 
 ## The construct registry (registry.c, D24)
 

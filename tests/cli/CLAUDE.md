@@ -14,7 +14,8 @@ Part of `make test` since M2.
   for NULL arguments and double free, (8) a compile-time C STACK budget,
   (9) `-i` (OS-1/D23) end to end — accepted, reaches `options.caseless`,
   composes with `--` and `--emit-main`, documented in `--help`, and does NOT
-  leak into a build that did not ask for it (the case-sensitive control).
+  leak into a build that did not ask for it (the case-sensitive control),
+  (10) the SR-3 syntax queries — `--list-syntax`, `--explain`, `--flavour`.
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
 
 ## Conventions
@@ -25,6 +26,15 @@ branch and segfaulted at a 1 MB stack — a regression against hardening this
 project had already done once (R3 critic F3). pcrec is a library and musl's
 default thread stack is 128 KB, so "it works on the main thread" is not the bar.
 Keep the limit low enough that the recursive form fails it.
+
+Case 10's load-bearing assertion is the FIELD COUNT, not the content. SR-4 makes
+tests/reject/ iterate `--list-syntax` and renders docs/pcre2_compliance.md from
+it, so the TSV is an interface with consumers. The dump forbids tabs and
+newlines inside a field rather than escaping them, and a `note` that acquired
+one would hand every consumer a silently shifted column — nothing else in the
+suite would notice. The other cases there are ordinary surface checks: a query
+takes no pattern and no `-o`, an unknown flavour is an error rather than a
+silently-unfiltered dump, and both flags appear in `--help`.
 
 Note that case 8 SKIPS itself when python3 is absent (it uses python3 only to
 build the 9000-branch pattern string). python3 is therefore not a hard

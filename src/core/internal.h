@@ -291,6 +291,16 @@ void pcrec_ext_verb(Ctx *cx, size_t at) __attribute__((noreturn));
 bool pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                              bool at_class_open);
 
+/* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
+ * renderers return a malloc'd string the caller frees; `flavours` of 0 means
+ * "no filter". These are INTERNAL on purpose: the CLI and the test suite are
+ * the only consumers today, and promoting one function into lib/pcrec.h later
+ * is easy in a way that un-promoting it is not. */
+char *pcrec_syntax_tsv(unsigned flavours);
+/* NULL when no construct matches the query. */
+char *pcrec_syntax_explain(const char *query, unsigned flavours);
+unsigned pcrec_flavour_by_name(const char *name);
+
 /* ---- stage entry points ---- */
 
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */

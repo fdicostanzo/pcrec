@@ -460,6 +460,95 @@ case9() {
         "stderr: $(cat "$d/e_dash.txt")"
 }
 
+# ---------------------------------------------------------------------------
+# 10. The syntax queries (SR-3): --list-syntax, --explain, --flavour.
+#
+#     These are not a convenience feature — SR-4 makes tests/reject/ iterate
+#     this dump and renders docs/pcre2_compliance.md from it, so the FORMAT is
+#     an interface with consumers. The load-bearing assertion here is the field
+#     count: the dump forbids tabs and newlines inside a field rather than
+#     escaping them, and a note that acquired one would silently hand every
+#     consumer a shifted column. Nothing else would notice.
+# ---------------------------------------------------------------------------
+case10() {
+    local d="$WORKDIR/case10"
+    mkdir -p "$d"
+    local rc out nrows nbad
+
+    out="$("$PCREC" --list-syntax 2>"$d/e.txt")"; rc=$?
+    assert_eq "case10: --list-syntax exits 0" "0" "$rc" "stderr: $(cat "$d/e.txt")"
+    assert_contains "case10: --list-syntax emits the column header" "$out" \
+        "#kind	selector	syntax"
+
+    # every non-comment row has exactly 12 tab-separated fields
+    printf '%s\n' "$out" > "$d/dump.tsv"
+    nrows=$(grep -vc '^#' "$d/dump.tsv")
+    nbad=$(awk -F'\t' '!/^#/ && NF != 12' "$d/dump.tsv" | wc -l)
+    assert_eq "case10: every dump row has 12 fields (no tab leaked into one)" \
+        "0" "$nbad" "rows: $nrows"
+    if [ "$nrows" -ge 60 ]; then
+        pass "case10: dump carries the registry's rows ($nrows)"
+    else
+        fail "case10: dump carries the registry's rows" "only $nrows rows"
+    fi
+    # a blank line would end the table early for a naive reader
+    assert_eq "case10: dump has no blank lines" "0" "$(grep -c '^$' "$d/dump.tsv")"
+
+    # --explain answers for one construct, and names the module it needs
+    out="$("$PCREC" --explain '\v' 2>"$d/e2.txt")"; rc=$?
+    assert_eq "case10: --explain exits 0" "0" "$rc" "stderr: $(cat "$d/e2.txt")"
+    assert_contains "case10: --explain names the owning module" "$out" \
+        "requires module 'classes'"
+    assert_contains "case10: --explain carries the PCRE2 semantics" "$out" \
+        "vertical whitespace"
+
+    # one selector byte, two constructs: BOTH must be reported
+    out="$("$PCREC" --explain '(?<')"
+    assert_contains "case10: --explain reports the compound (?< construct" \
+        "$out" "lookaround/named-groups"
+
+    # a base-tier construct has no row, and saying so is the correct answer
+    "$PCREC" --explain 'a' >"$d/o3.txt" 2>"$d/e3.txt"; rc=$?
+    assert_eq "case10: --explain on base syntax exits 1" "1" "$rc"
+    assert_contains "case10: --explain on base syntax says why" \
+        "$(cat "$d/e3.txt")" "no construct matches"
+
+    # --flavour: exactly one exists, and a typo must not silently dump the lot
+    "$PCREC" --list-syntax --flavour pcre2 >"$d/o4.txt" 2>&1; rc=$?
+    assert_eq "case10: --flavour pcre2 exits 0" "0" "$rc"
+    assert_eq "case10: --flavour pcre2 selects every row" \
+        "$nrows" "$(grep -vc '^#' "$d/o4.txt")"
+    "$PCREC" --list-syntax --flavour python-re >"$d/o5.txt" 2>"$d/e5.txt"; rc=$?
+    assert_eq "case10: an unknown flavour exits 1" "1" "$rc"
+    assert_contains "case10: an unknown flavour is named in the error" \
+        "$(cat "$d/e5.txt")" "unknown flavour 'python-re'"
+
+    # a query compiles nothing, so mixing it with a compile is an error rather
+    # than a silently-ignored half of the command line
+    "$PCREC" --list-syntax -o - -- 'abc' >/dev/null 2>"$d/e6.txt"; rc=$?
+    assert_eq "case10: --list-syntax with -o and a pattern exits 1" "1" "$rc"
+    assert_contains "case10: ...and says which flag conflicts" \
+        "$(cat "$d/e6.txt")" "takes no pattern and no -o"
+    "$PCREC" --list-syntax --explain '\v' >/dev/null 2>"$d/e7.txt"; rc=$?
+    assert_eq "case10: --list-syntax with --explain exits 1" "1" "$rc"
+    "$PCREC" --flavour pcre2 -o - -- 'abc' >/dev/null 2>"$d/e8.txt"; rc=$?
+    assert_eq "case10: --flavour without a query exits 1" "1" "$rc"
+    "$PCREC" --explain >/dev/null 2>"$d/e9.txt"; rc=$?
+    assert_eq "case10: --explain with no value exits 1" "1" "$rc"
+    assert_contains "case10: ...with a missing-value diagnostic" \
+        "$(cat "$d/e9.txt")" "missing value for --explain"
+
+    # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
+    out="$("$PCREC" --help)"
+    assert_contains "case10: --help documents --list-syntax" "$out" "--list-syntax"
+    assert_contains "case10: --help documents --explain" "$out" "--explain"
+
+    # `--` still ends options: a pattern that looks like a query is a pattern
+    "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?
+    assert_eq "case10: -- protects a '--list-syntax'-looking pattern" "0" "$rc" \
+        "stderr: $(cat "$d/e10.txt")"
+}
+
 case1
 case2
 case3
@@ -469,6 +558,7 @@ case6
 case7
 case8
 case9
+case10
 
 echo
 echo "== Summary =="

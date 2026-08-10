@@ -191,10 +191,24 @@ named, cleanly rejected and queried.
   opener) is the CONSTRUCT's rule, not base grammar, so it had to move with it.
   (4) `pcrec_ext_class_bracket` also takes `at_class_open`, which is the only
   branch of the four the suite CANNOT see — see K3
-- [SR-3] STATE:not-started — `pcrec --list-syntax [--flavour F]` dumps the
+- [SR-3] STATE:completed — `pcrec --list-syntax [--flavour F]` dumps the
   table (TSV: syntax, module, feature, flavours, engines, status, note), and
   `pcrec --explain '\v'` answers for one construct. This is the anti-drift
-  mechanism, not a convenience: SR-4 depends on it
+  mechanism, not a convenience: SR-4 depends on it.
+  BUILT 2026-08-10 as src/parse/syntax_dump.c, 12 columns rather than the 7
+  above — `kind`, `selector`, `diag`, `flags` and `expect` were added because
+  SR-4 needs to know how to PROBE a row and what text to expect, and deriving
+  either from the other five would put the doorway templates in a second home.
+  `expect` is a SUBSTRING of the parser's line ("requires module 'X'", or the
+  fixed text verbatim), not the whole diagnostic, for exactly that reason.
+  INTERNAL, not public API: the CLI includes core/internal.h for two functions
+  that return finished text, since the CLI and the tests are the only consumers
+  and promoting into lib/pcrec.h later is the reversible direction. `--flavour`
+  validates its argument against the one flavour that exists rather than
+  silently ignoring a typo. The format is an interface now, so it FORBIDS tabs
+  and newlines in a field rather than escaping them (an escaping scheme is a
+  thing every SR-4 consumer would have to reimplement identically); tests/cli
+  case 10 asserts it by counting fields, 49 -> 73 CLI checks
 - [SR-4] STATE:not-started — tests/reject/ ITERATES the dump instead of its
   hand-written 93 entries, and docs/pcre2_compliance.md is RENDERED from it.
   Adding a row then covers itself in both. Keep the accept-controls
