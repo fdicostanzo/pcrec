@@ -123,7 +123,7 @@ pattern {3,1}
 perr
 
 # K5 — a count above 65535 (PCRE2 error 105). python `re` ACCEPTS all of these
-# (its own ceiling is 4294967296), so it cannot oracle them — see U5 in
+# (its own ceiling is 4294967294), so it cannot oracle them — see U5 in
 # docs/upstream_issues.md. Verified against libpcre2 10.46 by hand instead.
 
 # pcre2-only
@@ -202,6 +202,63 @@ n "aaaaaaaaa"
 pattern a{65536,x}
 m "a{65536,x}" 0 10
 n "aaaaaaaaaa"
+
+# ---- K8: the whitespace that must NOT be skipped ----
+#
+# PCRE2 skips SPACE and TAB inside `{...}` and nothing else, and never in place
+# of a number. python reads every brace-whitespace form as literal, which is the
+# RIGHT answer for this block, so it is python-verified.
+#
+# READ THIS BEFORE ADDING A CASE HERE. The four control-byte blocks below do
+# NOT guard the whitespace rule, however much they look like they do, and they
+# are kept only because they are honest base-tier cases in their own right.
+# A `.rxt` pattern line cannot carry a raw control byte: a newline ends the
+# line, and `\n` written in a PATTERN is an escape that pcrec decodes in atom
+# position — long after try_quant has looked at the brace and seen a backslash.
+# So try_quant is never shown a newline here at all. This was measured, not
+# reasoned: substituting `isspace()` for the real space/tab test leaves every
+# case in this block passing. The guard that does work needs a raw byte and a
+# discriminating shape, and lives in tests/reject/ (`a{<LF>65536}` and friends).
+
+pattern a{\n1}
+m "a{\n1}" 0 5
+
+pattern a{\r1}
+m "a{\r1}" 0 5
+
+# VT is spelled \x0b, not \v: pcrec's `\v` is PCRE2's vertical-WHITESPACE
+# class (module 'classes'), not the byte — see docs/upstream_issues.md
+pattern a{\x0b1}
+m "a{\x0b1}" 0 5
+
+pattern a{\f1}
+m "a{\f1}" 0 5
+
+# The cases below DO guard the rule — they need no raw bytes, because a space
+# is a printable character. Whitespace never JOINS digits: this is literal,
+# not a{12}.
+pattern a{1 2}
+m "a{1 2}" 0 6
+n "aaaaaaaaaaaa"
+
+# ...and never stands in for a missing number, exactly as `a{}` and `a{,}` do
+pattern a{ }
+m "a{ }" 0 4
+n "a"
+
+pattern a{ , }
+m "a{ , }" 0 6
+n "a"
+
+pattern a{ ,}
+m "a{ ,}" 0 5
+
+# a tolerated byte still does not rescue a malformed brace
+pattern a{ 1x}
+m "a{ 1x}" 0 6
+
+pattern a{ 1
+m "a{ 1" 0 4
 
 # bare `{,}` is python's documented divergence (U2), not ours: it reads the
 # brace as {0,} where PCRE2 and pcrec read four literal characters.

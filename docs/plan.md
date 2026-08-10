@@ -158,7 +158,17 @@ CLAUDE.md files, commit, push.
   DIAGNOSTIC, which `perr` cannot express), +15 accept-controls, +37 corpus
   cases. Five sabotages, all caught; the off-by-one is caught by exactly ONE
   check (`(?:){65535}`) and nothing else. Found K7 (a large bounded repeat is
-  SIGKILLed, pre-existing) and U5 (python accepts counts PCRE2 rejects)
+  SIGKILLed, pre-existing) and U5 (python accepts counts PCRE2 rejects).
+  **R7's panel then found K8 — a THIRD miscompile of the same class in the same
+  function**, whitespace inside `{m,n}`, which all 49 probes had walked past
+  because they compared verdicts and the bug lives where both engines accept.
+  Fixed in the same checkpoint, with U6. The panel also closed: no test in the
+  repo asserted an error OFFSET (22 rows now do); the over-reach guard covered
+  only the first number (four rows added); no `{k,k}` existed anywhere (three
+  cases added); `tests/reject/` had no `timeout`, making its own rc>=124 promise
+  unreachable; and the exact-count hazard was measured disarming the boundary
+  row in a two-line diff, answered with a MANIFEST that names irreplaceable rows
+  by pattern. See docs/reviews/2026-08-10-r7-fix1.md
 - [PC-3] see "PCRE2 compliance tracking" below — SECOND, and it now carries Q1
   (a distinct "recognised but not a known name" outcome). Q1 is what makes an
   external name differential possible at all; without it the catch-all answers

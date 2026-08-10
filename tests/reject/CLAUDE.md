@@ -6,9 +6,12 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 93 constructs asserted to be rejected by hand, 66
-  more reached by iterating `pcrec --list-syntax`, plus 19 accept-controls.
-  Part of `make test`; env: PCREC, KEEP=1.
+- **run_reject_tests.sh** — 144 rows asserted by hand (124 naming a module, 20
+  the base-grammar brace errors K5/K6/K8), 66 more reached by iterating
+  `pcrec --list-syntax`, 45 accept-controls, and 5 known-wrong pins. Ends with
+  a MANIFEST naming the handful of rows whose deletion an exact count would not
+  catch, plus the exact counts themselves. Part of `make test`; env: PCREC,
+  KEEP=1.
 
 ## Two layers, and why neither replaces the other (SR-4)
 
@@ -78,18 +81,33 @@ still cannot assert a name.
    miscompiled) and not >= 124 (crash/timeout). A crash must never satisfy a
    rejection expectation; the .rxt harness applies the same rule to `perr`
    (R1 P-C1).
-2. the diagnostic contains the expected `requires module 'NAME'` text.
+2. the diagnostic contains the expected text — normally `requires module
+   'NAME'`, and for the 20 base-grammar brace rows a PCRE2 error wording. Since
+   R7 the brace rows also pin the OFFSET, because nothing in the repo asserted
+   one and `try_quant` keeps a per-number end position for no other purpose.
 3. no output file is left behind by a failed compile.
 
 ## The accept-controls are not optional
 
 A parser that rejected EVERYTHING would score 100% on a table made only of
-rejections. The 19 `accept` rows (literals, alternation, groups, every
+rejections. The 45 `accept` rows (literals, alternation, groups, every
 quantifier form, classes, `.`, anchors, the character escapes, escaped
-punctuation) are what stop that, and they are the same lesson the trie
-identity check learned the hard way — a control has to sit inside the range of
-what it certifies. The summary also enforces a floor on both counts, so
-deleting coverage fails rather than quietly shrinking the table.
+punctuation, and since FIX-1/R7 the malformed and whitespace-bearing braces)
+are what stop that, and they are the same lesson the trie identity check
+learned the hard way — a control has to sit inside the range of what it
+certifies.
+
+**A control has to be symmetric with the code it controls, too** (R7/T-5).
+K5's over-reach guard had three accept-controls and all three overflowed the
+FIRST number, so mirroring the mistake onto the second number rejected five
+patterns libpcre2 compiles with every suite green. The four `a{1,65536x}`-shaped
+rows close that half.
+
+The summary enforces exact counts AND a manifest. The counts alone are not
+enough: a critic moved the 65535 ceiling by one, deleted the single row that
+caught it, bumped the count as the failure message itself invites, and got a
+green `make test` in a two-line diff. The manifest names those rows by pattern,
+so deleting one fails with a message that does not offer a number to edit.
 
 ## Over-rejection is the opposite failure, and just as wrong
 

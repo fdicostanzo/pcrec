@@ -52,15 +52,23 @@ cleanup() {
 trap cleanup EXIT
 
 pass=0; fail=0
+seen=""   # every pattern that actually PASSED a check, for the manifest below
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 nrej=0
 reject() { # reject <pattern> <expected-substring>
+    # `timeout` on every invocation is load-bearing, not defensive (R7/T-11):
+    # this file's header promises rc >= 124 is a failure, and without it that
+    # branch was UNREACHABLE — pcrec cannot return 124 on its own, so a hanging
+    # or ballooning compile hung the suite instead of failing it. Not
+    # hypothetical: dropping the `big_n` raise turns three of the K5 rows into
+    # legal multi-GB bounded repeats, and a critic observed a 6.5 GB allocation
+    # inside an un-timeout-ed call here.
     local pat="$1" want="$2" out rc
     nrej=$((nrej + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    out="$("$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
     if [ "$rc" -eq 0 ]; then
         bad "reject '$pat': ACCEPTED (exit 0) — an unsupported construct was compiled instead of diagnosed, which is the miscompile the mandate forbids"
         return
@@ -78,18 +86,28 @@ reject() { # reject <pattern> <expected-substring>
         bad "reject '$pat': rejected but still wrote an output file"
         return
     fi
+    seen="$seen
+$pat"
     ok "reject '$pat' -> $want"
 }
 
 naccept=0
-accept() { # accept <pattern>   — the control: the table must not pass by rejecting everything
-    local pat="$1" out rc
+accept() { # accept <pattern> [display-label]
+    # The control: the table must not pass by rejecting everything.
+    # The optional label is for patterns containing RAW control bytes, which
+    # would otherwise put a newline or a non-UTF-8 byte into this script's own
+    # output and break anything that reads it as text.
+    local pat="$1" show="${2:-$1}" out rc
     naccept=$((naccept + 1))
-    out="$("$PCREC" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
-    if [ "$rc" -eq 0 ]; then
-        ok "accept '$pat' (base tier still compiles)"
+    out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    if [ "$rc" -ge 124 ]; then
+        bad "accept '$show': exit $rc — timed out or was killed, which is not 'compiles'"
+    elif [ "$rc" -eq 0 ]; then
+            seen="$seen
+$show"
+        ok "accept '$show' (base tier still compiles)"
     else
-        bad "accept '$pat': base-tier construct was REJECTED ($out) — the reject table has swallowed supported syntax"
+        bad "accept '$show': base-tier construct was REJECTED ($out) — the reject table has swallowed supported syntax"
     fi
 }
 
@@ -131,6 +149,15 @@ accept '{}{1}'      # literal `{`, then a `}` quantified by {1} — PCRE2 compil
 accept 'a{65536'
 accept 'a{65536x}'
 accept 'a{65536,x}'
+# ...and the SECOND number's half of the same guard, which was missing until
+# R7/T-5 measured it: all three rows above overflow the FIRST number, so
+# hoisting the `big_n` raise above its decline test — the identical mistake,
+# mirrored — rejected five patterns libpcre2 compiles with every suite green.
+# A guard that is symmetric in the code needs coverage that is symmetric too.
+accept 'a{1,65536x}'
+accept 'a{,65536x}'
+accept 'a{1,65536'
+accept '{1,65536x}'
 # The BOUNDARY itself, which nothing else pins: 65535 is a legal count, so an
 # off-by-one in K5's ceiling turns this into "number too big". The empty group
 # is what makes it cheap — `a{65535}` would need 65535 NFA states and dies on
@@ -139,6 +166,31 @@ accept 'a{65536,x}'
 # own size ceiling rather than a syntax verdict (the same class tests/fuzz/
 # already excludes), so the comparison legitimately stops at pcrec's parser.
 accept '(?:){65535}'
+# K8's over-reach guard: PCRE2 skips SPACE and TAB inside `{...}` and NO other
+# whitespace. `isspace()` would have been the obvious spelling and is wrong.
+#
+# This has to live here rather than in the corpus, and the reason is worth
+# keeping. A `.rxt` pattern line cannot carry a raw control byte — a newline
+# ends the line, and `\n` WRITTEN in a pattern is an escape that pcrec decodes
+# in atom position, long after try_quant has already declined the brace. So a
+# corpus case spelled `a{\n1}` exercises the escape decoder and never shows
+# try_quant a newline at all. Measured: with `isspace()` substituted for the
+# real test, every such corpus case still passes and this file still passed
+# too until these five rows existed.
+#
+# The discriminating shape is a TOO-BIG count behind the byte. If the byte were
+# skipped the count would be read and rejected (105); because it is not, the
+# whole brace is literal text and compiles. libpcre2 10.46 compiles all five.
+#
+# Only the four C0 bytes, deliberately. A 0xa0 row was written first — it would
+# guard against an `isspace()` under a Latin-1 locale — and then removed,
+# because this box's `timeout` (see the wrapper in accept()) rejects invalid
+# UTF-8 in argv and exits 125, and the row measured nothing anyway: the
+# `isspace()` sabotage costs 4 checks, all of them C0. If you re-add a
+# high-byte row, it cannot go through `timeout`.
+for b in 'n:\n' 'r:\r' 'v:\v' 'f:\f'; do
+    accept "$(printf "a{${b#*:}65536}")" "a{<${b%%:*}>65536}"
+done
 
 echo
 echo "== character-type escapes -> module 'classes' =="
@@ -302,38 +354,76 @@ echo "== base-grammar MISCOMPILES, fixed 2026-08-10 (K5, K6) =="
 # K5 — a count above 65535 is PCRE2 error 105. The overflow is remembered and
 # raised only where try_quant would have succeeded, so it must reach all three
 # of its return paths, not just `{m}`.
-reject 'a{65536}'       "number too big in {m,n} quantifier"
-reject 'a{100000}'      "number too big in {m,n} quantifier"
-reject 'a{0,65536}'     "number too big in {m,n} quantifier"
-reject 'a{65536,}'      "number too big in {m,n} quantifier"
-reject 'a{,65536}'      "number too big in {m,n} quantifier"
-reject 'a{65535,65536}' "number too big in {m,n} quantifier"
+#
+# THESE ROWS PIN THE OFFSET, and that is deliberate: `try_quant` keeps a
+# separate end position for each of the two numbers for no other purpose, and
+# until 2026-08-10 NOTHING in the repo asserted an error offset at all (R7,
+# C2/T-0 — `grep -rn "pattern offset" tests/` returned nothing). Every offset
+# below equals the one libpcre2 10.46 reports for the same pattern, so these
+# are a conformance claim and not just a change detector. Note which byte each
+# one lands on: the first number's end may be a `}` or a `,`, and the second
+# number's end is a different variable.
+reject 'a{65536}'       "number too big in {m,n} quantifier (pattern offset 7)"
+reject 'a{100000}'      "number too big in {m,n} quantifier (pattern offset 8)"
+reject 'a{0,65536}'     "number too big in {m,n} quantifier (pattern offset 9)"
+reject 'a{65536,}'      "number too big in {m,n} quantifier (pattern offset 7)"
+reject 'a{,65536}'      "number too big in {m,n} quantifier (pattern offset 8)"
+reject 'a{65535,65536}' "number too big in {m,n} quantifier (pattern offset 13)"
 # Too-big beats out-of-order — measured: PCRE2 answers 105 here, not 104. The
 # clamped accumulator makes `a{65536,1}` look out-of-order internally, so
-# checking in the other order is a live mistake, not a hypothetical one.
-reject 'a{65536,1}'     "number too big in {m,n} quantifier"
-# Twenty digits: the accumulator must stop growing once it is already too big.
-reject 'a{99999999999999999999}' "number too big in {m,n} quantifier"
+# checking in the other order is a live mistake, not a hypothetical one. The
+# offset also discriminates: 7 is the FIRST number's end, which is the one that
+# overflowed.
+reject 'a{65536,1}'     "number too big in {m,n} quantifier (pattern offset 7)"
+# Twenty digits. NOTE what this does and does not buy (R7/T-3): it pins the
+# OFFSET, which the clamp would otherwise get wrong, and it exercises the same
+# too-big path `a{100000}` does. It does NOT test the clamp's actual purpose —
+# `big_m` is sticky and ctx_fail fires before `m` is read, so removing the
+# clamp changes no observable output at all. The signed-overflow UB it prevents
+# is only visible to a UBSan build, which this repo does not have.
+reject 'a{99999999999999999999}' "number too big in {m,n} quantifier (pattern offset 22)"
 
 # K6 — a well-formed quantifier with nothing to quantify is PCRE2 error 109.
 # `*`, `+` and `?` were always rejected in this position; `{` was not, because
 # try_quant is only reached from p_rep, AFTER an atom.
-reject '{1}'      "quantifier does not follow a repeatable item"
-reject '{2,3}'    "quantifier does not follow a repeatable item"
-reject '{,5}'     "quantifier does not follow a repeatable item"
-reject '{1,}'     "quantifier does not follow a repeatable item"
-reject '{0}'      "quantifier does not follow a repeatable item"
-reject '{1}a'     "quantifier does not follow a repeatable item"
-reject 'a|{1}'    "quantifier does not follow a repeatable item"
-reject '({1})'    "quantifier does not follow a repeatable item"
-reject '(?:{1})'  "quantifier does not follow a repeatable item"
-reject '{1}{2}'   "quantifier does not follow a repeatable item"
+#
+# The offsets are pinned here too, and they carry a claim of their own: PCRE2
+# reports the CLOSING BRACE, which is exactly where try_quant leaves the cursor,
+# so `cx->pos - 1` is a conformance decision rather than a convenience. Each
+# value below matches libpcre2 10.46 on the same pattern.
+reject '{1}'      "quantifier does not follow a repeatable item (pattern offset 2)"
+reject '{2,3}'    "quantifier does not follow a repeatable item (pattern offset 4)"
+reject '{,5}'     "quantifier does not follow a repeatable item (pattern offset 3)"
+reject '{1,}'     "quantifier does not follow a repeatable item (pattern offset 3)"
+reject '{0}'      "quantifier does not follow a repeatable item (pattern offset 2)"
+reject '{1}a'     "quantifier does not follow a repeatable item (pattern offset 2)"
+reject 'a|{1}'    "quantifier does not follow a repeatable item (pattern offset 4)"
+reject '({1})'    "quantifier does not follow a repeatable item (pattern offset 3)"
+reject '(?:{1})'  "quantifier does not follow a repeatable item (pattern offset 5)"
+reject '{1}{2}'   "quantifier does not follow a repeatable item (pattern offset 2)"
 # The ORDER between the three brace diagnostics in atom position, which is also
 # measured: PCRE2 answers 105 for a too-big count and 104 for an out-of-order
 # pair, NOT 109. A fix that asked "is anything repeatable" first would pass
 # every K6 row above and get both of these wrong.
-reject '{65536}'  "number too big in {m,n} quantifier"
-reject '{3,1}'    "numbers out of order in {m,n} quantifier"
+reject '{65536}'  "number too big in {m,n} quantifier (pattern offset 6)"
+# K8 (found by R7's spec critic, fixed in the same checkpoint) — PCRE2 skips
+# SPACE and TAB in each of the four gaps inside `{...}`, so both rules above
+# have to see THROUGH the whitespace. These rows also pin the offsets, which is
+# where the subtlety lives: PCRE2 reports where the DIGITS ran out, so trailing
+# whitespace does not move it (`a{65536 }` is offset 7, the space itself) while
+# leading whitespace does (`a{ 65536}` is offset 8, the `}`).
+reject 'a{ 65536}' "number too big in {m,n} quantifier (pattern offset 8)"
+reject 'a{65536 }' "number too big in {m,n} quantifier (pattern offset 7)"
+reject '{ 65536}'  "number too big in {m,n} quantifier (pattern offset 7)"
+reject '{ 1}'      "quantifier does not follow a repeatable item (pattern offset 3)"
+reject 'a{3, 1}'   "numbers out of order in {m,n} quantifier (pattern offset 6)"
+# the p_rep path takes the same offset, and it is pre-existing code
+reject 'a{3,1}'    "numbers out of order in {m,n} quantifier (pattern offset 5)"
+reject 'ab{5,2}'   "numbers out of order in {m,n} quantifier (pattern offset 6)"
+# Out-of-order reported the `{` until R7 (offset 0 here) where PCRE2 reports
+# the `}`. It was the only one of the three brace diagnostics whose offset
+# disagreed, and two critics flagged it independently; aligned deliberately.
+reject '{3,1}'    "numbers out of order in {m,n} quantifier (pattern offset 4)"
 
 echo
 echo "== KNOWN-WRONG, pinned so a change is VISIBLE (K3, K4) =="
@@ -360,7 +450,7 @@ nwrong=0
 pinned() { # pinned <pattern> <accept|reject> <expected-msg-or-dash> <why it is wrong>
     local pat="$1" want="$2" msg="$3" why="$4" rc out
     nwrong=$((nwrong + 1))
-    out="$("$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
     if { [ "$want" = accept ] && [ "$rc" -eq 0 ]; } || \
        { [ "$want" = reject ] && [ "$rc" -eq 1 ]; }; then
         # verdict pinned; also pin the MESSAGE where one was given. A
@@ -373,6 +463,8 @@ pinned() { # pinned <pattern> <accept|reject> <expected-msg-or-dash> <why it is 
                    return ;;
             esac
         fi
+        seen="$seen
+$pat"
         ok "known-wrong '$pat' still ${want}s — $why"
     else
         bad "known-wrong '$pat': behaviour CHANGED (expected to $want, rc=$rc). $why. If you fixed K3/K4, move this line into the tables above; if not, you have regressed something"
@@ -431,7 +523,7 @@ row_reject() { # like reject(), but counted separately so the floors stay honest
     local pat="$1" want="$2" out rc
     niter=$((niter + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    out="$("$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
     if [ "$rc" -ne 1 ]; then
         bad "row '$pat': exit $rc, not a clean exit-1 rejection"
         return
@@ -507,12 +599,60 @@ echo "checks failed: $fail"
 # registry conformance check cannot object because since SR-2 both sides read
 # the same row, and the feature/module bijection stays consistent.
 #
-# A floor guards a COUNT; the thing worth guarding is a SET. Exact numbers do
-# not give you the set either, but they make every deletion deliberate and
-# visible in the diff, which is what the slack removed. If you added or removed
-# coverage on purpose, update these three numbers in the same commit.
-if [ "$nrej" -ne 137 ] || [ "$naccept" -ne 37 ] || [ "$nwrong" -ne 5 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 137 / 37 / 5." >&2
+# A floor guards a COUNT; the thing worth guarding is a SET.
+#
+# THE COUNT ALONE IS NOT ENOUGH, and R7/T-7 measured exactly how it fails. A
+# critic moved the 65535 ceiling to 65534 — rejecting every legal count at the
+# documented boundary — then deleted the single row that caught it and bumped
+# the expected count by one, which is what THIS FILE'S OWN FAILURE MESSAGE
+# invites. `make test` went green in a two-line diff. The count made the
+# deletion visible in the diff; it did not make it fail. That is the same
+# "exact counts disarm themselves" hazard R6 recorded, and a number cannot fix
+# it because the number is what the attacker is told to edit.
+#
+# So the rows whose absence would be silent are named HERE, by pattern. A
+# manifest is not a count: deleting the row makes this fail, and the failure
+# message does not tell you to edit a number. Keep it short — it is for rows
+# that are the ONLY check of something, not for coverage in general.
+manifest_missing=0
+must_have() { # must_have <pattern> <why it is irreplaceable>
+    # Match a WHOLE recorded line, not a substring. `[:alpha:]` is a substring
+    # of the unrelated row `[[:alpha:]]`, so a substring test would have made
+    # this entry silently vacuous — the exact failure mode the manifest exists
+    # to prevent, found while writing it.
+    case "
+$seen
+" in
+        *"
+$1
+"*) ;;
+        *) echo "reject: MANIFEST — no check exercised '$1'." >&2
+           echo "reject:   why it must exist: $2" >&2
+           echo "reject:   do NOT satisfy this by editing a count; restore the row." >&2
+           manifest_missing=1 ;;
+    esac
+}
+must_have '(?:){65535}' \
+    "the only check in the repo that sees an off-by-one in K5's 65535 ceiling"
+must_have 'a{1,65536x}' \
+    "the only check of the big_n half of K5's over-reach guard (R7/T-5)"
+must_have 'a{65536x}' \
+    "the big_m half of the same guard"
+must_have '[:alpha:]' \
+    "the K3 known-wrong pin; losing it makes a fixed-or-unfixed K3 invisible"
+must_have 'a{2,3,4}' \
+    "the only malformed-brace control with a SECOND comma"
+if [ "$manifest_missing" -ne 0 ]; then
+    echo "reject: one or more irreplaceable checks are gone — see above" >&2
+    exit 1
+fi
+
+# Exact numbers do not give you the set either, but they make every deletion
+# deliberate and visible in the diff, which is what the slack removed. If you
+# added or removed coverage on purpose, update these three numbers in the same
+# commit — and check first whether the row belongs in the manifest above.
+if [ "$nrej" -ne 144 ] || [ "$naccept" -ne 45 ] || [ "$nwrong" -ne 5 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 144 / 45 / 5." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

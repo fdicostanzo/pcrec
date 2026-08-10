@@ -28,6 +28,18 @@ most of the odd-looking test cases trace to a finding recorded here.
   test see?" — asked because a sabotage returned zero, and every other bug came
   from pointing it somewhere else.
 
+- **2026-08-10-r7-fix1.md** — R7, FIX-1 (K5/K6, the two brace miscompiles).
+  The panel found a THIRD miscompile of the same class in the same function
+  (K8, whitespace in `{m,n}`), one space away from all 49 forms the fix had
+  been certified against — invisible because those probes compared VERDICTS and
+  the bug lives where both engines accept. Also: nothing in the repo asserted an
+  error offset, though the code kept per-number state for no other purpose; the
+  over-reach guard was tested on one half of a two-sided rule; `{k,k}` did not
+  exist anywhere in the suite; the exact-count hazard was measured disarming the
+  one row the commit called irreplaceable, in a two-line diff, which is what the
+  new MANIFEST answers. Four of my claims were false, one of them a number I had
+  inferred from an error message and copied into four files.
+
 ## Conventions
 
 Findings are labelled CONFIRMED (reproduced, with the repro) or SUSPECTED, and

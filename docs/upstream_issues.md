@@ -63,8 +63,12 @@ oracles) | `not-a-bug` (looked suspicious, resolved as correct behavior).
 ## U5 — python `re`: repeat counts above 65535 are accepted (PCRE2 error 105)
 
 - **Status**: divergence-by-design (the two engines simply have different
-  ceilings). PCRE2's is 65535; python's is 4294967296, and above THAT it
-  raises `OverflowError` rather than `re.error`.
+  ceilings). PCRE2's is 65535; python 3.14's is **4294967294** (2^32 − 2), and
+  above that it raises `OverflowError` rather than `re.error`.
+  The round number 4294967296 stood here first, inferred from python's own
+  "repetition number is too large" message rather than measured, and an R7
+  critic caught it: `a{4294967294}` compiles, `a{4294967295}` does not. Two
+  off, in four files, from exactly the habit this document exists to break.
 - **Repro**: `re.compile('a{65536}')`, `a{100000}`, `a{0,65536}`, `a{,65536}`
   and `a{99999999999999999999}` all compile in python 3.14; libpcre2 10.46
   answers error 105 "number too big in {} quantifier" to every one. pcrec
@@ -78,6 +82,29 @@ oracles) | `not-a-bug` (looked suspicious, resolved as correct behavior).
 - **A second-order hazard worth naming**: the 20-digit form raises
   `OverflowError`, which is NOT an `re.error`, so an unmarked block would
   crash `verify_rxt.py` rather than fail it. The marker also avoids that.
+
+## U6 — python `re`: no whitespace allowed inside `{m,n}` (PCRE2 allows space/tab)
+
+- **Status**: divergence-by-design (a flavour difference). PCRE2 10.46 follows
+  Perl 5.34 and skips SPACE and TAB in each of the four gaps inside a repeat
+  quantifier; python `re` reads any whitespace there as ending the quantifier,
+  so the whole brace becomes literal text.
+- **Repro**: `re.compile('a{ 1}').search('a')` → `None`, and it matches the
+  five literal characters instead; the PCRE2 oracle answers `match 0 1` for
+  the same pattern and subject. Same for `a{1 }`, `a{1, 2}`, `a{1 ,2}`,
+  `a{<TAB>1}` and every combination of the four gaps. pcrec follows PCRE2
+  (K8, fixed 2026-08-10).
+- **Found**: 2026-08-10, R7's spec critic, generating the brace space
+  combinatorially rather than listing it.
+- **Impact**: python cannot oracle the tolerated forms, so the K8 block in
+  `tests/base/bounded_repeats.rxt` carries `# pcre2-only`. The COMPLEMENTARY
+  cases — the bytes PCRE2 does not skip, and whitespace inside or in place of
+  a number — are where python and PCRE2 agree, so those stay python-verified
+  and are the more valuable half: they are the over-reach guard.
+- **This is the third instance of one shape**, after `\v` and the POSIX
+  collating elements: python agrees with a pcrec bug, so a python-verified
+  corpus certifies the divergence instead of catching it. Each time, the thing
+  that found it was an instrument that does not use python.
 
 ---
 

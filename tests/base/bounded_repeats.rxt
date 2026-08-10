@@ -55,3 +55,77 @@ n "aa"
 pattern x{1,2}y
 m "xy" 0 2
 m "xxy" 0 3
+
+# ---- K8: SPACE and TAB inside a quantifier (found 2026-08-10, R7 spec critic)
+#
+# PCRE2 10.46, following Perl 5.34, skips space and tab in each of the four
+# gaps inside `{...}`. pcrec used to decline on the first non-digit, so every
+# form below compiled the LITERAL characters — a silent miscompile that no
+# verdict comparison could see, because both engines exit 0 and only the
+# compiled language differs.
+#
+# python `re` reads all of these as literal too, agreeing with the bug, so the
+# whole block is `# pcre2-only` (U6). The complementary cases — the bytes that
+# must NOT be skipped — live in syntax_errors.rxt and ARE python-verified,
+# which is where the over-reach guard actually sits.
+
+# pcre2-only
+pattern a{ 1}
+m "a" 0 1
+m "a{ 1}" 0 1
+
+# the second subject is the sharp one: as a QUANTIFIER only the leading 'a'
+# matches (span 0..1), where the old literal reading matched all five bytes.
+# libpcre2 10.46 answers 0..1 here too.
+
+# pcre2-only
+pattern a{1 }
+m "a" 0 1
+m "a{1 }" 0 1
+
+# pcre2-only
+pattern a{	1}
+m "a" 0 1
+
+# gap 3 and gap 4, and a run of more than one space
+# pcre2-only
+pattern a{1,  2}
+m "aa" 0 2
+m "a" 0 1
+n "b"
+
+# every gap at once, mixed space and tab
+# pcre2-only
+pattern a{ 1	,	2 }
+m "aa" 0 2
+m "a" 0 1
+
+# the {m,} and {,n} forms take whitespace in their gaps too
+# pcre2-only
+pattern a{ 2,}
+m "aaa" 0 3
+n "a"
+
+# pcre2-only
+pattern a{ ,2}
+m "aa" 0 2
+m "" 0 0
+
+# R7/T-12: equal bounds. `m > n` was tested on ONE side only — `{3,1}` and
+# `{2,1}` prove it fires when it should, and until now NOTHING proved it does
+# not fire when m == n. A critic changed `>` to `>=`, turning every `{k,k}`
+# into a syntax error, and no suite saw it: there was not one two-number
+# quantifier with equal bounds anywhere in the repo.
+
+pattern a{2,2}
+m "aa" 0 2
+m "aaa" 0 2
+n "a"
+
+pattern a{0,0}
+m "" 0 0
+m "aaa" 0 0
+
+pattern (a|b){3,3}c
+m "ababc" 1 5
+n "abc"

@@ -295,6 +295,42 @@ static Ast *p_atom(Ctx *cx)
     }
 }
 
+/* PCRE2 10.46, following Perl 5.34, tolerates SPACE and TAB inside a repeat
+ * quantifier (K8). Exactly two bytes and exactly four places — measured against
+ * libpcre2 10.46, every gap probed independently:
+ *
+ *     tolerated:  0x20 space, 0x09 tab
+ *     NOT:        0x0a 0x0b 0x0c 0x0d — those make the brace literal text
+ *     where:      { W m W , W n W }   — all four gaps, any run, mixed
+ *
+ * and nowhere else, which is the half that keeps this from over-reaching:
+ * whitespace never joins digits (`a{1 2}` is literal, not `a{12}`) and never
+ * stands in for a missing number (`a{ }`, `a{ , }`, `a{ ,}` stay literal
+ * exactly as `a{}`, `a{,}` do). Both fall out of skipping only at the four
+ * gaps, so there is no separate rule to keep in step.
+ *
+ * Note the call sites sit AFTER each `end_m`/`end_n` assignment, not before:
+ * PCRE2 reports the offset where the DIGITS ran out, so `a{65536 }` is error
+ * 105 at offset 7 (the space), not at the `}`. */
+
+/* COST, measured (R7). K6 made every literal `{` in atom position pay a
+ * try_quant scan it did not pay before, and the obvious cost model — "one more
+ * call" — undercounts, because the old digit loop also bailed out after at most
+ * six digits while the new one must reach the end of the run to make its
+ * two-phase decision. Instrumented over 1 MB patterns: exactly 2.00x the calls
+ * at every shape, and up to 286x the BYTES scanned on 999-digit runs.
+ *
+ * It is still linear, and provably so rather than just observably: try_quant
+ * scans only the maximal digit run one byte past its `{`; those runs are
+ * disjoint across distinct `{` positions (a `{` is not a digit); and each `{`
+ * is examined at most twice, once by p_rep after the preceding atom and once by
+ * p_atom when it becomes one. Total bytes scanned is bounded by 2 * patlen, and
+ * the measurement saturates that bound where it used to use 0.7% of it. */
+static void skip_quant_space(Ctx *cx)
+{
+    while (peekc(cx) == ' ' || peekc(cx) == '\t') cx->pos++;
+}
+
 /* Try to parse {m}, {m,}, {m,n} at '{'. Returns false (cursor restored) when
  * it is not a valid quantifier — PCRE then treats '{' as a literal.
  *
@@ -316,6 +352,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
 {
     size_t save = cx->pos;
     cx->pos++; /* '{' */
+    skip_quant_space(cx);               /* gap 1: `{` _ m */
 
     long m = 0, n;
     int ndig = 0;
@@ -331,7 +368,8 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
         }
         ndig++;
     }
-    end_m = cx->pos;
+    end_m = cx->pos;            /* BEFORE the skip — see skip_quant_space */
+    skip_quant_space(cx);       /* gap 2: m _ (`,` | `}`) */
     bool have_min = ndig > 0;   /* {,n} == {0,n} since PCRE2 10.43 (M2 fuzzer
                                    finding); bare {,} and {} stay literal */
 
@@ -344,6 +382,7 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
     }
     if (peekc(cx) != ',') { cx->pos = save; return false; }
     cx->pos++; /* ',' */
+    skip_quant_space(cx);               /* gap 3: `,` _ n */
 
     if (peekc(cx) == '}') {
         if (!have_min) { cx->pos = save; return false; }
@@ -361,12 +400,19 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax)
         }
         ndig++;
     }
-    end_n = cx->pos;
+    end_n = cx->pos;            /* BEFORE the skip — see skip_quant_space */
+    skip_quant_space(cx);       /* gap 4: n _ `}` */
     if (ndig == 0 || peekc(cx) != '}') { cx->pos = save; return false; }
     cx->pos++;
     if (big_m) ctx_fail(cx, end_m, "number too big in {m,n} quantifier");
     if (big_n) ctx_fail(cx, end_n, "number too big in {m,n} quantifier");
-    if (m > n) ctx_fail(cx, save, "numbers out of order in {m,n} quantifier");
+    /* R7/T-4: this used to report `save`, the `{`, where PCRE2 reports the
+     * closing `}` — the one brace diagnostic of the three whose offset did NOT
+     * agree, and it quietly falsified the comment above. Aligned deliberately:
+     * `a{3,1}` is offset 5 and `{3,1}` is offset 4, both matching libpcre2
+     * 10.46. It is a behaviour change to a pre-existing message, so it is
+     * pinned by name in tests/reject/ rather than left to be rediscovered. */
+    if (m > n) ctx_fail(cx, cx->pos - 1, "numbers out of order in {m,n} quantifier");
     *rmin = (int)m; *rmax = (int)n;
     return true;
 }

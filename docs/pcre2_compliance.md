@@ -73,13 +73,13 @@ pcrec implements a deliberately small base tier and rejects the rest by design.
 Of PCRE2's syntax surface:
 
 - The base tier (literals, `.`, classes, ranges, quantifiers incl. lazy,
-  alternation, groups, `^`, `$`, the character escapes) is `OK`, with 842
-  corpus cases at 100% oracle agreement (824 of them python-verified; the rest
+  alternation, groups, `^`, `$`, the character escapes) is `OK`, with 876
+  corpus cases at 100% oracle agreement (844 of them python-verified; the rest
   are `# pcre2-only` blocks checked against libpcre2 directly).
-- Everything else is `REJECTED` — 137 rows in `tests/reject/` individually
-  assert exit 1 and the right diagnostic (117 of them a module name; the other
-  20 are the base-grammar brace errors K5/K6 landed on 2026-08-10, which name a
-  PCRE2 error instead), with 37 accept-controls proving
+- Everything else is `REJECTED` — 144 rows in `tests/reject/` individually
+  assert exit 1 and the right diagnostic AND its offset (124 of them a module
+  name; the other 20 are the base-grammar brace errors K5/K6/K8 landed on
+  2026-08-10, which name a PCRE2 error instead), with 45 accept-controls proving
   the table cannot pass by rejecting everything, and (SR-4) a further 66 checks
   that iterate `pcrec --list-syntax` so no registry row can escape a probe
   (`tests/reject/`). The two layers answer different questions and neither
@@ -109,7 +109,7 @@ survey earned its keep").
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| whitespace inside `{ }` in `\g{2}` etc. | `REJECTED` | — | reached only via constructs that are themselves rejected |
+| whitespace inside `{ }` in `\g{2}` etc. | `REJECTED` | — | reached only via constructs that are themselves rejected. **This row's scope was too narrow and its dismissal was wrong for the case that mattered** (R7): the REPEAT quantifier is base-tier and very much reached, and pcrec silently compiled `a{ 1}` as literal text until K8. See the Quantifiers section |
 | `\u{...}` (ALT_BSUX) | `OUT-OF-SCOPE` | — | an ECMAScript-compatibility spelling gated on a PCRE2 option pcrec does not model |
 
 ## Escaped characters
@@ -172,6 +172,7 @@ commits to. The blocker is table generation and size, not matching.
 | double quantifier `a**`, `a{2}{3}` | `OK` | — | rejected, corpus-covered. Note the WORDING differs on `a{1}{2}`: PCRE2 says error 109, pcrec says "multiple quantifiers on the same item". Same verdict, and the offset agrees |
 | count above 65535, `a{65536}` | `AGREES-REJECT` | — | PCRE2 error 105. **Was a MISCOMPILE until 2026-08-10 (K5, FIX-1)** — silently reinterpreted as literal text, so the emitted matcher accepted a different language than the pattern named. The overflow is judged only once the form is CONFIRMED to be a quantifier, which is what PCRE2 does: `a{65536x}`, `a{65536,x}` and `a{65536` all stay literal in both engines |
 | `{m,n}` with nothing to quantify, `{1}` | `AGREES-REJECT` | — | PCRE2 error 109. **Was a MISCOMPILE until 2026-08-10 (K6, FIX-1)**; `*`, `+` and `?` had always been rejected in this position and only `{` was missed, because `try_quant` is reached from `p_rep`, i.e. after an atom. Malformed braces (`{}`, `{,}`, `{1`, `a{`) stay literal in both engines, and the reject suite's accept-controls pin that |
+| space/tab inside `{m,n}`, `a{ 1}` | `OK` | — | PCRE2 (following Perl 5.34) skips 0x20 and 0x09 in each of the four gaps `{`_m_`,`_n_`}`, and no other byte. **Was a MISCOMPILE until 2026-08-10 (K8)** — silently literal text, and invisible to a verdict comparison because both engines accept in quantifier position. Whitespace never joins digits (`a{1 2}` is literal) nor stands in for a number (`a{ }`, `a{ , }` stay literal). Found by R7's spec critic, not by the 49 probes that certified K5/K6 |
 | brace diagnostic PRECEDENCE | `OK` | — | measured, not assumed: in atom position PCRE2 answers 105 for `{65536}` and 104 for `{3,1}`, not 109; and too-big beats out-of-order, so `a{65536,1}` is 105. pcrec agrees on all three, offsets included |
 | large bounded repeat, `a{0,65535}` | `OK-LIMITED` | `PLANNED` | correct up to roughly `{0,20000}`. Above that the NFA/DFA build exhausts memory and the process is SIGKILLed instead of reaching the 32000-state cap that exists to prevent exactly this — see **K7**. `a{65535}` (the exact-count form) does hit the cap cleanly. Not a miscompile; no wrong code is emitted |
 
@@ -335,15 +336,26 @@ over-rejection is the opposite failure and just as wrong.
 **2. The mandate's central guarantee had no test.** "Unsupported constructs
 must fail with a clean `requires module 'X'` error, never miscompile" is the
 project's core promise, and nothing checked it. It could not live in the .rxt
-corpus: a `perr` block requires the python oracle to ALSO fail to compile, and
-python accepts `\d`, `\b`, `(?i)` and nearly everything else — so every
-module-routed construct was untestable there, and the `# pcre2-only` escape
-hatch does not apply because `verify_rxt.py`'s `perr` branch never consults it.
+corpus: a `perr` block asserts only THAT a pattern is rejected, never WHY, and
+the module name is the caller's only pointer to what would implement the
+construct.
+
+**CORRECTED 2026-08-10 (R7).** This paragraph used to give a second reason —
+that a `perr` block also needs the python oracle to fail, and that the
+`# pcre2-only` escape hatch "does not apply because `verify_rxt.py`'s `perr`
+branch never consults it". The first half is true; the second is FALSE and was
+never measured. `verify_rxt.py`'s skip test precedes its `perr` branch, so a
+marked block is skipped like any other case while `run.sh` still asserts it
+against pcrec. FIX-1 corrected the claim in `tests/reject/`, and a critic found
+this third copy still standing here, in the present tense, unflagged — the same
+"one claim, several files, never measured" shape the document elsewhere warns
+about.
 
 `tests/reject/run_reject_tests.sh` now asserts, per construct, that pcrec exits
-exactly 1 (not 0, not a crash), names the expected module, and writes no output
-file — 93 constructs, plus 19 accept-controls so the table cannot pass by
-rejecting everything. Reproducing the `\v` bug's exact shape on a different
+exactly 1 (not 0, not a crash, not a timeout), carries the right diagnostic,
+and writes no output file — 144 rows, plus 45 accept-controls so the table
+cannot pass by rejecting everything, and a short manifest naming the rows whose
+deletion the counts alone would not catch. Reproducing the `\v` bug's exact shape on a different
 escape (silently decoding `\d` to a literal `d`) fails 2 reject checks and
 **zero** corpus and codegen checks.
 

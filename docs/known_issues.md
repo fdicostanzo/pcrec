@@ -265,6 +265,59 @@ an error") costs 13 + 18.
 
 ---
 
+## K8 — FIXED 2026-08-10 (R7, same checkpoint it was found in) — was a MISCOMPILE
+
+pcrec did not accept SPACE or TAB inside a `{m,n}` quantifier. PCRE2 10.46 does,
+following Perl 5.34, so every such pattern was silently demoted to literal text.
+
+    a{ 1}   a{1 }   a{ 1 }   a{1, 2}   a{1 ,2}   a{<TAB>1}
+        -> PCRE2: a quantifier; matches ONE 'a'
+        -> pcrec: five or more literal characters
+
+**Found by R7's spec critic, and how it was found is the point.** The session's
+own 49 hand-picked probes missed it completely, because in QUANTIFIER position
+both engines exit 0 — a verdict-only comparison sees nothing, and only the
+compiled language differs. The critic generated the brace space combinatorially
+instead of listing it, and got 90 verdict disagreements in ATOM position (`{ 1}`
+is PCRE2 error 109, pcrec accepted it) plus the silent pair above. It is the
+same class as K5 and K6, undetected by the same instrument that had just been
+used to certify them.
+
+**The rule, measured gap by gap against libpcre2 10.46 rather than inferred:**
+
+    tolerated bytes:  0x20 space, 0x09 tab — and NO others. 0x0a 0x0b 0x0c 0x0d
+                      and 0xa0 all leave the brace literal in both engines.
+    positions:        all four gaps, `{` _ m _ `,` _ n _ `}`, any run, mixed.
+    never:            inside a number (`a{1 2}` is literal, not `a{12}`), and
+                      never in place of one (`a{ }`, `a{ , }`, `a{ ,}` stay
+                      literal exactly as `a{}` and `a{,}` do).
+
+**Fix:** a four-line `skip_quant_space` called at exactly those four gaps. Both
+"never" clauses fall out of skipping only at the gaps, so there is no second
+rule to keep in step. The calls sit AFTER each `end_m`/`end_n` assignment
+because PCRE2 reports the offset where the DIGITS ran out — `a{65536 }` is
+error 105 at offset 7, the space itself, not at the `}`.
+
+**The oracle situation is the `\v` shape again**: python `re` reads every one of
+these as literal, agreeing with the bug, so the tolerated forms cannot be
+python-verified (U6) and carry `# pcre2-only`. The bytes that must NOT be
+skipped agree with python and are verified normally.
+
+**One test-design trap, recorded because it cost a sabotage to find.** The
+obvious corpus guard — `pattern a{\n1}` — does not guard anything. A `.rxt`
+pattern line cannot carry a raw control byte, and `\n` written in a pattern is
+an escape pcrec decodes in ATOM position, long after `try_quant` has looked at
+the brace and seen a backslash. Substituting `isspace()` for the real test left
+every such case passing. The working guard needs a raw byte and a discriminating
+shape (`a{<LF>65536}` compiles iff the byte is not skipped) and lives in
+`tests/reject/`, where bash can supply the byte.
+
+Sabotage-validated: reverting all four gaps costs 5 reject + 12 corpus checks;
+`isspace()` costs 4; dropping one gap costs 1 + 4; skipping digits at the gaps
+costs 25 + 57; moving the skip before `end_m` costs 1.
+
+---
+
 ## K7 — OPEN, found 2026-08-10 (FIX-1, while probing the 65535 boundary)
 
 A large BOUNDED repeat exhausts memory and the process is SIGKILLed, instead of
@@ -283,8 +336,25 @@ regression from it:
 
 So the EXACT-count form degrades cleanly and the bounded-optional form does not:
 `{0,n}` builds an optional chain that blows past the memory the cap was meant to
-bound, before the cap is ever consulted. The threshold sits between 20000 and
-40000 and was not narrowed further.
+bound, before the cap is ever consulted.
+
+**Threshold narrowed by R7's spec critic under `ulimit -v 6000000`**, and the
+numbers are worse than "it dies above 40000":
+
+    a{0,20000}              4.68 GB peak RSS, 15.2 s   -> ACCEPTED
+    a{0,25000}                                         -> SIGABRT (cap hit)
+    a{0,30000}                                         -> SIGKILL
+    a{0,32001} .. a{0,65535}                           -> SIGABRT (cap hit)
+
+The `>32000 states` guard is therefore UNREACHABLE for this shape — the process
+dies of memory before the state count is consulted — and the last form that
+succeeds already costs 4.7 GB. That is the sharper statement of the bug: not
+"large repeats crash" but "the cap that exists to prevent this cannot be
+reached by the shape that needs it".
+
+No crash of a different shape was found: nested small counts
+(`((((a{16}){16}){16}){16})`, `(a{200}){200}`) and exponential subset blowups
+reject cleanly with the DFA-guard message once given enough memory.
 
 **Severity: not a miscompile.** No wrong code is emitted and nothing is silently
 accepted; the failure is loud, just not clean. It still violates the softer half
@@ -304,6 +374,9 @@ purpose-built check. **Fix with:** M4, or a bounded-repeat pre-estimate.
 _Four open issues: K2 (cosmetic), K3 and K4 (over-rejection / over-acceptance in
 the class-bracket doorway, one fix — FIX-2), K7 (a large bounded repeat is
 SIGKILLed rather than diagnosed; not a miscompile). **No open MISCOMPILE
-remains** — K5 and K6 were fixed on 2026-08-10 by FIX-1. Performance and
+remains** — K5 and K6 were fixed on 2026-08-10 by FIX-1, and K8 by R7's critic
+panel the same day. Note that K8 was found in the checkpoint review OF the K5/K6
+fix, in the same function, by an instrument the fix itself had not used: worth
+remembering before treating a construct as finished. Performance and
 architecture debt lives in docs/plan.md; other engines' bugs in
 docs/upstream_issues.md._

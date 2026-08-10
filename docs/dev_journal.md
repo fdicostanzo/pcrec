@@ -2601,3 +2601,95 @@ denotation) and let module `classes` prove it, since it needs `\d`/`\w`/`\s` AND
 
 **Next session: work docs/plan.md's four steps in order** — FIX-1 (K5/K6), PC-3
 (with Q1), FIX-2 (K3/K4), SR-9 (byte+tail). See docs/wake.md.
+
+## 2026-08-10 — FIX-1 (K5, K6) and R7, which found a third one
+
+First of the four steps in plan.md's AGREED ORDER. Two commits: the fix, then
+the panel's triage.
+
+**Baseline verified before touching anything**, all five green in place and from
+a fresh clone: 805 corpus / 73 CLI / 211 reject / 127 registry / 29 codegen /
+7 trie-identity, verify_rxt 796/796, fuzz seed 1 zero divergences, bench zero
+budget failures.
+
+**FIX-1.** K5 (`a{65536}`) and K6 (`{1}`) both silently reinterpreted a
+quantifier as literal text and compiled a matcher for a different language than
+the pattern named — the one class the charter forbids. `try_quant` now REMEMBERS
+an overflow and raises PCRE2's error 105 only where it would have returned true;
+`p_atom` gained a `case '{'` that asks try_quant and raises 109 only on a yes.
+
+Both fixes are two-phase for the same reason, and that is the part worth
+keeping: the forms that must stay literal (`a{`, `{}`, `{,}`, `a{65536x}`) are
+*exactly* the forms try_quant declines, so the over-reach guard is structural
+rather than a second list that can drift out of step. Three orderings were
+measured rather than assumed — too-big beats out-of-order, atom-position
+too-big beats not-repeatable, and the offset is where the digits ran out — and a
+plausible implementation gets each one wrong.
+
+**Then the panel found K8, and it is the finding of the session.** PCRE2 (Perl
+5.34) tolerates SPACE and TAB inside a quantifier. pcrec compiled `a{ 1}` as
+five literal characters. Same class as K5/K6, same function, one space away from
+every one of the 49 forms I had just certified the fix against — and my probes
+could not see it, because they compared VERDICTS and in quantifier position both
+engines exit 0. Only the compiled language differs. The critic found it by
+GENERATING the brace space combinatorially instead of listing it.
+
+Fixed the same day: a four-line `skip_quant_space` at exactly four gaps, with
+the rule measured gap by gap (space and tab only; never inside a number; never
+in place of one). U6 records that python agrees with the bug, which is the third
+instance of that shape after `\v` and the collating elements.
+
+**What the rest of the panel closed.** Nothing in the repo asserted an error
+OFFSET, while `try_quant` kept a per-number end position for no other purpose —
+so a one-token edit that made every K6 diagnostic point at the wrong brace left
+all nine checks green. The over-reach guard was tested on one half of a
+two-sided rule. No `{k,k}` existed anywhere in the suite, so `>` -> `>=` was
+invisible. `tests/reject/` had no `timeout`, making its own "rc >= 124 is a
+failure" promise unreachable — and a critic watched an un-timeout-ed call reach
+6.5 GB. All fixed, each with a sabotage that was 0 before and is not now.
+
+**The exact-count hazard finally has an answer.** R6 recorded that exact counts
+disarm themselves; R7 measured it on the single row I had called irreplaceable —
+move the ceiling by one, delete the row, bump the count exactly as the failure
+message instructs, green `make test` in a two-line diff, on a compiler that
+rejects every legal count at the boundary. `tests/reject/` now ends with a
+MANIFEST that names irreplaceable rows by pattern; deleting one fails with a
+message that offers no number to edit. Its first version was itself vacuous
+(`[:alpha:]` matched inside `[[:alpha:]]`), which is the same lesson one level
+down and is written up in the file rather than quietly fixed.
+
+**Four claims of mine were false again, and the shape has not changed.** python's
+repeat ceiling is 4294967294, not the round 4294967296 I inferred from an error
+message and copied into four files. "Verdicts AND offsets agree with libpcre2
+throughout" was false for one row of twenty (`{3,1}`), which I fixed in the code
+rather than carry as a documented wart — all three brace diagnostics now match
+PCRE2's offsets. The `# pcre2-only`/`perr` invariant I corrected in two files was
+still standing, present-tense, in a third. And a compliance row dismissed
+whitespace-in-braces as "reached only via constructs that are themselves
+rejected" — wrong for exactly the case that became K8.
+
+**My own sabotage harness lied to me**, which is now a four-session theme. The
+`isspace()` sabotage returned 0/0 and I nearly wrote "the guard holds": the
+patch had applied its `#include` and silently not its substitution, and my
+vacuity check — "did the file change?" — passed on the include alone. Asserting
+an exact occurrence count per replacement turned the same sabotage into a real
+result immediately, and the first thing it found was that the corpus guard I had
+just written for K8 was itself vacuous: a `.rxt` pattern line cannot carry a raw
+control byte, and `\n` in a pattern is an escape decoded long after try_quant
+has looked at the brace.
+
+**Also found, recorded not fixed.** K7 — a large bounded repeat is SIGKILLed
+rather than diagnosed, pre-existing (verified on a pinned build of c38934c). The
+sharp version, measured by a critic: the `>32000 states` cap is UNREACHABLE for
+`a{0,N}` because the process dies of memory first, the real threshold is
+~20k–25k, and `a{0,20000}` already costs 4.7 GB to succeed. Not a miscompile;
+deferred to M4 or a pre-construction size estimate.
+
+**Suite at close:** 876 corpus / 73 CLI / 261 reject / 127 registry / 29 codegen
+/ 7 trie-identity, verify_rxt 844/844, ratchet clean, fresh clone green.
+**No open miscompile remains.** Next: PC-3 with Q1.
+
+**One process note for next time.** Two of the four critics had to be prodded to
+append incrementally — they had done real work and were holding it. The
+instruction is in the brief and it is still not enough; ask for a first append
+early rather than waiting.

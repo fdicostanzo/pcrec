@@ -233,7 +233,7 @@ easy to scan.
   possessive quantifiers (python 3.11+ accepts), quantified bare anchors
   (`^*` — python accepts, PCRE2 rejects error 109), past-end `pos`
   clamping for nullable patterns (python clamps; pcrec/PCRE2 reject), and
-  repeat counts above 65535 (`a{65536}` — python's ceiling is 4294967296,
+  repeat counts above 65535 (`a{65536}` — python's ceiling is 4294967294,
   PCRE2's is 65535 with error 105; U5, added 2026-08-10 with K5's fix). Blocks
   that are correct-for-PCRE but not python-verifiable carry a `# pcre2-only`
   comment line immediately before `pattern`; the verifier skips them and reports
