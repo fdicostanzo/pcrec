@@ -65,3 +65,9 @@ tier, and PCRE2 is a moving target with no specification.
   "requires module 'X'" error, never miscompile.
 - Test expectations must be oracle-verified (python3 `re` for the base tier;
   libpcre2 differential once M7 lands).
+- **Some tests are written from the GOAL, by an author denied `src/` and
+  `tests/`** (D27). The panel reviews the implementation; a spec-first writer
+  tests the promise. Measured on 2026-08-10: it found a tier-1 miscompile that
+  four adversarial critics with source access, 1.24M generated patterns and the
+  fuzzer had all missed, because tests derived from the code inherit the code
+  author's alphabet.

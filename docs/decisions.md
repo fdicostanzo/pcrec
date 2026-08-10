@@ -1543,3 +1543,63 @@ was justified by.
 something; or pcrec grows a PCRE2-compatibility mode as a product feature rather
 than as an internal standard; or the module set grows far enough that tier 4 is
 nearly empty, at which point the gradient matters less than it does now.
+
+## D27 — some tests are written from the GOAL, by someone denied the code
+
+**Decision.** At least some of pcrec's tests are written by an author who has
+NOT read `src/` or `tests/`, working from the mandate, APPROACH.md, D26,
+`docs/pcre2_compliance.md`, the public header, the CLI surface, and libpcre2 as
+the source of truth. This sits alongside the D6 critic panel, it does not
+replace it: **the panel reviews the implementation; the spec writer tests the
+promise.**
+
+**Why, and this is measured rather than argued.** Every checkpoint from R4 to R9
+found the same defect in whatever check had just been built — a control sharing
+a source with the thing it controls. R9 chased that down to its root, and the
+deepest shared source is not a file. It is that the same author writes the code
+and then writes the check FROM the code, so the check can only ever ask *does it
+do what it does*.
+
+Frank named it on 2026-08-10, mid-review: *"perhaps some of the issues with
+testing are because the coder is writing the tests based on the code, not the
+goal."* Run as an experiment the same day, with two writers barred from the
+source. Result:
+
+- **A tier-1 miscompile in the first hour** (SPEC-FA): `[0-[:digit:]]`, a class
+  construct as a range endpoint, compiled to a matcher for a pattern libpcre2
+  refuses with error 150. 546 instances in a 1,530-pattern sweep.
+- **A tier-2 over-promise at a third doorway** (SPEC-classes-F1): ten escapes
+  told a module owns them inside a class, where PCRE2 forbids them permanently.
+- **Q2 independently re-derived** from the documents alone — a known finding
+  reached without reading the registry, which is the control saying the method
+  is not merely lucky.
+- **Seven ambiguities in our own documents**, the first time anyone had read the
+  spec cold.
+
+What it beat: four adversarial critics WITH source access, 1,239,480 generated
+patterns, ~2.4 billion name probes, ASan/UBSan, and the differential fuzzer.
+
+**The mechanism of the miss, which is the generalisable part.** SPEC-FA was
+masked by the ALPHABET the tests use. `a` is 0x61 and `[` is 0x5b, so
+`[a-[:digit:]]` is rejected as an out-of-order range before the endpoint can
+matter — and every range in this repository was `a`-based. A test derived from
+the implementation inherits the implementation author's alphabet. Isolation, not
+adversarialness, is the active ingredient: the critics were maximally
+adversarial and shared the author's vocabulary.
+
+And the sharpest instance: SPEC-classes-F1's fact was ALREADY in the repository,
+in the `\N` row's own `note` field — correct, written down, and inert, because
+`note` is read by no check. Knowledge the code does not act on is invisible to
+tests derived from the code.
+
+**How to apply.** When a checkpoint touches a doorway or a construct's
+semantics, brief a writer with the goal documents and libpcre2 and forbid `src/`
+and `tests/`. Ask for three things: the OBLIGATIONS derived before any case is
+written; the cases; and — most valuable — the list of obligations it expects are
+untested, made blind, to be diffed against what exists. Expectations come from
+libpcre2 or python `re`, never from pcrec.
+
+**Revisit when:** a spec-first round produces nothing on two consecutive
+checkpoints, which would suggest the goal documents have gone stale rather than
+that the method has stopped working; or the documents become detailed enough
+that "reading the spec" and "reading the code" stop being different acts.
