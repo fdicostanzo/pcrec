@@ -2733,3 +2733,66 @@ review now says so, because a number a reader cannot reproduce is a number that
 will be assumed wrong later.
 
 Suite unchanged and green: 876 / 73 / 261 / 127 / 29 / 7, verify_rxt 844/844.
+
+## 2026-08-10 — session close: FIX-1 done, R7, and the order's first step off the board
+
+Three commits, `c38934c..34d7e66`, all pushed. Working tree clean apart from the
+uncommitted (and gitignored) docs/wake.md. Nothing in `STATE:started`.
+
+**Landed:** FIX-1, the first of the four steps in plan.md's AGREED ORDER — K5
+and K6, the two base-tier miscompiles — plus R7, the checkpoint panel over it,
+plus the panel's follow-up.
+
+**Baseline at close, green in place and from a fresh clone:** 876 corpus / 73
+CLI / 261 reject / 127 registry + 2 SR-4 doc checks / 29 codegen / 7
+trie-identity, verify_rxt 844/844, fuzz seed 1 zero divergences, bench zero
+budget failures. Corpus 805 -> 876, reject 211 -> 261.
+
+**No open MISCOMPILE remains.** K5, K6 and K8 are fixed; K2 (cosmetic), K3, K4
+(FIX-2's target) and K7 (new, a resource bug) are open.
+
+**The session in one sentence: the checkpoint review found more than the fix
+did, again, and the reason it could is the thing worth carrying.** K5 and K6
+were measured against 49 differential probes and both fixes are correct. K8 —
+the same miscompile class, the same function, one space away — walked through
+every one of those 49, because they compared VERDICTS and in quantifier position
+both engines accept. Only the compiled language differs. A critic found it in
+minutes by GENERATING the brace space instead of listing it.
+
+**Four false claims of mine, and the shape has not changed since R5 or R6.**
+python's repeat ceiling (4294967294, not the round number I inferred from an
+error message and copied into four files); "offsets agree throughout" (false for
+one row of twenty); an invariant I corrected in two files and left standing in a
+third; and a compliance row that dismissed whitespace-in-braces as unreachable —
+wrong for precisely the case that became K8. Every one was a single measurement
+away.
+
+**Three findings reduce to one question I did not ask.** T-0, T-1 and T-2 all
+say: the code keeps state whose only purpose is an offset, and nothing reads an
+offset. *What does this code compute that nothing observes?* is cheaper than any
+sabotage, answerable from the diff alone, and would have found all three. It
+belongs beside R5's "which of my new branches is invisible?".
+
+**The exact-count hazard finally has a mechanism, not just a warning.** R6
+recorded that exact counts disarm themselves; R7 measured the disarm on the one
+row I had called irreplaceable, in a two-line diff, following the failure
+message's own instructions. tests/reject/ now ends with a MANIFEST naming rows
+by pattern. Its first version was itself vacuous through substring matching,
+which is the same lesson one level down.
+
+**And my own sabotage harness lied to me — fourth session running.** The
+`isspace()` sabotage returned 0/0 and nearly earned a "the guard holds": its
+patch had applied an `#include` and silently not its substitution, and my
+vacuity check ("did the file change?") passed on the include alone. Asserting an
+exact occurrence count per replacement turned it into a real result at once —
+and the first thing it found was that the corpus guard I had just written for K8
+was ITSELF vacuous, because a .rxt pattern line cannot carry a raw control byte.
+**MECH-1/MECH-2 have now been in the plan for four sessions for exactly this.**
+
+**Two deliberate behaviour changes beyond the ticket, both flagged rather than
+smuggled:** the out-of-order error offset now matches PCRE2 (it was the only one
+of three that did not, and carrying it meant carrying a comment that apologised
+for it), and `accept()` in tests/reject/ now asserts that output was actually
+emitted rather than only that pcrec exited 0.
+
+**Next session: PC-3, with Q1.** See docs/wake.md.
