@@ -3351,3 +3351,28 @@ Note the recursion: the six-bucket floor was itself the fix for "the 4b shape ca
 be deleted invisibly", and adding a second 4a shape put that bucket back to
 "*some* shape covers this". Five times now a guard written in this review was
 wrong in the way the finding it answered was wrong.
+
+### R9, seventh wave — a count cannot see a swap
+
+Sent the instrument critic back at the three C1F fixes. It confirmed C1F-5 fires
+on all three layers and that C1F-6's manifest gate opens no blind spot — it built
+the case I was most worried about, one check FAILING while another is silently
+DELETED, and showed the count guard sitting OUTSIDE the gate is what keeps that
+caught (rc=1, and the deletion surfaces the moment the regression is fixed,
+which a green run makes mandatory).
+
+**And it found what the probe-count floors cannot do: see a SWAP.** Blanking a
+shape to `""`, or replacing one shape with a duplicate of another, leaves the
+probe total at 2772 and loses the same coverage with no signal. Deletions were
+closed; substitutions were not. Fixed by checksumming the PATTERN SET each sweep
+generates (FNV-1a, separator-terminated), pinned per sweep. Both sabotages now
+fail on the checksum with the count unmoved.
+
+Two wording defects it also caught, both the shape of the thing they sat next to:
+the count guard asserted "coverage was removed" on every RED run, where a lower
+PASS count is simply what a failure produces and carries no information — C1F-6's
+own defect, relocated to the other half of the pair I had just fixed. And the
+skip notice said "PC-3 reported failures" when the gate is also true for a
+TRUNCATED run that reported none. Both now say which case they are in.
+
+PC-3 is 98 checks.

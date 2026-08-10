@@ -915,6 +915,40 @@ static int nested_opener_pos(const char *pat, char delim)
  * and it is why these sit BESIDE the manifest rather than replacing it: an
  * exact count tells you a number moved, never whether the change was right.
  * Update deliberately, in the same commit as the table you widened. */
+/* A COUNT CANNOT SEE A SWAP. The probe-count floors above close every DELETION,
+ * and a critic then showed what they cannot close: blanking a shape to `""`, or
+ * replacing one shape with a duplicate of another, leaves the probe total
+ * unchanged at 2772 and loses the same coverage with no signal (R9/C1-final2).
+ *
+ * So each sweep also checksums the PATTERN SET it actually generated. Same
+ * discipline as the counts — a deliberate widening updates the constant in the
+ * same commit — but it sees any change to WHICH patterns are probed, not merely
+ * how many. FNV-1a, with a separator so that concatenation cannot alias. */
+static unsigned long long set_hash(unsigned long long h, const char *s)
+{
+    for (const unsigned char *p = (const unsigned char *)s; *p; p++) {
+        h ^= *p; h *= 1099511628211ULL;
+    }
+    h ^= (unsigned char)'\n'; h *= 1099511628211ULL;
+    return h;
+}
+#define SET_HASH_INIT 14695981039346656037ULL
+
+static void expect_set(const char *what, unsigned long long got, unsigned long long want)
+{
+    if (got != want)
+        bad("%s: pattern-set checksum %#llx, expected %#llx. The number of probes may "
+            "be unchanged — a shape that was blanked or replaced by a duplicate of "
+            "another loses coverage without moving any count. Update this in the same "
+            "commit if you changed the tables on purpose",
+            what, got, want);
+    else {
+        char line[160];
+        snprintf(line, sizeof line, "%s: pattern set unchanged (%#llx)", what, got);
+        ok(line);
+    }
+}
+
 static void expect_probes(const char *what, unsigned long got, unsigned long want)
 {
     if (got != want)
@@ -936,6 +970,7 @@ static void check_class_brackets(void)
     int reported = 0;
     unsigned long nested[3][2] = {{0,0},{0,0},{0,0}};  /* [delimiter][4b=0, 4a=1] */
     unsigned long pc2_refused = 0;         /* the bucket the comment claimed */
+    unsigned long long seth = SET_HASH_INIT;
     unsigned long promised = 0;            /* module named for what PCRE2 refuses */
     unsigned long unterminated = 0;        /* ...but only because the class never closed */
 
@@ -951,6 +986,7 @@ static void check_class_brackets(void)
                     snprintf(pat, sizeof pat, "%s%s", body, tail);
                     {   int np = nested_opener_pos(pat, *d);
                         if (np >= 0) nested[d - CLS_DELIMS][np]++; }
+                    seth = set_hash(seth, pat);
 
                     int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
                     cmsg[0] = 0;
@@ -1016,6 +1052,7 @@ static void check_class_brackets(void)
     printf("  class-bracket doorway: %lu generated patterns — %lu agree, "
            "%lu deferred to a module\n", probed, agree, deferred);
     expect_probes("class-bracket doorway", probed, 2772);
+    expect_set("class-bracket doorway", seth, 0x69e3ddacf18fce3fULL);
     printf("  of the %lu both-refuse cases, %lu name a module wrongly, %lu name one "
            "for a construct PCRE2 has in a pattern that merely never closed\n",
            pc2_refused, promised, unterminated);
@@ -1116,6 +1153,7 @@ static void check_class_delim_bytes(void)
     unsigned long over_accept = 0, over_reject = 0;
     int reported = 0;
     unsigned sig[256];                   /* pcrec's verdict vector per byte */
+    unsigned long long seth = SET_HASH_INIT;
 
     for (int c = 1; c < 256; c++) {
         sig[c] = 0;
@@ -1128,6 +1166,7 @@ static void check_class_delim_bytes(void)
             int rejected = pcrec_try(pat, cmsg, sizeof cmsg) != 0;
             probed++;
             sig[c] = (sig[c] << 1) | (unsigned)rejected;
+            seth = set_hash(seth, pat);
 
             if ((pc2 == 0) == (!rejected)) { agree++; continue; }
             if (pc2 == 0 && rejected) {
@@ -1155,6 +1194,7 @@ static void check_class_delim_bytes(void)
            "%lu agree, %lu deferred\n", probed,
            sizeof DELIM_SHAPES / sizeof DELIM_SHAPES[0], agree, deferred);
     expect_probes("class delimiter byte sweep", probed, 1275);
+    expect_set("class delimiter byte sweep", seth, 0x0538673c9e76127fULL);
     if (over_accept == 0 && over_reject == 0)
         ok("class delimiter byte sweep: no over-acceptance and no over-rejection");
 
@@ -1309,16 +1349,27 @@ static void check_posix_names(void)
     if (!missing && !self_sourced)
         ok("every POSIX class name pcrec claims was produced INDEPENDENTLY of pcrec's table");
 
-    /* And a floor on the external contribution itself, so the differential
-     * cannot degrade to pcrec-checks-pcrec while every assertion above stays
-     * green. Most of the 16 are in libpcre2's compiled-in string table; the
-     * rest reach the pool from the byte sweep. */
-    if (real_ext * 4 < real)
-        bad("POSIX names: only %lu of %lu accepted names came from outside pcrec's table. "
-            "The external source has stopped contributing and this differential is "
-            "degrading to pcrec checking itself", real_ext, real);
+    /* A FLOOR ON THE CLAIMED NAMES, not on the accepted probes. The first
+     * version of this compared `real_ext` against `real`, both of which count
+     * patterns libpcre2 ACCEPTED — and under the very sabotage this section
+     * exists to catch, both were 6, the same six non-class byte probes
+     * (`[[:<:]]`, `[[:[:]]`, `[[:]:]]` and their `^` forms) that made the
+     * original liveness vacuous. `24 < 6` is false, so it passed, and it would
+     * pass with the external source contributing zero real class names. It
+     * measured a ratio the byte pool guarantees, one line from the loop that
+     * does the actual work (R9/C1F-5).
+     *
+     * The quantity that matters is how many of the names PCREC CLAIMS were
+     * produced externally, which is what the loop above counted per name. */
+    unsigned long ext_claimed = nnames - missing - self_sourced;
+    printf("  POSIX names pcrec claims: %zu, of which %lu were produced by a source "
+           "that is not a mutation of pcrec's own table\n", nnames, ext_claimed);
+    if (ext_claimed != nnames)
+        bad("POSIX names: only %lu of %zu names pcrec claims came from an external "
+            "source. The differential is degrading to pcrec checking itself",
+            ext_claimed, nnames);
     else
-        ok("the external sources supplied the bulk of the accepted POSIX names");
+        ok("every POSIX name pcrec claims has an external source behind it");
 }
 
 /* ---- NAME x POSITION, the cell neither existing sweep generates (R9/C3-4) --
@@ -1349,6 +1400,7 @@ static void check_posix_positions(void)
     const char *const *names = pcrec_registry_posix_names(&nnames);
     unsigned long probed = 0, agree = 0, deferred = 0, wrong = 0, restricted = 0;
     unsigned long pcrec_restricted = 0;
+    unsigned long long seth = SET_HASH_INIT;
     int reported = 0;
 
     for (size_t i = 0; i < nnames; i++) {
@@ -1358,6 +1410,7 @@ static void check_posix_positions(void)
         for (size_t si = 0; si < sizeof POS_SHAPES / sizeof POS_SHAPES[0]; si++) {
             char pat[256], cmsg[256];
             snprintf(pat, sizeof pat, POS_SHAPES[si], names[i]);
+            seth = set_hash(seth, pat);
 
             int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
             cmsg[0] = 0;
@@ -1400,6 +1453,7 @@ static void check_posix_positions(void)
            probed, nnames, sizeof POS_SHAPES / sizeof POS_SHAPES[0],
            agree, deferred, restricted);
     expect_probes("POSIX name x position", probed, 80);
+    expect_set("POSIX name x position", seth, 0xaf2c87f99da26e22ULL);
     if (!wrong)
         ok("POSIX name x position: every name's position behaviour matches libpcre2");
 

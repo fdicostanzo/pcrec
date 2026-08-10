@@ -89,14 +89,54 @@ if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
 # someone thought to name.
 if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     pc3n="$(grep -c '^PASS: ' "$PC3OUT" || true)"
-    if [ "$pc3n" -ne 95 ]; then
-        echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 95." >&2
-        echo "registry:   if you added or removed checks on purpose, update this number" >&2
-        echo "registry:   in the same commit; if not, coverage was removed" >&2
+    if [ "$pc3n" -ne 98 ]; then
+        # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
+        # outside the manifest gate — that is what keeps "one check fails while
+        # another is silently deleted" caught — but its message was written for
+        # the silent case and asserted "coverage was removed" on every red run,
+        # where a lower PASS count is simply what a failure produces. Nobody
+        # knows how many PASS lines a given failure suppresses, so the number
+        # carries no information there and must not be read as one.
+        if grep -q "^checks failed: 0" "$PC3OUT"; then
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 98." >&2
+            echo "registry:   if you added or removed checks on purpose, update this number" >&2
+            echo "registry:   in the same commit; if not, coverage was removed" >&2
+        else
+            nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
+            echo "registry: PC-3 shows $pc3n passing checks (98 expected; ${nf:-?} failed, so a" >&2
+            echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
+            echo "registry:   number must return to 98 — if it does not, coverage was removed too" >&2
+        fi
         rc=1
     fi
     # The manifest: checks whose ABSENCE would silently un-guard a specific past
-    # finding. Matched as whole PASS lines, by substring of the check's name.
+    # finding, matched by substring of the check's name.
+    #
+    # ONLY EVALUATED ON A GREEN PC-3 RUN (R9/C1F-6). The needles come from each
+    # check's `ok()` text, and a check that runs and legitimately FAILS never
+    # calls `ok()` — so its needle vanished and the manifest announced "no
+    # longer runs a check matching ..." with the remedy "restore the check",
+    # when the check had run, done its job, and what the reader must actually do
+    # is fix the compiler. Reproduced from two different failing checks, so it
+    # was every manifested entry, and it fired exactly when the operator is
+    # under the most pressure to read correctly. Worse in the other direction
+    # too: a real deletion then produces a message the reader has been trained
+    # to treat as noise.
+    #
+    # A failing run already fails. The manifest exists for the SILENT case.
+    if ! grep -q "^checks failed: 0" "$PC3OUT"; then
+        # Say WHICH of the two it is. The gate is also true when PC-3 produced no
+        # summary at all — a truncated run — and the first version of this notice
+        # announced "reported failures" for a run that reported none (R9/C1-final2).
+        # The truncated case is still caught, by the count guard, at rc=1.
+        if grep -q "^checks failed:" "$PC3OUT"; then
+            echo "registry: PC-3 reported failures; skipping the manifest (its needles" >&2
+            echo "registry:   come from PASS lines, so a failing check would look deleted)" >&2
+        else
+            echo "registry: PC-3 produced NO summary line — it did not finish. Skipping the" >&2
+            echo "registry:   manifest; the count guard above is what catches this" >&2
+        fi
+    else
     while IFS='|' read -r needle why; do
         [ -z "$needle" ] && continue
         if ! grep -qF "$needle" "$PC3OUT"; then
@@ -107,6 +147,7 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         fi
     done <<'MANIFEST'
 probe count intact|R9/C1F-4: 89%% of this doorway's probes were deletable with every PASS line and every other needle intact
+pattern set unchanged|R9/C1-final2: a blanked or duplicated shape loses coverage without moving any probe count
 class-bracket doorway: no over-acceptance|the K3/K4 verdict differential itself; PC-3's stated reason for existing
 no module promised for a pattern PCRE2 will never accept|R9/C1-8: the both-refuse half never read pcrec's message, so doorway 4a's own over-promise had no external check
 nested opener for every delimiter|R9/C1-1: the shape that names the construct generated none for . and =
@@ -118,5 +159,6 @@ pcrec varies its own answer by position|R9/C3-verify: the libpcre2-side counter 
 POSIX name x position|R9/C3-4: <  and > are only legal as a class's entire content
 every verb name pcrec claims was produced INDEPENDENTLY|R8/C1-4: the external pool could be empty with nothing failing
 MANIFEST
+    fi
 fi
 exit $rc
