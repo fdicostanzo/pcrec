@@ -10,3 +10,9 @@ build/
 __pycache__/
 *.pyc
 tests/fuzz/failures/
+
+# The session hand-off brief: deliberately NOT project record, so it must not
+# be committed. It was, twice, on 2026-08-10 — `git add -A -- docs` stages it,
+# and the previous session's brief warned about exactly that in prose. A rule
+# a tool enforces beats a rule a comment states.
+/docs/wake.md
