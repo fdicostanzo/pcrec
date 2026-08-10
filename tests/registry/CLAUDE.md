@@ -60,8 +60,10 @@ with the thing they control).
 descriptions right" from "both wrong the same way" — the likelier human error,
 since one person maintaining two files from one misunderstanding gets both wrong
 identically. A critic confirmed it: the same wrong module name written into BOTH
-parse.c and registry.c passes 116/116 here. It was caught by tests/reject/,
-whose 93 expectations are hand-written literals — so tests/reject/ is not
+parse.c and registry.c passed 116/116 here (the check count at the time of that
+measurement; it is 127 now — the RESULT is what matters, not the total). It was
+caught by tests/reject/, whose hand-written expectations are literals — 144 of
+them as of R7, when this sentence last said 93 — so tests/reject/ is not
 decoration, it is the control this file deliberately is not. Two things narrow
 the gap further: `registry.c`'s `M_<module>` macros make an invented module name
 a compile error, and they pair each feature bit with its diagnostic name so a

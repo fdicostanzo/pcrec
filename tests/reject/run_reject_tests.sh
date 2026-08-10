@@ -99,16 +99,28 @@ accept() { # accept <pattern> [display-label]
     # output and break anything that reads it as text.
     local pat="$1" show="${2:-$1}" out rc
     naccept=$((naccept + 1))
+    rm -f "$WORKDIR/ok.c" "$WORKDIR/ok.h"
     out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/ok.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
     if [ "$rc" -ge 124 ]; then
         bad "accept '$show': exit $rc — timed out or was killed, which is not 'compiles'"
-    elif [ "$rc" -eq 0 ]; then
-            seen="$seen
-$show"
-        ok "accept '$show' (base tier still compiles)"
-    else
-        bad "accept '$show': base-tier construct was REJECTED ($out) — the reject table has swallowed supported syntax"
+        return
     fi
+    if [ "$rc" -ne 0 ]; then
+        bad "accept '$show': base-tier construct was REJECTED ($out) — the reject table has swallowed supported syntax"
+        return
+    fi
+    # Exit 0 is not the whole claim (R7/T-10). reject() makes three assertions
+    # and this made ONE, so "compiles" meant only "did not say no" — a pcrec
+    # that exited 0 and emitted nothing would have satisfied all 45 controls.
+    # The `rm` above is as load-bearing as the test: without it a stale file
+    # from the previous accept satisfies this vacuously.
+    if [ ! -s "$WORKDIR/ok.c" ]; then
+        bad "accept '$show': exit 0 but no non-empty output was written — 'compiles' has to mean something was emitted"
+        return
+    fi
+    seen="$seen
+$show"
+    ok "accept '$show' (base tier still compiles)"
 }
 
 echo "== base tier must still compile (control) =="

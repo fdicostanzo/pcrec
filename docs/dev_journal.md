@@ -2693,3 +2693,43 @@ deferred to M4 or a pre-construction size estimate.
 append incrementally — they had done real work and were holding it. The
 instruction is in the brief and it is still not enough; ask for a first append
 early rather than waiting.
+
+### R7 follow-up — the critics' final reports, and two things they were right about
+
+The panel's closing reports landed after the R7 commit. Most items were already
+triaged and fixed; three were not, and one was a challenge to a fix rather than
+a new finding.
+
+**T-10, and it is the one I had under-rated.** `reject()` makes three assertions;
+`accept()` made ONE — exit 0. So "compiles" meant only "did not say no" across
+all 45 controls, and for `(?:){65535}`, which has no corpus row, that was the
+entire claim. `accept()` now also requires a non-empty output file, with an `rm`
+first so a stale file from the previous control cannot satisfy it vacuously.
+Validated with a pcrec patched to write the file and emit no bytes, exit code
+untouched: **45 controls fail, where none did before.** I had recorded this as
+NOTED in the review; it deserved FIX-NOW.
+
+**C2's swap challenge, which was the right question to ask.** It pointed out
+that my three offset sabotages each left one variable unused, so
+`run_trie_identity.sh`'s `-Wunused-but-set-variable` lint — the only place in
+the suite treating a library warning as a failure — might still be doing the
+work rather than the new assertions. Its T1b SWAPS `end_m`/`end_n` so both stay
+live. Run here: 4 reject failures, zero build warnings, trie-identity 7/7 clean.
+The catch is behavioural. Worth keeping: `a{65536,1}` catches the swap in the
+opposite direction (7 vs 9), which is the reason to have a row whose two numbers
+disagree rather than only rows where they coincide.
+
+**A stale count in a file nobody had opened.** `tests/registry/CLAUDE.md` said
+tests/reject has "93 expectations" — now 144. The passage also cites "passes
+116/116 here", which is a RESULT of a dated measurement and stays, now labelled
+as the count at the time. C4 flagged it as ambiguous rather than asserting it
+was stale, which was the correct call and is why it got read properly instead of
+being bulk-edited.
+
+**And one honest correction to my own review.** C4 could not reconcile "49 forms
+differentially probed" with the ~36 unique patterns in committed rows. Both are
+true — the 49 were ad-hoc terminal probes and only some were promoted — but the
+review now says so, because a number a reader cannot reproduce is a number that
+will be assumed wrong later.
+
+Suite unchanged and green: 876 / 73 / 261 / 127 / 29 / 7, verify_rxt 844/844.
