@@ -3326,3 +3326,28 @@ Also corrected two comments claiming load-bearing behaviour that is measurably
 dead: rule 2's `return` is identical to `break`, and the loop bound `i < patlen`
 is identical to `i + 1 < patlen`. Same defect as C2-F1, twice more, in the same
 function.
+
+### R9, sixth wave — C1F-4: the guards protected existence, not size
+
+Sent the instrument critic back at the whole remedy set asking which guard
+written today another fix written today had weakened. It found the structural
+form: **every new liveness floor is two-dimensional in what it probes and
+one-dimensional in what it asserts.** Each sweep is `axis x SHAPES` and every
+floor measures the axis; the shape axis has no floor at all.
+
+It deleted 89% of the doorway's probes — 3371 to 359, trimming CLS_TRAILERS 7->1,
+CLS_BODIES 8->2, DELIM_SHAPES 5->1, POS_SHAPES 5->2 — with every PASS line
+intact, the C1-7 count guard satisfied at its exact number, and all nine
+manifest needles matching. Green.
+
+That is a direct hit on a guard added hours earlier: a count of PASS lines
+protects a check's EXISTENCE and says nothing about its SIZE, and the realistic
+event is not "someone deletes the differential", it is "someone trims a body
+that looks redundant while refactoring". Fixed with per-sweep probe-count floors
+— the mechanism tests/reject/ has used since R7. Trimming the trailers now fails
+"396 probes, expected 2772", and the count guard catches it again at 94/95.
+
+Note the recursion: the six-bucket floor was itself the fix for "the 4b shape can
+be deleted invisibly", and adding a second 4a shape put that bucket back to
+"*some* shape covers this". Five times now a guard written in this review was
+wrong in the way the finding it answered was wrong.

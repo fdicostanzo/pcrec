@@ -89,8 +89,8 @@ if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
 # someone thought to name.
 if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     pc3n="$(grep -c '^PASS: ' "$PC3OUT" || true)"
-    if [ "$pc3n" -ne 91 ]; then
-        echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 91." >&2
+    if [ "$pc3n" -ne 95 ]; then
+        echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 95." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
         rc=1
@@ -106,6 +106,7 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
             rc=1
         fi
     done <<'MANIFEST'
+probe count intact|R9/C1F-4: 89%% of this doorway's probes were deletable with every PASS line and every other needle intact
 class-bracket doorway: no over-acceptance|the K3/K4 verdict differential itself; PC-3's stated reason for existing
 no module promised for a pattern PCRE2 will never accept|R9/C1-8: the both-refuse half never read pcrec's message, so doorway 4a's own over-promise had no external check
 nested opener for every delimiter|R9/C1-1: the shape that names the construct generated none for . and =

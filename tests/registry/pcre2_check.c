@@ -900,6 +900,35 @@ static int nested_opener_pos(const char *pat, char delim)
     return (pat[0] == '[' && pat[1] == delim) ? 1 : 0;
 }
 
+/* PROBE-COUNT FLOORS (R9/C1F-4). Every liveness assertion in this file is
+ * two-dimensional in what it PROBES (axis x shapes) and one-dimensional in what
+ * it ASSERTS — the shape axis has no floor, and the shape axis is exactly what a
+ * later refactor trims. A critic shrank `CLS_TRAILERS` 7->1, `CLS_BODIES` 8->2,
+ * `DELIM_SHAPES` 5->1 and `POS_SHAPES` 5->2, deleting **89% of all probes at
+ * this doorway** — 3371 down to 359 — with every PASS line intact, the PC-3
+ * count guard satisfied at its exact number, and all nine manifest needles
+ * still matching. The count guard protects a check's EXISTENCE; nothing
+ * protected its SIZE.
+ *
+ * So each sweep hard-checks its own probe total, which is the mechanism
+ * tests/reject/ has used since R7 for `nrej`/`naccept`. Same caveat as there,
+ * and it is why these sit BESIDE the manifest rather than replacing it: an
+ * exact count tells you a number moved, never whether the change was right.
+ * Update deliberately, in the same commit as the table you widened. */
+static void expect_probes(const char *what, unsigned long got, unsigned long want)
+{
+    if (got != want)
+        bad("%s: %lu probes, expected %lu. If you widened or trimmed a table on "
+            "purpose, update this number in the same commit — if not, coverage "
+            "was removed and every liveness assertion here would still pass",
+            what, got, want);
+    else {
+        char line[160];
+        snprintf(line, sizeof line, "%s: probe count intact (%lu)", what, got);
+        ok(line);
+    }
+}
+
 static void check_class_brackets(void)
 {
     unsigned long probed = 0, agree = 0, deferred = 0;
@@ -986,6 +1015,7 @@ static void check_class_brackets(void)
 
     printf("  class-bracket doorway: %lu generated patterns — %lu agree, "
            "%lu deferred to a module\n", probed, agree, deferred);
+    expect_probes("class-bracket doorway", probed, 2772);
     printf("  of the %lu both-refuse cases, %lu name a module wrongly, %lu name one "
            "for a construct PCRE2 has in a pattern that merely never closed\n",
            pc2_refused, promised, unterminated);
@@ -1124,6 +1154,7 @@ static void check_class_delim_bytes(void)
     printf("  class delimiter bytes: %lu probes over 255 bytes x %zu shapes — "
            "%lu agree, %lu deferred\n", probed,
            sizeof DELIM_SHAPES / sizeof DELIM_SHAPES[0], agree, deferred);
+    expect_probes("class delimiter byte sweep", probed, 1275);
     if (over_accept == 0 && over_reject == 0)
         ok("class delimiter byte sweep: no over-acceptance and no over-rejection");
 
@@ -1231,6 +1262,7 @@ static void check_posix_names(void)
            "binary or the byte sweep, %lu from mutations of pcrec's table), "
            "%lu libpcre2 does not have\n",
            probed, real, real_ext, real_mut, unknown);
+    expect_probes("POSIX class names", probed, 149774);
     if (!wrong) ok("POSIX class names: every name deferred or refused as libpcre2 does");
 
     /* Liveness, both directions. A pool that produced no real name would make
@@ -1367,6 +1399,7 @@ static void check_posix_positions(void)
            "%lu agree, %lu deferred, %lu names position-restricted\n",
            probed, nnames, sizeof POS_SHAPES / sizeof POS_SHAPES[0],
            agree, deferred, restricted);
+    expect_probes("POSIX name x position", probed, 80);
     if (!wrong)
         ok("POSIX name x position: every name's position behaviour matches libpcre2");
 
