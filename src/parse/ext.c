@@ -131,8 +131,12 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
 void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                              bool at_class_open)
 {
-    if (c2 < 0) return;                       /* nothing follows the bracket */
-
+    /* No `if (c2 < 0)` guard: it was here, and it was redundant rather than
+     * defensive. `find(RK_CLASSBRACKET, -1)` returns NULL because this kind has
+     * no catch-all row — which registry_check.c now REQUIRES of it, since a
+     * catch-all would turn every unmatched byte in a class into a construct. So
+     * the end-of-pattern case is handled one line below, by the check that
+     * handles every other unrecognised byte. */
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2);
     if (!r) return;
 

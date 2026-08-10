@@ -140,6 +140,11 @@ accept '[a.b.]'  # the `.` is not preceded by `[`
 # REJECTS and pcrec wrongly accepts (K3); pinning those would cement the bug.
 accept '[:]'
 accept '[:a]'
+# The `]` half of "a matching `.]` appears later". Every other control here
+# either has no second delimiter or has a real `.]`, so replacing the
+# terminator test with a bare `pat[i] == c2` was invisible to the whole suite
+# (R5 tests critic, F-7b). PCRE2 accepts this one.
+accept '[.a.b]'
 
 # A letter with NO registry row falls through to "unknown escape", and the
 # IN-CLASS spelling is a separate message that no test reached before R5 —
@@ -218,6 +223,48 @@ echo "== possessive quantifiers =="
 reject 'a*+' "possessive quantifier requires module 'atomic-groups'"
 reject 'a++' "possessive quantifier requires module 'atomic-groups'"
 reject 'a?+' "possessive quantifier requires module 'atomic-groups'"
+
+echo
+echo "== KNOWN-WRONG, pinned so a change is VISIBLE (K3, K4) =="
+# These assert what pcrec does TODAY, and what it does today is WRONG. They are
+# not certifications — each line records a measured disagreement with libpcre2
+# 10.46 that is deliberately unfixed, so that changing it produces a signal
+# instead of silence.
+#
+# WHY THIS EXISTS. tests/known_fail/ is the project's ratchet for deferred bugs,
+# and it structurally cannot hold any of these: a `.rxt` `perr` block requires
+# the PYTHON oracle to fail too, and python `re` accepts every pattern below.
+# That is the same blindness that let the bugs exist (R5 F-4).
+#
+# WHAT IT BUYS. An R5 critic replaced the `RF_CLASS_DELIM` flag test with `if
+# (1)` — a one-token edit that FIXES K3 and the `[a[:b]` half of it, moving
+# pcrec strictly closer to PCRE2 — and all seven suites stayed green. The suite
+# could not tell K3-fixed from K3-unfixed in either direction. Now it can.
+#
+# WHEN YOU FIX K3/K4: these lines must move to the normal accept/reject tables
+# above, in the same commit. A failure here means "you changed the behaviour" —
+# check it against libpcre2, then move the line. It does not mean "you broke
+# something".
+nwrong=0
+pinned() { # pinned <pattern> <accept|reject> <what PCRE2 does, and why it is wrong>
+    local pat="$1" want="$2" why="$3" rc
+    nwrong=$((nwrong + 1))
+    "$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" >/dev/null 2>&1; rc=$?
+    if { [ "$want" = accept ] && [ "$rc" -eq 0 ]; } || \
+       { [ "$want" = reject ] && [ "$rc" -eq 1 ]; }; then
+        ok "known-wrong '$pat' still ${want}s — $why"
+    else
+        bad "known-wrong '$pat': behaviour CHANGED (expected to $want, rc=$rc). $why. If you fixed K3/K4, move this line into the tables above; if not, you have regressed something"
+    fi
+}
+# K3 — over-acceptance. PCRE2: "POSIX named classes are supported only within a
+# class". pcrec compiles it as a five-character class.
+pinned '[:alpha:]' accept "PCRE2 REJECTS it; the ':' row lacks the class-open half of RF_CLASS_DELIM"
+# K3 — over-rejection, the same missing row flag seen from the other side.
+pinned '[a[:b]'    reject "PCRE2 ACCEPTS it; ':' fires without checking for a later ':]'"
+pinned '[[:alpha]' reject "PCRE2 ACCEPTS it; same missing terminator condition"
+# K4 — the terminator scan runs to the end of the PATTERN, not the class.
+pinned '[.a]x.]'   reject "PCRE2 ACCEPTS it; the '.]' matched is outside the class"
 
 echo
 echo "== every registry row covers itself (SR-4) =="
@@ -317,10 +364,24 @@ echo "== Summary =="
 echo "rejections checked: $nrej"
 echo "rows iterated:      $niter"
 echo "accept controls:    $naccept"
+echo "known-wrong pinned: $nwrong"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
-if [ "$nrej" -lt 90 ] || [ "$naccept" -lt 18 ]; then
-    echo "reject: TABLE SHRANK — $nrej rejections / $naccept controls is below the floor; coverage was removed" >&2
+# EXACT counts, not floors. These were `-lt 90` and `-lt 18` against 93 and 19
+# actual, and an R5 critic showed what three checks of slack buys an attacker:
+# delete `\R`, `\X` and `\C`, then change `\R`'s registry row from 'misc' to
+# 'classes', and pcrec tells the caller to enable the WRONG module — the one
+# fact the diagnostic exists to carry — with all seven suites green. The
+# registry conformance check cannot object because since SR-2 both sides read
+# the same row, and the feature/module bijection stays consistent.
+#
+# A floor guards a COUNT; the thing worth guarding is a SET. Exact numbers do
+# not give you the set either, but they make every deletion deliberate and
+# visible in the diff, which is what the slack removed. If you added or removed
+# coverage on purpose, update these three numbers in the same commit.
+if [ "$nrej" -ne 106 ] || [ "$naccept" -ne 22 ] || [ "$nwrong" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 106 / 22 / 4." >&2
+    echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi
 [ "$fail" -eq 0 ] && exit 0

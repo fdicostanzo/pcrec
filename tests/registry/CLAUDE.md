@@ -88,15 +88,36 @@ module:
 | delete the `(?:` base row | 1 |
 | `\b` row longhand with `FEAT_CLASSES` but module `"assertions"` (R4 E1) | many |
 
-## Known limitation: the verb doorway
+## Known limitation: ONE BYTE of lookahead is all any sweep here has
 
-`(*...)` is decided by a NAME, not a byte, so its sweep can only prove that
-every single byte after `(*` reaches the catch-all row. **A name-conditional
-branch added to parse.c would not be caught** — a critic demonstrated it by
-routing one verb name elsewhere with no row, and all checks stayed green. This
-sweep is genuinely weaker than its three neighbours; closing the gap needs
-per-verb rows, which arrive with module 'verbs' (SR-6). Do not read "all four
-doorways swept" as "all four equally guarded".
+This was previously written as "the verb doorway is weaker than its three
+neighbours". R5 measured it and the statement was wrong in both directions.
+
+**The `(*` sweep is STRONGER than was documented.** The template is `(*%c)`, so
+it does vary the first name byte, and a branch keyed on it IS caught — a critic
+added `if (pat[at+2] == 'N') ctx_fail(... 'misc')` and `registry` failed. The
+old sentence "a name-conditional branch added to parse.c would not be caught"
+is too strong.
+
+**The real gap is any branch keyed PAST the first byte, and it is not the verb
+doorway's alone.** Both of these were invisible to all seven suites:
+
+| sabotage | what it shows |
+|---|---|
+| branch on `(*NO_S…` (four bytes in) | verb names past their first letter are unswept |
+| branch on `(?P=` vs `(?P<` | the `(?` doorway has the same hole |
+
+Selector byte `P` carries two PCRE2 constructs — `(?P<name>...)` and
+`(?P=name)` — and the sweep varies only the byte after `(?`. The same is true of
+`(?<=` vs `(?<!` vs `(?<name>`, of `(?C1` vs `(?C{...}`, and of every verb name.
+registry.c's header already names one instance (`\N{U+hhhh}` sharing the `N`
+selector with bare `\N`) and calls it a known outstanding second home — it is
+not one instance, it is **the shape of every doorway that is keyed by one byte
+while PCRE2 keys by a string.**
+
+Per-verb rows arrive with module 'verbs' (SR-6); the sub-construct rows arrive
+with their own modules. Until then: do not read "all four doorways swept" as
+"every construct behind them is guarded".
 
 Maintenance: update this file when files are added/removed or their roles
 change. Re-run the sabotage battery if the check's structure changes — a

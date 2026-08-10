@@ -2434,3 +2434,63 @@ showed the follow-up matters as much: *when a sabotage comes back clean, do not
 conclude the branch is unreachable — find the input that reaches it, then ask
 why nothing in the repo supplies one.* I stopped at the first half and wrote the
 weaker conclusion into a commit message.
+
+### R5 addendum 2 — the tests critic's matrix, and the finding that mattered most
+
+The third critic finished last and produced the most useful single artifact of
+the session: 38 sabotages against a pinned `git archive c596710` snapshot, each
+run through all seven suites. **20 of 38 were invisible to the entire suite.**
+
+**The headline is F-7a, and it is uncomfortable.** Replacing
+`if (r->flags & RF_CLASS_DELIM)` with `if (1)` — one token — leaves all seven
+suites green. That edit FIXES K3 and its over-rejection half; it moves pcrec
+strictly closer to PCRE2. So `make test` could not tell K3-fixed from
+K3-unfixed, in either direction. Whoever lands the fix would have got no
+confirmation, and a later refactor undoing it would have raised nothing.
+
+That is a worse failure than a missing test. It means the project cannot
+verify its own bug fixes in this area.
+
+Closed with a **KNOWN-WRONG, pinned** block in tests/reject/: four measured
+disagreements with libpcre2 asserted as they behave TODAY, labelled as bugs, with
+instructions to move the lines into the real tables when K3/K4 are fixed. This
+is also the answer to the ratchet problem — tests/known_fail/ structurally
+cannot hold any of them, because a `.rxt` `perr` block needs the PYTHON oracle
+to fail too and python accepts all four. The pin lives where the oracle is
+libpcre2 and the assertions are hand-written.
+
+**Floors with slack, and what slack buys.** tests/reject guarded `nrej >= 90`
+against 93. Delete three checks, then change `\R`'s row from 'misc' to
+'classes': pcrec now names the WRONG MODULE — the one fact the diagnostic
+exists to carry — with every suite green. registry_check guarded `total < 60`
+against 67 rows; deleting GROUP('3')..GROUP('9') was invisible, and because the
+lookup then falls back to the `(?i)` catch-all, the parser routed `(?3)` to
+'modifiers' and the table agreed, in unison, that this was correct. Both are now
+EXACT counts. The exactness caught my own wrong guess on the first run.
+
+**A caveat I had inherited and repeated was wrong in both directions.**
+tests/registry/CLAUDE.md said the `(*` doorway is weaker than its neighbours.
+Measured: the `(*` sweep DOES vary the first name byte and catches a branch on
+it, while BOTH `(*` and `(?` are blind past the first byte — `(?P=` versus
+`(?P<` was invisible. The honest scope is "one byte of lookahead is all any
+sweep in this repo has", and registry.c's `\N{U+hhhh}` note is not one instance
+of that but the general shape.
+
+**A fair charge I have to accept.** Nine internal-error branches in ext.c are
+unreachable and untested — in the same commit where D24 deferred the handler
+field precisely because it "would be dead code no test can reach". The
+asymmetry is real. I kept the guards (they defend against a malformed row) but
+tested the INVARIANT that keeps them unreachable, and deleted the one that was
+redundant rather than defensive: `if (c2 < 0)` was already handled by the
+`if (!r)` on the next line.
+
+**On the critic itself, because the method is the transferable part.** It pinned
+its baseline to a commit when asked, DISCARDED the twelve sabotages it had
+already run unpinned, re-ran all 38 from the snapshot, then compared the
+discarded twelve against the pinned ones and reported "overlap 12, identical 12,
+differing 0" — while noting that the agreement was a post-hoc check and not a
+method. It also labelled the three runs it deliberately made against the live
+tree and kept them out of the matrix. That is how provenance should be handled.
+
+Suite now 805/73/199/127+2/29/7. Byte-identity re-verified after every change:
+4183 cases against a pre-SR-2 build, zero differences.

@@ -250,12 +250,24 @@ static void check_wellformed(void)
         ok(label);
     }
 
-    /* Coverage floor, the same guard tests/reject/ carries: deleting rows must
-     * not silently shrink what is described. */
-    if (total < 60) {
-        bad("registry TABLE SHRANK: %zu rows is below the floor of 60 — coverage was removed", total);
+    /* An EXACT count, not a floor. It was `total < 60` against 67 rows, and an
+     * R5 critic used the seven rows of slack: deleting GROUP('3')..GROUP('9')
+     * in one edit left all seven suites green. Recursion into capture groups
+     * 3..9 silently stopped being described, and because the lookup then falls
+     * back to the `(?i)` catch-all, the parser routed `(?3)` to 'modifiers'
+     * and the table AGREED — in unison — that this was correct.
+     *
+     * A floor answers "did someone delete a lot"; it never answers "did someone
+     * delete the right ones". The manifest below is the real defence and names
+     * 8 rows; this makes the other 59 undeletable-by-accident. Adding a row is
+     * a one-line bump here, in the same commit — which is the point, not the
+     * cost. */
+    if (total != 67) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 67. If you added or "
+            "removed a construct deliberately, update this number in the same "
+            "commit; if not, coverage was removed", total);
     } else {
-        printf("PASS: registry describes %zu constructs (floor 60)\n", total);
+        printf("PASS: registry describes %zu constructs (exact)\n", total);
         pass++;
     }
 }
