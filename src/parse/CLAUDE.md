@@ -86,7 +86,31 @@ Rules when touching it:
   field and not a fifth doorway kind.
 - **`RF_CLASS_NAMED` means the text between the delimiters is a NAME from a
   known set**, and an unknown one is not the construct at all. `[[:foo:]]` is
-  "unknown POSIX class name", not a promise about module `classes`.
+  "unknown POSIX class name", not a promise about module `classes`. It is only
+  meaningful ON a `RF_CLASS_DELIM` row — the name is the text the delimiter scan
+  measures — and since R9 `registry_check.c` requires that pairing rather than
+  leaving it to whoever writes the next row. The 16-name table was regenerated
+  independently from libpcre2 at R9, ~2.4 billion probes, and is exactly right.
+- **`<` and `>` are POSITION-RESTRICTED**, which R9/C3-4 found pcrec not
+  modelling. libpcre2 takes them only as a class's ENTIRE content: `[[:<:]]`
+  compiles, while `[x[:<:]]`, `[[:<:]a]` and even `[^[:<:]]` are all "unknown
+  POSIX class name" — and every ordinary name works in every position. pcrec
+  promised module `classes` for all of them: the same over-promise FIX-2
+  removed for bogus names, surviving for the two real names FIX-2 itself
+  discovered. `pcrec_registry_posix_whole_class_only()` plus the doorway's
+  `at_content_start` parameter is the fix, and `check_posix_positions` in
+  pcre2_check.c is what notices it coming back. Neither existing differential
+  could: one varies the name with position fixed, the other varies position with
+  the name fixed, and the defect was in the cell neither generates.
+- **Two things about `pcrec_ext_class_bracket`'s scan that the code cannot say
+  about itself** (R9). Its three rules are correct — a critic ran 1,239,480
+  generated patterns against libpcre2 with zero verdict divergences — but the
+  ORDER of the close check against rule 1 is arbitrary, not load-bearing as the
+  comment used to claim: the predicates are disjoint for every delimiter the
+  registry can hold, and no delimiter can be `]` because `registry_check.c` now
+  forbids it. And `close_at` starts at `from` rather than 0 so that a row
+  reaching the name check without having run the scan asks about a zero-length
+  name instead of a wrapped `size_t`.
 - **A verb NAME goes in the VerbName tables, not in a RegRow** (Q1/D25), and
   its form bits are a MEASUREMENT: add the name, then run
   `bash tests/registry/run_registry_tests.sh` and let libpcre2 tell you which

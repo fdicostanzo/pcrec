@@ -586,6 +586,29 @@ const char *const *pcrec_registry_posix_names(size_t *n)
     return posix_names;
 }
 
+bool pcrec_registry_posix_whole_class_only(const char *name, size_t len)
+{
+    /* `<` and `>` are not classes, and libpcre2 does not let them sit among
+     * class members the way a class can. Measured against 10.46 (R9/C3-4):
+     *
+     *   [[:<:]]           compiles      the ONLY shape that works
+     *   [x[:<:]]          error 130     a member before it
+     *   [[:<:]a]          error 130     a member after it
+     *   [^[:<:]]          error 130     even a bare `^`
+     *   [[:alpha:][:<:]]  error 130     another POSIX class before it
+     *   [x[:alpha:]]      compiles      position never matters for a real class
+     *
+     * pcrec answered "requires module 'classes'" for every one of those — a
+     * module promised for patterns PCRE2 will never accept, which is the exact
+     * over-promise FIX-2 set out to remove, surviving for the two names FIX-2
+     * itself discovered. The two differentials that should have caught it each
+     * vary one axis: the name sweep only ever builds `[[:NAME:]]`, and the
+     * shape sweep never uses `<` or `>` as a body. The defect lives in the cell
+     * of the cross-product neither generates. */
+    if (len && name[0] == '^') return false;   /* `^<` is already not-known */
+    return len == 1 && (name[0] == '<' || name[0] == '>');
+}
+
 const char *pcrec_registry_posix_unknown_msg(void)
 {
     /* PCRE2's own wording. It names no module ON PURPOSE — that is the whole

@@ -7,6 +7,13 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **literals.rxt** — literal character and substring matching
 - **dot.rxt** — dot (.) matching (any byte)
 - **classes.rxt** — character class [...] syntax and behavior
+- **class_brackets.rxt** — the MEMBER SETS of the class-bracket patterns FIX-2
+  changed the verdict of (`[a[:b]`, `[[:alpha]`, `[.a]x.]`, `[a[.b]c]d.]`, the
+  K4 rule-3 discriminators, both doorway-4a controls). They were guarded only by
+  `accept` rows asserting exit 0 and a non-empty file — "did not say no" — and
+  appeared nowhere in this corpus, so R9/C1-F4's one-line sabotage that DROPS
+  the `:` from `[a[:b]`'s member set passed every suite in the repo and the
+  differential fuzzer. Sabotage-validated: that edit fails 4 cases here
 - **quantifiers.rxt** — *, +, ? quantifiers
 - **bounded_repeats.rxt** — {m,n} repeat syntax
 - **alternation.rxt** — | alternation and precedence

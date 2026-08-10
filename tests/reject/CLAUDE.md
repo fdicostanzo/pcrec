@@ -6,12 +6,29 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 201 rows asserted by hand (naming a module, or the
+- **run_reject_tests.sh** — 200 rows asserted by hand (naming a module, or the
   base-grammar brace errors K5/K6/K8, or since Q1 the verb doorway's four
-  outcomes), 66 more reached by iterating `pcrec --list-syntax`, 45
-  accept-controls, and 5 known-wrong pins. Ends with a MANIFEST naming the
-  handful of rows whose deletion an exact count would not catch, plus the exact
-  counts themselves. Part of `make test`; env: PCREC, KEEP=1.
+  outcomes), 67 more reached by iterating `pcrec --list-syntax`, 57
+  accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
+  into the normal tables. Ends with a MANIFEST naming the handful of rows whose
+  deletion an exact count would not catch, plus the exact counts themselves.
+  Part of `make test`; env: PCREC, KEEP=1.
+
+  **These four figures are hand-copied, and every attempt to maintain them by
+  hand has failed — including twice in one review.** FIX-2 updated the first
+  (180 → 201) and left the other three describing the tree as it was before the
+  same commit: 66 iterated when the harness said 67, 45 accept-controls when it
+  said 59, and 5 known-wrong pins in the very change whose headline claim was
+  that there are now none (R9/C4-3). R9 then corrected them to 201/67/59 —
+  and immediately invalidated its own correction by removing three DUPLICATE
+  rows in the same review, so the real numbers became 200/67/57 while this
+  paragraph, written to warn about hand-copied figures, carried the wrong ones
+  (R9/C4V-3). Two authors, two commits, the same failure, once inside the
+  warning itself. The harness prints
+  all four in its own summary block — `rejections checked / rows iterated /
+  accept controls / known-wrong pinned` — so **read them from a run, never from
+  here**, and re-run it before editing this paragraph. MECH-1 is the planned
+  fix: generate the figures instead of copying them.
 
 ## What the verb rows do and do not pin (Q1, and R8 measured the difference)
 

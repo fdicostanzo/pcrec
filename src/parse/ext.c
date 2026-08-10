@@ -273,7 +273,7 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
  * perfectly ordinary class of five characters, pinned against libpcre2 10.46.
  * RF_CLASS_DELIM is what separates them — see its definition in internal.h. */
 void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
-                             bool at_class_open)
+                             bool at_class_open, bool at_content_start)
 {
     /* No `if (c2 < 0)` guard: it was here, and it was redundant rather than
      * defensive. `find(RK_CLASSBRACKET, -1)` returns NULL because this kind has
@@ -300,9 +300,34 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      *      PCRE2 abandons the outer one and recognises the inner
      *   3. `\]` and `\\` are skipped as a UNIT
      *
-     * The close check comes first because a delimiter immediately before `]`
-     * IS the closer, and rule 1 must not consume that `]` out from under it. */
-    size_t close_at = 0;                 /* index of the closing delimiter */
+     * THE ORDER OF THE CLOSE CHECK IS ARBITRARY, and the comment that stood
+     * here said otherwise. It claimed the close check must come first "because
+     * a delimiter immediately before `]` IS the closer, and rule 1 must not
+     * consume that `]` out from under it". That hazard cannot occur: rule 1
+     * tests the byte AT `i` (`ch == ']'`) while the close check tests
+     * `pat[i] == c2 && pat[i+1] == ']'`, so the two predicates are DISJOINT
+     * whenever `c2 != ']'` — and `c2` is only ever `:`, `.` or `=`. A critic
+     * moved the close block after rule 1 and got byte-identical results over
+     * 1,239,480 generated patterns, including the liveness counts, while the
+     * same battery's other five sabotages each produced thousands of
+     * divergences (R9/C2-1). The stated reason was untestable, not merely
+     * untested.
+     *
+     * What makes the disjointness true is a property of the TABLE, not of this
+     * function, so registry_check.c now asserts it: no RK_CLASSBRACKET row may
+     * have `]` as its selector. Keep the order as it is — it reads well — but
+     * do not believe it is load-bearing. */
+    /* Start at `from`, not 0, so that a row reaching the RF_CLASS_NAMED check
+     * below without having run the scan asks about a ZERO-length name rather
+     * than about `0 - from`, which wraps to a huge size_t. No shipped row does
+     * that (the one RF_CLASS_NAMED row also carries RF_CLASS_DELIM, and
+     * registry_check.c now requires that pairing), and a critic measured that
+     * even the wrapped length was memory-safe — but only because
+     * `pcrec_registry_posix_known` compares lengths before it compares bytes,
+     * which is an implementation detail of a different function that nothing
+     * ties to this one (R9/C3-1). Two guards, because the coupling was by
+     * accident and the natural "optimisation" of that function removes it. */
+    size_t close_at = from;              /* index of the closing delimiter */
     if (r->flags & RF_CLASS_DELIM) {
         bool closed = false;
         for (size_t i = from; i < cx->patlen; i++) {
@@ -364,6 +389,22 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      * cannot make it one. See RF_CLASS_NAMED in internal.h. */
     if ((r->flags & RF_CLASS_NAMED) &&
         !pcrec_registry_posix_known(cx->pat + from, close_at - from))
+        ctx_fail(cx, at, "%s", pcrec_registry_posix_unknown_msg());
+
+    /* A REAL name in a position libpcre2 will not take is still not a construct
+     * (R9/C3-4). `<` and `>` are word-boundary assertions rather than classes,
+     * and libpcre2 recognises them only as a class's ENTIRE content — so
+     * `[[:<:]]` compiles while `[x[:<:]]`, `[^[:<:]]` and `[[:<:]a]` are all
+     * "unknown POSIX class name". Answering "requires module 'classes'" for
+     * those is the over-promise this row exists to remove, surviving for the
+     * two names FIX-2 itself added.
+     *
+     * Entire content means: nothing before it (`at_content_start`, which is
+     * false after any member and false when a `^` negated the class) and the
+     * class's `]` immediately after the construct's own. */
+    if ((r->flags & RF_CLASS_NAMED) &&
+        pcrec_registry_posix_whole_class_only(cx->pat + from, close_at - from) &&
+        !(at_content_start && close_at + 2 < cx->patlen && cx->pat[close_at + 2] == ']'))
         ctx_fail(cx, at, "%s", pcrec_registry_posix_unknown_msg());
 
     ctx_fail(cx, at, "%s", r->msg);

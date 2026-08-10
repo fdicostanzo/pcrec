@@ -379,6 +379,10 @@ const char *pcrec_registry_verb_name_limit(size_t *max);
  * may carry a leading `^` (`[[:^alpha:]]` is a real construct). Returns true if
  * PCRE2 has it; `pcrec_registry_posix_unknown_msg` is what to say when not. */
 bool        pcrec_registry_posix_known(const char *name, size_t len);
+/* True for the names libpcre2 accepts ONLY as a class's ENTIRE content:
+ * `[[:<:]]` compiles, `[x[:<:]]` and `[^[:<:]]` and `[[:<:]a]` do not. Every
+ * other POSIX name is position-independent (R9/C3-4). */
+bool        pcrec_registry_posix_whole_class_only(const char *name, size_t len);
 const char *pcrec_registry_posix_unknown_msg(void);
 /* Iteration, for tests and --list-verbs' sibling checks. */
 const char *const *pcrec_registry_posix_names(size_t *n);
@@ -414,9 +418,14 @@ void pcrec_ext_verb(Ctx *cx, size_t at) __attribute__((noreturn));
  * a class-bracket row a handler returning "consumed, carry on", both callers
  * would ignore it and fall straight through to member parsing with nothing in
  * the build objecting. Adding the value back is SR-6's job, at which point the
- * signature change forces both call sites to be looked at. */
+ * signature change forces both call sites to be looked at.
+ *
+ * `at_content_start` says the construct begins at the FIRST byte of the class's
+ * content — no member before it and no `^`. It exists for `[[:<:]]` and
+ * `[[:>:]]`, which libpcre2 recognises ONLY as a class's entire content
+ * (R9/C3-4); every other POSIX name works in any position. */
 void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
-                             bool at_class_open);
+                             bool at_class_open, bool at_content_start);
 
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means

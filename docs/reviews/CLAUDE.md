@@ -54,6 +54,23 @@ most of the odd-looking test cases trace to a finding recorded here.
   positive lookahead and was answered "requires module 'modifiers'" — with the
   registry the only one of its three homes that had it wrong.
 
+- **2026-08-10-r9-fix2.md** — R9, FIX-2 (K3/K4 and the class-bracket doorway).
+  **The panel that ran a session late**, because FIX-2 was committed before its
+  critics could be convened. The split is the point: both critics who attacked
+  the RULE confirmed it — one over 1,239,480 generated patterns, one over ~2.4
+  billion POSIX-name probes against libpcre2, with the 16-name table
+  independently regenerated and found exactly right — while both critics who
+  attacked the CHECKS found defects. Undefined behaviour in the new
+  differential's one nested-opener shape (a `const char *` read as `%c`), so the
+  construct it existed to sweep appeared ZERO times for two of three delimiters
+  while the header printed 1680; a `size_t` underflow held safe only by an
+  unrelated function's length-check-before-memcmp; a MANIFEST entry hollowed by
+  a duplicated row, plus two more duplicates the critic's own inventory missed;
+  and three of four counts in a CLAUDE.md contradicting the commit that wrote
+  them. The liveness guard added for the first finding **was wrong in the same
+  way the finding was** and passed its sabotage until the positive control was
+  run.
+
 ## Conventions
 
 Findings are labelled CONFIRMED (reproduced, with the repro) or SUSPECTED, and

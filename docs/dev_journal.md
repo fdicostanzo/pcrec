@@ -3061,3 +3061,237 @@ known-wrong pins for the first time since they were introduced.
 
 **Next: the FIX-2 panel, then Q2 with SR-9.** PC-4 stays deferred to module
 `classes`. See docs/wake.md.
+
+## 2026-08-10 — R9: the FIX-2 panel, one session late
+
+The one process step FIX-2 shipped without. `29a0517` was committed green and
+fully documented and the session was reset before its critics ran; they ran here
+instead, against the committed tree. Four critics, four lenses, own clones,
+findings appended as confirmed. Two on a smaller model (record/harness, name
+table), two on the larger one (instrument, rule). Review:
+`docs/reviews/2026-08-10-r9-fix2.md`.
+
+**The fix was right and the instrument was not.** Both critics who attacked the
+RULE confirmed it — 1,239,480 generated patterns with zero verdict divergences,
+and the 16-name POSIX table independently regenerated against libpcre2 over ~2.4
+billion probes and found exactly right, no more and no fewer. Both critics who
+attacked the CHECKS found defects. Three of the four findings are in the
+instrument FIX-2 added; the fourth is in the docs describing it.
+
+**C1-F1, the headline: the nested-opener shape generated no nested openers, via
+undefined behaviour.** `CLS_SHAPES[9]` takes four `%c` and no `%s`; the call
+site passed the body string second, so a `const char *` was read as an `int`. In
+practice the low byte of a literal's address; at `-O0`, sometimes NUL, which
+truncated 21 probes to the stub `[[=a[`. Which patterns the "1680-pattern
+differential" probed depended on `.rodata` layout while the header kept printing
+1680. `-Wall -Wextra` cannot see a non-literal format, so `make strict` was
+clean. Measured cost: 42 same-delimiter nested openers in the whole sweep, all
+at `:`, **zero for `.` and `=`** — the two rows where rule 2 is the offset-only
+branch the commit message calls out. Replaced with a positional expander; the
+sweep now generates 98/56/56 and still finds zero divergences, so this was an
+instrument defect and not a compiler one.
+
+**And the guard I added for it was wrong the same way.** The per-delimiter
+liveness floor's first detector counted ONE occurrence of `[`+delimiter, which
+makes `[x[=a=]]` — an ordinary inner bracket — look like a nested opener. It
+read 511/504/504 and stayed GREEN when the nested shape was sabotaged away. A
+control measuring something adjacent to what it names, written inside the fix
+for a finding about exactly that. Only the positive control caught it. The
+corrected detector requires two occurrences and reproduces C1's measurement
+under sabotage: 42/0/0, two failures.
+
+**C2-F1:** "the close check comes first because rule 1 must not consume that `]`"
+is untestable — the predicates are disjoint whenever the delimiter is not `]`,
+and it never is. Moving the block gave byte-identical results across all
+1,239,480 patterns, against a battery where every other sabotage produced
+thousands. Comment corrected; the property that makes it true is now a
+`registry_check.c` assertion, because it is a fact about the TABLE.
+
+**C3-F1:** `close_at - from` underflows for a row with RF_CLASS_NAMED and no
+RF_CLASS_DELIM. Built under ASan/UBSan with such a row: no report — because
+`posix_known` compares lengths before bytes, so a length near `SIZE_MAX` never
+reaches `memcmp`. Safe by an implementation detail of a different function that
+nothing ties to this one, and the natural optimisation of that function makes it
+an OOB read. Fixed twice: `close_at` starts at `from`, and the pairing is now
+required in `registry_check.c`.
+
+**C4-F1/F2/F3:** an empty expected-substring makes `case "$out" in *""*` match
+anything, silently downgrading "rejected for the right reason" to "rejected at
+all" (~120 new call sites use that mechanism); the MANIFEST's "only row" for
+K4's rule 3 was written twice, so a critic deleted the real one, bumped the
+count 201 → 200 exactly as the file forbids, and went green; and three of four
+counts in tests/reject/CLAUDE.md contradicted this commit's own headline claim,
+including "5 known-wrong pins" when the point was that there are zero.
+
+**The duplicate detector found two more the critic's inventory missed.** C4
+reported `[a[.b\].]` as the only duplicate after a full-file inventory; adding a
+check that reads the harness's own runtime log of what it asserted found `[:]`
+and `[:a]` too. Counts corrected to 200/57 — legitimate because the removed rows
+were duplicates rather than coverage, and because a recurrence now fails.
+Consolidating them also surfaced a comment still calling `[::]`/`[:a:]`
+"wrongly accepted (K3)", eleven lines above where FIX-2 pins them as rejections.
+
+**One thing I got wrong at the top of the session:** the first baseline reported
+`exit 0` from `make test 2>&1 | tail -30`, which is `tail`'s exit code. Re-run
+properly it was genuinely green — but the project's recurring defect is an
+assertion projecting onto a subset of the output, and the first command of the
+panel convened to find it did exactly that.
+
+**Suite at this point** (interim — the panel had not finished, see the second
+wave below): 876 corpus / 83 CLI / 325 reject checks / 129 registry / 82 PC-3 /
+29 codegen / 7 trie-identity, `make strict` clean, verify_rxt 844/844, fuzz seed
+1 zero divergences, bench zero budget failures.
+
+### R9, second wave — the panel kept working after its first findings landed
+
+Five more findings after the first three were already fixed, one of them a LIVE
+BUG in shipped code rather than in an instrument. Third consecutive panel whose
+best material arrived after the point a less patient checkpoint would have
+closed.
+
+**C3-F4, the real bug.** libpcre2 accepts `[[:<:]]` and `[[:>:]]` ONLY as a
+class's ENTIRE content: `[x[:<:]]`, `[[:<:]a]`, `[^[:<:]]` (a bare `^` is
+enough), `[a-z[:<:]]` are all error 130, while any ordinary name works in every
+position. pcrec answered "requires module 'classes'" for all of them — the exact
+over-promise FIX-2 set out to remove, surviving for the two names FIX-2 itself
+discovered. Fixed with `posix_whole_class_only()` plus an `at_content_start`
+parameter through the doorway.
+
+**Why both differentials missed it is the finding within the finding.** The name
+sweep varies NAME across ~12000 candidates and builds every one as `[[:NAME:]]`
+— position fixed. The shape sweep varies POSITION and never uses `<` or `>` as a
+body — name fixed. Two large honest sweeps, and the defect in the cell of the
+cross-product neither generates. Making either one BIGGER would never have found
+it. New `check_posix_positions` crosses the axes; reverting the rule fails 8.
+
+**C1-F4, the one I would least like to have shipped.** The fourteen graduated
+`accept` rows assert exit 0 and a non-empty output file — "did not say no" — and
+none of those patterns appeared anywhere in the .rxt corpus. A critic changed one
+line so `[a[:b]` SWALLOWS the `:`, dropping it from the member set, and every
+suite in the repo passed with the fuzzer at zero divergences. All verdicts right,
+the set wrong. FIX-2's stated achievement is removing a class of silent wrong
+matcher and its instrument never asked what was emitted. Fixed:
+`tests/base/class_brackets.rxt`, 136 oracle-verified cases; the sabotage fails 4.
+
+**C1-F2**: `check_posix_names` had no provenance requirement and its liveness was
+satisfied by six non-class byte probes (`[[:]:]]` compiles because the `]` ends
+the class first). Filtering PCRE2's names out of the pool AND deleting `graph`
+from pcrec's table left it printing "6 real names" and three PASS lines. Its
+correctness was parasitic on `check_verb_names`' assertion about a different name
+space. R8/C1-F4 one doorway across. Fixed; sabotage now 10 failures.
+
+**C1-F3**: `CLS_DELIMS = ":.="` — hand-listed from pcrec's own rows, in the file
+whose header says "GENERATE the space". A critic added `if (c2 == '!')
+ctx_fail(...)`, a genuine tier-2 over-rejection, and every suite stayed green.
+Fixed with a 255-byte x 5-shape sweep against libpcre2. Its liveness asks a
+question only the PARSER can answer — how many bytes behave differently from an
+ordinary class member — rather than reading the table, which would be circular.
+Answer: `:` `.` `=` and `\`, the last being the class escape.
+
+**C1-F6**: a liveness assertion that existed only in the comment ("both buckets
+must be non-empty" — one was checked). **C1-F7**: tests/registry/ had neither of
+the two protections tests/reject/ has carried since R7; deleting both new
+differentials and the 4a sweep left everything green, 129 -> 128 and 81 -> 76 in
+output nothing compared. Both fixed.
+
+**And C4, given a second pass, broke two of my own remedies.** The duplicate
+detector false-positives on a row containing a newline (`reject()` had no display
+label; `accept()` has had one since it was written), and `[ -z "$want" ]` is
+defeated by a single space because every diagnostic here is an English sentence.
+Both fixed; the second now rejects all-blank and records the limit it cannot
+close — no floor separates a lazy `:` from a legitimately short expectation.
+
+**What held under attack, with numbers, so it is not re-covered:** K4's three
+scan rules over 1,239,480 generated patterns, zero verdict divergences; the
+16-name table over ~2.4 billion independently generated probes, exactly right;
+all 32 `^`-negation combinations; the position-before-name ordering; K3's
+emitted matchers agreeing with libpcre2 byte-for-byte over 255 subjects; and the
+200/57 count change independently confirmed honest. Also refuted: my own
+hypothesis that glob metacharacters could be injected into the reject harness —
+a quoted `"$want"` in a `case` pattern is literal.
+
+**Suite at close, after both waves:** 1012 corpus (+136, the new member-set
+file) / 83 CLI / 200 reject + 67 iterated (325 checks) / 129 registry / 89 PC-3
+/ 29 codegen / 7 trie-identity. `make strict` clean, verify_rxt 980/980, fuzz
+seed 1 zero content and zero accept/reject divergences, bench zero budget
+failures. Bench ran with a critic still working (load 2.7), which can only make
+it slower, so a pass stands.
+
+**Next: Q2 with SR-9** (Frank's call — they touch the same rows). PC-4 stays
+deferred to module `classes`. No open miscompile and no open over-acceptance.
+
+### R9, third wave — two sabotages that survived the second wave's fixes
+
+**C2-F3.** Turning K4's rule 2 off at doorway 4a for `.` and `=` only produces
+1,416 over-rejections against libpcre2 and the whole repo stays green — and it
+stayed green AFTER the nested-opener floor was added, because every nested
+opener the sweep generated was a 4b one. Five-byte reduction: `[.[.]`, which
+libpcre2 compiles as a class of `.` and `[`. Two more shapes at the class's own
+bracket; sabotage now fails 12. The C1-F1 lesson recurring inside its own
+remedy: the floor asked "every delimiter" when the honest question was "every
+delimiter AND every position".
+
+**C1-F8.** `check_class_brackets` counted `pc2 != 0 && rejected` as agreement
+without reading pcrec's message — 746 patterns, the entire libpcre2-refuses
+half, which is precisely where "is a module promised?" lives. Doorway 4a had no
+external check of its own over-promise. Fixed by reading the message there, with
+a mechanical way to tell a real over-promise from an honest one: append a `]`
+and re-ask libpcre2, because `[[:alpha:]` is an honest deferral on a real
+construct in a pattern that merely never closed, while `[:alpha:]]` still does
+not compile. Baseline 0 wrong / 4 unterminated; reverting `open_msg` fails 3.
+
+**C4V-F3, mine.** The C4-F3 fix wrote 201/67/59 into two CLAUDE.md files, and
+removing three duplicates in the same review made them 200/67/57 — so the
+paragraph I wrote warning about hand-copied counts carried wrong ones. Fourth
+instance, second one inside the warning. MECH-1 is no longer a nice-to-have.
+
+**C4V-F4, and a regression I caused fixing C2-F3.** The blank-only guard was
+still defeated by any literal inside the diagnostic envelope: a critic collected
+all 200 real diagnostics and measured `:`, `pcrec`, `pattern offset`, `(`, `)`
+and the letters a e s n r t o at 200/200 each. Every message has the shape
+`pcrec: <message> (pattern offset N)`, and no LENGTH floor separates `:` from
+`(pattern offset 4)` — 31 rows legitimately pin an offset with that suffix. Fixed
+by rejecting a want that is a substring of the envelope itself; 8/8 measured
+literals refused, zero false positives on 200 rows.
+
+And adding the 4a shapes for C2-F3 silently disarmed the nested-opener floor for
+the 4b shape — 154/112/112 and green on the very sabotage the floor was written
+for. The guard that caught C1-F1 stopped being able to catch C1-F1, as a side
+effect of a later fix. Found by RE-RUNNING the earlier positive control after
+the later change instead of assuming it still held. Six buckets now, delimiter x
+position, each shape's removal firing independently. Third time this review that
+a guard was wrong in the way the finding it answered was wrong.
+
+### R9, fourth wave — the fixes attacked in turn
+
+Each critic was sent back at the remedies for its own findings. Two results.
+
+**C3 confirmed the C3-F4 rule generalises** — 68 patterns across nested classes,
+ranges, escapes, quantifiers, groups, alternation, truncated forms and
+`[^]`/`[]` shapes: 66/68 agree with libpcre2, the two exceptions being the
+`[[:alpha:][:<:]]` case left deliberately. ASan+UBSan with
+`-fno-sanitize-recover=all` over 18 truncated patterns plus the differential:
+zero reports; `[[:<:]` hits `close_at + 2 == patlen` exactly and the bound
+refuses the read.
+
+**And it broke the liveness assertion I shipped with that fix.**
+`restricted != 2` in check_posix_positions is computed entirely from libpcre2's
+verdict and never reads pcrec's answer, so it stays PASS under a FULL REVERT of
+the position rule — proved in a run failing 8 other checks. A real check of the
+probe pool's non-degeneracy, not of pcrec, with a comment implying otherwise.
+Fixed by adding the counter the name promises: how many names does PCREC vary
+its own answer for by position, which must equal libpcre2's count. The full
+revert now fails that 0-against-2 directly.
+
+**C4 measured why the blank guard was still weak** — see C4V-F4 above — and
+confirmed the 200/57 count change honest by diffing RUNTIME `seen` logs between
+a clean 29a0517 build and the remedy build: exactly three lines removed, each
+2 occurrences to 1, nothing else.
+
+**Four times now a guard written this session was wrong in the way the finding
+it answered was wrong**: the nested-opener detector counting an inner bracket;
+the per-delimiter floor disarmed by adding 4a shapes; the counts restaled inside
+the paragraph warning about stale counts; and a liveness assertion that measured
+libpcre2 while its name claimed pcrec. Every one was caught by running a
+positive control rather than by reading the code — including the two that were
+caught only because an EARLIER control was re-run after a LATER change.

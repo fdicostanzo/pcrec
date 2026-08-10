@@ -167,20 +167,22 @@ static Ast *p_class(Ctx *cx)
      * (`[.a.]` is an error at offset 0). A negated class suppresses it because
      * `^` sits between the bracket and the delimiter — `[^.a.]` compiles. */
     if (!neg)
-        pcrec_ext_class_bracket(cx, peekc(cx), opening, cx->pos + 1, true);
+        pcrec_ext_class_bracket(cx, peekc(cx), opening, cx->pos + 1, true, false);
     bool first = true;
 
     for (;;) {
         int c = peekc(cx);
         if (c < 0) ctx_fail(cx, opening, "missing terminating ] for character class");
         if (c == ']' && !first) { cx->pos++; break; }
+        bool at_content_start = first && !neg;   /* R9/C3-4: `[[:<:]]` only */
         first = false;
 
         /* Doorway 4b: a bracket INSIDE the class. It declines far more often
          * than it fires — `[` is an ordinary member — and then falls through
          * to the member handling below. */
         if (c == '[')
-            pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos, cx->pos + 2, false);
+            pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos, cx->pos + 2, false,
+                                    at_content_start);
 
         int lo;
         cx->pos++;

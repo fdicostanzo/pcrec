@@ -57,7 +57,7 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 nrej=0
-reject() { # reject <pattern> <expected-substring>
+reject() { # reject <pattern> <expected-substring> [display-label]
     # `timeout` on every invocation is load-bearing, not defensive (R7/T-11):
     # this file's header promises rc >= 124 is a failure, and without it that
     # branch was UNREACHABLE — pcrec cannot return 124 on its own, so a hanging
@@ -65,7 +65,69 @@ reject() { # reject <pattern> <expected-substring>
     # hypothetical: dropping the `big_n` raise turns three of the K5 rows into
     # legal multi-GB bounded repeats, and a critic observed a 6.5 GB allocation
     # inside an un-timeout-ed call here.
-    local pat="$1" want="$2" out rc
+    local pat="$1" want="$2" show="${3:-$1}" out rc
+    # A logged pattern containing a NEWLINE splits `seen` into two lines, and
+    # the duplicate detector then compares fragments — a two-line pattern whose
+    # halves read like unrelated single-line rows reports a FALSE duplicate for
+    # rows that are not duplicated at all (R9/C4V-1). `accept()` has carried a
+    # display label for this hazard since it was written; `reject()` did not,
+    # and the duplicate detector is what made the omission matter. Third
+    # argument is that label. Refusing the newline outright rather than only
+    # offering the label is deliberate: an optional guard that must be
+    # remembered is the same shape as the bug.
+    case "$show" in
+        *"
+"*) bad "reject: a logged pattern contains a newline, which would split the coverage log and confuse the duplicate check. Pass a single-line display label as the third argument"
+            return ;;
+    esac
+    # An EMPTY `want` silently turns assertion 2 back into assertion 1. The text
+    # check below is `case "$out" in *"$want"*`, and `*""*` matches every string
+    # — so a blanked expectation degrades "rejected for the stated reason" to
+    # "rejected at all", passes, and prints `PASS: reject 'X' -> ` with nothing
+    # after the arrow, which nothing greps for. Getting the NAME right is this
+    # file's entire reason to exist over a `perr` block, so refuse the call
+    # rather than let it pass vacuously (R9/C4-1). A genuinely MISSING argument
+    # is already loud — `set -u` kills the script — it is the empty string that
+    # is quiet. The iterated path guards its own inputs the same way, at the
+    # `$3 == "" || $11 == ""` BADROW check.
+    #
+    # BLANK-ONLY, not merely empty. `[ -z "$want" ]` was the first version and a
+    # critic defeated it with a single space: every diagnostic this compiler
+    # prints is an English sentence, so `want=" "` is a substring of all of them
+    # and asserts nothing (R9/C4V-2). A tab does NOT currently defeat it — no
+    # message contains one — but that is a property of today's message corpus,
+    # not of the guard, so the guard rejects all whitespace.
+    #
+    # What this canNOT do, stated rather than implied: a short but non-blank
+    # expectation like `:` or `pcrec` is equally uninformative and equally
+    # legal. No length or content floor distinguishes a lazy expectation from a
+    # legitimately short one, so the guard stops at "asserts literally nothing"
+    # and review is what covers the rest.
+    case "$want" in
+        *[![:space:]]*) ;;
+        *) bad "reject '$show': expected-substring is empty or all whitespace. Every pcrec diagnostic contains a space, so that asserts only that pcrec exited 1 — name the diagnostic"
+           return ;;
+    esac
+    # AND THE BLANK GUARD WAS NOT ENOUGH EITHER (R9/C4V-4). Every diagnostic this
+    # compiler prints has the identical envelope `pcrec: <message> (pattern
+    # offset N)`. A critic ran the whole suite, collected all 200 real
+    # diagnostics, and measured which `want` literals match all of them:
+    # `:`, `pcrec`, `pattern offset`, `(`, `)` and the single letters
+    # a e s n r t o are each 200/200. None is blank, so none was caught.
+    #
+    # The discriminating rule is not a LENGTH floor — `:` is one character and
+    # `(pattern offset 4)` is eighteen, and 31 rows legitimately pin an offset
+    # with that suffix, so no floor separates them. What distinguishes them is
+    # that everything dangerously generic lives entirely inside the CONSTANT
+    # part. So: reject a `want` that is a substring of the envelope itself. It
+    # asserts nothing about which construct or module was named.
+    # `(pattern offset 4)` is not a substring of it — the digit is real content —
+    # so the offset-pinning rows are unaffected.
+    case "pcrec: (pattern offset )" in
+        *"$want"*)
+            bad "reject '$show': expected-substring \"$want\" is part of the envelope EVERY pcrec diagnostic has (\"pcrec: ... (pattern offset N)\"), so it matches all 200 of them and names no construct. Assert the message, not the frame"
+            return ;;
+    esac
     nrej=$((nrej + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
@@ -87,8 +149,8 @@ reject() { # reject <pattern> <expected-substring>
         return
     fi
     seen="$seen
-$pat"
-    ok "reject '$pat' -> $want"
+$show"
+    ok "reject '$show' -> $want"
 }
 
 naccept=0
@@ -260,8 +322,15 @@ accept '[a.b.]'  # the `.` is not preceded by `[`
 # deleting SR-2's `at_class_open` guard changed 0 of 4173 hashed cases and broke
 # no test: the guard was not invisible, it was simply never entered (R5
 # behaviour critic, FINDING 1). These two enter it, and both are accepted by
-# libpcre2 10.46 as well — deliberately not `[::]` or `[:a:]`, which PCRE2
-# REJECTS and pcrec wrongly accepts (K3); pinning those would cement the bug.
+# libpcre2 10.46 as well.
+#
+# The clause that stood here — "deliberately not `[::]` or `[:a:]`, which PCRE2
+# REJECTS and pcrec wrongly accepts (K3); pinning those would cement the bug" —
+# described the tree before FIX-2. K3 is fixed and both patterns are now pinned
+# as rejections in the K3 section below, which is where that sentence should
+# have been updated (R9). This is also the only home for these two rows: FIX-2
+# added a second copy of both in that section, and the duplicate check above is
+# what surfaced it.
 accept '[:]'
 accept '[:a]'
 # The `]` half of "a matching `.]` appears later". Every other control here
@@ -446,8 +515,10 @@ accept '[a[:b]'
 accept '[[:alpha]'
 accept '[[:]]'
 accept '[[:]'
-accept '[:]'
-accept '[:a]'
+# `[:]` and `[:a]` belong here too — they are the 4a doorway's accept-controls —
+# but they are asserted ONCE, in the doorway-4a section above, with the R5
+# FINDING 1 provenance that explains why they exist. FIX-2 added a second copy
+# here; a duplicate gives the MANIFEST a spare and inflates the counts (R9/C4-2).
 # K4's terminator scan. Every one of these has the `.]` or `=]` OUTSIDE the
 # class, which is the shape the old scan could not see.
 accept '[.a]x.]'
@@ -457,8 +528,10 @@ accept '[[.a].]'
 accept '[.a].]'
 # ...and the escape rule, which is why the three had to land together: the `]`
 # that ends the scan here is one a backslash was hiding, so a `]`-rule without
-# an escape-rule turns this correct rejection into an over-acceptance.
-reject '[a[.b\].]'  "POSIX collating elements are not supported"
+# an escape-rule turns this correct rejection into an over-acceptance. The `[.`
+# form of that is the rule-3 discriminator eleven lines down and is NOT repeated
+# here — it used to be, and the duplicate is what made the MANIFEST's claim
+# about it false (R9/C4-2). `[=` is the same statement at the other delimiter.
 reject '[a[=b\]=]'  "POSIX collating elements are not supported"
 # K4's RULE 3, and these four are the only thing that distinguishes it from the
 # two weaker rules I tried first. It is "`\]` and `\\` are units", not "skip any
@@ -616,6 +689,11 @@ pinned() { # pinned <pattern> <accept|reject> <expected-msg-or-dash> <why it is 
         # verdict pinned; also pin the MESSAGE where one was given. A
         # verdict-only pin says something moved, not that it moved somewhere
         # right (R6 testability critic, T-9).
+        case "$msg" in
+            *[![:space:]]*) ;;
+            *) bad "known-wrong '$pat': blank expected message. Use '-' to pin the VERDICT only and say so, or name the diagnostic — a blank string matches any output (R9/C4-1, C4V-2)"
+               return ;;
+        esac
         if [ "$msg" != "-" ]; then
             case "$out" in
                 *"$msg"*) ;;
@@ -675,6 +753,15 @@ echo "== every registry row covers itself (SR-4) =="
 niter=0
 row_reject() { # like reject(), but counted separately so the floors stay honest
     local pat="$1" want="$2" out rc
+    # Same empty-expectation trap as reject() (R9/C4-1). The BADROW filter below
+    # already drops dump rows with an empty `expect` field, so this is the
+    # second line rather than the first — but it is the line that survives
+    # someone rewriting the awk.
+    case "$want" in
+        *[![:space:]]*) ;;
+        *) bad "row '$pat': blank 'expect' text reached row_reject — it would match any output (R9/C4V-2)"
+           return ;;
+    esac
     niter=$((niter + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
@@ -768,6 +855,32 @@ echo "checks failed: $fail"
 # manifest is not a count: deleting the row makes this fail, and the failure
 # message does not tell you to edit a number. Keep it short — it is for rows
 # that are the ONLY check of something, not for coverage in general.
+# AND THE MANIFEST ASSUMES EVERY ROW IS UNIQUE, so enforce that rather than
+# assume it. `seen` is a flat log of every pattern that passed ANY check, and
+# `must_have` only asks whether a pattern appears in it — so a row that is
+# written TWICE has a spare. Delete either copy and the manifest still finds the
+# other, which is precisely the "delete the row, bump the count" attack the
+# manifest exists to defeat, with the count edit made unnecessary.
+#
+# Measured: `[a[.b\].]` was written twice, and it was the ONLY duplicated
+# pattern in this file. A critic deleted one copy, bumped the exact count 201 →
+# 200 exactly as the failure message below forbids, and the suite went green
+# with one of the two witnesses for K4's rule 3 physically gone (R9/C4-2).
+#
+# A pattern cannot legitimately appear twice: it is either accepted or rejected,
+# never both, and asserting the same thing twice also inflates the exact counts.
+dupes="$(printf '%s\n' "$seen" | sed '/^$/d' | LC_ALL=C sort | LC_ALL=C uniq -d)"
+if [ -n "$dupes" ]; then
+    while IFS= read -r d; do
+        [ -z "$d" ] && continue
+        bad "duplicate row: '$d' is asserted more than once. A duplicated row gives the MANIFEST a spare copy, so deleting the real check goes undetected — and it inflates the exact counts. Keep one."
+    done <<DUPES
+$dupes
+DUPES
+else
+    ok "no pattern is asserted twice (the MANIFEST's uniqueness assumption holds)"
+fi
+
 manifest_missing=0
 must_have() { # must_have <pattern> <why it is irreplaceable>
     # Match a WHOLE recorded line, not a substring. `[:alpha:]` is a substring
@@ -841,8 +954,16 @@ fi
 # deliberate and visible in the diff, which is what the slack removed. If you
 # added or removed coverage on purpose, update these three numbers in the same
 # commit — and check first whether the row belongs in the manifest above.
-if [ "$nrej" -ne 201 ] || [ "$naccept" -ne 59 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 201 / 59 / 0." >&2
+#
+# 201 → 200 and 59 → 57 on 2026-08-10 (R9/C4-2), and this is the one kind of
+# count edit that is legitimate: three rows were DUPLICATES, not coverage.
+# `[a[.b\].]`, `[:]` and `[:a]` were each asserted twice, so those three checks
+# were counted twice while testing nothing extra — and the spare copy is what
+# made the MANIFEST unable to notice the real row being deleted. The duplicate
+# detector above now fails if it happens again, which is what makes lowering
+# these numbers safe rather than the very move this file warns about.
+if [ "$nrej" -ne 200 ] || [ "$naccept" -ne 57 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 200 / 57 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

@@ -185,10 +185,33 @@ CLAUDE.md files, commit, push.
   surface. See docs/reviews/2026-08-10-r8-pc3-q1.md, and PC-4 and Q2 below,
   which are what the panel turned up
 - [FIX-2] STATE:completed 2026-08-10 — K3 and K4 both fixed, plus the doorway's
-  own over-promise. **NOT YET REVIEWED BY A D6 PANEL** — the session was reset
-  before it ran, and that is the one process step this step is missing. Run it
-  before or alongside the next checkpoint; the code is green and the docs are
-  current, but nobody adversarial has looked at it.
+  own over-promise. **PANEL RUN 2026-08-10, a session late: R9,
+  docs/reviews/2026-08-10-r9-fix2.md.** The rule held everywhere it was
+  attacked — 1,239,480 generated patterns with zero verdict divergences, and the
+  16-name POSIX table independently regenerated from libpcre2 over ~2.4 billion
+  probes and found exactly right. The CHECKS did not: UB in the new
+  differential's nested-opener shape meant that construct was generated ZERO
+  times for `.` and `=` while the header printed 1680; `close_at - from` could
+  underflow for a future row and was safe only by an unrelated function's
+  implementation detail; the MANIFEST had a duplicated row (and two more the
+  critic missed) making its uniqueness guarantee false; and three of four counts
+  in tests/reject/CLAUDE.md contradicted this very commit. All fixed, each with
+  a sabotage that fails without it.
+  **The panel's SECOND wave found a live bug in shipped code**, not just in the
+  instrument: `[[:<:]]` and `[[:>:]]` are accepted by libpcre2 ONLY as a class's
+  entire content, and pcrec promised module 'classes' for every other position —
+  the same over-promise FIX-2 removed for bogus names, surviving for the two
+  real names FIX-2 itself discovered. Neither differential could see it: the
+  name sweep fixes position, the shape sweep fixes the name, and the defect was
+  in the cell of the cross-product neither generates. Also: the fourteen
+  graduated `accept` rows asserted only that SOMETHING was emitted, so a
+  one-line change that drops `:` from `[a[:b]`'s member set passed every suite
+  and the fuzzer; the delimiter space was hand-listed so a construct with no
+  registry row was invisible; the name pool had no provenance requirement; and
+  tests/registry/ had no guard against its own checks being deleted. All fixed
+  and sabotage-validated. New: tests/base/class_brackets.rxt (136 cases),
+  `check_posix_positions`, a 255-byte delimiter sweep, and a coverage count plus
+  manifest for tests/registry/.
   What landed: `RF_CLASS_DELIM` on the `:` row plus an `open_msg` field (no
   fifth doorway kind — see K3 in known_issues.md and D26); K4's three scan rules
   together, with rule 3 implemented EXACTLY as K4 worded it after two looser

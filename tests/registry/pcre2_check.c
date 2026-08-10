@@ -802,35 +802,155 @@ static const char *CLS_SHAPES[] = {
     "[[%c]",
     "[%c]",
     "[[%c%s%c]",
-    "[[%ca[%cb%c]%c]]" /* a NESTED opener, which wins */
+    "[[%ca[%cb%c]%c]]", /* a NESTED opener, which wins */
+    /* And the same at the class's OWN bracket. R9/C2-3 turned rule 2 off for
+     * doorway 4a at the `.` and `=` delimiters only and the ENTIRE repository
+     * stayed green — including the nested-opener floor added hours earlier,
+     * because every nested opener the sweep generated was a 4b one. The
+     * five-byte reduction is `[.[.]`, which libpcre2 compiles as a class of `.`
+     * and `[`. Two shapes for one rule because the rule has two positions. */
+    "[%c[%c%s]",
+    "[%c[%c]"
 };
 static const char *CLS_TRAILERS[] = {"", "x", "x%c]", "y]", "$", "]", "\\\\"};
+
+/* Expand a shape template: `%c` becomes the delimiter and `%s` the body,
+ * WHEREVER each appears and in whatever order.
+ *
+ * This used to be `snprintf(body, sizeof body, CLS_SHAPES[si], *d,
+ * CLS_BODIES[bi], *d, *d, *d)` with a comment claiming "every shape takes at
+ * most four %c and one %s; snprintf ignores the extras it is not given, so pass
+ * generously". That is only true when the specifiers appear in the ARGUMENT
+ * LIST'S ORDER, and exactly one shape broke it: `[[%ca[%cb%c]%c]]` takes four
+ * %c and no %s, so its second %c consumed `CLS_BODIES[bi]`, a `const char *`,
+ * as an `int`. Undefined behaviour, and in practice it emitted the low byte of
+ * a string-literal address — so the ONE shape written to exercise K4's
+ * nested-opener rule generated no nested opener at all, at any delimiter, and
+ * at -O0 it truncated 21 of its probes to the five-character stub `[[=a[`.
+ * Which patterns the sweep probed depended on `.rodata` layout while the header
+ * kept printing the full count (R9/C1-F1).
+ *
+ * A positional expander cannot have that bug: there is no argument list to fall
+ * out of step with, and no non-literal format string for `-Wformat-nonliteral`
+ * to be unable to see through. */
+static void cls_expand(char *out, size_t cap, const char *shape,
+                       char delim, const char *body)
+{
+    size_t o = 0;
+    for (const char *p = shape; *p && o + 1 < cap; p++) {
+        if (p[0] == '%' && p[1] == 'c') {
+            out[o++] = delim; p++;
+        } else if (p[0] == '%' && p[1] == 's') {
+            for (const char *b = body; *b && o + 1 < cap; b++) out[o++] = *b;
+            p++;
+        } else {
+            out[o++] = *p;
+        }
+    }
+    out[o] = 0;
+}
+
+/* Does `pat` contain a nested opener — a SECOND `[` + delimiter, met while the
+ * scan is already inside the first one? That is the construct K4's scan rule 2
+ * exists for, and TWO occurrences is the whole definition: the first `[%c` is
+ * the pair the scan is looking to close, the second is the one that wins.
+ *
+ * The count, not merely the presence, is the point. The first version of this
+ * function returned true on ONE occurrence, which made `[x[=a=]]` — an ordinary
+ * inner bracket, doorway 4b — look like a nested opener, so the floor read
+ * 511/504/504 and stayed green when the nested shape was sabotaged away. It was
+ * a control that measured something adjacent to what it named. Caught by
+ * running the positive control before believing the green (R9). */
+static int has_nested_opener(const char *pat, char delim)
+{
+    int seen = 0;
+    for (const char *p = pat; p[0] && p[1]; p++)
+        if (p[0] == '[' && p[1] == delim && ++seen == 2) return 1;
+    return 0;
+}
+
+/* ...and WHERE the outer one sits, because rule 2 has two positions and the
+ * floor below must require both. 1 = the class's own bracket (doorway 4a, the
+ * `[.[.]` corner), 0 = an inner bracket (4b), -1 = no nested opener.
+ *
+ * This split exists because the per-delimiter floor DEGRADED the moment the 4a
+ * shapes were added for C2-F3: with them present, deleting the 4b nested-opener
+ * shape left the counts at 154/112/112 and the floor green, so the guard that
+ * caught R9/C1-1 stopped being able to catch it. A check that silently narrows
+ * when you extend it is this project's own warning, arrived at by extending the
+ * check. Six counters, not three. */
+static int nested_opener_pos(const char *pat, char delim)
+{
+    if (!has_nested_opener(pat, delim)) return -1;
+    return (pat[0] == '[' && pat[1] == delim) ? 1 : 0;
+}
 
 static void check_class_brackets(void)
 {
     unsigned long probed = 0, agree = 0, deferred = 0;
     unsigned long over_accept = 0, over_reject = 0;
     int reported = 0;
+    unsigned long nested[3][2] = {{0,0},{0,0},{0,0}};  /* [delimiter][4b=0, 4a=1] */
+    unsigned long pc2_refused = 0;         /* the bucket the comment claimed */
+    unsigned long promised = 0;            /* module named for what PCRE2 refuses */
+    unsigned long unterminated = 0;        /* ...but only because the class never closed */
 
     for (const char *d = CLS_DELIMS; *d; d++)
         for (size_t bi = 0; bi < sizeof CLS_BODIES / sizeof CLS_BODIES[0]; bi++)
             for (size_t si = 0; si < sizeof CLS_SHAPES / sizeof CLS_SHAPES[0]; si++)
                 for (size_t ti = 0; ti < sizeof CLS_TRAILERS / sizeof CLS_TRAILERS[0]; ti++) {
                     char body[128], tail[32], pat[256], cmsg[256];
-                    /* Every shape takes at most four %c and one %s; snprintf
-                     * ignores the extras it is not given, so pass generously. */
-                    snprintf(body, sizeof body, CLS_SHAPES[si],
-                             *d, CLS_BODIES[bi], *d, *d, *d);
-                    snprintf(tail, sizeof tail, CLS_TRAILERS[ti], *d);
+                    cls_expand(body, sizeof body, CLS_SHAPES[si], *d, CLS_BODIES[bi]);
+                    cls_expand(tail, sizeof tail, CLS_TRAILERS[ti], *d, "");
                     snprintf(pat, sizeof pat, "%s%s", body, tail);
+                    {   int np = nested_opener_pos(pat, *d);
+                        if (np >= 0) nested[d - CLS_DELIMS][np]++; }
 
                     int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
                     cmsg[0] = 0;
                     int rejected = pcrec_try(pat, cmsg, sizeof cmsg) != 0;
                     probed++;
+                    if (pc2 != 0) pc2_refused++;
 
                     if (pc2 == 0 && !rejected)      { agree++; continue; }
-                    if (pc2 != 0 && rejected)       { agree++; continue; }
+                    if (pc2 != 0 && rejected) {
+                        /* BOTH REFUSE — and this branch used to stop here,
+                         * counting agreement without ever reading pcrec's
+                         * message (R9/C1-8). That is 746 of the 1680 patterns,
+                         * and it is exactly where the property FIX-2 exists to
+                         * establish lives: promising module 'classes' for
+                         * `[:alpha:]` is wrong BECAUSE libpcre2 rejects it.
+                         * `check_posix_names` tests this for the 4b form only,
+                         * so the class's own bracket had no external check of
+                         * its own over-promise at all. */
+                        if (strstr(cmsg, "requires module")) {
+                            /* Naming a module for something libpcre2 refuses is
+                             * the over-promise — UNLESS libpcre2's complaint is
+                             * about something pcrec never reached. pcrec reports
+                             * the LEFTMOST construct it cannot handle and stops,
+                             * so `[[:alpha:]` is an honest "module needed" whose
+                             * pattern also happens to lack its closing `]`.
+                             *
+                             * Separating the two mechanically rather than by a
+                             * hand-listed exemption: append the `]` and ask
+                             * libpcre2 again. If it compiles then, its objection
+                             * was the termination and the construct pcrec named
+                             * is real. `[:alpha:]]` does NOT compile, so the 4a
+                             * over-promise is still caught. */
+                            char closed[300];
+                            snprintf(closed, sizeof closed, "%s]", pat);
+                            if (pcre2_try(closed, strlen(closed), NULL, 0) != 0) {
+                                promised++;
+                                if (reported++ < 12)
+                                    bad("class doorway: libpcre2 REJECTS '%s' and pcrec "
+                                        "answered \"%s\" — a module promised for a pattern "
+                                        "no module can make legal. This is the doorway's own "
+                                        "over-promise (R8/C4-7) at the position where nothing "
+                                        "external checked it (R9/C1-8)", pat, cmsg);
+                            } else unterminated++;
+                        }
+                        agree++; continue;
+                    }
                     if (pc2 == 0 && rejected) {
                         if (strstr(cmsg, "requires module")) { deferred++; continue; }
                         over_reject++;
@@ -849,6 +969,11 @@ static void check_class_brackets(void)
 
     printf("  class-bracket doorway: %lu generated patterns — %lu agree, "
            "%lu deferred to a module\n", probed, agree, deferred);
+    printf("  of the %lu both-refuse cases, %lu name a module wrongly, %lu name one "
+           "for a construct PCRE2 has in a pattern that merely never closed\n",
+           pc2_refused, promised, unterminated);
+    if (promised == 0)
+        ok("class-bracket doorway: no module promised for a pattern PCRE2 will never accept");
     if (over_accept == 0 && over_reject == 0)
         ok("class-bracket doorway: no over-acceptance and no over-rejection");
     else
@@ -864,6 +989,166 @@ static void check_class_brackets(void)
             "not exercising `[[:alpha:]]`-shaped constructs at all");
     else
         ok("class-bracket sweep is live: it reaches the POSIX-class deferral");
+
+    /* THE OTHER BUCKET THE COMMENT ABOVE NAMED. It said "both buckets must be
+     * non-empty: some pattern PCRE2 refuses, and some it accepts and pcrec
+     * defers", and only the second was ever evaluated — `agree` merges both
+     * directions, so the first half was an assertion that existed in prose only
+     * (R9/C1-6). Healthy today at 746 of 1680; if a `pcre2_try` regression made
+     * libpcre2 accept everything, the sweep would keep printing its totals and
+     * its stated liveness proof would still pass. */
+    if (pc2_refused == 0)
+        bad("class doorway: libpcre2 refused NONE of %lu generated patterns. The "
+            "over-acceptance half of this differential is comparing against nothing",
+            probed);
+    else
+        ok("class-bracket sweep is live in both directions: libpcre2 refuses some too");
+
+    /* PER-CONSTRUCT liveness, not just per-bucket. The two assertions above were
+     * both green while the nested-opener shape generated nothing, because they
+     * ask "did the sweep reach A module" and "did both verdict buckets fill" —
+     * questions a sweep missing one whole construct still answers yes to.
+     *
+     * K4's scan rule 2 (a `[` followed by the same delimiter is a nested opener
+     * and WINS) is the branch this floor guards, and it is the one that changes
+     * only the error OFFSET, so a verdict differential cannot see it even when
+     * the patterns ARE generated. Requiring the construct to appear FOR EVERY
+     * DELIMITER is what makes the shape's absence visible: before R9/C1-F1 the
+     * count was 42 for `:` and ZERO for `.` and `=`, so `[.` and `[=` — the two
+     * collating rows — had rule 2 entirely unswept while the header printed the
+     * full pattern total. */
+    printf("  nested openers generated (4b/4a):");
+    for (const char *d = CLS_DELIMS; *d; d++)
+        printf(" '%c'=%lu/%lu", *d, nested[d - CLS_DELIMS][0], nested[d - CLS_DELIMS][1]);
+    printf("\n");
+    int all_live = 1;
+    for (const char *d = CLS_DELIMS; *d; d++)
+        for (int pos = 0; pos < 2; pos++)
+            if (nested[d - CLS_DELIMS][pos] == 0) {
+                all_live = 0;
+                bad("class doorway: the sweep generated NO `[%c` nested opener at %s, so "
+                    "K4's scan rule 2 is unexercised for delimiter '%c' in that position. "
+                    "A shape that names the construct is not the same as a pattern that "
+                    "contains it, and the two positions are two different shapes",
+                    *d, pos ? "a class's OWN bracket (4a)" : "an inner bracket (4b)", *d);
+            }
+    if (all_live)
+        ok("class-bracket sweep generates a nested opener for every delimiter, in BOTH positions");
+}
+
+/* ---- the DELIMITER byte sweep, against libpcre2 (R9/C1-F3) --------------
+ *
+ * `CLS_DELIMS` is `":.="`, hand-listed from pcrec's own three rows — so the
+ * only instrument at this doorway with an EXTERNAL oracle never left the three
+ * bytes pcrec already knows about. The sweep in registry_check.c does generate
+ * bytes 1..255, but it compares the parser against pcrec's registry, which is a
+ * control sharing a source with what it controls; every byte without a
+ * `RD_FIXED` row falls through both `if` chains with no assertion evaluated
+ * while the line still prints "all 255 bytes agree".
+ *
+ * A critic added `if (c2 == '!') ctx_fail(...)` to the doorway — a construct
+ * with no registry row, and a genuine tier-2 over-rejection, since libpcre2
+ * compiles both `[!alpha!]` and `[[!alpha!]]` — and every suite in the
+ * repository stayed green.
+ *
+ * So: every byte in the delimiter slot, against libpcre2, in four shapes. Byte
+ * 0 is absent because these patterns are built as C strings; the verb doorway's
+ * `check_embedded_nul` is the only NUL probe in this file and doorway 4 has
+ * none, which is recorded rather than fixed here. */
+static const char *DELIM_SHAPES[] = {
+    "[[%ca%c]]",       /* 4b, the inner bracket */
+    "[%ca%c]",         /* 4a, the class's own bracket */
+    "[[%c]]",
+    "[a[%cb%c]c]",
+    "[[%calpha%c]]"    /* a REAL POSIX name, so the module path is reachable */
+};
+
+static void check_class_delim_bytes(void)
+{
+    unsigned long probed = 0, agree = 0, deferred = 0;
+    unsigned long over_accept = 0, over_reject = 0;
+    int reported = 0;
+    unsigned sig[256];                   /* pcrec's verdict vector per byte */
+
+    for (int c = 1; c < 256; c++) {
+        sig[c] = 0;
+        for (size_t si = 0; si < sizeof DELIM_SHAPES / sizeof DELIM_SHAPES[0]; si++) {
+            char pat[128], cmsg[256];
+            cls_expand(pat, sizeof pat, DELIM_SHAPES[si], (char)c, "");
+
+            int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
+            cmsg[0] = 0;
+            int rejected = pcrec_try(pat, cmsg, sizeof cmsg) != 0;
+            probed++;
+            sig[c] = (sig[c] << 1) | (unsigned)rejected;
+
+            if ((pc2 == 0) == (!rejected)) { agree++; continue; }
+            if (pc2 == 0 && rejected) {
+                /* libpcre2 compiles it. "requires module" is the honest
+                 * not-implemented-yet; anything else is an over-rejection, and
+                 * that is the shape a construct with no registry row takes. */
+                if (strstr(cmsg, "requires module")) { deferred++; continue; }
+                over_reject++;
+                if (reported++ < 12)
+                    bad("class delimiter byte %d (0x%02x): libpcre2 COMPILES '%s'; pcrec "
+                        "refused with \"%s\", which names no module. A construct recognised "
+                        "at this doorway with no registry row looks exactly like this",
+                        c, c, pat, cmsg);
+                continue;
+            }
+            over_accept++;
+            if (reported++ < 12)
+                bad("class delimiter byte %d (0x%02x): libpcre2 REJECTS '%s' and pcrec "
+                    "COMPILED it — a matcher emitted for a pattern PCRE2 refuses",
+                    c, c, pat);
+        }
+    }
+
+    printf("  class delimiter bytes: %lu probes over 255 bytes x %zu shapes — "
+           "%lu agree, %lu deferred\n", probed,
+           sizeof DELIM_SHAPES / sizeof DELIM_SHAPES[0], agree, deferred);
+    if (over_accept == 0 && over_reject == 0)
+        ok("class delimiter byte sweep: no over-acceptance and no over-rejection");
+
+    /* LIVENESS WITHOUT READING THE TABLE. The obvious floor — "exactly three
+     * bytes route to a module" — is both wrong (`[[.a.]]` is a fixed-text
+     * rejection, not a module) and circular. This asks a question only the
+     * PARSER can answer: how many bytes behave DIFFERENTLY from the ordinary
+     * byte in the delimiter slot?
+     *
+     * Every byte gets a verdict vector across the shapes. Bytes with no
+     * construct behind them share one vector — they are ordinary class members.
+     * A byte the doorway recognises cannot share it. So the count of bytes
+     * departing from the most common vector IS the number of live delimiters,
+     * derived from behaviour rather than from `registry.c`, which is the whole
+     * point of this file. Expect exactly three: `:`, `.`, `=`. */
+    unsigned best = 0; int bestn = 0;
+    for (int c = 1; c < 256; c++) {
+        int n = 0;
+        for (int d = 1; d < 256; d++) if (sig[d] == sig[c]) n++;
+        if (n > bestn) { bestn = n; best = sig[c]; }
+    }
+    char odd[260]; size_t ol = 0;
+    for (int c = 1; c < 256 && ol + 1 < sizeof odd; c++)
+        if (sig[c] != best) odd[ol++] = (char)c;
+    odd[ol] = 0;
+
+    /* The expected SET, hand-written, not derived — a control has to be. Three
+     * of these are the delimiter rows. The fourth is `\`, which behaves unlike
+     * an ordinary member for a reason that has nothing to do with this doorway:
+     * it is the class escape. It is left in the sweep rather than special-cased
+     * out, because a sweep that quietly excludes the bytes it finds
+     * inconvenient is how a 255-byte check becomes a 1-byte check. */
+    printf("  bytes departing from ordinary-member behaviour: %s\n", ol ? odd : "(none)");
+    if (strcmp(odd, ".:=\\") != 0)
+        bad("class delimiter byte sweep: the live bytes are \"%s\", expected \".:=\\\\\" "
+            "(the three delimiter rows, plus `\\` which is the class escape). A byte "
+            "appearing here with no row behind it is what R9/C1-F3's `[!alpha!]` "
+            "sabotage looked like; a byte DISAPPEARING means a doorway stopped working",
+            odd);
+    else
+        ok("class delimiter byte sweep: exactly `:` `.` `=` (and the class escape) are "
+           "live — no byte is recognised without a row");
 }
 
 /* The POSIX class NAME differential — the class-bracket doorway's half of the
@@ -880,6 +1165,7 @@ static void check_class_brackets(void)
 static void check_posix_names(void)
 {
     unsigned long probed = 0, real = 0, unknown = 0, wrong = 0;
+    unsigned long real_ext = 0, real_mut = 0;
     int reported = 0;
 
     for (unsigned h = 0; h < NAMESET_CAP; h++) {
@@ -900,6 +1186,7 @@ static void check_posix_names(void)
                  * because the `]` ends the class before any name begins. Only a
                  * rejection that names NO module is wrong here. */
                 real++;
+                if (ns_src[h] == NS_MUT) real_mut++; else real_ext++;
                 if (rejected && !strstr(cmsg, "requires module")) {
                     wrong++;
                     if (reported++ < 10)
@@ -923,8 +1210,10 @@ static void check_posix_names(void)
         }
     }
 
-    printf("  POSIX class names: %lu probes — %lu real names, %lu libpcre2 does not have\n",
-           probed, real, unknown);
+    printf("  POSIX class names: %lu probes — %lu real names (%lu from libpcre2's own "
+           "binary or the byte sweep, %lu from mutations of pcrec's table), "
+           "%lu libpcre2 does not have\n",
+           probed, real, real_ext, real_mut, unknown);
     if (!wrong) ok("POSIX class names: every name deferred or refused as libpcre2 does");
 
     /* Liveness, both directions. A pool that produced no real name would make
@@ -934,6 +1223,166 @@ static void check_posix_names(void)
     else          ok("POSIX name sweep reaches real class names");
     if (!unknown) bad("POSIX name sweep is not live: no candidate was an unknown name");
     else          ok("POSIX name sweep reaches names libpcre2 does not have");
+
+    /* PROVENANCE, and this is R8/C1-F4 one doorway across (R9/C1-F2).
+     *
+     * Everything above was satisfiable with the external source contributing
+     * nothing. `real` counts patterns libpcre2 ACCEPTED, which is not the same
+     * as names that are POSIX class names — `[[:]:]]` compiles because the `]`
+     * ends the class before any name begins. A critic filtered PCRE2's class
+     * names out of the pool and deleted `graph` from pcrec's table, and this
+     * function printed "6 real names" and three PASS lines, all six of them
+     * non-class byte probes, with a deleted name under test. The 51-failure
+     * empty-pool sabotage that DOES catch it lives in `check_verb_names` and is
+     * about a different name space — so this check's correctness was parasitic
+     * on an assertion elsewhere.
+     *
+     * The property that matters is not that the pool is non-empty. It is that
+     * the pool contains PCRE2's POSIX class names and that PCRE2 put them
+     * there. So: every name pcrec claims must appear in the pool from a source
+     * that is not a mutation of pcrec's own table. */
+    size_t nnames = 0;
+    const char *const *names = pcrec_registry_posix_names(&nnames);
+    unsigned long missing = 0, self_sourced = 0;
+    for (size_t i = 0; i < nnames; i++) {
+        long h = ns_slot(names[i], strlen(names[i]));
+        if (h < 0) { missing++;
+            if (reported++ < 10)
+                bad("POSIX names: pcrec claims '%s' but no candidate pool produced it, so "
+                    "nothing external ever tested that claim", names[i]);
+        } else if (ns_src[h] == NS_MUT) { self_sourced++;
+            if (reported++ < 10)
+                bad("POSIX names: '%s' reached the pool ONLY as a mutation of pcrec's own "
+                    "table. A name pcrec invented, mutated and then recognised is not an "
+                    "external check of anything", names[i]);
+        }
+    }
+    if (!missing && !self_sourced)
+        ok("every POSIX class name pcrec claims was produced INDEPENDENTLY of pcrec's table");
+
+    /* And a floor on the external contribution itself, so the differential
+     * cannot degrade to pcrec-checks-pcrec while every assertion above stays
+     * green. Most of the 16 are in libpcre2's compiled-in string table; the
+     * rest reach the pool from the byte sweep. */
+    if (real_ext * 4 < real)
+        bad("POSIX names: only %lu of %lu accepted names came from outside pcrec's table. "
+            "The external source has stopped contributing and this differential is "
+            "degrading to pcrec checking itself", real_ext, real);
+    else
+        ok("the external sources supplied the bulk of the accepted POSIX names");
+}
+
+/* ---- NAME x POSITION, the cell neither existing sweep generates (R9/C3-4) --
+ *
+ * `check_posix_names` varies the NAME across ~12000 candidates and builds every
+ * one as `[[:NAME:]]` — the isolated shape, position fixed.
+ * `check_class_brackets` varies POSITION across shapes and trailers and never
+ * uses `<` or `>` as a body. Each is real and large on its own axis, and the
+ * defect lived in the cross-product: libpcre2 accepts `[[:<:]]` but rejects
+ * `[x[:<:]]`, `[[:<:]a]` and `[^[:<:]]`, while every ordinary class name works
+ * in all four positions. pcrec promised module 'classes' for all of them.
+ *
+ * So: every name pcrec claims, in every position, against libpcre2. The names
+ * come from pcrec's table ON PURPOSE here — the question is not "what names
+ * exist" (that is `check_posix_names`' job, and it sources externally) but
+ * "for each name pcrec claims, does its POSITION behaviour match PCRE2". */
+static const char *POS_SHAPES[] = {
+    "[[:%s:]]",      /* alone — the only shape `<` and `>` may take */
+    "[x[:%s:]]",     /* a member before */
+    "[[:%s:]x]",     /* a member after */
+    "[^[:%s:]]",     /* negated: even a bare `^` breaks `<`/`>` */
+    "[x[:%s:]y]"
+};
+
+static void check_posix_positions(void)
+{
+    size_t nnames = 0;
+    const char *const *names = pcrec_registry_posix_names(&nnames);
+    unsigned long probed = 0, agree = 0, deferred = 0, wrong = 0, restricted = 0;
+    unsigned long pcrec_restricted = 0;
+    int reported = 0;
+
+    for (size_t i = 0; i < nnames; i++) {
+        int any_reject = 0;        /* libpcre2 refused it in some position */
+        int pcrec_varies = 0;      /* ...and pcrec's OWN answer changed too */
+        int pcrec_deferred = 0;
+        for (size_t si = 0; si < sizeof POS_SHAPES / sizeof POS_SHAPES[0]; si++) {
+            char pat[256], cmsg[256];
+            snprintf(pat, sizeof pat, POS_SHAPES[si], names[i]);
+
+            int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
+            cmsg[0] = 0;
+            int rejected = pcrec_try(pat, cmsg, sizeof cmsg) != 0;
+            probed++;
+
+            if (rejected && strstr(cmsg, "requires module")) pcrec_deferred = 1;
+            else if (rejected) pcrec_varies = 1;
+
+            if (pc2 == 0) {
+                /* libpcre2 has it here. pcrec owes a module, not a refusal. */
+                if (rejected && strstr(cmsg, "requires module")) { deferred++; agree++; continue; }
+                wrong++;
+                if (reported++ < 10)
+                    bad("POSIX position: libpcre2 compiles '%s' but pcrec answered \"%s\" "
+                        "— a real name in a position PCRE2 accepts must still name a module",
+                        pat, cmsg);
+            } else {
+                any_reject = 1;
+                /* libpcre2 will never accept it here, so no module can. */
+                if (!rejected) {
+                    wrong++;
+                    if (reported++ < 10)
+                        bad("POSIX position: libpcre2 REJECTS '%s' and pcrec COMPILED it", pat);
+                } else if (strstr(cmsg, "requires module")) {
+                    wrong++;
+                    if (reported++ < 10)
+                        bad("POSIX position: '%s' is a name libpcre2 will not accept in this "
+                            "POSITION, but pcrec answered \"%s\" — a module promised for a "
+                            "pattern no module can make legal (R9/C3-4)", pat, cmsg);
+                } else agree++;
+            }
+        }
+        if (any_reject) restricted++;
+        if (pcrec_varies && pcrec_deferred) pcrec_restricted++;
+    }
+
+    printf("  POSIX name x position: %lu probes over %zu names x %zu shapes — "
+           "%lu agree, %lu deferred, %lu names position-restricted\n",
+           probed, nnames, sizeof POS_SHAPES / sizeof POS_SHAPES[0],
+           agree, deferred, restricted);
+    if (!wrong)
+        ok("POSIX name x position: every name's position behaviour matches libpcre2");
+
+    /* Liveness that names the phenomenon rather than counting rows: at least
+     * one name must be position-RESTRICTED, or this sweep has lost the only
+     * thing it exists to see. Exactly two are (`<` and `>`); if that changes,
+     * either PCRE2 changed or the doorway stopped distinguishing position. */
+    if (restricted != 2)
+        bad("POSIX name x position: LIBPCRE2 restricts %lu names by position, expected 2 "
+            "(`<` and `>`). This is a statement about PCRE2 and about this probe pool, "
+            "NOT about pcrec — if it moved, PCRE2 changed or the shapes stopped covering "
+            "the positions", restricted);
+    else
+        ok("POSIX name x position: libpcre2 restricts exactly 2 names, so the pool is live");
+
+    /* AND THE SAME COUNT FROM PCREC'S SIDE. The assertion above is computed
+     * entirely from `pc2` and never reads pcrec's answer, so it stays green
+     * under a FULL REVERT of the position rule — a critic proved that by
+     * disabling `whole_class_only` and watching this line PASS in a run that
+     * failed 8 other checks (R9/C3-verify). It is a real check of the probe
+     * pool's liveness and its comment used to imply it was a check of pcrec.
+     * `wrong == 0` above is what actually catches the regression; this counter
+     * makes the claim its name suggests, by asking pcrec the same question:
+     * for how many names does PCREC itself answer differently depending on
+     * position — deferring to a module somewhere and refusing outright
+     * elsewhere? That must be the same 2, and it is a fact about pcrec. */
+    if (pcrec_restricted != restricted)
+        bad("POSIX name x position: libpcre2 restricts %lu names by position but PCREC "
+            "varies its answer by position for %lu. pcrec is not enforcing the same "
+            "position rule PCRE2 has (R9/C3-4)", restricted, pcrec_restricted);
+    else
+        ok("POSIX name x position: pcrec varies its own answer by position for exactly "
+           "the names libpcre2 restricts");
 }
 
 /* The one probe the pool cannot express, kept hand-written for that reason:
@@ -1004,7 +1453,9 @@ int main(void)
     pool_from_lengths();
     check_verb_names();
     check_class_brackets();
+    check_class_delim_bytes();
     check_posix_names();
+    check_posix_positions();
     check_embedded_nul();
 
     printf("\n== Summary (PC-3) ==\nchecks passed: %d\nchecks failed: %d\n", pass, fail);

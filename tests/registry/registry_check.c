@@ -183,6 +183,35 @@ static void check_wellformed(void)
                     "make it legal and promising one is the bug this field fixes",
                     kn, r->syntax, r->open_msg);
 
+            /* TWO PROPERTIES THE DOORWAY'S CODE RELIES ON AND CANNOT ASSERT
+             * ITSELF, both added at R9 after critics showed each held by
+             * accident rather than by construction.
+             *
+             * 1. No class-bracket row may use `]` as its selector. The scan in
+             *    `pcrec_ext_class_bracket` treats "an unescaped `]` ends the
+             *    class" and "delimiter followed by `]` closes the pair" as
+             *    disjoint tests, which is only true while no delimiter IS `]`.
+             *    A `]` row would make the two rules fight, and which won would
+             *    depend on their order in the loop — an order a critic proved
+             *    is otherwise arbitrary (R9/C2-1). */
+            if (r->kind == RK_CLASSBRACKET && r->sel == ']')
+                bad("%s (%s): `]` cannot be a class-bracket delimiter. The doorway's "
+                    "scan assumes \"a `]` ends the class\" and \"delimiter + `]` closes "
+                    "the pair\" are disjoint tests, and this row makes them overlap",
+                    kn, r->syntax);
+
+            /* 2. RF_CLASS_NAMED depends on RF_CLASS_DELIM having run the scan
+             *    that sets `close_at`. Without the pairing the name length is
+             *    computed from an unset `close_at`. That is now clamped at the
+             *    call site too, but the pairing is the real invariant: a named
+             *    construct whose extent is never measured is meaningless, not
+             *    merely unsafe (R9/C3-1). */
+            if ((r->flags & RF_CLASS_NAMED) && !(r->flags & RF_CLASS_DELIM))
+                bad("%s (%s): RF_CLASS_NAMED without RF_CLASS_DELIM. The name is the "
+                    "text between the delimiters, so the row that says \"this text is "
+                    "a name\" must also be the row whose extent the scan measures",
+                    kn, r->syntax);
+
             switch (r->status) {
             case RS_BASE:
                 if (r->module) bad("%s (%s): RS_BASE must name no module", kn, r->syntax);

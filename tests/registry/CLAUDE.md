@@ -19,6 +19,22 @@ directory asserts that the description and the shipped parser actually agree.
 
 ## What it asserts
 
+0. **Two invariants the class-bracket DOORWAY depends on and cannot assert
+   itself** (R9). Both were true by accident before this, and each has a
+   sabotage below. No `RK_CLASSBRACKET` row may use `]` as its selector — the
+   doorway's scan treats "an unescaped `]` ends the class" and "delimiter + `]`
+   closes the pair" as disjoint tests, which holds only while no delimiter is
+   `]`; a critic proved the order of those two tests is otherwise arbitrary by
+   swapping them for byte-identical results over 1.24M patterns. And every
+   `RF_CLASS_NAMED` row must also carry `RF_CLASS_DELIM`, because the name is
+   the text between the delimiters and the flag that says "this text is a name"
+   has to be on the row whose extent the scan measures. Without the pairing the
+   length computation underflows; it was memory-safe only because
+   `pcrec_registry_posix_known` compares lengths before bytes, which is an
+   implementation detail of a different function that nothing tied to this one.
+   **The general rule R9 drew from both: when a dangerous operation is safe
+   because of a fact that lives elsewhere, the assertion belongs where the fact
+   is, not where the danger is.**
 1. **Well-formedness** — no two rows claim one byte, catch-all rows come last,
    each row's `syntax` example really contains its selector byte, and the
    status/module/feature/engines/diagnostic fields are mutually consistent.
@@ -111,6 +127,8 @@ module:
 | delete BOTH collating rows (R4 F2 — was **invisible** before the manifest) | 2 |
 | delete the `(?:` base row | 1 |
 | `\b` row longhand with `FEAT_CLASSES` but module `"assertions"` (R4 E1) | many |
+| `RF_CLASS_DELIM \| RF_CLASS_NAMED` → `RF_CLASS_NAMED` (R9/C3-1) | 3 (+23 in PC-3) |
+| add a `]`-selector `RK_CLASSBRACKET` row (R9/C2-1) | 2 (+1 in PC-3) |
 
 ## pcre2_check.c — the external check (PC-3)
 
@@ -143,6 +161,52 @@ single home is invisible, because the wrongness is what both sides read.
    divergences on its first run where the plan had five hand-pinned cases; the
    second found two constructs a hand-written name list had missed (`[[:<:]]`
    and `[[:>:]]`) and refuted two successive wrong versions of K4's escape rule.
+
+   **R9 found the first of those two probing less than it printed.** The shape
+   written to exercise K4's nested-opener rule, `[[%ca[%cb%c]%c]]`, takes four
+   `%c` and no `%s` while the call site passed the body string as its second
+   argument — so a `const char *` was read as an `int`. Undefined behaviour;
+   in practice the low byte of a literal's address, and at `-O0` sometimes NUL,
+   truncating 21 probes to the stub `[[=a[`. Which patterns the sweep probed
+   depended on `.rodata` layout while the header kept printing 1680, and
+   `-Wall -Wextra` cannot see a non-literal format so `make strict` was clean.
+   Net effect: 42 same-delimiter nested openers in the whole sweep, all at `:`,
+   **zero at `.` and `=`** — the two rows for which rule 2 is the offset-only
+   branch. Replaced with `cls_expand`, a positional expander with no argument
+   list to fall out of step with; the sweep now generates 98/56/56 and still
+   reports zero divergences, so the RULE was right and only the instrument was
+   wrong.
+
+   The guard is a **per-delimiter nested-opener floor**, and it is per-construct
+   on purpose: "did the sweep reach a module" and "did both verdict buckets
+   fill" were both green while one whole construct went ungenerated. Note what
+   its own first version did — it counted ONE `[`+delimiter, which makes the
+   ordinary inner bracket `[x[=a=]]` look like a nested opener, so it read
+   511/504/504 and passed the sabotage. Two occurrences is the definition: the
+   pair being scanned, plus the one that wins.
+
+   **And it counts SIX buckets, delimiter x position, for a reason worth not
+   re-learning.** Rule 2 has two positions, and when the 4a shapes were added
+   (R9/C2-3, below) the per-delimiter floor stopped being able to detect the
+   loss of the 4b shape: the 4a openers kept the counts non-zero, so the guard
+   written for R9/C1-1 passed the very sabotage it was written for. Extending a
+   check disarmed it. Each shape's removal now fires independently — verify that
+   with a positive control if you ever add a seventh shape.
+
+   R9/C2-3 is why the 4a shapes exist at all: turning rule 2 off at the class's
+   own bracket for `.` and `=` only produces 1,416 over-rejections against
+   libpcre2 — reduction `[.[.]`, five bytes, which libpcre2 compiles as a class
+   of `.` and `[` — and the whole repository stayed green, including the
+   nested-opener floor, because every nested opener generated was a 4b one.
+
+   The differential also reads pcrec's MESSAGE in the both-refuse half now
+   (R9/C1-8). It used to count `pc2 != 0 && rejected` as agreement without
+   looking, which is 746 of the patterns and precisely where "is a module
+   promised?" lives — so doorway 4a had no external check of its own
+   over-promise. Distinguishing a real one from an honest one is mechanical
+   rather than a hand-listed exemption: append the class's `]` and ask libpcre2
+   again. `[[:alpha:]` then compiles, so pcrec deferring there is honest;
+   `[:alpha:]]` still does not, so the 4a over-promise is caught.
 4. **The verb NAME differential**, and this is the part that scales. Candidate
    names are generated from **libpcre2's own shared object** — its compiled-in
    name tables, read via `dlinfo`, expanded to every prefix and suffix — plus
@@ -153,6 +217,38 @@ single home is invisible, because the wrongness is what both sides read.
 The prefix/suffix expansion is not decoration: `ANYCRLF`, `CRLF` and `LF` are
 real PCRE2 option names that appear in the binary only INSIDE `BSR_ANYCRLF`, so
 a pool of whole runs would have missed three names this check exists to notice.
+
+5. **The DELIMITER byte sweep and the NAME x POSITION cross-product**, both
+   added at R9 and both closing a hole the panel demonstrated with a live
+   sabotage. `CLS_DELIMS` is `":.="`, hand-listed from pcrec's rows, so before
+   R9 the only externally-oracled instrument at this doorway never left three
+   bytes; a critic added a `!` construct with no registry row and every suite in
+   the repo stayed green. The byte sweep runs 255 bytes x 5 shapes against
+   libpcre2, and its liveness assertion is worth copying: it does not ask the
+   table how many delimiters there are, it asks how many BYTES behave
+   differently from an ordinary class member. That is a question only the parser
+   can answer, so it can see a construct the registry does not know about.
+   Expect `:` `.` `=` and `\` — the last is the class escape, kept in rather
+   than special-cased out.
+   The position sweep exists because two large honest differentials left a hole
+   between them: the name sweep fixes position at `[[:NAME:]]`, the shape sweep
+   never uses `<`/`>` as a body, and `<`/`>` are the two names libpcre2 accepts
+   ONLY as a class's entire content. **Ask what your axes are and whether
+   anything varies two of them together** — making either sweep bigger would
+   never have found it.
+
+## Coverage guard and manifest (R9/C1-7)
+
+`run_registry_tests.sh` now asserts PC-3's exact passing-check count AND a
+manifest of checks named by the finding each one closes. Until R9 this
+directory had neither, while `tests/reject/` has carried both since R7 — and
+this is the directory holding the expensive external checks. A critic deleted
+both new differentials from `main()` plus the 4a sweep and everything stayed
+green; the only trace was 129 → 128 and 81 → 76 in output nothing compared.
+Two layers on purpose, for the reason tests/reject/ gives: the count makes a
+deletion visible in the diff, the manifest makes it fail. Update the count
+deliberately when you add a check, and add a manifest line whenever a check is
+the ONLY thing standing between the repo and a specific past finding.
 
 **This is the first mechanism in the project that can see a MISSING row.**
 Everything else iterates what exists. Delete the `ACCEPT` name, misspell it
@@ -207,6 +303,15 @@ could all pass while the check was doing much less than it claimed.
 | revert the `=digits` magnitude rule (R8/C2-3) | 4 |
 | revert the 128-byte name-length rule (R8/C2-4) | 20 (capped) |
 | `case 'K': return 0x4b;` in `esc_char_value` — a real miscompile (R8/C1-F5) | 1 |
+| **shape 9 loses its nested opener** (`[[%ca[%cb%c]%c]]` → `[[%ca%cb%c]%c]]`) (R9/C1-F1) | **2** |
+| `posix_whole_class_only` always returns false (R9/C3-4) | 8 |
+| libpcre2 contributes ZERO POSIX class names (R9/C1-2) | 10 |
+| `if (c2 == '!') ctx_fail(...)`, a construct with no registry row (R9/C1-3) | 6 |
+| delete `check_class_brackets()` from `main()` (R9/C1-7) | count guard + 3 manifest lines |
+| rule 2 off at doorway 4a for `.`/`=` only (R9/C2-3) | 12 |
+| revert the `open_msg` branch — the 4a over-promise (R9/C1-8) | 3 |
+| remove the 4b nested-opener shape, WITH the 4a shapes present (R9) | 2 |
+| neutralise both 4a nested-opener shapes (R9) | 2 |
 
 Three are load-bearing beyond the others. The pre-Q1 sabotage was detectable by
 NOTHING in this repo before this change — and it also fails `sweep_verb()` now,
