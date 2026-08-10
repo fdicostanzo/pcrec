@@ -6,7 +6,7 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 180 rows asserted by hand (naming a module, or the
+- **run_reject_tests.sh** — 201 rows asserted by hand (naming a module, or the
   base-grammar brace errors K5/K6/K8, or since Q1 the verb doorway's four
   outcomes), 66 more reached by iterating `pcrec --list-syntax`, 45
   accept-controls, and 5 known-wrong pins. Ends with a MANIFEST naming the

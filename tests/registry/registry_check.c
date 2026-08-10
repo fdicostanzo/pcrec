@@ -169,6 +169,20 @@ static void check_wellformed(void)
                             kn, r->sel, j, i);
             }
 
+            /* `open_msg` is the class-open diagnostic (FIX-2/K3). Two things
+             * make it well-formed, and both are cheap to get wrong: it is
+             * meaningless outside the class-bracket doorway, and its whole
+             * purpose is to NOT promise a module — a row that names one there
+             * would be the over-promise the field exists to remove. */
+            if (r->open_msg && r->kind != RK_CLASSBRACKET)
+                bad("%s (%s): open_msg is only meaningful at the class-bracket "
+                    "doorway, where a class's own bracket can be the opener", kn, r->syntax);
+            if (r->open_msg && strstr(r->open_msg, "requires module"))
+                bad("%s (%s): open_msg names a module (\"%s\"). At a class's own "
+                    "bracket the construct is invalid in PCRE2, so no module can "
+                    "make it legal and promising one is the bug this field fixes",
+                    kn, r->syntax, r->open_msg);
+
             switch (r->status) {
             case RS_BASE:
                 if (r->module) bad("%s (%s): RS_BASE must name no module", kn, r->syntax);
@@ -472,7 +486,13 @@ static void check_required_rows(void)
 /* `fmt` receives the byte TWICE, so a doorway needing the selector in two
  * places can ask for it ("[[%ca%c]]" builds the collating form). Formats using
  * one %c simply ignore the second argument, which C defines as well-formed. */
-static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_flag)
+/* `at_open` says the template puts the construct at a CLASS'S OWN bracket, so a
+ * row with an `open_msg` answers with that one instead of `msg` (FIX-2/K3). The
+ * 4a sweep caught this on its first run, which is the sweep doing its job: the
+ * `:` row genuinely says two different things in two positions, and a sweep
+ * that could not tell them apart would have been asserting the wrong string. */
+static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_flag,
+                  bool at_open)
 {
     char pat[16], got[256], label[192];
     int mismatches = 0, routed = 0;
@@ -490,9 +510,10 @@ static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_fl
          * directly: this is what makes the collating rows visible to the sweep
          * rather than to their two hand-written probes alone. */
         if (r && r->sel == c && r->diag == RD_FIXED) {
-            if (!rejected || strcmp(got, r->msg) != 0) {
+            const char *want = (at_open && r->open_msg) ? r->open_msg : r->msg;
+            if (!rejected || strcmp(got, want) != 0) {
                 bad("%s: byte 0x%02x ('%c') — the row promises \"%s\", parser %s",
-                    what, c, c >= 32 && c < 127 ? c : '?', r->msg,
+                    what, c, c >= 32 && c < 127 ? c : '?', want,
                     rejected ? got : "COMPILED it");
                 mismatches++;
             } else {
@@ -641,9 +662,9 @@ int main(void)
      * caught "a construct added to parse.c with no row" — true for half the
      * doorways it was written to describe. A critic pass found it. */
     printf("\n== parser -> table (255-byte sweep of ALL FOUR doorways) ==\n");
-    sweep(RK_ESC,          "\\%c",      "after a backslash", 0);
-    sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class", RF_CLASS_BASE);
-    sweep(RK_GROUP,        "(?%c",      "after (?", 0);
+    sweep(RK_ESC,          "\\%c",      "after a backslash", 0, false);
+    sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class", RF_CLASS_BASE, false);
+    sweep(RK_GROUP,        "(?%c",      "after (?", 0, false);
     /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
      * doorway is decided by a NAME and a byte sweep varies one byte. It proves
      * the doorway is reached and that PCRE2's two name tables are selected by
@@ -652,7 +673,19 @@ int main(void)
      * pcre2_check.c (PC-3) against libpcre2 — not here, and not in a byte
      * sweep, which could never have supplied it. */
     sweep_verb();
-    sweep(RK_CLASSBRACKET, "[[%ca%c]]", "after [ inside a class", 0);
+    /* The body is `alpha`, not `a`, and that is load-bearing since FIX-2: the
+     * `:` row now checks the NAME between its delimiters, so `[[:a:]]` is
+     * "unknown POSIX class name" and would make this sweep assert the wrong
+     * string. `alpha` is a real POSIX class name and an ordinary run of letters
+     * to the two collating rows, so one body serves all three. */
+    sweep(RK_CLASSBRACKET, "[[%calpha%c]]", "after [ inside a class (4b)", 0, false);
+    /* DOORWAY 4a, which had NO sweep at all until FIX-2. The template above is
+     * `[[%ca%c]]` — an inner bracket — so it only ever tested 4b, and the
+     * CLASS'S OWN bracket went unswept even though it is a different code path
+     * with (since K3) a different message. R6 spotted the gap and could not add
+     * it: `[%ca%c]` would have FAILED until K3 was fixed, which is exactly why
+     * it is landing in the same change as the fix. */
+    sweep(RK_CLASSBRACKET, "[%calpha%c]", "at a class's own bracket (4a)", 0, true);
 
     printf("\n== Summary ==\n");
     printf("checks passed: %d\n", pass);

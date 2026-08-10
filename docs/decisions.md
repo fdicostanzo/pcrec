@@ -1500,6 +1500,36 @@ exists to answer before it happens:
   identity today; the correct response to an upgrade making that red is to
   demote the assertion, not to re-measure PCRE2.
 
+**A TENSION THIS DECISION CREATES, and it nearly cost a real guard within hours
+of being written.** "Do not chase PCRE2's wording, error number or offset" reads
+easily as "offsets do not matter". They do. What tier 3 releases you from is
+matching PCRE2's NUMBER; it does not release you from pcrec's offset being
+*right against pcrec's own convention*, which is to blame the construct it
+actually recognised.
+
+Measured, FIX-2: `[[.a[.b.].]` has a nested opener, and PCRE2 abandons the outer
+one for the inner. With K4's rule 2, pcrec reports offset 4 — the inner opener,
+the construct PCRE2 recognises. Without it, offset 1 — the outer bracket PCRE2
+walked away from. PCRE2 says offset 9, which is neither, because it points at
+the end. **Deleting rule 2 left a 1680-pattern generated differential at ZERO
+failures**, because that differential compares verdicts, and it was D26 that had
+talked me out of comparing offsets at all.
+
+So the rule is: **pin your own offsets against your own convention; do not pin
+them against PCRE2's.** The first is tier 2 — it is what makes a diagnostic
+actionable, and it is the difference between blaming byte 1 and byte 4. The
+second is tier 3 and a moving target like every other number here.
+
+There is a general form worth carrying, because this is the THIRD branch in this
+project that no test could see (R5's `at_class_open`, R7's `try_quant` offsets,
+now this): **the failure is not line coverage — every one of those branches
+EXECUTED.** It is that the assertions project onto a SUBSET OF THE OUTPUT
+FIELDS, and the branch moved a field outside the projection. pcrec's diagnostic
+has two fields, message and offset, and twice out of three the invisible one was
+the offset. The question that finds these is not "is this line covered" but
+**"which suite reads this FIELD of the output?"** — asked per field: verdict,
+message, offset, emitted bytes.
+
 **Consequences already taken:** `src/core/limits.h` sorts every policy number
 into three sections — ours, PCRE2 syntax (exact), PCRE2 internals (minimums we
 honour, not contracts we owe) — so a reader can tell which tier a number is in

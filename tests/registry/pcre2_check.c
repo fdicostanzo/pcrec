@@ -771,6 +771,171 @@ static void check_verb_names(void)
         ok("libpcre2's binary supplied the bulk of the candidate pool");
 }
 
+/* ---- part 4: the CLASS-BRACKET doorway, generated ---------------------- *
+ *
+ * PC-3's own spec text said it would be "the natural home for the finding that
+ * pcrec accepts `[:alpha:]` (K3) — found by hand, and findable mechanically".
+ * It was not built at PC-3, because it went red on a pinned deferred bug; it
+ * lands with FIX-2, which is the change that makes it green (R8/C4-9).
+ *
+ * The same shape as the verb differential and for the same reason: GENERATE the
+ * space, do not list it. A hand-written list is what the project had — five
+ * pinned known-wrong lines — and the generator found 126 divergences across 555
+ * patterns on its first run, including two families nobody had written down
+ * (`[::]` over-accepted, and the whole `[[.a\]b]x.]` escape family
+ * over-rejected).
+ *
+ * THE OBLIGATION IS A VERDICT, NOT A MESSAGE. Under D26 this is tier 2: pcrec
+ * must not COMPILE what PCRE2 refuses (a silent wrong matcher, the one class
+ * the charter forbids) and must not REFUSE what PCRE2 compiles. Naming a module
+ * for something PCRE2 accepts is neither — it is the honest "not implemented
+ * yet", and `[[:alpha:]]` is exactly that until module `classes` lands. */
+static const char *CLS_DELIMS  = ":.=";
+static const char *CLS_BODIES[] = {"a", "", "alpha", "a\\]b", "a\\\\", "^a", "b]c", "x[:y"};
+static const char *CLS_SHAPES[] = {
+    "[%c%s%c]",        /* the class's own bracket is the opener (doorway 4a) */
+    "[[%c%s%c]]",      /* an inner bracket (4b) */
+    "[x[%c%s%c]]",
+    "[[%c%s]",         /* nothing closes the pair */
+    "[a[%c%s]",
+    "[^%c%s%c]",       /* negated: `^` sits between the bracket and the delimiter */
+    "[[%c]",
+    "[%c]",
+    "[[%c%s%c]",
+    "[[%ca[%cb%c]%c]]" /* a NESTED opener, which wins */
+};
+static const char *CLS_TRAILERS[] = {"", "x", "x%c]", "y]", "$", "]", "\\\\"};
+
+static void check_class_brackets(void)
+{
+    unsigned long probed = 0, agree = 0, deferred = 0;
+    unsigned long over_accept = 0, over_reject = 0;
+    int reported = 0;
+
+    for (const char *d = CLS_DELIMS; *d; d++)
+        for (size_t bi = 0; bi < sizeof CLS_BODIES / sizeof CLS_BODIES[0]; bi++)
+            for (size_t si = 0; si < sizeof CLS_SHAPES / sizeof CLS_SHAPES[0]; si++)
+                for (size_t ti = 0; ti < sizeof CLS_TRAILERS / sizeof CLS_TRAILERS[0]; ti++) {
+                    char body[128], tail[32], pat[256], cmsg[256];
+                    /* Every shape takes at most four %c and one %s; snprintf
+                     * ignores the extras it is not given, so pass generously. */
+                    snprintf(body, sizeof body, CLS_SHAPES[si],
+                             *d, CLS_BODIES[bi], *d, *d, *d);
+                    snprintf(tail, sizeof tail, CLS_TRAILERS[ti], *d);
+                    snprintf(pat, sizeof pat, "%s%s", body, tail);
+
+                    int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
+                    cmsg[0] = 0;
+                    int rejected = pcrec_try(pat, cmsg, sizeof cmsg) != 0;
+                    probed++;
+
+                    if (pc2 == 0 && !rejected)      { agree++; continue; }
+                    if (pc2 != 0 && rejected)       { agree++; continue; }
+                    if (pc2 == 0 && rejected) {
+                        if (strstr(cmsg, "requires module")) { deferred++; continue; }
+                        over_reject++;
+                        if (reported++ < 12)
+                            bad("class doorway: libpcre2 COMPILES '%s'; pcrec refused "
+                                "with \"%s\", which names no module — an over-rejection",
+                                pat, cmsg);
+                        continue;
+                    }
+                    over_accept++;
+                    if (reported++ < 12)
+                        bad("class doorway: libpcre2 REJECTS '%s' and pcrec COMPILED it. "
+                            "That is a matcher emitted for a pattern PCRE2 refuses — the "
+                            "one class the charter forbids", pat);
+                }
+
+    printf("  class-bracket doorway: %lu generated patterns — %lu agree, "
+           "%lu deferred to a module\n", probed, agree, deferred);
+    if (over_accept == 0 && over_reject == 0)
+        ok("class-bracket doorway: no over-acceptance and no over-rejection");
+    else
+        printf("  (%lu over-accept, %lu over-reject; first %d shown)\n",
+               over_accept, over_reject, reported < 12 ? reported : 12);
+
+    /* Liveness. A generator that produced only agreeing patterns would pass the
+     * comparison above while testing nothing interesting. Both buckets must be
+     * non-empty: some pattern PCRE2 refuses, and some it accepts and pcrec
+     * defers. */
+    if (deferred == 0)
+        bad("class doorway: no generated pattern reached a module — the sweep is "
+            "not exercising `[[:alpha:]]`-shaped constructs at all");
+    else
+        ok("class-bracket sweep is live: it reaches the POSIX-class deferral");
+}
+
+/* The POSIX class NAME differential — the class-bracket doorway's half of the
+ * same check `check_verb_names` runs at `(*`, and the direct answer to R8/C4-7.
+ * It reuses the candidate pool already generated from libpcre2's own binary, so
+ * the names come from PCRE2 and not from pcrec's fourteen.
+ *
+ * The obligation is the one D26 makes tier 2: a name libpcre2 HAS must be
+ * deferred to a module, and a name it does not have must NOT be — promising
+ * module 'classes' for `[[:foo:]]` is a promise no module can keep. Before
+ * FIX-2 pcrec answered "requires module 'classes'" for all 12531 candidates,
+ * i.e. its answer did not depend on the name at all, which is exactly the
+ * property that makes a differential vacuous. */
+static void check_posix_names(void)
+{
+    unsigned long probed = 0, real = 0, unknown = 0, wrong = 0;
+    int reported = 0;
+
+    for (unsigned h = 0; h < NAMESET_CAP; h++) {
+        if (!ns_key[h]) continue;
+        for (int neg = 0; neg < 2; neg++) {
+            char pat[512], cmsg[256];
+            snprintf(pat, sizeof pat, "[[:%s%s:]]", neg ? "^" : "", ns_key[h]);
+            int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);
+            cmsg[0] = 0;
+            int rejected = pcrec_try(pat, cmsg, sizeof cmsg) != 0;
+            probed++;
+
+            if (pc2 == 0) {
+                /* libpcre2 ACCEPTED the pattern, which means one of two things:
+                 * the name is a real POSIX class (pcrec must defer it to a
+                 * module), or the text was never a construct at all and both
+                 * engines read ordinary class members — `[[:]:]]` is the latter,
+                 * because the `]` ends the class before any name begins. Only a
+                 * rejection that names NO module is wrong here. */
+                real++;
+                if (rejected && !strstr(cmsg, "requires module")) {
+                    wrong++;
+                    if (reported++ < 10)
+                        bad("POSIX names: libpcre2 accepts '%s' but pcrec refused with "
+                            "\"%s\" — an over-rejection", pat, cmsg);
+                }
+            } else {                              /* libpcre2 does NOT */
+                unknown++;
+                if (!rejected) {
+                    wrong++;
+                    if (reported++ < 10)
+                        bad("POSIX names: libpcre2 REJECTS '%s' and pcrec COMPILED it", pat);
+                } else if (strstr(cmsg, "requires module")) {
+                    wrong++;
+                    if (reported++ < 10)
+                        bad("POSIX names: '%s' is not a POSIX class name libpcre2 has, "
+                            "but pcrec answered \"%s\" — a module that will never "
+                            "implement it", pat, cmsg);
+                }
+            }
+        }
+    }
+
+    printf("  POSIX class names: %lu probes — %lu real names, %lu libpcre2 does not have\n",
+           probed, real, unknown);
+    if (!wrong) ok("POSIX class names: every name deferred or refused as libpcre2 does");
+
+    /* Liveness, both directions. A pool that produced no real name would make
+     * the "must defer" half vacuous, and one with no unknown name would make
+     * the over-promise half vacuous — which is the half that was broken. */
+    if (!real)    bad("POSIX name sweep is not live: no candidate was a real class name");
+    else          ok("POSIX name sweep reaches real class names");
+    if (!unknown) bad("POSIX name sweep is not live: no candidate was an unknown name");
+    else          ok("POSIX name sweep reaches names libpcre2 does not have");
+}
+
 /* The one probe the pool cannot express, kept hand-written for that reason:
  * a name containing a NUL byte. argv and NUL-terminated pools both stop there,
  * and pcrec's own pattern buffer does not — it carries a length. */
@@ -838,6 +1003,8 @@ int main(void)
     pool_from_bytes();
     pool_from_lengths();
     check_verb_names();
+    check_class_brackets();
+    check_posix_names();
     check_embedded_nul();
 
     printf("\n== Summary (PC-3) ==\nchecks passed: %d\nchecks failed: %d\n", pass, fail);

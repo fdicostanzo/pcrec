@@ -76,7 +76,17 @@ Rules when touching it:
 - **`RF_CLASS_DELIM` carries a construct's own recognition rule**, not just its
   diagnostic: a delimiter-pair construct opens only when its matching `X]`
   appears later, and the class's own bracket can serve as its `[`. SR-2 moved
-  that out of parse.c because it is the construct's rule, not base grammar.
+  that out of parse.c because it is the construct's rule, not base grammar. All
+  THREE class-bracket rows carry it since FIX-2 — the `:` row was missing it,
+  which was K3 in both directions at once.
+- **`open_msg` is the one field that varies by POSITION**, and only one row uses
+  it: inside a class `[[:alpha:]]` is a construct PCRE2 SUPPORTS (name the
+  module), at a class's own bracket `[:alpha:]` is one PCRE2 will never accept
+  (name none). That is a tier-2 distinction under D26, which is why it is a
+  field and not a fifth doorway kind.
+- **`RF_CLASS_NAMED` means the text between the delimiters is a NAME from a
+  known set**, and an unknown one is not the construct at all. `[[:foo:]]` is
+  "unknown POSIX class name", not a promise about module `classes`.
 - **A verb NAME goes in the VerbName tables, not in a RegRow** (Q1/D25), and
   its form bits are a MEASUREMENT: add the name, then run
   `bash tests/registry/run_registry_tests.sh` and let libpcre2 tell you which

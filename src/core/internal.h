@@ -244,7 +244,16 @@ enum {
      * the pair. Measured against libpcre2 10.46, not inferred. If a third row
      * ever needs one half without the other, split the flag — the two
      * behaviours coincide here, they are not the same statement. */
-    RF_CLASS_DELIM = 1u << 1
+    RF_CLASS_DELIM = 1u << 1,
+
+    /* The text between the delimiters is a NAME from a known set, and a name
+     * outside it is NOT this construct — PCRE2 says "unknown POSIX class name"
+     * rather than routing it anywhere. Exactly one row carries this today
+     * (`[[:alpha:]]`), and it is the class-bracket doorway's half of the same
+     * over-promise Q1 removed at `(*`: without it pcrec answered "requires
+     * module 'classes'" for all 12531 candidate names where libpcre2 has 14,
+     * so its answer did not depend on the name at all (R8/C4-7). */
+    RF_CLASS_NAMED = 1u << 2
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -269,6 +278,21 @@ typedef struct {
     RegStatus   status;
     RegDiag     diag;
     const char *msg;       /* RD_FIXED only, else NULL */
+    /* The diagnostic when the CLASS'S OWN bracket is the opener (`[:alpha:]`
+     * rather than `[[:alpha:]]`). NULL — every row but one — means the row
+     * behaves identically in both positions.
+     *
+     * It exists because ONE row's outcome genuinely changes KIND with position,
+     * measured against libpcre2 10.46: `[[:alpha:]]` is a POSIX class PCRE2
+     * SUPPORTS, so pcrec owes "requires module 'classes'"; `[:alpha:]` is an
+     * error PCRE2 will never accept, so promising a module there is a lie no
+     * module can make true. The two collating rows do NOT need it — `[.a.]`
+     * and `[[.a.]]` are both error 113, same text, both positions.
+     *
+     * This is a TIER 2 distinction under D26 (is a module promised?), not a
+     * tier 3 one (what does the sentence say), which is why one extra field
+     * buys it and a fifth doorway kind is not needed. */
+    const char *open_msg;
     unsigned    flags;     /* RF_* */
 
     const char *note;      /* one-line PCRE2 semantics (SR-3/SR-4 render this) */
@@ -350,6 +374,14 @@ const VerbTable *pcrec_registry_verb_tables(int which);
 /* PCRE2's cap on a verb NAME and the complaint past it — shared by both
  * tables, so it is not a VerbTable field. Returns the message; sets *max. */
 const char *pcrec_registry_verb_name_limit(size_t *max);
+
+/* The POSIX class names libpcre2 recognises, for RF_CLASS_NAMED rows. `name`
+ * may carry a leading `^` (`[[:^alpha:]]` is a real construct). Returns true if
+ * PCRE2 has it; `pcrec_registry_posix_unknown_msg` is what to say when not. */
+bool        pcrec_registry_posix_known(const char *name, size_t len);
+const char *pcrec_registry_posix_unknown_msg(void);
+/* Iteration, for tests and --list-verbs' sibling checks. */
+const char *const *pcrec_registry_posix_names(size_t *n);
 
 /* src/parse/ext.c — the four doorways out of the base grammar (SR-2). Each is
  * called only after parse.c's own switch has declined, so a base-tier pattern

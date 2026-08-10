@@ -284,30 +284,87 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2);
     if (!r) return;
 
+    /* K4, fixed 2026-08-10 (FIX-2). This scan used to run to the end of the
+     * PATTERN rather than the end of the CLASS, so a `.]` anywhere later — even
+     * well outside the class — made an ordinary `[.` look closed and pcrec
+     * rejected patterns PCRE2 compiles. `[a[.b]c]d.]` was the sharpest: the
+     * `.]` it matched sits at offset 9 and the class closed at offset 7.
+     *
+     * PCRE2's rule has THREE parts and they must land TOGETHER, which is not a
+     * style preference — adding the `]` rule without the escape rule flips
+     * `[a[.b\].]` from a correct rejection into an over-acceptance, because the
+     * `]` that ends the scan is one the backslash was hiding:
+     *
+     *   1. an unescaped `]` ends the class, so the pair can no longer close
+     *   2. a `[` followed by the SAME delimiter is a NESTED opener and WINS —
+     *      PCRE2 abandons the outer one and recognises the inner
+     *   3. `\]` and `\\` are skipped as a UNIT
+     *
+     * The close check comes first because a delimiter immediately before `]`
+     * IS the closer, and rule 1 must not consume that `]` out from under it. */
+    size_t close_at = 0;                 /* index of the closing delimiter */
     if (r->flags & RF_CLASS_DELIM) {
-        /* KNOWN WRONG, and deliberately unchanged here: this scan runs to the
-         * end of the PATTERN rather than the end of the character class, so a
-         * `.]` outside the class makes an ordinary `[.` look closed and pcrec
-         * rejects patterns PCRE2 compiles. Carried across verbatim by SR-2 —
-         * which is why the byte-identity proof correctly saw no change, an
-         * identity proof being unable to see a bug both sides share. Measured
-         * and recorded as K4, with PCRE2's three missing scan rules and the
-         * warning that they must land together. */
         bool closed = false;
-        for (size_t i = from; i + 1 < cx->patlen; i++)
-            if (cx->pat[i] == (char)c2 && cx->pat[i + 1] == ']') { closed = true; break; }
+        for (size_t i = from; i < cx->patlen; i++) {
+            char ch = cx->pat[i];
+            /* RULE 3 FIRST, and it means EXACTLY what K4 wrote: `\]` and `\\`
+             * are skipped AS UNITS. A backslash escapes a `]` or another
+             * backslash and NOTHING ELSE. I generalised it twice — first to
+             * "skip any `\X`", then to "suppress only a class-ending `]`" — and
+             * PC-3's generated sweep refuted both within minutes. Four measured
+             * patterns pin it, and no weaker rule gets all four:
+             *
+             *   [[.\.]]      REJECT  `\.` is NOT a unit, so `.]` closes the pair
+             *   [[.a\\]x.]   accept  `\\` IS a unit, so the `]` is unescaped and
+             *                        ends the class before `.]` is reached
+             *   [a[.b\].]    REJECT  `\]` IS a unit, so that `]` does not end
+             *                        the class and `.]` closes the pair
+             *   [[.b].]      accept  a bare `]` ends the class
+             *
+             * Skip-any-`\X` gets the first wrong; suppress-only-`]` gets the
+             * second wrong. Only the two-character rule gets all four. */
+            if (ch == '\\' && i + 1 < cx->patlen &&
+                (cx->pat[i + 1] == ']' || cx->pat[i + 1] == '\\')) {
+                i++;
+                continue;
+            }
+            if (ch == (char)c2 && i + 1 < cx->patlen && cx->pat[i + 1] == ']') {
+                closed = true; close_at = i; break;             /* the closer */
+            }
+            if (ch == '[' && i + 1 < cx->patlen && cx->pat[i + 1] == (char)c2)
+                return;                                         /* rule 2 */
+            if (ch == ']') break;                               /* rule 1 */
+        }
         if (!closed) return;
-    } else if (at_class_open) {
-        /* The class's own bracket cannot open a `[X...X]` construct. This is
-         * what keeps `[:alpha:]` compiling — which is K3's over-acceptance,
-         * preserved on purpose so SR-2 stayed byte-identical. Its only live
-         * consumer is the `:` row, and until R5 nothing in the repo entered
-         * this doorway at all; `accept '[:]'` and `accept '[:a]'` in
-         * tests/reject/ are what guard it now. */
-        return;                               /* needs a bracket of its own */
     }
 
+    /* The `else if (at_class_open) return;` that stood here is GONE, and its
+     * removal is K3's fix rather than a tidy-up: it was what kept `[:alpha:]`
+     * compiling, because the `:` row was the only one without RF_CLASS_DELIM
+     * and so the only one that reached it. All three rows carry the flag now,
+     * which made the branch unreachable as well as wrong.
+     *
+     * R5's sabotage battery found K3 by observing that deleting that branch
+     * changed 0 of 4173 emission cases and broke no test — an invisible branch
+     * with a real divergence behind it. `at_class_open` survives, but it is no
+     * longer invisible: it now SELECTS THE MESSAGE, and tests/reject/ pins both. */
     if (r->diag != RD_FIXED)
         BAD_ROW(cx, at, "a [ construct in a class");
+
+    /* POSITION FIRST, then the name — which is libpcre2's own order, measured:
+     * `[:foo:]` is "POSIX named classes are supported only within a class" at
+     * offset 0, NOT "unknown POSIX class name". The construct is in the wrong
+     * place, so whether its name is real never comes up. */
+    if (at_class_open && r->open_msg)
+        ctx_fail(cx, at, "%s", r->open_msg);
+
+    /* A name outside the known set is not this construct at all, so naming a
+     * module for it would be the over-promise this flag exists to remove:
+     * `[[:foo:]]` is an error libpcre2 will never accept, and module 'classes'
+     * cannot make it one. See RF_CLASS_NAMED in internal.h. */
+    if ((r->flags & RF_CLASS_NAMED) &&
+        !pcrec_registry_posix_known(cx->pat + from, close_at - from))
+        ctx_fail(cx, at, "%s", pcrec_registry_posix_unknown_msg());
+
     ctx_fail(cx, at, "%s", r->msg);
 }

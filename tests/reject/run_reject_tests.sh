@@ -211,13 +211,25 @@ for e in d D s S w W h H v V N; do
     reject "[\\$e]"   "\\$e in a class requires module 'classes'"
 done
 reject '[[:alpha:]]' "POSIX class [:...:] requires module 'classes'"
-# Names PCRE2 does not know. It rejects all three ("unknown POSIX class name")
-# and so do we, so the VERDICT agrees and only the wording differs — but nothing
-# covered them, and they are exactly the rows a name-keyed table would have to
-# get right (R6 fidelity critic F13: the list is 14 names and case-sensitive).
-reject '[[:foo:]]'   "POSIX class [:...:] requires module 'classes'"
-reject '[[::]]'      "POSIX class [:...:] requires module 'classes'"
-reject '[[:AlPhA:]]' "POSIX class [:...:] requires module 'classes'"
+reject '[[:^alpha:]]' "POSIX class [:...:] requires module 'classes'"   # ^ negates
+reject '[[:xdigit:]]' "POSIX class [:...:] requires module 'classes'"
+# NAMES PCRE2 DOES NOT KNOW, and these three rows CHANGED at FIX-2 — which is
+# the comment that used to sit here being right in advance. It said they "are
+# exactly the rows a name-keyed table would have to get right (R6 fidelity
+# critic F13: the list is 14 names and case-sensitive)". FIX-2 built that table,
+# so pcrec no longer promises module 'classes' for a name no module can ever
+# implement; it says what libpcre2 says. Case-sensitivity is pinned by
+# `[[:AlPhA:]]`, which R6 added for precisely this moment.
+reject '[[:foo:]]'    "unknown POSIX class name"
+reject '[[::]]'       "unknown POSIX class name"
+reject '[[:AlPhA:]]'  "unknown POSIX class name"
+reject '[[:ALPHA:]]'  "unknown POSIX class name"
+reject '[[:^foo:]]'   "unknown POSIX class name"
+reject '[[:al pha:]]' "unknown POSIX class name"
+# ...and the POSITION rule wins over the NAME rule, which is libpcre2's own
+# order: an unknown name at a class's own bracket is still the position error,
+# because the construct is in the wrong place before its name comes up.
+reject '[:foo:]'      "POSIX class [:...:] is only valid inside a character class"
 reject '\x{41}'      "\\x{...} requires module 'unicode-props'"
 
 # POSIX collating elements / equivalence classes. PCRE2 REJECTS these rather
@@ -421,6 +433,66 @@ for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)'
     reject "$v" "requires module 'verbs'"
 done
 
+# THE FIVE GRADUATED K3/K4 ROWS (FIX-2, 2026-08-10). Each was a `pinned`
+# known-wrong line until the fix landed; each is now an ordinary expectation.
+# Kept in one block, with its history, because a reader who finds `[[:]]` in a
+# reject table deserves to know it was once the opposite.
+reject '[:alpha:]' "POSIX class [:...:] is only valid inside a character class"
+reject '[::]'      "POSIX class [:...:] is only valid inside a character class"
+reject '[:a:]'     "POSIX class [:...:] is only valid inside a character class"
+# ...and the OTHER half of the same flag, which was an over-REJECTION: nothing
+# closes the pair, so PCRE2 reads ordinary members and so must pcrec.
+accept '[a[:b]'
+accept '[[:alpha]'
+accept '[[:]]'
+accept '[[:]'
+accept '[:]'
+accept '[:a]'
+# K4's terminator scan. Every one of these has the `.]` or `=]` OUTSIDE the
+# class, which is the shape the old scan could not see.
+accept '[.a]x.]'
+accept '[=a]x=]'
+accept '[a[.b]c]d.]'
+accept '[[.a].]'
+accept '[.a].]'
+# ...and the escape rule, which is why the three had to land together: the `]`
+# that ends the scan here is one a backslash was hiding, so a `]`-rule without
+# an escape-rule turns this correct rejection into an over-acceptance.
+reject '[a[.b\].]'  "POSIX collating elements are not supported"
+reject '[a[=b\]=]'  "POSIX collating elements are not supported"
+# K4's RULE 3, and these four are the only thing that distinguishes it from the
+# two weaker rules I tried first. It is "`\]` and `\\` are units", not "skip any
+# `\X`" and not "suppress only a class-ending `]`" — each weaker rule gets one of
+# these four wrong, and all four came from PC-3's generated sweep rather than
+# from anyone's reading.
+reject '[[.\.]]'      "POSIX collating elements are not supported"   # \. is NOT a unit
+accept '[[.a\\]x.]'                                                  # \\ IS a unit
+reject '[a[.b\].]'    "POSIX collating elements are not supported"   # \] IS a unit
+accept '[[.b].]'                                                     # a bare ] ends it
+accept '[[.b\]]'
+reject '[[:\:]]'      "unknown POSIX class name"
+# The two class-bracket constructs that are not classes at all: zero-width word
+# boundary assertions. My hand-written list of fourteen names missed both, and
+# the generated differential found them on its first run.
+reject '[[:<:]]'      "POSIX class [:...:] requires module 'classes'"
+reject '[[:>:]]'      "POSIX class [:...:] requires module 'classes'"
+reject '[[:^<:]]'     "unknown POSIX class name"   # ^ negates a CLASS; these are not
+# A NESTED opener wins: PCRE2 abandons the outer one and recognises the inner.
+# THESE THREE PIN THE OFFSET, and that is the whole point of them. Rule 2 of
+# K4's scan changes NOTHING about the verdict — with it or without it pcrec
+# rejects all three — so it was an INVISIBLE branch, which is the shape R5 and
+# R7 both got burned by. What it changes is WHICH CONSTRUCT gets blamed: with
+# rule 2 the error points at the inner opener (offset 4), which is the one PCRE2
+# recognises; without it, at the outer bracket PCRE2 abandoned (offset 1).
+# Deleting rule 2 leaves tests/registry/pcre2_check.c's 1680-pattern sweep at
+# zero failures, because that sweep compares VERDICTS. These rows are what sees
+# it. (PCRE2 reports offset 9 here — it points at the end. pcrec's convention is
+# the construct START and D26 puts the exact number in tier 3; pointing at the
+# right construct is the part worth having.)
+reject '[[.a[.b.].]'  "POSIX collating elements are not supported (pattern offset 4)"
+reject '[a[.b[.c.].]' "POSIX collating elements are not supported (pattern offset 5)"
+reject '[[=a[=b=]=]'  "POSIX collating elements are not supported (pattern offset 4)"
+
 echo
 echo "== possessive quantifiers =="
 reject 'a*+' "possessive quantifier requires module 'atomic-groups'"
@@ -558,23 +630,17 @@ $pat"
         bad "known-wrong '$pat': behaviour CHANGED (expected to $want, rc=$rc). $why. If you fixed K3/K4, move this line into the tables above; if not, you have regressed something"
     fi
 }
-# K3 — over-acceptance. PCRE2: "POSIX named classes are supported only within a
-# class". pcrec compiles it as a five-character class.
-pinned '[:alpha:]' accept - \
-    "PCRE2 REJECTS it; the ':' row lacks the class-open half of RF_CLASS_DELIM"
-# K3 — over-rejection, the same missing row flag seen from the other side.
-pinned '[a[:b]'    reject "POSIX class [:...:] requires module 'classes'" \
-    "PCRE2 ACCEPTS it; ':' fires without checking for a later ':]'"
-pinned '[[:alpha]' reject "POSIX class [:...:] requires module 'classes'" \
-    "PCRE2 ACCEPTS it; same missing terminator condition"
-# Found 2026-08-10 while adding R6's cheap pins: same family, previously
-# unrecorded. `[[:]]` has no ':]' terminator, so PCRE2 reads '[' and ':' as
-# ordinary class members and compiles it.
-pinned '[[:]]'     reject "POSIX class [:...:] requires module 'classes'" \
-    "PCRE2 ACCEPTS it; no ':]' terminator, so the '[:' is ordinary members"
-# K4 — the terminator scan runs to the end of the PATTERN, not the class.
-pinned '[.a]x.]'   reject "POSIX collating elements are not supported" \
-    "PCRE2 ACCEPTS it; the '.]' matched is outside the class"
+# EMPTY, and that is the point: all five lines that stood here were K3 and K4,
+# and FIX-2 (2026-08-10) fixed both. Each one fired on the way past — "behaviour
+# CHANGED... if you fixed K3/K4, move this line into the tables above" — which
+# is the mechanism working exactly as designed, and each has moved into the
+# normal accept/reject tables where it is now an ordinary expectation rather
+# than a pinned defect.
+#
+# Keep this block and its helper. A known-wrong pin is how this project records
+# a defect it has decided not to fix yet WITHOUT letting the defect become
+# invisible, and the next one will want the same machinery. The helper is
+# validated by the five that just graduated.
 
 echo
 echo "== every registry row covers itself (SR-4) =="
@@ -727,7 +793,25 @@ must_have 'a{1,65536x}' \
 must_have 'a{65536x}' \
     "the big_m half of the same guard"
 must_have '[:alpha:]' \
-    "the K3 known-wrong pin; losing it makes a fixed-or-unfixed K3 invisible"
+    "K3's over-ACCEPTANCE: pcrec compiled this into a matcher for {: a l p h}"
+must_have '[a[:b]' \
+    "K3's over-REJECTION, the same missing flag from the other side"
+must_have '[a[.b\].]' \
+    "the ONLY row where K4's escape rule is load-bearing; without it this flips to over-acceptance"
+must_have '[a[.b]c]d.]' \
+    "K4's sharpest case: the '.]' matched sits outside the class that closed before it"
+must_have '[[.a[.b.].]' \
+    "the ONLY check of K4's nested-opener rule; it is invisible to every verdict-level sweep"
+must_have '[[:AlPhA:]]' \
+    "the only pin that the 14 POSIX class names are CASE-SENSITIVE"
+must_have '[:foo:]' \
+    "the only pin that POSITION beats NAME: wrong place is reported before unknown name"
+must_have '[[.a\\]x.]' \
+    "the ONLY case that rules out 'suppress only a class-ending ]' for K4 rule 3"
+must_have '[[.\.]]' \
+    "the ONLY case that rules out 'skip any \\X' for K4 rule 3"
+must_have '[[:<:]]' \
+    "a class-bracket construct that is a word-boundary ASSERTION, not a class"
 must_have 'a{2,3,4}' \
     "the only malformed-brace control with a SECOND comma"
 # Q1's outcomes. Each of these five is the ONLY hand-written check of one rule,
@@ -757,8 +841,8 @@ fi
 # deliberate and visible in the diff, which is what the slack removed. If you
 # added or removed coverage on purpose, update these three numbers in the same
 # commit — and check first whether the row belongs in the manifest above.
-if [ "$nrej" -ne 181 ] || [ "$naccept" -ne 45 ] || [ "$nwrong" -ne 5 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 181 / 45 / 5." >&2
+if [ "$nrej" -ne 201 ] || [ "$naccept" -ne 59 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 201 / 59 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

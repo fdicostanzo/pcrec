@@ -184,7 +184,21 @@ CLAUDE.md files, commit, push.
   rows agree with PCRE2's error identity, and the verb doorway's whole name
   surface. See docs/reviews/2026-08-10-r8-pc3-q1.md, and PC-4 and Q2 below,
   which are what the panel turned up
-- [FIX-2] STATE:not-started — K3 and K4, the class-bracket doorway. THIRD, not
+- [FIX-2] STATE:completed 2026-08-10 — K3 and K4 both fixed, plus the doorway's
+  own over-promise. **NOT YET REVIEWED BY A D6 PANEL** — the session was reset
+  before it ran, and that is the one process step this step is missing. Run it
+  before or alongside the next checkpoint; the code is green and the docs are
+  current, but nobody adversarial has looked at it.
+  What landed: `RF_CLASS_DELIM` on the `:` row plus an `open_msg` field (no
+  fifth doorway kind — see K3 in known_issues.md and D26); K4's three scan rules
+  together, with rule 3 implemented EXACTLY as K4 worded it after two looser
+  versions were refuted by the generated sweep; a measured 16-name POSIX table
+  (the differential found `[[:<:]]` and `[[:>:]]`, word-boundary assertions my
+  hand-written 14 had missed); the 4a doorway sweep registry_check.c never had;
+  and two new generated differentials in pcre2_check.c — 1680 class patterns and
+  ~150k POSIX name probes, both at zero divergences.
+  Original entry follows.
+- [FIX-2] as planned — K3 and K4, the class-bracket doorway. THIRD, not
   last, and R8 gave it a SECOND job (C4-7): this doorway is NAME-keyed like the
   verb one and has the same over-promise Q1 just removed, 900x wider. Measured
   2026-08-10: libpcre2 recognises 14 POSIX class names and pcrec answers

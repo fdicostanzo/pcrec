@@ -2999,3 +2999,65 @@ variable in `src/core/sb.c` leaves plain `make` green and makes `make strict`
 fail.
 
 **Next: FIX-2**, built under D26 rather than retrofitted to it.
+
+## 2026-08-10 — FIX-2: K3 and K4 fixed, and the escape rule that took three tries
+
+Third step of the AGREED ORDER. **Landed and green, but NOT reviewed by a D6
+panel** — the session was reset before it ran. That is the one process step
+missing; the next session should run it before or alongside its own checkpoint.
+
+**What landed.** `RF_CLASS_DELIM` on the `:` row, which was K3 in both
+directions at once — pcrec ACCEPTED `[:alpha:]`, compiling a matcher for the set
+`{: a l p h}` (measured behaviourally: the emitted binary matched ':' and 'a'
+and rejected 'z'), and REJECTED `[a[:b]`, `[[:alpha]`, `[[:]`, which PCRE2
+compiles. K4's three scan rules together. A measured 16-name POSIX table. The 4a
+doorway sweep registry_check.c never had. And two new generated differentials in
+pcre2_check.c.
+
+**The schema question Frank was asked to steer got smaller before he answered
+it.** `RK_CLASSOPEN` existed to reproduce PCRE2's two different WORDINGS at one
+doorway; D26 made wording tier 3 and that reason evaporated. But a tier-2
+distinction survived: inside a class the construct is one PCRE2 SUPPORTS (name
+the module), at a class's own bracket it is one PCRE2 never accepts (name none).
+One field, `open_msg`. No fifth kind, no RK_COUNT change, no sweep change.
+
+**The generator changed the shape of the step before any code was written.** The
+plan had five hand-pinned known-wrong cases; a generated sweep of 555
+class-bracket patterns found **126 divergences**, including families nobody had
+written down — `[::]` over-accepted, the whole `[[.a\]b]x.]` escape family
+over-rejected. After the fix: 1341 patterns, 1325 agreeing outright, 16 honest
+deferrals, **zero real divergences**.
+
+**K4's rule 3 took THREE attempts and the instrument refuted the first two
+within minutes each.** K4 wrote "skip `\]` and `\\` as a unit", which is exact. I
+implemented "skip any `\X`" — refuted by `[[:\:]]`. Then "suppress only a
+class-ending `]`" — refuted by `[[.a\\]x.]`. Four measured patterns separate the
+three candidate rules and no weaker rule gets all four; all four are pinned, two
+in the MANIFEST as the only rows ruling out each wrong rule. **I paraphrased a
+precisely-worded finding twice and both paraphrases were wrong.**
+
+**Two constructs I would have shipped as broken.** My POSIX name table started at
+14 — the names I had eyeballed in libpcre2's string table. The name differential
+found `[[:<:]]` and `[[:>:]]`: zero-width WORD BOUNDARY assertions, not classes
+(`[[:<:]]def` matches [4,7) on "abc def"). It also found that `^` does not negate
+them. **I listed a name space instead of generating it, in the very change that
+added a generator** — R8's lesson, one level down, three hours later.
+
+**And rule 2 was nearly shipped as an invisible branch.** Deleting it leaves the
+1680-pattern differential at ZERO failures, because that differential compares
+VERDICTS and rule 2 changes only the error OFFSET: with it, `[[.a[.b.].]` blames
+offset 4 (the inner opener PCRE2 recognises); without it, offset 1 (the outer
+bracket PCRE2 abandoned). D26 is what talked me out of comparing offsets, so
+D26 now carries the correction: **pin your own offsets against your own
+convention; do not pin them against PCRE2's.** Frank asked whether the recurring
+issue is test coverage — it is not, and the distinction is in D26 now: every one
+of these branches EXECUTES. The assertions project onto a SUBSET OF THE OUTPUT
+FIELDS, and twice out of three the blind field was the offset.
+
+**Suite at close:** 876 corpus / 83 CLI / 201 reject + 67 iterated (328 checks) /
+129 registry / 81 PC-3 / 29 codegen / 7 trie-identity, `make strict` clean,
+green from a fresh clone. K3 and K4 are FIXED; tests/reject/ carries ZERO
+known-wrong pins for the first time since they were introduced.
+
+**Next: the FIX-2 panel, then Q2 with SR-9.** PC-4 stays deferred to module
+`classes`. See docs/wake.md.

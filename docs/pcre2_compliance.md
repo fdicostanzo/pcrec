@@ -238,6 +238,7 @@ commits to. The blocker is table generation and size, not matching.
 | `(?=...)` `(?!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround`. Lookahead is automaton intersection — feasible, not cheap, and it multiplies states |
 | `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround/named-groups`. Fixed-length lookbehind is tractable via the reverse machine D7 already builds; variable-length is much harder |
 | `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` verbose spellings | `REJECTED` | — | module `verbs`; same underlying feature |
+| `[[:<:]]` `[[:>:]]` | `REJECTED` | `PLANNED` | module `classes` by doorway, but they are NOT character classes — they are zero-width WORD BOUNDARY assertions PCRE2 inherited from its Unix ancestry, measured on "abc def" (`[[:<:]]def` matches [4,7), `abc[[:>:]]` matches [0,3)). Whoever implements module `classes` owns splitting them out; `^` does not negate them. Found by PC-3's generated name differential (FIX-2), not by reading |
 | `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` | module `lookaround`. The non-atomic variants are defined by their backtracking behaviour. **This row was RIGHT and the registry was WRONG** until R8/C4-8: `(?*...)` had no registry row, so the `(?` catch-all answered "requires module 'modifiers'" for it. Three homes, one disagreeing — the `\v` shape exactly, and found the same way, by reading an outside source rather than by any test |
 
 ## Substring scan, script runs

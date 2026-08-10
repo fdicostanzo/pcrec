@@ -75,7 +75,33 @@ not a wrong match, so there is no failing regression to ratchet.
 
 ---
 
-## K3 — OPEN, found 2026-08-10 (SR-2 sabotage validation)
+## K3 — FIXED 2026-08-10 (FIX-2)
+
+**Fixed by giving the `:` row `RF_CLASS_DELIM`**, the flag its two neighbours
+already had, plus a new `open_msg` field for the one thing that genuinely
+differs by position. Both halves went at once, as this entry said they must:
+the over-ACCEPTANCE (`[:alpha:]` compiled a matcher for `{: a l p h}`) and the
+over-REJECTION (`[a[:b]`, `[[:alpha]`, `[[:]` refused although PCRE2 compiles
+them). All five known-wrong pins in tests/reject/ fired on the way past and have
+graduated into the normal tables.
+
+**The schema question this entry left for Frank was answered by D26, and the
+answer was smaller than the question.** A fifth doorway kind (`RK_CLASSOPEN`)
+was proposed because PCRE2 uses different WORDING at a class's own bracket. D26
+makes wording tier 3, so that reason evaporated — but a real tier-2 distinction
+survived it: inside a class the construct is one PCRE2 SUPPORTS (name the
+module), and at the class's own bracket it is one PCRE2 will never accept (name
+no module, because none can make it legal). One field, `open_msg`, encodes that.
+No new kind, no `RK_COUNT` change, no sweep change.
+
+**And FIX-2 closed the doorway's own over-promise while it was there**
+(R8/C4-7): the 14 POSIX class names — 16, once the differential found
+`[[:<:]]` and `[[:>:]]` — are now a measured table, so `[[:foo:]]` is "unknown
+POSIX class name" rather than a promise that module `classes` will implement it.
+
+Historical record follows.
+
+## K3 — as recorded when OPEN, found 2026-08-10 (SR-2 sabotage validation)
 
 pcrec ACCEPTS `[:alpha:]` as an ordinary five-character class. PCRE2 rejects it.
 
@@ -141,7 +167,37 @@ and this is a behaviour change. Fix it with K4, which lives in the same loop.
 
 ---
 
-## K4 — OPEN, found 2026-08-10 (R5 critics, two independently)
+## K4 — FIXED 2026-08-10 (FIX-2)
+
+**All three scan rules landed together, as this entry insisted.** The scan now
+stops at the end of the CLASS rather than the end of the pattern.
+
+**Rule 3 is the one worth reading this entry's wording for.** It says "skip `\]`
+and `\\` as a unit", and that is exact. I implemented it twice as something
+looser — first "skip any `\X`", then "suppress only a class-ending `]`" — and
+PC-3's generated sweep refuted both within minutes. Four measured patterns
+separate the three candidate rules, and no weaker rule gets all four:
+
+    [[.\.]]      REJECT   `\.` is NOT a unit, so `.]` closes the pair
+    [[.a\\]x.]   accept   `\\` IS a unit, so the `]` is unescaped and ends
+                          the class before `.]` is reached
+    [a[.b\].]    REJECT   `\]` IS a unit, so that `]` does not end the class
+    [[.b].]      accept   a bare `]` ends the class
+
+All four are pinned in tests/reject/, two of them in the MANIFEST as the only
+rows ruling out each wrong rule.
+
+**Rule 2 was nearly shipped as an invisible branch.** Deleting it changes no
+VERDICT — pcrec rejects the same patterns either way — so a 1680-pattern
+generated differential stayed at zero failures without it. What it changes is
+the error OFFSET: with it, `[[.a[.b.].]` blames offset 4, the inner opener PCRE2
+actually recognises; without it, offset 1, the outer bracket PCRE2 abandoned.
+Now pinned. See D26's note on why "don't chase PCRE2's offsets" does not mean
+"offsets don't matter".
+
+Historical record follows.
+
+## K4 — as recorded when OPEN, found 2026-08-10 (R5 critics, two independently)
 
 `RF_CLASS_DELIM`'s terminator scan runs to the end of the PATTERN, not the end
 of the character class, so a `.]` or `=]` anywhere later — including well

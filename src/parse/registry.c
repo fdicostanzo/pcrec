@@ -152,31 +152,31 @@
 
 /* \x outside a class -> "\x requires module 'M'" */
 #define ESC(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, 0, (note)}
+    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
 /* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
 #define ESC_CLASS_BASE(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, RF_CLASS_BASE, (note)}
+    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note)}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
  * which is a different thing from the construct's semantics. */
 #define ESC_DIGIT(sel, syn, eng, note) \
-    {RK_ESC, (sel), (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, 0, (note)}
+    {RK_ESC, (sel), (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note)}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note) \
-    {RK_GROUP, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, 0, (note)}
+    {RK_GROUP, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
 /* a construct whose entire diagnostic is fixed text rather than a template */
 #define FIXED(kind, sel, syn, mod, eng, msg, note) \
-    {(kind), (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), 0, (note)}
+    {(kind), (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note)}
 /* PCRE2 rejects it too: no module to name, no feature to enable, no engine to
  * lower to. Agreement IS compliance. */
 #define REJECTED(kind, sel, syn, msg, note) \
-    {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), 0, (note)}
+    {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note)}
 /* as REJECTED, but a delimiter-pair construct: RF_CLASS_DELIM carries the two
  * recognition rules that SR-2 moved out of parse.c — see internal.h. */
 #define REJECTED_DELIM(kind, sel, syn, msg, note) \
     {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
-     RF_CLASS_DELIM, (note)}
+     NULL, RF_CLASS_DELIM, (note)}
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
@@ -268,7 +268,7 @@ static const RegRow group_rows[] = {
 {RK_GROUP, ':', "(?:...)",
  0, NULL,
  FLAV_PCRE2, ANY_ENGINE,
- RS_BASE, RD_NONE, NULL, 0,
+ RS_BASE, RD_NONE, NULL, NULL, 0,
  "non-capturing group"},
 
 GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead"),
@@ -504,9 +504,33 @@ const VerbName *pcrec_registry_verb_find(const VerbTable *t,
 
 /* ---- doorway 4: after '[' inside a class -------------------------------- */
 static const RegRow classbracket_rows[] = {
-FIXED(RK_CLASSBRACKET, ':', "[[:alpha:]]", classes, ANY_ENGINE,
-      "POSIX class [:...:] requires module 'classes'",
-      "POSIX character class"),
+/* LONGHAND because its shape is its own, which is this file's rule for a row no
+ * macro should be able to hide. It is the only row in the table whose OUTCOME
+ * KIND depends on WHERE it was found — K3, fixed 2026-08-10 (FIX-2):
+ *
+ *   [[:alpha:]]   a POSIX class PCRE2 SUPPORTS -> name the module (RS_MODULE)
+ *   [:alpha:]     an error PCRE2 will never accept -> `open_msg`, and note it
+ *                 names no module, because no module can make it legal
+ *
+ * pcrec ACCEPTED the second until now, compiling a matcher for the character
+ * set {: a l p h} — measured, not inferred: the emitted binary matched ':' and
+ * 'a' and rejected 'z'. A silent wrong matcher for a pattern PCRE2 refuses, and
+ * python `re` accepts it too, so the corpus oracle was structurally blind.
+ *
+ * RF_CLASS_DELIM is what it was missing, and it carries both halves of the
+ * recognition rule (see internal.h): the delimiter opens the construct only
+ * when its matching `:]` appears later, and the class's own bracket can serve
+ * as the `[`. That is why `[:]`, `[a[:b]` and `[[:alpha]` all still compile —
+ * nothing closes the pair — which is K3's other half, an OVER-REJECTION that
+ * cost users patterns PCRE2 accepts. */
+{RK_CLASSBRACKET, ':', "[[:alpha:]]",
+ M_classes,
+ FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_FIXED,
+ "POSIX class [:...:] requires module 'classes'",
+ "POSIX class [:...:] is only valid inside a character class",
+ RF_CLASS_DELIM | RF_CLASS_NAMED,
+ "POSIX character class"},
 /* PCRE2 REJECTS these outright rather than treating them as literals, so
  * agreeing is compliance and there is no module to name — the reason RS_REJECTED
  * exists as a status distinct from RS_MODULE. pcrec accepted them silently until
@@ -522,6 +546,67 @@ REJECTED_DELIM(RK_CLASSBRACKET, '.', "[[.a.]]", "POSIX collating elements are no
 REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are not supported",
                "POSIX equivalence class — PCRE2 rejects it, and so must we"),
 };
+
+/* ---- doorway 4's NAME set (FIX-2) ---------------------------------------
+ *
+ * The class-bracket doorway is NAME-keyed exactly as `(*` is, and it had the
+ * same defect: one row answered "requires module 'classes'" for every name, so
+ * `[[:foo:]]` was promised a module that will never implement it — libpcre2
+ * says "unknown POSIX class name" and always will. R8/C4-7 measured the size of
+ * it: 12517 of 12531 generated candidate names.
+ *
+ * MEASURED against libpcre2 10.46, not read: exactly these 14, case-SENSITIVE
+ * (`[[:ALPHA:]]` and `[[:AlPhA:]]` are both errors), each accepting a leading
+ * `^` for negation. No form bits are needed — unlike a verb name, a POSIX class
+ * name has exactly one spelling.
+ *
+ * Kept as a plain name list rather than RegRows for the reason D25 gives for
+ * the verb tables: a RegRow carries a module, a feature bit and an engine mask,
+ * and fourteen of them would repeat one module fourteen times. This answers one
+ * question — does PCRE2 have this name — and pcre2_check.c re-measures it. */
+static const char *const posix_names[] = {
+    "alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph",
+    "lower", "print", "punct", "space", "upper", "word",  "xdigit",
+    /* AND TWO THAT ARE NOT CHARACTER CLASSES AT ALL. `[[:<:]]` and `[[:>:]]`
+     * are zero-width WORD BOUNDARY assertions PCRE2 inherited from its Unix
+     * ancestry — measured on "abc def": `[[:<:]]def` matches [4,7) and
+     * `abc[[:>:]]` matches [0,3). I wrote the list above from the fourteen I
+     * had eyeballed in libpcre2's string table and PC-3's generated name
+     * differential found these two on its first run, which is the difference
+     * between listing a space and generating it, one level down from where R8
+     * already learned it. They are `classes` here only because that is the
+     * doorway's module; whoever implements it owns splitting them out, since a
+     * boundary assertion is not a set of characters. */
+    "<", ">"
+};
+
+const char *const *pcrec_registry_posix_names(size_t *n)
+{
+    *n = sizeof posix_names / sizeof posix_names[0];
+    return posix_names;
+}
+
+const char *pcrec_registry_posix_unknown_msg(void)
+{
+    /* PCRE2's own wording. It names no module ON PURPOSE — that is the whole
+     * point of the row, and registry_check.c asserts the absence. */
+    return "unknown POSIX class name";
+}
+
+bool pcrec_registry_posix_known(const char *name, size_t len)
+{
+    /* `^` negates a CLASS, and `<`/`>` are not classes — they are zero-width
+     * word-boundary assertions, so there is nothing to negate. Measured:
+     * `[[:^alpha:]]` compiles and `[[:^<:]]` is an error. Found by PC-3's name
+     * differential, which probes both spellings of every candidate. */
+    bool neg = len && name[0] == '^';
+    if (neg) { name++; len--; }
+    if (neg && len == 1 && (name[0] == '<' || name[0] == '>')) return false;
+    for (size_t i = 0; i < sizeof posix_names / sizeof posix_names[0]; i++)
+        if (strlen(posix_names[i]) == len && memcmp(posix_names[i], name, len) == 0)
+            return true;
+    return false;
+}
 
 /* ---- lookup -------------------------------------------------------------
  * A linear scan, deliberately, where SR-1's plan text said a [256] index per

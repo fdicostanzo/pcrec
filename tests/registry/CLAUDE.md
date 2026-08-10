@@ -135,7 +135,15 @@ single home is invisible, because the wrongness is what both sides read.
    the row's `syntax` verbatim, and a wrapper that is not NECESSARY is an error.
    A row with no wrapper whose syntax will not compile is a FAILURE, never a
    skip.
-3. **The verb NAME differential**, and this is the part that scales. Candidate
+3. **Two more generated differentials at the CLASS-BRACKET doorway** (FIX-2):
+   1680 patterns over delimiters x bodies x shapes x trailers, asserting no
+   over-acceptance and no over-rejection; and ~150k POSIX class NAME probes from
+   the same libpcre2-derived pool, asserting that a name libpcre2 has is
+   deferred to a module and a name it lacks is not. The first found 126
+   divergences on its first run where the plan had five hand-pinned cases; the
+   second found two constructs a hand-written name list had missed (`[[:<:]]`
+   and `[[:>:]]`) and refuted two successive wrong versions of K4's escape rule.
+4. **The verb NAME differential**, and this is the part that scales. Candidate
    names are generated from **libpcre2's own shared object** — its compiled-in
    name tables, read via `dlinfo`, expanded to every prefix and suffix — plus
    single-character mutations of the names pcrec claims, plus all 255 bytes.
