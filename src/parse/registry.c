@@ -50,6 +50,27 @@
  * first two or silently drop their tests/reject/ coverage, since neither has a
  * row to iterate.
  *
+ * WHAT THIS TABLE CANNOT DO, measured 2026-08-10 (R6). It identifies a DOORWAY
+ * and names a MODULE. It cannot always identify the CONSTRUCT, because for two
+ * constructs the deciding information is not at the doorway at all:
+ *
+ *   `(?(R)`  is a recursion condition or a NAMED-GROUP condition depending on
+ *            whether the pattern declares a group called `R` — and that
+ *            declaration may appear LATER in the pattern than the condition.
+ *            Appending `(?<R>z)?` silently rebinds a condition 20 bytes to its
+ *            left.
+ *   `\ddd`   is an octal escape or a backreference depending on how many
+ *            capture groups the parser has seen SO FAR. `(a)\12` is octal 012;
+ *            with twelve groups it is a backreference to group 12. No amount of
+ *            lookahead resolves it.
+ *
+ * Both are cleanly REJECTED today, naming the right module, so neither is a
+ * live bug. What they bound is the future: whoever implements modules
+ * 'conditionals' and 'backrefs' needs parser STATE the registry cannot supply —
+ * a running capture count, and a whole-pattern group-name table. A row can say
+ * "this doorway belongs to module X"; it cannot say which construct X should
+ * build. Do not design a handler signature that assumes it can.
+ *
  * FOUR AXES, KEPT APART. flavour (which construct a byte MEANS) / option (what
  * it DENOTES) / enablement (is it available) / engine (can it LOWER). Answering
  * all four with one mechanism is what produces an `if python-compat X else if

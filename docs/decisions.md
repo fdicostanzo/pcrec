@@ -1198,6 +1198,18 @@ said until R6 measured it (see the R6 CORRECTION at the end of this entry). A
 character class. That property is worth a guard, not just a claim (SR-5) — and
 SR-5 must guard the measured property, not the one asserted here.
 
+**THE LIMIT OF THE TABLE, measured at R6 and not known when D24 was written.**
+The registry identifies a DOORWAY and names a MODULE. It cannot always identify
+the CONSTRUCT. Two constructs decide on information that is not at the doorway:
+`(?(R)` depends on whether a group named `R` is declared anywhere in the pattern
+INCLUDING AFTER IT, and `\ddd` depends on the running capture count (`(a)\12`
+is octal; with twelve groups it is a backreference). Both are cleanly rejected
+today with the right module named, so this bounds the FUTURE rather than
+describing a bug: modules 'conditionals' and 'backrefs' need parser state — a
+capture count and a group-name table — that no lookup keyed on doorway text can
+provide. It is also why R6 rejected a lookup signature taking only the doorway
+text.
+
 **FOUR AXES, KEPT APART ON PURPOSE.** The `if flavour else if flavour` bloat
 comes from answering four different questions with one mechanism:
 

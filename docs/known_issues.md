@@ -39,8 +39,27 @@ against libpcre2 10.46 via pcre2_compile_8:
     (a)\2             -> error 115
     \0  \012  \o{101}  -> accepted (the genuine octal forms)
 
-So `\1`..`\9` are unconditionally backreferences, and `\0` — which shares the
-same diagnostic — can never be a backreference at all, since there is no group 0.
+So a SINGLE digit `\1`..`\9` is unconditionally a backreference, and `\0` —
+which shares the same diagnostic — can never be one at all, since there is no
+group 0.
+
+**R6 CORRECTION, 2026-08-10 — the paragraph above generalised from single digits
+and is wrong about the rest.** For a MULTI-digit sequence the reading depends on
+the running capture count. Re-measured independently:
+
+    (a)\12                           vs "a\n"           -> match   (octal 012)
+    (a)\12                           vs "aa2"           -> nomatch
+    (a)(b)...(l)\12  (twelve groups)  vs "abcdefghijkll" -> match   (backref 12)
+
+Same three bytes, opposite constructs, decided by how many capture groups the
+parser has seen SO FAR — a forward declaration does not count. So
+"(backreference/octal)" is not simply wrong: it is RIGHT for `\ddd` and for
+`\0`, and wrong only for a bare single digit.
+
+That makes the fix subtler than this entry first implied. **The correct message
+is not a constant** — it depends on parser state the doorway cannot see (D24's
+"THE LIMIT OF THE TABLE"). Module 'backrefs' must carry a running capture count
+and choose the diagnostic after consulting it.
 
 **Severity: cosmetic today.** pcrec rejects all ten either way, so nothing
 miscompiles; the message merely misdescribes PCRE2. It is recorded because the

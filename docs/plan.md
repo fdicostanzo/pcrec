@@ -248,6 +248,18 @@ named, cleanly rejected and queried.
   an instrumented build with a lookup counter, the way run_trie_identity.sh
   uses `-DPCREC_NO_TRIE`, so no counter exists in the shipped build (TS-1 would
   reject one anyway). Pair with the M2.9 compile-time budgets
+- [MOD-STATE] STATE:not-started — TWO MODULES INHERIT A NON-LEXICAL DEPENDENCY,
+  measured at R6 and easy to design past accidentally. `(?(R)` is a recursion
+  condition or a named-group condition depending on whether the pattern declares
+  a group called `R` ANYWHERE — including AFTER the condition; `\ddd` is octal or
+  a backreference depending on the capture count seen so far. Neither is
+  resolvable from the doorway text, so module 'conditionals' needs a
+  whole-pattern group-name table (a pre-pass or a fix-up pass) and module
+  'backrefs' needs a running capture count, with its DIAGNOSTIC chosen from that
+  count rather than fixed. Both constructs are cleanly rejected today with the
+  right module named, so this is a design constraint, not a bug — recorded so no
+  handler signature is designed on the assumption that a row can identify the
+  construct. See D24's "THE LIMIT OF THE TABLE" and K2
 - [SR-6] STATE:not-started — MODULE HANDLERS move to src/parse/ext/*.c as each
   module lands (esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc,
   grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier,
