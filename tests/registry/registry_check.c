@@ -403,6 +403,17 @@ static void check_table_to_parser(void)
              * NOT taken. A row that claims this must be right about it. */
             snprintf(label, sizeof label, "esc %s: base syntax inside a class, as the row claims", r->syntax);
             expect_compiles(label, pat);
+        } else if (r->flags & RF_CLASS_INVALID) {
+            /* PCRE2 forbids the construct inside a class permanently, so the
+             * in-class answer must promise NO module — the row's module is the
+             * right answer for the ATOM and a lie for the class position
+             * (R9/SPEC-classes-F1). Asserting the absence explicitly, because
+             * "does not contain 'requires module'" is the property, not the
+             * particular wording D26 leaves free. */
+            snprintf(want, sizeof want, "\\%c is not valid inside a character class", r->sel);
+            snprintf(label, sizeof label, "esc %s: in-class refusal promises no module", r->syntax);
+            expect_msg(label, pat, want);
+            continue;
         } else {
             snprintf(want, sizeof want, "\\%c in a class requires module '%s'", r->sel, r->module);
             snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);
@@ -692,7 +703,14 @@ int main(void)
      * doorways it was written to describe. A critic pass found it. */
     printf("\n== parser -> table (255-byte sweep of ALL FOUR doorways) ==\n");
     sweep(RK_ESC,          "\\%c",      "after a backslash", 0, false);
-    sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class", RF_CLASS_BASE, false);
+    /* RF_CLASS_INVALID joins RF_CLASS_BASE as a reason a row is deliberately not
+     * a "requires module" doorway in the class position — the first because the
+     * byte is base syntax there, the second because PCRE2 forbids the construct
+     * there permanently and a module must not be promised (R9/SPEC-classes-F1).
+     * The two are excused here and asserted POSITIVELY in check_table_to_parser,
+     * so being on this list is not a way to escape being checked. */
+    sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class",
+          RF_CLASS_BASE | RF_CLASS_INVALID, false);
     sweep(RK_GROUP,        "(?%c",      "after (?", 0, false);
     /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
      * doorway is decided by a NAME and a byte sweep varies one byte. It proves

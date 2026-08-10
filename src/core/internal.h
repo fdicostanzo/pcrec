@@ -253,7 +253,19 @@ enum {
      * over-promise Q1 removed at `(*`: without it pcrec answered "requires
      * module 'classes'" for all 12531 candidate names where libpcre2 has 14,
      * so its answer did not depend on the name at all (R8/C4-7). */
-    RF_CLASS_NAMED = 1u << 2
+    RF_CLASS_NAMED = 1u << 2,
+
+    /* PCRE2 forbids this construct INSIDE a character class, permanently — no
+     * option, no version, no future in which `[\A]` means anything (error 107,
+     * or 71 for `\N`). So the in-class doorway must NOT name a module for it:
+     * module `assertions` will implement `\A`, and will never implement
+     * `\A`-in-a-class, because that is not a construct. Same defect as
+     * `(*NOTAVERB)` and `[[:foo:]]`, at the third doorway (R9/SPEC-classes-F1).
+     *
+     * Distinct from RF_CLASS_BASE, which says the byte is BASE syntax in a class
+     * and the doorway is never entered (`[\b]` is backspace). This says the
+     * doorway IS entered and the answer is a refusal that promises nothing. */
+    RF_CLASS_INVALID = 1u << 3
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */

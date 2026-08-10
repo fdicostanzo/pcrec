@@ -293,10 +293,29 @@ done
 
 echo
 echo "== character-type escapes -> module 'classes' =="
-for e in d D s S w W h H v V N; do
+for e in d D s S w W h H v V; do
     reject "\\$e"     "\\$e requires module 'classes'"
     reject "[\\$e]"   "\\$e in a class requires module 'classes'"
 done
+# `\N` is the exception and PCRE2 is the reason: the ATOM is a real construct
+# module `classes` will implement, and INSIDE a class PCRE2 forbids it outright
+# (error 71) and always will. So the two positions get two different KINDS of
+# answer, and the in-class one must promise no module (R9/SPEC-classes-F1).
+reject '\N'    "\N requires module 'classes'"
+reject '[\N]'  "\N is not valid inside a character class"
+
+# The other nine escapes PCRE2 forbids inside a class, same rule, error 107.
+# The atom is real and owed a module; the in-class position is not a construct,
+# so naming one there is the over-promise D26 calls a defect. Found by a test
+# writer reading the spec with no sight of src/ — the knowledge was already in
+# the `\N` row's own note, in a field nothing reads.
+for e in A B G K Z z C R X; do
+    reject "[\\$e]"  "\\$e is not valid inside a character class"
+done
+# ...and the control that keeps the rule from swallowing the whole doorway:
+# `\b` inside a class is BASE syntax (backspace), and `\d` is a real construct
+# PCRE2 supports there, so it still names its module. Both directions pinned.
+accept '[\b]'
 reject '[[:alpha:]]' "POSIX class [:...:] requires module 'classes'"
 reject '[[:^alpha:]]' "POSIX class [:...:] requires module 'classes'"   # ^ negates
 reject '[[:xdigit:]]' "POSIX class [:...:] requires module 'classes'"
@@ -934,6 +953,8 @@ must_have '[:alpha:]' \
     "K3's over-ACCEPTANCE: pcrec compiled this into a matcher for {: a l p h}"
 must_have '[a[:b]' \
     "K3's over-REJECTION, the same missing flag from the other side"
+must_have '[\N]' \
+    "R9/SPEC-classes-F1: the in-class position of a REAL construct that PCRE2 forbids there permanently. Without it, promising module 'classes' for [\\N] returns unnoticed"
 must_have '[0-[:digit:]]' \
     "R9/SPEC-FA: a class construct as a range ENDPOINT is PCRE2 error 150, and pcrec emitted a matcher for it. The only reject row for a tier-1 miscompile found by spec-first testing"
 must_have '[0-[:digit]' \
@@ -991,8 +1012,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 206 ] || [ "$naccept" -ne 61 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 206 / 61 / 0." >&2
+if [ "$nrej" -ne 215 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 215 / 62 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

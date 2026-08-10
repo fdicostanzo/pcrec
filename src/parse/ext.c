@@ -70,6 +70,18 @@ void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
     if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL)
         BAD_ROW(cx, at, "an escape");
 
+    /* PCRE2 forbids some of these INSIDE a class and always will, so naming a
+     * module there is the over-promise D26 calls a defect: module `assertions`
+     * will implement `\A`, and will never implement `\A`-in-a-class, because
+     * that is not a construct (error 107; 71 for `\N`). Ten rows carry the flag
+     * — A B G K Z z C R X N — and it was found by a test writer reading the spec
+     * with no sight of this file (R9/SPEC-classes-F1). The knowledge was already
+     * HERE, in the `\N` row's own note, in a field no check reads.
+     *
+     * Distinct from RF_CLASS_BASE, where the doorway is never entered at all
+     * (`[\b]` is backspace, base syntax). */
+    if (in_class && (r->flags & RF_CLASS_INVALID))
+        ctx_fail(cx, at, "\\%c is not valid inside a character class", c);
     if (in_class)
         ctx_fail(cx, at, "\\%c in a class requires module '%s'", c, r->module);
     if (r->diag == RD_MODULE_OCTAL)

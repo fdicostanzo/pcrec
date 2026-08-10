@@ -160,6 +160,10 @@
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
  * which is a different thing from the construct's semantics. */
+/* as ESC, but PCRE2 forbids the construct INSIDE a class and always will, so
+ * the in-class answer must promise no module (R9/SPEC-classes-F1). */
+#define ESC_CLASS_INVALID(sel, syn, mod, eng, note) \
+    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note)}
 #define ESC_DIGIT(sel, syn, eng, note) \
     {RK_ESC, (sel), (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note)}
 /* (?X -> "(?X...) requires module 'M'" */
@@ -197,16 +201,16 @@ ESC('H', "\\H", classes, ANY_ENGINE, "any character that is not horizontal white
  * flavour-varying row, i.e. the single member of the set SR-7 is deferred for. */
 ESC('v', "\\v", classes, ANY_ENGINE, "any vertical whitespace character (NOT vertical tab; python re disagrees)"),
 ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitespace"),
-ESC('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)"),
+ESC_CLASS_INVALID('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)"),
 
 ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
                "word boundary — but inside a class it is BASE syntax: backspace (0x08)"),
-ESC('B', "\\B", assertions, ANY_ENGINE, "not a word boundary"),
-ESC('A', "\\A", assertions, ANY_ENGINE, "start of subject"),
-ESC('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline"),
-ESC('z', "\\z", assertions, ANY_ENGINE, "end of subject"),
-ESC('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject"),
-ESC('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match"),
+ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary"),
+ESC_CLASS_INVALID('A', "\\A", assertions, ANY_ENGINE, "start of subject"),
+ESC_CLASS_INVALID('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline"),
+ESC_CLASS_INVALID('z', "\\z", assertions, ANY_ENGINE, "end of subject"),
+ESC_CLASS_INVALID('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject"),
+ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match"),
 
 ESC('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n}"),
 ESC('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name}"),
@@ -217,9 +221,9 @@ ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Uni
 ESC('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E"),
 ESC('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q"),
 
-ESC('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence"),
-ESC('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster"),
-ESC('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode"),
+ESC_CLASS_INVALID('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence"),
+ESC_CLASS_INVALID('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster"),
+ESC_CLASS_INVALID('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode"),
 ESC('c', "\\cX",     misc, ANY_ENGINE, "control character: \\cX is X xor 0x40"),
 ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code"),
 

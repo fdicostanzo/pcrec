@@ -3432,3 +3432,33 @@ Suite: 1012 corpus / 83 CLI / 206 reject + 67 iterated (335 checks) / 129
 registry / 98 PC-3 / 29 codegen / 7 trie-identity. All five gates green, and
 bench GATED this time (load 5.72; the earlier runs were inconclusive at load 31
 because these very spec writers were saturating the box).
+
+### SPEC-classes-F1 — ten escapes promised a module for a non-construct
+
+The second spec-first writer's finding, same method and the same class of
+defect: `[\A]` `[\B]` `[\G]` `[\K]` `[\Z]` `[\z]` `[\C]` `[\R]` `[\X]` are
+libpcre2 error 107 and `[\N]` is error 71 — PCRE2 forbids these INSIDE a class
+permanently, no option and no version. pcrec answered "\A in a class requires
+module 'assertions'". Module `assertions` will implement `\A`; it will never
+implement `\A`-in-a-class, because that is not a construct. Tier 2 under D26,
+and the same defect as `(*NOTAVERB)` and `[[:foo:]]` at the third doorway.
+
+**The knowledge was already in this repository and inert.** The `\N` row's own
+note says "any character except newline (PCRE2 forbids it inside a class)" — in
+the `note` field, which R8 recorded as read by NO external check. The fact was
+written down, correct, and unusable, because every test was derived from what
+the code does rather than from what the row says.
+
+Fixed with `RF_CLASS_INVALID` on those ten rows, distinct from RF_CLASS_BASE
+(where the doorway is never entered — `[\b]` is backspace). Both directions
+pinned: `[\b]` still compiles, `[\d]` and `[\v]` still name their module.
+
+Both existing tripwires caught the change immediately — the in-class message
+check and the 255-byte in-class sweep — which is the suite working. The sweep
+now excuses RF_CLASS_INVALID the way it already excused RF_CLASS_BASE, and
+check_table_to_parser asserts the refusal POSITIVELY, so being on the excused
+list is not a way to escape being checked.
+
+Suite: 1012 corpus / 83 CLI / 215 reject + 67 iterated (345 checks) / 129
+registry / 98 PC-3 / 29 codegen / 7 trie-identity. All five gates green, bench
+gated on a quiet box (load 0.87).
