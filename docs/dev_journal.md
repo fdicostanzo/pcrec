@@ -2494,3 +2494,36 @@ tree and kept them out of the matrix. That is how provenance should be handled.
 
 Suite now 805/73/199/127+2/29/7. Byte-identity re-verified after every change:
 4183 cases against a pre-SR-2 build, zero differences.
+
+### R6 addendum — the exact counts I added disarm themselves, and what T-12 reframes
+
+The testability critic finished last and found the hole in the fix I had just
+landed. R5 converted two coverage floors to exact counts. **An exact count
+disarms itself for anyone who follows the failure message's own instructions.**
+Measured: delete the registry rows for `\0 \3 \4 \5 \6 \7` — chosen because the
+hand-written digit loop was `for d in 1 2 8 9`, so those six were covered ONLY
+by dump iteration — then bump `total != 67` to `61` as registry_check invites,
+then run `compliance_section.py --write` as ITS message invites. Every suite
+green. `\3` then reported "unknown escape \3", i.e. pcrec claiming it is not a
+PCRE construct at all.
+
+Closed by extending the digit loop to all ten by hand, and by making
+compliance_section.py's last floor (`len(rows) < 60`, seven rows of slack, mine)
+exact. Re-ran the critic's exact sabotage: **7 reject failures, and `registry`
+still misses it entirely** — the two-layer argument confirmed a third time, from
+a direction I had not tested.
+
+**T-12 is the finding that reframes the whole design question.** The strongest
+argument for name-keyed rows is not expressiveness, it is that a MISSING row
+becomes externally falsifiable: probe candidate names from outside pcrec against
+libpcre2 and assert pcrec agrees. Delete a verb row, misspell it, shadow it, or
+invent one — all detected, and none of those is detectable by anything in this
+repo today at any effort.
+
+But the dependency is not the selector shape. It is Q1 — a distinct
+"recognised but not a known name" outcome. Without it the catch-all answers for
+every name and every assertion collapses, which is precisely the over-promise
+R6 measured at both the `(?` and `(*` doorways. **Q1 + PC-3 are the load-bearing
+pair, both buildable against today's 67-row table.** The selector change is
+secondary. That is worth knowing before anyone reaches for the interesting
+refactor first.

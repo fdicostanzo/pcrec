@@ -166,7 +166,15 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 echo
 echo "== backreferences =="
 for e in k g; do reject "\\$e" "\\$e requires module 'backrefs'"; done
-for d in 1 2 8 9; do reject "\\$d" "requires module 'backrefs'"; done
+# ALL TEN digits, by hand. It was `for d in 1 2 8 9`, and R6's testability
+# critic used the gap: it deleted the rows for 0,3,4,5,6,7 — chosen precisely
+# because those six were covered ONLY by dump iteration — bumped the exact row
+# count as registry_check's own failure message invites, re-ran
+# compliance_section.py --write as ITS failure message invites, and every suite
+# passed. `\3` then reported "unknown escape \3", i.e. pcrec claiming it is not
+# a PCRE construct at all. An exact count disarms itself for anyone who follows
+# the instructions; a hand-written row does not.
+for d in 0 1 2 3 4 5 6 7 8 9; do reject "\\$d" "requires module 'backrefs'"; done
 
 echo
 echo "== unicode properties, quoting, misc escapes =="
@@ -414,8 +422,8 @@ echo "checks failed: $fail"
 # not give you the set either, but they make every deletion deliberate and
 # visible in the diff, which is what the slack removed. If you added or removed
 # coverage on purpose, update these three numbers in the same commit.
-if [ "$nrej" -ne 111 ] || [ "$naccept" -ne 22 ] || [ "$nwrong" -ne 5 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 111 / 22 / 5." >&2
+if [ "$nrej" -ne 117 ] || [ "$naccept" -ne 22 ] || [ "$nwrong" -ne 5 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 117 / 22 / 5." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

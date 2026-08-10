@@ -360,3 +360,39 @@ against 67 rows nobody has checked.
 5. **Found one new divergence while doing (4):** `[[:]]` — PCRE2 accepts it (no
    `:]` terminator, so `[` and `:` are ordinary members) and pcrec rejects it.
    Same family as K3/K4, previously unrecorded, now pinned.
+
+## 9. T-12 — the payoff neither §2 nor §7 claims, and it is not about selectors
+
+The testability critic found the strongest argument in this whole review, and
+the proposal does not make it.
+
+Every finding in R4, R5 and R6 runs into one wall: **a check that iterates what
+EXISTS cannot see what is MISSING.** The hand-written manifest is the only
+answer the project has, and it covers 8 rows.
+
+For the two NAME-keyed doorways that wall comes down, automatically:
+
+    for each candidate name s, from a source OUTSIDE pcrec
+        (pcre2syntax.html, generated, or fuzzed — never the registry):
+      pcre2_ok = libpcre2 compiles "(*" + s + ")"
+      assert  pcre2_ok  =>  pcrec says "requires module"
+      assert !pcre2_ok  =>  pcrec says "not recognized"
+
+Delete the `ACCEPT` row: detected. Misspell it `ACCPET`: detected. Shadow it
+with a longer row: detected. Add a row for a verb PCRE2 does not have:
+detected. **None of those is detectable by anything in this repo today, at any
+effort.** It is the first mechanism the project has had that scales coverage
+without scaling human transcription.
+
+**But read what it actually depends on.** Not string selectors — Q1. The check
+above collapses the moment the catch-all answers for every name, because then
+pcrec says "requires module 'verbs'" for `(*NOTAVERB)` too, which is exactly the
+over-promise R6 measured (F22) and exactly what happens today. What unlocks it
+is a distinct *recognised-but-not-a-known-name* outcome. That is Q1, and the
+cost critic's own comparison table lists Q1 as **orthogonal to both designs.**
+
+**Consequence for sequencing, and it strengthens the adopted order rather than
+changing it:** Q1 + PC-3 are the load-bearing pair, and both are buildable
+against today's 67-row table. The selector shape is secondary and can follow.
+Anyone tempted to reach for §7 first because it is the interesting change should
+read this section again.

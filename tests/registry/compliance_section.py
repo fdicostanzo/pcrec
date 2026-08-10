@@ -56,9 +56,13 @@ def dump():
             sys.exit(f"compliance_section: dump row has {len(f)} fields, "
                      f"expected {len(COLS)}: {line!r}")
         rows.append(dict(zip(COLS, f)))
-    if len(rows) < 60:
-        sys.exit(f"compliance_section: dump has only {len(rows)} rows — refusing "
-                 "to render an index that would silently lose coverage")
+    # EXACT, not a floor. This was `< 60` against 67 rows, i.e. seven rows of
+    # slack in the one absolute anchor either doc-side check had (R6 T-4).
+    # Bumping it is deliberate and belongs in the same commit as the row.
+    if len(rows) != 67:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 67. "
+                 "If you added or removed a construct deliberately, update this "
+                 "number in the same commit; if not, coverage was lost")
     return rows
 
 
