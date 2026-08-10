@@ -279,6 +279,26 @@ GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Pe
 GROUP('P',  "(?P<name>...)", named_groups,     VM_ONLY,
       "python-style named group (?P<n>...), backreference (?P=n), recursion (?P>n)"),
 GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group"),
+/* THE SECOND ROW THIS FILE'S PURPOSE IS MADE OF, and it arrived the same way
+ * the first did — three homes disagreeing, found by an outside reading rather
+ * than by any test. `(?*...)` is PCRE2's NON-ATOMIC POSITIVE LOOKAHEAD, the
+ * `(?` spelling of `(*napla:...)`. Q1's verb table already knew `napla`, and
+ * docs/pcre2_compliance.md has named `(?*...)` as non-atomic lookaround since
+ * the 2026-08-09 survey; only this table did not, so the `(?` catch-all
+ * answered "requires module 'modifiers'" for it — the wrong module, which is
+ * the one fact the diagnostic exists to carry.
+ *
+ * Proven BEHAVIOURALLY rather than by reading a name (R8/C4-8), because a
+ * construct that merely compiles proves nothing about what it is. On "abab":
+ *
+ *     (?*(a|ab))\1$    matches [2,4)      <- non-atomic: retries the alternation
+ *     (?=(a|ab))\1$    NO MATCH           <- atomic lookahead: keeps its first
+ *     (*napla:(a|ab))\1$ matches [2,4)    <- the same construct, verb spelling
+ *
+ * `(?<*...)` is the lookbehind of the same family and needs no row: it enters
+ * through the `<` selector, which already names lookaround. */
+GROUP('*',  "(?*a)",         lookaround,       VM_ONLY,
+      "non-atomic positive lookahead — the (? spelling of (*napla:...)"),
 GROUP('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
 GROUP('C',  "(?C1)",         callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text})"),
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,

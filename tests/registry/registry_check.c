@@ -266,8 +266,8 @@ static void check_wellformed(void)
      * 8 rows; this makes the other 59 undeletable-by-accident. Adding a row is
      * a one-line bump here, in the same commit — which is the point, not the
      * cost. */
-    if (total != 67) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 67. If you added or "
+    if (total != 68) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 68. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {

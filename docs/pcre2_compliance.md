@@ -238,7 +238,7 @@ commits to. The blocker is table generation and size, not matching.
 | `(?=...)` `(?!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround`. Lookahead is automaton intersection — feasible, not cheap, and it multiplies states |
 | `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround/named-groups`. Fixed-length lookbehind is tractable via the reverse machine D7 already builds; variable-length is much harder |
 | `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` verbose spellings | `REJECTED` | — | module `verbs`; same underlying feature |
-| `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` | the non-atomic variants are defined by their backtracking behaviour |
+| `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` | module `lookaround`. The non-atomic variants are defined by their backtracking behaviour. **This row was RIGHT and the registry was WRONG** until R8/C4-8: `(?*...)` had no registry row, so the `(?` catch-all answered "requires module 'modifiers'" for it. Three homes, one disagreeing — the `\v` shape exactly, and found the same way, by reading an outside source rather than by any test |
 
 ## Substring scan, script runs
 
@@ -423,7 +423,7 @@ predictions were — and record it here when one turns out wrong.
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 67 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 68 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 | doorway | syntax | status | module | engines | PCRE2 semantics |
 |---|---|---|---|---|---|
@@ -473,6 +473,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 67 rows f
 | after `(?` | `(?'name'...)` | `REJECTED` | `named-groups` | vm | named capture group, Perl-style quoting |
 | after `(?` | `(?P<name>...)` | `REJECTED` | `named-groups` | vm | python-style named group (?P<n>...), backreference (?P=n), recursion (?P>n) |
 | after `(?` | `(?>...)` | `REJECTED` | `atomic-groups` | vm | atomic (non-backtracking) group |
+| after `(?` | `(?*a)` | `REJECTED` | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
 | after `(?` | `(?#...)` | `REJECTED` | `comments` | dfa|vm | comment, discarded up to the next ')' |
 | after `(?` | `(?C1)` | `REJECTED` | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) |
 | after `(?` | `(?\|...)` | `REJECTED` | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |

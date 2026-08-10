@@ -190,7 +190,15 @@ CLAUDE.md files, commit, push.
   2026-08-10: libpcre2 recognises 14 POSIX class names and pcrec answers
   "requires module 'classes'" for all 12531 candidates — its answer does not
   depend on the name at all. Land the 14-name table with the K3/K4 fix; PC-3's
-  machinery then differentials it the same way it does verbs, for free. R6's testability critic showed the "the fix would be thrown away"
+  machinery then differentials it the same way it does verbs, for free.
+  **ACCEPTANCE CRITERION, carried over from PC-3's own spec text (R8/C4-9):**
+  PC-3 was specced as "the natural home for the finding that pcrec accepts
+  `[:alpha:]` — findable mechanically", and that differential was NOT built,
+  because it goes red today on a pinned deferred bug. FIX-2 is not done until
+  `tests/registry/pcre2_check.c` finds K3 and all four K4 cases MECHANICALLY,
+  and the four known-wrong pins in tests/reject/ have moved into the normal
+  tables. Also add the `"[%ca%c]"` sweep template registry_check.c is missing —
+  its current `"[[%ca%c]]"` only tests doorway 4b. R6's testability critic showed the "the fix would be thrown away"
   premise was wrong (K4 is untouched by any selector scheme, and its structural
   scan must exist under every design), and fixing them first gives the registry
   change a correctness target at the doorway it changes most. The four

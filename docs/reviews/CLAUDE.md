@@ -49,7 +49,10 @@ most of the odd-looking test cases trace to a finding recorded here.
   magnitude rule, a name-length boundary the candidate cap sat below), a fix
   whose guard scored ZERO until two probe forms were added, and the headline:
   the over-promise Q1 removed at the doorway with ONE row is still open at the
-  doorways with 24 and 3, which are 217x and 900x wider.
+  doorways with 24 and 3, which are 217x and 900x wider. The panel's closing
+  report then found a LIVE wrong-module bug — `(?*...)` is the non-atomic
+  positive lookahead and was answered "requires module 'modifiers'" — with the
+  registry the only one of its three homes that had it wrong.
 
 ## Conventions
 

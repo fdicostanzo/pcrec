@@ -308,6 +308,14 @@ reject '(?|a)'    "requires module 'branch-reset'"
 reject '(?(1)a)'  "requires module 'conditionals'"
 reject '(?R)'     "requires module 'recursion'"
 reject '(?&n)'    "requires module 'recursion'"
+# `(?*...)` is the NON-ATOMIC positive lookahead, not an option setting. It was
+# answered "requires module 'modifiers'" by the `(?` catch-all until R8/C4-8,
+# while pcrec's own verb table already knew `(*napla:...)` and
+# docs/pcre2_compliance.md already called it non-atomic lookaround — three
+# homes, one disagreeing, which is the `\v` bug's exact shape. Hand-written
+# here because the iterated probe reads the module from the same row the parser
+# renders from and so cannot see a wrong name.
+reject '(?*a)'    "requires module 'lookaround'"
 # All ten numeric recursion rows, by hand. Iterating the dump probes them, but
 # reads the module name from the same row the parser renders from, so it cannot
 # see a wrong name — these nine were the largest block of rows with no
@@ -656,7 +664,7 @@ else
     nexpected=$(awk -F'\t' '!/^#/ && NF == 12 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
-    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 66 ]; then
+    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 67 ]; then
         ok "iterated every non-base row in the dump ($niter)"
     else
         bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
@@ -749,8 +757,8 @@ fi
 # deliberate and visible in the diff, which is what the slack removed. If you
 # added or removed coverage on purpose, update these three numbers in the same
 # commit — and check first whether the row belongs in the manifest above.
-if [ "$nrej" -ne 180 ] || [ "$naccept" -ne 45 ] || [ "$nwrong" -ne 5 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 180 / 45 / 5." >&2
+if [ "$nrej" -ne 181 ] || [ "$naccept" -ne 45 ] || [ "$nwrong" -ne 5 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 181 / 45 / 5." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

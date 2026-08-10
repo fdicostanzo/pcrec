@@ -22,8 +22,13 @@ directory asserts that the description and the shipped parser actually agree.
 1. **Well-formedness** — no two rows claim one byte, catch-all rows come last,
    each row's `syntax` example really contains its selector byte, and the
    status/module/feature/engines/diagnostic fields are mutually consistent.
-   Plus a coverage floor (67 rows today, floor 60) so rows cannot be deleted
-   silently — the same "TABLE SHRANK" guard tests/reject/ carries.
+   Plus an EXACT row count (68 today) so rows cannot be deleted silently — the
+   same "TABLE SHRANK" guard tests/reject/ carries. Note what R8/C4-10 measured
+   about all three of these exact-count tripwires: each prints its own remedy,
+   so following their instructions verbatim is how a row with a WRONG MODULE
+   gets past the whole suite. They make a change VISIBLE in the diff; they do
+   not make a wrong one fail. Only the hand-written rows in tests/reject/ do
+   that, and only for rows someone wrote one for.
 2. **table → parser** — every row's `syntax` is compiled for real, and the
    diagnostic must match the row EXACTLY. Substring matching would let a row
    name the wrong module and still pass.

@@ -2892,3 +2892,40 @@ worth budgeting for rather than treating as an exception — it has happened at
 every panel since R3.
 
 **Next: FIX-2** (K3 and K4, plus C4-7's POSIX name table), then Q2, then SR-9.
+
+### R8 follow-up — a live wrong-module bug the panel found after the commit
+
+C4's closing report landed after `95d18d2` and carried three findings I had not
+read. One is a real bug and it is the `\v` shape, again, third time:
+
+**`(?*...)` is PCRE2's NON-ATOMIC POSITIVE LOOKAHEAD**, the `(?` spelling of
+`(*napla:...)`, and the registry had no row for it — so the `(?` catch-all
+answered "requires module 'modifiers'", which is the wrong module, which is the
+one fact that diagnostic exists to carry. Proven behaviourally rather than by
+reading a name, on "abab": `(?*(a|ab))\1$` matches [2,4), `(?=(a|ab))\1$` does
+not, `(*napla:(a|ab))\1$` matches [2,4).
+
+**Three homes, one disagreeing.** Q1's own verb table already knew `napla`, and
+docs/pcre2_compliance.md has called `(?*...)` non-atomic lookaround since the
+2026-08-09 survey. Only registry.c did not. Nothing in the repo covered it —
+`grep -rn '(?\*' tests/` was empty.
+
+I swept the whole doorway rather than fixing the instance: of the 21 byte-values
+libpcre2 accepts after `(?`, `*` is the ONLY one pcrec routed to the wrong
+module. `(?<*...)` needs no row — it enters through `<`, which already names
+lookaround.
+
+**The other two are limits, recorded rather than fixed.** PC-3's own spec text
+promised it would be "the natural home for the finding that pcrec accepts
+`[:alpha:]` — findable mechanically" and that differential was not built; it
+would go red today on a pinned deferred bug, so it is now FIX-2's acceptance
+criterion instead of PC-3's prose. And a critic added a REAL PCRE2 construct
+with the WRONG module, hit all three exact-count tripwires, followed each one's
+printed remedy verbatim, and got a green `make test` with a passing PC-3. That
+is the residual SR-4 deferred to PC-3 and PC-3 does not close it: libpcre2 can
+say a construct exists and cannot say what pcrec should call its module. I hit
+all three tripwires myself adding the `(?*` row, which is the honest
+illustration — the legitimate path and the attack are the same path.
+
+Registry is 68 rows. Suite: 876 / 83 / 181+67 reject / 128 registry / 76 PC-3 /
+29 codegen / 7 trie-identity.
