@@ -422,8 +422,36 @@ echo
 echo "== (?...) constructs =="
 reject '(?=a)'    "requires module 'lookaround'"
 reject '(?!a)'    "requires module 'lookaround'"
-reject '(?<=a)'   "requires module 'lookaround/named-groups'"
-reject '(?<!a)'   "requires module 'lookaround/named-groups'"
+# The three lookbehind TAILS on `<`, split from the named group at Q2/SR-9.
+# These read 'lookaround/named-groups' until then — a compound module name that
+# was a true sentence and an inexact answer, where D26 makes attribution tier 2.
+# Measured over all 256 tails: exactly `=`, `!` and `*` are lookaround and every
+# other byte is the named-group path. Hand-written HERE because that is the only
+# check of a module NAME — libpcre2 can say the construct exists and can never
+# say pcrec should call it 'lookaround'.
+reject '(?<=a)'   "requires module 'lookaround'"
+reject '(?<!a)'   "requires module 'lookaround'"
+reject '(?<*a)'   "requires module 'lookaround'"
+reject '(?<n>a)'  "requires module 'named-groups'"
+# `(?P` is three constructs and three modules, and answered 'named-groups' for
+# all three until Q2 (R8/C4-7, re-derived independently by a spec-first writer).
+reject '(?P=n)'   "requires module 'backrefs'"
+reject '(?P>n)'   "requires module 'recursion'"
+# ...and every other tail after `(?P` is PCRE2 error 141 with its own message,
+# which the byte-keyed row promised a module for. Found by the tail sweep this
+# step added, not by the plan.
+reject '(?PX)'    "unrecognized character after (?P"
+# The relative subroutine calls. Both fell to the `(?` catch-all and were called
+# 'modifiers'; `(?+N)` and `(?-N)` are the relative spellings of `(?1)`..`(?9)`,
+# which this table has always called 'recursion'.
+reject '(?+1)'    "requires module 'recursion'"
+reject '(a)(?-1)' "requires module 'recursion'"
+# `-` is the one byte at this doorway carrying two modules, which is why it has
+# ten digit tails AND a bare row rather than a compound name.
+reject '(?-i)'    "requires module 'modifiers'"
+# The extended character class, the third misattribution: a class with set
+# operations, not an option setting.
+reject '(?[[a]])' "requires module 'classes'"
 reject "(?'n'a)"  "requires module 'named-groups'"
 reject '(?P<n>a)' "requires module 'named-groups'"
 reject '(?>a)'    "requires module 'atomic-groups'"
@@ -449,9 +477,38 @@ for d in 0 1 2 3 4 5 6 7 8 9; do
     reject "(?$d)" "requires module 'recursion'"
 done
 # The pattern ENDS at the doorway. `c2 == -1` is also REG_SEL_ANY's value, so
-# the lookup lands on the catch-all twice over, and parse.c has always printed
-# '?' for the missing byte. Nothing covered this before R5.
-reject '(?'       "(??...) requires module 'modifiers'"
+# the lookup lands on the catch-all twice over. Until Q2 that catch-all promised
+# module 'modifiers' and this pin read "(??...) requires module 'modifiers'" —
+# a module promised for a truncated pattern, with a `??` in it because there was
+# no byte to print. The catch-all now agrees with PCRE2 that no construct begins
+# here. Both versions REJECT; the difference is the promise, which is tier 2.
+reject '(?'       "unrecognized character after (? or (?-"
+# THE Q2 ROWS. 217 of the 255 probeable bytes after `(?` were told a pcrec module
+# would implement syntax libpcre2 rejects outright (error 111). A sample is
+# pinned by hand here because PC-3's generated differential and this table fail
+# differently: the differential proves the POPULATION agrees with libpcre2, and
+# these prove the SENTENCE, which libpcre2 cannot judge.
+reject '(?q)'     "unrecognized character after (? or (?-"
+reject '(?Z)'     "unrecognized character after (? or (?-"
+reject '(?~)'     "unrecognized character after (? or (?-"
+# ...and the same over-promise one level down, which splitting the catch-all
+# into eleven option-letter rows did NOT fix: the row is chosen by the first
+# byte, so `(?iZ)` still promised 'modifiers' until the doorway read the whole
+# option RUN. Found while writing the differential, not before it.
+reject '(?iZ)'    "unrecognized character after (? or (?-"
+reject '(?-Z)'    "unrecognized character after (? or (?-"
+reject '(?i-Z)'   "unrecognized character after (? or (?-"
+reject '(?aPP)'   "unrecognized character after (? or (?-"
+# The other direction, and the mirror mistake: these ARE option settings PCRE2
+# recognises (error 194, "invalid hyphen in option setting"), so refusing them a
+# module would be an UNDER-promise. The first version of the run rule got this
+# wrong for 24 shapes and the differential refused it.
+reject '(?i-m-s)' "requires module 'modifiers'"
+reject '(?^-i)'   "requires module 'modifiers'"
+reject '(?--D)'   "requires module 'modifiers'"
+# `a` takes exactly one ASCII-restrict sub-option, which is invisible to any
+# rule derived from single letters: `(?aP)` compiles and `(?aPP)` is error 111.
+reject '(?aP)'    "requires module 'modifiers'"
 # `(*` used to be answered "requires module 'verbs'" here. Q1 changed it, and
 # the change is a correction: PCRE2 reads a bare `(*` as `(` followed by a
 # quantifier with nothing to quantify (error 109), and there is no verb name at
@@ -861,7 +918,8 @@ else
     nexpected=$(awk -F'\t' '!/^#/ && NF == 12 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
-    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 67 ]; then
+    # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).
+    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 99 ]; then
         ok "iterated every non-base row in the dump ($niter)"
     else
         bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
@@ -1012,8 +1070,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 215 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 215 / 62 / 0." >&2
+if [ "$nrej" -ne 235 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 235 / 62 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

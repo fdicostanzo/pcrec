@@ -142,20 +142,27 @@
 #define M_recursion      FEAT_RECURSION,     "recursion"
 #define M_modifiers      FEAT_MODIFIERS,     "modifiers"
 #define M_verbs          FEAT_VERBS,         "verbs"
-/* One byte, two constructs: `(?<` is lookbehind OR a named group. The compound
- * name is the diagnostic PCREC prints today and SR-2 must reproduce it. */
-#define M_lookaround_named \
-    FEAT_LOOKAROUND | FEAT_NAMED_GROUPS, "lookaround/named-groups"
+/* THERE IS NO COMPOUND MODULE MACRO ANY MORE. `M_lookaround_named`
+ * ("lookaround/named-groups") lived here for `(?<`, one byte meaning two
+ * constructs, and SR-9's `tail` retired it: `(?<=`, `(?<!` and `(?<*` are
+ * lookaround rows and every other tail is a named group. A compound name is a
+ * true sentence and an inexact answer, and D26 puts module attribution in
+ * tier 2, where the standard is exact.
+ *
+ * Kept as a comment rather than deleted silently because the next person to
+ * find one byte with two meanings will reach for this shape. Reach for `tail`
+ * instead, and only fall back to a compound name if the deciding text is not a
+ * literal prefix. */
 
 #define ANY_ENGINE  (ENGM_DFA | ENGM_VM)
 #define VM_ONLY     ENGM_VM
 
 /* \x outside a class -> "\x requires module 'M'" */
 #define ESC(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
 /* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
 #define ESC_CLASS_BASE(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note)}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
@@ -163,23 +170,35 @@
 /* as ESC, but PCRE2 forbids the construct INSIDE a class and always will, so
  * the in-class answer must promise no module (R9/SPEC-classes-F1). */
 #define ESC_CLASS_INVALID(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note)}
 #define ESC_DIGIT(sel, syn, eng, note) \
-    {RK_ESC, (sel), (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note)}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note) \
-    {RK_GROUP, (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+/* an inline option setting: the construct is the whole RUN, not this byte */
+#define GROUP_OPT(sel, syn, note) \
+    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note)}
+/* as GROUP, but the row applies only when `tl` FOLLOWS the selector byte (SR-9).
+ * One byte, several constructs: `(?P<` `(?P=` `(?P>` are a named group, a
+ * backreference and a subroutine call, and answering all three with one module
+ * was a tier-2 misattribution under D26. */
+#define GROUP_T(sel, tl, syn, mod, eng, note) \
+    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+/* PCRE2 rejects it, and the byte that decides is the one AFTER the selector. */
+#define REJECTED_T(kind, sel, tl, syn, msg, note) \
+    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note)}
 /* a construct whose entire diagnostic is fixed text rather than a template */
 #define FIXED(kind, sel, syn, mod, eng, msg, note) \
-    {(kind), (sel), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note)}
+    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note)}
 /* PCRE2 rejects it too: no module to name, no feature to enable, no engine to
  * lower to. Agreement IS compliance. */
 #define REJECTED(kind, sel, syn, msg, note) \
-    {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note)}
+    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note)}
 /* as REJECTED, but a delimiter-pair construct: RF_CLASS_DELIM carries the two
  * recognition rules that SR-2 moved out of parse.c — see internal.h. */
 #define REJECTED_DELIM(kind, sel, syn, msg, note) \
-    {(kind), (sel), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
+    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
      NULL, RF_CLASS_DELIM, (note)}
 
 /* ---- doorway 1: after '\' ----------------------------------------------
@@ -201,7 +220,43 @@ ESC('H', "\\H", classes, ANY_ENGINE, "any character that is not horizontal white
  * flavour-varying row, i.e. the single member of the set SR-7 is deferred for. */
 ESC('v', "\\v", classes, ANY_ENGINE, "any vertical whitespace character (NOT vertical tab; python re disagrees)"),
 ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitespace"),
+/* `\N` IS THREE CONSTRUCTS, split by tail at SR-9. The bare escape is "any
+ * character except newline"; `\N{U+hhhh}` is a Unicode code point; `\N{name}`
+ * is a Perl construct PCRE2 states it does not support. Measured against
+ * libpcre2 10.46:
+ *
+ *     \N            compiles
+ *     \N{U+0041}    error 193  "\N{U+dddd} is supported only in Unicode (UTF) mode"
+ *     \N{}  \N{name}  error 137  "PCRE2 does not support \F, \L, \l, \N{name}, \U, or \u"
+ *
+ * 193 is a CAPABILITY refusal, not a syntax one — our oracle compiles with
+ * options = 0 and so can never be in UTF mode, exactly as `(*TURKISH_CASING)`'s
+ * error 204 is bucketed with "PCRE2 recognised the construct" (Q1). So the
+ * construct is real and `unicode-props` owns it. 137 is PCRE2 saying it will
+ * never support the construct, which is what RS_REJECTED is for.
+ *
+ * The fact that `\N{U+hhhh}` is a distinct construct was ALREADY IN THIS FILE,
+ * in the bare row's own `note`, correct and inert, because `note` is read by no
+ * check (R8's finding, and R9's sharpest instance of it). SR-9 is what turned
+ * it into a row that answers. */
 ESC_CLASS_INVALID('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)"),
+/* THE SHORT TAIL IS WRITTEN FIRST ON PURPOSE. These two rows are the only
+ * prefix-related tail pair in the table (`{` is a proper prefix of `{U+`), which
+ * makes them the only place longest-tail-wins can be OBSERVED — and with `{U+`
+ * written first, a lookup that took the first matching tail instead of the
+ * longest would still answer correctly, so the rule would be untested. Putting
+ * `{` first makes row order DISAGREE with the rule, so the rule is load-bearing:
+ * a sabotage reducing find() to first-match-wins now produces a wrong answer
+ * here, and check_tail_precedence in registry_check.c asserts it directly.
+ *
+ * Measured: with the rows in the other order that sabotage produced ZERO
+ * failures across the whole repository. */
+REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
+           "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u",
+           "\\N{name} — PCRE2 states it does not support this Perl construct"),
+{RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
+ "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection"},
 
 ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
                "word boundary — but inside a class it is BASE syntax: backspace (0x08)"),
@@ -269,7 +324,7 @@ static const RegRow group_rows[] = {
  * reach it — parse.c answers `(?:` first, so this row costs zero lookups and the
  * ones a base pattern DOES perform are all at the class-bracket doorway. Written longhand deliberately — the only supported construct in the
  * file should not be able to hide inside a macro that means "rejected". */
-{RK_GROUP, ':', "(?:...)",
+{RK_GROUP, ':', NULL, "(?:...)",
  0, NULL,
  FLAV_PCRE2, ANY_ENGINE,
  RS_BASE, RD_NONE, NULL, NULL, 0,
@@ -277,11 +332,58 @@ static const RegRow group_rows[] = {
 
 GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead"),
 GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead"),
-GROUP('<',  "(?<=...)",      lookaround_named, VM_ONLY,
-      "lookbehind (?<=...) (?<!...), or named capture group (?<name>...)"),
+
+/* `<` IS THREE CONSTRUCTS AND A NAME, split by tail at SR-9 (Q2). It used to
+ * carry the compound module "lookaround/named-groups", which is a true sentence
+ * and an inexact answer — D26 makes module attribution tier 2, i.e. EXACT.
+ *
+ * Swept over all 256 tail bytes against libpcre2 10.46, which is the only way
+ * this was ever going to be right: exactly THREE tails are lookaround (`=`, `!`
+ * and `*`), and every other byte is the named-group path — either a valid name,
+ * error 162 "subpattern name expected", or error 144 for a leading digit. So
+ * the bare row below is `named-groups` and cannot be anything else.
+ *
+ * `(?<*` is the non-atomic positive LOOKBEHIND, the mirror of `(?*` above and
+ * the `(?` spelling of `(*naplb:...)`. It had no row at all before this sweep;
+ * the old comment claimed it "enters through the `<` selector, which already
+ * names lookaround", which was true only because that selector named lookaround
+ * for everything, including named groups. Splitting the row is what turned that
+ * into a fact needing its own line. */
+GROUP_T('<', "=", "(?<=...)", lookaround,   VM_ONLY, "positive lookbehind"),
+GROUP_T('<', "!", "(?<!...)", lookaround,   VM_ONLY, "negative lookbehind"),
+GROUP_T('<', "*", "(?<*a)",   lookaround,   VM_ONLY,
+      "non-atomic positive lookbehind — the (? spelling of (*naplb:...)"),
+GROUP('<',  "(?<name>a)",    named_groups,     VM_ONLY,
+      "named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows"),
+
 GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Perl-style quoting"),
-GROUP('P',  "(?P<name>...)", named_groups,     VM_ONLY,
-      "python-style named group (?P<n>...), backreference (?P=n), recursion (?P>n)"),
+
+/* `(?P` IS THE OTHER THREE-WAY BYTE, and the three are three DIFFERENT MODULES:
+ * a named group, a backreference and a subroutine call. One row answering
+ * "named-groups" for all three is R8/C4-7's misattribution, re-derived
+ * independently from the documents by a spec-first writer (D27) and confirmed
+ * here by measurement:
+ *
+ *     (?<n>a)(?P=n)   compiles     a BACKREFERENCE to group n
+ *     (?<n>a)(?P>n)   compiles     a SUBROUTINE CALL into group n
+ *     (?P<n>a)        compiles     a named group
+ *     (?PX)  (?P)     error 141    "unrecognized character after (?P"
+ *
+ * That last line is a FIFTH over-promise this sweep found and the plan did not
+ * list: 252 of the 255 probeable tails after `(?P` are error 141, and pcrec
+ * promised module 'named-groups' for every one of them. It is Q2's own defect
+ * one level down — the same catch-all shape, at a sub-doorway. */
+/* `syntax` must be a probe in which THIS row's construct is the LEFTMOST thing
+ * pcrec cannot handle, because that is the one pcrec reports. `(?<n>a)(?P=n)`
+ * looks like the better example and is the wrong field value: pcrec stops at
+ * the `(?<` and the row's own diagnostic never appears. The group declaration
+ * these two need to satisfy LIBPCRE2 goes in PC-3's WRAPPERS instead, which is
+ * exactly what that mechanism is for. */
+GROUP_T('P', "<", "(?P<name>a)", named_groups, VM_ONLY, "python-style named capture group"),
+GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backreference to a named group"),
+GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group"),
+REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
+         "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141"),
 GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group"),
 /* THE SECOND ROW THIS FILE'S PURPOSE IS MADE OF, and it arrived the same way
  * the first did — three homes disagreeing, found by an outside reading rather
@@ -320,12 +422,88 @@ GROUP('6',  "(?6)",          recursion,        VM_ONLY, "recurse into capture gr
 GROUP('7',  "(?7)",          recursion,        VM_ONLY, "recurse into capture group 7"),
 GROUP('8',  "(?8)",          recursion,        VM_ONLY, "recurse into capture group 8"),
 GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture group 9"),
-/* Catch-all, and it must stay last: everything else after `(?` is an inline
- * option setting. Options DENOTE rather than MEAN (D24's second axis), and
- * OS-1/D23 already showed one folding entirely into the automaton, which is why
- * this row is DFA-lowerable while most of its neighbours are not. */
-GROUP(REG_SEL_ANY, "(?i)", modifiers, ANY_ENGINE,
-      "inline option setting or scoping: (?i) (?im-sx:...) (?^) (?-i)"),
+/* THE RELATIVE SUBROUTINE CALLS. `(?+N)` calls the Nth group to the RIGHT and
+ * `(?-N)` the Nth to the LEFT — the relative spellings of `(?1)`..`(?9)` above,
+ * which this table has always called `recursion`. Both used to fall to the
+ * catch-all and be called `modifiers`, which is R8/C4-7's first two
+ * misattributions and is measurably wrong:
+ *
+ *     (?+1)(a)        compiles     a forward subroutine call
+ *     (a)(?-1)        compiles     a backward subroutine call
+ *     (?+x)           error 129    "digit expected after (?+ or (?-"
+ *
+ * `+` NEEDS NO TAIL: swept over all 256 tails, every non-digit is error 129, so
+ * the byte alone settles the construct. `-` is the one byte at this doorway
+ * that genuinely is two constructs — `(?-i)` unsets an option — so it takes the
+ * ten digit rows below and its bare row stays `modifiers`. Ten rows rather than
+ * one "digit" tail is the deliberate choice recorded on RegRow.tail: this table
+ * already spells that family out twice, and a literal tail cannot be
+ * misinterpreted by a future reader. */
+GROUP('+',  "(?+1)(a)",      recursion,        VM_ONLY,
+      "relative subroutine call to the Nth group to the RIGHT"),
+GROUP_T('-', "0", "(a)(?-01)",         recursion, VM_ONLY, "relative subroutine call, leading zero"),
+GROUP_T('-', "1", "(a)(?-1)",          recursion, VM_ONLY, "relative subroutine call to the group 1 to the LEFT"),
+GROUP_T('-', "2", "(a)(a)(?-2)",       recursion, VM_ONLY, "relative subroutine call, 2 to the left"),
+GROUP_T('-', "3", "(a)(a)(a)(?-3)",    recursion, VM_ONLY, "relative subroutine call, 3 to the left"),
+GROUP_T('-', "4", "(a)(a)(a)(a)(?-4)", recursion, VM_ONLY, "relative subroutine call, 4 to the left"),
+GROUP_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", recursion, VM_ONLY, "relative subroutine call, 5 to the left"),
+GROUP_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", recursion, VM_ONLY, "relative subroutine call, 6 to the left"),
+GROUP_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", recursion, VM_ONLY, "relative subroutine call, 7 to the left"),
+GROUP_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", recursion, VM_ONLY, "relative subroutine call, 8 to the left"),
+GROUP_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", recursion, VM_ONLY, "relative subroutine call, 9 to the left"),
+
+/* THE EXTENDED CHARACTER CLASS, R8/C4-7's third misattribution. `(?[...])` is a
+ * character class with set operations (`[a]&&[b]`, `[a]-[b]`), not an option
+ * setting — it compiles under libpcre2 10.46 and has its own error family (209
+ * "unexpected operator in extended character class", 214 "empty expression in
+ * extended character class"), which is PCRE2 parsing a class body rather than
+ * option letters.
+ *
+ * `classes` IS A JUDGEMENT, stated rather than buried: this doorway's module is
+ * the one that owns character classes, and the extended form is a spelling of a
+ * class. It could equally earn a module of its own when someone implements set
+ * operations. Nothing depends on the choice today — every row here is rejected —
+ * and PC-3 checks the construct is REAL, which is the tier-2 obligation; the
+ * NAME of the module that will implement it is ours to pick. */
+GROUP('[',  "(?[[a]])",      classes,      ANY_ENGINE,
+      "extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]])"),
+
+/* THE OPTION SETTINGS, WRITTEN OUT. These eleven bytes used to be a catch-all
+ * row with REG_SEL_ANY, and that row is what Q2 is about: it answered "requires
+ * module 'modifiers'" for EVERY byte, so 217 of the 255 probeable bytes after
+ * `(?` were promised a module for syntax libpcre2 rejects outright (error 111).
+ * Same defect as Q1's at the `(*` doorway and FIX-2's at the class bracket, at
+ * the one that is 217x wider.
+ *
+ * The eleven are MEASURED, not transcribed from pcre2syntax: a generated sweep
+ * of all 256 bytes with 45 completions each said 38 bytes are recognised, and
+ * these are the ones left after every other row here claims its own. A PCRE2
+ * upgrade that adds an option letter makes this list wrong, which is exactly
+ * what PC-3's byte differential now reports — a tier-2 finding under D26, not
+ * drift to be waved through. */
+GROUP_OPT(')',  "(?)", "empty option setting"),
+/* The bare `-` row, and it must sit under the ten `-<digit>` rows above rather
+ * than replace them: `(?-i)` unsets an option, `(?-1)` calls a subpattern. This
+ * is the only selector byte at this doorway carrying two different modules, and
+ * the tail is what keeps the answer exact instead of compound. */
+GROUP_OPT('-',  "(?-i)", "unset options: (?-i) (?-im:...)"),
+GROUP_OPT('^',  "(?^)", "reset all options to their default"),
+GROUP_OPT('J',  "(?J)", "allow duplicate names (PCRE2_DUPNAMES)"),
+GROUP_OPT('U',  "(?U)", "ungreedy: invert the greediness of quantifiers"),
+GROUP_OPT('a',  "(?a)", "ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*)"),
+GROUP_OPT('i',  "(?i)", "caseless"),
+GROUP_OPT('m',  "(?m)", "multiline: ^ and $ match at internal newlines"),
+GROUP_OPT('n',  "(?n)", "no auto-capture: plain (...) stops capturing"),
+GROUP_OPT('r',  "(?r)", "restrict caseless matching to within ASCII or non-ASCII"),
+GROUP_OPT('s',  "(?s)", "dotall: . matches newline"),
+GROUP_OPT('x',  "(?x)", "extended: ignore unescaped whitespace and # comments"),
+/* Catch-all, and it must stay last. Q2 INVERTS WHAT IT MEANS: it used to promise
+ * a module, and now it agrees with PCRE2 that there is no construct here at all.
+ * PCRE2's own wording, byte for byte, for the reason the collating and verb rows
+ * give — where AGREEMENT is the whole claim, saying it in different words makes
+ * the claim harder to check and no clearer to a reader. Error 111. */
+REJECTED(RK_GROUP, REG_SEL_ANY, "(?q)", "unrecognized character after (? or (?-",
+         "no construct begins with this byte — PCRE2 error 111"),
 };
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
@@ -527,7 +705,7 @@ static const RegRow classbracket_rows[] = {
  * as the `[`. That is why `[:]`, `[a[:b]` and `[[:alpha]` all still compile —
  * nothing closes the pair — which is K3's other half, an OVER-REJECTION that
  * cost users patterns PCRE2 accepts. */
-{RK_CLASSBRACKET, ':', "[[:alpha:]]",
+{RK_CLASSBRACKET, ':', NULL, "[[:alpha:]]",
  M_classes,
  FLAV_PCRE2, ANY_ENGINE,
  RS_MODULE, RD_FIXED,
@@ -583,6 +761,125 @@ static const char *const posix_names[] = {
      * boundary assertion is not a set of characters. */
     "<", ">"
 };
+
+/* ---- the `(?` doorway's OPTION RUN (Q2) ---------------------------------
+ *
+ * THIS FUNCTION'S HOME IS PROVISIONAL AND WILL MOVE — see [MOD-0] in
+ * docs/plan.md. It is a body PARSER living in a file whose header describes
+ * itself as `static const` data plus a lookup, and it does not match how the
+ * other two multi-byte doorways are split (both keep their tables here and
+ * their scanning in ext.c). Frank's call, 2026-08-10: a module should expose
+ * SEVERAL PORTS — a semantic one and a syntax one — and the doorway should
+ * identify the construct from key+tail and then call the row's SYNTAX handler
+ * for the details. Then neither ext.c nor this file accumulates parsers.
+ *
+ * It is written here rather than in ext.c meanwhile for one reason worth
+ * keeping when it moves: the grammar below and the measurements that establish
+ * it must not be separated. The `(*LIMIT_*=digits` rule is the counter-example
+ * — its measured description sits in this file and its implementation in ext.c,
+ * and R8/C2-9 found they had drifted, with ext.c accepting `=99999999999` that
+ * the description forbids. Whichever file the port lands in, the probes and the
+ * code go together.
+ *
+ * Splitting the catch-all into eleven option-letter rows fixed the BYTE and
+ * left the same over-promise one level down: `(?iZ)`, `(?-Z)` and `(?i-Z)` are
+ * PCRE2 error 111 and pcrec still answered "requires module 'modifiers'",
+ * because the row is chosen by the first byte and nothing read the rest. That
+ * is Q2's own defect at a smaller scale — the shape the wake brief warns about
+ * as "fixing the narrowest instance and calling it the class".
+ *
+ * So this doorway reads its whole run, exactly as `(*` reads its whole name.
+ *
+ * THE GRAMMAR IS MEASURED, and the sub-option rule is why it had to be. Swept
+ * against libpcre2 10.46 over single bytes, both terminators, the `^` and `-`
+ * prefixes, and every two-byte run:
+ *
+ *     letters   J U a i m n r s x          and NOTHING else
+ *     a<sub>    aD aP aS aT aW             one ASCII-restrict letter after `a`
+ *     (?aPP)    error 111                  ...and only one; `P` is not a letter
+ *     (?aDPS)   error 111                  same
+ *     repeats   (?xx) (?xxx) (?imsxJU)     OK — a letter may repeat
+ *     hyphen    (?i-m) (?i-) (?-) (?aP-i)  OK
+ *     caret     (?^) (?^i) (?^aP)          OK — and only at the very start
+ *     terminator  ')' or ':'
+ *
+ * Every one of those lines is a probe that was run, not a sentence from
+ * pcre2syntax. The `a` sub-options in particular are invisible to any rule
+ * derived from single letters, and a "set of option letters" implementation —
+ * the obvious one — accepts `(?aPP)` and rejects `(?aP)`, getting BOTH
+ * directions wrong.
+ *
+ * THE QUESTION IS RECOGNITION, NOT VALIDITY, and getting that backwards is the
+ * mistake this function was written with. PCRE2 has two answers for a bad run
+ * and only one of them means "no construct here":
+ *
+ *     (?i-m-s) (?--i) (?-i-) (?i--m) (?^-i)   error 194 "invalid hyphen in
+ *                                             option setting" — PCRE2 HAS
+ *                                             recognised an option setting
+ *     (?i-mZ) (?a-P) (?^^i) (?i^m)            error 111 — no construct at all
+ *
+ * So hyphens may appear anywhere and repeat: a misplaced one is a MALFORMED
+ * option setting, which module 'modifiers' is exactly what would diagnose. The
+ * doorway names the module; the module validates the body. Writing the stricter
+ * "at most one hyphen, never after ^" rule here made pcrec answer "unrecognized
+ * character" for five shapes PCRE2 calls option settings — an UNDER-promise,
+ * the mirror of the over-promise Q2 removes, and the generated differential in
+ * pcre2_check.c refused it within a minute of being pointed at it. */
+
+static bool opt_letter(int c)
+{
+    return c == 'J' || c == 'U' || c == 'a' || c == 'i' || c == 'm' ||
+           c == 'n' || c == 'r' || c == 's' || c == 'x';
+}
+
+/* The ASCII-restrict sub-options, valid ONLY directly after `a`. */
+static bool opt_a_sub(int c)
+{
+    return c == 'D' || c == 'P' || c == 'S' || c == 'T' || c == 'W';
+}
+
+bool pcrec_registry_option_run_ok(const char *at, size_t avail)
+{
+    size_t i = 0;
+    bool caret = false, hyphen = false;
+
+    if (!at) return false;
+
+    /* `^` only at the very start: `(?^^i)` and `(?i^m)` are error 111. */
+    if (i < avail && at[i] == '^') { caret = true; i++; }
+
+    for (;;) {
+        /* Running off the END of the pattern is not an illegal byte: `(?i` is
+         * PCRE2 error 114, "missing closing parenthesis", which is a RECOGNISED
+         * option setting that was truncated. Returning false here made pcrec
+         * answer "unrecognized character" for every truncated option run, and
+         * registry_check's own 255-byte sweep — whose template is `(?%c`, with
+         * no terminator at all — failed on all eleven option bytes at once. */
+        if (i >= avail) return true;
+        if (at[i] == ')' || at[i] == ':') return true;   /* a terminator ends it */
+
+        if (at[i] == '-') {
+            /* PCRE2 STOPS AT THE FIRST ERROR, and that ordering is part of the
+             * rule rather than an implementation detail to be normalised away.
+             * A hyphen that is invalid HERE — a second one, or one after `^` —
+             * raises error 194 and PCRE2 never looks at what follows. So
+             * `(?--D)` is a recognised (malformed) option setting even though
+             * `D` would have been error 111 on its own, and a rule that scanned
+             * the whole run before deciding got that backwards for 24 shapes. */
+            if (caret || hyphen) return true;
+            hyphen = true;
+            i++;
+            continue;
+        }
+        if (!opt_letter((unsigned char)at[i])) return false;
+        bool is_a = at[i] == 'a';
+        i++;
+        /* `a` may take exactly one ASCII-restrict sub-option, and those letters
+         * are not option letters anywhere else: `(?aP)` compiles, `(?a-P)` and
+         * `(?aPP)` are error 111. */
+        if (is_a && i < avail && opt_a_sub((unsigned char)at[i])) i++;
+    }
+}
 
 const char *const *pcrec_registry_posix_names(size_t *n)
 {
@@ -662,16 +959,40 @@ const RegRow *pcrec_registry(RegKind k, size_t *n)
 
 /* Exact selector match first, then the kind's catch-all row if it has one.
  * Returns NULL when the byte belongs to no construct — the caller's "unknown
- * escape" path. */
-const RegRow *pcrec_registry_find(RegKind k, int sel)
+ * escape" path.
+ *
+ * SR-9 makes this LONGEST TAIL WINS within the selector byte's bucket. The
+ * ordering matters and is not the row order: `(?P<` must beat `(?P`, whichever
+ * way round they are written in the table above, because a reader will
+ * eventually add a row in the wrong place and a lookup that depended on source
+ * order would silently answer the shorter row. Row order in this file is for
+ * humans; only `sel` and `tail` decide.
+ *
+ * A tail-less row (tail == NULL) is the bucket's own fallback and loses to
+ * every tail that matches — it is not a catch-all across bytes, which is what
+ * REG_SEL_ANY is. */
+const RegRow *pcrec_registry_find(RegKind k, int sel, const char *at, size_t avail)
 {
     size_t n;
     const RegRow *rows = pcrec_registry(k, &n);
-    const RegRow *any = NULL;
+    const RegRow *any = NULL, *best = NULL;
+    size_t best_len = 0;
 
     for (size_t i = 0; i < n; i++) {
-        if (rows[i].sel == sel) return &rows[i];
-        if (rows[i].sel == REG_SEL_ANY) any = &rows[i];
+        if (rows[i].sel == REG_SEL_ANY) { any = &rows[i]; continue; }
+        if (rows[i].sel != sel) continue;
+
+        if (!rows[i].tail) {
+            /* the bucket's fallback: keep it only if no tail ever matches */
+            if (!best) best = &rows[i];
+            continue;
+        }
+        size_t tl = strlen(rows[i].tail);
+        /* `at` may be NULL when a caller has no text to offer (the dump, and
+         * any probe that asks about a byte rather than a pattern). That is the
+         * tail-less question, not a reason to read a null pointer. */
+        if (!at || tl > avail || memcmp(at, rows[i].tail, tl) != 0) continue;
+        if (tl > best_len || !best || !best->tail) { best = &rows[i]; best_len = tl; }
     }
-    return any;
+    return best ? best : any;
 }

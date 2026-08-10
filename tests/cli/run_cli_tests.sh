@@ -502,10 +502,18 @@ case10() {
     assert_contains "case10: --explain carries the PCRE2 semantics" "$out" \
         "vertical whitespace"
 
-    # one selector byte, two constructs: BOTH must be reported
+    # One selector byte, two MODULES: both must be reported. This asserted the
+    # compound module string "lookaround/named-groups" until Q2/SR-9 retired it —
+    # `(?<` is now four rows (the `=` `!` `*` lookbehind tails and the named
+    # group), so the byte's answer is exact per construct instead of a compound
+    # name. The test's intent is unchanged and better served: ask for both
+    # modules rather than for one string that happened to contain both.
     out="$("$PCREC" --explain '(?<')"
-    assert_contains "case10: --explain reports the compound (?< construct" \
-        "$out" "lookaround/named-groups"
+    assert_contains "case10: --explain reports (?< as lookaround" "$out" "'lookaround'"
+    assert_contains "case10: --explain reports (?< as named-groups" "$out" "'named-groups'"
+    # ...and the tails really are distinct rows, not one row printed twice
+    assert_eq "case10: --explain '(?<' reports all four rows" "4" \
+        "$(printf '%s\n' "$out" | grep -c "^  doorway")"
 
     # a base-tier construct has no row, and saying so is the correct answer
     "$PCREC" --explain 'a' >"$d/o3.txt" 2>"$d/e3.txt"; rc=$?

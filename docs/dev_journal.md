@@ -3529,3 +3529,120 @@ tier-2 misattributions and an independent re-derivation. Then DOC-1, and PC-4
 when module `classes` lands. K7 gained a worse failure mode than it recorded
 (pcrec ABORTS the caller's process under a memory limit); K9 is new — the public
 API takes no pattern length, so `a\0b` compiles as `a` and reports success.
+
+## 2026-08-10 — Q2 + SR-9: the `(?` doorway stops promising a module for 217 bytes
+
+**The step, and why the two figures in the plan disagreed.** Q2's premise was a
+document number — "217 of 255 bytes" in one place, "218 of 256" in another — so
+the first thing built was not the fix but the measurement: all 256 bytes after
+`(?`, 45 generated completions each, against libpcre2 10.46. **38 bytes begin a
+construct; 217 of the 255 probeable ones do not**, and pcrec promised module
+'modifiers' for every one of the 217. Both document figures were right from
+different denominators; the 218th is NUL, which is K9's territory rather than
+Q2's. Neither number needed arbitrating once the sweep existed.
+
+SR-9 landed with it, as Frank sequenced: `RegRow` gains a `tail`, lookup becomes
+longest-tail-wins inside the selector byte's bucket, and parse.c is untouched —
+the §7 design predicted "0 call sites changed" and that held, because ext.c can
+compute the tail context from the `Ctx` it already has.
+
+**Six over-promises fixed. Four were on the plan; the sweep found the other
+two.**
+
+  - `(?q)` and 216 other bytes — a module promised for PCRE2 error 111
+  - `(?+N)` `(?-N)` — relative subroutine calls, called 'modifiers'
+  - `(?[...])` — an extended character class, called 'modifiers'
+  - `(?P=` `(?P>` — a backreference and a subroutine call, both 'named-groups'
+  - **`(?PX)` and 251 other tails** — bare `(?P` promised 'named-groups' where
+    PCRE2 has its own error 141. Q2's defect one level down, at a sub-doorway.
+  - **`(?iZ)` `(?-Z)` `(?aPP)`** — splitting the catch-all into eleven
+    option-letter rows fixed the BYTE and left the RUN. A row keyed on the first
+    byte cannot see the rest, so the doorway now reads the whole option run,
+    exactly as Q1 made `(*` read the whole verb name.
+
+The last one is the "fixing the narrowest instance and calling it the class"
+trap the wake brief names, and it was caught only because the differential was
+being written before the fix was called done.
+
+**The run grammar was wrong twice, in opposite directions, before the
+differential accepted it.** First too strict — "at most one hyphen, never after
+`^`" — which UNDER-promised for 24 shapes PCRE2 calls option settings (error
+194): a malformed option setting is still an option setting and module
+'modifiers' is what would diagnose it. Then wrong about ORDERING, because PCRE2
+stops at the first error, so `(?--D)` is 194 at the second hyphen and never
+examines the `D` that would have been 111. Three candidate rules, each refuted
+by measurement. K4's shape exactly, and the third time this project has paid for
+inducing a rule from examples.
+
+**The distinction that turned out to be load-bearing everywhere:** PCRE2's "no
+construct here" errors are 111 and 141, and every other error means it
+DISPATCHED and is complaining about the body. `(?+x)` is 129, `(?0J)` is 114,
+`(?i-m-s)` is 194 — all constructs pcrec owes a module for. The option-run sweep
+was first written against "does libpcre2 COMPILE it" and reported 967
+mismatches that were entirely the check's own error. That verdict shape is now
+recorded as D28's `SYN_OK` / `SYN_MALFORMED` / `SYN_NOT`.
+
+**A guard that was unguarded, found by sabotage and not by reading.** Reducing
+`pcrec_registry_find` from longest-tail-wins to first-tail-wins produced **zero
+failures across the whole repository**. Every tail is one byte except `\N`'s
+pair, and those two were written longest-first, so row ORDER stood in for the
+rule. Fixed by writing them SHORTEST first — order now disagrees with the rule —
+plus `check_tail_precedence`, which asserts it for every prefix-related pair and
+fails loudly if no such pair remains. R9's lesson met again: when a dangerous
+operation is safe because of a fact living elsewhere, the assertion belongs
+where the fact is.
+
+**And the instrument lied before the guards did.** Two sabotages first recorded
+"0 failures" because the battery counted `grep -c "^FAIL"` — and PC-3's stdout
+buffer flushes mid-line under load, splicing a FAIL onto the end of a PASS line
+(`PASS: ...it reaches theFAIL: (? byte differential...`). `bad()`'s
+`fflush(stdout)` cannot prevent it; the partial flush has already happened. A
+no-sabotage CONTROL run is what separated "the guard is missing" from "my
+counting is wrong", and it is the habit worth keeping — one of the two was a
+real hole and the other was not, and the counts alone could not tell them apart.
+
+**Coverage added.** PC-3 gains a 7650-probe byte differential (both populations
+pinned at 38/217, so "all 255 agree" cannot be printed by a doorway that
+promises a module for everything), a 19448-probe option-run sweep, and 10200
+probes of tail sweeps over `(?P` `(?<` `(?+` `(?-` — each with liveness counters
+and a pattern-set checksum. Six manifest entries name what each closes.
+tests/reject/ gains 20 hand-written rows, because module NAMES are the one thing
+no external oracle can judge: libpcre2 says a construct exists, never that pcrec
+should call it 'recursion'.
+
+Honest limits of the new sweeps, stated because they read as more than they are:
+`(?<` and `(?+` answer alike for every tail under libpcre2, so agreement there is
+free — only `(?P` and `(?-` have both buckets populated, which is why a
+live-prefix counter is asserted and why `(?<`'s three-way module split is pinned
+by hand instead.
+
+**D28, and a step inserted.** Frank's call mid-session, from a real question:
+option-run parsing had nowhere good to live. `ext.c` exists so parse.c holds the
+core syntax and nothing else — its job is routing a matched extension to a
+handler, not accumulating every construct's body parser — and `registry.c` is
+declarative data. The enumeration settles it: ten construct families need body
+parsing, and the two largest (`\p{...}`, which needs NORMALISATION rather than
+validation, and `(?[...]`'s nested set algebra) are ahead of us. So a module
+gets PORTS — semantic, syntax, and optimisation later — and the doorway
+identifies the construct from key+tail before calling the syntax port for the
+details. The argument that settles it over one handler with a mode flag is
+LIFECYCLE: every module is unimplemented today and body parsing is still
+required for all of them, because tier 2 is exact under D26.
+
+[MOD-0] is inserted after this step: define the ports and build two or three
+real modules to shape them. `pcrec_registry_option_run_ok` sits in registry.c
+PROVISIONALLY, with a comment saying so, and is the first thing MOD-0 moves.
+
+**State at close.** 1012 corpus / 85 CLI / 397 reject / 164 registry / 143 PC-3
+/ 29 codegen / 7 trie-identity, all green. `make strict` clean, verify_rxt
+980/980, fuzz seed 1 zero divergences. Registry is 100 rows (was 68).
+
+**THE PANEL IS OWED.** Frank's steer was to close this commit knowing MOD-0 will
+rework the interface, so no D6 critic panel was run. That is a deliberate
+deferral, not an oversight, and it is recorded here rather than left to be
+noticed: FIX-2's panel ran a session late as R9 and found thirteen findings plus
+two live product bugs, so a deferred panel is a real debt. Run it against
+MOD-0's result, and brief it on THIS change too — in particular on the option-run
+grammar, which no adversarial reader has seen.
+
+**Next:** MOD-0. Then DOC-1, then PC-4 when module `classes` lands.

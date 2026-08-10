@@ -134,31 +134,42 @@ static int pcrec_try(const char *pat, char *msg, size_t msgsz)
  *   2. A row whose `syntax` does not compile and has NO wrapper is a FAILURE,
  *      never a skip. A new row either compiles as written or forces someone to
  *      write down, deliberately, what context PCRE2 needs. */
-typedef struct { RegKind kind; int sel; const char *probe; const char *why; } Wrapper;
+/* `tail` matches the ROW's tail (SR-9), NULL meaning "the row with no tail".
+ * Without it a wrapper keyed on `(RK_GROUP, 'P')` would answer for all four `P`
+ * rows, and the three that need no wrapper would silently get one — which the
+ * "a wrapper that is not NECESSARY is an error" check would then report against
+ * the wrong row. */
+typedef struct { RegKind kind; int sel; const char *tail; const char *probe; const char *why; } Wrapper;
 
 static const Wrapper WRAPPERS[] = {
-{RK_ESC,   'k', "(?<name>a)\\k<name>", "a backreference by name needs the name declared"},
-{RK_ESC,   'g', "(a)\\g{-1}",          "a relative backreference needs a group to its left"},
-{RK_ESC,   '1', "(a)\\1",                       "PCRE2 error 115 without the group"},
-{RK_ESC,   '2', "(a)(a)\\2",                    "PCRE2 error 115 without the groups"},
-{RK_ESC,   '3', "(a)(a)(a)\\3",                 "PCRE2 error 115 without the groups"},
-{RK_ESC,   '4', "(a)(a)(a)(a)\\4",              "PCRE2 error 115 without the groups"},
-{RK_ESC,   '5', "(a)(a)(a)(a)(a)\\5",           "PCRE2 error 115 without the groups"},
-{RK_ESC,   '6', "(a)(a)(a)(a)(a)(a)\\6",        "PCRE2 error 115 without the groups"},
-{RK_ESC,   '7', "(a)(a)(a)(a)(a)(a)(a)\\7",     "PCRE2 error 115 without the groups"},
-{RK_ESC,   '8', "(a)(a)(a)(a)(a)(a)(a)(a)\\8",  "PCRE2 error 115 without the groups"},
-{RK_ESC,   '9', "(a)(a)(a)(a)(a)(a)(a)(a)(a)\\9","PCRE2 error 115 without the groups"},
-{RK_GROUP, '(', "(a)(?(1)a|b)",        "a conditional on group 1 needs group 1"},
-{RK_GROUP, '&', "(?<name>a)(?&name)",  "recursion by name needs the name declared"},
-{RK_GROUP, '1', "(a)(?1)",                       "recursion into a group needs the group"},
-{RK_GROUP, '2', "(a)(a)(?2)",                    "recursion into a group needs the group"},
-{RK_GROUP, '3', "(a)(a)(a)(?3)",                 "recursion into a group needs the group"},
-{RK_GROUP, '4', "(a)(a)(a)(a)(?4)",              "recursion into a group needs the group"},
-{RK_GROUP, '5', "(a)(a)(a)(a)(a)(?5)",           "recursion into a group needs the group"},
-{RK_GROUP, '6', "(a)(a)(a)(a)(a)(a)(?6)",        "recursion into a group needs the group"},
-{RK_GROUP, '7', "(a)(a)(a)(a)(a)(a)(a)(?7)",     "recursion into a group needs the group"},
-{RK_GROUP, '8', "(a)(a)(a)(a)(a)(a)(a)(a)(?8)",  "recursion into a group needs the group"},
-{RK_GROUP, '9', "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?9)","recursion into a group needs the group"},
+{RK_ESC, 'k', NULL, "(?<name>a)\\k<name>", "a backreference by name needs the name declared"},
+{RK_ESC, 'g', NULL, "(a)\\g{-1}",          "a relative backreference needs a group to its left"},
+{RK_ESC, '1', NULL, "(a)\\1",                       "PCRE2 error 115 without the group"},
+{RK_ESC, '2', NULL, "(a)(a)\\2",                    "PCRE2 error 115 without the groups"},
+{RK_ESC, '3', NULL, "(a)(a)(a)\\3",                 "PCRE2 error 115 without the groups"},
+{RK_ESC, '4', NULL, "(a)(a)(a)(a)\\4",              "PCRE2 error 115 without the groups"},
+{RK_ESC, '5', NULL, "(a)(a)(a)(a)(a)\\5",           "PCRE2 error 115 without the groups"},
+{RK_ESC, '6', NULL, "(a)(a)(a)(a)(a)(a)\\6",        "PCRE2 error 115 without the groups"},
+{RK_ESC, '7', NULL, "(a)(a)(a)(a)(a)(a)(a)\\7",     "PCRE2 error 115 without the groups"},
+{RK_ESC, '8', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)\\8",  "PCRE2 error 115 without the groups"},
+{RK_ESC, '9', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(a)\\9","PCRE2 error 115 without the groups"},
+{RK_GROUP, '(', NULL, "(a)(?(1)a|b)",        "a conditional on group 1 needs group 1"},
+{RK_GROUP, '&', NULL, "(?<name>a)(?&name)",  "recursion by name needs the name declared"},
+{RK_GROUP, '1', NULL, "(a)(?1)",                       "recursion into a group needs the group"},
+{RK_GROUP, '2', NULL, "(a)(a)(?2)",                    "recursion into a group needs the group"},
+{RK_GROUP, '3', NULL, "(a)(a)(a)(?3)",                 "recursion into a group needs the group"},
+{RK_GROUP, '4', NULL, "(a)(a)(a)(a)(?4)",              "recursion into a group needs the group"},
+{RK_GROUP, '5', NULL, "(a)(a)(a)(a)(a)(?5)",           "recursion into a group needs the group"},
+{RK_GROUP, '6', NULL, "(a)(a)(a)(a)(a)(a)(?6)",        "recursion into a group needs the group"},
+{RK_GROUP, '7', NULL, "(a)(a)(a)(a)(a)(a)(a)(?7)",     "recursion into a group needs the group"},
+{RK_GROUP, '8', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(?8)",  "recursion into a group needs the group"},
+{RK_GROUP, '9', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?9)","recursion into a group needs the group"},
+/* SR-9's two tailed rows. Their `syntax` has to put the construct LEFTMOST for
+ * pcrec (which reports the leftmost construct it cannot handle), so the group
+ * declaration libpcre2 needs cannot live there — it lives here, which is what
+ * this table is for. */
+{RK_GROUP, 'P', "=", "(?<n>a)(?P=n)", "a python-style backreference needs the name declared"},
+{RK_GROUP, 'P', ">", "(?<n>a)(?P>n)", "a python-style subroutine call needs the name declared"},
 };
 
 /* Substitute `syntax` out of `probe` for an escape libpcre2 always rejects, and
@@ -180,10 +191,14 @@ static int wrapper_is_load_bearing(const char *probe, const char *syntax)
     return pcre2_try(mutated, head + 2 + taillen, NULL, 0) != 0;
 }
 
-static const Wrapper *wrapper_for(RegKind k, int sel)
+static const Wrapper *wrapper_for(RegKind k, int sel, const char *tail)
 {
-    for (size_t i = 0; i < sizeof WRAPPERS / sizeof WRAPPERS[0]; i++)
-        if (WRAPPERS[i].kind == k && WRAPPERS[i].sel == sel) return &WRAPPERS[i];
+    for (size_t i = 0; i < sizeof WRAPPERS / sizeof WRAPPERS[0]; i++) {
+        if (WRAPPERS[i].kind != k || WRAPPERS[i].sel != sel) continue;
+        bool same_tail = (!WRAPPERS[i].tail && !tail) ||
+                         (WRAPPERS[i].tail && tail && strcmp(WRAPPERS[i].tail, tail) == 0);
+        if (same_tail) return &WRAPPERS[i];
+    }
     return NULL;
 }
 
@@ -202,13 +217,15 @@ static void check_rows(void)
 {
     int wrappers_used = 0;
     int wrapper_hit[sizeof WRAPPERS / sizeof WRAPPERS[0]] = {0};
+    int n_capability = 0;
+    char label2[320];
 
     for (int k = 0; k < RK_COUNT; k++) {
         size_t n;
         const RegRow *rows = pcrec_registry((RegKind)k, &n);
         for (size_t i = 0; i < n; i++) {
             const RegRow *r = &rows[i];
-            const Wrapper *w = wrapper_for(r->kind, r->sel);
+            const Wrapper *w = wrapper_for(r->kind, r->sel, r->tail);
             const char *probe = w ? w->probe : r->syntax;
             char label[256], msg[256];
 
@@ -278,6 +295,25 @@ static void check_rows(void)
             case RS_MODULE:
                 /* The row claims PCRE2 HAS this construct. */
                 if (rc == 0) { ok(label); break; }
+                /* A CAPABILITY refusal is PCRE2 confirming the construct, not
+                 * denying it: it names the thing and says this MODE cannot have
+                 * it. Our oracle compiles with options = 0 and so can never be
+                 * in UTF mode, which is why `\N{U+0041}` can never return 0 here
+                 * however it is wrapped. Q1 already made this call for error 204
+                 * ((*TURKISH_CASING)); 193 is the same shape for `\N{U+dddd}`.
+                 *
+                 * THIS WIDENS THE ANTI-FABRICATION GUARD, so it is counted and
+                 * the count is asserted below. Without that, "the probe did not
+                 * compile but the error was in my allow-list" is exactly how a
+                 * fabricated row would get in — the failure mode this whole file
+                 * exists to prevent. */
+                if (rc == 193 || rc == 204) {
+                    n_capability++;
+                    snprintf(label2, sizeof label2,
+                             "%s (libpcre2 recognises it and refuses the MODE: error %d)", label, rc);
+                    ok(label2);
+                    break;
+                }
                 if (!w)
                     bad("%s: libpcre2 REJECTS the probe '%s' (error %d: %s).\n"
                         "        An %s row claims PCRE2 has this construct. Either the row "
@@ -312,6 +348,21 @@ static void check_rows(void)
             }
         }
     }
+    /* EXACTLY ONE row may take the capability-refusal path today: `\N{U+0041}`.
+     * Asserting the number, not just printing it, is the difference between a
+     * counter and a guard — a second row quietly acquiring the exemption is the
+     * way this widening turns into the hole it was written to avoid. Raise it
+     * deliberately, in the same commit as the row that needs it, or find out why
+     * a row stopped compiling under libpcre2. */
+    if (n_capability != 1)
+        bad("capability-refusal exemptions: %d rows took the 193/204 path, expected "
+            "exactly 1 (\\N{U+0041}). This path lets an RS_MODULE row pass without "
+            "libpcre2 compiling its probe, so its population is asserted, not counted.",
+            n_capability);
+    else
+        ok("capability-refusal exemptions: exactly 1 row (libpcre2 names the "
+           "construct and refuses the mode)");
+
     /* A wrapper for a row that no longer exists would sit here forever looking
      * like coverage. It is the same shape as the stale-count hazard R6 measured
      * in tests/reject/, one level down. */
@@ -1521,6 +1572,278 @@ static void check_embedded_nul(void)
            "truncation agrees");
 }
 
+
+/* ---- Q2: the `(?` doorway against libpcre2, generated ------------------
+ *
+ * THE CHECK THAT MAKES Q2 MEAN ANYTHING. Q1 gave the `(*` doorway a name
+ * differential and PC-3's CLAUDE.md records why it works: while one catch-all
+ * answered for every name, pcrec's answer did not depend on the name and the
+ * comparison was vacuous. The `(?` doorway was in exactly that state until Q2 —
+ * one catch-all promising module 'modifiers' for all 255 bytes — so this
+ * differential could not have existed before the fix, and it is what stops the
+ * fix from silently reverting.
+ *
+ * PCRE2'S "NO CONSTRUCT HERE" ERRORS ARE 111 AND 141, and treating any other
+ * error as recognition is the load-bearing judgement in this file. `(?+x)` is
+ * error 129 "digit expected after (?+ or (?-" — PCRE2 has DISPATCHED on `+` and
+ * is complaining about what followed, which is recognition. Bucketing 129 with
+ * 111 would make this check demand that pcrec refuse `(?+`, which is the
+ * misattribution Q2 exists to remove. */
+
+#define PCRE2_NO_SUCH_CONSTRUCT(ec) ((ec) == 111 || (ec) == 141)
+
+/* Does pcrec's answer for `pat` PROMISE A MODULE? That is the tier-2 question
+ * D26 makes exact, and the only one an external oracle can pose here: libpcre2
+ * can say a construct exists, never that pcrec should call its module
+ * 'recursion'. Which module is tests/reject/'s job, as it has always been. */
+static bool pcrec_promises_module(const char *pat)
+{
+    char msg[256];
+    if (pcrec_try(pat, msg, sizeof msg) == 0) return true;   /* implemented is stronger */
+    return strstr(msg, "requires module") != NULL;
+}
+
+/* Completions after `(?<byte>`, generated rather than listed. A byte counts as
+ * recognised if ANY completion gets past the dispatch, because several
+ * constructs are errors in isolation — `(?P)` is error 141 while `(?P<n>a)`
+ * compiles — and a single completion would under-count exactly the bytes this
+ * check is about. */
+static const char *const Q2_COMPLETIONS[] = {
+    ")", "a)", ":a)", "=a)", "!a)", "<n>a)", "'n'a)", "1)", "n>a)", ">n)",
+    "-i)", "i)", "i:a)", "{1})", "&n)", "(1)a|b)", "R)", "0)", "+1)", "[a]])",
+    "*a)", "#c)", "C1)", "|a)", "^)", "=n)", "<=a)", "<!a)", "n)", "1a)",
+};
+
+static void check_group_bytes(void)
+{
+    int n_recognised = 0, n_not = 0, mismatches = 0;
+    unsigned long long seth = SET_HASH_INIT;
+    size_t probes = 0;
+
+    for (int b = 1; b < 256; b++) {
+        bool p2_recognised = false, pcrec_module = false;
+
+        for (size_t i = 0; i < sizeof Q2_COMPLETIONS / sizeof Q2_COMPLETIONS[0]; i++) {
+            char pat[64];
+            int len = snprintf(pat, sizeof pat, "(?%c%s", b, Q2_COMPLETIONS[i]);
+            if (len < 0 || (size_t)len >= sizeof pat) continue;
+            seth = set_hash(seth, pat);
+            probes++;
+            if (!PCRE2_NO_SUCH_CONSTRUCT(pcre2_try(pat, (size_t)len, NULL, 0)))
+                p2_recognised = true;
+            if (pcrec_promises_module(pat)) pcrec_module = true;
+        }
+
+        if (p2_recognised) n_recognised++; else n_not++;
+
+        if (p2_recognised != pcrec_module) {
+            if (mismatches < 12)
+                bad("(? byte differential: byte 0x%02x ('%c') — libpcre2 %s a construct, "
+                    "pcrec %s a module. An over-promise here is Q2's defect returning; "
+                    "an under-promise is a construct pcrec has stopped recognising.",
+                    b, (b >= 32 && b < 127) ? b : '?',
+                    p2_recognised ? "HAS" : "has NO",
+                    pcrec_module ? "promises" : "promises NO");
+            mismatches++;
+        }
+    }
+
+    char line[224];
+    snprintf(line, sizeof line,
+             "(? byte differential: %zu probes over 255 bytes — %d bytes are constructs, "
+             "%d are not, and pcrec agrees on every one", probes, n_recognised, n_not);
+    if (mismatches == 0) ok(line); else printf("  %s (%d mismatches)\n", line, mismatches);
+
+    /* LIVENESS, in both directions. "All 255 agree" is also what a doorway that
+     * promises a module for everything would print if this check were reading
+     * the wrong thing — which is the near-miss Q1's sweep_verb() was rewritten
+     * for. Pin BOTH populations: 38 real constructs and 217 non-constructs,
+     * measured against libpcre2 10.46. A PCRE2 upgrade moving either is a tier-2
+     * finding under D26, not drift to wave through. */
+    if (n_recognised != 38 || n_not != 217)
+        bad("(? byte differential: libpcre2 now recognises %d bytes and refuses %d "
+            "(expected 38 and 217). If a PCRE2 upgrade added a construct after `(?`, "
+            "that is a TIER 2 finding: give it a row, do not relax this number.",
+            n_recognised, n_not);
+    else
+        ok("(? byte differential: libpcre2's own populations are unchanged (38 constructs, 217 not)");
+
+    expect_set("(? byte differential", seth, 0x2cefbc6df53a8337ULL);
+}
+
+/* ---- Q2: the option RUN, not just its first byte ----------------------- */
+
+/* Splitting the catch-all into eleven letter rows fixed the BYTE and left the
+ * same over-promise one level down: `(?iZ)` is PCRE2 error 111 and pcrec still
+ * promised module 'modifiers', because the row was chosen by the first byte and
+ * nothing read the rest. This sweep is what refuses to let that come back —
+ * and it is what found it, while it was being written. */
+
+/* The alphabet is every option-relevant byte PLUS bytes that are not, so the
+ * sweep sees both answers. The two TERMINATORS are excluded on purpose and the
+ * exclusion is asserted below rather than left implicit: a run containing `)`
+ * ends the group early, so `(?))` is a well-formed option group followed by a
+ * stray `)` — libpcre2 error 122, about a position this doorway does not own. */
+static const char Q2_RUN_ALPHA[] = "JUaimnrsxDPSTW-^ZqQ0.";
+
+static void check_option_runs(void)
+{
+    int mismatches = 0, n_valid = 0, n_invalid = 0;
+    unsigned long long seth = SET_HASH_INIT;
+    size_t probes = 0;
+    const size_t na = sizeof Q2_RUN_ALPHA - 1;
+
+    for (size_t i = 0; i < na; i++)
+        if (Q2_RUN_ALPHA[i] == ')' || Q2_RUN_ALPHA[i] == ':')
+            bad("option-run alphabet contains a terminator ('%c'), which makes the "
+                "probe a group followed by stray text rather than a run",
+                Q2_RUN_ALPHA[i]);
+
+    /* Runs of length 0..3 over the alphabet, in both terminator shapes. Length
+     * 3 is where the `a`-sub-option rule and the one-hyphen rule interact
+     * (`aP-i`, `i-aP`, `^aP`), which is why two would not be enough. */
+    char run[4];
+    for (int len = 0; len <= 3; len++) {
+        int total = 1;
+        for (int k = 0; k < len; k++) total *= (int)na;
+        for (int idx = 0; idx < total; idx++) {
+            int v = idx;
+            for (int k = 0; k < len; k++) { run[k] = Q2_RUN_ALPHA[v % na]; v /= (int)na; }
+            run[len] = 0;
+
+            static const char *const shapes[] = {"(?%s)", "(?%s:a)"};
+            for (size_t sh = 0; sh < 2; sh++) {
+                char pat[32];
+                int n = snprintf(pat, sizeof pat, shapes[sh], run);
+                if (n < 0 || (size_t)n >= sizeof pat) continue;
+                seth = set_hash(seth, pat);
+                probes++;
+
+                /* RECOGNITION, not compilation — the same bar the byte and
+                 * tail sweeps use, and it has to be. `(?i-m-s)` is error 194,
+                 * a MALFORMED option setting, and `(?0J)` is error 114, a
+                 * malformed recursion call: both are constructs PCRE2 has, so a
+                 * module is owed for both. Asking "does it compile" here
+                 * demanded that pcrec refuse them, and reported 967 mismatches
+                 * that were the check's error rather than the parser's. */
+                bool p2_recognised = !PCRE2_NO_SUCH_CONSTRUCT(pcre2_try(pat, (size_t)n, NULL, 0));
+                bool promised = pcrec_promises_module(pat);
+                if (p2_recognised) n_valid++; else n_invalid++;
+
+                if (p2_recognised != promised) {
+                    if (mismatches < 12)
+                        bad("option run: '%s' — libpcre2 %s a construct, pcrec %s a "
+                            "module. The run is the construct; a row keyed on its "
+                            "first byte cannot see this.",
+                            pat, p2_recognised ? "HAS" : "has NO",
+                            promised ? "promises" : "promises NO");
+                    mismatches++;
+                }
+            }
+        }
+    }
+
+    char line[224];
+    snprintf(line, sizeof line,
+             "option runs: %zu probes over runs of length 0-3 — %d are constructs "
+             "libpcre2 has, %d are not, pcrec agrees on every one", probes, n_valid, n_invalid);
+    if (mismatches == 0) ok(line); else printf("  %s (%d mismatches)\n", line, mismatches);
+
+    /* Both buckets must be large. A sweep where every run is invalid would agree
+     * with a doorway that refuses everything, and would read as coverage. */
+    if (n_valid < 100 || n_invalid < 100)
+        bad("option runs: buckets are %d valid / %d invalid — one of them is nearly "
+            "empty, so agreement is cheap and this sweep is not measuring the rule",
+            n_valid, n_invalid);
+    else
+        ok("option runs: both verdict buckets are well populated, so agreement is not vacuous");
+
+    expect_set("option runs", seth, 0xd502f808e522c30dULL);
+}
+
+/* ---- Q2/SR-9: the TAIL sweeps ------------------------------------------
+ *
+ * The gap tests/registry/CLAUDE.md has named since R5: every sweep here varies
+ * ONE byte, so `(?P=` versus `(?P<` was invisible to all of them. SR-9's tail
+ * is the fix in the parser; this is the fix in the check. */
+
+struct TailPrefix { const char *pfx; const char *lead; const char *why; };
+
+static void check_group_tails(void)
+{
+    static const struct TailPrefix PREFIXES[] = {
+        {"P", "",       "(?P< (?P= and (?P> are three modules; every other tail is error 141"},
+        {"<", "",       "(?<= (?<! and (?<* are lookaround; every other tail is a named group"},
+        {"+", "(a)(a)", "every tail is a relative subroutine call; non-digits are error 129"},
+        {"-", "(a)(a)", "digits are subroutine calls, option letters are settings"},
+    };
+    static const char *const TAILCOMP[] = {
+        ")", "a)", "n>a)", "1)", "=a)", ":a)", "i)", "n)", "]])", "'n')",
+    };
+
+    unsigned long long seth = SET_HASH_INIT;
+    size_t probes = 0;
+    int total_mismatch = 0, live_prefixes = 0;
+
+    for (size_t p = 0; p < sizeof PREFIXES / sizeof PREFIXES[0]; p++) {
+        int recognised = 0, refused = 0, mismatches = 0;
+
+        for (int b = 1; b < 256; b++) {
+            bool p2_recognised = false, pcrec_module = false;
+
+            for (size_t i = 0; i < sizeof TAILCOMP / sizeof TAILCOMP[0]; i++) {
+                char pat[64];
+                int n = snprintf(pat, sizeof pat, "%s(?%s%c%s",
+                                 PREFIXES[p].lead, PREFIXES[p].pfx, b, TAILCOMP[i]);
+                if (n < 0 || (size_t)n >= sizeof pat) continue;
+                seth = set_hash(seth, pat);
+                probes++;
+                if (!PCRE2_NO_SUCH_CONSTRUCT(pcre2_try(pat, (size_t)n, NULL, 0)))
+                    p2_recognised = true;
+                if (pcrec_promises_module(pat)) pcrec_module = true;
+            }
+
+            if (p2_recognised) recognised++; else refused++;
+            if (p2_recognised != pcrec_module) {
+                if (total_mismatch < 12)
+                    bad("tail sweep (?%s: byte 0x%02x ('%c') — libpcre2 %s a construct, "
+                        "pcrec %s a module. %s",
+                        PREFIXES[p].pfx, b, (b >= 32 && b < 127) ? b : '?',
+                        p2_recognised ? "HAS" : "has NO",
+                        pcrec_module ? "promises" : "promises NO", PREFIXES[p].why);
+                mismatches++;
+                total_mismatch++;
+            }
+        }
+
+        char line[256];
+        snprintf(line, sizeof line, "tail sweep (?%s: 255 tails — %d are constructs, %d are not",
+                 PREFIXES[p].pfx, recognised, refused);
+        if (mismatches == 0) ok(line);
+
+        /* A prefix where libpcre2 answers the SAME for every tail cannot detect
+         * anything by agreement, and saying so is the point: `(?<` is that case
+         * — every tail is either a lookbehind or a name — so its module split is
+         * pinned in tests/reject/ and NOT here. Counting how many prefixes are
+         * live stops this whole sweep from quietly becoming that. */
+        if (recognised > 0 && refused > 0) live_prefixes++;
+    }
+
+    if (live_prefixes < 2)
+        bad("tail sweeps: only %d prefix(es) have both verdict buckets populated. "
+            "A sweep where libpcre2 answers alike for every tail agrees with any "
+            "doorway at all and is not evidence.", live_prefixes);
+    else {
+        char line[192];
+        snprintf(line, sizeof line,
+                 "tail sweeps: %d of 4 prefixes have both buckets populated (%zu probes)",
+                 live_prefixes, probes);
+        ok(line);
+    }
+
+    expect_set("tail sweeps", seth, 0x1884f2f7916a9955ULL);
+}
+
 int main(void)
 {
     char why[512], ver[64];
@@ -1561,6 +1884,9 @@ int main(void)
     check_posix_names();
     check_posix_positions();
     check_embedded_nul();
+    check_group_bytes();
+    check_option_runs();
+    check_group_tails();
 
     printf("\n== Summary (PC-3) ==\nchecks passed: %d\nchecks failed: %d\n", pass, fail);
     return fail ? 1 : 0;

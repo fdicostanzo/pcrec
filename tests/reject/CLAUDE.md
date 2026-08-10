@@ -6,9 +6,10 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 215 rows asserted by hand (naming a module, or the
+- **run_reject_tests.sh** — 235 rows asserted by hand (naming a module, or the
   base-grammar brace errors K5/K6/K8, or since Q1 the verb doorway's four
-  outcomes), 67 more reached by iterating `pcrec --list-syntax`, 62
+  outcomes, or since Q2 the `(?` doorway's module names and its refusals), 99
+  more reached by iterating `pcrec --list-syntax`, 62
   accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
   into the normal tables. Ends with a MANIFEST naming the handful of rows whose
   deletion an exact count would not catch, plus the exact counts themselves.
@@ -24,7 +25,8 @@ nothing checked that, and the gap was not hypothetical — see below.
   rows in the same review, so the real numbers became 200/67/57 while this
   paragraph, written to warn about hand-copied figures, carried the wrong ones
   (R9/C4V-3). Two authors, two commits, the same failure, once inside the
-  warning itself. The harness prints
+  warning itself. They moved again at Q2/SR-9 (200 → 235 hand-written, 67 → 99
+  iterated), which is the third time in three consecutive checkpoints. The harness prints
   all four in its own summary block — `rejections checked / rows iterated /
   accept controls / known-wrong pinned` — so **read them from a run, never from
   here**, and re-run it before editing this paragraph. MECH-1 is the planned

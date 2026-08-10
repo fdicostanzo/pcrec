@@ -142,9 +142,16 @@ the prediction, including when the prediction was wrong.
 
 ## Parser structure — the syntax construct registry (D24)
 
-**THE AGREED ORDER (R6, 2026-08-10). Work these four in sequence.** Each is a
+**THE AGREED ORDER (R6, 2026-08-10). Work these in sequence.** Each is a
 checkpoint: critic panel (D6), journal entry, plan STATE update, touched
 CLAUDE.md files, commit, push.
+
+FIX-1, PC-3+Q1, FIX-2 and **Q2+SR-9** are done. **[MOD-0] was inserted after
+Q2+SR-9 by Frank on 2026-08-10** and is next: Q2 showed that construct BODY
+parsing has no home — ext.c is meant to route to a handler, not to accumulate
+parsers, and registry.c is declarative data. Define a module's ports and build
+two or three real modules to shape them. Its full entry is below, with SR-9.
+Then DOC-1, then PC-4 when module `classes` lands.
 
 - [FIX-1] STATE:completed — K5 and K6, the two MISCOMPILES. Landed 2026-08-10.
   `try_quant` now REMEMBERS a count above 65535 and raises PCRE2's error 105
@@ -253,7 +260,31 @@ CLAUDE.md files, commit, push.
   KNOWN-WRONG pinned lines in tests/reject/ WILL FAIL when this lands — that is
   the signal working; check each against libpcre2 and move it into the normal
   tables in the same commit
-- [Q2] STATE:not-started — the `(?` doorway's over-promise, R8/C4-7, and
+- [Q2] STATE:completed 2026-08-10, WITH SR-9 — MEASURED FIRST: a generated
+  sweep of all 256 bytes after `(?` with 45 completions each says libpcre2
+  recognises 38 and refuses 217 of the 255 probeable bytes, which reconciles the
+  two figures below (217 of 255 probeable; 218 of 256 counts NUL, which is K9's
+  territory, not Q2's). pcrec promised module 'modifiers' for all 217. The
+  catch-all is now RS_REJECTED carrying PCRE2's own error-111 wording, and the
+  eleven real option bytes have rows of their own.
+  All four named misattributions fixed and measured, plus TWO the plan did not
+  list, both found by the sweep rather than by reading: `(?PX)` is PCRE2 error
+  141 with its own message, so bare `(?P` promised a module for 252 of 255
+  tails; and splitting the catch-all into eleven letter rows fixed the BYTE and
+  left `(?iZ)`, `(?-Z)`, `(?i-Z)` and `(?aPP)` still promising 'modifiers',
+  because a row keyed on the first byte cannot see the rest of the run. The
+  doorway now reads the whole option RUN, as Q1 made `(*` read the whole name.
+  **The run grammar was got wrong in both directions before the differential
+  refused it** — first too strict (one hyphen, no hyphen after `^`: an
+  UNDER-promise for 24 shapes PCRE2 calls option settings, error 194) and then
+  wrong about ordering (PCRE2 stops at the FIRST error, so `(?--D)` is 194 and
+  never reaches the illegal `D`). Three candidate rules, each refuted by
+  measurement — the same shape as K4, recorded because it keeps recurring.
+  Coverage: PC-3 gains a 7650-probe byte differential, a 19448-probe option-run
+  sweep and 10200 probes of tail sweeps, each with liveness counters and a
+  pattern-set checksum; tests/reject/ gains 20 hand-written rows for the module
+  NAMES, which no external oracle can judge. Original entry follows.
+- [Q2-original] the `(?` doorway's over-promise, R8/C4-7, and
   **INDEPENDENTLY RE-DERIVED 2026-08-10 by a spec-first writer (D27) that had
   not read the registry** — it measured 218 of 256 bytes after `(?` promised a
   module for syntax PCRE2 does not have, arriving at R8's finding from the
@@ -306,12 +337,67 @@ CLAUDE.md files, commit, push.
   every registry row is REJECTED today, so pcrec has no semantics to differ.
   The forcing function is module `classes` landing (M5), and this step must land
   WITH it, not after
-- [SR-9] STATE:not-started — the registry selector change, LAST and least
-  urgent. Build the `byte + tail` design in §7 of
-  docs/design_registry_selectors.md — NOT the string-selector version in §2,
-  which R6 rejected with measurements (§0). One new field, five new rows, zero
-  changes to parse.c, base-tier cost unchanged, the 255-byte sweep provably
-  identical. A critic prototyped and measured it
+- [SR-9] STATE:completed 2026-08-10, WITH Q2 — the `byte + tail` design from §7
+  of docs/design_registry_selectors.md (NOT §2's string selectors, which R6
+  rejected with measurements). One new field, longest-tail-wins within the
+  selector byte's bucket, ZERO changes to parse.c as predicted, base-tier cost
+  unchanged, the 255-byte sweep provably identical — the sweep now passes the
+  parser's own tail context, derived from the pattern it built rather than from
+  a second transcription, so `[\%c]` cannot drift from what the parser sees.
+  Five new rows became twenty-eight: the design listed `(?P<` `(?P=` `(?P>`
+  `\N{U+` `\N{}`, and a 256-byte tail sweep of each prefix added the three
+  lookbehind tails on `<` (which retired the compound module
+  `lookaround/named-groups` entirely) and the ten `(?-<digit>)` relative
+  subroutine calls. **The lookup's ordering rule was unguarded on arrival**:
+  reducing longest-tail-wins to first-tail-wins produced ZERO failures
+  repository-wide, because every tail is one byte except `\N`'s pair and those
+  were written longest-first, so row ORDER silently stood in for the rule. Fixed
+  by writing them shortest-first — so order DISAGREES with the rule — plus
+  check_tail_precedence, which asserts it for every prefix-related pair and
+  fails loudly if no such pair exists
+
+- [MOD-0] STATE:not-started — **MODULE STRUCTURE: define a module's PORTS, and
+  build two or three real ones to shape them.** Frank's call, 2026-08-10,
+  arising from Q2: option-run parsing had nowhere good to live. `ext.c` exists
+  so parse.c holds the core syntax and nothing else, and its role is to find the
+  right handler for a matched extension — NOT to accumulate every construct's
+  body parser. `registry.c` is declarative data. Q2's option-run grammar is
+  currently in registry.c, which matches neither (see the PROVISIONAL note above
+  it), and `\p{...}` alone — a loose format needing normalisation, not just
+  validation — would outweigh everything in ext.c today.
+
+  The shape: a module exposes SEVERAL PORTS. (1) SEMANTIC, what the construct
+  means, which is what SR-6's handler field was for. (2) SYNTAX, for constructs
+  whose body is complicated. (3) optimisation, deferred — do not design for it
+  yet. The doorway tables establish from key+tail that this IS an options group,
+  then call the row's syntax handler for the details.
+
+  **Why the syntax port is needed before any semantics exist:** every module is
+  unimplemented today and body parsing is STILL required, because "is this a
+  construct at all" is tier 2 under D26 and exact. The two ports have different
+  lifecycles, which is what makes them two ports rather than one handler with a
+  mode flag.
+
+  A verdict shape that fell out of Q2's measurements rather than being invented
+  — PCRE2 distinguishes two kinds of bad body, and only one means "no construct":
+  `SYN_OK` / `SYN_MALFORMED` (still promise the module: `(?i-m-s)` is error 194,
+  a malformed option setting; `(?0J)` is error 114, a malformed recursion call) /
+  `SYN_NOT` (errors 111 and 141 — no construct, promise nothing). Q2 got that
+  distinction wrong in BOTH directions before the differential refused it.
+
+  Pick two or three modules that capture DIFFERENT pieces rather than the
+  easiest ones — a port designed against one example inherits that example's
+  alphabet, which is D27's lesson applied to interface design. Candidates:
+  `modifiers` (a simple body; semantics that fold into parse-time state per
+  D23/OS-1, not into the engine), `classes` (set-valued return currency, a
+  name-keyed body, AND it is the forcing function PC-4 is blocked on), and
+  `unicode-props` (the case that breaks a validate-only signature, because it
+  must hand back a NORMALISED name). `verbs` is the migration test — it already
+  has a name scan in ext.c, so moving it proves the port fits existing code
+  rather than only greenfield.
+
+  Files in `src/parse/modules/` (or similar) — decide with the interface. Q2's
+  `pcrec_registry_option_run_ok` is the first thing to move.
 
 
 Sequenced so each step pays for itself before the next is justified. SR-1/SR-2

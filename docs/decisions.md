@@ -1603,3 +1603,68 @@ libpcre2 or python `re`, never from pcrec.
 checkpoints, which would suggest the goal documents have gone stale rather than
 that the method has stopped working; or the documents become detailed enough
 that "reading the spec" and "reading the code" stop being different acts.
+
+## D28 — a module has PORTS: semantics and syntax are answered separately
+
+**Decided** 2026-08-10 (Frank), arising from Q2. **Status:** adopted in
+principle; the interface itself is [MOD-0] and is not built. Q2's option-run
+parser is in `registry.c` PROVISIONALLY and is the first thing MOD-0 moves.
+
+**The problem Q2 exposed.** Construct BODY parsing has no home. `ext.c` was
+created so that parse.c could hold the core syntax and nothing else, and its
+role is to find the right handler for a matched extension — it is a router.
+`registry.c` is declarative `static const` data plus a lookup. Neither is a
+place to put a parser, and Q2 needed one: the `(?` doorway cannot answer "is
+this a construct" without reading the whole option run, exactly as Q1 could not
+answer it at `(*` without reading the whole verb name.
+
+It is not a handful of cases. Ten construct families need body parsing, and the
+two largest are ahead of us rather than behind: `\p{...}` is a loose format
+requiring NORMALISATION (case, spaces, `_`, `-`, `^`, `Script=Latin`, the bare
+`\pL` form) and `(?[...])` is a nested set algebra. Either would outweigh
+everything in `ext.c` today. Three families already sit in `ext.c` (verb names,
+the `LIMIT_*` magnitude rule, the class-bracket delimiter scan) and it was
+already the wrong shape for them.
+
+**The decision.** A module exposes several PORTS rather than one entry point:
+
+1. **semantic** — what the construct MEANS. This is what SR-6's handler field
+   was always for.
+2. **syntax** — how to parse a complicated body. The doorway tables establish
+   from key+tail that this IS, say, an options group; the syntax port works out
+   the details.
+3. optimisation — deferred. Do not design for it yet.
+
+**Why two ports rather than one handler with a mode flag, which is the argument
+that actually settles it:** they have different LIFECYCLES. Every module is
+unimplemented today, and body parsing is still required right now, for all of
+them, because "is this a construct at all" is tier 2 under D26 and therefore
+exact. The syntax port is needed for every module before any semantic port
+exists.
+
+**A verdict shape Q2 measured rather than invented.** PCRE2 distinguishes two
+kinds of bad body and only one of them means "no construct here":
+
+    SYN_OK         the body parses
+    SYN_MALFORMED  the construct, written wrongly — STILL promise the module.
+                   `(?i-m-s)` is error 194, a malformed option setting;
+                   `(?0J)` is error 114, a malformed recursion call.
+    SYN_NOT        errors 111 and 141 — no construct; promise nothing.
+
+Q2 got that distinction wrong in BOTH directions before the generated
+differential refused it, which is why it is recorded here rather than left for
+MOD-0 to rediscover.
+
+**Revisit when:** MOD-0 designs the signature. Two warnings carried forward. A
+`(const char *at, size_t avail, size_t *len)` validate-only signature is
+already known to be too weak — `\p` must hand back a normalised name, not a
+length. And a port designed against one example inherits that example's
+alphabet (D27), so shape it against at least `unicode-props` and the EXISTING
+`verbs` scan, not against `modifiers` alone, which is the simplest body there is.
+
+**Also carried forward, and it is why Q2's parser sits where it does:** the
+grammar and the measurements that establish it must not be separated. The
+`(*LIMIT_*=digits` rule is the counter-example — its measured description is in
+`registry.c` and its implementation in `ext.c`, and R8/C2-9 found them drifted,
+with `ext.c` accepting `=99999999999` that the description forbids. Wherever
+the port lands, the probes and the code go together.

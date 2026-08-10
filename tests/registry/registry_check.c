@@ -115,13 +115,12 @@ static const char *kind_name(RegKind k)
     }
 }
 
-/* Offset within `syntax` at which the selector byte must appear: "\\d" -> 1,
- * "(?=..." -> 2, "[[:alpha:]]" -> 2. Tying the probe to the selector is what
- * stops a row's example from drifting away from the byte it describes. */
-static int sel_offset(RegKind k)
-{
-    return k == RK_ESC ? 1 : 2;
-}
+/* `sel_offset` lived here and is gone at SR-9. It returned a FIXED offset at
+ * which a row's selector byte had to sit, which no longer holds: `(?-2)` needs
+ * leading groups to compile under libpcre2, so its example is `(a)(a)(?-2)` and
+ * the selector is at offset 8. check_wellformed now builds the row's whole
+ * doorway text — prefix, selector and tail — and requires the example to
+ * CONTAIN it, which also checks the tail the old offset test could not see. */
 
 static void check_wellformed(void)
 {
@@ -158,15 +157,41 @@ static void check_wellformed(void)
                         "only falls back to the catch-all after the full scan)",
                         kn, i, r->syntax);
             } else {
-                /* the selector byte must actually appear in the example */
-                int off = sel_offset((RegKind)k);
-                if ((int)strlen(r->syntax) <= off || (unsigned char)r->syntax[off] != (unsigned char)r->sel)
-                    bad("%s row %zu (%s): syntax[%d] is not the selector '%c'",
-                        kn, i, r->syntax, off, r->sel);
-                for (size_t j = 0; j < i; j++)
-                    if (rows[j].sel == r->sel)
-                        bad("%s: duplicate selector '%c' in rows %zu and %zu — two rows claim one byte",
-                            kn, r->sel, j, i);
+                /* The row's example must really contain its own DOORWAY TEXT —
+                 * the doorway prefix, the selector byte, and (SR-9) the tail.
+                 *
+                 * This was a fixed OFFSET until SR-9, which could not survive a
+                 * row whose probe needs leading context: `(?-2)` is a relative
+                 * subroutine call and its syntax has to be `(a)(a)(?-2)` for
+                 * libpcre2 to compile it at all, so the selector is at offset 8.
+                 * Searching for the constructed needle is strictly stronger than
+                 * the old offset test, because it checks the TAIL too — a row
+                 * claiming tail "=" whose example writes "<" now fails here
+                 * rather than in whichever differential noticed later. */
+                char needle[32];
+                const char *pfx = k == RK_ESC ? "\\" : k == RK_GROUP ? "(?" : "[";
+                snprintf(needle, sizeof needle, "%s%c%s", pfx, r->sel, r->tail ? r->tail : "");
+                if (!strstr(r->syntax, needle))
+                    bad("%s row %zu (%s): the example does not contain its own doorway text \"%s\"",
+                        kn, i, r->syntax, needle);
+                /* Uniqueness is over the (sel, tail) PAIR since SR-9. Two rows
+                 * MAY share a byte — that is the whole point of the tail — but
+                 * two rows with the same byte AND the same tail are
+                 * indistinguishable, and find() would silently answer whichever
+                 * the scan reached first. The design doc calls this "stronger
+                 * than today" and it is: the old check could not have caught two
+                 * identical `(?P<` rows, because neither existed to collide. */
+                for (size_t j = 0; j < i; j++) {
+                    if (rows[j].sel != r->sel) continue;
+                    bool same_tail = (!rows[j].tail && !r->tail) ||
+                                     (rows[j].tail && r->tail &&
+                                      strcmp(rows[j].tail, r->tail) == 0);
+                    if (same_tail)
+                        bad("%s: rows %zu and %zu both claim byte '%c' with tail %s%s%s "
+                            "— indistinguishable, so lookup answers whichever comes first",
+                            kn, j, i, r->sel,
+                            r->tail ? "\"" : "", r->tail ? r->tail : "(none)", r->tail ? "\"" : "");
+                }
             }
 
             /* `open_msg` is the class-open diagnostic (FIX-2/K3). Two things
@@ -250,17 +275,26 @@ static void check_wellformed(void)
              * is the right level to test it at: the runtime guard stays as
              * defence, and this is what keeps it unreachable. */
             switch ((RegKind)k) {
+            /* RD_FIXED joined both of these at Q2/SR-9, and it is not a
+             * loosening: ext.c has always rendered RD_FIXED at every doorway
+             * (`if (r->diag == RD_FIXED) ctx_fail(cx, at, "%s", r->msg)`), and
+             * the invariant is "this shape HAS a renderer here". The escape
+             * doorway needs it for `\N{name}` and the (? doorway for `(?PX)`
+             * and the catch-all — three rows saying what PCRE2 says, where a
+             * module template would be the over-promise Q2 removes. */
             case RK_ESC:
-                if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL)
+                if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL &&
+                    r->diag != RD_FIXED)
                     bad("%s (%s): the escape doorway renders only the module "
-                        "templates; this row's diagnostic shape has no renderer",
-                        kn, r->syntax);
+                        "templates and fixed text; this row's diagnostic shape "
+                        "has no renderer", kn, r->syntax);
                 break;
             case RK_GROUP:
-                if (r->diag != RD_MODULE && r->diag != RD_NONE)
+                if (r->diag != RD_MODULE && r->diag != RD_NONE &&
+                    r->diag != RD_FIXED)
                     bad("%s (%s): the (? doorway renders only the module "
-                        "template; this row's diagnostic shape has no renderer",
-                        kn, r->syntax);
+                        "template and fixed text; this row's diagnostic shape "
+                        "has no renderer", kn, r->syntax);
                 break;
             case RK_VERB:
             case RK_CLASSBRACKET:
@@ -306,11 +340,17 @@ static void check_wellformed(void)
      *
      * A floor answers "did someone delete a lot"; it never answers "did someone
      * delete the right ones". The manifest below is the real defence and names
-     * 8 rows; this makes the other 59 undeletable-by-accident. Adding a row is
+     * 8 rows; this makes the other 91 undeletable-by-accident. Adding a row is
      * a one-line bump here, in the same commit — which is the point, not the
-     * cost. */
-    if (total != 68) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 68. If you added or "
+     * cost.
+     *
+     * 68 -> 100 at Q2/SR-9. The 32 are: 11 option-setting bytes that used to
+     * hide behind one catch-all, 10 `(?-<digit>)` relative subroutine calls,
+     * 3 lookbehind tails on `<`, 3 python-style tails on `P`, `(?+`, `(?[`,
+     * the `(?P` and `\N{` refusals, and `\N{U+`. Every one of them is a
+     * MEASUREMENT against libpcre2 10.46, not a reading of pcre2syntax. */
+    if (total != 100) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 100. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -371,12 +411,93 @@ static void check_feature_module_bijection(void)
     }
 }
 
+/* ---- SR-9: longest tail wins, and it must be OBSERVABLE ----------------
+ *
+ * find() resolves a byte with several rows by taking the LONGEST matching tail.
+ * Nothing tested that. Measured: reducing it to first-matching-tail-wins
+ * produced ZERO failures across this repository — every tail in the table is
+ * one byte except `\N`'s pair, and those two happened to be written longest
+ * first, so row order silently stood in for the rule.
+ *
+ * That is R9's general lesson exactly: when a dangerous operation is safe
+ * because of a fact that lives elsewhere, the assertion belongs where the fact
+ * is. Two things now hold it — the rows are written SHORTEST FIRST so order
+ * disagrees with the rule, and this check asserts the rule directly, for every
+ * prefix-related pair rather than for the one that exists today. */
+static void check_tail_precedence(void)
+{
+    int pairs = 0, bad_pairs = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        if (!rows) continue;
+
+        for (size_t i = 0; i < n; i++) {
+            if (!rows[i].tail) continue;
+            for (size_t j = 0; j < n; j++) {
+                if (i == j || rows[j].sel != rows[i].sel) continue;
+                size_t li = strlen(rows[i].tail);
+                /* is row j's tail a PROPER PREFIX of row i's? */
+                const char *tj = rows[j].tail;
+                size_t lj = tj ? strlen(tj) : 0;
+                if (tj && (lj >= li || memcmp(tj, rows[i].tail, lj) != 0)) continue;
+                if (!tj) continue;   /* the bucket fallback is covered below */
+                pairs++;
+
+                /* Text that matches the LONGER tail must select the longer row. */
+                const RegRow *got = pcrec_registry_find((RegKind)k, rows[i].sel,
+                                                        rows[i].tail, li);
+                if (got != &rows[i]) {
+                    bad("%s: '%c' with text \"%s\" selected the row for tail \"%s\", not the "
+                        "longer \"%s\". Lookup must take the LONGEST matching tail; taking the "
+                        "first would make row ORDER decide, which is not a rule anyone maintains.",
+                        kind_name((RegKind)k), rows[i].sel, rows[i].tail,
+                        got && got->tail ? got->tail : "(none)", rows[i].tail);
+                    bad_pairs++;
+                }
+            }
+
+            /* And a tailed row must beat its own bucket's tail-less fallback. */
+            const RegRow *got = pcrec_registry_find((RegKind)k, rows[i].sel,
+                                                    rows[i].tail, strlen(rows[i].tail));
+            if (got && !got->tail) {
+                bad("%s: '%c' with text \"%s\" fell through to the tail-less row — a tail "
+                    "that matches must win, or a tailed construct is unreachable",
+                    kind_name((RegKind)k), rows[i].sel, rows[i].tail);
+                bad_pairs++;
+            }
+        }
+    }
+
+    /* LIVENESS. If no prefix-related pair exists, the first half of this check
+     * asserted nothing and passing means only that. Say so rather than printing
+     * a PASS that reads as coverage — the failure mode this repo keeps meeting. */
+    if (pairs == 0)
+        bad("tail precedence: NO prefix-related tail pair exists in the table, so "
+            "longest-tail-wins is currently unobservable. It was observable when this "
+            "check was written (\\N{ and \\N{U+); restore a pair or the rule is untested.");
+    else if (bad_pairs == 0) {
+        char label[160];
+        snprintf(label, sizeof label,
+                 "tail precedence: longest tail wins (%d prefix-related pair(s) checked, "
+                 "and every tailed row beats its bucket fallback)", pairs);
+        ok(label);
+    }
+}
+
 /* ---- part 2: table -> parser ------------------------------------------- */
 
 /* The exact diagnostic a row claims, at the atom (outside-a-class) site. */
 static void esc_atom_msg(const RegRow *r, char *buf, size_t sz)
 {
-    if (r->diag == RD_MODULE_OCTAL)
+    /* RD_FIXED says the whole diagnostic IS `msg` — no template, no module.
+     * `\N{name}` is the first escape row of that shape (SR-9): PCRE2 states it
+     * does not support the construct, so there is no module to name and the
+     * module template would print "(null)". */
+    if (r->diag == RD_FIXED)
+        snprintf(buf, sz, "%s", r->msg);
+    else if (r->diag == RD_MODULE_OCTAL)
         snprintf(buf, sz, "\\%c (backreference/octal) requires module '%s'", r->sel, r->module);
     else
         snprintf(buf, sz, "\\%c requires module '%s'", r->sel, r->module);
@@ -414,6 +535,11 @@ static void check_table_to_parser(void)
             snprintf(label, sizeof label, "esc %s: in-class refusal promises no module", r->syntax);
             expect_msg(label, pat, want);
             continue;
+        } else if (r->diag == RD_FIXED) {
+            /* A fixed-text row says the same thing in both positions: it is
+             * PCRE2's own refusal, and PCRE2 does not vary it by position. */
+            snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);
+            expect_msg(label, pat, r->msg);
         } else {
             snprintf(want, sizeof want, "\\%c in a class requires module '%s'", r->sel, r->module);
             snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);
@@ -432,7 +558,13 @@ static void check_table_to_parser(void)
             expect_compiles(label, r->syntax);
             continue;
         }
-        snprintf(want, sizeof want, "(?%c...) requires module '%s'", byte, r->module);
+        /* Since Q2 the (? doorway has fixed-text rows too — `(?PX)` and the
+         * catch-all, which agree with PCRE2 that no construct begins there
+         * rather than promising a module for it. */
+        if (r->diag == RD_FIXED)
+            snprintf(want, sizeof want, "%s", r->msg);
+        else
+            snprintf(want, sizeof want, "(?%c...) requires module '%s'", byte, r->module);
         snprintf(label, sizeof label, "group %s: diagnostic matches the row", r->syntax);
         expect_msg(label, r->syntax, want);
     }
@@ -491,12 +623,21 @@ static void check_required_rows(void)
         {RK_GROUP,        ':', RS_BASE,
          "(?: — the ONE doorway the base tier reaches; SR-5's guard is about this row"},
         {RK_VERB,  REG_SEL_ANY, RS_MODULE, "the (*...) verb catch-all"},
-        {RK_GROUP, REG_SEL_ANY, RS_MODULE, "the (?...) inline-option catch-all"},
+        /* Q2 INVERTED THIS ROW. It was RS_MODULE ("inline-option catch-all") and
+         * promised module 'modifiers' for all 255 bytes; the eleven real option
+         * bytes now have rows of their own and the catch-all AGREES WITH PCRE2
+         * that there is no construct. Pinned as RS_REJECTED so restoring the
+         * over-promise fails here as well as in PC-3's byte differential. */
+        {RK_GROUP, REG_SEL_ANY, RS_REJECTED, "the (?...) catch-all: PCRE2 error 111, no module"},
     };
     char label[192];
 
     for (size_t i = 0; i < sizeof required / sizeof required[0]; i++) {
-        const RegRow *r = pcrec_registry_find(required[i].kind, required[i].sel);
+        /* The manifest names rows by SELECTOR, which is the tail-less question;
+         * a manifest entry for a tailed row would need the tail too. None does
+         * today, and check_wellformed's (sel, tail) uniqueness check is what
+         * would notice a tailed row shadowing a manifest one. */
+        const RegRow *r = pcrec_registry_find(required[i].kind, required[i].sel, NULL, 0);
 
         /* find() falls back to the catch-all, so an exact-selector row must be
          * confirmed to be exactly that row and not the fallback standing in */
@@ -531,8 +672,20 @@ static void check_required_rows(void)
  * 4a sweep caught this on its first run, which is the sweep doing its job: the
  * `:` row genuinely says two different things in two positions, and a sweep
  * that could not tell them apart would have been asserting the wrong string. */
-static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_flag,
-                  bool at_open)
+/* `selpos` is the index of the SELECTOR BYTE inside the pattern `fmt` builds,
+ * and it exists so this sweep asks the registry the same question the PARSER
+ * asks (SR-9). A tail row matches on the bytes FOLLOWING the selector, so a
+ * lookup that passed NULL here would be asking a different question than the
+ * one the parser answered — and would agree with it only by luck. `[\%c]`
+ * is the live case: the parser sees `]` after the selector, so a future row
+ * with tail "]" would make the two disagree silently.
+ *
+ * It is checked, not trusted: `pat[selpos] != c` fails the sweep. Change a
+ * format and forget this number and you get a loud failure rather than a check
+ * quietly asking about the wrong byte. That is deliberate — R9 spent two
+ * findings on guards that were wrong in the same way as the bug they answered. */
+static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
+                  unsigned skip_flag, bool at_open)
 {
     char pat[16], got[256], label[192];
     int mismatches = 0, routed = 0;
@@ -542,8 +695,16 @@ static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_fl
         int rejected;
 
         snprintf(pat, sizeof pat, fmt, c, c);
+        size_t plen = strlen(pat);
+        if (selpos >= plen || (unsigned char)pat[selpos] != (unsigned char)c) {
+            bad("%s: selpos %zu does not point at the selector byte 0x%02x in \"%s\" "
+                "— the sweep would ask the registry about the wrong position",
+                what, selpos, c, pat);
+            mismatches++;
+            break;
+        }
         rejected = try_compile(pat, got, sizeof got) != 0;
-        r = pcrec_registry_find(k, c);
+        r = pcrec_registry_find(k, c, pat + selpos + 1, plen - selpos - 1);
 
         /* A row whose whole diagnostic is fixed text carries no "requires
          * module" marker, so the generic branches below cannot see it. Check it
@@ -619,7 +780,7 @@ static void sweep(RegKind k, const char *fmt, const char *what, unsigned skip_fl
  * the sentence above would otherwise read as more than it is. */
 static void sweep_verb(void)
 {
-    const RegRow    *row   = pcrec_registry_find(RK_VERB, REG_SEL_ANY);
+    const RegRow    *row   = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
     const VerbTable *upper = pcrec_registry_verb_tables(0);
     const VerbTable *lower = pcrec_registry_verb_tables(1);
     const VerbName  *mark  = pcrec_registry_verb_find(upper, "MARK", 4);
@@ -691,6 +852,8 @@ int main(void)
     check_wellformed();
     check_feature_module_bijection();
 
+    check_tail_precedence();
+
     printf("\n== table -> parser (every row's own syntax) ==\n");
     check_table_to_parser();
 
@@ -702,16 +865,16 @@ int main(void)
      * caught "a construct added to parse.c with no row" — true for half the
      * doorways it was written to describe. A critic pass found it. */
     printf("\n== parser -> table (255-byte sweep of ALL FOUR doorways) ==\n");
-    sweep(RK_ESC,          "\\%c",      "after a backslash", 0, false);
+    sweep(RK_ESC,          "\\%c",      1, "after a backslash", 0, false);
     /* RF_CLASS_INVALID joins RF_CLASS_BASE as a reason a row is deliberately not
      * a "requires module" doorway in the class position — the first because the
      * byte is base syntax there, the second because PCRE2 forbids the construct
      * there permanently and a module must not be promised (R9/SPEC-classes-F1).
      * The two are excused here and asserted POSITIVELY in check_table_to_parser,
      * so being on this list is not a way to escape being checked. */
-    sweep(RK_ESC,          "[\\%c]",    "after a backslash inside a class",
+    sweep(RK_ESC,          "[\\%c]",    2, "after a backslash inside a class",
           RF_CLASS_BASE | RF_CLASS_INVALID, false);
-    sweep(RK_GROUP,        "(?%c",      "after (?", 0, false);
+    sweep(RK_GROUP,        "(?%c",      2, "after (?", 0, false);
     /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
      * doorway is decided by a NAME and a byte sweep varies one byte. It proves
      * the doorway is reached and that PCRE2's two name tables are selected by
@@ -725,14 +888,14 @@ int main(void)
      * "unknown POSIX class name" and would make this sweep assert the wrong
      * string. `alpha` is a real POSIX class name and an ordinary run of letters
      * to the two collating rows, so one body serves all three. */
-    sweep(RK_CLASSBRACKET, "[[%calpha%c]]", "after [ inside a class (4b)", 0, false);
+    sweep(RK_CLASSBRACKET, "[[%calpha%c]]", 2, "after [ inside a class (4b)", 0, false);
     /* DOORWAY 4a, which had NO sweep at all until FIX-2. The template above is
      * `[[%ca%c]]` — an inner bracket — so it only ever tested 4b, and the
      * CLASS'S OWN bracket went unswept even though it is a different code path
      * with (since K3) a different message. R6 spotted the gap and could not add
      * it: `[%ca%c]` would have FAILED until K3 was fixed, which is exactly why
      * it is landing in the same change as the fix. */
-    sweep(RK_CLASSBRACKET, "[%calpha%c]", "at a class's own bracket (4a)", 0, true);
+    sweep(RK_CLASSBRACKET, "[%calpha%c]", 1, "at a class's own bracket (4a)", 0, true);
 
     printf("\n== Summary ==\n");
     printf("checks passed: %d\n", pass);

@@ -59,8 +59,8 @@ def dump():
     # EXACT, not a floor. This was `< 60` against 67 rows, i.e. seven rows of
     # slack in the one absolute anchor either doc-side check had (R6 T-4).
     # Bumping it is deliberate and belongs in the same commit as the row.
-    if len(rows) != 68:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 68. "
+    if len(rows) != 100:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 100. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

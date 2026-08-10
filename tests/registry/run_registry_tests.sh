@@ -89,7 +89,7 @@ if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
 # someone thought to name.
 if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     pc3n="$(grep -c '^PASS: ' "$PC3OUT" || true)"
-    if [ "$pc3n" -ne 98 ]; then
+    if [ "$pc3n" -ne 143 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -98,14 +98,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 98." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 143." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (98 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (143 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 98 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 143 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
@@ -158,6 +158,12 @@ POSIX class name pcrec claims was produced INDEPENDENTLY|R9/C1-2: the pool could
 pcrec varies its own answer by position|R9/C3-verify: the libpcre2-side counter stays green under a full revert; this is the half that reads pcrec
 POSIX name x position|R9/C3-4: <  and > are only legal as a class's entire content
 every verb name pcrec claims was produced INDEPENDENTLY|R8/C1-4: the external pool could be empty with nothing failing
+(? byte differential: 7650 probes|Q2: the doorway promised module 'modifiers' for 217 of 255 bytes; this is the only external check that 217 bytes are NOT constructs
+(? byte differential: libpcre2's own populations|Q2: "all 255 agree" is also what a doorway promising a module for everything prints; the 38/217 split is what makes agreement mean something
+option runs: 19448 probes|Q2: splitting the catch-all into 11 letter rows fixed the BYTE and left (?iZ) still promising a module; only a run-level sweep sees that
+option runs: both verdict buckets|Q2: a sweep where every run is invalid agrees with a doorway that refuses everything
+tail sweep (?P|SR-9: (?P= vs (?P< was invisible to every one-byte sweep in this repo (named in tests/registry/CLAUDE.md since R5)
+tail sweeps: 2 of 4 prefixes|SR-9: (?< answers alike for every tail, so its split is pinned in tests/reject/ and this counter is what stops the whole sweep becoming that
 MANIFEST
     fi
 fi

@@ -197,7 +197,7 @@ commits to. The blocker is table generation and size, not matching.
 | `a\|b` | `OK` | — | incl. empty branches; leftmost-first preference via priority pruning (D3) |
 | `(...)` | `OK-LIMITED` | — | parses and groups correctly, but capture SPANS are not reported — only the overall match. Captures arrive with the M4 VM engine |
 | `(?:...)` | `OK` | |
-| `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `REJECTED` | — | modules `lookaround/named-groups` / `named-groups`. Gated behind captures (M4) |
+| `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `REJECTED` | — | module `named-groups`. Gated behind captures (M4). Since Q2/SR-9 `(?<` names ONLY this module: the three lookbehind tails `=` `!` `*` have rows of their own |
 | `(?>...)`, `(*atomic:...)` | `REJECTED` | `PLANNED-HARD` | module `atomic-groups` / `verbs`. Same reasoning as possessive quantifiers: a cut, not a no-op |
 
 ## Comment
@@ -236,7 +236,7 @@ commits to. The blocker is table generation and size, not matching.
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `(?=...)` `(?!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround`. Lookahead is automaton intersection — feasible, not cheap, and it multiplies states |
-| `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround/named-groups`. Fixed-length lookbehind is tractable via the reverse machine D7 already builds; variable-length is much harder |
+| `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround`. Fixed-length lookbehind is tractable via the reverse machine D7 already builds; variable-length is much harder |
 | `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` verbose spellings | `REJECTED` | — | module `verbs`; same underlying feature |
 | `[[:<:]]` `[[:>:]]` | `REJECTED` | `PLANNED` | module `classes` by doorway, but they are NOT character classes — they are zero-width WORD BOUNDARY assertions PCRE2 inherited from its Unix ancestry, measured on "abc def" (`[[:<:]]def` matches [4,7), `abc[[:>:]]` matches [0,3)). Whoever implements module `classes` owns splitting them out; `^` does not negate them. Found by PC-3's generated name differential (FIX-2), not by reading. **And they are POSITION-RESTRICTED (R9/C3-4):** libpcre2 accepts them ONLY as a class's ENTIRE content, so `[[:<:]]` compiles while `[x[:<:]]`, `[[:<:]a]` and even `[^[:<:]]` are all error 130 — unlike every ordinary POSIX name, which works in any position. pcrec promised module `classes` for all of those until R9; it now answers "unknown POSIX class name", and `check_posix_positions` in tests/registry/ crosses name against position, which is the axis pair neither earlier differential varied |
 | `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` | module `lookaround`. The non-atomic variants are defined by their backtracking behaviour. **This row was RIGHT and the registry was WRONG** until R8/C4-8: `(?*...)` had no registry row, so the `(?` catch-all answered "requires module 'modifiers'" for it. Three homes, one disagreeing — the `\v` shape exactly, and found the same way, by reading an outside source rather than by any test |
@@ -424,7 +424,7 @@ predictions were — and record it here when one turns out wrong.
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 68 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 100 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 | doorway | syntax | status | module | engines | PCRE2 semantics |
 |---|---|---|---|---|---|
@@ -439,6 +439,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 68 rows f
 | after `\` | `\v` | `REJECTED` | `classes` | dfa|vm | any vertical whitespace character (NOT vertical tab; python re disagrees) |
 | after `\` | `\V` | `REJECTED` | `classes` | dfa|vm | any character that is not vertical whitespace |
 | after `\` | `\N` | `REJECTED` | `classes` | dfa|vm | any character except newline (PCRE2 forbids it inside a class) |
+| after `\` | `\N{name}` | `AGREES-REJECT` | — | — | \N{name} — PCRE2 states it does not support this Perl construct |
+| after `\` | `\N{U+0041}` | `REJECTED` | `unicode-props` | dfa|vm | a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection |
 | after `\` | `\b` | `REJECTED` | `assertions` | dfa|vm | word boundary — but inside a class it is BASE syntax: backspace (0x08) |
 | after `\` | `\B` | `REJECTED` | `assertions` | dfa|vm | not a word boundary |
 | after `\` | `\A` | `REJECTED` | `assertions` | dfa|vm | start of subject |
@@ -470,9 +472,15 @@ Every non-base construct pcrec knows, as the parser itself sees it — 68 rows f
 | after `(?` | `(?:...)` | `OK` | — | dfa|vm | non-capturing group |
 | after `(?` | `(?=...)` | `REJECTED` | `lookaround` | vm | positive lookahead |
 | after `(?` | `(?!...)` | `REJECTED` | `lookaround` | vm | negative lookahead |
-| after `(?` | `(?<=...)` | `REJECTED` | `lookaround/named-groups` | vm | lookbehind (?<=...) (?<!...), or named capture group (?<name>...) |
+| after `(?` | `(?<=...)` | `REJECTED` | `lookaround` | vm | positive lookbehind |
+| after `(?` | `(?<!...)` | `REJECTED` | `lookaround` | vm | negative lookbehind |
+| after `(?` | `(?<*a)` | `REJECTED` | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
+| after `(?` | `(?<name>a)` | `REJECTED` | `named-groups` | vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
 | after `(?` | `(?'name'...)` | `REJECTED` | `named-groups` | vm | named capture group, Perl-style quoting |
-| after `(?` | `(?P<name>...)` | `REJECTED` | `named-groups` | vm | python-style named group (?P<n>...), backreference (?P=n), recursion (?P>n) |
+| after `(?` | `(?P<name>a)` | `REJECTED` | `named-groups` | vm | python-style named capture group |
+| after `(?` | `(?P=n)` | `REJECTED` | `backrefs` | vm | python-style backreference to a named group |
+| after `(?` | `(?P>n)` | `REJECTED` | `recursion` | vm | python-style subroutine call into a named group |
+| after `(?` | `(?PX)` | `AGREES-REJECT` | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
 | after `(?` | `(?>...)` | `REJECTED` | `atomic-groups` | vm | atomic (non-backtracking) group |
 | after `(?` | `(?*a)` | `REJECTED` | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
 | after `(?` | `(?#...)` | `REJECTED` | `comments` | dfa|vm | comment, discarded up to the next ')' |
@@ -491,7 +499,31 @@ Every non-base construct pcrec knows, as the parser itself sees it — 68 rows f
 | after `(?` | `(?7)` | `REJECTED` | `recursion` | vm | recurse into capture group 7 |
 | after `(?` | `(?8)` | `REJECTED` | `recursion` | vm | recurse into capture group 8 |
 | after `(?` | `(?9)` | `REJECTED` | `recursion` | vm | recurse into capture group 9 |
-| after `(?` | `(?i)` | `REJECTED` | `modifiers` | dfa|vm | inline option setting or scoping: (?i) (?im-sx:...) (?^) (?-i) |
+| after `(?` | `(?+1)(a)` | `REJECTED` | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT |
+| after `(?` | `(a)(?-01)` | `REJECTED` | `recursion` | vm | relative subroutine call, leading zero |
+| after `(?` | `(a)(?-1)` | `REJECTED` | `recursion` | vm | relative subroutine call to the group 1 to the LEFT |
+| after `(?` | `(a)(a)(?-2)` | `REJECTED` | `recursion` | vm | relative subroutine call, 2 to the left |
+| after `(?` | `(a)(a)(a)(?-3)` | `REJECTED` | `recursion` | vm | relative subroutine call, 3 to the left |
+| after `(?` | `(a)(a)(a)(a)(?-4)` | `REJECTED` | `recursion` | vm | relative subroutine call, 4 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(?-5)` | `REJECTED` | `recursion` | vm | relative subroutine call, 5 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(?-6)` | `REJECTED` | `recursion` | vm | relative subroutine call, 6 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(?-7)` | `REJECTED` | `recursion` | vm | relative subroutine call, 7 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | `recursion` | vm | relative subroutine call, 8 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | `recursion` | vm | relative subroutine call, 9 to the left |
+| after `(?` | `(?[[a]])` | `REJECTED` | `classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
+| after `(?` | `(?)` | `REJECTED` | `modifiers` | dfa|vm | empty option setting |
+| after `(?` | `(?-i)` | `REJECTED` | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
+| after `(?` | `(?^)` | `REJECTED` | `modifiers` | dfa|vm | reset all options to their default |
+| after `(?` | `(?J)` | `REJECTED` | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
+| after `(?` | `(?U)` | `REJECTED` | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
+| after `(?` | `(?a)` | `REJECTED` | `modifiers` | dfa|vm | ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*) |
+| after `(?` | `(?i)` | `REJECTED` | `modifiers` | dfa|vm | caseless |
+| after `(?` | `(?m)` | `REJECTED` | `modifiers` | dfa|vm | multiline: ^ and $ match at internal newlines |
+| after `(?` | `(?n)` | `REJECTED` | `modifiers` | dfa|vm | no auto-capture: plain (...) stops capturing |
+| after `(?` | `(?r)` | `REJECTED` | `modifiers` | dfa|vm | restrict caseless matching to within ASCII or non-ASCII |
+| after `(?` | `(?s)` | `REJECTED` | `modifiers` | dfa|vm | dotall: . matches newline |
+| after `(?` | `(?x)` | `REJECTED` | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
+| after `(?` | `(?q)` | `AGREES-REJECT` | — | — | no construct begins with this byte — PCRE2 error 111 |
 | after `(*` | `(*ACCEPT)` | `REJECTED` | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | — | POSIX collating element — PCRE2 rejects it, and so must we |

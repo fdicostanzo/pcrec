@@ -43,7 +43,9 @@ nothing enforcing agreement; a construct with two homes will drift.
 
 Everything non-base enters through exactly **four doorways** — after `\`, after
 `(?`, after `(*`, after `[` inside a class — and since SR-2 those doorways are
-four real function calls in ext.c. parse.c's own switch answers first and
+four real function calls in ext.c. Since SR-9 a doorway is keyed by a byte AND
+an optional TAIL, which is what lets `(?P<` `(?P=` and `(?P>` name three
+different modules instead of one. parse.c's own switch answers first and
 returns in every one of them. A base-tier pattern still reaches the
 class-bracket doorway once per non-negated `[` — measured 2026-08-10, `[abc]`
 costs 1 lookup and `[a-z]+@[a-z]+\.[a-z]{2,4}` costs 3 — so "no lookup at all"
@@ -73,6 +75,33 @@ Rules when touching it:
   would cost the base tier a lookup. `\b` inside a class is a third thing
   parse.c still answers, but as BASE syntax — it decodes to backspace, which is
   what the row's `RF_CLASS_BASE` flag records.
+- **A row may carry a `tail`** (SR-9): the bytes that must FOLLOW its selector
+  byte, with LONGEST TAIL WINS inside that byte's bucket. It is a literal
+  prefix, not a pattern — `(?-` needs ten rows, "0".."9", rather than one "\d",
+  because a tail nobody has to interpret cannot be interpreted wrongly. Three
+  bytes use it: `P` (`<` named group, `=` backreference, `>` subroutine call),
+  `<` (`=` `!` `*` are lookaround, everything else is a named group) and `\N`
+  (`{U+` is a Unicode code point, `{` alone is a construct PCRE2 refuses).
+  **Row ORDER must not be able to stand in for the rule.** The `\N` pair is the
+  only place longest-wins is observable, and reducing find() to
+  first-matching-tail produced ZERO failures repository-wide while those two
+  rows were written longest-first. They are now written SHORTEST first, so order
+  disagrees with the rule, and `check_tail_precedence` asserts it directly and
+  fails if no prefix-related pair is left to observe it with.
+- **The compound module name is gone.** `M_lookaround_named`
+  ("lookaround/named-groups") existed for `(?<`, one byte meaning two
+  constructs. A compound name is a true sentence and an inexact answer, and D26
+  puts module attribution in tier 2. Reach for `tail` first; fall back to a
+  compound name only when the deciding text is not a literal prefix.
+- **`RF_OPTION_RUN` says the construct is a RUN, not a byte** (Q2). Splitting
+  the `(?` catch-all into eleven option-letter rows fixed `(?q)` and left
+  `(?iZ)` still promising module 'modifiers' for syntax PCRE2 refuses, because
+  the row is chosen by the first byte and nothing read the rest. The doorway now
+  reads the whole run, as Q1 made `(*` read the whole name. The grammar is
+  MEASURED and its edges are not guessable from single letters: `a` takes one
+  ASCII-restrict sub-option (`(?aP)` compiles, `(?aPP)` is error 111), and a
+  misplaced hyphen is error 194 — a MALFORMED option setting, so a module is
+  still owed. Its home in registry.c is PROVISIONAL; see D28 and [MOD-0].
 - **`RF_CLASS_DELIM` carries a construct's own recognition rule**, not just its
   diagnostic: a delimiter-pair construct opens only when its matching `X]`
   appears later, and the class's own bracket can serve as its `[`. SR-2 moved
@@ -117,6 +146,42 @@ Rules when touching it:
   of VF_BARE / VF_ARG / VF_EMPTYARG / VF_EQNUM / VF_GROUPARG / VF_ATSTART are
   right. Do not reason them out from the PCRE2 documentation; the check will
   disagree with you and it will be correct.
+
+## The `(?` doorway, after Q2
+
+The catch-all row used to answer "requires module 'modifiers'" for every byte.
+MEASURED with a generated sweep of all 256 bytes and 45 completions each,
+against libpcre2 10.46: **38 bytes begin a construct and 217 do not** (of the
+255 probeable ones; NUL is K9's territory). All 217 were promised a module for
+syntax PCRE2 rejects outright with error 111 — the same defect Q1 removed at
+`(*` and FIX-2 at the class bracket, at the doorway that is 217x wider.
+
+Six over-promises were fixed, and only four of them were on the plan. The other
+two came from the sweep, which is the argument for generating an input space
+rather than listing it, one more time:
+
+| written | was | is |
+|---|---|---|
+| `(?q)` and 216 other bytes | module 'modifiers' | PCRE2's error-111 wording, no module |
+| `(?+N)` `(?-N)` | 'modifiers' | 'recursion' — relative subroutine calls |
+| `(?[...])` | 'modifiers' | 'classes' — an extended character class |
+| `(?P=` `(?P>` | 'named-groups' | 'backrefs' / 'recursion' |
+| `(?PX)` and 251 other tails | 'named-groups' | PCRE2's error-141 wording *(not on the plan)* |
+| `(?iZ)` `(?-Z)` `(?aPP)` | 'modifiers' | no module — the RUN is the construct *(not on the plan)* |
+
+**The run grammar was wrong twice before the differential accepted it**, and
+both errors are worth not repeating. First too strict — "at most one hyphen,
+never after `^`" — which UNDER-promised for 24 shapes that PCRE2 calls option
+settings (error 194, "invalid hyphen"): a malformed option setting is still an
+option setting, and module 'modifiers' is exactly what would diagnose it. Then
+wrong about ORDERING: PCRE2 stops at the first error, so `(?--D)` is 194 at the
+second hyphen and never examines the `D` that would have been 111. Three
+candidate rules, each refuted by measurement — the same shape as K4, where four
+measured patterns separated three candidates and no weaker rule got all four.
+
+Do not read a module name here as externally verified. libpcre2 says whether a
+construct EXISTS; it cannot say pcrec should call it 'recursion'. The module
+names are pinned by hand in tests/reject/, as they have always been.
 
 ## The `(*` doorway's NAME tables (Q1 / D25)
 

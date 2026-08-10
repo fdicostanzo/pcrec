@@ -47,6 +47,22 @@
 #define BAD_ROW(cx, at, what) \
     ctx_fail((cx), (at), "internal error: malformed registry row for " what)
 
+/* SR-9's tail context, computed from the Ctx these functions already hold.
+ * `after` is the offset of the first byte PAST the doorway's selector byte, so
+ * a row's `tail` is compared against the text the pattern really has there.
+ *
+ * THE POINT OF DOING IT HERE is that parse.c does not change: the design's
+ * comparison table claims "parse.c call sites changed: 0" against the string
+ * selector alternative, and this is what makes that true. A truncated pattern
+ * yields avail = 0, which matches no tail, so `(?P` at end-of-pattern falls to
+ * the bare `P` row instead of reading past the buffer. */
+static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
+{
+    if (after >= cx->patlen) { *avail = 0; return NULL; }
+    *avail = cx->patlen - after;
+    return cx->pat + after;
+}
+
 /* ---- doorway 1: after '\' ----------------------------------------------
  * `c` is the byte after the backslash and the cursor sits just past it. Called
  * only once parse.c's decoder has declined: the plain character escapes
@@ -59,7 +75,10 @@
  * other module-routed escape, and byte-identity requires reproducing that. */
 void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
 {
-    const RegRow *r = pcrec_registry_find(RK_ESC, c);
+    /* cx->pos sits just past the escape byte, so that IS the tail position. */
+    size_t avail;
+    const char *tl = tail_at(cx, cx->pos, &avail);
+    const RegRow *r = pcrec_registry_find(RK_ESC, c, tl, avail);
 
     if (!r) {
         if (in_class) ctx_fail(cx, at, "unknown escape \\%c in class", c);
@@ -98,7 +117,12 @@ void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
  * missing byte, which is reproduced below. */
 void pcrec_ext_group(Ctx *cx, int c2, size_t at)
 {
-    const RegRow *r = pcrec_registry_find(RK_GROUP, c2);
+    /* cx->pos is at the '?'; c2 is the byte after it; so the tail starts two
+     * past the cursor. When the pattern ends at the '?' that is already beyond
+     * patlen and tail_at reports avail = 0. */
+    size_t avail;
+    const char *tl = tail_at(cx, cx->pos + 2, &avail);
+    const RegRow *r = pcrec_registry_find(RK_GROUP, c2, tl, avail);
     int shown = c2 < 0 ? '?' : c2;
 
     /* Only reachable by deleting the catch-all row, which tests/registry's
@@ -110,6 +134,29 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
         ctx_fail(cx, at, "%s", r->msg);
     if (r->diag != RD_MODULE)
         BAD_ROW(cx, at, "a (? construct");
+
+    /* AN OPTION SETTING IS A RUN, NOT A BYTE (Q2). Splitting the old catch-all
+     * into eleven letter rows fixed `(?q)` and left `(?iZ)` — PCRE2 error 111 —
+     * still being promised module 'modifiers', because the row was chosen by the
+     * first byte and nothing read the rest. Reading the run is what makes this
+     * doorway's answer depend on the whole construct, exactly as Q1 made the
+     * `(*` doorway depend on the whole name.
+     *
+     * The run starts AT the selector byte (`(?i-m:` has the run "i-m"), so this
+     * asks about cx->pos + 1 rather than the tail position used above. On
+     * failure the answer is the doorway's own catch-all row, so the rejection
+     * has ONE home: rewording it there changes it here too, and a second copy of
+     * PCRE2's sentence is exactly the drift this registry exists to prevent. */
+    if (r->flags & RF_OPTION_RUN) {
+        size_t oavail;
+        const char *orun = tail_at(cx, cx->pos + 1, &oavail);
+        if (!pcrec_registry_option_run_ok(orun, oavail)) {
+            const RegRow *any = pcrec_registry_find(RK_GROUP, REG_SEL_ANY, NULL, 0);
+            if (!any || any->diag != RD_FIXED)
+                BAD_ROW(cx, at, "the (? doorway's catch-all");
+            ctx_fail(cx, at, "%s", any->msg);
+        }
+    }
     ctx_fail(cx, at, "(?%c...) requires module '%s'", shown, r->module);
 }
 
@@ -139,7 +186,7 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
  * is measured against libpcre2 rather than read from documentation. */
 void pcrec_ext_verb(Ctx *cx, size_t at)
 {
-    const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY);
+    const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
     const char *pat = cx->pat;
     size_t n = cx->patlen;
     size_t star = at + 1;           /* the '*'; `at` is the '(' */
@@ -306,7 +353,11 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
  * duplication SR-2 removed. */
 bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from)
 {
-    const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2);
+    /* No class-bracket row carries a tail: this doorway's constructs are
+     * decided by the delimiter byte plus the SCAN below, not by the next byte.
+     * Passing NULL/0 asks the tail-less question explicitly rather than letting
+     * a future tailed row here change this scan's meaning by accident. */
+    const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
     if (!r || !(r->flags & RF_CLASS_DELIM)) return false;
     for (size_t i = from; i < cx->patlen; i++) {
         char ch = cx->pat[i];
@@ -328,7 +379,7 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      * catch-all would turn every unmatched byte in a class into a construct. So
      * the end-of-pattern case is handled one line below, by the check that
      * handles every other unrecognised byte. */
-    const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2);
+    const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
     if (!r) return;
 
     /* K4, fixed 2026-08-10 (FIX-2). This scan used to run to the end of the

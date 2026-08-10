@@ -268,18 +268,37 @@ before this file existed, produced none anywhere.
 - **options = 0.** No `PCRE2_UTF`, no `PCRE2_UCP`, no `PCRE2_CASELESS`. Every
   claim is about default 8-bit mode; no UTF conformance is measured anywhere in
   this repo, and `-i` has never been run against `PCRE2_CASELESS`.
-- **Only the `(*` doorway gets a name differential.** The other three are
-  byte-keyed and their rows are checked one probe each. `(?P=` versus `(?P<`,
-  and `\N{U+hhhh}` versus `\N`, are still unswept — that is SR-9's `tail`.
+- **The `(?` doorway now gets three generated differentials of its own** (Q2),
+  so the sentence that stood here — "only the `(*` doorway gets a name
+  differential" — is retired. A 7650-probe BYTE sweep (libpcre2 recognises a
+  byte after `(?` iff pcrec promises a module: 38 vs 217, both populations
+  pinned), a 19448-probe OPTION-RUN sweep over runs of length 0-3, and 10200
+  probes of TAIL sweeps for `(?P` `(?<` `(?+` `(?-`. `(?P=` versus `(?P<` and
+  `\N{U+hhhh}` versus `\N` are no longer unswept.
+  **Read what the tail sweeps can and cannot do.** `(?<` and `(?+` answer alike
+  for every tail under libpcre2, so for those two prefixes agreement is free and
+  proves nothing; only `(?P` and `(?-` have both buckets populated, which is why
+  a live-prefix counter is asserted and why `(?<`'s module split is pinned by
+  hand in tests/reject/ instead.
+- **RECOGNITION is the bar, not compilation, and the distinction is
+  load-bearing.** PCRE2's "no construct here" errors are 111 and 141; every
+  other error means it DISPATCHED and is complaining about the body. `(?+x)` is
+  error 129, `(?i-m-s)` is 194, `(?0J)` is 114 — all constructs pcrec owes a
+  module for. Bucketing any of those with 111 makes the check demand the
+  over-promise Q2 removed, in reverse: the option-run sweep was first written
+  against "does it compile" and reported 967 mismatches that were entirely the
+  check's error.
 - **A compiling probe is not a semantic check.** `\v` compiles in libpcre2 and
   in python `re`, and they mean different things by it. PC-3 proves the row
   names a construct PCRE2 has; the corpus and the fuzzer are what test meaning.
 
 ### Sabotage validation
 
-20 edits, each reverted after measuring, each caught. Record the EDIT, not just
-the count. The last six exist because the R8 panel proved the first fourteen
-could all pass while the check was doing much less than it claimed.
+27 edits, each reverted after measuring, each caught — but see the tail-precedence
+row, which was NOT caught on its first run and is the reason two more guards
+exist. Record the EDIT, not just the count. Six exist because the R8 panel proved
+the first fourteen could all pass while the check was doing much less than it
+claimed; the last seven are Q2/SR-9's.
 
 | sabotage (exact edit, in a scratch copy) | PC-3 failures |
 |---|---|
@@ -313,6 +332,33 @@ could all pass while the check was doing much less than it claimed.
 | remove the 4b nested-opener shape, WITH the 4a shapes present (R9) | 2 |
 | neutralise both 4a nested-opener shapes (R9) | 2 |
 | drop the `]` from the close check, a bare delimiter closes (R9/C2-6) | 12 |
+| **restore the pre-Q2 `(?` catch-all** (RS_REJECTED -> `GROUP(REG_SEL_ANY, ..., modifiers)`) | **25** (+8 reject) |
+| the doorway stops reading the option run (`if (0 && (r->flags & RF_OPTION_RUN))`) | 23 (+4 reject) |
+| bare `(?P` promises 'named-groups' again (the 5th over-promise) | 24 (+1 reject) |
+| `(?P=` back to 'named-groups' (R8/C4-7's misattribution) | 1 (+1 reject) |
+| `(?+N` back to 'modifiers' | 1 (+1 reject) |
+| one Q2 completion replaced by a duplicate of another (probe COUNT unchanged) | 1 (the set checksum) |
+| **longest-tail-wins -> first-tail-wins in `pcrec_registry_find`** | **3** (+1 reject) — see below |
+
+**The tail-precedence sabotage found a real hole and is the one to read.** On
+its first run it produced **ZERO failures repository-wide**: every tail in the
+table is one byte except `\N`'s pair, and those two were written longest-first,
+so taking the FIRST matching tail gave the same answer as taking the LONGEST and
+row ORDER was silently standing in for the rule. Two changes make it observable
+— the `\N` rows are now written SHORTEST first, so order disagrees with the
+rule, and `check_tail_precedence` asserts it for every prefix-related pair and
+FAILS if no such pair is left. R9's general lesson, met again: when a dangerous
+operation is safe because of a fact that lives elsewhere, the assertion belongs
+where the fact is.
+
+**And the measurement instrument lied before the check did.** Two of these
+sabotages were first recorded as "0 failures" because the battery counted
+`grep -c "^FAIL"`, and PC-3's stdout buffer can flush mid-line, splicing a FAIL
+onto the end of a PASS line (`PASS: ...it reaches theFAIL: (? byte
+differential...`). `bad()`'s `fflush(stdout)` does not prevent it — the partial
+flush has already happened when the buffer fills. Count `FAIL:` unanchored, and
+run a no-sabotage control first: the control is what showed the instrument was
+wrong rather than the guards.
 
 Three are load-bearing beyond the others. The pre-Q1 sabotage was detectable by
 NOTHING in this repo before this change — and it also fails `sweep_verb()` now,
@@ -377,12 +423,18 @@ selector with bare `\N`) and calls it a known outstanding second home — it is
 not one instance, it is **the shape of every doorway that is keyed by one byte
 while PCRE2 keys by a string.**
 
-**One of the two rows above is now closed, and by the differential rather than
-by a sweep.** `(*NO_S…` — a branch four bytes into a verb name — is caught by
-`pcre2_check.c`, because names are compared whole against libpcre2 over ~75,000
-candidates. `(?P=` versus `(?P<` is NOT: the `(?` doorway has no name
-differential and is still keyed by one byte. That asymmetry is the honest
-statement of where PC-3 reached and where SR-9's `tail` still has to.
+**BOTH rows above are now closed.** `(*NO_S…` — a branch four bytes into a verb
+name — is caught by `pcre2_check.c`, because names are compared whole against
+libpcre2 over ~75,000 candidates. `(?P=` versus `(?P<` was the open half, and
+SR-9's `tail` plus Q2's tail sweeps closed it: `(?P` has three recognised tails
+and 252 that are error 141, and the sweep asserts pcrec agrees on all 255.
+
+The general statement still stands and is worth keeping: **a sweep that varies
+one byte cannot see a branch keyed past it.** What changed is that this doorway
+now has a differential rather than only a sweep. `(?C1` versus `(?C{...}` is a
+live remaining instance — `(?Ca)` is error 182, "unrecognized string delimiter
+follows (?C", so the callout body has a grammar nothing here reads. It belongs
+to whoever builds module `callouts`, and MOD-0's syntax port is where it goes.
 
 Per-verb MODULES still arrive with SR-6 (`(*pla:...)` is a lookahead and will
 not belong to module `verbs`); Q1 gave the names an existence and a form, not a

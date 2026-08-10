@@ -265,7 +265,18 @@ enum {
      * Distinct from RF_CLASS_BASE, which says the byte is BASE syntax in a class
      * and the doorway is never entered (`[\b]` is backspace). This says the
      * doorway IS entered and the answer is a refusal that promises nothing. */
-    RF_CLASS_INVALID = 1u << 3
+    RF_CLASS_INVALID = 1u << 3,
+
+    /* The row is an INLINE OPTION SETTING, so its construct is the whole run of
+     * option letters up to `)` or `:` — not the single byte that selected it
+     * (Q2). ext.c validates the run with pcrec_registry_option_run_ok and falls
+     * back to the doorway's rejection when it is not one.
+     *
+     * It exists because splitting the `(?` catch-all into eleven letter rows
+     * fixed the first byte and left `(?iZ)` still promising a module for syntax
+     * PCRE2 refuses. A row-per-byte cannot express "and the rest must parse";
+     * this flag is where that obligation lives. */
+    RF_OPTION_RUN = 1u << 4
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -277,6 +288,24 @@ enum {
 typedef struct {
     RegKind     kind;
     int         sel;       /* the deciding byte, or REG_SEL_ANY */
+    /* The bytes that must FOLLOW `sel` for this row to apply, or NULL for "any"
+     * (SR-9, docs/design_registry_selectors.md §7). Lookup is LONGEST TAIL WINS
+     * within the selector byte's bucket, so a row with a tail shadows the same
+     * byte's tail-less row and never the other way round.
+     *
+     * WHY A SECOND KEY RATHER THAN A STRING SELECTOR (§2, which R6 rejected with
+     * measurements): one byte still decides the DOORWAY, and only a handful of
+     * constructs need more. Making every selector a string would turn the
+     * base-tier class lookup from 3 rows into ~31 and silently narrow the
+     * 255-byte sweep; this keeps both exactly as they were.
+     *
+     * IT IS A LITERAL PREFIX, NOT A PATTERN. `(?-` followed by a digit is a
+     * relative subroutine call and followed by a letter is an option setting,
+     * so that construct needs ten rows ("0".."9") rather than one "\d" — which
+     * is deliberate: a tail nobody has to interpret cannot be interpreted
+     * wrongly, and the ten-row digit family is a shape this table already has
+     * twice (`(?0)`..`(?9)` and `\0`..`\9`). */
+    const char *tail;
     const char *syntax;    /* how it is written — also a valid probe pattern,
                               which is what lets the conformance test cover new
                               rows without being edited */
@@ -312,7 +341,17 @@ typedef struct {
 
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
-const RegRow *pcrec_registry_find(RegKind k, int sel);
+/* `at` points at the byte AFTER the doorway's selector byte and `avail` is how
+ * many bytes remain there, so a row's `tail` can be compared without the caller
+ * knowing any row exists. Passing avail = 0 asks the tail-less question and is
+ * what a truncated pattern supplies — a row whose tail cannot fit does not
+ * match, which is why `(?P` at end-of-pattern falls to the bare-`P` row rather
+ * than reading past the end. */
+const RegRow *pcrec_registry_find(RegKind k, int sel, const char *at, size_t avail);
+/* Is `at[0..avail)` a valid PCRE2 inline option run — the text starting at the
+ * byte after `(?`, up to and including its `)` or `:` terminator? The grammar
+ * is measured against libpcre2; see registry.c. */
+bool pcrec_registry_option_run_ok(const char *at, size_t avail);
 
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *
