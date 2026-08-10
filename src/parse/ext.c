@@ -272,6 +272,41 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
  * not decoration: `[.a.]` is an error at offset 0 while `[:alpha:]` is a
  * perfectly ordinary class of five characters, pinned against libpcre2 10.46.
  * RF_CLASS_DELIM is what separates them — see its definition in internal.h. */
+/* Does a delimiter-pair construct actually OPEN at `from`, with `c2` as its
+ * delimiter? This is K4's three-rule scan as a PREDICATE, so that a caller which
+ * is not the doorway can ask the question without triggering a diagnostic.
+ *
+ * It exists for range endpoints (R9/SPEC-FA). PCRE2 refuses a range whose
+ * endpoint is one of these constructs — `[0-[:digit:]]` is error 150, "invalid
+ * range in character class" — and pcrec was reading the `[` as an ordinary
+ * literal member and EMITTING A MATCHER. Measured against libpcre2 10.46, and
+ * the boundary is exactly this scan rather than "the byte is `[`":
+ *
+ *   [0-[a]         compiles   `[a` opens nothing
+ *   [0-[:]         compiles   `[:` with no `:]` after it opens nothing
+ *   [0-[:digit]    compiles   same — the pair never closes
+ *   [0-[:digit:]]  err 150    the pair closes, so a construct is the endpoint
+ *   [0-[.a.]       err 150    ...even when the CLASS itself never closes
+ *   [0-[:foo:]]    err 150    position beats name validity; not "unknown name"
+ *
+ * `rules 1-3` are documented at length in the doorway below; this shares them
+ * rather than restating them, because two copies of that scan is exactly the
+ * duplication SR-2 removed. */
+bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from)
+{
+    const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2);
+    if (!r || !(r->flags & RF_CLASS_DELIM)) return false;
+    for (size_t i = from; i < cx->patlen; i++) {
+        char ch = cx->pat[i];
+        if (ch == '\\' && i + 1 < cx->patlen &&
+            (cx->pat[i + 1] == ']' || cx->pat[i + 1] == '\\')) { i++; continue; }
+        if (ch == (char)c2 && i + 1 < cx->patlen && cx->pat[i + 1] == ']') return true;
+        if (ch == '[' && i + 1 < cx->patlen && cx->pat[i + 1] == (char)c2) return false;
+        if (ch == ']') return false;
+    }
+    return false;
+}
+
 void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                              bool at_class_open, bool at_content_start)
 {

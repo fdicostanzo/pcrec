@@ -191,6 +191,24 @@ static Ast *p_class(Ctx *cx)
         if (peekc(cx) == '-' && peekc2(cx) != ']' && peekc2(cx) >= 0) {
             size_t dashpos = cx->pos;
             cx->pos++; /* '-' */
+            /* A RANGE ENDPOINT MAY NOT BE A CLASS-OPENING CONSTRUCT (R9/SPEC-FA).
+             * PCRE2 makes `[0-[:digit:]]` error 150, "invalid range in character
+             * class"; pcrec read the `[` as an ordinary literal upper bound and
+             * EMITTED A MATCHER — a silent wrong matcher, the one class the
+             * mandate forbids. 546 instances in a 1,530-pattern sweep.
+             *
+             * It survived every suite because it is masked by the alphabet the
+             * tests use: `a` is 0x61 and `[` is 0x5b, so `[a-[:digit:]]` is
+             * rejected as an out-of-order range before this can matter, and
+             * every range in the corpus is `a`-based. It took a test written
+             * from the SPEC rather than from the code to pick `[0-`.
+             *
+             * The endpoint test is the construct's own recognition rule, not
+             * "the byte is `[`" — `[0-[a]`, `[0-[:]` and `[0-[:digit]` all
+             * compile in PCRE2 because no pair closes. */
+            if (peekc(cx) == '[' &&
+                pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
+                ctx_fail(cx, dashpos, "invalid range in character class");
             int hc = nextc(cx);
             int hi = (hc == '\\') ? esc_class_value(cx) : hc;
             if (lo > hi)

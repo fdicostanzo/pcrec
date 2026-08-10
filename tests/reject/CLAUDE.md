@@ -6,9 +6,9 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 200 rows asserted by hand (naming a module, or the
+- **run_reject_tests.sh** — 206 rows asserted by hand (naming a module, or the
   base-grammar brace errors K5/K6/K8, or since Q1 the verb doorway's four
-  outcomes), 67 more reached by iterating `pcrec --list-syntax`, 57
+  outcomes), 67 more reached by iterating `pcrec --list-syntax`, 61
   accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
   into the normal tables. Ends with a MANIFEST naming the handful of rows whose
   deletion an exact count would not catch, plus the exact counts themselves.

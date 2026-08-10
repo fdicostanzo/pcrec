@@ -185,6 +185,31 @@ $show"
     ok "accept '$show' (base tier still compiles)"
 }
 
+# ---- a class-opening construct as a RANGE ENDPOINT (R9/SPEC-FA) ----
+# PCRE2 error 150. pcrec read the `[` as an ordinary literal upper bound and
+# EMITTED A MATCHER — the silent wrong matcher the mandate forbids, 546
+# instances in a 1,530-pattern sweep, and invisible to every suite here.
+#
+# WHY IT WAS INVISIBLE, which is the part worth keeping: `a` is 0x61 and `[` is
+# 0x5b, so `[a-[:digit:]]` is rejected as an out-of-order range long before the
+# endpoint matters — and every range in this repository is `a`-based. The bug
+# needed a lower bound BELOW `[`. It was found by a test writer working from the
+# spec with no sight of the code, which is why the alphabet was `0-` and not
+# `a-`. A test derived from the implementation inherits the implementation
+# author's alphabet.
+reject '[0-[:digit:]]'  "invalid range in character class"
+reject '[*-[..]]'       "invalid range in character class"
+reject '[A-[=b=]]'      "invalid range in character class"
+reject '[0-[.a.]]'      "invalid range in character class"
+reject '[0-[:foo:]]'    "invalid range in character class"   # position beats the name
+reject '[0-[:digit:]'   "invalid range in character class"   # class never closes
+# And the accept-controls that pin where the boundary is NOT. The test is the
+# construct's own recognition rule, not "the byte is `[`": each of these has a
+# `[` in the endpoint and no pair that closes, and libpcre2 compiles all four.
+accept '[0-[a]'
+accept '[0-[]'
+accept '[0-[:]'
+accept '[0-[:digit]'
 echo "== base tier must still compile (control) =="
 # Without these, a parser that rejected EVERYTHING would score 100% below.
 accept 'abc'
@@ -909,6 +934,10 @@ must_have '[:alpha:]' \
     "K3's over-ACCEPTANCE: pcrec compiled this into a matcher for {: a l p h}"
 must_have '[a[:b]' \
     "K3's over-REJECTION, the same missing flag from the other side"
+must_have '[0-[:digit:]]' \
+    "R9/SPEC-FA: a class construct as a range ENDPOINT is PCRE2 error 150, and pcrec emitted a matcher for it. The only reject row for a tier-1 miscompile found by spec-first testing"
+must_have '[0-[:digit]' \
+    "R9/SPEC-FA: the accept side of the same rule — the test is whether the PAIR CLOSES, not whether the byte is '['. Without this the fix could over-reject every '[' endpoint and nothing would notice"
 must_have '[a[.b\].]' \
     "the ONLY row where K4's escape rule is load-bearing; without it this flips to over-acceptance"
 must_have '[a[.b]c]d.]' \
@@ -962,8 +991,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 200 ] || [ "$naccept" -ne 57 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 200 / 57 / 0." >&2
+if [ "$nrej" -ne 206 ] || [ "$naccept" -ne 61 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 206 / 61 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

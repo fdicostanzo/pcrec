@@ -3376,3 +3376,59 @@ skip notice said "PC-3 reported failures" when the gate is also true for a
 TRUNCATED run that reported none. Both now say which case they are in.
 
 PC-3 is 98 checks.
+
+## 2026-08-10 — SPEC-FIRST TESTING, and the tier-1 miscompile it found in an hour
+
+Frank's diagnosis, mid-session: *"perhaps some of the issues with testing are
+because the coder is writing the tests based on the code, not the goal. lets
+have (at least some of) the tests written by a test writer based on reading of
+the goal spec."*
+
+Run as an experiment. Two test writers, both FORBIDDEN to read `src/` or
+`tests/`. They could read CLAUDE.md, APPROACH.md, D26, pcre2_compliance.md, the
+public header, and libpcre2 itself — the goal and the source of truth — and run
+`build/pcrec` as a black box.
+
+**It found a tier-1 miscompile within the hour, and it is one nothing else in
+this project could see.**
+
+`[0-[:digit:]]` — a class-opening construct as a range's UPPER BOUND. libpcre2
+refuses with error 150; pcrec read the `[` as an ordinary literal member and
+EMITTED A MATCHER. 546 instances in a 1,530-pattern sweep. That is the one class
+the mandate forbids outright, and it had been there the whole time.
+
+**Why every existing test missed it is the whole argument.** `a` is 0x61, `[` is
+0x5b, so `[a-[:digit:]]` is rejected as an out-of-order range before the endpoint
+can matter — and EVERY range in this repository is `a`-based. The bug requires a
+lower bound below `[`. A test derived from the implementation inherits the
+implementation author's alphabet; a writer reading only the spec picked `0-`
+because nothing in the spec privileges `a`.
+
+Scale of what it beat: four adversarial critics WITH source access, 1,239,480
+generated patterns, ~2.4 billion name probes, ASan/UBSan, and the differential
+fuzzer — all green, all past it. One writer denied the source found it.
+
+Fixed by testing the construct's own recognition rule at the endpoint rather than
+"is the byte `[`", with the boundary pinned against libpcre2 first: pcrec now
+agrees on all 13 measured cases, rejecting the six PCRE2 rejects and still
+compiling `[0-[a]`, `[0-[]`, `[0-[:]`, `[0-[:digit]` where no pair closes. Six
+reject rows and four accept-controls, two in the MANIFEST — the accept side is
+there because without it the fix could over-reject every `[` endpoint unnoticed.
+`pcrec_ext_class_pair_opens()` shares K4's scan rather than copying it.
+
+**The same report independently re-derived Q2** (218 of 256 bytes after `(?`
+promised a module for syntax PCRE2 does not have) from the documents alone. Q2
+is the next step in the AGREED ORDER and now has a second, independent
+justification arrived at without reading the registry.
+
+Still to work through from the two reports: a NUL-in-pattern API gap
+(`pcrec_compile` takes no length, so `a\0b` compiles as `a`), a resource case
+where `a{65535}` needs 2.1 GB / 23.9 s and aborts the caller's process under a
+2 GB limit, several more tier-2 module misattributions, and SEVEN places where
+the project's own documents are ambiguous or disagree — the first time anyone has
+read the spec cold.
+
+Suite: 1012 corpus / 83 CLI / 206 reject + 67 iterated (335 checks) / 129
+registry / 98 PC-3 / 29 codegen / 7 trie-identity. All five gates green, and
+bench GATED this time (load 5.72; the earlier runs were inconclusive at load 31
+because these very spec writers were saturating the box).

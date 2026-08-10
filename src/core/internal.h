@@ -427,6 +427,12 @@ void pcrec_ext_verb(Ctx *cx, size_t at) __attribute__((noreturn));
 void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                              bool at_class_open, bool at_content_start);
 
+/* True when a `[X...X]` construct really opens at `from` with delimiter `c2` —
+ * K4's scan as a predicate, for callers that must ASK rather than diagnose.
+ * Used by the range-endpoint check: PCRE2 makes `[0-[:digit:]]` error 150, and
+ * pcrec used to read the `[` as a literal and emit a matcher (R9/SPEC-FA). */
+bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from);
+
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means
  * "no filter". These are INTERNAL on purpose: the CLI and the test suite are
