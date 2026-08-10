@@ -791,7 +791,22 @@ static void check_verb_names(void)
  * for something PCRE2 accepts is neither — it is the honest "not implemented
  * yet", and `[[:alpha:]]` is exactly that until module `classes` lands. */
 static const char *CLS_DELIMS  = ":.=";
-static const char *CLS_BODIES[] = {"a", "", "alpha", "a\\]b", "a\\\\", "^a", "b]c", "x[:y"};
+/* Bodies are expanded through `cls_expand` too, so a `%c` here is the delimiter
+ * under test. Before R9/C2-6 the only body containing a delimiter was the
+ * literal `x[:y` — colon-hardcoded — so no generated pattern ever placed a
+ * LOOSE delimiter inside a class for `.` or `=`. Dropping the `]` from the
+ * close check (making a bare delimiter close the pair) then produced 19,964
+ * over-rejections against libpcre2, minimal cases `[::a]` and `[.a.b]`, while
+ * this differential printed its unchanged totals and its per-delimiter
+ * nested-opener floor passed. One hand-written `accept '[.a.b]'` row in
+ * tests/reject/ was the entire defence. */
+static const char *CLS_BODIES[] = {
+    "a", "", "alpha", "a\\]b", "a\\\\", "^a", "b]c",
+    "x[%cy",      /* a nested opener, at every delimiter rather than only `:` */
+    "a%cb",       /* a LOOSE delimiter mid-body */
+    "%c",         /* ...and alone */
+    "%c%c"        /* ...and doubled, so `::` and `..` are generated */
+};
 static const char *CLS_SHAPES[] = {
     "[%c%s%c]",        /* the class's own bracket is the opener (doorway 4a) */
     "[[%c%s%c]]",      /* an inner bracket (4b) */
@@ -900,7 +915,9 @@ static void check_class_brackets(void)
             for (size_t si = 0; si < sizeof CLS_SHAPES / sizeof CLS_SHAPES[0]; si++)
                 for (size_t ti = 0; ti < sizeof CLS_TRAILERS / sizeof CLS_TRAILERS[0]; ti++) {
                     char body[128], tail[32], pat[256], cmsg[256];
-                    cls_expand(body, sizeof body, CLS_SHAPES[si], *d, CLS_BODIES[bi]);
+                    char bodytxt[64];
+                    cls_expand(bodytxt, sizeof bodytxt, CLS_BODIES[bi], *d, "");
+                    cls_expand(body, sizeof body, CLS_SHAPES[si], *d, bodytxt);
                     cls_expand(tail, sizeof tail, CLS_TRAILERS[ti], *d, "");
                     snprintf(pat, sizeof pat, "%s%s", body, tail);
                     {   int np = nested_opener_pos(pat, *d);

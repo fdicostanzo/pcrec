@@ -312,6 +312,7 @@ could all pass while the check was doing much less than it claimed.
 | revert the `open_msg` branch — the 4a over-promise (R9/C1-8) | 3 |
 | remove the 4b nested-opener shape, WITH the 4a shapes present (R9) | 2 |
 | neutralise both 4a nested-opener shapes (R9) | 2 |
+| drop the `]` from the close check, a bare delimiter closes (R9/C2-6) | 12 |
 
 Three are load-bearing beyond the others. The pre-Q1 sabotage was detectable by
 NOTHING in this repo before this change — and it also fails `sweep_verb()` now,

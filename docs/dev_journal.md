@@ -3295,3 +3295,34 @@ the paragraph warning about stale counts; and a liveness assertion that measured
 libpcre2 while its name claimed pcrec. Every one was caught by running a
 positive control rather than by reading the code — including the two that were
 caught only because an EARLIER control was re-run after a LATER change.
+
+### R9, fifth wave — the pushed tree re-measured, and C2-F6
+
+C2 re-ran its 1,239,480-pattern differential against `d80b452` as pushed, since
+six fixes change doorway behaviour and its space had only run against `29a0517`.
+**Every field identical to the digit**, including both liveness counters, and
+all six sabotages reproduced their original counts — no fix weakened the
+instrument's target. It then generated the axis the fix created: 161,951
+patterns of `<`/`>` in every position plus a 2,400-pattern boundary sweep at
+`at_content_start`, at 0 divergence and 0 true over-promise; reverting the rule
+takes true over-promises 0 -> 1,841.
+
+Its classifier was wrong first, in the signature way: it lifted the blamed
+construct out and wrapped it alone (`[x[:<:]]` -> `[[:<:]]`), which compiles
+because that is the ONE legal position — the control destroyed the property it
+tested and would have certified C3-F4 absent. Replaced with in-place
+substitution.
+
+**C2-F6, fixed.** `CLS_BODIES` had exactly one delimiter-bearing body, the
+colon-hardcoded `x[:y`, so no generated pattern ever placed a LOOSE delimiter in
+a class for `.` or `=`. Dropping the `]` from the close check gave 19,964
+over-rejections (`[::a]`, `[.a.b]`) with this differential's totals unchanged
+and the new nested-opener floor passing; one hand-written accept row was the
+whole defence. Bodies now expand through `cls_expand` as the shapes do — 2772
+patterns, nested-opener counts symmetric at 112/161 per delimiter instead of
+colon-skewed, sabotage fails 12.
+
+Also corrected two comments claiming load-bearing behaviour that is measurably
+dead: rule 2's `return` is identical to `break`, and the loop bound `i < patlen`
+is identical to `i + 1 < patlen`. Same defect as C2-F1, twice more, in the same
+function.

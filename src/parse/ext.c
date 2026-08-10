@@ -297,7 +297,14 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      *
      *   1. an unescaped `]` ends the class, so the pair can no longer close
      *   2. a `[` followed by the SAME delimiter is a NESTED opener and WINS —
-     *      PCRE2 abandons the outer one and recognises the inner
+     *      PCRE2 abandons the outer one and recognises the inner. NOTE what
+     *      this code actually does about that: it abandons the outer pair, and
+     *      nothing more. Recognising the inner construct happens later, when
+     *      p_class reaches that `[` and enters doorway 4b again. So the
+     *      `return` below is behaviourally identical to `break` — `closed` is
+     *      false on that path, so the `if (!closed) return;` after the loop
+     *      takes the same exit. Measured byte-identical over 1,239,480 patterns
+     *      and over a 172,246-pattern verdict+message+offset dump (R9/C2).
      *   3. `\]` and `\\` are skipped as a UNIT
      *
      * THE ORDER OF THE CLOSE CHECK IS ARBITRARY, and the comment that stood
@@ -330,6 +337,12 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
     size_t close_at = from;              /* index of the closing delimiter */
     if (r->flags & RF_CLASS_DELIM) {
         bool closed = false;
+        /* `i < patlen`, and the bound is not load-bearing either: every body
+         * inside reads `pat[i + 1]` only after its own `i + 1 < patlen` test,
+         * so `i + 1 < patlen` here is byte-identical over the same 1,239,480
+         * patterns. Stated because the previous version of this function used
+         * the tighter bound and it would be easy to assume the change mattered
+         * (R9/C2). */
         for (size_t i = from; i < cx->patlen; i++) {
             char ch = cx->pat[i];
             /* RULE 3 FIRST, and it means EXACTLY what K4 wrote: `\]` and `\\`
