@@ -253,7 +253,21 @@ CLAUDE.md files, commit, push.
   KNOWN-WRONG pinned lines in tests/reject/ WILL FAIL when this lands — that is
   the signal working; check each against libpcre2 and move it into the normal
   tables in the same commit
-- [Q2] STATE:not-started — the `(?` doorway's over-promise, R8/C4-7. 217 of 255
+- [Q2] STATE:not-started — the `(?` doorway's over-promise, R8/C4-7, and
+  **INDEPENDENTLY RE-DERIVED 2026-08-10 by a spec-first writer (D27) that had
+  not read the registry** — it measured 218 of 256 bytes after `(?` promised a
+  module for syntax PCRE2 does not have, arriving at R8's finding from the
+  documents alone. That is the strongest evidence Q2 is real and not an artefact
+  of how the registry is written.
+  The same report named FOUR TIER-2 MISATTRIBUTIONS to fix while this doorway is
+  open, each measured against libpcre2 rather than read from documentation:
+  `(?+N)` and `(?-N)` are RELATIVE SUBROUTINE CALLS (module `recursion`, not
+  `modifiers`); `(?[...])` is an extended CHARACTER CLASS (not `modifiers`);
+  `(?P=` is a BACKREFERENCE and `(?P>` a SUBROUTINE CALL (neither is
+  `named-groups`). Note the last pair is exactly the `(?P=` vs `(?P<` split
+  SR-9's `tail` field exists for, which is why these two steps are sequenced
+  together.
+  Original entry follows. 217 of 255
   bytes after `(?` are told a pcrec module will implement a construct libpcre2
   rejects outright (error 111, "unrecognized character after (?"), because the
   catch-all `modifiers` row answers for every byte. Same defect as Q1's, at a
@@ -273,6 +287,17 @@ CLAUDE.md files, commit, push.
   The project's only warnings-as-errors gate was previously ACCIDENTAL
   (run_trie_identity.sh), and R7 measured that accident catching a class of
   offset bug
+- [DOC-1] STATE:not-started — reconcile the SEVEN ambiguities a spec-first
+  writer found reading the project's goal documents cold (D27, 2026-08-10). This
+  is the first time anyone has read the spec without also knowing the code, and
+  the ambiguities are findings about the SPEC rather than about the compiler:
+  places where the mandate, APPROACH.md, D26 and pcre2_compliance.md are unclear
+  or disagree with each other. Two are already known to be wrong as written —
+  the claims about the `a{65535}` boundary flagged in K7. Worth doing before the
+  next spec-first round, because a writer working from ambiguous documents
+  spends its effort resolving OUR ambiguity instead of finding OUR bugs. The
+  reports are in the R9 session scratchpad; re-derive rather than trust a path
+  that no longer exists
 - [PC-4] STATE:not-started — a SEMANTIC differential, R8/C4-2. PC-3 compares
   compile VERDICTS only and calls none of the match API it already links, so
   `\v`'s row — the incident this registry was built for — is unverified: the

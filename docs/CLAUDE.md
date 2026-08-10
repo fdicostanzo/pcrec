@@ -24,6 +24,10 @@ Process and status documents for pcrec. The architecture itself lives in
   checkpoint: findings, triage dispositions, reflection.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
+  Open at R9 close: K2 (cosmetic), K7 (a resource bug that also ABORTS the
+  caller's process under a memory limit) and K9 (the public API takes no pattern
+  length, so a pattern containing NUL compiles as its prefix and reports
+  success).
   Failing regressions live in tests/known_fail/ (excluded from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable

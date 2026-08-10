@@ -382,6 +382,16 @@ reaching the DFA state cap that exists to prevent exactly this.
     $ build/pcrec -p rx -o /tmp/o.c 'a{0,65535}'
     Killed                                          # rc 137, empty stderr
 
+**Re-measured 2026-08-10 by a spec-first writer (D27), with two consequences
+this entry did not previously record.** `a{65535}` does reach its clean "too
+complex" diagnostic — but only after 23.9 s and 2.1 GB RSS, and under a 2 GB
+address-space limit `pcrec_compile` ABORTS THE CALLER'S PROCESS with no
+diagnostic at all. pcrec is a library; killing the caller is a worse failure
+than the SIGKILL recorded below, because a caller that set a limit did so
+precisely to avoid this. `a{0,20000}` compiles at 4.7 GB / 49.5 s. The writer
+also found TWO CLAIMS IN docs/pcre2_compliance.md that are wrong as written
+about this boundary — reconcile them when K7 is fixed.
+
 Measured on a pinned build of `c38934c`, so it PREDATES FIX-1 and is not a
 regression from it:
 
@@ -436,3 +446,29 @@ fix, in the same function, by an instrument the fix itself had not used: worth
 remembering before treating a construct as finished. Performance and
 architecture debt lives in docs/plan.md; other engines' bugs in
 docs/upstream_issues.md._
+
+
+## K9 — OPEN, found 2026-08-10 (D27 spec-first writer, contract lens)
+
+`pcrec_compile()` takes a NUL-TERMINATED pattern and no length, so a pattern
+containing a NUL byte is silently TRUNCATED and the compile reports SUCCESS for
+a different pattern than the caller passed.
+
+    pattern "a\0b" (3 bytes)  ->  pcrec compiles `a`, returns 0
+    libpcre2 (given the length) ->  compiles the real 3-byte pattern
+
+This is not reachable through argv or through a line-based corpus, which is why
+no existing test could express it — `tests/registry/pcre2_check.c`'s
+`check_embedded_nul` probes the VERB doorway and says so explicitly, noting that
+"pcrec's public entry point takes a NUL-terminated pattern". That comment
+recorded the limitation; nothing recorded that it produces a WRONG SUCCESS
+rather than a clean refusal, which is the part that matters under the mandate.
+
+Two honest options, and the choice is a public-API decision rather than a bug
+fix: take a length in the public API (a breaking change, and DD-3 territory), or
+document that patterns are NUL-terminated AND refuse a pattern whose declared
+extent the compiler cannot verify. Doing neither leaves a silent wrong compile
+in the library's front door.
+
+**Scheduled:** with DD-3 (generated-API versioning/compat policy), because both
+are changes to the public contract and should be decided together.

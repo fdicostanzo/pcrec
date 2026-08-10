@@ -3462,3 +3462,70 @@ list is not a way to escape being checked.
 Suite: 1012 corpus / 83 CLI / 215 reject + 67 iterated (345 checks) / 129
 registry / 98 PC-3 / 29 codegen / 7 trie-identity. All five gates green, bench
 gated on a quiet box (load 0.87).
+
+## 2026-08-10 — session close: R9, and the change to how tests get written
+
+**What this session was for:** FIX-2's D6 panel, which `29a0517` shipped without
+because a session reset. It is discharged. Seven commits, `29a0517` → `174672b`,
+all pushed.
+
+**The panel's verdict, and the shape of the whole session:** the RULE FIX-2
+implemented was right everywhere it was attacked — 1,239,480 generated patterns
+and ~2.4 billion name probes, zero divergences. Its INSTRUMENT was not. Thirteen
+findings across four waves, then two more from a different method entirely.
+
+**Two real product bugs, both found after the panel's own findings were fixed:**
+
+  - `[[:<:]]`/`[[:>:]]` are position-restricted and pcrec promised a module
+    everywhere PCRE2 refuses. Neither differential could see it: one varies NAME
+    with position fixed, the other varies POSITION with the name fixed, and the
+    defect was in the cell of the cross-product neither generates.
+  - `[0-[:digit:]]` COMPILED A MATCHER for a pattern libpcre2 rejects — tier 1,
+    the one class the mandate forbids.
+
+**FIVE guards written during this review were wrong in the way the finding they
+answered was wrong.** A nested-opener detector that counted an ordinary inner
+bracket; a floor disarmed by the NEXT fix in the same session; corrected counts
+restaled by that session's own edit, inside the paragraph warning about stale
+counts; a liveness assertion measuring libpcre2 while its name claimed pcrec;
+and a probe-count guard that saw deletions but not substitutions. Every one was
+caught by a positive control, none by reading code, and two only by RE-RUNNING
+an earlier control after a later change. That last habit is the transferable
+one.
+
+**And four of my own claims needed correcting mid-session**, recorded here
+because the pattern matters more than any one of them: a baseline "green" that
+was `tail`'s exit code; a glob-injection hypothesis a critic refuted with
+measurements; a figure a later fix invalidated; and a "missing corpus suite"
+that was two gate runs sharing one log file.
+
+**THE DURABLE OUTCOME IS D27.** Frank's diagnosis mid-session — the coder writes
+the tests from the code, not the goal — run as an experiment with two writers
+barred from `src/` and `tests/`. It found the tier-1 miscompile in the first
+hour, a tier-2 over-promise at a third doorway, re-derived Q2 independently from
+the documents alone, and produced the first cold read of our own spec (seven
+ambiguities, now DOC-1).
+
+It beat four adversarial critics WITH source access, 1.24M patterns, ASan/UBSan
+and the fuzzer. The mechanism generalises and is the part to remember: **tests
+derived from the implementation inherit the implementation author's alphabet.**
+Every range in this repository was `a`-based; `a` is 0x61, `[` is 0x5b, so the
+masking case was rejected as an out-of-order range before the bug could show.
+Isolation, not adversarialness, was the active ingredient.
+
+Sharpest instance: the second finding's fact was ALREADY in the repo, in the
+`\N` row's own `note` field — correct, and inert, because `note` is read by no
+check. Knowledge the code does not act on is invisible to tests derived from the
+code.
+
+**State at close.** 1012 corpus / 83 CLI / 215 reject + 67 iterated (345 checks)
+/ 129 registry / 98 PC-3 / 29 codegen / 7 trie-identity. `make strict` clean,
+verify_rxt 980/980, fuzz seed 1 zero divergences, bench GATED on a quiet box
+(load 0.87) with zero inconclusive. Green in place and from a fresh clone.
+Nothing in `STATE:started`.
+
+**Next:** Q2 WITH SR-9 (Frank's call — same rows), now carrying four measured
+tier-2 misattributions and an independent re-derivation. Then DOC-1, and PC-4
+when module `classes` lands. K7 gained a worse failure mode than it recorded
+(pcrec ABORTS the caller's process under a memory limit); K9 is new — the public
+API takes no pattern length, so `a\0b` compiles as `a` and reports success.
