@@ -712,3 +712,72 @@ sweep that carries a TAIL** — that is K10's warning, and this entry is what
 happens when it is not heeded. No `tests/known_fail/` repro: the current
 behaviour is a rejection with a wrong module name, not a wrong match, so the
 pins belong in `tests/reject/`.
+
+## K14 — OPEN, found 2026-08-11 (R13 panel, C5/F13; verified independently by the author)
+
+**pcrec names a module for constructs its own compliance survey says will never
+be implemented.** D26's tier-2 row says this in as many words
+(`docs/decisions.md:1457`):
+
+> **exact.** Naming a module that will never implement a construct is a defect;
+> so is rejecting syntax PCRE2 accepts
+
+**Repro** (measured 2026-08-11, `build/pcrec` at `5173a82`):
+
+    (*COMMIT)         -> (*...) requires module 'verbs'
+    (*PRUNE)          -> (*...) requires module 'verbs'
+    (*SKIP)           -> (*...) requires module 'verbs'
+    (*MARK:x)         -> (*...) requires module 'verbs'
+    (*LIMIT_MATCH=3)  -> (*...) requires module 'verbs'
+    \d                -> \d requires module 'classes'      <- ACTIVELY PLANNED (MOD-0.2)
+
+The first five and the last are **indistinguishable to a caller**, and they are
+opposite promises.
+
+`docs/pcre2_compliance.md:301` says of the backtracking verbs, in its own words:
+
+> `OUT-OF-SCOPE` — these are DEFINED in terms of a backtracking engine's search
+> order [...] A simulation engine explores all alternatives at once, so there is
+> no backtracking tree to prune. PCRE2's own DFA matcher supports none of them.
+
+and `:221` of the `LIMIT_*` family:
+
+> `OUT-OF-SCOPE` — these bound a BACKTRACKING search. pcrec is O(n) by
+> construction, so there is nothing to limit.
+
+These are **architectural exclusions under D22, not backlog.** Module `verbs`
+will exist — it is MOD-0.4 — but it will never implement these constructs, so
+naming it is precisely the defect D26 defines.
+
+**Weaker, same family, recorded for completeness:** `(?C1)` answers "requires
+module 'callouts'", and `pcre2_compliance.md:307` marks callouts `OUT-OF-SCOPE`
+*"for now [...] Revisit only with a concrete customer"*. That is a genuine
+"not yet" rather than a "never", so it is a lesser instance — but a caller
+cannot tell it from either of the other two.
+
+**The missing distinction is an AXIS, not a status** (C5/F13). Three axes are
+needed and the table has two:
+
+    1. what PCRE2 does        RS_BASE / RS_MODULE / RS_REJECTED
+    2. what this compile does  enabled / disabled     (proposed, not built)
+    3. what pcrec will EVER do  will implement / never will   <-- ABSENT
+
+Axis 3 is a fact about pcrec's roadmap: it is not a fact about PCRE2, so axis 1
+cannot hold it, and it is not a fact about one compile, so axis 2 cannot hold
+it. `docs/extension_design.md` §7.2 proposes `RS_NOT_OFFERED` on axis 1 and
+considers a permanently-disabled name on axis 2; **both are category errors and
+neither supplies the missing axis.**
+
+**Severity: over-promise, not a miscompile.** Every one of these is refused, so
+nothing wrong is emitted. It is recorded because it is tier 2 and EXACT under
+D26, because the fact is already written down correctly in
+`docs/pcre2_compliance.md` and contradicted by the diagnostic — two homes for
+one fact, one of them wrong — and because it is the SAME over-promise shape as
+K12, K13 and FIX-2's `[[:foo:]]`, now at a third doorway.
+
+**Fix:** with the status/axis question in `docs/extension_design.md` §7.2 and
+§10.1, which is Frank's to answer. The verb rows need an answer that names no
+module; `REJECTED`'s existing "agreement IS compliance" wording is close, but
+these are constructs PCRE2 DOES support and pcrec will not — a combination the
+vocabulary has no slot for. No `tests/known_fail/` repro: the behaviour is a
+rejection with a misleading module name, so the pins belong in `tests/reject/`.

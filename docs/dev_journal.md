@@ -5209,3 +5209,52 @@ expressible as a set of row statuses or names.
 Three critics independently reached K13 (C3/F6, C4/F21, C1/F9); C1 added
 `[\k<name>]`, `[\g{1}]` and `[\9]`. K13 was written before that material
 arrived and needs no change.
+
+### ADDENDUM 2 — the panel IDLED, and the last pass found a second live defect
+
+All five critics idled 08:18–08:29; the 08:33 re-poll matched. **First
+checkpoint in three sessions to actually reach the "every critic has IDLED"
+bar before closing** rather than inferring it from a quiet agent list.
+
+Two items had been read only as headings when addendum 1 was written.
+
+**K14 recorded — a second shipped tier-2 defect, verified on all three legs.**
+pcrec names a module for constructs its own compliance survey calls
+architecturally out of scope:
+
+    (*COMMIT) (*PRUNE) (*SKIP) (*MARK:x)  ->  "requires module 'verbs'"
+    \d                                    ->  "requires module 'classes'"  (PLANNED)
+
+Indistinguishable to a caller, opposite promises. `decisions.md:1457` carries
+D26's wording — *"Naming a module that will never implement a construct is a
+defect"* — and `pcre2_compliance.md:301` already says the backtracking verbs
+are excluded because "a simulation engine explores all alternatives at once, so
+there is no backtracking tree to prune". **The fact is written down correctly
+and contradicted by the diagnostic.** Two homes, one wrong — the shape the
+single table exists to prevent, found in the docs rather than the table.
+
+**And the missing distinction is an AXIS, not a status.** What pcrec will EVER
+do is a fact about pcrec's roadmap: not about PCRE2, so the status column cannot
+hold it; not about one compile, so the enabled set cannot hold it. The design's
+`RS_NOT_OFFERED` and its permanently-disabled-name alternative are BOTH category
+errors — which retires §10's open question 1 as posed instead of answering it.
+
+**C1 produced a repair, which is the panel's best constructive output.** Asked
+for an alternative rather than only a refutation, it diagnosed the ASK contract
+correctly in a way I had missed: the three levels are a TOTAL ORDER over one
+axis when the measurements describe TWO. `(?(` needs the least information and
+the most effects, so it is simultaneously the highest and lowest rung. Its
+re-cut — `want` (CLAIM/VERDICT/RESULT) crossed with `may` (a capability set) —
+makes the missing point expressible, and it is distinguishable from D32 §8's
+refuted trial mode because allocation is permitted rather than trapped.
+**Recorded, NOT adopted**: adopting an unreviewed design at the desk is exactly
+what this panel caught me doing.
+
+**Obligation C, counted from git rather than argued** (C5/F12): the cleanest
+single-construct addition in the repo's history costs **four files and six
+edits** — the row, one reject-manifest assertion, and four hard-coded totals.
+"Adding a row and nothing else" is already false by a factor of six, and the
+design removes none of the six.
+
+Open defects now: K2, K7, K9, K10, K11, K12, K13, K14 — and K12/K13/K14 are the
+same shape three times over.

@@ -267,3 +267,101 @@ is built on.
 None of these reverse the panel's disposition; they widen it. The design's
 §10 open questions stand, with §10.2 now answered and §7's framing added to the
 list of things that did not survive.
+
+---
+
+# ADDENDUM 2 — the panel has IDLED, and the last material read in full
+
+All five critics idled between 08:18 and 08:29; the final re-poll at 08:33 was
+stable and matched. **This is the first checkpoint in three sessions where the
+"every critic has IDLED" bar was actually reached before closing**, rather than
+inferred from a quiet agent list. Two items in the last pass were read only as
+headings when addendum 1 was written, and both change something.
+
+## C1's proposed REPAIR of the ASK contract — the panel's best constructive output
+
+C1 was asked for an alternative rather than only a refutation, and produced one.
+
+> **The three levels are not the defect. The defect is that they are a total
+> order over one axis, when the measurements describe two independent axes.**
+
+The diagnosis is exactly right and is what the author missed: `(?(`'s TERMINAL
+needs **the least information** (one integer — the top-level branch count) and
+**the most effects** (a full recursive parse). It is simultaneously the highest
+and the lowest rung, so no total order can contain it.
+
+The proposed re-cut:
+
+    want   WANT_CLAIM     is this yours, and what shape        (the endpoint rule)
+           WANT_VERDICT   the right terminal answer, whatever it costs   (the gate)
+           WANT_RESULT    the produced node/set                (normal parse)
+
+    may    a capability SET, not a level:
+           MAY_ALLOCATE | MAY_RECURSE | MAY_DIAGNOSE
+           (the cursor is NEVER moved except under WANT_RESULT — the one hard
+            rule, and the one thing §5's seam got right)
+
+The three current levels become three points in that space, and the missing
+fourth becomes expressible: `{WANT_VERDICT, MAY_ALLOCATE|MAY_RECURSE|MAY_DIAGNOSE}`
+— parse the body with the real parser, read `AltInfo.nbr`, raise E127, and
+**discard the subtree**. It allocates and recurses; it does not commit the
+cursor and does not return a producing outcome.
+
+**Why this is not D32 §8's refuted TRIAL MODE, which is the obvious objection:**
+trial mode was *implicit* — a `Ctx` copy plus a flag trapping `arena_alloc` — so
+it aborted every correct implementation and leaked ~76-80 bytes per byte
+scanned. This inverts both properties: allocation is **permitted rather than
+trapped**, so nothing aborts, and the arena is the real one, freed wholesale on
+the compile's exit, so there is no leak. The only thing discarded is a subtree
+nobody linked in, which is what an arena is for.
+
+C1 states its cost honestly, including that it fixes only the ASK contract and
+none of the other findings, and that §8 check 5 must be re-scoped to the
+property that survives — *no ask level below WANT_RESULT moves `cx->pos`*, one
+comparison, total over every row, with live sabotage.
+
+**NOT ADOPTED — recorded as the panel's proposal, for Frank.** It is a design,
+and adopting an unreviewed design at the desk is the exact error this panel
+caught. It is now `docs/extension_design.md` §10 open question 10.
+
+## K14 — a second live tier-2 defect, verified on all three legs
+
+C5/F13. **pcrec names a module for constructs its own compliance survey says
+will never be implemented**, which D26 defines as a defect in as many words.
+
+    (*COMMIT) (*PRUNE) (*SKIP) (*MARK:x) (*LIMIT_MATCH=3)
+                              -> "(*...) requires module 'verbs'"
+    \d                        -> "\d requires module 'classes'"   <- ACTIVELY PLANNED
+
+Indistinguishable to a caller, and opposite promises. Verified: `decisions.md:1457`
+carries D26's wording; `pcre2_compliance.md:301` calls the backtracking verbs
+architecturally excluded (*"A simulation engine explores all alternatives at
+once, so there is no backtracking tree to prune"*); `:221` says the same of the
+`LIMIT_*` family. **The fact is already written down correctly and contradicted
+by the diagnostic** — two homes, one wrong.
+
+**The missing distinction is an AXIS, not a status**, and this is the part worth
+keeping: what pcrec will EVER do is a fact about pcrec's roadmap. It is not a
+fact about PCRE2, so the status column cannot hold it; it is not a fact about
+one compile, so the enabled set cannot hold it. §7.2 proposes it on the first
+axis and its [OPEN] considers the second — **both are category errors**, which
+retires §10.1 as posed rather than answering it.
+
+Recorded as **K14**.
+
+## C5/F12 — obligation C, counted from git rather than argued
+
+Asked for a number instead of an argument, C5 took the cleanest single-construct
+addition in the repo's history (`12380fe`, the `(?*...)` row) and measured it:
+**four files, six edits** — the row, one hand-written reject-manifest assertion,
+and four hard-coded totals (`compliance_section.py:62`, `registry_check.c:352`,
+`run_reject_tests.sh:922` and `:1073`).
+
+> **Obligation C is already false by a factor of six, and the design removes
+> none of the six.**
+
+§8.1 concedes the reject manifest and does not mention the counters at all. And
+the counters print their own bypass — *"If you added or removed a construct
+deliberately, update this number in the same commit"* — which is the same
+tripwire-with-printed-remedy the project already recorded as unable to catch a
+real construct added with a wrong name.

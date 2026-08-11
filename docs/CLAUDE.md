@@ -40,8 +40,11 @@ Process and status documents for pcrec. The architecture itself lives in
   invalid; pcrec is correct today only because `\d` is unimplemented, and
   MOD-0.2 removes that guard) and K13 (twelve rows answer the CLASS position
   with module `backrefs` for constructs it can never implement — `[\8]` is the
-  literal `8`, `[\k]` the literal `k`). Failing regressions live in
-  tests/known_fail/ (excluded from `make test`).
+  literal `8`, `[\k]` the literal `k`) and K14 (pcrec names a module for
+  constructs its own compliance survey calls architecturally OUT-OF-SCOPE —
+  `(*COMMIT)` answers "requires module 'verbs'", which D26 defines as a defect
+  in as many words). Failing regressions live in tests/known_fail/ (excluded
+  from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable
   rationale behind oracle exclusions. Add an entry whenever tooling

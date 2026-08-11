@@ -1184,6 +1184,21 @@ for Frank.
 11. **[OPEN, NEW] The corrected endpoint rule.** (§6) Per-doorway and per-side.
     The class-bracket doorway is exactly right over 21,396 patterns; the escape
     doorway is not; the low side is asymmetric with the high side.
+10a. **[OPEN, NEW — the panel's own proposed repair, NOT adopted]** C1's
+    re-cut of `ask` into two independent axes: `want` (CLAIM / VERDICT / RESULT)
+    and `may` (a capability SET — ALLOCATE / RECURSE / DIAGNOSE), with the
+    cursor never moving below WANT_RESULT. The diagnosis behind it is
+    unarguable: `(?(` needs the LEAST information and the MOST effects, so no
+    total order can contain it. Distinguished from D32 §8's refuted trial mode
+    because allocation is permitted rather than trapped, and the arena is the
+    real one. Recorded rather than adopted, because adopting an unreviewed
+    design at the desk is what this panel caught. See R13 addendum 2.
+13. **[OPEN, NEW] The THIRD axis — what pcrec will EVER do.** (K14) Not a fact
+    about PCRE2, so the status column cannot hold it; not a fact about one
+    compile, so the enabled set cannot hold it. §7.2's `RS_NOT_OFFERED` and its
+    [OPEN]'s permanently-disabled name are BOTH category errors, which retires
+    open question 1 as posed rather than answering it. pcrec ships this defect
+    today for the backtracking verbs.
 12. **[OPEN, NEW] §8 wants rebuilding by someone denied this document.** The
     density of scope-inheritance defects across ten checks is the signature of
     one author writing both the mechanism and its controls, which is what D27
