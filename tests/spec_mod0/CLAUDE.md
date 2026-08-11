@@ -23,9 +23,10 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-11 (MOD-0.1 slice 8): 8 pass, 0 fail, 2 awaiting.** The suite
-exits 1, and that is the correct state — two of the ten invariants describe
-pcrec surfaces that do not exist yet. Invariant 10's surface LANDED first
+**As of 2026-08-11 (MOD-0.1 slice 9 + the armed check06): 9 pass, 0 fail,
+1 awaiting.** The suite exits 1, and that is the correct state — one
+invariant (7, gate equivalence) still awaits its pcrec-side comparison,
+though its surface (`--features`) now exists. Invariant 10's surface LANDED first
 (`--list-syntax`'s 14th column, `quantifiable`, values {yes, no, form,
 lexical}); invariant 4's followed (the 15th column, `class_expect`, vocabulary
 {"err N", "char 0xNN", "set N"}, empty on the 56 group/verb rows); invariant
@@ -91,13 +92,13 @@ reader will arrive holding it.
 
 | # | Check | Status | Oracle | Awaited pcrec surface |
 |---|-------|--------|--------|----------------------|
-| 1 | check01_isolation.sh | awaiting | `nm` over `build/libpcrec.a` and `build/obj` — the linker | An enabled-set symbol (none matching `enabled_set\|feature_enabled\|…` exists in the archive), and any TU defining a recogniser or extent scan |
+| 1 | check01_isolation.sh | **PASS** (surface landed, MOD-0.1 slice 9 — self-armed with no edit) | `nm` over `build/libpcrec.a` and `build/obj` — the linker | — (enabled.c defines the enabled-set symbols, scans.c the convention-named extent scans; 4 symbol/TU pairs asserted absent from the recogniser TU's undefined list) |
 | 2 | check02_capture_count.c | **PASS** (surface landed) | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | — (`pcrec --count-groups -- BODY` is run, no shell involved, for every one of the 102 generated bodies; exit 0 compares its printed count against CAPTURECOUNT — `capture.pcrec_compared`, floor 1 — exit 1 means pcrec refuses the body as an unimplemented construct and is counted, not compared — `capture.pcrec_refused`, floor 101. Today only 1 of the 102 bodies is accepted, because pcrec implements only the base tier and every generator family here exists specifically to probe named groups / lookaround / verbs / callouts / branch-reset / `(?n)` / quote mode — the compared population grows module by module as those land) |
 | 3 | check03_lexical.c | **PASS** | libpcre2 binding behaviour over all 100 rows | — |
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
 | 6 | check06_cursor.sh | **PASS** (surface landed) | **none — see below; this check compares pcrec against itself** | — (`pcrec --probe-ask WANT [--] CONSTRUCT` drives one doorway once per call; every one of the 99 doorway-reaching rows is driven at `claim`, `verdict` AND `result` — `cursor.clear_compared`, floor 198, asserts pos_after == pos_before at the two WANT_RESULT-clear levels, and `cursor.set_compared`, floor 99, asserts pos_after >= pos_before at the WANT_RESULT-set level. The one row with no doorway at all, `(?:...)`, is named and floored separately — `cursor.base_answered_rows`, floor 1 — and the check fails if that set changes shape in either direction. Today every comparison is an equality: no recogniser is implemented yet, so nothing ever reaches a `result`-level answer, and the >= assertion's strictly-greater branch is unexercised but live) |
-| 7 | check07_gate_equivalence.c | awaiting | libpcre2 decides membership | A way to vary the enabled feature set (`--features=…`, `PCREC_FEATURES`, or an entry point) |
+| 7 | check07_gate_equivalence.c | awaiting | libpcre2 decides membership | The vary-the-set surface EXISTS since MOD-0.1 slice 9 (`pcrec --features LIST`, module names from the dump / all / none) — what remains is this check's own comparison over the three configurations, to be written spec-side |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
 | 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | Same as 7; the per-name-nonzero assertion arms when `gate.compared_pairs` is floored above 0 |
 | 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |

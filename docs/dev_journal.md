@@ -5852,3 +5852,40 @@ rather than only in the journal.
 (then run the one-line src sabotage against the armed check myself);
 spawn the check07-comparison author (surface exists now); then the
 byte-identity landing bar closes MOD-0.1.
+
+## 2026-08-11 — eighth session, fourth stretch: check06 merged and src-sabotaged; SPEC-MOD0 at 9/0/1
+
+**The check06 delivery merged** (5b81c45, worktree branch check06-arm —
+Frank's worktree convention, first full use: atomic delivery, reviewed as
+a diff, merged with --no-ff). Reviewed and independently re-verified
+before merge: the armed comparison drives all three want levels per row,
+asserts clear-side equality separately at claim AND verdict (two code
+paths), set-side >=, compares the non-routing set for EXACT equality
+against {(?:...)}, floors five populations (unpinned-is-a-failure
+implemented in the check itself), and detects the surface via --help
+rather than assuming. The author's three-direction validation held up;
+its predictor (all equalities today, >= branch live-but-unexercised)
+matched its run with no correction.
+
+**The invariant's own sabotage, run by the main session post-merge:**
+one line in the escape doorway (cx->pos++ under want != WANT_RESULT) →
+check06 FAILS with 82 disagreements (41 escape rows × claim+verdict),
+each naming the row and printing the before/after pair; suite 8/1/1.
+Restored pristine → 9/0/1. Both instruments now cover the rule: cli
+case10's in-repo sweep (fails the same sabotage 82/82 in make test) and
+spec-side check06 (independent authorship, runs at checkpoints).
+
+**SPEC-MOD0: 9 pass / 0 fail / 1 awaiting** — only check07's comparison
+remains, and its surface (--features) exists as of slice 9. Bookkeeping:
+CLAUDE.md summary + table rows 1/7 updated for the landed surfaces.
+
+**Process, the FIFTH D27 ambient-injection instance, with a new wrinkle:**
+the check06 author's context received the WORKTREE's own CLAUDE.md copies
+mid-task — including worktrees/check06-arm/tests/CLAUDE.md, a denied
+path — triggered by editing files under those directories. Worktrees
+make DELIVERY atomic; they do not contain the leak, they relocate it
+(the injected copies are the worktree's, byte-identical to the main
+tree's). Disclosure worked; nothing consumed; the standing rule stands.
+
+**Next:** spawn the check07-comparison author (fresh D27, worktree, on
+this HEAD); then the byte-identity landing bar closes MOD-0.1.
