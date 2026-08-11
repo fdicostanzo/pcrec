@@ -912,9 +912,31 @@ remaining options have not been swept. Writing the list needs that sweep.
 > The uniformity argument costs the invariant §5.4 calls load-bearing, and that
 > cost is not in the tradeoff as written.
 >
-> **NEGATIVE RESULT:** `PCRE2_UTF` (bit `0x80000`, also established
-> behaviourally) changes **0 of 120,099** verdicts, independently reproducing
-> R10 with a different generator.
+> **NEGATIVE RESULT, AND IT IS WRONG — see the correction below.**
+> C2 measured `PCRE2_UTF` (bit `0x80000`, established behaviourally) as changing
+> **0 of 120,099** verdicts, apparently reproducing R10.
+>
+> ### CORRECTED AGAIN (R13 — C5/F14, verified by the author): UTF DOES flip a verdict
+>
+>     \N{U+0041}     opt=0  err 193    opt=UTF  COMPILES
+>     [\N{U+0041}]   opt=0  err 193    opt=UTF  COMPILES
+>
+> **Both sweeps are correct.** C2's probe space was strings of length 1..3,
+> which cannot contain a ten-character construct; C5 swept the registry's own
+> `syntax` strings, which can. *Counting a population by a generator that cannot
+> produce it counts the generator* — and this is the second time in one session
+> that a measurement was taken on a space that could not falsify the claim.
+>
+> C5's full sweep, 376 + 198 generated patterns over all 32 single bits, found
+> **8 verdict-changing bits**, not two: `ALLOW_EMPTY_CLASS`, `ALT_BSUX`,
+> `NO_AUTO_CAPTURE` (11 flips), `UTF`, `NEVER_BACKSLASH_C`, `LITERAL` (143),
+> `MATCH_INVALID_UTF`, `ALT_EXTENDED_CLASS`.
+>
+> **And this breaks §7's framing, not just its list.** `\x` is mode-dependent
+> under ALT_BSUX and is BASE grammar — pcrec implements `\x41` in `parse.c`, not
+> in the table — so `\x` must NOT get a row. **The bound mode is therefore not
+> expressible as a set of row statuses or a set of names**, which is what §7 is
+> built on.
 
 ---
 

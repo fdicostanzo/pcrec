@@ -184,3 +184,86 @@ is not:
 - **The author's own review pass found two of the eight refutations** before the
   panel ran, and got one of them (§5.4's `\b` gate) only half right — C5 found
   the miscompiling half. A self-review is worth doing and is not a substitute.
+
+---
+
+# ADDENDUM — material delivered AFTER the commit
+
+**The R11 rule fired again, and this is the third session running.** Immediately
+after committing, `ListAgents` reported *"No reachable agents"* while three
+critics went on to deliver **another ~1,000 lines**: C1 583 → 1031, C5 721 →
+1126, C2 454 → 643. The agent list is evidence, not proof. A follow-up commit is
+the normal repair.
+
+The late material contained one item that changes a COMMITTED finding.
+
+## The one that matters: `PCRE2_UTF` DOES flip a construct verdict (C5/F14)
+
+D30 §4 records, from R10, that `UTF`, `UCP`, `CASELESS`, `MULTILINE`, `DOTALL`,
+`UNGREEDY`, `AUTO_CALLOUT` and every `EXTRA_ASCII_*` "flip NO construct verdict
+at all". Verified by the author against libpcre2 10.46, with the UTF bit
+established behaviourally (bit 19, the bit that makes `\xff` raise "UTF-8 error:
+illegal byte"):
+
+    \N{U+0041}     opt=0  err 193      opt=UTF  COMPILES
+    [\N{U+0041}]   opt=0  err 193      opt=UTF  COMPILES
+
+**It is K10's own construct** — the row this project uses as its worked example
+in D32, D33 and the extension design. And the registry's own `note` on that row
+already said *"PCRE2 error 193 outside UTF mode, which is recognition, not
+rejection"*, so the table knew what the measurement denied. Two homes for one
+fact, one wrong: the shape the single table exists to prevent. D30 §4 now carries
+the correction inline.
+
+**The methodological point is worth more than the correction, and it is the
+second instance in one session.** C2 independently measured `PCRE2_UTF` as
+changing **0 of 120,099** verdicts — and C2 was RIGHT. Its probe space was
+strings of length 1..3, which cannot contain a ten-character construct. C5 swept
+the registry's own `syntax` strings, which can.
+
+> Two correct sweeps, opposite conclusions, and the difference is entirely which
+> family the generator could express. **Counting a population by a generator
+> that cannot produce it counts the generator.**
+
+This is the same failure as the design's position-independence claim being
+evidenced on the only bucket that could not falsify it. Twice in one session,
+from two different directions.
+
+C5's full sweep found **8 verdict-changing option bits, not two**:
+`ALLOW_EMPTY_CLASS` (1 flip), `ALT_BSUX` (6), `NO_AUTO_CAPTURE` (11), `UTF` (2),
+`NEVER_BACKSLASH_C` (1), `LITERAL` (143), `MATCH_INVALID_UTF` (2),
+`ALT_EXTENDED_CLASS` (3); the other 24 bits flip nothing.
+
+**And it breaks §7's framing rather than just its list.** `\x` is mode-dependent
+under `ALT_BSUX` and is BASE grammar — pcrec implements `\x41` in `parse.c`, not
+in the table — so `\x` must not get a row. The bound compile mode is therefore
+**not expressible as a set of row statuses or a set of names**, which is what §7
+is built on.
+
+## The other late findings
+
+- **C1/F9** independently reached the same live bug as C4/F21 and C3/F6 — that
+  is now three critics on it — and added `[\k<name>]`, `[\g{1}]` and `[\9]`.
+  Already recorded as **K13**, which was written before this material arrived;
+  the extra probes strengthen it and change nothing.
+- **C1/F11** — NINE of the 100 rows cannot express their correct terminal answer
+  at TERMINAL, and they reach the VERB doorway, which C1 had earlier scored
+  clean. Widens Finding 2 from one row to nine.
+- **C1/F10** — §6's "set-shaped-but-invalid still yields 150" is a law of the
+  BRACKET family generalised to every set-shaped row; the `\p` family obeys the
+  opposite law. Corroborates C3/F1 from a second direction.
+- **C2/F8, F9, F10** — `(?x)` refutes §5.4 in two reachable configurations, one
+  of which the design itself introduces; the vacuity argument is carrying 28% of
+  the grammar on a single longjmp; and one byte owned by a toggleable feature
+  decides whether `\12` is a backreference or an octal escape.
+- **C5/F12** — obligation C counted: "a row and nothing else" is **already false
+  by 6x today**, and this design makes it ~10x while removing none of the
+  existing cost.
+- **C5/F13** — "never" and "not yet" are ALREADY indistinguishable, in the exact
+  words D26 calls a defect, and §7.2's new status is not the missing one.
+- **C5/F15** — the remaining §9 deletions audited: neither is subsumed, and one
+  of them the design refutes in its own §2.
+
+None of these reverse the panel's disposition; they widen it. The design's
+§10 open questions stand, with §10.2 now answered and §7's framing added to the
+list of things that did not survive.

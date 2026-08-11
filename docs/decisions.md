@@ -2412,6 +2412,34 @@ the option-dependence is a small nameable set (measured: `UTF`, `UCP`,
 `CASELESS`, `MULTILINE`, `DOTALL`, `UNGREEDY`, `AUTO_CALLOUT` and every
 `EXTRA_ASCII_*` flip NO construct verdict at all).
 
+> **CORRECTION, 2026-08-11 (R13/C5-F14, verified independently by the author).**
+> **`PCRE2_UTF` DOES flip a construct verdict**, so the parenthesis above is
+> wrong about the first option it lists. Measured against libpcre2 10.46, with
+> the UTF bit established behaviourally (bit 19, `0x00080000`, the bit that
+> makes `\xff` raise "UTF-8 error: illegal byte"):
+>
+>     \N{U+0041}     opt=0  err 193    opt=UTF  COMPILES
+>     [\N{U+0041}]   opt=0  err 193    opt=UTF  COMPILES
+>
+> And it is **K10's own construct** — the row this project has used as its
+> worked example in D32, D33 and the extension design. The registry's own `note`
+> on that row already says *"PCRE2 error 193 outside UTF mode, which is
+> recognition, not rejection"*, so the table knew what this measurement denied.
+> Two homes for one fact, one of them wrong — the shape the single table exists
+> to prevent.
+>
+> **The methodological point is worth more than the correction.** R13's C2
+> independently measured `PCRE2_UTF` as changing **0 of 120,099** verdicts and
+> was RIGHT — its probe space was strings of length 1..3, which cannot contain
+> a ten-character construct. Two correct sweeps, opposite conclusions, and the
+> difference is entirely which family the generator could express. *Counting a
+> population by a generator that cannot produce it counts the generator.*
+>
+> The rest of the list (`UCP`, `CASELESS`, `MULTILINE`, `DOTALL`, `UNGREEDY`,
+> `AUTO_CALLOUT`, `EXTRA_ASCII_*`) is not disturbed by this, but it was
+> established by the same method and should be re-swept over a space that can
+> express multi-character constructs before it is relied on again.
+
 **The quantifier ranges over five things, and D29 named none of them:**
 construct, POSITION (`(*CR)` compiles and `a(*CR)` is error 160 — `verbs` will
 make it valid, just not there), context flags, the bound MODE, and the PCRE2

@@ -5157,3 +5157,55 @@ makes §7.1's change visible.
 
 The D-group items Frank has not ruled on: the bound compile mode's list (which
 §7 now has most of the material for) and a `make ubsan` build.
+
+### ADDENDUM, same day — material delivered AFTER the commit, and it corrects a COMMITTED finding
+
+**The R11 rule fired for the third session running.** Immediately after
+committing `ce506af`, `ListAgents` reported "No reachable agents" while three
+critics went on to deliver another ~1,000 lines: C1 583 → 1031, C5 721 → 1126,
+C2 454 → 643. The agent list is evidence, not proof. Follow-up commit made, as
+the discipline says it should be.
+
+**`PCRE2_UTF` DOES flip a construct verdict, refuting R10 as recorded in
+D30 §4.** Verified by the author, UTF bit established behaviourally (bit 19 —
+the bit that makes `\xff` raise "UTF-8 error: illegal byte"):
+
+    \N{U+0041}     opt=0  err 193      opt=UTF  COMPILES
+    [\N{U+0041}]   opt=0  err 193      opt=UTF  COMPILES
+
+It is **K10's own construct**, the row used as the worked example in D32, D33
+and the extension design. And the registry's own `note` on that row already said
+*"PCRE2 error 193 outside UTF mode, which is recognition, not rejection"* — the
+table knew what the measurement denied. Two homes for one fact, one wrong.
+D30 §4 now carries the correction inline.
+
+**The method lesson is bigger than the correction, and it is the SECOND
+instance in one session.** C2 measured `PCRE2_UTF` as changing 0 of 120,099
+verdicts and was RIGHT — its probe space was strings of length 1..3, which
+cannot contain a ten-character construct. C5 swept the registry's own `syntax`
+strings, which can.
+
+> **Counting a population by a generator that cannot produce it counts the
+> generator.** Two correct sweeps, opposite conclusions, and the whole
+> difference is which family the generator could express.
+
+That is the same failure as the design's position-independence claim being
+evidenced on the only bucket that could not falsify it. Twice in one session,
+from two directions. The existing lesson — "GENERATE the input space, never list
+it" — is not sufficient; a generated space can be just as blind as a listed one.
+
+C5's full sweep found **8 verdict-changing option bits, not two** (`ALLOW_EMPTY_CLASS`,
+`ALT_BSUX`, `NO_AUTO_CAPTURE` 11 flips, `UTF`, `NEVER_BACKSLASH_C`, `LITERAL`
+143, `MATCH_INVALID_UTF`, `ALT_EXTENDED_CLASS`); the other 24 flip nothing. The
+rest of R10's "flips nothing" list is not disturbed, but it came from the same
+method and should be re-swept over a space that can express multi-character
+constructs before it is relied on again.
+
+**And it breaks §7's framing rather than just its list:** `\x` is mode-dependent
+under ALT_BSUX and is BASE grammar — pcrec implements `\x41` in `parse.c`, not
+in the table — so `\x` must not get a row, and the bound compile mode is not
+expressible as a set of row statuses or names.
+
+Three critics independently reached K13 (C3/F6, C4/F21, C1/F9); C1 added
+`[\k<name>]`, `[\g{1}]` and `[\9]`. K13 was written before that material
+arrived and needs no change.
