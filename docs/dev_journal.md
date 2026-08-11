@@ -5696,3 +5696,27 @@ the enabled-set/toggles surface (checks 01/07/09 — the largest remaining
 chunk), then MOD-0.1's byte-identity bar with its guarded exceptions
 (K12's ten pins are the exception list's current content, each
 failing-then-passing).
+
+## 2026-08-11 — seventh session, addendum: the check02 author's report arrived post-commit
+
+The author's final report reached the main session after its work was
+reviewed, independently re-verified, and committed (ec3eaae). It confirms
+the review on every point — same files, same 1/101 split (the one compared
+body is `(a)(b)`, scoped_n's plain-group control), and its own sabotage B
+is the same lying-wrapper test the main session ran independently.
+
+TWO CORRECTIONS TO THE RECORD. (1) The earlier "delivered clean" note is
+wrong: the author DISCLOSED a harness leak — the full contents of
+tests/CLAUDE.md (a denied path) were auto-injected into its context
+unrequested; it reports consuming nothing from it. That is the THIRD
+recorded instance of the D27 auto-injection pattern (sixth session:
+tests/CLAUDE.md + tests/fuzz/CLAUDE.md to the spec author, then
+src/core/internal.h + src/core/CLAUDE.md). The pattern is now stable
+enough to treat as a standing property of spawning: every D27-style brief
+must anticipate it and require disclosure, and blindness constraints must
+be written knowing ambient CLAUDE.mds WILL leak. (2) The main session
+began reviewing the delivery while the author was still mid-flight (the
+watch fired on the first file change) and briefly misread in-progress
+work as incomplete — the worktree convention Frank ruled this session
+exists to make that impossible; this addendum is its second motivating
+incident.
