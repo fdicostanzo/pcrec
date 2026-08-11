@@ -133,11 +133,47 @@ typedef struct {
     size_t               patlen;
     size_t               pos;      /* parser cursor */
     int                  depth;    /* parser group-nesting depth (bounded) */
+    /* SCOPED PARSE STATE (PARSE-1). Seeded from opt->caseless at parse entry
+     * and saved/restored around every group body, because that is where PCRE2
+     * restores it: measured 17/17 against libpcre2 10.46, `(?i)` set anywhere
+     * inside a group stays in force to the end of THAT group — it leaks across
+     * sibling alternation branches, `(a(?i)b|c)d` matching `Cd` — and is
+     * restored at the immediately-enclosing `)`, not the outermost one. A
+     * top-level `(?i)` is never restored.
+     *
+     * `opt` is const and caller-owned, so it CANNOT hold this: a module doing
+     * D29's "set parse state, parse body, restore" has nothing to set. Nothing
+     * mutates this field yet — module `modifiers` (MOD-0.5) is its first
+     * writer — so today it is exactly opt->caseless for the whole parse, which
+     * is asserted by byte-identity rather than assumed. */
+    bool                 caseless;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
     Job                 *job;
 } Ctx;
+
+/* PARSE-1: what `p_alt` reports about the alternation it just parsed.
+ *
+ * WHY THIS IS A STRUCT AND NOT AN `int`. The measured requirement is a branch
+ * COUNT — conditionals are error 127 above 2 top-level branches and
+ * `(?(DEFINE)` is error 154 above 1 — but `ctx_fail(cx, pos, ...)` takes a
+ * POSITION as a required argument, so a module cannot RAISE that error with a
+ * count alone. D26 puts pinning pcrec's own offsets against pcrec's own
+ * convention in tier 2; only chasing PCRE2's specific number is tier 3. And a
+ * per-branch position is not recoverable after the fact: `Ast` has no position
+ * field of any kind, so a design that leaves the AST alone forecloses it
+ * unless `p_alt` reports it. One `size_t` at the site that already touches
+ * `cx->pos` costs the same as the count.
+ *
+ * `nbr` counts TOP-LEVEL branches, so it is 1 for an alternation-free body and
+ * never 0. `last_bar` is the offset of the LAST `|` p_alt consumed, or
+ * SIZE_MAX when there was none — the offending separator for a
+ * "too many branches" diagnostic. */
+typedef struct {
+    int    nbr;
+    size_t last_bar;
+} AltInfo;
 
 void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
      __attribute__((noreturn, format(printf, 3, 4)));
@@ -500,6 +536,7 @@ unsigned pcrec_flavour_by_name(const char *name);
 /* ---- stage entry points ---- */
 
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
+Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse);
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */

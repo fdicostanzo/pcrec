@@ -29,6 +29,7 @@ test: all
 	bash tests/cli/run_cli_tests.sh
 	bash tests/reject/run_reject_tests.sh
 	bash tests/registry/run_registry_tests.sh
+	bash tests/parse/run_parse_tests.sh
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
 	bash tests/known_fail/run_known_fail.sh

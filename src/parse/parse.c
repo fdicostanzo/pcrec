@@ -77,7 +77,7 @@ static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
     cls_set(a->cls, c & 0xff);
-    if (cx->opt->caseless) cls_casefold(a->cls);
+    if (cx->caseless) cls_casefold(a->cls);
     return a;
 }
 
@@ -221,7 +221,7 @@ static Ast *p_class(Ctx *cx)
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
      * silently wrong and downstream cannot detect it */
-    if (cx->opt->caseless) cls_casefold(a->cls);
+    if (cx->caseless) cls_casefold(a->cls);
     if (neg)
         for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
     return a;
@@ -230,7 +230,96 @@ static Ast *p_class(Ctx *cx)
 /* ---- grammar: alt -> cat ('|' cat)* ; cat -> rep* ; rep -> atom quant? ---- */
 
 static Ast *p_alt(Ctx *cx);
+static Ast *p_alt_info(Ctx *cx, AltInfo *info);
+static Ast *p_group_body(Ctx *cx, size_t apos);
 static bool try_quant(Ctx *cx, int *rmin, int *rmax);
+
+/* PARSE-1. Everything between a group's `(` and its matching `)`.
+ *
+ * WHY IT IS A SEPARATE FUNCTION, and it is not tidiness. A group's ENTRY and
+ * EXIT bookkeeping must each sit on exactly ONE path, because a module handler
+ * that RETURNS (rather than ending in ctx_fail, which is all any doorway does
+ * today) would otherwise skip whatever the exit path does. `cx->depth--` used
+ * to sit after the doorway call, so it was already on a path a module could
+ * never reach; the caller below now owns both ends and this function owns
+ * none, so a `return` added anywhere in here stays balanced by construction.
+ *
+ * ctx_fail's longjmp still bypasses the exit, and that is correct: it abandons
+ * the parse. Verified structurally rather than assumed — `src/core/compile.c`
+ * holds the ONLY setjmp in the tree, its failure branch runs job_cleanup and
+ * returns, and `Ctx` is a stack-local zeroed per pcrec_compile call, so no
+ * caller can ever observe a half-unwound depth.
+ *
+ * A LATENT DEFECT THIS DOES NOT FIX, recorded so it is not rediscovered: if
+ * pcrec_ext_group ever returns a node, control still falls through into the
+ * body parse below and THE RETURNED NODE IS SILENTLY DISCARDED. Nothing here
+ * distinguishes "the doorway finished a construct" from "not mine, carry on".
+ * pcrec_ext_class_bracket is the shipped precedent for the second answer
+ * (ext.c:383,471,474 — the only doorway that can decline), and whatever
+ * contract MOD-0.1 gives this doorway should be derived from that one or
+ * justify differing from it. */
+static Ast *p_group(Ctx *cx, size_t apos)
+{
+    if (++cx->depth > PCREC_MAX_GROUP_DEPTH) /* PCRE2's exact cap, measured;
+                              also bounds parser and AST recursion depth
+                              (R1 review R-1). See core/limits.h */
+        ctx_fail(cx, apos, "parentheses are too deeply nested");
+
+    /* The group is the scope boundary for inline options, so it is also the
+     * save/restore boundary — measured, not assumed: `(?i)` set inside a group
+     * leaks across that group's sibling alternation branches and is restored at
+     * the immediately-enclosing `)`. Unconditional, because the base grammar
+     * must not need to know whether a module fired inside. Free today: nothing
+     * writes cx->caseless yet, so save == restore. */
+    bool saved_caseless = cx->caseless;
+
+    Ast *body = p_group_body(cx, apos);
+
+    cx->depth--;
+    cx->caseless = saved_caseless;
+    return body;
+}
+
+static Ast *p_group_body(Ctx *cx, size_t apos)
+{
+    /* Doorway 3. `(*...)` is caught as a family — backtracking verbs,
+     * pattern-start options and script runs — because otherwise `(` starts
+     * a group, `*` is a quantifier with nothing to quantify, and the caller
+     * is told "quantifier does not follow a repeatable item" about a
+     * construct that is not a quantifier at all. */
+    if (peekc(cx) == '*')
+        pcrec_ext_verb(cx, apos);
+    /* Doorway 2, with the base grammar answering first: `(?:` is the one
+     * construct here the base tier implements, so it never reaches the
+     * registry even though it has a row there. */
+    if (peekc(cx) == '?') {
+        int c2 = peekc2(cx);
+        if (c2 == ':') cx->pos += 2;
+        else           pcrec_ext_group(cx, c2, apos);
+    }
+    /* plain '(' : capturing group — parsed as a group; capture spans are
+     * reported starting with the VM engine (M4).
+     *
+     * THIS IS THE HOOK POINT for the running capture count [MOD-STATE] owes:
+     * "is this `(` a capturing group" is known here and nowhere else, and it is
+     * lost the moment this function returns. Two DIFFERENT counters are owed
+     * and conflating them is the trap — `\ddd` octal-vs-backref needs the count
+     * SO FAR (incremental, and this is where to bump it), while `\1`..`\9` uses
+     * the WHOLE-PATTERN count, which is a forward reference no incremental
+     * counter can answer and wants a lexical pre-scan instead. */
+    Ast *body = p_alt(cx);
+    if (nextc(cx) != ')')
+        ctx_fail(cx, apos, "missing closing ) for group");
+    if (body->k == A_BOL || body->k == A_EOL) {
+        /* wrap a bare-anchor group: `(^)*` is quantifiable in PCRE even
+         * though a bare quantified anchor is not (R1 review S-M1) */
+        Ast *cat = node(cx, A_CAT);
+        cat->l = body;
+        cat->r = node(cx, A_EMPTY);
+        body = cat;
+    }
+    return body;
+}
 
 static Ast *p_atom(Ctx *cx)
 {
@@ -238,42 +327,8 @@ static Ast *p_atom(Ctx *cx)
     int c = nextc(cx);
 
     switch (c) {
-    case '(': {
-        if (++cx->depth > PCREC_MAX_GROUP_DEPTH) /* PCRE2's exact cap, measured;
-                                  also bounds parser and AST recursion depth
-                                  (R1 review R-1). See core/limits.h */
-            ctx_fail(cx, apos, "parentheses are too deeply nested");
-        /* Doorway 3. `(*...)` is caught as a family — backtracking verbs,
-         * pattern-start options and script runs — because otherwise `(` starts
-         * a group, `*` is a quantifier with nothing to quantify, and the caller
-         * is told "quantifier does not follow a repeatable item" about a
-         * construct that is not a quantifier at all. */
-        if (peekc(cx) == '*')
-            pcrec_ext_verb(cx, apos);
-        /* Doorway 2, with the base grammar answering first: `(?:` is the one
-         * construct here the base tier implements, so it never reaches the
-         * registry even though it has a row there. */
-        if (peekc(cx) == '?') {
-            int c2 = peekc2(cx);
-            if (c2 == ':') cx->pos += 2;
-            else           pcrec_ext_group(cx, c2, apos);
-        }
-        /* plain '(' : capturing group — parsed as a group; capture spans are
-         * reported starting with the VM engine (M4) */
-        Ast *body = p_alt(cx);
-        if (nextc(cx) != ')')
-            ctx_fail(cx, apos, "missing closing ) for group");
-        cx->depth--;
-        if (body->k == A_BOL || body->k == A_EOL) {
-            /* wrap a bare-anchor group: `(^)*` is quantifiable in PCRE even
-             * though a bare quantified anchor is not (R1 review S-M1) */
-            Ast *cat = node(cx, A_CAT);
-            cat->l = body;
-            cat->r = node(cx, A_EMPTY);
-            body = cat;
-        }
-        return body;
-    }
+    case '(':
+        return p_group(cx, apos);
     case '[': return p_class(cx);
     case '.': {
         Ast *a = node(cx, A_CLASS);
@@ -497,23 +552,69 @@ static Ast *p_cat(Ctx *cx)
     return a;
 }
 
-static Ast *p_alt(Ctx *cx)
+/* PARSE-1. `p_alt` always knew its top-level branch count and threw it away;
+ * `info` is how a caller reads it. Pass NULL when you do not care.
+ *
+ * THE COUNT IS COMPUTED BY THE LOOP THAT DRIVES THE PARSE, which is the whole
+ * reason this beats recovering it from the AST afterwards: it cannot disagree
+ * with what was actually parsed. `p_cat` returns only when it is at a
+ * top-level `|`, `)` or end, and `p_class`/`esc_atom` have already consumed
+ * their own delimited content — so a `|` inside `[a|b]`, an escaped `a\|b` or
+ * one inside a group can never reach this loop and be miscounted. Probed:
+ * `[a|b]|c`, `a\|b|c`, `(?:[a|b])|c`, `()`, `(a|b)*|c` all agree.
+ *
+ * `\Q...\E` and `(?#...)` are siblings of this loop rather than children —
+ * whatever implements modules `quoting`/`comments` never calls p_alt — so they
+ * cannot perturb the count either. */
+static Ast *p_alt_info(Ctx *cx, AltInfo *info)
 {
+    AltInfo mine = { 1, SIZE_MAX };
     Ast *a = p_cat(cx);
     while (peekc(cx) == '|') {
+        mine.last_bar = cx->pos;
         cx->pos++;
+        mine.nbr++;
         Ast *b = p_cat(cx);
         Ast *alt = node(cx, A_ALT);
         alt->l = a;
         alt->r = b;
         a = alt;
     }
+    if (info) *info = mine;
     return a;
+}
+
+static Ast *p_alt(Ctx *cx)
+{
+    return p_alt_info(cx, NULL);
 }
 
 Ast *pcrec_parse(Ctx *cx)
 {
-    Ast *a = p_alt(cx);
+    return pcrec_parse_info(cx, NULL);
+}
+
+/* PARSE-1. The same parse, reporting what `p_alt` learned about the pattern's
+ * TOP-LEVEL alternation.
+ *
+ * THIS EXISTS TO BE CHECKED, and that is not a side benefit. Under
+ * candidate B the AST is deliberately unchanged, so no output-shaped test can
+ * observe whether the count is right — measured: `(a|b)|c`, `((a|b)|c)|d`,
+ * `(a)|b`, `a|(b|c)` and `(a|a)|a` are all byte-identical to their flat forms
+ * on the UNMODIFIED tree, so a codegen check asserting that identity is passed
+ * by a build containing none of PARSE-1 at all. The count and the emitted C are
+ * on orthogonal axes.
+ *
+ * So the count needs its own instrument, and this is the seam it needs:
+ * tests/parse/branch_count_check.c links libpcrec.a, calls this directly the
+ * way tests/registry/registry_check.c calls the registry, and compares against
+ * an INDEPENDENTLY WRITTEN reference counter — which is in turn validated
+ * against libpcre2's own error 127 / error 154 thresholds. pcrec's parser and
+ * the reference are different languages, different authors and different
+ * algorithms, which is what makes it a control rather than a self-join. */
+Ast *pcrec_parse_info(Ctx *cx, AltInfo *info)
+{
+    Ast *a = p_alt_info(cx, info);
     if (!at_end(cx)) {
         if (peekc(cx) == ')')
             ctx_fail(cx, cx->pos, "unmatched closing parenthesis");

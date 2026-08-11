@@ -4064,3 +4064,249 @@ did not start.
 
 **Next session's queue is written in docs/wake.md** with gates, journal
 discipline and the review requirement per step. First step is [PARSE-1].
+
+## 2026-08-11 (new session) — PARSE-1's design: a third defect, a corrected diagnosis, and 928 probes
+
+**Baseline verified first, all green at `e595a0e`.** 1012 corpus / 85 CLI / 397
+reject / 164 registry / 143 PC-3 / 29 codegen / 7 trie-identity, `EXIT=0`, zero
+`FAIL:` counted UNANCHORED. `make strict` 0. `verify_rxt.py` 980 PASS / 0 FAIL
+(100%). `fuzz.py --seed 1` zero divergences. `make bench` 0 budget failures,
+load 0.74 -> 0.80 across it, measured BEFORE any critic was spawned.
+
+**D5 amended, at Frank's instruction.** Asking permission before convening a
+panel was ruled a MISREADING: subagents are used AS NEEDED on this project, no
+per-occasion approval, and a lower model is the default where the work fits one.
+Recorded in D5 and in the root CLAUDE.md conventions.
+
+### Three defects in `p_alt`-as-a-callback, not the two R10 measured
+
+(a) and (b) are R10/C3-6's. Both re-verified today rather than taken on trust:
+`(a|b)|c` and `a|b|c` still generate C differing only in the pattern comment and
+the `#include` name.
+
+**(c) is NEW and was not in R10's list.** `src/core/internal.h:138` holds
+`const pcrec_options *opt`; `parse.c:80` and `:224` are the only two sites that
+fold case and both read `cx->opt->caseless`. So the scoped parse state D29 names
+as the callback's entire payoff — *"modifiers' semantics are literally set parse
+state, parse body, restore"* — does not exist: the state is `const`,
+caller-owned and whole-compile, and `(?i:a)b` cannot be expressed.
+
+**How (c) was found is the point, and it is D27 turned on the author.** R10's
+two defects came from reading the code, and reading the code finds the defects
+the code can express. (c) came from asking what the FIRST MODULE needs and then
+checking. Same method, one level up from where D27 applies it.
+
+### The diagnosis in R10/C3-6 and D30 §5 is partly WRONG, and this is the finding
+
+R10: *"a `conditionals` port calling `p_alt` back cannot recover the top-level
+branch count."* True only of recovering it FROM THE AST AFTER THE FACT.
+**`p_alt` already computes the number and throws it away** — its
+`while (peekc(cx) == '|')` loop counts branches, and `p_atom` consumes a whole
+group as ONE atom, so the erasure at `:275` sits strictly BELOW that loop and
+cannot perturb its count. `(?(1)(a|b)|c)` counts 2; `(?(1)a|b|c)` counts 3.
+
+**The group node being erased is real, and it is not what blocks error 127.**
+Committing to a structural `A_GROUP` on that reasoning would have been building
+a node to fix a problem it was mis-diagnosed into.
+
+### 928 probes, libpcre2 10.46, options = 0 — the class is TWO constructs
+
+32 construct families that take a nested pattern body x 29 generated bodies
+(branch counts 1..6, leading/trailing/middle/all-empty branches, sub-runs
+wrapped, nesting at depth 1 and 2). Exactly two families' verdicts depend on the
+body's top-level structure, and they are the same fact at different thresholds:
+
+    conditionals, ALL 13 condition forms   err 127   > 2 branches
+    (?(DEFINE)...)                         err 154   > 1 branch
+
+Empty branches COUNT — `(a)(?(1)|)` compiles, `(a)(?(1)|b|c)` is 127 at offset
+3. A group counts as ONE branch, which is why `(?(1)(a|b)|c)` compiles while
+`(?(DEFINE)(a|b)|c)` still fails.
+
+PROBED AND HELD, 29 each: branch reset `(?|...)` (unbounded — 50 branches
+compile), lookahead/lookbehind pos+neg, non-atomic forms, atomic groups,
+plain/non-capturing/named groups, `(*pla:` `(*plb:` `(*napla:` `(*nla:`
+`(*atomic:` `(*sr:` `(*asr:`. `(*scs:` is 115 on all 29 for an unrelated reason.
+
+### A wrong claim of my own, recorded because the wrong version is instructive
+
+I inferred that a wrapper node would defeat D9's prefix trie and regress bench
+case (d), which is literally `(alpha|beta|gamma|delta|epsilon)` — a group
+wrapped straight around a 5-branch alternation with a throughput budget on it.
+**Measured, and it is false.** `build/pcrec` and a scratch `-DPCREC_NO_TRIE`
+build emit byte-identical C for that pattern and for `(?:alpha|...|epsilon)`.
+The trie is OUTPUT-PRESERVING by construction (`nfa.c:162-165`,
+`run_trie_identity.sh`), so it cannot move a throughput benchmark at all.
+
+What it actually costs is PCREC'S OWN COMPILE TIME, and that is worth a lot:
+
+    (?:prefix000_suffix|...|prefix299_suffix)   trie 0.017s / no-trie 0.256s  15x
+    (?:w1|...|w150)|(?:w151|...|w300)           today 0.036s / bound 0.263s  7.3x
+
+And the regression is NARROW: a wrapper around a whole alternation sits ABOVE
+the spine, so a pass-through case recurses and the trie survives. Only a group
+wrapping a PROPER SUB-RUN of an outer alternation de-flattens.
+
+### What the fact-gatherers established (both delivered only after a prod)
+
+Two sonnet subagents, both header-only at the poll, both delivering in full
+immediately after being prodded — 31 -> 263 and 30 -> 387 lines. The rule holds
+for fact-gatherers, not only for critics.
+
+- `sizeof(Ast)` is 72; `arena_alloc` rounds to 16 so every node costs 80; 819
+  nodes per 64 KB block. A wrapper is +1 node per group, and `(...)` and `(?:...)`
+  share the path, so N is ALL parenthesised groups.
+- `compile_ast`'s switch has **no `default:`** — a new `AKind` is a `-Wswitch`
+  WARNING under plain `make` (build still succeeds) and only an error under the
+  opt-in `make strict`.
+- **NOTHING in `tests/` asserts on the AST at all**, and the
+  `(a|b)|c` == `a|b|c` byte-identity is pinned by NO automated check.
+- Both doorway bodies were traced exhaustively: no `return` on any path, so the
+  depth counter cannot leak TODAY and the defect is entirely latent.
+- **And the bigger half of (b), which neither R10 nor I had stated:** if
+  `pcrec_ext_group` returned a node, control would fall through into `p_alt` at
+  `:263` and **the node would be silently DISCARDED** — nothing at `:256-263`
+  distinguishes "handled" from "fall through to a plain group". (b) is not a
+  missing decrement; it is that the group case has no control shape in which a
+  doorway can answer at all. A fix that only moves `cx->depth--` leaves the
+  silent-discard intact, which is the more dangerous half.
+
+**Design panel convened** on the candidate design (four lenses: the
+recommendation, control flow, scoped state, checks). Nothing built yet — the
+gate is findings triaged first.
+
+## 2026-08-11 (same session) — PARSE-1 built: the panel moved the design twice
+
+**Panel: four lenses on the candidate design, before a line was built.** Two
+delivered in full (C1 249 lines, C4 413), one partially (C2 53), one after a
+SECOND prod (C3 8 -> 71). Every substantive finding was a correction to the
+author's own document, which is what a design panel is for.
+
+**AND THE RE-POLL RULE SAVED THE SESSION.** After reading C4 at 244 lines and
+C3 at 8, a final re-poll immediately before building showed C4 at 413 and C3 at
+71. C3's late material contained the finding that changed the shape of the fix
+(below) and C4's contained the built-and-sabotaged instrument the design was
+missing. R10 added "re-poll every file after the last prod and immediately
+before compiling"; this session is the second consecutive one where it was
+load-bearing rather than a courtesy.
+
+### What the panel changed
+
+**C1-3 — the currency was wrong.** The design said "one integer". `ctx_fail(cx,
+pos, ...)` takes a POSITION as a REQUIRED argument, so a module cannot RAISE
+error 127 from a count alone — and the critic checked the tier rather than
+assuming it: **D26 puts pinning pcrec's OWN offsets against pcrec's OWN
+convention in TIER 2**; only chasing PCRE2's number is tier 3. `Ast` has no
+position field, so leaving the AST alone forecloses recovering one afterwards.
+Adopted its proposal: `AltInfo {nbr, last_bar}`, a struct, at the same cost.
+
+**C3-1 — defect (c)'s fix is the SAME EDIT as defect (b)'s.** Measured 17/17
+against libpcre2: `(?i)` set inside a group stays in force to the end of THAT
+group, **leaks across that group's sibling alternation branches**
+(`(a(?i)b|c)d` matches `Cd`), and restores at the immediately-enclosing `)`,
+not the outermost. That boundary is structurally identical to the depth
+boundary — so the save/restore belongs in the base grammar's group case, NOT in
+`modifiers`' semantic port, and the parser must not need to know a module fired.
+I had been about to defer (c) as scope creep; it is two lines of the edit I was
+already making.
+
+**C4-1 — the primary check was refuted, and the sabotage is live.** Asserting
+`(a|b)|c` == `a|b|c` in emitted C is passed by a build containing NONE of
+PARSE-1: the property held BEFORE the feature existed, and candidate B's whole
+design is that the AST does not change. Verified on the unmodified tree for five
+shapes. Kept as a FORWARD-pointing regression net; its claim demoted in three
+places so no reader cites it as evidence the feature is present.
+
+**C4-2 — I cited the wrong liveness precedent, and copying it ships a red
+build.** `check_tail_precedence` calls `bad()` (exit 1) when its subject
+vanishes, because the property WAS live and going dead is a regression a
+maintainer caused. Depth balance and caseless scoping were NEVER live — they
+need code that does not exist. Wiring them to `bad()`, which is what a builder
+copying the CITED mechanism would do, leaves `make test` permanently RED from
+PARSE-1 until MOD-0.2. `pcre2_check.c`'s loud-SKIP-exit-0 is the right
+precedent. Both now print on every run.
+
+**C4-4 — the missing check, built and sabotage-verified by the critic.** The
+design proposed nothing that checked the COUNT IS RIGHT, and wrongly framed it
+as blocked on pcrec implementing conditionals. It is not: libpcre2's thresholds
+are functions of that number alone, so libpcre2 stands in for the module pcrec
+does not have — PC-3's shape exactly. The critic built a reference counter and
+validated it over 343 bodies with two sabotages scoring 9/2 and 9/1 mismatches.
+
+**C1-1 — the sweep omitted this document's own next consumer.** 32 families,
+and `modifiers` was not among them, despite §0 naming it priority 2 one page
+above. Closed (36 probes, no dependency); two verb spellings likewise (27
+probes, held). Benign outcome, real method gap: D27's alphabet lesson applies to
+a set the author GENERATED as much as to one they listed.
+
+### Built
+
+`p_alt_info` reporting `AltInfo`; the group case split into `p_group` (entry and
+exit bookkeeping, one path each) and `p_group_body` (owns neither end);
+`cx->caseless` seeded once in compile.c from the const caller-owned options and
+saved/restored at every group boundary; `pcrec_parse_info` as the seam a check
+can reach.
+
+**Behaviour-preserving, and asserted rather than assumed: 690 generated patterns
+compared against a binary built from HEAD — identical stdout, exit code and
+stderr on all 690.**
+
+### The new suite, and its sabotages
+
+`tests/parse/`. 16,384 generated bodies; pcrec agreed with an independently
+written reference counter on every one; libpcre2 arbitrated that reference
+32,768 times with ZERO disagreements. Three sabotages of the reference caught.
+Then the stronger control: **three sabotages of `p_alt` ITSELF** — always report
+1, stop incrementing, over-increment — each rebuilt in a scratch tree and each
+caught, 12,288 failures apiece.
+
+### Carried forward
+
+**A doorway that returns a node still has its node SILENTLY DISCARDED.** PARSE-1
+fixes the depth symptom; the control shape is MOD-0.1's, and
+`pcrec_ext_class_bracket` (the only one of four not `noreturn`) is the shipped
+precedent its contract should derive from.
+
+Two module-level facts found by the fact-gatherers, recorded so MOD-0 does not
+rediscover them: a conditional can SELF-SATISFY off its own body —
+`(?(1)(a|b)|c)` compiles with no preceding group, because PCRE2's numeric
+condition tests whole-pattern existence — so `conditionals` needs a
+whole-pattern capture count, generalising D30 §6 beyond the digit buckets; and
+error 127's OFFSET is form-specific (0/3/6/11/12/13). Also: the capture count is
+TWO mechanisms, not one — incremental for `\ddd`, whole-pattern for `\1..\9`,
+the latter a forward reference wanting a lexical pre-scan. `[MOD-STATE]` owns
+it; `p_group_body` now carries the hook comment so it is not a third renovation
+of the same lines.
+
+**C3 also argues `modifiers` may not need the callback at all** — its result IS
+its body, so it could be a second special case alongside `(?:` falling through
+to the existing body parse. If so, D29's motivating example does not motivate,
+and the callback's real forcing cases are `conditionals` and `lookaround`.
+SUSPECTED, falsifiable, and worth settling before MOD-0.5.
+
+### PARSE-1 gate: green, and one operational finding
+
+    make test    EXIT=0 — 1012 / 85 / 397 / 164 / 143 / [parse 2+5] / 29 / 7
+                 (every pre-existing count UNCHANGED; FAIL: counted unanchored, 0)
+    make strict  whole tree compiles clean with -Werror
+    verify_rxt   PASS=980 FAIL=0, 100%
+    fuzz --seed 1  zero divergences
+    make bench   hard errors 0, budget failures 0, every section PASS,
+                 load 0.63 -> 0.71 with no critic running
+
+Bench (d) — `(alpha|beta|gamma|delta|epsilon)`, the case I had WRONGLY predicted
+a wrapper would regress — came in at 455.1 MB/s against a 448.7 MB/s baseline,
+which is the final confirmation that the trie is output-preserving and the whole
+concern was misdirected.
+
+**`make bench` first failed, and the failure is worth recording because `df`
+lies about it.** `HARNESS FAILURE: python3 subject generation failed`,
+`OSError: [Errno 122] Disk quota exceeded` — with 1.6 GB reported free. `/tmp`
+on this box is a tmpfs with a PER-USER QUOTA, and prior sessions' scratchpads
+had 5.4 GB of it. Reproduced with `dd`: 72 MB of writes succeed and the next
+64 MB does not, at 1.6 GB "free". Fix used: `TMPDIR=/var/tmp make bench`,
+pointing at the 98 GB root filesystem rather than deleting another session's
+data. Recorded in tests/bench/CLAUDE.md. wake §3 was right that HARNESS FAILURE
+is distinct from a budget failure; it was wrong about the cause being free
+space. **`hard errors: 1 / budget failures: 0` means the benchmark DID NOT RUN
+— do not read the zero as a pass.**

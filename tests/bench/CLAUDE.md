@@ -1,4 +1,27 @@
-# tests/bench — throughput and compile-time budget suite
+# tests/bench
+
+## If subject generation fails, it is DISK and probably not free space
+
+`run_bench.sh` writes ~120 MB of subjects under `mktemp -d` (5x8 MB + 16 MB +
+64 MB). Measured 2026-08-11: on this box `/tmp` is a **tmpfs with a per-user
+quota**, so the 64 MB file failed with
+
+    OSError: [Errno 122] Disk quota exceeded
+
+while `df` reported **1.6 GB free**. Reproduced directly with `dd`: 72 MB of
+writes succeed, the next 64 MB does not. Free space is the wrong thing to look
+at; the user's total tmpfs usage is.
+
+**The fix that does not touch anyone else's data:** run bench with `TMPDIR`
+pointed at a real filesystem — `TMPDIR=/var/tmp make bench` — which is where
+the PARSE-1 numbers were taken. Deleting accumulated scratch under `/tmp` also
+works but is somebody else's session data.
+
+This is a HARNESS FAILURE and the script counts it separately from a budget
+failure for exactly this reason: `hard errors: 1 / budget failures: 0` means
+the benchmark did not run, NOT that performance regressed. Do not read a green
+`budget failures: 0` on such a run as a pass.
+ — throughput and compile-time budget suite
 
 `make bench`. Guards R1 A-2 (linearity) and A-3 (compile time) plus the
 optimizations whose removal is behavior-preserving and therefore invisible to

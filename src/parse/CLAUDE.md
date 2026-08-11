@@ -4,7 +4,9 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 
 ## Files
 
-- **parse.c** — the base grammar AND NOTHING ELSE (SR-2): literals, `.`,
+- **parse.c** — see also **PARSE-1 (2026-08-11)** below, which changed the
+  group case's SHAPE without adding a construct — the base grammar AND NOTHING
+  ELSE (SR-2): literals, `.`,
   classes, quantifiers, `|`, `(...)`, `(?:...)`, `^`, `$`, the plain character
   escapes. Produces the AST. Meant to stop growing: a new construct needs a
   registry row, not an edit here. "Stops growing" means stops gaining
@@ -33,6 +35,61 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which
   tests/cli case 10 asserts by counting fields
+
+## PARSE-1 — `p_alt` as a module callback (2026-08-11)
+
+Three defects made `p_alt` unusable as the callback D28/D29/D30 promise. All
+three are fixed or recorded here; none adds a construct, so parse.c's "stops
+growing" rule is intact.
+
+**The group case is now three functions, and the split is load-bearing.**
+`p_group` owns a group's ENTRY and EXIT bookkeeping; `p_group_body` owns
+everything between `(` and `)` and owns neither end. `cx->depth--` used to sit
+AFTER the doorway call, so it was already on a path a module could never reach;
+now a `return` added anywhere inside the body function stays balanced by
+construction. `ctx_fail`'s longjmp still bypasses the exit, and that is correct
+and structural rather than lucky: `src/core/compile.c` holds the ONLY `setjmp`
+in the tree, its failure branch runs `job_cleanup` and returns, and `Ctx` is a
+stack-local zeroed per `pcrec_compile` call — no caller can observe a
+half-unwound depth, and no API reuses a `Ctx`.
+
+**`p_alt` reports what it always computed.** `p_alt_info` fills an `AltInfo`
+`{nbr, last_bar}`. It is a struct and not an `int` because `ctx_fail` takes a
+POSITION as a required argument, so a module cannot RAISE "more than two
+branches" from a count alone; D26 puts pcrec's own offsets against pcrec's own
+convention in tier 2, and `Ast` has no position field, so a design that leaves
+the AST alone forecloses recovering one afterwards unless `p_alt` reports it.
+**The count is computed by the loop that drives the parse**, which is why it
+cannot disagree with what was parsed: a `|` inside `[a|b]`, an escaped `a\|b`,
+or one inside a group never reaches that loop. `\Q...\E` and `(?#...)` are
+siblings of `p_alt`, not children, so `quoting`/`comments` cannot perturb it
+either.
+
+**`caseless` moved from the options to the Ctx.** `opt` is `const` and
+caller-owned, so D29's "set parse state, parse body, restore" had nothing to
+set and `(?i:a)b` was inexpressible. `cx->caseless` is seeded from
+`opt->caseless` in compile.c — one home, seeded once — and saved/restored
+around every group body unconditionally. That boundary is MEASURED, 17/17
+against libpcre2 10.46: `(?i)` set inside a group stays in force to the end of
+THAT group, **leaks across that group's sibling alternation branches**
+(`(a(?i)b|c)d` matches `Cd`), and is restored at the immediately-enclosing `)`.
+A top-level `(?i)` is never restored. So the restore belongs at the group
+boundary in the base grammar, not inside a module — the parser must not need to
+know whether a module fired.
+
+**What PARSE-1 did NOT fix, recorded so it is not rediscovered.** If
+`pcrec_ext_group` ever returns a node, control still falls through into the body
+parse and **the node is silently discarded** — nothing distinguishes "the
+doorway finished a construct" from "not mine, carry on". `pcrec_ext_class_bracket`
+is the shipped precedent for the second answer (`ext.c:383,471,474`, the only
+doorway that can decline, and NOT `noreturn` unlike the other three), so
+MOD-0.1's contract for this doorway should be derived from that one or justify
+differing. Two doorway contracts differing without a reason is D24's two-homes
+shape one level up.
+
+Checks: `tests/parse/`, and read its CLAUDE.md before trusting the
+AST-identity check — it passed on the tree BEFORE PARSE-1 existed and is a
+forward-pointing regression net, not evidence the feature is present.
 
 ## The construct registry (registry.c, D24)
 

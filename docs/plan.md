@@ -356,7 +356,25 @@ Then DOC-1, then PC-4 when module `classes` lands.
   check_tail_precedence, which asserts it for every prefix-related pair and
   fails loudly if no such pair exists
 
-- [PARSE-1] STATE:not-started — **make `p_alt` a usable module callback. Split
+- [PARSE-1] STATE:completed (2026-08-11 — designed, panelled, built, checked and
+  sabotage-verified; see **D31**, which partly CORRECTS the diagnosis below).
+  **The headline: R10/C3-6's "cannot recover the top-level branch count" is true
+  only of recovering it FROM THE AST AFTERWARDS. `p_alt` always computed the
+  number and threw it away** — `p_atom` consumes a group as ONE atom, so the
+  erasure sits BELOW `p_alt`'s loop and cannot perturb its count. The group node
+  stays erased; an `A_GROUP` wrapper would have been built to fix a
+  mis-diagnosis. Delivered: `p_alt` reports `AltInfo {nbr, last_bar}` (a struct,
+  because `ctx_fail` requires a POSITION and D26 puts pcrec's own offsets in
+  tier 2); the group case split into `p_group`/`p_group_body` so entry and exit
+  bookkeeping each sit on one path; `caseless` moved from the const caller-owned
+  options into `Ctx`, saved/restored at the group boundary (measured 17/17 —
+  `(?i)` leaks across sibling branches and restores at the immediately-enclosing
+  `)`). A THIRD defect, not in R10's list, was found by asking what `modifiers`
+  needs. New suite `tests/parse/`: 16,384 bodies, 32,768 libpcre2 arbitrations
+  of an independent reference counter, zero disagreements, three sabotages of
+  `p_alt` itself verified caught. **Still open and now MOD-0.1's:** a doorway
+  that returns a node still has it silently discarded — **make `p_alt` a usable
+  module callback. Split
   out AHEAD of MOD-0 by D30 §5** (R10/C3-6 measured both defects). (a) The GROUP
   NODE IS ERASED: `p_atom`'s group case returns the body with no wrapper
   (`parse.c:275`), so `(a|b)|c` and `a|b|c` build the identical AST — verified,

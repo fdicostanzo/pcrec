@@ -65,6 +65,12 @@ tier, and PCRE2 is a moving target with no specification.
   "requires module 'X'" error, never miscompile.
 - Test expectations must be oracle-verified (python3 `re` for the base tier;
   libpcre2 differential once M7 lands).
+- **Subagents are used AS NEEDED — no per-occasion approval** (D5, affirmed by
+  Frank 2026-08-11), and a lower model is the default choice wherever the work
+  fits one. Fact-gathering (measure a binary, sweep an input space, read a
+  document) delegates; architectural judgement stays in the main session. The
+  D6 critic panels are subagent work by definition. Every brief restates the
+  scope mandate above, and critics work read-only and never run `make`.
 - **Some tests are written from the GOAL, by an author denied `src/` and
   `tests/`** (D27). The panel reviews the implementation; a spec-first writer
   tests the promise. Measured on 2026-08-10: it found a tier-1 miscompile that

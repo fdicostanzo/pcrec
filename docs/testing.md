@@ -15,15 +15,17 @@ bash tests/harness/run.sh tests/base        # one component directory
 bash tests/harness/run.sh tests/base/quantifiers.rxt   # one file
 ```
 
-`make test` is NOT equivalent to `run.sh`: it runs SIX scripts — the .rxt
+`make test` is NOT equivalent to `run.sh`: it runs SEVEN scripts — the .rxt
 corpus, `tests/cli/run_cli_tests.sh`, `tests/reject/run_reject_tests.sh` (the
 "never miscompile" mandate, per construct),
-`tests/registry/run_registry_tests.sh`, `tests/codegen/run_codegen_tests.sh`
+`tests/registry/run_registry_tests.sh`, `tests/parse/run_parse_tests.sh`
+(PARSE-1: facts the PARSER computes but never emits — see that directory's
+CLAUDE.md), `tests/codegen/run_codegen_tests.sh`
 (structural assertions that behaviour-preserving optimizations are actually
 PRESENT in the emitted C — see that directory's CLAUDE.md), and
 `tests/known_fail/run_known_fail.sh` (the ratchet that flags a deferred-bug
 regression which has started passing). `run.sh` alone certifies only the first
-of the six.
+of the seven.
 
 `make strict` is separate and opt-in: it recompiles every source with
 `-Werror`, writes nothing, links nothing, and touches `build/` not at all, so it
@@ -35,7 +37,17 @@ catching a class of offset bug. Now it is a gate someone chose. Validated the
 way any gate should be: adding one unused variable to `src/core/sb.c` leaves
 plain `make` succeeding and makes `make strict` fail.
 
-**One of the six can SKIP, and the skip is loud.** `run_registry_tests.sh` builds
+**TWO of the seven can SKIP, and both skips are loud.** `run_parse_tests.sh` is
+the second: without libpcre2 it still compares pcrec's branch count against its
+independent reference, but the stage that ARBITRATES that reference — libpcre2's
+error-127 / error-154 thresholds — prints a SKIP banner instead. The comparison
+still runs; what is lost is the outside authority validating the thing pcrec is
+compared against. It also prints, on every run, the two properties it
+deliberately does NOT assert (depth balance across a returning doorway, and
+caseless save/restore), because no code exists that can exercise either yet and
+a green run must not be mistaken for coverage of them.
+
+**And the first one.** `run_registry_tests.sh` builds
 and runs `tests/registry/pcre2_check.c` (PC-3), which dlopens libpcre2 at
 runtime — the only external authority in the suite. Without the PCRE2 8-bit
 runtime installed (Debian/Ubuntu `libpcre2-8-0`) it prints three `SKIP:` lines

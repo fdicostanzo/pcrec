@@ -40,6 +40,20 @@ CLAUDE.md upkeep) goes to cheaper-model subagents (sonnet/haiku) with an explici
 self-verification step in the task. Core compiler code (parser, IR, codegen) stays
 in the main session for design coherence. Requested by Frank 2026-08-09.
 
+**AFFIRMED AND WIDENED 2026-08-11 (Frank), in response to a session that asked
+permission before convening a panel.** Subagents may be used AS NEEDED on this
+project; no per-occasion approval is required, and asking for it is a
+misreading. **Consider a LOWER model where the work fits one** — that is the
+standing preference, not an exception to be justified. The split that decides
+the model is the one D5 already draws, plus the FACTS-vs-JUDGEMENT split
+measured 2026-08-09: fact-gathering (what a binary does, what a document says,
+what a sweep measures) delegates well and delegates cheaply; architectural
+judgement stays in the main session, where the design context is. The critic
+panels of D6 are subagent work by definition and are covered by this.
+
+This does not relax the SCOPE MANDATE: every subagent brief still restates that
+work touches only this repository, and critics work read-only.
+
 ## D6 — 2026-08-09 — Adversarial critic review gate at every major checkpoint
 
 At the close of each milestone (and any comparably large checkpoint), spawn a
@@ -2441,3 +2455,114 @@ or the reachability differential in §2 turns out not to cover the malformed-bod
 class, which is the one gap this decision leaves open by design; or pcrec grows
 a compile-option surface, at which point §4's bound mode becomes a set rather
 than a point and every REFUSE is requantified.
+
+## D31 — 2026-08-11 — PARSE-1: `p_alt` REPORTS what it already computed; the group node stays erased
+
+**Decided** 2026-08-11, after a design panel (four lenses) against a written
+candidate design. **Implements** D30 §5. **Partly corrects** R10/C3-6, which is
+the point of the entry.
+
+### The diagnosis in R10/C3-6 and D30 §5 was partly wrong
+
+R10: *"a `conditionals` port calling `p_alt` back cannot recover the top-level
+branch count."* True only of recovering it FROM THE AST AFTER THE FACT. **`p_alt`
+always computed the number and threw it away** — `p_atom` consumes a whole group
+as ONE atom, so the erasure at the group case sits strictly BELOW `p_alt`'s
+top-level loop and cannot perturb its count. `(?(1)(a|b)|c)` counts 2;
+`(?(1)a|b|c)` counts 3.
+
+**The group node being erased is real, and it is not what blocks error 127.**
+Building an `A_GROUP` wrapper on that reasoning would have been building a node
+to fix a problem it was mis-diagnosed into. The erasure STAYS.
+
+### The class this had to cover, measured rather than assumed
+
+32 construct families that take a nested pattern body x 29 generated bodies =
+928 probes, libpcre2 10.46, options = 0. Exactly two families' verdicts depend
+on the body's top-level structure, and they are the same fact at two thresholds:
+conditionals (all 13 condition forms) error 127 above TWO branches, and
+`(?(DEFINE)` error 154 above ONE. Empty branches count; `|` position never
+matters; verified to 50 branches. Branch reset `(?|...)` has no limit at all.
+
+A panel critic then found the sweep had omitted `modifiers` — **this project's
+own next-in-line consumer of the interface being designed** — and closed it
+(36 probes, no dependency), plus two missing verb spellings (27 probes, held).
+Benign outcome, real method gap: D27's alphabet lesson applies to a set the
+author generated as much as to one they listed.
+
+### What is built
+
+1. **`p_alt` reports `AltInfo {nbr, last_bar}`.** A STRUCT, not an `int`, and
+   the panel is why: `ctx_fail(cx, pos, ...)` takes a POSITION as a REQUIRED
+   argument, so a module cannot RAISE "more than two branches" from a count
+   alone. D26 puts pcrec's own offsets against pcrec's own convention in TIER 2
+   — only chasing PCRE2's specific number is tier 3 — and `Ast` has no position
+   field, so leaving the AST alone forecloses recovering one later. One `size_t`
+   at the site that already touches `cx->pos` costs what the count costs.
+2. **The group case is split** into `p_group` (entry/exit bookkeeping) and
+   `p_group_body` (everything between the parens, owning neither end), so a
+   module handler that returns cannot skip the exit. The longjmp bypass is
+   correct STRUCTURALLY: compile.c holds the only `setjmp`, its failure branch
+   cleans up and returns, and `Ctx` is stack-local and zeroed per call.
+3. **`caseless` moved into `Ctx`**, seeded once from the const caller-owned
+   `opt`, and saved/restored around every group body. Measured 17/17 against
+   libpcre2: `(?i)` inside a group holds to the end of THAT group, **leaks
+   across its sibling alternation branches** (`(a(?i)b|c)d` matches `Cd`), and
+   restores at the immediately-enclosing `)`. So the restore belongs at the
+   group boundary in the BASE GRAMMAR — the parser must not need to know a
+   module fired. This defect was not in R10's list; it was found by asking what
+   `modifiers` needs, which is D27's method applied to a design.
+
+### What is NOT built, recorded so it is not rediscovered
+
+**A doorway that returns a node still has its node silently DISCARDED** —
+control falls through into the body parse and nothing distinguishes "handled"
+from "carry on". PARSE-1 fixes the depth SYMPTOM; the control shape is MOD-0.1's.
+`pcrec_ext_class_bracket` is the shipped precedent for declining (`ext.c:383,471,474`,
+and it alone of the four is not `noreturn`), so MOD-0.1's contract derives from
+that or justifies differing.
+
+### The checks, and the one that had to be thrown away
+
+`tests/parse/`. The count is compared against an INDEPENDENT reference counter
+(a flat byte scan, not a transcription of `p_alt`), which **libpcre2 arbitrates**
+through its 127/154 thresholds — for two constructs pcrec does not implement,
+which is exactly PC-3's shape of checking before the customer exists. 16,384
+bodies, 32,768 arbitrations, zero disagreements. Three sabotages of `p_alt`
+itself were verified caught (12,288 failures each) before the commit.
+
+**The check the design ORIGINALLY proposed was refuted and demoted.** Asserting
+`(a|b)|c` == `a|b|c` in emitted C is passed by a build containing NONE of
+PARSE-1 — the property held before the feature existed, and candidate B's whole
+design is that the AST does not change. It is kept as a FORWARD-pointing
+regression net (a later naive `A_GROUP` trips it) and may never be cited as
+evidence PARSE-1 is present or correct.
+
+**Two properties are SKIP-shaped, not `check_tail_precedence`-shaped**, and the
+panel corrected the citation before it was built: `check_tail_precedence` calls
+`bad()` (exit 1) when its subject vanishes because the property WAS live and
+going dead is a regression. Depth balance and caseless scoping were NEVER live —
+they need code that does not exist — so wiring them to `bad()` would have left
+`make test` permanently RED from PARSE-1 until MOD-0.2. `pcre2_check.c`'s
+loud-SKIP-exit-0 is the right precedent, and both print on every run.
+
+### Costs measured, including a claim of the author's that was false
+
+Candidate A (`A_GROUP` wrapper) was rejected on measurement. It does NOT cost
+throughput: the D9 trie is output-preserving, so `(alpha|beta|...)` emits
+byte-identical C with and without it, and the author's first inference that bench
+case (d) would regress was simply wrong. It costs pcrec's OWN COMPILE TIME —
+15x on a 300-branch shared-prefix alternation — and only where a group wraps a
+PROPER SUB-RUN of an outer alternation, since a whole-alternation wrap sits above
+the spine and a pass-through case recurses. A panel critic then showed `make
+bench` DOES time pcrec's own compile in two of three sections, so the author's
+reason for saying bench could not catch this was also wrong; bench simply
+contains no pattern of the regressing shape, which is a gap closeable by adding
+one.
+
+**Revisit when:** a construct needs a nested body's structure BEYOND its
+top-level branch count (the 928 probes say none does today); or a module wants
+a per-branch position rather than the last separator, which `AltInfo` can carry
+without changing shape; or MOD-0.1 settles the returning-doorway contract, at
+which point the two SKIP-shaped properties become observable and must be
+promoted from SKIP to real assertions.
