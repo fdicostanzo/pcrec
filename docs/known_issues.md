@@ -537,3 +537,63 @@ only position where the two rows disagree about a flag.
 **Scheduled:** with MOD-0.6 (module `unicode-props`), which owns this row and
 must close the in-class tail-sweep gap to have a test that can see it. Do not
 fix the flag without the sweep, or the next reader has the same four blind nets.
+
+## K11 — OPEN, found 2026-08-11 (R11 panel, M4 — while probing the returning-doorway contract)
+
+**`pcrec_ext_escape`'s two call sites are UNDEFINED BEHAVIOUR the moment that
+doorway starts returning a value**, and the two behave differently in the same
+binary. Recorded now rather than at MOD-0.1 because it is a CONFIRMED,
+reproduced defect that the design work deliberately scoped OUT, and prose in a
+design document is not where a live defect belongs.
+
+**Latent today, and that is the only reason it is not a bug report.** Every path
+in `pcrec_ext_escape` ends in `ctx_fail`, and the function is declared
+`noreturn`, so no input can reach it. It becomes reachable the moment the first
+semantic port lands — `unicode-props` (`\p{...}`), `classes` (`\v`) and any
+assertion module all eventually need that doorway to return.
+
+**The defect is in the CALL-SITE SHAPE**, not in any one row, so it applies to
+all 41 `RK_ESC` rows and every future one. Both call sites invoke the doorway as
+the LAST STATEMENT of a value-returning function with **no `return` in front of
+it** — legal only because `noreturn` makes falling off the end unreachable:
+
+    src/parse/parse.c:132-140   esc_atom          returns Ast *
+    src/parse/parse.c:145-155   esc_class_value   returns int
+
+**Repro** (scratch copy of the tree; declaration changed from `void ... noreturn`
+to a value-returning form, one sentinel selector byte `q` made to return a stub
+node; no other change):
+
+    a\qb      exit 0, COMPILES, and the stub node reaches the emitted matcher —
+              the discarded pointer is relaunched as esc_atom's own return value
+              out of %rax by calling-convention coincidence.  5/5 runs.
+    [a\qb]    *** SIGSEGV, exit 139 — build/pcrec, the COMPILER ITSELF, crashes
+              before emitting anything.  3/3 runs. ***
+
+gcc emits `-Wreturn-type: control reaches end of non-void function` at BOTH
+sites — and the build still exits 0, because there is no `-Werror` by default
+(`make strict` would catch it). This is the only doorway where the compiler says
+anything at all: `pcrec_ext_group` and `pcrec_ext_verb` produce ZERO warnings
+for the identical change, because discarding a return value is silent in C.
+
+**Why this is worse than the group doorway's discard** (which MOD-0.1 fixes):
+that one is well-defined C — deterministically the same wrong answer on every
+platform. This is UB, and it is not even self-consistent across its own two call
+sites in one binary. A different compiler, optimisation level or register
+allocation could flip which site crashes and which silently corrupts.
+
+**A related hazard, FLAGGED AND NOT REPRODUCED:** `esc_class_value`'s return
+feeds `cls_set(a->cls, (unsigned)lo)` in `p_class` with **no range check between
+them**, and `cls_set` indexes `b[c >> 3]` into a 32-byte array. A UB-tainted
+`int` arriving there is a memory-safety question, not merely a correctness one.
+This run happened to segfault before reaching that path. Worth its own probe
+independent of this entry.
+
+**Scheduled:** with the first module that needs doorway 1 to return — currently
+MOD-0.6 (`unicode-props`), whichever lands first. **MOD-0.1 deliberately does
+NOT fix it** (R11 disposition 6 / M4's ruling): MOD-0.1 owns `p_group_body`'s
+discard, which is inseparable from building the interface, and bundling a
+second, differently-shaped doorway fix into a large refactor is how a regression
+hides. **But note `pcrec_ext_verb` shares `p_group_body` with the group doorway
+and IS in MOD-0.1's scope** — see R11 disposition 12; a fix touching only the
+`?` branch ships incomplete.
