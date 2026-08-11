@@ -1,0 +1,268 @@
+# class_escape_fallbacks.rxt — FIX-3 (K13): the twelve escape rows' CLASS
+# position semantics. Inside a class a backreference is impossible, so PCRE2
+# falls back: \0..\7 begin an octal escape (up to three octal digits, value
+# <= \377); \8 \9 \g \k are the LITERAL characters 8 9 g k (the complete
+# literal-fallback set, measured over all 62 [\c] probes — design §14.3);
+# tails re-enter the class as ordinary members; range endpoints ride along.
+#
+# Every cell here was measured against libpcre2 10.46 by
+# tests/probes/probe_fix3.c (41 cells, predictor stated first, zero
+# disagreements). Blocks python `re` cannot verify (it rejects \8 \9 \g \k in
+# a class as "bad escape" where PCRE2 compiles a literal) are marked
+# `# pcre2-only`; see docs/upstream_issues.md.
+#
+# Before FIX-3 landed, pcrec rejected every pattern in this file with
+# "requires module 'backrefs'" — the K13 over-promise. These pins were
+# written first and watched fail (2026-08-11).
+
+# ---- octal singles (python-verifiable) ----
+
+pattern [\0]
+m "\x00" 0 1
+n "0"
+n "\\"
+
+pattern [\1]
+m "\x01" 0 1
+n "1"
+n "\\"
+
+pattern [\7]
+m "\x07" 0 1
+n "7"
+
+# ---- octal runs: up to three octal digits, non-octal stops the run ----
+
+pattern [\12]
+m "\x0a" 0 1
+n "1"
+n "2"
+
+pattern [\123]
+m "S" 0 1
+n "1"
+n "\x0a"
+
+pattern [\1234]
+m "S" 0 1
+m "4" 0 1
+n "1"
+
+pattern [\08]
+m "\x00" 0 1
+m "8" 0 1
+n "0"
+
+pattern [\18]
+m "\x01" 0 1
+m "8" 0 1
+n "1"
+
+pattern [\077]
+m "?" 0 1
+n "0"
+n "7"
+
+pattern [\377]
+m "\xff" 0 1
+n "3"
+
+pattern [\0777]
+m "?" 0 1
+m "7" 0 1
+n "0"
+
+pattern [\378]
+m "\x1f" 0 1
+m "8" 0 1
+n "3"
+
+pattern a[\18]b
+m "a\x01b" 0 3
+m "a8b" 0 3
+n "a1b"
+
+# ---- octal endpoints in ranges ----
+
+pattern [\1-\7]
+m "\x05" 0 1
+m "\x01" 0 1
+m "\x07" 0 1
+n "\x08"
+n "1"
+
+pattern [\0-\7]
+m "\x00" 0 1
+m "\x07" 0 1
+n "\x08"
+
+pattern [\15-\17]
+m "\x0e" 0 1
+n "\x10"
+n "1"
+
+pattern [\1-\123]
+m "\x01" 0 1
+m "S" 0 1
+m "0" 0 1
+n "T"
+
+# ---- octal overflow and out-of-order ranges are compile errors ----
+
+pattern [\400]
+perr
+
+pattern [\777]
+perr
+
+pattern [a-\1]
+perr
+
+pattern [0-\12]
+perr
+
+pattern [\k-\g]
+perr
+
+# ---- the literal-fallback four (PCRE2 compiles; python re says bad escape) ----
+
+# pcre2-only
+pattern [\8]
+m "8" 0 1
+n "\x08"
+n "\\"
+n "9"
+
+# pcre2-only
+pattern [\9]
+m "9" 0 1
+n "8"
+
+# pcre2-only
+pattern [\g]
+m "g" 0 1
+n "\\"
+n "G"
+
+# pcre2-only
+pattern [\k]
+m "k" 0 1
+n "\\"
+n "K"
+
+# pcre2-only
+pattern [^\k]
+m "a" 0 1
+n "k"
+
+# pcre2-only
+pattern [\g\k]
+m "g" 0 1
+m "k" 0 1
+n "h"
+
+# ---- 8/9 stop an octal run and are literal members ----
+
+# pcre2-only
+pattern [\81]
+m "8" 0 1
+m "1" 0 1
+n "2"
+
+# pcre2-only
+pattern [\89]
+m "8" 0 1
+m "9" 0 1
+n "0"
+
+# pcre2-only
+pattern [\98]
+m "9" 0 1
+m "8" 0 1
+n "7"
+
+# pcre2-only
+pattern [\9x]
+m "9" 0 1
+m "x" 0 1
+n "y"
+
+# ---- tails re-enter as ordinary members ----
+
+# pcre2-only
+pattern [\k<n>]
+m "k" 0 1
+m "<" 0 1
+m "n" 0 1
+m ">" 0 1
+n "m"
+
+# pcre2-only
+pattern [\g{1}]
+m "g" 0 1
+m "{" 0 1
+m "1" 0 1
+m "}" 0 1
+n "2"
+
+# pcre2-only
+pattern [\g1]
+m "g" 0 1
+m "1" 0 1
+n "2"
+
+# pcre2-only
+pattern [\k'n']
+m "k" 0 1
+m "'" 0 1
+m "n" 0 1
+n "m"
+
+# ---- literal-fallback endpoints in ranges ----
+
+# pcre2-only
+pattern [0-\k]
+m "0" 0 1
+m "k" 0 1
+m "a" 0 1
+n "l"
+n "/"
+
+# pcre2-only
+pattern [\k-z]
+m "k" 0 1
+m "z" 0 1
+n "j"
+
+# pcre2-only
+pattern [\8-\9]
+m "8" 0 1
+m "9" 0 1
+n "7"
+n ":"
+
+# pcre2-only
+pattern [\g-\k]
+m "g" 0 1
+m "k" 0 1
+n "f"
+n "l"
+
+# pcre2-only
+pattern [0-\g]
+m "g" 0 1
+m "0" 0 1
+n "h"
+
+# ---- through the engine: quantified, concatenated ----
+
+# pcre2-only
+pattern [\k\g]+
+m "kg" 0 2
+m "gkg" 0 3
+n "ab"
+
+# pcre2-only
+pattern x[\8]y
+m "x8y" 0 3
+n "x9y"

@@ -70,9 +70,9 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
  * return a byte value and never arrive here.
  *
  * `in_class` selects the diagnostic, and it selects more than the wording:
- * RD_MODULE_OCTAL is the ATOM form only. Inside a class parse.c has always
- * printed the plain module template for `\1`, merging the digit case with every
- * other module-routed escape, and byte-identity requires reproducing that. */
+ * RD_MODULE_OCTAL is the ATOM form only. Since FIX-3 (K13) the digit rows and
+ * `\g`/`\k` never arrive here with in_class set at all — the class position is
+ * base syntax (octal / literal fallback, RF_CLASS_BASE), decoded in parse.c. */
 void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
 {
     /* cx->pos sits just past the escape byte, so that IS the tail position. */

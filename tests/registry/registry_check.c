@@ -520,9 +520,21 @@ static void check_table_to_parser(void)
 
         snprintf(pat, sizeof pat, "[%s]", r->syntax);
         if (r->flags & RF_CLASS_BASE) {
-            /* \b is backspace inside a class — base syntax, so the doorway is
-             * NOT taken. A row that claims this must be right about it. */
-            snprintf(label, sizeof label, "esc %s: base syntax inside a class, as the row claims", r->syntax);
+            /* \b is backspace inside a class, and since FIX-3 the twelve
+             * digit/\g/\k rows are octal or literal fallback there — base
+             * syntax, so the doorway is NOT taken. A row that claims this must
+             * be right about it.
+             *
+             * Probe `[\%c]` — the SELECTOR BYTE — not `[%s]` from the row's
+             * syntax. The flag's claim is about the byte; the syntax field is
+             * the ATOM-position probe, and wrapping it in brackets can change
+             * its meaning: `[\g{-1}]` is a class of g { - 1 } whose `{-1` is
+             * an out-of-order RANGE, error 108 in libpcre2 too (measured,
+             * tests/probes/probe_fix3.c), so demanding it compile asserted a
+             * bug. Tail and endpoint behaviour is pinned where it can be
+             * oracle-verified: tests/base/class_escape_fallbacks.rxt. */
+            snprintf(pat, sizeof pat, "[\\%c]", r->sel);
+            snprintf(label, sizeof label, "esc \\%c: base syntax inside a class, as the row claims", r->sel);
             expect_compiles(label, pat);
         } else if (r->flags & RF_CLASS_INVALID) {
             /* PCRE2 forbids the construct inside a class permanently, so the

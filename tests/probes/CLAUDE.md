@@ -37,6 +37,12 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
 - `probe_quant.c` — the §18.3 quantifiability determinism probes: the
   option-run form split (`a(?i)*` 109 vs `a(?i:b)*` compiles) and the
   per-VerbName split (`a(*FAIL)*` 109 vs `a(*pla:b)*` compiles).
+- `probe_fix3.c` — FIX-3 (K13): the twelve escape rows' class-position
+  semantics, 41 cells with the member SET verified byte-exact (all 256
+  single-byte subjects per compiling cell) — octal runs, the literal-fallback
+  four, tails, range endpoints, and the error-151/108 cells with their
+  offsets recorded. The oracle behind
+  tests/base/class_escape_fallbacks.rxt's `# pcre2-only` blocks (U7).
 
 ## The method these encode (R14's closing lesson)
 

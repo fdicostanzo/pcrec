@@ -120,7 +120,8 @@ survey earned its keep").
 | `\xhh` | `OK` | — | 1–2 hex digits; `digits missing after \x` matches PCRE2 error 178 |
 | `\x{hh..}` | `REJECTED` | — | module `unicode-props` |
 | `\cx` | `REJECTED` | — | module `misc`. Trivially implementable; base tier simply does not include it |
-| `\0dd`, `\ddd` | `REJECTED` | — | module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so they share an owner |
+| `\0dd`, `\ddd` as an ATOM | `REJECTED` | — | module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so they share an owner |
+| `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — | **FIX-3 (K13), 2026-08-11.** A backreference is impossible inside a class, so PCRE2 falls back and pcrec now agrees: `\0`..`\7` open an octal escape (up to three octal digits; above `\377` it is PCRE2 error 151, wording and offset reproduced), `\8` `\9` `\g` `\k` are the LITERAL characters (the complete fallback set over all 62 `[\c]` probes), tails re-enter as members (`[\k<n>]` matches k `<` n `>`), and decoded escapes are ordinary range endpoints (`[0-\k]`, `[\1-\7]`). Measured cell-by-cell against libpcre2 10.46 — tests/probes/probe_fix3.c, 41 cells, zero disagreements; pinned by tests/base/class_escape_fallbacks.rxt (127 cases) and the `[\400]`/`[\377]` boundary rows in tests/reject/. Until this change all twelve answered "requires module 'backrefs'" here — the K13 over-promise |
 | `\o{ddd..}` | `REJECTED` | — | module `misc` |
 | `\N{U+hh..}` | `REJECTED` | — | module `classes` (see note under Character types about the `\N` spelling clash) |
 | `\U`, `\uhhhh` (ALT_BSUX) | `OUT-OF-SCOPE` | — | option-gated compatibility spellings |
@@ -252,7 +253,7 @@ commits to. The blocker is table generation and size, not matching.
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)` | `REJECTED` | `PLANNED-HARD` | module `backrefs`. **Backreferences are not a regular language** — no DFA can do them, and PCRE2's own DFA matcher does not. They need the M4 VM engine plus capture state. Note also D23's boundary: a CASELESS backreference compares subject text to subject text, which cannot fold into the automaton and needs a match-time comparison |
+| `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)` | `REJECTED` | `PLANNED-HARD` | module `backrefs`. **Backreferences are not a regular language** — no DFA can do them, and PCRE2's own DFA matcher does not. They need the M4 VM engine plus capture state. Note also D23's boundary: a CASELESS backreference compares subject text to subject text, which cannot fold into the automaton and needs a match-time comparison. All ATOM position: inside a class these spellings are not backreferences at all — octal or literal fallback, supported since FIX-3 (K13); see Escaped characters. The module, when it lands, must not touch the class position |
 
 ## Subroutine references and recursion
 
@@ -448,8 +449,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `\` | `\z` | `REJECTED` | `assertions` | dfa|vm | end of subject |
 | after `\` | `\G` | `REJECTED` | `assertions` | dfa|vm | first matching position in the subject |
 | after `\` | `\K` | `REJECTED` | `assertions` | vm | reset the reported start of the match |
-| after `\` | `\k<name>` | `REJECTED` | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} |
-| after `\` | `\g{-1}` | `REJECTED` | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} |
+| after `\` | `\k<name>` | `REJECTED` | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
+| after `\` | `\g{-1}` | `REJECTED` | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
 | after `\` | `\p{L}` | `REJECTED` | `unicode-props` | dfa|vm | a character with the given Unicode property |
 | after `\` | `\P{L}` | `REJECTED` | `unicode-props` | dfa|vm | a character without the given Unicode property |
 | after `\` | `\Q` | `REJECTED` | `quoting` | dfa|vm | begin literal quoting, until \E |

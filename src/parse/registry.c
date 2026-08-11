@@ -172,7 +172,7 @@
 #define ESC_CLASS_INVALID(sel, syn, mod, eng, note) \
     {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note)}
 #define ESC_DIGIT(sel, syn, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note)}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
@@ -267,8 +267,13 @@ ESC_CLASS_INVALID('z', "\\z", assertions, ANY_ENGINE, "end of subject"),
 ESC_CLASS_INVALID('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject"),
 ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match"),
 
-ESC('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n}"),
-ESC('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name}"),
+/* FIX-3 (K13): CLASS_BASE, because inside a class there is no such construct
+ * at all — PCRE2's check_escape falls back to the LITERAL letter (`[\k<n>]`
+ * matches k < n >), so the class position is base syntax exactly as `\b` is.
+ * The ten digit rows carry the same flag: `[\0]`..`[\7]` are octal there and
+ * `[\8]` `[\9]` are the literal digits. Measured: tests/probes/probe_fix3.c. */
+ESC_CLASS_BASE('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class"),
+ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class"),
 
 ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property"),
 ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property"),
@@ -304,7 +309,12 @@ ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code"),
  * pcrec still PRINTS "(backreference/octal)" for all ten. That wording is
  * parse.c's today and SR-2 must reproduce it byte-identically, so the fix
  * belongs to the backrefs module rather than to this table; the note is where
- * the truth lives until then. Recorded in docs/known_issues.md. */
+ * the truth lives until then. Recorded in docs/known_issues.md.
+ *
+ * All of the above is the ATOM position. The CLASS position is RF_CLASS_BASE
+ * since FIX-3 (K13): a backreference is impossible there, so `[\0]`..`[\7]`
+ * are octal, `[\8]` `[\9]` the literal digits, decoded in parse.c and never
+ * reaching the doorway. Measured cell-by-cell in tests/probes/probe_fix3.c. */
 ESC_DIGIT('0', "\\0", ANY_ENGINE, "octal escape \\0dd — never a backreference (there is no group 0)"),
 ESC_DIGIT('1', "\\1", VM_ONLY, "backreference to capture group 1 (PCRE2 error 115 if no such group)"),
 ESC_DIGIT('2', "\\2", VM_ONLY, "backreference to capture group 2 (PCRE2 error 115 if no such group)"),

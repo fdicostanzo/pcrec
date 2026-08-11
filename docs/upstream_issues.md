@@ -141,3 +141,19 @@ generated patterns.
 Other escapes were checked at the same time against libpcre2 and all agree
 exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
 `\v` was the only divergence in the escape table.
+
+## U7 — python `re`: `[\8] [\9] [\g] [\k]` are "bad escape" (PCRE2: literal fallback)
+
+- **Status**: divergence-by-design (python 3.7+ deliberately made unknown
+  escapes of ASCII letters/digits in a class an error; PCRE2's `check_escape`
+  falls back to the literal character — `[\8]` matches `8`, `[\k<n>]` is a
+  class of `k` `<` `n` `>`).
+- **Repro**: `python3 -c "import re; re.compile(r'[\8]')"` → `bad escape \8`;
+  libpcre2 10.46 compiles it and matches exactly `8` (measured over all 62
+  `[\c]` single-letter/digit probes plus tails and range endpoints,
+  tests/probes/probe_fix3.c, 41 cells, zero disagreements). pcrec follows
+  PCRE2 since FIX-3 (K13).
+- **Impact**: python cannot oracle the literal-fallback class cells →
+  `# pcre2-only` blocks in tests/base/class_escape_fallbacks.rxt (their
+  oracle is the probe run against libpcre2 directly). The octal cells
+  (`[\1]`, `[\12]`, `[\377]`, `[\400]` error) python agrees on and verifies.

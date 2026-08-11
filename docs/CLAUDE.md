@@ -45,9 +45,10 @@ Process and status documents for pcrec. The architecture itself lives in
   that doorway returns; `[a\qb]` SIGSEGVs the compiler itself in a stub build),
   K12 (`[0-\d]` promises a module where PCRE2 says the range is permanently
   invalid; pcrec is correct today only because `\d` is unimplemented, and
-  MOD-0.2 removes that guard), K13 (twelve rows answer the CLASS position
-  with module `backrefs` for constructs it can never implement — `[\8]` is the
-  literal `8`, `[\k]` the literal `k`) and K14 (pcrec names a module for
+  MOD-0.2 removes that guard), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
+  rows answered the CLASS position with module `backrefs` for constructs it
+  can never implement — `[\8]` is the literal `8`, `[\k]` the literal `k`;
+  now octal/literal fallback per RF_CLASS_BASE) and K14 (pcrec names a module for
   constructs its own compliance survey calls architecturally OUT-OF-SCOPE —
   `(*COMMIT)` answers "requires module 'verbs'", which D26 defines as a defect
   in as many words). Failing regressions live in tests/known_fail/ (excluded

@@ -141,7 +141,20 @@ static Ast *esc_atom(Ctx *cx)
 
 /* Escape inside a class -> byte value. `\b` is BASE syntax here — backspace,
  * not a word boundary — so the base decode answers before the doorway is
- * reached (the row records that with RF_CLASS_BASE). */
+ * reached (the row records that with RF_CLASS_BASE).
+ *
+ * FIX-3 (K13, 2026-08-11): twelve more rows are base syntax at THIS position
+ * only. Inside a class a backreference is impossible, so PCRE2 falls back:
+ * `\0`..`\7` begin an OCTAL escape — up to three octal digits, value <= \377,
+ * error 151 above it — and `\8` `\9` `\g` `\k` are the LITERAL characters
+ * 8 9 g k (the complete literal-fallback set: measured over all 62 `[\c]`
+ * probes, tests/probes/probe_fix3.c, 41 cells, zero disagreements with
+ * libpcre2 10.46). Any tail re-enters the class as ordinary members, and a
+ * decoded escape is an ordinary range endpoint, so `[0-\k]` and `[\1-\7]`
+ * need no extra code. Until this landed all twelve answered "requires module
+ * 'backrefs'" here — an over-promise for constructs that module can never
+ * implement, and a tier-1 miscompile the day it lands (`[\k<n>]` means
+ * k<n>, not a backreference). */
 static int esc_class_value(Ctx *cx)
 {
     size_t epos = cx->pos - 1;
@@ -151,6 +164,20 @@ static int esc_class_value(Ctx *cx)
     cx->pos = save;
     int c = nextc(cx);
     if (c == 'b') return '\b';
+    if (c >= '0' && c <= '7') {
+        int val = c - '0', ndig = 1;
+        while (ndig < 3 && peekc(cx) >= '0' && peekc(cx) <= '7') {
+            val = val * 8 + (nextc(cx) - '0');
+            ndig++;
+        }
+        if (val > 0xff) /* PCRE2 error 151; the offset is where the digits
+                         * ran out, which is where the cursor now sits */
+            ctx_fail(cx, cx->pos,
+                     "octal value is greater than \\377 in 8-bit non-UTF-8 mode");
+        return val;
+    }
+    if (c == '8' || c == '9' || c == 'g' || c == 'k')
+        return c;
     pcrec_ext_escape(cx, c, true, epos);
 }
 

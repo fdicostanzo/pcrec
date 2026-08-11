@@ -651,7 +651,29 @@ live. No `tests/known_fail/` repro: the current behaviour is a rejection with a
 misleading message, not a wrong match, so there is no failing regression to
 ratchet — the pins belong in `tests/reject/`.
 
-## K13 — OPEN, found 2026-08-11 (R13 panel, C4/F21 and C3/F6; independently reproduced by the author)
+## K13 — FIXED 2026-08-11 ([FIX-3], the first src/ change of the module era)
+
+**Resolution.** `esc_class_value` now implements the class position's real
+semantics, measured cell-by-cell against libpcre2 10.46 first
+(tests/probes/probe_fix3.c — 41 cells, predictor stated before the run, zero
+disagreements): `\0`..`\7` open an octal escape (up to three octal digits;
+above `\377` it is PCRE2 error 151 with wording and offset reproduced), and
+`\8` `\9` `\g` `\k` are the LITERAL characters — the complete fallback set
+over all 62 `[\c]` probes. Tails re-enter the class as ordinary members
+(`[\k<n>]` matches k `<` n `>`) and decoded escapes are ordinary range
+endpoints (`[0-\k]`, `[\1-\7]`), with no extra code. The twelve registry rows
+carry `RF_CLASS_BASE`, so the doorway is never entered at class position —
+exactly the `\b` shape — and registry_check's derived in-class expectation
+flipped from "requires module" to "compiles" with the flag. Pins:
+tests/base/class_escape_fallbacks.rxt (127 cases, written first and watched
+fail — 122 failing pre-fix, the 5 `perr` blocks already failing for the wrong
+reason) plus the `[\400]`/`[\777]`/`[\377]` boundary rows in tests/reject/
+(the only home of the new diagnostic's text). The ATOM position is untouched.
+One planned-divergence note: the fix landed BEFORE MOD-0.1's byte-identity
+bar, per Frank's §18.4 ruling, so the bar measures true identity with no K13
+exception entry. Original entry below, kept for the analysis.
+
+**Historical entry (found 2026-08-11, R13 panel, C4/F21 and C3/F6; independently reproduced by the author):**
 
 **Twelve escape rows answer the CLASS position with the wrong module.** pcrec
 promises module `backrefs` for constructs that module can never implement,

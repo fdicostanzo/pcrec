@@ -780,6 +780,21 @@ reject 'ab{5,2}'   "numbers out of order in {m,n} quantifier (pattern offset 6)"
 # the `}`. It was the only one of the three brace diagnostics whose offset
 # disagreed, and two critics flagged it independently; aligned deliberately.
 reject '{3,1}'    "numbers out of order in {m,n} quantifier (pattern offset 4)"
+# FIX-3 (K13, 2026-08-11) — the in-class octal escape's 8-bit ceiling. With the
+# twelve class-position fallbacks implemented ([\1] is octal, [\8] [\9] [\g]
+# [\k] are literals — the accept side lives in
+# tests/base/class_escape_fallbacks.rxt, 127 oracle-verified cases), the class
+# decoder gained the first NEW base-grammar diagnostic since K8: a consumed
+# octal value above \377 cannot be a byte. PCRE2 error 151, wording AND offset
+# reproduced — the offset is where the digits ran out, measured on both cells
+# by tests/probes/probe_fix3.c. The boundary is pinned on BOTH sides, per the
+# K5 lesson (a boundary row on one side says a number exists, not where it
+# is): \377 is the largest legal value, so an off-by-one in the ceiling flips
+# the accept-control, and the .rxt perr blocks beside these assert only THAT
+# [\400] fails — this is the only home for the message.
+reject '[\400]' "octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 5)"
+reject '[\777]' "octal value is greater than \377 in 8-bit non-UTF-8 mode (pattern offset 5)"
+accept '[\377]'
 
 echo
 echo "== KNOWN-WRONG, pinned so a change is VISIBLE (K3, K4) =="
@@ -1079,6 +1094,8 @@ must_have '(*LIMIT_MATCH=4294967290)' \
     "the only pin of the =digits MAGNITUDE boundary; 4294967289 beside it is the control"
 must_have '\U' \
     "representative of the five rowless REAL escapes (\\U \\u \\F \\L \\l) the extension design §7.1 plans to give rows — their fall-through wording is otherwise the project's only unguarded diagnostic surface (R11 disposition 14, A1)"
+must_have '[\400]' \
+    "the only pin of the in-class octal \\377 ceiling's DIAGNOSTIC (FIX-3/K13) — the .rxt perr beside it asserts only that the pattern fails, and '[\\377]' is its accept-side boundary control"
 if [ "$manifest_missing" -ne 0 ]; then
     echo "reject: one or more irreplaceable checks are gone — see above" >&2
     exit 1
@@ -1096,8 +1113,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 246 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 246 / 62 / 0." >&2
+if [ "$nrej" -ne 248 ] || [ "$naccept" -ne 63 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 248 / 63 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi
