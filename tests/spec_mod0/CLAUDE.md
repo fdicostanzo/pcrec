@@ -23,10 +23,19 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-11 (MOD-0.1 slice 9 + the armed check06): 9 pass, 0 fail,
-1 awaiting.** The suite exits 1, and that is the correct state — one
-invariant (7, gate equivalence) still awaits its pcrec-side comparison,
-though its surface (`--features`) now exists. Invariant 10's surface LANDED first
+**As of 2026-08-11 (MOD-0.1 slice 9 + the armed check06 + the armed check07):
+9 pass, 0 fail, 1 awaiting.** The suite exits 1, and that is the correct
+state — invariant 7 (gate equivalence) now HAS a working pcrec-side
+comparison (the `--features` surface exists, the comparison runs a full
+sweep, and the instrument's own liveness is validated live), but it still
+cannot PASS: every row is refused identically in all three configurations
+because no module has an implementation yet, so `gate.compared_pairs` is
+honestly 0. check07 therefore reports **AWAITING-POPULATION**, not
+AWAITING-SURFACE — the distinction matters (see its own header and the
+correction below) even though the runner still buckets both under "awaiting
+a surface" in its summary line, a wording that is now slightly imprecise for
+this one check and is left as-is rather than reworded for one caller.
+Invariant 10's surface LANDED first
 (`--list-syntax`'s 14th column, `quantifiable`, values {yes, no, form,
 lexical}); invariant 4's followed (the 15th column, `class_expect`, vocabulary
 {"err N", "char 0xNN", "set N"}, empty on the 56 group/verb rows); invariant
@@ -98,9 +107,9 @@ reader will arrive holding it.
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
 | 6 | check06_cursor.sh | **PASS** (surface landed) | **none — see below; this check compares pcrec against itself** | — (`pcrec --probe-ask WANT [--] CONSTRUCT` drives one doorway once per call; every one of the 99 doorway-reaching rows is driven at `claim`, `verdict` AND `result` — `cursor.clear_compared`, floor 198, asserts pos_after == pos_before at the two WANT_RESULT-clear levels, and `cursor.set_compared`, floor 99, asserts pos_after >= pos_before at the WANT_RESULT-set level. The one row with no doorway at all, `(?:...)`, is named and floored separately — `cursor.base_answered_rows`, floor 1 — and the check fails if that set changes shape in either direction. Today every comparison is an equality: no recogniser is implemented yet, so nothing ever reaches a `result`-level answer, and the >= assertion's strictly-greater branch is unexercised but live) |
-| 7 | check07_gate_equivalence.c | awaiting | libpcre2 decides membership | The vary-the-set surface EXISTS since MOD-0.1 slice 9 (`pcrec --features LIST`, module names from the dump / all / none) — what remains is this check's own comparison over the three configurations, to be written spec-side |
+| 7 | check07_gate_equivalence.c | **AWAITING-POPULATION** (armed) | libpcre2 decides membership | The vary-the-set surface EXISTS (`pcrec --features LIST`) and the comparison RUNS: 1700 verdict-class checks (all-off vs all-on, and every module's inverted-config vs all-on, over all 100 rows), 0 disagreements, instrument liveness validated live via `--probe-ask`'s `answered_at`. What remains is a POPULATION, not a surface — `gate.eligible_rows` is 0 because only 1 row (the base row, owned by no module) is ever accepted under 'all on' today. Raise `gate.compared_pairs`'s floor when the first module lands |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
-| 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | Same as 7; the per-name-nonzero assertion arms when `gate.compared_pairs` is floored above 0 |
+| 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | check07's comparison now runs; the per-name-nonzero assertion (2) still arms only when `gate.compared_pairs` is floored above 0 — coverage (assertion 1, all 16 module names present) is checked and passing now |
 | 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |
 
 **Invariant 6 is the one with no oracle half, and that is not a gap in the
@@ -139,6 +148,11 @@ All against **libpcre2 10.46 2025-08-27**, registry of **100 rows**, on
 - 16 distinct module names in the registry.
 - 70 of 100 rows have their syntax probe accepted by libpcre2 (check07's
   membership set).
+- check07's armed sweep: **1700** verdict-class checks (100 rows x (1 all-off
+  + 16 inverted-module configs)), **0** disagreements. Only **1** row (the
+  base row, owned by no module) is accepted by pcrec under 'all on', so
+  `gate.eligible_rows` and `gate.compared_pairs` are both honestly **0** —
+  see the correction below for why that is the right number, not a bug.
 - Verb forms: 50 names → 18 quantifiable, 6 not, **26 undefined** (the
   unquantified form does not compile at all — start-of-pattern-only verbs).
   Counting those 26 as "not quantifiable" would be wrong, so they are a third
@@ -226,9 +240,27 @@ cell value outright rather than routing it into the form-resolved branch,
 because a value the check does not know cannot be checked, and a placeholder is
 not a verdict.
 
-## Two corrections this suite made to its own predictors
+## Three corrections this suite made to its own predictors
 
-Recorded because the wrong version is the intuitive one in both cases.
+Recorded because the wrong version is the intuitive one in all three cases.
+
+**A "compared pair" is NOT every (module-owned row) x (differing
+configuration) — that definition is trivially satisfied today and hides the
+vacuous-pass shape C4/F4 named.** check07's first draft of the counting rule,
+before its first run against the real binary, counted any row owned by
+module M compiled under a configuration where M's state differs from 'all
+on'. Measuring it showed ~1700 such pairs TODAY, all agreeing, because every
+module-gated row is refused as "requires module 'X'" in every configuration
+regardless of whether that module is nominally on or off — nothing is
+implemented, so the module's state changes nothing observable. A count of
+1700 agreeing pairs reads as "gate equivalence holds over a real population,"
+which is false: no row has ever been let through a gate. The corrected rule
+counts a pair only when the row is a libpcre2 member, is owned by the varied
+module, AND is ACCEPTED under 'all on' — only an accepted row demonstrates
+the module does anything, so only disabling it tests something. That rule
+gives 0 pairs today (`gate.eligible_rows` is 0; the only row pcrec accepts
+under 'all on', the base row `(?:...)`, is owned by no module), which is the
+honest number.
 
 **`\7777` is err 151, not `chr(0377)` followed by `'7'`.** The first version of
 check05's clause 3 reasoned that since octal fallback reads at most three
