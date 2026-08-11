@@ -472,3 +472,68 @@ in the library's front door.
 
 **Scheduled:** with DD-3 (generated-API versioning/compat policy), because both
 are changes to the public contract and should be decided together.
+
+## K10 — OPEN, found 2026-08-11 (R10 panel, C1 — while probing the ambiguity guard)
+
+**`\N{U+hhhh}` inside a character class is refused as permanently-invalid, when
+PCRE2 recognises it.** A tier-2 error, EXACT under D26: pcrec answers REFUSE
+where the correct answer is "requires module 'unicode-props'".
+
+**Repro** (measured 2026-08-11, `build/pcrec` at 2aca7dd):
+
+    $ build/pcrec -o /dev/null -- '[\N{U+41}]'
+    pcrec: \N is not valid inside a character class (pattern offset 1)
+    $ build/pcrec -o /dev/null -- '[x\N{U+41}]'
+    pcrec: \N is not valid inside a character class (pattern offset 2)
+    $ build/pcrec -o /dev/null -- '[a-\N{U+41}]'
+    pcrec: \N is not valid inside a character class (pattern offset 3)
+
+libpcre2 10.46, every class position including range endpoint and after `^`:
+
+    [\N]           err 171  \N is not supported in a class      <- genuinely not a construct
+    [\N{U+41}]     err 193  \N{U+dddd} is supported only in Unicode (UTF) mode
+    [x\N{U+41}]    err 193
+    [\N{U+41}x]    err 193
+    [a-\N{U+41}]   err 193
+    [^\N{U+41}]    err 193
+
+Error 171 for bare `\N` is a real refusal. Error 193 for `\N{U+...}` is PCRE2
+parsing it as an ordinary class member and then refusing the MODE — a code point
+is a perfectly good class member.
+
+**The defect.** `src/parse/registry.c:257-259`, the `{U+` row, carries
+`RF_CLASS_INVALID`. It should not. The flag's definition is "PCRE2 forbids this
+construct INSIDE a character class, permanently — no option, no version, no
+future in which it means anything", and **the row's own `note` says the
+opposite**: *"PCRE2 error 193 outside UTF mode, which is recognition, not
+rejection"*. The row states 193 is recognition and then wears the flag meaning
+permanent refusal.
+
+Provenance: R9/SPEC-classes-F1 added `RF_CLASS_INVALID` to ten escapes —
+`A B G K Z z C R X N` — and it landed on an eleventh row that is not one of the
+ten. The bare `\N` row correctly has it; the `{U+` row inherited it.
+
+**Fix.** Remove `RF_CLASS_INVALID` from that row. `ext.c:104-105` then answers
+`\N in a class requires module 'unicode-props'`, which is the CLAIM PCRE2's 193
+warrants. **The fix is one flag; the TEST is the work**, which is why this is
+recorded rather than patched in the same commit as a design review.
+
+**Why four independent nets all miss it, which is the part worth keeping:**
+
+- `check_tail_precedence` asks which ROW is selected. The right row IS selected.
+- The R10 ambiguity guard (D29) asks how many recognisers ANSWER. One answers.
+- `registry_check.c:875-876` **EXEMPTS `RF_CLASS_INVALID` rows from the in-class
+  sweep by design** (`skip_flag = RF_CLASS_BASE | RF_CLASS_INVALID`) — so the
+  flag exempts the row from the one check that would have contradicted it. A
+  control that takes its scope from the field it is controlling.
+- The in-class sweep's template is `"[\\%c]"`, one byte of tail context, so it
+  can only ever probe `[\N]` and never `[\N{U+41}]`.
+- PC-3 probes this row once, in the ATOM position only.
+
+`tests/registry/CLAUDE.md` claims "`\N{U+hhhh}` versus `\N` are no longer
+unswept". True in the atom position; false in the class position — which is the
+only position where the two rows disagree about a flag.
+
+**Scheduled:** with MOD-0.6 (module `unicode-props`), which owns this row and
+must close the in-class tail-sweep gap to have a test that can see it. Do not
+fix the flag without the sweep, or the next reader has the same four blind nets.

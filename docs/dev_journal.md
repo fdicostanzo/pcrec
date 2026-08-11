@@ -3646,3 +3646,287 @@ MOD-0's result, and brief it on THIS change too — in particular on the option-
 grammar, which no adversarial reader has seen.
 
 **Next:** MOD-0. Then DOC-1, then PC-4 when module `classes` lands.
+
+---
+
+## 2026-08-11 — MOD-0 design session: the recogniser, and a conflation caught before it was built
+
+**No code changed.** This session was design only: D29, an amendment to D28,
+MOD-0 expanded into eight substeps, and two documentation drifts fixed in
+passing. Baseline verified first (§2 of the wake brief) and green.
+
+**What Frank changed.** The shape I brought into the session was D28's — the
+doorway identifies a construct from key+tail, then calls the row's syntax port
+for the body. Frank's reframe: make the port a RECOGNISER of one proper form,
+put several of them on one selector byte, call all of them, and expect exactly
+one to answer. *"In this guise, perhaps this function supersedes the tail part
+entirely."* It does, and the argument that settles it is `\N`: today `\N` and
+`\N{U+...}` are resolved by LONGEST-TAIL-WINS, a rule that arrived unguarded
+with row ORDER standing in for it. As recognisers they are disjoint predicates,
+and a naive `\N` recogniser that matches everything makes BOTH fire — a loud
+registry defect where there was a silent precedence. Ten `(?-0)`..`(?-9)` rows
+also collapse to one recogniser, because they are one construct written ten
+times only because a tail is a literal prefix rather than a pattern.
+
+**THE FIND, and it is why Frank's "re-examine what we assumed" question earned
+its keep.** He asked, before any write-up, whether using a function here had
+ramifications we were missing — problems or missed opportunities. It did.
+D28's `SYN_OK / SYN_MALFORMED / SYN_NOT` is a taxonomy of PCRE2'S ERROR
+NUMBERS, measured correctly, and I had been treating it as a taxonomy of what
+the DOORWAY does. They are different axes. `pcrec_ext_class_bracket` already
+implements three doorway answers and `SYN_NOT` conflates two of them:
+
+    [[:alpha:]]   CLAIM     PCRE2 recognises it            -> name the module
+    [[:foo:]]     REFUSE    PCRE2 errors, permanently      -> this message, no module
+    [a[.b]        DECLINE   PCRE2 COMPILES it as something -> carry on, not mine
+
+REFUSE and DECLINE are opposites and both map to `SYN_NOT`. K3, K4, FIX-2 and
+R9/SPEC-FA were each a local instance of that distinction being got wrong, so a
+vocabulary unable to express it would have re-created all four. Caught in
+review, before a line of it was written.
+
+**Five more things that fell out of the same question.**
+
+- **Recognition must not depend on the body parsing**, because PCRE2's does not:
+  `(?i:(` is still an option group (dispatched, then error 114). A recogniser
+  that recursed into the body would watch it fail and DECLINE — exactly the
+  UNDER-promise Q2 made and the differential refused. So the recursion lives in
+  the semantic port, and that is also the better argument for TWO ports than
+  D28's lifecycle one: a predicate and a parser cannot share a signature.
+- **Recognisers allocate nothing, and that dodges K7.** The obvious repair for
+  `\p{...}`'s normalised name is to pass an `Arena *`. Measured:
+  `arena_alloc` calls `abort()` on malloc failure (`src/core/arena.c:15`), which
+  IS K7. Spans plus a caller-provided fixed buffer instead, so K7 does not
+  spread across the module layer.
+- **Frank asked whether a semantic port could just call the parser recursively,
+  since it is recursive descent.** Yes — `p_alt` at `parse.c:500` — and it makes
+  parse.c and the modules MUTUALLY RECURSIVE, which is a change to the stated
+  architecture (D24/`src/parse/CLAUDE.md` call ext.c a router with modules as
+  leaves). Adopted deliberately and written down. One depth counter, not two:
+  `cx->depth` against `PCREC_MAX_GROUP_DEPTH` (`parse.c:242`,`:266`). The payoff
+  confirms the shape — `(?i:...)`'s semantics are literally "set parse state,
+  parse body, restore", which cannot be written without the callback, so the
+  SIMPLEST module is the one proving the callback is needed.
+- **Row options have exactly one customer.** Frank proposed passing the row
+  options so a `tail_default` recogniser could check a literal tail as the
+  lookup does today, and asked whether options had any other use — he could not
+  think of one. Neither could I, after checking every family that shares an
+  algorithm across rows: the discriminator is always `sel` or the module's own
+  data. So no generic option field. `const char *tail` stays; only its READER
+  changes, from the lookup engine to one recogniser.
+- **Where DATA stops and CODE starts.** Turning flags into functions partly
+  reverses what D24 bought. The line adopted: a flag stating a citable FACT
+  about the construct stays data (`RF_CLASS_INVALID`, `RF_CLASS_NAMED`); a flag
+  meaning "call a special scanner" becomes the recogniser pointer
+  (`RF_OPTION_RUN`, `RF_CLASS_DELIM` both retire). D27's mechanism is the reason
+  facts must stay visible: knowledge the code does not act on is invisible to
+  tests derived from the code, which is exactly how SPEC-classes-F1 hid in the
+  `\N` row's own `note`.
+
+**Opportunities recorded, and one is the answer to a worry I had raised.** I had
+argued against port output fields nobody reads, since wake §6 counts seven
+RegRow columns already in that state. `--explain` is the answer: it consumes
+what was recognised, the answer, the blame offset and the normalised name, from
+a CLI surface testable in tests/cli (MOD-0.7). Also: a module's measured PROBES
+travel with its recogniser, which extends SR-1's "a new row covers itself" from
+rows to BODIES and directly answers R8/C2-9's drift; and
+`pcrec_ext_class_pair_opens` collapses, being a second copy of the scan K4 got
+wrong three times.
+
+**Three modules chosen, and why those three.** `modifiers` moves regardless — it
+is the debt MOD-0 exists to pay — but it is not one of the three, because D28 is
+right that shaping on the simplest body inherits its alphabet. `classes` is the
+richest INPUT case (context flags, an open-ended scan, and the only doorway
+where DECLINE is normal). `verbs` is the MIGRATION TEST — existing measured
+code, four answers, form bits, a non-default blame offset. `unicode-props` is
+the only NEW recogniser, the case that breaks a validate-only signature, and
+the only part a D27 spec-first writer can test blind. It should also produce a
+live tier-2 finding: `\p` promises its module for every tail today, which is the
+Q2 shape at a fourth doorway.
+
+**Landmines written down before they are stepped on** (D29's own section): the
+exact row count moves and R8/C4-10 measured that following the tripwires'
+printed remedy is how a wrong module passes everything; `(?:` would carry a dead
+recogniser nothing calls; and the class-bracket doorway is on the BASE-TIER path
+(once per non-negated `[`), so the cost of running all recognisers there gets
+measured or not claimed — SR-5 has not run.
+
+**Two documentation drifts fixed in passing.** `tests/registry/CLAUDE.md` said
+the exact row count was 68; it has been 100 since Q2/SR-9 — an exact-count
+tripwire failing to prevent drift in its own documentation. And
+`src/parse/CLAUDE.md`'s `tail` bullet now carries a forward reference to D29, so
+a reader does not follow a rule MOD-0.2 is about to retire.
+
+**Next:** MOD-0.1 — the interface, with the `\N` / `\N{U+` ambiguity pair
+written FIRST as its acceptance test.
+
+## 2026-08-11 (same session, later) — R10: the design panel, and the warning we had already written
+
+**Still no code.** Frank asked for a hostile critic pass on D29 before anything
+was built. Five critics, five lenses, ~2,400 lines of findings, all read-only.
+Compiled review: `docs/reviews/2026-08-11-r10-mod0-design.md`. D29 now carries
+inline `[R10]` corrections and a REFUTED-IN-PART status block; MOD-0.1 and
+MOD-0.2 are `STATE:blocked`.
+
+**The result: D29's spine survives, its central guard does not.** The
+recogniser-per-row idea, the two ports with two signatures, the semantic port
+recursing into `p_alt`, no-allocation-in-recognition, and
+row-options-have-one-customer all stand. "Exactly one recogniser may answer",
+the retirement of `check_tail_precedence`, both proposed controls, and four
+measured facts do not.
+
+**The finding that matters most, and it is D27's mechanism turned on the
+designer.** `src/parse/registry.c:62-72`, written 2026-08-10 — the day before
+D29 — says in as many words: *"Do not design a handler signature that assumes it
+can."* `\ddd` is octal or a backreference depending on the running capture
+count, which decides its MODULE, which is tier 2 and EXACT. D29 does not cite
+it, does not answer it, and specifies exactly that signature. C3 measured the
+behaviour rather than trusting the comment: `(a)x11 \12` is octal, `(a)x12 \12`
+is a backreference, `(?n)` flips it back, `\Q..\E` and class parens do not
+count, and `\1..\9` uses a whole-pattern count instead. D27 says knowledge the
+code does not act on is invisible to tests derived from the code. R10 adds that
+it is equally invisible to DESIGNS derived from reading the code — reading
+`registry.c` for its data while designing a signature is precisely the reading
+that skips a comment about signatures.
+
+**"Exactly one may answer" fires on a CORRECT registry.** Every tailed bucket has
+a tail-less FALLBACK row, and that row's honest recogniser is "always matches" —
+which D29 called naive and presented tripping the guard as the guard working. In
+the `\N` and `(?P` buckets the fallback and a sibling hold OPPOSITE verdicts, so
+two honest recognisers answer and the table is right. Silencing it means
+hand-encoding longest-tail-wins inside each function: **D29 retires the rule and
+keeps the obligation.** D29 also described its own acceptance test wrongly — the
+prefix-related pair is `{` vs `{U+`, not bare `\N` vs `\N{U+`, and there is no
+`}` in the construct.
+
+**And it was the wrong KIND of guard.** `check_tail_precedence`'s second half is
+REACHABILITY; the replacement is UNIQUENESS; they catch disjoint classes.
+Proved on D29's own proposal: `-\d+)` declines on `(a)(?-1` (error 114 —
+malformed body, still the construct), so the "simplification" is a tier-2
+regression. Deferred.
+
+**Both proposed controls were the defect they were meant to cure.** `--explain`
+never enters a doorway — it is a prefix match on the `syntax` column, and D29's
+own worked example does not run. A swapped module attribution passes every
+existing case10 assertion, demonstrated twice. And "probes travel with the
+module" is co-location (the DRIFT cure) applied to a CIRCULARITY problem;
+`pcre2_check.c` already carries the anti-circularity rule D29's scheme lacks.
+
+**The measurement lesson, in its purest form yet.** "17 tailed rows, measured"
+was measured — by one grep, for a macro NAME, on a table containing one tailed
+row not written through a macro. It is 18. Two critics found it independently by
+iterating the table. The missed row is `\N{U+`, the centrepiece of the argument
+the number supported, miscounted twice in two different ways in the same
+passage. **Counting a population by the syntax used to write it counts the
+syntax, not the population.**
+
+**What the panel confirmed, which is also a result:** `arena_alloc`'s abort IS
+K7 — reproduced live under `ulimit` with a gdb backtrace, a stronger method than
+the static read D29 used. `PCRE2_UTF` flips no construct verdict (the wake §6
+claim a critic was briefed to falsify). `(?x)`/`(?xx)`/`(?J)`/`(?n)` move no
+doorway recognition boundary. Two critics appeared to disagree about `(?x)` and
+did not: option state changes BASE-GRAMMAR lexing, not doorway recognition,
+which shrinks one finding and enlarges another.
+
+**The generalisation worth carrying, sharper than D27 reached it:** D29's three
+defences were all LIVENESS arguments — is there a reader, does the loop run, is
+the space generated — where every failure this project has recorded is a VALUE or
+a SET argument: can the reader dissent, can the loop be disarmed, who chose the
+input. Ask of any new guard **not "does this check run" but "what would have to
+be true for it to fail, and who chose that input".**
+
+**A process result: a DESIGN panel beat every implementation panel on cost.** R9
+found thirteen findings in built code; R10 found comparable severity in a
+document, and every fix is an edit to a paragraph rather than to a shipped
+construct. Worth repeating before the next interface, not after it.
+
+**Next:** the redesign, per R10's eight dispositions. Frank's call on the
+replacement resolution rule — it is a real design fork and the panel deliberately
+did not choose it. Nothing is committed yet.
+
+**ADDENDUM, same session — and it is a finding about the process, not the
+design.** C3 had written NOTHING at the 15-minute poll while the other four
+critics had 107-723 lines. Prodded per the standing lesson; produced 233 lines.
+I read those 233 lines, wrote the R10 review, corrected D29, updated the plan,
+and had `make test` running for the commit — and C3 then tripled to 739 lines
+with four more findings, one of which corrects D29's FOUNDING SENTENCE. **The
+commit was minutes away and would have gone out on two thirds of one critic's
+output.** wake §1 step 3 exists for exactly this (R8's panel sent its best
+finding after the commit) and R10 nearly repeated it. The rule to carry: **the
+prod is necessary and NOT sufficient — poll again AFTER the prod, and do not
+treat a critic's first delivery as its last.**
+
+What that late half contained:
+
+- **C3-7: "recognition must not depend on the body parsing" is FALSE as
+  written**, and D29 contradicts it two paragraphs earlier by nominating
+  `pcrec_ext_class_bracket` — a function whose entire body is a body scan — as
+  the model implementation of the three answers. Measured: PCRE2's recognition
+  depends on the body in five shipped constructs (`[a[.b]` vs `[[.a.]]`,
+  `[[:foo:]]`, `(?iZ)`, `(*LIMIT_MATCH=`'s magnitude, `(*pla:x` vs
+  `(*ACCEPT:x`), and in the base tier `a{1}` vs `a{x}`. The correct sentence is
+  narrower and survives every probe: **recognition must not depend on parsing a
+  NESTED PATTERN — it must never reach back into `p_alt`.** Scanning an opaque
+  body is not merely permitted, it is mandatory.
+- **C3-6: `p_alt` is not a usable callback as the code stands.** The group node
+  is ERASED (`(a|b)|c` and `a|b|c` generate byte-identical C), so a
+  `conditionals` port cannot recover the branch count PCRE2 needs for error 127;
+  and the depth decrement sits after the doorway call, on a path a module never
+  reaches. MOD-0 therefore includes a parse.c change, which D29 does not price.
+- **C3-5: `(?[...])` nests, capped at 13**, so a "pure, no failure path"
+  recogniser needs its own bounded stack and depth rejection — a second depth
+  budget in the layer that just insisted on one.
+- **C3-10: the bare-fallback hazard is FOUR buckets, not one**, widening C1-3
+  from the other lens.
+- **C3-3b, refuted harder than asked:** `(?x)` set MID-PATTERN and SCOPED still
+  moves no recognition boundary. That is what makes the leftward option
+  dependence narrow and nameable instead of pervasive.
+- **C3-9: the one D29 opportunity the panel CONFIRMED** — collapsing
+  `pcrec_ext_class_pair_opens` holds, and the shipped scans agree with libpcre2.
+
+R10's dispositions now run to twelve.
+
+**ADDENDUM 2 — and the same thing happened twice more, which is the real
+process finding.** Having written the addendum above about C3, a final re-poll
+before committing showed C1 had grown 645 -> 758 and C2 393 -> 680 **since I had
+read them**. Three of five critics delivered substantial material after their
+files were read and after compilation had begun, and that late material contains
+the panel's ONLY live product defect and its STRONGEST design finding. The
+amended rule, now in R10 and worth more than any single finding here:
+**re-poll every findings file after the last prod and immediately before
+compiling, and diff the counts against what you actually read. A critic's first
+delivery is not its last, and "I have read this file" decays.**
+
+**K10 — a LIVE tier-2 defect, recorded in docs/known_issues.md.**
+`[\N{U+41}]` is answered "\N is not valid inside a character class"; libpcre2
+gives error 193 in every class position including as a range endpoint, which is
+recognition-then-mode-refusal. The `{U+` row carries `RF_CLASS_INVALID` while
+its own `note` says error 193 is "recognition, not rejection" — the row
+contradicts itself. R9's SPEC-classes-F1 named ten escapes and the flag landed
+on an eleventh. Verified independently before recording. The fix is one flag;
+the TEST is the work, so it is scheduled with MOD-0.6 rather than patched here.
+**The fourth net is the one to remember:** `registry_check.c:875-876` exempts
+`RF_CLASS_INVALID` rows from the in-class sweep, so the flag exempts the row
+from the only check that would contradict it — a control taking its scope from
+the field it controls.
+
+**C2-8, the strongest design finding, and it indicts the method rather than the
+detail.** The `(*` doorway ALREADY has four answers: D25 is titled *"a 'not a
+known name' outcome DISTINCT FROM 'requires a module'"* and `(*MARK)` is pinned
+in three places. PCRE2 recognises `MARK`, so under D29's CLAIM row pcrec owes
+"requires module 'verbs'" — and deliberately does not. **One enum cannot carry
+"CLAIM the construct but name no module", and that cell is occupied by shipped,
+tested code.** Why it was missed: D29 derived its three answers from ONE doorway
+(`pcrec_ext_class_bracket`), a sample of size one — then cited D27 three
+sections later and applied it to the recogniser SIGNATURE while not applying it
+to the VERDICT ENUM. **The same document states D27's rule and breaks it, two
+pages apart.**
+
+**And a sequencing hazard the plan created and did not notice (C2-11):**
+`(?xx)[a- ]` compiles where `[a- ]` is error 108, because `xx` deletes the
+space — at the class range endpoint SPEC-FA fixed one commit ago. MOD-0.3
+(`modifiers`) was scheduled BEFORE MOD-0.5 (`classes`), and pcrec's only current
+guard is that `(?x)` is unimplemented. MOD-0.3 now carries the gate.
+
+R10's dispositions run to sixteen. Suite re-verified green after all doc edits
+(`make test` rc=0, zero `FAIL:` counted unanchored).

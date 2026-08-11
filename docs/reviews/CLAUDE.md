@@ -71,6 +71,31 @@ most of the odd-looking test cases trace to a finding recorded here.
   way the finding was** and passed its sabotage until the positive control was
   run.
 
+- **2026-08-11-r10-mod0-design.md** — R10, MOD-0's DESIGN (D29 and the MOD-0
+  substeps). **The first panel run against a design rather than an
+  implementation, and the cheapest review in the project's history**: comparable
+  severity to R9, found before a line was written, every fix an edit to a
+  paragraph. D29's spine survived — recogniser-per-row, two ports with two
+  signatures, the semantic port recursing into `p_alt`, no allocation in
+  recognition. Its central guard did not: "exactly one recogniser may answer"
+  FIRES ON A CORRECT REGISTRY, because every tailed bucket has a tail-less
+  fallback row whose honest recogniser is "always matches" and two buckets hold
+  opposite verdicts; and it is a UNIQUENESS guard traded for the REACHABILITY
+  guard it retired, proved on D29's own `-\d+)` collapse, which would have been a
+  tier-2 regression. Both proposed controls were the defect they were meant to
+  cure — `--explain` never enters a doorway, and module-shipped probes are
+  co-location (the drift cure) applied to a circularity problem. The most
+  serious finding is D27's own mechanism turned on the designer:
+  `src/parse/registry.c:62-72`, dated the day before, says *"Do not design a
+  handler signature that assumes it can"* about the exact signature D29
+  specifies, and D29 neither cites nor answers it. And "17 tailed rows,
+  measured" was 18 — measured by one grep for a macro NAME, missing the one
+  tailed row not written through a macro, which was the centrepiece of the
+  argument the number supported. The generalisation, sharper than D27 reached:
+  D29's three defences were all LIVENESS arguments where every failure this
+  project records is a VALUE or SET argument — ask not "does this check run" but
+  **"what would have to be true for it to fail, and who chose that input".**
+
 ## Conventions
 
 Findings are labelled CONFIRMED (reproduced, with the repro) or SUSPECTED, and

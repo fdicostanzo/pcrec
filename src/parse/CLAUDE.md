@@ -75,7 +75,13 @@ Rules when touching it:
   would cost the base tier a lookup. `\b` inside a class is a third thing
   parse.c still answers, but as BASE syntax — it decodes to backspace, which is
   what the row's `RF_CLASS_BASE` flag records.
-- **A row may carry a `tail`** (SR-9): the bytes that must FOLLOW its selector
+- **A row may carry a `tail`** (SR-9) — **but D29 supersedes this as a LOOKUP
+  KEY, and [MOD-0] is implementing that now.** After MOD-0 a row names a
+  RECOGNISER function, `tail` survives only as the parameter of a
+  `tail_default` recogniser, and LONGEST TAIL WINS is replaced by "exactly one
+  recogniser may answer, and two is a registry defect". The rest of this bullet
+  describes the shipped code, which is still accurate until MOD-0.2 lands: the
+  bytes that must FOLLOW its selector
   byte, with LONGEST TAIL WINS inside that byte's bucket. It is a literal
   prefix, not a pattern — `(?-` needs ten rows, "0".."9", rather than one "\d",
   because a tail nobody has to interpret cannot be interpreted wrongly. Three
