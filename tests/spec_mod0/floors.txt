@@ -1,0 +1,67 @@
+# tests/spec_mod0/floors.txt — ratcheting population floors.
+#
+# One line per population bucket: "<bucket> <minimum>". A check fails if a
+# bucket's count drops below its floor, AND fails if it reports a bucket with
+# no line here. Unpinned is unchecked: an empty population prints the same
+# "0 disagreements" as a full one, so the count is what makes a PASS mean
+# anything.
+#
+# Ratcheting: these are MINIMA measured on a real run, not targets. Raise a
+# floor when a sweep legitimately grows; lowering one is a claim that the
+# suite should compare less, and belongs in review with a reason.
+#
+# All numbers below measured against libpcre2 10.46 2025-08-27 on 2026-08-11,
+# registry dump of 100 rows.
+
+# --- invariant 3: LEXICAL membership -----------------------------------
+lexical.rows_swept                 100
+lexical.quantifier_compiles         50
+lexical.members                      2
+lexical.control_exclusions          18
+lexical.qe_cell                      1
+
+# --- invariant 5: the digit rules --------------------------------------
+digits.single_cells                904
+digits.run_cells                   244
+digits.leading89_cells             123
+digits.octal_fallback_cells        24
+digits.overflow_cells              12
+
+# --- invariant 8: the endpoint sweep -----------------------------------
+endpoint.row_cells                 200
+endpoint.delimiter_eaters          20
+endpoint.lexical_rows              8
+endpoint.both_sides_pairs          36
+endpoint.order_cells               6
+
+# --- invariant 10: quantifiability -------------------------------------
+quantifiable.rows                  100
+quantifiable.verb_forms             50
+quantifiable.option_forms            6
+
+# --- invariant 2: the capture count ------------------------------------
+capture.family_named               15
+capture.family_lookaround          40
+capture.family_verbs               15
+capture.family_callouts            8
+capture.family_branchreset         14
+capture.family_scoped_n            6
+capture.family_quotemode           4
+capture.noncompiling               700
+
+# --- invariant 4: class-position expectation ---------------------------
+class.esc_rows                      41
+class.bracket_rows                   3
+class.probe_cells                  175
+
+# --- invariant 7/9: gate equivalence -----------------------------------
+gate.membership_rows               70
+gate.compared_pairs                  0
+quantifiable.compared_rows          100
+endpoint.doorway_escape             82
+endpoint.doorway_bracket             6
+endpoint.cells_scored              200
+capture.bodies_compared            99
+class.adjacent_cells                22
+class.noclass_rows                  56
+gate.module_names                  16

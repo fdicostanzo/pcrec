@@ -2181,6 +2181,29 @@ rebuilt invariant list (§17.3).
 plan (docs/plan.md, MOD-0 substeps) is the next artefact and the design
 conversation's output.**
 
+**SPEC-MOD0 DELIVERED (2026-08-11, sixth session; D27 author, denied this
+document).** tests/spec_mod0/ — ten checks, 4 runnable-now green, 6 awaiting
+a named pcrec surface (exit 3, distinct from failure, never a vacuous pass).
+Three findings against §17.3's own statements, details and probes in
+tests/spec_mod0/CLAUDE.md: **(A)** invariant 3's "(Today: exactly three.)"
+is TWO under its own criterion — `a\Q*` COMPILES but quote mode makes the
+`*` a LITERAL, so no quantifier binds anything; the criterion sees `\E` and
+`(?#)` only. `\Q` is still lexical by design intent (it changes lexing) —
+the CRITERION needs a second arm, which is a §8-rebuild question, not a
+row-kind change. **(B)** the endpoint five-step model confirmed at 3
+deviations over 200 cells (the high-side collating pair, plus one
+non-class-reachable artefact cell) — and the author independently
+re-derived the oracle-measured extent scan and the `[0-\g{-1}]` tail rule.
+**(C)** verb quantifiability is per-NAME and NOT derivable from the tables'
+`forms` text (`a(*ACCEPT)*` compiles, `a(*FAIL)*` 109, identical forms),
+and the name sweep has a THIRD outcome — 26 of 50 names are UNDEFINED
+(start-only options whose unquantified form doesn't compile), so §18.3's
+per-VerbName column needs {repeatable, non-repeatable, not-askable}.
+Disclosure, recorded: the harness auto-injected tests/CLAUDE.md and
+tests/fuzz/CLAUDE.md (denied files) into the author's context unrequested;
+the author reports no predictor consumed them, and neither describes the
+mechanism — contamination nil in substance, real in fact.
+
 **Process note, recorded because it is now a pattern with three instances:**
 R13 refuted Part I's claims that were measured on buckets that could not
 falsify them; Part II then did it twice more (§16.1's literal-sided cells,
