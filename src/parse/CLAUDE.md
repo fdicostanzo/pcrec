@@ -4,6 +4,20 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 
 ## Files
 
+- **scans.c** — the ALWAYS-LIVE extent scans (design §12; MOD-0.1 slice 9):
+  the K4 three-rule delimiter-pair scan (with `pcrec_ext_class_pair_opens`,
+  its predicate form) and the verb-name extent. Pure over (pat, patlen);
+  named per spec check01's discovery convention (`*_extent_scan`); this TU
+  must NEVER link the enabled-set symbols — `nm` is the oracle (check01),
+  and the isolation is the mechanical form of "what a construct IS cannot
+  depend on what is switched on"
+- **enabled.c** — the enabled feature set (MOD-0.1 slice 9): one home,
+  process-wide, written once by the CLI's `--features` (module names from
+  the registry, or all/none; unknown names refused by name) before any
+  compile; `pcrec_feature_enabled` is the gate's membership question.
+  Deliberately NOT a pcrec_options field (D20). With no ports built,
+  enabling a module changes no verdict — only `--probe-ask`'s answered_at
+  sees the open gate; check07 owns verdict equivalence
 - **parse.c** — see also **PARSE-1 (2026-08-11)** below, which changed the
   group case's SHAPE without adding a construct — the base grammar AND NOTHING
   ELSE (SR-2): literals, `.`,
@@ -36,10 +50,13 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (D25). Since MOD-0.1's slice 8 every doorway takes an `ExtWant` ask level
   (§18.2's three-level contract, no `may` axis — see internal.h): parse.c's
   six call sites ask WANT_RESULT, `ext_gate` demotes RESULT→VERDICT while a
-  row's module is not enabled (unconditional today; floors at VERDICT), the
-  result's `answered_at` records the post-gate level, and the CURSOR RULE —
-  cx->pos moves only under WANT_RESULT — is measured externally through
-  `--probe-ask` (check06's channel) rather than asserted
+  row's module is not enabled (a real per-row membership test since slice 9,
+  consulting enabled.c AFTER row choice; floors at VERDICT), the result's
+  `answered_at` records the post-gate level ("gate open, port missing" vs
+  "gate closed"), and the CURSOR RULE — cx->pos moves only under
+  WANT_RESULT — is measured externally through `--probe-ask` (check06's
+  channel) rather than asserted. Slice 9 moved the extent scans out to
+  scans.c; ext.c keeps the seam: row choice, the gate, the terminal answer
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,

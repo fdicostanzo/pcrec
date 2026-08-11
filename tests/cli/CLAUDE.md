@@ -26,7 +26,15 @@ Part of `make test` since M2.
   in-repo cursor sweep over every registry row at claim+verdict, population
   FLOORED at 198 probes; the spec-side comparison belongs to
   tests/spec_mod0's check06, not here. Sabotage-validated three ways:
-  cursor breach 82/82 probes caught, gate unbroken pin, answered_at drop).
+  cursor breach 82/82 probes caught, gate unbroken pin, answered_at drop),
+  and since MOD-0.1 slice 9 `--features` (gate-open observable per module
+  via answered_at, per-module not blanket, unknown names refused by name,
+  open gate moves neither cursor nor verdict text, and a `--features all`
+  compile is byte-identical to a bare one — same output BASENAME in two
+  directories, the emitted-#include lesson, which this case's first
+  version paid a third time. Sabotage: gate ignoring the set is caught by
+  the answered_at pin; check01's one-reference-from-the-scans-TU sabotage
+  is the spec suite's own).
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
 
 ## Conventions

@@ -676,6 +676,38 @@ case10() {
     "$PCREC" --probe-ask verdict --list-syntax >/dev/null 2>&1; rc=$?
     assert_eq "case10: --probe-ask with --list-syntax exits 1" "1" "$rc"
 
+    # --features (MOD-0.1, slice 9): the enabled set. No module has ports yet,
+    # so the ONLY observable today is the gate's state through --probe-ask's
+    # answered_at — result stays result where the row's module is enabled,
+    # demotes to verdict where it is not — and verdicts must not move at all
+    # (check07's subject; one spot pin here).
+    assert_eq "case10: --features all opens the gate (answered_at result)" \
+        "result" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f3)"
+    assert_eq "case10: --features is per-module, not a blanket switch" \
+        "verdict" "$("$PCREC" --features backrefs --probe-ask result -- '\d' | cut -f3)"
+    assert_eq "case10: an open gate does not move the cursor either" \
+        "2	2" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f4,5)"
+    assert_eq "case10: an open gate changes no verdict text" \
+        "$("$PCREC" --probe-ask result -- '\d' | cut -f6-)" \
+        "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f6-)"
+    "$PCREC" --features nosuchmodule --probe-ask result -- '\d' \
+        >/dev/null 2>"$d/ef1.txt"; rc=$?
+    assert_eq "case10: an unknown module name in --features exits 1" "1" "$rc"
+    assert_contains "case10: ...and is refused BY NAME" \
+        "$(cat "$d/ef1.txt")" "unknown module 'nosuchmodule'"
+    # a compile under --features all emits byte-identical code to one without
+    # (no ports exist; the flag must be inert on the compile path today).
+    # SAME BASENAME in different directories — the emitted C embeds the
+    # output basename in its #include (the journal's twice-paid lesson)
+    mkdir -p "$d/fa" "$d/fb"
+    "$PCREC" -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    "$PCREC" --features all -o "$d/fb/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    if cmp -s "$d/fa/feat.c" "$d/fb/feat.c"; then
+        pass "case10: --features all compiles byte-identical output today"
+    else
+        fail "case10: --features all changed emitted code with no ports built"
+    fi
+
     # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
     out="$("$PCREC" --help)"
     assert_contains "case10: --help documents --list-syntax" "$out" "--list-syntax"
@@ -683,6 +715,7 @@ case10() {
     assert_contains "case10: --help documents --explain" "$out" "--explain"
     assert_contains "case10: --help documents --count-groups" "$out" "--count-groups"
     assert_contains "case10: --help documents --probe-ask" "$out" "--probe-ask"
+    assert_contains "case10: --help documents --features" "$out" "--features"
 
     # `--` still ends options: a pattern that looks like a query is a pattern
     "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?

@@ -48,17 +48,28 @@
 #include "core/internal.h"
 
 /* THE GATE (§5.4/§15, the ASK contract — see ExtWant in internal.h): demote
- * RESULT to VERDICT for a row whose module is not enabled, flooring at
- * VERDICT — never CLAIM, which would be silence where a diagnostic is owed.
- * The enabled set is EMPTY today (every row RS_MODULE or RS_REJECTED), so
- * the demotion is unconditional and sits at doorway entry; the enabled-set
- * slice replaces the constant with the per-row membership test and moves it
- * to where the row is known. Observable NOW through the probe channel: an
- * ask at `result` is answered_at `verdict`, and the day a module is enabled
- * that stops being true — a probe that is false the day before (D33 §9.3). */
-static ExtWant ext_gate(ExtWant want)
+ * RESULT to VERDICT for a row whose module is not in the enabled set,
+ * flooring at VERDICT — never CLAIM, which would be silence where a
+ * diagnostic is owed. Since MOD-0.1 slice 9 this is the real membership
+ * test: it sits AFTER row choice (enablement is a fact about the row's
+ * module) and consults enabled.c — the one place ext.o's undefined list
+ * gains the enabled-set symbol, which is exactly where check01's nm
+ * contract wants it: the gate at the seam, never in a scan.
+ *
+ * A NULL row and a non-module row both demote: no row means nobody's
+ * construct (the refusal is a terminal verdict), and an RS_REJECTED row can
+ * never be enabled. An ENABLED row keeps WANT_RESULT — and since no module
+ * port EXISTS yet, its refusal then reports answered_at = result, which is
+ * the externally visible difference between "gate open, port missing"
+ * (D33's NULL-port refusal) and "gate closed" (--probe-ask, cli case10).
+ * Equivalence of the VERDICT itself across enabled sets is check07's
+ * subject, and holds today by construction: no port, same refusal. */
+static ExtWant ext_gate(const RegRow *r, ExtWant want)
 {
-    return want == WANT_RESULT ? WANT_VERDICT : want;
+    if (want == WANT_RESULT &&
+        !(r && r->status == RS_MODULE && pcrec_feature_enabled(r->feature)))
+        return WANT_VERDICT;
+    return want;
 }
 
 /* Format a refusal at claim time and return it. The arguments are what the
@@ -123,11 +134,11 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
 ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
                            size_t at)
 {
-    want = ext_gate(want);
     /* cx->pos sits just past the escape byte, so that IS the tail position. */
     size_t avail;
     const char *tl = tail_at(cx, cx->pos, &avail);
     const RegRow *r = pcrec_registry_find(RK_ESC, c, tl, avail);
+    want = ext_gate(r, want);
 
     if (!r) {
         if (in_class) REFUSE(at, "unknown escape \\%c in class", c);
@@ -182,7 +193,6 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
  * missing byte, which is reproduced below. */
 ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
 {
-    want = ext_gate(want);
     /* cx->pos is at the '?'; c2 is the byte after it; so the tail starts two
      * past the cursor. When the pattern ends at the '?' that is already beyond
      * patlen and tail_at reports avail = 0. */
@@ -190,6 +200,7 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
     const char *tl = tail_at(cx, cx->pos + 2, &avail);
     const RegRow *r = pcrec_registry_find(RK_GROUP, c2, tl, avail);
     int shown = c2 < 0 ? '?' : c2;
+    want = ext_gate(r, want);
 
     /* Only reachable by deleting the catch-all row, which tests/registry's
      * hand-written manifest also refuses; a NULL deref is not an acceptable
@@ -258,8 +269,8 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
  * is measured against libpcre2 rather than read from documentation. */
 ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
 {
-    want = ext_gate(want);
     const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
+    want = ext_gate(r, want);
     const char *pat = cx->pat;
     size_t n = cx->patlen;
     size_t star = at + 1;           /* the '*'; `at` is the '(' */
@@ -270,10 +281,9 @@ ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
     if (r->diag != RD_FIXED)
         BAD_ROW(at, "a (* verb");
 
-    /* The name runs to the first of `)`, `:`, `=` or the end of the pattern.
-     * Nothing else terminates it: `(*NO_JIT )` is not `NO_JIT` with a trailing
-     * space, it is the name `NO_JIT ` and PCRE2 rejects it. */
-    while (i < n && pat[i] != ')' && pat[i] != ':' && pat[i] != '=') i++;
+    /* The name's extent (the terminator set and the trailing-space rule are
+     * documented at the scan, scans.c — always-live, never gated). */
+    i = pcrec_verb_name_extent_scan(pat, n, nstart);
     size_t nlen = i - nstart;
     int next = i < n ? (unsigned char)pat[i] : -1;
 
@@ -415,50 +425,16 @@ ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
  * not decoration: `[.a.]` is an error at offset 0 while `[:alpha:]` is a
  * perfectly ordinary class of five characters, pinned against libpcre2 10.46.
  * RF_CLASS_DELIM is what separates them — see its definition in internal.h. */
-/* Does a delimiter-pair construct actually OPEN at `from`, with `c2` as its
- * delimiter? This is K4's three-rule scan as a PREDICATE, so that a caller which
- * is not the doorway can ask the question without triggering a diagnostic.
- *
- * It exists for range endpoints (R9/SPEC-FA). PCRE2 refuses a range whose
- * endpoint is one of these constructs — `[0-[:digit:]]` is error 150, "invalid
- * range in character class" — and pcrec was reading the `[` as an ordinary
- * literal member and EMITTING A MATCHER. Measured against libpcre2 10.46, and
- * the boundary is exactly this scan rather than "the byte is `[`":
- *
- *   [0-[a]         compiles   `[a` opens nothing
- *   [0-[:]         compiles   `[:` with no `:]` after it opens nothing
- *   [0-[:digit]    compiles   same — the pair never closes
- *   [0-[:digit:]]  err 150    the pair closes, so a construct is the endpoint
- *   [0-[.a.]       err 150    ...even when the CLASS itself never closes
- *   [0-[:foo:]]    err 150    position beats name validity; not "unknown name"
- *
- * `rules 1-3` are documented at length in the doorway below; this shares them
- * rather than restating them, because two copies of that scan is exactly the
- * duplication SR-2 removed. */
-bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from)
-{
-    /* No class-bracket row carries a tail: this doorway's constructs are
-     * decided by the delimiter byte plus the SCAN below, not by the next byte.
-     * Passing NULL/0 asks the tail-less question explicitly rather than letting
-     * a future tailed row here change this scan's meaning by accident. */
-    const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
-    if (!r || !(r->flags & RF_CLASS_DELIM)) return false;
-    for (size_t i = from; i < cx->patlen; i++) {
-        char ch = cx->pat[i];
-        if (ch == '\\' && i + 1 < cx->patlen &&
-            (cx->pat[i + 1] == ']' || cx->pat[i + 1] == '\\')) { i++; continue; }
-        if (ch == (char)c2 && i + 1 < cx->patlen && cx->pat[i + 1] == ']') return true;
-        if (ch == '[' && i + 1 < cx->patlen && cx->pat[i + 1] == (char)c2) return false;
-        if (ch == ']') return false;
-    }
-    return false;
-}
+/* pcrec_ext_class_pair_opens — K4's scan as a predicate — MOVED to scans.c
+ * (MOD-0.1 slice 9) with the K4 three-rule scan itself: extent scans are the
+ * always-live half of recognition and live in a TU that never links the
+ * enabled-set symbol (check01's nm contract). This file keeps the SEAM: row
+ * choice, the gate, and the terminal answer. */
 
 ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
                                   size_t from, bool at_class_open,
                                   bool at_content_start)
 {
-    want = ext_gate(want);
     /* No `if (c2 < 0)` guard: it was here, and it was redundant rather than
      * defensive. `find(RK_CLASSBRACKET, -1)` returns NULL because this kind has
      * no catch-all row — which registry_check.c now REQUIRES of it, since a
@@ -467,97 +443,30 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
      * handles every other unrecognised byte. */
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
     if (!r) DECLINE();
+    want = ext_gate(r, want);
 
-    /* K4, fixed 2026-08-10 (FIX-2). This scan used to run to the end of the
-     * PATTERN rather than the end of the CLASS, so a `.]` anywhere later — even
-     * well outside the class — made an ordinary `[.` look closed and pcrec
-     * rejected patterns PCRE2 compiles. `[a[.b]c]d.]` was the sharpest: the
-     * `.]` it matched sits at offset 9 and the class closed at offset 7.
+    /* K4, fixed 2026-08-10 (FIX-2): the three-rule delimiter-pair scan, which
+     * used to run to the end of the PATTERN rather than the end of the CLASS
+     * (`[a[.b]c]d.]` was the sharpest repro). The scan itself now lives in
+     * scans.c (MOD-0.1 slice 9 — always-live extent scans in their own TU,
+     * check01's nm contract) WITH its rule documentation and the four
+     * measured pin patterns; what this call site keeps is the outcome
+     * mapping: a pair that never closes is a DECLINE either way (rule 2's
+     * nested-opener return was measured behaviourally identical to rule 1's
+     * break over 1,239,480 patterns, R9/C2, so the two collapse here).
      *
-     * PCRE2's rule has THREE parts and they must land TOGETHER, which is not a
-     * style preference — adding the `]` rule without the escape rule flips
-     * `[a[.b\].]` from a correct rejection into an over-acceptance, because the
-     * `]` that ends the scan is one the backslash was hiding:
-     *
-     *   1. an unescaped `]` ends the class, so the pair can no longer close
-     *   2. a `[` followed by the SAME delimiter is a NESTED opener and WINS —
-     *      PCRE2 abandons the outer one and recognises the inner. NOTE what
-     *      this code actually does about that: it abandons the outer pair, and
-     *      nothing more. Recognising the inner construct happens later, when
-     *      p_class reaches that `[` and enters doorway 4b again. So the
-     *      `return` below is behaviourally identical to `break` — `closed` is
-     *      false on that path, so the `if (!closed) return;` after the loop
-     *      takes the same exit. Measured byte-identical over 1,239,480 patterns
-     *      and over a 172,246-pattern verdict+message+offset dump (R9/C2).
-     *   3. `\]` and `\\` are skipped as a UNIT
-     *
-     * THE ORDER OF THE CLOSE CHECK IS ARBITRARY, and the comment that stood
-     * here said otherwise. It claimed the close check must come first "because
-     * a delimiter immediately before `]` IS the closer, and rule 1 must not
-     * consume that `]` out from under it". That hazard cannot occur: rule 1
-     * tests the byte AT `i` (`ch == ']'`) while the close check tests
-     * `pat[i] == c2 && pat[i+1] == ']'`, so the two predicates are DISJOINT
-     * whenever `c2 != ']'` — and `c2` is only ever `:`, `.` or `=`. A critic
-     * moved the close block after rule 1 and got byte-identical results over
-     * 1,239,480 generated patterns, including the liveness counts, while the
-     * same battery's other five sabotages each produced thousands of
-     * divergences (R9/C2-1). The stated reason was untestable, not merely
-     * untested.
-     *
-     * What makes the disjointness true is a property of the TABLE, not of this
-     * function, so registry_check.c now asserts it: no RK_CLASSBRACKET row may
-     * have `]` as its selector. Keep the order as it is — it reads well — but
-     * do not believe it is load-bearing. */
-    /* Start at `from`, not 0, so that a row reaching the RF_CLASS_NAMED check
-     * below without having run the scan asks about a ZERO-length name rather
-     * than about `0 - from`, which wraps to a huge size_t. No shipped row does
-     * that (the one RF_CLASS_NAMED row also carries RF_CLASS_DELIM, and
-     * registry_check.c now requires that pairing), and a critic measured that
-     * even the wrapped length was memory-safe — but only because
-     * `pcrec_registry_posix_known` compares lengths before it compares bytes,
-     * which is an implementation detail of a different function that nothing
-     * ties to this one (R9/C3-1). Two guards, because the coupling was by
-     * accident and the natural "optimisation" of that function removes it. */
+     * `close_at` starts at `from`, not 0, so that a row reaching the
+     * RF_CLASS_NAMED check below without having run the scan asks about a
+     * ZERO-length name rather than about `0 - from`, which wraps to a huge
+     * size_t. No shipped row does that (the one RF_CLASS_NAMED row also
+     * carries RF_CLASS_DELIM, and registry_check.c requires that pairing) —
+     * two guards, because the coupling that made the wrap memory-safe was
+     * accidental (R9/C3-1). */
     size_t close_at = from;              /* index of the closing delimiter */
     if (r->flags & RF_CLASS_DELIM) {
-        bool closed = false;
-        /* `i < patlen`, and the bound is not load-bearing either: every body
-         * inside reads `pat[i + 1]` only after its own `i + 1 < patlen` test,
-         * so `i + 1 < patlen` here is byte-identical over the same 1,239,480
-         * patterns. Stated because the previous version of this function used
-         * the tighter bound and it would be easy to assume the change mattered
-         * (R9/C2). */
-        for (size_t i = from; i < cx->patlen; i++) {
-            char ch = cx->pat[i];
-            /* RULE 3 FIRST, and it means EXACTLY what K4 wrote: `\]` and `\\`
-             * are skipped AS UNITS. A backslash escapes a `]` or another
-             * backslash and NOTHING ELSE. I generalised it twice — first to
-             * "skip any `\X`", then to "suppress only a class-ending `]`" — and
-             * PC-3's generated sweep refuted both within minutes. Four measured
-             * patterns pin it, and no weaker rule gets all four:
-             *
-             *   [[.\.]]      REJECT  `\.` is NOT a unit, so `.]` closes the pair
-             *   [[.a\\]x.]   accept  `\\` IS a unit, so the `]` is unescaped and
-             *                        ends the class before `.]` is reached
-             *   [a[.b\].]    REJECT  `\]` IS a unit, so that `]` does not end
-             *                        the class and `.]` closes the pair
-             *   [[.b].]      accept  a bare `]` ends the class
-             *
-             * Skip-any-`\X` gets the first wrong; suppress-only-`]` gets the
-             * second wrong. Only the two-character rule gets all four. */
-            if (ch == '\\' && i + 1 < cx->patlen &&
-                (cx->pat[i + 1] == ']' || cx->pat[i + 1] == '\\')) {
-                i++;
-                continue;
-            }
-            if (ch == (char)c2 && i + 1 < cx->patlen && cx->pat[i + 1] == ']') {
-                closed = true; close_at = i; break;             /* the closer */
-            }
-            if (ch == '[' && i + 1 < cx->patlen && cx->pat[i + 1] == (char)c2)
-                DECLINE();                                      /* rule 2 */
-            if (ch == ']') break;                               /* rule 1 */
-        }
-        if (!closed) DECLINE();
+        if (!pcrec_class_delim_extent_scan(cx->pat, cx->patlen, c2, from,
+                                           &close_at))
+            DECLINE();
     }
 
     /* The `else if (at_class_open) return;` that stood here is GONE, and its

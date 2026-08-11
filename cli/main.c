@@ -38,6 +38,13 @@ static void usage(FILE *f)
           "                    parse only; print the number of capturing\n"
           "                    groups. A pattern pcrec refuses is refused\n"
           "                    here too, with the same diagnostic\n"
+          "  --features LIST   enable feature modules for this invocation:\n"
+          "                    comma-separated names from --list-syntax's\n"
+          "                    module column, or 'all' or 'none' (default\n"
+          "                    none). Composes with every mode. No module\n"
+          "                    has an implementation yet, so enabling one\n"
+          "                    changes no verdict today — the gate's state\n"
+          "                    is visible via --probe-ask's answered_at\n"
           "  --probe-ask WANT [--] CONSTRUCT\n"
           "                    drive the construct's doorway ONCE at ask\n"
           "                    level WANT (claim|verdict|result) and report\n"
@@ -74,6 +81,7 @@ int main(int argc, char **argv)
     int list_verbs = 0;
     int count_groups = 0;
     const char *probe_want = NULL;
+    const char *features = NULL;
 
     int no_more_opts = 0;
     for (int i = 1; i < argc; i++) {
@@ -94,6 +102,13 @@ int main(int argc, char **argv)
                 return 1;
             }
             probe_want = argv[++i];
+        }
+        else if (!no_more_opts && !strcmp(a, "--features")) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            features = argv[++i];
         }
         else if (!no_more_opts &&
                  (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
@@ -135,6 +150,21 @@ int main(int argc, char **argv)
      * compares against libpcre2). A pattern pcrec refuses is refused here
      * with pcrec_compile's exact diagnostic — leftmost refusal, so a count is
      * never reported for a pattern whose constructs pcrec does not know. */
+    /* --features installs the enabled set BEFORE anything consults the gate
+     * (slice 9). It composes with every mode — a compile, --probe-ask,
+     * --count-groups — because it is configuration, not a query; an unknown
+     * module name is refused BY NAME rather than silently enabling nothing
+     * (the --flavour rule). No module has ports yet, so today it changes no
+     * verdict — only the probe channel's answered_at can see it (check07
+     * holds the verdict-equivalence half). */
+    if (features) {
+        char ferr[256];
+        if (pcrec_enabled_set_spec(features, ferr, sizeof ferr) != 0) {
+            fprintf(stderr, "pcrec: --features: %s\n", ferr);
+            return 1;
+        }
+    }
+
     /* --probe-ask drives ONE doorway call and reports the cursor — the
      * check06 channel (§18.2's cursor rule). The doorway REFUSING the
      * construct is a normal, reportable outcome here (exit 0, outcome

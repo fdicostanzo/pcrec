@@ -567,9 +567,30 @@ Then DOC-1, then PC-4 when module `classes` lands.
   by the predicted assertion set: cursor breach under !RESULT (82/82
   probes + exact-cell), gate returning want unchanged (the demotion pin,
   exactly 1 failure), REFUSE dropping answered_at (2 failures).
-  Remaining: check06 armed by a FRESH D27 author in a worktree (the
-  surface now exists), enabled-set/toggles, then the
-  byte-identity bar)
+  SLICE 9 LANDED eighth session: the enabled-set/toggles surface. enabled.c
+  — ONE home for the set (process-wide, written once by the CLI before any
+  compile; deliberately NOT a pcrec_options field, D20), `--features LIST`
+  (module names from the dump's module column, all/none, unknown names
+  refused BY NAME); scans.c — the always-live extent scans extracted from
+  ext.c (K4 delimiter-pair scan + pair_opens predicate + verb-name extent),
+  pure over (pat,patlen), named per check01's discovery convention, TU
+  never links the enabled symbols (nm verified: ext.o carries the undefined
+  ref — the gate at the seam — scans.o carries none); ext_gate became the
+  real per-row membership test (after row choice; NULL row and RS_REJECTED
+  always demote; an ENABLED row keeps WANT_RESULT so a refusal's
+  answered_at distinguishes gate-open-port-missing from gate-closed).
+  check01 SELF-ARMED and PASSES (4 symbol/TU pairs, 1 recogniser TU);
+  SPEC-MOD0 8/0/2 (check06 in flight with its D27 author, check07 needs
+  its comparison written now that the surface exists). Byte-identity: the
+  952-pattern differential vs the PRE-SLICE-8 binary still zero differences
+  (default empty set is inert). cli case10 109→117 (gate-open pin,
+  per-module pin, open-gate-moves-nothing pins, refused-by-name,
+  byte-identical compile under --features all — whose first version paid
+  the emitted-#include basename lesson a THIRD time). Sabotages:
+  check01's own one-reference-from-scans.c (caught, object+symbol named),
+  gate-ignores-set (caught by the answered_at pin).
+  Remaining: check06 merge (author in worktree), check07's comparison
+  (spec-side author, surface now exists), then the byte-identity bar)
   (UNBLOCKED 2026-08-11 by **D32**, which resolves
   the interface after three panels — R10 refuted D29, R11 refuted parts of D30,
   R12 refuted the alternative and produced the resolution. **Read D32 before any

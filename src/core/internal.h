@@ -708,9 +708,12 @@ typedef struct {
     size_t  end;
     /* The level the ask was actually ANSWERED at, after the gate — the §5.4
      * demotion made observable (the probe channel prints it; nothing on the
-     * compile path reads it, which byte-identity asserts). WANT_RESULT
-     * appears here the day the first enabled module port produces a result,
-     * and not before. A decline is a claim-level answer (zero-init). */
+     * compile path reads it, which byte-identity asserts). WANT_RESULT here
+     * means THE GATE WAS OPEN — the row's module is in the enabled set
+     * (slice 9); on a refusal it distinguishes "gate open, port missing"
+     * (D33's NULL-port refusal) from "gate closed" (verdict-level demotion).
+     * With the default empty enabled set it is never `result`, which cli
+     * case10 pins. A decline is a claim-level answer (zero-init). */
     ExtWant answered_at;
 } ExtResult;
 
@@ -742,8 +745,26 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
 /* True when a `[X...X]` construct really opens at `from` with delimiter `c2` —
  * K4's scan as a predicate, for callers that must ASK rather than diagnose.
  * Used by the range-endpoint check: PCRE2 makes `[0-[:digit:]]` error 150, and
- * pcrec used to read the `[` as a literal and emit a matcher (R9/SPEC-FA). */
+ * pcrec used to read the `[` as a literal and emit a matcher (R9/SPEC-FA).
+ * Lives in scans.c since slice 9. */
 bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from);
+
+/* src/parse/scans.c — the ALWAYS-LIVE extent scans (design §12; slice 9).
+ * Pure over (pat, patlen) on purpose, named per check01's discovery
+ * convention, and their TU must never link the enabled-set symbols below —
+ * the linker is the check's oracle. */
+bool   pcrec_class_delim_extent_scan(const char *pat, size_t patlen, int c2,
+                                     size_t from, size_t *close_at);
+size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
+                                   size_t nstart);
+
+/* src/parse/enabled.c — the enabled feature set (slice 9): one home,
+ * process-wide, written once by the CLI's --features before any compile.
+ * NOT a pcrec_options field (D20 keeps the core API's option surface
+ * scalar); promote a library channel later if a caller wants one. */
+bool     pcrec_feature_enabled(unsigned featmask);
+unsigned pcrec_enabled_mask(void);
+int      pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz);
 
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means

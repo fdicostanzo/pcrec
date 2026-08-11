@@ -5809,3 +5809,46 @@ directories, including K10's description, which overlaps its top finding;
 disclosed, and the finding cites only the two contradicting tables. The
 leak pattern remains a standing property of spawning; the disclosure
 requirement in briefs is doing its job.
+
+## 2026-08-11 — eighth session, third stretch: slice 9 (the enabled set, the scans TU, the real gate)
+
+**Slice 9 = the enabled-set/toggles surface** (this commit), scoped by the
+spec checks' own discovery conventions rather than by taste: check01 finds
+the enabled-set symbol AND the recogniser/extent-scan TUs by nm-name
+convention and fails-as-missing if either discovery is empty, so the slice
+owed three things at once. (1) enabled.c: the set's one home —
+process-wide, written once by `--features LIST` before any compile
+(module names as the dump spells them, all/none, unknown names refused BY
+NAME per the --flavour rule; NOT a pcrec_options field, D20 keeps the
+core option surface scalar). (2) scans.c: the always-live extent scans
+extracted from ext.c — the K4 three-rule delimiter-pair scan with its
+rule documentation and four pin patterns, pair_opens as its predicate,
+the verb-name extent — pure (pat,patlen) signatures, `*_extent_scan`
+names, and a TU that never links the enabled symbols. nm confirms the
+whole §12 story mechanically: ext.o (the seam) carries the one undefined
+reference to pcrec_feature_enabled; scans.o carries none. (3) ext_gate
+became the real membership test, AFTER row choice: NULL row and
+RS_REJECTED rows always demote; an ENABLED row keeps WANT_RESULT, so a
+refusal's answered_at now distinguishes "gate open, port missing" (the
+D33 NULL-port refusal) from "gate closed" — measured: `--features all`
+flips '\d' result-asks to answered_at=result, `--features backrefs`
+does NOT (per-module, not blanket), and neither cursor nor verdict text
+moves under an open gate.
+
+check01 SELF-ARMED on the surface's arrival and PASSES (4 symbol/TU
+pairs over 1 recogniser TU; its own sabotage — one reference from
+scans.c — caught with object and symbol named). SPEC-MOD0 is 8/0/2.
+Byte-identity: the 952-pattern differential against the PRE-SLICE-8
+binary still shows zero differences — the default empty set is inert
+through both slices. cli case10 109→117.
+
+**The basename lesson, paid a third time:** the new byte-identical-under-
+--features-all case first compared feat_a.c against feat_b.c and failed —
+the emitted C embeds the output basename in its #include. Same basename,
+two directories. The lesson is now load-bearing in a committed test
+rather than only in the journal.
+
+**Next:** merge the check06 author's worktree delivery when it lands
+(then run the one-line src sabotage against the armed check myself);
+spawn the check07-comparison author (surface exists now); then the
+byte-identity landing bar closes MOD-0.1.
