@@ -2029,12 +2029,71 @@ rebuilt invariant list (§17.3).
    VALIDITY (keep refusing `\1..\9` until the scanner exists) and land
    simpler modules first. The second keeps the migration small at the cost
    of `backrefs` staying refused longer.
-2. **Does `may` survive?** With `(?(` served by the count-scan, nothing
-   currently motivates `MAY_ALLOCATE|MAY_RECURSE` at VERDICT. Keep the axis
-   (C1's diagnosis was right and something may yet need it) or collapse back
-   to three `want` levels with the cursor rule? Collapsing loses nothing
-   measured today; keeping it costs an unexercised degree of freedom — the
-   D24/SR-2 lesson cuts against keeping.
+
+   > **RESOLVED (Frank, 2026-08-11 fifth session): NEITHER — there is no
+   > scanner, because PCRE2's digit semantics do not need one.** Frank
+   > challenged the scanner ("I recall you arguing against a scanner" — the
+   > original argument was right), and eighteen targeted probes plus a
+   > 2,931-probe generated sweep (predictor stated before running; backref-ness
+   > read back via `PCRE2_INFO_BACKREFMAX`, zero disagreements) established
+   > the model:
+   >
+   >     leading '0'                  octal, always
+   >     single digit 1..9            backref, always; VALID iff TOTAL count >= d
+   >     multi-digit, leading 1..7    backref iff RUNNING count >= n,
+   >                                  else OCTAL — the total is IRRELEVANT
+   >                                  (^\12(a)x12$ matches "\n"+12 a's: octal)
+   >     multi-digit, leading 8..9    backref, always; VALID iff TOTAL >= n
+   >                                  (\89 with 89 groups AFTER it compiles)
+   >
+   > The RUNNING count is ordinary parser state. The TOTAL count is needed
+   > only for VALIDITY of already-decided backrefs — and PCRE2 reports every
+   > structural error FIRST (`\1[` is 106, `\1(` 114, `\1a**` 109, `\1(?P<n`
+   > 142, `\1\q` 103; 115 surfaces only when the rest parses cleanly), which
+   > is exactly the behaviour of **DEFERRED RESOLUTION**: parse single-pass
+   > with the real parser, record pending references (offset + number), check
+   > them against the final count at end-of-parse. Structural errors longjmp
+   > out before the end-check runs, so the precedence matches by
+   > construction. `(?(n)` forward references measured to work the same way
+   > (`(?(1)a|b)(x)` compiles; `(?(2)a|b)(x)` is 115).
+   >
+   > Constructs pcrec refuses terminate the compile, so their count
+   > contribution never matters — the "always-live sub-parser including
+   > ROADMAP_NEVER families" requirement evaporates, and **"backrefs can land
+   > alone" is TRUE again** under this design (`\1(?<n>a)` with
+   > `named-groups` disabled refuses at `(?<n>` with the right module name).
+   > `plan.md`'s [MOD-STATE] note had already recorded the running/validity
+   > split; Part II walked past it. §12.2's count-scan is WITHDRAWN in favour
+   > of: running count in `Ctx` + a pending-references list + one end-of-parse
+   > check. Consequence for §15: the `(?(` terminal-answer question REOPENS
+   > (the scan was its designated answerer) — see decision 2.
+   >
+   > Probes: `probe_defer.c`, `probe_digit_sweep.c` (session scratchpad;
+   > outputs quoted in R14's addendum). Pending: a quick adversarial pass on
+   > this block before the plan builds on it — it is a same-day desk
+   > conclusion, and this project has a fresh catalogue of what those are
+   > worth.
+2. **Does `may` survive?** — REOPENED IN A NEW FORM by decision 1's
+   resolution: the count-scan that was to serve `(?(`'s exact E127/E154
+   terminal answer no longer exists, so the question is now *what answers
+   `(a)(?(1)x|y|z)` while `conditionals` is disabled*. Three options: (a)
+   keep `may` — VERDICT parses the body with the real parser in a
+   structure-only mode (gate-demotion propagating into sub-parses), which is
+   real machinery in the trial-mode direction; (b) a bounded lexical
+   top-level-`|` counter used only by `(?(`'s VERDICT (paren depth + the
+   lexer's existing hidden-`|` awareness — much smaller than the dead
+   scanner, but a second walker for one row); (c) LEFTMOST-REFUSAL POLICY:
+   while `conditionals` is disabled, `(?(` answers "requires module
+   'conditionals'" without reading the body — the `(*FAIL)*` precedent,
+   already pinned in `tests/reject/` as a deliberate non-defect — and the
+   exact E127 arrives for free from the real parse when the module lands.
+   (c) is today's shipped behaviour, costs no machinery, never miscompiles,
+   and makes `may` unnecessary; its price is that R13/C1-F2's E127
+   over-promise stands as a DOCUMENTED POLICY until `conditionals` lands
+   rather than being fixed by mechanism. If (c), collapse to three `want`
+   levels + the cursor rule, with the revisit trigger recorded: a terminal
+   answer REQUIRED to depend on a full sub-parse while its module is
+   disabled reintroduces the axis.
 3. **Where `quantifiable` and `captures` live** — row columns (two more
    hand-written facts, each with an external sweep behind it) is the working
    assumption; an alternative is deriving both from one machine-readable
