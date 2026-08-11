@@ -2315,6 +2315,33 @@ liveness assertion is CARRIED OVER, not retired with the check it belonged to:**
 if no probe in the space distinguishes a ranked pair, the rule is untested and
 the check must say so rather than print a PASS.
 
+> ## ⚠ PARTLY REFUTED BY THE R11 PANEL, 2026-08-11 — see
+> ## `docs/reviews/2026-08-11-r11-parse1-mod01.md`. §2's central sentence is
+> ## FALSE and §1-2's checks are weaker than claimed. NOT YET RE-RESOLVED.
+>
+> Three measured refutations, all found before MOD-0.1 was built:
+>
+> 1. **§2's "pcrec must promise a module wherever libpcre2 DISPATCHES" is
+>    false** — 93 counterexamples in 1,672 generated probes, and ALL 93 are
+>    pcrec behaving CORRECTLY (REFUSE cases, base-tier constructs pcrec
+>    implements, D25's `(*MARK)` answer). "Dispatched" does not imply a module
+>    is owed; that needs the other two of §3's three facts. **§3 gets this right
+>    and §2 ignores it two sections apart** — the same failure §3 diagnoses in
+>    D29.
+> 2. **Rank is almost entirely unchecked.** 20 of 22 rows accept ANY value up to
+>    250 without any proposed check failing; the one prefix-related pair is a
+>    single THRESHOLD, not a checked ordering (68 interior values pass). And the
+>    per-row `syntax` check and the rank sweep fire on IDENTICAL boundaries in
+>    all 5,632 probes — §2 requires both and one adds nothing.
+> 3. **§1's "two answering rows at equal rank is the defect" HOLDS** (0
+>    collisions over 3,507 probes on the correct table) — but module-swap and
+>    row-deletion are invisible to both new checks, and `check_tail_precedence`'s
+>    liveness obligation has no committed successor, so it cannot be retired.
+>
+> Also: the returning-doorway defect this decision never priced is FOUR call
+> sites across three doorways, and `pcrec_ext_escape`'s pair is UNDEFINED
+> BEHAVIOUR — making it return makes `build/pcrec` SIGSEGV on `[a\qb]`.
+
 ### 2. The per-row `syntax` check is the primary instrument (R10/C4-6)
 
 *A row's own `syntax`, fed to its bucket, must be won by THAT row and by no

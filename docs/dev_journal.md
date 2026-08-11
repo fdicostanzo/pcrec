@@ -4398,3 +4398,130 @@ single-homed. **A check that counted prose about itself.** Anchored on
 `ctx_fail(` it reads code, scores 1, and catches a planted second call site.
 Third time this session a check was wrong on first writing and only sabotage or
 an immediate red said so.
+
+## 2026-08-11 (same session) — MOD-0.1's design panel: D30 refuted in part, nothing built
+
+**[MOD-0.1] is STATE:blocked, deliberately.** The panel ran against a WRITTEN
+DESIGN and refuted enough of D30 that the interface needs re-resolving — the
+same shape as R10 → D30, so it wants a D32 and that is Frank's call. **Every
+finding cost a paragraph instead of a commit**, which is the argument for design
+panels stated once more.
+Full record: `docs/reviews/2026-08-11-r11-parse1-mod01.md`, seven dispositions.
+
+### The headline: D30 §2's non-optional check is FALSE, measured
+
+D30 §2: *"pcrec must promise a module wherever libpcre2 DISPATCHES."* Over 1,672
+generated probes at all four doorways, options = 0, libpcre2 10.46:
+
+    libpcre2 DISPATCHED (diagnostic names a construct)   769
+      of which pcrec promises a module                   676
+      dispatched but NO module promised                   93
+    libpcre2 says NOT-A-CONSTRUCT                        206
+      pcrec named a module anyway (OVER-promise)           0
+
+**All 93 are pcrec being CORRECT** — 40 REFUSE (`\U`/`\u`, D30 §4's own bound
+mode), 20 POSIX collating, 16 BASE-TIER constructs pcrec implements, 6 unknown
+POSIX names, 4 `\N{name}`, and 1 `(*MARK)` which is D25's deliberate fourth
+answer. **"Dispatched" does not imply a module is owed**; that needs the other
+two of D30 §3's three facts. §3 gets it right and §2 ignores it two sections
+apart — the same "states the rule and breaks it" failure §3 diagnoses in D29.
+
+Clean positive: **0 over-promises in 206 not-a-construct probes.** Q1's, Q2's
+and FIX-2's cleanups hold over a space none of them generated.
+
+### Rank is almost entirely unchecked, and two of the three checks coincide
+
+5,632 probes — all 22 bucketed rows x candidate rank in [-5,250]:
+
+- **20 of 22 rows accept ANY value up to 250** with no proposed check failing.
+- The one prefix-related pair is a single THRESHOLD, not an ordering: crossing
+  40→70 is caught, the other 68 interior values pass silently.
+- **The per-row `syntax` check and the rank sweep fire on IDENTICAL boundaries
+  in all 5,632 cases.** D30 requires both; one adds nothing.
+- Module-swap is invisible to the per-row check (R10/C4-1 one level in, on a
+  TIER 2 property); row deletion is invisible to both (R5's incident again);
+  `check_tail_precedence` cannot be retired because its liveness obligation has
+  no committed successor.
+
+Positive: "two answering rows at equal rank is the defect" does NOT repeat
+D29's bug — 0 collisions over 3,507 probes on the correct table.
+
+### The returning-doorway defect is FOUR call sites, and one is UNDEFINED BEHAVIOUR
+
+D31 recorded one instance. Measured, the class is worse. `pcrec_ext_escape` is
+called from `esc_atom` and `esc_class_value` as the LAST STATEMENT of a
+value-returning function with **no `return`** — legal only because `noreturn`
+makes falling off the end unreachable. Make it return:
+
+    a\qb    (esc_atom → Ast*)       exit 0, compiles, the stub node reaches the
+                                    matcher — pointer relaunched out of %rax by
+                                    calling-convention accident. 5/5.
+    [a\qb]  (esc_class_value → int) SIGSEGV, exit 139. build/pcrec — THE
+                                    COMPILER ITSELF — crashes. 3/3.
+
+Two failure shapes, two call sites, one binary, one change. Unlike the group
+case (well-defined C, deterministically the same wrong answer) **this is UB.**
+It is also the only doorway where the compiler warns at all — two
+`-Wreturn-type`, build still exit 0; group and verb warn ZERO for the identical
+change, because discarding a return value is silent in C.
+
+Flagged, not reproduced: `esc_class_value`'s return feeds
+`cls_set(a->cls, (unsigned)lo)` with NO range check, and `cls_set` indexes
+`b[c >> 3]` into a 32-byte array.
+
+And the group-discard class, generated not listed — 18 patterns: **7 are
+byte-identical to a SMALLER pattern** (`(?%x))` → the EMPTY pattern;
+`(?%x)(?%y)c))` → `c`, two discards compounding; `(?%x)(d))` → `d`, a real
+nested group absorbed), 8 give a spurious "missing closing ) for group", 2 give
+the wrong quantifier error, 1 a misattributed offset. **0 of 18 behave as the
+contract promises.**
+
+### Facts that survive and should be reused rather than re-measured
+
+100 rows / 18 tails / exactly **4** multi-row buckets, by iterating
+`pcrec_registry()` rather than grepping macro names — the method that produced
+17 where the answer was 18. All 18 tailed rows live inside those buckets, which
+hold **22 rows — D30's own figure, independently derived**. D30's undocumented
+0/25/40/70 rank mapping was recovered and verified 22/22 two ways. **`ext.c`
+never reads `.tail`**, so its six call sites need no change and only three files
+touch the field. `find()`'s same-length tie-break falls back to SOURCE ORDER — a
+latent branch that rank converts into a loud defect, which D30 never claims.
+And **existing external coverage of tailed rows is 2 prefixes, not the 10,200
+probes it looks like**: `check_group_tails` runs 4 prefixes x 255 bytes x 10
+completions, but for `<` and `+` libpcre2 agrees on every tail, so they prove
+nothing.
+
+### Process, and it cost something this time
+
+**The panel ran 2-of-4.** M3 (349 lines) and M4 (184) delivered; two produced
+only headers and were re-run with narrow single-question briefs. Recorded as a
+finding: **a five-part critic brief delivers materially worse than a brief with
+one clear primary item.**
+
+One fact-gatherer died before writing up — but because it wrote raw data
+incrementally, its four sweep TSVs survived and the analysis was done from them.
+The incremental-write rule paying off in a case it was not designed for.
+
+### MOD-0.1 panel close — one answer, and one gap I am not glossing
+
+**M5 (re-run on a narrow brief) settled the signature:** the recogniser's last
+parameter is `const char *tail`, NOT `const RegRow *self`. Answered by
+enumerating all 22 bucketed rows, not from principle — no row needs any other
+field. The reason to refuse `self` is that a recogniser able to read
+`self->module` becomes a second, contradictable home for a TIER 2 fact, and
+**the rank guard polices ANSWERS, not which fields a function consulted**, so
+nothing would catch the drift. The one genuinely hard bucket (`(?-`'s digits,
+where `\12` is octal-or-backreference by capture count) is out of a pure
+recogniser's reach regardless of signature, so it argues for a third kind of
+input to the SEMANTIC port, not for handing recognisers the row.
+
+**THE GAP: my reachability measurement was never independently reviewed.** The
+critic assigned to attack it produced only a header — twice, on two
+differently-scoped briefs. So "D30 §2 is false" currently rests on ONE
+measurement, taken by the person who found it interesting. That is the exact
+shape this project distrusts everywhere else, and R11 says so in its own text
+rather than letting the number stand unqualified. The probe corpus and
+classifier are kept so someone else can reproduce it before D32 leans on it.
+
+**Nothing was built for MOD-0.1 and nothing should have been.** The tree is
+unchanged from `5d4663f` apart from documentation.

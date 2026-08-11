@@ -95,6 +95,29 @@ most of the odd-looking test cases trace to a finding recorded here.
   D29's three defences were all LIVENESS arguments where every failure this
   project records is a VALUE or SET argument — ask not "does this check run" but
   **"what would have to be true for it to fail, and who chose that input".**
+- **2026-08-11-r11-parse1-mod01.md** — R11, two panels in one session:
+  PARSE-1's design+implementation and MOD-0.1's design. The PARSE-1 half is
+  absorbed into D31; its sharpest finding arrived **after the commit** —
+  `p_alt` had no linkage, so the step titled "make `p_alt` a usable module
+  callback" had left the callback uncallable, and the rule "re-poll before
+  compiling" was applied twice successfully and lost anyway because its
+  boundary was the build, not the panel. **A checkpoint is not closed until
+  every critic has IDLED.** The MOD-0.1 half REFUTES PARTS OF D30 the way R10
+  refuted D29 and is deliberately left unresolved: D30 §2's non-optional check
+  ("promise a module wherever libpcre2 DISPATCHES") is false — 93 counterexamples
+  in 1,672 probes, ALL of them pcrec being correct, because "dispatched" does not
+  imply a module is owed; D30 §3 gets that right and D30 §2 ignores it two
+  sections apart. Rank is almost entirely unchecked (20 of 22 rows accept any
+  value to 250; the one prefix pair is a single THRESHOLD, not an ordering) and
+  two of D30's three required checks fire on identical boundaries in all 5,632
+  probes. And the returning-doorway defect is FOUR call sites across three
+  doorways, one of which is undefined behaviour: making `pcrec_ext_escape`
+  return makes `build/pcrec` itself SIGSEGV on `[a\qb]`, while `a\qb` silently
+  launders the pointer out of `%rax`. Of the group-discard class, 7 of 18
+  generated patterns are byte-identical to a smaller pattern and 0 of 18 behave
+  as the contract promises. Second process finding: a five-part critic brief
+  delivered materially worse than a brief with one clear primary item — two of
+  four produced only headers.
 
 ## Conventions
 

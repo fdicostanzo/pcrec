@@ -474,7 +474,33 @@ Then DOC-1, then PC-4 when module `classes` lands.
   forbade this signature, because `\12` is octal or a backreference depending on
   a running capture count and that decides its MODULE, which is tier 2 and exact.
 
-- [MOD-0.1] STATE:not-started (unblocked by D30) — the interface, as D30
+- [MOD-0.1] STATE:blocked (2026-08-11 — **the R11 design panel refuted parts of
+  D30, exactly as R10 refuted D29, and the resolution is Frank's call.** See
+  `docs/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.
+  NOTHING WAS BUILT; the panel ran against a written design and every finding
+  cost a paragraph rather than a commit. **Seven dispositions** are listed at the
+  end of R11 and they are the specification for the re-resolution, which wants a
+  D32 the way D30 answered R10. The three that change the most work: (1) D30
+  §2's non-optional check is FALSE as written — "promise a module wherever
+  libpcre2 DISPATCHES" has 93 counterexamples in 1,672 probes and ALL 93 are
+  pcrec being CORRECT, because "dispatched" does not imply a module is owed;
+  (2) rank is almost entirely UNCHECKED — 20 of 22 rows accept any value to 250,
+  the single prefix pair is a THRESHOLD not an ordering, and two of D30's three
+  required checks fire on identical boundaries in all 5,632 probes, so one of
+  them adds nothing; (3) the returning-doorway defect PARSE-1 handed over is
+  FOUR call sites across three doorways, and `pcrec_ext_escape`'s pair is
+  UNDEFINED BEHAVIOUR — making it return makes `build/pcrec` itself SIGSEGV on
+  `[a\qb]` while `a\qb` silently launders the pointer out of `%rax`. Of the
+  group-discard class, 7 of 18 generated patterns are byte-identical to a
+  SMALLER pattern and 0 of 18 behave as the contract promises.
+  Measured facts that survive and should be reused: 100 rows / 18 tails /
+  exactly 4 multi-row buckets holding all 18 tailed rows = 22 rows (D30's own
+  figure, independently derived); D30's undocumented 0/25/40/70 rank mapping
+  recovered and verified 22/22 two ways; `ext.c` never reads `.tail` so its six
+  call sites need no change; `find()`'s same-length tie-break falls back to
+  SOURCE ORDER, a latent branch rank converts into a loud defect; and existing
+  external coverage of tailed rows is 2 prefixes, not the 10,200 probes it
+  looks like) — the interface, as D30
   resolves it. **DECLARED RANK**: a row carries an integer rank; every
   recogniser in the bucket runs; the highest-ranked ANSWERING row wins; two
   answering rows at EQUAL rank is the defect. Rank is DATA, so no recogniser
