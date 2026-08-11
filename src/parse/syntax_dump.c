@@ -38,6 +38,7 @@ static const MaskName engine_names[] = {
 };
 static const MaskName flag_names[] = {
     {RF_CLASS_BASE, "class-base"}, {RF_CLASS_DELIM, "class-delim"},
+    {RF_LEXICAL, "lexical"},
 };
 
 #define NELEMS(a) (sizeof (a) / sizeof (a)[0])

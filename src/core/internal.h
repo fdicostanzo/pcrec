@@ -374,7 +374,25 @@ enum {
      * fixed the first byte and left `(?iZ)` still promising a module for syntax
      * PCRE2 refuses. A row-per-byte cannot express "and the rest must parse";
      * this flag is where that obligation lives. */
-    RF_OPTION_RUN = 1u << 4
+    RF_OPTION_RUN = 1u << 4,
+
+    /* The LEXICAL row kind (MOD-0.1 slice 4, design §13.3): the construct is
+     * a TOKENIZER MODE, not an atom — `\Q...\E` turns raw bytes into literal
+     * character tokens, `\E` alone is the measured no-op, `(?#...)` is a
+     * lexer discard. When built, it is built in the lexer; when ports land
+     * (MOD-0.2+), a LEXICAL row has NO class port and NO AST port, and its
+     * "producer" is the mode transition itself, gating like any producer:
+     * disabled -> terminal at the token with the row's existing vocabulary.
+     * Until then the three rows keep refusing with their exact strings
+     * (byte-identity, §13.3) — this flag changes no behaviour today.
+     *
+     * MEMBERSHIP IS MEASURED, not asserted: §13.3(d)'s criterion is the same
+     * fact the `quant` column carries as QF_LEXICAL, so registry_check
+     * requires RF_LEXICAL <=> QF_LEXICAL in both directions and a fourth
+     * lexical construct is FOUND (by check10's sweep) rather than assumed
+     * away. NOT base grammar: base is never refused and never toggleable;
+     * these rows are both (`--without=quoting` must refuse `\Q`). */
+    RF_LEXICAL = 1u << 5
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */

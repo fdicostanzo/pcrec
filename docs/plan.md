@@ -486,7 +486,14 @@ Then DOC-1, then PC-4 when module `classes` lands.
   rows carry a value, 56 group/verb rows carry none) and the vocabulary,
   three sabotages each caught with exactly one named failure; dump is
   15/6 fields, emitted code spot-checked byte-identical 10/10 vs HEAD.
-  Remaining: LEXICAL row kind, returned-claims
+  SLICE 4 LANDED seventh session: the LEXICAL row kind as RF_LEXICAL on
+  {\Q, \E, (?#} (§13.3 — no behavior change, refusal strings verified
+  byte-exact; the macros force QF_LEXICAL so they cannot disagree with the
+  measured column; registry_check requires RF_LEXICAL <=> QF_LEXICAL both
+  directions, sabotaged both ways — the false-lexical-CELL direction is
+  check10's catch, verified with a doctored dump, not registry_check's,
+  whose pairing a self-consistent macro sabotage rightly survives).
+  Remaining: returned-claims
   epilogue/K11, endpoint rule/K12, want+cursor (fresh D27 author for
   check06), deferred-backref infra, enabled-set/toggles, then the
   byte-identity bar)

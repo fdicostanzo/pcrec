@@ -179,6 +179,27 @@ static void check_wellformed(void)
                 bad("%s row %zu (%s): QF_FORM outside the two form-resolved "
                     "families (option-run rows, the verb row)", kn, i, r->syntax);
 
+            /* MOD-0.1 slice 4 (design §13.3): the LEXICAL row kind, tied to
+             * the measured column so the two homes cannot drift. RF_LEXICAL
+             * is pcrec's own taxonomy (locus: the construct is lexer-owned;
+             * no class port, no AST port when ports land) and no outside
+             * authority can check a taxonomy — but its MEMBERSHIP criterion
+             * is §13.3(d)'s, which is exactly what the quantifiable column
+             * already measures: quantifying the syntax creates no quantifier
+             * for the construct. So the flag must appear on precisely the
+             * QF_LEXICAL rows, both directions — a fourth lexical construct
+             * would arrive with a measured QF_LEXICAL cell (check10's sweep)
+             * and this pairing would demand the flag the same day. */
+            if ((r->flags & RF_LEXICAL) && r->quant != QF_LEXICAL)
+                bad("%s row %zu (%s): RF_LEXICAL but quantifiable is not "
+                    "'lexical' — the row kind claims a lexer-owned construct "
+                    "the measured column does not see", kn, i, r->syntax);
+            if (!(r->flags & RF_LEXICAL) && r->quant == QF_LEXICAL)
+                bad("%s row %zu (%s): quantifiable='lexical' but the row does "
+                    "not carry RF_LEXICAL — a measured lexical-mode construct "
+                    "must be declared as the LEXICAL row kind (§13.3)",
+                    kn, i, r->syntax);
+
             /* MOD-0.1 slice 3: the class_expect column's legal shape. VALUES
              * are checked against a live libpcre2 oracle by
              * tests/spec_mod0/check04; what this asserts is the pairing and

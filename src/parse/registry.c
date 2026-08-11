@@ -176,6 +176,15 @@
  * the in-class answer must promise no module (R9/SPEC-classes-F1). */
 #define ESC_CLASS_INVALID(sel, syn, mod, eng, note, q, ce) \
     {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED, (q), (ce)}
+/* as ESC/GROUP, but the LEXICAL row kind (design §13.3): a tokenizer mode,
+ * not an atom — no class port, no AST port when ports land. The macros force
+ * QF_LEXICAL rather than take a `q`, because registry_check requires
+ * RF_LEXICAL <=> QF_LEXICAL and a macro that could disagree with itself
+ * would be the drift the pairing exists to catch. */
+#define ESC_LEXICAL(sel, syn, mod, eng, note, ce) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, (ce)}
+#define GROUP_LEXICAL(sel, syn, mod, eng, note) \
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, NULL}
 #define ESC_DIGIT(sel, syn, eng, note, q, ce) \
     {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce)}
 /* (?X -> "(?X...) requires module 'M'" */
@@ -295,8 +304,8 @@ ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or 
 ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property", QF_YES, "set 117"),
 ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property", QF_YES, "set 139"),
 
-ESC('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E", QF_LEXICAL, "err 106"),
-ESC('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q", QF_LEXICAL, "err 106"),
+ESC_LEXICAL('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E", "err 106"),
+ESC_LEXICAL('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q", "err 106"),
 
 ESC_CLASS_INVALID('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence", QF_YES, "err 107"),
 ESC_CLASS_INVALID('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster", QF_YES, "err 107"),
@@ -432,7 +441,7 @@ GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtrackin
  * through the `<` selector, which already names lookaround. */
 GROUP('*',  "(?*a)",         lookaround,       VM_ONLY,
       "non-atomic positive lookahead — the (? spelling of (*napla:...)", QF_YES),
-GROUP('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'", QF_LEXICAL),
+GROUP_LEXICAL('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
 GROUP_NEVER('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- OUT-OF-SCOPE (K14): a callout suspends generated code that has no runtime to suspend into", QF_NO),
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
