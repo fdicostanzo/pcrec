@@ -4310,3 +4310,91 @@ data. Recorded in tests/bench/CLAUDE.md. wake §3 was right that HARNESS FAILURE
 is distinct from a budget failure; it was wrong about the cause being free
 space. **`hard errors: 1 / budget failures: 0` means the benchmark DID NOT RUN
 — do not read the zero as a pass.**
+
+## 2026-08-11 (same session, follow-up) — R11's late material arrived AFTER the commit
+
+**The process failure first, because it is the finding.** `0ebbdc7` was
+committed with C2's findings file at **53 lines**. It finished at **680**. This
+is R8's recorded failure — *"do not close a checkpoint until the reports are in
+hand"* — reproduced in a session that had already applied R10's re-poll rule
+TWICE successfully. The rule as written stops at "immediately before compiling";
+C2 delivered after the commit. **Extend it: the checkpoint is not closed until
+every critic has idled, not until the build is green.** Recorded rather than
+smoothed over, and the fixes below are a follow-up commit rather than an amend.
+
+### What the late material actually contained — one of it was a real miss
+
+**`p_alt` had NO LINKAGE (C2-8), and that was PARSE-1's own stated purpose.**
+The step is titled "make `p_alt` a usable module callback". `p_alt` and
+`p_alt_info` are `static` to parse.c, so ext.c cannot call either, and
+`pcrec_parse_info` — the one thing PARSE-1 exported — is the WRONG entry point
+for a nested body, because it requires end-of-pattern and ctx_fails on `)` with
+"unmatched closing parenthesis". **A module handed it would fail on every body
+it was given.** I had fixed the count, the depth and the parse state and left
+the callback uncallable. Fixed now: `pcrec_parse_body`, which parses a body and
+stops AT its terminator without consuming it, the caller consuming its own `)`.
+
+**The contract guidance I committed was wrong (C2-5/C2-10).** `0ebbdc7` told
+MOD-0.1 to derive `pcrec_ext_group`'s contract from `pcrec_ext_class_bracket`'s
+"or justify differing". The justification exists and the answer is DIFFER: the
+two doorways' non-fail outcomes are DISJOINT. class_bracket's three `return;`
+sites never write `cx->pos` — its only normal-return outcome is DECLINE with the
+cursor unchanged. The `(?` doorway can never decline at all, because
+`registry.c:505`'s catch-all is REJECTED, so its only future normal-return
+outcome is CLAIM with the cursor past its own `)`. Corrected in three places.
+
+**The silent-discard defect is REPRODUCED and is an exit-0 miscompile.** One
+selector byte returning a node, and `(?%x)b)` compiles byte-identically to `b` —
+the module's node and the pattern's own unmatched `)` both vanish, no
+diagnostic, exit 0. Still MOD-0.1's, now recorded with the repro.
+
+**"These two checks cannot fail today" was FALSE (C2-9).** A fixture doorway on
+a selector byte no registry row uses makes depth balance observable NOW, no
+module needed. So the whole SKIP-vs-`check_tail_precedence` argument was the
+wrong question for these two: they are UNOBSERVED, not unobservable. Text
+corrected; MOD-0.1 should ship real checks rather than either precedent.
+
+### And the depth checks I then wrote were themselves blind, which is the better lesson
+
+Added cap probes (250 accepted / 251 rejected, both sides, `(...)` and
+`(?:...)` — matching C2's 780-probe measurement). Then sabotaged them, and:
+
+    double-decrement sabotage -> *** PASSED. The check was BLIND. ***
+
+A purely nested pattern only tests the cap on the way IN; a leaked decrement
+shows on the way OUT, where nothing was looking — and it fails OPEN, the
+dangerous direction. The input that catches it is SEQUENTIAL groups first, then
+a nest one past the cap. Added. Then `no-decrement` passed too — it fails
+CLOSED, needing the opposite probe (600 sibling groups at real depth 1 must
+still compile). Added.
+
+**Four depth sabotages now verified caught: double-decrement, no-decrement,
+no-increment, off-by-one cap.** The balance probes exist because a sabotage
+found the blindness, not because anyone foresaw it — which is the whole argument
+for sabotaging every check rather than running it once and believing it. My own
+first probe also failed for a stupid reason (`-o /dev/null` makes pcrec write
+`/dev/null.h`, permission denied, so every ok-side probe "failed" correctly for
+the wrong cause) — caught only because the check went red immediately.
+
+`tests/parse/` is now 7 checks. Full gate re-run below.
+
+**Follow-up gate, all green:** `make test` EXIT=0, 0 `FAIL:` unanchored,
+1012 / 85 / 397 / 164 / 143 / [parse 2 + 8] / 29 / 7. `make strict` clean.
+`verify_rxt` 980 PASS / 0 FAIL. `fuzz --seed 1` zero divergences (the state-cap
+lines are the known DFA limitation, labelled as such by the harness itself).
+`TMPDIR=/var/tmp make bench` 0 hard errors, 0 budget failures, every section
+PASS.
+
+One last check added, from C2's final delivery (823 lines — it grew AGAIN, from
+680, after the follow-up was written): **the base-tier group diagnostic must
+have exactly ONE home in `src/`.** Total, terminating, no generated space, no
+oracle. It guards the thing `pcrec_parse_body`'s contract makes tempting — a
+module copying "missing closing ) for group" instead of writing its own
+construct-appropriate wording, which is `\v`'s two-homes shape (D24).
+
+**And the first cut of that check scored 3 on a CORRECT tree**, because two of
+its three hits were comments in this repository explaining that the string is
+single-homed. **A check that counted prose about itself.** Anchored on
+`ctx_fail(` it reads code, scores 1, and catches a planted second call site.
+Third time this session a check was wrong on first writing and only sabotage or
+an immediate red said so.

@@ -2566,3 +2566,65 @@ a per-branch position rather than the last separator, which `AltInfo` can carry
 without changing shape; or MOD-0.1 settles the returning-doorway contract, at
 which point the two SKIP-shaped properties become observable and must be
 promoted from SKIP to real assertions.
+
+### D31 ADDENDUM — 2026-08-11, the R11 panel's late material, arriving AFTER the commit
+
+**Process first, because it is the finding about the process.** `0ebbdc7` was
+committed with C2's findings file at 53 lines. It finished at **680**. Three of
+four critics in this panel delivered their bulk after being read, and one
+delivered after the COMMIT — which is R8's recorded failure ("do not close a
+checkpoint until the reports are in hand") reproduced despite R10 adding the
+re-poll rule and despite that rule being applied twice successfully in the same
+session. The re-poll must extend PAST the commit, or the rule only moves the
+cliff. Everything below is a follow-up commit, not an amendment.
+
+**1. `p_alt` had NO LINKAGE, and that was PARSE-1's stated purpose (C2-8).**
+`p_alt`/`p_alt_info` are `static` to parse.c, so `ext.c` cannot call either, and
+`pcrec_parse_info` is the WRONG entry point for a nested body — it requires
+end-of-pattern and ctx_fails on `)`. A module handed it fails on every body.
+Fixed: `pcrec_parse_body(Ctx *, AltInfo *)`, which parses a body and stops AT
+its terminator without consuming it. The step titled "make `p_alt` a usable
+module callback" had fixed the count, the depth and the parse state, and left
+the callback uncallable.
+
+**2. The contract guidance shipped in `0ebbdc7` was WRONG (C2-5, C2-10).** It
+said MOD-0.1 should derive `pcrec_ext_group`'s contract from
+`pcrec_ext_class_bracket`'s "or justify differing". The justification exists and
+the answer is DIFFER: the two doorways' non-fail outcomes are **disjoint**.
+class_bracket's three `return;` sites never write `cx->pos`, so its only
+normal-return outcome is DECLINE with the cursor unchanged. The `(?` doorway can
+never decline at all — `registry.c:505`'s catch-all is `REJECTED` — so its only
+future normal-return outcome is CLAIM, cursor past its own `)`. One signature
+over both would make "returns normally" mean opposite things by doorway, which
+is D30 §3's "the answer is not an enum" one level up. Corrected in parse.c.
+
+**3. The silent-discard defect is REPRODUCED, and it is an exit-0 miscompile.**
+Give `pcrec_ext_group` one selector byte that returns a node instead of failing,
+and `(?%x)b)` compiles to byte-identical C to the bare pattern `b` — the
+module's node AND the pattern's own unmatched trailing `)` both vanish with no
+diagnostic. Still MOD-0.1's to fix; now recorded with its repro rather than as a
+hypothetical.
+
+**4. "These two checks cannot fail today" was FALSE (C2-9).** A fixture doorway
+gated on a selector byte no registry row uses makes depth balance observable NOW
+with no module. So the SKIP-vs-`check_tail_precedence` question was the wrong
+question for these two: they are UNOBSERVED, not unobservable. The runner's text
+is corrected, and MOD-0.1 should ship real checks rather than either precedent.
+
+**5. The depth cap and balance are now asserted, and the ordering is the
+lesson.** Cap: 250 accepted / 251 rejected, both sides, for `(...)` and
+`(?:...)` — C2 measured the same boundary over 780 generated probes. Balance:
+sequential groups before a deep nest, and long sibling runs. **The cap probes
+alone were measured BLIND to a double-decrement** — a purely nested pattern only
+tests the cap on the way IN, and a leaked decrement fails OPEN. That blindness
+was found by sabotage, not by foresight; the balance probes exist because of it.
+All four sabotages (double-decrement, no-decrement, no-increment, off-by-one
+cap) verified caught.
+
+**Also recorded, not acted on:** C3 measured that `(?^)` resets past a
+compile-time `PCRE2_CASELESS` — it is reset-to-hardwired-constant, not
+restore-to-saved-value and not restore-to-`opt` — which is a landmine for
+`modifiers`, not for PARSE-1. And 3 of 8 scoped options fit the "bool at a fixed
+site" shape; `(?x)`/`(?xx)` need a pervasive lexer change and `(?n)`/`(?J)` need
+capture/name infrastructure that does not exist, so `Ctx`'s scoped-state slot
+should be expected to grow a struct or bitmask rather than more bools.

@@ -254,10 +254,24 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax);
  * pcrec_ext_group ever returns a node, control still falls through into the
  * body parse below and THE RETURNED NODE IS SILENTLY DISCARDED. Nothing here
  * distinguishes "the doorway finished a construct" from "not mine, carry on".
- * pcrec_ext_class_bracket is the shipped precedent for the second answer
- * (ext.c:383,471,474 — the only doorway that can decline), and whatever
- * contract MOD-0.1 gives this doorway should be derived from that one or
- * justify differing from it. */
+ * REPRODUCED, and it is an exit-0 miscompile rather than a crash: give
+ * pcrec_ext_group one selector byte that returns a node instead of failing, and
+ * `(?%x)b)` compiles to byte-identical C to the bare pattern `b` — the module's
+ * node AND the pattern's own unmatched trailing `)` both vanish silently.
+ *
+ * MOD-0.1 owns the fix, and the shape is settled: capture the doorway's return
+ * and BRANCH around the body parse below, rather than falling through into it.
+ *
+ * DO NOT COPY pcrec_ext_class_bracket's CONTRACT HERE, which an earlier version
+ * of this comment suggested. The two doorways' non-fail outcomes are DISJOINT.
+ * class_bracket's three `return;` sites never write cx->pos, so its only
+ * normal-return outcome is DECLINE with the cursor UNCHANGED. This doorway can
+ * never decline at all — registry.c:505's `(?` catch-all is REJECTED, so every
+ * byte either names a module or is refused — so its only future normal-return
+ * outcome is CLAIM, with the cursor advanced PAST its own `)`. One signature
+ * spanning both would make "returns normally" mean opposite things depending on
+ * which doorway was called, which is D30 §3's "the answer is not an enum" one
+ * level up. */
 static Ast *p_group(Ctx *cx, size_t apos)
 {
     if (++cx->depth > PCREC_MAX_GROUP_DEPTH) /* PCRE2's exact cap, measured;
@@ -612,6 +626,32 @@ Ast *pcrec_parse(Ctx *cx)
  * against libpcre2's own error 127 / error 154 thresholds. pcrec's parser and
  * the reference are different languages, different authors and different
  * algorithms, which is what makes it a control rather than a self-join. */
+/* PARSE-1. THE MODULE CALLBACK ITSELF — parse a NESTED BODY and stop.
+ *
+ * This is the linkage D28/D29/D30 promise ("the semantic port recurses into
+ * `p_alt`") and it is the one thing the first cut of PARSE-1 forgot: `p_alt`
+ * and `p_alt_info` are `static` to this file, so ext.c could not call either,
+ * and `pcrec_parse_info` is the WRONG entry point for a body because it
+ * requires end-of-pattern and ctx_fails on `)` with "unmatched closing
+ * parenthesis". A module handed that function would fail on every nested body
+ * it was given.
+ *
+ * The contract, which is deliberately NOT `pcrec_parse_info`'s:
+ *   on entry  cx->pos is the first byte of the body
+ *   on return cx->pos is at the body's TERMINATOR — the `)` or end of pattern —
+ *             and the terminator is NOT consumed
+ *   the CALLER consumes its own `)` and raises its own diagnostic for a missing
+ *   one, because it alone knows which construct is unterminated
+ *
+ * That last clause is what keeps "missing closing ) for group" single-homed:
+ * the base grammar owns that message for its own two forms (`(` and `(?:`), and
+ * a module owns a DIFFERENT message for its own construct. Different
+ * constructs, different grammars, so this is not the D24 two-homes shape. */
+Ast *pcrec_parse_body(Ctx *cx, AltInfo *info)
+{
+    return p_alt_info(cx, info);
+}
+
 Ast *pcrec_parse_info(Ctx *cx, AltInfo *info)
 {
     Ast *a = p_alt_info(cx, info);

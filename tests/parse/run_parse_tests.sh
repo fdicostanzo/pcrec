@@ -117,28 +117,121 @@ else
     bad "ast-identity: $idfail of $((idpass + idfail)) generated pairs differ"
 fi
 
-# ---- 3. properties that CANNOT be observed yet -----------------------------
+# ---- 3. the depth discipline ----------------------------------------------
 #
-# SKIP-shaped, NOT check_tail_precedence-shaped, and the distinction is
-# load-bearing. check_tail_precedence calls bad() when its subject vanishes
-# (exit 1) because the property WAS live and going dead is a regression a
-# maintainer caused. These two were never live: they need code that does not
-# exist yet. Wiring them to bad() would leave `make test` permanently RED from
-# PARSE-1 until MOD-0.2+, which is why pcre2_check.c's loud-SKIP-exit-0 is the
-# correct precedent here and check_tail_precedence is not.
+# The CAP and the BALANCE are asserted here, both sides each, and all four
+# sabotages were verified live before this shipped (double-decrement,
+# no-decrement, no-increment, off-by-one cap). Note the ordering lesson baked
+# into the two blocks below: the cap probes ALONE were measured BLIND to a
+# double-decrement, because a purely nested pattern only tests the cap on the
+# way in. The balance probes exist because of that measurement, not by
+# foresight.
+#
+# What remains unasserted is narrower than the first cut of this file claimed,
+# and the claim is corrected rather than repeated: those properties are
+# UNOBSERVED, not unobservable. A fixture doorway gated on a selector byte no
+# registry row uses makes them testable today without any module — so the
+# SKIP-vs-check_tail_precedence question they were framed around is moot for
+# them, and MOD-0.1 should ship real checks rather than either precedent.
 echo
-echo "  *** NOT ASSERTED — no code can exercise these yet, stated so that a"
-echo "  *** green run is not mistaken for coverage:"
-echo "  ***  - depth balance across a doorway that RETURNS. Every doorway is"
-echo "  ***    noreturn today (ext.c: zero return statements on any path), so"
-echo "  ***    no input can reach the unbalanced path. First observable when a"
-echo "  ***    module handler returns a node (MOD-0.2+)."
+echo "  *** NOT ASSERTED HERE, stated so a green run is not mistaken for"
+echo "  *** coverage — and note these are NOT unobservable, only unobserved:"
+echo "  ***  - depth balance across a doorway that RETURNS. No REAL syntax can"
+echo "  ***    reach it: every doorway is noreturn today (ext.c has zero return"
+echo "  ***    statements on any path). But a FIXTURE doorway gated on a"
+echo "  ***    selector byte no registry row uses makes it observable NOW,"
+echo "  ***    without waiting for a module — demonstrated by the R11 panel,"
+echo "  ***    which used exactly that stub to reproduce the silent-discard"
+echo "  ***    miscompile. MOD-0.1 should ship it as a real check, not a SKIP."
 echo "  ***  - caseless save/restore around a group body. Nothing writes"
-echo "  ***    cx->caseless yet, so save == restore on every pattern. First"
-echo "  ***    observable when module 'modifiers' lands (MOD-0.5), whose"
-echo "  ***    measured rule is: restore at the IMMEDIATELY enclosing ')',"
-echo "  ***    leaking across that group's sibling alternation branches."
+echo "  ***    cx->caseless yet, so save == restore on every pattern. Same"
+echo "  ***    fixture technique applies. First REAL writer is 'modifiers'"
+echo "  ***    (MOD-0.5), whose measured rule is: restore at the IMMEDIATELY"
+echo "  ***    enclosing ')', leaking across that group's sibling branches."
+echo "  *** The depth CAP itself IS asserted below, both sides."
 echo
+
+# The depth cap, both sides, generated rather than hand-picked. R7 measured the
+# cost of testing one half of a two-sided rule. A double-decrement fails OPEN,
+# which is the dangerous direction, so the ok-side matters as much as the fail.
+capfail=0
+for n in 249 250 251 252; do
+    pat="$(python3 -c "print('('*$n + 'a' + ')'*$n)")"
+    if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
+    case "$n:$r" in
+        249:ok|250:ok|251:fail|252:fail) ;;
+        *) capfail=$((capfail + 1)); echo "  depth cap: n=$n gave $r" >&2 ;;
+    esac
+done
+# and the same boundary for (?:...), which shares the code path
+for n in 250 251; do
+    pat="$(python3 -c "print('(?:'*$n + 'a' + ')'*$n)")"
+    if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
+    case "$n:$r" in 250:ok|251:fail) ;; *) capfail=$((capfail+1)); echo "  depth cap (?:): n=$n gave $r" >&2 ;; esac
+done
+if [ "$capfail" -eq 0 ]; then
+    ok "depth cap: 250 accepted / 251 rejected, both sides, for (...) and (?:...)"
+else
+    bad "depth cap: $capfail boundary probes wrong"
+fi
+
+# DEPTH BALANCE, which the cap probes above CANNOT see — and that blindness was
+# measured, not guessed. A double-decrement (`cx->depth--` twice) passes every
+# probe above, because a purely nested pattern only ever tests the cap on the
+# way IN; the leak shows up on the way OUT and nothing above looks there. It
+# fails OPEN, which is the dangerous direction.
+#
+# The input that catches it: SEQUENTIAL groups FIRST, then a nest one past the
+# cap. Each unbalanced exit leaks a decrement, so the later nest starts from a
+# depth below zero and a 251-deep nest is wrongly accepted.
+balfail=0
+for lead in 1 5 20; do
+    pat="$(python3 -c "print('(a)'*$lead + '('*251 + 'b' + ')'*251)")"
+    if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
+        balfail=$((balfail + 1))
+        echo "  depth balance: ${lead}x'(a)' then a 251-deep nest was ACCEPTED — a" >&2
+        echo "  decrement is leaking, so the cap can be exceeded." >&2
+    fi
+done
+# The OTHER direction, which the probes above are equally blind to: a MISSING
+# decrement makes depth accumulate monotonically, so a long run of SHALLOW
+# sibling groups eventually trips the cap. That fails CLOSED — it rejects valid
+# patterns rather than accepting invalid ones — which is why it needs its own
+# probe rather than being caught by the ones above. Max real depth here is 1.
+for many in 300 600; do
+    pat="$(python3 -c "print('(a)'*$many)")"
+    if ! "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
+        balfail=$((balfail + 1))
+        echo "  depth balance: $many SEQUENTIAL groups (real depth 1) were REJECTED —" >&2
+        echo "  a decrement is missing, so depth accumulates across siblings." >&2
+    fi
+done
+if [ "$balfail" -eq 0 ]; then
+    ok "depth balance: neither a leaked nor a missing decrement survives (5 probes, both directions)"
+else
+    bad "depth balance: $balfail probes wrong"
+fi
+
+
+# ---- 4. the group diagnostic has exactly ONE home --------------------------
+#
+# Total, terminating, no generated space, no oracle — the properties D30 §2
+# wants in a primary instrument. `pcrec_parse_body` hands a module the body and
+# lets the CALLER consume its own `)`, so the day a module doorway starts
+# returning, the tempting mistake is to copy this base-tier wording into it
+# rather than write the construct-appropriate PCRE2 one. A construct with two
+# homes drifts (D24, and `\v` is why that rule exists).
+# Count CALL SITES, not mentions. The first cut of this check grepped for the
+# bare string and scored 3 on a correct tree, because two of the hits were
+# comments in this very repository explaining that the string is single-homed —
+# a check that counts prose about itself. Anchoring on `ctx_fail(` is what makes
+# it read code.
+homes=$(grep -rc 'ctx_fail([^)]*"missing closing ) for group"' "$ROOT_DIR/src" --include='*.c' | awk -F: '{s += $2} END {print s+0}')
+if [ "$homes" -eq 1 ]; then
+    ok "group diagnostic: \"missing closing ) for group\" has exactly one home in src/"
+else
+    bad "group diagnostic: found $homes copies in src/, expected exactly 1 — a module has probably copied the base-tier wording instead of writing its own"
+fi
 
 echo "checks passed: $pass"
 if [ "$fail" -gt 0 ]; then echo "checks FAILED: $fail" >&2; exit 1; fi

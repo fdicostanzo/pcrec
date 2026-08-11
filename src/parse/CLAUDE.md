@@ -77,15 +77,30 @@ A top-level `(?i)` is never restored. So the restore belongs at the group
 boundary in the base grammar, not inside a module — the parser must not need to
 know whether a module fired.
 
-**What PARSE-1 did NOT fix, recorded so it is not rediscovered.** If
-`pcrec_ext_group` ever returns a node, control still falls through into the body
-parse and **the node is silently discarded** — nothing distinguishes "the
-doorway finished a construct" from "not mine, carry on". `pcrec_ext_class_bracket`
-is the shipped precedent for the second answer (`ext.c:383,471,474`, the only
-doorway that can decline, and NOT `noreturn` unlike the other three), so
-MOD-0.1's contract for this doorway should be derived from that one or justify
-differing. Two doorway contracts differing without a reason is D24's two-homes
-shape one level up.
+**The callback itself is `pcrec_parse_body`.** `p_alt` and `p_alt_info` are
+static, so ext.c cannot call them, and `pcrec_parse_info` is the WRONG entry
+point for a nested body — it requires end-of-pattern and ctx_fails on `)`.
+`pcrec_parse_body` parses a body and stops AT its terminator without consuming
+it; the CALLER consumes its own `)` and owns its own unterminated diagnostic,
+which is what keeps "missing closing ) for group" single-homed (the base grammar
+owns it for `(` and `(?:`; a module owns a different message for a different
+construct, so this is not the D24 two-homes shape).
+
+**What PARSE-1 did NOT fix, recorded with its repro.** If `pcrec_ext_group` ever
+returns a node, control still falls through into the body parse and **the node
+is silently discarded**. Reproduced, and it is an exit-0 miscompile: give the
+doorway one selector byte that returns a node, and `(?%x)b)` compiles to
+byte-identical C to the bare pattern `b` — the module's node AND the pattern's
+own unmatched trailing `)` both vanish with no diagnostic. MOD-0.1 owns it; the
+shape is to capture the return and BRANCH around the body parse.
+
+**Do NOT copy `pcrec_ext_class_bracket`'s contract for it.** The two doorways'
+non-fail outcomes are DISJOINT. class_bracket's three `return;` sites never
+write `cx->pos`, so its only normal-return outcome is DECLINE, cursor unchanged.
+The `(?` doorway can never decline — `registry.c:505`'s catch-all is `REJECTED`
+— so its only future normal-return outcome is CLAIM, cursor past its own `)`.
+One signature over both would make "returns normally" mean opposite things
+depending which doorway was called.
 
 Checks: `tests/parse/`, and read its CLAUDE.md before trusting the
 AST-identity check — it passed on the tree BEFORE PARSE-1 existed and is a

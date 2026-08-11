@@ -537,6 +537,12 @@ unsigned pcrec_flavour_by_name(const char *name);
 
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
 Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
+/* PARSE-1: the MODULE CALLBACK. Parses a nested body and stops AT its
+ * terminator without consuming it — the caller consumes its own `)` and owns
+ * its own unterminated-construct diagnostic. Do NOT hand a module
+ * pcrec_parse_info instead: that one requires end-of-pattern and ctx_fails on
+ * `)`. info may be NULL. */
+Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
                      bool reverse);
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
