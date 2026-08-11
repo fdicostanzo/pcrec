@@ -5413,3 +5413,16 @@ panel does.
 
 **Next session:** implement FIX-3 (the twelve literal fallbacks, oracle
 pins first), then start MOD-0.1 and spawn SPEC-MOD0.
+
+## 2026-08-11 — fifth session close-out
+
+Frank's directive for the next session: **development starts.** Work through
+several plan sections, not one — using subagents (lesser models where the
+work fits one, per D5), and running MULTIPLE subagents in parallel on
+NON-DEPENDENT sections. The dependency spine stays serial (FIX-3 gates
+MOD-0.1's byte-identity bar), but SPEC-MOD0 is parallel BY DESIGN (its
+author must not see the design document anyway), and the plan carries
+several sections with no edge into MOD-0 at all (TS-2/3/4 concurrency tests,
+MECH-1/2/3 tooling, the R3.6-R3.10 bench-gate repairs) that can run
+alongside. Wake.md §1 carries the orchestration sketch. Session closed with
+a clean tree at a0eb618 + this entry.
