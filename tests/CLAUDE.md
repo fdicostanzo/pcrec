@@ -7,7 +7,7 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
-- **reject/** — the "unsupported constructs fail cleanly, never miscompile" mandate, asserted per construct (245 hand-written rejections + 99 reached by iterating `pcrec --list-syntax`, + 62 accept-controls + zero known-wrong pins since FIX-2 graduated the last five, plus a manifest of the rows an exact count would not protect; these four figures are hand-copied and went stale TWICE during R9 alone (C4-3, then C4V-3 when the counts changed again in the same review) and moved again at Q2/SR-9 — the harness prints them in its own summary block, so read them from a run rather than from here; the two layers catch different things and neither replaces the other — see its CLAUDE.md). Cannot live in .rxt: a `perr` block asserts only THAT a pattern is rejected, never WHY, and the module name is the point. 20 of the rejections are the base-grammar brace errors from FIX-1 and R7 (K5/K6/K8), which have no registry row and name a PCRE2 error instead of a module; another 36 are Q1's verb-doorway outcomes, which pin one name per FORM GROUP rather than one per name — the other 26 verb names are covered by tests/registry/pcre2_check.c alone, which SKIPS without libpcre2 installed
+- **reject/** — the "unsupported constructs fail cleanly, never miscompile" mandate, asserted per construct (248 hand-written rejections + 99 reached by iterating `pcrec --list-syntax`, + 63 accept-controls + zero known-wrong pins since FIX-2 graduated the last five, plus a manifest of the rows an exact count would not protect; these four figures are hand-copied and went stale TWICE during R9 alone (C4-3, then C4V-3 when the counts changed again in the same review), moved again at Q2/SR-9, at A1/§18.2 (→246/62) and at FIX-3 (→248/63) — the harness prints them in its own summary block, so read them from a run rather than from here; the two layers catch different things and neither replaces the other — see its CLAUDE.md). Cannot live in .rxt: a `perr` block asserts only THAT a pattern is rejected, never WHY, and the module name is the point. 20 of the rejections are the base-grammar brace errors from FIX-1 and R7 (K5/K6/K8), which have no registry row and name a PCRE2 error instead of a module; another 36 are Q1's verb-doorway outcomes, which pin one name per FORM GROUP rather than one per name — the other 26 verb names are covered by tests/registry/pcre2_check.c alone, which SKIPS without libpcre2 installed
 - **parse/** — checks on facts the PARSER computes but never emits, which no
   generated-C test can reach. PARSE-1's top-level branch count is the first:
   the design deliberately leaves the AST unchanged, so the count is compared
@@ -24,6 +24,14 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
 - **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/known_issues.md); excluded from `make test` so the suite stays honest. Currently empty (all known bugs fixed at R2)
 - **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal), plus a differential check that the M2.8 trie is output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3)
+- **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2] N
+  threads share one compiled matcher over different subjects across five
+  differently-shaped emitted engines, [TS-3] concurrent `pcrec_compile()` on
+  different patterns in different threads (library built WITH TSan), both
+  checked against single-threaded baselines for byte-identity as well as for
+  TSan silence. SKIPS loudly (exit 0) if `$CC` lacks `-fsanitize=thread`.
+  Both halves are sabotage-validated with planted races — see its CLAUDE.md
+  for the measured TSan race reports
 - **fuzz/** — PCRE2-oracle differential fuzzer (`make fuzz`), run manually and at checkpoints
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 

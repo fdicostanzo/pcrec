@@ -565,15 +565,39 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the deferred resolution and by §18.1 lands alone; conditionals' landing
   bar includes exact E127/E154 (§18.2's ruling).
 
-- [FIX-3] STATE:not-started — **K13: the twelve class-position literal
+- [FIX-3] STATE:completed 2026-08-11 — **K13: the twelve class-position
   fallbacks, in the CURRENT parser, before the mechanism** (Frank, design
-  §18.4). `[\g] [\k] [\8] [\9]` become the literal letters PCRE2 makes them
-  (measured complete over all 62 `[\c]` probes); tails re-enter as members
-  (`[\k<n>]` matches "k<n>"); endpoint interactions ride along (`[0-\k]`,
-  `[\k-z]` are ranges). Oracle-verified `.rxt` pins written to FAIL first;
-  the twelve reject rows deleted in the SAME change (a construct cannot be
-  both supported and asserted-rejected); `pcre2_compliance.md` updated.
-  Closes K13. First `src/` change of the module era; normal loop.
+  §18.4). Landed as designed: `esc_class_value` decodes the class position's
+  real semantics — `\0`..`\7` octal (≤3 octal digits; >\377 is PCRE2 error
+  151, wording AND offset reproduced), `\8` `\9` `\g` `\k` the literal
+  characters (complete fallback set over all 62 `[\c]` probes); tails
+  re-enter as members; endpoints ride along with NO extra code (the range
+  logic already consumed decoded values). All twelve rows RF_CLASS_BASE —
+  the `\b` shape — so ext.c is never entered at class position and
+  registry_check's derived in-class expectation flipped with the flag.
+  Measured FIRST: tests/probes/probe_fix3.c, 41 cells, predictor stated
+  before the run, zero disagreements with libpcre2 10.46. Pins first:
+  tests/base/class_escape_fallbacks.rxt, 127 cases, 122 watched failing
+  pre-fix. TWO CORRECTIONS to this step's own text, recorded so nobody
+  hunts for ghosts: (1) there were NO twelve class-position reject rows to
+  delete — K13's rejection was ext.c's generic in-class template asserted
+  by registry_check.c's derived sweep, which tests/reject/ never pinned by
+  hand, so the "counts move" is +2 rejections (`[\400]`/`[\777]`, the new
+  error-151 diagnostic's only home, offset-pinned) +1 accept-control
+  (`[\377]`, the boundary) = 248/99/63, one new manifest entry; the ten
+  ATOM-position digit rows and `\k`/`\g` stay rejected, correctly. (2) The
+  step's "become the literal letters" compressed the digit half: `[\0..\7]`
+  are OCTAL per design §14.3's partition ("the literals PCRE2 makes them"
+  is exact only for g/k/8/9), and the octal cells are python-verifiable so
+  they are ordinary corpus blocks; only the literal-fallback cells carry
+  `# pcre2-only` (U7). Closes K13. First `src/` change of the module era.
+  ONE CHECK CORRECTED on the way in: registry_check's RF_CLASS_BASE branch
+  probed `[<syntax>]`, and the `\g` row's syntax `\g{-1}` wrapped in
+  brackets is a class whose `{-1` is an out-of-order RANGE — libpcre2
+  rejects it too (108, measured — the probe gained the cell), so the derived
+  check was demanding a bug. It now probes `[\<sel>]`, which is the flag's
+  actual claim; tail/endpoint behaviour stays pinned in the oracle-verified
+  corpus, not in a derived check that cannot consult an oracle.
 - [SPEC-MOD0] STATE:not-started — **the §17.3 checks, written by an author
   DENIED the design document** (D27; ruled at design §10.12/§18). Handed:
   the ten §17.3 invariant statements, `tests/probes/` (the session's probe
@@ -898,8 +922,22 @@ that true, because it is invisible to every current test and a one-line change
 can destroy it.
 
 - [TS-1] STATE:completed — codegen structural check: every `static` in emitted output must be `const`, and the output must not reference a denylist of non-reentrant or allocating symbols (malloc/calloc/realloc/free, errno, getenv, setlocale, strtok, rand, asctime/ctime/gmtime/localtime). Cheap, needs no gcc, and directly sabotage-validatable — add one non-const static to the emitter and it must fail. This is the guard that catches the memoisation-cache and hoisted-scratch-buffer failure modes. DONE 2026-08-09: 18 emitted files across 9 emission shapes (both engines, EOL/non-EOL, both prefilter kinds, skip states, never-matches, case-folded, --emit-main) plus paired .h; the file count is itself asserted. SABOTAGE RESULT WORTH KEEPING: making every emitted table a non-const static fails 8 TS-1 checks and ZERO corpus cases — the code compiles, matches identically and passes the whole suite while being thread-hostile, which is exactly the property nothing else here can see
-- [TS-2] STATE:not-started — concurrency test for GENERATED code: N threads sharing one compiled matcher over different subjects, results required identical to the single-threaded run, executed under `-fsanitize=thread`. Establishes the property empirically rather than by reading the emitter
-- [TS-3] STATE:not-started — concurrency test for the LIBRARY: concurrent `pcrec_compile()` on different patterns in different threads under TSan. Guards against a future file-scope counter or cache in the compiler
+- [TS-2] STATE:completed 2026-08-11 (subagent; reviewed, wired into `make
+  test`) — concurrency test for GENERATED code: 8 threads sharing one
+  compiled matcher over different subjects, results required identical to
+  the single-threaded run, under `-fsanitize=thread` — across FIVE
+  differently-shaped emitted engines (anchored fast path, memchr literal,
+  $-EOL/M2.12, self-loop skip states with a liveness grep, alternation
+  trie), because the property is about the generated code and one pattern
+  tests one shape. Sabotage-validated (planted race caught, marker-count
+  guard on the patch). tests/thread/
+- [TS-3] STATE:completed 2026-08-11 (same change) — concurrency test for
+  the LIBRARY: 8 threads, each its own (pattern, prefix, caseless) job —
+  six accepting, two rejecting so ctx_fail/longjmp runs concurrently too —
+  the whole library built WITH TSan, every threaded compile byte-identical
+  to its single-threaded baseline. Sabotage-validated with a file-scope
+  counter planted in a COPY of compile.c — exactly the shape this step
+  named. tests/thread/
 - [TS-4] STATE:not-started — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points). Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH
 
 ## Process mechanization (session 2026-08-09) — turn recurring lessons into tools
@@ -910,8 +948,25 @@ or never made. Writing the lesson down demonstrably does not install it (this
 session restated a load-contamination rule and violated it in the same
 document). Mechanize instead.
 
-- [MECH-1] STATE:not-started — GENERATE the sabotage tables rather than hand-writing them. Every "disabling X fails N cases" figure in the docs is a hand-copied number that goes stale silently; this session shipped three wrong ones (a figure never measured, one from a tree with two sabotages stacked, and one whose sabotage form was UB so its count was unstable). Build a script that owns the sabotage edits, applies each to a pristine tree, verifies the edit actually applied, runs the suites, and prints the detection matrix. Docs then cite its output and drift becomes detectable by re-running it
-- [MECH-2] STATE:not-started — a pristine-sabotage-tree helper. The contaminated 132/200 figure came from a hand-rolled copy+sed+`git checkout` loop where the revert silently failed (`|| true` inside a tarball copy that is not a git repo) so sabotage 2 landed on top of sabotage 1. One helper that makes a fresh tree per sabotage, asserts the target text was found and changed, and refuses to continue otherwise. Subsumed by MECH-1 if that lands first
+- [MECH-1] STATE:completed 2026-08-11 (subagent; reviewed + integrated by the
+  main session; subsumes MECH-2 as predicted). tests/mech/: 20 sabotages
+  encoded as literal before/after edits (lib/replace.py refuses to run unless
+  the before-text occurs exactly N times and the after-text landed), one
+  FRESH `git archive HEAD` tree per sabotage — never revert-and-reuse, the
+  MECH-2 lesson — suites run in the copy, matrix printed with the measured
+  SHA. First full run at 499d39d: 20/20 DETECTED; found the trie ".rxt
+  corpus" figure stale (2 → 6, alternation_trie.rxt grew) and root-caused
+  the "new wrong row" sabotage's change from 0/0-undetected to 1 fail (the
+  exact iterated-count tripwire added since — visible, not fail-proof; SR-4
+  blind spot narrowed, not closed). Two sabotages deliberately NOT encoded:
+  the UB rule-1 form (its own docs say the count is unstable) and the
+  prose-only memory-safe rule-1 variant. `make mech` runs it (not in `make
+  test`: ~6 min of tree builds). Both hand-written sabotage tables now point
+  to the generator for figures and keep the edits + lessons. — GENERATE the sabotage tables rather than hand-writing them. Every "disabling X fails N cases" figure in the docs is a hand-copied number that goes stale silently; this session shipped three wrong ones (a figure never measured, one from a tree with two sabotages stacked, and one whose sabotage form was UB so its count was unstable). Build a script that owns the sabotage edits, applies each to a pristine tree, verifies the edit actually applied, runs the suites, and prints the detection matrix. Docs then cite its output and drift becomes detectable by re-running it
+- [MECH-2] STATE:completed 2026-08-11 — SUBSUMED by MECH-1, exactly as the
+  last sentence below predicted: tests/mech/ makes one fresh `git archive
+  HEAD` tree per sabotage and its replace.py refuses to continue unless the
+  target text was found exactly N times and actually changed. — a pristine-sabotage-tree helper. The contaminated 132/200 figure came from a hand-rolled copy+sed+`git checkout` loop where the revert silently failed (`|| true` inside a tarball copy that is not a git repo) so sabotage 2 landed on top of sabotage 1. One helper that makes a fresh tree per sabotage, asserts the target text was found and changed, and refuses to continue otherwise. Subsumed by MECH-1 if that lands first
 - [MECH-3] STATE:not-started — a measurement wrapper that refuses to emit a number without provenance: interleaved A/B, N trials, load before AND after (R3.10), min/median/max spread, and a stamped record. Every performance overclaim this project has made — the 27%-recorded-as-+40%, this session's 1.5-4.1% deltas taken at load 4.5-9.7 — would have been blocked at the point of measurement rather than caught in review. Frank's precedent: a claude-safe grep that refuses `| tail` and reports what it actually looked at
 
 ## Post-M2 follow-ups (from checkpoint review R3, docs/reviews/2026-08-09-m2-close.md)

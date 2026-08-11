@@ -6,12 +6,13 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 245 rows asserted by hand (naming a module, or the
-  base-grammar brace errors K5/K6/K8, or since Q1 the verb doorway's four
+- **run_reject_tests.sh** — 248 rows asserted by hand (naming a module, or the
+  base-grammar brace errors K5/K6/K8 and FIX-3's in-class octal ceiling, or
+  since Q1 the verb doorway's four
   outcomes, or since Q2 the `(?` doorway's module names and its refusals, or
   since A1 the ten `unknown escape` pins for `\U \u \F \L \l` in both
   spellings — the rowless surface the extension design §7.1 plans to change),
-  99 more reached by iterating `pcrec --list-syntax`, 62
+  99 more reached by iterating `pcrec --list-syntax`, 63
   accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
   into the normal tables. Ends with a MANIFEST naming the handful of rows whose
   deletion an exact count would not catch, plus the exact counts themselves.
@@ -184,7 +185,18 @@ certifies the divergence instead of catching it — recorded in
 
 ## Validated sabotages
 
-Record the exact edit, not just the count.
+Record the exact edit, not just the count. **The counts below are HISTORICAL
+— measured against the pre-SR-2 tree shape (a separate `esc_modules[]` table
+that no longer exists) — and MECH-1 measured their modern equivalents higher
+(3–4 fails, because A1's pins and FIX-3's class coverage widened the net
+since). Current figures come from `bash tests/mech/run_sabotage_matrix.sh`
+(S15..S20 cover this suite); the rows below keep the edits and the lessons.**
+One MECH-1 root-cause worth keeping: the "NEW row with a plausible wrong
+module and no hand-written entry" sabotage, 0/0-undetected when first
+measured, now trips exactly ONE check — the exact iterated-row count (100 ≠
+99) — whose own failure message invites bumping the number (R8/C4-10). So it
+is visible-in-the-diff now, not fail-proof: the SR-4 residual blind spot is
+narrowed, not closed, and PC-3 remains the only external answer.
 
 | sabotage (exact edit) | result |
 |---|---|

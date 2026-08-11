@@ -137,9 +137,15 @@ optimization off, which proves soundness across hundreds of patterns at once.
 Prefer the second shape whenever an optimization is supposed to be
 output-preserving; the M2 journal wrongly concluded M2.8 was not structurally
 testable, and the equivalence check turned out to be both possible and far
-stronger than the corpus (a broken disjointness guard shows up on 2 .rxt cases
-and on 64 of 500 patterns here — the measured figures and the exact edits behind
-them are in the sabotage table below).
+stronger than the corpus (a broken disjointness guard shows up on a handful of
+.rxt cases and on 64 of 500 patterns here — the measured figures and the exact
+edits behind them are in the sabotage table below). The ".rxt cases" half of
+that figure was measured at 2 when this was written and is 6 today
+(alternation_trie.rxt grew) — which is MECH-1's founding example of a
+hand-copied count going stale silently. Current figures for EVERY sabotage in
+this file come from `bash tests/mech/run_sabotage_matrix.sh` (S01..S14 cover
+this directory); the tables below keep the exact edits and the lessons, and
+the generator owns the numbers.
 
 An equivalence check has its own trap, and the fix for it is not optional: if
 BOTH builds had the optimization off, every comparison would agree and the

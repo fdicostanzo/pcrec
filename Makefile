@@ -33,6 +33,7 @@ test: all
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
 	bash tests/known_fail/run_known_fail.sh
+	bash tests/thread/run_thread_tests.sh
 
 # `make strict` — R5-Q1, answered 2026-08-10: OPT-IN, never the default.
 #
@@ -62,6 +63,14 @@ strict:
 	    $(CC) $(ALLFLAGS) -Werror -c -o /dev/null $$f; \
 	done
 	@echo "strict: whole tree compiles clean with -Werror"
+
+# The sabotage detection matrix (MECH-1): applies every encoded sabotage to a
+# pristine `git archive HEAD` copy, builds it there, runs the relevant suites
+# and prints which checks caught it. NOT part of `make test` — it builds the
+# tree ~20 times (about 6 minutes); run it when a sabotage table's figures are
+# in doubt and after changing any file a sabotage targets.
+mech:
+	bash tests/mech/run_sabotage_matrix.sh
 
 bench: all
 	bash tests/bench/run_bench.sh
