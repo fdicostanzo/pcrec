@@ -4615,3 +4615,32 @@ Dispositions 15-17 added.
 Circularity ruled out for that instrument: `check_group_tails` never reads
 `RegRow.tail` — it generates all 255 bytes directly, so its gaps are GENERATION
 gaps, not circularity leaks.
+
+### M6 — third confirmation, and a hole in my own criterion found by luck
+
+M6 reported last. **The reachability finding now rests on three independent
+harnesses** (G2 253,963 probes, M2 3,164, M6 58,709 + 435 for the nested class
+doorway): 1,392 dispatched-no-module cases, 0 anomalies, 0 counterexamples, 13
+(doorway, code) buckets triaged by hand. The gap R11 flagged is closed.
+
+**And M6 found that R11's published criterion is INCOMPLETE.** It names the
+"no construct" code for GROUP (111/141) and VERB (160/195) and never names the
+ESC doorway's own: **103, "unrecognized character follows \"**. Verified myself
+by sweeping the alphabet — 52 letters split into 29 compiles, one distinct code
+per real-but-incomplete construct (102 `\c`, 137 ALT_BSUX, 146 `\p`, 155 `\o`,
+157 `\g`, 169 `\k`, 178 `\x`), and exactly **11 letters at rc=103: i j m q y I J
+M O T Y**.
+
+**The published counts are unchanged, and that is the damning part.** Re-running
+my own 1,672-probe corpus with 103 added gives identical numbers — 769 / 93 /
+206 / 0 — because the corpus contains ZERO rc=103 probes. My escape alphabet was
+HAND-LISTED and happened to omit all 11 letters that would have exposed the
+hole. **I hand-listed an input space and got away with it by luck, inside the
+measurement I used to refute D30 — the exact failure wake §8 and D27 name, in a
+document that cites both.** The numbers survive; the method did not.
+
+M6 also refuted part of my own disposition 11: a rival GLOBAL BLACKLIST
+criterion (ignore which doorway produced a no-construct code) gave counts
+IDENTICAL to the per-doorway version, delta 0 across its whole space. So
+per-doorway calibration is not measurably necessary; the three-way split and
+complete per-doorway CODE COVERAGE are. Dispositions 18-19 added.
