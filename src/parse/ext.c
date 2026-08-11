@@ -136,14 +136,21 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
 {
     /* cx->pos sits just past the escape byte, so that IS the tail position. */
     size_t avail;
+    bool amb = false;
     const char *tl = tail_at(cx, cx->pos, &avail);
-    const RegRow *r = pcrec_registry_find(RK_ESC, c, tl, avail);
+    const RegRow *r = pcrec_registry_arbitrate(RK_ESC, c, tl, avail, &amb);
     want = ext_gate(r, want);
 
     if (!r) {
         if (in_class) REFUSE(at, "unknown escape \\%c in class", c);
         REFUSE(at, "unknown escape \\%c", c);
     }
+    /* Two answering rows at the winning rank (MOD-0.2, D32 §2): a registry
+     * defect, not a pattern error — arbitration cannot elect a row and must
+     * say so rather than let declaration order decide. Unreachable on the
+     * correct table; registry_check's liveness floors keep that measured. */
+    if (amb)
+        REFUSE(at, "internal error: ambiguous registry arbitration for an escape");
     if (r->diag == RD_FIXED)
         REFUSE(at, "%s", r->msg);
     if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL)
@@ -197,8 +204,9 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
      * past the cursor. When the pattern ends at the '?' that is already beyond
      * patlen and tail_at reports avail = 0. */
     size_t avail;
+    bool amb = false;
     const char *tl = tail_at(cx, cx->pos + 2, &avail);
-    const RegRow *r = pcrec_registry_find(RK_GROUP, c2, tl, avail);
+    const RegRow *r = pcrec_registry_arbitrate(RK_GROUP, c2, tl, avail, &amb);
     int shown = c2 < 0 ? '?' : c2;
     want = ext_gate(r, want);
 
@@ -206,6 +214,9 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
      * hand-written manifest also refuses; a NULL deref is not an acceptable
      * second answer to that. */
     if (!r) REFUSE(at, "internal error: no registry row for (?%c", shown);
+    /* The MOD-0.2 ambiguity defect — see the escape doorway's comment. */
+    if (amb)
+        REFUSE(at, "internal error: ambiguous registry arbitration for a (? construct");
 
     if (r->diag == RD_FIXED)
         REFUSE(at, "%s", r->msg);

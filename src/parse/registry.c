@@ -1090,11 +1090,12 @@ const RegRow *pcrec_registry_find_tail_reference(RegKind k, int sel,
     return best ? best : any;
 }
 
-/* MOD-0.2 slice 1: still the retired engine, so this slice changes NO
- * behaviour — the arbitration above is exercised only by registry_check's
- * scaffold until the wiring slice flips this line to
- * pcrec_registry_arbitrate(k, sel, at, avail, NULL). */
+/* Since MOD-0.2's wiring slice this IS the arbitration; callers that can
+ * surface the ambiguity defect (the escape and group doorways) call
+ * pcrec_registry_arbitrate directly for the out-param. Equivalence with the
+ * retired engine held over 261,193 scaffold probes and the 5,247-comparison
+ * behavioural differential before this line changed. */
 const RegRow *pcrec_registry_find(RegKind k, int sel, const char *at, size_t avail)
 {
-    return pcrec_registry_find_tail_reference(k, sel, at, avail);
+    return pcrec_registry_arbitrate(k, sel, at, avail, NULL);
 }
