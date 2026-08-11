@@ -4788,3 +4788,71 @@ conversation.** The pattern worth keeping: Frank's corrections came from
 questioning a premise the panels had inherited, not from finding an error in
 their work — every panel was internally sound and built on the same unexamined
 assumption.
+
+## 2026-08-11 — SESSION CLOSE
+
+A long session. **Two steps of real work, three design panels, and one design
+resolved after three attempts.** Everything committed and pushed.
+
+### Delivered
+
+**[PARSE-1] — built, checked, committed** (`0ebbdc7` + `5d4663f`). `p_alt`
+reports `AltInfo {nbr, last_bar}`; the group case split into
+`p_group`/`p_group_body` so entry and exit bookkeeping sit on one path each;
+`caseless` moved from the const caller-owned options into `Ctx` and
+saved/restored at the group boundary; `pcrec_parse_body` added as the actual
+module callback. New suite `tests/parse/`, 8 checks, every one
+sabotage-verified.
+
+**[MOD-0.1] — UNBLOCKED by D32** after R11 refuted D30 and R12 refuted the
+alternative. Nothing built; the interface is now specified.
+
+**K11 recorded** — `pcrec_ext_escape`'s two call sites are UB the moment that
+doorway returns; `[a\qb]` SIGSEGVs the compiler itself in a stub build.
+
+### State at close
+
+    make test  EXIT=0, 0 FAIL: unanchored
+               1012 / 85 / 397 / 164 / 143 / [parse 2+8] / 29 / 7
+    make strict  clean
+    verify_rxt   980 PASS / 0 FAIL (100%)
+    fuzz seed 1  zero divergences
+    make bench   0 hard errors, 0 budget failures  (needs TMPDIR=/var/tmp)
+
+Nothing in `STATE:started` except `[MOD-0]`. `[PARSE-1]` completed,
+`[MOD-0.1]` not-started and unblocked. Open defects: K2, K7, K9, K10, K11.
+
+### What this session actually cost, and where the value was
+
+**Almost none of the value was code.** It was: three retractions of the author's
+own claims caught by measurement (the bench-(d) trie regression, "`make bench`
+measures throughput", the `find()` tie-break); one real miss caught after a
+commit (`p_alt` had no linkage, which was PARSE-1's entire stated purpose); a
+panel that stopped MOD-0.1 being built against a specification its own
+measurements contradicted; and a design resolved by Frank questioning a premise
+three panels had inherited.
+
+**The process failures are the durable output.** Recorded in R11, R12 and here:
+
+1. **A checkpoint is not closed when the build is green.** Panels delivered
+   after the commit THREE times, once after a push. `ListAgents` reported no
+   reachable agents while five still had output. An agent-list check is
+   EVIDENCE, not proof — the real protection is that a follow-up commit is cheap
+   and normal.
+2. **Narrow briefs beat broad ones, measured twice.** R11 ran 2-of-4 with
+   five-part briefs; R12 ran 4-of-4 with one primary question each.
+3. **Hand-listing an input space fails silently.** R11's escape alphabet omitted
+   all 11 letters that would have exposed a hole in its own criterion — the
+   published numbers were unchanged only by luck.
+4. **A design that cannot be run should be SIMULATED against the real data
+   before adoption.** D30's rank was, and survived. The ordered-list design was
+   not, and died on the shipped table with no edit required.
+
+### Next session
+
+Per Frank: **discuss the remaining open issues and update the docs, THEN run a
+critic review.** Not building MOD-0.1 first. The open list is in wake.md §6 and
+D32's "still owed" — the residue check's fourth category, the whole-pattern
+capture count, the four returning-doorway call sites, two missing doorway
+epilogues, K2/K7/K9/K10/K11, the bound compile mode's contents, and a UBSan
+build.
