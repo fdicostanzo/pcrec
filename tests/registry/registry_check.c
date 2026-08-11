@@ -582,9 +582,10 @@ static void check_tail_precedence(void)
  * row must beat its bucket fallback" half of check_tail_precedence;
  * check_arbitration_liveness re-homes its liveness clause (R11/M3's
  * more-than-one-answer counter, the committed successor D32 §9 requires
- * before that check may retire). check_arbitration_migration is the D32
- * §9.5 MIGRATION SCAFFOLD — its oracle is the retired engine, and both are
- * deleted together in the retirement slice. */
+ * before that check may retire). The D32 §9.5 migration scaffold (arbitration
+ * vs the retired longest-tail-wins engine, 261,193 probes, 0 mismatches,
+ * 0 ambiguous) was DELETED with the engine it checked, in the same commit
+ * — an equivalence check cannot outlive its oracle honestly. */
 
 static bool row_answers_here(const RegRow *r, const char *at, size_t avail)
 {
@@ -727,64 +728,6 @@ static void check_arbitration_liveness(void)
                  "esc-'N'", total_multi, triple_seen);
         ok(label);
     }
-}
-
-/* MIGRATION SCAFFOLD (D32 §9.5) — DELETE together with
- * pcrec_registry_find_tail_reference in MOD-0.2's retirement slice; its
- * oracle IS the engine being replaced, so it cannot outlive it honestly.
- * Over every kind, every selector byte 1..255 (plus the tail-less NULL
- * question), and the full generated text space of all four multi-row
- * buckets: the new arbitration must elect exactly the row the retired
- * longest-tail-wins engine elected, with no ambiguity anywhere. */
-static void check_arbitration_migration(void)
-{
-    static char texts[ARB_MAX_TEXTS][ARB_TEXT_LEN];
-    long compared = 0;
-    int mismatches = 0;
-
-    for (int k = 0; k < RK_COUNT; k++) {
-        size_t n;
-        const RegRow *rows = pcrec_registry((RegKind)k, &n);
-        if (!rows) continue;
-
-        for (int sel = 1; sel < 256; sel++) {
-            int nt = bucket_probe_texts(rows, n, sel, texts);
-            for (int t = 0; t < nt; t++) {
-                bool amb = false;
-                const RegRow *nw = pcrec_registry_arbitrate((RegKind)k, sel,
-                                       texts[t], strlen(texts[t]), &amb);
-                const RegRow *od = pcrec_registry_find_tail_reference((RegKind)k,
-                                       sel, texts[t], strlen(texts[t]));
-                compared++;
-                if (nw != od || amb) {
-                    if (mismatches < 8)
-                        bad("arbitration migration: kind %s sel '%c' text \"%s\": "
-                            "new engine chose %s, retired engine chose %s%s",
-                            kind_name((RegKind)k), sel, texts[t],
-                            nw ? nw->syntax : "(null)", od ? od->syntax : "(null)",
-                            amb ? " (AND flagged ambiguous)" : "");
-                    mismatches++;
-                }
-            }
-            /* the tail-less question, exactly as the dump asks it */
-            bool amb = false;
-            const RegRow *nw = pcrec_registry_arbitrate((RegKind)k, sel, NULL, 0, &amb);
-            const RegRow *od = pcrec_registry_find_tail_reference((RegKind)k, sel, NULL, 0);
-            compared++;
-            if (nw != od || amb) mismatches++;
-        }
-    }
-    if (compared < 100000)
-        bad("arbitration migration: only %ld comparisons — the generated space "
-            "collapsed; an equivalence over nothing is not an equivalence", compared);
-    else if (mismatches == 0) {
-        char label[160];
-        snprintf(label, sizeof label,
-                 "arbitration migration (SCAFFOLD): new engine == retired engine "
-                 "over %ld probes, 0 ambiguous", compared);
-        ok(label);
-    } else
-        bad("arbitration migration: %d mismatches total", mismatches);
 }
 
 /* ---- part 2: table -> parser ------------------------------------------- */
@@ -1181,7 +1124,6 @@ int main(void)
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");
     check_row_ranks();
     check_arbitration_liveness();
-    check_arbitration_migration();   /* SCAFFOLD — deleted with the retired engine */
 
     printf("\n== table -> parser (every row's own syntax) ==\n");
     check_table_to_parser();

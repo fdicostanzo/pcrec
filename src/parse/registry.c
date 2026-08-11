@@ -268,16 +268,18 @@ ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitesp
  * it into a row that answers. */
 ESC_CLASS_INVALID('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)", QF_YES, "err 171"),
 /* THE SHORT TAIL IS WRITTEN FIRST ON PURPOSE. These two rows are the only
- * prefix-related tail pair in the table (`{` is a proper prefix of `{U+`), which
- * makes them the only place longest-tail-wins can be OBSERVED — and with `{U+`
- * written first, a lookup that took the first matching tail instead of the
- * longest would still answer correctly, so the rule would be untested. Putting
- * `{` first makes row order DISAGREE with the rule, so the rule is load-bearing:
- * a sabotage reducing find() to first-match-wins now produces a wrong answer
- * here, and check_tail_precedence in registry_check.c asserts it directly.
- *
- * Measured: with the rows in the other order that sabotage produced ZERO
- * failures across the whole repository. */
+ * prefix-related tail pair in the table (`{` is a proper prefix of `{U+`), so
+ * on `{U+...` text BOTH recognisers answer and rank is the only thing electing
+ * the `{U+` row — the one place the ordering between two TAILED ranks is
+ * observable (25 vs 70; everywhere else rank only beats the fallback's 0).
+ * Keeping `{` first makes row ORDER disagree with the required outcome, so an
+ * arbitration that quietly fell back to declaration order produces a wrong
+ * answer here instead of a coincidentally right one. Under SR-9's
+ * longest-tail-wins engine the same discipline made first-match-wins
+ * observable (a sabotage with the rows in the other order produced ZERO
+ * failures repository-wide — the measured reason for this ordering);
+ * registry_check's arbitration-liveness floor now asserts this pair still
+ * produces a triple-answer probe, so its disappearance fails loudly. */
 REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
            "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u",
            "\\N{name} — PCRE2 states it does not support this Perl construct", QF_NO, "err 137"),
@@ -1054,39 +1056,6 @@ const RegRow *pcrec_registry_arbitrate(RegKind k, int sel, const char *at,
         else if (rows[i].rank == best->rank)    tie = true;
     }
     if (ambiguous) *ambiguous = (best != NULL && tie);
-    return best ? best : any;
-}
-
-/* Exact selector match first, then the kind's catch-all row if it has one.
- * Returns NULL when the byte belongs to no construct — the caller's "unknown
- * escape" path.
- *
- * THE RETIRED ENGINE. SR-9 made this LONGEST TAIL WINS within the selector
- * byte's bucket; MOD-0.2 replaces that with the arbitration above, and this
- * body survives ONLY as the migration scaffold's oracle in registry_check
- * (D32 §9.5 — the scaffold's oracle is the engine it replaces, and both are
- * deleted together in the retirement slice). Do not add callers. */
-const RegRow *pcrec_registry_find_tail_reference(RegKind k, int sel,
-                                                 const char *at, size_t avail)
-{
-    size_t n;
-    const RegRow *rows = pcrec_registry(k, &n);
-    const RegRow *any = NULL, *best = NULL;
-    size_t best_len = 0;
-
-    for (size_t i = 0; i < n; i++) {
-        if (rows[i].sel == REG_SEL_ANY) { any = &rows[i]; continue; }
-        if (rows[i].sel != sel) continue;
-
-        if (!rows[i].tail) {
-            /* the bucket's fallback: keep it only if no tail ever matches */
-            if (!best) best = &rows[i];
-            continue;
-        }
-        size_t tl = strlen(rows[i].tail);
-        if (!at || tl > avail || memcmp(at, rows[i].tail, tl) != 0) continue;
-        if (tl > best_len || !best || !best->tail) { best = &rows[i]; best_len = tl; }
-    }
     return best ? best : any;
 }
 

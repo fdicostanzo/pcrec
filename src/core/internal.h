@@ -420,9 +420,14 @@ typedef struct {
     RegKind     kind;
     int         sel;       /* the deciding byte, or REG_SEL_ANY */
     /* The bytes that must FOLLOW `sel` for this row to apply, or NULL for "any"
-     * (SR-9, docs/design_registry_selectors.md §7). Lookup is LONGEST TAIL WINS
-     * within the selector byte's bucket, so a row with a tail shadows the same
-     * byte's tail-less row and never the other way round.
+     * (SR-9, docs/design_registry_selectors.md §7). Since MOD-0.2 the lookup
+     * engine never interprets this field: it is the PARAMETER of
+     * pcrec_recognise_tail_default — a row's recogniser answers when its tail
+     * is a prefix of the text, and `rank` (below) elects among answering rows,
+     * which is what makes a tailed row beat the same byte's tail-less fallback
+     * and `\N{U+` beat `\N{`. SR-9's longest-tail-wins produced identical
+     * answers over the whole probe space (261,193-probe scaffold + a
+     * 5,247-comparison behavioural differential) and was retired.
      *
      * WHY A SECOND KEY RATHER THAN A STRING SELECTOR (§2, which R6 rejected with
      * measurements): one byte still decides the DOORWAY, and only a handful of
@@ -560,11 +565,6 @@ bool pcrec_recognise_tail_default(const char *at, size_t avail, const char *tail
  * `ambiguous` may be NULL for callers that only want the row. */
 const RegRow *pcrec_registry_arbitrate(RegKind k, int sel, const char *at,
                                        size_t avail, bool *ambiguous);
-/* THE RETIRED ENGINE (SR-9 longest-tail-wins), kept ONLY as the migration
- * scaffold's oracle in registry_check (D32 §9.5). Deleted, with that
- * scaffold, in MOD-0.2's retirement slice. Do not add callers. */
-const RegRow *pcrec_registry_find_tail_reference(RegKind k, int sel,
-                                                 const char *at, size_t avail);
 /* Is `at[0..avail)` a valid PCRE2 inline option run — the text starting at the
  * byte after `(?`, up to and including its `)` or `:` terminator? The grammar
  * is measured against libpcre2; see registry.c. */
