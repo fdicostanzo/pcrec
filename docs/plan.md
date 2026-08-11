@@ -804,11 +804,31 @@ Then DOC-1, then PC-4 when module `classes` lands.
   must promise a module wherever libpcre2 DISPATCHES* — which is the only thing
   that covers the malformed-body class and is NOT optional. Prototyped and
   sabotaged before adoption; see D30 §1-2 for the numbers
-- [MOD-0.2] STATE:not-started (unblocked by D30; the `-\d+)` collapse still does
-  not land until MOD-0.1's reachability differential passes — it declines on
+- [MOD-0.2] STATE:started 2026-08-11 (ninth session; the `-\d+)` collapse does
+  NOT land in this step — it declines on
   `(a)(?-1`, `(a)(?-1x)` and `(a)(?-1:x)`, error 114, a malformed body of a
   construct pcrec answers correctly today, so the collapse as written is a
-  tier-2 regression) — migrate the **18** tail-bearing rows (R10 corrected
+  tier-2 regression; it waits for a reachability differential that passes).
+  SLICES (read THROUGH the §18-resolved design; D32 §§2-4,7,9 + Part II §14.4
+  are the interface): (1) DATA + UNWIRED ENGINE — RegRow gains `rank` and
+  `recognise` (both LAST, zero-defaulted; tiers 0/25/70 documented on the
+  field — the D30-era 40 tier is not reproduced, values are meaningless
+  except between clashing rows, D32 §3), `pcrec_recognise_tail_default`,
+  `pcrec_registry_arbitrate` (sel pre-test kept per D32 §7; top-rank tie =
+  the defect, out-param), the migration-scaffold equivalence check
+  (arbitrate vs the tail engine over a generated per-bucket space, D32
+  §9.5) and the permanent arbitration-liveness floors (the >1-answering-row
+  counter — check_tail_precedence's liveness clause re-homed, R11/M3);
+  (2) WIRE — `pcrec_registry_find` delegates to arbitrate, old body kept as
+  `pcrec_registry_find_tail_reference` (scaffold oracle only), doorways
+  report the ambiguity defect as an internal error; full battery + the
+  differential vs the pre-change snapshot binary, instrument liveness
+  proven by a sabotage build FIRST; (3) RETIRE — delete the reference
+  engine AND the scaffold in the same commit (D32 §9.5's rule), re-verify
+  registry_check's counts from a run; (4) check_tail_precedence retired in
+  its OWN edit (plan rule: not with the engine change), successor floors
+  already committed. Byte-identity everywhere: pure seam migration, zero
+  guarded exceptions. — migrate the **18** tail-bearing rows (R10 corrected
   2026-08-11: 16 `GROUP_T` + 1 `REJECTED_T` + `registry.c:257`'s `\N{U+`,
   written as a raw struct literal and invisible to a macro-name grep — the one
   row a mechanical macro-conversion skips, and the row the acceptance test is

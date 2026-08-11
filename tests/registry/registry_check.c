@@ -574,6 +574,219 @@ static void check_tail_precedence(void)
     }
 }
 
+/* ---- MOD-0.2: recogniser + rank arbitration ----------------------------
+ *
+ * Selection stopped being tail interpretation at MOD-0.2 (design §2.2/D32):
+ * each row's recogniser answers for itself and `rank` elects the winner.
+ * These checks own the migrated rules. check_row_ranks succeeds the "tailed
+ * row must beat its bucket fallback" half of check_tail_precedence;
+ * check_arbitration_liveness re-homes its liveness clause (R11/M3's
+ * more-than-one-answer counter, the committed successor D32 §9 requires
+ * before that check may retire). check_arbitration_migration is the D32
+ * §9.5 MIGRATION SCAFFOLD — its oracle is the retired engine, and both are
+ * deleted together in the retirement slice. */
+
+static bool row_answers_here(const RegRow *r, const char *at, size_t avail)
+{
+    return (r->recognise ? r->recognise
+                         : pcrec_recognise_tail_default)(at, avail, r->tail);
+}
+
+/* A tailed row at the fallback tier can never win against its bucket's
+ * always-answering fallback, so its construct would be unreachable — the
+ * exact defect the old check's second half guarded. Static and total.
+ *
+ * The 18 is a MEASURED count (R10's correction: 16 GROUP_T + 1 REJECTED_T +
+ * the `\N{U+` longhand row a macro-name grep misses). It is an exact-count
+ * tripwire with the R8/C4-10 caveat: it makes a change VISIBLE, it cannot
+ * make a wrong one fail — do not satisfy it by editing the number without
+ * re-deriving the population from the table. */
+static void check_row_ranks(void)
+{
+    int tailed = 0, badrows = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        for (size_t i = 0; rows && i < n; i++) {
+            if (!rows[i].tail) continue;
+            tailed++;
+            if (rows[i].rank <= 0) {
+                bad("%s: '%c' tail \"%s\" has rank %d — a tailed row at (or below) "
+                    "the fallback tier loses every arbitration and its construct "
+                    "is unreachable",
+                    kind_name((RegKind)k), rows[i].sel, rows[i].tail, rows[i].rank);
+                badrows++;
+            }
+        }
+    }
+    if (tailed != 18)
+        bad("row ranks: %d tailed rows, 18 expected — the tailed population "
+            "moved; re-derive it from the table (do NOT just edit this number)",
+        tailed);
+    else if (badrows == 0)
+        ok("row ranks: all 18 tailed rows sit above the fallback tier");
+}
+
+/* The generated probe space for one bucket: every row's tail, every proper
+ * prefix of every tail, every tail with a small suffix set appended, and all
+ * 255 single bytes. Returns the number of texts, deduplicated. */
+#define ARB_MAX_TEXTS 420
+#define ARB_TEXT_LEN  24
+static int bucket_probe_texts(const RegRow *rows, size_t n, int sel,
+                              char texts[][ARB_TEXT_LEN])
+{
+    static const char *sufs[] = {"x", ")", "0041}", "U+0041}"};
+    int nt = 0;
+    char cand[ARB_TEXT_LEN];
+
+    for (int b = 1; b < 256 && nt < ARB_MAX_TEXTS; b++) {
+        texts[nt][0] = (char)b; texts[nt][1] = '\0'; nt++;
+    }
+    for (size_t i = 0; i < n; i++) {
+        if (rows[i].sel != sel || !rows[i].tail) continue;
+        size_t tl = strlen(rows[i].tail);
+        /* the tail itself and every proper prefix */
+        for (size_t p = 1; p <= tl && nt < ARB_MAX_TEXTS; p++) {
+            snprintf(cand, sizeof cand, "%.*s", (int)p, rows[i].tail);
+            int dup = 0;
+            for (int t = 0; t < nt; t++) if (!strcmp(texts[t], cand)) { dup = 1; break; }
+            if (!dup) { snprintf(texts[nt], ARB_TEXT_LEN, "%s", cand); nt++; }
+        }
+        for (size_t s = 0; s < sizeof sufs / sizeof sufs[0]; s++) {
+            if (nt >= ARB_MAX_TEXTS) break;
+            snprintf(cand, sizeof cand, "%s%s", rows[i].tail, sufs[s]);
+            int dup = 0;
+            for (int t = 0; t < nt; t++) if (!strcmp(texts[t], cand)) { dup = 1; break; }
+            if (!dup) { snprintf(texts[nt], ARB_TEXT_LEN, "%s", cand); nt++; }
+        }
+    }
+    return nt;
+}
+
+/* LIVENESS of the arbitration: per multi-row bucket, how many generated
+ * probes make MORE THAN ONE recogniser answer? An arbitration nothing ever
+ * contests is unobservable — the exact vacuity check_tail_precedence's
+ * liveness clause guarded for longest-tail-wins (R11/M3 located this counter
+ * as its natural successor; D32 §9 requires it committed before that check
+ * retires). Floors MEASURED 2026-08-11 on the shipped table; a bucket
+ * falling below its floor lost its clash population and must FAIL, not pass
+ * quietly. The esc-'N' bucket must also keep a probe with three answers —
+ * the prefix-related pair (`\N{`/`\N{U+`) plus the fallback — or the rank
+ * ordering between two TAILED rows is no longer exercised anywhere. */
+static void check_arbitration_liveness(void)
+{
+    static const struct { RegKind k; int sel; int floor_multi; } buckets[] = {
+        { RK_ESC,   'N', 10 },
+        { RK_GROUP, '<', 15 },
+        { RK_GROUP, 'P', 15 },
+        { RK_GROUP, '-', 50 },
+    };
+    static char texts[ARB_MAX_TEXTS][ARB_TEXT_LEN];
+    int bad_buckets = 0, total_multi = 0, triple_seen = 0;
+
+    for (size_t bi = 0; bi < sizeof buckets / sizeof buckets[0]; bi++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(buckets[bi].k, &n);
+        int nt = bucket_probe_texts(rows, n, buckets[bi].sel, texts);
+        int multi = 0;
+
+        for (int t = 0; t < nt; t++) {
+            int answers = 0;
+            for (size_t i = 0; i < n; i++) {
+                if (rows[i].sel != buckets[bi].sel) continue;
+                if (row_answers_here(&rows[i], texts[t], strlen(texts[t])))
+                    answers++;
+            }
+            if (answers >= 2) multi++;
+            if (buckets[bi].k == RK_ESC && buckets[bi].sel == 'N' && answers >= 3)
+                triple_seen++;
+        }
+        total_multi += multi;
+        if (multi < buckets[bi].floor_multi) {
+            bad("arbitration liveness: bucket %s '%c' has %d multi-answer probes, "
+                "floor %d — the clash population shrank, so rank is deciding less "
+                "than this check was measured against",
+                kind_name(buckets[bi].k), buckets[bi].sel, multi,
+                buckets[bi].floor_multi);
+            bad_buckets++;
+        }
+    }
+    if (!triple_seen) {
+        bad("arbitration liveness: no esc-'N' probe makes THREE recognisers "
+            "answer — the prefix-related tail pair is gone, and the ordering "
+            "between two TAILED ranks is unobservable (the re-homed liveness "
+            "clause of check_tail_precedence)");
+        bad_buckets++;
+    }
+    if (bad_buckets == 0) {
+        char label[200];
+        snprintf(label, sizeof label,
+                 "arbitration liveness: %d multi-answer probes across the 4 "
+                 "multi-row buckets (floors 10/15/15/50), %d triple-answer at "
+                 "esc-'N'", total_multi, triple_seen);
+        ok(label);
+    }
+}
+
+/* MIGRATION SCAFFOLD (D32 §9.5) — DELETE together with
+ * pcrec_registry_find_tail_reference in MOD-0.2's retirement slice; its
+ * oracle IS the engine being replaced, so it cannot outlive it honestly.
+ * Over every kind, every selector byte 1..255 (plus the tail-less NULL
+ * question), and the full generated text space of all four multi-row
+ * buckets: the new arbitration must elect exactly the row the retired
+ * longest-tail-wins engine elected, with no ambiguity anywhere. */
+static void check_arbitration_migration(void)
+{
+    static char texts[ARB_MAX_TEXTS][ARB_TEXT_LEN];
+    long compared = 0;
+    int mismatches = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        if (!rows) continue;
+
+        for (int sel = 1; sel < 256; sel++) {
+            int nt = bucket_probe_texts(rows, n, sel, texts);
+            for (int t = 0; t < nt; t++) {
+                bool amb = false;
+                const RegRow *nw = pcrec_registry_arbitrate((RegKind)k, sel,
+                                       texts[t], strlen(texts[t]), &amb);
+                const RegRow *od = pcrec_registry_find_tail_reference((RegKind)k,
+                                       sel, texts[t], strlen(texts[t]));
+                compared++;
+                if (nw != od || amb) {
+                    if (mismatches < 8)
+                        bad("arbitration migration: kind %s sel '%c' text \"%s\": "
+                            "new engine chose %s, retired engine chose %s%s",
+                            kind_name((RegKind)k), sel, texts[t],
+                            nw ? nw->syntax : "(null)", od ? od->syntax : "(null)",
+                            amb ? " (AND flagged ambiguous)" : "");
+                    mismatches++;
+                }
+            }
+            /* the tail-less question, exactly as the dump asks it */
+            bool amb = false;
+            const RegRow *nw = pcrec_registry_arbitrate((RegKind)k, sel, NULL, 0, &amb);
+            const RegRow *od = pcrec_registry_find_tail_reference((RegKind)k, sel, NULL, 0);
+            compared++;
+            if (nw != od || amb) mismatches++;
+        }
+    }
+    if (compared < 100000)
+        bad("arbitration migration: only %ld comparisons — the generated space "
+            "collapsed; an equivalence over nothing is not an equivalence", compared);
+    else if (mismatches == 0) {
+        char label[160];
+        snprintf(label, sizeof label,
+                 "arbitration migration (SCAFFOLD): new engine == retired engine "
+                 "over %ld probes, 0 ambiguous", compared);
+        ok(label);
+    } else
+        bad("arbitration migration: %d mismatches total", mismatches);
+}
+
 /* ---- part 2: table -> parser ------------------------------------------- */
 
 /* The exact diagnostic a row claims, at the atom (outside-a-class) site. */
@@ -964,6 +1177,11 @@ int main(void)
     check_feature_module_bijection();
 
     check_tail_precedence();
+
+    printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");
+    check_row_ranks();
+    check_arbitration_liveness();
+    check_arbitration_migration();   /* SCAFFOLD — deleted with the retired engine */
 
     printf("\n== table -> parser (every row's own syntax) ==\n");
     check_table_to_parser();

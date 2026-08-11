@@ -495,6 +495,48 @@ typedef struct {
      * and 3 class-bracket rows must each carry one; registry_check enforces
      * both directions and the vocabulary. */
     const char *class_expect;
+
+    /* MOD-0.2 (design §2.2 as adopted at D32 §§2-4, kept by Part II §14.4):
+     * row SELECTION is recogniser + rank, not tail interpretation. Both
+     * fields sit after the explicitly-initialised block and are ZERO-
+     * DEFAULTED on purpose: 78 rows are alone in their bucket, and a
+     * meaningful rank there would be an invented fact (D32 §3 — rank only
+     * means anything between clashing recognisers).
+     *
+     * `rank` is a LOCAL TIEBREAK inside one (kind, sel) bucket, in three
+     * tiers:
+     *
+     *     0   the bucket's fallback, and every row that never clashes
+     *    25   a tailed row — beats the fallback; the single-byte tails
+     *         within one bucket are mutually exclusive, so equal rank
+     *         among them can never produce two ANSWERS
+     *    70   the longer half of the table's one prefix-related tail pair
+     *         (`\N{U+` over `\N{`) — the only place two tailed
+     *         recognisers both answer
+     *
+     * The VALUES are arbitrary; only the ordering within a clashing set is
+     * a fact. (R11 recovered D30's 0/25/40/70 draft mapping; the 40 tier is
+     * deliberately not reproduced — `\N{` clashes only with the fallback
+     * below it and `\N{U+` above it, so the tailed tier serves it.) Do not
+     * add a global rank sweep as a permanent check: R11/M3 measured one
+     * redundant with the per-row syntax check in all 5,632 probes. The
+     * defect rank CAN carry — two answering rows at the winning rank — is
+     * detected at dispatch (pcrec_registry_arbitrate) and floored as
+     * exercised by registry_check's arbitration-liveness counter.
+     *
+     * `recognise` answers "is the text at the tail position my construct's
+     * proper form?" — POSITIVE and LOCAL (D32 §2): it recognises its own
+     * form and knows nothing about sibling rows (the bare `\N` row
+     * answering "always" is CORRECT; elimination is rank's job). NULL
+     * means pcrec_recognise_tail_default with this row's `tail` as its
+     * parameter — after MOD-0.2 that default is the ONLY reader of `tail`
+     * on the lookup path ("tail survives only as the parameter of a
+     * tail_default recogniser"). The signature deliberately receives the
+     * row's tail and NOTHING ELSE of the row (R11/M5): a recogniser that
+     * could read its row would be a second, uncheckable home for tier-2
+     * facts like the module name. */
+    int  rank;
+    bool (*recognise)(const char *at, size_t avail, const char *tail);
 } RegRow;
 
 /* src/parse/registry.c */
@@ -506,6 +548,23 @@ const RegRow *pcrec_registry(RegKind k, size_t *n);
  * match, which is why `(?P` at end-of-pattern falls to the bare-`P` row rather
  * than reading past the end. */
 const RegRow *pcrec_registry_find(RegKind k, int sel, const char *at, size_t avail);
+/* The default recogniser (MOD-0.2): answers when `tail` is a prefix of
+ * at[0..avail), and always when the row has no tail (the bucket's fallback —
+ * D32 §2's "positive and local"). A NULL `at` is the tail-less question
+ * exactly as it was under SR-9. */
+bool pcrec_recognise_tail_default(const char *at, size_t avail, const char *tail);
+/* The MOD-0.2 engine behind pcrec_registry_find: every sel-matching row's
+ * recogniser runs, the highest-ranked ANSWERING row wins, and two answers at
+ * the WINNING rank set *ambiguous — the D32 §2 defect, which the escape and
+ * group doorways report as an internal error rather than resolving silently.
+ * `ambiguous` may be NULL for callers that only want the row. */
+const RegRow *pcrec_registry_arbitrate(RegKind k, int sel, const char *at,
+                                       size_t avail, bool *ambiguous);
+/* THE RETIRED ENGINE (SR-9 longest-tail-wins), kept ONLY as the migration
+ * scaffold's oracle in registry_check (D32 §9.5). Deleted, with that
+ * scaffold, in MOD-0.2's retirement slice. Do not add callers. */
+const RegRow *pcrec_registry_find_tail_reference(RegKind k, int sel,
+                                                 const char *at, size_t avail);
 /* Is `at[0..avail)` a valid PCRE2 inline option run — the text starting at the
  * byte after `(?`, up to and including its `)` or `:` terminator? The grammar
  * is measured against libpcre2; see registry.c. */
