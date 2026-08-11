@@ -474,7 +474,14 @@ Then DOC-1, then PC-4 when module `classes` lands.
   forbade this signature, because `\12` is octal or a backreference depending on
   a running capture count and that decides its MODULE, which is tier 2 and exact.
 
-- [MOD-0.1] STATE:started 2026-08-11 (sixth session, after FIX-3 landed)
+- [MOD-0.1] STATE:started 2026-08-11 (sixth session, after FIX-3 landed;
+  SLICES 1-2 LANDED same session: the ROADMAP column with the K14 fix at
+  8e5ab5a, the quantifiable column at 41a31a1 — check10 flipped from
+  awaiting to PASS and caught two transcription bugs on the surface's
+  arrival. Remaining: class_expect column, LEXICAL row kind, returned-claims
+  epilogue/K11, endpoint rule/K12, want+cursor (fresh D27 author for
+  check06), deferred-backref infra, enabled-set/toggles, then the
+  byte-identity bar)
   (UNBLOCKED 2026-08-11 by **D32**, which resolves
   the interface after three panels — R10 refuted D29, R11 refuted parts of D30,
   R12 refuted the alternative and produced the resolution. **Read D32 before any

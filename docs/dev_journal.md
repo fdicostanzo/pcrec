@@ -5507,3 +5507,44 @@ off immediately.
 check04), LEXICAL row kind, want levels + cursor rule, returned-claims
 epilogue (K11), endpoint rule (K12), deferred-backref infrastructure. The
 six awaiting SPEC-MOD0 checks are the landing bar's instrument panel.
+
+## 2026-08-11 — sixth session, second half: MOD-0.1 slices 1-2 landed
+
+**Slice 2 = the `quantifiable` column** (41a31a1), fed from libpcre2's own
+`a<syntax>*` verdicts (my sweep cross-validated SPEC-MOD0's numbers exactly:
+68 yes across rows+verbs, 26 not-askable names). Values on every row
+(including base — quantifiability is a real fact about supported syntax,
+unlike roadmap, and check10 demanded the answer), `form` on the two
+measured form-resolved families, `lexical` on {\Q, \E, (?#}; per-VerbName
+QuantVerb with the not-askable third outcome. Dumps at 14/6 fields.
+
+**The D27 instrument earned its keep the moment the surface landed:**
+check10 caught TWO transcription bugs in my first landing of the column —
+`(?>...)` marked `no` (a block-collection artifact in the mechanical
+transcription; atomic groups are plainly quantifiable) and the base row
+carrying `-`. The spec author's amendment (accepting `lexical` via two
+discriminators, then failing a false `yes` on either) went through two
+rounds with a ruling in between; their D2 test is the session's cleanest
+idea that wasn't mine: **a quantifier with a minimum of zero can only ADD
+strings to a language, so a subject accepted without the star and rejected
+with it WITNESSES that the star went literal** — no amount of "does it
+compile" probing can see that.
+
+**Two D27 process notes, recorded for every future spec-author spawn:**
+(1) The harness auto-injects CLAUDE.md/header files into subagent contexts
+unrequested — this session it fed the spec author tests/CLAUDE.md,
+tests/fuzz/CLAUDE.md, and later src/core/internal.h + src/core/CLAUDE.md,
+the last containing `cx->pos` itself. The author disclosed every exposure
+unprompted, used none of it (their check06 predates the leak and stands),
+and future invariant-6 hardening goes to a FRESH author. The blindness
+constraint must be written knowing the harness leaks ambient context.
+(2) The author's own sabotage run nearly reported a false clean because
+they grepped for `DISAGREE` while the actual failure printed as
+`POPULATION ... FAIL` — the vacuity the suite prevents, reappearing in how
+its output was READ. Key off exit codes, never a failure-keyword grep.
+
+MOD-0.1 remaining: class_expect column (arms check04), LEXICAL row kind,
+returned-claims epilogue (K11), endpoint rule (K12), want levels + cursor
+rule (arms check06 via a fresh author), deferred-backref infrastructure
+(arms check02), gate/toggles (arms check07/09), enabled-set symbol (arms
+check01). Then the byte-identity bar with its guarded exceptions.
