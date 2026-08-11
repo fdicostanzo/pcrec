@@ -136,7 +136,15 @@ static Ast *esc_atom(Ctx *cx)
     int v = esc_char_value(cx, epos);
     if (v >= 0) return char_node(cx, (unsigned)v);
     cx->pos = save;
-    pcrec_ext_escape(cx, nextc(cx), false, epos);
+    ExtResult r = pcrec_ext_escape(cx, nextc(cx), false, epos);
+    pcrec_ext_finish(cx, &r);
+    /* The wall (K11's fix is this shape): the escape doorway cannot decline
+     * today — even "no row" is a refusal — so reaching here means the
+     * ExtResult vocabulary grew without this call site learning the new
+     * value. Fail loudly instead of flowing an unhandled value onward; the
+     * first node-producing module port replaces this line with the splice,
+     * visibly (D33 §9.3). */
+    ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
 }
 
 /* Escape inside a class -> byte value. `\b` is BASE syntax here — backspace,
@@ -178,7 +186,13 @@ static int esc_class_value(Ctx *cx)
     }
     if (c == '8' || c == '9' || c == 'g' || c == 'k')
         return c;
-    pcrec_ext_escape(cx, c, true, epos);
+    ExtResult r = pcrec_ext_escape(cx, c, true, epos);
+    pcrec_ext_finish(cx, &r);
+    /* The wall — see esc_atom. K11's flagged-not-reproduced hazard lives on
+     * this path: a future class-port SCALAR feeds cls_set's 32-byte bitmap,
+     * so the module that first returns one adds the range check HERE, before
+     * the value flows, with a probe that is false today. */
+    ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
 }
 
 /* ---- [...] classes ---- */
@@ -193,8 +207,11 @@ static Ast *p_class(Ctx *cx)
     /* Doorway 4a: the class's OWN bracket can open a delimiter-pair construct
      * (`[.a.]` is an error at offset 0). A negated class suppresses it because
      * `^` sits between the bracket and the delimiter — `[^.a.]` compiles. */
-    if (!neg)
-        pcrec_ext_class_bracket(cx, peekc(cx), opening, cx->pos + 1, true, false);
+    if (!neg) {
+        ExtResult r = pcrec_ext_class_bracket(cx, peekc(cx), opening,
+                                              cx->pos + 1, true, false);
+        pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: carry on, cursor unmoved */
+    }
     bool first = true;
 
     for (;;) {
@@ -207,9 +224,12 @@ static Ast *p_class(Ctx *cx)
         /* Doorway 4b: a bracket INSIDE the class. It declines far more often
          * than it fires — `[` is an ordinary member — and then falls through
          * to the member handling below. */
-        if (c == '[')
-            pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos, cx->pos + 2, false,
-                                    at_content_start);
+        if (c == '[') {
+            ExtResult r = pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos,
+                                                  cx->pos + 2, false,
+                                                  at_content_start);
+            pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: ordinary member */
+        }
 
         int lo;
         cx->pos++;
@@ -277,28 +297,27 @@ static bool try_quant(Ctx *cx, int *rmin, int *rmax);
  * returns, and `Ctx` is a stack-local zeroed per pcrec_compile call, so no
  * caller can ever observe a half-unwound depth.
  *
- * A LATENT DEFECT THIS DOES NOT FIX, recorded so it is not rediscovered: if
- * pcrec_ext_group ever returns a node, control still falls through into the
- * body parse below and THE RETURNED NODE IS SILENTLY DISCARDED. Nothing here
- * distinguishes "the doorway finished a construct" from "not mine, carry on".
- * REPRODUCED, and it is an exit-0 miscompile rather than a crash: give
- * pcrec_ext_group one selector byte that returns a node instead of failing, and
- * `(?%x)b)` compiles to byte-identical C to the bare pattern `b` — the module's
- * node AND the pattern's own unmatched trailing `)` both vanish silently.
+ * THE FALLTHROUGH-DISCARD DEFECT THIS PARAGRAPH USED TO RECORD IS FIXED
+ * (MOD-0.1's returned-claims epilogue). It was: if pcrec_ext_group ever
+ * returned a node, control fell through into the body parse below and the
+ * node was SILENTLY DISCARDED — reproduced as an exit-0 miscompile,
+ * `(?%x)b)` compiling to bare `b`'s bytes with a stub row. The doorway call
+ * sites in p_group_body now capture the ExtResult, pass it to the one
+ * epilogue, and END IN A WALL (an internal-error ctx_fail): a claim the
+ * site does not handle is a loud deterministic refusal, never a
+ * fallthrough. The first module port that returns a real value replaces
+ * the wall with the splice — visibly, at the exact line — instead of
+ * being dropped by code that never knew it existed.
  *
- * MOD-0.1 owns the fix, and the shape is settled: capture the doorway's return
- * and BRANCH around the body parse below, rather than falling through into it.
- *
- * DO NOT COPY pcrec_ext_class_bracket's CONTRACT HERE, which an earlier version
- * of this comment suggested. The two doorways' non-fail outcomes are DISJOINT.
- * class_bracket's three `return;` sites never write cx->pos, so its only
- * normal-return outcome is DECLINE with the cursor UNCHANGED. This doorway can
- * never decline at all — registry.c:505's `(?` catch-all is REJECTED, so every
- * byte either names a module or is refused — so its only future normal-return
- * outcome is CLAIM, with the cursor advanced PAST its own `)`. One signature
- * spanning both would make "returns normally" mean opposite things depending on
- * which doorway was called, which is D30 §3's "the answer is not an enum" one
- * level up. */
+ * THE TWO DOORWAYS' NON-FAIL OUTCOMES ARE STILL DISJOINT, now carried by
+ * the VALUE rather than by which function returned: class_bracket declines
+ * with EXT_NOT_MINE and the cursor unchanged; this doorway can never
+ * decline at all — registry.c's `(?` catch-all is REJECTED, so every byte
+ * either names a module or is refused — so EXT_NOT_MINE from it hits the
+ * wall as a registry defect. One struct spans both without "returns
+ * normally" meaning opposite things, because "returns normally" now means
+ * nothing on its own (D30 §3's "the answer is not an enum", answered by
+ * making the answer a tagged value). */
 static Ast *p_group(Ctx *cx, size_t apos)
 {
     if (++cx->depth > PCREC_MAX_GROUP_DEPTH) /* PCRE2's exact cap, measured;
@@ -328,15 +347,32 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * a group, `*` is a quantifier with nothing to quantify, and the caller
      * is told "quantifier does not follow a repeatable item" about a
      * construct that is not a quantifier at all. */
-    if (peekc(cx) == '*')
-        pcrec_ext_verb(cx, apos);
+    if (peekc(cx) == '*') {
+        ExtResult r = pcrec_ext_verb(cx, apos);
+        pcrec_ext_finish(cx, &r);
+        /* The wall: this doorway cannot decline (D25 — four answers, all
+         * refusals today). When module 'verbs' first accepts a form, the
+         * accepted outcome is handled HERE, branching around the body parse
+         * below — the PARSE-1 fallthrough-discard shape is a compile-time
+         * impossibility now, because an unhandled outcome hits this line
+         * instead of flowing into p_alt. */
+        ctx_fail(cx, apos, "internal error: verb doorway returned an unhandled outcome");
+    }
     /* Doorway 2, with the base grammar answering first: `(?:` is the one
      * construct here the base tier implements, so it never reaches the
      * registry even though it has a row there. */
     if (peekc(cx) == '?') {
         int c2 = peekc2(cx);
         if (c2 == ':') cx->pos += 2;
-        else           pcrec_ext_group(cx, c2, apos);
+        else {
+            ExtResult r = pcrec_ext_group(cx, c2, apos);
+            pcrec_ext_finish(cx, &r);
+            /* The wall — see the verb doorway above. This is the exact site
+             * PARSE-1 reproduced the exit-0 miscompile at ((?%x)b) compiled
+             * to bare (b)'s bytes with a stub node): a claimed node can no
+             * longer fall through into the body parse. */
+            ctx_fail(cx, apos, "internal error: (? doorway returned an unhandled outcome");
+        }
     }
     /* plain '(' : capturing group — parsed as a group; capture spans are
      * reported starting with the VM engine (M4).

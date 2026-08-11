@@ -28,24 +28,51 @@
  * `\b` inside a character class is base syntax too — it decodes to backspace
  * without a lookup, which is what the row's RF_CLASS_BASE flag records.
  *
- * THESE FUNCTIONS DO NOT RETURN, TODAY. Every row is RS_MODULE or RS_REJECTED,
- * so every dispatch ends in a diagnostic. The `noreturn` attributes state
- * today's truth rather than the design's: when SR-6 lands the first real module
- * handler, one of these starts returning a value and gcc warns.
- *
- * WARNS, not errors — this comment claimed otherwise until an R5 critic
- * compiled SR-6's shape and watched `make` succeed. There is no -Werror in the
- * Makefile and no -W option controls this particular warning. Treat the
- * attribute as a loud hint whose promotion to a guard is R5-Q1. */
+ * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5). Every dispatch still
+ * ends in a refusal — every row is RS_MODULE or RS_REJECTED — but the refusal
+ * is now an ExtResult the CALLER receives and hands to pcrec_ext_finish, the
+ * one epilogue below, instead of a ctx_fail that longjmps past it. The
+ * diagnostic is formatted AT CLAIM TIME into the result (representability:
+ * a diagnostic must outlive its handler or D33 §6 collapses and pair_opens'
+ * deletion — later reversed by R14 anyway — comes back). Byte-identity: the
+ * REFUSE macro runs the exact snprintf the old ctx_fail ran, into a buffer of
+ * the same size, and the epilogue fires it at the same offset; no rendered
+ * diagnostic moved. The `noreturn` era's R5 lesson (warn-not-error, no guard
+ * without -Werror) is retired with the attributes themselves: falling off a
+ * value-returning doorway is now an ordinary -Wreturn-type warning that
+ * `make strict` promotes. */
+
+#include <stdio.h>
 
 #include "core/internal.h"
+
+/* Format a refusal at claim time and return it. The arguments are what the
+ * pre-epilogue ctx_fail calls passed, verbatim, so the rendered text cannot
+ * drift from what tests/reject/ pins. */
+#define REFUSE(atpos, ...) do {                                              \
+        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "" };  \
+        snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
+        return res_;                                                         \
+    } while (0)
+
+/* No construct here; the cursor is unchanged. Only doorway 4 produces this. */
+#define DECLINE() return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "" }
 
 /* A row whose diag value does not belong to its kind is a registry defect, not
  * a pattern error. It is reported like any other failure because the parser has
  * no other channel, but the wording is deliberately not a "requires module"
  * diagnostic: nothing a caller writes can produce it. */
-#define BAD_ROW(cx, at, what) \
-    ctx_fail((cx), (at), "internal error: malformed registry row for " what)
+#define BAD_ROW(at, what) \
+    REFUSE((at), "internal error: malformed registry row for " what)
+
+/* The ONE epilogue (D33 §5/§8): a refusal fires here, and only here. A caller
+ * that must override a claim — the endpoint rule, D33 §6 — looks at the
+ * ExtResult BEFORE calling this; today no caller overrides. */
+void pcrec_ext_finish(Ctx *cx, const ExtResult *r)
+{
+    if (r->what == EXT_NOT_MINE) return;
+    ctx_fail(cx, r->at, "%s", r->msg);
+}
 
 /* SR-9's tail context, computed from the Ctx these functions already hold.
  * `after` is the offset of the first byte PAST the doorway's selector byte, so
@@ -73,7 +100,7 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
  * RD_MODULE_OCTAL is the ATOM form only. Since FIX-3 (K13) the digit rows and
  * `\g`/`\k` never arrive here with in_class set at all — the class position is
  * base syntax (octal / literal fallback, RF_CLASS_BASE), decoded in parse.c. */
-void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
+ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
 {
     /* cx->pos sits just past the escape byte, so that IS the tail position. */
     size_t avail;
@@ -81,13 +108,13 @@ void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
     const RegRow *r = pcrec_registry_find(RK_ESC, c, tl, avail);
 
     if (!r) {
-        if (in_class) ctx_fail(cx, at, "unknown escape \\%c in class", c);
-        ctx_fail(cx, at, "unknown escape \\%c", c);
+        if (in_class) REFUSE(at, "unknown escape \\%c in class", c);
+        REFUSE(at, "unknown escape \\%c", c);
     }
     if (r->diag == RD_FIXED)
-        ctx_fail(cx, at, "%s", r->msg);
+        REFUSE(at, "%s", r->msg);
     if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL)
-        BAD_ROW(cx, at, "an escape");
+        BAD_ROW(at, "an escape");
 
     /* PCRE2 forbids some of these INSIDE a class and always will, so naming a
      * module there is the over-promise D26 calls a defect: module `assertions`
@@ -100,13 +127,13 @@ void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
      * Distinct from RF_CLASS_BASE, where the doorway is never entered at all
      * (`[\b]` is backspace, base syntax). */
     if (in_class && (r->flags & RF_CLASS_INVALID))
-        ctx_fail(cx, at, "\\%c is not valid inside a character class", c);
+        REFUSE(at, "\\%c is not valid inside a character class", c);
     if (in_class)
-        ctx_fail(cx, at, "\\%c in a class requires module '%s'", c, r->module);
+        REFUSE(at, "\\%c in a class requires module '%s'", c, r->module);
     if (r->diag == RD_MODULE_OCTAL)
-        ctx_fail(cx, at, "\\%c (backreference/octal) requires module '%s'",
-                 c, r->module);
-    ctx_fail(cx, at, "\\%c requires module '%s'", c, r->module);
+        REFUSE(at, "\\%c (backreference/octal) requires module '%s'",
+               c, r->module);
+    REFUSE(at, "\\%c requires module '%s'", c, r->module);
 }
 
 /* ---- doorway 2: after '(?' ----------------------------------------------
@@ -115,7 +142,7 @@ void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
  * over — once as an exact selector match, once as the fallback. It is the same
  * row and the same diagnostic either way, and parse.c printed '?' for the
  * missing byte, which is reproduced below. */
-void pcrec_ext_group(Ctx *cx, int c2, size_t at)
+ExtResult pcrec_ext_group(Ctx *cx, int c2, size_t at)
 {
     /* cx->pos is at the '?'; c2 is the byte after it; so the tail starts two
      * past the cursor. When the pattern ends at the '?' that is already beyond
@@ -128,12 +155,12 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
     /* Only reachable by deleting the catch-all row, which tests/registry's
      * hand-written manifest also refuses; a NULL deref is not an acceptable
      * second answer to that. */
-    if (!r) ctx_fail(cx, at, "internal error: no registry row for (?%c", shown);
+    if (!r) REFUSE(at, "internal error: no registry row for (?%c", shown);
 
     if (r->diag == RD_FIXED)
-        ctx_fail(cx, at, "%s", r->msg);
+        REFUSE(at, "%s", r->msg);
     if (r->diag != RD_MODULE)
-        BAD_ROW(cx, at, "a (? construct");
+        BAD_ROW(at, "a (? construct");
 
     /* AN OPTION SETTING IS A RUN, NOT A BYTE (Q2). Splitting the old catch-all
      * into eleven letter rows fixed `(?q)` and left `(?iZ)` — PCRE2 error 111 —
@@ -153,8 +180,8 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
         if (!pcrec_registry_option_run_ok(orun, oavail)) {
             const RegRow *any = pcrec_registry_find(RK_GROUP, REG_SEL_ANY, NULL, 0);
             if (!any || any->diag != RD_FIXED)
-                BAD_ROW(cx, at, "the (? doorway's catch-all");
-            ctx_fail(cx, at, "%s", any->msg);
+                BAD_ROW(at, "the (? doorway's catch-all");
+            REFUSE(at, "%s", any->msg);
         }
     }
     /* K14 (design §17.2): a ROADMAP_NEVER row is real PCRE2 syntax pcrec
@@ -162,8 +189,8 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
      * tier-2 row names. The module stays on the row as classification; it is
      * just never rendered as a promise. */
     if (r->roadmap == ROADMAP_NEVER)
-        ctx_fail(cx, at, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", shown);
-    ctx_fail(cx, at, "(?%c...) requires module '%s'", shown, r->module);
+        REFUSE(at, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", shown);
+    REFUSE(at, "(?%c...) requires module '%s'", shown, r->module);
 }
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
@@ -190,7 +217,7 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
  *
  * The forms are read from the VerbName table in registry.c, every bit of which
  * is measured against libpcre2 rather than read from documentation. */
-void pcrec_ext_verb(Ctx *cx, size_t at)
+ExtResult pcrec_ext_verb(Ctx *cx, size_t at)
 {
     const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
     const char *pat = cx->pat;
@@ -199,9 +226,9 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
     size_t nstart = star + 1;
     size_t i = nstart;
 
-    if (!r) ctx_fail(cx, at, "internal error: no registry row for (*");
+    if (!r) REFUSE(at, "internal error: no registry row for (*");
     if (r->diag != RD_FIXED)
-        BAD_ROW(cx, at, "a (* verb");
+        BAD_ROW(at, "a (* verb");
 
     /* The name runs to the first of `)`, `:`, `=` or the end of the pattern.
      * Nothing else terminates it: `(*NO_JIT )` is not `NO_JIT` with a trailing
@@ -230,7 +257,7 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
     if (nlen)              { name = pat + nstart; namelen = nlen; }
     else if (next == ':')  { name = "MARK";       namelen = 4;    }
     else if (next == '=')  { name = "";           namelen = 0;    }
-    else ctx_fail(cx, star, "quantifier does not follow a repeatable item");
+    else REFUSE(star, "quantifier does not follow a repeatable item");
 
     /* A name too long to be a name at all is a LENGTH complaint in PCRE2, not a
      * "no such name" one, and it is the same complaint in both tables. Measured
@@ -239,12 +266,12 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
      * `(*MARK:` followed by 200 bytes of argument compiles fine. */
     size_t maxname;
     const char *toolong = pcrec_registry_verb_name_limit(&maxname);
-    if (namelen > maxname) ctx_fail(cx, at, "%s", toolong);
+    if (namelen > maxname) REFUSE(at, "%s", toolong);
 
     const VerbTable *t =
         pcrec_registry_verb_table(namelen ? (unsigned char)name[0] : -1);
     const VerbName  *v = pcrec_registry_verb_find(t, name, namelen);
-    if (!v) ctx_fail(cx, at, "%s", t->unknown_msg);
+    if (!v) REFUSE(at, "%s", t->unknown_msg);
 
     /* Which FORM was written. A form of 0 means "none of them", which is what a
      * truncated construct produces — and PCRE2 agrees: `(*CR` and `(*ACCEPT:x`
@@ -296,8 +323,8 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
     }
 
     if (!(v->forms & form))
-        ctx_fail(cx, at, "%s",
-                 (v->own_forms & form) ? v->own_msg : t->unknown_msg);
+        REFUSE(at, "%s",
+               (v->own_forms & form) ? v->own_msg : t->unknown_msg);
 
     /* Start-of-pattern options are valid only at the start. PCRE2 allows a RUN
      * of them — `(*UTF)(*CR)` compiles — and pcrec's rule is `at == 0` exactly.
@@ -319,7 +346,7 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
      * "numbers out of order" in PCRE2), and the general prefix scan would not
      * change it. */
     if ((v->forms & VF_ATSTART) && at != 0)
-        ctx_fail(cx, at, "%s", t->unknown_msg);
+        REFUSE(at, "%s", t->unknown_msg);
 
     /* K14 (design §17.2): disposition is a PER-NAME fact — `(*COMMIT)` is
      * OUT-OF-SCOPE while `(*pla:...)` is a lookaround in verb spelling — with
@@ -329,10 +356,10 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
      * a typo. The `(*:x)` MARK synonym resolves to MARK's entry and inherits
      * its NEVER, which is why the message below prints the resolved name. */
     if ((v->roadmap ? v->roadmap : r->roadmap) == ROADMAP_NEVER)
-        ctx_fail(cx, at, "(*%.*s) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)",
-                 (int)namelen, name);
+        REFUSE(at, "(*%.*s) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)",
+               (int)namelen, name);
 
-    ctx_fail(cx, at, "%s", r->msg);
+    REFUSE(at, "%s", r->msg);
 }
 
 /* ---- doorway 4: after '[' inside a class --------------------------------
@@ -387,8 +414,8 @@ bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from)
     return false;
 }
 
-void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
-                             bool at_class_open, bool at_content_start)
+ExtResult pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
+                                  bool at_class_open, bool at_content_start)
 {
     /* No `if (c2 < 0)` guard: it was here, and it was redundant rather than
      * defensive. `find(RK_CLASSBRACKET, -1)` returns NULL because this kind has
@@ -397,7 +424,7 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      * the end-of-pattern case is handled one line below, by the check that
      * handles every other unrecognised byte. */
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
-    if (!r) return;
+    if (!r) DECLINE();
 
     /* K4, fixed 2026-08-10 (FIX-2). This scan used to run to the end of the
      * PATTERN rather than the end of the CLASS, so a `.]` anywhere later — even
@@ -485,10 +512,10 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
                 closed = true; close_at = i; break;             /* the closer */
             }
             if (ch == '[' && i + 1 < cx->patlen && cx->pat[i + 1] == (char)c2)
-                return;                                         /* rule 2 */
+                DECLINE();                                      /* rule 2 */
             if (ch == ']') break;                               /* rule 1 */
         }
-        if (!closed) return;
+        if (!closed) DECLINE();
     }
 
     /* The `else if (at_class_open) return;` that stood here is GONE, and its
@@ -502,14 +529,14 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      * with a real divergence behind it. `at_class_open` survives, but it is no
      * longer invisible: it now SELECTS THE MESSAGE, and tests/reject/ pins both. */
     if (r->diag != RD_FIXED)
-        BAD_ROW(cx, at, "a [ construct in a class");
+        BAD_ROW(at, "a [ construct in a class");
 
     /* POSITION FIRST, then the name — which is libpcre2's own order, measured:
      * `[:foo:]` is "POSIX named classes are supported only within a class" at
      * offset 0, NOT "unknown POSIX class name". The construct is in the wrong
      * place, so whether its name is real never comes up. */
     if (at_class_open && r->open_msg)
-        ctx_fail(cx, at, "%s", r->open_msg);
+        REFUSE(at, "%s", r->open_msg);
 
     /* A name outside the known set is not this construct at all, so naming a
      * module for it would be the over-promise this flag exists to remove:
@@ -517,7 +544,7 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      * cannot make it one. See RF_CLASS_NAMED in internal.h. */
     if ((r->flags & RF_CLASS_NAMED) &&
         !pcrec_registry_posix_known(cx->pat + from, close_at - from))
-        ctx_fail(cx, at, "%s", pcrec_registry_posix_unknown_msg());
+        REFUSE(at, "%s", pcrec_registry_posix_unknown_msg());
 
     /* A REAL name in a position libpcre2 will not take is still not a construct
      * (R9/C3-4). `<` and `>` are word-boundary assertions rather than classes,
@@ -533,7 +560,7 @@ void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
     if ((r->flags & RF_CLASS_NAMED) &&
         pcrec_registry_posix_whole_class_only(cx->pat + from, close_at - from) &&
         !(at_content_start && close_at + 2 < cx->patlen && cx->pat[close_at + 2] == ']'))
-        ctx_fail(cx, at, "%s", pcrec_registry_posix_unknown_msg());
+        REFUSE(at, "%s", pcrec_registry_posix_unknown_msg());
 
-    ctx_fail(cx, at, "%s", r->msg);
+    REFUSE(at, "%s", r->msg);
 }

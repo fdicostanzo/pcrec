@@ -596,41 +596,76 @@ const char *const *pcrec_registry_posix_names(size_t *n);
  * called only after parse.c's own switch has declined, so a base-tier pattern
  * reaches none of them.
  *
- * The three `noreturn`s are TODAY's truth, not the design's: every row is
- * RS_MODULE or RS_REJECTED, so every dispatch ends in a diagnostic. When SR-6
- * lands the first module handler one of them starts returning a value and gcc
- * WARNS ("'noreturn' function does return").
+ * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5 — the load-bearing
+ * change). A doorway's terminal answer used to be a `ctx_fail`, which longjmps
+ * past the caller; the three `noreturn` attributes that stood here were
+ * today's truth and the design's obstacle, because a caller that never sees
+ * the claim can never override it — the endpoint rule (D33 §6, K12) needs to
+ * see "something claimed" BEFORE the construct's own diagnostic fires. So a
+ * doorway now RETURNS an ExtResult and the caller passes it to
+ * pcrec_ext_finish, the ONE epilogue that renders a refusal (one epilogue, so
+ * D33 §8's "two missing doorway epilogues" cannot be missing). This also
+ * retires K11's undefined behaviour: both escape call sites invoked a
+ * value-flow through `noreturn` declarations, and a returning doorway
+ * corrupted or crashed depending on register allocation; under the value
+ * contract the flow is defined C at every site.
  *
- * It warns; it does not fail the build. An earlier version of this comment
- * claimed a compile error, and an R5 critic disproved it by writing SR-6's
- * shape and watching `make` succeed: WARN is `-Wall -Wextra` with no -Werror,
- * and this particular warning has no controlling -W option, so only a blanket
- * -Werror would promote it. Whether to adopt one is a live question (R5-Q1),
- * and until it is answered this is a loud hint, not a guard. A comment that
- * asserts a guard which does not exist is worse than no comment. */
-void pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
-     __attribute__((noreturn));
-void pcrec_ext_group(Ctx *cx, int c2, size_t at) __attribute__((noreturn));
-void pcrec_ext_verb(Ctx *cx, size_t at) __attribute__((noreturn));
-/* The one doorway that can DECLINE: `[` is an ordinary class member most of the
- * time, so this returns normally to mean "no construct here" and the caller
- * carries on with member parsing.
+ * TODAY'S VOCABULARY IS DELIBERATELY THE EXERCISABLE SUBSET of D33 §5's.
+ * Every row is still RS_MODULE or RS_REJECTED, so the only claims a doorway
+ * can produce are refusals; EXT_SCALAR / EXT_MEMBERS / EXT_NODE arrive with
+ * the first module port THAT CAN PRODUCE THEM, each with a probe that is
+ * false the day before (D33 §9.3 — a value nothing can construct is
+ * unexercised structure, D24's recorded loss). The call sites in parse.c end
+ * in a loud internal-error wall after the epilogue, so the first producing
+ * port must extend the vocabulary VISIBLY there rather than being silently
+ * discarded (the PARSE-1 fallthrough defect, made structurally impossible).
  *
- * `void`, not `bool`. It returned bool until an R5 critic pointed out that no
- * path could ever produce `true` and both callers discarded the value — a
- * return type that cannot take its second value is a lie of the same kind the
- * `noreturn`s above are honest about, and a worse one, because when SR-6 gives
- * a class-bracket row a handler returning "consumed, carry on", both callers
- * would ignore it and fall straight through to member parsing with nothing in
- * the build objecting. Adding the value back is SR-6's job, at which point the
- * signature change forces both call sites to be looked at.
+ * "Returns normally" carries NO meaning on its own — the meaning is in the
+ * VALUE, which is what keeps the two doorway contracts distinct (the concern
+ * parse.c's PARSE-1 note records): the class-bracket doorway declines with
+ * EXT_NOT_MINE and the cursor unchanged; the `(?` doorway can never decline
+ * (its catch-all is REJECTED), so EXT_NOT_MINE from it is a registry defect
+ * the wall reports. */
+typedef enum {
+    EXT_NOT_MINE = 0,   /* no construct here; cursor unchanged; caller
+                           carries on. Only the class-bracket doorway can
+                           produce it today. */
+    EXT_REFUSAL         /* a claim that terminates the compile: `msg`/`at`
+                           carry the diagnostic, formatted AT CLAIM TIME so it
+                           outlives the handler (D33 §5's representability
+                           requirement), fired by pcrec_ext_finish. */
+} ExtWhat;
+
+typedef struct {
+    ExtWhat what;
+    size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
+    char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
+                           pcrec_error.msg, so deferring the format cannot
+                           truncate differently than ctx_fail did */
+} ExtResult;
+
+/* The ONE epilogue: renders a refusal via ctx_fail (byte-identical to the
+ * pre-epilogue diagnostics — same format results, same offsets), returns
+ * normally on EXT_NOT_MINE. Every doorway call in parse.c is followed by
+ * exactly this call. */
+void pcrec_ext_finish(Ctx *cx, const ExtResult *r);
+
+ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at);
+ExtResult pcrec_ext_group(Ctx *cx, int c2, size_t at);
+ExtResult pcrec_ext_verb(Ctx *cx, size_t at);
+/* The one doorway that can DECLINE: `[` is an ordinary class member most of
+ * the time, so EXT_NOT_MINE means "no construct here" and the caller carries
+ * on with member parsing. (Its R5-era history — a bool return no path could
+ * make true, then `void` — is resolved by the value contract: the decline is
+ * IN the value now, and a future "consumed, carry on" outcome extends
+ * ExtWhat where both call sites' walls force it to be handled.)
  *
  * `at_content_start` says the construct begins at the FIRST byte of the class's
  * content — no member before it and no `^`. It exists for `[[:<:]]` and
  * `[[:>:]]`, which libpcre2 recognises ONLY as a class's entire content
  * (R9/C3-4); every other POSIX name works in any position. */
-void pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
-                             bool at_class_open, bool at_content_start);
+ExtResult pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
+                                  bool at_class_open, bool at_content_start);
 
 /* True when a `[X...X]` construct really opens at `from` with delimiter `c2` —
  * K4's scan as a predicate, for callers that must ASK rather than diagnose.

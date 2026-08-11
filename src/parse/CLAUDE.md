@@ -23,10 +23,17 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 - **ext.c** — the four doorways (SR-2): `pcrec_ext_escape`, `pcrec_ext_group`,
   `pcrec_ext_verb`, `pcrec_ext_class_bracket`. The edge that makes the registry
   the ONLY home rather than a sixth copy — parse.c calls these once its own
-  switch has declined, and they render the row's diagnostic. SR-6's module
-  handlers become their callees. `pcrec_ext_verb` is the one that reads more
-  than a byte: since Q1 it parses the verb NAME and the FORM it was written in,
-  and has four possible answers rather than one (D25)
+  switch has declined. Since MOD-0.1's returned-claims epilogue (D33 §5) a
+  doorway RETURNS its terminal answer as a tagged `ExtResult` (EXT_NOT_MINE,
+  or EXT_REFUSAL carrying the diagnostic formatted at claim time), and
+  `pcrec_ext_finish` — the one epilogue — renders refusals; call sites in
+  parse.c end in internal-error walls for outcomes they do not handle, which
+  is what closed K11 (the noreturn-era UB) and the PARSE-1 fallthrough
+  discard. SR-6's module handlers become their callees, extending ExtWhat
+  with probes that are false the day before (D33 §9.3). `pcrec_ext_verb` is
+  the one that reads more than a byte: since Q1 it parses the verb NAME and
+  the FORM it was written in, and has four possible answers rather than one
+  (D25)
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,

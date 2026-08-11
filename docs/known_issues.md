@@ -538,7 +538,36 @@ only position where the two rows disagree about a flag.
 must close the in-class tail-sweep gap to have a test that can see it. Do not
 fix the flag without the sweep, or the next reader has the same four blind nets.
 
-## K11 — OPEN, found 2026-08-11 (R11 panel, M4 — while probing the returning-doorway contract)
+## K11 — FIXED 2026-08-11 (MOD-0.1's returned-claims epilogue, D33 §5)
+
+**Resolution.** The four doorways now RETURN their terminal answer as an
+`ExtResult` (a tagged value: `EXT_NOT_MINE`, or `EXT_REFUSAL` carrying the
+diagnostic formatted at claim time), and every call site consumes the value —
+`pcrec_ext_finish` is the one epilogue that renders a refusal, and each site
+ends in a loud internal-error wall for any outcome it does not handle. The
+`noreturn` declarations and the fall-off-the-end call sites are gone, so the
+UB this entry records is structurally unrepresentable: there is no discarded
+register value to relaunch and no unreachable end to fall off. Re-ran this
+entry's own repro shape against the new contract (scratch tree, stub selector
+`q` made to return an unhandled outcome, no other change): `a\qb` and
+`[a\qb]` both exit 1 with "internal error: escape doorway returned an
+unhandled outcome" at the escape's offset, deterministically, no output file
+— where the old shape silently miscompiled the first and crashed the
+compiler on the second. Diagnostics byte-identical across the change: a
+952-pattern differential over every registry probe, every corpus pattern and
+per-doorway byte sweeps compared (exit, stdout, stderr, out.c, out.h)
+against the pre-epilogue build with zero differences (instrument
+sabotage-validated: one reworded message → 10 caught).
+
+**Still owed elsewhere, on purpose:** the flagged-not-reproduced hazard below
+(`esc_class_value`'s value feeding `cls_set`'s 32-byte bitmap with no range
+check) is NOT discharged by this fix — nothing returns a scalar yet. The
+call-site wall's comment assigns the range check to the first module whose
+class port returns one, with a probe that is false today (D33 §9.3).
+
+The original entry follows, unedited, as the record of what the defect was.
+
+## K11 (original entry) — OPEN, found 2026-08-11 (R11 panel, M4 — while probing the returning-doorway contract)
 
 **`pcrec_ext_escape`'s two call sites are UNDEFINED BEHAVIOUR the moment that
 doorway starts returning a value**, and the two behave differently in the same

@@ -493,8 +493,19 @@ Then DOC-1, then PC-4 when module `classes` lands.
   directions, sabotaged both ways — the false-lexical-CELL direction is
   check10's catch, verified with a doctored dump, not registry_check's,
   whose pairing a self-consistent macro sabotage rightly survives).
-  Remaining: returned-claims
-  epilogue/K11, endpoint rule/K12, want+cursor (fresh D27 author for
+  SLICE 5 LANDED seventh session: the returned-claims epilogue (D33 §5) —
+  doorways return a tagged ExtResult with the diagnostic formatted at claim
+  time, pcrec_ext_finish is the ONE epilogue, parse.c call sites consume
+  the value and end in internal-error walls (the PARSE-1 fallthrough
+  discard and K11's noreturn UB both structurally gone; K11 CLOSED, repro
+  re-run clean in a stub tree). Byte-identity: 952-pattern differential
+  (registry probes + corpus + per-doorway byte sweeps) vs the pre-epilogue
+  build, zero differences over exit/stdout/stderr/out.c/out.h, instrument
+  sabotage-validated; full suite, strict, verify_rxt 100%, fuzz seed 1
+  zero divergences. EXT vocabulary is deliberately the exercisable subset
+  {NOT_MINE, REFUSAL}; SCALAR/MEMBERS/NODE arrive with the first port that
+  can produce them, each with a probe false the day before (D33 §9.3).
+  Remaining: endpoint rule/K12, want+cursor (fresh D27 author for
   check06), deferred-backref infra, enabled-set/toggles, then the
   byte-identity bar)
   (UNBLOCKED 2026-08-11 by **D32**, which resolves

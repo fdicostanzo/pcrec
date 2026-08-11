@@ -41,8 +41,11 @@ Process and status documents for pcrec. The architecture itself lives in
   caller's process under a memory limit), K9 (the public API takes no pattern
   length, so a pattern containing NUL compiles as its prefix and reports
   success), K10 (tier 2, LIVE — `[\N{U+41}]` refused where libpcre2 recognises
-  it), K11 (LATENT — `pcrec_ext_escape`'s two call sites are UB the moment
-  that doorway returns; `[a\qb]` SIGSEGVs the compiler itself in a stub build),
+  it), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
+  return a tagged ExtResult, one epilogue renders refusals, call sites end in
+  internal-error walls — the stub-build repro now exits 1 cleanly at both
+  sites; the cls_set range-check hazard stays assigned to the first
+  scalar-returning module),
   K12 (`[0-\d]` promises a module where PCRE2 says the range is permanently
   invalid; pcrec is correct today only because `\d` is unimplemented, and
   MOD-0.2 removes that guard), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
