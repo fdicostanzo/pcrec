@@ -288,6 +288,47 @@ typedef enum {
     ROADMAP_NEVER
 } Roadmap;
 
+/* MOD-0.1 slice 2 (design §18.3 as ruled, plus SPEC-MOD0's findings A and C):
+ * is the construct a legal quantifier target? Populated FROM libpcre2
+ * (`a<syntax>*` per row — the sweep is /var-reproducible via
+ * tests/spec_mod0/check10, whose oracle recomputes every verdict on every
+ * run), never reasoned from documentation.
+ *
+ *   QF_YES      `a<syntax>*` compiles and the `*` quantifies the construct
+ *   QF_NO       err 109 — a real construct that is not a quantifier target
+ *               (-family assertions, (?C), bare option-settings... ) OR a
+ *               construct PCRE2 rejects outright, whose quantified form
+ *               cannot compile either
+ *   QF_FORM     the row's FAMILY spans both verdicts and the row cannot say:
+ *               option-run rows resolve bare-vs-`:body` in the producer, and
+ *               the verb row resolves PER NAME (QV_* below) — `a(*ACCEPT)*`
+ *               compiles while `a(*FAIL)*` is 109 with identical table forms
+ *               (SPEC-MOD0 finding C)
+ *   QF_LEXICAL  quantifying the syntax creates NO quantifier for the
+ *               construct at all: `\E`/`(?#)` are transparent (the `*` binds
+ *               the PRECEDING atom) and `\Q` literalises it (`a\Q*` compiles
+ *               but the star is a literal — SPEC-MOD0 finding A: a bare
+ *               "yes" there would be false)
+ *   QF_NONE     unset; legal only on RS_BASE rows */
+typedef enum {
+    QF_NONE = 0,
+    QF_YES,
+    QF_NO,
+    QF_FORM,
+    QF_LEXICAL
+} QuantFact;
+
+/* The verb row's per-name resolution of QF_FORM. QV_NOT_ASKABLE: the
+ * unquantified form itself does not compile (start-of-pattern-only options
+ * away from position 0 have no askable cell), which is a THIRD outcome, not
+ * a "no" — folding it into no would be wrong (SPEC-MOD0's sweep: 18 yes /
+ * 6 no / 26 not-askable over the 50 names). */
+typedef enum {
+    QV_NOT_ASKABLE = 0,
+    QV_YES,
+    QV_NO
+} QuantVerb;
+
 enum {
     RF_CLASS_BASE = 1u << 0,  /* inside a class this byte is BASE syntax and the
                                  doorway is not taken (\b is backspace there) */
@@ -395,10 +436,12 @@ typedef struct {
 
     const char *note;      /* one-line PCRE2 semantics (SR-3/SR-4 render this) */
 
-    /* LAST on purpose: every macro-built row initialises it explicitly, and a
-     * longhand row that forgets it gets ROADMAP_NONE, which registry_check
-     * flags on any non-base row rather than silently reading as PLANNED. */
+    /* LAST on purpose: every macro-built row initialises these explicitly,
+     * and a longhand row that forgets one gets the zero value, which
+     * registry_check flags on any non-base row rather than silently reading
+     * as a claim. */
     Roadmap     roadmap;
+    QuantFact   quant;
 } RegRow;
 
 /* src/parse/registry.c */
@@ -475,6 +518,9 @@ typedef struct {
      * `(*COMMIT)` is NEVER while `(*pla:...)` is a lookaround in verb
      * spelling). */
     Roadmap     roadmap;
+
+    /* Meaningful only through the RK_VERB row's QF_FORM (see QuantFact). */
+    QuantVerb   quant;
 } VerbName;
 
 typedef struct {

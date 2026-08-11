@@ -38,6 +38,15 @@
  * swallowed too. See the \Q cell printed below, which this check asserts
  * explicitly so the reason the count is two survives in the output.
  *
+ * RESOLVED, and this check did not change. The invariant went the widening
+ * way: invariant 10's `quantifiable` fact gained a fourth value, `lexical`,
+ * covering BOTH the transparent-binding case this check measures and the
+ * star-became-a-literal case `\Q` is. So `\Q` is lexical THERE, under a
+ * broader definition, while remaining a non-member HERE, under invariant 3's
+ * own binding criterion — and the pinned set below stays at two deliberately.
+ * check10 owns the union; see its D1/D2 discriminators, the first of which is
+ * spec_is_lexical(), shared with this file.
+ *
  * SABOTAGE (verified 2026-08-11, by building a copy against a modified
  * spec_common.h): change the control subject in spec_is_lexical() from "ZZ" to
  * "Z" and the control stops discriminating — 12 further rows are reported as

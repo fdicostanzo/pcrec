@@ -158,74 +158,74 @@
 #define VM_ONLY     ENGM_VM
 
 /* \x outside a class -> "\x requires module 'M'" */
-#define ESC(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED}
+#define ESC(sel, syn, mod, eng, note, q) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q)}
 /* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
-#define ESC_CLASS_BASE(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED}
+#define ESC_CLASS_BASE(sel, syn, mod, eng, note, q) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q)}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
  * which is a different thing from the construct's semantics. */
 /* as ESC, but PCRE2 forbids the construct INSIDE a class and always will, so
  * the in-class answer must promise no module (R9/SPEC-classes-F1). */
-#define ESC_CLASS_INVALID(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED}
-#define ESC_DIGIT(sel, syn, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED}
+#define ESC_CLASS_INVALID(sel, syn, mod, eng, note, q) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED, (q)}
+#define ESC_DIGIT(sel, syn, eng, note, q) \
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q)}
 /* (?X -> "(?X...) requires module 'M'" */
-#define GROUP(sel, syn, mod, eng, note) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED}
+#define GROUP(sel, syn, mod, eng, note, q) \
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q)}
 /* as GROUP, but the construct is OUT-OF-SCOPE in docs/pcre2_compliance.md and
  * the diagnostic must not promise the module (K14, design Â§17.2). The module
  * and feature stay as CLASSIFICATION -- which doorway family owns the row --
  * they are simply never rendered as a promise. */
-#define GROUP_NEVER(sel, syn, mod, eng, note) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_NEVER}
+#define GROUP_NEVER(sel, syn, mod, eng, note, q) \
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_NEVER, (q)}
 /* an inline option setting: the construct is the whole RUN, not this byte */
-#define GROUP_OPT(sel, syn, note) \
-    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note), ROADMAP_PLANNED}
+#define GROUP_OPT(sel, syn, note, q) \
+    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note), ROADMAP_PLANNED, (q)}
 /* as GROUP, but the row applies only when `tl` FOLLOWS the selector byte (SR-9).
  * One byte, several constructs: `(?P<` `(?P=` `(?P>` are a named group, a
  * backreference and a subroutine call, and answering all three with one module
  * was a tier-2 misattribution under D26. */
-#define GROUP_T(sel, tl, syn, mod, eng, note) \
-    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED}
+#define GROUP_T(sel, tl, syn, mod, eng, note, q) \
+    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q)}
 /* PCRE2 rejects it, and the byte that decides is the one AFTER the selector. */
-#define REJECTED_T(kind, sel, tl, syn, msg, note) \
-    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER}
+#define REJECTED_T(kind, sel, tl, syn, msg, note, q) \
+    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER, (q)}
 /* a construct whose entire diagnostic is fixed text rather than a template */
-#define FIXED(kind, sel, syn, mod, eng, msg, note) \
-    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_PLANNED}
+#define FIXED(kind, sel, syn, mod, eng, msg, note, q) \
+    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_PLANNED, (q)}
 /* PCRE2 rejects it too: no module to name, no feature to enable, no engine to
  * lower to. Agreement IS compliance. */
-#define REJECTED(kind, sel, syn, msg, note) \
-    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER}
+#define REJECTED(kind, sel, syn, msg, note, q) \
+    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER, (q)}
 /* as REJECTED, but a delimiter-pair construct: RF_CLASS_DELIM carries the two
  * recognition rules that SR-2 moved out of parse.c — see internal.h. */
-#define REJECTED_DELIM(kind, sel, syn, msg, note) \
+#define REJECTED_DELIM(kind, sel, syn, msg, note, q) \
     {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
-     NULL, RF_CLASS_DELIM, (note), ROADMAP_NEVER}
+     NULL, RF_CLASS_DELIM, (note), ROADMAP_NEVER, (q)}
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
  * arrive here. */
 static const RegRow esc_rows[] = {
-ESC('d', "\\d", classes, ANY_ENGINE, "any decimal digit"),
-ESC('D', "\\D", classes, ANY_ENGINE, "any character that is not a decimal digit"),
-ESC('s', "\\s", classes, ANY_ENGINE, "any whitespace character"),
-ESC('S', "\\S", classes, ANY_ENGINE, "any character that is not whitespace"),
-ESC('w', "\\w", classes, ANY_ENGINE, "any word character (letter, digit or underscore)"),
-ESC('W', "\\W", classes, ANY_ENGINE, "any character that is not a word character"),
-ESC('h', "\\h", classes, ANY_ENGINE, "any horizontal whitespace character"),
-ESC('H', "\\H", classes, ANY_ENGINE, "any character that is not horizontal whitespace"),
+ESC('d', "\\d", classes, ANY_ENGINE, "any decimal digit", QF_YES),
+ESC('D', "\\D", classes, ANY_ENGINE, "any character that is not a decimal digit", QF_YES),
+ESC('s', "\\s", classes, ANY_ENGINE, "any whitespace character", QF_YES),
+ESC('S', "\\S", classes, ANY_ENGINE, "any character that is not whitespace", QF_YES),
+ESC('w', "\\w", classes, ANY_ENGINE, "any word character (letter, digit or underscore)", QF_YES),
+ESC('W', "\\W", classes, ANY_ENGINE, "any character that is not a word character", QF_YES),
+ESC('h', "\\h", classes, ANY_ENGINE, "any horizontal whitespace character", QF_YES),
+ESC('H', "\\H", classes, ANY_ENGINE, "any character that is not horizontal whitespace", QF_YES),
 /* THE ROW THIS WHOLE FILE EXISTS FOR. PCRE2's `\v` is vertical WHITESPACE —
  * 0x0a 0x0b 0x0c 0x0d 0x85 — not the vertical tab 0x0B. pcrec decoded it as
  * 0x0B until 2026-08-09; the corpus certified the bug because python `re`, the
  * base-tier oracle, reads `\v` as 0x0B too. It is also the only known
  * flavour-varying row, i.e. the single member of the set SR-7 is deferred for. */
-ESC('v', "\\v", classes, ANY_ENGINE, "any vertical whitespace character (NOT vertical tab; python re disagrees)"),
-ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitespace"),
+ESC('v', "\\v", classes, ANY_ENGINE, "any vertical whitespace character (NOT vertical tab; python re disagrees)", QF_YES),
+ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitespace", QF_YES),
 /* `\N` IS THREE CONSTRUCTS, split by tail at SR-9. The bare escape is "any
  * character except newline"; `\N{U+hhhh}` is a Unicode code point; `\N{name}`
  * is a Perl construct PCRE2 states it does not support. Measured against
@@ -245,7 +245,7 @@ ESC('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whitesp
  * in the bare row's own `note`, correct and inert, because `note` is read by no
  * check (R8's finding, and R9's sharpest instance of it). SR-9 is what turned
  * it into a row that answers. */
-ESC_CLASS_INVALID('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)"),
+ESC_CLASS_INVALID('N', "\\N", classes, ANY_ENGINE, "any character except newline (PCRE2 forbids it inside a class)", QF_YES),
 /* THE SHORT TAIL IS WRITTEN FIRST ON PURPOSE. These two rows are the only
  * prefix-related tail pair in the table (`{` is a proper prefix of `{U+`), which
  * makes them the only place longest-tail-wins can be OBSERVED — and with `{U+`
@@ -259,40 +259,40 @@ ESC_CLASS_INVALID('N', "\\N", classes, ANY_ENGINE, "any character except newline
  * failures across the whole repository. */
 REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
            "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u",
-           "\\N{name} — PCRE2 states it does not support this Perl construct"),
+           "\\N{name} — PCRE2 states it does not support this Perl construct", QF_NO),
 {RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
  RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
  "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection",
- ROADMAP_PLANNED},
+ ROADMAP_PLANNED, QF_NO},
 
 ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
-               "word boundary — but inside a class it is BASE syntax: backspace (0x08)"),
-ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary"),
-ESC_CLASS_INVALID('A', "\\A", assertions, ANY_ENGINE, "start of subject"),
-ESC_CLASS_INVALID('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline"),
-ESC_CLASS_INVALID('z', "\\z", assertions, ANY_ENGINE, "end of subject"),
-ESC_CLASS_INVALID('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject"),
-ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match"),
+               "word boundary — but inside a class it is BASE syntax: backspace (0x08)", QF_NO),
+ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary", QF_NO),
+ESC_CLASS_INVALID('A', "\\A", assertions, ANY_ENGINE, "start of subject", QF_NO),
+ESC_CLASS_INVALID('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline", QF_NO),
+ESC_CLASS_INVALID('z', "\\z", assertions, ANY_ENGINE, "end of subject", QF_NO),
+ESC_CLASS_INVALID('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject", QF_NO),
+ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match", QF_NO),
 
 /* FIX-3 (K13): CLASS_BASE, because inside a class there is no such construct
  * at all — PCRE2's check_escape falls back to the LITERAL letter (`[\k<n>]`
  * matches k < n >), so the class position is base syntax exactly as `\b` is.
  * The ten digit rows carry the same flag: `[\0]`..`[\7]` are octal there and
  * `[\8]` `[\9]` are the literal digits. Measured: tests/probes/probe_fix3.c. */
-ESC_CLASS_BASE('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class"),
-ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class"),
+ESC_CLASS_BASE('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO),
+ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO),
 
-ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property"),
-ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property"),
+ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property", QF_YES),
+ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property", QF_YES),
 
-ESC('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E"),
-ESC('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q"),
+ESC('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E", QF_LEXICAL),
+ESC('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q", QF_LEXICAL),
 
-ESC_CLASS_INVALID('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence"),
-ESC_CLASS_INVALID('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster"),
-ESC_CLASS_INVALID('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode"),
-ESC('c', "\\cX",     misc, ANY_ENGINE, "control character: \\cX is X xor 0x40"),
-ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code"),
+ESC_CLASS_INVALID('R', "\\R",      misc, ANY_ENGINE, "any Unicode newline sequence", QF_YES),
+ESC_CLASS_INVALID('X', "\\X",      misc, ANY_ENGINE, "a Unicode extended grapheme cluster", QF_YES),
+ESC_CLASS_INVALID('C', "\\C",      misc, ANY_ENGINE, "one data unit (byte), even in UTF mode", QF_YES),
+ESC('c', "\\cX",     misc, ANY_ENGINE, "control character: \\cX is X xor 0x40", QF_YES),
+ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code", QF_YES),
 
 /* Digits. THESE NOTES WERE WRONG WHEN FIRST WRITTEN, from memory, and an
  * adversarial review caught it — which is the whole reason this file exists, so
@@ -322,16 +322,16 @@ ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code"),
  * since FIX-3 (K13): a backreference is impossible there, so `[\0]`..`[\7]`
  * are octal, `[\8]` `[\9]` the literal digits, decoded in parse.c and never
  * reaching the doorway. Measured cell-by-cell in tests/probes/probe_fix3.c. */
-ESC_DIGIT('0', "\\0", ANY_ENGINE, "octal escape \\0dd — never a backreference (there is no group 0)"),
-ESC_DIGIT('1', "\\1", VM_ONLY, "backreference to capture group 1 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('2', "\\2", VM_ONLY, "backreference to capture group 2 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('3', "\\3", VM_ONLY, "backreference to capture group 3 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('4', "\\4", VM_ONLY, "backreference to capture group 4 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('5', "\\5", VM_ONLY, "backreference to capture group 5 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('6', "\\6", VM_ONLY, "backreference to capture group 6 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('7', "\\7", VM_ONLY, "backreference to capture group 7 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('8', "\\8", VM_ONLY, "backreference to capture group 8 (PCRE2 error 115 if no such group)"),
-ESC_DIGIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 115 if no such group)"),
+ESC_DIGIT('0', "\\0", ANY_ENGINE, "octal escape \\0dd — never a backreference (there is no group 0)", QF_YES),
+ESC_DIGIT('1', "\\1", VM_ONLY, "backreference to capture group 1 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('2', "\\2", VM_ONLY, "backreference to capture group 2 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('3', "\\3", VM_ONLY, "backreference to capture group 3 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('4', "\\4", VM_ONLY, "backreference to capture group 4 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('5', "\\5", VM_ONLY, "backreference to capture group 5 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('6', "\\6", VM_ONLY, "backreference to capture group 6 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('7', "\\7", VM_ONLY, "backreference to capture group 7 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('8', "\\8", VM_ONLY, "backreference to capture group 8 (PCRE2 error 115 if no such group)", QF_NO),
+ESC_DIGIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 115 if no such group)", QF_NO),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */
@@ -345,10 +345,10 @@ static const RegRow group_rows[] = {
  0, NULL,
  FLAV_PCRE2, ANY_ENGINE,
  RS_BASE, RD_NONE, NULL, NULL, 0,
- "non-capturing group", ROADMAP_NONE},
+ "non-capturing group", ROADMAP_NONE, QF_YES},
 
-GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead"),
-GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead"),
+GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead", QF_YES),
+GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead", QF_YES),
 
 /* `<` IS THREE CONSTRUCTS AND A NAME, split by tail at SR-9 (Q2). It used to
  * carry the compound module "lookaround/named-groups", which is a true sentence
@@ -366,14 +366,14 @@ GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead"),
  * names lookaround", which was true only because that selector named lookaround
  * for everything, including named groups. Splitting the row is what turned that
  * into a fact needing its own line. */
-GROUP_T('<', "=", "(?<=...)", lookaround,   VM_ONLY, "positive lookbehind"),
-GROUP_T('<', "!", "(?<!...)", lookaround,   VM_ONLY, "negative lookbehind"),
+GROUP_T('<', "=", "(?<=...)", lookaround,   VM_ONLY, "positive lookbehind", QF_YES),
+GROUP_T('<', "!", "(?<!...)", lookaround,   VM_ONLY, "negative lookbehind", QF_YES),
 GROUP_T('<', "*", "(?<*a)",   lookaround,   VM_ONLY,
-      "non-atomic positive lookbehind — the (? spelling of (*naplb:...)"),
+      "non-atomic positive lookbehind — the (? spelling of (*naplb:...)", QF_YES),
 GROUP('<',  "(?<name>a)",    named_groups,     VM_ONLY,
-      "named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows"),
+      "named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows", QF_YES),
 
-GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Perl-style quoting"),
+GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Perl-style quoting", QF_YES),
 
 /* `(?P` IS THE OTHER THREE-WAY BYTE, and the three are three DIFFERENT MODULES:
  * a named group, a backreference and a subroutine call. One row answering
@@ -396,12 +396,12 @@ GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Pe
  * the `(?<` and the row's own diagnostic never appears. The group declaration
  * these two need to satisfy LIBPCRE2 goes in PC-3's WRAPPERS instead, which is
  * exactly what that mechanism is for. */
-GROUP_T('P', "<", "(?P<name>a)", named_groups, VM_ONLY, "python-style named capture group"),
-GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backreference to a named group"),
-GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group"),
+GROUP_T('P', "<", "(?P<name>a)", named_groups, VM_ONLY, "python-style named capture group", QF_YES),
+GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backreference to a named group", QF_NO),
+GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group", QF_NO),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
-         "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141"),
-GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group"),
+         "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141", QF_NO),
+GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group", QF_YES),
 /* THE SECOND ROW THIS FILE'S PURPOSE IS MADE OF, and it arrived the same way
  * the first did — three homes disagreeing, found by an outside reading rather
  * than by any test. `(?*...)` is PCRE2's NON-ATOMIC POSITIVE LOOKAHEAD, the
@@ -421,24 +421,24 @@ GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtrackin
  * `(?<*...)` is the lookbehind of the same family and needs no row: it enters
  * through the `<` selector, which already names lookaround. */
 GROUP('*',  "(?*a)",         lookaround,       VM_ONLY,
-      "non-atomic positive lookahead — the (? spelling of (*napla:...)"),
-GROUP('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
-GROUP_NEVER('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- OUT-OF-SCOPE (K14): a callout suspends generated code that has no runtime to suspend into"),
+      "non-atomic positive lookahead — the (? spelling of (*napla:...)", QF_YES),
+GROUP('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'", QF_LEXICAL),
+GROUP_NEVER('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- OUT-OF-SCOPE (K14): a callout suspends generated code that has no runtime to suspend into", QF_NO),
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
-      "branch reset group: alternatives reuse the same capture numbers"),
-GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)"),
-GROUP('&',  "(?&name)",      recursion,        VM_ONLY, "recurse into the named group"),
-GROUP('R',  "(?R)",          recursion,        VM_ONLY, "recurse the whole pattern"),
-GROUP('0',  "(?0)",          recursion,        VM_ONLY, "recurse the whole pattern (synonym for (?R))"),
-GROUP('1',  "(?1)",          recursion,        VM_ONLY, "recurse into capture group 1"),
-GROUP('2',  "(?2)",          recursion,        VM_ONLY, "recurse into capture group 2"),
-GROUP('3',  "(?3)",          recursion,        VM_ONLY, "recurse into capture group 3"),
-GROUP('4',  "(?4)",          recursion,        VM_ONLY, "recurse into capture group 4"),
-GROUP('5',  "(?5)",          recursion,        VM_ONLY, "recurse into capture group 5"),
-GROUP('6',  "(?6)",          recursion,        VM_ONLY, "recurse into capture group 6"),
-GROUP('7',  "(?7)",          recursion,        VM_ONLY, "recurse into capture group 7"),
-GROUP('8',  "(?8)",          recursion,        VM_ONLY, "recurse into capture group 8"),
-GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture group 9"),
+      "branch reset group: alternatives reuse the same capture numbers", QF_YES),
+GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),
+GROUP('&',  "(?&name)",      recursion,        VM_ONLY, "recurse into the named group", QF_NO),
+GROUP('R',  "(?R)",          recursion,        VM_ONLY, "recurse the whole pattern", QF_YES),
+GROUP('0',  "(?0)",          recursion,        VM_ONLY, "recurse the whole pattern (synonym for (?R))", QF_YES),
+GROUP('1',  "(?1)",          recursion,        VM_ONLY, "recurse into capture group 1", QF_NO),
+GROUP('2',  "(?2)",          recursion,        VM_ONLY, "recurse into capture group 2", QF_NO),
+GROUP('3',  "(?3)",          recursion,        VM_ONLY, "recurse into capture group 3", QF_NO),
+GROUP('4',  "(?4)",          recursion,        VM_ONLY, "recurse into capture group 4", QF_NO),
+GROUP('5',  "(?5)",          recursion,        VM_ONLY, "recurse into capture group 5", QF_NO),
+GROUP('6',  "(?6)",          recursion,        VM_ONLY, "recurse into capture group 6", QF_NO),
+GROUP('7',  "(?7)",          recursion,        VM_ONLY, "recurse into capture group 7", QF_NO),
+GROUP('8',  "(?8)",          recursion,        VM_ONLY, "recurse into capture group 8", QF_NO),
+GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture group 9", QF_NO),
 /* THE RELATIVE SUBROUTINE CALLS. `(?+N)` calls the Nth group to the RIGHT and
  * `(?-N)` the Nth to the LEFT — the relative spellings of `(?1)`..`(?9)` above,
  * which this table has always called `recursion`. Both used to fall to the
@@ -457,17 +457,17 @@ GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture gr
  * already spells that family out twice, and a literal tail cannot be
  * misinterpreted by a future reader. */
 GROUP('+',  "(?+1)(a)",      recursion,        VM_ONLY,
-      "relative subroutine call to the Nth group to the RIGHT"),
-GROUP_T('-', "0", "(a)(?-01)",         recursion, VM_ONLY, "relative subroutine call, leading zero"),
-GROUP_T('-', "1", "(a)(?-1)",          recursion, VM_ONLY, "relative subroutine call to the group 1 to the LEFT"),
-GROUP_T('-', "2", "(a)(a)(?-2)",       recursion, VM_ONLY, "relative subroutine call, 2 to the left"),
-GROUP_T('-', "3", "(a)(a)(a)(?-3)",    recursion, VM_ONLY, "relative subroutine call, 3 to the left"),
-GROUP_T('-', "4", "(a)(a)(a)(a)(?-4)", recursion, VM_ONLY, "relative subroutine call, 4 to the left"),
-GROUP_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", recursion, VM_ONLY, "relative subroutine call, 5 to the left"),
-GROUP_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", recursion, VM_ONLY, "relative subroutine call, 6 to the left"),
-GROUP_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", recursion, VM_ONLY, "relative subroutine call, 7 to the left"),
-GROUP_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", recursion, VM_ONLY, "relative subroutine call, 8 to the left"),
-GROUP_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", recursion, VM_ONLY, "relative subroutine call, 9 to the left"),
+      "relative subroutine call to the Nth group to the RIGHT", QF_YES),
+GROUP_T('-', "0", "(a)(?-01)",         recursion, VM_ONLY, "relative subroutine call, leading zero", QF_YES),
+GROUP_T('-', "1", "(a)(?-1)",          recursion, VM_ONLY, "relative subroutine call to the group 1 to the LEFT", QF_YES),
+GROUP_T('-', "2", "(a)(a)(?-2)",       recursion, VM_ONLY, "relative subroutine call, 2 to the left", QF_YES),
+GROUP_T('-', "3", "(a)(a)(a)(?-3)",    recursion, VM_ONLY, "relative subroutine call, 3 to the left", QF_YES),
+GROUP_T('-', "4", "(a)(a)(a)(a)(?-4)", recursion, VM_ONLY, "relative subroutine call, 4 to the left", QF_YES),
+GROUP_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", recursion, VM_ONLY, "relative subroutine call, 5 to the left", QF_YES),
+GROUP_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", recursion, VM_ONLY, "relative subroutine call, 6 to the left", QF_YES),
+GROUP_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", recursion, VM_ONLY, "relative subroutine call, 7 to the left", QF_YES),
+GROUP_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", recursion, VM_ONLY, "relative subroutine call, 8 to the left", QF_YES),
+GROUP_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", recursion, VM_ONLY, "relative subroutine call, 9 to the left", QF_YES),
 
 /* THE EXTENDED CHARACTER CLASS, R8/C4-7's third misattribution. `(?[...])` is a
  * character class with set operations (`[a]&&[b]`, `[a]-[b]`), not an option
@@ -483,7 +483,7 @@ GROUP_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", recursion, VM_ONLY, "relat
  * and PC-3 checks the construct is REAL, which is the tier-2 obligation; the
  * NAME of the module that will implement it is ours to pick. */
 GROUP('[',  "(?[[a]])",      classes,      ANY_ENGINE,
-      "extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]])"),
+      "extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]])", QF_YES),
 
 /* THE OPTION SETTINGS, WRITTEN OUT. These eleven bytes used to be a catch-all
  * row with REG_SEL_ANY, and that row is what Q2 is about: it answered "requires
@@ -498,29 +498,29 @@ GROUP('[',  "(?[[a]])",      classes,      ANY_ENGINE,
  * upgrade that adds an option letter makes this list wrong, which is exactly
  * what PC-3's byte differential now reports — a tier-2 finding under D26, not
  * drift to be waved through. */
-GROUP_OPT(')',  "(?)", "empty option setting"),
+GROUP_OPT(')',  "(?)", "empty option setting", QF_FORM),
 /* The bare `-` row, and it must sit under the ten `-<digit>` rows above rather
  * than replace them: `(?-i)` unsets an option, `(?-1)` calls a subpattern. This
  * is the only selector byte at this doorway carrying two different modules, and
  * the tail is what keeps the answer exact instead of compound. */
-GROUP_OPT('-',  "(?-i)", "unset options: (?-i) (?-im:...)"),
-GROUP_OPT('^',  "(?^)", "reset all options to their default"),
-GROUP_OPT('J',  "(?J)", "allow duplicate names (PCRE2_DUPNAMES)"),
-GROUP_OPT('U',  "(?U)", "ungreedy: invert the greediness of quantifiers"),
-GROUP_OPT('a',  "(?a)", "ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*)"),
-GROUP_OPT('i',  "(?i)", "caseless"),
-GROUP_OPT('m',  "(?m)", "multiline: ^ and $ match at internal newlines"),
-GROUP_OPT('n',  "(?n)", "no auto-capture: plain (...) stops capturing"),
-GROUP_OPT('r',  "(?r)", "restrict caseless matching to within ASCII or non-ASCII"),
-GROUP_OPT('s',  "(?s)", "dotall: . matches newline"),
-GROUP_OPT('x',  "(?x)", "extended: ignore unescaped whitespace and # comments"),
+GROUP_OPT('-',  "(?-i)", "unset options: (?-i) (?-im:...)", QF_FORM),
+GROUP_OPT('^',  "(?^)", "reset all options to their default", QF_FORM),
+GROUP_OPT('J',  "(?J)", "allow duplicate names (PCRE2_DUPNAMES)", QF_FORM),
+GROUP_OPT('U',  "(?U)", "ungreedy: invert the greediness of quantifiers", QF_FORM),
+GROUP_OPT('a',  "(?a)", "ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*)", QF_FORM),
+GROUP_OPT('i',  "(?i)", "caseless", QF_FORM),
+GROUP_OPT('m',  "(?m)", "multiline: ^ and $ match at internal newlines", QF_FORM),
+GROUP_OPT('n',  "(?n)", "no auto-capture: plain (...) stops capturing", QF_FORM),
+GROUP_OPT('r',  "(?r)", "restrict caseless matching to within ASCII or non-ASCII", QF_FORM),
+GROUP_OPT('s',  "(?s)", "dotall: . matches newline", QF_FORM),
+GROUP_OPT('x',  "(?x)", "extended: ignore unescaped whitespace and # comments", QF_FORM),
 /* Catch-all, and it must stay last. Q2 INVERTS WHAT IT MEANS: it used to promise
  * a module, and now it agrees with PCRE2 that there is no construct here at all.
  * PCRE2's own wording, byte for byte, for the reason the collating and verb rows
  * give — where AGREEMENT is the whole claim, saying it in different words makes
  * the claim harder to check and no clearer to a reader. Error 111. */
 REJECTED(RK_GROUP, REG_SEL_ANY, "(?q)", "unrecognized character after (? or (?-",
-         "no construct begins with this byte — PCRE2 error 111"),
+         "no construct begins with this byte — PCRE2 error 111", QF_NO),
 };
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
@@ -539,7 +539,7 @@ static const RegRow verb_rows[] = {
 FIXED(RK_VERB, REG_SEL_ANY, "(*ACCEPT)", verbs, VM_ONLY,
       "(*...) requires module 'verbs'",
       "backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) "
-      "or script run ((*script_run:...))"),
+      "or script run ((*script_run:...))", QF_FORM),
 };
 
 /* ---- doorway 3's NAME tables (Q1) ---------------------------------------
@@ -565,46 +565,46 @@ FIXED(RK_VERB, REG_SEL_ANY, "(*ACCEPT)", verbs, VM_ONLY,
 static const VerbName verb_upper[] = {
 /* Backtracking control verbs. An argument is optional and may be empty:
  * `(*ACCEPT)`, `(*ACCEPT:x)` and `(*ACCEPT:)` all compile. */
-{"ACCEPT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE},
-{"FAIL",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE},
-{"F",      VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE},
-{"COMMIT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
-{"PRUNE",  VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
-{"SKIP",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
-{"THEN",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
+{"ACCEPT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"FAIL",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE, QV_NO},
+{"F",      VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE, QV_NO},
+{"COMMIT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER, QV_NO},
+{"PRUNE",  VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER, QV_NO},
+{"SKIP",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER, QV_NO},
+{"THEN",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER, QV_NO},
 
 /* The one irregular name in either table, and the reason `own_forms`/`own_msg`
  * exist. `(*MARK)` and `(*MARK:)` are error 166 with a message of their own;
  * `(*MARK=1)` and a truncated `(*MARK` are the ordinary 160. The empty name in
  * `(*:x)` is a MARK synonym and reaches this row — see pcrec_ext_verb. */
-{"MARK",   VF_ARG, VF_BARE | VF_EMPTYARG, "(*MARK) must have an argument", ROADMAP_NEVER},
+{"MARK",   VF_ARG, VF_BARE | VF_EMPTYARG, "(*MARK) must have an argument", ROADMAP_NEVER, QV_NOT_ASKABLE},
 
 /* Start-of-pattern options. Bare form only, and only at offset 0:
  * `a(*CR)` is error 160. */
-{"UTF",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"UTF8",              VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"UCP",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"NOTEMPTY",          VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"NOTEMPTY_ATSTART",  VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"NO_AUTO_POSSESS",   VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"NO_DOTSTAR_ANCHOR", VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"NO_JIT",            VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"NO_START_OPT",      VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"CASELESS_RESTRICT", VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"UTF",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"UTF8",              VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"UCP",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"NOTEMPTY",          VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"NOTEMPTY_ATSTART",  VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"NO_AUTO_POSSESS",   VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"NO_DOTSTAR_ANCHOR", VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"NO_JIT",            VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"NO_START_OPT",      VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"CASELESS_RESTRICT", VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
 /* Recognised, and this build cannot honour it: `(*TURKISH_CASING)` is error
  * 204, "require Unicode (UTF or UCP) mode" — a capability refusal, not a
  * syntax one, and our oracle compiles with options = 0 so it can never be in
  * that mode. pcre2_check.c buckets 204 with "PCRE2 recognised the construct",
  * which is why this row needs no exclusion. */
-{"TURKISH_CASING",    VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"CR",                VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"LF",                VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"CRLF",              VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"ANYCRLF",           VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"ANY",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"NUL",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"BSR_ANYCRLF",       VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
-{"BSR_UNICODE",       VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"TURKISH_CASING",    VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"CR",                VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"LF",                VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"CRLF",              VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"ANYCRLF",           VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"ANY",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"NUL",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"BSR_ANYCRLF",       VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
+{"BSR_UNICODE",       VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE, QV_NOT_ASKABLE},
 
 /* `=digits` only, and at offset 0.
  *
@@ -620,10 +620,10 @@ static const VerbName verb_upper[] = {
  * one- and two-digit inputs, that induce the WRONG rule ("digits, at least
  * one") and left `ext.c` accepting `=99999999999`. Examples are not a rule.
  * `ext.c` implements the paragraph above. */
-{"LIMIT_MATCH",     VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"LIMIT_DEPTH",     VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"LIMIT_HEAP",      VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
-{"LIMIT_RECURSION", VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"LIMIT_MATCH",     VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"LIMIT_DEPTH",     VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"LIMIT_HEAP",      VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"LIMIT_RECURSION", VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
 };
 
 /* The lower table. Every name here takes a SUBPATTERN argument — these are
@@ -632,25 +632,25 @@ static const VerbName verb_upper[] = {
  * `(*scs:x)` is error 115 (a subpattern reference that does not resolve),
  * which is PCRE2 recognising the name and rejecting the reference. */
 static const VerbName verb_lower[] = {
-{"pla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"plb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"napla",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"naplb",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"nla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"nlb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"positive_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"positive_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"non_atomic_positive_lookahead",  VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"non_atomic_positive_lookbehind", VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"negative_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"negative_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"atomic",                         VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"sr",                             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"asr",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"script_run",                     VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"atomic_script_run",              VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
-{"scs",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NEVER},
-{"scan_substring",                 VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NEVER},
+{"pla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"plb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"napla",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"naplb",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"nla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"nlb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"positive_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"positive_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"non_atomic_positive_lookahead",  VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"non_atomic_positive_lookbehind", VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"negative_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"negative_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"atomic",                         VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"sr",                             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"asr",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"script_run",                     VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"atomic_script_run",              VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+{"scs",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
+{"scan_substring",                 VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NEVER, QV_NOT_ASKABLE},
 };
 
 /* The two "no such name" messages are PCRE2's own wording, byte for byte, for
@@ -729,7 +729,7 @@ static const RegRow classbracket_rows[] = {
  "POSIX class [:...:] requires module 'classes'",
  "POSIX class [:...:] is only valid inside a character class",
  RF_CLASS_DELIM | RF_CLASS_NAMED,
- "POSIX character class", ROADMAP_PLANNED},
+ "POSIX character class", ROADMAP_PLANNED, QF_YES},
 /* PCRE2 REJECTS these outright rather than treating them as literals, so
  * agreeing is compliance and there is no module to name — the reason RS_REJECTED
  * exists as a status distinct from RS_MODULE. pcrec accepted them silently until
@@ -741,9 +741,9 @@ static const RegRow classbracket_rows[] = {
  * RF_CLASS_DELIM, because they are the construct's own recognition rule and not
  * base grammar. Over-rejecting would break patterns PCRE2 accepts. */
 REJECTED_DELIM(RK_CLASSBRACKET, '.', "[[.a.]]", "POSIX collating elements are not supported",
-               "POSIX collating element — PCRE2 rejects it, and so must we"),
+               "POSIX collating element — PCRE2 rejects it, and so must we", QF_NO),
 REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are not supported",
-               "POSIX equivalence class — PCRE2 rejects it, and so must we"),
+               "POSIX equivalence class — PCRE2 rejects it, and so must we", QF_NO),
 };
 
 /* ---- doorway 4's NAME set (FIX-2) ---------------------------------------

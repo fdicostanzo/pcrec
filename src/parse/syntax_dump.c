@@ -148,7 +148,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
                  "# `expect` is the text the diagnostic must contain, for the "
                  "rows that reject.\n"
                  "#kind\tselector\tsyntax\tmodule\tfeature\tflavours\tengines"
-                 "\tstatus\tdiag\tflags\texpect\tnote\troadmap\n");
+                 "\tstatus\tdiag\tflags\texpect\tnote\troadmap\tquantifiable\n");
 
     for (size_t k = 0; k < NELEMS(all_kinds); k++) {
         size_t n;
@@ -177,6 +177,14 @@ char *pcrec_syntax_tsv(unsigned flavours)
              * Â§17.2). `-` = the question does not arise (base rows). */
             sb_puts(&sb, r->roadmap == ROADMAP_NEVER   ? "never"
                        : r->roadmap == ROADMAP_PLANNED ? "planned" : "-");
+            sb_putc(&sb, '\t');
+            /* 14th column (MOD-0.1 slice 2, design Â§18.3): the quantifiability
+             * fact, populated from libpcre2's own `a<syntax>*` verdicts and
+             * re-verified against them by tests/spec_mod0/check10. */
+            sb_puts(&sb, r->quant == QF_YES     ? "yes"
+                       : r->quant == QF_NO      ? "no"
+                       : r->quant == QF_FORM    ? "form"
+                       : r->quant == QF_LEXICAL ? "lexical" : "-");
             sb_putc(&sb, '\n');
         }
     }
@@ -204,7 +212,7 @@ char *pcrec_syntax_verbs(void)
                  "# for a name that table does not have.\n"
                  "# `forms` is what libpcre2 ACCEPTS, measured, not what pcrec\n"
                  "# implements — pcrec implements none of these yet.\n"
-                 "#table\tname\tforms\tunknown\troadmap\n");
+                 "#table\tname\tforms\tunknown\troadmap\tquantifiable\n");
 
     for (int w = 0; w < 2; w++) {
         const VerbTable *t = pcrec_registry_verb_tables(w);
@@ -227,6 +235,13 @@ char *pcrec_syntax_verbs(void)
              * RESOLVED (a name without its own value inherits the RK_VERB
              * row's, which is PLANNED — module 'verbs'). */
             sb_puts(&sb, v->roadmap == ROADMAP_NEVER ? "never" : "planned");
+            sb_putc(&sb, '\t');
+            /* 6th column (MOD-0.1 slice 2): the verb row's QF_FORM resolved
+             * per name. `not-askable` = the unquantified form does not
+             * compile (start-only options away from position 0), a third
+             * outcome that must not be folded into "no". */
+            sb_puts(&sb, v->quant == QV_YES ? "yes"
+                       : v->quant == QV_NO  ? "no" : "not-askable");
             sb_putc(&sb, '\n');
         }
     }

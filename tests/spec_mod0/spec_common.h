@@ -126,6 +126,35 @@ static inline int spec_backrefmax(const char *pat)
     return (int)bm;
 }
 
+/* ---- compile once, match many ------------------------------------------
+ * spec_matches() recompiles for every subject, which is fine for a handful of
+ * probes and ruinous for a language comparison: the star-is-literal
+ * discriminator below runs a few hundred subjects against two patterns per
+ * row. These keep the compile out of the inner loop. */
+typedef struct { pcre2_code_8 *code; } SpecPat;
+
+static inline int spec_pat_open(SpecPat *p, const char *pat)
+{
+    int err = 0; PCRE2_SIZE eoff = 0;
+    p->code = spec_abi.compile((PCRE2_SPTR)pat, strlen(pat), 0,
+                               &err, &eoff, NULL);
+    return p->code != NULL;
+}
+
+static inline int spec_pat_match(const SpecPat *p, const char *s, size_t len)
+{
+    pcre2_match_data_8 *md = spec_abi.match_data_create(16, NULL);
+    int rc = spec_abi.match(p->code, (PCRE2_SPTR)s, len, 0, 0, md, NULL);
+    spec_abi.match_data_free(md);
+    return rc >= 0;
+}
+
+static inline void spec_pat_close(SpecPat *p)
+{
+    if (p->code) spec_abi.code_free(p->code);
+    p->code = NULL;
+}
+
 /* Is S a LEXICAL construct — one that contributes no atom, so that a following
  * quantifier binds the atom BEFORE it? Defined operationally, exactly as
  * invariant 3 states it:

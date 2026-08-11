@@ -162,6 +162,23 @@ static void check_wellformed(void)
                     "PCRE2 rejects it too, so there is nothing a module could ever "
                     "implement (§17.2's required pairing)", kn, i, r->syntax);
 
+            /* MOD-0.1 slice 2: the quantifiable column's legal pairings.
+             * VALUES are checked against libpcre2 by tests/spec_mod0/check10;
+             * what this asserts is only the shape — EVERY row carries one
+             * (including RS_BASE: quantifiability is a real fact about
+             * supported syntax, unlike roadmap), and the form-resolved value
+             * is legal exactly where a family measurably spans both verdicts
+             * (the option-run rows and the verb row — design §18.3). */
+            if (r->quant == QF_NONE)
+                bad("%s row %zu (%s): no quantifiable value — unset would silently "
+                    "read as a fact, and unlike roadmap the question is real "
+                    "for BASE rows too (a(?:...)* compiles; check10 demands an "
+                    "answer for all 100)", kn, i, r->syntax);
+            if (r->quant == QF_FORM &&
+                !(r->flags & RF_OPTION_RUN) && r->kind != RK_VERB)
+                bad("%s row %zu (%s): QF_FORM outside the two form-resolved "
+                    "families (option-run rows, the verb row)", kn, i, r->syntax);
+
             if (r->sel == REG_SEL_ANY) {
                 nany++;
                 if (i != n - 1)

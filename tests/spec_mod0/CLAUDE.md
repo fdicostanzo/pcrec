@@ -23,9 +23,11 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-11: 4 pass, 0 fail, 6 awaiting.** The suite exits 1, and that
-is the correct state — six of the ten invariants describe pcrec surfaces that
-do not exist yet. `--oracle-only` exits 0 when the only non-passes are awaited
+**As of 2026-08-11: 5 pass, 0 fail, 5 awaiting.** The suite exits 1, and that
+is the correct state — five of the ten invariants describe pcrec surfaces that
+do not exist yet. Invariant 10's surface has LANDED (`--list-syntax` now emits
+a 14th column, `quantifiable`, with values {yes, no, form, lexical}), and
+check10 now compares rather than awaits. `--oracle-only` exits 0 when the only non-passes are awaited
 surfaces; it is for working on the oracle halves and says so on every run.
 
 ## Files
@@ -91,7 +93,7 @@ reader will arrive holding it.
 | 7 | check07_gate_equivalence.c | awaiting | libpcre2 decides membership | A way to vary the enabled feature set (`--features=…`, `PCREC_FEATURES`, or an entry point) |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
 | 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | Same as 7; the per-name-nonzero assertion arms when `gate.compared_pairs` is floored above 0 |
-| 10 | check10_quantifiable.c | awaiting | libpcre2 `a<syntax>*` verdicts + two form sweeps | A per-row `quantifiable` column in `--list-syntax` |
+| 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |
 
 **Invariant 6 is the one with no oracle half, and that is not a gap in the
 work.** Every other invariant is about what a pattern MEANS, and libpcre2 is
@@ -111,7 +113,17 @@ All against **libpcre2 10.46 2025-08-27**, registry of **100 rows**, on
 - 100 registry rows: 41 `esc`, 55 `group`, 3 `class-bracket`, 1 `verb`; 44 are
   class-reachable (41 esc + 3 class-bracket), 56 carry no class-position value.
 - 50 of 100 rows are quantifiable (`a<syntax>*` compiles).
-- **2** rows are LEXICAL, not three — see the finding below.
+- **2** rows satisfy invariant 3's binding criterion (D1); **1** more satisfies
+  the star-became-a-literal criterion (D2); **3** rows are `lexical` in the
+  column, and the two sets agree exactly — see the finding below.
+- `quantifiable` column: 46 yes, 38 no, 13 form, 3 lexical. check10 compares 84
+  two-valued rows, accepts 13 form-resolved and 3 lexical, and rejects any
+  other value.
+- D2's witness search cannot reach **4** rows whose quantified form still
+  compiles (`(?<=...)`, `(?<*a)`, `(?R)`, `(?0)` — empty languages for
+  structural reasons, not a bound that is too small). That is the blind spot
+  where a false `yes` could hide, and it is capped by an explicit CEILING in
+  check10 rather than a floor, because it is a number that must not GROW.
 - 16 distinct module names in the registry.
 - 70 of 100 rows have their syntax probe accepted by libpcre2 (check07's
   membership set).
@@ -125,20 +137,49 @@ All against **libpcre2 10.46 2025-08-27**, registry of **100 rows**, on
 - check05: 904 single-digit cells, 244 running-count cells, 123 leading-8/9
   cells, 24 octal cells, 12 overflow cells.
 
-## Three findings against the invariant statements
+## Four findings against the invariant statements
 
 **1. Invariant 3's "(Today: exactly three.)" is wrong under its own
-definition — it is two.** The definition given is "`a<syntax>*` compiles and
+definition — it is two. RESOLVED: the definition widened, and the count is
+three again.** The definition originally given is "`a<syntax>*` compiles and
 the quantifier binds the preceding atom". Swept over all 100 rows, exactly two
 rows satisfy it: `\E` and `(?#...)`. The third lexical-*mode* construct, `\Q`,
 fails and not narrowly: `a\Q*` does compile, but quote mode turns the `*` into
 a **literal**, so there is no quantifier to bind anything. `^Z\Q*$` accepts
 exactly one string, `"Z*$"` — the `$` is swallowed too. Confirmed by two
-independent discriminators (a binding probe with a control, and subject-set
-equivalence against `^Z*$` over eight subjects). check03 asserts the `\Q` cell
-explicitly so the reason the count is two survives in the output. Either the
-invariant's parenthetical should say two, or its definition should be widened
-to "changes lexing" — which would be a different check.
+independent discriminators.
+
+The resolution went the widening way, not the shrinking way: invariant 10's
+`quantifiable` fact gained a fourth cell value, `lexical`, meaning *quantifying
+the row does not create a quantifier for the construct at all*. That covers
+both ways it happens, and check10 now enforces exactly those two:
+
+- **D1** — the `*` binds the PRECEDING atom transparently (`spec_is_lexical()`,
+  check03's criterion). Holds for `\E` and `(?#...)`.
+- **D2** — the `*` stops being a quantifier and becomes a LITERAL. Holds for
+  `\Q`, and only `\Q`.
+
+D1 ∪ D2 = three rows, which reconciles the invariant's original "three" with
+check03's measured "two" without either being wrong: check03 still pins the
+two rows that satisfy invariant 3's own narrower binding criterion, and
+invariant 10's `lexical` cell covers all three. check10 accepts a `lexical`
+cell only on a D1-or-D2 row, and **fails a plain `yes` on a row satisfying
+either discriminator** — `a\Q*` and `a\E*` both compile, so a check that only
+asked "does it compile" would record `yes` for both, but in neither case is the
+CONSTRUCT what got quantified: D1's star bound the atom before it, D2's star is
+not a quantifier at all. The compile verdict is silent on the question the
+column asks.
+
+**How D2 is measured, since the obvious test is wrong.** "`^Z S *$` does not
+accept 'Z'" fires for every row whose syntax contains a mandatory consuming
+atom, and `(a)(?-1)` is not lexical. The property that actually separates them
+is monotonicity: *a quantifier with a minimum of zero can only ADD strings to a
+language, never remove one*. So D2 is witnessed when adding the `*` REMOVES a
+string — some subject `^Z S` accepts and `^Z S *` rejects. For `\Q` the witness
+is `"Z"`; for a genuine quantifier no such witness can exist, whatever S
+consumes. It is a witness search, so no witness leaves D2 false, which is the
+safe direction; the rows the search cannot reach are named on every run and
+capped by a ceiling (see below).
 
 **2. Invariant 8's "both deviating cells" is confirmed, and they are the
 high-side delimiter-eaters.** `[0-[.a.]]` and `[0-[=a=]]` are err **150**
@@ -157,6 +198,17 @@ quantifiability split is *not* upper-vs-lower case, and a row-level
 `quantifiable` fact read off the row's `(*ACCEPT)` probe would record
 "quantifiable" for a family in which 6 of the 24 askable names are not (with
 26 more unaskable). check10 pins this cell so the reason survives.
+
+**4. The `quantifiable` column caught two real bugs within minutes of
+landing.** On its first appearance the column had `(?>...)` = `no` where
+libpcre2 compiles `a(?>...)*`, `a(?>b)*`, `a(?>b)+` and `a(?>b){2}` — atomic
+groups are quantifiable — and `(?:...)` = `-`, a fifth value outside the
+documented set {yes, no, form, lexical}, on a row libpcre2 says is plainly
+`yes`. Both were corrected while this amendment was being written; the column
+now reads 46 yes / 38 no / 13 form / 3 lexical. check10 rejects an unrecognised
+cell value outright rather than routing it into the form-resolved branch,
+because a value the check does not know cannot be checked, and a placeholder is
+not a verdict.
 
 ## Two corrections this suite made to its own predictors
 

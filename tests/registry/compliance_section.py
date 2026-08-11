@@ -40,7 +40,8 @@ BEGIN = "<!-- BEGIN GENERATED: registry construct index (SR-4) -->"
 END = "<!-- END GENERATED -->"
 
 COLS = ["kind", "selector", "syntax", "module", "feature", "flavours",
-        "engines", "status", "diag", "flags", "expect", "note", "roadmap"]
+        "engines", "status", "diag", "flags", "expect", "note", "roadmap",
+        "quantifiable"]
 
 
 def dump():
@@ -154,8 +155,8 @@ def main():
             if line.startswith("#") or not line:
                 continue
             f = line.split("\t")
-            if len(f) != 5:
-                print(f"FAIL: --list-verbs row has {len(f)} fields, expected 5: "
+            if len(f) != 6:
+                print(f"FAIL: --list-verbs row has {len(f)} fields, expected 6: "
                       f"{line!r}", file=sys.stderr)
                 return 1
             if f[4] == "never":
