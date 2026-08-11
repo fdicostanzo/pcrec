@@ -590,6 +590,15 @@ reject '(*ACCEPT'         "(*VERB) not recognized or malformed"
 # changes it, they change it ON PURPOSE.
 reject '(*FAIL)*'         "requires module 'verbs'"
 reject '\d{3,1}'          "requires module 'classes'"
+# The THIRD leftmost-policy witness, ruled by Frank 2026-08-11 (§18.2 of the
+# extension design): `(a)(?(1)x|y|z)` is PCRE2 error 127 — more than two
+# branches, PERMANENTLY invalid, a defect module 'conditionals' can never
+# repair — and pcrec still answers with the module name, because pcrec reports
+# the LEFTMOST construct it cannot handle and does not read a disabled
+# construct's body to rank its defects. "This is not an exercise in emulating
+# the exact interface of pcre2." The exact E127 becomes part of the
+# conditionals module's landing bar instead.
+reject '(a)(?(1)x|y|z)'   "requires module 'conditionals'"
 # THE TWO BOUNDARIES, both found by the R8 panel and both pinned on BOTH SIDES.
 # A boundary row on one side only says a number exists, not where it is.
 # `=digits` has a MAGNITUDE rule, not a length one: libpcre2 refuses while
@@ -1064,6 +1073,8 @@ must_have '(*)' \
     "the only pin that an empty verb name is a quantifier error, not a verb"
 must_have '(*FAIL)*' \
     "the only pin that pcrec reports the LEFTMOST error, where libpcre2 reports a later one"
+must_have '(a)(?(1)x|y|z)' \
+    "the leftmost policy RULED (2026-08-11, design §18.2): a permanently-invalid body (PCRE2 E127) behind a disabled doorway still gets the module answer; exact E127 is the conditionals module's landing bar"
 must_have '(*LIMIT_MATCH=4294967290)' \
     "the only pin of the =digits MAGNITUDE boundary; 4294967289 beside it is the control"
 must_have '\U' \
@@ -1085,8 +1096,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 245 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 245 / 62 / 0." >&2
+if [ "$nrej" -ne 246 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 246 / 62 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

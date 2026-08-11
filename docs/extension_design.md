@@ -2094,6 +2094,23 @@ rebuilt invariant list (§17.3).
    levels + the cursor rule, with the revisit trigger recorded: a terminal
    answer REQUIRED to depend on a full sub-parse while its module is
    disabled reintroduces the axis.
+
+   > **RESOLVED (Frank, 2026-08-11 fifth session): (c), the leftmost-refusal
+   > policy — "this is not an exercise in emulating the exact interface of
+   > pcre2."** While `conditionals` is disabled, `(?(` answers with its
+   > module name and does not read the body to rank its defects; the exact
+   > E127/E154 is part of the `conditionals` module's LANDING BAR. R13/C1-F2
+   > is thereby closed by ruling, not machinery. **`may` is COLLAPSED**: the
+   > ASK contract is three `want` levels (CLAIM / VERDICT / RESULT) plus the
+   > cursor rule (`cx->pos` moves only under RESULT); VERDICT may diagnose
+   > and may read bounded row-local bodies (the class `:` name lookup, the
+   > verb-name scan — the §5.2 four-shapes material stands) but never
+   > recurses into the pattern grammar. C1's `want`×`may` DIAGNOSIS stays
+   > recorded; the revisit trigger above is the reintroduction condition.
+   > Pinned: `(a)(?(1)x|y|z)` → "requires module 'conditionals'" landed in
+   > `tests/reject/` beside `(*FAIL)*` and `\d{3,1}` as the third
+   > leftmost-policy witness, with a MANIFEST entry (counts 245→246, suite
+   > green).
 3. **Where `quantifiable` and `captures` live** — row columns (two more
    hand-written facts, each with an external sweep behind it) is the working
    assumption; an alternative is deriving both from one machine-readable
