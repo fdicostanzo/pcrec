@@ -5889,3 +5889,28 @@ tree's). Disclosure worked; nothing consumed; the standing rule stands.
 
 **Next:** spawn the check07-comparison author (fresh D27, worktree, on
 this HEAD); then the byte-identity landing bar closes MOD-0.1.
+
+## 2026-08-11 — eighth session, fifth stretch: the byte-identity landing bar MEASURED — PASSES
+
+The bar (plan: MOD-0.1's close condition) ran against the true pre-MOD-0.1
+baseline: daf3518 (post-FIX-3, pre-slice-1), rebuilt in a detached
+worktree and compared over 1,045 patterns — every registry syntax probe,
+every corpus pattern, every simply-quoted reject/accept pin, the four
+doorway byte sweeps and the delimiter shapes — on (exit, stdout, stderr,
+out.c, out.h). RESULT: 1,029 byte-identical; 16 differences, every one
+guarded; 0 unguarded. The guarded set decomposes exactly as the plan
+predicted: 6 K14 diffs (module promises → the no-promise ROADMAP_NEVER
+diagnostic), 10 K12 diffs (endpoint cells → "invalid range in character
+class", plus the two EVALUATION-ORDER cells — [\d-\A] and [\d-\p{Foo}],
+where which of two real refusals surfaces moved; both pinned with
+rationale at tests/reject/run_reject_tests.sh:230-231, and the bar
+enumerates them BY PATTERN so a third instance fails until pinned). No
+exception touches an emitted out.c: accepted patterns are byte-identical
+across the whole of MOD-0.1. The instrument's detection is live, not
+assumed — its first run reported those two order cells as UNGUARDED
+before the enumerated guard existed.
+
+MOD-0.1's close condition is therefore: bar PASSED, full suite green
+(slice-9 battery), SPEC-MOD0 at 9/0/1 — closure waits only for check07's
+comparison (author in flight in worktrees/check07-arm; its surface is
+slice 9's --features and is no longer missing).
