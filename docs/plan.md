@@ -356,6 +356,25 @@ Then DOC-1, then PC-4 when module `classes` lands.
   check_tail_precedence, which asserts it for every prefix-related pair and
   fails loudly if no such pair exists
 
+- [PARSE-1] STATE:not-started — **make `p_alt` a usable module callback. Split
+  out AHEAD of MOD-0 by D30 §5** (R10/C3-6 measured both defects). (a) The GROUP
+  NODE IS ERASED: `p_atom`'s group case returns the body with no wrapper
+  (`parse.c:275`), so `(a|b)|c` and `a|b|c` build the identical AST — verified,
+  the generated C is byte-identical apart from the pattern comment. PCRE2 needs
+  exactly that distinction: `(a)(?(1)(a|b)|c)` compiles while `(a)(?(1)a|b|c)`
+  is error 127, "conditional subpattern contains more than two branches", so a
+  `conditionals` semantic port calling `p_alt` back cannot recover the
+  top-level branch count. (b) The depth DECREMENT sits at `parse.c:266`, AFTER
+  the doorway call at `:259`, so it is on a path a module never reaches —
+  D29's "one depth counter, not two" is right as a rule and unimplementable
+  against today's control flow.
+
+  Base-grammar work on the hot path, so it is its own step rather than a
+  passenger inside MOD-0: independently testable (the AST-identity property is
+  what `tests/codegen` pins), and the callback should EXIST before the first
+  semantic port needs it rather than being discovered mid-module. Note this
+  spends SR-9's "parse.c call sites changed: 0" lineage, deliberately.
+
 - [MOD-0] STATE:started — **MODULE STRUCTURE: define a module's PORTS, and
   build two or three real ones to shape them.** Frank's call, 2026-08-10,
   arising from Q2: option-run parsing had nowhere good to live. `ext.c` exists
@@ -410,7 +429,15 @@ Then DOC-1, then PC-4 when module `classes` lands.
   SEMANTIC port takes `Ctx *` and recurses into `p_alt` for a nested body.
   Read D29 before writing any of the substeps below.
 
-  **R10 PANEL, 2026-08-11 — MOD-0.1 and MOD-0.2 are BLOCKED on a redesign; see
+  **RESOLVED BY D30, 2026-08-11.** Read D30 before any substep: declared RANK
+  replaces "exactly one may answer"; the doorway's answer is three facts rather
+  than an enum; the compile MODE is bound and is pcrec's own decision; `p_alt`
+  is fixed FIRST as [PARSE-1]; the digit buckets are a stated exception whose
+  module attribution belongs to the semantic port; `classes` is built before
+  `modifiers`; K10 ships known with MOD-0.6. The history below is kept because
+  the refutations are the reasons.
+
+  **R10 PANEL, 2026-08-11 — MOD-0.1 and MOD-0.2 were BLOCKED on a redesign; see
   `docs/reviews/2026-08-11-r10-mod0-design.md` and D29's inline `[R10]` marks.**
   Five critics reviewed the design before any of it was built. The spine holds;
   the ambiguity guard, both proposed controls, and four measured facts do not.
@@ -429,58 +456,71 @@ Then DOC-1, then PC-4 when module `classes` lands.
   forbade this signature, because `\12` is octal or a backreference depending on
   a running capture count and that decides its MODULE, which is tier 2 and exact.
 
-- [MOD-0.1] STATE:blocked (blocked: R10 refuted the ambiguity guard — redesign
-  per R10's dispositions 1, 2 and 4 before starting) — the interface. Recogniser signature, the
-  CLAIM/REFUSE/DECLINE verdict, bucket dispatch, `tail_default` and its row
-  parameter, and the AMBIGUITY GUARD in both halves: a runtime internal error
-  when two recognisers answer, AND uniqueness asserted over the GENERATED input
-  space rather than only over the rows' own `syntax` probes. **Write the `\N` /
-  `\N{U+` pair FIRST** — it is the one case `tail_default` cannot serve, and it
-  is the acceptance test for the whole design, because today longest-tail-wins
-  resolves it silently with row order standing in for the rule
-- [MOD-0.2] STATE:blocked (blocked: needs MOD-0.1's replacement guard; and the
-  `-\d+)` collapse is DEFERRED per R10 disposition 8 — it declines on
+- [MOD-0.1] STATE:not-started (unblocked by D30) — the interface, as D30
+  resolves it. **DECLARED RANK**: a row carries an integer rank; every
+  recogniser in the bucket runs; the highest-ranked ANSWERING row wins; two
+  answering rows at EQUAL rank is the defect. Rank is DATA, so no recogniser
+  needs to know its siblings and the bare fallback answering "always" at rank 0
+  is correct rather than naive. The doorway's answer is **not an enum** but
+  three facts — (dispatched?, compiles?, whose message?) — so that `(*MARK)`'s
+  "CLAIM the construct, name NO module" has a cell. Plus `tail_default` and its
+  row parameter, and bucket dispatch. THREE checks, and all three are required:
+  (a) the **per-row `syntax` check** (C4-6) — a row's own `syntax`, fed to its
+  bucket, must be won by THAT row and no other; it is TOTAL over 22 rows, needs
+  no generated space and no oracle, and it is the primary instrument; (b) the
+  **rank sweep** with `check_tail_precedence`'s **LIVENESS CLAUSE CARRIED OVER**
+  — measured, inverting the one prefix-related pair is observable on exactly ONE
+  input in 176,544, so a sweep that asserts nothing must SAY so rather than
+  print a PASS; (c) the **reachability differential** against libpcre2 — *pcrec
+  must promise a module wherever libpcre2 DISPATCHES* — which is the only thing
+  that covers the malformed-body class and is NOT optional. Prototyped and
+  sabotaged before adoption; see D30 §1-2 for the numbers
+- [MOD-0.2] STATE:not-started (unblocked by D30; the `-\d+)` collapse still does
+  not land until MOD-0.1's reachability differential passes — it declines on
   `(a)(?-1`, `(a)(?-1x)` and `(a)(?-1:x)`, error 114, a malformed body of a
   construct pcrec answers correctly today, so the collapse as written is a
   tier-2 regression) — migrate the **18** tail-bearing rows (R10 corrected
   2026-08-11: 16 `GROUP_T` + 1 `REJECTED_T` + `registry.c:257`'s `\N{U+`,
   written as a raw struct literal and invisible to a macro-name grep — the one
   row a mechanical macro-conversion skips, and the row the acceptance test is
-  about). Most go to `tail_default`
-  unchanged; the ten `(?-0)`..`(?-9)` rows collapse into ONE recogniser reading
-  `-\d+)`. Retire `tail` from the lookup engine and with it
-  `check_tail_precedence` and the shortest-first row discipline — the ambiguity
-  guard from MOD-0.1 is their replacement and must be in place first.
+  about). Each gets a RANK; most keep `tail_default`
+  unchanged. Retire `tail` from the lookup engine — and
+  `check_tail_precedence` goes only once MOD-0.1's three checks are in place and
+  its liveness clause has been re-homed, NOT in the same edit.
   **Re-derive `registry_check.c`'s exact row count BY MEASUREMENT** — R8/C4-10:
   the tripwires print their own remedy and following it verbatim is how a wrong
   module passes everything
-- [MOD-0.3] STATE:not-started — **SEQUENCING HAZARD, R10/C2-11: this step may
-  not land before MOD-0.5 without a gate.** Measured at options = 0: `[a- ]` is
-  error 108 (range out of order) and `(?xx)[a- ]` COMPILES, because `xx` deletes
-  the space — and the class RANGE ENDPOINT is exactly what the previous commit
-  (`3fca0d8`, SPEC-FA) fixed as a silent wrong matcher. **pcrec is safe today
-  only because `(?x)` is rejected outright as "requires module 'modifiers'" —
-  the guard IS the unimplemented-ness, and this step removes it.** Either
-  reorder after MOD-0.5, or land `modifiers` with `classes` explicitly told
-  about `x`/`xx`. The window is scheduled, not hypothetical — module `modifiers`. Move
-  `pcrec_registry_option_run_ok` out of registry.c into its module file WITH the
-  measurements that establish its grammar (D28's carried warning; R8/C2-9's
-  drifted `LIMIT_*` rule is the counter-example). `RF_OPTION_RUN` retires — the
-  recogniser pointer says the same thing and names which parser. The 12
-  option-setting rows STAY as 12 rows sharing one recogniser; see D29 on why a
-  byte-set row was rejected
-- [MOD-0.4] STATE:not-started — module `verbs`, the MIGRATION TEST: existing,
-  measured code rather than greenfield. Four answers drawn from its own tables,
-  the VF_* form bits, the at-start position rule, and a blame offset that is not
-  the doorway's default (`(*)` blames the `*`). If the signature survives this
-  it survives
-- [MOD-0.5] STATE:not-started — module `classes`, the richest INPUT case: a scan
+- [MOD-0.3] STATE:not-started — **MOVED AHEAD of `modifiers` (D30 §7, was
+  MOD-0.5)**, so the module that owns the class doorway exists before the module
+  that can change its lexing — module `classes`, the richest INPUT case: a scan
   whose end is not known in advance, context the others do not need (class-open,
   content-start, negation), and the only doorway where DECLINE is the normal
   answer. `RF_CLASS_DELIM` retires; `RF_CLASS_NAMED` and `RF_CLASS_INVALID` stay
   as DATA (D29's data/code line). Collapses `pcrec_ext_class_pair_opens`, which
   is a second copy of the scan K4 got wrong three times. Also PC-4's forcing
   function
+- [MOD-0.4] STATE:not-started — module `verbs`, the MIGRATION TEST: existing,
+  measured code rather than greenfield. Four answers drawn from its own tables,
+  the VF_* form bits, the at-start position rule, and a blame offset that is not
+  the doorway's default (`(*)` blames the `*`). If the signature survives this
+  it survives
+- [MOD-0.5] STATE:not-started — **MOVED AFTER `classes` (D30 §7, was MOD-0.3).**
+  R10/C2-11 measured the hazard at options = 0: `[a- ]` is error 108 (range out
+  of order) and `(?xx)[a- ]` COMPILES, because `xx` deletes the space — at the
+  class RANGE ENDPOINT that `3fca0d8` (SPEC-FA) fixed as a silent wrong matcher
+  one commit before the panel. **pcrec is safe today only because `(?x)` is
+  rejected outright as "requires module 'modifiers'" — the guard IS the
+  unimplemented-ness, and this step removes it.** So the module that OWNS the
+  class doorway is built first. The original order put `modifiers` first as the
+  cheap module that would shape the interface; the interface is being redesigned
+  anyway, so that reason is spent. **Landing this step must include telling
+  `classes` about `x`/`xx`** — module `modifiers`. Move
+  `pcrec_registry_option_run_ok` out of registry.c into its module file WITH the
+  measurements that establish its grammar (D28's carried warning; R8/C2-9's
+  drifted `LIMIT_*` rule is the counter-example). `RF_OPTION_RUN` retires — the
+  recogniser pointer says the same thing and names which parser. The 12
+  option-setting rows STAY as 12 rows sharing one recogniser; see D29 on why a
+  byte-set row was rejected
 - [MOD-0.6] STATE:not-started — module `unicode-props`, the only NEW recogniser:
   `\p{...}` vs `\pL` (two shapes at one byte), `\P` polarity from `sel`,
   normalisation into a CALLER-PROVIDED FIXED BUFFER (never an arena — D29;
@@ -498,7 +538,14 @@ Then DOC-1, then PC-4 when module `classes` lands.
   STREAMING; the bound is 48 SIGNIFICANT characters. Normalise as you scan and
   stop at 49 — copy-then-normalise either overruns or silently truncates, and
   truncation turns `\p{____L}` from CLAIM into REFUSE, a tier-2 miscompile of
-  the SPEC-classes-F1 shape. Put the 48 in `core/limits.h`
+  the SPEC-classes-F1 shape. Put the 48 in `core/limits.h`.
+  **THIS STEP ALSO OWNS K10** (D30 §8, Frank's call): `[\N{U+41}]` is refused as
+  class-invalid where libpcre2 recognises it (error 193, every class position).
+  The fix is removing `RF_CLASS_INVALID` from `registry.c:257`; the WORK is the
+  test, because the in-class sweep's template supplies one byte of tail and
+  `registry_check.c:875-876` exempts `RF_CLASS_INVALID` rows from that sweep
+  anyway. **Close the in-class tail-sweep gap in the same step**, or the same
+  four blind nets survive for the next reader
 - [MOD-0.7] STATE:not-started — `--explain` reads the port's output (what was
   recognised, the answer, the blame offset, the normalised name), with a
   tests/cli case. ~~This is the CONSUMER that keeps the output fields from

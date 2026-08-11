@@ -3930,3 +3930,72 @@ guard is that `(?x)` is unimplemented. MOD-0.3 now carries the gate.
 
 R10's dispositions run to sixteen. Suite re-verified green after all doc edits
 (`make test` rc=0, zero `FAIL:` counted unanchored).
+
+## 2026-08-11 (same session, close) — D30: the seven questions R10 left open, answered
+
+Frank went through R10's open questions one by one and took the recommendation
+on all of them. **D30** records the resolution; D29 stays as committed, with its
+`[R10]` marks, because the refutations are the reasons. Still no code — MOD-0
+is now a designed step rather than a blocked one.
+
+**The ranking was MEASURED before adopting, not argued.** Ranks hand-assigned as
+0/25/40/70 — deliberately not `strlen(tail)`, so the mechanism could not be tail
+length renamed — then compared against today's engine over a generated
+depth-0..3 suffix space across every multi-row bucket:
+
+    multi-row-bucket probes: 176544   agreements: 176544
+    disagreements: 0   equal-rank collisions: 0   zero answers: 0
+
+Sabotaged both ways: inverting `{U+` vs `{` → 1 disagreement; making the
+fallback outrank its siblings → 21,437.
+
+**Rank dissolves R10's central objection.** C1-1 said the only way to keep the
+guard silent was to hand-encode longest-tail-wins inside each recogniser —
+"D29 retires the rule and keeps the obligation". Under rank **no recogniser
+needs to know its siblings**, the bare fallback answering "always" at rank 0 is
+CORRECT rather than naive (dissolving C1-3 and C3-10 outright), and precedence
+goes back to being DATA, which is the side of D24's line it belongs on.
+
+**And the caveat is the interesting part.** Inverting the one genuinely
+prefix-related pair is observable on **exactly one input in 176,544** — the same
+n=1 fragility `check_tail_precedence` documents about itself. So its LIVENESS
+CLAUSE is carried over rather than retired with it. That is R9's lesson landing
+in a new place: a guard that can stop having anything to watch must say so.
+
+**Which is why C4-6's per-row check becomes the PRIMARY instrument, not the
+sweep.** *A row's own `syntax`, fed to its bucket, must be won by that row and
+no other*: 22 rows, TOTAL, terminating, no generated space, no oracle — the
+properties C4-5 noted the static `(sel,tail)` check had and a sweep loses. It
+scored 1 and 18 against the same two sabotages, catching by construction what
+the 176k sweep caught by a single probe.
+
+**What none of it covers, and it is written down as open by design:** C1-2's
+malformed-body reachability. `-\d+)` still declines on `(a)(?-1`. Closing it
+needs an external oracle — *pcrec must promise a module wherever libpcre2
+DISPATCHES* — so that differential is part of MOD-0.1 and the `-\d+)` collapse
+does not land until it passes.
+
+**Six other resolutions, in one line each.** The doorway's answer stops being an
+enum and becomes (dispatched?, compiles?, whose message?), because `(*MARK)`'s
+"CLAIM the construct, name NO module" is shipped and pinned and no enum carries
+it. The compile MODE is bound and written down as PCREC's decision, so `\U` is
+REFUSE *because pcrec will not offer ALT_BSUX* rather than by a false claim
+about PCRE2 — and the quantifier's five axes (construct, position, context,
+mode, version) are named. `p_alt` is fixed FIRST, as new step [PARSE-1], because
+it is base-grammar work on the hot path and the callback should exist before a
+module needs it. The digit buckets are a STATED exception: shape only, module
+attribution deferred to the semantic port, which is the one place D29's "the row
+names the module" genuinely fails. `classes` now precedes `modifiers`, closing
+the scheduled `(?xx)`-at-a-range-endpoint window. K10 ships known with MOD-0.6,
+Frank's call, at the cost of `tests/reject/` no longer carrying zero known-wrong
+pins.
+
+**The methodological note worth keeping from D30 §3.** D29 derived three answers
+from ONE doorway while citing D27 three sections later and applying it to the
+recogniser SIGNATURE but not to the VERDICT. The same document stated D27's rule
+and broke it two pages apart. **Apply D27 to every enumeration, not only to
+signatures.**
+
+**Next:** [PARSE-1], then MOD-0.1. Nothing about the recogniser is built yet,
+and that is now the first thing that has been fully specified rather than
+sketched.

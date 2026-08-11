@@ -2254,3 +2254,190 @@ that two modules both plausibly claim (`(?P` with a bad tail is the one to
 watch), where libpcre2's error number is the arbiter and the recognisers get
 tightened rather than the rule relaxed; or the base-tier path measurement (SR-5)
 shows the all-recognisers-run cost is not a wash at the class doorway.
+
+## D30 — 2026-08-11 — MOD-0's design, RESOLVED after R10: declared rank, an answer that is not an enum, and a bound compile mode
+
+**Decided** 2026-08-11 (Frank), after the R10 panel refuted D29 in part.
+**Supersedes** the sections of D29 marked WITHDRAWN; D29 stands as the record of
+what was tried and why it failed, and its surviving spine is not restated here.
+**Status:** adopted. MOD-0 builds it. Read D29's `[R10]` marks and
+`docs/reviews/2026-08-11-r10-mod0-design.md` first — this decision is only the
+resolution of the seven questions R10 left open.
+
+### 1. Resolution is by DECLARED RANK, and it is data
+
+A row declares an integer `rank`. Every recogniser in the bucket runs; the
+**highest-ranked ANSWERING row wins**; **two answering rows at EQUAL rank is the
+registry defect**. Rank lives in the row, not in the function.
+
+**What this fixes, and it is R10's central objection.** C1-1 showed that under
+"exactly one may answer" the only way to keep the guard silent is to hand-encode
+longest-tail-wins inside each recogniser — *"D29 retires the rule and keeps the
+obligation"*. Under rank, **no recogniser needs to know its siblings**. The
+bare fallback row honestly answering "always" at rank 0 is CORRECT rather than
+naive, which dissolves C1-3 and C3-10 entirely, and precedence returns to being
+DATA, which is the side of D24's line it belongs on.
+
+**MEASURED before adopting, not argued** (scratchpad, against
+`build/libpcrec.a`). Ranks were hand-assigned as 0/25/40/70 — deliberately NOT
+`strlen(tail)`, so the mechanism cannot be tail length renamed — and rank-wins
+was compared against today's engine over a generated depth-0..3 suffix space
+across every multi-row bucket:
+
+    multi-row-bucket probes:                   176544
+    rank-wins AGREES with longest-tail-wins:   176544
+    DISAGREEMENTS: 0    equal-rank collisions: 0    zero answers: 0
+
+Both directions of sabotage were then run, because an unsabotaged green check is
+worth nothing here:
+
+    invert {U+ vs { .......... 1 disagreement / 176544
+    fallback outranks all .... 21437 disagreements
+
+**AND THE CAVEAT IS LOAD-BEARING.** Inverting the one genuinely prefix-related
+pair is observable on **exactly one input in 176,544**. That is the same n=1
+fragility `check_tail_precedence` documents in its own liveness clause. **The
+liveness assertion is CARRIED OVER, not retired with the check it belonged to:**
+if no probe in the space distinguishes a ranked pair, the rule is untested and
+the check must say so rather than print a PASS.
+
+### 2. The per-row `syntax` check is the primary instrument (R10/C4-6)
+
+*A row's own `syntax`, fed to its bucket, must be won by THAT row and by no
+other.* Measured: 22 rows, and it is **TOTAL, terminating, needs no generated
+space and no oracle** — the properties C4-5 noted the static `(sel,tail)` check
+had and that a generated sweep loses. Against the same two sabotages it scored
+1 and 18 failures, catching the mis-rank the 176k sweep caught by a single
+probe.
+
+It is the successor to `registry_check.c:170-176` and it delivers ATTRIBUTION
+(C4-1's hole) and CANONICAL-FORM REACHABILITY in one assertion.
+
+**What neither check covers, stated so it is not mistaken for covered.** C1-2's
+reachability gap survives both: the per-row check proves a row wins its own
+CANONICAL form, not that its recogniser is wide enough for a malformed body.
+`-\d+)` declining on `(a)(?-1` (error 114) is still zero answers and still a
+tier-2 regression. Closing it needs a PC-3-style differential with an external
+oracle: **pcrec must promise a module wherever libpcre2 DISPATCHES.** That
+differential is part of MOD-0.1, not an optional extra, and `-\d+)`'s collapse
+does not land until it passes.
+
+### 3. The doorway's answer is NOT an enum
+
+R10/C2-8: the `(*` doorway already ships FOUR answers, adopted deliberately in
+D25 and pinned in three independent places. `(*MARK)` is the forcing case —
+PCRE2 recognises the name, so under D29's CLAIM row pcrec owed "requires module
+'verbs'", and it deliberately does not. **One enum cannot carry "CLAIM the
+construct but name NO module."**
+
+So the answer is three independent facts, not one value:
+
+    dispatched?   did PCRE2 recognise a construct here   (D28's axis, restored
+                                                          as PRIMARY, not a
+                                                          sub-distinction)
+    compiles?     does PCRE2 accept the pattern
+    message?      whose text: none / the row's / the name's own / the doorway's
+
+The old three answers are just cells: CLAIM = (yes, *, row's), REFUSE = (no, no,
+doorway's), DECLINE = (no, yes, none), `(*MARK)` = (yes, no, the name's own),
+and C2-6's `[^]` = (no, no, but an option makes it valid) has a cell instead of
+being an anomaly. The cost is that a doorway reads three fields instead of
+switching on one: more code, less lore.
+
+**Why D29 got this wrong is the methodological point worth keeping.** It derived
+three answers from ONE doorway (`pcrec_ext_class_bracket`) — a sample of size
+one — while citing D27 three sections later and applying it to the recogniser
+SIGNATURE but not to the VERDICT. **The same document stated D27's rule and
+broke it, two pages apart.** Apply D27 to every enumeration, not only to
+signatures.
+
+### 4. The compile MODE is bound, and it is PCREC's decision
+
+R10/C2-1: REFUSE's "no module can ever make it valid" is measurably false —
+`\U` and `\u` compile under `PCRE2_ALT_BSUX`, `\N{name}` under
+`PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL`, and **1,896 of 8,960 generated
+`\`-doorway patterns move from error to COMPILES under that one option.** The
+`\` doorway holds ~60 of 100 rows, so this is most of a doorway.
+
+pcrec therefore **writes down the mode it compiles for** — an explicit list of
+the option semantics pcrec implements — and quantifies its verdicts over that.
+`\U` is REFUSE **because pcrec will not offer `ALT_BSUX`**, which is a decision
+pcrec can defend, rather than a false claim about PCRE2. This is cheap because
+the option-dependence is a small nameable set (measured: `UTF`, `UCP`,
+`CASELESS`, `MULTILINE`, `DOTALL`, `UNGREEDY`, `AUTO_CALLOUT` and every
+`EXTRA_ASCII_*` flip NO construct verdict at all).
+
+**The quantifier ranges over five things, and D29 named none of them:**
+construct, POSITION (`(*CR)` compiles and `a(*CR)` is error 160 — `verbs` will
+make it valid, just not there), context flags, the bound MODE, and the PCRE2
+VERSION. A row author deciding "is my row REFUSE" reads this list.
+
+This also gives D26's upgrade rule something to bite on: a future PCRE2 adding
+an option does not retroactively make pcrec's diagnostics lies, because they
+were never quantified over every possible PCRE2 mode.
+
+### 5. `p_alt` is fixed FIRST, as its own step
+
+R10/C3-6 measured two defects that make `p_alt` unusable as a module callback:
+the group node is ERASED (`(a|b)|c` and `a|b|c` generate byte-identical C), so a
+`conditionals` port cannot recover the branch count PCRE2 needs for error 127;
+and `cx->depth--` sits at `parse.c:266`, after the doorway call at `:259`, on a
+path a module never reaches.
+
+That work is **split out ahead of MOD-0** rather than absorbed into it. It is
+base-grammar work on the hot path with its own regression risk, it is
+independently testable (the AST-identity property is exactly what
+`tests/codegen` pins), MOD-0 already carries four modules, and the callback
+should exist BEFORE the first semantic port needs it rather than being
+discovered mid-module.
+
+### 6. The digit buckets are OUT OF REACH of a pure recogniser, and this is a stated exception
+
+R10/C3-1, and `src/parse/registry.c:62-72` said so the day before D29 was
+written. `\12` is octal or a backreference by running capture count, under
+SCOPED `(?n)`, ignoring parens inside classes and inside `\Q...\E`; `\1..\9`
+uses a whole-pattern count instead. That decides the MODULE, which is tier 2 and
+EXACT.
+
+Widening the signature to carry parse progress is REJECTED: purity is what makes
+a recogniser usable as a predicate (`pcrec_ext_class_pair_opens` is the existing
+customer), and that is the more valuable property.
+
+So: **the digit buckets' recognisers answer SHAPE only, and their module
+attribution is explicitly deferred to the SEMANTIC port**, which holds `Ctx` and
+therefore holds the count. This is the one place D29's "the ROW names the
+module" rule genuinely fails, and it is recorded as an exception with its reason
+rather than left as a gap for MOD-0.4 to rediscover.
+
+### 7. `classes` is built BEFORE `modifiers`
+
+R10/C2-11: at options = 0, `[a- ]` is error 108 while `(?xx)[a- ]` COMPILES,
+because `xx` deletes the space — at the class range endpoint `3fca0d8`
+(SPEC-FA) fixed one commit before the panel. **pcrec is safe today only because
+`(?x)` is rejected outright as unimplemented: the guard IS the
+unimplemented-ness**, and building `modifiers` removes it.
+
+The original order built `modifiers` first as the cheap module that would shape
+the interface. The interface is being redesigned anyway, so that reason is
+spent. The module that OWNS the class doorway is built before the module that
+can change its lexing.
+
+### 8. K10 ships known, scheduled with `unicode-props`
+
+`[\N{U+41}]` is answered "not valid inside a character class" where libpcre2
+recognises it (error 193, every class position). The fix is removing one flag;
+the TEST is the work, because the in-class sweep's template supplies one byte of
+tail and `registry_check.c:875-876` exempts `RF_CLASS_INVALID` rows from that
+sweep anyway. Fixing the flag alone would leave the same four blind nets for the
+next reader.
+
+Accepted cost, Frank's call: `tests/reject/` stops carrying zero known-wrong
+pins, which it had reached for the first time at R9. Recorded in
+docs/known_issues.md as K10 and scheduled with MOD-0.6.
+
+**Revisit when:** a bucket needs two rows to win at once (rank makes that a
+defect by construction, so the first real instance is a genuine falsification);
+or the reachability differential in §2 turns out not to cover the malformed-body
+class, which is the one gap this decision leaves open by design; or pcrec grows
+a compile-option surface, at which point §4's bound mode becomes a set rather
+than a point and every REFUSE is requantified.
