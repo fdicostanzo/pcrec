@@ -234,3 +234,99 @@ positional coupling, which rank never had.
    pure predicate is sound exactly where the decision classifies untouched text
    — which is where the parser's only speculative customer already lives. Record
    this before MOD-0's first real handler, since that handler is the test.
+
+---
+
+# ADDENDUM 2 — the census that settles A-vs-B, and a correction to Addendum 1
+
+Two further late deliveries after Addendum 1 was pushed. Both change something.
+
+## P2's full census — and it refutes the AUTHOR'S CHALLENGE to P4
+
+While the panel ran, I challenged P4's claim that design B's ordering is
+*structurally* worse than design A's rank rather than merely equally unchecked.
+My argument: the per-row `syntax` check is the order-analogue and has identical
+power against order that it has against rank, so both are equally weakly
+guarded. **P2's census shows P4 was right and I was wrong, for a reason neither
+of us had stated.**
+
+Two numbers, measured by brute-forcing `pcrec_registry()` (never grepping a macro
+name), reported together because they answer different questions:
+
+    ADJACENT swap (the realistic minimal edit — a merge interleave, a manual
+    reorder):        96 pairs across all 100 rows -> 4 LOAD-BEARING, 92 silent
+    ARBITRARY swap (any two of the 100 rows):  2,308 pairs -> 520 LOAD-BEARING
+                                               (22.5%), 1,788 silent
+
+The 4 adjacent cases are exactly the known boundaries: `\N`-fallback/`{`,
+`(?<*`/`(?<`-fallback, `(?P>`/`(?P`-fallback, and the last ordinary GROUP row
+against the doorway catch-all.
+
+**The 520 was debugged rather than reported blind, and it is real.** Swapping an
+UNRELATED row — say `\d`, unique selector, nothing to do with `\N` — with a row
+that happens to sit inside the `\N` bucket's span moves that bucket member out of
+its bucket's relative order and drags the unrelated row in. The bucket is
+corrupted **as a side effect of where the swap LANDS**, regardless of the moved
+row's own construct. Traced directly: swapping row 0 (`\d`) with row 11 (`{`)
+breaks 16 of 17 probes.
+
+**So the count of position-critical rows is unchanged at 23** (22 bucketed + the
+GROUP catch-all) — but the DANGER RADIUS of those 23 scales with how far an edit
+reaches, not with who it touches. A small edit is nearly always safe (4/96); a
+sort, an alphabetisation or a large rebase risks 22.5% of all row-pair
+relationships.
+
+**And that is the asymmetry my challenge missed.** Rank's hazard is confined to
+the row whose value is wrong. **Order's hazard can implicate rows that were never
+touched and have nothing to do with the construct being moved.** The per-row
+`syntax` check does police both equally *per row* — my point stood as far as it
+went — but it cannot see a hazard whose blast radius is the table's layout
+rather than any row's content. P4's "structurally worse, not merely equally
+unchecked" was correct.
+
+## P1 — Addendum 1's dividing line was stated one notch too pessimistically
+
+Addendum 1 recorded: *"a construct whose decision is a pure CLASSIFICATION
+separates cleanly... a construct whose MEANING is proportional to content does
+not."* The first half understates what was then measured.
+
+**No construct fails to DECIDE without allocating — including the hardest
+unbounded-scan case, confirmed empirically.** An instrumented `arena_alloc`
+(call and byte counters) compiled `[` + `[.` + N copies of `x` + `]` through the
+REAL `pcrec_compile` for N = 1,000 / 100,000 / 2,000,000, forcing the delimiter
+scan to run the whole body and then decline:
+
+    18 alloc calls, 318 bytes — IDENTICAL at every N. Zero allocation growth
+    with scan length.
+
+So the seam is not classification-vs-content on the DECIDE side; deciding is
+universally separable. **It is only BUILDING that cannot be separated**, and only
+for constructs whose output depends on more than the scan's boundary —
+`\Q…\E`'s literal bytes, and (SUSPECTED, unimplemented) `(?P<name>…)`,
+`\g{name}`, `\N{U+FFFF}`, which capture scanned CONTENT into the compiled
+artifact rather than just locating an end.
+
+**This strengthens the successor design further than Addendum 1 claimed.** A pure
+`opens()` predicate is sound at ANY doorway, not merely classification-only ones,
+because deciding never allocates anywhere. The proportionate split is limited by
+the number of speculative CUSTOMERS (one), not by which constructs could support
+one (all of them).
+
+**And a bonus first measurement of SR-5**, which has never run: the declining
+delimiter scan costs ~21 ms at a 2 MB body, scaling roughly linearly. That is a
+speed observation, not an allocation one, but it is the first real number
+against the base-tier doorway-cost concern D29 flagged and nobody had measured.
+
+## Dispositions, amended
+
+8. **Rank's hazard is LOCAL; order's is GLOBAL.** 4 of 96 adjacent swaps are
+   load-bearing, but 520 of 2,308 arbitrary swaps are, because any row can be
+   collateral damage of a critical row's relocation. This is the decisive
+   asymmetry between A and B, and the author's challenge to P4 was wrong (P2).
+9. **Deciding never requires allocation, for any construct, measured** — 18
+   calls / 318 bytes flat from N=1,000 to N=2,000,000. Only BUILDING is
+   inseparable, and only for content-capturing constructs. Correct Addendum 1's
+   wording accordingly (P1).
+10. **SR-5 has its first data point**: ~21 ms for a 2 MB declining delimiter
+    scan, roughly linear. Not a blocker; record it before someone re-argues the
+    doorway cost from first principles.
