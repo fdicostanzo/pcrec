@@ -159,10 +159,10 @@
 
 /* \x outside a class -> "\x requires module 'M'" */
 #define ESC(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED}
 /* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
 #define ESC_CLASS_BASE(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
@@ -170,36 +170,42 @@
 /* as ESC, but PCRE2 forbids the construct INSIDE a class and always will, so
  * the in-class answer must promise no module (R9/SPEC-classes-F1). */
 #define ESC_CLASS_INVALID(sel, syn, mod, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED}
 #define ESC_DIGIT(sel, syn, eng, note) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note)}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED}
+/* as GROUP, but the construct is OUT-OF-SCOPE in docs/pcre2_compliance.md and
+ * the diagnostic must not promise the module (K14, design Â§17.2). The module
+ * and feature stay as CLASSIFICATION -- which doorway family owns the row --
+ * they are simply never rendered as a promise. */
+#define GROUP_NEVER(sel, syn, mod, eng, note) \
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_NEVER}
 /* an inline option setting: the construct is the whole RUN, not this byte */
 #define GROUP_OPT(sel, syn, note) \
-    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note)}
+    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note), ROADMAP_PLANNED}
 /* as GROUP, but the row applies only when `tl` FOLLOWS the selector byte (SR-9).
  * One byte, several constructs: `(?P<` `(?P=` `(?P>` are a named group, a
  * backreference and a subroutine call, and answering all three with one module
  * was a tier-2 misattribution under D26. */
 #define GROUP_T(sel, tl, syn, mod, eng, note) \
-    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note)}
+    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED}
 /* PCRE2 rejects it, and the byte that decides is the one AFTER the selector. */
 #define REJECTED_T(kind, sel, tl, syn, msg, note) \
-    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note)}
+    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER}
 /* a construct whose entire diagnostic is fixed text rather than a template */
 #define FIXED(kind, sel, syn, mod, eng, msg, note) \
-    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note)}
+    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_PLANNED}
 /* PCRE2 rejects it too: no module to name, no feature to enable, no engine to
  * lower to. Agreement IS compliance. */
 #define REJECTED(kind, sel, syn, msg, note) \
-    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note)}
+    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER}
 /* as REJECTED, but a delimiter-pair construct: RF_CLASS_DELIM carries the two
  * recognition rules that SR-2 moved out of parse.c — see internal.h. */
 #define REJECTED_DELIM(kind, sel, syn, msg, note) \
     {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
-     NULL, RF_CLASS_DELIM, (note)}
+     NULL, RF_CLASS_DELIM, (note), ROADMAP_NEVER}
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
@@ -256,7 +262,8 @@ REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
            "\\N{name} — PCRE2 states it does not support this Perl construct"),
 {RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
  RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
- "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection"},
+ "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection",
+ ROADMAP_PLANNED},
 
 ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
                "word boundary — but inside a class it is BASE syntax: backspace (0x08)"),
@@ -338,7 +345,7 @@ static const RegRow group_rows[] = {
  0, NULL,
  FLAV_PCRE2, ANY_ENGINE,
  RS_BASE, RD_NONE, NULL, NULL, 0,
- "non-capturing group"},
+ "non-capturing group", ROADMAP_NONE},
 
 GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead"),
 GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead"),
@@ -416,7 +423,7 @@ GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtrackin
 GROUP('*',  "(?*a)",         lookaround,       VM_ONLY,
       "non-atomic positive lookahead — the (? spelling of (*napla:...)"),
 GROUP('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
-GROUP('C',  "(?C1)",         callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text})"),
+GROUP_NEVER('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- OUT-OF-SCOPE (K14): a callout suspends generated code that has no runtime to suspend into"),
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers"),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)"),
@@ -558,46 +565,46 @@ FIXED(RK_VERB, REG_SEL_ANY, "(*ACCEPT)", verbs, VM_ONLY,
 static const VerbName verb_upper[] = {
 /* Backtracking control verbs. An argument is optional and may be empty:
  * `(*ACCEPT)`, `(*ACCEPT:x)` and `(*ACCEPT:)` all compile. */
-{"ACCEPT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
-{"FAIL",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
-{"F",      VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
-{"COMMIT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
-{"PRUNE",  VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
-{"SKIP",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
-{"THEN",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL},
+{"ACCEPT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE},
+{"FAIL",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE},
+{"F",      VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NONE},
+{"COMMIT", VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
+{"PRUNE",  VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
+{"SKIP",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
+{"THEN",   VF_BARE | VF_ARG | VF_EMPTYARG, 0, NULL, ROADMAP_NEVER},
 
 /* The one irregular name in either table, and the reason `own_forms`/`own_msg`
  * exist. `(*MARK)` and `(*MARK:)` are error 166 with a message of their own;
  * `(*MARK=1)` and a truncated `(*MARK` are the ordinary 160. The empty name in
  * `(*:x)` is a MARK synonym and reaches this row — see pcrec_ext_verb. */
-{"MARK",   VF_ARG, VF_BARE | VF_EMPTYARG, "(*MARK) must have an argument"},
+{"MARK",   VF_ARG, VF_BARE | VF_EMPTYARG, "(*MARK) must have an argument", ROADMAP_NEVER},
 
 /* Start-of-pattern options. Bare form only, and only at offset 0:
  * `a(*CR)` is error 160. */
-{"UTF",               VF_BARE | VF_ATSTART, 0, NULL},
-{"UTF8",              VF_BARE | VF_ATSTART, 0, NULL},
-{"UCP",               VF_BARE | VF_ATSTART, 0, NULL},
-{"NOTEMPTY",          VF_BARE | VF_ATSTART, 0, NULL},
-{"NOTEMPTY_ATSTART",  VF_BARE | VF_ATSTART, 0, NULL},
-{"NO_AUTO_POSSESS",   VF_BARE | VF_ATSTART, 0, NULL},
-{"NO_DOTSTAR_ANCHOR", VF_BARE | VF_ATSTART, 0, NULL},
-{"NO_JIT",            VF_BARE | VF_ATSTART, 0, NULL},
-{"NO_START_OPT",      VF_BARE | VF_ATSTART, 0, NULL},
-{"CASELESS_RESTRICT", VF_BARE | VF_ATSTART, 0, NULL},
+{"UTF",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"UTF8",              VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"UCP",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"NOTEMPTY",          VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"NOTEMPTY_ATSTART",  VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"NO_AUTO_POSSESS",   VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"NO_DOTSTAR_ANCHOR", VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"NO_JIT",            VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"NO_START_OPT",      VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"CASELESS_RESTRICT", VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
 /* Recognised, and this build cannot honour it: `(*TURKISH_CASING)` is error
  * 204, "require Unicode (UTF or UCP) mode" — a capability refusal, not a
  * syntax one, and our oracle compiles with options = 0 so it can never be in
  * that mode. pcre2_check.c buckets 204 with "PCRE2 recognised the construct",
  * which is why this row needs no exclusion. */
-{"TURKISH_CASING",    VF_BARE | VF_ATSTART, 0, NULL},
-{"CR",                VF_BARE | VF_ATSTART, 0, NULL},
-{"LF",                VF_BARE | VF_ATSTART, 0, NULL},
-{"CRLF",              VF_BARE | VF_ATSTART, 0, NULL},
-{"ANYCRLF",           VF_BARE | VF_ATSTART, 0, NULL},
-{"ANY",               VF_BARE | VF_ATSTART, 0, NULL},
-{"NUL",               VF_BARE | VF_ATSTART, 0, NULL},
-{"BSR_ANYCRLF",       VF_BARE | VF_ATSTART, 0, NULL},
-{"BSR_UNICODE",       VF_BARE | VF_ATSTART, 0, NULL},
+{"TURKISH_CASING",    VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"CR",                VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"LF",                VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"CRLF",              VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"ANYCRLF",           VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"ANY",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"NUL",               VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"BSR_ANYCRLF",       VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
+{"BSR_UNICODE",       VF_BARE | VF_ATSTART, 0, NULL, ROADMAP_NONE},
 
 /* `=digits` only, and at offset 0.
  *
@@ -613,10 +620,10 @@ static const VerbName verb_upper[] = {
  * one- and two-digit inputs, that induce the WRONG rule ("digits, at least
  * one") and left `ext.c` accepting `=99999999999`. Examples are not a rule.
  * `ext.c` implements the paragraph above. */
-{"LIMIT_MATCH",     VF_EQNUM | VF_ATSTART, 0, NULL},
-{"LIMIT_DEPTH",     VF_EQNUM | VF_ATSTART, 0, NULL},
-{"LIMIT_HEAP",      VF_EQNUM | VF_ATSTART, 0, NULL},
-{"LIMIT_RECURSION", VF_EQNUM | VF_ATSTART, 0, NULL},
+{"LIMIT_MATCH",     VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"LIMIT_DEPTH",     VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"LIMIT_HEAP",      VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
+{"LIMIT_RECURSION", VF_EQNUM | VF_ATSTART, 0, NULL, ROADMAP_NEVER},
 };
 
 /* The lower table. Every name here takes a SUBPATTERN argument — these are
@@ -625,25 +632,25 @@ static const VerbName verb_upper[] = {
  * `(*scs:x)` is error 115 (a subpattern reference that does not resolve),
  * which is PCRE2 recognising the name and rejecting the reference. */
 static const VerbName verb_lower[] = {
-{"pla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"plb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"napla",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"naplb",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"nla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"nlb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"positive_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"positive_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"non_atomic_positive_lookahead",  VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"non_atomic_positive_lookbehind", VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"negative_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"negative_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"atomic",                         VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"sr",                             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"asr",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"script_run",                     VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"atomic_script_run",              VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"scs",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
-{"scan_substring",                 VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL},
+{"pla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"plb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"napla",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"naplb",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"nla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"nlb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"positive_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"positive_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"non_atomic_positive_lookahead",  VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"non_atomic_positive_lookbehind", VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"negative_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"negative_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"atomic",                         VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"sr",                             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"asr",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"script_run",                     VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"atomic_script_run",              VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE},
+{"scs",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NEVER},
+{"scan_substring",                 VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NEVER},
 };
 
 /* The two "no such name" messages are PCRE2's own wording, byte for byte, for
@@ -722,7 +729,7 @@ static const RegRow classbracket_rows[] = {
  "POSIX class [:...:] requires module 'classes'",
  "POSIX class [:...:] is only valid inside a character class",
  RF_CLASS_DELIM | RF_CLASS_NAMED,
- "POSIX character class"},
+ "POSIX character class", ROADMAP_PLANNED},
 /* PCRE2 REJECTS these outright rather than treating them as literals, so
  * agreeing is compliance and there is no module to name — the reason RS_REJECTED
  * exists as a status distinct from RS_MODULE. pcrec accepted them silently until

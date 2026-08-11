@@ -40,7 +40,7 @@ BEGIN = "<!-- BEGIN GENERATED: registry construct index (SR-4) -->"
 END = "<!-- END GENERATED -->"
 
 COLS = ["kind", "selector", "syntax", "module", "feature", "flavours",
-        "engines", "status", "diag", "flags", "expect", "note"]
+        "engines", "status", "diag", "flags", "expect", "note", "roadmap"]
 
 
 def dump():
@@ -87,15 +87,16 @@ def render(rows):
            "above carry the analysis; this is the inventory, and it cannot drift "
            "from the compiler because it is printed by it.",
            "",
-           "| doorway | syntax | status | module | engines | PCRE2 semantics |",
-           "|---|---|---|---|---|---|"]
+           "| doorway | syntax | status | roadmap | module | engines | PCRE2 semantics |",
+           "|---|---|---|---|---|---|---|"]
     for r in rows:
         status = {"base": "`OK`", "module": "`REJECTED`",
                   "rejected": "`AGREES-REJECT`"}.get(r["status"], r["status"])
-        out.append("| {} | `{}` | {} | {} | {} | {} |".format(
+        out.append("| {} | `{}` | {} | {} | {} | {} | {} |".format(
             doorway.get(r["kind"], r["kind"]),
             md_escape(r["syntax"]),
             status,
+            r["roadmap"] if r["roadmap"] != "-" else "—",
             f"`{r['module']}`" if r["module"] else "—",
             r["engines"] or "—",
             md_escape(r["note"] or "")))
@@ -136,6 +137,68 @@ def main():
         n = len(set(re.findall(r"module `([a-z0-9/-]+)`", text)))
         print(f"PASS: every module named in pcre2_compliance.md prose exists in "
               f"the registry ({n} distinct)")
+
+        # K14 (MOD-0.1, design §17.2, R14/C2-F8: the one-source direction is
+        # CHECKED, not generated): the survey's hand-written OUT-OF-SCOPE rows
+        # and the table's ROADMAP_NEVER column must agree in BOTH directions,
+        # so the independent home that caught K14 stays independent and cannot
+        # drift from the diagnostics. Verb names are compared per-name against
+        # `pcrec --list-verbs` (disposition is a per-name fact); registry rows
+        # against the dump's roadmap column.
+        vout = subprocess.run([PCREC, "--list-verbs"], capture_output=True, text=True)
+        if vout.returncode != 0:
+            print("FAIL: pcrec --list-verbs failed", file=sys.stderr)
+            return 1
+        never_dump = set()
+        for line in vout.stdout.splitlines():
+            if line.startswith("#") or not line:
+                continue
+            f = line.split("\t")
+            if len(f) != 5:
+                print(f"FAIL: --list-verbs row has {len(f)} fields, expected 5: "
+                      f"{line!r}", file=sys.stderr)
+                return 1
+            if f[4] == "never":
+                never_dump.add(f[1])
+        # names inside OUT-OF-SCOPE prose table rows. `(*:NAME)` carries no
+        # name and is MARK's synonym; MARK itself appears beside it.
+        never_prose = set()
+        for line in text.splitlines():
+            if "OUT-OF-SCOPE" in line:
+                never_prose |= set(re.findall(r"\(\*([A-Za-z_0-9]+)", line))
+        only_prose = sorted(never_prose - never_dump)
+        only_dump  = sorted(never_dump - never_prose)
+        if only_prose:
+            print(f"FAIL: pcre2_compliance.md marks these verb names OUT-OF-SCOPE "
+                  f"but the tables do not carry ROADMAP_NEVER for them: "
+                  f"{', '.join(only_prose)}", file=sys.stderr)
+            return 1
+        if only_dump:
+            print(f"FAIL: the verb tables mark these names ROADMAP_NEVER but no "
+                  f"OUT-OF-SCOPE row in pcre2_compliance.md's prose mentions them: "
+                  f"{', '.join(only_dump)}", file=sys.stderr)
+            return 1
+        if not never_dump:
+            print("FAIL: the OUT-OF-SCOPE <=> ROADMAP_NEVER check compared an "
+                  "EMPTY set — that is vacuity, not agreement", file=sys.stderr)
+            return 1
+        print(f"PASS: OUT-OF-SCOPE prose and ROADMAP_NEVER agree, both directions "
+              f"({len(never_dump)} verb names)")
+        # ...and the registry-row instances: today exactly the callouts row.
+        never_rows = {r["syntax"] for r in rows if r["roadmap"] == "never"}
+        prose_has_callouts = any("OUT-OF-SCOPE" in ln and "(?C" in ln
+                                 for ln in text.splitlines())
+        if ("(?C1)" in never_rows) != prose_has_callouts:
+            print("FAIL: the callouts row's roadmap and the survey's callouts "
+                  "OUT-OF-SCOPE row disagree", file=sys.stderr)
+            return 1
+        planned_out = sorted(r["syntax"] for r in rows
+                             if r["roadmap"] == "planned" and r["syntax"].startswith("(?C"))
+        if planned_out:
+            print(f"FAIL: rows promise a module for prose-OUT-OF-SCOPE constructs: "
+                  f"{planned_out}", file=sys.stderr)
+            return 1
+        print("PASS: the callouts row and the survey agree ((?C is ROADMAP_NEVER)")
         return 0
 
     section = render(rows)

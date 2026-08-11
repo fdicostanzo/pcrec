@@ -469,7 +469,10 @@ reject "(?'n'a)"  "requires module 'named-groups'"
 reject '(?P<n>a)' "requires module 'named-groups'"
 reject '(?>a)'    "requires module 'atomic-groups'"
 reject '(?#c)'    "requires module 'comments'"
-reject '(?C1)'    "requires module 'callouts'"
+# K14's group-doorway instance: callouts are OUT-OF-SCOPE in the survey
+# ("revisit only with a concrete customer"), so the row is ROADMAP_NEVER and
+# the diagnostic must not promise module 'callouts'.
+reject '(?C1)'    "(?C...) is outside pcrec's scope and no module will implement it"
 reject '(?|a)'    "requires module 'branch-reset'"
 reject '(?(1)a)'  "requires module 'conditionals'"
 reject '(?R)'     "requires module 'recursion'"
@@ -603,9 +606,9 @@ reject '(a)(?(1)x|y|z)'   "requires module 'conditionals'"
 # A boundary row on one side only says a number exists, not where it is.
 # `=digits` has a MAGNITUDE rule, not a length one: libpcre2 refuses while
 # accumulating, one digit before its 32-bit counter would overflow.
-reject '(*LIMIT_MATCH=4294967289)' "requires module 'verbs'"
+reject '(*LIMIT_MATCH=4294967289)' "is outside pcrec's scope and no module will implement it"
 reject '(*LIMIT_MATCH=4294967290)' "(*VERB) not recognized or malformed"
-reject '(*LIMIT_MATCH=00000000000000000001)' "requires module 'verbs'"
+reject '(*LIMIT_MATCH=00000000000000000001)' "is outside pcrec's scope and no module will implement it"
 # A verb NAME over 128 bytes is a LENGTH complaint in PCRE2, not a "no such
 # name" one, and it is the same complaint from both name tables.
 name128="$(printf 'A%.0s' $(seq 1 128))"
@@ -615,15 +618,34 @@ reject "(*$name128)"  "(*VERB) not recognized or malformed"
 reject "(*$name129)"  "subpattern name is too long (maximum 128 code units)"
 reject "(*$lname129)" "subpattern name is too long (maximum 128 code units)"
 
-for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)' \
-         '(*MARK:x)' '(*:x)' '(*ACCEPT:)' '(*CR)' '(*LF)' '(*CRLF)' '(*ANYCRLF)' \
-         '(*UTF)' '(*UCP)' '(*NUL)' '(*BSR_UNICODE)' '(*NO_JIT)' '(*NOTEMPTY)' \
-         '(*LIMIT_MATCH=1)' '(*LIMIT_HEAP=1)' '(*TURKISH_CASING)' \
-         '(*script_run:a)' '(*sr:a)' '(*atomic:a)' '(*pla:a)' '(*scs:x)' \
+for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*ACCEPT:)' '(*CR)' '(*LF)' '(*CRLF)' \
+         '(*ANYCRLF)' '(*UTF)' '(*UCP)' '(*NUL)' '(*BSR_UNICODE)' '(*NOTEMPTY)' \
+         '(*script_run:a)' '(*sr:a)' '(*atomic:a)' '(*pla:a)' \
          '(*naplb:a)' '(*negative_lookbehind:a)' \
          '(*atomic:)' 'a(*ACCEPT)'; do
     reject "$v" "requires module 'verbs'"
 done
+# THE K14 FIX (MOD-0.1, 2026-08-11; ruled at design §17.2 / D34 item 1).
+# These names are real PCRE2 syntax that pcrec's own compliance survey calls
+# OUT-OF-SCOPE — the backtracking verbs (defined in terms of a backtracking
+# tree a simulation engine does not have), the LIMIT_* family (they bound a
+# backtracking search), the PCRE2-internals knobs, the Unicode-casing options,
+# scan-substring, and (?C) callouts. Promising "module 'verbs'" for them was
+# K14: naming a module that will never implement a construct, which D26's
+# tier-2 row calls a defect in as many words. The disposition is a COLUMN
+# (ROADMAP_NEVER, per-row and per-VerbName), the diagnostic names no module,
+# and compliance_section.py asserts prose-OUT-OF-SCOPE <=> ROADMAP_NEVER in
+# both directions so the survey and the table cannot drift apart. A malformed
+# FORM of a NEVER name keeps PCRE2's own form error — the roadmap answer is
+# only for constructs PCRE2 would accept ('(*MARK)' bare still gets "must
+# have an argument"; 'a(*CR)' still gets the position error).
+for v in '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)' '(*MARK:x)' \
+         '(*LIMIT_MATCH=1)' '(*LIMIT_HEAP=1)' '(*TURKISH_CASING)' \
+         '(*NO_JIT)'; do
+    reject "$v" "is outside pcrec's scope and no module will implement it"
+done
+reject '(*:x)'    "(*MARK) is outside pcrec's scope and no module will implement it"   # the MARK synonym resolves to MARK's row
+reject '(*scs:x)' "(*scs) is outside pcrec's scope and no module will implement it"    # lower table carries the column too
 
 # THE FIVE GRADUATED K3/K4 ROWS (FIX-2, 2026-08-10). Each was a `pinned`
 # known-wrong line until the fix landed; each is now an ordinary expectation.
@@ -936,7 +958,7 @@ else
     # with an empty pattern or matched against an empty substring — the latter
     # matches ANY diagnostic and would pass while testing nothing.
     awk -F'\t' '
-        /^#/ || NF != 12 || $8 == "base" { next }
+        /^#/ || NF != 13 || $8 == "base" { next }
         $3 == "" || $11 == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
         { print $3 "\t" $11 }
     ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
@@ -952,7 +974,7 @@ else
 
     # The loop must have seen every non-base row: a `read` that silently stops
     # early would make this whole section quietly shrink to nothing.
-    nexpected=$(awk -F'\t' '!/^#/ && NF == 12 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
+    nexpected=$(awk -F'\t' '!/^#/ && NF == 13 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
     # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).
@@ -1096,6 +1118,10 @@ must_have '\U' \
     "representative of the five rowless REAL escapes (\\U \\u \\F \\L \\l) the extension design §7.1 plans to give rows — their fall-through wording is otherwise the project's only unguarded diagnostic surface (R11 disposition 14, A1)"
 must_have '[\400]' \
     "the only pin of the in-class octal \\377 ceiling's DIAGNOSTIC (FIX-3/K13) — the .rxt perr beside it asserts only that the pattern fails, and '[\\377]' is its accept-side boundary control"
+must_have '(*scs:x)' \
+    "the only pin that the LOWER verb table carries the ROADMAP_NEVER column too (K14) — every other NEVER pin is an upper-table name"
+must_have '(?C1)' \
+    "the only pin of ROADMAP_NEVER at the GROUP doorway (K14) — deleting it leaves the callouts row free to resume promising its module"
 if [ "$manifest_missing" -ne 0 ]; then
     echo "reject: one or more irreplaceable checks are gone — see above" >&2
     exit 1

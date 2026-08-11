@@ -157,6 +157,12 @@ void pcrec_ext_group(Ctx *cx, int c2, size_t at)
             ctx_fail(cx, at, "%s", any->msg);
         }
     }
+    /* K14 (design §17.2): a ROADMAP_NEVER row is real PCRE2 syntax pcrec
+     * deliberately excludes, and promising its module is the defect D26's
+     * tier-2 row names. The module stays on the row as classification; it is
+     * just never rendered as a promise. */
+    if (r->roadmap == ROADMAP_NEVER)
+        ctx_fail(cx, at, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", shown);
     ctx_fail(cx, at, "(?%c...) requires module '%s'", shown, r->module);
 }
 
@@ -314,6 +320,17 @@ void pcrec_ext_verb(Ctx *cx, size_t at)
      * change it. */
     if ((v->forms & VF_ATSTART) && at != 0)
         ctx_fail(cx, at, "%s", t->unknown_msg);
+
+    /* K14 (design §17.2): disposition is a PER-NAME fact — `(*COMMIT)` is
+     * OUT-OF-SCOPE while `(*pla:...)` is a lookaround in verb spelling — with
+     * the row's value as the default. It fires only for a form PCRE2 would
+     * ACCEPT: a malformed form of a NEVER name keeps PCRE2's own form error
+     * above, because the roadmap is an answer about the construct, not about
+     * a typo. The `(*:x)` MARK synonym resolves to MARK's entry and inherits
+     * its NEVER, which is why the message below prints the resolved name. */
+    if ((v->roadmap ? v->roadmap : r->roadmap) == ROADMAP_NEVER)
+        ctx_fail(cx, at, "(*%.*s) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)",
+                 (int)namelen, name);
 
     ctx_fail(cx, at, "%s", r->msg);
 }

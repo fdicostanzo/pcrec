@@ -480,11 +480,12 @@ case10() {
     assert_contains "case10: --list-syntax emits the column header" "$out" \
         "#kind	selector	syntax"
 
-    # every non-comment row has exactly 12 tab-separated fields
+    # every non-comment row has exactly 13 tab-separated fields (12 until
+    # MOD-0.1/K14 appended the `roadmap` disposition column, 2026-08-11)
     printf '%s\n' "$out" > "$d/dump.tsv"
     nrows=$(grep -vc '^#' "$d/dump.tsv")
-    nbad=$(awk -F'\t' '!/^#/ && NF != 12' "$d/dump.tsv" | wc -l)
-    assert_eq "case10: every dump row has 12 fields (no tab leaked into one)" \
+    nbad=$(awk -F'\t' '!/^#/ && NF != 13' "$d/dump.tsv" | wc -l)
+    assert_eq "case10: every dump row has 13 fields (no tab leaked into one)" \
         "0" "$nbad" "rows: $nrows"
     if [ "$nrows" -ge 60 ]; then
         pass "case10: dump carries the registry's rows ($nrows)"
@@ -568,14 +569,15 @@ case10() {
         "lower	script_run	"
     assert_contains "case10: --list-verbs records the start-of-pattern rule" "$out" \
         "start-of-pattern-only"
-    # Every line must have exactly 4 tab-separated fields: the format is an
-    # interface, and a field containing a tab would corrupt it (case10's rule
-    # for --list-syntax, applied to the second dump).
-    badfields="$(printf '%s\n' "$out" | grep -v '^#' | awk -F'\t' 'NF != 4' | head -3)"
+    # Every line must have exactly 5 tab-separated fields (4 until MOD-0.1/K14
+    # appended `roadmap`): the format is an interface, and a field containing
+    # a tab would corrupt it (case10's rule for --list-syntax, applied to the
+    # second dump).
+    badfields="$(printf '%s\n' "$out" | grep -v '^#' | awk -F'\t' 'NF != 5' | head -3)"
     if [ -n "$badfields" ]; then
-        fail "case10: --list-verbs rows without exactly 4 fields" "$badfields"
+        fail "case10: --list-verbs rows without exactly 5 fields" "$badfields"
     else
-        pass "case10: every --list-verbs row has exactly 4 tab-separated fields"
+        pass "case10: every --list-verbs row has exactly 5 tab-separated fields"
     fi
     "$PCREC" --list-verbs --list-syntax >/dev/null 2>"$d/ev2.txt"; rc=$?
     assert_eq "case10: --list-verbs with --list-syntax exits 1" "1" "$rc"

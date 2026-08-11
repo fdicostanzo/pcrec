@@ -267,6 +267,27 @@ typedef enum {
     RD_FIXED          /* `msg`, verbatim */
 } RegDiag;
 
+/* K14 / D34 item 1 (design §17.2): a fact about pcrec's ROADMAP, orthogonal to
+ * `status` (which is a fact about PCRE2). "requires module 'X'" renders ONLY
+ * for ROADMAP_PLANNED; a ROADMAP_NEVER construct is real, refused, and names
+ * NO module — these are exactly the constructs docs/pcre2_compliance.md marks
+ * OUT-OF-SCOPE, and compliance_section.py asserts prose <=> column in BOTH
+ * directions so the survey stays the independent home that caught K14 (the
+ * one-source direction is CHECKED, not generated — R14/C2-F8).
+ *
+ * Zero is deliberately NOT a legal published value: it means "unset" on a
+ * row registry_check requires to carry one, and "inherit the row's value" on
+ * a VerbName. The legal pairings (registry_check enforces them): RS_BASE
+ * rows carry ROADMAP_NONE (the question does not arise for supported
+ * syntax); RS_MODULE rows carry PLANNED or NEVER; RS_REJECTED rows carry
+ * NEVER (PCRE2 rejects it too, so there is nothing a module could ever
+ * implement — the pairing is required, not a choice). */
+typedef enum {
+    ROADMAP_NONE = 0,
+    ROADMAP_PLANNED,
+    ROADMAP_NEVER
+} Roadmap;
+
 enum {
     RF_CLASS_BASE = 1u << 0,  /* inside a class this byte is BASE syntax and the
                                  doorway is not taken (\b is backspace there) */
@@ -373,6 +394,11 @@ typedef struct {
     unsigned    flags;     /* RF_* */
 
     const char *note;      /* one-line PCRE2 semantics (SR-3/SR-4 render this) */
+
+    /* LAST on purpose: every macro-built row initialises it explicitly, and a
+     * longhand row that forgets it gets ROADMAP_NONE, which registry_check
+     * flags on any non-base row rather than silently reading as PLANNED. */
+    Roadmap     roadmap;
 } RegRow;
 
 /* src/parse/registry.c */
@@ -441,6 +467,14 @@ typedef struct {
        every other name. */
     unsigned    own_forms;
     const char *own_msg;
+
+    /* ROADMAP_NONE = inherit the RK_VERB row's value (PLANNED — module
+     * `verbs`). Set explicitly on the names the compliance survey marks
+     * OUT-OF-SCOPE; disposition is a PER-NAME fact because RK_VERB is one
+     * row for ~50 names spanning both values (design §17.2, R14/C2-F5:
+     * `(*COMMIT)` is NEVER while `(*pla:...)` is a lookaround in verb
+     * spelling). */
+    Roadmap     roadmap;
 } VerbName;
 
 typedef struct {

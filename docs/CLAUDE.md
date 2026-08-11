@@ -48,11 +48,12 @@ Process and status documents for pcrec. The architecture itself lives in
   MOD-0.2 removes that guard), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
   rows answered the CLASS position with module `backrefs` for constructs it
   can never implement — `[\8]` is the literal `8`, `[\k]` the literal `k`;
-  now octal/literal fallback per RF_CLASS_BASE) and K14 (pcrec names a module for
-  constructs its own compliance survey calls architecturally OUT-OF-SCOPE —
-  `(*COMMIT)` answers "requires module 'verbs'", which D26 defines as a defect
-  in as many words). Failing regressions live in tests/known_fail/ (excluded
-  from `make test`).
+  now octal/literal fallback per RF_CLASS_BASE) and K14 (FIXED 2026-08-11 in
+  MOD-0.1's first slice: pcrec named a module for constructs its own
+  compliance survey calls architecturally OUT-OF-SCOPE — now a ROADMAP_NEVER
+  column per-row and per-VerbName, a no-promise diagnostic, and a
+  both-directions prose⇔column check). Failing regressions live in
+  tests/known_fail/ (excluded from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable
   rationale behind oracle exclusions. Add an entry whenever tooling

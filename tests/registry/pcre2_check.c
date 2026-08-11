@@ -426,6 +426,42 @@ static int names_a_module(const char *msg)
     return p && strchr(p + 17, '\'') != NULL;
 }
 
+/* K14 (MOD-0.1): for a name pcrec's tables mark ROADMAP_NEVER, the owed
+ * OBL_MODULE answer is the scope refusal, never a module promise. The name is
+ * re-derived from the probe by ext.c's own rule (runs to `)` `:` `=`; an
+ * empty name before `:` is the MARK synonym) rather than by calling the
+ * doorway — this is a check, and asking the doorway which row it picked in
+ * order to check the doorway would share a source with what it controls.
+ * libpcre2 cannot arbitrate the roadmap at all (it is pcrec's own taxonomy,
+ * exactly like module names), so the independent pins for WHICH names are
+ * NEVER are hand-written in tests/reject/; what this file guards is that the
+ * two shapes are not swapped between names. */
+static int verb_probe_is_never(const char *pat)
+{
+    const char *p = strstr(pat, "(*");
+    if (!p) return 0;
+    p += 2;
+    const char *q = p;
+    while (*q && *q != ')' && *q != ':' && *q != '=') q++;
+    const char *name = p;
+    size_t len = (size_t)(q - p);
+    if (!len && *q == ':') { name = "MARK"; len = 4; }
+    const VerbTable *t = pcrec_registry_verb_table(len ? (unsigned char)name[0] : -1);
+    const VerbName  *v = t ? pcrec_registry_verb_find(t, name, len) : NULL;
+    if (!v) return 0;
+    if (v->roadmap == ROADMAP_NEVER) return 1;
+    if (v->roadmap == ROADMAP_NONE) {
+        const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
+        return r && r->roadmap == ROADMAP_NEVER;
+    }
+    return 0;
+}
+
+static int is_scope_refusal(const char *msg)
+{
+    return strstr(msg, "is outside pcrec's scope and no module will implement it") != NULL;
+}
+
 /* The "some other error code" bucket, COUNTED PER CODE and printed. The first
  * version of this file described that bucket in a comment naming errors 114,
  * 115 and 204 — and a critic measured what is actually in it: 231 of the 326
@@ -724,7 +760,11 @@ static void check_verb_names(void)
                         "%d (%s), so pcrec owed %s", pat, rc, pmsg, want);
                 continue;
             }
-            if (obl == OBL_EXACT ? strcmp(cmsg, want) != 0 : !names_a_module(cmsg)) {
+            int nev = obl != OBL_EXACT && verb_probe_is_never(pat);
+            if (nev)
+                want = "a refusal stating the construct is outside pcrec's scope (ROADMAP_NEVER, K14)";
+            if (obl == OBL_EXACT ? strcmp(cmsg, want) != 0
+                                 : (nev ? !is_scope_refusal(cmsg) : !names_a_module(cmsg))) {
                 mismatches++;
                 if (reported++ < 20)
                     bad("verb differential: '%s'\n"
@@ -1600,7 +1640,13 @@ static bool pcrec_promises_module(const char *pat)
 {
     char msg[256];
     if (pcrec_try(pat, msg, sizeof msg) == 0) return true;   /* implemented is stronger */
-    return strstr(msg, "requires module") != NULL;
+    /* Since K14 (MOD-0.1) "pcrec attributes a real construct here" has TWO
+     * shapes: the module promise, and the ROADMAP_NEVER scope refusal — which
+     * also names the construct as real, it just refuses to promise a module
+     * for it. The differential's question is attribution, not wording, so
+     * both count. `(?C` is the one byte in this sweep that answers the second
+     * way today. */
+    return strstr(msg, "requires module") != NULL || is_scope_refusal(msg);
 }
 
 /* Completions after `(?<byte>`, generated rather than listed. A byte counts as

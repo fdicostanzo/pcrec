@@ -130,6 +130,10 @@ static void put_str(StrBuf *sb, const char *s) { if (s) sb_puts(sb, s); }
 static void put_expect(StrBuf *sb, const RegRow *r)
 {
     if (r->diag == RD_FIXED)      put_str(sb, r->msg);
+    /* K14: a ROADMAP_NEVER row must not promise its module. The substring is
+     * the template-free core both doorway templates share. */
+    else if (r->status == RS_MODULE && r->roadmap == ROADMAP_NEVER)
+        sb_puts(sb, "is outside pcrec's scope and no module will implement it");
     else if (r->status == RS_MODULE) sb_printf(sb, "requires module '%s'", r->module);
 }
 
@@ -144,7 +148,7 @@ char *pcrec_syntax_tsv(unsigned flavours)
                  "# `expect` is the text the diagnostic must contain, for the "
                  "rows that reject.\n"
                  "#kind\tselector\tsyntax\tmodule\tfeature\tflavours\tengines"
-                 "\tstatus\tdiag\tflags\texpect\tnote\n");
+                 "\tstatus\tdiag\tflags\texpect\tnote\troadmap\n");
 
     for (size_t k = 0; k < NELEMS(all_kinds); k++) {
         size_t n;
@@ -167,7 +171,13 @@ char *pcrec_syntax_tsv(unsigned flavours)
             put_mask(&sb, r->flags, flag_names, NELEMS(flag_names));
             sb_putc(&sb, '\t');
             put_expect(&sb, r);                         sb_putc(&sb, '\t');
-            put_str(&sb, r->note);                      sb_putc(&sb, '\n');
+            put_str(&sb, r->note);                      sb_putc(&sb, '\t');
+            /* 13th column, appended 2026-08-11 (MOD-0.1/K14) so existing
+             * field indices survive: the ROADMAP disposition (design
+             * Â§17.2). `-` = the question does not arise (base rows). */
+            sb_puts(&sb, r->roadmap == ROADMAP_NEVER   ? "never"
+                       : r->roadmap == ROADMAP_PLANNED ? "planned" : "-");
+            sb_putc(&sb, '\n');
         }
     }
     return sb_take(&sb);
@@ -194,7 +204,7 @@ char *pcrec_syntax_verbs(void)
                  "# for a name that table does not have.\n"
                  "# `forms` is what libpcre2 ACCEPTS, measured, not what pcrec\n"
                  "# implements — pcrec implements none of these yet.\n"
-                 "#table\tname\tforms\tunknown\n");
+                 "#table\tname\tforms\tunknown\troadmap\n");
 
     for (int w = 0; w < 2; w++) {
         const VerbTable *t = pcrec_registry_verb_tables(w);
@@ -212,6 +222,11 @@ char *pcrec_syntax_verbs(void)
             if (f & VF_ATSTART)  sb_puts(&sb, "|start-of-pattern-only");
             sb_putc(&sb, '\t');
             sb_puts(&sb, t->unknown_msg);
+            sb_putc(&sb, '\t');
+            /* 5th column (MOD-0.1/K14): the per-name ROADMAP disposition,
+             * RESOLVED (a name without its own value inherits the RK_VERB
+             * row's, which is PLANNED — module 'verbs'). */
+            sb_puts(&sb, v->roadmap == ROADMAP_NEVER ? "never" : "planned");
             sb_putc(&sb, '\n');
         }
     }

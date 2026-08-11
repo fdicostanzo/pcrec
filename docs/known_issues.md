@@ -735,7 +735,29 @@ happens when it is not heeded. No `tests/known_fail/` repro: the current
 behaviour is a rejection with a wrong module name, not a wrong match, so the
 pins belong in `tests/reject/`.
 
-## K14 — OPEN, found 2026-08-11 (R13 panel, C5/F13; verified independently by the author)
+## K14 — FIXED 2026-08-11 (MOD-0.1's first slice, the D34 item-1 ruling)
+
+**Resolution.** The missing axis is now a COLUMN: `Roadmap` — ROADMAP_PLANNED
+/ ROADMAP_NEVER, with ROADMAP_NONE meaning "unset" so registry_check can
+require the §17.2 pairings (RS_MODULE rows must declare one; RS_REJECTED must
+pair with NEVER; RS_BASE must carry none). It lives on `RegRow` AND on
+`VerbName` (per-name with the row's value as default — `(*COMMIT)` is NEVER
+while `(*pla:...)` is a planned lookaround in verb spelling). A NEVER
+construct in a form PCRE2 would accept now answers
+"... is outside pcrec's scope and no module will implement it (see
+docs/pcre2_compliance.md)" — real, refused, names no module; malformed forms
+keep PCRE2's own form errors. 17 verb names (the five backtracking verbs +
+MARK's synonym, the four LIMIT_*, the four NO_* knobs, the two casing
+options, scs/scan_substring) and the `(?C` row carry it. The one-source
+direction is CHECKED, not generated (R14/C2-F8): `compliance_section.py
+--names` asserts prose-OUT-OF-SCOPE ⇔ ROADMAP_NEVER in both directions — and
+its first run caught `LIMIT_RECURSION` in the tables but missing from the
+survey's row. Pins: 14 rows in tests/reject/ (failing first), two manifest
+entries; both dumps carry the column (13-field --list-syntax, 5-field
+--list-verbs, consumers updated). Original entry below, kept for the
+analysis.
+
+**Historical entry (found 2026-08-11, R13 panel, C5/F13; verified independently by the author):**
 
 **pcrec names a module for constructs its own compliance survey says will never
 be implemented.** D26's tier-2 row says this in as many words

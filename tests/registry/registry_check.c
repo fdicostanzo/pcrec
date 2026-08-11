@@ -147,6 +147,21 @@ static void check_wellformed(void)
                 bad("%s row %zu (%s): not in the PCRE2 flavour; exactly one flavour exists today",
                     kn, i, r->syntax);
 
+            /* K14 / design §17.2: the roadmap column's legal pairings, and
+             * only these. ROADMAP_NONE is "unset" — legal exactly where the
+             * question does not arise. */
+            if (r->status == RS_BASE && r->roadmap != ROADMAP_NONE)
+                bad("%s row %zu (%s): an RS_BASE row carries a roadmap value — supported "
+                    "syntax has no disposition to declare", kn, i, r->syntax);
+            if (r->status == RS_MODULE && r->roadmap == ROADMAP_NONE)
+                bad("%s row %zu (%s): an RS_MODULE row must declare ROADMAP_PLANNED or "
+                    "ROADMAP_NEVER — an unset value would silently read as a promise",
+                    kn, i, r->syntax);
+            if (r->status == RS_REJECTED && r->roadmap != ROADMAP_NEVER)
+                bad("%s row %zu (%s): an RS_REJECTED row must pair with ROADMAP_NEVER — "
+                    "PCRE2 rejects it too, so there is nothing a module could ever "
+                    "implement (§17.2's required pairing)", kn, i, r->syntax);
+
             if (r->sel == REG_SEL_ANY) {
                 nany++;
                 if (i != n - 1)
@@ -575,6 +590,12 @@ static void check_table_to_parser(void)
          * rather than promising a module for it. */
         if (r->diag == RD_FIXED)
             snprintf(want, sizeof want, "%s", r->msg);
+        else if (r->roadmap == ROADMAP_NEVER)
+            /* K14: a NEVER row must not promise its module (the callouts row
+             * is the only one today; this branch is derived, so a second one
+             * is covered the day it exists). The independent pin of WHICH
+             * rows are NEVER is hand-written in tests/reject/. */
+            snprintf(want, sizeof want, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", byte);
         else
             snprintf(want, sizeof want, "(?%c...) requires module '%s'", byte, r->module);
         snprintf(label, sizeof label, "group %s: diagnostic matches the row", r->syntax);
@@ -746,7 +767,12 @@ static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
                     what, c, c >= 32 && c < 127 ? c : '?', got, r->module);
                 mismatches++;
             }
-        } else if (r && r->status == RS_MODULE && r->sel == c && !(r->flags & skip_flag)) {
+        } else if (r && r->status == RS_MODULE && r->sel == c && !(r->flags & skip_flag)
+                   && r->roadmap != ROADMAP_NEVER) {
+            /* NEVER rows are excused like skip_flag rows: they reject WITHOUT
+             * naming a module by design (K14), and check_table_to_parser
+             * asserts their exact text positively, so this is not an escape
+             * from being checked. */
             /* skip_flag excuses a row that is deliberately NOT a doorway here —
              * RF_CLASS_BASE marks `\b`, which is backspace inside a class. */
             bad("%s: the registry claims byte 0x%02x ('%c') needs module '%s', but the parser %s",
