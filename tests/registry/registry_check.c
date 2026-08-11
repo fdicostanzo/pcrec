@@ -499,80 +499,16 @@ static void check_feature_module_bijection(void)
     }
 }
 
-/* ---- SR-9: longest tail wins, and it must be OBSERVABLE ----------------
- *
- * find() resolves a byte with several rows by taking the LONGEST matching tail.
- * Nothing tested that. Measured: reducing it to first-matching-tail-wins
- * produced ZERO failures across this repository — every tail in the table is
- * one byte except `\N`'s pair, and those two happened to be written longest
- * first, so row order silently stood in for the rule.
- *
- * That is R9's general lesson exactly: when a dangerous operation is safe
- * because of a fact that lives elsewhere, the assertion belongs where the fact
- * is. Two things now hold it — the rows are written SHORTEST FIRST so order
- * disagrees with the rule, and this check asserts the rule directly, for every
- * prefix-related pair rather than for the one that exists today. */
-static void check_tail_precedence(void)
-{
-    int pairs = 0, bad_pairs = 0;
-
-    for (int k = 0; k < RK_COUNT; k++) {
-        size_t n;
-        const RegRow *rows = pcrec_registry((RegKind)k, &n);
-        if (!rows) continue;
-
-        for (size_t i = 0; i < n; i++) {
-            if (!rows[i].tail) continue;
-            for (size_t j = 0; j < n; j++) {
-                if (i == j || rows[j].sel != rows[i].sel) continue;
-                size_t li = strlen(rows[i].tail);
-                /* is row j's tail a PROPER PREFIX of row i's? */
-                const char *tj = rows[j].tail;
-                size_t lj = tj ? strlen(tj) : 0;
-                if (tj && (lj >= li || memcmp(tj, rows[i].tail, lj) != 0)) continue;
-                if (!tj) continue;   /* the bucket fallback is covered below */
-                pairs++;
-
-                /* Text that matches the LONGER tail must select the longer row. */
-                const RegRow *got = pcrec_registry_find((RegKind)k, rows[i].sel,
-                                                        rows[i].tail, li);
-                if (got != &rows[i]) {
-                    bad("%s: '%c' with text \"%s\" selected the row for tail \"%s\", not the "
-                        "longer \"%s\". Lookup must take the LONGEST matching tail; taking the "
-                        "first would make row ORDER decide, which is not a rule anyone maintains.",
-                        kind_name((RegKind)k), rows[i].sel, rows[i].tail,
-                        got && got->tail ? got->tail : "(none)", rows[i].tail);
-                    bad_pairs++;
-                }
-            }
-
-            /* And a tailed row must beat its own bucket's tail-less fallback. */
-            const RegRow *got = pcrec_registry_find((RegKind)k, rows[i].sel,
-                                                    rows[i].tail, strlen(rows[i].tail));
-            if (got && !got->tail) {
-                bad("%s: '%c' with text \"%s\" fell through to the tail-less row — a tail "
-                    "that matches must win, or a tailed construct is unreachable",
-                    kind_name((RegKind)k), rows[i].sel, rows[i].tail);
-                bad_pairs++;
-            }
-        }
-    }
-
-    /* LIVENESS. If no prefix-related pair exists, the first half of this check
-     * asserted nothing and passing means only that. Say so rather than printing
-     * a PASS that reads as coverage — the failure mode this repo keeps meeting. */
-    if (pairs == 0)
-        bad("tail precedence: NO prefix-related tail pair exists in the table, so "
-            "longest-tail-wins is currently unobservable. It was observable when this "
-            "check was written (\\N{ and \\N{U+); restore a pair or the rule is untested.");
-    else if (bad_pairs == 0) {
-        char label[160];
-        snprintf(label, sizeof label,
-                 "tail precedence: longest tail wins (%d prefix-related pair(s) checked, "
-                 "and every tailed row beats its bucket fallback)", pairs);
-        ok(label);
-    }
-}
+/* check_tail_precedence RETIRED (MOD-0.2, its own edit — the plan's rule).
+ * It asserted SR-9's longest-tail-wins, an engine that no longer exists; its
+ * two obligations have committed successors that were green BEFORE it went:
+ * "a tailed row must beat its bucket fallback" -> check_row_ranks (static,
+ * total), and its liveness clause ("no prefix pair left = the rule is
+ * unobservable, say so") -> check_arbitration_liveness's floors and the
+ * esc-'N' triple-answer assertion (R11/M3's counter, the successor D32 §9
+ * required). The retired check's own history — first run ZERO failures
+ * repository-wide because row order silently stood in for the rule — is in
+ * tests/registry/CLAUDE.md and stays instructive. */
 
 /* ---- MOD-0.2: recogniser + rank arbitration ----------------------------
  *
@@ -1119,7 +1055,6 @@ int main(void)
     check_wellformed();
     check_feature_module_bijection();
 
-    check_tail_precedence();
 
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");
     check_row_ranks();
