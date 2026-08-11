@@ -5354,3 +5354,62 @@ test` green after.
 **Next session:** Frank answers §18's five decisions. Then the plan. The
 checks (§17.3) go to a D27 author with probes, not prose. Do not start
 building before the §18 conversation.
+
+## 2026-08-11 — FIFTH session of the day: §18 resolved, the plan built
+
+The design conversation, completed. Frank ruled on all five §18 decisions,
+and two of his questions materially changed the design before it reached the
+plan:
+
+**"I recall you arguing against a scanner" — and the scanner died.** The
+original anti-pre-scan argument was right all along: eighteen targeted probes
+plus a 2,931-probe generated sweep (predictor stated first, backref-ness read
+via PCRE2_INFO_BACKREFMAX, zero disagreements) established that multi-digit
+octal-vs-backref uses the RUNNING count (`^\12(a)x12$` is octal — the total
+is irrelevant), the total count is validity-only, and PCRE2 reports every
+structural error before err 115 — which is exactly what deferred end-of-parse
+resolution produces by construction. Running count in `Ctx` + a
+pending-references list + one end-of-parse check, all in the real parser.
+"backrefs can land alone" is TRUE again. plan.md's [MOD-STATE] note had
+recorded the running/validity split all along; Part II walked past a fact the
+repo already held.
+
+**"Is a row always deterministically quantifiable?" — no, and the question
+caught my fresh overclaim.** Twenty-six probes: the option-run rows span both
+values BY FORM (`a(?i)*` 109, `a(?i:b)*` compiles) and the verb row spans
+both BY NAME (`a(*FAIL)*` 109, `a(*pla:b)*` compiles — and it is not the
+colon boundary, `(*MARK:x)` is 109). Two turns earlier I had told Frank the
+verb row was uniformly non-repeatable, from C3's two probes. The column is
+three-valued with two form-resolved spans; the verb value lives per-VerbName
+on the K14 machinery.
+
+**The other rulings:** leftmost-refusal policy for disabled `(?(` ("this is
+not an exercise in emulating the exact interface of pcre2") — `may`
+collapsed, exact E127/E154 moved to the conditionals landing bar, third
+policy witness pinned in tests/reject/ (245→246, manifest entry, green);
+K13 fix lands FIRST as [FIX-3], pre-mechanism; the bound-mode document
+deferred with one constraint (before §7.1's rows).
+
+**The plan:** MOD-0's pre-existing substeps (.1-.8, D30/D32-era — which I
+initially missed and briefly duplicated before reconciling) now carry a
+fifth-session preamble listing the known conflicts with the resolved design
+(pair_opens survives, check (c) refuted, digit model superseded, per-port
+recognition) and MOD-0.1's additional scope. New steps: [FIX-3] (K13, first),
+[SPEC-MOD0] (the §17.3 checks by a D27 author, handed tests/probes/ — the
+six probe programs are now committed there with a CLAUDE.md stating the
+predictor-from-the-oracle method), [DOC-BM] (deferred). Execution order:
+FIX-3 → MOD-0.1 + SPEC-MOD0 → .3 classes → .5 modifiers → .4 verbs →
+.6 unicode-props → .7/.8; backrefs and conditionals are post-MOD-0.
+
+**Also this session:** /tmp unclogged (Frank ran the cleanup; 5.5 GB freed,
+13% used — TMPDIR=/var/tmp no longer needed but harmless).
+
+**Lesson:** BOTH design-changing facts this session came from Frank asking a
+one-line question about something the design asserted. The panels missed the
+scanner's needlessness and the quantifiability spans; the questions "do we
+really need this?" and "is this really constant?" found them in minutes. Ask
+those two questions of every new mechanism and every new column, before the
+panel does.
+
+**Next session:** implement FIX-3 (the twelve literal fallbacks, oracle
+pins first), then start MOD-0.1 and spawn SPEC-MOD0.

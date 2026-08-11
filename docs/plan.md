@@ -527,6 +527,69 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the digit rule gained the 8/9 clause. Corrections inline marked R14;
   checks to be rebuilt by a D27 author per the rebuilt §17.3. A1 landed the
   same session (ten `unknown escape` pins, `tests/reject/` 235→245).
+
+  **THE PLAN, 2026-08-11 (fifth session), after Frank resolved all five §18
+  decisions** (no scanner — deferred backref resolution; leftmost-refusal
+  policy, `may` collapsed; `quantifiable` three-valued with two form-resolved
+  spans, `captures` dead; K13 fix lands first; bound-mode document deferred).
+  The substeps [MOD-0.1..0.8] below PREDATE D33/Part II/R14 — **read each
+  THROUGH the §18-resolved design; where a substep's text conflicts with
+  `extension_design.md` as corrected, the design wins.** The known conflicts,
+  so nobody re-derives them: MOD-0.1's D33 amendment says
+  `pcrec_ext_class_pair_opens` is DELETED — R14 reversed that, it SURVIVES as
+  the (bracket, high) deviating cell's predicate; MOD-0.1's old check (c)
+  ("promise a module wherever libpcre2 dispatches") was refuted at R11 and
+  its successor is the §17.3 list, owned by SPEC-MOD0 below; any older digit
+  handling yields to §18.1's measured model (running-count disambiguation +
+  pending-references end-of-parse validity — `[MOD-STATE]` is RETIRED,
+  subsumed by that infrastructure); and D33 §4's position-independent
+  arbitration is dead — recognition is PER-PORT (Part II §14).
+  MOD-0.1 ADDITIONALLY OWNS, per the resolved design: the `ROADMAP_*`
+  disposition column (per-row AND per-VerbName — the K14 diagnostic fix),
+  the three-valued `quantifiable` column with its two form-resolved spans
+  (option-run by form, verbs by name — design §18.3), the class-position
+  expectation column (44 rows), the LEXICAL row kind ({`\Q`,`\E`,`(?#`}),
+  three `want` levels + the cursor rule with NO `may` axis (§18.2), the
+  returned-claims epilogue (fixes K11), the endpoint rule (five-step order,
+  TWO deviating cells — closes K12), and the deferred-backref infrastructure
+  (running count in `Ctx` + pending-references list + end-of-parse check).
+  Its landing bar: byte-identity across the corpus with the GUARDED
+  exception list (K12 endpoint and K14 diagnostics land here, each with a
+  failing-then-passing pin; §7.1's rows wait for DOC-BM; bare-`\E` waits for
+  its module; K13 already landed at FIX-3), plus SPEC-MOD0 green, plus the
+  full suite.
+  Execution order: **FIX-3 → MOD-0.1 (SPEC-MOD0 alongside) → the shaping
+  modules in their existing D30 §7 order (.3 classes, then .5 modifiers, .4
+  verbs, .6 unicode-props) → .7/.8.** Modules `backrefs` and `conditionals`
+  are POST-MOD-0 milestones, planned at MOD-0.8 close: backrefs exercises
+  the deferred resolution and by §18.1 lands alone; conditionals' landing
+  bar includes exact E127/E154 (§18.2's ruling).
+
+- [FIX-3] STATE:not-started — **K13: the twelve class-position literal
+  fallbacks, in the CURRENT parser, before the mechanism** (Frank, design
+  §18.4). `[\g] [\k] [\8] [\9]` become the literal letters PCRE2 makes them
+  (measured complete over all 62 `[\c]` probes); tails re-enter as members
+  (`[\k<n>]` matches "k<n>"); endpoint interactions ride along (`[0-\k]`,
+  `[\k-z]` are ranges). Oracle-verified `.rxt` pins written to FAIL first;
+  the twelve reject rows deleted in the SAME change (a construct cannot be
+  both supported and asserted-rejected); `pcre2_compliance.md` updated.
+  Closes K13. First `src/` change of the module era; normal loop.
+- [SPEC-MOD0] STATE:not-started — **the §17.3 checks, written by an author
+  DENIED the design document** (D27; ruled at design §10.12/§18). Handed:
+  the ten §17.3 invariant statements, `tests/probes/` (the session's probe
+  sources, committed for exactly this hand-off), and the
+  predictor-fed-from-the-oracle method its CLAUDE.md states. Includes the
+  external sweeps: endpoint (alphabet per §17.3.8), quantifiability
+  (`a<syntax>*` × rows + option forms + verb names), class-position
+  expectation (probe sets, per-bucket floors), digit-model grid,
+  capture-count differential. Runs alongside MOD-0.1; MOD-0.1 cannot close
+  without it.
+- [DOC-BM] STATE:deferred — **the bound-mode document** (design §18.5):
+  full 32-bit option sweep with seeded generators, the `RS_NOT_OFFERED`
+  split, the `EXTRA_BAD_ESCAPE_IS_LITERAL` 18-cell migration. Constraint:
+  must exist BEFORE §7.1's five escape rows land (their `status` values are
+  its output; A1's pins hold the surface meanwhile).
+
   ~~STATE:blocked (2026-08-11 — the R11 design panel refuted parts of
   D30, exactly as R10 refuted D29, and the resolution is Frank's call.** See
   `docs/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.

@@ -2168,6 +2168,19 @@ rebuilt invariant list (§17.3).
    mode-dependence of the fallback partition (18 cells move; the NULL ten do
    not).
 
+   > **RESOLVED (Frank, 2026-08-11 fifth session): DEFERRED** until after
+   > the mechanism lands — nothing in the build consumes it, every
+   > mode-dependent construct is refused today, and A1's pins keep the five
+   > escapes' surface guarded meanwhile. ONE scheduling constraint recorded:
+   > the document must exist BEFORE §7.1's five rows land, because their
+   > `status` values are its output. Its sweep inherits the seeded-generator
+   > requirement (generators that can produce the constructs — the
+   > UTF/`\N{U+0041}` lesson).
+
+**All five decisions are now RESOLVED (fifth session). §18 is closed; the
+plan (docs/plan.md, MOD-0 substeps) is the next artefact and the design
+conversation's output.**
+
 **Process note, recorded because it is now a pattern with three instances:**
 R13 refuted Part I's claims that were measured on buckets that could not
 falsify them; Part II then did it twice more (§16.1's literal-sided cells,
