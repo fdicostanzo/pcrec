@@ -5548,3 +5548,63 @@ returned-claims epilogue (K11), endpoint rule (K12), want levels + cursor
 rule (arms check06 via a fresh author), deferred-backref infrastructure
 (arms check02), gate/toggles (arms check07/09), enabled-set symbol (arms
 check01). Then the byte-identity bar with its guarded exceptions.
+
+## 2026-08-11 — SEVENTH session: MOD-0.1 slices 3-4 (class_expect, LEXICAL kind)
+
+Baseline verified green first (all six gates, FAIL: counted unanchored,
+fuzz 0 divergences, bench 0/0 with load 1.20→1.07).
+
+**Slice 3 = the `class_expect` column** (5874b4b). The 15th `--list-syntax`
+column: each of the 44 class-reachable rows states what `[<syntax>]` does
+under libpcre2 ('err N' / 'char 0xNN' / 'set N'); the 56 group/verb rows
+carry an EMPTY field. Measured before transcribed:
+tests/probes/probe_class_expect.c re-derived all 44 values and agreed 44/44
+with the SPEC-MOD0 pins before registry.c was touched. check04 was armed by
+a spec-side subagent DENIED src/ (the check10 spec_col_index pattern;
+comparison against the LIVE measured value, not the dump; two exact floors
+44/56) — SPEC-MOD0 is now 6 pass / 0 fail / 4 awaiting. registry_check
+enforces the 44/56 pairing and the three-form vocabulary; three sabotages
+each caught with exactly one named failure, controls green both sides. The
+armed check04 verified independently: moved value exit 1, column removed
+exit 3, '-' on a group row exit 1.
+
+**Slice 4 = the LEXICAL row kind** (b873c9b). RF_LEXICAL on {\Q, \E, (?#}
+per §13.3, rendered in the existing flags column — no new column, no
+consumer moves, no behavior change (the three refusal strings verified
+byte-exact). The ESC_LEXICAL/GROUP_LEXICAL macros force QF_LEXICAL so the
+kind cannot disagree with the measured column; registry_check requires
+RF_LEXICAL <=> QF_LEXICAL both directions, watched failing on all three
+rows pre-flag.
+
+**Lessons, three instrument incidents in one session:**
+(1) `git checkout` as a sabotage-revert REVERTED MY OWN UNCOMMITTED SLICE —
+the sabotage battery then measured a tree where the whole column was
+missing (44 spurious failures) and the real registry.c edits were lost and
+re-applied by hand. Save/restore sabotage state with cp to the scratchpad,
+never git, while uncommitted work is in the tree. The tell was failure
+COUNTS wildly off the predicted one-per-sabotage.
+(2) The byte-identity spot check first reported 10/10 DIFFERENT because the
+two sides wrote different basenames and the emitted C embeds the output
+basename in its #include — the journal's stdout-.h-collision lesson, met
+again from a new direction. Same basename in different directories: 10/10
+identical.
+(3) A sabotage that moves BOTH homes together (ESC_LEXICAL on \d flips the
+flag AND the cell) is invisible to a consistency check by construction —
+registry_check's exit 0 there was correct, not a miss; the false CELL is
+check10's catch (verified: D1/D2 both false for \d, exit 1). Route each
+sabotage to the instrument that owns its failure direction, and expect a
+self-consistent forgery to need the ORACLE-side check. Also: check10 takes
+three args, and its exit 2 on a missing verbs dump is the harness refusing
+to run, not a verdict — key off which exit code, not just nonzero.
+
+**Process note:** make strict caught a missing-field-initializer on the
+longhand (?: row that the default -Wall build had scrolled past — strict
+after every schema-widening edit, not only at gates. The check04-arming
+subagent's report was reviewed as a diff (its edits: the guard, two floors,
+the CLAUDE.md row); disclosure requirement was in the brief; no ambient
+leak was observed in its delivered work.
+
+**Next:** the returned-claims epilogue (D33 §5, K11) — the load-bearing
+slice; then endpoint rule (K12), want+cursor (fresh D27 author for
+check06), deferred-backref infra, enabled-set/toggles, the byte-identity
+bar.
