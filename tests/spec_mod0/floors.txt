@@ -73,3 +73,10 @@ quantifiable.lexical_d1_rows         2
 quantifiable.lexical_d2_rows         1
 quantifiable.lexical_cells           0
 quantifiable.d2_unmeasured_at_risk   0
+
+# --- invariant 6: the cursor rule ---------------------------------------
+cursor.rows_swept                  100
+cursor.doorway_rows                 99
+cursor.base_answered_rows            1
+cursor.clear_compared              198
+cursor.set_compared                 99

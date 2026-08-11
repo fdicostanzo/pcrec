@@ -23,17 +23,19 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-11 (MOD-0.1 slice 7): 7 pass, 0 fail, 3 awaiting.** The suite
-exits 1, and that is the correct state — three of the ten invariants describe
+**As of 2026-08-11 (MOD-0.1 slice 8): 8 pass, 0 fail, 2 awaiting.** The suite
+exits 1, and that is the correct state — two of the ten invariants describe
 pcrec surfaces that do not exist yet. Invariant 10's surface LANDED first
 (`--list-syntax`'s 14th column, `quantifiable`, values {yes, no, form,
 lexical}); invariant 4's followed (the 15th column, `class_expect`, vocabulary
 {"err N", "char 0xNN", "set N"}, empty on the 56 group/verb rows); invariant
 2's followed that (`pcrec --count-groups [--] PATTERN`, a bare integer on
-stdout exit 0, or pcrec's normal refusal diagnostic on stderr exit 1) — all
-three checks now compare rather than await. `--oracle-only` exits 0 when the
-only non-passes are awaited surfaces; it is for working on the oracle halves
-and says so on every run.
+stdout exit 0, or pcrec's normal refusal diagnostic on stderr exit 1); invariant
+6's followed that (`pcrec --probe-ask WANT [--] CONSTRUCT`, one TSV line per
+call reporting the parser cursor before and after) — all four checks now
+compare rather than await. `--oracle-only` exits 0 when the only non-passes
+are awaited surfaces; it is for working on the oracle halves and says so on
+every run.
 
 ## Files
 
@@ -94,7 +96,7 @@ reader will arrive holding it.
 | 3 | check03_lexical.c | **PASS** | libpcre2 binding behaviour over all 100 rows | — |
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
-| 6 | check06_cursor.sh | awaiting | **none exists** — see below | A way to drive one recogniser with `WANT_RESULT` set and clear and read `cx->pos` before and after |
+| 6 | check06_cursor.sh | **PASS** (surface landed) | **none — see below; this check compares pcrec against itself** | — (`pcrec --probe-ask WANT [--] CONSTRUCT` drives one doorway once per call; every one of the 99 doorway-reaching rows is driven at `claim`, `verdict` AND `result` — `cursor.clear_compared`, floor 198, asserts pos_after == pos_before at the two WANT_RESULT-clear levels, and `cursor.set_compared`, floor 99, asserts pos_after >= pos_before at the WANT_RESULT-set level. The one row with no doorway at all, `(?:...)`, is named and floored separately — `cursor.base_answered_rows`, floor 1 — and the check fails if that set changes shape in either direction. Today every comparison is an equality: no recogniser is implemented yet, so nothing ever reaches a `result`-level answer, and the >= assertion's strictly-greater branch is unexercised but live) |
 | 7 | check07_gate_equivalence.c | awaiting | libpcre2 decides membership | A way to vary the enabled feature set (`--features=…`, `PCREC_FEATURES`, or an entry point) |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
 | 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | Same as 7; the per-name-nonzero assertion arms when `gate.compared_pairs` is floored above 0 |
@@ -105,9 +107,13 @@ work.** Every other invariant is about what a pattern MEANS, and libpcre2 is
 the authority on meaning. The cursor rule is about pcrec's internal
 discipline, which libpcre2 cannot arbitrate. Building a libpcre2 sweep there
 to have something runnable would be theatre — a check measuring something
-adjacent and reporting it as though it covered the claim. What check06 does
-today is enumerate the row population the comparison will run over, so that
-count stays live, and state exactly what it needs.
+adjacent and reporting it as though it covered the claim. Now that
+`--probe-ask` exists, check06 compares pcrec against ITSELF instead: two (in
+fact three — `claim`, `verdict`, `result`) observed runs of the same
+construct, with the expected relationship between `pos_before` and
+`pos_after` computed arithmetically (equal, or not-less-than) rather than
+read from any field. `answered_at`, `at` and `end` are the implementation
+talking about itself and are never consulted for the comparison.
 
 ## Measured numbers a reader will rely on
 

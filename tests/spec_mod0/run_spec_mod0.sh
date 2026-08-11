@@ -121,7 +121,7 @@ run_c  check02_capture_count         "$PCREC"
 run_c  check03_lexical               "$REG"
 run_c  check04_class_position        "$REG"
 run_c  check05_digits
-run_sh check06_cursor.sh             "$ROOT" "$REG"
+run_sh check06_cursor.sh             "$ROOT" "$REG" "$PCREC"
 run_c  check07_gate_equivalence      "$REG"
 run_c  check08_endpoints             "$REG"
 run_sh check09_every_feature_toggles.sh "$WORK/check07_gate_equivalence.out" "$REG" "$FLOORS"
