@@ -119,6 +119,36 @@ most of the odd-looking test cases trace to a finding recorded here.
   delivered materially worse than a brief with one clear primary item — two of
   four produced only headers.
 
+- **2026-08-11-r12-d32-comparative.md** — R12, a COMPARATIVE design panel on two
+  candidate MOD-0 interfaces. **(Listed late: this entry was omitted when the
+  file was committed.)** Nothing built. Four lenses, one primary question each —
+  and 4 of 4 delivered, against R11's 2 of 4 with five-part briefs, which is the
+  measurement that made narrow briefs the standard. The ordered-list design was
+  killed on the SHIPPED TABLE with no edit required, trial mode was refuted by
+  building it, and a third shape emerged that neither author had proposed. Five
+  of the author's claims were refuted.
+
+- **2026-08-11-r13-extension-design.md** — R13, five lenses on the extension
+  mechanism design. **The design was partly refuted: eight load-bearing claims
+  fell, four to independent measurement by more than one critic.** Selection is
+  NOT position-independent (`(a)x12\12` is a backreference, `(a)x12[\12]` is
+  still OCTAL); the endpoint rule is decided by the DOORWAY not a shape column
+  (`[0-\p{Foo}]` is 147, not 150); `\Q...\E` fits none of the five outcomes and
+  the natural reading is a tier-1 miscompile (`^\Qab\E*$` matches "abbb", not
+  "ababab"); a NULL class port has at least three meanings. **The checks did
+  worst**: 26 findings against ten, two of them the K10 shape the design cites
+  as its own template — check 4 is vacuous for ~90 of 100 rows because the
+  shared handler IS its own definition, and `RK_VERB`'s single row is
+  `REG_SEL_ANY`, so that bucket's coverage is permanently zero. One live bug
+  found and recorded (K13, twelve rows). **Two method lessons, both from the
+  same session and both about measurement rather than code:** the design's
+  position-independence claim was evidenced on the only bucket that could not
+  falsify it; and two CORRECT sweeps of `PCRE2_UTF` reached opposite conclusions
+  because one generator could not express a ten-character construct — which
+  corrected a committed R10 result in D30 §4. *Counting a population by a
+  generator that cannot produce it counts the generator.* Third session running
+  in which critics delivered substantial material AFTER the commit.
+
 ## Conventions
 
 Findings are labelled CONFIRMED (reproduced, with the repro) or SUSPECTED, and
