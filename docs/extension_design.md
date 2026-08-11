@@ -2116,6 +2116,37 @@ rebuilt invariant list (§17.3).
    assumption; an alternative is deriving both from one machine-readable
    grammar classification of the `(?` header, which is more structure than
    the table has anywhere else.
+
+   > **RESOLVED (Frank, 2026-08-11 fifth session), in three parts.**
+   > **`captures` is DEAD** — its only consumer was the withdrawn count-scan;
+   > under deferred resolution the producer is the authority (a disabled
+   > module's construct refuses before its count matters).
+   > **`quantifiable` is a row COLUMN with an external sweep** — but Frank's
+   > determinism question ("is a row always deterministically quantifiable?")
+   > was measured before enshrining it, and the answer is NO at row
+   > granularity, two refuters (26 probes):
+   >
+   >     a(?i)*        109        a(?i:b)*                 COMPILES
+   >     a(?i-m)*      109        a(?i-m:b)*  a(?^i:b)*    COMPILES
+   >     a(*FAIL)*     109        a(*pla:b)*  a(*nla:b)*   COMPILES
+   >     a(*MARK:x)*   109        a(*atomic:b)*            COMPILES
+   >     a(*COMMIT)*   109        a(*script_run:b)*        COMPILES
+   >
+   > The option-run rows span both values BY FORM (bare option-setting vs
+   > `:body` group — the `(?-i)` row's own note covers `(?-im:...)`), and the
+   > verb row spans both values BY NAME — and not on the "has a colon"
+   > boundary (`(*MARK:x)` is 109). So the column is THREE-VALUED
+   > (repeatable / non-repeatable / transparent-lexical) with exactly two
+   > documented form-resolved spans: option-run rows resolve bare-vs-body in
+   > the producer, and the verb value lives per-VerbName (the same
+   > name-level machinery the K14 disposition fix already requires — the
+   > earlier claim that verbs were uniformly non-repeatable was measured on
+   > two probes and was WRONG, caught by Frank's question).
+   > Everything else measured deterministic: `\K`, `(?C1)`, `(?C"x")`
+   > non-repeatable; `\1`, `(?1)`, `(?&n)`, `\k<n>`, `(?(1)x|y)`,
+   > `(?(DEFINE)x)`, `\R`, `\X` repeatable. The sweep therefore probes
+   > `a<syntax>*` per row PLUS both option forms PLUS one probe per verb
+   > name. Probe: `probe_quant.c`.
 4. **The K13-fix sequencing** (§17.1's R14 block): land it before the
    byte-identity bar, or exclude its twelve patterns from the bar's corpus.
    Landing first is cleaner and it is a shipped-bug fix Frank has already
