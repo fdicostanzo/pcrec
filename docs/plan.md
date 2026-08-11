@@ -489,7 +489,21 @@ Then DOC-1, then PC-4 when module `classes` lands.
   forbade this signature, because `\12` is octal or a backreference depending on
   a running capture count and that decides its MODULE, which is tier 2 and exact.
 
-- [MOD-0.1] STATE:started 2026-08-11 (sixth session, after FIX-3 landed;
+- [MOD-0.1] STATE:completed 2026-08-11 (eighth session). CLOSED against its
+  landing bar, all three conditions measured: (1) BYTE-IDENTITY across
+  1,045 patterns vs the pre-MOD-0.1 baseline daf3518 — 1,029 identical, 16
+  differences all on the guarded exception list (6 K14 no-promise
+  diagnostics, 10 K12 endpoint cells including the two enumerated
+  evaluation-order cells pinned at tests/reject/run_reject_tests.sh:230-231),
+  0 unguarded, and no exception touches an emitted out.c; (2) SPEC-MOD0
+  9 pass / 0 fail / 1 awaiting, where the one awaiting (check07,
+  AWAITING-POPULATION) awaits a MODULE (MOD-0.3+'s to provide), not a
+  surface — every surface MOD-0.1 owed exists and armed its check (01
+  self-armed, 02/04/06/10 armed by D27 authors, 07's comparison armed and
+  its instrument proven live); (3) full suite, strict, verify_rxt, fuzz,
+  bench, mech all green. K11, K12, K13 (at FIX-3), K14 closed along the
+  way. The slice history below is the step's record.
+  (WAS: STATE:started 2026-08-11, sixth session, after FIX-3 landed;
   SLICES 1-2 LANDED same session: the ROADMAP column with the K14 fix at
   8e5ab5a, the quantifiable column at 41a31a1 — check10 flipped from
   awaiting to PASS and caught two transcription bugs on the surface's

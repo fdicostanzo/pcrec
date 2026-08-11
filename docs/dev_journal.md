@@ -5949,3 +5949,40 @@ disclosure requirement for exactly that residue.
 The check07 author, already mid-flight under the old convention when
 this landed, finishes under it (its brief carries the disclosure
 requirement); the next D27 spawn uses the cell.
+
+## 2026-08-11 — eighth session, close: check07 merged; MOD-0.1 COMPLETED
+
+**check07 merged** (50966bf). The author's two judgment calls were both
+right and both survived review: (1) the compared-pair definition was
+corrected BEFORE landing — accepted-under-all-on eligibility, because the
+naive count would have claimed 1,700 meaningful pairs while nothing has
+ever been let through a gate (C4/F4's exact vacuous-pass shape; the 1,700
+verdict-class checks still RUN over the whole registry, 0 disagreements,
+they just don't count as compared pairs); (2) AWAITING-POPULATION rather
+than PASS — the surface exists and the comparison runs, but a check that
+cannot yet disagree must not report a pass. The load-bearing addition:
+a separate instrument-LIVENESS check (via --probe-ask's answered_at),
+because a no-op --features would pass the class sweep exactly as well as
+a live one — the author independently identified the
+control-sharing-a-source shape and routed around it. My own src-side
+sabotage post-merge confirmed it: gate wired to ignore the enabled set →
+check07 FAILS at the liveness check naming the exact probe, 1
+disagreement; restored, suite 9/0/1. SIXTH D27 leak instance disclosed
+(worktree CLAUDE.mds; author predates the cell convention — the next
+spawn uses scripts/mk_d27_cell.sh).
+
+**MOD-0.1 CLOSED against its landing bar** (plan.md STATE flipped, the
+three conditions and their numbers recorded there): byte-identity
+1045/1029/16-guarded/0-unguarded vs daf3518; SPEC-MOD0 9/0/1 with the
+one awaiting being a POPULATION owed by MOD-0.3+, not a surface;
+full battery green. Started sixth session, closed eighth: nine slices,
+four K-issues (K11/K12/K13/K14), five checks armed by four blinded
+authors plus one self-arming, one refuted-and-corrected design (D33 →
+Part II → §18), and a byte-identity guarantee that the whole mechanism
+change moved nothing it did not pin first.
+
+**Next session: MOD-0.2** (migrate the 18 tail-bearing rows — read it
+THROUGH the §18-resolved design; the reachability differential gates the
+`-\d+)` collapse), with MOD-0.3 (classes) behind it as the first module
+with ports — the moment check07's population goes nonzero, check02's
+compared floor ratchets, and the K12 certification scope grows.
