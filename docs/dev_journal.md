@@ -5426,3 +5426,84 @@ several sections with no edge into MOD-0 at all (TS-2/3/4 concurrency tests,
 MECH-1/2/3 tooling, the R3.6-R3.10 bench-gate repairs) that can run
 alongside. Wake.md §1 carries the orchestration sketch. Session closed with
 a clean tree at a0eb618 + this entry.
+
+## 2026-08-11 — SIXTH session: dev starts. FIX-3 + K14 landed; four parallel tracks reviewed in
+
+Frank's directive executed: the spine ran serial, four subagent tracks ran in
+parallel (briefs restated the scope mandate, banned `make` in the main tree,
+partitioned by directory), and everything that landed was reviewed first.
+Baseline verified green before any change (all six gates, FAIL: counted
+unanchored, fuzz 0 divergences).
+
+**[FIX-3] / K13 CLOSED — first src/ change of the module era** (commit
+1b83fbc). The §18.4 loop exactly: probe first (tests/probes/probe_fix3.c, 43
+cells, predictor stated in the header before the run, zero disagreements
+with libpcre2 10.46), oracle-verified pins first
+(tests/base/class_escape_fallbacks.rxt, 127 cases, 122 watched failing),
+then ~15 lines in esc_class_value — [\0..\7] octal (≤3 digits, >\377 = PCRE2
+error 151 with wording AND offset), [\8] [\9] [\g] [\k] literal, tails
+re-enter, endpoints ride with no extra code — plus RF_CLASS_BASE on the
+twelve rows. Reject table +2/+1 (the error-151 boundary, both sides), counts
+248/63. Byte-identity vs pre-fix HEAD: 328/328 identical, exactly the 38 pin
+patterns newly accepted, 0 newly rejected. Two corrections to the step's own
+text recorded in its STATE block (no twelve reject rows ever existed to
+delete; "literals" compressed the octal half). The full suite then caught
+registry_check's RF_CLASS_BASE branch over-asserting ([\g{-1}] wrapped in
+brackets is an out-of-order range — libpcre2 rejects it too; the derived
+check now probes [\<sel>], the flag's actual claim).
+
+**[MOD-0.1] STARTED; slice 1 = the K14 fix, K14 CLOSED** (commit 8e5ab5a).
+Roadmap column (PLANNED/NEVER/NONE-unset) on RegRow and VerbName; 17
+OUT-OF-SCOPE verb names + the (?C row answer with a no-promise scope
+refusal; malformed forms keep PCRE2's own errors. Pins first (14 reject rows
+watched failing). §17.2's pairings enforced in registry_check; PC-3 asks
+about ATTRIBUTION (two shapes) with which-name-is-which pinned by hand; both
+dumps grew a column (13/5 fields, consumers moved). The prose⇔column check
+(compliance_section --names, both directions) caught LIMIT_RECURSION missing
+from the survey's row ON ITS FIRST RUN.
+
+**Parallel tracks, all four delivered and reviewed:**
+- [TS-2]/[TS-3] (commit daf3518): tests/thread/, TSan concurrency over five
+  engine shapes + the library built WITH TSan, byte-identity baselines, both
+  halves sabotage-validated with planted races. Wired into make test (~7s).
+- [MECH-1]+[MECH-2] (same commit): tests/mech/, 20 encoded sabotages, one
+  fresh `git archive HEAD` tree each, 20/20 detected; found the trie ".rxt
+  corpus" figure stale (2→6) and root-caused the new-wrong-row sabotage's
+  0/0→1 (the exact iterated-count tripwire — visible, not fail-proof; SR-4
+  blind spot narrowed, not closed). `make mech`; hand tables now point at
+  the generator for figures.
+- [SPEC-MOD0] (commit this session): tests/spec_mod0/, ten checks, 4 green /
+  0 failed / 6 AWAITING-SURFACE (exit 3 ≠ pass ≠ fail, surfaces named BY
+  NAME so landing one arms its check with no edit). THREE findings against
+  §17.3 as written — the LEXICAL criterion sees two constructs, not three
+  (a\Q* swallows its quantifier); endpoint model confirmed 3/200 with the
+  extent scan independently re-derived; verb quantifiability is per-NAME
+  with a THIRD outcome (26/50 names not askable). Contamination disclosure
+  recorded (harness auto-injected two denied CLAUDE.mds; unused).
+- [R3.6..R3.10] (commit this session): load re-sampled after measuring
+  (INCONCLUSIVE exit 2 per D14), case (i) investigated — 1.94x RUN-TO-RUN
+  spread over ten quiet runs, run_history.tsv + rebaseline.sh + EARN=1
+  machinery, budgets re-measured on a genuinely quiet box, case (e) now
+  exercises the REVERSE skip loop (counted, not timed) with the sabotage
+  re-validated at 7.4x. ONE REVIEW CORRECTION: the agent's median floor for
+  (i) made the gate flaky (two of its own ten runs sat above the clamped
+  threshold; the acceptance run passed by 2.7%) — floor set to the observed
+  maximum instead, arithmetic in floors.tsv.
+
+**Lessons:** (1) A derived check asserting a row's syntax in a context the
+syntax was not written for over-asserts — [\g{-1}]'s brackets made the check
+demand a bug; probe what the flag claims. (2) The gate-side of a re-baseline
+needs the FAIL THRESHOLD checked against the recorded run distribution, not
+just the center — a median floor under a clamped margin false-fails a
+1.94x-noise case. (3) Instrument bugs three times today (stdout .h
+collision, basename in emitted #include, wrapper reporting echo's exit) —
+each caught by the count-FAIL:-unanchored habit or a differing control.
+(4) The prose⇔column check and the MECH-1 matrix each caught a real
+discrepancy on their first run — checks that compare two existing homes pay
+off immediately.
+
+**Next session:** MOD-0.1 continues. Remaining slices: quantifiable column
+(§18.3 + SPEC-MOD0's not-askable third outcome), class_expect column (arms
+check04), LEXICAL row kind, want levels + cursor rule, returned-claims
+epilogue (K11), endpoint rule (K12), deferred-backref infrastructure. The
+six awaiting SPEC-MOD0 checks are the landing bar's instrument panel.
