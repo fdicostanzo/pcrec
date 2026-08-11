@@ -585,11 +585,37 @@ case10() {
     "$PCREC" --list-verbs -o - -- 'abc' >/dev/null 2>"$d/ev3.txt"; rc=$?
     assert_eq "case10: --list-verbs with -o and a pattern exits 1" "1" "$rc"
 
+    # --count-groups (MOD-0.1, §18.1): the running capture count's external
+    # channel — the surface tests/spec_mod0/check02 compares against libpcre2.
+    # Expectations oracle-verified: python re agrees on every cell, and a
+    # 300-pattern generated sweep at landing found zero disagreements.
+    out="$("$PCREC" --count-groups -- '(a)(b)(c)' 2>"$d/ec1.txt")"; rc=$?
+    assert_eq "case10: --count-groups counts sibling groups" "0" "$rc" \
+        "stderr: $(cat "$d/ec1.txt")"
+    assert_eq "case10: ...and prints 3 for (a)(b)(c)" "3" "$out"
+    assert_eq "case10: --count-groups counts nested groups" \
+        "2" "$("$PCREC" --count-groups -- '(a(b))')"
+    assert_eq "case10: --count-groups does not count (?:...)" \
+        "0" "$("$PCREC" --count-groups -- '(?:a)')"
+    assert_eq "case10: --count-groups on a groupless pattern is 0" \
+        "0" "$("$PCREC" --count-groups -- 'a|b')"
+    # a refused construct refuses here too, with the compile diagnostic —
+    # leftmost refusal, no count for a pattern pcrec does not fully know
+    "$PCREC" --count-groups -- '(?<n>a)' >/dev/null 2>"$d/ec2.txt"; rc=$?
+    assert_eq "case10: --count-groups refuses what pcrec refuses" "1" "$rc"
+    assert_contains "case10: ...with the construct's own diagnostic" \
+        "$(cat "$d/ec2.txt")" "requires module 'named-groups'"
+    "$PCREC" --count-groups -o - -- 'a' >/dev/null 2>"$d/ec3.txt"; rc=$?
+    assert_eq "case10: --count-groups with -o exits 1" "1" "$rc"
+    "$PCREC" --count-groups >/dev/null 2>"$d/ec4.txt"; rc=$?
+    assert_eq "case10: --count-groups without a pattern exits 1" "1" "$rc"
+
     # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
     out="$("$PCREC" --help)"
     assert_contains "case10: --help documents --list-syntax" "$out" "--list-syntax"
     assert_contains "case10: --help documents --list-verbs" "$out" "--list-verbs"
     assert_contains "case10: --help documents --explain" "$out" "--explain"
+    assert_contains "case10: --help documents --count-groups" "$out" "--count-groups"
 
     # `--` still ends options: a pattern that looks like a query is a pattern
     "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?

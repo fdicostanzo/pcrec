@@ -5644,3 +5644,55 @@ an arbitrary body, answering 150 for [0-\p{Foo}] would be wrong (PCRE2
 endpoint cells get pins asserting the CURRENT behavior so the boundary is
 deliberate, not accidental. All pins failing-then-passing per §17.1's
 guarded-divergence rule.
+
+## 2026-08-11 — seventh session, third stretch: slices 6-7 (endpoint rule, capture count); worktree convention
+
+**Slice 6 = the endpoint rule, K12 CLOSED** (f439b95). §16's five steps in
+p_class, composed from what the session already built: slice 5's returned
+claims make the refusal visible at the range site, slice 3's measured
+class_expect column certifies SET-shape (ep_set_certain — §16.3(e)'s
+payload, exercisable subset). Certification scoped to all-forms rows; the
+\p boundary pinned as deliberate. 42 cells measured first
+(probe_endpoint_k12.c, every prediction confirmed), ten
+failing-then-passing pins + seven boundary pins + two accept-controls
+(counts 265/99/65, three MANIFEST entries), the 952-pattern differential
+vs pre-slice HEAD shows exactly the one changed cell it contains.
+pair_opens survives as the (bracket, high) deviating cell's predicate,
+per R14.
+
+**Slice 7 = the running capture count + its channel, check02 armed**
+(this commit). Ctx.ncap at p_group_body's hook (incremented at the
+opening paren, so a future \12 consults the right running value);
+pcrec_count_groups parse-only entry in compile.c (the file with the
+tree's only setjmp); CLI --count-groups with pcrec_compile's exact
+refusal behaviour. Oracle-verified 10/10 hand cells + 300/300 generated
+base-tier patterns against python re; emitted code byte-identical; cli
+case10 85→95. THE PENDING LIST IS DEFERRED to module backrefs by D33
+§9.3's own rule — a list nothing can write is unexercised structure;
+recorded in plan.md. check02 armed by a spec-side author (denied src/):
+runs every generated body through pcrec via execl (no shell), exit 0 →
+count must equal CAPTURECOUNT, exit 1 → refused-not-compared. The
+honest split today is 1 compared / 101 refused (the families are
+count-scan traps, all unimplemented) — both floors pinned EXACTLY, the
+compared floor ratchets as modules land. I verified all three directions
+myself: control 0, flag-less stand-in exits 3 (awaiting), a lying
+wrapper exits 1 naming the body. SPEC-MOD0 is now 7 pass / 0 fail / 3
+awaiting (01 isolation, 06 cursor, 07 gate).
+
+**Process changes this stretch:** (1) Frank's worktree ruling — a
+subagent that WRITES gets a git worktree under worktrees/ (gitignored,
+inside the repo so the scope mandate holds by construction) and delivers
+a diff to review-then-merge; critics stay read-only in the main tree.
+Recorded in CLAUDE.md. The motivating incident: the check02 author's
+edits landed under me mid-review — my background watch fired on the
+FIRST file change and I began reviewing a half-delivered state, briefly
+misreading missing floors as the author's omission. Worktrees make
+delivery atomic. (2) A watch keyed on "any file changed" is not a watch
+for "delivery complete" — key hand-off watches on an explicit
+done-marker, or use worktrees where the merge IS the marker.
+
+**Next:** want levels + cursor rule (fresh D27 author arms check06),
+the enabled-set/toggles surface (checks 01/07/09 — the largest remaining
+chunk), then MOD-0.1's byte-identity bar with its guarded exceptions
+(K12's ten pins are the exception list's current content, each
+failing-then-passing).

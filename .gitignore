@@ -16,3 +16,4 @@ tests/fuzz/failures/
 # and the previous session's brief warned about exactly that in prose. A rule
 # a tool enforces beats a rule a comment states.
 /docs/wake.md
+worktrees/

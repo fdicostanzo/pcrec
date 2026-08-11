@@ -71,6 +71,10 @@ tier, and PCRE2 is a moving target with no specification.
   document) delegates; architectural judgement stays in the main session. The
   D6 critic panels are subagent work by definition. Every brief restates the
   scope mandate above, and critics work read-only and never run `make`.
+  **A subagent that WRITES works in a git worktree under `worktrees/`**
+  (gitignored; inside the repo, so the scope mandate holds by construction —
+  Frank, 2026-08-11 seventh session) and delivers a diff the main session
+  reviews and merges; read-only critics keep working in the main tree.
 - **Some tests are written from the GOAL, by an author denied `src/` and
   `tests/`** (D27). The panel reviews the implementation; a spec-first writer
   tests the promise. Measured on 2026-08-10: it found a tier-1 miscompile that

@@ -48,6 +48,8 @@ capture.family_branchreset         14
 capture.family_scoped_n            6
 capture.family_quotemode           4
 capture.noncompiling               700
+capture.pcrec_compared               1
+capture.pcrec_refused              101
 
 # --- invariant 4: class-position expectation ---------------------------
 class.esc_rows                      41

@@ -124,6 +124,45 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
     return 0;
 }
 
+/* Parse-only entry for the running capture count (MOD-0.1, §18.1): the
+ * count-scan IS the real parser — there is no scanner — so this runs the
+ * parse stage alone and reports Ctx.ncap's end-of-parse value. The refusal
+ * behaviour is pcrec_compile's exactly (leftmost refusal, same diagnostics):
+ * a pattern containing an unimplemented construct reports that refusal, not
+ * a count, which is §18.1's "constructs pcrec refuses terminate the compile,
+ * so their count contribution never matters". Internal, like the syntax
+ * dumps: the CLI's --count-groups and the test suite are the consumers, and
+ * tests/spec_mod0/check02 compares the channel against libpcre2's
+ * CAPTURECOUNT and err-115 boundary. */
+int pcrec_count_groups(const char *pattern, pcrec_error *err)
+{
+    pcrec_options defo;
+    pcrec_default_options(&defo);
+    if (err) { err->msg[0] = 0; err->pos = 0; }
+
+    Ctx cx;
+    memset(&cx, 0, sizeof(cx));
+    cx.pat = pattern;
+    cx.patlen = pattern ? strlen(pattern) : 0;
+    cx.err = err;
+    cx.opt = &defo;
+    cx.caseless = defo.caseless;
+    if (!pattern) {
+        if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
+        return -1;
+    }
+
+    if (setjmp(cx.jb)) {
+        job_cleanup(&cx);
+        return -1;
+    }
+
+    pcrec_parse(&cx);
+    int n = (int)cx.ncap;
+    job_cleanup(&cx);
+    return n;
+}
+
 void pcrec_output_free(pcrec_output *out)
 {
     if (!out) return;

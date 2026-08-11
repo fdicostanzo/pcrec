@@ -430,13 +430,19 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
     /* plain '(' : capturing group — parsed as a group; capture spans are
      * reported starting with the VM engine (M4).
      *
-     * THIS IS THE HOOK POINT for the running capture count [MOD-STATE] owes:
-     * "is this `(` a capturing group" is known here and nowhere else, and it is
-     * lost the moment this function returns. Two DIFFERENT counters are owed
-     * and conflating them is the trap — `\ddd` octal-vs-backref needs the count
-     * SO FAR (incremental, and this is where to bump it), while `\1`..`\9` uses
-     * the WHOLE-PATTERN count, which is a forward reference no incremental
-     * counter can answer and wants a lexical pre-scan instead. */
+     * THE HOOK POINT, now hooked (MOD-0.1, §18.1): "is this `(` a capturing
+     * group" is known here and nowhere else. Reaching this line means the
+     * doorways above did not fire, so the group is plain-`(` or `(?:` — and
+     * `entry` still points at the byte after the `(`, so the two are
+     * distinguishable here (`(?:`'s cursor moved, but its first byte was
+     * '?'). PCRE2 assigns group numbers by OPENING-paren order, so the
+     * increment sits before the body parse: inside `(\12...)` the enclosing
+     * group is already number 1. The old claim that `\1`..`\9`'s
+     * whole-pattern count "wants a lexical pre-scan instead" is RETIRED —
+     * §18.1's measured resolution is deferred resolution against this
+     * counter's end-of-parse value; the pre-scan is dead. */
+    if (cx->pat[cx->pos - 1] == '(')
+        cx->ncap++;
     Ast *body = p_alt(cx);
     if (nextc(cx) != ')')
         ctx_fail(cx, apos, "missing closing ) for group");

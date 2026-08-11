@@ -33,7 +33,11 @@ static void usage(FILE *f)
           "  --list-verbs      TSV of the (*VERB) names pcrec recognises\n"
           "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
           "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
-          "                    exists today; a second one arrives with SR-7)\n", f);
+          "                    exists today; a second one arrives with SR-7)\n"
+          "  --count-groups [--] PATTERN\n"
+          "                    parse only; print the number of capturing\n"
+          "                    groups. A pattern pcrec refuses is refused\n"
+          "                    here too, with the same diagnostic\n", f);
 }
 
 static const char *base_name(const char *path)
@@ -60,6 +64,7 @@ int main(int argc, char **argv)
     int list_syntax = 0;
     const char *explain = NULL, *flavour = NULL;
     int list_verbs = 0;
+    int count_groups = 0;
 
     int no_more_opts = 0;
     for (int i = 1; i < argc; i++) {
@@ -73,6 +78,7 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "-i")) opt.caseless = 1;
         else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
         else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
+        else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;
         else if (!no_more_opts &&
                  (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
             if (i + 1 >= argc) {
@@ -105,6 +111,40 @@ int main(int argc, char **argv)
         }
         else if (!pattern) pattern = a;
         else { fprintf(stderr, "pcrec: exactly one pattern expected\n"); return 1; }
+    }
+
+    /* --count-groups is the one query that TAKES a pattern — it runs the real
+     * parser (parse only, nothing emitted) and prints the running capture
+     * count's end-of-parse value (§18.1; the channel tests/spec_mod0/check02
+     * compares against libpcre2). A pattern pcrec refuses is refused here
+     * with pcrec_compile's exact diagnostic — leftmost refusal, so a count is
+     * never reported for a pattern whose constructs pcrec does not know. */
+    if (count_groups) {
+        if (list_syntax || list_verbs || explain) {
+            fprintf(stderr, "pcrec: --count-groups is a separate query; use one\n");
+            return 1;
+        }
+        if (outpath) {
+            fprintf(stderr, "pcrec: --count-groups takes no -o\n");
+            return 1;
+        }
+        if (flavour) {
+            fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
+                            "--explain only\n");
+            return 1;
+        }
+        if (!pattern) {
+            fprintf(stderr, "pcrec: --count-groups needs a pattern\n");
+            return 1;
+        }
+        pcrec_error err;
+        int n = pcrec_count_groups(pattern, &err);
+        if (n < 0) {
+            fprintf(stderr, "pcrec: %s (pattern offset %zu)\n", err.msg, err.pos);
+            return 1;
+        }
+        printf("%d\n", n);
+        return 0;
     }
 
     /* Syntax queries answer from the registry and compile nothing, so they take

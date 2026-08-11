@@ -518,8 +518,21 @@ Then DOC-1, then PC-4 when module `classes` lands.
   265/99/65, three new MANIFEST entries); 952-pattern differential vs
   pre-slice HEAD shows exactly the one changed cell it contains; full
   suite, strict, verify_rxt, fuzz, SPEC-MOD0 6/0/4 all green.
+  SLICE 7 LANDED seventh session: the running capture count (§18.1 —
+  Ctx.ncap at p_group_body's hook, incremented at the opening paren so a
+  future \12 consults the right value) + the external channel
+  (pcrec_count_groups parse-only entry, CLI --count-groups; refusals keep
+  pcrec_compile's exact diagnostics — leftmost refusal, no count for a
+  pattern pcrec does not fully know). Oracle-verified: python re agrees
+  10/10 hand cells + 300/300 generated base-tier patterns; emitted code
+  byte-identical 5/5; cli case10 grew 10 assertions (85→95). The PENDING
+  LIST and end-of-parse check are DEFERRED to module backrefs by D33
+  §9.3's own rule: a list nothing can write is unexercised structure —
+  every construct that would record a reference is refused today, so the
+  pass condition would hold vacuously (R11/C4-1's shape). check02 armed
+  by a spec-side author (denied src/) against the channel.
   Remaining: want+cursor (fresh D27 author for
-  check06), deferred-backref infra, enabled-set/toggles, then the
+  check06), enabled-set/toggles, then the
   byte-identity bar)
   (UNBLOCKED 2026-08-11 by **D32**, which resolves
   the interface after three panels — R10 refuted D29, R11 refuted parts of D30,

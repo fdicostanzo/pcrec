@@ -147,6 +147,21 @@ typedef struct {
      * writer — so today it is exactly opt->caseless for the whole parse, which
      * is asserted by byte-identity rather than assumed. */
     bool                 caseless;
+    /* THE RUNNING CAPTURE COUNT (MOD-0.1, design §18.1 as Frank resolved
+     * it: there is NO scanner). Incremented at p_group_body's capturing-`(`
+     * hook — group numbers are assigned by opening-paren order, so the
+     * count AT a point in the parse is what PCRE2's multi-digit
+     * octal-vs-backref rule consults (`\12` is a backreference iff the
+     * RUNNING count >= 12, else octal; the TOTAL is irrelevant there). The
+     * count at END of parse is the whole-pattern total, which is what
+     * validates `\1`..`\9` — deferred resolution: module `backrefs` records
+     * pending references and checks them against the final value, and its
+     * pending list lands WITH that module (a list nothing can write is
+     * unexercised structure, D33 §9.3 / D24's recorded loss — the judgment
+     * is in the 2026-08-11 journal entry). Today the count feeds
+     * `--count-groups`, the external channel tests/spec_mod0/check02
+     * compares against libpcre2's CAPTURECOUNT and err-115 boundary. */
+    unsigned             ncap;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
@@ -708,6 +723,10 @@ unsigned pcrec_flavour_by_name(const char *name);
 
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
 Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
+/* src/core/compile.c — parse-only: the running capture count's end-of-parse
+ * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
+ * on the same refusal pcrec_compile would give. Internal, like the dumps. */
+int pcrec_count_groups(const char *pattern, pcrec_error *err);
 /* PARSE-1: the MODULE CALLBACK. Parses a nested body and stops AT its
  * terminator without consuming it — the caller consumes its own `)` and owns
  * its own unterminated-construct diagnostic. Do NOT hand a module

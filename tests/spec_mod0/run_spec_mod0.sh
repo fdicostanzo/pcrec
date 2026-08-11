@@ -117,7 +117,7 @@ run_sh() {   # run_sh <script> [args...]
 
 # --- the ten invariants ------------------------------------------------
 run_sh check01_isolation.sh          "$ROOT"
-run_c  check02_capture_count
+run_c  check02_capture_count         "$PCREC"
 run_c  check03_lexical               "$REG"
 run_c  check04_class_position        "$REG"
 run_c  check05_digits

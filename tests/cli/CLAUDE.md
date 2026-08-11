@@ -15,8 +15,11 @@ Part of `make test` since M2.
   (9) `-i` (OS-1/D23) end to end — accepted, reaches `options.caseless`,
   composes with `--` and `--emit-main`, documented in `--help`, and does NOT
   leak into a build that did not ask for it (the case-sensitive control),
-  (10) the SR-3 syntax queries — `--list-syntax`, `--explain`, `--flavour`, and
-  since Q1 `--list-verbs`.
+  (10) the SR-3 syntax queries — `--list-syntax`, `--explain`, `--flavour`,
+  since Q1 `--list-verbs`, and since MOD-0.1 `--count-groups` (the running
+  capture count's external channel, §18.1 — count cells oracle-verified
+  against python re and a 300-pattern generated sweep at landing; refusals
+  keep the compile diagnostics).
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
 
 ## Conventions

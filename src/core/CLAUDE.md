@@ -4,7 +4,12 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 ## Files
 
-- **compile.c** — pcrec_compile() pipeline driver (parse → NFA → DFA → emit); ctx_fail error handler; pcrec_default_options defaults
+- **compile.c** — pcrec_compile() pipeline driver (parse → NFA → DFA → emit);
+  ctx_fail error handler; pcrec_default_options defaults; and
+  pcrec_count_groups(), the parse-only entry behind the CLI's
+  `--count-groups` (MOD-0.1/§18.1 — reports Ctx.ncap's end-of-parse value
+  with pcrec_compile's exact refusal behaviour; it lives here because this
+  file holds the tree's ONLY setjmp)
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf
 - **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or

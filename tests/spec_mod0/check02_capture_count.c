@@ -51,16 +51,181 @@
  * Drop the `(?|` family and its population line disappears, which
  * spec_floors_require() turns into a failure rather than a smaller pass.
  *
- * AWAITED SURFACE. pcrec exposes no group count for a pattern: there is no
- * flag on the CLI that prints one, and `--list-syntax` is a static registry
- * dump with no per-pattern column. The oracle half below runs now, on every
- * generated body, and fails now if the two libpcre2 measurements ever part.
+ * PCREC-SIDE SURFACE, LANDED: `pcrec --count-groups [--] PATTERN`. Detected
+ * by RUNNING the probe `--count-groups -- '(a)'`: stdout "1" and exit 0 means
+ * the surface exists; anything else (including the exit-1 unknown-option
+ * diagnostic an older pcrec prints for a flag it does not have) means it does
+ * not, and this check falls back unchanged to the oracle-only behaviour below
+ * — detection keys off exit codes and stdout content only, never stderr.
+ * When present, every generated body below is run a SECOND time, through
+ * pcrec itself, no shell involved (execl(), so a body's quotes/backslashes/
+ * parens reach pcrec exactly as this file spelled them): exit 0 means
+ * compare pcrec's printed count against libpcre2 CAPTURECOUNT for that body;
+ * exit 1 means pcrec refuses the body (an unimplemented construct — base tier
+ * only, so most of the named/lookaround/verb/callout/branch-reset/scoped/
+ * quote-mode bodies land here today, not in the compared bucket) — counted,
+ * not compared; anything else (timeout, a non-exit status, or an unparseable
+ * stdout on exit 0) is a spec_fail. The pcrec binary's path is argv[2] if the
+ * runner passed one (run_spec_mod0.sh does), else the PCREC environment
+ * variable, else the literal "build/pcrec" — either override exists so a
+ * sabotage run can point this check at a stand-in binary without editing it.
+ *
+ * SABOTAGE (verified 2026-08-11): a wrapper standing in for pcrec that prints
+ * the unknown-option diagnostic and exits 1 for `--count-groups` (an old
+ * pcrec) makes detect_surface() return false and the check falls back to
+ * AWAITING-SURFACE, exit 3 — the pcrec-side buckets are never reported, so
+ * spec_floors_require never asks for them. A wrapper that delegates every
+ * body to the real pcrec except one, for which it echoes a count one too
+ * high, is detected present (the '(a)' probe still passes through) and fails
+ * exactly the sabotaged body, naming pcrec's wrong number against libpcre2's
+ * CAPTURECOUNT, exit 1.
  *
  * Build: TMPDIR=/var/tmp gcc -I tests/fuzz -I tests/spec_mod0 \
  *          -o /var/tmp/check02 check02_capture_count.c -ldl
- * Run:   check02 floors.txt
+ * Run:   check02 floors.txt [PCREC_PATH]
  */
 #include "spec_common.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
+
+/* ---------------------------------------------------------------------
+ * Running pcrec as a black box. No shell is involved anywhere here: every
+ * body reaches pcrec as one argv element, handed to execl() verbatim, so a
+ * body containing quotes, backslashes, or unbalanced parens reaches pcrec
+ * exactly as this file spelled it, with none of the respelling a shell
+ * would do. Bounded by a wall-clock timeout so a hang in pcrec is a
+ * spec_fail, never a hang of the whole suite.
+ * ------------------------------------------------------------------- */
+
+#define PCREC_TIMEOUT_MS 3000
+
+typedef struct {
+    int ran;         /* fork/exec/wait all succeeded */
+    int timed_out;
+    int exit_code;    /* valid only when ran && !timed_out */
+    char out[256];     /* captured stdout, NUL-terminated */
+} PcrecRun;
+
+static PcrecRun run_pcrec_count(const char *pcrec_path, const char *body)
+{
+    PcrecRun r; memset(&r, 0, sizeof r);
+    int pfd[2];
+    if (pipe(pfd) != 0) return r;
+    pid_t pid = fork();
+    if (pid < 0) { close(pfd[0]); close(pfd[1]); return r; }
+    if (pid == 0) {
+        close(pfd[0]);
+        dup2(pfd[1], STDOUT_FILENO);
+        int devnull = open("/dev/null", O_WRONLY);
+        if (devnull >= 0) { dup2(devnull, STDERR_FILENO); close(devnull); }
+        close(pfd[1]);
+        execl(pcrec_path, pcrec_path, "--count-groups", "--", body, (char *)NULL);
+        _exit(127);   /* exec failed: no such binary, or not executable */
+    }
+    close(pfd[1]);
+    int fl = fcntl(pfd[0], F_GETFL, 0);
+    fcntl(pfd[0], F_SETFL, fl | O_NONBLOCK);
+
+    struct timespec deadline;
+    clock_gettime(CLOCK_MONOTONIC, &deadline);
+    deadline.tv_sec += PCREC_TIMEOUT_MS / 1000;
+
+    size_t total = 0;
+    int status = 0, exited = 0;
+    for (;;) {
+        pid_t w = waitpid(pid, &status, WNOHANG);
+        if (w == pid) exited = 1;
+
+        ssize_t n;
+        while (total < sizeof r.out - 1 &&
+               (n = read(pfd[0], r.out + total, sizeof r.out - 1 - total)) > 0)
+            total += (size_t)n;
+
+        if (exited) break;
+
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        if (now.tv_sec > deadline.tv_sec ||
+            (now.tv_sec == deadline.tv_sec && now.tv_nsec >= deadline.tv_nsec)) {
+            kill(pid, SIGKILL);
+            waitpid(pid, &status, 0);
+            r.timed_out = 1;
+            break;
+        }
+        struct timespec nap = {0, 5 * 1000 * 1000};
+        nanosleep(&nap, NULL);
+    }
+    close(pfd[0]);
+    r.out[total] = 0;
+    r.ran = 1;
+    if (!r.timed_out) r.exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    return r;
+}
+
+static void rstrip(char *s)
+{
+    size_t L = strlen(s);
+    while (L && (s[L-1] == '\n' || s[L-1] == '\r' || s[L-1] == ' ')) s[--L] = 0;
+}
+
+static const char *pcrec_path;
+static int surface_present;
+static long pcrec_compared, pcrec_refused;
+
+/* Exactly the probe the surface is specified by: '(a)' must print "1" and
+ * exit 0. Anything else — including the exit-1 unknown-option diagnostic an
+ * older pcrec prints for a flag it does not have — means the surface is not
+ * there. Only exit codes and stdout content are examined; stderr is never
+ * grepped for a failure keyword. */
+static int detect_surface(const char *path)
+{
+    PcrecRun r = run_pcrec_count(path, "(a)");
+    if (!r.ran || r.timed_out || r.exit_code != 0) return 0;
+    rstrip(r.out);
+    return strcmp(r.out, "1") == 0;
+}
+
+/* The pcrec-side comparison for one body, given its libpcre2 CAPTURECOUNT. */
+static void check_pcrec_side(const char *b, const char *family, int cc)
+{
+    PcrecRun r = run_pcrec_count(pcrec_path, b);
+    if (!r.ran) {
+        spec_fail("%s body '%s': could not run pcrec --count-groups "
+                  "(fork/exec failed)", family, b);
+        return;
+    }
+    if (r.timed_out) {
+        spec_fail("%s body '%s': pcrec --count-groups did not return within "
+                  "%dms", family, b, PCREC_TIMEOUT_MS);
+        return;
+    }
+    if (r.exit_code == 1) {
+        pcrec_refused++;   /* an unimplemented construct: counted, not compared */
+        return;
+    }
+    if (r.exit_code != 0) {
+        spec_fail("%s body '%s': pcrec --count-groups exited %d (expected 0 "
+                  "or 1)", family, b, r.exit_code);
+        return;
+    }
+    rstrip(r.out);
+    char *end;
+    errno = 0;
+    long got = strtol(r.out, &end, 10);
+    if (errno || end == r.out || *end != '\0') {
+        spec_fail("%s body '%s': pcrec --count-groups exited 0 but printed "
+                  "unparseable stdout '%s'", family, b, r.out);
+        return;
+    }
+    pcrec_compared++;
+    if (got != cc)
+        spec_fail("%s body '%s': pcrec --count-groups reports %ld, libpcre2 "
+                  "CAPTURECOUNT is %d", family, b, got, cc);
+}
 
 /* The count as err-115 sees it: the largest d for which `\d B` still compiles.
  * Single digits only (1..9), which is all the invariant's failure direction
@@ -96,6 +261,8 @@ static void body(const char *b, const char *family)
     /* every d past the boundary, up to 9, is a non-compiling probe */
     noncompiling_probes += (9 - (md < 0 ? 0 : md));
 
+    if (surface_present) check_pcrec_side(b, family, cc);
+
     if (cc > 9) return;    /* beyond the single-digit probe's reach */
     if (md != cc)
         spec_fail("%s body '%s': libpcre2 CAPTURECOUNT is %d, but the largest "
@@ -107,6 +274,17 @@ static void body(const char *b, const char *family)
 int main(int argc, char **argv)
 {
     spec_start("check02_capture_count", argc, argv, NULL);
+
+    /* argv[2] (if the runner passed one) wins, then $PCREC, then the literal
+     * default — the same three-way fallback run_spec_mod0.sh itself uses for
+     * $PCREC, kept overridable here so a sabotage run can substitute a
+     * stand-in binary without editing this file. */
+    pcrec_path = (argc >= 3 && argv[2][0]) ? argv[2] : getenv("PCREC");
+    if (!pcrec_path || !*pcrec_path) pcrec_path = "build/pcrec";
+    surface_present = detect_surface(pcrec_path);
+    printf("  pcrec:  %s (--count-groups %s)\n", pcrec_path,
+           surface_present ? "present — comparing" : "not present — awaiting");
+
     long f_named = 0, f_look = 0, f_verb = 0, f_call = 0,
          f_branch = 0, f_scoped = 0, f_quote = 0;
     char buf[2048];
@@ -238,6 +416,10 @@ int main(int argc, char **argv)
     spec_pop("capture.family_quotemode", f_quote);
     spec_pop("capture.bodies_compared", compared);
     spec_pop("capture.noncompiling", noncompiling_probes);
+    if (surface_present) {
+        spec_pop("capture.pcrec_compared", pcrec_compared);
+        spec_pop("capture.pcrec_refused", pcrec_refused);
+    }
 
     static const char *const owned[] = {
         "capture.family_named", "capture.family_lookaround",
@@ -247,15 +429,24 @@ int main(int argc, char **argv)
         "capture.noncompiling"
     };
     spec_floors_require(owned, 9);
+    if (surface_present) {
+        static const char *const pcrec_owned[] = {
+            "capture.pcrec_compared", "capture.pcrec_refused"
+        };
+        spec_floors_require(pcrec_owned, 2);
+    }
     if (spec_fails) return spec_finish();
 
-    return spec_await(
-        "a per-pattern group count from pcrec's count-scan",
-        "this check needs pcrec to report, for a given pattern, the number of "
-        "capturing groups its count-scan found — any stable channel will do "
-        "(a CLI flag such as `--count-groups`, a column in a per-pattern dump, "
-        "or a documented symbol the harness can call). It then compares that "
-        "number, body by body, against the two libpcre2 measurements above. "
-        "Until then the err-115 boundary is checked against CAPTURECOUNT only, "
-        "which is the oracle half");
+    if (!surface_present)
+        return spec_await(
+            "a per-pattern group count from pcrec's count-scan",
+            "this check needs pcrec to report, for a given pattern, the number "
+            "of capturing groups its count-scan found — any stable channel "
+            "will do (a CLI flag such as `--count-groups`, a column in a "
+            "per-pattern dump, or a documented symbol the harness can call). "
+            "It then compares that number, body by body, against the two "
+            "libpcre2 measurements above. Until then the err-115 boundary is "
+            "checked against CAPTURECOUNT only, which is the oracle half");
+
+    return spec_finish();
 }
