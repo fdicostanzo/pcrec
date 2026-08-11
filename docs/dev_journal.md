@@ -3999,3 +3999,68 @@ signatures.**
 **Next:** [PARSE-1], then MOD-0.1. Nothing about the recogniser is built yet,
 and that is now the first thing that has been fully specified rather than
 sketched.
+
+## 2026-08-11 — SESSION CLOSE
+
+**Three commits, no behaviour change, and MOD-0 went from a sketch to a
+specification that has survived a hostile panel.** `2aca7dd` -> `695f937` (R10)
+-> `6fa6331` (D30), all pushed. Suite green at every commit: `make test` rc=0
+with the status captured directly, zero `FAIL:` counted UNANCHORED.
+
+**The arc.** D29 was designed with Frank across four turns, written up, then
+attacked by a five-lens panel BEFORE anything was built — the first design panel
+this project has run. It refuted the central guard, four measured facts, and
+both proposed controls, and turned up one live product defect (K10). D30 then
+resolved the seven questions R10 left open, with the replacement mechanism
+MEASURED and SABOTAGED before adoption rather than argued.
+
+**What the session produced, in order of durable value:**
+
+1. **A working resolution mechanism, verified.** Declared rank reproduces
+   today's selection over 176,544 probes with zero disagreements and zero
+   collisions, using ranks that are deliberately not tail length. Both sabotages
+   fire. The per-row `syntax` check is total over 22 rows with no oracle.
+2. **The knowledge that a DESIGN panel is the cheapest review available here.**
+   R9 found thirteen findings in built code. R10 found comparable severity in a
+   document, where every fix was an edit to a paragraph.
+3. **Two sharpened process rules** — below, and both are now in wake.md.
+4. **K10**, a live tier-2 defect, found by a critic probing a guard rather than
+   probing the product.
+
+**Rule 1: the prod is necessary and NOT sufficient.** Three of five critics
+delivered substantial material AFTER their findings files had been read and
+compilation had begun — including the panel's only live defect (C1-7) and its
+strongest design finding (C2-8). C3 had written nothing at the 15-minute poll,
+produced 233 lines after a prod, and then tripled to 739 after those 233 were
+read. **Re-poll every file immediately before compiling and diff against what
+you actually read.** "I have read this file" decays.
+
+**Rule 2: apply D27 to every ENUMERATION, not only to signatures.** D29 derived
+its three-answer verdict from ONE doorway while citing D27 three sections later
+and applying it correctly to the recogniser signature. The same document stated
+the rule and broke it two pages apart. The `(*` doorway already shipped four
+answers, adopted in D25 and pinned in three places.
+
+**And the one that stings, worth keeping for that reason.**
+`src/parse/registry.c:62-72` — *"Do not design a handler signature that assumes
+it can"* — was written 2026-08-10, the day before D29 specified exactly that
+signature. D27 says knowledge the code does not act on is invisible to tests
+derived from the code. R10's addition: it is equally invisible to DESIGNS
+derived from reading the code, because reading a file for its DATA while
+designing a signature is precisely the reading that skips a comment about
+signatures.
+
+**State at close.** 1012 corpus / 85 CLI / 397 reject / 164 registry / 143 PC-3
+/ 29 codegen / 7 trie-identity, all green. Registry 100 rows. `parse.c` is still
+the base grammar and nothing else — PARSE-1 will be the first change to it since
+FIX-1. Open defects: K2 (cosmetic), K7 (resource), K9 (API contract), **K10 (new
+— tier 2, live, scheduled with MOD-0.6)**. `tests/reject/` no longer carries
+zero known-wrong pins; that was a deliberate call.
+
+**Owed and carried forward:** the Q2+SR-9 panel debt still rides on MOD-0.8, now
+alongside R10's own follow-ups. DOC-1 (seven spec ambiguities) and PC-4 are
+untouched; PC-4 is now further away, since `classes` moved but the semantic work
+did not start.
+
+**Next session's queue is written in docs/wake.md** with gates, journal
+discipline and the review requirement per step. First step is [PARSE-1].
