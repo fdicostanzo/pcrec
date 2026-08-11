@@ -75,6 +75,13 @@ tier, and PCRE2 is a moving target with no specification.
   (gitignored; inside the repo, so the scope mandate holds by construction —
   Frank, 2026-08-11 seventh session) and delivers a diff the main session
   reviews and merges; read-only critics keep working in the main tree.
+  **A D27-blinded author additionally gets a CELL** (Frank, 2026-08-11
+  eighth session): `scripts/mk_d27_cell.sh NAME` creates the worktree AND a
+  parallel non-git, allowlist-filtered copy (`worktrees/NAME-cell/`) the
+  author works in — no denied files to auto-inject, no .git to query; the
+  main session diffs the cell back into the worktree for review-then-merge.
+  Briefs keep the disclosure requirement for the residual spawn-time
+  injections (session-root CLAUDE.md, memory index).
 - **Some tests are written from the GOAL, by an author denied `src/` and
   `tests/`** (D27). The panel reviews the implementation; a spec-first writer
   tests the promise. Measured on 2026-08-10: it found a tier-1 miscompile that

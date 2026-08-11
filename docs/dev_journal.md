@@ -5914,3 +5914,38 @@ MOD-0.1's close condition is therefore: bar PASSED, full suite green
 (slice-9 battery), SPEC-MOD0 at 9/0/1 — closure waits only for check07's
 comparison (author in flight in worktrees/check07-arm; its surface is
 slice 9's --features and is no longer missing).
+
+## 2026-08-11 — eighth session, sixth stretch: the D27 CELL (Frank's ruling on the injection leak)
+
+Frank ruled the fix for the ambient-injection leak: keep the worktree as
+the DELIVERY target, and give the author a parallel, NON-GIT, allowlist-
+filtered CELL to work in. Done manually first, then scripted once it
+worked (scripts/mk_d27_cell.sh, with its own CLAUDE.md; convention
+recorded in the root CLAUDE.md beside the worktree ruling it amends).
+
+What the manual walkthrough established: the cell (tests/spec_mod0 +
+tests/probes + tests/fuzz/pcre2_abi.h + a build/ prebuilt INSIDE the
+worktree so the binary matches the delivery branch) runs the full
+spec_mod0 suite identically to the main tree (9/0/1) with no source
+tree and no .git; an author edit rsyncs back into the worktree and
+appears as an ordinary reviewable git diff. Hygiene is verified by the
+script itself (no git metadata, every top-level entry explained by the
+allowlist), the allowlist is validated BEFORE anything is created (a
+typo leaves no debris — the first version left a worktree behind, found
+by testing the failure direction), and the script prints the exact
+diff-back/review/teardown commands.
+
+Why cell beats worktree-alone, recorded for the next reader: the
+injection needs the file to EXIST in a directory the agent touches —
+allowlist copying removes the denied files' existence, not just
+permission; and a git worktree hands the author full history (git show
+HEAD:src/... defeats instruction-level blindness), which non-git
+removes. Allowlist, never denylist: a denylist miss leaks SILENTLY, an
+allowlist miss fails LOUDLY. The residual spawn-time injections
+(session-root CLAUDE.md, memory index — present in instances 4 and 5)
+are unavoidable without leaving the project directory; briefs keep the
+disclosure requirement for exactly that residue.
+
+The check07 author, already mid-flight under the old convention when
+this landed, finishes under it (its brief carries the disclosure
+requirement); the next D27 spawn uses the cell.
