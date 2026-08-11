@@ -804,41 +804,36 @@ Then DOC-1, then PC-4 when module `classes` lands.
   must promise a module wherever libpcre2 DISPATCHES* — which is the only thing
   that covers the malformed-body class and is NOT optional. Prototyped and
   sabotaged before adoption; see D30 §1-2 for the numbers
-- [MOD-0.2] STATE:started 2026-08-11 (ninth session; the `-\d+)` collapse does
-  NOT land in this step — it declines on
-  `(a)(?-1`, `(a)(?-1x)` and `(a)(?-1:x)`, error 114, a malformed body of a
-  construct pcrec answers correctly today, so the collapse as written is a
-  tier-2 regression; it waits for a reachability differential that passes).
-  SLICES (read THROUGH the §18-resolved design; D32 §§2-4,7,9 + Part II §14.4
-  are the interface): (1) DATA + UNWIRED ENGINE — RegRow gains `rank` and
-  `recognise` (both LAST, zero-defaulted; tiers 0/25/70 documented on the
-  field — the D30-era 40 tier is not reproduced, values are meaningless
-  except between clashing rows, D32 §3), `pcrec_recognise_tail_default`,
-  `pcrec_registry_arbitrate` (sel pre-test kept per D32 §7; top-rank tie =
-  the defect, out-param), the migration-scaffold equivalence check
-  (arbitrate vs the tail engine over a generated per-bucket space, D32
-  §9.5) and the permanent arbitration-liveness floors (the >1-answering-row
-  counter — check_tail_precedence's liveness clause re-homed, R11/M3);
-  (2) WIRE — `pcrec_registry_find` delegates to arbitrate, old body kept as
-  `pcrec_registry_find_tail_reference` (scaffold oracle only), doorways
-  report the ambiguity defect as an internal error; full battery + the
-  differential vs the pre-change snapshot binary, instrument liveness
-  proven by a sabotage build FIRST; (3) RETIRE — delete the reference
-  engine AND the scaffold in the same commit (D32 §9.5's rule), re-verify
-  registry_check's counts from a run; (4) check_tail_precedence retired in
-  its OWN edit (plan rule: not with the engine change), successor floors
-  already committed. Byte-identity everywhere: pure seam migration, zero
-  guarded exceptions. — migrate the **18** tail-bearing rows (R10 corrected
-  2026-08-11: 16 `GROUP_T` + 1 `REJECTED_T` + `registry.c:257`'s `\N{U+`,
-  written as a raw struct literal and invisible to a macro-name grep — the one
-  row a mechanical macro-conversion skips, and the row the acceptance test is
-  about). Each gets a RANK; most keep `tail_default`
-  unchanged. Retire `tail` from the lookup engine — and
-  `check_tail_precedence` goes only once MOD-0.1's three checks are in place and
-  its liveness clause has been re-homed, NOT in the same edit.
-  **Re-derive `registry_check.c`'s exact row count BY MEASUREMENT** — R8/C4-10:
-  the tripwires print their own remedy and following it verbatim is how a wrong
-  module passes everything
+- [MOD-0.2] STATE:completed 2026-08-11 (ninth session; four commits, 1cc6ed6 →
+  c1e203d). The 18 tail-bearing rows (16 `GROUP_T` + 1 `REJECTED_T` +
+  `registry.c`'s longhand `\N{U+`) migrated to recogniser + rank; `tail`
+  RETIRED from the lookup engine — it survives only as
+  `pcrec_recognise_tail_default`'s parameter. Landed through the resolved
+  design (D32 §§2-4,7,9; Part II §14.4): rank tiers 0/25/70 on the field
+  (the D30-era 40 tier deliberately not reproduced — values are meaningless
+  except between clashing rows, D32 §3); `pcrec_registry_arbitrate` with sel
+  as the checkable pre-test and a tie AT THE WINNING RANK as the defect, an
+  internal error at the escape/group doorways, validated LIVE by an
+  equal-rank sabotage (`\N{U+0041}` → clean exit 1 + 2 registry failures).
+  LANDING BAR MET: ZERO differences over a 5,247-comparison differential vs
+  the pre-change snapshot binary (4,330 patterns × compile/count-groups/
+  probe-ask channels; instrument liveness proven first — an inverted-rank
+  build showed 910), pure seam migration, no guarded exceptions. The D32
+  §9.5 discipline followed exactly: the migration scaffold (261,193 probes,
+  0 mismatches, 0 ambiguous) was deleted in the same commit as the retired
+  engine; `check_tail_precedence` retired in its OWN edit with both
+  successors committed and green first (`check_row_ranks`;
+  `check_arbitration_liveness` — R11/M3's >1-answer counter, floors
+  10/15/15/50 predicted from the generator then confirmed exactly, plus the
+  esc-'N' triple-answer assertion). Counts re-read from runs: registry 165,
+  reject 430, PC-3 143, mech 20/20 (no anchor drift — macro DEFINITIONS
+  changed, call sites did not), full battery green, spec_mod0 9/0/1.
+  **The `-\d+)` collapse did NOT land**, per the standing rule: ten digit
+  rows stay ten rows until a reachability differential passes on
+  `(a)(?-1` / `(a)(?-1x)` / `(a)(?-1:x)` (PCRE2 error 114 — malformed
+  bodies pcrec answers correctly today; the collapse as written is a tier-2
+  regression). That differential belongs to whoever proposes the collapse,
+  not to this step's close.
 - [MOD-0.3] STATE:not-started — **MOVED AHEAD of `modifiers` (D30 §7, was
   MOD-0.5)**, so the module that owns the class doorway exists before the module
   that can change its lexing — module `classes`, the richest INPUT case: a scan

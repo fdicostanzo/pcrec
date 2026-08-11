@@ -5986,3 +5986,131 @@ THROUGH the §18-resolved design; the reachability differential gates the
 `-\d+)` collapse), with MOD-0.3 (classes) behind it as the first module
 with ports — the moment check07's population goes nonzero, check02's
 compared floor ratchets, and the K12 certification scope grows.
+
+## 2026-08-11 — ninth session: MOD-0.2 COMPLETE — the tail engine retired for recogniser + rank
+
+**Frank's directive:** MOD-0.2 and only MOD-0.2. Baseline verified first
+(full battery green at fc981e3, mech 20/20, spec_mod0 at its designed
+9/0/1), the pre-change binary snapshotted to the scratchpad, and the
+differential instrument rebuilt from the journaled MOD-0.1 method before a
+line of src changed: 4,330 unique patterns (registry probes, corpus,
+simply-quoted reject/accept pins, verb forms, four doorway byte sweeps,
+tail sweeps at all four migrated buckets, delimiter shapes) x three
+channels (compile on (exit, stdout, stderr, out.c, out.h) with the same
+basename in two directories; --count-groups; --probe-ask x three wants x
+{default, --features all}) = 5,247 comparisons per run. Identical-binary
+control: zero. Instrument liveness proven before any real result was
+trusted: an inverted-rank sabotage build produced 910 differences.
+
+**The interface, read through the resolved design (D32 §§2-4,7,9; Part II
+§14.4):** RegRow gains `rank` and `recognise` as trailing fields; a NULL
+recogniser means `pcrec_recognise_tail_default` with the row's `tail` as
+parameter — after this step the field's ONLY reader on the lookup path.
+Rank tiers 0 (fallback / never clashes), 25 (tailed), 70 (`\N{U+`). The
+D30-era 40 tier is deliberately not reproduced: rank values are
+meaningless except between clashing rows (D32 §3), and `\N{` clashes only
+with the fallback below it and `\N{U+` above it. `pcrec_registry_arbitrate`
+runs every sel-matching recogniser (sel kept as the checkable pre-test,
+D32 §7); highest answering rank wins; a tie AT THE WINNING RANK is the
+defect, surfaced by the escape/group doorways as an internal error — a tie
+below the winner is rank doing its job and is deliberately not one.
+
+**Four slices, committed separately, full battery + differential between
+each** (1cc6ed6, 0aec468, bade9dd, c1e203d):
+
+1. Data + unwired engine + checks. check_row_ranks (successor of
+   tailed-beats-fallback; 18 tailed rows, the measured count), and
+   check_arbitration_liveness — the R11/M3 more-than-one-answer counter,
+   check_tail_precedence's liveness clause re-homed. Floors PREDICTED from
+   the generator before the first run (10/15/15/50 multi-answer probes per
+   bucket, 5 triple-answer at esc-'N') and confirmed exactly. The D32 §9.5
+   migration scaffold compared the unwired arbitration against the live
+   tail engine: 261,193 probes, 0 mismatches, 0 ambiguous.
+2. Wiring. find() delegates to arbitrate; doorways own the ambiguity
+   refusal. Differential ZERO over 5,247 — the seam moved engines with
+   nothing observable moving.
+3. Retirement, one commit for both: the reference engine AND its scaffold
+   (an equivalence check cannot outlive its oracle honestly — D32 §9.5's
+   rule, followed to the letter). Stale SR-9 prose rewritten at both homes
+   (RegRow.tail's doc, the \N shortest-first comment). Counts re-read from
+   runs: registry 166 then 165 after slice 4, reject 430, PC-3 143.
+4. check_tail_precedence retired in its OWN edit, successors committed and
+   green FIRST — the plan's sequencing rule held exactly.
+
+**The ambiguity path validated live, not asserted:** an equal-rank
+sabotage on the \N pair (70 -> 25) makes `\N{U+0041}` answer "internal
+error: ambiguous registry arbitration for an escape", clean exit 1, and
+fails 2 registry checks naming the row. Restored; pristine reruns green.
+
+**The `-\d+)` collapse did NOT land**, per the standing rule: ten digit
+rows stay ten rows. It waits for a reachability differential that passes
+on `(a)(?-1` / `(a)(?-1x)` / `(a)(?-1:x)` (PCRE2 114) — unchanged.
+
+**Landing bar:** differential vs the pre-MOD-0.2 snapshot ZERO differences
+over 5,247 comparisons — a pure seam migration with NO guarded exceptions,
+which is what the step promised. Full battery green (make test with 165
+registry + 430 reject + PC-3 143, strict, verify_rxt 100%, fuzz seed 1
+zero divergences, spec_mod0 9/0/1, bench, mech 20/20).
+
+**Lessons:**
+- `-Wextra`'s missing-field-initializers turns "append zero-defaulted
+  trailing fields to a positional-literal table" into a per-row obligation
+  — `make strict` failed on the first build, and the fix (every macro
+  initialises both fields explicitly) is now itself the enforcement: a
+  future row cannot omit rank/recognise silently. The zero-default design
+  survived; the SILENT half of it did not, and that is an improvement.
+- The wake brief predicted mech anchor drift (S15-S19) from registry.c
+  edits. It did not happen, and the reason is the edit SHAPE: macro
+  DEFINITIONS changed, call sites did not, and the anchors quote call
+  sites. Worth remembering as the drift-avoiding way to widen a row schema.
+- Predict-then-measure kept paying: the liveness floors were derived by
+  hand from the generator before the first run and matched exactly, which
+  is the difference between floors and numbers copied from output.
+
+**Next:** MOD-0.3 (classes) is the head of the spine — first module with
+real ports, check07's population comes due, PC-4 lands with it. NOT
+started without Frank, per the session directive.
+
+## 2026-08-11 — ninth session, close: the R15 panel and its fixes
+
+Three narrow-brief read-only critics on the landed migration (checks lens,
+engine lens, docs lens — one primary question each, the R12 standard; all
+disclosed their ambient injections). Compiled with dispositions in
+docs/reviews/2026-08-11-r15-mod02.md. The engine critic found NO
+behavioural divergence. Four findings fixed the same session, each cheap
+because the probe spaces already existed:
+
+- **The no-ambiguity sweep** (engine critic): deleting the D32 §9.5
+  scaffold had left the `ambiguous` out-param probed by NOTHING — a future
+  same-rank prefix pair would fire only in a user's compile.
+  check_arbitration_liveness now sweeps every kind × sel × generated text
+  (261,193 probes, 0 ties); the equal-rank sabotage fails it directly,
+  naming the probes.
+- **registry_check's own count + manifest guard** (checks critic): the
+  directory that DOCUMENTS why deletions must fail had the protection on
+  PC-3 only. Mirrored for registry_check (count 166, three needles, plus
+  one NEGATIVE needle — the retired check's PASS line must not reappear).
+  Validated: deleting check_row_ranks fires both layers.
+- **Tails only at esc/group** (checks critic): scans.c's prose assumption
+  is now check_row_ranks' assertion — the other two doorways ask the
+  tail-less question and discard ambiguity, so a tailed row there would be
+  unreachable with silent clashes.
+- **K10's stale nets list** (docs critic): named the deleted
+  check_tail_precedence in present tense; now marks the retirement AND
+  states the successors miss K10 the same way — the blind-net count did
+  not shrink, which is the honest sentence the old text only implied.
+- The duplicated dispatch predicate is gone: registry_check counts answers
+  with the engine's own exported pcrec_registry_row_answers.
+
+**The finding that was REFUTED, recorded because the refutation method
+matters:** the checks critic proved the two new checks blind to
+winner-swaps (true — they are, by design) and concluded a rank-value swap
+(`\N{U+` at 24 vs `\N{` at 25) ships through `make test` green. Measured:
+it fails check_table_to_parser TWICE inside make test — the per-row syntax
+check is D32 §9.1's primary instrument and was in place before MOD-0.2
+began. One sabotage build settled what the report argued. Verify a
+critic's consequence claim the way you verify your own: run it.
+
+Final state: registry 166 + reject 430 + PC-3 143 all from runs, strict
+clean, differential vs the pre-MOD-0.2 snapshot still ZERO over 5,247,
+spec_mod0 9/0/1, mech 20/20, bench clean. MOD-0.2 closed.

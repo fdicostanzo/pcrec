@@ -518,10 +518,18 @@ ten. The bare `\N` row correctly has it; the `{U+` row inherited it.
 warrants. **The fix is one flag; the TEST is the work**, which is why this is
 recorded rather than patched in the same commit as a design review.
 
-**Why four independent nets all miss it, which is the part worth keeping:**
+**Why four independent nets all miss it, which is the part worth keeping**
+(updated at MOD-0.2, 2026-08-11, when the first net was retired — its
+successors miss it the same way, so the count of blind nets did not shrink):
 
-- `check_tail_precedence` asks which ROW is selected. The right row IS selected.
-- The R10 ambiguity guard (D29) asks how many recognisers ANSWER. One answers.
+- `check_tail_precedence` asked which ROW is selected; the right row IS
+  selected. RETIRED at MOD-0.2, and its successors inherit the blindness for
+  the same reason: `check_row_ranks` asks whether a tailed row can WIN and
+  `check_arbitration_liveness` asks how often more than one recogniser
+  ANSWERS — K10 is a wrong FLAG on a correctly-selected row, invisible to
+  every question about selection.
+- The MOD-0.2 ambiguity defect (née the R10/D29 guard) asks how many
+  recognisers answer at the winning rank. One answers.
 - `registry_check.c:875-876` **EXEMPTS `RF_CLASS_INVALID` rows from the in-class
   sweep by design** (`skip_flag = RF_CLASS_BASE | RF_CLASS_INVALID`) — so the
   flag exempts the row from the one check that would have contradicted it. A
@@ -536,7 +544,9 @@ only position where the two rows disagree about a flag.
 
 **Scheduled:** with MOD-0.6 (module `unicode-props`), which owns this row and
 must close the in-class tail-sweep gap to have a test that can see it. Do not
-fix the flag without the sweep, or the next reader has the same four blind nets.
+fix the flag without the sweep, or the next reader has the same blind nets
+(four at R10 when this was written; still four after MOD-0.2 swapped the
+first for its successors — see the updated list above).
 
 ## K11 — FIXED 2026-08-11 (MOD-0.1's returned-claims epilogue, D33 §5)
 

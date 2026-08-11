@@ -523,11 +523,6 @@ static void check_feature_module_bijection(void)
  * 0 ambiguous) was DELETED with the engine it checked, in the same commit
  * — an equivalence check cannot outlive its oracle honestly. */
 
-static bool row_answers_here(const RegRow *r, const char *at, size_t avail)
-{
-    return (r->recognise ? r->recognise
-                         : pcrec_recognise_tail_default)(at, avail, r->tail);
-}
 
 /* A tailed row at the fallback tier can never win against its bucket's
  * always-answering fallback, so its construct would be unreachable — the
@@ -553,6 +548,20 @@ static void check_row_ranks(void)
                     "the fallback tier loses every arbitration and its construct "
                     "is unreachable",
                     kind_name((RegKind)k), rows[i].sel, rows[i].tail, rows[i].rank);
+                badrows++;
+            }
+            /* Tails live ONLY at the escape and group doorways (R15, checks
+             * critic): the class-bracket and verb lookups ask the tail-less
+             * question (at = NULL) and discard the ambiguity flag — a tailed
+             * row there could never win its own probe AND a genuine tie
+             * would be swallowed silently. scans.c states this as an
+             * assumption in prose; this is the assertion, where the fact
+             * lives (the R9 rule). */
+            if ((RegKind)k != RK_ESC && (RegKind)k != RK_GROUP) {
+                bad("%s: '%c' tail \"%s\" — a tailed row at a doorway that asks "
+                    "the tail-less question and discards ambiguity; the construct "
+                    "is unreachable and its clashes are silent",
+                    kind_name((RegKind)k), rows[i].sel, rows[i].tail);
                 badrows++;
             }
         }
@@ -632,7 +641,7 @@ static void check_arbitration_liveness(void)
             int answers = 0;
             for (size_t i = 0; i < n; i++) {
                 if (rows[i].sel != buckets[bi].sel) continue;
-                if (row_answers_here(&rows[i], texts[t], strlen(texts[t])))
+                if (pcrec_registry_row_answers(&rows[i], texts[t], strlen(texts[t])))
                     answers++;
             }
             if (answers >= 2) multi++;
@@ -663,6 +672,64 @@ static void check_arbitration_liveness(void)
                  "multi-row buckets (floors 10/15/15/50), %d triple-answer at "
                  "esc-'N'", total_multi, triple_seen);
         ok(label);
+    }
+
+    /* THE NO-AMBIGUITY SWEEP (R15, the engine critic's finding): after the
+     * D32 §9.5 scaffold was deleted with the retired engine, NOTHING probed
+     * the `ambiguous` out-param over a swept space — the defect could only
+     * fire at runtime on a user's pattern, caught indirectly by whichever
+     * string comparison it happened to break. This is the direct, total
+     * form: every kind, every selector byte, every generated text (the same
+     * space the floors above count over) must arbitrate WITHOUT a tie at
+     * the winning rank. The invariant it pins is the one the whole
+     * migration's equivalence rested on: same-rank tailed rows sharing a
+     * bucket have mutually exclusive tails, so only the deliberately
+     * rank-split \N pair ever clashes above the fallback. A future row
+     * violating that fails HERE, at check time, not in a user's compile.
+     * Validated in the failing direction: the equal-rank sabotage on the
+     * \N pair (70 -> 25) trips this sweep directly. */
+    {
+        long ambprobes = 0;
+        int  ambhits = 0;
+        for (int k = 0; k < RK_COUNT; k++) {
+            size_t n;
+            const RegRow *rows = pcrec_registry((RegKind)k, &n);
+            if (!rows) continue;
+            for (int sel = 1; sel < 256; sel++) {
+                int nt = bucket_probe_texts(rows, n, sel, texts);
+                for (int t = 0; t < nt; t++) {
+                    bool amb = false;
+                    (void)pcrec_registry_arbitrate((RegKind)k, sel, texts[t],
+                                                   strlen(texts[t]), &amb);
+                    ambprobes++;
+                    if (amb) {
+                        if (ambhits < 8)
+                            bad("no-ambiguity sweep: kind %s sel '%c' text \"%s\" "
+                                "arbitrates AMBIGUOUS — two rows answer at the "
+                                "winning rank; the winner would be declaration "
+                                "order, which is not a rule anyone maintains",
+                                kind_name((RegKind)k), sel, texts[t]);
+                        ambhits++;
+                    }
+                }
+                bool amb = false;
+                (void)pcrec_registry_arbitrate((RegKind)k, sel, NULL, 0, &amb);
+                ambprobes++;
+                if (amb) ambhits++;
+            }
+        }
+        if (ambprobes < 100000)
+            bad("no-ambiguity sweep: only %ld probes — the generated space "
+                "collapsed and this sweep is asserting less than it claims",
+                ambprobes);
+        else if (ambhits == 0) {
+            char label[120];
+            snprintf(label, sizeof label,
+                     "no-ambiguity sweep: 0 winning-rank ties over %ld probes",
+                     ambprobes);
+            ok(label);
+        } else if (ambhits > 8)
+            bad("no-ambiguity sweep: %d ambiguous probes total", ambhits);
     }
 }
 

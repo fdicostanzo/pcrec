@@ -189,6 +189,24 @@ Two rules earned the hard way and enforced here:
   bucket was one probe away, and the fix that worked was feeding the
   predictor from the oracle, never from the row.
 
+- **2026-08-11-r15-mod02.md** — R15, three narrow-brief read-only critics on
+  the LANDED MOD-0.2 migration (the design had R10/R11/R12; this attacked
+  the implementation). No behavioural divergence found (systematic bucket
+  enumeration + live probes). Three findings fixed same-session: the
+  registry_check suite had no count/manifest guard in the directory whose
+  own docs record why that matters (now mirrored from PC-3, plus a NEGATIVE
+  needle — the retired check's PASS line must not reappear); nothing probed
+  the `ambiguous` flag over a swept space after the D32 §9.5 scaffold's
+  deletion (now the no-ambiguity sweep, 261,193 probes, validated in the
+  failing direction); tails-only-at-esc/group was prose discipline (now an
+  assertion). One stale-as-current doc fixed (K10's "four nets" named a
+  deleted check; the successors' shared blindness is now stated). **The
+  sharpest lesson runs the other way**: the checks critic proved two new
+  checks blind to winner-swaps and concluded `make test` would pass one —
+  measured FALSE in one sabotage build; `check_table_to_parser` (D32 §9.1's
+  primary instrument) catches it twice. Verify a critic's consequence claim
+  the way you verify your own: run it.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 

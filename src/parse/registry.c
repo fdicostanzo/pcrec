@@ -1022,7 +1022,12 @@ bool pcrec_recognise_tail_default(const char *at, size_t avail, const char *tail
     return at && tl <= avail && memcmp(at, tail, tl) == 0;
 }
 
-static bool row_answers(const RegRow *r, const char *at, size_t avail)
+/* Exposed (not static) so registry_check counts answers with the ENGINE'S
+ * OWN predicate rather than a second copy that could drift (R15, checks
+ * critic). The oracle duty stays elsewhere — the per-row syntax checks and
+ * PC-3 — so sharing this source with the liveness counter costs nothing a
+ * duplicate would have caught. */
+bool pcrec_registry_row_answers(const RegRow *r, const char *at, size_t avail)
 {
     return (r->recognise ? r->recognise
                          : pcrec_recognise_tail_default)(at, avail, r->tail);
@@ -1051,7 +1056,7 @@ const RegRow *pcrec_registry_arbitrate(RegKind k, int sel, const char *at,
     for (size_t i = 0; i < n; i++) {
         if (rows[i].sel == REG_SEL_ANY) { any = &rows[i]; continue; }
         if (rows[i].sel != sel) continue;
-        if (!row_answers(&rows[i], at, avail)) continue;
+        if (!pcrec_registry_row_answers(&rows[i], at, avail)) continue;
         if (!best || rows[i].rank > best->rank) { best = &rows[i]; tie = false; }
         else if (rows[i].rank == best->rank)    tie = true;
     }

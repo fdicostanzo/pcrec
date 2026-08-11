@@ -38,8 +38,58 @@ if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
     exit 1
 fi
 
-"$BIN"
-rc=$?
+REGOUT="$WORKDIR/registry_check.out"
+"$BIN" 2>&1 | tee "$REGOUT"
+rc=${PIPESTATUS[0]}
+
+# ---- COVERAGE GUARD for registry_check itself (R15, checks critic) ------
+#
+# PC-3 below has carried a count + manifest since R9; registry_check — the
+# suite in the SAME directory, holding the MOD-0.2 arbitration checks — had
+# neither, so deleting check_row_ranks or the no-ambiguity sweep would have
+# been invisible: `checks passed` shifts in output nothing compared. Same
+# two layers, same rules: count evaluated always (with the R9/C1-final2
+# wording split), manifest only on a green run (needles come from ok()
+# lines, and a failing check never prints one).
+regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
+if [ "$regn" -ne 166 ]; then
+    if grep -q "^checks failed: 0" "$REGOUT"; then
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 166." >&2
+        echo "registry:   if you added or removed checks on purpose, update this number" >&2
+        echo "registry:   in the same commit; if not, coverage was removed" >&2
+    else
+        rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
+        echo "registry: registry_check shows $regn passing checks (166 expected; ${rnf:-?} failed," >&2
+        echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
+        echo "registry:   number must return to 166 — if it does not, coverage was removed too" >&2
+    fi
+    rc=1
+fi
+if grep -q "^checks failed: 0" "$REGOUT"; then
+    while IFS='|' read -r needle why; do
+        [ -z "$needle" ] && continue
+        if ! grep -qF "$needle" "$REGOUT"; then
+            echo "registry: MANIFEST — registry_check no longer runs a check matching '$needle'." >&2
+            echo "registry:   why it must exist: $why" >&2
+            echo "registry:   do NOT satisfy this by editing a count; restore the check" >&2
+            rc=1
+        fi
+    done <<'REGMANIFEST'
+row ranks: all 18 tailed rows|MOD-0.2: a tailed row at the fallback tier loses every arbitration and its construct is unreachable; successor of check_tail_precedence's second half
+arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is unobservable; these floors are check_tail_precedence's re-homed liveness clause
+no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
+REGMANIFEST
+fi
+# The one NEGATIVE needle, outside the manifest loop because its polarity is
+# reversed: the retired check's PASS line must NOT reappear. Someone
+# resurrecting check_tail_precedence instead of maintaining its successors
+# reintroduces an assertion about an engine that no longer exists.
+if grep -qF "tail precedence: longest tail wins" "$REGOUT"; then
+    echo "registry: the RETIRED check_tail_precedence is back — its engine was" >&2
+    echo "registry:   deleted at MOD-0.2; maintain check_row_ranks and the" >&2
+    echo "registry:   arbitration-liveness floors instead" >&2
+    rc=1
+fi
 
 # SR-4: the dump is load-bearing for docs/pcre2_compliance.md. The construct
 # INDEX in that file is generated from `pcrec --list-syntax`, so it cannot drift

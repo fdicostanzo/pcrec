@@ -558,6 +558,10 @@ const RegRow *pcrec_registry_find(RegKind k, int sel, const char *at, size_t ava
  * D32 §2's "positive and local"). A NULL `at` is the tail-less question
  * exactly as it was under SR-9. */
 bool pcrec_recognise_tail_default(const char *at, size_t avail, const char *tail);
+/* Does this row's recogniser answer for the text? The engine's own dispatch
+ * predicate, exposed so checks count answers with the same code the
+ * arbitration runs — one source, no drift (R15). */
+bool pcrec_registry_row_answers(const RegRow *r, const char *at, size_t avail);
 /* The MOD-0.2 engine behind pcrec_registry_find: every sel-matching row's
  * recogniser runs, the highest-ranked ANSWERING row wins, and two answers at
  * the WINNING rank set *ambiguous — the D32 §2 defect, which the escape and

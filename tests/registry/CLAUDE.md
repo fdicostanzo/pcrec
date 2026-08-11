@@ -87,6 +87,42 @@ directory asserts that the description and the shipped parser actually agree.
    removed both collating rows and all 116 checks stayed green. A coverage
    floor cannot fix this — it answers "did someone delete a lot", never "did
    someone delete the right ones".
+6. **the MOD-0.2 arbitration** (2026-08-11) — row selection is recogniser +
+   rank since MOD-0.2, and two checks own the migrated rules.
+   `check_row_ranks`: every tailed row (18, a measured count with the
+   R8/C4-10 caveat printed beside it) must sit above the fallback tier, or
+   its construct is unreachable — the successor of the retired
+   `check_tail_precedence`'s tailed-beats-fallback half. `check_arbitration_
+   liveness`: per multi-row bucket, a FLOORED count of generated probes where
+   more than one recogniser answers (10/15/15/50, predicted from the
+   generator before the first run and confirmed exactly), plus the esc-`N`
+   triple-answer assertion — the pair `\N{`/`\N{U+` is the only place the
+   ordering between two TAILED ranks is observable, so its disappearance
+   must fail loudly rather than leave rank untested (the retired check's
+   liveness clause, re-homed; R11/M3's counter, D32 §9's retirement
+   precondition). The D32 §9.5 migration scaffold (new engine vs the retired
+   longest-tail-wins engine, 261,193 probes, 0 mismatches, 0 ambiguous) was
+   deleted WITH the retired engine in one commit — an equivalence check
+   cannot outlive its oracle honestly. The ambiguity defect path (two
+   answers at the winning rank → "internal error: ambiguous registry
+   arbitration...") was validated live: an equal-rank sabotage on the `\N`
+   pair fires it with a clean exit 1 and 2 registry failures naming the row.
+   R15 hardened all of this the same session: the liveness check now ends
+   with the **no-ambiguity sweep** (every kind × sel × generated text,
+   261,193 probes, zero winning-rank ties — the scaffold's deletion had
+   left the `ambiguous` flag probed by nothing; equal-rank sabotage fails
+   it directly), check_row_ranks also asserts **tails exist only at the
+   escape and group doorways** (the other two ask the tail-less question
+   and discard ambiguity — scans.c's prose assumption, now an assertion),
+   the answer predicate is the engine's own exported
+   `pcrec_registry_row_answers` (no duplicate to drift), and
+   run_registry_tests.sh carries a **count (166) + manifest guard for
+   registry_check itself**, mirroring PC-3's, with one NEGATIVE needle:
+   the retired check's PASS line must not reappear. NOTE the division of
+   labour R15's checks critic initially misread: these checks do NOT ask
+   which row WINS — `check_table_to_parser` owns that (D32 §9.1's primary
+   instrument), and a rank-value winner-swap sabotage fails it twice inside
+   `make test`, measured.
 
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
@@ -342,7 +378,10 @@ claimed; the last seven are Q2/SR-9's.
 | one Q2 completion replaced by a duplicate of another (probe COUNT unchanged) | 1 (the set checksum) |
 | **longest-tail-wins -> first-tail-wins in `pcrec_registry_find`** | **3** (+1 reject) — see below |
 
-**The tail-precedence sabotage found a real hole and is the one to read.** On
+**The tail-precedence sabotage found a real hole and is the one to read**
+(historical since MOD-0.2 — the engine it sabotaged is deleted and
+`check_tail_precedence` retired with committed successors, item 6 above —
+but the lesson is the reason those successors exist in the shape they do). On
 its first run it produced **ZERO failures repository-wide**: every tail in the
 table is one byte except `\N`'s pair, and those two were written longest-first,
 so taking the FIRST matching tail gave the same answer as taking the LONGEST and

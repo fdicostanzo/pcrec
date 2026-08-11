@@ -56,7 +56,11 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   "gate closed"), and the CURSOR RULE — cx->pos moves only under
   WANT_RESULT — is measured externally through `--probe-ask` (check06's
   channel) rather than asserted. Slice 9 moved the extent scans out to
-  scans.c; ext.c keeps the seam: row choice, the gate, the terminal answer
+  scans.c; ext.c keeps the seam: row choice, the gate, the terminal answer.
+  Since MOD-0.2 the escape and group doorways call
+  `pcrec_registry_arbitrate` directly and render its ambiguity defect (two
+  answering rows at the winning rank) as an internal error — unreachable on
+  the correct table, validated live by an equal-rank sabotage
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
@@ -184,25 +188,34 @@ Rules when touching it:
   would cost the base tier a lookup. `\b` inside a class is a third thing
   parse.c still answers, but as BASE syntax — it decodes to backspace, which is
   what the row's `RF_CLASS_BASE` flag records.
-- **A row may carry a `tail`** (SR-9) — **but D29 supersedes this as a LOOKUP
-  KEY, and [MOD-0] is implementing that now.** After MOD-0 a row names a
-  RECOGNISER function, `tail` survives only as the parameter of a
-  `tail_default` recogniser, and LONGEST TAIL WINS is replaced by "exactly one
-  recogniser may answer, and two is a registry defect". The rest of this bullet
-  describes the shipped code, which is still accurate until MOD-0.2 lands: the
-  bytes that must FOLLOW its selector
-  byte, with LONGEST TAIL WINS inside that byte's bucket. It is a literal
-  prefix, not a pattern — `(?-` needs ten rows, "0".."9", rather than one "\d",
-  because a tail nobody has to interpret cannot be interpreted wrongly. Three
-  bytes use it: `P` (`<` named group, `=` backreference, `>` subroutine call),
-  `<` (`=` `!` `*` are lookaround, everything else is a named group) and `\N`
-  (`{U+` is a Unicode code point, `{` alone is a construct PCRE2 refuses).
-  **Row ORDER must not be able to stand in for the rule.** The `\N` pair is the
-  only place longest-wins is observable, and reducing find() to
-  first-matching-tail produced ZERO failures repository-wide while those two
-  rows were written longest-first. They are now written SHORTEST first, so order
-  disagrees with the rule, and `check_tail_precedence` asserts it directly and
-  fails if no prefix-related pair is left to observe it with.
+- **A row may carry a `tail`** (SR-9), and since MOD-0.2 (2026-08-11) the
+  lookup engine never interprets it: selection is RECOGNISER + RANK (design
+  §2.2/D32, kept per-port-ready by Part II §14.4). Each sel-matching row's
+  recogniser runs — positive and local, knowing nothing of its siblings; NULL
+  means `pcrec_recognise_tail_default` with the row's `tail` as its parameter,
+  which is the field's only remaining reader on the lookup path — and the
+  highest-ranked ANSWERING row wins. Multiple answers are NORMAL (the bare
+  fallback answering "always" is correct, D32 §2); **two answers at the
+  WINNING rank is the defect**, rendered by the escape/group doorways as an
+  internal error, never resolved by declaration order. Rank tiers are 0
+  (fallback / never clashes), 25 (tailed), 70 (`\N{U+`, the longer half of the
+  table's one prefix pair) — values are meaningless except between clashing
+  rows, documented on RegRow.rank. A tail is still a literal prefix, not a
+  pattern — `(?-` keeps ten rows, "0".."9", rather than one "\d" (the `-\d+)`
+  collapse is DEFERRED: as written it declines on `(a)(?-1`/`(a)(?-1x)`/
+  `(a)(?-1:x)`, PCRE2 error 114, a tier-2 regression; it waits for a passing
+  reachability differential). Three bytes use tails: `P` (`<` named group, `=`
+  backreference, `>` subroutine call), `<` (`=` `!` `*` are lookaround,
+  everything else is a named group) and `\N` (`{U+` is a Unicode code point,
+  `{` alone is a construct PCRE2 refuses). **Row ORDER must not be able to
+  stand in for the rule** — the `\N` pair stays written SHORTEST first so
+  order disagrees with the required outcome; `check_tail_precedence` retired
+  WITH committed successors: `check_row_ranks` (tailed row must outrank the
+  fallback tier) and `check_arbitration_liveness` (floored multi-answer
+  counts per bucket plus the esc-'N' triple-answer assertion, R11/M3's
+  counter). The retired SR-9 engine was proven equivalent before deletion:
+  a 261,193-probe scaffold plus a 5,247-comparison behavioural differential,
+  zero differences.
 - **The compound module name is gone.** `M_lookaround_named`
   ("lookaround/named-groups") existed for `(?<`, one byte meaning two
   constructs. A compound name is a true sentence and an inexact answer, and D26
