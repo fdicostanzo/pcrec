@@ -10,5 +10,5 @@ SAB_SUITES="reject"
 SAB_DESC="ESC('d', ...) module changed from 'classes' to 'misc' (wrong but plausible)"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 2 hand-written fail, 0 iterated"
 SAB_COUNT=1
-SAB_BEFORE="ESC('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\"),"
-SAB_AFTER="ESC('d', \"\\\\d\", misc, ANY_ENGINE, \"any decimal digit\"),"
+SAB_BEFORE="ESC('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\"),"
+SAB_AFTER="ESC('d', \"\\\\d\", misc, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\"),"

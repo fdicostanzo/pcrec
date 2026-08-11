@@ -15,6 +15,6 @@ SAB_SUITES="reject"
 SAB_DESC="add ESC('j', \"\\\\j\", misc, ...) for a construct PCRE2 does not define; no hand-written pin exists"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 0/0 -- expected UNDETECTED, this is the SR-4 blind spot itself"
 SAB_COUNT=1
-SAB_BEFORE="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\"),"
-SAB_AFTER="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\"),
-ESC('j', \"\\\\j\", misc, ANY_ENGINE, \"fabricated: PCRE2 does not define this escape (MECH-1 sabotage for the SR-4 blind spot)\"),"
+SAB_BEFORE="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\"),"
+SAB_AFTER="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\"),
+ESC('j', \"\\\\j\", misc, ANY_ENGINE, \"fabricated: PCRE2 does not define this escape (MECH-1 sabotage for the SR-4 blind spot)\", QF_NO, \"err 103\"),"

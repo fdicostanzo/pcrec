@@ -12,6 +12,6 @@ SAB_SUITES="reject"
 SAB_DESC="delete the ESC('d', ...) registry row entirely (adapted from the stale esc_modules[] reference)"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md (pre-SR-2 shape): 2 reject checks, 0 corpus cases -- ADAPTED, see report"
 SAB_COUNT=1
-SAB_BEFORE="ESC('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\"),
+SAB_BEFORE="ESC('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\"),
 "
 SAB_AFTER=""

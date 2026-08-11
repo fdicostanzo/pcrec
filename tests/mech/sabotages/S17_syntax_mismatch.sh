@@ -10,5 +10,5 @@ SAB_SUITES="reject"
 SAB_DESC="ESC('s', ...) syntax probe changed from '\\\\s' to 'zz' (a syntax field that never reaches its doorway)"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 0 hand-written, 1 iterated fail"
 SAB_COUNT=1
-SAB_BEFORE="ESC('s', \"\\\\s\", classes, ANY_ENGINE, \"any whitespace character\"),"
-SAB_AFTER="ESC('s', \"zz\", classes, ANY_ENGINE, \"any whitespace character\"),"
+SAB_BEFORE="ESC('s', \"\\\\s\", classes, ANY_ENGINE, \"any whitespace character\", QF_YES, \"set 6\"),"
+SAB_AFTER="ESC('s', \"zz\", classes, ANY_ENGINE, \"any whitespace character\", QF_YES, \"set 6\"),"
