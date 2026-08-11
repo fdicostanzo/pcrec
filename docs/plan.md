@@ -474,7 +474,27 @@ Then DOC-1, then PC-4 when module `classes` lands.
   forbade this signature, because `\12` is octal or a backreference depending on
   a running capture count and that decides its MODULE, which is tier 2 and exact.
 
-- [MOD-0.1] STATE:blocked (2026-08-11 — **the R11 design panel refuted parts of
+- [MOD-0.1] STATE:not-started (UNBLOCKED 2026-08-11 by **D32**, which resolves
+  the interface after three panels — R10 refuted D29, R11 refuted parts of D30,
+  R12 refuted the alternative and produced the resolution. **Read D32 before any
+  substep.** In one line: a row names ONE PARSER FUNCTION taking `Ctx *` (not a
+  pure recogniser plus a semantic port); functions are POSITIVE and LOCAL, each
+  knowing only its own form; RANK is a LOCAL TIEBREAK present only where rows
+  clash, and the bare fallback answering "always" is CORRECT; multiple answering
+  is normal and EQUAL RANK among answerers is the defect; `sel` demotes from key
+  to a checkable pre-test; the terminal outcome is the ROW'S EXISTING vocabulary,
+  not a uniform enum; and **purity is PER-DOORWAY**, which drops D30 §6's digit
+  exception entirely because a parser-continuation function has the running
+  capture count. Rejected and recorded so they are not re-proposed: declaration
+  ORDER as the rule (refuted on the shipped table, 16/17 and 7/17 probes, plus
+  global positional coupling 520/2308), TRIAL MODE (refuted by building it), the
+  two-port split with `head_len`, and a uniform three-outcome protocol (would
+  have resurrected the over-promise FIX-2 removed).
+  **Still owed and NOT resolved by D32:** the reachability differential's fourth
+  residue category; the whole-pattern capture count for `\1..\9` ([MOD-STATE]);
+  the returning-doorway contract across four call sites (K11 holds the escape
+  pair); and two doorway epilogues (GROUP, VERB) that do not exist as code)
+  ~~STATE:blocked (2026-08-11 — the R11 design panel refuted parts of
   D30, exactly as R10 refuted D29, and the resolution is Frank's call.** See
   `docs/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.
   NOTHING WAS BUILT; the panel ran against a written design and every finding

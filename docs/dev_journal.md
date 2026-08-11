@@ -4718,3 +4718,73 @@ doorway. Three doorways need no split.
 
 **NOT yet panelled** — it emerged from this panel and has not been attacked.
 That is the next step, and it wants Frank's call first.
+
+## 2026-08-11 (same session) — D32: the interface resolved, after three panels
+
+**[MOD-0.1] is UNBLOCKED.** D32 is written. It took R10 (refuted D29), R11
+(refuted parts of D30) and R12 (refuted the alternative and produced the
+resolution) to get here, and the resolution came from Frank pushing back on a
+premise nobody had examined.
+
+### The thing that unlocked it
+
+Every refutation since R10 rested on *"every tailed bucket has a tail-less
+FALLBACK row whose honest recogniser is 'always matches'"* — R10/C1-1. Frank
+asked for an example of a genuine ambiguity, and there isn't one: written as
+proper forms the four buckets are disjoint. That "honest" was honest about the
+TAIL, not about the CONSTRUCT — an artifact of the lookup mechanism being
+replaced.
+
+But the author's first repair (write disjoint forms, so `\N` reads "N not
+followed by `{`") was WORSE, and Frank named why: it puts negative knowledge of
+every sibling into every function. **His version keeps functions POSITIVE and
+LOCAL — `\N{U+` asks only "does it start with `{U+`" — and lets RANK do the
+elimination.** Which is exactly what D30 §1 always claimed rank was for, and
+which the author had talked himself out of two messages earlier.
+
+### And it dissolves M3's finding instead of repairing it
+
+R11/M3 measured "20 of 22 rows have completely unconstrained rank" and I read it
+as a hole for two sessions. Under the local-tiebreak framing it is not: rank only
+means something between CLASHING rows, so the 20 are rows whose value genuinely
+does not matter. What is constrained is what needs to be, and the per-row
+`syntax` check does it for free.
+
+### Rank vs order is settled by measurement, not preference
+
+Order was proposed and is refuted on the shipped table with no edit: the
+tail-less `\N` is declared FIRST (`registry.c:242`) so first-match claims
+`\N{U+0041}` (16/17 probes), and pinned last, `"{"` still precedes `"{U+"`
+(7/17). And the irony is exact — those rows are shortest-first DELIBERATELY so
+`check_tail_precedence` would have a pair to observe. The decisive property is
+blast radius: 4 of 96 adjacent swaps are load-bearing, but **520 of 2,308
+arbitrary swaps**, because moving an unrelated row across a bucket's span
+corrupts that bucket as a side effect of where it LANDS. Rank travels with the
+row; order is a property of the file.
+
+### D30 §6 is dropped, and the reason is structural
+
+Frank's point: a parser-continuation function has the intermediate data already
+built, so it knows the running capture count and simply decides whether `\12` is
+octal or a backreference. D30 deferred that to the semantic port to preserve
+PURITY — and that trade was bad because **purity was made GLOBAL when it is
+needed at exactly ONE doorway**. The class doorway needs a pure decide phase for
+its predicate; the escape doorway needs the count; they are different doorways
+and never conflict.
+
+Measured while checking it: `\8` followed by EIGHT groups compiles, seven does
+not — so `\1..\9` uses the WHOLE-PATTERN count, a forward reference no
+already-built state reaches. **Two counters are owed, not one.** `[MOD-STATE]`
+still owns the second.
+
+### Recorded in D32 §8 so they are not re-proposed
+
+Trial mode (refuted by building it), declaration order, the two-port split with
+`head_len`, one-function-per-bucket (the author's synthesis, made unnecessary),
+and disjoint-forms-without-rank (the author's, and worse).
+
+**Five of the author's claims were refuted across R12 and three more in
+conversation.** The pattern worth keeping: Frank's corrections came from
+questioning a premise the panels had inherited, not from finding an error in
+their work — every panel was internally sound and built on the same unexamined
+assumption.

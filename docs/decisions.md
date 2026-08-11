@@ -2315,6 +2315,10 @@ liveness assertion is CARRIED OVER, not retired with the check it belonged to:**
 if no probe in the space distinguishes a ranked pair, the rule is untested and
 the check must say so rather than print a PASS.
 
+> ## ⚠ SUPERSEDED IN PART BY **D32** (2026-08-11). §6 is DROPPED entirely;
+> ## §1's rank survives as a LOCAL TIEBREAK; §2's check wording is FALSE.
+> ## The refutations below are kept because they are the reasons.
+>
 > ## ⚠ PARTLY REFUTED BY THE R11 PANEL, 2026-08-11 — see
 > ## `docs/reviews/2026-08-11-r11-parse1-mod01.md`. §2's central sentence is
 > ## FALSE and §1-2's checks are weaker than claimed. NOT YET RE-RESOLVED.
@@ -2655,3 +2659,221 @@ restore-to-saved-value and not restore-to-`opt` — which is a landmine for
 site" shape; `(?x)`/`(?xx)` need a pervasive lexer change and `(?n)`/`(?J)` need
 capture/name infrastructure that does not exist, so `Ctx`'s scoped-state slot
 should be expected to grow a struct or bitmask rather than more bools.
+
+## D32 — 2026-08-11 — MOD-0's interface, RESOLVED: a row names a PARSER FUNCTION; rank is a LOCAL tiebreak; purity is PER-DOORWAY
+
+**Decided** 2026-08-11 (Frank), after three panels — R10 (refuted D29), R11
+(refuted parts of D30), R12 (a comparative panel on the alternative). **Amends
+D30**, whose spine survives; **drops D30 §6 entirely**; **supersedes** D29's
+two-port split. Read D30's inline R11 warning block, R11 and R12 first — this
+entry is the resolution, not the argument.
+
+### 1. A row names ONE PARSER FUNCTION, which is a continuation of the parser
+
+Not D29's pure recogniser plus a separate semantic port. **One function per row**,
+taking `Ctx *`, which decides whether the text is its construct and — once its
+module is implemented — parses it, recursing through `pcrec_parse_body` for a
+nested body.
+
+**Why the two-port split is dropped.** It was justified by a type-level boundary
+between deciding and building. That boundary bought less than it cost:
+
+- its hand-off contract was **already wrong** before anything was built —
+  `head_len` assumes every recogniser's `at` sits after the selector byte, and
+  `RF_OPTION_RUN` rows start AT it (R11/M1);
+- "the semantic port begins exactly where the head ended, ASSERTED" **named no
+  mechanism**: `src/` contains zero `assert()` calls;
+- `span_at`/`span_len` had **no consumer at all**, present or named-future —
+  D24/SR-2's own recorded hazard, *"lost more to unexercised structure than to
+  missing structure"*;
+- and it forced D30 §6's exception (below), which the one-function model deletes.
+
+### 2. Functions are POSITIVE and LOCAL — and this is the crux
+
+Each function recognises **its own proper form and knows nothing about its
+siblings**:
+
+    \N{U+…}   "does the text start with `{U+`?"
+    \N{name}  "does it start with `{`?"
+    \N        "am I `\N`?"   — trivially yes
+
+**The elimination is done by RANK, not by each function re-deriving it.** The
+bare row answering "always" is **CORRECT**, exactly as D30 §1 said, and the
+author's counter-proposal — write disjoint forms so `\N` reads *"N not followed
+by `{`"* — is WORSE and was rejected: it puts negative knowledge of every
+sibling into every function, so adding a `\N[` form tomorrow means editing a
+function that never mentioned `[`. That is precisely what rank exists to
+prevent.
+
+**Multiple functions answering is NORMAL, not a defect.** D29's "exactly one may
+answer" stays retired (R10/C1-1). **Two ANSWERING rows at EQUAL rank is the
+defect**, reported as an internal error — measured not to fire on the correct
+table: 0 collisions over 3,507 generated probes across all four buckets.
+
+### 3. Rank is a LOCAL TIEBREAK, not a global order
+
+Rank exists **only where rows clash** — measured: four buckets, 22 rows. The
+other 78 rows are alone in their bucket and carry no meaningful rank.
+
+**This dissolves R11/M3's finding rather than repairing it.** M3 measured "20 of
+22 rows have completely unconstrained rank values" and the author read it as a
+hole. It is not: rank only means something between clashing rows, so the 20 are
+rows whose value genuinely does not matter, and nothing should pretend to
+constrain it. What IS constrained is what needs to be, and the per-row `syntax`
+check does it for free — feed `\N{U+0041}` to its bucket and if bare `\N`
+outranked `\N{U+`, bare wins and the check fails.
+
+### 4. RANK, not ORDER — and the difference is measured
+
+Declaration order was proposed as the rule (it is stated exactly, so nothing
+stands in for anything). **It is refuted, on the shipped table, with no edit
+required** (R12/P2):
+
+- `registry.c:242`'s tail-less `\N` is declared FIRST, so first-match hands it
+  `\N{U+0041}` — **16 of 17 boundary probes wrong**;
+- pin the fallback last and `"{"` (`:254`) still precedes `"{U+"` (`:257`) —
+  **7 of 17**, including the canonical example.
+
+And the irony is exact: `src/parse/CLAUDE.md:166` records those rows are written
+SHORTEST-first *deliberately*, so `check_tail_precedence` would have a real
+prefix pair to observe. **The hardening that made the old check meaningful is
+what breaks the new rule.**
+
+**The decisive property is blast radius.** Rank travels with the row; order is a
+property of the file:
+
+    adjacent swaps (the realistic minimal edit)    4 of    96 load-bearing
+    arbitrary swaps (any two of 100 rows)        520 of 2,308 (22.5%)
+
+The 520 is real, not a harness artefact: swapping an UNRELATED row with one
+inside a bucket's span moves that bucket member out of relative order and drags
+the unrelated row in — corrupting the bucket **as a side effect of where the
+swap LANDS**. Rank's hazard is confined to the row whose value is wrong; order's
+can implicate rows never touched.
+
+### 5. PURITY IS PER-DOORWAY, and D30 §6's digit exception is DROPPED
+
+D30 §6 declared the digit buckets out of reach: `\12` is octal or a
+backreference by a running capture count, so *"their module attribution is
+explicitly deferred to the SEMANTIC port"* — a wart on a property D26 makes
+TIER 2 and EXACT. It shows today: pcrec answers `\12` with a hedged
+*"\1 (backreference/octal) requires module 'backrefs'"*, one module named for
+two constructs.
+
+**A parser-continuation function has the running count, so it just decides.**
+The exception disappears rather than being documented.
+
+**The trade D30 made was bad, and the reason is structural: purity was made
+GLOBAL when it is needed at exactly ONE doorway.** The class doorway needs a
+pure decide phase for `pcrec_ext_class_pair_opens`, the parser's only
+speculative customer. The escape doorway needs the capture count. **Different
+doorways — they never conflict.** D30 paid for global purity with an exception
+at a doorway that never needed it.
+
+Deciding is pure everywhere it must be, measured rather than assumed: an
+instrumented arena over the REAL `pcrec_compile`, forcing an unbounded declining
+delimiter scan, allocated **18 calls / 318 bytes identically at N = 1,000 /
+100,000 / 2,000,000** — zero growth with scan length (R12/P1).
+
+**Two counters are owed, not one** (R11/C3-2, re-measured here): `\ddd` uses the
+count SO FAR — which the function has. `\1..\9` uses the WHOLE-PATTERN count, a
+forward reference: `\8` followed by eight groups COMPILES, seven does not. No
+already-built state reaches that; it needs a pre-scan. `[MOD-STATE]` owns it,
+unchanged. `p_group_body` already carries the hook comment at the one place a
+capturing `(` is known.
+
+### 6. The terminal outcome is the ROW'S EXISTING VOCABULARY, not a uniform enum
+
+A three-outcome protocol (NOT_MINE / PARSED / UNIMPLEMENTED→render the module)
+was proposed and is REJECTED (R12/P3). It holds at one doorway of four:
+
+- **it would resurrect a bug FIX-2 removed.** The class `:` row has FOUR live
+  terminal shapes — `[[:alpha:]]` (module), `[:alpha:]` (`open_msg`, no module),
+  `[[:foo:]]` (bad name), `[x[:<:]]` (wrong position). Rendering "requires module
+  'classes'" mechanically is the exact over-promise FIX-2 removed, for **three of
+  its four shapes**;
+- module-shaped outcomes are a **minority even at the escape doorway** — ~18 of
+  41 rows;
+- `NOT_MINE` is **structurally unreachable at VERB** (one row, one unconditional
+  call site, nothing to hand back to), and `(*)` fits none of the three.
+
+So the outcomes are **NOT_MINE / PARSED / TERMINATED**, where TERMINATED's
+message is selected by the row's existing `RD_MODULE` / `RD_FIXED` / `open_msg`
+vocabulary and D25's four `(*` answers — **i.e. exactly what `ext.c` does
+today**. This is what keeps D32 a change to how a row is SELECTED and not to
+what happens after.
+
+### 7. `sel` survives, DEMOTED from key to checkable pre-test
+
+`sel` becomes a cheap filter — "don't call me unless the byte matches" — and the
+function is the truth. Which makes `sel` **redundant, and redundancy is
+checkable in a way a key never was**: for every row with a non-null `sel`,
+assert its function **returns exactly `NOT_MINE`** for every input whose first
+byte differs.
+
+That wording is deliberate. "Does not return PARSED" would pass vacuously for
+all 100 rows today, since every row is a stub — R11/C4-1's failure shape
+(a check whose pass condition holds before the feature exists) and it was caught
+in review (R12/P4).
+
+### 8. What is NOT adopted, recorded so it is not re-proposed
+
+- **Trial mode** — a `Ctx` copy plus a flag tripping `arena_alloc`/`ctx_fail`.
+  REFUTED by building it (R12/P1): the loop commits only after the function
+  RETURNS, so any construct with a body must allocate inside the trial-covered
+  call, aborting every CORRECT implementation. A real handler must therefore
+  clear the flag — one line, on mutable state it owns — and the trip did not
+  fire. It also buys **nothing** over design A for its own motivating customer,
+  since `pcrec_ext_class_pair_opens` is safe to call speculatively only because
+  it is already pure. And the arena leak is not benign: **~76-80 bytes per byte
+  scanned, 76.4 MB at N = 1,000,000**, unreachable from the real `Ctx` so
+  `arena_free` frees none of it.
+- **One function per BUCKET** (the author's synthesis after P2 killed order). Not
+  needed: §2's positive-functions-plus-rank removes the arbitration problem it
+  was invented to solve, and it would have cost D24's "add a row and nowhere
+  else" in four places.
+- **Disjoint proper forms with no rank** (the author's, §2) — worse, see §2.
+- **Declaration order as the rule** — §4.
+
+### 9. Checks
+
+1. **the per-row `syntax` check** — a row's own `syntax`, fed through the REAL
+   dispatch, must be claimed by THAT row. TOTAL over 22 rows, terminating, no
+   generated space, no oracle. **Primary**, and it constrains exactly the rank
+   orderings that matter (§3).
+2. **equal-rank collision detection** at dispatch — an internal error.
+3. **`sel`-redundancy**, worded per §7.
+4. **the reachability differential** — D30 §2's wording *"pcrec must promise a
+   module wherever libpcre2 DISPATCHES"* is FALSE and is NOT adopted: 93
+   counterexamples in 1,672 probes, all of them pcrec being correct, confirmed by
+   three independent harnesses. The rule is a RESIDUE assertion, and its
+   definition needs a FOURTH category beyond base-tier / `RS_REJECTED` / D25's
+   answers, because **46 of the 93 (49%) come from neither a row nor D25** —
+   there is no registry row at all for `\U`/`\u`/`\F`/`\L`/`\l`. Baseline to
+   beat, measured: **2 of 4 buckets have any live external coverage, 0 of 4 have
+   complete coverage of the malformed-body class, `\N` has none.**
+   Classifier requirements: THREE-way, and it must name **every doorway's**
+   no-construct code — including **103** at the escape doorway, which R11
+   published a criterion without.
+5. **the rank sweep is a MIGRATION SCAFFOLD, not a permanent check.** Its oracle
+   is the engine it replaces, and MOD-0.2 deletes that engine. Build it, run it
+   through the migration, and **delete it in the same commit that removes `tail`
+   from the lookup engine.**
+
+`check_tail_precedence` is NOT retired until its liveness obligation has a
+committed successor — R11/M3 located the natural one, a "did any generated probe
+have more than one matching row" counter, baseline nonzero per bucket
+(111 / 333 / 333 / 2730).
+
+### 10. Known to be unguarded by BOTH designs, stated rather than implied
+
+Module swap between two rows, and row deletion. `tests/reject/`'s hand-written
+manifest remains their only guard, unchanged by this decision. Do not let §9's
+list imply otherwise.
+
+**Revisit when:** two rows in one bucket genuinely need the same rank (the rule
+makes it a defect by construction, so the first real instance is a falsification);
+or a doorway other than the class bracket acquires a speculative customer, at
+which point per-doorway purity needs restating; or `[MOD-STATE]` lands the
+whole-pattern capture count, which is the only part of §5 this decision does not
+resolve.
