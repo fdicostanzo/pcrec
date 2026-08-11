@@ -311,3 +311,116 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours)
     if (!found) { sb_free(&sb); return NULL; }
     return sb_take(&sb);
 }
+
+/* ---- the --probe-ask channel (MOD-0.1, §18.2) ---------------------------
+ *
+ * ONE doorway call for a construct, at a caller-chosen ask level, with the
+ * REAL cursor reported before and after. This is the surface the cursor rule
+ * is measured over: check06 (tests/spec_mod0) drives every registry row's
+ * syntax here twice — WANT_RESULT set and clear — and requires cx->pos
+ * unchanged whenever RESULT was not asked. The positions printed are the Ctx
+ * field the doorways actually use, read by this function before and after
+ * the call; nothing here derives an "expected" position for the check to
+ * echo, because a check fed from the implementation's own answer would be
+ * the control-sharing-a-source failure this project keeps paying for.
+ *
+ * ROUTING MIRRORS parse.c'S CALL CONVENTIONS and recognises nothing itself:
+ * each branch places the cursor exactly where parse.c has it at that
+ * doorway's call site (escape: `\` and selector consumed; group: AT the
+ * `?`; verb: after `(`; class-bracket 4a/4b: after the class's `[`). It is
+ * a fifth CALLER of the four doorways, not a fifth doorway.
+ *
+ * TSV, one line, fields appended never reordered (the SR-4 rule):
+ *   doorway  want  answered_at  pos_before  pos_after  outcome  at
+ *   ep_set_certain  end  msg
+ * `answered_at` is the post-gate level — `result` asks print `verdict`
+ * until the first module is enabled, which makes the §5.4 demotion a
+ * measured fact rather than a comment.
+ *
+ * The Ctx below is ZEROED: no jmp target, no arena blocks. That is safe
+ * while every doorway RETURNS its answer (none may ctx_fail or allocate —
+ * the D33 §5 contract), and it is one of the things the first enabled,
+ * result-producing module port must revisit here, with a probe that is
+ * false the day before (D33 §9.3): a port that allocates needs this Ctx
+ * given a real arena before `result` asks can be driven through it. */
+char *pcrec_probe_ask(const char *want_name, const char *construct)
+{
+    static const char *const want_names[] = { "claim", "verdict", "result" };
+    int w = -1;
+    for (int i = 0; i < 3; i++)
+        if (!strcmp(want_name, want_names[i])) w = i;
+    if (w < 0) return NULL;
+    ExtWant want = (ExtWant)w;
+
+    Ctx cx;
+    memset(&cx, 0, sizeof cx);
+    cx.pat = construct;
+    cx.patlen = strlen(construct);
+    size_t n = cx.patlen;
+
+    /* Locate the construct: the FIRST byte that opens a doorway, found by a
+     * bytewise scan, never a parse. Ten registry rows carry a plain-group
+     * prefix in their syntax (`(a)(?-1)` — the probe must COMPILE in PCRE2,
+     * and a bare `(?-1)` does not), and parse.c reaches their doorway with
+     * the cursor deep in the pattern; the scan reproduces that placement
+     * and every reported position is in the FULL text's coordinates, so
+     * `at`/tails line up exactly as they would in a real parse. The scan
+     * does not decode escapes, so hand it a construct (with at most a plain
+     * prefix), not an arbitrary pattern.
+     *
+     * `(?:` is EXCLUDED exactly as parse.c excludes it: the base grammar
+     * answers it before the doorway is consulted, so there is no doorway
+     * call to probe — its row exists for the dump's completeness (SR-3),
+     * not because anything looks it up. */
+    const char *doorway = NULL;
+    size_t before = 0;
+    ExtResult r = { .what = EXT_NOT_MINE };
+    for (size_t i = 0; i < n && !doorway; i++) {
+        char c0 = construct[i];
+        int c1 = i + 1 < n ? (unsigned char)construct[i + 1] : -1;
+        if (c0 == '\\' && c1 >= 0) {
+            /* esc_atom's convention: `\` and the selector byte consumed */
+            doorway = "escape";
+            cx.pos = before = i + 2;
+            r = pcrec_ext_escape(&cx, want, c1, false, i);
+        } else if (c0 == '(' && c1 == '?' &&
+                   !(i + 2 < n && construct[i + 2] == ':')) {
+            /* p_group_body's convention: cursor AT the '?' */
+            doorway = "group";
+            cx.pos = before = i + 1;
+            r = pcrec_ext_group(&cx, want,
+                                i + 2 < n ? (unsigned char)construct[i + 2]
+                                          : -1, i);
+        } else if (c0 == '(' && c1 == '*') {
+            doorway = "verb";
+            cx.pos = before = i + 1;
+            r = pcrec_ext_verb(&cx, want, i);
+        } else if (c0 == '[' && c1 == '[') {
+            /* doorway 4b: a bracket INSIDE the class — `[[:alpha:]]` */
+            doorway = "class-bracket";
+            cx.pos = before = i + 1;
+            r = pcrec_ext_class_bracket(&cx, want,
+                                        i + 2 < n
+                                            ? (unsigned char)construct[i + 2]
+                                            : -1,
+                                        i + 1, i + 3, false, true);
+        } else if (c0 == '[') {
+            /* doorway 4a: the class's OWN bracket as opener — `[:alpha:]` */
+            doorway = "class-bracket";
+            cx.pos = before = i + 1;
+            r = pcrec_ext_class_bracket(&cx, want, c1, i, i + 2, true, false);
+        }
+    }
+    if (!doorway)
+        return NULL;    /* not doorway territory; the CLI says so and how */
+
+    StrBuf sb = {0};
+    sb_printf(&sb, "%s\t%s\t%s\t%zu\t%zu\t%s\t%zu\t%d\t%zu\t",
+              doorway, want_names[w], want_names[r.answered_at],
+              before, cx.pos,
+              r.what == EXT_NOT_MINE ? "not-mine" : "refusal",
+              r.at, r.ep_set_certain ? 1 : 0, r.end);
+    if (r.what == EXT_REFUSAL) sb_puts(&sb, r.msg);
+    sb_putc(&sb, '\n');
+    return sb_take(&sb);
+}

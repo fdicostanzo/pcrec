@@ -610,12 +610,79 @@ case10() {
     "$PCREC" --count-groups >/dev/null 2>"$d/ec4.txt"; rc=$?
     assert_eq "case10: --count-groups without a pattern exits 1" "1" "$rc"
 
+    # --probe-ask (MOD-0.1, §18.2): the cursor-rule channel — one doorway call
+    # at a chosen want level, real cursor reported before and after. The
+    # comparison over every row belongs to tests/spec_mod0's check06 (a D27
+    # author); what is pinned HERE is the surface: the exact line for one
+    # known cell, the field count, the gate demotion being visible, and the
+    # in-repo cursor sweep with a FLOORED population (an empty sweep prints
+    # the same silence as a passing one, so the count is asserted).
+    out="$("$PCREC" --probe-ask verdict -- '\d' 2>"$d/ep1.txt")"; rc=$?
+    assert_eq "case10: --probe-ask verdict runs" "0" "$rc" \
+        "stderr: $(cat "$d/ep1.txt")"
+    assert_eq "case10: ...and reports the escape doorway cell exactly" \
+        "escape	verdict	verdict	2	2	refusal	0	0	0	\\d requires module 'classes'" \
+        "$out"
+    assert_eq "case10: --probe-ask line has 10 fields" \
+        "10" "$(printf '%s\n' "$out" | awk -F'\t' '{print NF}')"
+    # the §5.4 gate, observable: a `result` ask is ANSWERED at `verdict`
+    # while no module is enabled — the day one is, this cell changes and
+    # this assertion must be revisited alongside check07
+    assert_eq "case10: --probe-ask result is answered at verdict (the gate)" \
+        "verdict" "$("$PCREC" --probe-ask result -- '\d' | cut -f3)"
+    # full-text coordinates for a prefixed construct (the ten (?-N) rows)
+    assert_eq "case10: --probe-ask reports full-text cursor coordinates" \
+        "4	4" "$("$PCREC" --probe-ask verdict -- '(a)(?-1)' | cut -f4,5)"
+    # THE CURSOR SWEEP: every registry row's syntax, claim and verdict, and
+    # the cursor must not move (§18.2's hard rule; WANT_RESULT is the only
+    # level allowed to move it, and nothing produces a result yet). (?:...)
+    # is the one deliberate non-route: the base grammar answers it before
+    # any doorway, so there is no call to probe.
+    local swept=0 moved=0 noroute=0
+    while IFS= read -r syn; do
+        for w in claim verdict; do
+            if line="$("$PCREC" --probe-ask "$w" -- "$syn" 2>/dev/null)"; then
+                swept=$((swept + 1))
+                [ "$(printf '%s\n' "$line" | cut -f4)" = \
+                  "$(printf '%s\n' "$line" | cut -f5)" ] || {
+                    moved=$((moved + 1))
+                    fail "case10: cursor moved under $w" "$syn: $line"
+                }
+            else
+                noroute=$((noroute + 1))
+                [ "$syn" = '(?:...)' ] || \
+                    fail "case10: a row's syntax no longer routes" "$syn ($w)"
+            fi
+        done
+    done < <(grep -v '^#' "$d/dump.tsv" | cut -f3)
+    if [ "$swept" -ge 198 ] && [ "$moved" -eq 0 ]; then
+        pass "case10: cursor unchanged below WANT_RESULT over $swept probes (floor 198)"
+    else
+        fail "case10: cursor sweep" "swept=$swept (floor 198) moved=$moved"
+    fi
+    assert_eq "case10: exactly one row is base-answered before the doorway" \
+        "2" "$noroute"
+    # channel-cannot-run is exit 1 and distinct from a measured refusal
+    "$PCREC" --probe-ask verdict -- 'abc' >/dev/null 2>"$d/ep2.txt"; rc=$?
+    assert_eq "case10: --probe-ask on non-doorway text exits 1" "1" "$rc"
+    assert_contains "case10: ...and explains the (?: exclusion" \
+        "$(cat "$d/ep2.txt")" "base grammar answers"
+    "$PCREC" --probe-ask sideways -- '\d' >/dev/null 2>&1; rc=$?
+    assert_eq "case10: an unknown want level exits 1" "1" "$rc"
+    "$PCREC" --probe-ask verdict -o - -- '\d' >/dev/null 2>&1; rc=$?
+    assert_eq "case10: --probe-ask with -o exits 1" "1" "$rc"
+    "$PCREC" --probe-ask verdict >/dev/null 2>&1; rc=$?
+    assert_eq "case10: --probe-ask without a construct exits 1" "1" "$rc"
+    "$PCREC" --probe-ask verdict --list-syntax >/dev/null 2>&1; rc=$?
+    assert_eq "case10: --probe-ask with --list-syntax exits 1" "1" "$rc"
+
     # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
     out="$("$PCREC" --help)"
     assert_contains "case10: --help documents --list-syntax" "$out" "--list-syntax"
     assert_contains "case10: --help documents --list-verbs" "$out" "--list-verbs"
     assert_contains "case10: --help documents --explain" "$out" "--explain"
     assert_contains "case10: --help documents --count-groups" "$out" "--count-groups"
+    assert_contains "case10: --help documents --probe-ask" "$out" "--probe-ask"
 
     # `--` still ends options: a pattern that looks like a query is a pattern
     "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?

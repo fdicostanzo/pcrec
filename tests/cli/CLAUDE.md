@@ -16,10 +16,17 @@ Part of `make test` since M2.
   composes with `--` and `--emit-main`, documented in `--help`, and does NOT
   leak into a build that did not ask for it (the case-sensitive control),
   (10) the SR-3 syntax queries — `--list-syntax`, `--explain`, `--flavour`,
-  since Q1 `--list-verbs`, and since MOD-0.1 `--count-groups` (the running
+  since Q1 `--list-verbs`, since MOD-0.1 `--count-groups` (the running
   capture count's external channel, §18.1 — count cells oracle-verified
   against python re and a 300-pattern generated sweep at landing; refusals
-  keep the compile diagnostics).
+  keep the compile diagnostics), and since MOD-0.1 slice 8 `--probe-ask`
+  (§18.2's cursor-rule channel: one known cell pinned byte-exact, the
+  10-field count, the §5.4 gate demotion pinned as a cell — result asks
+  answered at verdict, REVISIT when the first module is enabled — and an
+  in-repo cursor sweep over every registry row at claim+verdict, population
+  FLOORED at 198 probes; the spec-side comparison belongs to
+  tests/spec_mod0's check06, not here. Sabotage-validated three ways:
+  cursor breach 82/82 probes caught, gate unbroken pin, answered_at drop).
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
 
 ## Conventions

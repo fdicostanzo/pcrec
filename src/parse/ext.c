@@ -47,17 +47,36 @@
 
 #include "core/internal.h"
 
+/* THE GATE (§5.4/§15, the ASK contract — see ExtWant in internal.h): demote
+ * RESULT to VERDICT for a row whose module is not enabled, flooring at
+ * VERDICT — never CLAIM, which would be silence where a diagnostic is owed.
+ * The enabled set is EMPTY today (every row RS_MODULE or RS_REJECTED), so
+ * the demotion is unconditional and sits at doorway entry; the enabled-set
+ * slice replaces the constant with the per-row membership test and moves it
+ * to where the row is known. Observable NOW through the probe channel: an
+ * ask at `result` is answered_at `verdict`, and the day a module is enabled
+ * that stops being true — a probe that is false the day before (D33 §9.3). */
+static ExtWant ext_gate(ExtWant want)
+{
+    return want == WANT_RESULT ? WANT_VERDICT : want;
+}
+
 /* Format a refusal at claim time and return it. The arguments are what the
  * pre-epilogue ctx_fail calls passed, verbatim, so the rendered text cannot
- * drift from what tests/reject/ pins. */
+ * drift from what tests/reject/ pins. NOTE: reads the enclosing doorway's
+ * gated `want` parameter for `answered_at` — every doorway names it `want`
+ * and gates it at entry, which the macro relies on. */
 #define REFUSE(atpos, ...) do {                                              \
-        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "" };  \
+        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "",    \
+                           .answered_at = want };                            \
         snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
         return res_;                                                         \
     } while (0)
 
-/* No construct here; the cursor is unchanged. Only doorway 4 produces this. */
-#define DECLINE() return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "" }
+/* No construct here; the cursor is unchanged. Only doorway 4 produces this.
+ * A decline is a CLAIM-level answer — "not mine" costs nothing to say. */
+#define DECLINE() return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "", \
+                                      .answered_at = WANT_CLAIM }
 
 /* A row whose diag value does not belong to its kind is a registry defect, not
  * a pattern error. It is reported like any other failure because the parser has
@@ -101,8 +120,10 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
  * RD_MODULE_OCTAL is the ATOM form only. Since FIX-3 (K13) the digit rows and
  * `\g`/`\k` never arrive here with in_class set at all — the class position is
  * base syntax (octal / literal fallback, RF_CLASS_BASE), decoded in parse.c. */
-ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
+ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
+                           size_t at)
 {
+    want = ext_gate(want);
     /* cx->pos sits just past the escape byte, so that IS the tail position. */
     size_t avail;
     const char *tl = tail_at(cx, cx->pos, &avail);
@@ -137,7 +158,8 @@ ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
          * excludes every body-carrying row (\p{...} is "set 117" for the
          * probe form, but [0-\p{Foo}] is PCRE2 147, so the row cannot be
          * certified; see the ExtResult comment). */
-        ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "" };
+        ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "",
+                          .answered_at = want };
         res.ep_set_certain = r->class_expect &&
                              strncmp(r->class_expect, "set ", 4) == 0 &&
                              r->syntax[0] == '\\' && r->syntax[1] != '\0' &&
@@ -158,8 +180,9 @@ ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
  * over — once as an exact selector match, once as the fallback. It is the same
  * row and the same diagnostic either way, and parse.c printed '?' for the
  * missing byte, which is reproduced below. */
-ExtResult pcrec_ext_group(Ctx *cx, int c2, size_t at)
+ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
 {
+    want = ext_gate(want);
     /* cx->pos is at the '?'; c2 is the byte after it; so the tail starts two
      * past the cursor. When the pattern ends at the '?' that is already beyond
      * patlen and tail_at reports avail = 0. */
@@ -233,8 +256,9 @@ ExtResult pcrec_ext_group(Ctx *cx, int c2, size_t at)
  *
  * The forms are read from the VerbName table in registry.c, every bit of which
  * is measured against libpcre2 rather than read from documentation. */
-ExtResult pcrec_ext_verb(Ctx *cx, size_t at)
+ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
 {
+    want = ext_gate(want);
     const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
     const char *pat = cx->pat;
     size_t n = cx->patlen;
@@ -430,9 +454,11 @@ bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from)
     return false;
 }
 
-ExtResult pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
-                                  bool at_class_open, bool at_content_start)
+ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
+                                  size_t from, bool at_class_open,
+                                  bool at_content_start)
 {
+    want = ext_gate(want);
     /* No `if (c2 < 0)` guard: it was here, and it was redundant rather than
      * defensive. `find(RK_CLASSBRACKET, -1)` returns NULL because this kind has
      * no catch-all row — which registry_check.c now REQUIRES of it, since a
@@ -584,7 +610,8 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
      * collating rows' class_expect is "err 113", never certified). `end` is
      * where a low endpoint's range dash would sit. */
     {
-        ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "" };
+        ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "",
+                          .answered_at = want };
         res.ep_set_certain = r->class_expect &&
                              strncmp(r->class_expect, "set ", 4) == 0;
         res.end = close_at + 2;

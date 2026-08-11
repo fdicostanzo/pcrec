@@ -5720,3 +5720,61 @@ watch fired on the first file change) and briefly misread in-progress
 work as incomplete — the worktree convention Frank ruled this session
 exists to make that impossible; this addendum is its second motivating
 incident.
+
+## 2026-08-11 — eighth session: stale-watcher cleanup; slice 8 (the ASK contract + the cursor-rule channel)
+
+**Housekeeping first, on Frank's report:** 17 stale watcher shells from
+previous sessions were polling forever — each `until ! pgrep -f "...";
+do sleep N; done` matched the OTHER watchers' command lines, a mutual
+deadlock by pattern. Stopped via the harness (TaskStop by task id, mapped
+from /proc/PID/fd/1 → task output file; a direct `kill` was blocked by the
+permission classifier). Lesson for hand-off watches, adding to the
+seventh session's: a pgrep-based quiet-check must anchor or exclude its
+own observers (`pgrep -f` sees every watcher quoting the same string), or
+better, key on a done-marker file. The ~88 idle AGENTS in the panel are
+inert conversation state, not processes — nothing to clean.
+
+**Slice 8 = the ASK contract (§18.2 as ruled) + the probe channel**
+(this commit). ExtWant {CLAIM, VERDICT, RESULT}, no `may` axis, threaded
+through all four doorway signatures; parse.c's six call sites ask
+WANT_RESULT (the real parse wants the construct); `ext_gate` demotes
+RESULT→VERDICT — the §5.4 gate with an empty enabled set, unconditional
+today, floors at VERDICT never CLAIM; ExtResult gains `answered_at` (the
+post-gate level; nothing on the compile path reads it, byte-identity
+asserts that). The channel: `pcrec --probe-ask WANT [--] TEXT`
+(pcrec_probe_ask, syntax_dump.c) drives ONE doorway call placed exactly
+as parse.c places it and reports the REAL cursor before/after — the
+harness computes both sides from observed runs, per the check-design
+lesson (never echo a field the implementation also wrote).
+
+**Two routing findings, measured on the first sweep.** (1) Ten rows'
+syntax carries a plain-group prefix (`(a)(?-1)` — the probe must compile
+in PCRE2), so prefix routing missed them: the channel now scans bytewise
+to the first doorway OPENER and reports full-text coordinates, exactly
+where parse.c would have the cursor. (2) `(?:` driven at the group
+doorway hits BAD_ROW ("malformed registry row") — because parse.c
+answers `(?:` BEFORE the doorway and the RS_BASE row is never looked up.
+The channel now excludes `(?:` exactly as parse.c does; probing a call
+that cannot happen is not a measurement. 99/100 rows route (the `(?:...)`
+row is the deliberate exception), × 3 want levels, cursor unchanged
+everywhere; `result` asks visibly answered at `verdict` — the gate
+demotion is now a measured fact, false the day the first module lands.
+
+**Verified:** 952-pattern byte-identity differential vs the pre-slice
+binary (slice 5's instrument, reused): zero differences. cli case10
+95→109: exact cell, 10-field count, gate pin, cursor sweep FLOORED at
+198 probes, exit-code split (measured refusal exit 0 ≠ channel-cannot-run
+exit 1). Three sabotages, each caught by its intended instrument with
+the counts predicted beforehand: cursor breach under !RESULT → 82/82
+sweep probes + the exact cell; ext_gate returning want unchanged → the
+gate pin alone (1 failure); REFUSE dropping answered_at → 2 failures.
+Full battery green (suite, strict, verify_rxt, fuzz seed 1, spec_mod0
+7/0/3, mech).
+
+**Parallel tracks this session:** DOC-1 cold reader spawned (read-only,
+denied src/tests/plan/journal/design; re-derives the seven lost
+spec-ambiguity findings). Next spawn: the FRESH D27 author for check06's
+comparison — in a worktree under worktrees/ per Frank's ruling.
+
+**Next:** check06 arming (D27, worktree), then the enabled-set/toggles
+surface (checks 01/07/09), then MOD-0.1's byte-identity landing bar.

@@ -33,13 +33,24 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   with probes that are false the day before (D33 §9.3). `pcrec_ext_verb` is
   the one that reads more than a byte: since Q1 it parses the verb NAME and
   the FORM it was written in, and has four possible answers rather than one
-  (D25)
+  (D25). Since MOD-0.1's slice 8 every doorway takes an `ExtWant` ask level
+  (§18.2's three-level contract, no `may` axis — see internal.h): parse.c's
+  six call sites ask WANT_RESULT, `ext_gate` demotes RESULT→VERDICT while a
+  row's module is not enabled (unconditional today; floors at VERDICT), the
+  result's `answered_at` records the post-gate level, and the CURSOR RULE —
+  cx->pos moves only under WANT_RESULT — is measured externally through
+  `--probe-ask` (check06's channel) rather than asserted
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
   never reordered, so consumers' positional reads survive), `--list-verbs`
   (TSV, 6 columns — the Q1 name tables, which are not RegRows and so cannot
-  appear in the row dump whose format SR-4 froze) and `--explain`. Internal, not public API — the CLI and the
+  appear in the row dump whose format SR-4 froze), `--explain`, and since
+  MOD-0.1's slice 8 `pcrec_probe_ask` (`--probe-ask` — ONE doorway call at a
+  chosen want level with the real cursor reported before/after, routed by a
+  bytewise scan to the first doorway opener in full-text coordinates, `(?:`
+  excluded exactly as parse.c excludes it; the check06 cursor-rule channel,
+  10 TSV fields appended-never-reordered). Internal, not public API — the CLI and the
   test suite are the only consumers, and promoting a function into lib/pcrec.h
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which

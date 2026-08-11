@@ -531,8 +531,29 @@ Then DOC-1, then PC-4 when module `classes` lands.
   every construct that would record a reference is refused today, so the
   pass condition would hold vacuously (R11/C4-1's shape). check02 armed
   by a spec-side author (denied src/) against the channel.
-  Remaining: want+cursor (fresh D27 author for
-  check06), enabled-set/toggles, then the
+  SLICE 8 LANDED eighth session: the ASK contract (§18.2 as ruled — three
+  `want` levels CLAIM/VERDICT/RESULT, NO `may` axis) threaded through the
+  four doorway signatures; parse.c's six call sites all ask WANT_RESULT;
+  ext_gate demotes RESULT→VERDICT unconditionally (the §5.4 gate with an
+  empty enabled set — floors at VERDICT, never CLAIM; the enabled-set slice
+  replaces the constant with the membership test); ExtResult gains
+  `answered_at` (the post-gate level, nothing on the compile path reads it)
+  so the demotion is EXTERNALLY OBSERVABLE: `--probe-ask WANT [--] TEXT`
+  (pcrec_probe_ask in syntax_dump.c) drives ONE doorway call placed exactly
+  as parse.c would place it — bytewise scan to the first doorway opener,
+  full-text coordinates, `(?:` excluded exactly as the base grammar excludes
+  it — and reports the REAL cursor before/after: the check06 channel.
+  Cursor rule holds measured: 99/100 rows (the `(?:...)` row is the one
+  deliberate non-route) × 3 want levels, cursor unchanged everywhere.
+  Byte-identity 952-pattern differential vs pre-slice build: zero
+  differences. cli case10 95→109, with the in-repo cursor sweep FLOORED at
+  198 probes and the gate demotion pinned as a cell (revisit alongside
+  check07 when the first module is enabled). Three sabotages, each caught
+  by the predicted assertion set: cursor breach under !RESULT (82/82
+  probes + exact-cell), gate returning want unchanged (the demotion pin,
+  exactly 1 failure), REFUSE dropping answered_at (2 failures).
+  Remaining: check06 armed by a FRESH D27 author in a worktree (the
+  surface now exists), enabled-set/toggles, then the
   byte-identity bar)
   (UNBLOCKED 2026-08-11 by **D32**, which resolves
   the interface after three panels — R10 refuted D29, R11 refuted parts of D30,

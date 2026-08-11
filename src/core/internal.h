@@ -651,6 +651,37 @@ typedef enum {
                            requirement), fired by pcrec_ext_finish. */
 } ExtWhat;
 
+/* THE ASK CONTRACT (MOD-0.1, design §15/§18.2 as Frank ruled it): a doorway
+ * is asked at one of three `want` levels, and there is NO `may` capability
+ * axis — the fifth-session ruling collapsed it, with the revisit trigger
+ * recorded: a terminal answer REQUIRED to depend on a full sub-parse while
+ * its module is disabled reintroduces the axis.
+ *
+ *     WANT_CLAIM     is this yours, and what shape (consumer: arbitration)
+ *     WANT_VERDICT   the right terminal answer, whatever it costs
+ *     WANT_RESULT    the produced set/node
+ *
+ * THE CURSOR RULE, the load-bearing line: cx->pos moves ONLY under
+ * WANT_RESULT. Below RESULT a doorway may inspect the pattern without limit
+ * — the verb-name scan, the option run and the delimiter-pair scan are all
+ * bounded row-local reads VERDICT is entitled to — but must leave cx->pos
+ * byte-identical, and VERDICT never recurses into the pattern grammar.
+ * tests/spec_mod0's check06 measures this over every registry row through
+ * the CLI probe channel (`--probe-ask`), which reports the real cursor
+ * before and after a single doorway call.
+ *
+ * THE GATE (§5.4/§15) demotes `want` by exactly one step — RESULT ->
+ * VERDICT — for a row whose module is not enabled, and FLOORS at VERDICT: a
+ * disabled module still owes its diagnostic, so nothing ever demotes to
+ * CLAIM (silence where a message is owed). The enabled set is EMPTY today,
+ * so every ask from parse.c (always WANT_RESULT — the real parse wants the
+ * construct) is answered at VERDICT, which is why ExtResult's vocabulary is
+ * all refusals. ext.c's demotion is unconditional for exactly that reason;
+ * the enabled-set slice replaces it with the membership test (check07's
+ * subject), and `pcrec_ext_class_pair_opens` below is the one ask that
+ * bypasses `want` — it IS the CLAIM-shaped question as a predicate. */
+typedef enum { WANT_CLAIM = 0, WANT_VERDICT, WANT_RESULT } ExtWant;
+
 typedef struct {
     ExtWhat what;
     size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
@@ -675,6 +706,12 @@ typedef struct {
     /* class-bracket claims only: offset just past the construct's closing
      * "X]" — where a low endpoint's range dash would sit. */
     size_t  end;
+    /* The level the ask was actually ANSWERED at, after the gate — the §5.4
+     * demotion made observable (the probe channel prints it; nothing on the
+     * compile path reads it, which byte-identity asserts). WANT_RESULT
+     * appears here the day the first enabled module port produces a result,
+     * and not before. A decline is a claim-level answer (zero-init). */
+    ExtWant answered_at;
 } ExtResult;
 
 /* The ONE epilogue: renders a refusal via ctx_fail (byte-identical to the
@@ -683,9 +720,10 @@ typedef struct {
  * exactly this call. */
 void pcrec_ext_finish(Ctx *cx, const ExtResult *r);
 
-ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at);
-ExtResult pcrec_ext_group(Ctx *cx, int c2, size_t at);
-ExtResult pcrec_ext_verb(Ctx *cx, size_t at);
+ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
+                           size_t at);
+ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at);
+ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at);
 /* The one doorway that can DECLINE: `[` is an ordinary class member most of
  * the time, so EXT_NOT_MINE means "no construct here" and the caller carries
  * on with member parsing. (Its R5-era history — a bool return no path could
@@ -697,8 +735,9 @@ ExtResult pcrec_ext_verb(Ctx *cx, size_t at);
  * content — no member before it and no `^`. It exists for `[[:<:]]` and
  * `[[:>:]]`, which libpcre2 recognises ONLY as a class's entire content
  * (R9/C3-4); every other POSIX name works in any position. */
-ExtResult pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
-                                  bool at_class_open, bool at_content_start);
+ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
+                                  size_t from, bool at_class_open,
+                                  bool at_content_start);
 
 /* True when a `[X...X]` construct really opens at `from` with delimiter `c2` —
  * K4's scan as a predicate, for callers that must ASK rather than diagnose.
@@ -718,6 +757,13 @@ char *pcrec_syntax_verbs(void);
 /* NULL when no construct matches the query. */
 char *pcrec_syntax_explain(const char *query, unsigned flavours);
 unsigned pcrec_flavour_by_name(const char *name);
+/* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
+ * doorway call for `construct` at ask level `want_name` ("claim" /
+ * "verdict" / "result"), placed exactly as parse.c would place it, reporting
+ * the REAL Ctx cursor before and after. Returns a malloc'd TSV line the
+ * caller frees, or NULL when the want name is unknown or the text reaches no
+ * doorway. check06 (the cursor rule) compares over this surface. */
+char *pcrec_probe_ask(const char *want_name, const char *construct);
 
 /* ---- stage entry points ---- */
 

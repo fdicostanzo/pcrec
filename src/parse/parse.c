@@ -136,7 +136,7 @@ static Ast *esc_atom(Ctx *cx)
     int v = esc_char_value(cx, epos);
     if (v >= 0) return char_node(cx, (unsigned)v);
     cx->pos = save;
-    ExtResult r = pcrec_ext_escape(cx, nextc(cx), false, epos);
+    ExtResult r = pcrec_ext_escape(cx, WANT_RESULT, nextc(cx), false, epos);
     pcrec_ext_finish(cx, &r);
     /* The wall (K11's fix is this shape): the escape doorway cannot decline
      * today — even "no row" is a refusal — so reaching here means the
@@ -191,7 +191,7 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
      * §16's five steps need the claim visible at the range site, which is
      * exactly what the returned-claims epilogue exists for). The returned 0
      * is never read: every caller checks `claim` before using the value. */
-    *claim = pcrec_ext_escape(cx, c, true, epos);
+    *claim = pcrec_ext_escape(cx, WANT_RESULT, c, true, epos);
     if (claim->what != EXT_REFUSAL)
         /* The wall — see esc_atom. K11's flagged-not-reproduced hazard lives
          * on this path: a future class-port SCALAR feeds cls_set's 32-byte
@@ -214,8 +214,9 @@ static Ast *p_class(Ctx *cx)
      * (`[.a.]` is an error at offset 0). A negated class suppresses it because
      * `^` sits between the bracket and the delimiter — `[^.a.]` compiles. */
     if (!neg) {
-        ExtResult r = pcrec_ext_class_bracket(cx, peekc(cx), opening,
-                                              cx->pos + 1, true, false);
+        ExtResult r = pcrec_ext_class_bracket(cx, WANT_RESULT, peekc(cx),
+                                              opening, cx->pos + 1, true,
+                                              false);
         pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: carry on, cursor unmoved */
     }
     bool first = true;
@@ -231,8 +232,8 @@ static Ast *p_class(Ctx *cx)
          * than it fires — `[` is an ordinary member — and then falls through
          * to the member handling below. */
         if (c == '[') {
-            ExtResult r = pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos,
-                                                  cx->pos + 2, false,
+            ExtResult r = pcrec_ext_class_bracket(cx, WANT_RESULT, peekc2(cx),
+                                                  cx->pos, cx->pos + 2, false,
                                                   at_content_start);
             /* The K12 endpoint rule, bracket doorway, LOW side: a KNOWN
              * POSIX name (certifiably SET-shaped — ep_set_certain, set only
@@ -401,7 +402,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * is told "quantifier does not follow a repeatable item" about a
      * construct that is not a quantifier at all. */
     if (peekc(cx) == '*') {
-        ExtResult r = pcrec_ext_verb(cx, apos);
+        ExtResult r = pcrec_ext_verb(cx, WANT_RESULT, apos);
         pcrec_ext_finish(cx, &r);
         /* The wall: this doorway cannot decline (D25 — four answers, all
          * refusals today). When module 'verbs' first accepts a form, the
@@ -418,7 +419,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
         int c2 = peekc2(cx);
         if (c2 == ':') cx->pos += 2;
         else {
-            ExtResult r = pcrec_ext_group(cx, c2, apos);
+            ExtResult r = pcrec_ext_group(cx, WANT_RESULT, c2, apos);
             pcrec_ext_finish(cx, &r);
             /* The wall — see the verb doorway above. This is the exact site
              * PARSE-1 reproduced the exit-0 miscompile at ((?%x)b) compiled

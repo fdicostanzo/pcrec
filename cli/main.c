@@ -37,7 +37,15 @@ static void usage(FILE *f)
           "  --count-groups [--] PATTERN\n"
           "                    parse only; print the number of capturing\n"
           "                    groups. A pattern pcrec refuses is refused\n"
-          "                    here too, with the same diagnostic\n", f);
+          "                    here too, with the same diagnostic\n"
+          "  --probe-ask WANT [--] CONSTRUCT\n"
+          "                    drive the construct's doorway ONCE at ask\n"
+          "                    level WANT (claim|verdict|result) and report\n"
+          "                    the parser cursor. TSV: doorway, want,\n"
+          "                    answered_at, pos_before, pos_after, outcome,\n"
+          "                    at, ep_set_certain, end, msg. The cursor rule\n"
+          "                    (pos moves only under result) is what\n"
+          "                    tests/spec_mod0's check06 compares here\n", f);
 }
 
 static const char *base_name(const char *path)
@@ -65,6 +73,7 @@ int main(int argc, char **argv)
     const char *explain = NULL, *flavour = NULL;
     int list_verbs = 0;
     int count_groups = 0;
+    const char *probe_want = NULL;
 
     int no_more_opts = 0;
     for (int i = 1; i < argc; i++) {
@@ -79,6 +88,13 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
         else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;
+        else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "pcrec: missing value for %s\n", a);
+                return 1;
+            }
+            probe_want = argv[++i];
+        }
         else if (!no_more_opts &&
                  (!strcmp(a, "--explain") || !strcmp(a, "--flavour"))) {
             if (i + 1 >= argc) {
@@ -119,6 +135,44 @@ int main(int argc, char **argv)
      * compares against libpcre2). A pattern pcrec refuses is refused here
      * with pcrec_compile's exact diagnostic — leftmost refusal, so a count is
      * never reported for a pattern whose constructs pcrec does not know. */
+    /* --probe-ask drives ONE doorway call and reports the cursor — the
+     * check06 channel (§18.2's cursor rule). The doorway REFUSING the
+     * construct is a normal, reportable outcome here (exit 0, outcome
+     * column says so): probing is not compiling. Only a channel that could
+     * not run at all exits nonzero, so the check can tell "measured a
+     * refusal" from "measured nothing". */
+    if (probe_want) {
+        if (list_syntax || list_verbs || explain || count_groups) {
+            fprintf(stderr, "pcrec: --probe-ask is a separate query; use one\n");
+            return 1;
+        }
+        if (outpath) {
+            fprintf(stderr, "pcrec: --probe-ask takes no -o\n");
+            return 1;
+        }
+        if (flavour) {
+            fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
+                            "--explain only\n");
+            return 1;
+        }
+        if (!pattern) {
+            fprintf(stderr, "pcrec: --probe-ask needs a construct\n");
+            return 1;
+        }
+        char *line = pcrec_probe_ask(probe_want, pattern);
+        if (!line) {
+            fprintf(stderr, "pcrec: --probe-ask: WANT must be claim, verdict "
+                            "or result, and the construct must reach a "
+                            "doorway (start with '\\', '(?', '(*' or '[' — "
+                            "except '(?:', which the base grammar answers "
+                            "before any doorway is consulted)\n");
+            return 1;
+        }
+        fputs(line, stdout);
+        free(line);
+        return 0;
+    }
+
     if (count_groups) {
         if (list_syntax || list_verbs || explain) {
             fprintf(stderr, "pcrec: --count-groups is a separate query; use one\n");
