@@ -86,15 +86,40 @@ KEEP="${KEEP:-0}"
 # measured numbers, so none of them would have caught a 2x regression — a
 # budget that cannot fail is documentation, not a gate.
 #
-# Each is now the measured MEDIAN on the reference box divided by ~1.75, i.e.
-# tuned to fail on a ~1.75x regression. Individual trials on that box spread
-# 1.20-1.43x (printed on every row), and the median of BENCH_TRIALS is much
-# tighter than that, so the margin is real but not generous. Reference medians
-# are in the table in README.md; every value here is env-overridable, which is
-# how you retune on slower hardware rather than by editing this file.
-COMPILE_BUDGET_SECS="${COMPILE_BUDGET_SECS:-0.4}"        # measured 0.111
-GCC_O1_BUDGET_SECS="${GCC_O1_BUDGET_SECS:-2}"            # measured 0.219
-GCC_O2_BUDGET_SECS="${GCC_O2_BUDGET_SECS:-2}"            # measured 0.219
+# Most are the measured MEDIAN on the reference box divided by ~1.75, i.e.
+# tuned to fail on a ~1.75x regression: THROUGHPUT_NEEDLE/NOMATCH/ALT/SKIP.
+# FOUR ARE NOT: COMPILE_BUDGET_SECS, GCC_O1/O2_BUDGET_SECS and
+# LINEARITY_MAX_RATIO. This claim ("all of them are median/1.75") has now been
+# made three times and refuted twice (R3.8) — see the exception table in this
+# directory's CLAUDE.md for the current looseness of each, kept there instead
+# of here because it drifts and a reader should get it from one place. THE
+# REASON they stay loose, established by R3.8 (2026-08-11): COMPILE-SPEED and
+# GCC-TIME take ONE sample per run_bench.sh invocation, unlike THROUGHPUT's
+# BENCH_TRIALS=5 median — and single-sample GCC-TIME noise is real, not
+# theoretical: six same-day quiet-box runs (1-min load 0.9-2.6, well under
+# LOAD_LIMIT) measured the 8192-state pattern's -O1 compile at 0.119-0.223s, a
+# 1.87x swing on ONE sample with no other trial to average against. Tightening
+# to /1.75 on data this noisy would trade a documented-but-honest looseness
+# for a plausibly flaky gate, which is worse (see the LOAD_LIMIT rationale
+# below — a flaky gate gets its budget widened permanently, not fixed).
+# COMPILE-SPEED's own six-run spread was much tighter (0.112-0.117s, ~1.04x,
+# consistent with it being pure in-process work with no forked toolchain) and
+# is a more plausible tightening candidate in the future, but has not been
+# tightened here either: giving GCC-TIME and COMPILE-SPEED their own
+# BENCH_TRIALS-style median (an infrastructure change, not a budget retune)
+# should come BEFORE either is tightened, so both single-sample sections are
+# treated the same way until that lands. LINEARITY_MAX_RATIO's prior "2.08x
+# loose" characterization was itself likely a stale artifact: its cited
+# "measured 2.883" reference sits BELOW the theoretical linear ratio of 4.0
+# (16MB/64MB relative work), which is what a lucky low sample looks like, not
+# a real health baseline; a fresh six-run quiet-box median of 3.731 (this
+# section IS BENCH_TRIALS-protected, so this is a real median of medians)
+# gives 6.0/3.731 = 1.61x slack, close to the target 1.75x and not obviously
+# in need of retuning at all. Every value here remains env-overridable, which
+# is how you retune on slower hardware rather than by editing this file.
+COMPILE_BUDGET_SECS="${COMPILE_BUDGET_SECS:-0.4}"        # measured 0.114 (median of 6, 2026-08-11 quiet-box)
+GCC_O1_BUDGET_SECS="${GCC_O1_BUDGET_SECS:-2}"            # measured 0.214 (8192-state pattern, the binding one; median of 6, 2026-08-11)
+GCC_O2_BUDGET_SECS="${GCC_O2_BUDGET_SECS:-2}"            # measured 0.222 (8192-state pattern, the binding one; median of 6, 2026-08-11)
 THROUGHPUT_NEEDLE_MIN_MBPS="${THROUGHPUT_NEEDLE_MIN_MBPS:-1200}"   # measured 2160
 THROUGHPUT_NOMATCH_MIN_MBPS="${THROUGHPUT_NOMATCH_MIN_MBPS:-12000}" # measured 21910
 THROUGHPUT_ALT_MIN_MBPS="${THROUGHPUT_ALT_MIN_MBPS:-1000}"         # measured 1753
@@ -114,18 +139,37 @@ THROUGHPUT_BITMAP_MIN_MBPS="${THROUGHPUT_BITMAP_MIN_MBPS:-330}"   # measured 429
 # The shape R3 proposed for this, `.*=.*` over key=value text, is WRONG and is
 # recorded here so it does not get tried again: it MATCHES at offset 0 and ends
 # at 127, so an 8 MB run exits after 127 bytes and reports 32 GB/s. That is
-# R2-B4's exit-latency mistake exactly. `=[^\n]*!` over the same subject cannot
-# match (no '!' in the alphabet), so the scan is real and ~92% of the bytes are
-# consumed inside the skip loop.
+# R2-B4's exit-latency mistake exactly.
 #
-# Budget per D12, stated exactly rather than approximately, because R3 found
-# only 3 of 8 budgets actually matched the "/1.75" they claimed. Interleaved
-# median-of-9, pinned, 1-min load 0.79: healthy 1741.8 MB/s (spread 1.081x),
-# sabotaged 360.6 MB/s (spread 1.030x, pick_skip_states returning 0) — 4.83x.
-# 1741.8/1000 = median/1.74, i.e. this is /1.75 rounded to a round number
-# (995.3), not a different rule. The sabotaged build fails it by 2.8x.
-THROUGHPUT_SKIP_MIN_MBPS="${THROUGHPUT_SKIP_MIN_MBPS:-1000}"      # measured 1741.8
-LINEARITY_MAX_RATIO="${LINEARITY_MAX_RATIO:-6.0}"        # measured 2.883, linear 4.0
+# R3.9 (2026-08-11): the original subject here (many small "key=value\n"
+# records, alphanumeric only, `=[^\n]*!` never matching) covered the FORWARD
+# skip loop only. This engine also runs a REVERSE skip loop once a match is
+# found (scan forward for match end, then backward for match start — see
+# src/gen/emit_dfa.c's emit_unanchored) and a subject that never matches never
+# reaches that code at all, so the reverse skip table (rx_rs1 for this
+# pattern) had zero throughput coverage anywhere in this suite. The subject is
+# now `'=' + 'a'*(n-2) + '!'`: ONE match spanning the whole buffer, forcing
+# both the forward scan (to reach the trailing '!') and the reverse scan (to
+# walk back to the leading '=') through their skip tables almost end to end —
+# confirmed directly (not by timing) with a debug-instrumented build: the
+# forward and reverse skip loops each iterate 8,388,606 times over this exact
+# 8 MB subject. Re-validated by sabotage with the new subject: `pick_skip_states`
+# returning 0 (both tables gone) measures 173.1 MB/s (median of 5, spread
+# 1.02x) against a healthy 1288.7 MB/s (median of 5, spread 1.07x) — a 7.4x
+# regression, LARGER than the 4.8x the old forward-only subject caught,
+# because sabotage now costs both directions instead of one.
+#
+# Budget per D12: median/1.75, rounded to a round number. Cross-run median
+# from 5 independent quiet-box measurements taken 2026-08-11 (4 full
+# `run_bench.sh` invocations’ median-of-5 plus one standalone median-of-5
+# check; 1-min load 1.35-2.65 throughout, LOAD_LIMIT 6.0, cross-run spread
+# 1288.7/1162.8 = 1.108x): 1162.8, 1232.9, 1258.7, 1285.4, 1288.7 -> median
+# 1258.7. 1258.7/1.75 = 719.3, rounded down to 700 for headroom against the
+# widest single within-run spread observed (1.70x) — 1258.7/700 = 1.80x
+# slack, and the sabotaged build (173.1) still fails it by 4x even at the
+# noisiest observed healthy sample (1162.8).
+THROUGHPUT_SKIP_MIN_MBPS="${THROUGHPUT_SKIP_MIN_MBPS:-700}"      # measured 1258.7 (median of 5 quiet runs, 2026-08-11)
+LINEARITY_MAX_RATIO="${LINEARITY_MAX_RATIO:-6.0}"        # measured 3.731 (median of 6, 2026-08-11 quiet-box; linear ~4.0, see exception note above)
 
 PCREC_TIMEOUT="${PCREC_TIMEOUT:-60}"
 GCC_O1_TIMEOUT="${GCC_O1_TIMEOUT:-60}"
@@ -242,6 +286,19 @@ LOADED=0
 if num_gt "$LOAD_NOW" "$LOAD_LIMIT"; then LOADED=1; fi
 budget_inconclusive=0
 
+# R3.10: a single load sample taken before a multi-minute run describes the
+# box at t=0, not during measurement — D14 stated this as a known limitation
+# rather than fixing it. Observed on this box during four minutes of
+# measuring: 1-minute load climbed 1.94 -> 6.01 -> 8.93 -> 13.32 -> 16.04
+# against a LOAD_LIMIT of 6.0, so a run that starts quiet can still measure
+# every THROUGHPUT case under a load of 13+. LIVE_FAIL_LABELS tracks every
+# budget that record_budget reported as a real, live FAIL (i.e. NOT already
+# downgraded because LOADED was already 1 at call time) so that a second,
+# end-of-run load sample (below, after all sections) can retroactively
+# downgrade them the same way — see that block for why a live FAIL cannot
+# simply be re-printed as INCONCLUSIVE in place.
+LIVE_FAIL_LABELS=()
+
 # record_budget <label> <verdict PASS|FAIL>
 # Prints the verdict and, on FAIL, bumps budget_failures (which only
 # affects the exit code when SKIP_BUDGETS != 1). Under high load a FAIL is
@@ -255,7 +312,10 @@ record_budget() {
         return 0
     fi
     echo "  $label -> $verdict"
-    [ "$verdict" = "FAIL" ] && budget_failures=$((budget_failures + 1))
+    if [ "$verdict" = "FAIL" ]; then
+        budget_failures=$((budget_failures + 1))
+        LIVE_FAIL_LABELS+=("$label")
+    fi
     return 0
 }
 
@@ -601,19 +661,40 @@ alpha_noa = b"bcdefghijklmnopqrstuvwxyz"
 with open(os.path.join(outdir, "bitmap_8mb.bin"), "wb") as f:
     f.write(bytes(random.choices(alpha_noa, k=n)))
 
-# (e) 8 MB of 128-byte "key=value\n" records, for the SELF-LOOP SKIP STATE
-# case. Pattern '=[^\n]*!': the alphabet is alphanumeric only, so no '!'
-# exists and the scan is full. Per record the machine memchr's to the '=' (8
-# bytes), then sits in the [^\n]* self-loop for 118 bytes before dying at the
-# newline — so ~92% of the buffer is consumed inside the skip loop, which is
-# what makes this measure skip states rather than the prefilter.
-kv_alpha = b"abcdefghijklmnopqrstuvwxyz0123456789"
-rec = bytearray()
-while len(rec) < n:
-    rec += bytes(random.choices(kv_alpha, k=8)) + b"=" \
-         + bytes(random.choices(kv_alpha, k=118)) + b"\n"
-with open(os.path.join(outdir, "kv_8mb.bin"), "wb") as f:
-    f.write(bytes(rec[:n]))
+# (e) '=' + 8 MB-2 of 'a' + '!', for the SELF-LOOP SKIP STATE case. Pattern
+# '=[^\n]*!': one '=' at byte 0, one '!' at the last byte, everything between
+# is 'a' (a [^\n]* byte). This is a MATCHING subject and a deliberate change
+# from the original (many small "key=value\n" records, always a no-match) —
+# see R3.9.
+#
+# R3.9 (R3 guards critic F19/F22): the record-based subject only ever ran the
+# FORWARD skip loop. This engine also has a REVERSE skip loop (it scans
+# forward to find the match's END, then backward from there to find the
+# match's START — see src/gen/emit_dfa.c's emit_unanchored), and the reverse
+# loop only runs at all once a match is found (`last` gets set). The old
+# subject never matched, so the reverse loop's own skip table (rx_rs1 for
+# this pattern) was emitted but its while-loop body had ZERO throughput
+# coverage anywhere in this suite — a regression in the REVERSE machine
+# specifically (D13's suspicion: "a backward byte-at-a-time skip loop loses
+# to the reverse table walk") could not have been caught here or anywhere
+# else. A single '=' at the start and a single '!' at the end forces both
+# directions to walk almost the entire buffer through the skip table:
+# verified with a debug-instrumented build counting loop iterations directly
+# (not by timing) that the forward skip loop (rx_fs1) and the reverse skip
+# loop (rx_rs1) each iterate 8,388,606 times over this exact 8 MB subject —
+# i.e. both machines are exercised almost end-to-end. Match span is the
+# whole buffer, [0, n), so this is not the R2-B4 early-exit trap: reaching
+# the '!' requires scanning (and reaching 'sfound' requires walking back)
+# almost the full 8 MB either way.
+#
+# Known remaining gap, not closed by this subject: this pattern's forward
+# DFA also emits a SECOND skip table, rx_fs3, on the state reached only
+# AFTER a match by encountering a further '=' (i.e. a second candidate match
+# start following the first). This subject's single '=' means that state,
+# and rx_fs3, are still never entered — pick_skip_states' multi-state
+# selection remains uncovered by any throughput case. Left for future work.
+with open(os.path.join(outdir, "skiploop_8mb.bin"), "wb") as f:
+    f.write(b"=" + b"a" * (n - 2) + b"!")
 
 # linearity subjects. R2-B4: the old pair was 1 MB vs 4 MB, which on the
 # current engine takes ~46 us vs ~337 us — below the script's own anti-blowup
@@ -772,28 +853,35 @@ if [ $py_rc -eq 0 ]; then
         fi
     fi
 
-    # ---- (e) self-loop skip states: full scan, ~92% of bytes inside the ----
-    # ---- skip loop. Without this case the suite is byte-identical with  ----
-    # ---- pick_skip_states returning 0 (R3.1).                           ----
+    # ---- (e) self-loop skip states, FORWARD AND REVERSE: '=' + 'a'*N + '!', ----
+    # ---- a full match spanning the whole buffer, so both the forward scan ----
+    # ---- (find match end) and the reverse scan (find match start) walk   ----
+    # ---- almost the entire buffer through a skip table (R3.9).           ----
     tdir="$WORKDIR/tp_skip"
     build_bench_bin "$tdir" '=[^\n]*!'
     if [ "$BB_OK" = "1" ]; then
-        # A skip table must actually be present, or this case silently
-        # degenerates into a second prefilter measurement and the guard it
-        # exists to be stops guarding anything.
+        # Both a forward AND a reverse skip table must actually be present,
+        # or this case silently degenerates into a prefilter-only (or
+        # forward-only) measurement and the guard it exists to be stops
+        # guarding what it claims to. The reverse requirement is new in
+        # R3.9: it used to be un-checkable because the old subject never
+        # matched, so the reverse loop never ran at all.
         if ! grep -qE 'rx_fs[0-9]+\[256\]' "$tdir/gen.c"; then
-            record_hard_error "THROUGHPUT (e) emitted NO forward skip table for '=[^\\n]*!' — this case can no longer measure skip states, which is the only thing it is for"
+            record_hard_error "THROUGHPUT (e) emitted NO forward skip table for '=[^\\n]*!' — this case can no longer measure forward skip states, which is half of what it is for"
         fi
-        run_bdriver "$tdir/t" "$subj_dir/kv_8mb.bin" 10 "$RUN_TIMEOUT"
+        if ! grep -qE 'rx_rs[0-9]+\[256\]' "$tdir/gen.c"; then
+            record_hard_error "THROUGHPUT (e) emitted NO reverse skip table for '=[^\\n]*!' — this case can no longer measure reverse skip states, which is the other half of what it is for (R3.9)"
+        fi
+        run_bdriver "$tdir/t" "$subj_dir/skiploop_8mb.bin" 10 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
-            echo "  (e) =[^\\n]*!    over kv_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_SKIP_MIN_MBPS} MB/s)"
+            echo "  (e) =[^\\n]*!    over skiploop_8mb.bin: ${RB_SECS}s, ${RB_MBPS} MB/s (spread ${RB_SPREAD}x) (budget > ${THROUGHPUT_SKIP_MIN_MBPS} MB/s)"
             if num_gt "$RB_MBPS" "$THROUGHPUT_SKIP_MIN_MBPS"; then
                 record_budget "THROUGHPUT (e) skip states" "PASS"
             else
                 record_budget "THROUGHPUT (e) skip states" "FAIL"
             fi
         elif [ "$RB_RC" = "dnf" ]; then
-            echo "  (e) =[^\\n]*!    over kv_8mb.bin: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
+            echo "  (e) =[^\\n]*!    over skiploop_8mb.bin: DNF (exceeded ${RUN_TIMEOUT}s timeout)"
             record_budget "THROUGHPUT (e) skip states" "FAIL"
         else
             record_hard_error "bdriver crashed/errored on subject (e): $RB_RAW"
@@ -858,6 +946,32 @@ if [ $py_rc -eq 0 ]; then
 fi
 echo
 
+# ---- R3.10: re-read load AFTER the measurements too --------------------
+# The start-of-run sample above only catches a box that was ALREADY busy.
+# Re-sample now and, if EITHER sample exceeds LOAD_LIMIT, downgrade every
+# budget this run recorded as a LIVE FAIL (LIVE_FAIL_LABELS) to INCONCLUSIVE
+# — the same verdict a FAIL gets when the start sample alone was over the
+# limit, just applied retroactively since the load spike wasn't visible yet
+# when record_budget printed the original line. A FAIL line already printed
+# earlier cannot be un-printed, so this prints an explicit downgrade note and
+# corrects the counts that decide the exit code, rather than silently
+# rewriting history.
+LOAD_END="$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || echo 0)"
+LOADED_END=0
+if num_gt "$LOAD_END" "$LOAD_LIMIT"; then LOADED_END=1; fi
+if [ "$LOADED_END" = "1" ] && [ "${#LIVE_FAIL_LABELS[@]}" -gt 0 ]; then
+    echo
+    echo "run_bench.sh: end-of-run 1-min load $LOAD_END exceeds $LOAD_LIMIT (start was $LOAD_NOW)."
+    echo "  Downgrading ${#LIVE_FAIL_LABELS[@]} budget FAIL(s) recorded during this run to"
+    echo "  INCONCLUSIVE: the box may have gotten busy mid-run, after those were measured,"
+    echo "  which the start-of-run sample alone cannot see (R3.10)."
+    for lbl in "${LIVE_FAIL_LABELS[@]}"; do
+        echo "    $lbl -> INCONCLUSIVE (was FAIL; end-of-run load $LOAD_END > $LOAD_LIMIT)"
+        budget_failures=$((budget_failures - 1))
+        budget_inconclusive=$((budget_inconclusive + 1))
+    done
+fi
+
 # =========================================================================
 # Summary
 # =========================================================================
@@ -865,8 +979,9 @@ echo
 echo "== Summary =="
 echo "hard errors (harness/mechanical failures): $hard_errors"
 echo "budget failures: $budget_failures"
+echo "1-minute load: start=$LOAD_NOW end=$LOAD_END (limit $LOAD_LIMIT)"
 if [ "$budget_inconclusive" -gt 0 ]; then
-    echo "budget INCONCLUSIVE: $budget_inconclusive (1-min load $LOAD_NOW > $LOAD_LIMIT)"
+    echo "budget INCONCLUSIVE: $budget_inconclusive (1-min load start=$LOAD_NOW end=$LOAD_END, limit $LOAD_LIMIT)"
     echo "  This run did NOT gate those budgets. Re-run on a quiet box before"
     echo "  treating this as evidence of no regression."
 fi

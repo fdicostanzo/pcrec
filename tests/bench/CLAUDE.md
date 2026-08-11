@@ -42,29 +42,69 @@ engines — the cross-engine matrix lives in compare/.
 
 ## Conventions
 
-Budgets are SUPPOSED to be measured-median/1.75 (D12). Four of the nine are not,
-and saying otherwise is a claim this project has now made three times and
-refuted twice — so here is the actual table, from the budget and the `measured`
-comment on the same line of run_bench.sh:
+Budgets are SUPPOSED to be measured-median/1.75 (D12). Two of the nine are
+not, and saying otherwise is a claim this project has now made three times
+and refuted twice — so here is the actual table, from the budget and the
+`measured` comment on the same line of run_bench.sh. Refreshed [R3.8]
+(2026-08-11) with a real quiet-box multi-run median (six independent
+`run_bench.sh` invocations, 1-min load 0.9-2.6 throughout, well under
+`LOAD_LIMIT`) for every row that changed:
 
-| budget | value | measured | slack |
-|---|---|---|---|
-| COMPILE_BUDGET_SECS | 0.4 s | 0.111 s | 3.60x |
-| GCC_O1 / GCC_O2 | 2 s | 0.219 s | 9.13x |
-| NEEDLE (a) | 1200 | 2160 | 1.80x |
-| NOMATCH (b) | 12000 | 21910 | 1.83x |
-| ALT (c) | 1000 | 1753 | 1.75x |
-| BITMAP (d) | 330 | 429 | 1.30x (documented tighter, on purpose) |
-| SKIP (e) | 1000 | 1741.8 | 1.74x |
-| LINEARITY | 6.0 | 2.883 | 2.08x |
+| budget | value | measured | slack | status |
+|---|---|---|---|---|
+| COMPILE_BUDGET_SECS | 0.4 s | 0.114 s (median of 6) | 3.51x | loose, deliberately (see below) |
+| GCC_O1 | 2 s | 0.214 s (8192-state pattern, the binding one; median of 6) | 9.35x | loose, deliberately (see below) |
+| GCC_O2 | 2 s | 0.222 s (8192-state pattern, the binding one; median of 6) | 9.01x | loose, deliberately (see below) |
+| NEEDLE (a) | 1200 | 2160 | 1.80x | at target |
+| NOMATCH (b) | 12000 | 21910 | 1.83x | at target |
+| ALT (c) | 1000 | 1753 | 1.75x | at target |
+| BITMAP (d) | 330 | 429 | 1.30x | tighter, on purpose (documented in run_bench.sh) |
+| SKIP (e) | 700 | 1258.7 (median of 5 independent runs, 2026-08-11) | 1.80x | RETUNED to target [R3.9] — was 1000/1741.8 (1.74x) against a subject that has since changed |
+| LINEARITY | 6.0 | 3.731 (median of 6) | 1.61x | NOT loose — see below |
 
-The GCC budgets sit inside the "9x-300,000x loose" band D12 opens by condemning.
-Tightening them is [R3.8]; until then, do not describe this suite as "all
-median/1.75". Every measurement is pinned (`taskset`) and repeated
-`BENCH_TRIALS` times with the MEDIAN judged and the max/min spread printed. A
-budget miss on a box whose 1-minute load exceeds `LOAD_LIMIT` is reported as
-INCONCLUSIVE and exits 2 — "clean" and "not measured" are different results
-(D14).
+Two genuine exceptions remain, both explained (not just measured) by [R3.8]:
+**COMPILE-SPEED and GCC-TIME are single-sample measurements.** Unlike
+THROUGHPUT, which takes `BENCH_TRIALS` (5) trials and judges the median, these
+two sections time ONE pcrec/gcc invocation per `run_bench.sh` run. That is not
+a theoretical gap: six same-day quiet-box runs measured the 8192-state
+pattern's `gcc -O1` compile at 0.119s to 0.223s — a 1.87x swing on a single
+sample, with no other trial in that run to average against. Tightening to
+/1.75 on data this noisy would trade a documented-but-honest looseness for a
+plausibly flaky gate, which the project's own LOAD_LIMIT rationale calls out
+as worse (a flaky budget gets widened permanently, not fixed). COMPILE-SPEED's
+own six-run spread was much tighter (0.112-0.117s, ~1.04x — plausible, since
+it is pure in-process work with no forked toolchain), so it is a better
+tightening candidate than GCC-TIME, but neither has been touched: giving both
+sections a real `BENCH_TRIALS`-style median is an infrastructure change that
+should land BEFORE either budget is tightened, not after.
+
+**LINEARITY turned out not to be an exception at all.** The previous "2.08x
+loose" figure came from a "measured 2.883" reference that sits BELOW the
+theoretical linear ratio of 4.0 (64MB is 4x the work of 16MB) — that is what a
+lucky low sample looks like, not a real baseline. LINEARITY's own check IS
+BENCH_TRIALS-protected (it reuses `run_bdriver`), so a fresh six-run median of
+3.731 is a genuine median of medians, and 6.0/3.731 = 1.61x sits close to the
+1.75x target rather than 2x looser than it.
+
+**SKIP (e) was retuned, not just re-measured**, because [R3.9] changed its
+subject: the old design only exercised the FORWARD self-loop skip machine (its
+subject never matched, so the REVERSE skip loop — this engine scans forward
+for the match end, then backward for the start — never ran at all). The new
+subject, `'=' + 'a'*(n-2) + '!'`, forces both directions through their skip
+tables almost end to end (verified with a debug counter, not by timing: the
+forward and reverse skip loops each iterate 8,388,606 times over the 8 MB
+subject), and re-sabotage-tested at 173.1 MB/s (median of 5) against a healthy
+1288.7 MB/s (median of 5) — a 7.4x regression, larger than the 4.8x the old
+forward-only subject caught, because sabotage now costs both directions.
+
+Every measurement is pinned (`taskset`) and repeated `BENCH_TRIALS` times with
+the MEDIAN judged and the max/min spread printed (except COMPILE-SPEED and
+GCC-TIME, per the exception above). A budget miss on a box whose 1-minute load
+exceeds `LOAD_LIMIT` is reported as INCONCLUSIVE and exits 2 — "clean" and
+"not measured" are different results (D14). [R3.10] closed the gap where only
+the START-of-run load was sampled: `run_bench.sh` now re-samples load AFTER
+the measurements too and retroactively downgrades any live FAIL to
+INCONCLUSIVE if either sample was over the limit.
 
 **Every case must exercise something no other case does, and that has to be
 demonstrated by sabotage, not asserted** (D15). Two cases here exist only

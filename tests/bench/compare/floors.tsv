@@ -6,27 +6,60 @@
 #
 # PROVENANCE OF THE VALUES — stated correctly on the second attempt, because the
 # first version of this header got it wrong in both halves (R3 guards critic F11).
-# The values were written at commit b66ad67 and have not moved since. They come
-# from a run that is NOT in this repository: they match neither
+# The values a-h were written at commit b66ad67 and have not moved since. They
+# come from a run that is NOT in this repository: they match neither
 # results-ubuntubudu-20260809.md (a 2130.050) nor results-ubuntubudu-20260809-2.md
 # (a 2201.356). Do not cite either file as their source.
 #
-# They were left in place rather than re-baselined, which is still the right call
+# a-h were left in place rather than re-baselined, which is still the right call
 # — the 2026-08-09-2 re-run that produced the margins below reproduced eight of
-# the nine within 3.3%. NOT all nine: case (i) came back at 77.00 against a
-# recorded 69.72, which is 10.4% worse. That is the one case whose 0.700 margin
-# means this gate cannot see it move, so the discrepancy is self-concealing and
-# is written down here instead. [R3.6] tracks resolving it.
+# the nine within 3.3%.
 #
-# MARGINS are per case, from the 2026-08-09-2 run's trial spread (R3.5, D17):
+# i WAS RE-BASELINED (R3.6, 2026-08-11): the old value, 69.72, matched neither
+# results file either (61.11 and 77.00) and its 0.700 margin — the loosest this
+# gate ever gets — meant it could not see the 10.4% gap between 69.72 and 77.00
+# move at all. Investigating WHY turned up something worse than a stale number:
+# case (i) is a sub-100ns per-call latency measurement, and it is genuinely the
+# noisiest case in the whole matrix. Ten independent, pinned, BENCH_TRIALS=5-
+# median runs across two separate sessions (2026-08-09 x2, 2026-08-11 x8, all
+# quiet — 1-min load 1.31-3.07 against a 6.0 limit; full values and per-run
+# provenance in run_history.tsv) span 43.07 to 83.36 ns/call, a 1.94x run-to-run
+# spread — WIDER than any WITHIN-run trial spread recorded anywhere in this
+# suite (the next-noisiest, this same case's own 2.04x-2.66x within-run
+# spreads, is close, which is the same underlying noise showing up twice). A
+# single fresh sample would have been exactly as unrepresentative as 69.72 was.
+#
+# THE VALUE IS THE OBSERVED MAXIMUM OF THE TEN, NOT THE MEDIAN, and the
+# review that changed it is worth keeping (2026-08-11, same day): the first
+# version of this re-baseline used the median, 50.56. But the gate fails a
+# latency case ABOVE floor/margin, the margin is CLAMPED at 0.700 (D17), and
+# 50.56/0.700 = 72.23 ns — a threshold that two of the ten recorded QUIET
+# runs (77.00, 83.36) already exceed, and that the very first acceptance run
+# after the change came within 2.7% of (70.26). A median floor under a
+# clamped margin makes ~a fifth of honest runs fail; the D17 formula would
+# want margin ≈ 0.49 for a 1.94x-noise case and the clamp forbids it, so the
+# FLOOR is where the noise has to live: 83.36, the worst recorded honest
+# run, putting the fail threshold at 119.1 ns — a real regression must
+# exceed 1.43x beyond the worst quiet run ever recorded to fire, which is
+# weaker than the other cases get, and the honest price of a sub-100ns
+# measurement this box cannot repeat more tightly. Re-baseline with
+# `CASE=i bash tests/bench/compare/rebaseline.sh` (R3.6's mechanics script) —
+# it appends to run_history.tsv and reports the cross-run median rather than
+# overwriting this file itself. Margin is UNCHANGED at 0.700 (the clamp floor):
+# every one of the ten runs' own within-run spreads (1.22x-2.66x) independently
+# clamps there, so no single run's spread choice would have moved it.
+#
+# MARGINS are per case, from the 2026-08-09-2 run's trial spread (R3.5, D17)
+# for a-h, and from run_history.tsv's ten runs for i (R3.6):
 #   margin = clamp(1/(spread*1.05), 0.70, 0.90)
 # Observed spreads: a 1.01x, b 1.01x, c 1.02x, d 1.06x, e 1.26x, f 1.09x,
-# g 1.22x, h 1.04x, i 2.04x
+# g 1.22x, h 1.04x, i 1.22x-2.66x (ten runs, all clamp to the 0.70 floor)
 #
-# The 0.90 CEILING is over-conservative and known to be so: see D17: the "~10%
-# noise floor" it was justified by is not backed by any measurement in this
-# repo, and the three recorded runs move by <=3.3% on eight of nine cases.
-# Regenerate both columns together with:
+# The 0.90 CEILING is over-conservative, and the "~10% noise floor" it was
+# originally justified by was never backed by any measurement in this repo —
+# see gate.sh's header and [R3.7], which is building the machinery
+# (run_history.tsv + gate.sh's EARN mode) to raise it on real evidence instead
+# of guessing either number. Regenerate a-h together with:
 #   UPDATE=1 bash tests/bench/compare/gate.sh
 a	throughput	2192.358	0.900
 b	throughput	1970.443	0.900
@@ -36,4 +69,4 @@ e	throughput	24365.979	0.756
 f	throughput	159.070	0.874
 g	throughput	24674.218	0.781
 h	throughput	1303.477	0.900
-i	latency	69.72	0.700
+i	latency	83.36	0.700

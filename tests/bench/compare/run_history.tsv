@@ -1,0 +1,45 @@
+# tests/bench/compare/run_history.tsv — accumulated INDEPENDENT compare.sh
+# runs, one row per (run, case) pair, for R3.6/R3.7: neither a re-baseline nor
+# a tightened gate margin should rest on a single sample or a single session.
+#
+# Columns: date (UTC, run generation time) / case / metric / pcrec value
+# (throughput MB/s or latency ns/call) / within-run trial spread (max/min
+# across BENCH_TRIALS, "n/a" if the run predates the spread column) / 1-min
+# load average AT MEASUREMENT TIME (all rows below are quiet: well under the
+# LOAD_LIMIT that run used) / source (results file or how the row was taken).
+#
+# Append rows here with `bash tests/bench/compare/rebaseline.sh` (see that
+# script's header) rather than by hand, so provenance stays honest. A case
+# needs several independent rows — taken in different sessions/times, not
+# just several trials in one script invocation — before either a floors.tsv
+# value (R3.6) or a compare-gate margin (R3.7) should be derived from it; see
+# rebaseline.sh's REBASELINE_MIN_RUNS / gate.sh's EARN mode for the count each
+# actually requires before it will act.
+#
+# date	case	metric	value	spread	load_1min	source
+2026-08-09	a	throughput	2130.050	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	b	throughput	1965.004	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	c	throughput	384.880	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	d	throughput	25825.490	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	e	throughput	24119.727	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	f	throughput	159.056	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	g	throughput	24601.589	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	h	throughput	1314.003	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	i	latency	61.11	n/a	1.31	results-ubuntubudu-20260809.md
+2026-08-09	a	throughput	2192.358	1.01	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	b	throughput	1970.443	1.01	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	c	throughput	388.615	1.02	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	d	throughput	26035.592	1.06	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	e	throughput	24365.979	1.26	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	f	throughput	159.070	1.09	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	g	throughput	24674.218	1.22	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	h	throughput	1303.477	1.04	1.39	results-ubuntubudu-20260809-2.md
+2026-08-09	i	latency	77.00	2.04	1.39	results-ubuntubudu-20260809-2.md
+2026-08-11	i	latency	45.78	2.37	2.43	rebaseline.sh (R3.6, run 1/6)
+2026-08-11	i	latency	83.36	2.63	2.93	rebaseline.sh (R3.6, run 2/6)
+2026-08-11	i	latency	51.19	2.30	2.71	rebaseline.sh (R3.6, run 3/6)
+2026-08-11	i	latency	50.56	2.20	2.99	rebaseline.sh (R3.6, run 4/6)
+2026-08-11	i	latency	48.81	1.74	2.99	rebaseline.sh (R3.6, run 5/6)
+2026-08-11	i	latency	43.07	1.65	3.07	rebaseline.sh (R3.6, run 6/6)
+2026-08-11	i	latency	52.94	2.25	1.43	rebaseline.sh (smoke-test, run 1/2)
+2026-08-11	i	latency	44.47	2.66	1.60	rebaseline.sh (smoke-test, run 2/2)

@@ -683,6 +683,17 @@ admission of over-conservatism, instead of a number nobody measured. Cases a-h
 would tolerate 0.95 with 1.5-3x headroom over their observed movement, and
 [R3.7] carries collecting enough runs to earn it.
 
+POSTSCRIPT (2026-08-11, R3.6/R3.7 landed): the earning machinery exists —
+`compare/run_history.tsv` accumulates independent runs with load provenance,
+and `EARN=1 gate.sh` REPORTS (never applies) the margin each case's history
+would justify, gated on 8 distinct dates. Its first real run says every case
+is still too thin, so the ceiling stands. And case (i)'s "26%" movement above
+under-stated it: ten independent quiet runs span 1.94x run-to-run (43.07-83.36
+ns/call — a sub-100ns latency case), so its old floor value 69.72 (which
+matched NO recorded run) was re-baselined to the ten-run median 50.56, margin
+still clamped at 0.700. Single samples do not baseline the latency case;
+`rebaseline.sh` is the mechanics.
+
 Validated: a uniform 27% regression fails 8 of 9 cases where it previously
 failed 0 (independently reproduced by a critic). CAVEAT, and it belongs next to
 the headline: case (e) fails that test by only 3.4%, and its margin came from
