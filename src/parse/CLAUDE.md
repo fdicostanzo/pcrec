@@ -28,9 +28,11 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   than a byte: since Q1 it parses the verb NAME and the FORM it was written in,
   and has four possible answers rather than one (D25)
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
-  (TSV, 12 columns), `--list-verbs` (TSV, 4 columns — the Q1 name tables, which
-  are not RegRows and so cannot appear in the 12-column dump whose format SR-4
-  froze) and `--explain`. Internal, not public API — the CLI and the
+  (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
+  `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
+  never reordered, so consumers' positional reads survive), `--list-verbs`
+  (TSV, 6 columns — the Q1 name tables, which are not RegRows and so cannot
+  appear in the row dump whose format SR-4 froze) and `--explain`. Internal, not public API — the CLI and the
   test suite are the only consumers, and promoting a function into lib/pcrec.h
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which

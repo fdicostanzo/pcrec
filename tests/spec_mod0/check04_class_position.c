@@ -137,6 +137,8 @@ int main(int argc, char **argv)
 
     long esc_rows = 0, bracket_rows = 0, probe_cells = 0, adj_cells = 0;
     long noclass_rows = 0;
+    long expect_compared = 0, expect_empty_rows = 0;
+    int col = spec_col_index("class_expect");
 
     for (int i = 0; i < spec_nrows; i++) {
         const SpecRow *r = &spec_rows[i];
@@ -146,7 +148,20 @@ int main(int argc, char **argv)
         int is_bracket = !strcmp(kind, "class-bracket");
         char inner[256];
 
-        if (!is_esc && !is_bracket) { noclass_rows++; continue; }
+        if (!is_esc && !is_bracket) {
+            noclass_rows++;
+            if (col >= 0) {
+                if (!spec_col_empty(r, col))
+                    spec_fail("row '%s' (kind '%s') is not class-reachable but "
+                              "class_expect='%s' — a group/verb construct "
+                              "cannot appear in a class position, so a value "
+                              "here is an invented fact", S, kind,
+                              spec_col(r, col));
+                else
+                    expect_empty_rows++;
+            }
+            continue;
+        }
         if (is_bracket) {
             size_t L = strlen(S);
             snprintf(inner, sizeof inner, "%.*s", (int)(L - 2), S + 1);
@@ -166,6 +181,15 @@ int main(int argc, char **argv)
         else if (strcmp(pin, got))
             spec_fail("row '%s': pinned class-position expectation is '%s', "
                       "libpcre2 now says '%s'", S, pin, got);
+
+        if (col >= 0) {
+            const char *cell = spec_col(r, col);
+            if (strcmp(cell, got))
+                spec_fail("row '%s': class_expect='%s' but the measured "
+                          "class-position expectation is '%s'", S, cell, got);
+            else
+                expect_compared++;
+        }
 
         /* ---- the probe set, and the census arithmetic ------------------- */
         unsigned char bare[256], with[256]; int nb = 0, nw = 0;
@@ -310,14 +334,32 @@ int main(int argc, char **argv)
     spec_floors_require(owned, 5);
     if (spec_fails) return spec_finish();
 
-    return spec_await(
-        "a two-valued class-position expectation column in `pcrec "
-        "--list-syntax` (compile-as-what / error N)",
-        "this check looks for a column named `class_expect` in the dump's "
-        "header. For each of the 44 class-reachable rows it must equal the "
-        "measured value pinned in class_expectations.inc, in the same "
-        "vocabulary ('err N' / 'char 0xNN' / 'set N'); for the 56 group and "
-        "verb rows it must be EMPTY, since those constructs are not reachable "
-        "inside a class at all. The `expect` column that exists today is "
-        "diagnostic TEXT for rejecting rows and is not this");
+    if (col < 0)
+        return spec_await(
+            "a two-valued class-position expectation column in `pcrec "
+            "--list-syntax` (compile-as-what / error N)",
+            "this check looks for a column named `class_expect` in the dump's "
+            "header. For each of the 44 class-reachable rows it must equal the "
+            "measured value pinned in class_expectations.inc, in the same "
+            "vocabulary ('err N' / 'char 0xNN' / 'set N'); for the 56 group and "
+            "verb rows it must be EMPTY, since those constructs are not reachable "
+            "inside a class at all. The `expect` column that exists today is "
+            "diagnostic TEXT for rejecting rows and is not this");
+
+    /* The column exists: the comparisons above ran inline as the oracle half
+     * measured each row, so reaching here (spec_fails still 0) means every
+     * class-reachable row's class_expect cell equalled the measured
+     * expectation, and every group/verb row's cell was empty. */
+    printf("  class_expect column: %ld class-reachable cell(s) compared, "
+           "%ld group/verb row(s) verified empty\n",
+           expect_compared, expect_empty_rows);
+    spec_pop("class.expect_compared_cells", expect_compared);
+    spec_pop("class.expect_verified_empty_rows", expect_empty_rows);
+
+    static const char *const expect_owned[] = {
+        "class.expect_compared_cells", "class.expect_verified_empty_rows"
+    };
+    spec_floors_require(expect_owned, 2);
+
+    return spec_finish();
 }

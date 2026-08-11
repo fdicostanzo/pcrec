@@ -23,12 +23,15 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-11: 5 pass, 0 fail, 5 awaiting.** The suite exits 1, and that
-is the correct state — five of the ten invariants describe pcrec surfaces that
-do not exist yet. Invariant 10's surface has LANDED (`--list-syntax` now emits
-a 14th column, `quantifiable`, with values {yes, no, form, lexical}), and
-check10 now compares rather than awaits. `--oracle-only` exits 0 when the only non-passes are awaited
-surfaces; it is for working on the oracle halves and says so on every run.
+**As of 2026-08-11 (MOD-0.1 slice 3): 6 pass, 0 fail, 4 awaiting.** The suite
+exits 1, and that is the correct state — four of the ten invariants describe
+pcrec surfaces that do not exist yet. Invariant 10's surface LANDED first
+(`--list-syntax`'s 14th column, `quantifiable`, values {yes, no, form,
+lexical}); invariant 4's followed (the 15th column, `class_expect`, vocabulary
+{"err N", "char 0xNN", "set N"}, empty on the 56 group/verb rows) — both
+checks now compare rather than await. `--oracle-only` exits 0 when the only
+non-passes are awaited surfaces; it is for working on the oracle halves and
+says so on every run.
 
 ## Files
 
@@ -87,7 +90,7 @@ reader will arrive holding it.
 | 1 | check01_isolation.sh | awaiting | `nm` over `build/libpcrec.a` and `build/obj` — the linker | An enabled-set symbol (none matching `enabled_set\|feature_enabled\|…` exists in the archive), and any TU defining a recogniser or extent scan |
 | 2 | check02_capture_count.c | awaiting | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | A per-pattern group count from pcrec's count-scan (a `--count-groups` flag, a dump column, or a callable symbol) |
 | 3 | check03_lexical.c | **PASS** | libpcre2 binding behaviour over all 100 rows | — |
-| 4 | check04_class_position.c | awaiting | libpcre2 256-byte class censuses | A two-valued class-position expectation column (`class_expect`); today's `expect` column is diagnostic text, not this |
+| 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
 | 6 | check06_cursor.sh | awaiting | **none exists** — see below | A way to drive one recogniser with `WANT_RESULT` set and clear and read `cx->pos` before and after |
 | 7 | check07_gate_equivalence.c | awaiting | libpcre2 decides membership | A way to vary the enabled feature set (`--features=…`, `PCREC_FEATURES`, or an entry point) |

@@ -179,6 +179,41 @@ static void check_wellformed(void)
                 bad("%s row %zu (%s): QF_FORM outside the two form-resolved "
                     "families (option-run rows, the verb row)", kn, i, r->syntax);
 
+            /* MOD-0.1 slice 3: the class_expect column's legal shape. VALUES
+             * are checked against a live libpcre2 oracle by
+             * tests/spec_mod0/check04; what this asserts is the pairing and
+             * the vocabulary — the 44 class-reachable rows (kind esc or
+             * class-bracket) each carry one, the 56 group/verb rows carry
+             * NONE (`(` inside a class is an ordinary member, so a value
+             * there is an invented fact), and a carried value must be one of
+             * the three observable forms, because a cell outside the
+             * vocabulary cannot be checked by anything. */
+            {
+                int reachable = (r->kind == RK_ESC || r->kind == RK_CLASSBRACKET);
+                if (reachable && (!r->class_expect || !*r->class_expect))
+                    bad("%s row %zu (%s): no class_expect value — every esc/"
+                        "class-bracket row can reach a class position and must "
+                        "state its measured expectation", kn, i, r->syntax);
+                if (!reachable && r->class_expect)
+                    bad("%s row %zu (%s): a group/verb row carries a "
+                        "class_expect value ('%s') — the construct cannot reach "
+                        "a class position, so the value is an invented fact",
+                        kn, i, r->syntax, r->class_expect);
+                if (reachable && r->class_expect) {
+                    const char *ce = r->class_expect;
+                    int n = -1, b = -1;
+                    char trail = 0;
+                    int ok = (sscanf(ce, "err %d%c", &n, &trail) == 1 && n > 0)
+                          || (sscanf(ce, "set %d%c", &n, &trail) == 1 && n >= 0)
+                          || (sscanf(ce, "char 0x%2x%c", &b, &trail) == 1 &&
+                              strlen(ce) == 9);
+                    if (!ok)
+                        bad("%s row %zu (%s): class_expect '%s' is not in the "
+                            "vocabulary {\"err N\", \"char 0xNN\", \"set N\"}",
+                            kn, i, r->syntax, ce);
+                }
+            }
+
             if (r->sel == REG_SEL_ANY) {
                 nany++;
                 if (i != n - 1)

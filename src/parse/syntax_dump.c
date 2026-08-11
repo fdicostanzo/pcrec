@@ -148,7 +148,8 @@ char *pcrec_syntax_tsv(unsigned flavours)
                  "# `expect` is the text the diagnostic must contain, for the "
                  "rows that reject.\n"
                  "#kind\tselector\tsyntax\tmodule\tfeature\tflavours\tengines"
-                 "\tstatus\tdiag\tflags\texpect\tnote\troadmap\tquantifiable\n");
+                 "\tstatus\tdiag\tflags\texpect\tnote\troadmap\tquantifiable"
+                 "\tclass_expect\n");
 
     for (size_t k = 0; k < NELEMS(all_kinds); k++) {
         size_t n;
@@ -185,6 +186,13 @@ char *pcrec_syntax_tsv(unsigned flavours)
                        : r->quant == QF_NO      ? "no"
                        : r->quant == QF_FORM    ? "form"
                        : r->quant == QF_LEXICAL ? "lexical" : "-");
+            sb_putc(&sb, '\t');
+            /* 15th column (MOD-0.1 slice 3): the class-position expectation,
+             * measured from libpcre2 and re-verified against a live oracle by
+             * tests/spec_mod0/check04. EMPTY — not "-" — on the 56 group/verb
+             * rows: the construct cannot reach a class position, so there is
+             * no fact to print (the header's "Empty field = none" rule). */
+            put_str(&sb, r->class_expect);
             sb_putc(&sb, '\n');
         }
     }

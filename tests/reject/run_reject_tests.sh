@@ -958,7 +958,7 @@ else
     # with an empty pattern or matched against an empty substring — the latter
     # matches ANY diagnostic and would pass while testing nothing.
     awk -F'\t' '
-        /^#/ || NF != 14 || $8 == "base" { next }
+        /^#/ || NF != 15 || $8 == "base" { next }
         $3 == "" || $11 == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
         { print $3 "\t" $11 }
     ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
@@ -974,7 +974,7 @@ else
 
     # The loop must have seen every non-base row: a `read` that silently stops
     # early would make this whole section quietly shrink to nothing.
-    nexpected=$(awk -F'\t' '!/^#/ && NF == 14 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
+    nexpected=$(awk -F'\t' '!/^#/ && NF == 15 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
     # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).

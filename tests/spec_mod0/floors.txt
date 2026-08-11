@@ -53,6 +53,8 @@ capture.noncompiling               700
 class.esc_rows                      41
 class.bracket_rows                   3
 class.probe_cells                  175
+class.expect_compared_cells         44
+class.expect_verified_empty_rows    56
 
 # --- invariant 7/9: gate equivalence -----------------------------------
 gate.membership_rows               70

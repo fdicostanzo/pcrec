@@ -43,6 +43,12 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   four, tails, range endpoints, and the error-151/108 cells with their
   offsets recorded. The oracle behind
   tests/base/class_escape_fallbacks.rxt's `# pcre2-only` blocks (U7).
+- `probe_class_expect.c` — MOD-0.1 slice 3: the `class_expect` column's 44
+  values, measured from libpcre2 (census of `^[S]$` over all 256 bytes; takes
+  a `--list-syntax` dump path and probes every esc/class-bracket row). The
+  independent cross-check of tests/spec_mod0/class_expectations.inc — the two
+  implementations agreed 44/44 before the column was transcribed into
+  registry.c.
 
 ## The method these encode (R14's closing lesson)
 

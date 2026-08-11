@@ -442,6 +442,26 @@ typedef struct {
      * as a claim. */
     Roadmap     roadmap;
     QuantFact   quant;
+
+    /* MOD-0.1 slice 3 (design §14.4 as R14-corrected): the row's
+     * CLASS-POSITION EXPECTATION — what `[<syntax>]` does under libpcre2,
+     * two-valued and libpcre2-observable:
+     *
+     *   "err N"      the class does not compile; N is PCRE2's error number
+     *   "char 0xNN"  it compiles and denotes exactly this one byte
+     *   "set N"      it compiles and denotes N of the 256 byte values
+     *
+     * Populated FROM libpcre2 (tests/probes/probe_class_expect.c, 8-bit,
+     * options = 0), cross-validated against the independent SPEC-MOD0
+     * measurement, and re-verified against a live oracle run by
+     * tests/spec_mod0/check04 — never reasoned from documentation.
+     *
+     * NULL on the 56 group/verb rows, and ONLY there: `(` inside a class is
+     * an ordinary member, so those constructs cannot reach a class position
+     * and a value would be an invented fact (§4.4's objection). The 41 esc
+     * and 3 class-bracket rows must each carry one; registry_check enforces
+     * both directions and the vocabulary. */
+    const char *class_expect;
 } RegRow;
 
 /* src/parse/registry.c */

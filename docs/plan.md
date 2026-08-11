@@ -478,7 +478,15 @@ Then DOC-1, then PC-4 when module `classes` lands.
   SLICES 1-2 LANDED same session: the ROADMAP column with the K14 fix at
   8e5ab5a, the quantifiable column at 41a31a1 — check10 flipped from
   awaiting to PASS and caught two transcription bugs on the surface's
-  arrival. Remaining: class_expect column, LEXICAL row kind, returned-claims
+  arrival. SLICE 3 LANDED seventh session: the class_expect column —
+  values measured by tests/probes/probe_class_expect.c and cross-validated
+  44/44 against the SPEC-MOD0 pins BEFORE transcription; check04 armed by
+  a spec-side subagent (denied src/) and flipped awaiting→PASS; SPEC-MOD0
+  now 6/0/4; registry_check enforces the pairing (44 esc/class-bracket
+  rows carry a value, 56 group/verb rows carry none) and the vocabulary,
+  three sabotages each caught with exactly one named failure; dump is
+  15/6 fields, emitted code spot-checked byte-identical 10/10 vs HEAD.
+  Remaining: LEXICAL row kind, returned-claims
   epilogue/K11, endpoint rule/K12, want+cursor (fresh D27 author for
   check06), deferred-backref infra, enabled-set/toggles, then the
   byte-identity bar)

@@ -41,7 +41,7 @@ END = "<!-- END GENERATED -->"
 
 COLS = ["kind", "selector", "syntax", "module", "feature", "flavours",
         "engines", "status", "diag", "flags", "expect", "note", "roadmap",
-        "quantifiable"]
+        "quantifiable", "class_expect"]
 
 
 def dump():
