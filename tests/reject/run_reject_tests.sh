@@ -389,6 +389,19 @@ accept '[.a.b]'
 reject '\q'   "unknown escape \\q"
 reject '[\q]' "unknown escape \\q in class"
 
+# The five escapes below are REAL PCRE2 constructs (\U and \u under ALT_BSUX;
+# \F, \L, \l in no mode — PCRE2 error 137 groups all five with \N{name}) that
+# pcrec currently answers through the same rowless fall-through as \q, because
+# there was nowhere to put "real construct, mode not offered" (R11
+# disposition 14; extension design §7.1). The design gives all five ROWS with a
+# status of their own. These pins are what make that change arrive as a
+# deliberate edit here rather than a silent rewording — the atom and in-class
+# spellings are separate messages, per letter (A1, approved 2026-08-11).
+for e in U u F L l; do
+    reject "\\$e"   "unknown escape \\$e"
+    reject "[\\$e]" "unknown escape \\$e in class"
+done
+
 echo
 echo "== assertions =="
 for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
@@ -1053,6 +1066,8 @@ must_have '(*FAIL)*' \
     "the only pin that pcrec reports the LEFTMOST error, where libpcre2 reports a later one"
 must_have '(*LIMIT_MATCH=4294967290)' \
     "the only pin of the =digits MAGNITUDE boundary; 4294967289 beside it is the control"
+must_have '\U' \
+    "representative of the five rowless REAL escapes (\\U \\u \\F \\L \\l) the extension design §7.1 plans to give rows — their fall-through wording is otherwise the project's only unguarded diagnostic surface (R11 disposition 14, A1)"
 if [ "$manifest_missing" -ne 0 ]; then
     echo "reject: one or more irreplaceable checks are gone — see above" >&2
     exit 1
@@ -1070,8 +1085,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 235 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 235 / 62 / 0." >&2
+if [ "$nrej" -ne 245 ] || [ "$naccept" -ne 62 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 245 / 62 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi
