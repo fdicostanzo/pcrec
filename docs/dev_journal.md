@@ -4484,8 +4484,10 @@ contract promises.**
 hold **22 rows — D30's own figure, independently derived**. D30's undocumented
 0/25/40/70 rank mapping was recovered and verified 22/22 two ways. **`ext.c`
 never reads `.tail`**, so its six call sites need no change and only three files
-touch the field. `find()`'s same-length tie-break falls back to SOURCE ORDER — a
-latent branch that rank converts into a loud defect, which D30 never claims.
+touch the field. ~~`find()`'s same-length tie-break falls back to SOURCE ORDER — a
+latent branch that rank converts into a loud defect, which D30 never claims.~~
+**[RETRACTED the same session — see the addendum below. The second half of that
+sentence is false and the first half is unreachable.]**
 And **existing external coverage of tailed rows is 2 prefixes, not the 10,200
 probes it looks like**: `check_group_tails` runs 4 prefixes x 255 bytes x 10
 completions, but for `<` and `+` libpcre2 agrees on every tail, so they prove
@@ -4525,3 +4527,62 @@ classifier are kept so someone else can reproduce it before D32 leans on it.
 
 **Nothing was built for MOD-0.1 and nothing should have been.** The tree is
 unchanged from `5d4663f` apart from documentation.
+
+### ADDENDUM — five agents delivered AFTER the R11 commit was pushed
+
+**Third occurrence this session, and this one corrected a claim already in a
+pushed commit message.** M1 (recorded header-only) produced seven findings; M2
+(recorded as producing nothing, twice) produced the panel's sharpest refutation;
+G2 (recorded as having died before writing up) produced a 253,963-probe
+corroboration; M3 and M4 both appended more.
+
+**And the rule I had just written was followed and still failed.** *"A
+checkpoint is not closed until every critic has IDLED"* — `ListAgents` reported
+no reachable agents before the commit, while five agents still had output to
+deliver. So the honest version is weaker: an agent-list check is EVIDENCE, not
+proof, and the only real protection is that a follow-up commit is cheap and
+normal. Recorded in R11's addendum in that weaker form.
+
+**RETRACTED: the `find()` tie-break claim.** I asserted in R11, plan.md, the
+journal and commit `9504e8a`'s message that `find()`'s same-length tie-break
+falls back to source order and that rank converts it into a loud defect.
+Verified in code: the tie needs an IDENTICAL `(sel,tail)` pair, which
+`registry_check.c:184-193` already forbids unconditionally — so the branch is
+unreachable. And rank would NOT make it loud: a counter-example was built and
+run — two duplicate-tail rows at ranks 25 and 26, both plausible hand-typed
+values, produce zero collisions and the higher rank silently always wins. That
+is SR-9's own failure shape relocated from "row order" to "whichever integer is
+bigger". Corrected in all three files.
+
+**The gap R11 flagged is CLOSED — the measurement was corroborated twice.** G2:
+253,963 generated truncated probes, zero genuine gaps, zero over-promises, 1.6s
+linking libpcrec.a directly. M2: 3,164 independent probes, 0 over-promises,
+0/104 residue across the `(?-N` malformed space. **And both hit the same trap
+independently** — G2's first two-way classifier produced 7,516 FALSE gaps and
+M2's produced 236 FALSE over-promises. The classifier must be THREE-way and
+PER-DOORWAY calibrated; a uniform code set breaks on VERB.
+
+**M2 refuted the residue formula: 46 of its own 93 counterexamples (49%) fit
+none of its three exclusions.** There is NO registry row for `\U`/`\u`/`\F`/
+`\L`/`\l` — the answer comes from `ext.c:84-85`'s generic fallback — and
+"unknown POSIX class name" is a function (`registry.c:913-918`), not a row. PC-3's
+circularity defence is literally true and beside the point: most of the evidence
+was never a row. **Most actionable line in the whole panel:** `ext.c:85`'s
+generic `"unknown escape \%c"` is the project's ONLY completely unguarded
+diagnostic surface — nothing would notice its wording changing.
+
+**M4's highest-value finding: `pcrec_ext_verb` has the IDENTICAL discard defect**
+— same function, two lines above the `?` branch, same fallthrough — and is named
+in NONE of mod01-design.md, D31, or D31's addendum. A fix touching only the `?`
+branch ships incomplete with no test able to catch it.
+
+**M1 found two signature defects:** `head_len`'s contract breaks for
+`RF_OPTION_RUN` rows (the option run starts AT the selector byte, one before
+every other recogniser's `at`), and `span_at`/`span_len` have no consumer at all
+— D24/SR-2's own "lost more to unexercised structure than to missing structure".
+Also: option (B)'s cost premise was false, since all 22 rows use one identical
+generic recogniser.
+
+Six further dispositions (9-14) added to R11. **M6 was still running when this
+was written; its result folds in when it lands, and the finding no longer
+depends on it.**

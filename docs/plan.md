@@ -497,8 +497,11 @@ Then DOC-1, then PC-4 when module `classes` lands.
   exactly 4 multi-row buckets holding all 18 tailed rows = 22 rows (D30's own
   figure, independently derived); D30's undocumented 0/25/40/70 rank mapping
   recovered and verified 22/22 two ways; `ext.c` never reads `.tail` so its six
-  call sites need no change; `find()`'s same-length tie-break falls back to
-  SOURCE ORDER, a latent branch rank converts into a loud defect; and existing
+  call sites need no change; **[RETRACTED — see R11's addendum: `find()`'s
+  same-length tie-break is UNREACHABLE, because it needs an identical
+  `(sel,tail)` pair which `registry_check.c:184-193` already forbids, and rank
+  would NOT make it loud — two duplicate rows at ranks 25 vs 26 resolve
+  silently]**; and existing
   external coverage of tailed rows is 2 prefixes, not the 10,200 probes it
   looks like) — the interface, as D30
   resolves it. **DECLARED RANK**: a row carries an integer rank; every
