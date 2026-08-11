@@ -174,3 +174,63 @@ the shipped table and watched it fail.
 The pattern worth keeping: **a design that cannot be run should be simulated
 against the real data before it is adopted.** D30's rank was measured that way
 and survived; design B was not, and did not.
+
+---
+
+# ADDENDUM — late material, and it sharpens the third shape rather than damaging it
+
+Re-polled after the review was committed (the rule this session has been burned
+by three times): P1 had grown 197 → 378 lines, P2 → 341. Nothing overturns a
+disposition; one finding materially improves the successor design.
+
+## P1 — the exact dividing line for decide/build separability
+
+Not "how long is the scan" but **what the decision produces**:
+
+> **A construct whose decision is a pure CLASSIFICATION of untouched pattern
+> text separates decide-from-commit cleanly, NO MATTER HOW LONG THE SCAN RUNS.
+> A construct whose MEANING is proportional to the scanned span's CONTENT — not
+> merely its boundary — does not, and forces the bypass regardless of whether it
+> could ever fail to be itself.**
+
+CONFIRMED pure classifiers: `pcrec_ext_class_bracket`'s three-rule scan,
+`LIMIT_MATCH`'s magnitude accumulator, the option-run grammar. For these,
+building after commit is an O(1) re-read — `cx->pat` is the caller's immutable
+buffer, never consumed, so the span is still there and unmoved.
+
+The other side, and P1 corrects its own earlier example: **`\Q…\E` was never a
+rollback candidate at all** — seeing `\Q` is *always* that construct, so trial
+mode's abandon-a-bad-guess capability is not what it needs. What breaks it is
+different: each literal byte between `\Q` and `\E` becomes the CONTENT of an AST
+leaf (72 bytes per byte), so meaning is O(body length) allocation with nowhere
+to happen but inside the deciding call.
+
+**Sharper falsifying candidates, SUSPECTED (argued from grammar shape, not
+measured — all are `RS_MODULE` stubs today):** `(?P<name>…)`, `\g{name}`,
+`\N{U+FFFF}` — constructs whose CONTENT, not just extent, must enter the
+compiled artifact (a symbol-table entry, a backref target, a codepoint value).
+MOD-0's first real handler will confirm or refute this in one commit.
+
+**Why this strengthens the third shape.** The one doorway needing a pure
+speculative predicate — the class doorway — is *exactly* the
+classification-only kind, so its `opens()` predicate is sound by P1's own
+criterion. And the constructs that genuinely cannot separate decide from build
+are precisely the ones with **no speculative customer**, so they never need to.
+The proportionate split is not a compromise; it lands on the natural seam.
+
+## P2 — final position, unchanged in substance
+
+*"A rule being stated exactly does not make it self-enforcing, and the CURRENT
+table (unedited) already violates it in the one bucket this project has already
+been burned on once."* Adoptable only bundled with (1) a hard, verified
+convention that every bucket's fallback and every doorway's catch-all is
+provably last, and (2) the Q4 static prefix-order check with its own liveness
+clause — **both unstated commitments** — and even then carrying global
+positional coupling, which rank never had.
+
+## Disposition, amended
+
+7. **The decide/build seam is CONTENT-vs-BOUNDARY, not scan length** (P1). A
+   pure predicate is sound exactly where the decision classifies untouched text
+   — which is where the parser's only speculative customer already lives. Record
+   this before MOD-0's first real handler, since that handler is the test.
