@@ -19,12 +19,16 @@ pattern → one `.c`/`.h` pair you can vendor into an embedded project;
 
 ## Status
 
-Early and moving. Milestone M1 (base regex tier: literals, `.`, classes,
+Early and moving. Milestones M1 (base regex tier: literals, `.`, classes,
 alternation, `* + ? {m,n}` greedy/lazy, anchors, groups; ASCII; string
-search) is complete and tested — 353 corpus cases, oracle-verified. Roadmap:
-optimizer + long-text performance, streaming input, captures via a
-backtracking VM engine (DFA-prefilter hybrid), UTF-8, then the wider PCRE
-feature set as drop-in modules.
+search) and M2 (the optimization pass: scan-avoidance prefilters and skip
+loops, an alternation prefix trie, DFA minimization — all guarded by
+benchmark budgets in `make bench`) are complete. The oracle-verified corpus
+and the rest of the suite run under `make test`; read counts from a run,
+not from this file — two hand-copied counts have gone stale here already.
+Roadmap: streaming input (M3), captures via a backtracking VM engine
+(DFA-prefilter hybrid, M4), UTF-8 (M5), then the wider PCRE feature set as
+drop-in modules.
 
 - **Architecture:** [APPROACH.md](APPROACH.md)
 - **Plan / status:** [docs/plan.md](docs/plan.md) (grep `STATE:` tags),

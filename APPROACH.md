@@ -2,6 +2,14 @@
 
 ## Approach Document (v1)
 
+> **About the "req. N" citations** (DOC-1, 2026-08-11): the numbered
+> requirements cited throughout ("req. 5", "req. 8", ...) are the founding
+> project brief's list. That brief predates this repository and is not
+> checked in, so the numbers are NOT resolvable references here — each
+> citation's surrounding sentence is the requirement's only in-repo record.
+> They are kept because they preserve the original numbering should the
+> brief be added to docs/ later.
+
 `pcrec` is an ahead-of-time compiler: it takes a PCRE pattern and emits specialized,
 self-contained C source (gcc dialect) that matches exactly that pattern. The generated
 matcher has no runtime interpreter, no dispatch tables to walk generically, and no

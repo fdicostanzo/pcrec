@@ -318,17 +318,32 @@ Then DOC-1, then PC-4 when module `classes` lands.
   The project's only warnings-as-errors gate was previously ACCIDENTAL
   (run_trie_identity.sh), and R7 measured that accident catching a class of
   offset bug
-- [DOC-1] STATE:not-started — reconcile the SEVEN ambiguities a spec-first
-  writer found reading the project's goal documents cold (D27, 2026-08-10). This
-  is the first time anyone has read the spec without also knowing the code, and
-  the ambiguities are findings about the SPEC rather than about the compiler:
-  places where the mandate, APPROACH.md, D26 and pcre2_compliance.md are unclear
-  or disagree with each other. Two are already known to be wrong as written —
-  the claims about the `a{65535}` boundary flagged in K7. Worth doing before the
-  next spec-first round, because a writer working from ambiguous documents
-  spends its effort resolving OUR ambiguity instead of finding OUR bugs. The
-  reports are in the R9 session scratchpad; re-derive rather than trust a path
-  that no longer exists
+- [DOC-1] STATE:completed 2026-08-11 (eighth session) — the ambiguities a
+  spec-first writer found reading the goal documents cold (D27, 2026-08-10)
+  were RE-DERIVED by a fresh cold reader (the originals' scratchpad path was
+  dead, exactly as this step predicted) and reconciled: ELEVEN findings, all
+  eleven fixed in one commit. The load-bearing ones: `\N{U+hh..}` was
+  assigned to module `classes` by the hand table and `unicode-props` by the
+  generated index IN THE SAME DOCUMENT, with the resolving cross-reference
+  pointing at a note that did not exist (fixed; the note now exists and
+  covers the three-way `\N` spelling clash, citing K10); README described
+  the shipped, bench-gated M2 optimizer as roadmap and carried a corpus
+  count stale since the first commit (fixed; counts now read from runs);
+  `^`'s `OK-LIMITED` stated no limit — probed, its only correctness gap is
+  multiline exactly like `$`, so it is `OK` with D8's engine caveat named
+  as SPEED (fixed); `OK-LIMITED` had accreted three meanings (vocabulary
+  now requires the limit's KIND per row); the `becomes` vocabulary lacked
+  the generated index's `never` and read `—`-plus-revisit-note as a
+  contradiction (both defined); lib/pcrec.h now scopes D18's caseless
+  zero-cost claim per D23 and states that streaming is M3's, not part of
+  today's generated contract; APPROACH.md's "req. N" citations are flagged
+  as founding-brief numbers with no in-repo referent (FLAGGED TO FRANK: the
+  brief could be checked in to make them resolvable); D18 carries its D20
+  supersession marker; D26 gained the which-PCRE2 addendum (the pinned
+  oracle, 10.46; version bumps are deliberate re-measurement events).
+  Registry/compliance checks green after the edits (143/143). The reader's
+  disclosure recorded the FOURTH D27 ambient-injection instance
+  (docs/CLAUDE.md + lib/CLAUDE.md, K10 overlap disclosed and unused)
 - [PC-4] STATE:not-started — a SEMANTIC differential, R8/C4-2. PC-3 compares
   compile VERDICTS only and calls none of the match API it already links, so
   `\v`'s row — the incident this registry was built for — is unverified: the

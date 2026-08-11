@@ -32,7 +32,7 @@ the intended end state, or `—` when there is no plan.
 | status (today) | meaning |
 |---|---|
 | `OK` | Supported, exercised by the .rxt corpus, cross-verified against an oracle |
-| `OK-LIMITED` | Supported, correct within a limit stated in the row |
+| `OK-LIMITED` | Supported, correct within a limit stated in the row — and the row must name the limit's KIND: a RESOURCE cap (correct until a measured size, then a clean failure), or a CAPABILITY not yet built (part of the construct's contract unimplemented). A speed-only caveat is not a limit; it stays `OK` with the caveat in the note (DOC-1, 2026-08-11 — the value had accreted three unrelated meanings) |
 | `REJECTED` | Not supported. Exits 1 with `requires module 'X'`, writes no output, never miscompiles. Pinned construct-by-construct by `tests/reject/` |
 | `AGREES-REJECT` | PCRE2 rejects it too, and pcrec rejects it the same way. Refusing the pattern IS compliance here — not a gap |
 | `OUT-OF-SCOPE` | Deliberately excluded, with the reason |
@@ -40,9 +40,10 @@ the intended end state, or `—` when there is no plan.
 
 | becomes | meaning |
 |---|---|
-| `—` | no plan; the status is the end state |
+| `—` | no plan; the status is the end state. A row's note may still record a revisit TRIGGER — a condition under which the question reopens — which is not a plan and does not change the value (DOC-1, 2026-08-11: three OUT-OF-SCOPE rows carry such triggers, and the column and note were read as contradicting) |
 | `PLANNED` | a named module/milestone owns it, no known architectural obstacle |
 | `PLANNED-HARD` | owned, but the architecture makes it genuinely difficult — needs the M4 VM engine, or fights the D7 two-pass DFA design. Reason per row |
+| `never` | generated index only: the registry's `ROADMAP_NEVER` — real PCRE2 syntax pcrec deliberately excludes, which no module will ever implement, and whose diagnostic says so instead of promising one (K14). Synonymous with a hand-table `OUT-OF-SCOPE`/`—` pairing, rendered from the row so it cannot drift (DOC-1: the value was in use, undefined here) |
 
 Roughly against the vocabulary Frank asked for: `OK` = compliant;
 `OK-LIMITED` = mostly compliant; `becomes: PLANNED` = anticipate compliance;
@@ -123,7 +124,7 @@ survey earned its keep").
 | `\0dd`, `\ddd` as an ATOM | `REJECTED` | — | module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so they share an owner |
 | `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — | **FIX-3 (K13), 2026-08-11.** A backreference is impossible inside a class, so PCRE2 falls back and pcrec now agrees: `\0`..`\7` open an octal escape (up to three octal digits; above `\377` it is PCRE2 error 151, wording and offset reproduced), `\8` `\9` `\g` `\k` are the LITERAL characters (the complete fallback set over all 62 `[\c]` probes), tails re-enter as members (`[\k<n>]` matches k `<` n `>`), and decoded escapes are ordinary range endpoints (`[0-\k]`, `[\1-\7]`). Measured cell-by-cell against libpcre2 10.46 — tests/probes/probe_fix3.c, 41 cells, zero disagreements; pinned by tests/base/class_escape_fallbacks.rxt (127 cases) and the `[\400]`/`[\377]` boundary rows in tests/reject/. Until this change all twelve answered "requires module 'backrefs'" here — the K13 over-promise |
 | `\o{ddd..}` | `REJECTED` | — | module `misc` |
-| `\N{U+hh..}` | `REJECTED` | — | module `classes` (see note under Character types about the `\N` spelling clash) |
+| `\N{U+hh..}` | `REJECTED` | — | module `unicode-props` — the registry's answer, which is authoritative (this row said `classes` until DOC-1, 2026-08-11, contradicting the generated index below; the pointer it gave to a "note under Character types" pointed at a note that did not exist — it does now) |
 | `\U`, `\uhhhh` (ALT_BSUX) | `OUT-OF-SCOPE` | — | option-gated compatibility spellings |
 
 ## Character types
@@ -131,7 +132,7 @@ survey earned its keep").
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `REJECTED` (module `modifiers`) |
-| `\d \D \s \S \w \W \h \H \V \N` | `REJECTED` | `PLANNED` | module `classes`. All are single-position bitmap predicates — `PLANNED`, easy, no engine work |
+| `\d \D \s \S \w \W \h \H \V \N` | `REJECTED` | `PLANNED` | module `classes`. All are single-position bitmap predicates — `PLANNED`, easy, no engine work. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`, and K10 records the live `[\N{U+41}]` class-position divergence), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
 | `\v` | `REJECTED` | `PLANNED` | **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as well as outside. Now `REJECTED` to module `classes` like its negation `\V`. It survived because python `re` also reads `\v` as `0x0B`, so the base-tier oracle agreed with the bug — see "How this survey earned its keep" |
 | `\C` | `REJECTED` | `PLANNED` | "one code unit". In the ASCII tier that is just "any byte", i.e. trivial. PCRE2 forbids it under its own DFA matcher in UTF modes for the reason that will apply to us in M5 |
 | `\p{..}` `\P{..}` | `REJECTED` | — | module `unicode-props`, M5. Single-position predicates, so DFA-friendly; the work is Unicode tables, not engine |
@@ -175,13 +176,13 @@ commits to. The blocker is table generation and size, not matching.
 | `{m,n}` with nothing to quantify, `{1}` | `AGREES-REJECT` | — | PCRE2 error 109. **Was a MISCOMPILE until 2026-08-10 (K6, FIX-1)**; `*`, `+` and `?` had always been rejected in this position and only `{` was missed, because `try_quant` is reached from `p_rep`, i.e. after an atom. Malformed braces (`{}`, `{,}`, `{1`, `a{`) stay literal in both engines, and the reject suite's accept-controls pin that |
 | space/tab inside `{m,n}`, `a{ 1}` | `OK` | — | PCRE2 (following Perl 5.34) skips 0x20 and 0x09 in each of the four gaps `{`_m_`,`_n_`}`, and no other byte. **Was a MISCOMPILE until 2026-08-10 (K8)** — silently literal text, and invisible to a verdict comparison because both engines accept in quantifier position. Whitespace never joins digits (`a{1 2}` is literal) nor stands in for a number (`a{ }`, `a{ , }` stay literal). Found by R7's spec critic, not by the 49 probes that certified K5/K6 |
 | brace diagnostic PRECEDENCE | `OK` | — | measured, not assumed: in atom position PCRE2 answers 105 for `{65536}` and 104 for `{3,1}`, not 109; and too-big beats out-of-order, so `a{65536,1}` is 105. pcrec agrees on all three, offsets included |
-| large bounded repeat, `a{0,65535}` | `OK-LIMITED` | `PLANNED` | correct up to roughly `{0,20000}`. Above that the NFA/DFA build exhausts memory and the process is SIGKILLed instead of reaching the 32000-state cap that exists to prevent exactly this — see **K7**. `a{65535}` (the exact-count form) does hit the cap cleanly. Not a miscompile; no wrong code is emitted |
+| large bounded repeat, `a{0,65535}` | `OK-LIMITED` | `PLANNED` | limit kind: RESOURCE cap. Correct up to roughly `{0,20000}`. Above that the NFA/DFA build exhausts memory and the process is SIGKILLed instead of reaching the 32000-state cap that exists to prevent exactly this — see **K7**. `a{65535}` (the exact-count form) does hit the cap cleanly. Not a miscompile; no wrong code is emitted |
 
 ## Anchors and simple assertions
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `^` | `OK-LIMITED` | — | start of subject. Multiline `^` is `REJECTED` (module `modifiers`); the DFA-state-context design for it is DD-6 |
+| `^` | `OK` | — | start of subject, accepted and correct in every position (probed at class open, mid-pattern, and per alternation branch — DOC-1, 2026-08-11, which found the old `OK-LIMITED` stating no limit; the multiline gap it gestured at is `$`'s too and both rows now carry it the same way). Multiline `^` is `REJECTED` (module `modifiers`); the DFA-state-context design for it is DD-6. One SPEED caveat, not a correctness limit: unanchored patterns with `^` in some branches stay on the slower ENG_ATTEMPT engine until DD-7's unification (D8) |
 | `$` | `OK` | — | end of subject or before a final newline — PCRE2's default. Mid-pattern `$` is fully general via EOL-variant states |
 | `\A \Z \z \b \B \G` | `REJECTED` | — | module `assertions`. `\A`/`\z` are trivial. `\b`/`\B` need a one-byte lookbehind, which is a state-context change (same machinery as DD-6). `\G` additionally collides with `nfa_wrap_unanchored`'s baked-in start self-loop — that is DD-4 |
 
@@ -196,7 +197,7 @@ commits to. The blocker is table generation and size, not matching.
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `a\|b` | `OK` | — | incl. empty branches; leftmost-first preference via priority pruning (D3) |
-| `(...)` | `OK-LIMITED` | — | parses and groups correctly, but capture SPANS are not reported — only the overall match. Captures arrive with the M4 VM engine |
+| `(...)` | `OK-LIMITED` | — | limit kind: CAPABILITY not yet built. Parses and groups correctly, but capture SPANS are not reported — only the overall match. Captures arrive with the M4 VM engine |
 | `(?:...)` | `OK` | |
 | `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `REJECTED` | — | module `named-groups`. Gated behind captures (M4). Since Q2/SR-9 `(?<` names ONLY this module: the three lookbehind tails `=` `!` `*` have rows of their own |
 | `(?>...)`, `(*atomic:...)` | `REJECTED` | `PLANNED-HARD` | module `atomic-groups` / `verbs`. Same reasoning as possessive quantifiers: a cut, not a no-op |

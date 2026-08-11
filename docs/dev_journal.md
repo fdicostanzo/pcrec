@@ -5778,3 +5778,34 @@ comparison — in a worktree under worktrees/ per Frank's ruling.
 
 **Next:** check06 arming (D27, worktree), then the enabled-set/toggles
 surface (checks 01/07/09), then MOD-0.1's byte-identity landing bar.
+
+## 2026-08-11 — eighth session, second stretch: DOC-1 closed (eleven findings reconciled)
+
+DOC-1 ran as the parallel track while slice 8 verified: a fresh cold reader
+(read-only, denied src/, tests/, plan, journal, design doc) re-derived the
+lost spec-ambiguity findings from the six goal documents alone. ELEVEN
+findings, quotes and line numbers for each; all eleven reconciled in one
+commit, dispositions in plan.md's DOC-1 entry. The sharpest was the D26
+tier-2 shape this project keeps finding in its own documents: the hand
+half of pcre2_compliance.md assigned `\N{U+hh..}` to module `classes`
+while the generated index in the SAME file said `unicode-props`, and the
+cross-reference that would have resolved it pointed at a note that had
+never been written. The registry wins (it is measured); the note now
+exists and covers the three-way `\N` clash. Also: `^`'s unexplained
+OK-LIMITED resolved by probing (correctness gap = multiline, same as `$`;
+the D8 engine caveat is SPEED and now says so), the OK-LIMITED and
+`becomes` vocabularies tightened (limit KIND per row; `never` defined;
+revisit-trigger ≠ plan), README's optimizer-as-roadmap and first-commit
+corpus count fixed (counts read from runs now), pcrec.h scopes the
+caseless zero-cost claim (D23) and the streaming absence (M3.0's gate),
+APPROACH's "req. N" citations flagged as founding-brief numbers with no
+in-repo referent — Frank could check the brief in — and D18/D26 gained
+their supersession/pinning markers. Registry+compliance checks green
+after the edits (143/143).
+
+Process: the reader disclosed the FOURTH D27 ambient-injection instance —
+docs/CLAUDE.md and lib/CLAUDE.md auto-injected on first Read into those
+directories, including K10's description, which overlaps its top finding;
+disclosed, and the finding cites only the two contradicting tables. The
+leak pattern remains a standing property of spawning; the disclosure
+requirement in briefs is doing its job.

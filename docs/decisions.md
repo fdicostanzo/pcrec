@@ -714,6 +714,12 @@ matching what it measures in practice.
 
 ## D18 — 2026-08-09 — hyperspecialization: options are compiled away, and every option dimension must EARN its engine
 
+> **Partly superseded by D20 (same day):** this entry's closing speculation
+> that `pcrec_options`' scalar fields would need a SET-VALUED redesign is
+> reversed there — the core API never becomes set-valued; D20 deletes that
+> half. Recorded here because a reader who stops at this entry draws the
+> wrong conclusion about lib/pcrec.h's stability (DOC-1, 2026-08-11).
+
 Stated by Frank 2026-08-09 as perspective that should have been set at the
 start, and recorded here because it resolves trade-offs the earlier entries
 left open.
@@ -1568,6 +1574,15 @@ was justified by.
 something; or pcrec grows a PCRE2-compatibility mode as a product feature rather
 than as an internal standard; or the module set grows far enough that tier 4 is
 nearly empty, at which point the gradient matters less than it does now.
+
+**Addendum (DOC-1, 2026-08-11) — which PCRE2.** "Source of truth" means the
+PINNED oracle the differentials actually run against — libpcre2 **10.46**
+today, named in docs/pcre2_compliance.md's header — not whatever release is
+current. Point 1 above already concedes releases move; this line closes the
+loop it left open: a version bump is a deliberate re-measurement event (rerun
+the differentials, re-pin what moved, record it), never ambient drift a test
+should silently track. Until such an event, a claim measured on 10.46
+remains the project's expected verdict even where a newer PCRE2 differs.
 
 ## D27 — some tests are written from the GOAL, by someone denied the code
 
