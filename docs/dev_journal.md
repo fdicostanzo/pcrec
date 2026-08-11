@@ -5258,3 +5258,99 @@ design removes none of the six.
 
 Open defects now: K2, K7, K9, K10, K11, K12, K13, K14 — and K12/K13/K14 are the
 same shape three times over.
+
+## 2026-08-11 — FOURTH session of the day: Frank's rulings, Part II, R14, A1
+
+Frank reviewed the design document, agreed with the recommendations on every
+open question, asked one question of his own — is `\Q\E` lexical enough to be
+core grammar? — and asked for the design passes. What happened, in order:
+
+**Baseline: green, after an environmental fight.** `/tmp`'s per-user tmpfs
+quota was exhausted by 5.5 GB of PRIOR sessions' scratchpads — exactly what
+wake.md §3 warned about — which broke `make test` mid-run (gcc could not
+write its own temp files) and briefly broke the shell itself. The permission
+layer declined a bulk delete of the stale scratchpads, so everything this
+session ran with `TMPDIR=/var/tmp`, and the cleanup is flagged for Frank to
+do by hand. All six baseline gates then passed: make, make test, strict,
+verify_rxt (100%), fuzz seed 1 (0 divergences), bench (0 hard errors, 0
+budget failures — the real run, not the quota lie).
+
+**Measurements first.** Two probe programs against libpcre2 10.46 before any
+design prose: 24 `\Q\E`/`(?#)` lexical cells, the full 62-escape class-
+position sweep (the literal-fallback set is exactly `\g \k \8 \9`), the
+endpoint doorway×side table, the atom-side digit facts, and re-verification
+of every C2/F3 forward-reference cell. The `\Q\E` answer to Frank: lexical
+YES (every cell consistent with a tokenizer mode; quantifier binds the last
+character, ranges form through `\Q\E` and bare `\E`, case-folding applies
+inside, `(?x)` suspends and resumes), core grammar NO (pcrec refuses all
+three today with module names; D26 tier 2 needs the attribution; the
+sabotage instrument needs the toggle) — implementation locus and gating are
+different axes.
+
+**Part II written (§11-§17), D34 recorded, then R14 the same session.**
+Three read-only critics (measurement / coherence / controls), ~5,400 probes.
+The panel refuted Part II's two central factual claims and it was RIGHT both
+times — every load-bearing measurement re-verified by hand before applying
+(29-cell verification probe, all reproduced):
+
+- §16.2's "exactly ONE deviating cell" — there are TWO (`[:<:]`/`[:>:]` are
+  whole-class-content assertions, low-side 130), and the falsifying cell was
+  printed in §16.1's OWN TABLE and read as confirmation. Plus a FIVE-step
+  evaluation order the 33 curated cells were structurally blind to (every
+  cell had a literal on the non-construct side). C1's 5,041-pair generated
+  differential — predictor fed from libpcre2, never from the row — found 71
+  disagreements, all one item, and nothing else.
+- §14.2's digit rule — `\81` is err 115 at ANY count: a run beginning 8/9 is
+  always a backreference. Derived from `\12`/`\8`/`\0`, a probe set with no
+  run beginning 8 or 9. THE method failure, committed while correcting it.
+- "backrefs can land alone" WITHDRAWN: the count-scan must classify every
+  `(`-form (named groups capture; `(?<n>` vs `(?<=`), needs verb/callout
+  body extents (two ROADMAP_NEVER families), and `(?|` needs the
+  nesting-aware top-level `|` scan R13 used to kill TERMINAL — "that scan IS
+  the parser" came back through the side door. Migration order is now
+  Frank's decision (§18.1).
+- Quote mode is scoped to ATOM/CLASS-ITEM positions — `(\Q?\E:a)` is a
+  CAPTURING group. §13's tokenizer story holds exactly where it was
+  measured (34/34) and nowhere else.
+- Quantifiability is a THIRD per-row axis nobody modelled: `a\b*`,
+  `a(?i)*`, `a(*FAIL)*` are all err 109, and an EXT_NODE from any of the
+  22+ non-repeatable rows lets try_quant compile them — R13's `\Qab\E*`
+  mechanism, generalised. New `quantifiable` fact, external sweep.
+- Three critics independently saved `pcrec_ext_class_pair_opens` from
+  deletion — the "two-byte lexical test" that replaced it over-rejects the
+  four accept-controls D33 §9.1 calls mandatory. Deleting the thing measured
+  (21,396/0) while keeping its measurement was the design's clearest error.
+- C3 on the first §17.3: six of nine invariants could not fail in the
+  direction the design's own gaps produce ("an invariant with no population,
+  no oracle and no sabotage is not a weaker check — it is a sentence").
+  Rebuilt: every entry now names oracle, population, sabotage.
+
+All corrections applied inline as R14 blocks; §18 is the post-R14 state and
+Frank's five open decisions (migration order; does `may` survive now that
+`(?(` uses the scan; where `quantifiable`/`captures` live; K13-fix
+sequencing vs the byte-identity bar; the bound-mode document's scope).
+Review compiled at docs/reviews/2026-08-11-r14-part2.md. D33 got its
+amendment banner (its own revisit-when had fired unmarked — C2/F13).
+
+**A1 landed.** Ten `unknown escape` pins for `\U \u \F \L \l` (atom + class)
+in tests/reject/, count 235→245, one manifest entry — sabotage verified live
+(deleting the rows fails the MANIFEST by name, not a count). Full `make
+test` green after.
+
+**Lessons, added to the pile:**
+- A CURATED TABLE CAN CONTAIN ITS OWN REFUTATION AND STILL CONFIRM THE RULE
+  TO ITS AUTHOR. `[[:<:]-z] 130` sat in §16.1 while §16.2 said "every cell
+  above follows". Reading a table you built checks transcription, not the
+  rule; only a predictor fed from the oracle checks the rule.
+- THE FIX FOR "MEASURED ON A BUCKET THAT CANNOT FALSIFY" IS STRUCTURAL, NOT
+  VIGILANCE: generate the probe set from the claim's failure directions
+  (both-sides-construct pairs; digit runs starting 8/9; quote at non-atom
+  positions). Three instances in two days of the vigilance version failing.
+- A PANEL THE SAME SESSION IS CHEAP AND THE DESK IS EXPENSIVE. Part II was
+  written carefully, from fresh measurements, by an author who had just
+  catalogued R13's failure modes — and still shipped two false central
+  claims that three critics found in under an hour.
+
+**Next session:** Frank answers §18's five decisions. Then the plan. The
+checks (§17.3) go to a D27 author with probes, not prose. Do not start
+building before the §18 conversation.

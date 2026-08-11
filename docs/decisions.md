@@ -2919,6 +2919,15 @@ resolve.
 
 ## D33 — 2026-08-11 — ONE table, TWO PORTS per row: a class port returning a set, an AST port returning a node; the claim is RETURNED, not raised
 
+**AMENDED IN PART BY D34 + extension_design.md PART II (2026-08-11, same
+day). Two numbered sections below are FALSIFIED — this entry's own
+revisit-when fired.** §4's position-independent arbitration: R13 measured
+`\12` selecting a different row by position (backreference at atom, octal in
+class, same count); replaced by PER-PORT recognition, Part II §14. §6's
+static shape-column endpoint rule: R13/R14 measured the DOORWAY deciding, not
+the shape; replaced by evaluate-first with one deviating cell, Part II §16.
+The rest of this entry stands. Read D34 before building from it.
+
 **Decided** 2026-08-11 (Frank), in conversation, refining D32 rather than
 replacing it. D32's spine is untouched: a row still names a parser function, rank
 is still a local tiebreak, purity is still per-doorway. What changes is that a
@@ -3110,3 +3119,79 @@ manifest remains their only guard. This decision does not improve it.
 falsified and `pair_opens` returns); or a construct is found whose SELECTED ROW
 differs by position (§4 is falsified); or MOD-0.6 needs the class structure
 wider than 256 bits (§7, expected, not a falsification).
+
+## D34 — 2026-08-11 — Frank's rulings on the extension design's open questions; PART II is the redesign of record
+
+**Decided** 2026-08-11 (Frank, fourth session of the day), after reviewing
+`docs/extension_design.md` and its R13 refutations. Frank agreed with the
+recommendations presented for each §10 open question; this entry records the
+rulings, and **Part II of the design document (§11-§17) is the single design
+pass they called for** — written the same session, PROPOSED pending the R14
+panel. Where a ruling's rationale is long it lives in Part II, not here.
+
+The rulings, by §10 item:
+
+1. **(items 1+13)** A row carries TWO ORTHOGONAL COLUMNS: `status` (fact about
+   PCRE2 — RS_BASE / RS_MODULE / RS_REJECTED / RS_NOT_OFFERED(option)) and
+   `disposition` (fact about pcrec's roadmap — RD_PLANNED / RD_NEVER).
+   "Requires module 'X'" renders only for RD_PLANNED. This is the K14 fix and
+   it retires §10.1 as posed (both of its options were category errors).
+2. **(item 2)** The bound-mode LIST is deferred to its own document, after an
+   option sweep whose generator can produce the constructs (the §7 framing
+   broke: `\x` is base grammar whose meaning ALT_BSUX changes, so the bound
+   mode is not expressible as row statuses or names).
+3. **(item 4)** Feature mask stays 32-bit, with a loud check at the ceiling.
+4. **(item 5)** Toggles are CLI-only (`--without=NAME`), test-facing, not
+   public API.
+5. **(item 6)** RECOGNISERS AND EXTENT SCANS ARE ALWAYS LIVE; only producers
+   gate. The whole-pattern pre-scan becomes the lexer in count mode; `backrefs`
+   can land alone. (Part II §12.)
+6. **(item 7)** Recognition is PER-PORT; the two ports of one row may disagree
+   about presence, and that is PCRE2's own behaviour (`\12` at 12 groups:
+   backref at atom, octal in class). ONE rank per row until a measured
+   counterexample. (Part II §14. This supersedes D33 §4's position-independent
+   arbitration — D33's own revisit-when trigger, hit by R13.)
+7. **(item 8)** The class-position literal fallback (`\g \k \8 \9`, measured
+   as the complete set over all 62 `[\c]` probes) becomes EXPLICIT data-driven
+   class ports producing the letter as a scalar. A NULL class port regains its
+   single meaning: permanently invalid at class position. This is the K13 fix.
+   (Part II §14.3.)
+8. **(item 9)** `\Q`, `\E`, `(?#...)` are LEXICAL-MODE constructs owned by the
+   tokenizer: rows with NO ports, gated at the token. The sixth outcome is
+   REJECTED; the five outcomes stay five and are again total over their
+   domain. Lexical locus and gating are different axes: these rows keep their
+   names (`quoting`, `comments`) and their refusals until implemented — they
+   are NOT base grammar. (Part II §13, and 24 measurements behind it.)
+9. **(items 10/10a)** C1's `want`×`may` re-cut of the ASK contract is ADOPTED
+   as the basis, pending R14: want ∈ {CLAIM, VERDICT, RESULT}, may =
+   {ALLOCATE, RECURSE, DIAGNOSE}, cursor moves only under RESULT; the gate
+   demotes want and preserves may. (Part II §15.)
+10. **(item 11)** The endpoint rule is MEASURED, not derived: evaluate the
+    item at class position, its own error wins, success + SET → error 150 —
+    with exactly ONE deviating cell (bracket doorway, HIGH side: the syntactic
+    pair-open after `-` short-circuits to 150 unevaluated). The static SHAPE
+    column loses its only consumer and is dropped. (Part II §16, 33 cells.)
+11. **(item 12)** §8's check list is rebuilt by an author DENIED the design
+    document (D27's separation, now measured to work twice); Part II §17.3
+    hands that author nine invariants as inputs, not checks.
+
+**Why record rulings separately from the design:** the document is where the
+reasoning lives and will keep being revised by panels; this log is where "Frank
+decided X on date Y" has to survive that revision.
+
+**Revisit when:** R14 refutes a Part II section (expected route: §16's rule on
+a cell outside the 33 measured, or §12.2's extent set proving incomplete); or
+a bucket is found where two rows clash at both positions with different
+winners (reopens one-rank-per-row); or the bound-mode sweep contradicts
+RS_NOT_OFFERED as a status.
+
+**Postscript, same session:** R14 ran against Part II and the expected route
+fired — §16's rule was refuted on cells outside the 33 (a second deviating
+cell, `[:<:]`, printed in the design's own table; a five-step evaluation
+order), §12.2's extent set was proven incomplete ("backrefs can land alone"
+is withdrawn), and §14.2's digit rule fell to the bucket it had not probed
+(`\81` is err 115, not octal). Corrections are inline in Part II marked R14;
+`docs/reviews/2026-08-11-r14-part2.md` is the panel record; §18 holds the
+five decisions R14 left for Frank (migration order, whether `may` survives,
+where `quantifiable`/`captures` live, K13-fix sequencing, the bound-mode
+document's scope). The rulings above stand except where §18 reopens them.

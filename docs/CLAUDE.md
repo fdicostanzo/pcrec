@@ -24,8 +24,15 @@ Process and status documents for pcrec. The architecture itself lives in
   feature plugs into pcrec — one table, a NAME per row as the unit of
   enable/disable, two PORTS per row, and a RECOGNISE-then-PRODUCE seam. Written
   from scratch rather than as an amendment to D32/D33, and **partly REFUTED by
-  the R13 panel**; the refutations are inline and the holes they left are marked
-  `[OPEN]` for Frank. Read the PANEL OUTCOME block at the top before any section.
+  the R13 panel**; the refutations are inline. Read the PANEL OUTCOME block at
+  the top before any section. **PART II (§11-§18)** is the post-ruling redesign
+  (D34): per-port recognition, always-live recognisers, lexical-mode rows for
+  `\Q`/`\E`/`(?#)`, the `want`×`may` ask contract, the measured endpoint rule
+  — itself reviewed the same session by R14
+  (`reviews/2026-08-11-r14-part2.md`), which refuted its two central factual
+  claims; corrections inline marked R14, and §18 holds the post-R14 state
+  plus the five decisions left for Frank. Read BOTH panel-outcome blocks
+  before any section.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather

@@ -509,6 +509,24 @@ Then DOC-1, then PC-4 when module `classes` lands.
   rows and row deletion, still guarded only by `tests/reject/`'s manifest.
   D33 subsumes the returning-doorway contract (one epilogue, so the two missing
   ones cannot be missing) and K12)
+  **AMENDED AGAIN 2026-08-11 (fourth session) by D34 + extension_design.md
+  PART II — READ THOSE AFTER D33.** R13 refuted D33 §4's position-independent
+  arbitration (its own revisit-when trigger: `\12` selects differently by
+  position) and parts of the design document; Frank ruled on the open
+  questions (D34) and Part II (§11-§17) is the redesign of record: recognisers
+  always live / producers gate, per-port recognition with one rank, explicit
+  literal-fallback class ports (the K13 fix), `\Q`/`\E`/`(?#)` as port-less
+  LEXICAL rows, the `want`×`may` ask contract, and the measured endpoint rule
+  (one deviating cell; the static SHAPE column is dropped). [MOD-STATE]'s
+  pre-scan is subsumed by §12.2's lexer-in-count-mode, which is on the always-
+  live side. R14 ran the same session and partly refuted Part II — most
+  materially for this step: "backrefs can land alone" is WITHDRAWN (the
+  always-live layer is a group-header sub-parser plus verb/callout body
+  extents — §18.1 is Frank's migration-order decision), the endpoint rule
+  has TWO deviating cells and a five-step order, `pair_opens` SURVIVES, and
+  the digit rule gained the 8/9 clause. Corrections inline marked R14;
+  checks to be rebuilt by a D27 author per the rebuilt §17.3. A1 landed the
+  same session (ten `unknown escape` pins, `tests/reject/` 235→245).
   ~~STATE:blocked (2026-08-11 — the R11 design panel refuted parts of
   D30, exactly as R10 refuted D29, and the resolution is Frank's call.** See
   `docs/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.

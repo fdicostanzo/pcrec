@@ -1,6 +1,11 @@
 # pcrec's extension mechanism — design
 
-**Status: PROPOSED AND PARTLY REFUTED, 2026-08-11. Not built. Not adopted.**
+**Status: PART I PROPOSED AND PARTLY REFUTED (R13); PART II (§11-§18) is the
+redesign that answers R13's holes, written 2026-08-11 fourth session after
+Frank's rulings (D34), then itself reviewed the same session by the R14 panel
+— which refuted its two central factual claims. Corrections are inline,
+marked R14; §18 is the post-R14 state and Frank's open decisions. Not built.
+Not adopted.**
 
 > ## PANEL OUTCOME — READ THIS BEFORE ANY SECTION BELOW
 >
@@ -39,6 +44,11 @@
 >
 > **And the panel found a live shipped bug the design would have frozen: K13.**
 > Twelve rows answer the class position with the wrong module.
+>
+> **PART II (§11-§18, fourth session) is the redesign that answers the holes
+> above, written after Frank ruled on §10 (D34) — read it after this Part, not
+> instead of it. It was itself reviewed the same session (R14), partly
+> refuted, and corrected inline; read ITS panel-outcome block too.**
 
 This document describes, from scratch, how a regex feature is added to pcrec.
 It draws on D24, D26, D28, D30, D32 and D33 and on the R10/R11/R12 panels, but
@@ -1131,6 +1141,13 @@ sides share.**
 measurements; items marked WIDENED got worse under review. Everything here is
 for Frank.
 
+> **Revised again after Frank's rulings (D34, fourth session): items 1, 3, 6,
+> 7, 8, 9, 10/10a, 11 and 13 are answered in PART II (§11-§17), pending the
+> R14 panel. Items 2 (the bound-mode sweep), 4 (mask width — ruled: stay at
+> 32 with a loud ceiling check), 5 (ruled: CLI-only `--without=NAME`) and 12
+> (ruled: §8 rebuilt by a D27 author) are dispositioned in §11. The texts
+> below stand as the record of the questions as asked.**
+
 1. **RESOLVED toward STATUS — `RS_NOT_OFFERED` is a status, not a name.**
    (§7.2) C2 measured 274 ALT_BSUX-dependent verdicts over 120,099 probes. If
    `alt-bsux` were a name in the enabled set, recognition would depend on the
@@ -1203,3 +1220,841 @@ for Frank.
     density of scope-inheritance defects across ten checks is the signature of
     one author writing both the mechanism and its controls, which is what D27
     exists to break.
+
+---
+---
+
+# PART II — THE REDESIGN (2026-08-11, fourth session; PROPOSED — R14 has RUN)
+
+> ## R14 PANEL OUTCOME — READ BEFORE ANY PART II SECTION
+>
+> A three-lens panel (R14, `docs/reviews/2026-08-11-r14-part2.md`, ~5,400
+> probes) ran against Part II the session it was written. **Its two central
+> factual claims were refuted** — §16.2's "exactly ONE deviating cell" (a
+> second cell was printed in §16.1's own table and read as confirmation) and
+> §14.2's digit rule (every multi-digit escape beginning 8 or 9) — and §12.2's
+> "backrefs can land alone" is withdrawn. Corrections are applied inline below,
+> marked **R14**; what they leave genuinely undecided is in §18. The panel's
+> method note is R13's, recurring: *in each refuted section the falsifying
+> bucket was one probe away, and the probe set used was one the claim could
+> not fail on.*
+>
+> **What R14 corroborated, with counts:** per-port recognition (every cell,
+> including class-side digits and fallback tails); the endpoint CORE rule at
+> the escape doorway (every constructible cell beyond the curated 33); the
+> LEXICAL set being exactly {`\Q…\E`, `\E`, `(?#…)`} (27 candidates, no
+> fourth); the tokenizer reading AT atom/class-item positions (34 probes);
+> the ten NULL class-port rows being mode-invariant; and invariant 6 (the
+> cursor rule) as "the best of the nine — both sides computed by the harness,
+> total, one-line live sabotage".
+
+Frank reviewed Part I and ruled on its open questions (D34). This part is the
+single design pass those rulings called for, covering §10's items 6, 7, 8, 9,
+10/10a and 11 **together**, because R13's refutations cluster on one cause:
+Part I assumed one recogniser, one shape, and one total order per row, and
+PCRE2's grammar has position-dependent construct *identity* (`\12`), doorway-
+and side-dependent error *precedence* (`[0-\p{Foo}]` vs `[[.a.]-z]`), and
+constructs that are not atoms at all (`\Q...\E`). Every section below pushes
+the missing distinction into per-port or per-doorway **data** rather than a
+global invariant.
+
+Every measurement in Part II was taken 2026-08-11 (fourth session) against
+libpcre2 10.46 through `tests/fuzz/pcre2_abi.h`, or against `build/pcrec` at
+`37a2401`, and is quoted with its probe. Two probe programs produced them
+(`probe_qe.c`, `probe_atom.c`, session scratchpad — the outputs are quoted here
+in full where load-bearing, because the scratchpad is ephemeral).
+
+**What Part II does NOT cover, deliberately:** §7's bound-mode list (its
+framing broke — the mode-dependent set reaches base grammar — so it gets its
+own document after the option sweep, OQ 2); and §8's checks (ruled to be
+rebuilt by an author denied this document, OQ 12 — §17.3 hands that author the
+invariant list). Part I's text is left as the record; §17 maps which sections
+it supersedes.
+
+---
+
+## 11. The rulings (Frank, 2026-08-11 — recorded as D34)
+
+1. **Two axes for what a row is** (was OQ 1 + 13): a `status` column holds
+   facts about PCRE2; a new `disposition` column holds facts about pcrec's
+   roadmap (PLANNED / NEVER). "Requires module 'X'" is only ever emitted for
+   PLANNED. Fixes K14. §17.2.
+2. **Bound-mode list**: separate document, after the sweep (OQ 2 stays open).
+3. **Mask width** (OQ 4): stay at 32 bits with a loud check at the ceiling.
+4. **Toggles** (OQ 5): CLI-only `--without=NAME`, test-facing, not public API.
+5. **Recognition is never gated; only production is** (OQ 6): §12.
+6. **Per-port recognition, one rank per row** (OQ 7): §14.
+7. **Explicit literal-fallback class ports** (OQ 8): §14.3.
+8. **`\Q`/`\E`/`(?#...)` are lexical-mode, owned by the lexer** (OQ 9): §13.
+   The sixth-outcome repair is rejected.
+9. **Adopt C1's `want`×`may` re-cut of the ASK contract** (OQ 10/10a) as the
+   basis, subject to R14: §15.
+10. **The endpoint rule is measured, not derived** (OQ 11): §16.
+11. **§8 is rebuilt under D27** (OQ 12): by an author denied this document.
+
+## 12. Recognisers are ALWAYS LIVE; only producers gate (answers OQ 6)
+
+**The rule.** Every port's RECOGNISE phase — and the extent computation §12.2
+adds — is permanently-live code with no path from the enabled set into it. The
+gate applies to PRODUCE only. §5.4's invariant ("recognition never depends on
+what is enabled") stops being a vacuous consequence of single-pass termination
+and becomes a structural property: it holds because the code that could break
+it does not exist. Single-pass termination remains as a second wall, no longer
+the only one.
+
+This also dissolves §3.1's apparent contradiction. "The enabled set instead of
+the absence of code" was always about producers; recognisers were never absent
+— `sel` + `tail` data exists for every row today. §12.2 extends that to
+extents, and nothing more.
+
+### 12.1 What C2/F3 measured, re-verified
+
+All five cells reproduce exactly (probe_atom.c, fw-1..fw-5):
+
+    \1(a)         COMPILES        \1\Q(a)\E     ERR 115
+    \1(?#()       ERR 115         \1(?|(a))     COMPILES
+    (?n)(a)x12\12 COMPILES (octal)
+
+`\1`'s verdict at offset 0 depends on group-count effects of constructs owned
+by `quoting`, `comments`, `modifiers` and `branch-reset` appearing LATER. So
+backref recognition needs a whole-pattern group count, and the count-scan needs
+correct extents for exactly: `\Q...\E` runs, classes, `(?#...)`, `(?x)`-mode
+comment/whitespace, `(?n)`, and `(?|`.
+
+### 12.2 The count-scan is the LEXER in count mode, not a second parser
+
+Under §13, `\Q`/`\E`/`(?#...)`/`(?x)`-whitespace are lexer-owned; classes are
+base grammar; `(?n)` and `(?|` are *recognised* (not produced) by their rows.
+So every extent the count-scan needs comes from machinery that is always live
+by this section's rule. There is no duplicate branch scanner (the thing OQ 6
+feared), and **`backrefs` can land alone**: the `quoting`/`comments`/
+`modifiers`/`branch-reset` rows contribute their recognisers and extents from
+day one while their producers stay gated.
+
+Worked example, `quoting` disabled, `backrefs` enabled:
+
+- `\1\Q(a)\E` — count-scan (always live) sees the quote extent, counts 0
+  groups; the parser reaches `\1`, the backref row claims (a single digit is
+  always a backreference, §14.2), produces, and fails "reference to
+  non-existent subpattern" at offset 0 — the same verdict PCRE2 gives (115).
+  The compile never reaches the disabled `\Q`.
+- `\1(a)\Q\E` — count 1, `\1` produces a valid backref, the parser reaches
+  `\Q` and terminates with "requires module 'quoting'". PCRE2 compiles it;
+  pcrec's refusal names the exact unimplemented construct. Correct under D26.
+
+**The guard is no longer the unimplemented-ness** — the count is computed by
+live code in every configuration, which is what OQ 6 demanded and the pre-scan
+as designed could not deliver.
+
+> ### REFUTED IN PART (R14 — C1/F3, C3/F1, C3/F2, C2/F4; verified by the author)
+>
+> **§12.2's "exactly" list is short by at least four families, and "backrefs
+> can land alone" is WITHDRAWN.** The count-scan must classify EVERY
+> `(`-initiated form as capturing or not:
+>
+>     \1(?<n>a)  \1(?'n'a)  \1(?P<n>a)   COMPILE     (named groups CAPTURE)
+>     \1(?=a) \1(?<=a) \1(?>a) \1(?i:a)  ERR 115     (these do not)
+>     \2(*MARK:()(a)   \2(?C"(")(a)      ERR 115     (verb/callout bodies hide a `(`)
+>     \2(?|(a)|(b)|(c))                  ERR 115     ((?| is a per-branch MAXIMUM)
+>     ((?n))(a)\1  OK   vs   (?n)(a)\1  ERR 115      ((?n) is a SCOPED mode; (?-n) reverses)
+>
+> The `(?|` maximum needs a nesting-aware top-level `|` scan — `|` hidden by
+> an escape, a class, a quote, a comment, and unbounded nesting, all measured
+> — which is the scan R13 used to kill TERMINAL at `(?(`. So §12.2's "no
+> duplicate branch scanner" is FALSE, and the always-live layer is honestly a
+> **group-header sub-parser plus verb/callout body extents** — including code
+> for two RD_NEVER families. Whether that changes the migration order is §18's
+> first open question.
+>
+> **Corrections adopted:** a per-row `captures` fact (data, checked against
+> libpcre2's capture count per row syntax — it must not be a hand-list, C3/F2);
+> the §13.3 axis split into THREE — recognise / count-affecting semantics /
+> produce-a-node — with the middle always live by name (`(?x)` `(?n)` `(?|`
+> `\Q…\E` and every capturing form; C2/F4 measured `\2(?x)#(a)\n(b)` err 115
+> vs `\2#(a)\n(b)` COMPILES); invariant 2 re-scoped to **libpcre2 as the
+> oracle, over generated patterns compiling or not** — as written its scope
+> excluded undercounts, the only failure direction the gaps produce (C3/F1);
+> and §12's "the code does not exist" claim gets a MECHANISM — recognisers and
+> extent scans live in translation units that do not link the enabled-set
+> symbol, checked by `nm` in the build, sabotage = an added reference (C3/F7).
+
+## 13. Lexical-mode constructs: `\Q`, `\E`, `(?#...)` (answers OQ 9)
+
+### 13.1 The measurements
+
+Everything below is probe_qe.c, sections A-D, quoted in full because this
+section's conclusion rests on the *pattern* across them:
+
+    A1  ^\Qab\E*$      "abbb" MATCH   "ababab" no      quantifier binds LAST char
+    A4  ^(\Qab\E)*$    "ababab" MATCH "abbb" no        grouping restores the run
+    A5  ^\Qab\E+$      "abbb" MATCH   "ab" MATCH
+    A6  ^\Qab\E{2}$    "abb" MATCH    "abab" no
+    A2  ^a\Q\E*$       "aaa" MATCH                     empty quote is TRANSPARENT to *
+    A3  ^\Q\E*$        ERR 109                          ...and leaves no target
+    B1  ^[\Qa-z\E]$    "-" MATCH   "b" no              `-` quoted: three literals, no range
+    B2  ^[\Q]\E]$      "]" MATCH                        `]` quotable
+    B4  ^[\Q^\Ea]$     "^" MATCH   "a" MATCH            `^` quoted
+    B7  ^[\Q\\\E]$     "\" MATCH                        `\` quoted
+    B3  ^[a\Q\E-z]$    "m" MATCH   "-" no              range FORMS THROUGH an empty quote
+    B5  ^[0-\Q\Ea]$    "5" MATCH   "a" MATCH            endpoint reached through the quote
+    B6  ^[0-\E9]$      "5" MATCH   "-" no              range forms through a bare \E
+    C1  (?i)\Qa\E      "A" MATCH                        case-folding applies INSIDE the quote
+    C2  (?x)\Q a\E     " a" MATCH  "a" no              (?x) whitespace-skipping suspends inside
+    C8  ^\Qa\E\E b$ (EXTENDED)  "ab" MATCH  "a b" no   ...and resumes after \E
+    C3  ^(a)\Q\1\E$    "a\1" MATCH "aa" no             \1 inside the quote is two literals
+    C4  ^\Q\Q\E$       "\Q" MATCH                       no nesting: inner \Q is two literals
+    C5  ^\Qab$         "ab$" MATCH "ab" no             unterminated quote absorbs $ to the end
+    C6  ^a\Eb$         "ab" MATCH                       bare \E is a no-op
+    C7  ^[a\E]$        "a" MATCH                        ...in a class too
+    D1  ^a(?#x)*$      "aaa" MATCH "a" MATCH            * binds `a` THROUGH the comment
+    D2  ^(?#x)*$       ERR 109                          comment leaves no target either
+    D3  ^a(?#x)b$      "ab" MATCH
+    D4  ^[0-(?#x)]$    ERR 108                          `(` is a literal inside a class
+
+### 13.2 The conclusion: these are not constructs with outcomes; they are
+tokenizer modes
+
+Every row of §13.1 is consistent with ONE reading and inconsistent with every
+atom-shaped reading: **`\Q...\E` is a lexer mode that turns raw bytes into
+literal character tokens; `(?#...)` is a lexer discard; downstream machinery
+(classes, ranges, quantifiers, case-folding, anchors) sees only the tokens.**
+The quantifier binds the last character because the parser only ever saw
+characters. The range forms through `\Q\E` and `\E` because the range logic
+never saw them. Case-folding applies inside the quote because folding is a
+semantic property of the character token, not a lexical one. `(?x)` suspends
+inside `\Q` because both are modes of the same tokenizer.
+
+A port-and-outcome reading cannot reproduce this. The natural `EXT_NODE`
+reading is R13's tier-1 miscompile (`\Qab\E*` → `(ab)*`); a sixth
+`EXT_TRANSPARENT` outcome would need every consumer of every outcome to learn
+"not here, keep looking" — §4.4's own argument against unread values, applied
+to every caller at once. **The sixth outcome is REJECTED. `\Q`, `\E` and
+`(?#...)` leave the outcome vocabulary entirely; the five outcomes of §4.4
+stay five, and are once again total over their domain — every construct that
+IS an atom or class item fits them.**
+
+### 13.3 Lexical, but NOT base grammar
+
+Frank's question, answered with a distinction: **implementation locus and
+gating are different axes.** `\Q...\E` is lexical in locus — when built, it is
+built in the tokenizer, not as a row with ports. It is NOT base grammar:
+
+- pcrec today refuses all three (`build/pcrec` at `37a2401`):
+
+      \Q      ->  \Q requires module 'quoting'
+      \E      ->  \E requires module 'quoting'
+      (?#x)a  ->  (?#...) requires module 'comments'
+
+  Base grammar is never refused; these must keep being refused until
+  implemented, and byte-identity (§9) requires the exact strings.
+- D26 tier 2 requires attributing the construct to its owner while it is
+  unimplemented. A base construct carries no name to attribute.
+- The sabotage instrument (§3.1) applies: `--without=quoting` must refuse
+  `\Q` with today's message. Base grammar is not toggleable (§3.3), and
+  quoting must be.
+
+So the table keeps rows for `\Q`, `\E` and `(?#...)` — carrying name, syntax,
+status, disposition, note — but of a new row kind, **LEXICAL: no class port,
+no AST port.** The "producer" is the lexer-mode transition itself, and it
+gates like any producer: disabled → terminal at the token, with the row's
+existing vocabulary. Their recognisers and extent scans are always live
+(§12.2). When `quoting` lands, bare `\E` becomes the measured no-op (C6/C7) —
+a planned, pinned behaviour change, not a byte-identity accident.
+
+`(?x)`'s whitespace/comment skipping is the same tokenizer machinery, owned by
+`modifiers` — the lexer hosts mode state; producers set it. That is the
+designed home for C2/F8's finding that `(?x)` is a state-setter, not a
+violation of §12's rule: recognising `(?x)` never depends on the enabled set;
+*acting* on it does.
+
+> ### CORRECTED (R14 — C1/F6, C3/F4, C3/F6, C3/F16; verified by the author)
+>
+> **(a) Quote mode belongs to the ATOM/CLASS-ITEM tokenizer only.** It is not
+> entered in group headers, subpattern names, quantifier bodies or braced
+> escape bodies — `(?\Q:\Ea)` is err 111, `(*\QFAIL\E)` 160, `\p{\QL\E}` 147,
+> and `a{\Q2\E}` matches the LITERAL "a{2}". The sharpest cell: **`(\Q?\E:a)`
+> is a CAPTURING group** while `(?:a)` is not, so a lexer entering quote mode
+> uniformly counts groups wrong — §13.2's "downstream machinery sees only the
+> tokens" holds exactly where §13.1 measured it (34/34 probes at atom/class
+> positions) and nowhere else. The count-scan (§12.2) must scope its modes the
+> same way.
+>
+> **(b) The tokenizer's modes are also CLASS-SCOPED, differently per row.**
+> `\Q`/`\E` are active inside a class (`[\Qa-z\E]` quotes the `-`);
+> `(?#` is NOT a comment inside a class — `[a(?#x)]+` matches "(#x)", the
+> bytes are ordinary members, because a class member never consults the GROUP
+> bucket at all. §14.3's "a NULL class port means permanently invalid" is
+> therefore SCOPED to port-bearing rows of the two buckets a class position
+> consults (escape, class-bracket); the two lexical escape rows' class
+> behaviour is lexer-owned, and `(?#`'s row needs no class story of any kind.
+>
+> **(c) QUANTIFIABILITY is a third axis this section missed, and it is R13's
+> `\Qab\E*` mechanism on 22+ rows.** Measured: atom-position constructs
+> partition into THREE quantifier classes — transparent (`(?#c)`, `\Qz\E`,
+> `\E`), repeatable (`(?=x)`, `(?:x)`, `(?>x)`, `(?R)`…), and NON-repeatable,
+> err 109: `\b \B \A \Z \z \G \K`, the modifier family `(?i)`, `(?C1)`,
+> `(*FAIL)`, `(*MARK:z)`. No §4.4 outcome encodes "not a quantifier target";
+> an EXT_NODE from a non-repeatable row lets `try_quant` compile `a\b*`,
+> which PCRE2 rejects. Not derivable from any existing column — `(?=x)` is an
+> assertion and repeatable; `\b` is an assertion and not. **Adopted: a
+> per-row `quantifiable` fact, populated and checked by sweeping
+> `a<syntax>*` over all 100 rows against libpcre2.** Where it lives (column
+> vs outcome flag) is §18.
+>
+> **(d) §13.2's "cannot reproduce this" overstated what was measured** — the
+> EXT_NODE reading measurably miscompiles; the sixth-outcome reading was
+> rejected on an unmeasured cost. The conclusion stands on (a)-(c)'s evidence;
+> the word "cannot" does not, and the LEXICAL set membership is guarded by the
+> criterion itself as a check: *a row is LEXICAL iff `a<syntax>*` compiles
+> and the quantifier binds the preceding atom, per libpcre2* — swept, so a
+> fourth lexical construct is FOUND rather than assumed away (C3/F11: 27
+> candidates probed, exactly three qualify today).
+
+## 14. Per-port recognition (answers OQ 7 and OQ 8)
+
+### 14.1 Each port recognises for itself; disagreement is the designed
+behaviour
+
+§2.3 is replaced. A row still appears once in the table with one name-pair
+(per-port features, §4.1's correction), but each port carries its own
+RECOGNISE, and the two ports of one row may disagree about whether the
+construct is present. That disagreement is not a defect to check away — it is
+PCRE2, measured:
+
+    \12  at 12 groups, atom pos.:  backreference   (br-12:  matches "a"x12+"a")
+    \12  at 12 groups, class pos.: octal 012       (br-12c: [\12] matches "\n")
+    \8 \9 \k \g  atom pos.:        constructs      (ERR 115, 115, 169, 157)
+    \8 \9 \k \g  class pos.:       literal letters ([\8] matches "8", etc.)
+
+Arbitration runs per-bucket as today, over the recognisers of the ports at the
+current position. The `backrefs` rows' class-side recognisers decline
+unconditionally — backreferences do not exist inside classes, a permanent
+PCRE2 fact — so the octal row claims `[\12]` and the literal rows claim
+`[\8]`, at any group count.
+
+### 14.2 The atom-side digit rule, corrected while we were here
+
+Part I (§5.1, §10.7) had "octal or backreference according to the count" for
+all digit escapes. Measured, the real atom-position rule is finer:
+
+    ^\12$  0 groups   COMPILES, octal   (matches "\n")
+    ^\8$   0 groups   ERR 115           single digit: ALWAYS a backreference
+    ^\0$              COMPILES, octal   \0 is NEVER a backreference
+
+**A single digit `\1`..`\9` at atom position is always a backreference** —
+err 115 when the group is missing, never octal fallback. Multi-digit escapes
+fall back to octal by count (`\12` at 0 groups is octal 012). `\0` is always
+octal. This refines the §10.7 split and is why check 1's complete-probe rule
+matters: a `\8` row probed as bare `\8` is probed at its ERROR, and its happy
+path needs `(a)x8` in front (verified: 8 groups + `\8` compiles and matches).
+
+> ### REFUTED IN PART (R14 — C1/F2 and C3/F13, independently; verified by the
+> author)
+>
+> The paragraph above was derived from `\12`, `\8`, `\0` — a probe set with no
+> multi-digit run beginning 8 or 9, i.e. one that could not falsify it. The
+> same method failure this section exists to correct, and the missing clauses
+> are three:
+>
+>     \81 \90 \88 \99 \80 \819 \8123   at 0 groups: ALL err 115
+>
+> **A decimal number beginning 8 or 9 is ALWAYS a backreference, at any
+> length, regardless of count** (8 is not an octal digit; the prescribed
+> fallback was not even well defined). Count still matters within that rule:
+> `(a)x9 \98` is 115, `(a)x98 \98` compiles. And the octal fallback itself is
+> not "the whole run": **up to three OCTAL digits are re-read and the rest are
+> literals** (`\19` = `\x01` + "9"; `\0123` = `\x0a` + "3"), and overflow is
+> its own error (`\400 \500 \777` err 151 in 8-bit non-UTF mode; `\3777` =
+> `\377` + "7"). §17.3's invariant on this rule carries all three clauses —
+> as written it certified an implementation that reads `\81` as octal.
+
+### 14.3 The literal fallback is an EXPLICIT port, and NULL regains its one
+meaning (answers OQ 8)
+
+The full class-position sweep over `[\c]` for all 62 ASCII letters and digits
+(probe_qe.c section E) partitions cleanly:
+
+    literal fallback   \g \k \8 \9                      compile; MATCH the letter itself
+    base scalar        \a \b \e \f \n \r \t \0..\7      compile; match the control/octal byte
+    construct (set)    \d \D \w \W \s \S \h \H \v \V    compile; match members
+    ERR 107/171        \A \B \C \G \K \R \X \Z \z \N    permanently invalid in a class
+    ERR 103            \i \j \m \q \y \I \J \M \O \T \Y  not an escape anywhere
+    own-body errors    \c(106) \o(155) \p \P(146) \x(178) \u \l \F \L \U(137)
+    lexical            \Q \E                            §13
+
+The four fallback rows get **explicit class ports producing `EXT_SCALAR` of
+the letter** — data, like the char-type escapes, not functions. `[\k<name>]`,
+`[\g{1}]`, `[\9]` (C1/F9's probes) follow with no further machinery: the
+tailed `\k<`/`\g{` rows' class recognisers decline, the bare row claims one
+letter, and `<name>` re-enters the class loop as ordinary literals.
+
+With the fallback explicit, **a NULL class port means exactly one thing again
+— permanently invalid at class position** — which §4.1 wanted and could not
+have. The three meanings R13 counted are now three representations: base/
+scalar data ports (`\b` → 0x08), literal-fallback data ports (`\g \k \8 \9`),
+NULL (the ten ERR 107/171 rows). **This is the K13 fix**: the twelve rows'
+class answer becomes the literal, produced and testable, instead of module
+`backrefs` asserted by silence.
+
+Per-port features make the C5 miscompile unrepresentable too: `\b`'s class
+port is base (never gated) and its AST port is `assertions` (its own handler,
+not the generic wrapper). The §4.2 wrapper applies only to rows whose two
+ports share one feature and a set/scalar shape — the char-types — which is
+what it was designed from.
+
+### 14.4 Rank stays one per row
+
+Per-port recognition reopened whether `rank` is per-port. Ruling: **one rank
+per row, until a measured counterexample.** Rationale: rank only means
+anything between clashing recognisers; the measured clashes (`\N` family, the
+digit family) either arbitrate identically at both positions or are resolved
+by a port's recogniser declining outright, so no measured case needs two
+ranks. The revisit trigger is concrete: a bucket where two rows clash at BOTH
+positions and the winner must differ. None exists in the current table.
+
+The check-3 successor: every row states its expected class-position
+disposition **as data** — claimed-by-me / claimed-by-row-R / invalid — and a
+total check walks the table comparing each row's `syntax` at class position
+against that column, through the real dispatch. The K13 shape (wrong answer at
+the position the author didn't think about) becomes a per-row assertion
+against libpcre2 instead of a silence. Detailed check design belongs to the
+§8 rebuild (D27 author).
+
+> ### CORRECTED (R14 — C2/F9, C2/F17, C3/F8, C3/F9, C1/F8)
+>
+> Four defects in the two paragraphs above, all applied:
+>
+> - **"Through the real dispatch" compared pcrec against pcrec** — K13
+>   survives that check (the author who believes the wrong module writes the
+>   column, the dispatch agrees). The check is COLUMN vs LIBPCRE2; the
+>   dispatch comparison is a separate secondary line.
+> - **The column's vocabulary was unobservable and a second home.**
+>   `claimed-by-me`/`claimed-by-row-R` are facts libpcre2 cannot see, and
+>   `claimed-by-row-R` stores row R's fact in someone else's row — the K10
+>   two-homes shape. The column becomes TWO-VALUED and libpcre2-observable:
+>   *what does `[<syntax>]` do — compile as WHAT, or error N.* Which pcrec row
+>   claims is the dispatch's business, not data. Renamed **"class-position
+>   expectation"** — "disposition" now means only the roadmap column (§17.2).
+> - **Its real population is 44, not 100** — 41 esc + 3 class-bracket rows
+>   can reach a class position; `(` is an ordinary member (`[a(?#x)]+`
+>   matches "(#x)"), so 56 group/verb rows carry NO value rather than an
+>   invented one (§4.4's own objection). Within the 44 the single `syntax`
+>   probe samples one point — `[\cX]` never sees `[0-\c]` err 108 vs
+>   `[\c-z]` COMPILES (`\c` eats the delimiter) — so endpoint-adjacent
+>   probes are part of the row's probe SET, and the check prints real and
+>   covered populations per bucket with a ratcheting floor.
+> - **The partition is mode-dependent** (C1/F8): under
+>   `EXTRA_BAD_ESCAPE_IS_LITERAL` 18 of the 62 class cells migrate into
+>   literal-fallback (the set becomes 22 rows, not 4). Bound-mode document
+>   material. The part that HOLDS, measured: the ten NULL rows are exactly
+>   the rows that do not move under any swept option — "NULL means
+>   permanently invalid" is mode-invariant, which is the claim this section
+>   needs.
+
+## 15. The ASK contract: `want` × `may` (answers OQ 10, adopts 10a)
+
+C1's re-cut is adopted as the basis. The diagnosis stands unweakened: `(?(`'s
+terminal answer needs the LEAST information (a branch count) and the MOST
+effects (a real parse), so no total order of ask levels can contain it.
+
+    want   WANT_CLAIM    is this yours, and what shape
+           WANT_VERDICT  the right terminal answer, whatever it costs
+           WANT_RESULT   the produced set/node
+
+    may    capability SET: MAY_ALLOCATE | MAY_RECURSE | MAY_DIAGNOSE
+
+    hard rule: cx->pos moves ONLY under WANT_RESULT.
+
+The old levels map to points in the space — SHAPE = {CLAIM, ∅}, TERMINAL =
+{VERDICT, ALLOCATE|RECURSE|DIAGNOSE}, FULL = {RESULT, all} — and the case no
+level could express becomes ordinary: `(?(` at VERDICT parses its body with
+the real parser into the real arena, reads the branch count, raises E127/E154
+exactly, and discards the subtree (freed wholesale at compile exit, which is
+what an arena is for). This is not D32 §8's trial mode: allocation is
+permitted, not trapped, so nothing aborts and nothing leaks.
+
+**The gate (§5.4 restated):** demotes `want` by one — RESULT → VERDICT — and
+leaves `may` alone. A disabled `conditionals` still answers E127 for
+`(a)(?(1)x|y|z)`: no over-promise, FIX-2's standard held at every doorway.
+
+Check 5's successor is C1's: *no ask with `want` below WANT_RESULT moves
+`cx->pos`* — one comparison, total over every row, live sabotage (make one
+handler commit under VERDICT).
+
+**[OPEN, narrowed] C1/F6's after-the-construct case** — a terminal answer
+that depends on text AFTER the construct — is not covered by `want`×`may` and
+is deliberately left open for R14 with its R13 citation, rather than patched
+here. It is one finding wide; the contract above is not redesigned around an
+unmeasured case.
+
+> ### CORRECTED (R14 — C3/F3, C1/F7, C2/F14, C2/F15, C3/F17)
+>
+> **(a) "Parse the body with the real parser" over-promises in the shipping
+> configuration** (C3/F3, verified): the real parser has GATED producers, so
+> `(a)(?(1)\d|y|z)` — PCRE2 err 127, PERMANENT — dies first at the gated
+> `\d` with "requires module 'classes'". The FIX-2 promise this section makes
+> fails at its own motivating row, in the all-disabled state the refactor
+> ships in. **Correction: the E127/E154 branch count comes from §12.2's
+> always-live count-scan** (which already needs every extent this requires),
+> not from a recursive parse. The measured half that survives: real body
+> errors DO beat 127 (`(a)(?(1)x|y|[z)` → 106) — body-first precedence is
+> right; only the gated-producer route to it was wrong.
+> **Consequence, §18:** with `(?(` served by the scan, NOTHING currently
+> motivates `MAY_ALLOCATE|MAY_RECURSE` at VERDICT. The `want`×`may` diagnosis
+> stands; whether `may` still earns its keep is for Frank.
+>
+> **(b) "[OPEN, narrowed]... one finding wide" is WITHDRAWN** (C1/F7): 18 of
+> 26 class items change their correct verdict when a range tail follows —
+> after-the-construct dependence is §16's entire subject, one section later.
+> The endpoint caller owns that dependence; the sentence claiming it was rare
+> was false.
+>
+> **(c) Legality rules, previously unstated** (C2/F14): the gate FLOORS at
+> VERDICT (never demotes to CLAIM — silence where a message is owed);
+> `WANT_VERDICT` requires `MAY_DIAGNOSE`; `WANT_RESULT` carries all three
+> capabilities. **(d)** CLAIM's consumer is ARBITRATION (`{WANT_CLAIM, ∅}`),
+> not the endpoint rule — the annotation carried over from C1's R13 table was
+> stale the moment §16 made the endpoint evaluate in full (C2/F15, C3/F17).
+
+## 16. The endpoint rule, measured (answers OQ 11)
+
+### 16.1 The measured table
+
+probe_qe.c section F, complete:
+
+    HIGH, escape doorway            LOW, escape doorway
+    [0-\d]        150               [\d-z]        150
+    [0-\p{L}]     150               [\p{L}-z]     150
+    [0-\p{Foo}]   147               [\p{Foo}-z]   147
+    [0-\p]        146               [\p-z]        146
+    [0-\N{U+41}]  193               [\N{U+41}-z]  193
+    [0-\x{110000}] 134
+    [0-\A]        107               [\A-z]        107
+    [0-\x41]      COMPILES (range)  [\x41-z]      COMPILES (range)
+    [0-\k]        COMPILES (range)  [\k-z]        COMPILES (range)
+    [0-\8]        COMPILES (range)  [\8-z]        COMPILES (range)
+
+    HIGH, bracket doorway           LOW, bracket doorway
+    [0-[:digit:]] 150               [[:alpha:]-z] 150
+    [0-[:foo:]]   150               [[:foo:]-z]   130
+    [0-[.ab.]]    150               [[.a.]-z]     113
+    [0-[=x=]]     150               [[=a=]-z]     113
+                                    [[:<:]-z]     130
+
+    order/dissolution: [z-\x41] 108;  [0-\Q\Ea] COMPILES (endpoint a);
+    [0-\Q-\E9] 108 (endpoint was `-`);  [0-\E] COMPILES (both literals);
+    [0-\E9] COMPILES (range 0-9 forms through the \E)
+
+### 16.2 The rule, and it is simpler than Part I feared
+
+**Evaluate the item at class position exactly as it would be evaluated
+anywhere in the class. Any error of its own wins. If evaluation succeeds and
+the result is SET-shaped, the range is invalid: 150. There is exactly ONE
+deviating cell: at the HIGH endpoint, the bracket doorway's syntactic
+pair-open (`[:` `[.` `[=` after the `-`) short-circuits to 150 with no
+evaluation at all.**
+
+Every cell above follows. The escape doorway is symmetric across sides — six
+error pairs and three range pairs, identical low and high. The bracket
+doorway's asymmetry is exactly the one special cell: on the low side `[.a.]`
+is evaluated as an ordinary class item (113 — nobody knows a range is coming),
+on the high side the pair-open is refused before the name is read (150 beats
+130/113). SPEC-FA's original fix was precisely this cell, which is why C3/F8
+found it exactly right over 21,396 patterns — the defect was Part I
+generalising the cell's law to the other doorway, where the opposite law
+(evaluate first) holds.
+
+`\E`/`\Q` transparency at endpoints needs no rule at all: under §13 the range
+logic sees only character tokens, and B3/B5/B6/F-x2/F-x3 all follow.
+
+### 16.3 Consequences for the mechanism
+
+- **The SHAPE column loses its only static consumer.** Part I §4.4 justified
+  a static shape column by the endpoint caller's need to say 150 without
+  parsing (`[:foo:]` raises 130 first). Measured, that need exists only in the
+  one deviating cell, and there it is met by a two-byte lexical test at one
+  call site — not by a column. Everywhere else the caller evaluates first and
+  inspects the RESULT's shape, which is a tag on a value that exists, never a
+  guess about one that doesn't. §4.4's worry about 60 unread column values
+  dissolves with the column. `pcrec_ext_class_pair_opens` still dies (§9),
+  replaced by the one lexical test instead of by a column.
+- **Composition with the gate keeps K12 closed.** `[0-\d]` with `classes`
+  disabled: the endpoint caller's RESULT ask is demoted to VERDICT; a VERDICT
+  for a real, successfully-recognised construct carries its shape; success +
+  SET at an endpoint → 150. The verdict is 150 whether or not `classes` is
+  enabled — PCRE2's answer, D26 tier 2, and the third "guard is the
+  unimplemented-ness" instance (§10.6's defence) is retired the same way as
+  the first two.
+- **The build-time obligation is a generated differential sweep** of all four
+  doorway×side cells (the C3/F8 generator extended to the low side and the
+  escape doorway), sized in the tens of thousands through the shim. The 33
+  curated cells above are the design evidence; the sweep is the check, and it
+  belongs to the §8 rebuild.
+
+> ### REFUTED IN PART (R14 — C1/F1, C1/F4, C1/F5, C2/F1, C2/F2, C2/F12,
+> C3/F5, C3/F12; all verified by the author)
+>
+> **(a) "Exactly ONE deviating cell" is FALSE — there are TWO, and the second
+> was printed in §16.1's own table and read as confirmation.** `[:<:]`/`[:>:]`
+> are word-boundary assertions legal ONLY as a class's ENTIRE content
+> (`pcre2_compliance.md:241` had it right; R9/C3-4 measured it): `[[:<:]]`
+> compiles, `[[:<:]x]`, `[x[:<:]]` and `[[:<:]-z]` are all 130. "Evaluated as
+> anywhere in the class" they are NOT an error, so the §16.2 rule predicts
+> 150 for `[[:<:]-z]`; libpcre2 says 130. C1's generated differential — 71
+> items², 5,041 (low, high) pairs, verdicts and shapes taken FROM libpcre2 so
+> the predictor shares no source with the predicted — found 71 disagreements,
+> every one with `[:<:]` low, and no others. The needed predicate is
+> at-content-start AND at-class-end.
+>
+> **(b) The rule is silent on EVALUATION ORDER, and all 33 curated cells were
+> blind to it** — every cell has a plain literal on the non-construct side.
+> On the bucket that can see it: `[\d-\A]` is 107 and `[\d-\p{Foo}]` is 147 —
+> the HIGH side's own error beats the LOW side's success+SET. The order
+> fitting all 5,041 pairs is FIVE steps: low's own error → high's pair-open
+> short-circuit → high's own error → either side SET → 150 → scalar
+> ordering.
+>
+> **(c) The "two-byte lexical test" is WRONG and `pcrec_ext_class_pair_opens`
+> SURVIVES** (three critics independently). `[0-[:]`, `[0-[:digit]`,
+> `[0-[.a]`, `[0-[:alpha]]` all COMPILE — the real condition is the
+> predicate's own three rules: two delimiter bytes, next byte not `]`, and a
+> matching terminator before end of PATTERN (`ext.c:340-345` lists the exact
+> forcing counterexamples). It is struck from §9's and §16.3's deletion
+> lists; the deviating cell is implemented BY it. Its 21,396/0 record was the
+> evidence; deleting the thing measured while keeping the measurement was
+> this section's clearest error.
+>
+> **(d) The claimed side-symmetry overcounted** (C3/F12): `[0-\c]` is 108 but
+> `[\c-z]` COMPILES (`\c` eats the `-`); `[0-\g{1}]` compiles but
+> `[\g{1}-z]` is 108. Symmetry holds only for the pairs measured on both
+> sides, and delimiter-eating rows break it by construction.
+>
+> **(e) §16.3's composition bullets contradicted each other** (C2/F1): the
+> SHAPE column cannot both dissolve and be consulted for a producer that
+> never ran. Correction: RECOGNISE returns `(claim, shape)` — the shape
+> column RELOCATED into recogniser output, scoped to the 44 class-reachable
+> rows (§14.4's population), which answers §4.4's unread-values objection by
+> construction. The demoted VERDICT's payload is
+> `(diagnostic, shape, would-PCRE2-accept-this-here)` — the third field is
+> what lets the endpoint caller send `[[:alpha:]-z]` to 150 while
+> `[[:foo:]-z]` keeps its 130 with `classes` disabled (C2/F12's low-side K12
+> case, now the worked example the section lacked).
+>
+> **(f) The sweep obligation was sized, not designed** (C3/F12): it gains an
+> alphabet (every row's syntax × both sides × both doorways, PLUS the
+> delimiter-eaters, the lexical rows, and both-sides-construct pairs — the
+> two families the cell-generator could not produce), a nonzero per-cell
+> floor printed on the PASS line, and an owner (the §8 rebuild inherits
+> C1's `probe3.c` method: predictor fed from libpcre2, never from the row).
+
+## 17. Bookkeeping
+
+### 17.1 What Part II supersedes in Part I
+
+    §2.3  position-independent selection      -> §14.1
+    §4.1  NULL-port meanings, \b resolution   -> §14.3 (per-port features kept)
+    §4.4  the five outcomes' totality         -> §13.2 (five stay; \Q \E (?# leave)
+    §5.2  three ASK levels                    -> §15
+    §5.4  the gate demotes                    -> §15 (demotes `want`, keeps `may`)
+    §6    shape-column endpoint rule          -> §16
+    §10.6 the whole-pattern pre-scan          -> §12.2 (lexer in count mode)
+
+§9's byte-identity divergence list is repaired by §14.3: with per-port
+features, `[\b]`'s class port is base and never gated, so divergence 1 (the
+`tests/base/escapes.rxt:96` regression the design didn't expect) disappears.
+Remaining planned divergences: the K10 fix, the K12 endpoint rule, §7.1's new
+rows, and bare `\E` becoming a no-op when `quoting` lands — each lands as its
+own change with its own pins, never inside the refactor.
+
+> ### CORRECTED (R14 — C2/F11, C3/F15, C2/F3)
+>
+> **The list above was missing its LARGEST entry, the second consecutive
+> draft to miss one** (R13 caught K10's fix missing from the same list): the
+> **K13 fix** — the literal-fallback class ports are base scalars, never
+> gated, so `[\8]`, `[\12]`, `[\k]`, `[\g]`, `[0-\k]` go from refusal to
+> compiling with every name disabled, the exact configuration byte-identity
+> is measured in. It cannot be gated off during the refactor, so it must land
+> FIRST, before the byte-identity bar is asserted, or be explicitly excluded
+> from the corpus the bar runs on.
+>
+> **And the list itself is now guarded** (C3/F15): a planned divergence
+> exists only with a named test that FAILS before the change and passes
+> after, and the byte-identity run enumerates its exceptions by test id — an
+> exception with no failing-then-passing pin cannot exist, so a fifth
+> divergence cannot ride the refactor by being added to prose.
+>
+> **§5.6 is added to the superseded list** (C2/F3): its "EXT_TERMINATED may
+> still leave by ctx_fail" carve-out pointed the wrong way once §16.3 needs
+> the NON-producing verdict returned. The rule is now: every terminal answer
+> is RETURNED under WANT_VERDICT; `ctx_fail` survives only under WANT_RESULT.
+> D33 §5's blast radius carries forward: 23 `ctx_fail` sites in `ext.c` must
+> yield a representable diagnostic.
+
+### 17.2 Status and disposition (the D34 ruling on OQ 1 + 13)
+
+    status       fact about PCRE2:   RS_BASE | RS_MODULE | RS_REJECTED |
+                                     RS_NOT_OFFERED(option)
+    disposition  fact about pcrec:   RD_PLANNED | RD_NEVER
+
+"Requires module 'X'" renders only for RD_PLANNED. RD_NEVER rows (the
+backtracking verbs, `(?C)` callouts, the `LIMIT_*` family — the constructs
+`pcre2_compliance.md` already calls architecturally excluded) say so in the
+diagnostic instead of promising a module. **This is the K14 fix**, and it puts
+the fact in one home: the compliance survey's prose becomes a generated view
+of the column, or the column is checked against it — either direction, but
+one source. The exact diagnostic wording is tier 3; that it does not promise
+is tier 2.
+
+> ### CORRECTED (R14 — C2/F5, C2/F6, C2/F7, C2/F8)
+>
+> Four repairs, all applied:
+>
+> - **The enum is renamed `ROADMAP_PLANNED`/`ROADMAP_NEVER`** — `RD_*` is the
+>   shipped diagnostic-disposition enum (`internal.h:263`) that §5.3/§5.5
+>   still cite, and the verb row would have carried `RD_MODULE` (promises a
+>   module) beside roadmap-NEVER (must not) with nothing arbitrating. The
+>   diagnostic vocabulary gains the missing entry — *real, refused, names no
+>   module* — so §5.5 stays total.
+> - **Illegal cells are stated**: `RS_BASE` × either roadmap value, and
+>   `RS_REJECTED × ROADMAP_PLANNED`, are table-check errors;
+>   `RS_REJECTED × ROADMAP_NEVER` is the required pairing, not a choice.
+> - **Disposition lives on `VerbName` too, with the row's value as default**
+>   (C2/F5): `RK_VERB` is ONE row for fifty names spanning both dispositions
+>   — `(*COMMIT)` is NEVER while `(*pla:…)`/`(*atomic:…)` are the
+>   lookaround/atomic constructs in verb spelling. A per-row column cannot
+>   separate K14's own repro set. And **ROADMAP_NEVER demotes `want`
+>   INDEPENDENTLY of the enabled set** — when module `verbs` lands and is
+>   enabled, that clause is the only thing standing between `(*COMMIT)` and
+>   WANT_RESULT.
+> - **`RS_NOT_OFFERED` is DEFERRED to the bound-mode document** (C2/F6): "real
+>   under an option pcrec does not implement" packs a roadmap fact into the
+>   PCRE2-facts column — the category error K14 names, inside K14's fix. The
+>   likely split ("real under option X" as a status; "pcrec will not offer X"
+>   as roadmap) is recorded for that document, not decided here.
+> - **The one-source direction is CHOSEN: checked, not generated** (C2/F8).
+>   Generating the survey's prose from the column would retire the
+>   independent home that CAUGHT K14 — a control sharing a source with what
+>   it controls. `compliance_section.py --names` grows a pass asserting
+>   prose-OUT-OF-SCOPE ⇔ ROADMAP_NEVER, both directions.
+
+### 17.3 Invariants handed to the §8 rebuild (D27 author; not checks, inputs)
+
+**REBUILT AFTER R14** (C3's audit, F1/F7/F8/F9/F10/F11/F14: the first version
+was "nine one-line invariants... six of which cannot fail in the direction
+the design's own gaps produce"). Each entry now names its ORACLE, its
+POPULATION, and its SABOTAGE — and per C3/F14, what the D27 author receives
+is these entries plus the PROBES behind them, never this document's
+reasoning. Where an entry says "libpcre2", the probe is external; where it
+says "harness", both sides are computed outside the handler under test.
+
+1. **Enabled-set isolation, mechanical.** Recognisers and extent scans live
+   in translation units that do not link the enabled-set symbol; checked by
+   `nm` in the build. Oracle: the linker. Sabotage: add one reference.
+2. **The capture count, external.** The count-scan's group count equals
+   LIBPCRE2's capture count over generated patterns — compiling AND
+   non-compiling, because an undercount manifests as a spurious err-115
+   refusal (the non-compiling side is the failure direction). Population
+   printed per generator family; includes `(?<n>`/`(?<=` splits, verb and
+   callout bodies, `(?|` branch maxima with hidden `|`, scoped `(?n)`, and
+   quote-mode edges (`(\Q?\E:a)` captures).
+3. **LEXICAL membership, behavioural.** A row is LEXICAL iff `a<syntax>*`
+   compiles and the quantifier binds the preceding atom, per libpcre2 —
+   swept over all 100 rows, so a fourth lexical construct is FOUND, not
+   assumed away. (Today: exactly three.)
+4. **Class-position expectation, external.** For the 44 class-reachable rows
+   (41 esc + 3 class-bracket): the two-valued expectation column (compile-as-
+   what / error N) matches libpcre2 on the row's class probe SET (including
+   endpoint-adjacent probes for delimiter-eaters). Populations printed per
+   bucket with a ratcheting floor; the 56 group/verb rows carry no value.
+5. **The digit rules, all three clauses.** Single digits `\1..\9` never fall
+   back to octal; runs beginning 8/9 are backreferences at any length and
+   any count; octal fallback re-reads at most three octal digits and
+   overflow is err 151. Oracle: libpcre2 over a generated digit-run × count
+   grid.
+6. **The cursor rule.** `cx->pos` moves only under WANT_RESULT — harness
+   computes both sides, total over rows, sabotage is one line. (R14: "the
+   best of the nine"; unchanged.)
+7. **Gate equivalence, with a real population.** Disabled-feature verdicts
+   equal enabled-feature verdicts, varied over the WHOLE enabled set (all
+   on / all off / one inverted), with a per-name compared-pair count and a
+   ratcheting floor printed on the PASS line — an empty population is
+   indistinguishable from a pass otherwise, and at landing the population
+   IS empty until the first module flips (C4/F4's remedy, carried this
+   time). Membership ("whose validity PCRE2 decides") is computed by asking
+   libpcre2, never hand-listed.
+8. **The endpoint sweep, with an alphabet.** Every row's syntax × both sides
+   × both doorways, PLUS delimiter-eaters, lexical rows, and both-sides-
+   construct pairs; per-cell floors printed; predictor fed from libpcre2
+   (C1's probe3.c method). The five-step order and both deviating cells are
+   in scope by construction.
+9. **Every feature toggles** (§3.1's check 8) — subsumed into 7's population
+   machinery; kept named because it is the check with no analogue today.
+10. **Quantifiability.** The per-row `quantifiable` fact matches libpcre2's
+    `a<syntax>*` verdict, all 100 rows (new; §13's R14 block).
+
+
+## 18. State after R14, and what is open for Frank
+
+R14 ran the session Part II was written (three lenses, ~5,400 probes,
+`docs/reviews/2026-08-11-r14-part2.md`), every load-bearing refutation was
+re-verified by the author before being applied, and the corrections are inline
+above. The honest summary:
+
+**What now stands, corroborated rather than asserted:** one table; names;
+per-port recognition (every cell tried, including fallback tails and
+class-side digits at every count); explicit literal-fallback ports with the
+ten NULL rows mode-invariant; the lexical-mode reading at atom/class-item
+positions (34/34) with the set {`\Q…\E`, `\E`, `(?#…)`} behaviourally exact
+(27 candidates, no fourth); the endpoint CORE rule at the escape doorway
+(every constructible cell); `pair_opens` as the surviving deviating-cell
+predicate; the cursor rule; the `want`×`may` DIAGNOSIS.
+
+**What R14 corrected, now inline:** two deviating endpoint cells and a
+five-step evaluation order (§16); the three-clause digit rule (§14.2); the
+count-scan as a group-header sub-parser with a per-row `captures` fact, and
+the withdrawal of "backrefs can land alone" (§12); quote-mode position
+scoping and the quantifiability axis (§13); E127 from the scan, not the gated
+parser, plus `want`×`may` legality rules (§15); the guarded divergence list
+and §5.6's supersession (§17.1); `ROADMAP_*`, per-VerbName disposition, the
+checked one-source direction, and `RS_NOT_OFFERED`'s deferral (§17.2); the
+rebuilt invariant list (§17.3).
+
+**Open for Frank — these are decisions, not desk-fillable holes:**
+
+1. **The migration order.** The always-live layer is honestly a group-header
+   sub-parser plus verb/callout body extents plus a nesting-aware branch
+   scanner — code for two ROADMAP_NEVER families among it. That is
+   effectively a LEXER/SCANNER milestone that must precede `backrefs`.
+   Options: accept it as the first module-era milestone; or defer backref
+   VALIDITY (keep refusing `\1..\9` until the scanner exists) and land
+   simpler modules first. The second keeps the migration small at the cost
+   of `backrefs` staying refused longer.
+2. **Does `may` survive?** With `(?(` served by the count-scan, nothing
+   currently motivates `MAY_ALLOCATE|MAY_RECURSE` at VERDICT. Keep the axis
+   (C1's diagnosis was right and something may yet need it) or collapse back
+   to three `want` levels with the cursor rule? Collapsing loses nothing
+   measured today; keeping it costs an unexercised degree of freedom — the
+   D24/SR-2 lesson cuts against keeping.
+3. **Where `quantifiable` and `captures` live** — row columns (two more
+   hand-written facts, each with an external sweep behind it) is the working
+   assumption; an alternative is deriving both from one machine-readable
+   grammar classification of the `(?` header, which is more structure than
+   the table has anywhere else.
+4. **The K13-fix sequencing** (§17.1's R14 block): land it before the
+   byte-identity bar, or exclude its twelve patterns from the bar's corpus.
+   Landing first is cleaner and it is a shipped-bug fix Frank has already
+   agreed with in substance.
+5. **The bound-mode document** now owns: the full option sweep (OQ 2), the
+   `RS_NOT_OFFERED` split, and the `EXTRA_BAD_ESCAPE_IS_LITERAL`
+   mode-dependence of the fallback partition (18 cells move; the NULL ten do
+   not).
+
+**Process note, recorded because it is now a pattern with three instances:**
+R13 refuted Part I's claims that were measured on buckets that could not
+falsify them; Part II then did it twice more (§16.1's literal-sided cells,
+§13.1's atom-only cells), and in one case the falsifying measurement was
+already printed in the document's own table. The next design pass on this
+project should REQUIRE, for every stated rule, one probe chosen because the
+rule could fail on it — before the rule is written down. R14's generated
+differential (predictor fed from the oracle, never from the row) is the
+method that found what three curated tables missed.

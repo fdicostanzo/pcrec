@@ -168,6 +168,27 @@ Two rules earned the hard way and enforced here:
   from every commit since M0, so a fresh clone did not build. Cloning and
   building is now step 5 of the process critic's brief.
 
+- **2026-08-11-r14-part2.md** — R14, three lenses on the design's PART II
+  (the post-ruling redesign), run the same session it was written, ~5,400
+  probes. **Part II's two central factual claims were refuted**: §16.2's
+  "exactly ONE deviating cell" (the second cell, `[:<:]` low-side 130, was
+  printed in the design's own table and read as confirmation; 5,041-pair
+  generated differential, 71 disagreements all one item, plus a FIVE-step
+  evaluation order the 33 curated cells were blind to) and §14.2's digit
+  rule (`\81` is err 115 at any count — the probe set had no run beginning
+  8/9). "backrefs can land alone" withdrawn (the count-scan is a
+  group-header sub-parser; `(?|` needs the nesting-aware branch scan R13
+  used to kill TERMINAL); quote mode is scoped to atom/class-item positions
+  (`(\Q?\E:a)` is a CAPTURING group); quantifiability found as a third
+  unmodelled per-row axis (`a\b*` is 109 — R13's `\Qab\E*` mechanism on 22+
+  rows); three critics independently saved `pcrec_ext_class_pair_opens`
+  from its own deletion. C3's verdict on the first §17.3: "an invariant
+  with no population, no oracle and no sabotage is not a weaker check — it
+  is a sentence." All corrections applied inline marked R14; five decisions
+  left for Frank in §18. Method lesson, third instance: the falsifying
+  bucket was one probe away, and the fix that worked was feeding the
+  predictor from the oracle, never from the row.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
