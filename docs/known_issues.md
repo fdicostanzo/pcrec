@@ -627,7 +627,32 @@ hides. **But note `pcrec_ext_verb` shares `p_group_body` with the group doorway
 and IS in MOD-0.1's scope** — see R11 disposition 12; a fix touching only the
 `?` branch ships incomplete.
 
-## K12 — OPEN, found 2026-08-11 (D33 design conversation, while probing the range-endpoint rule)
+## K12 — FIXED 2026-08-11 (MOD-0.1's endpoint-rule slice, design §16 as R14-corrected)
+
+**Resolution.** p_class implements the five-step evaluation order PCRE2's
+5,041-pair sweep established — low's own error → high pair-open short-circuit
+→ high's own error → either endpoint certifiably SET-shaped → "invalid range
+in character class" → scalar ordering — using the two mechanisms the earlier
+slices built for it: the returned-claims epilogue lets the range logic SEE a
+doorway refusal before it fires (a claim carries `ep_set_certain`, §16.3(e)'s
+verdict-shape payload), and the measured `class_expect` column is what
+certifies SET-shape. Certification is deliberately scoped to rows whose
+measured value covers EVERY form that reaches them: the ten char-type escapes
+(the construct is its selector byte) and the bracket doorway's known POSIX
+names (both sides, so `[[:alpha:]-z]` and mid-class `[x[:alpha:]-z]` are 150's
+analogue too). Body-dependent rows keep the module promise — `[0-\p{Foo}]` is
+PCRE2 147, not 150, so certifying `\p` would trade an over-promise for a
+wrong verdict; the boundary is pinned in tests/reject/ and owned by MOD-0.6's
+property table. Every cell measured first (tests/probes/probe_endpoint_k12.c,
+42 cells), ten failing-then-passing pins plus seven boundary pins and two
+accept-controls (counts 265/99/65, three MANIFEST entries); the 952-pattern
+differential vs the pre-slice build shows exactly the one changed cell it
+contains. `pcrec_ext_class_pair_opens` survives as the (bracket, high)
+deviating cell's predicate, exactly as R14 ruled.
+
+The original entry follows, unedited.
+
+## K12 (original entry) — OPEN, found 2026-08-11 (D33 design conversation, while probing the range-endpoint rule)
 
 **A class-type escape at a range endpoint is answered with a module promise
 where PCRE2 says the range is permanently invalid.** SPEC-FA implemented the

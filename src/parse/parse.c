@@ -163,7 +163,7 @@ static Ast *esc_atom(Ctx *cx)
  * 'backrefs'" here — an over-promise for constructs that module can never
  * implement, and a tier-1 miscompile the day it lands (`[\k<n>]` means
  * k<n>, not a backreference). */
-static int esc_class_value(Ctx *cx)
+static int esc_class_value(Ctx *cx, ExtResult *claim)
 {
     size_t epos = cx->pos - 1;
     size_t save = cx->pos;
@@ -186,13 +186,19 @@ static int esc_class_value(Ctx *cx)
     }
     if (c == '8' || c == '9' || c == 'g' || c == 'k')
         return c;
-    ExtResult r = pcrec_ext_escape(cx, c, true, epos);
-    pcrec_ext_finish(cx, &r);
-    /* The wall — see esc_atom. K11's flagged-not-reproduced hazard lives on
-     * this path: a future class-port SCALAR feeds cls_set's 32-byte bitmap,
-     * so the module that first returns one adds the range check HERE, before
-     * the value flows, with a probe that is false today. */
-    ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
+    /* A doorway claim travels UP: p_class decides whether the refusal fires
+     * as-is or is overridden by the range logic (the K12 endpoint rule —
+     * §16's five steps need the claim visible at the range site, which is
+     * exactly what the returned-claims epilogue exists for). The returned 0
+     * is never read: every caller checks `claim` before using the value. */
+    *claim = pcrec_ext_escape(cx, c, true, epos);
+    if (claim->what != EXT_REFUSAL)
+        /* The wall — see esc_atom. K11's flagged-not-reproduced hazard lives
+         * on this path: a future class-port SCALAR feeds cls_set's 32-byte
+         * bitmap, so the module that first returns one adds the range check
+         * HERE, before the value flows, with a probe that is false today. */
+        ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
+    return 0;
 }
 
 /* ---- [...] classes ---- */
@@ -228,16 +234,53 @@ static Ast *p_class(Ctx *cx)
             ExtResult r = pcrec_ext_class_bracket(cx, peekc2(cx), cx->pos,
                                                   cx->pos + 2, false,
                                                   at_content_start);
+            /* The K12 endpoint rule, bracket doorway, LOW side: a KNOWN
+             * POSIX name (certifiably SET-shaped — ep_set_certain, set only
+             * after every own-error check in the doorway declined) followed
+             * by a range dash is PCRE2's invalid range (err 150, measured:
+             * `[[:alpha:]-z]` and mid-class `[x[:alpha:]-z]` both 150),
+             * where an unknown or whole-class-only name keeps its own error
+             * (130/113 — those claims are never marked). The HIGH side is
+             * the pair_opens short-circuit below, the (bracket, high)
+             * deviating cell. */
+            if (r.what == EXT_REFUSAL && r.ep_set_certain &&
+                r.end + 1 < cx->patlen && cx->pat[r.end] == '-' &&
+                cx->pat[r.end + 1] != ']')
+                ctx_fail(cx, r.end, "invalid range in character class");
             pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: ordinary member */
         }
 
         int lo;
+        ExtResult loclaim = { .what = EXT_NOT_MINE };
         cx->pos++;
-        lo = (c == '\\') ? esc_class_value(cx) : c;
+        lo = (c == '\\') ? esc_class_value(cx, &loclaim) : c;
 
         if (peekc(cx) == '-' && peekc2(cx) != ']' && peekc2(cx) >= 0) {
             size_t dashpos = cx->pos;
             cx->pos++; /* '-' */
+            /* THE ENDPOINT RULE (K12; design §16 as R14-corrected), five
+             * steps in PCRE2's measured evaluation order — probe evidence in
+             * tests/probes/probe_endpoint_k12.c, every cell pinned in
+             * tests/reject/ with failing-then-passing pins:
+             *
+             *   1. the LOW endpoint's own error      ([\A-z] 107, [[.a.]-z] 113)
+             *   2. the HIGH pair-open short-circuit  ([0-[:digit:]] 150 with
+             *      no evaluation — the (bracket, high) deviating cell,
+             *      implemented BY pair_opens, which R14 struck from D33's
+             *      deletion list for exactly this)
+             *   3. the HIGH endpoint's own error     ([\d-\A] 107 — beats
+             *      the low side's SET)
+             *   4. either endpoint certifiably SET-shaped -> invalid range
+             *      ([0-\d], [\d-z], [\d-\w] all 150)
+             *   5. scalar ordering                   ([z-a] 108)
+             *
+             * A claim that is NOT certifiably SET (a body-dependent row —
+             * \p{...} until MOD-0.6's property table) fires as the
+             * construct's own refusal at steps 1/3: the module promise is
+             * the honest answer where pcrec cannot certify PCRE2's 150
+             * ([0-\p{Foo}] is 147, not 150). */
+            if (loclaim.what == EXT_REFUSAL && !loclaim.ep_set_certain)
+                pcrec_ext_finish(cx, &loclaim);              /* step 1 */
             /* A RANGE ENDPOINT MAY NOT BE A CLASS-OPENING CONSTRUCT (R9/SPEC-FA).
              * PCRE2 makes `[0-[:digit:]]` error 150, "invalid range in character
              * class"; pcrec read the `[` as an ordinary literal upper bound and
@@ -257,11 +300,21 @@ static Ast *p_class(Ctx *cx)
                 pcrec_ext_class_pair_opens(cx, peekc2(cx), cx->pos + 2))
                 ctx_fail(cx, dashpos, "invalid range in character class");
             int hc = nextc(cx);
-            int hi = (hc == '\\') ? esc_class_value(cx) : hc;
+            ExtResult hiclaim = { .what = EXT_NOT_MINE };
+            int hi = (hc == '\\') ? esc_class_value(cx, &hiclaim) : hc;
+            if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
+                pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
+            if (loclaim.what == EXT_REFUSAL || hiclaim.what == EXT_REFUSAL)
+                ctx_fail(cx, dashpos,
+                         "invalid range in character class"); /* step 4 */
             if (lo > hi)
                 ctx_fail(cx, dashpos, "range out of order in character class");
             for (int i = lo; i <= hi; i++) cls_set(a->cls, (unsigned)i);
         } else {
+            /* Not a range endpoint: a deferred claim fires exactly as it
+             * always did — `[\d]` and `[\d-]` keep their module promise. */
+            if (loclaim.what == EXT_REFUSAL)
+                pcrec_ext_finish(cx, &loclaim);
             cls_set(a->cls, (unsigned)lo);
         }
     }

@@ -505,7 +505,20 @@ Then DOC-1, then PC-4 when module `classes` lands.
   zero divergences. EXT vocabulary is deliberately the exercisable subset
   {NOT_MINE, REFUSAL}; SCALAR/MEMBERS/NODE arrive with the first port that
   can produce them, each with a probe false the day before (D33 §9.3).
-  Remaining: endpoint rule/K12, want+cursor (fresh D27 author for
+  SLICE 6 LANDED seventh session: the endpoint rule (design §16 as
+  R14-corrected — K12 CLOSED). Five steps in p_class, the (bracket, high)
+  deviating cell still implemented BY pair_opens per R14; SET-shape
+  certified from the measured class_expect column THROUGH the epilogue's
+  returned claims (ep_set_certain, §16.3(e)'s payload, exercisable
+  subset); certification scoped to all-forms rows (ten char-type escapes,
+  known POSIX names both sides) with the \p boundary pinned as deliberate
+  (PCRE2 147 for [0-\p{Foo}] — MOD-0.6's property table owns it). 42
+  cells measured first (probe_endpoint_k12.c), ten failing-then-passing
+  pins + seven boundary pins + two accept-controls (reject counts
+  265/99/65, three new MANIFEST entries); 952-pattern differential vs
+  pre-slice HEAD shows exactly the one changed cell it contains; full
+  suite, strict, verify_rxt, fuzz, SPEC-MOD0 6/0/4 all green.
+  Remaining: want+cursor (fresh D27 author for
   check06), deferred-backref infra, enabled-set/toggles, then the
   byte-identity bar)
   (UNBLOCKED 2026-08-11 by **D32**, which resolves

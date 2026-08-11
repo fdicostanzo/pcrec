@@ -210,6 +210,45 @@ accept '[0-[a]'
 accept '[0-[]'
 accept '[0-[:]'
 accept '[0-[:digit]'
+
+# ---- the K12 endpoint rule (MOD-0.1, design §16 as R14-corrected) ----
+# PCRE2's five-step order: low's own error -> high pair-open short-circuit ->
+# high's own error -> either side certifiably SET-shaped -> 150 -> scalar
+# ordering. pcrec certifies SET-shape only where the row's measured
+# class_expect covers EVERY form that reaches it: the ten char-type escapes
+# (the construct IS its selector byte) and the bracket doorway's KNOWN POSIX
+# names (the 14-name table validates the body). Every cell below measured
+# against libpcre2 10.46 first — tests/probes/probe_endpoint_k12.c.
+reject '[0-\d]'         "invalid range in character class"
+reject '[\d-z]'         "invalid range in character class"
+reject '[z-\d]'         "invalid range in character class"
+reject '[\d-\w]'        "invalid range in character class"   # both sides constructs
+reject '[0-\V]'         "invalid range in character class"
+reject '[\v-z]'         "invalid range in character class"
+reject '[[:alpha:]-z]'  "invalid range in character class"   # bracket doorway, LOW side
+reject '[x[:alpha:]-z]' "invalid range in character class"   # ...and mid-class
+reject '[\d-\A]'        'is not valid inside a character class'  # step 3 beats step 4: PCRE2 107, the high side's OWN error
+reject '[\d-\p{Foo}]'   "in a class requires module 'unicode-props'"  # high's own refusal beats low's SET
+# The deliberate NON-certified boundary (journal 2026-08-11): \p is
+# body-dependent and pcrec has no property table until MOD-0.6, so the module
+# promise stays even where PCRE2 says 150 — answering 150 for [0-\p{Foo}]
+# would be wrong (PCRE2 147), and the promise stays true (the module owns
+# deciding the body).
+reject '[0-\p{L}]'      "in a class requires module 'unicode-props'"
+reject '[\p{L}-z]'      "in a class requires module 'unicode-props'"
+# Non-range dash and truncation: the construct's ordinary class answer stays
+# (PCRE2 compiles [\d-]; pcrec's refusal is the standard unimplemented answer).
+reject '[\d-]'          "in a class requires module 'classes'"
+reject '[\d-'           "in a class requires module 'classes'"
+# Own-error rows at a low endpoint keep their own errors (steps 1/3, measured
+# 130/130/113): the rule must not swallow them into 150.
+reject '[[:foo:]-z]'    "unknown POSIX class name"
+reject '[[:<:]-z]'      "unknown POSIX class name"
+reject '[[.a.]-z]'      "POSIX collating elements are not supported"
+# And the accept side: RF_CLASS_BASE endpoints ride (FIX-3) — the rule must
+# not over-reach onto literal-fallback escapes. libpcre2 compiles both.
+accept '[0-\8]'
+accept '[\8-z]'
 echo "== base tier must still compile (control) =="
 # Without these, a parser that rejected EVERYTHING would score 100% below.
 accept 'abc'
@@ -1122,6 +1161,12 @@ must_have '(*scs:x)' \
     "the only pin that the LOWER verb table carries the ROADMAP_NEVER column too (K14) — every other NEVER pin is an upper-table name"
 must_have '(?C1)' \
     "the only pin of ROADMAP_NEVER at the GROUP doorway (K14) — deleting it leaves the callouts row free to resume promising its module"
+must_have '[0-\d]' \
+    "K12's row: a certifiably SET-shaped escape at a range endpoint is PCRE2 error 150, and pcrec promised module 'classes' for it — a promise no module could keep"
+must_have '[0-\p{L}]' \
+    "the K12 boundary's other side: a BODY-dependent row keeps its module promise because pcrec cannot certify 150 for an arbitrary body ([0-\\p{Foo}] is 147). Deleting it frees the endpoint rule to over-reach onto \\p"
+must_have '[0-\8]' \
+    "the K12 accept side: a literal-fallback escape at an endpoint RIDES (FIX-3). Without it the endpoint rule could over-reject every escape endpoint and nothing would notice"
 if [ "$manifest_missing" -ne 0 ]; then
     echo "reject: one or more irreplaceable checks are gone — see above" >&2
     exit 1
@@ -1139,8 +1184,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 248 ] || [ "$naccept" -ne 63 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 248 / 63 / 0." >&2
+if [ "$nrej" -ne 265 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 265 / 65 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

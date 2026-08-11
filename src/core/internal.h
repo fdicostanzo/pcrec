@@ -642,6 +642,24 @@ typedef struct {
     char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
                            pcrec_error.msg, so deferring the format cannot
                            truncate differently than ctx_fail did */
+
+    /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
+     * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
+     * SET-shaped and PCRE2-accepted for EVERY form that reaches the row: the
+     * ten char-type escapes (the construct IS its selector byte — syntax
+     * "\X"; the measured class_expect covers all forms) and the bracket
+     * doorway's KNOWN POSIX names (the 14-name table validated the body).
+     * The range logic overrides such a refusal with PCRE2's verdict —
+     * "invalid range in character class", err-150's analogue — at an
+     * endpoint (§16's step 4). Body-dependent rows (\p, \N{U+}, ...) are
+     * NEVER marked: pcrec cannot certify 150 for an arbitrary body
+     * ([0-\p{Foo}] is PCRE2 147, not 150), so their module promise stands —
+     * the deliberate boundary pinned in tests/reject/ and recorded in the
+     * 2026-08-11 journal entry. */
+    bool    ep_set_certain;
+    /* class-bracket claims only: offset just past the construct's closing
+     * "X]" — where a low endpoint's range dash would sit. */
+    size_t  end;
 } ExtResult;
 
 /* The ONE epilogue: renders a refusal via ctx_fail (byte-identical to the

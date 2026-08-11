@@ -46,9 +46,11 @@ Process and status documents for pcrec. The architecture itself lives in
   internal-error walls — the stub-build repro now exits 1 cleanly at both
   sites; the cls_set range-check hazard stays assigned to the first
   scalar-returning module),
-  K12 (`[0-\d]` promises a module where PCRE2 says the range is permanently
-  invalid; pcrec is correct today only because `\d` is unimplemented, and
-  MOD-0.2 removes that guard), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
+  K12 (FIXED 2026-08-11 by MOD-0.1's endpoint-rule slice: the five-step §16
+  order in p_class, SET-shape certified from the measured class_expect column
+  through the returned-claims epilogue; body-dependent rows like `\p` keep
+  their module promise until MOD-0.6's property table — a pinned, deliberate
+  boundary), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
   rows answered the CLASS position with module `backrefs` for constructs it
   can never implement — `[\8]` is the literal `8`, `[\k]` the literal `k`;
   now octal/literal fallback per RF_CLASS_BASE) and K14 (FIXED 2026-08-11 in

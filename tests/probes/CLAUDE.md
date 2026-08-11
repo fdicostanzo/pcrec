@@ -49,6 +49,11 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   independent cross-check of tests/spec_mod0/class_expectations.inc — the two
   implementations agreed 44/44 before the column was transcribed into
   registry.c.
+- `probe_endpoint_k12.c` — MOD-0.1 endpoint-rule slice (K12): the 42 cells
+  the §16 five-step rule changes or deliberately leaves — char-type escapes
+  both sides, both-construct pairs, the step-3-beats-step-4 cells, the
+  non-certified `\p` boundary, the bracket doorway's low side, non-range
+  dashes and truncations. The oracle behind the K12 pins in tests/reject/.
 
 ## The method these encode (R14's closing lesson)
 

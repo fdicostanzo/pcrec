@@ -6,13 +6,13 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 248 rows asserted by hand (naming a module, or the
+- **run_reject_tests.sh** — 265 rows asserted by hand (naming a module, or the
   base-grammar brace errors K5/K6/K8 and FIX-3's in-class octal ceiling, or
   since Q1 the verb doorway's four
   outcomes, or since Q2 the `(?` doorway's module names and its refusals, or
   since A1 the ten `unknown escape` pins for `\U \u \F \L \l` in both
   spellings — the rowless surface the extension design §7.1 plans to change),
-  99 more reached by iterating `pcrec --list-syntax`, 63
+  99 more reached by iterating `pcrec --list-syntax`, 65
   accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
   into the normal tables. Ends with a MANIFEST naming the handful of rows whose
   deletion an exact count would not catch, plus the exact counts themselves.

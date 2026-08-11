@@ -43,6 +43,7 @@
  * `make strict` promotes. */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "core/internal.h"
 
@@ -128,8 +129,23 @@ ExtResult pcrec_ext_escape(Ctx *cx, int c, bool in_class, size_t at)
      * (`[\b]` is backspace, base syntax). */
     if (in_class && (r->flags & RF_CLASS_INVALID))
         REFUSE(at, "\\%c is not valid inside a character class", c);
-    if (in_class)
-        REFUSE(at, "\\%c in a class requires module '%s'", c, r->module);
+    if (in_class) {
+        /* The K12 endpoint payload (§16.3(e), exercisable subset): certify
+         * SET-shape only where the row's measured class_expect covers every
+         * form that can reach it — the construct must BE its selector byte
+         * (syntax "\X", length 2), which is the ten char-type escapes and
+         * excludes every body-carrying row (\p{...} is "set 117" for the
+         * probe form, but [0-\p{Foo}] is PCRE2 147, so the row cannot be
+         * certified; see the ExtResult comment). */
+        ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "" };
+        res.ep_set_certain = r->class_expect &&
+                             strncmp(r->class_expect, "set ", 4) == 0 &&
+                             r->syntax[0] == '\\' && r->syntax[1] != '\0' &&
+                             r->syntax[2] == '\0';
+        snprintf(res.msg, sizeof res.msg,
+                 "\\%c in a class requires module '%s'", c, r->module);
+        return res;
+    }
     if (r->diag == RD_MODULE_OCTAL)
         REFUSE(at, "\\%c (backreference/octal) requires module '%s'",
                c, r->module);
@@ -562,5 +578,17 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, int c2, size_t at, size_t from,
         !(at_content_start && close_at + 2 < cx->patlen && cx->pat[close_at + 2] == ']'))
         REFUSE(at, "%s", pcrec_registry_posix_unknown_msg());
 
-    REFUSE(at, "%s", r->msg);
+    /* The final refusal — reached only after every own-error check above
+     * declined to fire, so for the `:` row this is a KNOWN POSIX name in a
+     * legal position: certifiably SET-shaped for the K12 endpoint rule (the
+     * collating rows' class_expect is "err 113", never certified). `end` is
+     * where a low endpoint's range dash would sit. */
+    {
+        ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "" };
+        res.ep_set_certain = r->class_expect &&
+                             strncmp(r->class_expect, "set ", 4) == 0;
+        res.end = close_at + 2;
+        snprintf(res.msg, sizeof res.msg, "%s", r->msg);
+        return res;
+    }
 }
