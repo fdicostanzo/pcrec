@@ -2151,6 +2151,18 @@ rebuilt invariant list (§17.3).
    byte-identity bar, or exclude its twelve patterns from the bar's corpus.
    Landing first is cleaner and it is a shipped-bug fix Frank has already
    agreed with in substance.
+
+   > **RESOLVED (Frank, 2026-08-11 fifth session): LAND IT FIRST**, as its
+   > own pre-mechanism change: today's parser compiles the twelve
+   > class-position constructs as the literals PCRE2 makes them
+   > (`[\k] [\g] [\8] [\9]` + tails re-entering as members + the endpoint
+   > interactions `[0-\k]`/`[\k-z]`, all already measured), oracle-verified
+   > `.rxt` pins, the corresponding reject rows deleted in the same change
+   > per the maintenance rule, failing-then-passing pins per §17.1's R14
+   > rule. The byte-identity bar then measures true identity with no K13
+   > exception entry. First `src/` change of the module era; normal loop
+   > (implement → oracle-verify → full suite → review pass). Goes into the
+   > plan as the step BEFORE the mechanism refactor.
 5. **The bound-mode document** now owns: the full option sweep (OQ 2), the
    `RS_NOT_OFFERED` split, and the `EXTRA_BAD_ESCAPE_IS_LITERAL`
    mode-dependence of the fallback partition (18 cells move; the NULL ten do
