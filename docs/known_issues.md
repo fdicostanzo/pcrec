@@ -597,3 +597,118 @@ second, differently-shaped doorway fix into a large refactor is how a regression
 hides. **But note `pcrec_ext_verb` shares `p_group_body` with the group doorway
 and IS in MOD-0.1's scope** — see R11 disposition 12; a fix touching only the
 `?` branch ships incomplete.
+
+## K12 — OPEN, found 2026-08-11 (D33 design conversation, while probing the range-endpoint rule)
+
+**A class-type escape at a range endpoint is answered with a module promise
+where PCRE2 says the range is permanently invalid.** SPEC-FA implemented the
+endpoint rule for the BRACKET shape and not for the ESCAPE shape.
+
+**Repro** (measured 2026-08-11 against libpcre2 10.46 via `tests/fuzz/pcre2_abi.h`;
+`build/pcrec` at 5173a82):
+
+                    PCRE2                       pcrec
+    [0-\d]      err 150 invalid range     "\d in a class requires module 'classes'"
+    [0-\p{L}]   err 150 invalid range     "\p in a class requires module 'unicode-props'"
+    [a-\d] [\d-x] [a-\v] [\w-z] [\d-\w]   all err 150 in PCRE2
+
+Controls, where pcrec is already correct and must stay so:
+
+    [\d]        COMPILES in PCRE2 (a class member, not an endpoint)
+    [\x41-z]    COMPILES — a SCALAR escape is a legal endpoint
+    [a-\x41]    err 108 range out of order — i.e. accepted AS a range
+    [0-\N{U+41}] err 193, the construct's own mode error, NOT 150 — scalar-shaped
+    [0-\q]      err 103, the escape's own error — no construct claimed
+
+**Severity: not a miscompile, and the wording is not the point.** Both engines
+reject all of these, so nothing is compiled wrongly and no user gets a wrong
+matcher. Two things make it worth recording:
+
+1. pcrec names a module for a pattern that will NEVER compile. `[0-\d]` must
+   still be rejected after module `classes` lands. That is the over-promise
+   FIX-2 removed for `[[:foo:]]`, in a place SPEC-FA did not reach.
+2. **The guard is the unimplemented-ness.** pcrec is right today only because
+   `\d` is refused before `parse.c:213`'s range code can look at it. That code
+   is `int hi = esc_class_value(cx)` with `lo > hi` and
+   `for (i = lo; i <= hi; i++)` behind it. **MOD-0.2 (`classes`) removes the
+   guard**, and at that moment a set-shaped value arrives in an `int`.
+
+This is the exact shape `docs/plan.md:577` already records for `(?xx)[a- ]`, one
+construct over: *"pcrec is safe today only because `(?x)` is rejected outright
+as 'requires module modifiers' — the guard IS the unimplemented-ness, and this
+step removes it."*
+
+**Fix:** D33 §6 — the endpoint rule becomes "did a port claim, and is the ROW'S
+SHAPE set-valued", a static column covering the bracket and escape shapes with
+one rule. Do not fix it as an escape-specific special case: that is the
+"fixing the narrowest instance and calling it the class" error, and it would
+leave a third shape (a future set-valued construct at some other doorway)
+unguarded again.
+
+**Scheduled:** with MOD-0.1 if D33 is adopted (the rule falls out of the shape
+column), otherwise with MOD-0.2 (`classes`), which is the step that makes it
+live. No `tests/known_fail/` repro: the current behaviour is a rejection with a
+misleading message, not a wrong match, so there is no failing regression to
+ratchet — the pins belong in `tests/reject/`.
+
+## K13 — OPEN, found 2026-08-11 (R13 panel, C4/F21 and C3/F6; independently reproduced by the author)
+
+**Twelve escape rows answer the CLASS position with the wrong module.** pcrec
+promises module `backrefs` for constructs that module can never implement,
+because at class position they are not backreferences at all. Tier 2 under D26,
+where the standard is exact.
+
+**Repro** (measured 2026-08-11; `build/pcrec` at `5173a82`, libpcre2 10.46 via
+`tests/fuzz/pcre2_abi.h`; every libpcre2 line below was re-run by the author,
+not taken from the panel):
+
+                    libpcre2                      pcrec
+    [\8]        matches "8" — LITERAL     "\8 in a class requires module 'backrefs'"
+    [\1]        matches "\001" — OCTAL    "\1 in a class requires module 'backrefs'"
+    [\12]       octal 012                 "\1 in a class requires module 'backrefs'"
+    [\k]        matches "k", not "\"      "\k in a class requires module 'backrefs'"
+    [\g]        matches "g"               "\g in a class requires module 'backrefs'"
+    [0-\k]      a RANGE 0x30..0x6b        "\k in a class requires module 'backrefs'"
+
+The rows: the ten `ESC_DIGIT` rows (`\0`..`\9`) plus `\g` and `\k`.
+
+**Three distinct wrongnesses behind one message:**
+
+1. `[\8]` — `8` is not an octal digit, so libpcre2 falls back to the LITERAL
+   character `8`. pcrec's base grammar already implements literals.
+2. `[\1]`, `[\12]` — octal, which is not module `backrefs` under any reading.
+   A backreference is not a class member and never can be.
+3. `[\k]`, `[\g]` — libpcre2's `check_escape` treats these inside a class as a
+   bad escape falling through to **the literal letter**. There is no construct
+   to attribute at all.
+
+**Severity: over-promise, not a miscompile — today.** All twelve are refused, so
+nothing wrong is emitted. Two things make it worth recording:
+
+- It is the over-promise FIX-2 removed for `[[:foo:]]`, surviving at the escape
+  doorway. Module `backrefs` landing does not make `[\k]` legal; it is two
+  literals.
+- **It becomes a tier-1 MISCOMPILE the day `backrefs` lands**, if the class
+  position is not fixed first: a real `\k` handler would be handed `[\k<n>]` and
+  emit a backreference matcher for a pattern that means `[k<n>]` — a wrong
+  matcher arriving *because* the module was implemented.
+
+**Why every net misses it, which is K10's list again:**
+
+- `check_table_to_parser` derives the expected in-class string from the row's
+  own `module` (`registry_check.c:544`) — the control shares its source with
+  what it controls.
+- the in-class sweep's template is `"[\\%c]"`, one byte of tail, so `[\12]` is
+  unreachable (`registry_check.c:875`) — the same one-byte template that hid K10.
+- PC-3 probes each row's `syntax` — `\1` — at the ATOM position only.
+
+**Related and smaller, same family:** `\0` carries module `backrefs` at the ATOM
+position too, and `\0` can never be a backreference — there is no group 0. K2
+records the diagnostic half of this.
+
+**Fix:** with module `backrefs` / the octal-vs-backref row split (K2, and the
+extension design's §10.7). **Do not re-attribute the rows without an in-class
+sweep that carries a TAIL** — that is K10's warning, and this entry is what
+happens when it is not heeded. No `tests/known_fail/` repro: the current
+behaviour is a rejection with a wrong module name, not a wrong match, so the
+pins belong in `tests/reject/`.

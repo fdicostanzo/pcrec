@@ -2668,6 +2668,17 @@ D30**, whose spine survives; **drops D30 §6 entirely**; **supersedes** D29's
 two-port split. Read D30's inline R11 warning block, R11 and R12 first — this
 entry is the resolution, not the argument.
 
+> **AMENDED IN PART BY D33 (2026-08-11). Read D33 before building from this
+> entry.** D32's spine stands — a row names a parser function, rank is a local
+> tiebreak, purity is per-doorway — but three things change. A row names **two**
+> functions, one per POSITION, not one. §6's "the terminal outcome is exactly
+> what `ext.c` does today" is **false as written**: `ext.c` raises by `ctx_fail`,
+> which longjmps, and D33 requires the claim to be RETURNED so a caller can see
+> it before the diagnostic fires. And §5's claim that the class doorway needs a
+> speculative pure predicate is **withdrawn** — `pcrec_ext_class_pair_opens` is
+> deleted, because it was necessary only while the construct's error could
+> escape past its caller.
+
 ### 1. A row names ONE PARSER FUNCTION, which is a continuation of the parser
 
 Not D29's pure recogniser plus a separate semantic port. **One function per row**,
@@ -2877,3 +2888,197 @@ or a doorway other than the class bracket acquires a speculative customer, at
 which point per-doorway purity needs restating; or `[MOD-STATE]` lands the
 whole-pattern capture count, which is the only part of §5 this decision does not
 resolve.
+
+## D33 — 2026-08-11 — ONE table, TWO PORTS per row: a class port returning a set, an AST port returning a node; the claim is RETURNED, not raised
+
+**Decided** 2026-08-11 (Frank), in conversation, refining D32 rather than
+replacing it. D32's spine is untouched: a row still names a parser function, rank
+is still a local tiebreak, purity is still per-doorway. What changes is that a
+row names **two** functions, one per POSITION, and that a doorway's terminal
+answer is a value the caller receives rather than a `ctx_fail` that longjmps past
+it. **Supersedes D32 §5's claim that the class doorway needs a speculative
+predicate**, and deletes `pcrec_ext_class_pair_opens`.
+
+### 1. The shape
+
+One row per construct. Two function references on it:
+
+    class port   parses the construct INSIDE `[...]`  -> a set (or a scalar)
+    AST  port    parses it OUTSIDE a class            -> an Ast *
+
+Two tables — one keyed for class context, one for atom context — was considered
+and rejected. The two tables' OVERLAP is exactly the escape doorway's
+class-shaped rows, and **that overlap is where K10 lives**: K10 is one construct
+whose class-position facet (`RF_CLASS_INVALID`) contradicts its own
+atom-position `note`. Split it across two independently-keyed tables and that
+contradiction becomes two rows with nothing forcing them to agree — the same
+failure one level up, and harder to check, because there is no longer a single
+object to compare against itself. Related data stays together.
+
+### 2. The AST port of a class-shaped construct is a GENERIC WRAPPER
+
+Not one function per construct per position. `char_node` (`parse.c:76-82`)
+already normalises a literal to a singleton `A_CLASS` node, `internal.h:42`
+records that literals ARE singleton classes, and codegen emits membership tests
+from `cls[32]`. So "the code to check whether the piece belongs" is not
+something an AST-port function writes — it is what the backend already does with
+a bitmap.
+
+Therefore the AST port for every class-shaped row is ONE shared wrapper that
+calls the class port and wraps the result in an `A_CLASS` node. And for the ten
+character-type escapes (`\d \D \w \W \s \S \h \H \v \V`) the class port is
+DATA — a bitmap plus a negate flag — read by one shared handler. Not two
+functions per class; not even one function per class.
+
+### 3. A NULL class port means exactly one thing, and `\b` is what makes that true
+
+Measured 2026-08-11 against libpcre2 10.46:
+
+    [\A] [\Z] [\K] [\R] [\X]   err 107  escape sequence is invalid in class
+    [\N]                       err 171  \N is not supported in a class
+    [\b]                       COMPILES — backspace 0x08
+
+Today `ESC_CLASS_BASE` (one row, `\b`, `registry.c:261`) and
+`ESC_CLASS_INVALID` (10 rows) BOTH amount to "the class doorway is not taken",
+for opposite reasons: `\b` because the base grammar answers first
+(`parse.c:152`), the other ten because PCRE2 forbids them permanently. A NULL
+port cannot say both.
+
+**Resolution: `\b`'s class port returns `EXT_SCALAR 0x08`.** Then a NULL class
+port means exactly one thing — *no module, permanently invalid in a class* — and
+this decision deletes `parse.c:152`'s special case, `RF_CLASS_BASE` and
+`RF_CLASS_INVALID` together. **K10 becomes structurally unrepresentable**: there
+is no flag left to contradict the behaviour, because the presence of the
+function IS the answer and the dispatcher uses that same object.
+
+`\N`'s wording differing from the other nine (171 vs 107) is TIER 3 under D26
+and is deliberately not modelled.
+
+### 4. Arbitration is POSITION-INDEPENDENT; only the port consulted differs
+
+Measured on the `\N` bucket, the only prefix-related tail pair in the table:
+
+    [\N]        err 171   bare row wins, class port NULL      -> refuse
+    [\N{name}]  err 137   {name} row wins, class port present -> same answer as outside
+    [\N{U+41}]  err 193   {U+}   row wins, class port present -> same answer as outside
+
+So it is NOT "filter to rows that have a class port, then rank". It is
+**arbitrate exactly as today, then consult the winner's port**; a NULL port is a
+REFUSAL, never a reason to select a different row. This matters because the
+other reading silently re-ranks the bucket at class position and would make
+`[\N]` answer `\N{name}`'s error.
+
+Consequences: `check_tail_precedence` and D32 §2's equal-rank-is-a-defect rule
+are unchanged, one `rank` column still suffices, and a new invariant becomes
+checkable — **the same row must be selected at both positions.**
+
+### 5. THE LOAD-BEARING CHANGE: a claim is RETURNED, not raised
+
+D32 §6 said the terminal outcome is "exactly what `ext.c` does today", and what
+`ext.c` does today is `ctx_fail`, which longjmps. **Everything in this entry
+depends on that stopping.** A handler must return its claim — including a claim
+that carries a diagnostic — so the caller sees the claim before the diagnostic
+fires and can override it.
+
+    typedef enum { EXT_NOT_MINE, EXT_SCALAR, EXT_MEMBERS, EXT_NODE } ExtWhat;
+
+    typedef struct {
+        ExtWhat what;
+        int     scalar;   /* EXT_SCALAR:  a code point — the ONLY shape legal
+                             as a range endpoint */
+        Ast    *node;     /* EXT_MEMBERS: A_CLASS whose cls[] the caller ORs in
+                             EXT_NODE:    a subtree the caller splices in */
+        /* plus the pending diagnostic for a claim that terminates */
+    } ExtResult;
+
+**Blast radius, counted rather than estimated: 23 `ctx_fail` sites, all in
+`ext.c`.** `parse.c`'s 20 and `compile.c`'s 4 are base grammar and are not
+touched. A diagnostic must become representable instead of raised — `ctx_fail`
+is printf-style varargs — so this needs either a formatted buffer on `Ctx` at
+claim time or the row plus enough context to format later.
+
+**This is the piece to attack.** If a diagnostic cannot cleanly outlive its
+handler, `pcrec_ext_class_pair_opens` comes straight back and §6 collapses.
+
+### 6. The range-endpoint rule falls out, and `pair_opens` is DELETED
+
+D32 §5 justified a speculative pure predicate at the class doorway. That
+justification was **wrong, and the reason it looked right is worth keeping**: at
+an endpoint PCRE2's "invalid range" beats the construct's own diagnostic, so
+parsing the construct first appeared to lose the right answer —
+
+    [0-[:foo:]]  err 150 invalid range    vs  [[:foo:]]  err 130 unknown POSIX class name
+    [0-[.ab.]]   err 150 invalid range    vs  [[.ab.]]   err 113 collating not supported
+    [0-[=x=]]    err 150 invalid range    vs  [[=x=]]    err 113
+
+— but only because the construct's error ESCAPES by longjmp. Once a claim is
+returned (§5), the endpoint caller sees the claim first and overrides.
+
+**The rule is two questions: did anything claim (run the port), and is the ROW'S
+SHAPE set-valued (a static column).** Verified against every case measured
+2026-08-11:
+
+    [0-[:digit:]]              claims, set        -> 150   PCRE2 150
+    [0-[:foo:]]                claims, set, bad name -> 150 PCRE2 150
+    [0-[.ab.]] [0-[=x=]] [0-[:<:]]  claims, set   -> 150   PCRE2 150
+    [0-[a]  [0-[:]  [0-[:digit]  [0-[.]  declines -> literal, compiles   PCRE2 COMPILES
+    [0-\d]  [0-\p{L}]          claims, set        -> 150   PCRE2 150
+    [0-\N{U+41}]               claims, SCALAR     -> its own 193         PCRE2 193
+    [0-\q]                     no row, not claimed -> escape's own error PCRE2 103
+
+The shape must be a STATIC column, not a parse outcome: `[:foo:]` is
+set-shaped-but-invalid and still yields 150, while `\N{U+41}` is scalar-shaped
+and its own mode error stands. The shipped code needs `pair_opens` precisely
+because it has no way to ask the second question and hard-codes the answer for
+one doorway.
+
+**This also closes K12** (`[0-\d]` answered "requires module 'classes'" where
+PCRE2 says invalid range): SPEC-FA implemented the endpoint rule for the BRACKET
+shape only, and pcrec is correct today only because `\d` is refused before the
+range code can look at it — the guard IS the unimplemented-ness, exactly as
+`docs/plan.md:577` warns for `(?xx)[a- ]`. Under a shape column, one rule covers
+both shapes.
+
+### 7. The class structure is 8-BIT NOW, and MOD-0.6 owns widening
+
+`uint8_t cls[32]`, matching the `Ast` node today. `\p{...}` needs more than 256
+bits and `\v` under UTF reaches U+2028/2029. Designing the wide form now is the
+unexercised structure D24/SR-2 warns about ("lost more to unexercised structure
+than to missing structure"); leaving it unsaid is how MOD-0.6 discovers it.
+Stated here so it is a decision.
+
+### 8. What this deletes
+
+    pcrec_ext_class_pair_opens          (ext.c:354)  — §6
+    RF_CLASS_BASE, RF_CLASS_INVALID     — §3
+    parse.c:152's `\b` special case     — §3
+    the `in_class` parameter            — position selects the PORT
+    registry_check.c:875's skip_flag    — went with RF_CLASS_INVALID; K10's
+                                          fourth blind net
+    two missing doorway epilogues       — one epilogue, so they cannot be missing
+    esc_class_value's bare `int`        — becomes a tagged field, which is
+                                          K11's UB shape
+
+### 9. Migration obligations
+
+1. **SPEC-FA's accept-controls must be shown passing through the new path** —
+   `[0-[a]`, `[0-[:]`, `[0-[:digit]`, `[0-[.]`.
+   `tests/reject/run_reject_tests.sh:1019` states that without them the fix
+   could over-reject every `[` endpoint and nothing would notice.
+2. **The in-class sweep must be extended past one byte of tail context.** Its
+   template is `"[\\%c]"`, so it can probe `[\N]` and never `[\N{U+41}]` — K10's
+   fourth net. Removing `RF_CLASS_INVALID` without this leaves the gap in a new
+   place.
+3. **Every `EXT_*` outcome needs a probe that is false today.** R11/C4-1's
+   failure shape: a check whose pass condition already held before the feature
+   existed. Ask of each: *was this already true yesterday?*
+
+### 10. Still unresolved, carried from D32 §10
+
+Module swap between two rows, and row deletion. `tests/reject/`'s hand-written
+manifest remains their only guard. This decision does not improve it.
+
+**Revisit when:** a diagnostic is found that cannot outlive its handler (§5 is
+falsified and `pair_opens` returns); or a construct is found whose SELECTED ROW
+differs by position (§4 is falsified); or MOD-0.6 needs the class structure
+wider than 256 bits (§7, expected, not a falsification).

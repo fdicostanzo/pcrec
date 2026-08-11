@@ -20,6 +20,12 @@ Process and status documents for pcrec. The architecture itself lives in
   its `REJECTED` rows are backed by tests/reject/ rather than asserted.
 - `testing.md` — .rxt test-file format, harness usage, env vars, oracle
   exclusions, and how to add a per-module test directory.
+- `extension_design.md` — PROPOSED (not adopted, not built): how a regex
+  feature plugs into pcrec — one table, a NAME per row as the unit of
+  enable/disable, two PORTS per row, and a RECOGNISE-then-PRODUCE seam. Written
+  from scratch rather than as an amendment to D32/D33, and **partly REFUTED by
+  the R13 panel**; the refutations are inline and the holes they left are marked
+  `[OPEN]` for Frank. Read the PANEL OUTCOME block at the top before any section.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
@@ -28,9 +34,14 @@ Process and status documents for pcrec. The architecture itself lives in
   caller's process under a memory limit), K9 (the public API takes no pattern
   length, so a pattern containing NUL compiles as its prefix and reports
   success), K10 (tier 2, LIVE — `[\N{U+41}]` refused where libpcre2 recognises
-  it) and K11 (LATENT — `pcrec_ext_escape`'s two call sites are UB the moment
-  that doorway returns; `[a\qb]` SIGSEGVs the compiler itself in a stub build).
-  Failing regressions live in tests/known_fail/ (excluded from `make test`).
+  it), K11 (LATENT — `pcrec_ext_escape`'s two call sites are UB the moment
+  that doorway returns; `[a\qb]` SIGSEGVs the compiler itself in a stub build)
+  K12 (`[0-\d]` promises a module where PCRE2 says the range is permanently
+  invalid; pcrec is correct today only because `\d` is unimplemented, and
+  MOD-0.2 removes that guard) and K13 (twelve rows answer the CLASS position
+  with module `backrefs` for constructs it can never implement — `[\8]` is the
+  literal `8`, `[\k]` the literal `k`). Failing regressions live in
+  tests/known_fail/ (excluded from `make test`).
 - `upstream_issues.md` — suspected bugs and divergences in OTHER engines
   (PCRE2, python re) found by our differential tooling; the citable
   rationale behind oracle exclusions. Add an entry whenever tooling

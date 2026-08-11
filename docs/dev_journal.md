@@ -4856,3 +4856,304 @@ D32's "still owed" — the residue check's fourth category, the whole-pattern
 capture count, the four returning-doorway call sites, two missing doorway
 epilogues, K2/K7/K9/K10/K11, the bound compile mode's contents, and a UBSan
 build.
+
+## 2026-08-11 — THIRD session of the day: open-issues discussion, and D33
+
+Per Frank's instruction at the close of the previous session — *"discuss any
+other open issues and update then critic review"*. No building. The review is
+still owed at the time of writing.
+
+### Baseline, verified before anything else
+
+    make            exit 0
+    make test       exit 0, 0 "FAIL:" counted UNANCHORED
+                    1012 corpus / 85 CLI / 397 reject / 164 registry / 143 PC-3
+                    / 2 + 8 parse / 29 codegen / 7 trie-identity
+                    known-fail ratchet empty
+    make strict     exit 0 — whole tree clean under -Werror
+    verify_rxt.py   980 PASS / 0 FAIL (100%)
+    fuzz --seed 1   0 content divergences, 0 accept/reject divergences,
+                    12 DFA state-cap hits (the known M4 limitation)
+
+`make bench` NOT run: nothing since the last green run touches codegen, and it
+is the one gate that costs real time and disk. Stated rather than skipped
+silently.
+
+### Decisions taken (Frank)
+
+- **K2** — backrefs and octals get their OWN parser functions, rather than one
+  hedged row. The clash is multi-digit only; a single digit is never octal and
+  `\0` is never a backreference (measured below), so the two functions are
+  disjoint except over `\dd+`, where the RUNNING capture count decides. Rank
+  cannot be the tiebreak there — rank is static and that answer is dynamic —
+  which D32 §2 does not spell out.
+- **K9** stays with DD-3. **K10** stays with MOD-0.6 (the entry is right that
+  fixing the flag without the in-class tail sweep leaves the same four blind
+  nets) and remains a known issue regardless of where it is scheduled.
+- **The unguarded `unknown escape \%c` diagnostics** (`ext.c:84-85`) are to be
+  pinned. NOT YET DONE at the time of this entry.
+- **The reachability differential's fourth residue category** goes to the panel
+  as one critic's single primary question rather than being decided at the desk.
+- **D33 written** — see below.
+
+### D33: one table, two ports
+
+Frank's design, arrived at by questioning a premise I had inherited from D32.
+One row per construct carrying TWO function references — a class port returning
+a set, an AST port returning a node — with the AST port of every class-shaped
+row being ONE shared generic wrapper, because `char_node` already normalises
+literals to singleton `A_CLASS` nodes and codegen emits membership tests from
+`cls[32]`. For the ten character-type escapes the class port is DATA (a bitmap
+plus a negate flag), not a function.
+
+Two separate tables were considered and rejected: their overlap is exactly the
+escape doorway's class-shaped rows, which is where K10 lives, and splitting them
+turns one self-contradicting row into two rows nothing forces to agree.
+
+### THREE of my own claims were refuted in this session, all by Frank
+
+1. **"Schedule `[MOD-STATE]` as a real step now; it gates K2."** Wrong on both
+   counts. Measured it after saying it: `[MOD-STATE]` owes TWO counters and only
+   the RUNNING one is on MOD-0.1's path. The whole-pattern count decides
+   VALIDITY (`reference to non-existent subpattern`), which pcrec never says,
+   because it refuses every `\1..\9` with "requires module" first. So it is owed
+   to whoever IMPLEMENTS `backrefs`, not to the dispatch work. The real defect
+   is smaller and different: `[MOD-STATE]` is a name in prose with no plan entry.
+2. **"`pcrec_ext_class_pair_opens` is irreducible."** I argued a speculative
+   predicate was structurally necessary, because at an endpoint PCRE2's
+   "invalid range" beats the construct's own diagnostic and parsing it first
+   loses the right answer. That is true ONLY because `ctx_fail` longjmps — the
+   construct's error escapes before the caller can override it. Frank's "the
+   class parse code could call the class table freely, as it will either return
+   a class or not" dissolves it: once a claim is a RETURNED value, the endpoint
+   caller sees the claim first. All ten measured cases then fall out of one rule.
+   **I had reasoned from the implementation's control flow and called the result
+   a structural necessity.**
+3. **"The payload split is `Ast *` vs `int`."** That is the base-tier picture
+   only. Every module that makes doorway 1 return at class position contributes
+   a SET (`\d`, `\v`, `\p{L}`), which an `int` cannot express — so the class
+   payload has to be rewritten whether or not the accessor is unified, and my
+   objection to unification was weaker than I stated.
+
+And one I nearly got wrong while writing D33 §4: I first wrote the arbitration
+as "filter to rows with a class port, then rank". Measured, it must be
+"arbitrate as today, THEN consult the winner's port" — the other reading makes
+`[\N]` answer `\N{name}`'s error.
+
+### Measurements taken this session, with method
+
+All against libpcre2 10.46 through `tests/fuzz/pcre2_abi.h` (this box has the
+runtime but not the -dev package: no `pcre2.h`, no `-lpcre2-8`), probes written
+in the session scratchpad, never in the repo.
+
+**The whole-pattern capture count, reproducing D32 §5 independently:**
+
+    \8 + 8 groups  COMPILES      \8 + 7 groups  err 115
+    \1             err 115       \1(a)          COMPILES   <- pure forward reference
+    \3(a)(a)(a)    COMPILES      \3(a)(a)       err 115
+    \12  COMPILES   (a)\12  COMPILES   \0  COMPILES   \012  COMPILES
+
+`\1(a)` is the sharper form than the `\8` pair, and single digits are never
+octal — `\1` is 115, not `\001`.
+
+**Range endpoints — the rule is the row's SHAPE, not the doorway:**
+
+    [a-\d] [\d-x] [a-\v] [\w-z] [\d-\w]   err 150 invalid range
+    [\d]                                  COMPILES (member, not endpoint)
+    [\x41-z]  COMPILES     [a-\x41] [a-\n]  err 108 out of order (i.e. a RANGE)
+
+**Position beats name validity for brackets, and does NOT for escapes** — this
+asymmetry is what made a speculative predicate look necessary:
+
+    [0-[:foo:]] err 150   vs   [[:foo:]] err 130 unknown POSIX class name
+    [0-[.ab.]]  err 150   vs   [[.ab.]]  err 113 collating not supported
+    [0-[=x=]]   err 150   vs   [[=x=]]   err 113
+    [0-\q]      err 103 — the ESCAPE's own error wins
+    [0-\N{U+41}] err 193 — the construct's own MODE error wins (scalar-shaped)
+    [0-[a]  [0-[:]  [0-[:digit]  [0-[.]   COMPILE — no pair closes
+
+`ext.c:344-349` already recorded "position beats name validity"; this reproduced
+it rather than found it.
+
+**The class-position port map, which forced D33 §3:**
+
+    [\A] [\Z] [\K] [\R] [\X]  err 107 escape sequence is invalid in class
+    [\N]                      err 171 \N is not supported in a class
+    [\N{name}]                err 137 — SAME answer as outside a class
+    [\N{U+41}]                err 193 — SAME answer as outside a class
+    [\b]                      COMPILES — backspace, BASE syntax
+
+`ESC_CLASS_BASE` (1 row, `\b`) and `ESC_CLASS_INVALID` (10 rows) both mean "the
+class doorway is not taken" for OPPOSITE reasons, so a NULL port cannot say
+both. Making `\b`'s class port return `EXT_SCALAR 0x08` disambiguates it and
+deletes both flags plus `parse.c:152`.
+
+**Counted, not estimated:**
+
+    ctx_fail sites in src/   50 total — 23 in ext.c, 20 in parse.c, 4 in compile.c
+    row-macro invocations    97 (+3 raw struct literals = 100 rows)
+                             ESC 18, ESC_CLASS_INVALID 10, ESC_DIGIT 10,
+                             GROUP 24, GROUP_OPT 12, GROUP_T 16, others 7
+
+The 23 is the deferred-diagnostic blast radius, and it is one file, not the tree.
+
+### K12 recorded
+
+`[0-\d]` is answered "requires module 'classes'" where PCRE2 says err 150,
+invalid range — permanently. SPEC-FA implemented the endpoint rule for the
+BRACKET shape only. Not a miscompile (both engines reject), but pcrec is right
+today only because `\d` is refused before `parse.c:213`'s range code can see it:
+**the guard is the unimplemented-ness, and MOD-0.2 removes it.** Same shape
+`docs/plan.md:577` already records for `(?xx)[a- ]`, one construct over.
+
+### Next
+
+The critic review is still owed, and D33 §5 names its own primary target: the
+deferred diagnostic. If a diagnostic cannot cleanly outlive its handler,
+`pair_opens` returns and D33 §6 collapses.
+
+## 2026-08-11 — same session, continued: the extension design and R13
+
+Frank's instruction, given mid-session: write the extension mechanism up as its
+own design document from scratch (not as an amendment), self-review it, send it
+to critics with different lenses, apply what I agree with strongly, leave the
+rest open, then close out. He went AFK partway through; the rest was carried out
+against that instruction.
+
+### Two new ideas from Frank, and what they turned out to be worth
+
+**1. "The interface to the class handler could be different — you could send
+special instructions."** This dissolved the problem I had told him was
+structural. I had argued `pcrec_ext_class_pair_opens` was irreducible, because
+at a range endpoint PCRE2's "invalid range" beats the construct's own diagnostic
+and parsing it first loses the right answer. That is true ONLY because
+`ctx_fail` longjmps. An explicit ASK level lets the caller ask "do you claim,
+and what shape" without the construct's error escaping. **I had reasoned from
+the implementation's control flow and called the result a structural necessity.**
+
+**2. "A name associated with each row or logical grouping of rows, used to turn
+handler sets on and off dynamically."** Measured while writing it up: **the names
+already exist and are half-built.** `FEAT_*` is a 16-bit mask in
+`internal.h:219-234`, `RegRow` carries `unsigned feature`, and
+`registry.c:129-144` pairs each with a string. 100 rows, 16 features, every row
+carrying exactly one bit or zero, `classes` spanning 3 buckets and `backrefs` 2.
+Nothing uses it beyond printing a module name.
+
+And three separate open issues turned out to be one hole: `\U`, `\u`, `\F`,
+`\L`, `\l` have NO REGISTRY ROW, so they fall through to `ext.c:84-85`'s generic
+`"unknown escape \%c"` — which is simultaneously the project's only completely
+unguarded diagnostic surface (R11 disposition 14), D32 §9.4's missing fourth
+residue category (46 of 93, 49%), and the reason D30 §4's bound-mode list could
+not be written.
+
+### R13 — five lenses, and the design was partly refuted
+
+Full report: `docs/reviews/2026-08-11-r13-extension-design.md`. Roughly 61
+findings over ~3,370 lines. **Eight load-bearing claims fell, four of them to
+independent measurement by more than one critic.**
+
+The four independently-reached refutations:
+
+1. **Selection is NOT position-independent** (four critics). `(a)x12\12` is a
+   backreference; `(a)x12[\12]` is still OCTAL, at the same capture count.
+   C3 widened it to 114 of 168 cells. **And the methodological lesson is
+   sharper than the finding: my evidence was three `\N` probes, all REFUSALS at
+   class position, so the two competing readings were indistinguishable on that
+   data. I measured the claim on the only bucket that could not test it.**
+2. **`\Q...\E` is representable by nothing in the design** (four critics), and
+   the natural reading is a tier-1 miscompile — `^\Qab\E*$` matches "abbb" and
+   NOT "ababab", because a quantifier binds the last character of a quoted run.
+3. **The endpoint rule is decided by the DOORWAY, not a shape column.**
+   `[0-\p{Foo}]` is 147, not 150. My justifying contrast varied two things at
+   once and credited the wrong one.
+4. **`\b`'s two facets have different owners** — I found this half myself before
+   the panel and got it half right; C5 found the miscompiling half I missed
+   (the shared generic wrapper makes `a\bb` compile to `a\x08b`).
+
+**The single most useful finding (C2/F3):** my document condemns "the guard is
+the unimplemented-ness" twice — at K12, and by citing `plan.md:577` — and then
+commits the identical error defending the whole-pattern pre-scan. Measured:
+`\1(?n)(a)`, `\1(?#()`, `\1\Q(a)\E` are all err 115, so `\1`'s validity at
+offset 0 depends on constructs owned by four other features appearing later.
+Being able to name a failure mode twice in a document and then commit it in the
+same document is worth more than the finding.
+
+### K13 recorded — a live shipped bug, reproduced before recording
+
+Twelve rows (the ten digit rows plus `\g` and `\k`) answer the CLASS position
+with module `backrefs` for constructs it can never implement. Verified by the
+author against libpcre2 10.46, not taken from the panel:
+
+    [\8]   matches "8" — the LITERAL character
+    [\1]   matches "\001" — OCTAL
+    [\k]   matches "k", not "\"       [\g] matches "g"
+    [0-\k] a legal RANGE 0x30..0x6b
+
+pcrec answers all six "requires module 'backrefs'". Over-promise today; a
+tier-1 miscompile the day `backrefs` lands, arriving BECAUSE the module was
+implemented. Every net misses it for K10's reasons, including the same one-byte
+`"[\\%c]"` sweep template.
+
+### The checks did worst of all
+
+C4: 26 findings against ten checks. Check 4 is vacuous for ~90 of 100 rows —
+most rows' recogniser IS "compare the first byte to `row->sel`", so asking that
+function whether it returns NOT_MINE when the byte differs from `row->sel` is
+its own definition evaluated ninety times. And check 4's SCOPE is the field it
+validates: `RK_VERB` has exactly one row and it is `REG_SEL_ANY`, so that
+bucket's coverage is permanently zero. Both are the K10 shape my own document
+cites as its template.
+
+**Disposition: §8 gets rebuilt by someone denied the design's reasoning.** The
+density of scope-inheritance defects across ten checks is the signature of one
+author writing both a mechanism and its controls — which is what D27 exists to
+break, and this is the second measurement that it works.
+
+### Negative results worth not re-deriving
+
+- **`unicode-props` / `classes` coupling is exactly ZERO** (8,716,400 compile
+  pairs). My own [OPEN] question named the wrong pair.
+- **`PCRE2_UTF` changes 0 of 120,099 verdicts**, reproducing R10 with a
+  different generator.
+- **At the class-bracket doorway the endpoint rule is EXACTLY right** — 21,396
+  patterns, zero disagreements. The defect is the generalisation to the escape
+  doorway, not SPEC-FA's rule.
+- **`\x` is mode-dependent under ALT_BSUX** — a BASE-GRAMMAR escape, so the
+  mode-dependent set reaches into the base grammar. New information; the design
+  had two categories and there are three.
+
+### Process
+
+- **Second prods delivered most of the panel, again.** C4 168 → 1003 lines,
+  C5 87 → 721, C2 57 → 454. The first round is not the panel; budget two.
+- **C2 caught its own control error mid-flight** (`(?:)` conflates
+  quantifiability with state-setting; `(?i)` does not) and re-ran 8.7M pairs.
+- **C2 and C4 established PCRE2 option bits behaviourally** rather than looking
+  them up — sweeping all 32 single-bit options and disambiguating `ALT_BSUX`
+  from `PCRE2_LITERAL` with a second probe.
+- **My own review pass found two of the eight refutations** and got one only
+  half right. Worth doing; not a substitute for the panel.
+
+### State at close
+
+Baseline verified green at the top of the session and NOT re-run after these
+changes, because everything since is documentation — no source file was touched.
+
+    make / make test   exit 0, 0 FAIL: unanchored
+                       1012 / 85 / 397 / 164 / 143 / 2+8 / 29 / 7
+    make strict        clean       verify_rxt 980/980
+    fuzz seed 1        0 divergences
+
+Open defects: K2, K7, K9, K10, K11, K12, K13.
+
+### Still owed, and deliberately not done
+
+**A1 — pinning `ext.c:84-85`'s two unguarded diagnostics — is NOT done.** Frank
+approved it earlier in the session. It was held back because the design's §7.1
+proposes giving those five escapes ROWS, which changes the wording, and because
+the critics were reading the tree. It should be the first thing built next
+session, and the pin is now MORE valuable than when it was approved, because it
+makes §7.1's change visible.
+
+The D-group items Frank has not ruled on: the bound compile mode's list (which
+§7 now has most of the material for) and a `make ubsan` build.

@@ -490,10 +490,25 @@ Then DOC-1, then PC-4 when module `classes` lands.
   global positional coupling 520/2308), TRIAL MODE (refuted by building it), the
   two-port split with `head_len`, and a uniform three-outcome protocol (would
   have resurrected the over-promise FIX-2 removed).
-  **Still owed and NOT resolved by D32:** the reachability differential's fourth
-  residue category; the whole-pattern capture count for `\1..\9` ([MOD-STATE]);
-  the returning-doorway contract across four call sites (K11 holds the escape
-  pair); and two doorway epilogues (GROUP, VERB) that do not exist as code)
+  **AMENDED 2026-08-11 by D33 — READ D33 AFTER D32, it changes what gets built.**
+  A row names TWO functions, one per POSITION: a class port returning a set and
+  an AST port returning a node, where the AST port of every class-shaped row is
+  ONE shared generic wrapper and the ten character-type escapes' class port is
+  DATA rather than a function. The claim is RETURNED, not raised — which is the
+  load-bearing change and the thing to attack, since 23 `ctx_fail` sites in
+  `ext.c` must yield a representable diagnostic instead of a longjmp.
+  `pcrec_ext_class_pair_opens` is DELETED, along with `RF_CLASS_BASE`,
+  `RF_CLASS_INVALID`, `parse.c:152`'s `\b` case, the `in_class` parameter and
+  `registry_check.c:875`'s skip. Arbitration stays POSITION-INDEPENDENT — pick
+  the row exactly as today, THEN consult its port; a NULL port is a refusal, not
+  a reason to pick another row.
+  **Still owed and NOT resolved by D32 or D33:** the reachability differential's
+  fourth residue category; the whole-pattern capture count for `\1..\9`
+  ([MOD-STATE] — and note it decides VALIDITY only, so it is NOT on this step's
+  path; the RUNNING count is the one this step needs); module swap between two
+  rows and row deletion, still guarded only by `tests/reject/`'s manifest.
+  D33 subsumes the returning-doorway contract (one epilogue, so the two missing
+  ones cannot be missing) and K12)
   ~~STATE:blocked (2026-08-11 — the R11 design panel refuted parts of
   D30, exactly as R10 refuted D29, and the resolution is Frank's call.** See
   `docs/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.
