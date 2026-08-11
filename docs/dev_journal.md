@@ -5608,3 +5608,39 @@ leak was observed in its delivered work.
 slice; then endpoint rule (K12), want+cursor (fresh D27 author for
 check06), deferred-backref infra, enabled-set/toggles, the byte-identity
 bar.
+
+## 2026-08-11 — seventh session, second half: slice 5 landed (the epilogue); endpoint rule scoped
+
+**Slice 5 = the returned-claims epilogue** (a67058a). D33 §5 as amended:
+all four doorways return a tagged ExtResult (EXT_NOT_MINE / EXT_REFUSAL
+with the diagnostic formatted at claim time); pcrec_ext_finish is the one
+epilogue; parse.c call sites consume the value and end in internal-error
+walls. K11 CLOSED — its own stub repro re-run in a scratch tree exits 1
+cleanly at both sites (was: silent miscompile at atom, compiler SIGSEGV in
+class). The EXT vocabulary is deliberately the exercisable subset;
+SCALAR/MEMBERS/NODE arrive with the first producing port, each with a probe
+false the day before. Verified by a 952-pattern byte-identity differential
+vs the pre-epilogue build (registry probes + corpus + per-doorway byte
+sweeps; exit/stdout/stderr/out.c/out.h; sabotage-validated), full suite,
+strict, verify_rxt 100%, fuzz seed 1 zero divergences.
+
+**Endpoint rule (K12) scoped before building, recorded so the next session
+does not re-derive it.** §16 as R14-corrected: five steps (low's own error
+→ high pair-open short-circuit → high's own error → either side SET → 150
+→ scalar ordering), two deviating cells ((bracket, high) = pair_opens,
+which SURVIVES; (bracket, low) = whole-class-only names, which our
+doorway's at-content-start + close-at-]-check already answers). The
+composition insight: slice 3's class_expect column IS §16.3(e)'s relocated
+shape — the endpoint caller reads the claim (slice 5) plus the row's
+measured shape (slice 3). SCOPE JUDGMENT: the override to "invalid range
+in character class" applies only where the row's measured value covers
+EVERY form reaching it — the ten char-type escapes (\d \D \s \S \w \W \h
+\H \v \V; selector = whole construct, no body) and the bracket doorway's
+KNOWN POSIX names (the 14-name table validates the body). Body-dependent
+rows (\p/\P — no property table until MOD-0.6; \N{U+}, \o, \c — scalar or
+err anyway) KEEP the module promise: pcrec cannot certify PCRE2's 150 for
+an arbitrary body, answering 150 for [0-\p{Foo}] would be wrong (PCRE2
+147), and the promise stays true (the module owns deciding it). The \p
+endpoint cells get pins asserting the CURRENT behavior so the boundary is
+deliberate, not accidental. All pins failing-then-passing per §17.1's
+guarded-divergence rule.
