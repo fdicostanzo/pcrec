@@ -4644,3 +4644,77 @@ criterion (ignore which doorway produced a no-construct code) gave counts
 IDENTICAL to the per-doorway version, delta 0 across its whole space. So
 per-doorway calibration is not measurably necessary; the three-way split and
 complete per-doorway CODE COVERAGE are. Dispositions 18-19 added.
+
+## 2026-08-11 (same session) — R12: a comparative design panel, and both designs lost something
+
+Frank proposed an alternative to D30's recogniser+rank design after reading R11:
+**an ordered list of parser functions**, one per row, each deciding AND parsing,
+first match wins, called with a copy of `Ctx` and a `trial` flag so a
+speculative call could be abandoned. It was written up and panelled against D30.
+Full record: `docs/reviews/2026-08-11-r12-d32-comparative.md`.
+
+**Four narrow briefs, one primary question each — 4 of 4 delivered**, against
+R11's 2 of 4 with five-part briefs. That format difference is now measured twice.
+
+### Design B's precedence rule died on the shipped table, needing no edit
+
+Its loop run against `registry.c` as it stands gets its own canonical example
+wrong twice: the tail-less `\N` fallback is declared FIRST (`:242`) so it claims
+`\N{U+0041}` before anything else (16/17 probes), and even pinned last, `"{"`
+(`:254`) precedes `"{U+"` (`:257`) so the short prefix wins (7/17).
+
+**And the irony is exact.** `src/parse/CLAUDE.md:166` records those rows are
+written SHORTEST first DELIBERATELY, so `check_tail_precedence` would have a real
+prefix-pair to observe. **The hardening that made the old check meaningful is
+exactly what breaks the new rule.**
+
+Structural finding: order has a failure mode rank cannot have — **global
+positional coupling**. Moving `RK_GROUP`'s catch-all to position 0 breaks 54 of
+the other 55 rows, none touched. And B's own repair can't cover B's reason for
+existing: a static position check is buildable but reasons only about `tail`
+strings, while B demotes `tail` and lets functions claim beyond it — **the check
+covers exactly the rows that don't need design B.**
+
+### Trial mode died by being built
+
+The loop calls the function once and commits only after it RETURNS, so any
+construct with a body must allocate inside the trial-covered call — which under
+a literal trip aborts every CORRECT implementation. So a handler must clear the
+flag first; the critic wrote `cx->trial = false;` as line one and allocated
+freely, and **the trip did not fire**. It is mutable state on the struct the
+checked code owns a pointer to. Design A's boundary (a pure recogniser has no
+`Ctx *` at all) cannot be defeated that way; B's can, by construction.
+
+It also **buys nothing over design A for its own motivating customer** —
+`pcrec_ext_class_pair_opens` is safe to call speculatively only because it is
+already pure. And the arena leak I called "waste, not corruption" was wrong by
+orders of magnitude: **~76-80 bytes leaked per byte scanned, 76.4 MB at
+N=1,000,000**, unreachable from the real `Ctx` so `arena_free` frees none of it.
+
+### Five of my own claims refuted
+
+trial mode "strictly stronger than A's type guarantee" (false); the arena leak
+being benign (false, by orders of magnitude); the per-row `syntax` check getting
+"stronger" under B (true but irrelevant to the module-swap blindness I cited it
+for); my `sel`-redundancy check (vacuous as worded — passes for all 100 stub
+rows, R11/C4-1's shape again); and the three-outcome protocol, which **would have
+resurrected the over-promise FIX-2 removed**, for three of the class `:` row's
+four terminal shapes.
+
+### The third shape, which neither of us proposed
+
+Both designs arbitrate BETWEEN ROWS IN A BUCKET — and two of the four doorways
+already have no such mechanism, because ONE function handles the whole bucket
+(`pcrec_ext_class_bracket` for all three class rows; `pcrec_ext_verb` for D25's
+four answers and both name tables). Generalising that gives **one function per
+bucket**: precedence becomes `if`/`else` inside one function — local, greppable,
+diff-visible, testable in isolation — which **deletes both precedence mechanisms
+and every check either of them needed.**
+
+It honours P1's finding that a decide/build boundary must be STRUCTURAL, but
+proportionately: the boundary is only needed where something asks speculatively,
+and there is exactly ONE such customer in the parser, already pure, at one
+doorway. Three doorways need no split.
+
+**NOT yet panelled** — it emerged from this panel and has not been attacked.
+That is the next step, and it wants Frank's call first.
