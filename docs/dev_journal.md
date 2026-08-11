@@ -4586,3 +4586,32 @@ generic recogniser.
 Six further dispositions (9-14) added to R11. **M6 was still running when this
 was written; its result folds in when it lands, and the finding no longer
 depends on it.**
+
+### M2, fourth tranche — the baseline number, and a shipped guard on its floor
+
+**The honest baseline for MOD-0.1's check (c), which nobody had written down:**
+by the four multi-row buckets — `\N` has **0% external coverage (no sweep for
+the `\` doorway exists at all)**, `(?<` is nominal but structurally vacuous,
+`(?P` and `(?-` are live and already correct on garbage-before-paren. So **2 of
+4 buckets have any live coverage, 0 of 4 have complete coverage of the
+malformed-body class, 1 of 4 has none.** That is the number to beat, and D32
+should state it.
+
+**`check_group_tails` cannot generate an unterminated body.** Verified in
+source: `TAILCOMP[]` (`pcre2_check.c:1780-1782`) has ten completions and **every
+one ends in `)`**. So R10/C1-2's own forcing example `(a)(?-1` is outside the
+instrument BY CONSTRUCTION — the existing differential covers "digit + garbage +
+`)`" and is blind to "digit + nothing", which is exactly the shape the `-\d+)`
+collapse would regress. The new check EXTENDS this one; it does not duplicate it.
+
+**And a shipped guard is sitting on its floor.** `pcre2_check.c:1832` is
+`if (live_prefixes < 2) bad(...)` — a COUNT, not a per-prefix expectation — and
+exactly two prefixes are live today. **If `-` went vacuous while any other
+prefix became live for an unrelated reason, the total stays 2 and the guard says
+nothing** — losing coverage of the one prefix the collapse depends on, silently.
+That is wake §8's silent-narrowing shape inside a guard written to prevent it.
+Dispositions 15-17 added.
+
+Circularity ruled out for that instrument: `check_group_tails` never reads
+`RegRow.tail` — it generates all 255 bytes directly, so its gaps are GENERATION
+gaps, not circularity leaks.
