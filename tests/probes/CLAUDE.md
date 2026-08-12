@@ -66,6 +66,21 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   scan, two load-bearing callers) and the R16 reject/corpus pins. Also
   corrected one cell in the R16 engine critic's own report ({,3} compiles)
   and exposed fuzz.py's stale a{,3} exclusion note.
+- `probe_mod05.c` — MOD-0.5a scope probes (2026-08-12): the x-vs-xx class
+  boundary ((?x) never touches class interiors, xx deletes exactly {09,20};
+  the D30 §7 `(?xx)[a- ]` hazard cells with match spans); spaced brace
+  quantifiers COMPILE as quantifiers at options=0 (10.43+ rule,
+  pcrec_brace_quant_shape already agrees — verified both sides, no
+  divergence); (?s)/(?U)/(?m)/(?n)/(?J) semantics cells; (?ri) and all four
+  a-sub pairs census-identical at options=0 (MEASURED no-ops, real again
+  under UTF/UCP). Its naive x-skip census has a recorded template flaw —
+  see the MEASURED block in its header and probe_mod05b.c.
+- `probe_mod05b.c` — MOD-0.5a follow-ups (2026-08-12): spaced-brace match
+  cells; the (?^) reset scope PER LETTER (unsets i,m,n,s,x,xx; U and J
+  SURVIVE — "unset imnsx" is the measured rule); the CONTROLLED x-skip
+  census (a no-x control column removes the quantifier false positives):
+  {09,0A,0B,0C,0D,20,85} — 0x85 NEL is skipped, so x-mode's skip set is
+  NOT \s's set (census 6).
 - `probe_mod03.c` — MOD-0.3a scope probes (2026-08-12): `[[:^alpha:]]` is
   REAL with census identical to `[^[:alpha:]]` (204 members, 0/256 diff);
   `[[:^foo:]]`/`[[:^<:]]` err 130; `[[:<:]]`/`[[:>:]]` compile as zero-width

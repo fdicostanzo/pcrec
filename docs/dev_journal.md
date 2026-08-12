@@ -6448,3 +6448,51 @@ context-free and stay VM; (?(DEFINE)) is a macro library begging for
 instantiation. Two measure-first obligations recorded: probe the
 atomicity claim (documentation is a claim, not a fact here) and the
 capture-restore wrinkle that returns when the VM grows captures.
+
+## 2026-08-12 — eleventh session: MOD-0.5 (module `modifiers`) opened — baseline + the design gate
+
+Frank's directive: begin dev; mid-session, manage parallel subagents with
+appropriate models over non-interdependent sections, worktrees for writers,
+the D27 cell generator for the blinded test author.
+
+**Baseline re-verified before any edit** (wake §3 battery rebuilt in the
+session scratchpad: make+strict serial; PROCS=6 make test | verify_rxt |
+fuzz seed 1 | spec_mod0 concurrent, TMPDIR=/var/tmp; bench alone; PROCS=4
+mech). Every exit 0 — spec_mod0 exit 0, its new normal; mech 20/20;
+`FAIL:` grepped unanchored across all logs: zero. HEAD 1a38d3b, tree clean.
+
+**[MOD-0.5] expanded in docs/plan.md and STATE:started; MOD-0.5a (design
+gate) completed in the same commit.** Scope measured before scoping
+(tests/probes/probe_mod05.c + probe_mod05b.c, predictions stated first,
+libpcre2 10.46):
+
+- The D30 §7 hazard cells confirmed exactly: `(?x)[a- ]` err 108,
+  `(?xx)[a- ]` COMPILES with members {a,-}; escaped space stays significant
+  at endpoints; xx deletes exactly {09,20} inside classes; single `x`
+  NEVER touches a class interior.
+- The x-mode skip set outside classes is {09,0A,0B,0C,0D,20,85} — 0x85
+  (NEL) is skipped, so the set is NOT \s's (census 6). The first census
+  template had quantifier false positives (`a*b` matches "ab" with no
+  skipping); re-run with a no-x control column. Lesson re-learned in
+  miniature: a census needs a control before its members are believed.
+- SURPRISE, then non-finding: `a{1, 2}` and every spaced brace form
+  COMPILE at options=0 as QUANTIFIERS (PCRE2 10.43+ rule). Checked pcrec's
+  side immediately: pcrec_brace_quant_shape already accepts space/tab
+  (R16's scan) and the emitted matcher agrees with libpcre2 on the
+  discriminating subjects. No divergence; recorded in the probe header.
+- `(?^)` resets i,m,n,s,x,xx and does NOT touch U or J (both probed
+  surviving) — "unset imnsx", not "unset everything"; the reset is
+  to-hardwired-constant (the PARSE-1 landmine, now load-bearing).
+- `(?ri)` vs `(?i)`: 0 diff cells over 256 patterns x 256 subjects; all
+  four `a`-sub pairs census-identical — r/aD/aP/aS/aT/aW are MEASURED
+  no-ops at options=0 C locale, real again under UTF/UCP (MOD-0.6/M5
+  pointer recorded).
+- `(?n)` uncaptures plain parens (rc 2->1 on `(a)`), makes `\1` err 115,
+  and does NOT imply J (err 143 preserved).
+
+Rulings recorded in the plan entry (per-letter semantics vs honest
+per-letter refusals — `m` -> 'assertions', `J` -> 'named-groups', tier-2
+attributions FLAGGED TO FRANK; the measured (?^) rule; the measured x-mode
+sets; malformed runs are the module's SYN_MALFORMED half with the gate ON).
+Slices .5b-.5f staged with byte-identity first, the lexer third, checks
+moving with surfaces, and the close panel + D27 cell writer last.

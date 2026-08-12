@@ -1116,7 +1116,8 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the VF_* form bits, the at-start position rule, and a blame offset that is not
   the doorway's default (`(*)` blames the `*`). If the signature survives this
   it survives
-- [MOD-0.5] STATE:not-started — **MOVED AFTER `classes` (D30 §7, was MOD-0.3).**
+- [MOD-0.5] STATE:started 2026-08-12 (eleventh session) — module `modifiers`.
+  **MOVED AFTER `classes` (D30 §7, was MOD-0.3).**
   R10/C2-11 measured the hazard at options = 0: `[a- ]` is error 108 (range out
   of order) and `(?xx)[a- ]` COMPILES, because `xx` deletes the space — at the
   class RANGE ENDPOINT that `3fca0d8` (SPEC-FA) fixed as a silent wrong matcher
@@ -1133,6 +1134,72 @@ Then DOC-1, then PC-4 when module `classes` lands.
   recogniser pointer says the same thing and names which parser. The 12
   option-setting rows STAY as 12 rows sharing one recogniser; see D29 on why a
   byte-set row was rejected
+- [MOD-0.5a] STATE:completed 2026-08-12 — the DESIGN GATE, short and
+  journal-recorded (evidence: tests/probes/probe_mod05.c + probe_mod05b.c,
+  predictions stated first, run against libpcre2 10.46). Rulings:
+  (1) PER-LETTER SEMANTIC SCOPE with `--features modifiers` ON — implemented
+  as scoped parse state (Ctx grows a modifier struct around the existing
+  `caseless` slot, the D31-note's "expect a struct, not more bools"):
+  `i`/`-i` (state exists, PARSE-1's 17/17), `s` (dot's set: 255 -> 256,
+  parse-time class construction), `U` (greed swap at quantifier
+  construction), `n` (capturing-`(` hook consults state; feeds
+  --count-groups/check02), `^` (reset to hardwired defaults), `x`/`xx`
+  (slice .5d, the lexer), and `r`/`aD aP aS aT aW` as MEASURED NO-OPS at
+  options=0 C locale (0 diff cells over full censuses; they become real
+  under UTF/UCP — pointer recorded for MOD-0.6/M5, DD-12's owners).
+  (2) PER-LETTER REFUSALS, honest names (the MOD-0.3a per-name precedent):
+  `m` -> module 'assertions' (multiline ^/$ is assertion-engine work, DD-11's
+  $-EOL sibling); `J` -> module 'named-groups' (J is observable only through
+  named groups, which are that module). Tier-2 attribution judgements,
+  recorded not asked, reversible one-row edits — FLAGGED TO FRANK.
+  (3) THE MEASURED (?^) RULE: resets i,m,n,s,x,xx to the hardwired defaults
+  and does NOT touch U or J (both probed surviving); the reset is
+  to-constant, not to-compile-option (the PARSE-1 landmine, now load-bearing).
+  (4) THE MEASURED X-MODE SETS: skip set OUTSIDE classes is
+  {09,0A,0B,0C,0D,20,85} — NOT \s's set (0x85 NEL is skipped; census run
+  with a no-x control column after the naive template's quantifier false
+  positives, probe_mod05b); `#`-comments run to newline; xx additionally
+  DELETES {09,20} inside class interiors AHEAD of the endpoint rule; single
+  `x` never touches class interiors ((?x)[a b] keeps the space member).
+  (5) NON-FINDING, verified both sides: spaced brace quantifiers (`a{1, 2}`
+  etc) are QUANTIFIERS at options=0 (10.43+ rule) and
+  pcrec_brace_quant_shape already accepts space/tab (R16) — pcrec's emitted
+  matcher agrees with libpcre2 on the discriminating subjects.
+  (6) Malformed runs with the gate ON are the module's to diagnose
+  (D28's SYN_MALFORMED half: `(?i-m-s)` err-194 shape, offset at the
+  offending byte); gate OFF keeps today's answers byte-identical.
+- [MOD-0.5b] STATE:not-started — slice 1, the GRAMMAR MOVE, byte-identity.
+  mod_modifiers.c TU carries pcrec_registry_option_run_ok WITH its measured
+  grammar block (probes-and-code-together; R8/C2-9 is the counter-example);
+  RF_OPTION_RUN retires — the 12 GROUP_OPT rows point at the recogniser
+  (MOD-0.2 machinery; rows stay 12); ext.c's RF_OPTION_RUN branch reads the
+  pointer instead of the flag. Landing bar: byte-identity differential over
+  the corpus + reject surface, full battery.
+- [MOD-0.5c] STATE:not-started — slice 2, the SEMANTIC PRODUCERS, gated.
+  Ctx modifier state (seeded from opt, saved/restored where `caseless`
+  already is); `(?...)`-terminated runs apply to the enclosing scope;
+  `(?...:body)` = set state, pcrec_parse_body, restore (the callback PARSE-1
+  built); letters per .5a ruling 1-3 incl. per-letter refusals and
+  malformed-run diagnostics; corpus tests/modifiers/ (features directive;
+  python-re oracle where it agrees — mid-pattern `(?i)` is a py3.11+ error,
+  those blocks go pcre2-only); reject pins move by measurement.
+- [MOD-0.5d] STATE:not-started — slice 3, THE LEXER: x/xx, and telling
+  `classes`. Skip set + comments outside classes; xx's {09,20} deletion in
+  class interiors ahead of the endpoint rule (the D30 §7 hazard cells
+  `(?xx)[a- ]` / `(?xx)[a-\ ]` / `(?xx)[\ -a]` in the corpus, both gate
+  states); interaction cells with quantifier braces and `\Q`/`\E`/escaped
+  whitespace measured in the slice.
+- [MOD-0.5e] STATE:not-started — slice 4, CHECKS MOVE WITH THE SURFACE:
+  check07 gate-equivalence and check09 per-feature toggle meet their first
+  modifier population (grep the suites for "nothing produces yet" premises —
+  the tenth session's lesson); registry_check ties for the recogniser
+  pointer; PC-3/PC-4 implications measured; mech rows for the lexer;
+  fuzz.py's stale a{,3} note fixed at this, its next edit (R16 NOTED).
+- [MOD-0.5f] STATE:not-started — close: R17 panel (D6; read-only critics) +
+  D27 blinded spec-writer via scripts/mk_d27_cell.sh briefed on option-run
+  semantics from the goal documents and libpcre2 only (Frank's directive,
+  eleventh session — pulled forward from MOD-0.8's brief); docs sweep;
+  journal + wake.
 - [MOD-0.6] STATE:not-started — module `unicode-props`, the only NEW recogniser:
   `\p{...}` vs `\pL` (two shapes at one byte), `\P` polarity from `sel`,
   normalisation into a CALLER-PROVIDED FIXED BUFFER (never an arena — D29;
