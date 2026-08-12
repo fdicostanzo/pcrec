@@ -547,6 +547,23 @@ reject '\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
        "\\p requires module 'unicode-props' (pattern offset 52)"            # 48 A's, well-formed
 reject '\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
        "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 52)"  # 49 A's, malformed
+# the same boundary CARET-PREFIXED — S33's guard, added after mech measured
+# the caret-consume drop UNDETECTED against the original pin set (design
+# note §8): \p{^L} never flips under that sabotage, because a two-char name
+# gets the GENERIC message either way (ruling 3's design); what MOVES is
+# the 48/49 boundary for a caret-prefixed body. Probe: caret + 48 A's is
+# ERR 147 at 53, caret + 49 A's is ERR 146 at 53 — the caret costs one
+# OFFSET byte but zero BUDGET.
+reject '\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
+       "\\p requires module 'unicode-props' (pattern offset 53)"            # caret + 48 A's, well-formed
+reject '\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
+       "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 53)"  # caret + 49 A's, malformed
+# the accumulator-fold guard — S34's, same mech finding: a lowercase KNOWN
+# letter in braces must still read as known. The brace path's table lookup
+# is deliberately FOLD-FREE (mod_uprops.c uprops_short_lookup), so this pin
+# fails the moment the accumulator stops folding, instead of the lookup
+# silently repairing the buffer on the way in.
+reject '\p{c}' "\\p requires module 'unicode-props' (pattern offset 5)"
 reject '\Q'    "\\Q requires module 'quoting'"
 reject '\E'    "\\E requires module 'quoting'"
 reject '\R'    "\\R requires module 'misc'"
@@ -1349,8 +1366,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 296 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 296 / 65 / 0 / 4." >&2
+if [ "$nrej" -ne 299 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 299 / 65 / 0 / 4." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

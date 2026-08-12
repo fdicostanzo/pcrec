@@ -94,10 +94,21 @@
  * which sweeps all 52 letters against the live oracle every run. */
 static const char UPROPS_SHORT_NAMES[] = "CLMNPSZ";
 
-static bool uprops_is_short_name(int c)
+static int uprops_fold(int c)
 {
-    int u = (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
-    return strchr(UPROPS_SHORT_NAMES, u) != NULL;
+    return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
+}
+
+/* Expects an ALREADY-FOLDED byte and deliberately does NOT fold again: the
+ * brace path passes name[0] straight from the normalised-name accumulator,
+ * so the accumulator's case fold is LOAD-BEARING through this lookup — a
+ * lookup that re-folded would repair a broken accumulator on the way in,
+ * which is exactly how mech measured S34 UNDETECTED at first landing (the
+ * buffer's only reader masked the sabotage; docs/design_notes_mod06.md §8).
+ * The bare-letter path folds its raw pattern byte explicitly at the call. */
+static bool uprops_short_lookup(int folded)
+{
+    return strchr(UPROPS_SHORT_NAMES, folded) != NULL;
 }
 
 /* The twelve GROUP_OPT rows' `recognise` field carries
@@ -149,7 +160,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      * position; only the message differs). */
     if ((c0 >= 'A' && c0 <= 'Z') || (c0 >= 'a' && c0 <= 'z')) {
         i++;
-        if (uprops_is_short_name(c0))
+        if (uprops_short_lookup(uprops_fold(c0)))
             REFUSE(i, "\\%c requires module '%s'", sel, rw->module);
         REFUSE(i, "\\%c: not a one-letter Unicode property code pcrec "
                   "recognises — requires module '%s'", sel, rw->module);
@@ -226,7 +237,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      * there would be a claim about PCRE2 pcrec cannot back. */
     bool verifiable_axis = !has_eq && sig_count <= 1;
     bool verifiable_hit = verifiable_axis && sig_count == 1 &&
-                          uprops_is_short_name(name[0]);
+                          uprops_short_lookup(name[0]);
     if (verifiable_axis && !verifiable_hit)
         REFUSE(i, "\\%c{...}: not a one-letter Unicode property code pcrec "
                   "recognises — requires module '%s'", sel, rw->module);

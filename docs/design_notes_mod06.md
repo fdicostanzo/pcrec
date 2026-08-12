@@ -599,3 +599,28 @@ already use, with blocks carrying `features unicode-props`.
    body-dependent rows therefore SURVIVES this milestone. The certified
    endpoint override moves to the producer milestone with the rest of the
    port wiring. `[0-\p{Foo}]` and `[\p{L}-z]` land the same way.
+3. **MECH FINDING at first validation run: S33 and S34 came back UNDETECTED
+   (0/465 each), 33/35 detected.** Both sabotage doc-figures had predicted
+   flips that the landed design does not produce — worth recording because
+   BOTH mispredictions trace to reading §3/§5 without ruling 3:
+   - **S33** (caret enters the count) predicted `\p{^L}` flips to the
+     not-recognised message. It does not: `^L` is a two-significant-char
+     name, and multi-char names take the GENERIC message by ruling 3 —
+     identical text and offset to the un-sabotaged known-letter answer. The
+     observable consequence is the 48/49 boundary moving one character
+     early for caret-prefixed bodies; §5's planned caret-boundary pins had
+     not actually landed. FIXED: the two caret pins (48 -> generic at 53,
+     49 -> malformed at 53) are now in tests/reject/, measured flipping
+     under the sabotage (SAB_COUNT=2).
+   - **S34** (accumulator stops folding) was structurally undetectable as
+     landed: the buffer's only reader folded again on the way in, repairing
+     the damage — the control sharing a source with what it controls.
+     FIXED in code, not just pins: the brace path's lookup is now FOLD-FREE
+     (`uprops_short_lookup` expects an already-folded byte; the bare-letter
+     path folds explicitly at its call), which makes the accumulator's fold
+     load-bearing, and `\p{c}` pins it (generic at offset 5; flips to
+     not-recognised under the sabotage). §3's pseudocode stands — the
+     buffer IS the normalised name — the fix is that something now
+     observably depends on that being true before MOD-0.7's consumer
+     arrives.
+   Reject count 296 -> 299 with these three pins.
