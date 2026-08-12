@@ -1491,8 +1491,13 @@ named, cleanly rejected and queried.
   right module named, so this is a design constraint, not a bug — recorded so no
   handler signature is designed on the assumption that a row can identify the
   construct. See D24's "THE LIMIT OF THE TABLE" and K2
-- [SR-6] STATE:not-started — MODULE HANDLERS move to src/parse/ext/*.c as each
-  module lands (esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc,
+- [SR-6] STATE:not-started — MODULE HANDLERS move to their own module TUs as
+  each module lands (as-built naming: src/parse/mod_*.c flat in src/parse/ —
+  mod_modifiers.c, mod_verbs.c — not the src/parse/ext/*.c subdirectory this
+  row originally predicted; R18 docs critic. The verbs entry below remains
+  accurately PENDING: MOD-0.4 moved the doorway/tables to mod_verbs.c but no
+  verb produces yet, so SR-6's real per-verb handler has not landed)
+  (esc_class, esc_assert, esc_backref, esc_uniprop, esc_misc,
   grp_lookaround, grp_named, grp_atomic, grp_cond, grp_recurse, grp_modifier,
   grp_callout, verbs, cls_posix). Not a step to schedule — a rule to follow
   when a module is implemented. NOTE (R4 critic finding): the row does NOT yet

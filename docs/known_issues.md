@@ -893,3 +893,43 @@ module; `REJECTED`'s existing "agreement IS compliance" wording is close, but
 these are constructs PCRE2 DOES support and pcrec will not — a combination the
 vocabulary has no slot for. No `tests/known_fail/` repro: the behaviour is a
 rejection with a misleading module name, so the pins belong in `tests/reject/`.
+
+## K15 — OPEN, found 2026-08-12 (R18 panel, engine critic — the sweep-template-misses-the-boundary lesson, third recurrence)
+
+**A verb "name" longer than 128 bytes made of NON-identifier bytes gets the
+name-too-long diagnostic where libpcre2 answers "not recognized".** Tier 2
+under D26 (the message CATEGORY for a refused construct, no accept/reject
+divergence — the engine critic verified a non-identifier run can never match
+a table entry, so pcrec always refuses either way). Pre-existing: the move to
+mod_verbs.c was byte-identical; this was measured against the migrated tree
+and re-confirmed against the pre-move logic.
+
+**Root shape:** `pcrec_verb_name_extent_scan` (scans.c) terminates only on
+`)`, `:`, `=`, EOF — every other byte, including space, `*`, `(`, 0x80+, is
+"name". libpcre2's own name scan stops at the first non-alnum/`_` byte.
+The two agree on every message for runs UNDER the cap; they part company
+exactly when a non-identifier run crosses the 128-byte boundary.
+
+**Repro** (measured 2026-08-12, `build/pcrec` at 8e7597d, libpcre2 10.46):
+
+    (* + 130 spaces + )   pcrec: subpattern name is too long (maximum 128 code units)
+                          libpcre2: err 160 "(*VERB) not recognized or malformed" at offset 2
+    (* + 127 spaces + )   BOTH: not recognized / unknown-name (control: under the cap, they agree)
+    (* + 129 x 'A' + )    BOTH: subpattern name is too long — exact text match
+                          (control: the 128-byte rule itself is right for identifier names)
+
+**Why every net misses it:** PC-3's only length-boundary generator
+(`pool_from_lengths`, pcre2_check.c source 4) builds its 126-130-length
+candidates from repeated `A`/`a` — pure identifiers; the mutation pool edits
+short names only. The generators structurally cannot express "long AND
+non-identifier", the same class as R16's `\N` empty-row lesson and R17's
+`(?%c`-always-emits-a-byte lesson.
+
+**Deferred, as a LINKED PAIR:** the divergence and its guard must move
+together — extending `pool_from_lengths` with non-identifier fillers TODAY
+would make PC-3 fail on the divergence it newly sees. Fix the extent-vs-cap
+interaction (or rule the category divergence acceptable and add a PC-3
+exclusion with this entry as the citation), THEN extend the generator.
+Scheduled: with SR-6's real verb handler (when module `verbs` first
+produces, the extent scan's semantics get remeasured anyway); flagged to
+Frank as unruled.

@@ -612,7 +612,10 @@ answer. That is exactly what `ext.c` does today for the rows that have no body.
 
 Only rows with a BODY override it, and D28 counted them: **ten construct
 families need body parsing** — verb names, the `LIMIT_*` magnitude rule, the
-class-bracket delimiter scan (all three already in `ext.c`), plus `\p{...}`'s
+class-bracket delimiter scan (all three already implemented — the location
+claim "already in `ext.c`" aged out in two moves: the delimiter scan to
+scans.c at MOD-0.1 slice 9, verb names and the `LIMIT_*` rule to
+mod_verbs.c at MOD-0.4 — R18 docs critic), plus `\p{...}`'s
 loose normalisation, `(?[...])`'s nested set algebra, the named-group forms,
 and the rest. So the per-handler contract is owed by roughly ten handlers, not
 a hundred, and for the other ninety the levels are a property of the shared

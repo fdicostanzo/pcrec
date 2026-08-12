@@ -474,6 +474,6 @@ stays with DD-1/M5.
 
 ## Conventions
 
-The parser builds an expression AST using recursive descent. Split edges in the AST preserve choice order for greedy/lazy and alternation preference. Non-base syntax is described once, in registry.c, and reached through ext.c's four doorways: adding a construct means adding a row, not editing parse.c. Unsupported syntax produces an actionable "requires module 'X'" error rather than a miscompile.
+The parser builds an expression AST using recursive descent. Split edges in the AST preserve choice order for greedy/lazy and alternation preference. Non-base syntax is described once, in registry.c's row tables, and reached through the four doorways — three defined in ext.c, the verb doorway in mod_verbs.c since MOD-0.4 (its two name tables moved with it): adding a construct means adding a row, not editing parse.c. Unsupported syntax produces an actionable "requires module 'X'" error rather than a miscompile.
 
 Maintenance: update this file when files are added/removed or their roles change.

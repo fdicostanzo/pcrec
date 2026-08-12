@@ -237,6 +237,16 @@ Two rules earned the hard way and enforced here:
   all fixed. First adversarial read of the option-run grammar (the
   MOD-0.8 note discharged early).
 
+- **2026-08-12-r18-mod04.md** — R18, MOD-0.4 close (module `verbs`, the
+  migration test). Second consecutive clean panel; zero tier-1 divergences.
+  Checks → S27's offset-blindness generalized to five more REFUSE families,
+  closed with per-family offset pins + S30; engine → the offset-divergence
+  inventory (tier 2, no action, with the two counter-cells that DO match the
+  oracle now measured) and K15 (the too-long category divergence, a linked
+  pair with PC-3's identifier-only length generator); docs → two live-doc
+  staleness fixes (the §5.3 location claim had aged through TWO moves) and
+  the SR-6 as-built naming correction.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
