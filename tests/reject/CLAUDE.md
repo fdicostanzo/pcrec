@@ -70,6 +70,24 @@ construct it cannot handle and stops. `\d{3,1}` beside it is the same shape at
 a different doorway and has been true since the registry existed. Both are here
 so that changing that rule has to be deliberate rather than accidental.
 
+**Ten rows now pin the OFFSET too** (MOD-0.4c/S27, widened MOD-0.4d/S30): one
+representative per REFUSE(at, ...) site in `pcrec_ext_verb`, both tables where
+the site is genuinely per-table (too-long name, unknown name, form mismatch —
+`(*NOTAVERB)`/`(*accept)`, `(*CR:x)`/`(*pla)`, the two 129-byte boundary rows,
+`(*:x)`/`(*scs:x)`), one representative where it is not (`a(*CR)` for the
+at-start check, `a(*ACCEPT)` — pulled out of the accepted-forms loop — for the
+terminal module refusal). The reason is the same as the brace rows' above:
+a message-only pin cannot distinguish `REFUSE(at, ...)` from a "blame a more
+precise position" refactor to `REFUSE(nstart, ...)` or similar, because most
+of these probes share one unprefixed pattern shape and every internal
+position (`star`, `nstart`, the name's own end) collapses to the SAME text at
+`at == 0` — only the OFFSET differs. Unlike the brace rows, which pin PCRE2
+agreement, these offsets are pcrec's OWN stability under refactoring, not a
+libpcre2 fact — PC-3 (`pcre2_check.c`) never compares offsets, so this really
+is the only place any of these ten positions is checked. Mech rows
+`tests/mech/sabotages/S27_verb_blame_offset.sh` and
+`S30_verb_unknown_name_blames_nstart.sh` validate the shape live.
+
 ## Two layers, and why neither replaces the other (SR-4)
 
 SR-4's plan text said to iterate the dump INSTEAD of the hand-written rows.
@@ -142,6 +160,8 @@ still cannot assert a name.
    'NAME'`, and for the 20 base-grammar brace rows a PCRE2 error wording. Since
    R7 the brace rows also pin the OFFSET, because nothing in the repo asserted
    one and `try_quant` keeps a per-number end position for no other purpose.
+   Since MOD-0.4c/d ten of the verb rows do too, for the analogous reason —
+   see "What the verb rows do and do not pin" below.
 3. no output file is left behind by a failed compile.
 
 ## The accept-controls are not optional
