@@ -1695,6 +1695,23 @@ named, cleanly rejected and queried.
   honest diagnostic becomes "requires the VM engine", which is a lowering-time
   check against the registry's `engines` column. Blocked on M4 having a second
   engine to choose between
+- [SR-10] STATE:not-started — SINGLE NAMESPACE DEFINITIONS (Frank,
+  2026-08-12: "do we have a single set of 'modules' or 'encodings'? we
+  should, and then those should be directly referenced — this enforces
+  existence over everyone using string names"). One authoritative table per
+  namespace — MODULES, ENCODINGS, (post-D37) NAMED FEATURE SETS, and
+  flavours when SR-7 lands — with every renderer and parser of a namespace
+  member referencing the table entry (enum/identifier + its one string),
+  never a loose literal. Existence becomes a compile-time property: a
+  diagnostic cannot name a nonexistent member because the name is not
+  reachable except through the table. The both-directions checks then guard
+  table⇔docs instead of table⇔scattered-strings. MOTIVATING INSTANCE
+  (R20/0.8c): src/core/compile.c:97 hand-wrote "requires module 'utf8'" —
+  a member of no namespace — while cli/main.c separately hand-mapped
+  "utf8"→PCREC_ENC_UTF8; slice 3's reword fixes the instance, THIS row
+  fixes the class. Audit inventory at start: every `module '` /
+  `--features` / `-e` string site, the enabled.c parser, the registry
+  module column, compile.c's encoding gate
 
 ## Optimization waves (D21) — algorithmic, then profiled code, then compile time
 
