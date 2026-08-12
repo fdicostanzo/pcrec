@@ -296,6 +296,28 @@ and a name over 128 bytes is a third complaint again). pcrec reproduces all of
 it, and `tests/registry/pcre2_check.c` re-measures every bit of it against
 libpcre2 on each run. `pcrec --list-verbs` prints the tables.
 
+**A RULED, deliberate tier-2 divergence (K15, D26; Frank, 2026-08-12):** for a
+verb "name" over the 128-code-unit cap made ENTIRELY of non-identifier bytes,
+pcrec answers "subpattern name is too long (maximum 128 code units)" where
+libpcre2 10.46 answers error 160, "(*VERB) not recognized or malformed", at
+offset 2. Root cause: pcrec's extent scan (`pcrec_verb_name_extent_scan`,
+scans.c) reads every byte up to `)` `:` `=` EOF before it ever compares the run
+to a table entry, so an over-cap run hits the length check first; libpcre2's
+own scan stops at the first non-alnum/`_` byte and reports "not recognized"
+about the short prefix it actually extracted. Both are honest refusals of a
+name that can never match a real verb — the two engines diverge on which
+REFUSAL CATEGORY, never on accept vs. reject, which is what keeps this at tier
+2 rather than tier 1. Found by the R18 panel's engine critic
+(docs/reviews/2026-08-12-r18-mod04.md), recorded at docs/known_issues.md K15,
+and confirmed on both controls: UNDER the 128-byte cap a non-identifier run
+gets "not recognized" on both sides (agreement — K15's own control), and OVER
+the cap an IDENTIFIER run gets the exact same "too long" text on both sides
+(also agreement — the 128-byte rule itself is right for identifier names).
+`tests/registry/pcre2_check.c`'s `k15_excluded()` carries the one exclusion
+this divergence needs, scoped to that single cell; extending the extent scan
+to stop at the first non-identifier byte is deferred to SR-6, when module
+`verbs` first produces and the scan's semantics get remeasured anyway.
+
 What pcrec does NOT yet claim is which MODULE owns each name: `(*atomic:…)` and
 `(*pla:…)` are answered "requires module 'verbs'" though they are atomic groups
 and lookarounds, and correcting that belongs to SR-6 with the module itself.

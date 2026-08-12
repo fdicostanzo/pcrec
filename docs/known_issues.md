@@ -894,7 +894,7 @@ these are constructs PCRE2 DOES support and pcrec will not — a combination the
 vocabulary has no slot for. No `tests/known_fail/` repro: the behaviour is a
 rejection with a misleading module name, so the pins belong in `tests/reject/`.
 
-## K15 — OPEN, found 2026-08-12 (R18 panel, engine critic — the sweep-template-misses-the-boundary lesson, third recurrence)
+## K15 — RULED ACCEPTABLE 2026-08-12 (Frank; D26 tier 2), found 2026-08-12 (R18 panel, engine critic — the sweep-template-misses-the-boundary lesson, third recurrence)
 
 **A verb "name" longer than 128 bytes made of NON-identifier bytes gets the
 name-too-long diagnostic where libpcre2 answers "not recognized".** Tier 2
@@ -925,11 +925,24 @@ short names only. The generators structurally cannot express "long AND
 non-identifier", the same class as R16's `\N` empty-row lesson and R17's
 `(?%c`-always-emits-a-byte lesson.
 
-**Deferred, as a LINKED PAIR:** the divergence and its guard must move
-together — extending `pool_from_lengths` with non-identifier fillers TODAY
-would make PC-3 fail on the divergence it newly sees. Fix the extent-vs-cap
-interaction (or rule the category divergence acceptable and add a PC-3
-exclusion with this entry as the citation), THEN extend the generator.
-Scheduled: with SR-6's real verb handler (when module `verbs` first
-produces, the extent scan's semantics get remeasured anyway); flagged to
-Frank as unruled.
+**RULED, 2026-08-12 (Frank): acceptable, tier 2 per D26.** The linked pair
+above landed in the same session, in order: `pool_from_lengths`
+(`tests/registry/pcre2_check.c`) now generates non-identifier fillers
+(space, `*`, 0x80) across the 126-130 boundary; PC-3 was run with the
+generator live and NO guard, and confirmed to FAIL on exactly this cell (78
+mismatches, all of them the too-long/not-recognized category split
+measured above, zero elsewhere) — the failing-direction measurement the
+ruling needed before an exclusion could be trusted; THEN `k15_excluded()`
+was added, scoped as narrowly as the ruling allows — only the category
+comparison for over-cap non-identifier runs. The two controls this entry
+already names stay routed through the ordinary comparison and both still
+agree: under-cap non-identifier runs (both "not recognized"), and over-cap
+IDENTIFIER runs (both "too long", exact text). Documented at
+docs/pcre2_compliance.md's Backtracking control verbs section.
+
+**The extent-vs-cap interaction in `pcrec_verb_name_extent_scan` is left
+AS-IS, deliberately** — this ruling accepts the message-CATEGORY
+difference; it does not fix the scan. Remeasure when SR-6's real verb
+handler lands (module `verbs` first produces, and the extent scan's
+semantics get remeasured anyway regardless of this entry) — the original
+schedule note stands.
