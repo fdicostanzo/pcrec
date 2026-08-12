@@ -526,11 +526,11 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
 | after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
 | after `(?` | `(?[[a]])` | `REJECTED` | planned | `extended-classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
-| after `(?` | `(?)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | empty option setting |
-| after `(?` | `(?-i)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
-| after `(?` | `(?^)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | reset all options to their default (measured: imnsx only — U/J survive) |
+| after `(?` | `(?)` | `REJECTED` | planned | `modifiers` | dfa|vm | empty option setting |
+| after `(?` | `(?-i)` | `REJECTED` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
+| after `(?` | `(?^)` | `REJECTED` | planned | `modifiers` | dfa|vm | reset all options to their default |
 | after `(?` | `(?J)` | `REJECTED` | planned | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
-| after `(?` | `(?U)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
+| after `(?` | `(?U)` | `REJECTED` | planned | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
 | after `(?` | `(?a)` | `REJECTED` | planned | `modifiers` | dfa|vm | ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*) |
 | after `(?` | `(?i)` | `REJECTED` | planned | `modifiers` | dfa|vm | caseless |
 | after `(?` | `(?m)` | `REJECTED` | planned | `modifiers` | dfa|vm | multiline: ^ and $ match at internal newlines |
