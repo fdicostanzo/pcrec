@@ -85,6 +85,27 @@ Part of `make test` since M2.
   the phase-2 commit messages rather than as mech rows — a mech `cli` suite
   arm is a MOD-0.8 candidate (the code is trivial; the runtime budget is
   unmeasured, and this project does not assert a cost).
+- **case 12 (R20/MOD07-1)** — A PRODUCING PORT THAT FAILS, on both query
+  surfaces. The tier-1 the R20 panel found: `--explain` and `--probe-ask`
+  each hand a doorway a `Ctx` they `memset` and never `setjmp`, which was
+  safe only while no port could `ctx_fail`. The first result-producing port
+  ended that at MOD-0.3c/0.5c, two milestones before MOD-0.7 extracted
+  `doorway_call` and carried its own "the first producing port must revisit
+  here" comment along unexamined — so `--features modifiers --explain
+  '(?i:['` SIGSEGVed (139), as did `--features all --probe-ask result --
+  '(?i:['`. **What is pinned is the SHAPE, not the wording** (D26 tier 3):
+  nonzero AND below 128, because bash reports 128+N for a signal and that
+  bound is the whole difference between diagnosed and died — plus a
+  non-empty stderr naming the port's own error rather than `--probe-ask`'s
+  usage sentence (a NEGATIVE pin: reusing the misuse text would tell an
+  operator to fix a command line that is fine). **Both gate states are in
+  the case because the gate is the axis**: closed, the same text stays an
+  ordinary exit-0 refusal; open, a WELL-FORMED body must still PRODUCE —
+  that last one is the positive control, since a guard that swallowed every
+  open-gate answer would satisfy the two crash pins on its own. Written
+  first and watched crashing; the verbatim FAIL block is in the slice's
+  commit message, and the sweep behind it (10 query templates × ASCII bytes
+  × both gate states × both surfaces = 5,080 probes) went 18 crashes → 0.
 
 ## Conventions
 

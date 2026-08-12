@@ -1054,6 +1054,107 @@ case11() {
         "@header" "dissents" "0"
 }
 
+# ---------------------------------------------------------------------------
+# 12. A PRODUCING PORT THAT FAILS, ON THE QUERY SURFACES (R20/MOD07-1, tier 1).
+#
+#     Both query surfaces hand a doorway a Ctx they `memset` and never
+#     `setjmp`. That was safe exactly while every doorway RETURNED its answer
+#     — and the extracted `doorway_call` still CARRIES the comment saying so,
+#     naming "the first enabled, result-producing module port" as the event
+#     that must revisit it. That port landed at MOD-0.3c/0.5c, two milestones
+#     before `--explain` was rewritten around the same Ctx, and nothing
+#     revisited: `--features modifiers --explain '(?i:['` SIGSEGVed (139),
+#     because mod_modifiers' port recurses into `pcrec_parse_body`, the
+#     unterminated class raises `ctx_fail`, and the longjmp lands in an
+#     uninitialized `jmp_buf`.
+#
+#     WHAT IS PINNED IS THE SHAPE, NOT THE WORDING (D26 tier 3): a status
+#     that is nonzero (the surface could not answer) and BELOW 128 (bash
+#     reports 128+N for a signal, so this is what separates "diagnosed" from
+#     "died"), plus a non-empty diagnostic on the stream that surface already
+#     uses for errors. Both surfaces, because both had the defect.
+#
+#     THE GATE IS THE AXIS, so both of its states are here: closed, the same
+#     text is an ordinary refusal at exit 0 and must stay one; open, a
+#     WELL-FORMED body must still produce. A guard that turned every open-gate
+#     query into an error would satisfy the two crash pins alone.
+# ---------------------------------------------------------------------------
+
+# assert_clean_failure <case-name> <rc> <stderr-file>
+# Nonzero (it failed) and < 128 (it was not killed by a signal) and it said
+# something. 139 = 128 + SIGSEGV is exactly what this rejects.
+assert_clean_failure() {
+    local name="$1" rc="$2" ef="$3"
+    if [ "$rc" -ne 0 ] && [ "$rc" -lt 128 ] && [ -s "$ef" ]; then
+        pass "$name (exit $rc, diagnosed)"
+    else
+        fail "$name" "exit: $rc (want nonzero and < 128)" \
+             "stderr: $(cat "$ef")"
+    fi
+}
+
+case12() {
+    local d="$WORKDIR/case12"
+    mkdir -p "$d"
+    local rc out
+
+    # --- the two crashing cells (139 before the fix) ---------------------
+    "$PCREC" --features modifiers --explain '(?i:[)' \
+        >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+    assert_clean_failure \
+        "case12: --explain survives a port that ctx_fails" "$rc" "$d/e1.txt"
+    "$PCREC" --features all --probe-ask result -- '(?i:[)' \
+        >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
+    assert_clean_failure \
+        "case12: --probe-ask survives a port that ctx_fails" "$rc" "$d/e2.txt"
+
+    # ...and the port's own diagnostic is what the operator is told, rather
+    # than a generic "could not answer". The TEXT is tier 3 and free; that it
+    # is the CLASS ERROR and not the misuse sentence is not.
+    assert_contains "case12: ...naming the error the port actually raised" \
+        "$(cat "$d/e1.txt")" "character class"
+    assert_contains "case12: ...on --probe-ask too" \
+        "$(cat "$d/e2.txt")" "character class"
+    # the misuse sentence must NOT be what a failing port prints: before this
+    # fix the only nonzero --probe-ask path was "WANT must be claim, verdict
+    # or result", and reusing it here would tell the operator to fix their
+    # command line for a defect in the pattern.
+    if grep -q "WANT must be" "$d/e2.txt"; then
+        fail "case12: a failing port must not print the misuse sentence" \
+             "stderr: $(cat "$d/e2.txt")"
+    else
+        pass "case12: a failing port does not print --probe-ask's misuse sentence"
+    fi
+
+    # --- the CLOSED gate: the same text, an ordinary answer ---------------
+    out="$("$PCREC" --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
+    assert_eq "case12: closed-gate --explain of the same text exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e3.txt")"
+    assert_field "case12: ...and answers with the module refusal" "$out" \
+        "@header" "live" "(?i...) requires module 'modifiers'"
+    out="$("$PCREC" --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
+    assert_eq "case12: closed-gate --probe-ask of the same text exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e4.txt")"
+    assert_eq "case12: ...reporting a refusal, not an error" "refusal" \
+        "$(cut -f6 <<<"$out")"
+
+    # --- the OPEN gate, WELL-FORMED body: production is untouched ---------
+    # The positive control for the guard itself: a setjmp that swallowed
+    # every open-gate answer would pass both crash pins above.
+    out="$("$PCREC" --features modifiers --explain '(?i:a)' 2>"$d/e5.txt")"; rc=$?
+    assert_eq "case12: an open gate still answers a well-formed body" "0" "$rc" \
+        "stderr: $(cat "$d/e5.txt")"
+    assert_field "case12: ...by PRODUCING" "$out" "@header" "live" \
+        "produces an AST node"
+    assert_field "case12: ...answered at result" "$out" "@header" \
+        "live answered" "result"
+    out="$("$PCREC" --features all --probe-ask result -- '(?i:a)' 2>"$d/e6.txt")"; rc=$?
+    assert_eq "case12: --probe-ask likewise" "0" "$rc" \
+        "stderr: $(cat "$d/e6.txt")"
+    assert_eq "case12: ...reporting the produced node" "node" \
+        "$(cut -f6 <<<"$out")"
+}
+
 case1
 case2
 case3
@@ -1065,6 +1166,7 @@ case8
 case9
 case10
 case11
+case12
 
 echo
 echo "== Summary =="

@@ -355,13 +355,33 @@ static bool doorway_route(const char *text, size_t n, Doorway *d)
     return false;
 }
 
-/* Place the cursor and make the ONE call. The Ctx handed in is ZEROED by both
- * callers: no jmp target, no arena blocks. That is safe while every doorway
- * RETURNS its answer (none may ctx_fail or allocate — the D33 §5 contract),
- * and it is one of the things the first enabled, result-producing module port
- * must revisit here, with a probe that is false the day before (D33 §9.3): a
- * port that allocates needs this Ctx given a real arena before `result` asks
- * can be driven through it. */
+/* Place the cursor and make the ONE call.
+ *
+ * THE OBLIGATION THIS COMMENT USED TO DEFER IS DISCHARGED (R20/MOD07-1,
+ * 2026-08-12). It said the zeroed Ctx was safe "while every doorway RETURNS
+ * its answer (none may ctx_fail or allocate)" and named "the first enabled,
+ * result-producing module port" as the event that must revisit it. That port
+ * landed at MOD-0.3c/0.5c — two milestones before MOD-0.7 extracted this
+ * function and carried the comment along unexamined — and the precondition
+ * had been false ever since: a module port recurses into `pcrec_parse_body`,
+ * whose `ctx_fail` longjmps, and both callers were handing over a `jmp_buf`
+ * that had never been `setjmp`'d. `--features modifiers --explain '(?i:['`
+ * SIGSEGVed (139), as did `--features all --probe-ask result -- '(?i:['`.
+ *
+ * SO BOTH CALLERS NOW GUARD THEIR OWN Ctx, and each renders a raise as its
+ * surface's ordinary error (stderr + a nonzero exit, cli case12). This
+ * function itself is unchanged and stays free of the guard on purpose: the
+ * jmp target must be the frame that owns the buffers being abandoned, and
+ * that frame is the caller's, not this one.
+ *
+ * BOTH CALLERS ALSO ARENA_FREE. A port that produces allocates from
+ * `cx->arena`, and a port that raises allocates and then abandons — so the
+ * arena is no longer the "no arena blocks" the old comment assumed either.
+ *
+ * The general lesson, recorded because R20 filed it as one of two: a
+ * carried-forward comment is a carried-forward OBLIGATION. Moving code whose
+ * comment names a future revisit is the moment to check whether the future
+ * already happened. */
 static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
 {
     cx->pos = d->cursor;
@@ -414,20 +434,44 @@ static const char *doorway_word(RegKind k)
  *   ep_set_certain  end  msg
  * `answered_at` is the post-gate level — `result` asks print `verdict`
  * until the first module is enabled, which makes the §5.4 demotion a
- * measured fact rather than a comment. */
-char *pcrec_probe_ask(const char *want_name, const char *construct)
+ * measured fact rather than a comment.
+ *
+ * TWO WAYS TO RETURN NULL, and `err` is what separates them (R20/MOD07-1):
+ * `err->msg` empty means the CALLER asked a bad question (an unknown want
+ * level, or text that reaches no doorway) — the misuse the CLI has always
+ * answered with a usage sentence. `err->msg` non-empty means the doorway
+ * RAISED: the construct reached an enabled port, the port ran a real parse,
+ * and that parse failed. Telling an operator to fix their command line for
+ * the second would be a lie, so the two exits print different things. */
+char *pcrec_probe_ask(const char *want_name, const char *construct,
+                      pcrec_error *err)
 {
     static const char *const want_names[] = { "claim", "verdict", "result" };
+    if (err) { err->msg[0] = '\0'; err->pos = 0; }
+
+    /* THE GUARD (R20/MOD07-1), placed FIRST so that no automatic object in
+     * this function is live across it. That is not style: `-Wclobbered`
+     * flagged `w`, `doorway` and `before` when the guard sat lower, and each
+     * warning was a real (if benign here) statement that a longjmp may
+     * restore a stale register copy. The only object read after the branch is
+     * `cx`, whose address escapes — the arrangement `src/core/compile.c` (the
+     * tree's only other `setjmp`) uses for the same reason. Nothing between
+     * here and `doorway_call` can raise, so guarding early costs nothing. */
+    Ctx cx;
+    memset(&cx, 0, sizeof cx);
+    cx.err = err;
+    cx.pat = construct;
+    cx.patlen = strlen(construct);
+    if (setjmp(cx.jb)) {
+        arena_free(&cx.arena);      /* a raising port allocated, then left */
+        return NULL;
+    }
+
     int w = -1;
     for (int i = 0; i < 3; i++)
         if (!strcmp(want_name, want_names[i])) w = i;
     if (w < 0) return NULL;
     ExtWant want = (ExtWant)w;
-
-    Ctx cx;
-    memset(&cx, 0, sizeof cx);
-    cx.pat = construct;
-    cx.patlen = strlen(construct);
 
     Doorway d;
     if (!doorway_route(construct, cx.patlen, &d))
@@ -455,6 +499,13 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
               r.at, r.ep_set_certain ? 1 : 0, r.end);
     if (r.what == EXT_REFUSAL) sb_puts(&sb, r.msg);
     sb_putc(&sb, '\n');
+    /* A PRODUCING port allocates its node from this arena and nothing below
+     * reads it (`sb` holds only the rendered TSV, and `r.msg` is an inline
+     * array). `--explain` has freed its arena since MOD-0.7; this call site
+     * was the one that did not, which R20's critic noted while reading the
+     * crash — the guard above makes the omission a leak on two paths instead
+     * of one, so both are closed here. */
+    arena_free(&cx.arena);
     return sb_take(&sb);
 }
 
@@ -715,17 +766,44 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
                                                              : "not-askable");
 }
 
-char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
+                           pcrec_error *err)
 {
-    StrBuf body = {0};
+    StrBuf body = {0}, sb = {0};
     size_t qlen = strlen(query);
     int rows_shown = 0, dissents = 0;
 
-    /* ONE Ctx for the whole invocation: zeroed (no jmp target — every doorway
-     * RETURNS its answer, the D33 §5 contract), reused across every call, and
-     * its arena freed at the end. */
+    /* ONE Ctx for the whole invocation, reused across every call, its arena
+     * freed at the end — and GUARDED since R20/MOD07-1. The old comment here
+     * asserted "no jmp target — every doorway RETURNS its answer, the D33 §5
+     * contract"; §5's contract is about the doorway's own terminal answer and
+     * says nothing about a PORT, which recurses into `pcrec_parse_body` and
+     * can `ctx_fail` from arbitrarily deep. See `doorway_call`'s header for
+     * the full history. */
     Ctx cx;
     memset(&cx, 0, sizeof cx);
+    cx.err = err;
+    if (err) { err->msg[0] = '\0'; err->pos = 0; }
+
+    /* ABANDON THE WHOLE ANSWER, rather than render the raise per line and
+     * carry on. The reason is not tidiness: after a longjmp out of a
+     * half-finished parse this Ctx's own state (`depth`, `ncap`, `mods`, and
+     * whatever the arena holds) is arbitrary, and every remaining row block
+     * would be a further call THROUGH that Ctx. Continuing would be a fresh
+     * instance of exactly the reasoning that produced this defect — safe
+     * today, unmeasured, and load-bearing for whoever adds the next port. One
+     * raise, one honest error, no partial table.
+     *
+     * `body`, `sb` and `cx` are declared above the `setjmp` and mutated only
+     * through their escaped addresses; `rows_shown`/`dissents` are mutated
+     * after it and are deliberately not read here. */
+    if (setjmp(cx.jb)) {
+        sb_free(&body);
+        sb_free(&sb);
+        arena_free(&cx.arena);
+        if (ndissent) *ndissent = 0;
+        return NULL;
+    }
 
     /* WANT_RESULT is what parse.c asks — the real ask — so `--explain` shows
      * what pcrec would actually DO with the text. With the default empty
@@ -854,7 +932,6 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
         return NULL;      /* not doorway territory and no row looks like it */
     }
 
-    StrBuf sb = {0};
     sb_printf(&sb, "query          %s\n", query);
     if (q.routed) {
         sb_printf(&sb, "route          %s", doorway_name(q.d.kind));

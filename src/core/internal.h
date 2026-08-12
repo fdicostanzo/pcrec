@@ -1141,16 +1141,29 @@ char *pcrec_syntax_verbs(void);
  * many displayed rows FAILED the election/promise/attribution clauses: a
  * defect surfaced, which the CLI reports as exit 3, distinct from exit 1's
  * "your query could not be answered". See syntax_dump.c's own header for the
- * format and for what these clauses can and cannot dissent on. */
-char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent);
+ * format and for what these clauses can and cannot dissent on.
+ *
+ * `err` (may be NULL, zeroed on entry) is the R20/MOD07-1 channel and it
+ * DISAMBIGUATES THE NULL: empty `err->msg` is "no construct matches" as
+ * before; a filled one is a doorway that RAISED — an enabled module port ran
+ * a real parse of the query text and that parse failed. Both are exit 1 at
+ * the CLI, with different sentences, because "your query could not be
+ * answered" is not what happened in the second. */
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
+                           pcrec_error *err);
 unsigned pcrec_flavour_by_name(const char *name);
 /* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
  * doorway call for `construct` at ask level `want_name` ("claim" /
  * "verdict" / "result"), placed exactly as parse.c would place it, reporting
  * the REAL Ctx cursor before and after. Returns a malloc'd TSV line the
  * caller frees, or NULL when the want name is unknown or the text reaches no
- * doorway. check06 (the cursor rule) compares over this surface. */
-char *pcrec_probe_ask(const char *want_name, const char *construct);
+ * doorway. check06 (the cursor rule) compares over this surface.
+ *
+ * `err` as for `pcrec_syntax_explain` above: zeroed on entry, and a filled
+ * `err->msg` on a NULL return is the R20/MOD07-1 case — an enabled port
+ * raised rather than the caller asking a bad question. */
+char *pcrec_probe_ask(const char *want_name, const char *construct,
+                      pcrec_error *err);
 
 /* ---- stage entry points ---- */
 
