@@ -134,6 +134,36 @@ with.
 - [V-B] STATE:not-started — usage libraries for other languages: bindings over the generated C. Note the generated code already has no runtime dependency on pcrec, which is what makes this cheap; keep it that way
 - [V-C] STATE:not-started — a grep CLI built on pcrec, the natural end-user demonstration that the speed mandate (D18) actually shows up in a real tool
 - [V-D] STATE:not-started — translators from other regex syntaxes into the base tier: grep/egrep (BRE/ERE), python `re`, and PCRE2-flavour differences. Pairs with V-C (a grep CLI needs BRE/ERE) and with V-A. Design note: these are FRONT-END modules that lower into the existing AST, exactly the shape APPROACH §3's parser extension points already anticipate — no engine work, which is what makes the direction affordable
+- [V-E] STATE:not-started — MULTI-PATTERN COMPILATION UNITS and the
+  CROSS-PATTERN FINDER (Frank, 2026-08-12; boonies tier by his word —
+  recorded now, built with a customer). N named regexes into ONE emitted
+  file: per-pattern named entry points exactly as today (a statically-known
+  caller pays no dispatch — D20's rule holds), SHARED DATA deduplicated by
+  CONTENT (the driver is M5: a dozen patterns each carrying a private copy
+  of the unicode tables adds up; share by content hash, so sharing is only
+  ever dedup of identical bytes and never forces a pattern's specialized
+  table into a common shape), and OS-0's finder generalized by ONE AXIS:
+  D20's selector already dispatches over option-combinations of one
+  pattern; the same interface selects the PATTERN too. **This is OS-0's
+  candidate FIRST CUSTOMER** — the finder was deferred for lack of one.
+  D20's two structural properties still bind: dispatch resolves once per
+  call and never reaches the hot loop; a single-pattern single-option
+  request emits byte-for-byte today's output. Usage modes to design BEFORE
+  building (Frank: "we should think about how it's used"): CLI
+  multi-pattern args with per-pattern names, and a manifest file for build
+  integration ([V-F] is the third consumer)
+- [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
+  same discussion, same tier): scan a C program's sources for regex
+  markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
+  references into a pcrec-compiled companion unit ([V-E]'s output format is
+  the natural target). re2c/lex-shaped build tool. The dogfooding
+  constraint IS the design constraint (Frank: the scanner uses a regex we
+  compiled): the marker grammar must be REGULAR and unambiguous amid C
+  strings/comments — chosen to be findable by the tool being sold, which
+  makes the scanner both the demo and the spec. Do not start without a
+  marker-grammar design note answering: escaping inside `rx/.../`, flags
+  syntax, occurrences inside string literals and comments (skip or honor,
+  and how a regular scanner distinguishes them)
 
 ## Checkpoint review gates (D6)
 
