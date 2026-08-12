@@ -6,7 +6,7 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 303 rows asserted by hand (moved 268→275 at
+- **run_reject_tests.sh** — 306 rows asserted by hand (moved 268→275 at
   MOD-0.6's K10 slice: the seven `[\N{U+41}]`-shaped in-class cells,
   offset-pinned, the first hand-written coverage that row ever had;
   275→296 at MOD-0.6's mod_uprops.c slice: the full malformed-vs-
@@ -15,7 +15,14 @@ nothing checked that, and the gap was not hypothetical — see below.
   296→299 at the S33/S34 mech-finding closure — caret-boundary pair +
   the fold-guard `\p{c}`; 299→303 at R19 close — offsets added to the two
   last message-only `\p`/`\P` pins, plus the has_eq/digit/K16-hostile-byte
-  cells the differential's letters-only generator cannot produce)
+  cells the differential's letters-only generator cannot produce;
+  303→304 at R20/OPTRUN-1 — truncated `(?P`, the cell PC-3's tail-sweep
+  template structurally cannot generate; 304→306 at R20/SPEC-1 — the two
+  QUANTIFIED lexical rows `a\Q\E*` and `a(?#c)*`, which are CONTROLS rather
+  than findings: libpcre2 COMPILES both, because a quote span and a comment
+  are TRANSPARENT and let the quantifier reach back to the preceding atom,
+  and these two say pcrec's leftmost-construct answer for them must not move
+  when the bare-option-run fix lands beside it)
   (naming a module, or the
   base-grammar brace errors K5/K6/K8 and FIX-3's in-class octal ceiling, or
   since Q1 the verb doorway's four
@@ -24,12 +31,21 @@ nothing checked that, and the gap was not hypothetical — see below.
   spellings — the rowless surface the extension design §7.1 plans to change),
   99 more reached by iterating `pcrec --list-syntax`, 65
   accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
-  into the normal tables. Since MOD-0.5c there is a FOURTH class: 4 GATED
+  into the normal tables. Since MOD-0.5c there is a FOURTH class: 15 GATED
   pins (`reject_gated`, its own counter in the ratchet), run with
   `--features modifiers` — the per-letter attribution diagnostics for `m`
   (-> 'assertions') and `J` (-> 'named-groups') and the module's own
   malformed/truncated-run wording, none of which exist in the default
-  config and none of which a `perr` block can assert. Ends with a MANIFEST
+  config and none of which a `perr` block can assert. **R20/SPEC-1 took this
+  class from 4 to 15**: a bare option run is NOT a repeatable item, and
+  `--features modifiers --emit-main 'a(?i)*'` was exiting 0 with a matcher
+  that matched a/aa/aaa where libpcre2 gives err 109 — a tier-1 MISCOMPILE,
+  found by the D27 blinded writer's generated sweep, reachable only through
+  this gated class because the construct does not exist in the default
+  config. Eleven rows, OFFSETS INCLUDED (this refusal shares one wording
+  with three other sites in `p_rep`, so a message-only pin cannot tell them
+  apart — the S27 lesson), spanning every quantifier form, both pattern
+  positions and five accepted bare spellings. Ends with a MANIFEST
   naming the handful of rows whose deletion an exact count would not catch,
   plus the exact counts themselves. Part of `make test`; env: PCREC, KEEP=1.
 

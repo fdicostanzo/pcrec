@@ -855,7 +855,15 @@ static Ast *p_rep(Ctx *cx)
 have:
         if (quantified)
             ctx_fail(cx, cx->pos - 1, "multiple quantifiers on the same item");
-        if (a->k == A_BOL || a->k == A_EOL) /* PCRE2 error 109 (S-M1) */
+        /* PCRE2 error 109 (S-M1 for the anchors; R20/SPEC-1 for
+         * `not_repeatable`, which a bare option run sets — see the flag's
+         * definition in internal.h for why the node KIND cannot carry it).
+         * `cx->pos - 1` is the blame position and it is pcrec's own
+         * convention agreeing with PCRE2's, measured cell for cell: the
+         * quantifier byte for `*`/`+`/`?` (the `cx->pos++` above ran), the
+         * closing `}` for a brace form (the `goto have` skipped it and
+         * try_quant left the cursor past the brace). */
+        if (a->k == A_BOL || a->k == A_EOL || a->not_repeatable)
             ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
         quantified = true;
 

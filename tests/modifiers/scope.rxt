@@ -80,3 +80,24 @@ pattern (a(?i)b|c)d
 features modifiers
 m "Cd" 0 2
 m "cd" 0 2
+
+# ---- QUANTIFYING the scoping form is legal; the bare run is NOT ----------
+# R20/SPEC-1's accept-controls. A tier-1 miscompile (found by the D27
+# blinded writer) had `a(?i)*` compiling and matching a/aa/aaa, because the
+# bare run's A_EMPTY node accepted the quantifier. The fix marks that node
+# not-repeatable — and these two blocks are what stop the fix over-reaching
+# into the SCOPING form, which libpcre2 and python both accept and which
+# must keep binding its quantifier normally. The refusal half is pinned in
+# tests/reject/ (11 gated rows, offsets included), because a `perr` block
+# cannot assert WHICH diagnostic came back.
+
+pattern a(?i:b)*
+features modifiers
+m "a" 0 1
+m "abB" 0 3
+m "abbB" 0 4
+n "c"
+
+pattern (?i)a*
+features modifiers
+m "AAA" 0 3

@@ -132,8 +132,23 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
   or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals
   `m` -> 'assertions', `J` -> 'named-groups' (gated reject pins);
-  recognised-malformed runs diagnosed here (the err-194/114 shapes). The
-  x/xx LEVEL is adjacency-sensitive and a later bare `x` downgrades — every
+  recognised-malformed runs diagnosed here (the err-194/114 shapes).
+  **A BARE RUN'S NODE IS MARKED `not_repeatable` since R20/SPEC-1**, a tier-1
+  MISCOMPILE the D27 blinded writer found: the bare run produces `A_EMPTY`,
+  `A_EMPTY` is ORDINARILY quantifiable (`()*` and `(a|)*` both compile in
+  libpcre2), so `a(?i)*` compiled and its matcher matched a/aa/aaa where
+  libpcre2 gives err 109. pcrec's own registry had been right all along —
+  these rows' `quantifiable` column reads `form` — so nothing was missing:
+  the PRODUCER contradicted the table. The flag lives on `Ast` (internal.h,
+  read by `p_rep`) because the node KIND cannot carry the fact, and the
+  boundary is BARE-vs-SCOPING rather than "produces no atom": the genuinely
+  lexical constructs produce no atom either and are TRANSPARENT — libpcre2
+  compiles `a\Q\E*` and `a(?#c)*`, letting the quantifier reach back to the
+  preceding atom. 560-cell differential (5 positions × 16 runs × 7
+  quantifier forms): 455 cells where the oracle rejects and pcrec ACCEPTED,
+  now 0, with the blame OFFSET byte-identical to libpcre2's on all 455; the
+  105 cells the oracle accepts are unmoved, so there is no over-rejection.
+  The x/xx LEVEL is adjacency-sensitive and a later bare `x` downgrades — every
   clause probe-cited in the port's comment. The x/xx CONSUMER (skip set,
   comments, class-interior deletion) lives in parse.c's lexer helpers
   (MOD-0.5d): `xskip`, `cls_skip`, `cls_peek_past_dash`

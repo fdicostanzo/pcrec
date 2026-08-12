@@ -55,6 +55,21 @@ struct Ast {
     Ast     *l, *r;
     int      rmin, rmax;
     bool     greedy;
+    /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
+     * quantifier after this node is an error rather than a repetition of it.
+     * It cannot be derived from `k`, which is the whole reason it is a field
+     * — a bare option run produces A_EMPTY, and A_EMPTY is ORDINARILY
+     * quantifiable (`()*` and `(a|)*` both compile in libpcre2, measured).
+     * The arena zeroes, so every node that does not say otherwise is
+     * repeatable, which is the safe default.
+     *
+     * WHY IT IS NOT "produces no atom": the genuinely-lexical constructs
+     * produce no atom either and are TRANSPARENT — libpcre2 compiles
+     * `a\Q\E*` and `a(?#c)*`, letting the quantifier reach back to the `a`.
+     * A bare option run does not: `a(?i)*` is err 109 at the quantifier.
+     * That measured boundary is what this flag marks, and both sides of it
+     * are pinned in tests/reject/. */
+    bool     not_repeatable;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }

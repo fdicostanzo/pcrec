@@ -9,6 +9,17 @@ letters, and per-letter refusals (`m` -> module 'assertions', `J` -> module
 'named-groups'), written from the [MOD-0.5a] design gate
 (`grep -n "MOD-0.5" docs/plan.md`; docs/plan.md's rulings 1-6).
 
+## R20/SPEC-1 — the quantifier controls in scope.rxt
+
+`scope.rxt` gained two blocks at R20: `a(?i:b)*` and `(?i)a*` must keep
+compiling and matching. They are ACCEPT-CONTROLS for a tier-1 miscompile fixed
+the same session — a bare option run is not a repeatable item, so `a(?i)*` now
+refuses (err 109's wording, pinned with its offset in tests/reject/), and these
+two are what stop that fix reaching into the SCOPING form, which libpcre2 and
+python both accept. The refusal half cannot live here: a `perr` block asserts
+only THAT a pattern rejects, never WHICH diagnostic came back, and the whole
+point is which one.
+
 ## Files
 
 Every block carries the `features modifiers` directive except the

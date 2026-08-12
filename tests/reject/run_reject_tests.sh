@@ -676,6 +676,35 @@ reject_gated modifiers '(?J)a'     "requires module 'named-groups'"
 # truncated run (error 114's): the module diagnoses its own body.
 reject_gated modifiers '(?i-m-s)a' "invalid hyphen in option setting"
 reject_gated modifiers '(?i'       "missing closing ) for inline option setting"
+# R20/SPEC-1, a TIER-1 MISCOMPILE found by the D27 blinded writer: A BARE
+# OPTION RUN IS NOT A REPEATABLE ITEM. `--features modifiers --emit-main
+# 'a(?i)*'` exited 0 and the emitted matcher matched a/aa/aaa; libpcre2 gives
+# err 109 at offset 5. The producing port modelled a bare run as a lexical
+# no-atom construct (A_EMPTY), so the quantifier bound to it and matched
+# empty — and pcrec's OWN registry disagreed with the producer all along, the
+# GROUP_OPT rows' `quantifiable` column reading `form`.
+#
+# THE OFFSETS ARE PINNED, not just the sentence: this refusal shares one
+# wording with three other sites in p_rep, so a message-only pin cannot tell
+# them apart (the S27 lesson). They are also pcrec's OWN convention agreeing
+# with PCRE2's, cell for cell, measured — the quantifier byte for `*`/`+`,
+# the closing `}` for a brace form.
+reject_gated modifiers 'a(?i)*'     "quantifier does not follow a repeatable item (pattern offset 5)"
+reject_gated modifiers 'a(?i)+'     "quantifier does not follow a repeatable item (pattern offset 5)"
+reject_gated modifiers 'a(?i)?'     "quantifier does not follow a repeatable item (pattern offset 5)"
+reject_gated modifiers 'a(?i){2}'   "quantifier does not follow a repeatable item (pattern offset 7)"
+reject_gated modifiers 'a(?i){2,3}' "quantifier does not follow a repeatable item (pattern offset 9)"
+# at the START of the pattern, and after a group: the quantifier has an atom
+# to its left in the second, and it still must not reach past the run
+reject_gated modifiers '(?i)*'      "quantifier does not follow a repeatable item (pattern offset 4)"
+reject_gated modifiers '(a)(?i)*'   "quantifier does not follow a repeatable item (pattern offset 7)"
+# other accepted bare spellings — the boundary is bare-vs-scoping, not the
+# letter: an unsetting run, a caret run, a two-letter x level, and a run
+# following another run
+reject_gated modifiers 'a(?i-m)*'   "quantifier does not follow a repeatable item (pattern offset 7)"
+reject_gated modifiers 'a(?^)*'     "quantifier does not follow a repeatable item (pattern offset 5)"
+reject_gated modifiers 'a(?xx)*'    "quantifier does not follow a repeatable item (pattern offset 6)"
+reject_gated modifiers '(?i)(?i)*'  "quantifier does not follow a repeatable item (pattern offset 8)"
 # The extended character class, the third misattribution: a class with set
 # operations, not an option setting. MOD-0.3a split it out of 'classes' the
 # day classes gained producers — an enabled module must never refuse a
@@ -685,6 +714,16 @@ reject "(?'n'a)"  "requires module 'named-groups'"
 reject '(?P<n>a)' "requires module 'named-groups'"
 reject '(?>a)'    "requires module 'atomic-groups'"
 reject '(?#c)'    "requires module 'comments'"
+# THE GENUINELY-LEXICAL ROWS, quantified — R20/SPEC-1's other control, and
+# the reason that fix is keyed to the option-run node and not to "produces
+# no atom". libpcre2 COMPILES `a\Q\E*` and `a(?#c)*`: a quote span and a
+# comment are transparent, so the quantifier reaches back to the `a`. A bare
+# option run is NOT transparent — `a(?i)*` is err 109 — which is the whole
+# distinction. pcrec refuses all three today, but for the lexical two it
+# refuses at the MODULE (leftmost construct, offset 1), and these pins are
+# what say that answer must not move when the option-run fix lands.
+reject 'a\Q\E*'   "\\Q requires module 'quoting'"
+reject 'a(?#c)*'  "(?#...) requires module 'comments'"
 # K14's group-doorway instance: callouts are OUT-OF-SCOPE in the survey
 # ("revisit only with a concrete customer"), so the row is ROADMAP_NEVER and
 # the diagnostic must not promise module 'callouts'.
@@ -1394,8 +1433,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 304 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 304 / 65 / 0 / 4." >&2
+if [ "$nrej" -ne 306 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 15 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 306 / 65 / 0 / 15." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi
