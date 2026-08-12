@@ -91,8 +91,8 @@ modsyn.alphabet_forms               27
 modsyn.alphabet_complement          40
 modsyn.structural_grammar           42
 modsyn.doorway_disambiguation        4
-modsyn.pcrec_compared               52
-modsyn.pcrec_refused_unimpl         61
+modsyn.pcrec_compared              105
+modsyn.pcrec_refused_unimpl          8
 
 # --- modifiers module (D27, SR-mod05): check12 behavioural semantics ----
 modsem.letter_effect                11
@@ -102,5 +102,5 @@ modsem.scoping                      10
 modsem.reset                         4
 modsem.capture_n                     5
 modsem.oracle_only_unicode           6
-modsem.pcrec_compared                8
-modsem.pcrec_refused_unimpl         30
+modsem.pcrec_compared               35
+modsem.pcrec_refused_unimpl          3

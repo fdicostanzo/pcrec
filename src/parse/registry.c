@@ -219,7 +219,7 @@
  * check itself, and internal.h's retired-RF_OPTION_RUN comment says where
  * the real check moved to: ext.c, gated on this pointer instead of the bit). */
 #define GROUP_OPT(sel, syn, note, q) \
-    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, pcrec_registry_option_run_recognise, NO_PORT, NO_PORT}
+    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, pcrec_registry_option_run_recognise, {PORT_FN, false, 0, NULL, pcrec_modport_optrun}, NO_PORT}
 /* as GROUP, but the row applies only when `tl` FOLLOWS the selector byte (SR-9).
  * One byte, several constructs: `(?P<` `(?P=` `(?P>` are a named group, a
  * backreference and a subroutine call, and answering all three with one module

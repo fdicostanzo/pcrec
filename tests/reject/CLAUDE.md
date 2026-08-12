@@ -15,9 +15,14 @@ nothing checked that, and the gap was not hypothetical — see below.
   spellings — the rowless surface the extension design §7.1 plans to change),
   99 more reached by iterating `pcrec --list-syntax`, 65
   accept-controls, and **zero** known-wrong pins — FIX-2 graduated the last five
-  into the normal tables. Ends with a MANIFEST naming the handful of rows whose
-  deletion an exact count would not catch, plus the exact counts themselves.
-  Part of `make test`; env: PCREC, KEEP=1.
+  into the normal tables. Since MOD-0.5c there is a FOURTH class: 4 GATED
+  pins (`reject_gated`, its own counter in the ratchet), run with
+  `--features modifiers` — the per-letter attribution diagnostics for `m`
+  (-> 'assertions') and `J` (-> 'named-groups') and the module's own
+  malformed/truncated-run wording, none of which exist in the default
+  config and none of which a `perr` block can assert. Ends with a MANIFEST
+  naming the handful of rows whose deletion an exact count would not catch,
+  plus the exact counts themselves. Part of `make test`; env: PCREC, KEEP=1.
 
   **These four figures are hand-copied, and every attempt to maintain them by
   hand has failed — including twice in one review.** FIX-2 updated the first

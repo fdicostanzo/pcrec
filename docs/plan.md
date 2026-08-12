@@ -1188,7 +1188,29 @@ Then DOC-1, then PC-4 when module `classes` lands.
   (MOD-0.2 machinery; rows stay 12); ext.c's RF_OPTION_RUN branch reads the
   pointer instead of the flag. Landing bar: byte-identity differential over
   the corpus + reject surface, full battery.
-- [MOD-0.5c] STATE:not-started — slice 2, the SEMANTIC PRODUCERS, gated.
+- [MOD-0.5c] STATE:completed 2026-08-12 (eleventh session; landed in ONE
+  MERGE with .5d and the corpus — sequencing ruling: with the gate ON there
+  is no honest refusal wording for `(?x...)` before the lexer exists, so
+  the slices were authored separately and landed atomically). Execution
+  detail beyond the spec below: Ctx's `bool caseless` widened to the
+  ModState struct; THE SCOPE MECHANISM IS PLACEMENT — the group
+  save/restore moved from p_group to p_group_body's body-parsing tail, so
+  a bare `(?i)`'s doorway splice ESCAPES its own paren pair's restore by
+  construction (the measured leak-to-enclosing-`)` rule with no flag and
+  no module knowledge in the base grammar); one port function is the shared
+  handler for both spellings, diverging only at the terminator; THREE new
+  probe rounds (probe_mod05c cells, committed): unset-WINS regardless of
+  run order ((?i-i)/(?-ii) both case-sensitive), doubled-x is
+  ADJACENCY-sensitive ((?xsx) is level 1) and a later bare (?x) DOWNGRADES
+  an earlier xx — the (?xx)(?s) control keeps it; four reject_gated pins
+  (m->'assertions', J->'named-groups', err-194 and err-114 shapes) — a NEW
+  fourth pin class with its own ratchet counter, because .rxt perr cannot
+  assert WHY (corpus author's finding); floors moved with the surface
+  (modsyn 105/8, modsem 35/3; zero real disagreements at 140 compared
+  cells); corpus merged and green 59/59 after ONE landing correction (the
+  \t-escape block had transcribed the raw-tab measurement onto the escape
+  form — libpcre2 measured: the escape SURVIVES deletion; pcrec agreed
+  before the fix, both forms now pinned). Spec was:
   Ctx modifier state (seeded from opt, saved/restored where `caseless`
   already is); `(?...)`-terminated runs apply to the enclosing scope;
   `(?...:body)` = set state, pcrec_parse_body, restore (the callback PARSE-1
@@ -1196,8 +1218,21 @@ Then DOC-1, then PC-4 when module `classes` lands.
   malformed-run diagnostics; corpus tests/modifiers/ (features directive;
   python-re oracle where it agrees — mid-pattern `(?i)` is a py3.11+ error,
   those blocks go pcre2-only); reject pins move by measurement.
-- [MOD-0.5d] STATE:not-started — slice 3, THE LEXER: x/xx, and telling
-  `classes`. Skip set + comments outside classes; xx's {09,20} deletion in
+- [MOD-0.5d] STATE:completed 2026-08-12 (eleventh session; same landing as
+  .5c). Execution detail: probe_mod05d measured the boundary FIRST —
+  quantifiers and lazy markers bind across skips ((?x)a + and (?x)a + ?),
+  `#`-comments end at 0x0A ONLY (0x0D and even the skipped 0x85 do NOT —
+  the terminator is the NEWLINE convention, not the skip set: DD-11 made
+  load-bearing), the `(?` option run is lexically tight ((?x)( ?i) is the
+  109 shape), a NEWLINE inside a brace quantifier defeats quantifier-hood
+  even under x (the brace shape's space/tab rule is its own, raw scan),
+  xx deletion precedes the NEGATION check ([ ^a] negates) and RANGE
+  parsing ([a\t-\tz] is a-z) and the dash-vs-literal lookahead must see
+  THROUGH deletion ([a- ] is {a,-}) — implemented as three parse.c helpers
+  (xskip at p_cat entry + p_rep's quantifier and lazy peeks; cls_skip at
+  class open/member/range points; cls_peek_past_dash) with every rule
+  probe-cited. The D30 §7 hazard compiles correctly under the gate and is
+  corpus-pinned in both gate states. Spec was: Skip set + comments outside classes; xx's {09,20} deletion in
   class interiors ahead of the endpoint rule (the D30 §7 hazard cells
   `(?xx)[a- ]` / `(?xx)[a-\ ]` / `(?xx)[\ -a]` in the corpus, both gate
   states); interaction cells with quantifier braces and `\Q`/`\E`/escaped

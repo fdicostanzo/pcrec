@@ -12,7 +12,7 @@ SAB_BEFORE="static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
     cls_set(a->cls, c & 0xff);
-    if (cx->caseless) cls_casefold(a->cls);
+    if (cx->mods.caseless) cls_casefold(a->cls);
     return a;
 }"
 SAB_AFTER="static Ast *char_node(Ctx *cx, unsigned c)

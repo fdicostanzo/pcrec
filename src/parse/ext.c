@@ -300,6 +300,16 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
                 BAD_ROW(at, "the (? doorway's catch-all");
             REFUSE(at, "%s", any->msg);
         }
+        /* THE PRODUCER (MOD-0.5c). Post-gate WANT_RESULT means module
+         * `modifiers` is enabled; the run is recognised (which INCLUDES the
+         * recognised-malformed err-194 shapes — diagnosing them is the
+         * module's job, D28's SYN_MALFORMED half). The port parses the run
+         * from the SELECTOR byte (cx->pos + 1 — the same position the check
+         * above asked about), applies or refuses per letter, and returns the
+         * construct's node with `end` past its `)`; the cursor stays here
+         * (check06) and p_group_body advances. */
+        if (want == WANT_RESULT && r->aport.kind == PORT_FN)
+            return r->aport.fn(cx, r, want, at, cx->pos + 1);
     }
     /* K14 (design §17.2): a ROADMAP_NEVER row is real PCRE2 syntax pcrec
      * deliberately excludes, and promising its module is the defect D26's

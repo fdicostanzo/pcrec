@@ -646,7 +646,10 @@ case10() {
         "4	4" "$("$PCREC" --probe-ask verdict -- '(a)(?-1)' | cut -f4,5)"
     # THE CURSOR SWEEP: every registry row's syntax, claim and verdict, and
     # the cursor must not move (§18.2's hard rule; WANT_RESULT is the only
-    # level allowed to move it, and nothing produces a result yet). (?:...)
+    # level allowed to move it — and the producing ports that exist since
+    # MOD-0.3/MOD-0.5 (classes, modifiers) return it unmoved too, carrying
+    # `end` for the CALLER to advance, check06's rule — so this sweep's
+    # claim/verdict limit is caution, not a live dependency). (?:...)
     # is the one deliberate non-route: the base grammar answers it before
     # any doorway, so there is no call to probe.
     local swept=0 moved=0 noroute=0

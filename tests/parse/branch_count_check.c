@@ -115,7 +115,7 @@ static int pcrec_branch_count(const char *pat)
     cx.pat = pat;
     cx.patlen = strlen(pat);
     cx.opt = &defo;
-    cx.caseless = defo.caseless;
+    cx.mods = (ModState){ .caseless = defo.caseless != 0 };
     cx.job = calloc(1, sizeof(Job));
     if (!cx.job) return -1;
 

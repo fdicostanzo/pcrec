@@ -36,6 +36,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **classes/** — module `classes` corpus (MOD-0.3c): the first per-module
   test directory. Blocks carry the `features classes` directive; see its
   CLAUDE.md for the §9.3 watched-failing record and the oracle split
+- **modifiers/** — module `modifiers` corpus (MOD-0.5c/d): authored in
+  parallel by a worktree subagent from the MOD-0.5a rulings + oracles,
+  landed WITH the producers. Blocks carry `features modifiers`; python
+  oracle where it agrees, `# pcre2-only` elsewhere (xxmode entirely —
+  docs/upstream_issues.md U8 is the measured python divergence); see its
+  CLAUDE.md for the §9.3 record and the escape-vs-raw-tab landing correction
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 
 ## Conventions

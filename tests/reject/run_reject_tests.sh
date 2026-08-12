@@ -509,6 +509,51 @@ reject '(a)(?-1)' "requires module 'recursion'"
 # `-` is the one byte at this doorway carrying two modules, which is why it has
 # ten digit tails AND a bare row rather than a compound name.
 reject '(?-i)'    "requires module 'modifiers'"
+
+# ---- GATED pins (MOD-0.5c): diagnostics whose text only exists with the
+# gate OPEN. The corpus's perr blocks assert only THAT these fail; the
+# MODULE NAME in the answer is the tier-2 fact under D26, and these are its
+# only pins (the .rxt format cannot assert message content — found by the
+# corpus author at this landing). Counted separately (ngated) so the
+# default-config ratchet above stays exactly what it says it is.
+reject_gated() { # reject_gated <features> <pattern> <expected-substring>
+    local feats="$1" pat="$2" want="$3" out rc
+    case "$want" in
+        *[![:space:]]*) ;;
+        *) bad "reject_gated '$pat': blank expectation asserts nothing"; return ;;
+    esac
+    ngated=$((ngated + 1))
+    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
+    out="$(timeout 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    if [ "$rc" -eq 0 ]; then
+        bad "reject_gated '$pat' (features $feats): ACCEPTED — the gate-open refusal this pin exists for has vanished"
+        return
+    fi
+    if [ "$rc" -ne 1 ]; then
+        bad "reject_gated '$pat': exit $rc, not a clean exit-1 rejection"
+        return
+    fi
+    case "$out" in
+        *"$want"*) ;;
+        *) bad "reject_gated '$pat': wrong diagnostic. want substring: $want ; got: $out"
+           return ;;
+    esac
+    if [ -f "$WORKDIR/out.c" ]; then
+        bad "reject_gated '$pat': rejected but still wrote an output file"
+        return
+    fi
+    ok "reject_gated [$feats] '$pat' -> $want"
+}
+ngated=0
+# The two per-letter attributions (MOD-0.5a rulings, flagged to Frank):
+# multiline is assertion-engine work; J is observable only through named
+# groups. Reversible one-row edits in mod_modifiers.c if overruled.
+reject_gated modifiers '(?m)a'     "requires module 'assertions'"
+reject_gated modifiers '(?J)a'     "requires module 'named-groups'"
+# The recognised-malformed shape (PCRE2 error 194's analogue) and the
+# truncated run (error 114's): the module diagnoses its own body.
+reject_gated modifiers '(?i-m-s)a' "invalid hyphen in option setting"
+reject_gated modifiers '(?i'       "missing closing ) for inline option setting"
 # The extended character class, the third misattribution: a class with set
 # operations, not an option setting. MOD-0.3a split it out of 'classes' the
 # day classes gained producers — an enabled module must never refuse a
@@ -1197,8 +1242,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 268 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 268 / 65 / 0." >&2
+if [ "$nrej" -ne 268 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 268 / 65 / 0 / 4." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

@@ -1257,17 +1257,19 @@ static void check_class_ports(void)
         }
     }
 
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 11)
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 23)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (11: the char-types + \\N). A deliberate move edits this "
-            "check IN THE SAME CHANGE; a silent one is the defect",
+            "ports (23: the char-types + \\N, plus the twelve GROUP_OPT "
+            "rows' option-run producer since MOD-0.5c). A deliberate move "
+            "edits this check IN THE SAME CHANGE; a silent one is the defect",
             scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 11 atom "
-           "ports; scalar and SET values oracle-tied (class_expect column / "
-           "fallback law / census popcounts), as predicted for slice 3");
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 23 atom "
+           "ports (11 + the 12 option-run rows, MOD-0.5c); scalar and SET "
+           "values oracle-tied (class_expect column / fallback law / census "
+           "popcounts), as predicted for slice 3");
 }
 
 int main(void)

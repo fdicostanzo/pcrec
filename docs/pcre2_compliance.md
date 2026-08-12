@@ -134,7 +134,7 @@ survey earned its keep").
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `REJECTED` (module `modifiers`) |
+| `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `OK-GATED` (module `modifiers`, MOD-0.5c) |
 | `\d \D \s \S \w \W \h \H \V \N` | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement, matched end-to-end under `--features classes`; default still refuses with the module name. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`, and K10 records the live `[\N{U+41}]` class-position divergence), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
 | `\v` | `REJECTED` | `PLANNED` | **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as well as outside. Now `REJECTED` to module `classes` like its negation `\V`. It survived because python `re` also reads `\v` as `0x0B`, so the base-tier oracle agreed with the bug — see "How this survey earned its keep" |
 | `\C` | `REJECTED` | `PLANNED` | "one code unit". In the ASCII tier that is just "any byte", i.e. trivial. PCRE2 forbids it under its own DFA matcher in UTF modes for the reason that will apply to us in M5 |
@@ -185,7 +185,7 @@ commits to. The blocker is table generation and size, not matching.
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `^` | `OK` | — | start of subject, accepted and correct in every position (probed at class open, mid-pattern, and per alternation branch — DOC-1, 2026-08-11, which found the old `OK-LIMITED` stating no limit; the multiline gap it gestured at is `$`'s too and both rows now carry it the same way). Multiline `^` is `REJECTED` (module `modifiers`); the DFA-state-context design for it is DD-6. One SPEED caveat, not a correctness limit: unanchored patterns with `^` in some branches stay on the slower ENG_ATTEMPT engine until DD-7's unification (D8) |
+| `^` | `OK` | — | start of subject, accepted and correct in every position (probed at class open, mid-pattern, and per alternation branch — DOC-1, 2026-08-11, which found the old `OK-LIMITED` stating no limit; the multiline gap it gestured at is `$`'s too and both rows now carry it the same way). Multiline `^` is `REJECTED` — since MOD-0.5c the gate-open answer names module `assertions` per-letter (the MOD-0.5a ruling); the DFA-state-context design for it is DD-6. One SPEED caveat, not a correctness limit: unanchored patterns with `^` in some branches stay on the slower ENG_ATTEMPT engine until DD-7's unification (D8) |
 | `$` | `OK` | — | end of subject or before a final newline — PCRE2's default. Mid-pattern `$` is fully general via EOL-variant states |
 | `\A \Z \z \b \B \G` | `REJECTED` | — | module `assertions`. `\A`/`\z` are trivial. `\b`/`\B` need a one-byte lookbehind, which is a state-context change (same machinery as DD-6). `\G` additionally collides with `nfa_wrap_unanchored`'s baked-in start self-loop — that is DD-4 |
 
@@ -215,14 +215,15 @@ commits to. The blocker is table generation and size, not matching.
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `(?i)` `(?i:...)` `(?-i)` | `REJECTED` | `PLANNED` | module `modifiers`. The MECHANISM already exists and is measured: `options.caseless` / `pcrec -i` folds case into class construction with zero runtime cost (D23). Scoped spellings need only a parser state variable saved/restored at group boundaries, because the fold is applied per-class at construction time |
-| `(?s)` dotall | `REJECTED` | `PLANNED` | module `modifiers`. One bitmap change to `.` |
-| `(?m)` multiline | `REJECTED` | `PLANNED-HARD` | module `modifiers`. `^`/`$` at internal newlines is DFA state context; interacts with the state budget (DD-6) |
-| `(?x)` `(?xx)` extended | `REJECTED` | `PLANNED` | module `modifiers`. Pure lexing |
-| `(?U)` ungreedy | `REJECTED` | `PLANNED` | swaps default quantifier preference — a front-end flip of the split edge order |
-| `(?n)` no-auto-capture, `(?J)` dup names | `REJECTED` | — | gated behind captures/named groups (M4/M6) |
-| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `REJECTED` | — | UCP-restriction options; meaningless until M5 exists to restrict |
-| `(?^)` reset options | `REJECTED` | — | module `modifiers` |
+| `(?i)` `(?i:...)` `(?-i)` | `OK-GATED` | `OK` | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5c): the D23 fold driven by scoped parse state (`cx->mods`), the measured 17/17 group-scope rule (leaks across sibling branches, restored at the enclosing `)`), under `--features modifiers`; default refuses with the module name. Oracles: tests/modifiers/, spec_mod0 check12 |
+| `(?s)` dotall | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): `.` census 255 -> 256, measured against the oracle |
+| `(?m)` multiline | `REJECTED` | `PLANNED-HARD` | with the gate OPEN the letter refuses per-letter to module `assertions` (MOD-0.5a ruling: `^`/`$` at internal newlines is assertion-engine work — DFA state context, DD-6, DD-11's $-EOL sibling); `(?-m)` is an accepted no-op (true today). Gated pin: tests/reject/ reject_gated |
+| `(?x)` `(?xx)` extended | `OK-GATED` | `OK` | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5d): skip set {09,0A,0B,0C,0D,20,85} (NOT `\s`'s set — NEL is skipped), `#`-comments to 0x0A only (the NEWLINE_LF convention), xx's class-interior {09,20} deletion ahead of the endpoint rule (the D30 §7 `(?xx)[a- ]` hazard, now compiled correctly), doubled-x ADJACENCY rule incl. the later-bare-x downgrade — every clause probe-measured (probe_mod05*.c) |
+| `(?U)` ungreedy | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): default greed inverted at quantifier construction, `?` re-inverts; NOT reset by `(?^)` (measured) |
+| `(?n)` no-auto-capture | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting (`--count-groups` oracle-tied via check02's channel); does NOT imply J (measured) |
+| `(?J)` dup names | `REJECTED` | — | with the gate OPEN the letter refuses per-letter to module `named-groups` (MOD-0.5a ruling: J is observable only through named groups); `(?-J)` accepted no-op. Gated pin: tests/reject/ reject_gated |
+| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK-GATED` | `OK` | MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0 diff cells over 256x256; all four a-sub pairs census-identical) — accepted and applied as nothing, which is exactly PCRE2's observable behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own that day (DD-12) |
+| `(?^)` reset options | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): resets i,m,n,s,x,xx to the HARDWIRED defaults; U and J SURVIVE — "unset imnsx" is the measured rule, and the reset is to-constant, not to-compile-option (both from probe_mod05b.c) |
 | `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — | these bound a BACKTRACKING search. pcrec is O(n) by construction, so there is nothing to limit. D22 also removes the adversarial-input motivation. `LIMIT_RECURSION` is PCRE2's older synonym for `LIMIT_DEPTH` — it was in pcrec's verb tables but missing from this row until the K14 check compared them (2026-08-11) |
 | `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — | knobs for PCRE2 implementation internals that pcrec does not have |
 | `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` | match-time semantics, expressible; no owner yet |
@@ -525,11 +526,11 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
 | after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
 | after `(?` | `(?[[a]])` | `REJECTED` | planned | `extended-classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
-| after `(?` | `(?)` | `REJECTED` | planned | `modifiers` | dfa|vm | empty option setting |
-| after `(?` | `(?-i)` | `REJECTED` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
-| after `(?` | `(?^)` | `REJECTED` | planned | `modifiers` | dfa|vm | reset all options to their default |
+| after `(?` | `(?)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | empty option setting |
+| after `(?` | `(?-i)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
+| after `(?` | `(?^)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | reset all options to their default (measured: imnsx only — U/J survive) |
 | after `(?` | `(?J)` | `REJECTED` | planned | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
-| after `(?` | `(?U)` | `REJECTED` | planned | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
+| after `(?` | `(?U)` | `OK-GATED` | shipped | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
 | after `(?` | `(?a)` | `REJECTED` | planned | `modifiers` | dfa|vm | ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*) |
 | after `(?` | `(?i)` | `REJECTED` | planned | `modifiers` | dfa|vm | caseless |
 | after `(?` | `(?m)` | `REJECTED` | planned | `modifiers` | dfa|vm | multiline: ^ and $ match at internal newlines |

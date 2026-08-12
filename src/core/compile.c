@@ -72,11 +72,12 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
     cx.err = err;
     cx.opt = &defo;
     /* PARSE-1: the CLI option is the SEED for the parse state, not the state
-     * itself. `opt` stays const and caller-owned; `cx.caseless` is what the
-     * parser reads and what a scoped `(?i:...)` will later save/set/restore.
-     * Seeding here rather than at each read site is what stops there being two
-     * homes for the same fact. */
-    cx.caseless = defo.caseless;
+     * itself. `opt` stays const and caller-owned; `cx.mods` is what the
+     * parser reads and what a scoped `(?i:...)` saves/sets/restores
+     * (MOD-0.5c). Seeding here rather than at each read site is what stops
+     * there being two homes for the same fact. The other fields seed to the
+     * hardwired defaults — the same constants `(?^)` resets to. */
+    cx.mods = (ModState){ .caseless = defo.caseless != 0 };
     cx.job = calloc(1, sizeof(Job));
     if (!cx.job || !out || !pattern) {
         job_cleanup(&cx);
@@ -146,7 +147,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     cx.patlen = pattern ? strlen(pattern) : 0;
     cx.err = err;
     cx.opt = &defo;
-    cx.caseless = defo.caseless;
+    cx.mods = (ModState){ .caseless = defo.caseless != 0 };
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
         return -1;

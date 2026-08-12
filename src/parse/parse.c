@@ -39,6 +39,87 @@ static Ast *node(Ctx *cx, AKind k)
     return a;
 }
 
+/* The bare constructor, exposed for module TUs (MOD-0.5c: the option-run
+ * port builds A_EMPTY for a bare run and the S-M1 anchor wrap for a `:`
+ * body). Kind only — payload fields are the caller's. */
+Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
+
+/* ---- the x-mode lexer (MOD-0.5d) ----------------------------------------
+ *
+ * Under `(?x)`/`(?xx)` PCRE2 deletes pattern whitespace and `#`-comments
+ * OUTSIDE classes before they can be tokens. Every rule below is measured
+ * (probe_mod05b.c's controlled census, probe_mod05d.c's boundary cells):
+ *
+ *   - the skip set is {09,0A,0B,0C,0D,20,85} — 0x85 (NEL) is skipped, so
+ *     this is NOT \s's set (census 6), and the set is written out here
+ *     rather than derived from any class table;
+ *   - a `#` comment runs to the next 0x0A ONLY — 0x0D and even the skipped
+ *     0x85 do NOT terminate it (`(?x)a#c\rb` matches just "a"): the
+ *     terminator is the NEWLINE convention (NEWLINE_LF, DD-11), not the
+ *     skip set;
+ *   - skipping happens at TOKEN boundaries: between an atom and its
+ *     quantifier (`(?x)a +` quantifies), before a lazy marker
+ *     (`(?x)a + ?` is lazy), across `|`, inside groups — but NOT inside
+ *     the `(?` option run (`(?x)( ?i)` is the 109-shape error, the run is
+ *     lexically tight), NOT inside a brace quantifier's own interior (the
+ *     space/tab tolerance there is pcrec_brace_quant_shape's own measured
+ *     rule; a NEWLINE inside braces defeats quantifier-hood even under x),
+ *     and NOT inside classes (single x; xx's separate in-class deletion is
+ *     cls_skip below).
+ *
+ * xlevel == 0 makes every call a no-op, which is what keeps the base
+ * grammar byte-identical with the module disabled. */
+static bool xskip_byte(int c)
+{
+    return c == 0x09 || c == 0x0a || c == 0x0b || c == 0x0c ||
+           c == 0x0d || c == 0x20 || c == 0x85;
+}
+
+static void xskip(Ctx *cx)
+{
+    if (!cx->mods.xlevel) return;
+    for (;;) {
+        int c = peekc(cx);
+        if (c == '#') {
+            cx->pos++;
+            while ((c = peekc(cx)) >= 0 && c != 0x0a) cx->pos++;
+            continue;
+        }
+        if (c >= 0 && xskip_byte(c)) { cx->pos++; continue; }
+        return;
+    }
+}
+
+/* xx's CLASS-INTERIOR deletion (the D30 §7 hazard): unescaped SPACE and
+ * TAB — exactly {09,20}, measured census — vanish before ANY structural
+ * decision inside a class: before the negation check (`(?xx)[ ^a]` is
+ * negated), before range parsing (`(?xx)[a\t-\tz]` is the range a-z), and
+ * ahead of the endpoint rule (`(?xx)[a- ]` is members {a,-} — the trailing
+ * dash is literal because the deleted space leaves `]` after it). Escaped
+ * whitespace survives (`\` is not deleted; the escape reads raw), and the
+ * bounded POSIX-bracket scan reads raw too (`(?xx)[[: alpha :]]` is PCRE2's
+ * unknown-name 130, the spaces belong to the name). Single `x` NEVER
+ * touches a class interior. */
+static void cls_skip(Ctx *cx)
+{
+    if (cx->mods.xlevel < 2) return;
+    int c;
+    while ((c = peekc(cx)) == ' ' || c == '\t') cx->pos++;
+}
+
+/* The byte a range-dash would bind to, seen THROUGH xx's deletion — the
+ * dash-vs-literal decision (`- ]` = literal, `-\tz` = range) must look past
+ * deleted bytes or `(?xx)[a- ]` mis-parses as a range. Identical to
+ * peekc2 when the deletion is off. */
+static int cls_peek_past_dash(Ctx *cx)
+{
+    size_t i = cx->pos + 1;
+    if (cx->mods.xlevel >= 2)
+        while (i < cx->patlen &&
+               (cx->pat[i] == ' ' || cx->pat[i] == '\t')) i++;
+    return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
+}
+
 /* ---- ASCII case folding (OS-1, D18 case 1: the option folds into the front
  * end and never reaches run time) ----
  *
@@ -80,7 +161,7 @@ static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
     cls_set(a->cls, c & 0xff);
-    if (cx->caseless) cls_casefold(a->cls);
+    if (cx->mods.caseless) cls_casefold(a->cls);
     return a;
 }
 
@@ -95,7 +176,7 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
 {
     Ast *a = node(cx, A_CLASS);
     memcpy(a->cls, bits, 32);
-    if (cx->caseless) cls_casefold(a->cls);
+    if (cx->mods.caseless) cls_casefold(a->cls);
     if (negate)
         for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
     return a;
@@ -261,6 +342,7 @@ static Ast *p_class(Ctx *cx)
     Ast *a = node(cx, A_CLASS);
     bool neg = false;
 
+    cls_skip(cx);   /* xx deletes BEFORE the negation check: [ ^a] negates */
     if (peekc(cx) == '^') { neg = true; cx->pos++; }
     /* Doorway 4a: the class's OWN bracket can open a delimiter-pair construct
      * (`[.a.]` is an error at offset 0). A negated class suppresses it because
@@ -274,6 +356,7 @@ static Ast *p_class(Ctx *cx)
     bool first = true;
 
     for (;;) {
+        cls_skip(cx);   /* xx: unescaped SP/TAB are not members */
         int c = peekc(cx);
         if (c < 0) ctx_fail(cx, opening, "missing terminating ] for character class");
         if (c == ']' && !first) { cx->pos++; break; }
@@ -309,7 +392,9 @@ static Ast *p_class(Ctx *cx)
             if (r.what == EXT_MEMBERS) {
                 for (int i = 0; i < 32; i++) a->cls[i] |= r.node->cls[i];
                 cx->pos = r.end;
-                if (peekc(cx) == '-' && peekc2(cx) != ']' && peekc2(cx) >= 0)
+                cls_skip(cx);   /* xx: [[:alpha:]\t-\tz] still hits the 150 */
+                if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
+                    cls_peek_past_dash(cx) >= 0)
                     ctx_fail(cx, r.end, "invalid range in character class");
                 continue;
             }
@@ -321,9 +406,16 @@ static Ast *p_class(Ctx *cx)
         cx->pos++;
         lo = (c == '\\') ? esc_class_value(cx, &loclaim) : c;
 
-        if (peekc(cx) == '-' && peekc2(cx) != ']' && peekc2(cx) >= 0) {
+        /* xx: deletion precedes RANGE PARSING (measured: [a\t-\tz] is the
+         * range a-z), and the dash-vs-literal lookahead must see through it
+         * (measured: [a- ] is members {a,-} — the trailing dash is literal
+         * because only `]` remains after deletion). */
+        cls_skip(cx);
+        if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
+            cls_peek_past_dash(cx) >= 0) {
             size_t dashpos = cx->pos;
             cx->pos++; /* '-' */
+            cls_skip(cx);   /* xx: ws between '-' and the high endpoint */
             /* THE ENDPOINT RULE (K12; design §16 as R14-corrected), five
              * steps in PCRE2's measured evaluation order — probe evidence in
              * tests/probes/probe_endpoint_k12.c, every cell pinned in
@@ -399,7 +491,7 @@ static Ast *p_class(Ctx *cx)
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
      * silently wrong and downstream cannot detect it */
-    if (cx->caseless) cls_casefold(a->cls);
+    if (cx->mods.caseless) cls_casefold(a->cls);
     if (neg)
         for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
     return a;
@@ -456,18 +548,19 @@ static Ast *p_group(Ctx *cx, size_t apos)
                               (R1 review R-1). See core/limits.h */
         ctx_fail(cx, apos, "parentheses are too deeply nested");
 
-    /* The group is the scope boundary for inline options, so it is also the
-     * save/restore boundary — measured, not assumed: `(?i)` set inside a group
-     * leaks across that group's sibling alternation branches and is restored at
-     * the immediately-enclosing `)`. Unconditional, because the base grammar
-     * must not need to know whether a module fired inside. Free today: nothing
-     * writes cx->caseless yet, so save == restore. */
-    bool saved_caseless = cx->caseless;
-
+    /* The scoped-state save/restore moved from HERE to p_group_body's
+     * body-parsing tail at MOD-0.5c, and the move is the semantics: a
+     * body-CARRYING group is the scope boundary for inline options — measured,
+     * not assumed: `(?i)` set inside a group leaks across that group's sibling
+     * alternation branches and is restored at the immediately-enclosing `)`.
+     * A BARE `(?i)` is spelled with parens but is not a group with a body,
+     * and its whole point is to mutate the ENCLOSING scope — wrapping it here
+     * unconditionally would restore its own effect at its own `)`, a
+     * do-nothing construct. So the doorway path escapes the restore by
+     * construction, and the body paths carry it. */
     Ast *body = p_group_body(cx, apos);
 
     cx->depth--;
-    cx->caseless = saved_caseless;
     return body;
 }
 
@@ -497,6 +590,13 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
         if (c2 == ':') cx->pos += 2;
         else {
             ExtResult r = pcrec_ext_group(cx, WANT_RESULT, c2, apos);
+            /* THE SPLICE (MOD-0.5c): a produced group construct is the whole
+             * `(?...)`/`(?...:body)` — the port carried `end` past its own
+             * `)`, the caller advances (check06's rule), and the return
+             * DELIBERATELY bypasses the body tail below: a bare option run's
+             * state mutation must reach the enclosing scope, so it must not
+             * pass through this function's own save/restore. */
+            if (r.what == EXT_NODE) { cx->pos = r.end; return r.node; }
             pcrec_ext_finish(cx, &r);
             /* The wall — see the verb doorway above. This is the exact site
              * PARSE-1 reproduced the exit-0 miscompile at ((?%x)b) compiled
@@ -519,11 +619,20 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * whole-pattern count "wants a lexical pre-scan instead" is RETIRED —
      * §18.1's measured resolution is deferred resolution against this
      * counter's end-of-parse value; the pre-scan is dead. */
-    if (cx->pat[cx->pos - 1] == '(')
+    if (cx->pat[cx->pos - 1] == '(' && !cx->mods.nocap)
         cx->ncap++;
+    /* The scope boundary (moved from p_group at MOD-0.5c — see its comment):
+     * a body-carrying group saves/restores the scoped state around ITS body,
+     * so `(?i)` inside restores at this `)` and a bare `(?i)` (which returned
+     * through the doorway splice above and never reaches this line) escapes
+     * to the enclosing scope. `(?i:...)` does the same save/apply/restore
+     * inside its port. Restore on the failure path is longjmp's problem:
+     * ctx_fail abandons the whole parse, no one reads cx->mods after it. */
+    ModState saved_mods = cx->mods;
     Ast *body = p_alt(cx);
     if (nextc(cx) != ')')
         ctx_fail(cx, apos, "missing closing ) for group");
+    cx->mods = saved_mods;
     if (body->k == A_BOL || body->k == A_EOL) {
         /* wrap a bare-anchor group: `(^)*` is quantifiable in PCRE even
          * though a bare quantified anchor is not (R1 review S-M1) */
@@ -547,7 +656,11 @@ static Ast *p_atom(Ctx *cx)
     case '.': {
         Ast *a = node(cx, A_CLASS);
         for (int i = 0; i < 32; i++) a->cls[i] = 0xff;
-        a->cls['\n' >> 3] &= (uint8_t)~(1u << ('\n' & 7));
+        /* NEWLINE_LF, oracle-anchored (DD-11). Under `(?s)` the clear is
+         * skipped and `.` is the full 256-set — measured census 255 vs 256,
+         * probe_mod05.c (MOD-0.5c). */
+        if (!cx->mods.dotall)
+            a->cls['\n' >> 3] &= (uint8_t)~(1u << ('\n' & 7));
         return a;
     }
     case '^': return node(cx, A_BOL);
@@ -721,6 +834,11 @@ static Ast *p_rep(Ctx *cx)
     bool quantified = false;
 
     for (;;) {
+        /* MOD-0.5d: a quantifier binds across skipped bytes — `(?x)a +`
+         * quantifies (measured). This also leaves the cursor past any
+         * trailing ws when the loop breaks, which is what lets cat_ends
+         * and the group's `)` see their bytes. */
+        xskip(cx);
         int c = peekc(cx);
         int rmin, rmax;
 
@@ -745,8 +863,12 @@ have:
         r->l = a;
         r->rmin = rmin;
         r->rmax = rmax;
-        r->greedy = true;
-        if (peekc(cx) == '?')      { r->greedy = false; cx->pos++; }
+        /* `(?U)` inverts the DEFAULT greed and a trailing `?` then inverts
+         * whichever default is in force — measured both directions
+         * (probe_mod05.c: `(?U)a+` lazy [0,1), `(?U)a+?` greedy [0,3)). */
+        r->greedy = !cx->mods.ungreedy;
+        xskip(cx);   /* the lazy marker binds across skips too: (?x)a + ? */
+        if (peekc(cx) == '?')      { r->greedy = cx->mods.ungreedy; cx->pos++; }
         else if (peekc(cx) == '+')
             ctx_fail(cx, cx->pos, "possessive quantifier requires module 'atomic-groups'");
         a = r;
@@ -762,6 +884,7 @@ static bool cat_ends(Ctx *cx)
 
 static Ast *p_cat(Ctx *cx)
 {
+    xskip(cx);   /* leading ws/comments in this branch ((?x) ^ a, ( a )) */
     if (cat_ends(cx)) return node(cx, A_EMPTY);
     Ast *a = p_rep(cx);
     while (!cat_ends(cx)) {

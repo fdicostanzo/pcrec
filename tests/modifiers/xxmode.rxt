@@ -30,6 +30,8 @@
 # `(?xx)[a\tb]`). The two `perr` blocks (`(?x)[a- ]`, `(?xx)[a-\ ]`)
 # already PASS today: today's blanket gate refusal satisfies "fails to
 # compile" just as well as the eventual err-108 diagnostic does.
+# (Landing correction, same date: the tab block was split into escape-form
+# and raw-byte-form — 14 cases now; see that block's own note.)
 
 # ---- the D30 §7 hazard: single x leaves the range invalid ----------------
 
@@ -63,10 +65,26 @@ m " " 0 1
 m "0" 0 1
 m "a" 0 1
 
-# ---- xx deletes tab too: [a\tb] left with members {a, b} -----------------
+# ---- xx deletes RAW tab bytes; the \t ESCAPE survives ---------------------
+# CORRECTED at the .5c/.5d landing (2026-08-12): this block originally
+# expected `n "\t"` for the pattern spelled with backslash-t, transcribing
+# the RAW-TAB measurement (probe_mod05.c) onto the ESCAPE form. The two are
+# different constructs: xx deletes unescaped WHITESPACE BYTES {09,20};
+# `\t` is an escape producing a tab MEMBER and is untouched by deletion.
+# Measured both engines at the landing: libpcre2 10.46 MATCHES "\t" for
+# the escape form, and pcrec agreed before the fix — the corpus was the
+# wrong side of the disagreement. Both forms are pinned now; the raw-tab
+# pattern line below embeds a literal 0x09 (pattern lines are verbatim).
 
 # pcre2-only
 pattern (?xx)[a\tb]
+features modifiers
+m "\t" 0 1
+m "a" 0 1
+m "b" 0 1
+
+# pcre2-only
+pattern (?xx)[a	b]
 features modifiers
 n "\t"
 m "a" 0 1

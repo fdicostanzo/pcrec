@@ -34,6 +34,8 @@
  * the measurements that establish it must not be separated. Whichever file
  * holds the port, the probes and the code go together. */
 
+#include <stdio.h>
+
 #include "core/internal.h"
 
 /* Splitting the catch-all into eleven option-letter rows fixed the BYTE and
@@ -169,4 +171,197 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
 {
     (void)at; (void)avail; (void)tail;
     return true;
+}
+
+/* ---- the SEMANTIC port (MOD-0.5c) ---------------------------------------
+ *
+ * The twelve GROUP_OPT rows' atom port. Called by the `(?` doorway ONLY at a
+ * post-gate WANT_RESULT, and only after pcrec_registry_option_run_ok accepted
+ * the run — which deliberately INCLUDES the recognised-malformed shapes
+ * (PCRE2 error 194: a second hyphen, or a hyphen after `^`): the doorway
+ * names the construct, this port diagnoses its body (D28's SYN_MALFORMED
+ * half). `from` is the SELECTOR byte — the run includes it.
+ *
+ * PER-LETTER SEMANTICS, every line measured (probe_mod05.c, probe_mod05b.c,
+ * probe_mod05c.c — the MOD-0.5a design gate plus this slice's corners):
+ *
+ *   i s U n     scoped parse state (cx->mods); the masks COLLECT over the
+ *               whole run and UNSET WINS regardless of order — `(?i-i)k` and
+ *               `(?-ii)k` are BOTH case-sensitive (measured).
+ *   x / xx      a LEVEL, assigned per run, adjacency-sensitive: on each set-
+ *               side `x` the level becomes 2 if the previous byte was also
+ *               `x`, else 1 — `(?xsx)` and `(?xaDx)` are level 1 (measured),
+ *               `(?xx)`/`(?xxx)`/`(?^xx)` level 2, and a later bare `(?x)`
+ *               DOWNGRADES an earlier `(?xx)` (measured: `(?xx)(?x)[a b]`
+ *               has the space member again; the `(?xx)(?s)` control keeps
+ *               deletion). `-x` clears BOTH levels (`(?xx-x)` measured).
+ *               The state is written here; its CONSUMER is the MOD-0.5d
+ *               lexer, which lands in the same merge.
+ *   ^           reset to the HARDWIRED defaults — caseless/dotall/nocap/
+ *               xlevel false/0 — and ungreedy SURVIVES: U and J both live
+ *               through `(?^)` (probe_mod05b; "unset imnsx" is the measured
+ *               rule). The reset is to-constant, not to-`opt` — a `(?^)`
+ *               under `-i` turns caseless OFF (the PARSE-1 landmine, now
+ *               load-bearing).
+ *   r, a+sub    MEASURED NO-OPS at options=0 in the C locale: `(?ri)` vs
+ *               `(?i)` is 0 diff cells over 256x256, and all four a-sub
+ *               pairs are census-identical (probe_mod05.c). They become
+ *               real under UTF/UCP — MOD-0.6/M5 own that day; the letters
+ *               are consumed here so the run parses, and nothing is set.
+ *   m, J        HONEST PER-LETTER REFUSALS (the MOD-0.3a per-name
+ *               precedent): multiline ^/$ is assertion-engine work
+ *               (DD-11's $-EOL sibling) and J is observable only through
+ *               named groups. Tier-2 attributions, recorded in the plan.
+ *               `-m` and `-J` are accepted no-ops: pcrec's anchors already
+ *               have the not-multiline semantics, and duplicate names
+ *               cannot occur without named groups — unsetting either is
+ *               true today.
+ *
+ * TERMINATORS: `)` applies the delta to the ENCLOSING scope — the caller's
+ * splice deliberately bypasses p_group_body's save/restore, so the mutation
+ * survives to the enclosing group's `)` (the measured 17/17 scoping).
+ * `:` is set-parse-restore: the body parses under the new state through
+ * pcrec_parse_body (the callback PARSE-1 built), and both the state and the
+ * cursor are restored before returning (check06: the doorway never moves
+ * cx->pos; the result carries `end` past the construct's `)`). */
+
+static ExtResult modport_refuse(ExtWant want, size_t at, const char *msg)
+{
+    ExtResult res = { .what = EXT_REFUSAL, .at = at, .msg = "",
+                      .answered_at = want };
+    snprintf(res.msg, sizeof res.msg, "%s", msg);
+    return res;
+}
+
+ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from)
+{
+    (void)rw;
+    const char *p = cx->pat;
+    size_t n = cx->patlen;
+    size_t i = from;
+    bool caret = false, hyphen = false;
+    bool set_i = false, set_s = false, set_U = false, set_n = false;
+    bool un_i = false, un_s = false, un_U = false, un_n = false, un_x = false;
+    int xlvl = -1;              /* -1 = the run does not touch the level */
+
+    if (i < n && p[i] == '^') { caret = true; i++; }
+    for (;;) {
+        if (i >= n)
+            /* `(?i` — PCRE2 error 114's shape: a RECOGNISED option setting,
+             * truncated. The run check already called this a construct;
+             * the honest post-gate answer is the truncation itself. */
+            return modport_refuse(want, at,
+                                  "missing closing ) for inline option setting");
+        int c = (unsigned char)p[i];
+        if (c == ')' || c == ':') break;
+        if (c == '-') {
+            if (caret || hyphen)
+                /* PCRE2 stops at the FIRST error (error 194) — the ordering
+                 * is part of the measured rule, mod-grammar block above. */
+                return modport_refuse(want, i,
+                                      "invalid hyphen in option setting");
+            hyphen = true;
+            i++;
+            continue;
+        }
+        switch (c) {
+        case 'i': if (hyphen) un_i = true; else set_i = true; break;
+        case 's': if (hyphen) un_s = true; else set_s = true; break;
+        case 'U': if (hyphen) un_U = true; else set_U = true; break;
+        case 'n': if (hyphen) un_n = true; else set_n = true; break;
+        case 'x':
+            if (hyphen) un_x = true;
+            else xlvl = (i > from && p[i - 1] == 'x') ? 2 : 1;
+            break;
+        case 'm':
+            if (!hyphen)
+                return modport_refuse(want, i,
+                    "inline option 'm' (multiline) requires module 'assertions'");
+            break;                        /* -m: true today, accepted */
+        case 'J':
+            if (!hyphen)
+                return modport_refuse(want, i,
+                    "inline option 'J' (dupnames) requires module 'named-groups'");
+            break;                        /* -J: true today, accepted */
+        case 'r':
+            break;                        /* measured no-op at options=0 */
+        case 'a':
+            /* One optional ASCII-restrict sub-letter (the measured grammar);
+             * the pair is a no-op at options=0 (census-identical). */
+            if (i + 1 < n && (p[i + 1] == 'D' || p[i + 1] == 'P' ||
+                              p[i + 1] == 'S' || p[i + 1] == 'T' ||
+                              p[i + 1] == 'W'))
+                i++;
+            break;
+        default:
+            /* Unreachable: option_run_ok admitted the run. A wall, not a
+             * decline — declining here would re-read the construct. */
+            return modport_refuse(want, i,
+                "internal error: option-run port saw a byte the grammar rejects");
+        }
+        i++;
+    }
+
+    /* The applied state: reset first (caret), then set, then unset — unset
+     * WINS on a letter named on both sides (measured, (?i-i)/(?-ii)). */
+    ModState ns = cx->mods;
+    if (caret) {
+        bool keep_ungreedy = ns.ungreedy;
+        ns = (ModState){0};
+        ns.ungreedy = keep_ungreedy;
+    }
+    if (set_i) ns.caseless = true;
+    if (set_s) ns.dotall = true;
+    if (set_U) ns.ungreedy = true;
+    if (set_n) ns.nocap = true;
+    if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
+    if (un_i) ns.caseless = false;
+    if (un_s) ns.dotall = false;
+    if (un_U) ns.ungreedy = false;
+    if (un_n) ns.nocap = false;
+    if (un_x) ns.xlevel = 0;
+
+    if (p[i] == ')') {
+        /* Bare run: mutate the enclosing scope and produce the construct's
+         * node — A_EMPTY, because an option setting matches nothing. */
+        cx->mods = ns;
+        ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
+                          .answered_at = want };
+        res.node = pcrec_ast_node(cx, A_EMPTY);
+        res.end = i + 1;
+        return res;
+    }
+
+    /* `:` — a group body under the new state: set, parse, restore (the
+     * semantic D29 said cannot be written without the callback). */
+    {
+        ModState saved_mods = cx->mods;
+        size_t   saved_pos  = cx->pos;
+        AltInfo  info;
+        cx->mods = ns;
+        cx->pos = i + 1;
+        Ast *body = pcrec_parse_body(cx, &info);
+        if (cx->pos >= n || p[cx->pos] != ')') {
+            cx->mods = saved_mods;
+            cx->pos = saved_pos;
+            return modport_refuse(want, at, "missing closing ) for group");
+        }
+        size_t end = cx->pos + 1;
+        cx->mods = saved_mods;
+        cx->pos = saved_pos;
+        if (body->k == A_BOL || body->k == A_EOL) {
+            /* the S-M1 anchor wrap, mirrored from p_group_body: `(?i:^)*`
+             * stays quantifiable exactly as `(^)*` is */
+            Ast *cat = pcrec_ast_node(cx, A_CAT);
+            cat->l = body;
+            cat->r = pcrec_ast_node(cx, A_EMPTY);
+            body = cat;
+        }
+        ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
+                          .answered_at = want };
+        res.node = body;
+        res.end = end;
+        return res;
+    }
 }

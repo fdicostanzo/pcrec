@@ -91,8 +91,19 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   reconstructing that from `at` would read out of bounds against
   registry_check.c's synthetic arbitration-sweep buffers. ext.c still runs
   the real check, gated on the pointer's identity rather than the flag.
-  Byte-identity only in this slice: no Ctx modifier state, no per-letter
-  semantics, no lexer changes — those are MOD-0.5c/d
+  **MOD-0.5c added the SEMANTIC port** `pcrec_modport_optrun` — the twelve
+  rows' atom-port FN, the shared handler for BOTH spellings (`(?run)` and
+  `(?run:body)`, diverging only at the terminator inside the port): walks
+  the validated run building set/unset masks (unset wins, measured), applies
+  them to `cx->mods` for a bare run (whose caller splice deliberately
+  escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
+  or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals
+  `m` -> 'assertions', `J` -> 'named-groups' (gated reject pins);
+  recognised-malformed runs diagnosed here (the err-194/114 shapes). The
+  x/xx LEVEL is adjacency-sensitive and a later bare `x` downgrades — every
+  clause probe-cited in the port's comment. The x/xx CONSUMER (skip set,
+  comments, class-interior deletion) lives in parse.c's lexer helpers
+  (MOD-0.5d): `xskip`, `cls_skip`, `cls_peek_past_dash`
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,

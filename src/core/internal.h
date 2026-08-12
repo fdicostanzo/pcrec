@@ -133,20 +133,39 @@ typedef struct {
     size_t               patlen;
     size_t               pos;      /* parser cursor */
     int                  depth;    /* parser group-nesting depth (bounded) */
-    /* SCOPED PARSE STATE (PARSE-1). Seeded from opt->caseless at parse entry
-     * and saved/restored around every group body, because that is where PCRE2
-     * restores it: measured 17/17 against libpcre2 10.46, `(?i)` set anywhere
-     * inside a group stays in force to the end of THAT group — it leaks across
-     * sibling alternation branches, `(a(?i)b|c)d` matching `Cd` — and is
-     * restored at the immediately-enclosing `)`, not the outermost one. A
-     * top-level `(?i)` is never restored.
+    /* SCOPED PARSE STATE (PARSE-1; widened to a struct at MOD-0.5c, the
+     * D31-note's "expect a struct, not more bools"). Seeded from opt at parse
+     * entry and saved/restored around every BODY-CARRYING group, because that
+     * is where PCRE2 restores it: measured 17/17 against libpcre2 10.46,
+     * `(?i)` set anywhere inside a group stays in force to the end of THAT
+     * group — it leaks across sibling alternation branches, `(a(?i)b|c)d`
+     * matching `Cd` — and is restored at the immediately-enclosing `)`, not
+     * the outermost one. A top-level `(?i)` is never restored. A BARE option
+     * run `(?i)` deliberately escapes its own paren pair's restore — it is an
+     * option-setting construct spelled with parens, not a group with a body —
+     * which is why the save/restore lives on p_group_body's body-parsing
+     * tail, not unconditionally in p_group (the placement IS the scope rule).
      *
      * `opt` is const and caller-owned, so it CANNOT hold this: a module doing
-     * D29's "set parse state, parse body, restore" has nothing to set. Nothing
-     * mutates this field yet — module `modifiers` (MOD-0.5) is its first
-     * writer — so today it is exactly opt->caseless for the whole parse, which
-     * is asserted by byte-identity rather than assumed. */
-    bool                 caseless;
+     * D29's "set parse state, parse body, restore" has nothing to set.
+     * Module `modifiers`' port (mod_modifiers.c) is the only writer.
+     *
+     * `(?^)` resets caseless/dotall/nocap/xlevel to the HARDWIRED defaults
+     * below — measured, probe_mod05b.c: the reset is to-constant, not
+     * to-`opt` (a `(?^)` under `-i` turns caseless OFF), and it does NOT
+     * touch ungreedy (U and J both survive `(?^)`; "unset imnsx" is the
+     * measured rule, not "unset everything"). */
+    struct ModState {
+        bool    caseless;   /* i — the OS-1/D23 fold, applied at class
+                             * construction time (char_node/from_bits) */
+        bool    dotall;     /* s — `.` keeps 0x0A instead of clearing it */
+        bool    ungreedy;   /* U — quantifier greed default inverted; a
+                             * trailing `?` then RE-inverts. NOT reset by ^ */
+        bool    nocap;      /* n — plain `(` stops counting as a capture */
+        uint8_t xlevel;     /* 0 off / 1 `x` / 2 `xx` — consumed by the
+                             * MOD-0.5d lexer; the state exists so one run
+                             * parser owns every letter */
+    }                    mods;
     /* THE RUNNING CAPTURE COUNT (MOD-0.1, design §18.1 as Frank resolved
      * it: there is NO scanner). Incremented at p_group_body's capturing-`(`
      * hook — group numbers are assigned by opening-paren order, so the
@@ -167,6 +186,9 @@ typedef struct {
     const pcrec_options *opt;
     Job                 *job;
 } Ctx;
+
+/* The scoped-state block above, nameable for save/restore locals. */
+typedef struct ModState ModState;
 
 /* PARSE-1: what `p_alt` reports about the alternation it just parsed.
  *
@@ -651,6 +673,7 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * order rule: both orders produce case-closed sets and only behaviour can
  * tell them apart — see cls_casefold's comment). The ONE constructor every
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
+Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
 Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
                                bool negate);
 
@@ -835,6 +858,17 @@ bool pcrec_registry_option_run_ok(const char *at, size_t avail);
  * pcrec_registry_option_run_ok directly. */
 bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
                                          const char *tail);
+/* The twelve GROUP_OPT rows' atom-port producer (MOD-0.5c): parses the
+ * validated run at `from` (the SELECTOR byte — the run includes it),
+ * applies the per-letter deltas to cx->mods or refuses per letter, and for
+ * the `:` terminator parses the body through pcrec_parse_body under the
+ * new state. Returns EXT_NODE with `end` past the construct's `)`; the
+ * cursor is returned UNMOVED (check06). Only called at a post-gate
+ * WANT_RESULT on a run pcrec_registry_option_run_ok accepted — which
+ * includes the RECOGNISED-MALFORMED runs (the err-194 shapes) this port
+ * exists to diagnose. */
+ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
 
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *

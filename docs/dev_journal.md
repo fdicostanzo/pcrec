@@ -6496,3 +6496,70 @@ attributions FLAGGED TO FRANK; the measured (?^) rule; the measured x-mode
 sets; malformed runs are the module's SYN_MALFORMED half with the gate ON).
 Slices .5b-.5f staged with byte-identity first, the lexer third, checks
 moving with surfaces, and the close panel + D27 cell writer last.
+
+## 2026-08-12 — eleventh session: MOD-0.5b/c/d — the modifiers producers, three lanes in parallel
+
+**The parallel fan-out (Frank's directive):** three sonnet subagents on
+non-interdependent sections — impl-mod05b (worktree: the .5b grammar move),
+corpus-mod05 (worktree: tests/modifiers/, oracle-verified, watched-failing
+per §9.3), d27-mod05 (a BLINDED cell writer; allowlist narrowed to exclude
+tests/probes so this milestone's measured alphabet could not leak into the
+spec). All three delivered; the main session reviewed and merged each diff
+serially with the battery between merges.
+
+**MOD-0.5b (105aecf, merged 1c8883b):** the grammar move, byte-identity —
+641 patterns + list surfaces + 69 probe-ask combos, zero diffs; moved code
+diffed VERBATIM; the recogniser is a MARKER keyed by pointer identity (the
+run starts AT the selector byte; `at - 1` in the shared recogniser would be
+UB against registry_check's synthetic buffers). The worker went idle
+uncommitted; the main session finished the landing bar and committed with
+authorship noted.
+
+**The D27 delivery (b337be2, merged 91e6b23):** check11 (113
+recognition-boundary probes incl. the 40-letter alphabet COMPLEMENT with
+runtime-computed exceptions) + check12 (39 behaviour cases; U-greed via
+match spans; a 10-case scoping family armed on the across-| leak the writer
+independently re-derived from libpcre2 — the same 17/17 semantics PARSE-1
+measured, converging blind). Its refused_unimpl floors were DESIGNED
+transition tripwires for this landing. Disclosure clean.
+
+**MOD-0.5c/d (this commit) — the producers, ONE landing.** Sequencing
+ruling: with the gate ON there is no honest refusal wording for `(?x...)`
+before the lexer exists (naming 'modifiers' while enabled is the MOD-0.3a
+lie; other wording breaks check12's classifier), so the slices landed
+atomically. What landed:
+
+- Ctx.caseless -> ModState {caseless, dotall, ungreedy, nocap, xlevel};
+  THE SCOPE MECHANISM IS PLACEMENT: save/restore moved to p_group_body's
+  body-parsing tail, so a bare run's doorway splice escapes its own paren
+  pair's restore by construction.
+- pcrec_modport_optrun: ONE handler for both spellings ((?run) mutates the
+  enclosing scope + A_EMPTY; (?run:body) = set/pcrec_parse_body/restore);
+  per-letter semantics i/s/U/n; ^ resets imnsx and PRESERVES U (measured);
+  r/a-subs measured no-ops; m/J refuse per-letter to 'assertions' /
+  'named-groups'; malformed runs diagnosed in the port (194/114 shapes).
+- Three probe rounds beyond the gate's (all committed): unset-WINS in a
+  run regardless of order; doubled-x is ADJACENCY-sensitive and a later
+  bare (?x) DOWNGRADES xx; the x-lexer boundary (quantifiers/lazy markers
+  bind across skips; comments end at 0x0A ONLY — the newline convention,
+  not the skip set; the option run is lexically tight; newline-in-brace
+  defeats quantifier-hood; xx deletion precedes negation, range parsing,
+  and the dash lookahead).
+- parse.c lexer: xskip / cls_skip / cls_peek_past_dash, every rule
+  probe-cited. The D30 §7 hazard (?xx)[a- ] compiles to members {a,-}.
+- reject_gated: a FOURTH pin class (own ratchet counter, 4 pins) because
+  .rxt perr cannot assert WHY — the corpus author's finding.
+- Floors moved with the surface: modsyn 105 compared / 8 refused, modsem
+  35 / 3 — zero real disagreements across all 140 compared cells.
+- Corpus merged: 59/59 green after ONE landing correction — the \t block
+  had transcribed the RAW-TAB measurement onto the ESCAPE form; libpcre2
+  measured the escape SURVIVING deletion (pcrec agreed before the fix).
+  Both forms now pinned; xxmode header records the correction.
+- Docs: compliance rows to OK-GATED (i/s/U/n/x/xx/^/r/a-subs; m and J
+  carry their per-letter attributions); anchors moved in S08/S09 sabotage
+  definitions, branch_count_check, run_parse_tests prose, case10's
+  cursor-sweep premise.
+
+Still open in MOD-0.5: [.5e] checks (mech rows for the lexer, fuzz.py's
+stale a{,3} note at its next edit), [.5f] close (R17 panel; the D27
+follow-up brief; docs sweep; wake).
