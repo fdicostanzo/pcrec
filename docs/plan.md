@@ -1531,8 +1531,8 @@ Then DOC-1, then PC-4 when module `classes` lands.
     wide producer (+ mod08fix's residual: PC-3 still cannot generate the
     zero-tail `(?P` cell), in-class routing → next router toucher,
     OPTRUN-B2 alphabet generation → with the mech pc3 arm; make ubsan →
-    next session, with R20's tier-1 (longjmp into uninitialized jmp_buf)
-    as the new argument — that crash is ubsan's home class
+    EXPANDED by Frank into [SAN-1] (full sanitizer + lint battery, both
+    the compiler and the compilee axes), scheduled next session
   - [STD1] STATE:not-started — implement D37: the bare default becomes
     frozen named set `std1` = {classes, modifiers}; named-set plumbing
     (`--features std1|none|<explicit>`, older sets available verbatim
@@ -1753,6 +1753,28 @@ can destroy it.
   counter planted in a COPY of compile.c — exactly the shape this step
   named. tests/thread/
 - [TS-4] STATE:not-started — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points). Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH
+- [SAN-1] STATE:not-started — THE SANITIZER + LINT BATTERY (Frank,
+  2026-08-12, expanding the R7/T-3 ubsan carry; scheduled NEXT SESSION;
+  lands BEFORE [OPT-A] opens — Frank: "we should expect some trouble when
+  we start optimizing", so this is the tripwire built before the risk).
+  BOTH AXES instrumented, because trouble lands in both: the COMPILER
+  (build/pcrec, libpcrec.a, test drivers) and the COMPILEE (every generated
+  matcher the harness compiles — the `GENCFLAGS` env hook already exists in
+  tests/harness, so the compilee axis may be mostly plumbing; the emitted
+  computed-goto code is exactly where OPT-A/B will take its risks). Pieces,
+  each an opt-in target like `make strict` (writes nothing, D2 plain-make):
+  `make ubsan` (-fsanitize=undefined over the suite — R20's tier-1
+  longjmp-into-uninitialized-jmp_buf is this tool's home class, caught at
+  first execution instead of by a lucky SIGSEGV); `make asan`
+  (AddressSanitizer + LeakSanitizer — K7's abort-under-memory-limit is this
+  class); `make lint` (static analysis: survey what the box offers —
+  gcc -fanalyzer, cppcheck, clang-tidy if clang present — adopt what earns
+  it, RECORD REJECTIONS with reasons per OPT-A's convention); valgrind
+  memcheck noted as the no-rebuild alternative where ASan conflicts.
+  TSan already lives in tests/thread — this row completes the family.
+  Battery integration ruled AFTER runtime is measured, never asserted:
+  which stages join wake §3's standing battery vs run checkpoint-only is
+  a number-backed decision
 
 ## Process mechanization (session 2026-08-09) — turn recurring lessons into tools
 
