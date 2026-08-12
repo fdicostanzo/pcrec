@@ -1116,7 +1116,9 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the VF_* form bits, the at-start position rule, and a blame offset that is not
   the doorway's default (`(*)` blames the `*`). If the signature survives this
   it survives
-- [MOD-0.4a] STATE:started 2026-08-12 — scope + design note. Scope rulings
+- [MOD-0.4a] STATE:completed 2026-08-12 — scope + design note. Design note
+  delivered and approved with four rulings; the seam ruling recorded on
+  MOD-0.4b. Scope rulings were: Scope rulings
   (main session): PURE MIGRATION, no verb produces — the parse.c doorway-3
   wall stays; NO new probe harness (PC-3's check_verb_names IS the live
   measurement record, re-taken every make test — a frozen probe_verb.c
@@ -1127,8 +1129,22 @@ Then DOC-1, then PC-4 when module `classes` lands.
   offset map onto the mod_modifiers.c seam (recognise pointer / pointer
   identity / port field), preserving the accessor signatures PC-3 and
   --list-verbs consume
-- [MOD-0.4b] STATE:not-started — the MOVE, byte-identity bar (worktree lane
-  impl-mod04): pcrec_ext_verb + verb_upper/verb_lower + accessors ->
+- [MOD-0.4b] STATE:completed 2026-08-12 (worktree lane impl-mod04, commit
+  043d78a, merged 72f4fcf). Execution detail beyond the spec: the SEAM IS A
+  DIRECT CALL, not a port — doorway 3 has ONE RegRow and dispatches by NAME
+  through its own tables, so there is no row family for a recognise pointer
+  to mark, and an aport now would wire a producer nothing exercises (the
+  NULL-port discipline); the milestone's signature question answered YES and
+  DOCUMENTED in mod_verbs.c's header (four table answers via the shared
+  REFUSE epilogue, VF_* computation, at==0, star=at+1 — no new vocabulary
+  needed); ext_gate promoted to pcrec_ext_gate + REFUSE/BAD_ROW to
+  internal.h, ONE definition each (DECLINE stayed local to ext.c);
+  check01_isolation re-verified post-move (mod_verbs.o does not link the
+  enabled-set symbol); extent scan stayed in scans.c (never-links contract);
+  differential corpus derived programmatically from baseline --list-verbs —
+  resolved name count 50 (31 upper + 19 lower), 602 comparisons across both
+  gate states + dumps + --probe-ask, ZERO diffs vs f88ff2e. Spec was:
+  pcrec_ext_verb + verb_upper/verb_lower + accessors ->
   src/parse/mod_verbs.c with their measured-grammar comments
   (probes-and-code-together, R8/C2-9's counter-example); RK_VERB row stays
   ONE row in registry.c (D29's shape question answered the same way: the
