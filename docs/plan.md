@@ -599,7 +599,9 @@ Then DOC-1, then PC-4 when module `classes` lands.
   returned claims (ep_set_certain, §16.3(e)'s payload, exercisable
   subset); certification scoped to all-forms rows (ten char-type escapes,
   known POSIX names both sides) with the \p boundary pinned as deliberate
-  (PCRE2 147 for [0-\p{Foo}] — MOD-0.6's property table owns it). 42
+  (PCRE2 147 for [0-\p{Foo}] — owned by unicode-props' first WIDE producer;
+  MOD-0.6 landed recogniser-only and deliberately kept the boundary,
+  design_notes_mod06.md §8.2). 42
   cells measured first (probe_endpoint_k12.c), ten failing-then-passing
   pins + seven boundary pins + two accept-controls (reject counts
   265/99/65, three new MANIFEST entries); 952-pattern differential vs
@@ -1344,13 +1346,31 @@ Then DOC-1, then PC-4 when module `classes` lands.
   pre-landing §9.3 framing (the R16 failure mode, one module later). The
   option-run grammar got its first adversarial readers (MOD-0.8's note
   discharged early). Journal + wake at close.
-- [MOD-0.6] STATE:started (2026-08-12, thirteenth session; Frank's go. Same
-  session Frank RULED K15: category divergence acceptable, tier 2 per D26 —
-  PC-3 exclusion citing K15 + hostile-alphabet generator row + a
-  pcre2_compliance.md divergence entry land as a separate small lane, not
-  part of this step. Also ruled: D33 §7's class-structure WIDENING defers to
-  the first wide PRODUCER — amendment recorded under D33 §7; this step stays
-  recogniser-only) — module `unicode-props`, the only NEW recogniser:
+- [MOD-0.6] STATE:completed (2026-08-12, thirteenth session; opened and
+  closed same session on Frank's go. CLOSURE: phase-1 probe
+  (tests/probes/probe_uprops.c, archived per D35) + accepted design note
+  (docs/design_notes_mod06.md, §8 holds the landing amendments) + five
+  slices merged at e2b1d4a — K10 FIXED with check_class_syntax_reach and
+  seven pins; mod_uprops.c streaming scanner (48-cap in limits.h, caret
+  excluded, fold-free brace-path lookup) with the 146/147-shaped refusal
+  split and load-bearing offsets; 35 offset pins total; PC-3 uprops
+  differential 1,976 probes + 52-letter table drift guard; mech S31-S35
+  with the S33/S34 first-landing UNDETECTED finding closed measured. R19
+  panel (docs/reviews/2026-08-12-r19-mod06.md): zero tier-1; K16 opened
+  (164/256 malformed body bytes, tier 2, Frank ruled DEFER to first
+  producer) + the last two message-only pins offset-pinned + has_eq/digit
+  pins; reject 303/99/65/4, registry 168, PC-3 154, mech 35/35. LANDING
+  NOTES against this row's own predictions: the "expect a live tier-2
+  finding" over-promise did NOT materialize — \p/\P have no decline-shaped
+  tail (256-byte sweep), so the catch-all recognise is permanently correct;
+  the registry.c:257 citation was stale (the row moved with file growth —
+  cite rows by content, not line). Rulings the session recorded: K15
+  acceptable tier-2 (exclusion + hostile-alphabet row + compliance entry
+  landed as their own lane); D33 §7 WIDENING defers to the first wide
+  producer, amendment under D33 §7; this step stayed recogniser-only —
+  \p SET-certification and the K12 body-dependent boundary deliberately
+  survive to the producer milestone, design note §8.2) — module
+  `unicode-props`, the only NEW recogniser:
   `\p{...}` vs `\pL` (two shapes at one byte), `\P` polarity from `sel`,
   normalisation into a CALLER-PROVIDED FIXED BUFFER (never an arena — D29;
   `arena_alloc` aborts, which is K7), and the `\N{U+` half of MOD-0.1's

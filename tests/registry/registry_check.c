@@ -1357,6 +1357,12 @@ static void check_class_syntax_reach(void)
         }
         char pat[64], got_msg[256];
         snprintf(pat, sizeof pat, "[%s]", r->syntax);
+        /* DELIBERATE TIME BOMB (R19 checks critic): `!rejected` below is
+         * unconditional, correct while no unicode-props/ctrl/octal producer
+         * exists. The FIRST real cport on any of these five rows makes its
+         * probe COMPILE and this check fail — that failure is the signal to
+         * rewrite this check for the produced path in the same change, not
+         * to exempt the row. */
         int rejected = try_compile(pat, got_msg, sizeof got_msg) != 0;
         if (!rejected || !strstr(got_msg, "requires module") ||
             !strstr(got_msg, r->module)) {

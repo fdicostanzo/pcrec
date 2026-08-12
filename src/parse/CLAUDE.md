@@ -173,7 +173,19 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   opinion, only about pcrec's own (partial, stated) vocabulary. `\N{U+`'s
   own K10 fix (registry.c's flag removal) is a SEPARATE change and landed
   first — see registry.c's own comment on that row and
-  tests/registry/CLAUDE.md's `check_class_syntax_reach` entry
+  tests/registry/CLAUDE.md's `check_class_syntax_reach` entry. **Slice 5
+  (mech finding)**: the brace path's table lookup became FOLD-FREE
+  (`uprops_short_lookup` expects an already-folded byte; only the
+  bare-letter path folds at its call) after mech measured S34 UNDETECTED —
+  the lookup's own re-fold was silently repairing a sabotaged accumulator,
+  the control-sharing-a-source shape. S33 (caret consume) was also
+  UNDETECTED at first landing for a different reason (its predicted flip
+  misread ruling 3's generic-message design). Both histories + fixes:
+  docs/design_notes_mod06.md §8.3 and the sabotage files' own headers.
+  K16 (docs/known_issues.md, found at R19 close, ruled deferred-to-producer)
+  records the malformed-body-byte divergence — 164/256 body bytes are
+  err-146 to libpcre2 at the byte; this scanner reads past them; the fix
+  lands with the first producer
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,

@@ -169,7 +169,13 @@ directory asserts that the description and the shipped parser actually agree.
    row, `\p`, `\P`, `\c`, `\o` — `\g`/`\k` are excused, base class ports,
    see below), it arbitrates on the REAL tail text a class doorway would
    see and confirms it resolves to THAT row, then confirms the compiled
-   diagnostic promises that row's module. **What it cannot do, stated so
+   diagnostic promises that row's module. **Positive control, measured
+   with a number at R19 close** (the panel's checks critic flagged the
+   original record as count-less): re-applying `RF_CLASS_INVALID` to the
+   `{U+` row fails EXACTLY ONE check — this one, naming the row and the
+   unpromised module ("class-position reach: '\N{U+0041}' ... does not
+   promise module 'unicode-props'"), measured on a scratch build
+   2026-08-12. **What it cannot do, stated so
    it is not mistaken for more**: it predicts the expected text from the
    row's OWN current fields (same as `check_table_to_parser`), so it can
    never independently catch a WRONG FLAG the way K10 was wrong — only

@@ -494,8 +494,12 @@ for d in 0 1 2 3 4 5 6 7 8 9; do reject "\\$d" "requires module 'backrefs'"; don
 
 echo
 echo "== unicode properties, quoting, misc escapes =="
-reject '\p{L}' "\\p requires module 'unicode-props'"
-reject '\P{L}' "\\P requires module 'unicode-props'"
+# R19 checks-CONFIRMED: these two rows — the module's own canonical syntax
+# examples — were the LAST message-only \p pins, predating the offset slice
+# that landed around them (the S27 lesson recurring inside the commit whose
+# comment claims to have learned it). Offsets added at R19 close.
+reject '\p{L}' "\\p requires module 'unicode-props' (pattern offset 5)"
+reject '\P{L}' "\\P requires module 'unicode-props' (pattern offset 5)"
 # MOD-0.6 phase 2 (mod_uprops.c): the malformed-vs-unknown-name split, offset
 # pinned (the S27 lesson — a message-only pin cannot distinguish a refactor
 # that moves the blame position from one that does not). Measured against
@@ -564,6 +568,20 @@ reject '\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
 # fails the moment the accumulator stops folding, instead of the lookup
 # silently repairing the buffer on the way in.
 reject '\p{c}' "\\p requires module 'unicode-props' (pattern offset 5)"
+# R19 close: the axes the differential's generator cannot produce (its
+# alphabet is letters-only, no '=' — its own comment says so). The has_eq
+# branch (a '='-bearing body promises the module with NO table lookup,
+# ruling 3) had ZERO coverage anywhere; the digit and hostile-byte cells
+# had none either. The '!' pin is K16's representative: libpcre2 calls 164
+# of 256 body bytes MALFORMED at the byte (err 146); pcrec scans past them
+# and answers its own category at its own offset — ruled acceptable tier-2
+# and deferred to the first producer (Frank, 2026-08-12; docs/
+# known_issues.md K16, docs/pcre2_compliance.md). These pins claim PCREC'S
+# OWN current behavior, not oracle agreement.
+reject '\p{=}' "\\p requires module 'unicode-props' (pattern offset 5)"
+reject '\p{Script=Latin}' "\\p requires module 'unicode-props' (pattern offset 16)"
+reject '\p{9}' "\\p{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 5)"
+reject '\p{!}' "\\p{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 5)"
 reject '\Q'    "\\Q requires module 'quoting'"
 reject '\E'    "\\E requires module 'quoting'"
 reject '\R'    "\\R requires module 'misc'"
@@ -1366,8 +1384,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 299 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 299 / 65 / 0 / 4." >&2
+if [ "$nrej" -ne 303 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 303 / 65 / 0 / 4." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

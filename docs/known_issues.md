@@ -665,8 +665,9 @@ measured value covers EVERY form that reaches them: the ten char-type escapes
 names (both sides, so `[[:alpha:]-z]` and mid-class `[x[:alpha:]-z]` are 150's
 analogue too). Body-dependent rows keep the module promise — `[0-\p{Foo}]` is
 PCRE2 147, not 150, so certifying `\p` would trade an over-promise for a
-wrong verdict; the boundary is pinned in tests/reject/ and owned by MOD-0.6's
-property table. Every cell measured first (tests/probes/probe_endpoint_k12.c,
+wrong verdict; the boundary is pinned in tests/reject/ and owned by
+unicode-props' first WIDE producer (MOD-0.6 landed recogniser-only, 2026-08-12,
+and deliberately kept this boundary — design_notes_mod06.md §8.2). Every cell measured first (tests/probes/probe_endpoint_k12.c,
 42 cells), ten failing-then-passing pins plus seven boundary pins and two
 accept-controls (counts 265/99/65, three MANIFEST entries); the 952-pattern
 differential vs the pre-slice build shows exactly the one changed cell it
@@ -958,3 +959,52 @@ difference; it does not fix the scan. Remeasure when SR-6's real verb
 handler lands (module `verbs` first produces, and the extent scan's
 semantics get remeasured anyway regardless of this entry) — the original
 schedule note stands.
+
+## K16 — RULED ACCEPTABLE-UNTIL-PRODUCER 2026-08-12 (Frank; D26 tier 2), found 2026-08-12 (R19 panel, engine critic — the sweep-template lesson's FOURTH recurrence, one level deeper than K15's)
+
+**pcrec's `\p{...}`/`\P{...}` body scanner never detects libpcre2's
+"malformed body byte" class: 164 of 256 possible body bytes are ERR 146
+("malformed \P or \p sequence") to libpcre2 the instant they appear —
+blamed at the bad byte, ignoring even the 48-char cap — where pcrec scans
+past them, folds them into the name buffer, and answers its own
+unknown-name/generic category at the scan-completion offset.** Tier 2 under
+D26: no producer exists, both engines refuse every such pattern, and module
+attribution (`unicode-props`) is correct either way; only the refusal
+CATEGORY and OFFSET diverge.
+
+**The malformed set (measured 2026-08-12, libpcre2 10.46, full 256-byte
+census of the sole body byte in `\p{X}`):** 0x00-0x08, 0x0E-0x1F (C0
+controls other than the whitespace five), `!` `"` `#` `$` `%` (0x21-0x25),
+`{` `|` `~` DEL (0x7B/7C/7E/7F), and ALL of 0x80-0xFF. The other 92 bytes
+are ERR 147 (dispatched, unknown name) — pcrec's own bucket, agreement.
+
+**Repro** (HEAD a42d604):
+
+    \p{!}       libpcre2: err 146 at 4      pcrec: not-recognised text at 5
+    \p{L!}      libpcre2: err 146 at 5      pcrec: generic module text at 6
+    47A + '!'   libpcre2: err 146 at 51     pcrec: its own 48-cap fires at 52
+                (libpcre2 stops at the byte;  (same "malformed" WORD, wrong
+                 the cap never engages)        reason, wrong offset)
+
+**Why every net missed it:** three instruments independently stop at the
+brace boundary — the design note's insignificant-byte census tested four
+candidate bytes; `probe_uprops.c` swept all 256 TAIL bytes but never the
+BODY byte; `check_uprops_differential` generates well-formed-by-construction
+cells and says so in its own comment. K15 was the length axis; this is the
+content axis of the same lesson.
+
+**RULED (Frank, 2026-08-12, R19 close): acceptable tier 2, fix DEFERRED to
+the first unicode-props producer** — when the scanner's buffer gains a real
+consumer, the whole algorithm gets remeasured anyway, and the fix (a
+measured malformed-byte class table mirroring PCRE2's accepted-name-byte
+set, body-byte census like the tail already got) lands with it. Until then:
+`tests/reject/`'s `\p{!}`/`\p{9}`/`\p{=}`/`\p{Script=Latin}` pins claim
+PCREC'S OWN current behavior (stability, not oracle agreement), and the
+divergence is documented in docs/pcre2_compliance.md. **LINKED PAIR, K15's
+shape: `check_uprops_differential` must NOT gain malformed-body generation
+until this is fixed** — it would fail on the divergence it newly sees; its
+well-formed-only scope is deliberate and its comment says so. Forward risk
+recorded: a producer built directly on the accumulated buffer without the
+malformed-byte check would treat `\p{Sc!ript}` as a lookup miss rather than
+a shape PCRE2 never dispatches past — the K12/K13 "guard is the
+unimplemented-ness" pattern.

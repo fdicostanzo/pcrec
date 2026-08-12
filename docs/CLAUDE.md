@@ -55,8 +55,10 @@ Process and status documents for pcrec. The architecture itself lives in
   Open at R11 close: K2 (cosmetic), K7 (a resource bug that also ABORTS the
   caller's process under a memory limit), K9 (the public API takes no pattern
   length, so a pattern containing NUL compiles as its prefix and reports
-  success), K10 (tier 2, LIVE — `[\N{U+41}]` refused where libpcre2 recognises
-  it), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
+  success), K10 (FIXED 2026-08-12 by MOD-0.6's K10 slice: `RF_CLASS_INVALID` removed
+  from the `{U+` row, `[\N{U+41}]` now promises module `unicode-props`;
+  guarded by `check_class_syntax_reach` and seven offset pins — see
+  docs/known_issues.md), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
   return a tagged ExtResult, one epilogue renders refusals, call sites end in
   internal-error walls — the stub-build repro now exits 1 cleanly at both
   sites; the cls_set range-check hazard stays assigned to the first
@@ -64,8 +66,9 @@ Process and status documents for pcrec. The architecture itself lives in
   K12 (FIXED 2026-08-11 by MOD-0.1's endpoint-rule slice: the five-step §16
   order in p_class, SET-shape certified from the measured class_expect column
   through the returned-claims epilogue; body-dependent rows like `\p` keep
-  their module promise until MOD-0.6's property table — a pinned, deliberate
-  boundary), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
+  their module promise until unicode-props' first WIDE producer lands —
+  MOD-0.6 landed recogniser-only and deliberately kept this boundary, see
+  design_notes_mod06.md §8.2 — a pinned, deliberate boundary), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
   rows answered the CLASS position with module `backrefs` for constructs it
   can never implement — `[\8]` is the literal `8`, `[\k]` the literal `k`;
   now octal/literal fallback per RF_CLASS_BASE) and K14 (FIXED 2026-08-11 in
