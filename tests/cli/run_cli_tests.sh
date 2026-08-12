@@ -963,8 +963,52 @@ case11() {
         "@header" "live" "produces an AST node"
     assert_field "case11: ...answered at result, the gate observable" "$out" \
         "@header" "live answered" "result"
+    # WHAT THIS CELL ASSERTS CHANGED AT R20/MOD07-3, and the annotation has to
+    # say so because the string alone does not. It used to read "ok (produces;
+    # this row's module is enabled)" and that was the WHOLE of the row's
+    # agreement at an open gate: `put_agreement` short-circuited on any
+    # non-refusal, so promise and attribution were never evaluated and opening
+    # a gate SHRANK the coverage of the rows it turned on. Now three clauses
+    # run against the row's CLOSED-GATE answer (which is where the predicate
+    # was censused) and a fourth — `gate` — runs against this open-gate one:
+    # a row that produces must have its declared module in the enabled set.
+    # So this cell is now four assertions wearing one string, and the
+    # parenthetical names which gate each half was judged at.
     assert_field "case11: ...and producing is agreement for a module row" \
-        "$out" '\d' "agree" "ok  (produces; this row's module is enabled)"
+        "$out" '\d' "agree" \
+        "ok  (clauses at the closed gate; at this one the row produces and its module is enabled)"
+    # the DISPLAYED answer is still the requested gate's — the clause scope
+    # moved, the data did not
+    assert_field "case11: ...with the open gate's own answer still displayed" \
+        "$out" '\d' "own" "produces an AST node"
+
+    # --- THE CLAUSE SCOPE: clauses judge the CLOSED gate (R20/MOD07-2) -----
+    # `(?J)` and `(?m)` DISSENTED the moment `--features modifiers` opened the
+    # gate — exit 3, stderr calling it "a pcrec defect", about a tree
+    # tests/reject:663-664 pins as CORRECT. An enabled option-run port refuses
+    # per LETTER and a letter's module is not the option ROW's, so comparing
+    # them fired on right data. §5.2's census was taken entirely at the closed
+    # gate; the enabled set is the axis the design never varied. Written
+    # failing first — both exited 3 with
+    #   agree  DISSENT: attribution: declared 'modifiers', live names 'named-groups'
+    # — and the verbatim blocks are in the slice's commit message.
+    local letter_mod
+    for q in '(?J)' '(?m)'; do
+        [ "$q" = '(?J)' ] && letter_mod="named-groups" || letter_mod="assertions"
+        out="$("$PCREC" --features modifiers --explain "$q" 2>"$d/e3.txt")"; rc=$?
+        assert_eq "case11: an open gate does not make $q dissent" "0" "$rc" \
+            "stderr: $(cat "$d/e3.txt")"
+        assert_field "case11: ...$q's row agrees" "$out" "$q" "agree" "ok"
+        assert_field "case11: ...and the header counts no dissent for $q" \
+            "$out" "@header" "dissents" "0"
+        # the per-LETTER module is still SHOWN. This is the pin that stops the
+        # fix being "make the two sides agree by dropping the interesting
+        # one": the displayed answer must keep naming the letter's module.
+        assert_field "case11: ...while $q's own answer still names the letter's module" \
+            "$out" "$q" "own names" "$letter_mod"
+        assert_field "case11: ...and the row still declares its own" \
+            "$out" "$q" "module" "modifiers"
+    done
 
     # --- the base-grammar row: an honest non-answer, not a fabricated one ---
     out="$("$PCREC" --explain '(?:')"; rc=$?

@@ -468,6 +468,64 @@ the row and compiles the row's `syntax`), so for those 13 rows it cannot tell
 which row answered. `elected` can. That is the one thing the live call adds
 that no existing check has.
 
+> ### CORRECTED (R20 — MOD07-2 and MOD07-3, one fix; manager ruling in
+> `reviews/2026-08-12-r20-mod08.md`)
+>
+> **§5 NEVER STATES THE GATE IT IS SCOPED TO, and both of the section's
+> defects live in that omission.** §5.2's census was taken with
+> `--probe-ask verdict` on each row's syntax — the CLOSED gate — and §5.3's
+> two lists are inventories of that census. Neither says so, and the
+> implementation asked the clauses at whatever `--features` happened to be.
+> The enabled set is the axis this design never varied.
+>
+> **The clauses are now scoped to the CLOSED GATE, explicitly.** `--explain`
+> makes TWO calls per displayed row: the `own *` fields display the
+> REQUESTED-gate answer as DATA, and a second call at `WANT_VERDICT` is what
+> clauses 1-3 judge. `WANT_VERDICT` realises "the default enabled set" —
+> `pcrec_ext_gate` only ever demotes and floors at VERDICT, so no enabled set
+> can promote it, and a BASE port answers at the level asked, which is also
+> VERDICT. Measured equivalent to a default-set `WANT_RESULT` ask on all 100
+> rows, every `--probe-ask` field compared, 0 differences.
+>
+> **Two measured defects this closes, both at the first open-gate cell:**
+>
+> - *`(?J)` and `(?m)` dissented on ATTRIBUTION under `--features
+>   modifiers`* — exit 3, stderr calling a tree `tests/reject:663-664` pins
+>   as CORRECT "a pcrec defect". An enabled option-run port refuses per
+>   LETTER (`J` → `named-groups`, `m` → `assertions`) while the row it
+>   dispatched on declares `modifiers`. Both facts are right; clause 3 was
+>   comparing them anyway. So the "Cannot, measured" list above is short by
+>   one entry: **clause 3 cannot be evaluated at an open gate at all**,
+>   because the answering text is then a MODULE's, not the doorway's.
+> - *clauses 2 and 3 switched OFF for producing rows.* The old predicate
+>   short-circuited on any non-refusal into a `status` read, so opening a
+>   gate SHRANK the coverage of the very rows it turned on. Judging at the
+>   closed gate restores all three for producing rows.
+>
+> **The "Can" list gains a FOURTH clause, and it is the one the open gate is
+> good for:** `gate` — a row whose requested-gate answer PRODUCES must have
+> its declared module in the enabled set. That is a real cross-check the
+> short-circuit was walking past; it would fire if production stopped being
+> the thing `--features` decides.
+>
+> **Totality, re-measured as the 100-row × 5-gate-state census** (each row's
+> own syntax as a query; `none / classes / modifiers / verbs / all`):
+>
+>     gate         queries   dissents BEFORE   dissents AFTER
+>     none             100                 0                0
+>     classes          100                 0                0
+>     modifiers        100                 2                0
+>     verbs            100                 0                0
+>     all              100                 2                0
+>
+> 500 probes per build. The predicate is now total over the table at every
+> gate state, which the pre-fix column shows it was not.
+>
+> Method lesson, and R20 filed it as one of the checkpoint's two: **an axis
+> your census never varied is an axis your clauses are wrong about.** The
+> check-design rule ("what does this claim when the population it was written
+> for changes?") now has a gate-shaped instance.
+
 ### 5.4 `--explain` is not the check, and this section is why (R10 ruling 6)
 
 R10 disposition 6 is explicit: *"Drop `--explain` and module-shipped probes as

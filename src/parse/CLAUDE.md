@@ -210,7 +210,29 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   beside the LIVE doorway's answer and compares them per row (election,
   promise, attribution — `docs/design_notes_mod07.md` §5.2), selecting rows by
   prefix UNION bucket-candidates with each row tagged which rule found it, and
-  exiting 3 when a row DISSENTS. **The honest limit, measured and repeated
+  exiting 3 when a row DISSENTS.
+  **THE CLAUSES ARE SCOPED TO THE CLOSED GATE since R20/MOD07-2+3**, and the
+  scope is the correction: §5.2's census was taken at the closed gate while
+  the implementation asked its clauses at whatever `--features` said, so the
+  enabled set was an axis the predicate had never been established over. Two
+  defects lived there — `--features modifiers --explain '(?J)'` DISSENTED on
+  attribution about a tree tests/reject:664 pins as CORRECT (an enabled
+  option-run port refuses per LETTER, and a letter's module is not the
+  dispatching row's), and a producing answer short-circuited promise and
+  attribution away, so opening a gate SHRANK the coverage of the rows it
+  turned on. Now TWO calls per displayed row: the `own *` fields show the
+  REQUESTED-gate answer as DATA, and a second `WANT_VERDICT` call is what the
+  clauses judge. `WANT_VERDICT` is how "the default enabled set" is reached
+  without a process-global being rewritten — `pcrec_ext_gate` only demotes and
+  floors at VERDICT, so no enabled set can promote it, and a BASE port answers
+  at the level asked (measured equivalent to a default-set RESULT ask on all
+  100 rows, every `--probe-ask` field compared). A FOURTH clause, `gate`, is
+  the one thing an open gate is good for here: a row that PRODUCES must have
+  its declared module in the enabled set — the cross-check the short-circuit
+  walked past. Total over the table at every gate state, measured as a
+  100-row × 5-gate-state census: 0 dissents everywhere, against 2 at
+  `modifiers` and 2 at `all` before.
+  **The honest limit, measured and repeated
   here because it is the thing a reader will assume wrongly: the attribution
   clause CANNOT dissent on a module-name swap** — ext.c renders "requires
   module '%s'" from the same `r->module` this file prints, so the two agree by
