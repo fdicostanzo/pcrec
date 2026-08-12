@@ -15,6 +15,13 @@
 #              (default: -O1 -std=gnu11 -Wall -Wextra -Werror)
 #   KEEP=1     keep the temp working directory instead of deleting it
 #   VERBOSE=1  print a line for every passing case, not just failures
+#   PROCS=N    run N .rxt FILES concurrently (default 1 — serial, unchanged).
+#              Each file runs in its own re-invocation of this script with its
+#              own temp dir; the parent aggregates the per-file summaries and
+#              HARD-FAILS if any worker vanished without one (a lost worker
+#              must never read as a pass). Summary line format is identical in
+#              both modes — tests/mech greps it. On this box prefer
+#              TMPDIR=/var/tmp at higher PROCS: /tmp is a quota'd tmpfs.
 #
 # See docs/testing.md for the .rxt format and driver protocol.
 
@@ -28,6 +35,9 @@ CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 KEEP="${KEEP:-0}"
 VERBOSE="${VERBOSE:-0}"
+PROCS="${PROCS:-1}"
+case "$PROCS" in (''|*[!0-9]*) echo "run.sh: PROCS must be a positive integer, got '$PROCS'" >&2; exit 2;; esac
+[ "$PROCS" -ge 1 ] || { echo "run.sh: PROCS must be >= 1, got '$PROCS'" >&2; exit 2; }
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -55,6 +65,85 @@ else
             files+=("$arg")
         fi
     done
+fi
+
+# ---- parallel dispatch (PROCS > 1): one worker per FILE ---------------------
+#
+# Each worker is this same script, PROCS=1, one file, its own WORKDIR; stdout
+# and stderr go to per-worker files replayed IN files[] ORDER after the wait,
+# so the parallel output is deterministic and diffable. The parent judges a
+# worker ONLY by its printed summary (never by exit code alone): a worker
+# whose output lacks the "cases passed:" line is a HARD failure — the
+# lost-worker-reads-as-pass shape is the one this block must never have.
+
+if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
+    pardir="$WORKDIR/par"
+    mkdir -p "$pardir"
+
+    running=0
+    idx=0
+    for f in "${files[@]}"; do
+        idx=$((idx + 1))
+        PROCS=1 PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
+            KEEP="$KEEP" VERBOSE="$VERBOSE" \
+            bash "${BASH_SOURCE[0]}" "$f" \
+            > "$pardir/$idx.out" 2> "$pardir/$idx.err" &
+        running=$((running + 1))
+        if [ "$running" -ge "$PROCS" ]; then
+            wait -n || true
+            running=$((running - 1))
+        fi
+    done
+    wait
+
+    total_pass=0
+    total_fail=0
+    total_cfail=0
+    summaries=0
+    fail_files=()
+
+    idx=0
+    for f in "${files[@]}"; do
+        idx=$((idx + 1))
+        # replay the worker's failure detail and any harness notes, in order
+        cat "$pardir/$idx.err" >&2
+        p="$(grep -m1 '^cases passed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
+        x="$(grep -m1 '^cases failed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
+        c="$(grep -m1 '^pattern-compile failures (distinct):' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
+        if [ -z "$p" ] || [ -z "$x" ]; then
+            echo "$f: HARNESS FAILURE: worker produced no summary (crashed or was killed) — counting as failed" >&2
+            total_fail=$((total_fail + 1))
+            fail_files+=("$f: worker lost")
+            continue
+        fi
+        summaries=$((summaries + 1))
+        total_pass=$((total_pass + p))
+        total_fail=$((total_fail + x))
+        total_cfail=$((total_cfail + ${c:-0}))
+        [ "$x" -gt 0 ] && fail_files+=("$f: $x")
+    done
+
+    echo
+    echo "== Summary =="
+    echo "cases passed: $total_pass"
+    echo "cases failed: $total_fail"
+    if [ ${#fail_files[@]} -gt 0 ]; then
+        echo "failures by file:"
+        for line in "${fail_files[@]}"; do echo "  $line"; done | sort
+    fi
+    echo "pattern-compile failures (distinct): $total_cfail"
+    echo "parallel: $summaries of ${#files[@]} file workers reported (PROCS=$PROCS)"
+
+    if [ "$summaries" -ne "${#files[@]}" ]; then
+        echo "run.sh: HARD FAILURE: $((${#files[@]} - summaries)) worker(s) vanished without a summary" >&2
+        exit 1
+    fi
+    if [ $((total_pass + total_fail)) -eq 0 ]; then
+        echo "run.sh: NO CASES RUN — corpus missing or fully unparseable" >&2
+        exit 1
+    fi
+    [ "$total_fail" -eq 0 ] && exit 0
+    exit 1
 fi
 
 # ---- result tracking ------------------------------------------------------

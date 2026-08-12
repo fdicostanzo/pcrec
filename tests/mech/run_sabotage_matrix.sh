@@ -38,7 +38,18 @@
 #   MECH_SCRATCH    scratch root for tree copies (default: a mktemp dir under
 #                   $TMPDIR, or /tmp)
 #   KEEP=1          do not delete scratch trees on exit (prints their paths)
-#   JOBS            parallel make jobs per tree build (default: nproc)
+#   JOBS            parallel make jobs per tree build (default: nproc,
+#                   divided by PROCS when PROCS > 1 so concurrent tree builds
+#                   do not oversubscribe the box)
+#   PROCS           run N SABOTAGES concurrently (default 1 — serial,
+#                   unchanged). Each run_one already works in its own
+#                   $MECH_SCRATCH/$SAB_ID tree; in parallel mode each writes
+#                   its matrix row to its own file and the rows are merged in
+#                   sabotages/ listing order, so the matrix stays diffable.
+#                   In BOTH modes the row count is now guarded against the
+#                   number of sabotage definitions requested: a run that
+#                   produces no row (e.g. a definition failing validation) is
+#                   a loud FATAL, not a silently smaller denominator.
 #
 # What this does NOT do: it does not run `make` in the real repository (every
 # build happens inside a scratch copy), it does not edit any file outside
@@ -50,7 +61,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
-JOBS="${JOBS:-$(nproc 2>/dev/null || echo 2)}"
+PROCS="${PROCS:-1}"
+case "$PROCS" in (''|*[!0-9]*) echo "FATAL: PROCS must be a positive integer, got '$PROCS'" >&2; exit 2;; esac
+[ "$PROCS" -ge 1 ] || { echo "FATAL: PROCS must be >= 1, got '$PROCS'" >&2; exit 2; }
+ncpu="$(nproc 2>/dev/null || echo 2)"
+if [ -z "${JOBS:-}" ]; then
+    JOBS=$(( ncpu / PROCS )); [ "$JOBS" -ge 1 ] || JOBS=1
+fi
 ONLY="${1:-}"
 
 if [ -z "${MECH_SCRATCH:-}" ]; then
@@ -208,17 +225,39 @@ run_one() {
     )
 }
 
-# ---- run all requested sabotages, serially (each build is seconds; the ----
-# ---- point is a correct, diffable matrix, not concurrency) ---------------
+# ---- run all requested sabotages ------------------------------------------
+#
+# Serial by default (PROCS=1): a correct, diffable matrix first. PROCS>1 runs
+# sabotages concurrently — safe because run_one is already fully isolated per
+# sabotage — with rows merged in sabotages/ listing order so the matrix output
+# is byte-identical to a serial run's.
 
 results_file="$(mktemp "$MECH_SCRATCH/results.XXXXXX")"
 : > "$results_file"
 
-for f in "${sab_files[@]}"; do
-    id_guess="$(basename "$f" | sed -E 's/^(S[0-9]+)-.*/\1/; s/^(S[0-9]+)_.*/\1/')"
-    echo "-- running $(basename "$f") --" >&2
-    run_one "$f" | tee -a "$results_file" >&2
-done
+if [ "$PROCS" -gt 1 ] && [ "${#sab_files[@]}" -gt 1 ]; then
+    rowdir="$(mktemp -d "$MECH_SCRATCH/rows.XXXXXX")"
+    running=0
+    for f in "${sab_files[@]}"; do
+        echo "-- running $(basename "$f") --" >&2
+        run_one "$f" > "$rowdir/$(basename "$f").row" &
+        running=$((running + 1))
+        if [ "$running" -ge "$PROCS" ]; then
+            wait -n || true
+            running=$((running - 1))
+        fi
+    done
+    wait
+    for f in "${sab_files[@]}"; do
+        cat "$rowdir/$(basename "$f").row" >> "$results_file" 2>/dev/null || true
+    done
+    cat "$results_file" >&2
+else
+    for f in "${sab_files[@]}"; do
+        echo "-- running $(basename "$f") --" >&2
+        run_one "$f" | tee -a "$results_file" >&2
+    done
+fi
 # run_one's stdout IS the tsv row; tee above sent it to stderr for a progress
 # view too, so re-extract just the tab-separated rows for the table below
 grep -P '^\S+\t' "$results_file" > "$results_file.rows" || true
@@ -234,6 +273,22 @@ echo
 undetected="$(grep -c 'UNDETECTED' "$results_file.rows" || true)"
 anomalies="$(grep -c 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" || true)"
 total="$(wc -l < "$results_file.rows" | tr -d ' ')"
+
+# The denominator guard: `total` above is derived from the rows that ARRIVED,
+# which is the same source as the numerators — a sabotage that produced no row
+# (a definition failing validation, or a lost parallel worker) would silently
+# shrink the matrix and 19/19 would read as 20/20. Count the DEMAND side from
+# the sabotages/ listing instead and refuse the mismatch loudly.
+if [ "$total" -ne "${#sab_files[@]}" ]; then
+    echo "*** FATAL: ${#sab_files[@]} sabotage(s) requested but only $total row(s) arrived. ***"
+    echo "*** A sabotage that vanishes is a lost measurement, never a smaller matrix. ***"
+    for f in "${sab_files[@]}"; do
+        id="$(basename "$f" | sed -E 's/^(S[0-9]+)[-_].*/\1/')"
+        grep -q "^$id	" "$results_file.rows" || echo "    - missing: $(basename "$f")"
+    done
+    rm -f "$results_file" "$results_file.rows"
+    exit 2
+fi
 
 if [ "${undetected:-0}" -gt 0 ]; then
     echo "*** $undetected of $total sabotage(s) were caught by ZERO checks in their assigned suites. ***"

@@ -72,6 +72,7 @@ it plugs directly into `make test` / CI.
 | `GENCFLAGS` | `-O1 -std=gnu11`           | Flags passed to `$CC` when compiling generated code |
 | `KEEP`      | unset (0)                  | Set to `1` to keep the harness's temp working directory instead of deleting it on exit (path is printed to stderr) |
 | `VERBOSE`   | unset (0)                  | Set to `1` to print a line for every *passing* case, not just failures |
+| `PROCS`     | unset (1)                  | Run N `.rxt` **files** concurrently (each in its own re-invocation with its own temp dir). Summary format and counts are identical to a serial run; the parent hard-fails if any worker vanishes without printing a summary, so a lost worker can never read as a pass. Measured on the project box: full corpus 4m25s serial → 55s at `PROCS=6`. Prefer `TMPDIR=/var/tmp` at higher `PROCS` (`/tmp` is a quota'd tmpfs there) |
 
 Example: testing a debug build with a different compiler and keeping
 artifacts around for inspection:
@@ -79,6 +80,15 @@ artifacts around for inspection:
 ```sh
 PCREC=build/pcrec-debug CC=clang KEEP=1 VERBOSE=1 bash tests/harness/run.sh tests/base
 ```
+
+`tests/mech/run_sabotage_matrix.sh` takes the same `PROCS` variable for
+concurrent sabotages (rows merged in listing order, so the matrix stays
+byte-identical to a serial run's), and in both modes now guards the matrix
+row count against the number of sabotage definitions requested — a sabotage
+that produces no row is a loud FATAL, never a silently smaller denominator.
+`make bench` deliberately supports no parallelism, in either direction: its
+budgets are timing medians (D12/D17) and it gates on load average, so it runs
+alone on a quiet box or its numbers mean nothing.
 
 ## The `.rxt` format
 

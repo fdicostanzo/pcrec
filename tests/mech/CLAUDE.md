@@ -18,7 +18,18 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   table says are relevant, and print one row of the matrix. Supports running a
   single sabotage by id prefix: `bash tests/mech/run_sabotage_matrix.sh S13`.
   Env: `CC`, `KEEP=1` (keep scratch trees + suite logs instead of deleting
-  them), `MECH_SCRATCH` (scratch root), `JOBS`.
+  them), `MECH_SCRATCH` (scratch root), `JOBS`, and `PROCS=N` (2026-08-12) —
+  N sabotages concurrently, safe because run_one was already isolated per
+  sabotage; rows are merged in sabotages/ listing order so the matrix is
+  byte-identical to a serial run's, and `JOBS` defaults to nproc/PROCS so
+  concurrent tree builds do not oversubscribe. In BOTH modes the summary now
+  guards its row count against the number of definitions requested: before
+  this, a sabotage whose definition failed validation produced NO row and the
+  denominator (`wc -l` of arrived rows) silently shrank — 19/19 reads as
+  clean where 20 were asked for. That is the checks-sharing-a-source shape
+  again, fixed by counting the demand side from the `sabotages/S*.sh` listing.
+  Validated in the failing direction with a stub definition missing
+  `SAB_FILE`: FATAL exit 2, the missing sabotage named.
 - **lib/replace.py** — the ONLY thing that edits a sabotaged file. Takes a
   target file plus literal BEFORE/AFTER text and a required occurrence count;
   refuses to run if the anchor text is not found exactly that many times

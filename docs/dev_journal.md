@@ -6191,3 +6191,27 @@ the `<`/`>` → `assertions` move and the new `extended-classes` module name
 are my rulings under D26's tier discipline, recorded here rather than
 asked, per the begin-dev directive. Say the word and either becomes a
 one-row edit plus pin updates.
+
+**Mid-session (Frank): test parallelism.** `PROCS=N` landed in the two serial
+loops worth parallelizing, opt-in, default 1 = byte-identical behaviour:
+
+- `tests/harness/run.sh` — per-FILE workers (self-reinvocations, own temp
+  dirs, output replayed in file order). The parent judges a worker ONLY by
+  its printed summary; a vanished worker is a hard failure. Validated in the
+  failing direction twice: a planted wrong expectation propagates (exit 1,
+  detail line intact) and a deleted worker output fires the guard ("1 of 2
+  file workers reported", HARD FAILURE). Measured: full corpus 1139/0/0 over
+  25 files, 4m25s serial → 55s at PROCS=6, counts identical.
+- `tests/mech/run_sabotage_matrix.sh` — concurrent sabotages (run_one was
+  already isolated per sabotage), rows merged in sabotages/ listing order,
+  JOBS defaults to nproc/PROCS. Measured: 6m20s serial → 1m57s at PROCS=4,
+  detection tables BYTE-IDENTICAL unsorted, 20/20 DETECTED both ways.
+  **The change also closed a pre-existing hole**: the summary's denominator
+  was `wc -l` over the rows that ARRIVED — the same source as the numerators
+  — so a sabotage whose definition failed validation produced no row and
+  19/19 read as clean. The guard now counts the demand side from the
+  `sabotages/S*.sh` listing in BOTH modes; validated with a stub missing
+  SAB_FILE (FATAL exit 2, the missing sabotage named). The
+  checks-sharing-a-source catalogue gains its counter-example.
+- `make bench` stays deliberately parallel-free in both directions (D12/D17
+  timing medians, loadavg gate) — documented in docs/testing.md.
