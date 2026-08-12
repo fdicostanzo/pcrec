@@ -389,16 +389,17 @@ enum {
      * doorway IS entered and the answer is a refusal that promises nothing. */
     RF_CLASS_INVALID = 1u << 3,
 
-    /* The row is an INLINE OPTION SETTING, so its construct is the whole run of
-     * option letters up to `)` or `:` — not the single byte that selected it
-     * (Q2). ext.c validates the run with pcrec_registry_option_run_ok and falls
-     * back to the doorway's rejection when it is not one.
-     *
-     * It exists because splitting the `(?` catch-all into eleven letter rows
-     * fixed the first byte and left `(?iZ)` still promising a module for syntax
-     * PCRE2 refuses. A row-per-byte cannot express "and the rest must parse";
-     * this flag is where that obligation lives. */
-    RF_OPTION_RUN = 1u << 4,
+    /* RF_OPTION_RUN (1u << 4) RETIRED at MOD-0.5b: it told ext.c "validate the
+     * whole run before trusting this row" for the twelve GROUP_OPT rows. Since
+     * MOD-0.2's recogniser+rank arbitration already asks each row a row-local
+     * question and falls through to the kind's catch-all when a row declines,
+     * the same fact now lives in the row's own `recognise` field —
+     * pcrec_registry_option_run_recognise (src/parse/mod_modifiers.c), whose
+     * own comment records why it is a MARKER rather than the check itself,
+     * and see ext.c for where the real check moved (not far: the same call,
+     * gated on identity instead of a bit). The bit is left unassigned so an
+     * old build's dump and a new one cannot alias — the RF_CLASS_BASE
+     * precedent above. */
 
     /* The LEXICAL row kind (MOD-0.1 slice 4, design §13.3): the construct is
      * a TOKENIZER MODE, not an atom — `\Q...\E` turns raw bytes into literal
@@ -819,10 +820,21 @@ bool pcrec_registry_row_answers(const RegRow *r, const char *at, size_t avail);
  * `ambiguous` may be NULL for callers that only want the row. */
 const RegRow *pcrec_registry_arbitrate(RegKind k, int sel, const char *at,
                                        size_t avail, bool *ambiguous);
+
+/* src/parse/mod_modifiers.c — module `modifiers` (MOD-0.5b), moved out of
+ * registry.c WITH the measured grammar block that establishes it (the
+ * probes-and-code-together rule; see the file's own header for why). */
 /* Is `at[0..avail)` a valid PCRE2 inline option run — the text starting at the
  * byte after `(?`, up to and including its `)` or `:` terminator? The grammar
- * is measured against libpcre2; see registry.c. */
+ * is measured against libpcre2; see mod_modifiers.c. */
 bool pcrec_registry_option_run_ok(const char *at, size_t avail);
+/* The twelve GROUP_OPT rows' `recognise` field (retires RF_OPTION_RUN). A
+ * MARKER, not the check itself — always answers true, identically to the
+ * tail-less default — so ext.c can key off `r->recognise == this pointer`
+ * instead of a flag; see its own comment for why it does not run
+ * pcrec_registry_option_run_ok directly. */
+bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
+                                         const char *tail);
 
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *

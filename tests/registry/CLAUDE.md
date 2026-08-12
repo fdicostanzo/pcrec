@@ -407,7 +407,7 @@ claimed; the last seven are Q2/SR-9's.
 | neutralise both 4a nested-opener shapes (R9) | 2 |
 | drop the `]` from the close check, a bare delimiter closes (R9/C2-6) | 12 |
 | **restore the pre-Q2 `(?` catch-all** (RS_REJECTED -> `GROUP(REG_SEL_ANY, ..., modifiers)`) | **25** (+8 reject) |
-| the doorway stops reading the option run (`if (0 && (r->flags & RF_OPTION_RUN))`) | 23 (+4 reject) |
+| the doorway stops reading the option run (pre-MOD-0.5b: `if (0 && (r->flags & RF_OPTION_RUN))`; MOD-0.5b retired the flag — the equivalent edit today is `if (0 && r->recognise == pcrec_registry_option_run_recognise)` in ext.c) | 23 (+4 reject) — carried forward at the move, not re-measured; `make mech` re-confirms |
 | bare `(?P` promises 'named-groups' again (the 5th over-promise) | 24 (+1 reject) |
 | `(?P=` back to 'named-groups' (R8/C4-7's misattribution) | 1 (+1 reject) |
 | `(?+N` back to 'modifiers' | 1 (+1 reject) |

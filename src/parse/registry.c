@@ -212,9 +212,14 @@
  * they are simply never rendered as a promise. */
 #define GROUP_NEVER(sel, syn, mod, eng, note, q) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_NEVER, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
-/* an inline option setting: the construct is the whole RUN, not this byte */
+/* an inline option setting: the construct is the whole RUN, not this byte.
+ * RF_OPTION_RUN retired at MOD-0.5b — the `recognise` field now carries the
+ * same fact, as a MARKER (src/parse/mod_modifiers.c's own comment on
+ * pcrec_registry_option_run_recognise says why it is a marker and not the
+ * check itself, and internal.h's retired-RF_OPTION_RUN comment says where
+ * the real check moved to: ext.c, gated on this pointer instead of the bit). */
 #define GROUP_OPT(sel, syn, note, q) \
-    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
+    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, pcrec_registry_option_run_recognise, NO_PORT, NO_PORT}
 /* as GROUP, but the row applies only when `tl` FOLLOWS the selector byte (SR-9).
  * One byte, several constructs: `(?P<` `(?P=` `(?P>` are a named group, a
  * backreference and a subroutine call, and answering all three with one module
@@ -880,122 +885,12 @@ static const PosixName posix_names[] = {
 
 /* ---- the `(?` doorway's OPTION RUN (Q2) ---------------------------------
  *
- * THIS FUNCTION'S HOME IS PROVISIONAL AND WILL MOVE — see [MOD-0] in
- * docs/plan.md. It is a body PARSER living in a file whose header describes
- * itself as `static const` data plus a lookup, and it does not match how the
- * other two multi-byte doorways are split (both keep their tables here and
- * their scanning in ext.c). Frank's call, 2026-08-10: a module should expose
- * SEVERAL PORTS — a semantic one and a syntax one — and the doorway should
- * identify the construct from key+tail and then call the row's SYNTAX handler
- * for the details. Then neither ext.c nor this file accumulates parsers.
- *
- * It is written here rather than in ext.c meanwhile for one reason worth
- * keeping when it moves: the grammar below and the measurements that establish
- * it must not be separated. The `(*LIMIT_*=digits` rule is the counter-example
- * — its measured description sits in this file and its implementation in ext.c,
- * and R8/C2-9 found they had drifted, with ext.c accepting `=99999999999` that
- * the description forbids. Whichever file the port lands in, the probes and the
- * code go together.
- *
- * Splitting the catch-all into eleven option-letter rows fixed the BYTE and
- * left the same over-promise one level down: `(?iZ)`, `(?-Z)` and `(?i-Z)` are
- * PCRE2 error 111 and pcrec still answered "requires module 'modifiers'",
- * because the row is chosen by the first byte and nothing read the rest. That
- * is Q2's own defect at a smaller scale — the shape the wake brief warns about
- * as "fixing the narrowest instance and calling it the class".
- *
- * So this doorway reads its whole run, exactly as `(*` reads its whole name.
- *
- * THE GRAMMAR IS MEASURED, and the sub-option rule is why it had to be. Swept
- * against libpcre2 10.46 over single bytes, both terminators, the `^` and `-`
- * prefixes, and every two-byte run:
- *
- *     letters   J U a i m n r s x          and NOTHING else
- *     a<sub>    aD aP aS aT aW             one ASCII-restrict letter after `a`
- *     (?aPP)    error 111                  ...and only one; `P` is not a letter
- *     (?aDPS)   error 111                  same
- *     repeats   (?xx) (?xxx) (?imsxJU)     OK — a letter may repeat
- *     hyphen    (?i-m) (?i-) (?-) (?aP-i)  OK
- *     caret     (?^) (?^i) (?^aP)          OK — and only at the very start
- *     terminator  ')' or ':'
- *
- * Every one of those lines is a probe that was run, not a sentence from
- * pcre2syntax. The `a` sub-options in particular are invisible to any rule
- * derived from single letters, and a "set of option letters" implementation —
- * the obvious one — accepts `(?aPP)` and rejects `(?aP)`, getting BOTH
- * directions wrong.
- *
- * THE QUESTION IS RECOGNITION, NOT VALIDITY, and getting that backwards is the
- * mistake this function was written with. PCRE2 has two answers for a bad run
- * and only one of them means "no construct here":
- *
- *     (?i-m-s) (?--i) (?-i-) (?i--m) (?^-i)   error 194 "invalid hyphen in
- *                                             option setting" — PCRE2 HAS
- *                                             recognised an option setting
- *     (?i-mZ) (?a-P) (?^^i) (?i^m)            error 111 — no construct at all
- *
- * So hyphens may appear anywhere and repeat: a misplaced one is a MALFORMED
- * option setting, which module 'modifiers' is exactly what would diagnose. The
- * doorway names the module; the module validates the body. Writing the stricter
- * "at most one hyphen, never after ^" rule here made pcrec answer "unrecognized
- * character" for five shapes PCRE2 calls option settings — an UNDER-promise,
- * the mirror of the over-promise Q2 removes, and the generated differential in
- * pcre2_check.c refused it within a minute of being pointed at it. */
-
-static bool opt_letter(int c)
-{
-    return c == 'J' || c == 'U' || c == 'a' || c == 'i' || c == 'm' ||
-           c == 'n' || c == 'r' || c == 's' || c == 'x';
-}
-
-/* The ASCII-restrict sub-options, valid ONLY directly after `a`. */
-static bool opt_a_sub(int c)
-{
-    return c == 'D' || c == 'P' || c == 'S' || c == 'T' || c == 'W';
-}
-
-bool pcrec_registry_option_run_ok(const char *at, size_t avail)
-{
-    size_t i = 0;
-    bool caret = false, hyphen = false;
-
-    if (!at) return false;
-
-    /* `^` only at the very start: `(?^^i)` and `(?i^m)` are error 111. */
-    if (i < avail && at[i] == '^') { caret = true; i++; }
-
-    for (;;) {
-        /* Running off the END of the pattern is not an illegal byte: `(?i` is
-         * PCRE2 error 114, "missing closing parenthesis", which is a RECOGNISED
-         * option setting that was truncated. Returning false here made pcrec
-         * answer "unrecognized character" for every truncated option run, and
-         * registry_check's own 255-byte sweep — whose template is `(?%c`, with
-         * no terminator at all — failed on all eleven option bytes at once. */
-        if (i >= avail) return true;
-        if (at[i] == ')' || at[i] == ':') return true;   /* a terminator ends it */
-
-        if (at[i] == '-') {
-            /* PCRE2 STOPS AT THE FIRST ERROR, and that ordering is part of the
-             * rule rather than an implementation detail to be normalised away.
-             * A hyphen that is invalid HERE — a second one, or one after `^` —
-             * raises error 194 and PCRE2 never looks at what follows. So
-             * `(?--D)` is a recognised (malformed) option setting even though
-             * `D` would have been error 111 on its own, and a rule that scanned
-             * the whole run before deciding got that backwards for 24 shapes. */
-            if (caret || hyphen) return true;
-            hyphen = true;
-            i++;
-            continue;
-        }
-        if (!opt_letter((unsigned char)at[i])) return false;
-        bool is_a = at[i] == 'a';
-        i++;
-        /* `a` may take exactly one ASCII-restrict sub-option, and those letters
-         * are not option letters anywhere else: `(?aP)` compiles, `(?a-P)` and
-         * `(?aPP)` are error 111. */
-        if (is_a && i < avail && opt_a_sub((unsigned char)at[i])) i++;
-    }
-}
+ * MOVED to src/parse/mod_modifiers.c at MOD-0.5b (slice 1 of module
+ * `modifiers`): pcrec_registry_option_run_ok, its measured grammar comment,
+ * and the recogniser that replaces RF_OPTION_RUN
+ * (pcrec_registry_option_run_recognise) all live there now, together, on the
+ * probes-and-code-together rule the block itself explains. This file no
+ * longer claims that grammar — see mod_modifiers.c and GROUP_OPT below. */
 
 const PosixName *pcrec_registry_posix_names(size_t *n)
 {
