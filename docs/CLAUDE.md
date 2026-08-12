@@ -34,6 +34,15 @@ Process and status documents for pcrec. The architecture itself lives in
   claims; corrections inline marked R14, and §18 holds the post-R14 state
   plus the five decisions left for Frank. Read BOTH panel-outcome blocks
   before any section.
+- `design_notes_mod06.md` — MOD-0.6 (module `unicode-props`) phase-1 design
+  note: the \p/\P syntax-port shape and its CLAIM/REFUSE dispatch rule
+  (bound to options=0, R10 disposition 3), the K10 row fix, the streaming
+  normalisation algorithm and its 48-significant-character boundary
+  (measured, not assumed — tests/probes/probe_uprops.c), the in-class
+  tail-sweep extension design, and the phase-2 test plan. ACCEPTED by the
+  manager 2026-08-12; phase 2 (code) built from it — see
+  tests/registry/CLAUDE.md and src/parse/CLAUDE.md's `mod_uprops.c` entry
+  for what actually landed.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather

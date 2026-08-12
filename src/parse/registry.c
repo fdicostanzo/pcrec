@@ -325,8 +325,20 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u", NULL, 0,
  "\\N{name} — PCRE2 states it does not support this Perl construct",
  ROADMAP_NEVER, QF_NO, "err 137", 25, recognise_N_name_brace, NO_PORT, NO_PORT},
+/* K10 FIX (MOD-0.6 phase 2, 2026-08-12): RF_CLASS_INVALID removed. That flag
+ * means "PCRE2 forbids this permanently in a class" (R9/SPEC-classes-F1), and
+ * it was WRONG on this row — measured against libpcre2 10.46, [\N{U+41}] is
+ * error 193 in EVERY class position (bare, leading, trailing, low endpoint,
+ * negated: tests/probes/probe_uprops.c), which is recognition-then-mode-
+ * refusal, not permanent rejection, exactly as this row's own `note` field
+ * already said (R10/C1-7 — the row contradicted itself). Without the flag
+ * this row falls through to the ordinary RS_MODULE in-class branch in ext.c,
+ * so [\N{U+41}] now reads "\N in a class requires module 'unicode-props'"
+ * instead of "\N is not valid inside a character class" — see
+ * docs/known_issues.md K10 and docs/design_notes_mod06.md §2 for the full
+ * field-by-field account of what did and did not change on this row. */
 {RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
- RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
  "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection",
  ROADMAP_PLANNED, QF_NO, "err 193",
  /* rank 70: the LONGER half of the table's one prefix-related tail pair —

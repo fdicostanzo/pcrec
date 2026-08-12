@@ -342,6 +342,28 @@ done
 # answer, and the in-class one must promise no module (R9/SPEC-classes-F1).
 reject '\N'    "\N requires module 'classes'"
 reject '[\N]'  "\N is not valid inside a character class"
+# K10 FIX (MOD-0.6 phase 2): `\N{U+hhhh}` is the OPPOSITE case from bare `\N`
+# just above — libpcre2 recognises it in every class position (error 193,
+# recognition-then-mode-refusal, not permanent rejection; measured against
+# libpcre2 10.46 in tests/probes/probe_uprops.c), so unlike bare `\N` it MUST
+# promise module 'unicode-props' rather than refuse with no module. Offsets
+# load-bearing (the S27 lesson: these pin pcrec's OWN blame-position
+# convention, not PCRE2's number, though they happen to agree here — see D26's
+# addendum). Before this fix these five cells all read "\N is not valid inside
+# a character class" instead (the RF_CLASS_INVALID row this fixed); measured
+# failing against the unpinned pre-fix HEAD before landing.
+reject '[\N{U+41}]'    "\N in a class requires module 'unicode-props' (pattern offset 1)"
+reject '[x\N{U+41}]'   "\N in a class requires module 'unicode-props' (pattern offset 2)"
+reject '[\N{U+41}x]'   "\N in a class requires module 'unicode-props' (pattern offset 1)"
+reject '[a-\N{U+41}]'  "\N in a class requires module 'unicode-props' (pattern offset 3)"
+reject '[^\N{U+41}]'   "\N in a class requires module 'unicode-props' (pattern offset 2)"
+# The K12 endpoint rule's SCALAR-shaped exception, re-pinned for this row
+# specifically now that it can promise a module at all: `\N{U+41}` is a
+# SCALAR (one code point), not a certified SET, so it keeps its OWN error at
+# a range endpoint rather than being overridden by PCRE2's "invalid range"
+# (contrast the SET-shaped `[0-\p{L}]` pins below, which DO get overridden).
+reject '[0-\N{U+41}]'    "\N in a class requires module 'unicode-props' (pattern offset 3)"
+reject '[\N{U+41}-z]'    "\N in a class requires module 'unicode-props' (pattern offset 1)"
 # MOD-0.3f (R16 engine critic): a quantifier-SHAPED brace after \N is bare
 # \N quantified — PCRE2's fallback rule, measured in probe_nbrace.c — so in
 # the default state it refuses as the GATED module construct, not as the
@@ -1272,8 +1294,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 268 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 268 / 65 / 0 / 4." >&2
+if [ "$nrej" -ne 275 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 275 / 65 / 0 / 4." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

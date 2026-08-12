@@ -139,8 +139,9 @@ directory asserts that the description and the shipped parser actually agree.
    and discard ambiguity — scans.c's prose assumption, now an assertion),
    the answer predicate is the engine's own exported
    `pcrec_registry_row_answers` (no duplicate to drift), and
-   run_registry_tests.sh carries a **count (167 since MOD-0.3b; 166 at R15)
-   + manifest guard for registry_check itself**, mirroring PC-3's, with one
+   run_registry_tests.sh carries a **count (168 since MOD-0.6's K10 slice;
+   167 since MOD-0.3b; 166 at R15) + manifest guard for registry_check
+   itself**, mirroring PC-3's, with one
    NEGATIVE needle: the retired check's PASS line must not reappear. NOTE the division of
    labour R15's checks critic initially misread: these checks do NOT ask
    which row WINS — `check_table_to_parser` owns that (D32 §9.1's primary
@@ -159,6 +160,23 @@ directory asserts that the description and the shipped parser actually agree.
    directions same-session: value drift on `\b` (0x08→0x09) fails the
    column tie, a zeroed `\k` scalar fails the fallback law, and deleting
    the call fires the count guard AND the manifest line.
+8. **class-position reach** (MOD-0.6, K10's fourth net) — the generic
+   `[\%c]` in-class sweep above supplies exactly one byte of tail, so it
+   structurally cannot probe `[\N{U+41}]` (or any other tailed/body-
+   carrying escape) at class position at all. `check_class_syntax_reach`
+   closes that specific gap: for every RK_ESC row whose `syntax` carries a
+   `tail` or body text past the bare `\X` form (today exactly 5: the `{U+`
+   row, `\p`, `\P`, `\c`, `\o` — `\g`/`\k` are excused, base class ports,
+   see below), it arbitrates on the REAL tail text a class doorway would
+   see and confirms it resolves to THAT row, then confirms the compiled
+   diagnostic promises that row's module. **What it cannot do, stated so
+   it is not mistaken for more**: it predicts the expected text from the
+   row's OWN current fields (same as `check_table_to_parser`), so it can
+   never independently catch a WRONG FLAG the way K10 was wrong — only
+   tests/reject/'s hand-written pins and PC-3's libpcre2 differential can
+   do that, and always could. Positive-controlled by re-sabotaging K10
+   (restoring `RF_CLASS_INVALID` on the `{U+` row): the check fails
+   immediately, naming the row and the unpromised module.
 
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
