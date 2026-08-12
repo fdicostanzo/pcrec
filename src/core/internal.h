@@ -1135,7 +1135,14 @@ char *pcrec_syntax_tsv(unsigned flavours);
  * appear in the TSV above. Caller frees. */
 char *pcrec_syntax_verbs(void);
 /* NULL when no construct matches the query. */
-char *pcrec_syntax_explain(const char *query, unsigned flavours);
+/* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
+ * no doorway AND no row looks like it — the CLI turns that into exit 1 with
+ * its own message. Otherwise the answer, and `*ndissent` (may be NULL) is how
+ * many displayed rows FAILED the election/promise/attribution clauses: a
+ * defect surfaced, which the CLI reports as exit 3, distinct from exit 1's
+ * "your query could not be answered". See syntax_dump.c's own header for the
+ * format and for what these clauses can and cannot dissent on. */
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent);
 unsigned pcrec_flavour_by_name(const char *name);
 /* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
  * doorway call for `construct` at ask level `want_name` ("claim" /
