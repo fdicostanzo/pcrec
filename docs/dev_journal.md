@@ -6708,3 +6708,101 @@ Lessons, this session's additions:
   room to spare, where MOD-0.5's shape needed the same. The skill's
   3-lane cap was never hit — one serialized lane was enough for a
   migration; parallelism is for genuinely disjoint work.
+
+## 2026-08-12 — thirteenth session: MOD-0.6 opened/built/closed; K15 ruled and closed; D35; K16 opened at R19
+
+Session ran under /pcrec-manager (the skill's second outing). Frank
+present and ruling throughout — five rulings this session. Baseline
+battery green at 39f78f9 before any work.
+
+**The milestone in one line: the recogniser landed with zero tier-1
+divergences, and BOTH of the project's marquee lessons (S27's
+message-only pins, the sweep-template blindness) recurred inside the very
+milestone that cites them — caught by mech's first-ever UNDETECTED rows
+and by the R19 panel.**
+
+- **K15 closed as ruled** (Frank: acceptable tier-2 + document the
+  divergence). Lane landed the linked pair in order: hostile-alphabet
+  pool first, PC-3 measured FAILING 78/78 on exactly the K15 cell, THEN
+  the narrow exclusion (fires iff rc-160 x over-cap x too-long text) +
+  liveness assert (sabotage-validated) + pcre2_compliance.md entry.
+  PC-3 143->144. Merged 7b5e494.
+- **D35** (Frank): probe OUTPUT reports archived at
+  docs/measurements/<probe>.txt via scripts/measure.sh — STABLE filenames
+  so re-measurement is a git diff; header stamps date/repo/oracle/gcc.
+  REFINED same session (Frank): a report is a PURE FUNCTION of (probe
+  blob, ABI blob, oracle version) — all three stamped; `measure.sh
+  --stale` answers VALID/STALE with no re-run. Evidence, never an oracle.
+  First reports: probe_quant (validation), probe_uprops (at the merge;
+  the R19 engine critic reproduced it byte-for-byte — the convention's
+  first real validation).
+- **MOD-0.6** (Frank's go; ruled recogniser-only — D33 §7 WIDENING
+  amendment: defers to the first wide producer). Phase 1 measured before
+  design: probe_uprops's 256-byte tail sweep KILLED the plan row's
+  predicted finding — \p/\P have NO decline-shaped tail, so the catch-all
+  recognise is permanently correct, not the Q2 shape. The 48/49
+  significant-char boundary located exactly with the streaming proof
+  (blame offset tracks the COUNT, not body length — n=49 blames one past
+  the 49th sig char at the same offset whether or not insignificant
+  filler doubles the body). Slices: K10 FIXED (flag removal +
+  check_class_syntax_reach + 7 pins); mod_uprops.c (streaming scanner,
+  PCREC_UPROP_NAME_MAX=48, marker-keyed direct call bypassing aport/cport
+  — nothing that refuses may start compiling); 24+3 pins; PC-3
+  differential (1,976 probes; 52-letter live-oracle sweep guards the
+  hand-written table — manager ruling: hand-written beats generated,
+  because generated-from-libpcre2 checked-against-libpcre2 is one source
+  wearing two hats); mech S31-S35.
+- **Mech's first UNDETECTED rows, working as designed**: S33 and S34 came
+  back 0/465. S33's predicted flip misread ruling 3 (a two-char name gets
+  the GENERIC message; what MOVES is the caret-prefixed 48/49 boundary)
+  — closed with the two caret-boundary pins. S34 was structurally
+  undetectable: the buffer's only reader RE-FOLDED on the way in,
+  repairing the sabotage — the control-sharing-a-source shape — closed in
+  CODE (fold-free uprops_short_lookup; the accumulator's fold is now
+  load-bearing) + the \p{c} pin. Also learned twice about the mech
+  harness itself: SAB_COUNT is replace.py's anchor-occurrence count (an
+  S33 rerun ANOMALY taught that), and run_sabotage_matrix.sh EXITS 0 with
+  UNDETECTED/ANOMALY rows — the matrix is a record, not a gate; read
+  rows, never the exit code.
+- **R19 panel** (docs/reviews/2026-08-12-r19-mod06.md): zero tier-1.
+  ENGINE -> **K16 opened** (164/256 \p{...} body bytes are err-146 AT THE
+  BYTE to libpcre2; pcrec scans past them — the sweep-template lesson's
+  FOURTH recurrence: probe swept the tail byte, census tested four body
+  bytes, differential is well-formed-by-construction; all three stop at
+  the brace). Frank ruled DEFER to first producer; pins claim pcrec's own
+  behavior; compliance entry landed; LINKED PAIR recorded (differential
+  stays well-formed-only until the fix). CHECKS -> \p{L}/\P{L} were the
+  LAST message-only pins (S27's lesson, fourth recurrence, THREE LINES
+  under the comment citing it — fixed); has_eq branch had ZERO coverage
+  (manager's own ruling-3 code — pinned); the 1,976-probe differential's
+  honest claim is POSITION-INVARIANCE, not absolute offsets (its header
+  always said so; closure prose now does too); S31's positive control
+  measured to a NUMBER (exactly 1). DOCS -> K10-LIVE staleness + three
+  stale "until MOD-0.6's property table" copies + slice-5 lag in
+  src/parse/CLAUDE.md — all fixed.
+- **Session ops**: THREE lane deaths mid-flight (mod06 twice, mod06b
+  once, all while waiting on long test runs); each time the
+  landing-bar-travels-with-the-brief rule held and the manager finished
+  the landing from worktree state (review-first, then commit). Final
+  counts: reject 303/99/65/4 (437->472 total checks), registry_check 168,
+  PC-3 154 (verb probes 973,726; uprops 1,976), mech 35/35, corpus/fuzz/
+  spec_mod0/bench green.
+
+Lessons, this session's additions:
+
+- Lessons transfer by CHECKLIST, not osmosis: S27's and the
+  sweep-template's recurrences were both INSIDE surfaces citing them. The
+  close checklist now needs, literally: "sweep the axis your generator
+  cannot produce" and "grep the touched surface for message-only pins".
+- A sabotage's doc-figure is a PREDICTION and can be wrong two ways: by
+  misreading the landed design (S33) and by sabotaging something whose
+  only reader repairs it (S34). An UNDETECTED row is the harness working;
+  triage the prediction before touching the pins.
+- A control must not re-derive what its subject computes (S34's re-fold):
+  make the read path TRUST the write path, then sabotage the writer.
+- Harness exit codes are not gates unless proven: mech exits 0 on
+  UNDETECTED and ANOMALY both. Read the matrix.
+- Probe reports as pure functions of stamped dependencies (D35
+  refinement) turn "should we re-measure?" into a mechanical --stale
+  check — and the first byte-for-byte reproduction validated the whole
+  convention.
