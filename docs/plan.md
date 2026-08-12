@@ -1344,7 +1344,13 @@ Then DOC-1, then PC-4 when module `classes` lands.
   pre-landing §9.3 framing (the R16 failure mode, one module later). The
   option-run grammar got its first adversarial readers (MOD-0.8's note
   discharged early). Journal + wake at close.
-- [MOD-0.6] STATE:not-started — module `unicode-props`, the only NEW recogniser:
+- [MOD-0.6] STATE:started (2026-08-12, thirteenth session; Frank's go. Same
+  session Frank RULED K15: category divergence acceptable, tier 2 per D26 —
+  PC-3 exclusion citing K15 + hostile-alphabet generator row + a
+  pcre2_compliance.md divergence entry land as a separate small lane, not
+  part of this step. Also ruled: D33 §7's class-structure WIDENING defers to
+  the first wide PRODUCER — amendment recorded under D33 §7; this step stays
+  recogniser-only) — module `unicode-props`, the only NEW recogniser:
   `\p{...}` vs `\pL` (two shapes at one byte), `\P` polarity from `sel`,
   normalisation into a CALLER-PROVIDED FIXED BUFFER (never an arena — D29;
   `arena_alloc` aborts, which is K7), and the `\N{U+` half of MOD-0.1's

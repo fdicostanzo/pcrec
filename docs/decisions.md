@@ -3121,6 +3121,13 @@ unexercised structure D24/SR-2 warns about ("lost more to unexercised structure
 than to missing structure"); leaving it unsaid is how MOD-0.6 discovers it.
 Stated here so it is a decision.
 
+> **AMENDED 2026-08-12 (Frank, thirteenth session).** Widening DEFERS to the
+> first milestone that PRODUCES a wide set (M5-era `\p` matching). MOD-0.6 as
+> scoped in plan.md is recogniser-only — no producer lands, so a widened
+> structure built there would itself be the unexercised structure this section
+> warns about. Ownership split: MOD-0.6 owns the `\p`/`\P`/`\N{U+` REFUSAL
+> surface; the first wide producer owns the structure.
+
 ### 8. What this deletes
 
     pcrec_ext_class_pair_opens          (ext.c:354)  — §6
