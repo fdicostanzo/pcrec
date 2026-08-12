@@ -660,8 +660,17 @@ echo "== (*...) verbs, option settings and script runs =="
 # rows below pin one name per FORM GROUP — there are five — rather than one per
 # name, and the honest statement is that the other 26 names are covered by PC-3
 # alone. Do not read this block as "the verb tables are pinned".
+# MOD-0.4d: `(*NOTAVERB)`, `(*CR:x)`, `(*pla)`, `a(*CR)`, `(*:x)`, `(*scs:x)`
+# and the two 129-byte boundary rows below all gain an offset suffix here,
+# for the SAME reason line 670's `(*)` row did (MOD-0.4c/S27): each is a
+# message-only pin for a REFUSE(at, ...) call, so a future "blame a more
+# precise position" refactor that keeps the SAME message text is invisible
+# to it. Every offset below is `at` — the doorway's own default, the `(`'s
+# position — because that IS what pcrec_ext_verb correctly reports at each
+# of these sites today; this pins pcrec's OWN stability against a silent
+# regression, not agreement with PCRE2 (PC-3 never compares offsets).
 reject '(*MARKx)'    "(*VERB) not recognized or malformed"
-reject '(*NOTAVERB)' "(*VERB) not recognized or malformed"
+reject '(*NOTAVERB)' "(*VERB) not recognized or malformed (pattern offset 0)"
 reject '(*ACCPET)'   "(*VERB) not recognized or malformed"
 # Offset pinned too (MOD-0.4c), matching the brace-quantifier family's own
 # convention (R7, below): the empty-name branch blames `star` (the '*', one
@@ -671,15 +680,19 @@ reject '(*)'         "quantifier does not follow a repeatable item (pattern offs
 # The lower table: PCRE2 picks it by the case of the first byte and says
 # something different. `(*accept)` is not `(*ACCEPT)` misspelt — it is a lookup
 # in a table that has no ACCEPT.
-reject '(*accept)'   "(*alpha_assertion) not recognized"
-reject '(*pla)'      "(*alpha_assertion) not recognized"
+reject '(*accept)'   "(*alpha_assertion) not recognized (pattern offset 0)"
+# `(*pla)` hits a DIFFERENT branch than `(*accept)` despite the shared
+# message: pla IS a known lower-table name, just not in BARE form (its
+# forms are ARG|EMPTYARG|GROUPARG) — this is the lower-table representative
+# of the form-mismatch REFUSE, `(*CR:x)` below is the upper-table one.
+reject '(*pla)'      "(*alpha_assertion) not recognized (pattern offset 0)"
 reject '(*SCRIPT_RUN:a)' "(*VERB) not recognized or malformed"
 # Real names in a form PCRE2 does not accept. Each of these is a DIFFERENT rule
 # in the table, and each was measured against libpcre2 10.46 rather than read:
 reject '(*MARK)'          "(*MARK) must have an argument"   # the one name with its own message
 reject '(*:)'             "(*MARK) must have an argument"   # (*:...) is a MARK synonym
-reject 'a(*CR)'           "(*VERB) not recognized or malformed"  # options are start-only
-reject '(*CR:x)'          "(*VERB) not recognized or malformed"  # ... and take no argument
+reject 'a(*CR)'           "(*VERB) not recognized or malformed (pattern offset 1)"  # options are start-only
+reject '(*CR:x)'          "(*VERB) not recognized or malformed (pattern offset 0)"  # ... and take no argument
 reject '(*LIMIT_MATCH)'   "(*VERB) not recognized or malformed"  # ... but LIMIT_* needs =n
 reject '(*LIMIT_MATCH=x)' "(*VERB) not recognized or malformed"  # ... and n must be digits
 reject '(*ACCEPT:x'       "(*VERB) not recognized or malformed"  # a name-run arg needs its ')'
@@ -716,16 +729,24 @@ name128="$(printf 'A%.0s' $(seq 1 128))"
 name129="$(printf 'A%.0s' $(seq 1 129))"
 lname129="$(printf 'a%.0s' $(seq 1 129))"
 reject "(*$name128)"  "(*VERB) not recognized or malformed"
-reject "(*$name129)"  "subpattern name is too long (maximum 128 code units)"
-reject "(*$lname129)" "subpattern name is too long (maximum 128 code units)"
+# Offset pinned too (MOD-0.4d): the too-long-name REFUSE is `at`, not the
+# name's own start — see the block comment above `(*NOTAVERB)`.
+reject "(*$name129)"  "subpattern name is too long (maximum 128 code units) (pattern offset 0)"
+reject "(*$lname129)" "subpattern name is too long (maximum 128 code units) (pattern offset 0)"
 
 for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*ACCEPT:)' '(*CR)' '(*LF)' '(*CRLF)' \
          '(*ANYCRLF)' '(*UTF)' '(*UCP)' '(*NUL)' '(*BSR_UNICODE)' '(*NOTEMPTY)' \
          '(*script_run:a)' '(*sr:a)' '(*atomic:a)' '(*pla:a)' \
          '(*naplb:a)' '(*negative_lookbehind:a)' \
-         '(*atomic:)' 'a(*ACCEPT)'; do
+         '(*atomic:)'; do
     reject "$v" "requires module 'verbs'"
 done
+# Pulled out of the loop above (MOD-0.4d) to carry its own OFFSET
+# expectation: the terminal "requires module 'verbs'" REFUSE is `at` too,
+# and this is the one member of the loop with a non-zero `at` to pin it
+# against (the rest all start at offset 0) — see the block comment above
+# `(*NOTAVERB)`.
+reject 'a(*ACCEPT)' "requires module 'verbs' (pattern offset 1)"
 # THE K14 FIX (MOD-0.1, 2026-08-11; ruled at design §17.2 / D34 item 1).
 # These names are real PCRE2 syntax that pcrec's own compliance survey calls
 # OUT-OF-SCOPE — the backtracking verbs (defined in terms of a backtracking
@@ -745,8 +766,10 @@ for v in '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)' '(*MARK:x)' \
          '(*NO_JIT)'; do
     reject "$v" "is outside pcrec's scope and no module will implement it"
 done
-reject '(*:x)'    "(*MARK) is outside pcrec's scope and no module will implement it"   # the MARK synonym resolves to MARK's row
-reject '(*scs:x)' "(*scs) is outside pcrec's scope and no module will implement it"    # lower table carries the column too
+# Offset pinned too (MOD-0.4d): the ROADMAP_NEVER REFUSE is `at` in both
+# tables — see the block comment above `(*NOTAVERB)`.
+reject '(*:x)'    "(*MARK) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"   # the MARK synonym resolves to MARK's row
+reject '(*scs:x)' "(*scs) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md) (pattern offset 0)"    # lower table carries the column too
 
 # THE FIVE GRADUATED K3/K4 ROWS (FIX-2, 2026-08-10). Each was a `pinned`
 # known-wrong line until the fix landed; each is now an ordinary expectation.
