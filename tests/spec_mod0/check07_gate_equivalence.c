@@ -99,6 +99,29 @@
  * missing is a module for it to have an opinion about) until the first module
  * lands and gate.compared_pairs's floor is raised above 0 in floors.txt.
  *
+ * CORRECTED 2026-08-12 — THE DAY THE POPULATION ARRIVED (module `classes`,
+ * MOD-0.3c; 12 eligible rows, 24 pairs). The paragraph above is now history,
+ * and so is the strict class-EQUALITY the sweep originally asserted: on its
+ * first live population it reported 24 "disagreements" that were all the
+ * gate DOING ITS JOB (accepted under all-on, refused-as-unimplemented with
+ * the module off) — the CLAIM paragraph had said "a disabled feature changes
+ * what pcrec can COMPILE — that is the point of a gate" all along, and the
+ * equality form was only the exercisable subset while nothing could flip.
+ * The sweep now applies the TRANSITION RULE (transition_ok below): a
+ * disabled-module row that was accepted at baseline MUST flip to
+ * refused-as-unimplemented NAMING ITS OWN MODULE — still-accepted is a DEAD
+ * GATE (the direction equality was structurally blind to, sabotage-verified:
+ * an ext_gate that never demotes fails 24 clauses by name), refused-as-
+ * invalid is the second-quieter-grammar defect, someone else's name is a
+ * misattribution; every other row keeps the equality requirement, so
+ * cross-module leaks still fail. `gate.eligible_rows` (12) and
+ * `gate.baseline_accepted_rows` (13) are floored; `gate.compared_pairs`
+ * stays floor-0 DELIBERATELY — check09's per-name-nonzero assertion arms on
+ * that floor and would demand all 17 modules toggle while only one has a
+ * producer; the pair count is transitively ratcheted meanwhile by the
+ * eligible_rows floor through the pairs==eligible*2 self-consistency
+ * assertion. Raising it is MOD-0.8-close work (or the second module's).
+ *
  * SABOTAGE (verified — see the final report for exact commands and output).
  * (1) Oracle half: drop the membership test and take all 100 rows as members
  *     — the printed membership count jumps, failing the pinned floor's
@@ -281,12 +304,14 @@ static const char *vclass_name(VClass c)
  * otherwise = refused-as-invalid; anything else is a harness-level failure,
  * reported once here rather than silently miscounted downstream. */
 static VClass compile_verdict(const char *pcrec_path, const char *features,
-                               const char *syntax)
+                               const char *syntax, char *named_module,
+                               size_t named_sz)
 {
     char *argv[] = {
         (char *)pcrec_path, (char *)"--features", (char *)features,
         (char *)"-o", (char *)"-", (char *)"--", (char *)syntax, NULL
     };
+    if (named_module && named_sz) named_module[0] = '\0';
     PcrecRun r = run_pcrec(pcrec_path, argv, 0);
     if (!r.ran) {
         spec_fail("compile_verdict: fork/exec failed for '%s' under "
@@ -299,12 +324,78 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
         return VC_ERROR;
     }
     if (r.exit_code == 0) return VC_ACCEPTED;
-    if (r.exit_code == 1)
-        return strstr(r.err, "requires module '") ? VC_UNIMPL : VC_INVALID;
+    if (r.exit_code == 1) {
+        const char *p = strstr(r.err, "requires module '");
+        if (!p) return VC_INVALID;
+        /* which module the refusal NAMES — the 2026-08-12 transition rule
+         * (below) requires a gate-flip to name the row's OWN module, so a
+         * misattributed refusal cannot pass as a healthy toggle */
+        if (named_module && named_sz) {
+            p += strlen("requires module '");
+            size_t i = 0;
+            while (p[i] && p[i] != '\'' && i + 1 < named_sz) {
+                named_module[i] = p[i];
+                i++;
+            }
+            named_module[i] = '\0';
+        }
+        return VC_UNIMPL;
+    }
     spec_fail("compile_verdict: pcrec exited %d (expected 0 or 1) for '%s' "
               "under --features %s (stderr: %s)", r.exit_code, syntax,
               features, r.err);
     return VC_ERROR;
+}
+
+/* THE TRANSITION RULE (2026-08-12, the day the first module landed — a
+ * dated correction per this suite's own convention, recorded rather than
+ * edited away; the original strict-equality comparison below it was the
+ * exercisable subset while the population was zero and became WRONG the
+ * moment it wasn't — its own CLAIM paragraph said so all along: "a disabled
+ * feature changes what pcrec can COMPILE — that is the point of a gate").
+ *
+ * For a row R under configuration C compared against 'all on':
+ *   - R's module DISABLED in C, baseline accepted:  R must flip to
+ *     refused-as-unimplemented AND the refusal must name R's OWN module.
+ *     Staying accepted is a DEAD GATE (the direction strict equality was
+ *     blind to); flipping to invalid is the second-quieter-grammar defect;
+ *     naming someone else's module is a misattribution.
+ *   - R's module DISABLED in C, baseline not accepted: class equality (a
+ *     port-less row refuses identically either way).
+ *   - R's module NOT disabled in C (including no-module rows): class
+ *     equality — any change is a cross-module leak.
+ * Returns 1 if ok, else 0 after reporting. */
+static int transition_ok(const char *syntax, const char *rowmod,
+                         int mod_disabled_in_cfg, const char *cfgname,
+                         VClass base, VClass vc, const char *named)
+{
+    if (mod_disabled_in_cfg && base == VC_ACCEPTED) {
+        if (vc != VC_UNIMPL) {
+            spec_fail("row '%s' (module '%s'): %s under %s — an accepted row "
+                      "whose module is OFF must refuse as unimplemented "
+                      "(accepted = dead gate; invalid = a second, quieter "
+                      "grammar)", syntax, rowmod,
+                      vc == VC_ACCEPTED ? "still ACCEPTED" : "refused-as-INVALID",
+                      cfgname);
+            return 0;
+        }
+        if (strcmp(named, rowmod) != 0) {
+            spec_fail("row '%s' (module '%s'): gate-flip under %s names module "
+                      "'%s' — a flip must name the row's own module",
+                      syntax, rowmod, cfgname, named);
+            return 0;
+        }
+        return 1;
+    }
+    if (vc != base) {
+        spec_fail("row '%s' (module '%s'): verdict class differs — all-on=%s, "
+                  "%s=%s%s", syntax, (rowmod && *rowmod) ? rowmod : "(none)",
+                  vclass_name(base), cfgname, vclass_name(vc),
+                  mod_disabled_in_cfg ? "" :
+                  " — the varied module does not own this row: a cross-module leak");
+        return 0;
+    }
+    return 1;
 }
 
 /* answered_at (TSV field 3) from `--probe-ask result -- SYNTAX` under a
@@ -455,20 +546,22 @@ int main(int argc, char **argv)
 
         for (int i = 0; i < spec_nrows; i++) {
             const char *S = spec_col(&spec_rows[i], SPEC_COL_SYNTAX);
-            vc_base[i] = compile_verdict(pcrec_path, "all", S);
+            vc_base[i] = compile_verdict(pcrec_path, "all", S, NULL, 0);
             if (vc_base[i] == VC_ACCEPTED) baseline_accepted_rows++;
         }
 
         for (int i = 0; i < spec_nrows; i++) {
             const char *S = spec_col(&spec_rows[i], SPEC_COL_SYNTAX);
             const char *m = spec_col(&spec_rows[i], SPEC_COL_MODULE);
-            VClass vc = compile_verdict(pcrec_path, "none", S);
+            char named[64];
+            VClass vc = compile_verdict(pcrec_path, "none", S, named, sizeof named);
             verdict_checks_total++;
             if (vc_base[i] != VC_ERROR && vc != VC_ERROR) {
-                if (vc != vc_base[i])
-                    spec_fail("row '%s' (module '%s'): verdict class differs "
-                              "— all-on=%s, all-off=%s", S, (m && *m) ? m : "(none)",
-                              vclass_name(vc_base[i]), vclass_name(vc));
+                /* all-off disables EVERY module, so any module-owned row is
+                 * a disabled-module row here (the transition rule's first
+                 * arm); no-module rows take the equality arm. */
+                transition_ok(S, (m && *m) ? m : "", m && *m, "all-off",
+                              vc_base[i], vc, named);
                 int midx = name_lookup(m);
                 if (midx >= 0 && member_ok[i] && vc_base[i] == VC_ACCEPTED) {
                     pairs[midx]++;
@@ -483,14 +576,17 @@ int main(int argc, char **argv)
             for (int i = 0; i < spec_nrows; i++) {
                 const char *S = spec_col(&spec_rows[i], SPEC_COL_SYNTAX);
                 const char *m = spec_col(&spec_rows[i], SPEC_COL_MODULE);
-                VClass vc = compile_verdict(pcrec_path, inv, S);
+                char named[64];
+                char cfg[96];
+                VClass vc = compile_verdict(pcrec_path, inv, S, named, sizeof named);
                 verdict_checks_total++;
                 if (vc_base[i] == VC_ERROR || vc == VC_ERROR) continue;
-                if (vc != vc_base[i])
-                    spec_fail("row '%s' (module '%s'): verdict class differs "
-                              "— all-on=%s, inverted(-%s)=%s", S,
-                              (m && *m) ? m : "(none)", vclass_name(vc_base[i]),
-                              names[mi], vclass_name(vc));
+                snprintf(cfg, sizeof cfg, "inverted(-%s)", names[mi]);
+                /* inverted-M disables ONLY M: rows of every other module
+                 * take the equality arm, so a toggle that leaks across
+                 * modules fails naming both sides. */
+                transition_ok(S, (m && *m) ? m : "", m && *m && strcmp(m, names[mi]) == 0,
+                              cfg, vc_base[i], vc, named);
                 int midx = name_lookup(m);
                 if (midx == mi && member_ok[i] && vc_base[i] == VC_ACCEPTED)
                     pairs[mi]++;

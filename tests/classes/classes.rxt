@@ -1,0 +1,201 @@
+# tests/classes/classes.rxt — module `classes` producers (MOD-0.3c).
+#
+# Every block carries `features classes`: these constructs REFUSE without it
+# (the default empty enabled set), and that refusal stays pinned in
+# tests/reject/. Blocks python re cannot express carry `# pcre2-only`; their
+# expectations derive from the generated-bitmap censuses
+# (tests/probes/probe_cls_bits.c, libpcre2 10.46) and, for the caseless
+# posix cells, from the probe_ci_posix measurement recorded in the
+# 2026-08-12 journal entry. PC-4 is the live oracle for produced SETS.
+#
+# THE D33 §9.3 EVIDENCE: this corpus was run against the slice-1 binary
+# (which has the vocabulary but no producers) and every features-classes
+# match block FAILED — the probes were false the day before the wiring.
+
+# ---- char-type escapes, python-verified --------------------------------
+
+pattern \d+
+features classes
+m "abc123def" 3 6
+m "007" 0 3
+n "no digits"
+
+pattern \D+
+features classes
+m "12ab34" 2 4
+n "123"
+
+pattern [\d]+
+features classes
+m "abc123def" 3 6
+
+pattern [\D]+
+features classes
+m "12ab34" 2 4
+
+pattern \s\w+
+features classes
+m "a bc d" 1 4
+
+pattern \S+
+features classes
+m "  xy  " 2 4
+
+pattern [\w]+
+features classes
+m "-a_9-" 1 4
+
+pattern [^\W]+
+features classes
+m "-a_9-" 1 4
+
+pattern [a\d]+
+features classes
+m "xa1b" 1 3
+
+pattern [\d-]+
+features classes
+m "a1-2b" 1 4
+
+pattern (\d|x)+
+features classes
+m "ax1x2" 1 5
+
+pattern \d{2,3}
+features classes
+m "a1234b" 1 4
+
+pattern [^\d]+
+features classes
+m "12ab34" 2 4
+
+pattern [\da-c]+
+features classes
+flags i
+m "zA1Bc" 1 5
+
+# ---- \h \H \v \V \N — no python spelling; censuses are the oracle ------
+
+# pcre2-only
+pattern \h+
+features classes
+m "a\t b" 1 3
+
+# pcre2-only
+pattern \H+
+features classes
+m "\t ab\t" 2 4
+
+# pcre2-only
+pattern \v+
+features classes
+m "a\n\fb" 1 3
+
+# pcre2-only
+pattern \V+
+features classes
+m "\nab\r" 1 3
+
+# pcre2-only
+pattern \N+
+features classes
+m "ab\ncd" 0 2
+
+# pcre2-only
+pattern [\h\d]+
+features classes
+m "a\t5 b" 1 4
+
+# ---- POSIX named classes — no python spelling ---------------------------
+
+# pcre2-only
+pattern [[:alpha:]]+
+features classes
+m "12abCD34" 2 6
+
+# pcre2-only
+pattern [[:^alpha:]]+
+features classes
+m "ab123cd" 2 5
+
+# pcre2-only
+pattern [[:xdigit:]]+
+features classes
+m "zzDEADbeef09zz" 2 12
+
+# pcre2-only
+pattern [x[:digit:]y]+
+features classes
+m "axy12za" 1 5
+
+# pcre2-only
+pattern [^[:alpha:]]+
+features classes
+m "ab12_cd" 2 5
+
+# pcre2-only
+pattern [[:alpha:][:digit:]]+
+features classes
+m "_ab12_" 1 5
+
+# pcre2-only
+pattern [[:digit:]-]+
+features classes
+m "a1-2b" 1 4
+
+# pcre2-only
+pattern ^[[:blank:]]+
+features classes
+m " \ta" 0 2
+
+# ---- caseless x posix: the probe_ci_posix cells (fold-before-negate) ----
+
+# pcre2-only
+pattern ^[[:lower:]]$
+features classes
+flags i
+m "A" 0 1
+
+# pcre2-only
+pattern ^[[:^lower:]]$
+features classes
+flags i
+n "a"
+n "A"
+m "0" 0 1
+
+# pcre2-only
+pattern ^[^[:lower:]]$
+features classes
+flags i
+n "A"
+m "0" 0 1
+
+# ---- rejections that hold WITH the module enabled -----------------------
+
+pattern [\N]
+features classes
+perr
+
+pattern [0-\d]
+features classes
+perr
+
+pattern (?[[a]])
+features classes
+perr
+
+# pcre2-only
+pattern [[:alpha:]-z]
+features classes
+perr
+
+# pcre2-only
+pattern [[:<:]]
+features classes
+perr
+
+# pcre2-only
+pattern [[:foo:]]
+features classes
+perr

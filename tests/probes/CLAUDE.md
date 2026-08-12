@@ -37,6 +37,20 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
 - `probe_quant.c` — the §18.3 quantifiability determinism probes: the
   option-run form split (`a(?i)*` 109 vs `a(?i:b)*` compiles) and the
   per-VerbName split (`a(*FAIL)*` 109 vs `a(*pla:b)*` compiles).
+- `probe_cls_bits.c` — MOD-0.3c: GENERATES src/parse/cls_bits.inc (--emit)
+  from libpcre2 one-byte censuses — 20 positive tables (5 char-type sets +
+  newline + 14 posix names), predictor stated in the header before the
+  first run and confirmed exactly (10/6/63/3/5; 62/52/128/2/33/10/94/26/
+  95/32/6/26/63/22; 1). Asserts the COMPLEMENT LAW (negation = exact
+  256-bit complement) for every pair before emitting, which is why only
+  positive tables exist to drift. registry_check ties each bare-escape
+  SET port's census to the class_expect column; PC-4 re-measures live.
+- `probe_ci_posix.c` — MOD-0.3c: the caseless×posix cells behind
+  tests/classes/classes.rxt's `flags i` posix blocks — /[[:lower:]]/i
+  matches 'A', /[[:^lower:]]/i matches neither case but matches '0',
+  [^[:lower:]]/i likewise: fold-BEFORE-negate confirmed on all 8 cells
+  (OS-1/D23's order rule, measured rather than reasoned at the moment a
+  producer first composed -i with a posix set).
 - `probe_mod03.c` — MOD-0.3a scope probes (2026-08-12): `[[:^alpha:]]` is
   REAL with census identical to `[^[:alpha:]]` (204 members, 0/256 diff);
   `[[:^foo:]]`/`[[:^<:]]` err 130; `[[:<:]]`/`[[:>:]]` compile as zero-width

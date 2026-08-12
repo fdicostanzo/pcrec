@@ -913,7 +913,31 @@ Then DOC-1, then PC-4 when module `classes` lands.
   outcome gets a probe that is false today** (D33 §9.3 — ask of each: was
   this already true yesterday?). Landing bar: byte-identity, nothing
   consumes a port yet; full battery between this and every later slice
-- [MOD-0.3c] STATE:not-started — slice 2, the PRODUCERS, gated: the ten
+- [MOD-0.3c] STATE:completed 2026-08-12 — slice 2, the PRODUCERS, gated.
+  As specified below, plus what execution added: bitmaps GENERATED from
+  libpcre2 censuses (probe_cls_bits.c, predictor confirmed exactly on all
+  20 tables; the complement law probe-asserted, so only positive tables
+  exist to drift — negation is a PORT flag); the caseless×posix cells
+  MEASURED before pinning (probe_ci_posix.c, 8/8 fold-before-negate);
+  `pcrec_ast_class_from_bits` as the ONE set-node constructor (the OS-1
+  fold-order rule owned in one place); the endpoint rule's step 4 now keys
+  on ANY surviving claim so a produced SET at an endpoint is err-150's
+  analogue in both gate states; check_class_ports extended (populations
+  5/10/1/11 predicted and confirmed; SET censuses tied to class_expect;
+  negate-flag sabotage fires); the `features` corpus directive landed with
+  a validated spec (a typo'd module list can never satisfy a perr block);
+  tests/classes/classes.rxt 43 cases green, watched FAILING first against
+  the slice-1 binary (37 fail / 31 distinct compile-fails — the D33 §9.3
+  record, in the corpus header); S15-S17 sabotage anchors re-derived in
+  the same change. AND THE FIRST spec_mod0 EXIT-0 IN PROJECT HISTORY:
+  check07's population arrived (12 eligible rows, 24 pairs) and its
+  strict-equality sweep reported the gate DOING ITS JOB as 24
+  disagreements — replaced by the TRANSITION RULE its own CLAIM paragraph
+  had stated all along (dated correction in the file header; dead-gate
+  direction sabotage-verified — an ext_gate that never demotes fails 24
+  clauses by name; gate.eligible_rows/baseline floors ratcheted;
+  gate.compared_pairs stays floor-0 deliberately, check09's all-modules
+  assertion being MOD-0.8 work). Spec: the ten
   char-type escapes (atom position → A_CLASS node; class position → members
   ORed into the class; **every A_CLASS-building site calls `cls_casefold`
   itself** — the OS-1/D23 rule, stated in src/parse/CLAUDE.md); bare `\N`'s

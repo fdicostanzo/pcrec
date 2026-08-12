@@ -1144,7 +1144,37 @@ static void check_class_ports(void)
         for (size_t i = 0; rows && i < n; i++) {
             const RegRow *r = &rows[i];
             if (r->aport.kind != PORT_NONE) aports++;
-            if (r->cport.kind == PORT_SET) set++;
+            if (r->cport.kind == PORT_SET) {
+                set++;
+                /* the SET tie (slice 2): a bare-escape row's produced census
+                 * must equal the libpcre2-fed class_expect count, with the
+                 * PORT's negate flag applied — the bitmap is generated data,
+                 * and this is what notices a stale or mis-negated table
+                 * before PC-4's live oracle does */
+                char bare[8];
+                snprintf(bare, sizeof bare, "\\%c", r->sel);
+                if (strcmp(r->syntax, bare) == 0) {
+                    int pop = 0;
+                    for (int b = 0; b < 32; b++)
+                        for (int bit = 0; bit < 8; bit++)
+                            if (r->cport.set[b] & (1 << bit)) pop++;
+                    if (r->cport.scalar) pop = 256 - pop;
+                    unsigned want_n = 0;
+                    if (!r->class_expect ||
+                        sscanf(r->class_expect, "set %u", &want_n) != 1) {
+                        bad("class ports: '%s' carries a SET class port but "
+                            "class_expect is '%s', not 'set N'", r->syntax,
+                            r->class_expect ? r->class_expect : "(null)");
+                        bads++;
+                    } else if ((unsigned)pop != want_n) {
+                        bad("class ports: '%s' produced census %d != measured "
+                            "class_expect %u — the generated bitmap (or its "
+                            "negate flag) drifted from the oracle column",
+                            r->syntax, pop, want_n);
+                        bads++;
+                    }
+                }
+            }
             if (r->cport.kind == PORT_FN)  fn++;
             if (r->cport.kind != PORT_SCALAR) continue;
             scalar++;
@@ -1177,17 +1207,17 @@ static void check_class_ports(void)
         }
     }
 
-    if (scalar != 5 || set != 0 || fn != 0 || aports != 0)
-        bad("class ports: populations moved — %d scalar (5 expected: b g k 8 9), "
-            "%d SET (0 until the classes producers land), %d FN (0 until the "
-            "octal/posix scans wire), %d atom ports (0 until slice 2). A "
-            "deliberate move edits this check IN THE SAME CHANGE; a silent one "
-            "is the defect",
+    if (scalar != 5 || set != 10 || fn != 1 || aports != 11)
+        bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
+            "%d SET class ports (10: the char-types, slice 2), %d FN class "
+            "ports (1: the posix name row), %d atom ports (11: the "
+            "char-types + \\N). A deliberate move edits this check IN THE "
+            "SAME CHANGE; a silent one is the defect",
             scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar ports (b g k 8 9), values oracle-tied "
-           "(bare rows to class_expect, body rows to the fallback law), "
-           "0 SET / 0 FN / 0 atom ports as predicted for slice 1");
+        ok("class ports: 5 scalar + 10 SET + 1 FN class ports, 11 atom "
+           "ports; scalar and SET values oracle-tied (class_expect column / "
+           "fallback law / census popcounts), as predicted for slice 2");
 }
 
 int main(void)

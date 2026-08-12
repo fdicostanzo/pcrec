@@ -179,6 +179,26 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
      * (`[\b]` is backspace, base syntax). */
     if (in_class && (r->flags & RF_CLASS_INVALID))
         REFUSE(at, "\\%c is not valid inside a character class", c);
+
+    /* THE PRODUCERS (MOD-0.3c). A post-gate WANT_RESULT means both halves
+     * at once: the caller wants the construct (parse.c always asks RESULT)
+     * AND the row's module is in the enabled set (ext_gate demotes to
+     * VERDICT otherwise). Position selects the PORT — §14's per-port rule —
+     * and a PORT_NONE falls through to the refusals below unchanged, which
+     * is "gate open, port missing", observable in answered_at. The doorway
+     * never moves cx->pos even when producing: the two-byte escape is
+     * already consumed by the caller, and check06's cursor rule stays a
+     * property of the seam rather than of each port. */
+    if (want == WANT_RESULT) {
+        const ExtPort *p = in_class ? &r->cport : &r->aport;
+        if (p->kind == PORT_SET) {
+            ExtResult res = { .what = in_class ? EXT_MEMBERS : EXT_NODE,
+                              .at = at, .msg = "", .answered_at = want };
+            res.node = pcrec_ast_class_from_bits(cx, p->set, p->scalar != 0);
+            return res;
+        }
+    }
+
     if (in_class) {
         /* The K12 endpoint payload (§16.3(e), exercisable subset): certify
          * SET-shape only where the row's measured class_expect covers every
@@ -551,6 +571,16 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
             REFUSE(at, "[[:%s:]] is a word-boundary assertion and requires "
                        "module '%s'", pn->name, pn->module);
     }
+
+    /* THE PRODUCER (MOD-0.3c): post-gate WANT_RESULT and the row carries a
+     * class port. Every own-error check above declined first — the pair
+     * closes, the name is known, and it is not a whole-class-only assertion
+     * name — so the port's only job is name -> set -> members. PORT_FN
+     * because a NAME is not a fixed set per row (the `:` row is one row for
+     * fourteen names and both polarities). The caller consumes res.node and
+     * advances to res.end; the doorway leaves cx->pos alone. */
+    if (want == WANT_RESULT && r->cport.kind == PORT_FN)
+        return r->cport.fn(cx, r, want, at, from);
 
     /* The final refusal — reached only after every own-error check above
      * declined to fire, so for the `:` row this is a KNOWN POSIX name in a

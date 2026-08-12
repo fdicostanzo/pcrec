@@ -72,6 +72,7 @@ it plugs directly into `make test` / CI.
 | `GENCFLAGS` | `-O1 -std=gnu11`           | Flags passed to `$CC` when compiling generated code |
 | `KEEP`      | unset (0)                  | Set to `1` to keep the harness's temp working directory instead of deleting it on exit (path is printed to stderr) |
 | `VERBOSE`   | unset (0)                  | Set to `1` to print a line for every *passing* case, not just failures |
+| — | — | Per-block `.rxt` directives: `flags i` (caseless) and, since MOD-0.3c, `features <list>` (comma-separated module names passed as `--features`; the spec is validated once per distinct list so a typo is a loud harness failure, never a perr match) |
 | `PROCS`     | unset (1)                  | Run N `.rxt` **files** concurrently (each in its own re-invocation with its own temp dir). Summary format and counts are identical to a serial run; the parent hard-fails if any worker vanishes without printing a summary, so a lost worker can never read as a pass. Measured on the project box: full corpus 4m25s serial → 55s at `PROCS=6`. Prefer `TMPDIR=/var/tmp` at higher `PROCS` (`/tmp` is a quota'd tmpfs there) |
 
 Example: testing a debug build with a different compiler and keeping
@@ -112,6 +113,16 @@ lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
   to `re.IGNORECASE | re.ASCII` — the `re.ASCII` is required, since python's
   IGNORECASE otherwise folds Unicode and would disagree with pcrec's
   deliberately ASCII-only fold.
+- `features <list>` — enabled feature modules for the current block
+  (MOD-0.3c): a comma-separated list of module names exactly as
+  `--list-syntax`'s module column spells them, passed to pcrec as
+  `--features <list>`. Block-scoped like `flags`. The harness validates
+  each distinct list once against a trivially-valid pattern, because pcrec
+  refuses an unknown module name with exit 1 and a `perr` block would
+  otherwise read the typo as its expected rejection. `verify_rxt.py`
+  understands the directive as a no-op — python re has no module gate, and
+  gate-only constructs are `# pcre2-only` blocks like any other
+  python-inexpressible pattern.
 - `perr` — asserts that the current pattern **fails to compile** (`pcrec`
   must exit nonzero). A block using `perr` has no `m`/`n` lines — the
   pattern text itself is the entire test.

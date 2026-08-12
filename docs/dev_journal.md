@@ -6245,3 +6245,53 @@ attribution diagnostics differ, and it sees them). Sabotage-anchor check:
 S15-S19 quote call-site lines this slice did not touch (macro DEFINITIONS
 and the five scalar call sites only; the drift-avoiding edit shape, reused
 deliberately). mech re-run against the slice-1 commit follows it.
+
+**Slice 2 (MOD-0.3c) — THE PRODUCERS. pcrec compiles its first non-base
+constructs.** Under `--features classes`: the ten char-type escapes at both
+positions, bare `\N` at atom position, and the POSIX named classes with
+both polarities (`[[:^alpha:]]` measured real in .3a) — matched end-to-end
+(`\d+` finds [3,6) in "abc123def" through the emitted C). Default state
+byte-identical (243-pattern differential vs the slice-1 HEAD build, zero
+differences).
+
+The shape: bitmaps GENERATED from libpcre2 censuses (probe_cls_bits.c —
+predictor stated first, confirmed exactly on all 20 tables; the complement
+law asserted before emitting, so negation is a port FLAG and only positive
+tables exist to drift); ports on rows (SET data for char-types and \N,
+PORT_FN for the posix name row — one row, fourteen names, two polarities);
+`pcrec_ast_class_from_bits` the ONE set-node constructor, owning
+fold-before-negate (the caseless×posix cells measured before pinning:
+probe_ci_posix.c, 8/8). Wiring: the escape doorway answers post-gate
+WANT_RESULT from the position's port (EXT_NODE atom / EXT_MEMBERS class);
+esc_atom splices, p_class ORs and moves the cursor to res.end (the caller
+moves, never the doorway — check06 held without edits). The endpoint rule's
+step 4 now keys on ANY surviving claim, so [0-\d] is invalid-range in both
+gate states — §16.3's composition bullet, live.
+
+**check07 found its first real disagreement set, and the finding ran the
+other way.** The moment the population arrived (12 eligible rows), the
+sweep reported 24 disagreements — every one the gate DOING ITS JOB
+(accepted all-on → refused-as-unimplemented with classes off). The check's
+own CLAIM paragraph ("a disabled feature changes what pcrec can COMPILE —
+that is the point of a gate") had stated the right invariant all along; the
+implemented strict equality was the exercisable subset while nothing could
+flip. Replaced with the TRANSITION RULE (dated correction in the header):
+an eligible row MUST flip to refused-as-unimplemented NAMING ITS OWN
+module — still-accepted is a DEAD GATE, the direction equality was
+structurally blind to, and the new clause was sabotage-verified (an
+ext_gate that never demotes fails 24 clauses by name); everything else
+keeps equality, so cross-module leaks still fail. Floors: eligible 12,
+baseline_accepted 13; compared_pairs stays floor-0 deliberately (check09's
+per-name assertion arms on it and would demand all 17 modules toggle —
+MOD-0.8 work; the pair count is transitively ratcheted through
+pairs==eligible×2). **tests/spec_mod0 exits 0 for the first time in
+project history: 10 pass, 0 fail, 0 awaiting.**
+
+Corpus: tests/classes/classes.rxt (first per-module test directory), 43
+cases green, python oracle 20/20 on the expressible blocks — and the D33
+§9.3 record measured for real: against the slice-1 binary the corpus fails
+37 with 31 distinct compile failures. The `features` directive landed with
+a VALIDATED spec (pcrec refuses unknown module names with exit 1, which a
+perr block would have read as success — the typo path is a loud harness
+failure instead). S15/S16/S17 anchors re-derived for the ESC_SET call
+sites in the same change, per the anchor convention.

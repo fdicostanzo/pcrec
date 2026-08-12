@@ -630,6 +630,17 @@ case10() {
     # this assertion must be revisited alongside check07
     assert_eq "case10: --probe-ask result is answered at verdict (the gate)" \
         "verdict" "$("$PCREC" --probe-ask result -- '\d' | cut -f3)"
+    # ...and that day arrived (MOD-0.3c): with module classes ENABLED the
+    # same ask reaches `result` and the outcome word is the PRODUCING
+    # vocabulary — both cells were false the day before the producers wired
+    # in (D33 §9.3), and the doorway still must not move the cursor even
+    # when producing (fields 4/5 equal; the CALLER moves at result).
+    assert_eq "case10: --features classes --probe-ask result produces a node" \
+        "escape	result	result	2	2	node	0	0	0	" \
+        "$("$PCREC" --features classes --probe-ask result -- '\d')"
+    assert_eq "case10: ...and the posix class produces members, cursor unmoved" \
+        "class-bracket	result	result	1	1	members	1	0	10	" \
+        "$("$PCREC" --features classes --probe-ask result -- '[[:alpha:]]')"
     # full-text coordinates for a prefixed construct (the ten (?-N) rows)
     assert_eq "case10: --probe-ask reports full-text cursor coordinates" \
         "4	4" "$("$PCREC" --probe-ask verdict -- '(a)(?-1)' | cut -f4,5)"
@@ -687,16 +698,29 @@ case10() {
         "verdict" "$("$PCREC" --features backrefs --probe-ask result -- '\d' | cut -f3)"
     assert_eq "case10: an open gate does not move the cursor either" \
         "2	2" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f4,5)"
-    assert_eq "case10: an open gate changes no verdict text" \
-        "$("$PCREC" --probe-ask result -- '\d' | cut -f6-)" \
-        "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f6-)"
+    # The MOD-0.1-era pin that stood here — "an open gate changes no verdict
+    # text" — EXPIRED the day the first producer landed (MOD-0.3c), exactly
+    # as its neighbour comment predicted ("the day one is, this cell changes
+    # and this assertion must be revisited alongside check07"). Successor:
+    # the open gate now changes the OUTCOME for a producing row, in exactly
+    # one way — refusal -> produced node, diagnostic emptied — while the
+    # closed gate keeps the refusal text verbatim.
+    assert_eq "case10: an open gate now PRODUCES where the closed one refuses" \
+        "node	" \
+        "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f6,10)"
+    assert_eq "case10: ...and the closed gate keeps the refusal verbatim" \
+        "refusal	\d requires module 'classes'" \
+        "$("$PCREC" --probe-ask result -- '\d' | cut -f6,10)"
     "$PCREC" --features nosuchmodule --probe-ask result -- '\d' \
         >/dev/null 2>"$d/ef1.txt"; rc=$?
     assert_eq "case10: an unknown module name in --features exits 1" "1" "$rc"
     assert_contains "case10: ...and is refused BY NAME" \
         "$(cat "$d/ef1.txt")" "unknown module 'nosuchmodule'"
-    # a compile under --features all emits byte-identical code to one without
-    # (no ports exist; the flag must be inert on the compile path today).
+    # a BASE-TIER compile under --features all emits byte-identical code to
+    # one without: the gate exists for module rows only and must never
+    # perturb a base pattern's compile path (this pin's original "no ports
+    # exist" rationale expired at MOD-0.3c; the base-tier half is the part
+    # that must stay true forever).
     # SAME BASENAME in different directories — the emitted C embeds the
     # output basename in its #include (the journal's twice-paid lesson)
     mkdir -p "$d/fa" "$d/fb"

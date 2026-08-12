@@ -585,12 +585,42 @@ typedef ExtResult (*ExtPortFn)(Ctx *cx, const RegRow *rw, ExtWant want,
 
 typedef struct {
     PortKind             kind;
-    int                  scalar;  /* PORT_SCALAR */
+    int                  scalar;  /* PORT_SCALAR: the code point.
+                                     PORT_SET: the NEGATE flag — nonzero
+                                     means the produced set is the exact
+                                     256-bit complement of `set` (\D \S \W
+                                     \H \V, and \N's not-newline). Only
+                                     POSITIVE tables are stored; the
+                                     complement law is asserted by the
+                                     emitting probe for every pair. */
     const unsigned char *set;     /* PORT_SET: 32 bytes, bit b of set[b>>3] */
     ExtPortFn            fn;      /* PORT_FN */
 } ExtPort;
 
 #define NO_PORT { PORT_NONE, 0, NULL, NULL }
+
+/* module `classes` (MOD-0.3c) — src/parse/mod_classes.c. The tables are
+ * GENERATED from libpcre2 censuses by tests/probes/probe_cls_bits.c
+ * (--emit writes src/parse/cls_bits.inc; the provenance header names the
+ * version); PC-4 re-measures produced sets against the live oracle. */
+extern const unsigned char pcrec_cls_digit_esc[32], pcrec_cls_space_esc[32],
+    pcrec_cls_word_esc[32], pcrec_cls_hspace[32], pcrec_cls_vspace[32],
+    pcrec_cls_newline[32],
+    pcrec_cls_px_alnum[32], pcrec_cls_px_alpha[32], pcrec_cls_px_ascii[32],
+    pcrec_cls_px_blank[32], pcrec_cls_px_cntrl[32], pcrec_cls_px_digit[32],
+    pcrec_cls_px_graph[32], pcrec_cls_px_lower[32], pcrec_cls_px_print[32],
+    pcrec_cls_px_punct[32], pcrec_cls_px_space[32], pcrec_cls_px_upper[32],
+    pcrec_cls_px_word[32],  pcrec_cls_px_xdigit[32];
+/* The POSIX named-class producer (the `:` row's PORT_FN). */
+ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from);
+/* src/parse/parse.c — build an A_CLASS from a 32-byte membership bitmap,
+ * applying the caseless fold BEFORE the optional negation (the OS-1/D23
+ * order rule: both orders produce case-closed sets and only behaviour can
+ * tell them apart — see cls_casefold's comment). The ONE constructor every
+ * set-producing port uses, so the fold rule cannot be forgotten per site. */
+Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
+                               bool negate);
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one

@@ -151,6 +151,7 @@ fi
 total_pass=0
 total_fail=0
 declare -A file_fail_count=()
+declare -A features_seen=()
 compile_fail_set=()   # distinct "file:line" pattern-compile failures
 block_counter=0
 
@@ -187,6 +188,30 @@ flush_block() {
     # is rejected at parse time, so this can only hold letters we map here
     local pflags=()
     [[ "$cur_flags" == *i* ]] && pflags+=(-i)
+
+    # per-block enabled modules (the `features` directive, MOD-0.3c). The
+    # SPEC is validated once per distinct list against a trivially-valid
+    # pattern, because pcrec refuses an unknown module name with exit 1 and
+    # a perr block would read that as its expected rejection — a typo'd
+    # features line must be a loud harness failure, never a quiet pass.
+    if [ -n "$cur_features" ]; then
+        if [ -z "${features_seen[$cur_features]:-}" ]; then
+            if "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" -- 'a' >/dev/null 2>&1; then
+                features_seen[$cur_features]=ok
+            else
+                features_seen[$cur_features]=bad
+            fi
+        fi
+        if [ "${features_seen[$cur_features]}" = "bad" ]; then
+            local i
+            for i in "${!case_kind[@]}"; do
+                record_fail "$cur_file" "${case_line[$i]}" \
+                    "HARNESS FAILURE: --features '$cur_features' is not a valid enabled-set spec"
+            done
+            return 0
+        fi
+        pflags+=(--features "$cur_features")
+    fi
 
     local pcrec_err
     pcrec_err="$(timeout 60 "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
@@ -287,6 +312,7 @@ for file in "${files[@]}"; do
     cur_pattern_line=0
     cur_is_perr=0
     cur_flags=""
+    cur_features=""
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     have_block=0
     blocks_in_file=0
@@ -304,6 +330,7 @@ for file in "${files[@]}"; do
             cur_pattern_line=$lineno
             cur_is_perr=0
             cur_flags=""
+            cur_features=""
             case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
@@ -322,6 +349,14 @@ for file in "${files[@]}"; do
                     "unknown flag letter(s) '$flag_letters' (only 'i' is defined)"
             else
                 cur_flags="$flag_letters"
+            fi
+        elif [[ "$line" =~ ^features[[:space:]]+([a-zA-Z0-9,_-]+)[[:space:]]*$ ]]; then
+            # captured BEFORE any further [[ =~ ]] clobbers BASH_REMATCH
+            feat_list="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'features' line before any pattern block"
+            else
+                cur_features="$feat_list"
             fi
         elif [[ "$line" =~ ^perr[[:space:]]*$ ]]; then
             cur_is_perr=1

@@ -22,14 +22,21 @@ Part of `make test` since M2.
   keep the compile diagnostics), and since MOD-0.1 slice 8 `--probe-ask`
   (§18.2's cursor-rule channel: one known cell pinned byte-exact, the
   10-field count, the §5.4 gate demotion pinned as a cell — result asks
-  answered at verdict, REVISIT when the first module is enabled — and an
+  answered at verdict in the DEFAULT state; the enabled-state cells landed
+  when the revisit came due at MOD-0.3c: `--features classes` at result
+  produces `node`/`members` with the cursor still unmoved, both pinned
+  byte-exact (probes false the day before, D33 §9.3) — and an
   in-repo cursor sweep over every registry row at claim+verdict, population
   FLOORED at 198 probes; the spec-side comparison belongs to
   tests/spec_mod0's check06, not here. Sabotage-validated three ways:
   cursor breach 82/82 probes caught, gate unbroken pin, answered_at drop),
   and since MOD-0.1 slice 9 `--features` (gate-open observable per module
   via answered_at, per-module not blanket, unknown names refused by name,
-  open gate moves neither cursor nor verdict text, and a `--features all`
+  an open gate moves no cursor and — since MOD-0.3c replaced the expired
+  changes-no-verdict-text pin, exactly as its own comment predicted —
+  PRODUCES where the closed gate refuses (both directions pinned: `node` +
+  emptied diagnostic open, verbatim refusal closed), and a BASE-TIER
+  `--features all`
   compile is byte-identical to a bare one — same output BASENAME in two
   directories, the emitted-#include lesson, which this case's first
   version paid a third time. Sabotage: gate ignoring the set is caught by

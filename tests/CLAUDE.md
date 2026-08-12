@@ -33,6 +33,9 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   Both halves are sabotage-validated with planted races — see its CLAUDE.md
   for the measured TSan race reports
 - **fuzz/** — PCRE2-oracle differential fuzzer (`make fuzz`), run manually and at checkpoints
+- **classes/** — module `classes` corpus (MOD-0.3c): the first per-module
+  test directory. Blocks carry the `features classes` directive; see its
+  CLAUDE.md for the §9.3 watched-failing record and the oracle split
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 
 ## Conventions

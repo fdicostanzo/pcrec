@@ -20,6 +20,8 @@
  * the quantifier suffix), not doorways, and giving them a doorway would cost
  * the base tier a lookup for nothing. */
 
+#include <string.h>
+
 #include "core/internal.h"
 
 /* ---- cursor helpers ---- */
@@ -81,6 +83,23 @@ static Ast *char_node(Ctx *cx, unsigned c)
     return a;
 }
 
+/* The ONE constructor for a produced byte-set (MOD-0.3c): every set-producing
+ * port builds its A_CLASS here, so the fold-BEFORE-negate order (see
+ * cls_casefold above — the order only behaviour can check) and the fold
+ * itself cannot be forgotten at a new site. Folding a case-closed set (\d,
+ * \w) is a no-op; folding [[:lower:]] under -i correctly widens it to both
+ * cases BEFORE [[:^lower:]]'s complement excludes them. */
+Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
+                               bool negate)
+{
+    Ast *a = node(cx, A_CLASS);
+    memcpy(a->cls, bits, 32);
+    if (cx->caseless) cls_casefold(a->cls);
+    if (negate)
+        for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
+    return a;
+}
+
 /* ---- escapes ---- */
 
 static int hexval(int c)
@@ -137,13 +156,17 @@ static Ast *esc_atom(Ctx *cx)
     if (v >= 0) return char_node(cx, (unsigned)v);
     cx->pos = save;
     ExtResult r = pcrec_ext_escape(cx, WANT_RESULT, nextc(cx), false, epos);
+    /* THE SPLICE (MOD-0.3c — the line D33 §9.3 promised would replace the
+     * wall, visibly): a produced atom node is the construct. The cursor
+     * already sits past the two-byte escape, which is the whole construct
+     * for every current producer (\d..\V, \N); a longer-bodied atom
+     * producer must carry its own end and advance here. */
+    if (r.what == EXT_NODE) return r.node;
     pcrec_ext_finish(cx, &r);
     /* The wall (K11's fix is this shape): the escape doorway cannot decline
      * today — even "no row" is a refusal — so reaching here means the
      * ExtResult vocabulary grew without this call site learning the new
-     * value. Fail loudly instead of flowing an unhandled value onward; the
-     * first node-producing module port replaces this line with the splice,
-     * visibly (D33 §9.3). */
+     * value. Fail loudly instead of flowing an unhandled value onward. */
     ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
 }
 
@@ -192,11 +215,15 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
      * exactly what the returned-claims epilogue exists for). The returned 0
      * is never read: every caller checks `claim` before using the value. */
     *claim = pcrec_ext_escape(cx, WANT_RESULT, c, true, epos);
-    if (claim->what != EXT_REFUSAL)
+    if (claim->what != EXT_REFUSAL && claim->what != EXT_MEMBERS)
         /* The wall — see esc_atom. K11's flagged-not-reproduced hazard lives
          * on this path: a future class-port SCALAR feeds cls_set's 32-byte
          * bitmap, so the module that first returns one adds the range check
-         * HERE, before the value flows, with a probe that is false today. */
+         * HERE, before the value flows, with a probe that is false today.
+         * EXT_MEMBERS travels UP like a refusal claim (MOD-0.3c): p_class
+         * decides whether it ORs in as members or trips the endpoint rule's
+         * SET-at-an-endpoint step — the same claim-travels-up shape the K12
+         * epilogue established for refusals. */
         ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
     return 0;
 }
@@ -248,6 +275,19 @@ static Ast *p_class(Ctx *cx)
                 r.end + 1 < cx->patlen && cx->pat[r.end] == '-' &&
                 cx->pat[r.end + 1] != ']')
                 ctx_fail(cx, r.end, "invalid range in character class");
+            /* THE PRODUCED MEMBERS (MOD-0.3c): the caller consumes and the
+             * caller moves the cursor — the doorway never writes cx->pos
+             * (check06's rule). The low-side endpoint check above has a
+             * produced twin: `[[:alpha:]-z]` is PCRE2 150 whether or not
+             * module classes is enabled, so a set followed by a range dash
+             * refuses HERE with the same offset the refusal path uses. */
+            if (r.what == EXT_MEMBERS) {
+                for (int i = 0; i < 32; i++) a->cls[i] |= r.node->cls[i];
+                cx->pos = r.end;
+                if (peekc(cx) == '-' && peekc2(cx) != ']' && peekc2(cx) >= 0)
+                    ctx_fail(cx, r.end, "invalid range in character class");
+                continue;
+            }
             pcrec_ext_finish(cx, &r);   /* EXT_NOT_MINE: ordinary member */
         }
 
@@ -305,18 +345,30 @@ static Ast *p_class(Ctx *cx)
             int hi = (hc == '\\') ? esc_class_value(cx, &hiclaim) : hc;
             if (hiclaim.what == EXT_REFUSAL && !hiclaim.ep_set_certain)
                 pcrec_ext_finish(cx, &hiclaim);              /* step 3 */
-            if (loclaim.what == EXT_REFUSAL || hiclaim.what == EXT_REFUSAL)
+            /* step 4 — either side SET-shaped -> invalid range. A claim
+             * that SURVIVED steps 1/3 is exactly that: a refusal here is a
+             * certified-SET one (uncertified refusals fired above), and a
+             * produced EXT_MEMBERS (MOD-0.3c) is a SET by construction —
+             * [0-\d] is 150 with module classes enabled or disabled, which
+             * is §16.3's composition-keeps-K12-closed bullet, now live in
+             * both gate states. */
+            if (loclaim.what != EXT_NOT_MINE || hiclaim.what != EXT_NOT_MINE)
                 ctx_fail(cx, dashpos,
                          "invalid range in character class"); /* step 4 */
             if (lo > hi)
                 ctx_fail(cx, dashpos, "range out of order in character class");
             for (int i = lo; i <= hi; i++) cls_set(a->cls, (unsigned)i);
         } else {
-            /* Not a range endpoint: a deferred claim fires exactly as it
-             * always did — `[\d]` and `[\d-]` keep their module promise. */
+            /* Not a range endpoint: a deferred REFUSAL fires exactly as it
+             * always did — `[\d]` keeps its module promise while classes is
+             * disabled — and produced MEMBERS (MOD-0.3c) are ORed in, which
+             * is the same `[\d]` the day the gate opens. */
             if (loclaim.what == EXT_REFUSAL)
                 pcrec_ext_finish(cx, &loclaim);
-            cls_set(a->cls, (unsigned)lo);
+            if (loclaim.what == EXT_MEMBERS)
+                for (int i = 0; i < 32; i++) a->cls[i] |= loclaim.node->cls[i];
+            else
+                cls_set(a->cls, (unsigned)lo);
         }
     }
 

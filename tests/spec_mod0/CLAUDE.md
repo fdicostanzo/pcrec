@@ -23,9 +23,10 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-11 (MOD-0.1 slice 9 + the armed check06 + the armed check07):
-9 pass, 0 fail, 1 awaiting.** The suite exits 1, and that is the correct
-state — invariant 7 (gate equivalence) now HAS a working pcrec-side
+**As of 2026-08-12 (MOD-0.3c, the first module with producers): 10 pass, 0
+fail, 0 awaiting — the suite's first exit-0.** The history below records the
+awaiting era: as of 2026-08-11 it was 9 pass / 0 fail / 1 awaiting, exit 1,
+and that was the correct state — invariant 7 (gate equivalence) now HAS a working pcrec-side
 comparison (the `--features` surface exists, the comparison runs a full
 sweep, and the instrument's own liveness is validated live), but it still
 cannot PASS: every row is refused identically in all three configurations
@@ -107,7 +108,7 @@ reader will arrive holding it.
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
 | 6 | check06_cursor.sh | **PASS** (surface landed) | **none — see below; this check compares pcrec against itself** | — (`pcrec --probe-ask WANT [--] CONSTRUCT` drives one doorway once per call; every one of the 99 doorway-reaching rows is driven at `claim`, `verdict` AND `result` — `cursor.clear_compared`, floor 198, asserts pos_after == pos_before at the two WANT_RESULT-clear levels, and `cursor.set_compared`, floor 99, asserts pos_after >= pos_before at the WANT_RESULT-set level. The one row with no doorway at all, `(?:...)`, is named and floored separately — `cursor.base_answered_rows`, floor 1 — and the check fails if that set changes shape in either direction. Today every comparison is an equality: no recogniser is implemented yet, so nothing ever reaches a `result`-level answer, and the >= assertion's strictly-greater branch is unexercised but live) |
-| 7 | check07_gate_equivalence.c | **AWAITING-POPULATION** (armed) | libpcre2 decides membership | The vary-the-set surface EXISTS (`pcrec --features LIST`) and the comparison RUNS: 1700 verdict-class checks (all-off vs all-on, and every module's inverted-config vs all-on, over all 100 rows), 0 disagreements, instrument liveness validated live via `--probe-ask`'s `answered_at`. What remains is a POPULATION, not a surface — `gate.eligible_rows` is 0 because only 1 row (the base row, owned by no module) is ever accepted under 'all on' today. Raise `gate.compared_pairs`'s floor when the first module lands |
+| 7 | check07_gate_equivalence.c | **PASS** (population arrived 2026-08-12: module `classes`, 12 eligible rows, 24 pairs — the suite's FIRST exit-0 run) | libpcre2 decides membership | — (the sweep now applies the TRANSITION RULE, a dated correction in the file header: a disabled-module row accepted at baseline MUST flip to refused-as-unimplemented NAMING ITS OWN MODULE — still-accepted is a dead gate (sabotage-verified: an ext_gate that never demotes fails 24 clauses), invalid is the second-quieter-grammar defect, and every other row keeps strict equality so cross-module leaks fail. `gate.eligible_rows` floored at 12, `gate.baseline_accepted_rows` at 13; `gate.compared_pairs` stays floor-0 DELIBERATELY — check09's per-name assertion arms on it and would demand all 17 modules toggle; the pair count is transitively ratcheted via eligible_rows through the pairs==eligible×2 self-consistency assertion) |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
 | 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | check07's comparison now runs; the per-name-nonzero assertion (2) still arms only when `gate.compared_pairs` is floored above 0 — coverage (assertion 1, all module names present — 17 since MOD-0.3a added `extended-classes`) is checked and passing now |
 | 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |

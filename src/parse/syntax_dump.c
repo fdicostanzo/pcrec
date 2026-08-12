@@ -414,11 +414,21 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
     if (!doorway)
         return NULL;    /* not doorway territory; the CLI says so and how */
 
+    /* The outcome word covers the FULL ExtWhat vocabulary (MOD-0.3c: the
+     * producing values are constructable now, and a probe channel that
+     * reported them as "refusal" would be the dump lying about the one
+     * thing it exists to show). check06 never consults this field; it is
+     * the human's and the future checks' window. */
+    const char *outcome =
+        r.what == EXT_NOT_MINE ? "not-mine" :
+        r.what == EXT_REFUSAL  ? "refusal"  :
+        r.what == EXT_SCALAR   ? "scalar"   :
+        r.what == EXT_MEMBERS  ? "members"  :
+        r.what == EXT_NODE     ? "node"     : "unknown";
     StrBuf sb = {0};
     sb_printf(&sb, "%s\t%s\t%s\t%zu\t%zu\t%s\t%zu\t%d\t%zu\t",
               doorway, want_names[w], want_names[r.answered_at],
-              before, cx.pos,
-              r.what == EXT_NOT_MINE ? "not-mine" : "refusal",
+              before, cx.pos, outcome,
               r.at, r.ep_set_certain ? 1 : 0, r.end);
     if (r.what == EXT_REFUSAL) sb_puts(&sb, r.msg);
     sb_putc(&sb, '\n');

@@ -78,7 +78,7 @@ if grep -q "^checks failed: 0" "$REGOUT"; then
 row ranks: all 18 tailed rows|MOD-0.2: a tailed row at the fallback tier loses every arbitration and its construct is unreachable; successor of check_tail_precedence's second half
 arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is unobservable; these floors are check_tail_precedence's re-homed liveness clause
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
-class ports: 5 scalar ports|MOD-0.3b: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
+class ports: 5 scalar + 10 SET + 1 FN|MOD-0.3b/c: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is

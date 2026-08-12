@@ -108,6 +108,8 @@ def parse_rxt(path):
             results.append((lineno, 'perr', None))
         elif line.startswith('flags '):
             results.append((lineno, 'flags', line[len('flags '):].strip()))
+        elif line.startswith('features '):
+            results.append((lineno, 'features', line[len('features '):].strip()))
         elif line.startswith('m "'):
             rest = line[2:]  # keep leading quote
             subj, tail = parse_quoted(rest)
@@ -189,6 +191,19 @@ def main():
                         compiled = re.compile(cur_pattern)
                     except re.error as e:
                         compile_error = e
+                continue
+
+            if kind == 'features':
+                # per-block enabled-module list (MOD-0.3c). The python oracle
+                # is deliberately unaffected: python re has no module gate,
+                # and every construct the gate can open either means the same
+                # thing in python (\d \s \w and friends — verified as
+                # usual) or cannot be expressed there at all, in which case
+                # the block carries # pcre2-only exactly like any other
+                # python-inexpressible pattern. An EMPTY list is a corpus
+                # typo, refused like an unknown flag letter.
+                if not data:
+                    file_failures.append((lineno, "empty features list"))
                 continue
 
             if kind == 'flags':

@@ -61,6 +61,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `pcrec_registry_arbitrate` directly and render its ambiguity defect (two
   answering rows at the winning rank) as an internal error — unreachable on
   the correct table, validated live by an equal-rank sabotage
+- **mod_classes.c** — module `classes` (MOD-0.3c), the first module with
+  real PRODUCERS: includes the GENERATED cls_bits.inc (20 positive byte-set
+  tables from libpcre2 censuses — regenerate with probe_cls_bits --emit,
+  never hand-edit; the complement law makes negation table-free) and
+  provides `pcrec_clsport_posix`, the `:` row's PORT_FN (one row, fourteen
+  names, both polarities — a NAME is not a fixed set per row). Production
+  wiring: the escape doorway answers a post-gate WANT_RESULT from the
+  position's SET port (EXT_NODE at atom, EXT_MEMBERS in class, both built
+  by parse.c's `pcrec_ast_class_from_bits`, the ONE constructor that owns
+  fold-before-negate); parse.c's call sites consume — esc_atom splices
+  EXT_NODE, p_class ORs EXT_MEMBERS and advances to res.end (the caller
+  moves the cursor, never the doorway — check06's rule). The endpoint rule
+  gained its produced twin: a SET at a range endpoint is err-150's analogue
+  in BOTH gate states (step 4 now keys on any surviving claim), and
+  `[[:alpha:]]-z`-shaped low-side dashes refuse after production exactly as
+  they do after a certified refusal
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
