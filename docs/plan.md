@@ -1152,11 +1152,18 @@ Then DOC-1, then PC-4 when module `classes` lands.
   check surfaces (registry_check, PC-3, reject pins, --list-verbs,
   --probe-ask) move/pass IN THE SAME CHANGE; byte-identity differential vs
   the pre-move build over the verb surface, zero diffs
-- [MOD-0.4c] STATE:not-started — NEW guards for the moved surface: mech
-  sabotage rows for whatever the migration makes newly-plausible to break
-  (candidates from the move itself: blame-offset regression, table-order/
-  case-dispatch swap, at-start check drop), failing direction measured
-  against the unpinned tree first (R17's method)
+- [MOD-0.4c] STATE:completed 2026-08-12 (impl-mod04 lane, commit 94b0693 +
+  841d73f landing bar, merged 8f94ccd) — S27 (blame-offset regression), S28
+  (table case swap, 52 reject failures), S29 (at-start drop, the a(*CR)
+  pin; cross-referenced to the PC-3 sabotage table's identical edit).
+  FINDING: S27 came back UNDETECTED 0/437 — the (*) reject pin was
+  message-only, and the blame-offset regression produces the SAME message;
+  closed by pinning "(pattern offset 1)" per the brace family's R7
+  convention, both directions measured (0/437 without, 1/436 with). The
+  milestone's own marquee hazard was the one unguarded. NOTED, framework
+  limit: mech's SAB_SUITES has no `registry` suite, so PC-3/sweep_verb
+  coverage cannot be mech-claimed; wiring one is a framework change for a
+  future owner, recorded here rather than forced
 - [MOD-0.4d] STATE:not-started — close: D6 panel (checks + engine + docs
   lenses) on the migration, journal, wake
 - [MOD-0.5] STATE:completed 2026-08-12 (eleventh session, opened and closed
