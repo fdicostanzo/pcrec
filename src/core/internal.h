@@ -964,6 +964,11 @@ bool pcrec_ext_class_pair_opens(Ctx *cx, int c2, size_t from);
  * the linker is the check's oracle. */
 bool   pcrec_class_delim_extent_scan(const char *pat, size_t patlen, int c2,
                                      size_t from, size_t *close_at);
+/* True iff `at` points at a `{` whose body is quantifier-SHAPED by
+ * try_quant's grammar (values unchecked — err-104/105 bodies are shaped).
+ * Two load-bearing callers by design: try_quant's pre-test and the `\N{`
+ * row's recogniser. See the scan's own comment. */
+bool   pcrec_brace_quant_shape(const char *at, size_t avail);
 size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
                                    size_t nstart);
 

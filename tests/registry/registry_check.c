@@ -623,7 +623,13 @@ static int bucket_probe_texts(const RegRow *rows, size_t n, int sel,
 static void check_arbitration_liveness(void)
 {
     static const struct { RegKind k; int sel; int floor_multi; } buckets[] = {
-        { RK_ESC,   'N', 10 },
+        /* 10 -> 9 at MOD-0.3f (R16): the \N{ row's recogniser now DECLINES
+         * quantifier-shaped bodies (PCRE2's fallback rule — \N{2,3} is bare
+         * \N quantified), so the generated text "{0041}" lost its second
+         * answer — predicted as exactly one text before the run, confirmed
+         * by this check firing at 9. The esc-'N' TRIPLE-answer floor below
+         * is untouched: "{U+0041}" is not quantifier-shaped. */
+        { RK_ESC,   'N', 9 },
         { RK_GROUP, '<', 15 },
         { RK_GROUP, 'P', 15 },
         { RK_GROUP, '-', 50 },

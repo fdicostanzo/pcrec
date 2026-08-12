@@ -121,3 +121,41 @@ size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
     while (i < patlen && pat[i] != ')' && pat[i] != ':' && pat[i] != '=') i++;
     return i;
 }
+
+/* THE BRACE-QUANTIFIER SHAPE (MOD-0.3f, R16 engine critic's finding) — pure
+ * over (at, avail), `at` pointing AT the `{`. True iff the brace body is a
+ * quantifier by pcrec's own try_quant grammar: `{` sp* digits* sp* then
+ * either `}` (digits required), or `,` sp* (`}` with min required | digits+
+ * sp* `}` — min optional, `{,n}` is `{0,n}` since PCRE2 10.43). sp is space
+ * or tab, exactly try_quant's skip_quant_space. SHAPE only — value errors
+ * (too big, out of order) are still quantifier-SHAPED, which matches PCRE2's
+ * fallback rule at `\N{`: err 104/105 there prove the quantifier parser
+ * claimed the brace (measured 2026-08-12, tests/probes/probe_nbrace.c).
+ *
+ * ONE HOME, TWO LOAD-BEARING CALLERS, on purpose: try_quant's entry
+ * pre-test (so the base tier exercises this scan on every brace it accepts
+ * or declines — the corpus, the brace reject pins and the fuzzer all break
+ * loudly if the shape drifts from try_quant's decisions) and the `\N{`
+ * row's recogniser (which must DECLINE on quantifier-shaped bodies so bare
+ * `\N` wins the arbitration and try_quant consumes the brace). A private
+ * copy in either caller would be the D24 two-homes drift with K8's
+ * whitespace rule waiting inside it. */
+bool pcrec_brace_quant_shape(const char *at, size_t avail)
+{
+    size_t i = 0;
+    if (i >= avail || at[i] != '{') return false;
+    i++;
+    while (i < avail && (at[i] == ' ' || at[i] == '\t')) i++;
+    size_t mdig = 0;
+    while (i < avail && at[i] >= '0' && at[i] <= '9') { i++; mdig++; }
+    while (i < avail && (at[i] == ' ' || at[i] == '\t')) i++;
+    if (i < avail && at[i] == '}') return mdig > 0;
+    if (i >= avail || at[i] != ',') return false;
+    i++;
+    while (i < avail && (at[i] == ' ' || at[i] == '\t')) i++;
+    if (i < avail && at[i] == '}') return mdig > 0;   /* {m,} needs m */
+    size_t ndig = 0;
+    while (i < avail && at[i] >= '0' && at[i] <= '9') { i++; ndig++; }
+    while (i < avail && (at[i] == ' ' || at[i] == '\t')) i++;
+    return ndig > 0 && i < avail && at[i] == '}';     /* {,n} == {0,n} */
+}

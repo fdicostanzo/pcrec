@@ -871,7 +871,8 @@ Then DOC-1, then PC-4 when module `classes` lands.
   bodies pcrec answers correctly today; the collapse as written is a tier-2
   regression). That differential belongs to whoever proposes the collapse,
   not to this step's close.
-- [MOD-0.3] STATE:started 2026-08-12 (tenth session) — **MOVED AHEAD of
+- [MOD-0.3] STATE:completed 2026-08-12 (tenth session; commits 8273184 →
+  R16 close) — **MOVED AHEAD of
   `modifiers` (D30 §7, was
   MOD-0.5)**, so the module that owns the class doorway exists before the module
   that can change its lexing — module `classes`, the richest INPUT case: a scan
@@ -1039,7 +1040,14 @@ Then DOC-1, then PC-4 when module `classes` lands.
   (AWAITING-POPULATION retires — spec_mod0's first possible exit-0 run);
   check02's compared floor moves if any generator body now compiles;
   check09's assertion 2 arms. Counts re-read from runs, never docs
-- [MOD-0.3f] STATE:not-started — close: D6 critic panel (read-only,
+- [MOD-0.3f] STATE:completed 2026-08-12 — close: R16 panel (three lenses,
+  all delivered — docs/reviews/2026-08-12-r16-mod03.md; both behavioural
+  findings FIXED same-session: the lower/upper caseless blindness with ten
+  discriminating pins, and the \N{quantifier} fallback with the table's
+  first custom recogniser + the shared brace-shape scan) + the landing bar
+  (default-config differential vs b6adda5: ZERO beyond the three pinned
+  attribution diagnostics; PC-4 62,872 cells zero divergences; spec_mod0
+  10/0/0; battery green at every commit). Spec: (read-only,
   narrow briefs, one primary question each — the R12 standard; any BLINDED
   author spawns through scripts/mk_d27_cell.sh, the CELL) + the landing
   bar: (a) default-config differential vs the pre-MOD-0.3 snapshot binary,

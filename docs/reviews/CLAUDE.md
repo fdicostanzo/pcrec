@@ -207,6 +207,21 @@ Two rules earned the hard way and enforced here:
   primary instrument) catches it twice. Verify a critic's consequence claim
   the way you verify your own: run it.
 
+- **2026-08-12-r16-mod03.md** — R16, MOD-0.3 close (module `classes`, the
+  first producers). Three narrow-brief critics; every lens landed. The
+  checks critic proved the corpus blind to a lower/upper bitmap swap on a
+  box without libpcre2 (measured: 43/43 green with the swap live; ten
+  discriminating pins added — "a caseless pin is not a pin of the two sets
+  it folds together"). The engine critic found a LIVE tier-2 divergence
+  the milestone itself made reachable — \N{2,3} refused where PCRE2
+  parses a quantifier — fixed with the table's first custom recogniser
+  sharing ONE brace-shape scan with try_quant; boundary measured first
+  (probe_nbrace.c, 22 cells), floors moved with predictions. The docs
+  critic filed seven stale-as-current-fact findings, all fixed, including
+  the compliance survey gaining OK-GATED. Also: an engine-critic
+  self-reported-and-reverted overreach (the brief discipline working),
+  and two wrong cells in critics' own reports corrected by measurement.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 

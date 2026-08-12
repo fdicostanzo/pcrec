@@ -148,6 +148,64 @@ pattern ^[[:blank:]]+
 features classes
 m " \ta" 0 2
 
+# ---- every POSIX name pinned WITHOUT libpcre2 (R16, checks critic) ------
+# PC-4 censuses all fourteen names, but it skips loudly on a box without
+# libpcre2 — and before R16 the ten names below had NO non-caseless pin at
+# all, so a lower/upper bitmap swap shipped green there (measured: the swap
+# left this corpus 43/43 while PC-4 saw 1,151 disagreements). One
+# discriminating block per name; lower and upper are the pair the caseless
+# blocks are structurally blind to (the -i fold makes them identical).
+
+# pcre2-only
+pattern [[:lower:]]+
+features classes
+m "AbcD" 1 3
+
+# pcre2-only
+pattern [[:upper:]]+
+features classes
+m "aBCd" 1 3
+
+# pcre2-only
+pattern [[:alnum:]]+
+features classes
+m "_ab1_" 1 4
+
+# pcre2-only
+pattern [[:^ascii:]]+
+features classes
+m "a\xff\x80b" 1 3
+
+# pcre2-only
+pattern [[:cntrl:]]+
+features classes
+m "a\t\nb" 1 3
+
+# pcre2-only
+pattern [[:graph:]]+
+features classes
+m " ab " 1 3
+
+# pcre2-only
+pattern [[:print:]]+
+features classes
+m "\tab \t" 1 4
+
+# pcre2-only
+pattern [[:punct:]]+
+features classes
+m "a,;b" 1 3
+
+# pcre2-only
+pattern [[:space:]]+
+features classes
+m "a \tb" 1 3
+
+# pcre2-only
+pattern [[:word:]]+
+features classes
+m "-a_9-" 1 4
+
 # ---- caseless x posix: the probe_ci_posix cells (fold-before-negate) ----
 
 # pcre2-only
@@ -170,6 +228,31 @@ features classes
 flags i
 n "A"
 m "0" 0 1
+
+# ---- \N{quantifier} — the R16 engine critic's boundary (probe_nbrace.c) --
+# PCRE2 tries the brace as a quantifier FIRST; only a non-quantifier-shaped
+# body is the unsupported \N{name} construct. One home for the shape:
+# pcrec_brace_quant_shape, shared by try_quant and the \N{ recogniser.
+
+# pcre2-only
+pattern ^\N{2,3}$
+features classes
+m "ab" 0 2
+n "abcd"
+n "a"
+
+# pcre2-only
+pattern \N{2}
+features classes
+m "xy" 0 2
+
+pattern \N{3,2}
+features classes
+perr
+
+pattern \N{abc}
+features classes
+perr
 
 # ---- rejections that hold WITH the module enabled -----------------------
 

@@ -15,9 +15,10 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   process-wide, written once by the CLI's `--features` (module names from
   the registry, or all/none; unknown names refused by name) before any
   compile; `pcrec_feature_enabled` is the gate's membership question.
-  Deliberately NOT a pcrec_options field (D20). With no ports built,
-  enabling a module changes no verdict — only `--probe-ask`'s answered_at
-  sees the open gate; check07 owns verdict equivalence
+  Deliberately NOT a pcrec_options field (D20). Since MOD-0.3c enabling a
+  module with producers CHANGES VERDICTS — that is the point of a gate —
+  and check07's transition rule owns the shape of that change (an eligible
+  row must flip to a refusal naming its own module, nothing else may move)
 - **parse.c** — see also **PARSE-1 (2026-08-11)** below, which changed the
   group case's SHAPE without adding a construct — the base grammar AND NOTHING
   ELSE (SR-2): literals, `.`,
@@ -293,10 +294,11 @@ Rules when touching it:
   (§14.3's NULL meaning; slice 3 retired RF_CLASS_BASE into base ports —
   RF_CLASS_INVALID STAYS, because D33 §3's precondition is measurably
   false while lexical and unicode-props rows carry honest NULLs that are
-  not permanently invalid; journal 2026-08-12). UNWIRED until the classes producers land; the
-  port DATA is guarded by registry_check's check_class_ports (populations
-  pinned, values oracle-tied). Set bitmaps, when they arrive, are GENERATED
-  from libpcre2 censuses and re-measured by PC-4 — never hand-typed.
+  not permanently invalid; journal 2026-08-12). WIRED since slice 2 (the
+  classes producers) and slice 3 (the BASE ports — gate-immune PCRE2 base
+  facts); the port DATA is guarded by registry_check's check_class_ports
+  (populations pinned, values oracle-tied). Set bitmaps are GENERATED from
+  libpcre2 censuses and re-measured by PC-4 — never hand-typed.
 - **A verb NAME goes in the VerbName tables, not in a RegRow** (Q1/D25), and
   its form bits are a MEASUREMENT: add the name, then run
   `bash tests/registry/run_registry_tests.sh` and let libpcre2 tell you which

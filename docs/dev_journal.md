@@ -6364,3 +6364,47 @@ joined the prerequisites, with the story in a comment). The R8 battery's
 lesson one level down, met again: prove the sabotage reached the binary
 before reading its zero. Without the liveness discipline, a regenerated
 bitmap after a libpcre2 version bump would have silently shipped stale.
+
+## 2026-08-12 — tenth session, close: R16 and the MOD-0.3 landing
+
+**The landing bar, met before the panel:** default-config differential vs
+the pre-MOD-0.3 snapshot (b6adda5 build) over 243 corpus patterns — ZERO
+differences beyond the three pinned attribution diagnostics, shown
+explicitly; PC-4 zero divergences over 62,872 cells; spec_mod0 10/0/0;
+full battery green at every commit.
+
+**R16 (three narrow-brief critics, all delivered; compiled with
+dispositions in docs/reviews/2026-08-12-r16-mod03.md):**
+
+- CHECKS: the corpus was blind to a lower/upper bitmap swap on a box
+  without libpcre2 — MEASURED with the critic's exact sabotage (corpus
+  43/43 green, PC-4 1,151 disagreements) — because every lower-adjacent
+  block was caseless and the -i fold makes lower≡upper. Ten discriminating
+  pins added, failing-direction validated. New catalogue sentence: a
+  caseless pin is not a pin of the two sets it folds together.
+- ENGINE: \N{2,3} refused where PCRE2 parses the brace as a QUANTIFIER
+  and compiles bare \N repeated — a pre-existing row made into a live
+  tier-2 divergence by this milestone's own producer. Boundary measured
+  first (probe_nbrace.c, 22 cells; {,3} compiles — one of the critic's
+  own cells corrected, and fuzz.py's a{,3} exclusion note found stale).
+  Fixed with the table's FIRST custom recogniser + pcrec_brace_quant_shape
+  — one pure scan, two load-bearing callers (try_quant's pre-test and the
+  recogniser), so the two grammars cannot drift silently. esc-'N' liveness
+  floor 10→9 with the exact probe text predicted; reject counts 265→268;
+  corpus blocks landed; ^\N{2,3}$ matched end-to-end.
+- DOCS: seven stale-as-current-fact findings, all fixed — the design doc's
+  "Not built" banner, the compliance survey's REJECTED rows for shipped
+  constructs (vocabulary gained OK-GATED), K13 naming the retired flag as
+  live machinery, K10's stale citation, D33 §3's unmarked half-falsified
+  prediction, and two src/parse/CLAUDE.md sentences from the pre-producer
+  world. The reject-table maintenance rule updated for the gated era
+  (default-state rows stay until a module goes default-on).
+- Process: the engine critic self-reported and reverted a worktree write
+  it caught itself making — the scope-mandate-in-every-brief discipline
+  plus honest disclosure, working as designed.
+
+MOD-0.3 CLOSES with this commit: the first module with producers, shipped
+through five slices + a panel, every check moved with its surface, and
+both panel findings fixed with machinery the design had already paid for.
+MOD-0.5 (modifiers) is next on the D30 §7 spine — NOT started without
+Frank, per the standing directive.

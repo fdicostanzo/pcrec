@@ -4,7 +4,13 @@
 redesign that answers R13's holes, written 2026-08-11 fourth session after
 Frank's rulings (D34), then itself reviewed the same session by the R14 panel
 — which refuted its two central factual claims. Corrections are inline,
-marked R14; §18 is the post-R14 state and Frank's open decisions. Not built.
+marked R14; §18 is the post-R14 state and Frank's decisions, ALL RESOLVED
+in the fifth session. ADOPTED: D34 rules Part II the redesign of record,
+and it has been progressively BUILT since — MOD-0.1 (walls, gate, ask
+contract), MOD-0.2 (recogniser+rank), MOD-0.3 (ports and the first
+producers: module `classes` compiles real matchers behind `--features
+classes`, 2026-08-12). The corrected design text below remains the
+authority the plan reads each substep through.
 Not adopted.**
 
 > ## PANEL OUTCOME — READ THIS BEFORE ANY SECTION BELOW

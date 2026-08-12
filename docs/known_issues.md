@@ -531,7 +531,8 @@ successors miss it the same way, so the count of blind nets did not shrink):
 - The MOD-0.2 ambiguity defect (née the R10/D29 guard) asks how many
   recognisers answer at the winning rank. One answers.
 - `registry_check.c:875-876` **EXEMPTS `RF_CLASS_INVALID` rows from the in-class
-  sweep by design** (`skip_flag = RF_CLASS_BASE | RF_CLASS_INVALID`) — so the
+  sweep by design** (`skip_flag` — RF_CLASS_INVALID since MOD-0.3d, when the
+RF_CLASS_BASE half became the separate `excuse_base_cport` boolean) — so the
   flag exempts the row from the one check that would have contradicted it. A
   control that takes its scope from the field it is controlling.
 - The in-class sweep's template is `"[\\%c]"`, one byte of tail context, so it
@@ -726,7 +727,10 @@ above `\377` it is PCRE2 error 151 with wording and offset reproduced), and
 over all 62 `[\c]` probes. Tails re-enter the class as ordinary members
 (`[\k<n>]` matches k `<` n `>`) and decoded escapes are ordinary range
 endpoints (`[0-\k]`, `[\1-\7]`), with no extra code. The twelve registry rows
-carry `RF_CLASS_BASE`, so the doorway is never entered at class position —
+carried `RF_CLASS_BASE` (retired at MOD-0.3d, 2026-08-12: the same
+semantics are the rows' own BASE class ports now, and the doorway IS
+entered at class position, the port answering whatever the enabled set
+says) — originally the doorway was never entered at class position —
 exactly the `\b` shape — and registry_check's derived in-class expectation
 flipped from "requires module" to "compiles" with the flag. Pins:
 tests/base/class_escape_fallbacks.rxt (127 cases, written first and watched

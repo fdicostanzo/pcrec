@@ -33,6 +33,7 @@ the intended end state, or `—` when there is no plan.
 |---|---|
 | `OK` | Supported, exercised by the .rxt corpus, cross-verified against an oracle |
 | `OK-LIMITED` | Supported, correct within a limit stated in the row — and the row must name the limit's KIND: a RESOURCE cap (correct until a measured size, then a clean failure), or a CAPABILITY not yet built (part of the construct's contract unimplemented). A speed-only caveat is not a limit; it stays `OK` with the caveat in the note (DOC-1, 2026-08-11 — the value had accreted three unrelated meanings) |
+| `OK-GATED` | Built and oracle-verified (corpus + PC-4's 62,872-cell live differential), but compiled ONLY under `--features <module>` — the default enabled set is empty until MOD-0.8 rules the default-on policy, so a bare `pcrec` still refuses these with the module name exactly as `REJECTED` describes (added 2026-08-12 when module `classes` shipped the first producers; the old vocabulary had no value for "built, gated off by default") |
 | `REJECTED` | Not supported. Exits 1 with `requires module 'X'`, writes no output, never miscompiles. Pinned construct-by-construct by `tests/reject/` |
 | `AGREES-REJECT` | PCRE2 rejects it too, and pcrec rejects it the same way. Refusing the pattern IS compliance here — not a gap |
 | `OUT-OF-SCOPE` | Deliberately excluded, with the reason |
@@ -77,6 +78,8 @@ Of PCRE2's syntax surface:
   alternation, groups, `^`, `$`, the character escapes) is `OK`, with 876
   corpus cases at 100% oracle agreement (844 of them python-verified; the rest
   are `# pcre2-only` blocks checked against libpcre2 directly).
+- Module `classes`' constructs are `OK-GATED` since 2026-08-12 — built and
+  oracle-verified, compiled only under `--features classes`.
 - Everything else is `REJECTED` — 144 rows in `tests/reject/` individually
   assert exit 1 and the right diagnostic AND its offset (124 of them a module
   name; the other 20 are the base-grammar brace errors K5/K6/K8 landed on
@@ -132,7 +135,7 @@ survey earned its keep").
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `REJECTED` (module `modifiers`) |
-| `\d \D \s \S \w \W \h \H \V \N` | `REJECTED` | `PLANNED` | module `classes`. All are single-position bitmap predicates — `PLANNED`, easy, no engine work. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`, and K10 records the live `[\N{U+41}]` class-position divergence), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
+| `\d \D \s \S \w \W \h \H \V \N` | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement, matched end-to-end under `--features classes`; default still refuses with the module name. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`, and K10 records the live `[\N{U+41}]` class-position divergence), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
 | `\v` | `REJECTED` | `PLANNED` | **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as well as outside. Now `REJECTED` to module `classes` like its negation `\V`. It survived because python `re` also reads `\v` as `0x0B`, so the base-tier oracle agreed with the bug — see "How this survey earned its keep" |
 | `\C` | `REJECTED` | `PLANNED` | "one code unit". In the ASCII tier that is just "any byte", i.e. trivial. PCRE2 forbids it under its own DFA matcher in UTF modes for the reason that will apply to us in M5 |
 | `\p{..}` `\P{..}` | `REJECTED` | — | module `unicode-props`, M5. Single-position predicates, so DFA-friendly; the work is Unicode tables, not engine |
@@ -157,7 +160,7 @@ commits to. The blocker is table generation and size, not matching.
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `[...]`, `[^...]`, `[x-y]` | `OK` | — | corpus-covered incl. `]` first, `-` last, high bytes, out-of-order range rejection |
-| `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `REJECTED` | `PLANNED` | module `classes`. `PLANNED`, easy |
+| `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): all 14 names, both polarities, under `--features classes` (default refuses with the module name; `[[:<:]]`/`[[:>:]]` are assertions, module `assertions`, still refused). Oracles: tests/classes/ (every name pinned without libpcre2 since R16), PC-4 |
 | `[[.ch.]]` collating elements, `[[=ch=]]` equivalence classes | `AGREES-REJECT` | — | **Was a proven divergence, fixed 2026-08-09.** PCRE2 does not support these and REJECTS them ("POSIX collating elements are not supported"); pcrec silently accepted them as a class of literal `[` `.` `a` characters. Now rejected with PCRE2's own wording, so rejecting IS compliance here. The trigger was pinned against libpcre2 rather than guessed: `[` + `.`/`=` opens a collating element ONLY when the matching `.]`/`=]` terminator appears later, and a negated class suppresses it — so `[.a]`, `[.]`, `[[.]`, `[a[.b]`, `[^.a.]` and `[a.b.]` must all still COMPILE. Over-rejecting here would break patterns PCRE2 accepts, which is why those six are accept-controls in `tests/reject/` |
 | `\Q...\E` inside a class | `REJECTED` | — | module `quoting` |
 | `[x&&y]`, `[x--y]`, `[x~~y]` (UTS#18 set ops) | `OK` | `PLANNED` | pure bitmap algebra at parse time; no engine implication at all |

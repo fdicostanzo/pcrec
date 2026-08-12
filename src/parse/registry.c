@@ -247,6 +247,22 @@
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
  * arrive here. */
+/* The `\N{` row's recogniser (MOD-0.3f, R16 engine critic): PCRE2 tries
+ * the brace as a QUANTIFIER first — `\N{2,3}` is bare `\N` repeated, and
+ * err 104/105 bodies prove the quantifier parser claimed the brace — and
+ * only a non-quantifier-shaped body is the (unsupported) `\N{name}`
+ * construct. So this recogniser answers for a `{` tail ONLY when the brace
+ * is NOT quantifier-shaped; on `{2,3}` it declines, the bare `\N` fallback
+ * wins the arbitration, and try_quant consumes the brace through the SAME
+ * shape scan (one home, two callers — see pcrec_brace_quant_shape).
+ * Measured boundary in tests/probes/probe_nbrace.c. */
+static bool recognise_N_name_brace(const char *at, size_t avail,
+                                   const char *tail)
+{
+    if (!pcrec_recognise_tail_default(at, avail, tail)) return false;
+    return !pcrec_brace_quant_shape(at, avail);
+}
+
 static const RegRow esc_rows[] = {
 ESC_SET('d', "\\d", classes, ANY_ENGINE, "any decimal digit", QF_YES, "set 10", pcrec_cls_digit_esc, 0),
 ESC_SET('D', "\\D", classes, ANY_ENGINE, "any character that is not a decimal digit", QF_YES, "set 246", pcrec_cls_digit_esc, 1),
@@ -300,9 +316,10 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  * failures repository-wide — the measured reason for this ordering);
  * registry_check's arbitration-liveness floor now asserts this pair still
  * produces a triple-answer probe, so its disappearance fails loudly. */
-REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
-           "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u",
-           "\\N{name} — PCRE2 states it does not support this Perl construct", QF_NO, "err 137"),
+{RK_ESC, 'N', "{", "\\N{name}", 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED,
+ "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u", NULL, 0,
+ "\\N{name} — PCRE2 states it does not support this Perl construct",
+ ROADMAP_NEVER, QF_NO, "err 137", 25, recognise_N_name_brace, NO_PORT, NO_PORT},
 {RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
  RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
  "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection",

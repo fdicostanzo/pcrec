@@ -3014,6 +3014,17 @@ this decision deletes `parse.c:152`'s special case, `RF_CLASS_BASE` and
 is no flag left to contradict the behaviour, because the presence of the
 function IS the answer and the dispatcher uses that same object.
 
+> **HALF-FALSIFIED IN EXECUTION (MOD-0.3d, 2026-08-12 — R16 docs critic
+> flagged the missing mark).** RF_CLASS_BASE retired exactly as written;
+> RF_CLASS_INVALID did NOT, because this section's precondition — "a NULL
+> class port means exactly one thing" — is measurably false before the
+> port population is total: the lexical rows' class_expect is "err 106"
+> for probe-shape reasons ([\Q] quotes the closing bracket) and
+> unicode-props' rows carry honest NULLs that mean "awaiting MOD-0.6",
+> not "permanently invalid". Retirement rescheduled to MOD-0.6; K10 is
+> accordingly still OPEN and still representable until then. The measured
+> record is the 2026-08-12 journal entry and e38ce62's commit message.
+
 `\N`'s wording differing from the other nine (171 vs 107) is TIER 3 under D26
 and is deliberately not modelled.
 

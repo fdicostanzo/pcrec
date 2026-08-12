@@ -342,6 +342,14 @@ done
 # answer, and the in-class one must promise no module (R9/SPEC-classes-F1).
 reject '\N'    "\N requires module 'classes'"
 reject '[\N]'  "\N is not valid inside a character class"
+# MOD-0.3f (R16 engine critic): a quantifier-SHAPED brace after \N is bare
+# \N quantified — PCRE2's fallback rule, measured in probe_nbrace.c — so in
+# the default state it refuses as the GATED module construct, not as the
+# \N{name} construct pcrec called it before R16 (the guarded exception to
+# the pre-MOD-0.3 differential). Non-quantifier bodies keep the 137 text.
+reject '\N{2,3}' "\N requires module 'classes'"
+reject '\N{,3}'  "\N requires module 'classes'"
+reject '\N{abc}' "PCRE2 does not support"
 
 # The other nine escapes PCRE2 forbids inside a class, same rule, error 107.
 # The atom is real and owed a module; the in-class position is not a construct,
@@ -1189,8 +1197,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 265 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 265 / 65 / 0." >&2
+if [ "$nrej" -ne 268 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong, expected 268 / 65 / 0." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

@@ -641,6 +641,14 @@ static void skip_quant_space(Ctx *cx)
 static bool try_quant(Ctx *cx, int *rmin, int *rmax)
 {
     size_t save = cx->pos;
+    /* SHAPE pre-test (MOD-0.3f): pcrec_brace_quant_shape is the ONE home of
+     * "is this brace a quantifier", shared with the \N{ row's recogniser —
+     * the R16 fix needs the same answer at both sites or \N{2,3} splits
+     * between two grammars. The pre-test must accept exactly what the body
+     * below accepts; the whole corpus, the brace reject pins and the fuzzer
+     * break loudly if the two ever disagree, which is the drift net. */
+    if (!pcrec_brace_quant_shape(cx->pat + cx->pos, cx->patlen - cx->pos))
+        return false;
     cx->pos++; /* '{' */
     skip_quant_space(cx);               /* gap 1: `{` _ m */
 

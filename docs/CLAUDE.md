@@ -20,8 +20,9 @@ Process and status documents for pcrec. The architecture itself lives in
   its `REJECTED` rows are backed by tests/reject/ rather than asserted.
 - `testing.md` — .rxt test-file format, harness usage, env vars, oracle
   exclusions, and how to add a per-module test directory.
-- `extension_design.md` — PROPOSED (not adopted, not built): how a regex
-  feature plugs into pcrec — one table, a NAME per row as the unit of
+- `extension_design.md` — ADOPTED (D34: Part II is the redesign of record)
+  and progressively BUILT through MOD-0.1..0.3 (the first producers landed
+  2026-08-12): how a regex feature plugs into pcrec — one table, a NAME per row as the unit of
   enable/disable, two PORTS per row, and a RECOGNISE-then-PRODUCE seam. Written
   from scratch rather than as an amendment to D32/D33, and **partly REFUTED by
   the R13 panel**; the refutations are inline. Read the PANEL OUTCOME block at

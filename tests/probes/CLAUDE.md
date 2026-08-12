@@ -51,6 +51,15 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   [^[:lower:]]/i likewise: fold-BEFORE-negate confirmed on all 8 cells
   (OS-1/D23's order rule, measured rather than reasoned at the moment a
   producer first composed -i with a posix set).
+- `probe_nbrace.c` — MOD-0.3f/R16 (2026-08-12): the `\N{...}` vs
+  quantifier-fallback boundary, 22 cells — PCRE2 tries the brace as a
+  quantifier FIRST (`\N{2,3}`, `\N{,3}`, `\N{2, 3}` all compile as
+  quantified bare `\N`; err 104/105 bodies prove the quantifier parser
+  claimed the brace; `{}`, `{,}`, `{2,3,4}`, `{2x}`, unterminated stay the
+  err-137 name construct). The oracle behind pcrec_brace_quant_shape (one
+  scan, two load-bearing callers) and the R16 reject/corpus pins. Also
+  corrected one cell in the R16 engine critic's own report ({,3} compiles)
+  and exposed fuzz.py's stale a{,3} exclusion note.
 - `probe_mod03.c` — MOD-0.3a scope probes (2026-08-12): `[[:^alpha:]]` is
   REAL with census identical to `[^[:alpha:]]` (204 members, 0/256 diff);
   `[[:^foo:]]`/`[[:^<:]]` err 130; `[[:<:]]`/`[[:>:]]` compile as zero-width

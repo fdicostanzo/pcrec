@@ -6,7 +6,8 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 265 rows asserted by hand (naming a module, or the
+- **run_reject_tests.sh** — 268 rows asserted by hand (moved 265→268 at
+  R16: the three `\N{quantifier-shaped}` boundary pins) (naming a module, or the
   base-grammar brace errors K5/K6/K8 and FIX-3's in-class octal ceiling, or
   since Q1 the verb doorway's four
   outcomes, or since Q2 the `(?` doorway's module names and its refusals, or
@@ -206,7 +207,14 @@ narrowed, not closed, and PC-3 remains the only external answer.
 The second is the one to remember: a silent miscompile of a class escape is
 invisible to every other test in this repo.
 
-Maintenance: when a module lands, delete its constructs from the reject table
-in the SAME change that adds their corpus coverage — a construct cannot be both
-supported and asserted to be rejected. Update `docs/pcre2_compliance.md` too;
-its `REJECTED` rows are only true because this table says so.
+Maintenance: when a module lands, decide each of its constructs' rows by
+STATE, not by reflex (rule updated at MOD-0.3, the first landing): the
+enabled set is empty by default and this suite runs the DEFAULT state, so a
+gated construct is still honestly rejected here — `\d` stays, with corpus
+coverage under the `features` directive carrying the supported half, and
+docs/pcre2_compliance.md carrying `OK-GATED`. Only when a module becomes
+default-on (MOD-0.8 policy) do its rows leave this table in the SAME change
+that flips the default — a construct cannot be both accepted-by-default and
+asserted-rejected. Update `docs/pcre2_compliance.md` in the same change
+either way; its `REJECTED`/`OK-GATED` rows are only true because this table
+and the corpus say so.
