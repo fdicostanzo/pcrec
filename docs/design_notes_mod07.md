@@ -843,3 +843,52 @@ Stated as boundaries of case11 and of the design, not as future work:
    `tests/cli/CLAUDE.md`, `docs/plan.md` STATE flips, and a journal entry.
 
 Optional, manager's call: the verb sub-block (§4.3, OQ 4).
+
+---
+
+## 13. MANAGER RULINGS (2026-08-12) — the note is accepted and phase 2 is authorized
+
+The manager reviewed this note at `f3fc90a` and independently reproduced §1
+(the `(?C1)` over-promise against the compiler's no-promise wall) and §2
+(`(?i-m:`'s prefix miss against the doorway's live answer) on a main-tree
+build, both byte-exact. §0's swap-blindness measurement is accepted as
+reshaping the milestone. Recorded here so this note is self-contained for the
+R panel.
+
+1. **OQ 1 — the `(?C1)` defect: option (a), fixed in this milestone, NO `K`
+   number**, with the FIX-3 pattern made explicit: the case11 pins for
+   `roadmap never` / `names —` are written FIRST and run against the
+   pre-fix rewrite, and that failure is RECORDED — that is what preserves the
+   false-the-day-before evidence, since fixing inside the same milestone that
+   found the defect otherwise destroys it. Only then does the roadmap-aware
+   rendering land. V3 stays as the re-introduction sabotage at landing. The
+   defect is recorded in the journal and will appear in the R-panel close file
+   rather than in `docs/known_issues.md`.
+2. **OQ 2 — the normalised name is DEFERRED to the first `unicode-props`
+   producer.** This SUPERSEDES the [MOD-0.7] plan row's original wording (the
+   main-tree plan row is annotated accordingly). K16's linked-pair logic
+   applies: the buffer gains its accessor when it gains a real consumer AND
+   the K16 fix, together. **Do not add the accessor.**
+3. **OQ 3 — class-position queries are DECLARED-only**, answered with the
+   honest class-bracket decline plus the `class_expect` column. In-class
+   routing is a MOD-0.8 candidate. **The router's routing behaviour must not
+   change**; V7 guards that in the failing direction.
+4. **OQ 4 — the verb sub-block is KEPT.** It is the only genuinely independent
+   cross-source pair in the design and the milestone budget accommodates it.
+   If phase 2 runs long, tell the manager before cutting anything rather than
+   cutting silently.
+5. **OQ 5 — `--explain '(?'`'s 45-row catalogue stays as-is**, with the
+   `select listed` tag.
+6. **OQ 6 — exit code 3 is CONFIRMED**, pinned in both directions: `0` on
+   agreement in case11, and `3` under a sabotaged table measured at landing as
+   part of V1-V7 — case11 itself must never ship asserting against a sabotaged
+   tree.
+
+**Landing-bar additions** (manager, same review): slice 1's byte-identity
+evidence goes in its commit message with NUMBERS, not "green"; slice 2 states
+the measured evidence that nothing on the compile path changed; the final
+commit carries V1-V7 as a table (sabotage, suite that fired, count) with
+§9.2's V1 caveat restated verbatim; and the docs slice records case11's
+no-blob-assertions rule, the `explain_field` helper, and §9.4's boundaries in
+`tests/cli/CLAUDE.md` — the hand-listed query set named as the instrument's
+stopping boundary, so the fifth sweep-template recurrence has a signpost.
