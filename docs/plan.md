@@ -121,6 +121,27 @@ the last checkpoint; compiled results live in docs/reviews/.
 - [DD-10] STATE:not-started — remaining unbounded C-stack recursion in the compiler (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone
 - [DD-8] STATE:not-started — `--emit-ir` / `--emit-dot` promised in APPROACH §6, never built (R2-A7)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
+- [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
+  2026-08-12 tenth-session close). pcrec is NEWLINE_LF today and that is
+  ANCHORED, not assumed: every oracle measurement runs libpcre2 at
+  options=0 (build default LF on this box), so \N's generated bitmap is
+  the measured complement of {0x0A}, `.` is every-byte-but-0x0A, and `$`
+  is before-final-\n; a convention change on either side fails PC-4 and
+  the census probe loudly. PCRE2 makes newline a per-pattern CONVENTION
+  (CR/LF/CRLF/ANYCRLF/ANY/NUL via the start-only (*CR)-family verbs or the
+  API option; \R separately via BSR) — pcrec refuses the verbs cleanly
+  today (Q1 tables, start-only), so the axis is closed off LOUDLY, no
+  miscompile. COST PREDICTION when a consumer arrives (D18 earn-its-axis):
+  `.`/\N fold into the front end per-convention like OS-1's caseless
+  (byte-set swap, oracle-generated tables, zero engine cost) for CR/LF/
+  NUL/ANYCRLF/ANY; the ENGINE work is `$` (and DD-6's multiline ^/$) —
+  an EOL assertion that becomes set-valued under ANY/ANYCRLF and a
+  TWO-BYTE SEQUENCE under CRLF, in both the forward and reverse DFAs
+  (the M2.7/M2.12 EOL-variant machinery is single-byte shaped), and
+  CRLF also complicates `.`'s complement. Decide with the assertions
+  module or a real consumer, whichever asks first; measure the
+  convention's effect on the censuses through the existing probe
+  pipeline before writing any table
 
 ## Option-specialization dimensions (D18) — each must EARN its engine
 

@@ -6408,3 +6408,11 @@ through five slices + a panel, every check moved with its surface, and
 both panel findings fixed with machinery the design had already paid for.
 MOD-0.5 (modifiers) is next on the D30 §7 spine — NOT started without
 Frank, per the standing directive.
+
+**Session-close discussion (Frank): the newline-convention axis, recorded
+as DD-11.** pcrec is NEWLINE_LF and it is anchored by the oracle (every
+measurement at options=0; \N's bitmap is the measured complement of
+{0x0A}), not assumed; the (*CR)-family verbs refuse cleanly so the axis is
+closed loudly. Cost prediction on arrival: ./\N fold like caseless;
+$'s EOL assertion is the engine work (set-valued under ANY/ANYCRLF,
+two-byte under CRLF, both DFAs). Details in the DD-11 plan entry.
