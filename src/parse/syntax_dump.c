@@ -37,7 +37,9 @@ static const MaskName engine_names[] = {
     {ENGM_DFA, "dfa"}, {ENGM_VM, "vm"},
 };
 static const MaskName flag_names[] = {
-    {RF_CLASS_BASE, "class-base"}, {RF_CLASS_DELIM, "class-delim"},
+    /* "class-base" retired at MOD-0.3d with its flag — base class
+     * semantics are the row's port now, not a flag the dump can show */
+    {RF_CLASS_DELIM, "class-delim"},
     {RF_LEXICAL, "lexical"},
 };
 

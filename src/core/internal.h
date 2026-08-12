@@ -351,8 +351,11 @@ typedef enum {
 } QuantVerb;
 
 enum {
-    RF_CLASS_BASE = 1u << 0,  /* inside a class this byte is BASE syntax and the
-                                 doorway is not taken (\b is backspace there) */
+    /* RF_CLASS_BASE (1u << 0) RETIRED at MOD-0.3d: "inside a class this
+     * byte is BASE syntax" became the row's own BASE class port (ExtPort
+     * .base + SCALAR/FN data — one home, and the value is oracle-tied by
+     * check_class_ports where the flag was a bare assertion). The bit is
+     * left unassigned so an old build's dump and a new one cannot alias. */
 
     /* A DELIMITER-PAIR construct: the selector byte opens it only when the
      * matching `<sel>]` appears later in the pattern, and the character class's
@@ -381,7 +384,7 @@ enum {
      * `\A`-in-a-class, because that is not a construct. Same defect as
      * `(*NOTAVERB)` and `[[:foo:]]`, at the third doorway (R9/SPEC-classes-F1).
      *
-     * Distinct from RF_CLASS_BASE, which says the byte is BASE syntax in a class
+     * Distinct from a BASE class port, which says the byte is BASE syntax in a class
      * and the doorway is never entered (`[\b]` is backspace). This says the
      * doorway IS entered and the answer is a refusal that promises nothing. */
     RF_CLASS_INVALID = 1u << 3,
@@ -585,6 +588,13 @@ typedef ExtResult (*ExtPortFn)(Ctx *cx, const RegRow *rw, ExtWant want,
 
 typedef struct {
     PortKind             kind;
+    /* MOD-0.3d: TRUE for a port whose semantics are PCRE2 BASE FACTS the
+     * gate must never touch — `\b`-in-class is backspace and `[\12]` is
+     * octal WHATEVER is enabled (§14.3: "\b's class port is base (never
+     * gated) and its AST port is 'assertions'" — the per-port feature
+     * split that makes the C5 miscompile unrepresentable). A module's own
+     * producing ports carry false and answer only through an open gate. */
+    bool                 base;
     int                  scalar;  /* PORT_SCALAR: the code point.
                                      PORT_SET: the NEGATE flag — nonzero
                                      means the produced set is the exact
@@ -597,7 +607,7 @@ typedef struct {
     ExtPortFn            fn;      /* PORT_FN */
 } ExtPort;
 
-#define NO_PORT { PORT_NONE, 0, NULL, NULL }
+#define NO_PORT { PORT_NONE, false, 0, NULL, NULL }
 
 /* module `classes` (MOD-0.3c) — src/parse/mod_classes.c. The tables are
  * GENERATED from libpcre2 censuses by tests/probes/probe_cls_bits.c
@@ -613,6 +623,12 @@ extern const unsigned char pcrec_cls_digit_esc[32], pcrec_cls_space_esc[32],
     pcrec_cls_px_word[32],  pcrec_cls_px_xdigit[32];
 /* The POSIX named-class producer (the `:` row's PORT_FN). */
 ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from);
+/* The octal class producer (MOD-0.3d) — the `\0`..`\7` rows' BASE PORT_FN,
+ * in parse.c: base grammar's own rule migrated to the seam (FIX-3's measured
+ * semantics — selector digit + up to two more octal digits, <= \377, PCRE2
+ * err 151 above with the ran-out offset). */
+ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from);
 /* src/parse/parse.c — build an A_CLASS from a 32-byte membership bitmap,
  * applying the caseless fold BEFORE the optional negation (the OS-1/D23

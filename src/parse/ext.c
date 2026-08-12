@@ -24,9 +24,10 @@
  *
  * WHAT DOES NOT LIVE HERE. Base syntax, including two things that look like
  * they belong: `\x{...}` and the possessive `+` are sub-cases of BASE
- * constructs (the `\x` decoder and the quantifier suffix), not doorways, and
- * `\b` inside a character class is base syntax too — it decodes to backspace
- * without a lookup, which is what the row's RF_CLASS_BASE flag records.
+ * constructs (the `\x` decoder and the quantifier suffix), not doorways.
+ * (`\b`-in-class IS routed here since MOD-0.3d — still base SEMANTICS, but
+ * carried as the row's own BASE class port instead of a parse.c special
+ * case; ExtPort.base is what keeps the gate off it.)
  *
  * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5). Every dispatch still
  * ends in a refusal — every row is RS_MODULE or RS_REJECTED — but the refusal
@@ -100,12 +101,11 @@ static ExtWant ext_gate(const RegRow *r, ExtWant want)
  * that must override a claim — the endpoint rule, D33 §6 — looks at the
  * ExtResult BEFORE calling this; today no caller overrides.
  *
- * A PRODUCING outcome (EXT_SCALAR / EXT_MEMBERS / EXT_NODE, MOD-0.3b) must
- * be consumed by the CALLER before this runs — the epilogue renders
- * refusals, it does not splice results. Until the classes producers wire in
- * (slices 2-3) nothing can construct one, so reaching the wall below means a
- * port produced a value its call site does not yet handle: the PARSE-1
- * silent-discard defect, reported loudly instead. */
+ * A PRODUCING outcome (EXT_SCALAR / EXT_MEMBERS / EXT_NODE) must be
+ * consumed by the CALLER before this runs — the epilogue renders refusals,
+ * it does not splice results. Reaching the wall below means a port produced
+ * a value its call site does not yet handle: the PARSE-1 silent-discard
+ * defect, reported loudly instead of dropped. */
 void pcrec_ext_finish(Ctx *cx, const ExtResult *r)
 {
     if (r->what == EXT_NOT_MINE) return;
@@ -135,13 +135,15 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
 /* ---- doorway 1: after '\' ----------------------------------------------
  * `c` is the byte after the backslash and the cursor sits just past it. Called
  * only once parse.c's decoder has declined: the plain character escapes
- * (\n \t \r \f \a \e \xHH), escaped punctuation and class-context `\b` all
- * return a byte value and never arrive here.
+ * (\n \t \r \f \a \e \xHH) and escaped punctuation return a byte value and
+ * never arrive here. (Class-context `\b`/octal/literal-fallbacks DO arrive
+ * since MOD-0.3d — their BASE class ports answer below.)
  *
  * `in_class` selects the diagnostic, and it selects more than the wording:
- * RD_MODULE_OCTAL is the ATOM form only. Since FIX-3 (K13) the digit rows and
- * `\g`/`\k` never arrive here with in_class set at all — the class position is
- * base syntax (octal / literal fallback, RF_CLASS_BASE), decoded in parse.c. */
+ * RD_MODULE_OCTAL is the ATOM form only. Since MOD-0.3d the digit rows and
+ * `\g`/`\k` DO arrive here with in_class set — their class position is base
+ * semantics (octal / literal fallback, FIX-3/K13) carried as BASE class
+ * ports, produced below regardless of the enabled set. */
 ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
                            size_t at)
 {
@@ -150,6 +152,11 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
     bool amb = false;
     const char *tl = tail_at(cx, cx->pos, &avail);
     const RegRow *r = pcrec_registry_arbitrate(RK_ESC, c, tl, avail, &amb);
+    /* `asked` survives the gate for BASE ports (MOD-0.3d): a port whose
+     * semantics are PCRE2 base facts ([\b] is backspace, [\12] is octal)
+     * answers at the level the CALLER asked, whatever the enabled set —
+     * per-port gating, §14.3's split. Module ports keep the demoted level. */
+    ExtWant asked = want;
     want = ext_gate(r, want);
 
     if (!r) {
@@ -180,20 +187,29 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
     if (in_class && (r->flags & RF_CLASS_INVALID))
         REFUSE(at, "\\%c is not valid inside a character class", c);
 
-    /* THE PRODUCERS (MOD-0.3c). A post-gate WANT_RESULT means both halves
-     * at once: the caller wants the construct (parse.c always asks RESULT)
-     * AND the row's module is in the enabled set (ext_gate demotes to
-     * VERDICT otherwise). Position selects the PORT — §14's per-port rule —
-     * and a PORT_NONE falls through to the refusals below unchanged, which
-     * is "gate open, port missing", observable in answered_at. The doorway
-     * never moves cx->pos even when producing: the two-byte escape is
-     * already consumed by the caller, and check06's cursor rule stays a
-     * property of the seam rather than of each port. */
-    if (want == WANT_RESULT) {
+    /* THE PRODUCERS (MOD-0.3c, base ports MOD-0.3d). Position selects the
+     * PORT — §14's per-port rule. A BASE port answers at the level the
+     * caller ASKED (the gate never touches PCRE2 base facts); a module
+     * port answers at the post-gate level, so WANT_RESULT there means the
+     * gate is open. PORT_NONE falls through to the refusals below
+     * unchanged. The doorway never moves cx->pos even when producing —
+     * a result carries `end` and the CALLER advances (check06's rule). */
+    {
         const ExtPort *p = in_class ? &r->cport : &r->aport;
-        if (p->kind == PORT_SET) {
+        ExtWant w = p->base ? asked : want;
+        if (w == WANT_RESULT && p->kind != PORT_NONE) {
+            if (p->kind == PORT_SCALAR) {
+                ExtResult res = { .what = EXT_SCALAR, .at = at, .msg = "",
+                                  .answered_at = w };
+                res.scalar = p->scalar;
+                res.end = cx->pos;    /* the two-byte escape, already read */
+                return res;
+            }
+            if (p->kind == PORT_FN)
+                return p->fn(cx, r, w, at, cx->pos);
+            /* PORT_SET */
             ExtResult res = { .what = in_class ? EXT_MEMBERS : EXT_NODE,
-                              .at = at, .msg = "", .answered_at = want };
+                              .at = at, .msg = "", .answered_at = w };
             res.node = pcrec_ast_class_from_bits(cx, p->set, p->scalar != 0);
             return res;
         }

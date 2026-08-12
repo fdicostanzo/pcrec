@@ -201,9 +201,12 @@ Rules when touching it:
 - **Two "requires module" diagnostics deliberately stay in parse.c**: `\x{...}`
   (a sub-case of the base `\x` handler) and the possessive `+` suffix (a
   quantifier suffix, not an atom). Neither is a doorway, and giving them one
-  would cost the base tier a lookup. `\b` inside a class is a third thing
-  parse.c still answers, but as BASE syntax — it decodes to backspace, which is
-  what the row's `RF_CLASS_BASE` flag records.
+  would cost the base tier a lookup. `\b` inside a class is base
+  SEMANTICS but no longer parse.c's special case: since MOD-0.3d it is the
+  row's own BASE class port (ExtPort.base — the gate never touches it), as
+  are the octal digits and the literal fallbacks. RF_CLASS_BASE retired
+  with the migration; check_class_ports ties the port values to the
+  measured class_expect column.
 - **A row may carry a `tail`** (SR-9), and since MOD-0.2 (2026-08-11) the
   lookup engine never interprets it: selection is RECOGNISER + RANK (design
   §2.2/D32, kept per-port-ready by Part II §14.4). Each sel-matching row's
@@ -287,8 +290,10 @@ Rules when touching it:
 - **A row carries two PRODUCING PORTS since MOD-0.3b** (`aport`/`cport`,
   design Part II §4/§14; full doc on ExtPort in internal.h): tagged
   data-or-function, one per position, NONE at class = permanently invalid
-  (§14.3's NULL meaning — replaces RF_CLASS_BASE/RF_CLASS_INVALID when
-  slice 3 retires them). UNWIRED until the classes producers land; the
+  (§14.3's NULL meaning; slice 3 retired RF_CLASS_BASE into base ports —
+  RF_CLASS_INVALID STAYS, because D33 §3's precondition is measurably
+  false while lexical and unicode-props rows carry honest NULLs that are
+  not permanently invalid; journal 2026-08-12). UNWIRED until the classes producers land; the
   port DATA is guarded by registry_check's check_class_ports (populations
   pinned, values oracle-tied). Set bitmaps, when they arrive, are GENERATED
   from libpcre2 censuses and re-measured by PC-4 — never hand-typed.

@@ -766,11 +766,12 @@ static void check_table_to_parser(void)
         expect_msg(label, r->syntax, want);
 
         snprintf(pat, sizeof pat, "[%s]", r->syntax);
-        if (r->flags & RF_CLASS_BASE) {
+        if (r->cport.base && r->cport.kind != PORT_NONE) {
             /* \b is backspace inside a class, and since FIX-3 the twelve
-             * digit/\g/\k rows are octal or literal fallback there — base
-             * syntax, so the doorway is NOT taken. A row that claims this must
-             * be right about it.
+             * digit/\g/\k rows are octal or literal fallback there — BASE
+             * semantics, since MOD-0.3d carried as the row's own base class
+             * PORT (the doorway IS entered now; RF_CLASS_BASE retired). A
+             * row that claims this must be right about it.
              *
              * Probe `[\%c]` — the SELECTOR BYTE — not `[%s]` from the row's
              * syntax. The flag's claim is about the byte; the syntax field is
@@ -950,7 +951,7 @@ static void check_required_rows(void)
  * quietly asking about the wrong byte. That is deliberate — R9 spent two
  * findings on guards that were wrong in the same way as the bug they answered. */
 static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
-                  unsigned skip_flag, bool at_open)
+                  unsigned skip_flag, bool at_open, bool excuse_base_cport)
 {
     char pat[16], got[256], label[192];
     int mismatches = 0, routed = 0;
@@ -1000,13 +1001,18 @@ static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
                 mismatches++;
             }
         } else if (r && r->status == RS_MODULE && r->sel == c && !(r->flags & skip_flag)
+                   && !(excuse_base_cport && r->cport.base && r->cport.kind != PORT_NONE)
                    && r->roadmap != ROADMAP_NEVER) {
             /* NEVER rows are excused like skip_flag rows: they reject WITHOUT
              * naming a module by design (K14), and check_table_to_parser
              * asserts their exact text positively, so this is not an escape
              * from being checked. */
-            /* skip_flag excuses a row that is deliberately NOT a doorway here —
-             * RF_CLASS_BASE marks `\b`, which is backspace inside a class. */
+            /* skip_flag excuses a row that is deliberately NOT a "requires
+             * module" answer here; since MOD-0.3d the base-class-semantics
+             * excuse is the row's own BASE PORT (excuse_base_cport, set only
+             * by the in-class sweep — [\b] compiles as backspace THROUGH the
+             * doorway now, and check_class_ports/check_table_to_parser assert
+             * that positively). */
             bad("%s: the registry claims byte 0x%02x ('%c') needs module '%s', but the parser %s",
                 what, c, c >= 32 && c < 127 ? c : '?', r->module,
                 rejected ? "rejects it for another reason" : "compiles it");
@@ -1207,17 +1213,17 @@ static void check_class_ports(void)
         }
     }
 
-    if (scalar != 5 || set != 10 || fn != 1 || aports != 11)
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 11)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
-            "ports (1: the posix name row), %d atom ports (11: the "
-            "char-types + \\N). A deliberate move edits this check IN THE "
-            "SAME CHANGE; a silent one is the defect",
+            "ports (9: posix + the eight octal digits, slice 3), %d atom "
+            "ports (11: the char-types + \\N). A deliberate move edits this "
+            "check IN THE SAME CHANGE; a silent one is the defect",
             scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 1 FN class ports, 11 atom "
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 11 atom "
            "ports; scalar and SET values oracle-tied (class_expect column / "
-           "fallback law / census popcounts), as predicted for slice 2");
+           "fallback law / census popcounts), as predicted for slice 3");
 }
 
 int main(void)
@@ -1243,16 +1249,20 @@ int main(void)
      * caught "a construct added to parse.c with no row" — true for half the
      * doorways it was written to describe. A critic pass found it. */
     printf("\n== parser -> table (255-byte sweep of ALL FOUR doorways) ==\n");
-    sweep(RK_ESC,          "\\%c",      1, "after a backslash", 0, false);
-    /* RF_CLASS_INVALID joins RF_CLASS_BASE as a reason a row is deliberately not
-     * a "requires module" doorway in the class position — the first because the
-     * byte is base syntax there, the second because PCRE2 forbids the construct
-     * there permanently and a module must not be promised (R9/SPEC-classes-F1).
-     * The two are excused here and asserted POSITIVELY in check_table_to_parser,
-     * so being on this list is not a way to escape being checked. */
+    sweep(RK_ESC,          "\\%c",      1, "after a backslash", 0, false, false);
+    /* Two reasons a row is deliberately not a "requires module" answer in
+     * the class position, both excused here and asserted POSITIVELY in
+     * check_table_to_parser: a BASE class port (the byte is base syntax
+     * there — [\b] is backspace; the port replaced RF_CLASS_BASE at
+     * MOD-0.3d, hence excuse_base_cport) and RF_CLASS_INVALID (PCRE2
+     * forbids the construct there permanently and a module must not be
+     * promised, R9/SPEC-classes-F1 — the flag STAYS: D33 §3's NULL-port
+     * retirement precondition is measurably false while the lexical rows
+     * and unicode-props' rows carry honest NULLs that are NOT permanently
+     * invalid; recorded in the 2026-08-12 journal). */
     sweep(RK_ESC,          "[\\%c]",    2, "after a backslash inside a class",
-          RF_CLASS_BASE | RF_CLASS_INVALID, false);
-    sweep(RK_GROUP,        "(?%c",      2, "after (?", 0, false);
+          RF_CLASS_INVALID, false, true);
+    sweep(RK_GROUP,        "(?%c",      2, "after (?", 0, false, false);
     /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
      * doorway is decided by a NAME and a byte sweep varies one byte. It proves
      * the doorway is reached and that PCRE2's two name tables are selected by
@@ -1266,14 +1276,14 @@ int main(void)
      * "unknown POSIX class name" and would make this sweep assert the wrong
      * string. `alpha` is a real POSIX class name and an ordinary run of letters
      * to the two collating rows, so one body serves all three. */
-    sweep(RK_CLASSBRACKET, "[[%calpha%c]]", 2, "after [ inside a class (4b)", 0, false);
+    sweep(RK_CLASSBRACKET, "[[%calpha%c]]", 2, "after [ inside a class (4b)", 0, false, false);
     /* DOORWAY 4a, which had NO sweep at all until FIX-2. The template above is
      * `[[%ca%c]]` — an inner bracket — so it only ever tested 4b, and the
      * CLASS'S OWN bracket went unswept even though it is a different code path
      * with (since K3) a different message. R6 spotted the gap and could not add
      * it: `[%ca%c]` would have FAILED until K3 was fixed, which is exactly why
      * it is landing in the same change as the fix. */
-    sweep(RK_CLASSBRACKET, "[%calpha%c]", 1, "at a class's own bracket (4a)", 0, true);
+    sweep(RK_CLASSBRACKET, "[%calpha%c]", 1, "at a class's own bracket (4a)", 0, true, false);
 
     printf("\n== Summary ==\n");
     printf("checks passed: %d\n", pass);

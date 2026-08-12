@@ -20,6 +20,7 @@
  * the quantifier suffix), not doorways, and giving them a doorway would cost
  * the base tier a lookup for nothing. */
 
+#include <stdio.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -170,22 +171,18 @@ static Ast *esc_atom(Ctx *cx)
     ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
 }
 
-/* Escape inside a class -> byte value. `\b` is BASE syntax here — backspace,
- * not a word boundary — so the base decode answers before the doorway is
- * reached (the row records that with RF_CLASS_BASE).
- *
- * FIX-3 (K13, 2026-08-11): twelve more rows are base syntax at THIS position
- * only. Inside a class a backreference is impossible, so PCRE2 falls back:
- * `\0`..`\7` begin an OCTAL escape — up to three octal digits, value <= \377,
- * error 151 above it — and `\8` `\9` `\g` `\k` are the LITERAL characters
- * 8 9 g k (the complete literal-fallback set: measured over all 62 `[\c]`
- * probes, tests/probes/probe_fix3.c, 41 cells, zero disagreements with
- * libpcre2 10.46). Any tail re-enters the class as ordinary members, and a
- * decoded escape is an ordinary range endpoint, so `[0-\k]` and `[\1-\7]`
- * need no extra code. Until this landed all twelve answered "requires module
- * 'backrefs'" here — an over-promise for constructs that module can never
- * implement, and a tier-1 miscompile the day it lands (`[\k<n>]` means
- * k<n>, not a backreference). */
+/* Escape inside a class -> byte value. The plain character escapes decode
+ * here (base grammar); EVERYTHING else goes through the doorway, and since
+ * MOD-0.3d that includes the FIX-3 (K13) base-semantics set — `\b` ->
+ * backspace, `\0`..`\7` octal (up to three digits, <= \377, err 151
+ * above), `\8` `\9` `\g` `\k` the literal letters — which are now the
+ * rows' own BASE class ports (SCALAR data / the octal PORT_FN below),
+ * answering whatever the enabled set says. The measured semantics are
+ * unchanged (probe_fix3.c, 41 cells, zero disagreements; 127 corpus pins
+ * held byte-identical through the migration); what moved is the HOME —
+ * one table, one oracle-tied value per row, no parse.c special case for
+ * the doorway to disagree with. A decoded escape is an ordinary range
+ * endpoint, so `[0-\k]` and `[\1-\7]` need no extra code. */
 static int esc_class_value(Ctx *cx, ExtResult *claim)
 {
     size_t epos = cx->pos - 1;
@@ -194,38 +191,66 @@ static int esc_class_value(Ctx *cx, ExtResult *claim)
     if (v >= 0) return v;
     cx->pos = save;
     int c = nextc(cx);
-    if (c == 'b') return '\b';
-    if (c >= '0' && c <= '7') {
-        int val = c - '0', ndig = 1;
-        while (ndig < 3 && peekc(cx) >= '0' && peekc(cx) <= '7') {
-            val = val * 8 + (nextc(cx) - '0');
-            ndig++;
-        }
-        if (val > 0xff) /* PCRE2 error 151; the offset is where the digits
-                         * ran out, which is where the cursor now sits */
-            ctx_fail(cx, cx->pos,
-                     "octal value is greater than \\377 in 8-bit non-UTF-8 mode");
+    /* THE FIX-3 BLOCK THAT STOOD HERE IS GONE (MOD-0.3d): `\b` -> 0x08, the
+     * octal re-read for `\0`..`\7`, and the literal fallbacks `\8 \9 \g \k`
+     * are now the rows' own BASE class ports — SCALAR data for the fixed
+     * bytes, PORT_FN (pcrec_clsport_octal below) for the digit scan — so
+     * the doorway is entered and the port answers REGARDLESS of the enabled
+     * set (ExtPort.base: these are PCRE2 base facts, not module features).
+     * One home: the semantics parse.c used to hard-code are the same table
+     * data check_class_ports ties to the measured class_expect column. */
+    *claim = pcrec_ext_escape(cx, WANT_RESULT, c, true, epos);
+    if (claim->what == EXT_SCALAR) {
+        /* the CALLER moves the cursor at RESULT: `end` is one past the
+         * construct (identical to the cursor for the two-byte escapes,
+         * past the last consumed digit for octal) */
+        cx->pos = claim->end;
+        int val = claim->scalar;
+        *claim = (ExtResult){ .what = EXT_NOT_MINE };
         return val;
     }
-    if (c == '8' || c == '9' || c == 'g' || c == 'k')
-        return c;
-    /* A doorway claim travels UP: p_class decides whether the refusal fires
-     * as-is or is overridden by the range logic (the K12 endpoint rule —
-     * §16's five steps need the claim visible at the range site, which is
-     * exactly what the returned-claims epilogue exists for). The returned 0
-     * is never read: every caller checks `claim` before using the value. */
-    *claim = pcrec_ext_escape(cx, WANT_RESULT, c, true, epos);
     if (claim->what != EXT_REFUSAL && claim->what != EXT_MEMBERS)
-        /* The wall — see esc_atom. K11's flagged-not-reproduced hazard lives
-         * on this path: a future class-port SCALAR feeds cls_set's 32-byte
-         * bitmap, so the module that first returns one adds the range check
-         * HERE, before the value flows, with a probe that is false today.
-         * EXT_MEMBERS travels UP like a refusal claim (MOD-0.3c): p_class
-         * decides whether it ORs in as members or trips the endpoint rule's
-         * SET-at-an-endpoint step — the same claim-travels-up shape the K12
-         * epilogue established for refusals. */
+        /* The wall — see esc_atom. EXT_REFUSAL and EXT_MEMBERS travel UP:
+         * p_class decides whether they fire/OR as-is or trip the endpoint
+         * rule's steps (K12 — §16's five steps need the claim visible at
+         * the range site, which is what the returned-claims epilogue
+         * exists for). */
         ctx_fail(cx, epos, "internal error: escape doorway returned an unhandled outcome");
     return 0;
+}
+
+/* The octal class port (MOD-0.3d) — module-independent BASE semantics
+ * (ExtPort.base), owned by parse.c because it is the base grammar's own
+ * rule migrated to the seam, not a module's production: inside a class a
+ * backreference is impossible, so `\0`..`\7` begin an octal escape — the
+ * selector digit plus up to two more octal digits, value <= \377, PCRE2
+ * error 151 above it with the offset where the digits ran out (FIX-3's
+ * measured semantics, 41 cells, zero disagreements; pinned in
+ * tests/base/class_escape_fallbacks.rxt). The port never moves cx->pos —
+ * it reports `end` and the caller advances at RESULT (check06's rule). */
+ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from)
+{
+    (void)from;
+    ExtResult res = { .what = EXT_SCALAR, .at = at, .msg = "",
+                      .answered_at = want };
+    int val = rw->sel - '0', ndig = 1;
+    size_t p = cx->pos;
+    while (ndig < 3 && p < cx->patlen &&
+           cx->pat[p] >= '0' && cx->pat[p] <= '7') {
+        val = val * 8 + (cx->pat[p] - '0');
+        p++; ndig++;
+    }
+    if (val > 0xff) {
+        ExtResult err = { .what = EXT_REFUSAL, .at = p, .msg = "",
+                          .answered_at = want };
+        snprintf(err.msg, sizeof err.msg,
+                 "octal value is greater than \\377 in 8-bit non-UTF-8 mode");
+        return err;
+    }
+    res.scalar = val;
+    res.end = p;
+    return res;
 }
 
 /* ---- [...] classes ---- */

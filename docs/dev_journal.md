@@ -6295,3 +6295,36 @@ a VALIDATED spec (pcrec refuses unknown module names with exit 1, which a
 perr block would have read as success — the typo path is a loud harness
 failure instead). S15/S16/S17 anchors re-derived for the ESC_SET call
 sites in the same change, per the anchor convention.
+
+**Slice 3 (MOD-0.3d) — the retirements, with the design meeting reality
+three times.** RF_CLASS_BASE retired into BASE ports: ExtPort gained a
+`base` bit (§14.3's per-port gating — [\b] is backspace and [\12] octal
+WHATEVER is enabled), \b/\8/\9/\g/\k are scalar port data, \0..\7 the
+octal PORT_FN (pcrec_clsport_octal stays in parse.c: base grammar's own
+rule migrated to the seam, message and offset byte-identical — err 151 at
+the ran-out position). parse.c's FIX-3 block and \b special case are
+DELETED; the doorway is entered at class position for all thirteen rows
+and the port answers at the level the caller ASKED, gate untouched.
+registry_check re-keyed both RF_CLASS_BASE readers onto the port; the
+in-class sweep gained excuse_base_cport (scoped to that sweep only, so an
+atom-position mismatch on those rows cannot hide behind it);
+check_class_ports 5/10/9/11 predicted then confirmed. Byte-identity in
+BOTH gate states: 243 × (verdict, diagnostic, emitted C) vs the slice-2
+build, zero differences; the 127 FIX-3 pins and the classes corpus green
+through the migrated path.
+
+**The deviations, because the measured world disagreed with the plan text
+three times:** (1) RF_CLASS_INVALID stays — D33 §3's "NULL regains its one
+meaning" is false today: the lexical rows' class_expect is "err 106" for
+PROBE-SHAPE reasons ([\Q] quotes the closing bracket — K13's
+column-measures-the-probe lesson, re-met), and unicode-props' rows carry
+honest NULLs that are "awaiting MOD-0.6", not "permanently invalid".
+Deriving invalidity from the measured column would have rewritten [\Q]'s
+answer wrongly. Retirement goes to MOD-0.6, when the port population is
+total. (2) RF_CLASS_DELIM stays as DATA — conversion to a recogniser buys
+nothing observable and churns the R9-hardened doorway dispatch; the flag
+is the construct's recognition rule as data, which is D29's line, and
+pair_opens already survived R14 as code where code is needed. (3) The
+in-class tail-sweep extension defers WITH RF_CLASS_INVALID (D33 §9.2
+conditioned the obligation on the removal; K10's blind-net count is
+unchanged and stays MOD-0.6's).

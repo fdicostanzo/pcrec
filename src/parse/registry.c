@@ -172,10 +172,12 @@
  * stored; the complement law is probe-asserted). Gated: with module
  * `classes` disabled these rows refuse exactly as ESC rows do. */
 #define ESC_SET(sel, syn, mod, eng, note, q, ce, bits, neg) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, {PORT_SET, (neg), (bits), NULL}, {PORT_SET, (neg), (bits), NULL}}
-/* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
-#define ESC_CLASS_BASE(sel, syn, mod, eng, note, q, ce, lit) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, (lit), NULL, NULL}}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, {PORT_SET, false, (neg), (bits), NULL}, {PORT_SET, false, (neg), (bits), NULL}}
+/* as ESC, but inside a class the byte is BASE syntax: one fixed literal,
+ * carried as a BASE scalar class port (MOD-0.3d — the port replaced
+ * RF_CLASS_BASE; ExtPort.base means the gate never touches it). */
+#define ESC_CLASS_SCALAR(sel, syn, mod, eng, note, q, ce, lit) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, true, (lit), NULL, NULL}}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
@@ -194,13 +196,13 @@
 #define GROUP_LEXICAL(sel, syn, mod, eng, note) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, NULL, 0, NULL, NO_PORT, NO_PORT}
 #define ESC_DIGIT(sel, syn, eng, note, q, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}}
 /* as ESC_DIGIT, but the class answer is one fixed literal byte: \8 and \9
  * (8 and 9 are not octal digits, so no continuation is ever read — measured
  * at FIX-3, the [\81] cell). \0..\7 need the octal SCAN and get a PORT_FN
  * class port when it wires in (slice 3). */
 #define ESC_DIGIT_LIT(sel, syn, eng, note, q, ce, lit) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, (lit), NULL, NULL}}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, true, (lit), NULL, NULL}}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note, q) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
@@ -284,7 +286,7 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  * complement); its class port stays NONE — permanently invalid, err 171,
  * wording tier 3 (D33 §3). Longhand because it is the one row with a
  * producing aport and a class-invalid flag at once. */
-{RK_ESC, 'N', NULL, "\\N", M_classes, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "any character except newline (PCRE2 forbids it inside a class)", ROADMAP_PLANNED, QF_YES, "err 171", 0, NULL, {PORT_SET, 1, pcrec_cls_newline, NULL}, NO_PORT},
+{RK_ESC, 'N', NULL, "\\N", M_classes, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "any character except newline (PCRE2 forbids it inside a class)", ROADMAP_PLANNED, QF_YES, "err 171", 0, NULL, {PORT_SET, false, 1, pcrec_cls_newline, NULL}, NO_PORT},
 /* THE SHORT TAIL IS WRITTEN FIRST ON PURPOSE. These two rows are the only
  * prefix-related tail pair in the table (`{` is a proper prefix of `{U+`), so
  * on `{U+...` text BOTH recognisers answer and rank is the only thing electing
@@ -310,7 +312,7 @@ REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
   * prefix, and this row) and rank is what elects this one (MOD-0.2). */
  70, NULL, NO_PORT, NO_PORT},
 
-ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
+ESC_CLASS_SCALAR('b', "\\b", assertions, ANY_ENGINE,
                "word boundary — but inside a class it is BASE syntax: backspace (0x08)", QF_NO, "char 0x08", 0x08),
 ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary", QF_NO, "err 107"),
 ESC_CLASS_INVALID('A', "\\A", assertions, ANY_ENGINE, "start of subject", QF_NO, "err 107"),
@@ -324,8 +326,8 @@ ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start 
  * matches k < n >), so the class position is base syntax exactly as `\b` is.
  * The ten digit rows carry the same flag: `[\0]`..`[\7]` are octal there and
  * `[\8]` `[\9]` are the literal digits. Measured: tests/probes/probe_fix3.c. */
-ESC_CLASS_BASE('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k'),
-ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g'),
+ESC_CLASS_SCALAR('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k'),
+ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g'),
 
 ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property", QF_YES, "set 117"),
 ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property", QF_YES, "set 139"),
@@ -363,10 +365,13 @@ ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code", QF
  * belongs to the backrefs module rather than to this table; the note is where
  * the truth lives until then. Recorded in docs/known_issues.md.
  *
- * All of the above is the ATOM position. The CLASS position is RF_CLASS_BASE
- * since FIX-3 (K13): a backreference is impossible there, so `[\0]`..`[\7]`
- * are octal, `[\8]` `[\9]` the literal digits, decoded in parse.c and never
- * reaching the doorway. Measured cell-by-cell in tests/probes/probe_fix3.c. */
+ * All of the above is the ATOM position. The CLASS position is base
+ * semantics since FIX-3 (K13): a backreference is impossible there, so
+ * `[\0]`..`[\7]` are octal and `[\8]` `[\9]` the literal digits — since
+ * MOD-0.3d carried as BASE class ports (the octal PORT_FN below, scalar
+ * data for 8/9) instead of a parse.c special case, so the doorway IS
+ * entered and the port answers whatever the enabled set says. Measured
+ * cell-by-cell in tests/probes/probe_fix3.c. */
 ESC_DIGIT('0', "\\0", ANY_ENGINE, "octal escape \\0dd — never a backreference (there is no group 0)", QF_YES, "char 0x00"),
 ESC_DIGIT('1', "\\1", VM_ONLY, "backreference to capture group 1 (PCRE2 error 115 if no such group)", QF_NO, "char 0x01"),
 ESC_DIGIT('2', "\\2", VM_ONLY, "backreference to capture group 2 (PCRE2 error 115 if no such group)", QF_NO, "char 0x02"),
@@ -779,7 +784,7 @@ static const RegRow classbracket_rows[] = {
  "POSIX character class", ROADMAP_PLANNED, QF_YES, "set 52", 0, NULL, NO_PORT,
  /* MOD-0.3c: one row, fourteen names, both polarities — a NAME is not a
   * fixed set per row, so the class port is the module's PORT_FN. */
- {PORT_FN, 0, NULL, pcrec_clsport_posix}},
+ {PORT_FN, false, 0, NULL, pcrec_clsport_posix}},
 /* PCRE2 REJECTS these outright rather than treating them as literals, so
  * agreeing is compliance and there is no module to name — the reason RS_REJECTED
  * exists as a status distinct from RS_MODULE. pcrec accepted them silently until

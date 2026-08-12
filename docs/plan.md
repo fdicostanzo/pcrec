@@ -947,7 +947,35 @@ Then DOC-1, then PC-4 when module `classes` lands.
   stays byte-identical; under `--features classes` the constructs compile
   and MATCH. tests/classes/*.rxt lands here, oracle-verified (python3 re
   where expressible, `# pcre2-only` otherwise)
-- [MOD-0.3d] STATE:not-started — slice 3, the ENDPOINT RULE + retirements:
+- [MOD-0.3d] STATE:completed 2026-08-12 — slice 3, retirements, WITH THREE
+  MEASURED DEVIATIONS from this step's own spec, each recorded in the
+  journal: (1) **RF_CLASS_INVALID STAYS** — D33 §3's precondition ("NULL
+  class port regains its one meaning") is measurably FALSE while the
+  lexical rows carry class_expect "err 106" for probe-shape reasons ([\Q]
+  quotes the ]) and unicode-props' rows await MOD-0.6 ports; a NULL cport
+  today means "invalid OR not yet produced", and deriving permanently-
+  invalid from the measured column would have changed [\Q] to the wrong
+  message. Retirement re-scheduled to MOD-0.6's port population. (2)
+  **RF_CLASS_DELIM STAYS AS DATA** — the recogniser conversion buys
+  nothing observable (all three rows carry it; the scan is always-live in
+  scans.c; pair_opens survived R14 as the deviating-cell predicate) and
+  would churn the R9-hardened dispatch of a doorway that has produced
+  three shipped bugs. The flag IS the construct's recognition rule as
+  data, D29's line. (3) The **in-class tail sweep extension defers WITH
+  RF_CLASS_INVALID** (D33 §9.2 conditioned it on the removal; K10's net
+  stays MOD-0.6's). WHAT LANDED: RF_CLASS_BASE retired into BASE ports
+  (ExtPort.base — the gate never touches PCRE2 base facts): \b/\8/\9/
+  \g/\k scalar data, \0..\7 the octal PORT_FN (pcrec_clsport_octal in
+  parse.c — base grammar's rule migrated to the seam, err-151 message and
+  offset byte-identical); parse.c's FIX-3 block and \b special case
+  DELETED; esc_class_value consumes EXT_SCALAR and moves the cursor to
+  claim.end; registry_check re-keyed both readers on the port
+  (check_table_to_parser's compiles-branch; sweep gained excuse_base_cport,
+  scoped to the in-class sweep only) and check_class_ports moved to
+  5/10/9/11 predicted-then-confirmed. Byte-identity BOTH gate states: 243
+  patterns × verdict/diagnostic/emitted C vs the slice-2 build, ZERO
+  differences; the 127 FIX-3 pins and 43 classes cases green through the
+  migrated path. ORIGINAL SPEC:
   the five-step evaluation order (§16.2 as R14-corrected: low's own error →
   high's pair-open short-circuit → high's own error → either side SET → 150
   → scalar ordering) live at both class-reachable doorways with real SET
