@@ -174,8 +174,12 @@ static void check_wellformed(void)
                     "read as a fact, and unlike roadmap the question is real "
                     "for BASE rows too (a(?:...)* compiles; check10 demands an "
                     "answer for all 100)", kn, i, r->syntax);
+            /* RF_OPTION_RUN retired at MOD-0.5b: the option-run family is now
+             * identified by its row's `recognise` pointer (a MARKER identity,
+             * not the check itself — see mod_modifiers.c) rather than a flag.
+             * Moved with the surface, not deleted. */
             if (r->quant == QF_FORM &&
-                !(r->flags & RF_OPTION_RUN) && r->kind != RK_VERB)
+                r->recognise != pcrec_registry_option_run_recognise && r->kind != RK_VERB)
                 bad("%s row %zu (%s): QF_FORM outside the two form-resolved "
                     "families (option-run rows, the verb row)", kn, i, r->syntax);
 

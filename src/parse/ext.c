@@ -281,8 +281,17 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
      * asks about cx->pos + 1 rather than the tail position used above. On
      * failure the answer is the doorway's own catch-all row, so the rejection
      * has ONE home: rewording it there changes it here too, and a second copy of
-     * PCRE2's sentence is exactly the drift this registry exists to prevent. */
-    if (r->flags & RF_OPTION_RUN) {
+     * PCRE2's sentence is exactly the drift this registry exists to prevent.
+     *
+     * RF_OPTION_RUN retired at MOD-0.5b: this branch now keys off `r->recognise`
+     * — a GROUP_OPT row's identity, not a bit — rather than a flag. The
+     * recogniser itself is a MARKER (mod_modifiers.c's own comment says why:
+     * the real check needs the selector byte, one position earlier than a
+     * recogniser's `at` conventionally means, and reconstructing that from
+     * `at` is unsafe against the synthetic buffers registry_check.c's
+     * arbitration sweeps call it with). So the real check still lives here,
+     * unchanged, with the real Ctx. */
+    if (r->recognise == pcrec_registry_option_run_recognise) {
         size_t oavail;
         const char *orun = tail_at(cx, cx->pos + 1, &oavail);
         if (!pcrec_registry_option_run_ok(orun, oavail)) {

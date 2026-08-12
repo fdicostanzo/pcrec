@@ -78,6 +78,21 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   in BOTH gate states (step 4 now keys on any surviving claim), and
   `[[:alpha:]]-z`-shaped low-side dashes refuse after production exactly as
   they do after a certified refusal
+- **mod_modifiers.c** — module `modifiers` (MOD-0.5), slice 1 (MOD-0.5b) so
+  far: the `(?` doorway's OPTION RUN, moved out of registry.c WITH its whole
+  measured grammar comment (the probes-and-code-together rule — see the
+  file's own header, and R8/C2-9's drifted `LIMIT_*` rule as the
+  counter-example it cites). `pcrec_registry_option_run_ok` is the grammar;
+  `pcrec_registry_option_run_recognise` is what the twelve GROUP_OPT rows now
+  carry in their `recognise` field instead of the retired `RF_OPTION_RUN`
+  flag, and it is a MARKER rather than the check itself — always answering
+  true, same as the tail-less default — because the real check needs the
+  selector byte the standard recogniser `at` sits one position past, and
+  reconstructing that from `at` would read out of bounds against
+  registry_check.c's synthetic arbitration-sweep buffers. ext.c still runs
+  the real check, gated on the pointer's identity rather than the flag.
+  Byte-identity only in this slice: no Ctx modifier state, no per-letter
+  semantics, no lexer changes — those are MOD-0.5c/d
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
@@ -241,15 +256,20 @@ Rules when touching it:
   constructs. A compound name is a true sentence and an inexact answer, and D26
   puts module attribution in tier 2. Reach for `tail` first; fall back to a
   compound name only when the deciding text is not a literal prefix.
-- **`RF_OPTION_RUN` says the construct is a RUN, not a byte** (Q2). Splitting
-  the `(?` catch-all into eleven option-letter rows fixed `(?q)` and left
-  `(?iZ)` still promising module 'modifiers' for syntax PCRE2 refuses, because
-  the row is chosen by the first byte and nothing read the rest. The doorway now
-  reads the whole run, as Q1 made `(*` read the whole name. The grammar is
-  MEASURED and its edges are not guessable from single letters: `a` takes one
-  ASCII-restrict sub-option (`(?aP)` compiles, `(?aPP)` is error 111), and a
-  misplaced hyphen is error 194 — a MALFORMED option setting, so a module is
-  still owed. Its home in registry.c is PROVISIONAL; see D28 and [MOD-0].
+- **An inline option setting is a RUN, not a byte** (Q2). Splitting the `(?`
+  catch-all into eleven option-letter rows fixed `(?q)` and left `(?iZ)` still
+  promising module 'modifiers' for syntax PCRE2 refuses, because the row is
+  chosen by the first byte and nothing read the rest. The doorway reads the
+  whole run, as Q1 made `(*` read the whole name. The grammar is MEASURED and
+  its edges are not guessable from single letters: `a` takes one ASCII-restrict
+  sub-option (`(?aP)` compiles, `(?aPP)` is error 111), and a misplaced hyphen
+  is error 194 — a MALFORMED option setting, so a module is still owed.
+  `RF_OPTION_RUN` said this at MOD-0.5's start; it RETIRED at MOD-0.5b, moving
+  to mod_modifiers.c as a `recognise` pointer instead of a flag (see that
+  file's entry above). The grammar's home is settled now, in its own module
+  TU; what is still provisional is the SEMANTICS — MOD-0.5c/d have not landed
+  Ctx modifier state, per-letter production or the lexer, so today this row
+  family still only ever refuses. See D28 and [MOD-0.5] in docs/plan.md.
 - **`RF_CLASS_DELIM` carries a construct's own recognition rule**, not just its
   diagnostic: a delimiter-pair construct opens only when its matching `X]`
   appears later, and the class's own bracket can serve as its `[`. SR-2 moved
