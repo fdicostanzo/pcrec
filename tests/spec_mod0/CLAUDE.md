@@ -69,7 +69,16 @@ every run.
   verb tables from a *run* of pcrec, never a committed copy.
 - **check01_isolation.sh**, **check06_cursor.sh**,
   **check09_every_feature_toggles.sh** — the three shell checks.
-- **check02 / 03 / 04 / 05 / 07 / 08 / 10** `.c` — the seven C checks.
+- **check02 / 03 / 04 / 05 / 07 / 08 / 10** `.c` — the seven C checks for the
+  ten module-0 invariants.
+- **check11_modifier_syntax.c**, **check12_modifier_semantics.c** — a SECOND
+  D27 pass (2026-08-12, SR-mod05), scoped to the `modifiers` module (PCRE2's
+  inline option settings, `(?i)` / `(?i:...)` / `(?-i)` / `(?^)` / ...) rather
+  than the original ten invariants. Same method, same harness, a different
+  promise: check11 owns the RECOGNITION BOUNDARY (which spellings are a
+  construct at all), check12 owns the BEHAVIOUR (what a recognised spelling
+  DOES). See their own headers for the full predictor set and the finding
+  check12's scoping family is built around.
 
 Each check's own header states its predictor, its oracle, its population, its
 sabotage, and (where it applies) the surface it awaits. Read the header before
@@ -112,6 +121,41 @@ reader will arrive holding it.
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
 | 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | check07's comparison now runs; the per-name-nonzero assertion (2) still arms only when `gate.compared_pairs` is floored above 0 — coverage (assertion 1, all module names present — 17 since MOD-0.3a added `extended-classes`) is checked and passing now |
 | 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |
+
+## The modifiers module (check11, check12) — a second D27 pass, 2026-08-12
+
+Not one of the ten numbered invariants above — the ten are about pcrec's
+architecture in general; check11/check12 are about ONE module's promise
+(PCRE2's inline option settings, `--features modifiers`), written by a
+SEPARATE D27-blinded pass (same discipline: denied `src/`, `docs/`, and the
+rest of `tests/`; derived from the module's promise and live libpcre2
+measurement, never from a reading of pcrec's implementation).
+
+| Check | Status | Owns | pcrec comparison today |
+|-------|--------|------|-------------------------|
+| check11_modifier_syntax.c | **PASS** (113 probes, 52 compared, 61 refused-as-unimplemented, 0 disagreements) | the RECOGNITION BOUNDARY: which `(?...)` / `(?...:body)` spellings are a construct at all — alphabet soundness (pcrec's own 9 declared letters are real), alphabet COMPLETENESS (the full A-Za-z complement, not the registry's one `(?q)` sample, is independently confirmed unrecognised), the option-run's structural grammar (`^` position, `-` count, doubled `x`, whitespace), and the shared `(?-` doorway (digit=recursion vs letter=modifiers) | pcrec's LEXER already does character-level recognition ahead of the module gate — `(?X)` (unknown letter) and `(?i^)` (malformed) are both refused as genuinely invalid TODAY, independent of `--features`, which is why this check is already armed rather than AWAITING-SURFACE |
+| check12_modifier_semantics.c | **PASS** (39 cases: 8 compared — all "control" patterns containing no `(?...)` construct at all — 30 refused-as-unimplemented, 6 oracle-only, 0 disagreements) | the BEHAVIOUR of a recognised spelling: per-letter effect (i/m/s/x), options × classes (`x` vs doubled `xx` — whitespace inside a class), options × quantifiers (`U` inverts `+`/`+?`, `-U` restores), SCOPING (see the finding below), reset (`(?^)`), and capture (`(?n)`, via `--count-groups`) | every construct-bearing pattern is still refused as `requires module 'modifiers'` — none of the 30 refused-unimplemented cases has landed yet, so the compared 8 are patterns that happen not to need the module at all |
+
+**The finding check12's scoping family is built around.** The textbook-
+intuitive model of PCRE-family option scoping — "a bare `(?i)` applies to
+the rest of its own branch, reset at the next `|`" — is WRONG, measured
+against libpcre2 10.46: `^a(?i)b|c$` against `"C"` MATCHES. An option set
+inside one branch of a group is still in effect for that group's LATER
+branches; the scope ends at the group's own closing `)`, not at `|`. A
+pcrec whose parser resets option state at every `|` — the natural
+implementation an author recalling PCRE2's docs would reach for — would
+agree with every single-branch case here and fail exactly the two
+across-`|` cases, silently, because both models agree everywhere else. This
+is the alphabet-inheritance risk D27 exists to guard against, one level up:
+even the SPEC as commonly recalled is the wrong alphabet here; only
+measurement gets it right.
+
+**Two letters (`a`, `r`) are oracle-only by design.** Both are only
+observable under PCRE2_UCP (Unicode property mode); pcrec's CLI exposes no
+UCP-equivalent encoding flag today, so there is no surface a comparison
+could target. check12 still measures and floors the libpcre2 facts
+(`modsem.oracle_only_unicode`, floor 6) so a regression in the oracle side
+is caught now, with no edit needed the day a UCP-capable surface exists.
 
 **Invariant 6 is the one with no oracle half, and that is not a gap in the
 work.** Every other invariant is about what a pattern MEANS, and libpcre2 is
