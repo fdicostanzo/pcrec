@@ -22,11 +22,12 @@ Two rules:
   committed snapshot nobody re-runs is exactly the stale-record failure
   this project keeps finding. Reviews and design notes cite these reports;
   code does not.
-- **Re-measure deliberately.** Regenerate a report when its probe changes,
-  when the oracle version changes (a D26-addendum re-measurement event), or
-  when a review needs current evidence — and commit the diff with a note on
-  what moved and why. A drive-by regeneration with an unexplained diff is a
-  finding, not housekeeping.
+- **Re-measure exactly when stale.** A report is a pure function of its
+  stamped dependencies (probe source blob, ABI shim blob, oracle version —
+  Frank's D35 refinement, 2026-08-12); `scripts/measure.sh --stale` answers
+  VALID/STALE per report without running anything. Regenerate on STALE and
+  commit the diff with a note on what moved and why; a drive-by
+  regeneration with an unexplained diff is a finding, not housekeeping.
 
 Reports present:
 

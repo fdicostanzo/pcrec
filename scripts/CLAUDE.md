@@ -21,8 +21,12 @@ pcrec (the Makefile owns that).
 
 - **measure.sh** — builds and runs one `tests/probes/` probe and archives
   its full output as `docs/measurements/<probe>.txt` (D35, 2026-08-12):
-  stable filename per probe so a re-measurement is a `git diff`, header
-  records date / repo commit / libpcre2 version / gcc version. Reports are
-  review evidence, never an oracle — no check reads them.
+  stable filename per probe so a re-measurement is a `git diff`; header
+  stamps the report's full dependency set (probe source blob hash, ABI shim
+  blob hash, oracle package version) plus date/repo/gcc context.
+  `measure.sh --stale` checks every report's stamps against the current
+  tree and oracle WITHOUT re-running — a report is a pure function of its
+  dependencies (Frank's refinement). Reports are review evidence, never an
+  oracle — no check reads them.
 
 Maintenance: update this file when scripts are added/removed or change role.

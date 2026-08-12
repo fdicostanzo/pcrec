@@ -1,7 +1,10 @@
 # probe_quant — archived measurement report (D35: evidence, never an oracle)
 # regenerate: scripts/measure.sh probe_quant   (git diff shows what changed)
+# check validity without re-running: scripts/measure.sh --stale
 # date: 2026-08-12
-# repo: f9bdfdc +dirty
+# repo: 2951203 +dirty
+# probe-blob: 917373e12c13c51bf557f676207dd81173b0a7ae (git hash-object tests/probes/probe_quant.c)
+# abi-blob: 0a2d70999f960eea3a2f912629a262fdb5203d71 (tests/fuzz/pcre2_abi.h)
 # oracle: libpcre2-8-0 10.46-1build1
 # compiler: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
 

@@ -3265,6 +3265,18 @@ the strong form). Regeneration is DELIBERATE (probe change, oracle version
 bump per D26's addendum, or a review needing current evidence), and the
 diff is committed with a note on what moved.
 
+**REFINED same session (Frank): a report is a PURE FUNCTION of its
+dependencies, so validity is checkable without re-running.** The header
+stamps the probe source's git blob hash, the ABI shim's blob hash, and the
+oracle package version; `scripts/measure.sh --stale` compares every
+report's stamps against the current tree and installed oracle and answers
+VALID or STALE with the reason. A report whose stamps match its
+dependencies never needs regeneration — "regenerate deliberately" above
+reduces to "regenerate exactly when --stale says so (and commit the diff
+with a note on what moved)". Environment residue (gcc version) is stamped
+but NOT a staleness input: a well-defined probe's output does not depend
+on the compiler that built it, and if one ever does, that is a probe bug.
+
 **Revisit-when:** a report's diff ever becomes load-bearing in a check, or
 the directory grows enough that nobody reads diffs — either is the signal
 the convention has drifted from evidence into oracle or noise.
