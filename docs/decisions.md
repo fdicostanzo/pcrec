@@ -3314,3 +3314,51 @@ hook the match — refuse loudly instead until the module lands).
 **Revisit-when:** M4's design begins (the behavior step), or any lane is
 free for the flip step ([M4-CALLOUTS] part 1 — do not start it while
 another lane owns registry.c/reject/case11).
+
+## D37 — default-on policy: frozen NAMED sets, graduation criterion, stamped artifacts (2026-08-12)
+
+**Decision (Frank, fourteenth session, ruling on the R20/0.8c sheet's item
+1):** the middle path — modules ship DEFAULT-ON once they have survived a
+checkpoint panel AND carry PC-3 differential coverage — amended by Frank's
+consistency constraint: *"the set of standards should be consistent; if it
+surprisingly changed at some point it might annoy developers midway through
+their project."*
+
+**The mechanism, so the default can grow without ever surprising anyone:**
+
+- The default enabled set is a FROZEN NAMED SET. `std1` = {classes,
+  modifiers} — the two modules that qualify today. A frozen set's contents
+  NEVER change after it ships; `--features std1` compiles identically
+  forever.
+- unicode-props is NOT in std1: recogniser-only, no producer — the gate is
+  measured byte-identical either way, and a set member with no effect is a
+  false promise of one.
+- Future graduates form the NEXT named set (`std2` = `std1` + {x}), they do
+  not join an existing one. The BARE default (no `--features`) maps to a
+  named set, and that mapping advances only at an ANNOUNCED version
+  boundary — never within a version line — with every older named set
+  remaining available verbatim forever. A developer mid-project either
+  passes nothing and is protected by the version line, or pins `--features
+  stdN` and is protected unconditionally.
+- Emitted C is SELF-DESCRIBING: the header comment and a macro stamp the
+  set name AND its expanded module list, so any artifact can be reproduced
+  by any future pcrec by passing the stamped expansion — reproducibility
+  does not depend on remembering what "default" meant that year.
+- `--features none` remains the escape hatch and the honest empty set;
+  explicit sets always win over the bare default.
+
+**Why:** friction vs honesty resolved by separating them — `(?i)foo`
+working out of the box is friction repair; the frozen-name discipline is
+what keeps the honesty (nothing under a developer changes without an
+announced, opt-outable boundary).
+
+**Consequences owed at implementation** (recorded so the row inherits
+them): reject_gated rows and every default-gate measurement in the suites
+assume the default is EMPTY today — flipping the bare default inverts those
+assumptions across reject counts, corpus `features` directives, check07's
+gate equivalence, and the PC-3 gate state; the implementation row carries a
+full re-baseline, and check09 per-name arming + check01 aperture/floors
+(whose meanings shift with the default) land WITH it, not before.
+
+**Revisit-when:** the first post-std1 graduation — it defines the
+announcement mechanics in practice.

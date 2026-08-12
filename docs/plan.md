@@ -1514,12 +1514,35 @@ Then DOC-1, then PC-4 when module `classes` lands.
     RECOGNITION from the construct's public promise and libpcre2, denied
     src/ and tests/ (default cell allowlist); cell diffed back into the
     worktree for review-then-merge
-  - [MOD-0.8c] STATE:not-started — candidate dispositions and close, each
-    ruled/landed/deferred WITH measurement: check09 per-name arming;
-    default-on policy (a Frank ruling); check01 aperture/floors; mech suite
-    types — registry+pc3 (R18+R19, two motivations) and cli (MOD-0.7 §9.3,
-    runtime cost unmeasured); PC-4 missing shapes (caseless-negated,
-    \N{n,m}, MODIFIER — R16/R17 NOTED); in-class routing (MOD-0.7 §3.4)
+  - [MOD-0.8c] STATE:started — candidate dispositions RULED 2026-08-12
+    (Frank items 1-2 explicit, manager slate unvetoed; execution lane
+    mod08c): DEFAULT-ON = D37 (frozen named sets, std1={classes,modifiers};
+    implementation is [STD1] below — check09 per-name arming and check01
+    aperture/floors land WITH it, their meanings shift with the default);
+    MECH SUITE TYPES registry+pc3+cli — BUILD, runtime cost measured before
+    wiring (Frank: "this project's greatest benefit will be its testing
+    suite — builds confidence and lets us go crazy when we get to
+    optimizations"); PC-3 GATE AXIS — BUILD (OPTRUN-B3: no differential
+    opens the gate; two modules now produce); DEFERRED-VALIDATION ORDERING
+    — DOCUMENT in pcre2_compliance.md (category divergence, module-gate
+    runs before run-validity, population can only shrink); `-e utf8`
+    MODULE-NAMESPACE GAP — FIX small (K14 shape: names a module the
+    namespace lacks); DEFERRED WITH OWNERS: PC-4 missing shapes → first
+    wide producer (+ mod08fix's residual: PC-3 still cannot generate the
+    zero-tail `(?P` cell), in-class routing → next router toucher,
+    OPTRUN-B2 alphabet generation → with the mech pc3 arm; make ubsan →
+    next session, with R20's tier-1 (longjmp into uninitialized jmp_buf)
+    as the new argument — that crash is ubsan's home class
+  - [STD1] STATE:not-started — implement D37: the bare default becomes
+    frozen named set `std1` = {classes, modifiers}; named-set plumbing
+    (`--features std1|none|<explicit>`, older sets available verbatim
+    forever, bare-default mapping advances only at announced version
+    boundaries); artifact stamping (set name + expanded module list in
+    emitted header + macro); FULL SUITE RE-BASELINE (reject_gated
+    inversions, corpus `features` directives, check07 gate equivalence,
+    PC-3 gate state all assume an empty default today); check09 per-name
+    arming + check01 aperture/floors land here. Product-face change —
+    starts with Frank's go, after MOD-0.8 closes
 
 
 Sequenced so each step pays for itself before the next is justified. SR-1/SR-2
@@ -1679,6 +1702,10 @@ Not a milestone: a shape applied at appropriate points, in this ORDER. Profiling
 a bad algorithm optimizes the wrong loop, and optimizing compile time before
 execution speed trades the primary goal (D18) for the secondary one.
 
+- (Frank, 2026-08-12, on this whole block: "this project's greatest benefit
+  will be its testing suite. builds confidence and lets us go crazy when we
+  get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
+  everything below; an optimization the suite cannot referee does not land)
 - [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it
 - [OPT-B] STATE:not-started — PROFILED code-level optimization, only after OPT-A. D13's correction says throughput here is dominated by transition PREDICTABILITY, so target branch behaviour and memory layout rather than instruction count. Every number under D12's rules and the R3.10 load guard
 - [OPT-C] STATE:not-started — COMPILE-TIME optimization, last. Must include what gcc does with our output, not only what pcrec does: after M2.8, gcc is the LARGER half (0.79 s vs 1.36 s at 3600 words) and M2.9's budgets measure only pcrec's
