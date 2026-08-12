@@ -83,3 +83,24 @@ cursor.doorway_rows                 99
 cursor.base_answered_rows            1
 cursor.clear_compared              198
 cursor.set_compared                 99
+
+# --- modifiers module (D27, SR-mod05): check11 syntax boundary ----------
+modsyn.registry_rows_modifiers      12
+modsyn.registry_syntax_ok           12
+modsyn.alphabet_forms               27
+modsyn.alphabet_complement          40
+modsyn.structural_grammar           42
+modsyn.doorway_disambiguation        4
+modsyn.pcrec_compared               52
+modsyn.pcrec_refused_unimpl         61
+
+# --- modifiers module (D27, SR-mod05): check12 behavioural semantics ----
+modsem.letter_effect                11
+modsem.interaction_classes           3
+modsem.interaction_quantifiers       5
+modsem.scoping                      10
+modsem.reset                         4
+modsem.capture_n                     5
+modsem.oracle_only_unicode           6
+modsem.pcrec_compared                8
+modsem.pcrec_refused_unimpl         30
