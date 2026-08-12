@@ -186,7 +186,8 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   records the malformed-body-byte divergence — 164/256 body bytes are
   err-146 to libpcre2 at the byte; this scanner reads past them; the fix
   lands with the first producer
-- **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
+- **syntax_dump.c** — rendering the registry as text (SR-3) AND, since
+  MOD-0.7, querying the live parse front: `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
   never reordered, so consumers' positional reads survive), `--list-verbs`
@@ -196,7 +197,30 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   chosen want level with the real cursor reported before/after, routed by a
   bytewise scan to the first doorway opener in full-text coordinates, `(?:`
   excluded exactly as parse.c excludes it; the check06 cursor-rule channel,
-  10 TSV fields appended-never-reordered). Internal, not public API — the CLI and the
+  10 TSV fields appended-never-reordered).
+  **MOD-0.7 made this file a CALLER of the doorways, not only a renderer.**
+  The bytewise scan is now `doorway_route`/`doorway_call`, file-statics with
+  TWO callers — `--probe-ask` and the rewritten `--explain` — because a second
+  router would drift and the drift would be invisible, each surface staying
+  self-consistent with itself (extraction evidence: 1089 `--probe-ask` cells
+  byte-identical, check06's floors unmoved). `--explain` was a mutual-prefix
+  match on the `syntax` column with no `ext_`/`arbitrate` reference at all,
+  which R10/C4-2 refuted as a control and which made D29's own worked example
+  (`--explain '(?i-m:'`) fail; it now prints the ROW's declared attribution
+  beside the LIVE doorway's answer and compares them per row (election,
+  promise, attribution — `docs/design_notes_mod07.md` §5.2), selecting rows by
+  prefix UNION bucket-candidates with each row tagged which rule found it, and
+  exiting 3 when a row DISSENTS. **The honest limit, measured and repeated
+  here because it is the thing a reader will assume wrongly: the attribution
+  clause CANNOT dissent on a module-name swap** — ext.c renders "requires
+  module '%s'" from the same `r->module` this file prints, so the two agree by
+  construction (100 rows, zero census difference under C4-1's sabotage).
+  Module-name truth is `tests/reject`'s hand pins; what the live call adds is
+  ELECTION, which no existing check has, because 13 rows share their rendered
+  diagnostic with a bucket sibling. MOD-0.7 also fixed K14 HERE: the `status`
+  line promised module `callouts` for the ROADMAP_NEVER row while ext.c and
+  `put_expect` in this same file had both been roadmap-aware since MOD-0.1.
+  Internal, not public API — the CLI and the
   test suite are the only consumers, and promoting a function into lib/pcrec.h
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which

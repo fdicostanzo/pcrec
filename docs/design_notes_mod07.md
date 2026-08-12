@@ -823,7 +823,7 @@ Stated as boundaries of case11 and of the design, not as future work:
 
 ---
 
-## 12. Slice plan for phase 2 (for the manager's authorization, not started)
+## 12. Slice plan for phase 2 (AUTHORIZED and BUILT — see §14 and the branch's slice commits)
 
 1. **Router extraction** — `doorway_route`/`doorway_call` as file-statics;
    `pcrec_probe_ask` rewritten onto them with its 10 TSV fields byte-identical.
@@ -892,3 +892,53 @@ commit carries V1-V7 as a table (sabotage, suite that fired, count) with
 no-blob-assertions rule, the `explain_field` helper, and §9.4's boundaries in
 `tests/cli/CLAUDE.md` — the hand-listed query set named as the instrument's
 stopping boundary, so the fifth sweep-template recurrence has a signpost.
+
+---
+
+## 14. V1-V7, MEASURED at landing (phase 2, 2026-08-12)
+
+Each sabotage applied to a FRESH tree from `git archive HEAD` at `9516863` —
+never a copy of the working tree, never a reused/reverted one (tests/mech's
+[MECH-2] lesson) — built there, with `tests/cli`, `tests/reject` and
+`tests/registry` run against it. Failure counts are `^FAIL` lines per suite.
+
+| # | sabotage | cli | reject | registry | which case11 assertions fired |
+|---|---|---|---|---|---|
+| **V1** | C4-1's module swap, `(?<=...)` lookaround → named-groups | **2** | 1 | 1 | `(?<=...) is module lookaround`; `...and its live answer promises its own module` |
+| **V2** | C4-1b's swap, the `\N{U+` row unicode-props → classes | **1** | 7 | 1 | `\N{U+0041} is module unicode-props` |
+| **V3** | K14 on the query surface, re-introduced | **1** | **0** | **0** | `(?C1)'s status does NOT promise a module` |
+| **V4** | recogniser narrowed: the `\N{U+` row's tail → `{U+X` | **2** | 8 | 4 | `agreement sweep`; `no query dissents (exit 3 count)` |
+| **V5** | rank inversion on the `\N{U+` / `\N{` pair | **2** | 8 | 3 | `agreement sweep`; `no query dissents (exit 3 count)` |
+| **V6** | the option-run grammar rejects every run | **6** | 27 | 58 | the four `(?i-m:` query-cell pins |
+| **V7** | the SHARED router: group cursor `i+1` → `i+2` | **6** | **0** | **0** | `(?<=...) wins its own syntax`; `...promises its own module`; `(?<=...) agrees`; `agreement sweep`; `no query dissents` — **plus case10's byte-exact `--probe-ask` cursor cell** |
+
+**Every one of the seven is caught, and four readings matter more than the
+counts.**
+
+**V1 IS THE ONE TO READ CAREFULLY, and §9.2 said so in advance.** Its two
+failures are `case11: (?<=...) is module lookaround` (a hand-written pin on the
+DECLARED column) and `case11: ...and its live answer promises its own module`
+(a hand-written pin on the LIVE text). **The `agree` field did not fire**, and
+could not: both of its sides read `r->module`. A reader who reports V1 as "the
+cross-source check caught the swap" has recorded the opposite of what happened.
+The pins are the net; the clause is not.
+
+**V3 is the sharpest result in the table: 1 / 0 / 0.** The K14 query-surface
+over-promise is invisible to `tests/reject` and to all 322 registry checks,
+because it is a defect in a DISPLAY that no other suite reads. case11 is its
+only net — which is the argument for the case existing, made in the failing
+direction rather than asserted.
+
+**V5 answers the open question §9.2 recorded.** D30 measured the `\N{U+`/`\N{`
+rank inversion as observable on exactly ONE input in 176,544 in a generated
+sweep. The per-row canonical probe sees it directly (clause 1, plus the exit-3
+count), so the note's "if it does not, say so" does not need to be exercised.
+
+**V7 confirms the one-home guarantee in the failing direction, and its 6/0/0
+shape confirms §9.4's point 5 in the same breath.** Moving the SHARED router's
+cursor breaks case10's byte-exact `--probe-ask` cell AND case11's row-level
+assertions, so the extraction cannot drift unnoticed. It also touches nothing
+in `tests/reject` or `tests/registry` — both of those reach the doorways
+through `parse.c`'s real call sites, so the router genuinely has no
+independent control outside the CLI surfaces. That is the boundary §9.4 named,
+now with a number on it.
