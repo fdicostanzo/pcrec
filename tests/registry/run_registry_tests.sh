@@ -52,16 +52,16 @@ rc=${PIPESTATUS[0]}
 # wording split), manifest only on a green run (needles come from ok()
 # lines, and a failing check never prints one).
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 166 ]; then
+if [ "$regn" -ne 167 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 166." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 167." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (166 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (167 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 166 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 167 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -78,6 +78,7 @@ if grep -q "^checks failed: 0" "$REGOUT"; then
 row ranks: all 18 tailed rows|MOD-0.2: a tailed row at the fallback tier loses every arbitration and its construct is unreachable; successor of check_tail_precedence's second half
 arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is unobservable; these floors are check_tail_precedence's re-homed liveness clause
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
+class ports: 5 scalar ports|MOD-0.3b: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is

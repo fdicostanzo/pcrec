@@ -1116,11 +1116,86 @@ static void sweep_verb(void)
     }
 }
 
+/* MOD-0.3b: the port DATA, checked before anything consumes it. Slice 1
+ * lands the two port columns UNWIRED, so the checkable facts are
+ * data-consistency facts, each with its population stated as a PREDICTION
+ * before the first run (the MOD-0.2 floors rule): exactly 5 scalar class
+ * ports (\b \g \k \8 \9), 0 SET, 0 FN, 0 non-NONE atom ports. Slices 2-3
+ * move those counts DELIBERATELY — a silent move is the defect this pins.
+ *
+ * Value rules, one per syntax shape:
+ *   - bare-escape syntax ("\X"): the scalar must equal the class_expect
+ *     column's measured byte. That column is libpcre2-fed (probe_class_
+ *     expect.c) and re-verified live by spec check04, so the port cannot
+ *     drift from the oracle without this failing — the port does NOT get
+ *     to be its own authority.
+ *   - body-carrying syntax (\k<name>, \g{-1}): class_expect measures the
+ *     whole probe, so the tie is §14.3's literal-fallback law instead —
+ *     the port produces the row's own selector letter (measured at FIX-3
+ *     over all 62 [\c] probes; the corpus pins the behaviour, this pins
+ *     the data). */
+static void check_class_ports(void)
+{
+    int scalar = 0, set = 0, fn = 0, aports = 0, bads = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        for (size_t i = 0; rows && i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (r->aport.kind != PORT_NONE) aports++;
+            if (r->cport.kind == PORT_SET) set++;
+            if (r->cport.kind == PORT_FN)  fn++;
+            if (r->cport.kind != PORT_SCALAR) continue;
+            scalar++;
+
+            char bare[8];
+            snprintf(bare, sizeof bare, "\\%c", r->sel);
+            if (strcmp(r->syntax, bare) == 0) {
+                unsigned v = 0;
+                if (!r->class_expect ||
+                    sscanf(r->class_expect, "char 0x%x", &v) != 1) {
+                    bad("class ports: '%s' carries a scalar class port but its "
+                        "class_expect is '%s', not a measured 'char 0xNN' — the "
+                        "port has no oracle-fed value to be checked against",
+                        r->syntax, r->class_expect ? r->class_expect : "(null)");
+                    bads++;
+                } else if ((int)v != r->cport.scalar) {
+                    bad("class ports: '%s' port scalar 0x%02x != measured "
+                        "class_expect byte 0x%02x — the port drifted from the "
+                        "libpcre2-fed column",
+                        r->syntax, (unsigned)r->cport.scalar, v);
+                    bads++;
+                }
+            } else if (r->cport.scalar != r->sel) {
+                bad("class ports: '%s' (body-carrying syntax) port scalar "
+                    "0x%02x != its selector '%c' — §14.3's literal-fallback "
+                    "law is the value rule for these rows",
+                    r->syntax, (unsigned)r->cport.scalar, r->sel);
+                bads++;
+            }
+        }
+    }
+
+    if (scalar != 5 || set != 0 || fn != 0 || aports != 0)
+        bad("class ports: populations moved — %d scalar (5 expected: b g k 8 9), "
+            "%d SET (0 until the classes producers land), %d FN (0 until the "
+            "octal/posix scans wire), %d atom ports (0 until slice 2). A "
+            "deliberate move edits this check IN THE SAME CHANGE; a silent one "
+            "is the defect",
+            scalar, set, fn, aports);
+    else if (bads == 0)
+        ok("class ports: 5 scalar ports (b g k 8 9), values oracle-tied "
+           "(bare rows to class_expect, body rows to the fallback law), "
+           "0 SET / 0 FN / 0 atom ports as predicted for slice 1");
+}
+
 int main(void)
 {
     printf("== registry well-formedness ==\n");
     check_wellformed();
     check_feature_module_bijection();
+    check_class_ports();
 
 
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");

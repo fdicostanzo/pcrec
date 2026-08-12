@@ -6215,3 +6215,33 @@ loops worth parallelizing, opt-in, default 1 = byte-identical behaviour:
   checks-sharing-a-source catalogue gains its counter-example.
 - `make bench` stays deliberately parallel-free in both directions (D12/D17
   timing medians, loadavg gate) — documented in docs/testing.md.
+
+**Slice 1 (MOD-0.3b) — vocabulary + port columns, unwired.** ExtWhat gains
+EXT_SCALAR / EXT_MEMBERS / EXT_NODE (unconstructable until the producers
+wire; pcrec_ext_finish walls a premature arrival as an internal error);
+ExtResult gains the production payloads; RegRow gains `aport`/`cport` —
+tagged {NONE, SCALAR, SET, FN} ports, every macro initialising both
+(-Wextra enforcement, the MOD-0.2 property, held: make strict green on
+first try after 14 macro edits). The doorway vocabulary block moved above
+RegRow in internal.h — ports embed it, the dependency inverted. Data
+landed: \b -> 0x08, \g \k \8 \9 -> their letters (ESC_CLASS_BASE gained a
+scalar parameter — its three callers are exactly the fixed-byte rows;
+ESC_DIGIT_LIT split for \8/\9, which have no octal continuation). \0..\7
+stay portless until the octal FN wires (slice 3).
+
+check_class_ports: populations predicted BEFORE the first run (5 scalar /
+0 SET / 0 FN / 0 atom) and confirmed; values oracle-tied — a bare-escape
+row's scalar must equal its libpcre2-fed class_expect byte, so the port is
+never its own authority; body-carrying rows (\k<name>, \g{-1}) tie to the
+selector letter per §14.3's fallback law. Sabotage-validated three ways:
+0x08->0x09 drift fails the column tie, a zeroed \k scalar fails the
+fallback law, deleting the call fires run_registry_tests.sh's count
+(166->167) AND the new manifest needle.
+
+Byte-identity: 243 corpus patterns x (verdict, diagnostic, emitted C)
+against the post-attribution snapshot binary — ZERO differences; the
+instrument proven live first against the pre-MOD-0.3 snapshot (the
+attribution diagnostics differ, and it sees them). Sabotage-anchor check:
+S15-S19 quote call-site lines this slice did not touch (macro DEFINITIONS
+and the five scalar call sites only; the drift-avoiding edit shape, reused
+deliberately). mech re-run against the slice-1 commit follows it.

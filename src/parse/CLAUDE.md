@@ -268,6 +268,14 @@ Rules when touching it:
   forbids it. And `close_at` starts at `from` rather than 0 so that a row
   reaching the name check without having run the scan asks about a zero-length
   name instead of a wrapped `size_t`.
+- **A row carries two PRODUCING PORTS since MOD-0.3b** (`aport`/`cport`,
+  design Part II §4/§14; full doc on ExtPort in internal.h): tagged
+  data-or-function, one per position, NONE at class = permanently invalid
+  (§14.3's NULL meaning — replaces RF_CLASS_BASE/RF_CLASS_INVALID when
+  slice 3 retires them). UNWIRED until the classes producers land; the
+  port DATA is guarded by registry_check's check_class_ports (populations
+  pinned, values oracle-tied). Set bitmaps, when they arrive, are GENERATED
+  from libpcre2 censuses and re-measured by PC-4 — never hand-typed.
 - **A verb NAME goes in the VerbName tables, not in a RegRow** (Q1/D25), and
   its form bits are a MEASUREMENT: add the name, then run
   `bash tests/registry/run_registry_tests.sh` and let libpcre2 tell you which

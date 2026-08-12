@@ -165,10 +165,10 @@
  * The values themselves are measured, never authored — see internal.h. */
 /* \x outside a class -> "\x requires module 'M'" */
 #define ESC(sel, syn, mod, eng, note, q, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT}
 /* as ESC, but inside a class the byte is BASE syntax and the doorway is not taken */
-#define ESC_CLASS_BASE(sel, syn, mod, eng, note, q, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL}
+#define ESC_CLASS_BASE(sel, syn, mod, eng, note, q, ce, lit) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, (lit), NULL, NULL}}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
@@ -176,58 +176,64 @@
 /* as ESC, but PCRE2 forbids the construct INSIDE a class and always will, so
  * the in-class answer must promise no module (R9/SPEC-classes-F1). */
 #define ESC_CLASS_INVALID(sel, syn, mod, eng, note, q, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT}
 /* as ESC/GROUP, but the LEXICAL row kind (design §13.3): a tokenizer mode,
  * not an atom — no class port, no AST port when ports land. The macros force
  * QF_LEXICAL rather than take a `q`, because registry_check requires
  * RF_LEXICAL <=> QF_LEXICAL and a macro that could disagree with itself
  * would be the drift the pairing exists to catch. */
 #define ESC_LEXICAL(sel, syn, mod, eng, note, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, (ce), 0, NULL}
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, (ce), 0, NULL, NO_PORT, NO_PORT}
 #define GROUP_LEXICAL(sel, syn, mod, eng, note) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, NULL, 0, NULL}
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, NULL, 0, NULL, NO_PORT, NO_PORT}
 #define ESC_DIGIT(sel, syn, eng, note, q, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT}
+/* as ESC_DIGIT, but the class answer is one fixed literal byte: \8 and \9
+ * (8 and 9 are not octal digits, so no continuation is ever read — measured
+ * at FIX-3, the [\81] cell). \0..\7 need the octal SCAN and get a PORT_FN
+ * class port when it wires in (slice 3). */
+#define ESC_DIGIT_LIT(sel, syn, eng, note, q, ce, lit) \
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, RF_CLASS_BASE, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, (lit), NULL, NULL}}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note, q) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL}
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
 /* as GROUP, but the construct is OUT-OF-SCOPE in docs/pcre2_compliance.md and
  * the diagnostic must not promise the module (K14, design Â§17.2). The module
  * and feature stay as CLASSIFICATION -- which doorway family owns the row --
  * they are simply never rendered as a promise. */
 #define GROUP_NEVER(sel, syn, mod, eng, note, q) \
-    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_NEVER, (q), NULL, 0, NULL}
+    {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_NEVER, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
 /* an inline option setting: the construct is the whole RUN, not this byte */
 #define GROUP_OPT(sel, syn, note, q) \
-    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL}
+    {RK_GROUP, (sel), NULL, (syn), M_modifiers, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, RF_OPTION_RUN, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
 /* as GROUP, but the row applies only when `tl` FOLLOWS the selector byte (SR-9).
  * One byte, several constructs: `(?P<` `(?P=` `(?P>` are a named group, a
  * backreference and a subroutine call, and answering all three with one module
  * was a tier-2 misattribution under D26. */
 #define GROUP_T(sel, tl, syn, mod, eng, note, q) \
-    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 25, NULL}
+    {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 25, NULL, NO_PORT, NO_PORT}
 /* PCRE2 rejects it, and the byte that decides is the one AFTER the selector.
  * Takes `ce`: its one caller is an RK_ESC row, which is class-reachable.
  * Rank 25 = the tailed tier (MOD-0.2; see RegRow.rank) — its caller is the
  * SHORT half of the `\N` prefix pair, outranked by `\N{U+`'s 70 below. */
 #define REJECTED_T(kind, sel, tl, syn, msg, note, q, ce) \
-    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER, (q), (ce), 25, NULL}
+    {(kind), (sel), (tl), (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER, (q), (ce), 25, NULL, NO_PORT, NO_PORT}
 /* a construct whose entire diagnostic is fixed text rather than a template.
  * Verb-kind callers only today, hence no `ce`; an esc/class-bracket caller
  * would need one (registry_check fails the NULL rather than letting it read
  * as a fact). */
 #define FIXED(kind, sel, syn, mod, eng, msg, note, q) \
-    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL}
+    {(kind), (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
 /* PCRE2 rejects it too: no module to name, no feature to enable, no engine to
  * lower to. Agreement IS compliance. Group-kind callers only today — see FIXED. */
 #define REJECTED(kind, sel, syn, msg, note, q) \
-    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER, (q), NULL, 0, NULL}
+    {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), NULL, 0, (note), ROADMAP_NEVER, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
 /* as REJECTED, but a delimiter-pair construct: RF_CLASS_DELIM carries the two
  * recognition rules that SR-2 moved out of parse.c — see internal.h. Both
  * callers are class-bracket rows, so `ce` is required. */
 #define REJECTED_DELIM(kind, sel, syn, msg, note, q, ce) \
     {(kind), (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, 0, RS_REJECTED, RD_FIXED, (msg), \
-     NULL, RF_CLASS_DELIM, (note), ROADMAP_NEVER, (q), (ce), 0, NULL}
+     NULL, RF_CLASS_DELIM, (note), ROADMAP_NEVER, (q), (ce), 0, NULL, NO_PORT, NO_PORT}
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * Only non-base escapes. \n \t \r \f \a \e \xHH decode in parse.c and never
@@ -291,10 +297,10 @@ REJECTED_T(RK_ESC, 'N', "{", "\\N{name}",
  /* rank 70: the LONGER half of the table's one prefix-related tail pair —
   * on `{U+...` text three recognisers answer (bare \N always, `{` as a
   * prefix, and this row) and rank is what elects this one (MOD-0.2). */
- 70, NULL},
+ 70, NULL, NO_PORT, NO_PORT},
 
 ESC_CLASS_BASE('b', "\\b", assertions, ANY_ENGINE,
-               "word boundary — but inside a class it is BASE syntax: backspace (0x08)", QF_NO, "char 0x08"),
+               "word boundary — but inside a class it is BASE syntax: backspace (0x08)", QF_NO, "char 0x08", 0x08),
 ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary", QF_NO, "err 107"),
 ESC_CLASS_INVALID('A', "\\A", assertions, ANY_ENGINE, "start of subject", QF_NO, "err 107"),
 ESC_CLASS_INVALID('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline", QF_NO, "err 107"),
@@ -307,8 +313,8 @@ ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start 
  * matches k < n >), so the class position is base syntax exactly as `\b` is.
  * The ten digit rows carry the same flag: `[\0]`..`[\7]` are octal there and
  * `[\8]` `[\9]` are the literal digits. Measured: tests/probes/probe_fix3.c. */
-ESC_CLASS_BASE('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7"),
-ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108"),
+ESC_CLASS_BASE('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k'),
+ESC_CLASS_BASE('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g'),
 
 ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property", QF_YES, "set 117"),
 ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property", QF_YES, "set 139"),
@@ -358,8 +364,8 @@ ESC_DIGIT('4', "\\4", VM_ONLY, "backreference to capture group 4 (PCRE2 error 11
 ESC_DIGIT('5', "\\5", VM_ONLY, "backreference to capture group 5 (PCRE2 error 115 if no such group)", QF_NO, "char 0x05"),
 ESC_DIGIT('6', "\\6", VM_ONLY, "backreference to capture group 6 (PCRE2 error 115 if no such group)", QF_NO, "char 0x06"),
 ESC_DIGIT('7', "\\7", VM_ONLY, "backreference to capture group 7 (PCRE2 error 115 if no such group)", QF_NO, "char 0x07"),
-ESC_DIGIT('8', "\\8", VM_ONLY, "backreference to capture group 8 (PCRE2 error 115 if no such group)", QF_NO, "char 0x38"),
-ESC_DIGIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 115 if no such group)", QF_NO, "char 0x39"),
+ESC_DIGIT_LIT('8', "\\8", VM_ONLY, "backreference to capture group 8 (PCRE2 error 115 if no such group)", QF_NO, "char 0x38", '8'),
+ESC_DIGIT_LIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 115 if no such group)", QF_NO, "char 0x39", '9'),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */
@@ -373,7 +379,7 @@ static const RegRow group_rows[] = {
  0, NULL,
  FLAV_PCRE2, ANY_ENGINE,
  RS_BASE, RD_NONE, NULL, NULL, 0,
- "non-capturing group", ROADMAP_NONE, QF_YES, NULL, 0, NULL},
+ "non-capturing group", ROADMAP_NONE, QF_YES, NULL, 0, NULL, NO_PORT, NO_PORT},
 
 GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead", QF_YES),
 GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead", QF_YES),
@@ -759,7 +765,7 @@ static const RegRow classbracket_rows[] = {
  "POSIX class [:...:] requires module 'classes'",
  "POSIX class [:...:] is only valid inside a character class",
  RF_CLASS_DELIM | RF_CLASS_NAMED,
- "POSIX character class", ROADMAP_PLANNED, QF_YES, "set 52", 0, NULL},
+ "POSIX character class", ROADMAP_PLANNED, QF_YES, "set 52", 0, NULL, NO_PORT, NO_PORT},
 /* PCRE2 REJECTS these outright rather than treating them as literals, so
  * agreeing is compliance and there is no module to name — the reason RS_REJECTED
  * exists as a status distinct from RS_MODULE. pcrec accepted them silently until

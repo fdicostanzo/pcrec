@@ -98,10 +98,21 @@ static ExtWant ext_gate(const RegRow *r, ExtWant want)
 
 /* The ONE epilogue (D33 §5/§8): a refusal fires here, and only here. A caller
  * that must override a claim — the endpoint rule, D33 §6 — looks at the
- * ExtResult BEFORE calling this; today no caller overrides. */
+ * ExtResult BEFORE calling this; today no caller overrides.
+ *
+ * A PRODUCING outcome (EXT_SCALAR / EXT_MEMBERS / EXT_NODE, MOD-0.3b) must
+ * be consumed by the CALLER before this runs — the epilogue renders
+ * refusals, it does not splice results. Until the classes producers wire in
+ * (slices 2-3) nothing can construct one, so reaching the wall below means a
+ * port produced a value its call site does not yet handle: the PARSE-1
+ * silent-discard defect, reported loudly instead. */
 void pcrec_ext_finish(Ctx *cx, const ExtResult *r)
 {
     if (r->what == EXT_NOT_MINE) return;
+    if (r->what != EXT_REFUSAL)
+        ctx_fail(cx, r->at,
+                 "internal error: unconsumed producing doorway outcome %d",
+                 (int)r->what);
     ctx_fail(cx, r->at, "%s", r->msg);
 }
 

@@ -116,13 +116,26 @@ directory asserts that the description and the shipped parser actually agree.
    and discard ambiguity — scans.c's prose assumption, now an assertion),
    the answer predicate is the engine's own exported
    `pcrec_registry_row_answers` (no duplicate to drift), and
-   run_registry_tests.sh carries a **count (166) + manifest guard for
-   registry_check itself**, mirroring PC-3's, with one NEGATIVE needle:
-   the retired check's PASS line must not reappear. NOTE the division of
+   run_registry_tests.sh carries a **count (167 since MOD-0.3b; 166 at R15)
+   + manifest guard for registry_check itself**, mirroring PC-3's, with one
+   NEGATIVE needle: the retired check's PASS line must not reappear. NOTE the division of
    labour R15's checks critic initially misread: these checks do NOT ask
    which row WINS — `check_table_to_parser` owns that (D32 §9.1's primary
    instrument), and a rank-value winner-swap sabotage fails it twice inside
    `make test`, measured.
+
+7. **the MOD-0.3b port data** (2026-08-12) — `check_class_ports`, the
+   unwired ports' only guard until the classes producers land. Populations
+   PREDICTED before the first run and pinned (exactly 5 scalar class ports —
+   `\b \g \k \8 \9` — 0 SET, 0 FN, 0 atom ports; slices 2-3 move them
+   deliberately, in the same change as the producer). Values are
+   oracle-tied, one rule per syntax shape: a bare-escape row's scalar must
+   equal its libpcre2-fed `class_expect` byte (the port is never its own
+   authority), a body-carrying row's must equal its selector letter (§14.3's
+   literal-fallback law, FIX-3-measured). Sabotage-validated in three
+   directions same-session: value drift on `\b` (0x08→0x09) fails the
+   column tie, a zeroed `\k` scalar fails the fallback law, and deleting
+   the call fires the count guard AND the manifest line.
 
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check

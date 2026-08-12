@@ -891,8 +891,22 @@ Then DOC-1, then PC-4 when module `classes` lands.
   port-ification scope: classes-owned rows plus the D33 §3 retirements;
   `esc_class_value`'s bare int becomes a tagged claim (the K11 UB shape,
   named in D33 §8)
-- [MOD-0.3b] STATE:not-started — slice 1, vocabulary + port columns,
-  UNWIRED: `ExtWhat` gains EXT_SCALAR / EXT_MEMBERS / EXT_NODE (D33 §5's
+- [MOD-0.3b] STATE:completed 2026-08-12 — slice 1, vocabulary + port columns,
+  UNWIRED. As specified below, plus what execution added: the doorway
+  vocabulary block MOVED above RegRow in internal.h (ports embed it — the
+  dependency inverted); RegRow gained a struct tag; ESC_CLASS_BASE gained a
+  literal-scalar parameter (its three callers are exactly the fixed-byte
+  rows) and ESC_DIGIT_LIT split from ESC_DIGIT for \8/\9 (no octal
+  continuation exists — 8 and 9 are not octal digits, the FIX-3 [\81]
+  cell); pcrec_ext_finish walls unconsumed producing outcomes.
+  check_class_ports landed with populations PREDICTED first (5/0/0/0,
+  confirmed), values oracle-tied (bare rows to the libpcre2-fed
+  class_expect column; body rows to §14.3's fallback law),
+  sabotage-validated in three directions (value drift, zeroed scalar,
+  deleted call → count 167 + manifest). Byte-identity differential vs the
+  post-attribution snapshot: 243 corpus patterns, verdicts + diagnostics +
+  emitted C, ZERO differences; instrument liveness proven against the
+  pre-MOD-0.3 snapshot (attribution diagnostics differ). Spec: `ExtWhat` gains EXT_SCALAR / EXT_MEMBERS / EXT_NODE (D33 §5's
   vocabulary); the class-port column lands with data ports (`\b` → scalar
   0x08; `\g \k \8 \9` → their letters; NULL = permanently invalid);
   parse.c's call-site walls extend to the new outcomes; **every EXT_*

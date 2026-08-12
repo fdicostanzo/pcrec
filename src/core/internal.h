@@ -418,11 +418,186 @@ enum {
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
 
+/* src/parse/ext.c — the four doorways out of the base grammar (SR-2). Each is
+ * called only after parse.c's own switch has declined, so a base-tier pattern
+ * reaches none of them.
+ *
+ * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5 — the load-bearing
+ * change). A doorway's terminal answer used to be a `ctx_fail`, which longjmps
+ * past the caller; the three `noreturn` attributes that stood here were
+ * today's truth and the design's obstacle, because a caller that never sees
+ * the claim can never override it — the endpoint rule (D33 §6, K12) needs to
+ * see "something claimed" BEFORE the construct's own diagnostic fires. So a
+ * doorway now RETURNS an ExtResult and the caller passes it to
+ * pcrec_ext_finish, the ONE epilogue that renders a refusal (one epilogue, so
+ * D33 §8's "two missing doorway epilogues" cannot be missing). This also
+ * retires K11's undefined behaviour: both escape call sites invoked a
+ * value-flow through `noreturn` declarations, and a returning doorway
+ * corrupted or crashed depending on register allocation; under the value
+ * contract the flow is defined C at every site.
+ *
+ * THE PRODUCING VALUES EXIST SINCE MOD-0.3b AND NOTHING CONSTRUCTS THEM
+ * YET: slice 1 lands the vocabulary and the port DATA unwired, so
+ * EXT_SCALAR / EXT_MEMBERS / EXT_NODE are unreachable until the classes
+ * producers wire in (slices 2-3), and pcrec_ext_finish's wall reports any
+ * premature arrival as an internal error. D33 §9.3's obligation — every
+ * EXT_* outcome carries a probe that is false the day before — is
+ * discharged AT WIRING by the tests/classes/ corpus pins, written first and
+ * watched failing (the FIX-3 pattern); until then the exercisable subset is
+ * still refusals only, which byte-identity asserts. The call sites in
+ * parse.c end in a loud internal-error wall after the epilogue, so a
+ * producing port must extend the handling VISIBLY there rather than being
+ * silently discarded (the PARSE-1 fallthrough defect, made structurally
+ * impossible).
+ *
+ * "Returns normally" carries NO meaning on its own — the meaning is in the
+ * VALUE, which is what keeps the two doorway contracts distinct (the concern
+ * parse.c's PARSE-1 note records): the class-bracket doorway declines with
+ * EXT_NOT_MINE and the cursor unchanged; the `(?` doorway can never decline
+ * (its catch-all is REJECTED), so EXT_NOT_MINE from it is a registry defect
+ * the wall reports. */
+typedef enum {
+    EXT_NOT_MINE = 0,   /* no construct here; cursor unchanged; caller
+                           carries on. Only the class-bracket doorway can
+                           produce it today. */
+    EXT_REFUSAL,        /* a claim that terminates the compile: `msg`/`at`
+                           carry the diagnostic, formatted AT CLAIM TIME so it
+                           outlives the handler (D33 §5's representability
+                           requirement), fired by pcrec_ext_finish. */
+    /* The PRODUCING claims (D33 §5's full vocabulary, landed MOD-0.3b,
+     * unconstructable until the classes producers wire in): */
+    EXT_SCALAR,         /* one code point in `scalar` — the ONLY shape legal
+                           as a range endpoint (D33 §6). `\b` in a class. */
+    EXT_MEMBERS,        /* a byte-set the caller ORs into the class under
+                           construction: `node` is an A_CLASS whose cls[]
+                           holds the members. `[\d]`, `[[:alpha:]]`. */
+    EXT_NODE            /* a finished subtree the caller splices in at atom
+                           position: `\d` outside a class. */
+} ExtWhat;
+
+/* THE ASK CONTRACT (MOD-0.1, design §15/§18.2 as Frank ruled it): a doorway
+ * is asked at one of three `want` levels, and there is NO `may` capability
+ * axis — the fifth-session ruling collapsed it, with the revisit trigger
+ * recorded: a terminal answer REQUIRED to depend on a full sub-parse while
+ * its module is disabled reintroduces the axis.
+ *
+ *     WANT_CLAIM     is this yours, and what shape (consumer: arbitration)
+ *     WANT_VERDICT   the right terminal answer, whatever it costs
+ *     WANT_RESULT    the produced set/node
+ *
+ * THE CURSOR RULE, the load-bearing line: cx->pos moves ONLY under
+ * WANT_RESULT. Below RESULT a doorway may inspect the pattern without limit
+ * — the verb-name scan, the option run and the delimiter-pair scan are all
+ * bounded row-local reads VERDICT is entitled to — but must leave cx->pos
+ * byte-identical, and VERDICT never recurses into the pattern grammar.
+ * tests/spec_mod0's check06 measures this over every registry row through
+ * the CLI probe channel (`--probe-ask`), which reports the real cursor
+ * before and after a single doorway call.
+ *
+ * THE GATE (§5.4/§15) demotes `want` by exactly one step — RESULT ->
+ * VERDICT — for a row whose module is not enabled, and FLOORS at VERDICT: a
+ * disabled module still owes its diagnostic, so nothing ever demotes to
+ * CLAIM (silence where a message is owed). The enabled set is EMPTY today,
+ * so every ask from parse.c (always WANT_RESULT — the real parse wants the
+ * construct) is answered at VERDICT, which is why ExtResult's vocabulary is
+ * all refusals. ext.c's demotion is unconditional for exactly that reason;
+ * the enabled-set slice replaces it with the membership test (check07's
+ * subject), and `pcrec_ext_class_pair_opens` below is the one ask that
+ * bypasses `want` — it IS the CLAIM-shaped question as a predicate. */
+typedef enum { WANT_CLAIM = 0, WANT_VERDICT, WANT_RESULT } ExtWant;
+
+typedef struct {
+    ExtWhat what;
+    size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
+    char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
+                           pcrec_error.msg, so deferring the format cannot
+                           truncate differently than ctx_fail did */
+
+    /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
+     * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
+     * SET-shaped and PCRE2-accepted for EVERY form that reaches the row: the
+     * ten char-type escapes (the construct IS its selector byte — syntax
+     * "\X"; the measured class_expect covers all forms) and the bracket
+     * doorway's KNOWN POSIX names (the 14-name table validated the body).
+     * The range logic overrides such a refusal with PCRE2's verdict —
+     * "invalid range in character class", err-150's analogue — at an
+     * endpoint (§16's step 4). Body-dependent rows (\p, \N{U+}, ...) are
+     * NEVER marked: pcrec cannot certify 150 for an arbitrary body
+     * ([0-\p{Foo}] is PCRE2 147, not 150), so their module promise stands —
+     * the deliberate boundary pinned in tests/reject/ and recorded in the
+     * 2026-08-11 journal entry. */
+    bool    ep_set_certain;
+    /* class-bracket claims only: offset just past the construct's closing
+     * "X]" — where a low endpoint's range dash would sit. */
+    size_t  end;
+    /* The level the ask was actually ANSWERED at, after the gate — the §5.4
+     * demotion made observable (the probe channel prints it; nothing on the
+     * compile path reads it, which byte-identity asserts). WANT_RESULT here
+     * means THE GATE WAS OPEN — the row's module is in the enabled set
+     * (slice 9); on a refusal it distinguishes "gate open, port missing"
+     * (D33's NULL-port refusal) from "gate closed" (verdict-level demotion).
+     * With the default empty enabled set it is never `result`, which cli
+     * case10 pins. A decline is a claim-level answer (zero-init). */
+    ExtWant answered_at;
+
+    /* Production payloads (MOD-0.3b; read only for the matching `what`,
+     * zero/NULL otherwise — designated initializers leave them so): */
+    int     scalar;     /* EXT_SCALAR: the code point */
+    Ast    *node;       /* EXT_MEMBERS: A_CLASS whose cls[] the caller ORs in;
+                           EXT_NODE: the subtree the caller splices */
+} ExtResult;
+
+/* A row's PRODUCING PORTS (design Part II §4/§14; D33 §5). One per position
+ * — `aport` answers atom position, `cport` answers class position — because
+ * the two positions of one construct genuinely differ in PCRE2 (\12 at 12
+ * groups: backref at atom, octal in class — §14.1's measured table). The
+ * KIND is the single home of "can this row produce here":
+ *
+ *   PORT_NONE    atom: the row refuses with its own diagnostic, exactly as
+ *                every row does today.
+ *                class: PERMANENTLY INVALID at class position — NULL's one
+ *                meaning (§14.3, R14-verified mode-invariant). When the
+ *                RF_CLASS_* flags retire (slice 3) this replaces them.
+ *   PORT_SCALAR  one code point, as DATA: `\b` -> 0x08 (base scalar), and
+ *                the literal fallbacks `\g \k \8 \9` -> their own letters
+ *                (§14.3 — the K13 semantics, produced instead of asserted).
+ *   PORT_SET     a 256-bit membership bitmap, as DATA (32 bytes): the ten
+ *                char-type escapes and the POSIX names. Bitmaps are
+ *                GENERATED from libpcre2 censuses, never hand-typed, and
+ *                PC-4 re-measures them against the live oracle (the PC-3
+ *                pattern; a libpcre2 version bump is a re-measurement
+ *                event, D26 addendum).
+ *   PORT_FN      a bounded row-local scan for shapes data cannot carry (the
+ *                octal re-read `[\12]`, the POSIX name lookup): §18.2's
+ *                VERDICT legality — may read its own body, never recurses
+ *                into the pattern grammar. Signature is provisional until
+ *                its first caller wires in (slice 2/3); the FIELD exists now
+ *                so every macro initialises the whole port once.
+ *
+ * Ports are DATA about production; they carry no diagnostic and no module
+ * fact (those stay on the row — R11/M5's rule that a handler must not be a
+ * second home for tier-2 facts). */
+typedef enum { PORT_NONE = 0, PORT_SCALAR, PORT_SET, PORT_FN } PortKind;
+
+typedef struct RegRow RegRow;
+typedef ExtResult (*ExtPortFn)(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
+
+typedef struct {
+    PortKind             kind;
+    int                  scalar;  /* PORT_SCALAR */
+    const unsigned char *set;     /* PORT_SET: 32 bytes, bit b of set[b>>3] */
+    ExtPortFn            fn;      /* PORT_FN */
+} ExtPort;
+
+#define NO_PORT { PORT_NONE, 0, NULL, NULL }
+
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
  * fact, and registry.c's M_* macros emit them as a pair so a row cannot carry
  * a feature bit that disagrees with the module name it prints. */
-typedef struct {
+
+struct RegRow {
     RegKind     kind;
     int         sel;       /* the deciding byte, or REG_SEL_ANY */
     /* The bytes that must FOLLOW `sel` for this row to apply, or NULL for "any"
@@ -548,7 +723,15 @@ typedef struct {
      * facts like the module name. */
     int  rank;
     bool (*recognise)(const char *at, size_t avail, const char *tail);
-} RegRow;
+
+    /* MOD-0.3b: the two producing ports (full doc on ExtPort above). Every
+     * macro initialises BOTH explicitly — -Wextra's missing-field-initializers
+     * is the enforcement, the same property MOD-0.2 measured for rank and
+     * recognise. Unwired in slice 1: nothing on the compile path reads them
+     * until the classes producers land, which byte-identity asserts. */
+    ExtPort aport;   /* atom position */
+    ExtPort cport;   /* class position */
+};
 
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
@@ -692,115 +875,10 @@ const PosixName *pcrec_registry_posix_find(const char *name, size_t len);
 /* Iteration, for tests and --list-verbs' sibling checks. */
 const PosixName *pcrec_registry_posix_names(size_t *n);
 
-/* src/parse/ext.c — the four doorways out of the base grammar (SR-2). Each is
- * called only after parse.c's own switch has declined, so a base-tier pattern
- * reaches none of them.
- *
- * THE CLAIM IS RETURNED, NOT RAISED (MOD-0.1, D33 §5 — the load-bearing
- * change). A doorway's terminal answer used to be a `ctx_fail`, which longjmps
- * past the caller; the three `noreturn` attributes that stood here were
- * today's truth and the design's obstacle, because a caller that never sees
- * the claim can never override it — the endpoint rule (D33 §6, K12) needs to
- * see "something claimed" BEFORE the construct's own diagnostic fires. So a
- * doorway now RETURNS an ExtResult and the caller passes it to
- * pcrec_ext_finish, the ONE epilogue that renders a refusal (one epilogue, so
- * D33 §8's "two missing doorway epilogues" cannot be missing). This also
- * retires K11's undefined behaviour: both escape call sites invoked a
- * value-flow through `noreturn` declarations, and a returning doorway
- * corrupted or crashed depending on register allocation; under the value
- * contract the flow is defined C at every site.
- *
- * TODAY'S VOCABULARY IS DELIBERATELY THE EXERCISABLE SUBSET of D33 §5's.
- * Every row is still RS_MODULE or RS_REJECTED, so the only claims a doorway
- * can produce are refusals; EXT_SCALAR / EXT_MEMBERS / EXT_NODE arrive with
- * the first module port THAT CAN PRODUCE THEM, each with a probe that is
- * false the day before (D33 §9.3 — a value nothing can construct is
- * unexercised structure, D24's recorded loss). The call sites in parse.c end
- * in a loud internal-error wall after the epilogue, so the first producing
- * port must extend the vocabulary VISIBLY there rather than being silently
- * discarded (the PARSE-1 fallthrough defect, made structurally impossible).
- *
- * "Returns normally" carries NO meaning on its own — the meaning is in the
- * VALUE, which is what keeps the two doorway contracts distinct (the concern
- * parse.c's PARSE-1 note records): the class-bracket doorway declines with
- * EXT_NOT_MINE and the cursor unchanged; the `(?` doorway can never decline
- * (its catch-all is REJECTED), so EXT_NOT_MINE from it is a registry defect
- * the wall reports. */
-typedef enum {
-    EXT_NOT_MINE = 0,   /* no construct here; cursor unchanged; caller
-                           carries on. Only the class-bracket doorway can
-                           produce it today. */
-    EXT_REFUSAL         /* a claim that terminates the compile: `msg`/`at`
-                           carry the diagnostic, formatted AT CLAIM TIME so it
-                           outlives the handler (D33 §5's representability
-                           requirement), fired by pcrec_ext_finish. */
-} ExtWhat;
-
-/* THE ASK CONTRACT (MOD-0.1, design §15/§18.2 as Frank ruled it): a doorway
- * is asked at one of three `want` levels, and there is NO `may` capability
- * axis — the fifth-session ruling collapsed it, with the revisit trigger
- * recorded: a terminal answer REQUIRED to depend on a full sub-parse while
- * its module is disabled reintroduces the axis.
- *
- *     WANT_CLAIM     is this yours, and what shape (consumer: arbitration)
- *     WANT_VERDICT   the right terminal answer, whatever it costs
- *     WANT_RESULT    the produced set/node
- *
- * THE CURSOR RULE, the load-bearing line: cx->pos moves ONLY under
- * WANT_RESULT. Below RESULT a doorway may inspect the pattern without limit
- * — the verb-name scan, the option run and the delimiter-pair scan are all
- * bounded row-local reads VERDICT is entitled to — but must leave cx->pos
- * byte-identical, and VERDICT never recurses into the pattern grammar.
- * tests/spec_mod0's check06 measures this over every registry row through
- * the CLI probe channel (`--probe-ask`), which reports the real cursor
- * before and after a single doorway call.
- *
- * THE GATE (§5.4/§15) demotes `want` by exactly one step — RESULT ->
- * VERDICT — for a row whose module is not enabled, and FLOORS at VERDICT: a
- * disabled module still owes its diagnostic, so nothing ever demotes to
- * CLAIM (silence where a message is owed). The enabled set is EMPTY today,
- * so every ask from parse.c (always WANT_RESULT — the real parse wants the
- * construct) is answered at VERDICT, which is why ExtResult's vocabulary is
- * all refusals. ext.c's demotion is unconditional for exactly that reason;
- * the enabled-set slice replaces it with the membership test (check07's
- * subject), and `pcrec_ext_class_pair_opens` below is the one ask that
- * bypasses `want` — it IS the CLAIM-shaped question as a predicate. */
-typedef enum { WANT_CLAIM = 0, WANT_VERDICT, WANT_RESULT } ExtWant;
-
-typedef struct {
-    ExtWhat what;
-    size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
-    char    msg[256];   /* EXT_REFUSAL: the exact text; 256 matches
-                           pcrec_error.msg, so deferring the format cannot
-                           truncate differently than ctx_fail did */
-
-    /* §16.3(e)'s verdict-shape payload, exercisable subset (the K12 endpoint
-     * slice). TRUE only on a refusal for a construct pcrec can CERTIFY is
-     * SET-shaped and PCRE2-accepted for EVERY form that reaches the row: the
-     * ten char-type escapes (the construct IS its selector byte — syntax
-     * "\X"; the measured class_expect covers all forms) and the bracket
-     * doorway's KNOWN POSIX names (the 14-name table validated the body).
-     * The range logic overrides such a refusal with PCRE2's verdict —
-     * "invalid range in character class", err-150's analogue — at an
-     * endpoint (§16's step 4). Body-dependent rows (\p, \N{U+}, ...) are
-     * NEVER marked: pcrec cannot certify 150 for an arbitrary body
-     * ([0-\p{Foo}] is PCRE2 147, not 150), so their module promise stands —
-     * the deliberate boundary pinned in tests/reject/ and recorded in the
-     * 2026-08-11 journal entry. */
-    bool    ep_set_certain;
-    /* class-bracket claims only: offset just past the construct's closing
-     * "X]" — where a low endpoint's range dash would sit. */
-    size_t  end;
-    /* The level the ask was actually ANSWERED at, after the gate — the §5.4
-     * demotion made observable (the probe channel prints it; nothing on the
-     * compile path reads it, which byte-identity asserts). WANT_RESULT here
-     * means THE GATE WAS OPEN — the row's module is in the enabled set
-     * (slice 9); on a refusal it distinguishes "gate open, port missing"
-     * (D33's NULL-port refusal) from "gate closed" (verdict-level demotion).
-     * With the default empty enabled set it is never `result`, which cli
-     * case10 pins. A decline is a claim-level answer (zero-init). */
-    ExtWant answered_at;
-} ExtResult;
+/* src/parse/ext.c — the four doorways out of the base grammar (SR-2). The
+ * doorway VOCABULARY (ExtWhat / ExtWant / ExtResult and its contract doc)
+ * moved above RegRow when MOD-0.3b embedded ports in rows — the dependency
+ * inverted; the doorway FUNCTIONS stay here. */
 
 /* The ONE epilogue: renders a refusal via ctx_fail (byte-identical to the
  * pre-epilogue diagnostics — same format results, same offsets), returns

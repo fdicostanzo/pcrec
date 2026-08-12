@@ -25,8 +25,11 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   vocabulary, D24), the `(*` doorway's NAME tables (VerbName/VerbTable and the
   VF_* form bits, D25/Q1 — a SECOND schema on purpose, because a verb name
   answers one externally-measured question while a RegRow carries a module, a
-  feature bit and an engine mask it would have to invent), and module-level
-  declarations
+  feature bit and an engine mask it would have to invent), the POSIX
+  class-bracket NAME table (PosixName, MOD-0.3a — a third schema, per-name
+  module attribution), the doorway vocabulary (ExtWhat/ExtWant/ExtResult,
+  moved above RegRow at MOD-0.3b when ports embedded it) with the ExtPort
+  producing-port types, and module-level declarations
 
 ## Conventions
 
