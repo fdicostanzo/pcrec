@@ -496,32 +496,16 @@ case10() {
     # a blank line would end the table early for a naive reader
     assert_eq "case10: dump has no blank lines" "0" "$(grep -c '^$' "$d/dump.tsv")"
 
-    # --explain answers for one construct, and names the module it needs
-    out="$("$PCREC" --explain '\v' 2>"$d/e2.txt")"; rc=$?
-    assert_eq "case10: --explain exits 0" "0" "$rc" "stderr: $(cat "$d/e2.txt")"
-    assert_contains "case10: --explain names the owning module" "$out" \
-        "requires module 'classes'"
-    assert_contains "case10: --explain carries the PCRE2 semantics" "$out" \
-        "vertical whitespace"
-
-    # One selector byte, two MODULES: both must be reported. This asserted the
-    # compound module string "lookaround/named-groups" until Q2/SR-9 retired it —
-    # `(?<` is now four rows (the `=` `!` `*` lookbehind tails and the named
-    # group), so the byte's answer is exact per construct instead of a compound
-    # name. The test's intent is unchanged and better served: ask for both
-    # modules rather than for one string that happened to contain both.
-    out="$("$PCREC" --explain '(?<')"
-    assert_contains "case10: --explain reports (?< as lookaround" "$out" "'lookaround'"
-    assert_contains "case10: --explain reports (?< as named-groups" "$out" "'named-groups'"
-    # ...and the tails really are distinct rows, not one row printed twice
-    assert_eq "case10: --explain '(?<' reports all four rows" "4" \
-        "$(printf '%s\n' "$out" | grep -c "^  doorway")"
-
-    # a base-tier construct has no row, and saying so is the correct answer
-    "$PCREC" --explain 'a' >"$d/o3.txt" 2>"$d/e3.txt"; rc=$?
-    assert_eq "case10: --explain on base syntax exits 1" "1" "$rc"
-    assert_contains "case10: --explain on base syntax says why" \
-        "$(cat "$d/e3.txt")" "no construct matches"
+    # --explain's CONTENT assertions moved to case11 at MOD-0.7 and were
+    # rewritten per FIELD. They are not here any more because R10/C4-1
+    # demonstrated — and MOD-0.7a re-measured at 26b9660 — that all eight of
+    # them stayed GREEN under a module-attribution swap between two rows of
+    # `--explain '(?<'`: assert_contains tests the whole output blob, and the
+    # "all four rows" count is satisfied by any four rows. Keeping them here
+    # beside case11's field-level versions would leave assertions the project
+    # has measured as unable to dissent sitting in the suite as if they were
+    # coverage. What stays in case10 is the flag PLUMBING below, which is
+    # about argument handling and not about what --explain knows.
 
     # --flavour: exactly one exists, and a typo must not silently dump the lot
     "$PCREC" --list-syntax --flavour pcre2 >"$d/o4.txt" 2>&1; rc=$?
@@ -750,6 +734,326 @@ case10() {
         "stderr: $(cat "$d/e10.txt")"
 }
 
+# ---------------------------------------------------------------------------
+# 11. `--explain` (MOD-0.7): the CROSS-SOURCE query surface.
+#
+#     THIS CASE EXISTS BECAUSE case10's --explain assertions COULD NOT DISSENT.
+#     R10/C4-1 demonstrated it and MOD-0.7a re-measured it at 26b9660: swap the
+#     module attributions of two rows in registry.c and all eight of case10's
+#     --explain content assertions stay green, because assert_contains tests the
+#     whole output blob and the row count is satisfied by any four rows. Those
+#     assertions MOVED here and were rewritten per FIELD. case10 keeps only the
+#     flag-plumbing ones (conflicts, missing value, --help).
+#
+#     THE RULE FOR THIS CASE, and it is the reason it exists:
+#       NO assert_contains AGAINST A WHOLE --explain OUTPUT. Every assertion
+#       names a ROW (or the header) and a KEY, through explain_field.
+#     A future assertion that reaches for assert_contains "$out" is re-creating
+#     the defect this case was written to remove.
+#
+#     WHAT THIS CASE CANNOT REACH (docs/design_notes_mod07.md section 9.4 —
+#     recorded here because the sweep-template lesson has recurred four times
+#     and this is the signpost):
+#       - THE QUERY SET IS HAND-LISTED. The generated query space (every byte
+#         after each doorway opener, at depth) is NOT swept here; a routing or
+#         selection bug that affects only a byte outside the list below is
+#         invisible to this case.
+#       - the row set comes from --list-syntax, the same table --explain prints,
+#         so a DELETED row disappears from both (check_required_rows' hand-written
+#         manifest is what sees that);
+#       - the attribution clause CANNOT dissent on a module-name swap (measured:
+#         ext.c renders the promise from the same r->module --explain prints), so
+#         the module PINS below, not the `agree` field, are the C4-1 net;
+#       - class-position answers are DECLARED (the `class` column), never live.
+# ---------------------------------------------------------------------------
+
+# explain_field <output> <row-syntax|@header> <key>  ->  the value, or ""
+#
+# The format is a strict grammar so that a test can dissent per field: header
+# lines are unindented `key<2+ spaces>value` and end at the first blank line;
+# each row block then starts with the row's `syntax` unindented and continues
+# with `  key<2+ spaces>value`. Keys never contain two consecutive spaces,
+# which is what makes the split unambiguous.
+explain_field() {
+    # row/key go through the ENVIRONMENT, never `awk -v`: -v processes escape
+    # sequences in its value, so a row named `\v` would arrive as a vertical
+    # tab and match nothing. Half this case's rows are backslash escapes.
+    EF_ROW="$2" EF_KEY="$3" awk '
+        BEGIN { hdr = 1; row = ENVIRON["EF_ROW"]; key = ENVIRON["EF_KEY"] }
+        /^$/   { hdr = 0; head = ""; next }
+        /^[^ ]/ {
+            if (hdr) {
+                if (row == "@header" && match($0, /  +/)) {
+                    k = substr($0, 1, RSTART - 1)
+                    if (k == key) { print substr($0, RSTART + RLENGTH); exit }
+                }
+            } else head = $0
+            next
+        }
+        {
+            if (row == "@header" || head != row) next
+            line = substr($0, 3)
+            if (match(line, /  +/)) {
+                k = substr(line, 1, RSTART - 1)
+                if (k == key) { print substr(line, RSTART + RLENGTH); exit }
+            }
+        }
+    ' <<<"$1"
+}
+
+# assert_field <case-name> <output> <row> <key> <expected>
+assert_field() {
+    local name="$1" out="$2" row="$3" key="$4" want="$5"
+    assert_eq "$name" "$want" "$(explain_field "$out" "$row" "$key")" \
+        "row: $row  key: $key"
+}
+
+case11() {
+    local d="$WORKDIR/case11"
+    mkdir -p "$d"
+    local rc out
+
+    # --- D29's worked example, the headline: it did not run before MOD-0.7 ---
+    out="$("$PCREC" --explain '(?i-m:' 2>"$d/e1.txt")"; rc=$?
+    assert_eq "case11: --explain '(?i-m:' exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e1.txt")"
+    assert_field "case11: ...echoes the query" "$out" "@header" "query" "(?i-m:"
+    assert_field "case11: ...routes to the (? doorway with selector i" "$out" \
+        "@header" "route" "after '(?'  selector 'i'"
+    assert_field "case11: ...and the LIVE doorway answers it" "$out" "@header" \
+        "live" "(?i...) requires module 'modifiers'"
+    assert_field "case11: ...at pcrec's own blame offset" "$out" "@header" "live at" "0"
+    assert_field "case11: ...electing the (?i) row" "$out" "@header" "live elected" "(?i)"
+    assert_field "case11: ...answered at verdict (the gate is shut)" "$out" \
+        "@header" "live answered" "verdict"
+    assert_field "case11: ...promising module modifiers" "$out" "@header" \
+        "live names" "modifiers"
+    assert_field "case11: ...with one row shown" "$out" "@header" "rows" "1"
+    assert_field "case11: ...and no dissent" "$out" "@header" "dissents" "0"
+    # the row is a CANDIDATE (it competed), which the prefix rule cannot say:
+    # today's prefix match finds NOTHING for this query
+    assert_field "case11: '(?i-m:' selects (?i) as a candidate" "$out" "(?i)" \
+        "select" "candidate"
+
+    # --- THE C4-1 NET: hand-written module pins, per row, per field ---------
+    # These are the assertions a module-attribution swap must fail. NOT the
+    # `agree` field: that reads r->module through ext.c's own snprintf and
+    # agrees with itself (measured, design note section 0). tests/reject is the
+    # primary home of module-name truth (470 pins); these six are the subset
+    # R10's C4-1 and C4-1b actually used, plus one row per doorway.
+    out="$("$PCREC" --explain '(?<')"
+    assert_field "case11: (?<=...) is module lookaround" "$out" "(?<=...)" \
+        "module" "lookaround"
+    assert_field "case11: (?<name>a) is module named-groups" "$out" "(?<name>a)" \
+        "module" "named-groups"
+    assert_field "case11: (?<=...) wins its own syntax" "$out" "(?<=...)" \
+        "own elected" "self"
+    assert_field "case11: ...and its live answer promises its own module" "$out" \
+        "(?<=...)" "own names" "lookaround"
+    assert_field "case11: (?<=...) agrees" "$out" "(?<=...)" "agree" "ok"
+    assert_field "case11: (?<name>a) agrees" "$out" "(?<name>a)" "agree" "ok"
+    # the four rows of the '<' bucket, all candidates — case10 counted them,
+    # this names them
+    assert_eq "case11: --explain '(?<' shows the whole bucket" "4" \
+        "$(explain_field "$out" "@header" "rows")"
+    assert_field "case11: the lookbehind rows are candidates" "$out" "(?<!...)" \
+        "select" "candidate"
+    # and the QUERY's own live answer elects the bare row, not a lookbehind
+    assert_field "case11: '(?<' truncated elects the bare named-group row" \
+        "$out" "@header" "live elected" "(?<name>a)"
+
+    out="$("$PCREC" --explain '\N{U+0041}')"
+    assert_field "case11: \N{U+0041} is module unicode-props" "$out" '\N{U+0041}' \
+        "module" "unicode-props"
+    assert_field "case11: \N is module classes" "$out" '\N' "module" "classes"
+    # R10/C1-1: the bucket has THREE rows and the prefix rule sees two. The
+    # third is a candidate here, which is the selection rule's whole point.
+    assert_eq "case11: the \N bucket shows all three rows" "3" \
+        "$(explain_field "$out" "@header" "rows")"
+    assert_field "case11: \N{name} is a CANDIDATE the prefix rule misses" "$out" \
+        '\N{name}' "select" "candidate"
+    assert_field "case11: \N{name} is a rejected row promising nothing" "$out" \
+        '\N{name}' "own names" "—"
+    assert_field "case11: ...and that agrees" "$out" '\N{name}' "agree" "ok"
+
+    # --- THE ROADMAP_NEVER ROW: the defect MOD-0.7a found (note section 1) ---
+    # --explain promised module 'callouts' for a construct the compiler
+    # refuses with "no module will implement it". K14's over-promise, fixed in
+    # ext.c at MOD-0.1, still live on the query surface because syntax_dump.c
+    # never read `roadmap`. These three assertions were written BEFORE the fix
+    # and watched failing (the FIX-3 pattern; the recorded failure is in this
+    # slice's commit message) — the `agree` clause cannot see this defect,
+    # because both of its sides read the row.
+    out="$("$PCREC" --explain '(?C1)')"
+    assert_field "case11: (?C1) carries roadmap never" "$out" "(?C1)" \
+        "roadmap" "never"
+    assert_field "case11: (?C1)'s status does NOT promise a module" "$out" \
+        "(?C1)" "status" \
+        "known, outside pcrec's scope — no module will implement it"
+    assert_field "case11: ...the row still records whose module it would be" \
+        "$out" "(?C1)" "module" "callouts"
+    assert_field "case11: ...the live answer promises nothing" "$out" "(?C1)" \
+        "own names" "—"
+    assert_field "case11: ...and that is agreement, not a dissent" "$out" \
+        "(?C1)" "agree" "ok"
+
+    # --- the class-bracket doorway, and a DECLARED class expectation --------
+    out="$("$PCREC" --explain '[[:alpha:]]')"
+    assert_field "case11: [[:alpha:]] is module classes" "$out" "[[:alpha:]]" \
+        "module" "classes"
+    assert_field "case11: ...blamed at pcrec's own offset" "$out" "[[:alpha:]]" \
+        "own at" "1"
+    out="$("$PCREC" --explain '\d')"
+    assert_field "case11: \d's class expectation is DECLARED from the row" \
+        "$out" '\d' "class" "set 10"
+    assert_field "case11: \d carries the PCRE2 semantics note" "$out" '\d' \
+        "note" "any decimal digit"
+    out="$("$PCREC" --explain '\v')"
+    assert_field "case11: \v is module classes" "$out" '\v' "module" "classes"
+    assert_field "case11: \v's note is the measured PCRE2 semantics" "$out" '\v' \
+        "note" \
+        "any vertical whitespace character (NOT vertical tab; python re disagrees)"
+
+    # --- QUERY CELLS whose live answer differs from the row's declaration ---
+    # Five measured cells where that is CORRECT. Pinned as correct so a future
+    # reader does not "fix" them into agreement.
+    out="$("$PCREC" --explain '\p{Foo}')"
+    assert_field "case11: \p{Foo} gets mod_uprops' refined refusal" "$out" \
+        "@header" "live" "\p requires module 'unicode-props'"
+    # K16: this offset is PCREC'S OWN behaviour (stability, not oracle
+    # agreement) — 164 of 256 body bytes are libpcre2 err-146 AT THE BYTE while
+    # pcrec's scanner reads past them. The K16 fix lands with the first
+    # unicode-props producer and MOVES this number; it is pinned so the move is
+    # deliberate rather than silent.
+    assert_field "case11: ...at pcrec's own scan-completion offset (K16)" \
+        "$out" "@header" "live at" "7"
+    out="$("$PCREC" --explain '(*NOTAVERB)')"
+    assert_field "case11: an unknown verb NAME promises no module" "$out" \
+        "@header" "live" "(*VERB) not recognized or malformed"
+    assert_field "case11: ...even though the one verb ROW declares one" "$out" \
+        "(*ACCEPT)" "module" "verbs"
+    assert_field "case11: ...and the name table says it is not known" "$out" \
+        "verb name NOTAVERB" "known" "no"
+    assert_field "case11: ...naming the table PCRE2 would have consulted" \
+        "$out" "verb name NOTAVERB" "table" "upper"
+    out="$("$PCREC" --explain '(*ACCEPT)')"
+    assert_field "case11: a known verb name reports its measured forms" "$out" \
+        "verb name ACCEPT" "forms" "(*N)|(*N:a)|(*N:)"
+    assert_field "case11: ...and where its roadmap came from" "$out" \
+        "verb name ACCEPT" "roadmap src" "inherited from the (* row"
+    out="$("$PCREC" --explain '[[:foo:]]')"
+    assert_field "case11: an unknown POSIX name promises no module" "$out" \
+        "@header" "live" "unknown POSIX class name"
+    assert_field "case11: ...while its row is still module classes" "$out" \
+        "[[:alpha:]]" "module" "classes"
+    out="$("$PCREC" --explain '[[:<:]]')"
+    assert_field "case11: a whole-class-only name names ANOTHER module" "$out" \
+        "@header" "live names" "assertions"
+    out="$("$PCREC" --explain '(?iZ)')"
+    assert_field "case11: a malformed option RUN promises no module" "$out" \
+        "@header" "live" "unrecognized character after (? or (?-"
+    # ...and the elected row is still the option row: `elected` is the row the
+    # doorway DISPATCHED on, not the row that wrote the message
+    assert_field "case11: ...but the (?i) row was still the one elected" "$out" \
+        "@header" "live elected" "(?i)"
+
+    # --- the gate axis: --features changes what the doorway DOES ------------
+    out="$("$PCREC" --features classes --explain '\d')"
+    assert_field "case11: an open gate PRODUCES instead of refusing" "$out" \
+        "@header" "live" "produces an AST node"
+    assert_field "case11: ...answered at result, the gate observable" "$out" \
+        "@header" "live answered" "result"
+    assert_field "case11: ...and producing is agreement for a module row" \
+        "$out" '\d' "agree" "ok  (produces; this row's module is enabled)"
+
+    # --- the base-grammar row: an honest non-answer, not a fabricated one ---
+    out="$("$PCREC" --explain '(?:')"; rc=$?
+    assert_eq "case11: --explain '(?:' exits 0" "0" "$rc"
+    assert_field "case11: (?: has no doorway call to report" "$out" "@header" \
+        "route" \
+        "none — the base grammar answers this text before any doorway is consulted"
+    assert_field "case11: ...and its row says so rather than passing silently" \
+        "$out" "(?:...)" "agree" "ok  (base grammar; no doorway call to compare)"
+    assert_field "case11: ...it is a prefix match, not a bucket candidate" \
+        "$out" "(?:...)" "select" "listed"
+
+    # --- the unanswerable query keeps its exit 1 and its message ------------
+    "$PCREC" --explain 'a' >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
+    assert_eq "case11: --explain on base syntax exits 1" "1" "$rc"
+    assert_contains "case11: ...and says why" "$(cat "$d/e2.txt")" \
+        "no construct matches"
+
+    # --- THE FLOORED SWEEPS -------------------------------------------------
+    # An empty sweep prints the same silence as a passing one, so the
+    # populations are asserted. Every displayed row must win its OWN syntax and
+    # agree; the ONE exception is the single RS_BASE row, whose syntax reaches
+    # no doorway.
+    local blocks=0 selfel=0 agreed=0 exempt=0 answered=0 q
+    local queries=('\v' '\d' '\N{U+0041}' '(?<' '(?P' '(?i-m:' '(?iZ)' '(?C1)'
+                   '(?(1)' '(?-1)' '[[:alpha:]]' '[[.a.]]' '[[:foo:]]'
+                   '(*ACCEPT)' '(*NOTAVERB)' '\p{Foo}' '(?' '(?:' '\Q')
+    for q in "${queries[@]}"; do
+        out="$("$PCREC" --explain "$q" 2>/dev/null)" || continue
+        answered=$((answered + 1))
+        while IFS= read -r line; do
+            # match on the KEY and trim the value, never on a fixed column:
+            # the first version of this loop pinned the padding and reported
+            # 81 dissents the moment a key got one space wider
+            local v
+            case "$line" in
+              "  own elected"*)
+                  v="${line#*elected}"; v="${v#"${v%%[! ]*}"}"
+                  blocks=$((blocks + 1))
+                  if [ "$v" = "self" ]; then selfel=$((selfel + 1))
+                  else exempt=$((exempt + 1)); fi ;;
+            esac
+            case "$line" in
+              "  agree"*)
+                  v="${line#*agree}"; v="${v#"${v%%[! ]*}"}"
+                  case "$v" in
+                    ok*) agreed=$((agreed + 1)) ;;
+                    *)   fail "case11: a row DISSENTS on the shipped table" \
+                              "query: $q" "$line" ;;
+                  esac ;;
+            esac
+        done < <(printf '%s\n' "$out")
+    done
+    # FLOORS, measured at landing: 19 queries answered, 81 row blocks. A floor
+    # catches shrinkage (a row deleted, a selection rule narrowed); adding a
+    # registry row raises the count and is fine.
+    if [ "$answered" -ge 19 ] && [ "$blocks" -ge 81 ] && [ "$agreed" -eq "$blocks" ]; then
+        pass "case11: $blocks row blocks over $answered queries, all agree (floors 81/19)"
+    else
+        fail "case11: agreement sweep" \
+             "answered=$answered (floor 19) blocks=$blocks (floor 81) agreed=$agreed"
+    fi
+    # every block but the RS_BASE row's elected ITSELF
+    if [ "$selfel" -eq $((blocks - exempt)) ] && [ "$exempt" -le 3 ]; then
+        pass "case11: $selfel/$blocks blocks elected their own row ($exempt base-grammar exempt)"
+    else
+        fail "case11: election sweep" "self=$selfel blocks=$blocks exempt=$exempt"
+    fi
+    # and no query on the shipped table may exit 3
+    local dissenting=0
+    for q in "${queries[@]}"; do
+        "$PCREC" --explain "$q" >/dev/null 2>&1
+        [ $? -eq 3 ] && dissenting=$((dissenting + 1))
+    done
+    assert_eq "case11: no query dissents on the shipped table (exit 3 count)" \
+        "0" "$dissenting"
+
+    # --- the dissent contract, in the direction that can be tested here -----
+    # Exit 3's FIRING direction needs a sabotaged table and this case must
+    # never ship asserting against one (manager ruling 6), so it is measured at
+    # landing as V1-V7 and recorded in the commit message. What is pinned here
+    # is that the surface distinguishes the two failure modes at all: exit 1
+    # for an unanswerable query (above) and exit 0 with `dissents 0` for a
+    # clean one.
+    out="$("$PCREC" --explain '\v')"
+    assert_field "case11: a clean query reports zero dissents" "$out" \
+        "@header" "dissents" "0"
+}
+
 case1
 case2
 case3
@@ -760,6 +1064,7 @@ case7
 case8
 case9
 case10
+case11
 
 echo
 echo "== Summary =="

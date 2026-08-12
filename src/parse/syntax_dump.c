@@ -683,14 +683,14 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
     const RegRow *row = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
 
     sb_printf(sb, "\nverb name %.*s\n", (int)namelen, query + nstart);
-    sb_printf(sb, "  table       %s\n",
+    sb_printf(sb, "  table        %s\n",
               t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
-    sb_printf(sb, "  known       %s\n", v ? "yes" : "no");
+    sb_printf(sb, "  known        %s\n", v ? "yes" : "no");
     if (!v) {
-        sb_printf(sb, "  unknown     %s\n", t->unknown_msg);
+        sb_printf(sb, "  unknown      %s\n", t->unknown_msg);
         return;
     }
-    sb_puts(sb, "  forms       ");
+    sb_puts(sb, "  forms        ");
     {
         unsigned f = v->forms;
         if (f & VF_BARE)     sb_puts(sb, "(*N)");
@@ -704,13 +704,13 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
     }
     /* The EFFECTIVE roadmap and where it came from — the cross-source pair
      * this block exists for. */
-    sb_printf(sb, "  roadmap     %s\n",
+    sb_printf(sb, "  roadmap      %s\n",
               (v->roadmap ? v->roadmap : (row ? row->roadmap : ROADMAP_NONE))
                   == ROADMAP_NEVER ? "never" : "planned");
-    sb_printf(sb, "  roadmap src %s\n",
+    sb_printf(sb, "  roadmap src  %s\n",
               v->roadmap ? "the verb NAME's own entry"
                          : "inherited from the (* row");
-    sb_printf(sb, "  quant       %s\n",
+    sb_printf(sb, "  quant        %s\n",
               v->quant == QV_YES ? "yes" : v->quant == QV_NO ? "no"
                                                              : "not-askable");
 }
@@ -772,30 +772,51 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
 
             if (rows_shown++) sb_putc(&body, '\n');
             sb_printf(&body, "%s\n", r->syntax);
-            sb_printf(&body, "  select      %s\n",
+            sb_printf(&body, "  select       %s\n",
                       candidate ? "candidate" : fallback ? "fallback" : "listed");
-            sb_printf(&body, "  doorway     %s\n", doorway_name(r->kind));
+            sb_printf(&body, "  doorway      %s\n", doorway_name(r->kind));
             switch (r->status) {
             case RS_BASE:
-                sb_puts(&body, "  status      implemented by the base grammar\n");
+                sb_puts(&body, "  status       implemented by the base grammar\n");
                 break;
             case RS_MODULE:
-                sb_printf(&body, "  status      known, unimplemented — requires "
-                                 "module '%s'\n", r->module);
+                /* K14, ON THE QUERY SURFACE (design note §1 — the defect this
+                 * milestone found by applying its own design to the first row
+                 * it touched). A ROADMAP_NEVER row is real PCRE2 syntax pcrec
+                 * has decided never to implement, and promising its module is
+                 * the tier-2 defect D26 names in its own words: "Naming a
+                 * module that will never implement a construct is a defect."
+                 * ext.c has answered this correctly since MOD-0.1 and
+                 * put_expect (100 lines above, same file) has rendered it
+                 * correctly for --list-syntax's `expect` column since the same
+                 * milestone; --explain kept promising, because it never read
+                 * `roadmap`. One row today, (?C1); the branch is derived, so
+                 * the second one is covered the day it exists.
+                 *
+                 * The `agree` clause CANNOT see this — both of its sides read
+                 * the row — so cli case11's hand-written pin is the only net,
+                 * which is §0's lesson recurring inside the milestone that
+                 * found it. */
+                if (r->roadmap == ROADMAP_NEVER)
+                    sb_puts(&body, "  status       known, outside pcrec's scope "
+                                   "— no module will implement it\n");
+                else
+                    sb_printf(&body, "  status       known, unimplemented — "
+                                     "requires module '%s'\n", r->module);
                 break;
             case RS_REJECTED:
-                sb_puts(&body, "  status      rejected, as PCRE2 rejects it too\n");
+                sb_puts(&body, "  status       rejected, as PCRE2 rejects it too\n");
                 break;
             }
-            sb_printf(&body, "  module      %s\n", r->module ? r->module : "—");
-            sb_printf(&body, "  roadmap     %s\n",
+            sb_printf(&body, "  module       %s\n", r->module ? r->module : "—");
+            sb_printf(&body, "  roadmap      %s\n",
                       r->roadmap == ROADMAP_NEVER   ? "never"
                     : r->roadmap == ROADMAP_PLANNED ? "planned" : "—");
             if (r->diag == RD_FIXED && r->msg)
-                sb_printf(&body, "  error       %s\n", r->msg);
-            sb_puts(&body, "  flavours    ");
+                sb_printf(&body, "  error        %s\n", r->msg);
+            sb_puts(&body, "  flavours     ");
             put_mask(&body, r->flavours, flavour_names, NELEMS(flavour_names));
-            sb_puts(&body, "\n  engines     ");
+            sb_puts(&body, "\n  engines      ");
             if (r->engines)
                 put_mask(&body, r->engines, engine_names, NELEMS(engine_names));
             else
@@ -806,21 +827,21 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
              * in-class escape query lands on the class-bracket doorway and
              * honestly declines). class_expect is libpcre2-measured and
              * check04 re-verifies it; in-class routing is a MOD-0.8 item. */
-            sb_printf(&body, "  class       %s\n",
+            sb_printf(&body, "  class        %s\n",
                       r->class_expect ? r->class_expect
                                       : "— (cannot reach a class position)");
-            if (r->note) sb_printf(&body, "  note        %s\n", r->note);
-            sb_puts(&body, "  own         "); put_answer(&body, &own);
+            if (r->note) sb_printf(&body, "  note         %s\n", r->note);
+            sb_puts(&body, "  own          "); put_answer(&body, &own);
             sb_putc(&body, '\n');
             if (own.routed)
-                sb_printf(&body, "  own at      %zu\n", own.r.at);
-            sb_printf(&body, "  own elected %s\n",
+                sb_printf(&body, "  own at       %zu\n", own.r.at);
+            sb_printf(&body, "  own elected  %s\n",
                       !own.routed        ? "—"
                     : own.r.row == r     ? "self"
                     : own.r.row          ? own.r.row->syntax : "none");
-            sb_puts(&body, "  own names   "); put_names(&body, &own);
+            sb_puts(&body, "  own names    "); put_names(&body, &own);
             sb_putc(&body, '\n');
-            sb_puts(&body, "  agree       ");
+            sb_puts(&body, "  agree        ");
             dissents += put_agreement(&body, r, &own);
             sb_putc(&body, '\n');
         }
