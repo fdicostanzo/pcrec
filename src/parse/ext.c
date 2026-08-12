@@ -138,14 +138,15 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
  * `\g`/`\k` DO arrive here with in_class set — their class position is base
  * semantics (octal / literal fallback, FIX-3/K13) carried as BASE class
  * ports, produced below regardless of the enabled set. */
-ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
-                           size_t at)
+static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
+                            size_t at, const RegRow **elected)
 {
     /* cx->pos sits just past the escape byte, so that IS the tail position. */
     size_t avail;
     bool amb = false;
     const char *tl = tail_at(cx, cx->pos, &avail);
     const RegRow *r = pcrec_registry_arbitrate(RK_ESC, c, tl, avail, &amb);
+    *elected = r;   /* MOD-0.7 slice 2; NULL for an unknown escape */
     /* `asked` survives the gate for BASE ports (MOD-0.3d): a port whose
      * semantics are PCRE2 base facts ([\b] is backspace, [\12] is octal)
      * answers at the level the CALLER asked, whatever the enabled set —
@@ -246,13 +247,32 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
     REFUSE(at, "\\%c requires module '%s'", c, r->module);
 }
 
+/* THE ELECTED-ROW WRAPPERS (MOD-0.7 slice 2, design note §5.3). Each public
+ * doorway is a two-liner around the body above, stamping `res.row` on the ONE
+ * return. The alternative — teaching the REFUSE macro to pick a
+ * conventionally-named local out of its caller's scope — would stamp only the
+ * refusal paths and silently miss the producing ones, and a `return` added
+ * inside a doorway later would inherit whatever the macro happened to see.
+ * `--explain` is the only reader; parse.c's six call sites are unchanged and
+ * every rendered diagnostic is byte-identical (measured: 876 compile cells,
+ * tests/reject's 470 checks, the .rxt corpus). */
+ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
+                           size_t at)
+{
+    const RegRow *elected = NULL;
+    ExtResult res = esc_answer(cx, want, c, in_class, at, &elected);
+    res.row = elected;
+    return res;
+}
+
 /* ---- doorway 2: after '(?' ----------------------------------------------
  * `c2` is the byte after the '?', or -1 when the pattern ends there. That -1 is
  * also REG_SEL_ANY's value, so the lookup lands on the catch-all row twice
  * over — once as an exact selector match, once as the fallback. It is the same
  * row and the same diagnostic either way, and parse.c printed '?' for the
  * missing byte, which is reproduced below. */
-ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
+static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
+                              const RegRow **elected)
 {
     /* cx->pos is at the '?'; c2 is the byte after it; so the tail starts two
      * past the cursor. When the pattern ends at the '?' that is already beyond
@@ -261,6 +281,7 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
     bool amb = false;
     const char *tl = tail_at(cx, cx->pos + 2, &avail);
     const RegRow *r = pcrec_registry_arbitrate(RK_GROUP, c2, tl, avail, &amb);
+    *elected = r;   /* MOD-0.7 slice 2 */
     int shown = c2 < 0 ? '?' : c2;
     want = pcrec_ext_gate(r, want);
 
@@ -341,6 +362,14 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
     REFUSE(at, "(?%c...) requires module '%s'", shown, r->module);
 }
 
+ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
+{
+    const RegRow *elected = NULL;
+    ExtResult res = group_answer(cx, want, c2, at, &elected);
+    res.row = elected;
+    return res;
+}
+
 /* ---- doorway 3: after '(*' ----------------------------------------------
  * Moved to src/parse/mod_verbs.c at MOD-0.4 (the migration test): the whole
  * `pcrec_ext_verb` function, together with the VerbName tables it reads and
@@ -369,9 +398,10 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
  * enabled-set symbol (check01's nm contract). This file keeps the SEAM: row
  * choice, the gate, and the terminal answer. */
 
-ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
-                                  size_t from, bool at_class_open,
-                                  bool at_content_start)
+static ExtResult clsbracket_answer(Ctx *cx, ExtWant want, int c2, size_t at,
+                                   size_t from, bool at_class_open,
+                                   bool at_content_start,
+                                   const RegRow **elected)
 {
     /* No `if (c2 < 0)` guard: it was here, and it was redundant rather than
      * defensive. `find(RK_CLASSBRACKET, -1)` returns NULL because this kind has
@@ -380,6 +410,7 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
      * the end-of-pattern case is handled one line below, by the check that
      * handles every other unrecognised byte. */
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
+    *elected = r;   /* MOD-0.7 slice 2; NULL on the decline below */
     if (!r) DECLINE();
     want = pcrec_ext_gate(r, want);
 
@@ -492,4 +523,15 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
         snprintf(res.msg, sizeof res.msg, "%s", r->msg);
         return res;
     }
+}
+
+ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
+                                  size_t from, bool at_class_open,
+                                  bool at_content_start)
+{
+    const RegRow *elected = NULL;
+    ExtResult res = clsbracket_answer(cx, want, c2, at, from, at_class_open,
+                                      at_content_start, &elected);
+    res.row = elected;
+    return res;
 }

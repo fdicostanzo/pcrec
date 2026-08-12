@@ -532,6 +532,8 @@ typedef enum {
  * bypasses `want` — it IS the CLAIM-shaped question as a predicate. */
 typedef enum { WANT_CLAIM = 0, WANT_VERDICT, WANT_RESULT } ExtWant;
 
+typedef struct RegRow RegRow;
+
 typedef struct {
     ExtWhat what;
     size_t  at;         /* EXT_REFUSAL: offset the diagnostic points at */
@@ -571,6 +573,30 @@ typedef struct {
     int     scalar;     /* EXT_SCALAR: the code point */
     Ast    *node;       /* EXT_MEMBERS: A_CLASS whose cls[] the caller ORs in;
                            EXT_NODE: the subtree the caller splices */
+
+    /* THE ELECTED ROW (MOD-0.7 slice 2) — which row the doorway DISPATCHED
+     * on, or NULL where it answered without one (an unknown escape, a
+     * class-bracket decline, `(?` at end of pattern). Nothing on the compile
+     * path reads it; `--explain` does, and cli case11 asserts it per row.
+     *
+     * IT IS NOT "THE ROW THAT WROTE THE MESSAGE", and the distinction is
+     * measured rather than pedantic: for `(?iZ)` the elected row is the `i`
+     * GROUP_OPT row while the text is the catch-all row's, because the
+     * option-run grammar rejected the run (ext.c's option-run branch). Both
+     * facts are true and `--explain` prints them as two fields.
+     *
+     * WHY IT EXISTS AT ALL, with the number: 13 registry rows share their
+     * rendered atom diagnostic with a sibling in the same bucket (10 of the
+     * `(?-N)` family, 3 of the `(?<` lookarounds), so a check comparing TEXT
+     * — which is what registry_check's check_table_to_parser does — cannot
+     * tell which of them answered. Identity can. See docs/design_notes_mod07.md
+     * §5.3.
+     *
+     * STAMPED IN EXACTLY ONE PLACE PER DOORWAY: each public `pcrec_ext_*`
+     * is a thin wrapper that calls the answering body with an out-parameter
+     * and writes this field on the single return. A return added inside a
+     * doorway later cannot forget it. */
+    const RegRow *row;
 } ExtResult;
 
 /* A row's PRODUCING PORTS (design Part II §4/§14; D33 §5). One per position
@@ -605,7 +631,8 @@ typedef struct {
  * second home for tier-2 facts). */
 typedef enum { PORT_NONE = 0, PORT_SCALAR, PORT_SET, PORT_FN } PortKind;
 
-typedef struct RegRow RegRow;
+/* (`typedef struct RegRow RegRow;` moved ABOVE ExtResult at MOD-0.7 slice 2 —
+ * ExtResult.row needs the name, and ExtResult is defined first.) */
 typedef ExtResult (*ExtPortFn)(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from);
 
