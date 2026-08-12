@@ -30,6 +30,18 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   again, fixed by counting the demand side from the `sabotages/S*.sh` listing.
   Validated in the failing direction with a stub definition missing
   `SAB_FILE`: FATAL exit 2, the missing sabotage named.
+  A successful run ends with a grep-able COMPLETION TRAILER
+  (`== mech run COMPLETE: <N> rows (undetected: U, anomalies: A) at <SHA> ==`),
+  added 2026-08-12 (fourteenth session) after a finished run was twice
+  reported still-running: **never poll a run's liveness with
+  `pgrep -f "make mech"`** (or any pattern naming this script) — the session
+  harness wraps every polling command in a shell whose own command line
+  contains the pattern, so the poll matches itself and answers RUNNING
+  forever. Completion is a fact about the log: grep it for the trailer, or
+  for FATAL (the only early exit that skips it). The run also now removes
+  its mktemp'd scratch root and parallel-mode row dir on exit (KEEP=1
+  preserves both; a scratch root passed in via MECH_SCRATCH is never
+  removed).
 - **lib/replace.py** — the ONLY thing that edits a sabotaged file. Takes a
   target file plus literal BEFORE/AFTER text and a required occurrence count;
   refuses to run if the anchor text is not found exactly that many times

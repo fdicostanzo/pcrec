@@ -54,6 +54,12 @@
 # What this does NOT do: it does not run `make` in the real repository (every
 # build happens inside a scratch copy), it does not edit any file outside
 # tests/mech/ or the scratch trees, and it does not commit anything.
+#
+# Completion: a successful run ends with a grep-able trailer line,
+# `== mech run COMPLETE: ...` (row count, undetected/anomaly counts, SHA).
+# Poll a run's log for that trailer (or FATAL) to know whether it finished;
+# never poll with `pgrep -f` — see the comment at the trailer for why that
+# check lies.
 
 set -u
 
@@ -70,8 +76,10 @@ if [ -z "${JOBS:-}" ]; then
 fi
 ONLY="${1:-}"
 
+MADE_SCRATCH=0
 if [ -z "${MECH_SCRATCH:-}" ]; then
     MECH_SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-mech-sabotage.XXXXXX")"
+    MADE_SCRATCH=1
 fi
 mkdir -p "$MECH_SCRATCH"
 
@@ -301,5 +309,22 @@ if [ "${anomalies:-0}" -gt 0 ]; then
 fi
 
 rm -f "$results_file" "$results_file.rows"
+if [ "$KEEP" != "1" ]; then
+    [ -n "${rowdir:-}" ] && rm -rf "$rowdir"
+    # remove the scratch root only if this run created it (and it is empty)
+    [ "$MADE_SCRATCH" = "1" ] && rmdir "$MECH_SCRATCH" 2>/dev/null
+fi
+
+# COMPLETION TRAILER. The one line a watcher may poll for. Never check
+# whether this script is still running with `pgrep -f "make mech"` (or any
+# pattern naming this script): the session harness wraps every polling
+# command in a shell whose OWN command line contains that pattern, so the
+# poll matches itself and answers RUNNING forever — a control sharing a
+# source with its subject, measured 2026-08-12: a finished run was reported
+# alive 51 minutes after completion, twice. Completion is a fact about the
+# LOG, not about a process listing: grep the log for this trailer (or for
+# FATAL, the only early exit that skips it).
+echo
+echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}) at $SHA =="
 
 exit 0

@@ -6806,3 +6806,49 @@ Lessons, this session's additions:
   refinement) turn "should we re-measure?" into a mechanical --stale
   check — and the first byte-for-byte reproduction validated the whole
   convention.
+
+## 2026-08-12 — fourteenth session, opening item: the "make mech silently stopping" report — not a crash; the liveness poll was lying
+
+Frank opened the session reporting `make mech` had "silently stopped"
+twice without the manager noticing, cause unknown. Investigated from
+three evidence sources (leftover scratch roots, the thirteenth session's
+transcript, kernel logs) before touching anything.
+
+**Finding: every mech run yesterday COMPLETED.** All 34 leftover scratch
+roots across /tmp and /var/tmp held complete row sets for the sabotage
+listing as it existed at their moment (20→23→26→29→30→35 rows tracking
+S21–S35's landings); no abandoned sabotage trees; no OOM kills. What
+stopped silently was the session's BELIEF: the S31–S35 validation run
+finished at 16:53 (`MECH_RC=0`, 35/35 rows), but the lane that launched
+it had died — taking the background task's completion notification with
+it — and the manager's outside-in liveness poll, `pgrep -f "make mech"`,
+answered MECH_RUNNING at 17:44 and MECH_ALIVE at 17:49, 51+ minutes
+after completion. Root cause: the session harness wraps every polling
+command in a `/bin/bash -c 'source snapshot… <command>'` whose own
+command line contains the pattern, so the poll matches ITSELF —
+reproduced live this session (`pgrep -af "make mech"` with nothing
+running: one match, the wrapper). The 17:49 `ps --forest` had even shown
+it (the "make mech" pid: STAT Ss, ELAPSED 00:00) and it went unread.
+This is the check-design lesson in a new costume: a control sharing a
+source (the literal string "make mech") with its subject.
+
+**Fix, landed this commit:**
+
+- `run_sabotage_matrix.sh` now ends every successful run with a
+  grep-able completion trailer — `== mech run COMPLETE: <N> rows
+  (undetected: U, anomalies: A) at <SHA> ==` — so "is it done" is
+  answered from the log artifact. The only early exit that skips it is
+  the loud FATAL path. Watchers grep for `COMPLETE|FATAL`, never pgrep.
+- The run now removes its mktemp'd scratch root and parallel-mode row
+  dir on exit (KEEP=1 preserves; a caller-supplied MECH_SCRATCH is never
+  removed) — yesterday's 34 leftover roots were this hygiene gap; swept
+  them after mining them as evidence.
+- tests/mech/CLAUDE.md documents the trailer and the pgrep trap.
+- Validated: single-sabotage run (S15) prints the trailer, DETECTED
+  12fail/459pass, scratch root gone afterward.
+
+Lesson (also added to the check-design memory): a liveness poll whose
+pattern names its target matches itself through the harness wrapper;
+completion of a long run is a fact about its output artifact, and a dead
+lane silently discards its tasks' completion notifications — read the
+file, not the process table.
