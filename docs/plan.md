@@ -94,6 +94,22 @@ Known M1 limitations (tracked for later milestones):
   semantics (0/positive/negative) mirroring pcre2_callout_block exactly
   (D26-exact tier), fire-point discipline DOCUMENTED as engine-relative
   with PCRE2's own PCRE2_NO_START_OPTIMIZE latitude as the cited precedent
+- [M4-SUBST] STATE:not-started — COMPILED SUBSTITUTION (Frank, 2026-08-12:
+  the headline xmas item): the `pcre2_substitute` capability as an AOT
+  artifact — pattern AND replacement template compiled together into one
+  emitted C function (match + splice), first/global modes, caller-buffer
+  zero-allocation mode plus an output-sizing mode. **The template compiler
+  is almost completely independent of the matcher (Frank's observation,
+  recorded because it sequences the work): it consumes only the
+  capture-offset CONTRACT, so its design note can precede M4 even though
+  end-to-end substitution is capture-gated.** AOT-only win to preserve in
+  the design: `$n`/`${name}` references are resolved and BOUNDS-CHECKED AT
+  COMPILE TIME against the pattern's own group count — a template naming a
+  group that does not exist is a compile error, where PCRE2 discovers it at
+  substitute time. Tier the template language: core `$n`/`${name}`/literal
+  escapes first; PCRE2_SUBSTITUTE_EXTENDED forms (\u \l case forcing,
+  ${n:-default}, ${n:+yes:no}) earn their rows separately under D18's
+  earn-its-axis discipline
 
 ## M5 — UTF-8
 
@@ -114,7 +130,7 @@ a corner that would make these expensive later. Each becomes a milestone only
 after the current ladder is complete and the result is something we are happy
 with.
 
-- [V-A] STATE:not-started — PCRE2 compatibility layer: a drop-in surface for callers who already speak PCRE2, so adopting pcrec does not mean rewriting call sites. Interacts with DD-3 (generated-API versioning) — a compat layer is a second consumer of the generated contract
+- [V-A] STATE:not-started — PCRE2 compatibility layer: a drop-in surface for callers who already speak PCRE2, so adopting pcrec does not mean rewriting call sites. Interacts with DD-3 (generated-API versioning) — a compat layer is a second consumer of the generated contract. TWO surfaces (Frank, 2026-08-12): the PCRE2-native API, and a POSIX `regex.h` shim (regcomp/regexec/regfree, à la pcre2posix) — a smaller surface with wider adoption reach, since decades of C code speaks regex.h and never touched PCRE2
 - [V-B] STATE:not-started — usage libraries for other languages: bindings over the generated C. Note the generated code already has no runtime dependency on pcrec, which is what makes this cheap; keep it that way
 - [V-C] STATE:not-started — a grep CLI built on pcrec, the natural end-user demonstration that the speed mandate (D18) actually shows up in a real tool
 - [V-D] STATE:not-started — translators from other regex syntaxes into the base tier: grep/egrep (BRE/ERE), python `re`, and PCRE2-flavour differences. Pairs with V-C (a grep CLI needs BRE/ERE) and with V-A. Design note: these are FRONT-END modules that lower into the existing AST, exactly the shape APPROACH §3's parser extension points already anticipate — no engine work, which is what makes the direction affordable
