@@ -23,6 +23,14 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
+**As of 2026-08-12, after the MOD-0.8b D27 pass: 13 pass, 1 fail, 0 awaiting —
+exit 1, and the failure is a real defect, not an awaited surface.**
+check14_option_runs fails on one family, and only that family: pcrec accepts a
+quantifier after a bare option run (`a(?i)*`) where PCRE2 raises error 109, and
+emits a matcher for it. The check is pinned to PCRE2's answer and will pass with
+no edit once the producer refuses the form. See "The quantified-option-run
+finding" below and check14's own FINDING block.
+
 **As of 2026-08-12 (MOD-0.3c, the first module with producers): 10 pass, 0
 fail, 0 awaiting — the suite's first exit-0.** The history below records the
 awaiting era: as of 2026-08-11 it was 9 pass / 0 fail / 1 awaiting, exit 1,
@@ -79,6 +87,23 @@ every run.
   construct at all), check12 owns the BEHAVIOUR (what a recognised spelling
   DOES). See their own headers for the full predictor set and the finding
   check12's scoping family is built around.
+- **spec_pcrec.h** — running the pcrec BINARY as a black box: fork/exec with a
+  timeout, and the four-way verdict classification (ACCEPTED /
+  REFUSED-AS-UNIMPLEMENTED / REFUSED-AS-OUT-OF-SCOPE / REFUSED-AS-INVALID) that
+  every pcrec-comparing check needs. Added by the MOD-0.8b pass and used by
+  check13 and check14 only; check02, check07 and check11 keep their own older
+  private copies, deliberately untouched (rewriting a passing check to route
+  through a new header changes what it tests). It differs from those copies in
+  one respect that is load-bearing: **stdout is counted, not discarded**, so
+  "emitted no C" is an observation rather than an inference from the exit code.
+- **check13_uprop_syntax.c**, **check14_option_runs.c** — a THIRD D27 pass
+  (2026-08-12, MOD-0.8b), scoped to two construct families' RECOGNITION
+  behaviour: `\p{...}` / `\P{...}` and the `(?...)` option run. Their method
+  differs from check11/check12's in the way that turned out to matter: **every
+  population is generated, not hand-listed**, and every bound on a sweep is
+  stated at the family it bounds. check14 overlaps check11 on purpose, and in
+  the space check11's 21-entry hand-written structural table does not reach it
+  found the quantified-option-run defect below.
 
 Each check's own header states its predictor, its oracle, its population, its
 sabotage, and (where it applies) the surface it awaits. Read the header before
@@ -157,6 +182,62 @@ could target. check12 still measures and floors the libpcre2 facts
 (`modsem.oracle_only_unicode`, floor 6) so a regression in the oracle side
 is caught now, with no edit needed the day a UCP-capable surface exists.
 
+## Two recognition families (check13, check14) — a third D27 pass, 2026-08-12
+
+Scoped to the RECOGNITION behaviour of `\p{...}` / `\P{...}` (the
+`unicode-props` module, which has a recogniser and no implementation) and of
+the `(?...)` option run (the `modifiers` module, which is implemented).
+Everything is compared under `--features all`, the maximal configuration, so a
+cell that still comes back "requires module 'X'" is genuinely unreached rather
+than merely switched off.
+
+| Check | Status | Cells | Owns |
+|-------|--------|-------|------|
+| check13_uprop_syntax.c | **PASS** (2,587 cells, 0 disagreements) | every byte after `\p`/`\P`; every printable byte in five braced-body positions; 20 contexts x 31 spellings; every prefix of six canonical constructs; name lengths 0..79 in four paddings; quote mode; three `--features` settings; the `-i` flag | that the construct is REAL and whose it is, that no C is ever emitted, and **where pcrec stops** |
+| check14_option_runs.c | **FAIL — one family, a real defect** (4,385 compared, 512 disagreements, all in `quantified`) | every byte at the `(?` doorway and at six positions inside a run; ordered letter pairs; every placement and count of `-` and `^`; junk-letter insertion; truncation; run lengths to 32; terminator variants; whitespace with and without x mode; **a quantifier after every accepted spelling** | that pcrec accepts exactly what PCRE2 accepts |
+
+**The offset rule check13 pins, and why an offset is not "wording".** pcrec
+prints `(pattern offset N)` with each refusal, and N is where its recogniser
+stopped — the position it would resume parsing from the day the module lands.
+Derived from the public grammar and then confirmed on all 2,587 cells: N is the
+construct's grammatical EXTENT (`\p`/`\P`, then a braced body through the first
+`}` or exactly one following character), except where libpcre2 itself stops
+earlier, where N is libpcre2's own error offset. Both branches are populated —
+2,525 at the extent, 31 at an earlier stop, the latter being the over-length
+property names, where libpcre2 abandons the name at the same byte pcrec does.
+D26 tiers the *sentence* out of scope; it does not tier out the *position*, and
+this is the only assertion in the suite that reads one.
+
+**The quantified-option-run finding — check14's failing family.**
+`build/pcrec --features modifiers -o - 'a(?i)*'` exits 0 and emits a matcher
+that accepts `"a"`, `"aa"`, `"aaa"`. libpcre2 rejects the same pattern with
+error 109 at offset 5. pcrec has modelled a bare option run as a LEXICAL
+construct contributing no atom — so the `*` bound the preceding `a` — which is
+the intuitive model and the wrong one; PCRE2 does not allow a quantifier there
+at all. `a(?i)**` is even diagnosed as "multiple quantifiers on the same item",
+the same wrong model speaking twice.
+
+Three things make this worth the space:
+
+- The SCOPING form is unaffected: `a(?i:b)*` compiles under both. That split is
+  exact — of 7,040 (spelling x quantifier) cells run while check14 was written,
+  4,472 disagreed and 2,568 agreed, and the boundary was bare-run versus
+  scoping-run with no exceptions. check14 keeps 512 of each so the agreeing half
+  is a live control rather than an anecdote.
+- **pcrec's own registry already has the right answer.** Every `modifiers` row's
+  `quantifiable` cell reads `form` — quantifiability depends on which form the
+  construct takes. The producer contradicts the registry, and `probe_quant.c`
+  measured the same fact before either was written. Nothing was missing; two
+  parts of pcrec disagree.
+- check11 covers the same module and did not find it, because check11's
+  structural family is a hand-listed table of 21 spellings and none of them is
+  quantified. This is the D27 wager paying out a second time, one level in:
+  blindness to the source was not enough on its own — the generated sweep is
+  what reached the cell.
+
+check14 is pinned to PCRE2's answer, not to pcrec's, so it fails today and will
+pass with no edit once the producer refuses the bare-run form.
+
 **Invariant 6 is the one with no oracle half, and that is not a gap in the
 work.** Every other invariant is about what a pattern MEANS, and libpcre2 is
 the authority on meaning. The cursor rule is about pcrec's internal
@@ -211,6 +292,19 @@ All against **libpcre2 10.46 2025-08-27**, registry of **100 rows**, on
   specifically to probe constructs outside the base tier.
 - check05: 904 single-digit cells, 244 running-count cells, 123 leading-8/9
   cells, 24 octal cells, 12 overflow cells.
+- check13: 2,587 cells, 0 disagreements. **28** of the 510 single-byte forms
+  after `\p`/`\P` compile — `C L M N P S Z` in either case, 14 codes each for
+  `\p` and `\P` — and every other byte lands on error 146 or 147, never on a
+  third error and never on "compiles as something else". libpcre2's property
+  NAME length limit sits at 49 significant characters (`\p{` + 49 x `L` is
+  error 146 at offset 52, and the offset does not move as the body grows).
+- check14: 4,385 cells compared, 286 deferred to a module, 36 out of scope,
+  **512 disagreements, all in one family** (see the finding above). **21**
+  single bytes B make `(?B)` compile — `! # * - 0 : = > C J R U ^ a i m n r s
+  x |` — of which **11** are letters (`C J R U a i m n r s x`); the other ten
+  are the non-letter doorways `(?` shares with the rest of PCRE2's group
+  syntax. Both sets are anchored literally, because a change in the wider set
+  moves the boundary this check measures even when no letter moves.
 
 ## Four findings against the invariant statements
 
