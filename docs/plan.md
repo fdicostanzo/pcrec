@@ -1168,7 +1168,20 @@ Then DOC-1, then PC-4 when module `classes` lands.
   (6) Malformed runs with the gate ON are the module's to diagnose
   (D28's SYN_MALFORMED half: `(?i-m-s)` err-194 shape, offset at the
   offending byte); gate OFF keeps today's answers byte-identical.
-- [MOD-0.5b] STATE:not-started — slice 1, the GRAMMAR MOVE, byte-identity.
+- [MOD-0.5b] STATE:completed 2026-08-12 (eleventh session; worktree worker
+  impl-mod05b authored, main session landed after the worker went idle
+  uncommitted; commit 105aecf, merged 1c8883b) — slice 1, the GRAMMAR MOVE,
+  byte-identity. As specified below, plus what execution decided: the rows'
+  recogniser is a MARKER (always answers, exactly the tail-less default) and
+  ext.c keys the whole-run check off POINTER IDENTITY — because the run's
+  grammar starts AT the selector byte, and reconstructing `at - 1` inside
+  the shared recogniser would be UB against registry_check's synthetic
+  probe buffers (rationale in the function's own comment); the retired bit
+  stays unassigned so dumps cannot alias. Byte-identity measured: 641
+  patterns + list surfaces + 69 --probe-ask combos, zero diffs vs a7b835c.
+  Moved code diffed VERBATIM against the original. registry_check QF_FORM
+  family test and the tests/registry/CLAUDE.md sabotage table moved with
+  the surface. Spec was:
   mod_modifiers.c TU carries pcrec_registry_option_run_ok WITH its measured
   grammar block (probes-and-code-together; R8/C2-9 is the counter-example);
   RF_OPTION_RUN retires — the 12 GROUP_OPT rows point at the recogniser
