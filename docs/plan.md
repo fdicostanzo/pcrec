@@ -77,7 +77,11 @@ Known M1 limitations (tracked for later milestones):
   the queue boonies). Two separable steps: (1) THE FLIP, schedulable any
   time a lane is free: registry `(?C` row ROADMAP_NEVER → PLANNED, the
   diagnostic moves from "no module will implement" to "requires module
-  'callouts'", reject + case11 pins move with it failing-first, compliance
+  'callouts'", reject + case11 pins move with it failing-first (NOTE,
+  mod08fix lane 2026-08-12: case11 asserts `(?C1)` `roadmap never`,
+  `names —`, and the "no module will implement it" status — load-bearing
+  against today's tree; they MUST move inside the flip commit or the flip
+  lands red), compliance
   prose updated IN THE SAME CHANGE (the K14 prose⇔column check binds them),
   and note the ROADMAP_NEVER live population drops to zero — the never
   branch stays, column-derived, covered the day a second row exists.
