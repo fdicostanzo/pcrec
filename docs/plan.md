@@ -72,6 +72,24 @@ Known M1 limitations (tracked for later milestones):
 ## M4 — Captures + backtracking VM engine
 
 - [M4.0] STATE:not-started — milestone (expand on arrival): VM emitter, DFA-prefilter hybrid, DFA islands
+- [M4-CALLOUTS] STATE:not-started — module `callouts` (D36: Frank re-scoped
+  `(?C` from NEVER to PLANNED, 2026-08-12 — LOW PRIORITY, deliberately in
+  the queue boonies). Two separable steps: (1) THE FLIP, schedulable any
+  time a lane is free: registry `(?C` row ROADMAP_NEVER → PLANNED, the
+  diagnostic moves from "no module will implement" to "requires module
+  'callouts'", reject + case11 pins move with it failing-first, compliance
+  prose updated IN THE SAME CHANGE (the K14 prose⇔column check binds them),
+  and note the ROADMAP_NEVER live population drops to zero — the never
+  branch stays, column-derived, covered the day a second row exists.
+  (2) THE BEHAVIOR, M4-hosted and engine-forcing (VM only — the compiled
+  DFA erases the pattern positions a callout fires at): static extern
+  binding (`extern int rx_callout_n(const rx_callout_block *)` defined by
+  the embedding program — compile-time binding, zero cost when absent;
+  V-A's compat layer later implements pcre2_set_callout as a trampoline ON
+  TOP of this primitive, not instead of it), callback block and return
+  semantics (0/positive/negative) mirroring pcre2_callout_block exactly
+  (D26-exact tier), fire-point discipline DOCUMENTED as engine-relative
+  with PCRE2's own PCRE2_NO_START_OPTIMIZE latitude as the cited precedent
 
 ## M5 — UTF-8
 

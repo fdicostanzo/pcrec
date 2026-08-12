@@ -3280,3 +3280,37 @@ on the compiler that built it, and if one ever does, that is a probe bug.
 **Revisit-when:** a report's diff ever becomes load-bearing in a check, or
 the directory grows enough that nobody reads diffs — either is the signal
 the convention has drifted from evidence into oracle or noise.
+
+## D36 — `(?C` callouts re-scoped: NEVER → PLANNED, M4-hosted, pcrec-native binding (2026-08-12)
+
+**Decision (Frank, fourteenth session):** the callout family `(?C)` /
+`(?Cn)` / `(?C"text")` moves from ROADMAP_NEVER (K14's out-of-scope ruling,
+"revisit only with a concrete customer") to a PLANNED module `callouts`,
+explicitly LOW priority — parked at [M4-CALLOUTS] in the queue, behind the
+M4 VM engine that hosts it. The compliance survey's revisit trigger was the
+roadmap owner wanting it; that happened.
+
+**The design layering that made the flip acceptable** (from the same
+discussion, recorded so the M4 designer inherits it): compatibility splits
+three ways. The PATTERN layer (syntax, where callouts may appear, matching
+semantics) is D26-exact and fully PCRE2-compatible. The CALLBACK CONTRACT
+(block contents, return-code meaning: 0 continue / >0 fail path / <0
+abort) mirrors pcre2_callout_block field for field. The REGISTRATION API is
+pcrec-native by design, as pcrec's whole API already is: the generated C
+declares `extern int rx_callout_n(...)` and the embedding program defines
+it — compile-time binding, no indirect call for patterns without callouts,
+and V-A's compat layer implements pcre2_set_callout as a trampoline ON TOP
+of the extern (dynamic-over-static composes; the reverse pays indirection
+everywhere). Callouts are ENGINE-FORCING like backrefs: the compiled DFA
+erases pattern positions at construction, so callout patterns compile to
+the VM engine only. Fire-point precision is documented engine-relative —
+PCRE2 itself requires PCRE2_NO_START_OPTIMIZE for predictable callout
+invocation, which is the precedent that fire counts are not the contract.
+
+**Explicitly rejected:** accept-and-discard (semantically sound for the
+no-callback case, but it silently swallows the user's stated intent to
+hook the match — refuse loudly instead until the module lands).
+
+**Revisit-when:** M4's design begins (the behavior step), or any lane is
+free for the flip step ([M4-CALLOUTS] part 1 — do not start it while
+another lane owns registry.c/reject/case11).
