@@ -52,16 +52,16 @@ rc=${PIPESTATUS[0]}
 # wording split), manifest only on a green run (needles come from ok()
 # lines, and a failing check never prints one).
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 167 ]; then
+if [ "$regn" -ne 168 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 167." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 168." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (167 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (168 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 167 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 168 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -79,6 +79,7 @@ row ranks: all 18 tailed rows|MOD-0.2: a tailed row at the fallback tier loses e
 arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is unobservable; these floors are check_tail_precedence's re-homed liveness clause
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
 class ports: 5 scalar + 10 SET + 9 FN|MOD-0.3b/c/d: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
+class-position reach: 5 tailed/body-carrying rows|MOD-0.6/D33 §9.2, K10's fourth net: the one-byte in-class sweep above cannot express [\N{U+41}]-shaped bodies at all; this is the only check that arbitrates a tailed/body-carrying row's FULL syntax at class position and confirms it reaches itself and promises its own module
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is
@@ -140,7 +141,7 @@ if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
 # someone thought to name.
 if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     pc3n="$(grep -c '^PASS: ' "$PC3OUT" || true)"
-    if [ "$pc3n" -ne 144 ]; then
+    if [ "$pc3n" -ne 154 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -149,14 +150,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 144." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 154." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (144 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (154 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 144 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 154 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
@@ -216,6 +217,7 @@ option runs: both verdict buckets|Q2: a sweep where every run is invalid agrees 
 tail sweep (?P|SR-9: (?P= vs (?P< was invisible to every one-byte sweep in this repo (named in tests/registry/CLAUDE.md since R5)
 tail sweeps: 2 of 4 prefixes|SR-9: (?< answers alike for every tail, so its split is pinned in tests/reject/ and this counter is what stops the whole sweep becoming that
 K15 exclusion: fired|K15 (2026-08-12): the exclusion is a dead branch reading as coverage unless it actually fires on the hostile-alphabet pool; a regressed pool or a closed K15 must be investigated, not silently pass
+uprops differential: pcrec matched libpcre2|MOD-0.6 slice 4: the \p/\P shape-space differential, obligation-mapped against a LIVE oracle per cell; its 52-letter axis is the independent drift guard on mod_uprops.c's hand-written 14-of-52 short-name table (manager ruling 2) — measured to fail 20/20 when the table drops a letter
 MANIFEST
     fi
 fi

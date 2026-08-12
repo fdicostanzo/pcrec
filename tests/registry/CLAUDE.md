@@ -139,8 +139,9 @@ directory asserts that the description and the shipped parser actually agree.
    and discard ambiguity — scans.c's prose assumption, now an assertion),
    the answer predicate is the engine's own exported
    `pcrec_registry_row_answers` (no duplicate to drift), and
-   run_registry_tests.sh carries a **count (167 since MOD-0.3b; 166 at R15)
-   + manifest guard for registry_check itself**, mirroring PC-3's, with one
+   run_registry_tests.sh carries a **count (168 since MOD-0.6's K10 slice;
+   167 since MOD-0.3b; 166 at R15) + manifest guard for registry_check
+   itself**, mirroring PC-3's, with one
    NEGATIVE needle: the retired check's PASS line must not reappear. NOTE the division of
    labour R15's checks critic initially misread: these checks do NOT ask
    which row WINS — `check_table_to_parser` owns that (D32 §9.1's primary
@@ -159,6 +160,23 @@ directory asserts that the description and the shipped parser actually agree.
    directions same-session: value drift on `\b` (0x08→0x09) fails the
    column tie, a zeroed `\k` scalar fails the fallback law, and deleting
    the call fires the count guard AND the manifest line.
+8. **class-position reach** (MOD-0.6, K10's fourth net) — the generic
+   `[\%c]` in-class sweep above supplies exactly one byte of tail, so it
+   structurally cannot probe `[\N{U+41}]` (or any other tailed/body-
+   carrying escape) at class position at all. `check_class_syntax_reach`
+   closes that specific gap: for every RK_ESC row whose `syntax` carries a
+   `tail` or body text past the bare `\X` form (today exactly 5: the `{U+`
+   row, `\p`, `\P`, `\c`, `\o` — `\g`/`\k` are excused, base class ports,
+   see below), it arbitrates on the REAL tail text a class doorway would
+   see and confirms it resolves to THAT row, then confirms the compiled
+   diagnostic promises that row's module. **What it cannot do, stated so
+   it is not mistaken for more**: it predicts the expected text from the
+   row's OWN current fields (same as `check_table_to_parser`), so it can
+   never independently catch a WRONG FLAG the way K10 was wrong — only
+   tests/reject/'s hand-written pins and PC-3's libpcre2 differential can
+   do that, and always could. Positive-controlled by re-sabotaging K10
+   (restoring `RF_CLASS_INVALID` on the `{U+` row): the check fails
+   immediately, naming the row and the unpromised module.
 
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
@@ -328,6 +346,59 @@ a pool of whole runs would have missed three names this check exists to notice.
    anything varies two of them together** — making either sweep bigger would
    never have found it.
 
+6. **The `\p`/`\P` shape-space differential** (MOD-0.6 slice 4,
+   `check_uprops_differential`), the module's first external check —
+   `check_class_syntax_reach` (registry_check.c) only proves the row
+   arbitrates to itself and promises a module; nothing before this compared
+   pcrec's message and offset against libpcre2's own opinion of the name.
+   1976 probes: `\p`/`\P` x prefix (`""`/`"^"`) x name (the 14 short names
+   both cases, `Alpha`/`Alphabetic`/`Any`/`Foo`, and the empty name) x noise
+   (none, leading/trailing space, internal hyphen/underscore/space,
+   mixed-case — all measured insignificant, docs/design_notes_mod06.md §3)
+   x shape (bare `\pX` for single letters, `{...}` for everything) x
+   position (atom, class, class as low/high range endpoint, negated class),
+   plus a 52-letter sweep (bare and `{X}`, both selectors, atom and class
+   position) that is the INDEPENDENT check on `mod_uprops.c`'s hand-written
+   14-of-52 short-name table (the manager's phase-2 ruling 2, §8): dropping a
+   letter from that table is invisible to everything else in the suite and
+   fails this check 20/20 (measured, reverted before commit — the twenty is
+   the file's 20-report cap, and every failure names the dropped letter
+   across all 5 positions and both cases).
+
+   **What is oracle-derived and what is not, per cell.** The claim libpcre2
+   CAN adjudicate — for the single-significant-character axis, is this
+   letter a Unicode general-category short code — is answered by a live
+   `pcre2_try` on the cell's own escape text, never by consulting
+   `mod_uprops.c`'s table or a hardcoded pass/fail list here (that would be
+   the check-design failure the memory `pcrec-check-design-lessons` names: a
+   table generated from libpcre2 and checked by a differential against the
+   same libpcre2 is one source wearing two hats). The AXIS BOUNDARY itself
+   — a single significant character with no `=` is the only claim pcrec's
+   table promises to be exhaustive for; every other well-formed body gets
+   the GENERIC "requires module" text unconditionally regardless of what
+   libpcre2 says about the name — is pcrec's OWN taxonomy decision (manager
+   ruling 3), the same way a module NAME is pcrec's own taxonomy and no
+   oracle query can arbitrate it.
+
+   **The offset obligation is computed, not oracle-matched**, per D26: pcrec
+   pins its OWN offset convention, not PCRE2's. `escape_start + 2 +
+   strlen(body)` reproduces `mod_uprops.c`'s "one past the last byte
+   consumed" rule exactly (docs/design_notes_mod06.md §3), and this is what
+   proves the doorway's offset arithmetic is POSITION-INVARIANT — the same
+   relative blame regardless of how many bytes of class-bracket/range/
+   negation machinery precede the backslash — rather than merely re-deriving
+   the eight offsets tests/reject/'s hand-written pins already cover at atom
+   position.
+
+   **What this check does NOT generate**, stated so its liveness buckets are
+   not misread as wider than they are: every cell is WELL-FORMED by
+   construction (a real name run, a real closing brace). The malformed-shape
+   space — truncated, unterminated, a non-letter/non-brace tail byte, the
+   48/49-character cap boundary, whether the caret counts toward it — stays
+   pinned by hand, offset by offset, in tests/reject/run_reject_tests.sh; S32
+   (the cap off-by-one) and S33 (the caret-consume drop) are the mech
+   sabotages that validate THAT space, not this one.
+
 ## Coverage guard and manifest (R9/C1-7)
 
 `run_registry_tests.sh` now asserts PC-3's exact passing-check count AND a
@@ -431,6 +502,7 @@ claimed; the last seven are Q2/SR-9's.
 | one Q2 completion replaced by a duplicate of another (probe COUNT unchanged) | 1 (the set checksum) |
 | **longest-tail-wins -> first-tail-wins in `pcrec_registry_find`** | **3** (+1 reject) — see below |
 | `k15_excluded()` neutered (`return 0`) (K15, 2026-08-12) | **21** (20 capped verb-differential mismatches + the exclusion's own liveness check, which fires on the same zero) |
+| MOD-0.6 slice 4: drop `'L'` from `mod_uprops.c`'s hand-written `UPROPS_SHORT_NAMES` table (`"CLMNPSZ"` → `"CMNPSZ"`) | **20** (capped) — every failure names `\pL`/`\pl`/`\p{L}`/`\p{^L}` across all 5 positions and both cases; this is the failing-direction proof for `check_uprops_differential`'s 52-letter axis, measured then reverted before commit |
 
 **The tail-precedence sabotage found a real hole and is the one to read**
 (historical since MOD-0.2 — the engine it sabotaged is deleted and

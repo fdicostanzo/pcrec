@@ -228,14 +228,18 @@ reject '[\v-z]'         "invalid range in character class"
 reject '[[:alpha:]-z]'  "invalid range in character class"   # bracket doorway, LOW side
 reject '[x[:alpha:]-z]' "invalid range in character class"   # ...and mid-class
 reject '[\d-\A]'        'is not valid inside a character class'  # step 3 beats step 4: PCRE2 107, the high side's OWN error
-reject '[\d-\p{Foo}]'   "in a class requires module 'unicode-props'"  # high's own refusal beats low's SET
+reject '[\d-\p{Foo}]'   "\\p requires module 'unicode-props' (pattern offset 11)"  # high's own refusal beats low's SET
 # The deliberate NON-certified boundary (journal 2026-08-11): \p is
 # body-dependent and pcrec has no property table until MOD-0.6, so the module
 # promise stays even where PCRE2 says 150 — answering 150 for [0-\p{Foo}]
 # would be wrong (PCRE2 147), and the promise stays true (the module owns
-# deciding the body).
-reject '[0-\p{L}]'      "in a class requires module 'unicode-props'"
-reject '[\p{L}-z]'      "in a class requires module 'unicode-props'"
+# deciding the body). MOD-0.6 phase 2: the WORDING moved from "in a class
+# requires module" to the position-invariant mod_uprops.c text (this
+# module's messages do not vary by position — same shape as an RD_FIXED
+# row's, deliberate, D26 tier 3), so these two re-pin the new text +
+# offset rather than the old one.
+reject '[0-\p{L}]'      "\\p requires module 'unicode-props' (pattern offset 8)"
+reject '[\p{L}-z]'      "\\p requires module 'unicode-props' (pattern offset 6)"
 # Non-range dash and truncation: the construct's ordinary class answer stays
 # (PCRE2 compiles [\d-]; pcrec's refusal is the standard unimplemented answer).
 reject '[\d-]'          "in a class requires module 'classes'"
@@ -342,6 +346,28 @@ done
 # answer, and the in-class one must promise no module (R9/SPEC-classes-F1).
 reject '\N'    "\N requires module 'classes'"
 reject '[\N]'  "\N is not valid inside a character class"
+# K10 FIX (MOD-0.6 phase 2): `\N{U+hhhh}` is the OPPOSITE case from bare `\N`
+# just above — libpcre2 recognises it in every class position (error 193,
+# recognition-then-mode-refusal, not permanent rejection; measured against
+# libpcre2 10.46 in tests/probes/probe_uprops.c), so unlike bare `\N` it MUST
+# promise module 'unicode-props' rather than refuse with no module. Offsets
+# load-bearing (the S27 lesson: these pin pcrec's OWN blame-position
+# convention, not PCRE2's number, though they happen to agree here — see D26's
+# addendum). Before this fix these five cells all read "\N is not valid inside
+# a character class" instead (the RF_CLASS_INVALID row this fixed); measured
+# failing against the unpinned pre-fix HEAD before landing.
+reject '[\N{U+41}]'    "\N in a class requires module 'unicode-props' (pattern offset 1)"
+reject '[x\N{U+41}]'   "\N in a class requires module 'unicode-props' (pattern offset 2)"
+reject '[\N{U+41}x]'   "\N in a class requires module 'unicode-props' (pattern offset 1)"
+reject '[a-\N{U+41}]'  "\N in a class requires module 'unicode-props' (pattern offset 3)"
+reject '[^\N{U+41}]'   "\N in a class requires module 'unicode-props' (pattern offset 2)"
+# The K12 endpoint rule's SCALAR-shaped exception, re-pinned for this row
+# specifically now that it can promise a module at all: `\N{U+41}` is a
+# SCALAR (one code point), not a certified SET, so it keeps its OWN error at
+# a range endpoint rather than being overridden by PCRE2's "invalid range"
+# (contrast the SET-shaped `[0-\p{L}]` pins below, which DO get overridden).
+reject '[0-\N{U+41}]'    "\N in a class requires module 'unicode-props' (pattern offset 3)"
+reject '[\N{U+41}-z]'    "\N in a class requires module 'unicode-props' (pattern offset 1)"
 # MOD-0.3f (R16 engine critic): a quantifier-SHAPED brace after \N is bare
 # \N quantified — PCRE2's fallback rule, measured in probe_nbrace.c — so in
 # the default state it refuses as the GATED module construct, not as the
@@ -470,6 +496,74 @@ echo
 echo "== unicode properties, quoting, misc escapes =="
 reject '\p{L}' "\\p requires module 'unicode-props'"
 reject '\P{L}' "\\P requires module 'unicode-props'"
+# MOD-0.6 phase 2 (mod_uprops.c): the malformed-vs-unknown-name split, offset
+# pinned (the S27 lesson — a message-only pin cannot distinguish a refactor
+# that moves the blame position from one that does not). Measured against
+# libpcre2 10.46 in tests/probes/probe_uprops.c: EVERY byte after \p/\P
+# lands on one of PCRE2's two "yes, dispatched" errors (146 malformed, 147
+# unknown name) and never a THIRD kind that would mean "not a \p construct" —
+# so pcrec promises the module unconditionally, but the OFFSET and the
+# malformed-vs-not wording now carry that split. Before this landed, every
+# one of the cells below read the single generic "\p requires module
+# 'unicode-props'" text at the BACKSLASH's offset (0) — measured failing
+# against the pre-mod_uprops.c HEAD before landing.
+reject '\p'      "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 2)"  # truncated at EOF
+reject '\p!'     "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 3)"  # not a letter, not {
+reject '\p9'     "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 3)"
+reject '\p{'     "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 3)"  # unterminated, empty
+reject '\p{L'    "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 4)"  # unterminated, valid prefix
+reject '\p{}'    "\\p{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 4)"  # well-formed, empty name
+reject '\pA'     "\\p: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 3)"  # well-formed, unknown 1-letter name (A is not in {C,L,M,N,P,S,Z})
+reject '\p{Foo}' "\\p requires module 'unicode-props' (pattern offset 7)"  # well-formed, multi-char name — pcrec's table does not cover this axis (manager ruling 3, phase-2 authorization), no "not recognised" claim
+reject '\P'      "\\P: malformed property escape — requires module 'unicode-props' (pattern offset 2)"
+reject '\P!'     "\\P: malformed property escape — requires module 'unicode-props' (pattern offset 3)"
+reject '\P9'     "\\P: malformed property escape — requires module 'unicode-props' (pattern offset 3)"
+reject '\P{'     "\\P: malformed property escape — requires module 'unicode-props' (pattern offset 3)"
+reject '\P{L'    "\\P: malformed property escape — requires module 'unicode-props' (pattern offset 4)"
+reject '\P{}'    "\\P{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 4)"
+reject '\PA'     "\\P: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 3)"
+reject '\P{Foo}' "\\P requires module 'unicode-props' (pattern offset 7)"
+# case-insensitive single-letter short names, both directions of the
+# 14-of-52 table (C L M N P S Z, hand-written — see mod_uprops.c's header;
+# PC-3 sweeps all 52 letters independently): a KNOWN short name gets the
+# GENERIC message (no "not recognised" claim — pcrec just has not built the
+# module yet), an unknown one names pcrec's own gap explicitly.
+reject '\pC'     "\\p requires module 'unicode-props' (pattern offset 3)"
+reject '\pc'     "\\p requires module 'unicode-props' (pattern offset 3)"   # case-insensitive
+# insignificant-byte skip (space/tab/hyphen/underscore never enter the
+# significant-character count): a padded UNKNOWN single letter must still
+# read as a single-character name, not a multi-character one — sig_count
+# staying at 1 is what keeps this in the "not recognised" bucket rather
+# than silently falling through to the generic message once padding is
+# added (S35's catch).
+reject '\p{ A}'  "\\p{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 6)"
+# the 48/49 significant-character boundary (R10 disposition 5, PCREC_UPROP_NAME_MAX
+# in src/core/limits.h): 48 significant characters is a well-formed (if
+# unknown) name; 49 is malformed, blamed ONE PAST the 49th significant
+# character consumed — not at the closing brace, which is the streaming
+# proof (tests/probes/probe_uprops.c: the same blame position holds even
+# when insignificant filler is interleaved between every character).
+reject '\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
+       "\\p requires module 'unicode-props' (pattern offset 52)"            # 48 A's, well-formed
+reject '\p{AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
+       "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 52)"  # 49 A's, malformed
+# the same boundary CARET-PREFIXED — S33's guard, added after mech measured
+# the caret-consume drop UNDETECTED against the original pin set (design
+# note §8): \p{^L} never flips under that sabotage, because a two-char name
+# gets the GENERIC message either way (ruling 3's design); what MOVES is
+# the 48/49 boundary for a caret-prefixed body. Probe: caret + 48 A's is
+# ERR 147 at 53, caret + 49 A's is ERR 146 at 53 — the caret costs one
+# OFFSET byte but zero BUDGET.
+reject '\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
+       "\\p requires module 'unicode-props' (pattern offset 53)"            # caret + 48 A's, well-formed
+reject '\p{^AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}' \
+       "\\p: malformed property escape — requires module 'unicode-props' (pattern offset 53)"  # caret + 49 A's, malformed
+# the accumulator-fold guard — S34's, same mech finding: a lowercase KNOWN
+# letter in braces must still read as known. The brace path's table lookup
+# is deliberately FOLD-FREE (mod_uprops.c uprops_short_lookup), so this pin
+# fails the moment the accumulator stops folding, instead of the lookup
+# silently repairing the buffer on the way in.
+reject '\p{c}' "\\p requires module 'unicode-props' (pattern offset 5)"
 reject '\Q'    "\\Q requires module 'quoting'"
 reject '\E'    "\\E requires module 'quoting'"
 reject '\R'    "\\R requires module 'misc'"
@@ -1272,8 +1366,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 268 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 268 / 65 / 0 / 4." >&2
+if [ "$nrej" -ne 299 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 299 / 65 / 0 / 4." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

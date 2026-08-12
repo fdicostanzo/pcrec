@@ -63,6 +63,7 @@
 /* FIRST: pcre2_abi.h defines _GNU_SOURCE, needed before any libc header. */
 #include "../fuzz/pcre2_abi.h"
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -114,6 +115,22 @@ static int pcrec_try(const char *pat, char *msg, size_t msgsz)
     rc = pcrec_compile(pat, &opt, &out, &err);
     if (rc == 0) { pcrec_output_free(&out); return 0; }
     snprintf(msg, msgsz, "%s", err.msg);
+    return -1;
+}
+
+/* Same as pcrec_try, plus the blame OFFSET (pcrec_error.pos) — needed by the
+ * uprops differential below, which pins offset as well as message text
+ * (the S27 lesson: an offset is as load-bearing as the words around it). */
+static int pcrec_try_pos(const char *pat, char *msg, size_t msgsz, size_t *pos)
+{
+    pcrec_options opt; pcrec_output out; pcrec_error err; int rc;
+    pcrec_default_options(&opt);
+    memset(&out, 0, sizeof out);
+    memset(&err, 0, sizeof err);
+    rc = pcrec_compile(pat, &opt, &out, &err);
+    if (rc == 0) { pcrec_output_free(&out); return 0; }
+    snprintf(msg, msgsz, "%s", err.msg);
+    if (pos) *pos = err.pos;
     return -1;
 }
 
@@ -1979,6 +1996,342 @@ static void check_group_tails(void)
     expect_set("tail sweeps", seth, 0x1884f2f7916a9955ULL);
 }
 
+/* ---- MOD-0.6 phase 2 / slice 4: the \p and \P shape space --------------
+ *
+ * docs/design_notes_mod06.md §5's "PC-3 differential additions", plus the
+ * manager's phase-2 ruling 2 amendment (§8): the name axis must ALSO sweep
+ * all 52 single letters, not just the 14 mod_uprops.c's hand-written table
+ * claims — because a table GENERATED from libpcre2 and then CHECKED by a
+ * differential against the SAME libpcre2 is one source wearing two hats
+ * (the memory `pcrec-check-design-lessons` finding, cited by
+ * mod_uprops.c's own header as the reason the table stays hand-written).
+ * The 52-letter sweep is what keeps that hand-written table honest: it asks
+ * libpcre2, independently of anything pcrec claims, whether each of the 52
+ * possible bare `\pX` letters compiles, and requires pcrec's message to
+ * agree — so an eighth PCRE2 short-category letter, or a typo in the
+ * fourteen, surfaces as a differential failure rather than a stale table.
+ *
+ * WHAT IS AND ISN'T ORACLE-DERIVED, stated because it is easy to blur.
+ * pcrec's own message-SHAPE rule — a single significant character with no
+ * `=` is the axis pcrec's table claims to be EXHAUSTIVE for, and every other
+ * well-formed body (empty, or two-or-more significant characters) gets the
+ * GENERIC "requires module" text unconditionally — is pcrec's OWN taxonomy
+ * decision (manager ruling 3, §8), not something libpcre2 can arbitrate: no
+ * oracle query can say whether pcrec OUGHT to claim exhaustiveness over a
+ * wider axis, the same way no oracle query can say a construct belongs to
+ * module 'unicode-props' rather than 'walruses'. What IS oracle-derived, on
+ * every single generated cell, is the one claim libpcre2 CAN adjudicate:
+ * for the single-significant-character axis, is this exact letter one
+ * libpcre2 accepts? That answer comes from a live `pcre2_try` on each
+ * cell's own escape text (never from mod_uprops.c's table, and never from a
+ * hardcoded pass/fail list here) and is what decides, per cell, whether
+ * pcrec owes the GENERIC message or the "not... recognises" one.
+ *
+ * THE OFFSET OBLIGATION is computed, not measured against libpcre2 (D26:
+ * offsets are pcrec's own convention). mod_uprops.c's scan blames the
+ * absolute pattern position one past the last byte it consumed
+ * (docs/design_notes_mod06.md §3), so for a well-formed body reaching the
+ * lookup step the expected offset is exactly
+ * `escape_start + 2 (the backslash and selector) + strlen(body)`, where
+ * `body` is everything after the selector exactly as generated (braces,
+ * caret, noise and all) and `escape_start` is how many bytes of the
+ * doorway's own embedding (a class bracket, a range side, negation)
+ * precede the backslash. This is the same arithmetic
+ * tests/reject/run_reject_tests.sh's hand-written uprops pins already
+ * confirm at the atom position; this check re-derives it at every
+ * generated position instead of pinning eight lines by hand.
+ *
+ * THE GENERATED SPACE, crossing (both selectors `p`/`P` throughout):
+ *   - BARE shape: the 14 known short names (both cases), at all 5
+ *     positions, no noise (a bare `\pX` has no room for any) and no
+ *     prefix (the negation caret is a `{...}`-only shape).
+ *   - BRACE shape, single-letter names: the same 14, crossed with the
+ *     {none, leading space, trailing space} noise variants (the only ones
+ *     that fit in a one-character name), the {"", "^"} prefix, and all 5
+ *     positions.
+ *   - BRACE shape, multi-letter names: Alpha/Alphabetic/Any (all measured
+ *     COMPILING, docs/design_notes_mod06.md §5) and Foo (unknown), crossed
+ *     with the FULL noise set (adding internal hyphen/underscore/space and
+ *     mixed-case, all of which need >= 2 characters), the prefix axis and
+ *     all 5 positions.
+ *   - BRACE shape, the empty name (`\p{}`, `\p{^}`): both prefixes, all 5
+ *     positions — the sig_count==0 cell the "not... recognises" text also
+ *     owns (§3: an empty name is a KNOWN-bad name, not a shape error).
+ *   - The 52-letter drift guard: every A-Z/a-z, both shapes (bare and
+ *     `{X}`), both selectors, at the atom and class positions — the
+ *     independent check on the hand-written 14-of-52 table itself.
+ *
+ * Every cell is WELL-FORMED by construction (a real name run, a real
+ * closing brace) — the malformed-shape space (truncated, unterminated, a
+ * non-letter/non-brace tail byte, the 48/49-character cap boundary, the
+ * caret-counts-or-not question) is already pinned by hand in
+ * tests/reject/, offset by offset, and is not regenerated here. */
+
+typedef enum { UP_ATOM, UP_CLASS, UP_CLASS_LOW, UP_CLASS_HIGH, UP_CLASS_NEG, UP_N_POS } UpropsPos;
+
+/* Embed `escape` (the full `\p...` or `\P...` text) at the given position.
+ * `*escape_start` is how many bytes precede the backslash — the doorway's
+ * own contribution to the blame offset. */
+static void uprops_embed(char *out, size_t outsz, const char *escape,
+                         UpropsPos pos, size_t *escape_start)
+{
+    switch (pos) {
+    case UP_ATOM:      snprintf(out, outsz, "%s", escape);        *escape_start = 0; break;
+    case UP_CLASS:     snprintf(out, outsz, "[%s]", escape);      *escape_start = 1; break;
+    case UP_CLASS_LOW: snprintf(out, outsz, "[%s-z]", escape);    *escape_start = 1; break;
+    case UP_CLASS_HIGH:snprintf(out, outsz, "[0-%s]", escape);    *escape_start = 3; break;
+    case UP_CLASS_NEG: snprintf(out, outsz, "[^%s]", escape);     *escape_start = 2; break;
+    default:           snprintf(out, outsz, "%s", escape);        *escape_start = 0; break;
+    }
+}
+
+enum { UP_NOISE_NONE, UP_NOISE_LEAD, UP_NOISE_TRAIL,
+       UP_NOISE_HYPHEN, UP_NOISE_UNDERSCORE, UP_NOISE_SPACE, UP_NOISE_MIXED,
+       UP_N_NOISE };
+
+/* Every noise variant is measured insignificant (docs/design_notes_mod06.md
+ * §3): none of them may change sig_count, the accumulated name, or which
+ * bucket a cell falls in — only the BYTE LENGTH of the body, which is why
+ * the offset formula above reads `strlen(body)` off whatever this produces
+ * rather than off the bare name. HYPHEN/UNDERSCORE/SPACE/MIXED need a
+ * midpoint to insert at or a second character to flip, so callers only
+ * request them for names of length >= 2. */
+static void uprops_noise_apply(char *out, size_t outsz, const char *name, int noise)
+{
+    size_t len = strlen(name);
+    size_t mid = len / 2;
+    if (mid == 0) mid = 1;
+    switch (noise) {
+    case UP_NOISE_NONE:       snprintf(out, outsz, "%s", name); break;
+    case UP_NOISE_LEAD:       snprintf(out, outsz, " %s", name); break;
+    case UP_NOISE_TRAIL:      snprintf(out, outsz, "%s ", name); break;
+    case UP_NOISE_HYPHEN:     snprintf(out, outsz, "%.*s-%s", (int)mid, name, name + mid); break;
+    case UP_NOISE_UNDERSCORE: snprintf(out, outsz, "%.*s_%s", (int)mid, name, name + mid); break;
+    case UP_NOISE_SPACE:      snprintf(out, outsz, "%.*s %s", (int)mid, name, name + mid); break;
+    case UP_NOISE_MIXED: {
+        size_t i;
+        for (i = 0; i < len && i + 1 < outsz; i++)
+            out[i] = (i % 2 == 0) ? (char)toupper((unsigned char)name[i])
+                                   : (char)tolower((unsigned char)name[i]);
+        out[i] = 0;
+        break;
+    }
+    default: snprintf(out, outsz, "%s", name); break;
+    }
+}
+
+/* Running counters for the whole sweep, grouped so the per-cell function
+ * below does not need fifteen parameters. */
+typedef struct {
+    unsigned long probed, mismatches;
+    int reported;
+    /* liveness buckets, keyed by (sig_count class) x (libpcre2's own
+     * verdict on the cell's exact escape text, taken alone) */
+    unsigned long b_single_compile, b_single_unknown;
+    unsigned long b_multi_compile, b_multi_unknown;
+    unsigned long b_empty;
+    unsigned long pos_seen[UP_N_POS];
+    unsigned long sel_seen[2];   /* 'p', 'P' */
+    unsigned long long seth;
+} UpropsSweep;
+
+/* One generated cell. `body` is everything after the selector, exactly as
+ * it will appear in the pattern (a bare letter, or a full `{...}` run
+ * including braces/caret/noise). `sig_count` is the number of SIGNIFICANT
+ * characters in the name BEFORE noise was applied — 0 for the empty name,
+ * 1 for a single letter, >=2 for a multi-letter name — which is pcrec's own
+ * axis boundary (docs/design_notes_mod06.md §8 ruling 3), not something an
+ * oracle query can supply. */
+static void uprops_check_cell(UpropsSweep *sw, int sel, int sel_idx,
+                              const char *body, int sig_count, bool is_brace,
+                              UpropsPos pos)
+{
+    char escape[96];
+    snprintf(escape, sizeof escape, "\\%c%s", sel, body);
+
+    char full_pat[160];
+    size_t escape_start;
+    uprops_embed(full_pat, sizeof full_pat, escape, pos, &escape_start);
+    sw->seth = set_hash(sw->seth, full_pat);
+
+    /* THE LIVE ORACLE QUERY, once per cell, on the escape ALONE (never
+     * embedded — the position doorways are pcrec's own arithmetic, not a
+     * question for libpcre2, and docs/design_notes_mod06.md §8 records that
+     * pcrec's uprops promise stays position-invariant even where the
+     * embedding pattern would fail for an unrelated reason, e.g. a range
+     * endpoint). Every cell here is well-formed by construction, so the
+     * only two verdicts the headline finding (§0) allows are COMPILES and
+     * ERR 147 (unknown property) — never ERR 146, which is the malformed
+     * space this sweep does not generate. */
+    int identity_rc = pcre2_try(escape, strlen(escape), NULL, 0);
+    bool oracle_known = (identity_rc == 0);
+    if (identity_rc != 0 && identity_rc != 147)
+        bad("uprops differential: '%s' (identity form) — libpcre2 gave error %d, "
+            "expected 0 (compiles) or 147 (unknown property) for a well-formed "
+            "\\p/\\P body; the headline finding (design_notes_mod06.md §0) says "
+            "nothing else is reachable here", escape, identity_rc);
+
+    if (sig_count == 0)      sw->b_empty++;
+    else if (sig_count == 1) { if (oracle_known) sw->b_single_compile++; else sw->b_single_unknown++; }
+    else                     { if (oracle_known) sw->b_multi_compile++;  else sw->b_multi_unknown++;  }
+    sw->pos_seen[pos]++;
+    sw->sel_seen[sel_idx]++;
+    sw->probed++;
+
+    /* THE OBLIGATION MAP. sig_count <= 1 (no '=' — none generated here) is
+     * pcrec's own claimed-exhaustive axis (mod_uprops.c's `verifiable_axis`,
+     * restated from the design note rather than re-read from the source, so
+     * this is the axis BOUNDARY as a design fact, not a copy of the table
+     * the oracle query above exists to check independently). Within that
+     * axis the oracle decides known-vs-not; outside it (multi-letter, or
+     * the manager's ruling-3 "no lookup" cases) pcrec's own promise is
+     * unconditional regardless of what libpcre2 says about the name. */
+    bool verifiable_axis = sig_count <= 1;
+    bool want_not_recognised = verifiable_axis && !(sig_count == 1 && oracle_known);
+
+    char want_msg[300];
+    if (want_not_recognised)
+        snprintf(want_msg, sizeof want_msg,
+                 "\\%c%s: not a one-letter Unicode property code pcrec "
+                 "recognises \xe2\x80\x94 requires module 'unicode-props'",
+                 sel, is_brace ? "{...}" : "");
+    else
+        snprintf(want_msg, sizeof want_msg, "\\%c requires module 'unicode-props'", sel);
+
+    size_t want_off = escape_start + 2 + strlen(body);
+
+    char got_msg[256]; size_t got_off = 0;
+    int rc = pcrec_try_pos(full_pat, got_msg, sizeof got_msg, &got_off);
+    if (rc == 0) {
+        sw->mismatches++;
+        if (sw->reported++ < 20)
+            bad("uprops differential: pcrec COMPILED '%s' — \\p/\\P has no "
+                "producer this phase (docs/design_notes_mod06.md §6), so a "
+                "compile here can only mean the doorway was never reached",
+                full_pat);
+        return;
+    }
+    if (strcmp(got_msg, want_msg) != 0 || got_off != want_off) {
+        sw->mismatches++;
+        if (sw->reported++ < 20)
+            bad("uprops differential: '%s'\n"
+                "        libpcre2 identity verdict: %d (%s)\n"
+                "        pcrec owed:  \"%s\" at offset %zu\n"
+                "        pcrec said:  \"%s\" at offset %zu",
+                full_pat, identity_rc, oracle_known ? "known" : "unknown",
+                want_msg, want_off, got_msg, got_off);
+    }
+}
+
+static void check_uprops_differential(void)
+{
+    static const char *SINGLE_NAMES[] = {"C","c","L","l","M","m","N","n","P","p","S","s","Z","z"};
+    static const char *MULTI_NAMES[]  = {"Alpha","Alphabetic","Any","Foo"};
+    static const char *PREFIXES[] = {"", "^"};
+    static const int   SELS[] = {'p', 'P'};
+
+    UpropsSweep sw; memset(&sw, 0, sizeof sw);
+
+    for (int si = 0; si < 2; si++) {
+        int sel = SELS[si];
+
+        /* BARE shape: the 14 single-letter names, no noise (none fits),
+         * no prefix (the caret is a brace-only shape), all 5 positions. */
+        for (size_t ni = 0; ni < sizeof SINGLE_NAMES / sizeof SINGLE_NAMES[0]; ni++)
+            for (int pos = 0; pos < UP_N_POS; pos++)
+                uprops_check_cell(&sw, sel, si, SINGLE_NAMES[ni], 1, false, (UpropsPos)pos);
+
+        /* BRACE shape, single-letter names: only the noise variants that
+         * fit in one character (none/leading/trailing space). */
+        for (size_t ni = 0; ni < sizeof SINGLE_NAMES / sizeof SINGLE_NAMES[0]; ni++)
+            for (int noise = UP_NOISE_NONE; noise <= UP_NOISE_TRAIL; noise++)
+                for (int pi = 0; pi < 2; pi++)
+                    for (int pos = 0; pos < UP_N_POS; pos++) {
+                        char noised[32], body[64];
+                        uprops_noise_apply(noised, sizeof noised, SINGLE_NAMES[ni], noise);
+                        snprintf(body, sizeof body, "{%s%s}", PREFIXES[pi], noised);
+                        uprops_check_cell(&sw, sel, si, body, 1, true, (UpropsPos)pos);
+                    }
+
+        /* BRACE shape, multi-letter names: the full noise set. */
+        for (size_t ni = 0; ni < sizeof MULTI_NAMES / sizeof MULTI_NAMES[0]; ni++)
+            for (int noise = 0; noise < UP_N_NOISE; noise++)
+                for (int pi = 0; pi < 2; pi++)
+                    for (int pos = 0; pos < UP_N_POS; pos++) {
+                        char noised[32], body[64];
+                        uprops_noise_apply(noised, sizeof noised, MULTI_NAMES[ni], noise);
+                        snprintf(body, sizeof body, "{%s%s}", PREFIXES[pi], noised);
+                        uprops_check_cell(&sw, sel, si, body,
+                                          (int)strlen(MULTI_NAMES[ni]), true, (UpropsPos)pos);
+                    }
+
+        /* BRACE shape, the empty name: \p{} and \p{^}. */
+        for (int pi = 0; pi < 2; pi++)
+            for (int pos = 0; pos < UP_N_POS; pos++) {
+                char body[8];
+                snprintf(body, sizeof body, "{%s}", PREFIXES[pi]);
+                uprops_check_cell(&sw, sel, si, body, 0, true, (UpropsPos)pos);
+            }
+    }
+
+    /* The 52-letter drift guard (manager ruling 2, §8): every A-Z/a-z,
+     * both shapes, both selectors, at the atom and class positions —
+     * deliberately smaller on the position/noise axes than the sweep
+     * above, because its whole job is the NAME axis independence, not
+     * more position coverage (the sweep above already proves the offset
+     * arithmetic at all 5 positions for the 14-letter subset). */
+    for (int si = 0; si < 2; si++) {
+        int sel = SELS[si];
+        for (int c = 'A'; c <= 'Z'; c++) {
+            char upper[2] = {(char)c, 0};
+            char lower[2] = {(char)(c + 32), 0};
+            const char *letters[2] = {upper, lower};
+            for (int cs = 0; cs < 2; cs++)
+                for (int pos = 0; pos < 2; pos++) {   /* UP_ATOM, UP_CLASS */
+                    uprops_check_cell(&sw, sel, si, letters[cs], 1, false, (UpropsPos)pos);
+                    char body[8];
+                    snprintf(body, sizeof body, "{%s}", letters[cs]);
+                    uprops_check_cell(&sw, sel, si, body, 1, true, (UpropsPos)pos);
+                }
+        }
+    }
+
+    printf("  uprops shape differential: %lu probes over \\p/\\P x prefix x name x "
+           "noise x shape x position, plus the 52-letter drift guard\n", sw.probed);
+    expect_probes("uprops differential", sw.probed, 1976);
+    expect_set("uprops differential", sw.seth, 0x89762073cd5e48acULL);
+    if (sw.mismatches == 0)
+        ok("uprops differential: pcrec matched libpcre2's live verdict (or its own "
+           "no-lookup promise) on every generated cell");
+
+    /* LIVENESS, both directions per bucket (the K15 lesson: a bucket with
+     * zero cells is a dead branch reading as coverage). */
+    if (!sw.b_single_compile) bad("uprops differential is not live: no single-letter name compiled under libpcre2");
+    else ok("uprops differential liveness: some single-letter name is a known short code");
+    if (!sw.b_single_unknown) bad("uprops differential is not live: no single-letter name was unknown to libpcre2");
+    else ok("uprops differential liveness: some single-letter name is NOT a known short code");
+    if (!sw.b_multi_compile) bad("uprops differential is not live: no multi-letter name compiled under libpcre2");
+    else ok("uprops differential liveness: some multi-letter name compiles under libpcre2 (Alpha/Alphabetic/Any)");
+    if (!sw.b_multi_unknown) bad("uprops differential is not live: no multi-letter name was unknown to libpcre2");
+    else ok("uprops differential liveness: some multi-letter name is unknown to libpcre2 (Foo)");
+    if (!sw.b_empty) bad("uprops differential is not live: the empty-name cell never ran");
+    else ok("uprops differential liveness: the empty-name cell ran");
+
+    int pos_live = 0;
+    for (int p = 0; p < UP_N_POS; p++) if (sw.pos_seen[p]) pos_live++;
+    if (pos_live != UP_N_POS)
+        bad("uprops differential: only %d of %d positions were generated — the "
+            "position axis narrowed", pos_live, UP_N_POS);
+    else
+        ok("uprops differential liveness: all 5 positions (atom, class, class low/high "
+           "endpoint, negated class) were generated");
+
+    if (!sw.sel_seen[0] || !sw.sel_seen[1])
+        bad("uprops differential: one of \\p / \\P never ran — the selector axis narrowed");
+    else
+        ok("uprops differential liveness: both \\p and \\P ran");
+}
+
 int main(void)
 {
     char why[512], ver[64];
@@ -2022,6 +2375,7 @@ int main(void)
     check_group_bytes();
     check_option_runs();
     check_group_tails();
+    check_uprops_differential();
 
     printf("\n== Summary (PC-3) ==\nchecks passed: %d\nchecks failed: %d\n", pass, fail);
     return fail ? 1 : 0;

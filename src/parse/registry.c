@@ -325,8 +325,20 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  "PCRE2 does not support \\F, \\L, \\l, \\N{name}, \\U, or \\u", NULL, 0,
  "\\N{name} — PCRE2 states it does not support this Perl construct",
  ROADMAP_NEVER, QF_NO, "err 137", 25, recognise_N_name_brace, NO_PORT, NO_PORT},
+/* K10 FIX (MOD-0.6 phase 2, 2026-08-12): RF_CLASS_INVALID removed. That flag
+ * means "PCRE2 forbids this permanently in a class" (R9/SPEC-classes-F1), and
+ * it was WRONG on this row — measured against libpcre2 10.46, [\N{U+41}] is
+ * error 193 in EVERY class position (bare, leading, trailing, low endpoint,
+ * negated: tests/probes/probe_uprops.c), which is recognition-then-mode-
+ * refusal, not permanent rejection, exactly as this row's own `note` field
+ * already said (R10/C1-7 — the row contradicted itself). Without the flag
+ * this row falls through to the ordinary RS_MODULE in-class branch in ext.c,
+ * so [\N{U+41}] now reads "\N in a class requires module 'unicode-props'"
+ * instead of "\N is not valid inside a character class" — see
+ * docs/known_issues.md K10 and docs/design_notes_mod06.md §2 for the full
+ * field-by-field account of what did and did not change on this row. */
 {RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
- RS_MODULE, RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
  "a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection",
  ROADMAP_PLANNED, QF_NO, "err 193",
  /* rank 70: the LONGER half of the table's one prefix-related tail pair —
@@ -351,8 +363,23 @@ ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start 
 ESC_CLASS_SCALAR('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k'),
 ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g'),
 
-ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property", QF_YES, "set 117"),
-ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property", QF_YES, "set 139"),
+/* MOD-0.6 phase 2: longhand rather than the ESC macro, for exactly one
+ * reason — `recognise` carries `pcrec_registry_uprops_recognise`, a MARKER
+ * (mod_uprops.c) ext.c keys off by pointer identity to hand off to the
+ * body scanner instead of the generic RD_MODULE fallback text. Every other
+ * field is unchanged from what ESC(...) would have built: both rows are
+ * alone in their (RK_ESC, sel) bucket (no arbitration to affect), `flags`
+ * stays 0 (neither is RF_CLASS_INVALID — [\p{L}]/[\P{L}] compile as sets,
+ * measured, tests/probes/probe_uprops.c), and `aport`/`cport` stay NO_PORT
+ * (no producer this phase — docs/design_notes_mod06.md §6). */
+{RK_ESC, 'p', NULL, "\\p{L}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "a character with the given Unicode property", ROADMAP_PLANNED, QF_YES, "set 117",
+ 0, pcrec_registry_uprops_recognise, NO_PORT, NO_PORT},
+{RK_ESC, 'P', NULL, "\\P{L}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "a character without the given Unicode property", ROADMAP_PLANNED, QF_YES, "set 139",
+ 0, pcrec_registry_uprops_recognise, NO_PORT, NO_PORT},
 
 ESC_LEXICAL('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E", "err 106"),
 ESC_LEXICAL('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q", "err 106"),

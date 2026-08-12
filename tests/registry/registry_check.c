@@ -810,6 +810,18 @@ static void check_table_to_parser(void)
              * PCRE2's own refusal, and PCRE2 does not vary it by position. */
             snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);
             expect_msg(label, pat, r->msg);
+        } else if (r->recognise == pcrec_registry_uprops_recognise) {
+            /* MOD-0.6: mod_uprops.c's refusal is POSITION-INVARIANT by
+             * design (D26 tier 3 is free wording; same shape as an
+             * RD_FIXED row's "PCRE2 does not vary it by position" above,
+             * chosen deliberately rather than carrying the generic
+             * "in a class requires module" phrasing). `want` still holds
+             * esc_atom_msg's result from the top of this loop iteration —
+             * the atom and class messages are the SAME text by
+             * construction, so reusing it here is the assertion, not a
+             * convenience. */
+            snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row (position-invariant)", r->syntax);
+            expect_msg(label, pat, want);
         } else {
             snprintf(want, sizeof want, "\\%c in a class requires module '%s'", r->sel, r->module);
             snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);
@@ -1272,6 +1284,108 @@ static void check_class_ports(void)
            "popcounts), as predicted for slice 3");
 }
 
+/* ---- MOD-0.6/D33 §9.2: the in-class sweep gains tail context -----------
+ *
+ * `check_table_to_parser` above already probes every ESC row's own
+ * `syntax` wrapped in `[...]` and asserts the message it predicts FROM THE
+ * ROW'S OWN CURRENT FIELDS — which means it can never independently catch
+ * a WRONG flag (K10: RF_CLASS_INVALID set on a row whose own `note` said
+ * the opposite), only a table/parser disagreement given whatever the
+ * table currently says. That is not this check's job either — no
+ * check in this file reads an external oracle; tests/reject/'s
+ * hand-written pins and PC-3's libpcre2 differential are what independently
+ * catch a wrong flag, and always were (see docs/known_issues.md's K10
+ * entry).
+ *
+ * What WAS structurally impossible before this check: `sweep(RK_ESC,
+ * "[\\%c]", ...)` above supplies exactly one byte of tail, so it can probe
+ * `[\N]` and never `[\N{U+41}]` — the fourth of K10's four blind nets.
+ * This closes THAT gap specifically: for every row whose `syntax` carries
+ * more than the one-byte generic sweep can express (a `tail`, or body
+ * text past the bare `\X` two-byte form), arbitrate on the REAL tail text
+ * a class doorway would see and confirm it resolves to THIS row — not a
+ * sibling in the same bucket — and that the compiled diagnostic actually
+ * promises this row's module. A row that is unreachable at class position,
+ * or reachable but misattributed, now fails here; a row whose FLAG is
+ * simply wrong (given a correct table/parser agreement) still does not —
+ * that is what tests/reject/'s independent pins are for.
+ *
+ * SKIPS rows whose class port is BASE (`\b \g \k \8 \9`): their in-class
+ * meaning is a fixed literal fallback unrelated to the body form —
+ * `[\g{-1}]` is not the \g construct at all, it is an ordinary class of
+ * literal members `g { - 1` (see the `cport.base` branch's own comment
+ * above), so wrapping their full syntax in `[...]` would assert something
+ * FALSE, not something instructive. Those rows are already positively
+ * tested via the one-byte `[\%c]` form both here and in
+ * check_table_to_parser. Also skips non-RS_MODULE rows (RD_FIXED text is
+ * already asserted positively, in both positions, by
+ * check_table_to_parser). */
+static void check_class_syntax_reach(void)
+{
+    size_t n;
+    const RegRow *rows = pcrec_registry(RK_ESC, &n);
+    int probed = 0, bads = 0;
+
+    for (size_t i = 0; i < n; i++) {
+        const RegRow *r = &rows[i];
+        if (r->cport.base) continue;
+        if (r->status != RS_MODULE) continue;
+        bool has_tail = r->tail != NULL;
+        bool body_carrying = strlen(r->syntax) > 2;   /* not a bare "\X" */
+        if (!has_tail && !body_carrying) continue;
+
+        const char *body = r->syntax + 2;   /* skip "\<sel>" */
+        size_t bodylen = strlen(body);
+
+        bool amb = false;
+        const RegRow *got = pcrec_registry_arbitrate(RK_ESC, r->sel, body,
+                                                      bodylen, &amb);
+        probed++;
+        if (amb) {
+            bad("class-position reach: '%s' arbitrates AMBIGUOUS at class "
+                "position (two rows answer at the winning rank)", r->syntax);
+            bads++;
+            continue;
+        }
+        if (got != r) {
+            bad("class-position reach: '%s' arbitrates to a DIFFERENT row "
+                "(sel '%c') than the one whose syntax this is — a class "
+                "probe using this text would be attributed to the wrong "
+                "construct", r->syntax, r->sel);
+            bads++;
+            continue;
+        }
+        char pat[64], got_msg[256];
+        snprintf(pat, sizeof pat, "[%s]", r->syntax);
+        int rejected = try_compile(pat, got_msg, sizeof got_msg) != 0;
+        if (!rejected || !strstr(got_msg, "requires module") ||
+            !strstr(got_msg, r->module)) {
+            bad("class-position reach: '%s' arbitrates to the right row but "
+                "the compiled diagnostic (\"%s\") does not promise module "
+                "'%s'", r->syntax, rejected ? got_msg : "(compiled)", r->module);
+            bads++;
+        }
+    }
+
+    /* EXACT, not a floor (matching check_class_ports' own convention just
+     * above): the population is small and every member is named here
+     * rather than merely counted, so a silent add/remove is visible in a
+     * diff of THIS number. Measured today (RK_ESC, RS_MODULE, non-base
+     * cport, tail or body-carrying syntax): the `{U+` row, `\p`, `\P`,
+     * `\c`, `\o`. `\g`/`\k` are correctly excluded — base class ports,
+     * excused above with the reason. A deliberate table change edits this
+     * count in the same commit; a silent one is the defect. */
+    if (probed != 5)
+        bad("class-position reach: %d rows probed, expected 5 (the `{U+` "
+            "row, \\p, \\P, \\c, \\o) — the tailed/body-carrying population "
+            "moved. If deliberate, update this number in the same change",
+            probed);
+    else if (bads == 0)
+        ok("class-position reach: 5 tailed/body-carrying rows ({U+, \\p, "
+           "\\P, \\c, \\o) all reach themselves and promise their own "
+           "module in a class");
+}
+
 int main(void)
 {
     printf("== registry well-formedness ==\n");
@@ -1308,6 +1422,7 @@ int main(void)
      * invalid; recorded in the 2026-08-12 journal). */
     sweep(RK_ESC,          "[\\%c]",    2, "after a backslash inside a class",
           RF_CLASS_INVALID, false, true);
+    check_class_syntax_reach();
     sweep(RK_GROUP,        "(?%c",      2, "after (?", 0, false, false);
     /* LIMITATION, STATED BECAUSE IT IS EASY TO MISREAD AS COVERAGE: this
      * doorway is decided by a NAME and a byte sweep varies one byte. It proves

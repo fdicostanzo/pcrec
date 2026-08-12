@@ -473,11 +473,29 @@ in the library's front door.
 **Scheduled:** with DD-3 (generated-API versioning/compat policy), because both
 are changes to the public contract and should be decided together.
 
-## K10 — OPEN, found 2026-08-11 (R10 panel, C1 — while probing the ambiguity guard)
+## K10 — FIXED 2026-08-12 (MOD-0.6 phase 2, the K10 slice)
 
-**`\N{U+hhhh}` inside a character class is refused as permanently-invalid, when
-PCRE2 recognises it.** A tier-2 error, EXACT under D26: pcrec answers REFUSE
-where the correct answer is "requires module 'unicode-props'".
+**Resolution.** `RF_CLASS_INVALID` removed from the `{U+` row
+(`src/parse/registry.c`, the `\N{U+0041}` row) — the one-flag fix this entry
+always said it was. `[\N{U+41}]` now falls through to the ordinary `RS_MODULE`
+in-class branch in `ext.c` and reads `\N in a class requires module
+'unicode-props'` at the same offset as before (measured: offset unchanged,
+1/2/3 for the three repro cells below — `ext.c`'s in-class branches share one
+`at`). Bare `\N` in a class is UNCHANGED (`registry.c:310`'s row correctly
+keeps the flag; err 171 stays permanent). **The TEST is what this entry always
+said was the real work**: the in-class sweep's one-byte-of-tail blindness
+(the fourth net below) is closed in the SAME commit by extending
+`registry_check.c`'s sweep to probe every tailed/body-carrying row through its
+own `syntax` field wrapped in `[...]` — see `docs/design_notes_mod06.md` §4
+for the design and `tests/registry/CLAUDE.md` for what landed. Reject-pins for
+the new message + offset are in `tests/reject/run_reject_tests.sh`; mech
+sabotage `S31` re-flags the row and is caught by the extended sweep.
+
+**Original finding, kept for the history** (R10 panel, C1, found 2026-08-11 —
+while probing the ambiguity guard). `\N{U+hhhh}` inside a character class was
+refused as permanently-invalid, when PCRE2 recognises it. A tier-2 error,
+EXACT under D26: pcrec answered REFUSE where the correct answer is "requires
+module 'unicode-props'".
 
 **Repro** (measured 2026-08-11, `build/pcrec` at 2aca7dd):
 
@@ -539,15 +557,9 @@ RF_CLASS_BASE half became the separate `excuse_base_cport` boolean) — so the
   can only ever probe `[\N]` and never `[\N{U+41}]`.
 - PC-3 probes this row once, in the ATOM position only.
 
-`tests/registry/CLAUDE.md` claims "`\N{U+hhhh}` versus `\N` are no longer
-unswept". True in the atom position; false in the class position — which is the
-only position where the two rows disagree about a flag.
-
-**Scheduled:** with MOD-0.6 (module `unicode-props`), which owns this row and
-must close the in-class tail-sweep gap to have a test that can see it. Do not
-fix the flag without the sweep, or the next reader has the same blind nets
-(four at R10 when this was written; still four after MOD-0.2 swapped the
-first for its successors — see the updated list above).
+`tests/registry/CLAUDE.md`'s claim "`\N{U+hhhh}` versus `\N` are no longer
+unswept" was true only in the atom position until this fix; the class-position
+half is what MOD-0.6's tail-sweep extension (§4 of the design note) closes.
 
 ## K11 — FIXED 2026-08-11 (MOD-0.1's returned-claims epilogue, D33 §5)
 
