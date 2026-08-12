@@ -1111,7 +1111,10 @@ Then DOC-1, then PC-4 when module `classes` lands.
   method, rebuilt from the journal — scratchpad is ephemeral); (b) under
   `--features classes`: PC-4 zero divergences + corpus green; (c) full
   battery + strict; (d) journal, wake brief, per-dir CLAUDE.mds
-- [MOD-0.4] STATE:started 2026-08-12 (twelfth session) — module `verbs`, the MIGRATION TEST: existing,
+- [MOD-0.4] STATE:completed 2026-08-12 (twelfth session, opened and closed in
+  one session: gate 9aa720a -> close after R18; one impl worktree lane
+  through four slices + a three-critic close panel; every merge
+  battery-green) — module `verbs`, the MIGRATION TEST: existing,
   measured code rather than greenfield. Four answers drawn from its own tables,
   the VF_* form bits, the at-start position rule, and a blame offset that is not
   the doorway's default (`(*)` blames the `*`). If the signature survives this
@@ -1164,8 +1167,25 @@ Then DOC-1, then PC-4 when module `classes` lands.
   limit: mech's SAB_SUITES has no `registry` suite, so PC-3/sweep_verb
   coverage cannot be mech-claimed; wiring one is a framework change for a
   future owner, recorded here rather than forced
-- [MOD-0.4d] STATE:not-started — close: D6 panel (checks + engine + docs
-  lenses) on the migration, journal, wake
+- [MOD-0.4d] STATE:completed 2026-08-12 — close. R18 panel
+  (docs/reviews/2026-08-12-r18-mod04.md): three critics, second consecutive
+  clean panel, ZERO tier-1 divergences (the engine critic independently
+  re-verified the move's byte-identity, so all behavioural findings are
+  pre-existing). Checks -> the S27 finding GENERALIZED: six REFUSE families
+  were message-only-pinned; closed on the mod04d-offsets lane (bd9b6a1,
+  merged 19020ee) with ten measured offset pins + S30
+  (failing-direction: 0/437 pre-pin — S27's exact baseline — then 2/435).
+  Engine -> the offset-divergence inventory recorded tier-2 no-action
+  (~35 cells; the star=at+1 and (*:) cells MATCH the oracle, now measured
+  claims); K15 opened (too-long category divergence on >128-byte
+  non-identifier runs, a LINKED PAIR with PC-3's identifier-only length
+  generator — docs/known_issues.md). Docs -> three live-doc staleness
+  fixes incl. extension_design §5.3's location claim that had aged through
+  TWO moves. NOTED inventory in the review file: check07 gate coverage at
+  doorway 3 waits for the first producer; check01's aperture excludes
+  mod_verbs.o both directions, no isolation floors (MOD-0.8 candidates);
+  mech has no registry suite. Close battery green: mech 30/30, reject
+  268/99/65/437-checks, registry_check 167, PC-3 143
 - [MOD-0.5] STATE:completed 2026-08-12 (eleventh session, opened and closed
   in one session: gate a7b835c -> close after R17; three parallel subagent
   lanes + the main session; every slice battery-green at its landing) —

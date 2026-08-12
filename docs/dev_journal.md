@@ -6623,3 +6623,88 @@ Lessons, this session's additions to the catalogue:
   the battery between — and a worker going idle without committing is a
   recoverable state, not a failure: the landing bar travels with the
   brief, so anyone can finish it.
+
+## 2026-08-12 — twelfth session: MOD-0.4 opened and closed (module `verbs`, the migration test)
+
+Frank: commit the new pcrec-manager skill, then begin MOD-0.4; AFK, defer
+questions or stop if blocked. Nothing needed a stop.
+
+**The milestone in one line: the doorway signature survived the hardest
+case, and the milestone's own marquee hazard — the star=at+1 blame offset —
+turned out to be the ONE thing no check guarded.**
+
+- **Session-shape change:** the session ran under the new
+  .claude/skills/pcrec-manager skill (committed f88ff2e) — the manager
+  workflow (wake -> plan -> brief -> review -> merge -> close) written down
+  and followed as written. One read-only scout mapped the verbs surface
+  before any design; one impl worktree lane (sonnet) carried all four
+  slices through two-phase briefs (design note reviewed BEFORE code);
+  three read-only critics closed. Baseline battery green at f88ff2e before
+  any milestone work.
+- **MOD-0.4a gate** (9aa720a): scope rulings recorded in plan rather than
+  probed — PURE migration (no verb produces, the parse.c wall stays), no
+  new probe harness (PC-3 IS the live measurement record), RK_VERB stays
+  one row (K14's per-name machinery already lives on VerbName). The lane's
+  design note raised one real question the brief missed: REFUSE/ext_gate
+  would need a second home in mod_verbs.c — ruled option (b), promote to
+  internal.h with ONE definition each (the two-homes-drift shape refused).
+- **MOD-0.4b, the move** (043d78a, merged 72f4fcf): pcrec_ext_verb + both
+  VerbName tables + four accessors -> src/parse/mod_verbs.c with their
+  measurement-provenance comments; SEAM IS A DIRECT CALL — doorway 3 has
+  ONE row dispatching by NAME, no row family for a recognise pointer, and
+  an aport now would wire a producer nothing exercises. The signature
+  verdict is DOCUMENTED in the TU header (four table answers via the shared
+  REFUSE epilogue, VF_* computation, at==0, star=at+1 — no new vocabulary
+  needed). Byte-identity: corpus derived programmatically from baseline
+  --list-verbs (resolved the scout's 44 vs the lane's 50 name-count
+  disagreement: 50, 31+19), 602 comparisons, zero diffs. Review verified
+  the move verbatim by extraction-diff (only the gate rename + one stale
+  comment pointer).
+- **MOD-0.4c, new guards** (94b0693 + 841d73f landing bar, merged 8f94ccd):
+  S27-29. THE FINDING: S27 (blame-offset regression) came back UNDETECTED
+  0/437 — the (*) reject pin was message-only and the regression keeps the
+  message; closed by pinning "(pattern offset 1)" per the brace family's R7
+  convention, both directions measured. S28 52 fails, S29 1 fail (the
+  a(*CR) pin), both already-detected. Framework limit recorded: mech has
+  no `registry` suite, so PC-3/sweep_verb coverage cannot be mech-claimed.
+- **R18 close panel** (f4a9643, docs/reviews/2026-08-12-r18-mod04.md):
+  second consecutive ZERO-wrong-cells panel; zero tier-1 divergences.
+  CHECKS -> S27's finding generalized to SIX message-only REFUSE families;
+  closed same-session (bd9b6a1, merged 19020ee): ten measured offset pins
+  (non-zero probes a(*CR)/a(*ACCEPT) at offset 1 for the two
+  single-representative families) + S30, whose pre-pin baseline reproduced
+  S27's exactly (0/437). ENGINE -> ~35-cell offset-divergence inventory
+  vs libpcre2, tier-2 no-action (D26); the star=at+1 and (*:) cells MATCH
+  the oracle — now measured claims with citations, not prose; K15 opened:
+  >128-byte NON-identifier "names" get too-long where libpcre2 says
+  not-recognized (extent scan swallows all but `):=`; verified NOT tier-1),
+  a LINKED PAIR with PC-3's identifier-only length generator — the
+  sweep-template-misses-the-boundary lesson, third recurrence. DOCS ->
+  three live-doc fixes; extension_design §5.3's "(all three already in
+  ext.c)" had aged through TWO moves without anyone noticing.
+- Close battery green: mech 30/30 (S27 1/436, S28 52/385, S29 1/436, S30
+  2/435), reject 268/99/65 + 437 checks, registry_check 167, PC-3 143
+  (973,531 verb probes), spec_mod0 12 checks exit 0.
+
+Lessons, this session's additions:
+
+- A milestone that names its own hazard ("a blame offset that is not the
+  doorway's default") is naming the thing to CHECK FIRST — the hazard was
+  real, and it was the exact cell no pin guarded. Read the milestone's
+  plan row as a list of things to verify guards for, not just things to
+  preserve.
+- An offset regression that keeps the message text is invisible to every
+  message-matching pin AND to PC-3 (which never compares offsets) — pin
+  offsets wherever the blame position is load-bearing, and let the pins
+  claim only pcrec's own stability unless the oracle cell is measured.
+- Two-phase briefs (design note -> review -> code) caught the shared-macro
+  two-homes hazard before any code existed; the cost was one message
+  round-trip.
+- A count disagreement between two readers of the same table (44 vs 50
+  verb names) is resolved by deriving from the binary's own dump, not by
+  re-reading harder.
+- The scout->design->brief pipeline preserves main-session context: the
+  whole milestone (four slices + panel + close) fit in one session with
+  room to spare, where MOD-0.5's shape needed the same. The skill's
+  3-lane cap was never hit — one serialized lane was enough for a
+  migration; parallelism is for genuinely disjoint work.
