@@ -1,0 +1,33 @@
+# S26 — the run's apply order flipped: unset applied BEFORE set, so a
+# letter named on both sides of the hyphen resolves set-wins. Measured
+# truth (probe_mod05c.c): (?i-i)k and (?-ii)k are BOTH case-sensitive —
+# unset WINS regardless of order — and the port encodes that only by its
+# fixed set-then-unset block order, with no explicit branch. This is the
+# one-reordering-refactor-away regression. R17 checks critic, finding 3.
+SAB_ID="S26-unset-applied-first"
+SAB_FILE="src/parse/mod_modifiers.c"
+SAB_SUITES="harness"
+SAB_HARNESS_TARGET="tests/modifiers/letters.rxt"
+SAB_DESC="pcrec_modport_optrun: apply un_* before set_*, so set wins a contested letter"
+SAB_DOC_FIGURE="measured R17: 2 harness cases (tests/modifiers/letters.rxt, the (?i-i)a and (?-ii)a blocks)"
+SAB_COUNT=1
+SAB_BEFORE="    if (set_i) ns.caseless = true;
+    if (set_s) ns.dotall = true;
+    if (set_U) ns.ungreedy = true;
+    if (set_n) ns.nocap = true;
+    if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
+    if (un_i) ns.caseless = false;
+    if (un_s) ns.dotall = false;
+    if (un_U) ns.ungreedy = false;
+    if (un_n) ns.nocap = false;
+    if (un_x) ns.xlevel = 0;"
+SAB_AFTER="    if (un_i) ns.caseless = false;
+    if (un_s) ns.dotall = false;
+    if (un_U) ns.ungreedy = false;
+    if (un_n) ns.nocap = false;
+    if (un_x) ns.xlevel = 0;
+    if (set_i) ns.caseless = true;
+    if (set_s) ns.dotall = true;
+    if (set_U) ns.ungreedy = true;
+    if (set_n) ns.nocap = true;
+    if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;"

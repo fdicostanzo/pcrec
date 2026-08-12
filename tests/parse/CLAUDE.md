@@ -74,19 +74,22 @@ pair is how a check quietly narrows.
 Stated in the runner's output on every run, so a green result is not mistaken
 for coverage:
 
-- **depth balance across a doorway that RETURNS** — every doorway is `noreturn`
-  today (zero `return` statements on any path in ext.c), so no input can reach
-  the unbalanced path. First observable at MOD-0.2+.
-- **caseless save/restore around a group body** — nothing writes `cx->caseless`
-  yet, so save == restore on every pattern. First observable when `modifiers`
-  lands (MOD-0.5).
+- **depth balance across a doorway that RETURNS** — written when every doorway
+  was `noreturn`; STALE since MOD-0.1's K11 fix made doorways return tagged
+  ExtResults (found by R17's docs sweep, a pre-existing miss older than the
+  MOD-0.5 landing it was found during). The property is live and is exercised
+  by the module corpora and spec_mod0 rather than asserted here.
+- **caseless save/restore around a group body** — written when nothing wrote
+  `cx->caseless`; LIVE since MOD-0.5c: `pcrec_modport_optrun` writes
+  `cx->mods` (the widened struct), and the property is directly asserted by
+  tests/modifiers/scope.rxt (the leak-across-siblings and restore-at-`)`
+  cells) and spec_mod0 check12's scoping family. This directory still
+  deliberately does not duplicate those assertions — one home each.
 
-These are SKIP-shaped (loud, exit 0), NOT `check_tail_precedence`-shaped
-(exit 1). The distinction is load-bearing: `check_tail_precedence` fails the
-suite when its subject vanishes because the property WAS live and going dead is
-a regression a maintainer caused. These two were never live — they need code
-that does not exist yet — so wiring them to `bad()` would leave `make test`
-permanently red from PARSE-1 until MOD-0.2. `pcre2_check.c`'s loud-SKIP is the
-right precedent.
+Both bullets are records of why this directory's runner prints loud SKIPs
+for properties that were unobservable when PARSE-1 landed; both properties
+are observable NOW and guarded in the homes named above, so the SKIPs are
+historical texture, not gaps. (`check_tail_precedence`'s exit-1 rule stays
+what it was: it fails when a LIVE subject vanishes.)
 
 Maintenance: update this file when files are added/removed or their roles change.

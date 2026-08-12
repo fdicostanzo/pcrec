@@ -1237,7 +1237,20 @@ Then DOC-1, then PC-4 when module `classes` lands.
   `(?xx)[a- ]` / `(?xx)[a-\ ]` / `(?xx)[\ -a]` in the corpus, both gate
   states); interaction cells with quantifier braces and `\Q`/`\E`/escaped
   whitespace measured in the slice.
-- [MOD-0.5e] STATE:not-started — slice 4, CHECKS MOVE WITH THE SURFACE:
+- [MOD-0.5e] STATE:completed 2026-08-12 (eleventh session; worktree worker
+  mod05e, commit 4f0a964, merged c15374c). Execution: check07/check09 and
+  registry_check moved WITH the .5c/.5d landing itself (aports 11->23,
+  floors modsyn/modsem, the transition all measured there); this slice
+  added the three NEW mech rows — S21 (cls_peek_past_dash raw peek; caught
+  by xxmode.rxt 3/11), S22 ((?^) clearing ungreedy; caught by reset.rxt),
+  S23 (comment terminator widened to any skip byte; caught by xmode.rxt —
+  the surface suspected UNGUARDED was already guarded, by a space inside an
+  existing comment block's text, since a space IS a skip-set byte; no
+  raw-newline cell needed) — mech 23/23; and resolved the R16 fuzz-note
+  item: fuzz.py's own note was ALREADY correct (RESOLVED addendum from
+  99eff9e) — the stale copy was tests/fuzz/README.md's summary, now fixed
+  and cross-referenced to U2. PC-4 still has no modifier shapes (R16 NOTED
+  stands; belongs to whoever next extends PC-4). Spec was:
   check07 gate-equivalence and check09 per-feature toggle meet their first
   modifier population (grep the suites for "nothing produces yet" premises —
   the tenth session's lesson); registry_check ties for the recogniser

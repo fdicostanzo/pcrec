@@ -89,3 +89,22 @@ features modifiers
 n "\t"
 m "a" 0 1
 m "b" 0 1
+
+# ---- R17 additions (checks critic, 2026-08-12): the x-LEVEL rules --------
+# The level is assigned per occurrence by ADJACENCY (probe_mod05c.c):
+# (?xsx) is level 1 — an implementation that COUNTS x occurrences reads it
+# as xx and deletes the class-interior space. These are the only make-test
+# pins of the adjacency rule and the cross-run downgrade.
+
+# pcre2-only
+pattern (?xsx)[a b]
+features modifiers
+m " " 0 1
+m "a" 0 1
+
+# a later bare (?x) DOWNGRADES an earlier (?xx) (the (?xx)(?s) control in
+# probe_mod05c.c keeps deletion; this cell is the downgrade direction).
+# pcre2-only
+pattern (?xx)(?x)[a b]
+features modifiers
+m " " 0 1

@@ -39,9 +39,10 @@ this directory's, since a `.rxt` `perr` block cannot assert WHY).
   single-`x` contrast.
 - **malformed_and_gate.rxt** — `(?i-m-s)` (recognised malformed run) vs
   `(?iZ)` (not a construct at all); `m`/`J`'s per-letter refusal under
-  `features modifiers` alone; six gate-off pins. The one file that is
-  fully green (11/11) against today's binary, by design — everything
-  else here is a watched-failing probe until MOD-0.5c lands.
+  `features modifiers` alone; six gate-off pins. Before the MOD-0.5c/d
+  landing this was the one file already fully green (11/11), by design —
+  every other file was a watched-failing probe until the producers landed
+  (they have; the whole directory is green now — see the §9.3 record below).
 
 ## Oracle split
 
@@ -59,20 +60,23 @@ throwaway scratchpad oracle patterned on tests/probes/probe_mod05.c and
 probe_mod05b.c (not committed — those probes remain the canonical,
 reproducible measurement).
 
-## The D33 §9.3 record
+## The D33 §9.3 record (HISTORICAL — the producers have since landed)
 
-Each file's header carries its own measured pass/fail split against the
-[MOD-0.5a]-gate binary (vocabulary landed, `modifiers` has no producer).
-Whole-directory total: 56 cases, 16 PASS today (11 in
-`malformed_and_gate.rxt`'s already-correct gate pins, reset.rxt's J-cell
-`perr`, plus 4 control/coincidental-agreement cells scattered through the
-others), 40 FAIL with "requires module 'modifiers'" — measured 2026-08-12
-via `PCREC=<binary> bash tests/harness/run.sh tests/modifiers`, before
-MOD-0.5b/c land. Re-run per file with the same command pointed at one
-`.rxt` path. (Separately, `python3 tests/harness/verify_rxt.py
-tests/modifiers` reports its own PASS=26/26 — that is the ORACLE
-cross-check on the 26 non-`# pcre2-only` cases, a different axis from the
-pcrec-binary pass/fail count above; do not conflate the two.)
+Each file's header carries the pass/fail split that was MEASURED 2026-08-12
+against the [MOD-0.5a]-gate binary, BEFORE MOD-0.5c/d landed the producers
+(at that point the vocabulary existed and `modifiers` had no producer):
+56 cases, 16 PASS (11 in `malformed_and_gate.rxt`'s already-correct gate
+pins, reset.rxt's J-cell `perr`, plus 4 control/coincidental-agreement
+cells), 40 FAIL with "requires module 'modifiers'" — via
+`PCREC=<binary> bash tests/harness/run.sh tests/modifiers`. That record is
+kept as the watched-failing evidence and as a regression-check recipe:
+re-run it against any binary suspected of losing the module wiring (the
+tests/classes/ precedent). CURRENT status since the MOD-0.5c/d landing
+(commit 9f18c06): 59/59 green — the count grew from 56 when the tab block
+was split at the landing (see xxmode.rxt's correction note). (Separately,
+`python3 tests/harness/verify_rxt.py tests/modifiers` reports PASS=26/26 —
+the ORACLE cross-check on the non-`# pcre2-only` cases, a different axis
+from the pcrec-binary count; do not conflate the two.)
 
 Maintenance: add blocks when the module's producing scope grows (M5's
 UTF/UCP re-measurement of the `r`/`aD aP aS aT aW` no-ops, per [MOD-0.5a]

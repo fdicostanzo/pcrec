@@ -151,9 +151,13 @@ either.
 
 **`caseless` moved from the options to the Ctx.** `opt` is `const` and
 caller-owned, so D29's "set parse state, parse body, restore" had nothing to
-set and `(?i:a)b` was inexpressible. `cx->caseless` is seeded from
-`opt->caseless` in compile.c — one home, seeded once — and saved/restored
-around every group body unconditionally. That boundary is MEASURED, 17/17
+set and `(?i:a)b` was inexpressible. The field is `cx->mods.caseless` since
+MOD-0.5c widened the PARSE-1 bool into the ModState struct; it is seeded
+from `opt->caseless` in compile.c — one home, seeded once — and
+saved/restored around every BODY-CARRYING group (the save/restore placement
+moved to p_group_body's body tail at MOD-0.5c; a bare option run escapes
+its own paren pair's restore by construction — see parse.c's comment at the
+splice). That boundary is MEASURED, 17/17
 against libpcre2 10.46: `(?i)` set inside a group stays in force to the end of
 THAT group, **leaks across that group's sibling alternation branches**
 (`(a(?i)b|c)d` matches `Cd`), and is restored at the immediately-enclosing `)`.
@@ -276,11 +280,10 @@ Rules when touching it:
   sub-option (`(?aP)` compiles, `(?aPP)` is error 111), and a misplaced hyphen
   is error 194 — a MALFORMED option setting, so a module is still owed.
   `RF_OPTION_RUN` said this at MOD-0.5's start; it RETIRED at MOD-0.5b, moving
-  to mod_modifiers.c as a `recognise` pointer instead of a flag (see that
-  file's entry above). The grammar's home is settled now, in its own module
-  TU; what is still provisional is the SEMANTICS — MOD-0.5c/d have not landed
-  Ctx modifier state, per-letter production or the lexer, so today this row
-  family still only ever refuses. See D28 and [MOD-0.5] in docs/plan.md.
+  to mod_modifiers.c as a `recognise` pointer instead of a flag, and the
+  SEMANTICS landed at MOD-0.5c/d — see the mod_modifiers.c entry above for
+  the port, the scoped state, and the lexer (one home; this line is a
+  pointer, not a second description). See D28 and [MOD-0.5] in docs/plan.md.
 - **`RF_CLASS_DELIM` carries a construct's own recognition rule**, not just its
   diagnostic: a delimiter-pair construct opens only when its matching `X]`
   appears later, and the class's own bracket can serve as its `[`. SR-2 moved

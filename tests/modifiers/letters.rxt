@@ -58,3 +58,32 @@ m "a" 0 1
 pattern (?n)(a)\1
 features modifiers
 perr
+
+# ---- R17 additions (checks critic, 2026-08-12): the port's own corners ----
+# Three cell families that were "correct today, unguarded" — verified only
+# in tests/probes/probe_mod05*.c, which is not part of `make test`. Each
+# expectation below was re-verified against libpcre2 10.46 at the R17
+# disposition (the probe headers carry the measured cells).
+
+# (?aP): the ASCII-restrict sub-letter is a MEASURED NO-OP at options=0,
+# and the port's `a`+sub lookahead is a second implementation of the
+# grammar's rule (recognition vs semantics) — this is its only gate-on pin.
+# pcre2-only
+pattern (?aP)x
+features modifiers
+m "x" 0 1
+
+# unset WINS regardless of side order within one run: (?i-i) and (?-ii)
+# are BOTH case-sensitive (probe_mod05c.c). Guarded by the port's fixed
+# set-then-unset apply order — these cells are what notice a reorder.
+# pcre2-only
+pattern (?i-i)a
+features modifiers
+n "A"
+m "a" 0 1
+
+# pcre2-only
+pattern (?-ii)a
+features modifiers
+n "A"
+m "a" 0 1
