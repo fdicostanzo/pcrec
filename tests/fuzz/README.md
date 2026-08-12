@@ -93,14 +93,20 @@ run's divergence list. Full rationale and verified examples are in
 2. **`\x{...}` brace hex escapes** — pcrec rejects ("requires module
    'unicode-props'" — not yet implemented); PCRE2 accepts. Same rationale
    as (1). The generator uses only the supported `\xHH`/`\xH` form.
-3. **`{,n}` / `{,}` quantifier forms** (no digit before the comma) — **not**
-   an accept/reject mismatch (both engines accept!) but a genuine semantic
-   divergence: pcrec treats the brace text as a **literal string**; PCRE2
-   10.46 (the version on this box) treats it as a quantifier equivalent to
-   `{0,n}`. Verified: `a{,3}` vs subject `"aaaa"` → pcrec `nomatch`, PCRE2
-   `match 0 3`. **This looks like a real gap in pcrec worth a follow-up
-   fix**, flagged to the team; excluded from generation only so it doesn't
-   drown out new findings on every run.
+3. **`{,n}` / `{,}` quantifier forms** (no digit before the comma) — **not
+   a live divergence.** `a{,3}` vs subject `"aaaa"` used to be pcrec
+   `nomatch` / PCRE2 `match 0 3` (pcrec read the brace text as a **literal
+   string**); this was **RESOLVED in the M2-era session** (see `fuzz.py`'s
+   `EXCLUDED FROM GENERATION` block and `try_quant` in
+   `src/parse/parse.c`, which has treated `{,n}` as `{0,n}` — matching
+   PCRE2 10.43+ — ever since, pinned in
+   `tests/base/fuzz_regressions.rxt`). Bare `{,}` (no digits at all) stays
+   literal in pcrec, and PCRE2 agrees with that reading too — it's python
+   `re` that diverges on the bare form, tracked separately in
+   `docs/upstream_issues.md`. Generation of `{,n}` stays off here only
+   because the generator's `QUANTS` list predates the fix, not because of
+   any remaining gap; safe to add as a generated form in a future fuzzer
+   change.
 
 **Not excluded** (checked and confirmed no longer needed): quantified bare
 anchors (`^*a`, `a$*`, `${1,2}`, ...). Since the R1 S-M1 fix, pcrec rejects
