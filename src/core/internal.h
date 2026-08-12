@@ -941,6 +941,10 @@ typedef struct {
     size_t          n;
 } VerbTable;
 
+/* Defined in src/parse/mod_verbs.c since MOD-0.4 (the migration test), moved
+ * WITH the verb_upper/verb_lower/verb_tables data and their measurement
+ * provenance comments — was src/parse/registry.c until this move. */
+
 /* The table PCRE2 would consult for a name whose first byte is `first`. Never
  * NULL: every byte selects one of the two. */
 const VerbTable *pcrec_registry_verb_table(int first);
@@ -985,7 +989,37 @@ const PosixName *pcrec_registry_posix_names(size_t *n);
 /* src/parse/ext.c — the four doorways out of the base grammar (SR-2). The
  * doorway VOCABULARY (ExtWhat / ExtWant / ExtResult and its contract doc)
  * moved above RegRow when MOD-0.3b embedded ports in rows — the dependency
- * inverted; the doorway FUNCTIONS stay here. */
+ * inverted; the doorway FUNCTIONS stay here, except `pcrec_ext_verb` (MOD-0.4,
+ * the migration test): it moved to src/parse/mod_verbs.c WITH the `(*`
+ * doorway's VerbName tables and accessors, keeping this file's exact
+ * signature — parse.c's call site did not change. See mod_verbs.c's header
+ * for why the move needed no new port/recognise wiring. */
+
+/* THE SHARED GATE and THE SHARED REFUSAL EPILOGUE MACRO, below, are the two
+ * pieces of doorway machinery `pcrec_ext_verb` still needs after MOD-0.4's
+ * move — promoted from `static`/file-local so mod_verbs.c can call/use them
+ * too, with exactly one definition each (ext.c keeps the definitions; the
+ * full rationale comments live there, not duplicated here). */
+/* Demotes RESULT to VERDICT for a row whose module is not enabled, floors at
+ * VERDICT. See ext.c's own comment on the definition for the full ASK-contract
+ * rationale. */
+ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want);
+
+/* Format a refusal at claim time and return it — relies on the enclosing
+ * doorway naming its gated ask level `want`, exactly as ext.c's comment on
+ * REFUSE's original site documents. Needs <stdio.h> in the includer for
+ * snprintf; every TU that invokes it already carries that include. */
+#define REFUSE(atpos, ...) do {                                              \
+        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "",    \
+                           .answered_at = want };                            \
+        snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
+        return res_;                                                         \
+    } while (0)
+/* A row whose diag value does not belong to its kind is a registry defect,
+ * not a pattern error — see REFUSE above; the wording is deliberately not a
+ * "requires module" diagnostic since nothing a caller writes can produce it. */
+#define BAD_ROW(at, what) \
+    REFUSE((at), "internal error: malformed registry row for " what)
 
 /* The ONE epilogue: renders a refusal via ctx_fail (byte-identical to the
  * pre-epilogue diagnostics — same format results, same offsets), returns

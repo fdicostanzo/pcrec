@@ -387,7 +387,7 @@ claimed; the last seven are Q2/SR-9's.
 | drop `VF_GROUPARG` from `pla` | 3 |
 | drop `VF_EMPTYARG` from `ACCEPT` | 4 |
 | reword the lower table's "not recognized" | 20 (capped) |
-| delete the `at != 0` start-of-pattern check in ext.c | 20 (capped) |
+| delete the `at != 0` start-of-pattern check (MOD-0.4: moved from ext.c to mod_verbs.c with the rest of `pcrec_ext_verb`; edit lands in mod_verbs.c now) | 20 (capped) |
 | **restore pre-Q1 behaviour: the doorway ignores the name** | 21 (capped) |
 | swap the two tables' "not recognized" messages | 21 (capped) |
 | **`pool_from_library` succeeds and yields ZERO names** (R8/C1-F4) | **51** |

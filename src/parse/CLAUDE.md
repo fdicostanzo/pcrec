@@ -35,33 +35,66 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   the CASE of the first name byte exactly as libpcre2 chooses between its own
   two. Every bit of those tables is measured against libpcre2 and re-measured on
   every run by tests/registry/pcre2_check.c
-- **ext.c** — the four doorways (SR-2): `pcrec_ext_escape`, `pcrec_ext_group`,
-  `pcrec_ext_verb`, `pcrec_ext_class_bracket`. The edge that makes the registry
-  the ONLY home rather than a sixth copy — parse.c calls these once its own
-  switch has declined. Since MOD-0.1's returned-claims epilogue (D33 §5) a
-  doorway RETURNS its terminal answer as a tagged `ExtResult` (EXT_NOT_MINE,
-  or EXT_REFUSAL carrying the diagnostic formatted at claim time), and
-  `pcrec_ext_finish` — the one epilogue — renders refusals; call sites in
-  parse.c end in internal-error walls for outcomes they do not handle, which
-  is what closed K11 (the noreturn-era UB) and the PARSE-1 fallthrough
-  discard. SR-6's module handlers become their callees, extending ExtWhat
-  with probes that are false the day before (D33 §9.3). `pcrec_ext_verb` is
-  the one that reads more than a byte: since Q1 it parses the verb NAME and
-  the FORM it was written in, and has four possible answers rather than one
-  (D25). Since MOD-0.1's slice 8 every doorway takes an `ExtWant` ask level
-  (§18.2's three-level contract, no `may` axis — see internal.h): parse.c's
-  six call sites ask WANT_RESULT, `ext_gate` demotes RESULT→VERDICT while a
-  row's module is not enabled (a real per-row membership test since slice 9,
-  consulting enabled.c AFTER row choice; floors at VERDICT), the result's
-  `answered_at` records the post-gate level ("gate open, port missing" vs
-  "gate closed"), and the CURSOR RULE — cx->pos moves only under
-  WANT_RESULT — is measured externally through `--probe-ask` (check06's
-  channel) rather than asserted. Slice 9 moved the extent scans out to
-  scans.c; ext.c keeps the seam: row choice, the gate, the terminal answer.
-  Since MOD-0.2 the escape and group doorways call
-  `pcrec_registry_arbitrate` directly and render its ambiguity defect (two
-  answering rows at the winning rank) as an internal error — unreachable on
-  the correct table, validated live by an equal-rank sabotage
+- **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
+  `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
+  mod_verbs.c at MOD-0.4 — see its own entry below; declared in internal.h
+  and called from parse.c exactly as before, so this remains "the edge that
+  makes the registry the ONLY home rather than a sixth copy" for all four).
+  parse.c calls these once its own switch has declined. Since MOD-0.1's
+  returned-claims epilogue (D33 §5) a doorway RETURNS its terminal answer as
+  a tagged `ExtResult` (EXT_NOT_MINE, or EXT_REFUSAL carrying the diagnostic
+  formatted at claim time), and `pcrec_ext_finish` — the one epilogue —
+  renders refusals; call sites in parse.c end in internal-error walls for
+  outcomes they do not handle, which is what closed K11 (the noreturn-era
+  UB) and the PARSE-1 fallthrough discard. SR-6's module handlers become
+  their callees, extending ExtWhat with probes that are false the day
+  before (D33 §9.3). Since MOD-0.1's slice 8 every doorway takes an
+  `ExtWant` ask level (§18.2's three-level contract, no `may` axis — see
+  internal.h): parse.c's six call sites ask WANT_RESULT, `pcrec_ext_gate`
+  demotes RESULT→VERDICT while a row's module is not enabled (a real
+  per-row membership test since slice 9, consulting enabled.c AFTER row
+  choice; floors at VERDICT), the result's `answered_at` records the
+  post-gate level ("gate open, port missing" vs "gate closed"), and the
+  CURSOR RULE — cx->pos moves only under WANT_RESULT — is measured
+  externally through `--probe-ask` (check06's channel) rather than
+  asserted. Slice 9 moved the extent scans out to scans.c; ext.c keeps the
+  seam: row choice, the gate, the terminal answer. Since MOD-0.2 the escape
+  and group doorways call `pcrec_registry_arbitrate` directly and render
+  its ambiguity defect (two answering rows at the winning rank) as an
+  internal error — unreachable on the correct table, validated live by an
+  equal-rank sabotage. **MOD-0.4** promoted `pcrec_ext_gate` from `static`
+  (was `ext_gate`) and the `REFUSE`/`BAD_ROW` refusal-epilogue macros out to
+  internal.h — mod_verbs.c needs both and gets one shared definition of
+  each rather than a second copy; `pcrec_ext_gate` is still DEFINED here,
+  `DECLINE` stays file-local (only the class-bracket doorway produces it)
+- **mod_verbs.c** — module `verbs` (MOD-0.4), the MIGRATION TEST: moves
+  `pcrec_ext_verb` here from ext.c WITH the `(*` doorway's two VerbName
+  tables and their four accessors (was registry.c) and their whole
+  measured-grammar comments (the probes-and-code-together rule
+  mod_modifiers.c's entry below states). PURE MIGRATION — no verb produces
+  yet, the doorway-3 wall stays, gate ON/OFF stay byte-identical to the
+  pre-move build (verified: 602 differential comparisons across every verb
+  name × applicable form, unknown names, the 128/129-byte length boundary,
+  the `LIMIT_*` accumulator boundary, empty-name shapes, at-start
+  placement, both gate states — zero diffs). WIRING: a direct call, not a
+  port — `pcrec_ext_verb` keeps its exact signature and parse.c's call
+  site is unchanged, unlike mod_modifiers.c's `(?` doorway, which
+  dispatches across a FAMILY of GROUP_OPT rows via a row's `recognise`
+  field. Doorway 3 has exactly ONE RegRow (`verb_rows[0]`, still in
+  registry.c) dispatching by NAME through the tables in this file, not by
+  row, so there is no row family for a recognise pointer to mark; building
+  one would wire a producer nothing exercises yet (internal.h §14.3's
+  NULL-port discipline) and would invent the synthetic-buffer UB class
+  mod_modifiers.c's `recognise` field exists to sidestep, a risk that does
+  not arise here since verb dispatch reads scanned NAME TEXT
+  (`pcrec_verb_name_extent_scan`, scans.c — stays there, unmoved: pure over
+  (pat, patlen), needed regardless of gate state, and scans.c's
+  never-links-the-enabled-set contract is exactly why lexer machinery does
+  not belong in a module TU even when it has one caller). See the file's
+  own header for the full mapping of the milestone's four measured facts
+  (the returned-claims epilogue, the VF_* form computation, VF_ATSTART's
+  `at == 0`, and the `star = at + 1` blame offset) to where each still
+  lives
 - **mod_classes.c** — module `classes` (MOD-0.3c), the first module with
   real PRODUCERS: includes the GENERATED cls_bits.inc (20 positive byte-set
   tables from libpcre2 censuses — regenerate with probe_cls_bits --emit,

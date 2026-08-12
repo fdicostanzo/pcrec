@@ -9,7 +9,11 @@
  *
  *     after `\`              pcrec_ext_escape        (\d \v \p \K \g \Q \1)
  *     after `(?`             pcrec_ext_group         ((?= (?< (?> (?# (?i)
- *     after `(*`             pcrec_ext_verb          ((*SKIP) (*CR))
+ *     after `(*`             pcrec_ext_verb          ((*SKIP) (*CR)) — MOD-0.4
+ *                                                     moved this one to
+ *                                                     mod_verbs.c; declared
+ *                                                     in internal.h, called
+ *                                                     from parse.c unchanged
  *     after `[` in a class   pcrec_ext_class_bracket ([[:alpha:]] [[.a.]])
  *
  * THE BASE SWITCH RUNS FIRST AND RETURNS. Every one of these is called only
@@ -64,8 +68,12 @@
  * the externally visible difference between "gate open, port missing"
  * (D33's NULL-port refusal) and "gate closed" (--probe-ask, cli case10).
  * Equivalence of the VERDICT itself across enabled sets is check07's
- * subject, and holds today by construction: no port, same refusal. */
-static ExtWant ext_gate(const RegRow *r, ExtWant want)
+ * subject, and holds today by construction: no port, same refusal.
+ *
+ * NON-STATIC since MOD-0.4: `pcrec_ext_verb` moved out to mod_verbs.c and
+ * still needs this exact gate, so this is now the ONE definition two TUs
+ * share (declared in internal.h) rather than a second copy risking drift. */
+ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want)
 {
     if (want == WANT_RESULT &&
         !(r && r->status == RS_MODULE && pcrec_feature_enabled(r->feature)))
@@ -73,29 +81,15 @@ static ExtWant ext_gate(const RegRow *r, ExtWant want)
     return want;
 }
 
-/* Format a refusal at claim time and return it. The arguments are what the
- * pre-epilogue ctx_fail calls passed, verbatim, so the rendered text cannot
- * drift from what tests/reject/ pins. NOTE: reads the enclosing doorway's
- * gated `want` parameter for `answered_at` — every doorway names it `want`
- * and gates it at entry, which the macro relies on. */
-#define REFUSE(atpos, ...) do {                                              \
-        ExtResult res_ = { .what = EXT_REFUSAL, .at = (atpos), .msg = "",    \
-                           .answered_at = want };                            \
-        snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
-        return res_;                                                         \
-    } while (0)
+/* REFUSE and BAD_ROW moved to internal.h at MOD-0.4 for the same reason —
+ * mod_verbs.c's `pcrec_ext_verb` uses both, and one shared definition beats
+ * two copies of the refusal epilogue. DECLINE stays here: only doorway 4
+ * (this file) ever produces it. */
 
 /* No construct here; the cursor is unchanged. Only doorway 4 produces this.
  * A decline is a CLAIM-level answer — "not mine" costs nothing to say. */
 #define DECLINE() return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "", \
                                       .answered_at = WANT_CLAIM }
-
-/* A row whose diag value does not belong to its kind is a registry defect, not
- * a pattern error. It is reported like any other failure because the parser has
- * no other channel, but the wording is deliberately not a "requires module"
- * diagnostic: nothing a caller writes can produce it. */
-#define BAD_ROW(at, what) \
-    REFUSE((at), "internal error: malformed registry row for " what)
 
 /* The ONE epilogue (D33 §5/§8): a refusal fires here, and only here. A caller
  * that must override a claim — the endpoint rule, D33 §6 — looks at the
@@ -157,7 +151,7 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
      * answers at the level the CALLER asked, whatever the enabled set —
      * per-port gating, §14.3's split. Module ports keep the demoted level. */
     ExtWant asked = want;
-    want = ext_gate(r, want);
+    want = pcrec_ext_gate(r, want);
 
     if (!r) {
         if (in_class) REFUSE(at, "unknown escape \\%c in class", c);
@@ -255,7 +249,7 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
     const char *tl = tail_at(cx, cx->pos + 2, &avail);
     const RegRow *r = pcrec_registry_arbitrate(RK_GROUP, c2, tl, avail, &amb);
     int shown = c2 < 0 ? '?' : c2;
-    want = ext_gate(r, want);
+    want = pcrec_ext_gate(r, want);
 
     /* Only reachable by deleting the catch-all row, which tests/registry's
      * hand-written manifest also refuses; a NULL deref is not an acceptable
@@ -335,173 +329,13 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
 }
 
 /* ---- doorway 3: after '(*' ----------------------------------------------
- * A NAME decides here, and since Q1 pcrec reads it. Until Q1 this function
- * ignored the name entirely and answered "requires module 'verbs'" for all of
- * them, which was wrong in three separate ways at once:
- *
- *   `(*NOTAVERB)`  was promised a module that will never implement it, because
- *                  PCRE2 has no such verb (error 160)
- *   `(*)`          was called a verb, when PCRE2 reads `(` then a `*` that
- *                  quantifies nothing (error 109)
- *   `a(*CR)`       was called a verb, when a start-of-pattern option anywhere
- *                  but the start is error 160
- *
- * and, worse than any single wrong answer, it made pcrec's answer INDEPENDENT
- * of the name — so no differential against libpcre2 over names could say
- * anything. That is what Q1 unlocks and PC-3 spends: see D25 and
- * tests/registry/pcre2_check.c.
- *
- * WHAT THIS FUNCTION DECIDES, and it is only ever one of four things: the
- * quantifier error, the table's "no such name" message, a name's own message
- * (`MARK` alone has one), or the row's "requires module 'verbs'". It does NOT
- * parse the argument — an accepted form still ends the compile here.
- *
- * The forms are read from the VerbName table in registry.c, every bit of which
- * is measured against libpcre2 rather than read from documentation. */
-ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
-{
-    const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
-    want = ext_gate(r, want);
-    const char *pat = cx->pat;
-    size_t n = cx->patlen;
-    size_t star = at + 1;           /* the '*'; `at` is the '(' */
-    size_t nstart = star + 1;
-    size_t i = nstart;
-
-    if (!r) REFUSE(at, "internal error: no registry row for (*");
-    if (r->diag != RD_FIXED)
-        BAD_ROW(at, "a (* verb");
-
-    /* The name's extent (the terminator set and the trailing-space rule are
-     * documented at the scan, scans.c — always-live, never gated). */
-    i = pcrec_verb_name_extent_scan(pat, n, nstart);
-    size_t nlen = i - nstart;
-    int next = i < n ? (unsigned char)pat[i] : -1;
-
-    /* An EMPTY name has three different answers, and the first version of this
-     * code got one of them wrong until the PC-3 differential said so on its
-     * first run — over a thousand probes, all of this shape.
-     *
-     *   `(*)`, `(*`     not this doorway at all: `(` followed by a quantifier
-     *                   with nothing to quantify (PCRE2 error 109, and what
-     *                   parse.c's own `case '*'` says for a bare `*`). Reported
-     *                   at the `*`, matching both.
-     *   `(*:NAME)`      a synonym for `(*MARK:NAME)`. It resolves to the MARK
-     *                   row and inherits its rules, which is why `(*:)` reports
-     *                   "(*MARK) must have an argument" and not a "no such name".
-     *   `(*=1)`         an ordinary unrecognised name that happens to be empty:
-     *                   PCRE2 error 160. Falling through with a zero-length name
-     *                   gets that for free — no table contains "" — which is why
-     *                   there is no third branch here. */
-    const char *name;
-    size_t      namelen;
-    if (nlen)              { name = pat + nstart; namelen = nlen; }
-    else if (next == ':')  { name = "MARK";       namelen = 4;    }
-    else if (next == '=')  { name = "";           namelen = 0;    }
-    else REFUSE(star, "quantifier does not follow a repeatable item");
-
-    /* A name too long to be a name at all is a LENGTH complaint in PCRE2, not a
-     * "no such name" one, and it is the same complaint in both tables. Measured
-     * on libpcre2 10.46 (R8/C2-4): 128 bytes is error 160/195 as usual, 129 is
-     * error 148, in every form and in both tables. The limit is on the NAME —
-     * `(*MARK:` followed by 200 bytes of argument compiles fine. */
-    size_t maxname;
-    const char *toolong = pcrec_registry_verb_name_limit(&maxname);
-    if (namelen > maxname) REFUSE(at, "%s", toolong);
-
-    const VerbTable *t =
-        pcrec_registry_verb_table(namelen ? (unsigned char)name[0] : -1);
-    const VerbName  *v = pcrec_registry_verb_find(t, name, namelen);
-    if (!v) REFUSE(at, "%s", t->unknown_msg);
-
-    /* Which FORM was written. A form of 0 means "none of them", which is what a
-     * truncated construct produces — and PCRE2 agrees: `(*CR` and `(*ACCEPT:x`
-     * are both error 160, the same as an unknown name. */
-    unsigned form = 0;
-    if (next == ')') {
-        form = VF_BARE;
-    } else if (next == ':') {
-        if (v->forms & VF_GROUPARG) {
-            /* A subpattern argument. The doorway does not require the closing
-             * `)` to be present — PCRE2 recognises `(*pla:x` and then reports a
-             * missing parenthesis (error 114), a different complaint entirely. */
-            form = (i + 1 < n && pat[i + 1] == ')') ? VF_EMPTYARG : VF_ARG;
-        } else {
-            /* A name-run argument, terminated by `)`, which must exist: without
-             * it PCRE2 does not recognise the construct at all. `:` is an
-             * ordinary character inside it (`(*MARK:a:b)` compiles). */
-            size_t j = i + 1;
-            while (j < n && pat[j] != ')') j++;
-            if (j < n) form = (j == i + 1) ? VF_EMPTYARG : VF_ARG;
-        }
-    } else if (next == '=') {
-        /* Digits only, at least one, then `)`. `(*LIMIT_MATCH= 1)` and
-         * `(*LIMIT_MATCH=x)` are both error 160; `=01` is accepted.
-         *
-         * AND A MAGNITUDE RULE, which the first version of this code did not
-         * have because the probes that measured it were one and two digits long
-         * (R8/C2-3 — the sweep agreed because the axis it varied was the NAME).
-         * PCRE2 refuses while ACCUMULATING, one digit before its 32-bit
-         * accumulator would overflow, so the boundary is 4294967290 and not
-         * 4294967296: `(*LIMIT_MATCH=4294967289)` compiles and
-         * `(*LIMIT_MATCH=4294967290)` is error 160. LENGTH is not the rule —
-         * `=00000000000000000001` compiles, because leading zeros never move
-         * the accumulator. Reproduced here exactly, including that. */
-        size_t j = i + 1;
-        unsigned long long acc = 0;
-        bool fits = true;
-        while (j < n && pat[j] >= '0' && pat[j] <= '9') {
-            if (acc > PCREC_VERB_LIMIT_ACC_MAX) fits = false;
-            /* `acc` keeps accumulating past that point and WRAPS on a long
-             * enough digit run. That is defined behaviour for an unsigned type
-             * and the wrapped value is never read, because `fits` is sticky —
-             * it is only ever cleared. Said out loud rather than left for a
-             * reader to re-derive, or for someone to "fix" by resetting it. */
-            acc = acc * 10 + (unsigned)(pat[j] - '0');
-            j++;
-        }
-        if (fits && j > i + 1 && j < n && pat[j] == ')') form = VF_EQNUM;
-    }
-
-    if (!(v->forms & form))
-        REFUSE(at, "%s",
-               (v->own_forms & form) ? v->own_msg : t->unknown_msg);
-
-    /* Start-of-pattern options are valid only at the start. PCRE2 allows a RUN
-     * of them — `(*UTF)(*CR)` compiles — and pcrec's rule is `at == 0` exactly.
-     *
-     * That is equivalent TO THE GENERAL PREFIX-RUN RULE, as an implementation
-     * choice inside pcrec, and to nothing else: any earlier verb would already
-     * have ended this compile with "requires module 'verbs'", so a run can
-     * never reach here with a non-zero offset, and the two rules cannot differ
-     * on any pattern. Writing the general scan now would be code whose only
-     * interesting branch nothing can execute. When module 'verbs' lands and
-     * these constructs start being ACCEPTED, that stops being true and the scan
-     * is what replaces this line.
-     *
-     * IT DOES NOT MEAN pcrec's message matches PCRE2's on every pattern with an
-     * option in it (R8/C2). `(*UTF)a(*UTF)` is PCRE2 error 160 — about the
-     * SECOND one — while pcrec answers about the first, because pcrec reports
-     * the leftmost construct it cannot handle and stops. That is pcrec's rule
-     * at every doorway (`\d{3,1}` is "requires module 'classes'" here and
-     * "numbers out of order" in PCRE2), and the general prefix scan would not
-     * change it. */
-    if ((v->forms & VF_ATSTART) && at != 0)
-        REFUSE(at, "%s", t->unknown_msg);
-
-    /* K14 (design §17.2): disposition is a PER-NAME fact — `(*COMMIT)` is
-     * OUT-OF-SCOPE while `(*pla:...)` is a lookaround in verb spelling — with
-     * the row's value as the default. It fires only for a form PCRE2 would
-     * ACCEPT: a malformed form of a NEVER name keeps PCRE2's own form error
-     * above, because the roadmap is an answer about the construct, not about
-     * a typo. The `(*:x)` MARK synonym resolves to MARK's entry and inherits
-     * its NEVER, which is why the message below prints the resolved name. */
-    if ((v->roadmap ? v->roadmap : r->roadmap) == ROADMAP_NEVER)
-        REFUSE(at, "(*%.*s) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)",
-               (int)namelen, name);
-
-    REFUSE(at, "%s", r->msg);
-}
+ * Moved to src/parse/mod_verbs.c at MOD-0.4 (the migration test): the whole
+ * `pcrec_ext_verb` function, together with the VerbName tables it reads and
+ * their four accessors. It keeps this file's exact signature — declared in
+ * internal.h, called unchanged from parse.c — and reuses `pcrec_ext_gate`
+ * and `REFUSE`/`BAD_ROW` from this file/internal.h rather than duplicating
+ * them; see mod_verbs.c's header for why the move needed no new port or
+ * recognise-pointer wiring despite moving the whole doorway function out. */
 
 /* ---- doorway 4: after '[' inside a class --------------------------------
  * The only doorway that can decline. `[` is an ordinary class member most of
@@ -534,7 +368,7 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
      * handles every other unrecognised byte. */
     const RegRow *r = pcrec_registry_find(RK_CLASSBRACKET, c2, NULL, 0);
     if (!r) DECLINE();
-    want = ext_gate(r, want);
+    want = pcrec_ext_gate(r, want);
 
     /* K4, fixed 2026-08-10 (FIX-2): the three-rule delimiter-pair scan, which
      * used to run to the end of the PATTERN rather than the end of the CLASS
