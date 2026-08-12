@@ -591,7 +591,38 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * lines from a closed vocabulary; blocks are separated by one blank line. Keys
  * never contain two consecutive spaces, which is what makes the split
  * unambiguous. Row keys stay INDENTED because case10/case11 count `^  doorway`
- * lines to count rows, and a header key must not add one. */
+ * lines to count rows, and a header key must not add one.
+ *
+ * CONTROL BYTES IN A VALUE ARE ESCAPED (R20/MOD07-8). Every value that can
+ * carry bytes from the QUERY goes through `put_text`, which renders anything
+ * below 0x20 and 0x7f as `\xHH`. Without it the grammar had no escaping at
+ * all, and a query containing a newline injected a synthetic header line that
+ * `explain_field` — the test helper that parses this very format — then read
+ * as real: `--explain "$(printf '\\\nrows           99\n')"` reported
+ * `rows 99` for an answer that displayed no rows. There is no attacker here
+ * (it is the operator's own text), which is why the cure is a cheap rendering
+ * rather than a quoting scheme.
+ *
+ * THE ESCAPE IS ONE-WAY, AND SAYS SO: `\` is NOT itself escaped, because
+ * doing that would double every backslash on a surface whose whole subject is
+ * backslash escapes, and would move every existing pin. So a literal
+ * four-byte `\x0a` in a query and a real newline render alike. The ambiguity
+ * is accepted deliberately — this is a human answer, not a wire format.
+ * `--list-syntax` and `--probe-ask` are the surfaces with parsers, and both
+ * FORBID these bytes rather than escape them (this file's own header says
+ * why). Bytes >= 0x80 pass through untouched: they are not control bytes, and
+ * R20/MOD07-B records that they are unreachable through argv anyway. */
+
+/* Render `n` bytes with control bytes made visible. See the format grammar
+ * above for why `\` is deliberately not escaped. */
+static void put_text(StrBuf *sb, const char *s, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
+        else                       sb_putc(sb, (char)c);
+    }
+}
 
 /* Which module does a rendered answer PROMISE, if any? Derived in the CONSUMER
  * by looking for the `module 'NAME'` shape every doorway renders its promise
@@ -652,7 +683,11 @@ static void put_answer(StrBuf *sb, const Live *L)
         return;
     }
     switch (L->r.what) {
-    case EXT_REFUSAL:  sb_puts(sb, L->r.msg); break;
+    /* ESCAPED (R20/MOD07-8): a refusal renders the selector byte into its
+     * text ("unknown escape \%c"), so this value carries QUERY bytes just as
+     * the `query` echo does. Escaping only the echo would have left the same
+     * injection reachable one line down. */
+    case EXT_REFUSAL:  put_text(sb, L->r.msg, strlen(L->r.msg)); break;
     case EXT_NOT_MINE: sb_puts(sb, "declines — no construct at this doorway"); break;
     case EXT_SCALAR:   sb_printf(sb, "produces one code point (0x%02X)",
                                  (unsigned)L->r.scalar); break;
@@ -802,7 +837,10 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
     const VerbName *v = pcrec_registry_verb_find(t, query + nstart, namelen);
     const RegRow *row = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
 
-    sb_printf(sb, "\nverb name %.*s\n", (int)namelen, query + nstart);
+    /* the NAME is query text; escaped for the same reason (R20/MOD07-8) */
+    sb_puts(sb, "\nverb name ");
+    put_text(sb, query + nstart, namelen);
+    sb_putc(sb, '\n');
     sb_printf(sb, "  table        %s\n",
               t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
     sb_printf(sb, "  known        %s\n", v ? "yes" : "no");
@@ -1010,15 +1048,22 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
         return NULL;      /* not doorway territory and no row looks like it */
     }
 
-    sb_printf(&sb, "query          %s\n", query);
+    /* the two ECHOES of query text, escaped (R20/MOD07-8) */
+    sb_puts(&sb, "query          ");
+    put_text(&sb, query, qlen);
+    sb_putc(&sb, '\n');
     if (q.routed) {
         sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
         if (q.d.kind == RK_VERB)
             sb_puts(&sb, "  (the NAME decides; see the verb block)");
         else if (q.d.sel < 0)
             sb_puts(&sb, "  selector none (the text ends at the doorway)");
-        else
-            sb_printf(&sb, "  selector '%c'", q.d.sel);
+        else {
+            char selb = (char)q.d.sel;
+            sb_puts(&sb, "  selector '");
+            put_text(&sb, &selb, 1);
+            sb_putc(&sb, '\'');
+        }
         sb_putc(&sb, '\n');
     } else {
         sb_puts(&sb, "route          none — the base grammar answers this text "

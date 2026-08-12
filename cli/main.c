@@ -308,10 +308,13 @@ int main(int argc, char **argv)
          * misuse of this CLI is exit 1 too. The full answer still goes to
          * stdout; the failing rows carry `agree  DISSENT: <clause>: …`. */
         if (ndissent > 0) {
-            fprintf(stderr, "pcrec: --explain: %d row%s DISAGREE with the live "
+            /* the VERB agrees too (R20/MOD07-9): "1 row DISAGREES", "2 rows
+             * DISAGREE". The old form pluralized only the noun. */
+            fprintf(stderr, "pcrec: --explain: %d row%s DISAGREE%s with the live "
                             "doorway (see the 'agree' lines) — this is a pcrec "
                             "defect, not a bad query\n",
-                    ndissent, ndissent == 1 ? "" : "s");
+                    ndissent, ndissent == 1 ? "" : "s",
+                    ndissent == 1 ? "S" : "");
             return 3;
         }
         return 0;

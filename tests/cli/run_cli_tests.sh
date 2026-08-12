@@ -1049,6 +1049,47 @@ case11() {
     assert_field "case11: ...it is a prefix match, not a bucket candidate" \
         "$out" "(?:...)" "select" "listed"
 
+    # --- `rows 0`: a ROUTED query that selects nothing (R20/MOD07-6) --------
+    # The design note called this branch "impossible today; every routed query
+    # yields at least the elected row". Measured: 87 of the 127 `\<byte>`
+    # queries display it, because an unknown escape elects no row and no row's
+    # `syntax` shares a prefix with it. The branch had ZERO assertions until
+    # now — which is how a live, common output shape stayed described as
+    # unreachable.
+    out="$("$PCREC" --explain '\q' 2>"$d/e5.txt")"; rc=$?
+    assert_eq "case11: a routed query that selects no rows still exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e5.txt")"
+    assert_field "case11: ...reporting rows 0" "$out" "@header" "rows" "0"
+    assert_field "case11: ...with the live block still answered" "$out" \
+        "@header" "live" "unknown escape \q"
+    assert_field "case11: ...electing no row" "$out" "@header" "live elected" "none"
+    assert_field "case11: ...and no dissent, there being nothing to dissent" \
+        "$out" "@header" "dissents" "0"
+
+    # --- CONTROL BYTES IN THE ECHO (R20/MOD07-8) ---------------------------
+    # The format grammar had no escaping, so a query containing a newline
+    # injected a synthetic header line that `explain_field` — the helper right
+    # above, parsing this same format — read as real. Measured before the fix:
+    # this query reported `rows 99`. No attacker involved; it is the
+    # operator's own text, so the cure is a visible rendering (`\xHH` for
+    # bytes below 0x20 and 0x7f), not a quoting scheme.
+    out="$("$PCREC" --explain "$(printf '\\\nrows           99\n')" 2>/dev/null)"
+    assert_field "case11: an injected header line does not become a field" \
+        "$out" "@header" "rows" "0"
+    # (command substitution strips the trailing newline, so the query is
+    # `\` + LF + `rows           99` — the leading `\` is the query's own,
+    # deliberately NOT doubled: only control bytes are escaped)
+    assert_field "case11: ...the newline is rendered visibly in the echo" \
+        "$out" "@header" "query" '\\x0arows           99'
+    # ...and the same bytes reaching the ANSWER text are escaped too: the
+    # refusal renders the selector byte into its own sentence, so escaping
+    # only the echo would leave the injection reachable one line down.
+    assert_field "case11: ...and in the live answer that embeds the byte" \
+        "$out" "@header" "live" 'unknown escape \\x0a'
+    out="$("$PCREC" --explain "$(printf '(?\t)')" 2>/dev/null)"
+    assert_field "case11: a control byte in the SELECTOR echo is escaped" \
+        "$out" "@header" "route" "after '(?'  selector '\\x09'"
+
     # --- the unanswerable query keeps its exit 1 and its message ------------
     "$PCREC" --explain 'a' >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
     assert_eq "case11: --explain on base syntax exits 1" "1" "$rc"
@@ -1099,11 +1140,29 @@ case11() {
         fail "case11: agreement sweep" \
              "answered=$answered (floor 19) blocks=$blocks (floor 81) agreed=$agreed"
     fi
-    # every block but the RS_BASE row's elected ITSELF
-    if [ "$selfel" -eq $((blocks - exempt)) ] && [ "$exempt" -le 3 ]; then
-        pass "case11: $selfel/$blocks blocks elected their own row ($exempt base-grammar exempt)"
+    # THE EXEMPT COUNT, ASSERTED EXACTLY (R20/MOD07-7). The conjunct that
+    # stood here was `selfel == blocks - exempt`, which is a TAUTOLOGY: the
+    # loop above increments exactly one of the two per block, so their sum is
+    # `blocks` by construction and the test could not fail. Beside it sat
+    # `exempt <= 3` with no explanation of the 3.
+    #
+    # SELF-ELECTION IS NOT UNASSERTED AS A RESULT — it is asserted by the
+    # agreement sweep this loop duplicates: clause 1 DISSENTS when a row's own
+    # syntax does not elect that row, and the sweep above requires every block
+    # to agree. What was left genuinely unchecked is the size of the EXCEPTION
+    # set, so that is what this now pins, exactly rather than as a tolerance.
+    #
+    # WHY 2: exactly one registry row (`(?:...)`, the single RS_BASE row)
+    # reaches no doorway, and it appears in two of the 19 queries — `(?` finds
+    # it by prefix, `(?:` by both rules. A third exempt block would mean a row
+    # stopped electing itself while still reporting agreement, which is the
+    # one combination the two sweeps cannot produce together.
+    if [ "$exempt" -eq 2 ] && [ "$selfel" -eq $((blocks - 2)) ]; then
+        pass "case11: exactly $exempt blocks are base-grammar exempt ($selfel/$blocks elected their own row)"
     else
-        fail "case11: election sweep" "self=$selfel blocks=$blocks exempt=$exempt"
+        fail "case11: election sweep" \
+             "exempt=$exempt (want exactly 2: the RS_BASE row in 2 queries)" \
+             "self=$selfel blocks=$blocks"
     fi
     # and no query on the shipped table may exit 3
     local dissenting=0

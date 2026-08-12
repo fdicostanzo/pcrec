@@ -242,7 +242,18 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   diagnostic with a bucket sibling. MOD-0.7 also fixed K14 HERE: the `status`
   line promised module `callouts` for the ROADMAP_NEVER row while ext.c and
   `put_expect` in this same file had both been roadmap-aware since MOD-0.1.
-  Internal, not public API — the CLI and the
+  **BOTH QUERY SURFACES `setjmp` THEIR OWN Ctx since R20/MOD07-1**, and
+  `doorway_call`'s comment — which had named "the first enabled,
+  result-producing module port" as the event that must revisit the zeroed Ctx,
+  two milestones after that port landed — is rewritten as a discharged
+  obligation. A raising port used to SIGSEGV both surfaces; it now abandons
+  the answer and returns NULL with a `pcrec_error` filled, which the CLI
+  renders in the compile path's own shape. Both surfaces `arena_free` too
+  (`--probe-ask` never did). **`--explain`'s value renderings escape control
+  bytes** (R20/MOD07-8, `put_text`: bytes below 0x20 and 0x7f as `\xHH`, `\`
+  deliberately not doubled) — the format grammar had no escaping, so a query
+  containing a newline injected a synthetic header line that the test
+  suite's own `explain_field` parser read as real. Internal, not public API — the CLI and the
   test suite are the only consumers, and promoting a function into lib/pcrec.h
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which
