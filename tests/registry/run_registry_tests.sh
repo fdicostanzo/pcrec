@@ -218,4 +218,26 @@ tail sweeps: 2 of 4 prefixes|SR-9: (?< answers alike for every tail, so its spli
 MANIFEST
     fi
 fi
+
+# ---- PC-4 (MOD-0.3e): the SEMANTIC differential ---------------------------
+#
+# PC-3 proves every row names a real construct; PC-4 compares what the
+# PRODUCED constructs MATCH, cell by cell, against the live oracle — the
+# check R8/C4-2 asked for, buildable only once a module gave pcrec
+# semantics that can differ. Skips loudly without libpcre2 (probed inside
+# run_pc4.sh before the gcc sweep is paid for). The needle below is this
+# suite's guard that PC-4 stays wired: a deleted call would leave every
+# other line green.
+PC4OUT="$WORKDIR/pc4.out"
+bash "$SCRIPT_DIR/run_pc4.sh" 2>&1 | tee "$PC4OUT"
+pc4rc=${PIPESTATUS[0]}
+if [ "$pc4rc" -ne 0 ]; then
+    rc=1
+elif ! grep -q "^SKIP: pc4" "$PC4OUT" && \
+     ! grep -q "^pc4: 273 patterns" "$PC4OUT"; then
+    echo "registry: PC-4 ran but its population line is missing or moved —" >&2
+    echo "registry:   the 273-pattern space and pc4_check.c's predictions move" >&2
+    echo "registry:   in the same change or not at all" >&2
+    rc=1
+fi
 exit $rc

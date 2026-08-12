@@ -344,14 +344,16 @@ Then DOC-1, then PC-4 when module `classes` lands.
   Registry/compliance checks green after the edits (143/143). The reader's
   disclosure recorded the FOURTH D27 ambient-injection instance
   (docs/CLAUDE.md + lib/CLAUDE.md, K10 overlap disclosed and unused)
-- [PC-4] STATE:not-started — a SEMANTIC differential, R8/C4-2. PC-3 compares
-  compile VERDICTS only and calls none of the match API it already links, so
-  `\v`'s row — the incident this registry was built for — is unverified: the
-  critic rewrote its note to the pre-PC-1 wrong semantics and PC-3 stayed green.
-  Not buildable yet, and the reason is the schedule rather than the effort:
-  every registry row is REJECTED today, so pcrec has no semantics to differ.
-  The forcing function is module `classes` landing (M5), and this step must land
-  WITH it, not after
+- [PC-4] STATE:completed 2026-08-12 (MOD-0.3e, landed WITH module `classes`
+  as required) — the SEMANTIC differential, R8/C4-2: 273 deterministic
+  patterns × 271 shared subjects, compile verdicts both directions + 62,872
+  match cells vs libpcre2 in make test (~2.5 s; skip-loudly), populations
+  predicted exactly before the first run and confirmed; includes the `-i`
+  axis (first external oracle contact). Liveness proven both axes; the
+  first bitmap sabotage found the Makefile's hand-maintained header deps
+  missing cls_bits.inc — the sabotage never entered the binary — fixed in
+  the same change. `\v`'s semantics — the incident the registry was built
+  for — are externally verified at last
 - [SR-9] STATE:completed 2026-08-10, WITH Q2 — the `byte + tail` design from §7
   of docs/design_registry_selectors.md (NOT §2's string selectors, which R6
   rejected with measurements). One new field, longest-tail-wins within the
@@ -695,6 +697,41 @@ Then DOC-1, then PC-4 when module `classes` lands.
   are POST-MOD-0 milestones, planned at MOD-0.8 close: backrefs exercises
   the deferred resolution and by §18.1 lands alone; conditionals' landing
   bar includes exact E127/E154 (§18.2's ruling).
+  **DESIGN NOTE FOR `backrefs` (Frank, 2026-08-12 tenth session): the
+  engines column's blanket VM_ONLY on the digit rows is provisional and
+  splits under an AOT compiler.** At match time a backreference is a string
+  compare against the group's captured text — which is exactly what the
+  backtracking VM will do, and what the DFA engine cannot (subset
+  construction erases thread identity; no execution point knows a capture,
+  and `(a*)b\1`'s state would need unbounded text — the pumping-lemma
+  classic). But when the referenced group's language is FINITE, the backref
+  is REGULAR and compiles away statically: `(abc)\1` is `abcabc`, `(a|b)\1`
+  is `aa|bb` — expand each choice with the reference synchronized, pure
+  DFA, zero runtime cost, and only an ahead-of-time compiler can afford the
+  expansion (bounded by the existing NFA/DFA caps and gcc-compile-time
+  budgets; infinite-language groups keep the VM). So the module's engine
+  answer is per-PATTERN, not per-row: finite-group backrefs → ENGM_DFA via
+  expansion, infinite-group → ENGM_VM. The `engines` column stays design
+  intent until then (nothing consumes it before SR-8/M4); do not read the
+  rows' VM_ONLY as a measured limit.
+  **SAME-SESSION COMPANION NOTE for `atomic-groups`/possessives (Frank):
+  the (?> row's VM_ONLY splits the same way, and the naive intuition is
+  BACKWARDS twice over.** A DFA never backtracks in the first place —
+  subset construction keeps every alternative alive, which is exactly the
+  NON-possessive semantics — so `a*+` is not a free annotation: it CHANGES
+  the language (`a*+ab` matches nothing, `a*ab` matches "aab"), and a
+  naively-determinized atomic group silently implements the wrong one.
+  But the language stays REGULAR (atomic/possessive are CUT operators;
+  Berglund et al., "Cuts in Regular Expressions" — cuts preserve
+  regularity with possibly-exponential conversion), so pure-DFA
+  compilation is achievable, and the construction's one primitive —
+  determine the sub-expression's OWN priority-first match endpoint online,
+  ignoring the continuation — is precisely the priority accept-pruning
+  pcrec's subset construction is already built around. Blowup bounded by
+  the existing caps; the disjoint-follow special case (PCRE2's own
+  auto-possessification direction, a*b ≡ a*+b when nothing that follows
+  can start with an `a`) is free in both directions. Engine answer again
+  per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 - [FIX-3] STATE:completed 2026-08-11 — **K13: the twelve class-position
   fallbacks, in the CURRENT parser, before the mechanism** (Frank, design
@@ -989,7 +1026,12 @@ Then DOC-1, then PC-4 when module `classes` lands.
   one byte of tail context, because removing `RF_CLASS_INVALID` without it
   leaves K10's gap in a new place (K10's FIX stays MOD-0.6's; the NET comes
   due here)
-- [MOD-0.3e] STATE:not-started — slice 4, PC-4 + the ratchets: PC-4 (the
+- [MOD-0.3e] STATE:completed 2026-08-12 — slice 4, PC-4 + the ratchets
+  (see [PC-4] above for the instrument's own record; check07's floors
+  ratcheted at .3c when its population arrived; check02's compared floor
+  is UNCHANGED by measurement — its bodies run without --features, so
+  nothing new compiles there until a module is default-on, which is
+  MOD-0.8-scope policy). Spec: PC-4 (the
   R8/C4-2 SEMANTIC differential — compile AND MATCH vs libpcre2 over a
   generated class-pattern space, inside make test, skipping loudly without
   libpcre2 exactly as PC-3 does) lands WITH the module per its own step

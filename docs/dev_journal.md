@@ -6328,3 +6328,39 @@ pair_opens already survived R14 as code where code is needed. (3) The
 in-class tail-sweep extension defers WITH RF_CLASS_INVALID (D33 §9.2
 conditioned the obligation on the removal; K10's blind-net count is
 unchanged and stays MOD-0.6's).
+
+**Backrefs design note recorded (Frank's question, tenth session):** the
+digit rows' VM_ONLY is provisional — a backreference to a FINITE-language
+group is regular and an AOT compiler can expand it statically ((a|b)\1 =
+aa|bb, pure DFA, zero runtime cost, bounded by the existing caps); only
+infinite-language groups need the VM's string-compare-and-backtrack. The
+module's engine answer is per-pattern, not per-row. Home: the backrefs
+paragraph in docs/plan.md, pointer beside the rows in registry.c.
+
+**Atomic/possessive companion note recorded (Frank, same conversation):**
+the (?> row's VM_ONLY splits like backrefs', with the intuition trap
+recorded — a DFA never backtracks, so naive determinization gives the
+NON-possessive semantics (a*+ab vs a*ab differ); the constructs are cut
+operators (regular, Berglund et al.), and the cut construction's primitive
+is the priority-first-accept function pcrec's subset construction already
+computes. Homes: plan.md beside the backrefs note; pointer on the (?> row.
+
+**Slice 4 (MOD-0.3e) — PC-4, the semantic differential, landed WITH the
+module as its step always demanded.** 273 deterministic patterns (esc +
+posix spellings × six shapes + a 39-pattern caseless block — the first
+time -i has ever met an external oracle here) × 271 subjects shared
+through ONE header both sides embed. Populations predicted exactly, then
+confirmed on the first run: 232 both-accepted, 41 refusal agreements,
+62,872 match cells, zero disagreements, ~2.5 s inside make test with
+skip-loudly. Both failure axes proven live before the zero was trusted: a
+one-bit bitmap sabotage names subject 0x35 per pattern; a dropped -i fold
+names exactly the caseless posix cells.
+
+**The sabotage that returned zero and was RIGHT to be distrusted:** the
+first bitmap sabotage produced no failures because the Makefile's
+hand-maintained header prerequisites did not include cls_bits.inc — the
+edited table never entered the binary. Fixed in the same change (the .inc
+joined the prerequisites, with the story in a comment). The R8 battery's
+lesson one level down, met again: prove the sabotage reached the binary
+before reading its zero. Without the liveness discipline, a regenerated
+bitmap after a libpcre2 version bump would have silently shipped stale.

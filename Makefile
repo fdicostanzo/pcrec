@@ -13,7 +13,12 @@ LIBOBJS := $(patsubst src/%.c,build/obj/%.o,$(LIBSRCS))
 
 all: build/pcrec build/libpcrec.a
 
-build/obj/%.o: src/%.c src/core/internal.h src/core/limits.h lib/pcrec.h
+# src/parse/cls_bits.inc joined the prerequisites at MOD-0.3e, found the
+# hard way: a PC-4 bitmap sabotage produced ZERO disagreements because the
+# edited .inc never entered the binary — hand-maintained header deps must
+# grow with every new include, or a regenerated table (a libpcre2 version
+# bump is a re-measurement event, D26) silently ships stale.
+build/obj/%.o: src/%.c src/core/internal.h src/core/limits.h lib/pcrec.h src/parse/cls_bits.inc
 	@mkdir -p $(dir $@)
 	$(CC) $(ALLFLAGS) -c -o $@ $<
 

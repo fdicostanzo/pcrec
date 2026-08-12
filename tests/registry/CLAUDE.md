@@ -14,8 +14,31 @@ directory asserts that the description and the shipped parser actually agree.
   runtime `dlopen` through `../fuzz/pcre2_abi.h`. SKIPS LOUDLY and exits 0 when
   libpcre2-8-0 is absent, so a stranger's clone stays green. See its own
   section below
-- **run_registry_tests.sh** — builds and runs both, plus compliance_section.py;
-  part of `make test`. Env: CC, KEEP=1
+- **run_registry_tests.sh** — builds and runs both, plus compliance_section.py
+  and PC-4; part of `make test`. Env: CC, KEEP=1
+- **run_pc4.sh / pc4_check.c / pc4_driver.c / pc4_subjects.h** — PC-4
+  (MOD-0.3e), the SEMANTIC differential R8/C4-2 asked for and PC-3
+  deliberately is not: what a PRODUCED construct MATCHES, cell by cell,
+  against the live oracle. 273 deterministic patterns (11 esc + 28 posix
+  spellings × 6 shapes, + 39 caseless bare forms — the first time `-i` has
+  met an external oracle in this repository) × 271 shared subjects (every
+  single byte + curated multis, ONE header embedded by both sides so the
+  probed set cannot drift). Populations are EXACT predictions stated in
+  pc4_check.c before the first run and confirmed on it: 232 both-accepted,
+  41 refusal agreements (both directions checked — over-acceptance and
+  over-rejection each fail naming the cell), 62,872 match cells, mlimit
+  asserted zero on a backtrack-free space. The pcrec side runs one process
+  per PATTERN (all subjects in-process), whole sweep ~2.5 s. Skips loudly
+  without libpcre2, probed BEFORE the gcc sweep is paid for; the runner
+  carries a population-line needle so an unwired PC-4 fails rather than
+  vanishes. LIVENESS proven in both axes before the zero was trusted: a
+  one-bit bitmap sabotage fires per-pattern naming subject 0x35, and a
+  dropped `-i` fold fires exactly the caseless posix cells — and the FIRST
+  bitmap sabotage run returned zero failures because hand-maintained
+  Makefile header deps did not include cls_bits.inc, so the sabotage never
+  entered the binary (fixed in the same change; the lesson is the fuzz
+  battery's one level down: prove the sabotage reached the binary before
+  reading its zero)
 
 ## What it asserts
 

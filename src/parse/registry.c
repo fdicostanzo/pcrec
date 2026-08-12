@@ -365,6 +365,13 @@ ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code", QF
  * belongs to the backrefs module rather than to this table; the note is where
  * the truth lives until then. Recorded in docs/known_issues.md.
  *
+ * ENGINES: the rows say VM_ONLY, and that is design intent with a known
+ * split behind it — a backref whose group has a FINITE language is regular
+ * and an AOT compiler can expand it away statically ((a|b)\1 = aa|bb, pure
+ * DFA); only infinite-language groups ((a*)\1) genuinely need the VM. The
+ * per-PATTERN engine decision belongs to module `backrefs`; the note with
+ * the reasoning is in docs/plan.md's backrefs paragraph (Frank, 2026-08-12).
+ *
  * All of the above is the ATOM position. The CLASS position is base
  * semantics since FIX-3 (K13): a backreference is impossible there, so
  * `[\0]`..`[\7]` are octal and `[\8]` `[\9]` the literal digits — since
@@ -451,6 +458,14 @@ GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backrefere
 GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group", QF_NO),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
          "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141", QF_NO),
+/* VM_ONLY is design intent with a recorded split (docs/plan.md, backrefs/
+ * atomic note, 2026-08-12): atomic groups are CUT operators — regular, so
+ * DFA-compilable via the cut construction, whose one primitive is the
+ * priority-first-accept function our subset construction already computes.
+ * NOTE the trap the same entry records: naive determinization implements
+ * the NON-atomic semantics (a DFA never backtracks to begin with) — the
+ * cut changes the LANGUAGE, so this row must never be lowered by simply
+ * ignoring the atomicity. Per-pattern engine decision, module's call. */
 GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group", QF_YES),
 /* THE SECOND ROW THIS FILE'S PURPOSE IS MADE OF, and it arrived the same way
  * the first did — three homes disagreeing, found by an outside reading rather
