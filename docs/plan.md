@@ -1424,7 +1424,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
     original wording — K16's linked-pair logic: the buffer gains an accessor
     when it gains a consumer and the K16 fix, together). In-class routing and
     a mech `cli` suite arm are recorded MOD-0.8 candidates
-- [MOD-0.8] STATE:not-started — checkpoint close. The D6 panel **must also cover
+- [MOD-0.8] STATE:started — (2026-08-12 fourteenth session; substeps below) checkpoint close. The D6 panel **must also cover
   Q2+SR-9**, whose panel was deliberately deferred into this step: brief it on
   the option-run grammar in `pcrec_registry_option_run_ok`, which no adversarial
   reader has seen, and the three PC-3 differentials Q2 added. Plus a D27
@@ -1432,6 +1432,26 @@ Then DOC-1, then PC-4 when module `classes` lands.
   option-run RECOGNITION from the goal documents and libpcre2 — MOD-0.6 is the
   only part of this step a blind writer can test, which is itself an argument
   for it being in scope
+  - [MOD-0.8a] STATE:started — the D6 close panel (R20), three lenses:
+    (1) checks/tests on Q2+SR-9's option-run grammar
+    (`pcrec_registry_option_run_ok`, which no adversarial reader has seen)
+    plus the three PC-3 differentials Q2 added; (2) engine semantics on
+    MOD-0.7's landed surfaces (shared router, ExtResult.row, the
+    election/promise/attribution clauses, case11) against the oracle and the
+    accepted design note; (3) docs staleness. Compiled to
+    docs/reviews/2026-08-12-r20-mod08.md with triage dispositions,
+    fix-with-measurement before disposition
+  - [MOD-0.8b] STATE:started — the D27 blinded writer (cell `spec-mod08`,
+    scripts/mk_d27_cell.sh): spec-first tests of \p/\P and `(?` option-run
+    RECOGNITION from the construct's public promise and libpcre2, denied
+    src/ and tests/ (default cell allowlist); cell diffed back into the
+    worktree for review-then-merge
+  - [MOD-0.8c] STATE:not-started — candidate dispositions and close, each
+    ruled/landed/deferred WITH measurement: check09 per-name arming;
+    default-on policy (a Frank ruling); check01 aperture/floors; mech suite
+    types — registry+pc3 (R18+R19, two motivations) and cli (MOD-0.7 §9.3,
+    runtime cost unmeasured); PC-4 missing shapes (caseless-negated,
+    \N{n,m}, MODIFIER — R16/R17 NOTED); in-class routing (MOD-0.7 §3.4)
 
 
 Sequenced so each step pays for itself before the next is justified. SR-1/SR-2
