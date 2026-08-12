@@ -1929,21 +1929,60 @@ static void check_group_tails(void)
         {"+", "(a)(a)", "every tail is a relative subroutine call; non-digits are error 129"},
         {"-", "(a)(a)", "digits are subroutine calls, option letters are settings"},
     };
+    /* TWO HALVES SINCE R20/OPTRUN-1, and the second one is the fix for a
+     * measured blindness. Every completion here used to contain a `)`, so
+     * every generated pattern was a CLOSED construct — and the whole
+     * truncated region was invisible to all 48.7M probes of this doorway.
+     * That is where OPTRUN-1 lived: `(?P` at end of pattern is libpcre2 err
+     * 114 (the construct is UNCLOSED) while pcrec called it "unrecognized
+     * character after (?P", a sentence about a byte the pattern does not
+     * contain. Proved blind by sabotage (OPTRUN-B1: invert the truncation
+     * rule and PC-3 stays all green while registry_check fails 11).
+     *
+     * THE TWO HALVES ARE AGGREGATED SEPARATELY, and that is not tidiness —
+     * the first version of this extension appended the truncated shapes to
+     * the SAME per-byte OR and was measurably VACUOUS. The per-byte verdicts
+     * are ORs across completions, so a closed shape that still recognises and
+     * still promises pins both sides true and no truncated shape can ever
+     * contribute a mismatch. Measured: a sabotage making every truncated
+     * pattern in a tailed bucket drop its module promise scored ZERO failures
+     * repository-wide. That is this directory's own recorded lesson —
+     * "extending a check disarmed it", the R9 nested-opener floor, one
+     * doorway over — so `HALF_CLOSED` and `HALF_TRUNC` carry their own
+     * verdicts, their own populations and their own mismatch reports.
+     *
+     * THE RESIDUAL, stated because narrowing a blind spot is not closing it:
+     * the template `"%s(?%s%c%s"` always inserts byte `b` after the prefix,
+     * so the ZERO-TAIL cell — `(?P` itself — is still a pattern this loop
+     * cannot generate. What the truncated half buys is its REGION: every
+     * shape that ends without a `)`. The exact cell is a hand pin in
+     * tests/reject/ and an expectation in registry_check's `(?%c` sweep
+     * (which does end at the selector); OPTRUN-B1's general lesson ("every
+     * completion contains `)`") is recorded for PC-4. */
+#define TAILCOMP_NCLOSED 10
     static const char *const TAILCOMP[] = {
+        /* CLOSED — indices 0..TAILCOMP_NCLOSED-1 */
         ")", "a)", "n>a)", "1)", "=a)", ":a)", "i)", "n)", "]])", "'n')",
+        /* TRUNCATED — the same shapes with the `)` removed */
+        "", "a", "n>a", "1", "=a", ":a", "i", "n", "]]", "'n'",
     };
+    enum { HALF_CLOSED = 0, HALF_TRUNC = 1, NHALF = 2 };
+    static const char *const HALF_NAME[NHALF] = { "closed", "truncated" };
 
     unsigned long long seth = SET_HASH_INIT;
     size_t probes = 0;
     int total_mismatch = 0, live_prefixes = 0;
 
     for (size_t p = 0; p < sizeof PREFIXES / sizeof PREFIXES[0]; p++) {
-        int recognised = 0, refused = 0, mismatches = 0;
+        int recognised[NHALF] = {0, 0}, refused[NHALF] = {0, 0};
+        int mismatches[NHALF] = {0, 0};
 
         for (int b = 1; b < 256; b++) {
-            bool p2_recognised = false, pcrec_module = false;
+            bool p2_recognised[NHALF] = {false, false};
+            bool pcrec_module[NHALF] = {false, false};
 
             for (size_t i = 0; i < sizeof TAILCOMP / sizeof TAILCOMP[0]; i++) {
+                int h = i < TAILCOMP_NCLOSED ? HALF_CLOSED : HALF_TRUNC;
                 char pat[64];
                 int n = snprintf(pat, sizeof pat, "%s(?%s%c%s",
                                  PREFIXES[p].lead, PREFIXES[p].pfx, b, TAILCOMP[i]);
@@ -1951,34 +1990,56 @@ static void check_group_tails(void)
                 seth = set_hash(seth, pat);
                 probes++;
                 if (!PCRE2_NO_SUCH_CONSTRUCT(pcre2_try(pat, (size_t)n, NULL, 0)))
-                    p2_recognised = true;
-                if (pcrec_promises_module(pat)) pcrec_module = true;
+                    p2_recognised[h] = true;
+                if (pcrec_promises_module(pat)) pcrec_module[h] = true;
             }
 
-            if (p2_recognised) recognised++; else refused++;
-            if (p2_recognised != pcrec_module) {
+            for (int h = 0; h < NHALF; h++) {
+                if (p2_recognised[h]) recognised[h]++; else refused[h]++;
+                if (p2_recognised[h] == pcrec_module[h]) continue;
                 if (total_mismatch < 12)
-                    bad("tail sweep (?%s: byte 0x%02x ('%c') — libpcre2 %s a construct, "
-                        "pcrec %s a module. %s",
-                        PREFIXES[p].pfx, b, (b >= 32 && b < 127) ? b : '?',
-                        p2_recognised ? "HAS" : "has NO",
-                        pcrec_module ? "promises" : "promises NO", PREFIXES[p].why);
-                mismatches++;
+                    bad("tail sweep (?%s [%s]: byte 0x%02x ('%c') — libpcre2 %s a "
+                        "construct, pcrec %s a module. %s",
+                        PREFIXES[p].pfx, HALF_NAME[h], b,
+                        (b >= 32 && b < 127) ? b : '?',
+                        p2_recognised[h] ? "HAS" : "has NO",
+                        pcrec_module[h] ? "promises" : "promises NO",
+                        PREFIXES[p].why);
+                mismatches[h]++;
                 total_mismatch++;
             }
         }
 
         char line[256];
-        snprintf(line, sizeof line, "tail sweep (?%s: 255 tails — %d are constructs, %d are not",
-                 PREFIXES[p].pfx, recognised, refused);
-        if (mismatches == 0) ok(line);
+        snprintf(line, sizeof line,
+                 "tail sweep (?%s: 255 tails — closed %d/%d constructs/not, "
+                 "truncated %d/%d", PREFIXES[p].pfx,
+                 recognised[HALF_CLOSED], refused[HALF_CLOSED],
+                 recognised[HALF_TRUNC], refused[HALF_TRUNC]);
+        if (mismatches[HALF_CLOSED] == 0 && mismatches[HALF_TRUNC] == 0) ok(line);
 
         /* A prefix where libpcre2 answers the SAME for every tail cannot detect
-         * anything by agreement, and saying so is the point: `(?<` is that case
-         * — every tail is either a lookbehind or a name — so its module split is
-         * pinned in tests/reject/ and NOT here. Counting how many prefixes are
-         * live stops this whole sweep from quietly becoming that. */
-        if (recognised > 0 && refused > 0) live_prefixes++;
+         * anything by agreement, and saying so is the point. TWO of the four
+         * are that case, not one (R20/OPTRUN-3 — this comment named only the
+         * first, which made a floor sitting exactly ON its threshold read as
+         * though it had slack):
+         *
+         *     (?P   3 constructs / 252 not     LIVE
+         *     (?-  22 constructs / 233 not     LIVE
+         *     (?<  255 / 0   SATURATED — every tail is a lookbehind or a name
+         *     (?+  255 / 0   SATURATED — every tail is a relative call, and a
+         *                    non-digit is err 129, which is DISPATCH
+         *
+         * So the module splits for `(?<` and `(?+` are pinned in tests/reject/
+         * and NOT here. Counting how many prefixes are live stops this whole
+         * sweep from quietly becoming that — and with exactly 2 of 4 live, the
+         * floor below has NO margin: losing either live prefix trips it. That
+         * is measured, and left as measured.
+         *
+         * Liveness is read off the CLOSED half so the floor keeps meaning the
+         * same thing it did before R20 widened the completion set. */
+        if (recognised[HALF_CLOSED] > 0 && refused[HALF_CLOSED] > 0)
+            live_prefixes++;
     }
 
     if (live_prefixes < 2)
@@ -1993,7 +2054,7 @@ static void check_group_tails(void)
         ok(line);
     }
 
-    expect_set("tail sweeps", seth, 0x1884f2f7916a9955ULL);
+    expect_set("tail sweeps", seth, 0x29c2e21e28d1bbc9ULL);
 }
 
 /* ---- MOD-0.6 phase 2 / slice 4: the \p and \P shape space --------------

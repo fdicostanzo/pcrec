@@ -613,6 +613,16 @@ reject '(?P>n)'   "requires module 'recursion'"
 # which the byte-keyed row promised a module for. Found by the tail sweep this
 # step added, not by the plan.
 reject '(?PX)'    "unrecognized character after (?P"
+# ...but a TRUNCATED `(?P` is not one of them, and that cell went unpinned for
+# two eras (R20/OPTRUN-1). "unrecognized character after (?P" is a claim about
+# the byte AFTER `(?P`, and when the pattern ENDS there is no such byte — the
+# sentence is false by construction. libpcre2 10.46 gives err 114 "missing
+# closing parenthesis" at offset 3, exactly what it gives bare `(?`, which is
+# R17's finding one row over. The tail sweep could not see this: its template
+# `"%s(?%s%c%s"` always inserts a byte after the prefix, so `(?P` is a pattern
+# it structurally cannot generate (OPTRUN-B1 — truncated completion shapes
+# land with this fix).
+reject '(?P'      "missing closing ) for group"
 # The relative subroutine calls. Both fell to the `(?` catch-all and were called
 # 'modifiers'; `(?+N)` and `(?-N)` are the relative spellings of `(?1)`..`(?9)`,
 # which this table has always called 'recursion'.
@@ -1384,8 +1394,8 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 303 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 303 / 65 / 0 / 4." >&2
+if [ "$nrej" -ne 304 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 4 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 304 / 65 / 0 / 4." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

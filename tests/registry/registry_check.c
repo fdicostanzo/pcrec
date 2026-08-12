@@ -972,6 +972,18 @@ static void check_required_rows(void)
  * format and forget this number and you get a loud failure rather than a check
  * quietly asking about the wrong byte. That is deliberate — R9 spent two
  * findings on guards that were wrong in the same way as the bug they answered. */
+/* Does this bucket decide anything by a TAIL? Mirrors ext.c's helper of the
+ * same shape and exists for the same one caller — the truncation exception
+ * below. */
+static bool sweep_bucket_has_tail(RegKind k, int sel)
+{
+    size_t n;
+    const RegRow *rows = pcrec_registry(k, &n);
+    for (size_t i = 0; i < n; i++)
+        if (rows[i].sel == sel && rows[i].tail) return true;
+    return false;
+}
+
 static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
                   unsigned skip_flag, bool at_open, bool excuse_base_cport)
 {
@@ -1000,6 +1012,24 @@ static void sweep(RegKind k, const char *fmt, size_t selpos, const char *what,
          * rather than to their two hand-written probes alone. */
         if (r && r->sel == c && r->diag == RD_FIXED) {
             const char *want = (at_open && r->open_msg) ? r->open_msg : r->msg;
+            /* THE TRUNCATION EXCEPTION (R20/OPTRUN-1). Every pattern this
+             * sweep builds for the `(?` doorway is `(?X` — it ENDS at the
+             * selector — and in a bucket decided by a TAIL that means the
+             * fallback row was reached because the text ran out, not because
+             * the byte is unrecognisable. Its fixed message ("unrecognized
+             * character after (?P") is then a sentence about a byte the
+             * pattern does not contain, and the parser answers the
+             * unclosed-group family instead, as libpcre2 does (err 114).
+             *
+             * THE EXPECTATION IS HAND-WRITTEN HERE, NOT READ FROM THE ROW,
+             * and that is deliberate: the row's own message is precisely the
+             * wrong answer in this cell, so deriving it would re-assert the
+             * defect. This string can therefore dissent if the parser
+             * reverts. Its ORACLE is elsewhere, as it must be — tests/reject
+             * pins `(?P` by hand, and PC-3's tail sweep now generates
+             * truncated completions against libpcre2. */
+            if (selpos + 1 == plen && sweep_bucket_has_tail(k, c))
+                want = "missing closing ) for group";
             if (!rejected || strcmp(got, want) != 0) {
                 bad("%s: byte 0x%02x ('%c') — the row promises \"%s\", parser %s",
                     what, c, c >= 32 && c < 127 ? c : '?', want,
