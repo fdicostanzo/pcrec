@@ -285,8 +285,8 @@ single home is invisible, because the wrongness is what both sides read.
    names are generated from **libpcre2's own shared object** — its compiled-in
    name tables, read via `dlinfo`, expanded to every prefix and suffix — plus
    single-character mutations of the names pcrec claims, plus all 255 bytes,
-   plus LENGTHS straddling the 126-130 boundary. ~75,000 candidates in 11
-   forms, ~823,000 probes, about 3 seconds. libpcre2's verdict on each decides
+   plus LENGTHS straddling the 126-130 boundary. ~75,000 candidates in 13
+   forms, ~973,700 probes, about 3 seconds. libpcre2's verdict on each decides
    what pcrec owes.
 
    **`pool_from_lengths`'s alphabet is not just `A`/`a` any more** (K15,
