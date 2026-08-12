@@ -1010,6 +1010,34 @@ case11() {
             "$out" "$q" "module" "modifiers"
     done
 
+    # --- THE NULL CONTRACT (R20/MOD07-4+5): NULL <=> answered without a row -
+    # `ExtResult.row` named three no-row cases and was WRONG about two of
+    # them. Both doorways stamp the elected row at the point of LOOKUP, and
+    # both then have a later path that answers without consulting it: the `(?`
+    # doorway's c2 < 0 branch (R17's end-of-pattern fix — c2 == -1 aliases
+    # REG_SEL_ANY, so the catch-all is stamped and then walked past), and the
+    # class-bracket delimiter-scan decline (stamped before the scan runs). So
+    # "NULL => no row" held and the converse did not, and the display asserted
+    # elections that never happened. Written failing first; the verbatim block
+    # is in the slice's commit message.
+    out="$("$PCREC" --explain '(?')"
+    assert_field "case11: '(?' at end of pattern elected NO row" "$out" \
+        "@header" "live elected" "none"
+    # ...and MOD07-5 falls out of the same fix: `fallback` means "the
+    # arbitration actually elected the catch-all here", so tagging it on a
+    # query the catch-all never won asserted a reachability nothing exercised.
+    # The row is still SHOWN — the prefix rule finds it, which is what
+    # `listed` says.
+    assert_field "case11: ...so the catch-all is 'listed', not an election" \
+        "$out" "(?q)" "select" "listed"
+    assert_eq "case11: ...and the row set is unchanged by the retagging" "45" \
+        "$(explain_field "$out" "@header" "rows")"
+    out="$("$PCREC" --explain '[[:alpha]')"
+    assert_field "case11: an unclosed delimiter pair DECLINES" "$out" \
+        "@header" "live" "declines — no construct at this doorway"
+    assert_field "case11: ...having elected no row either" "$out" \
+        "@header" "live elected" "none"
+
     # --- the base-grammar row: an honest non-answer, not a fabricated one ---
     out="$("$PCREC" --explain '(?:')"; rc=$?
     assert_eq "case11: --explain '(?:' exits 0" "0" "$rc"

@@ -303,9 +303,19 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * family pcrec already uses for bare `(`, in both gate states (this is
      * base-family truth, not module truth). The Q2-era pin asserting the
      * old answer carried prose claiming PCRE2 agreement; the measurement
-     * says otherwise, and the pin moved with this fix. */
-    if (c2 < 0)
+     * says otherwise, and the pin moved with this fix.
+     *
+     * AND IT ANSWERS WITHOUT A ROW (R20/MOD07-4), so the stamp is cleared.
+     * The lookup above landed on the catch-all only because c2 == -1 aliases
+     * REG_SEL_ANY — an accident of the sentinel, not an arbitration — and
+     * this branch then walks past whatever it found. Leaving the stamp made
+     * `--explain '(?'` print `live elected (?q)` and tag that row's block
+     * `fallback`, both asserting an election that never happened. NULL is
+     * what `ExtResult.row` promises here. */
+    if (c2 < 0) {
+        *elected = NULL;
         REFUSE(at, "missing closing ) for group");
+    }
 
     if (r->diag == RD_FIXED)
         REFUSE(at, "%s", r->msg);
@@ -434,8 +444,18 @@ static ExtResult clsbracket_answer(Ctx *cx, ExtWant want, int c2, size_t at,
     size_t close_at = from;              /* index of the closing delimiter */
     if (r->flags & RF_CLASS_DELIM) {
         if (!pcrec_class_delim_extent_scan(cx->pat, cx->patlen, c2, from,
-                                           &close_at))
+                                           &close_at)) {
+            /* R20/MOD07-4: this DECLINE answers without a row, so clear the
+             * stamp the lookup left. A pair that never closes is not this
+             * construct — `[[.]`, `[a[.b]` and `[.]` are ordinary classes —
+             * and reporting the row the scan just rejected made
+             * `--explain '[[:alpha]'` say `live elected [[:alpha:]]` beside
+             * `declines — no construct at this doorway`. The `!r` decline
+             * above already yields NULL because the lookup itself found
+             * nothing; this is the same contract, one branch later. */
+            *elected = NULL;
             DECLINE();
+        }
     }
 
     /* The `else if (at_class_open) return;` that stood here is GONE, and its

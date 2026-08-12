@@ -575,9 +575,27 @@ typedef struct {
                            EXT_NODE: the subtree the caller splices */
 
     /* THE ELECTED ROW (MOD-0.7 slice 2) — which row the doorway DISPATCHED
-     * on, or NULL where it answered without one (an unknown escape, a
-     * class-bracket decline, `(?` at end of pattern). Nothing on the compile
-     * path reads it; `--explain` does, and cli case11 asserts it per row.
+     * on. Nothing on the compile path reads it; `--explain` does, and cli
+     * case11 asserts it per row.
+     *
+     * THE CONTRACT IS A BICONDITIONAL: **NULL if and only if the doorway
+     * answered WITHOUT a row.** R20/MOD07-4 found the reverse direction false
+     * in two of the three cases this comment already named, because both
+     * failing paths STAMP AT LOOKUP and then answer somewhere the lookup's
+     * result plays no part:
+     *
+     *   unknown escape              the lookup found nothing. NULL, always.
+     *   class-bracket, no row       the lookup found nothing. NULL, always.
+     *   class-bracket, pair never   a row WAS found and the delimiter scan
+     *     closes                    then rejected it. Cleared at the DECLINE.
+     *   `(?` at end of pattern      c2 == -1 aliases REG_SEL_ANY, so the
+     *                               catch-all is found by an accident of the
+     *                               sentinel and the branch walks past it.
+     *                               Cleared in that branch.
+     *
+     * A path that answers without consulting the row must clear the stamp
+     * where it answers, not rely on the lookup having failed. The two that
+     * did not made `--explain` assert elections that never happened.
      *
      * IT IS NOT "THE ROW THAT WROTE THE MESSAGE", and the distinction is
      * measured rather than pedantic: for `(?iZ)` the elected row is the `i`
