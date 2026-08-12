@@ -1,0 +1,72 @@
+# tests/modifiers/xxmode.rxt — module `modifiers` (MOD-0.5c/d): the `xx`
+# extended-mode hazard, the reason [MOD-0.5] was reordered after `classes`
+# in the first place (docs/plan.md [MOD-0.5], D30 §7). R10/C2-11 measured:
+# `[a- ]` at options=0 is error 108 (range out of order); `(?xx)[a- ]`
+# COMPILES, because `xx` DELETES the space from the class body before
+# range-parsing, at the exact class-range-endpoint spot `3fca0d8` (SPEC-FA)
+# fixed as a silent-wrong-matcher one commit before the R-panel that found
+# it. These are the cells that made pcrec's earlier safety an accident of
+# `(?x)` being unimplemented rather than a designed guarantee — landing
+# `xx` removes that accidental guard, so this file is the regression net
+# for exactly the hazard the reordering was about.
+#
+# ORACLE: `# pcre2-only` throughout. Python has no `xx` distinct from `x` —
+# `(?xx)a b` happens to behave like `(?x)a b` outside a class (both just
+# see two 'x' letters in the flag group), but INSIDE a class python does
+# NOT delete anything, so `(?xx)[a- ]` is a python compile ERROR ("bad
+# character range a- ") where libpcre2/pcrec's xx COMPILES it — the two
+# engines answer DIFFERENTLY on the discriminating cell, confirmed
+# directly (scratchpad check against python3 `re` 2026-08-12). Every
+# expectation below is measured against live libpcre2 10.46 instead
+# (tests/probes/probe_mod05.c's "verdicts: x vs xx at the class boundary"
+# and "matches: x/xx lexing" blocks, cross-checked with a throwaway
+# scratchpad extension for the specific match spans used here).
+#
+# THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary via
+#   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/xxmode.rxt
+# 11 cases total, 9 fail with "requires module 'modifiers'" (measured
+# 2026-08-12) — the three `m`/`n` blocks (`(?xx)[a- ]`, `(?xx)[\ -a]`,
+# `(?xx)[a\tb]`). The two `perr` blocks (`(?x)[a- ]`, `(?xx)[a-\ ]`)
+# already PASS today: today's blanket gate refusal satisfies "fails to
+# compile" just as well as the eventual err-108 diagnostic does.
+
+# ---- the D30 §7 hazard: single x leaves the range invalid ----------------
+
+# pcre2-only
+pattern (?x)[a- ]
+features modifiers
+perr
+
+# ---- xx DELETES the space first, so [a-] is left: members {a, -} ---------
+
+# pcre2-only
+pattern (?xx)[a- ]
+features modifiers
+m "a" 0 1
+m "-" 0 1
+n " "
+
+# ---- escaped space stays SIGNIFICANT even under xx: range a>SP invalid ---
+
+# pcre2-only
+pattern (?xx)[a-\ ]
+features modifiers
+perr
+
+# ---- the mirrored range compiles: SP..a covers the low end -------------
+
+# pcre2-only
+pattern (?xx)[\ -a]
+features modifiers
+m " " 0 1
+m "0" 0 1
+m "a" 0 1
+
+# ---- xx deletes tab too: [a\tb] left with members {a, b} -----------------
+
+# pcre2-only
+pattern (?xx)[a\tb]
+features modifiers
+n "\t"
+m "a" 0 1
+m "b" 0 1

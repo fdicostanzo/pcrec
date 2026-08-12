@@ -1,0 +1,112 @@
+# tests/modifiers/malformed_and_gate.rxt — module `modifiers` (MOD-0.5c):
+# two things that are NOT the module's semantic producers but ARE its
+# recognition surface — [MOD-0.5a] ruling 6 (malformed option-setting runs
+# are the module's to diagnose) and ruling 2 (per-letter refusals `m` ->
+# 'assertions', `J` -> 'named-groups') — plus a small set of GATE-OFF pins
+# (today's real, already-correct behaviour, no producer required).
+#
+# ---- malformed vs non-construct ------------------------------------------
+# `(?i-m-s)` IS a recognised option-setting run, just a MALFORMED one (a
+# hyphen appearing twice — PCRE2 error 194 "invalid hyphen in option
+# setting", measured against libpcre2 10.46). `(?iZ)` is NOT a construct at
+# all: `Z` is never a recognised modifier letter, so it never even reaches
+# the module's malformed-run diagnosis — it is base-grammar's "unrecognized
+# character after (? or (?-", independent of whether `modifiers` is
+# enabled, TODAY and permanently (D26: the WORDING need not match PCRE2's
+# error 111 for the same input; the shape does — see the same probe run).
+#
+# ---- per-letter refusal, WHY belongs to tests/reject/ ---------------------
+# `m` and `J` are recognised modifier letters whose SEMANTIC home is a
+# different module (ruling 2). With ONLY `features modifiers` enabled they
+# must still refuse — but a `.rxt` `perr` block asserts only THAT a pattern
+# is rejected, never WHY (tests/reject/CLAUDE.md), and the module NAME in
+# the diagnostic is the whole point of ruling 2. **The WHY check (that the
+# diagnostic names 'assertions'/'named-groups', not 'modifiers') needs a
+# tests/reject/ entry; this file only pins THAT these stay rejected.**
+# Flagged for the merge: adding those two tests/reject/ rows is part of
+# [MOD-0.5c]'s landing bar, not something this corpus can discharge.
+# These two blocks use a LEADING literal (`a(?m)...`, `a(?J)...`) rather
+# than position 0, for the ORACLE reason below, not for any pcrec-semantic
+# reason.
+#
+# ORACLE: every block in this file is plain, unmarked (no `# pcre2-only`)
+# — NOT because python agrees these constructs are invalid PCRE (it does
+# not; `(?m)^b` and `(?i-m-s)a`'s LETTERS are real PCRE), but because every
+# pattern here happens to ALSO fail to compile in python re, for python's
+# OWN independent reasons (a non-start-position global inline flag is a
+# python SyntaxError since 3.11 — "global flags not at the start of the
+# expression"; `U`/`n`/`J`/`^` are not python flag letters at all —
+# "unknown extension"; `(?i-m-s)` is "missing :" since python's unscoped
+# form is add-only; `Z` is "unknown flag"). `perr` only asserts THAT a
+# pattern fails to compile, so this is genuine (if coincidental) two-oracle
+# agreement, confirmed directly against python3 `re` 2026-08-12 for every
+# pattern below — not a claim that python's REASON matches pcrec's.
+#
+# THE D33 §9.3 RECORD, split (this file mixes forward pins with today-
+# already-correct pins — say which):
+#   - the two malformed/non-construct blocks (both gate states: `(?i-m-s)a`
+#     WITH features modifiers, `(?iZ)a` with and without) PASS TODAY —
+#     `modifiers` being wholly unimplemented already refuses everything,
+#     which is a strictly WEAKER but still-perr-satisfying reason; `(?iZ)a`
+#     would perr identically before, during and after MOD-0.5 (it never
+#     touches the module).
+#   - the two per-letter-refusal blocks (`a(?m)^b`, `a(?J)...`) with
+#     `features modifiers` ALSO pass today, and are a FORWARD PIN: they
+#     will stay perr straight through MOD-0.5c's landing (m/J's real
+#     modules do not exist yet) — not a §9.3 near-term flip, flagged so it
+#     is not mistaken for one.
+#   - the six gate-off blocks (no `features` line at all) PASS TODAY and
+#     will keep passing after MOD-0.5 lands (default enabled set stays
+#     empty) — these are the ones worth watching for a REGRESSION, not a
+#     future flip.
+# Measured 2026-08-12: all 11 blocks in this file (11 cases, all `perr`)
+# already PASS against the MOD-0.5a-gate binary, 0 pattern-compile
+# failures — the one file in this corpus that is fully green before the
+# module lands, by design.
+
+# ---- malformed vs non-construct, gate ON ----------------------------------
+
+pattern (?i-m-s)a
+features modifiers
+perr
+
+pattern (?iZ)a
+features modifiers
+perr
+
+# ---- (?iZ) is not a construct AT ALL: stays rejected with the gate OFF too
+
+pattern (?iZ)a
+perr
+
+# ---- per-letter refusal: m's home is 'assertions', not 'modifiers' -------
+
+pattern a(?m)^b
+features modifiers
+perr
+
+# ---- per-letter refusal: J's home is 'named-groups', not 'modifiers' -----
+
+pattern a(?J)(?<g>x)(?<g>y)
+features modifiers
+perr
+
+# ---- gate OFF: today's behaviour, no features line, must stay pinned -----
+
+pattern a(?i)b
+perr
+
+pattern a(?U)b+
+perr
+
+pattern a(?n)(b)
+perr
+
+pattern a(?^)b
+perr
+
+pattern a(?s)b
+perr
+
+pattern a(?x)b c
+perr
