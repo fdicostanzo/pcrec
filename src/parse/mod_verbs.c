@@ -272,9 +272,11 @@ const VerbName *pcrec_registry_verb_find(const VerbTable *t,
  * MOD-0.4: moved here verbatim from src/parse/ext.c — see this file's own
  * header for the wiring decision (a direct call, no port) and for where
  * each of the milestone's four measured facts now lives. */
-ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
+static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
+                             const RegRow **elected)
 {
     const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
+    *elected = r;   /* MOD-0.7 slice 2 — doorway 3's single row */
     want = pcrec_ext_gate(r, want);
     const char *pat = cx->pat;
     size_t n = cx->patlen;
@@ -415,4 +417,18 @@ ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
                (int)namelen, name);
 
     REFUSE(at, "%s", r->msg);
+}
+
+/* The elected-row wrapper (MOD-0.7 slice 2; ext.c's wrappers carry the full
+ * rationale). Doorway 3 has exactly one RegRow, so `res.row` is always that
+ * row when the doorway answers at all — the INTERESTING half here is that the
+ * MESSAGE frequently is not the row's: an unknown name, a MARK without its
+ * argument and a NEVER name all come from the VerbName tables, which is the
+ * one genuinely independent cross-source pair in the design (§4.3). */
+ExtResult pcrec_ext_verb(Ctx *cx, ExtWant want, size_t at)
+{
+    const RegRow *elected = NULL;
+    ExtResult res = verb_answer(cx, want, at, &elected);
+    res.row = elected;
+    return res;
 }

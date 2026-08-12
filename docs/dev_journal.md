@@ -6852,3 +6852,73 @@ pattern names its target matches itself through the harness wrapper;
 completion of a long run is a fact about its output artifact, and a dead
 lane silently discards its tasks' completion notifications — read the
 file, not the process table.
+
+## 2026-08-12 — fourteenth session: MOD-0.7, `--explain` rewritten — and the milestone's own cure refuted before it was built
+
+**MOD-0.7a (design note) then MOD-0.7b (six slices), both complete.**
+`docs/design_notes_mod07.md` is the record; this entry is the part a
+restarting reader needs.
+
+**The headline is a refutation of the plan row's own instruction.** [MOD-0.7]
+said: print the row's declared attribution and the recogniser's answer and
+assert they agree per row. Applied literally that cannot catch a module
+swap, because `ext.c` renders "requires module '%s'" from the same
+`r->module` `--explain` prints. Measured before anything was designed:
+R10/C4-1's sabotage applied at `26b9660`, then the whole 100-row
+declared-vs-live census re-run — **93 SAME / 6 SILENT / 1 NOROUTE, bit
+identical to the correct table**, both swapped rows still reading "SAME".
+Suite-wide detection of that swap, each suite run alone because `make test`
+halts at the first failure: `tests/reject` 2 (hand pins), case10 1 (the
+`--count-groups` pin), `registry_check` + `pcre2_check` **0 of 322**, the
+committed doc index 1. **All eight of case10's `--explain` assertions passed.**
+
+So the live call was kept for what it does deliver — ELECTION (13 rows share
+their rendered diagnostic with a bucket sibling, so text cannot say which
+answered) and PROMISE CONSISTENCY — and module-name truth stayed where it
+already lived, in hand-written pins.
+
+**A live defect, found by applying the design to its first row.**
+`--explain '(?C1)'` promised module `callouts` while the compiler said "no
+module will implement it". K14's over-promise, fixed in `ext.c` at MOD-0.1 and
+rendered correctly by `put_expect` 100 lines above in the same file since the
+same milestone; `--explain` never read `roadmap`. D26 tier 2 in D26's own
+words. One row today. Fixed here under the manager's FIX-3 ruling — pin
+written first, run against the pre-fix rewrite, **recorded failing** (one
+assertion, 182 pass / 1 fail), then the fix. No K number: found and fixed
+inside one milestone.
+
+**And the same lesson recurred INSIDE the milestone that found it.** The
+`agree` clause cannot see the `(?C1)` defect either — both of its sides read
+the row, so the live answer (correctly promising nothing) and the declared
+columns agree while the rendered sentence lies. Only the hand-written pin
+catches it. Twice in one milestone: a control fed from the thing it controls
+reports agreement, and agreement is not correctness.
+
+**What landed, in slices:** one doorway router shared by `--probe-ask` and
+`--explain` (1089 cells byte-identical, check06 floors unmoved);
+`ExtResult.row`, stamped by a thin wrapper per doorway so a later `return`
+cannot forget it (876 compile cells byte-identical); the rewrite — a query is
+TEXT AT A DOORWAY, selection is prefix ∪ bucket-candidates with each row
+tagged, the query's live answer is DATA and each row's canonical live answer
+is the ASSERTION, exit 3 for a dissent; cli case11, 63 field-level assertions
+under a stated no-`assert_contains` rule, with case10's eight blob assertions
+DELETED rather than duplicated; V1-V7 measured; docs.
+
+**Two harness bugs worth remembering, both found writing the case.**
+`awk -v row='\v'` processes escape sequences in the value, so half the rows
+arrived as a vertical tab and matched nothing — pass row/key through the
+ENVIRONMENT. And a sweep loop that matched `agree` lines by fixed column
+reported 81 dissents on a clean table the moment a key got one space wider:
+match on the KEY and trim, never on padding.
+
+**Deferred, with reasons:** the normalised `\p` name waits for the first
+`unicode-props` producer (manager ruling 2, superseding the plan row's
+wording — K16's linked-pair logic: accessor, consumer and K16 fix land
+together). In-class routing for `--explain '[\p{L}]'` and a `mech` `cli`
+suite arm are MOD-0.8 candidates; the mech arm's CODE is trivial and its
+RUNTIME is unmeasured, which is the reason it is not built.
+
+**Named for the next reader (§9.4):** case11's query set is HAND-LISTED. The
+generated query space is not swept, so a routing or selection bug affecting
+only a byte outside that list is invisible to it. That is the sweep-template
+lesson's fifth possible recurrence and this is its signpost.

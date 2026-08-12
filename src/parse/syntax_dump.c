@@ -259,59 +259,139 @@ char *pcrec_syntax_verbs(void)
     return sb_take(&sb);
 }
 
-/* `--explain '\v'`. A row matches when the query and the row's `syntax` are a
- * prefix of one another, so `\k` finds `\k<name>` and `(?=...)` finds `(?=`.
- * Every match is printed: `(?<` is genuinely two constructs, and answering with
- * only the first would be the kind of half-truth this file exists to end. */
-char *pcrec_syntax_explain(const char *query, unsigned flavours)
+/* `--explain` lives at the END of this file since MOD-0.7: it is the shared
+ * doorway router's second caller, so it must be defined below it. */
+
+/* ---- THE ROUTER: text -> ONE doorway call (MOD-0.1 slice 8; extracted at
+ *      MOD-0.7 slice 1) --------------------------------------------------
+ *
+ * Locate the construct: the FIRST byte that opens a doorway, found by a
+ * bytewise scan, never a parse. Ten registry rows carry a plain-group prefix
+ * in their syntax (`(a)(?-1)` — the probe must COMPILE in PCRE2, and a bare
+ * `(?-1)` does not), and parse.c reaches their doorway with the cursor deep
+ * in the pattern; the scan reproduces that placement and every reported
+ * position is in the FULL text's coordinates, so `at`/tails line up exactly
+ * as they would in a real parse. The scan does not decode escapes, so hand it
+ * a construct (with at most a plain prefix), not an arbitrary pattern.
+ *
+ * ROUTING MIRRORS parse.c'S CALL CONVENTIONS and recognises nothing itself:
+ * each branch places the cursor exactly where parse.c has it at that
+ * doorway's call site (escape: `\` and selector consumed; group: AT the `?`;
+ * verb: after `(`; class-bracket 4a/4b: after the class's `[`). It is a fifth
+ * CALLER of the four doorways, not a fifth doorway.
+ *
+ * `(?:` is EXCLUDED exactly as parse.c excludes it: the base grammar answers
+ * it before the doorway is consulted, so there is no doorway call to probe —
+ * its row exists for the dump's completeness (SR-3), not because anything
+ * looks it up.
+ *
+ * TWO CALLERS, ONE ROUTER (MOD-0.7 slice 1, design note §3.1).
+ * `pcrec_probe_ask` and `pcrec_syntax_explain` both need "which doorway does
+ * this text reach, with which arguments", and a second copy would be the D24
+ * two-homes failure with a new coat: the two would drift, and the drift would
+ * be invisible because each surface would be self-consistent with itself.
+ * The extraction is behaviour-preserving by construction (the branches below
+ * are the originals, unmoved) and the evidence is external: `--probe-ask`'s
+ * ten TSV fields are read by check06 and pinned byte-exact by cli case10,
+ * whose cursor sweep is floored at 198 probes.
+ *
+ * The router's FIDELITY — that an answer obtained through it is the answer
+ * the compiler gives — is measured, not assumed: 99 of 99 routed registry-row
+ * syntaxes and 11 of 11 hand-listed queries produce a (msg, at) pair
+ * byte-identical to `pcrec -o - <text>`'s (design note §3.2). The boundary is
+ * in the note: arbitrary query text has no compile to compare against. */
+typedef struct {
+    RegKind kind;
+    int     sel;              /* the doorway's selector byte, or -1          */
+    size_t  at;               /* the offset the doorway blames               */
+    size_t  from;             /* class-bracket: just past the delimiter      */
+    size_t  cursor;           /* where parse.c has cx->pos at this call site */
+    bool    at_class_open;    /* class-bracket 4a                            */
+    bool    at_content_start; /* class-bracket 4b                            */
+} Doorway;
+
+static bool doorway_route(const char *text, size_t n, Doorway *d)
 {
-    StrBuf sb = {0};
-    size_t qlen = strlen(query);
-    int found = 0;
-
-    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
-        size_t n;
-        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
-        for (size_t i = 0; i < n; i++) {
-            const RegRow *r = &rows[i];
-            if (flavours && !(r->flavours & flavours)) continue;
-            if (!r->syntax) continue;
-
-            size_t slen = strlen(r->syntax);
-            size_t cmp = qlen < slen ? qlen : slen;
-            if (cmp == 0 || strncmp(query, r->syntax, cmp) != 0) continue;
-
-            if (found++) sb_putc(&sb, '\n');
-            sb_printf(&sb, "%s\n", r->syntax);
-            sb_printf(&sb, "  doorway   %s\n", doorway_name(r->kind));
-            switch (r->status) {
-            case RS_BASE:
-                sb_puts(&sb, "  status    implemented by the base grammar\n");
-                break;
-            case RS_MODULE:
-                sb_printf(&sb, "  status    known, unimplemented — requires "
-                               "module '%s'\n", r->module);
-                break;
-            case RS_REJECTED:
-                sb_puts(&sb, "  status    rejected, as PCRE2 rejects it too\n");
-                break;
-            }
-            if (r->diag == RD_FIXED && r->msg)
-                sb_printf(&sb, "  error     %s\n", r->msg);
-            sb_puts(&sb, "  flavours  ");
-            put_mask(&sb, r->flavours, flavour_names, NELEMS(flavour_names));
-            sb_puts(&sb, "\n  engines   ");
-            if (r->engines)
-                put_mask(&sb, r->engines, engine_names, NELEMS(engine_names));
-            else
-                sb_puts(&sb, "none");
-            sb_puts(&sb, "  (design intent, unconsumed until SR-8)\n");
-            if (r->note) sb_printf(&sb, "  note      %s\n", r->note);
+    for (size_t i = 0; i < n; i++) {
+        char c0 = text[i];
+        int  c1 = i + 1 < n ? (unsigned char)text[i + 1] : -1;
+        if (c0 == '\\' && c1 >= 0) {
+            /* esc_atom's convention: `\` and the selector byte consumed */
+            *d = (Doorway){ .kind = RK_ESC, .sel = c1, .at = i, .from = 0,
+                            .cursor = i + 2, .at_class_open = false,
+                            .at_content_start = false };
+            return true;
+        }
+        if (c0 == '(' && c1 == '?' && !(i + 2 < n && text[i + 2] == ':')) {
+            /* p_group_body's convention: cursor AT the '?' */
+            *d = (Doorway){ .kind = RK_GROUP,
+                            .sel = i + 2 < n ? (unsigned char)text[i + 2] : -1,
+                            .at = i, .from = 0, .cursor = i + 1,
+                            .at_class_open = false, .at_content_start = false };
+            return true;
+        }
+        if (c0 == '(' && c1 == '*') {
+            *d = (Doorway){ .kind = RK_VERB, .sel = -1, .at = i, .from = 0,
+                            .cursor = i + 1, .at_class_open = false,
+                            .at_content_start = false };
+            return true;
+        }
+        if (c0 == '[' && c1 == '[') {
+            /* doorway 4b: a bracket INSIDE the class — `[[:alpha:]]` */
+            *d = (Doorway){ .kind = RK_CLASSBRACKET,
+                            .sel = i + 2 < n ? (unsigned char)text[i + 2] : -1,
+                            .at = i + 1, .from = i + 3, .cursor = i + 1,
+                            .at_class_open = false, .at_content_start = true };
+            return true;
+        }
+        if (c0 == '[') {
+            /* doorway 4a: the class's OWN bracket as opener — `[:alpha:]` */
+            *d = (Doorway){ .kind = RK_CLASSBRACKET, .sel = c1, .at = i,
+                            .from = i + 2, .cursor = i + 1,
+                            .at_class_open = true, .at_content_start = false };
+            return true;
         }
     }
+    return false;
+}
 
-    if (!found) { sb_free(&sb); return NULL; }
-    return sb_take(&sb);
+/* Place the cursor and make the ONE call. The Ctx handed in is ZEROED by both
+ * callers: no jmp target, no arena blocks. That is safe while every doorway
+ * RETURNS its answer (none may ctx_fail or allocate — the D33 §5 contract),
+ * and it is one of the things the first enabled, result-producing module port
+ * must revisit here, with a probe that is false the day before (D33 §9.3): a
+ * port that allocates needs this Ctx given a real arena before `result` asks
+ * can be driven through it. */
+static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
+{
+    cx->pos = d->cursor;
+    switch (d->kind) {
+    case RK_ESC:   return pcrec_ext_escape(cx, want, d->sel, false, d->at);
+    case RK_GROUP: return pcrec_ext_group(cx, want, d->sel, d->at);
+    case RK_VERB:  return pcrec_ext_verb(cx, want, d->at);
+    case RK_CLASSBRACKET:
+        return pcrec_ext_class_bracket(cx, want, d->sel, d->at, d->from,
+                                       d->at_class_open, d->at_content_start);
+    default: break;
+    }
+    return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "",
+                        .answered_at = WANT_CLAIM };
+}
+
+/* The TSV word for a doorway. Deliberately NOT `doorway_name`'s wording:
+ * that one reads "after '(?'" for a human in `--explain`'s row blocks, this
+ * one is a frozen column value in `--probe-ask`'s output (check06 parses it)
+ * and in `--explain`'s route line. Two audiences, two spellings, one
+ * mapping each. */
+static const char *doorway_word(RegKind k)
+{
+    switch (k) {
+    case RK_ESC:          return "escape";
+    case RK_GROUP:        return "group";
+    case RK_VERB:         return "verb";
+    case RK_CLASSBRACKET: return "class-bracket";
+    default:              return "?";
+    }
 }
 
 /* ---- the --probe-ask channel (MOD-0.1, §18.2) ---------------------------
@@ -326,25 +406,15 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours)
  * echo, because a check fed from the implementation's own answer would be
  * the control-sharing-a-source failure this project keeps paying for.
  *
- * ROUTING MIRRORS parse.c'S CALL CONVENTIONS and recognises nothing itself:
- * each branch places the cursor exactly where parse.c has it at that
- * doorway's call site (escape: `\` and selector consumed; group: AT the
- * `?`; verb: after `(`; class-bracket 4a/4b: after the class's `[`). It is
- * a fifth CALLER of the four doorways, not a fifth doorway.
+ * The routing moved to `doorway_route`/`doorway_call` above at MOD-0.7 slice
+ * 1 — same branches, same order, now shared with `--explain`.
  *
  * TSV, one line, fields appended never reordered (the SR-4 rule):
  *   doorway  want  answered_at  pos_before  pos_after  outcome  at
  *   ep_set_certain  end  msg
  * `answered_at` is the post-gate level — `result` asks print `verdict`
  * until the first module is enabled, which makes the §5.4 demotion a
- * measured fact rather than a comment.
- *
- * The Ctx below is ZEROED: no jmp target, no arena blocks. That is safe
- * while every doorway RETURNS its answer (none may ctx_fail or allocate —
- * the D33 §5 contract), and it is one of the things the first enabled,
- * result-producing module port must revisit here, with a probe that is
- * false the day before (D33 §9.3): a port that allocates needs this Ctx
- * given a real arena before `result` asks can be driven through it. */
+ * measured fact rather than a comment. */
 char *pcrec_probe_ask(const char *want_name, const char *construct)
 {
     static const char *const want_names[] = { "claim", "verdict", "result" };
@@ -358,63 +428,14 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
     memset(&cx, 0, sizeof cx);
     cx.pat = construct;
     cx.patlen = strlen(construct);
-    size_t n = cx.patlen;
 
-    /* Locate the construct: the FIRST byte that opens a doorway, found by a
-     * bytewise scan, never a parse. Ten registry rows carry a plain-group
-     * prefix in their syntax (`(a)(?-1)` — the probe must COMPILE in PCRE2,
-     * and a bare `(?-1)` does not), and parse.c reaches their doorway with
-     * the cursor deep in the pattern; the scan reproduces that placement
-     * and every reported position is in the FULL text's coordinates, so
-     * `at`/tails line up exactly as they would in a real parse. The scan
-     * does not decode escapes, so hand it a construct (with at most a plain
-     * prefix), not an arbitrary pattern.
-     *
-     * `(?:` is EXCLUDED exactly as parse.c excludes it: the base grammar
-     * answers it before the doorway is consulted, so there is no doorway
-     * call to probe — its row exists for the dump's completeness (SR-3),
-     * not because anything looks it up. */
-    const char *doorway = NULL;
-    size_t before = 0;
-    ExtResult r = { .what = EXT_NOT_MINE };
-    for (size_t i = 0; i < n && !doorway; i++) {
-        char c0 = construct[i];
-        int c1 = i + 1 < n ? (unsigned char)construct[i + 1] : -1;
-        if (c0 == '\\' && c1 >= 0) {
-            /* esc_atom's convention: `\` and the selector byte consumed */
-            doorway = "escape";
-            cx.pos = before = i + 2;
-            r = pcrec_ext_escape(&cx, want, c1, false, i);
-        } else if (c0 == '(' && c1 == '?' &&
-                   !(i + 2 < n && construct[i + 2] == ':')) {
-            /* p_group_body's convention: cursor AT the '?' */
-            doorway = "group";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_group(&cx, want,
-                                i + 2 < n ? (unsigned char)construct[i + 2]
-                                          : -1, i);
-        } else if (c0 == '(' && c1 == '*') {
-            doorway = "verb";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_verb(&cx, want, i);
-        } else if (c0 == '[' && c1 == '[') {
-            /* doorway 4b: a bracket INSIDE the class — `[[:alpha:]]` */
-            doorway = "class-bracket";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_class_bracket(&cx, want,
-                                        i + 2 < n
-                                            ? (unsigned char)construct[i + 2]
-                                            : -1,
-                                        i + 1, i + 3, false, true);
-        } else if (c0 == '[') {
-            /* doorway 4a: the class's OWN bracket as opener — `[:alpha:]` */
-            doorway = "class-bracket";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_class_bracket(&cx, want, c1, i, i + 2, true, false);
-        }
-    }
-    if (!doorway)
+    Doorway d;
+    if (!doorway_route(construct, cx.patlen, &d))
         return NULL;    /* not doorway territory; the CLI says so and how */
+
+    const char *doorway = doorway_word(d.kind);
+    size_t before = d.cursor;
+    ExtResult r = doorway_call(&cx, &d, want);
 
     /* The outcome word covers the FULL ExtWhat vocabulary (MOD-0.3c: the
      * producing values are constructable now, and a probe channel that
@@ -434,5 +455,441 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
               r.at, r.ep_set_certain ? 1 : 0, r.end);
     if (r.what == EXT_REFUSAL) sb_puts(&sb, r.msg);
     sb_putc(&sb, '\n');
+    return sb_take(&sb);
+}
+
+/* ---- `--explain QUERY` (SR-3; REWRITTEN at MOD-0.7) ---------------------
+ *
+ * A QUERY IS TEXT AT A DOORWAY, not a key into a column. That one sentence is
+ * the rewrite. Until MOD-0.7 this was a mutual-prefix match against the
+ * `syntax` column and nothing else — no `ext_`, no `registry_find`, no
+ * arbitration — so D29's own worked example did not run (`--explain '(?i-m:'`
+ * answered "no construct matches" while the doorway, asked the same text, said
+ * "requires module 'modifiers'"), and R10/C4-2 refuted it as a control: a
+ * table printing its own columns is a self-join, and swapping two rows'
+ * module attributions left every assertion on it green (R10/C4-1, reproduced
+ * at MOD-0.7a: docs/design_notes_mod07.md §0).
+ *
+ * WHAT THIS PRINTS, and the split is the design:
+ *
+ *   the QUERY's live answer   ONE doorway call on the text the user typed,
+ *                             through the same router --probe-ask uses. It is
+ *                             DATA and is never compared to anything: a query
+ *                             legitimately gets an answer its bucket's rows do
+ *                             not declare, measured in five cells ((?iZ),
+ *                             (*NOTAVERB), [[:foo:]], [[:<:]], \p{Foo}).
+ *                             Asserting agreement there would fire on a
+ *                             CORRECT registry — R10/C1-1's refutation of D29.
+ *   each ROW's live answer    one call per displayed row, on THAT ROW'S OWN
+ *                             `syntax` (which registry.c already guarantees
+ *                             reaches that row's doorway). This one IS the
+ *                             assertion: election, promise, attribution.
+ *
+ * AND THE HONEST LIMIT, stated here because the next reader will otherwise
+ * assume the opposite: the attribution clause CANNOT dissent on a module-name
+ * swap. ext.c renders "requires module '%s'" from `r->module`, the same field
+ * this function prints, so the two agree by construction — measured, both
+ * directions, 100 rows, zero census difference (§0). Module-name truth lives
+ * in HAND-WRITTEN pins (tests/reject's 470, and cli case11's small named
+ * subset), never here. What the live call adds that no table read can is
+ * ELECTION: 13 rows share their rendered diagnostic with a bucket sibling, so
+ * text cannot say which row answered.
+ *
+ * THIS IS NOT THE CHECK (R10 disposition 6: `--explain` may exist, it may not
+ * be the control). registry_check's check_table_to_parser owns the row->parser
+ * invariant over all 100 rows with no CLI in the loop; check_required_rows
+ * owns row existence; tests/reject owns module names. This is a human surface
+ * that shows both sources side by side and cannot silently print a
+ * fabrication, plus one field nothing else reads.
+ *
+ * FORMAT (a strict grammar, so a test can assert per FIELD rather than per
+ * blob — R10 §7: "not 'is there a reader' but 'can the reader dissent'"):
+ * header lines are UNINDENTED `key<2+ spaces>value`; each row block starts
+ * with the row's `syntax` unindented and continues with `  key<2+ spaces>value`
+ * lines from a closed vocabulary; blocks are separated by one blank line. Keys
+ * never contain two consecutive spaces, which is what makes the split
+ * unambiguous. Row keys stay INDENTED because case10/case11 count `^  doorway`
+ * lines to count rows, and a header key must not add one. */
+
+/* Which module does a rendered answer PROMISE, if any? Derived in the CONSUMER
+ * by looking for the `module 'NAME'` shape every doorway renders its promise
+ * with — deliberately not a new `src` enum on ExtResult, which would mean
+ * touching ~20 REFUSE sites and defaulting a new one to a wrong label. The
+ * cost of deriving is stated rather than hidden: this can tell "promises a
+ * module" from "does not", and it CANNOT tell whose text a non-promising
+ * message is (the doorway's own, the verb name table's, a module port's).
+ * The ROADMAP_NEVER wording contains "no module will implement it" and is
+ * correctly read as promising nothing — the `'` is what makes that safe. */
+static bool msg_module(const char *msg, char *out, size_t outsz)
+{
+    const char *p = strstr(msg, "module '");
+    if (!p) return false;
+    p += 8;
+    const char *q = strchr(p, '\'');
+    if (!q) return false;
+    size_t n = (size_t)(q - p);
+    if (n >= outsz) n = outsz - 1;
+    memcpy(out, p, n);
+    out[n] = '\0';
+    return true;
+}
+
+typedef struct {
+    bool      routed;
+    Doorway   d;
+    ExtResult r;
+} Live;
+
+/* ONE doorway call on `text`, through the shared router. The Ctx is the
+ * CALLER'S and is reused across every call of one --explain invocation, so
+ * the arena a producing port may allocate from is freed once at the end
+ * rather than leaked per row (--probe-ask makes a single call and does not
+ * face this). */
+static Live live_answer(Ctx *cx, const char *text, ExtWant want)
+{
+    Live L;
+    memset(&L, 0, sizeof L);
+    cx->pat = text;
+    cx->patlen = strlen(text);
+    cx->pos = 0;
+    if (!doorway_route(text, cx->patlen, &L.d)) return L;
+    L.routed = true;
+    L.r = doorway_call(cx, &L.d, want);
+    return L;
+}
+
+/* The answer as one line. The producing outcomes get their own words: a
+ * channel that reported them as a refusal would be the dump lying about the
+ * one thing it exists to show (--probe-ask's own rule for its outcome
+ * column). */
+static void put_answer(StrBuf *sb, const Live *L)
+{
+    if (!L->routed) {
+        sb_puts(sb, "—  (no doorway call: the base grammar answers this text "
+                    "before the registry is consulted)");
+        return;
+    }
+    switch (L->r.what) {
+    case EXT_REFUSAL:  sb_puts(sb, L->r.msg); break;
+    case EXT_NOT_MINE: sb_puts(sb, "declines — no construct at this doorway"); break;
+    case EXT_SCALAR:   sb_printf(sb, "produces one code point (0x%02X)",
+                                 (unsigned)L->r.scalar); break;
+    case EXT_MEMBERS:  sb_puts(sb, "produces a class member set"); break;
+    case EXT_NODE:     sb_puts(sb, "produces an AST node"); break;
+    default:           sb_puts(sb, "internal error: unknown doorway outcome"); break;
+    }
+}
+
+static void put_names(StrBuf *sb, const Live *L)
+{
+    char mod[64];
+    if (L->routed && L->r.what == EXT_REFUSAL && msg_module(L->r.msg, mod, sizeof mod))
+        sb_puts(sb, mod);
+    else
+        sb_puts(sb, "—");
+}
+
+/* THE THREE CLAUSES (design note §5.2), evaluated on the row's OWN syntax.
+ * Returns nonzero if this row dissents. The clause NAMES are part of the
+ * format: a reader must be able to tell election from promise from
+ * attribution, so they are not free wording the way the rest of the sentence
+ * is (D26 tier 3 covers the prose, not the clause identity). */
+static int put_agreement(StrBuf *sb, const RegRow *r, const Live *L)
+{
+    /* `(?:...)` is the one row whose syntax reaches no doorway: the base
+     * grammar answers it, so there is nothing to compare and saying so is the
+     * honest answer rather than a fabricated pass. */
+    if (!L->routed) {
+        sb_puts(sb, "ok  (base grammar; no doorway call to compare)");
+        return 0;
+    }
+    /* 1. ELECTION / REACHABILITY. A row's own canonical syntax must reach
+     * THAT row. A decline is the same failure wearing a different hat: the
+     * doorway walked away from a construct the table says is there. */
+    if (L->r.what == EXT_NOT_MINE) {
+        sb_puts(sb, "DISSENT: election: the row's own syntax DECLINES at its "
+                    "own doorway");
+        return 1;
+    }
+    if (L->r.row != r) {
+        sb_printf(sb, "DISSENT: election: '%s' elected %s%s%s for its own syntax",
+                  r->syntax,
+                  L->r.row ? "'" : "no row",
+                  L->r.row ? L->r.row->syntax : "",
+                  L->r.row ? "'" : "");
+        return 1;
+    }
+    /* A PRODUCING outcome means the gate opened for this row's module, which
+     * only an RS_MODULE row can do. There is no module NAME in a produced
+     * value, so the promise clause takes this shape here instead of the text
+     * one below. */
+    if (L->r.what != EXT_REFUSAL) {
+        if (r->status != RS_MODULE) {
+            sb_puts(sb, "DISSENT: promise: a row that is not RS_MODULE produced "
+                        "a value");
+            return 1;
+        }
+        sb_puts(sb, "ok  (produces; this row's module is enabled)");
+        return 0;
+    }
+    /* 2. PROMISE. A module is owed exactly when the row is a PLANNED module
+     * row. K14's rule, and the one clause that fires on today's tree before
+     * this milestone's own fix: a ROADMAP_NEVER row must not be promised. */
+    char mod[64];
+    bool named = msg_module(L->r.msg, mod, sizeof mod);
+    bool owed  = (r->status == RS_MODULE && r->roadmap != ROADMAP_NEVER);
+    if (named != owed) {
+        sb_printf(sb, "DISSENT: promise: the row is %s%s and the live answer "
+                      "promises %s",
+                  r->status == RS_MODULE ? "a module row" : "not a module row",
+                  r->status == RS_MODULE && r->roadmap == ROADMAP_NEVER
+                      ? " marked NEVER" : "",
+                  named ? mod : "none");
+        return 1;
+    }
+    /* 3. ATTRIBUTION. Measured to be unable to dissent on a swap (§0); it is
+     * here because it is cheap and because the OTHER sources of a module name
+     * — the POSIX name table, the verb name tables — could put a different
+     * one in this text without the row changing at all. */
+    if (named && strcmp(mod, r->module) != 0) {
+        sb_printf(sb, "DISSENT: attribution: declared '%s', live names '%s'",
+                  r->module, mod);
+        return 1;
+    }
+    sb_puts(sb, "ok");
+    return 0;
+}
+
+/* The `(*` doorway's SECOND SOURCE, shown beside the row (design note §4.3).
+ * Doorway 3 has exactly one RegRow, so the row alone is a fiction: what
+ * decides the answer is the VerbName tables, a separate schema whose every
+ * bit PC-3 re-measures against libpcre2 on every run, and which carries a
+ * PER-NAME roadmap the row does not. This block is DISPLAY, deliberately with
+ * no `agree` line: a per-name roadmap DIFFERING from the row's is correct
+ * ((*COMMIT) is NEVER while the row is PLANNED), so a clause here would fire
+ * on correct data — the shape R10/C1-1 refuted. Consistency of these tables
+ * with libpcre2 is PC-3's assertion, not this surface's. */
+static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
+{
+    size_t qlen = strlen(query);
+    size_t nstart = d->at + 2;
+    if (nstart > qlen) return;
+    /* The scan returns the INDEX of the terminator (== patlen when the text
+     * ends first), not a length — scans.c's own contract. */
+    size_t namelen = pcrec_verb_name_extent_scan(query, qlen, nstart) - nstart;
+    if (namelen == 0) return;
+    const VerbTable *t = pcrec_registry_verb_table((unsigned char)query[nstart]);
+    const VerbName *v = pcrec_registry_verb_find(t, query + nstart, namelen);
+    const RegRow *row = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
+
+    sb_printf(sb, "\nverb name %.*s\n", (int)namelen, query + nstart);
+    sb_printf(sb, "  table        %s\n",
+              t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
+    sb_printf(sb, "  known        %s\n", v ? "yes" : "no");
+    if (!v) {
+        sb_printf(sb, "  unknown      %s\n", t->unknown_msg);
+        return;
+    }
+    sb_puts(sb, "  forms        ");
+    {
+        unsigned f = v->forms;
+        if (f & VF_BARE)     sb_puts(sb, "(*N)");
+        if (f & VF_ARG)      sb_puts(sb, (f & VF_BARE) ? "|(*N:a)" : "(*N:a)");
+        if (f & VF_EMPTYARG) sb_puts(sb, "|(*N:)");
+        if (f & VF_EQNUM)    sb_puts(sb, (f & (VF_BARE|VF_ARG|VF_EMPTYARG))
+                                          ? "|(*N=d)" : "(*N=d)");
+        if (f & VF_GROUPARG) sb_puts(sb, "|arg-is-subpattern");
+        if (f & VF_ATSTART)  sb_puts(sb, "|start-of-pattern-only");
+        sb_putc(sb, '\n');
+    }
+    /* The EFFECTIVE roadmap and where it came from — the cross-source pair
+     * this block exists for. */
+    sb_printf(sb, "  roadmap      %s\n",
+              (v->roadmap ? v->roadmap : (row ? row->roadmap : ROADMAP_NONE))
+                  == ROADMAP_NEVER ? "never" : "planned");
+    sb_printf(sb, "  roadmap src  %s\n",
+              v->roadmap ? "the verb NAME's own entry"
+                         : "inherited from the (* row");
+    sb_printf(sb, "  quant        %s\n",
+              v->quant == QV_YES ? "yes" : v->quant == QV_NO ? "no"
+                                                             : "not-askable");
+}
+
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
+{
+    StrBuf body = {0};
+    size_t qlen = strlen(query);
+    int rows_shown = 0, dissents = 0;
+
+    /* ONE Ctx for the whole invocation: zeroed (no jmp target — every doorway
+     * RETURNS its answer, the D33 §5 contract), reused across every call, and
+     * its arena freed at the end. */
+    Ctx cx;
+    memset(&cx, 0, sizeof cx);
+
+    /* WANT_RESULT is what parse.c asks — the real ask — so `--explain` shows
+     * what pcrec would actually DO with the text. With the default empty
+     * enabled set the gate demotes every one of these to VERDICT, which is
+     * why `live answered` reads `verdict` until a `--features` names the
+     * row's module. */
+    Live q = live_answer(&cx, query, WANT_RESULT);
+
+    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (flavours && !(r->flavours & flavours)) continue;
+            if (!r->syntax) continue;
+
+            /* SELECTION is two rules with two meanings, and the row says
+             * which one put it here (design note §3.3):
+             *
+             *   candidate  the row is in the bucket the query's doorway
+             *              arbitrates over — it COMPETED for this text. This
+             *              is what makes `--explain '(?i-m:'` answer at all,
+             *              and what shows `\N{U+0041}` its third row.
+             *   listed     the mutual-prefix match, kept: it answers "which
+             *              rows look like what I typed", which is a real use
+             *              (`--explain '(?'` is a catalogue) and which cli
+             *              case10 has depended on since SR-3.
+             *
+             * A row can be both; `candidate` wins the label. */
+            size_t slen = strlen(r->syntax);
+            size_t cmp = qlen < slen ? qlen : slen;
+            bool listed = cmp != 0 && strncmp(query, r->syntax, cmp) == 0;
+            bool candidate = q.routed && r->kind == q.d.kind &&
+                             r->sel != REG_SEL_ANY && r->sel == q.d.sel;
+            /* The bucket's catch-all is shown ONLY when the arbitration
+             * actually elected it. Printing it for every query in its kind
+             * would assert a reachability the arbitration denies: for `(?<`
+             * the bare `<` row always answers, so the `(?` catch-all is
+             * unreachable there. */
+            bool fallback = q.routed && r->sel == REG_SEL_ANY && q.r.row == r;
+            if (!listed && !candidate && !fallback) continue;
+
+            Live own = live_answer(&cx, r->syntax, WANT_RESULT);
+
+            if (rows_shown++) sb_putc(&body, '\n');
+            sb_printf(&body, "%s\n", r->syntax);
+            sb_printf(&body, "  select       %s\n",
+                      candidate ? "candidate" : fallback ? "fallback" : "listed");
+            sb_printf(&body, "  doorway      %s\n", doorway_name(r->kind));
+            switch (r->status) {
+            case RS_BASE:
+                sb_puts(&body, "  status       implemented by the base grammar\n");
+                break;
+            case RS_MODULE:
+                /* K14, ON THE QUERY SURFACE (design note §1 — the defect this
+                 * milestone found by applying its own design to the first row
+                 * it touched). A ROADMAP_NEVER row is real PCRE2 syntax pcrec
+                 * has decided never to implement, and promising its module is
+                 * the tier-2 defect D26 names in its own words: "Naming a
+                 * module that will never implement a construct is a defect."
+                 * ext.c has answered this correctly since MOD-0.1 and
+                 * put_expect (100 lines above, same file) has rendered it
+                 * correctly for --list-syntax's `expect` column since the same
+                 * milestone; --explain kept promising, because it never read
+                 * `roadmap`. One row today, (?C1); the branch is derived, so
+                 * the second one is covered the day it exists.
+                 *
+                 * The `agree` clause CANNOT see this — both of its sides read
+                 * the row — so cli case11's hand-written pin is the only net,
+                 * which is §0's lesson recurring inside the milestone that
+                 * found it. */
+                if (r->roadmap == ROADMAP_NEVER)
+                    sb_puts(&body, "  status       known, outside pcrec's scope "
+                                   "— no module will implement it\n");
+                else
+                    sb_printf(&body, "  status       known, unimplemented — "
+                                     "requires module '%s'\n", r->module);
+                break;
+            case RS_REJECTED:
+                sb_puts(&body, "  status       rejected, as PCRE2 rejects it too\n");
+                break;
+            }
+            sb_printf(&body, "  module       %s\n", r->module ? r->module : "—");
+            sb_printf(&body, "  roadmap      %s\n",
+                      r->roadmap == ROADMAP_NEVER   ? "never"
+                    : r->roadmap == ROADMAP_PLANNED ? "planned" : "—");
+            if (r->diag == RD_FIXED && r->msg)
+                sb_printf(&body, "  error        %s\n", r->msg);
+            sb_puts(&body, "  flavours     ");
+            put_mask(&body, r->flavours, flavour_names, NELEMS(flavour_names));
+            sb_puts(&body, "\n  engines      ");
+            if (r->engines)
+                put_mask(&body, r->engines, engine_names, NELEMS(engine_names));
+            else
+                sb_puts(&body, "none");
+            sb_puts(&body, "  (design intent, unconsumed until SR-8)\n");
+            /* DECLARED, never observed: `--explain` probes ATOM position only
+             * (the router's first opener for `[\d]` is the `[`, so an
+             * in-class escape query lands on the class-bracket doorway and
+             * honestly declines). class_expect is libpcre2-measured and
+             * check04 re-verifies it; in-class routing is a MOD-0.8 item. */
+            sb_printf(&body, "  class        %s\n",
+                      r->class_expect ? r->class_expect
+                                      : "— (cannot reach a class position)");
+            if (r->note) sb_printf(&body, "  note         %s\n", r->note);
+            sb_puts(&body, "  own          "); put_answer(&body, &own);
+            sb_putc(&body, '\n');
+            if (own.routed)
+                sb_printf(&body, "  own at       %zu\n", own.r.at);
+            sb_printf(&body, "  own elected  %s\n",
+                      !own.routed        ? "—"
+                    : own.r.row == r     ? "self"
+                    : own.r.row          ? own.r.row->syntax : "none");
+            sb_puts(&body, "  own names    "); put_names(&body, &own);
+            sb_putc(&body, '\n');
+            sb_puts(&body, "  agree        ");
+            dissents += put_agreement(&body, r, &own);
+            sb_putc(&body, '\n');
+        }
+    }
+
+    if (!rows_shown && !q.routed) {
+        sb_free(&body);
+        arena_free(&cx.arena);
+        if (ndissent) *ndissent = 0;
+        return NULL;      /* not doorway territory and no row looks like it */
+    }
+
+    StrBuf sb = {0};
+    sb_printf(&sb, "query          %s\n", query);
+    if (q.routed) {
+        sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
+        if (q.d.kind == RK_VERB)
+            sb_puts(&sb, "  (the NAME decides; see the verb block)");
+        else if (q.d.sel < 0)
+            sb_puts(&sb, "  selector none (the text ends at the doorway)");
+        else
+            sb_printf(&sb, "  selector '%c'", q.d.sel);
+        sb_putc(&sb, '\n');
+    } else {
+        sb_puts(&sb, "route          none — the base grammar answers this text "
+                     "before any doorway is consulted\n");
+    }
+    sb_puts(&sb, "live           "); put_answer(&sb, &q); sb_putc(&sb, '\n');
+    if (q.routed) {
+        static const char *const want_names[] = { "claim", "verdict", "result" };
+        sb_printf(&sb, "live at        %zu\n", q.r.at);
+        sb_printf(&sb, "live elected   %s\n",
+                  q.r.row ? q.r.row->syntax : "none");
+        sb_printf(&sb, "live answered  %s\n", want_names[q.r.answered_at]);
+        sb_puts(&sb, "live names     "); put_names(&sb, &q); sb_putc(&sb, '\n');
+    }
+    sb_printf(&sb, "rows           %d\n", rows_shown);
+    sb_printf(&sb, "dissents       %d\n", dissents);
+    if (q.routed && q.d.kind == RK_VERB)
+        put_verb_block(&sb, query, &q.d);
+    if (rows_shown) {
+        char *b = sb_take(&body);
+        sb_putc(&sb, '\n');
+        sb_puts(&sb, b);
+        free(b);
+    }
+    sb_free(&body);
+    arena_free(&cx.arena);
+    if (ndissent) *ndissent = dissents;
     return sb_take(&sb);
 }

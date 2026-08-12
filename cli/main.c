@@ -267,8 +267,9 @@ int main(int argc, char **argv)
                             "more arrive with SR-7)\n", flavour);
             return 1;
         }
+        int ndissent = 0;
         char *text = list_syntax ? pcrec_syntax_tsv(fl)
-                                 : pcrec_syntax_explain(explain, fl);
+                                 : pcrec_syntax_explain(explain, fl, &ndissent);
         if (!text) {
             /* --explain only; the TSV always has rows */
             fprintf(stderr, "pcrec: no construct matches '%s' — it is either "
@@ -278,6 +279,20 @@ int main(int argc, char **argv)
         }
         fputs(text, stdout);
         free(text);
+        /* EXIT 3 IS A DISSENT (MOD-0.7): --explain prints the registry's
+         * declared attribution beside the live doorway's answer and compares
+         * them per row. A disagreement is a DEFECT SURFACED, not a bad
+         * question, and a script must be able to tell the two apart — exit 1
+         * already means "your query could not be answered", and every other
+         * misuse of this CLI is exit 1 too. The full answer still goes to
+         * stdout; the failing rows carry `agree  DISSENT: <clause>: …`. */
+        if (ndissent > 0) {
+            fprintf(stderr, "pcrec: --explain: %d row%s DISAGREE with the live "
+                            "doorway (see the 'agree' lines) — this is a pcrec "
+                            "defect, not a bad query\n",
+                    ndissent, ndissent == 1 ? "" : "s");
+            return 3;
+        }
         return 0;
     }
     if (flavour) {

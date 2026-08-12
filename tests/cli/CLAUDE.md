@@ -43,6 +43,46 @@ Part of `make test` since M2.
   the answered_at pin; check01's one-reference-from-the-scans-TU sabotage
   is the spec suite's own).
   Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
+- **case 11 (MOD-0.7)** — `--explain`, the CROSS-SOURCE query surface, and the
+  first case in this file written under a stated assertion rule. **case10's
+  eight `--explain` content assertions were DELETED, not moved**: R10/C4-1
+  demonstrated and MOD-0.7a re-measured (at 26b9660, both directions) that
+  every one of them stays GREEN under a module-attribution swap between two
+  rows, because `assert_contains` tests the whole output blob and the
+  "all four rows" count is satisfied by any four rows. **THE RULE: no
+  `assert_contains` against a whole `--explain` output.** Every assertion
+  names a ROW (or `@header`) and a KEY through the `explain_field` awk helper,
+  which parses the format's grammar — unindented `key<2+ spaces>value` header
+  lines up to the first blank line, then row blocks headed by the row's
+  `syntax` with `  key<2+ spaces>value` inside. The helper passes row/key
+  through the ENVIRONMENT rather than `awk -v`, because `-v` processes escape
+  sequences in its value and half these rows are named `\v`, `\d`, `\N{U+0041}`.
+  63 assertions: D29's worked example `(?i-m:` end to end (it exited 1 before
+  MOD-0.7); the six C4-1/C4-1b module pins that ARE the swap net; `\N{U+0041}`'s
+  third bucket row as a candidate the prefix rule cannot see; the five query
+  cells whose live answer legitimately differs from the row's declaration
+  (`(?iZ)`, `(*NOTAVERB)`, `[[:foo:]]`, `[[:<:]]`, `\p{Foo}`), pinned as
+  CORRECT so a later reader does not "fix" them; the verb name block; the gate
+  axis (`--features classes` flips `\d` to `produces an AST node`, answered at
+  `result`); and the `(?C1)` K14 pins, written first and recorded failing
+  before the fix (the FIX-3 pattern — slice 4's commit carries the FAIL text).
+  Floored sweeps: 19 queries answered, 81 row blocks, all agree, 79 elect
+  their own row and 2 are the one RS_BASE row exempt by construction.
+  **WHAT THIS CASE CANNOT REACH** (docs/design_notes_mod07.md §9.4, recorded
+  here because the sweep-template lesson has recurred four times and this is
+  the signpost): **the query set is HAND-LISTED** — the generated query space
+  (every byte after each doorway opener, at depth) is not swept here, so a
+  routing or selection bug affecting only a byte outside that list is
+  invisible; the row set comes from `--list-syntax`, the same table `--explain`
+  prints, so a DELETED row disappears from both (`check_required_rows`'
+  hand-written manifest is what sees that); the attribution clause CANNOT
+  dissent on a module-name swap, so the module PINS and not the `agree` field
+  are the C4-1 net, and 94 of 100 rows have no module pin here by design;
+  class-position answers are DECLARED (the `class` column), never live.
+  Failing-direction validation is V1-V7, measured at landing and recorded in
+  the phase-2 commit messages rather than as mech rows — a mech `cli` suite
+  arm is a MOD-0.8 candidate (the code is trivial; the runtime budget is
+  unmeasured, and this project does not assert a cost).
 
 ## Conventions
 

@@ -1395,20 +1395,35 @@ Then DOC-1, then PC-4 when module `classes` lands.
   `registry_check.c:875-876` exempts `RF_CLASS_INVALID` rows from that sweep
   anyway. **Close the in-class tail-sweep gap in the same step**, or the same
   four blind nets survive for the next reader
-- [MOD-0.7] STATE:not-started — `--explain` reads the port's output (what was
-  recognised, the answer, the blame offset, the normalised name), with a
-  tests/cli case. ~~This is the CONSUMER that keeps the output fields from
-  becoming the eighth unread column (wake §6 counts seven today)~~
-  **R10 WITHDREW that justification (C4-1, C4-2).** `--explain` never enters a
-  doorway today — it is a prefix match on the `syntax` column, so it must be
-  REWRITTEN, not pointed at new fields, and D29's own worked example
-  (`--explain '(?i-m:'`) does not run. Rewritten naively it prints
-  `recogniser(query)` and can only assert the recogniser agrees with itself;
-  demonstrated, a swapped module attribution passes all of case10's assertions.
-  Build it as a CROSS-SOURCE check instead: print the ROW's declared attribution
-  AND the recogniser's answer, and assert they agree per row. That is the only
-  cross-source comparison this design makes available, and it is what makes the
-  surface a control rather than a pass-through
+- [MOD-0.7] STATE:completed — `--explain` REWRITTEN as a live doorway call.
+  ~~reads the port's output (what was recognised, the answer, the blame offset,
+  the normalised name), with a tests/cli case~~ **R10 WITHDREW that
+  justification (C4-1, C4-2)** and MOD-0.7a's design note refuted the
+  replacement's own cure. What landed:
+  - [MOD-0.7a] STATE:completed — the design note,
+    `docs/design_notes_mod07.md` (+ §13, the manager's six rulings).
+    **Headline, measured:** the declared-vs-live agreement the row above asked
+    for CANNOT catch a module swap — ext.c renders the promise from the same
+    `r->module` `--explain` prints, so C4-1's sabotage leaves the 100-row
+    census bit-identical (93 SAME / 6 SILENT / 1 NOROUTE) and all eight of
+    case10's `--explain` assertions green. Module-name truth stays in
+    hand-written pins; the live call earns its place on ELECTION (13 rows
+    share a rendered diagnostic with a bucket sibling) and PROMISE
+    CONSISTENCY. Found by applying the design to its first row: `--explain
+    '(?C1)'` promised module `callouts` where the compiler says no module ever
+    will — K14 on the query surface, D26 tier 2, one row
+  - [MOD-0.7b] STATE:completed — the build, in six slices: ONE doorway router
+    shared with `--probe-ask` (1089 cells byte-identical); `ExtResult.row`,
+    the elected row (876 compile cells byte-identical); the rewrite (selection
+    = prefix ∪ bucket-candidates, each row tagged; the query's live answer as
+    DATA and each row's canonical live answer as the ASSERTION; exit 3 for a
+    dissent); cli case11, field-level, 63 assertions, with the K14 fix landed
+    under the FIX-3 pattern (pin written first, recorded failing); V1-V7
+    measured; docs. **The normalised name is DEFERRED to the first
+    unicode-props producer** (manager ruling 2, superseding this row's
+    original wording — K16's linked-pair logic: the buffer gains an accessor
+    when it gains a consumer and the K16 fix, together). In-class routing and
+    a mech `cli` suite arm are recorded MOD-0.8 candidates
 - [MOD-0.8] STATE:not-started — checkpoint close. The D6 panel **must also cover
   Q2+SR-9**, whose panel was deliberately deferred into this step: brief it on
   the option-run grammar in `pcrec_registry_option_run_ok`, which no adversarial
