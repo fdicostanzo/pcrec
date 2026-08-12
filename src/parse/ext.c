@@ -524,6 +524,23 @@ ExtResult pcrec_ext_class_bracket(Ctx *cx, ExtWant want, int c2, size_t at,
         !(at_content_start && close_at + 2 < cx->patlen && cx->pat[close_at + 2] == ']'))
         REFUSE(at, "%s", pcrec_registry_posix_unknown_msg());
 
+    /* A whole-class-only name in its ONE legal position is still not a class:
+     * `[[:<:]]` is a zero-width word-boundary assertion, and the honest
+     * promise is the module that owns assertions, not this doorway's
+     * (MOD-0.3a — the posix_names[] comment reserved this split for whoever
+     * implemented the doorway). Decided by the NAME's own module field, so a
+     * future name in someone else's module renders itself with no edit here.
+     * Negated spellings never reach this: `^`-prefixed names fail
+     * posix_find, and a negated whole-class-only name already refused as
+     * unknown above. */
+    if (r->flags & RF_CLASS_NAMED) {
+        const PosixName *pn = pcrec_registry_posix_find(cx->pat + from,
+                                                        close_at - from);
+        if (pn && strcmp(pn->module, r->module) != 0)
+            REFUSE(at, "[[:%s:]] is a word-boundary assertion and requires "
+                       "module '%s'", pn->name, pn->module);
+    }
+
     /* The final refusal — reached only after every own-error check above
      * declined to fire, so for the `:` row this is a KNOWN POSIX name in a
      * legal position: certifiably SET-shaped for the K12 endpoint rule (the

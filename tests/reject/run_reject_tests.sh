@@ -502,8 +502,10 @@ reject '(a)(?-1)' "requires module 'recursion'"
 # ten digit tails AND a bare row rather than a compound name.
 reject '(?-i)'    "requires module 'modifiers'"
 # The extended character class, the third misattribution: a class with set
-# operations, not an option setting.
-reject '(?[[a]])' "requires module 'classes'"
+# operations, not an option setting. MOD-0.3a split it out of 'classes' the
+# day classes gained producers — an enabled module must never refuse a
+# construct while naming itself.
+reject '(?[[a]])' "requires module 'extended-classes'"
 reject "(?'n'a)"  "requires module 'named-groups'"
 reject '(?P<n>a)' "requires module 'named-groups'"
 reject '(?>a)'    "requires module 'atomic-groups'"
@@ -731,8 +733,11 @@ reject '[[:\:]]'      "unknown POSIX class name"
 # The two class-bracket constructs that are not classes at all: zero-width word
 # boundary assertions. My hand-written list of fourteen names missed both, and
 # the generated differential found them on its first run.
-reject '[[:<:]]'      "POSIX class [:...:] requires module 'classes'"
-reject '[[:>:]]'      "POSIX class [:...:] requires module 'classes'"
+# MOD-0.3a: their honest module is 'assertions' (\b's own module) — a
+# boundary assertion is not a set of characters, and 'classes' with its
+# producers landed could never make these compile.
+reject '[[:<:]]'      "word-boundary assertion and requires module 'assertions'"
+reject '[[:>:]]'      "word-boundary assertion and requires module 'assertions'"
 reject '[[:^<:]]'     "unknown POSIX class name"   # ^ negates a CLASS; these are not
 # A NESTED opener wins: PCRE2 abandons the outer one and recognises the inner.
 # THESE THREE PIN THE OFFSET, and that is the whole point of them. Rule 2 of

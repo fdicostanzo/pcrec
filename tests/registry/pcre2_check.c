@@ -1422,19 +1422,19 @@ static void check_posix_names(void)
      * there. So: every name pcrec claims must appear in the pool from a source
      * that is not a mutation of pcrec's own table. */
     size_t nnames = 0;
-    const char *const *names = pcrec_registry_posix_names(&nnames);
+    const PosixName *names = pcrec_registry_posix_names(&nnames);
     unsigned long missing = 0, self_sourced = 0;
     for (size_t i = 0; i < nnames; i++) {
-        long h = ns_slot(names[i], strlen(names[i]));
+        long h = ns_slot(names[i].name, strlen(names[i].name));
         if (h < 0) { missing++;
             if (reported++ < 10)
                 bad("POSIX names: pcrec claims '%s' but no candidate pool produced it, so "
-                    "nothing external ever tested that claim", names[i]);
+                    "nothing external ever tested that claim", names[i].name);
         } else if (ns_src[h] == NS_MUT) { self_sourced++;
             if (reported++ < 10)
                 bad("POSIX names: '%s' reached the pool ONLY as a mutation of pcrec's own "
                     "table. A name pcrec invented, mutated and then recognised is not an "
-                    "external check of anything", names[i]);
+                    "external check of anything", names[i].name);
         }
     }
     if (!missing && !self_sourced)
@@ -1488,7 +1488,7 @@ static const char *POS_SHAPES[] = {
 static void check_posix_positions(void)
 {
     size_t nnames = 0;
-    const char *const *names = pcrec_registry_posix_names(&nnames);
+    const PosixName *names = pcrec_registry_posix_names(&nnames);
     unsigned long probed = 0, agree = 0, deferred = 0, wrong = 0, restricted = 0;
     unsigned long pcrec_restricted = 0;
     unsigned long long seth = SET_HASH_INIT;
@@ -1500,7 +1500,7 @@ static void check_posix_positions(void)
         int pcrec_deferred = 0;
         for (size_t si = 0; si < sizeof POS_SHAPES / sizeof POS_SHAPES[0]; si++) {
             char pat[256], cmsg[256];
-            snprintf(pat, sizeof pat, POS_SHAPES[si], names[i]);
+            snprintf(pat, sizeof pat, POS_SHAPES[si], names[i].name);
             seth = set_hash(seth, pat);
 
             int pc2 = pcre2_try(pat, strlen(pat), NULL, 0);

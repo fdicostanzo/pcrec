@@ -246,7 +246,13 @@ enum {
     FEAT_CONDITIONALS  = 1u << 12,
     FEAT_RECURSION     = 1u << 13,
     FEAT_MODIFIERS     = 1u << 14,
-    FEAT_VERBS         = 1u << 15
+    FEAT_VERBS         = 1u << 15,
+    /* MOD-0.3a (2026-08-12): `(?[...])` split out of `classes` the day the
+     * classes producers began — an enabled module must never still refuse a
+     * construct while naming itself, and set-operation classes are real
+     * work `classes` does not contain. The registry row's own comment had
+     * reserved this call for whoever implemented the doorway. */
+    FEAT_EXTENDED_CLASSES = 1u << 16
 };
 
 /* Flavour: which construct a byte MEANS. Exactly one today, by design — D18's
@@ -658,17 +664,33 @@ const VerbTable *pcrec_registry_verb_tables(int which);
  * tables, so it is not a VerbTable field. Returns the message; sets *max. */
 const char *pcrec_registry_verb_name_limit(size_t *max);
 
-/* The POSIX class names libpcre2 recognises, for RF_CLASS_NAMED rows. `name`
- * may carry a leading `^` (`[[:^alpha:]]` is a real construct). Returns true if
- * PCRE2 has it; `pcrec_registry_posix_unknown_msg` is what to say when not. */
+/* The POSIX class-bracket NAME table, for RF_CLASS_NAMED rows — a THIRD
+ * schema beside RegRow and VerbName, on D25's reasoning: a POSIX name answers
+ * "does PCRE2 have this name" plus, since MOD-0.3a, WHOSE construct it is —
+ * because two of the sixteen are not character classes at all. `[[:<:]]` and
+ * `[[:>:]]` are zero-width word-boundary assertions, so their honest module
+ * is `assertions` (the module `\b`'s own row carries), not the doorway's
+ * `classes`; the split is data here, never a special case at a call site. */
+typedef struct {
+    const char *name;              /* case-sensitive; exactly one spelling */
+    bool        whole_class_only;  /* legal ONLY as the class's entire content:
+                                      `[[:<:]]` compiles, `[x[:<:]]`,
+                                      `[^[:<:]]`, `[[:<:]a]` do not (R9/C3-4);
+                                      also unnegatable — `[[:^<:]]` is err 130 */
+    unsigned    feature;           /* FEAT_* of the module that will produce it */
+    const char *module;            /* that module's name, for diagnostics */
+} PosixName;
+
+/* `name` may carry a leading `^` (`[[:^alpha:]]` is a real construct; a
+ * whole-class-only name never negates). Returns true if PCRE2 has it;
+ * `pcrec_registry_posix_unknown_msg` is what to say when not. */
 bool        pcrec_registry_posix_known(const char *name, size_t len);
-/* True for the names libpcre2 accepts ONLY as a class's ENTIRE content:
- * `[[:<:]]` compiles, `[x[:<:]]` and `[^[:<:]]` and `[[:<:]a]` do not. Every
- * other POSIX name is position-independent (R9/C3-4). */
 bool        pcrec_registry_posix_whole_class_only(const char *name, size_t len);
 const char *pcrec_registry_posix_unknown_msg(void);
+/* Exact lookup (no `^` handling — strip it first), or NULL. */
+const PosixName *pcrec_registry_posix_find(const char *name, size_t len);
 /* Iteration, for tests and --list-verbs' sibling checks. */
-const char *const *pcrec_registry_posix_names(size_t *n);
+const PosixName *pcrec_registry_posix_names(size_t *n);
 
 /* src/parse/ext.c — the four doorways out of the base grammar (SR-2). Each is
  * called only after parse.c's own switch has declined, so a base-tier pattern

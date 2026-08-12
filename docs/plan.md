@@ -834,15 +834,111 @@ Then DOC-1, then PC-4 when module `classes` lands.
   bodies pcrec answers correctly today; the collapse as written is a tier-2
   regression). That differential belongs to whoever proposes the collapse,
   not to this step's close.
-- [MOD-0.3] STATE:not-started — **MOVED AHEAD of `modifiers` (D30 §7, was
+- [MOD-0.3] STATE:started 2026-08-12 (tenth session) — **MOVED AHEAD of
+  `modifiers` (D30 §7, was
   MOD-0.5)**, so the module that owns the class doorway exists before the module
   that can change its lexing — module `classes`, the richest INPUT case: a scan
   whose end is not known in advance, context the others do not need (class-open,
   content-start, negation), and the only doorway where DECLINE is the normal
-  answer. `RF_CLASS_DELIM` retires; `RF_CLASS_NAMED` and `RF_CLASS_INVALID` stay
-  as DATA (D29's data/code line). Collapses `pcrec_ext_class_pair_opens`, which
-  is a second copy of the scan K4 got wrong three times. Also PC-4's forcing
-  function
+  answer. ~~`RF_CLASS_DELIM` retires; `RF_CLASS_NAMED` and `RF_CLASS_INVALID`
+  stay as DATA (D29's data/code line). Collapses `pcrec_ext_class_pair_opens`,
+  which is a second copy of the scan K4 got wrong three times.~~ Also PC-4's
+  forcing function.
+  **EXPANDED ON START (tenth session), read through the resolved design**
+  (Part II §§12-16 as R14-corrected; D33 as amended by D34 items 6/7 and R14;
+  §18 all resolved). TWO CORRECTIONS to this entry's own pre-D33 text, struck
+  above, so nobody re-derives them: (1) `pcrec_ext_class_pair_opens` is NOT
+  collapsed — R14 correction (c) struck it from every deletion list, three
+  critics independently; it survives as the (bracket, high) deviating cell's
+  predicate and the deviating cell is implemented BY it. (2) `RF_CLASS_INVALID`
+  does NOT stay as data — D33 §3 / D34 item 7 retire it WITH `RF_CLASS_BASE`:
+  base scalars and literal fallbacks become explicit data-driven class ports,
+  and a NULL class port regains its single meaning, permanently invalid at
+  class position (mode-invariant, the R14-verified half of §14.3).
+  SCOPE MEASUREMENTS (2026-08-12, probe_mod03 vs libpcre2 10.46, predictor
+  stated before the run): `[[:^alpha:]]` COMPILES with census identical to
+  `[^[:alpha:]]` (204 members, 0 diff bytes over all 256) — **negated names
+  are in the named-class port's scope**; `[[:^foo:]]` and `[[:^<:]]` are err
+  130, and pcrec's current answers at both are already correct (module promise
+  / unknown-name), so no pre-existing defect there; `[[:<:]]`/`[[:>:]]`
+  COMPILE as zero-width word-boundary assertions (`[[:<:]]ab` matches "ab" at
+  [0,2), `a[[:<:]]b` does not match "ab") — **not producible without assertion
+  engine work (M6), so they stay refused and need an attribution ruling**;
+  `(?[[a]])` COMPILES in 10.46 — extended classes are REAL syntax, out of this
+  step's producing scope, same ruling needed. Substeps:
+- [MOD-0.3a] STATE:completed 2026-08-12 — the DESIGN GATE, short and journal-recorded
+  (rulings in the tenth-session journal entry: per-name POSIX attribution with
+  `<`/`>` → module 'assertions', `(?[` → new module 'extended-classes'; two
+  trailing tagged port fields {NONE,SCALAR,SET,FN} on RegRow; bitmaps
+  generated from libpcre2 censuses, PC-4 re-measures; per-block `features`
+  directive in .rxt; esc_class_value stays through slices 1-2, FN-port
+  callee in slice 3)
+  (the D6 panel stays at close; R10's lesson is design review is cheapest
+  before code, but this design already carries R13/R14 — what remains is
+  milestone-local): (1) what a REAL construct answers while module `classes`
+  is ENABLED and its producer is deliberately absent — the `[[:<:]]`,
+  `[[:>:]]` and `(?[` cells; candidates are re-attribution to honest module
+  names vs keeping 'classes' with the enabled-module-still-refuses wording;
+  tier-2 attribution under D26, pinned by hand in tests/reject/ either way,
+  and the gate's `answered_at` already distinguishes "gate open, port
+  missing". (2) The port representation on RegRow: tagged data-or-function
+  class/atom port columns, trailing fields, every macro initialises them —
+  MOD-0.2's measured lesson that -Wextra missing-field-initializers IS the
+  enforcement, and the macro-DEFINITION edit shape that kept mech anchors
+  from drifting. (3) The corpus channel: how tests/classes/*.rxt requests
+  `--features classes` from the harness (a per-file directive, not a global
+  env — the default-config corpus must keep running unmodified). (4) The
+  port-ification scope: classes-owned rows plus the D33 §3 retirements;
+  `esc_class_value`'s bare int becomes a tagged claim (the K11 UB shape,
+  named in D33 §8)
+- [MOD-0.3b] STATE:not-started — slice 1, vocabulary + port columns,
+  UNWIRED: `ExtWhat` gains EXT_SCALAR / EXT_MEMBERS / EXT_NODE (D33 §5's
+  vocabulary); the class-port column lands with data ports (`\b` → scalar
+  0x08; `\g \k \8 \9` → their letters; NULL = permanently invalid);
+  parse.c's call-site walls extend to the new outcomes; **every EXT_*
+  outcome gets a probe that is false today** (D33 §9.3 — ask of each: was
+  this already true yesterday?). Landing bar: byte-identity, nothing
+  consumes a port yet; full battery between this and every later slice
+- [MOD-0.3c] STATE:not-started — slice 2, the PRODUCERS, gated: the ten
+  char-type escapes (atom position → A_CLASS node; class position → members
+  ORed into the class; **every A_CLASS-building site calls `cls_casefold`
+  itself** — the OS-1/D23 rule, stated in src/parse/CLAUDE.md); bare `\N`'s
+  atom port (`[^\n]`, set 255; its class port stays NULL, err-171 wording is
+  tier 3); the POSIX named-class port at the bracket doorway, 16 names × 2
+  polarities (the `^` form measured real above). Default (empty enabled set)
+  stays byte-identical; under `--features classes` the constructs compile
+  and MATCH. tests/classes/*.rxt lands here, oracle-verified (python3 re
+  where expressible, `# pcre2-only` otherwise)
+- [MOD-0.3d] STATE:not-started — slice 3, the ENDPOINT RULE + retirements:
+  the five-step evaluation order (§16.2 as R14-corrected: low's own error →
+  high's pair-open short-circuit → high's own error → either side SET → 150
+  → scalar ordering) live at both class-reachable doorways with real SET
+  results — K12's certification scope grows from refusals to produced sets;
+  `RF_CLASS_DELIM` retires into recognisers; `RF_CLASS_BASE` /
+  `RF_CLASS_INVALID` retire (parse.c:152's `\b` special case deleted;
+  registry_check.c:875's skip_flag goes). **D33 §9's migration obligations
+  come due in this slice**: SPEC-FA's accept-controls shown passing through
+  the new path (`[0-[a]` `[0-[:]` `[0-[:digit]` `[0-[.]` —
+  run_reject_tests.sh:1019's warning), and the in-class sweep extended past
+  one byte of tail context, because removing `RF_CLASS_INVALID` without it
+  leaves K10's gap in a new place (K10's FIX stays MOD-0.6's; the NET comes
+  due here)
+- [MOD-0.3e] STATE:not-started — slice 4, PC-4 + the ratchets: PC-4 (the
+  R8/C4-2 SEMANTIC differential — compile AND MATCH vs libpcre2 over a
+  generated class-pattern space, inside make test, skipping loudly without
+  libpcre2 exactly as PC-3 does) lands WITH the module per its own step
+  text; check07's `gate.compared_pairs` floored above 0
+  (AWAITING-POPULATION retires — spec_mod0's first possible exit-0 run);
+  check02's compared floor moves if any generator body now compiles;
+  check09's assertion 2 arms. Counts re-read from runs, never docs
+- [MOD-0.3f] STATE:not-started — close: D6 critic panel (read-only,
+  narrow briefs, one primary question each — the R12 standard; any BLINDED
+  author spawns through scripts/mk_d27_cell.sh, the CELL) + the landing
+  bar: (a) default-config differential vs the pre-MOD-0.3 snapshot binary,
+  ZERO differences, instrument liveness proven first (the mod02_diff.py
+  method, rebuilt from the journal — scratchpad is ephemeral); (b) under
+  `--features classes`: PC-4 zero divergences + corpus green; (c) full
+  battery + strict; (d) journal, wake brief, per-dir CLAUDE.mds
 - [MOD-0.4] STATE:not-started — module `verbs`, the MIGRATION TEST: existing,
   measured code rather than greenfield. Four answers drawn from its own tables,
   the VF_* form bits, the at-start position rule, and a blame offset that is not

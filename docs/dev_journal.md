@@ -6114,3 +6114,80 @@ critic's consequence claim the way you verify your own: run it.
 Final state: registry 166 + reject 430 + PC-3 143 all from runs, strict
 clean, differential vs the pre-MOD-0.2 snapshot still ZERO over 5,247,
 spec_mod0 9/0/1, mech 20/20, bench clean. MOD-0.2 closed.
+
+## 2026-08-12 — tenth session: MOD-0.3 (module `classes`) opened — baseline + the design gate
+
+Frank's directive: begin dev. MOD-0.3 is the head of the spine and §18's five
+decisions were all resolved in the fifth session, so nothing gates it.
+
+**Baseline re-verified before any edit** (wake §3, exit statuses captured
+directly, `FAIL:` grepped unanchored across every log: zero): make, make test,
+strict, verify_rxt 100%, fuzz seed 1 zero divergences, spec_mod0 9/0/1 exit 1
+(the designed awaiting state — check07 AWAITING-POPULATION), bench 0 budget
+failures. mech pending at the time of this entry; recorded below when done.
+
+**[MOD-0.3] expanded in docs/plan.md and STATE:started.** Substeps .3a-.3f,
+each read THROUGH the resolved design (Part II §§12-16 as R14-corrected, D33
+as amended, §18). Two conflicts in the old step text corrected on expansion,
+struck in place: `pcrec_ext_class_pair_opens` is NOT collapsed (R14 (c) —
+three critics independently; it IMPLEMENTS the deviating cell), and
+`RF_CLASS_INVALID` does not stay as data (D33 §3/D34-7 retire it with
+RF_CLASS_BASE; NULL class port = permanently invalid, the mode-invariant
+half of §14.3 R14 verified).
+
+**Scope measured before scoping** (probe_mod03.c, scratchpad, predictor
+stated first; against libpcre2 10.46):
+
+- `[[:^alpha:]]` COMPILES, census == `[^[:alpha:]]` exactly (204 members,
+  0/256 diff) — negated names join the named-class port's scope.
+- `[[:^foo:]]` / `[[:^<:]]` both err 130; pcrec's shipped answers at both
+  are already right (module promise / unknown-name), no pre-existing defect.
+- `[[:<:]]` / `[[:>:]]` COMPILE as zero-width word-boundary assertions
+  (`[[:<:]]ab` → [0,2) on "ab"; `a[[:<:]]b` → no match on "ab").
+- `(?[[a]])` COMPILES — extended classes are REAL 10.46 syntax; `(?[a])` is
+  its own err 216, "unexpected character in (?[...]) extended character
+  class".
+
+**MOD-0.3a rulings (the design gate; D6 panel stays at close):**
+
+1. **No enabled-module-still-refuses lie.** With `classes` on, everything
+   still refused must answer an honest name. The POSIX name list gains
+   per-name structure (the K14/VerbName precedent): 14 character-class
+   names stay `classes` and become producible; `<` and `>` move to module
+   `assertions` — the module `\b`'s own row already carries, and the
+   registry's comment at posix_names[] assigned this split to whoever
+   implements the doorway. `(?[` re-attributes from `classes` to a NEW
+   module `extended-classes` (real syntax, RD_PLANNED, no milestone owner
+   yet — the name discharges the obligation under D26). Consequences,
+   accepted: 17 module names; check09's coverage count and the reject pins
+   move BY MEASUREMENT; `--features all` picks the new name up
+   automatically; feature mask 17 < 32 (D34-3's loud ceiling far off).
+2. **Ports are two trailing tagged fields on RegRow** (atom port, class
+   port), kind ∈ {NONE, SCALAR, SET, FN}: NONE at atom = refuse as today,
+   NONE at class = permanently invalid (NULL's one meaning, §14.3); SCALAR
+   and SET are data (`\b` → 0x08; the char-types' 32-byte bitmaps); FN is
+   the bounded row-local scan (octal, posix-name — §18.2's VERDICT
+   legality). Every macro initialises both fields explicitly: -Wextra's
+   missing-field-initializers IS the enforcement (MOD-0.2's measured
+   lesson), and the edits stay in macro DEFINITIONS so mech's call-site
+   anchors hold.
+3. **The set bitmaps are generated FROM libpcre2 censuses** (a probe emits
+   the C tables), never hand-typed, and PC-4 re-measures them against the
+   live oracle every run — the PC-3 pattern; a version bump is a deliberate
+   re-measurement event (D26 addendum). python re independently oracles the
+   \d \D \s \S \w \W corpus blocks.
+4. **The corpus channel is a per-block `features <list>` directive** in
+   .rxt beside `flags` (run.sh forwards `--features <list>`); \h \H \v \V
+   \N and POSIX blocks are `# pcre2-only` by construction, the rest keep
+   the python oracle.
+5. **Slice order keeps byte-identity until the wiring slice**:
+   esc_class_value stays parse.c's class-side octal/literal engine through
+   slices 1-2 and becomes the FN-port callee in slice 3 (its bare int →
+   tagged claim, the K11 shape named in D33 §8). Class structure stays
+   8-bit (D33 §7; MOD-0.6 owns widening).
+
+FLAGGED TO FRANK (tier-2 attribution judgements, reversible data + pins):
+the `<`/`>` → `assertions` move and the new `extended-classes` module name
+are my rulings under D26's tier discipline, recorded here rather than
+asked, per the begin-dev directive. Say the word and either becomes a
+one-row edit plus pin updates.

@@ -142,6 +142,7 @@
 #define M_recursion      FEAT_RECURSION,     "recursion"
 #define M_modifiers      FEAT_MODIFIERS,     "modifiers"
 #define M_verbs          FEAT_VERBS,         "verbs"
+#define M_extended_classes FEAT_EXTENDED_CLASSES, "extended-classes"
 /* THERE IS NO COMPOUND MODULE MACRO ANY MORE. `M_lookaround_named`
  * ("lookaround/named-groups") lived here for `(?<`, one byte meaning two
  * constructs, and SR-9's `tail` retired it: `(?<=`, `(?<!` and `(?<*` are
@@ -503,13 +504,15 @@ GROUP_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", recursion, VM_ONLY, "relat
  * extended character class"), which is PCRE2 parsing a class body rather than
  * option letters.
  *
- * `classes` IS A JUDGEMENT, stated rather than buried: this doorway's module is
- * the one that owns character classes, and the extended form is a spelling of a
- * class. It could equally earn a module of its own when someone implements set
- * operations. Nothing depends on the choice today — every row here is rejected —
- * and PC-3 checks the construct is REAL, which is the tier-2 obligation; the
- * NAME of the module that will implement it is ours to pick. */
-GROUP('[',  "(?[[a]])",      classes,      ANY_ENGINE,
+ * `classes` WAS A JUDGEMENT, stated rather than buried, and MOD-0.3a
+ * (2026-08-12) exercised the exit the original comment reserved: the moment
+ * module `classes` gained producers, "requires module 'classes'" for a
+ * construct classes will not produce became a live lie — an ENABLED module
+ * still refusing in its own name. Set-operation classes earn the module of
+ * their own the comment predicted. PC-3 keeps checking the construct is REAL
+ * (measured: `(?[[a]])` COMPILES under 10.46, `(?[a])` is its own err 216);
+ * the NAME stays ours to pick, and is pinned in tests/reject/. */
+GROUP('[',  "(?[[a]])",      extended_classes, ANY_ENGINE,
       "extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]])", QF_YES),
 
 /* THE OPTION SETTINGS, WRITTEN OUT. These eleven bytes used to be a catch-all
@@ -786,13 +789,19 @@ REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are no
  * `^` for negation. No form bits are needed — unlike a verb name, a POSIX class
  * name has exactly one spelling.
  *
- * Kept as a plain name list rather than RegRows for the reason D25 gives for
- * the verb tables: a RegRow carries a module, a feature bit and an engine mask,
- * and fourteen of them would repeat one module fourteen times. This answers one
- * question — does PCRE2 have this name — and pcre2_check.c re-measures it. */
-static const char *const posix_names[] = {
-    "alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph",
-    "lower", "print", "punct", "space", "upper", "word",  "xdigit",
+ * Kept as a name table rather than RegRows for the reason D25 gives for the
+ * verb tables: a RegRow carries a flavour, a status and an engine mask this
+ * question never asks. Since MOD-0.3a a name DOES carry a feature/module pair
+ * — because two of the sixteen belong to a different module than the doorway
+ * — and that is still one question per field, not a RegRow. pcre2_check.c
+ * re-measures the name set against libpcre2 on every run. */
+#define PN_CLASS(n)  { n, false, M_classes }
+static const PosixName posix_names[] = {
+    PN_CLASS("alnum"), PN_CLASS("alpha"), PN_CLASS("ascii"),
+    PN_CLASS("blank"), PN_CLASS("cntrl"), PN_CLASS("digit"),
+    PN_CLASS("graph"), PN_CLASS("lower"), PN_CLASS("print"),
+    PN_CLASS("punct"), PN_CLASS("space"), PN_CLASS("upper"),
+    PN_CLASS("word"),  PN_CLASS("xdigit"),
     /* AND TWO THAT ARE NOT CHARACTER CLASSES AT ALL. `[[:<:]]` and `[[:>:]]`
      * are zero-width WORD BOUNDARY assertions PCRE2 inherited from its Unix
      * ancestry — measured on "abc def": `[[:<:]]def` matches [4,7) and
@@ -800,11 +809,17 @@ static const char *const posix_names[] = {
      * had eyeballed in libpcre2's string table and PC-3's generated name
      * differential found these two on its first run, which is the difference
      * between listing a space and generating it, one level down from where R8
-     * already learned it. They are `classes` here only because that is the
-     * doorway's module; whoever implements it owns splitting them out, since a
-     * boundary assertion is not a set of characters. */
-    "<", ">"
+     * already learned it. MOD-0.3a (2026-08-12) split them out to module
+     * `assertions` — the module `\b`'s own row already carries — because a
+     * boundary assertion is not a set of characters, and once `classes` has
+     * producers, promising `classes` for a construct it will never produce is
+     * the enabled-module lie K14 exists to forbid. whole_class_only is the
+     * OTHER measured fact about them (R9/C3-4): legal only as the class's
+     * entire content, and unnegatable. */
+    { "<", true, M_assertions },
+    { ">", true, M_assertions },
 };
+#undef PN_CLASS
 
 /* ---- the `(?` doorway's OPTION RUN (Q2) ---------------------------------
  *
@@ -925,10 +940,19 @@ bool pcrec_registry_option_run_ok(const char *at, size_t avail)
     }
 }
 
-const char *const *pcrec_registry_posix_names(size_t *n)
+const PosixName *pcrec_registry_posix_names(size_t *n)
 {
     *n = sizeof posix_names / sizeof posix_names[0];
     return posix_names;
+}
+
+const PosixName *pcrec_registry_posix_find(const char *name, size_t len)
+{
+    for (size_t i = 0; i < sizeof posix_names / sizeof posix_names[0]; i++)
+        if (strlen(posix_names[i].name) == len &&
+            memcmp(posix_names[i].name, name, len) == 0)
+            return &posix_names[i];
+    return NULL;
 }
 
 bool pcrec_registry_posix_whole_class_only(const char *name, size_t len)
@@ -951,7 +975,8 @@ bool pcrec_registry_posix_whole_class_only(const char *name, size_t len)
      * shape sweep never uses `<` or `>` as a body. The defect lives in the cell
      * of the cross-product neither generates. */
     if (len && name[0] == '^') return false;   /* `^<` is already not-known */
-    return len == 1 && (name[0] == '<' || name[0] == '>');
+    const PosixName *pn = pcrec_registry_posix_find(name, len);
+    return pn && pn->whole_class_only;
 }
 
 const char *pcrec_registry_posix_unknown_msg(void)
@@ -969,11 +994,10 @@ bool pcrec_registry_posix_known(const char *name, size_t len)
      * differential, which probes both spellings of every candidate. */
     bool neg = len && name[0] == '^';
     if (neg) { name++; len--; }
-    if (neg && len == 1 && (name[0] == '<' || name[0] == '>')) return false;
-    for (size_t i = 0; i < sizeof posix_names / sizeof posix_names[0]; i++)
-        if (strlen(posix_names[i]) == len && memcmp(posix_names[i], name, len) == 0)
-            return true;
-    return false;
+    const PosixName *pn = pcrec_registry_posix_find(name, len);
+    if (!pn) return false;
+    if (neg && pn->whole_class_only) return false;  /* an assertion cannot negate */
+    return true;
 }
 
 /* ---- lookup -------------------------------------------------------------

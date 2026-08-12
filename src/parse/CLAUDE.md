@@ -297,6 +297,11 @@ rather than listing it, one more time:
 | `(?PX)` and 251 other tails | 'named-groups' | PCRE2's error-141 wording *(not on the plan)* |
 | `(?iZ)` `(?-Z)` `(?aPP)` | 'modifiers' | no module — the RUN is the construct *(not on the plan)* |
 
+(The `(?[...])` row's "is" column above is Q2-era history: MOD-0.3a
+(2026-08-12) moved it again, 'classes' → 'extended-classes', the day module
+`classes` gained producers. Same session, `[[:<:]]`/`[[:>:]]` moved to
+per-NAME attribution — module 'assertions' — in the PosixName table.)
+
 **The run grammar was wrong twice before the differential accepted it**, and
 both errors are worth not repeating. First too strict — "at most one hyphen,
 never after `^`" — which UNDER-promised for 24 shapes that PCRE2 calls option

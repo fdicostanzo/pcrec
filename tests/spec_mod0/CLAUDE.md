@@ -109,7 +109,7 @@ reader will arrive holding it.
 | 6 | check06_cursor.sh | **PASS** (surface landed) | **none — see below; this check compares pcrec against itself** | — (`pcrec --probe-ask WANT [--] CONSTRUCT` drives one doorway once per call; every one of the 99 doorway-reaching rows is driven at `claim`, `verdict` AND `result` — `cursor.clear_compared`, floor 198, asserts pos_after == pos_before at the two WANT_RESULT-clear levels, and `cursor.set_compared`, floor 99, asserts pos_after >= pos_before at the WANT_RESULT-set level. The one row with no doorway at all, `(?:...)`, is named and floored separately — `cursor.base_answered_rows`, floor 1 — and the check fails if that set changes shape in either direction. Today every comparison is an equality: no recogniser is implemented yet, so nothing ever reaches a `result`-level answer, and the >= assertion's strictly-greater branch is unexercised but live) |
 | 7 | check07_gate_equivalence.c | **AWAITING-POPULATION** (armed) | libpcre2 decides membership | The vary-the-set surface EXISTS (`pcrec --features LIST`) and the comparison RUNS: 1700 verdict-class checks (all-off vs all-on, and every module's inverted-config vs all-on, over all 100 rows), 0 disagreements, instrument liveness validated live via `--probe-ask`'s `answered_at`. What remains is a POPULATION, not a surface — `gate.eligible_rows` is 0 because only 1 row (the base row, owned by no module) is ever accepted under 'all on' today. Raise `gate.compared_pairs`'s floor when the first module lands |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
-| 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | check07's comparison now runs; the per-name-nonzero assertion (2) still arms only when `gate.compared_pairs` is floored above 0 — coverage (assertion 1, all 16 module names present) is checked and passing now |
+| 9 | check09_every_feature_toggles.sh | **PASS** (coverage half) | check07's per-name output vs the registry | check07's comparison now runs; the per-name-nonzero assertion (2) still arms only when `gate.compared_pairs` is floored above 0 — coverage (assertion 1, all module names present — 17 since MOD-0.3a added `extended-classes`) is checked and passing now |
 | 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |
 
 **Invariant 6 is the one with no oracle half, and that is not a gap in the
@@ -145,7 +145,7 @@ All against **libpcre2 10.46 2025-08-27**, registry of **100 rows**, on
   structural reasons, not a bound that is too small). That is the blind spot
   where a false `yes` could hide, and it is capped by an explicit CEILING in
   check10 rather than a floor, because it is a number that must not GROW.
-- 16 distinct module names in the registry.
+- 17 distinct module names in the registry (16 until MOD-0.3a, 2026-08-12, split `extended-classes` out of `classes`).
 - 70 of 100 rows have their syntax probe accepted by libpcre2 (check07's
   membership set).
 - check07's armed sweep: **1700** verdict-class checks (100 rows x (1 all-off

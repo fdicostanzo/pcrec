@@ -71,7 +71,7 @@ endpoint.cells_scored              200
 capture.bodies_compared            99
 class.adjacent_cells                22
 class.noclass_rows                  56
-gate.module_names                  16
+gate.module_names                  17
 quantifiable.lexical_d1_rows         2
 quantifiable.lexical_d2_rows         1
 quantifiable.lexical_cells           0

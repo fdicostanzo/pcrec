@@ -37,6 +37,14 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
 - `probe_quant.c` — the §18.3 quantifiability determinism probes: the
   option-run form split (`a(?i)*` 109 vs `a(?i:b)*` compiles) and the
   per-VerbName split (`a(*FAIL)*` 109 vs `a(*pla:b)*` compiles).
+- `probe_mod03.c` — MOD-0.3a scope probes (2026-08-12): `[[:^alpha:]]` is
+  REAL with census identical to `[^[:alpha:]]` (204 members, 0/256 diff);
+  `[[:^foo:]]`/`[[:^<:]]` err 130; `[[:<:]]`/`[[:>:]]` compile as zero-width
+  word-boundary assertions (match spans recorded); `(?[[a]])` COMPILES under
+  10.46 while `(?[a])` is its own err 216. The evidence behind the MOD-0.3a
+  attribution rulings (per-name `assertions` for `<`/`>`, the new
+  `extended-classes` module) and the negated-name scope of the classes
+  producer.
 - `probe_fix3.c` — FIX-3 (K13): the twelve escape rows' class-position
   semantics, 41 cells with the member SET verified byte-exact (all 256
   single-byte subjects per compiling cell) — octal runs, the literal-fallback
