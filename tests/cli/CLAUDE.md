@@ -6,7 +6,9 @@ Part of `make test` since M2.
 
 ## Files
 
-- **run_cli_tests.sh** — nine cases: (1) `-o -` self-contained C that compiles
+- **run_cli_tests.sh** — the cases (count deliberately not hand-copied here —
+  this line has drifted twice; `grep -c '^case[0-9]*()' run_cli_tests.sh` is
+  the source): (1) `-o -` self-contained C that compiles
   standalone, (2) `--emit-main` producing a runnable binary, (3) prefix boundary
   validation, (4) `-o subdir/out.c` writing and compiling both files, (5) `--`
   before a pattern starting with `-` plus missing-value diagnostics, (6) error

@@ -834,8 +834,9 @@ direction is CHECKED, not generated (R14/C2-F8): `compliance_section.py
 --names` asserts prose-OUT-OF-SCOPE ⇔ ROADMAP_NEVER in both directions — and
 its first run caught `LIMIT_RECURSION` in the tables but missing from the
 survey's row. Pins: 14 rows in tests/reject/ (failing first), two manifest
-entries; both dumps carry the column (13-field --list-syntax, 5-field
---list-verbs, consumers updated). Original entry below, kept for the
+entries; both dumps carry the column (15-field --list-syntax — 13 at K14
+landing, MOD-0.1's later slices appended quantifiable and class_expect the
+same day — 5-field --list-verbs, consumers updated). Original entry below, kept for the
 analysis.
 
 **Historical entry (found 2026-08-11, R13 panel, C5/F13; verified independently by the author):**

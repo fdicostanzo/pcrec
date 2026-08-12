@@ -43,6 +43,15 @@ Process and status documents for pcrec. The architecture itself lives in
   manager 2026-08-12; phase 2 (code) built from it — see
   tests/registry/CLAUDE.md and src/parse/CLAUDE.md's `mod_uprops.c` entry
   for what actually landed.
+- `design_notes_mod07.md` — MOD-0.7 (`--explain` rewrite) phase-1 design
+  note: the measured refutation of the plan row's own cure (the
+  declared-vs-live agreement clause is swap-blind — both sides read
+  `r->module`), the query→doorway mapping (one shared router, two callers),
+  selection = prefix ∪ candidates, the election/promise/attribution clauses
+  and their honest limits, exit 3 for dissent, §13's six manager rulings and
+  §14's V1-V7 failing-direction measurements. ACCEPTED and built 2026-08-12
+  — see cli/CLAUDE.md and src/parse/CLAUDE.md's `syntax_dump.c` entry for
+  what landed.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
