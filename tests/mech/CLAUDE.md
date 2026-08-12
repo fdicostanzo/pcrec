@@ -71,6 +71,76 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - `harness` → `tests/harness/run.sh`, optionally scoped to
   `SAB_HARNESS_TARGET` for speed (most sabotages here only need
   `tests/base/caseless.rxt`, not the full corpus).
+- `registry` → `tests/registry/registry_check.c` (built against the sabotaged
+  tree's own `libpcrec.a`) plus the two `compliance_section.py` checks. This is
+  tests/registry/ MINUS its libpcre2 half — the pcrec-reading-pcrec net.
+- `pc3` → `tests/registry/pcre2_check.c`, the EXTERNAL check. Needs libpcre2 at
+  run time and **skips loudly per row** when it is absent (see below).
+- `cli` → `tests/cli/run_cli_tests.sh`. Note the scrape: this script counts
+  `cases`, like the corpus harness, not `checks` like every other arm.
+
+The last three landed 2026-08-12 (MOD-0.8c slice 1), and **neither arm runs
+`run_registry_tests.sh` itself** even though that is what `make test` runs.
+Two reasons, both about what a matrix cell is allowed to mean. The wrapper
+fuses the internal and external checks into one exit code, and which of the two
+sees a sabotage is usually the whole finding — S16 is interesting precisely
+because `registry` and `pc3` both score zero on it. And the wrapper's coverage
+guards fire on a changed PASS COUNT, so a check that legitimately failed would
+also trip "coverage changed", and the cell could not distinguish detection from
+a count moving.
+
+**The cost was measured before the arms were wired, not asserted after**
+(docs/plan.md's [MOD-0.8c] row requires that order). One scratch archive tree
+at `11352be` on a 12-core box: `git archive HEAD` 0.04s, `make all -j12` 0.75s,
+then build-and-run per suite — `registry` 0.60s, `pc3` 4.36s, `cli` 5.46s,
+against the `reject` arm's **54.75s** that S15-S20 were already paying. All
+three together cost about a fifth of the one arm those rows already ran, which
+is why the retagging below was not a cost question.
+
+## `pc3` can SKIP, and a skip is not a pass
+
+`pcre2_check.c` dlopens libpcre2 and exits 0 with `SKIP:` lines when it is
+absent — the convention that keeps a stranger's clone green. The arm reproduces
+that as a **visible `pc3:SKIPPED-no-oracle` cell**, never as a silent zero, and
+the verdict logic refuses to let it read as evidence:
+
+- a row whose assigned suites ALL skipped is `INCONCLUSIVE`, never
+  `UNDETECTED` — the latter is a finding, and it would be a false one;
+- a row that ran something else carries `(pc3 SKIPPED -- no oracle)` appended
+  to its verdict, because "caught by nothing" means something different when
+  one of the nets was not in the water;
+- the end-of-run summary lists every skipped row, and the completion trailer
+  counts them: `== mech run COMPLETE: N rows (undetected: U, anomalies: A,
+  pc3-skipped: S) at <SHA> ==`.
+
+That last field is new in the trailer; the grep-able prefix is unchanged.
+
+`make bench` and PC-4 (`run_pc4.sh`, measured 2.50s) are the two suites still
+deliberately NOT wired, for the same reason: no sabotage's ONLY signal is a
+throughput budget or a semantic differential today. Add the arm in the same
+change as the first sabotage that needs it.
+
+## Which rows were retagged, and what the new arms measured
+
+Six rows gained arms at MOD-0.8c slice 1 — the ones whose own documentation
+names these suites as their relevant net. Both runs are at `11352be`; `before`
+is the same matrix with `reject` as the only arm. Every row was DETECTED in
+both runs, so the deltas are in the CELLS, which is where the information is.
+
+| row | before | what the new arms added |
+|---|---|---|
+| S15 drop `\d` row | reject 12 | registry **2** (+compliance), pc3 **0** — PC-3 iterates rows that EXIST, so a deleted one is invisible to it; the exact row count is what sees this |
+| S16 wrong module | reject 5 | registry_check **0**, pc3 **0** — both prose claims confirmed as measured zeros (see the row's own header for the `+compliance-FAIL` caveat) |
+| S17 syntax probe | reject 1 | registry **3**, pc3 **1** — both fire, for different reasons: the probe stops reaching pcrec's doorway, and stops being a construct libpcre2 can be asked about |
+| S18 empty TSV | reject 1 | registry **0**+compliance-FAIL, cli **8** — the `cli` arm's first user; case10 counts the dump's fields |
+| S19 fabricated row | reject 1 | registry **1**, pc3 **1** — the documented blind spot, closed; see the section above |
+| S20 `\d` as literal | reject 9 | registry **4**, pc3 **1** — the `\v`-bug shape, now with an external answer |
+
+The `+compliance-FAIL` on five of the six is `compliance_section.py --check`
+noticing that docs/pcre2_compliance.md's generated index no longer matches the
+table. Read it as visibility, not as a control: its own failure message names
+`--write` as the remedy, which regenerates the doc from the sabotaged table and
+goes green.
 
 `make bench` is deliberately NOT wired in here — R3.1 already measured that
 S01's skip-state sabotage also fails bench case (e)'s throughput budget, but
@@ -83,12 +153,35 @@ budget.
 
 If every suite a sabotage lists comes back with 0 failures, the matrix marks
 that row `**UNDETECTED**` and calls it out again in a summary block at the
-end. `S19-new-wrong-row` is EXPECTED to land there — it is the SR-4 blind spot
-`tests/reject/CLAUDE.md` documents by hand ("iteration reads the same table
-the parser renders from... a NEW row with a plausible wrong module and no
-hand-written entry" is caught by nothing in this repository except PC-3, which
-needs libpcre2 and is out of scope for this matrix). An UNDETECTED verdict on
-any OTHER row means a guard regressed and is the thing to go fix.
+end. An UNDETECTED verdict means a guard regressed and is the thing to go fix.
+
+**As of 2026-08-12 there are no UNDETECTED rows** (35 of 35 DETECTED, 0
+anomalies, 0 pc3-skipped), and the row that used to be the standing exception
+is worth reading before anyone re-adds one.
+
+`S19-new-wrong-row` — the SR-4 blind spot, "a NEW row with a plausible wrong
+module and no hand-written entry" — was documented HERE and in its own header
+as EXPECTED to land UNDETECTED, with PC-3 named as the only thing that could
+see it and declared out of scope for this matrix. Both halves of that were
+retired at MOD-0.8c slice 1, and the two failure modes are different lessons:
+
+- **It had already stopped being UNDETECTED, and nothing noticed.** Measured
+  at `11352be` with `reject` as its only arm, BEFORE the new arms existed:
+  `reject 1fail/486pass`. The exact iterated-row count (100 ≠ 101) trips, as
+  `tests/reject/CLAUDE.md` records. A hand-maintained "expected UNDETECTED"
+  that had quietly become DETECTED is precisely the staleness this directory
+  exists to prevent — occurring in the directory that exists to prevent it,
+  which is this project's oldest recurring shape and its fourth instance.
+- **PC-3 is in scope now**, because there is a `pc3` arm. Measured:
+  `pc3 1fail/154pass` — libpcre2 has no `\j`, so the fabricated `RS_MODULE`
+  row fails PC-3's "a row naming a construct PCRE2 does not have" clause.
+  That is an external answer rather than a count moving, which matters: R8/C4-10
+  records that a count-shaped tripwire prints its own remedy, so following its
+  instructions verbatim is how a wrong row gets past the suite.
+
+The generalisation for the next reader: **a documented expected-UNDETECTED is a
+claim with an expiry date, and nothing was checking it.** If you add one, say
+what would have to change for it to close, and re-measure it when that changes.
 
 ## Sabotages NOT encoded here, and why
 

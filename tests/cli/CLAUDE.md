@@ -106,9 +106,11 @@ Part of `make test` since M2.
   are the C4-1 net, and 94 of 100 rows have no module pin here by design;
   class-position answers are DECLARED (the `class` column), never live.
   Failing-direction validation is V1-V7, measured at landing and recorded in
-  the phase-2 commit messages rather than as mech rows — a mech `cli` suite
-  arm is a MOD-0.8 candidate (the code is trivial; the runtime budget is
-  unmeasured, and this project does not assert a cost).
+  the phase-2 commit messages rather than as mech rows. **The mech `cli` arm
+  exists since MOD-0.8c slice 1** and the cost it was waiting on is measured:
+  5.46s per sabotage tree, against the `reject` arm's 54.75s. Whether V1-V7
+  become mech rows is still open and is a manager decision; the arm's first
+  user is `S18-tsv-empty`, whose net is case10.
 - **case 12 (R20/MOD07-1)** — A PRODUCING PORT THAT FAILS, on both query
   surfaces. The tier-1 the R20 panel found: `--explain` and `--probe-ask`
   each hand a doorway a `Ctx` they `memset` and never `setjmp`, which was
