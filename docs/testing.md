@@ -332,3 +332,22 @@ Closes R1's PLAN findings P-M1, P-M2, P-N1, P-N2.
   could see it). It is part of `make test` since M2 — it was standalone when
   first written, and the stale claim that it is not wired in survived two
   checkpoint reviews before an R3 critic grepped for it.
+
+## The differential gate principle (Frank, 2026-08-12, R20/0.8c)
+
+Apples to apples: **a construct whose module has producers is differentially
+tested against libpcre2 with that module ENABLED.** libpcre2 has everything
+"on" always, so a closed-gate comparison of a producing construct compares
+pcrec's refusal against pcre2's acceptance — a RECOGNITION-tier comparison
+only, and it must be labelled as one, never mistaken for behavioral
+coverage (SPEC-1, the `a(?i)*` miscompile, lived exactly in that mislabel:
+every differential was closed-gate, so the accepting path was never
+compared to the oracle at all).
+
+And FOCUSED: **enable exactly the module(s) the sweep exercises — per
+feature, not `--features all`.** Two reasons. Attribution: a failure in a
+focused gated sweep implicates the module under test, not a cross-module
+interaction. Coverage honesty: interactions between enabled modules are a
+real axis, but they are tested DELIBERATELY as their own labelled sweeps,
+not smuggled in as noise inside every differential. (This mirrors the
+per-module-not-blanket rule the `--features` CLI surface already pins.)
