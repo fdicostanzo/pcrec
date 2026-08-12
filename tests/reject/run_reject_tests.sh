@@ -587,12 +587,15 @@ for d in 0 1 2 3 4 5 6 7 8 9; do
     reject "(?$d)" "requires module 'recursion'"
 done
 # The pattern ENDS at the doorway. `c2 == -1` is also REG_SEL_ANY's value, so
-# the lookup lands on the catch-all twice over. Until Q2 that catch-all promised
-# module 'modifiers' and this pin read "(??...) requires module 'modifiers'" —
-# a module promised for a truncated pattern, with a `??` in it because there was
-# no byte to print. The catch-all now agrees with PCRE2 that no construct begins
-# here. Both versions REJECT; the difference is the promise, which is tier 2.
-reject '(?'       "unrecognized character after (? or (?-"
+# the lookup lands on the catch-all twice over. This pin's THIRD answer in
+# three eras, each one measured: pre-Q2 it promised module 'modifiers' for a
+# truncated pattern ("(??...)..."); Q2 changed it to the catch-all's
+# "unrecognized character", with prose here claiming PCRE2 agreement; R17's
+# engine critic MEASURED that claim false — PCRE2 gives `(?` error 114,
+# "missing closing parenthesis", the SAME error bare `(` gets (as do `(?i`,
+# `(?^`, `(?-`): an unclosed group, not an unrecognisable byte. ext.c now
+# answers `(?`-at-end in the family pcrec already used for bare `(`.
+reject '(?'       "missing closing ) for group"
 # THE Q2 ROWS. 217 of the 255 probeable bytes after `(?` were told a pcrec module
 # would implement syntax libpcre2 rejects outright (error 111). A sample is
 # pinned by hand here because PC-3's generated differential and this table fail

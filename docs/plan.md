@@ -1116,7 +1116,10 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the VF_* form bits, the at-start position rule, and a blame offset that is not
   the doorway's default (`(*)` blames the `*`). If the signature survives this
   it survives
-- [MOD-0.5] STATE:started 2026-08-12 (eleventh session) — module `modifiers`.
+- [MOD-0.5] STATE:completed 2026-08-12 (eleventh session, opened and closed
+  in one session: gate a7b835c -> close after R17; three parallel subagent
+  lanes + the main session; every slice battery-green at its landing) —
+  module `modifiers`.
   **MOVED AFTER `classes` (D30 §7, was MOD-0.3).**
   R10/C2-11 measured the hazard at options = 0: `[a- ]` is error 108 (range out
   of order) and `(?xx)[a- ]` COMPILES, because `xx` deletes the space — at the
@@ -1256,11 +1259,21 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the tenth session's lesson); registry_check ties for the recogniser
   pointer; PC-3/PC-4 implications measured; mech rows for the lexer;
   fuzz.py's stale a{,3} note fixed at this, its next edit (R16 NOTED).
-- [MOD-0.5f] STATE:not-started — close: R17 panel (D6; read-only critics) +
-  D27 blinded spec-writer via scripts/mk_d27_cell.sh briefed on option-run
-  semantics from the goal documents and libpcre2 only (Frank's directive,
-  eleventh session — pulled forward from MOD-0.8's brief); docs sweep;
-  journal + wake.
+- [MOD-0.5f] STATE:completed 2026-08-12 (eleventh session) — close. The D27
+  blinded spec-writer ran EARLY (parallel with .5b, Frank's directive —
+  check11/check12 merged 91e6b23, allowlist narrowed to exclude
+  tests/probes so the milestone's measured alphabet could not leak; its
+  floors were designed transition tripwires that fired at the .5c landing
+  exactly as intended). R17 panel (docs/reviews/2026-08-12-r17-mod05.md):
+  three critics, ZERO wrong cells (a panel first); checks -> three
+  correct-today-unguarded port corners, all pinned + S24-26 with the
+  failing direction measured against the unpinned HEAD; engine -> bare
+  `(?`-at-EOF fixed into the bare-`(` 114 family (the Q2 pin's
+  PCRE2-agreement prose was measured FALSE — its third answer in three
+  eras); docs -> five stale-voice fixes incl. tests/modifiers/CLAUDE.md's
+  pre-landing §9.3 framing (the R16 failure mode, one module later). The
+  option-run grammar got its first adversarial readers (MOD-0.8's note
+  discharged early). Journal + wake at close.
 - [MOD-0.6] STATE:not-started — module `unicode-props`, the only NEW recogniser:
   `\p{...}` vs `\pL` (two shapes at one byte), `\P` polarity from `sel`,
   normalisation into a CALLER-PROVIDED FIXED BUFFER (never an arena — D29;

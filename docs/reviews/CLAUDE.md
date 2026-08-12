@@ -222,6 +222,21 @@ Two rules earned the hard way and enforced here:
   self-reported-and-reverted overreach (the brief discipline working),
   and two wrong cells in critics' own reports corrected by measurement.
 
+- **2026-08-12-r17-mod05.md** — R17, MOD-0.5 close (module `modifiers`).
+  Three narrow-brief critics, and a panel first: zero wrong cells in any
+  report (every brief demanded both-sides measurement per claim). The
+  checks critic found three correct-today-unguarded port corners (the
+  a-sub two-homes rule, x-level adjacency/downgrade, unset-wins) — all
+  pinned + sabotage rows S24-26, with the failing direction measured by
+  running the rows against the unpinned HEAD first. The engine critic
+  found bare `(?`-at-EOF answering in the 111 family where PCRE2 gives
+  the same 114 bare `(` gets — fixed in ext.c; the Q2-era pin whose prose
+  claimed PCRE2 agreement moved with its third measured answer in three
+  eras. The docs critic caught tests/modifiers/CLAUDE.md still in the
+  pre-landing voice (the R16 failure mode, one module later) + four more,
+  all fixed. First adversarial read of the option-run grammar (the
+  MOD-0.8 note discharged early).
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 

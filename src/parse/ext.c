@@ -265,6 +265,20 @@ ExtResult pcrec_ext_group(Ctx *cx, ExtWant want, int c2, size_t at)
     if (amb)
         REFUSE(at, "internal error: ambiguous registry arbitration for a (? construct");
 
+    /* The pattern ENDS at `(?` (R17 engine finding, fixed at disposition).
+     * c2 == -1 aliases REG_SEL_ANY, so the natural lookup lands on the
+     * catch-all's "unrecognized character" answer — the 111 family, a claim
+     * PCRE2 does not make here: `(`, `(?`, `(?i`, `(?^` and `(?-` are ALL
+     * error 114, "missing closing parenthesis" (measured, probe cells in
+     * docs/reviews/2026-08-12-r17-mod05.md) — an UNCLOSED GROUP, the same
+     * answer bare `(` gets, not an unrecognisable byte. So answer in the
+     * family pcrec already uses for bare `(`, in both gate states (this is
+     * base-family truth, not module truth). The Q2-era pin asserting the
+     * old answer carried prose claiming PCRE2 agreement; the measurement
+     * says otherwise, and the pin moved with this fix. */
+    if (c2 < 0)
+        REFUSE(at, "missing closing ) for group");
+
     if (r->diag == RD_FIXED)
         REFUSE(at, "%s", r->msg);
     if (r->diag != RD_MODULE)

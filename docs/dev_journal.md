@@ -6563,3 +6563,63 @@ atomically. What landed:
 Still open in MOD-0.5: [.5e] checks (mech rows for the lexer, fuzz.py's
 stale a{,3} note at its next edit), [.5f] close (R17 panel; the D27
 follow-up brief; docs sweep; wake).
+
+## 2026-08-12 — eleventh session, close: R17 and the MOD-0.5 landing
+
+**The panel (three read-only critics in parallel while the .5e battery
+ran; compiled with dispositions in docs/reviews/2026-08-12-r17-mod05.md):**
+
+- CHECKS: three correct-today-unguarded corners of the port — the a-sub
+  rule's second implementation with zero gate-on coverage, the x-level
+  adjacency/downgrade rules living only in non-make-test probes, and
+  unset-wins guaranteed only by block order. All three pinned (corpus
+  59 -> 67) with sabotage rows S24-26 — and the failing direction was
+  measured for free: the rows ran UNDETECTED against the unpinned HEAD
+  (mech archives HEAD; the pins were still uncommitted), then DETECTED
+  once the pins landed. Mech 23/23 -> 26/26. One predicted figure
+  corrected to the measured value ((?-ii) is all unset-side — not a
+  contested cell).
+- ENGINE: bare `(?` at end of pattern answered "unrecognized character"
+  (the 111 family) where PCRE2 gives 114 — and the disposition
+  measurement SHARPENED it: `(`, `(?`, `(?i`, `(?^`, `(?-` are ALL 114,
+  so the right answer was the one pcrec already gave bare `(`. Fixed in
+  ext.c (c2 < 0 answers "missing closing ) for group", both gate states);
+  the Q2-era pin moved with its third measured answer in three eras — its
+  prose had CLAIMED PCRE2 agreement, unverified for two checkpoints.
+  Five clean sweeps recorded as evidence. NOTED: the pre-existing K12
+  dash-offset outlier ([z-a]: pcrec pins the dash, libpcre2 the high
+  endpoint).
+- DOCS: five stale-voice fixes, the worst being tests/modifiers/CLAUDE.md
+  reading its watched-failing §9.3 record as CURRENT status — the R16
+  failure mode one module later, caught by the same lens. Plus the
+  incidental pre-existing noreturn claim (dead since MOD-0.1/K11).
+- Panel first: ZERO wrong cells across all three reports — the briefs
+  demanded both-sides measurement per claim, and got it.
+
+**MOD-0.5 CLOSES: opened and closed in one session.** The gate measured
+first (probe_mod05/b), three parallel subagent lanes (impl worktree,
+corpus worktree, D27 cell with a narrowed allowlist), the producers landed
+atomically (.5c+.5d, the honest-refusal sequencing ruling), checks moved
+with every surface, and the panel's findings were all fixed with
+measurement before disposition. The D30 §7 hazard that ordered this
+milestone after `classes` — `(?xx)[a- ]` — compiles to members {a,-},
+pinned in both gate states, with the lexer rule that decides it
+(deletion-aware dash lookahead) carrying its own sabotage row.
+
+Lessons, this session's additions to the catalogue:
+
+- Run new sabotage rows against the unpinned tree first, ON PURPOSE — the
+  UNDETECTED/DETECTED pair is the failing-direction validation, free.
+- A sweep template that always emits a byte cannot probe the empty/EOF
+  boundary — R16's \N lesson recurring at (?%c. Give generators an
+  explicit empty row.
+- A pin whose prose claims oracle agreement is a measurement claim and
+  ages like one; cite the probe, not the belief.
+- A corpus block's expectation must be derived from the pattern AS THE
+  FORMAT ENCODES IT — the \t-escape block transcribed a raw-byte
+  measurement onto an escape spelling (caught at the landing by the
+  corpus's own first green run).
+- Parallel lanes work when the merges serialize through one reviewer with
+  the battery between — and a worker going idle without committing is a
+  recoverable state, not a failure: the landing bar travels with the
+  brief, so anyone can finish it.
