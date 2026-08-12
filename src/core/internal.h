@@ -55,6 +55,21 @@ struct Ast {
     Ast     *l, *r;
     int      rmin, rmax;
     bool     greedy;
+    /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
+     * quantifier after this node is an error rather than a repetition of it.
+     * It cannot be derived from `k`, which is the whole reason it is a field
+     * — a bare option run produces A_EMPTY, and A_EMPTY is ORDINARILY
+     * quantifiable (`()*` and `(a|)*` both compile in libpcre2, measured).
+     * The arena zeroes, so every node that does not say otherwise is
+     * repeatable, which is the safe default.
+     *
+     * WHY IT IS NOT "produces no atom": the genuinely-lexical constructs
+     * produce no atom either and are TRANSPARENT — libpcre2 compiles
+     * `a\Q\E*` and `a(?#c)*`, letting the quantifier reach back to the `a`.
+     * A bare option run does not: `a(?i)*` is err 109 at the quantifier.
+     * That measured boundary is what this flag marks, and both sides of it
+     * are pinned in tests/reject/. */
+    bool     not_repeatable;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -575,9 +590,27 @@ typedef struct {
                            EXT_NODE: the subtree the caller splices */
 
     /* THE ELECTED ROW (MOD-0.7 slice 2) — which row the doorway DISPATCHED
-     * on, or NULL where it answered without one (an unknown escape, a
-     * class-bracket decline, `(?` at end of pattern). Nothing on the compile
-     * path reads it; `--explain` does, and cli case11 asserts it per row.
+     * on. Nothing on the compile path reads it; `--explain` does, and cli
+     * case11 asserts it per row.
+     *
+     * THE CONTRACT IS A BICONDITIONAL: **NULL if and only if the doorway
+     * answered WITHOUT a row.** R20/MOD07-4 found the reverse direction false
+     * in two of the three cases this comment already named, because both
+     * failing paths STAMP AT LOOKUP and then answer somewhere the lookup's
+     * result plays no part:
+     *
+     *   unknown escape              the lookup found nothing. NULL, always.
+     *   class-bracket, no row       the lookup found nothing. NULL, always.
+     *   class-bracket, pair never   a row WAS found and the delimiter scan
+     *     closes                    then rejected it. Cleared at the DECLINE.
+     *   `(?` at end of pattern      c2 == -1 aliases REG_SEL_ANY, so the
+     *                               catch-all is found by an accident of the
+     *                               sentinel and the branch walks past it.
+     *                               Cleared in that branch.
+     *
+     * A path that answers without consulting the row must clear the stamp
+     * where it answers, not rely on the lookup having failed. The two that
+     * did not made `--explain` assert elections that never happened.
      *
      * IT IS NOT "THE ROW THAT WROTE THE MESSAGE", and the distinction is
      * measured rather than pedantic: for `(?iZ)` the elected row is the `i`
@@ -1141,16 +1174,29 @@ char *pcrec_syntax_verbs(void);
  * many displayed rows FAILED the election/promise/attribution clauses: a
  * defect surfaced, which the CLI reports as exit 3, distinct from exit 1's
  * "your query could not be answered". See syntax_dump.c's own header for the
- * format and for what these clauses can and cannot dissent on. */
-char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent);
+ * format and for what these clauses can and cannot dissent on.
+ *
+ * `err` (may be NULL, zeroed on entry) is the R20/MOD07-1 channel and it
+ * DISAMBIGUATES THE NULL: empty `err->msg` is "no construct matches" as
+ * before; a filled one is a doorway that RAISED — an enabled module port ran
+ * a real parse of the query text and that parse failed. Both are exit 1 at
+ * the CLI, with different sentences, because "your query could not be
+ * answered" is not what happened in the second. */
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
+                           pcrec_error *err);
 unsigned pcrec_flavour_by_name(const char *name);
 /* MOD-0.1 (§18.2): the probe channel behind `pcrec --probe-ask` — one
  * doorway call for `construct` at ask level `want_name` ("claim" /
  * "verdict" / "result"), placed exactly as parse.c would place it, reporting
  * the REAL Ctx cursor before and after. Returns a malloc'd TSV line the
  * caller frees, or NULL when the want name is unknown or the text reaches no
- * doorway. check06 (the cursor rule) compares over this surface. */
-char *pcrec_probe_ask(const char *want_name, const char *construct);
+ * doorway. check06 (the cursor rule) compares over this surface.
+ *
+ * `err` as for `pcrec_syntax_explain` above: zeroed on entry, and a filled
+ * `err->msg` on a NULL return is the R20/MOD07-1 case — an enabled port
+ * raised rather than the caller asking a bad question. */
+char *pcrec_probe_ask(const char *want_name, const char *construct,
+                      pcrec_error *err);
 
 /* ---- stage entry points ---- */
 

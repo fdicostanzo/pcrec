@@ -59,7 +59,9 @@ Part of `make test` since M2.
   `syntax` with `  key<2+ spaces>value` inside. The helper passes row/key
   through the ENVIRONMENT rather than `awk -v`, because `-v` processes escape
   sequences in its value and half these rows are named `\v`, `\d`, `\N{U+0041}`.
-  63 assertions: D29's worked example `(?i-m:` end to end (it exited 1 before
+  88 assertions (63 at MOD-0.7, +25 at R20; read the number from a run —
+  `grep -c '^PASS: case11'` — this file's own history with hand-copied counts
+  is in the paragraph below): D29's worked example `(?i-m:` end to end (it exited 1 before
   MOD-0.7); the six C4-1/C4-1b module pins that ARE the swap net; `\N{U+0041}`'s
   third bucket row as a candidate the prefix rule cannot see; the five query
   cells whose live answer legitimately differs from the row's declaration
@@ -69,7 +71,29 @@ Part of `make test` since M2.
   `result`); and the `(?C1)` K14 pins, written first and recorded failing
   before the fix (the FIX-3 pattern — slice 4's commit carries the FAIL text).
   Floored sweeps: 19 queries answered, 81 row blocks, all agree, 79 elect
-  their own row and 2 are the one RS_BASE row exempt by construction.
+  their own row and **exactly 2** are the one RS_BASE row exempt.
+  **R20 added five groups of pins and rewrote one** (findings in
+  `docs/reviews/2026-08-12-r20-mod08.md`):
+  the CLAUSE SCOPE (`(?J)`/`(?m)` under `--features modifiers` agree and exit
+  0, where they dissented on attribution about a tree tests/reject:664 pins as
+  correct — with the per-LETTER module still SHOWN, which is the pin that stops
+  the fix being "make the two sides agree by dropping the interesting one");
+  the NULL CONTRACT (`(?` at end of pattern elects `none` and the catch-all is
+  tagged `listed` rather than `fallback`; the `[[:alpha]` delimiter-scan
+  decline elects `none` too); `rows 0` (the branch the design note called
+  "impossible today" while 87 of 127 `\<byte>` queries display it — it had
+  ZERO assertions); CONTROL-BYTE ESCAPING (a query containing a newline used
+  to inject a synthetic header line that `explain_field` read as real,
+  reporting `rows 99`); and `\d`'s open-gate cell, whose STRING changed
+  because what it asserts did — see its annotation in the case.
+  **The rewritten one is the election sweep** (MOD07-7): its first conjunct
+  was `selfel == blocks - exempt`, a TAUTOLOGY — the loop increments exactly
+  one of the two per block — sitting beside an unexplained `exempt <= 3`.
+  Self-election was never actually unasserted (the agreement sweep's clause 1
+  dissents on it, and that sweep requires every block to agree); what was
+  unchecked was the size of the EXCEPTION set, so `exempt` is now pinned at
+  exactly 2, with the reason written down: one RS_BASE row, appearing in two
+  of the 19 queries.
   **WHAT THIS CASE CANNOT REACH** (docs/design_notes_mod07.md §9.4, recorded
   here because the sweep-template lesson has recurred four times and this is
   the signpost): **the query set is HAND-LISTED** — the generated query space
@@ -85,6 +109,27 @@ Part of `make test` since M2.
   the phase-2 commit messages rather than as mech rows — a mech `cli` suite
   arm is a MOD-0.8 candidate (the code is trivial; the runtime budget is
   unmeasured, and this project does not assert a cost).
+- **case 12 (R20/MOD07-1)** — A PRODUCING PORT THAT FAILS, on both query
+  surfaces. The tier-1 the R20 panel found: `--explain` and `--probe-ask`
+  each hand a doorway a `Ctx` they `memset` and never `setjmp`, which was
+  safe only while no port could `ctx_fail`. The first result-producing port
+  ended that at MOD-0.3c/0.5c, two milestones before MOD-0.7 extracted
+  `doorway_call` and carried its own "the first producing port must revisit
+  here" comment along unexamined — so `--features modifiers --explain
+  '(?i:['` SIGSEGVed (139), as did `--features all --probe-ask result --
+  '(?i:['`. **What is pinned is the SHAPE, not the wording** (D26 tier 3):
+  nonzero AND below 128, because bash reports 128+N for a signal and that
+  bound is the whole difference between diagnosed and died — plus a
+  non-empty stderr naming the port's own error rather than `--probe-ask`'s
+  usage sentence (a NEGATIVE pin: reusing the misuse text would tell an
+  operator to fix a command line that is fine). **Both gate states are in
+  the case because the gate is the axis**: closed, the same text stays an
+  ordinary exit-0 refusal; open, a WELL-FORMED body must still PRODUCE —
+  that last one is the positive control, since a guard that swallowed every
+  open-gate answer would satisfy the two crash pins on its own. Written
+  first and watched crashing; the verbatim FAIL block is in the slice's
+  commit message, and the sweep behind it (10 query templates × ASCII bytes
+  × both gate states × both surfaces = 5,080 probes) went 18 crashes → 0.
 
 ## Conventions
 

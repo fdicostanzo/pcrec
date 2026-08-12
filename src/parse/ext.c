@@ -126,6 +126,21 @@ static const char *tail_at(const Ctx *cx, size_t after, size_t *avail)
     return cx->pat + after;
 }
 
+/* Does this bucket decide anything by a TAIL (R20/OPTRUN-1)? Used only to
+ * tell "the fallback answered because no tail matched" from "the fallback
+ * answered because the text ENDED before any tail could" — see the
+ * truncation branch in `group_answer`. Reads the shipped rows rather than a
+ * second list of tailed selectors, which would be the D24 two-homes shape;
+ * the buckets are 4 and 22 rows, and this runs on a refusal path. */
+static bool bucket_has_tail(RegKind kind, int sel)
+{
+    size_t n;
+    const RegRow *rows = pcrec_registry(kind, &n);
+    for (size_t i = 0; i < n; i++)
+        if (rows[i].sel == sel && rows[i].tail) return true;
+    return false;
+}
+
 /* ---- doorway 1: after '\' ----------------------------------------------
  * `c` is the byte after the backslash and the cursor sits just past it. Called
  * only once parse.c's decoder has declined: the plain character escapes
@@ -303,8 +318,49 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * family pcrec already uses for bare `(`, in both gate states (this is
      * base-family truth, not module truth). The Q2-era pin asserting the
      * old answer carried prose claiming PCRE2 agreement; the measurement
-     * says otherwise, and the pin moved with this fix. */
-    if (c2 < 0)
+     * says otherwise, and the pin moved with this fix.
+     *
+     * AND IT ANSWERS WITHOUT A ROW (R20/MOD07-4), so the stamp is cleared.
+     * The lookup above landed on the catch-all only because c2 == -1 aliases
+     * REG_SEL_ANY — an accident of the sentinel, not an arbitration — and
+     * this branch then walks past whatever it found. Leaving the stamp made
+     * `--explain '(?'` print `live elected (?q)` and tag that row's block
+     * `fallback`, both asserting an election that never happened. NULL is
+     * what `ExtResult.row` promises here. */
+    if (c2 < 0) {
+        *elected = NULL;
+        REFUSE(at, "missing closing ) for group");
+    }
+
+    /* THE PATTERN ENDS INSIDE A TAILED BUCKET (R20/OPTRUN-1) — R17's
+     * end-of-pattern fix above, one cell over, and the same reasoning.
+     *
+     * `(?P` is decided by its TAIL: `<` a named group, `=` a backreference,
+     * `>` a subroutine call, anything else PCRE2 error 141. When the pattern
+     * ends at the `P`, `avail` is 0, no tail can match, and the arbitration
+     * falls to the bucket's tail-less RD_FIXED row — whose message is
+     * "unrecognized character after (?P", a claim about a byte the pattern
+     * DOES NOT CONTAIN. libpcre2 10.46 agrees it is not that: err 114
+     * "missing closing parenthesis" at offset 3, the same answer bare `(` and
+     * bare `(?` get (measured; the sole divergence in the panel's 48.7M
+     * probes of this region).
+     *
+     * THE CONDITION IS THE REASON, not the byte. Three parts, each doing
+     * work: the text ended at the selector (`avail == 0`), the elected row
+     * carries a FIXED sentence about what follows (`RD_FIXED`), and the
+     * bucket has tailed rows at all — so the fallback was reached by
+     * TRUNCATION rather than by an unrecognisable byte. No hardcoded 'P',
+     * for the reason mod_uprops.c's marker gives: a `c2 == 'P'` special case
+     * puts the connection here instead of in the registry.
+     *
+     * IT DELIBERATELY DOES NOT GENERALISE TO EVERY TAILED BUCKET. `(?<` is
+     * the other one, and truncated it is libpcre2 err 162 "subpattern name
+     * expected", NOT 114 — measured, all 255 bytes. Its fallback is
+     * RS_MODULE/RD_MODULE, so the RD_FIXED clause excludes it, and pcrec's
+     * "requires module 'named-groups'" there is a tier-2-acceptable answer
+     * that this fix must not disturb. Measured after: exactly one of the 21
+     * truncated `(?X` cells moved. */
+    if (avail == 0 && r->diag == RD_FIXED && bucket_has_tail(RK_GROUP, c2))
         REFUSE(at, "missing closing ) for group");
 
     if (r->diag == RD_FIXED)
@@ -434,8 +490,18 @@ static ExtResult clsbracket_answer(Ctx *cx, ExtWant want, int c2, size_t at,
     size_t close_at = from;              /* index of the closing delimiter */
     if (r->flags & RF_CLASS_DELIM) {
         if (!pcrec_class_delim_extent_scan(cx->pat, cx->patlen, c2, from,
-                                           &close_at))
+                                           &close_at)) {
+            /* R20/MOD07-4: this DECLINE answers without a row, so clear the
+             * stamp the lookup left. A pair that never closes is not this
+             * construct — `[[.]`, `[a[.b]` and `[.]` are ordinary classes —
+             * and reporting the row the scan just rejected made
+             * `--explain '[[:alpha]'` say `live elected [[:alpha:]]` beside
+             * `declines — no construct at this doorway`. The `!r` decline
+             * above already yields NULL because the lookup itself found
+             * nothing; this is the same contract, one branch later. */
+            *elected = NULL;
             DECLINE();
+        }
     }
 
     /* The `else if (at_class_open) return;` that stood here is GONE, and its

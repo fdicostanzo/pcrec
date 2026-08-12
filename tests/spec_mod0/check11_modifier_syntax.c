@@ -90,10 +90,29 @@
  * SURFACE DETECTION is PER-PROBE, not whole-check (modelled on check02's
  * `--count-groups`, not check07's whole-check `--help` grep): a probe whose
  * pcrec verdict is anything other than REFUSED-AS-UNIMPLEMENTED counts as
- * "compared" and arms the check; while literally everything comes back
- * REFUSED-AS-UNIMPLEMENTED (measured TODAY: true for all four families —
- * `pcrec --features modifiers` refuses `(?i)a` exactly as `--features none`
- * does), the whole check reports AWAITING-SURFACE, oracle side fully run.
+ * "compared" and arms the check.
+ *
+ * ~~while literally everything comes back REFUSED-AS-UNIMPLEMENTED (measured
+ * TODAY: true for all four families — `pcrec --features modifiers` refuses
+ * `(?i)a` exactly as `--features none` does), the whole check reports
+ * AWAITING-SURFACE, oracle side fully run.~~
+ *
+ * **CORRECTED (R20, reported by the D27 writer): that was written BEFORE the
+ * module had producers and describes a tree that no longer exists.** The
+ * surface arrived with MOD-0.5c/d and the check has been ARMED ever since:
+ * 105 of the 113 probes are COMPARED, 8 still refused-as-unimplemented, both
+ * floored. Read the populations from a run — this header is not their home.
+ *
+ * WHAT THAT CHANGE OF STATE COST, recorded because R20 is where it was paid:
+ * this check owns the modifiers module's recognition boundary and its probe
+ * set is a hand-listed 21-spelling table with **not one QUANTIFIED spelling
+ * in it**. `a(?i)*` — a tier-1 miscompile, exit 0 and a matcher that matched
+ * a/aa/aaa where libpcre2 gives err 109 — sat inside this check's own subject
+ * area and outside its alphabet. D27's wager paid out a second time, one
+ * level in: blindness to `src/` was not sufficient, and what reached the cell
+ * was the writer's GENERATED sweep (7,040 authoring cells, 4,472
+ * disagreeing). A hand-listed probe table inherits its author's alphabet
+ * whether or not that author could read the implementation.
  *
  * SABOTAGE (verified 2026-08-12, exact command in the suite's report). A
  * wrapper standing in for pcrec that ACCEPTS every `-o` compile request

@@ -227,6 +227,7 @@ module:
 | `\b` row longhand with `FEAT_CLASSES` but module `"assertions"` (R4 E1) | many |
 | `RF_CLASS_DELIM \| RF_CLASS_NAMED` → `RF_CLASS_NAMED` (R9/C3-1) | 3 (+23 in PC-3) |
 | add a `]`-selector `RK_CLASSBRACKET` row (R9/C2-1) | 2 (+1 in PC-3) |
+| R20/OPTRUN-1: delete `group_answer`'s truncation branch (`(?P` at end of pattern) | 1 — the `(?%c` sweep's truncation exception, which is the ONLY generated instrument that reaches this cell: PC-3's tail-sweep template always inserts a byte after the prefix (+1 in tests/reject) |
 
 ## pcre2_check.c — the external check (PC-3)
 
@@ -440,14 +441,38 @@ before this file existed, produced none anywhere.
   so the sentence that stood here — "only the `(*` doorway gets a name
   differential" — is retired. A 7650-probe BYTE sweep (libpcre2 recognises a
   byte after `(?` iff pcrec promises a module: 38 vs 217, both populations
-  pinned), a 19448-probe OPTION-RUN sweep over runs of length 0-3, and 10200
+  pinned), a 19448-probe OPTION-RUN sweep over runs of length 0-3, and 20400
   probes of TAIL sweeps for `(?P` `(?<` `(?+` `(?-`. `(?P=` versus `(?P<` and
   `\N{U+hhhh}` versus `\N` are no longer unswept.
   **Read what the tail sweeps can and cannot do.** `(?<` and `(?+` answer alike
   for every tail under libpcre2, so for those two prefixes agreement is free and
   proves nothing; only `(?P` and `(?-` have both buckets populated, which is why
   a live-prefix counter is asserted and why `(?<`'s module split is pinned by
-  hand in tests/reject/ instead.
+  hand in tests/reject/ instead. (The floor sits at exactly 2 of 4 with no
+  margin — measured, left as measured; the code comment beside it named only
+  `(?<` as saturated until R20/OPTRUN-3 corrected it to name both, with the
+  populations.)
+  **The tail sweeps have TWO halves since R20/OPTRUN-1**, 10200 probes each
+  (hence 20400 above, up from 10200), and the split is a defect fix rather
+  than a widening. Every completion used to contain a `)`, so every generated
+  pattern was a CLOSED construct and the whole TRUNCATED region was invisible
+  to all 48.7M probes of this doorway — which is exactly where OPTRUN-1 lived.
+  The truncated half is the same ten shapes with the `)` removed.
+  **They are aggregated SEPARATELY, and the first version of the extension was
+  not**: the per-byte verdict is an OR across completions, so appending
+  truncated shapes to the same OR left them structurally unable to contribute
+  a mismatch — measured VACUOUS, with a sabotage that drops every truncated
+  module promise in a tailed bucket scoring ZERO failures repository-wide.
+  Split into `HALF_CLOSED`/`HALF_TRUNC` with their own verdicts, populations
+  and mismatch reports, the same sabotage fires 12 (capped). That is this
+  directory's own recorded lesson — *extending a check disarmed it*, the R9
+  nested-opener floor — recurring one doorway over, and it is why the PASS
+  line prints both halves' populations.
+  **Residual, stated because narrowing a blind spot is not closing it:** the
+  template `"%s(?%s%c%s"` always inserts a byte after the prefix, so the
+  ZERO-TAIL cell `(?P` itself is still a pattern this loop cannot generate.
+  It is covered by a hand pin in tests/reject/ and by an expectation in
+  registry_check's `(?%c` sweep, whose template does end at the selector.
 - **RECOGNITION is the bar, not compilation, and the distinction is
   load-bearing.** PCRE2's "no construct here" errors are 111 and 141; every
   other error means it DISPATCHED and is complaining about the body. `(?+x)` is
@@ -508,6 +533,8 @@ claimed; the last seven are Q2/SR-9's.
 | one Q2 completion replaced by a duplicate of another (probe COUNT unchanged) | 1 (the set checksum) |
 | **longest-tail-wins -> first-tail-wins in `pcrec_registry_find`** | **3** (+1 reject) — see below |
 | `k15_excluded()` neutered (`return 0`) (K15, 2026-08-12) | **21** (20 capped verb-differential mismatches + the exclusion's own liveness check, which fires on the same zero) |
+| R20/OPTRUN-1: delete the truncation branch from `group_answer` so `(?P` at end of pattern goes back to "unrecognized character after (?P" | **0 in PC-3** — the residual above, honestly: the tail-sweep template cannot generate the zero-tail cell. Caught by `registry_check` (1, its `(?%c` sweep) and `tests/reject` (1, the hand pin) |
+| R20: every truncated pattern in a tailed bucket drops its module promise (`avail > 0 && bucket_has_tail && no ')' in the pattern` → refuse) | **0 with the halves merged, 12 (capped) with them split** — the measurement that turned the first version of the truncated extension from vacuous into live; every failure names `[truncated]` and its byte |
 | MOD-0.6 slice 4: drop `'L'` from `mod_uprops.c`'s hand-written `UPROPS_SHORT_NAMES` table (`"CLMNPSZ"` → `"CMNPSZ"`) | **20** (capped) — every failure names `\pL`/`\pl`/`\p{L}`/`\p{^L}` across all 5 positions and both cases; this is the failing-direction proof for `check_uprops_differential`'s 52-letter axis, measured then reverted before commit |
 
 **The tail-precedence sabotage found a real hole and is the one to read**

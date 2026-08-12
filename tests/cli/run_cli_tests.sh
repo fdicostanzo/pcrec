@@ -963,8 +963,80 @@ case11() {
         "@header" "live" "produces an AST node"
     assert_field "case11: ...answered at result, the gate observable" "$out" \
         "@header" "live answered" "result"
+    # WHAT THIS CELL ASSERTS CHANGED AT R20/MOD07-3, and the annotation has to
+    # say so because the string alone does not. It used to read "ok (produces;
+    # this row's module is enabled)" and that was the WHOLE of the row's
+    # agreement at an open gate: `put_agreement` short-circuited on any
+    # non-refusal, so promise and attribution were never evaluated and opening
+    # a gate SHRANK the coverage of the rows it turned on. Now three clauses
+    # run against the row's CLOSED-GATE answer (which is where the predicate
+    # was censused) and a fourth — `gate` — runs against this open-gate one:
+    # a row that produces must have its declared module in the enabled set.
+    # So this cell is now four assertions wearing one string, and the
+    # parenthetical names which gate each half was judged at.
     assert_field "case11: ...and producing is agreement for a module row" \
-        "$out" '\d' "agree" "ok  (produces; this row's module is enabled)"
+        "$out" '\d' "agree" \
+        "ok  (clauses at the closed gate; at this one the row produces and its module is enabled)"
+    # the DISPLAYED answer is still the requested gate's — the clause scope
+    # moved, the data did not
+    assert_field "case11: ...with the open gate's own answer still displayed" \
+        "$out" '\d' "own" "produces an AST node"
+
+    # --- THE CLAUSE SCOPE: clauses judge the CLOSED gate (R20/MOD07-2) -----
+    # `(?J)` and `(?m)` DISSENTED the moment `--features modifiers` opened the
+    # gate — exit 3, stderr calling it "a pcrec defect", about a tree
+    # tests/reject:663-664 pins as CORRECT. An enabled option-run port refuses
+    # per LETTER and a letter's module is not the option ROW's, so comparing
+    # them fired on right data. §5.2's census was taken entirely at the closed
+    # gate; the enabled set is the axis the design never varied. Written
+    # failing first — both exited 3 with
+    #   agree  DISSENT: attribution: declared 'modifiers', live names 'named-groups'
+    # — and the verbatim blocks are in the slice's commit message.
+    local letter_mod
+    for q in '(?J)' '(?m)'; do
+        [ "$q" = '(?J)' ] && letter_mod="named-groups" || letter_mod="assertions"
+        out="$("$PCREC" --features modifiers --explain "$q" 2>"$d/e3.txt")"; rc=$?
+        assert_eq "case11: an open gate does not make $q dissent" "0" "$rc" \
+            "stderr: $(cat "$d/e3.txt")"
+        assert_field "case11: ...$q's row agrees" "$out" "$q" "agree" "ok"
+        assert_field "case11: ...and the header counts no dissent for $q" \
+            "$out" "@header" "dissents" "0"
+        # the per-LETTER module is still SHOWN. This is the pin that stops the
+        # fix being "make the two sides agree by dropping the interesting
+        # one": the displayed answer must keep naming the letter's module.
+        assert_field "case11: ...while $q's own answer still names the letter's module" \
+            "$out" "$q" "own names" "$letter_mod"
+        assert_field "case11: ...and the row still declares its own" \
+            "$out" "$q" "module" "modifiers"
+    done
+
+    # --- THE NULL CONTRACT (R20/MOD07-4+5): NULL <=> answered without a row -
+    # `ExtResult.row` named three no-row cases and was WRONG about two of
+    # them. Both doorways stamp the elected row at the point of LOOKUP, and
+    # both then have a later path that answers without consulting it: the `(?`
+    # doorway's c2 < 0 branch (R17's end-of-pattern fix — c2 == -1 aliases
+    # REG_SEL_ANY, so the catch-all is stamped and then walked past), and the
+    # class-bracket delimiter-scan decline (stamped before the scan runs). So
+    # "NULL => no row" held and the converse did not, and the display asserted
+    # elections that never happened. Written failing first; the verbatim block
+    # is in the slice's commit message.
+    out="$("$PCREC" --explain '(?')"
+    assert_field "case11: '(?' at end of pattern elected NO row" "$out" \
+        "@header" "live elected" "none"
+    # ...and MOD07-5 falls out of the same fix: `fallback` means "the
+    # arbitration actually elected the catch-all here", so tagging it on a
+    # query the catch-all never won asserted a reachability nothing exercised.
+    # The row is still SHOWN — the prefix rule finds it, which is what
+    # `listed` says.
+    assert_field "case11: ...so the catch-all is 'listed', not an election" \
+        "$out" "(?q)" "select" "listed"
+    assert_eq "case11: ...and the row set is unchanged by the retagging" "45" \
+        "$(explain_field "$out" "@header" "rows")"
+    out="$("$PCREC" --explain '[[:alpha]')"
+    assert_field "case11: an unclosed delimiter pair DECLINES" "$out" \
+        "@header" "live" "declines — no construct at this doorway"
+    assert_field "case11: ...having elected no row either" "$out" \
+        "@header" "live elected" "none"
 
     # --- the base-grammar row: an honest non-answer, not a fabricated one ---
     out="$("$PCREC" --explain '(?:')"; rc=$?
@@ -976,6 +1048,47 @@ case11() {
         "$out" "(?:...)" "agree" "ok  (base grammar; no doorway call to compare)"
     assert_field "case11: ...it is a prefix match, not a bucket candidate" \
         "$out" "(?:...)" "select" "listed"
+
+    # --- `rows 0`: a ROUTED query that selects nothing (R20/MOD07-6) --------
+    # The design note called this branch "impossible today; every routed query
+    # yields at least the elected row". Measured: 87 of the 127 `\<byte>`
+    # queries display it, because an unknown escape elects no row and no row's
+    # `syntax` shares a prefix with it. The branch had ZERO assertions until
+    # now — which is how a live, common output shape stayed described as
+    # unreachable.
+    out="$("$PCREC" --explain '\q' 2>"$d/e5.txt")"; rc=$?
+    assert_eq "case11: a routed query that selects no rows still exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e5.txt")"
+    assert_field "case11: ...reporting rows 0" "$out" "@header" "rows" "0"
+    assert_field "case11: ...with the live block still answered" "$out" \
+        "@header" "live" "unknown escape \q"
+    assert_field "case11: ...electing no row" "$out" "@header" "live elected" "none"
+    assert_field "case11: ...and no dissent, there being nothing to dissent" \
+        "$out" "@header" "dissents" "0"
+
+    # --- CONTROL BYTES IN THE ECHO (R20/MOD07-8) ---------------------------
+    # The format grammar had no escaping, so a query containing a newline
+    # injected a synthetic header line that `explain_field` — the helper right
+    # above, parsing this same format — read as real. Measured before the fix:
+    # this query reported `rows 99`. No attacker involved; it is the
+    # operator's own text, so the cure is a visible rendering (`\xHH` for
+    # bytes below 0x20 and 0x7f), not a quoting scheme.
+    out="$("$PCREC" --explain "$(printf '\\\nrows           99\n')" 2>/dev/null)"
+    assert_field "case11: an injected header line does not become a field" \
+        "$out" "@header" "rows" "0"
+    # (command substitution strips the trailing newline, so the query is
+    # `\` + LF + `rows           99` — the leading `\` is the query's own,
+    # deliberately NOT doubled: only control bytes are escaped)
+    assert_field "case11: ...the newline is rendered visibly in the echo" \
+        "$out" "@header" "query" '\\x0arows           99'
+    # ...and the same bytes reaching the ANSWER text are escaped too: the
+    # refusal renders the selector byte into its own sentence, so escaping
+    # only the echo would leave the injection reachable one line down.
+    assert_field "case11: ...and in the live answer that embeds the byte" \
+        "$out" "@header" "live" 'unknown escape \\x0a'
+    out="$("$PCREC" --explain "$(printf '(?\t)')" 2>/dev/null)"
+    assert_field "case11: a control byte in the SELECTOR echo is escaped" \
+        "$out" "@header" "route" "after '(?'  selector '\\x09'"
 
     # --- the unanswerable query keeps its exit 1 and its message ------------
     "$PCREC" --explain 'a' >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
@@ -1027,11 +1140,29 @@ case11() {
         fail "case11: agreement sweep" \
              "answered=$answered (floor 19) blocks=$blocks (floor 81) agreed=$agreed"
     fi
-    # every block but the RS_BASE row's elected ITSELF
-    if [ "$selfel" -eq $((blocks - exempt)) ] && [ "$exempt" -le 3 ]; then
-        pass "case11: $selfel/$blocks blocks elected their own row ($exempt base-grammar exempt)"
+    # THE EXEMPT COUNT, ASSERTED EXACTLY (R20/MOD07-7). The conjunct that
+    # stood here was `selfel == blocks - exempt`, which is a TAUTOLOGY: the
+    # loop above increments exactly one of the two per block, so their sum is
+    # `blocks` by construction and the test could not fail. Beside it sat
+    # `exempt <= 3` with no explanation of the 3.
+    #
+    # SELF-ELECTION IS NOT UNASSERTED AS A RESULT — it is asserted by the
+    # agreement sweep this loop duplicates: clause 1 DISSENTS when a row's own
+    # syntax does not elect that row, and the sweep above requires every block
+    # to agree. What was left genuinely unchecked is the size of the EXCEPTION
+    # set, so that is what this now pins, exactly rather than as a tolerance.
+    #
+    # WHY 2: exactly one registry row (`(?:...)`, the single RS_BASE row)
+    # reaches no doorway, and it appears in two of the 19 queries — `(?` finds
+    # it by prefix, `(?:` by both rules. A third exempt block would mean a row
+    # stopped electing itself while still reporting agreement, which is the
+    # one combination the two sweeps cannot produce together.
+    if [ "$exempt" -eq 2 ] && [ "$selfel" -eq $((blocks - 2)) ]; then
+        pass "case11: exactly $exempt blocks are base-grammar exempt ($selfel/$blocks elected their own row)"
     else
-        fail "case11: election sweep" "self=$selfel blocks=$blocks exempt=$exempt"
+        fail "case11: election sweep" \
+             "exempt=$exempt (want exactly 2: the RS_BASE row in 2 queries)" \
+             "self=$selfel blocks=$blocks"
     fi
     # and no query on the shipped table may exit 3
     local dissenting=0
@@ -1054,6 +1185,107 @@ case11() {
         "@header" "dissents" "0"
 }
 
+# ---------------------------------------------------------------------------
+# 12. A PRODUCING PORT THAT FAILS, ON THE QUERY SURFACES (R20/MOD07-1, tier 1).
+#
+#     Both query surfaces hand a doorway a Ctx they `memset` and never
+#     `setjmp`. That was safe exactly while every doorway RETURNED its answer
+#     — and the extracted `doorway_call` still CARRIES the comment saying so,
+#     naming "the first enabled, result-producing module port" as the event
+#     that must revisit it. That port landed at MOD-0.3c/0.5c, two milestones
+#     before `--explain` was rewritten around the same Ctx, and nothing
+#     revisited: `--features modifiers --explain '(?i:['` SIGSEGVed (139),
+#     because mod_modifiers' port recurses into `pcrec_parse_body`, the
+#     unterminated class raises `ctx_fail`, and the longjmp lands in an
+#     uninitialized `jmp_buf`.
+#
+#     WHAT IS PINNED IS THE SHAPE, NOT THE WORDING (D26 tier 3): a status
+#     that is nonzero (the surface could not answer) and BELOW 128 (bash
+#     reports 128+N for a signal, so this is what separates "diagnosed" from
+#     "died"), plus a non-empty diagnostic on the stream that surface already
+#     uses for errors. Both surfaces, because both had the defect.
+#
+#     THE GATE IS THE AXIS, so both of its states are here: closed, the same
+#     text is an ordinary refusal at exit 0 and must stay one; open, a
+#     WELL-FORMED body must still produce. A guard that turned every open-gate
+#     query into an error would satisfy the two crash pins alone.
+# ---------------------------------------------------------------------------
+
+# assert_clean_failure <case-name> <rc> <stderr-file>
+# Nonzero (it failed) and < 128 (it was not killed by a signal) and it said
+# something. 139 = 128 + SIGSEGV is exactly what this rejects.
+assert_clean_failure() {
+    local name="$1" rc="$2" ef="$3"
+    if [ "$rc" -ne 0 ] && [ "$rc" -lt 128 ] && [ -s "$ef" ]; then
+        pass "$name (exit $rc, diagnosed)"
+    else
+        fail "$name" "exit: $rc (want nonzero and < 128)" \
+             "stderr: $(cat "$ef")"
+    fi
+}
+
+case12() {
+    local d="$WORKDIR/case12"
+    mkdir -p "$d"
+    local rc out
+
+    # --- the two crashing cells (139 before the fix) ---------------------
+    "$PCREC" --features modifiers --explain '(?i:[)' \
+        >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+    assert_clean_failure \
+        "case12: --explain survives a port that ctx_fails" "$rc" "$d/e1.txt"
+    "$PCREC" --features all --probe-ask result -- '(?i:[)' \
+        >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
+    assert_clean_failure \
+        "case12: --probe-ask survives a port that ctx_fails" "$rc" "$d/e2.txt"
+
+    # ...and the port's own diagnostic is what the operator is told, rather
+    # than a generic "could not answer". The TEXT is tier 3 and free; that it
+    # is the CLASS ERROR and not the misuse sentence is not.
+    assert_contains "case12: ...naming the error the port actually raised" \
+        "$(cat "$d/e1.txt")" "character class"
+    assert_contains "case12: ...on --probe-ask too" \
+        "$(cat "$d/e2.txt")" "character class"
+    # the misuse sentence must NOT be what a failing port prints: before this
+    # fix the only nonzero --probe-ask path was "WANT must be claim, verdict
+    # or result", and reusing it here would tell the operator to fix their
+    # command line for a defect in the pattern.
+    if grep -q "WANT must be" "$d/e2.txt"; then
+        fail "case12: a failing port must not print the misuse sentence" \
+             "stderr: $(cat "$d/e2.txt")"
+    else
+        pass "case12: a failing port does not print --probe-ask's misuse sentence"
+    fi
+
+    # --- the CLOSED gate: the same text, an ordinary answer ---------------
+    out="$("$PCREC" --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
+    assert_eq "case12: closed-gate --explain of the same text exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e3.txt")"
+    assert_field "case12: ...and answers with the module refusal" "$out" \
+        "@header" "live" "(?i...) requires module 'modifiers'"
+    out="$("$PCREC" --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
+    assert_eq "case12: closed-gate --probe-ask of the same text exits 0" "0" "$rc" \
+        "stderr: $(cat "$d/e4.txt")"
+    assert_eq "case12: ...reporting a refusal, not an error" "refusal" \
+        "$(cut -f6 <<<"$out")"
+
+    # --- the OPEN gate, WELL-FORMED body: production is untouched ---------
+    # The positive control for the guard itself: a setjmp that swallowed
+    # every open-gate answer would pass both crash pins above.
+    out="$("$PCREC" --features modifiers --explain '(?i:a)' 2>"$d/e5.txt")"; rc=$?
+    assert_eq "case12: an open gate still answers a well-formed body" "0" "$rc" \
+        "stderr: $(cat "$d/e5.txt")"
+    assert_field "case12: ...by PRODUCING" "$out" "@header" "live" \
+        "produces an AST node"
+    assert_field "case12: ...answered at result" "$out" "@header" \
+        "live answered" "result"
+    out="$("$PCREC" --features all --probe-ask result -- '(?i:a)' 2>"$d/e6.txt")"; rc=$?
+    assert_eq "case12: --probe-ask likewise" "0" "$rc" \
+        "stderr: $(cat "$d/e6.txt")"
+    assert_eq "case12: ...reporting the produced node" "node" \
+        "$(cut -f6 <<<"$out")"
+}
+
 case1
 case2
 case3
@@ -1065,6 +1297,7 @@ case8
 case9
 case10
 case11
+case12
 
 echo
 echo "== Summary =="

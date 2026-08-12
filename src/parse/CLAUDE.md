@@ -132,8 +132,23 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
   or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals
   `m` -> 'assertions', `J` -> 'named-groups' (gated reject pins);
-  recognised-malformed runs diagnosed here (the err-194/114 shapes). The
-  x/xx LEVEL is adjacency-sensitive and a later bare `x` downgrades — every
+  recognised-malformed runs diagnosed here (the err-194/114 shapes).
+  **A BARE RUN'S NODE IS MARKED `not_repeatable` since R20/SPEC-1**, a tier-1
+  MISCOMPILE the D27 blinded writer found: the bare run produces `A_EMPTY`,
+  `A_EMPTY` is ORDINARILY quantifiable (`()*` and `(a|)*` both compile in
+  libpcre2), so `a(?i)*` compiled and its matcher matched a/aa/aaa where
+  libpcre2 gives err 109. pcrec's own registry had been right all along —
+  these rows' `quantifiable` column reads `form` — so nothing was missing:
+  the PRODUCER contradicted the table. The flag lives on `Ast` (internal.h,
+  read by `p_rep`) because the node KIND cannot carry the fact, and the
+  boundary is BARE-vs-SCOPING rather than "produces no atom": the genuinely
+  lexical constructs produce no atom either and are TRANSPARENT — libpcre2
+  compiles `a\Q\E*` and `a(?#c)*`, letting the quantifier reach back to the
+  preceding atom. 560-cell differential (5 positions × 16 runs × 7
+  quantifier forms): 455 cells where the oracle rejects and pcrec ACCEPTED,
+  now 0, with the blame OFFSET byte-identical to libpcre2's on all 455; the
+  105 cells the oracle accepts are unmoved, so there is no over-rejection.
+  The x/xx LEVEL is adjacency-sensitive and a later bare `x` downgrades — every
   clause probe-cited in the port's comment. The x/xx CONSUMER (skip set,
   comments, class-interior deletion) lives in parse.c's lexer helpers
   (MOD-0.5d): `xskip`, `cls_skip`, `cls_peek_past_dash`
@@ -210,7 +225,29 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   beside the LIVE doorway's answer and compares them per row (election,
   promise, attribution — `docs/design_notes_mod07.md` §5.2), selecting rows by
   prefix UNION bucket-candidates with each row tagged which rule found it, and
-  exiting 3 when a row DISSENTS. **The honest limit, measured and repeated
+  exiting 3 when a row DISSENTS.
+  **THE CLAUSES ARE SCOPED TO THE CLOSED GATE since R20/MOD07-2+3**, and the
+  scope is the correction: §5.2's census was taken at the closed gate while
+  the implementation asked its clauses at whatever `--features` said, so the
+  enabled set was an axis the predicate had never been established over. Two
+  defects lived there — `--features modifiers --explain '(?J)'` DISSENTED on
+  attribution about a tree tests/reject:664 pins as CORRECT (an enabled
+  option-run port refuses per LETTER, and a letter's module is not the
+  dispatching row's), and a producing answer short-circuited promise and
+  attribution away, so opening a gate SHRANK the coverage of the rows it
+  turned on. Now TWO calls per displayed row: the `own *` fields show the
+  REQUESTED-gate answer as DATA, and a second `WANT_VERDICT` call is what the
+  clauses judge. `WANT_VERDICT` is how "the default enabled set" is reached
+  without a process-global being rewritten — `pcrec_ext_gate` only demotes and
+  floors at VERDICT, so no enabled set can promote it, and a BASE port answers
+  at the level asked (measured equivalent to a default-set RESULT ask on all
+  100 rows, every `--probe-ask` field compared). A FOURTH clause, `gate`, is
+  the one thing an open gate is good for here: a row that PRODUCES must have
+  its declared module in the enabled set — the cross-check the short-circuit
+  walked past. Total over the table at every gate state, measured as a
+  100-row × 5-gate-state census: 0 dissents everywhere, against 2 at
+  `modifiers` and 2 at `all` before.
+  **The honest limit, measured and repeated
   here because it is the thing a reader will assume wrongly: the attribution
   clause CANNOT dissent on a module-name swap** — ext.c renders "requires
   module '%s'" from the same `r->module` this file prints, so the two agree by
@@ -220,7 +257,18 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   diagnostic with a bucket sibling. MOD-0.7 also fixed K14 HERE: the `status`
   line promised module `callouts` for the ROADMAP_NEVER row while ext.c and
   `put_expect` in this same file had both been roadmap-aware since MOD-0.1.
-  Internal, not public API — the CLI and the
+  **BOTH QUERY SURFACES `setjmp` THEIR OWN Ctx since R20/MOD07-1**, and
+  `doorway_call`'s comment — which had named "the first enabled,
+  result-producing module port" as the event that must revisit the zeroed Ctx,
+  two milestones after that port landed — is rewritten as a discharged
+  obligation. A raising port used to SIGSEGV both surfaces; it now abandons
+  the answer and returns NULL with a `pcrec_error` filled, which the CLI
+  renders in the compile path's own shape. Both surfaces `arena_free` too
+  (`--probe-ask` never did). **`--explain`'s value renderings escape control
+  bytes** (R20/MOD07-8, `put_text`: bytes below 0x20 and 0x7f as `\xHH`, `\`
+  deliberately not doubled) — the format grammar had no escaping, so a query
+  containing a newline injected a synthetic header line that the test
+  suite's own `explain_field` parser read as real. Internal, not public API — the CLI and the
   test suite are the only consumers, and promoting a function into lib/pcrec.h
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which

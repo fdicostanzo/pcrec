@@ -251,7 +251,7 @@ argument to make.
 |---|---|---|---|
 | no doorway opener (`a`, `abc`) | router returns false | today's message verbatim: *"no construct matches '…' — it is either base syntax or not a construct pcrec knows"* | 1 |
 | `(?:` | router excludes it exactly as `parse.c` does | the row block (prefix-selected), and a `route` line reading `none — the base grammar answers `(?:` before any doorway is consulted`. **No live block**: there is no call to report, and inventing one would be the dump lying. | 0 |
-| a doorway opener but an empty selection (impossible today; every routed query yields at least the elected row) | — | the live block alone, with `rows 0` | 0 |
+| a doorway opener but an empty selection (~~impossible today; every routed query yields at least the elected row~~ **R20: COMMON — see below**) | — | the live block alone, with `rows 0` | 0 |
 | **escape at CLASS position** (`[\p{L}]`, `[\d]`) | the router's first opener is `[`, so it lands on doorway 4 and the class-bracket row lookup DECLINES (there is no `RK_CLASSBRACKET` row for `\`) | the honest class-bracket decline. **This is a known non-answer, OUT OF SCOPE for MOD-0.7** — see §10 and §11.3 | 0 |
 
 The class-position gap deserves its own sentence, because it is the one place
@@ -261,6 +261,28 @@ in-class escape case would change `--probe-ask`'s routing, and `--probe-ask` is
 a MOD-0.8 change with its own measurement, not a side effect of a display
 rewrite. Until then `--explain` prints the row's declared `class_expect` column
 (a libpcre2-measured fact already on the row) and labels it DECLARED.
+
+> ### CORRECTED (R20 — MOD07-6)
+>
+> **`rows 0` is not "impossible today". It is the majority answer at the
+> escape doorway: 87 of the 127 `\<byte>` queries display it** (measured, all
+> 127 answered). The row above reasoned that a routed query always yields "at
+> least the elected row" — but an UNKNOWN escape elects no row at all, and no
+> row's `syntax` shares a prefix with it either, so both selection rules come
+> back empty while the live block is perfectly well answered:
+>
+>     $ pcrec --explain '\q'
+>     route          after '\'  selector 'q'
+>     live           unknown escape \q
+>     live elected   none
+>     rows           0
+>
+> The branch had **zero assertions** until R20 — a live and common output
+> shape carried in the design as unreachable, which is how it stayed
+> untested. cli case11 now pins the `\q` cell (exit 0, `rows 0`, the live
+> answer, `live elected none`). Note the shape of the error rather than just
+> the count: the sentence generalised from ROUTED to SELECTED without
+> noticing they are different questions.
 
 ---
 
@@ -374,9 +396,29 @@ and what `--explain` prints for each:
 | row kind | example | what `--explain` prints |
 |---|---|---|
 | tail-less fallback (`recognise` NULL, `tail` NULL, rank 0) | `\d`, `(?<name>a)` | ordinary candidate; it answers "always" and that is CORRECT (D32 §2), so its live block is ordinary |
-| MARKER recogniser (`option_run`, `uprops`) | `(?i)`, `\p{L}` | ordinary candidate. The marker always answers true and the real check runs in `ext.c`/the module — so the elected row is the marker's row and the message may come from elsewhere (§4.2). The output's `names` field is what shows this, and the note for these rows says the marker is a marker |
+| MARKER recogniser (`option_run`, `uprops`) | `(?i)`, `\p{L}` | ordinary candidate. The marker always answers true and the real check runs in `ext.c`/the module — so the elected row is the marker's row and the message may come from elsewhere (§4.2). The output's `names` field is what shows this, ~~and the note for these rows says the marker is a marker~~ **R20: see below** |
 | `REG_SEL_ANY` catch-all (2 exist: `(?q)`, `(*ACCEPT)`) | `--explain '(?'` | printed as `fallback`, and **only when the arbitration actually elected it** — printing it always would assert reachability the arbitration denies (for `(?<`, the bare `<` row always answers, so the catch-all is unreachable there) |
 | `RS_BASE` (`(?:...)`) | `--explain '(?:'` | the row block with `status base`, and `route none` with the base-grammar sentence. No live block; §3.4 |
+
+> ### CORRECTED (R20 — OPTRUN-2)
+>
+> **No note says the marker is a marker.** The `note` column is a RegRow field
+> printed verbatim, and the two marker rows' notes are the ordinary
+> construct descriptions they have always been:
+>
+>     (?i)    note   caseless
+>     \p{L}   note   a character with the given Unicode property
+>
+> The claim above described a change that was never landed — the row is
+> reporting an intention as a fact, which is the staleness class the docs
+> lens exists to catch. What actually distinguishes a marker row on this
+> surface is what the rest of the cell already says: `elected` names the
+> marker's row while `names` may name a different module, and the two fields
+> side by side are the whole tell. **Left unlanded rather than landed now**:
+> `note` is a registry column with other consumers (`--list-syntax`,
+> `docs/pcre2_compliance.md`), so writing implementation trivia into it to
+> serve one display would put a second audience's text in a shared field —
+> exactly the two-homes shape D24 exists to prevent.
 
 ---
 
@@ -468,6 +510,64 @@ the row and compiles the row's `syntax`), so for those 13 rows it cannot tell
 which row answered. `elected` can. That is the one thing the live call adds
 that no existing check has.
 
+> ### CORRECTED (R20 — MOD07-2 and MOD07-3, one fix; manager ruling in
+> `reviews/2026-08-12-r20-mod08.md`)
+>
+> **§5 NEVER STATES THE GATE IT IS SCOPED TO, and both of the section's
+> defects live in that omission.** §5.2's census was taken with
+> `--probe-ask verdict` on each row's syntax — the CLOSED gate — and §5.3's
+> two lists are inventories of that census. Neither says so, and the
+> implementation asked the clauses at whatever `--features` happened to be.
+> The enabled set is the axis this design never varied.
+>
+> **The clauses are now scoped to the CLOSED GATE, explicitly.** `--explain`
+> makes TWO calls per displayed row: the `own *` fields display the
+> REQUESTED-gate answer as DATA, and a second call at `WANT_VERDICT` is what
+> clauses 1-3 judge. `WANT_VERDICT` realises "the default enabled set" —
+> `pcrec_ext_gate` only ever demotes and floors at VERDICT, so no enabled set
+> can promote it, and a BASE port answers at the level asked, which is also
+> VERDICT. Measured equivalent to a default-set `WANT_RESULT` ask on all 100
+> rows, every `--probe-ask` field compared, 0 differences.
+>
+> **Two measured defects this closes, both at the first open-gate cell:**
+>
+> - *`(?J)` and `(?m)` dissented on ATTRIBUTION under `--features
+>   modifiers`* — exit 3, stderr calling a tree `tests/reject:663-664` pins
+>   as CORRECT "a pcrec defect". An enabled option-run port refuses per
+>   LETTER (`J` → `named-groups`, `m` → `assertions`) while the row it
+>   dispatched on declares `modifiers`. Both facts are right; clause 3 was
+>   comparing them anyway. So the "Cannot, measured" list above is short by
+>   one entry: **clause 3 cannot be evaluated at an open gate at all**,
+>   because the answering text is then a MODULE's, not the doorway's.
+> - *clauses 2 and 3 switched OFF for producing rows.* The old predicate
+>   short-circuited on any non-refusal into a `status` read, so opening a
+>   gate SHRANK the coverage of the very rows it turned on. Judging at the
+>   closed gate restores all three for producing rows.
+>
+> **The "Can" list gains a FOURTH clause, and it is the one the open gate is
+> good for:** `gate` — a row whose requested-gate answer PRODUCES must have
+> its declared module in the enabled set. That is a real cross-check the
+> short-circuit was walking past; it would fire if production stopped being
+> the thing `--features` decides.
+>
+> **Totality, re-measured as the 100-row × 5-gate-state census** (each row's
+> own syntax as a query; `none / classes / modifiers / verbs / all`):
+>
+>     gate         queries   dissents BEFORE   dissents AFTER
+>     none             100                 0                0
+>     classes          100                 0                0
+>     modifiers        100                 2                0
+>     verbs            100                 0                0
+>     all              100                 2                0
+>
+> 500 probes per build. The predicate is now total over the table at every
+> gate state, which the pre-fix column shows it was not.
+>
+> Method lesson, and R20 filed it as one of the checkpoint's two: **an axis
+> your census never varied is an axis your clauses are wrong about.** The
+> check-design rule ("what does this claim when the population it was written
+> for changes?") now has a gate-shaped instance.
+
 ### 5.4 `--explain` is not the check, and this section is why (R10 ruling 6)
 
 R10 disposition 6 is explicit: *"Drop `--explain` and module-shipped probes as
@@ -503,6 +603,33 @@ blob):
 Keeping row-block keys indented and header keys unindented is load-bearing:
 case10 counts `^  doorway` lines to count rows, and the header must not add
 one.
+
+> ### CORRECTED (R20 — MOD07-8)
+>
+> **The grammar above has no escaping, and the "no tabs, no newlines in a
+> value" line was a wish rather than a rule.** Nothing enforced it, and a
+> query is operator text that goes straight into the `query` echo, the
+> `selector` echo, the verb-name block and the refusal messages that render
+> the selector byte. Measured:
+>
+>     $ pcrec --explain "$(printf '\\\nrows           99\n')"
+>     query          \
+>     rows           99          <- a synthetic HEADER line
+>     ...
+>     rows           0
+>
+> and `explain_field` — the test helper written to parse this very grammar —
+> reads the first match, so it reported `rows 99` for an answer displaying no
+> rows. There is no attacker (it is the operator's own text), which is why the
+> cure is a rendering rather than a quoting scheme: **every value that can
+> carry query bytes now renders bytes below 0x20 and 0x7f as `\xHH`.**
+>
+> `\` is deliberately NOT escaped — doubling it on a surface whose subject is
+> backslash escapes would move every existing pin — so a literal `\x0a` and a
+> real newline render alike. That ambiguity is accepted: this is a human
+> answer. §6.4's contrast is the reason it is safe to accept — the surfaces
+> with PARSERS (`--list-syntax`, `--probe-ask`) FORBID these bytes instead,
+> and that asymmetry is now the point of §6.4 rather than an aside.
 
 ### 6.1 Query header
 

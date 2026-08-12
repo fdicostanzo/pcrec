@@ -189,7 +189,17 @@ int main(int argc, char **argv)
             fprintf(stderr, "pcrec: --probe-ask needs a construct\n");
             return 1;
         }
-        char *line = pcrec_probe_ask(probe_want, pattern);
+        /* Two NULLs with different causes (R20/MOD07-1): a port that RAISED
+         * fills perr, and gets the compile path's own error shape rather
+         * than the usage sentence below — the operator's command line is
+         * fine, their pattern is not. */
+        pcrec_error perr;
+        char *line = pcrec_probe_ask(probe_want, pattern, &perr);
+        if (!line && perr.msg[0]) {
+            fprintf(stderr, "pcrec: --probe-ask: %s (pattern offset %zu)\n",
+                    perr.msg, perr.pos);
+            return 1;
+        }
         if (!line) {
             fprintf(stderr, "pcrec: --probe-ask: WANT must be claim, verdict "
                             "or result, and the construct must reach a "
@@ -268,8 +278,19 @@ int main(int argc, char **argv)
             return 1;
         }
         int ndissent = 0;
+        pcrec_error eerr = { .msg = { 0 }, .pos = 0 };
         char *text = list_syntax ? pcrec_syntax_tsv(fl)
-                                 : pcrec_syntax_explain(explain, fl, &ndissent);
+                                 : pcrec_syntax_explain(explain, fl, &ndissent,
+                                                        &eerr);
+        /* A DOORWAY THAT RAISED (R20/MOD07-1), not a query nothing matches:
+         * an enabled module port parsed the query text for real and that
+         * parse failed. Same shape a compile error gets, so an operator who
+         * has seen one recognises the other. */
+        if (!text && eerr.msg[0]) {
+            fprintf(stderr, "pcrec: --explain: %s (pattern offset %zu)\n",
+                    eerr.msg, eerr.pos);
+            return 1;
+        }
         if (!text) {
             /* --explain only; the TSV always has rows */
             fprintf(stderr, "pcrec: no construct matches '%s' — it is either "
@@ -287,10 +308,13 @@ int main(int argc, char **argv)
          * misuse of this CLI is exit 1 too. The full answer still goes to
          * stdout; the failing rows carry `agree  DISSENT: <clause>: …`. */
         if (ndissent > 0) {
-            fprintf(stderr, "pcrec: --explain: %d row%s DISAGREE with the live "
+            /* the VERB agrees too (R20/MOD07-9): "1 row DISAGREES", "2 rows
+             * DISAGREE". The old form pluralized only the noun. */
+            fprintf(stderr, "pcrec: --explain: %d row%s DISAGREE%s with the live "
                             "doorway (see the 'agree' lines) — this is a pcrec "
                             "defect, not a bad query\n",
-                    ndissent, ndissent == 1 ? "" : "s");
+                    ndissent, ndissent == 1 ? "" : "s",
+                    ndissent == 1 ? "S" : "");
             return 3;
         }
         return 0;

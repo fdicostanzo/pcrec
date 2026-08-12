@@ -324,11 +324,24 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
 
     if (p[i] == ')') {
         /* Bare run: mutate the enclosing scope and produce the construct's
-         * node — A_EMPTY, because an option setting matches nothing. */
+         * node — A_EMPTY, because an option setting matches nothing.
+         *
+         * AND IT IS NOT A REPEATABLE ITEM (R20/SPEC-1, a tier-1 miscompile
+         * the D27 blinded writer found). A_EMPTY alone does not say that —
+         * `()*` and `(a|)*` are ordinary quantifiable empties — so without
+         * the flag `a(?i)*` compiled, the `*` bound to this node, and the
+         * emitted matcher matched a/aa/aaa where libpcre2 gives err 109 at
+         * the quantifier. The registry had been right the whole time: these
+         * rows' `quantifiable` column reads `form`, and the producer
+         * contradicted it. The boundary is BARE-vs-SCOPING, measured with no
+         * exceptions: `a(?i:b)*` is correct and stays quantifiable (the `:`
+         * branch below never sets this), while every accepted bare spelling
+         * — `(?i)`, `(?i-m)`, `(?^)`, `(?xx)`, `(?U)` — is err 109. */
         cx->mods = ns;
         ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                           .answered_at = want };
         res.node = pcrec_ast_node(cx, A_EMPTY);
+        res.node->not_repeatable = true;
         res.end = i + 1;
         return res;
     }

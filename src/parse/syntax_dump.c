@@ -355,13 +355,33 @@ static bool doorway_route(const char *text, size_t n, Doorway *d)
     return false;
 }
 
-/* Place the cursor and make the ONE call. The Ctx handed in is ZEROED by both
- * callers: no jmp target, no arena blocks. That is safe while every doorway
- * RETURNS its answer (none may ctx_fail or allocate — the D33 §5 contract),
- * and it is one of the things the first enabled, result-producing module port
- * must revisit here, with a probe that is false the day before (D33 §9.3): a
- * port that allocates needs this Ctx given a real arena before `result` asks
- * can be driven through it. */
+/* Place the cursor and make the ONE call.
+ *
+ * THE OBLIGATION THIS COMMENT USED TO DEFER IS DISCHARGED (R20/MOD07-1,
+ * 2026-08-12). It said the zeroed Ctx was safe "while every doorway RETURNS
+ * its answer (none may ctx_fail or allocate)" and named "the first enabled,
+ * result-producing module port" as the event that must revisit it. That port
+ * landed at MOD-0.3c/0.5c — two milestones before MOD-0.7 extracted this
+ * function and carried the comment along unexamined — and the precondition
+ * had been false ever since: a module port recurses into `pcrec_parse_body`,
+ * whose `ctx_fail` longjmps, and both callers were handing over a `jmp_buf`
+ * that had never been `setjmp`'d. `--features modifiers --explain '(?i:['`
+ * SIGSEGVed (139), as did `--features all --probe-ask result -- '(?i:['`.
+ *
+ * SO BOTH CALLERS NOW GUARD THEIR OWN Ctx, and each renders a raise as its
+ * surface's ordinary error (stderr + a nonzero exit, cli case12). This
+ * function itself is unchanged and stays free of the guard on purpose: the
+ * jmp target must be the frame that owns the buffers being abandoned, and
+ * that frame is the caller's, not this one.
+ *
+ * BOTH CALLERS ALSO ARENA_FREE. A port that produces allocates from
+ * `cx->arena`, and a port that raises allocates and then abandons — so the
+ * arena is no longer the "no arena blocks" the old comment assumed either.
+ *
+ * The general lesson, recorded because R20 filed it as one of two: a
+ * carried-forward comment is a carried-forward OBLIGATION. Moving code whose
+ * comment names a future revisit is the moment to check whether the future
+ * already happened. */
 static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
 {
     cx->pos = d->cursor;
@@ -414,20 +434,44 @@ static const char *doorway_word(RegKind k)
  *   ep_set_certain  end  msg
  * `answered_at` is the post-gate level — `result` asks print `verdict`
  * until the first module is enabled, which makes the §5.4 demotion a
- * measured fact rather than a comment. */
-char *pcrec_probe_ask(const char *want_name, const char *construct)
+ * measured fact rather than a comment.
+ *
+ * TWO WAYS TO RETURN NULL, and `err` is what separates them (R20/MOD07-1):
+ * `err->msg` empty means the CALLER asked a bad question (an unknown want
+ * level, or text that reaches no doorway) — the misuse the CLI has always
+ * answered with a usage sentence. `err->msg` non-empty means the doorway
+ * RAISED: the construct reached an enabled port, the port ran a real parse,
+ * and that parse failed. Telling an operator to fix their command line for
+ * the second would be a lie, so the two exits print different things. */
+char *pcrec_probe_ask(const char *want_name, const char *construct,
+                      pcrec_error *err)
 {
     static const char *const want_names[] = { "claim", "verdict", "result" };
+    if (err) { err->msg[0] = '\0'; err->pos = 0; }
+
+    /* THE GUARD (R20/MOD07-1), placed FIRST so that no automatic object in
+     * this function is live across it. That is not style: `-Wclobbered`
+     * flagged `w`, `doorway` and `before` when the guard sat lower, and each
+     * warning was a real (if benign here) statement that a longjmp may
+     * restore a stale register copy. The only object read after the branch is
+     * `cx`, whose address escapes — the arrangement `src/core/compile.c` (the
+     * tree's only other `setjmp`) uses for the same reason. Nothing between
+     * here and `doorway_call` can raise, so guarding early costs nothing. */
+    Ctx cx;
+    memset(&cx, 0, sizeof cx);
+    cx.err = err;
+    cx.pat = construct;
+    cx.patlen = strlen(construct);
+    if (setjmp(cx.jb)) {
+        arena_free(&cx.arena);      /* a raising port allocated, then left */
+        return NULL;
+    }
+
     int w = -1;
     for (int i = 0; i < 3; i++)
         if (!strcmp(want_name, want_names[i])) w = i;
     if (w < 0) return NULL;
     ExtWant want = (ExtWant)w;
-
-    Ctx cx;
-    memset(&cx, 0, sizeof cx);
-    cx.pat = construct;
-    cx.patlen = strlen(construct);
 
     Doorway d;
     if (!doorway_route(construct, cx.patlen, &d))
@@ -455,6 +499,13 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
               r.at, r.ep_set_certain ? 1 : 0, r.end);
     if (r.what == EXT_REFUSAL) sb_puts(&sb, r.msg);
     sb_putc(&sb, '\n');
+    /* A PRODUCING port allocates its node from this arena and nothing below
+     * reads it (`sb` holds only the rendered TSV, and `r.msg` is an inline
+     * array). `--explain` has freed its arena since MOD-0.7; this call site
+     * was the one that did not, which R20's critic noted while reading the
+     * crash — the guard above makes the omission a leak on two paths instead
+     * of one, so both are closed here. */
+    arena_free(&cx.arena);
     return sb_take(&sb);
 }
 
@@ -482,8 +533,39 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
  *                             CORRECT registry — R10/C1-1's refutation of D29.
  *   each ROW's live answer    one call per displayed row, on THAT ROW'S OWN
  *                             `syntax` (which registry.c already guarantees
- *                             reaches that row's doorway). This one IS the
- *                             assertion: election, promise, attribution.
+ *                             reaches that row's doorway). DATA too — the
+ *                             `own *` fields show it at the REQUESTED gate.
+ *   each ROW's canonical      a SECOND call on the same syntax, pinned to the
+ *   answer                    CLOSED gate. This one IS the assertion:
+ *                             election, promise, attribution.
+ *
+ * THE CLAUSES ARE SCOPED TO THE CLOSED GATE, and that scope is the R20 fix
+ * (MOD07-2/3, manager ruling). The agreement predicate is the CENSUSED claim
+ * and §5.2's census was taken at the closed gate — so evaluating it anywhere
+ * else asks a question it was never established over. Two defects lived in
+ * the gap, both at the first open-gate cell: `--features modifiers --explain
+ * '(?J)'` dissented on attribution ("declared 'modifiers', live names
+ * 'named-groups'") for a tree tests/reject pins as CORRECT, because an
+ * enabled port refuses per LETTER and the letter's module is not the row's;
+ * and a producing answer short-circuited the other two clauses away, so
+ * opening a gate SHRANK the coverage of the very rows it turned on. Judging
+ * at the closed gate makes all three clauses total over the table at every
+ * enabled set, and gives producing rows their dissent-capability back.
+ *
+ * HOW THE CLOSED GATE IS REACHED, and why it is not a global the code
+ * temporarily rewrites: the canonical call asks WANT_VERDICT, which is the
+ * exact ask §5.2's census used (`--probe-ask verdict` per row). It is
+ * enabled-set-invariant BY CONSTRUCTION rather than by luck —
+ * `pcrec_ext_gate` only ever DEMOTES and floors at VERDICT, so a VERDICT ask
+ * cannot be promoted by any enabled set, and a BASE port (the one thing the
+ * gate does not touch) answers at the level asked, which is also VERDICT.
+ * Measured equivalent to a default-set RESULT ask on all 100 rows, every
+ * field of `--probe-ask` compared.
+ *
+ * WHAT THE OPEN GATE STILL ASSERTS is one clause of its own, and it is a real
+ * cross-check rather than a consolation: a row whose REQUESTED-gate answer
+ * PRODUCES must have its declared module in the enabled set. That is the
+ * question the old short-circuit walked past — it read `status` and stopped.
  *
  * AND THE HONEST LIMIT, stated here because the next reader will otherwise
  * assume the opposite: the attribution clause CANNOT dissent on a module-name
@@ -509,7 +591,38 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
  * lines from a closed vocabulary; blocks are separated by one blank line. Keys
  * never contain two consecutive spaces, which is what makes the split
  * unambiguous. Row keys stay INDENTED because case10/case11 count `^  doorway`
- * lines to count rows, and a header key must not add one. */
+ * lines to count rows, and a header key must not add one.
+ *
+ * CONTROL BYTES IN A VALUE ARE ESCAPED (R20/MOD07-8). Every value that can
+ * carry bytes from the QUERY goes through `put_text`, which renders anything
+ * below 0x20 and 0x7f as `\xHH`. Without it the grammar had no escaping at
+ * all, and a query containing a newline injected a synthetic header line that
+ * `explain_field` — the test helper that parses this very format — then read
+ * as real: `--explain "$(printf '\\\nrows           99\n')"` reported
+ * `rows 99` for an answer that displayed no rows. There is no attacker here
+ * (it is the operator's own text), which is why the cure is a cheap rendering
+ * rather than a quoting scheme.
+ *
+ * THE ESCAPE IS ONE-WAY, AND SAYS SO: `\` is NOT itself escaped, because
+ * doing that would double every backslash on a surface whose whole subject is
+ * backslash escapes, and would move every existing pin. So a literal
+ * four-byte `\x0a` in a query and a real newline render alike. The ambiguity
+ * is accepted deliberately — this is a human answer, not a wire format.
+ * `--list-syntax` and `--probe-ask` are the surfaces with parsers, and both
+ * FORBID these bytes rather than escape them (this file's own header says
+ * why). Bytes >= 0x80 pass through untouched: they are not control bytes, and
+ * R20/MOD07-B records that they are unreachable through argv anyway. */
+
+/* Render `n` bytes with control bytes made visible. See the format grammar
+ * above for why `\` is deliberately not escaped. */
+static void put_text(StrBuf *sb, const char *s, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c < 0x20 || c == 0x7f) sb_printf(sb, "\\x%02x", c);
+        else                       sb_putc(sb, (char)c);
+    }
+}
 
 /* Which module does a rendered answer PROMISE, if any? Derived in the CONSUMER
  * by looking for the `module 'NAME'` shape every doorway renders its promise
@@ -570,7 +683,11 @@ static void put_answer(StrBuf *sb, const Live *L)
         return;
     }
     switch (L->r.what) {
-    case EXT_REFUSAL:  sb_puts(sb, L->r.msg); break;
+    /* ESCAPED (R20/MOD07-8): a refusal renders the selector byte into its
+     * text ("unknown escape \%c"), so this value carries QUERY bytes just as
+     * the `query` echo does. Escaping only the echo would have left the same
+     * injection reachable one line down. */
+    case EXT_REFUSAL:  put_text(sb, L->r.msg, strlen(L->r.msg)); break;
     case EXT_NOT_MINE: sb_puts(sb, "declines — no construct at this doorway"); break;
     case EXT_SCALAR:   sb_printf(sb, "produces one code point (0x%02X)",
                                  (unsigned)L->r.scalar); break;
@@ -589,54 +706,80 @@ static void put_names(StrBuf *sb, const Live *L)
         sb_puts(sb, "—");
 }
 
-/* THE THREE CLAUSES (design note §5.2), evaluated on the row's OWN syntax.
- * Returns nonzero if this row dissents. The clause NAMES are part of the
- * format: a reader must be able to tell election from promise from
- * attribution, so they are not free wording the way the rest of the sentence
- * is (D26 tier 3 covers the prose, not the clause identity). */
-static int put_agreement(StrBuf *sb, const RegRow *r, const Live *L)
+/* THE CLAUSES (design note §5.2, gate-scoped at R20/MOD07-2+3), evaluated on
+ * the row's OWN syntax. Returns nonzero if this row dissents. The clause NAMES
+ * are part of the format: a reader must be able to tell election from promise
+ * from attribution from gate, so they are not free wording the way the rest of
+ * the sentence is (D26 tier 3 covers the prose, not the clause identity).
+ *
+ * TWO ANSWERS COME IN, and which clause reads which is the whole R20 fix:
+ *   `C`  the CANONICAL answer — WANT_VERDICT, enabled-set-invariant. Clauses
+ *        1-3 read this and nothing else, because the closed gate is the
+ *        population the predicate was censused over (see the file header).
+ *   `own` the REQUESTED-gate answer, the one the `own *` fields display.
+ *        Exactly one clause reads it: the gate cross-check below. */
+static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
+                         const Live *own)
 {
     /* `(?:...)` is the one row whose syntax reaches no doorway: the base
      * grammar answers it, so there is nothing to compare and saying so is the
      * honest answer rather than a fabricated pass. */
-    if (!L->routed) {
+    if (!C->routed) {
         sb_puts(sb, "ok  (base grammar; no doorway call to compare)");
         return 0;
+    }
+    /* 0. GATE. The one clause about the REQUESTED enabled set, and the one
+     * the old short-circuit was walking past: it read `status` and stopped,
+     * so "this row produced" was never checked against "this row's module is
+     * switched on". Producing with the gate shut would mean the gate is not
+     * the thing deciding production — the single fact `--features` exists to
+     * be true. (A BASE port produces gate-immune by design, but no row
+     * reaches one through this surface: `--explain` routes escapes at ATOM
+     * position and the base ports are all CLASS-position. If that changes,
+     * this clause is where it must be taught the difference.) */
+    bool produced = own->routed && own->r.what != EXT_NOT_MINE &&
+                    own->r.what != EXT_REFUSAL;
+    if (produced) {
+        if (r->status != RS_MODULE) {
+            sb_puts(sb, "DISSENT: gate: a row that is not RS_MODULE produced "
+                        "a value");
+            return 1;
+        }
+        if (!pcrec_feature_enabled(r->feature)) {
+            sb_printf(sb, "DISSENT: gate: the row produced a value with its "
+                          "module '%s' NOT in the enabled set", r->module);
+            return 1;
+        }
     }
     /* 1. ELECTION / REACHABILITY. A row's own canonical syntax must reach
      * THAT row. A decline is the same failure wearing a different hat: the
      * doorway walked away from a construct the table says is there. */
-    if (L->r.what == EXT_NOT_MINE) {
+    if (C->r.what == EXT_NOT_MINE) {
         sb_puts(sb, "DISSENT: election: the row's own syntax DECLINES at its "
                     "own doorway");
         return 1;
     }
-    if (L->r.row != r) {
+    if (C->r.row != r) {
         sb_printf(sb, "DISSENT: election: '%s' elected %s%s%s for its own syntax",
                   r->syntax,
-                  L->r.row ? "'" : "no row",
-                  L->r.row ? L->r.row->syntax : "",
-                  L->r.row ? "'" : "");
+                  C->r.row ? "'" : "no row",
+                  C->r.row ? C->r.row->syntax : "",
+                  C->r.row ? "'" : "");
         return 1;
     }
-    /* A PRODUCING outcome means the gate opened for this row's module, which
-     * only an RS_MODULE row can do. There is no module NAME in a produced
-     * value, so the promise clause takes this shape here instead of the text
-     * one below. */
-    if (L->r.what != EXT_REFUSAL) {
-        if (r->status != RS_MODULE) {
-            sb_puts(sb, "DISSENT: promise: a row that is not RS_MODULE produced "
-                        "a value");
-            return 1;
-        }
-        sb_puts(sb, "ok  (produces; this row's module is enabled)");
-        return 0;
+    /* A canonical answer CANNOT produce — WANT_VERDICT is below the level any
+     * port answers at, and the gate never promotes. Reaching here with a
+     * non-refusal would mean the ask contract itself is broken, which is not
+     * a registry defect and must not be reported as one. */
+    if (C->r.what != EXT_REFUSAL) {
+        sb_puts(sb, "internal error: a WANT_VERDICT ask produced a value");
+        return 1;
     }
     /* 2. PROMISE. A module is owed exactly when the row is a PLANNED module
      * row. K14's rule, and the one clause that fires on today's tree before
      * this milestone's own fix: a ROADMAP_NEVER row must not be promised. */
     char mod[64];
-    bool named = msg_module(L->r.msg, mod, sizeof mod);
+    bool named = msg_module(C->r.msg, mod, sizeof mod);
     bool owed  = (r->status == RS_MODULE && r->roadmap != ROADMAP_NEVER);
     if (named != owed) {
         sb_printf(sb, "DISSENT: promise: the row is %s%s and the live answer "
@@ -650,11 +793,23 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *L)
     /* 3. ATTRIBUTION. Measured to be unable to dissent on a swap (§0); it is
      * here because it is cheap and because the OTHER sources of a module name
      * — the POSIX name table, the verb name tables — could put a different
-     * one in this text without the row changing at all. */
+     * one in this text without the row changing at all.
+     *
+     * IT READS THE CANONICAL ANSWER, and R20/MOD07-2 is why: at an open gate
+     * the module's port refuses per LETTER, so `(?J)` renders module
+     * 'named-groups' from the `(?J` GROUP_OPT row whose declared module is
+     * 'modifiers'. Both are correct — the option-run row dispatches, the
+     * letter decides who owes the feature — and comparing them fired on a
+     * tree tests/reject pins as right. */
     if (named && strcmp(mod, r->module) != 0) {
         sb_printf(sb, "DISSENT: attribution: declared '%s', live names '%s'",
                   r->module, mod);
         return 1;
+    }
+    if (produced) {
+        sb_puts(sb, "ok  (clauses at the closed gate; at this one the row "
+                    "produces and its module is enabled)");
+        return 0;
     }
     sb_puts(sb, "ok");
     return 0;
@@ -682,7 +837,10 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
     const VerbName *v = pcrec_registry_verb_find(t, query + nstart, namelen);
     const RegRow *row = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
 
-    sb_printf(sb, "\nverb name %.*s\n", (int)namelen, query + nstart);
+    /* the NAME is query text; escaped for the same reason (R20/MOD07-8) */
+    sb_puts(sb, "\nverb name ");
+    put_text(sb, query + nstart, namelen);
+    sb_putc(sb, '\n');
     sb_printf(sb, "  table        %s\n",
               t == pcrec_registry_verb_tables(0) ? "upper" : "lower");
     sb_printf(sb, "  known        %s\n", v ? "yes" : "no");
@@ -715,17 +873,44 @@ static void put_verb_block(StrBuf *sb, const char *query, const Doorway *d)
                                                              : "not-askable");
 }
 
-char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
+char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
+                           pcrec_error *err)
 {
-    StrBuf body = {0};
+    StrBuf body = {0}, sb = {0};
     size_t qlen = strlen(query);
     int rows_shown = 0, dissents = 0;
 
-    /* ONE Ctx for the whole invocation: zeroed (no jmp target — every doorway
-     * RETURNS its answer, the D33 §5 contract), reused across every call, and
-     * its arena freed at the end. */
+    /* ONE Ctx for the whole invocation, reused across every call, its arena
+     * freed at the end — and GUARDED since R20/MOD07-1. The old comment here
+     * asserted "no jmp target — every doorway RETURNS its answer, the D33 §5
+     * contract"; §5's contract is about the doorway's own terminal answer and
+     * says nothing about a PORT, which recurses into `pcrec_parse_body` and
+     * can `ctx_fail` from arbitrarily deep. See `doorway_call`'s header for
+     * the full history. */
     Ctx cx;
     memset(&cx, 0, sizeof cx);
+    cx.err = err;
+    if (err) { err->msg[0] = '\0'; err->pos = 0; }
+
+    /* ABANDON THE WHOLE ANSWER, rather than render the raise per line and
+     * carry on. The reason is not tidiness: after a longjmp out of a
+     * half-finished parse this Ctx's own state (`depth`, `ncap`, `mods`, and
+     * whatever the arena holds) is arbitrary, and every remaining row block
+     * would be a further call THROUGH that Ctx. Continuing would be a fresh
+     * instance of exactly the reasoning that produced this defect — safe
+     * today, unmeasured, and load-bearing for whoever adds the next port. One
+     * raise, one honest error, no partial table.
+     *
+     * `body`, `sb` and `cx` are declared above the `setjmp` and mutated only
+     * through their escaped addresses; `rows_shown`/`dissents` are mutated
+     * after it and are deliberately not read here. */
+    if (setjmp(cx.jb)) {
+        sb_free(&body);
+        sb_free(&sb);
+        arena_free(&cx.arena);
+        if (ndissent) *ndissent = 0;
+        return NULL;
+    }
 
     /* WANT_RESULT is what parse.c asks — the real ask — so `--explain` shows
      * what pcrec would actually DO with the text. With the default empty
@@ -768,7 +953,16 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
             bool fallback = q.routed && r->sel == REG_SEL_ANY && q.r.row == r;
             if (!listed && !candidate && !fallback) continue;
 
-            Live own = live_answer(&cx, r->syntax, WANT_RESULT);
+            /* TWO calls on the row's own syntax (R20/MOD07-2+3): `own` at
+             * the REQUESTED gate is what the `own *` fields display, and
+             * `canon` at WANT_VERDICT is what the clauses judge. They are the
+             * same answer whenever the row's module is not enabled, which is
+             * every row at the default set — the second call buys nothing
+             * there and costs nothing either, and paying for it
+             * unconditionally is what keeps the clause scope from depending
+             * on a branch someone has to remember. */
+            Live own   = live_answer(&cx, r->syntax, WANT_RESULT);
+            Live canon = live_answer(&cx, r->syntax, WANT_VERDICT);
 
             if (rows_shown++) sb_putc(&body, '\n');
             sb_printf(&body, "%s\n", r->syntax);
@@ -842,7 +1036,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
             sb_puts(&body, "  own names    "); put_names(&body, &own);
             sb_putc(&body, '\n');
             sb_puts(&body, "  agree        ");
-            dissents += put_agreement(&body, r, &own);
+            dissents += put_agreement(&body, r, &canon, &own);
             sb_putc(&body, '\n');
         }
     }
@@ -854,16 +1048,22 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent)
         return NULL;      /* not doorway territory and no row looks like it */
     }
 
-    StrBuf sb = {0};
-    sb_printf(&sb, "query          %s\n", query);
+    /* the two ECHOES of query text, escaped (R20/MOD07-8) */
+    sb_puts(&sb, "query          ");
+    put_text(&sb, query, qlen);
+    sb_putc(&sb, '\n');
     if (q.routed) {
         sb_printf(&sb, "route          %s", doorway_name(q.d.kind));
         if (q.d.kind == RK_VERB)
             sb_puts(&sb, "  (the NAME decides; see the verb block)");
         else if (q.d.sel < 0)
             sb_puts(&sb, "  selector none (the text ends at the doorway)");
-        else
-            sb_printf(&sb, "  selector '%c'", q.d.sel);
+        else {
+            char selb = (char)q.d.sel;
+            sb_puts(&sb, "  selector '");
+            put_text(&sb, &selb, 1);
+            sb_putc(&sb, '\'');
+        }
         sb_putc(&sb, '\n');
     } else {
         sb_puts(&sb, "route          none — the base grammar answers this text "
