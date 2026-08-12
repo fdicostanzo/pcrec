@@ -1,0 +1,166 @@
+# probe_uprops — archived measurement report (D35: evidence, never an oracle)
+# regenerate: scripts/measure.sh probe_uprops   (git diff shows what changed)
+# check validity without re-running: scripts/measure.sh --stale
+# date: 2026-08-12
+# repo: e2b1d4a
+# probe-blob: ada20dcdbd0e8001f289051adcfdd69e8b59ac04 (git hash-object tests/probes/probe_uprops.c)
+# abi-blob: 0a2d70999f960eea3a2f912629a262fdb5203d71 (tests/fuzz/pcre2_abi.h)
+# oracle: libpcre2-8-0 10.46-1build1
+# compiler: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+
+PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL established behaviourally as bit 0x00000002 (0 means: not found / symbols unavailable)
+
+== (a) \p{Foo} — the three-answers inventory ==
+  \p{Foo}                                        ERR 147 at  7  unknown property after \P or \p
+  \p{Foo}                                        COMPILES
+  \P{Foo}                                        ERR 147 at  7  unknown property after \P or \p
+  \P{Foo}                                        COMPILES
+
+== (b) malformed-tail taxonomy — \p ==
+  \p at EOF                                      ERR 146 at  2  malformed \P or \p sequence
+  \p!                                            ERR 146 at  3  malformed \P or \p sequence
+  \p9                                            ERR 146 at  3  malformed \P or \p sequence
+  \p{ unterminated at EOF                        ERR 146 at  3  malformed \P or \p sequence
+  \p{}                                           ERR 147 at  4  unknown property after \P or \p
+  \p{L unterminated (valid prefix)               ERR 146 at  4  malformed \P or \p sequence
+  \pL                                            COMPILES
+  \p{L}                                          COMPILES
+
+== (b) malformed-tail taxonomy — \P ==
+  \P at EOF                                      ERR 146 at  2  malformed \P or \p sequence
+  \P!                                            ERR 146 at  3  malformed \P or \p sequence
+  \P9                                            ERR 146 at  3  malformed \P or \p sequence
+  \P{ unterminated at EOF                        ERR 146 at  3  malformed \P or \p sequence
+  \P{}                                           ERR 147 at  4  unknown property after \P or \p
+  \P{L unterminated (valid prefix)               ERR 146 at  4  malformed \P or \p sequence
+  \PL                                            COMPILES
+  \P{L}                                          COMPILES
+
+== (b) malformed-tail taxonomy under EXTRA_BAD_ESCAPE_IS_LITERAL ==
+  \p at EOF                                      COMPILES
+  \p!                                            COMPILES
+  \p9                                            COMPILES
+  \p{ unterminated at EOF                        COMPILES
+  \p{}                                           COMPILES
+  \p{L unterminated                              COMPILES
+
+== (c) \p{^L} / \P{^L} caret negation ==
+  \p{^L}                                         COMPILES
+  \P{^L}                                         COMPILES
+  \p{^Foo}                                       ERR 147 at  8  unknown property after \P or \p
+
+== (c) \pX single-letter sweep, X = A..Z ==
+  \pA..\pZ compiling: CLMNPSZ
+  \pA..\pZ NOT compiling: ABDEFGHIJKOQRTUVWXY
+
+== (c) \pX single-letter sweep, X = a..z (lowercase) ==
+  \pa..\pz compiling: clmnpsz
+  \pa..\pz NOT compiling (should be all 26): abdefghijkoqrtuvwxy
+  (all lowercase single-letter forms refused: NO — see above)
+
+== (c) \PX single-letter sweep, X = A..Z ==
+  \PA..\PZ compiling: CLMNPSZ
+
+== (d) insignificant-byte census against the \p{L} baseline ==
+  baseline ^\p{L}$ vs 'A': MATCH   vs '1': no match
+  space around name:  \p{ L }                                COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  leading space:      \p{ L}                                 COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  trailing space:     \p{L }                                 COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  hyphen prefix:      \p{-L}                                 COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  underscore prefix:  \p{_L}                                 COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  hyphen+underscore:  \p{_-L}                                COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  tab prefix:         \p{\tL}                                COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  lowercase name:     \p{l}                                  COMPILES  'A':MATCH  '1':no  == \p{L} semantics
+  mixed case (n/a for single letter, use Letter): \p{Letter} ERR 147 at 11  unknown property after \P or \p
+  uppercase form:     \p{LETTER}                             ERR 147 at 11  unknown property after \P or \p
+  lowercase form:     \p{letter}                             ERR 147 at 11  unknown property after \P or \p
+  internal space:     \p{L e t t e r}                        ERR 147 at 16  unknown property after \P or \p
+  internal hyphen:    \p{L-e-t-t-e-r}                        ERR 147 at 16  unknown property after \P or \p
+  internal underscore:\p{L_e_t_t_e_r}                        ERR 147 at 16  unknown property after \P or \p
+
+== (d) streaming: a valid 1-significant-char body padded to ~100,006 bytes ==
+  body length = 100001 bytes (1 significant char, 100000 spaces)
+  COMPILES
+
+== (d) the 48/49 SIGNIFICANT-character boundary — plain run of 'A' ==
+  n=40 significant 'A's: ERR 147 at 44  unknown property after \P or \p
+  n=41 significant 'A's: ERR 147 at 45  unknown property after \P or \p
+  n=42 significant 'A's: ERR 147 at 46  unknown property after \P or \p
+  n=43 significant 'A's: ERR 147 at 47  unknown property after \P or \p
+  n=44 significant 'A's: ERR 147 at 48  unknown property after \P or \p
+  n=45 significant 'A's: ERR 147 at 49  unknown property after \P or \p
+  n=46 significant 'A's: ERR 147 at 50  unknown property after \P or \p
+  n=47 significant 'A's: ERR 147 at 51  unknown property after \P or \p
+  n=48 significant 'A's: ERR 147 at 52  unknown property after \P or \p
+  n=49 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+  n=50 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+  n=51 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+  n=52 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+  n=53 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+  n=54 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+  n=55 significant 'A's: ERR 146 at 52  malformed \P or \p sequence
+
+== (d) the same boundary, PADDED with an insignificant space after every significant char (proves the count is of SIGNIFICANT chars, not total bytes) ==
+  n=40 significant 'A's, body 80 bytes: ERR 147 at 84  unknown property after \P or \p
+  n=41 significant 'A's, body 82 bytes: ERR 147 at 86  unknown property after \P or \p
+  n=42 significant 'A's, body 84 bytes: ERR 147 at 88  unknown property after \P or \p
+  n=43 significant 'A's, body 86 bytes: ERR 147 at 90  unknown property after \P or \p
+  n=44 significant 'A's, body 88 bytes: ERR 147 at 92  unknown property after \P or \p
+  n=45 significant 'A's, body 90 bytes: ERR 147 at 94  unknown property after \P or \p
+  n=46 significant 'A's, body 92 bytes: ERR 147 at 96  unknown property after \P or \p
+  n=47 significant 'A's, body 94 bytes: ERR 147 at 98  unknown property after \P or \p
+  n=48 significant 'A's, body 96 bytes: ERR 147 at 100  unknown property after \P or \p
+  n=49 significant 'A's, body 98 bytes: ERR 146 at 100  malformed \P or \p sequence
+  n=50 significant 'A's, body 100 bytes: ERR 146 at 100  malformed \P or \p sequence
+  n=51 significant 'A's, body 102 bytes: ERR 146 at 100  malformed \P or \p sequence
+  n=52 significant 'A's, body 104 bytes: ERR 146 at 100  malformed \P or \p sequence
+  n=53 significant 'A's, body 106 bytes: ERR 146 at 100  malformed \P or \p sequence
+  n=54 significant 'A's, body 108 bytes: ERR 146 at 100  malformed \P or \p sequence
+  n=55 significant 'A's, body 110 bytes: ERR 146 at 100  malformed \P or \p sequence
+
+== (d) does the negation caret count toward the 48/49 boundary? \p{^ + n A's} ==
+  caret + n=46 significant 'A's: ERR 147 at 51  unknown property after \P or \p
+  caret + n=47 significant 'A's: ERR 147 at 52  unknown property after \P or \p
+  caret + n=48 significant 'A's: ERR 147 at 53  unknown property after \P or \p
+  caret + n=49 significant 'A's: ERR 146 at 53  malformed \P or \p sequence
+  caret + n=50 significant 'A's: ERR 146 at 53  malformed \P or \p sequence
+
+== (e) in-class: \p{L} \P{L} \pL, and the K10 oracle \N{U+41} ==
+  [\p{L}]                                        COMPILES
+  [\P{L}]                                        COMPILES
+  [\pL]                                          COMPILES
+  [\PL]                                          COMPILES
+  [\N{U+41}]                                     ERR 193 at  3  \N{U+dddd} is supported only in Unicode (UTF) mode
+  [x\N{U+41}]                                    ERR 193 at  4  \N{U+dddd} is supported only in Unicode (UTF) mode
+  [\N{U+41}x]                                    ERR 193 at  3  \N{U+dddd} is supported only in Unicode (UTF) mode
+  [a-\N{U+41}]                                   ERR 193 at  5  \N{U+dddd} is supported only in Unicode (UTF) mode
+  [^\N{U+41}]                                    ERR 193 at  4  \N{U+dddd} is supported only in Unicode (UTF) mode
+  [\N]                                           ERR 171 at  3  \N is not supported in a class
+
+== (e) endpoint-rule shape check: \p{L} (certifiable SET) vs \p{Foo} (bad name) vs \N{U+41} (SCALAR) ==
+  [0-\p{L}]                                      ERR 150 at  8  invalid range in character class
+  [0-\p{Foo}]                                    ERR 147 at 10  unknown property after \P or \p
+  [0-\N{U+41}]                                   ERR 193 at  5  \N{U+dddd} is supported only in Unicode (UTF) mode
+  [\p{L}-z]                                      ERR 150 at  7  invalid range in character class
+  [\N{U+41}-z]                                   ERR 193 at  3  \N{U+dddd} is supported only in Unicode (UTF) mode
+
+== (f) quantifiability, Script= form, and whitespace around '=' ==
+  a\p{L}*                                        COMPILES
+  a\p{L}*?                                       COMPILES
+  \p{Script=Latin}                               COMPILES
+  \p{sc=Latin}                                   COMPILES
+  \p{ Script = Latin }                           COMPILES
+  \p{Any}                                        COMPILES
+  \p{^}                                          ERR 147 at  5  unknown property after \P or \p
+  \p{^^L}                                        ERR 147 at  7  unknown property after \P or \p
+  \p{L} then more pattern                        COMPILES
+
+== (b) widened: 256-byte sweep of the byte after \p — error-code census ==
+  COMPILES: 14   ERR 146: 204   ERR 147: 38   OTHER: 0
+  every one of the 256 tail bytes lands on {COMPILES, 146, 147} — no DECLINE-shaped tail exists for \p
+
+== (b) widened: same 256-byte sweep for \P ==
+  COMPILES: 14   ERR 146: 204   ERR 147: 38   OTHER: 0
+  every one of the 256 tail bytes lands on {COMPILES, 146, 147} — no DECLINE-shaped tail exists for \P
+
+DONE.
