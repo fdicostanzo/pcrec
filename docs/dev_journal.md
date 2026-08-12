@@ -6416,3 +6416,12 @@ measurement at options=0; \N's bitmap is the measured complement of
 closed loudly. Cost prediction on arrival: ./\N fold like caseless;
 $'s EOL assertion is the engine work (set-valued under ANY/ANYCRLF,
 two-byte under CRLF, both DFAs). Details in the DD-11 plan entry.
+
+**Session-close discussion 2 (Frank): the UTF architecture, recorded as
+DD-12.** One parser; CharSet = code-point intervals as the parser's
+semantic output; encoding = a per-instance LOWERING to byte-level NFA
+(ASCII identity, UTF-8 interval expansion with suffix sharing); match time
+stays byte-wise UTF-8 forever — code points exist only at regex-compile
+time inside the CharSet, which is where the convert-to-UTF-32 instinct
+belongs. Invalid-UTF semantics to be measured against
+PCRE2_MATCH_INVALID_UTF. Details and owners in the DD-12 plan entry.

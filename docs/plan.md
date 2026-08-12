@@ -121,6 +121,41 @@ the last checkpoint; compiled results live in docs/reviews/.
 - [DD-10] STATE:not-started — remaining unbounded C-stack recursion in the compiler (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone
 - [DD-8] STATE:not-started — `--emit-ir` / `--emit-dot` promised in APPROACH §6, never built (R2-A7)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
+- [DD-12] STATE:not-started — the UTF ARCHITECTURE sketch (Frank,
+  2026-08-12 tenth-session close; elaborates APPROACH §4/§10, OS-2, DD-1,
+  D33 §7 into one position). (1) ONE parser, no encoding parameter in the
+  grammar: the parser's semantic output becomes a CharSet — sorted CODE
+  POINT intervals (the D33 §7 widening and DD-1's "byte-range trees" are
+  this) — and the encoding is a LOWERING instance, CharSet → byte-level
+  NFA fragment: ASCII = identity byte map, UTF-8 = interval-to-byte-
+  sequence expansion with suffix sharing (the RE2/Ragel construction, so
+  \p{L}-sized sets stay near-linear). Downstream (subset construction,
+  minimization, emitter, prefilters) stays encoding-blind and BYTE-WISE —
+  OS-2's fold prediction, made concrete. Parser changes only where UTF
+  changes the LANGUAGE: \x{>FF} becomes meaningful, a multi-byte atom
+  quantifies as one unit (free once atoms are lowered fragments), pattern
+  validity. (2) UTF-8 AT MATCH TIME, ALWAYS — never convert the subject:
+  UTF-32 conversion costs a decode pass + 4x memory, kills the byte
+  prefilters/skips, breaks the byte-offset API (PCRE2 reports byte offsets
+  even under UTF) and M3 streaming. Code points exist ONLY at regex-compile
+  time, inside the CharSet, between parse and lowering — that is the right
+  home for the "convert to UTF-32" instinct. The backtracking worry is
+  bounded: the DFA never backtracks; the M4 VM steps back a character by
+  skipping ≤3 continuation bytes (self-synchronization), O(1). (3) Invalid
+  UTF-8 is a DECISION: byte-wise automata naturally treat invalid
+  sequences as nomatch; PCRE2_UTF errors, but PCRE2_MATCH_INVALID_UTF is
+  essentially the byte-wise semantics — measure against THAT mode and pick
+  deliberately. (4) The oracle pipeline extends with a UTF twin of PC-4
+  (compiled PCRE2_UTF), carrying the R13/R14 warning verbatim: a UTF sweep
+  needs generators that can PRODUCE multi-byte constructs, or it counts
+  the generator. (5) Fold-before-negate and the one-constructor-owns-fold
+  seam (OS-1) carry over at the CharSet level; DD-1's Unicode fold pairs
+  land there. (6) Scope: ASCII + UTF-8 only (D18 earn-its-axis; UTF-16's
+  surrogates make byte automata messy and no consumer asks); encoding is
+  a generation-time scalar (D20, --encoding), named entry points via OS-0
+  if anyone wants both from one binary. Owners: the CharSet widening is
+  MOD-0.6's (D33 §7); the lowering instances and the UTF PC-4 twin are
+  M5's; DD-1 folds in at the CharSet level
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
   2026-08-12 tenth-session close). pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
