@@ -104,3 +104,49 @@ modsem.capture_n                     5
 modsem.oracle_only_unicode           6
 modsem.pcrec_compared               35
 modsem.pcrec_refused_unimpl          3
+
+# --- unicode property escapes (D27, MOD-0.8b): check13 recognition ------
+uprop.registry_rows                     2
+uprop.after_byte                      510
+uprop.braced_marginal                 950
+uprop.context                         620
+uprop.truncation                      108
+uprop.namelen                         399
+uprop.quote_mode                       62
+uprop.config                           93
+uprop.case_flag                        62
+uprop.oracle_accepts                  836
+uprop.oracle_rejects                 1751
+# The next three are REPORTED counts, not ratchets, and their floors are 0
+# DELIBERATELY: every one of them can only SHRINK as unicode-props is
+# implemented (a cell that is refused-as-unimplemented today becomes an
+# accepted one, and an accepted cell has no blame offset to classify). A real
+# floor here would fail on the day the module lands, which is the wrong
+# direction for a ratchet. What actually guards them is live rather than
+# pinned: check13 FAILS if a refusal naming this module carries no
+# "(pattern offset N)" at all, and FAILS if the offset is neither the
+# grammatical extent nor libpcre2's own earlier stop. The sweep sizes above
+# are the ratchet.
+uprop.refused_module                    0
+uprop.offset_at_extent                  0
+uprop.offset_at_oracle_stop             0
+
+# --- option runs (D27, MOD-0.8b): check14 generated recognition sweep ---
+optrun.doorway_byte                   510
+optrun.run_byte                      1530
+optrun.letter_pairs                   484
+optrun.marker_place                   684
+optrun.junk_insert                    164
+optrun.truncation                      54
+optrun.runlen                         112
+optrun.degenerate                      49
+optrun.whitespace                      96
+optrun.quantified                    1024
+optrun.quantified_scoped_control      512
+optrun.pcrec_compared                4385
+# Floor 0 DELIBERATELY, same reasoning as uprop.refused_module: a deferred
+# cell is one pcrec answered with "requires module 'X'", and every module that
+# lands converts some of them into compared cells. optrun.pcrec_compared is
+# the complementary count and IS ratcheted.
+optrun.pcrec_deferred                   0
+optrun.accepted_both                  540

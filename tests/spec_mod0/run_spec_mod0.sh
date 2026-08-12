@@ -128,6 +128,8 @@ run_sh check09_every_feature_toggles.sh "$WORK/check07_gate_equivalence.out" "$R
 run_c  check10_quantifiable          "$REG" "$VERBS"
 run_c  check11_modifier_syntax       "$REG" "$PCREC"
 run_c  check12_modifier_semantics    "$REG" "$PCREC"
+run_c  check13_uprop_syntax          "$REG" "$PCREC"
+run_c  check14_option_runs           "$REG" "$PCREC"
 
 # --- summary -----------------------------------------------------------
 echo "=============================================================="
