@@ -1,0 +1,36 @@
+# probe_quant — archived measurement report (D35: evidence, never an oracle)
+# regenerate: scripts/measure.sh probe_quant   (git diff shows what changed)
+# date: 2026-08-12
+# repo: f9bdfdc +dirty
+# oracle: libpcre2-8-0 10.46-1build1
+# compiler: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+
+== (1) option-run row: two forms, one family ==
+q1a      a(?i)*                       ERR 109  quantifier does not follow a repeatable item
+q1b      a(?i:b)*                     COMPILES
+q1c      a(?i-m)*                     ERR 109  quantifier does not follow a repeatable item
+q1d      a(?i-m:b)*                   COMPILES
+q1e      a(?^)*                       ERR 109  quantifier does not follow a repeatable item
+q1f      a(?^i:b)*                    COMPILES
+== (2) the verb row: fifty names, one row ==
+q2a      a(*FAIL)*                    ERR 109  quantifier does not follow a repeatable item
+q2b      a(*MARK:x)*                  ERR 109  quantifier does not follow a repeatable item
+q2c      a(*pla:b)*                   COMPILES
+q2d      a(*positive_lookahead:b)*    COMPILES
+q2e      a(*atomic:b)*                COMPILES
+q2f      a(*script_run:b)*            COMPILES
+q2g      a(*nla:b)*                   COMPILES
+q2h      a(*COMMIT)*                  ERR 109  quantifier does not follow a repeatable item
+q2i      a(*CR)*                      ERR 160  (*VERB) not recognized or malformed
+== (3) misc atoms ==
+q3a      a\K*                         ERR 109  quantifier does not follow a repeatable item
+q3b      (a)\1*                       COMPILES
+q3c      (a)(?1)*                     COMPILES
+q3d      (a)(?(1)x|y)*                COMPILES
+q3e      (?(DEFINE)x)*                COMPILES
+q3f      a(?C1)*                      ERR 109  quantifier does not follow a repeatable item
+q3g      a(?C"x")*                    ERR 109  quantifier does not follow a repeatable item
+q3h      (?<n>a)(?&n)*                COMPILES
+q3i      (?<n>a)\k<n>*                COMPILES
+q3j      a\R*                         COMPILES
+q3k      a\X*                         COMPILES

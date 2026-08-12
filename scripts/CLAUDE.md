@@ -19,4 +19,10 @@ pcrec (the Makefile owns that).
   memory index, injected before any tool call) is unavoidable and stays
   covered by the briefs' disclosure requirement.
 
+- **measure.sh** — builds and runs one `tests/probes/` probe and archives
+  its full output as `docs/measurements/<probe>.txt` (D35, 2026-08-12):
+  stable filename per probe so a re-measurement is a `git diff`, header
+  records date / repo commit / libpcre2 version / gcc version. Reports are
+  review evidence, never an oracle — no check reads them.
+
 Maintenance: update this file when scripts are added/removed or change role.

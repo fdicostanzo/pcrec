@@ -36,6 +36,11 @@ Process and status documents for pcrec. The architecture itself lives in
   before any section.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
+- `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
+  stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
+  output with a source-information header (date, repo commit, libpcre2 and
+  gcc versions), written by `scripts/measure.sh`. Evidence for reviews,
+  never an oracle — no check reads them. See the directory's own CLAUDE.md.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
   Open at R11 close: K2 (cosmetic), K7 (a resource bug that also ABORTS the

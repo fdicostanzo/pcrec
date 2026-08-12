@@ -15,6 +15,11 @@ Build any of them:
 (`TMPDIR` matters on the project box — /tmp is a quota'd tmpfs. libpcre2 is
 runtime-only here: no header, no -dev link, hence the dlopen shim.)
 
+Since D35 (2026-08-12) a probe's full OUTPUT is archived as a diffable,
+source-stamped report via `scripts/measure.sh <probe>` →
+`docs/measurements/<probe>.txt` — regenerated deliberately (probe edit,
+oracle version bump, review needing evidence), never read by any check.
+
 ## Files
 
 - `probe_qe.c` — the §13 lexical-mode evidence (`\Q\E` quantifier binding,

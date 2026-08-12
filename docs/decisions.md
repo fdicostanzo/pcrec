@@ -3239,3 +3239,32 @@ is withdrawn), and §14.2's digit rule fell to the bucket it had not probed
 five decisions R14 left for Frank (migration order, whether `may` survives,
 where `quantifiable`/`captures` live, K13-fix sequencing, the bound-mode
 document's scope). The rulings above stand except where §18 reopens them.
+
+## D35 — 2026-08-12 — probe OUTPUT reports are archived as stable-named, diffable evidence files (docs/measurements/), never as oracles
+
+**Decision (Frank, thirteenth session).** The full output of a
+`tests/probes/` measurement run is archived in `docs/measurements/<probe>.txt`
+via `scripts/measure.sh <probe>`, with a header recording the run's date,
+repo commit, libpcre2 package version, and gcc version. The filename is
+STABLE per probe rather than dated, so a re-measurement lands as a `git
+diff` against the previous report — "what changed" is one command, which is
+the point (Frank: "useful to see changes specifically so we know quickly
+what changed. record source information obviously like version").
+
+**Why.** Probe sources were always committed for reproducibility, but raw
+outputs were session-scratch: R18 NOTED that MOD-0.4's 602-comparison
+byte-identity sweep survives only as prose in the review file, and a future
+libpcre2 upgrade makes any past run unreproducible — the pre-bump evidence
+would exist nowhere. An archived report closes that at the cost of one file
+per probe.
+
+**The boundary that keeps this from becoming the stale-record failure:** a
+report is EVIDENCE for reviews and design notes, never an oracle — no check
+may read these files (the live re-measured checks in tests/registry/ remain
+the strong form). Regeneration is DELIBERATE (probe change, oracle version
+bump per D26's addendum, or a review needing current evidence), and the
+diff is committed with a note on what moved.
+
+**Revisit-when:** a report's diff ever becomes load-bearing in a check, or
+the directory grows enough that nobody reads diffs — either is the signal
+the convention has drifted from evidence into oracle or noise.
