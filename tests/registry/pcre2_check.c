@@ -378,8 +378,17 @@ static void check_rows(void)
 
 /* ---- part 3: the verb NAME differential -------------------------------- */
 
-/* What libpcre2's answer OBLIGES pcrec to say. Total: every error code lands in
- * exactly one bucket, so there is no exclusion list and nothing is skipped.
+/* What libpcre2's answer OBLIGES pcrec to say. Total: every error code lands
+ * in exactly one bucket. ONE exclusion exists on top of that, added
+ * 2026-08-12 for K15 (docs/known_issues.md): a verb name over the
+ * 128-code-unit cap made entirely of non-identifier bytes gets pcrec's
+ * "too long" message (its own extent scan hits the cap before it ever
+ * compares the run to a table entry) while libpcre2, whose scan stops at
+ * the first non-alnum/`_` byte, answers "not recognized" (160) about the
+ * short prefix it actually read. Ruled an acceptable tier-2 divergence
+ * (D26) by Frank, 2026-08-12 — see `k15_excluded()` below, which states
+ * the exclusion's exact scope: the category comparison for that one cell
+ * only, not a skip of the bucket, the candidate, or the form.
  *
  * TWO STRENGTHS OF OBLIGATION, and keeping them apart is the point (R8/C1-F2).
  * For 160, 195, 166 and 109 libpcre2 supplies an IDENTITY — it is saying which
@@ -405,6 +414,8 @@ static void check_rows(void)
  * the only check of that, exactly as they are for every other doorway. */
 enum { OBL_MODULE, OBL_EXACT };
 
+#define K15_TOO_LONG_MSG "subpattern name is too long (maximum 128 code units)"
+
 static int required_answer(int rc, const char **want)
 {
     switch (rc) {
@@ -412,8 +423,7 @@ static int required_answer(int rc, const char **want)
     case 195: *want = "(*alpha_assertion) not recognized";            return OBL_EXACT;
     case 166: *want = "(*MARK) must have an argument";                return OBL_EXACT;
     case 109: *want = "quantifier does not follow a repeatable item"; return OBL_EXACT;
-    case 148: *want = "subpattern name is too long (maximum 128 code units)";
-                                                                      return OBL_EXACT;
+    case 148: *want = K15_TOO_LONG_MSG;                                return OBL_EXACT;
     default:  *want = "a rejection naming a module (\"... requires module '...'\")";
               return OBL_MODULE;
     }
@@ -424,6 +434,35 @@ static int names_a_module(const char *msg)
 {
     const char *p = strstr(msg, "requires module '");
     return p && strchr(p + 17, '\'') != NULL;
+}
+
+/* K15 (docs/known_issues.md), ruled ACCEPTABLE tier-2 (D26) by Frank,
+ * 2026-08-12. The cell: libpcre2 answers 160 ("not recognized or
+ * malformed") because its own name scan stopped at the first
+ * non-alnum/`_` byte and the short prefix it extracted matches no table
+ * entry; pcrec's extent scan (scans.c) does not stop there — it reads
+ * every byte up to `)` `:` `=` EOF — so once that run is over the
+ * 128-code-unit cap pcrec answers "too long" before it ever compares the
+ * run to a table entry at all. Both are honest refusals of a name that
+ * can never match a real verb; only the REFUSAL CATEGORY differs, so
+ * D26 places it at tier 2 (wording/category for a construct that is
+ * refused either way), not tier 1.
+ *
+ * Deliberately narrow, matching the ruling exactly:
+ *   - fires ONLY when libpcre2 said 160 AND the candidate is over the
+ *     128-code-unit cap AND pcrec's message is the too-long text — the
+ *     one cell the ruling names;
+ *   - under-cap non-identifier runs are NOT excluded (K15's own control:
+ *     both engines already agree there — pcrec's extent scan reads the
+ *     whole under-cap run, fails the table lookup, and also says "not
+ *     recognized") — those stay routed through the normal strcmp above;
+ *   - over-cap IDENTIFIER runs are NOT excluded either: libpcre2 enforces
+ *     the same 128-unit cap on identifier names (rc 148), and that
+ *     bucket's text matches pcrec's exactly, so it was never a mismatch
+ *     and never reaches this function. */
+static int k15_excluded(const char *nm, int rc, const char *cmsg)
+{
+    return rc == 160 && strlen(nm) > 128 && strcmp(cmsg, K15_TOO_LONG_MSG) == 0;
 }
 
 /* K14 (MOD-0.1): for a name pcrec's tables mark ROADMAP_NEVER, the owed
@@ -666,17 +705,37 @@ static void pool_from_bytes(void)
  * The library pool cannot supply these — nothing inside libpcre2 is a 129-byte
  * run of one letter — so a length rule is invisible to sources 1 and 2 no matter
  * how large the cap is. Both cases, because the two name tables reach the limit
- * separately. */
+ * separately.
+ *
+ * NON-IDENTIFIER fillers, at the same 126-130 boundary (K15,
+ * docs/known_issues.md). Until this row every over-cap candidate was built
+ * from repeated 'A'/'a' — pure identifiers — so the cell "long AND
+ * non-identifier" was structurally unreachable: libpcre2's own name scan
+ * stops at the first non-alnum/`_` byte, so a non-identifier run only
+ * disagrees with pcrec's extent scan (which swallows everything up to `)`
+ * `:` `=` EOF) once the run is ALSO long enough to cross the 128-byte cap.
+ * Three filler bytes: space (the K15 repro byte), `*` (a byte that is
+ * itself construct-shaped), and 0x80 (a high byte, so the boundary is
+ * checked outside the printable range too). */
+static const char NS_FILL[] = {' ', '*', (char)0x80};
+
 static void pool_from_lengths(void)
 {
     static const int LENS[] = {1, 2, 3, 30, 31, 32, 63, 64, 65,
                                126, 127, 128, 129, 130, 200, 256};
+    static const int NI_LENS[] = {126, 127, 128, 129, 130};
     char buf[300];
     ns_current_src = NS_BYTE;
     for (size_t i = 0; i < sizeof LENS / sizeof LENS[0]; i++) {
         int n = LENS[i];
         memset(buf, 'A', (size_t)n); ns_add(buf, (size_t)n);
         memset(buf, 'a', (size_t)n); ns_add(buf, (size_t)n);
+    }
+    for (size_t i = 0; i < sizeof NI_LENS / sizeof NI_LENS[0]; i++) {
+        int n = NI_LENS[i];
+        for (size_t f = 0; f < sizeof NS_FILL / sizeof NS_FILL[0]; f++) {
+            memset(buf, NS_FILL[f], (size_t)n); ns_add(buf, (size_t)n);
+        }
     }
 }
 
@@ -727,6 +786,7 @@ static void check_verb_names(void)
     size_t nforms = sizeof FORMS / sizeof FORMS[0];
     unsigned long probes = 0, mismatches = 0;
     unsigned long buckets[7] = {0};   /* accept, 160, 195, 166, 109, defer, 148 */
+    unsigned long k15_cells = 0;
     int reported = 0;
 
     for (unsigned h = 0; h < NAMESET_CAP; h++) {
@@ -760,6 +820,10 @@ static void check_verb_names(void)
                         "%d (%s), so pcrec owed %s", pat, rc, pmsg, want);
                 continue;
             }
+            if (k15_excluded(nm, rc, cmsg)) {
+                k15_cells++;
+                continue;
+            }
             int nev = obl != OBL_EXACT && verb_probe_is_never(pat);
             if (nev)
                 want = "a refusal stating the construct is outside pcrec's scope (ROADMAP_NEVER, K14)";
@@ -774,6 +838,26 @@ static void check_verb_names(void)
             }
         }
     }
+
+    /* The exclusion above must actually FIRE, or it is a dead branch that
+     * reads as coverage (this file's own recurring lesson — see the PC-3
+     * README's "a conformance test that cannot fail is worse than none").
+     * If this ever goes to zero because the hostile-alphabet pool
+     * regressed, or because SR-6's real verb handler changed the extent
+     * scan and closed K15 outright, that is news: either fix the pool or
+     * delete k15_excluded() and update docs/known_issues.md K15 in the
+     * same commit. */
+    if (k15_cells == 0)
+        bad("the K15 exclusion never fired (0 cells) — either the "
+            "hostile-alphabet pool in pool_from_lengths regressed, or K15's "
+            "divergence has closed. Investigate before trusting this run; a "
+            "silent zero here is exactly the sweep-narrows-to-nothing "
+            "failure this file warns about elsewhere.");
+    else
+        ok("K15 exclusion: fired on the over-cap non-identifier cell "
+           "and nowhere else (see docs/known_issues.md K15)");
+    printf("  K15 cells excluded (over-cap non-identifier verb names, "
+           "category divergence ruled acceptable): %lu\n", k15_cells);
 
     printf("  verb names probed: %u candidates x %zu forms = %lu probes\n",
            ns_count, nforms, probes);
@@ -1393,7 +1477,12 @@ static void check_posix_names(void)
            "binary or the byte sweep, %lu from mutations of pcrec's table), "
            "%lu libpcre2 does not have\n",
            probed, real, real_ext, real_mut, unknown);
-    expect_probes("POSIX class names", probed, 149774);
+    /* 149774 -> 149804 (2026-08-12): K15's hostile-alphabet row added 15
+     * non-identifier names to the shared source-4 pool this check also
+     * draws on (5 lengths x 3 fillers), each probed here in both the bare
+     * and negated ("^") forms — +30, mechanical, not a new divergence
+     * (`every name deferred or refused as libpcre2 does` still holds). */
+    expect_probes("POSIX class names", probed, 149804);
     if (!wrong) ok("POSIX class names: every name deferred or refused as libpcre2 does");
 
     /* Liveness, both directions. A pool that produced no real name would make

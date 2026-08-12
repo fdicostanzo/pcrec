@@ -284,9 +284,26 @@ single home is invisible, because the wrongness is what both sides read.
 4. **The verb NAME differential**, and this is the part that scales. Candidate
    names are generated from **libpcre2's own shared object** — its compiled-in
    name tables, read via `dlinfo`, expanded to every prefix and suffix — plus
-   single-character mutations of the names pcrec claims, plus all 255 bytes.
-   ~75,000 candidates in 11 forms, ~823,000 probes, about 3 seconds. libpcre2's
-   verdict on each decides what pcrec owes.
+   single-character mutations of the names pcrec claims, plus all 255 bytes,
+   plus LENGTHS straddling the 126-130 boundary. ~75,000 candidates in 11
+   forms, ~823,000 probes, about 3 seconds. libpcre2's verdict on each decides
+   what pcrec owes.
+
+   **`pool_from_lengths`'s alphabet is not just `A`/`a` any more** (K15,
+   2026-08-12, docs/known_issues.md): the same 126-130 lengths are also
+   generated from three non-identifier filler bytes (space, `*`, 0x80), so
+   the "long AND non-identifier" cell — invisible to identifier-only
+   lengths — is finally reachable. It diverges from libpcre2: pcrec's extent
+   scan hits the 128-code-unit cap before comparing the run to a table
+   entry ("too long"), libpcre2's scan stops at the first non-alnum/`_`
+   byte and answers "not recognized" about the short prefix. Ruled an
+   acceptable tier-2 divergence under D26 (Frank, 2026-08-12) and given
+   **this file's one exclusion**, `k15_excluded()`, scoped to exactly that
+   cell — everything else in this differential, including the same
+   non-identifier fillers UNDER the cap and identifier runs OVER it, is
+   still compared with no exclusion and still agrees. See
+   docs/known_issues.md K15 and docs/pcre2_compliance.md's Backtracking
+   control verbs section.
 
 The prefix/suffix expansion is not decoration: `ANYCRLF`, `CRLF` and `LF` are
 real PCRE2 option names that appear in the binary only INSIDE `BSR_ANYCRLF`, so
@@ -413,6 +430,7 @@ claimed; the last seven are Q2/SR-9's.
 | `(?+N` back to 'modifiers' | 1 (+1 reject) |
 | one Q2 completion replaced by a duplicate of another (probe COUNT unchanged) | 1 (the set checksum) |
 | **longest-tail-wins -> first-tail-wins in `pcrec_registry_find`** | **3** (+1 reject) — see below |
+| `k15_excluded()` neutered (`return 0`) (K15, 2026-08-12) | **21** (20 capped verb-differential mismatches + the exclusion's own liveness check, which fires on the same zero) |
 
 **The tail-precedence sabotage found a real hole and is the one to read**
 (historical since MOD-0.2 — the engine it sabotaged is deleted and
