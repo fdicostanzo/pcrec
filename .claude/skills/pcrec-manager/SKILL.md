@@ -83,6 +83,18 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   before battery runs that archive HEAD. A worker going idle uncommitted is
   recoverable — the landing bar travels with the brief, so you can finish
   the landing yourself.
+- **Briefs tell workers to run long validation ASYNCHRONOUSLY** (Frank,
+  2026-08-12 fourteenth session): `make test`, mech, and battery-length
+  runs go in a background task with output to a log, polled via the
+  artifact (log tail; mech's `== mech run COMPLETE` trailer) — never as a
+  blocking foreground call. A lane blocked in a foreground run is
+  unreachable and indistinguishable from dead (the manager has now made
+  BOTH wrong calls: waited on a finished run believed alive, and started
+  finishing a live lane's landing believed dead), and mid-wait is where
+  every lane death to date has happened. Async keeps the lane responsive
+  to messages while the run executes. Before finishing an "idle" lane's
+  landing, check the worktree for fresh mtimes AND send a status message
+  first; only take over on silence or an explicit handback.
 
 ## 4. Review their work
 

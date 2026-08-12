@@ -82,6 +82,11 @@ tier, and PCRE2 is a moving target with no specification.
   main session diffs the cell back into the worktree for review-then-merge.
   Briefs keep the disclosure requirement for the residual spawn-time
   injections (session-root CLAUDE.md, memory index).
+  **Subagents run long validation (make test, mech, batteries)
+  ASYNCHRONOUSLY** (Frank, 2026-08-12): background task + poll the output
+  artifact (log tail; mech's completion trailer) — never a blocking
+  foreground call, which leaves the agent unreachable for its whole
+  duration and is where every lane death to date has occurred.
 - **Some tests are written from the GOAL, by an author denied `src/` and
   `tests/`** (D27). The panel reviews the implementation; a spec-first writer
   tests the promise. Measured on 2026-08-10: it found a tier-1 miscompile that
