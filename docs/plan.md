@@ -20,6 +20,16 @@ Rules: update the STATE tag in place when a step changes state; expand a milesto
 into substeps only when work on it begins (replace its single `[Mx.0]` line);
 note blockers inline after the title with `(blocked: reason)`.
 
+## Queue discipline (Frank, 2026-08-12)
+
+**The BOONIES TIER sits well after the general work.** [M4-CALLOUTS],
+[M4-SUBST], [V-E], [V-F], [SR-10] and their kin are PARKING SPOTS, not queue
+positions: recorded so nothing is re-derived, started only after the spine —
+M3 streaming, M4 captures + backtracking VM engine, M5 UTF-8, M6 feature
+modules, M7 differential fuzzing — is done, unless Frank explicitly pulls
+one forward. A boonies row growing substeps while spine rows sit not-started
+is the smell this note exists to stop.
+
 ## M0 — Scaffold & process
 
 - [M0.1] STATE:completed — directory layout, GNU Makefile
