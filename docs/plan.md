@@ -1111,11 +1111,38 @@ Then DOC-1, then PC-4 when module `classes` lands.
   method, rebuilt from the journal — scratchpad is ephemeral); (b) under
   `--features classes`: PC-4 zero divergences + corpus green; (c) full
   battery + strict; (d) journal, wake brief, per-dir CLAUDE.mds
-- [MOD-0.4] STATE:not-started — module `verbs`, the MIGRATION TEST: existing,
+- [MOD-0.4] STATE:started 2026-08-12 (twelfth session) — module `verbs`, the MIGRATION TEST: existing,
   measured code rather than greenfield. Four answers drawn from its own tables,
   the VF_* form bits, the at-start position rule, and a blame offset that is not
   the doorway's default (`(*)` blames the `*`). If the signature survives this
   it survives
+- [MOD-0.4a] STATE:started 2026-08-12 — scope + design note. Scope rulings
+  (main session): PURE MIGRATION, no verb produces — the parse.c doorway-3
+  wall stays; NO new probe harness (PC-3's check_verb_names IS the live
+  measurement record, re-taken every make test — a frozen probe_verb.c
+  would be a second copy of a measurement that already re-runs; decision
+  recorded here rather than silently). Design note (impl lane, reviewed by
+  main before code): how pcrec_ext_verb's four table-drawn answers, the
+  VF_* form computation, VF_ATSTART (at == 0), and the star = at+1 blame
+  offset map onto the mod_modifiers.c seam (recognise pointer / pointer
+  identity / port field), preserving the accessor signatures PC-3 and
+  --list-verbs consume
+- [MOD-0.4b] STATE:not-started — the MOVE, byte-identity bar (worktree lane
+  impl-mod04): pcrec_ext_verb + verb_upper/verb_lower + accessors ->
+  src/parse/mod_verbs.c with their measured-grammar comments
+  (probes-and-code-together, R8/C2-9's counter-example); RK_VERB row stays
+  ONE row in registry.c (D29's shape question answered the same way: the
+  per-name machinery already lives on VerbName, K14's ruling); existing
+  check surfaces (registry_check, PC-3, reject pins, --list-verbs,
+  --probe-ask) move/pass IN THE SAME CHANGE; byte-identity differential vs
+  the pre-move build over the verb surface, zero diffs
+- [MOD-0.4c] STATE:not-started — NEW guards for the moved surface: mech
+  sabotage rows for whatever the migration makes newly-plausible to break
+  (candidates from the move itself: blame-offset regression, table-order/
+  case-dispatch swap, at-start check drop), failing direction measured
+  against the unpinned tree first (R17's method)
+- [MOD-0.4d] STATE:not-started — close: D6 panel (checks + engine + docs
+  lenses) on the migration, journal, wake
 - [MOD-0.5] STATE:completed 2026-08-12 (eleventh session, opened and closed
   in one session: gate a7b835c -> close after R17; three parallel subagent
   lanes + the main session; every slice battery-green at its landing) —
