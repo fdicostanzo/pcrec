@@ -122,6 +122,22 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   both sides, both-construct pairs, the step-3-beats-step-4 cells, the
   non-certified `\p` boundary, the bracket doorway's low side, non-range
   dashes and truncations. The oracle behind the K12 pins in tests/reject/.
+- `probe_uprops.c` — MOD-0.6 phase-1 design probes (2026-08-12, module
+  `unicode-props`): the three-answers inventory for `\p{Foo}` (options=0
+  vs `PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL`, its bit established
+  BEHAVIOURALLY — no `pcre2.h` on this box); a full 256-byte sweep of the
+  byte after `\p`/`\P` showing there is NO decline-shaped tail (every byte
+  lands on {COMPILES, ERR 146 malformed, ERR 147 unknown property}); the
+  single-letter short-name census (case-insensitive, only C L M N P S Z);
+  the insignificant-byte census (space/hyphen/underscore/tab/case, all
+  insignificant, verified semantically); the streaming proof (a
+  1-significant-char body padded past 100,000 insignificant bytes still
+  compiles) and the exact 48/49 significant-character boundary, located
+  both in a bare run and in a padded one to show the blame offset tracks
+  significant-character count, not total body length; the in-class and
+  endpoint-shape cells including the K10 oracle (`[\N{U+41}]` is ERR 193
+  in every class position). The evidence behind
+  docs/design_notes_mod06.md.
 
 ## The method these encode (R14's closing lesson)
 
