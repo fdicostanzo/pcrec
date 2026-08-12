@@ -81,7 +81,23 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   census (a no-x control column removes the quantifier false positives):
   {09,0A,0B,0C,0D,20,85} — 0x85 NEL is skipped, so x-mode's skip set is
   NOT \s's set (census 6).
-- `probe_mod03.c` — MOD-0.3a scope probes (2026-08-12): `[[:^alpha:]]` is
+- `probe_mod05c.c` — MOD-0.5c port-implementation corners (2026-08-12):
+  set/unset masks collect over the whole run and UNSET WINS regardless of
+  order ((?i-i)/(?-ii) both case-sensitive); doubled-x is
+  ADJACENCY-sensitive ((?xsx) and (?xaDx) are level 1); `-x` clears BOTH
+  levels; `^` then adjacent xx is level 2; and the landing-round cells: a
+  later bare (?x) DOWNGRADES an earlier xx with the (?xx)(?s) control
+  keeping it — the per-char level-assignment rule in pcrec_modport_optrun.
+- `probe_mod05d.c` — MOD-0.5d lexer-boundary cells (2026-08-12):
+  quantifiers and lazy markers bind ACROSS skips ((?x)a + and (?x)a + ?);
+  `#`-comments end at 0x0A ONLY (0x0D and the skipped 0x85 do NOT — the
+  NEWLINE convention, not the skip set); the `(?` run is lexically tight
+  (( ?i) is the 109 shape); newline-in-brace defeats quantifier-hood under
+  x; xx deletion precedes the negation check ([ ^a] negates), range
+  parsing ([a\t-\tz] ranges), and the dash-vs-literal lookahead; POSIX
+  bracket names read raw; the \t ESCAPE survives deletion (the corpus
+  transcription defect's oracle). The evidence behind parse.c's
+  xskip/cls_skip/cls_peek_past_dash.
   REAL with census identical to `[^[:alpha:]]` (204 members, 0/256 diff);
   `[[:^foo:]]`/`[[:^<:]]` err 130; `[[:<:]]`/`[[:>:]]` compile as zero-width
   word-boundary assertions (match spans recorded); `(?[[a]])` COMPILES under
