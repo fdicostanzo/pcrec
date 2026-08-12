@@ -1,0 +1,90 @@
+# tests/modifiers/reset.rxt — module `modifiers` (MOD-0.5c): the `(?^)`
+# construct, per the MEASURED rule in docs/plan.md [MOD-0.5a] ruling 3 and
+# tests/probes/probe_mod05b.c's "== (?^) reset scope per letter ==" block:
+# `(?^)` resets i, m, n, s, x, xx to their HARDWIRED DEFAULTS (reset-to-
+# constant, not reset-to-compile-option — the load-bearing PARSE-1 landmine)
+# and does NOT touch U or J, both probed surviving.
+#
+# ORACLE: python `re` has no `(?^)` syntax at all (unknown extension, any
+# position) — EVERY block here is `# pcre2-only`. Expectations are the
+# match spans measured directly from tests/probes/probe_mod05b.c's own
+# "(?^) reset scope per letter" cells (2026-08-12, libpcre2 10.46).
+#
+# THE J CELL IS DELIBERATELY A `perr`, NOT A MATCH/NOMATCH PIN: the
+# SEMANTICS — J survives `(?^)`, i.e. `(?J)(?^)(?<g>a)(?<g>b)` still
+# COMPILES and matches "ab" [0,2) — are measured against live libpcre2
+# 10.46 in tests/probes/probe_mod05b.c's "(?^) reset scope per letter"
+# block ("J survives ^"), but pinning that measurement as a corpus MATCH
+# case needs `(?<name>...)` from module `named-groups`, which this
+# milestone does not land. No block in this file may depend on a module
+# MOD-0.5 doesn't ship, so instead this pins what IS true under `features
+# modifiers` ALONE, in both epochs: the pattern refuses to compile, first
+# because `modifiers` itself has no producer yet (today), and — once
+# MOD-0.5c lands and J's own semantics are produced — because `(?<g>...)`
+# then hits the `named-groups` doorway instead (verified: with
+# `--features modifiers` given today, `(?J)(?^)(?<g>a)(?<g>b)` already
+# refuses with "requires module 'modifiers'"; the SAME exit status is what
+# every later epoch produces too, just for the later, correct reason —
+# `perr` cannot distinguish the two, which is exactly why this is stable
+# across the boundary this file's other blocks are not). Add the real
+# match-span pin for J-survives-^ to a future corpus once `named-groups`
+# has a producer; until then probe_mod05b.c is the only place that
+# semantics is checked.
+#
+# THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary via
+#   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/reset.rxt
+# 8 cases: 7 fail with "requires module 'modifiers'" (measured 2026-08-12).
+# The J cell's `perr` already PASSES today (see above — it is satisfied by
+# today's blanket gate refusal, same as the reasoning in
+# malformed_and_gate.rxt) and stays passing straight through MOD-0.5c.
+
+# ---- i is reset by (?^) --------------------------------------------------
+
+# pcre2-only
+pattern (?i)a(?^)a
+features modifiers
+m "Aa" 0 2
+n "AA"
+
+# ---- U SURVIVES (?^) — the measured exception ----------------------------
+
+# pcre2-only
+pattern (?U)(?^)a+
+features modifiers
+m "aaa" 0 1
+
+# ---- J survives (?^) semantically (probe_mod05b.c), but that needs
+# named-groups to PIN as a match case (see header) — pin only what's true
+# under `features modifiers` alone: still refuses, stably, in both epochs.
+
+pattern (?J)(?^)(?<g>a)(?<g>b)
+features modifiers
+perr
+
+# ---- s is reset by (?^) ---------------------------------------------------
+
+# pcre2-only
+pattern (?s)(?^).
+features modifiers
+n "\n"
+
+# ---- n is reset by (?^): plain (...) captures again -----------------------
+
+# pcre2-only
+pattern (?n)(?^)(a)
+features modifiers
+m "a" 0 1
+
+# ---- x is reset by (?^): whitespace no longer skipped ---------------------
+
+# pcre2-only
+pattern (?xx)(?^)a b
+features modifiers
+n "ab"
+
+# ---- xx is reset by (?^): class interior no longer touched ----------------
+
+# pcre2-only
+pattern (?xx)(?^)[a b]
+features modifiers
+m " " 0 1

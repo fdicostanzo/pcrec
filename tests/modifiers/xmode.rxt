@@ -1,0 +1,69 @@
+# tests/modifiers/xmode.rxt — module `modifiers` (MOD-0.5c/d): single `x`
+# (extended mode) OUTSIDE character classes, per [MOD-0.5a] ruling 4's
+# measured skip set and tests/probes/probe_mod05.c/probe_mod05b.c's
+# controlled census. This file is deliberately narrow: it exercises the
+# LEXER-VISIBLE behaviour (whitespace skipped, `#`-comments to end of line,
+# escaped whitespace stays literal, class interiors untouched by single
+# `x`) with representative subjects, NOT the full byte census — that
+# census lives in the probes (tests/probes/probe_mod05b.c's controlled
+# result: skip set {09,0A,0B,0C,0D,20,85}, NOT \s's set — 0x85 NEL is
+# skipped and \s does not contain it) and is design evidence, not a
+# per-byte corpus.
+#
+# ORACLE: every block here is python-VERIFIABLE. Python's `re.X` (verbose)
+# mode happens to agree with libpcre2/pcrec on these specific cells:
+# whitespace-skip outside classes, `#`-comment-to-newline, escaped-space-
+# stays-literal, and "single x never touches class interiors" are all
+# shared behaviour (python's own verbose-mode docs make the same class-
+# interior exception) — confirmed directly against python3 `re` for the
+# exact subjects used below. (Python's whitespace set differs at the
+# margins — no NEL — but none of these subjects probe that margin; the
+# byte-exact skip census is the probes' job, not this file's.)
+#
+# FORMAT LIMITATION: the `.rxt` format is strictly line-oriented with ZERO
+# escaping in the `pattern` line (docs/testing.md: "no quoting, no escaping
+# — write the pattern exactly as PCRE would see it"), so a pattern cannot
+# contain a literal embedded newline BYTE. That means the "comment runs to
+# the next newline, then a real atom resumes" cell (tests/probes/
+# probe_mod05.c's `(?x)a#c\nb` — an actual LF inside the C string literal)
+# cannot be written here at all; the probe is the only place that measures
+# it. What CAN be written and is below is the weaker-but-real cell "a
+# comment consumes everything to the end of the PATTERN, with no trailing
+# atom" — it still confirms `#` opens a comment, just not the newline-stop
+# specifically.
+#
+# THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary via
+#   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/xmode.rxt
+# every block's pcrec compile fails with "requires module 'modifiers'" —
+# 7 cases, 0 passed, 4 distinct pattern-compile failures (measured
+# 2026-08-12; `(?x)` is not wired to a lexer yet — that is slice 3,
+# [MOD-0.5d]).
+
+# ---- whitespace skipped outside classes -----------------------------------
+
+pattern (?x)a b
+features modifiers
+m "ab" 0 2
+n "a b"
+
+# ---- escaped whitespace stays literal --------------------------------------
+
+pattern (?x)a\ b
+features modifiers
+m "a b" 0 3
+n "ab"
+
+# ---- #-comment consumes to end of pattern (the newline-stop cell is not
+# expressible in this line-oriented format — see the FORMAT LIMITATION note
+# above; it is measured instead in tests/probes/probe_mod05.c) -------------
+
+pattern (?x)ab#trailing comment
+features modifiers
+m "ab" 0 2
+
+# ---- single x NEVER touches class interiors: the space stays a member -----
+
+pattern (?x)[a b]
+features modifiers
+m " " 0 1
+m "a" 0 1

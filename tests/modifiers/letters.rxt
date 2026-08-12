@@ -1,0 +1,60 @@
+# tests/modifiers/letters.rxt — module `modifiers` (MOD-0.5c): the cheap
+# per-letter semantics measured at [MOD-0.5a] ruling 1 — `s` (dot's set
+# grows from 255 to 256 members), `U` (greed swap at quantifier
+# construction, BOTH directions), and `n` (capturing-`(` hook consults
+# state; plain `(...)` stops capturing, and a backreference to a
+# never-captured group is a compile error). `m` and `J` are NOT here: per
+# ruling 2 they are per-letter REFUSALS (`m` -> module 'assertions', `J` ->
+# module 'named-groups') — see tests/modifiers/malformed_and_gate.rxt.
+#
+# ORACLE SPLIT: `(?s)` at pattern position 0 is valid python syntax
+# (DOTALL is one of python's supported inline letters) and python-verified.
+# `U` and `n` are not python flag letters AT ALL — `re.compile("(?U)...")`
+# and `re.compile("(?n)...")` raise "unknown extension" regardless of
+# position, in agreement with pcrec's REFUSAL reason if run gate-off, but
+# here (with `features modifiers` enabled and the construct meant to
+# COMPILE and MATCH) python simply cannot express these two letters, so
+# every U/n match/nomatch block is `# pcre2-only`, measured against live
+# libpcre2 10.46 (tests/probes/probe_mod05.c's "candidate cheap semantics"
+# block, cross-checked with a throwaway scratchpad extension for the
+# specific subjects used here).
+#
+# THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary via
+#   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/letters.rxt
+# 6 cases total, 4 fail with "requires module 'modifiers'" (measured
+# 2026-08-12). The other 2 already PASS today for reasons unrelated to the
+# module: `pattern a.b` needs no `features` line at all (base grammar, not
+# gated), and `(?n)(a)\1`'s `perr` is satisfied by today's blanket gate
+# refusal just as well as by the eventual real diagnostic.
+
+# ---- (?s): dot matches newline; plain dot does not -----------------------
+
+pattern (?s)a.b
+features modifiers
+m "a\nb" 0 3
+
+pattern a.b
+n "a\nb"
+
+# ---- (?U): greed swap, BOTH directions ------------------------------------
+
+# pcre2-only
+pattern (?U)a+
+features modifiers
+m "aaa" 0 1
+
+# pcre2-only
+pattern (?U)a+?
+features modifiers
+m "aaa" 0 3
+
+# ---- (?n): plain (...) stops capturing; \1 to it is a compile error ------
+
+# pcre2-only
+pattern (?n)(a)
+features modifiers
+m "a" 0 1
+
+pattern (?n)(a)\1
+features modifiers
+perr

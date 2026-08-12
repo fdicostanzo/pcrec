@@ -1,0 +1,82 @@
+# tests/modifiers/scope.rxt — module `modifiers` (MOD-0.5c): where a global
+# `(?i)`/`(?-i)` setting starts and stops applying, per the MOD-0.5a design
+# gate (docs/plan.md [MOD-0.5a] ruling 1: "Ctx modifier state ... saved/
+# restored where `caseless` already is"; PARSE-1's 17/17 smoke cells).
+#
+# Every block carries `features modifiers`: these constructs REFUSE without
+# it (default empty enabled set) — that refusal is pinned separately in
+# tests/modifiers/malformed_and_gate.rxt and belongs primarily to
+# tests/reject/ (the module-name check tests/modifiers/*.rxt cannot make,
+# since a `perr` block asserts only THAT a pattern rejects, never WHY).
+#
+# ORACLE SPLIT: `(?i)pat` at pattern position 0 and `(?i:...)` scoped-group
+# form are valid python syntax and python-verified as usual. Every other
+# block here places `(?i)`/`(?-i)` somewhere other than byte offset 0 of the
+# whole pattern (inside a group, after a literal, in a second alternation
+# branch) — python 3.11+ raises "global flags not at the start of the
+# expression" for a GLOBAL (unscoped) inline flag anywhere but position 0,
+# and has no unscoped `(?-i)` form at all ("missing :" — it requires
+# `(?-i:...)`). Those blocks carry `# pcre2-only`; their match spans were
+# measured against live libpcre2 10.46 with a throwaway oracle patterned on
+# tests/probes/probe_mod05.c (kept in-session scratchpad, not committed —
+# see the corpus05 worktree report for the transcript).
+#
+# THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary (vocabulary
+# exists, `modifiers` has no producer) via
+#   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/scope.rxt
+# every block's pcrec compile fails with "requires module 'modifiers'" —
+# 13 cases, 0 passed, 7 distinct pattern-compile failures (measured
+# 2026-08-12, before MOD-0.5b/c land). Re-run that command against any
+# binary suspected of losing the wiring.
+
+# ---- (?i) from its position; (?i:...) scoped, restored after the group ---
+
+pattern (?i)ab
+features modifiers
+m "AB" 0 2
+m "Ab" 0 2
+
+pattern (?i:a)b
+features modifiers
+m "Ab" 0 2
+n "AB"
+
+# ---- (?i) applies FROM its position, not retroactively (PARSE-1) --------
+
+# pcre2-only
+pattern x(?i)ab
+features modifiers
+m "xAB" 0 3
+n "XAB"
+
+# ---- (?-i) unsets mid-pattern -------------------------------------------
+
+# pcre2-only
+pattern (?i)a(?-i)b
+features modifiers
+n "AB"
+m "Ab" 0 2
+
+# ---- (?i) inside a group is restored at THAT group's close --------------
+
+# pcre2-only
+pattern (a(?i)b)c
+features modifiers
+n "abC"
+m "abc" 0 3
+
+# pcre2-only
+pattern (a(?i)b)C
+features modifiers
+m "abC" 0 3
+
+# ---- (?i) set in one alternation branch leaks across SIBLING branches ---
+# within the same enclosing group (the measured PARSE-1 semantics: option
+# state is scoped to the GROUP, not the branch, so branch 2 ("c") inherits
+# whatever branch 1 left set before the group's close restores it).
+
+# pcre2-only
+pattern (a(?i)b|c)d
+features modifiers
+m "Cd" 0 2
+m "cd" 0 2
