@@ -43,8 +43,14 @@ runtime-only here: no header, no -dev link, hence the dlopen shim.)
   first run and confirmed exactly (10/6/63/3/5; 62/52/128/2/33/10/94/26/
   95/32/6/26/63/22; 1). Asserts the COMPLEMENT LAW (negation = exact
   256-bit complement) for every pair before emitting, which is why only
-  positive tables exist to drift. registry_check ties each bare-escape
-  SET port's census to the class_expect column; PC-4 re-measures live.
+  positive tables exist to drift. Since the R16 follow-up it ALSO emits
+  pcrec_cls_posix_map — the name->bits PAIRING as part of the same
+  measured artifact, so the R16 lower/upper swap is no longer writable as
+  a plausible source line (mod_classes.c walks the generated map; a
+  registry_check tie holds the map's name set equal to posix_names[]'s
+  producible names, both directions, sabotage-validated). registry_check
+  ties each bare-escape SET port's census to the class_expect column;
+  PC-4 re-measures live.
 - `probe_ci_posix.c` — MOD-0.3c: the caseless×posix cells behind
   tests/classes/classes.rxt's `flags i` posix blocks — /[[:lower:]]/i
   matches 'A', /[[:^lower:]]/i matches neither case but matches '0',

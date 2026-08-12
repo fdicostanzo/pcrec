@@ -1219,6 +1219,40 @@ static void check_class_ports(void)
         }
     }
 
+    /* The generated posix map vs posix_names[] (R16 follow-up): the map's
+     * name set must be EXACTLY the producible posix names — every
+     * non-assertion name in posix_names[] present once, no extras. The
+     * PAIRING inside the map is generated with the tables (same probe
+     * run); this ties the two name LISTS, which have different owners
+     * (PC-3 measures posix_names; the probe generates the map). */
+    {
+        size_t nn = 0;
+        const PosixName *pn = pcrec_registry_posix_names(&nn);
+        for (size_t i = 0; i < nn; i++) {
+            if (pn[i].whole_class_only) continue;
+            int hits = 0;
+            for (size_t j = 0; j < pcrec_cls_posix_map_n; j++)
+                if (strcmp(pcrec_cls_posix_map[j].name, pn[i].name) == 0)
+                    hits++;
+            if (hits != 1) {
+                bad("class ports: posix name '%s' appears %d times in the "
+                    "generated map (exactly 1 required) — regenerate "
+                    "cls_bits.inc with probe_cls_bits --emit",
+                    pn[i].name, hits);
+                bads++;
+            }
+        }
+        int producible = 0;
+        for (size_t i = 0; i < nn; i++)
+            if (!pn[i].whole_class_only) producible++;
+        if ((size_t)producible != pcrec_cls_posix_map_n) {
+            bad("class ports: generated map has %zu names, posix_names[] "
+                "has %d producible — a name exists in one list only",
+                pcrec_cls_posix_map_n, producible);
+            bads++;
+        }
+    }
+
     if (scalar != 5 || set != 10 || fn != 9 || aports != 11)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "

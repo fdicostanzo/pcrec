@@ -40,15 +40,15 @@
 ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from)
 {
-    static const struct { const char *name; const unsigned char *bits; } map[] = {
-        { "alnum", pcrec_cls_px_alnum }, { "alpha", pcrec_cls_px_alpha },
-        { "ascii", pcrec_cls_px_ascii }, { "blank", pcrec_cls_px_blank },
-        { "cntrl", pcrec_cls_px_cntrl }, { "digit", pcrec_cls_px_digit },
-        { "graph", pcrec_cls_px_graph }, { "lower", pcrec_cls_px_lower },
-        { "print", pcrec_cls_px_print }, { "punct", pcrec_cls_px_punct },
-        { "space", pcrec_cls_px_space }, { "upper", pcrec_cls_px_upper },
-        { "word",  pcrec_cls_px_word  }, { "xdigit", pcrec_cls_px_xdigit },
-    };
+    /* The hand-written name->bits map that stood here is GONE (R16
+     * follow-up, Frank): the pairing now comes out of cls_bits.inc as
+     * pcrec_cls_posix_map, emitted by the same probe run that measured
+     * the tables — so the R16 lower/upper swap is no longer writable as
+     * a plausible source line, only as an edit to a generated artifact.
+     * The name LIST still has its two legitimate other homes with
+     * different questions: posix_names[] (existence + attribution, the
+     * PC-3-measured facts) and the probe's ents[] (the generator);
+     * registry_check ties the map's name set to posix_names[]. */
 
     size_t close_at = from;
     if (!pcrec_class_delim_extent_scan(cx->pat, cx->patlen, rw->sel, from,
@@ -65,13 +65,14 @@ ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
     bool neg = len > 0 && name[0] == '^';
     if (neg) { name++; len--; }
 
-    for (size_t i = 0; i < sizeof map / sizeof map[0]; i++) {
-        if (strlen(map[i].name) != len ||
-            memcmp(map[i].name, name, len) != 0)
+    for (size_t i = 0; i < pcrec_cls_posix_map_n; i++) {
+        if (strlen(pcrec_cls_posix_map[i].name) != len ||
+            memcmp(pcrec_cls_posix_map[i].name, name, len) != 0)
             continue;
         ExtResult res = { .what = EXT_MEMBERS, .at = at, .msg = "",
                           .answered_at = want };
-        res.node = pcrec_ast_class_from_bits(cx, map[i].bits, neg);
+        res.node = pcrec_ast_class_from_bits(cx, pcrec_cls_posix_map[i].bits,
+                                             neg);
         res.end  = close_at + 2;   /* past the closing ":]" */
         return res;
     }

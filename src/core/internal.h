@@ -621,6 +621,21 @@ extern const unsigned char pcrec_cls_digit_esc[32], pcrec_cls_space_esc[32],
     pcrec_cls_px_graph[32], pcrec_cls_px_lower[32], pcrec_cls_px_print[32],
     pcrec_cls_px_punct[32], pcrec_cls_px_space[32], pcrec_cls_px_upper[32],
     pcrec_cls_px_word[32],  pcrec_cls_px_xdigit[32];
+/* The GENERATED name->bits map for the POSIX named classes: emitted by
+ * probe_cls_bits.c --emit as part of cls_bits.inc, so the PAIRING of a
+ * name to its table is the same artifact as the measurement that produced
+ * the table — never a hand-written line (R16's lower/upper swap lived in
+ * exactly such a line; this deletes the species). posix_names[] in
+ * registry.c stays the separate home of EXISTENCE and ATTRIBUTION (does
+ * PCRE2 have the name; whose module is it), which PC-3 measures — two
+ * different questions, two homes, one check tying their name sets. */
+typedef struct {
+    const char          *name;
+    const unsigned char *bits;
+} PcrecClsNamed;
+extern const PcrecClsNamed pcrec_cls_posix_map[];
+extern const size_t        pcrec_cls_posix_map_n;
+
 /* The POSIX named-class producer (the `:` row's PORT_FN). */
 ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from);

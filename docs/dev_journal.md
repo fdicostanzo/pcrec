@@ -6425,3 +6425,26 @@ stays byte-wise UTF-8 forever — code points exist only at regex-compile
 time inside the CharSet, which is where the convert-to-UTF-32 instinct
 belongs. Invalid-UTF semantics to be measured against
 PCRE2_MATCH_INVALID_UTF. Details and owners in the DD-12 plan entry.
+
+**R16 follow-up (Frank spotted the replication): the posix name->bits map
+is generated, not hand-paired.** mod_classes.c's hand-written map[] was
+the exact species of line the R16 lower/upper swap exploited; the pairing
+now comes out of probe_cls_bits --emit as pcrec_cls_posix_map, part of the
+same measured artifact as the tables, and mod_classes.c walks it. The name
+LIST keeps its two legitimate other homes (different questions:
+posix_names[] = existence + attribution, PC-3-measured; the probe's ents[]
+= the generator), and registry_check now ties the map's name set to
+posix_names[]'s producible names both directions — sabotage-validated
+(deleting the graph entry from a scratch .inc fires both clauses).
+
+**Session-close discussion 3 (Frank): subroutine calls by INSTANTIATION,
+recorded as the third companion note beside backrefs/atomic in plan.md.**
+The composition is the insight: PCRE2 subroutine calls are documented
+implicitly atomic, so the AOT compile is inline-the-body PLUS the cut
+operator from the atomic note — the two notes share the hazard (naive
+determinization) and the cure (priority-first-accept). Engine boundary =
+call-graph acyclicity at compile time; cycles ((?R)) are honestly
+context-free and stay VM; (?(DEFINE)) is a macro library begging for
+instantiation. Two measure-first obligations recorded: probe the
+atomicity claim (documentation is a claim, not a fact here) and the
+capture-restore wrinkle that returns when the VM grows captures.

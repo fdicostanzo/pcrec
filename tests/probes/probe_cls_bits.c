@@ -123,6 +123,22 @@ int main(int argc, char **argv)
                    ents[i].cname, np, nn, comp ? "HOLDS" : "VIOLATED");
         }
     }
+    if (emit && !bad) {
+        /* THE NAME->BITS MAP, emitted WITH the tables (R16 follow-up,
+         * Frank): the pairing is part of the measurement, so a swapped
+         * pair cannot be written by hand in a plausible source line —
+         * only by editing this generated artifact. Names are the px_
+         * entries' own labels; the esc tables need no map (registry rows
+         * reference their symbols directly). */
+        printf("\nconst PcrecClsNamed pcrec_cls_posix_map[] = {\n");
+        for (size_t i = 0; i < sizeof ents / sizeof ents[0]; i++) {
+            if (strncmp(ents[i].cname, "px_", 3) != 0) continue;
+            printf("    { \"%s\", pcrec_cls_%s },\n",
+                   ents[i].cname + 3, ents[i].cname);
+        }
+        printf("};\nconst size_t pcrec_cls_posix_map_n =\n"
+               "    sizeof pcrec_cls_posix_map / sizeof pcrec_cls_posix_map[0];\n");
+    }
     if (!emit) printf("bad=%d\n", bad);
     return bad ? 1 : 0;
 }

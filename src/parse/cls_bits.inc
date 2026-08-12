@@ -124,3 +124,22 @@ const unsigned char pcrec_cls_px_xdigit[32] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 }; /* 22 members; complement = 234 */
+
+const PcrecClsNamed pcrec_cls_posix_map[] = {
+    { "alnum", pcrec_cls_px_alnum },
+    { "alpha", pcrec_cls_px_alpha },
+    { "ascii", pcrec_cls_px_ascii },
+    { "blank", pcrec_cls_px_blank },
+    { "cntrl", pcrec_cls_px_cntrl },
+    { "digit", pcrec_cls_px_digit },
+    { "graph", pcrec_cls_px_graph },
+    { "lower", pcrec_cls_px_lower },
+    { "print", pcrec_cls_px_print },
+    { "punct", pcrec_cls_px_punct },
+    { "space", pcrec_cls_px_space },
+    { "upper", pcrec_cls_px_upper },
+    { "word", pcrec_cls_px_word },
+    { "xdigit", pcrec_cls_px_xdigit },
+};
+const size_t pcrec_cls_posix_map_n =
+    sizeof pcrec_cls_posix_map / sizeof pcrec_cls_posix_map[0];
