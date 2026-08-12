@@ -21,9 +21,13 @@ this directory's, since a `.rxt` `perr` block cannot assert WHY).
   applying: from-position, unset mid-pattern, group-close restore, and the
   measured PARSE-1 sibling-alternation-branch leak.
 - **reset.rxt** — the `(?^)` rule: resets i/m/n/s/x/xx to hardwired
-  defaults, does NOT touch U or J. The J cell is a forward pin needing
-  `named-groups` too — see its in-file note before reading it as a
-  regression.
+  defaults, does NOT touch U or J. The J cell is a `perr` (not a match
+  pin): the survives-`(?^)` semantics are measured in
+  tests/probes/probe_mod05b.c, but pinning them as a corpus match case
+  needs `named-groups` too, which this milestone does not land — no block
+  in this directory may depend on a module MOD-0.5 doesn't ship. The perr
+  pins what IS true under `features modifiers` alone (stably refuses, in
+  both today's and MOD-0.5c's epoch, for two different real reasons).
 - **letters.rxt** — `(?s)` dotall, `(?U)` greed swap (both directions),
   `(?n)` no-auto-capture plus the backreference-to-uncaptured-group error.
 - **xmode.rxt** — single `x`: whitespace skip outside classes, `#`-comment,
@@ -59,15 +63,15 @@ reproducible measurement).
 
 Each file's header carries its own measured pass/fail split against the
 [MOD-0.5a]-gate binary (vocabulary landed, `modifiers` has no producer).
-Whole-directory total: 56 cases, 15 PASS today (11 in
-`malformed_and_gate.rxt`'s already-correct gate pins, plus 4 control/
-coincidental-agreement cells scattered through the others), 41 FAIL with
-"requires module 'modifiers'" — measured 2026-08-12 via
-`PCREC=<binary> bash tests/harness/run.sh tests/modifiers`, before
+Whole-directory total: 56 cases, 16 PASS today (11 in
+`malformed_and_gate.rxt`'s already-correct gate pins, reset.rxt's J-cell
+`perr`, plus 4 control/coincidental-agreement cells scattered through the
+others), 40 FAIL with "requires module 'modifiers'" — measured 2026-08-12
+via `PCREC=<binary> bash tests/harness/run.sh tests/modifiers`, before
 MOD-0.5b/c land. Re-run per file with the same command pointed at one
 `.rxt` path. (Separately, `python3 tests/harness/verify_rxt.py
-tests/modifiers` reports its own PASS=25/25 — that is the ORACLE
-cross-check on the 25 non-`# pcre2-only` cases, a different axis from the
+tests/modifiers` reports its own PASS=26/26 — that is the ORACLE
+cross-check on the 26 non-`# pcre2-only` cases, a different axis from the
 pcrec-binary pass/fail count above; do not conflate the two.)
 
 Maintenance: add blocks when the module's producing scope grows (M5's

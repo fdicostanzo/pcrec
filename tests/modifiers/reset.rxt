@@ -8,23 +8,35 @@
 # ORACLE: python `re` has no `(?^)` syntax at all (unknown extension, any
 # position) — EVERY block here is `# pcre2-only`. Expectations are the
 # match spans measured directly from tests/probes/probe_mod05b.c's own
-# "(?^) reset scope per letter" cells (2026-08-12, libpcre2 10.46), plus one
-# additional cell (the J-survives compile+match) measured the same way with
-# a throwaway extension of that probe (scratchpad, not committed).
+# "(?^) reset scope per letter" cells (2026-08-12, libpcre2 10.46).
 #
-# THE J CELL IS A FORWARD PIN, NOT A §9.3 near-term flip: it needs BOTH
-# `modifiers` (this module, for J/^) AND `named-groups` (for `(?<name>...)`)
-# to have PRODUCERS before it can compile at all. It will stay a
-# pattern-compile failure through MOD-0.5's close and only turn green once
-# `named-groups` lands too — flagged here so a future reader does not read
-# it going green at MOD-0.5c as a sign something else broke, or read it
-# staying red past MOD-0.5c as a regression.
+# THE J CELL IS DELIBERATELY A `perr`, NOT A MATCH/NOMATCH PIN: the
+# SEMANTICS — J survives `(?^)`, i.e. `(?J)(?^)(?<g>a)(?<g>b)` still
+# COMPILES and matches "ab" [0,2) — are measured against live libpcre2
+# 10.46 in tests/probes/probe_mod05b.c's "(?^) reset scope per letter"
+# block ("J survives ^"), but pinning that measurement as a corpus MATCH
+# case needs `(?<name>...)` from module `named-groups`, which this
+# milestone does not land. No block in this file may depend on a module
+# MOD-0.5 doesn't ship, so instead this pins what IS true under `features
+# modifiers` ALONE, in both epochs: the pattern refuses to compile, first
+# because `modifiers` itself has no producer yet (today), and — once
+# MOD-0.5c lands and J's own semantics are produced — because `(?<g>...)`
+# then hits the `named-groups` doorway instead (verified: with
+# `--features modifiers` given today, `(?J)(?^)(?<g>a)(?<g>b)` already
+# refuses with "requires module 'modifiers'"; the SAME exit status is what
+# every later epoch produces too, just for the later, correct reason —
+# `perr` cannot distinguish the two, which is exactly why this is stable
+# across the boundary this file's other blocks are not). Add the real
+# match-span pin for J-survives-^ to a future corpus once `named-groups`
+# has a producer; until then probe_mod05b.c is the only place that
+# semantics is checked.
 #
 # THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary via
 #   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/reset.rxt
-# every block's pcrec compile fails with "requires module 'modifiers'" —
-# 8 cases, 0 passed, 7 distinct pattern-compile failures (measured
-# 2026-08-12).
+# 8 cases: 7 fail with "requires module 'modifiers'" (measured 2026-08-12).
+# The J cell's `perr` already PASSES today (see above — it is satisfied by
+# today's blanket gate refusal, same as the reasoning in
+# malformed_and_gate.rxt) and stays passing straight through MOD-0.5c.
 
 # ---- i is reset by (?^) --------------------------------------------------
 
@@ -41,12 +53,13 @@ pattern (?U)(?^)a+
 features modifiers
 m "aaa" 0 1
 
-# ---- J SURVIVES (?^) — forward pin, needs named-groups too (see header) --
+# ---- J survives (?^) semantically (probe_mod05b.c), but that needs
+# named-groups to PIN as a match case (see header) — pin only what's true
+# under `features modifiers` alone: still refuses, stably, in both epochs.
 
-# pcre2-only
 pattern (?J)(?^)(?<g>a)(?<g>b)
-features modifiers,named-groups
-m "ab" 0 2
+features modifiers
+perr
 
 # ---- s is reset by (?^) ---------------------------------------------------
 

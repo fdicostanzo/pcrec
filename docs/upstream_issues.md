@@ -157,3 +157,47 @@ exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
   `# pcre2-only` blocks in tests/base/class_escape_fallbacks.rxt (their
   oracle is the probe run against libpcre2 directly). The octal cells
   (`[\1]`, `[\12]`, `[\377]`, `[\400]` error) python agrees on and verifies.
+
+## U8 — python `re`: `(?xx)` has no class-interior byte deletion (PCRE2: `xx` deletes SPACE/TAB before range-parsing)
+
+- **Status**: divergence-by-design (python's flag-letter parser treats a
+  repeated `x` as ordinary verbose mode, duplicated and harmless — python
+  has no concept of a SECOND, stricter extended mode at all; PCRE2 10.43+
+  gives `xx` a distinct, documented meaning: inside a character class it
+  additionally deletes SPACE and TAB bytes from the class body BEFORE
+  range-parsing, which plain `x`/python verbose mode never does).
+- **Found**: 2026-08-12, authoring tests/modifiers/xxmode.rxt for module
+  `modifiers` (MOD-0.5c corpus half), while deciding which blocks needed
+  `# pcre2-only` — checked directly against python3 `re` rather than
+  assumed.
+- **Repro**: `python3 -c "import re; re.compile('(?xx)[a- ]')"` →
+  `re.error: bad character range a-  at position 6` (python parses the
+  class body `a- ` unchanged and rejects the descending range a→SPACE);
+  libpcre2 10.46 (measured via tests/probes/probe_mod05.c and a throwaway
+  scratchpad extension of it, `pcre2_abi.h`-based) COMPILES the identical
+  pattern, because `xx` deletes the SPACE from the class body first,
+  leaving `[a-]` — members `{a, -}`, dash literal at the end, no range at
+  all. This is the D30 §7 hazard docs/plan.md's [MOD-0.5] step names
+  directly (R10/C2-11: `[a- ]` is PCRE2 error 108 at options=0, `(?xx)[a-
+  ]` compiles at the exact class-range-endpoint spot `3fca0d8` (SPEC-FA)
+  had fixed as a silent-wrong-matcher one commit before the panel that
+  found it).
+- **Isolation**: the divergence is specifically the CLASS-INTERIOR
+  deletion, not `xx` generally — OUTSIDE a class the two engines agree:
+  `(?xx)a b` matches `"ab"` [0,2) in both python and libpcre2, because
+  python's verbose mode and PCRE2's `x`/`xx` share the same
+  outside-class whitespace-skip behaviour (python simply never
+  distinguishes `x` from `xx` there). The mirrored hazard cells also
+  disagree the same way: `(?xx)[a-\ ]` (escaped space, still significant)
+  and `(?xx)[\ -a]` (range SP..a) and tab deletion in `(?xx)[a\tb]` all
+  compile differently or identically depending on whether the engine
+  implements the class-interior deletion at all.
+- **Impact**: python cannot oracle ANY of the class-interior `xx` cells →
+  tests/modifiers/xxmode.rxt is entirely `# pcre2-only` (every block, not
+  just the discriminating one — the file's own header cites this entry).
+  Expectations there are measured against live libpcre2 10.46 with a
+  throwaway scratchpad oracle patterned on tests/probes/probe_mod05.c and
+  probe_mod05b.c (not committed; those two probes remain the canonical,
+  reproducible measurement of the hazard). Outside-class `x`/`xx` lexing
+  (tests/modifiers/xmode.rxt) stays python-verified as usual, since that
+  half is where the two engines actually agree.

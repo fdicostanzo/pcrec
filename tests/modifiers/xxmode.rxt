@@ -16,11 +16,12 @@
 # NOT delete anything, so `(?xx)[a- ]` is a python compile ERROR ("bad
 # character range a- ") where libpcre2/pcrec's xx COMPILES it — the two
 # engines answer DIFFERENTLY on the discriminating cell, confirmed
-# directly (scratchpad check against python3 `re` 2026-08-12). Every
-# expectation below is measured against live libpcre2 10.46 instead
-# (tests/probes/probe_mod05.c's "verdicts: x vs xx at the class boundary"
-# and "matches: x/xx lexing" blocks, cross-checked with a throwaway
-# scratchpad extension for the specific match spans used here).
+# directly (scratchpad check against python3 `re` 2026-08-12) and recorded
+# as docs/upstream_issues.md U8. Every expectation below is measured
+# against live libpcre2 10.46 instead (tests/probes/probe_mod05.c's
+# "verdicts: x vs xx at the class boundary" and "matches: x/xx lexing"
+# blocks, cross-checked with a throwaway scratchpad extension for the
+# specific match spans used here).
 #
 # THE D33 §9.3 RECORD: run against the MOD-0.5a-gate binary via
 #   PCREC=<binary> bash tests/harness/run.sh tests/modifiers/xxmode.rxt
