@@ -663,7 +663,11 @@ echo "== (*...) verbs, option settings and script runs =="
 reject '(*MARKx)'    "(*VERB) not recognized or malformed"
 reject '(*NOTAVERB)' "(*VERB) not recognized or malformed"
 reject '(*ACCPET)'   "(*VERB) not recognized or malformed"
-reject '(*)'         "quantifier does not follow a repeatable item"
+# Offset pinned too (MOD-0.4c), matching the brace-quantifier family's own
+# convention (R7, below): the empty-name branch blames `star` (the '*', one
+# past `at`), not the doorway's own default `at` (the '('), and a message-only
+# check cannot tell those apart — both produce this exact sentence.
+reject '(*)'         "quantifier does not follow a repeatable item (pattern offset 1)"
 # The lower table: PCRE2 picks it by the case of the first byte and says
 # something different. `(*accept)` is not `(*ACCEPT)` misspelt — it is a lookup
 # in a table that has no ACCEPT.
