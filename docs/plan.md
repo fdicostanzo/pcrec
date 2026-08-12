@@ -1804,6 +1804,34 @@ document). Mechanize instead.
   HEAD` tree per sabotage and its replace.py refuses to continue unless the
   target text was found exactly N times and actually changed. — a pristine-sabotage-tree helper. The contaminated 132/200 figure came from a hand-rolled copy+sed+`git checkout` loop where the revert silently failed (`|| true` inside a tarball copy that is not a git repo) so sabotage 2 landed on top of sabotage 1. One helper that makes a fresh tree per sabotage, asserts the target text was found and changed, and refuses to continue otherwise. Subsumed by MECH-1 if that lands first
 - [MECH-3] STATE:not-started — a measurement wrapper that refuses to emit a number without provenance: interleaved A/B, N trials, load before AND after (R3.10), min/median/max spread, and a stamped record. Every performance overclaim this project has made — the 27%-recorded-as-+40%, this session's 1.5-4.1% deltas taken at load 4.5-9.7 — would have been blocked at the point of measurement rather than caught in review. Frank's precedent: a claude-safe grep that refuses `| tail` and reports what it actually looked at
+- [TT-1] STATE:not-started — TIERED TESTING (Frank, 2026-08-12: suite crept
+  15min → 5min parallelized → growing again, and we only ever ADD tests;
+  "spot check the relevant test sections while we work then hit the full
+  load at evaluation"; CI DEFERRED, NOT REJECTED — Frank clarified same
+  session: he likes CI, but "it's a bunch of trouble and i want to stay
+  nimble as long as we can" — revisit CI when a red lands on main that the
+  local pre-push discipline should have caught, or when a second regular
+  contributor appears). Scheduled next session WITH [SAN-1], because
+  the tier design must also place the sanitizer stages. Principles pinned
+  now so the fast path never quietly becomes the only path:
+  (1) `make test` NEVER WEAKENS — it stays the full suite and a green
+  `make test` keeps meaning the complete claim; tiers are new names, not a
+  redefinition. (2) SECTION TARGETS — `make test-corpus`, `test-cli`,
+  `test-reject`, `test-registry` (PC-3 included), `test-codegen`,
+  `test-spec`, `test-thread`, `test-parse` — thin make wrappers over the
+  suite scripts that already run standalone, plus a TOUCHED-PATH → SECTIONS
+  table in docs/testing.md (src/parse/* → reject+registry+spec+cli;
+  src/gen/*+src/opt/* → corpus+codegen+trie+bench; tests/mech/* → mech;
+  refine from measurement). (3) `make smoke` — a MEASURED <60s inner-loop
+  subset, contents documented and floored so it cannot silently shrink,
+  chosen from per-section runtime numbers recorded in testing.md, never
+  vibes. (4) FULL LOAD AT EVALUATION POINTS — the wake §3 battery stays
+  the merge/close standard; plus an OPT-IN local pre-push hook
+  (scripts/hooks/pre-push running `make test`, installed only by an
+  explicit `make hooks` — never auto-installed, no CI, D2's
+  plain-make-for-strangers holds). (5) Every tier boundary NUMBER-BACKED:
+  per-section runtimes measured at setup and re-recorded when any section
+  doubles — that re-record trigger is the row's revisit-when
 
 ## Post-M2 follow-ups (from checkpoint review R3, docs/reviews/2026-08-09-m2-close.md)
 
