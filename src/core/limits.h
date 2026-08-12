@@ -98,7 +98,22 @@ enum {
      * is a tier-4 construct reproduced to a tier-1 standard — exactly the
      * over-investment D26 exists to stop. It stays because it is already built
      * and passing, not because it earned its keep. */
-    PCREC_VERB_LIMIT_ACC_MAX = 429496728
+    PCREC_VERB_LIMIT_ACC_MAX = 429496728,
+
+    /* `\p{...}`/`\P{...}` property names. libpcre2 10.46 normalises the
+     * body WHILE SCANNING (space/tab/hyphen/underscore insignificant, ASCII
+     * case folded) and counts only SIGNIFICANT characters: 48 compiles or
+     * refuses as an unknown name (error 147); 49 is "malformed \P or \p
+     * sequence" (error 146), blamed at the scan position immediately after
+     * the 49th significant character — NOT at the end of the body, which is
+     * how tests/probes/probe_uprops.c proved the count is of significant
+     * characters rather than of total body bytes (a body padded with
+     * insignificant filler past 100,000 bytes still compiles when it has
+     * one significant character). R10 disposition 5 named 48 before this was
+     * measured; the probe confirmed it exactly, so this is not a corrected
+     * number, only a verified one. Not a contract pcrec owes — an artifact
+     * of libpcre2's own build, MOD-0.6's `mod_uprops.c`. */
+    PCREC_UPROP_NAME_MAX = 48
 };
 
 #endif /* PCREC_LIMITS_H */

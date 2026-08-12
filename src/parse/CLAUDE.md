@@ -137,6 +137,43 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   clause probe-cited in the port's comment. The x/xx CONSUMER (skip set,
   comments, class-interior deletion) lives in parse.c's lexer helpers
   (MOD-0.5d): `xskip`, `cls_skip`, `cls_peek_past_dash`
+- **mod_uprops.c** — module `unicode-props` (MOD-0.6 phase 2): the `\p`/`\P`
+  doorway's BODY SCANNER, NO PRODUCER (nothing that refuses today may start
+  compiling — Frank's ruling). Measured against libpcre2 10.46
+  (tests/probes/probe_uprops.c, a full 256-byte tail sweep): `\p`/`\P` have
+  NO decline-shaped tail at all — every byte lands on {COMPILES, PCRE2 err
+  146 malformed, err 147 unknown-name} — so the row's `recognise` field
+  answering "always" (a MARKER, `pcrec_registry_uprops_recognise`,
+  mirroring `pcrec_registry_option_run_recognise`'s pointer-identity shape)
+  is the permanently correct answer, not a Q2-shaped over-promise. `\p`/`\P`
+  stay longhand rows in registry.c for that one field; ext.c keys off the
+  marker's pointer identity and calls `pcrec_modport_uprops` DIRECTLY
+  (bypassing `aport`/`cport`, which stay `NO_PORT` — no producer this
+  phase), REFINING the refusal into the measured malformed(146)-vs-
+  unknown-name(147) split with a load-bearing OFFSET (the S27 lesson) —
+  where the pre-existing generic fallback gave one text at the backslash's
+  offset for every tail. The STREAMING NORMALISATION ALGORITHM (normalise
+  while scanning, insignificant space/tab/hyphen/underscore, ASCII case
+  folded, a leading `^` consumed once and excluded from the count) stops at
+  `PCREC_UPROP_NAME_MAX` (48, `src/core/limits.h`'s PCRE2 INTERNALS
+  section) SIGNIFICANT characters — confirmed, not merely assumed, by
+  locating the blame offset TWICE (a bare run and one padded with
+  insignificant filler between every character) and finding it tracks
+  significant-character count, never total body length. The SHORT-NAME
+  TABLE (`C L M N P S Z`, case-insensitive, 14 of the 52 possible letters)
+  is HAND-WRITTEN rather than generated from a libpcre2 census — a manager
+  ruling (2026-08-12 phase-2 authorization), overriding this module's own
+  design note: a table generated from
+  libpcre2 and checked by a PC-3 differential against the SAME libpcre2
+  install is one source wearing two hats, this project's recurring
+  check-design failure. Used ONLY where pcrec's table is EXHAUSTIVE for the
+  axis (a single significant character, no `=`); a multi-character or
+  `Script=`/`sc=`-shaped body promises the module WITHOUT any lookup, so
+  pcrec's own "not recognised" wording is never a claim about PCRE2's
+  opinion, only about pcrec's own (partial, stated) vocabulary. `\N{U+`'s
+  own K10 fix (registry.c's flag removal) is a SEPARATE change and landed
+  first — see registry.c's own comment on that row and
+  tests/registry/CLAUDE.md's `check_class_syntax_reach` entry
 - **syntax_dump.c** — rendering the registry as text (SR-3): `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
   `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,

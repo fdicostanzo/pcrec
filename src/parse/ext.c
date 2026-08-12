@@ -168,6 +168,19 @@ ExtResult pcrec_ext_escape(Ctx *cx, ExtWant want, int c, bool in_class,
     if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL)
         BAD_ROW(at, "an escape");
 
+    /* MOD-0.6 phase 2: \p/\P get a REFINED refusal (a malformed-vs-
+     * unknown-name split with a load-bearing offset, measured against
+     * libpcre2 — tests/probes/probe_uprops.c) instead of falling through to
+     * the generic module-refusal text below. Keyed off POINTER IDENTITY on
+     * `recognise`, mirroring GROUP_OPT's `pcrec_registry_option_run_recognise`
+     * marker (mod_modifiers.c) rather than a hardcoded `c == 'p'` special
+     * case, so the connection lives in the registry row, not here.
+     * Position-invariant on purpose (mod_uprops.c's own header): still
+     * ALWAYS refuses — no aport/cport wiring this phase (D33 §9.3's "nothing
+     * that refuses today may start COMPILING"). */
+    if (r->recognise == pcrec_registry_uprops_recognise)
+        return pcrec_modport_uprops(cx, r, want, at, cx->pos);
+
     /* PCRE2 forbids some of these INSIDE a class and always will, so naming a
      * module there is the over-promise D26 calls a defect: module `assertions`
      * will implement `\A`, and will never implement `\A`-in-a-class, because

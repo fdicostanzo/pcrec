@@ -363,8 +363,23 @@ ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start 
 ESC_CLASS_SCALAR('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k'),
 ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g'),
 
-ESC('p', "\\p{L}", unicode_props, ANY_ENGINE, "a character with the given Unicode property", QF_YES, "set 117"),
-ESC('P', "\\P{L}", unicode_props, ANY_ENGINE, "a character without the given Unicode property", QF_YES, "set 139"),
+/* MOD-0.6 phase 2: longhand rather than the ESC macro, for exactly one
+ * reason — `recognise` carries `pcrec_registry_uprops_recognise`, a MARKER
+ * (mod_uprops.c) ext.c keys off by pointer identity to hand off to the
+ * body scanner instead of the generic RD_MODULE fallback text. Every other
+ * field is unchanged from what ESC(...) would have built: both rows are
+ * alone in their (RK_ESC, sel) bucket (no arbitration to affect), `flags`
+ * stays 0 (neither is RF_CLASS_INVALID — [\p{L}]/[\P{L}] compile as sets,
+ * measured, tests/probes/probe_uprops.c), and `aport`/`cport` stay NO_PORT
+ * (no producer this phase — docs/design_notes_mod06.md §6). */
+{RK_ESC, 'p', NULL, "\\p{L}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "a character with the given Unicode property", ROADMAP_PLANNED, QF_YES, "set 117",
+ 0, pcrec_registry_uprops_recognise, NO_PORT, NO_PORT},
+{RK_ESC, 'P', NULL, "\\P{L}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "a character without the given Unicode property", ROADMAP_PLANNED, QF_YES, "set 139",
+ 0, pcrec_registry_uprops_recognise, NO_PORT, NO_PORT},
 
 ESC_LEXICAL('Q', "\\Q", quoting, ANY_ENGINE, "begin literal quoting, until \\E", "err 106"),
 ESC_LEXICAL('E', "\\E", quoting, ANY_ENGINE, "end literal quoting begun by \\Q", "err 106"),

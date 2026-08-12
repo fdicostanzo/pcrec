@@ -810,6 +810,18 @@ static void check_table_to_parser(void)
              * PCRE2's own refusal, and PCRE2 does not vary it by position. */
             snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);
             expect_msg(label, pat, r->msg);
+        } else if (r->recognise == pcrec_registry_uprops_recognise) {
+            /* MOD-0.6: mod_uprops.c's refusal is POSITION-INVARIANT by
+             * design (D26 tier 3 is free wording; same shape as an
+             * RD_FIXED row's "PCRE2 does not vary it by position" above,
+             * chosen deliberately rather than carrying the generic
+             * "in a class requires module" phrasing). `want` still holds
+             * esc_atom_msg's result from the top of this loop iteration —
+             * the atom and class messages are the SAME text by
+             * construction, so reusing it here is the assertion, not a
+             * convenience. */
+            snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row (position-invariant)", r->syntax);
+            expect_msg(label, pat, want);
         } else {
             snprintf(want, sizeof want, "\\%c in a class requires module '%s'", r->sel, r->module);
             snprintf(label, sizeof label, "esc %s: in-class diagnostic matches the row", r->syntax);

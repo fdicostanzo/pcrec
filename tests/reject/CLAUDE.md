@@ -6,10 +6,13 @@ nothing checked that, and the gap was not hypothetical — see below.
 
 ## Files
 
-- **run_reject_tests.sh** — 275 rows asserted by hand (moved 268→275 at
-  MOD-0.6's K10 slice: the seven `[\N{U+41}]`-shaped in-class cells, offset-
-  pinned, the first hand-written coverage that row ever had) (naming a
-  module, or the
+- **run_reject_tests.sh** — 296 rows asserted by hand (moved 268→275 at
+  MOD-0.6's K10 slice: the seven `[\N{U+41}]`-shaped in-class cells,
+  offset-pinned, the first hand-written coverage that row ever had;
+  275→296 at MOD-0.6's mod_uprops.c slice: the full malformed-vs-
+  unknown-name `\p`/`\P` taxonomy, offset-pinned, plus two pre-existing
+  K12 endpoint pins re-pinned to the new position-invariant wording)
+  (naming a module, or the
   base-grammar brace errors K5/K6/K8 and FIX-3's in-class octal ceiling, or
   since Q1 the verb doorway's four
   outcomes, or since Q2 the `(?` doorway's module names and its refusals, or

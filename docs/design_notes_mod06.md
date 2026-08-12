@@ -575,3 +575,27 @@ already use, with blocks carrying `features unicode-props`.
    until a later slice — the same "known-but-unimplemented, a complete and
    tested outcome" shape SR-1 already establishes for NULL handlers
    generally.
+
+---
+
+## 8. PHASE-2 AMENDMENTS (manager, at slice-2 landing, 2026-08-12)
+
+1. **§7's three questions were RULED at the phase-2 authorization** (manager
+   rulings, flagged to Frank): (1) generic in-class text acceptable, D26
+   tier 3; (2) the short-name table is HAND-WRITTEN, not generated — a table
+   generated from a libpcre2 census and checked by a differential against
+   the same libpcre2 is one source wearing two hats; the PC-3 name axis
+   sweeps all 52 letters as the independent drift guard; (3) confirmed,
+   with the wording constraint that pcrec's "not recognised" claim speaks
+   only for pcrec's own (partial, stated) vocabulary — `=`-shaped bodies
+   promise the module with NO lookup.
+2. **DEVIATION from §5's reject-pin table, recorded**: the table predicted
+   `[0-\p{L}]` would flip to PCRE2's own range error (endpoint rule
+   overriding, SET-certified). The landed behaviour KEEPS the module
+   promise (now in the position-invariant wording, offset-pinned):
+   SET-certifying a body-dependent row requires the table lookup to certify
+   shape, which is producer-adjacent machinery — out of scope while
+   aport/cport stay NO_PORT, and K12's "pinned, deliberate boundary" for
+   body-dependent rows therefore SURVIVES this milestone. The certified
+   endpoint override moves to the producer milestone with the rest of the
+   port wiring. `[0-\p{Foo}]` and `[\p{L}-z]` land the same way.

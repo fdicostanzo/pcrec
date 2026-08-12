@@ -870,6 +870,29 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
 ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from);
 
+/* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
+ * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
+ * split between "malformed shape" and "well-formed, unrecognised name" —
+ * see the file's own header for the full account, docs/design_notes_mod06.md
+ * for the design, and D33 §9's obligation this discharges (an EXT_* outcome
+ * exists here only in the sense that the refusal text/offset changed;
+ * SCALAR/MEMBERS/NODE remain unreachable for this module until a producer
+ * lands, exactly as MOD-0.3b's own comment on ExtWhat describes). */
+/* The `\p`/`\P` rows' `recognise` field — a MARKER, not the check itself
+ * (mirrors pcrec_registry_option_run_recognise): both rows are alone in
+ * their bucket, so this always answers true, identically to the tail-less
+ * default. Its only purpose is POINTER IDENTITY: ext.c keys off
+ * `r->recognise == pcrec_registry_uprops_recognise` to hand off to
+ * pcrec_modport_uprops instead of the generic RD_MODULE fallback text. */
+bool pcrec_registry_uprops_recognise(const char *at, size_t avail,
+                                     const char *tail);
+/* The \p/\P body scanner (see mod_uprops.c's header for the full algorithm
+ * and its measured basis). Called DIRECTLY from pcrec_ext_escape — not
+ * through r->aport/r->cport, which stay NO_PORT on both rows this phase —
+ * keyed on the recogniser marker above. Always returns EXT_REFUSAL. */
+ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
+
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *
  * The other three doorways are decided by a BYTE and a RegRow can carry the
