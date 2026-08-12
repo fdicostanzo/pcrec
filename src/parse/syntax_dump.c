@@ -314,6 +314,138 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours)
     return sb_take(&sb);
 }
 
+/* ---- THE ROUTER: text -> ONE doorway call (MOD-0.1 slice 8; extracted at
+ *      MOD-0.7 slice 1) --------------------------------------------------
+ *
+ * Locate the construct: the FIRST byte that opens a doorway, found by a
+ * bytewise scan, never a parse. Ten registry rows carry a plain-group prefix
+ * in their syntax (`(a)(?-1)` — the probe must COMPILE in PCRE2, and a bare
+ * `(?-1)` does not), and parse.c reaches their doorway with the cursor deep
+ * in the pattern; the scan reproduces that placement and every reported
+ * position is in the FULL text's coordinates, so `at`/tails line up exactly
+ * as they would in a real parse. The scan does not decode escapes, so hand it
+ * a construct (with at most a plain prefix), not an arbitrary pattern.
+ *
+ * ROUTING MIRRORS parse.c'S CALL CONVENTIONS and recognises nothing itself:
+ * each branch places the cursor exactly where parse.c has it at that
+ * doorway's call site (escape: `\` and selector consumed; group: AT the `?`;
+ * verb: after `(`; class-bracket 4a/4b: after the class's `[`). It is a fifth
+ * CALLER of the four doorways, not a fifth doorway.
+ *
+ * `(?:` is EXCLUDED exactly as parse.c excludes it: the base grammar answers
+ * it before the doorway is consulted, so there is no doorway call to probe —
+ * its row exists for the dump's completeness (SR-3), not because anything
+ * looks it up.
+ *
+ * TWO CALLERS, ONE ROUTER (MOD-0.7 slice 1, design note §3.1).
+ * `pcrec_probe_ask` and `pcrec_syntax_explain` both need "which doorway does
+ * this text reach, with which arguments", and a second copy would be the D24
+ * two-homes failure with a new coat: the two would drift, and the drift would
+ * be invisible because each surface would be self-consistent with itself.
+ * The extraction is behaviour-preserving by construction (the branches below
+ * are the originals, unmoved) and the evidence is external: `--probe-ask`'s
+ * ten TSV fields are read by check06 and pinned byte-exact by cli case10,
+ * whose cursor sweep is floored at 198 probes.
+ *
+ * The router's FIDELITY — that an answer obtained through it is the answer
+ * the compiler gives — is measured, not assumed: 99 of 99 routed registry-row
+ * syntaxes and 11 of 11 hand-listed queries produce a (msg, at) pair
+ * byte-identical to `pcrec -o - <text>`'s (design note §3.2). The boundary is
+ * in the note: arbitrary query text has no compile to compare against. */
+typedef struct {
+    RegKind kind;
+    int     sel;              /* the doorway's selector byte, or -1          */
+    size_t  at;               /* the offset the doorway blames               */
+    size_t  from;             /* class-bracket: just past the delimiter      */
+    size_t  cursor;           /* where parse.c has cx->pos at this call site */
+    bool    at_class_open;    /* class-bracket 4a                            */
+    bool    at_content_start; /* class-bracket 4b                            */
+} Doorway;
+
+static bool doorway_route(const char *text, size_t n, Doorway *d)
+{
+    for (size_t i = 0; i < n; i++) {
+        char c0 = text[i];
+        int  c1 = i + 1 < n ? (unsigned char)text[i + 1] : -1;
+        if (c0 == '\\' && c1 >= 0) {
+            /* esc_atom's convention: `\` and the selector byte consumed */
+            *d = (Doorway){ .kind = RK_ESC, .sel = c1, .at = i, .from = 0,
+                            .cursor = i + 2, .at_class_open = false,
+                            .at_content_start = false };
+            return true;
+        }
+        if (c0 == '(' && c1 == '?' && !(i + 2 < n && text[i + 2] == ':')) {
+            /* p_group_body's convention: cursor AT the '?' */
+            *d = (Doorway){ .kind = RK_GROUP,
+                            .sel = i + 2 < n ? (unsigned char)text[i + 2] : -1,
+                            .at = i, .from = 0, .cursor = i + 1,
+                            .at_class_open = false, .at_content_start = false };
+            return true;
+        }
+        if (c0 == '(' && c1 == '*') {
+            *d = (Doorway){ .kind = RK_VERB, .sel = -1, .at = i, .from = 0,
+                            .cursor = i + 1, .at_class_open = false,
+                            .at_content_start = false };
+            return true;
+        }
+        if (c0 == '[' && c1 == '[') {
+            /* doorway 4b: a bracket INSIDE the class — `[[:alpha:]]` */
+            *d = (Doorway){ .kind = RK_CLASSBRACKET,
+                            .sel = i + 2 < n ? (unsigned char)text[i + 2] : -1,
+                            .at = i + 1, .from = i + 3, .cursor = i + 1,
+                            .at_class_open = false, .at_content_start = true };
+            return true;
+        }
+        if (c0 == '[') {
+            /* doorway 4a: the class's OWN bracket as opener — `[:alpha:]` */
+            *d = (Doorway){ .kind = RK_CLASSBRACKET, .sel = c1, .at = i,
+                            .from = i + 2, .cursor = i + 1,
+                            .at_class_open = true, .at_content_start = false };
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Place the cursor and make the ONE call. The Ctx handed in is ZEROED by both
+ * callers: no jmp target, no arena blocks. That is safe while every doorway
+ * RETURNS its answer (none may ctx_fail or allocate — the D33 §5 contract),
+ * and it is one of the things the first enabled, result-producing module port
+ * must revisit here, with a probe that is false the day before (D33 §9.3): a
+ * port that allocates needs this Ctx given a real arena before `result` asks
+ * can be driven through it. */
+static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
+{
+    cx->pos = d->cursor;
+    switch (d->kind) {
+    case RK_ESC:   return pcrec_ext_escape(cx, want, d->sel, false, d->at);
+    case RK_GROUP: return pcrec_ext_group(cx, want, d->sel, d->at);
+    case RK_VERB:  return pcrec_ext_verb(cx, want, d->at);
+    case RK_CLASSBRACKET:
+        return pcrec_ext_class_bracket(cx, want, d->sel, d->at, d->from,
+                                       d->at_class_open, d->at_content_start);
+    default: break;
+    }
+    return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "",
+                        .answered_at = WANT_CLAIM };
+}
+
+/* The TSV word for a doorway. Deliberately NOT `doorway_name`'s wording:
+ * that one reads "after '(?'" for a human in `--explain`'s row blocks, this
+ * one is a frozen column value in `--probe-ask`'s output (check06 parses it)
+ * and in `--explain`'s route line. Two audiences, two spellings, one
+ * mapping each. */
+static const char *doorway_word(RegKind k)
+{
+    switch (k) {
+    case RK_ESC:          return "escape";
+    case RK_GROUP:        return "group";
+    case RK_VERB:         return "verb";
+    case RK_CLASSBRACKET: return "class-bracket";
+    default:              return "?";
+    }
+}
+
 /* ---- the --probe-ask channel (MOD-0.1, §18.2) ---------------------------
  *
  * ONE doorway call for a construct, at a caller-chosen ask level, with the
@@ -326,25 +458,15 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours)
  * echo, because a check fed from the implementation's own answer would be
  * the control-sharing-a-source failure this project keeps paying for.
  *
- * ROUTING MIRRORS parse.c'S CALL CONVENTIONS and recognises nothing itself:
- * each branch places the cursor exactly where parse.c has it at that
- * doorway's call site (escape: `\` and selector consumed; group: AT the
- * `?`; verb: after `(`; class-bracket 4a/4b: after the class's `[`). It is
- * a fifth CALLER of the four doorways, not a fifth doorway.
+ * The routing moved to `doorway_route`/`doorway_call` above at MOD-0.7 slice
+ * 1 — same branches, same order, now shared with `--explain`.
  *
  * TSV, one line, fields appended never reordered (the SR-4 rule):
  *   doorway  want  answered_at  pos_before  pos_after  outcome  at
  *   ep_set_certain  end  msg
  * `answered_at` is the post-gate level — `result` asks print `verdict`
  * until the first module is enabled, which makes the §5.4 demotion a
- * measured fact rather than a comment.
- *
- * The Ctx below is ZEROED: no jmp target, no arena blocks. That is safe
- * while every doorway RETURNS its answer (none may ctx_fail or allocate —
- * the D33 §5 contract), and it is one of the things the first enabled,
- * result-producing module port must revisit here, with a probe that is
- * false the day before (D33 §9.3): a port that allocates needs this Ctx
- * given a real arena before `result` asks can be driven through it. */
+ * measured fact rather than a comment. */
 char *pcrec_probe_ask(const char *want_name, const char *construct)
 {
     static const char *const want_names[] = { "claim", "verdict", "result" };
@@ -358,63 +480,14 @@ char *pcrec_probe_ask(const char *want_name, const char *construct)
     memset(&cx, 0, sizeof cx);
     cx.pat = construct;
     cx.patlen = strlen(construct);
-    size_t n = cx.patlen;
 
-    /* Locate the construct: the FIRST byte that opens a doorway, found by a
-     * bytewise scan, never a parse. Ten registry rows carry a plain-group
-     * prefix in their syntax (`(a)(?-1)` — the probe must COMPILE in PCRE2,
-     * and a bare `(?-1)` does not), and parse.c reaches their doorway with
-     * the cursor deep in the pattern; the scan reproduces that placement
-     * and every reported position is in the FULL text's coordinates, so
-     * `at`/tails line up exactly as they would in a real parse. The scan
-     * does not decode escapes, so hand it a construct (with at most a plain
-     * prefix), not an arbitrary pattern.
-     *
-     * `(?:` is EXCLUDED exactly as parse.c excludes it: the base grammar
-     * answers it before the doorway is consulted, so there is no doorway
-     * call to probe — its row exists for the dump's completeness (SR-3),
-     * not because anything looks it up. */
-    const char *doorway = NULL;
-    size_t before = 0;
-    ExtResult r = { .what = EXT_NOT_MINE };
-    for (size_t i = 0; i < n && !doorway; i++) {
-        char c0 = construct[i];
-        int c1 = i + 1 < n ? (unsigned char)construct[i + 1] : -1;
-        if (c0 == '\\' && c1 >= 0) {
-            /* esc_atom's convention: `\` and the selector byte consumed */
-            doorway = "escape";
-            cx.pos = before = i + 2;
-            r = pcrec_ext_escape(&cx, want, c1, false, i);
-        } else if (c0 == '(' && c1 == '?' &&
-                   !(i + 2 < n && construct[i + 2] == ':')) {
-            /* p_group_body's convention: cursor AT the '?' */
-            doorway = "group";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_group(&cx, want,
-                                i + 2 < n ? (unsigned char)construct[i + 2]
-                                          : -1, i);
-        } else if (c0 == '(' && c1 == '*') {
-            doorway = "verb";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_verb(&cx, want, i);
-        } else if (c0 == '[' && c1 == '[') {
-            /* doorway 4b: a bracket INSIDE the class — `[[:alpha:]]` */
-            doorway = "class-bracket";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_class_bracket(&cx, want,
-                                        i + 2 < n
-                                            ? (unsigned char)construct[i + 2]
-                                            : -1,
-                                        i + 1, i + 3, false, true);
-        } else if (c0 == '[') {
-            /* doorway 4a: the class's OWN bracket as opener — `[:alpha:]` */
-            doorway = "class-bracket";
-            cx.pos = before = i + 1;
-            r = pcrec_ext_class_bracket(&cx, want, c1, i, i + 2, true, false);
-        }
-    }
-    if (!doorway)
+    Doorway d;
+    if (!doorway_route(construct, cx.patlen, &d))
         return NULL;    /* not doorway territory; the CLI says so and how */
+
+    const char *doorway = doorway_word(d.kind);
+    size_t before = d.cursor;
+    ExtResult r = doorway_call(&cx, &d, want);
 
     /* The outcome word covers the FULL ExtWhat vocabulary (MOD-0.3c: the
      * producing values are constructable now, and a probe channel that
