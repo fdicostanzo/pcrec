@@ -19,7 +19,7 @@ SAB_FILE="src/parse/mod_uprops.c"
 SAB_SUITES="reject"
 SAB_DESC="pcrec_modport_uprops: drop the leading-caret consume, so ^ enters the significant-character count"
 SAB_DOC_FIGURE="measured at MOD-0.6 phase 2 landing (post-§8 fix): both caret-boundary pins flip — caret+48 A's goes generic->malformed with offset 53->52, caret+49 A's blames 52 where 53 is pinned"
-SAB_COUNT=2
+SAB_COUNT=1
 SAB_BEFORE="    if (i < n && p[i] == '^')
         i++;   /* negation caret: consumed, does NOT enter the 48-char
                   budget below (measured — see this file's header) */"
