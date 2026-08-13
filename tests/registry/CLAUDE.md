@@ -406,6 +406,98 @@ a pool of whole runs would have missed three names this check exists to notice.
    (the cap off-by-one) and S33 (the caret-consume drop) are the mech
    sabotages that validate THAT space, not this one.
 
+7. **The GATED pass** (MOD-0.8c slice 2, `check_gated_option_space`), which
+   closes R20's OPTRUN-B3. Everything above this line — every sweep, every
+   differential, all 48.7M probes of the `(?` doorway — compiles pcrec at the
+   DEFAULT enabled set, which is EMPTY. So every module-owned construct is
+   refused at the gate before a producer runs, and what this file has always
+   measured is RECOGNITION. R20 recorded the consequence as a boundary; SPEC-1
+   had already paid for it. `a(?i)*` was accepted by pcrec with the gate open,
+   is libpcre2 error 109, and the emitted matcher really matched `a`/`aa`/`aaa`
+   — while at the closed gate the same pattern is correctly refused as
+   "requires module 'modifiers'", so every differential here agreed with a
+   compiler that was wrong.
+
+   The pass re-walks three spaces — the option-run space (19,448 cells), the
+   `(?` byte space (7,650) and both halves of the tail sweeps (20,400) — plus a
+   fourth family that is the defect's own shape: **accepted spelling ×
+   quantifier**, GENERATED from the spellings family 1 just measured both
+   engines accepting, not hand-listed. 49,034 cells, +0.25s on PC-3's 3.33s.
+
+   **The three closed-gate sweeps above are RECOGNITION TIER, and now say so
+   in their own PASS lines** (`[RECOGNITION tier: default gate]`) as well as in
+   a comment block above them. That is not decoration: comparing pcrec's
+   gate-refusal against libpcre2 — which has everything on, always — answers
+   "is this construct real, and whose is it", and is not behavioural coverage
+   of a producing construct. SPEC-1 lived in exactly that mislabel.
+
+   **The clause is check14's T1, and it is a different bar from every other
+   sweep in this file.** Those ask recognition (did libpcre2 DISPATCH here),
+   because at a closed gate acceptance is not on the table. Here it is, so the
+   question becomes acceptance: *pcrec must not ACCEPT what libpcre2 REJECTS*.
+   Error 109 is a construct libpcre2 dispatched to and then refused — a T1
+   violation, but a recognition AGREEMENT, so reading OPTRUN-B3's cell with the
+   old bar would have passed SPEC-1 too. T3 (a refusal emits no C) rides along
+   free in-process, observed as `out.c_src == NULL` rather than inferred from
+   the return code.
+
+   **T2 is deliberately not asserted** (pcrec must not refuse as invalid what
+   libpcre2 accepts). Three live, RULED tier-2 divergences are T2-shaped — K15,
+   K16, and the deferred-validation ordering in docs/pcre2_compliance.md — so a
+   T2 clause here would fire on decisions already made rather than on
+   regressions.
+
+   **THE ENABLED SET IS FOCUSED: `modifiers` alone, one pass per feature,
+   never `all`** (docs/testing.md, "The differential gate principle", Frank
+   2026-08-12). The pass is parameterised by its set, names it in every line it
+   prints (`gated[modifiers] ...`), and REFUSES a set that is `all` or a comma
+   list — "focused" is the property the whole pass rests on, so it is asserted
+   rather than trusted. Two reasons: **attribution** (a failure implicates the
+   module under test, not one of seventeen or an interaction between them) and
+   **coverage honesty** (cross-module interaction is a real axis that earns its
+   own deliberate, labelled sweeps, and must not be smuggled in as uncontrolled
+   noise inside every differential). Same rule `--features` already pins:
+   per-module, not blanket.
+
+   `modifiers` is the set because it is the one module with PRODUCERS these
+   three spaces exercise. Measured, and worth recording because it is what
+   makes focusing free here: `modifiers` alone and `all` give **byte-identical
+   populations** (49,034 cells, 3,769 accepted by libpcre2, 2,339 by pcrec) —
+   every other module still refuses at the gate in this space, so `all` was
+   buying nothing but ambiguity. When a second module gains producers at this
+   doorway it gets its OWN call with its OWN name, not an extra bit in this one.
+
+   The set is a process-global; the pass runs LAST, installs it, restores
+   `none`, and asserts both transitions — the restore assertion now says why it
+   matters, which is that the NEXT focused pass would otherwise not be focused.
+
+   **One space, two walkers, held together by checksum.** The gated pass does
+   not refactor the closed-gate checks (the R9 lesson — *extending a check
+   disarmed it* — argues against reshaping three tuned checks to share a
+   loop). It walks the same hoisted tables and asserts the SAME three pinned
+   pattern-set checksums, so a generator that drifts from its closed-gate twin
+   fails rather than quietly measuring a different space.
+
+   **Failing-direction, measured 2026-08-12**: reverting SPEC-1's fix in a
+   scratch build (drop `|| a->not_repeatable` from parse.c's `p_rep`) fires
+   **672 T1 cells** here (12 reported, capped), naming `a(?)*`, `a(?x)+` and
+   the rest of the shape — while `registry_check` and the CLI suite stay
+   completely green. `tests/reject` also fires 11, from the hand pins that
+   landed WITH the fix; the difference is that those pin the spellings someone
+   wrote down and this covers the generated space, which is the whole
+   check11-versus-check14 lesson one file over.
+
+   **What it does not do**: it inherits its predecessors' residual, since it
+   walks their tables. The zero-tail cell `(?P` is still ungenerated and the
+   option runs still stop at length 3. No class-bracket or POSIX-name space is
+   re-run gated — that is the `classes` module's production surface and under
+   the focused rule it would be a SEPARATE pass, `check_gated_option_space`'s
+   sibling with `classes` alone, not an extra bit on this one. Adding it is a
+   one-line call plus its own floors; it is deliberately not built here.
+   Cross-module interaction (`modifiers` + `classes` enabled together) is a
+   real axis and is likewise deliberately absent: it belongs in a sweep that
+   says that is what it is measuring.
+
 ## Coverage guard and manifest (R9/C1-7)
 
 `run_registry_tests.sh` now asserts PC-3's exact passing-check count AND a
@@ -487,11 +579,14 @@ before this file existed, produced none anywhere.
 
 ### Sabotage validation
 
-27 edits, each reverted after measuring, each caught — but see the tail-precedence
-row, which was NOT caught on its first run and is the reason two more guards
-exist. Record the EDIT, not just the count. Six exist because the R8 panel proved
-the first fourteen could all pass while the check was doing much less than it
-claimed; the last seven are Q2/SR-9's.
+**46 edits** (count the table's rows — this sentence said `27` from Q2/SR-9
+until MOD-0.8c, which is a hand-maintained figure in the directory whose own
+docs explain why those go stale; `tests/mech/` exists because of exactly this).
+Each was reverted after measuring, and each was caught — but see the
+tail-precedence row, which was NOT caught on its first run and is the reason two
+more guards exist. **Record the EDIT, not just the count.** Six exist because
+the R8 panel proved the first fourteen could all pass while the check was doing
+much less than it claimed.
 
 | sabotage (exact edit, in a scratch copy) | PC-3 failures |
 |---|---|
@@ -536,6 +631,7 @@ claimed; the last seven are Q2/SR-9's.
 | R20/OPTRUN-1: delete the truncation branch from `group_answer` so `(?P` at end of pattern goes back to "unrecognized character after (?P" | **0 in PC-3** — the residual above, honestly: the tail-sweep template cannot generate the zero-tail cell. Caught by `registry_check` (1, its `(?%c` sweep) and `tests/reject` (1, the hand pin) |
 | R20: every truncated pattern in a tailed bucket drops its module promise (`avail > 0 && bucket_has_tail && no ')' in the pattern` → refuse) | **0 with the halves merged, 12 (capped) with them split** — the measurement that turned the first version of the truncated extension from vacuous into live; every failure names `[truncated]` and its byte |
 | MOD-0.6 slice 4: drop `'L'` from `mod_uprops.c`'s hand-written `UPROPS_SHORT_NAMES` table (`"CLMNPSZ"` → `"CMNPSZ"`) | **20** (capped) — every failure names `\pL`/`\pl`/`\p{L}`/`\p{^L}` across all 5 positions and both cases; this is the failing-direction proof for `check_uprops_differential`'s 52-letter axis, measured then reverted before commit |
+| MOD-0.8c slice 2: revert SPEC-1's fix — drop `\|\| a->not_repeatable` from `p_rep`'s error-109 test in `src/parse/parse.c`, so a quantifier after a bare option run binds the preceding atom again | **672 T1 cells** in the GATED pass (12 reported, capped) and **0 anywhere else in this file** — the whole point of the gated pass, since the closed gate refuses `a(?i)*` correctly. `registry_check` 0, `tests/cli` 0, `tests/reject` 11 (the hand pins landed with the fix). Measured on a scratch copy 2026-08-12, never committed |
 
 **The tail-precedence sabotage found a real hole and is the one to read**
 (historical since MOD-0.2 — the engine it sabotaged is deleted and

@@ -1803,7 +1803,8 @@ static void check_group_bytes(void)
     char line[224];
     snprintf(line, sizeof line,
              "(? byte differential: %zu probes over 255 bytes — %d bytes are constructs, "
-             "%d are not, and pcrec agrees on every one", probes, n_recognised, n_not);
+             "%d are not, and pcrec agrees on every one [RECOGNITION tier: default gate]",
+             probes, n_recognised, n_not);
     if (mismatches == 0) ok(line); else printf("  %s (%d mismatches)\n", line, mismatches);
 
     /* LIVENESS, in both directions. "All 255 agree" is also what a doorway that
@@ -1822,6 +1823,25 @@ static void check_group_bytes(void)
 
     expect_set("(? byte differential", seth, 0x2cefbc6df53a8337ULL);
 }
+
+/* ============ THE THREE SWEEPS BELOW ARE RECOGNITION TIER ================
+ *
+ * They compile pcrec at the DEFAULT enabled set, which is EMPTY, so every
+ * module-owned construct is refused at the gate before any producer runs.
+ * Against libpcre2 — which has everything "on", always — that compares
+ * pcrec's REFUSAL with pcre2's ACCEPTANCE. It is a real and load-bearing
+ * comparison (does pcrec know this construct is real, and whose it is), and
+ * it is NOT behavioural coverage of a producing construct. Their PASS lines
+ * say so in the text, not only here.
+ *
+ * SPEC-1 lived in exactly that mislabel: `a(?i)*` is refused correctly at the
+ * closed gate, so all three of these agreed while the ACCEPTING path — the
+ * one that emitted a matcher for a pattern libpcre2 calls error 109 — had
+ * never been compared to the oracle at all. `check_gated_option_space` at the
+ * bottom of this file is where these same three spaces are compared with the
+ * module ENABLED, one focused pass per feature.
+ *
+ * See docs/testing.md, "The differential gate principle". ================= */
 
 /* ---- Q2: the option RUN, not just its first byte ----------------------- */
 
@@ -1898,7 +1918,8 @@ static void check_option_runs(void)
     char line[224];
     snprintf(line, sizeof line,
              "option runs: %zu probes over runs of length 0-3 — %d are constructs "
-             "libpcre2 has, %d are not, pcrec agrees on every one", probes, n_valid, n_invalid);
+             "libpcre2 has, %d are not, pcrec agrees on every one [RECOGNITION tier: default gate]",
+             probes, n_valid, n_invalid);
     if (mismatches == 0) ok(line); else printf("  %s (%d mismatches)\n", line, mismatches);
 
     /* Both buckets must be large. A sweep where every run is invalid would agree
@@ -1921,14 +1942,34 @@ static void check_option_runs(void)
 
 struct TailPrefix { const char *pfx; const char *lead; const char *why; };
 
+/* FILE SCOPE since MOD-0.8c slice 2, and the move is the point rather than
+ * tidiness: the gated pass at the bottom of this file walks these SAME three
+ * tables (with Q2_COMPLETIONS and Q2_RUN_ALPHA above) instead of holding a
+ * second copy of the completion strings. A duplicated table drifts, and the
+ * drift is invisible — this project's oldest recorded failure. What the two
+ * walkers cannot share is their per-cell bookkeeping, so the gated pass
+ * asserts the SAME pattern-set checksums the closed-gate checks pin: if the
+ * two loop structures ever stop generating the same space, the checksum says
+ * so. Hoisting changed no value and no order, so the pins below are unmoved. */
+static const struct TailPrefix TAIL_PREFIXES[] = {
+    {"P", "",       "(?P< (?P= and (?P> are three modules; every other tail is error 141"},
+    {"<", "",       "(?<= (?<! and (?<* are lookaround; every other tail is a named group"},
+    {"+", "(a)(a)", "every tail is a relative subroutine call; non-digits are error 129"},
+    {"-", "(a)(a)", "digits are subroutine calls, option letters are settings"},
+};
+#define TAILCOMP_NCLOSED 10
+static const char *const TAILCOMP[] = {
+    /* CLOSED — indices 0..TAILCOMP_NCLOSED-1 */
+    ")", "a)", "n>a)", "1)", "=a)", ":a)", "i)", "n)", "]])", "'n')",
+    /* TRUNCATED — the same shapes with the `)` removed */
+    "", "a", "n>a", "1", "=a", ":a", "i", "n", "]]", "'n'",
+};
+
+#define TAIL_NPREFIX (sizeof TAIL_PREFIXES / sizeof TAIL_PREFIXES[0])
+#define TAILCOMP_N   (sizeof TAILCOMP / sizeof TAILCOMP[0])
+
 static void check_group_tails(void)
 {
-    static const struct TailPrefix PREFIXES[] = {
-        {"P", "",       "(?P< (?P= and (?P> are three modules; every other tail is error 141"},
-        {"<", "",       "(?<= (?<! and (?<* are lookaround; every other tail is a named group"},
-        {"+", "(a)(a)", "every tail is a relative subroutine call; non-digits are error 129"},
-        {"-", "(a)(a)", "digits are subroutine calls, option letters are settings"},
-    };
     /* TWO HALVES SINCE R20/OPTRUN-1, and the second one is the fix for a
      * measured blindness. Every completion here used to contain a `)`, so
      * every generated pattern was a CLOSED construct — and the whole
@@ -1959,13 +2000,6 @@ static void check_group_tails(void)
      * tests/reject/ and an expectation in registry_check's `(?%c` sweep
      * (which does end at the selector); OPTRUN-B1's general lesson ("every
      * completion contains `)`") is recorded for PC-4. */
-#define TAILCOMP_NCLOSED 10
-    static const char *const TAILCOMP[] = {
-        /* CLOSED — indices 0..TAILCOMP_NCLOSED-1 */
-        ")", "a)", "n>a)", "1)", "=a)", ":a)", "i)", "n)", "]])", "'n')",
-        /* TRUNCATED — the same shapes with the `)` removed */
-        "", "a", "n>a", "1", "=a", ":a", "i", "n", "]]", "'n'",
-    };
     enum { HALF_CLOSED = 0, HALF_TRUNC = 1, NHALF = 2 };
     static const char *const HALF_NAME[NHALF] = { "closed", "truncated" };
 
@@ -1973,7 +2007,7 @@ static void check_group_tails(void)
     size_t probes = 0;
     int total_mismatch = 0, live_prefixes = 0;
 
-    for (size_t p = 0; p < sizeof PREFIXES / sizeof PREFIXES[0]; p++) {
+    for (size_t p = 0; p < TAIL_NPREFIX; p++) {
         int recognised[NHALF] = {0, 0}, refused[NHALF] = {0, 0};
         int mismatches[NHALF] = {0, 0};
 
@@ -1981,11 +2015,11 @@ static void check_group_tails(void)
             bool p2_recognised[NHALF] = {false, false};
             bool pcrec_module[NHALF] = {false, false};
 
-            for (size_t i = 0; i < sizeof TAILCOMP / sizeof TAILCOMP[0]; i++) {
+            for (size_t i = 0; i < TAILCOMP_N; i++) {
                 int h = i < TAILCOMP_NCLOSED ? HALF_CLOSED : HALF_TRUNC;
                 char pat[64];
                 int n = snprintf(pat, sizeof pat, "%s(?%s%c%s",
-                                 PREFIXES[p].lead, PREFIXES[p].pfx, b, TAILCOMP[i]);
+                                 TAIL_PREFIXES[p].lead, TAIL_PREFIXES[p].pfx, b, TAILCOMP[i]);
                 if (n < 0 || (size_t)n >= sizeof pat) continue;
                 seth = set_hash(seth, pat);
                 probes++;
@@ -2000,11 +2034,11 @@ static void check_group_tails(void)
                 if (total_mismatch < 12)
                     bad("tail sweep (?%s [%s]: byte 0x%02x ('%c') — libpcre2 %s a "
                         "construct, pcrec %s a module. %s",
-                        PREFIXES[p].pfx, HALF_NAME[h], b,
+                        TAIL_PREFIXES[p].pfx, HALF_NAME[h], b,
                         (b >= 32 && b < 127) ? b : '?',
                         p2_recognised[h] ? "HAS" : "has NO",
                         pcrec_module[h] ? "promises" : "promises NO",
-                        PREFIXES[p].why);
+                        TAIL_PREFIXES[p].why);
                 mismatches[h]++;
                 total_mismatch++;
             }
@@ -2013,7 +2047,7 @@ static void check_group_tails(void)
         char line[256];
         snprintf(line, sizeof line,
                  "tail sweep (?%s: 255 tails — closed %d/%d constructs/not, "
-                 "truncated %d/%d", PREFIXES[p].pfx,
+                 "truncated %d/%d [RECOGNITION tier: default gate]", TAIL_PREFIXES[p].pfx,
                  recognised[HALF_CLOSED], refused[HALF_CLOSED],
                  recognised[HALF_TRUNC], refused[HALF_TRUNC]);
         if (mismatches[HALF_CLOSED] == 0 && mismatches[HALF_TRUNC] == 0) ok(line);
@@ -2393,6 +2427,442 @@ static void check_uprops_differential(void)
         ok("uprops differential liveness: both \\p and \\P ran");
 }
 
+/* ---- MOD-0.8c slice 2 / R20-OPTRUN-B3: THE SAME SPACES, GATE OPEN -------
+ *
+ * WHY THIS EXISTS, and it is not "the option-run sweeps again". Every
+ * differential above compiles pcrec with the DEFAULT enabled set, which is
+ * EMPTY (src/parse/enabled.c) — so every module-owned construct is refused at
+ * the gate before any producer runs, and what all 48.7M probes of the `(?`
+ * doorway have ever measured is pcrec's RECOGNITION. The boundary R20 recorded
+ * as OPTRUN-B3: "no differential opens the module gate; nothing in the suite
+ * would catch a gated-recognition regression."
+ *
+ * That boundary had already cost a tier-1. SPEC-1 — a quantifier after a bare
+ * option run, `a(?i)*`, accepted by pcrec and libpcre2 error 109, with the
+ * emitted matcher really matching a/aa/aaa — is a GATE-OPEN-ONLY miscompile.
+ * At the closed gate `a(?i)*` is refused with "requires module 'modifiers'",
+ * which is the correct answer, so every closed-gate differential agreed with a
+ * compiler that was wrong. A D27-blinded writer's generated sweep found it;
+ * nothing in this file could have.
+ *
+ * THE CLAUSE. check14's T1 (tests/spec_mod0/check14_option_runs.c), ported
+ * here: **pcrec must not ACCEPT what libpcre2 REJECTS.** A pattern libpcre2
+ * refuses has no meaning to be faithful to, so whatever pcrec emits for it is
+ * a matcher for a language PCRE2 never defined — which D26 puts squarely in
+ * the exact tier (what a pattern MATCHES). Note this is a different bar from
+ * every other sweep in this file: those ask RECOGNITION (did libpcre2 DISPATCH
+ * here), because at the closed gate acceptance is not on the table. Here it
+ * is, so the question becomes acceptance, and error 109 — a construct libpcre2
+ * dispatched to and then refused — is a T1 violation rather than a recognition
+ * agreement. Reading OPTRUN-B3's cell with the recognition bar would have
+ * passed SPEC-1 too.
+ *
+ * T3 comes free in-process: a refusal must emit no C. Measured as
+ * `out.c_src == NULL` after a nonzero return, not inferred from the code.
+ *
+ * WHAT IS DELIBERATELY NOT ASSERTED: check14's T2 (pcrec must not refuse as
+ * INVALID what libpcre2 ACCEPTS). Three of this project's live, RULED tier-2
+ * divergences are T2-shaped — K15's too-long verb names, K16's \p body bytes,
+ * and the deferred-validation ordering documented in docs/pcre2_compliance.md
+ * — so a T2 clause here would fire on decisions already made rather than on
+ * regressions. T1 has no such exemptions and needs none, which is why it is
+ * the clause worth spending an open gate on.
+ *
+ * THE ENABLED SET IS FOCUSED — exactly the module the sweep exercises, ONE
+ * PASS PER FEATURE, never `--features all` (docs/testing.md, "The differential
+ * gate principle", Frank 2026-08-12). The pass is PARAMETERISED by its set and
+ * NAMED by it in every line it prints, so a reader always knows which
+ * configuration produced a number.
+ *
+ * Two reasons, and the first version of this pass got both wrong by opening
+ * `all`. ATTRIBUTION: a failure in a focused sweep implicates the module under
+ * test; under `all` it could be any of seventeen, or an interaction between
+ * them, and the check would not say which. COVERAGE HONESTY: interactions
+ * between enabled modules are a REAL axis, and they earn their own deliberate,
+ * labelled sweeps — they must not be smuggled in as noise inside every
+ * differential, where they are neither controlled nor reported. (Same rule the
+ * `--features` CLI surface already pins: per-module, not blanket.)
+ *
+ * `modifiers` is the set here because it is the one module with PRODUCERS that
+ * these three spaces exercise. The `(?` byte and tail spaces reach constructs
+ * owned by many modules, but every one of those still refuses at the gate, so
+ * `modifiers` is the only enablement that can change an answer in this space —
+ * which is exactly what "the module(s) the sweep exercises" means. When a
+ * second module gains producers at this doorway, it gets its OWN call with its
+ * OWN name, not an extra bit in this one.
+ *
+ * The set is installed at entry and restored to empty at exit, and both
+ * transitions are asserted: this is a process-global (write-once-then-read by
+ * design), and a check that silently left it open would change the meaning of
+ * anything added after it. */
+
+/* pcrec at whatever the current enabled set is, reporting BOTH the verdict and
+ * whether any C came out. `emitted` is an observation, never an inference from
+ * the return code — that distinction is spec_pcrec.h's, and it is the half
+ * that makes T3 a measurement. */
+static int pcrec_try_emit(const char *pat, bool *emitted)
+{
+    pcrec_options opt; pcrec_output out; pcrec_error err; int rc;
+    pcrec_default_options(&opt);
+    memset(&out, 0, sizeof out);
+    memset(&err, 0, sizeof err);
+    rc = pcrec_compile(pat, &opt, &out, &err);
+    *emitted = (out.c_src != NULL && out.c_src[0] != '\0');
+    if (out.c_src || out.h_src) pcrec_output_free(&out);
+    return rc == 0 ? 0 : -1;
+}
+
+/* The quantifier forms crossed with every accepted spelling. Eight, matching
+ * check14's family J: the three bare quantifiers, three brace forms (exact,
+ * open-ended, ranged), one lazy and one possessive — the possessive and lazy
+ * suffixes included because `a(?i)**` was diagnosed as "multiple quantifiers
+ * on the same item", the same wrong model speaking twice, and a family that
+ * stopped at single quantifiers would not have seen it. */
+static const char *const GATE_QUANTS[] = {
+    "*", "+", "?", "{2}", "{2,}", "{2,3}", "*?", "++",
+};
+#define GATE_NQUANT (sizeof GATE_QUANTS / sizeof GATE_QUANTS[0])
+
+/* Spellings BOTH engines accepted, collected from the gated option-run walk
+ * and kept in two lists so the SCOPING form stays a live control rather than
+ * an anecdote (check14's split: the bare-vs-scoping boundary was exact over
+ * 7,040 cells, so a family that pooled them would report a 50% disagreement
+ * rate and name nothing). Sized to hold the whole measured population; the
+ * overflow counter is checked, because a collection that quietly loses cells
+ * is the vacuous-population shape this suite exists to refuse. */
+#define GATE_ACC_MAX 4096
+#define GATE_ACC_LEN 40
+struct GateAcc {
+    char  s[GATE_ACC_MAX][GATE_ACC_LEN];
+    long  n, dropped_full, dropped_long;
+};
+
+static void gate_acc_add(struct GateAcc *a, const char *pat)
+{
+    if (strlen(pat) + 1 > GATE_ACC_LEN) { a->dropped_long++; return; }
+    if (a->n >= GATE_ACC_MAX)           { a->dropped_full++; return; }
+    snprintf(a->s[a->n], GATE_ACC_LEN, "%s", pat);
+    a->n++;
+}
+
+struct GateTally {
+    long probes;                 /* cells generated */
+    long p2_accept, p2_reject;   /* libpcre2's verdict populations */
+    long pc_accept;              /* cells pcrec ACCEPTED (the gate is open)   */
+    long t1, t3;                 /* violations */
+    int  shown;
+};
+
+static void gate_cell(struct GateTally *t, const char *family, const char *pat)
+{
+    bool emitted = false;
+    int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
+    int pc = pcrec_try_emit(pat, &emitted);
+
+    t->probes++;
+    if (p2 == 0) t->p2_accept++; else t->p2_reject++;
+    if (pc == 0) t->pc_accept++;
+
+    if (p2 != 0 && pc == 0) {
+        if (t->shown < 12)
+            bad("GATED T1 [%s]: '%s' — libpcre2 REJECTS this (error %d) and pcrec "
+                "ACCEPTS it with the gate open, emitting a matcher for a language "
+                "PCRE2 never defined. This is SPEC-1's shape; the closed-gate "
+                "sweeps cannot see it because the gate refuses first.",
+                family, pat, p2);
+        t->shown++;
+        t->t1++;
+    }
+    if (pc != 0 && emitted) {
+        if (t->shown < 12)
+            bad("GATED T3 [%s]: '%s' — pcrec refused and still produced C source. "
+                "A refusal must emit nothing; a caller that ignores the status "
+                "would compile it.", family, pat);
+        t->shown++;
+        t->t3++;
+    }
+}
+
+static void check_gated_option_space(const char *set)
+{
+    char err[256];
+    unsigned mask_before = pcrec_enabled_mask();
+    struct GateTally t = {0};
+    unsigned long long seth;
+    char lbl[96];
+    static struct GateAcc bare, scoping;      /* static: ~320 KB, not a stack frame */
+
+    /* `set` must name ONE module. Guarded rather than trusted: "focused" is
+     * the property the whole pass rests on, and `all` or a comma list would
+     * silently turn every finding below into an unattributable one. */
+    if (!set || !*set || strchr(set, ',') || !strcmp(set, "all"))
+        bad("gated pass: enabled set '%s' is not FOCUSED. This pass must name "
+            "exactly ONE module (docs/testing.md, the differential gate "
+            "principle): a failure has to implicate the module under test, and "
+            "cross-module interaction is its own deliberate sweep, not noise "
+            "inside this one.", set ? set : "(null)");
+
+    if (mask_before != 0)
+        bad("gated[%s]: the enabled set was ALREADY non-empty (0x%x) on entry. "
+            "Every check above this line believes it ran at the default (empty) "
+            "set, so their results are not what their PASS lines claim.",
+            set, mask_before);
+
+    if (pcrec_enabled_set_spec(set, err, sizeof err) != 0) {
+        bad("gated[%s]: could not open the module gate: %s. The whole pass "
+            "measured nothing.", set, err);
+        return;
+    }
+    if (pcrec_enabled_mask() == 0) {
+        bad("gated[%s]: that set installed an EMPTY enabled mask, so this pass "
+            "is a second copy of the closed-gate sweeps wearing an open-gate "
+            "name.", set);
+        return;
+    }
+    printf("  gated[%s]: focused enabled set installed (feature mask 0x%x)\n",
+           set, pcrec_enabled_mask());
+
+    /* ---- family 1: the OPTION RUN space, gate open ---------------------
+     * The same runs of length 0..3 over the same alphabet in the same two
+     * terminator shapes as check_option_runs above, walked with the same loop
+     * so the checksum below can hold the two generators to one space.
+     * STOPPING BOUNDARY: inherited unchanged from the closed-gate sweep —
+     * length 3 is where the `a`-sub-option rule and the one-hyphen rule
+     * interact, and length 4 multiplies the space by 21 for interactions the
+     * grammar has none of. Not restrided here: at 0.16s for the whole space
+     * there is nothing to buy. */
+    seth = SET_HASH_INIT;
+    {
+        const size_t na = sizeof Q2_RUN_ALPHA - 1;
+        char run[4];
+        for (int len = 0; len <= 3; len++) {
+            long total = 1;
+            for (int k = 0; k < len; k++) total *= (long)na;
+            for (long idx = 0; idx < total; idx++) {
+                long v = idx;
+                for (int k = 0; k < len; k++) { run[k] = Q2_RUN_ALPHA[v % (long)na]; v /= (long)na; }
+                run[len] = 0;
+                static const char *const shapes[] = {"(?%s)", "(?%s:a)"};
+                for (size_t sh = 0; sh < 2; sh++) {
+                    char pat[32];
+                    int n = snprintf(pat, sizeof pat, shapes[sh], run);
+                    if (n < 0 || (size_t)n >= sizeof pat) continue;
+                    seth = set_hash(seth, pat);
+                    long before_acc = t.pc_accept, before_p2 = t.p2_accept;
+                    gate_cell(&t, "option runs", pat);
+                    /* Collected for family 4 only when BOTH engines accept:
+                     * a spelling libpcre2 refuses is already a T1 cell here,
+                     * and quantifying it would test the same thing twice. */
+                    if (t.pc_accept > before_acc && t.p2_accept > before_p2)
+                        gate_acc_add(sh == 0 ? &bare : &scoping, pat);
+                }
+            }
+        }
+    }
+    /* The SAME constant check_option_runs pins. Two walkers, one space — if
+     * they ever disagree, this is what says so. */
+    snprintf(lbl, sizeof lbl, "gated[%s] option runs", set);
+    expect_set(lbl, seth, 0xd502f808e522c30dULL);
+
+    /* ---- family 2: the `(?` BYTE space, gate open ----------------------
+     * STOPPING BOUNDARY: bytes 1..255 x the 30 shared completions. Byte 0 is
+     * K9's territory (the API takes no length) and is out of every sweep in
+     * this file. */
+    seth = SET_HASH_INIT;
+    for (int b = 1; b < 256; b++) {
+        for (size_t i = 0; i < sizeof Q2_COMPLETIONS / sizeof Q2_COMPLETIONS[0]; i++) {
+            char pat[64];
+            int n = snprintf(pat, sizeof pat, "(?%c%s", b, Q2_COMPLETIONS[i]);
+            if (n < 0 || (size_t)n >= sizeof pat) continue;
+            seth = set_hash(seth, pat);
+            gate_cell(&t, "(? byte", pat);
+        }
+    }
+    snprintf(lbl, sizeof lbl, "gated[%s] (? byte", set);
+    expect_set(lbl, seth, 0x2cefbc6df53a8337ULL);
+
+    /* ---- family 3: the TAIL space, gate open ---------------------------
+     * Both halves, closed and truncated. STOPPING BOUNDARY: the four prefixes
+     * and twenty completions of the closed-gate sweep, and its residual comes
+     * with them — the template always inserts a byte after the prefix, so the
+     * zero-tail cell `(?P` is not generated here either. */
+    seth = SET_HASH_INIT;
+    for (size_t p = 0; p < TAIL_NPREFIX; p++) {
+        for (int b = 1; b < 256; b++) {
+            for (size_t i = 0; i < TAILCOMP_N; i++) {
+                char pat[64];
+                int n = snprintf(pat, sizeof pat, "%s(?%s%c%s",
+                                 TAIL_PREFIXES[p].lead, TAIL_PREFIXES[p].pfx, b, TAILCOMP[i]);
+                if (n < 0 || (size_t)n >= sizeof pat) continue;
+                seth = set_hash(seth, pat);
+                gate_cell(&t, "tail sweep", pat);
+            }
+        }
+    }
+    snprintf(lbl, sizeof lbl, "gated[%s] tail sweeps", set);
+    expect_set(lbl, seth, 0x29c2e21e28d1bbc9ULL);
+
+    long space_probes = t.probes;
+
+    /* ---- family 4: ACCEPTED SPELLING x QUANTIFIER — the SPEC-1 shape ----
+     *
+     * GENERATED, not hand-listed, and that is the whole reason this family
+     * exists. check11 owns this module and did not find SPEC-1 because its
+     * structural table is 21 hand-written spellings with not one quantified
+     * form; the spellings below are whatever family 1 just MEASURED both
+     * engines accepting, so the family cannot stop at its author's
+     * imagination.
+     *
+     * STOPPING BOUNDARY / STRIDE: each list is strided down to at most
+     * GATE_CAP spellings, taken evenly across the list rather than from its
+     * head (a head slice would take only the shortest runs, which is a
+     * different space, not a smaller one). The two lists are strided
+     * SEPARATELY so the scoping control's size is a property of this check
+     * and not of whatever the accepted set happens to contain. Every dropped
+     * cell is COUNTED and printed — no silent caps. */
+#define GATE_CAP 96
+/* Both floors are MEASURED at the focused set, not guessed, and they are the
+ * two liveness numbers this pass rests on: nothing accepted means the gate
+ * never opened, nothing rejected means T1 is free. */
+#define GATE_ACCEPT_FLOOR 1000
+#define GATE_REJECT_FLOOR  1000
+    {
+        struct { struct GateAcc *a; const char *name; long taken; } lists[2] = {
+            { &bare,    "bare"    , 0 },
+            { &scoping, "scoping" , 0 },
+        };
+        for (int li = 0; li < 2; li++) {
+            struct GateAcc *a = lists[li].a;
+            /* FLOOR division, not ceiling: a ceiling stride overshoots and the
+             * walk runs out of list one cell short of the cap, which would put
+             * the floor below permanently out of reach and read as a real
+             * finding forever. Floor division spreads the take across the whole
+             * list and still fills the cap whenever n >= cap. */
+            long stride = a->n / GATE_CAP;
+            if (stride < 1) stride = 1;
+            long taken = 0;
+            for (long i = 0; i < a->n && taken < GATE_CAP; i += stride, taken++) {
+                for (size_t q = 0; q < GATE_NQUANT; q++) {
+                    char pat[64];
+                    int n = snprintf(pat, sizeof pat, "a%s%s", a->s[i], GATE_QUANTS[q]);
+                    if (n < 0 || (size_t)n >= sizeof pat) continue;
+                    gate_cell(&t, "quantified", pat);
+                }
+            }
+            lists[li].taken = taken;
+            printf("  gated[%s] quantifier cross [%s]: %ld spellings accepted by both "
+                   "engines, stride %ld, %ld taken x %zu quantifiers = %ld cells "
+                   "(%ld dropped by the stride, %ld too long to store, %ld over "
+                   "the collector's capacity)\n",
+                   set, lists[li].name, a->n, stride, taken, GATE_NQUANT,
+                   taken * (long)GATE_NQUANT, a->n - taken,
+                   a->dropped_long, a->dropped_full);
+            if (a->dropped_full > 0)
+                bad("gated[%s] quantifier cross [%s]: %ld accepted spellings did not fit "
+                    "the collector (capacity %d). The stride is supposed to be the "
+                    "only thing that drops a cell.",
+                    set, lists[li].name, a->dropped_full, GATE_ACC_MAX);
+        }
+
+        /* FLOORS FROM THE DEMAND SIDE. `taken` is what the strider asked for,
+         * not what arrived — the mech denominator lesson, one file over: a
+         * count derived from the rows that turned up shares its source with
+         * the numerators and reads 19/19 where 20 were requested. */
+        long want = (lists[0].taken + lists[1].taken) * (long)GATE_NQUANT;
+        long got  = t.probes - space_probes;
+        if (got != want)
+            bad("gated[%s] quantifier cross: %ld cells ran, %ld were generated. A cell "
+                "lost between the generator and the comparison is coverage nobody "
+                "would miss.", set, got, want);
+        else {
+            snprintf(lbl, sizeof lbl, "gated[%s] quantifier cross: every generated "
+                     "cell reached the comparison", set);
+            ok(lbl);
+        }
+
+        /* Both lists must be FULL. This is the floor that catches the family
+         * going quiet: check14 measured a refuse-everything pcrec collapsing
+         * this family to zero cells with no disagreement reported, because
+         * with nothing accepted there is nothing to quantify. A shrunken
+         * accepted set is a finding about the gate, not a smaller sweep. */
+        if (lists[0].taken < GATE_CAP || lists[1].taken < GATE_CAP)
+            bad("gated[%s] quantifier cross: bare %ld / scoping %ld spellings, floor %d "
+                "each. Fewer accepted spellings than the cap means the open gate "
+                "stopped producing, and this family measures nothing without them.",
+                set, lists[0].taken, lists[1].taken, GATE_CAP);
+        else {
+            char line[192];
+            snprintf(line, sizeof line,
+                     "gated[%s] quantifier cross: both spelling lists full (%d bare "
+                     "+ %d scoping x %zu quantifiers), so the bare-vs-scoping control "
+                     "is live", set, GATE_CAP, GATE_CAP, GATE_NQUANT);
+            ok(line);
+        }
+    }
+
+    /* ---- verdict and liveness ------------------------------------------ */
+
+    char line[256];
+    snprintf(line, sizeof line,
+             "gated[%s] recognition (OPTRUN-B3): %ld cells with ONLY module '%s' "
+             "enabled — libpcre2 accepts %ld and rejects %ld, pcrec accepts %ld, "
+             "and pcrec accepts nothing libpcre2 rejects",
+             set, t.probes, set, t.p2_accept, t.p2_reject, t.pc_accept);
+    if (t.t1 == 0 && t.t3 == 0) ok(line);
+    else printf("  %s (T1 %ld, T3 %ld)\n", line, t.t1, t.t3);
+
+    /* THE LIVENESS THAT MATTERS, and it is not the probe count. If pcrec
+     * accepts NOTHING here, the gate never opened and this whole pass is the
+     * closed-gate sweeps run twice — which is precisely the failure OPTRUN-B3
+     * describes, reproduced by the check written to close it. Floored at a
+     * measured number rather than at 1: one accepted cell would satisfy a
+     * gate that opened for a single row. */
+    if (t.pc_accept < GATE_ACCEPT_FLOOR)
+        bad("gated[%s]: pcrec accepted only %ld of %ld cells with the gate OPEN "
+            "(floor %d). Either the producers stopped producing or the enabled "
+            "set is not reaching them — and with nothing accepted, T1 cannot fail "
+            "and this pass reads as coverage while measuring nothing.",
+            set, t.pc_accept, t.probes, GATE_ACCEPT_FLOOR);
+    else {
+        snprintf(line, sizeof line,
+                 "gated[%s] liveness: pcrec ACCEPTED %ld cells with the gate open "
+                 "(floor %d) — the producers really ran, so T1 had something to catch",
+                 set, t.pc_accept, GATE_ACCEPT_FLOOR);
+        ok(line);
+    }
+    /* And the other direction: T1 is only meaningful over cells libpcre2
+     * REJECTS. A space where everything compiles agrees with any compiler. */
+    if (t.p2_reject < GATE_REJECT_FLOOR)
+        bad("gated[%s]: libpcre2 rejected only %ld of %ld cells (floor %d). T1 "
+            "is a claim about rejected cells; with too few, agreement is free.",
+            set, t.p2_reject, t.probes, GATE_REJECT_FLOOR);
+    else {
+        snprintf(line, sizeof line,
+                 "gated[%s] liveness: libpcre2 REJECTED %ld cells (floor %d), so "
+                 "T1 is asserted over a real population", set, t.p2_reject,
+                 GATE_REJECT_FLOOR);
+        ok(line);
+    }
+
+    /* ---- restore, and prove it -----------------------------------------
+     * The enabled set is process-global. Leaving it open would silently
+     * re-scope every check added after this one. */
+    if (pcrec_enabled_set_spec("none", err, sizeof err) != 0)
+        bad("gated[%s]: could not restore the empty enabled set: %s", set, err);
+    else if (pcrec_enabled_mask() != 0)
+        bad("gated[%s]: the enabled set is still 0x%x after restoring 'none'. Any "
+            "check added below this line would run at an open gate while its own "
+            "text says otherwise — and the NEXT focused pass would not be "
+            "focused.", set, pcrec_enabled_mask());
+    else {
+        snprintf(line, sizeof line,
+                 "gated[%s]: the enabled set is restored to empty (this pass leaves "
+                 "no process-global behind, so the next focused pass really is "
+                 "focused)", set);
+        ok(line);
+    }
+}
+
 int main(void)
 {
     char why[512], ver[64];
@@ -2437,6 +2907,11 @@ int main(void)
     check_option_runs();
     check_group_tails();
     check_uprops_differential();
+    /* LAST, and deliberately: it is the only check here that writes the
+     * process-global enabled set. It restores it and asserts the restore, but
+     * ordering it last means nothing above can be re-scoped by a bug in that
+     * restore rather than merely reported by it. */
+    check_gated_option_space("modifiers");
 
     printf("\n== Summary (PC-3) ==\nchecks passed: %d\nchecks failed: %d\n", pass, fail);
     return fail ? 1 : 0;
