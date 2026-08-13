@@ -486,49 +486,99 @@ engine, a new prefilter) DOES produce a false positive under `LINTGEN=1`,
 that is a finding to document here with the exact pattern and diagnostic,
 not something to silently exclude.
 
-Runtime delta (`make test` vs `make test LINTGEN=1`, commit `c509d944`,
-gcc 15.2.0, box otherwise quiet only for `make ubsan`; some measurements
-below ran concongruently with another agent's `make test-corpus` and are
-marked): **[fill in from clean back-to-back run]**
+Runtime delta (`make test` vs `make test LINTGEN=1`): **measurement HELD**
+(2026-08-13) — a second lane (tt1) is running concurrent per-section timing
+sweeps on this same box for its own tiered-testing work, and the project's
+R3.10 lesson (the most-repeated failure class in this repo's history: a
+runtime number documented without load provenance) means this delta is not
+worth taking until that sweep clears. A first attempt was stopped
+mid-run rather than recorded. Will follow in a later commit once the
+manager sends the all-clear and a quiet-box run can be taken with
+`/proc/loadavg` sampled before and after.
 
 ### Measured runtimes (2026-08-13, commit `c509d944`, gcc 15.2.0 Ubuntu
 15.2.0-16ubuntu1, libpcre2 10.46 present — PC-3/PC-4's ~1000+ checks and
 ~700K probes run for real under both sanitizers, nothing skipped)
 
-| target | wall time | result |
-|---|---|---|
-| `make ubsan` | 6m57s | **GREEN** — full suite (harness, cli, reject, registry incl. PC-3/PC-4, parse, codegen, trie_identity, known_fail), both axes |
-| `make asan` | 7m58s (stops at trie_identity; known_fail — empty/instant — confirmed separately clean) | 1 finding, see below |
-| `make lint` | ~9s | **GREEN**, 0 findings |
+**Load provenance, per R3.10** (the project's own most-repeated
+measurement failure: a number recorded without checking what else was on
+the box): the `make ubsan` and first `make test` baseline runs below did
+NOT have `/proc/loadavg` sampled before/after at the time — an omission,
+not a claim of a quiet box — and a second lane (tt1) is confirmed to have
+been running concurrent work on this box during at least part of this
+window. **Treat the two numbers below as CONTENDED / load-unknown, not a
+tight budget**, until re-taken quiet with load samples. `make asan`'s
+figure below DOES carry a load sample (taken after this caveat was raised)
+and was very likely contended too (tt1's sweep was confirmed running
+throughout). `make lint`'s ~9s figure is short enough that ordinary
+scheduling noise dominates before contention would show up in a
+minute-scale tier decision either way.
 
-`make ubsan`/`make asan` are each single, uncontended runs on this box
-except as noted; a stranger's box will differ, and the numbers exist to
-place these targets in a tier (battery, not smoke — see below), not as a
-tight budget.
+| target | wall time | result | load provenance |
+|---|---|---|---|
+| `make ubsan` | 6m57s | **GREEN** — full suite (harness, cli, reject, registry incl. PC-3/PC-4, parse, codegen, trie_identity, known_fail), both axes | NOT sampled at the time — CONTENDED/unknown, re-time before trusting to the minute |
+| `make asan` | 7m58s (stops at trie_identity; known_fail — empty/instant — confirmed separately clean) | 1 finding, see below | tt1's sweep confirmed running concurrently during this window — CONTENDED, re-time before trusting to the minute |
+| `make lint` | ~9s | **GREEN**, 0 findings | short enough that contention is unlikely to move the minute-scale tier decision |
+
+These numbers still support the qualitative claim the plan row needs
+(minutes, not seconds — "battery, not smoke") even under contention, since
+a 2x skew would have to be implausibly large to change that tier call. They
+are NOT yet trustworthy to the minute for a finer placement decision (e.g.
+"joins the 5-minute checkpoint stage vs a 10-minute one"), and will be
+re-taken quiet, with `/proc/loadavg` before/after, once the manager's
+all-clear lands.
 
 ### Sanitizer findings inventory
 
 **F1 — `-Wclobbered` on `pcrec_syntax_explain`'s `rows_shown`/`dissents`,
 `src/parse/syntax_dump.c:881`, surfaces only under `make asan`** (not
-`make ubsan`, not the default `-O2` build, not `make strict`). Repro:
-`gcc -O1 -g -fsanitize=address,leak -Wall -Wextra -std=gnu11 -c
-src/parse/syntax_dump.c` (or `make asan`, which hits it while rebuilding
-`tests/codegen/run_trie_identity.sh`'s `-DPCREC_NO_TRIE` reference compiler
-from source — the same warning is present in the real `build-asan/`
-library build too, confirmed in that build's own log; it just has nowhere
-that trips on it). **Triage guess: false positive / benign, not a real
-defect.** The two variables are declared before a `setjmp(cx.jb)` and
-mutated only after it; the comment immediately above the `setjmp` already
-states the reasoning gcc's heuristic can't see: *"`rows_shown`/`dissents`
-are mutated after it and are deliberately not read [on the longjmp
-path]"* — the `if (setjmp(cx.jb)) { ...; return NULL; }` branch returns
-before either variable is ever read. This is the same shape as another
-`setjmp` earlier in the same file that this project already resolved as
-benign (see the comment block above `syntax_dump.c`'s first `setjmp`,
-~line 455). Not fixed here (SAN-1's findings discipline: report, don't
-fix, except trivial one-liners — and silencing a compiler heuristic
-without matching the file's own established "document why it's safe"
-convention is a judgment call for `--explain`'s owner, not this lane).
+`make ubsan`, not the default `-O2` build, not `make strict`). **Full
+compiler output, verbatim:**
+
+```
+/home/duxevents/pcrec/worktrees/san1/src/parse/syntax_dump.c: In function ‘pcrec_syntax_explain’:
+/home/duxevents/pcrec/worktrees/san1/src/parse/syntax_dump.c:881:9: warning: variable ‘rows_shown’ might be clobbered by ‘longjmp’ or ‘vfork’ [-Wclobbered]
+  881 |     int rows_shown = 0, dissents = 0;
+      |         ^~~~~~~~~~
+/home/duxevents/pcrec/worktrees/san1/src/parse/syntax_dump.c:881:25: warning: variable ‘dissents’ might be clobbered by ‘longjmp’ or ‘vfork’ [-Wclobbered]
+  881 |     int rows_shown = 0, dissents = 0;
+      |                         ^~~~~~~~
+```
+
+Both variables named, both from the single declaration line
+`int rows_shown = 0, dissents = 0;` at `src/parse/syntax_dump.c:881`, inside
+`pcrec_syntax_explain` (the `--explain` query function, R20/MOD-0.7
+territory). Repro: `gcc -O1 -g -fsanitize=address,leak -Wall -Wextra
+-std=gnu11 -c src/parse/syntax_dump.c` (or `make asan`, which hits it while
+rebuilding `tests/codegen/run_trie_identity.sh`'s `-DPCREC_NO_TRIE`
+reference compiler from source — the same warning is present in the real
+`build-asan/` library build too, confirmed in that build's own log; it
+just has nowhere that treats a warning as fatal there).
+
+**Triage guess: false positive / benign, not a real defect — but flagged
+for the setjmp-guard owner to confirm, not asserted with confidence, since
+a clobbered-across-setjmp variable is exactly this project's own R20
+tier-1-bug shape when it's wrong.** The two variables are declared at
+line 881, BEFORE the function's `setjmp(cx.jb)` call (a few lines below, at
+line 907, per the function's own source), and mutated only after it
+(`rows_shown++` at line 967, `dissents +=` at line 1039, both well past the
+`setjmp`). The comment immediately above that `setjmp` already states the
+reasoning gcc's `-Wclobbered` heuristic apparently can't see through:
+*"`body`, `sb` and `cx` are declared above the `setjmp` and mutated only
+through their escaped addresses; `rows_shown`/`dissents` are mutated after
+it and are deliberately not read here [i.e. on the longjmp path]"* — the
+`if (setjmp(cx.jb)) { sb_free(&body); sb_free(&sb); arena_free(&cx.arena);
+if (ndissent) *ndissent = 0; return NULL; }` branch returns unconditionally
+without ever reading `rows_shown` or `dissents`, so whatever clobbered
+value either holds on that path is never observed. This is the same shape
+as another `setjmp` earlier in the same file (~line 455) that this
+project's own comments describe having already reasoned through as benign
+for an analogous warning. Not fixed here (SAN-1's findings discipline:
+report, don't fix, except trivial one-liners — and this needs the
+`--explain`/R20 setjmp-guard owner's confirmation that the longjmp path
+truly never reads either variable anywhere else in the function before
+committing to "benign," not a mechanical `volatile` silence from this
+lane).
 
 **Secondary observation, not a finding**: this is the FIRST time anything
 in the repo has compiled `syntax_dump.c` under `-fsanitize=address` — the
