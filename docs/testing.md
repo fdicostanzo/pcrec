@@ -351,3 +351,283 @@ interaction. Coverage honesty: interactions between enabled modules are a
 real axis, but they are tested DELIBERATELY as their own labelled sweeps,
 not smuggled in as noise inside every differential. (This mirrors the
 per-module-not-blanket rule the `--features` CLI surface already pins.)
+
+## Sanitizer + lint battery (SAN-1, 2026-08-13)
+
+Three opt-in targets, the same shape as `make strict`: never part of `make
+test`, never default, write nothing to `build/`, safe to run alongside
+`make test` in another shell. `make ubsan` and `make asan` each build a
+SEPARATE tree (`build-ubsan/`, `build-asan/`, gitignored, via the Makefile's
+`BUILD_DIR` variable) so a subsequent plain `make`/`make test` is unaffected.
+TSan already lives in `tests/thread` (part of `make test`, docs/testing.md's
+existing coverage); this section completes the sanitizer family docs/plan.md
+[SAN-1] asked for, and adds `make lint` and the `LINTGEN` flag.
+
+### Both axes, and why each target needs both
+
+Trouble lands in two different pieces of code, and a battery that only
+instruments one is blind to the other:
+
+- **the COMPILER axis** — `pcrec` itself (parsing, the registry, IR
+  construction, codegen, the CLI) and the small C test-driver binaries
+  several suites build to link `libpcrec.a` directly (`registry_check.c`,
+  `pcre2_check.c`, `branch_count_check.c`, `pc4_check.c`/`pc4_driver.c`).
+  R20's tier-1 longjmp-into-uninitialized-`jmp_buf` bug (fixed the same
+  session it was found) is this class — the kind of bug that surfaces as a
+  lucky SIGSEGV without a sanitizer and as a precise, first-execution
+  diagnostic with one.
+- **the COMPILEE axis** — every GENERATED matcher the suite compiles and
+  runs. This is where OPT-A/OPT-B will take real risk (memchr/SIMD
+  prefilters, transition-table packing) once they open, so the tripwire is
+  built first, per Frank: "we should expect some trouble when we start
+  optimizing."
+
+`make ubsan`/`make asan` set `PCREC`/`LIBPCREC`/`LIBA` to point every suite
+at the sanitizer-built tree (compiler axis) and `GENCFLAGS` to carry the
+sanitizer flags into every generated-matcher compile (compilee axis) in one
+pass, over the SAME suites `make test` runs (minus `tests/thread`, see
+Exclusions below).
+
+### The GENCFLAGS compile-site audit (the actual SAN-1 finding)
+
+The brief this landed from assumed the `GENCFLAGS` hook already reached
+"every place a generated matcher is compiled" and asked to verify that.
+It did not. `tests/harness/run.sh` and `tests/codegen/run_codegen_tests.sh`
+honored it; four other compile sites that build or link generated-matcher
+code had their own hardcoded flags and were completely deaf to it:
+
+| site | what it compiles | was | now |
+|---|---|---|---|
+| `tests/cli/run_cli_tests.sh` | `gen.c` + small drivers, several cases | hardcoded `CFLAGS` | `CFLAGS="${GENCFLAGS:-...same default...}"` |
+| `tests/registry/run_pc4.sh` | the 273-pattern sweep's `gen.c`/`gen.o`, per pattern | hardcoded `-O0 -std=gnu11` | honors `GENCFLAGS`, same default |
+| `tests/registry/run_registry_tests.sh` | links `libpcrec.a` (`registry_check.c`, `pcre2_check.c`) | hardcoded `LIB=.../build/libpcrec.a` | `LIB="${LIBPCREC:-...same default...}"`, plus `$SANFLAGS` appended to both builds |
+| `tests/parse/run_parse_tests.sh` | links `libpcrec.a` (`branch_count_check.c`) | same | same fix |
+| `tests/codegen/run_trie_identity.sh` | the `-DPCREC_NO_TRIE` reference compiler, built from source | `PCREC` was already overridable (free compiler-axis coverage); `$REF`'s own build had no hook | `$SANFLAGS` appended to the `$REF` build |
+
+Two new env vars carry this, both empty/default-preserving when unset:
+`LIBPCREC` (default `<repo-root>/build/libpcrec.a`) lets a suite that links
+the library directly pick up the sanitizer-built one; `SANFLAGS` (default
+empty) is appended to the small test-driver builds that don't already have a
+`GENCFLAGS`-shaped hook, since those are compiler-axis code, not generated
+matchers. `tests/reject/` and `tests/known_fail/` compile nothing directly
+(known_fail delegates to `tests/harness/run.sh`, which already carries the
+hook) and needed no change.
+
+### Targets
+
+- **`make ubsan`** — `-fsanitize=undefined -fno-sanitize-recover=undefined`
+  (the `-fno-sanitize-recover` is deliberate: a first-hit abort with a
+  stack trace, not a log line the harness's own PASS/FAIL scan could miss).
+  Compiler axis at `-O1 -g`; compilee axis via
+  `GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra -fsanitize=undefined -fno-sanitize-recover=undefined"`.
+- **`make asan`** — `-fsanitize=address,leak`, same `-O1 -g` / `GENCFLAGS`
+  shape. `ASAN_OPTIONS="detect_leaks=1"` is set explicitly since LSan's
+  default varies by platform.
+- **`make lint`** — static analysis survey, degrading loudly-but-gracefully
+  per tool present (the PC-3 libpcre2-absent SKIP pattern), never failing
+  the target just because a tool is missing:
+
+  | tool | verdict | reason |
+  |---|---|---|
+  | `gcc -fanalyzer` | **ADOPTED** | the only analyzer this box offers; 0 findings across the whole tree (17 lib files + cli/main.c), ~9s |
+  | `clang-tidy` | absent on this box | SKIP, loud, per-run |
+  | `cppcheck` | absent on this box | SKIP, loud, per-run |
+  | `clang` (as a second compiler, for its own warning set) | absent on this box | SKIP, loud, per-run |
+  | `valgrind` | absent on this box; noted below as the ASan-conflict fallback anyway | — |
+
+  These are ABSENCE, not technical rejections — this box happens to offer
+  only `gcc`. `make lint` prints `SKIP: <tool>: not installed` for each, the
+  same shape as PC-3's libpcre2-absent skip, so a stranger's box with more
+  tooling installed gets more coverage automatically without a code change
+  here (the survey is re-runnable, not a one-time verdict pinned to this
+  machine).
+
+  `gcc -fanalyzer` is genuinely useful, not adopted by default: it catches a
+  straight-line double-free immediately (`free(p); free(p);` in `main`,
+  no branch), but MISSED the same bug moved into a helper function and
+  gated behind one `if` branch, at `-O2`, in a throwaway probe — a real,
+  documented limit of its interprocedural reach, not a claim that `make
+  lint` catches every use-after-free. Record it so a future "why didn't
+  lint catch X" has an answer already on file.
+
+### LINTGEN — riding `make test`'s own compile pass (Frank, 2026-08-13)
+
+`make test LINTGEN=1` is a second, complementary lint mechanism: rather than
+a separate lint-only pass over generated code, it injects `-fanalyzer` into
+the SAME `GENCFLAGS` compile every generated matcher already goes through
+during a normal `make test` run. `LINTGEN` is `?= 0` and `export`ed from the
+Makefile; `tests/harness/run.sh`, `tests/cli/run_cli_tests.sh`,
+`tests/codegen/run_codegen_tests.sh`, and `tests/registry/run_pc4.sh` each
+read it themselves (the same pattern as `GENCFLAGS`) and append `-fanalyzer`
+(`run_pc4.sh` also adds `-Werror`, since its own `GENCFLAGS` default has none
+— see below). Unset (default), the four scripts compute byte-identical
+`GENCFLAGS`/`CFLAGS` to before; `make test` is unaffected.
+
+**Findings surface loudly, by construction, not by a separate check**:
+`harness`/`cli`/`codegen`'s default `GENCFLAGS` already carries `-Werror`, so
+an analyzer finding on generated code is a hard compile failure, exactly
+like any other warning on that path — no new machinery needed.
+`run_pc4.sh`'s default (`-O0 -std=gnu11`, no `-Wall`/`-Werror` — this sweep
+runs 273 patterns and stays fast on purpose) does NOT carry `-Werror`, so
+`LINTGEN=1` adds `-Werror` there too, specifically so a finding does not
+compile clean and vanish.
+
+**False-positive survey before wiring, not after**: before adding the
+`-Werror` coupling, 9 representative generated-matcher shapes (alternation,
+anchors, bounded repeats `{2,5}`, character classes, keyword-alternation —
+the trie/OPT-A's future target — case-insensitive, `--emit-main`) were run
+through `gcc -O1 -Wall -Wextra -fanalyzer` by hand. **Zero findings, zero
+false positives**, including on the keyword-alternation trie's
+computed-goto shape — `-fanalyzer`'s treatment of `goto *table[state]`
+turned out to be a non-issue for this codebase's generated output, contrary
+to the a-priori worry that computed goto would be exactly where a
+whole-program analyzer gets confused. If a future generated shape (a new
+engine, a new prefilter) DOES produce a false positive under `LINTGEN=1`,
+that is a finding to document here with the exact pattern and diagnostic,
+not something to silently exclude.
+
+Runtime delta (`make test` vs `make test LINTGEN=1`, commit `c509d944`,
+gcc 15.2.0, box otherwise quiet only for `make ubsan`; some measurements
+below ran concongruently with another agent's `make test-corpus` and are
+marked): **[fill in from clean back-to-back run]**
+
+### Measured runtimes (2026-08-13, commit `c509d944`, gcc 15.2.0 Ubuntu
+15.2.0-16ubuntu1, libpcre2 10.46 present — PC-3/PC-4's ~1000+ checks and
+~700K probes run for real under both sanitizers, nothing skipped)
+
+| target | wall time | result |
+|---|---|---|
+| `make ubsan` | 6m57s | **GREEN** — full suite (harness, cli, reject, registry incl. PC-3/PC-4, parse, codegen, trie_identity, known_fail), both axes |
+| `make asan` | 7m58s (stops at trie_identity; known_fail — empty/instant — confirmed separately clean) | 1 finding, see below |
+| `make lint` | ~9s | **GREEN**, 0 findings |
+
+`make ubsan`/`make asan` are each single, uncontended runs on this box
+except as noted; a stranger's box will differ, and the numbers exist to
+place these targets in a tier (battery, not smoke — see below), not as a
+tight budget.
+
+### Sanitizer findings inventory
+
+**F1 — `-Wclobbered` on `pcrec_syntax_explain`'s `rows_shown`/`dissents`,
+`src/parse/syntax_dump.c:881`, surfaces only under `make asan`** (not
+`make ubsan`, not the default `-O2` build, not `make strict`). Repro:
+`gcc -O1 -g -fsanitize=address,leak -Wall -Wextra -std=gnu11 -c
+src/parse/syntax_dump.c` (or `make asan`, which hits it while rebuilding
+`tests/codegen/run_trie_identity.sh`'s `-DPCREC_NO_TRIE` reference compiler
+from source — the same warning is present in the real `build-asan/`
+library build too, confirmed in that build's own log; it just has nowhere
+that trips on it). **Triage guess: false positive / benign, not a real
+defect.** The two variables are declared before a `setjmp(cx.jb)` and
+mutated only after it; the comment immediately above the `setjmp` already
+states the reasoning gcc's heuristic can't see: *"`rows_shown`/`dissents`
+are mutated after it and are deliberately not read [on the longjmp
+path]"* — the `if (setjmp(cx.jb)) { ...; return NULL; }` branch returns
+before either variable is ever read. This is the same shape as another
+`setjmp` earlier in the same file that this project already resolved as
+benign (see the comment block above `syntax_dump.c`'s first `setjmp`,
+~line 455). Not fixed here (SAN-1's findings discipline: report, don't
+fix, except trivial one-liners — and silencing a compiler heuristic
+without matching the file's own established "document why it's safe"
+convention is a judgment call for `--explain`'s owner, not this lane).
+
+**Secondary observation, not a finding**: this is the FIRST time anything
+in the repo has compiled `syntax_dump.c` under `-fsanitize=address` — the
+default `build-asan/libpcrec.a` build doesn't fail on it (no `-Werror`
+there), and it only becomes fatal because `run_trie_identity.sh`'s own
+`$REF` build has always treated any warning as fatal (`comment: "Warnings
+stay on so #ifdef rot is loud rather than silent"`) — a policy this row's
+`$SANFLAGS` plumbing (added for bonus compiler-axis coverage on `$REF`;
+`$PCREC` itself already covers the PRIMARY compiler axis there) newly
+exposes to warnings from an unrelated file. Worth a manager call: either
+accept that `make asan` surfaces this class of coupling (arguably correct
+— it IS a real warning on real code, just not one `run_trie_identity.sh`'s
+own purpose is about), or scope `$SANFLAGS` out of the `$REF` build and
+rely on `$PCREC`'s compiler-axis coverage alone there.
+
+No findings from `make ubsan` at commit `c509d944` — clean across the full
+suite including the PC-3/PC-4 probe volume.
+
+### K7/K9 — read, not automated here
+
+docs/known_issues.md K7 (a large bounded repeat exhausts memory and can
+abort the CALLER's process under a memory limit — ASan/LSan's home class)
+has **no automated repro in `make test` today**; it is reproduced only by
+hand (`ulimit -v ...; pcrec ... 'a{0,65535}'`) and by the probe
+measurements the entry cites. There is therefore nothing K7-shaped to
+exclude from `make asan` right now. If a K7 repro is ever added to the
+standing suite, expect exactly the conflict the brief anticipated — ASan's
+shadow-memory bookkeeping needs headroom a tight `ulimit -v` does not leave
+it — and the no-rebuild alternative is **valgrind memcheck**
+(`valgrind --leak-check=full build/pcrec ...`), which works under an
+external memory limit the way ASan's in-process shadow memory does not.
+(Not runnable on THIS box for this report — `valgrind` is one of the absent
+tools above — but the substitution is the same "no-rebuild alternative"
+pattern PC-3 documents for libpcre2-absent boxes: the recommendation
+survives the tool's own absence.) K9 (`pcrec_compile()` takes no pattern
+length, so an embedded NUL silently truncates) is a public-API/semantic
+issue, not a memory-safety one — no sanitizer in this battery is the right
+instrument for it, and it is out of SAN-1's scope by construction.
+
+### Sabotage validation — the instrument has to be watched fire
+
+Following `tests/thread/`'s and `tests/mech/`'s own convention (an
+instrument nobody has watched fire is a claim, not a check), each axis of
+each sanitizer was validated with a planted bug in a SCRATCH file
+(scratchpad, never committed, never touching `src/`), built with the exact
+flags the corresponding Makefile target uses, then removed:
+
+| axis | sanitizer | sabotage | result |
+|---|---|---|---|
+| compiler | UBSan | signed overflow (`INT_MAX + 1`, `volatile`-sourced so gcc can't fold it) in a scratch `main()`, built with `make ubsan`'s exact `UBSAN_CFLAGS` | caught, precise diagnostic + stack trace, exit 1 |
+| compilee | UBSan | signed overflow hand-planted into a REAL `pcrec`-generated matcher (`a(b|c)+d`)'s `rx_search`, forced live via `fprintf` (a dead computation with no observer is legally eliminated — see below), compiled via `GENCFLAGS` exactly as the harness would, linked with the real `tests/harness/driver.c` | caught, diagnostic names `gen.c:12`, exit 1 |
+| compiler | ASan+LSan | heap-buffer-overflow (`memset` 1 byte past an 8-byte `malloc`, runtime-sized so gcc can't constant-fold it) + a leaked allocation, in a scratch `main()`, built with `make asan`'s exact `ASAN_CFLAGS` | caught (both classes), exit 1 |
+| compilee | ASan | out-of-bounds READ on the emitted `rx_fcls[256]` global table (index depends on runtime subject length), hand-planted into a real generated matcher, compiled via `GENCFLAGS` | caught, `global-buffer-overflow`, names `rx_fcls` and its true 256-byte extent, exit 1 |
+
+**One measured gotcha worth keeping, found while building the compiler-axis
+ASan sabotage**: at `-O1` (the flag level both `make ubsan` and `make asan`
+build at), gcc's dead-store elimination silently erased a heap-overflow
+write that was never read before the buffer was freed — the sabotage
+compiled clean and ran to exit 0 under ASan, looking like a sanitizer
+failure until the write was made observable (an `fprintf` reading the
+overflowed byte back). This is legal per the C standard (an unobserved
+write has no side effect the compiler must preserve) and is not specific to
+this project's sanitizer flags — but it means a "write-then-free-with-no-
+read" class of real bug, if one ever exists in pcrec's own code, could in
+principle be optimized away before ASan's instrumentation sees it at `-O1`.
+Recorded as a known limit of the chosen build flags rather than fixed
+(`-O0` would close it but cost real coverage speed across a suite this
+size — a tradeoff for the manager, not decided here).
+
+### Exclusions
+
+- **`tests/thread/`** — NOT re-run under `make ubsan`/`make asan`. TSan
+  already covers it (part of `make test`); combining ASan/UBSan
+  instrumentation with the pthread-heavy TS-2/TS-3 driver is not how these
+  sanitizers compose cleanly on this toolchain, and concurrency bugs are
+  TSan's class, not UBSan/ASan's. The exclusion is structural (the target's
+  suite list omits it), not a skip printed at run time.
+- **`make bench`, `make mech`, `make fuzz`** — never touched. `bench`'s
+  numbers are timing medians that sanitizer overhead would invalidate;
+  `mech` already costs ~6 minutes building the tree ~20 times, and doubling
+  that under a sanitizer is disproportionate to what SAN-1 needs to prove;
+  `fuzz` is a separate, long-running, manually-invoked tool.
+- **`tests/spec_mod0/`, `tests/probes/`** — never part of `make test` (D27
+  hand-off artifacts / design-measurement probes), so never part of
+  `make ubsan`/`make asan` either — SAN-1 rides the STANDING battery, it
+  does not grow it.
+
+### Battery integration — measured, not decided here
+
+The plan row (`docs/plan.md` [SAN-1]) explicitly defers the placement
+question ("which stages join wake §3's standing battery vs run
+checkpoint-only is a number-backed decision") to the manager, once runtime
+is measured. It now is: `make ubsan` and `make asan` each cost roughly as
+much wall time as the entire standing `make test` suite (~6-8 minutes each,
+serial — `PROCS` is not wired into either target), so back-of-envelope a
+full local pre-push (`make test` + `make ubsan` + `make asan` + `make
+lint`) is in the 15-20 minute range on this box, serial. **Never smoke** —
+the plan row's own expected answer holds. Whether both sanitizers join the
+checkpoint-close battery, or one is checkpoint-only and the other
+per-release, is the manager's call once F1 above is triaged (an
+un-triaged finding makes `make asan` red today, which changes what "joins
+the battery" would mean operationally until it's resolved).

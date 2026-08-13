@@ -213,6 +213,6 @@ fuzz: all
 	python3 tests/fuzz/fuzz.py
 
 clean:
-	rm -rf build
+	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
 
 .PHONY: all test strict ubsan asan lint mech bench fuzz clean
