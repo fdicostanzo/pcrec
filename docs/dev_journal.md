@@ -7036,3 +7036,71 @@ Lessons, this session's additions (full statements in the memory file):
 - The generated sweep, not source-blindness alone, is what makes D27 pay:
   a hand-listed probe table inherits its author's alphabet whether or not
   that author could read the implementation.
+
+## 2026-08-13 — fifteenth session: TT-1 + SAN-1 both landed; box reboot mid-session, zero loss; battery placement ruled
+
+Session under /pcrec-manager, Frank present intermittently; light session
+as ordered, exactly the queued pair, both closed. Two SONNET worker lanes
+(Frank: lower models, subscription limits), concurrent, merges serialized.
+Baseline verified green at 662c528 before lanes launched.
+
+**[TT-1] tiered testing (lane tt1, merged c9776ee):** 9 section targets
+wrapping `test:`'s own scripts (`test:` byte-untouched; test-spec wrapped
+though deliberately not part of make test — documented three places);
+`make smoke` = 6 fast sections, 31-32s across 3 runs, SMOKE_FLOOR=6 a
+literal independent of SMOKE_SECTIONS (check-design lesson applied),
+floor sabotage-validated (dropped section → loud trip, exit 2, restored);
+per-section runtimes measured 3x with per-run load sampling after the
+lane's FIRST sweep was discarded whole for R3.10 contamination (overlapped
+san1's runs; single-sample load check — the exact historical mistake);
+touched-path→sections table; doubling re-record trigger; opt-in `make
+hooks` pre-push resolving `git rev-parse --git-path hooks`. Corpus is
+~304s of ~391s serial total — the tier structure was visible in the data.
+
+**[SAN-1] sanitizer+lint battery (lane san1 + manager landing, merged
+f943060):** make ubsan/asan/lint, opt-in, BUILD_DIR-separated trees, BOTH
+axes. Headline: the GENCFLAGS COMPILE-SITE AUDIT found FIVE deaf sites
+(cli, pc4, registry-link, parse-link, trie_identity $REF) — the compilee
+axis was silently partial its whole life; new hooks LIBPCREC/SANFLAGS/
+LINTGEN plumb them. Frank's LINTGEN=1 "2-fer" rides make test's own
+compile pass with -fanalyzer: +53.7s/+13.8% quiet-measured; 9-shape
+false-positive survey first (zero, incl. computed-goto trie). Four
+sabotage validations (both sanitizers x both axes) fired. F1: -Wclobbered
+on pcrec_syntax_explain's rows_shown/dissents, asan-build only —
+manager-triaged BENIGN (handler reads neither; comment already stated the
+invariant), hardened volatile (2e71606). Gotcha recorded: -O1 DSE legally
+erases an unobserved heap-overflow write before ASan sees it. Quiet
+runtimes (serial, idle box, per-run load ≤1.05): baseline test 389.7s
+(agrees with TT-1's independent ~391s section-sum), LINTGEN 443.3s,
+ubsan 408.9s, asan 470.4s (green post-F1), lint 8.8s. Contended earlier
+figures superseded; they landed within ~7% of quiet — discipline kept
+anyway. SANFLAGS-on-$REF coupling RULED KEPT (F1 is its existence proof).
+
+**Battery placement RULED (manager, from the numbers, in testing.md):**
+merge/close battery gains ubsan+asan+lint; battery-grade make test adopts
+LINTGEN=1; smoke never; asan red blocks a merge like a test red.
+
+**Incidents, all recovered:** (1) cross-lane timing contamination —
+caught, sweep discarded, measurement windows then explicitly serialized
+by the manager. (2) tt1's Monitor missed its sweep-completion wake twice
+(Frank spotted the idle box once); a 10-minute manager cron doing
+ARTIFACT-based stall checks (worktree mtimes + log trailers,
+message-first) covered the rest of the session; deleted at close.
+(3) THE BOX REBOOTED 02:50 (journalctl -b -1: clean systemd shutdown,
+not a panic; external cause) — both lane agents died, ZERO work lost:
+tt1 already merged; san1 had committed everything after a manager nudge
+~40min earlier ("commit as you go" is crash insurance, measured). Manager
+finished san1's landing per protocol (quiet re-times + docs + rulings).
+
+**Also this session:** browser/Wasm backend discussed, left CONVERSATIONAL
+per Frank (no plan row); assessment + cheap first experiment recorded in
+wake.md §1. Stale mod08c worktree cleaned. tt1 fixed two pre-existing doc
+staleness bugs (tests/thread/CLAUDE.md make-test claim; tests/CLAUDE.md
+missing spec_mod0/ + mech/ entries).
+
+**Close battery at e2ee3a1, ALL GREEN:** strict 2.7s; test LINTGEN=1
+PROCS=6 157.2s; spec 14/14 25.5s; fuzz seed-1 4.5s; ubsan 411.2s green
+both axes; asan 474.6s green both axes; lint 8.8s clean; bench 15.0s;
+mech 266.6s trailer `35 rows (undetected: 0, anomalies: 0, pc3-skipped:
+0)`. Counts unchanged (infrastructure session, no new test rows).
+Worktrees tt1/san1 removed post-merge; only d27-selftest-cell remains.
