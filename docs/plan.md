@@ -1821,7 +1821,7 @@ document). Mechanize instead.
   HEAD` tree per sabotage and its replace.py refuses to continue unless the
   target text was found exactly N times and actually changed. — a pristine-sabotage-tree helper. The contaminated 132/200 figure came from a hand-rolled copy+sed+`git checkout` loop where the revert silently failed (`|| true` inside a tarball copy that is not a git repo) so sabotage 2 landed on top of sabotage 1. One helper that makes a fresh tree per sabotage, asserts the target text was found and changed, and refuses to continue otherwise. Subsumed by MECH-1 if that lands first
 - [MECH-3] STATE:not-started — a measurement wrapper that refuses to emit a number without provenance: interleaved A/B, N trials, load before AND after (R3.10), min/median/max spread, and a stamped record. Every performance overclaim this project has made — the 27%-recorded-as-+40%, this session's 1.5-4.1% deltas taken at load 4.5-9.7 — would have been blocked at the point of measurement rather than caught in review. Frank's precedent: a claude-safe grep that refuses `| tail` and reports what it actually looked at
-- [TT-1] STATE:not-started — TIERED TESTING (Frank, 2026-08-12: suite crept
+- [TT-1] STATE:started — TIERED TESTING (Frank, 2026-08-12: suite crept
   15min → 5min parallelized → growing again, and we only ever ADD tests;
   "spot check the relevant test sections while we work then hit the full
   load at evaluation"; CI DEFERRED, NOT REJECTED — Frank clarified same
