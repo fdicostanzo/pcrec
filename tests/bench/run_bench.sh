@@ -8,7 +8,7 @@
 #
 #   COMPILE-SPEED  pcrec wall time over ~20 varied base-tier patterns
 #   GCC-TIME       gcc -O1/-O2 wall time compiling two big generated DFAs
-#                  (the R1 A-3 regression guard — see docs/reviews/2026-08-09-m1.md)
+#                  (the R1 A-3 regression guard — see docs/dev/reviews/2026-08-09-m1.md)
 #   THROUGHPUT     MB/s of the generated matcher over three subjects, plus a
 #                  linearity check (the R1 A-2 regression guard)
 #

@@ -135,7 +135,7 @@ static inline int pcre2_abi_load(Pcre2Abi *abi, char *why, size_t whysz)
 }
 
 /* R2-PR5: resolving symbols proves nothing about VERSION, and versions differ
- * behaviourally (pre-10.43 `{,n}` — docs/upstream_issues.md U2). Every consumer
+ * behaviourally (pre-10.43 `{,n}` — docs/dev/upstream_issues.md U2). Every consumer
  * prints this alongside its results, so a result can be attributed. */
 static inline void pcre2_abi_version(const Pcre2Abi *abi, char *buf, size_t bufsz)
 {

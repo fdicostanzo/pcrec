@@ -7,7 +7,7 @@
 # unknown-option diagnostics, and a direct library-API (pcrec_compile /
 # pcrec_output_free) NULL-argument / double-free smoke test.
 #
-# docs/reviews/2026-08-09-m1.md P-M1; plan M2.4.
+# docs/dev/reviews/2026-08-09-m1.md P-M1; plan M2.4.
 #
 # Usage: bash tests/cli/run_cli_tests.sh
 #
@@ -757,7 +757,7 @@ case10() {
 #     A future assertion that reaches for assert_contains "$out" is re-creating
 #     the defect this case was written to remove.
 #
-#     WHAT THIS CASE CANNOT REACH (docs/design_notes_mod07.md section 9.4 —
+#     WHAT THIS CASE CANNOT REACH (docs/design/design_notes_mod07.md section 9.4 —
 #     recorded here because the sweep-template lesson has recurred four times
 #     and this is the signpost):
 #       - THE QUERY SET IS HAND-LISTED. The generated query space (every byte

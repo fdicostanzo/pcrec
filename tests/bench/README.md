@@ -5,7 +5,7 @@ generated matcher return the right span), this suite checks *performance
 regression*: does pcrec stay fast to compile, does the C compiler stay fast
 on its output, and does the generated matcher stay fast (and linear) to
 run. It exists specifically because checkpoint review R1
-(`docs/reviews/2026-08-09-m1.md`) found the M1 computed-goto emitter had two
+(`docs/dev/reviews/2026-08-09-m1.md`) found the M1 computed-goto emitter had two
 measured pathologies that no test caught until an adversarial critic went
 looking, and both needed a standing regression guard before M2 could build
 on top of the emitter:

@@ -41,7 +41,7 @@ Supersedes the earlier load-compromised run of the same date.
 > summary is: pcrec wins clearly on 6 throughput cases (a,b,c,d,e,h), loses
 > clearly on 1 (f), ties on 1 (g). The case (i) latency advantage is
 > direction-robust (won all 7 runs) but its magnitude is ~1.0–2.0x, not the
-> single-sample "1.248x" below. See docs/reviews/2026-08-09-m2.md R2-B1/B2.
+> single-sample "1.248x" below. See docs/dev/reviews/2026-08-09-m2.md R2-B1/B2.
 
 `ratio-vs-pcrec` on the row equal to the best-other-engine reads as pcrec's
 speed multiple over the best non-pcrec engine for that case (throughput cases:

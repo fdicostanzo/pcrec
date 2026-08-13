@@ -196,8 +196,8 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   the control-sharing-a-source shape. S33 (caret consume) was also
   UNDETECTED at first landing for a different reason (its predicted flip
   misread ruling 3's generic-message design). Both histories + fixes:
-  docs/design_notes_mod06.md §8.3 and the sabotage files' own headers.
-  K16 (docs/known_issues.md, found at R19 close, ruled deferred-to-producer)
+  docs/design/design_notes_mod06.md §8.3 and the sabotage files' own headers.
+  K16 (docs/dev/known_issues.md, found at R19 close, ruled deferred-to-producer)
   records the malformed-body-byte divergence — 164/256 body bytes are
   err-146 to libpcre2 at the byte; this scanner reads past them; the fix
   lands with the first producer
@@ -223,7 +223,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   which R10/C4-2 refuted as a control and which made D29's own worked example
   (`--explain '(?i-m:'`) fail; it now prints the ROW's declared attribution
   beside the LIVE doorway's answer and compares them per row (election,
-  promise, attribution — `docs/design_notes_mod07.md` §5.2), selecting rows by
+  promise, attribution — `docs/design/design_notes_mod07.md` §5.2), selecting rows by
   prefix UNION bucket-candidates with each row tagged which rule found it, and
   exiting 3 when a row DISSENTS.
   **THE CLAUSES ARE SCOPED TO THE CLOSED GATE since R20/MOD07-2+3**, and the
@@ -437,7 +437,7 @@ Rules when touching it:
   to mod_modifiers.c as a `recognise` pointer instead of a flag, and the
   SEMANTICS landed at MOD-0.5c/d — see the mod_modifiers.c entry above for
   the port, the scoped state, and the lexer (one home; this line is a
-  pointer, not a second description). See D28 and [MOD-0.5] in docs/plan.md.
+  pointer, not a second description). See D28 and [MOD-0.5] in docs/dev/plan.md.
 - **`RF_CLASS_DELIM` carries a construct's own recognition rule**, not just its
   diagnostic: a delimiter-pair construct opens only when its matching `X]`
   appears later, and the class's own bracket can serve as its `[`. SR-2 moved

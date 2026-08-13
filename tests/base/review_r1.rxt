@@ -1,4 +1,4 @@
-# Regression cases from checkpoint review R1 (docs/reviews/2026-08-09-m1.md).
+# Regression cases from checkpoint review R1 (docs/dev/reviews/2026-08-09-m1.md).
 # S-C1: mid-pattern $ with a matchable continuation must work (EOL-variant states)
 pattern a$\n
 m "a\n" 0 2

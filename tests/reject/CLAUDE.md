@@ -232,7 +232,7 @@ It survived because **python `re` also reads `\v` as 0x0B**, so the base-tier
 oracle agreed with the bug and `tests/base/escapes.rxt` asserted the wrong
 answer and passed. Where python and PCRE2 disagree, a python-verified corpus
 certifies the divergence instead of catching it — recorded in
-`docs/upstream_issues.md` and in `docs/pcre2_compliance.md`.
+`docs/dev/upstream_issues.md` and in `docs/pcre2_compliance.md`.
 
 ## Validated sabotages
 

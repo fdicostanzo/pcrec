@@ -55,7 +55,7 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * The one-shot form above is the WHOLE generated contract today. The
  * streaming interface APPROACH.md §6 specifies (<prefix>_stream_init/feed/
  * end) is not emitted yet: it arrives with milestone M3, whose design gate
- * (docs/plan.md, M3.0) owns reconciling that contract with the two-pass
+ * (docs/dev/plan.md, M3.0) owns reconciling that contract with the two-pass
  * engine before any streaming code is written. */
 
 void pcrec_output_free(pcrec_output *out);

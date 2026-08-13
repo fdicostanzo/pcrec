@@ -73,7 +73,7 @@ Part of `make test` since M2.
   Floored sweeps: 19 queries answered, 81 row blocks, all agree, 79 elect
   their own row and **exactly 2** are the one RS_BASE row exempt.
   **R20 added five groups of pins and rewrote one** (findings in
-  `docs/reviews/2026-08-12-r20-mod08.md`):
+  `docs/dev/reviews/2026-08-12-r20-mod08.md`):
   the CLAUSE SCOPE (`(?J)`/`(?m)` under `--features modifiers` agree and exit
   0, where they dissented on attribution about a tree tests/reject:664 pins as
   correct — with the per-LETTER module still SHOWN, which is the pin that stops
@@ -94,7 +94,7 @@ Part of `make test` since M2.
   unchecked was the size of the EXCEPTION set, so `exempt` is now pinned at
   exactly 2, with the reason written down: one RS_BASE row, appearing in two
   of the 19 queries.
-  **WHAT THIS CASE CANNOT REACH** (docs/design_notes_mod07.md §9.4, recorded
+  **WHAT THIS CASE CANNOT REACH** (docs/design/design_notes_mod07.md §9.4, recorded
   here because the sweep-template lesson has recurred four times and this is
   the signpost): **the query set is HAND-LISTED** — the generated query space
   (every byte after each doorway opener, at depth) is not swept here, so a

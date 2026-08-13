@@ -22,7 +22,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   success), K10 (FIXED 2026-08-12 by MOD-0.6's K10 slice: `RF_CLASS_INVALID` removed
   from the `{U+` row, `[\N{U+41}]` now promises module `unicode-props`;
   guarded by `check_class_syntax_reach` and seven offset pins — see
-  docs/known_issues.md), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
+  docs/dev/known_issues.md), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
   return a tagged ExtResult, one epilogue renders refusals, call sites end in
   internal-error walls — the stub-build repro now exits 1 cleanly at both
   sites; the cls_set range-check hazard stays assigned to the first

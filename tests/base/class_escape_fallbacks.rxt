@@ -9,7 +9,7 @@
 # tests/probes/probe_fix3.c (41 cells, predictor stated first, zero
 # disagreements). Blocks python `re` cannot verify (it rejects \8 \9 \g \k in
 # a class as "bad escape" where PCRE2 compiles a literal) are marked
-# `# pcre2-only`; see docs/upstream_issues.md.
+# `# pcre2-only`; see docs/dev/upstream_issues.md.
 #
 # Before FIX-3 landed, pcrec rejected every pattern in this file with
 # "requires module 'backrefs'" — the K13 over-promise. These pins were

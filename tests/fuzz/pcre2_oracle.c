@@ -104,7 +104,7 @@ static unsigned char *read_file(const char *path, size_t *out_len)
 
 /* R2-PR5: the oracle previously verified only that symbols RESOLVED. If
  * dlopen picked up a different libpcre2-8 (e.g. pre-10.43, where {,n}
- * semantics differ — see docs/upstream_issues.md U2), it would have produced
+ * semantics differ — see docs/dev/upstream_issues.md U2), it would have produced
  * silently wrong "ground truth". Callers can now query the version and record
  * it alongside results. */
 static void print_version(void)

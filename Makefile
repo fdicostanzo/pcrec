@@ -1,4 +1,4 @@
-# pcrec — GNU make build (see docs/decisions.md D2).
+# pcrec — GNU make build (see docs/dev/decisions.md D2).
 # Targets: all (default), test, strict, ubsan, asan, lint, mech, bench, fuzz, clean.
 
 CC      ?= gcc
@@ -172,7 +172,7 @@ strict:
 	@echo "strict: whole tree compiles clean with -Werror"
 
 # ---------------------------------------------------------------------------
-# SAN-1: the sanitizer + lint battery (docs/plan.md [SAN-1], R7/T-3 carry).
+# SAN-1: the sanitizer + lint battery (docs/dev/plan.md [SAN-1], R7/T-3 carry).
 #
 # OPT-IN like `make strict` — never part of `make test`, never default, writes
 # nothing to the source tree, safe to run alongside `make test` (separate
@@ -226,7 +226,7 @@ ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
                ASAN_OPTIONS="detect_leaks=1" \
                LSAN_OPTIONS=""
 
-# K7 (docs/known_issues.md) has NO automated repro in `make test` today — it
+# K7 (docs/dev/known_issues.md) has NO automated repro in `make test` today — it
 # is reproduced only by hand (`ulimit -v ...; pcrec -p rx ... 'a{0,65535}'`)
 # and by the probes/spec-writer measurements the entry cites. There is
 # therefore nothing K7-shaped to exclude here; see docs/testing.md for the

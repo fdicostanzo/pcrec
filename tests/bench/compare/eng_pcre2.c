@@ -55,7 +55,7 @@
  *                                    JIT-compilable even when the library
  *                                    supports JIT in general)
  * A match-time resource-limit trip (PCRE2's rc < 0 && rc != -1, see
- * pcre2_oracle.c's "mlimit" / docs/upstream_issues.md U4) prints
+ * pcre2_oracle.c's "mlimit" / docs/dev/upstream_issues.md U4) prints
  * status=mlimit code=<N> -- not a verdict, must not be compared.
  *
  * Exit codes: 0 normal (a status= line was printed), 2 usage/IO error,

@@ -622,7 +622,7 @@ typedef struct {
      * rendered atom diagnostic with a sibling in the same bucket (10 of the
      * `(?-N)` family, 3 of the `(?<` lookarounds), so a check comparing TEXT
      * — which is what registry_check's check_table_to_parser does — cannot
-     * tell which of them answered. Identity can. See docs/design_notes_mod07.md
+     * tell which of them answered. Identity can. See docs/design/design_notes_mod07.md
      * §5.3.
      *
      * STAMPED IN EXACTLY ONE PLACE PER DOORWAY: each public `pcrec_ext_*`
@@ -746,7 +746,7 @@ struct RegRow {
     RegKind     kind;
     int         sel;       /* the deciding byte, or REG_SEL_ANY */
     /* The bytes that must FOLLOW `sel` for this row to apply, or NULL for "any"
-     * (SR-9, docs/design_registry_selectors.md §7). Since MOD-0.2 the lookup
+     * (SR-9, docs/design/design_registry_selectors.md §7). Since MOD-0.2 the lookup
      * engine never interprets this field: it is the PARAMETER of
      * pcrec_recognise_tail_default — a row's recogniser answers when its tail
      * is a prefix of the text, and `rank` (below) elects among answering rows,
@@ -933,7 +933,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
  * split between "malformed shape" and "well-formed, unrecognised name" —
- * see the file's own header for the full account, docs/design_notes_mod06.md
+ * see the file's own header for the full account, docs/design/design_notes_mod06.md
  * for the design, and D33 §9's obligation this discharges (an EXT_* outcome
  * exists here only in the sense that the refusal text/offset changed;
  * SCALAR/MEMBERS/NODE remain unreachable for this module until a producer
@@ -961,7 +961,7 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
  * name, including names PCRE2 does not have. That was a live over-promise —
  * `(*NOTAVERB)` was told a module would implement it — and it made an external
  * name differential impossible, because pcrec's answer did not depend on the
- * name. See docs/decisions.md D25.
+ * name. See docs/dev/decisions.md D25.
  *
  * THESE ARE NOT RegRows, deliberately. A RegRow names a module, a feature bit,
  * an engine mask and a diagnostic template; fifty verb rows would repeat one

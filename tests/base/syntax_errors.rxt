@@ -124,7 +124,7 @@ perr
 
 # K5 — a count above 65535 (PCRE2 error 105). python `re` ACCEPTS all of these
 # (its own ceiling is 4294967294), so it cannot oracle them — see U5 in
-# docs/upstream_issues.md. Verified against libpcre2 10.46 by hand instead.
+# docs/dev/upstream_issues.md. Verified against libpcre2 10.46 by hand instead.
 
 # pcre2-only
 pattern a{65536}
@@ -227,7 +227,7 @@ pattern a{\r1}
 m "a{\r1}" 0 5
 
 # VT is spelled \x0b, not \v: pcrec's `\v` is PCRE2's vertical-WHITESPACE
-# class (module 'classes'), not the byte — see docs/upstream_issues.md
+# class (module 'classes'), not the byte — see docs/dev/upstream_issues.md
 pattern a{\x0b1}
 m "a{\x0b1}" 0 5
 

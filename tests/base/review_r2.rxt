@@ -1,4 +1,4 @@
-# Regressions from checkpoint review R2 (docs/reviews/2026-08-09-m2.md).
+# Regressions from checkpoint review R2 (docs/dev/reviews/2026-08-09-m2.md).
 # All PCRE2- and python-verified.
 #
 # Group 1 (was K1, now FIXED): an empty iteration ends a repeat, so a

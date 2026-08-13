@@ -26,14 +26,14 @@ no dependency on pcrec in the generated code). Design: APPROACH.md.
     make lint       # static analysis survey (opt-in; gcc -fanalyzer today)
     build/pcrec -p rx --emit-main -o out.c 'a(b|c)+d'   # try it
 
-Plain GNU make on purpose (docs/decisions.md D2). gcc is the target compiler;
+Plain GNU make on purpose (docs/dev/decisions.md D2). gcc is the target compiler;
 generated code uses computed goto and other GNU C extensions.
 
 `-Werror` is deliberately NOT the default (R5-Q1, answered 2026-08-10): a
 stranger's `make` must not fail on a newer gcc's new opinion. `make strict` is
 the opt-in gate, it writes nothing, and it is safe to run alongside `make test`.
 
-`make ubsan`/`make asan`/`make lint` (SAN-1, docs/plan.md) are the same
+`make ubsan`/`make asan`/`make lint` (SAN-1, docs/dev/plan.md) are the same
 opt-in shape: they build a SEPARATE output tree (`build-ubsan/`,
 `build-asan/`, gitignored) so `build/` and a plain `make`/`make test` are
 never touched, and they instrument BOTH axes — the compiler itself and every
@@ -58,12 +58,12 @@ tier, and PCRE2 is a moving target with no specification.
 
 - `APPROACH.md` — the approved architecture (two engines, modular components,
   optimization pass, encodings). Read this first.
-- `docs/plan.md` — milestone/step tracker. Step states are grep'able:
-  `grep -n "STATE:started" docs/plan.md` (format documented at top of file).
-- `docs/dev_journal.md` — append-only dated journal. **Append an entry after
+- `docs/dev/plan.md` — milestone/step tracker. Step states are grep'able:
+  `grep -n "STATE:started" docs/dev/plan.md` (format documented at top of file).
+- `docs/dev/dev_journal.md` — append-only dated journal. **Append an entry after
   every significant work session** (accomplishments, issues, next steps); it is
   the restart/status-recovery record.
-- `docs/decisions.md` — ADR-lite decision log (D1..).
+- `docs/dev/decisions.md` — ADR-lite decision log (D1..).
 - `docs/testing.md` — .rxt test format and harness usage.
 - `lib/pcrec.h` — the only public header. `src/` is internal (core/, parse/,
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
@@ -72,7 +72,7 @@ tier, and PCRE2 is a moving target with no specification.
 
 - Every directory has a CLAUDE.md describing its purpose and files; update it
   when files are added/removed or change roles.
-- Update the STATE tag in docs/plan.md when starting/finishing a step; expand a
+- Update the STATE tag in docs/dev/plan.md when starting/finishing a step; expand a
   milestone into substeps only when work on it begins.
 - New regex features are drop-in modules: parser hook + lowering + tests in
   their own tests/<module>/ dir; unsupported constructs must fail with a clean

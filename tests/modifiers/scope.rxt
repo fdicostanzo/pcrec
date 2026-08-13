@@ -1,6 +1,6 @@
 # tests/modifiers/scope.rxt — module `modifiers` (MOD-0.5c): where a global
 # `(?i)`/`(?-i)` setting starts and stops applying, per the MOD-0.5a design
-# gate (docs/plan.md [MOD-0.5a] ruling 1: "Ctx modifier state ... saved/
+# gate (docs/dev/plan.md [MOD-0.5a] ruling 1: "Ctx modifier state ... saved/
 # restored where `caseless` already is"; PARSE-1's 17/17 smoke cells).
 #
 # Every block carries `features modifiers`: these constructs REFUSE without

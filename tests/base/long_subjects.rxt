@@ -1,4 +1,4 @@
-# Long-subject coverage (docs/reviews/2026-08-09-m1.md P-N1; plan M2.4).
+# Long-subject coverage (docs/dev/reviews/2026-08-09-m1.md P-N1; plan M2.4).
 # Subjects range 200-900 bytes: end-of-subject matches, near-miss long
 # scans, greedy .* spans, and bounded {50,60} repeats over long runs.
 

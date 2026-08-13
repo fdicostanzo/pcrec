@@ -1,4 +1,4 @@
-/* Priority subset construction (leftmost-first, see docs/decisions.md D3).
+/* Priority subset construction (leftmost-first, see docs/dev/decisions.md D3).
  *
  * A DFA state is a priority-ordered list of N_CLASS NFA states. With
  * `prune` on (forward machines), epsilon closure walks split edges in

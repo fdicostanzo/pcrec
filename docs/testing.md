@@ -267,7 +267,7 @@ easy to scan.
    following the format above. `run.sh` picks up any `*.rxt` under `tests/`
    automatically — no registration step needed.
 2. If the component isn't implemented yet (see the milestone ladder in
-   `docs/plan.md`), its tests should assert the clean "module required"
+   `docs/dev/plan.md`), its tests should assert the clean "module required"
    compile error via `perr`, per `APPROACH.md` §7's *expected-unsupported*
    policy — this keeps the suite green at every milestone rather than
    red until the component lands.
@@ -292,7 +292,7 @@ easy to scan.
   that are correct-for-PCRE but not python-verifiable carry a `# pcre2-only`
   comment line immediately before `pattern`; the verifier skips them and reports
   the skip count. Keep such cases rare and justified; every exclusion must
-  have a corresponding entry in docs/upstream_issues.md.
+  have a corresponding entry in docs/dev/upstream_issues.md.
 - **Harness hardening**: `perr` passes only on exit code 1 (clean rejection) — a
   crash or timeout (>=124) is a failure; unparseable non-comment lines are hard
   errors; a file with zero pattern blocks fails; a run with zero total cases exits
@@ -550,7 +550,7 @@ test`, never default, write nothing to `build/`, safe to run alongside
 SEPARATE tree (`build-ubsan/`, `build-asan/`, gitignored, via the Makefile's
 `BUILD_DIR` variable) so a subsequent plain `make`/`make test` is unaffected.
 TSan already lives in `tests/thread` (part of `make test`, docs/testing.md's
-existing coverage); this section completes the sanitizer family docs/plan.md
+existing coverage); this section completes the sanitizer family docs/dev/plan.md
 [SAN-1] asked for, and adds `make lint` and the `LINTGEN` flag.
 
 ### Both axes, and why each target needs both
@@ -794,7 +794,7 @@ F1's fix — full quiet re-run GREEN, 470.4s, in the runtime table above.
 
 ### K7/K9 — read, not automated here
 
-docs/known_issues.md K7 (a large bounded repeat exhausts memory and can
+docs/dev/known_issues.md K7 (a large bounded repeat exhausts memory and can
 abort the CALLER's process under a memory limit — ASan/LSan's home class)
 has **no automated repro in `make test` today**; it is reproduced only by
 hand (`ulimit -v ...; pcrec ... 'a{0,65535}'`) and by the probe

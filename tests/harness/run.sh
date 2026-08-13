@@ -4,7 +4,7 @@
 # Usage: bash tests/harness/run.sh [file-or-dir ...]
 #   With no arguments, runs every *.rxt under <repo-root>/tests/, EXCEPT
 #   tests/known_fail/ (deferred-bug regressions that are expected to fail —
-#   see docs/known_issues.md). Pass such a file explicitly to run it.
+#   see docs/dev/known_issues.md). Pass such a file explicitly to run it.
 #   Arguments may be individual .rxt files or directories (searched
 #   recursively for *.rxt).
 #

@@ -3,7 +3,7 @@
 Plan step M2.5. Promotes the ad-hoc tool the R1 semantics critic built in
 their session scratchpad (a hand-declared libpcre2-8 ABI oracle + a
 generator/comparator script) into a committed, repeatable tool. See
-`docs/reviews/2026-08-09-m1.md` ("Critic: semantics") for the checkpoint
+`docs/dev/reviews/2026-08-09-m1.md` ("Critic: semantics") for the checkpoint
 that found this worth keeping, and the triage summary's "PCRE2-oracle
 fuzzing pulled forward from M7 (M2.5)" line.
 
@@ -103,7 +103,7 @@ run's divergence list. Full rationale and verified examples are in
    `tests/base/fuzz_regressions.rxt`). Bare `{,}` (no digits at all) stays
    literal in pcrec, and PCRE2 agrees with that reading too — it's python
    `re` that diverges on the bare form, tracked separately in
-   `docs/upstream_issues.md`. Generation of `{,n}` stays off here only
+   `docs/dev/upstream_issues.md`. Generation of `{,n}` stays off here only
    because the generator's `QUANTS` list predates the fix, not because of
    any remaining gap; safe to add as a generated form in a future fuzzer
    change.
@@ -125,7 +125,7 @@ A run's summary breaks results into:
 - **DFA state-cap hits** — pcrec rejects with "pattern too complex for the
   DFA engine" or "NFA exceeds N states"; PCRE2 accepts. **Not** treated as
   a divergence and **not** written to `failures/`. This is checkpoint
-  review R1 finding A-3 (`docs/reviews/2026-08-09-m1.md`) doing its
+  review R1 finding A-3 (`docs/dev/reviews/2026-08-09-m1.md`) doing its
   documented job: the M1 pipeline has hard complexity caps at NFA
   construction and DFA determinization and no VM fallback yet (planned
   M4), so sufficiently nested/bounded-repeat-heavy legal patterns are

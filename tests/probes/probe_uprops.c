@@ -23,7 +23,7 @@
  *          tests/probes/probe_uprops.c -ldl
  * Run:   /var/tmp/probe_uprops
  *
- * PREDICTOR, stated before the run (from docs/plan.md's MOD-0.6 row and D33
+ * PREDICTOR, stated before the run (from docs/dev/plan.md's MOD-0.6 row and D33
  * §6's table, both themselves measured, never re-derived from documentation
  * here):
  *
@@ -106,7 +106,7 @@
  *   - class position: [\p{L}] [\P{L}] [\pL] [\PL] all COMPILE (set-shaped).
  *     [\N{U+41}] is ERR 193 in every position tested (bare, leading,
  *     trailing, low endpoint, negated class) — K10's oracle cell, exactly
- *     as docs/known_issues.md records. Bare [\N] stays ERR 171 (unaffected
+ *     as docs/dev/known_issues.md records. Bare [\N] stays ERR 171 (unaffected
  *     — this milestone does not touch that row).
  *   - the caret does NOT count toward the 48/49 boundary: \p{^ + 48 A's} is
  *     ERR 147 (unknown), \p{^ + 49 A's} is ERR 146 at offset "right after

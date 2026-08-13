@@ -1,6 +1,6 @@
 /* AST -> priority Thompson NFA. Split edges are ordered: t1 is the preferred
  * (higher-priority) branch, which is how greedy/lazy and alternation order
- * survive into the DFA (see docs/decisions.md D3).
+ * survive into the DFA (see docs/dev/decisions.md D3).
  *
  * The builder can target any Nfa and compile the pattern REVERSED (concat
  * order flipped recursively) — the reverse machine finds match starts in the

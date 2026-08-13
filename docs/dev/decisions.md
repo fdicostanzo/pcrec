@@ -62,7 +62,7 @@ checkpoint — separate lenses (correctness/semantics, robustness, architecture,
 tests/process), explicitly instructed to be unfriendly and to surface problems,
 with evidence/reproduction required per finding (CONFIRMED vs SUSPECTED) and a
 list of what was probed-and-held so clean areas are distinguishable from
-unprobed ones. Findings are compiled + triaged into docs/reviews/<date>-<milestone>.md;
+unprobed ones. Findings are compiled + triaged into docs/dev/reviews/<date>-<milestone>.md;
 confirmed criticals are fixed before the next milestone starts, the rest become
 plan.md steps. Requested by Frank 2026-08-09.
 
@@ -1411,7 +1411,7 @@ option away from the start is an error. Three wrong answers, all shipped.
 which is where SR-1 put it.** SR-1's argument was sound at the time: naming
 forty verbs that nothing distinguishes and no test exercises is fiction in a
 file whose purpose is to stop syntax knowledge from being fiction. What changed
-is the second half of that sentence. `docs/design_registry_selectors.md` §9
+is the second half of that sentence. `docs/design/design_registry_selectors.md` §9
 (T-12) is the strongest argument any review in this project has produced: every
 finding in R4, R5 and R6 ran into "a check that iterates what EXISTS cannot see
 what is MISSING", and for a NAME-keyed doorway that wall comes down the moment
@@ -1726,7 +1726,7 @@ as a lookup key. **Amends** D28's verdict vocabulary.
 
 > ## ⚠ STATUS: REFUTED IN PART BY THE R10 PANEL — DO NOT BUILD FROM THIS YET
 >
-> `docs/reviews/2026-08-11-r10-mod0-design.md`. Five critics reviewed this
+> `docs/dev/reviews/2026-08-11-r10-mod0-design.md`. Five critics reviewed this
 > decision the day it was written, before any of it was built. **The SPINE
 > survives** — a recogniser function per row, two ports with two signatures, the
 > semantic port recursing into `p_alt`, no allocation in recognition, row
@@ -2301,7 +2301,7 @@ shows the all-recognisers-run cost is not a wash at the class doorway.
 **Supersedes** the sections of D29 marked WITHDRAWN; D29 stands as the record of
 what was tried and why it failed, and its surviving spine is not restated here.
 **Status:** adopted. MOD-0 builds it. Read D29's `[R10]` marks and
-`docs/reviews/2026-08-11-r10-mod0-design.md` first — this decision is only the
+`docs/dev/reviews/2026-08-11-r10-mod0-design.md` first — this decision is only the
 resolution of the seven questions R10 left open.
 
 ### 1. Resolution is by DECLARED RANK, and it is data
@@ -2346,7 +2346,7 @@ the check must say so rather than print a PASS.
 > ## The refutations below are kept because they are the reasons.
 >
 > ## ⚠ PARTLY REFUTED BY THE R11 PANEL, 2026-08-11 — see
-> ## `docs/reviews/2026-08-11-r11-parse1-mod01.md`. §2's central sentence is
+> ## `docs/dev/reviews/2026-08-11-r11-parse1-mod01.md`. §2's central sentence is
 > ## FALSE and §1-2's checks are weaker than claimed. NOT YET RE-RESOLVED.
 >
 > Three measured refutations, all found before MOD-0.1 was built:
@@ -2532,7 +2532,7 @@ next reader.
 
 Accepted cost, Frank's call: `tests/reject/` stops carrying zero known-wrong
 pins, which it had reached for the first time at R9. Recorded in
-docs/known_issues.md as K10 and scheduled with MOD-0.6.
+docs/dev/known_issues.md as K10 and scheduled with MOD-0.6.
 
 **Revisit when:** a bucket needs two rows to win at once (rank makes that a
 defect by construction, so the first real instance is a genuine falsification);
@@ -3110,7 +3110,7 @@ one doorway.
 PCRE2 says invalid range): SPEC-FA implemented the endpoint rule for the BRACKET
 shape only, and pcrec is correct today only because `\d` is refused before the
 range code can look at it — the guard IS the unimplemented-ness, exactly as
-`docs/plan.md:577` warns for `(?xx)[a- ]`. Under a shape column, one rule covers
+`docs/dev/plan.md:577` warns for `(?xx)[a- ]`. Under a shape column, one rule covers
 both shapes.
 
 ### 7. The class structure is 8-BIT NOW, and MOD-0.6 owns widening
@@ -3167,7 +3167,7 @@ wider than 256 bits (§7, expected, not a falsification).
 ## D34 — 2026-08-11 — Frank's rulings on the extension design's open questions; PART II is the redesign of record
 
 **Decided** 2026-08-11 (Frank, fourth session of the day), after reviewing
-`docs/extension_design.md` and its R13 refutations. Frank agreed with the
+`docs/design/extension_design.md` and its R13 refutations. Frank agreed with the
 recommendations presented for each §10 open question; this entry records the
 rulings, and **Part II of the design document (§11-§17) is the single design
 pass they called for** — written the same session, PROPOSED pending the R14
@@ -3235,7 +3235,7 @@ cell, `[:<:]`, printed in the design's own table; a five-step evaluation
 order), §12.2's extent set was proven incomplete ("backrefs can land alone"
 is withdrawn), and §14.2's digit rule fell to the bucket it had not probed
 (`\81` is err 115, not octal). Corrections are inline in Part II marked R14;
-`docs/reviews/2026-08-11-r14-part2.md` is the panel record; §18 holds the
+`docs/dev/reviews/2026-08-11-r14-part2.md` is the panel record; §18 holds the
 five decisions R14 left for Frank (migration order, whether `may` survives,
 where `quantifiable`/`captures` live, K13-fix sequencing, the bound-mode
 document's scope). The rulings above stand except where §18 reopens them.

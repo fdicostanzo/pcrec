@@ -31,11 +31,11 @@ Roadmap: streaming input (M3), captures via a backtracking VM engine
 drop-in modules.
 
 - **Architecture:** [APPROACH.md](APPROACH.md)
-- **Plan / status:** [docs/plan.md](docs/plan.md) (grep `STATE:` tags),
-  [docs/dev_journal.md](docs/dev_journal.md)
-- **Decisions:** [docs/decisions.md](docs/decisions.md)
+- **Plan / status:** [docs/dev/plan.md](docs/dev/plan.md) (grep `STATE:` tags),
+  [docs/dev/dev_journal.md](docs/dev/dev_journal.md)
+- **Decisions:** [docs/dev/decisions.md](docs/dev/decisions.md)
 - **Testing:** [docs/testing.md](docs/testing.md) — `make test`
-- **Checkpoint reviews:** [docs/reviews/](docs/reviews/) — adversarial
+- **Checkpoint reviews:** [docs/dev/reviews/](docs/dev/reviews/) — adversarial
   multi-agent review at every milestone, findings and triage published
 
 ## Requirements
