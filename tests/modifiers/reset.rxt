@@ -1,5 +1,5 @@
 # tests/modifiers/reset.rxt — module `modifiers` (MOD-0.5c): the `(?^)`
-# construct, per the MEASURED rule in docs/dev/plan.md [MOD-0.5a] ruling 3 and
+# construct, per the MEASURED rule in docs/dev/plan_completed.md [MOD-0.5a] ruling 3 and
 # tests/probes/probe_mod05b.c's "== (?^) reset scope per letter ==" block:
 # `(?^)` resets i, m, n, s, x, xx to their HARDWIRED DEFAULTS (reset-to-
 # constant, not reset-to-compile-option — the load-bearing PARSE-1 landmine)

@@ -1,6 +1,6 @@
 # tests/modifiers/xxmode.rxt — module `modifiers` (MOD-0.5c/d): the `xx`
 # extended-mode hazard, the reason [MOD-0.5] was reordered after `classes`
-# in the first place (docs/dev/plan.md [MOD-0.5], D30 §7). R10/C2-11 measured:
+# in the first place (docs/dev/plan_completed.md [MOD-0.5], D30 §7). R10/C2-11 measured:
 # `[a- ]` at options=0 is error 108 (range out of order); `(?xx)[a- ]`
 # COMPILES, because `xx` DELETES the space from the class body before
 # range-parsing, at the exact class-range-endpoint spot `3fca0d8` (SPEC-FA)

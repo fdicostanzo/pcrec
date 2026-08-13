@@ -90,7 +90,7 @@ also trip "coverage changed", and the cell could not distinguish detection from
 a count moving.
 
 **The cost was measured before the arms were wired, not asserted after**
-(docs/dev/plan.md's [MOD-0.8c] row requires that order). One scratch archive tree
+(docs/dev/plan_completed.md's [MOD-0.8c] row requires that order). One scratch archive tree
 at `11352be` on a 12-core box: `git archive HEAD` 0.04s, `make all -j12` 0.75s,
 then build-and-run per suite — `registry` 0.60s, `pc3` 4.36s, `cli` 5.46s,
 against the `reject` arm's **54.75s** that S15-S20 were already paying. All

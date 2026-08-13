@@ -1,6 +1,6 @@
 # S21 — cls_peek_past_dash reverts to a raw two-byte peek, blind through
 # xx's class-interior deletion (MOD-0.5e; the D30 §7 hazard the module was
-# reordered after `classes` to fix — docs/dev/plan.md [MOD-0.5]). The
+# reordered after `classes` to fix — docs/dev/plan_completed.md [MOD-0.5]). The
 # dash-vs-literal lookahead must see THROUGH deletion for `(?xx)[a- ]` to
 # compile to members {a,-} instead of a bogus a-SPACE range; this sabotage
 # makes the lookahead see the raw (undeleted) byte instead.
