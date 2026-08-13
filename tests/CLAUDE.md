@@ -43,6 +43,18 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   docs/upstream_issues.md U8 is the measured python divergence); see its
   CLAUDE.md for the §9.3 record and the escape-vs-raw-tab landing correction
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
+- **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
+  author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
+  and a black-box `build/pcrec` were the only inputs). NOT part of `make
+  test` (own entry point: `bash tests/spec_mod0/run_spec_mod0.sh`) but has
+  a [TT-1] section target, `make test-spec`, since it's a real oracle-backed
+  gate someone should be able to spot-run — see its CLAUDE.md for the
+  PASS/FAIL/AWAITING-SURFACE exit vocabulary and the current pass count
+- **mech/** — GENERATES the sabotage-detection matrix ([MECH-1]) rather than
+  hand-maintaining "disabling X fails N cases" figures, which have gone
+  stale every time this project tried to keep them by hand. `make mech`
+  (not part of `make test`: ~6 minutes, builds the tree once per sabotage
+  from a fresh `git archive HEAD`) — see its CLAUDE.md
 
 ## Conventions
 

@@ -29,4 +29,13 @@ pcrec (the Makefile owns that).
   dependencies (Frank's refinement). Reports are review evidence, never an
   oracle — no check reads them.
 
+- **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
+  full suite, not a tier) and blocks the push on failure. Installed ONLY by
+  `make hooks`, which copies it to `git rev-parse --git-path hooks` (not a
+  hardcoded `.git/hooks` — a worktree's `.git` is a file pointing at the
+  shared gitdir, so the install must resolve the path rather than assume
+  it). Never auto-installed, no CI (D2). See docs/testing.md "Tiered
+  testing" for the opt-in rationale and `git push --no-verify` as the
+  documented bypass.
+
 Maintenance: update this file when scripts are added/removed or change role.
