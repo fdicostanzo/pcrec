@@ -48,8 +48,20 @@ capture.family_branchreset         14
 capture.family_scoped_n            6
 capture.family_quotemode           4
 capture.noncompiling               700
-capture.pcrec_compared               1
-capture.pcrec_refused              101
+# capture.pcrec_compared raised 1 -> 5 2026-08-13 (STD1b re-baseline): check02
+# invokes `pcrec --count-groups` with NO --features, so it measures the bare
+# default. D37's flip (classes+modifiers now default-on) moves 4 of the 102
+# generated bodies from refused to compared; 5+97=102, same as 1+101=102
+# before the flip. Measured on a real post-flip run, libpcre2 10.46.
+capture.pcrec_compared               5
+# capture.pcrec_refused LOWERED 101 -> 97, manager review 2026-08-13 (STD1b):
+# the complementary population to capture.pcrec_compared above — same cause,
+# same run. This is NOT the "suite compares less" case the header guards
+# against: the 102-body population is conserved (5+97 == 1+101 == 102) and
+# the four moved rows moved INTO the compared bucket, whose floor rose. A
+# refused-count decrease that conserves the total against a ratified
+# default-set change (D37/[STD1b]) is the one legitimate shape for lowering.
+capture.pcrec_refused               97
 
 # --- invariant 4: class-position expectation ---------------------------
 class.esc_rows                      41
