@@ -40,11 +40,14 @@ static void usage(FILE *f)
           "                    here too, with the same diagnostic\n"
           "  --features LIST   enable feature modules for this invocation:\n"
           "                    comma-separated names from --list-syntax's\n"
-          "                    module column, or 'all' or 'none' (default\n"
-          "                    none). Composes with every mode. No module\n"
-          "                    has an implementation yet, so enabling one\n"
-          "                    changes no verdict today — the gate's state\n"
-          "                    is visible via --probe-ask's answered_at\n"
+          "                    module column, a frozen named set ('std1'),\n"
+          "                    'all', or 'none' (default: none — an explicit\n"
+          "                    --features always wins over the default; see\n"
+          "                    docs/dev/decisions.md D37). Composes with\n"
+          "                    every mode. Most modules have no producer\n"
+          "                    yet, so enabling one changes no verdict —\n"
+          "                    the gate's state is visible via --probe-ask's\n"
+          "                    answered_at either way\n"
           "  --probe-ask WANT [--] CONSTRUCT\n"
           "                    drive the construct's doorway ONCE at ask\n"
           "                    level WANT (claim|verdict|result) and report\n"
@@ -154,12 +157,24 @@ int main(int argc, char **argv)
      * (slice 9). It composes with every mode — a compile, --probe-ask,
      * --count-groups — because it is configuration, not a query; an unknown
      * module name is refused BY NAME rather than silently enabling nothing
-     * (the --flavour rule). No module has ports yet, so today it changes no
-     * verdict — only the probe channel's answered_at can see it (check07
-     * holds the verdict-equivalence half). */
-    if (features) {
+     * (the --flavour rule). Modules with a producer (classes, modifiers)
+     * change VERDICTS by design — that is the point of a gate; modules
+     * without one still change only the probe channel's answered_at
+     * (check07 holds that verdict-equivalence half for the rest).
+     *
+     * D37 (docs/dev/decisions.md): an explicit --features ALWAYS wins; a
+     * bare invocation resolves through PCREC_DEFAULT_FEATURES instead of
+     * skipping this call — that constant is the one bare-default mapping
+     * point, and it is deliberately still "none" in [STD1] phase A, so this
+     * call installs the same empty set a bare invocation always has, just
+     * by a named route rather than by omission. Either way the set gets
+     * INSTALLED (never left at whatever a previous call left it), which is
+     * also what gives the artifact stamp (src/gen) something honest to
+     * report for a bare invocation. */
+    {
         char ferr[256];
-        if (pcrec_enabled_set_spec(features, ferr, sizeof ferr) != 0) {
+        const char *fspec = features ? features : PCREC_DEFAULT_FEATURES;
+        if (pcrec_enabled_set_spec(fspec, ferr, sizeof ferr) != 0) {
             fprintf(stderr, "pcrec: --features: %s\n", ferr);
             return 1;
         }

@@ -151,6 +151,34 @@ Part of `make test` since M2.
   than quietly deleted. Written failing-first against the pre-fix binary; the
   verbatim FAIL block is in the slice's commit message.
 
+- **case 14 ([STD1] phase A, D37, 2026-08-13)** — the frozen named set
+  `std1` = {classes, modifiers}, artifact stamping, and the bare-default
+  mapping point, WITHOUT the bare default itself flipping (that is a
+  separate later commit carrying the full suite re-baseline). Since
+  `classes`/`modifiers` both carry real producers (MOD-0.3c/MOD-0.5c),
+  `--features std1` genuinely changes what a pattern compiles to, not just
+  answered_at — pinned with an oracle-verified match cell (`(?i)cat\d+`
+  against python3 `re`, two subjects) that exercises BOTH modules'
+  producers in one pattern. Also: the bare default still refuses `\d`
+  (phase A's hard invariant) while `--features std1` accepts it, which is
+  simultaneously the "explicit wins over the bare default" proof (a
+  secretly-flipped default would make the bare case succeed too);
+  `--features std1` is byte-identical to `--features classes,modifiers`
+  except the stamp's own SET NAME (compared via `-o -`, avoiding the
+  #include-basename trap case9/case10 already document); an unknown
+  named-set-shaped spec (`std2`) is refused BY NAME and writes no C; the
+  stamp comment + `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` macros are
+  present and correct for a bare invocation ("none"), `--features std1`,
+  and `--features all`; and the paired `.h` carries the comment but not the
+  macros (so a `.c` that includes its own `.h` never redefines them).
+  **case10's pre-existing `--features all` byte-identity pin was ALSO
+  updated** (not by this case, in case10 itself): it now compares past the
+  4-line stamp block rather than the whole file, since the stamp
+  legitimately differs by design — the fix is what makes the stamp
+  trustworthy as a reproduction recipe, not a hole in the old pin, which
+  still asserts what it always meant to (the MATCHER is gate-inert for a
+  base-tier pattern).
+
 ## Conventions
 
 Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation

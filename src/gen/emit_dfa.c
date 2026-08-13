@@ -40,6 +40,40 @@ static void emit_pattern_comment(StrBuf *sb, const char *pat)
     sb_puts(sb, " */\n");
 }
 
+/* D37 (docs/dev/decisions.md): emitted C is SELF-DESCRIBING about which
+ * feature modules were enabled at generation time — the comment for a
+ * human, the macros for a machine (or a future pcrec: pass
+ * PCREC_FEATURE_MODULES's value to --features and get the same gate state
+ * this artifact was built with, even if a named set's own meaning, or
+ * "all"'s membership, has since changed). Both values come from
+ * src/parse/enabled.c's OWN render of the currently-installed set — there
+ * is no second copy of "what does this mask mean as names" here. Every
+ * value in play (a named set's name, "all"/"none"/"explicit", and every
+ * module name) comes from pcrec's own fixed vocabulary, never from the
+ * pattern text, so unlike emit_pattern_comment above nothing here needs
+ * escaping. */
+static void emit_feature_comment(StrBuf *sb)
+{
+    const char *label = pcrec_enabled_set_label();
+    const char *mods = pcrec_enabled_set_modules();
+    sb_printf(sb, "/* Feature set: %s (modules: %s) */\n",
+              label, *mods ? mods : "none");
+}
+
+/* Macros, ONCE PER FILE like emit_span_typedef above — the enabled set is
+ * process-wide (one set for the whole compile), so every engine a future
+ * multi-engine file carries (OS-0b) shares one stamp. Lives only in the .c:
+ * a paired .h gets the comment (emit_header, matching its existing
+ * pattern-comment convention) but not these, so a .c that #includes its own
+ * .h never sees the pair twice. */
+static void emit_feature_macros(StrBuf *sb)
+{
+    sb_printf(sb, "#define PCREC_FEATURE_SET \"%s\"\n",
+              pcrec_enabled_set_label());
+    sb_printf(sb, "#define PCREC_FEATURE_MODULES \"%s\"\n",
+              pcrec_enabled_set_modules());
+}
+
 /* ---- the multi-engine naming surface (OS-0b; D18 measured, D20 owns it) ----
  *
  * One output file may eventually carry SEVERAL engines — one per point of the
@@ -105,6 +139,7 @@ static void emit_header(Ctx *cx, const char *fn)
     guard[gi] = 0;
 
     emit_pattern_comment(h, cx->pat);
+    emit_feature_comment(h);
     sb_printf(h, "#ifndef PCREC_GEN_%s_H\n#define PCREC_GEN_%s_H\n\n", guard, guard);
     sb_puts(h, "#include <stddef.h>\n\n");
     emit_span_typedef(h, p);
@@ -544,6 +579,8 @@ void pcrec_emit_dfa(Ctx *cx)
     if (cx->opt->header_name) emit_header(cx, fn);
 
     emit_pattern_comment(c, cx->pat);
+    emit_feature_comment(c);
+    emit_feature_macros(c);
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {
