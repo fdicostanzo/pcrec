@@ -56,7 +56,7 @@
 #   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
 #
 # COST, measured before the three new arms were wired rather than asserted
-# after (docs/plan.md's [MOD-0.8c] row forbids claiming a cost): one scratch
+# after (docs/dev/plan.md's [MOD-0.8c] row forbids claiming a cost): one scratch
 # archive tree at 11352be on a 12-core box, `git archive HEAD` 0.04s + `make
 # all -j12` 0.75s, then per suite, build AND run —
 #   registry  0.60s  (0.38 build + 0.14 run + 0.08 compliance_section.py x2)

@@ -1,6 +1,6 @@
 # Known issues — confirmed pcrec bugs (deferred fixes)
 
-Confirmed correctness bugs in pcrec itself (distinct from docs/upstream_issues.md,
+Confirmed correctness bugs in pcrec itself (distinct from docs/dev/upstream_issues.md,
 which tracks OTHER engines). Each has a minimal repro and a scheduled fix. Repros
 live in tests/known_fail/ (NOT run by `make test`, so the suite stays honest about
 what it certifies) and become passing regressions when fixed.
@@ -444,8 +444,8 @@ remains** — K5 and K6 were fixed on 2026-08-10 by FIX-1, and K8 by R7's critic
 panel the same day. Note that K8 was found in the checkpoint review OF the K5/K6
 fix, in the same function, by an instrument the fix itself had not used: worth
 remembering before treating a construct as finished. Performance and
-architecture debt lives in docs/plan.md; other engines' bugs in
-docs/upstream_issues.md._
+architecture debt lives in docs/dev/plan.md; other engines' bugs in
+docs/dev/upstream_issues.md._
 
 
 ## K9 — OPEN, found 2026-08-10 (D27 spec-first writer, contract lens)
@@ -486,7 +486,7 @@ keeps the flag; err 171 stays permanent). **The TEST is what this entry always
 said was the real work**: the in-class sweep's one-byte-of-tail blindness
 (the fourth net below) is closed in the SAME commit by extending
 `registry_check.c`'s sweep to probe every tailed/body-carrying row through its
-own `syntax` field wrapped in `[...]` — see `docs/design_notes_mod06.md` §4
+own `syntax` field wrapped in `[...]` — see `docs/design/design_notes_mod06.md` §4
 for the design and `tests/registry/CLAUDE.md` for what landed. Reject-pins for
 the new message + offset are in `tests/reject/run_reject_tests.sh`; mech
 sabotage `S31` re-flags the row and is caught by the extended sweep.
@@ -711,7 +711,7 @@ matcher. Two things make it worth recording:
    `for (i = lo; i <= hi; i++)` behind it. **MOD-0.2 (`classes`) removes the
    guard**, and at that moment a set-shaped value arrives in an `int`.
 
-This is the exact shape `docs/plan.md:577` already records for `(?xx)[a- ]`, one
+This is the exact shape `docs/dev/plan.md:577` already records for `(?xx)[a- ]`, one
 construct over: *"pcrec is safe today only because `(?x)` is rejected outright
 as 'requires module modifiers' — the guard IS the unimplemented-ness, and this
 step removes it."*
@@ -843,7 +843,7 @@ analysis.
 
 **pcrec names a module for constructs its own compliance survey says will never
 be implemented.** D26's tier-2 row says this in as many words
-(`docs/decisions.md:1457`):
+(`docs/dev/decisions.md:1457`):
 
 > **exact.** Naming a module that will never implement a construct is a defect;
 > so is rejecting syntax PCRE2 accepts
@@ -890,7 +890,7 @@ needed and the table has two:
 
 Axis 3 is a fact about pcrec's roadmap: it is not a fact about PCRE2, so axis 1
 cannot hold it, and it is not a fact about one compile, so axis 2 cannot hold
-it. `docs/extension_design.md` §7.2 proposes `RS_NOT_OFFERED` on axis 1 and
+it. `docs/design/extension_design.md` §7.2 proposes `RS_NOT_OFFERED` on axis 1 and
 considers a permanently-disabled name on axis 2; **both are category errors and
 neither supplies the missing axis.**
 
@@ -901,7 +901,7 @@ D26, because the fact is already written down correctly in
 one fact, one of them wrong — and because it is the SAME over-promise shape as
 K12, K13 and FIX-2's `[[:foo:]]`, now at a third doorway.
 
-**Fix:** with the status/axis question in `docs/extension_design.md` §7.2 and
+**Fix:** with the status/axis question in `docs/design/extension_design.md` §7.2 and
 §10.1, which is Frank's to answer. The verb rows need an answer that names no
 module; `REJECTED`'s existing "agreement IS compliance" wording is close, but
 these are constructs PCRE2 DOES support and pcrec will not — a combination the

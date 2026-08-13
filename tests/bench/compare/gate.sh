@@ -29,7 +29,7 @@
 # "<case>\t<metric>\t<floor>\t<margin>". For throughput a run FAILS when value
 # < floor*margin; for latency (ns/call, lower is better) it FAILS when value >
 # floor/margin. Regenerate with UPDATE=1 after a deliberate change, and say why
-# in docs/dev_journal.md — an unexplained floor move is the regression this
+# in docs/dev/dev_journal.md — an unexplained floor move is the regression this
 # script exists to catch.
 #
 # PER-CASE MARGINS (R3.5). The margin used to be one global 0.70, which fires
@@ -111,7 +111,7 @@ if [ "$EARN" = "1" ]; then
     done < "$FLOORS"
     echo
     echo "  This is a REPORT, not a write: apply a change by hand to floors.tsv and"
-    echo "  journal why in docs/dev_journal.md, same discipline as UPDATE=1."
+    echo "  journal why in docs/dev/dev_journal.md, same discipline as UPDATE=1."
     exit 0
 fi
 
@@ -294,7 +294,7 @@ if [ "$fails" -gt 0 ]; then
         echo "quiet box before treating this as evidence of a regression." >&2
         exit 2
     fi
-    echo "If this is a deliberate trade, say so in docs/dev_journal.md and" >&2
+    echo "If this is a deliberate trade, say so in docs/dev/dev_journal.md and" >&2
     echo "regenerate the floors with UPDATE=1. Do not just widen GATE_MARGIN." >&2
     exit 1
 fi

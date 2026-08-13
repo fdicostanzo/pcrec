@@ -104,7 +104,7 @@ static int uprops_fold(int c)
  * so the accumulator's case fold is LOAD-BEARING through this lookup — a
  * lookup that re-folded would repair a broken accumulator on the way in,
  * which is exactly how mech measured S34 UNDETECTED at first landing (the
- * buffer's only reader masked the sabotage; docs/design_notes_mod06.md §8).
+ * buffer's only reader masked the sabotage; docs/design/design_notes_mod06.md §8).
  * The bare-letter path folds its raw pattern byte explicitly at the call. */
 static bool uprops_short_lookup(int folded)
 {

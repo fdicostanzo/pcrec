@@ -135,7 +135,7 @@ survey earned its keep").
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `OK-GATED` (module `modifiers`, MOD-0.5c) |
-| `\d \D \s \S \w \W \h \H \V \N` | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement, matched end-to-end under `--features classes`; default still refuses with the module name. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`; K10 recorded the `[\N{U+41}]` class-position divergence, FIXED 2026-08-12 by MOD-0.6 — see docs/known_issues.md K10), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
+| `\d \D \s \S \w \W \h \H \V \N` | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement, matched end-to-end under `--features classes`; default still refuses with the module name. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`; K10 recorded the `[\N{U+41}]` class-position divergence, FIXED 2026-08-12 by MOD-0.6 — see docs/dev/known_issues.md K10), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
 | `\v` | `REJECTED` | `PLANNED` | **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as well as outside. Now `REJECTED` to module `classes` like its negation `\V`. It survived because python `re` also reads `\v` as `0x0B`, so the base-tier oracle agreed with the bug — see "How this survey earned its keep" |
 | `\C` | `REJECTED` | `PLANNED` | "one code unit". In the ASCII tier that is just "any byte", i.e. trivial. PCRE2 forbids it under its own DFA matcher in UTF modes for the reason that will apply to us in M5 |
 | `\p{..}` `\P{..}` | `REJECTED` | — | module `unicode-props`, M5. Single-position predicates, so DFA-friendly; the work is Unicode tables, not engine |
@@ -153,7 +153,7 @@ them as ordinary name characters and refuses in its own
 unknown-name/generic category at its scan-completion offset. Both engines
 refuse every such pattern and the module attribution is identical, which is
 what keeps this tier 2. Found by R19's engine critic
-(docs/reviews/2026-08-12-r19-mod06.md); recorded at docs/known_issues.md
+(docs/dev/reviews/2026-08-12-r19-mod06.md); recorded at docs/dev/known_issues.md
 K16 with the full byte census; fix deferred to the first `unicode-props`
 producer, when the scanner is remeasured anyway. The reject pins for
 `\p{!}`/`\p{9}`/`\p{=}` claim pcrec's own current behavior, not oracle
@@ -300,8 +300,8 @@ the option-run grammar is one home (`mod_modifiers.c`) precisely so the doorway
 does not acquire a second copy of it.
 
 Found by the MOD-0.8b D27 blinded writer (recorded in
-`docs/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
-document-don't-reorder. **No K row**: `docs/known_issues.md` is for confirmed
+`docs/dev/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
+document-don't-reorder. **No K row**: `docs/dev/known_issues.md` is for confirmed
 BUGS deferred rather than fixed, and this is a ruled category divergence with a
 self-closing population — the same treatment shape as this file's K15 and K16
 paragraphs, minus the defect.
@@ -384,7 +384,7 @@ about the short prefix it actually extracted. Both are honest refusals of a
 name that can never match a real verb — the two engines diverge on which
 REFUSAL CATEGORY, never on accept vs. reject, which is what keeps this at tier
 2 rather than tier 1. Found by the R18 panel's engine critic
-(docs/reviews/2026-08-12-r18-mod04.md), recorded at docs/known_issues.md K15,
+(docs/dev/reviews/2026-08-12-r18-mod04.md), recorded at docs/dev/known_issues.md K15,
 and confirmed on both controls: UNDER the 128-byte cap a non-identifier run
 gets "not recognized" on both sides (agreement — K15's own control), and OVER
 the cap an IDENTIFIER run gets the exact same "too long" text on both sides
@@ -520,7 +520,7 @@ evidence, not from memory:
    asserted to be rejected — and the reject suite's floor check will notice the
    table shrinking).
 4. Any new `DIVERGENCE-PROVEN` row must cite a measurement against libpcre2,
-   not a doc reading, and get an entry in `docs/known_issues.md` if it is not
+   not a doc reading, and get an entry in `docs/dev/known_issues.md` if it is not
    fixed in the same change.
 5. Re-stamp "Last surveyed" and note what moved.
 

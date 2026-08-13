@@ -313,7 +313,7 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * catch-all's "unrecognized character" answer — the 111 family, a claim
      * PCRE2 does not make here: `(`, `(?`, `(?i`, `(?^` and `(?-` are ALL
      * error 114, "missing closing parenthesis" (measured, probe cells in
-     * docs/reviews/2026-08-12-r17-mod05.md) — an UNCLOSED GROUP, the same
+     * docs/dev/reviews/2026-08-12-r17-mod05.md) — an UNCLOSED GROUP, the same
      * answer bare `(` gets, not an unrecognisable byte. So answer in the
      * family pcrec already uses for bare `(`, in both gate states (this is
      * base-family truth, not module truth). The Q2-era pin asserting the

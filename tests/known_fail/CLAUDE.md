@@ -2,7 +2,7 @@
 
 `.rxt` files here assert the **correct** behaviour for bugs that are CONFIRMED
 but deliberately deferred rather than fixed now; each one has an entry in
-`docs/known_issues.md` with a minimal repro and the milestone that owns it.
+`docs/dev/known_issues.md` with a minimal repro and the milestone that owns it.
 `tests/harness/run.sh` excludes this directory from its default discovery, so
 `make test` stays green and honest — a known bug does not get to look fixed,
 and it does not get to break the build either.
@@ -21,7 +21,7 @@ rather than deferred. That is the good state, not a missing-file problem.
 
 Adding a deferred bug: write the `.rxt` asserting the behaviour PCRE actually
 has (oracle-verified, same as any other corpus file), put it here, and add the
-`docs/known_issues.md` entry naming the owning milestone. Never weaken an
+`docs/dev/known_issues.md` entry naming the owning milestone. Never weaken an
 expectation to make a bug look fixed.
 
 Removing one: when the ratchet flags a file, MOVE it into the matching

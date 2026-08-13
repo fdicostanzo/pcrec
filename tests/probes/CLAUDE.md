@@ -3,7 +3,7 @@
 Measurement programs against libpcre2 (through `../fuzz/pcre2_abi.h`), NOT
 part of `make test`. These are the probes behind the extension design's
 Part II / R14 / §18 measurements, committed so that the numbers quoted in
-`docs/extension_design.md` and `docs/reviews/2026-08-11-r14-part2.md` are
+`docs/design/extension_design.md` and `docs/dev/reviews/2026-08-11-r14-part2.md` are
 reproducible, and so that **the SPEC-MOD0 author (a D27 writer denied the
 design document) can be handed working probe code instead of prose** —
 that hand-off is the reason this directory exists (plan step SPEC-MOD0).
@@ -142,7 +142,7 @@ oracle version bump, review needing evidence), never read by any check.
   significant-character count, not total body length; the in-class and
   endpoint-shape cells including the K10 oracle (`[\N{U+41}]` is ERR 193
   in every class position). The evidence behind
-  docs/design_notes_mod06.md.
+  docs/design/design_notes_mod06.md.
 
 ## The method these encode (R14's closing lesson)
 

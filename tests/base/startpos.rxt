@@ -1,4 +1,4 @@
-# startpos coverage (docs/reviews/2026-08-09-m1.md P-M2; plan M2.4).
+# startpos coverage (docs/dev/reviews/2026-08-09-m1.md P-M2; plan M2.4).
 # `ms <P> "<subject>" <start> <end>` / `ns <P> "<subject>"` exercise
 # rx_search's startpos parameter — see docs/testing.md.
 

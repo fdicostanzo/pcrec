@@ -1,6 +1,6 @@
 # tests/registry — the syntax construct registry, checked against the parser
 
-Guards the SR-1 table in `src/parse/registry.c` (design: docs/decisions.md
+Guards the SR-1 table in `src/parse/registry.c` (design: docs/dev/decisions.md
 D24). The table describes every non-base PCRE construct declaratively; this
 directory asserts that the description and the shipped parser actually agree.
 
@@ -247,7 +247,7 @@ single home is invisible, because the wrongness is what both sides read.
    construct PCRE2 does not have fails there. An `RS_REJECTED` row says
    "agreement IS compliance", so libpcre2 must REJECT it *and pcrec's message
    must be PCRE2's message*, not merely some rejection. **Mind the polarity:**
-   docs/plan.md had check (b) backwards until R6, and as written it would have
+   docs/dev/plan.md had check (b) backwards until R6, and as written it would have
    passed every fabricated row it exists to catch.
 2. **22 context wrappers.** A row's `syntax` reaches pcrec's DOORWAY, which is a
    weaker contract than "libpcre2 will compile this": `\3` needs three groups,
@@ -319,7 +319,7 @@ single home is invisible, because the wrongness is what both sides read.
    what pcrec owes.
 
    **`pool_from_lengths`'s alphabet is not just `A`/`a` any more** (K15,
-   2026-08-12, docs/known_issues.md): the same 126-130 lengths are also
+   2026-08-12, docs/dev/known_issues.md): the same 126-130 lengths are also
    generated from three non-identifier filler bytes (space, `*`, 0x80), so
    the "long AND non-identifier" cell — invisible to identifier-only
    lengths — is finally reachable. It diverges from libpcre2: pcrec's extent
@@ -331,7 +331,7 @@ single home is invisible, because the wrongness is what both sides read.
    cell — everything else in this differential, including the same
    non-identifier fillers UNDER the cap and identifier runs OVER it, is
    still compared with no exclusion and still agrees. See
-   docs/known_issues.md K15 and docs/pcre2_compliance.md's Backtracking
+   docs/dev/known_issues.md K15 and docs/pcre2_compliance.md's Backtracking
    control verbs section.
 
 The prefix/suffix expansion is not decoration: `ANYCRLF`, `CRLF` and `LF` are
@@ -365,7 +365,7 @@ a pool of whole runs would have missed three names this check exists to notice.
    1976 probes: `\p`/`\P` x prefix (`""`/`"^"`) x name (the 14 short names
    both cases, `Alpha`/`Alphabetic`/`Any`/`Foo`, and the empty name) x noise
    (none, leading/trailing space, internal hyphen/underscore/space,
-   mixed-case — all measured insignificant, docs/design_notes_mod06.md §3)
+   mixed-case — all measured insignificant, docs/design/design_notes_mod06.md §3)
    x shape (bare `\pX` for single letters, `{...}` for everything) x
    position (atom, class, class as low/high range endpoint, negated class),
    plus a 52-letter sweep (bare and `{X}`, both selectors, atom and class
@@ -394,7 +394,7 @@ a pool of whole runs would have missed three names this check exists to notice.
    **The offset obligation is computed, not oracle-matched**, per D26: pcrec
    pins its OWN offset convention, not PCRE2's. `escape_start + 2 +
    strlen(body)` reproduces `mod_uprops.c`'s "one past the last byte
-   consumed" rule exactly (docs/design_notes_mod06.md §3), and this is what
+   consumed" rule exactly (docs/design/design_notes_mod06.md §3), and this is what
    proves the doorway's offset arithmetic is POSITION-INVARIANT — the same
    relative blame regardless of how many bytes of class-bracket/range/
    negation machinery precede the backslash — rather than merely re-deriving

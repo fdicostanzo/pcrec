@@ -22,7 +22,7 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   regression net, not evidence the feature is there
 - **registry/** — the SR-1 syntax construct table checked TWICE: against the parser in both directions (including a 255-byte sweep of each of the four doorways, which catches a construct added to parse.c with no registry row, D24), and — since PC-3 — against **libpcre2**, which is the first check in this repo that is not pcrec reading pcrec. Since Q2/SR-9 the `(?` doorway has three generated differentials of its own — a byte sweep, an option-run sweep and per-prefix tail sweeps — so it is no longer the case that only `(*` is name-checked. Plus compliance_section.py, which holds docs/pcre2_compliance.md to the dump (SR-4)
 - **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
-- **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/known_issues.md); excluded from `make test` so the suite stays honest. Currently empty (all known bugs fixed at R2)
+- **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/dev/known_issues.md); excluded from `make test` so the suite stays honest. Currently empty (all known bugs fixed at R2)
 - **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal), plus a differential check that the M2.8 trie is output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3)
 - **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2] N
   threads share one compiled matcher over different subjects across five
@@ -40,7 +40,7 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   parallel by a worktree subagent from the MOD-0.5a rulings + oracles,
   landed WITH the producers. Blocks carry `features modifiers`; python
   oracle where it agrees, `# pcre2-only` elsewhere (xxmode entirely —
-  docs/upstream_issues.md U8 is the measured python divergence); see its
+  docs/dev/upstream_issues.md U8 is the measured python divergence); see its
   CLAUDE.md for the §9.3 record and the escape-vs-raw-tab landing correction
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an

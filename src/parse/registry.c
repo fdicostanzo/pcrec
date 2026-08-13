@@ -335,7 +335,7 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  * this row falls through to the ordinary RS_MODULE in-class branch in ext.c,
  * so [\N{U+41}] now reads "\N in a class requires module 'unicode-props'"
  * instead of "\N is not valid inside a character class" — see
- * docs/known_issues.md K10 and docs/design_notes_mod06.md §2 for the full
+ * docs/dev/known_issues.md K10 and docs/design/design_notes_mod06.md §2 for the full
  * field-by-field account of what did and did not change on this row. */
 {RK_ESC, 'N', "{U+", "\\N{U+0041}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
  RS_MODULE, RD_MODULE, NULL, NULL, 0,
@@ -371,7 +371,7 @@ ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number o
  * alone in their (RK_ESC, sel) bucket (no arbitration to affect), `flags`
  * stays 0 (neither is RF_CLASS_INVALID — [\p{L}]/[\P{L}] compile as sets,
  * measured, tests/probes/probe_uprops.c), and `aport`/`cport` stay NO_PORT
- * (no producer this phase — docs/design_notes_mod06.md §6). */
+ * (no producer this phase — docs/design/design_notes_mod06.md §6). */
 {RK_ESC, 'p', NULL, "\\p{L}", M_unicode_props, FLAV_PCRE2, ANY_ENGINE,
  RS_MODULE, RD_MODULE, NULL, NULL, 0,
  "a character with the given Unicode property", ROADMAP_PLANNED, QF_YES, "set 117",
@@ -412,14 +412,14 @@ ESC('o', "\\o{101}", misc, ANY_ENGINE, "character with the given octal code", QF
  * pcrec still PRINTS "(backreference/octal)" for all ten. That wording is
  * parse.c's today and SR-2 must reproduce it byte-identically, so the fix
  * belongs to the backrefs module rather than to this table; the note is where
- * the truth lives until then. Recorded in docs/known_issues.md.
+ * the truth lives until then. Recorded in docs/dev/known_issues.md.
  *
  * ENGINES: the rows say VM_ONLY, and that is design intent with a known
  * split behind it — a backref whose group has a FINITE language is regular
  * and an AOT compiler can expand it away statically ((a|b)\1 = aa|bb, pure
  * DFA); only infinite-language groups ((a*)\1) genuinely need the VM. The
  * per-PATTERN engine decision belongs to module `backrefs`; the note with
- * the reasoning is in docs/plan.md's backrefs paragraph (Frank, 2026-08-12).
+ * the reasoning is in docs/dev/plan.md's backrefs paragraph (Frank, 2026-08-12).
  *
  * All of the above is the ATOM position. The CLASS position is base
  * semantics since FIX-3 (K13): a backreference is impossible there, so
@@ -507,7 +507,7 @@ GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backrefere
 GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group", QF_NO),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
          "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141", QF_NO),
-/* VM_ONLY is design intent with a recorded split (docs/plan.md, backrefs/
+/* VM_ONLY is design intent with a recorded split (docs/dev/plan.md, backrefs/
  * atomic note, 2026-08-12): atomic groups are CUT operators — regular, so
  * DFA-compilable via the cut construction, whose one primitive is the
  * priority-first-accept function our subset construction already computes.

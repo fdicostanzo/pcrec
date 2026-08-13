@@ -21,7 +21,7 @@
  *                names a construct PCRE2 does not have fails here, which is
  *                the fabrication check.
  *
- * MIND THE POLARITY. It was recorded backwards in docs/plan.md until R6 caught
+ * MIND THE POLARITY. It was recorded backwards in docs/dev/plan.md until R6 caught
  * it, and as written there it would have passed every fabricated row it exists
  * to catch. RS_MODULE must COMPILE. It caught one on the first run: the verb
  * row's probe was `(*...)`, which is not a PCRE2 construct at all.
@@ -397,7 +397,7 @@ static void check_rows(void)
 
 /* What libpcre2's answer OBLIGES pcrec to say. Total: every error code lands
  * in exactly one bucket. ONE exclusion exists on top of that, added
- * 2026-08-12 for K15 (docs/known_issues.md): a verb name over the
+ * 2026-08-12 for K15 (docs/dev/known_issues.md): a verb name over the
  * 128-code-unit cap made entirely of non-identifier bytes gets pcrec's
  * "too long" message (its own extent scan hits the cap before it ever
  * compares the run to a table entry) while libpcre2, whose scan stops at
@@ -453,7 +453,7 @@ static int names_a_module(const char *msg)
     return p && strchr(p + 17, '\'') != NULL;
 }
 
-/* K15 (docs/known_issues.md), ruled ACCEPTABLE tier-2 (D26) by Frank,
+/* K15 (docs/dev/known_issues.md), ruled ACCEPTABLE tier-2 (D26) by Frank,
  * 2026-08-12. The cell: libpcre2 answers 160 ("not recognized or
  * malformed") because its own name scan stopped at the first
  * non-alnum/`_` byte and the short prefix it extracted matches no table
@@ -725,7 +725,7 @@ static void pool_from_bytes(void)
  * separately.
  *
  * NON-IDENTIFIER fillers, at the same 126-130 boundary (K15,
- * docs/known_issues.md). Until this row every over-cap candidate was built
+ * docs/dev/known_issues.md). Until this row every over-cap candidate was built
  * from repeated 'A'/'a' — pure identifiers — so the cell "long AND
  * non-identifier" was structurally unreachable: libpcre2's own name scan
  * stops at the first non-alnum/`_` byte, so a non-identifier run only
@@ -862,7 +862,7 @@ static void check_verb_names(void)
      * If this ever goes to zero because the hostile-alphabet pool
      * regressed, or because SR-6's real verb handler changed the extent
      * scan and closed K15 outright, that is news: either fix the pool or
-     * delete k15_excluded() and update docs/known_issues.md K15 in the
+     * delete k15_excluded() and update docs/dev/known_issues.md K15 in the
      * same commit. */
     if (k15_cells == 0)
         bad("the K15 exclusion never fired (0 cells) — either the "
@@ -872,7 +872,7 @@ static void check_verb_names(void)
             "failure this file warns about elsewhere.");
     else
         ok("K15 exclusion: fired on the over-cap non-identifier cell "
-           "and nowhere else (see docs/known_issues.md K15)");
+           "and nowhere else (see docs/dev/known_issues.md K15)");
     printf("  K15 cells excluded (over-cap non-identifier verb names, "
            "category divergence ruled acceptable): %lu\n", k15_cells);
 
@@ -2093,7 +2093,7 @@ static void check_group_tails(void)
 
 /* ---- MOD-0.6 phase 2 / slice 4: the \p and \P shape space --------------
  *
- * docs/design_notes_mod06.md §5's "PC-3 differential additions", plus the
+ * docs/design/design_notes_mod06.md §5's "PC-3 differential additions", plus the
  * manager's phase-2 ruling 2 amendment (§8): the name axis must ALSO sweep
  * all 52 single letters, not just the 14 mod_uprops.c's hand-written table
  * claims — because a table GENERATED from libpcre2 and then CHECKED by a
@@ -2125,7 +2125,7 @@ static void check_group_tails(void)
  * THE OFFSET OBLIGATION is computed, not measured against libpcre2 (D26:
  * offsets are pcrec's own convention). mod_uprops.c's scan blames the
  * absolute pattern position one past the last byte it consumed
- * (docs/design_notes_mod06.md §3), so for a well-formed body reaching the
+ * (docs/design/design_notes_mod06.md §3), so for a well-formed body reaching the
  * lookup step the expected offset is exactly
  * `escape_start + 2 (the backslash and selector) + strlen(body)`, where
  * `body` is everything after the selector exactly as generated (braces,
@@ -2145,7 +2145,7 @@ static void check_group_tails(void)
  *     that fit in a one-character name), the {"", "^"} prefix, and all 5
  *     positions.
  *   - BRACE shape, multi-letter names: Alpha/Alphabetic/Any (all measured
- *     COMPILING, docs/design_notes_mod06.md §5) and Foo (unknown), crossed
+ *     COMPILING, docs/design/design_notes_mod06.md §5) and Foo (unknown), crossed
  *     with the FULL noise set (adding internal hyphen/underscore/space and
  *     mixed-case, all of which need >= 2 characters), the prefix axis and
  *     all 5 positions.
@@ -2184,7 +2184,7 @@ enum { UP_NOISE_NONE, UP_NOISE_LEAD, UP_NOISE_TRAIL,
        UP_NOISE_HYPHEN, UP_NOISE_UNDERSCORE, UP_NOISE_SPACE, UP_NOISE_MIXED,
        UP_N_NOISE };
 
-/* Every noise variant is measured insignificant (docs/design_notes_mod06.md
+/* Every noise variant is measured insignificant (docs/design/design_notes_mod06.md
  * §3): none of them may change sig_count, the accumulated name, or which
  * bucket a cell falls in — only the BYTE LENGTH of the body, which is why
  * the offset formula above reads `strlen(body)` off whatever this produces
@@ -2235,7 +2235,7 @@ typedef struct {
  * including braces/caret/noise). `sig_count` is the number of SIGNIFICANT
  * characters in the name BEFORE noise was applied — 0 for the empty name,
  * 1 for a single letter, >=2 for a multi-letter name — which is pcrec's own
- * axis boundary (docs/design_notes_mod06.md §8 ruling 3), not something an
+ * axis boundary (docs/design/design_notes_mod06.md §8 ruling 3), not something an
  * oracle query can supply. */
 static void uprops_check_cell(UpropsSweep *sw, int sel, int sel_idx,
                               const char *body, int sig_count, bool is_brace,
@@ -2251,7 +2251,7 @@ static void uprops_check_cell(UpropsSweep *sw, int sel, int sel_idx,
 
     /* THE LIVE ORACLE QUERY, once per cell, on the escape ALONE (never
      * embedded — the position doorways are pcrec's own arithmetic, not a
-     * question for libpcre2, and docs/design_notes_mod06.md §8 records that
+     * question for libpcre2, and docs/design/design_notes_mod06.md §8 records that
      * pcrec's uprops promise stays position-invariant even where the
      * embedding pattern would fail for an unrelated reason, e.g. a range
      * endpoint). Every cell here is well-formed by construction, so the
@@ -2301,7 +2301,7 @@ static void uprops_check_cell(UpropsSweep *sw, int sel, int sel_idx,
         sw->mismatches++;
         if (sw->reported++ < 20)
             bad("uprops differential: pcrec COMPILED '%s' — \\p/\\P has no "
-                "producer this phase (docs/design_notes_mod06.md §6), so a "
+                "producer this phase (docs/design/design_notes_mod06.md §6), so a "
                 "compile here can only mean the doorway was never reached",
                 full_pat);
         return;

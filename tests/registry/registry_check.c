@@ -1324,7 +1324,7 @@ static void check_class_ports(void)
  * table currently says. That is not this check's job either — no
  * check in this file reads an external oracle; tests/reject/'s
  * hand-written pins and PC-3's libpcre2 differential are what independently
- * catch a wrong flag, and always were (see docs/known_issues.md's K10
+ * catch a wrong flag, and always were (see docs/dev/known_issues.md's K10
  * entry).
  *
  * What WAS structurally impossible before this check: `sweep(RK_ESC,

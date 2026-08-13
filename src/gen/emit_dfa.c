@@ -1,4 +1,4 @@
-/* DFA -> C code generation, two engines (see docs/decisions.md D3/D7):
+/* DFA -> C code generation, two engines (see docs/dev/decisions.md D3/D7):
  *
  * ENG_UNANCH (patterns without `^`, including `$`-bearing ones since M2.7):
  * one O(n) forward pass over the

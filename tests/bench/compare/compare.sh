@@ -36,12 +36,12 @@
 # (reference: pcre2-interp, this project's established oracle -- see
 # tests/fuzz/pcre2_oracle.c); a disagreeing case is marked INVALID and is
 # NOT timed (never silently dropped -- see the Results section and
-# docs/upstream_issues.md for known other-engine divergences to check
+# docs/dev/upstream_issues.md for known other-engine divergences to check
 # against first). Iteration counts are auto-scaled per engine so every
 # timed measurement accumulates at least TARGET_SECS (default 0.3s) of
 # wall time.
 #
-# Measurement rigor (R2-B1/B2/B3, checkpoint review docs/reviews/2026-08-09-m2.md):
+# Measurement rigor (R2-B1/B2/B3, checkpoint review docs/dev/reviews/2026-08-09-m2.md):
 # the same box runs `schedutil` with turbo on, and per-measurement wall
 # times sat inside a frequency-ramp window; every measurement used to be a
 # SINGLE sample (published ratios swung 0.82-1.11 across 7 repeat runs,
@@ -703,7 +703,7 @@ process_case() {
         local reason_str
         reason_str="$(join_semi "${reasons[@]}")"
         echo "   VERDICT: INVALID -- not timed. $reason_str"
-        echo "   (check docs/upstream_issues.md for a known divergence before assuming a pcrec bug)"
+        echo "   (check docs/dev/upstream_issues.md for a known divergence before assuming a pcrec bug)"
         CASE_VALID[$id]="invalid"
         CASE_REASON[$id]="$reason_str"
         ALL_ROWS+=("$id"$'\t'"*"$'\t'"INVALID"$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-$'\t'-)

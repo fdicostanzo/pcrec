@@ -19,5 +19,5 @@ tests/fuzz/failures/
 # be committed. It was, twice, on 2026-08-10 — `git add -A -- docs` stages it,
 # and the previous session's brief warned about exactly that in prose. A rule
 # a tool enforces beats a rule a comment states.
-/docs/wake.md
+/docs/dev/wake.md
 worktrees/

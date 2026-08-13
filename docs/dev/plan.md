@@ -1,6 +1,6 @@
 # pcrec Project Plan
 
-Working plan derived from ../APPROACH.md. Milestones M0–M7 mirror APPROACH §9.
+Working plan derived from ../../APPROACH.md. Milestones M0–M7 mirror APPROACH §9.
 
 ## Step-state format (grep'able)
 
@@ -12,9 +12,9 @@ States: `not-started` | `started` | `completed` | `blocked` | `deferred`
 
 Find work:
 
-    grep -n "STATE:started" docs/plan.md
-    grep -n "STATE:not-started" docs/plan.md
-    grep -c "STATE:completed" docs/plan.md
+    grep -n "STATE:started" docs/dev/plan.md
+    grep -n "STATE:not-started" docs/dev/plan.md
+    grep -c "STATE:completed" docs/dev/plan.md
 
 Rules: update the STATE tag in place when a step changes state; expand a milestone
 into substeps only when work on it begins (replace its single `[Mx.0]` line);
@@ -178,10 +178,10 @@ with.
 ## Checkpoint review gates (D6)
 
 Every milestone ends with an adversarial critic-panel review of the work since
-the last checkpoint; compiled results live in docs/reviews/.
+the last checkpoint; compiled results live in docs/dev/reviews/.
 
-- [R1] STATE:completed — M0+M1 checkpoint review (4 critics) — compiled + triaged in docs/reviews/2026-08-09-m1.md
-- [R2] STATE:completed — M2 checkpoint review (5 critics; 4 reported, process/tests/docs critic did not deliver — lens carried to R3) — docs/reviews/2026-08-09-m2.md
+- [R1] STATE:completed — M0+M1 checkpoint review (4 critics) — compiled + triaged in docs/dev/reviews/2026-08-09-m1.md
+- [R2] STATE:completed — M2 checkpoint review (5 critics; 4 reported, process/tests/docs critic did not deliver — lens carried to R3) — docs/dev/reviews/2026-08-09-m2.md
 - [R1.1] STATE:completed — all fix-now items applied and verified (2 wrong-answer bugs via EOL-variant states, 3 crash classes, leak class, LLP64 span type, PCRE accept/reject parity, harness integrity, CLI --); suite 353/353
 
 ## Design-debt ledger (from R1; resolve before the milestone that hits each)
@@ -309,7 +309,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   cases added); `tests/reject/` had no `timeout`, making its own rc>=124 promise
   unreachable; and the exact-count hazard was measured disarming the boundary
   row in a two-line diff, answered with a MANIFEST that names irreplaceable rows
-  by pattern. See docs/reviews/2026-08-10-r7-fix1.md
+  by pattern. See docs/dev/reviews/2026-08-10-r7-fix1.md
 - [PC-3] STATE:completed 2026-08-10, WITH Q1 — the first external check in the
   project. `tests/registry/pcre2_check.c`: every row against libpcre2, plus a
   ~824,000-probe differential over ~75,000 verb names generated from libpcre2's
@@ -323,11 +323,11 @@ Then DOC-1, then PC-4 when module `classes` lands.
   verified, because libpcre2 compiles `\v` under either semantics. What IS
   externally verified: no row names a construct PCRE2 lacks, the two RS_REJECTED
   rows agree with PCRE2's error identity, and the verb doorway's whole name
-  surface. See docs/reviews/2026-08-10-r8-pc3-q1.md, and PC-4 and Q2 below,
+  surface. See docs/dev/reviews/2026-08-10-r8-pc3-q1.md, and PC-4 and Q2 below,
   which are what the panel turned up
 - [FIX-2] STATE:completed 2026-08-10 — K3 and K4 both fixed, plus the doorway's
   own over-promise. **PANEL RUN 2026-08-10, a session late: R9,
-  docs/reviews/2026-08-10-r9-fix2.md.** The rule held everywhere it was
+  docs/dev/reviews/2026-08-10-r9-fix2.md.** The rule held everywhere it was
   attacked — 1,239,480 generated patterns with zero verdict divergences, and the
   16-name POSIX table independently regenerated from libpcre2 over ~2.4 billion
   probes and found exactly right. The CHECKS did not: UB in the new
@@ -489,7 +489,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the same change. `\v`'s semantics — the incident the registry was built
   for — are externally verified at last
 - [SR-9] STATE:completed 2026-08-10, WITH Q2 — the `byte + tail` design from §7
-  of docs/design_registry_selectors.md (NOT §2's string selectors, which R6
+  of docs/design/design_registry_selectors.md (NOT §2's string selectors, which R6
   rejected with measurements). One new field, longest-tail-wins within the
   selector byte's bucket, ZERO changes to parse.c as predicted, base-tier cost
   unchanged, the 255-byte sweep provably identical — the sweep now passes the
@@ -614,7 +614,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   the refutations are the reasons.
 
   **R10 PANEL, 2026-08-11 — MOD-0.1 and MOD-0.2 were BLOCKED on a redesign; see
-  `docs/reviews/2026-08-11-r10-mod0-design.md` and D29's inline `[R10]` marks.**
+  `docs/dev/reviews/2026-08-11-r10-mod0-design.md` and D29's inline `[R10]` marks.**
   Five critics reviewed the design before any of it was built. The spine holds;
   the ambiguity guard, both proposed controls, and four measured facts do not.
   TWELVE dispositions are listed at the end of R10 and they are the
@@ -938,7 +938,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
 
   ~~STATE:blocked (2026-08-11 — the R11 design panel refuted parts of
   D30, exactly as R10 refuted D29, and the resolution is Frank's call.** See
-  `docs/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.
+  `docs/dev/reviews/2026-08-11-r11-parse1-mod01.md` and D30's inline R11 marks.
   NOTHING WAS BUILT; the panel ran against a written design and every finding
   cost a paragraph rather than a commit. **Seven dispositions** are listed at the
   end of R11 and they are the specification for the re-resolution, which wants a
@@ -1184,7 +1184,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   check02's compared floor moves if any generator body now compiles;
   check09's assertion 2 arms. Counts re-read from runs, never docs
 - [MOD-0.3f] STATE:completed 2026-08-12 — close: R16 panel (three lenses,
-  all delivered — docs/reviews/2026-08-12-r16-mod03.md; both behavioural
+  all delivered — docs/dev/reviews/2026-08-12-r16-mod03.md; both behavioural
   findings FIXED same-session: the lower/upper caseless blindness with ten
   discriminating pins, and the \N{quantifier} fallback with the table's
   first custom recogniser + the shared brace-shape scan) + the landing bar
@@ -1255,7 +1255,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   coverage cannot be mech-claimed; wiring one is a framework change for a
   future owner, recorded here rather than forced
 - [MOD-0.4d] STATE:completed 2026-08-12 — close. R18 panel
-  (docs/reviews/2026-08-12-r18-mod04.md): three critics, second consecutive
+  (docs/dev/reviews/2026-08-12-r18-mod04.md): three critics, second consecutive
   clean panel, ZERO tier-1 divergences (the engine critic independently
   re-verified the move's byte-identity, so all behavioural findings are
   pre-existing). Checks -> the S27 finding GENERALIZED: six REFUSE families
@@ -1266,7 +1266,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   (~35 cells; the star=at+1 and (*:) cells MATCH the oracle, now measured
   claims); K15 opened (too-long category divergence on >128-byte
   non-identifier runs, a LINKED PAIR with PC-3's identifier-only length
-  generator — docs/known_issues.md). Docs -> three live-doc staleness
+  generator — docs/dev/known_issues.md). Docs -> three live-doc staleness
   fixes incl. extension_design §5.3's location claim that had aged through
   TWO moves. NOTED inventory in the review file: check07 gate coverage at
   doorway 3 waits for the first producer; check01's aperture excludes
@@ -1421,7 +1421,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   check11/check12 merged 91e6b23, allowlist narrowed to exclude
   tests/probes so the milestone's measured alphabet could not leak; its
   floors were designed transition tripwires that fired at the .5c landing
-  exactly as intended). R17 panel (docs/reviews/2026-08-12-r17-mod05.md):
+  exactly as intended). R17 panel (docs/dev/reviews/2026-08-12-r17-mod05.md):
   three critics, ZERO wrong cells (a panel first); checks -> three
   correct-today-unguarded port corners, all pinned + S24-26 with the
   failing direction measured against the unpinned HEAD; engine -> bare
@@ -1434,14 +1434,14 @@ Then DOC-1, then PC-4 when module `classes` lands.
 - [MOD-0.6] STATE:completed (2026-08-12, thirteenth session; opened and
   closed same session on Frank's go. CLOSURE: phase-1 probe
   (tests/probes/probe_uprops.c, archived per D35) + accepted design note
-  (docs/design_notes_mod06.md, §8 holds the landing amendments) + five
+  (docs/design/design_notes_mod06.md, §8 holds the landing amendments) + five
   slices merged at e2b1d4a — K10 FIXED with check_class_syntax_reach and
   seven pins; mod_uprops.c streaming scanner (48-cap in limits.h, caret
   excluded, fold-free brace-path lookup) with the 146/147-shaped refusal
   split and load-bearing offsets; 35 offset pins total; PC-3 uprops
   differential 1,976 probes + 52-letter table drift guard; mech S31-S35
   with the S33/S34 first-landing UNDETECTED finding closed measured. R19
-  panel (docs/reviews/2026-08-12-r19-mod06.md): zero tier-1; K16 opened
+  panel (docs/dev/reviews/2026-08-12-r19-mod06.md): zero tier-1; K16 opened
   (164/256 malformed body bytes, tier 2, Frank ruled DEFER to first
   producer) + the last two message-only pins offset-pinned + has_eq/digit
   pins; reject 303/99/65/4, registry 168, PC-3 154, mech 35/35. LANDING
@@ -1486,7 +1486,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   justification (C4-1, C4-2)** and MOD-0.7a's design note refuted the
   replacement's own cure. What landed:
   - [MOD-0.7a] STATE:completed — the design note,
-    `docs/design_notes_mod07.md` (+ §13, the manager's six rulings).
+    `docs/design/design_notes_mod07.md` (+ §13, the manager's six rulings).
     **Headline, measured:** the declared-vs-live agreement the row above asked
     for CANNOT catch a module swap — ext.c renders the promise from the same
     `r->module` `--explain` prints, so C4-1's sabotage leaves the 100-row
@@ -1524,7 +1524,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
     MOD-0.7's landed surfaces (shared router, ExtResult.row, the
     election/promise/attribution clauses, case11) against the oracle and the
     accepted design note; (3) docs staleness. Compiled to
-    docs/reviews/2026-08-12-r20-mod08.md with triage dispositions,
+    docs/dev/reviews/2026-08-12-r20-mod08.md with triage dispositions,
     fix-with-measurement before disposition
   - [MOD-0.8b] STATE:completed — the D27 blinded writer (cell `spec-mod08`,
     scripts/mk_d27_cell.sh): spec-first tests of \p/\P and `(?` option-run
@@ -1850,7 +1850,7 @@ document). Mechanize instead.
   per-section runtimes measured at setup and re-recorded when any section
   doubles — that re-record trigger is the row's revisit-when
 
-## Post-M2 follow-ups (from checkpoint review R3, docs/reviews/2026-08-09-m2-close.md)
+## Post-M2 follow-ups (from checkpoint review R3, docs/dev/reviews/2026-08-09-m2-close.md)
 
 - [R3.1] STATE:completed — skip states have NO throughput guard anywhere (R3 critic, reframed): all four `make bench` patterns emit ZERO skip tables, so generated code is byte-identical with pick_skip_states returning 0 — bench cannot detect a skip-state regression at any count including zero, and D12's sabotage validation attributed to "prefilter+skips" was measuring the prefilter alone. Asserting a skip-table COUNT is the WRONG fix: the cap of 4 buys nothing measurable (730.8 vs 740.1 MB/s at cap 1, interleaved x9). Add a bench case whose hot state actually self-loops (`.*=.*` over a key=value subject is the shape), then the guard has something to measure RESOLVED: THROUGHPUT case (e), `=[^\n]*!` over an 8 MB key=value subject, ~92% of bytes consumed inside the skip loop. NOTE the suggested shape `.*=.*` is WRONG and the case records why: it matches at offset 0 ending at 127, so an 8 MB run exits after 127 bytes and reports 32 GB/s — R2-B4's exit-latency mistake again. Budget 1000 MB/s = measured-median/1.75 (D12). Sabotage-validated: pick_skip_states returning 0 measures 341.7 MB/s and fails the budget, AND trips the case's own hard-error check that a skip table is still emitted.
 - [R3.6] STATE:completed 2026-08-11 (subagent, reviewed; provenance in tests/bench/compare/run_history.tsv — case (i) re-baselined 69.72 → 50.56, the MEDIAN of ten independent quiet runs spanning 1.94x, with rebaseline.sh as the repeatable mechanics) — compare floors.tsv case (i) is 10.4% off the run that verified the others (77.00 vs a recorded 69.72) and its 0.700 margin means this gate CANNOT see it move, so the discrepancy is self-concealing (R3 guards critic F11). The floor values also come from a run that is not in the repository at all — they match neither results-ubuntubudu-20260809.md nor -2.md. Either re-baseline (i) deliberately and record the run, or establish why the latency case drifts; do not leave a floor whose own gate is blind to it

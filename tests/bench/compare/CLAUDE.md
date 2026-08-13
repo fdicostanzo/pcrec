@@ -45,7 +45,7 @@ from a single run's WITHIN-run spread, which is a sample, not a distribution.
 CORRECTION (R3.7, 2026-08-11): this file used to justify the 0.90 ceiling with
 "the box's noise floor is ~10% no matter how tight one run looks" — that
 number was never backed by any measurement in this repository (also corrected
-in gate.sh and floors.tsv; D17 in docs/decisions.md still needs the same fix).
+in gate.sh and floors.tsv; D17 in docs/dev/decisions.md still needs the same fix).
 The ceiling stays at 0.90 regardless: `run_history.tsv` (one row per case per
 independent `compare.sh` run — see `rebaseline.sh`) and `gate.sh`'s `EARN=1`
 mode are the honest path to tightening it, and as of this correction every

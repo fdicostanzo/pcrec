@@ -35,7 +35,7 @@ table, a machine-readable TSV block, and a full copy of both written to
 
 ## Measurement rigor (pinning, trials, order — R2-B1/B2/B3)
 
-Checkpoint review R2 (`docs/reviews/2026-08-09-m2.md`) found this script's
+Checkpoint review R2 (`docs/dev/reviews/2026-08-09-m2.md`) found this script's
 cross-engine numbers untrustworthy for three compounding reasons, all now
 fixed, styled after `tests/bench/run_bench.sh`'s equivalent fix (M2.9):
 
@@ -140,7 +140,7 @@ levels:
   finish within `RUN_TIMEOUT`. A case where an engine's single-call
   verdict (match/nomatch + span) disagrees with the reference is marked
   **INVALID** and is **not timed** — never silently dropped. Check
-  `docs/upstream_issues.md` first before assuming an INVALID case is a
+  `docs/dev/upstream_issues.md` first before assuming an INVALID case is a
   pcrec bug; it might be a known other-engine divergence.
 - **A single engine's DNF never kills the case.** Every engine's baseline
   is attempted independently; a DNF or error on ANY one engine (reference
@@ -362,7 +362,7 @@ regression without firing on noise. Tighten it only together with a higher
 `BENCH_TRIALS`.
 
 **When the gate fails**, the fix is a diagnosis, not a wider margin. If the
-slowdown is a deliberate trade, say so in `docs/dev_journal.md` and regenerate
+slowdown is a deliberate trade, say so in `docs/dev/dev_journal.md` and regenerate
 with `UPDATE=1`. It earned its keep immediately: within an hour of existing it
 caught a 43% regression on case (f) that `make test`, the python oracle, and
 the fuzzer were all green on, because the regression was behaviour-preserving.

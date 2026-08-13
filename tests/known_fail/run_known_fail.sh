@@ -3,10 +3,10 @@
 #
 # WHY THIS EXISTS (checkpoint review R2, finding R2-PR8): tests/known_fail/
 # holds .rxt files asserting the CORRECT behaviour for bugs we have confirmed
-# but deliberately deferred (docs/known_issues.md). `make test` excludes them,
+# but deliberately deferred (docs/dev/known_issues.md). `make test` excludes them,
 # which is what keeps the suite honest — but it also means that if a deferred
 # bug gets fixed as a side effect of other work, nothing says so. The
-# regression then has no test protecting it, and docs/known_issues.md quietly
+# regression then has no test protecting it, and docs/dev/known_issues.md quietly
 # becomes wrong.
 #
 # So this runs them and INVERTS the verdict:
@@ -15,7 +15,7 @@
 #
 # The fix for a flagged file is not to silence it: move the .rxt into the
 # matching tests/<module>/ directory so it becomes a live regression, and
-# close its entry in docs/known_issues.md.
+# close its entry in docs/dev/known_issues.md.
 #
 # An empty tests/known_fail/ is a legitimate, good state ("no confirmed bugs
 # are currently deferred") and exits 0 — unlike tests/codegen, "no checks ran"
@@ -69,8 +69,8 @@ if [ "$now_passing" -gt 0 ]; then
     echo "A bug was fixed without anyone noticing. For each file listed above:" >&2
     echo "  1. move it into the matching tests/<module>/ directory so it becomes" >&2
     echo "     a live regression that protects the fix;" >&2
-    echo "  2. close its entry in docs/known_issues.md;" >&2
-    echo "  3. note it in docs/dev_journal.md — an accidental fix is worth" >&2
+    echo "  2. close its entry in docs/dev/known_issues.md;" >&2
+    echo "  3. note it in docs/dev/dev_journal.md — an accidental fix is worth" >&2
     echo "     understanding, because it may have been accidental in scope too." >&2
     for p in "${passing_files[@]}"; do echo "     - $p" >&2; done
     if [ "$WARN_ONLY" = "1" ]; then

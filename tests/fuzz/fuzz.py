@@ -92,7 +92,7 @@ RUN_TIMEOUT = 5
 # NOT excluded (checked and confirmed to no longer be a divergence, despite
 # earlier speculation that it might need an exception): quantified bare
 # anchors (^*a, a$*, ${1,2}, ^{0,1}, ...). Since the S-M1 fix
-# (docs/reviews/2026-08-09-m1.md), pcrec rejects these exactly like PCRE2
+# (docs/dev/reviews/2026-08-09-m1.md), pcrec rejects these exactly like PCRE2
 # rejects them (error "quantifier does not follow a repeatable item" /
 # PCRE2 error code 109), verified across ^*a, a$*, $?, ^+, ${1,2}, ^{0,1}.
 # The generator is free to produce these naturally (quantifying an anchor

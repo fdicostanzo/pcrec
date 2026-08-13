@@ -7,7 +7,7 @@ swap, `(?n)` no-auto-capture, single-`x` and `xx` extended-mode lexing, the
 NOT producer semantics: malformed option-setting runs, non-construct option
 letters, and per-letter refusals (`m` -> module 'assertions', `J` -> module
 'named-groups'), written from the [MOD-0.5a] design gate
-(`grep -n "MOD-0.5" docs/plan.md`; docs/plan.md's rulings 1-6).
+(`grep -n "MOD-0.5" docs/dev/plan.md`; docs/dev/plan.md's rulings 1-6).
 
 ## R20/SPEC-1 — the quantifier controls in scope.rxt
 

@@ -110,6 +110,6 @@ else
     echo "  Suggested floors.tsv row (margin left as whatever this case already carries —"
     echo "  this script recommends a VALUE, not a margin; see gate.sh's EARN mode for that):"
     echo "    $CASE	<metric>	$med	<existing margin>"
-    echo "  Apply by hand and journal WHY in docs/dev_journal.md (compare/CLAUDE.md: never"
+    echo "  Apply by hand and journal WHY in docs/dev/dev_journal.md (compare/CLAUDE.md: never"
     echo "  auto-widen or auto-replace a floor without saying why)."
 fi

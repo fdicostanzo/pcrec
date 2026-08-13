@@ -519,7 +519,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
  * "requires module 'modifiers'"), and R10/C4-2 refuted it as a control: a
  * table printing its own columns is a self-join, and swapping two rows'
  * module attributions left every assertion on it green (R10/C4-1, reproduced
- * at MOD-0.7a: docs/design_notes_mod07.md §0).
+ * at MOD-0.7a: docs/design/design_notes_mod07.md §0).
  *
  * WHAT THIS PRINTS, and the split is the design:
  *

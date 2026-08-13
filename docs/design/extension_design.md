@@ -15,7 +15,7 @@ Not adopted.**
 
 > ## PANEL OUTCOME — READ THIS BEFORE ANY SECTION BELOW
 >
-> A five-lens panel (R13, `docs/reviews/2026-08-11-r13-extension-design.md`) ran
+> A five-lens panel (R13, `docs/dev/reviews/2026-08-11-r13-extension-design.md`) ran
 > against the first draft of this document and refuted several of its
 > load-bearing claims with measurements. The sections below have been corrected
 > in place; the corrections are marked **REFUTED** or **CORRECTED** and carry
@@ -1237,7 +1237,7 @@ for Frank.
 
 > ## R14 PANEL OUTCOME — READ BEFORE ANY PART II SECTION
 >
-> A three-lens panel (R14, `docs/reviews/2026-08-11-r14-part2.md`, ~5,400
+> A three-lens panel (R14, `docs/dev/reviews/2026-08-11-r14-part2.md`, ~5,400
 > probes) ran against Part II the session it was written. **Its two central
 > factual claims were refuted** — §16.2's "exactly ONE deviating cell" (a
 > second cell was printed in §16.1's own table and read as confirmation) and
@@ -2005,7 +2005,7 @@ says "harness", both sides are computed outside the handler under test.
 ## 18. State after R14, and what is open for Frank
 
 R14 ran the session Part II was written (three lenses, ~5,400 probes,
-`docs/reviews/2026-08-11-r14-part2.md`), every load-bearing refutation was
+`docs/dev/reviews/2026-08-11-r14-part2.md`), every load-bearing refutation was
 re-verified by the author before being applied, and the corrections are inline
 above. The honest summary:
 
@@ -2187,7 +2187,7 @@ rebuilt invariant list (§17.3).
    > UTF/`\N{U+0041}` lesson).
 
 **All five decisions are now RESOLVED (fifth session). §18 is closed; the
-plan (docs/plan.md, MOD-0 substeps) is the next artefact and the design
+plan (docs/dev/plan.md, MOD-0 substeps) is the next artefact and the design
 conversation's output.**
 
 **SPEC-MOD0 DELIVERED (2026-08-11, sixth session; D27 author, denied this

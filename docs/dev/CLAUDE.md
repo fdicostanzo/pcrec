@@ -1,0 +1,55 @@
+# docs/dev/ — development-process documents
+
+Documents that track execution against the design, not the product itself.
+Append-only where noted; the restart/status-recovery record for the project.
+
+## Files
+
+- `plan.md` — milestone/step tracker mirroring APPROACH §9. Machine-greppable
+  step states (`STATE:not-started|started|completed|blocked|deferred`); format
+  and grep recipes documented at the top of the file. Expand a milestone into
+  substeps only when work on it begins.
+- `dev_journal.md` — append-only dated journal, newest at bottom. Append an
+  entry after every significant work session; this is the primary
+  restart/status-recovery record.
+- `decisions.md` — ADR-lite decision log (D1, D2, ...): decision, why,
+  revisit-when. Add an entry whenever a choice would surprise a future reader.
+- `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
+  than fixed immediately; each has a minimal repro and a scheduled milestone.
+  Open at R11 close: K2 (cosmetic), K7 (a resource bug that also ABORTS the
+  caller's process under a memory limit), K9 (the public API takes no pattern
+  length, so a pattern containing NUL compiles as its prefix and reports
+  success), K10 (FIXED 2026-08-12 by MOD-0.6's K10 slice: `RF_CLASS_INVALID` removed
+  from the `{U+` row, `[\N{U+41}]` now promises module `unicode-props`;
+  guarded by `check_class_syntax_reach` and seven offset pins — see
+  docs/dev/known_issues.md), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
+  return a tagged ExtResult, one epilogue renders refusals, call sites end in
+  internal-error walls — the stub-build repro now exits 1 cleanly at both
+  sites; the cls_set range-check hazard stays assigned to the first
+  scalar-returning module),
+  K12 (FIXED 2026-08-11 by MOD-0.1's endpoint-rule slice: the five-step §16
+  order in p_class, SET-shape certified from the measured class_expect column
+  through the returned-claims epilogue; body-dependent rows like `\p` keep
+  their module promise until unicode-props' first WIDE producer lands —
+  MOD-0.6 landed recogniser-only and deliberately kept this boundary, see
+  design_notes_mod06.md §8.2 — a pinned, deliberate boundary), K13 (FIXED 2026-08-11 at [FIX-3]: the twelve
+  rows answered the CLASS position with module `backrefs` for constructs it
+  can never implement — `[\8]` is the literal `8`, `[\k]` the literal `k`;
+  now octal/literal fallback per RF_CLASS_BASE) and K14 (FIXED 2026-08-11 in
+  MOD-0.1's first slice: pcrec named a module for constructs its own
+  compliance survey calls architecturally OUT-OF-SCOPE — now a ROADMAP_NEVER
+  column per-row and per-VerbName, a no-promise diagnostic, and a
+  both-directions prose⇔column check). Failing regressions live in
+  tests/known_fail/ (excluded from `make test`).
+- `upstream_issues.md` — suspected bugs and divergences in OTHER engines
+  (PCRE2, python re) found by our differential tooling; the citable
+  rationale behind oracle exclusions. Add an entry whenever tooling
+  implicates another engine.
+- `reviews/` — compiled checkpoint critic reviews (D6), one file per
+  checkpoint: findings, triage dispositions, reflection.
+- `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
+  lives in this directory but is not committed. Committed docs win on any
+  disagreement with it.
+
+Maintenance: update this file when files are added/removed or their roles
+change.

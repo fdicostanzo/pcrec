@@ -511,7 +511,7 @@ which row answered. `elected` can. That is the one thing the live call adds
 that no existing check has.
 
 > ### CORRECTED (R20 — MOD07-2 and MOD07-3, one fix; manager ruling in
-> `reviews/2026-08-12-r20-mod08.md`)
+> `../dev/reviews/2026-08-12-r20-mod08.md`)
 >
 > **§5 NEVER STATES THE GATE IT IS SCOPED TO, and both of the section's
 > defects live in that omission.** §5.2's census was taken with
@@ -967,7 +967,7 @@ Stated as boundaries of case11 and of the design, not as future work:
 5. **V1-V7 measured**, results in the commit message; §9.2's warning about V1's
    expected result restated there.
 6. **Docs** — `src/parse/CLAUDE.md`'s `syntax_dump.c` entry, `cli/CLAUDE.md`,
-   `tests/cli/CLAUDE.md`, `docs/plan.md` STATE flips, and a journal entry.
+   `tests/cli/CLAUDE.md`, `docs/dev/plan.md` STATE flips, and a journal entry.
 
 Optional, manager's call: the verb sub-block (§4.3, OQ 4).
 
@@ -990,7 +990,7 @@ R panel.
    found the defect otherwise destroys it. Only then does the roadmap-aware
    rendering land. V3 stays as the re-introduction sabotage at landing. The
    defect is recorded in the journal and will appear in the R-panel close file
-   rather than in `docs/known_issues.md`.
+   rather than in `docs/dev/known_issues.md`.
 2. **OQ 2 — the normalised name is DEFERRED to the first `unicode-props`
    producer.** This SUPERSEDES the [MOD-0.7] plan row's original wording (the
    main-tree plan row is annotated accordingly). K16's linked-pair logic

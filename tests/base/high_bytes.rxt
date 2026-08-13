@@ -1,4 +1,4 @@
-# High-byte coverage (docs/reviews/2026-08-09-m1.md P-N2; plan M2.4).
+# High-byte coverage (docs/dev/reviews/2026-08-09-m1.md P-N2; plan M2.4).
 # \x80-\xFF in both patterns (literals and classes) and subjects. pcrec
 # treats bytes >=0x80 as plain byte semantics (ascii encoding, 8-bit
 # clean, per lib/pcrec.h); python re over these codepoints (U+0080-U+00FF)
