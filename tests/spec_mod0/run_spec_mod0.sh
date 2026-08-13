@@ -116,7 +116,7 @@ run_sh() {   # run_sh <script> [args...]
 }
 
 # --- the ten invariants ------------------------------------------------
-run_sh check01_isolation.sh          "$ROOT"
+run_sh check01_isolation.sh          "$ROOT" "$FLOORS"
 run_c  check02_capture_count         "$PCREC"
 run_c  check03_lexical               "$REG"
 run_c  check04_class_position        "$REG"
@@ -124,7 +124,7 @@ run_c  check05_digits
 run_sh check06_cursor.sh             "$ROOT" "$REG" "$PCREC"
 run_c  check07_gate_equivalence      "$REG" "$PCREC"
 run_c  check08_endpoints             "$REG"
-run_sh check09_every_feature_toggles.sh "$WORK/check07_gate_equivalence.out" "$REG" "$FLOORS"
+run_sh check09_every_feature_toggles.sh "$WORK/check07_gate_equivalence.out" "$REG" "$FLOORS" "$PCREC"
 run_c  check10_quantifiable          "$REG" "$VERBS"
 run_c  check11_modifier_syntax       "$REG" "$PCREC"
 run_c  check12_modifier_semantics    "$REG" "$PCREC"
