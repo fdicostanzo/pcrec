@@ -88,6 +88,40 @@ test-thread: all
 test-spec: all
 	bash tests/spec_mod0/run_spec_mod0.sh
 
+# [TT-1] make smoke — MEASURED <60s inner-loop subset (docs/testing.md
+# "Tiered testing" has the per-section numbers this was chosen from). The
+# three slow sections are deliberately OUT: test-corpus (~304s), test-reject
+# (~55s, which alone would eat the whole budget) and test-spec (~27s, which
+# would leave the total too close to 60s to survive ordinary run-to-run
+# variance — see the docs section for the arithmetic). What's IN runs the
+# real section targets, not a weakened subset of any of them.
+#
+# SMOKE_FLOOR is a LITERAL, kept independent of SMOKE_SECTIONS on purpose
+# (project lesson, memory: pcrec-check-design-lessons — every check here
+# that failed shared a source with the thing it controlled). $$ran below is
+# counted by the loop actually running each entry in SMOKE_SECTIONS, so it
+# tracks the list; SMOKE_FLOOR does not auto-follow it, which is what makes
+# shrinking the list (accidentally or not) without updating SMOKE_FLOOR in
+# the same commit a loud, failing gate instead of a silent shrink.
+SMOKE_SECTIONS = test-cli test-registry test-parse test-codegen test-known-fail test-thread
+SMOKE_FLOOR    := 6
+
+smoke: all
+	@ran=0; \
+	for sec in $(SMOKE_SECTIONS); do \
+	    $(MAKE) --no-print-directory $$sec || exit 1; \
+	    ran=$$((ran+1)); \
+	done; \
+	if [ "$$ran" -lt $(SMOKE_FLOOR) ]; then \
+	    echo "smoke: FLOOR TRIPPED — ran $$ran section(s), expected at least $(SMOKE_FLOOR)." >&2; \
+	    echo "smoke:   SMOKE_SECTIONS shrank without SMOKE_FLOOR being updated to match." >&2; \
+	    echo "smoke:   Restore the missing section(s); if the shrink is deliberate, update" >&2; \
+	    echo "smoke:   BOTH SMOKE_FLOOR here AND docs/testing.md's smoke composition in the" >&2; \
+	    echo "smoke:   same commit." >&2; \
+	    exit 1; \
+	fi; \
+	echo "smoke: ran $$ran/$(SMOKE_FLOOR) sections ($(SMOKE_SECTIONS))."
+
 # `make strict` — R5-Q1, answered 2026-08-10: OPT-IN, never the default.
 #
 # The question was whether to adopt -Werror. The reason it matters is that the

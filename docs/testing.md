@@ -351,3 +351,194 @@ interaction. Coverage honesty: interactions between enabled modules are a
 real axis, but they are tested DELIBERATELY as their own labelled sweeps,
 not smuggled in as noise inside every differential. (This mirrors the
 per-module-not-blanket rule the `--features` CLI surface already pins.)
+
+## Tiered testing ([TT-1], 2026-08-13)
+
+The full suite has crept from ~15 minutes to ~5 minutes parallelized and
+keeps growing, because the project only ever ADDS tests. The fix is not to
+weaken `make test` — **it stays the full suite, and a green `make test`
+keeps meaning the complete claim, unchanged by anything below.** Instead:
+section targets to spot-check just the area a change touches while working,
+`make smoke` as a measured fast path for the tightest inner loop, and an
+opt-in local push gate so the full suite still runs before code leaves the
+machine — full load stays the standard at merge/checkpoint evaluation
+points regardless of what ran during development.
+
+### Section targets
+
+Thin wrappers, one per section, over the exact scripts `make test` already
+runs — no weakened variants, each target runs the real script(s). `test:`
+in the Makefile is untouched (still the same nine `bash tests/.../*.sh`
+lines it always was); the wrappers just let you invoke one line instead of
+paying for all nine.
+
+The plan row that created this tiering named eight targets by number
+(`test-corpus`, `test-cli`, `test-reject`, `test-registry`, `test-codegen`,
+`test-spec`, `test-thread`, `test-parse`). Reading the Makefile, `make
+test:` actually runs **nine** script invocations, which this table groups
+into eight sections (`test-codegen` wraps two scripts — `run_codegen_tests.sh`
+and `run_trie_identity.sh` — since this file already describes them as one
+"codegen structural checks" concept, and `test:` runs them back to back).
+`test-spec` is the ninth target and the one genuine divergence: it wraps
+`tests/spec_mod0/run_spec_mod0.sh`, which is **not** one of the nine `test:`
+lines (its own CLAUDE.md: "Not part of `make test`, and it does not run
+`make`") — it gets a target anyway because the plan row named it explicitly,
+and the script already runs standalone and was green (14/14) at the last
+project journal entry.
+
+| Target | Runs | Part of `make test`? |
+|---|---|---|
+| `make test-corpus` | `tests/harness/run.sh` (the `.rxt` corpus) | yes |
+| `make test-cli` | `tests/cli/run_cli_tests.sh` | yes |
+| `make test-reject` | `tests/reject/run_reject_tests.sh` | yes |
+| `make test-registry` | `tests/registry/run_registry_tests.sh` (registry_check, compliance_section.py, PC-3, PC-4) | yes |
+| `make test-parse` | `tests/parse/run_parse_tests.sh` | yes |
+| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
+| `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
+| `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
+| `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+
+Each target depends on `all`, so a stale binary never reads as a pass.
+`make mech`, `make bench`, `make fuzz`, and `make strict` already had their
+own top-level targets before TT-1 and are untouched — they are not `test:`
+sections and this tiering doesn't wrap them again.
+
+### Measured per-section runtimes
+
+Measured 2026-08-13 at commit `f5e419a3e6c9d0e5629ab7bdd345d21e3b902586`, on
+the project box, `TMPDIR=/var/tmp`, `PROCS` unset (serial — the same default
+`make test` itself uses), 3 runs per section. Following the R3.10 lesson (a
+single `/proc/loadavg` sample for a whole multi-minute run can call a
+contended window "quiet"), `/proc/loadavg` was sampled immediately before
+**and** after *each individual run*; a run was flagged CONTAMINATED if
+either sample's 1-minute load exceeded 1.20 (the box's observed quiet
+baseline was under 1.0). All 27 runs (9 sections x 3) came back clean — no
+retries were needed. A first attempt at this measurement, taken while a
+second concurrent lane was running its own `make test`/`make ubsan` in a
+different worktree on the same box, was discarded in full rather than
+partially trusted, because it only sampled load once for the whole sweep
+and load visibly climbed (0.99/0.77/0.57 -> 2.41/1.45/0.92) across it.
+
+| Section | run 1 | run 2 | run 3 |
+|---|---|---|---|
+| `test-corpus` | 303.45s | 303.89s | 304.18s |
+| `test-cli` | 6.26s | 6.29s | 6.56s |
+| `test-reject` | 54.70s | 54.71s | 54.70s |
+| `test-registry` | 7.85s | 7.86s | 7.85s |
+| `test-parse` | 0.89s | 0.91s | 0.96s |
+| `test-codegen` | 10.08s | 10.98s | 10.06s |
+| `test-known-fail` | 0.03s | 0.03s | 0.02s |
+| `test-thread` | 7.68s | 7.72s | 7.70s |
+| `test-spec` | 25.95s | 27.53s | 26.67s |
+
+`test-corpus` dominates by nearly an order of magnitude over everything
+except `test-reject`; `test-known-fail` is a no-op today (the directory is
+empty per its own CLAUDE.md) and its near-zero time reflects that, not a
+weak check. Summing the eight sections that make up `make test` (excluding
+`test-spec`, which isn't part of it) by median gives ~391s (~6m31s) serial
+for the full suite run as separate section invocations. A direct `make
+test` run at commit f5e419a confirmed this: corpus 1270 cases, cli 221,
+reject 486/0 failed, registry_check 168/0 failed, PC-3 163/0 failed (ran
+against real libpcre2, not skipped), parse 2+8 checks, codegen 29/0 failed,
+trie identity 7/0 failed, known-fail empty/nothing-to-ratchet, thread 8/0
+fail — all green, zero FAIL lines anywhere in the output. Its own wall-clock
+trailer was lost (an earlier, unrelated cleanup command killed the timing
+wrapper after `make test` had already forked, so the run finished
+unsupervised and unmeasured for elapsed time); the log's start-to-finish
+window and the section sum above both put it at roughly 6-6.5 minutes,
+consistent with each other.
+
+**RE-RECORD TRIGGER**: re-measure a section (same method: 3 runs, per-run
+load-before/after sampling, `TMPDIR=/var/tmp`) whenever its runtime doubles
+from the figures above. `make smoke`'s composition and the touched-path
+table below both derive from these numbers, so a re-measurement that moves
+them is also a prompt to re-check whether `make smoke` still fits under 60s
+and whether the composition should change.
+
+### Touched-path -> sections (inner-loop guidance, not a substitute for full load)
+
+Starting point from the TT-1 plan row, refined by reading the Makefile,
+`src/`'s actual directory contents, and what each section's own CLAUDE.md
+says it guards. This is guidance for **spot-checking while you work** — the
+full suite (or at minimum every section the touched paths imply) still runs
+at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
+
+| Touched path | Spot-check with | Why |
+|---|---|---|
+| `src/parse/*` (`parse.c`, `registry.c`, `enabled.c`, `ext.c`, `scans.c`, `syntax_dump.c`, `mod_*.c`) | `test-reject`, `test-registry`, `test-spec`, `test-cli` | reject asserts the "never miscompile" mandate per construct; registry checks the SR-1 table against the parser AND against libpcre2 (PC-3/PC-4); spec_mod0 is the D27 promise-derived suite, blind to `src/`'s own alphabet; cli exercises the CLI surface these modules gate ("requires module 'X'") |
+| `src/ir/*` (`nfa.c`, `dfa.c`) + `src/opt/*` (`minimize.c`) + `src/gen/*` (`emit_dfa.c`) | `test-corpus`, `test-codegen` (includes the trie identity differential), `bench` | corpus is correctness of what the emitted matcher actually matches; codegen asserts the optimization signatures (skip tables, fast paths, minimization) are structurally present, per R2-PR3's finding that these can be silently disabled with zero other signal; bench guards the throughput/compile-time budgets these components produce |
+| `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
+| `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
+| `lib/pcrec.h` | `test-cli` (the library-API smoke test), `test-thread` (both TS-2 and TS-3 call the public API directly) | |
+| `tests/mech/*` (sabotage definitions) | `make mech` (not a `make test` section — its own top-level target, ~6 minutes, run manually per its own CLAUDE.md when a sabotage table's figures are in doubt) | |
+
+### `make smoke`
+
+A measured, sub-60-second inner-loop subset, sized from the table above —
+never vibes. Runs the real section targets it lists, not a weakened variant
+of any of them.
+
+**Composition**: `test-cli`, `test-registry`, `test-parse`, `test-codegen`,
+`test-known-fail`, `test-thread`. Deliberately excludes the three slow
+sections: `test-corpus` (~304s, two orders of magnitude over budget),
+`test-reject` (~55s, which alone would consume nearly the whole budget and
+leave no room for anything else), and `test-spec` (~27s, which — added to
+the ~33s the other six sections cost together — lands at ~60s with
+essentially no headroom against ordinary run-to-run variance; see the
+per-section table's spread, e.g. `test-codegen`'s 10.06-10.98s). The six
+included sections sum to ~33s by median, leaving comfortable headroom.
+
+**Measured runtime** (2026-08-13, same commit and load-provenance method as
+above): 32.16s clean (load 0.50/0.24/0.21 -> 0.65/0.31/0.24), 31.36s
+(load 0.59/0.30/0.24 -> 1.44/0.54/0.32, flagged CONTAMINATED by the
+1-minute-load-after sample — a second lane was mid-retime on the same box),
+and 30.88s (load 1.13/1.08/0.89 -> 1.26/1.12/0.91, also flagged
+CONTAMINATED). All three land in the same ~31-32s band regardless of the
+mild contention on the two flagged runs, which is itself reassuring: even
+under load this target has comfortable headroom under the 60s target, not
+just on a perfectly quiet box.
+
+**Floor check**: `SMOKE_FLOOR := 6` in the Makefile is a literal, kept
+independent of `SMOKE_SECTIONS` on purpose — the project's own lesson
+(memory: every check written for this repo that failed shared a source with
+the thing it controlled; see e.g. registry_check's PASS-count guard, which
+this mirrors). The target counts how many entries in `SMOKE_SECTIONS` it
+actually ran and fails loudly, with a fix-it message, if that count drops
+below `SMOKE_FLOOR`. Because `SMOKE_FLOOR` does not auto-track the list,
+shrinking `SMOKE_SECTIONS` — by accident or on purpose — without also
+updating `SMOKE_FLOOR` in the same commit trips the gate instead of
+silently shrinking what "smoke" means.
+
+**Sabotage validation** (2026-08-13): temporarily dropped `test-thread` from
+`SMOKE_SECTIONS` (5 entries, `SMOKE_FLOOR` left at 6) and ran `make smoke`.
+It ran the remaining five sections, then failed loudly:
+
+    smoke: FLOOR TRIPPED — ran 5 section(s), expected at least 6.
+    smoke:   SMOKE_SECTIONS shrank without SMOKE_FLOOR being updated to match.
+    smoke:   Restore the missing section(s); if the shrink is deliberate, update
+    smoke:   BOTH SMOKE_FLOOR here AND docs/testing.md's smoke composition in the
+    smoke:   same commit.
+    make: *** [Makefile:110: smoke] Error 1
+
+Exit code nonzero (2, via `make`'s own wrapping of the target's `exit 1`).
+The sabotage was never committed — `SMOKE_SECTIONS` was restored immediately
+after, and `make smoke` re-verified green (6/6) before anything landed.
+
+### Opt-in local pre-push gate
+
+`make hooks` installs `scripts/hooks/pre-push` (runs the full `make test`,
+not a tier) into the repository's real hooks directory, resolved via `git
+rev-parse --git-path hooks` rather than assumed as `.git/hooks` — a
+worktree's `.git` is a file pointing at the shared gitdir, and the install
+must resolve that path correctly to work from a worktree clone (verified:
+installing from inside a nested worktree correctly resolves to the shared
+gitdir's `hooks/`, not a nonexistent `.git/hooks` under the worktree).
+**Never installed automatically** by any other target and never by CI (D2's
+"plain make for strangers" holds: cloning this repo and running
+`make`/`make test` must not install anything into the cloner's git config).
+Bypass with `git push --no-verify` when you deliberately need to push past
+a failing local gate.
+
+CI itself stays deferred, not rejected (Frank, 2026-08-12): revisit when a
+red lands on `main` that this local pre-push discipline should have caught,
+or when a second regular contributor appears.
