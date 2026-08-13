@@ -878,7 +878,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
 {
     StrBuf body = {0}, sb = {0};
     size_t qlen = strlen(query);
-    int rows_shown = 0, dissents = 0;
+    volatile int rows_shown = 0, dissents = 0;
 
     /* ONE Ctx for the whole invocation, reused across every call, its arena
      * freed at the end — and GUARDED since R20/MOD07-1. The old comment here
@@ -903,7 +903,9 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
      *
      * `body`, `sb` and `cx` are declared above the `setjmp` and mutated only
      * through their escaped addresses; `rows_shown`/`dissents` are mutated
-     * after it and are deliberately not read here. */
+     * after it and are deliberately not read here. `volatile` on both (SAN-1
+     * F1, manager triage 2026-08-13) is the setjmp/longjmp clobber contract
+     * for exactly this invariant, not a threading concern. */
     if (setjmp(cx.jb)) {
         sb_free(&body);
         sb_free(&sb);

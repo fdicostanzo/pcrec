@@ -531,9 +531,20 @@ all-clear lands.
 ### Sanitizer findings inventory
 
 **F1 — `-Wclobbered` on `pcrec_syntax_explain`'s `rows_shown`/`dissents`,
-`src/parse/syntax_dump.c:881`, surfaces only under `make asan`** (not
-`make ubsan`, not the default `-O2` build, not `make strict`). **Full
-compiler output, verbatim:**
+`src/parse/syntax_dump.c:881`, surfaced only under `make asan`** (not
+`make ubsan`, not the default `-O2` build, not `make strict`). **TRIAGED
+BENIGN and HARDENED (manager, 2026-08-13, same session)** — the manager
+independently read the handler and confirmed the analysis below: neither
+variable is read on the longjmp path, and the ASan-build-only appearance is
+ASan's instrumentation shifting register allocation into gcc's clobber
+heuristic. Both variables are now `volatile int` (one-liner, per SAN-1's
+findings-discipline exception for trivial fixes — separate commit, this
+warning quoted in it), so the invariant the comment already stated in
+prose ("deliberately not read on the longjmp path") is now a defined-read
+guarantee rather than a heuristic gcc happens to get right, closing off
+the R20-shaped latent-bug risk a *wrong* instance of this warning would
+represent. Rebuilt `build-asan/` after the fix: warning gone, `make`/
+`make strict` still clean. **Full compiler output, verbatim (pre-fix):**
 
 ```
 /home/duxevents/pcrec/worktrees/san1/src/parse/syntax_dump.c: In function ‘pcrec_syntax_explain’:
@@ -555,30 +566,24 @@ reference compiler from source — the same warning is present in the real
 `build-asan/` library build too, confirmed in that build's own log; it
 just has nowhere that treats a warning as fatal there).
 
-**Triage guess: false positive / benign, not a real defect — but flagged
-for the setjmp-guard owner to confirm, not asserted with confidence, since
-a clobbered-across-setjmp variable is exactly this project's own R20
-tier-1-bug shape when it's wrong.** The two variables are declared at
-line 881, BEFORE the function's `setjmp(cx.jb)` call (a few lines below, at
-line 907, per the function's own source), and mutated only after it
-(`rows_shown++` at line 967, `dissents +=` at line 1039, both well past the
-`setjmp`). The comment immediately above that `setjmp` already states the
-reasoning gcc's `-Wclobbered` heuristic apparently can't see through:
-*"`body`, `sb` and `cx` are declared above the `setjmp` and mutated only
-through their escaped addresses; `rows_shown`/`dissents` are mutated after
-it and are deliberately not read here [i.e. on the longjmp path]"* — the
-`if (setjmp(cx.jb)) { sb_free(&body); sb_free(&sb); arena_free(&cx.arena);
-if (ndissent) *ndissent = 0; return NULL; }` branch returns unconditionally
-without ever reading `rows_shown` or `dissents`, so whatever clobbered
-value either holds on that path is never observed. This is the same shape
-as another `setjmp` earlier in the same file (~line 455) that this
-project's own comments describe having already reasoned through as benign
-for an analogous warning. Not fixed here (SAN-1's findings discipline:
-report, don't fix, except trivial one-liners — and this needs the
-`--explain`/R20 setjmp-guard owner's confirmation that the longjmp path
-truly never reads either variable anywhere else in the function before
-committing to "benign," not a mechanical `volatile` silence from this
-lane).
+**Analysis (confirmed correct by the manager's independent read).** The two
+variables are declared at line 881, BEFORE the function's `setjmp(cx.jb)`
+call (a few lines below, at line 907, per the function's own source), and
+mutated only after it (`rows_shown++` at line 967, `dissents +=` at
+line 1039, both well past the `setjmp`). The comment immediately above
+that `setjmp` already stated the reasoning gcc's `-Wclobbered` heuristic
+apparently can't see through: *"`body`, `sb` and `cx` are declared above
+the `setjmp` and mutated only through their escaped addresses;
+`rows_shown`/`dissents` are mutated after it and are deliberately not read
+here [i.e. on the longjmp path]"* — the `if (setjmp(cx.jb)) { sb_free(&body);
+sb_free(&sb); arena_free(&cx.arena); if (ndissent) *ndissent = 0; return
+NULL; }` branch returns unconditionally without ever reading `rows_shown`
+or `dissents`, so whatever clobbered value either holds on that path is
+never observed — the manager verified the handler touches only `body`,
+`sb`, `cx.arena` and the `ndissent` parameter. This is the same shape as
+another `setjmp` earlier in the same file (~line 455) that this project's
+own comments describe having already reasoned through as benign for an
+analogous warning.
 
 **Secondary observation, not a finding**: this is the FIRST time anything
 in the repo has compiled `syntax_dump.c` under `-fsanitize=address` — the
@@ -592,10 +597,16 @@ exposes to warnings from an unrelated file. Worth a manager call: either
 accept that `make asan` surfaces this class of coupling (arguably correct
 — it IS a real warning on real code, just not one `run_trie_identity.sh`'s
 own purpose is about), or scope `$SANFLAGS` out of the `$REF` build and
-rely on `$PCREC`'s compiler-axis coverage alone there.
+rely on `$PCREC`'s compiler-axis coverage alone there. Moot for THIS
+finding now that F1 is fixed (the coupling did its job once — it surfaced
+a real, if benign, warning nothing else in the repo had ever compiled
+under), but the coupling itself is still there for the next one, so the
+call is left open rather than silently resolved by this one fix.
 
 No findings from `make ubsan` at commit `c509d944` — clean across the full
-suite including the PC-3/PC-4 probe volume.
+suite including the PC-3/PC-4 probe volume. `make asan` is now clean too,
+after F1's fix — rebuild-verified, full timed re-run still pending the
+measurement hold below.
 
 ### K7/K9 — read, not automated here
 
