@@ -7197,3 +7197,28 @@ PC-5/BENCH-1 fact-gathering are schedulable as lanes whenever Frank wants
 the tables. Nothing in flight; zero STATE:started rows. Worktrees
 docs-reorg/plan-restruct removed post-merge; only d27-selftest-cell
 remains.
+
+### Sixteenth session, late addendum — positioning ruled and recorded
+
+Frank ruled the niche discussion RECORDED (post-close, same session). What
+landed, all in docs/dev/plan.md: a POSITIONING NOTE at the head of Beyond
+M7 (the one-sentence niche: PCRE2 semantics, compiled to verified,
+dependency-free C — fastest where the pattern is known ahead of time, the
+only one with compiled substitution; five elements each tied to an owner
+row; re2c named as the embedded incumbent; the verification story named a
+product feature); [BENCH-1] amended with a latency/short-subject case
+group (time-to-first-match from process start, per-call overhead on short
+subjects) and the prioritizer's second reading (best cells feed
+positioning, worst cells feed fixes); [M4-SUBST] amended with the
+beyond-PCRE2 direction (shell-style transforms, C-callback template
+segments reusing M4-CALLOUTS' static-extern primitive, own-namespace
+discipline per SR-10 so D26's compat story stays clean); [V-E] annotated
+as the answer to two use-case questions (organizing/finding compiled
+matchers = the finder; the manifest = the user-facing regex-specification
+FILE FORMAT, to be designed as a first-class surface); and two NEW boonies
+rows — [V-G] user-facing regex testing (package the .rxt harness + oracle
+differentials as a `pcrec test` surface) and [V-H] debug/trace emission
+modes (traced matcher variant + verbose compile narration; DD-8 keeps
+--emit-ir/--emit-dot). Frank's other two use-case ideas already had rows:
+the rx/.../ source scanner is [V-F], the organizing system is [V-E]. All
+boonies-tier by his word — parking spots, not queue positions.

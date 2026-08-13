@@ -158,6 +158,32 @@ a corner that would make these expensive later. Each becomes a milestone only
 after the current ladder is complete and the result is something we are happy
 with.
 
+**POSITIONING NOTE (Frank + manager, 2026-08-13 sixteenth session).** The
+niche, in one sentence: *PCRE2 semantics, compiled to verified,
+dependency-free C — fastest where the pattern is known ahead of time, and
+the only one that does compiled substitution.* Its elements, each with an
+owner: (1) PERFORMANCE, honestly scoped — an AOT compiler wins where the
+compiler saw the exact pattern (specialized single-pattern scanning,
+startup, latency), and does not chase Hyperscan-scale SIMD multi-pattern;
+[BENCH-1]'s prioritizer maps both the worst cells (fix) and the best cells
+(advertise). (2) EMBEDDED / NO-LIBRARY — the defensible core. The incumbent
+to name is re2c; differentiation is PCRE2 syntax+semantics, leftmost-first,
+the future captures/backrefs tier, and the verification story. What the
+code already guarantees is the sales sheet: all-const tables (TS-1,
+enforced), no malloc/errno/locale in generated code, thread-safe by
+construction, deterministic — certifiable vendored source. M7's
+freestanding profile cashes this. (3) THE VERIFICATION STORY IS A PRODUCT
+FEATURE — "differentially verified against libpcre2; unsupported syntax
+fails loudly, never miscompiles" is a claim no neighbor in this niche
+makes. (4) LATENCY — time-to-first-match from process start (~zero for us:
+tables page in from .rodata; PCRE2 pays pcre2_compile + JIT warmup every
+process) and short-subject per-call overhead, the dimension real workloads
+(log lines, field validation) are dominated by and benchmarks skip —
+measured under [BENCH-1]. (5) COMPILED SUBSTITUTION as the headline
+differentiator — see [M4-SUBST]'s beyond-PCRE2 direction. Developer-
+experience directions that serve the niche are the [V-*] rows below,
+including V-G/V-H (added this session).
+
 - [V-A] STATE:not-started — PCRE2 compatibility layer: a drop-in surface for callers who already speak PCRE2, so adopting pcrec does not mean rewriting call sites. Interacts with DD-3 (generated-API versioning) — a compat layer is a second consumer of the generated contract. TWO surfaces (Frank, 2026-08-12): the PCRE2-native API, and a POSIX `regex.h` shim (regcomp/regexec/regfree, à la pcre2posix) — a smaller surface with wider adoption reach, since decades of C code speaks regex.h and never touched PCRE2
 - [V-B] STATE:not-started — usage libraries for other languages: bindings over the generated C. Note the generated code already has no runtime dependency on pcrec, which is what makes this cheap; keep it that way
 - [V-C] STATE:not-started — a grep CLI built on pcrec, the natural end-user demonstration that the speed mandate (D18) actually shows up in a real tool
@@ -179,7 +205,13 @@ with.
   request emits byte-for-byte today's output. Usage modes to design BEFORE
   building (Frank: "we should think about how it's used"): CLI
   multi-pattern args with per-pattern names, and a manifest file for build
-  integration ([V-F] is the third consumer)
+  integration ([V-F] is the third consumer). NOTE (Frank, 2026-08-13):
+  this row also answers two use-case questions from the positioning
+  discussion — the system for ORGANIZING/FINDING the regex functions you
+  have compiled is this row's finder + named entry points, and the
+  MANIFEST is the user-facing FILE FORMAT for specifying regexes (name,
+  pattern, flags, encoding per entry → one compiled unit); design the
+  manifest as a first-class user surface, not a build artifact
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
@@ -192,6 +224,30 @@ with.
   marker-grammar design note answering: escaping inside `rx/.../`, flags
   syntax, occurrences inside string literals and comments (skip or honor,
   and how a regular scanner distinguishes them)
+- [V-G] STATE:not-started — USER-FACING REGEX TESTING (Frank, 2026-08-13,
+  positioning discussion; boonies tier): expose the project's own dev
+  testing machinery to a developer wishing to test THEIR regexes — the
+  .rxt corpus format, the harness runner, and (where installed) the
+  python-re / libpcre2 oracle differentials, as a `pcrec test`-shaped
+  surface: write cases for your pattern, run them against your compiled
+  matcher, optionally cross-check against the oracles. The machinery
+  exists and is battle-proven (docs/testing.md); the work is packaging,
+  scope (which harness features are user-grade vs dev-only), and docs —
+  a docs/spec/ candidate when built. Nobody in the niche ships a regex
+  TESTING story; this makes the verification story a user capability,
+  not just an internal discipline
+- [V-H] STATE:not-started — DEBUG / TRACE EMISSION MODES (Frank,
+  2026-08-13, same discussion; boonies tier): generation-time variants
+  that aid understanding and debugging a matcher — a TRACING build
+  (emitted matcher logs state transitions, positions, prefilter/skip
+  entry/exit; a SEPARATE emitted variant per D18, zero cost in the normal
+  emission — never a runtime flag in the hot loop), a VERBOSE compile
+  mode narrating compilation decisions (prefilter chosen, skip states,
+  trie factoring, caps hit), and the compile-time introspection DD-8
+  already owes (--emit-ir / --emit-dot — that row stays the owner of
+  those two surfaces; this row is the run-time half). Pairs with [V-G]:
+  a failing user test plus a traced matcher is a debugging story no
+  regex library offers
 
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
@@ -233,7 +289,16 @@ spine, not before):
   substitute time. Tier the template language: core `$n`/`${name}`/literal
   escapes first; PCRE2_SUBSTITUTE_EXTENDED forms (\u \l case forcing,
   ${n:-default}, ${n:+yes:no}) earn their rows separately under D18's
-  earn-its-axis discipline
+  earn-its-axis discipline. **BEYOND-PCRE2 DIRECTION (Frank, 2026-08-13:
+  "this might be an area where we provide more capability than pcre2"):**
+  richer shell-style transforms and C FUNCTION CALLBACKS as template
+  segments — a segment that calls an embedder-defined `extern` to render,
+  reusing M4-CALLOUTS' static-extern primitive verbatim (compile-time
+  bound, zero cost when absent). Discipline: everything past PCRE2's
+  surface lives in pcrec's own clearly-flagged namespace (SR-10's rule) so
+  the D26 compatibility story stays clean — PCRE2-compatible core,
+  pcrec-extended templates opt-in; non-portability is a non-issue for the
+  embedded niche, which is compiling in anyway
 
 ## Design-debt ledger (from R1; resolve before the milestone that hits each)
 
@@ -461,7 +526,7 @@ execution speed trades the primary goal (D18) for the secondary one.
   will be its testing suite. builds confidence and lets us go crazy when we
   get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
   everything below; an optimization the suite cannot referee does not land)
-- [BENCH-1] STATE:not-started — FEATURE-SPANNING BENCHMARK EXPANSION + THE PRIORITIZER (Frank, 2026-08-13 sixteenth session): today's bench is 9 cases (a-i) of deliberately basic shapes — good regression gates, not a capability map (Frank: "whenever i see benchmarks, its usually a series of rather basic benchmarks that do not really exercise the capabilities"). Build a benchmark that SPANS the feature set and the complexity range: per-feature-family case GROUPS (literal/memchr shapes, classes, alternation/trie widths, bounded repeats, anchors/EOL, dense/counting — the case-f family, captures (M4), backrefs/lookaround/atomic (M6), UTF-8/\p (M5), plus real-world-shaped patterns), each family at graded complexities; pattern sources = hand-designed families + the PCRE2 testdata import (M7 — this row is deliberately scheduled around that import so the corpus arrives with it) + generated shapes where a family needs a sweep. STRUCTURED FOR SPOT-CHECKS exactly like TT-1's tiers: every case and group individually addressable (make bench CASE=... / GROUP=...), the full sweep at evaluation points only. TWO INSTRUMENTS, deliberately distinct — M2.11's ruling stands: the regression GATE stays absolute per-case floors (cross-engine ratios move for reasons that are not our regression); the new PRIORITIZER is a cross-engine RELATIVE ranking vs libpcre2 — informational, never a gate — whose output is a worst-first worklist. Frank's stated optimization workflow, recorded as the row's purpose: (1) OPT-A's survey incl. the pattern-generation study, then (2) work the prioritizer list from the relative worst downward. Every number under D12/D17/R3.10 discipline; MECH-3's provenance-refusing wrapper is the intended measurement vehicle and lands first. Sequencing: after the main feature set is built and proven (post-M6, with M7's testdata), BEFORE the OPT waves open — this row is the OPT waves' worklist generator.
+- [BENCH-1] STATE:not-started — FEATURE-SPANNING BENCHMARK EXPANSION + THE PRIORITIZER (Frank, 2026-08-13 sixteenth session): today's bench is 9 cases (a-i) of deliberately basic shapes — good regression gates, not a capability map (Frank: "whenever i see benchmarks, its usually a series of rather basic benchmarks that do not really exercise the capabilities"). Build a benchmark that SPANS the feature set and the complexity range: per-feature-family case GROUPS (literal/memchr shapes, classes, alternation/trie widths, bounded repeats, anchors/EOL, dense/counting — the case-f family, captures (M4), backrefs/lookaround/atomic (M6), UTF-8/\p (M5), plus real-world-shaped patterns), each family at graded complexities; pattern sources = hand-designed families + the PCRE2 testdata import (M7 — this row is deliberately scheduled around that import so the corpus arrives with it) + generated shapes where a family needs a sweep. STRUCTURED FOR SPOT-CHECKS exactly like TT-1's tiers: every case and group individually addressable (make bench CASE=... / GROUP=...), the full sweep at evaluation points only. TWO INSTRUMENTS, deliberately distinct — M2.11's ruling stands: the regression GATE stays absolute per-case floors (cross-engine ratios move for reasons that are not our regression); the new PRIORITIZER is a cross-engine RELATIVE ranking vs libpcre2 — informational, never a gate — whose output is a worst-first worklist. Frank's stated optimization workflow, recorded as the row's purpose: (1) OPT-A's survey incl. the pattern-generation study, then (2) work the prioritizer list from the relative worst downward. Every number under D12/D17/R3.10 discipline; MECH-3's provenance-refusing wrapper is the intended measurement vehicle and lands first. Sequencing: after the main feature set is built and proven (post-M6, with M7's testdata), BEFORE the OPT waves open — this row is the OPT waves' worklist generator. AMENDED 2026-08-13 (same session, positioning discussion): the case groups include a LATENCY / SHORT-SUBJECT group — time-to-first-match from process start (the AOT structural win: tables page in from .rodata vs pcre2_compile + JIT warmup per process) and per-call overhead on short subjects (log lines, field validation — the dimension real workloads are dominated by and typical benchmarks skip); and the prioritizer gets a second reading — the BEST relative cells feed the positioning note (Beyond M7), not just the worst cells feeding the fix list.
 - [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it
 - [OPT-B] STATE:not-started — PROFILED code-level optimization, only after OPT-A. D13's correction says throughput here is dominated by transition PREDICTABILITY, so target branch behaviour and memory layout rather than instruction count. Every number under D12's rules and the R3.10 load guard
 - [OPT-C] STATE:not-started — COMPILE-TIME optimization, last. Must include what gcc does with our output, not only what pcrec does: after M2.8, gcc is the LARGER half (0.79 s vs 1.36 s at 3600 words) and M2.9's budgets measure only pcrec's
