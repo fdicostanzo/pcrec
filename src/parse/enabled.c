@@ -100,17 +100,16 @@ static const NamedFeatureSet g_named_sets[] = {
  * accepts (a named set, "all", or "none"). The CLI (and any future non-CLI
  * caller) reads this rather than deciding the default for itself.
  *
- * PHASE A (docs/dev/plan.md [STD1], this commit) keeps it "none" ON
- * PURPOSE: a bare invocation's behaviour must stay byte-identical to
- * before this change. The flip to "std1" is a DELIBERATELY SEPARATE later
- * commit that travels with the full suite re-baseline D37's "Consequences
- * owed at implementation" describes (reject_gated inversions, corpus
- * `features` directives, check07's gate equivalence, the PC-3 gate state).
- * Do not read this constant as settled — it is simply the one place the
- * eventual flip happens, at an announced version boundary, with every
- * older named set (including "none") remaining available verbatim
- * forever after that. */
-const char *const PCREC_DEFAULT_FEATURES = "none";
+ * FLIPPED TO "std1" at [STD1b] (docs/dev/plan.md, 2026-08-13) — the first
+ * announced version-boundary advance D37 describes, travelling in the
+ * same landing as the full suite re-baseline (reject_gated inversions,
+ * corpus `features` directives, check07's gate equivalence, the PC-3 gate
+ * state). Every older set stays available verbatim forever: a caller who
+ * wants the old bare behaviour passes --features none, and one who wants
+ * THIS default pinned regardless of future boundaries passes --features
+ * std1. The next advance (std2, when a module graduates) changes this
+ * constant and nothing else. */
+const char *const PCREC_DEFAULT_FEATURES = "std1";
 
 static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
 

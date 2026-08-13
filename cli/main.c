@@ -41,7 +41,7 @@ static void usage(FILE *f)
           "  --features LIST   enable feature modules for this invocation:\n"
           "                    comma-separated names from --list-syntax's\n"
           "                    module column, a frozen named set ('std1'),\n"
-          "                    'all', or 'none' (default: none — an explicit\n"
+          "                    'all', or 'none' (default: std1 — an explicit\n"
           "                    --features always wins over the default; see\n"
           "                    docs/dev/decisions.md D37). Composes with\n"
           "                    every mode. Most modules have no producer\n"
@@ -165,9 +165,9 @@ int main(int argc, char **argv)
      * D37 (docs/dev/decisions.md): an explicit --features ALWAYS wins; a
      * bare invocation resolves through PCREC_DEFAULT_FEATURES instead of
      * skipping this call — that constant is the one bare-default mapping
-     * point, and it is deliberately still "none" in [STD1] phase A, so this
-     * call installs the same empty set a bare invocation always has, just
-     * by a named route rather than by omission. Either way the set gets
+     * point — "std1" since [STD1b], advancing only at announced version
+     * boundaries (--features none is the verbatim old bare behaviour;
+     * --features stdN pins a set forever). Either way the set gets
      * INSTALLED (never left at whatever a previous call left it), which is
      * also what gives the artifact stamp (src/gen) something honest to
      * report for a bare invocation. */
