@@ -85,13 +85,25 @@ Of PCRE2's syntax surface:
   now maps to the frozen named set `std1` = {`classes`, `modifiers`}, so a
   bare `pcrec` compiles their constructs with no flag needed. `--features
   none` is the only invocation that still refuses them, with the module name.
-- Everything else is `REJECTED` — 144 rows in `tests/reject/` individually
-  assert exit 1 and the right diagnostic AND its offset (124 of them a module
-  name; the other 20 are the base-grammar brace errors K5/K6/K8 landed on
-  2026-08-10, which name a PCRE2 error instead), with 45 accept-controls proving
-  the table cannot pass by rejecting everything, and (SR-4) a further 66 checks
-  that iterate `pcrec --list-syntax` so no registry row can escape a probe
-  (`tests/reject/`). The two layers answer different questions and neither
+- Everything else is `REJECTED` — measured live at this commit (`ab7592d`+,
+  [STD1b], 2026-08-13) from `tests/reject/run_reject_tests.sh`'s own summary,
+  not transcribed: **274** hand-written rows individually assert exit 1 and
+  the right diagnostic (most name a module; some — the base-grammar brace
+  errors K5/K6/K8, the verb doorway's outcomes, the `unknown escape` pins —
+  name a PCRE2-flavoured wording instead, and offsets are pinned where a
+  message alone cannot distinguish sites), **99** accept-controls proving the
+  table cannot pass by rejecting everything, **55** `reject_gated` pins
+  asserting the still-refused-under-`--features none` half for constructs
+  whose bare-default refusal changed at [STD1b] (D37), and (SR-4) **99**
+  further checks that iterate `pcrec --list-syntax` so no registry row can
+  escape a probe (`tests/reject/`) — **528** checks passing, **0**
+  known-wrong. **This paragraph previously cited 144/45/66: those figures
+  were already stale independent of the STD1b flip — `tests/reject/CLAUDE.md`'s
+  own count history records several unrelated intermediate values this
+  survey never caught up to (the file's own maintenance note: "read them
+  from a run, never from here"). What is written above is a fresh whole-suite
+  measurement, not a same-category update of the old numbers.** The two
+  layers (hand-written and iterated) answer different questions and neither
   subsumes the other: iteration guarantees coverage but reads the same table
   the parser renders from, so it cannot see a WRONG module name — measured, by
   changing `\d`'s row to `misc`, which the hand-written rows catch twice and
@@ -492,10 +504,16 @@ this third copy still standing here, in the present tense, unflagged — the sam
 "one claim, several files, never measured" shape the document elsewhere warns
 about.
 
-`tests/reject/run_reject_tests.sh` now asserts, per construct, that pcrec exits
+`tests/reject/run_reject_tests.sh` asserts, per construct, that pcrec exits
 exactly 1 (not 0, not a crash, not a timeout), carries the right diagnostic,
-and writes no output file — 144 rows, plus 45 accept-controls so the table
-cannot pass by rejecting everything, and a short manifest naming the rows whose
+and writes no output file — 144 rows, plus 45 accept-controls, at R7 when this
+was first built; the count has moved several times since and the same
+hand-copied-figures failure mode this document warns about elsewhere (see
+"Keeping this current") applied here too. **Current whole-suite figures,
+measured live at [STD1b] (`ab7592d`, 2026-08-13): 274 hand-written rows, 99
+accept-controls, 55 `reject_gated` pins, 99 iterated, 528 checks passing, 0
+known-wrong — see the Headline above; do not re-copy these either, re-run the
+script.** The table also carries a short manifest naming the rows whose
 deletion the counts alone would not catch. Reproducing the `\v` bug's exact shape on a different
 escape (silently decoding `\d` to a literal `d`) fails 2 reject checks and
 **zero** corpus and codegen checks.
