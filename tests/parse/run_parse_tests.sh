@@ -18,7 +18,9 @@
 #      it has power in, and it is worth keeping for exactly that.
 #
 # Usage: bash tests/parse/run_parse_tests.sh
-# Env: CC (default gcc), PCREC (default <root>/build/pcrec), KEEP=1
+# Env: CC (default gcc), PCREC (default <root>/build/pcrec), KEEP=1,
+#   LIBPCREC (default <root>/build/libpcrec.a — SAN-1 override), SANFLAGS
+#   (default empty — SAN-1: extra flags appended to branch_count_check.c)
 
 set -u
 
@@ -27,8 +29,9 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CC="${CC:-gcc}"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 KEEP="${KEEP:-0}"
+SANFLAGS="${SANFLAGS:-}"
 
-LIB="$ROOT_DIR/build/libpcrec.a"
+LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 if [ ! -f "$LIB" ]; then
     echo "parse: $LIB not built — run 'make' first" >&2
     exit 1
@@ -49,7 +52,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 BIN="$WORKDIR/branch_count_check"
 if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
         -o "$BIN" "$SCRIPT_DIR/branch_count_check.c" "$LIB" -ldl; then
     echo "parse: FAILED TO BUILD branch_count_check.c" >&2
     exit 1

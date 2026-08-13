@@ -8,7 +8,11 @@
 # (SR-3) is the external view, and tests/reject/ consumes that one (SR-4).
 #
 # Usage: bash tests/registry/run_registry_tests.sh
-# Env: CC (default gcc), KEEP=1 to keep the built binary
+# Env: CC (default gcc), KEEP=1 to keep the built binary, LIBPCREC (default
+#   <repo-root>/build/libpcrec.a — SAN-1 override so this can link a
+#   sanitizer-built library), SANFLAGS (default empty — SAN-1: extra flags
+#   appended to this file's own test-driver builds), PCREC/JOBS forwarded to
+#   run_pc4.sh below (inherited process env, no export needed)
 
 set -u
 
@@ -16,8 +20,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
+SANFLAGS="${SANFLAGS:-}"
 
-LIB="$ROOT_DIR/build/libpcrec.a"
+LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 if [ ! -f "$LIB" ]; then
     echo "registry: $LIB not built — run 'make' first" >&2
     exit 1
@@ -32,7 +37,7 @@ trap cleanup EXIT
 
 BIN="$WORKDIR/registry_check"
 if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
         -o "$BIN" "$SCRIPT_DIR/registry_check.c" "$LIB"; then
     echo "registry: FAILED TO BUILD registry_check.c" >&2
     exit 1
@@ -114,7 +119,7 @@ if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --names; then rc
 # extra link requirement.
 PC3BIN="$WORKDIR/pcre2_check"
 if ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
-        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" $SANFLAGS \
         -o "$PC3BIN" "$SCRIPT_DIR/pcre2_check.c" "$LIB" -ldl; then
     echo "registry: FAILED TO BUILD pcre2_check.c (PC-3)" >&2
     exit 1

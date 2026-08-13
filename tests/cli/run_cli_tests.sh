@@ -28,7 +28,13 @@ CC="${CC:-gcc}"
 LIBA="${LIBA:-$ROOT_DIR/build/libpcrec.a}"
 LIBDIR="${LIBDIR:-$ROOT_DIR/lib}"
 KEEP="${KEEP:-0}"
-CFLAGS="-O1 -std=gnu11 -Wall -Wextra -Werror"
+# SAN-1: this is a compile site for GENERATED matcher code (gen.c, several
+# cases below) as well as this file's own small test drivers, in the same
+# invocation — so it honors GENCFLAGS like tests/harness and tests/codegen
+# do, rather than a hardcoded string, which was a gap the sanitizer battery
+# found (docs/testing.md, "Sanitizer + lint battery").
+CFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
+if [ "${LINTGEN:-0}" = "1" ]; then CFLAGS="$CFLAGS -fanalyzer"; fi
 
 if [ ! -x "$PCREC" ]; then
     echo "run_cli_tests.sh: pcrec binary not found or not executable: $PCREC" >&2

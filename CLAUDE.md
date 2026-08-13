@@ -21,6 +21,9 @@ no dependency on pcrec in the generated code). Design: APPROACH.md.
                     # loudly if libpcre2-8-0 is absent) + codegen structural
                     # checks + the known-fail ratchet (see docs/testing.md)
     make strict     # warnings-as-errors check (opt-in, writes nothing)
+    make ubsan      # -fsanitize=undefined, compiler AND compilee axes (opt-in)
+    make asan       # AddressSanitizer + LeakSanitizer, both axes (opt-in)
+    make lint       # static analysis survey (opt-in; gcc -fanalyzer today)
     build/pcrec -p rx --emit-main -o out.c 'a(b|c)+d'   # try it
 
 Plain GNU make on purpose (docs/decisions.md D2). gcc is the target compiler;
@@ -29,6 +32,17 @@ generated code uses computed goto and other GNU C extensions.
 `-Werror` is deliberately NOT the default (R5-Q1, answered 2026-08-10): a
 stranger's `make` must not fail on a newer gcc's new opinion. `make strict` is
 the opt-in gate, it writes nothing, and it is safe to run alongside `make test`.
+
+`make ubsan`/`make asan`/`make lint` (SAN-1, docs/plan.md) are the same
+opt-in shape: they build a SEPARATE output tree (`build-ubsan/`,
+`build-asan/`, gitignored) so `build/` and a plain `make`/`make test` are
+never touched, and they instrument BOTH axes — the compiler itself and every
+generated matcher the suite compiles (the `GENCFLAGS`/`LINTGEN` hooks in
+tests/harness and friends). `make test LINTGEN=1` is the complementary
+opt-in flag that rides `make test`'s own generated-code compile pass with
+`gcc -fanalyzer`, rather than requiring a separate lint-only run. Full
+runtimes, tool survey, exclusions and sabotage validation: docs/testing.md,
+"Sanitizer + lint battery".
 
 ## Compatibility standard (D26)
 

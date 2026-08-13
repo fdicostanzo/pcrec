@@ -1,4 +1,8 @@
 build/
+# SAN-1: separate sanitizer build trees (make ubsan / make asan), so their
+# objects never land in build/ and a subsequent plain `make` stays correct.
+build-ubsan/
+build-asan/
 *.o
 *.a
 # Core dumps only — anchored, because an unanchored `core` also matches the

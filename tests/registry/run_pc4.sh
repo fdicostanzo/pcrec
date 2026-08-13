@@ -15,7 +15,11 @@
 # The pattern space and the exact population predictions live in
 # pc4_check.c's header; edit them TOGETHER or not at all.
 #
-# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default nproc/2)
+# Env: PCREC, CC, KEEP=1, JOBS (parallel compile fan-out, default nproc/2),
+#   GENCFLAGS (SAN-1: flags for the sweep's per-pattern gen.c compile —
+#   default -O0 -std=gnu11, was hardcoded and unreachable by the harness's
+#   GENCFLAGS hook until SAN-1 plumbed it here too), SANFLAGS (SAN-1: extra
+#   flags appended to pc4_check.c/pc4_driver.c, this file's own test drivers)
 
 set -u
 
@@ -24,6 +28,12 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
+GENCFLAGS="${GENCFLAGS:--O0 -std=gnu11}"
+# SAN-1 LINTGEN: this default carries no -Werror (unlike harness/cli/codegen's),
+# so an analyzer finding would otherwise compile clean and never surface --
+# add -Werror too, or LINTGEN's "must fail loudly" promise breaks here alone.
+if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer -Werror"; fi
+SANFLAGS="${SANFLAGS:-}"
 ncpu="$(nproc 2>/dev/null || echo 2)"
 JOBS="${JOBS:-$(( ncpu / 2 > 1 ? ncpu / 2 : 1 ))}"
 
@@ -36,7 +46,7 @@ trap cleanup EXIT
 
 # ---- build the comparator first: it doubles as the oracle probe ----------
 if ! "$CC" -O1 -std=gnu11 -Wall -Wextra -Werror \
-        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" \
+        -I "$ROOT_DIR/tests/fuzz" -I "$SCRIPT_DIR" $SANFLAGS \
         -o "$WORKDIR/pc4_check" "$SCRIPT_DIR/pc4_check.c" -ldl; then
     echo "FAIL: pc4: pc4_check.c does not build" >&2
     exit 1
@@ -85,7 +95,7 @@ done
 mkdir -p "$WORKDIR/_tmpl" "$WORKDIR/results"
 "$PCREC" -p rx -o "$WORKDIR/_tmpl/gen.c" -- 'a' >/dev/null 2>&1 || {
     echo "FAIL: pc4: template compile failed" >&2; exit 1; }
-if ! "$CC" -O0 -std=gnu11 -I "$WORKDIR/_tmpl" -I "$SCRIPT_DIR" \
+if ! "$CC" -O0 -std=gnu11 -I "$WORKDIR/_tmpl" -I "$SCRIPT_DIR" $SANFLAGS \
         -c -o "$WORKDIR/pc4_driver.o" "$SCRIPT_DIR/pc4_driver.c"; then
     echo "FAIL: pc4: pc4_driver.c does not build" >&2
     exit 1
@@ -103,8 +113,8 @@ one_pattern() {
         echo "REFUSED" > "$WORKDIR/results/$pid"
         return 0
     fi
-    if ! "$CC" -O0 -std=gnu11 -I "$d" -c -o "$d/gen.o" "$d/gen.c" 2>"$d/cc.log" ||
-       ! "$CC" -o "$d/t" "$d/gen.o" "$WORKDIR/pc4_driver.o" 2>>"$d/cc.log"; then
+    if ! "$CC" $GENCFLAGS -I "$d" -c -o "$d/gen.o" "$d/gen.c" 2>"$d/cc.log" ||
+       ! "$CC" $GENCFLAGS -o "$d/t" "$d/gen.o" "$WORKDIR/pc4_driver.o" 2>>"$d/cc.log"; then
         echo "GCC-FAILED" > "$WORKDIR/results/$pid"   # pc4_check fails the cell loudly
         return 0
     fi

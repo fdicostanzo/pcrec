@@ -311,6 +311,8 @@ fi
 # about — a control has to fire inside the range of what it certifies.
 CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
+# SAN-1 LINTGEN: ride this GENCFLAGS compile with gcc -fanalyzer, opt-in.
+if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 if ! command -v "$CC" >/dev/null 2>&1; then
     bad "multi-engine: no C compiler ($CC) — this block cannot be skipped silently"
 elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \

@@ -15,7 +15,11 @@ directory asserts that the description and the shipped parser actually agree.
   libpcre2-8-0 is absent, so a stranger's clone stays green. See its own
   section below
 - **run_registry_tests.sh** — builds and runs both, plus compliance_section.py
-  and PC-4; part of `make test`. Env: CC, KEEP=1
+  and PC-4; part of `make test`. Env: CC, KEEP=1, LIBPCREC (SAN-1: overrides
+  the `build/libpcrec.a` these two link, default unchanged), SANFLAGS
+  (SAN-1: extra flags appended to their builds, default empty) — both used by
+  `make ubsan`/`make asan` to point this directory's own checks at the
+  sanitizer-built library; see docs/testing.md "Sanitizer + lint battery"
 - **run_pc4.sh / pc4_check.c / pc4_driver.c / pc4_subjects.h** — PC-4
   (MOD-0.3e), the SEMANTIC differential R8/C4-2 asked for and PC-3
   deliberately is not: what a PRODUCED construct MATCHES, cell by cell,
