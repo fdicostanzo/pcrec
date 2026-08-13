@@ -486,47 +486,42 @@ engine, a new prefilter) DOES produce a false positive under `LINTGEN=1`,
 that is a finding to document here with the exact pattern and diagnostic,
 not something to silently exclude.
 
-Runtime delta (`make test` vs `make test LINTGEN=1`): **measurement HELD**
-(2026-08-13) — a second lane (tt1) is running concurrent per-section timing
-sweeps on this same box for its own tiered-testing work, and the project's
-R3.10 lesson (the most-repeated failure class in this repo's history: a
-runtime number documented without load provenance) means this delta is not
-worth taking until that sweep clears. A first attempt was stopped
-mid-run rather than recorded. Will follow in a later commit once the
-manager sends the all-clear and a quiet-box run can be taken with
-`/proc/loadavg` sampled before and after.
+Runtime delta (`make test` vs `make test LINTGEN=1`): **+53.7s on a 389.7s
+baseline (+13.8%)**, measured 2026-08-13 on a quiet box, serial, with
+`/proc/loadavg` sampled before and after each run (full table below).
+Cheap enough to make the "2-fer" habitual at battery-grade evaluation
+points; not free enough to fold into the default `make test` claim, which
+stays byte-identical with `LINTGEN` unset. Placement ruling: see "Battery
+integration" below.
 
-### Measured runtimes (2026-08-13, commit `c509d944`, gcc 15.2.0 Ubuntu
-15.2.0-16ubuntu1, libpcre2 10.46 present — PC-3/PC-4's ~1000+ checks and
-~700K probes run for real under both sanitizers, nothing skipped)
+### Measured runtimes (2026-08-13, QUIET box, san1 at `2e71606` plus these
+landing edits, gcc 15.2.0 Ubuntu 15.2.0-16ubuntu1, libpcre2 10.46 present —
+PC-3/PC-4's ~1000+ checks and ~700K probes run for real under both
+sanitizers, nothing skipped)
 
-**Load provenance, per R3.10** (the project's own most-repeated
-measurement failure: a number recorded without checking what else was on
-the box): the `make ubsan` and first `make test` baseline runs below did
-NOT have `/proc/loadavg` sampled before/after at the time — an omission,
-not a claim of a quiet box — and a second lane (tt1) is confirmed to have
-been running concurrent work on this box during at least part of this
-window. **Treat the two numbers below as CONTENDED / load-unknown, not a
-tight budget**, until re-taken quiet with load samples. `make asan`'s
-figure below DOES carry a load sample (taken after this caveat was raised)
-and was very likely contended too (tt1's sweep was confirmed running
-throughout). `make lint`'s ~9s figure is short enough that ordinary
-scheduling noise dominates before contention would show up in a
-minute-scale tier decision either way.
+**Load provenance, per R3.10**: every run below was taken SERIALLY on an
+otherwise idle box (post-reboot), `/proc/loadavg` sampled immediately
+before and after each individual run; every 1-minute sample stayed at or
+under 1.05 against the sweep discipline's 1.20 contamination threshold.
+An earlier figure set taken the same day during concurrent two-lane work
+(ubsan 6m57s, baseline 6m28s, asan 7m58s) was recorded as
+CONTENDED/load-unknown at the time and is SUPERSEDED by this table; for
+the record, those contended figures landed within ~7% of the quiet ones —
+the discipline cost little here and is kept because the one time it
+doesn't, nobody would otherwise know.
 
-| target | wall time | result | load provenance |
+| target | wall time | result | load (1-min, before → after) |
 |---|---|---|---|
-| `make ubsan` | 6m57s | **GREEN** — full suite (harness, cli, reject, registry incl. PC-3/PC-4, parse, codegen, trie_identity, known_fail), both axes | NOT sampled at the time — CONTENDED/unknown, re-time before trusting to the minute |
-| `make asan` | 7m58s (stops at trie_identity; known_fail — empty/instant — confirmed separately clean) | 1 finding, see below | tt1's sweep confirmed running concurrently during this window — CONTENDED, re-time before trusting to the minute |
-| `make lint` | ~9s | **GREEN**, 0 findings | short enough that contention is unlikely to move the minute-scale tier decision |
+| `make test` (baseline) | 389.7s (6m30s) | **GREEN** | 0.58 → 0.91 |
+| `make test LINTGEN=1` | 443.3s (7m23s) | **GREEN** — delta vs baseline **+53.7s (+13.8%)** | 0.91 → 0.76 |
+| `make ubsan` | 408.9s (6m49s) | **GREEN** — full suite (harness, cli, reject, registry incl. PC-3/PC-4, parse, codegen, trie_identity, known_fail), both axes | 0.76 → 1.02 |
+| `make asan` | 470.4s (7m50s) | **GREEN** — full suite, both axes (post-F1 fix; the pre-fix run stopped red at trie_identity, which is F1's story below) | 1.02 → 1.05 |
+| `make lint` | 8.8s | **GREEN**, 0 findings | 1.05 → 1.04 |
 
-These numbers still support the qualitative claim the plan row needs
-(minutes, not seconds — "battery, not smoke") even under contention, since
-a 2x skew would have to be implausibly large to change that tier call. They
-are NOT yet trustworthy to the minute for a finer placement decision (e.g.
-"joins the 5-minute checkpoint stage vs a 10-minute one"), and will be
-re-taken quiet, with `/proc/loadavg` before/after, once the manager's
-all-clear lands.
+Cross-check: the 389.7s baseline agrees with [TT-1]'s independent
+per-section median sum (~391s serial, measured the same day by a different
+method in the "Tiered testing" section above) — two instruments, one
+number.
 
 ### Sanitizer findings inventory
 
@@ -593,20 +588,19 @@ there), and it only becomes fatal because `run_trie_identity.sh`'s own
 stay on so #ifdef rot is loud rather than silent"`) — a policy this row's
 `$SANFLAGS` plumbing (added for bonus compiler-axis coverage on `$REF`;
 `$PCREC` itself already covers the PRIMARY compiler axis there) newly
-exposes to warnings from an unrelated file. Worth a manager call: either
-accept that `make asan` surfaces this class of coupling (arguably correct
-— it IS a real warning on real code, just not one `run_trie_identity.sh`'s
-own purpose is about), or scope `$SANFLAGS` out of the `$REF` build and
-rely on `$PCREC`'s compiler-axis coverage alone there. Moot for THIS
-finding now that F1 is fixed (the coupling did its job once — it surfaced
-a real, if benign, warning nothing else in the repo had ever compiled
-under), but the coupling itself is still there for the next one, so the
-call is left open rather than silently resolved by this one fix.
+exposes to warnings from an unrelated file. **RULED (manager,
+2026-08-13, same session): the coupling STAYS.** `make asan` surfacing a
+real warning from a file outside `run_trie_identity.sh`'s own purpose is
+the instrument working, not a defect — F1 is the existence proof: nothing
+else in the repo had ever compiled `syntax_dump.c` under these flags, and
+what it surfaced was worth a triage and a hardening one-liner. If a future
+warning from this coupling is genuine NOISE, that instance is the evidence
+to revisit with — document it here first, then re-open the scoping
+question with a case in hand rather than a hypothetical.
 
 No findings from `make ubsan` at commit `c509d944` — clean across the full
-suite including the PC-3/PC-4 probe volume. `make asan` is now clean too,
-after F1's fix — rebuild-verified, full timed re-run still pending the
-measurement hold below.
+suite including the PC-3/PC-4 probe volume. `make asan` is clean too after
+F1's fix — full quiet re-run GREEN, 470.4s, in the runtime table above.
 
 ### K7/K9 — read, not automated here
 
@@ -677,18 +671,26 @@ size — a tradeoff for the manager, not decided here).
   `make ubsan`/`make asan` either — SAN-1 rides the STANDING battery, it
   does not grow it.
 
-### Battery integration — measured, not decided here
+### Battery integration — DECIDED (manager, 2026-08-13, from the quiet numbers)
 
-The plan row (`docs/plan.md` [SAN-1]) explicitly defers the placement
-question ("which stages join wake §3's standing battery vs run
-checkpoint-only is a number-backed decision") to the manager, once runtime
-is measured. It now is: `make ubsan` and `make asan` each cost roughly as
-much wall time as the entire standing `make test` suite (~6-8 minutes each,
-serial — `PROCS` is not wired into either target), so back-of-envelope a
-full local pre-push (`make test` + `make ubsan` + `make asan` + `make
-lint`) is in the 15-20 minute range on this box, serial. **Never smoke** —
-the plan row's own expected answer holds. Whether both sanitizers join the
-checkpoint-close battery, or one is checkpoint-only and the other
-per-release, is the manager's call once F1 above is triaged (an
-un-triaged finding makes `make asan` red today, which changes what "joins
-the battery" would mean operationally until it's resolved).
+The plan row deferred placement until runtime was measured, never asserted.
+Measured (table above), the ruling:
+
+- **`make smoke`: never.** Both sanitizers cost ~7-8 minutes against
+  smoke's measured ~31-32s budget (the "Tiered testing" section) — the
+  plan row's expected answer holds, now with numbers behind it.
+- **The merge/close battery (wake §3 shape) GAINS `make ubsan` and
+  `make asan`.** Each costs about one `make test` (~7-8 min serial).
+  Whether they run serial or concurrent within a battery is the running
+  session's load-discipline call: battery runs are pass/fail, not timing
+  measurements, so contention there costs nothing that matters (R3.10
+  applies to NUMBERS, not verdicts).
+- **Battery-grade `make test` runs adopt `LINTGEN=1`** (+13.8%): the
+  2-fer is cheap at evaluation points. Plain `make test` stays the
+  default claim everywhere else, and for strangers, byte-identical to
+  before SAN-1.
+- **`make lint` (~9s) joins the battery alongside `make strict`**, and is
+  cheap enough to run ad hoc at any point in the inner loop.
+- `make asan` red BLOCKS a merge the way a red `make test` does; findings
+  land in the inventory above with a triage before any fix (the
+  findings-discipline that produced F1's clean arc).
