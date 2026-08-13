@@ -34,7 +34,14 @@ or it has no regression net at all.
   `--features std1` stamps `/* Feature set: std1 (modules: classes,modifiers) */`
   plus the `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` macros in the .c, the
   paired `.h` carries the comment but never the macros, and a bare
-  invocation still stamps `"none"` rather than nothing. Part of `make test`;
+  invocation still stamps something rather than nothing. **[STD1b]
+  (2026-08-13) re-baseline:** phase A's bare invocation stamped `"none"`
+  (the pre-flip default constant); the bare default is `std1` now, so the
+  bare-invocation check flipped to expect
+  `/* Feature set: std1 (modules: classes,modifiers) */`, and a second
+  check was added for `--features none` stamping `"none"` explicitly (the
+  escape hatch, unaffected by the flip) — 33 checks before, 34 now. Part
+  of `make test`;
   env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
   (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
 

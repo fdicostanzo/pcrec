@@ -179,6 +179,37 @@ Part of `make test` since M2.
   still asserts what it always meant to (the MATCHER is gate-inert for a
   base-tier pattern).
 
+  **[STD1b] (D37, 2026-08-13) re-baseline: phase A's "not flipped" premise
+  is gone.** case14 was rewritten rather than just re-pointed: the bare
+  default now IS std1, so the case's job flips from "bare refuses, std1
+  accepts, explicit wins" to "bare == std1 byte-for-byte, including the
+  stamp itself (not merely equivalent modulo the set name, the way the
+  pre-existing std1-vs-`classes,modifiers` comparison still is), and the
+  PRE-flip bare behaviour survives verbatim as `--features none`" — proven
+  with a `diff -q` on `-o -` output for `\d`, the same trap-avoidance idiom
+  the std1-vs-explicit comparison already used. The artifact-stamping
+  assertions flip the same way: a bare invocation now stamps `std1
+  (modules: classes,modifiers)` (D37's whole point — the stamp reports the
+  REQUESTED set honestly, and the request itself changed), and
+  `--features none` is what now stamps `none`. **Three OTHER cases needed
+  fixes too**, all bare invocations elsewhere in this file that assumed the
+  old empty default and are not case14's to fix: case10's `--probe-ask
+  result` closed-gate demonstration (twice: the verdict-demotion cell and
+  the "closed gate keeps the refusal verbatim" cell) and its `--features
+  all` byte-identity pin's `fa` generation (used to rely on bare to get the
+  "none" stamp); case11's D29 worked example (`--explain '(?i-m:'` bare
+  used to stop at "requires module 'modifiers'" — now it reaches the
+  module's own malformed-run parse and answers something else entirely,
+  which is a genuinely different worked example, not this one); case12's
+  "the CLOSED gate: the same text, an ordinary answer" section (bare now
+  reaches the SAME crashing-port path the case's two `--features
+  modifiers`/`all` cells above it already exercise, making the section
+  redundant with itself rather than testing the closed-gate case it names).
+  All four got `--features none` added to keep testing exactly what they
+  tested before; none needed a new bare-positive pin of their own, because
+  case14's byte-identity proof already covers "bare behaves like std1"
+  more strongly than any single field would.
+
 ## Conventions
 
 Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation

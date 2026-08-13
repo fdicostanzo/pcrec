@@ -49,6 +49,37 @@ nothing checked that, and the gap was not hypothetical — see below.
   naming the handful of rows whose deletion an exact count would not catch,
   plus the exact counts themselves. Part of `make test`; env: PCREC, KEEP=1.
 
+  **[STD1b] (D37, 2026-08-13) re-baseline: 306→274 hand-written, 65→99
+  accept-controls, 15→55 gated, 0 known-wrong throughout.** The bare
+  default flipped from empty to the frozen named set `std1` = {classes,
+  modifiers} (docs/dev/decisions.md D37), so every row whose bare-default
+  refusal depended on the old empty set had its OLD behaviour re-pinned as
+  `reject_gated none <pattern> <expect>` (the literal old-default spec,
+  explicit now instead of implicit) rather than deleted — the
+  coverage-conservation rule: a construct invalidated by a default-set
+  flip is never just weakened, its old pin moves behind an explicit
+  `--features` spec and its new bare-default behaviour gets its own pin
+  alongside (an `accept` control where the construct now simply compiles,
+  a fresh `reject`/`reject_gated` pair where the diagnostic TEXT itself
+  changed — `\d{3,1}`, the three malformed-hyphen option runs, `(?aP)`,
+  the six `(?…)a` rows, plus a bare proof of the R20/SPEC-1 tier-1
+  miscompile guard and of the std1 module BOUNDARY itself via `(?J)a`
+  staying refused). `reject_gated` itself moved earlier in the file (right
+  after `accept()`) so rows anywhere can call it as `reject_gated none
+  ...`, not just the MOD-0.5c gate-open block that originally defined it.
+  The iterated SR-4 loop also changed: it now reads the dump's MODULE
+  column too, and probes a `classes`/`modifiers` row with `--features
+  none` instead of bare — otherwise it silently stops testing the row's
+  declared closed-gate `expect` text and starts testing something else
+  (`(?J)`/`(?m)` are the sharpest case: their OWN row declares module
+  'modifiers', but their live per-letter attribution once the gate is
+  actually open dissents to 'named-groups'/'assertions' — a bare probe
+  after the flip would have silently started asserting the WRONG text
+  against the dump's own expectation). Per this directory's maintenance
+  rule ("a construct cannot be both accepted-by-default and
+  asserted-rejected"), every row affected was decided by state, not by
+  reflex, at the same commit as the flip.
+
   **These four figures are hand-copied, and every attempt to maintain them by
   hand has failed — including twice in one review.** FIX-2 updated the first
   (180 → 201) and left the other three describing the tree as it was before the

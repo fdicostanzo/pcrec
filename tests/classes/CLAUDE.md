@@ -9,14 +9,21 @@ rejections that must HOLD with the module enabled (`[\N]`, `[0-\d]`,
 
 ## Files
 
-- **classes.rxt** — every block carries the `features classes` directive
-  (tests/harness/run.sh passes it as `--features classes`; the default
-  enabled set stays empty, and the default-state refusals stay pinned in
-  tests/reject/). python-verifiable blocks (\d \D \s \S \w \W and friends)
-  go through verify_rxt.py as usual; `# pcre2-only` blocks' expectations
-  derive from the generated-bitmap censuses (tests/probes/probe_cls_bits.c)
-  and the caseless×posix cells from tests/probes/probe_ci_posix.c — PC-4 is
-  the live oracle for produced sets.
+- **classes.rxt** — every block through the original 51 carries the
+  `features classes` directive (tests/harness/run.sh passes it as
+  `--features classes`; unaffected by which set is default, since an
+  explicit spec always wins). python-verifiable blocks (\d \D \s \S \w \W
+  and friends) go through verify_rxt.py as usual; `# pcre2-only` blocks'
+  expectations derive from the generated-bitmap censuses
+  (tests/probes/probe_cls_bits.c) and the caseless×posix cells from
+  tests/probes/probe_ci_posix.c — PC-4 is the live oracle for produced
+  sets. **[STD1b] (D37, 2026-08-13)** added a short trailing section with
+  NO `features` line at all (`\d+`, `\s\w+`, `[[:alpha:]]+`): the bare
+  default now resolves to `std1` = {classes, modifiers} instead of the
+  empty set, and that DEFAULT PATH — not just the explicit-features
+  behaviour above, which the flip does not change — is what these three
+  new blocks pin; tests/reject/'s companion pin is `reject_gated none` for
+  the same constructs' old bare refusal.
 
 ## The D33 §9.3 record
 

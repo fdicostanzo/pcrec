@@ -617,9 +617,13 @@ case10() {
         "10" "$(printf '%s\n' "$out" | awk -F'\t' '{print NF}')"
     # the §5.4 gate, observable: a `result` ask is ANSWERED at `verdict`
     # while no module is enabled — the day one is, this cell changes and
-    # this assertion must be revisited alongside check07
+    # this assertion must be revisited alongside check07.
+    # [STD1b] (D37, 2026-08-13): that day arrived for the BARE invocation
+    # too (`classes` is default-on now), so this cell now needs
+    # `--features none` to keep exercising "no module enabled" — the bare
+    # cell itself is exercised by case14's byte-identity-with-std1 pin.
     assert_eq "case10: --probe-ask result is answered at verdict (the gate)" \
-        "verdict" "$("$PCREC" --probe-ask result -- '\d' | cut -f3)"
+        "verdict" "$("$PCREC" --features none --probe-ask result -- '\d' | cut -f3)"
     # ...and that day arrived (MOD-0.3c): with module classes ENABLED the
     # same ask reaches `result` and the outcome word is the PRODUCING
     # vocabulary — both cells were false the day before the producers wired
@@ -701,9 +705,13 @@ case10() {
     assert_eq "case10: an open gate now PRODUCES where the closed one refuses" \
         "node	" \
         "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f6,10)"
+    # [STD1b]: `\d`'s own module (`classes`) is open by DEFAULT now, so a
+    # bare probe would produce too — `--features none` is what still shows
+    # the closed-gate refusal verbatim (bare's own "produces, same as
+    # std1" fact is case14's job).
     assert_eq "case10: ...and the closed gate keeps the refusal verbatim" \
         "refusal	\d requires module 'classes'" \
-        "$("$PCREC" --probe-ask result -- '\d' | cut -f6,10)"
+        "$("$PCREC" --features none --probe-ask result -- '\d' | cut -f6,10)"
     "$PCREC" --features nosuchmodule --probe-ask result -- '\d' \
         >/dev/null 2>"$d/ef1.txt"; rc=$?
     assert_eq "case10: an unknown module name in --features exits 1" "1" "$rc"
@@ -726,8 +734,14 @@ case10() {
     # stamp block (pattern comment + feature comment + the two feature
     # macros — 4 lines) and asserts identity on everything after it, which
     # is the part this pin has always been about: the MATCHER.
+    # [STD1b]: `fa` used to be generated BARE to get the "none" stamp — bare
+    # now stamps 'std1' instead (D37's whole point: the stamp reports the
+    # REQUESTED set honestly, and the request itself changed). `--features
+    # none` is what still requests, and stamps, 'none'; the MATCHER-identity
+    # claim below is unaffected either way, since a base-tier pattern like
+    # 'a(b|c)+d' never engages the gate regardless of which set is named.
     mkdir -p "$d/fa" "$d/fb"
-    "$PCREC" -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    "$PCREC" --features none -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
     "$PCREC" --features all -o "$d/fb/feat.c" -- 'a(b|c)+d' 2>/dev/null
     if cmp -s <(tail -n +5 "$d/fa/feat.c") <(tail -n +5 "$d/fb/feat.c"); then
         pass "case10: --features all compiles byte-identical MATCHER code (stamp lines 1-4 differ on purpose, D37)"
@@ -837,7 +851,13 @@ case11() {
     local rc out
 
     # --- D29's worked example, the headline: it did not run before MOD-0.7 ---
-    out="$("$PCREC" --explain '(?i-m:' 2>"$d/e1.txt")"; rc=$?
+    # [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so a genuinely
+    # bare `--explain '(?i-m:'` no longer stops at "requires module
+    # 'modifiers'" — it reaches the module's OWN parse of the (malformed,
+    # truncated) run and answers "missing closing ) for group" instead, a
+    # different worked example entirely. `--features none` is what still
+    # walks through D29's original example step by step.
+    out="$("$PCREC" --features none --explain '(?i-m:' 2>"$d/e1.txt")"; rc=$?
     assert_eq "case11: --explain '(?i-m:' exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e1.txt")"
     assert_field "case11: ...echoes the query" "$out" "@header" "query" "(?i-m:"
@@ -1281,12 +1301,17 @@ case12() {
     fi
 
     # --- the CLOSED gate: the same text, an ordinary answer ---------------
-    out="$("$PCREC" --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
+    # [STD1b]: `modifiers` is default-on now, so a bare invocation of this
+    # same text reaches the SAME crashing-port path the two cells above
+    # already exercise (with `--features modifiers`/`all` explicitly) —
+    # `--features none` is what still demonstrates the CLOSED-gate case
+    # this section is actually about.
+    out="$("$PCREC" --features none --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
     assert_eq "case12: closed-gate --explain of the same text exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e3.txt")"
     assert_field "case12: ...and answers with the module refusal" "$out" \
         "@header" "live" "(?i...) requires module 'modifiers'"
-    out="$("$PCREC" --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
+    out="$("$PCREC" --features none --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
     assert_eq "case12: closed-gate --probe-ask of the same text exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e4.txt")"
     assert_eq "case12: ...reporting a refusal, not an error" "refusal" \
@@ -1390,23 +1415,42 @@ case14() {
         echo "case14: SKIP oracle-verified match cells (needs python3)" >&2
     fi
 
-    # --- std1 ACCEPTS what the bare default (still empty in phase A)
-    #     refuses, and is EQUIVALENT to the explicit spelling ------------
+    # --- [STD1b] (D37, 2026-08-13): the bare default IS std1 now. Phase A
+    #     (above, historically) pinned that the bare default still refused
+    #     \d while --features std1 explicitly accepted it; this phase
+    #     flips the bare default itself, so the interesting facts are now
+    #     that BARE accepts \d and is byte-IDENTICAL to --features std1
+    #     (not just equivalent modulo the stamp's set name, as the old
+    #     std1-vs-explicit-classes,modifiers comparison below still is),
+    #     and that the PRE-flip behaviour survives, verbatim, as
+    #     `--features none` — the literal old-default spec. -----------
     "$PCREC" -o "$d/bare.c" -- '\d' >/dev/null 2>"$d/e_bare.txt"; rc=$?
-    assert_eq "case14: bare default still refuses \\d (phase A: not flipped)" \
+    assert_eq "case14: bare default now accepts \\d ([STD1b]: the flip)" \
+        "0" "$rc" "stderr: $(cat "$d/e_bare.txt")"
+
+    "$PCREC" --features none -o "$d/none.c" -- '\d' >/dev/null 2>"$d/e_none.txt"; rc=$?
+    assert_eq "case14: --features none still refuses \\d (the pre-flip bare behaviour, kept explicit)" \
         "1" "$rc"
     assert_contains "case14: ...with the classes-module refusal" \
-        "$(cat "$d/e_bare.txt")" "requires module 'classes'"
+        "$(cat "$d/e_none.txt")" "requires module 'classes'"
 
     "$PCREC" --features std1 -o "$d/std1.c" -- '\d' 2>"$d/e_std1.txt"; rc=$?
-    assert_eq "case14: --features std1 accepts \\d (explicit wins over the bare default)" \
+    assert_eq "case14: --features std1 accepts \\d" \
         "0" "$rc" "stderr: $(cat "$d/e_std1.txt")"
 
     # -o - (self-contained, no #include) for the comparison below: two
     # different output BASENAMES would otherwise embed two different
     # #include lines and differ for a reason unrelated to the stamp — the
     # same trap run_trie_identity.sh and case9's -i comparison both avoid.
+    "$PCREC" -o - -- '\d' > "$d/bare_stamp.c" 2>/dev/null
     "$PCREC" --features std1 -o - -- '\d' > "$d/std1_bare.c" 2>/dev/null
+    if diff -q "$d/bare_stamp.c" "$d/std1_bare.c" >/dev/null; then
+        pass "case14: bare invocation == --features std1, byte-for-byte, stamp included (no set-name difference at all — a bare invocation IS std1 now, not merely equivalent to it)"
+    else
+        fail "case14: bare invocation vs --features std1 diverged" \
+            "$(diff "$d/bare_stamp.c" "$d/std1_bare.c")"
+    fi
+
     "$PCREC" --features classes,modifiers -o - -- '\d' > "$d/expl_bare.c" 2>/dev/null
     # byte-identical except the stamp's own SET NAME (std1 vs explicit) —
     # everything a matcher's behaviour depends on, including the stamped
@@ -1459,8 +1503,22 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     fi
 
     # --- ARTIFACT STAMPING: header comment + macros, every invocation ---
+    # [STD1b]: the DEFAULT constant flipped from "none" to "std1", so the
+    # bare invocation's stamp flips with it — that is the entire mechanism
+    # D37 promised (an artifact reproduces itself forever regardless of
+    # what "default" means the year it was built, because it stamps the
+    # EXPANDED answer, not the word "default"). `--features none` is what
+    # now stamps 'none': the escape hatch, unaffected by the flip.
     out="$("$PCREC" -o - -- 'a')"
-    assert_contains "case14: bare invocation stamps 'none' (the default constant, not silence)" \
+    assert_contains "case14: bare invocation stamps 'std1' ([STD1b]: the new default constant)" \
+        "$out" '/* Feature set: std1 (modules: classes,modifiers) */'
+    assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
+        "$out" '#define PCREC_FEATURE_SET "std1"'
+    assert_contains "case14: ...and the expanded PCREC_FEATURE_MODULES" \
+        "$out" '#define PCREC_FEATURE_MODULES "classes,modifiers"'
+
+    out="$("$PCREC" --features none -o - -- 'a')"
+    assert_contains "case14: --features none stamps 'none' (the escape hatch, unaffected by the flip)" \
         "$out" '/* Feature set: none (modules: none) */'
     assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
         "$out" '#define PCREC_FEATURE_SET "none"'

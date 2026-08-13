@@ -33,7 +33,7 @@ the intended end state, or `—` when there is no plan.
 |---|---|
 | `OK` | Supported, exercised by the .rxt corpus, cross-verified against an oracle |
 | `OK-LIMITED` | Supported, correct within a limit stated in the row — and the row must name the limit's KIND: a RESOURCE cap (correct until a measured size, then a clean failure), or a CAPABILITY not yet built (part of the construct's contract unimplemented). A speed-only caveat is not a limit; it stays `OK` with the caveat in the note (DOC-1, 2026-08-11 — the value had accreted three unrelated meanings) |
-| `OK-GATED` | Built and oracle-verified (corpus + PC-4's 62,872-cell live differential), but compiled ONLY under `--features <module>` — the default enabled set is empty until MOD-0.8 rules the default-on policy, so a bare `pcrec` still refuses these with the module name exactly as `REJECTED` describes (added 2026-08-12 when module `classes` shipped the first producers; the old vocabulary had no value for "built, gated off by default") |
+| `OK-GATED` | Built and oracle-verified (corpus + PC-4's 62,872-cell live differential), but compiled ONLY under an explicit `--features` naming it (the module itself, or a named set that includes it) — NOT reachable via the bare default. Added 2026-08-12 when module `classes` shipped the first producers, when the bare default was still empty; **as of [STD1b] (`ab7592d`, 2026-08-13, D37) the bare default maps to the frozen named set `std1` = {`classes`, `modifiers`}**, so those two modules' rows graduated to plain `OK` — see the Headline. `OK-GATED` remains the correct status for a built module OUTSIDE the current bare-default set (e.g. a future graduate whose named set has not yet become the bare-default mapping per D37's announced-boundary rule); `--features none` still refuses every gated construct with the module name exactly as `REJECTED` describes |
 | `REJECTED` | Not supported. Exits 1 with `requires module 'X'`, writes no output, never miscompiles. Pinned construct-by-construct by `tests/reject/` |
 | `AGREES-REJECT` | PCRE2 rejects it too, and pcrec rejects it the same way. Refusing the pattern IS compliance here — not a gap |
 | `OUT-OF-SCOPE` | Deliberately excluded, with the reason |
@@ -78,15 +78,32 @@ Of PCRE2's syntax surface:
   alternation, groups, `^`, `$`, the character escapes) is `OK`, with 876
   corpus cases at 100% oracle agreement (844 of them python-verified; the rest
   are `# pcre2-only` blocks checked against libpcre2 directly).
-- Module `classes`' constructs are `OK-GATED` since 2026-08-12 — built and
-  oracle-verified, compiled only under `--features classes`.
-- Everything else is `REJECTED` — 144 rows in `tests/reject/` individually
-  assert exit 1 and the right diagnostic AND its offset (124 of them a module
-  name; the other 20 are the base-grammar brace errors K5/K6/K8 landed on
-  2026-08-10, which name a PCRE2 error instead), with 45 accept-controls proving
-  the table cannot pass by rejecting everything, and (SR-4) a further 66 checks
-  that iterate `pcrec --list-syntax` so no registry row can escape a probe
-  (`tests/reject/`). The two layers answer different questions and neither
+- Modules `classes` and `modifiers` shipped `OK-GATED` on 2026-08-12 (built
+  and oracle-verified, compiled only under `--features classes` or
+  `--features modifiers`); as of [STD1b] (`ab7592d`, 2026-08-13, D37) both
+  are `OK` — the bare default
+  now maps to the frozen named set `std1` = {`classes`, `modifiers`}, so a
+  bare `pcrec` compiles their constructs with no flag needed. `--features
+  none` is the only invocation that still refuses them, with the module name.
+- Everything else is `REJECTED` — measured live at this commit (`ab7592d`+,
+  [STD1b], 2026-08-13) from `tests/reject/run_reject_tests.sh`'s own summary,
+  not transcribed: **274** hand-written rows individually assert exit 1 and
+  the right diagnostic (most name a module; some — the base-grammar brace
+  errors K5/K6/K8, the verb doorway's outcomes, the `unknown escape` pins —
+  name a PCRE2-flavoured wording instead, and offsets are pinned where a
+  message alone cannot distinguish sites), **99** accept-controls proving the
+  table cannot pass by rejecting everything, **55** `reject_gated` pins
+  asserting the still-refused-under-`--features none` half for constructs
+  whose bare-default refusal changed at [STD1b] (D37), and (SR-4) **99**
+  further checks that iterate `pcrec --list-syntax` so no registry row can
+  escape a probe (`tests/reject/`) — **528** checks passing, **0**
+  known-wrong. **This paragraph previously cited 144/45/66: those figures
+  were already stale independent of the STD1b flip — `tests/reject/CLAUDE.md`'s
+  own count history records several unrelated intermediate values this
+  survey never caught up to (the file's own maintenance note: "read them
+  from a run, never from here"). What is written above is a fresh whole-suite
+  measurement, not a same-category update of the old numbers.** The two
+  layers (hand-written and iterated) answer different questions and neither
   subsumes the other: iteration guarantees coverage but reads the same table
   the parser renders from, so it cannot see a WRONG module name — measured, by
   changing `\d`'s row to `misc`, which the hand-written rows catch twice and
@@ -134,8 +151,8 @@ survey earned its keep").
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `OK-GATED` (module `modifiers`, MOD-0.5c) |
-| `\d \D \s \S \w \W \h \H \V \N` | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement, matched end-to-end under `--features classes`; default still refuses with the module name. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`; K10 recorded the `[\N{U+41}]` class-position divergence, FIXED 2026-08-12 by MOD-0.6 — see docs/dev/known_issues.md K10), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
+| `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `OK` by default since [STD1b] (module `modifiers`, MOD-0.5c; still refused under `--features none`) |
+| `\d \D \s \S \w \W \h \H \V \N` | `OK` | — | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement. Default-on since [STD1b] (`ab7592d`, 2026-08-13): `classes` is in the bare-default named set `std1` (D37), so a bare `pcrec` compiles these with no flag; `--features none` still refuses with the module name, and `--features classes`/`--features std1` are unchanged. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`; K10 recorded the `[\N{U+41}]` class-position divergence, FIXED 2026-08-12 by MOD-0.6 — see docs/dev/known_issues.md K10), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
 | `\v` | `REJECTED` | `PLANNED` | **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as well as outside. Now `REJECTED` to module `classes` like its negation `\V`. It survived because python `re` also reads `\v` as `0x0B`, so the base-tier oracle agreed with the bug — see "How this survey earned its keep" |
 | `\C` | `REJECTED` | `PLANNED` | "one code unit". In the ASCII tier that is just "any byte", i.e. trivial. PCRE2 forbids it under its own DFA matcher in UTF modes for the reason that will apply to us in M5 |
 | `\p{..}` `\P{..}` | `REJECTED` | — | module `unicode-props`, M5. Single-position predicates, so DFA-friendly; the work is Unicode tables, not engine |
@@ -175,7 +192,7 @@ commits to. The blocker is table generation and size, not matching.
 | syntax | status | becomes | notes |
 |---|---|---|---|
 | `[...]`, `[^...]`, `[x-y]` | `OK` | — | corpus-covered incl. `]` first, `-` last, high bytes, out-of-order range rejection |
-| `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `OK-GATED` | `OK` | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): all 14 names, both polarities, under `--features classes` (default refuses with the module name; `[[:<:]]`/`[[:>:]]` are assertions, module `assertions`, still refused). Oracles: tests/classes/ (every name pinned without libpcre2 since R16), PC-4 |
+| `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `OK` | — | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): all 14 names, both polarities. Default-on since [STD1b] (`ab7592d`, 2026-08-13): `classes` is in the bare-default named set `std1` (D37); `--features none` still refuses with the module name (`[[:<:]]`/`[[:>:]]` are assertions, module `assertions`, still refused in every configuration — not in `std1`). Oracles: tests/classes/ (every name pinned without libpcre2 since R16), PC-4 |
 | `[[.ch.]]` collating elements, `[[=ch=]]` equivalence classes | `AGREES-REJECT` | — | **Was a proven divergence, fixed 2026-08-09.** PCRE2 does not support these and REJECTS them ("POSIX collating elements are not supported"); pcrec silently accepted them as a class of literal `[` `.` `a` characters. Now rejected with PCRE2's own wording, so rejecting IS compliance here. The trigger was pinned against libpcre2 rather than guessed: `[` + `.`/`=` opens a collating element ONLY when the matching `.]`/`=]` terminator appears later, and a negated class suppresses it — so `[.a]`, `[.]`, `[[.]`, `[a[.b]`, `[^.a.]` and `[a.b.]` must all still COMPILE. Over-rejecting here would break patterns PCRE2 accepts, which is why those six are accept-controls in `tests/reject/` |
 | `\Q...\E` inside a class | `REJECTED` | — | module `quoting` |
 | `[x&&y]`, `[x--y]`, `[x~~y]` (UTS#18 set ops) | `OK` | `PLANNED` | pure bitmap algebra at parse time; no engine implication at all |
@@ -230,15 +247,15 @@ commits to. The blocker is table generation and size, not matching.
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `(?i)` `(?i:...)` `(?-i)` | `OK-GATED` | `OK` | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5c): the D23 fold driven by scoped parse state (`cx->mods`), the measured 17/17 group-scope rule (leaks across sibling branches, restored at the enclosing `)`), under `--features modifiers`; default refuses with the module name. Oracles: tests/modifiers/, spec_mod0 check12 |
-| `(?s)` dotall | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): `.` census 255 -> 256, measured against the oracle |
+| `(?i)` `(?i:...)` `(?-i)` | `OK` | — | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5c): the D23 fold driven by scoped parse state (`cx->mods`), the measured 17/17 group-scope rule (leaks across sibling branches, restored at the enclosing `)`). Default-on since [STD1b] (`ab7592d`, 2026-08-13): `modifiers` is in the bare-default named set `std1` (D37); `--features none` still refuses with the module name, `--features modifiers`/`--features std1` unchanged. Oracles: tests/modifiers/, spec_mod0 check12 |
+| `(?s)` dotall | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): `.` census 255 -> 256, measured against the oracle. Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(?m)` multiline | `REJECTED` | `PLANNED-HARD` | with the gate OPEN the letter refuses per-letter to module `assertions` (MOD-0.5a ruling: `^`/`$` at internal newlines is assertion-engine work — DFA state context, DD-6, DD-11's $-EOL sibling); `(?-m)` is an accepted no-op (true today). Gated pin: tests/reject/ reject_gated |
-| `(?x)` `(?xx)` extended | `OK-GATED` | `OK` | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5d): skip set {09,0A,0B,0C,0D,20,85} (NOT `\s`'s set — NEL is skipped), `#`-comments to 0x0A only (the NEWLINE_LF convention), xx's class-interior {09,20} deletion ahead of the endpoint rule (the D30 §7 `(?xx)[a- ]` hazard, now compiled correctly), doubled-x ADJACENCY rule incl. the later-bare-x downgrade — every clause probe-measured (probe_mod05*.c) |
-| `(?U)` ungreedy | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): default greed inverted at quantifier construction, `?` re-inverts; NOT reset by `(?^)` (measured) |
-| `(?n)` no-auto-capture | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting (`--count-groups` oracle-tied via check02's channel); does NOT imply J (measured) |
+| `(?x)` `(?xx)` extended | `OK` | — | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5d): skip set {09,0A,0B,0C,0D,20,85} (NOT `\s`'s set — NEL is skipped), `#`-comments to 0x0A only (the NEWLINE_LF convention), xx's class-interior {09,20} deletion ahead of the endpoint rule (the D30 §7 `(?xx)[a- ]` hazard, now compiled correctly), doubled-x ADJACENCY rule incl. the later-bare-x downgrade — every clause probe-measured (probe_mod05*.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
+| `(?U)` ungreedy | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): default greed inverted at quantifier construction, `?` re-inverts; NOT reset by `(?^)` (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
+| `(?n)` no-auto-capture | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting (`--count-groups` oracle-tied via check02's channel); does NOT imply J (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(?J)` dup names | `REJECTED` | — | with the gate OPEN the letter refuses per-letter to module `named-groups` (MOD-0.5a ruling: J is observable only through named groups); `(?-J)` accepted no-op. Gated pin: tests/reject/ reject_gated |
-| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK-GATED` | `OK` | MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0 diff cells over 256x256; all four a-sub pairs census-identical) — accepted and applied as nothing, which is exactly PCRE2's observable behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own that day (DD-12) |
-| `(?^)` reset options | `OK-GATED` | `OK` | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): resets i,m,n,s,x,xx to the HARDWIRED defaults; U and J SURVIVE — "unset imnsx" is the measured rule, and the reset is to-constant, not to-compile-option (both from probe_mod05b.c) |
+| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK` | — | MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0 diff cells over 256x256; all four a-sub pairs census-identical) — accepted and applied as nothing, which is exactly PCRE2's observable behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own that day (DD-12). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
+| `(?^)` reset options | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): resets i,m,n,s,x,xx to the HARDWIRED defaults; U and J SURVIVE — "unset imnsx" is the measured rule, and the reset is to-constant, not to-compile-option (both from probe_mod05b.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — | these bound a BACKTRACKING search. pcrec is O(n) by construction, so there is nothing to limit. D22 also removes the adversarial-input motivation. `LIMIT_RECURSION` is PCRE2's older synonym for `LIMIT_DEPTH` — it was in pcrec's verb tables but missing from this row until the K14 check compared them (2026-08-11) |
 | `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — | knobs for PCRE2 implementation internals that pcrec does not have |
 | `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` | match-time semantics, expressible; no owner yet |
@@ -278,11 +295,17 @@ report that found it):
 - Over PC-3's own option-run space (19,448 cells: the Q2 alphabet, runs of
   length 0-3, both terminator shapes), **14,986 cells are runs libpcre2 calls
   invalid** (error 111 or 194). Of those, pcrec diagnoses 14,844 as invalid and
-  DEFERS on **142** at the closed (default) gate — all to `modifiers`, the
+  DEFERS on **142** at the closed gate — all to `modifiers`, the
   row-level deferral before the run is ever read — and diagnoses 14,978 and
   defers on **8** with the gate open (4 to `assertions`, 4 to `named-groups`:
   `(?m--)`, `(?m--:a)`, `(?^m-)`, `(?^m-:a)` and the `J` equivalents). Nothing
-  is accepted in either state.
+  is accepted in either state. **"Closed gate" here meant the bare default at
+  measurement time (2026-08-12), when the bare default was empty; since
+  [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` = {`classes`, `modifiers`}) the
+  BARE default reproduces the 8-cell gate-open figures for `modifiers`
+  letters (verified live: bare `(?m--)` and `--features modifiers '(?m--)'`
+  both give `requires module 'assertions'`) — only `--features none`
+  reproduces the original 142-cell closed-gate figure now.**
 
 **The population can only shrink, and the shrink is measured rather than
 promised.** 142 → 8 is what opening the gate already does: every letter whose
@@ -481,10 +504,16 @@ this third copy still standing here, in the present tense, unflagged — the sam
 "one claim, several files, never measured" shape the document elsewhere warns
 about.
 
-`tests/reject/run_reject_tests.sh` now asserts, per construct, that pcrec exits
+`tests/reject/run_reject_tests.sh` asserts, per construct, that pcrec exits
 exactly 1 (not 0, not a crash, not a timeout), carries the right diagnostic,
-and writes no output file — 144 rows, plus 45 accept-controls so the table
-cannot pass by rejecting everything, and a short manifest naming the rows whose
+and writes no output file — 144 rows, plus 45 accept-controls, at R7 when this
+was first built; the count has moved several times since and the same
+hand-copied-figures failure mode this document warns about elsewhere (see
+"Keeping this current") applied here too. **Current whole-suite figures,
+measured live at [STD1b] (`ab7592d`, 2026-08-13): 274 hand-written rows, 99
+accept-controls, 55 `reject_gated` pins, 99 iterated, 528 checks passing, 0
+known-wrong — see the Headline above; do not re-copy these either, re-run the
+script.** The table also carries a short manifest naming the rows whose
 deletion the counts alone would not catch. Reproducing the `\v` bug's exact shape on a different
 escape (silently decoding `\d` to a literal `d`) fails 2 reject checks and
 **zero** corpus and codegen checks.
