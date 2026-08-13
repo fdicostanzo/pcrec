@@ -133,6 +133,24 @@ Part of `make test` since M2.
   commit message, and the sweep behind it (10 query templates × ASCII bytes
   × both gate states × both surfaces = 5,080 probes) went 18 crashes → 0.
 
+- **case 13 (MOD-0.8c slice 3)** — THE ENCODING GATE (`-e`), which nothing in
+  this repository covered before: `grep -rn '\-e utf8' tests/` found nothing,
+  so the CLI's only gate besides `--features` was entirely unpinned. It landed
+  with the fix for K14's shape ON that gate (R20, the D27 writer's divergence
+  5): `-e utf8` answered "requires module 'utf8'" and the module namespace has
+  no `utf8` — `--features utf8` says "unknown module" itself, so the
+  diagnostic's one actionable noun pointed at a dead end. The fix promises the
+  MILESTONE instead of a module, because M5 delivers byte-wise UTF-8 automata
+  and OS-2 commits ASCII and UTF-8 to ONE DFA emitter: UTF-8 is an engine axis,
+  not a drop-in construct, so registering a name would have meant inventing a
+  module with no construct to describe. **What is pinned is not the sentence**
+  (D26 tiers that out): a NEGATIVE pin that no module is named, a positive one
+  that the milestone is, that a refused encoding writes no C, and the
+  CROSS-CHECK that makes it stick — `--features` must still reject `utf8` by
+  name, so if M5 ever registers it, this flips and the pin is revisited rather
+  than quietly deleted. Written failing-first against the pre-fix binary; the
+  verbatim FAIL block is in the slice's commit message.
+
 ## Conventions
 
 Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation
