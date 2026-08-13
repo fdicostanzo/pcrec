@@ -30,21 +30,33 @@
 # check that quietly passes because it found no recognisers to check is the
 # vacuity this suite exists to prevent.
 #
+# APERTURE, STD1c re-arm (docs/dev/std1_check_rearm.md, 2026-08-13). D37's
+# frozen named sets (`std1`) and the bare-default mapping point added new
+# process-wide enabled-set machinery: `nm` over the merged build showed
+# PCREC_DEFAULT_FEATURES was NOT caught by the pre-STD1c ENABLED_RE (it has
+# no "enabled" substring — the naming convention it follows is
+# "PCREC_DEFAULT_FEATURES", not "*_enabled_*"). Widened below. Both discovery
+# populations (the symbol count, the TU count) are now floored in floors.txt
+# — a ratchet against the aperture silently narrowing again, since an empty
+# discovery reads identically to a real pass otherwise (the same vacuity this
+# check already guards structurally, made numeric).
+#
 # SABOTAGE: add one reference to the enabled-set symbol from any recogniser TU
 # and rebuild — that object gains the symbol in its undefined list and this
 # check names the object and the symbol. That is the whole test, and it is
-# exactly the sabotage the invariant names.
+# exactly the sabotage the invariant names. (Validated 2026-08-13 against
+# PCREC_DEFAULT_FEATURES specifically, in a scratch reference planted in
+# scans.c — see the STD1c re-arm report for the exact command and failing
+# output.) A SECOND sabotage, added at STD1c: narrow ENABLED_RE to match none
+# of the real symbols — the vacuity guard below must still fire
+# (SURFACE MISSING / exit 3), proving the widening did not also weaken the
+# empty-discovery guard it sits next to.
 #
-# AWAITED SURFACE (measured 2026-08-11): build/libpcrec.a contains NO symbol
-# matching the enabled-set naming — `nm` over the archive finds nothing for
-# enabl/gate/feature/module. There is no enabled set yet, so there is nothing
-# to be isolated FROM, and this check cannot pass or fail meaningfully until
-# the first module lands. It reports that state and exits nonzero.
-#
-# Run: check01_isolation.sh <repo-root>
+# Run: check01_isolation.sh <repo-root> <floors.txt>
 
 set -u
-ROOT="${1:?usage: check01_isolation.sh <repo-root>}"
+ROOT="${1:?usage: check01_isolation.sh <repo-root> <floors.txt>}"
+FLOORS="${2:?usage: check01_isolation.sh <repo-root> <floors.txt>}"
 NAME=check01_isolation
 echo "== $NAME =="
 
@@ -57,6 +69,10 @@ if [ ! -f "$ARCHIVE" ]; then
     echo "  session owns the build tree.)"
     exit 2
 fi
+if [ ! -f "$FLOORS" ]; then
+    echo "FAIL[$NAME]: no floors file at $FLOORS"
+    exit 2
+fi
 if ! command -v nm >/dev/null 2>&1; then
     echo "FAIL[$NAME]: nm not found; the linker is this check's oracle"
     exit 2
@@ -64,7 +80,17 @@ fi
 
 # Naming conventions, in one place. Widened deliberately: a false positive here
 # costs a look, a false negative costs the whole check.
-ENABLED_RE='enabled_set|enabled_features|feature_enabled|pcrec_enabled|g_enabled'
+#
+# ENABLED_RE gained `PCREC_DEFAULT_FEATURES` at STD1c (2026-08-13): D37's
+# bare-default mapping point does not carry an "enabled"/"gate" substring, so
+# the pre-STD1c pattern below did not catch it even though it is exactly the
+# kind of process-wide enabled-set state this check exists to isolate
+# recognisers from. Named explicitly rather than folded into a broader
+# "default" pattern, because a broad "default" match also catches
+# `pcrec_default_options` (core/compile.c, an unrelated options struct) and
+# `pcrec_recognise_tail_default` (registry.c, a recogniser — matching it
+# here would be exactly backwards).
+ENABLED_RE='enabled_set|enabled_features|feature_enabled|pcrec_enabled|g_enabled|PCREC_DEFAULT_FEATURES'
 RECOG_RE='recognis|recogniz|extent_scan|scan_extent|_extent$'
 
 echo "  archive: $ARCHIVE"
@@ -85,8 +111,10 @@ for o in $(find "$OBJDIR" -name '*.o' 2>/dev/null | sort); do
 done
 
 NOBJ=$(find "$OBJDIR" -name '*.o' 2>/dev/null | wc -l)
+NSYM=$(echo "$ENABLED_SYMS" | grep -c .)
 NREC=$(echo $RECOG_OBJS | wc -w)
 echo "  POPULATION isolation.objects_scanned          $NOBJ"
+echo "  POPULATION isolation.enabled_symbols          $NSYM"
 echo "  POPULATION isolation.recogniser_tus           $NREC"
 
 MISSING=0
@@ -94,12 +122,12 @@ if [ -z "$ENABLED_SYMS" ]; then
     echo
     echo "  SURFACE MISSING: an enabled-set symbol in the built library"
     echo "  consumed how:    this check reads \`nm --defined-only\` over"
-    echo "                   $ARCHIVE and needs exactly one symbol naming the"
-    echo "                   enabled feature set (matching $ENABLED_RE, or"
-    echo "                   widen that pattern when the real name is chosen)."
-    echo "                   It then asserts that symbol is absent from the"
-    echo "                   UNDEFINED list of every recogniser/extent-scan"
-    echo "                   object."
+    echo "                   $ARCHIVE and needs at least one symbol naming"
+    echo "                   the enabled feature set (matching $ENABLED_RE,"
+    echo "                   or widen that pattern when the real name is"
+    echo "                   chosen). It then asserts that symbol is absent"
+    echo "                   from the UNDEFINED list of every recogniser/"
+    echo "                   extent-scan object."
     MISSING=1
 else
     echo "  enabled-set symbol(s) found:"
@@ -126,6 +154,31 @@ if [ "$MISSING" -eq 1 ]; then
     exit 3
 fi
 
+# --- floors: the two discovery populations, ratcheting minima ------------
+POPFAIL=0
+floor_of() {  # floor_of <bucket>  -> prints the pinned floor, or __MISSING__
+    awk -v b="$1" '$1==b{print $2; found=1} END{if(!found) print "__MISSING__"}' "$FLOORS"
+}
+pop_floor_check() {  # pop_floor_check <bucket> <count>
+    local b="$1" c="$2" f
+    f=$(floor_of "$b")
+    if [ "$f" = "__MISSING__" ]; then
+        echo "  FAIL: no floor pinned for $b in $FLOORS (unpinned is unchecked)"
+        POPFAIL=1
+        return
+    fi
+    if [ "$c" -lt "$f" ]; then
+        echo "  FAIL: $b is $c, below its floor of $f"
+        POPFAIL=1
+    fi
+}
+pop_floor_check isolation.enabled_symbols "$NSYM"
+pop_floor_check isolation.recogniser_tus "$NREC"
+if [ "$POPFAIL" -eq 1 ]; then
+    echo "FAIL $NAME: a discovery population is unpinned or below its floor"
+    exit 1
+fi
+
 # --- the assertion ------------------------------------------------------
 FAILS=0
 CHECKED=0
@@ -150,5 +203,5 @@ if [ "$FAILS" -gt 0 ]; then
     echo "FAIL $NAME: $FAILS reference(s)"
     exit 1
 fi
-echo "PASS $NAME ($CHECKED symbol/TU pairs, $NREC recogniser TUs)"
+echo "PASS $NAME ($CHECKED symbol/TU pairs, $NSYM enabled-set symbols, $NREC recogniser TUs)"
 exit 0

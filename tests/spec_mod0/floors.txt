@@ -11,7 +11,21 @@
 # suite should compare less, and belongs in review with a reason.
 #
 # All numbers below measured against libpcre2 10.46 2025-08-27 on 2026-08-11,
-# registry dump of 100 rows.
+# registry dump of 100 rows. Additions dated 2026-08-13 (STD1c re-arm) were
+# measured against the same libpcre2 build, post-STD1b (bare default =
+# std1 = {classes, modifiers}), on a real `bash run_spec_mod0.sh` run.
+
+# --- invariant 1: enabled-set isolation ---------------------------------
+# Measured 2026-08-13 (STD1c re-arm): `nm --defined-only` over
+# build/libpcrec.a discovers 9 enabled-set symbols (g_enabled_features,
+# g_enabled_label, g_enabled_modules, PCREC_DEFAULT_FEATURES,
+# pcrec_enabled_mask, pcrec_enabled_set_label, pcrec_enabled_set_modules,
+# pcrec_enabled_set_spec, pcrec_feature_enabled — the last of these 9 is the
+# widened ENABLED_RE's catch: PCREC_DEFAULT_FEATURES, D37's bare-default
+# mapping point, was invisible to the pre-STD1c aperture) and 4 recogniser/
+# extent-scan TUs (mod_modifiers.o, mod_uprops.o, registry.o, scans.o).
+isolation.enabled_symbols            9
+isolation.recogniser_tus             4
 
 # --- invariant 3: LEXICAL membership -----------------------------------
 lexical.rows_swept                 100
@@ -72,9 +86,25 @@ class.expect_verified_empty_rows    56
 
 # --- invariant 7/9: gate equivalence -----------------------------------
 gate.membership_rows               70
-gate.compared_pairs                  0
-gate.baseline_accepted_rows          13
-gate.eligible_rows                   12
+# gate.compared_pairs raised 0 -> 44 2026-08-13 (STD1c re-arm, docs/dev/
+# std1_check_rearm.md): the total is now the measured sum of gate.pairs.*
+# below (24 classes + 20 modifiers). The floor was 0 DELIBERATELY while
+# check09's assertion 2 was a single GLOBAL trigger on this bucket, which
+# would have demanded all 17 registry modules toggle at once for a floor
+# raise to mean anything; check09 now reads PER-NAME floors instead
+# (gate.pairs.<name>), so this total no longer arms anything on its own —
+# it is printed and floored for its own sake, not as an arming signal.
+gate.compared_pairs                 44
+gate.pairs.classes                  24
+gate.pairs.modifiers                20
+# gate.baseline_accepted_rows/gate.eligible_rows raised 13->23 / 12->22
+# 2026-08-13 (STD1c re-arm), measured on a real post-STD1b run. NOT a D37
+# bare-default effect (check07 always passes an explicit --features, per
+# docs/dev/std1_check_rearm.md's verified premise 1): the growth is the
+# `modifiers` module's producers landing (MOD-0.5c/d) after the original
+# 12/13 measurement, which was classes-only.
+gate.baseline_accepted_rows          23
+gate.eligible_rows                   22
 gate.verdict_checks_total         1800
 quantifiable.compared_rows         83
 endpoint.doorway_escape             82
