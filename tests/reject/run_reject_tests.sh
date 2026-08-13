@@ -185,6 +185,47 @@ $show"
     ok "accept '$show' (base tier still compiles)"
 }
 
+# ---- reject_gated: an explicit-features rejection, for pins whose
+# diagnostic (or whose very refusal) only holds under a NON-default
+# `--features` spec. Originally MOD-0.5c's mechanism for gate-OPEN-only
+# diagnostics (`--features modifiers`); [STD1b] (D37, 2026-08-13) also uses
+# it as `reject_gated none ...` to keep the PRE-flip bare behaviour pinned
+# verbatim now that the bare default itself is `std1` rather than empty —
+# moved up here (from its original home just above the MOD-0.5c block much
+# further down) so rows anywhere in the file, including the ones the flip
+# touches, can call it. Counted in `ngated` either way: a features spec
+# other than the bare default is the same kind of pin regardless of WHICH
+# named set it pins against.
+reject_gated() { # reject_gated <features> <pattern> <expected-substring>
+    local feats="$1" pat="$2" want="$3" out rc
+    case "$want" in
+        *[![:space:]]*) ;;
+        *) bad "reject_gated '$pat': blank expectation asserts nothing"; return ;;
+    esac
+    ngated=$((ngated + 1))
+    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
+    out="$(timeout 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    if [ "$rc" -eq 0 ]; then
+        bad "reject_gated '$pat' (features $feats): ACCEPTED — the gate-open refusal this pin exists for has vanished"
+        return
+    fi
+    if [ "$rc" -ne 1 ]; then
+        bad "reject_gated '$pat': exit $rc, not a clean exit-1 rejection"
+        return
+    fi
+    case "$out" in
+        *"$want"*) ;;
+        *) bad "reject_gated '$pat': wrong diagnostic. want substring: $want ; got: $out"
+           return ;;
+    esac
+    if [ -f "$WORKDIR/out.c" ]; then
+        bad "reject_gated '$pat': rejected but still wrote an output file"
+        return
+    fi
+    ok "reject_gated [$feats] '$pat' -> $want"
+}
+ngated=0
+
 # ---- a class-opening construct as a RANGE ENDPOINT (R9/SPEC-FA) ----
 # PCRE2 error 150. pcrec read the `[` as an ordinary literal upper bound and
 # EMITTED A MATCHER — the silent wrong matcher the mandate forbids, 546
@@ -240,10 +281,21 @@ reject '[\d-\p{Foo}]'   "\\p requires module 'unicode-props' (pattern offset 11)
 # offset rather than the old one.
 reject '[0-\p{L}]'      "\\p requires module 'unicode-props' (pattern offset 8)"
 reject '[\p{L}-z]'      "\\p requires module 'unicode-props' (pattern offset 6)"
-# Non-range dash and truncation: the construct's ordinary class answer stays
-# (PCRE2 compiles [\d-]; pcrec's refusal is the standard unimplemented answer).
-reject '[\d-]'          "in a class requires module 'classes'"
-reject '[\d-'           "in a class requires module 'classes'"
+# Non-range dash and truncation: the construct's ordinary class answer USED
+# TO stay the standard unimplemented answer (PCRE2 compiles [\d-]; pcrec
+# refused it for lacking module 'classes'). [STD1b] (D37, 2026-08-13) flips
+# that: `classes` is default-on, so `[\d-]` now compiles (PCRE2 agrees —
+# trailing `-` in a class is literal) and `[\d-` now reaches ITS OWN error
+# (unterminated class, "missing terminating ]") instead of the classes-gate
+# refusal, since `\d` is recognised before the truncation is noticed. Old
+# bare behaviour kept pinned verbatim via `--features none`; new bare
+# behaviour pinned alongside (the truncated form as a `reject`, since it is
+# still a rejection just for a different, now-real reason; the well-formed
+# form as an `accept`, since it now compiles).
+reject_gated none '[\d-]' "in a class requires module 'classes'"
+reject_gated none '[\d-'  "in a class requires module 'classes'"
+accept '[\d-]'
+reject '[\d-'  "missing terminating ] for character class (pattern offset 0)"
 # Own-error rows at a low endpoint keep their own errors (steps 1/3, measured
 # 130/130/113): the rule must not swallow them into 150.
 reject '[[:foo:]-z]'    "unknown POSIX class name"
@@ -336,15 +388,29 @@ done
 
 echo
 echo "== character-type escapes -> module 'classes' =="
+# [STD1b] (D37, 2026-08-13): `classes` is now default-on, so all 20 of these
+# (ten letters, two positions each) now ACCEPT bare instead of refusing. Old
+# bare behaviour kept pinned verbatim via `--features none`
+# (`reject_gated`); the new bare-accepts fact is pinned as an `accept`
+# control per cell — match/nomatch semantics for these same constructs are
+# already oracle-verified under explicit `features classes` in
+# tests/classes/classes.rxt, so this file's job is only the GATE state, same
+# as every other row here.
 for e in d D s S w W h H v V; do
-    reject "\\$e"     "\\$e requires module 'classes'"
-    reject "[\\$e]"   "\\$e in a class requires module 'classes'"
+    reject_gated none "\\$e"     "\\$e requires module 'classes'"
+    reject_gated none "[\\$e]"   "\\$e in a class requires module 'classes'"
+    accept "\\$e"
+    accept "[\\$e]"
 done
 # `\N` is the exception and PCRE2 is the reason: the ATOM is a real construct
 # module `classes` will implement, and INSIDE a class PCRE2 forbids it outright
 # (error 71) and always will. So the two positions get two different KINDS of
 # answer, and the in-class one must promise no module (R9/SPEC-classes-F1).
-reject '\N'    "\N requires module 'classes'"
+# [STD1b]: the ATOM position is default-on now (`classes`), the IN-CLASS
+# position is a permanent PCRE2 rule unrelated to any gate — only the first
+# needs a gate-state pin.
+reject_gated none '\N'  "\N requires module 'classes'"
+accept '\N'
 reject '[\N]'  "\N is not valid inside a character class"
 # K10 FIX (MOD-0.6 phase 2): `\N{U+hhhh}` is the OPPOSITE case from bare `\N`
 # just above — libpcre2 recognises it in every class position (error 193,
@@ -373,8 +439,12 @@ reject '[\N{U+41}-z]'    "\N in a class requires module 'unicode-props' (pattern
 # the default state it refuses as the GATED module construct, not as the
 # \N{name} construct pcrec called it before R16 (the guarded exception to
 # the pre-MOD-0.3 differential). Non-quantifier bodies keep the 137 text.
-reject '\N{2,3}' "\N requires module 'classes'"
-reject '\N{,3}'  "\N requires module 'classes'"
+# [STD1b]: quantifier-shaped `\N{...}` is bare \N quantified (see comment
+# above), and bare \N is default-on now too — both now accept.
+reject_gated none '\N{2,3}' "\N requires module 'classes'"
+reject_gated none '\N{,3}'  "\N requires module 'classes'"
+accept '\N{2,3}'
+accept '\N{,3}'
 reject '\N{abc}' "PCRE2 does not support"
 
 # The other nine escapes PCRE2 forbids inside a class, same rule, error 107.
@@ -387,11 +457,18 @@ for e in A B G K Z z C R X; do
 done
 # ...and the control that keeps the rule from swallowing the whole doorway:
 # `\b` inside a class is BASE syntax (backspace), and `\d` is a real construct
-# PCRE2 supports there, so it still names its module. Both directions pinned.
+# PCRE2 supports there — under `--features none` it still names its module
+# (the "for e in d D s S w W h H v V" loop above pins both directions, gated
+# and default-accepting, now that [STD1b] makes `classes` default-on). Both
+# directions pinned.
 accept '[\b]'
-reject '[[:alpha:]]' "POSIX class [:...:] requires module 'classes'"
-reject '[[:^alpha:]]' "POSIX class [:...:] requires module 'classes'"   # ^ negates
-reject '[[:xdigit:]]' "POSIX class [:...:] requires module 'classes'"
+reject_gated none '[[:alpha:]]' "POSIX class [:...:] requires module 'classes'"
+reject_gated none '[[:^alpha:]]' "POSIX class [:...:] requires module 'classes'"   # ^ negates
+reject_gated none '[[:xdigit:]]' "POSIX class [:...:] requires module 'classes'"
+# [STD1b]: same three, bare default now accepts (`classes` default-on).
+accept '[[:alpha:]]'
+accept '[[:^alpha:]]'
+accept '[[:xdigit:]]'
 # NAMES PCRE2 DOES NOT KNOW, and these three rows CHANGED at FIX-2 — which is
 # the comment that used to sit here being right in advance. It said they "are
 # exactly the rows a name-keyed table would have to get right (R6 fidelity
@@ -630,7 +707,9 @@ reject '(?+1)'    "requires module 'recursion'"
 reject '(a)(?-1)' "requires module 'recursion'"
 # `-` is the one byte at this doorway carrying two modules, which is why it has
 # ten digit tails AND a bare row rather than a compound name.
-reject '(?-i)'    "requires module 'modifiers'"
+# [STD1b]: `modifiers` is default-on now, so this bare row accepts too.
+reject_gated none '(?-i)' "requires module 'modifiers'"
+accept '(?-i)'
 
 # ---- GATED pins (MOD-0.5c): diagnostics whose text only exists with the
 # gate OPEN. The corpus's perr blocks assert only THAT these fail; the
@@ -638,40 +717,23 @@ reject '(?-i)'    "requires module 'modifiers'"
 # only pins (the .rxt format cannot assert message content — found by the
 # corpus author at this landing). Counted separately (ngated) so the
 # default-config ratchet above stays exactly what it says it is.
-reject_gated() { # reject_gated <features> <pattern> <expected-substring>
-    local feats="$1" pat="$2" want="$3" out rc
-    case "$want" in
-        *[![:space:]]*) ;;
-        *) bad "reject_gated '$pat': blank expectation asserts nothing"; return ;;
-    esac
-    ngated=$((ngated + 1))
-    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    out="$(timeout 60 "$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
-    if [ "$rc" -eq 0 ]; then
-        bad "reject_gated '$pat' (features $feats): ACCEPTED — the gate-open refusal this pin exists for has vanished"
-        return
-    fi
-    if [ "$rc" -ne 1 ]; then
-        bad "reject_gated '$pat': exit $rc, not a clean exit-1 rejection"
-        return
-    fi
-    case "$out" in
-        *"$want"*) ;;
-        *) bad "reject_gated '$pat': wrong diagnostic. want substring: $want ; got: $out"
-           return ;;
-    esac
-    if [ -f "$WORKDIR/out.c" ]; then
-        bad "reject_gated '$pat': rejected but still wrote an output file"
-        return
-    fi
-    ok "reject_gated [$feats] '$pat' -> $want"
-}
-ngated=0
+# `reject_gated` itself now lives earlier in the file (right after
+# `accept()`), because [STD1b] needs it — as `reject_gated none ...` — for
+# rows far above this point in the file. See its definition there.
 # The two per-letter attributions (MOD-0.5a rulings, flagged to Frank):
 # multiline is assertion-engine work; J is observable only through named
 # groups. Reversible one-row edits in mod_modifiers.c if overruled.
 reject_gated modifiers '(?m)a'     "requires module 'assertions'"
 reject_gated modifiers '(?J)a'     "requires module 'named-groups'"
+# [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so `(?m)a`/
+# `(?J)a` reach this SAME diagnosis bare, with no `--features` at all — the
+# std1-BOUNDARY proof: std1 = {classes, modifiers} and nothing wider, so
+# `m`'s and `J`'s real modules ('assertions', 'named-groups') must still be
+# refused by a bare invocation. If std1's mask ever silently grew to include
+# either, these two rows are what would flip from reject to accept.
+# (`(?m)a`'s bare pin already lives further down, alongside its five
+# sibling letters' gate conversion — not duplicated here.)
+reject '(?J)a'     "requires module 'named-groups'"
 # The recognised-malformed shape (PCRE2 error 194's analogue) and the
 # truncated run (error 114's): the module diagnoses its own body.
 reject_gated modifiers '(?i-m-s)a' "invalid hyphen in option setting"
@@ -689,6 +751,11 @@ reject_gated modifiers '(?i'       "missing closing ) for inline option setting"
 # them apart (the S27 lesson). They are also pcrec's OWN convention agreeing
 # with PCRE2's, cell for cell, measured — the quantifier byte for `*`/`+`,
 # the closing `}` for a brace form.
+# [STD1b]: this is the TIER-1 MISCOMPILE GUARD (see the R20/SPEC-1 note
+# above), and it is worth its own bare proof rather than trusting the mask
+# equivalence by inference — a silently-wrong std1 expansion here would be
+# exactly the kind of regression this class of pin exists to catch.
+reject 'a(?i)*'     "quantifier does not follow a repeatable item (pattern offset 5)"
 reject_gated modifiers 'a(?i)*'     "quantifier does not follow a repeatable item (pattern offset 5)"
 reject_gated modifiers 'a(?i)+'     "quantifier does not follow a repeatable item (pattern offset 5)"
 reject_gated modifiers 'a(?i)?'     "quantifier does not follow a repeatable item (pattern offset 5)"
@@ -777,24 +844,57 @@ reject '(?aPP)'   "unrecognized character after (? or (?-"
 # recognises (error 194, "invalid hyphen in option setting"), so refusing them a
 # module would be an UNDER-promise. The first version of the run rule got this
 # wrong for 24 shapes and the differential refused it.
-reject '(?i-m-s)' "requires module 'modifiers'"
-reject '(?^-i)'   "requires module 'modifiers'"
-reject '(?--D)'   "requires module 'modifiers'"
+# [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, and these three
+# were all answered "requires module 'modifiers'" only because the module
+# itself was absent — bare now reaches the SAME malformed-run diagnosis
+# `--features modifiers` already gets (`reject_gated modifiers '(?i-m-s)a'`
+# above), since the mask is identical. Old behaviour kept pinned via
+# `--features none`; new bare behaviour pinned alongside as its own
+# `reject` (still a rejection, now for the module's OWN reason).
+reject_gated none '(?i-m-s)' "requires module 'modifiers'"
+reject_gated none '(?^-i)'   "requires module 'modifiers'"
+reject_gated none '(?--D)'   "requires module 'modifiers'"
+reject '(?i-m-s)' "invalid hyphen in option setting (pattern offset 5)"
+reject '(?^-i)'   "invalid hyphen in option setting (pattern offset 3)"
+reject '(?--D)'   "invalid hyphen in option setting (pattern offset 3)"
 # `a` takes exactly one ASCII-restrict sub-option, which is invisible to any
 # rule derived from single letters: `(?aP)` compiles and `(?aPP)` is error 111.
-reject '(?aP)'    "requires module 'modifiers'"
+# [STD1b]: bare now accepts too (a measured no-op at options=0, per
+# tests/modifiers/letters.rxt's `(?aP)x` cell under `features modifiers`).
+reject_gated none '(?aP)' "requires module 'modifiers'"
+accept '(?aP)a'
 # `(*` used to be answered "requires module 'verbs'" here. Q1 changed it, and
 # the change is a correction: PCRE2 reads a bare `(*` as `(` followed by a
 # quantifier with nothing to quantify (error 109), and there is no verb name at
 # all to route to a module. Pinned as its own row rather than merged with the
 # other quantifier rows because THIS one is the doorway declining.
 reject '(*'       "quantifier does not follow a repeatable item"
-reject '(?i)a'    "requires module 'modifiers'"
-reject '(?-i)a'   "requires module 'modifiers'"
-reject '(?i:a)'   "requires module 'modifiers'"
-reject '(?s)a'    "requires module 'modifiers'"
-reject '(?m)a'    "requires module 'modifiers'"
-reject '(?x)a'    "requires module 'modifiers'"
+# [STD1b]: all six below are default-on constructs now (`modifiers`); old
+# bare-refusal behaviour is kept pinned via `--features none`. The new
+# bare-accepts fact does not need a fresh oracle here — MATCH semantics for
+# `(?i)`/`(?-i)`/`(?i:...)`/`(?s)`/`(?x)` are already oracle-verified under
+# explicit `features modifiers` in tests/modifiers/scope.rxt, letters.rxt
+# and xmode.rxt, and the bare/default PATH itself (not just the mask) is
+# separately proven equivalent to `--features modifiers` for this same
+# module by tests/modifiers/malformed_and_gate.rxt's [STD1b] bare section
+# and by tests/cli's case14 std1-vs-explicit byte-diff — so a plain
+# `accept` control per cell is enough to close this file's own job (the
+# GATE state), without re-deriving six more oracle cells. `(?m)a` is the
+# ONE exception: it is not an accept at all, even bare — `m`'s home is
+# module 'assertions' (not in std1), so it stays a rejection and is the
+# std1-BOUNDARY proof (std1 = {classes, modifiers} and nothing wider).
+reject_gated none '(?i)a'    "requires module 'modifiers'"
+reject_gated none '(?-i)a'   "requires module 'modifiers'"
+reject_gated none '(?i:a)'   "requires module 'modifiers'"
+reject_gated none '(?s)a'    "requires module 'modifiers'"
+reject_gated none '(?m)a'    "requires module 'modifiers'"
+reject_gated none '(?x)a'    "requires module 'modifiers'"
+accept '(?i)a'
+accept '(?-i)a'
+accept '(?i:a)'
+accept '(?s)a'
+reject '(?m)a'    "requires module 'assertions'"
+accept '(?x)a'
 
 echo
 echo "== (*...) verbs, option settings and script runs =="
@@ -862,12 +962,23 @@ reject '(*ACCEPT'         "(*VERB) not recognized or malformed"
 # (R8/C2). libpcre2 rejects `(*FAIL)*` with "quantifier does not follow a
 # repeatable item" — the verb is real, but PCRE2 will not quantify it — while
 # pcrec answers about the construct it met FIRST and never reads the `*`. That
-# is pcrec's rule at every doorway, not a verb-doorway defect: `\d{3,1}` is
-# "requires module 'classes'" here and "numbers out of order" in PCRE2, and has
-# been since the registry existed. Both rows are here so that if anyone ever
-# changes it, they change it ON PURPOSE.
+# is pcrec's rule at every doorway, not a verb-doorway defect: `\d{3,1}` USED
+# TO BE "requires module 'classes'" here and "numbers out of order" in PCRE2
+# — different answers for the SAME reason (leftmost-wins), since `\d` itself
+# was the leftmost unhandled construct under the old empty bare default.
+# [STD1b] (D37, 2026-08-13) changes which doorway is leftmost: `classes` is
+# now default-on, so `\d` is no longer unhandled and the pattern reaches its
+# OWN quantifier — pcrec now agrees with PCRE2's wording on this cell (both
+# say "numbers out of order", verified below), which is a coincidence of
+# what pcrec's base-grammar message happens to say, not a new promise (D26
+# still does not require wording agreement). The row is kept as
+# `reject_gated none` for the OLD leftmost-wins witness (still true under
+# the literal old-default spec) plus a new bare row for what leftmost-wins
+# now answers by default — both are here so that if anyone ever changes
+# either, they change it ON PURPOSE.
 reject '(*FAIL)*'         "requires module 'verbs'"
-reject '\d{3,1}'          "requires module 'classes'"
+reject_gated none '\d{3,1}' "requires module 'classes'"
+reject '\d{3,1}'          "numbers out of order in {m,n} quantifier (pattern offset 6)"
 # The THIRD leftmost-policy witness, ruled by Frank 2026-08-11 (§18.2 of the
 # extension design): `(a)(?(1)x|y|z)` is PCRE2 error 127 — more than two
 # branches, PERMANENTLY invalid, a defect module 'conditionals' can never
@@ -1200,7 +1311,7 @@ echo "== every registry row covers itself (SR-4) =="
 # by hand, and iteration must never be read as covering them.
 niter=0
 row_reject() { # like reject(), but counted separately so the floors stay honest
-    local pat="$1" want="$2" out rc
+    local pat="$1" want="$2" mod="${3:-}" out rc
     # Same empty-expectation trap as reject() (R9/C4-1). The BADROW filter below
     # already drops dump rows with an empty `expect` field, so this is the
     # second line rather than the first — but it is the line that survives
@@ -1212,7 +1323,24 @@ row_reject() { # like reject(), but counted separately so the floors stay honest
     esac
     niter=$((niter + 1))
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
-    out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    # [STD1b] (D37, 2026-08-13): every row's `expect` field is the CLOSED-gate
+    # answer — the row-level attribution the registry declares, which is what
+    # a fully bare invocation always got back when the enabled set was empty.
+    # `classes`/`modifiers` are default-on now, so a genuinely bare probe for
+    # one of THEIR rows no longer reaches that answer (it either accepts, or
+    # — for `(?J)`/`(?m)`, whose live per-letter attribution dissents from
+    # their own row's declared 'modifiers' — reaches a DIFFERENT rejection).
+    # Probing those rows with `--features none` instead keeps testing the
+    # exact thing this loop has always tested (the row's own declared
+    # closed-gate expectation) rather than silently starting to test
+    # something else. Every other module keeps the original bare probe,
+    # unchanged.
+    case "$mod" in
+        classes|modifiers)
+            out="$(timeout 60 "$PCREC" --features none -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$? ;;
+        *)
+            out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$? ;;
+    esac
     if [ "$rc" -ne 1 ]; then
         bad "row '$pat': exit $rc, not a clean exit-1 rejection"
         return
@@ -1248,7 +1376,7 @@ else
     awk -F'\t' '
         /^#/ || NF != 15 || $8 == "base" { next }
         $3 == "" || $11 == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
-        { print $3 "\t" $11 }
+        { print $3 "\t" $11 "\t" $4 }
     ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
 
     if [ -s "$WORKDIR/badrows.txt" ]; then
@@ -1256,8 +1384,8 @@ else
         cat "$WORKDIR/badrows.txt" >&2
     fi
 
-    while IFS=$'\t' read -r syntax expect; do
-        row_reject "$syntax" "$expect"
+    while IFS=$'\t' read -r syntax expect module; do
+        row_reject "$syntax" "$expect" "$module"
     done < "$WORKDIR/probe.tsv"
 
     # The loop must have seen every non-base row: a `read` that silently stops
@@ -1433,8 +1561,24 @@ fi
 # made the MANIFEST unable to notice the real row being deleted. The duplicate
 # detector above now fails if it happens again, which is what makes lowering
 # these numbers safe rather than the very move this file warns about.
-if [ "$nrej" -ne 306 ] || [ "$naccept" -ne 65 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 15 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 306 / 65 / 0 / 15." >&2
+#
+# 306/65/0/15 -> 274/99/0/55 at [STD1b] (D37, 2026-08-13): the bare-default
+# flip (`classes`+`modifiers` now default-on) moved every row whose OLD bare
+# behaviour depended on the empty default from `reject` to `reject_gated
+# none` (same assertion, same diagnostic, now pinned under an explicit
+# spec instead of the bare invocation) — read the per-row [STD1b] comments
+# above for which, do not hand-derive the arithmetic here (this paragraph
+# is the exact "hand-copied figures go stale" trap this file's CLAUDE.md
+# warns about; the harness's own summary block is the source of truth,
+# always re-read from a run before editing these four numbers). New
+# `accept` controls pin the bare-default POSITIVE half (these constructs
+# now compile with no `--features` flag at all); a handful of rows also
+# gained a fresh `reject`/`reject_gated` pair where the bare diagnostic
+# genuinely changed TEXT rather than just moving behind `--features none`
+# (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
+# proof, the std1-boundary proof for `(?J)a`).
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 55 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 55." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

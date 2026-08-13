@@ -54,6 +54,15 @@ this directory's, since a `.rxt` `perr` block cannot assert WHY).
   landing this was the one file already fully green (11/11), by design —
   every other file was a watched-failing probe until the producers landed
   (they have; the whole directory is green now — see the §9.3 record below).
+  **[STD1b] (D37, 2026-08-13):** the bare default stopped meaning "empty
+  set" — it now resolves to `std1` = {classes, modifiers} — so the six
+  gate-off pins' premise ("no `features` line" = "gate closed") broke. Each
+  was kept pinned verbatim via `features none` (the literal old-default
+  spec) AND paired with a new bare (no `features` line at all) `# pcre2-only`
+  match block proving the DEFAULT path itself now accepts and matches
+  correctly (measured against live libpcre2 10.46 via
+  `tests/fuzz/pcre2_oracle.c`, same method the rest of this directory
+  already uses) — 11 patterns/11 cases before, 17 patterns/22 cases now.
 
 ## Oracle split
 

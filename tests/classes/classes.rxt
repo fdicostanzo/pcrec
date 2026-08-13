@@ -282,3 +282,25 @@ perr
 pattern [[:foo:]]
 features classes
 perr
+
+# ---- [STD1b] (D37, 2026-08-13): bare default now includes `classes` -----
+# Every block above pins behaviour under EXPLICIT `features classes`, which
+# the bare-default flip does not change (an explicit spec always wins).
+# What the flip changes is the DEFAULT path itself — no `features` line at
+# all now resolves to `std1` = {classes, modifiers} instead of the empty
+# set — and that path is worth its own small proof rather than trusting it
+# by inference from the explicit-features blocks above (coverage-
+# conservation rule, tests/reject/'s companion pin is
+# `reject_gated none ...` for the same constructs). A handful of
+# representative producers, not the full 51-block sweep already covered
+# above.
+
+pattern \d+
+m "abc123def" 3 6
+
+pattern \s\w+
+m "a bc d" 1 4
+
+# pcre2-only
+pattern [[:alpha:]]+
+m "ab12" 0 2

@@ -405,13 +405,21 @@ if "$PCREC" -p rx --features std1 -o "$WORKDIR/stamp.c" -- 'a' >/dev/null 2>&1; 
 else
     bad "D37: pcrec failed to compile 'a' under --features std1"
 fi
-# a bare invocation (no --features) still stamps — "none", the phase-A
-# default constant, not silence: an unstamped artifact would be ambiguous
-# the day the bare default itself changes (D37's own point).
-if "$PCREC" -p rx -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: none (modules: none) */'; then
-    ok "D37: a bare invocation stamps the resolved default ('none'), not nothing"
+# a bare invocation (no --features) still stamps — the resolved default,
+# not silence: an unstamped artifact would be ambiguous the day the bare
+# default itself changes (D37's own point, and [STD1b], 2026-08-13, is
+# that day: the bare default moved from "none" to the frozen named set
+# `std1` = {classes, modifiers}, so a bare invocation now stamps std1's own
+# expansion). `--features none` is what now stamps "none" explicitly.
+if "$PCREC" -p rx -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: std1 (modules: classes,modifiers) */'; then
+    ok "D37: a bare invocation stamps the resolved default ('std1'), not nothing"
 else
     bad "D37: a bare invocation's stamp is missing or wrong"
+fi
+if "$PCREC" -p rx --features none -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: none (modules: none) */'; then
+    ok "D37: --features none stamps 'none' explicitly (the escape hatch, unaffected by [STD1b])"
+else
+    bad "D37: --features none's stamp is missing or wrong"
 fi
 
 # ---- TS-1: the generated matcher stays usable FROM threads (D19) ---------

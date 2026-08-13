@@ -63,6 +63,23 @@
 # already PASS against the MOD-0.5a-gate binary, 0 pattern-compile
 # failures — the one file in this corpus that is fully green before the
 # module lands, by design.
+#
+# [STD1b] RE-BASELINE (2026-08-13, D37): the bare default stopped being the
+# empty set — it now resolves to the frozen named set `std1` = {classes,
+# modifiers} — so the premise of the six "gate OFF" blocks below ("no
+# `features` line" meant "the gate is closed") is no longer true. Per the
+# coverage-conservation rule, the OLD bare behaviour is kept pinned
+# verbatim by making it explicit (`features none`, the literal old-default
+# spec) rather than deleted, and a SECOND set of six blocks is added with no
+# `features` line at all — which now exercises the DEFAULT path itself
+# (std1), not just the already-covered `features modifiers` semantics in
+# scope.rxt/letters.rxt/reset.rxt/xmode.rxt/xxmode.rxt. Every pattern here
+# is python-inexpressible (the same non-start-position-flag / unknown-letter
+# reasons the header above already gives), so the six new blocks are
+# `# pcre2-only`, measured directly against live libpcre2 10.46 via
+# tests/fuzz/pcre2_oracle.c (throwaway scratchpad invocation, not committed
+# — the same method the rest of this directory already uses for its
+# pcre2-only cells).
 
 # ---- malformed vs non-construct, gate ON ----------------------------------
 
@@ -91,22 +108,63 @@ pattern a(?J)(?<g>x)(?<g>y)
 features modifiers
 perr
 
-# ---- gate OFF: today's behaviour, no features line, must stay pinned -----
+# ---- gate OFF via `--features none`, the literal old-default spec: the
+# pre-STD1b bare behaviour, kept pinned verbatim rather than deleted -------
 
 pattern a(?i)b
+features none
 perr
 
 pattern a(?U)b+
+features none
 perr
 
 pattern a(?n)(b)
+features none
 perr
 
 pattern a(?^)b
+features none
 perr
 
 pattern a(?s)b
+features none
 perr
 
 pattern a(?x)b c
+features none
 perr
+
+# ---- gate ON by DEFAULT (D37/STD1b): the bare invocation — no `features`
+# line at all — now accepts and correctly matches these, the positive half
+# of the flip. All six are python-inexpressible (see header); measured
+# against live libpcre2 10.46.
+
+# pcre2-only
+pattern a(?i)b
+m "aB" 0 2
+n "aX"
+
+# pcre2-only
+pattern a(?U)b+
+m "abbb" 0 2
+
+# pcre2-only
+pattern a(?n)(b)
+m "ab" 0 2
+n "aX"
+
+# pcre2-only
+pattern a(?^)b
+m "ab" 0 2
+n "aX"
+
+# pcre2-only
+pattern a(?s)b
+m "ab" 0 2
+n "aX"
+
+# pcre2-only
+pattern a(?x)b c
+m "abc" 0 3
+n "ab c"
