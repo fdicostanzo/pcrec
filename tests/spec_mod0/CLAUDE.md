@@ -23,6 +23,20 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
+**As of 2026-08-13, after the STD1b default-flip re-baseline (D37: bare
+default is now the named set `std1` = {classes, modifiers}): 13 pass, 1 fail,
+0 awaiting — exit 1, and the failure is check02_capture_count, NOT
+check14_option_runs (check14 now passes; see the still-current finding
+below for the defect that was fixed).** check02 is the only check here that
+invokes `pcrec --count-groups` with no `--features`, so it measures the bare
+default directly: of the 102 generated bodies, 4 that use `classes`/
+`modifiers` constructs now compile instead of being refused
+(`capture.pcrec_compared` 1 -> 5, floor raised and measured this run;
+`capture.pcrec_refused` 101 -> 97, a floor DECREASE left unmodified pending
+review rather than lowered by this lane — see floors.txt). This is expected
+fallout of the announced D37 boundary, not a regression in the invariant
+itself.
+
 **As of 2026-08-12, after the MOD-0.8b D27 pass: 13 pass, 1 fail, 0 awaiting —
 exit 1, and the failure is a real defect, not an awaited surface.**
 check14_option_runs fails on one family, and only that family: pcrec accepts a
@@ -137,7 +151,7 @@ reader will arrive holding it.
 | # | Check | Status | Oracle | Awaited pcrec surface |
 |---|-------|--------|--------|----------------------|
 | 1 | check01_isolation.sh | **PASS** (surface landed, MOD-0.1 slice 9 — self-armed with no edit) | `nm` over `build/libpcrec.a` and `build/obj` — the linker | — (enabled.c defines the enabled-set symbols, scans.c the convention-named extent scans; 4 symbol/TU pairs asserted absent from the recogniser TU's undefined list) |
-| 2 | check02_capture_count.c | **PASS** (surface landed) | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | — (`pcrec --count-groups -- BODY` is run, no shell involved, for every one of the 102 generated bodies; exit 0 compares its printed count against CAPTURECOUNT — `capture.pcrec_compared`, floor 1 — exit 1 means pcrec refuses the body as an unimplemented construct and is counted, not compared — `capture.pcrec_refused`, floor 101. Today only 1 of the 102 bodies is accepted, because pcrec implements only the base tier and every generator family here exists specifically to probe named groups / lookaround / verbs / callouts / branch-reset / `(?n)` / quote mode — the compared population grows module by module as those land) |
+| 2 | check02_capture_count.c | **FAIL since 2026-08-13 STD1b** (surface landed; see the dated addendum above — `capture.pcrec_refused` floor 101 vs measured 97, a legitimate flip-caused decrease awaiting review, not a defect) | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | — (`pcrec --count-groups -- BODY` is run, no shell involved, for every one of the 102 generated bodies, with NO `--features` — this check measures the bare default; exit 0 compares its printed count against CAPTURECOUNT — `capture.pcrec_compared`, floor 5 as of the D37 flip — exit 1 means pcrec refuses the body as an unimplemented construct and is counted, not compared — `capture.pcrec_refused`, floor 101 pending review. 5 of the 102 bodies are accepted today (base tier plus classes/modifiers constructs since D37); the compared population grows further module by module as more land) |
 | 3 | check03_lexical.c | **PASS** | libpcre2 binding behaviour over all 100 rows | — |
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
