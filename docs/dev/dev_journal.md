@@ -7294,3 +7294,66 @@ State if interrupted here: STD1a uncommitted in worktrees/std1-impl,
 make test running in lane; on green, lane commits and reports; merge +
 battery is next manager action. STD1b/c not started; rearm spec at
 docs/dev/std1_check_rearm.md.
+
+### Seventeenth session, phase boundary 5 — STD1b lanes merged, integration gate running
+
+std1-rebase-tests landed (6ef0c5d, reviewed and approved): coverage
+conservation held throughout — ~32 hand-written reject rows inverted with
+old bare behaviour re-pinned verbatim under --features none + new accept
+controls; SR-4 iterated loop now probes classes/modifiers rows under
+--features none (the flip made a bare probe silently assert against
+dissenting per-letter attribution); case14 rewritten to bare==std1
+byte-IDENTITY incl. stamp; 3 other broken bare invocations in cli cases
+10/11/12 fixed with --features none; codegen bare-stamp check flipped to
+std1 + new none-stamps-none check. Counts: corpus 1270->1284, cli
+242->247, codegen 33->34, reject 528 checks (gated 15->55, accepts
+65->99). Lane independently re-derived the two-defaults fact via
+tests/thread/ts3_driver.c (library-linked, unaffected by the CLI flip) —
+consistent with the oracle lane and the D37 addendum. It flagged
+docs/pcre2_compliance.md's ~15 OK-GATED rows stale.
+
+Both lane branches merged into std1-flip (5eebbed oracle, 09f0535
+tests; disjoint, no conflicts). INTEGRATION GATE now running async on
+std1-flip: full make test (PROCS=6) + spec_mod0, log
+scratchpad/integration_test.log, watcher set. Concurrently: sonnet lane
+std1-compliance (worktree std1-compliance off 09f0535) updating
+pcre2_compliance.md's stale gated rows against the live merged binary.
+
+State if interrupted here: std1-flip at 09f0535 holds the entire STD1b
+landing; main still pre-flip green at 0e89506. On integration green +
+compliance lane merge: std1-flip -> main, then STD1c per
+std1_check_rearm.md, then close battery + STD1 completion bookkeeping.
+
+### Seventeenth session, phase boundary 6 — INTEGRATION GATE GREEN, STD1c launched
+
+Integration run on std1-flip @ 09f0535: make test EXIT 0 + spec_mod0
+EXIT 0, all 14 spec checks, counts at the new baseline (corpus 1284, cli
+247, reject 274 rejections / 528 checks, codegen 34, registry 168 + PC-3
+163, trie 7, thread 8/8, known_fail empty). The combined STD1b landing
+(flip + both re-baselines + floor ruling) is verified as a composition,
+not just lane-by-lane.
+
+STD1c lane (sonnet, worktree std1-rearm, branch std1-rearm off 09f0535)
+spawned against docs/dev/std1_check_rearm.md as the governing contract:
+per-name gate.pairs floors measured-not-guessed, compared_pairs 0->
+measured, eligible/baseline ratchets 12->22 / 13->23, check01 aperture
+widened from nm over the merged build, five sabotage validations
+evidence-required. Compliance lane (std1-compliance) still working on
+pcre2_compliance.md's stale gated rows.
+
+State if interrupted here: std1-flip @ 09f0535 verified green; main
+still pre-flip at 0e89506. Two lanes in flight: std1-compliance (docs),
+std1-rearm (STD1c). Merge order: both lanes -> std1-flip (spec_mod0
+re-run after rearm merge) -> main; then plan states (STD1a/b/c
+completed), close battery, wake.md rewrite.
+
+### Seventeenth session — compliance lane merged (2aebe8b on std1-flip)
+
+pcre2_compliance.md re-baselined: 9 OK-GATED rows -> OK under the std1
+default (all 28 constructs verified against the live merged binary, both
+bare and --features none), OK-GATED status definition updated to D37
+vocabulary, headline reject counts MEASURED (274 rows / 99 accepts / 55
+gated / 99 iterated / 528 checks — old 144/45/66 was stale independent
+of STD1b) and a second stale copy of the same figures fixed in the
+earned-its-keep section. Worktree removed. Only std1-rearm (STD1c)
+outstanding; merge chain to main after it lands + spec_mod0 re-verify.

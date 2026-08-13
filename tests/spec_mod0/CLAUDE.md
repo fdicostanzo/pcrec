@@ -23,19 +23,20 @@ comparison does not exist yet). The runner exits 0 only when everything
 PASSes; an awaited surface exits nonzero on purpose, because a check that
 cannot fail must not report a pass.
 
-**As of 2026-08-13, after the STD1b default-flip re-baseline (D37: bare
-default is now the named set `std1` = {classes, modifiers}): 13 pass, 1 fail,
-0 awaiting — exit 1, and the failure is check02_capture_count, NOT
-check14_option_runs (check14 now passes; see the still-current finding
-below for the defect that was fixed).** check02 is the only check here that
-invokes `pcrec --count-groups` with no `--features`, so it measures the bare
-default directly: of the 102 generated bodies, 4 that use `classes`/
-`modifiers` constructs now compile instead of being refused
-(`capture.pcrec_compared` 1 -> 5, floor raised and measured this run;
-`capture.pcrec_refused` 101 -> 97, a floor DECREASE left unmodified pending
-review rather than lowered by this lane — see floors.txt). This is expected
-fallout of the announced D37 boundary, not a regression in the invariant
-itself.
+**As of 2026-08-13, at the [STD1] close (D37: bare default is the named
+set `std1` = {classes, modifiers}): 14 pass, 0 fail, 0 awaiting — exit 0.**
+check02 is the only check here that invokes `pcrec --count-groups` with no
+`--features`, so it measures the bare default directly: of the 102
+generated bodies, 4 that use `classes`/`modifiers` constructs now compile
+instead of being refused (`capture.pcrec_compared` 1 -> 5, floor raised by
+the STD1b lane; `capture.pcrec_refused` 101 -> 97, lowered under manager
+review — population conserved at 102, see floors.txt's comment). The
+transient 13-pass/1-fail state this paragraph previously recorded existed
+only between the lane's measurement and that review, same day. STD1c then
+re-armed check09 (per-name `gate.pairs.<name>` floors + set-membership
+honesty against the artifact stamp) and check01 (aperture widened to the
+9 enabled-set symbols incl. `PCREC_DEFAULT_FEATURES`, discovery floors) —
+see those checks' own rows below.
 
 **As of 2026-08-12, after the MOD-0.8b D27 pass: 13 pass, 1 fail, 0 awaiting —
 exit 1, and the failure is a real defect, not an awaited surface.**
@@ -151,7 +152,7 @@ reader will arrive holding it.
 | # | Check | Status | Oracle | Awaited pcrec surface |
 |---|-------|--------|--------|----------------------|
 | 1 | check01_isolation.sh | **PASS** (aperture widened, STD1c re-arm 2026-08-13 — `docs/dev/std1_check_rearm.md`) | `nm` over `build/libpcrec.a` and `build/obj` — the linker | — (`ENABLED_RE` now also catches `PCREC_DEFAULT_FEATURES`, D37's bare-default mapping point, which the pre-STD1c pattern missed since it carries no `enabled`/`gate` substring; discovery is now 9 enabled-set symbols x 4 recogniser TUs (`mod_modifiers.o`, `mod_uprops.o`, `registry.o`, `scans.o`) = 36 symbol/TU pairs, all asserted absent from the recogniser TUs' undefined lists. Both discovery populations (`isolation.enabled_symbols` floor 9, `isolation.recogniser_tus` floor 4) are now ratcheted in floors.txt, taking the floors argument the other shell checks already take. Sabotage-validated both directions: narrowing `ENABLED_RE` to match nothing still trips the vacuity guard (SURFACE MISSING, exit 3); planting one reference to `PCREC_DEFAULT_FEATURES` from `scans.c` and rebuilding makes the check fail, naming `scans.o` and the symbol by name) |
-| 2 | check02_capture_count.c | **FAIL since 2026-08-13 STD1b** (surface landed; see the dated addendum above — `capture.pcrec_refused` floor 101 vs measured 97, a legitimate flip-caused decrease awaiting review, not a defect) | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | — (`pcrec --count-groups -- BODY` is run, no shell involved, for every one of the 102 generated bodies, with NO `--features` — this check measures the bare default; exit 0 compares its printed count against CAPTURECOUNT — `capture.pcrec_compared`, floor 5 as of the D37 flip — exit 1 means pcrec refuses the body as an unimplemented construct and is counted, not compared — `capture.pcrec_refused`, floor 101 pending review. 5 of the 102 bodies are accepted today (base tier plus classes/modifiers constructs since D37); the compared population grows further module by module as more land) |
+| 2 | check02_capture_count.c | **PASS** (the transient 2026-08-13 FAIL resolved same day: `capture.pcrec_refused` lowered 101 -> 97 under manager review, population conserved at 102 — see floors.txt) | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | — (`pcrec --count-groups -- BODY` is run, no shell involved, for every one of the 102 generated bodies, with NO `--features` — this check measures the bare default; exit 0 compares its printed count against CAPTURECOUNT — `capture.pcrec_compared`, floor 5 as of the D37 flip — exit 1 means pcrec refuses the body as an unimplemented construct and is counted, not compared — `capture.pcrec_refused`, floor 97 as of the same review. 5 of the 102 bodies are accepted today (base tier plus classes/modifiers constructs since D37); the compared population grows further module by module as more land) |
 | 3 | check03_lexical.c | **PASS** | libpcre2 binding behaviour over all 100 rows | — |
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
