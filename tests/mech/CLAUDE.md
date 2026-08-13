@@ -115,6 +115,22 @@ the verdict logic refuses to let it read as evidence:
 
 That last field is new in the trailer; the grep-able prefix is unchanged.
 
+**Both skip branches are validated in the failing direction** (2026-08-12) — a
+branch that exists for a rare environment and has never run is the dead-branch-
+reading-as-coverage shape this directory keeps finding. Measured in a throwaway
+scratch repo whose `tests/fuzz/pcre2_abi.h` SONAME list points at a nonexistent
+library, which is the documented way to make PC-3 skip:
+
+    pc3 the ONLY arm   pc3:SKIPPED-no-oracle
+                       INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle)
+    S19 (reject+registry+pc3)
+                       reject:1fail/486pass,registry:1fail/169pass+compliance-FAIL,pc3:SKIPPED-no-oracle
+                       DETECTED (pc3 SKIPPED -- no oracle)
+
+Neither said UNDETECTED, which is the property that matters: with the oracle
+missing, "caught by nothing" is not a finding, and the summary block and the
+trailer's `pc3-skipped` count both fired.
+
 `make bench` and PC-4 (`run_pc4.sh`, measured 2.50s) are the two suites still
 deliberately NOT wired, for the same reason: no sabotage's ONLY signal is a
 throughput budget or a semantic differential today. Add the arm in the same
