@@ -54,12 +54,14 @@ capture.noncompiling               700
 # generated bodies from refused to compared; 5+97=102, same as 1+101=102
 # before the flip. Measured on a real post-flip run, libpcre2 10.46.
 capture.pcrec_compared               5
-# capture.pcrec_refused: the complementary population DROPPED 101 -> 97 for
-# the identical reason (see capture.pcrec_compared above) — legitimate given
-# the flip, but a floor decrease is not this lane's call per the project's
-# ratchet convention (STD1b re-baseline lane, 2026-08-13): NOT lowered here,
-# left FAILING at the old floor pending manager review. Measured value is 97.
-capture.pcrec_refused              101
+# capture.pcrec_refused LOWERED 101 -> 97, manager review 2026-08-13 (STD1b):
+# the complementary population to capture.pcrec_compared above — same cause,
+# same run. This is NOT the "suite compares less" case the header guards
+# against: the 102-body population is conserved (5+97 == 1+101 == 102) and
+# the four moved rows moved INTO the compared bucket, whose floor rose. A
+# refused-count decrease that conserves the total against a ratified
+# default-set change (D37/[STD1b]) is the one legitimate shape for lowering.
+capture.pcrec_refused               97
 
 # --- invariant 4: class-position expectation ---------------------------
 class.esc_rows                      41
