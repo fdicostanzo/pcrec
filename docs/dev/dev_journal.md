@@ -7104,3 +7104,96 @@ both axes; asan 474.6s green both axes; lint 8.8s clean; bench 15.0s;
 mech 266.6s trailer `35 rows (undetected: 0, anomalies: 0, pc3-skipped:
 0)`. Counts unchanged (infrastructure session, no new test rows).
 Worktrees tt1/san1 removed post-merge; only d27-selftest-cell remains.
+
+## 2026-08-13 — sixteenth session: docs tree reorganized; plan split + development order ratified; PC-5/BENCH-1 rows added (no code)
+
+Planning/documentation session, Frank present and ruling throughout. No
+src/, cli/, lib/ or test changes; the suite is untouched. Two `make smoke`
+runs green (6/6 floor) around the merges; the full battery was deliberately
+NOT run (doc-only session) — the standing baseline verification remains the
+fifteenth-session close battery at e2ee3a1.
+
+1. DEVELOPMENT ORDER RATIFIED (Frank): **STD1 → M4 (captures + VM) →
+   M5 (UTF-8) → M6 (feature modules) → M3 (streaming) → M7 (hardening).**
+   Frank challenged M3-streaming-next (the old numeric order) as less
+   fundamental than the VM and classes; manager analysis concurred with one
+   correction — classes/modifiers already exist as gated modules (MOD-0.3/
+   0.5; [STD1] flips the default) — and moved streaming late on the
+   rebuild-risk argument: a `*_stream_*` API built now binds to the DFA
+   engine only and gets forked or rebuilt when the VM (M4) and
+   lookbehind/backrefs (M6) change what a stream window must retain; OS-3
+   already predicts streaming is not a wrapper. M5 sits before M6 so
+   feature modules are born CharSet/UTF-aware (DD-12, DD-1) rather than
+   rebuilt. The backrefs/atomic/subst-template design notes precede M4
+   (its design customers); MECH-3 precedes OPT-A. Encoded in plan.md's new
+   "Development order" section.
+
+2. DOCS TREE REORGANIZED (lane docs-reorg, sonnet, worktree; merged
+   5196500): `docs/dev/` = process docs (plan.md, plan_completed.md,
+   dev_journal.md, decisions.md, known/upstream issues, reviews/, wake.md
+   untracked); `docs/design/` = living design docs (extension_design, the
+   mod06/mod07 notes, design_registry_selectors); `docs/spec/` = NEW,
+   empty except its charter CLAUDE.md (spec docs = how the tool actually
+   works and how to use it; deliverables like code, maintained, no build
+   history; may cite design docs — none authored yet; testing.md is a
+   future candidate but carries build history and stays in docs/ for now).
+   testing.md, pcre2_compliance.md, measurements/ stay in docs/. 89 files
+   relinked; dev_journal.md and reviews/ content deliberately untouched
+   (historical citations stay as written). Smoke green in the worktree
+   before merge. Memory files and the pcrec-manager skill updated to the
+   new paths.
+
+3. PLAN SPLIT + REORDER (lane plan-restruct, sonnet, worktree; merged
+   c932c82): `plan_completed.md` archives 91 completed rows verbatim,
+   grouped by completion date (2026-08-09 → 08-13; MOD-0 arc contiguous
+   under its close date). Active plan.md now 45 rows (42 not-started,
+   3 deferred: DOC-BM, SR-7, SR-8), zero completed, restructured to the
+   spine order with `## Next: [STD1]`, the backrefs/atomic design notes
+   relocated under M4, boonies at the tail, and a small-debt shelf
+   (pointers only, no STATE tags). Hygiene fixes: the completed
+   make-strict row renamed [MECH-STRICT] (its "[MECH-3]" id collided with
+   the active measurement-wrapper row); [MOD-STATE] flipped to
+   completed-RETIRED (subsumed by Part II §12.2 / MOD-0.1 slice 7).
+   ID conservation verified: 133 old top-level rows == 136 new minus the
+   3 deliberate additions ([STD1] promoted from nested text, [PC-5],
+   [BENCH-1]); no id lives in both files.
+
+4. NEW PLAN ROWS (Frank's rulings this session):
+   - **[PC-5]** PCRE2 option/flag disposition survey — flag-by-flag
+     sibling of pcre2_compliance.md with a binding-time vocabulary
+     (DONE-AS / RIDES / GENERATION-AXIS / API-PARAM / EMITTED-LOOP /
+     LATER / NEVER-with-reason); fact-gathering is lane work, dispositions
+     are Frank's; the table must exist before M4's match-API design
+     freezes; output docs/pcre2_options.md.
+   - **[BENCH-1]** feature-spanning benchmark expansion + the PRIORITIZER —
+     per-feature-family case groups at graded complexity, spot-checkable
+     like TT-1's tiers; the regression gate stays absolute per-case floors
+     (M2.11's ruling), the prioritizer is a separate relative-vs-libpcre2
+     worst-first ranking, informational and never a gate; rides M7's
+     testdata import; it is the OPT waves' worklist generator (Frank's
+     workflow: OPT-A survey, then work the ranking worst-first).
+
+5. Flags discussion on record (PC-5's seed): the AOT binding-time framing —
+   pattern-semantics options are modifier letters / generation scalars
+   (mostly done or scheduled); match-time options are really M4 API design
+   (ANCHORED → compiled variant, NOTBOL/NOTEOL → runtime params,
+   NOTEMPTY(_ATSTART) → subsumed when pcrec emits the global-iteration
+   loop itself at DD-4/M4-SUBST); engine-behavior knobs are mostly moot
+   for an AOT compiler; NEWLINE/BSR belong to DD-11; the EXTRA_* tail is
+   DOC-BM's territory.
+
+6. Incident, recovered: two Frank-ruled row additions were SendMessage'd
+   to the plan-restruct lane MID-FLIGHT and landed after it had already
+   committed and reported — its invariant summary (43 rows, "one
+   addition") contradicted the expected additions, which is exactly how
+   the gap was caught; a resume message applied both rows and re-verified
+   (45 rows). Lesson: read a lane's report invariants as a RECEIPT for
+   everything sent to it; anything sent mid-flight needs explicit
+   confirmation it was processed, because a lane can finish between your
+   send and its read.
+
+Next steps: [STD1] awaits Frank's go and a roomy session (unchanged).
+PC-5/BENCH-1 fact-gathering are schedulable as lanes whenever Frank wants
+the tables. Nothing in flight; zero STATE:started rows. Worktrees
+docs-reorg/plan-restruct removed post-merge; only d27-selftest-cell
+remains.

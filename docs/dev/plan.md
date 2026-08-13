@@ -14,10 +14,11 @@ Find work:
 
     grep -n "STATE:started" docs/dev/plan.md
     grep -n "STATE:not-started" docs/dev/plan.md
-    grep -c "STATE:completed" docs/dev/plan.md
+    grep -c "STATE:completed" docs/dev/plan_completed.md
 
-Completed-history greps (archived rows, not here) run against
-docs/dev/plan_completed.md instead.
+Completed rows are archived in docs/dev/plan_completed.md (this file keeps
+zero STATE:completed rows; a completed-count grep here counts nothing but
+recipe text).
 
 Rules: update the STATE tag in place when a step changes state; expand a milestone
 into substeps only when work on it begins (replace its single `[Mx.0]` line);
