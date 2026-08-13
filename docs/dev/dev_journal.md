@@ -7294,3 +7294,75 @@ State if interrupted here: STD1a uncommitted in worktrees/std1-impl,
 make test running in lane; on green, lane commits and reports; merge +
 battery is next manager action. STD1b/c not started; rearm spec at
 docs/dev/std1_check_rearm.md.
+
+### Seventeenth session, phase boundary 3 — STD1a merged, flip cut, STD1b lanes out
+
+STD1a MERGED to main (merge 3048303; lane commit 30461a4; manager docs
+commit 0dca4a7 before it). Full make test + strict green in the lane's
+worktree at the merged code state (corpus 1270, cli 242, reject 486,
+registry 168, PC-3 163, codegen 33, trie 7, thread 8, known_fail empty);
+post-merge main verified by build + make smoke 6/6. Full battery
+(ubsan/asan/lint/bench/mech) deliberately deferred to STD1 close, which
+re-runs everything post-flip anyway. Worktree std1-impl removed.
+
+THE FLIP is cut as ab7592d on branch std1-flip (NOT on main):
+PCREC_DEFAULT_FEATURES "none"->"std1" + help-text/comment coherence,
+manager-authored. Verified: bare '\d+' now compiles and stamps
+"std1 (modules: classes,modifiers)". main stays green; std1-flip is
+expected-red until re-baseline.
+
+STD1b lanes spawned (both sonnet, branched from ab7592d):
+- std1-rebase-tests (worktree same name): reject/corpus/cli/codegen
+  territory, coverage-conservation rule (inverted rows keep refusal
+  pinned under --features none AND gain oracle-verified bare-accepts
+  coverage).
+- std1-rebase-oracle (worktree same name): registry/PC-3/spec_mod0
+  territory; floors may ratchet up, never down; STD1c re-arm explicitly
+  out of its scope (spec: docs/dev/std1_check_rearm.md).
+Both run validation async at PROCS=3 (concurrent lanes sharing the box).
+
+State if interrupted here: main green at 3048303 incl. STD1a; flip at
+ab7592d (std1-flip branch); two lanes possibly mid-work in
+worktrees/std1-rebase-{tests,oracle} — check their branches for commits
+and the lanes' worktree mtimes before finishing their landings. Merge
+order when they land: lanes -> std1-flip -> full make test -> main.
+
+### Seventeenth session, phase boundary 4 — oracle lane landed (doubled-journaling entry)
+
+std1-rebase-oracle reported and committed (22e3305): registry 168 +
+PC-3 163 + pc4 62872 cells all flip-immune WITH the mechanism confirmed,
+not just the outcome — tests/registry links libpcrec.a and never calls
+pcrec_enabled_set_spec, so it runs at the library's raw EMPTY mask. That
+TWO-DEFAULTS fact (CLI bare default = std1; library raw default = empty,
+by D20's not-an-option ruling) is recorded as a dated D37 addendum in
+decisions.md; the library-channel default question re-opens with D20's
+promotion, not before. tests/parse 8/8 unaffected. spec_mod0: 13/14
+flip-immune (check02 is the one bare-default consumer by design);
+capture.pcrec_compared floor raised 1->5 by the lane;
+capture.pcrec_refused 101->97 LOWERED BY MANAGER REVIEW (b1d3231 in the
+oracle worktree) — population conserved at 102 (5+97==1+101), rows moved
+INTO the compared bucket; the one legitimate lowering shape. Lane
+correctly refused to lower it itself. check07 measured post-flip:
+eligible_rows 22 (floor 12), baseline_accepted 23 (floor 13) — ratchet
+raises assigned to STD1c (noted in std1_check_rearm.md). Verification
+spec_mod0 re-run in background at boundary time.
+
+State if interrupted here: oracle branch ready at b1d3231 (worktree
+std1-rebase-oracle); tests lane still working (worktree
+std1-rebase-tests); merge order unchanged: both lanes -> std1-flip ->
+full make test -> main. decisions.md D37 addendum + rearm-spec update +
+this entry are uncommitted on main.
+
+### Seventeenth session — composition proposals recorded (Frank's ruling)
+
+Side-conversation proposals RECORDED per Frank, syntax and semantic
+choices explicitly TBD (his): [M4-CALLOUTS] amended with the callout-ABI/
+match-here alignment proposal (decide before M4 match-API freeze — same
+gate as PC-5; atomicity + DFA-islands semantics noted; tension with the
+pcre2_callout_block mirror to resolve at design time, V-A trampoline the
+candidate reconciliation). [V-E] amended with manifest NAMED DEFINITIONS
++ cross-references (two composition tiers: source-level AST inlining
+default, link-level callout ABI; the open PCRE2-(?(DEFINE))-desugar vs
+own-spelling choice recorded as Q2/K4-tier measured-not-read; cycles
+rejected cleanly; re2c/flex parity note). [V-G] amended: subpart testing
+rides V-E's named definitions. All boonies tier, no queue changes.

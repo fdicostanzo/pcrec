@@ -224,7 +224,26 @@ including V-G/V-H (added this session).
   have compiled is this row's finder + named entry points, and the
   MANIFEST is the user-facing FILE FORMAT for specifying regexes (name,
   pattern, flags, encoding per entry → one compiled unit); design the
-  manifest as a first-class user surface, not a build artifact
+  manifest as a first-class user surface, not a build artifact.
+  AMENDED 2026-08-13 (Frank, composition discussion; syntax and semantic
+  choices TBD, his to rule): the manifest gains NAMED DEFINITIONS with
+  CROSS-REFERENCES — `regexa = abc|def` usable inside a later
+  `regexb = xyz(<regexa>)*` — making the file a module system for
+  regexes, built up in steps. TWO COMPOSITION TIERS, kept distinct:
+  SOURCE-LEVEL (manifest references, AST-inlined at compile time — zero
+  runtime cost, DFA compilability preserved, the default) and LINK-LEVEL
+  (M4-CALLOUTS' aligned ABI, for separately-compiled parts and
+  non-regex predicates). OPEN CHOICE (Frank's, Q2/K4-tier — measured,
+  never read from docs): PCRE2 spelling via (?(DEFINE))/(?&name) desugar
+  — composed pattern is valid PCRE2, libpcre2 becomes the oracle for the
+  composed form, but subroutine-call semantics are ATOMIC and shift
+  capture numbering — vs own reference spelling with plain inlining
+  semantics (beyond-PCRE2, clean namespace, same shape as M4-SUBST's
+  ruling). Reference CYCLES are rejected with a clean diagnostic (true
+  recursion is non-regular; a future VM-side module's business, never
+  inlining's). Positioning parity note: re2c and lex/flex both ship
+  named-definition composition — established practice in exactly our
+  claimed niche; PCRE2 semantics on top is the differentiator
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
@@ -248,7 +267,11 @@ including V-G/V-H (added this session).
   scope (which harness features are user-grade vs dev-only), and docs —
   a docs/spec/ candidate when built. Nobody in the niche ships a regex
   TESTING story; this makes the verification story a user capability,
-  not just an internal discipline
+  not just an internal discipline. AMENDED 2026-08-13 (Frank, composition
+  discussion): rides [V-E]'s named definitions — every named part of a
+  manifest is independently compilable, so subpart testing is the .rxt
+  harness pointed at each definition, per-part expectations in the same
+  file; complex regexes become testable in steps, bottom-up
 - [V-H] STATE:not-started — DEBUG / TRACE EMISSION MODES (Frank,
   2026-08-13, same discussion; boonies tier): generation-time variants
   that aid understanding and debugging a matcher — a TRACING build
@@ -286,7 +309,21 @@ spine, not before):
   TOP of this primitive, not instead of it), callback block and return
   semantics (0/positive/negative) mirroring pcre2_callout_block exactly
   (D26-exact tier), fire-point discipline DOCUMENTED as engine-relative
-  with PCRE2's own PCRE2_NO_START_OPTIMIZE latitude as the cited precedent
+  with PCRE2's own PCRE2_NO_START_OPTIMIZE latitude as the cited precedent.
+  AMENDED 2026-08-13 (Frank, composition discussion; syntax and semantic
+  choices TBD, his to rule): PROPOSAL — align the callout ABI with an
+  anchored MATCH-HERE entry point every generated matcher also exports
+  (`(subject, pos, len) -> matched-length-or-fail` shape; OS-0's named
+  entry points are the natural vehicle), so a compiled matcher IS a valid
+  callout — link-level regex composition. DEADLINE: this is a match-API
+  design constraint and must be decided BEFORE M4's match-API freezes
+  (same gate as PC-5). Semantics to document honestly: a callout-as-
+  submatcher is OPAQUE to the automaton — atomic (no backtracking into
+  it) and un-fusable, partitioning the pattern into [M4.0]'s DFA islands
+  around call points. TENSION to resolve at design time: this row's
+  pcre2_callout_block-exact mirror vs the aligned ABI — possibly
+  reconciled by V-A's trampoline direction (the PCRE2-shaped block as a
+  compat layer ON TOP of the aligned primitive)
 - [M4-SUBST] STATE:not-started — COMPILED SUBSTITUTION (Frank, 2026-08-12:
   the headline xmas item): the `pcre2_substitute` capability as an AOT
   artifact — pattern AND replacement template compiled together into one

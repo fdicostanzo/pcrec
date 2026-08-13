@@ -35,7 +35,10 @@ WITH the flip's landing (same STD1 row), never before it.
    (expectation: classes ≥ 24 = 12 eligible rows × 2 configs; modifiers
    measured, not guessed). `gate.compared_pairs` rises from 0 to the
    measured total; replace its "deliberately 0" comment with a dated note
-   pointing here.
+   pointing here. Post-flip data point (oracle lane, 2026-08-13, real
+   run): check07 measures gate.eligible_rows 22 (floor 12) and
+   gate.baseline_accepted_rows 23 (floor 13) — raise BOTH ratchets here
+   with the per-name work, from the same run that measures N and M.
 2. **Assertion 2 restructured**: check09 reads `gate.pairs.<name>` lines
    from floors.txt; for each, check07's PERNAME count for `<name>` must
    meet the floor. A `gate.pairs.<name>` whose name is not in the registry

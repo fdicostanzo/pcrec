@@ -3362,3 +3362,17 @@ full re-baseline, and check09 per-name arming + check01 aperture/floors
 
 **Revisit-when:** the first post-std1 graduation — it defines the
 announcement mechanics in practice.
+
+**Addendum (2026-08-13, [STD1b] landing, found by the oracle re-baseline
+lane):** there are TWO "defaults" and the flip moves only one. The bare
+default D37 names is the CLI-invocation default — cli/main.c resolves a
+missing `--features` through `PCREC_DEFAULT_FEATURES`. A LIBRARY caller
+that links libpcrec.a and calls `pcrec_compile()` without
+`pcrec_enabled_set_spec()` runs at the raw enabled mask, which is EMPTY at
+process start and stays empty: `pcrec_enabled_set_spec` is internal.h
+surface, not lib/pcrec.h, because D20 rules the enabled set is internal
+configuration, not a caller-facing option. So the library's raw default is
+deliberately NOT a D37 named set today; tests/registry relies on this
+(pcre2_check.c compiles at the empty set by construction and is
+flip-immune). The question "what default does a promoted library channel
+get" re-opens WITH that promotion, not before.
