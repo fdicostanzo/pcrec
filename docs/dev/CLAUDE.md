@@ -5,10 +5,16 @@ Append-only where noted; the restart/status-recovery record for the project.
 
 ## Files
 
-- `plan.md` — milestone/step tracker mirroring APPROACH §9. Machine-greppable
-  step states (`STATE:not-started|started|completed|blocked|deferred`); format
-  and grep recipes documented at the top of the file. Expand a milestone into
+- `plan.md` — the ACTIVE milestone/step tracker mirroring APPROACH §9;
+  STATE:completed rows do not live here. Machine-greppable step states
+  (`STATE:not-started|started|completed|blocked|deferred`); format and grep
+  recipes documented at the top of the file. Expand a milestone into
   substeps only when work on it begins.
+- `plan_completed.md` — archive of completed plan rows, grouped by
+  completion date, text preserved verbatim (split from plan.md 2026-08-13).
+  A row cited elsewhere as "docs/dev/plan.md [ID]" lives here once it is
+  STATE:completed; `grep -c "STATE:completed" docs/dev/plan_completed.md`
+  counts them.
 - `dev_journal.md` — append-only dated journal, newest at bottom. Append an
   entry after every significant work session; this is the primary
   restart/status-recovery record.

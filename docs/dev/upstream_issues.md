@@ -177,7 +177,7 @@ exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
   scratchpad extension of it, `pcre2_abi.h`-based) COMPILES the identical
   pattern, because `xx` deletes the SPACE from the class body first,
   leaving `[a-]` — members `{a, -}`, dash literal at the end, no range at
-  all. This is the D30 §7 hazard docs/dev/plan.md's [MOD-0.5] step names
+  all. This is the D30 §7 hazard docs/dev/plan_completed.md's [MOD-0.5] step names
   directly (R10/C2-11: `[a- ]` is PCRE2 error 108 at options=0, `(?xx)[a-
   ]` compiles at the exact class-range-endpoint spot `3fca0d8` (SPEC-FA)
   had fixed as a silent-wrong-matcher one commit before the panel that

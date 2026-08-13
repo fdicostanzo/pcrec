@@ -33,7 +33,7 @@ generated code uses computed goto and other GNU C extensions.
 stranger's `make` must not fail on a newer gcc's new opinion. `make strict` is
 the opt-in gate, it writes nothing, and it is safe to run alongside `make test`.
 
-`make ubsan`/`make asan`/`make lint` (SAN-1, docs/dev/plan.md) are the same
+`make ubsan`/`make asan`/`make lint` (SAN-1, docs/dev/plan_completed.md) are the same
 opt-in shape: they build a SEPARATE output tree (`build-ubsan/`,
 `build-asan/`, gitignored) so `build/` and a plain `make`/`make test` are
 never touched, and they instrument BOTH axes — the compiler itself and every

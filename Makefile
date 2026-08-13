@@ -172,7 +172,7 @@ strict:
 	@echo "strict: whole tree compiles clean with -Werror"
 
 # ---------------------------------------------------------------------------
-# SAN-1: the sanitizer + lint battery (docs/dev/plan.md [SAN-1], R7/T-3 carry).
+# SAN-1: the sanitizer + lint battery (docs/dev/plan_completed.md [SAN-1], R7/T-3 carry).
 #
 # OPT-IN like `make strict` — never part of `make test`, never default, writes
 # nothing to the source tree, safe to run alongside `make test` (separate
