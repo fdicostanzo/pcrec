@@ -544,7 +544,14 @@ Then DOC-1, then PC-4 when module `classes` lands.
   semantic port needs it rather than being discovered mid-module. Note this
   spends SR-9's "parse.c call sites changed: 0" lineage, deliberately.
 
-- [MOD-0] STATE:started — **MODULE STRUCTURE: define a module's PORTS, and
+- [MOD-0] STATE:completed — (CLOSED 2026-08-13, fourteenth session, at 569b48f
+  with MOD-0.8's checkpoint: the arc ran MOD-0.1 through 0.8 across sessions
+  eleven to fourteen — ports/returned-claims/endpoint rule, first producers
+  classes+modifiers, verbs migration, unicode-props recogniser, the --explain
+  rewrite, and the R20 close that fixed two tier-1s the arc's own instruments
+  found. Follow-on rows spawned during close: [STD1] (D37 default-on),
+  [SAN-1]+[TT-1] (next session), [SR-10], boonies tier per queue discipline.)
+  **MODULE STRUCTURE: define a module's PORTS, and
   build two or three real ones to shape them.** Frank's call, 2026-08-10,
   arising from Q2: option-run parsing had nowhere good to live. `ext.c` exists
   so parse.c holds the core syntax and nothing else, and its role is to find the
@@ -1502,7 +1509,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
     original wording — K16's linked-pair logic: the buffer gains an accessor
     when it gains a consumer and the K16 fix, together). In-class routing and
     a mech `cli` suite arm are recorded MOD-0.8 candidates
-- [MOD-0.8] STATE:started — (2026-08-12 fourteenth session; substeps below) checkpoint close. The D6 panel **must also cover
+- [MOD-0.8] STATE:completed — (2026-08-12/13 fourteenth session; closed at 569b48f, final battery green: corpus 1270, cli 221, reject 486, registry 168, PC-3 163, spec 14/14, mech 35/35 0-anomaly) checkpoint close. The D6 panel **must also cover
   Q2+SR-9**, whose panel was deliberately deferred into this step: brief it on
   the option-run grammar in `pcrec_registry_option_run_ok`, which no adversarial
   reader has seen, and the three PC-3 differentials Q2 added. Plus a D27
@@ -1510,7 +1517,7 @@ Then DOC-1, then PC-4 when module `classes` lands.
   option-run RECOGNITION from the goal documents and libpcre2 — MOD-0.6 is the
   only part of this step a blind writer can test, which is itself an argument
   for it being in scope
-  - [MOD-0.8a] STATE:started — the D6 close panel (R20), three lenses:
+  - [MOD-0.8a] STATE:completed — the D6 close panel (R20), three lenses:
     (1) checks/tests on Q2+SR-9's option-run grammar
     (`pcrec_registry_option_run_ok`, which no adversarial reader has seen)
     plus the three PC-3 differentials Q2 added; (2) engine semantics on
@@ -1519,12 +1526,12 @@ Then DOC-1, then PC-4 when module `classes` lands.
     accepted design note; (3) docs staleness. Compiled to
     docs/reviews/2026-08-12-r20-mod08.md with triage dispositions,
     fix-with-measurement before disposition
-  - [MOD-0.8b] STATE:started — the D27 blinded writer (cell `spec-mod08`,
+  - [MOD-0.8b] STATE:completed — the D27 blinded writer (cell `spec-mod08`,
     scripts/mk_d27_cell.sh): spec-first tests of \p/\P and `(?` option-run
     RECOGNITION from the construct's public promise and libpcre2, denied
     src/ and tests/ (default cell allowlist); cell diffed back into the
     worktree for review-then-merge
-  - [MOD-0.8c] STATE:started — candidate dispositions RULED 2026-08-12
+  - [MOD-0.8c] STATE:completed — (landed 2026-08-13, merge 569b48f) candidate dispositions RULED 2026-08-12
     (Frank items 1-2 explicit, manager slate unvetoed; execution lane
     mod08c): DEFAULT-ON = D37 (frozen named sets, std1={classes,modifiers};
     implementation is [STD1] below — check09 per-name arming and check01

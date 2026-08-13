@@ -6922,3 +6922,117 @@ RUNTIME is unmeasured, which is the reason it is not built.
 generated query space is not swept, so a routing or selection bug affecting
 only a byte outside that list is invisible to it. That is the sweep-template
 lesson's fifth possible recurrence and this is its signpost.
+
+## 2026-08-12/13 — fourteenth session: mech liveness diagnosis; MOD-0.7 open-to-close; MOD-0.8 checkpoint (R20 + D27) — TWO tier-1s found and fixed; MOD-0 ARC CLOSED
+
+Session ran under /pcrec-manager, Frank present and ruling throughout
+(default-on, callouts re-scope, xmas rows, gate principle, SR-10, SAN-1,
+TT-1, queue discipline — eleven rulings). Baseline green at 26b9660.
+
+**Opening item — Frank's report "make mech silently stopping, unnoticed
+twice": NOT a crash.** Every mech run had completed; the thirteenth
+session's liveness poll `pgrep -f "make mech"` matches its own harness
+wrapper and answers RUNNING forever (reproduced live). Fixed at the
+artifact level: mech runs now end with a grep-able `== mech run COMPLETE ==`
+trailer + scratch cleanup (26b9660). The lesson later completed its pair:
+this manager ALSO made the opposite call — judged a live lane dead
+(ListAgents empty while it was blocked in a foreground make test) and
+briefly meddled in its worktree (disclosed, repaired, no loss). Frank's
+directive closes the root cause: SUBAGENTS RUN LONG VALIDATION
+ASYNCHRONOUSLY (background + artifact polling, never a blocking foreground
+call) — in root CLAUDE.md, the manager skill, and memory (60711b2).
+
+**MOD-0.7 (--explain rewrite), open to close in one arc (b2cecc8):**
+- Phase-1 design note REFUTED the plan row's own cure before building it:
+  the declared-vs-live agreement clause is SWAP-BLIND (both sides read
+  r->module) — measured both directions; and found a live tier-2 on main
+  ((?C1) promised module 'callouts' against ROADMAP_NEVER — syntax_dump
+  never read the K14 column). Design reshaped: hand pins own module-name
+  truth; the live call earns its place on ELECTION (13 rows share a
+  rendered diagnostic with a bucket sibling) and promise-consistency.
+- Six slices: shared doorway router (--probe-ask byte-identical, 1,089
+  cells), ExtResult.row (876-cell compile differential, zero diff),
+  the rewrite (selection = prefix ∪ candidates tagged; live-on-query is
+  DATA, live-on-row-syntax is the assertion; exit 3 = dissent), case11
+  (field-level, no blob assertions, (?C1) fixed FIX-3-style with the pin
+  recorded failing), V1-V7 failing-direction measurements, docs.
+- Manager rulings §13: normalised name DEFERRED to first uprops producer
+  (K16 pair); class-position stays declared; verb sub-block kept; exit 3.
+
+**MOD-0.8 checkpoint — R20 panel (3 critics) + D27 blinded writer:**
+- R20 findings (docs/reviews/2026-08-12-r20-mod08.md): TIER-1 —
+  probe/explain surfaces longjmp into an uninitialized jmp_buf once a
+  producing module is enabled (inherited from MOD-0.3c/0.5c; the extracted
+  function CARRIED the comment naming the overdue obligation). Two tier-2
+  clause defects on the gate axis the census never varied ((?J)/(?m) false
+  DISSENT exit 3; clauses silently off for producing rows). ExtResult.row
+  NULL-contract false on two decline paths. OPTRUN: (?P truncation (the
+  sweep-template lesson's FIFTH recurrence — the tail template cannot
+  generate the zero-tail cell); ~513M probes otherwise unrefuted; measured
+  boundaries B1-B4. Docs: three staleness fixes (067c024).
+- D27 blinded writer (cell spec-mod08): **TIER-1 MISCOMPILE — `a(?i)*`
+  accepted and compiled with modifiers enabled, quantifier bound to the
+  preceding atom; libpcre2 err 109.** The registry always said these rows'
+  quantifiable is `form`; the producer contradicted it. check11 (hand-listed
+  21 spellings, none quantified) owned the module and missed it — D27's
+  wager paid a SECOND time, one level in: the GENERATED sweep reached the
+  cell, not source-blindness alone. Checks 13+14 (7,294 cells) landed loud
+  RED as the false-the-day-before record; green after the fix merged.
+- mod08fix lane, six slices (db7ad1c): setjmp guard (5,080-probe sweep
+  18→0 crashes); clauses scoped to the CLOSED gate + new gate clause
+  (100×5 census all-zero); NULL biconditional; (?P fix (1 of 255 truncated
+  cells moved) + tail sweep truncated halves (10,200→20,400 — first
+  version was OR-vacuous, self-caught, split); tier-3 batch; SPEC-1 fix
+  (not_repeatable flag; \E/(?#) transparency oracle-verified unchanged;
+  11 offset pins). Its slice-3 "328 patterns" figure was locale-collapsed
+  (sort -u); superseded by the 3,069-pattern differential — do not cite.
+- mod08c lane, four slices (569b48f): mech registry/pc3/cli arms (costs
+  measured FIRST: 0.60/4.36/5.46s vs reject's 54.75s; pc3 skip
+  failing-direction validated, INCONCLUSIVE-never-UNDETECTED, trailer
+  counts pc3-skipped); **S19's documented blind spot closed AND found
+  stale in two directions** — it had already become DETECTED (reject row
+  count) with nobody noticing, and the pc3 arm adds an external answer
+  (libpcre2 has no \j); PC-3 FOCUSED gated pass per Frank's differential
+  gate principle (49,034 cells, T1 clause, modifiers-only ==
+  --features-all byte-identical so focusing is free; SPEC-1 revert lights
+  672 gated cells while all closed-gate PC-3 stays green); -e utf8 reworded
+  to milestone phrasing (case13; the -e gate had ZERO coverage repo-wide);
+  deferred-validation ordering documented (142 closed-gate → 8 open-gate
+  deferring cells — "population only shrinks" measured).
+
+**Frank's rulings shelf (all recorded in plan/decisions):** D36 callouts
+NEVER→PLANNED (M4-hosted, static extern binding, V-A trampoline composes);
+D37 default-on via FROZEN NAMED SETS (std1={classes,modifiers}, stamped
+artifacts, bare default advances only at announced boundaries) + [STD1]
+implementation row; differential gate principle (testing.md); [SR-10]
+single namespace tables; [M4-SUBST] compiled substitution (template
+compiler independent of the matcher — Frank's observation — compile-time
+group-reference checking); V-A gains the POSIX regex.h shim; [V-E]
+multi-pattern units + cross-pattern finder (OS-0's first customer);
+[V-F] source-scan transformer (regular marker grammar as the design
+constraint); [SAN-1] sanitizer+lint battery BOTH axes (compiler and
+compilee via GENCFLAGS) before OPT-A; [TT-1] tiered testing (make test
+never weakens; CI deferred-not-rejected with named triggers); queue
+discipline (boonies tier well after the M3-M7 spine).
+
+**Final state (569b48f, battery green):** corpus 1270, cli 221 (case11 88,
+case12 14, case13 7), reject 486 (306/99/65/0/15 gated), registry_check
+168, PC-3 163 (gated[modifiers] pass; tail sweeps 20,400), spec_mod0 14/14
+(checks 13+14: 7,294 cells), codegen 29, trie 7, thread green, mech 35/35
+(0 undetected, 0 anomalies, 0 pc3-skipped), strict clean. **MOD-0 CLOSED.**
+
+Lessons, this session's additions (full statements in the memory file):
+- A liveness probe whose pattern names its target matches ITSELF through
+  the harness wrapper — and the belief error has a mirror twin (live lane
+  judged dead). Poll artifacts; async validation for subagents; check
+  worktree mtimes + message before finishing an "idle" lane's landing.
+- A carried-forward comment is a carried-forward OBLIGATION: the tier-1
+  crash sat exactly where an extracted function's own comment said "the
+  first producing port must revisit this" — two milestones overdue.
+- An axis your census never varied is an axis your clauses are wrong
+  about (the gate; both tier-2 clause defects).
+- A documented expected-UNDETECTED is a claim with an EXPIRY DATE and
+  nothing was checking it (S19, stale in both directions).
+- The generated sweep, not source-blindness alone, is what makes D27 pay:
+  a hand-listed probe table inherits its author's alphabet whether or not
+  that author could read the implementation.
