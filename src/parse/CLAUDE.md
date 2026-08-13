@@ -18,7 +18,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   Deliberately NOT a pcrec_options field (D20). Since MOD-0.3c enabling a
   module with producers CHANGES VERDICTS — that is the point of a gate —
   and check07's transition rule owns the shape of that change (an eligible
-  row must flip to a refusal naming its own module, nothing else may move)
+  row must flip to a refusal naming its own module, nothing else may move).
+  **[STD1] phase A (D37, 2026-08-13) adds frozen named sets on top, WITHOUT
+  touching the mask machinery above.** `g_named_sets` holds one entry today
+  — `std1` = {classes, modifiers}, FROZEN forever once shipped, expanded
+  through the same `find_module_bits` registry lookup an explicit list
+  already used (factored out so there is exactly one name->bits lookup).
+  `PCREC_DEFAULT_FEATURES` is D37's bare-default MAPPING POINT — the one
+  place "no --features flag" resolves to a named vocabulary value; it stays
+  `"none"` through phase A on purpose (see its own comment before touching
+  it — the flip to `"std1"` is a deliberately separate later commit that
+  travels with the full suite re-baseline). Two new readers,
+  `pcrec_enabled_set_label`/`pcrec_enabled_set_modules`, expose WHICH name
+  resolved the current set and its rendered (mask-derived, so it cannot
+  drift) module list — static, fixed-size buffers filled once by `install()`
+  at spec-parse time, matching the file's existing write-once/read-many
+  contract; src/gen's artifact stamping is their only consumer today
 - **parse.c** — see also **PARSE-1 (2026-08-11)** below, which changed the
   group case's SHAPE without adding a construct — the base grammar AND NOTHING
   ELSE (SR-2): literals, `.`,

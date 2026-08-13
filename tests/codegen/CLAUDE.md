@@ -29,7 +29,13 @@ or it has no regression net at all.
   for `$` vs `^`, and the M2.12 EOL-path checks: skips present and bounded at
   n-1, reverse skip entry guard, memchr bounded at n-1, and an ORDER check
   that accept/EOL evaluation follows the skips), plus the OS-0b multi-engine
-  block. Part of `make test`; env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
+  block. **Since [STD1] phase A (D37, 2026-08-13)** also a WHOLE-FILE check
+  (the stamp sits above any engine function, so `body()` does not apply):
+  `--features std1` stamps `/* Feature set: std1 (modules: classes,modifiers) */`
+  plus the `PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` macros in the .c, the
+  paired `.h` carries the comment but never the macros, and a bare
+  invocation still stamps `"none"` rather than nothing. Part of `make test`;
+  env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
   (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
 
 ## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)

@@ -709,20 +709,37 @@ case10() {
     assert_eq "case10: an unknown module name in --features exits 1" "1" "$rc"
     assert_contains "case10: ...and is refused BY NAME" \
         "$(cat "$d/ef1.txt")" "unknown module 'nosuchmodule'"
-    # a BASE-TIER compile under --features all emits byte-identical code to
-    # one without: the gate exists for module rows only and must never
-    # perturb a base pattern's compile path (this pin's original "no ports
-    # exist" rationale expired at MOD-0.3c; the base-tier half is the part
-    # that must stay true forever).
+    # a BASE-TIER compile under --features all emits byte-identical MATCHER
+    # code to one without: the gate exists for module rows only and must
+    # never perturb a base pattern's compile path (this pin's original "no
+    # ports exist" rationale expired at MOD-0.3c; the base-tier half is the
+    # part that must stay true forever).
     # SAME BASENAME in different directories — the emitted C embeds the
     # output basename in its #include (the journal's twice-paid lesson)
+    #
+    # [STD1] phase A (D37) makes the file's OWN FIRST LINES differ on
+    # purpose: the artifact stamp reports the REQUESTED set, by design,
+    # regardless of whether this particular base-tier pattern's matcher
+    # uses any of it — that is what makes the stamp trustworthy as a
+    # reproduction recipe (a "none"-stamped artifact must mean the compile
+    # really asked for none). So the comparison below skips exactly the
+    # stamp block (pattern comment + feature comment + the two feature
+    # macros — 4 lines) and asserts identity on everything after it, which
+    # is the part this pin has always been about: the MATCHER.
     mkdir -p "$d/fa" "$d/fb"
     "$PCREC" -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
     "$PCREC" --features all -o "$d/fb/feat.c" -- 'a(b|c)+d' 2>/dev/null
-    if cmp -s "$d/fa/feat.c" "$d/fb/feat.c"; then
-        pass "case10: --features all compiles byte-identical output today"
+    if cmp -s <(tail -n +5 "$d/fa/feat.c") <(tail -n +5 "$d/fb/feat.c"); then
+        pass "case10: --features all compiles byte-identical MATCHER code (stamp lines 1-4 differ on purpose, D37)"
     else
-        fail "case10: --features all changed emitted code with no ports built"
+        fail "case10: --features all changed emitted MATCHER code with no ports built"
+    fi
+    if grep -q '^/\* Feature set: none' "$d/fa/feat.c" \
+       && grep -q '^/\* Feature set: all' "$d/fb/feat.c"; then
+        pass "case10: ...and the stamp itself DOES differ, honestly reporting what was requested"
+    else
+        fail "case10: the stamp did not report the two different requested sets" \
+            "$(head -2 "$d/fa/feat.c") / $(head -2 "$d/fb/feat.c")"
     fi
 
     # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
@@ -1351,6 +1368,136 @@ case13() {
     assert_contains "case13: ...as an unknown module" "$out" "unknown module 'utf8'"
 }
 
+# ---------------------------------------------------------------------------
+# 14. [STD1] phase A (docs/dev/decisions.md D37): the frozen named set
+#     `std1` = {classes, modifiers}, artifact stamping, and the bare-default
+#     mapping point. Phase A does NOT flip the bare default — it stays
+#     "none" (the pre-existing behaviour); only the plumbing lands here.
+#
+#     `classes` and `modifiers` both carry real PRODUCERS since MOD-0.3c/
+#     MOD-0.5c (src/parse/CLAUDE.md), so `--features std1` genuinely changes
+#     what a pattern compiles TO, not just the probe channel's answered_at
+#     — case10/case11 pinned that axis while the gate had no name for it.
+#     Match assertions below are oracle-verified against python3 `re`
+#     (docs/testing.md).
+# ---------------------------------------------------------------------------
+case14() {
+    local d="$WORKDIR/case14"
+    mkdir -p "$d"
+    local rc out
+
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "case14: SKIP oracle-verified match cells (needs python3)" >&2
+    fi
+
+    # --- std1 ACCEPTS what the bare default (still empty in phase A)
+    #     refuses, and is EQUIVALENT to the explicit spelling ------------
+    "$PCREC" -o "$d/bare.c" -- '\d' >/dev/null 2>"$d/e_bare.txt"; rc=$?
+    assert_eq "case14: bare default still refuses \\d (phase A: not flipped)" \
+        "1" "$rc"
+    assert_contains "case14: ...with the classes-module refusal" \
+        "$(cat "$d/e_bare.txt")" "requires module 'classes'"
+
+    "$PCREC" --features std1 -o "$d/std1.c" -- '\d' 2>"$d/e_std1.txt"; rc=$?
+    assert_eq "case14: --features std1 accepts \\d (explicit wins over the bare default)" \
+        "0" "$rc" "stderr: $(cat "$d/e_std1.txt")"
+
+    # -o - (self-contained, no #include) for the comparison below: two
+    # different output BASENAMES would otherwise embed two different
+    # #include lines and differ for a reason unrelated to the stamp — the
+    # same trap run_trie_identity.sh and case9's -i comparison both avoid.
+    "$PCREC" --features std1 -o - -- '\d' > "$d/std1_bare.c" 2>/dev/null
+    "$PCREC" --features classes,modifiers -o - -- '\d' > "$d/expl_bare.c" 2>/dev/null
+    # byte-identical except the stamp's own SET NAME (std1 vs explicit) —
+    # everything a matcher's behaviour depends on, including the stamped
+    # MODULE LIST, is unchanged.
+    local ndiff
+    ndiff="$(diff "$d/std1_bare.c" "$d/expl_bare.c" | grep -cE '^[<>]')"
+    if [ "$ndiff" -eq 4 ] \
+       && grep -q '/\* Feature set: std1 (modules: classes,modifiers) \*/' "$d/std1_bare.c" \
+       && grep -q '/\* Feature set: explicit (modules: classes,modifiers) \*/' "$d/expl_bare.c"; then
+        pass "case14: --features std1 == --features classes,modifiers except the stamp's set name"
+    else
+        fail "case14: std1 vs explicit spelling diverged beyond the stamp" \
+            "$(diff "$d/std1_bare.c" "$d/expl_bare.c")"
+    fi
+
+    # --- MATCH BEHAVIOUR, oracle-verified: std1 engages BOTH classes'
+    #     (\d) and modifiers' ((?i)) producers in one pattern ------------
+    if command -v python3 >/dev/null 2>&1; then
+        "$PCREC" --features std1 --emit-main -o - -- '(?i)cat\d+' \
+            > "$d/m.c" 2>"$d/e_m.txt"
+        if "$CC" $CFLAGS -o "$d/m" "$d/m.c" 2>"$d/build_m.txt"; then
+            pass "case14: --features std1 '(?i)cat\\d+' compiles"
+            local py rx got
+            for subj in 'xxCAT123xx' 'xxcatxx'; do
+                py="$(python3 -c "
+import re
+m = re.search(r'(?i)cat\d+', '$subj')
+print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
+")"
+                got="$("$d/m" "$subj")"
+                assert_eq "case14: '(?i)cat\\d+' vs python re on '$subj'" \
+                    "$py" "$got"
+            done
+        else
+            fail "case14: --features std1 '(?i)cat\\d+' compiles" \
+                "$(cat "$d/build_m.txt")"
+        fi
+    fi
+
+    # --- unknown named-set-shaped spec: a clean, by-name error ----------
+    "$PCREC" --features std2 -o "$d/bad.c" -- 'a' >/dev/null 2>"$d/e_bad.txt"; rc=$?
+    assert_eq "case14: an unknown named-set name exits 1" "1" "$rc"
+    assert_contains "case14: ...refused BY NAME" "$(cat "$d/e_bad.txt")" "'std2'"
+    assert_contains "case14: ...and the message names the real vocabulary (std1)" \
+        "$(cat "$d/e_bad.txt")" "std1"
+    if [ -s "$d/bad.c" ]; then
+        fail "case14: a refused --features writes no C" "wrote $(wc -c <"$d/bad.c") bytes"
+    else
+        pass "case14: a refused --features writes no C"
+    fi
+
+    # --- ARTIFACT STAMPING: header comment + macros, every invocation ---
+    out="$("$PCREC" -o - -- 'a')"
+    assert_contains "case14: bare invocation stamps 'none' (the default constant, not silence)" \
+        "$out" '/* Feature set: none (modules: none) */'
+    assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
+        "$out" '#define PCREC_FEATURE_SET "none"'
+    assert_contains "case14: ...and an empty PCREC_FEATURE_MODULES" \
+        "$out" '#define PCREC_FEATURE_MODULES ""'
+
+    out="$("$PCREC" --features std1 -o - -- 'a')"
+    assert_contains "case14: --features std1 stamps its own name" \
+        "$out" '/* Feature set: std1 (modules: classes,modifiers) */'
+    assert_contains "case14: ...and the expanded module list in the macro" \
+        "$out" '#define PCREC_FEATURE_MODULES "classes,modifiers"'
+
+    out="$("$PCREC" --features all -o - -- 'a')"
+    assert_contains "case14: --features all stamps 'all' plus its own full expansion" \
+        "$out" '/* Feature set: all (modules: '
+
+    # the paired .c/.h form: the HEADER carries the comment (matching the
+    # existing pattern-comment convention) but not the macros, so a .c that
+    # #includes its own .h never sees PCREC_FEATURE_SET defined twice.
+    "$PCREC" --features std1 -o "$d/pair.c" -- 'a' >/dev/null 2>"$d/e_pair.txt"
+    assert_contains "case14: the paired .h also carries the stamp comment" \
+        "$(cat "$d/pair.h" 2>/dev/null)" \
+        '/* Feature set: std1 (modules: classes,modifiers) */'
+    if grep -q 'PCREC_FEATURE_SET' "$d/pair.h" 2>/dev/null; then
+        fail "case14: the paired .h must not carry the macros too" \
+            "$(cat "$d/pair.h")"
+    else
+        pass "case14: the paired .h carries the comment only, not the macros"
+    fi
+    if [ "$(grep -c 'define PCREC_FEATURE_SET' "$d/pair.c")" -eq 1 ]; then
+        pass "case14: the .c defines PCREC_FEATURE_SET exactly once (no redefinition via its own #include)"
+    else
+        fail "case14: PCREC_FEATURE_SET macro count in the .c" \
+            "$(grep -c 'define PCREC_FEATURE_SET' "$d/pair.c") occurrences"
+    fi
+}
+
 case1
 case2
 case3
@@ -1364,6 +1511,7 @@ case10
 case11
 case12
 case13
+case14
 
 echo
 echo "== Summary =="

@@ -1157,6 +1157,20 @@ size_t pcrec_verb_name_extent_scan(const char *pat, size_t patlen,
 bool     pcrec_feature_enabled(unsigned featmask);
 unsigned pcrec_enabled_mask(void);
 int      pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz);
+/* D37 (docs/dev/decisions.md): the currently-installed set's own NAME
+ * ("std1", "all", "none", or "explicit" for a hand-written module list)
+ * and its EXPANDED module list (comma-separated, rendered from the mask —
+ * never NULL, "" when nothing is enabled). Filled by pcrec_enabled_set_spec
+ * at spec-parse time; src/gen reads both at emission time to stamp the
+ * artifact (D37's reproducibility promise). Returned strings point at
+ * static storage — do not free. */
+const char *pcrec_enabled_set_label(void);
+const char *pcrec_enabled_set_modules(void);
+/* D37's bare-default MAPPING POINT: the one place "no --features flag"
+ * resolves to a named value from --features' own vocabulary. Stays "none"
+ * through [STD1] phase A on purpose — see enabled.c's own comment on this
+ * constant before changing it. */
+extern const char *const PCREC_DEFAULT_FEATURES;
 
 /* src/parse/syntax_dump.c — rendering the registry as text (SR-3). Both
  * renderers return a malloc'd string the caller frees; `flavours` of 0 means

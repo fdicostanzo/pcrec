@@ -375,6 +375,45 @@ else
     bad "multi-engine: could not build the two-engine fixture"
 fi
 
+# ---- D37: emitted C is self-describing about its feature set -------------
+# docs/dev/decisions.md D37 / [STD1] phase A: every emitted file carries a
+# comment AND (in the .c) two macros stamping the enabled set's own NAME and
+# its EXPANDED module list, rendered from the mask by src/parse/enabled.c so
+# it can never say something the compile didn't actually do. Whole-file
+# checks (not `body()` — the stamp is outside any engine function, at the
+# very top).
+if "$PCREC" -p rx --features std1 -o "$WORKDIR/stamp.c" -- 'a' >/dev/null 2>&1; then
+    if grep -qF '/* Feature set: std1 (modules: classes,modifiers) */' "$WORKDIR/stamp.c" \
+       && grep -qF '#define PCREC_FEATURE_SET "std1"' "$WORKDIR/stamp.c" \
+       && grep -qF '#define PCREC_FEATURE_MODULES "classes,modifiers"' "$WORKDIR/stamp.c"; then
+        ok "D37: --features std1 stamps its name and expanded module list in the .c"
+    else
+        bad "D37: --features std1 did not stamp the expected comment/macros" \
+            "$(head -4 "$WORKDIR/stamp.c")"
+    fi
+    if grep -qF '/* Feature set: std1 (modules: classes,modifiers) */' "$WORKDIR/stamp.h" \
+       2>/dev/null; then
+        ok "D37: the paired .h carries the same stamp COMMENT"
+    else
+        bad "D37: the paired .h is missing the stamp comment"
+    fi
+    if grep -q 'PCREC_FEATURE_SET' "$WORKDIR/stamp.h" 2>/dev/null; then
+        bad "D37: the paired .h must not carry the stamp MACROS (only the .c does)"
+    else
+        ok "D37: the paired .h carries no macros, so a .c that includes it defines PCREC_FEATURE_SET once"
+    fi
+else
+    bad "D37: pcrec failed to compile 'a' under --features std1"
+fi
+# a bare invocation (no --features) still stamps — "none", the phase-A
+# default constant, not silence: an unstamped artifact would be ambiguous
+# the day the bare default itself changes (D37's own point).
+if "$PCREC" -p rx -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: none (modules: none) */'; then
+    ok "D37: a bare invocation stamps the resolved default ('none'), not nothing"
+else
+    bad "D37: a bare invocation's stamp is missing or wrong"
+fi
+
 # ---- TS-1: the generated matcher stays usable FROM threads (D19) ---------
 # D19's property for GENERATED code reduces to two mechanical facts: every
 # emitted `static` is `const` — so it is .rodata with a constant initialiser,

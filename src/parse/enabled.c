@@ -10,18 +10,25 @@
  *
  * PROCESS-WIDE, WRITE-ONCE-THEN-READ by design: the CLI parses the spec
  * before any compile starts, and nothing writes during compilation (the
- * thread suite compiles concurrently and relies on that). It is NOT a
- * pcrec_options field on purpose — D20 rules the core API's option surface
- * stays scalar and this is internal configuration, not a caller-facing
- * option; a library channel can be promoted later if a real caller wants
- * one (the usual easy-to-promote, hard-to-unpromote direction).
+ * thread suite compiles concurrently and relies on that — this extends to
+ * the label/module-list state added below: both are filled by `install()`
+ * at spec-parse time, before any compile, and never touched again). It is
+ * NOT a pcrec_options field on purpose — D20 rules the core API's option
+ * surface stays scalar and this is internal configuration, not a
+ * caller-facing option; a library channel can be promoted later if a real
+ * caller wants one (the usual easy-to-promote, hard-to-unpromote direction).
  *
  * The default is EMPTY: with nothing enabled, every gate demotes and pcrec
  * behaves byte-identically to the pre-slice build — which the 952-pattern
  * differential asserts rather than assumes. Enabling a module whose ports do
- * not exist yet changes NO verdict (the NULL-port refusal is the same
- * refusal); what it changes today is the probe channel's answered_at, and
- * check07 exists to hold the verdict-equivalence half forever. */
+ * not exist yet changes NO verdict today; what it changes today is the probe
+ * channel's answered_at, and check07 exists to hold the verdict-equivalence
+ * half forever.
+ *
+ * D37 (docs/dev/decisions.md) ADDS frozen named sets on top of the mask
+ * machinery above, WITHOUT changing it: a named set is just a fixed list of
+ * module names that expands to a mask through the same registry lookup an
+ * explicit list already uses. See STD1_MODULES and g_named_sets below. */
 
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +36,19 @@
 #include "core/internal.h"
 
 static unsigned g_enabled_features;     /* FEAT_* mask; empty at start */
+
+/* D37's stamping payload: WHICH NAME resolved the currently-installed set
+ * ("std1", "all", "none", or "explicit" for a hand-written module list) and
+ * the set's own EXPANDED module list, comma-separated, rendered from the
+ * mask so it can never drift from what is actually enabled. Both are filled
+ * once by install() below, at spec-parse time, and read by src/gen's
+ * artifact stamping — a fixed-size buffer rather than malloc/free because
+ * every valid value is short and bounded, and it keeps the write-once/
+ * read-many contract this file already documents above (safe under the
+ * thread suite's concurrent COMPILES, because nothing writes here again
+ * after install() returns). */
+static char g_enabled_label[24]   = "none";
+static char g_enabled_modules[512] = "";
 
 /* The membership question the gate asks. A zero mask (base/rejected rows)
  * is never "enabled": there is nothing to switch. */
@@ -42,61 +62,184 @@ unsigned pcrec_enabled_mask(void)
     return g_enabled_features;
 }
 
-/* Parse an enabled-set spec: a comma-separated list of module names exactly
- * as `--list-syntax`'s module column spells them, or "all", or "none" / the
- * empty string. Unknown names are refused BY NAME — a typo must not silently
- * enable nothing (the --flavour rule, applied here).
+/* D37's artifact-stamping readers: src/gen consults these at emission time
+ * (still before any concurrent compile could start writing anything, since
+ * nothing here is ever written again after install()). */
+const char *pcrec_enabled_set_label(void)
+{
+    return g_enabled_label;
+}
+
+const char *pcrec_enabled_set_modules(void)
+{
+    return g_enabled_modules;
+}
+
+/* ---- D37: frozen named feature sets ------------------------------------
  *
- * Name->bits comes from the registry rows themselves (module string beside
- * feature mask), so this function cannot hold a second copy of the pairing;
- * tests/registry/ already proves module<->feature is a bijection. Returns 0
- * and installs the set, or -1 with `err` filled and the set UNCHANGED. */
+ * `std1` = {classes, modifiers} — the two modules that had, at freeze time
+ * (2026-08-12), survived a checkpoint panel AND carry PC-3 differential
+ * coverage against libpcre2. FROZEN FOREVER once shipped: `--features std1`
+ * must compile identically for as long as pcrec exists. DO NOT add a module
+ * to STD1_MODULES — a future graduate forms the NEXT named set (std2 =
+ * std1 + {x}), it does not join this one. */
+static const char *const STD1_MODULES[] = { "classes", "modifiers" };
+
+typedef struct {
+    const char *name;
+    const char *const *modules;
+    size_t nmodules;
+} NamedFeatureSet;
+
+static const NamedFeatureSet g_named_sets[] = {
+    { "std1", STD1_MODULES, sizeof STD1_MODULES / sizeof STD1_MODULES[0] },
+};
+
+/* D37's bare-default MAPPING POINT: the one place "no --features flag at
+ * all" resolves to a value from the same vocabulary --features itself
+ * accepts (a named set, "all", or "none"). The CLI (and any future non-CLI
+ * caller) reads this rather than deciding the default for itself.
+ *
+ * PHASE A (docs/dev/plan.md [STD1], this commit) keeps it "none" ON
+ * PURPOSE: a bare invocation's behaviour must stay byte-identical to
+ * before this change. The flip to "std1" is a DELIBERATELY SEPARATE later
+ * commit that travels with the full suite re-baseline D37's "Consequences
+ * owed at implementation" describes (reject_gated inversions, corpus
+ * `features` directives, check07's gate equivalence, the PC-3 gate state).
+ * Do not read this constant as settled — it is simply the one place the
+ * eventual flip happens, at an announced version boundary, with every
+ * older named set (including "none") remaining available verbatim
+ * forever after that. */
+const char *const PCREC_DEFAULT_FEATURES = "none";
+
+static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+
+/* The one name->bits lookup in this file (a spec's explicit list and a
+ * named set's expansion both go through it, so there is no second copy of
+ * the pairing to drift). Name->bits comes from the registry rows
+ * themselves, exactly as before D37; tests/registry/ already proves
+ * module<->feature is a bijection. */
+static unsigned find_module_bits(const char *name, size_t len)
+{
+    for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const char *m = rows[i].module;
+            if (m && strlen(m) == len && strncmp(m, name, len) == 0)
+                return rows[i].feature;
+        }
+    }
+    return 0;
+}
+
+/* Whole-token membership test over a comma list, used only to DEDUP
+ * render_modules' output below (a module can own more than one row). */
+static bool module_listed(const char *list, const char *name)
+{
+    size_t nlen = strlen(name);
+    const char *p = list;
+    while (*p) {
+        const char *comma = strchr(p, ',');
+        size_t len = comma ? (size_t)(comma - p) : strlen(p);
+        if (len == nlen && strncmp(p, name, nlen) == 0) return true;
+        p = comma ? comma + 1 : p + len;
+    }
+    return false;
+}
+
+/* D37's reproducible payload: the module list rendered FROM THE MASK, not
+ * carried along from whichever path (named set / "all" / explicit list)
+ * produced it — so it can never say something the mask disagrees with.
+ * Truncates rather than overflows if the registry ever outgrows the
+ * buffer (nothing in the tree is close to that today). */
+static void render_modules(unsigned mask, char *out, size_t outsz)
+{
+    out[0] = 0;
+    if (!mask) return;
+    size_t used = 0;
+    for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            unsigned f = rows[i].feature;
+            const char *m = rows[i].module;
+            if (!f || !m || (mask & f) != f) continue;
+            if (module_listed(out, m)) continue;
+            size_t mlen = strlen(m);
+            size_t need = mlen + (used ? 1 : 0);
+            if (used + need >= outsz) continue;
+            if (used) out[used++] = ',';
+            memcpy(out + used, m, mlen);
+            used += mlen;
+            out[used] = 0;
+        }
+    }
+}
+
+static void install(unsigned mask, const char *label)
+{
+    g_enabled_features = mask;
+    snprintf(g_enabled_label, sizeof g_enabled_label, "%s", label);
+    render_modules(mask, g_enabled_modules, sizeof g_enabled_modules);
+}
+
+/* Parse an enabled-set spec: a comma-separated list of module names exactly
+ * as `--list-syntax`'s module column spells them, "all", "none" / the empty
+ * string, or (D37) a frozen named set's own name ("std1" today). Unknown
+ * names are refused BY NAME — a typo must not silently enable nothing (the
+ * --flavour rule, applied here). Returns 0 and installs the set, or -1 with
+ * `err` filled and the set UNCHANGED. */
 int pcrec_enabled_set_spec(const char *spec, char *err, size_t errsz)
 {
-    static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB,
-                                     RK_CLASSBRACKET };
-    unsigned mask = 0;
-
     if (!spec) spec = "";
+
     if (!strcmp(spec, "all")) {
+        unsigned mask = 0;
         for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
             size_t n;
             const RegRow *rows = pcrec_registry(kinds[k], &n);
             for (size_t i = 0; i < n; i++) mask |= rows[i].feature;
         }
-        g_enabled_features = mask;
+        install(mask, "all");
         return 0;
     }
     if (!*spec || !strcmp(spec, "none")) {
-        g_enabled_features = 0;
+        install(0, "none");
         return 0;
     }
 
+    /* D37 named-set resolution: a spec that is EXACTLY one known frozen
+     * set's name (no comma, nothing composed with it) expands to that
+     * set's module list. Checked before the explicit-list parse below, so
+     * "std1" resolves as a SET rather than being looked up as a
+     * (nonexistent) module name. */
+    for (size_t s = 0; s < sizeof g_named_sets / sizeof g_named_sets[0]; s++) {
+        if (strcmp(spec, g_named_sets[s].name) != 0) continue;
+        unsigned mask = 0;
+        for (size_t i = 0; i < g_named_sets[s].nmodules; i++) {
+            const char *m = g_named_sets[s].modules[i];
+            mask |= find_module_bits(m, strlen(m));
+        }
+        install(mask, g_named_sets[s].name);
+        return 0;
+    }
+
+    unsigned mask = 0;
     const char *p = spec;
     while (*p) {
         const char *comma = strchr(p, ',');
         size_t len = comma ? (size_t)(comma - p) : strlen(p);
-        unsigned bits = 0;
-        for (size_t k = 0; k < sizeof kinds / sizeof kinds[0] && !bits; k++) {
-            size_t n;
-            const RegRow *rows = pcrec_registry(kinds[k], &n);
-            for (size_t i = 0; i < n; i++) {
-                const char *m = rows[i].module;
-                if (m && strlen(m) == len && strncmp(m, p, len) == 0) {
-                    bits = rows[i].feature;
-                    break;
-                }
-            }
-        }
+        unsigned bits = find_module_bits(p, len);
         if (!bits) {
             snprintf(err, errsz, "unknown module '%.*s' (names are "
-                     "--list-syntax's module column; also 'all', 'none')",
-                     (int)len, p);
+                     "--list-syntax's module column; also 'all', 'none', "
+                     "or a named set: std1)", (int)len, p);
             return -1;
         }
         mask |= bits;
         p = comma ? comma + 1 : p + len;
     }
-    g_enabled_features = mask;
+    install(mask, "explicit");
     return 0;
 }
