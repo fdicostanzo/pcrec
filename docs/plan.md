@@ -1770,7 +1770,7 @@ can destroy it.
   counter planted in a COPY of compile.c — exactly the shape this step
   named. tests/thread/
 - [TS-4] STATE:not-started — DD-10 is a thread-safety item, not just robustness (D19): musl's default THREAD stack is 128 KB against the main thread's 8 MB, and `compile_ast` plus `clo_visit`'s t1 edge are still bounded only by pattern structure (~192 KB for 400 nested branch points). Give `compile_ast` a stated budget the way trie_build has one, and add a `tests/cli` stack case that binds it — case 8 covers branch COUNT, nothing covers nesting DEPTH
-- [SAN-1] STATE:not-started — THE SANITIZER + LINT BATTERY (Frank,
+- [SAN-1] STATE:started 2026-08-13 (fifteenth session) — THE SANITIZER + LINT BATTERY (Frank,
   2026-08-12, expanding the R7/T-3 ubsan carry; scheduled NEXT SESSION;
   lands BEFORE [OPT-A] opens — Frank: "we should expect some trouble when
   we start optimizing", so this is the tripwire built before the risk).
@@ -1821,7 +1821,7 @@ document). Mechanize instead.
   HEAD` tree per sabotage and its replace.py refuses to continue unless the
   target text was found exactly N times and actually changed. — a pristine-sabotage-tree helper. The contaminated 132/200 figure came from a hand-rolled copy+sed+`git checkout` loop where the revert silently failed (`|| true` inside a tarball copy that is not a git repo) so sabotage 2 landed on top of sabotage 1. One helper that makes a fresh tree per sabotage, asserts the target text was found and changed, and refuses to continue otherwise. Subsumed by MECH-1 if that lands first
 - [MECH-3] STATE:not-started — a measurement wrapper that refuses to emit a number without provenance: interleaved A/B, N trials, load before AND after (R3.10), min/median/max spread, and a stamped record. Every performance overclaim this project has made — the 27%-recorded-as-+40%, this session's 1.5-4.1% deltas taken at load 4.5-9.7 — would have been blocked at the point of measurement rather than caught in review. Frank's precedent: a claude-safe grep that refuses `| tail` and reports what it actually looked at
-- [TT-1] STATE:not-started — TIERED TESTING (Frank, 2026-08-12: suite crept
+- [TT-1] STATE:started 2026-08-13 (fifteenth session) — TIERED TESTING (Frank, 2026-08-12: suite crept
   15min → 5min parallelized → growing again, and we only ever ADD tests;
   "spot check the relevant test sections while we work then hit the full
   load at evaluation"; CI DEFERRED, NOT REJECTED — Frank clarified same
