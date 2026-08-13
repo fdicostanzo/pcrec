@@ -70,7 +70,7 @@ setting the work order.
 
 ## Next: [STD1]
 
-- [STD1] STATE:not-started — implement D37: the bare default becomes
+- [STD1] STATE:started — implement D37: the bare default becomes
   frozen named set `std1` = {classes, modifiers}; named-set plumbing
   (`--features std1|none|<explicit>`, older sets available verbatim
   forever, bare-default mapping advances only at announced version
@@ -80,6 +80,19 @@ setting the work order.
   PC-3 gate state all assume an empty default today); check09 per-name
   arming + check01 aperture/floors land here. Product-face change —
   starts with Frank's go, after MOD-0.8 closes
+  - [STD1a] STATE:started — named-set plumbing + artifact stamping,
+    bare default KEPT EMPTY (mapping constant held at "none") so the
+    suite stays green; stamp is UNCONDITIONAL incl. bare invocations
+    (ruled in-session: D37's reproducibility rationale applies most to
+    bare artifacts; skip-when-bare would make stamp presence depend on
+    invocation spelling). Lane std1-impl, worktree std1-impl.
+  - [STD1b] STATE:not-started — flip PCREC_DEFAULT_FEATURES to "std1"
+    + full suite re-baseline (reject_gated inversions, corpus features
+    directives, PC-3 gate state, check07 population re-measure). Two
+    lanes, after STD1a merges.
+  - [STD1c] STATE:not-started — check09 per-name arming + check01
+    aperture/floors per docs/dev/std1_check_rearm.md (spec written
+    2026-08-13, sabotage validations named there); after STD1b.
 
 ## M4 — Captures + backtracking VM engine
 

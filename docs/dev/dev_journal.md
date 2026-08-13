@@ -7222,3 +7222,75 @@ modes (traced matcher variant + verbose compile narration; DD-8 keeps
 --emit-ir/--emit-dot). Frank's other two use-case ideas already had rows:
 the rx/.../ source scanner is [V-F], the organizing system is [V-E]. All
 boonies-tier by his word — parking spots, not queue positions.
+
+## 2026-08-13 — Seventeenth session: [STD1] started (D37 implementation)
+
+Frank's go received. Session constraint on record: near subscription
+limits; worst case the tail finishes tomorrow with sessions left open —
+therefore DOUBLED JOURNALING (an entry at every phase boundary, not just
+session close) so an interruption loses nothing.
+
+Session shape ratified in discussion (this session, pre-start):
+1. Sonnet implementation lane (worktree std1-impl): named-set table
+   (std1 = {classes, modifiers}), --features std1|none|<explicit>,
+   bare-default -> std1 mapping, artifact stamping (set name + expanded
+   module list in emitted header + macro). Small, spec'd by D37.
+2. Merge + battery, THEN re-baseline fans out (re-baseline needs the
+   flipped default to test against — lanes are sequenced, not parallel
+   with impl).
+3. Two sonnet re-baseline lanes: (a) reject_gated inversions + corpus
+   features-directive sweep, (b) PC-3 gate state + check07 equivalence.
+4. check09 per-name arming + check01 aperture/floors: DESIGN stays at
+   manager level (memory: every pcrec check has failed via control
+   sharing a source with what it controls); sonnet implements the
+   written spec; sabotage validation before either check counts.
+
+[STD1] plan row flipped to STATE:started. Worktree std1-impl created at
+5c218bd. Baseline: fifteenth-session close battery at e2ee3a1, smoke
+green through session sixteen; counts corpus 1270 / cli 221 / reject 486
+/ registry 168 / PC-3 163 / spec_mod0 14 / codegen 29 / mech 35.
+
+### Seventeenth session, phase boundary 1 (doubled-journaling entry)
+
+Impl lane (sonnet, worktree std1-impl) briefed and running: named-set
+table + --features std1|none plumbing + artifact stamping, bare default
+DELIBERATELY kept empty in phase A (the flip travels with the re-baseline
+so every merge stays green). Landing bar includes byte-identity proof for
+bare-default invocations.
+
+Manager work while lane runs: phase C check re-arm spec WRITTEN to
+docs/dev/std1_check_rearm.md (delete/archive at STD1 close). Key verified
+premise recorded there: check07 passes explicit --features on every
+invocation (lines 311/408) — the flip does NOT change its semantics;
+phase C re-arms check09 (per-name floors in floors.txt + set-membership
+honesty assertion against the stamp) and check01 (aperture widened to
+phase A's new symbols, isolation extended over them, discovery floors),
+each with named sabotage validations. check07's rule changes: none.
+
+Session state if interrupted here: impl lane may still be running or done
+(check worktrees/std1-impl for commits on branch std1-impl); nothing
+merged; main-tree changes so far: plan.md STD1 STATE:started, this
+journal, the rearm spec file (all uncommitted).
+
+### Seventeenth session, phase boundary 2 — STD1a rulings (doubled-journaling entry)
+
+Impl lane reported (work done, make test in flight, uncommitted). Three
+judgment calls ruled: (1) artifact stamp is UNCONDITIONAL, bare
+invocations included — lane's D37 reading beat the brief's literal
+byte-identity invariant (an unstamped bare artifact is exactly the one
+that cannot self-describe; skip-when-bare would tie stamp presence to
+invocation spelling). Amended phase A invariant: matcher-code identity,
+delta = stamp lines only — demonstrated over 5 probe patterns x 3
+emission modes against a 5c218bd build. (2) case10's pre-existing
+"--features all byte-identical" assertion, invalidated by the stamp by
+design, re-shaped to skip the 4 stamp lines + companion stamp-differs
+assertion — accepted as a travelling re-baseline. (3) plan.md hunk
+reverted by lane (manager-owned); phase split recorded by manager as
+STD1a/b/c substeps instead. Expected counts at STD1a merge: cli 221->242,
+codegen 29->33, all else baseline. Library-side named-set resolution
+(enabled.c, one name->bits lookup) accepted as following the code's grain.
+
+State if interrupted here: STD1a uncommitted in worktrees/std1-impl,
+make test running in lane; on green, lane commits and reports; merge +
+battery is next manager action. STD1b/c not started; rearm spec at
+docs/dev/std1_check_rearm.md.
