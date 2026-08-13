@@ -24,7 +24,12 @@ Process and status documents for pcrec. The architecture itself lives in
   test-corpus`/`test-cli`/etc., the touched-path -> sections guidance table,
   `make smoke`'s measured composition and floor check, and the opt-in
   `make hooks` pre-push gate. `make test` itself is unchanged by any of this
-  — still the full suite, still the merge/close standard.
+  — still the full suite, still the merge/close standard. Also (added
+  [SAN-1]) "Sanitizer + lint battery": make ubsan/asan/lint both-axes
+  targets, the GENCFLAGS compile-site audit, LINTGEN=1, the findings
+  inventory (F1), sabotage validations, quiet-box runtimes, and the
+  battery-placement ruling (ubsan+asan+lint join the merge/close battery;
+  smoke never).
 - `extension_design.md` — ADOPTED (D34: Part II is the redesign of record)
   and progressively BUILT through MOD-0.1..0.3 (the first producers landed
   2026-08-12): how a regex feature plugs into pcrec — one table, a NAME per row as the unit of
