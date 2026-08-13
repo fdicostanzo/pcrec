@@ -245,6 +245,67 @@ commits to. The blocker is table generation and size, not matching.
 | `(*UTF)` `(*UCP)` | `REJECTED` | `PLANNED` | module `verbs`; the underlying capability is M5 |
 | `(*CASELESS_RESTRICT)` `(*TURKISH_CASING)` | `OUT-OF-SCOPE` | — | for the ASCII tier — revisit with DD-1's Unicode work |
 
+**A RULED, deliberate tier-2 divergence (D26; manager ruling 2026-08-12,
+MOD-0.8c): the per-letter MODULE GATE answers before the option run's own
+VALIDITY check.** An option run that is BOTH invalid as a run AND contains a
+letter pcrec defers to another module is reported as the deferral, not as the
+invalidity:
+
+    $ build/pcrec --features modifiers -o - '(?m--)'
+    pcrec: inline option 'm' (multiline) requires module 'assertions'
+    libpcre2 10.46: error 194, "invalid hyphen in option setting"
+
+`(?i--)`, whose letters are all implemented, IS diagnosed as the malformed run
+it is — so the ordering is only observable through a deferred letter. Today
+that is exactly two letters, `m` (→ `assertions`) and `J` (→ `named-groups`),
+which are the two rows above marked `REJECTED` with a per-letter refusal.
+
+**Why this is tier 2 and not tier 1.** Both engines REFUSE, and neither emits
+anything: what differs is which REFUSAL CATEGORY the user is told about, which
+is the same distinction that keeps K15 at tier 2. Nothing miscompiles, no
+pattern changes meaning, and pcrec's answer is not false — `(?m--)` genuinely
+does need module `assertions` before it could ever compile. It is simply the
+less useful of two true sentences, and D26 puts diagnostic category for a
+construct pcrec has not implemented outside the exact tier.
+
+**MEASURED 2026-08-12** (re-measured for this entry, not transcribed from the
+report that found it):
+
+- Over `tests/spec_mod0/check14_option_runs.c`'s generated space: **286
+  deferred cells of 4,385 compared — 189 by letter, 97 by doorway byte.**
+  That is every deferral, of which the ordering divergence is the subset
+  landing on an invalid run.
+- Over PC-3's own option-run space (19,448 cells: the Q2 alphabet, runs of
+  length 0-3, both terminator shapes), **14,986 cells are runs libpcre2 calls
+  invalid** (error 111 or 194). Of those, pcrec diagnoses 14,844 as invalid and
+  DEFERS on **142** at the closed (default) gate — all to `modifiers`, the
+  row-level deferral before the run is ever read — and diagnoses 14,978 and
+  defers on **8** with the gate open (4 to `assertions`, 4 to `named-groups`:
+  `(?m--)`, `(?m--:a)`, `(?^m-)`, `(?^m-:a)` and the `J` equivalents). Nothing
+  is accepted in either state.
+
+**The population can only shrink, and the shrink is measured rather than
+promised.** 142 → 8 is what opening the gate already does: every letter whose
+module lands stops deferring and starts being validated with the rest of the
+run. When `assertions` and `named-groups` both ship, the last 8 cells go and
+this entry closes itself.
+
+**REVISIT TRIGGER**, therefore: each module landing converts its letters, so
+re-measure at every module landing that owns a deferred option letter —
+`assertions` (for `m`) and `named-groups` (for `J`) — and delete this entry
+when the open-gate count reaches zero. Re-ordering the check so run validity is
+decided before the module gate was considered and NOT taken: it would move a
+grammar decision ahead of the gate for a benefit that expires on its own, and
+the option-run grammar is one home (`mod_modifiers.c`) precisely so the doorway
+does not acquire a second copy of it.
+
+Found by the MOD-0.8b D27 blinded writer (recorded in
+`docs/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
+document-don't-reorder. **No K row**: `docs/known_issues.md` is for confirmed
+BUGS deferred rather than fixed, and this is a ruled category divergence with a
+self-closing population — the same treatment shape as this file's K15 and K16
+paragraphs, minus the defect.
+
 ## Newline convention and `\R`
 
 | syntax | status | becomes | notes |

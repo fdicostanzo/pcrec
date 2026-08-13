@@ -106,9 +106,11 @@ Part of `make test` since M2.
   are the C4-1 net, and 94 of 100 rows have no module pin here by design;
   class-position answers are DECLARED (the `class` column), never live.
   Failing-direction validation is V1-V7, measured at landing and recorded in
-  the phase-2 commit messages rather than as mech rows — a mech `cli` suite
-  arm is a MOD-0.8 candidate (the code is trivial; the runtime budget is
-  unmeasured, and this project does not assert a cost).
+  the phase-2 commit messages rather than as mech rows. **The mech `cli` arm
+  exists since MOD-0.8c slice 1** and the cost it was waiting on is measured:
+  5.46s per sabotage tree, against the `reject` arm's 54.75s. Whether V1-V7
+  become mech rows is still open and is a manager decision; the arm's first
+  user is `S18-tsv-empty`, whose net is case10.
 - **case 12 (R20/MOD07-1)** — A PRODUCING PORT THAT FAILS, on both query
   surfaces. The tier-1 the R20 panel found: `--explain` and `--probe-ask`
   each hand a doorway a `Ctx` they `memset` and never `setjmp`, which was
@@ -130,6 +132,24 @@ Part of `make test` since M2.
   first and watched crashing; the verbatim FAIL block is in the slice's
   commit message, and the sweep behind it (10 query templates × ASCII bytes
   × both gate states × both surfaces = 5,080 probes) went 18 crashes → 0.
+
+- **case 13 (MOD-0.8c slice 3)** — THE ENCODING GATE (`-e`), which nothing in
+  this repository covered before: `grep -rn '\-e utf8' tests/` found nothing,
+  so the CLI's only gate besides `--features` was entirely unpinned. It landed
+  with the fix for K14's shape ON that gate (R20, the D27 writer's divergence
+  5): `-e utf8` answered "requires module 'utf8'" and the module namespace has
+  no `utf8` — `--features utf8` says "unknown module" itself, so the
+  diagnostic's one actionable noun pointed at a dead end. The fix promises the
+  MILESTONE instead of a module, because M5 delivers byte-wise UTF-8 automata
+  and OS-2 commits ASCII and UTF-8 to ONE DFA emitter: UTF-8 is an engine axis,
+  not a drop-in construct, so registering a name would have meant inventing a
+  module with no construct to describe. **What is pinned is not the sentence**
+  (D26 tiers that out): a NEGATIVE pin that no module is named, a positive one
+  that the milestone is, that a refused encoding writes no C, and the
+  CROSS-CHECK that makes it stick — `--features` must still reject `utf8` by
+  name, so if M5 ever registers it, this flips and the pin is revisited rather
+  than quietly deleted. Written failing-first against the pre-fix binary; the
+  verbatim FAIL block is in the slice's commit message.
 
 ## Conventions
 

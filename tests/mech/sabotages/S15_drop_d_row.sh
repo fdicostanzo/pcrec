@@ -6,9 +6,19 @@
 # comments referencing the old name). The functionally equivalent edit today
 # is deleting the ESC('d', ...) row from esc_rows[]. Documented result (for
 # the pre-SR-2 shape): 2 reject checks fail, 0 corpus cases.
+#
+# RETAGGED 2026-08-12 (MOD-0.8c slice 1) with `registry` and `pc3`. This row's
+# subject is a DELETED registry row, and both of those suites' own docs name
+# themselves as the relevant net for it: tests/registry/CLAUDE.md carries an
+# EXACT row count ("so rows cannot be deleted silently — the same TABLE SHRANK
+# guard tests/reject/ carries"), and its "What it does NOT establish" section
+# makes PC-3 the only external reader of the same fact. Everything else in
+# both suites ITERATES THE ROWS THAT EXIST, which is structurally blind to a
+# deletion — so what these two arms measure here is exactly whether the
+# count-shaped guards are the whole answer.
 SAB_ID="S15-drop-d-row"
 SAB_FILE="src/parse/registry.c"
-SAB_SUITES="reject"
+SAB_SUITES="reject registry pc3"
 SAB_DESC="delete the ESC('d', ...) registry row entirely (adapted from the stale esc_modules[] reference)"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md (pre-SR-2 shape): 2 reject checks, 0 corpus cases -- ADAPTED, see report"
 SAB_COUNT=1

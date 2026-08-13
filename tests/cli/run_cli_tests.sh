@@ -1286,6 +1286,65 @@ case12() {
         "$(cut -f6 <<<"$out")"
 }
 
+# ---------------------------------------------------------------------------
+# 13. THE ENCODING GATE (-e), which nothing in this repository covered until
+#     MOD-0.8c slice 3 — `grep -rn '\-e utf8' tests/` found nothing at all, so
+#     the one gate the CLI has besides --features was entirely unpinned.
+#
+#     The finding it closes is K14's shape on that gate (R20, the D27 blinded
+#     writer's divergence 5): pcrec answered "encoding 'utf8' requires module
+#     'utf8'", and the module namespace has no 'utf8' — `--features utf8` says
+#     so itself. The one actionable noun in the diagnostic pointed at a name
+#     the only surface that consumes module names rejects.
+#
+#     WHAT IS PINNED, and it is not the sentence. D26 tiers the WORDING of a
+#     refusal for something pcrec does not implement out of the exact tier, so
+#     these assert the two things that are not wording: the diagnostic must not
+#     name a module (a NEGATIVE pin — the substring "module 'utf8'"), and it
+#     must point at the milestone that actually delivers the feature. The
+#     cross-check is the one that makes it stick: whatever name the diagnostic
+#     offers, `--features` must accept it, and here the assertion is that no
+#     name is offered at all.
+# ---------------------------------------------------------------------------
+case13() {
+    local d="$WORKDIR/case13"
+    mkdir -p "$d"
+    local rc out err
+
+    # -e ascii is the default and must still compile.
+    "$PCREC" -e ascii -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
+    assert_eq "case13: -e ascii compiles" "0" "$rc" "stderr: $(cat "$d/e0.txt")"
+
+    # -e utf8 is refused, cleanly, with no C written.
+    "$PCREC" -e utf8 -o "$d/no.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+    err="$(cat "$d/e1.txt")"
+    assert_eq "case13: -e utf8 is refused" "1" "$rc" "stderr: $err"
+    if [ -s "$d/no.c" ]; then
+        fail "case13: a refused encoding writes no C" "wrote $(wc -c <"$d/no.c") bytes"
+    else
+        pass "case13: a refused encoding writes no C"
+    fi
+
+    # THE FIX: it must not promise a module that does not exist.
+    if printf '%s' "$err" | grep -q "module 'utf8'"; then
+        fail "case13: -e utf8 must not promise a module the namespace lacks" \
+             "stderr: $err" \
+             "K14's shape: --features utf8 answers 'unknown module'"
+    else
+        pass "case13: -e utf8 does not promise a module the namespace lacks"
+    fi
+    assert_contains "case13: ...it names the milestone that delivers UTF-8" \
+        "$err" "milestone M5"
+
+    # AND THE CROSS-CHECK, which is what stops the fix being a reword: the
+    # module namespace really has no 'utf8', so any diagnostic naming one is
+    # over-promising. If a future M5 registers the name, this flips and the
+    # pin above must be revisited deliberately rather than deleted.
+    out="$("$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
+    assert_eq "case13: --features utf8 is still refused by name" "1" "$rc"
+    assert_contains "case13: ...as an unknown module" "$out" "unknown module 'utf8'"
+}
+
 case1
 case2
 case3
@@ -1298,6 +1357,7 @@ case9
 case10
 case11
 case12
+case13
 
 echo
 echo "== Summary =="

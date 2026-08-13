@@ -51,6 +51,23 @@
 #                   produces no row (e.g. a definition failing validation) is
 #                   a loud FATAL, not a silently smaller denominator.
 #
+# SUITE VOCABULARY (the words that may appear in a sabotage's SAB_SUITES):
+#   codegen  trie  reject  harness   — the original four
+#   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
+#
+# COST, measured before the three new arms were wired rather than asserted
+# after (docs/plan.md's [MOD-0.8c] row forbids claiming a cost): one scratch
+# archive tree at 11352be on a 12-core box, `git archive HEAD` 0.04s + `make
+# all -j12` 0.75s, then per suite, build AND run —
+#   registry  0.60s  (0.38 build + 0.14 run + 0.08 compliance_section.py x2)
+#   pc3       4.36s  (1.05 build + 3.31 run)
+#   cli       5.46s
+#   reject   54.75s  <- the arm S15-S19 already paid, for scale
+# So all three new arms together cost about a fifth of the one arm those rows
+# already ran. PC-4 (run_pc4.sh, 2.50s) is deliberately NOT an arm, for the
+# reason `make bench` is not one: no sabotage's only signal is a semantic
+# differential today. Add it the day one is, with the sabotage that needs it.
+#
 # What this does NOT do: it does not run `make` in the real repository (every
 # build happens inside a scratch copy), it does not edit any file outside
 # tests/mech/ or the scratch trees, and it does not commit anything.
@@ -164,9 +181,12 @@ run_one() {
         fi
 
         pcrec="$tree/build/pcrec"
+        lib="$tree/build/libpcrec.a"
         suite_bits=()
         any_fail=0
         any_ran=0
+        any_skip=0      # an assigned suite could not run for want of an ORACLE
+        any_anom=0      # a check binary would not build in the sabotaged tree
 
         for suite in $SAB_SUITES; do
             case "$suite" in
@@ -208,18 +228,111 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            registry)
+                # tests/registry/ MINUS its libpcre2 half: registry_check.c
+                # (the table against the parser, in one process) plus the two
+                # compliance_section.py checks (the table against
+                # docs/pcre2_compliance.md, via `--list-syntax`). This is the
+                # pcrec-reading-pcrec net; `pc3` below is the external one, and
+                # they are separate arms because a sabotage's interesting
+                # answer is usually WHICH of the two sees it. Neither arm runs
+                # run_registry_tests.sh itself: that wrapper's coverage guards
+                # fire on a changed PASS COUNT, so a sabotage that made a check
+                # legitimately fail would also trip "coverage changed" and the
+                # cell could not distinguish detection from a count moving.
+                if ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
+                        -I"$tree/lib" -I"$tree/src" -o "$work/registry_check" \
+                        "$tree/tests/registry/registry_check.c" "$lib" \
+                        > "$work/registry_build.log" 2>&1; then
+                    suite_bits+=("registry:CHECK-BUILD-FAILED")
+                    any_anom=1
+                else
+                    "$work/registry_check" > "$work/registry.log" 2>&1
+                    p="$(grep -m1 '^checks passed:' "$work/registry.log" | grep -oE '[0-9]+')"
+                    f="$(grep -m1 '^checks failed:' "$work/registry.log" | grep -oE '[0-9]+')"
+                    cf=0
+                    PCREC="$pcrec" python3 "$tree/tests/registry/compliance_section.py" --check \
+                        >> "$work/registry.log" 2>&1 || cf=1
+                    PCREC="$pcrec" python3 "$tree/tests/registry/compliance_section.py" --names \
+                        >> "$work/registry.log" 2>&1 || cf=1
+                    if [ "$cf" = "1" ]; then
+                        suite_bits+=("registry:${f:-ERR}fail/${p:-?}pass+compliance-FAIL")
+                        any_fail=1
+                    else
+                        suite_bits+=("registry:${f:-ERR}fail/${p:-?}pass")
+                    fi
+                    [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                    any_ran=1
+                fi
+                ;;
+            pc3)
+                # The EXTERNAL check: the same table against libpcre2. It
+                # dlopens the oracle at run time and SKIPS LOUDLY when it is
+                # absent, and this arm reproduces that skip AS A VISIBLE CELL
+                # rather than as a pass. A row whose only assigned net skipped
+                # has measured nothing, and "0 failures because the oracle was
+                # missing" is the exact shape of a green run that means nothing
+                # — see the verdict block below, which refuses to call that
+                # UNDETECTED.
+                if ! "$CC" -O2 -g -Wall -Wextra -std=gnu11 \
+                        -I"$tree/lib" -I"$tree/src" -o "$work/pcre2_check" \
+                        "$tree/tests/registry/pcre2_check.c" "$lib" -ldl \
+                        > "$work/pc3_build.log" 2>&1; then
+                    suite_bits+=("pc3:CHECK-BUILD-FAILED")
+                    any_anom=1
+                else
+                    "$work/pcre2_check" > "$work/pc3.log" 2>&1
+                    if grep -q '^SKIP:' "$work/pc3.log"; then
+                        suite_bits+=("pc3:SKIPPED-no-oracle")
+                        any_skip=1
+                    else
+                        p="$(grep -m1 '^checks passed:' "$work/pc3.log" | grep -oE '[0-9]+')"
+                        f="$(grep -m1 '^checks failed:' "$work/pc3.log" | grep -oE '[0-9]+')"
+                        suite_bits+=("pc3:${f:-ERR}fail/${p:-?}pass")
+                        [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                        any_ran=1
+                    fi
+                fi
+                ;;
+            cli)
+                # tests/cli/run_cli_tests.sh — the CLI surface and library API.
+                # NOTE the scrape: this script counts `cases`, not `checks`,
+                # like the corpus harness and unlike every other arm here.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/cli/run_cli_tests.sh" \
+                    > "$work/cli.log" 2>&1
+                p="$(grep -m1 '^cases passed:' "$work/cli.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^cases failed:' "$work/cli.log" | grep -oE '[0-9]+')"
+                suite_bits+=("cli:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             *)
                 suite_bits+=("UNKNOWN-SUITE:$suite")
                 ;;
             esac
         done
 
+        # THE SKIP MUST NEVER READ AS A PASS. `pc3` is the only arm that can
+        # decline to run — it needs libpcre2 — and a skipped oracle contributes
+        # no evidence in either direction. So a row whose ONLY nets skipped is
+        # INCONCLUSIVE, never UNDETECTED (which is a finding, and would be a
+        # false one), and a row that did run something still carries the skip
+        # visibly in its verdict, because "caught by nothing" means something
+        # different when one of the nets was not in the water.
         verdict="DETECTED"
-        if [ "$any_ran" -eq 0 ]; then
+        if [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
+            verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle)"
+        elif [ "$any_ran" -eq 0 ] && [ "$any_anom" -eq 1 ]; then
+            verdict="ANOMALY (every assigned check binary failed to build)"
+        elif [ "$any_ran" -eq 0 ]; then
             verdict="ANOMALY (no suite ran)"
         elif [ "$any_fail" -eq 0 ]; then
             verdict="**UNDETECTED -- ZERO CHECKS FAILED**"
         fi
+        [ "$any_ran" -gt 0 ] && [ "$any_skip" -eq 1 ] && \
+            verdict="$verdict (pc3 SKIPPED -- no oracle)"
+        [ "$any_ran" -gt 0 ] && [ "$any_anom" -eq 1 ] && \
+            verdict="$verdict + ANOMALY (a check binary failed to build)"
 
         bits_joined="$(IFS=,; echo "${suite_bits[*]}")"
         printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
@@ -280,6 +393,7 @@ echo "== detection matrix =="
 echo
 undetected="$(grep -c 'UNDETECTED' "$results_file.rows" || true)"
 anomalies="$(grep -c 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" || true)"
+oracle_skipped="$(grep -c 'SKIPPED-no-oracle' "$results_file.rows" || true)"
 total="$(wc -l < "$results_file.rows" | tr -d ' ')"
 
 # The denominator guard: `total` above is derived from the rows that ARRIVED,
@@ -307,6 +421,12 @@ if [ "${anomalies:-0}" -gt 0 ]; then
     echo "*** $anomalies sabotage(s) hit an ANOMALY (anchor drift, build failure, or archive failure) and were NOT measured. ***"
     grep 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
 fi
+if [ "${oracle_skipped:-0}" -gt 0 ]; then
+    echo "*** $oracle_skipped row(s) ran with the pc3 arm SKIPPED: libpcre2-8-0 is absent, so the ***"
+    echo "*** EXTERNAL oracle contributed nothing to those verdicts. Read them accordingly —    ***"
+    echo "*** for the rows whose only external answer is PC-3, this run did not measure them.   ***"
+    grep 'SKIPPED-no-oracle' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
+fi
 
 rm -f "$results_file" "$results_file.rows"
 if [ "$KEEP" != "1" ]; then
@@ -325,6 +445,6 @@ fi
 # LOG, not about a process listing: grep the log for this trailer (or for
 # FATAL, the only early exit that skips it).
 echo
-echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}) at $SHA =="
+echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, pc3-skipped: ${oracle_skipped:-0}) at $SHA =="
 
 exit 0

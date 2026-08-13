@@ -93,8 +93,26 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
     if (!valid_prefix(defo.prefix))
         ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
                  PCREC_MAX_PREFIX_LEN);
+    /* K14's shape on the ENCODING gate (R20, the D27 writer's divergence 5;
+     * fixed MOD-0.8c slice 3). This said "requires module 'utf8' (milestone
+     * M5)" — and there is no module 'utf8'. `--features` is the only surface
+     * that consumes a module name, and it answers "unknown module 'utf8'",
+     * so the diagnostic's one actionable noun sent the reader to a dead end.
+     * That is exactly K14: promising a module the namespace does not contain.
+     *
+     * REGISTERING the name was the other option and is the wrong one. M5's
+     * plan row promises "byte-wise UTF-8 automata", and OS-2 records the
+     * design commitment that ASCII and UTF-8 share ONE DFA emitter with no
+     * hot-path decode — so UTF-8 is an axis of the ENGINE, not a drop-in
+     * construct with a parser hook and a registry row. A module name would
+     * have to be invented here and would then need a row that describes no
+     * construct. (The `\p{...}` half of M5 already has its module, and it is
+     * called `unicode-props`.) So the promise names the MILESTONE, and says
+     * plainly that no --features name will turn it on — pre-empting the
+     * question the old wording invited. */
     if (defo.encoding == PCREC_ENC_UTF8)
-        ctx_fail(&cx, 0, "encoding 'utf8' requires module 'utf8' (milestone M5)");
+        ctx_fail(&cx, 0, "encoding 'utf8' arrives with milestone M5 "
+                         "(an engine axis, not a module: no --features name enables it)");
     if (defo.encoding != PCREC_ENC_ASCII)
         ctx_fail(&cx, 0, "unknown encoding");
 
