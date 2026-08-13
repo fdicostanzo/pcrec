@@ -68,31 +68,14 @@ on M4 either. After M7, [BENCH-1] builds the feature-spanning benchmark +
 prioritizer; then the OPT waves open, [MECH-3] first, with the prioritizer
 setting the work order.
 
-## Next: [STD1]
+## Next: M4 (milestones start with Frank)
 
-- [STD1] STATE:started — implement D37: the bare default becomes
-  frozen named set `std1` = {classes, modifiers}; named-set plumbing
-  (`--features std1|none|<explicit>`, older sets available verbatim
-  forever, bare-default mapping advances only at announced version
-  boundaries); artifact stamping (set name + expanded module list in
-  emitted header + macro); FULL SUITE RE-BASELINE (reject_gated
-  inversions, corpus `features` directives, check07 gate equivalence,
-  PC-3 gate state all assume an empty default today); check09 per-name
-  arming + check01 aperture/floors land here. Product-face change —
-  starts with Frank's go, after MOD-0.8 closes
-  - [STD1a] STATE:started — named-set plumbing + artifact stamping,
-    bare default KEPT EMPTY (mapping constant held at "none") so the
-    suite stays green; stamp is UNCONDITIONAL incl. bare invocations
-    (ruled in-session: D37's reproducibility rationale applies most to
-    bare artifacts; skip-when-bare would make stamp presence depend on
-    invocation spelling). Lane std1-impl, worktree std1-impl.
-  - [STD1b] STATE:not-started — flip PCREC_DEFAULT_FEATURES to "std1"
-    + full suite re-baseline (reject_gated inversions, corpus features
-    directives, PC-3 gate state, check07 population re-measure). Two
-    lanes, after STD1a merges.
-  - [STD1c] STATE:not-started — check09 per-name arming + check01
-    aperture/floors per docs/dev/std1_check_rearm.md (spec written
-    2026-08-13, sabotage validations named there); after STD1b.
+[STD1] completed 2026-08-13 (seventeenth session) — archived in
+plan_completed.md. Per the ratified order M4 is next; before its match-API
+design freezes, the [PC-5] flag-disposition table must exist and the
+subst-template design note is owed (backrefs + atomic notes below are
+already drafted). The M4-CALLOUTS callout-ABI alignment proposal
+(2026-08-13 amendment) is a design input to the same freeze.
 
 ## M4 — Captures + backtracking VM engine
 

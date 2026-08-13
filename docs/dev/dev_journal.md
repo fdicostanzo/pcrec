@@ -7428,3 +7428,63 @@ gated / 99 iterated / 528 checks — old 144/45/66 was stale independent
 of STD1b) and a second stale copy of the same figures fixed in the
 earned-its-keep section. Worktree removed. Only std1-rearm (STD1c)
 outstanding; merge chain to main after it lands + spec_mod0 re-verify.
+
+### Seventeenth session, phase boundary 7 — STD1 merged to main, close battery running
+
+std1-rearm landed (552efe2, reviewed: spec-faithful, five sabotage
+evidences incl. the validating find that the old ENABLED_RE missed
+PCREC_DEFAULT_FEATURES — the exact gap phase C existed to close; measured
+gate.pairs classes 24 / modifiers 20, compared_pairs 44, eligible 22,
+baseline 23, isolation 9 symbols / 4 TUs / 36 pairs). Merged into
+std1-flip; manager fixed spec_mod0/CLAUDE.md's stale 13/1 summary +
+check02 row (transient state, resolved same day). Final spec_mod0 gate
+on composed branch: 14/14 exit 0.
+
+std1-flip MERGED TO MAIN at db86a69 (journal conflict resolved
+chronologically — flip branch carried boundaries 5/6/compliance, main
+carried 3/4/composition; both kept, ordered). Plan substates STD1a/b/c
+-> completed; [STD1] itself stays STATE:started until the close battery
+is green. CLOSE BATTERY launched async (scratchpad/battery.log): the
+ruled shape ending in bench-alone and mech (tree committed first — mech
+archives HEAD).
+
+State if interrupted here: main holds the complete STD1 landing at
+db86a69 + these doc edits (uncommitted); battery result in
+scratchpad/battery.log ("=== BATTERY COMPLETE ===" trailer; per-step
+"BATTERY STEP: <name> (exit=N)" lines — every exit must be 0, mech
+trailer must read 35 rows undetected:0 anomalies:0 pc3-skipped:0...
+NOTE mech row count may have grown with STD1's new checks; judge against
+the trailer's own undetected/anomalies zeros, not the old 35). On green:
+[STD1] -> completed + archive row to plan_completed.md, journal close,
+wake.md rewrite, push per Frank's standing end-of-session call.
+
+### Seventeenth session close — [STD1] COMPLETED
+
+CLOSE BATTERY GREEN at db86a69: make, strict, test LINTGEN=1, spec_mod0,
+fuzz --seed 1, ubsan, asan, lint, bench (alone), mech — every step exit
+0; mech trailer 35 rows (undetected: 0, anomalies: 0, pc3-skipped: 0).
+The mech row count did NOT grow (STD1's new checks live inside existing
+sections); judged against the trailer's zeros as planned.
+
+Bookkeeping: [STD1] + STD1a/b/c archived to plan_completed.md (dated
+group, landing record with all merge hashes and the new baseline);
+plan.md's Next section now points at M4 (milestones start with Frank;
+PC-5 + subst-template note before the match-API freeze, callout-ABI
+alignment a design input to the same freeze). std1_check_rearm.md
+retired (git history holds it; sabotage evidence in the STD1c merge
+message). wake.md rewritten for session eighteen.
+
+NEW BASELINE (supersedes 569b48f figures): corpus 1284, cli 247, reject
+528 checks (274/99/55/99), codegen 34, registry 168, PC-3 163, spec_mod0
+14/14 ARMED, trie 7, thread 8, mech 35. Bare default = std1 =
+{classes, modifiers}; --features none = old bare behaviour verbatim;
+library raw default still empty (D37 addendum).
+
+Session lessons: (1) an expected-red integration branch (std1-flip) kept
+main green through a 5-merge landing — the flip riding WITH its
+re-baseline, not ahead of it, is the shape to repeat at std2. (2) Lanes
+that go idle mid-async-run need artifact-based watchers on the manager
+side (two lanes needed completion nudges; the watcher pattern worked
+both times). (3) The check-rearm spec written BEFORE implementation held
+without amendment — and its one prediction (the aperture gap) was
+confirmed by the implementing lane's own nm discovery.

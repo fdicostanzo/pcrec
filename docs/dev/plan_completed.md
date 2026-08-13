@@ -1537,3 +1537,41 @@ Known M1 limitations (tracked for later milestones):
   plain-make-for-strangers holds). (5) Every tier boundary NUMBER-BACKED:
   per-section runtimes measured at setup and re-recorded when any section
   doubles — that re-record trigger is the row's revisit-when
+
+
+## 2026-08-13 (seventeenth session — [STD1] close)
+
+- [STD1] STATE:completed — implement D37: the bare default becomes
+  frozen named set `std1` = {classes, modifiers}; named-set plumbing
+  (`--features std1|none|<explicit>`, older sets available verbatim
+  forever, bare-default mapping advances only at announced version
+  boundaries); artifact stamping (set name + expanded module list in
+  emitted header + macro); FULL SUITE RE-BASELINE (reject_gated
+  inversions, corpus `features` directives, check07 gate equivalence,
+  PC-3 gate state all assume an empty default today); check09 per-name
+  arming + check01 aperture/floors land here. Product-face change —
+  starts with Frank's go, after MOD-0.8 closes
+  - [STD1a] STATE:completed — named-set plumbing + artifact stamping,
+    bare default KEPT EMPTY (mapping constant held at "none") so the
+    suite stays green; stamp is UNCONDITIONAL incl. bare invocations
+    (ruled in-session: D37's reproducibility rationale applies most to
+    bare artifacts; skip-when-bare would make stamp presence depend on
+    invocation spelling). Lane std1-impl, worktree std1-impl.
+  - [STD1b] STATE:completed — flip PCREC_DEFAULT_FEATURES to "std1"
+    + full suite re-baseline (reject_gated inversions, corpus features
+    directives, PC-3 gate state, check07 population re-measure). Two
+    lanes, after STD1a merges.
+  - [STD1c] STATE:completed — check09 per-name arming + check01
+    aperture/floors per docs/dev/std1_check_rearm.md (spec written
+    2026-08-13, sabotage validations named there); after STD1b.
+
+  Landing record: STD1a merge 3048303 (plumbing+stamp, bare default held
+  empty); flip ab7592d; STD1b lane merges 5eebbed/09f0535 + compliance
+  2aebe8b; STD1c merge + main landing db86a69. Close battery green at
+  db86a69 (all steps exit 0; mech 35 rows undetected:0 anomalies:0
+  pc3-skipped:0). New baseline counts: corpus 1284, cli 247, reject 528
+  checks (274 rejections / 99 accepts / 55 gated / 99 iterated), codegen
+  34, registry 168, PC-3 163, spec_mod0 14/14 (check09 per-name +
+  check01 aperture ARMED), trie 7, thread 8. Phase C spec
+  (std1_check_rearm.md) retired at close — content in git history and
+  the sabotage evidence in the STD1c merge message.
