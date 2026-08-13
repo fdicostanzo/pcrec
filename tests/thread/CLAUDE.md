@@ -6,7 +6,9 @@ from multiple threads at once on different subjects (TS-2), and that
 `pcrec_compile()` is safe to call from multiple threads at once on different
 patterns (TS-3). Both are established empirically, under `-fsanitize=thread`,
 rather than by reading the emitter or `src/core/compile.c` and trusting the
-design. Not part of `make test` yet — see "Proposed integration" below.
+design. Part of `make test` (wired in per "Proposed integration" below,
+which is now the actual state, not a proposal) and has its own [TT-1]
+section target, `make test-thread`.
 
 ## Files
 
@@ -132,20 +134,11 @@ wall time ~6.6s across three repeated runs (no flakiness observed). TSan's
 finishes in well under a second; the wall time is dominated by 8 separate
 gcc invocations under `-fsanitize=thread`, not by the runs themselves.
 
-## Proposed integration (not yet wired in — main session's call)
+## Integration
 
-`Makefile`, in `test:` (after the existing lines, given `test: all` already
-guarantees `build/pcrec` exists before this suite's PCREC default needs it):
-
-    bash tests/thread/run_thread_tests.sh
-
-`tests/CLAUDE.md`, in the file list:
-
-    - **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2]
-      N threads share one compiled matcher over different subjects, [TS-3]
-      concurrent `pcrec_compile()` on different patterns in different
-      threads. SKIPS loudly if `$CC` lacks `-fsanitize=thread`. Both halves
-      are sabotage-validated — see its CLAUDE.md for the measured TSan
-      race reports.
+Wired into `Makefile`'s `test:` as its last line (`test: all` already
+guarantees `build/pcrec` exists before this suite's PCREC default needs it),
+and into `tests/CLAUDE.md`'s file list. [TT-1] added `make test-thread` as a
+section target running just this script.
 
 Maintenance: update this file when fixtures, patterns, or sabotages change.

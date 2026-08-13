@@ -19,7 +19,12 @@ Process and status documents for pcrec. The architecture itself lives in
   believed and clean-rejection from miscompile. Periodically re-surveyed;
   its `REJECTED` rows are backed by tests/reject/ rather than asserted.
 - `testing.md` — .rxt test-file format, harness usage, env vars, oracle
-  exclusions, and how to add a per-module test directory.
+  exclusions, how to add a per-module test directory, and (added [TT-1])
+  "Tiered testing": the measured per-section runtimes behind `make
+  test-corpus`/`test-cli`/etc., the touched-path -> sections guidance table,
+  `make smoke`'s measured composition and floor check, and the opt-in
+  `make hooks` pre-push gate. `make test` itself is unchanged by any of this
+  — still the full suite, still the merge/close standard.
 - `extension_design.md` — ADOPTED (D34: Part II is the redesign of record)
   and progressively BUILT through MOD-0.1..0.3 (the first producers landed
   2026-08-12): how a regex feature plugs into pcrec — one table, a NAME per row as the unit of

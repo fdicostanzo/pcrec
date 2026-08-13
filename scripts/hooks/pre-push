@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# scripts/hooks/pre-push — OPT-IN local gate: runs `make test` before a push
+# leaves the machine. [TT-1].
+#
+# NOT auto-installed. Installed only by `make hooks` (a plain copy into the
+# resolved hooks directory) and by nothing else — no Makefile target runs it
+# implicitly, and there is no CI running it either. D2's "plain make for
+# strangers" holds: cloning this repo and running `make`/`make test` must
+# never trip a hook the stranger didn't ask for.
+#
+# `make test` is the FULL suite (see docs/testing.md "Tiered testing" — this
+# hook deliberately does not call a tier target; a push gate that only ran
+# the fast subset would let the slow sections rot unwatched). It can take
+# several minutes; that cost is the point of making this opt-in rather than
+# forced on everyone by CI.
+set -u
+
+# This file, once installed, lives under .git/hooks (or wherever
+# core.hooksPath / `git rev-parse --git-path hooks` points), which is NOT
+# inside a worktree's own tracked tree — so we cannot walk up from here to
+# find the repo root the way an in-tree script would. Instead ask git,
+# from the current working directory, which is the worktree that invoked
+# `git push` (git runs pre-push with cwd at that worktree's top level).
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$repo_root" ]; then
+    echo "pre-push: could not resolve repo root via 'git rev-parse --show-toplevel'" >&2
+    exit 1
+fi
+
+cd "$repo_root" || exit 1
+echo "pre-push: running 'make test' (opt-in gate, installed via 'make hooks')..."
+if ! make test; then
+    echo "pre-push: 'make test' FAILED — push blocked." >&2
+    echo "pre-push: fix the failure, or bypass once with 'git push --no-verify'" >&2
+    echo "pre-push:   (bypassing is a deliberate choice, not the default)." >&2
+    exit 1
+fi
+echo "pre-push: 'make test' passed."
+exit 0

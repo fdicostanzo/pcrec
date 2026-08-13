@@ -131,9 +131,21 @@ bench: all
 fuzz: all
 	python3 tests/fuzz/fuzz.py
 
+# [TT-1] OPT-IN local push gate. Copies scripts/hooks/pre-push into the
+# resolved hooks directory — `git rev-parse --git-path hooks`, NOT a
+# hardcoded .git/hooks, because in a worktree .git is a file pointing at the
+# shared gitdir (see `git worktree`'s docs and docs/testing.md). Never run
+# automatically by any other target and never by CI (D2, TT-1 principle 4):
+# a stranger's plain `make`/`make test` must not install anything into their
+# git config.
+hooks:
+	@hookdir="$$(git rev-parse --git-path hooks)"; \
+	install -m 0755 scripts/hooks/pre-push "$$hookdir/pre-push"; \
+	echo "hooks: installed scripts/hooks/pre-push -> $$hookdir/pre-push"
+
 clean:
 	rm -rf build
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
-        test-codegen test-known-fail test-thread test-spec strict bench \
-        fuzz clean
+        test-codegen test-known-fail test-thread test-spec smoke hooks \
+        strict bench fuzz clean
