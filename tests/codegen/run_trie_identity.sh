@@ -28,7 +28,9 @@
 #
 # Usage: bash tests/codegen/run_trie_identity.sh
 # Env: PCREC (default <root>/build/pcrec), CC, TRIE_N (pattern count, default
-#      500), TRIE_SEED (default 20260809), KEEP=1
+#      500), TRIE_SEED (default 20260809), KEEP=1, SANFLAGS (default empty —
+#      SAN-1: extra flags appended to the from-source $REF reference build;
+#      $PCREC itself carries the compiler axis for free via the PCREC override)
 
 set -u
 
@@ -38,6 +40,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 N="${TRIE_N:-500}"
 SEED="${TRIE_SEED:-20260809}"
+SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
 
 WORKDIR="$(mktemp -d)"
@@ -74,7 +77,7 @@ gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 # so #ifdef rot is loud rather than silent.
 REF="$WORKDIR/pcrec_notrie"
 if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
-        -DPCREC_NO_TRIE \
+        -DPCREC_NO_TRIE $SANFLAGS \
         -o "$REF" "$ROOT_DIR"/cli/main.c "$ROOT_DIR"/src/*/*.c \
         2>"$WORKDIR/refbuild.log"; then
     echo "FAIL: could not build the -DPCREC_NO_TRIE reference compiler:" >&2

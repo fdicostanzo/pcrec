@@ -13,6 +13,14 @@
 #   CC         C compiler                 (default: gcc)
 #   GENCFLAGS  flags for compiling generated code
 #              (default: -O1 -std=gnu11 -Wall -Wextra -Werror)
+#   LINTGEN=1  (SAN-1) ride this compile pass with gcc -fanalyzer on every
+#              generated matcher — the compilee-axis half of `make lint`,
+#              opt-in so a plain `make test` is byte-for-byte unchanged.
+#              Findings surface the same way any other GENCFLAGS warning
+#              does: -Werror is already in the default GENCFLAGS, so an
+#              analyzer finding fails the compile loudly. See docs/testing.md
+#              "Sanitizer + lint battery" for the shape survey that found
+#              zero analyzer findings/false positives before this was wired.
 #   KEEP=1     keep the temp working directory instead of deleting it
 #   VERBOSE=1  print a line for every passing case, not just failures
 #   PROCS=N    run N .rxt FILES concurrently (default 1 — serial, unchanged).
@@ -33,6 +41,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
+if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 KEEP="${KEEP:-0}"
 VERBOSE="${VERBOSE:-0}"
 PROCS="${PROCS:-1}"
