@@ -40,6 +40,54 @@ test: all
 	bash tests/known_fail/run_known_fail.sh
 	bash tests/thread/run_thread_tests.sh
 
+# [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
+# runs, one target per section, so a developer can spot-check just the
+# section a change touches instead of paying for the whole suite. `test:`
+# itself is UNTOUCHED by this: it is still the full nine-script run above,
+# byte for byte the same claim as before tiering existed. See docs/testing.md
+# "Tiered testing" for the measured per-section runtimes, the touched-path
+# guidance table, and why `test-spec` exists even though it is not (yet) one
+# of the nine lines in `test:` above.
+#
+# Each target rebuilds `all` first (bar test-spec, which treats build/pcrec
+# as a black box the way its own runner already does) so a stale binary never
+# reads as a pass.
+test-corpus: all
+	bash tests/harness/run.sh
+
+test-cli: all
+	bash tests/cli/run_cli_tests.sh
+
+test-reject: all
+	bash tests/reject/run_reject_tests.sh
+
+test-registry: all
+	bash tests/registry/run_registry_tests.sh
+
+test-parse: all
+	bash tests/parse/run_parse_tests.sh
+
+# Both scripts here are the "codegen structural checks" docs/testing.md
+# already describes as one thing; `test:` runs them as consecutive lines,
+# so this target does too.
+test-codegen: all
+	bash tests/codegen/run_codegen_tests.sh
+	bash tests/codegen/run_trie_identity.sh
+
+test-known-fail: all
+	bash tests/known_fail/run_known_fail.sh
+
+test-thread: all
+	bash tests/thread/run_thread_tests.sh
+
+# Not one of the nine `test:` lines — tests/spec_mod0/run_spec_mod0.sh is a
+# standalone D27 suite, deliberately kept out of `make test` (its own
+# CLAUDE.md: "Not part of `make test`, and it does not run `make`"). It gets
+# a section target anyway because the plan row that created tiering named it
+# explicitly as one of the eight tiers a developer should be able to run.
+test-spec: all
+	bash tests/spec_mod0/run_spec_mod0.sh
+
 # `make strict` — R5-Q1, answered 2026-08-10: OPT-IN, never the default.
 #
 # The question was whether to adopt -Werror. The reason it matters is that the
@@ -86,4 +134,6 @@ fuzz: all
 clean:
 	rm -rf build
 
-.PHONY: all test strict bench fuzz clean
+.PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
+        test-codegen test-known-fail test-thread test-spec strict bench \
+        fuzz clean
