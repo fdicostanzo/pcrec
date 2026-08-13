@@ -16,7 +16,11 @@ or it has no regression net at all.
   and diffs the emitted C over 500 generated alternation patterns. The trie is
   required to be OUTPUT-PRESERVING — subset construction plus minimization must
   erase it — so any difference is a rule-1/rule-2 soundness bug. No subjects, no
-  gcc, ~4 s. Env: PCREC, CC, TRIE_N, TRIE_SEED, KEEP=1.
+  gcc, ~4 s. Env: PCREC, CC, TRIE_N, TRIE_SEED, KEEP=1, SANFLAGS (SAN-1:
+  extra flags appended to the from-source `$REF` reference build only —
+  `$PCREC` is already overridable and carries the PRIMARY compiler-axis
+  sanitizer coverage for free; see docs/testing.md "Sanitizer + lint
+  battery" for a real finding (F1) this SANFLAGS wiring surfaced).
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
@@ -25,7 +29,8 @@ or it has no regression net at all.
   for `$` vs `^`, and the M2.12 EOL-path checks: skips present and bounded at
   n-1, reverse skip entry guard, memchr bounded at n-1, and an ORDER check
   that accept/EOL evaluation follows the skips), plus the OS-0b multi-engine
-  block. Part of `make test`; env: PCREC, CC, GENCFLAGS, KEEP=1.
+  block. Part of `make test`; env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
+  (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
 
 ## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)
 
