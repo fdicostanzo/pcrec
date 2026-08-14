@@ -1659,3 +1659,33 @@ Known M1 limitations (tracked for later milestones):
   candidate is bit-parallel shift-and, detectable from the built DFA as
   an src/opt pass. M4.6 owes the family a non-regression floor via the
   capture-bearing sibling (engine_m4.md §8.5).
+
+- [M4.3] STATE:completed (2026-08-14, nineteenth session) — D6 ADVERSARIAL PANEL over M4.1 + M4.2
+  TOGETHER WITH the still-unpaneled design_callout_abi.md and
+  subst_template_design.md (their panel-outcome blocks land here).
+  Findings file under docs/dev/reviews/; fix-with-measurement before
+  disposition. GATE: no implementation substep below opens before this
+  panel's tier-1/tier-2 findings are dispositioned; the match-API
+  freeze is declared at this step's close
+
+  Landing record: R21 (docs/dev/reviews/2026-08-14-r21-m4-design.md) —
+  three read-only critics (ABI/contract, engine-vs-oracles [strong
+  model], coherence/staleness [sonnet]), 36 findings (11 tier-1), every
+  one dispositioned same day: D44 (+ working-baseline addendum) ratified
+  the ruling batch; the r21-fixes lane applied every doc disposition
+  (merge f2629a3 + landing bar ae6946b/fc5d98f); the k17-fix lane fixed
+  the panel's live shipped miscompile (K17 — K1's one-shot redirect
+  guard removed from clo_visit, 120 oracle-verified family tests,
+  corpus 1284→1404, 294/294 changed cells toward the oracle in a
+  50,400-cell isolation sweep, sabotage-validated fuzz trap templates;
+  merge of fb95b88/62690a9) and OPENED K18 (the path-dependent sibling;
+  165 known_fail cases, design-first before [M4.6]). ubsan + asan both
+  axes green on the composed tree; lint/bench/mech owed at [M4.4] close
+  per the standing schedule. FREEZE DECLARED at close as the M4 WORKING
+  BASELINE: match_api_m4.md STATUS flipped to FROZEN, engine_m4.md to
+  DESIGN OF RECORD. Headline panel results: python-vs-PCRE2 oracle
+  disagreement measured ZERO across 225,240 pairs (ASK-1 refuted — the
+  planned exclusion mechanism would have hidden K17; three-way
+  2-1-minority rule adopted); the erasure argument, trail discipline,
+  VM sketch, cliff guard and all 11 STRUCTURAL citations HELD under
+  attack; what broke was what was marked BELIEVED.

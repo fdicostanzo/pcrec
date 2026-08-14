@@ -27,11 +27,14 @@
 > Superseded text is struck/annotated in place per house style, not
 > silently rewritten.
 
-STATUS: **PROPOSED** ([M4.2], 2026-08-14). Nothing here is built and nothing
-here is ruled. The [M4.3] D6 adversarial panel reviews this document together
-with `match_api_m4.md`, `design_callout_abi.md` and `subst_template_design.md`
-before any implementation substep opens; the panel-outcome block lands at the
-top of this file when it reports.
+STATUS: **DESIGN OF RECORD for [M4.4]–[M4.7]** (declared at [M4.3]'s
+close, 2026-08-14 — R21 panel dispositions applied, K17 fixed and merged
+sanitizer-green, K18 opened/ratcheted/scheduled design-first before
+[M4.6]). D44's addendum calibrates the weight: a working baseline for the
+first VM build, EXPECTED to be revised by measurement at [M4.7]'s
+post-run review; build-time disagreements resolve toward running code
+and are recorded for that review. *(Original status, kept for history:
+PROPOSED, [M4.2] 2026-08-14, pre-panel.)*
 
 This document is written to be attacked. Every load-bearing claim is marked,
 every number that does not yet exist is named as a measurement someone must

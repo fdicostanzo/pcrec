@@ -81,11 +81,12 @@ merged 3d5a9e8 with all fourteen of §9's questions fully ruled
 alignment proposal has its rulings applied
 (docs/design/design_callout_abi.md) with only the syntax spelling (§6 Q5)
 and the embedded-code restrictions (§6 Q6) left open. [M4.0] EXPANDED
-into substeps M4.1–M4.7 (2026-08-14, Frank's go): design docs first
-(M4.1 match-API freeze, M4.2 engine — each its own doc in docs/design/),
-then the M4.3 D6 panel (which also sweeps the two unpaneled pre-freeze
-docs) as a hard gate before any implementation substep opens. Next
-session starts at M4.1/M4.2.
+into substeps M4.1–M4.7 (2026-08-14, Frank's go). AS OF THE NINETEENTH
+SESSION'S CLOSE (2026-08-14): M4.1, M4.2 and M4.3 are ALL COMPLETED —
+both design docs written, paneled (R21), fix-rounded, and the freeze is
+DECLARED as the working baseline (D44 + addendum; D41–D44 rounded out
+the ruling surface, K17 found-and-fixed, K18 opened and scheduled).
+NEXT: [M4.4] — implementation is open.
 
 ## M4 — Captures + backtracking VM engine
 
@@ -109,13 +110,17 @@ stated terms.
   ride to Frank/panel; four requirements handed back to
   match_api_m4.md (search-entry negative returns, the capture-delivering
   entry gap, ASK-4 closure per §5.7, symbol spellings)
-- [M4.3] STATE:started (2026-08-14, R21, 3 critics) — D6 ADVERSARIAL PANEL over M4.1 + M4.2
-  TOGETHER WITH the still-unpaneled design_callout_abi.md and
-  subst_template_design.md (their panel-outcome blocks land here).
-  Findings file under docs/dev/reviews/; fix-with-measurement before
-  disposition. GATE: no implementation substep below opens before this
-  panel's tier-1/tier-2 findings are dispositioned; the match-API
-  freeze is declared at this step's close
+- [M4.3] COMPLETED 2026-08-14 (R21; row archived in plan_completed.md) —
+  the D6 panel ran (3 critics, 36 findings, 11 tier-1), every tier-1/2
+  finding is dispositioned (D44 + the r21-fixes doc round + the k17-fix
+  code lane, ubsan+asan green on the composed tree), and **the MATCH-API
+  FREEZE IS DECLARED** as the M4 WORKING BASELINE (D44 addendum's
+  weight: revisable at M4.7's post-run review, D40 regime 1).
+  match_api_m4.md is the frozen surface; engine_m4.md is the design of
+  record. Standing consequences: K18 (opened by the K17 fix's own sweep)
+  is design-first-before-[M4.6]; the full battery (lint/bench/mech)
+  remains owed at [M4.4]'s close per the standing schedule.
+  IMPLEMENTATION IS OPEN from [M4.4]
 - [M4.4] STATE:not-started — IMPL: the API BREAK lands mechanically —
   rx_span RETIRES for the caps-array search signature across
   emitters/harness/corpus (D44.2), the pcrec_error tag, PCREC_*

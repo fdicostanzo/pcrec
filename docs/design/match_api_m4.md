@@ -21,13 +21,23 @@
 > (§8, D44.8). Superseded text is struck/annotated in place per this
 > document's own house style, not silently rewritten.
 
-**STATUS: PROPOSED.** This document does not itself rule anything; it
-collects rulings that already exist (`docs/dev/decisions.md` D38, D39, and
-D38's PC-5 disposition of `docs/pcre2_options.md`) into one place, precisely
-enough that [M4.4] can apply the break mechanically and [M4.3]'s panel can
-attack a single surface instead of three overlapping documents. **The freeze
-does not take effect until AFTER [M4.3]'s panel closes.** Until then this is
-a draft of the contract, not the contract.
+**STATUS: FROZEN — the M4 WORKING BASELINE, declared at [M4.3]'s close
+(2026-08-14, R21 dispositions applied and sanitizer-green K17 fix
+merged).** The freeze's WEIGHT is calibrated by D44's addendum: this is
+the settled surface [M4.4]–[M4.7] build against without mid-build drift —
+NOT a v1 contract. The post-run review at [M4.7]'s close is EXPECTED to
+revise it with the running engine's measurements in hand, under D40
+regime 1's announced-break form; build-time disagreements resolve toward
+running code and are recorded for that review (miscompile-shaped findings
+always stop the line). The as-built contract graduates to docs/spec/ at
+[M4.7] (D40 addendum).
+
+*(Original status, kept for history:)* PROPOSED — this document does not
+itself rule anything; it collects rulings that already exist
+(`docs/dev/decisions.md` D38, D39, and D38's PC-5 disposition of
+`docs/pcre2_options.md`) into one place, precisely enough that [M4.4] can
+apply the break mechanically and [M4.3]'s panel can attack a single
+surface instead of three overlapping documents.
 
 ## How to read this document
 
