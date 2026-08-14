@@ -437,7 +437,39 @@ panel MEASURED that `rx_work` arrays are Θ(n) on benign matches
 (~68 B/subject byte for `(a|b)+c`) — as locals under D19's 128 KB thread
 stack, that caps captured matching at roughly 1.9 KB of subject, three
 orders of magnitude below where the step budget would notice (§4). The
-root cause: §2.5 as originally written excluded ANY capture-bearing body
+per-entry constants behind that aggregate, spelled out against §2.2's
+`rx_work` struct: a resume frame (`bt[]`, the `{const void *k; size_t
+pos; unsigned mark;}` element) is **24 B** — `k` (8 B) + `pos` (8 B) +
+`mark` (4 B, padded to 8 B) — and a trail entry (`tr[]`, `{unsigned
+short slot; ptrdiff_t v;}`) is **16 B** — `slot` (2 B, padded to 8 B) +
+`v` (8 B). One resume frame plus one trail entry per iteration is where
+`(a|b)+c`'s aggregate comes from.
+
+**Alignment note (manager-recorded from Frank's question, 2026-08-14).**
+Both arrays are naturally 8-byte-ALIGNED as designed: every padding byte
+above exists because `size_t`/`ptrdiff_t` members force 8-byte alignment
+on the struct as a whole, which is exactly what rounds `bt[]`'s element
+from a bare 20 B (8+8+4) up to 24, and `tr[]`'s from a bare 10 B (2+8) up
+to 16 — the padding is not waste in the sense of a mistake, it is the
+cost of keeping every element naturally aligned in an ARRAY of them
+(misaligned repeated access, not a single misaligned struct, is the thing
+alignment padding is actually paying to avoid). Any FUTURE packing of
+these constants (e.g. narrowing `mark`/`pos` where the pattern's bounds
+allow it) must preserve stride alignment or it trades a correctness-cheap
+padding cost for a genuinely slower array — the clean shape for that kind
+of packing is THEREFORE structure-of-arrays, not a tighter interleaved
+struct: separate `slots[]` (tightly-packed `unsigned short`, 2 B/entry,
+needs no internal padding because every element is the same narrow type)
+and `vals[]` (naturally-aligned `ptrdiff_t`, 8 B/entry) arrays, aggregate
+~10 B/entry against the interleaved struct's 16, with neither array ever
+misaligned internally. This is recorded as a MEASURED-OPTIMIZATION option
+for [M4.5]/[M4.6], not designed now, and it is largely MOOTED for the
+common shapes by the D44.1 cursor extension: a deterministic
+capture-bearing body no longer allocates per-iteration trail entries at
+all, so packing only matters for the residual choice-point-bearing
+class, which the extension already shrinks.
+
+The root cause: §2.5 as originally written excluded ANY capture-bearing body
 from the cursor scheme by definition (a capture write needs an `RX_SET`
 call, which the plain span-loop-plus-cursor above never makes), so every
 capture-bearing quantifier fell back to one resume frame PER ITERATION
@@ -471,21 +503,6 @@ excluding captures wholesale). Two consequences:
   without discovering it by triggering `RX_ERR_FRAMES`. [M4.5] is where
   this extension is BUILT (§14's own scope line); this section records
   the design.
-
-**Alignment note (manager-recorded from Frank's question, 2026-08-14).**
-The measured entry sizes are the ALIGNED sizes, not waste: a frame is
-24 B (`void *` resume address + `size_t` pos + `unsigned` mark padded
-8/8/8) and a trail entry 16 B (`unsigned short` slot padded + `ptrdiff_t`
-old value) — both arrays stride at multiples of 8 with every 8-byte
-member naturally aligned, and the "~68 B/subject byte" figure is
-arithmetic ACROSS the two separately-aligned arrays, never a stride
-anything loads at. Any future field-packing (2-byte label index, 32-bit
-positions) must keep stride alignment; the clean shape for that is
-STRUCTURE-OF-ARRAYS (separate `slots[]`/`vals[]`, each naturally
-aligned, ~10 B/entry aggregate), never a packed interleaved struct.
-Recorded as a measured-optimization option for [M4.5]/[M4.6]; largely
-mooted for common shapes by the D44.1 cursor extension above, which
-deletes entries rather than shrinking them.
 
 ### 2.6 Search wraps match-here
 
