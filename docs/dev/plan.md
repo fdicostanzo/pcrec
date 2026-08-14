@@ -80,13 +80,77 @@ merged 3d5a9e8 with all fourteen of §9's questions fully ruled
 (docs/design/subst_template_design.md); the M4-CALLOUTS callout-ABI
 alignment proposal has its rulings applied
 (docs/design/design_callout_abi.md) with only the syntax spelling (§6 Q5)
-and the embedded-code restrictions (§6 Q6) left open. Next step: expand
-[M4.0] into substeps — milestones start with Frank, and the session-start
-go covers development; the manager will bring the expansion.
+and the embedded-code restrictions (§6 Q6) left open. [M4.0] EXPANDED
+into substeps M4.1–M4.7 (2026-08-14, Frank's go): design docs first
+(M4.1 match-API freeze, M4.2 engine — each its own doc in docs/design/),
+then the M4.3 D6 panel (which also sweeps the two unpaneled pre-freeze
+docs) as a hard gate before any implementation substep opens. Next
+session starts at M4.1/M4.2.
 
 ## M4 — Captures + backtracking VM engine
 
-- [M4.0] STATE:not-started — milestone (expand on arrival): VM emitter, DFA-prefilter hybrid, DFA islands
+Expanded 2026-08-14 (eighteenth session; Frank's go — design and panel
+first, implementation next session at the earliest). The milestone's two
+design docs do not exist yet and NOTHING M4-shaped has been panel-critiqued;
+the two ruled pre-freeze docs (design_callout_abi.md, subst_template_design.md)
+are themselves unpaneled and are swept into M4.3's panel by their own
+stated terms.
+
+- [M4.1] STATE:not-started — DESIGN: the MATCH-API FREEZE document
+  (docs/design/match_api_m4.md). Collects every ruled obligation into one
+  freezable contract: the rx_span → `ptrdiff_t[2]` pair break (D38 Q12 —
+  a DD-3 versioning event at the M4 boundary, D37's announced-boundary
+  shape), the caps array + RX_NCAPS/RX_UNSET surface satisfying subst
+  C1–C11, the unconditional match-here export (F1/F2), rx_ctx +
+  rx_callout_ref (F3, D38), the {name, number, ref} group index (F8, D39
+  + addendum), the pcrec_error which-input tag (subst Q8), OS-0
+  entry-point naming, the PCREC_* native constants surface (D38
+  addendum; PCRE2_* compat-only), and how callout-pattern entry points
+  thread nothing extra (user lives in the binding ref). Deliverable: the
+  doc; freeze happens only AFTER M4.3's panel
+- [M4.2] STATE:not-started — DESIGN: the ENGINE document, its own design
+  doc at docs/design/engine_m4.md (Frank, 2026-08-14) — the
+  backtracking VM as EMITTED SPECIALIZED C (no runtime interpreter, per
+  the project mandate), capture tracking with PCRE2's leftmost/priority
+  semantics, DD-2's step budget (robustness tier, not a security
+  boundary), per-pattern engine selection (capture-free patterns keep
+  today's DFA engines; the backrefs-finite/atomic-cut analyses under
+  this milestone are future selection customers), the DFA-prefilter
+  hybrid and DFA-islands shape from APPROACH, DD-7 (which machine is
+  the capture prefilter; ENG_UNANCH/anchoring absorption ownership),
+  DD-9 (decide whether the hybrid owns the case-f dense/counting gap —
+  the row's own requirement), and SR-8's lowering-time
+  "requires the VM engine" refusal design. DD-8's --emit-ir/--emit-dot
+  noted as optional bring-up tooling, schedulable as filler
+- [M4.3] STATE:not-started — D6 ADVERSARIAL PANEL over M4.1 + M4.2
+  TOGETHER WITH the still-unpaneled design_callout_abi.md and
+  subst_template_design.md (their panel-outcome blocks land here).
+  Findings file under docs/dev/reviews/; fix-with-measurement before
+  disposition. GATE: no implementation substep below opens before this
+  panel's tier-1/tier-2 findings are dispositioned; the match-API
+  freeze is declared at this step's close
+- [M4.4] STATE:not-started — IMPL: the API BREAK lands mechanically —
+  rx_span becomes the pair type across emitters/harness/corpus, the
+  pcrec_error tag, PCREC_* constants, match-here export + (empty-ref)
+  group index retrofitted onto the EXISTING DFA matchers. Coverage
+  conservation per the STD1 re-baseline shape: suite populations
+  conserved and accounted, one announced break commit
+- [M4.5] STATE:not-started — IMPL: VM emitter core — captures over the
+  base tier, search + match-here entries, DD-2 budget wired; .rxt
+  format extension for capture expectations (docs/testing.md updated),
+  python-re group-span oracle tier, and a D27-blinded capture test
+  author per convention
+- [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
+  DFA-prefilter hybrid + DFA islands as designed; measured against
+  bench floors under D12/R3.10 discipline; DD-9's decided outcome
+  applied and measured
+- [M4.7] STATE:not-started — DIFFERENTIAL + CLOSE: capture differential
+  vs libpcre2 ovectors (gate-ON per docs/testing.md's differential-gate
+  principle), fuzzer extended to compare capture spans, SR-8's
+  diagnostic flip lands (the VM now exists), full close battery +
+  ratchets. M4-CALLOUTS step 2 stays a boonies row, NOT an M4 substep —
+  the VM design must merely not preclude its call sites (F-obligations
+  already frozen)
 
 Design notes moved here from [MOD-0.1]'s archived entry (docs/dev/plan_completed.md),
 2026-08-13 — M4's design customers, per the Development order above:
