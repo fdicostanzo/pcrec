@@ -7582,3 +7582,113 @@ break; VM emitter core + capture oracle + D27 author; selection/hybrid/
 islands measured; capture differential + SR-8 flip + close battery).
 Next session starts at M4.1/M4.2. Tree committed clean; smoke 6/6 green
 post-flip-merge; wake.md rewritten; pushed to origin per standing call.
+
+## 2026-08-14 — Nineteenth session: M4 design built, paneled, frozen; K17 found-and-fixed; implementation open
+
+Frank opened with "begin dev when ready" against wake.md's queue (M4.1 +
+M4.2). By close: BOTH design docs written and merged, the entire
+remaining ruling surface closed interactively (D41–D44 + addenda, ~25
+more rulings across four batches), the R21 panel run and every finding
+dispositioned, a LIVE SHIPPED MISCOMPILE found by the panel and fixed
+the same day, and the MATCH-API FREEZE DECLARED as the M4 working
+baseline. [M4.1], [M4.2], [M4.3] all completed; [M4.4] is open.
+
+**Lanes (six across the session, sequential ≤2 concurrent, all merged
+and cleaned up):** m41-matchapi (sonnet; match_api_m4.md, merge
+65b16c6); m42-engine (strong model; engine_m4.md, merge b726386 — DD-9
+decided, SR-8's flip measured smaller than its row, three ABI tensions
+reported not resolved); m4-amend (sonnet; D41–D43 integration + rx_info,
+merge 96b8179); r21-fixes (sonnet; all D44 dispositions across four
+docs, merge f2629a3); k17-fix (strong model, pre-tiering-rule; the K17
+fix, merge of fb95b88/62690a9); plus three R21 critics (read-only).
+
+**The ruling record (decisions.md):** D40 pre-v1/at-v1 versioning stance
+(+ addendum: docs/spec is the contract vehicle; spec charter sharpened —
+build history excluded, design references informational only). D41
+fixed rx_* ABI type names, <prefix>_match, named-only group index,
+match_caps entry ADDED, search posture (one-shot primitive; emitted
+loops own dense iteration; <prefix>_iter the designated cursor
+extension; find-all rejected as primitive) + [OPT-SIMD] row. D42
+captures ON by default, RX_NCAPS artifact rule, reservation kept,
+err-tag spelling + V-A alias obligation, caps lifetime, DD-2 two
+bounds, DD-7 split ([ENG-ABS]), DD-9 archived to BENCH-1's worklist
+head. D43 (+2 addenda) the rx_info reflection struct (Frank's own
+direction: consistent CLI → PCREC_* bit → pcrec_options.flags funnel;
+pattern embedded unconditionally; THREE counts after his
+names-vs-groups catch; V-E direction: referenced patterns contribute
+slots only for NAMED groups). D44 (+ working-baseline addendum) the
+R21 dispositions: frame-ceiling design (cursor extension +
+stamped residual ceiling), caps-array search signature at M4.4
+(<prefix>_span RETIRES), slot column born into rx_group_entry, K17
+fix-now, rx_info hardening (abi member, pattern_len, 64-bit flags,
+ncaps = RX_NCAPS, ENGM engine int, int64 budget), --engine=dfa refusal,
+--no-captures × $n --replace compile error, PCREC_CASELESS.
+
+**R21 (docs/dev/reviews/2026-08-14-r21-m4-design.md):** 3 critics, 36
+findings, 11 tier-1. Headlines: E-1 → K17, a live shipped DFA priority
+miscompile ((?:b*?(?:a*)*)* on "ab": pcrec [0,2), BOTH oracles [0,1)),
+found by executing the design's own P-1 probe; E-2, the design's
+empty-guard wrong for bounded repeats (60/225,240 vs libpcre2; 0 with
+guard iff rmax==-1); E-3, the Θ(n) frame/trail working set capping
+capture matching at ~2 KB of subject under D19's thread-stack budget;
+A-1, the span array-typedef's measured silent-stack-smash at the M4.5
+signature change; A-2, the fixed ABI types failing to compile when two
+differently-prefixed headers meet in one TU. ASK-1 REFUTED: python vs
+PCRE2 disagreement measured ZERO across 225,240 pairs — the planned
+oracle-exclusion mechanism would have HIDDEN K17; replaced by the
+three-way 2-1-minority rule. All 11 STRUCTURAL citations held; what
+broke was what was marked BELIEVED.
+
+**K17 fixed same day** (the k17-fix lane): K1's one-shot redirect guard
+in clo_visit removed — the empty-iteration rule is a property of the
+ARRIVAL, with a termination argument replacing the guard. 120
+oracle-verified family tests (corpus 1284→1404); 294/294 changed span
+cells old-wrong→new-right over a 50,400-cell isolation sweep; 4477/4500
+emitted-source blast radius byte-identical; sabotage-validated fuzz trap
+templates (28 pre-fix divergences → 0; the class goes from ~1e-4 joint
+probability to ~4% of generated patterns). Manager independently
+re-verified the repro both sides. The fix's own validation sweep found
+**K18** — the structurally distinct sibling (re-arrival THROUGH a seen ε
+state; the memo is global, the rule is path-dependent) — opened,
+ratcheted (165 known_fail cases + 7 controls), scheduled DESIGN-FIRST
+before [M4.6], which does not open with it unfixed. The lane also caught
+its own vacuous isolation check (a 0-changed control whose generator
+couldn't produce the class) — two new check-design lessons recorded.
+
+**Frank's session threads, all recorded:** the rx_ctx user-data
+re-examination (kept, noted in the doc); the v1 stance (D40); the spec
+charter; the pcrec_options funnel question that became D43/rx_info; the
+two-counts catch (D43 addendum); the leftmost-first vs leftmost-longest
+discussion that confirmed K17 is a bug under the ruled standard; the
+frame-anatomy and alignment questions (recorded in engine §2.5 with the
+SoA packing constraint); the fixed-stride cursor ladder (his z(ab)*y
+question) and the REVERSE-DETERMINISTIC rung (his "play the regex
+backwards" — five-rung ladder now in §2.5); the DD-8 tracer upgraded to
+requested; --engine do-or-die confirmed with prefilter-off comparison
+semantics; model tiering (sonnet default / opus difficult / manager
+model never in lanes — CLAUDE.md + memory).
+
+**State at close:** main pushed; [M4.1]–[M4.3] completed and archived;
+freeze DECLARED (match_api_m4.md FROZEN as working baseline;
+engine_m4.md DESIGN OF RECORD; weight per D44 addendum). Counts:
+corpus 1404, cli 247, reject 528 (274/99/99/0), codegen 34, registry
+168, PC-3 163, PC-4 62,872 cells 0 disagreements, trie 7, thread 8,
+known_fail 1 (K18, deliberate). make test + strict green (k17-fix
+battery); ubsan + asan both axes green on the composed tree; lint/
+bench/mech owed at [M4.4]'s close. Open K-list: K2, K7, K9, K18.
+NEXT: [M4.4] — the announced API break, per match_api_m4.md §11's
+mechanical checklist.
+
+**Lessons:** (1) A design panel on a genuinely load-bearing surface
+found a shipped miscompile that 1284 tests and a span-comparing 1.24M-
+pattern fuzzer missed — by executing the design's own named prediction;
+budget critic probes by the BELIEVED marks. (2) The oracle-exclusion
+inversion: the noise the mechanism guarded against measured zero and
+the mechanism would have hidden the real bug — instruments point at
+pcrec first. (3) Crossed lane messages caused three near-misses this
+session (extension not landed, duplicate work, wrong-directory commit);
+the verify-the-extension-landed grep and worktree-state checks caught
+all three. (4) Frank's engineering questions (counts, alignment,
+stride, reverse-scan) each improved the design and each took minutes to
+record — the live-discussion channel is the project's cheapest
+high-quality critic.

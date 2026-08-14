@@ -64,8 +64,9 @@ append-only or historical records.
   `engine_m4.md` — F8 marked SUPERSEDED (folds into `rx_info`, D43.1/
   D44) and a new F9 backported (the D42.5 caps-lifetime line); see
   `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
-  POST-RULING UPDATES section. Dispositions APPLIED; still PROPOSED
-  until [M4.3]'s close is declared by the manager.
+  POST-RULING UPDATES section. Dispositions APPLIED; [M4.3] CLOSED
+  2026-08-14 — this doc remains a design input; the applied frozen
+  surface is match_api_m4.md.
 - `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
   because Frank's ratified observation is that the template compiler consumes
@@ -108,7 +109,7 @@ append-only or historical records.
   banner (`match_api_m4.md` is the applied surface; `rx_subst` gains
   `RX_ERR_*` codes and the A-9 compile-time-error obligation, D44.7); see
   `docs/dev/reviews/2026-08-14-r21-m4-design.md`. Dispositions APPLIED;
-  still PROPOSED until [M4.3]'s close is declared by the manager.
+  [M4.3] CLOSED 2026-08-14: STATUS is now FROZEN — the M4 working baseline (D44 addendum's weight; revisable at M4.7's post-run review).
 - `match_api_m4.md` — [M4.1] MATCH-API FREEZE document (2026-08-14):
   collects every already-ruled M4 obligation into ONE freezable contract —
   a collection-and-reconciliation document, not new design. STATUS:
@@ -181,8 +182,8 @@ append-only or historical records.
   search entry reshapes to a caps-array parameter and `<prefix>_span`
   RETIRES (D44.2) rather than becoming a typedef. See
   `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
-  §15. Dispositions APPLIED; still PROPOSED until [M4.3]'s close is
-  declared by the manager.
+  §15. Dispositions APPLIED; [M4.3] CLOSED 2026-08-14: STATUS is now DESIGN
+  OF RECORD for M4.4-M4.7 (working-baseline weight, D44 addendum).
 - `engine_m4.md` — **PROPOSED** ([M4.2], 2026-08-14): the M4 ENGINE design —
   the backtracking VM as EMITTED SPECIALIZED C (no interpreter: one function
   per pattern, one label per pattern position, an explicit fixed-size resume
@@ -257,8 +258,9 @@ append-only or historical records.
   now charges one step per island entry (E-5); `--engine=dfa` refuses
   captures-default patterns (D44.6). See
   `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
-  panel-outcome block. Dispositions APPLIED; still PROPOSED until
-  [M4.3]'s close is declared by the manager.
+  panel-outcome block. Dispositions APPLIED; [M4.3] CLOSED
+  2026-08-14 (these two remain design inputs; the applied surface is
+  match_api_m4.md, now FROZEN as the working baseline).
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
