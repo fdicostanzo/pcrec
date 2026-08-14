@@ -3778,3 +3778,31 @@ count; a reader sizing capture storage uses the group count; conflating
 them under one `ngroups` field would make the empty-index case read as
 "zero capture groups", which is wrong for any group-bearing pattern
 today.
+
+**D43 addendum 2 (Frank, same session): rx_info carries ALL THREE counts,
+and the composition edge-case direction.** Ruled: "the more the merrier,
+its essentially free" — rx_info carries (spellings are the amendment's
+PROPOSED picks):
+
+- `ncaps` — the ARTIFACT's actual caps[] geometry (= RX_NCAPS − 1), ALL-IN
+  by definition: whatever slots this build actually delivers, including,
+  once V-E's rx references exist, slots contributed by referenced
+  patterns. Because it is defined as the artifact fact, composition never
+  makes it wrong.
+- `ngroups` — capturing groups in THIS pattern's own TEXT (a lexical fact,
+  primary only, independent of --no-captures and of references).
+- `nnames` — the index array's length (named entries, including referenced
+  patterns' named groups with their ref labels once V-E lands).
+
+**V-E direction ruled with it (refines D39's addendum):** when a pattern
+instantiates another regex by reference, the referenced regex's groups
+contribute capture slots ONLY IF NAMED — named ones get slots and appear
+in the index (the ref-labeled lookup path); unnamed ones do not
+contribute. This REVISES D39's "caps array length = 1 + N_primary + sum
+of inserted" to "sum of inserted NAMED"; exact semantics still land at
+V-E design time. Frank's motivating scenario, recorded: a --no-captures
+primary referencing a captures-on pattern with names — under the
+three-count design the reader sees ngroups = the primary text's total,
+the NO_CAPTURES flag bit (so the primary contributed zero slots), and
+ncaps = the referenced names' contribution; no single count is asked to
+carry two facts, which was the failure mode of every smaller design.
