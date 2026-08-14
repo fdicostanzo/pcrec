@@ -44,8 +44,19 @@ conflated, because §8's PCREC_*/PCRE2_* ruling governs only one of them:
    namespace only.
 
 `pcrec_error`'s new which-input tag (§6) belongs to namespace 2. `RX_NCAPS`/
-`RX_UNSET`/the group-index symbols (§2, §5) belong to namespace 1 and are
-untouched by the PCREC_*/PCRE2_* ruling.
+`RX_UNSET` (§2) belong to namespace 1 and are untouched by the
+PCREC_*/PCRE2_* ruling.
+
+**A third family, present since §4 and grown by D43: fixed-literal ABI
+TYPES**, scoped by NEITHER namespace — `rx_ctx`, `rx_matchfn`,
+`rx_callout_ref` (§4), and now `rx_info`/`rx_group_entry` (§5, D43.1). Their
+TYPE names never carry `--prefix`; their per-artifact INSTANCE symbols do
+(`<prefix>_info`, like `<prefix>_match`). §7's table marks this family
+"neither." The group index (D39/F8) used to sit in namespace 1 as
+freestanding `<prefix>_group_entry`/`<prefix>_groups[]`/`<PREFIX>_NGROUPS`
+symbols; D43 moves it into this third family as `rx_info` members — see
+§5's own note on why folding it into a genuinely shared `rx_info` forces
+its element type fixed-literal too.
 
 ---
 
@@ -134,6 +145,32 @@ an embedder customer appears — deliberately not designed now; batch
 find-all is REJECTED as a primitive (data-dependent output size,
 capacity negotiation reinvents the cursor). See D41 for the full record.
 
+**RULED (D42.3, 2026-08-14) — `<prefix>_search`'s negative-return space.**
+Handed across from engine_m4.md §4.4/§4.5: `<prefix>_search` keeps returning
+`int`, and its NEGATIVE values are RESERVED for engine-give-up conditions —
+the search entry, unlike `rx_matchfn`, has room for a third outcome beyond
+match/no-match, because D38.4's `< -1` reservation binds only the ABI type
+`rx_matchfn`, not this per-artifact entry (engine §4.4's "`rx_search` is not
+an `rx_matchfn`" observation). Two names are fixed now, cheap because the
+space is empty today (STRUCTURAL: `<prefix>_search` returns exactly `1` or
+`0`):
+
+```c
+/* <prefix>_search returns:
+ *   1              match found, *m (and, once M4.5 lands, caps) written
+ *   0              no match
+ *   RX_ERR_STEPS   step budget (DD-2, engine §4.2) exhausted
+ *   RX_ERR_FRAMES  backtrack-frame/trail capacity (engine §4.5) exhausted
+ */
+```
+
+**Today's `1`/`0` contract KEEPS its meanings** — this reservation adds new
+negative outcomes, it does not renumber the existing two. A DFA-only
+artifact (pre-M4.5, or any `--no-captures` build, D42.1) never emits a step
+or frame counter and so never returns either code; they become live only
+once the counters exist on the VM path (engine §4.6). The concrete integer
+values are [M4.4]'s emitter's to assign, not fixed by this ruling.
+
 ---
 
 ## 2. The caps array surface: `rx_ctx.caps`, `RX_NCAPS`, `RX_UNSET`, and the C1–C11 conformance table
@@ -164,10 +201,32 @@ with a different `--prefix` emits `<PREFIX>_NCAPS`/`<PREFIX>_UNSET`.)
   C6 ("no watermarks") against the callout direction's genuine need for a
   watermark (captures-so-far, R-b): the tension resolves because they are
   properties of two different MOMENTS (mid-match vs. completed), not a
-  contradiction over one field.
+  contradiction over one field. **Lifetime of the pointer handed to a
+  callout at that mid-match moment is a separate freeze line — §4's D42.5
+  addition.**
 - **Caller-owned, fixed-size, compile-time-sized** (C7): a caller declares
   `ptrdiff_t caps[RX_NCAPS][2];` on the stack; nothing in the generated
   contract allocates.
+
+**RULED (D42.2, 2026-08-14) — `RX_NCAPS` states what the ARTIFACT delivers,
+not what the pattern text contains.** Confirming engine_m4.md §5.7 (which
+answered §13 ASK 4): capture-slot count is a property of the compiled
+artifact, chosen at the SAME point the engine is chosen. A DFA-compiled
+artifact emits `RX_NCAPS 1` always; `RX_NCAPS > 1` implies the VM engine,
+enforced by a `tests/codegen/` structural check live from [M4.4]. C6 never
+bends — for a DFA artifact `RX_NCAPS - 1 == 0`, so "every pair `0..ngroups`
+written" is trivially `caps[0]` only, never an under-populated promise.
+
+**RULED (D42.1, 2026-08-14) — captures are ON BY DEFAULT.** After [M4.5],
+`pcrec 'a(b|c)+d'` emits a capture-tracking (VM) matcher, matching PCRE2's
+own default and the principle of least surprise; `--no-captures` is the
+GENERATION AXIS that recovers today's pure-DFA artifact (`RX_NCAPS 1`) for
+callers who do not want group offsets. Before [M4.5] lands, and for any
+`--no-captures` build after it, `RX_NCAPS` is 1 for every pattern — there is
+no window in which a caller can ask for something nothing can deliver
+(engine §5.7.3). The `RX_NCAPS` 1 → >1 change for group-bearing patterns
+lands on the SAME announced D37 boundary as the `rx_span` break (§1; engine
+§9.2(3), §5.7.3).
 
 ### 2.2 C1–C11 conformance table
 
@@ -238,6 +297,77 @@ typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 - **F4** (confirmed, no longer pending): match-or-fail only in v1. Composed
   submatchers/callouts cannot abort the outer match.
 
+### 3.1 `<prefix>_match_caps` — the anchored capture-delivering entry
+
+**RULED (D41.4, 2026-08-14):** an anchored capture-DELIVERING entry JOINS the
+freeze surface, closing the gap both design docs converged on independently
+(this document's §13 ASK 4 / engine_m4.md §11.2: `rx_matchfn`'s `caps` is an
+INPUT and its return is a length only, so a caller who knows the start
+position and wants group offsets — D41.4's "tokenizer class of caller" — has
+no entry to call). Exact signature left to the amendment round; this is that
+signature.
+
+**PROPOSED-here (§12.9):**
+
+```c
+ptrdiff_t <prefix>_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);
+/* Anchored at ctx->pos (no search loop, unlike <prefix>_search).
+ * Returns matched length >= 0 (the same value <prefix>_match(ctx) would
+ * return for this ctx) or -1 on failure.
+ *
+ * On success: caps_out[0..RX_NCAPS-1] are ALL written (C6, same
+ * copy-on-success discipline as <prefix>_search, engine_m4.md §3.4);
+ * caps_out[0] is the whole match, [ctx->pos, ctx->pos + length).
+ * On failure: caps_out is untouched.
+ *
+ * Self-contained per F2: ctx->ncap/ctx->caps are read as ordinary
+ * rx_ctx INPUT (a top-level call passes ncap=0, caps=NULL, same as
+ * <prefix>_match) and are NOT this entry's own output channel — that is
+ * what caps_out is for. rx_ctx.caps stays frozen as an input (D38/F3,
+ * engine §11.2); this entry does not reinterpret it. Caller-owned,
+ * RX_NCAPS entries, allocation-free (C7). A thin wrapper over the same
+ * internal rx_match_impl(ctx, w) that engine_m4.md §4.4's three layers
+ * build for <prefix>_match and <prefix>_search. */
+```
+
+**Which entries deliver captures.** `<prefix>_search` and
+`<prefix>_match_caps` do; `<prefix>_match` structurally cannot — its
+`caps` is an input, its return is a length only, and there is no output
+channel for its own captures anywhere in `rx_matchfn`'s signature (engine
+§11.2). A capture-consuming caller who does not want the search loop uses
+`<prefix>_match_caps`; one who does not know the start position uses
+`<prefix>_search`; one who wants neither offsets nor a loop uses
+`<prefix>_match`.
+
+**Rationale.** `const rx_ctx *ctx` as the first parameter — rather than the
+scalar `(subject, len, pos)` triple `<prefix>_search` takes — keeps
+`<prefix>_match_caps` sharing its FIRST parameter's exact type with
+`<prefix>_match`: a caller that already built a `ctx` (to call `_match`, or
+because it sits inside composed matching) reuses it verbatim to also get
+captures, with no repackaging. It is also the thinnest wrapper structurally:
+`rx_match_impl` already takes `(const rx_ctx *, rx_work *)` (engine §4.4),
+so `<prefix>_match_caps` is `rx_match_impl(ctx, &w)` plus one
+copy-on-success loop into `caps_out` — no local `rx_ctx` needs constructing
+first, unlike a scalar signature would require. The separate `caps_out`
+parameter (rather than writing through `ctx->caps`) has direct precedent:
+`rx_renderfn` (subst Q13) is already `ctx` plus a separate output
+parameter, for the same underlying reason — `rx_ctx.caps` is frozen as an
+INPUT (D38/F3), so an entry that DELIVERS captures needs a channel `rx_ctx`
+does not provide, exactly as the renderer needed one for its rendered
+bytes.
+
+**Rejected alternative:** the scalar signature, `(subject, len, pos,
+ptrdiff_t caps_out[RX_NCAPS][2])`, mirroring `<prefix>_search`'s own
+parameter style instead of `<prefix>_match`'s. Rejected because it buys
+nothing a `ctx`-based signature doesn't already have — a caller with only
+scalars builds a one-line compound literal exactly once, while a caller
+that already holds a `ctx` (the composition-adjacent case this entry
+primarily exists for, per D41.4) is forced to re-unpack it into scalars for
+no benefit — and it would group `<prefix>_match_caps` with
+`<prefix>_search` (the LOOPING entry) in a reader's mental model rather
+than with `<prefix>_match` (the ANCHORED entry it is actually a
+capture-delivering sibling of), the wrong grouping for §7's table.
+
 ---
 
 ## 4. `rx_ctx` layout and the `rx_callout_ref` binding unit
@@ -264,6 +394,15 @@ typedef struct rx_callout_ref {
 extern const rx_callout_ref rx_callout_<name>;   /* one per callout binding */
 ```
 
+- **RULED (D42.5, 2026-08-14) — `rx_ctx.caps` LIFETIME, joining the F-list.**
+  The `caps` pointer handed to a callout is valid for the DURATION OF THE
+  CALL ONLY. The engine rewrites the same storage afterwards (trail-based
+  undo, §2.4 of engine_m4.md — the slots a callout reads are not a private
+  copy). A callout that retains the pointer past its own call and reads it
+  later is the EMBEDDER'S BUG, not a pcrec contract violation; nothing in
+  the generated code detects or guards against it. This line did not exist
+  in F1–F8 (engine_m4.md §12 ASK-3 raised the gap) and is now part of the
+  frozen contract alongside them.
 - **`const unsigned char *subject`**, not `const char *`: char signedness is
   implementation-defined, and the emitter already indexes 256-entry class
   tables with subject bytes (`rx_ftr[st * 5 + rx_fcls[s[pos++]]]`) — a signed
@@ -316,54 +455,142 @@ extern const rx_callout_ref rx_callout_<name>;   /* one per callout binding */
 
 ---
 
-## 5. The exported group index (F8, D39 + addendum)
+## 5. The `rx_info` reflection structure (D43) — F8's group index folds in
 
-**RULED (D39 + addendum):** every generated pattern exports a static const
-name→number index, born WITH a `ref` column at this freeze (not added later
-as a second break):
+**RULED (D43.1, 2026-08-14):** every generated artifact exports a static
+REFLECTION structure — a fixed ABI type `rx_info` (fixed-literal name per
+D41.1's family — see §7's table, and §0's third naming family below), one
+`extern const rx_info <prefix>_info` per artifact, `.rodata` only, zero
+runtime cost. Members: the compile-time option FLAGS (`PCREC_*` bits,
+exactly as compiled — §8), the encoding, a pointer to the SOURCE PATTERN
+string, the group count, a pointer to the group index (D39/F8 FOLDS IN
+here — the index becomes a MEMBER of `rx_info` rather than freestanding
+`<prefix>_group_entry`/`<prefix>_groups[]`/`<PREFIX>_NGROUPS` symbols; its
+field set `{name, number, ref}`, the born-with-`ref` rule, and D41.3's
+named-only content are all UNCHANGED, only their home moves), the selected
+engine, and the step budget. This SUPERSEDES engine_m4.md §5.5's
+comment/macro-only stamping direction as the CANONICAL machine-readable
+record — comments stay for humans; macros stay where compile-time-useful
+(engine §5.5 carries the applied amendment).
+
+**Exact layout — PROPOSED-here, panel-reviewed per D43.1's own text:**
 
 ```c
 typedef struct {
     const char *name;
     int         number;
-    const char *ref;     /* NULL/empty for the primary's own groups;
-                             carries the labeled insertion path once
-                             V-E's rx references exist */
-} <prefix>_group_entry;
+    const char *ref;      /* NULL/empty for the primary's own groups;
+                              carries the labeled insertion path once
+                              V-E's rx references exist */
+} rx_group_entry;
 
-extern const <prefix>_group_entry <prefix>_groups[];
-#define <PREFIX>_NGROUPS <count>
+typedef struct {
+    unsigned int          flags;          /* PCREC_* option bits, exactly
+                                              as compiled — §8 */
+    int                   encoding;       /* PCREC_ENC_* */
+    const char           *pattern;        /* source pattern text, as given
+                                              to pcrec_compile(); NUL-term. */
+    int                   ngroups;        /* total capturing groups in the
+                                              PATTERN (== RX_NCAPS - 1 once
+                                              RX_NCAPS reflects it, but see
+                                              the note below — they are NOT
+                                              always the same fact) */
+    const rx_group_entry *groups;         /* sorted, bsearch-able; NAMED
+                                              groups only (D41.3) */
+    int                   ngroups_named;  /* entries in `groups`; <= ngroups;
+                                              0 until module `named-groups`
+                                              lands */
+    const char           *engine;         /* "dfa" | "vm" — selected engine
+                                              (engine_m4.md §5.1/§5.5) */
+    long                  step_budget;    /* compiled-in budget; <= 0 means
+                                              none (--fno-step-budget) */
+} rx_info;
+
+extern const rx_info <prefix>_info;
 ```
 
-(**PROPOSED-here**, §12.3: the struct/array/count symbol names above —
-D39 fixes the FIELD set `{name, number, ref}` and its properties, not the
-C identifier spelling. Following §1's `RX_NCAPS`-style convention for the
-count keeps the naming scheme uniform across every new symbol this freeze
-introduces; see §7's table.)
-
-- **Sorted, bsearch-able, `.rodata` only, zero runtime cost** — a static
-  table, not a runtime structure.
-- **Does NOT travel in `rx_ctx` or any callback parameter**: it is a
-  link-time constant per pattern (queried by symbol, not passed at a call
-  site), unlike everything else in §2 and §4.
+- **Sorted, bsearch-able, `.rodata` only, zero runtime cost** — same
+  properties the freestanding index had; nothing about the DATA changes,
+  only its container.
+- **Does NOT travel in `rx_ctx` or any callback parameter**: like the
+  freestanding index before it, `rx_info` is a link-time constant per
+  pattern (queried by symbol), unlike everything in §2 and §4.
+- **The pattern string is embedded UNCONDITIONALLY** (D43.3): artifacts
+  carry their contract (D37 spirit). An omission axis (size/secrecy) may
+  earn itself later if a real objector appears (D18); none exists today.
 - **`ref` is NULL/empty for the primary pattern's own groups today** — V-E's
-  labeled-reference numbering (a path like `"c:a"` for nested insertions) is
-  the only future consumer of a non-empty `ref`; nothing produces one yet.
-  This is why F8's index is "born with the ref column" rather than needing a
-  second break when V-E lands: V-E extends DATA, not ABI.
-- **Second customer**: `V-A`'s `pcre2_substring_number_from_name`.
-- **PROPOSED-here (§12.4), what the index CONTAINS today**: the array is
-  indexed over NAMED groups only — an entry with no name has nothing to
-  `bsearch` by, so unnamed capturing groups do not appear. Module
-  `named-groups` does not exist yet (subst C10's measured gate:
-  `pcrec --count-groups '(?<g>a)(b)'` currently fails with "requires module
-  'named-groups'"), so **every pattern's index has count 0 until that module
-  lands** — the export mechanism (the array + count symbols) is present
-  unconditionally per F8; its CONTENT is trivially empty pre-`named-groups`.
-  This is a narrower reading of the plan row's "(empty-ref) group index
-  retrofitted onto the EXISTING DFA matchers" than "ref column empty, but
-  entries already exist for something" — flagged for the panel because it is
-  new synthesis, not literally in D39.
+  labeled-reference numbering is the only future consumer of a non-empty
+  `ref`; nothing produces one yet.
+- **Named-only content, unchanged from D41.3**: `pcrec --count-groups
+  '(?<g>a)(b)'` still fails with "requires module 'named-groups'" today, so
+  `groups`/`ngroups_named` are `NULL`/`0` on every pattern until that module
+  lands. `ngroups` (the total) is INDEPENDENT of that gate — see the note
+  below.
+- **Second customer**: `V-A`'s `pcre2_pattern_info` (D43's own text; this
+  supersedes this document's earlier framing of `V-A`'s
+  `pcre2_substring_number_from_name` as the second customer — that reads
+  `rx_info.groups` specifically, `pcre2_pattern_info` reads the whole
+  struct). **Queued customers**: V-G (regex testing), V-H (debug/trace),
+  and F7's per-pattern selection reporting (engine_m4.md §5.5).
+
+**PROPOSED-here — two structural additions D43.1's prose does not spell
+out, flagged for the panel:**
+
+1. **`rx_group_entry` must ALSO become a fixed-literal ABI type, not
+   `<prefix>_group_entry`.** D43.1 says `rx_info` is one fixed type shared
+   by every artifact (per D41.1's family, same reasoning as `rx_ctx`
+   composability, §12.7). But if `rx_info.groups` pointed at a
+   `<prefix>_group_entry`, the pointee type would differ PER PREFIX, and
+   `rx_info`'s own shape would then diverge across differently-prefixed
+   TUs — exactly the divergence §7/§12.7's C-typedef-scoping safety
+   argument requires NOT to happen. Folding F8 into a genuinely uniform
+   `rx_info` forces its constituent pointee type to go fixed-literal too.
+   D43.1's text ("field set... unchanged") does not say the C TYPE NAME
+   stays `<prefix>`-scoped or becomes fixed — this document reads "F8
+   folds in" as requiring the latter, and flags it because it is new
+   synthesis a panel critic could reasonably attack (e.g. by asking why V-A
+   needs a single generic type at all, if it links against one artifact at
+   a time — the answer is D43's own "further customers queued" framing:
+   V-G/V-H are plausibly MULTI-artifact tools, where a uniform type is the
+   whole point).
+2. **The array needs its own length, separate from "the group count."**
+   D43.1 lists "the group count" and "a pointer to the group index" as two
+   members, not three — but the array holds only NAMED entries (D41.3),
+   which is generally FEWER than the pattern's total group count. A caller
+   cannot safely iterate `groups[]` using `ngroups` (it would over-read
+   once `named-groups` lands on a pattern with unnamed groups). This
+   document therefore splits "the group count" into `ngroups` (the
+   pattern's true total, independent of any module) and `ngroups_named`
+   (the array's own length) rather than reusing one field for two
+   different counts, as the old freestanding `<PREFIX>_NGROUPS` macro did
+   (§12.4's prior reading — that macro was ALWAYS the named count, never
+   the total; this split makes both facts available where the old design
+   only exposed one).
+
+**Why `ngroups` is a genuinely new fact, not a restatement of `RX_NCAPS`.**
+`RX_NCAPS - 1` (§2.1, D42.2) states what the ARTIFACT can DELIVER — it is
+pinned to 0 on a DFA-compiled or `--no-captures` build regardless of how
+many groups the PATTERN has. `rx_info.ngroups` states what the pattern
+TEXT has, independent of engine selection or the captures-default axis —
+useful precisely in the cases where `RX_NCAPS` alone under-informs: a
+caller can ask "does this pattern have groups at all" on a pure-DFA
+artifact where `RX_NCAPS` says only `1`. The two facts coincide only when
+`RX_NCAPS - 1 == ngroups`, i.e. a VM-compiled, captures-on artifact — the
+common case at [M4.5], but not a rule `rx_info` should be read as
+restating.
+
+**Open, not resolved here (flagged for the panel/Frank):** D43.1 names the
+step budget as an `rx_info` member but not the backtrack-frame/trail
+capacity (§4.5's SECOND DD-2 bound, engine_m4.md §4.5, D42.6's "DD-2's row
+names two bounds" ruling) — engine §5.5's ORIGINAL stamp comment showed
+both bounds together (`/* Step budget: ...; backtrack frames: ... */`).
+This document does NOT add a `backtrack_frames` field to `rx_info` above,
+since D43.1's member list is literal and this document should not silently
+widen a ruled list — but flags the asymmetry: if D42.6's two-bounds
+reasoning applies to the human-readable stamp, the same reasoning arguably
+applies to the machine-readable one. [M4.3]'s panel or Frank should rule
+whether `rx_info` gains a ninth-ish member or the frame capacity stays
+comment/macro-only.
 
 ---
 
@@ -405,6 +632,16 @@ freeze obligations reinforce each other. `pcrec_compile()` always sets
 substitution-compiler entry point (`[M4-SUBST]`, not yet built) is the first
 producer of `PCREC_ERR_INPUT_TEMPLATE`.
 
+**RULED (D42.4, 2026-08-14) — spelling ACCEPTED, with a compat obligation
+recorded.** `pcrec_err_input` / `input` / `PCREC_ERR_INPUT_PATTERN` /
+`PCREC_ERR_INPUT_TEMPLATE` are accepted exactly as proposed above — no
+rename. Recorded alongside: the PCRE2-compat surface (V-A direction, D38's
+addenda) will ALSO alias these names PCRE2-style with approximately the
+same error meaning ("samish" — D26's tiering governs: the MEANING matches,
+the WORDING need not). This lands now (nothing native ever uses a PCRE2_
+spelling, unchanged) or at V-A's own design time, whichever comes first;
+it is not owed by [M4.4].
+
 ---
 
 ## 7. Entry-point naming (OS-0) for every new symbol
@@ -416,14 +653,19 @@ namespaces; the table separates them because they follow different rules.
 
 | symbol | namespace | scoped by `--prefix`? | status |
 |---|---|---|---|
-| `<prefix>_search` | 1 (per-artifact) | yes | unchanged name, changed signature (§1) |
+| `<prefix>_search` | 1 (per-artifact) | yes | unchanged name, changed signature (§1); negative space RULED (D42.3, §1) |
 | `<prefix>_span` | 1 | yes | unchanged name, changed representation (§1) |
-| the match-here entry | 1 | **PROPOSED-here (§12.6): yes — `<prefix>_match`** | new; see below |
-| `<PREFIX>_NCAPS`, `<PREFIX>_UNSET` | 1 | yes (uppercased) | already spelled this way in the subst note's example |
-| `<prefix>_group_entry`, `<prefix>_groups[]`, `<PREFIX>_NGROUPS` | 1 | yes | PROPOSED-here (§5, §12.3) |
-| `rx_ctx`, `rx_matchfn`, `rx_callout_ref` | **neither — fixed literal** | **no (open question, §12.7)** | as spelled throughout `design_callout_abi.md` |
+| the match-here entry | 1 | yes — `<prefix>_match`, RULED (D41.2, §12.6's proposal confirmed) | new; see §3 |
+| `<prefix>_match_caps` | 1 | yes | new (D41.4); PROPOSED-here (§3.1, §12.9) |
+| `<PREFIX>_NCAPS`, `<PREFIX>_UNSET` | 1 | yes (uppercased) | already spelled this way in the subst note's example; `RX_NCAPS`'s artifact-property rule RULED (D42.2, §2.1) |
+| ~~`<prefix>_group_entry`, `<prefix>_groups[]`, `<PREFIX>_NGROUPS`~~ | — | — | **SUPERSEDED (D43.1, §5):** folded into `rx_info` — see the `rx_group_entry` and `rx_info`/`<prefix>_info` rows below. No freestanding index symbols land at [M4.4]. |
+| `rx_ctx`, `rx_matchfn`, `rx_callout_ref` | **neither — fixed literal** | **no, RULED (D41.1, confirming §12.7)** | as spelled throughout `design_callout_abi.md` |
+| `rx_group_entry` | **neither — fixed literal** | **no** | new (D43.1 folding F8 in); PROPOSED-here (§5) — same family as `rx_ctx`, for the reason §5 gives |
+| `rx_info` | **neither — fixed literal** | **no** | new (D43.1); PROPOSED-here layout (§5) |
+| `<prefix>_info` | 1 (per-artifact) | yes | new (D43.1): `extern const rx_info <prefix>_info` |
 | `rx_callout_<name>` | fixed literal `rx_callout_` prefix + the callout's own name | no | RULED (D38) shape |
-| `pcrec_err_input`, `PCREC_ERR_INPUT_*` | 2 (library-fixed) | no | PROPOSED-here (§6) |
+| `pcrec_err_input`, `PCREC_ERR_INPUT_*` | 2 (library-fixed) | no | RULED (D42.4): spelling accepted; V-A compat alias obligation recorded (§6) |
+| `PCREC_CASELESS` (or `PCREC_CASE_INSENSITIVE`), `PCREC_EMIT_MAIN`, `PCREC_NO_CAPTURES` | 2 (library-fixed) | no | new (D43.2); PROPOSED-here naming, panel disposes (§8) |
 
 **PROPOSED-here (§12.6), the match-here entry's name.** Neither ruling picks
 a literal spelling. Following the SAME collision-avoidance reasoning that
@@ -475,10 +717,114 @@ chosen prefix, not by this scheme.
 
 **What the freeze fixes today**: the SCHEME, not any concrete flag. Per
 `docs/pcre2_options.md`: "nothing below emits either name yet — this note
-applies only once a row's own work actually lands." No PC-5 row lands as part
-of [M4.1]/[M4.4]; this section exists so that when one does (independently),
-its constant is `PCREC_*`-native by construction rather than by a
-case-by-case re-litigation.
+applies only once a row's own work actually lands." No PC-5 row lands as
+part of [M4.1]/[M4.4] — **this sentence is about `docs/pcre2_options.md`'s
+own PCRE2-option-survey rows specifically, and stays true of them**; it is
+NOT about `pcrec_options`' own pre-existing boolean fields, which D43.2
+(below) DOES fund with concrete `PCREC_*` constants at [M4.4]. The two are
+different populations: PC-5 rows are PCRE2-semantic options not yet
+adopted; `caseless`/`emit_main`/the coming `no-captures` are pcrec's OWN
+struct fields, already real, now getting a consistent bit-constant
+representation.
+
+**Manager-confirmed 2026-08-14 — what this ruling governs, stated so a
+panel critic does not have to re-derive it.** Frank asked whether
+`--no-captures`/`-i` map to `PCREC_*` options under the hood; the answer as
+first recorded, then SUPERSEDED the same day by D43 (see the block below —
+kept here rather than deleted, per this document's house style of
+appending outcomes rather than erasing prior text):
+
+- ~~The native option SURFACE is the `pcrec_options` STRUCT, not a
+  bitmask — named fields (`prefix`, `encoding`, `caseless`, `emit_main`,
+  `header_name` today). M4-era additions land the same way: the captures
+  default's `--no-captures` becomes a field, not a `PCREC_*` bit.~~
+- ~~No bitmask surface is being added natively.~~
+
+**SUPERSEDED (D43.2, 2026-08-14).** Frank himself raised the options
+funnel in the same session and ruled the opposite direction for BOOLEAN
+fields specifically: CLI flag → `PCREC_*` bit constant → `pcrec_options.flags`
+→ reflected verbatim in `rx_info.flags` (§5) is now the consistent,
+end-to-end representation, adopted with all three of the amendment's
+recommendations. What stands, corrected:
+
+- **Boolean options become `PCREC_*` bits in ONE `flags` word.** `caseless`,
+  `emit_main`, and the coming `no-captures` (D42.1) move from separate `int`
+  fields to bits of a single `unsigned int flags` field. **Non-boolean
+  options stay named fields** — `prefix`, `encoding`, `header_name`, and the
+  M4-era step budget are UNCHANGED in shape, still typed struct members, not
+  bits.
+- **CLI flags are still a thin veneer**, now over the flags word instead of
+  separate `int`s: `-i` becomes `opt.flags |= PCREC_CASELESS` (naming below);
+  `--no-captures` sets its bit the same way. No CLI flag is itself the
+  `PCREC_*` constant — the constant is what the flag SETS.
+- **The `pcrec_options` struct BREAK lands on the [M4.4] announced
+  boundary** (free pre-v1 per D40, one boundary per D37) — the same commit
+  that carries the `rx_span` break and `rx_info`'s introduction, not a
+  separate event.
+- **ONE representation of the options fact end-to-end** (F3's
+  one-representation rule, previously scoped to capture offsets, now
+  EXTENDED to options by D43.2): the same boolean is the SAME bit from CLI
+  parse through `pcrec_options.flags` through `rx_info.flags`, never
+  translated to a different representation partway. The alternative — keep
+  `int` fields internally and translate to bits only at emission time —
+  was REJECTED (D43.2) as two representations of one fact, the same
+  objection that shapes `rx_ctx.caps`/`<prefix>_span` sharing one
+  `ptrdiff_t[2]` type (§1) rather than a conversion seam.
+- **`PCREC_*` still names only the enum/bit-valued constants** — the
+  distinction this section drew before stands, just with a bigger
+  denomination: it now covers BOTH `PCREC_ENC_ASCII`-style enum values AND
+  the new boolean bits, but still never the struct's field NAMES
+  (`flags`, `encoding`) and never a bare CLI flag spelling.
+- **V-A's compat layer is still where PCRE2 bits reappear**, unchanged:
+  it translates `PCRE2_CASELESS` etc. onto the native `flags` word's bits
+  at the boundary. Bits at the compat boundary, bits natively too now for
+  booleans specifically — the compat/native split §8 draws for CONSTANT
+  NAMES (`PCRE2_*` vs `PCREC_*`) is untouched; only the native SIDE's
+  internal representation (struct field vs. flags-word bit) changed.
+
+**PROPOSED-here — the three concrete bit names (D43's own "left to the
+amendment" framing):**
+
+```c
+enum {
+    PCREC_CASELESS    = 1u << 0,  /* was pcrec_options.caseless */
+/*  PCREC_CASE_INSENSITIVE — Frank's original sketch spelling, presented
+    as the alternative below */
+    PCREC_EMIT_MAIN   = 1u << 1,  /* was pcrec_options.emit_main */
+    PCREC_NO_CAPTURES = 1u << 2,  /* new, M4.5-era: --no-captures (D42.1) */
+};
+```
+
+**Recommendation: `PCREC_CASELESS`, not `PCREC_CASE_INSENSITIVE`** (D43's
+own text records Frank's sketch as `PCREC_CASE_INSENSITIVE` "(or
+whatever)" alongside the amendment's suggestion). Both are presented; this
+document argues for `PCREC_CASELESS` on the D38-addendum PARALLEL-NAMING
+rule this same section states above (§8's own RULED text: every PCRE2
+option pcrec adopts gets a parallel pcrec-native name) — `PCRE2_CASELESS`
+is the real PCRE2 constant this option parallels, and a caller porting
+from PCRE2 (V-A's whole audience) recognizes `PCREC_CASELESS` on sight
+where `PCREC_CASE_INSENSITIVE` requires a name-mapping lookup despite
+meaning the same thing. `PCREC_EMIT_MAIN` and `PCREC_NO_CAPTURES` have no
+PCRE2 equivalent to parallel (both are pcrec-only knobs — a generated
+`main()`, and this project's own captures-default axis), so no naming
+tension exists for them. **Frank disposes at panel time** (D43's own
+framing); this document does not treat `PCREC_CASELESS` as settled.
+
+**The corrected `pcrec_options` struct, PROPOSED-here:**
+
+```c
+typedef struct {
+    const char *prefix;       /* unchanged */
+    int         encoding;     /* unchanged, PCREC_ENC_* */
+    unsigned    flags;        /* PCREC_CASELESS | PCREC_EMIT_MAIN |
+                                  PCREC_NO_CAPTURES | ... */
+    const char *header_name;  /* unchanged */
+} pcrec_options;
+```
+
+`pcrec_default_options()` (`lib/pcrec.h`) initializes `flags = 0` (today's
+`caseless = 0, emit_main = 0` defaults; `PCREC_NO_CAPTURES` unset means
+captures ON, matching D42.1's default).
 
 ---
 
@@ -539,24 +885,27 @@ executable rather than merely descriptive:
    `lib/pcrec.h`'s doc comment updates; `tests/harness/driver.c` and any
    `_span`-pattern grep in `tests/codegen/` update in the same commit — one
    announced break, not a staged migration.
-2. **Emit `rx_ctx`, `rx_matchfn`, `rx_callout_ref`** (§4, §7) as file-scope
-   types, once per file — the same "ONCE PER FILE, shared by every engine in
-   it" shape `emit_span_typedef` already uses, since these three types are
-   fixed (not `<prefix>`-scoped, §12.7) and would collide if emitted more
-   than once identically (harmlessly, but redundantly) or divergently
-   (a build error, same class as today's duplicate-`rx_span` hazard).
+2. **Emit `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
+   `rx_info`** (§4, §5, §7) as file-scope types, once per file — the same
+   "ONCE PER FILE, shared by every engine in it" shape `emit_span_typedef`
+   already uses, since all five types are fixed (not `<prefix>`-scoped,
+   §12.7/§5's D43 extension) and would collide if emitted more than once
+   identically (harmlessly, but redundantly) or divergently (a build error,
+   same class as today's duplicate-`rx_span` hazard). `rx_group_entry` and
+   `rx_info` are new to this item this round (D43.1).
 3. **Emit the match-here entry unconditionally** (§3) — `<prefix>_match`,
    `rx_matchfn`-typed, accepting `ncap=0, caps=NULL` — retrofitted onto the
    EXISTING DFA matchers (per [M4.4]'s own plan-row text), alongside
    `<prefix>_search`, not replacing it. No trap-check call sites are needed
    yet (§3's scope note — no callers of `rx_matchfn` exist before callouts or
    V-E composition land).
-4. **Emit F8's group index unconditionally, empty today** (§5): the
-   `<prefix>_group_entry` array, `<prefix>_groups[]`, `<PREFIX>_NGROUPS`
-   symbols land with count 0 for every pattern (module `named-groups`
-   doesn't exist), `ref` column present but never populated (V-E doesn't
-   exist). The MECHANISM is what this freeze requires landed now; the
-   CONTENT arrives with those later modules.
+4. **SUPERSEDED (D43.1) — no freestanding group-index symbols land.** The
+   prior version of this item emitted `<prefix>_group_entry`/
+   `<prefix>_groups[]`/`<PREFIX>_NGROUPS` directly. D43 folds F8 into
+   `rx_info` instead (§5) — see item 10 below, which is what [M4.4] emits
+   in this item's place. The group data itself (empty today, `ref` column
+   present but unpopulated, content arrives with `named-groups`/V-E) is
+   UNCHANGED; only its container changed.
 5. **Change `lib/pcrec.h`**: add `pcrec_err_input` and the `input` field to
    `pcrec_error` (§6); `pcrec_compile()`'s error path sets
    `PCREC_ERR_INPUT_PATTERN` always (it has no other input yet).
@@ -568,53 +917,137 @@ executable rather than merely descriptive:
    [M4.4]'s own plan row.
 7. **Nothing above requires the VM.** All of it targets the existing DFA
    emitter; M4.5 (VM emitter core) is where `caps` actually gets populated
-   for capture-bearing patterns. **PROPOSED-here (§12.8), flagged as an ASK
-   (§13):** what does a DFA-compiled pattern that HAS capturing groups (no
-   backreferences, so not yet forced to the VM by SR-8) report through
-   `caps[1..ngroups]` via the retrofitted match-here entry, given the DFA
-   engine has never tracked per-group offsets (only the whole-match span)?
-   Neither D38 nor D39 nor [M4.4]'s plan-row text says. This document does
-   not resolve it — per-pattern engine selection is M4.2/M4.6 territory —
-   but flags it because [M4.4] will hit the question mechanically the moment
-   it retrofits F1/F8 onto a DFA matcher for a pattern with groups.
+   for capture-bearing patterns. **RESOLVED by D42.2 / engine §5.7 (was
+   this document's own §13 ASK 4 / §12.8):** a DFA-compiled pattern —
+   capture-bearing or not — emits
+   `RX_NCAPS 1` at [M4.4] time, full stop; there is no interim `caps[1..]`
+   population to define because the artifact never promises those slots.
+   `RX_NCAPS > 1 ⇒ VM` is the structural check [M4.4] adds.
+8. **Emit `<prefix>_match_caps`** (§3.1, D41.4): the anchored
+   capture-delivering sibling of `<prefix>_match`, thin-wrapped over the
+   same `rx_match_impl`. Lands whenever `<prefix>_match` does for a given
+   engine — at [M4.4] it exists but is only ever called on a `RX_NCAPS 1`
+   artifact (so `caps_out[0]` is the only slot ever written); it becomes
+   useful for capture-bearing patterns once [M4.5]'s VM lands.
+9. **`<prefix>_search`'s negative-return space** (D42.3, §1): reserve and
+   name `RX_ERR_STEPS`/`RX_ERR_FRAMES` in the emitted header at [M4.4],
+   even though no engine produces either value until [M4.6] wires the
+   budget/frame counters — the space must be reserved before any counter
+   exists, not after, so a caller's `switch` written against [M4.4]'s
+   output does not need revisiting later.
+10. **Emit `<prefix>_info` unconditionally** (§5, D43.1): one
+    `extern const rx_info <prefix>_info` per artifact, `.rodata`,
+    populated with `flags` (from the compiled `pcrec_options.flags`),
+    `encoding`, the `pattern` pointer (embedded unconditionally, D43.3),
+    `ngroups` (the parser's existing `Ctx.ncap` count — already computed
+    for `--count-groups`, §1.2's inventory in engine_m4.md), `groups`/
+    `ngroups_named` (NULL/0 until `named-groups`, same content as the old
+    freestanding index, item 4), `engine` (`"dfa"` for every [M4.4]-era
+    artifact — no VM exists yet), and `step_budget` (0/none until [M4.6]
+    wires a counter). Every FIELD lands at [M4.4]; several are trivially
+    empty/default until later substeps populate them, the same shape item
+    4's group index already had before D43 folded it in.
+11. **Break `pcrec_options`** (§8, D43.2): `caseless`/`emit_main` become
+    bits of a new `flags` field (`PCREC_CASELESS`/`PCREC_EMIT_MAIN` —
+    naming per §8, panel disposes); `pcrec_default_options()` initializes
+    `flags = 0`; every CLI flag site (`cli/main.c`) that sets
+    `opt.caseless`/`opt.emit_main` updates to `opt.flags |=` the bit; every
+    consumer that reads the old `int` fields (`src/core/compile.c` and
+    anywhere else `pcrec_options.caseless`/`.emit_main` is read) updates in
+    the SAME commit — this is a `lib/pcrec.h` embedder-facing break, so it
+    joins item 6's coverage-conservation inventory rather than being a
+    separate, later-discovered failure.
 
 ---
 
 ## 12. Everything this document introduces beyond the rulings (for the manager / M4.3 panel)
 
 Collected from the PROPOSED-here marks above, in one place per the brief's
-house-style requirement:
+house-style requirement. Items 3–8 were RULED by D41/D42 in the amendment
+round (still listed — they are what the panel should check the ruling was
+APPLIED to, not just that it exists); items 1, 2, and 9 remain open
+PROPOSED-here synthesis; items 10–13 are new this round (D43) and are ALL
+open — D43 rules that `rx_info`/the funnel EXIST in this shape, not the
+concrete layout/naming below, which is explicitly left to this amendment
+per D43's own text:
 
 1. **§1**: the concrete post-break spelling of `<prefix>_span` —
    `typedef ptrdiff_t <prefix>_span[2];`, keeping the existing name and
    `<prefix>_search` signature shape, changing only element type and
-   struct-vs-array representation.
+   struct-vs-array representation. **Still open** — no ruling picked this
+   concrete spelling.
 2. **§3**: the scope note that F2's `__builtin_trap()` call-site enforcement
    has no call sites to attach to yet at [M4.4] time (no callout/composition
    code exists), so [M4.4] emits the entry but not the trap-guarded call.
+   **Still open.**
 3. **§5**: the group-index C identifier spellings (`<prefix>_group_entry`,
    `<prefix>_groups[]`, `<PREFIX>_NGROUPS`) and the claim that the index's
    CONTENT (not just its `ref` column) is empty (count 0) until module
-   `named-groups` lands.
+   `named-groups` lands. **RULED (D41.3).** **The SPELLING half is
+   SUPERSEDED (D43.1, 2026-08-14):** these freestanding symbols no longer
+   land at all — the index folds into `rx_info` (items 10–11 below). The
+   CONTENT claim (D41.3, empty until `named-groups`) is UNCHANGED and now
+   lives at §5 as `ngroups_named`.
 4. **§5** (same item, restated): that unnamed capturing groups never appear
    in the index at all (only named groups get an entry), since an entry
-   needs a name to be a lookup key.
+   needs a name to be a lookup key. **RULED (D41.3), same ruling as item 3.**
 5. **§6**: the concrete `pcrec_err_input` enum and field spelling for the
-   which-input tag.
+   which-input tag. **RULED (D42.4)**, plus the V-A compat-alias obligation
+   recorded alongside it.
 6. **§7**: that the match-here entry is `<prefix>_match` (prefix-scoped),
    by analogy with `<prefix>_search`'s existing collision-avoidance role.
+   **RULED (D41.2).**
 7. **§7 / §12.7 together**: the claim that `rx_ctx`/`rx_matchfn`/
    `rx_callout_ref` are DELIBERATELY fixed literal names, not scoped by
    `--prefix`, because per-pattern scoping would defeat the ABI's
    composability goal — and the C-typedef-scoping argument for why that is
-   safe across separately-compiled generated files. This is the single
-   highest-leverage PROPOSED-here item in this document: if wrong, it
-   changes every code sample in `design_callout_abi.md` and this document
-   both.
+   safe across separately-compiled generated files. This was the single
+   highest-leverage PROPOSED-here item in this document. **RULED (D41.1)** —
+   confirmed exactly as proposed, including the C-typedef-scoping safety
+   argument (D41.1's own text cites "safe under C's per-TU typedef
+   scoping").
 8. **§11 item 7**: the open question of what a group-bearing, non-backref
    DFA-compiled pattern's `caps[1..]` should read via the retrofitted
-   match-here entry before the VM/engine-selection exists — recorded as a
-   question for [M4.4]/[M4.2], not answered here.
+   match-here entry before the VM/engine-selection exists. **RULED
+   (D42.2, confirming engine §5.7's answer, ASK-12):** the question
+   dissolves — a DFA-compiled artifact never promises `caps[1..]` at all
+   (`RX_NCAPS 1` always); see §2.1 and §11 item 7's revision.
+9. **§3.1** (new this round): the concrete `<prefix>_match_caps` signature
+   — `ptrdiff_t <prefix>_match_caps(const rx_ctx *ctx, ptrdiff_t
+   (*caps_out)[2])`, `ctx` for the anchor position (matching
+   `<prefix>_match`'s first parameter, not `<prefix>_search`'s scalar
+   triple) plus a separate output array (matching the renderer's `rx_ctx` +
+   output-parameter shape, subst Q13), rejecting a scalar-triple
+   alternative. D41.4 ruled that this entry EXISTS; this signature is
+   PROPOSED-here, for [M4.3] to review.
+10. **§5** (D43 round): the concrete `rx_info`/`rx_group_entry` struct
+    layout — eight `rx_info` members in the order and types §5 gives,
+    `rx_group_entry` unchanged from the old F8 shape. D43.1 says the
+    reflection structure exists and lists member CONCEPTS; this document
+    picks concrete C types (`unsigned int flags`, `const char *pattern`,
+    `const char *engine` as a NAME not an enum, `long step_budget`) and
+    field names (`ngroups`, `ngroups_named`, etc).
+11. **§5** (D43 round, flagged as the single highest-leverage new item
+    this round): that `rx_group_entry` must become a fixed-literal ABI
+    type (not `<prefix>_group_entry`) for `rx_info` to remain genuinely
+    ONE shared type across differently-prefixed artifacts — D43.1's text
+    does not say this explicitly; it is this document's inference from
+    D41.1's "one fixed type" reasoning applied to `rx_info`'s own
+    constituent pointee type. If wrong, `rx_info.groups`'s type changes
+    per artifact and the "one reflection struct any tool can read
+    generically" framing (D43's V-G/V-H customers) weakens.
+12. **§5** (D43 round): the `ngroups`/`ngroups_named` split — D43.1 lists
+    "the group count" as one member; this document reads that as needing
+    to be TWO numbers (the pattern's true total vs. the named-index
+    array's length) because they diverge as soon as a pattern has both
+    named and unnamed groups, and picks two field names accordingly.
+13. **§8** (D43 round): the three concrete `PCREC_*` bit constant names —
+    `PCREC_CASELESS` (recommended) or `PCREC_CASE_INSENSITIVE` (Frank's
+    sketch, presented as the alternative), `PCREC_EMIT_MAIN`,
+    `PCREC_NO_CAPTURES` — and the corrected `pcrec_options` struct shape
+    (`flags` replacing `caseless`/`emit_main`). D43.2 rules the FUNNEL
+    mechanism; D43's own text explicitly defers bit naming to this
+    amendment, panel-reviewed, Frank disposes.
 
 ---
 
@@ -641,47 +1074,129 @@ house-style requirement:
    still pending. **RULED alongside it (D41.4): an anchored
    capture-delivering entry (`<prefix>_match_caps` direction) JOINS the
    freeze surface** — exact signature proposed by the amendment round,
-   reviewed at M4.3.
+   reviewed at M4.3. **ASK-12 itself now RULED (D42.2, 2026-08-14):** the
+   §5.7 rule is CONFIRMED as stated — folded into §2.1 and §11 item 7 in
+   this amendment round. The `<prefix>_match_caps` signature it names is
+   §3.1.
 5. **§6**: is `pcrec_err_input` / `PCREC_ERR_INPUT_PATTERN` /
    `PCREC_ERR_INPUT_TEMPLATE` an acceptable spelling, or does Frank want a
-   different field name than `input` (e.g. `which`, `source`)?
+   different field name than `input` (e.g. `which`, `source`)? **RULED
+   (D42.4, 2026-08-14):** accepted as proposed, `input` unchanged, plus the
+   V-A compat-alias obligation — see §6.
+6. **NEW (D43 round, 2026-08-14) — the `PCREC_*` boolean bit names.**
+   `PCREC_CASELESS` (this document's recommendation, §8) or
+   `PCREC_CASE_INSENSITIVE` (Frank's own sketch spelling, D43's text)?
+   D43 explicitly names this open and defers it to the amendment +
+   [M4.3] panel, so it is listed here rather than folded into an
+   assumed answer. `PCREC_EMIT_MAIN`/`PCREC_NO_CAPTURES` have no naming
+   tension (no PCRE2 parallel to weigh against) and are not part of this
+   ASK.
+7. **NEW (D43 round, 2026-08-14) — is the `rx_group_entry`/`rx_info`
+   layout in §5 acceptable, in particular the `ngroups`/`ngroups_named`
+   split (§12 item 12) and `rx_group_entry` going fixed-literal (§12 item
+   11)?** D43.1 rules the reflection structure's EXISTENCE and member
+   CONCEPTS; this document's concrete layout is new synthesis the panel
+   should attack, per D43's own "exact layout is the amendment round's
+   proposal, panel-reviewed" framing.
+8. **NEW (D43 round, 2026-08-14) — does `rx_info` gain a
+   backtrack-frame-capacity member, or does that second DD-2 bound
+   (D42.6) stay comment/macro-only?** Flagged at §5's end as an
+   asymmetry this document did not resolve unilaterally.
 
 No genuine contradiction between D38 and D39 was found — every tension
 encountered (ncap-as-watermark vs. C6's no-watermark rule, §2.1; the group
 index's "(empty-ref)" phrasing vs. this document's stronger "(empty,
-period)" reading, §5) resolved on inspection rather than blocking. The five
-items above are gaps the rulings left unfilled, not disagreements between them.
+period)" reading, §5) resolved on inspection rather than blocking. Items
+1–5 above are gaps D38/D39 left unfilled, not disagreements between them;
+items 6–8 are new questions D43 itself opens and explicitly defers.
 
 ---
 
-## 14. Amendment round owed (pre-[M4.3] panel)
+## 14. AMENDMENTS APPLIED (D41/D42/D43, 2026-08-14)
 
-Recorded 2026-08-14 after D41 and engine_m4.md's merge; the amendment
-integrates rather than annotates:
+The amendment round owed after D41 and engine_m4.md's merge is DISCHARGED —
+every item below is integrated in place (not merely annotated) at the
+section cited; this list is now the record of what changed, not a
+checklist of what remains. Items 1–6 are the D41/D42 round; item 7 is a
+second wave, D43, folded into the same round because it arrived before
+[M4.3] closed (same reasoning D37 gives for one announced boundary rather
+than staged amendments).
 
-1. **`<prefix>_match_caps`** (D41.4): propose the exact signature and add it
-   to §3/§7's surface — anchored at pos, fills a caller-provided caps
+1. **`<prefix>_match_caps`** (D41.4): exact signature proposed and
+   integrated at §3.1, with a naming-table row at §7, an [M4.4] emission
+   item at §11.8, and its rationale/rejected-alternative recorded there and
+   at §12.9. Anchored at `ctx->pos`, fills a caller-provided `caps_out`
    array, returns length or −1; a thin wrapper over the same internal
-   implementation as `<prefix>_match` and `<prefix>_search` (engine doc
+   `rx_match_impl` as `<prefix>_match` and `<prefix>_search` (engine doc
    §4.4's layering).
-2. **Search-entry negative returns** (engine doc §4.4/§4.5 handback): the
-   `<prefix>_search` contract reserves negative returns for engine-give-up,
-   naming at least `RX_ERR_STEPS` and `RX_ERR_FRAMES`. Cheap now because
-   the space is empty (returns exactly 1/0 today, STRUCTURAL).
-3. **Absorb §13.4's sharpening**: state which entries deliver captures
-   (`<prefix>_search`, `<prefix>_match_caps`) and that `<prefix>_match`
-   does not and cannot; fold engine §5.7's `RX_NCAPS`-is-an-artifact-
-   property rule into §2 once ASK-12 is ruled.
-4. **`rx_ctx.caps` lifetime line** — RULED (D42.5): "valid for the
-   duration of the call; the engine rewrites the storage afterwards;
-   retaining the pointer is the embedder's bug" JOINS the F-list; the
-   amendment writes it in.
-5. **`pcrec_err_input` compat note** — RULED (D42.4): spelling accepted
-   as §6 proposes; record beside it that the V-A compat surface will
-   also alias these names PCRE2-style with approximately the same error
-   meaning (D26 tiering governs the wording).
-6. **Captures-default consequence** — RULED (D42.1): captures ON by
-   default post-M4.5 (`--no-captures` recovers today's artifact); §2's
-   surface should note RX_NCAPS reflects the ARTIFACT per the confirmed
-   engine §5.7 rule (D42.2), and the search entry's negative space
-   carries RX_ERR_STEPS/RX_ERR_FRAMES per D42.3/§14.2.
+2. **Search-entry negative returns** (engine doc §4.4/§4.5 handback):
+   integrated at §1 (RULED D42.3) and §11.9 — `<prefix>_search` reserves
+   negative returns for engine-give-up, naming `RX_ERR_STEPS` and
+   `RX_ERR_FRAMES`; today's `1`/`0` contract keeps its meanings unchanged.
+3. **§13.4's sharpening absorbed**: §3.1 states which entries deliver
+   captures (`<prefix>_search`, `<prefix>_match_caps`) and that
+   `<prefix>_match` structurally cannot; engine §5.7's
+   `RX_NCAPS`-is-an-artifact-property rule is folded into §2.1 (RULED
+   D42.2, confirming ASK-12) and §11 item 7 is rewritten to match rather
+   than to flag an open question.
+4. **`rx_ctx.caps` lifetime line** — RULED (D42.5): integrated into §4
+   ("valid for the duration of the call; the engine rewrites the storage
+   afterwards; retaining the pointer is the embedder's bug"), with a
+   forward reference from §2.1 where the mid-match watermark is discussed.
+5. **`pcrec_err_input` compat note** — RULED (D42.4): integrated into §6
+   and the §7 table row — spelling accepted as originally proposed; the
+   V-A compat surface will also alias these names PCRE2-style with
+   approximately the same error meaning (D26 tiering governs the wording).
+6. **Captures-default consequence** — RULED (D42.1): integrated into §2.1
+   — captures ON by default post-[M4.5] (`--no-captures` recovers today's
+   artifact); `RX_NCAPS` reflects the ARTIFACT per the confirmed engine
+   §5.7 rule (D42.2); the search entry's negative space carries
+   `RX_ERR_STEPS`/`RX_ERR_FRAMES` per D42.3/§1.
+7. **The `rx_info` reflection structure and options funnel** — RULED
+   (D43.1/D43.2/D43.3): §5 is REWORKED (not merely annotated) from "the
+   exported group index" into "the `rx_info` reflection structure —
+   F8's group index folds in", carrying the full struct layout, the
+   unconditional pattern embed, the customer list (V-A's
+   `pcre2_pattern_info` corrected as the second customer, superseding
+   this document's earlier `pcre2_substring_number_from_name` framing),
+   and two flagged structural additions this document had to derive
+   (`rx_group_entry` going fixed-literal; the `ngroups`/`ngroups_named`
+   split). §0 gains a third naming family (fixed-literal ABI types,
+   previously implicit in §7's table only). §7's table drops the
+   freestanding index row and adds `rx_group_entry`/`rx_info`/
+   `<prefix>_info`/the three bit constants. §8 is CORRECTED in place —
+   the prior "no bitmask surface is being added natively" line from the
+   §8-clarification task is struck through and marked SUPERSEDED rather
+   than silently rewritten, with the funnel's corrected shape (flags
+   word, one-representation rationale, both candidate bit-name spellings)
+   written in below it. §11 gains two mechanical items (`rx_info`
+   emission, the `pcrec_options` flags-word break) and item 4 is marked
+   SUPERSEDED rather than deleted. §12 gains four new items (10–13);
+   §13 gains three new ASKs (6–8) for what D43 itself left open.
+
+**What did NOT resist integration.** No conflict was found between any
+D41/D42 ruling and the existing text of this document — every ruling
+either confirmed a PROPOSED-here item verbatim (D41.1/D41.2/D41.3/D42.4)
+or filled a gap this document had already flagged as an ASK (D41.4/D42.2's
+answer to ASK 4; D42.5 to §12 ASK-3's engine-side twin; D42.3 to the
+search-entry gap engine §4.4 raised). The one place worth flagging for the
+panel as a JUDGMENT CALL rather than a mechanical fold: `§3.1`'s
+`<prefix>_match_caps` signature took `const rx_ctx *ctx` plus a separate
+output array over a scalar `(subject, len, pos)` triple — D41.4 ruled the
+entry must exist and be reviewed at [M4.3], not which shape it takes, so
+this is new PROPOSED-here synthesis for the panel to attack, not a ruled
+fact. §12 collects it alongside the two items (1, 2) still open from the
+prior round.
+
+**D43's round did surface one genuine correction** (distinct from the
+D41/D42 round, where nothing this document had written turned out wrong):
+the §8-clarification task's "no bitmask surface is being added natively"
+line was accurate when written and became WRONG the same day when Frank
+ruled D43.2 in a later part of the same session. It is struck through and
+marked SUPERSEDED in place (§8) rather than removed, so a reader comparing
+this document against its own commit history sees the correction rather
+than a silent edit. The two D43-round structural additions this document
+had to derive on its own — `rx_group_entry` going fixed-literal, and the
+`ngroups`/`ngroups_named` split — are flagged as JUDGMENT CALLS at §12
+items 11–12 and §13 ASK 7, the same treatment `<prefix>_match_caps`'s
+signature got in the prior round.
