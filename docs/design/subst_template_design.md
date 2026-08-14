@@ -1,8 +1,11 @@
 # Compiled substitution — the template compiler design (M4-SUBST, phase 1)
 
-**Status: PROPOSED.** No panel has reviewed this and Frank has ruled on none
-of §9's questions. It is the design note the `[M4-SUBST]` row owes *before
-M4's match-API freezes*, and its §2 is the half that has a deadline: the
+**Status: PROPOSED, §9 now fully RULED (D38, 2026-08-14).** `docs/dev/decisions.md`
+D38 rules all fourteen of §9's questions (and §10's summary asks) —
+outcomes appended in place below, marked **RULED (D38, 2026-08-14)**.
+The design prose itself is UNCHANGED by this pass; only the rulings are
+added. It is the design note the `[M4-SUBST]` row owes *before M4's
+match-API freezes*, and its §2 is the half that has a deadline: the
 capture-offset contract stated there is an **input** to that freeze, not a
 consumer of it. Everything else can move later; §2 cannot.
 
@@ -189,6 +192,11 @@ the matcher may overwrite the span array during a subsequent search (it may —
 the loop simply completes each splice first) so that the loop's ordering is a
 documented consequence rather than an accident. **[OPEN]** only in the sense
 that M4 must *say*; either answer is implementable.
+**RULED (D38, 2026-08-14):** §2's C1–C11 are accepted as requirements on
+M4's match API (§10), carrying this note's stated answer forward as the
+accepted contract — the matcher may overwrite the span array between
+splices, and the loop completing each splice first is the documented
+consequence, not an accident.
 
 **C9 — Group NUMBERING is PCRE2's: left-to-right by opening parenthesis of a
 capturing group; non-capturing groups do not consume a number.**
@@ -529,6 +537,8 @@ Two properties this surface should have, both **[PROPOSED]**:
   worse experience than no caret. This is **[OPEN]** — §9 question 8 — and it
   is an API question that must be answered before M4 freezes, because it
   changes `lib/pcrec.h`.
+  **RULED (D38, 2026-08-14):** see §9 question 8 — `pcrec_error` gains a
+  WHICH-INPUT tag (an enum: pattern vs. template) beside `pos`.
 
 ### 4.3 A tension in the ratified row, recorded
 
@@ -653,6 +663,8 @@ delimiter anyway; and a caller who wants one can append it, knowing the
 length. This is a deliberate divergence from PCRE2 in a place D26 does not
 protect — it is API shape, not "what a pattern matches" — but it *is* a
 divergence and it is §9 question 4.
+**RULED (D38, 2026-08-14):** see §9 question 4 — length-only, as
+proposed here, with no NUL termination and no NUL budget.
 
 ### 5.5 One emitted file, several templates
 
@@ -1002,6 +1014,7 @@ Numbered for reference. Recommendations are this note's, not rulings.
 
 1. **Is `$0` core?** **[MEASURED]** it is core in PCRE2, and it costs nothing
    because `rx_span` already carries it. *Recommend: yes, core.*
+   **RULED (D38, 2026-08-14):** yes, `$0` is core.
 
 2. **Is the bare `$name` form (no braces) supported?** **[MEASURED]** PCRE2
    supports it and it is greedy — `$gx` is the name `gx`, not group `g` then
@@ -1010,6 +1023,8 @@ Numbered for reference. Recommendations are this note's, not rulings.
    run time, which weakens the footgun argument considerably.
    *Recommend: support it (tier 1 fidelity), since the compile-time check
    defuses it.*
+   **RULED (D38, 2026-08-14):** supported, per the recommendation — the
+   compile-time check defuses the footgun.
 
 3. **What does an UNSET but existing group render as?** The most consequential
    question here. **[MEASURED]** PCRE2 default: `-55`, a run-time error;
@@ -1019,12 +1034,16 @@ Numbered for reference. Recommendations are this note's, not rulings.
    puts an error path into generated code for the embedded niche, and that
    the D18-shaped answer is (b) with a default. *Recommend: (b), defaulting
    to empty* — which also makes python the cleaner oracle (§8.2).
+   **RULED (D38, 2026-08-14):** (b) — a GENERATION AXIS, default empty;
+   python becomes the clean oracle (§8.2).
 
 4. **Does the output buffer get NUL-terminated?** **[MEASURED]** PCRE2
    terminates *and* requires room for it, and reports length inclusive of it
    on overflow but exclusive on success (§5.4). §5.2 proposes length-only,
    uniformly, no NUL. This is an API-shape divergence from PCRE2, which D26
    does not protect either way. *Recommend: length-only.*
+   **RULED (D38, 2026-08-14):** length-only, uniformly, no NUL termination
+   and no NUL budget — 8-bit clean; embedded NULs are legal output.
 
 5. **The extension namespace spelling.** **[MEASURED]** every candidate is
    rejected by PCRE2, so all are safe; `${!...}` is the only one that is an
@@ -1035,6 +1054,9 @@ Numbered for reference. Recommendations are this note's, not rulings.
    collision rule — that doc names this note as sharing the discipline — and
    §7.1 argues the template side should hold the stronger form, since its
    namespace is empty where the pattern side's is not.
+   **RULED (D38, 2026-08-14):** the §7.1 namespace rule is ADOPTED as
+   testable (every pcrec-only template form must be a spelling PCRE2
+   rejects), and `${!...}` is reserved as the extension prefix.
 
 6. **Callback signature: is there a `void *ctx`?** *Narrowed by the
    2026-08-14 amendment.* Segment renderers now take `const rx_ctx *`
@@ -1045,6 +1067,10 @@ Numbered for reference. Recommendations are this note's, not rulings.
    renderer with no user data must reach for a global. What remains here is
    only the sink form's `void *ctx` (§7.2 option (c)), which is the sink's,
    not the renderer's. *Recommend: rule it on the ABI side; yes on the sink.*
+   **RULED (D38, 2026-08-14):** subsumed by `design_callout_abi.md`'s
+   ruling — `rx_ctx` gains `void *user` via the `rx_callout_ref` binding
+   unit (§1.1 there); segment renderers consume `rx_ctx` verbatim, so
+   this question does not need a separate answer here.
 
 7. **Where does the template come from on the CLI?** `--replace TEMPLATE` is
    the obvious flag. But **[V-E]**'s manifest is the ratified home for
@@ -1052,26 +1078,39 @@ Numbered for reference. Recommendations are this note's, not rulings.
    field of that entry. *Recommend: `--replace` now, and note the manifest
    field so V-E's design inherits it.* Related: may one file carry several
    templates over one matcher (§5.5)?
+   **RULED (D38, 2026-08-14):** `--replace` now (repeatable per §5.5);
+   `[V-E]`'s manifest gains a template field when that design lands.
 
 8. **`pcrec_error.pos` with two input strings.** It is documented as an offset
    into *the pattern*. A template error needs an offset into *the template*.
    This changes `lib/pcrec.h` and so **must be answered before M4's API
    freeze** — it is the one question here with the same deadline as §2.
    Options: a discriminator field, a second position field, or a convention.
+   **RULED (D38, 2026-08-14):** `pcrec_error` gains a WHICH-INPUT tag —
+   an enum distinguishing pattern vs. template — beside `pos`; a
+   `lib/pcrec.h` change to land at the M4 freeze.
 
 9. **UTF deferral.** Confirm that the template compiler is encoding-blind
    (C4: byte offsets throughout, per **[DD-12]**), that global-mode step width
    is **[M5]**'s only change to §6, and that case-forcing under UTF (§3.3) is
    **[DD-1]**/**[M5]** business and not this note's.
+   **RULED (D38, 2026-08-14):** confirmed as stated — byte offsets
+   throughout per **[DD-12]**, UTF is **[M5]**'s.
 
 10. **Duplicate group names (`(?J)`).** A template `${name}` with two groups
     of that name has to pick one. Deferred with `named-groups`, or ruled now?
+    **RULED (D38, 2026-08-14):** deferred, to land together with module
+    `named-groups`.
 
 11. **Does the sizing mode survive §7.2?** *Improved by the amendment:* the
     `out == NULL` convention makes it exact even for callback templates, at
     the cost of calling each renderer twice. Adopt that, or accept a lower
     bound, or make the sink form the only supported shape for the extended
     tier?
+    **RULED (D38, 2026-08-14):** sizing is EXACT BY CONTRACT — renderers
+    must honor `out == NULL` sizing and be deterministic across the two
+    passes; a renderer that violates this is the embedder's bug, not a
+    pcrec obligation to guard at run time.
 
 **Added by the 2026-08-14 callout-ABI amendment:**
 
@@ -1084,6 +1123,11 @@ Numbered for reference. Recommendations are this note's, not rulings.
     which is **[DD-3]**'s territory. *Recommend: the whole match becomes
     `caps[0]` and `rx_search` keeps a compatibility signature*, but this is
     a match-API call, not a substitution one. See §2.4(a).
+    **RULED (D38, 2026-08-14):** `rx_span` BREAKS at the M4 freeze — it
+    becomes the `ptrdiff_t` pair type in one announced break, not a
+    permanent conversion seam (Frank: `ptrdiff_t` is "clearer in a utf
+    environment"). This is the M4 match-API's [DD-3] event, scheduled
+    with the freeze per this question's own framing.
 
 13. **How literally does F6's "verbatim" bind?** §7.2 reads it as: the
     `rx_ctx` half is verbatim, the `rx_matchfn` half is extended by an output
@@ -1091,6 +1135,11 @@ Numbered for reference. Recommendations are this note's, not rulings.
     something stricter is intended — a renderer that really is an
     `rx_matchfn`, writing through a field added to `rx_ctx` — say so, since
     it changes the ABI struct rather than this note.
+    **RULED (D38, 2026-08-14):** confirmed as §7.2 reads it — a renderer
+    is `rx_matchfn` extended by an output buffer:
+    `rx_renderfn(const rx_ctx *, unsigned char *out, size_t cap) ->
+    ptrdiff_t`, same return discipline as `rx_matchfn`, sharing the
+    `out == NULL` sizing convention (Q11).
 
 14. **Is `rx_ctx.subject` really `const char *`?** §2.4(c) argues it should
     be `const unsigned char *`: `char`'s signedness is implementation-defined,
@@ -1098,6 +1147,8 @@ Numbered for reference. Recommendations are this note's, not rulings.
     class tables with subject bytes, and `PCREC_ENC_ASCII` is documented
     8-bit clean. This is a defect report against the ABI proposal, surfaced
     here because this note is its second consumer.
+    **RULED (D38, 2026-08-14):** `const unsigned char *subject` — already
+    applied in `design_callout_abi.md` §1.
 
 ---
 
@@ -1106,17 +1157,19 @@ Numbered for reference. Recommendations are this note's, not rulings.
 - **Adopt §2's C1–C11 as requirements on M4's match API** (the deadline
   item), together with §2.2's explicit non-requirements. C4 and C5 are now
   stated in the callout ABI's `rx_ctx.caps` representation, per F3.
+  **ACCEPTED (D38).**
 - **Rule §9's fourteen questions**, of which 3, 8 and 12 are load-bearing for
-  other work.
+  other work. **ACCEPTED (D38)** — all fourteen ruled, see §9 above.
 - **Take §2.4's four consequences of adopting `rx_ctx.caps` to the freeze**,
   three of which are not visible from the callout side alone: it breaks the
   already-emitted `<prefix>_span` type (question 12), `ncap` is a watermark
   that C6 needs pinned to `ngroups + 1` on a completed match, and
   `rx_ctx.subject` should be `const unsigned char *` (question 14).
+  **ACCEPTED (D38).**
 - **Accept the module-name tiering in §3.0** (`subst`, `subst-extended`,
   `subst-pcrec`) as the mechanism that turns PCRE2's run-time
   `SUBSTITUTE_EXTENDED` option into a D18 compile-time tier and inherits
-  D26 tier 3's diagnostic discharge for free.
+  D26 tier 3's diagnostic discharge for free. **ACCEPTED (D38).**
 - **Accept §7.1's namespace requirement** — every pcrec-only form must be a
   spelling PCRE2 rejects — as a testable rule, independent of the spelling
-  chosen.
+  chosen. **ACCEPTED (D38).**
