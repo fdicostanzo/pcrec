@@ -39,6 +39,15 @@ append-only or historical records.
   §14's V1-V7 failing-direction measurements. ACCEPTED and built 2026-08-12
   — see cli/CLAUDE.md and src/parse/CLAUDE.md's `syntax_dump.c` entry for
   what landed.
+- `design_callout_abi.md` — PROPOSAL (eighteenth session, 2026-08-14):
+  the callout-ABI ↔ match-here alignment owed to M4's match-API freeze
+  ([M4-CALLOUTS] amendment; direction confirmed by Frank in-session —
+  matcher entry and callout callback share ONE signature so a compiled
+  matcher links directly as a callout). One aligned `(subject, len, pos)
+  → length-or-−1` primitive; the pcre2_callout_block mirror moves to
+  PCRE2-compat GENERATION mode (AOT dissolves the trampoline-state
+  tension); freeze obligations F1–F6; five open questions for Frank.
+  Unpaneled — reviewed with the M4 match-API design.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
