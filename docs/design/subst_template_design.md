@@ -10,6 +10,17 @@ Nothing here is implementation. No code was written for the template
 compiler; the only code this note added is a measurement probe
 (`tests/probes/probe_subst.c`).
 
+**AMENDED 2026-08-14** against `design_callout_abi.md` (Frank's R-a/R-b/R-c
+rulings, committed at `bfc07b0`), which lands after this note's first draft
+and whose **F3** and **F6** bind it. The capture-offset contract adopts
+`rx_ctx.caps` — `ptrdiff_t[2]` pairs, `{-1,-1}` = unset — instead of the
+draft's `size_t` spans (§2.4), and the callback template segments consume
+`rx_ctx` verbatim instead of the draft's bespoke signature (§7.2). Both
+amendments improved the design rather than merely complying with it; §2.4
+and §7.2 also carry three things the freeze should see, raised as questions
+12–14. Amended text is marked **AMENDED 2026-08-14** in place; the superseded
+draft is in git history, not edited away.
+
 ## How claims in this document are marked
 
 The `[M4-SUBST]` row is a ratified scope statement with Frank's own
@@ -33,7 +44,7 @@ that report.
 The probe follows the method `tests/probes/CLAUDE.md` closes with: twelve
 predictions (P1–P12) are stated in its header **before** the first run, and
 the report shows which survived. **Three were refuted, and two of the three
-changed this design** — they are called out where they land (§2.4, §3.3,
+changed this design** — they are called out where they land (§2.5, §3.3,
 §5.4). Because this box has the libpcre2 runtime but no `pcre2.h`, the
 `PCRE2_SUBSTITUTE_*` bit values are hand-written from memory of the
 documentation and then **confirmed by effect** before use (probe §0), the
@@ -123,14 +134,18 @@ overall span. **[MEASURED]** this is PCRE2's numbering (probe §3: `/b+/` with
 array indexed from 1 with the overall match kept somewhere else.
 
 **C4 — Offsets are BYTE offsets into the original subject, half-open
-`[start, end)`, as `size_t`.** The splice is a copy out of the subject
-buffer; it needs byte positions in that buffer. Not code-point indices, not
-pointers, not lengths. This matches `rx_span` today and matches PCRE2, which
-reports byte offsets even under UTF. **[DD-12]** already rules that code
-points exist only at regex-compile time between parse and lowering, so this
-requirement is a restatement of the ratified UTF architecture, not a new
-constraint on it. Under **[M5]** the template compiler stays entirely
-encoding-blind: it copies byte ranges the matcher identified.
+`[start, end)`, as a two-element pair per group.** The splice is a copy out
+of the subject buffer; it needs byte positions in that buffer. Not code-point
+indices, not pointers, not lengths. This matches PCRE2, which reports byte
+offsets even under UTF. **[DD-12]** already rules that code points exist only
+at regex-compile time between parse and lowering, so this requirement is a
+restatement of the ratified UTF architecture, not a new constraint on it.
+Under **[M5]** the template compiler stays entirely encoding-blind: it copies
+byte ranges the matcher identified.
+
+**AMENDED 2026-08-14** (callout-ABI ruling, `design_callout_abi.md` F3): the
+element type is **`ptrdiff_t`**, not `size_t`, and the pair is
+`ptrdiff_t[2]`. §2.4 works through the adoption and what it costs.
 
 **C5 — There is a DISTINGUISHED UNSET value, present in BOTH slots of an
 unset pair, and it is a NAMED constant in the generated header.**
@@ -138,9 +153,13 @@ A group that exists but did not participate in this match is the one case the
 compile-time bounds check cannot remove (§2.3), so the emitted splice must be
 able to test for it at run time. **[MEASURED]** PCRE2 uses
 `~(PCRE2_SIZE)0` — `18446744073709551615` here — in both slots (probe §2).
-**[PROPOSED]** pcrec adopts the same sentinel, exported as
-`RX_UNSET` (prefix-namespaced), because a caller writing its own loop over
-the spans needs to spell the test and must not hard-code `(size_t)-1`.
+
+**AMENDED 2026-08-14**: the sentinel is **`{-1, -1}`** per the callout ABI,
+which under `ptrdiff_t` is the same *idea* as PCRE2's all-ones and a strictly
+better one to test — `caps[k][0] < 0` is one signed comparison, where the
+`size_t` form needs a comparison against a named constant that a caller can
+get wrong. The named constant is still required (`RX_UNSET`), because a
+caller writing its own loop must not hard-code either spelling.
 
 **C6 — EVERY pair `0..ngroups` is written on every successful match.**
 The emitted splice reads pair `k` unconditionally; if pairs above some
@@ -160,8 +179,8 @@ compile-time constant the generated header exposes.**
 No allocation anywhere in the generated code — the positioning note's element
 2 (embedded / no-library: "*no malloc/errno/locale in generated code*") and
 TS-1's all-const-tables rule are not negotiable for this feature. The caller
-must be able to write `rx_span caps[RX_NCAPS];` on the stack, which requires
-the count as a macro, not as a function return.
+must be able to write `ptrdiff_t caps[RX_NCAPS][2];` on the stack, which
+requires the count as a macro, not as a function return.
 
 **C8 — The spans are STABLE for the duration of one splice.**
 In global mode the emitted loop alternates *match* and *splice*; the splice
@@ -224,7 +243,88 @@ and leaves the *unset* case as a genuine run-time condition that the emitted
 code must render somehow. What it renders is §9's question 3, and it is the
 most consequential ruling in this note.
 
-### 2.4 Refuted prediction that changed this section
+### 2.4 Reconciliation with the callout ABI (F3, F6) — AMENDED 2026-08-14
+
+`docs/design/design_callout_abi.md` (manager proposal, incorporating Frank's
+same-day rulings R-a/R-b/R-c) aligns the matcher and callout interfaces on
+one context struct, and its **F3** couples that struct's capture field to
+this section: *"the capture representation in `rx_ctx.caps` must BE the match
+API's capture-offset contract (one representation, not a conversion)."*
+
+```c
+typedef struct rx_ctx {
+    const char     *subject;
+    size_t          len;
+    size_t          pos;
+    size_t          ncap;       /* capture slots known so far */
+    const ptrdiff_t (*caps)[2]; /* [start,end) pairs; -1,-1 = unset */
+} rx_ctx;
+```
+
+**[PROPOSED]** this note **adopts** `rx_ctx.caps` as the capture-offset
+contract. F3 is right that two representations with a conversion between them
+would be the worse outcome, and the fit is good: `const ptrdiff_t (*)[2]` is
+precisely C2's "flat indexed sequence of pairs" and C4's half-open byte
+ranges, expressed as a type rather than as a convention. C1, C2, C3, C7, C9,
+C10 and C11 are unaffected.
+
+Four consequences the freeze should see, because adoption is not free and
+three of these are not visible from the callout side alone.
+
+**(a) It changes an ALREADY-EMITTED type.** `src/gen/emit_dfa.c:106` emits
+`typedef struct { size_t start, end; } <prefix>_span;` today, `rx_search`
+takes a `rx_span *`, and `tests/harness/driver.c` consumes it. So "one
+representation, no conversion" cannot be satisfied by adding `rx_ctx`
+alongside `rx_span` — it requires that `rx_span` either become the pair type
+or go away. That is a breaking change to a shipped generated contract, which
+is **[DD-3]**'s territory (generated-API versioning) and should be recorded
+as a cost of F3 rather than discovered at implementation time.
+**[PROPOSED]** the cheapest reconciliation is that the whole-match span
+becomes `caps[0]` and `rx_search` keeps a compatibility signature; but this
+note does not own that call and flags it as §9 question 12.
+
+**(b) `size_t` → `ptrdiff_t` halves the representable subject length**, from
+`SIZE_MAX` to `PTRDIFF_MAX`. On any target pcrec plausibly serves this is
+irrelevant (2^63−1 bytes here), and the gain — one signed test for unset, and
+fail/empty distinctness for the same reason F1 gives for the return value —
+is worth it. Recorded so the freeze is informed rather than surprised.
+
+**(c) `const char *subject` should almost certainly be `const unsigned char
+*`.** This is a defect report against the ABI proposal, not a substitution
+question, but this note is the second consumer and so is where it surfaced.
+Plain `char` has implementation-defined signedness; the entire existing
+emitter uses `const unsigned char *` for subject bytes precisely because it
+indexes 256-entry class tables with them (`rx_ftr[st * 5 + rx_fcls[s[pos++]]]`
+in the emitted scan loop), and a signed `char` makes that a negative index on
+any byte ≥ 0x80. `PCREC_ENC_ASCII` is documented as *"byte semantics, 8-bit
+clean"*, so bytes ≥ 0x80 are ordinary subjects, not an edge case. The splice
+copies bytes and would survive either choice; the matcher on the other side
+of the same struct would not.
+
+**(d) `ncap` is a WATERMARK, and C6 said watermarks are the thing to avoid.**
+The tension is real but resolves cleanly, and the resolution is worth writing
+into the freeze because each side is right about its own direction:
+
+- *Callout direction (mid-match).* Captures genuinely are incomplete — that
+  is the whole content of R-b's "captures **thus far**" — so `ncap` is
+  load-bearing and correct there. A callout must not read `caps[k]` for
+  `k >= ncap`, and `caps[0]`'s end is not yet meaningful at all, since the
+  overall match has not finished.
+- *Substitution direction (match complete).* The splice runs only after a
+  match succeeds, and C6 asks that at that point **every** pair `0..ngroups`
+  be written, with non-participating groups holding `{-1,-1}` rather than
+  being merely "beyond the watermark". **[MEASURED]** this is what libpcre2
+  does at match completion, the poison cell in §2.5 notwithstanding its
+  return value.
+
+**[PROPOSED]** therefore: `ncap` is part of the struct, and the *contract on
+a completed match* is `ncap == ngroups + 1` with all pairs written. The
+emitted splice then needs no watermark logic and no guard per reference,
+which is what C6 was actually asking for — C6 is a statement about the
+completed-match contract, not a request to delete a field the callout
+direction needs.
+
+### 2.5 Refuted prediction that changed this section
 
 **P11 predicted** that an unset pair reads as `PCRE2_UNSET` in both slots —
 confirmed. **P8's neighbour did not survive**: the note's first draft assumed
@@ -472,10 +572,11 @@ int rx_search(const unsigned char *s, size_t n, size_t startpos, rx_span *m);
 /* Replacement: <$1> */
 /* Feature set: <D37 stamp, unchanged; 'subst' appears in its module list> */
 
-typedef struct { size_t start, end; } rx_span;
+/* The capture-offset contract, shared verbatim with the callout ABI (F3). */
+typedef struct rx_ctx rx_ctx;         /* see design_callout_abi.md §1 */
 
-#define RX_NCAPS 2                    /* $0..$1 — sized for rx_span caps[] */
-#define RX_UNSET ((size_t)-1)         /* C5: an unset capture, both slots */
+#define RX_NCAPS 2                    /* $0..$1 — the caps[] element count */
+#define RX_UNSET ((ptrdiff_t)-1)      /* C5: an unset capture, both slots */
 
 /* Substitution outcome. Non-negative = number of substitutions performed. */
 #define RX_SUBST_NOSPACE (-1)
@@ -671,41 +772,96 @@ dialects, so the namespace is available (probe §13):
 enabled. Spelling is Frank's to rule (§9 question 5); the *requirement* above
 is the part this note asks to be adopted regardless of spelling.
 
+**Convergence worth recording (2026-08-14).** `design_callout_abi.md` §3
+arrives at the same principle from the pattern side, and names this note as
+sharing the discipline: *"a spelling that reinterprets a currently-valid
+pattern must be MODULE-GATED"* — `(<x>)` is today a group matching the
+literal `<x>`, `\{` an escaped literal brace. Same hazard, and the two rules
+should be read together, but they are not identical and the difference is
+deliberate:
+
+- The **pattern** side gates, because the colliding spellings are already
+  *valid PCRE2* and cannot be made errors; the module gate is what keeps
+  today's parse standing when the module is off.
+- The **template** side can demand more, because the namespace is empty:
+  every candidate measured is *already an error* in PCRE2 (the table above),
+  so pcrec-only template forms can be required to collide with nothing at
+  all. That is strictly stronger than gating, and it costs nothing to keep
+  while the property still holds.
+
+Both are one instance of SR-10's rule that pcrec's own surface lives in a
+flagged namespace; if a future template extension ever needs a spelling PCRE2
+accepts, it falls back to the pattern side's module gate rather than
+inventing a third answer.
+
 ### 7.2 Callback segments
 
-**[PROPOSED]**, reusing **[M4-CALLOUTS]**'s primitive without modification —
-*"static extern binding... defined by the embedding program — compile-time
-binding, zero cost when absent"*:
+**AMENDED 2026-08-14.** The first draft invented a bespoke signature taking
+`(in, inlen, out, outcap, outlen)`. `design_callout_abi.md` **F6** rules that
+out: *"[M4-SUBST]'s callback template segments reuse this same
+`rx_matchfn`/`rx_ctx` primitive verbatim; the subst design note should consume
+the §1 typedef rather than invent a sibling."* What follows is the amended
+form, and it is better than what it replaces — the bespoke version passed one
+pre-selected capture's text, where `rx_ctx` hands the callback *all* the
+captures and lets it choose, which is exactly what Frank's
+`parse_int($1) > 100` direction needs.
+
+**[PROPOSED]**, consuming the ABI's context type verbatim:
 
 ```c
-/* Emitted ONLY when the template names it. The embedding program defines it.
- * Renders one template segment: `in` is the captured text (or the whole
- * match for ${!fn:0}); write at most outcap bytes to out and set *outlen.
- * Return 0 on success, nonzero to abort the substitution. */
-extern int rx_tr_upper(const unsigned char *in, size_t inlen,
-                       unsigned char *out, size_t outcap, size_t *outlen);
+/* Emitted ONLY when the template names it; the embedding program defines it.
+ * Renders one template segment. Reads its inputs from the SAME rx_ctx a
+ * callout receives — ctx->caps[k] selects any group, ctx->subject is the
+ * text. Writes at most outcap bytes to out; returns the number of bytes
+ * produced, or -1 to fail the substitution. Called with out == NULL and
+ * outcap == 0, it returns the length it WOULD produce, writing nothing. */
+typedef ptrdiff_t rx_renderfn(const rx_ctx *ctx,
+                              unsigned char *out, size_t outcap);
+
+extern ptrdiff_t rx_tr_upper(const rx_ctx *, unsigned char *, size_t);
 ```
 
-The properties that make this cheap, each inherited rather than invented:
+**How far "verbatim" reaches, stated precisely**, because F6 asks for
+something only half of which is literally possible. The **`rx_ctx` half is
+verbatim** — same struct, same capture representation, same field meanings,
+no conversion, which is the part F3 actually cares about. The **`rx_matchfn`
+half cannot be**, because the two functions have different jobs: a matcher
+*consumes* subject text and reports a length; a renderer *produces* output
+bytes. A renderer with `rx_matchfn`'s exact signature would have nowhere to
+write. So `rx_renderfn` is `rx_matchfn` **extended by an output buffer**, and
+it deliberately keeps every other convention identical:
 
-- **Compile-time bound.** The `extern` is declared only when a template
-  names it, so a program with no callback templates has no new symbols and no
-  link-time obligation — literally zero cost when absent, which is
-  M4-CALLOUTS' own criterion.
-- **No context threading.** Unlike a matcher callout, a template callback
-  fires during the *splice*, where there is no engine state to expose. It
-  needs no `pcre2_callout_block` analogue, which sidesteps the ABI tension
-  **[M4-CALLOUTS]** records between its PCRE2-exact block and V-A's aligned
-  ABI. **[OPEN]**-adjacent: whether a `void *ctx` parameter should exist at
-  all is question 6; a thread-safe embedder cannot use a global, and D19 says
-  pcrec must be usable *from* threads.
+- `ptrdiff_t` return, with `-1` = fail and `>= 0` a length — the same signed
+  discipline F1 gives for `rx_matchfn`, and for the same reason (a zero-length
+  render must stay distinct from a failure).
+- `const rx_ctx *` as the first parameter, unchanged.
+- Compile-time bound: the `extern` is declared only when a template names it,
+  so a program with no callback templates gains no symbols and no link-time
+  obligation — D36's static-extern primitive, zero cost when absent.
+
+This is offered as the reading of F6 rather than a departure from it; if the
+manager intends something stricter — a renderer that really is an
+`rx_matchfn`, presumably writing through a field added to `rx_ctx` — that is
+§9 question 13.
+
+**One consequence that improves the design.** The `out == NULL` convention
+above is the same one §5.2 proposes for `rx_subst`'s sizing mode, so the
+sizing question raised below composes instead of conflicting: a
+callback-bearing template can be sized exactly by calling each renderer once
+with `out == NULL`. That costs a second call per segment but keeps the sizing
+mode *exact*, which the first draft had given up on. It does mean a renderer
+must be **pure enough to be called twice** — a documented obligation on the
+embedder, not something pcrec can enforce, and the reason option (a) below
+survives as the fallback for renderers that are not.
 
 **A real consequence, stated rather than hidden:** a callback's output length
-is not knowable ahead of the call, so **the sizing mode (§5.2) cannot be
-exact for a callback-bearing template.** Options are (a) sizing mode returns
-a lower bound and callers must handle `RX_SUBST_NOSPACE` anyway, (b) sizing
-mode invokes the callbacks (doubling side effects — unacceptable), or (c)
-callback templates get a sink-based entry point instead:
+is not knowable without asking the callback, so **the sizing mode (§5.2)
+cannot be exact for a callback-bearing template for free.** Three options,
+and the amended signature above changes which one wins: (a) sizing mode
+returns a lower bound and callers handle `RX_SUBST_NOSPACE` anyway, (b)
+sizing mode calls each renderer with `out == NULL` — **exact**, at the cost
+of a second call per segment and an obligation that renderers be callable
+twice, (c) callback templates get a sink-based entry point instead:
 
 ```c
 /* Streaming writer form: no output buffer at all. */
@@ -714,11 +870,14 @@ int rx_subst_to(const unsigned char *s, size_t n,
                 void *ctx);
 ```
 
-**[PROPOSED]** (a) plus (c): the sink form is the recommended shape for the
-extended tier, it composes with **[M3]** later, and it removes the
-buffer-sizing question entirely. It is also independently useful — writing
-substitution output straight to a socket or a `FILE *` with no intermediate
-buffer is exactly the embedded-niche story.
+**[PROPOSED]** (b) as the default, with (a) as the documented fallback for
+renderers that cannot be called twice, and (c) offered alongside: the sink
+form composes with **[M3]** later and removes the buffer-sizing question
+entirely. It is also independently useful — writing substitution output
+straight to a socket or a `FILE *` with no intermediate buffer is exactly the
+embedded-niche story. Note that (c)'s `void *ctx` is the sink's own context,
+not the renderer's; `rx_ctx` covers the renderer, which is what question 6
+below now reduces to.
 
 ### 7.3 Built-in transforms
 
@@ -869,15 +1028,23 @@ Numbered for reference. Recommendations are this note's, not rulings.
 
 5. **The extension namespace spelling.** **[MEASURED]** every candidate is
    rejected by PCRE2, so all are safe; `${!...}` is the only one that is an
-   error *independently of dialect* (§7.1). Separately: is §7.1's
-   **requirement** (every pcrec-only form must be a PCRE2 error, testably)
-   adopted as a rule?
+   error *independently of dialect* (§7.1). Separately, and more important
+   than the spelling: is §7.1's **requirement** (every pcrec-only template
+   form must be a PCRE2 error, testably) adopted as a rule? It is the
+   template-side sibling of `design_callout_abi.md` §3's module-gated
+   collision rule — that doc names this note as sharing the discipline — and
+   §7.1 argues the template side should hold the stronger form, since its
+   namespace is empty where the pattern side's is not.
 
-6. **Callback signature: is there a `void *ctx`?** D19 says pcrec must be
-   usable *from* threads, and a callback with no context forces the embedder
-   to use a global. Adding `ctx` means every entry point carries it.
-   *Recommend: yes on the sink form (§7.2), which needs one anyway; and yes
-   on segment callbacks for the same reason.*
+6. **Callback signature: is there a `void *ctx`?** *Narrowed by the
+   2026-08-14 amendment.* Segment renderers now take `const rx_ctx *`
+   verbatim (§7.2), so the question is no longer whether they get a context —
+   it is whether `rx_ctx` itself should carry a user-data pointer, which is
+   `design_callout_abi.md`'s **own question 1** and should be ruled there
+   once, not twice. D19 (usable *from* threads) is the argument for yes: a
+   renderer with no user data must reach for a global. What remains here is
+   only the sink form's `void *ctx` (§7.2 option (c)), which is the sink's,
+   not the renderer's. *Recommend: rule it on the ABI side; yes on the sink.*
 
 7. **Where does the template come from on the CLI?** `--replace TEMPLATE` is
    the obvious flag. But **[V-E]**'s manifest is the ratified home for
@@ -900,19 +1067,52 @@ Numbered for reference. Recommendations are this note's, not rulings.
 10. **Duplicate group names (`(?J)`).** A template `${name}` with two groups
     of that name has to pick one. Deferred with `named-groups`, or ruled now?
 
-11. **Does the sizing mode survive §7.2?** It is exact for PCRE2-compatible
-    templates and only a lower bound once callbacks exist. Keep it as
-    "exact when exact, lower bound otherwise", or make the sink form the only
-    supported shape for the extended tier?
+11. **Does the sizing mode survive §7.2?** *Improved by the amendment:* the
+    `out == NULL` convention makes it exact even for callback templates, at
+    the cost of calling each renderer twice. Adopt that, or accept a lower
+    bound, or make the sink form the only supported shape for the extended
+    tier?
+
+**Added by the 2026-08-14 callout-ABI amendment:**
+
+12. **`rx_span` versus `rx_ctx.caps` — who gives way?** F3 requires one
+    capture representation with no conversion, but `<prefix>_span`
+    (`size_t start, end`) is already emitted (`src/gen/emit_dfa.c:106`),
+    already in `rx_search`'s signature and already consumed by
+    `tests/harness/driver.c`. Satisfying F3 means `rx_span` becomes the pair
+    type or disappears — a breaking change to a shipped generated contract,
+    which is **[DD-3]**'s territory. *Recommend: the whole match becomes
+    `caps[0]` and `rx_search` keeps a compatibility signature*, but this is
+    a match-API call, not a substitution one. See §2.4(a).
+
+13. **How literally does F6's "verbatim" bind?** §7.2 reads it as: the
+    `rx_ctx` half is verbatim, the `rx_matchfn` half is extended by an output
+    buffer, because a renderer produces bytes and a matcher does not. If
+    something stricter is intended — a renderer that really is an
+    `rx_matchfn`, writing through a field added to `rx_ctx` — say so, since
+    it changes the ABI struct rather than this note.
+
+14. **Is `rx_ctx.subject` really `const char *`?** §2.4(c) argues it should
+    be `const unsigned char *`: `char`'s signedness is implementation-defined,
+    the emitter already uses `unsigned char` because it indexes 256-entry
+    class tables with subject bytes, and `PCREC_ENC_ASCII` is documented
+    8-bit clean. This is a defect report against the ABI proposal, surfaced
+    here because this note is its second consumer.
 
 ---
 
 ## 10. Summary of what this note asks for
 
 - **Adopt §2's C1–C11 as requirements on M4's match API** (the deadline
-  item), together with §2.2's explicit non-requirements.
-- **Rule §9's eleven questions**, of which 3 and 8 are load-bearing for other
-  work.
+  item), together with §2.2's explicit non-requirements. C4 and C5 are now
+  stated in the callout ABI's `rx_ctx.caps` representation, per F3.
+- **Rule §9's fourteen questions**, of which 3, 8 and 12 are load-bearing for
+  other work.
+- **Take §2.4's four consequences of adopting `rx_ctx.caps` to the freeze**,
+  three of which are not visible from the callout side alone: it breaks the
+  already-emitted `<prefix>_span` type (question 12), `ncap` is a watermark
+  that C6 needs pinned to `ngroups + 1` on a completed match, and
+  `rx_ctx.subject` should be `const unsigned char *` (question 14).
 - **Accept the module-name tiering in §3.0** (`subst`, `subst-extended`,
   `subst-pcrec`) as the mechanism that turns PCRE2's run-time
   `SUBSTITUTE_EXTENDED` option into a D18 compile-time tier and inherits
