@@ -96,19 +96,11 @@ the two ruled pre-freeze docs (design_callout_abi.md, subst_template_design.md)
 are themselves unpaneled and are swept into M4.3's panel by their own
 stated terms.
 
-- [M4.1] STATE:not-started — DESIGN: the MATCH-API FREEZE document
-  (docs/design/match_api_m4.md). Collects every ruled obligation into one
-  freezable contract: the rx_span → `ptrdiff_t[2]` pair break (D38 Q12 —
-  a DD-3 versioning event at the M4 boundary, D37's announced-boundary
-  shape), the caps array + RX_NCAPS/RX_UNSET surface satisfying subst
-  C1–C11, the unconditional match-here export (F1/F2), rx_ctx +
-  rx_callout_ref (F3, D38), the {name, number, ref} group index (F8, D39
-  + addendum), the pcrec_error which-input tag (subst Q8), OS-0
-  entry-point naming, the PCREC_* native constants surface (D38
-  addendum; PCRE2_* compat-only), and how callout-pattern entry points
-  thread nothing extra (user lives in the binding ref). Deliverable: the
-  doc; freeze happens only AFTER M4.3's panel
-- [M4.2] STATE:not-started — DESIGN: the ENGINE document, its own design
+- [M4.1] COMPLETED 2026-08-14 (merge 65b16c6) — row archived in
+  plan_completed.md; the doc (docs/design/match_api_m4.md) is PROPOSED
+  until M4.3's panel closes, and its §13 ASKs (naming picks + the
+  rx_ctx-fixed-names confirmation) go to Frank with the panel materials
+- [M4.2] STATE:started — DESIGN: the ENGINE document, its own design
   doc at docs/design/engine_m4.md (Frank, 2026-08-14) — the
   backtracking VM as EMITTED SPECIALIZED C (no runtime interpreter, per
   the project mandate), capture tracking with PCRE2's leftmost/priority
