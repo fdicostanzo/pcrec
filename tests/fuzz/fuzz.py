@@ -215,6 +215,28 @@ TRAP_TEMPLATES = [
     "(?:{a}|){q}{b}",           # nullable trailing branch
     "(?:{a}{a}|{a}){q}{a}",     # overlapping same-letter runs
     "{a}(?:{b}|{b}{a}){q}{a}",  # trap behind a literal prefix
+
+    # K17 family (R21 finding E-1, fixed 2026-08-14) — the R2-M1 mechanism one
+    # level deeper. The trigger is an OUTER star over a body that begins with a
+    # LAZY NULLABLE prefix and continues into a NESTED NULLABLE quantified
+    # group, so the outer loop's own empty iteration has to reach the loop exit
+    # THROUGH the lazy prefix's preferred (skip) branch. `(?:b*?(?:a*)*)*` on
+    # "ab" was [0,2) against both oracles' [0,1).
+    #
+    # These rows exist because the unbiased generator CAN produce the class and
+    # essentially never does: it needs a quantified group, whose body STARTS
+    # with a lazy nullable quantifier, followed by a nested nullable quantified
+    # group, under an outer star, and then a subject that exposes it — a joint
+    # probability around 1e-4..1e-5 per pattern. Nothing excluded it; it was
+    # just never rolled. The first two pin the outer `*` so the exact shape is
+    # generated every time rather than one draw in nine.
+    "(?:{a}*?(?:{b}*)*)*",         # K17's own repro shape
+    "({a}*?({b}*)*)*",             # capturing: same span, so this is the
+                                   #   priority construction, not erasure
+    "(?:{a}*?(?:{b}*)*){q}",       # same body under every outer quantifier
+    "(?:{a}??(?:{b}*)+){q}",       # lazy `??` prefix, inner `+`
+    "(?:{a}*?(?:{b}*|{a}*)*){q}",  # nullable ALTERNATION as the inner body
+    "(?:{a}*?(?:(?:{b}*)*)*){q}",  # one nesting level deeper again
 ]
 TRAP_QUANTS = ["*", "+", "?", "*?", "+?", "{0,2}", "{0,2}?", "{1,3}?", "{2,}?"]
 

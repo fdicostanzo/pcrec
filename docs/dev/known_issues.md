@@ -1082,6 +1082,49 @@ bounded by loop-nesting depth. `reent` is deleted outright; the marks array
 is half the size it was. Compile time measured unchanged on twelve
 nested-star/nullable-alternation shapes (worst ratio 1.06, noise).
 
+**Why every net missed it** (house tradition; this one is the R2-M1 lesson
+one level deeper, and the answer is NOT that anything excluded the shape):
+
+1. **The corpus never had it — the code author's alphabet, D27's lesson.**
+   Measured over the 612 `pattern` lines in `tests/` before this fix: 44 use
+   a lazy quantifier, and only 3 of those 44 also contain a quantified group
+   with a quantifier inside it. All 3 are in review_r2.rxt and all 3 are
+   R2-M1's own shape — a lazy quantifier over an alternation of LITERALS
+   (`(?:ab|a){0,2}?b`). Not one paired a lazy NULLABLE prefix with a nested
+   NULLABLE star, and not one put that under an outer star. Tests written
+   from the fix that was just made inherit the shape of that fix.
+
+2. **The fuzzer could produce it and never did — probability, not
+   exclusion.** This is worth stating precisely because the tempting
+   conclusion is that a filter hid it, and no filter did: the fuzzer
+   compares EXACT SPANS against libpcre2, its grammar can generate every
+   piece, and nothing in `EXCLUDED FROM GENERATION` touches this class. It
+   needs four independent draws to land together — a quantified group, whose
+   body STARTS with a lazy nullable quantifier, followed by a nested nullable
+   quantified group, with an outer star over the whole thing — and then a
+   subject short enough to expose it. Joint probability ~1e-4..1e-5 per
+   pattern. The existing R2 trap templates did not help, because they encode
+   R2-M1's overlapping-prefix ALTERNATION, which is the level above this one.
+
+3. **What did find it was a probe aimed at a named blind spot.** The R21
+   engine critic ran the refutation that engine_m4.md §6.1's own P-1 asked
+   for — "the capture-erased DFA hands the VM an exact span" — instead of
+   sampling more of the same space. Seed 5 gave 910/910 agreement and said
+   nothing; the family fell out of seed 99. A claim the design marked
+   BELIEVED is a better place to point an instrument than a bigger random
+   sample, and this file's own history says so repeatedly (K15, K16).
+
+**Countermeasure, landed with this fix:** K17-family TRAP TEMPLATES in
+`tests/fuzz/fuzz.py` (six rows beside the R2 ones), which move the class from
+~1e-4 of generated patterns to a measured **4%** — 50% of trap draws, traps
+being 8% of patterns. They are sabotage-validated in the direction that
+matters: exhaustively expanded, the six rows give 111 distinct patterns, and
+against the PRE-fix compiler those produce 28 divergences over 1887
+pattern/subject cells, against the post-fix compiler 0. The second half of
+the countermeasure is the three-way differential gate ruled at D44 (any 2-1
+split with pcrec in the minority is a bug, never an oracle exclusion) — the
+mechanism that stops the next one being explained away.
+
 **Guard tests:** `tests/base/review_r21.rxt`, 120 cases — the six diverging
 family members, one nesting level deeper (`(?:b*?(?:(?:a*)*)*)*`, which
 needs the redirect a THIRD time), a witness the post-fix random sweep found
