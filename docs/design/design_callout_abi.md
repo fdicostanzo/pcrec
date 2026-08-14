@@ -31,12 +31,18 @@ cannot carry captures, so the alignment moves to a CONTEXT STRUCT that
 both sides take:
 
     typedef struct rx_ctx {
-        const char     *subject;   /* whole subject, not a slice */
-        size_t          len;       /* subject length */
-        size_t          pos;       /* where to match, anchored */
-        size_t          ncap;      /* capture slots known so far */
-        const ptrdiff_t (*caps)[2];/* [start,end) pairs; -1,-1 = unset */
+        const unsigned char *subject;  /* whole subject, not a slice */
+        size_t               len;      /* subject length */
+        size_t               pos;      /* where to match, anchored */
+        size_t               ncap;     /* capture slots known so far */
+        const ptrdiff_t     (*caps)[2];/* [start,end); -1,-1 = unset */
     } rx_ctx;
+
+(`unsigned char *` per the subst note's §2.4 finding: char signedness is
+implementation-defined and the emitter indexes 256-entry class tables
+with subject bytes. `ncap` is a mid-match watermark at a callout site;
+on a COMPLETED match it is pinned to ngroups + 1 with every pair written
+— the subst note's C6.)
 
     typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
     /* returns matched length >= 0 (anchored at ctx->pos), or -1 */
@@ -146,9 +152,14 @@ rx_ctx that now carries captures anyway.
   `ncap = 0, caps = NULL` (no inbound capture dependence).
 - **F3**: `rx_ctx`'s layout is part of the frozen ABI. The capture
   representation in `rx_ctx.caps` must BE the match API's capture-offset
-  contract (one representation, not a conversion) — this couples to the
-  [M4-SUBST] design note's capture-offset contract; the two must land on
-  the same pair shape. Unset = {−1,−1}.
+  contract (one representation, not a conversion) — RECONCILED
+  2026-08-14: the [M4-SUBST] note's §2.4 ADOPTS `ptrdiff_t[2]` /
+  {−1,−1}-unset as the contract (its C4/C5). Consequence it returns:
+  one-representation means the ALREADY-EMITTED `<prefix>_span`
+  (`size_t start,end` — emit_dfa.c) must become this pair type or go —
+  a breaking change to a shipped generated contract, i.e. a [DD-3]
+  generated-API-versioning event to schedule WITH the M4 freeze, not
+  after it (subst note Q12).
 - **F4**: composed submatchers/callouts cannot abort the outer match —
   match or fail only (pending §6 Q3).
 - **F5**: capture VISIBILITY IN, opacity OUT: a callout SEES the outer
