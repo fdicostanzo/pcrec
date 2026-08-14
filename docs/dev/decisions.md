@@ -3475,3 +3475,13 @@ inputs, and rx_span's break lands there); D20's promotion for anything
 library-default-shaped; V-E's manifest design for capture export and
 the template field; the abort reservation if a real customer for
 native abort appears.
+
+**D38 addendum (Frank, same session): PARALLEL OPTION NAMING.** Every
+PCRE2 option pcrec adopts (in whatever ruled form) gets a parallel
+pcrec-native name — e.g. `PCRE2_LITERAL` and `PCREC_LITERAL`. The
+PCREC_* spelling is pcrec's own surface (SR-10's namespace discipline);
+the PCRE2_* spelling serves callers porting from PCRE2. LAYERING
+SUB-QUESTION deliberately left open until V-A's design: whether pcrec
+core accepts the PCRE2_* spellings directly (documented aliases) or
+they exist only in V-A's compat layer. docs/pcre2_options.md carries
+the scheme note; nothing emits either name until its owning row lands.
