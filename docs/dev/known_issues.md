@@ -1273,6 +1273,14 @@ pass today and must still pass after a fix). Every expectation generated
 from python3 `re` and re-measured against libpcre2 10.46 — 165/165 pairs,
 both oracles, zero disagreements.
 
-**Scheduled:** UNASSIGNED — needs a manager/Frank decision, because the fix
-shape (path-sensitive closure) is a different risk class from K17's and
-sits on the same [M4.6] precondition.
+**Scheduled:** ASSIGNED by the manager at R21 close (2026-08-14):
+DESIGN-FIRST, before [M4.6] opens — a short design note measuring the
+compile-time cost of the (state, open-loop-set) memo (the lane's sketch
+of the naive path-local version was exponential on `(?:a*|b*){20}`-class
+shapes, so the design must find the bounded formulation or a narrower
+sound rule), panel-eyed with whatever review gates M4.6's start, then the
+rewrite as its own lane with K17's validation methodology (blast-radius
+emitted-source diff + isolation sweep with an injected positive control).
+Until then: the known_fail ratchet holds it visible; [M4.5]'s three-way
+span differential is the net; [M4.6] does NOT open with K18 unfixed
+(same precondition status as K17, R21 review E-1 disposition).
