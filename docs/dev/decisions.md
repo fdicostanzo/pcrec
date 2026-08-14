@@ -3493,3 +3493,40 @@ will need its own non-PCRE2 flags and a mixed surface — some spelled
 PCRE2_, some PCREC_ — is confusing. One canonical namespace
 (PCREC_*), one compat aliasing surface (PCRE2_*, the V-A direction);
 no flag is ever native under the PCRE2_ prefix.
+
+## D39 — group naming: exported name→number index per pattern; appended numbering for rx references (2026-08-14)
+
+**Decision (Frank, eighteenth session, same conversation as D38):**
+
+1. **Per-pattern name→number index, exported.** The mapping is static,
+   so it does NOT travel in rx_ctx or any callback parameter; instead
+   every generated pattern exports a const structure for name → group
+   number lookup (direction: a sorted `{const char *name; int number;}`
+   array + count, bsearch-able; .rodata only, zero runtime cost).
+   This AMENDS subst C10's non-requirement list ("no name table in the
+   artifact"): template `${name}` still resolves at compile time — the
+   exported index is a separate, deliberate artifact obligation, whose
+   second customer is V-A's `pcre2_substring_number_from_name`. It
+   joins the M4 freeze list (the artifact contract grows the index
+   alongside the match-here entry).
+2. **rx references (future: one regex refers to another, inserted at
+   that point — V-E territory) use APPENDED numbering.** Inserted
+   groups are NOT renumbered inline into the primary's sequence ("too
+   complicated" — and inline renumbering makes the primary's numbers
+   change whenever the referenced regex changes, the (?(DEFINE)
+   brittleness). Instead: the primary keeps its own 1..N stable;
+   inserted regexes' groups append at N+1.. in insertion order; group
+   NAMES are kept and the point-1 index is the lookup path into
+   results. Consequences inherited by V-E's design: backrefs inside an
+   inserted regex renumber to their appended positions at insert time
+   (compile-time); the caps array length stays a compile-time constant
+   (1 + N_primary + sum of inserted), so subst C1/C7 hold.
+
+**Open sub-question (recorded, ruled at V-E design time):** name
+COLLISIONS in the flat index — primary and inserted regex sharing a
+name, or the same regex inserted twice. Candidates: qualified names
+for inserted groups (`sub.year` style — seemingly forced by the
+inserted-twice case), compile error on collision, first-wins.
+
+**Revisit-when:** M4 freeze (the index joins the artifact contract);
+V-E's design start (numbering + collision policy applied there).
