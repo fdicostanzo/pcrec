@@ -7,7 +7,9 @@ documents for the reasoning behind a design without repeating it.
 
 Empty today — no spec documents exist yet. First candidates will be split
 out of existing design/process documents, or authored fresh, when Frank
-asks for them.
+asks for them. FIRST SCHEDULED (Frank, 2026-08-14, D40 addendum): the
+as-built M4 match-API contract, authored at [M4.7]'s close from the
+shipped surface (docs/dev/plan.md [M4.7]).
 
 Maintenance: update this file when files are added/removed or their roles
 change.
