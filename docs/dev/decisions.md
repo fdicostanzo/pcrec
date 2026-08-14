@@ -3766,3 +3766,15 @@ PCRE2_CASELESS). Amendment proposes, panel reviews, Frank disposes.
 **Revisit-when:** the M4.3 panel (layout + folded-F8 shape); V-A's
 design (pattern_info mapping); the first size/secrecy objector to the
 embedded pattern string; DD-3 if rx_info ever needs a revision post-v1.
+
+**D43 addendum (Frank, same session): rx_info carries TWO distinct
+counts.** Because the group index is NAMED-groups-only (D41.3), the
+number of index entries may be LESS than the number of capture groups.
+The reflection struct must therefore carry both, distinctly named: the
+CAPTURE-GROUP count (the caps[] geometry, = RX_NCAPS − 1) and the
+INDEX-ENTRY count (named groups only, ≤ the group count, 0 until module
+`named-groups` lands). A reader iterating the index uses the entry
+count; a reader sizing capture storage uses the group count; conflating
+them under one `ngroups` field would make the empty-index case read as
+"zero capture groups", which is wrong for any group-bearing pattern
+today.
