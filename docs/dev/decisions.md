@@ -3879,3 +3879,18 @@ disposition above either adopts a measured fix or spends pre-v1 freedom
 **Revisit-when:** the K17 fix lane's landing (if the fix proves deeper
 than the priority construction); [M4.5] (cursor-extension design is
 built there); V-E (slot semantics go live).
+
+**D44 addendum (Frank, same session): the freeze's WEIGHT, calibrated.**
+"This is the first build of the nfa engine. we just need a start
+somewhere. we can review things after we get it running." The M4
+match-API freeze is a WORKING BASELINE, not a v1 contract: its purpose
+is one settled surface for M4.4–M4.7 to build against without mid-build
+drift — not a promise that survives contact with a running engine.
+Post-implementation review (at M4.7's close, with the running engine and
+its measurements in hand) is EXPECTED to revise it, under D40 regime 1's
+announced-break form. Practical consequences: no further design-polish
+rounds before implementation (the R21 fix round closes the gate);
+implementation substeps open as soon as it lands; and disagreements
+discovered while building are resolved toward getting it running, then
+recorded for the post-run review, rather than re-litigated at design
+altitude first.
