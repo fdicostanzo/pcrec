@@ -35,5 +35,10 @@ Reports present:
   convention's validation run, 2026-08-12).
 - `probe_uprops.txt` — MOD-0.6's \p/\P measurement (archived at the
   milestone's merge; see tests/probes/CLAUDE.md's probe_uprops.c entry).
+- `probe_subst.txt` — [M4-SUBST]'s pcre2_substitute measurement
+  (2026-08-14): the evidence behind every MEASURED claim in
+  ../design/subst_template_design.md. Its section 0 is the behavioural
+  confirmation of the PCRE2_SUBSTITUTE_* bit values themselves, which are
+  not includable on this box.
 
 Maintenance: update this file when reports are added/removed.
