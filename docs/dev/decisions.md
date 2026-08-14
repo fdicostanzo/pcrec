@@ -3806,3 +3806,76 @@ three-count design the reader sees ngroups = the primary text's total,
 the NO_CAPTURES flag bit (so the primary contributed zero slots), and
 ncaps = the referenced names' contribution; no single count is asked to
 carry two facts, which was the failure mode of every smaller design.
+
+## D44 — R21 panel dispositions ratified: the frame-ceiling design, the search-signature reshape, index slot column, K17 fix-now, rx_info hardening (2026-08-14)
+
+**Decision (Frank, nineteenth session — "proceed with your
+recommendation" over the R21 decision batch; full findings and
+per-finding dispositions in docs/dev/reviews/2026-08-14-r21-m4-design.md):**
+
+1. **E-3 (frame ceiling):** [M4.5] extends engine_m4.md §2.5's
+   span-loop-plus-cursor to DETERMINISTIC capture-bearing bodies
+   (provably-single-path iteration needs no per-iteration frames or
+   trail; group spans computed from the cursor at loop exit — kills the
+   Θ(n) working set for the (a|b)+c class); patterns residually
+   unbounded carry an HONEST STAMPED subject/frame ceiling in rx_info.
+   Both halves, not either. Context recorded: capture VALUES were never
+   the unbounded thing — the resume stack (24 B/frame: resume address,
+   position, trail mark) and undo trail (16 B/entry: slot, old value)
+   were, at ~68 B per subject byte aggregate for the worked example;
+   packing shrinks constants, the cursor deletes the count.
+2. **A-1 (search shape):** `<prefix>_search` becomes
+   `int <prefix>_search(const unsigned char *s, size_t n, size_t
+   startpos, ptrdiff_t (*caps)[2])` AT [M4.4] — caps[0] IS the span
+   (F3's one representation taken literally), RX_NCAPS pairs written on
+   match, NULL allowed for existence-only callers, negative returns per
+   D42.3. The `<prefix>_span` typedef RETIRES (one break, no second at
+   M4.5 — RX_NCAPS just grows). The measured silent-stack-smash hazard
+   of the array-typedef spelling is thereby structural-impossible: the
+   parameter type is explicitly the caps-pair pointer from day one.
+3. **A-4 (index integrity):** `rx_group_entry` is BORN
+   `{name, number, slot, ref}` — number = lexical PCRE2 group number,
+   slot = caps index or −1 (this artifact delivers no slot for this
+   group). The D39-addendum ref-column precedent applied again; C2 is
+   restated as O(1) BY SLOT; the pre-V-E OOB case
+   (--no-captures '(?<g>a)') reads slot=−1 instead of caps[1].
+4. **E-1/K17:** fixed NOW, before [M4.4], by a dedicated code lane —
+   it is a shipped miscompile in the default engine independent of M4.
+   Net: the K17 family as oracle-verified corpus tests + the three-way
+   pcrec/python/pcre2 rule (a 2-1 split with pcrec in the minority is a
+   bug, never an exclusion) + full battery.
+5. **rx_info hardening (A-3, A-10, A-11, A-12, A-15, A-16 + the open
+   frame-capacity item):** `unsigned abi` FIRST member (layout version);
+   `ncaps = RX_NCAPS` (element count, all-in; invariant
+   rx_info.ncaps == RX_NCAPS structurally checked); `size_t pattern_len`
+   beside pattern (K9-proof; escaped-C-literal emission obligation
+   stated); flags widens to a fixed-width 64-bit type; engine as
+   `unsigned engine` (ENGM_*) + `const char *engine_why` (+ prefilter
+   bit reflected); `int64_t step_budget` with −1 = none (0 representable);
+   the DD-2 SECOND bound (frame capacity) and, where E-3's residual
+   applies, the subject ceiling JOIN rx_info; scalars grouped for layout.
+6. **E-7:** `--engine=dfa` on a captures-default pattern REFUSES cleanly
+   (never silently implies --no-captures), diagnostic names
+   `--no-captures` as the way to get a DFA artifact.
+7. **A-9:** `--no-captures` + a `--replace` template referencing `$n`
+   (n>=1) is a COMPILE-TIME ERROR — stated in the freeze so [M4.4] and
+   [M4-SUBST] both inherit it.
+8. **Bit spelling:** `PCREC_CASELESS` (D38-addendum parallel-naming),
+   not PCREC_CASE_INSENSITIVE.
+
+All remaining R21 FIX-NOW dispositions (the review file's tables) are
+ratified as written — including the D38.6 vocabulary restatement in
+ncaps terms (A-5), the prefix-independent `PCREC_RX_ABI_H` guard for the
+fixed-literal ABI types (A-2), the M4.5-mechanism/M4.6-calibration
+counter correction (C-1), the E-2 guard restriction (rmax == -1 only,
+0/225,240 verified), E-6's --engine=vm-disables-the-prefilter rule
+(Frank independently requested the do-or-die comparison use), and the
+E-ASK-1 re-scope (no exclusion mechanism; three-way rule).
+
+**Why:** the panel produced measured defects, not opinions; every
+disposition above either adopts a measured fix or spends pre-v1 freedom
+(D40) to make a v1-era DD-3 break impossible.
+
+**Revisit-when:** the K17 fix lane's landing (if the fix proves deeper
+than the priority construction); [M4.5] (cursor-extension design is
+built there); V-E (slot semantics go live).
