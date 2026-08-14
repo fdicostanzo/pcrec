@@ -3485,3 +3485,11 @@ SUB-QUESTION deliberately left open until V-A's design: whether pcrec
 core accepts the PCRE2_* spellings directly (documented aliases) or
 they exist only in V-A's compat layer. docs/pcre2_options.md carries
 the scheme note; nothing emits either name until its owning row lands.
+
+**D38 addendum, resolved same session (Frank):** the layering question
+closes immediately — `PCRE2_*` IS FOR COMPATIBILITY, full stop. The
+native surface is uniformly `PCREC_*` for every flag, because pcrec
+will need its own non-PCRE2 flags and a mixed surface — some spelled
+PCRE2_, some PCREC_ — is confusing. One canonical namespace
+(PCREC_*), one compat aliasing surface (PCRE2_*, the V-A direction);
+no flag is ever native under the PCRE2_ prefix.
