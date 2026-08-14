@@ -237,9 +237,13 @@ runtime signal threaded back through `rx_matchfn`'s return convention.
 - **F7**: callout patterns force the VM engine; the registry/engine
   selection must be able to say so per-pattern (same per-pattern engine
   answer shape as the backrefs/atomic design notes under M4).
-- **F8** (D39.1, `docs/dev/decisions.md`): every generated pattern
-  EXPORTS a static const name→number group index — a sorted
-  `{const char *name; int number;}` array plus count, bsearch-able,
+- **F8** (D39.1 + addendum, `docs/dev/decisions.md`): every generated
+  pattern EXPORTS a static const name→number group index — a sorted
+  `{const char *name; int number; const char *ref;}` array plus count,
+  bsearch-able. The `ref` column is BORN INTO the frozen shape (NULL for
+  the primary's own groups): it carries the labeled insertion reference
+  ("a:reg1" style; nested insertions compose a path, "c:a") once V-E's
+  rx references exist — so V-E extends data, not ABI,
   `.rodata` only, zero runtime cost. It does NOT travel in `rx_ctx` or
   any callback parameter (it is a link-time constant per pattern, not
   per-call state); a callout wanting it links against the exported

@@ -239,9 +239,13 @@ including V-G/V-H (added this session).
   inserted regex's groups append at N+1.. in insertion order; names are
   kept, and D39.1's exported name→number index is the lookup path.
   Backrefs inside an inserted regex renumber to their appended positions
-  at insert time (compile-time). The name-collision policy (qualified
-  names, e.g. `sub.year`; compile error; first-wins) is the recorded
-  open sub-question, ruled at V-E design time
+  at insert time (compile-time). The name-collision policy RESOLVED by
+  the D39 addendum: caller-supplied LABELED REFERENCES per insertion
+  ("a:reg1", "b:reg1"), stored as the index's `ref` column; nested
+  insertions compose a path ("c:a"). Still open, ruled at V-E design
+  time: path spelling/separator, label mandatory-vs-optional for single
+  insertions, and lookup-key semantics (name-alone when unambiguous vs
+  ref+name)
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
