@@ -96,6 +96,34 @@ append-only or historical records.
   in place, e.g. length-only no-NUL buffers, `pcrec_error`'s which-input
   tag, `rx_span` breaking at the M4 freeze) and §10's summary asks marked
   ACCEPTED; the design prose itself is unchanged, only annotated.
+- `match_api_m4.md` — [M4.1] MATCH-API FREEZE document (2026-08-14):
+  collects every already-ruled M4 obligation into ONE freezable contract —
+  a collection-and-reconciliation document, not new design. STATUS:
+  PROPOSED; the freeze does not take effect until AFTER [M4.3]'s panel.
+  Covers, each cited to its ruling: the `<prefix>_span` -> `ptrdiff_t[2]`
+  break (D38 Q12, a DD-3 versioning event landing WITH the freeze, one
+  announced-break commit, no permanent conversion seam); the caps array
+  surface (`rx_ctx.caps`, `RX_NCAPS`, `RX_UNSET`) with a full C1-C11
+  conformance table against `subst_template_design.md` plus its explicit
+  non-requirements; the unconditional match-here export (F1/F2, including
+  the `__builtin_trap()` reserved-return-value enforcement and where it
+  does and doesn't bind yet); `rx_ctx`'s full layout and the
+  `rx_callout_ref` binding unit (F3); the `{name, number, ref}` group
+  index (F8, D39 + addendum) and what it exports before module
+  `named-groups` exists; the `pcrec_error` which-input tag (subst Q8); an
+  OS-0 entry-point naming table spanning both the per-prefix artifact
+  namespace and pcrec's own fixed `PCREC_*` namespace (kept explicitly
+  separate in §0, since D38's PCREC_*/PCRE2_* addenda govern only the
+  latter); and confirmation that callout call sites thread nothing beyond
+  the binding ref's `user`. Marks every claim RULED (D38/D39) vs
+  PROPOSED-here vs BELIEVED; §12 collects everything introduced beyond the
+  rulings (concrete symbol spellings the rulings left unpicked, and one
+  load-bearing synthesis — that `rx_ctx`/`rx_matchfn`/`rx_callout_ref` are
+  deliberately UNPREFIXED literal names, not `<prefix>`-scoped, so that
+  composability across differently-prefixed generated matchers holds) —
+  and §13 lists five ASKs for Frank, none of which are ruling
+  contradictions: every apparent tension between D38 and D39 resolved on
+  inspection.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
