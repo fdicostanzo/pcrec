@@ -83,15 +83,15 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    rx_span m;
-    m.start = 0;
-    m.end = 0;
-    int found = rx_search(buf, n, 0, &m); /* untimed warmup, see header */
+    ptrdiff_t caps[RX_NCAPS][2];
+    caps[0][0] = 0;
+    caps[0][1] = 0;
+    int found = rx_search(buf, n, 0, caps); /* untimed warmup, see header */
 
     struct timespec t0, t1;
     clock_gettime(CLOCK_MONOTONIC, &t0);
     for (long i = 0; i < iters; i++) {
-        found = rx_search(buf, n, 0, &m);
+        found = rx_search(buf, n, 0, caps);
     }
     clock_gettime(CLOCK_MONOTONIC, &t1);
     free(buf);
@@ -101,8 +101,8 @@ int main(int argc, char **argv)
     double mb = ((double)n * (double)iters) / (1024.0 * 1024.0);
     double mbps = secs > 0.0 ? mb / secs : 0.0;
 
-    printf("status=ok bytes=%zu iters=%ld secs=%.6f mbps=%.3f match=%d start=%zu end=%zu\n",
+    printf("status=ok bytes=%zu iters=%ld secs=%.6f mbps=%.3f match=%d start=%td end=%td\n",
            n, iters, secs, mbps, found,
-           found ? m.start : (size_t)0, found ? m.end : (size_t)0);
+           found ? caps[0][0] : (ptrdiff_t)0, found ? caps[0][1] : (ptrdiff_t)0);
     return 0;
 }

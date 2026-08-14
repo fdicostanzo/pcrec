@@ -18,28 +18,52 @@ subtle half.
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the
-option product, behind a generated selector (D18/D20). Of the 15 identifiers
-this emitter produces, 12 are FUNCTION-LOCAL statics, so two engines in two
-functions cannot collide on them. Exactly two things are file-scope and both
-have their own emitter:
+option product, behind a generated selector (D18/D20). Of the identifiers
+this emitter produces, the large majority are FUNCTION-LOCAL statics, so two
+engines in two functions cannot collide on them. The file-scope names are:
 
-- `emit_span_typedef` — ONCE PER FILE, shared by every engine in it. Emitting
-  it per engine is not a benign redefinition: each occurrence declares a fresh
-  anonymous struct type, so gcc rejects the file with `error: conflicting
-  types for 'rx_span'` (verified, -std=gnu11 and -std=c99).
-- `emit_search_decl` / `emit_search_head` — ONCE PER ENGINE, under that
-  engine's own entry name, kept adjacent so the declaration and the definition
-  cannot drift apart.
+- `emit_rx_abi_types` — ONCE PER FILE, shared by every engine in it, and
+  ([M4.4], D44/A-2) by every DIFFERENTLY-PREFIXED generated header sharing
+  one TU too: `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
+  `rx_info`, `rx_renderfn` are fixed-literal ABI types, never `<prefix>`-
+  scoped (match_api_m4.md §7/§12.7 — a compiled matcher must link directly
+  as a callout for another, regardless of either one's own `--prefix`).
+  Wrapped in a PREFIX-INDEPENDENT `#ifndef PCREC_RX_ABI_H` guard: the R21
+  panel MEASURED that a per-prefix guard fails the exact composability case
+  it exists for (two differently-prefixed headers in one TU each derive a
+  DIFFERENT guard name, so both bodies redefine the same types — a hard
+  redefinition error). `<prefix>_span`, the one prior file-scope type,
+  RETIRED at [M4.4] (D44.2) — no compatibility alias.
+- `emit_ncaps_macros` — ONCE PER FILE, PER-PREFIX (`<PREFIX>_NCAPS`,
+  `<PREFIX>_UNSET`, `<PREFIX>_ERR_STEPS`, `<PREFIX>_ERR_FRAMES`).
+- `emit_search_decl` / `emit_search_head`, `emit_match_decl`,
+  `emit_match_caps_decl`, `emit_info_decl` — ONCE PER ENGINE, under that
+  engine's own entry name(s), kept adjacent to their definitions so
+  declaration and definition cannot drift apart.
 
-The entry name comes from `engine_entry_name()` and is read nowhere else, so a
-finder can hand each engine a distinct name without any emitter learning that
-options have a product. Today there is one engine per file and the name is
-`<prefix>_search`. Both properties are enforced by the multi-engine block in
-tests/codegen/run_codegen_tests.sh, which compiles a two-engine file.
+The entry name comes from `engine_entry_name()` / `derived_name()` and is read
+nowhere else, so a finder can hand each engine a distinct name without any
+emitter learning that options have a product. Today there is one engine per
+file and the name is `<prefix>_search` (plus its `<prefix>_match`/
+`<prefix>_match_caps`/`<prefix>_info` siblings). Both properties are enforced
+by the multi-engine block in tests/codegen/run_codegen_tests.sh, which
+compiles a two-engine file; the cross-prefix guard property has its own check
+there too (a two-differently-prefixed-headers-in-one-TU build).
 
 ## Files
 
-- **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all
+- **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
+
+  Additional [M4.4] entry points in emit_dfa.c: `emit_c_string_literal` (the
+  A-11 string-literal escaper — `"`, `\`, control bytes; non-printables use a
+  fixed 3-digit OCTAL `\NNN` escape, never `\xNN`, because a hex escape has
+  no digit-count limit and would glue onto a following literal hex digit,
+  where an always-3-digit octal escape self-terminates), `prefix_upper` (the
+  OS-0 uppercased-prefix spelling shared by the NCAPS/UNSET/ERR macros and
+  `rx_info`'s `RX_NCAPS` reference), `derived_name` (prefix+suffix identifier
+  builder, arena-owned, generalizing the old `engine_entry_name`), and
+  `emit_match_def`/`emit_match_caps_def`/`emit_info_def` (the three new
+  entries' definitions).
 
 ## Conventions
 

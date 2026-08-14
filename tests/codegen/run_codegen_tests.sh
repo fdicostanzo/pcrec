@@ -237,17 +237,30 @@ fi
 # different `#include "<name>.h"` lines and every comparison would then differ
 # for a reason that has nothing to do with folding — the same trap
 # run_trie_identity.sh documents at its own gen_a/gen_b.
-gensc() { # gensc <name> <pattern> [extra pcrec args...] -> <name>.sc
+#
+# [M4.4] SCOPES the comparison down to the rx_search ENGINE BODY (via
+# body()), not the whole file, and this is a deliberate narrowing, not a
+# weakening: `rx_info` (D43.1) embeds the source PATTERN TEXT and the
+# compiled `flags` word unconditionally, both of which legitimately differ
+# between two DIFFERENT pattern spellings (or between -i and no -i, even on
+# a pattern -i has no folding effect on — the flag was still set as
+# compiled) — the same "the stamp differs by design" shape D37's [STD1]
+# case9/case10 already established in tests/cli/. D18's zero-cost claim was
+# always about the AUTOMATON specifically, which is exactly what body()
+# extracts.
+gensc() { # gensc <name> <pattern> [extra pcrec args...] -> <name>.body
     local name="$1" pat="$2"
     shift 2
-    "$PCREC" -p rx "$@" -o - -- "$pat" 2>/dev/null | tail -n +2 > "$WORKDIR/$name.sc"
+    "$PCREC" -p rx "$@" -o - -- "$pat" 2>/dev/null > "$WORKDIR/$name.sc"
     [ -s "$WORKDIR/$name.sc" ] \
         || { bad "$name: pcrec produced no self-contained output for '$pat'"; return 1; }
+    body "$WORKDIR/$name.sc" rx_search "$WORKDIR/$name.body" \
+        || { bad "$name: could not extract the rx_search engine body"; return 1; }
 }
 
 if gensc foldi 'aBc' -i && gensc foldx '[aA][bB][cC]'; then
-    if diff -q "$WORKDIR/foldi.sc" "$WORKDIR/foldx.sc" >/dev/null; then
-        ok "OS-1: -i 'aBc' emits byte-identical C to '[aA][bB][cC]' (folding IS the automaton)"
+    if diff -q "$WORKDIR/foldi.body" "$WORKDIR/foldx.body" >/dev/null; then
+        ok "OS-1: -i 'aBc' emits a byte-identical engine to '[aA][bB][cC]' (folding IS the automaton)"
     else
         bad "OS-1: -i 'aBc' differs from the hand-written '[aA][bB][cC]' — case folding is no longer a pure class-construction change"
     fi
@@ -258,24 +271,27 @@ fi
 # byte instead. Both results are case-closed, so nothing else in the pipeline
 # can tell them apart; the corpus pins the behaviour and this pins the shape.
 if gensc negi '[^a]' -i && gensc negx '[^aA]' && gensc negwrong '[^A]'; then
-    if diff -q "$WORKDIR/negi.sc" "$WORKDIR/negx.sc" >/dev/null; then
-        ok "OS-1: -i '[^a]' emits byte-identical C to '[^aA]' (folded BEFORE negating)"
+    if diff -q "$WORKDIR/negi.body" "$WORKDIR/negx.body" >/dev/null; then
+        ok "OS-1: -i '[^a]' emits a byte-identical engine to '[^aA]' (folded BEFORE negating)"
     else
         bad "OS-1: -i '[^a]' is not '[^aA]' — the fold is being applied on the wrong side of the negation"
     fi
-    if diff -q "$WORKDIR/negi.sc" "$WORKDIR/negwrong.sc" >/dev/null; then
+    if diff -q "$WORKDIR/negi.body" "$WORKDIR/negwrong.body" >/dev/null; then
         bad "OS-1: -i '[^a]' collapsed to '[^A]' — one case is being dropped rather than added"
     else
         ok "OS-1: -i '[^a]' is distinct from '[^A]' (the check above is not vacuous)"
     fi
 fi
 
-# a pattern with no ASCII letters must be completely untouched by -i
+# a pattern with no ASCII letters must have an untouched ENGINE BODY under
+# -i (D18's zero-cost claim). [M4.4]: rx_info.flags legitimately differs
+# (PCREC_CASELESS is set as COMPILED, whether or not it had any folding
+# effect on this particular pattern) — see the gensc comment above.
 if gensc nolet '[0-9]+-[0-9]+' && gensc nolet_i '[0-9]+-[0-9]+' -i; then
-    if diff -q "$WORKDIR/nolet.sc" "$WORKDIR/nolet_i.sc" >/dev/null; then
-        ok "OS-1: a letter-free pattern is byte-identical with and without -i"
+    if diff -q "$WORKDIR/nolet.body" "$WORKDIR/nolet_i.body" >/dev/null; then
+        ok "OS-1: a letter-free pattern's engine body is byte-identical with and without -i"
     else
-        bad "OS-1: -i changed the output of a pattern containing no ASCII letters"
+        bad "OS-1: -i changed the engine body of a pattern containing no ASCII letters"
     fi
 fi
 
@@ -286,7 +302,7 @@ if gen casehot 'Hello|World' -i; then
     else
         ok "OS-1: -i output contains no run-time case conversion at all"
     fi
-    if grep -q '^int rx_search(const unsigned char \*s, size_t n, size_t startpos, rx_span \*m)$' "$WORKDIR/casehot.body"; then
+    if grep -q '^int rx_search(const unsigned char \*s, size_t n, size_t startpos, ptrdiff_t (\*caps)\[2\])$' "$WORKDIR/casehot.body"; then
         ok "OS-1: -i leaves the entry-point signature unchanged (a singleton dimension is not in the signature)"
     else
         bad "OS-1: -i changed the entry-point signature — a compiled-away option must not appear at run time (D18)"
@@ -298,8 +314,8 @@ fi
 # Nothing in pcrec emits two engines yet — the FINDER that would (OS-0) is
 # deliberately unbuilt until a dimension earns an axis — so this block builds
 # the two-engine file by hand, applying exactly the transformation the finder
-# will: keep ONE span typedef for the file, give each engine its own entry
-# name, and leave every other identifier alone (they are function-local
+# will: keep the ABI-types block once for the file, give each engine its own
+# entry name, and leave every other identifier alone (they are function-local
 # statics and cannot collide, which is the measured finding OS-0b rests on).
 #
 # It buys two things at once. It proves the output contract compiles, and it
@@ -322,33 +338,54 @@ elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
     # function-local and deliberately left untouched
     {
         echo
-        echo "int rx_search_b(const unsigned char *s, size_t n, size_t startpos, rx_span *m);"
+        echo "int rx_search_b(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2]);"
         sed 's/\brx_search\b/rx_search_b/g' "$WORKDIR/engb.body"
     } >> "$WORKDIR/multi.c"
 
-    if [ "$(grep -c 'typedef struct { size_t start, end; } rx_span;' "$WORKDIR/multi.c")" -eq 1 ]; then
-        ok "OS-0b: two-engine file carries exactly ONE rx_span typedef"
+    if [ "$(grep -c '^#define PCREC_RX_ABI_H$' "$WORKDIR/multi.c")" -eq 1 ]; then
+        ok "OS-0b [M4.4]: two-engine file carries exactly ONE ABI-types block"
     else
-        bad "OS-0b: rx_span typedef is not emitted exactly once per file"
+        bad "OS-0b [M4.4]: the fixed ABI-types block is not emitted exactly once per file"
     fi
 
     if $CC -c $GENCFLAGS -o "$WORKDIR/multi.o" "$WORKDIR/multi.c" 2>"$WORKDIR/multi.log"; then
-        ok "OS-0b: two engines compile in one file (shared span typedef, distinct entry names)"
+        ok "OS-0b: two engines compile in one file (shared ABI types, distinct entry names)"
     else
         bad "OS-0b: two-engine file failed to compile: $(head -3 "$WORKDIR/multi.log" | tr '\n' ' ')"
     fi
 
-    # ...and the shared typedef is a REQUIREMENT, not a tidiness preference:
-    # a second copy declares a second anonymous struct type, so gcc rejects
-    # the file ("conflicting types for 'rx_span'"). Asserted rather than
-    # asserted-in-a-comment, so nobody later "simplifies" emit_span_typedef
-    # into the per-engine path and finds out at integration time.
-    sed '0,/typedef struct { size_t start, end; } rx_span;/s//typedef struct { size_t start, end; } rx_span;\ntypedef struct { size_t start, end; } rx_span;/' \
-        "$WORKDIR/multi.c" > "$WORKDIR/multi_dup.c"
-    if $CC -c $GENCFLAGS -o "$WORKDIR/multi_dup.o" "$WORKDIR/multi_dup.c" 2>/dev/null; then
-        bad "OS-0b: a DUPLICATED rx_span typedef compiled — the emit-once rule is not load-bearing here; recheck the multi-engine contract"
+    # [M4.4] (D44/A-2) INVERTS the old assertion here on purpose, not by
+    # oversight: the retired `<prefix>_span` typedef was NOT include-guarded,
+    # so a second copy declared a second anonymous struct type and gcc
+    # rejected the file ("conflicting types for 'rx_span'") — the panel
+    # MEASURED that shape as a hazard for the fixed ABI types too (two
+    # differently-prefixed generated headers in one TU each deriving their
+    # OWN include guard), and the fix was a guard SPELLED THE SAME regardless
+    # of --prefix. That guard's whole job is to make a second, byte-identical
+    # copy of this block a harmless no-op, so the property worth asserting
+    # flipped: duplicating the block must NOT break the build anymore. See
+    # the two-differently-prefixed-headers-in-one-TU check this file's
+    # CLAUDE.md documents as the sabotage-equivalent positive control.
+    # Duplicate the WHOLE guarded block (guard included)
+    # by re-emitting everything between its #ifndef and matching #endif a
+    # second time, immediately after the first copy.
+    awk '
+        /^#ifndef PCREC_RX_ABI_H$/ { inblock = 1; block = $0 "\n"; next }
+        inblock && /^#endif \/\* PCREC_RX_ABI_H \*\// {
+            block = block $0 "\n"
+            inblock = 0
+            printf "%s", block
+            printf "%s", block
+            next
+        }
+        inblock { block = block $0 "\n"; next }
+        { print }
+    ' "$WORKDIR/multi.c" > "$WORKDIR/multi_dup.c"
+    if [ "$(grep -c '^#define PCREC_RX_ABI_H$' "$WORKDIR/multi_dup.c")" -eq 2 ] \
+        && $CC -c $GENCFLAGS -o "$WORKDIR/multi_dup.o" "$WORKDIR/multi_dup.c" 2>"$WORKDIR/multi_dup.log"; then
+        ok "OS-0b [M4.4]: a DUPLICATED (guard-included) ABI-types block still compiles — the prefix-independent #ifndef guard (D44/A-2) makes re-inclusion a no-op"
     else
-        ok "OS-0b: duplicating the rx_span typedef breaks the build (emit-once is load-bearing)"
+        bad "OS-0b [M4.4]: duplicating the guarded ABI-types block broke the build: $(head -3 "$WORKDIR/multi_dup.log" 2>/dev/null | tr '\n' ' ')"
     fi
 
     # the control for every engine-scoped grep above
@@ -373,6 +410,30 @@ elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
     fi
 else
     bad "multi-engine: could not build the two-engine fixture"
+fi
+
+# ---- D44/A-2: the ABI-types guard is PREFIX-INDEPENDENT -------------------
+# The fixed ABI types (rx_ctx, rx_matchfn, rx_callout_ref, rx_group_entry,
+# rx_info, rx_renderfn) are shared, byte-for-byte, by every generated
+# matcher regardless of its own --prefix — the entire point of the callout
+# ABI's composability (a compiled matcher links directly as a callout for
+# another, match_api_m4.md §7/§12.7). The R21 panel MEASURED that a guard
+# DERIVED FROM --prefix breaks exactly this case: two differently-prefixed
+# generated headers, in one TU, each spell a DIFFERENT guard name and so
+# both bodies re-define rx_ctx/rx_matchfn/etc. — a hard redefinition error,
+# not a harmless no-op. This check builds that TU for real, with two
+# genuinely different prefixes, and is this file's positive control for the
+# `#ifndef PCREC_RX_ABI_H` fix (D44, ratifying A-2).
+if "$PCREC" -p rx -o "$WORKDIR/dprx.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
+   && "$PCREC" -p qq -o "$WORKDIR/dpqq.c" -- 'x(y|z)+w' >/dev/null 2>&1; then
+    printf '#include "dprx.h"\n#include "dpqq.h"\nint main(void){return 0;}\n' > "$WORKDIR/dp_main.c"
+    if $CC -c $GENCFLAGS -I"$WORKDIR" -o "$WORKDIR/dp_main.o" "$WORKDIR/dp_main.c" 2>"$WORKDIR/dp_main.log"; then
+        ok "D44/A-2: two differently-prefixed generated headers compile together in one TU (prefix-independent ABI guard)"
+    else
+        bad "D44/A-2: two differently-prefixed generated headers FAILED to compile together: $(head -3 "$WORKDIR/dp_main.log" | tr '\n' ' ')"
+    fi
+else
+    bad "D44/A-2: could not generate the two differently-prefixed fixtures"
 fi
 
 # ---- D37: emitted C is self-describing about its feature set -------------
@@ -494,6 +555,33 @@ if [ "$ts1_files" -lt 12 ]; then
     bad "TS-1: only $ts1_files emitted files scanned — the sweep is not covering the emission shapes it claims to"
 elif [ "$ts1_bad" -eq 0 ]; then
     ok "TS-1: $ts1_files emitted files across 9 emission shapes — every static is const, no non-reentrant libc"
+fi
+
+# ---- [M4.4] structural checks (match_api_m4.md §11 item 9, D42.2/D44.5) ----
+# rx_info.ncaps == RX_NCAPS is a BY-CONSTRUCTION invariant in this emitter
+# (the initializer writes the macro's OWN NAME, never a second literal), and
+# RX_NCAPS > 1 => VM (D42.2) is trivially green until [M4.5] since RX_NCAPS
+# is 1 on every artifact this DFA-only emitter produces — asserted now, live
+# from this commit, so a future emitter change that breaks either invariant
+# fails here rather than being discovered once the VM exists.
+if "$PCREC" -p rx -o - -- 'a(b|c)+d' > "$WORKDIR/m44info.c" 2>/dev/null; then
+    if grep -qF '.ncaps = RX_NCAPS,' "$WORKDIR/m44info.c"; then
+        ok "[M4.4]: rx_info.ncaps is written as the RX_NCAPS macro itself (structural ncaps == RX_NCAPS)"
+    else
+        bad "[M4.4]: rx_info.ncaps is not the RX_NCAPS macro — the ncaps==RX_NCAPS invariant is no longer structural"
+    fi
+
+    ncaps_val="$(grep -oE '^#define RX_NCAPS [0-9]+' "$WORKDIR/m44info.c" | awk '{print $3}')"
+    engine_val="$(grep -oE '\.engine = [0-9]+' "$WORKDIR/m44info.c" | awk '{print $3}')"
+    if [ -z "${ncaps_val:-}" ] || [ -z "${engine_val:-}" ]; then
+        bad "[M4.4]: could not extract RX_NCAPS/rx_info.engine from generated output"
+    elif [ "$ncaps_val" -gt 1 ] && [ "$engine_val" -ne 2 ]; then
+        bad "[M4.4]: RX_NCAPS ($ncaps_val) > 1 but rx_info.engine ($engine_val) is not ENGM_VM (2) — RX_NCAPS>1 must imply the VM engine (D42.2)"
+    else
+        ok "[M4.4]: RX_NCAPS ($ncaps_val) > 1 => VM structural check holds (trivially green pre-[M4.5]: RX_NCAPS is always 1 on this DFA-only emitter)"
+    fi
+else
+    bad "[M4.4]: pcrec failed to compile 'a(b|c)+d' for the structural NCAPS/engine checks"
 fi
 
 echo

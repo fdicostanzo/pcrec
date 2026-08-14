@@ -83,10 +83,10 @@ int main(int argc, char **argv)
     size_t len = 0;
     unsigned char *buf = read_file(argv[1], &len);
 
-    rx_span m;
-    int found = rx_search(buf, len, startpos, &m);
+    ptrdiff_t caps[RX_NCAPS][2];
+    int found = rx_search(buf, len, startpos, caps);
     if (found) {
-        printf("match %zu %zu\n", m.start, m.end);
+        printf("match %td %td\n", caps[0][0], caps[0][1]);
     } else {
         printf("nomatch\n");
     }

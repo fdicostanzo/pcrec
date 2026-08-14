@@ -12,7 +12,8 @@
  *   explicitly — see docs/testing.md).
  *
  * Prints exactly one line to stdout:
- *   "match %zu %zu\n"   (rx_search found a match: start, end)
+ *   "match %td %td\n"   (rx_search found a match: caps[0][0], caps[0][1] —
+ *                        [M4.4], D44.2: the caps-array search signature)
  *   "nomatch\n"         (rx_search found no match)
  * and exits 0. On a malformed escape in argv[1] or a malformed [startpos],
  * prints a message to stderr and exits 2.
@@ -131,10 +132,10 @@ int main(int argc, char **argv) {
     unsigned char *buf = decode(argv[1], &len);
     if (!buf) return 2;
 
-    rx_span m;
-    int found = rx_search(buf, len, startpos, &m);
+    ptrdiff_t caps[RX_NCAPS][2];
+    int found = rx_search(buf, len, startpos, caps);
     if (found) {
-        printf("match %zu %zu\n", m.start, m.end);
+        printf("match %td %td\n", caps[0][0], caps[0][1]);
     } else {
         printf("nomatch\n");
     }

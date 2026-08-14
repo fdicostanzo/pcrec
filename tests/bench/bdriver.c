@@ -80,14 +80,14 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    rx_span m;
-    m.start = 0;
-    m.end = 0;
+    ptrdiff_t caps[RX_NCAPS][2];
+    caps[0][0] = 0;
+    caps[0][1] = 0;
     int found = 0;
     struct timespec t0, t1;
     clock_gettime(CLOCK_MONOTONIC, &t0);
     for (long i = 0; i < iters; i++) {
-        found = rx_search(buf, n, 0, &m);
+        found = rx_search(buf, n, 0, caps);
     }
     clock_gettime(CLOCK_MONOTONIC, &t1);
     free(buf);
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     printf("bytes=%zu iters=%ld secs=%.6f mbps=%.3f match=%d",
            n, iters, secs, mbps, found);
     if (found) {
-        printf(" start=%zu end=%zu", m.start, m.end);
+        printf(" start=%td end=%td", caps[0][0], caps[0][1]);
     }
     printf("\n");
 

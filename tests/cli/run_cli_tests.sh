@@ -111,13 +111,15 @@ case1() {
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-typedef struct { size_t start, end; } rx_span;
-int rx_search(const unsigned char *s, size_t n, size_t startpos, rx_span *m);
+/* [M4.4] D44.2: the caps-array search signature, its FINAL shape — no
+ * rx_span/out-struct declared here at all, since the parameter type needs
+ * no name of its own. */
+int rx_search(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2]);
 int main(int argc, char **argv) {
     if (argc != 2) return 2;
-    rx_span m;
-    if (rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0, &m)) {
-        printf("match %zu %zu\n", m.start, m.end);
+    ptrdiff_t caps[1][2];
+    if (rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0, caps)) {
+        printf("match %td %td\n", caps[0][0], caps[0][1]);
     } else {
         printf("nomatch\n");
     }
@@ -423,7 +425,8 @@ case8() {
 # 9. -i (ASCII case-insensitive, OS-1/D23) end to end through the CLI, and the
 #    library field behind it. The .rxt corpus covers the matching semantics;
 #    what is CLI surface, and therefore this file's job, is that the flag is
-#    accepted, reaches pcrec_options.caseless, composes with `--` and
+#    accepted, reaches pcrec_options.flags (PCREC_CASELESS, [M4.4] D43.2/D44.8:
+#    was pcrec_options.caseless), composes with `--` and
 #    --emit-main, and does not leak into a build that did not ask for it.
 # ---------------------------------------------------------------------------
 case9() {

@@ -82,7 +82,7 @@ static int run_one(const Job *j, pcrec_output *out, pcrec_error *err)
     pcrec_options opt;
     pcrec_default_options(&opt);
     opt.prefix = j->prefix;
-    opt.caseless = j->caseless;
+    if (j->caseless) opt.flags |= PCREC_CASELESS;
     return pcrec_compile(j->pattern, &opt, out, err);
 }
 

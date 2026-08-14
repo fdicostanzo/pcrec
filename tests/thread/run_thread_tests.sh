@@ -314,7 +314,7 @@ sed \
         /^typedef struct {$/i\
 static long g_calls = 0;  /* SABOTAGE: shared, unsynchronized, incremented every call */
     }' \
-    -e 's/int found = rx_search((const unsigned char \*)subjects\[i\], n, 0, \&m);/int found = rx_search((const unsigned char *)subjects[i], n, 0, \&m);\n            g_calls++;  \/* SABOTAGE: unsynchronized write from every thread *\//' \
+    -e 's/int found = rx_search((const unsigned char \*)subjects\[i\], n, 0, caps);/int found = rx_search((const unsigned char *)subjects[i], n, 0, caps);\n            g_calls++;  \/* SABOTAGE: unsynchronized write from every thread *\//' \
     "$SCRIPT_DIR/ts2_driver.c" > "$sab_dir/ts2_driver_sabotaged.c"
 
 nmarks=$(grep -c "SABOTAGE" "$sab_dir/ts2_driver_sabotaged.c")

@@ -17,7 +17,20 @@
  * start_max=0 fast path, so the slow shape is `^` on only SOME branches.
  *
  * Generated code is self-contained: no dependency on pcrec at build or run
- * time. */
+ * time.
+ *
+ * [M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE): the API BREAK
+ * lands mechanically here. `<prefix>_span`/`emit_span_typedef` are RETIRED
+ * (D44.2) in favor of a caps-array `<prefix>_search` parameter that is
+ * already its FINAL shape; the fixed-literal ABI types (`rx_ctx`,
+ * `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`, `rx_info`,
+ * `rx_renderfn`) are emitted once per file; `<prefix>_match` and
+ * `<prefix>_match_caps` are new unconditional exports, retrofitted onto the
+ * existing DFA matchers by calling through `<prefix>_search` rather than by
+ * building a second, genuinely-anchored automaton (nothing at [M4.4]
+ * requires the VM); and `<prefix>_info` is a new `.rodata` reflection
+ * structure. See that document's §11 for the itemized checklist this file
+ * discharges. */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -40,6 +53,53 @@ static void emit_pattern_comment(StrBuf *sb, const char *pat)
     sb_puts(sb, " */\n");
 }
 
+/* [M4.4] (match_api_m4.md §5, A-11): rx_info.pattern is emitted as a real C
+ * STRING LITERAL, not a comment — a wholly different escaping obligation
+ * from emit_pattern_comment above, which is NOT this escaper: it avoids the
+ * comment-close sequence and hex-escapes non-printables so the text is safe
+ * inside a C comment, but does nothing about a double quote or a backslash,
+ * both legal and unescaped in a PCRE pattern and both of which would
+ * terminate or corrupt a C string literal if copied through verbatim
+ * (e.g. a class like [^"]*" ).
+ *
+ * Non-printables use a fixed THREE-DIGIT OCTAL escape, never `\xNN`: a hex
+ * escape consumes every hex digit that follows with no length limit, so a
+ * non-printable byte immediately before a literal hex digit ('0'-'9',
+ * 'a'-'f', 'A'-'F') would glue onto it and silently corrupt the next byte
+ * of the string. `\NNN`, always emitted zero-padded to exactly three
+ * digits, consumes exactly three digits and so can never glue with
+ * whatever follows.
+ *
+ * `?` is ALSO always escaped as `\?`, found failing-first against the
+ * corpus (tests/base/review_r21.rxt's `(b??(a*)*)*`): two literal `?`
+ * followed by one of `( ) < > = / ' ! -` forms a TRIGRAPH, and gcc treats
+ * an unescaped trigraph-looking sequence inside a string literal as a
+ * `-Wtrigraphs` warning, `-Werror` under the harness's GENCFLAGS. `\?` is
+ * an ordinary escape for a plain `?` in every C dialect this project
+ * targets, so escaping every `?` unconditionally is simpler and no less
+ * correct than detecting the nine specific trigraph-forming sequences. */
+static void emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
+{
+    sb_putc(sb, '"');
+    for (size_t i = 0; i < len; i++) {
+        unsigned char ch = (unsigned char)s[i];
+        switch (ch) {
+            case '"':  sb_puts(sb, "\\\""); break;
+            case '\\': sb_puts(sb, "\\\\"); break;
+            case '?':  sb_puts(sb, "\\?");  break;
+            case '\n': sb_puts(sb, "\\n");  break;
+            case '\t': sb_puts(sb, "\\t");  break;
+            case '\r': sb_puts(sb, "\\r");  break;
+            default:
+                if (ch >= 32 && ch < 127)
+                    sb_putc(sb, (char)ch);
+                else
+                    sb_printf(sb, "\\%03o", ch);
+        }
+    }
+    sb_putc(sb, '"');
+}
+
 /* D37 (docs/dev/decisions.md): emitted C is SELF-DESCRIBING about which
  * feature modules were enabled at generation time — the comment for a
  * human, the macros for a machine (or a future pcrec: pass
@@ -60,7 +120,7 @@ static void emit_feature_comment(StrBuf *sb)
               label, *mods ? mods : "none");
 }
 
-/* Macros, ONCE PER FILE like emit_span_typedef above — the enabled set is
+/* Macros, ONCE PER FILE like the ABI-types block below — the enabled set is
  * process-wide (one set for the whole compile), so every engine a future
  * multi-engine file carries (OS-0b) shares one stamp. Lives only in the .c:
  * a paired .h gets the comment (emit_header, matching its existing
@@ -79,56 +139,293 @@ static void emit_feature_macros(StrBuf *sb)
  * One output file may eventually carry SEVERAL engines — one per point of the
  * option product, chosen by a generated selector (D18/D20). Almost nothing
  * here needs to change for that, because every identifier either emitter
- * produces is a FUNCTION-LOCAL static except the two named below: the
+ * produces is a FUNCTION-LOCAL static except the ones named below: the
  * unanchored engine's fcls/ftr/facc/fev/first/fs<N>/rcls/rtr/racc/rev/rs<N>
  * and the attempt engine's cls/t<N> are all declared inside the engine
  * function, so two engines in two functions cannot collide on them however
  * similar their patterns. (D18 measured this on `.*=.*$`: 15 emitted
  * identifiers, 12 function-local.)
  *
- * That leaves TWO file-scope names — the span type and the entry point — and
- * both go through the helpers below:
+ * That leaves the FILE-SCOPE names, which go through the helpers below:
  *
- *   emit_span_typedef  ONCE PER FILE, shared by every engine in it. Emitting
- *                      it per engine is NOT a benign redefinition — each
- *                      occurrence declares a fresh anonymous struct type, so
- *                      gcc rejects the file with "conflicting types for
- *                      'rx_span'" (verified under -std=gnu11 and -std=c99).
- *   emit_search_decl   ONCE PER ENGINE, under that engine's own entry name.
+ *   emit_rx_abi_types  ONCE PER FILE, shared by every engine in it, guarded
+ *                      by a PREFIX-INDEPENDENT `PCREC_RX_ABI_H` (D44/A-2) so
+ *                      two differently-prefixed generated headers compile
+ *                      together in one TU without a redefinition error.
+ *   emit_ncaps_macros  ONCE PER FILE, per-prefix (RX_NCAPS/RX_UNSET/
+ *                      RX_ERR_STEPS/RX_ERR_FRAMES under the file's own
+ *                      --prefix).
+ *   emit_search_decl,
+ *   emit_match_decl,
+ *   emit_match_caps_decl,
+ *   emit_info_decl     ONCE PER ENGINE, under that engine's own entry name.
  *
  * The entry name is produced by engine_entry_name() and read from nowhere
  * else, so a finder can hand each engine a distinct name (`rx_search_ci`)
  * without any emitter knowing that options have a product. Today there is one
  * engine per file and the name is "<prefix>_search". */
 
-static void emit_span_typedef(StrBuf *sb, const char *p)
-{
-    sb_printf(sb, "typedef struct { size_t start, end; } %s_span;\n", p);
-}
-
-static void emit_search_decl(StrBuf *sb, const char *p, const char *fn)
+/* [M4.4] (D44.2, match_api_m4.md §1.0/§11 item 1): RETIRES emit_span_typedef
+ * and its `<prefix>_span` out-struct — the search entry's fourth parameter
+ * is now `ptrdiff_t (*caps)[2]` directly, already its FINAL shape (no
+ * further signature change is owed when RX_NCAPS grows past 1 at [M4.5]). */
+static void emit_search_decl(StrBuf *sb, const char *fn)
 {
     sb_printf(sb, "int %s(const unsigned char *s, size_t n, "
-                  "size_t startpos, %s_span *m);\n", fn, p);
+                  "size_t startpos, ptrdiff_t (*caps)[2]);\n", fn);
 }
 
 /* The definition's signature, kept next to the declaration it must match. */
-static void emit_search_head(StrBuf *c, const char *p, const char *fn)
+static void emit_search_head(StrBuf *c, const char *fn)
 {
     sb_printf(c, "int %s(const unsigned char *s, size_t n, "
-                 "size_t startpos, %s_span *m)\n{\n", fn, p);
+                 "size_t startpos, ptrdiff_t (*caps)[2])\n{\n", fn);
 }
 
-static const char *engine_entry_name(Ctx *cx)
+static void emit_match_decl(StrBuf *sb, const char *fn)
+{
+    sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx);\n", fn);
+}
+
+static void emit_match_caps_decl(StrBuf *sb, const char *fn)
+{
+    sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);\n", fn);
+}
+
+/* [DEVIATION, REPORTED] spelled `struct rx_info`, not the bare `rx_info`
+ * match_api_m4.md §5's literal C snippet shows — see emit_rx_abi_types'
+ * comment on the type declaration itself. `<prefix>_info` under the
+ * DEFAULT prefix "rx" is the literal identifier "rx_info": a bare typedef
+ * of that same name and a variable of that same name cannot coexist in one
+ * C scope (verified against gcc: "redeclared as different kind of
+ * symbol"), so the type is a tagged struct with no typedef alias and every
+ * reference to it — here and in emit_info_def below — uses the tag. This
+ * is the ONE of the six [M4.4] ABI types where the collision is reachable,
+ * because "info" is the only per-artifact entry-point suffix that is also,
+ * verbatim, a whole fixed ABI type name. */
+static void emit_info_decl(StrBuf *sb, const char *infoname)
+{
+    sb_printf(sb, "extern const struct rx_info %s;\n", infoname);
+}
+
+/* Every identifier this file derives from --prefix beyond `<prefix>_search`
+ * itself (match, match_caps, info) is built the same way: prefix + suffix,
+ * arena-owned so it outlives the emission calls that read it. */
+static const char *derived_name(Ctx *cx, const char *suffix)
 {
     const char *p = cx->opt->prefix;
-    size_t sz = strlen(p) + sizeof("_search");
+    size_t sz = strlen(p) + strlen(suffix) + 1;
     char *fn = arena_alloc(&cx->arena, sz);
-    snprintf(fn, sz, "%s_search", p);
+    snprintf(fn, sz, "%s%s", p, suffix);
     return fn;
 }
 
-static void emit_header(Ctx *cx, const char *fn)
+static const char *engine_entry_name(Ctx *cx) { return derived_name(cx, "_search"); }
+static const char *match_entry_name(Ctx *cx)  { return derived_name(cx, "_match"); }
+static const char *match_caps_entry_name(Ctx *cx) { return derived_name(cx, "_match_caps"); }
+static const char *info_entry_name(Ctx *cx)   { return derived_name(cx, "_info"); }
+
+/* The OS-0 uppercased-prefix spelling (`<PREFIX>_NCAPS` etc., match_api_m4.md
+ * §0/§2.1) — every prefix byte is a valid C identifier byte already
+ * (validated by compile.c's valid_prefix), so a plain per-byte toupper is
+ * exact; no replacement pass is needed the way emit_header's include-guard
+ * computation needs one (that one also has to survive an ARBITRARY guard
+ * namespace collision, this one does not). */
+static void prefix_upper(const char *p, char *buf, size_t bufsz)
+{
+    size_t i = 0;
+    for (; p[i] && i + 1 < bufsz; i++)
+        buf[i] = (char)toupper((unsigned char)p[i]);
+    buf[i] = 0;
+}
+
+/* [M4.4] (match_api_m4.md §11 item 2, D44/A-2): the five fixed-literal ABI
+ * types plus rx_renderfn (D44/A-14) — shared, BYTE-FOR-BYTE, by every
+ * generated matcher regardless of its own --prefix, which is the entire
+ * point of the callout ABI's composability (a compiled matcher links
+ * directly as a callout for another). Emitting this block more than once
+ * IDENTICALLY in one file is a harmless no-op only by luck of them all
+ * matching; emitting it divergently (two prefixes, two headers, one TU) is
+ * a hard redefinition error — the same class emit_span_typedef used to
+ * document for itself before it retired. So this is ONCE PER FILE, guarded
+ * by an include guard that does NOT depend on --prefix, so two
+ * differently-prefixed generated headers still agree on the guard name and
+ * only the first one's body wins. */
+static void emit_rx_abi_types(StrBuf *sb)
+{
+    sb_puts(sb,
+        "#ifndef PCREC_RX_ABI_H\n"
+        "#define PCREC_RX_ABI_H\n"
+        "\n"
+        "typedef struct rx_ctx {\n"
+        "    const unsigned char *subject;   /* whole subject, not a slice */\n"
+        "    size_t                len;      /* subject length */\n"
+        "    size_t                pos;      /* where to match, anchored */\n"
+        "    size_t                ncap;     /* capture slots known so far (watermark\n"
+        "                                        mid-match; ncaps on completion) */\n"
+        "    const ptrdiff_t     (*caps)[2]; /* [start,end); {-1,-1} = unset */\n"
+        "    void                 *user;     /* per-binding user data */\n"
+        "} rx_ctx;\n"
+        "\n"
+        "/* returns matched length >= 0 (anchored at ctx->pos), or -1 (fail).\n"
+        " * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL.\n"
+        " * Return values < -1 are RESERVED for a future abort semantic; no\n"
+        " * pcrec-emitted matcher produces one today. */\n"
+        "typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);\n"
+        "\n"
+        "typedef struct rx_callout_ref {\n"
+        "    rx_matchfn *fn;\n"
+        "    void       *user;\n"
+        "} rx_callout_ref;\n"
+        "\n"
+        "/* Emitted ONLY when a substitution template names it. Renders one\n"
+        " * template segment from the same rx_ctx a callout receives. Writes at\n"
+        " * most outcap bytes to out; returns the number of bytes produced, or\n"
+        " * -1 to fail. Called with out == NULL and outcap == 0, it returns the\n"
+        " * length it WOULD produce, writing nothing. */\n"
+        "typedef ptrdiff_t rx_renderfn(const rx_ctx *ctx,\n"
+        "                              unsigned char *out, size_t outcap);\n"
+        "\n"
+        "typedef struct {\n"
+        "    const char *name;\n"
+        "    int         number;\n"
+        "    int         slot;   /* caps[] index this entry delivers, or -1 if\n"
+        "                           this build delivers no slot for it */\n"
+        "    const char *ref;    /* NULL/empty for the primary's own groups */\n"
+        "} rx_group_entry;\n"
+        "\n"
+        /* NOT `typedef struct { ... } rx_info;` like the other five ABI
+         * types above (a deliberate, REPORTED deviation from the literal
+         * spelling in match_api_m4.md §5 — see the emit_info_decl/
+         * emit_info_def comment below for why: a bare typedef alias here
+         * would make every DEFAULT-prefix artifact's own `<prefix>_info`
+         * instance, "rx_info", an illegal redeclaration of this type's own
+         * name in the same scope). `struct rx_info` is a TAG, which C keeps
+         * in a namespace separate from ordinary identifiers (typedef names,
+         * variable names, function names) — so a struct TAGGED rx_info and
+         * a variable NAMED rx_info coexist with no conflict, verified
+         * directly against gcc. */
+        "struct rx_info {\n"
+        "    unsigned      abi;             /* layout version */\n"
+        "    uint64_t      flags;           /* PCREC_* option bits, as compiled */\n"
+        "    int           encoding;        /* PCREC_ENC_* */\n"
+        "    int           ncaps;           /* == RX_NCAPS: this artifact's caps[]\n"
+        "                                       slot count, all-in */\n"
+        "    int           ngroups;         /* capturing groups in the pattern's\n"
+        "                                       own TEXT (a lexical fact) */\n"
+        "    int           nnames;          /* entries in groups[], named only */\n"
+        "    unsigned      engine;          /* ENGM_DFA=1 / ENGM_VM=2 */\n"
+        "    int64_t       step_budget;     /* -1 = none */\n"
+        "    int64_t       frame_capacity;  /* -1 = unbounded */\n"
+        "    int64_t       subject_ceiling; /* 0 = unset/not applicable */\n"
+        "    const char           *pattern;     /* source pattern text */\n"
+        "    size_t                pattern_len; /* companion length (K9-proof) */\n"
+        "    const rx_group_entry *groups;       /* sorted, bsearch-able */\n"
+        "    const char           *engine_why;   /* forcing construct/reason, or NULL */\n"
+        "};\n"
+        "\n"
+        "#endif /* PCREC_RX_ABI_H */\n");
+}
+
+/* [M4.4] (match_api_m4.md §2.1/§9 item 9): the caps-array surface's named
+ * constants, and the search entry's reserved give-up codes — PER-PREFIX,
+ * since two artifacts compiled with different --prefix legitimately have
+ * different RX_NCAPS values once [M4.5] lands. `RX_NCAPS` is 1 on every
+ * artifact this DFA-only emitter produces (D42.2): a DFA-compiled pattern
+ * never promises more than the whole-match slot, capture-bearing or not.
+ * RX_ERR_STEPS/RX_ERR_FRAMES are RESERVED here (D42.3) — no engine produces
+ * either value until [M4.5] wires the step/frame-capacity counters. */
+static void emit_ncaps_macros(StrBuf *sb, const char *upper)
+{
+    sb_printf(sb, "#define %s_NCAPS 1\n", upper);
+    sb_printf(sb, "#define %s_UNSET ((ptrdiff_t)-1)\n", upper);
+    sb_printf(sb, "#define %s_ERR_STEPS  (-2)\n", upper);
+    sb_printf(sb, "#define %s_ERR_FRAMES (-3)\n", upper);
+}
+
+/* [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
+ * on every generated matcher (F1/F2) and RETROFITTED onto the existing DFA
+ * search — nothing at [M4.4] requires a second, genuinely-anchored
+ * automaton. `<prefix>_search`'s own leftmost-first priority already makes
+ * this exact: a match beginning at ctx->pos exists iff the search's
+ * highest-priority thread (which always tries "match starting here" before
+ * "skip a byte and try later", by construction of the unanchored wrap) finds
+ * one, so checking the reported start against ctx->pos is not an
+ * approximation of anchored matching, it IS anchored matching, reusing the
+ * existing forward+reverse walk rather than a new one. */
+static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
+                            const char *upper)
+{
+    sb_printf(c,
+        "ptrdiff_t %s(const rx_ctx *ctx)\n"
+        "{\n"
+        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
+        "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
+        "    return caps[0][1] - caps[0][0];\n"
+        "}\n",
+        matchfn, upper, searchfn);
+}
+
+/* [M4.4] (match_api_m4.md §3.1, D41.4): the anchored capture-DELIVERING
+ * sibling of <prefix>_match — same anchoring test, plus a caps_out
+ * parameter that gets every RX_NCAPS pair on success and is left UNTOUCHED
+ * on failure (A-8's "untouched wins" rule, shared with <prefix>_search). At
+ * [M4.4] RX_NCAPS is always 1, so caps_out[0] is the only slot ever
+ * written; the loop is written against the macro rather than hardcoded so
+ * nothing here needs revisiting when [M4.5] grows it. */
+static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
+                                 const char *upper)
+{
+    sb_printf(c,
+        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
+        "{\n"
+        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
+        "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
+        "    if (caps_out) {\n"
+        "        for (int k = 0; k < %s_NCAPS; k++) {\n"
+        "            caps_out[k][0] = caps[k][0];\n"
+        "            caps_out[k][1] = caps[k][1];\n"
+        "        }\n"
+        "    }\n"
+        "    return caps[0][1] - caps[0][0];\n"
+        "}\n",
+        fn, upper, searchfn, upper);
+}
+
+/* [M4.4] (match_api_m4.md §5, D43.1/D44.5): the static reflection structure,
+ * one per artifact, `.rodata` only. Every FIELD lands at [M4.4]; several are
+ * trivially empty/default until later substeps populate them (groups/nnames
+ * until module `named-groups`; step_budget/frame_capacity/subject_ceiling
+ * until [M4.5]'s counter mechanism; engine_why until a construct forces a
+ * non-default engine, which cannot happen before the VM exists) — the same
+ * shape the freestanding group index had before D43.1 folded it in here. */
+static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname, const char *upper)
+{
+    sb_printf(c, "const struct rx_info %s = {\n", infoname);
+    sb_puts(c,   "    .abi = 1,\n");
+    sb_printf(c, "    .flags = %lluULL,\n", (unsigned long long)cx->opt->flags);
+    sb_printf(c, "    .encoding = %d,\n", cx->opt->encoding);
+    sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
+    sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap);
+    sb_puts(c,   "    .nnames = 0,\n");
+    sb_puts(c,   "    .engine = 1, /* ENGM_DFA */\n");
+    sb_puts(c,   "    .step_budget = -1,\n");
+    sb_puts(c,   "    .frame_capacity = -1,\n");
+    sb_puts(c,   "    .subject_ceiling = 0,\n");
+    sb_puts(c,   "    .pattern = ");
+    emit_c_string_literal(c, cx->pat, cx->patlen);
+    sb_puts(c,   ",\n");
+    sb_printf(c, "    .pattern_len = %zu,\n", cx->patlen);
+    sb_puts(c,   "    .groups = NULL,\n");
+    sb_puts(c,   "    .engine_why = NULL,\n");
+    sb_puts(c,   "};\n");
+}
+
+static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
+                         const char *matchcapsfn, const char *infoname,
+                         const char *upper)
 {
     StrBuf *h = &cx->job->hsb;
     const char *p = cx->opt->prefix;
@@ -141,9 +438,15 @@ static void emit_header(Ctx *cx, const char *fn)
     emit_pattern_comment(h, cx->pat);
     emit_feature_comment(h);
     sb_printf(h, "#ifndef PCREC_GEN_%s_H\n#define PCREC_GEN_%s_H\n\n", guard, guard);
-    sb_puts(h, "#include <stddef.h>\n\n");
-    emit_span_typedef(h, p);
-    emit_search_decl(h, p, fn);
+    sb_puts(h, "#include <stddef.h>\n#include <stdint.h>\n\n");
+    emit_rx_abi_types(h);
+    sb_putc(h, '\n');
+    emit_ncaps_macros(h, upper);
+    sb_putc(h, '\n');
+    emit_search_decl(h, fn);
+    emit_match_decl(h, matchfn);
+    emit_match_caps_decl(h, matchcapsfn);
+    emit_info_decl(h, infoname);
     sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
 }
 
@@ -284,10 +587,10 @@ static void emit_unanchored(Ctx *cx, const char *fn)
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
 
-    emit_search_head(c, p, fn);
+    emit_search_head(c, fn);
 
     if (fs < 0 || rs < 0) {
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
         return;
     }
@@ -306,7 +609,7 @@ static void emit_unanchored(Ctx *cx, const char *fn)
      * exactly the counter-example: it never leaves fs and facc[fs] is 0, but
      * its EOL variant accepts. */
     if (esc_count == 0 && !start_acc && fd->st[fs].eolvar < 0) {
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
         return;
     }
@@ -465,7 +768,7 @@ static void emit_unanchored(Ctx *cx, const char *fn)
     sb_puts(c,   "            if (rst < 0) break;\n"
                  "        }\n"
                  "        if (sfound == (size_t)-1) return 0;\n"
-                 "        if (m) { m->start = sfound; m->end = end; }\n"
+                 "        if (caps) { caps[0][0] = (ptrdiff_t)sfound; caps[0][1] = (ptrdiff_t)end; }\n"
                  "        return 1;\n"
                  "    }\n"
                  "}\n");
@@ -486,11 +789,11 @@ static void emit_attempt(Ctx *cx, const char *fn)
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
-    emit_search_head(c, p, fn);
+    emit_search_head(c, fn);
 
     if (d->n == 0) {
         /* no live start state: the pattern matches nothing */
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)m;\n"
+        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
         return;
     }
@@ -561,7 +864,7 @@ static void emit_attempt(Ctx *cx, const char *fn)
     sb_printf(c, "%s_dead: __attribute__((unused));\n", p);
     sb_printf(c, "%s_done:\n", p);
     sb_puts(c, "        if (__builtin_expect(last != (size_t)-1, 0)) {\n"
-               "            if (m) { m->start = start; m->end = last; }\n"
+               "            if (caps) { caps[0][0] = (ptrdiff_t)start; caps[0][1] = (ptrdiff_t)last; }\n"
                "            return 1;\n"
                "        }\n"
                "    }\n"
@@ -573,10 +876,15 @@ void pcrec_emit_dfa(Ctx *cx)
 {
     Job *job = cx->job;
     StrBuf *c = &job->csb;
-    const char *p = cx->opt->prefix;
     const char *fn = engine_entry_name(cx);
+    const char *matchfn = match_entry_name(cx);
+    const char *matchcapsfn = match_caps_entry_name(cx);
+    const char *infoname = info_entry_name(cx);
+    char upper[80];
+    prefix_upper(cx->opt->prefix, upper, sizeof upper);
 
-    if (cx->opt->header_name) emit_header(cx, fn);
+    if (cx->opt->header_name)
+        emit_header(cx, fn, matchfn, matchcapsfn, infoname, upper);
 
     emit_pattern_comment(c, cx->pat);
     emit_feature_comment(c);
@@ -584,14 +892,20 @@ void pcrec_emit_dfa(Ctx *cx)
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {
-        sb_puts(c, "#include <stddef.h>\n\n");
+        sb_puts(c, "#include <stddef.h>\n#include <stdint.h>\n\n");
         /* file-scope, shared by every engine here; per-engine below */
-        emit_span_typedef(c, p);
-        emit_search_decl(c, p, fn);
+        emit_rx_abi_types(c);
+        sb_putc(c, '\n');
+        emit_ncaps_macros(c, upper);
+        sb_putc(c, '\n');
+        emit_search_decl(c, fn);
+        emit_match_decl(c, matchfn);
+        emit_match_caps_decl(c, matchcapsfn);
+        emit_info_decl(c, infoname);
     }
     if (job->engine == PCREC_ENG_UNANCH)
         sb_puts(c, "#include <string.h>\n");
-    if (cx->opt->emit_main)
+    if (cx->opt->flags & PCREC_EMIT_MAIN)
         sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
     sb_puts(c, "\n");
 
@@ -600,18 +914,25 @@ void pcrec_emit_dfa(Ctx *cx)
     else
         emit_attempt(cx, fn);
 
-    if (cx->opt->emit_main) {
+    sb_puts(c, "\n");
+    emit_match_def(c, matchfn, fn, upper);
+    sb_puts(c, "\n");
+    emit_match_caps_def(c, matchcapsfn, fn, upper);
+    sb_puts(c, "\n");
+    emit_info_def(cx, c, infoname, upper);
+
+    if (cx->opt->flags & PCREC_EMIT_MAIN) {
         sb_puts(c, "\n");
         sb_printf(c,
             "int main(int argc, char **argv)\n{\n"
-            "    %s_span m = { 0, 0 };\n"
+            "    ptrdiff_t caps[%s_NCAPS][2];\n"
             "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
-            "    if (%s((const unsigned char *)argv[1], strlen(argv[1]), 0, &m)) {\n"
-            "        printf(\"match %%zu %%zu\\n\", m.start, m.end);\n"
+            "    if (%s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps)) {\n"
+            "        printf(\"match %%td %%td\\n\", caps[0][0], caps[0][1]);\n"
             "        return 0;\n"
             "    }\n"
             "    printf(\"nomatch\\n\");\n"
             "    return 1;\n"
-            "}\n", p, fn);
+            "}\n", upper, fn);
     }
 }

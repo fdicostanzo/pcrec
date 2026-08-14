@@ -50,7 +50,7 @@
 
 #define NSUBJ (sizeof(subjects) / sizeof(subjects[0]))
 
-typedef struct { int found; size_t start, end; } Result;
+typedef struct { int found; ptrdiff_t start, end; } Result;
 static Result baseline[NSUBJ];   /* written once, single-threaded, before spawn */
 
 typedef struct {
@@ -63,11 +63,11 @@ static void *worker(void *argp)
     ThreadArg *ta = (ThreadArg *)argp;
     for (long it = 0; it < ta->iters; it++) {
         for (size_t i = 0; i < NSUBJ; i++) {
-            rx_span m; m.start = 0; m.end = 0;
+            ptrdiff_t caps[RX_NCAPS][2]; caps[0][0] = 0; caps[0][1] = 0;
             size_t n = strlen(subjects[i]);
-            int found = rx_search((const unsigned char *)subjects[i], n, 0, &m);
+            int found = rx_search((const unsigned char *)subjects[i], n, 0, caps);
             if (found != baseline[i].found ||
-                (found && (m.start != baseline[i].start || m.end != baseline[i].end)))
+                (found && (caps[0][0] != baseline[i].start || caps[0][1] != baseline[i].end)))
                 ta->mismatches++;
         }
     }
@@ -84,11 +84,11 @@ int main(int argc, char **argv)
     }
 
     for (size_t i = 0; i < NSUBJ; i++) {
-        rx_span m; m.start = 0; m.end = 0;
+        ptrdiff_t caps[RX_NCAPS][2]; caps[0][0] = 0; caps[0][1] = 0;
         size_t n = strlen(subjects[i]);
-        baseline[i].found = rx_search((const unsigned char *)subjects[i], n, 0, &m);
-        baseline[i].start = m.start;
-        baseline[i].end   = m.end;
+        baseline[i].found = rx_search((const unsigned char *)subjects[i], n, 0, caps);
+        baseline[i].start = caps[0][0];
+        baseline[i].end   = caps[0][1];
     }
 
     pthread_t *tids = malloc((size_t)nthreads * sizeof(pthread_t));
