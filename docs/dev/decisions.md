@@ -3546,3 +3546,32 @@ is mandatory per insertion or optional-with-default for single
 insertions, and lookup-key semantics (name-alone when unambiguous vs
 ref+name). Frank also notes more group-names-static questions may
 surface; they land here as further addenda.
+
+## D40 — versioning stance: pre-v1 breaks are free; at v1, ABI consistency and backwards compatibility become binding (2026-08-14)
+
+**Decision (Frank, nineteenth session, in the rx_ctx user-data
+discussion):** *"at some point we will become v1 then abi consistency
+and backwards compatibility are important."* Two regimes:
+
+1. **Pre-v1 (now):** backwards compatibility carries NO weight in design
+   choices. Breaking changes to the library API and the generated-artifact
+   contract are unconstrained in substance and governed only in FORM —
+   D37's announced-boundary shape and [DD-3]'s versioning-event
+   discipline (one announced break commit, populations conserved and
+   accounted), so breaks are deliberate and visible, never silent drift.
+2. **At v1 (a future declaration, not scheduled):** the public surface —
+   lib/pcrec.h, the emitted per-artifact contract (entry points, rx_ctx/
+   rx_matchfn/rx_callout_ref, caps representation, the group index), and
+   the PCREC_* constants namespace — becomes compatibility-bound. From
+   then on, ABI-affecting changes need a compatibility story, not just an
+   announcement.
+
+**Why:** the question arose reviewing the M4 freeze doc's rx_ctx `user`
+field — struct-stability arguments were given no weight, and Frank
+confirmed that stance is a PRE-V1 property, not a permanent one.
+Recording the boundary prevents two future mistakes: gold-plating
+compat shims before v1, and casually breaking ABI after it.
+
+**Revisit-when:** declaring v1 (that declaration should enumerate
+exactly which symbols/layouts are covered — the M4 freeze doc's
+contract is the natural core of that list); any DD-3 event after v1.
