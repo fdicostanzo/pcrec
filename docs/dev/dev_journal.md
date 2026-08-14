@@ -7692,3 +7692,75 @@ all three. (4) Frank's engineering questions (counts, alignment,
 stride, reverse-scan) each improved the design and each took minutes to
 record — the live-discussion channel is the project's cheapest
 high-quality critic.
+
+## 2026-08-14 — Twentieth session: [M4.4] the announced API break LANDED; full battery green; lint/bench/mech debt discharged
+
+Frank opened with "begin dev when ready" against wake.md's queue ([M4.4]).
+One writer lane (m44-apibreak, sonnet per the tiering rule, worktree off
+4c26989) implemented match_api_m4.md §11's twelve-item checklist end to
+end; the manager reviewed, added one fix, merged (c18e904), and ran the
+FULL battery — every leg green.
+
+**What landed (break commit 1dbb6ce, one announced break, no staged
+migration):** `<prefix>_span`/`emit_span_typedef` RETIRED — `<prefix>_search`
+takes `ptrdiff_t (*caps)[2]` directly (final shape), every _span site
+updated including D44/A-7's three missed sites and --emit-main's %zu→%td;
+the six fixed ABI types (rx_ctx, rx_matchfn, rx_callout_ref,
+rx_group_entry, rx_info, rx_renderfn) emitted once per file under the
+prefix-independent PCREC_RX_ABI_H guard; `<prefix>_match` +
+`<prefix>_match_caps` retrofitted onto the DFA via search (leftmost-first
+makes reported-start==pos exact anchored matching — no second automaton);
+`<prefix>_info` in .rodata with all D44.5 fields (several
+trivially-default pending M4.5/named-groups) and a NEW
+emit_c_string_literal escaper (three-digit octal only — no \x gluing;
+unconditional \? — trigraph warning found failing-first against
+review_r21.rxt's `(b??(a*)*)*`); pcrec_error.input +
+PCREC_ERR_INPUT_PATTERN; pcrec_options.flags uint64_t word
+(PCREC_CASELESS D44.8 / PCREC_EMIT_MAIN / PCREC_NO_CAPTURES reserved);
+RX_ERR_STEPS(-2)/RX_ERR_FRAMES(-3) reserved; +3 codegen checks (34→37).
+
+**The lane's own miscompile-shaped find, needing a Frank ruling:**
+`<prefix>_info` under the DEFAULT prefix is the literal identifier
+`rx_info` — byte-identical to the ABI type's name — so §5's bare-typedef
+spelling failed to compile on every default-prefix build ("redeclared as
+different kind of symbol"). Landed as struct TAG only (tags are a
+separate C namespace; every reference spells `struct rx_info`), the one
+ABI type where the collision is reachable. Recorded as an as-built
+deviation in match_api_m4.md §5; OPEN: bless struct-tag-only, or rename
+the per-artifact instance and restore the typedef.
+
+**Check movements (all traveling in the break commit, per the landing
+bar):** OS-1's whole-file diffs and parse's ast-identity narrowed to the
+rx_search ENGINE BODY — rx_info.pattern/flags differ BY DESIGN between
+spelling-different-but-AST-equal patterns and across -i (the D37
+stamp-differs shape); the codegen dup-typedef assertion INVERTED
+deliberately (the guard's whole job is to make duplication a no-op) with
+a new cross-prefix two-headers-one-TU compile as A-2's positive control;
+S04 mech sabotage retargeted to guard-neutering (#ifndef → #if 1).
+Manager review found ONE vacuousness hole in the lane's rescoping: parse's
+rx_search_body() extraction returning empty on both sides counted as a
+PASS — fixed (2498bf4) to hard-fail, matching codegen body()'s -s guard.
+The codegen side already had a live non-vacuous control (negi≠negwrong).
+
+**Battery (all at c18e904):** make test green — corpus 1404, cli 247,
+reject 528 (274/99/99/0), parse 8, codegen 37, registry 168, PC-3 163,
+PC-4 273 patterns/62,872 cells/0 disagreements, trie 7, thread 8,
+known_fail 1 (K18 deliberate; ratchet silent). strict, ubsan (both
+axes), asan (both axes), lint all green. bench green (floors held).
+mech: 35 rows, 0 undetected, 0 anomalies — S04's retarget hit exactly
+its documented 2-fail figure. THE LINT/BENCH/MECH DEBT OWED SINCE THE
+EIGHTEENTH SESSION IS DISCHARGED.
+
+**Process notes:** the lane went idle without its final report arriving
+(a known pattern); the worktree-state check found the work complete and
+committed — the commit-message-as-report house style meant nothing was
+lost. Single-lane was the right call: M4.5 shares the same files and
+K18's design note isn't needed until the M4.6 gate.
+
+**State at close:** [M4.4] COMPLETED and archived; main pushed. NEXT:
+[M4.5] — VM emitter core per engine_m4.md (cursor ladder, counter
+mechanism, .rxt capture-expectation format + python span-oracle tier,
+three-way differential rule, D27-blinded capture test author, DD-8
+tracer scheduled with bring-up). [M4.6] still gated on K18 design-first.
+Open Frank items: the struct-rx_info spelling ruling (above), callout
+syntax Q5/Q6, V-E-time items.

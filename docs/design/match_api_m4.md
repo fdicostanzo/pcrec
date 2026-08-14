@@ -639,6 +639,23 @@ string with no escaper for it, `engine` as a string beside `encoding` as
 an int, and a struct that had already grown once mid-round with no
 mechanism to say so) — the layout below closes all six in place:
 
+**[M4.4] AS-BUILT DEVIATION (2026-08-14, recorded for M4.7's post-run
+review; needs a ruling):** `rx_info` is emitted as a struct **TAG ONLY**
+(`struct rx_info { ... };`, no typedef alias), and every reference spells
+it `struct rx_info` — NOT the bare-typedef spelling the snippet below
+shows. Found miscompile-shaped at implementation: `<prefix>_info` under
+the DEFAULT prefix `rx` is the literal identifier `rx_info`, byte-identical
+to this type's own name, and a typedef name and a variable name cannot
+coexist in one C scope (gcc: "redeclared as different kind of symbol") —
+every default-prefix build failed to compile. Struct tags live in a
+separate C namespace, so the tag and the instance coexist. This is the one
+of the six ABI types where the collision is reachable ("info" is the only
+per-artifact suffix that is verbatim a whole ABI type name). OPEN for
+Frank: bless `struct rx_info` as the ABI's real C spelling, or rename the
+per-artifact instance and restore the typedef. Emitter record:
+src/gen/emit_dfa.c (emit_rx_abi_types / emit_info_decl comments), landed
+with the [M4.4] break commit.
+
 ```c
 typedef struct {
     const char *name;

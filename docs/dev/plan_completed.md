@@ -1689,3 +1689,46 @@ Known M1 limitations (tracked for later milestones):
   2-1-minority rule adopted); the erasure argument, trail discipline,
   VM sketch, cliff guard and all 11 STRUCTURAL citations HELD under
   attack; what broke was what was marked BELIEVED.
+
+- [M4.4] COMPLETED 2026-08-14 (merge c18e904, break commit 1dbb6ce) — IMPL: the API BREAK lands mechanically —
+  rx_span RETIRES for the caps-array search signature across
+  emitters/harness/corpus (D44.2), the pcrec_error tag, PCREC_*
+  constants, match-here export + the slot-bearing group index folded
+  into rx_info (D43.1/D44.3) retrofitted onto the EXISTING DFA matchers.
+  CORRECTED 2026-08-14 (R21 C-4): this clause previously said "rx_span
+  becomes the pair type" and "(empty-ref) group index retrofitted",
+  both stale against D44's search-signature reshape and D43.1's rx_info
+  fold — see docs/design/match_api_m4.md §1.0/§5. Coverage
+  conservation per the STD1 re-baseline shape: suite populations
+  conserved and accounted, one announced break commit. AMENDED
+  2026-08-14 (D42, D43): the same boundary also carries the
+  `<prefix>_match_caps` entry (D41.4), the search entry's reserved
+  negative returns (RX_ERR_STEPS/RX_ERR_FRAMES, D42.3), the
+  RX_NCAPS>1⇒VM structural check (D42.2 — trivially green until M4.5),
+  the `pcrec_options` flags-word break (booleans → PCREC_* bits,
+  D43.2), and the `rx_info` reflection struct (D43.1 — flags, encoding,
+  pattern string, folded group index, engine, budget; the group index
+  no longer lands as freestanding symbols).
+  COMPLETION RECORD: all 12 of match_api_m4.md §11's checklist items
+  discharged (item 12 as a recorded obligation only, per its own text);
+  counts corpus 1404, cli 247, reject 528 (274/99/99/0), codegen 34→37
+  (+2 structural: ncaps==RX_NCAPS-by-construction and NCAPS>1⇒VM; +1
+  cross-prefix one-TU compile, D44/A-2's positive control), registry
+  168, PC-3 163, PC-4 273/62,872 cells/0 disagreements, trie 7,
+  thread 8, known_fail 1 (K18 deliberate, ratchet did not fire); OS-1
+  whole-file diffs and parse's ast-identity re-scoped to the rx_search
+  ENGINE BODY (rx_info.pattern/flags differ by design, the D37
+  stamp-differs shape), with a manager review fix making empty
+  extraction a hard fail (2498bf4); S04 mech sabotage retargeted from
+  the retired emit_span_typedef to PCREC_RX_ABI_H guard-neutering, its
+  assertion direction deliberately inverted (dup emission is now safe
+  BY the guard; validated in the close battery: codegen 2fail,
+  DETECTED, 35 rows 0 undetected). New emit_c_string_literal escaper
+  for rx_info.pattern (three-digit octal, unconditional \? for
+  trigraphs — found failing-first against review_r21.rxt). AS-BUILT
+  DEVIATION recorded in match_api_m4.md §5 (needs ruling): rx_info is
+  a struct TAG with no typedef alias — the bare typedef collides with
+  the default-prefix instance name rx_info, a miscompile-shaped find
+  by the lane. Full battery green at close: test + strict + ubsan +
+  asan + lint + bench + mech (TMPDIR=/var/tmp), discharging the
+  lint/bench/mech debt owed since the eighteenth session.

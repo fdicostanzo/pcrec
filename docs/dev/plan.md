@@ -121,25 +121,23 @@ stated terms.
   is design-first-before-[M4.6]; the full battery (lint/bench/mech)
   remains owed at [M4.4]'s close per the standing schedule.
   IMPLEMENTATION IS OPEN from [M4.4]
-- [M4.4] STATE:started — IMPL: the API BREAK lands mechanically —
-  rx_span RETIRES for the caps-array search signature across
-  emitters/harness/corpus (D44.2), the pcrec_error tag, PCREC_*
-  constants, match-here export + the slot-bearing group index folded
-  into rx_info (D43.1/D44.3) retrofitted onto the EXISTING DFA matchers.
-  CORRECTED 2026-08-14 (R21 C-4): this clause previously said "rx_span
-  becomes the pair type" and "(empty-ref) group index retrofitted",
-  both stale against D44's search-signature reshape and D43.1's rx_info
-  fold — see docs/design/match_api_m4.md §1.0/§5. Coverage
-  conservation per the STD1 re-baseline shape: suite populations
-  conserved and accounted, one announced break commit. AMENDED
-  2026-08-14 (D42, D43): the same boundary also carries the
-  `<prefix>_match_caps` entry (D41.4), the search entry's reserved
-  negative returns (RX_ERR_STEPS/RX_ERR_FRAMES, D42.3), the
-  RX_NCAPS>1⇒VM structural check (D42.2 — trivially green until M4.5),
-  the `pcrec_options` flags-word break (booleans → PCREC_* bits,
-  D43.2), and the `rx_info` reflection struct (D43.1 — flags, encoding,
-  pattern string, folded group index, engine, budget; the group index
-  no longer lands as freestanding symbols)
+- [M4.4] COMPLETED 2026-08-14 (merge c18e904, break commit 1dbb6ce, lane
+  m44-apibreak) — row archived in plan_completed.md. The announced API
+  break landed as ONE break commit: `<prefix>_span` RETIRED for the
+  caps-array search signature (all emit sites incl. the three from
+  D44/A-7, %zu→%td), the six fixed ABI types under the prefix-independent
+  `PCREC_RX_ABI_H` guard, `<prefix>_match`/`_match_caps`/`_info`
+  emitted unconditionally, `pcrec_error.input`, the `pcrec_options`
+  flags word (PCREC_CASELESS/PCREC_EMIT_MAIN; PCREC_NO_CAPTURES
+  reserved), RX_ERR_STEPS/RX_ERR_FRAMES reserved, +3 codegen checks
+  (34→37: ncaps-is-the-macro, NCAPS>1⇒VM, cross-prefix one-TU compile);
+  populations conserved and accounted; S04 sabotage retargeted to
+  guard-neutering. FULL battery green at close (test/strict/ubsan/asan/
+  lint/bench/mech 35-rows-0-undetected) — the lint/bench/mech debt owed
+  since the eighteenth session is DISCHARGED. One as-built deviation
+  awaiting a Frank ruling: `rx_info` is emitted as a struct TAG only
+  (bare typedef collides with default-prefix `<prefix>_info` = literal
+  `rx_info`) — see match_api_m4.md §5's as-built note
 - [M4.5] STATE:not-started — IMPL: VM emitter core — captures over the
   base tier, search + match-here entries, DD-2 budget wired; .rxt
   format extension for capture expectations (docs/testing.md updated),
