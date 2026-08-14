@@ -893,6 +893,30 @@ A pattern-level `--why` / `--explain-pattern` CLI surface is NOT proposed here.
 If one is wanted it belongs with DD-8's bring-up tooling (§10), where it can
 share the IR dump's plumbing.
 
+**RULED (D43.1, 2026-08-14) — SUPERSEDED as the canonical record.** The
+comment/macro shape above stays, but a NEW machine-readable record —
+`rx_info` (`match_api_m4.md` §5) — takes over as the CANONICAL one: every
+generated artifact's `<prefix>_info` reflects the selected engine (as a
+`const char *`, `"dfa"`/`"vm"`) and the step budget as typed `rx_info`
+fields, queryable by any tool that links against or reads the artifact,
+not just a human reading the `.c`/`.h` source. This section's comments stay
+for humans; the `RX_ENGINE`/`RX_ENGINE_WHY` macros above are RETAINED
+(PROPOSED-here, this document's own call, since D43.1 leaves it open
+whether they survive) rather than dropped, for a reason D43.1's own text
+anticipates ("macros where compile-time-useful"): `rx_info` is a
+`.rodata` symbol, readable only by LINKING against the artifact or reading
+the compiled binary; `RX_ENGINE`/`RX_ENGINE_WHY` are preprocessor-visible
+at COMPILE TIME, which is what a `tests/codegen/` structural check (the
+same style as the `RX_NCAPS > 1 ⇒ VM` check, §5.7.2) or a build-time
+`#ifdef RX_ENGINE` conditional needs — `rx_info` cannot serve that
+consumer, since reading a struct field requires the artifact to be
+compiled and either run or objdump'd, not merely preprocessed. The two
+records are therefore NOT redundant: macros for compile-time consumers,
+`rx_info` for link/runtime ones. `RX_ENGINE_WHY`'s free-text forcing
+reason has no `rx_info` equivalent and is NOT proposed as one — D43.1
+lists "the selected engine" as a member, not the reason, so the WHY stays
+comment/macro-only unless a future ruling adds it.
+
 ### 5.6 The override
 
 APPROACH §2 says selection is "automatic per pattern (overridable)". The

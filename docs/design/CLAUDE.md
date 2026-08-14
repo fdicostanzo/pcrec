@@ -132,14 +132,33 @@ append-only or historical records.
   default (D42.1); `rx_ctx.caps`'s callout lifetime joins §4's F-list
   (D42.5); §6 records the `pcrec_err_input` V-A compat obligation (D42.4);
   the former §14 checklist is replaced by an "AMENDMENTS APPLIED" record.
-  §8 also gains a manager-confirmed clarification: `PCREC_*` names
-  enum-valued constants only — the native option surface itself is the
-  `pcrec_options` STRUCT (`lib/pcrec.h`, named fields; CLI flags are a thin
-  veneer over it, e.g. `-i` sets `opt.caseless`), and PCRE2 bitmask
-  spellings reappear only at V-A's compat boundary, translated onto the
-  native struct's fields. **Still STATUS: PROPOSED** — the freeze does not take effect until
-  [M4.3]'s panel closes; this round exists so the panel reviews one
-  reconciled document instead of a stale one plus a decision log to
+  §8 gained a manager-confirmed clarification (`PCREC_*` names enum-valued
+  constants only, native option surface is the `pcrec_options` struct) —
+  **itself SUPERSEDED same day by D43** (below): a second wave, folded
+  into the same round rather than staged. **D43 (rx_info + options
+  funnel, 2026-08-14):** §5 is REWORKED from "the exported group index"
+  into "the `rx_info` reflection structure — F8's group index folds in"
+  — a fixed ABI type `rx_info` (`rx_ctx`'s family), one
+  `extern const rx_info <prefix>_info` per artifact, carrying the option
+  flags, encoding, an unconditionally-embedded pattern-string pointer,
+  the group count, the folded-in group index, the selected engine, and
+  the step budget — superseding engine_m4.md §5.5's comment/macro stamp
+  as the CANONICAL machine-readable record (macros retained alongside it
+  for compile-time consumers). §8 is corrected in place (struck through,
+  not silently rewritten): booleans (`caseless`, `emit_main`, the coming
+  `no-captures`) now become `PCREC_*` bits in one `pcrec_options.flags`
+  word (D43.2, F3's one-representation rule extended to options), with
+  both candidate bit-name spellings presented (`PCREC_CASELESS`
+  recommended vs. Frank's own sketch `PCREC_CASE_INSENSITIVE`) and Frank
+  disposing at panel time per D43's own text. Two structural additions
+  this document had to derive beyond D43's literal member list —
+  `rx_group_entry` going fixed-literal for `rx_info` to stay one shared
+  type, and splitting "the group count" into `ngroups`/`ngroups_named`
+  since the array holds named groups only — are flagged as JUDGMENT
+  CALLS for the panel (§12 items 11–12, §13 ASK 7). **Still STATUS:
+  PROPOSED** — the freeze does not take effect until [M4.3]'s panel
+  closes; this round exists so the panel reviews one reconciled document
+  instead of a stale one plus a decision log to
   cross-reference.
 - `engine_m4.md` — **PROPOSED** ([M4.2], 2026-08-14): the M4 ENGINE design —
   the backtracking VM as EMITTED SPECIALIZED C (no interpreter: one function
@@ -195,8 +214,15 @@ append-only or historical records.
   default, the M4.4→M4.5 gap, the give-up residual, and the search
   posture respectively); §0.3 records that D41.1/D41.2 ruled §12.6/§12.7 as
   proposed. The five untouched measurement ASKs (1, 6, 7, 9, 10) are
-  unchanged — deliberately unruled, lane work. **Still PROPOSED**,
-  unpaneled.
+  unchanged — deliberately unruled, lane work. **D43 (2026-08-14,
+  same round):** §5.5 gains a RULED note that `rx_info`
+  (`match_api_m4.md` §5) supersedes this section's comment/macro stamp as
+  the CANONICAL machine-readable selection/budget record; the
+  `RX_ENGINE`/`RX_ENGINE_WHY` macros are RETAINED alongside it
+  (PROPOSED-here, this document's own call) because they are
+  compile-time-visible where `rx_info` is only link/runtime-visible —
+  the two serve different consumers, not redundant ones. **Still
+  PROPOSED**, unpaneled.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
