@@ -368,6 +368,23 @@ no benefit — and it would group `<prefix>_match_caps` with
 than with `<prefix>_match` (the ANCHORED entry it is actually a
 capture-delivering sibling of), the wrong grouping for §7's table.
 
+**PROPOSED-here — give-up behavior (manager addition at review,
+2026-08-14).** `<prefix>_match_caps` is NOT an `rx_matchfn` (two
+parameters, a different function type), so D38.4's `< -1` reservation and
+F2's trap rule do NOT bind it — its negative return space below `-1` is
+pcrec's own, by exactly the "`rx_search` is not an `rx_matchfn`"
+observation (engine_m4.md §4.4) one entry over. Proposal: on a
+budget/frame-carrying artifact it MAY return `RX_ERR_STEPS`/
+`RX_ERR_FRAMES` (D42.3's search precedent) rather than collapsing give-up
+into `-1` as `<prefix>_match` must — a tokenizer looping on this entry
+wants to distinguish "no token here" from "the engine gave up". Rejected
+alternative: `-1`-only for symmetry with `<prefix>_match` — rejected
+because the symmetry is with the wrong sibling: `<prefix>_match`'s
+collapse is FORCED by its frozen ABI type, and copying a forced limitation
+into an entry that has room for honesty inverts the reason the limitation
+was accepted (D42.3, §11.1 of engine_m4.md). Like the search codes, both
+values are reserved at [M4.4] and become live only when the counters exist.
+
 ---
 
 ## 4. `rx_ctx` layout and the `rx_callout_ref` binding unit
@@ -566,6 +583,23 @@ out, flagged for the panel:**
    (§12.4's prior reading — that macro was ALWAYS the named count, never
    the total; this split makes both facts available where the old design
    only exposed one).
+
+   **The SPLIT itself is RULED, not synthesis — D43 addendum (Frank, same
+   day, written before this round but after this lane's worktree
+   branched):** "rx_info carries TWO distinct counts... conflating them
+   would make the empty-index case read as 'zero capture groups'." What
+   REMAINS this document's own refinement (PROPOSED-here, for the panel):
+   the addendum's letter defines the first count as the caps[] geometry
+   ("= RX_NCAPS − 1"), where this document's `ngroups` is the PATTERN
+   total — two facts that diverge exactly on `--no-captures`/DFA builds
+   (the "why ngroups is a genuinely new fact" note below). That raises a
+   THIRD-count question the panel should answer: should `rx_info` ALSO
+   carry the artifact's slot count (`ncaps`) as a struct member, so a
+   generic multi-artifact reader (V-G/V-H shape) gets the artifact fact
+   without parsing the per-prefix `RX_NCAPS` macro — or is
+   engine-plus-ngroups enough to derive it? Flagged at §13 alongside the
+   frame-capacity question, which has the same "should rx_info widen"
+   shape.
 
 **Why `ngroups` is a genuinely new fact, not a restatement of `RX_NCAPS`.**
 `RX_NCAPS - 1` (§2.1, D42.2) states what the ARTIFACT can DELIVER — it is
