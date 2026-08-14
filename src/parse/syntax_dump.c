@@ -986,8 +986,10 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
                  * put_expect (100 lines above, same file) has rendered it
                  * correctly for --list-syntax's `expect` column since the same
                  * milestone; --explain kept promising, because it never read
-                 * `roadmap`. One row today, (?C1); the branch is derived, so
-                 * the second one is covered the day it exists.
+                 * `roadmap`. Zero RS_MODULE ROADMAP_NEVER rows today —
+                 * (?C1) carried it alone until [M4-CALLOUTS] step 1 (D36,
+                 * 2026-08-14) flipped it to PLANNED; the branch is derived,
+                 * so the next one is covered the day it exists.
                  *
                  * The `agree` clause CANNOT see this — both of its sides read
                  * the row — so cli case11's hand-written pin is the only net,

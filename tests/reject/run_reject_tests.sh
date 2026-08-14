@@ -791,10 +791,11 @@ reject '(?#c)'    "requires module 'comments'"
 # what say that answer must not move when the option-run fix lands.
 reject 'a\Q\E*'   "\\Q requires module 'quoting'"
 reject 'a(?#c)*'  "(?#...) requires module 'comments'"
-# K14's group-doorway instance: callouts are OUT-OF-SCOPE in the survey
-# ("revisit only with a concrete customer"), so the row is ROADMAP_NEVER and
-# the diagnostic must not promise module 'callouts'.
-reject '(?C1)'    "(?C...) is outside pcrec's scope and no module will implement it"
+# [M4-CALLOUTS] step 1 (D36, flipped 2026-08-14): callouts moved from
+# ROADMAP_NEVER (K14's OUT-OF-SCOPE ruling) to a PLANNED module, LOW
+# priority, M4-hosted. The diagnostic now promises 'callouts' like any other
+# module row.
+reject '(?C1)'    "(?C...) requires module 'callouts'"
 reject '(?|a)'    "requires module 'branch-reset'"
 reject '(?(1)a)'  "requires module 'conditionals'"
 reject '(?R)'     "requires module 'recursion'"
@@ -1024,7 +1025,10 @@ reject 'a(*ACCEPT)' "requires module 'verbs' (pattern offset 1)"
 # OUT-OF-SCOPE — the backtracking verbs (defined in terms of a backtracking
 # tree a simulation engine does not have), the LIMIT_* family (they bound a
 # backtracking search), the PCRE2-internals knobs, the Unicode-casing options,
-# scan-substring, and (?C) callouts. Promising "module 'verbs'" for them was
+# and scan-substring. (?C callouts carried the same K14 disposition at the
+# GROUP doorway until [M4-CALLOUTS] step 1 (D36, 2026-08-14) moved it to
+# PLANNED — see the `(?C1)` reject() call above, outside this loop.)
+# Promising "module 'verbs'" for them was
 # K14: naming a module that will never implement a construct, which D26's
 # tier-2 row calls a defect in as many words. The disposition is a COLUMN
 # (ROADMAP_NEVER, per-row and per-VerbName), the diagnostic names no module,
@@ -1033,6 +1037,10 @@ reject 'a(*ACCEPT)' "requires module 'verbs' (pattern offset 1)"
 # FORM of a NEVER name keeps PCRE2's own form error — the roadmap answer is
 # only for constructs PCRE2 would accept ('(*MARK)' bare still gets "must
 # have an argument"; 'a(*CR)' still gets the position error).
+# NOTE ([M4-CALLOUTS] step 1, 2026-08-14): the verb-table LIMIT_* / NO_* /
+# casing / scan-substring names below are still ROADMAP_NEVER; `(?C1)` (the
+# GROUP-doorway instance, at its own reject() call above) is not — it moved
+# to PLANNED the same session this note was added.
 for v in '(*COMMIT)' '(*PRUNE)' '(*SKIP)' '(*THEN)' '(*MARK:x)' \
          '(*LIMIT_MATCH=1)' '(*LIMIT_HEAP=1)' '(*TURKISH_CASING)' \
          '(*NO_JIT)'; do
@@ -1537,7 +1545,7 @@ must_have '[\400]' \
 must_have '(*scs:x)' \
     "the only pin that the LOWER verb table carries the ROADMAP_NEVER column too (K14) — every other NEVER pin is an upper-table name"
 must_have '(?C1)' \
-    "the only pin of ROADMAP_NEVER at the GROUP doorway (K14) — deleting it leaves the callouts row free to resume promising its module"
+    "[M4-CALLOUTS] step 1 (D36, 2026-08-14): was the only pin of ROADMAP_NEVER at the GROUP doorway (K14); the flip moved the row to PLANNED, so this is now the only pin that the callouts row promises module 'callouts' — deleting it leaves the row's diagnostic text unguarded"
 must_have '[0-\d]' \
     "K12's row: a certifiably SET-shaped escape at a range endpoint is PCRE2 error 150, and pcrec promised module 'classes' for it — a promise no module could keep"
 must_have '[0-\p{L}]' \
