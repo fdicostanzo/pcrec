@@ -396,6 +396,26 @@ low-water mark, and backtracking decrements the cursor. So the residual
 unbounded-depth class is quantifiers CONTAINING a choice point or a capture,
 which is small and compile-time detectable.
 
+**The FIXED-STRIDE generalization (Frank, 2026-08-14, the `z(ab)*y`
+question):** the cursor scheme is not limited to single-byte bodies. Any
+DETERMINISTIC FIXED-LENGTH body — a literal like `(ab)`, a fixed
+class sequence — admits the same shape with **stride = the body length**:
+scan ahead to the last complete iteration, retreat by the stride per
+backtrack. Exactness condition: determinism + fixed length give any
+consumed run a UNIQUE decomposition into iterations, so every retreat
+position is a real boundary and no other exists (a choice-bearing body
+like `(a|bc)` breaks the constant stride and falls back to frames). With
+the D44.1 capture extension, the group's span is `[cursor − stride,
+cursor)` at exit — no trail. And the ladder has a rung BELOW even this:
+when the follow set is DISJOINT from the body's interior bytes
+(`z(ab)*y` — every retreat position holds `a`, which can never match
+`y`), §6.3's disjoint-follow auto-possessification proves NO retreat can
+ever succeed and emits a pure forward scan with no cursor at all. The
+compile-time ladder [M4.5] implements, cheapest first: disjoint follow →
+no machinery; fixed-stride deterministic → cursor, stride-k retreat;
+deterministic variable-length → cursor + boundary record; choice-bearing
+→ frames + the stamped ceiling (D44.1).
+
 **RULED (D44, ratifying R21 E-4) — the cursor's HOME and its re-push
 discipline, both previously unshown.** The panel found the span-loop
 cursor had "no home in §2.4's layout" — §2.4's `stv` table lists capture
