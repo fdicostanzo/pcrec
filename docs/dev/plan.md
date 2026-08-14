@@ -100,20 +100,15 @@ stated terms.
   plan_completed.md; the doc (docs/design/match_api_m4.md) is PROPOSED
   until M4.3's panel closes, and its §13 ASKs (naming picks + the
   rx_ctx-fixed-names confirmation) go to Frank with the panel materials
-- [M4.2] STATE:started — DESIGN: the ENGINE document, its own design
-  doc at docs/design/engine_m4.md (Frank, 2026-08-14) — the
-  backtracking VM as EMITTED SPECIALIZED C (no runtime interpreter, per
-  the project mandate), capture tracking with PCRE2's leftmost/priority
-  semantics, DD-2's step budget (robustness tier, not a security
-  boundary), per-pattern engine selection (capture-free patterns keep
-  today's DFA engines; the backrefs-finite/atomic-cut analyses under
-  this milestone are future selection customers), the DFA-prefilter
-  hybrid and DFA-islands shape from APPROACH, DD-7 (which machine is
-  the capture prefilter; ENG_UNANCH/anchoring absorption ownership),
-  DD-9 (decide whether the hybrid owns the case-f dense/counting gap —
-  the row's own requirement), and SR-8's lowering-time
-  "requires the VM engine" refusal design. DD-8's --emit-ir/--emit-dot
-  noted as optional bring-up tooling, schedulable as filler
+- [M4.2] COMPLETED 2026-08-14 (merge b726386) — row archived in
+  plan_completed.md; the doc (docs/design/engine_m4.md) is PROPOSED
+  until M4.3's panel closes. Headlines: DD-9 DECIDED (hybrid cannot own
+  case (f) — re-home to BENCH-1's worklist, Frank's confirmation
+  pending); SR-8's flip is smaller than its row (zero constructs become
+  compilable); three ABI tensions reported (§11) and twelve ASKs (§12)
+  ride to Frank/panel; four requirements handed back to
+  match_api_m4.md (search-entry negative returns, the capture-delivering
+  entry gap, ASK-4 closure per §5.7, symbol spellings)
 - [M4.3] STATE:not-started — D6 ADVERSARIAL PANEL over M4.1 + M4.2
   TOGETHER WITH the still-unpaneled design_callout_abi.md and
   subst_template_design.md (their panel-outcome blocks land here).

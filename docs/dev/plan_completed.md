@@ -1611,3 +1611,35 @@ Known M1 limitations (tracked for later milestones):
   text in subst_template_design.md §2) and the emit_dfa.c span-typedef
   citation (accurate). PROPOSED until M4.3's panel; freeze declared at
   that step's close.
+
+- [M4.2] STATE:completed (2026-08-14, merge b726386) — DESIGN: the ENGINE document, its own design
+  doc at docs/design/engine_m4.md (Frank, 2026-08-14) — the
+  backtracking VM as EMITTED SPECIALIZED C (no runtime interpreter, per
+  the project mandate), capture tracking with PCRE2's leftmost/priority
+  semantics, DD-2's step budget (robustness tier, not a security
+  boundary), per-pattern engine selection (capture-free patterns keep
+  today's DFA engines; the backrefs-finite/atomic-cut analyses under
+  this milestone are future selection customers), the DFA-prefilter
+  hybrid and DFA-islands shape from APPROACH, DD-7 (which machine is
+  the capture prefilter; ENG_UNANCH/anchoring absorption ownership),
+  DD-9 (decide whether the hybrid owns the case-f dense/counting gap —
+  the row's own requirement), and SR-8's lowering-time
+  "requires the VM engine" refusal design. DD-8's --emit-ir/--emit-dot
+  noted as optional bring-up tooling, schedulable as filler
+
+  Landing record: authored by the m42-engine lane (strong model),
+  commits 91a8f9e + 63cf7f5, merged b726386 same day (one CLAUDE.md
+  both-added conflict, resolved keeping both entries). 1598 lines, 14
+  sections + 8 falsifiable predictions (§13) + 12 ASKs (§12). Manager
+  review spot-checked three STRUCTURAL claims, all confirmed:
+  <prefix>_search's negative return space unused (lib/pcrec.h),
+  selection is one if in compile.c:120, and zero VM_ONLY registry rows
+  belong to a producer-backed module (so SR-8 flips nothing today).
+  Key outcomes: DD-9 decided (hybrid structurally cannot own capture-free
+  case (f); re-home to BENCH-1 with three findings); DD-2 gains a second
+  bound (backtrack-frame capacity); budget failure surface reconciled
+  with D38's frozen return space via the three-layer entry design (§4.4);
+  match_api_m4.md ASK 4 answered (§5.7: RX_NCAPS is an artifact
+  property; DFA artifact emits RX_NCAPS 1; RX_NCAPS>1 implies VM);
+  three ABI tensions reported not resolved (§11). PROPOSED until
+  M4.3's panel; four handed-back M4.1 amendments pending pre-panel.
