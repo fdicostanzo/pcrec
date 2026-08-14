@@ -39,6 +39,30 @@ append-only or historical records.
   §14's V1-V7 failing-direction measurements. ACCEPTED and built 2026-08-12
   — see cli/CLAUDE.md and src/parse/CLAUDE.md's `syntax_dump.c` entry for
   what landed.
+- `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
+  the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
+  because Frank's ratified observation is that the template compiler consumes
+  only the capture-offset CONTRACT. **PROPOSED throughout; no panel has seen
+  it and §9's eleven questions are unruled.** §2 is the half with the
+  deadline: C1-C11, requirements ON M4's match API (offset-pair shape, group
+  count as a compile-time constant, the UNSET sentinel in both slots, every
+  pair written on every match, byte offsets per DD-12) plus an explicit
+  non-requirements list. Also: the tiering mechanism (PCRE2's run-time
+  `SUBSTITUTE_EXTENDED` bit becomes a compile-time MODULE — `subst` /
+  `subst-extended` / `subst-pcrec` — so D18 compiles the dialect away and
+  D26 tier 3's "requires module 'X'" discharges the diagnostics for free);
+  the compile-time bounds check that deletes PCRE2's whole "unknown
+  substring" error class from generated code; proposed emitted signatures
+  with first/global as a GENERATION AXIS (D18/OS-0 named entry points, not a
+  flag); the global-mode empty-match rule; the beyond-PCRE2 tier (callback
+  segments reusing M4-CALLOUTS' static-extern primitive) under a namespace
+  rule stated as a TESTABLE property — every pcrec-only form must be a
+  spelling PCRE2 rejects; and a testing sketch whose finding is that the
+  whole global-mode splice geometry is testable BEFORE captures land,
+  because `$0` is already `rx_span`. Every PCRE2 claim is MEASURED
+  (`tests/probes/probe_subst.c` → `../measurements/probe_subst.txt`, 10.46),
+  not read from documentation: three of the note's twelve stated predictions
+  were refuted, two of them changing the design.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

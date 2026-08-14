@@ -1,0 +1,262 @@
+# probe_subst — archived measurement report (D35: evidence, never an oracle)
+# regenerate: scripts/measure.sh probe_subst   (git diff shows what changed)
+# check validity without re-running: scripts/measure.sh --stale
+# date: 2026-08-14
+# repo: 46862ef
+# probe-blob: c07ef541c41e18ebeac851cf41b7d287c5f12421 (git hash-object tests/probes/probe_subst.c)
+# abi-blob: fc641df02ab249b4b4ea6a56f6ba2b82c5117936 (tests/fuzz/pcre2_abi.h)
+# oracle: libpcre2-8-0 10.46-1build1
+# compiler: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+
+probe_subst — pcre2_substitute semantics for M4-SUBST
+libpcre2 version: 10.46 2025-08-27
+resolved from:    /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0
+PCRE2_UNSET is:   18446744073709551615 (~(PCRE2_SIZE)0)
+
+== 0. option bits confirmed behaviourally (no pcre2.h here) ==
+  SUBSTITUTE_GLOBAL      bit 0x00000100  CONFIRM  /a/ "aaa" "X" -> XXX|rc=3|len=3|term=NUL
+  SUBSTITUTE_EXTENDED    bit 0x00000200  CONFIRM  /(b)/ "ab" "\u$1" -> aB|rc=1|len=2|term=NUL
+  SUBSTITUTE_LITERAL     bit 0x00008000  CONFIRM  /b/ "ab" "$0$0" -> a$0$0|rc=1|len=5|term=NUL
+  SUBSTITUTE_REPLACEMENT_ONLY bit 0x00020000  CONFIRM  /b/ "abc" "X" -> X|rc=1|len=1|term=NUL
+  SUBSTITUTE_UNSET_EMPTY bit 0x00000400  CONFIRM  /(a)|(b)/ "b" "[$1]" -> []|rc=1|len=2|term=NUL
+  (UNKNOWN_UNSET and OVERFLOW_LENGTH are confirmed in their own
+   sections below, where the contrast cell is the confirmation.)
+  ALL CONFIRMED: yes
+
+== 1. capture count is a COMPILE-TIME property of the pattern ==
+  /abc             / capturecount = 0
+  /(a)             / capturecount = 1
+  /(a)(b)          / capturecount = 2
+  /(?<x>a)(b)(?:c) / capturecount = 2
+  /(a)|(b)         / capturecount = 2
+  (a count that tracks the visible group count confirms the
+   INFO_CAPTURECOUNT constant too; 0xFFFFFFFF would mean it
+   did not.)
+
+== 2. P11 — unset group's ovector pair ==
+  /(a)|(b)/ on "b": rc=3 (rc is the highest set pair + 1)
+    pair 0: [0, 1]
+    pair 1: [18446744073709551615, 18446744073709551615]   <- PCRE2_UNSET both slots
+    pair 2: [0, 1]
+  /(a)(b)?(c)?/ on "a": rc=2 (pattern has 3 groups)
+    pair 0: [0, 1]
+    pair 1: [0, 1]
+    pair 2: [18446744073709551615, 18446744073709551615]  <- PCRE2_UNSET
+    pair 3: [18446744073709551615, 18446744073709551615]  <- PCRE2_UNSET
+
+== 3. P1/P5 — CORE template syntax (no EXTENDED) ==
+  P1  $0 whole match                 /b+/ on "abbc" repl "[$0]"
+      -> a[bb]c|rc=1|len=6|term=NUL
+      $1 numbered                    /(b+)/ on "abbc" repl "[$1]"
+      -> a[bb]c|rc=1|len=6|term=NUL
+      ${1} braced                    /(b+)/ on "abbc" repl "[${1}]"
+      -> a[bb]c|rc=1|len=6|term=NUL
+      $name bare                     /(?<g>b+)/ on "abbc" repl "[$g]"
+      -> a[bb]c|rc=1|len=6|term=NUL
+      ${name} braced                 /(?<g>b+)/ on "abbc" repl "[${g}]"
+      -> a[bb]c|rc=1|len=6|term=NUL
+  P5  $$ literal dollar              /b/ on "ab" repl "$$"
+      -> a$|rc=1|len=2|term=NUL
+  P5  bare $ before letter           /b/ on "ab" repl "$x"
+      -> ERR -49 (unknown substring)
+  P5  bare $ at end                  /b/ on "ab" repl "x$"
+      -> ERR -35 (invalid replacement string)
+      ${1 unterminated               /(b)/ on "ab" repl "${1"
+      -> ERR -58 (expected closing curly bracket in replacement string)
+      $ before space                 /b/ on "ab" repl "$ "
+      -> ERR -35 (invalid replacement string)
+      multi-digit $10                /(b)/ on "ab" repl "$10"
+      -> ERR -49 (unknown substring)
+      ${10} braced                   /(b)/ on "ab" repl "${10}"
+      -> ERR -49 (unknown substring)
+
+== 4. P7 — backslash in a CORE replacement ==
+  P7  \n without EXTENDED            /b/ on "ab" repl "x\ny"
+      -> ax\ny|rc=1|len=5|term=NUL
+  P7  \n WITH EXTENDED               /b/ on "ab" repl "x\ny"
+      -> ax\x0Ay|rc=1|len=4|term=NUL
+  P7  \$ without EXTENDED            /b/ on "ab" repl "\$1"
+      -> ERR -49 (unknown substring)
+  P7  \$ WITH EXTENDED               /b/ on "ab" repl "\$1"
+      -> a$1|rc=1|len=3|term=NUL
+      \x41 WITH EXTENDED             /b/ on "ab" repl "\x41"
+      -> aA|rc=1|len=2|term=NUL
+      \q (unknown) EXTENDED          /b/ on "ab" repl "\q"
+      -> ERR -57 (bad escape sequence in replacement string)
+
+== 5. P2/P3/P4 — nonexistent vs unset groups ==
+  P2  $2 when pattern has 1          /(b)/ on "ab" repl "[$2]"
+      -> ERR -49 (unknown substring)
+  P2  ${nosuch} named                /(?<g>b)/ on "ab" repl "[${nosuch}]"
+      -> ERR -49 (unknown substring)
+  P3  $2/1 + UNKNOWN_UNSET           /(b)/ on "ab" repl "[$2]"
+      -> ERR -55 (requested value is not set)
+  P3  ${nosuch} + UNKNOWN_UNSET      /(?<g>b)/ on "ab" repl "[${nosuch}]"
+      -> ERR -55 (requested value is not set)
+  P4  unset group, default           /(a)|(b)/ on "b" repl "[$1]"
+      -> ERR -55 (requested value is not set)
+  P4  unset group, UNSET_EMPTY       /(a)|(b)/ on "b" repl "[$1]"
+      -> []|rc=1|len=2|term=NUL
+      unset + UNKNOWN_UNSET only     /(a)|(b)/ on "b" repl "[$1]"
+      -> ERR -55 (requested value is not set)
+      both options together          /(a)|(b)/ on "b" repl "[$1][$9]"
+      -> [][]|rc=1|len=4|term=NUL
+
+== 6. P6 — EXTENDED-only template forms ==
+  P6  \u core                        /(b)/ on "ab" repl "\u$1"
+      -> a\ub|rc=1|len=4|term=NUL
+  P6  \u EXTENDED                    /(b)/ on "ab" repl "\u$1"
+      -> aB|rc=1|len=2|term=NUL
+      \l EXTENDED                    /(B)/ on "aB" repl "\l$1"
+      -> ab|rc=1|len=2|term=NUL
+      \U..\E EXTENDED                /(bc)/ on "abc" repl "\U$1\E!"
+      -> aBC!|rc=1|len=4|term=NUL
+      \L..\E EXTENDED                /(BC)/ on "aBC" repl "\L$1\E!"
+      -> abc!|rc=1|len=4|term=NUL
+  P6  ${n:-default} core             /(a)|(b)/ on "b" repl "[${1:-none}]"
+      -> ERR -58 (expected closing curly bracket in replacement string)
+  P6  ${n:-default} EXTENDED         /(a)|(b)/ on "b" repl "[${1:-none}]"
+      -> [none]|rc=1|len=6|term=NUL
+      ${n:-def} when SET             /(a)|(b)/ on "a" repl "[${1:-none}]"
+      -> [a]|rc=1|len=3|term=NUL
+      ${n:+yes:no} unset             /(a)|(b)/ on "b" repl "[${1:+Y:N}]"
+      -> [N]|rc=1|len=3|term=NUL
+      ${n:+yes:no} set               /(a)|(b)/ on "a" repl "[${1:+Y:N}]"
+      -> [Y]|rc=1|len=3|term=NUL
+      ${n:+yes} one-armed            /(a)|(b)/ on "a" repl "[${1:+Y}]"
+      -> [Y]|rc=1|len=3|term=NUL
+      nested $ in default            /(a)|(b)/ on "b" repl "[${1:-<$0>}]"
+      -> [<b>]|rc=1|len=5|term=NUL
+      :- on NONEXISTENT group        /(a)/ on "a" repl "[${9:-none}]"
+      -> ERR -49 (unknown substring)
+      :- on nonexist + UNK_UNSET     /(a)/ on "a" repl "[${9:-none}]"
+      -> [none]|rc=1|len=6|term=NUL
+
+== 7. P10 — global mode, empty matches and advancement ==
+      a* on bab                      /a*/ on "bab" repl "[$0]"
+      -> []b[a][]b[]|rc=4|len=11|term=NUL
+      a* on aab                      /a*/ on "aab" repl "[$0]"
+      -> [aa][]b[]|rc=3|len=9|term=NUL
+      empty-only pattern             // on "abc" repl "-"
+      -> -a-b-c-|rc=4|len=7|term=NUL
+      lookahead (?=b)                /(?=b)/ on "abc" repl "-"
+      -> a-bc|rc=1|len=4|term=NUL
+      \b on 'ab cd'                  /\b/ on "ab cd" repl "-"
+      -> -ab- -cd-|rc=4|len=9|term=NUL
+      a|  (alt with empty)           /a|/ on "bab" repl "[$0]"
+      -> []b[a][]b[]|rc=4|len=11|term=NUL
+      non-global control a*          /a*/ on "bab" repl "[$0]"
+      -> []bab|rc=1|len=5|term=NUL
+      global over CRLF text          /$/ on "a
+b" repl "<>"
+      -> a\x0Ab<>|rc=1|len=5|term=NUL
+
+== 8. P8/P9 — output buffer sizing contract ==
+  success cell           : aXY|rc=1|len=3|term=NUL
+    -> *outlengthptr on success = 3 (produced text is "aXY" = 3 bytes)
+  cap=2, no OVERFLOW_LEN : ERR -48 (no more memory)
+    -> *outlengthptr = 18446744073709551615, rc = -48
+  cap=2, OVERFLOW_LENGTH : ERR -48 (no more memory)
+    -> *outlengthptr = 4, rc = -48  (P8: does 4 include
+       the terminating NUL? produced text is 3 bytes)
+  cap=3 (exact text len) : ERR -48 (no more memory)
+    -> rc = -48  (if this fails, the NUL must fit too)
+  cap=4 (text + NUL)     : aXY|rc=1|len=3|term=NUL
+    -> rc = 1
+
+== 9. P12 — REPLACEMENT_ONLY, and the no-match case ==
+  P12 REPLACEMENT_ONLY               /b/ on "abc" repl "[$0]"
+      -> [b]|rc=1|len=3|term=NUL
+  P12 + GLOBAL                       /[bc]/ on "abcd" repl "[$0]"
+      -> [b][c]|rc=2|len=6|term=NUL
+      no match, plain                /z/ on "abc" repl "X"
+      -> abc|rc=0|len=3|term=NUL
+      no match, GLOBAL               /z/ on "abc" repl "X"
+      -> abc|rc=0|len=3|term=NUL
+      no match, REPL_ONLY            /z/ on "abc" repl "X"
+      -> |rc=0|len=0|term=NUL
+  (rc is the NUMBER OF SUBSTITUTIONS: 0 with the subject copied
+   through is the documented no-match outcome, not an error.)
+
+== 10. bad-template error surface (D26 tier 3 for pcrec) ==
+      lone $ then EOF                /b/ on "ab" repl "$"
+      -> ERR -35 (invalid replacement string)
+      ${} empty braces               /(b)/ on "ab" repl "${}"
+      -> ERR -35 (invalid replacement string)
+      ${1x} junk in braces           /(b)/ on "ab" repl "${1x}"
+      -> ERR -58 (expected closing curly bracket in replacement string)
+      ${:-d} no name                 /(b)/ on "ab" repl "${:-d}"
+      -> ERR -35 (invalid replacement string)
+      trailing backslash EXT         /b/ on "ab" repl "x\"
+      -> ERR -57 (bad escape sequence in replacement string)
+      \E with no \U                  /b/ on "ab" repl "x\Ey"
+      -> axy|rc=1|len=3|term=NUL
+
+== 11. $n where n exceeds this MATCH but not the PATTERN ==
+      ovector large enough           /(a)(b)?/ on "a" repl "[$1][$2]"
+      -> ERR -55 (requested value is not set)
+      ...with UNSET_EMPTY            /(a)(b)?/ on "a" repl "[$1][$2]"
+      -> [a][]|rc=1|len=5|term=NUL
+  (P4's real shape: a group that EXISTS in the pattern but did
+   not participate in THIS match. This is the cell pcrec's
+   compile-time bounds check does NOT remove — bounds checking
+   is about existence, participation is a run-time fact.)
+
+== 12. bare-name termination and case-forcing SCOPE ==
+      $g then '-'                    /(?<g>b)/ on "ab" repl "[$g-]"
+      -> a[b-]|rc=1|len=5|term=NUL
+      $g then 'x' (name gx?)         /(?<g>b)/ on "ab" repl "[$gx]"
+      -> ERR -49 (unknown substring)
+      $g then '_'                    /(?<g>b)/ on "ab" repl "[$g_]"
+      -> ERR -49 (unknown substring)
+      $g then digit                  /(?<g>b)/ on "ab" repl "[$g1]"
+      -> ERR -49 (unknown substring)
+      $1 then digit (greedy?)        /(b)/ on "ab" repl "[$12]"
+      -> ERR -49 (unknown substring)
+      ${1}2 braces stop it           /(b)/ on "ab" repl "[${1}2]"
+      -> a[b2]|rc=1|len=5|term=NUL
+      $0 in EXTENDED default         /(a)|(b)/ on "b" repl "[${0:-x}]"
+      -> [b]|rc=1|len=3|term=NUL
+      \u before LITERAL text         /b/ on "ab" repl "\uxyz"
+      -> aXyz|rc=1|len=4|term=NUL
+      \u before empty group          /(a)|(b)/ on "b" repl "\u$1z"
+      -> Z|rc=1|len=1|term=NUL
+      \U spans a $n boundary         /(b)(c)/ on "abc" repl "\U$1-$2z"
+      -> aB-CZ|rc=1|len=5|term=NUL
+      \U..\E then plain              /(b)(c)/ on "abc" repl "\U$1\E-$2"
+      -> aB-c|rc=1|len=4|term=NUL
+      \u inside \U run               /(bc)/ on "abc" repl "\U$1\l$1"
+      -> aBCbc|rc=1|len=5|term=NUL
+      \u\u doubled                   /(bc)/ on "abc" repl "\u\u$1"
+      -> aBc|rc=1|len=3|term=NUL
+      \u at very end                 /b/ on "ab" repl "x\u"
+      -> ax|rc=1|len=2|term=NUL
+      LITERAL beats EXTENDED?        /b/ on "ab" repl "\u$0"
+      -> a\u$0|rc=1|len=5|term=NUL
+
+== 13. SR-10 namespace candidates: is the spelling an ERROR in PCRE2? ==
+  (The design requires that every pcrec-only form be something
+   PCRE2 REJECTS today, in BOTH core and EXTENDED. A spelling
+   PCRE2 accepts with other meaning would make a valid PCRE2
+   template silently change behaviour under pcrec — the one
+   outcome D26's compatibility story cannot survive.)
+      ${!name} core                  /(b)/ on "ab" repl "${!upper:1}"
+      -> ERR -35 (invalid replacement string)
+      ${!name} EXTENDED              /(b)/ on "ab" repl "${!upper:1}"
+      -> ERR -35 (invalid replacement string)
+      $!{...} core                   /(b)/ on "ab" repl "$!{upper:1}"
+      -> ERR -35 (invalid replacement string)
+      ${#...} EXTENDED               /(b)/ on "ab" repl "${#upper:1}"
+      -> ERR -35 (invalid replacement string)
+      ${@...} EXTENDED               /(b)/ on "ab" repl "${@upper:1}"
+      -> ERR -35 (invalid replacement string)
+      ${1!upper} EXTENDED            /(b)/ on "ab" repl "${1!upper}"
+      -> ERR -58 (expected closing curly bracket in replacement string)
+      ${1|upper} EXTENDED            /(b)/ on "ab" repl "${1|upper}"
+      -> ERR -58 (expected closing curly bracket in replacement string)
+      ${1:!upper} EXTENDED           /(b)/ on "ab" repl "${1:!upper}"
+      -> ERR -59 (bad substitution in replacement string)
+      ${1:^} EXTENDED                /(b)/ on "ab" repl "${1:^}"
+      -> ERR -59 (bad substitution in replacement string)
+
+== done ==

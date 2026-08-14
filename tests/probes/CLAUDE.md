@@ -144,6 +144,28 @@ oracle version bump, review needing evidence), never read by any check.
   in every class position). The evidence behind
   docs/design/design_notes_mod06.md.
 
+- `probe_subst.c` — [M4-SUBST] design probe (2026-08-14): `pcre2_substitute`
+  semantics for the substitution-template design note. Twelve predictions
+  stated in the header before the first run; three refuted. Confirms the
+  `PCRE2_SUBSTITUTE_*` bit VALUES behaviourally before using them (no
+  pcre2.h here — the probe_uprops.c precedent), and resolves
+  `pcre2_substitute_8` probe-side rather than adding a symbol to
+  ../fuzz/pcre2_abi.h, whose loader treats a missing symbol as fatal for
+  every consumer including pcre2_check.c inside `make test`. Cells: the
+  core-vs-EXTENDED template grammar split (backslash is LITERAL in core;
+  `${n:-d}` is err 58 there), bare-`$name` GREED (`$gx` is the name `gx`),
+  the three "no text for this reference" cases (nonexistent = err 49,
+  unset = err 55 BY DEFAULT — the P4 refutation, python re.sub renders
+  empty instead), case-forcing SCOPE (a pending `\u` crosses an empty group
+  onto the following literal; a one-shot force CANCELS an active `\U` run),
+  the global-mode empty-match geometry (`a*` on "aab" is `[aa][]b[]` — an
+  empty match IS produced at the end of a non-empty one, refuting the
+  intuitive rule), the asymmetric buffer-length contract (success length
+  excludes the NUL, overflow length includes it), the ovector poison cell
+  showing pairs above `pcre2_match`'s return value ARE set to PCRE2_UNSET,
+  and the SR-10 namespace survey (every candidate pcrec-only spelling is
+  rejected by PCRE2, so the namespace is available).
+
 ## The method these encode (R14's closing lesson)
 
 State the predictor BEFORE running; generate probe sets from the claim's
