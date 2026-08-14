@@ -416,6 +416,29 @@ no machinery; fixed-stride deterministic → cursor, stride-k retreat;
 deterministic variable-length → cursor + boundary record; choice-bearing
 → frames + the stamped ceiling (D44.1).
 
+**The REVERSE-DETERMINISTIC rung (Frank, 2026-08-14, same discussion —
+"play the regex backwards"):** a body that is variable-length FORWARD may
+still be deterministic BACKWARDS — `(avb?)`: reading right-to-left from
+an iteration boundary, one byte decides the iteration (`b` ⇒ 3-byte
+`avb`, retreat 3; `v` ⇒ 2-byte `av`, retreat 2). Such bodies need NO
+boundary record: the engine recovers boundaries on demand by walking the
+REVERSED body automaton, O(1) per retreat, zero memory. Exactness
+condition: the consumed run's decomposition must be UNIQUE and
+recoverable from the right (the reversed body language is locally
+decodable — no iteration's suffix is another iteration's suffix).
+Boundary counterexample: `(aa?)*` on "aaa" — `aa+a` / `a+aa` / `a+a+a`
+all decompose, greedy picks one, and the rightmost byte cannot say which
+iteration it ends; reverse-ambiguous bodies stay on the frames rung.
+The infrastructure exists TODAY: the unanchored engine's match-START
+pass already builds reversed automata (D7's forward+reverse pair); this
+applies the same construction per-quantifier-body, with
+reverse-determinism checked at compile time from the built machine. The
+rung slots between fixed-stride and boundary-record, and DISPLACES most
+of the boundary-record population (which shrinks to bodies deterministic
+forward but ambiguous backward). Full ladder, cheapest first: disjoint
+follow → fixed stride → reverse-deterministic backwards walk →
+boundary record → frames + stamped ceiling.
+
 **RULED (D44, ratifying R21 E-4) — the cursor's HOME and its re-push
 discipline, both previously unshown.** The panel found the span-loop
 cursor had "no home in §2.4's layout" — §2.4's `stv` table lists capture
