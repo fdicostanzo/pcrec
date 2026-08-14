@@ -21,6 +21,17 @@ Process and status documents for pcrec. The architecture itself lives in
   syntax reference, with a status vocabulary that separates verified from
   believed and clean-rejection from miscompile. Periodically re-surveyed;
   its `REJECTED` rows are backed by tests/reject/ rather than asserted.
+- `pcre2_options.md` — [PC-5]'s option-by-option sibling survey: every
+  PCRE2 compile/match/dfa-match/substitute flag, `EXTRA_*` bit and
+  BSR/NEWLINE value, each with a PROPOSED pcrec disposition (Frank rules)
+  from a fixed vocabulary (DONE-AS/RIDES/GENERATION-AXIS/API-PARAM/
+  EMITTED-LOOP/LATER/NEVER) and a `ruling` column left for him to fill in.
+  Fiddly semantics are measured against libpcre2 (probe + transcript in the
+  Measurement Appendix), never read from documentation alone. Restates the
+  standing constraint that the suite's oracle is pinned at options=0, so
+  adopting any flag is a deliberate re-measurement event. Points to DD-11
+  (NEWLINE/BSR) and DOC-BM (`EXTRA_*` dispatch effects) rather than
+  re-deriving their territory.
 - `testing.md` — .rxt test-file format, harness usage, env vars, oracle
   exclusions, how to add a per-module test directory, and (added [TT-1])
   "Tiered testing": the measured per-section runtimes behind `make
