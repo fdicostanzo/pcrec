@@ -58,11 +58,19 @@ append-only or historical records.
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
   because Frank's ratified observation is that the template compiler consumes
   only the capture-offset CONTRACT. **PROPOSED throughout; no panel has seen
-  it and §9's eleven questions are unruled.** §2 is the half with the
+  it and §9's fourteen questions are unruled.** §2 is the half with the
   deadline: C1-C11, requirements ON M4's match API (offset-pair shape, group
   count as a compile-time constant, the UNSET sentinel in both slots, every
   pair written on every match, byte offsets per DD-12) plus an explicit
-  non-requirements list. Also: the tiering mechanism (PCRE2's run-time
+  non-requirements list. **AMENDED 2026-08-14** against
+  `design_callout_abi.md`: C4/C5 adopt `rx_ctx.caps` (`ptrdiff_t[2]`,
+  `{-1,-1}` unset) per F3 and the template callbacks consume `rx_ctx`
+  verbatim per F6 — §2.4 and §7.2, which return three findings to the freeze
+  (adoption breaks the already-emitted `<prefix>_span`, a DD-3 event; `ncap`
+  is a watermark that must be pinned to `ngroups + 1` on a completed match;
+  and `rx_ctx.subject` should be `const unsigned char *`, since the emitter
+  indexes 256-entry class tables with subject bytes). Also: the tiering
+  mechanism (PCRE2's run-time
   `SUBSTITUTE_EXTENDED` bit becomes a compile-time MODULE — `subst` /
   `subst-extended` / `subst-pcrec` — so D18 compiles the dialect away and
   D26 tier 3's "requires module 'X'" discharges the diagnostics for free);
