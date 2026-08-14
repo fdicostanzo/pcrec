@@ -3586,3 +3586,67 @@ maintained, no build history, referencing docs/design/match_api_m4.md for
 reasoning per the spec charter. That spec document is the natural
 enumeration a future v1 declaration points at; post-v1, changing it is a
 deliberate compatibility event per D40's regime 2.
+
+## D41 — M4 freeze-surface rulings, round 2: ABI type names fixed; entry-point set; group-index scope; search posture (2026-08-14)
+
+**Decision (Frank, nineteenth session, interactive batch over
+match_api_m4.md §13 + the search-interface exploration):**
+
+1. **`rx_ctx`, `rx_matchfn`, `rx_callout_ref` are FIXED literal names**,
+   never `--prefix`-scoped — confirming match_api_m4.md §12.7's reading.
+   Composability across differently-prefixed generated matchers is the
+   point of the ABI; safe under C's per-TU typedef scoping.
+2. **The unconditional anchored match-here entry is `<prefix>_match`**
+   (§12.6 confirmed).
+3. **The group index is NAMED-groups-only**: an entry needs a name to be
+   a lookup key; unnamed groups are reachable by number via caps[].
+   Count 0 until module `named-groups` lands; the mechanism (array +
+   count symbols, ref column) ships at M4.4 regardless (§12.3–4
+   confirmed).
+4. **An anchored capture-DELIVERING entry IS ADDED to the freeze
+   surface** (`<prefix>_match_caps` direction: match exactly at pos,
+   fill a caller-provided caps array, return length or −1). Closes the
+   gap both design docs converged on (match_api_m4.md §13 ASK 4's
+   sharpening / engine_m4.md §11.2): `rx_matchfn` returns only a length
+   and its `caps` is an input, so without this entry the tokenizer class
+   of caller (anchored + wants groups) has only a search-and-check
+   workaround. Exact signature proposed by the amendment round, reviewed
+   by the M4.3 panel. All three entries are thin wrappers over one
+   internal implementation (engine_m4.md §4.4's layering).
+5. **Search posture: one-shot `<prefix>_search` stays the v1 primitive.**
+   Frank raised the alternative (find-all / continued search, motivated
+   by SIMD block scanning: stopping at the first match in a 32–64-byte
+   block discards candidate work for later matches in that block).
+   Ruled framing: "find all" is not a different result set under PCRE2's
+   sequential-match semantics — only redone work. Remedies ranked:
+   (a) EMITTED LOOPS own dense-match iteration (the PC-5 EMITTED-LOOP
+   disposition; global subst already, V-C grep later) — the generator
+   owns the loop, so block context carries in locals with no API;
+   (b) a cursor/iterator entry (`<prefix>_iter` over a caller-declared,
+   per-pattern-sized carry struct holding position + current block mask)
+   is the DESIGNATED ADDITIVE EXTENSION when an embedder-side customer
+   appears — additive OS-0 entry, D40-cheap pre-v1, deliberately not
+   designed now; (c) batch find-all REJECTED as a primitive: match count
+   is data-dependent, capacity negotiation reinvents the cursor with
+   worse ergonomics, and (a)+(b) leave it no customer.
+6. **SIMD emission gets its own plan row** ([OPT-SIMD], beside
+   [BENCH-1]): AOT composition of SIMD candidate scanning (multi-literal
+   substring search, pshufb-class tests, 0x20-fold case-insensitivity)
+   is the strong version of the project's own thesis — an extension of
+   the existing memchr/skip-loop lever, not a new engine posture. It is
+   prefilter/DFA-engine territory, orthogonal to M4.
+
+**Why:** rounds out the freeze surface before the M4.3 panel so critics
+attack ruled ground; the search-posture ruling turns "first-match-per-
+call" from an unexamined default into a chosen posture with its
+extension path named.
+
+**Still open from the same batch (not yet asked/ruled):** pcrec_err_input
+spelling (match_api_m4.md §13.5); captures-on-by-default (engine_m4.md
+ASK-5); §5.7 confirmation (ASK-12); the −2 reservation question (ASK-2);
+caps-lifetime freeze line (ASK-3); DD-2 two-bounds row amendment (ASK-4);
+DD-7 absorption re-home (ASK-8); DD-9 re-tag (ASK-11).
+
+**Revisit-when:** the M4.3 panel (it reviews the match_caps signature and
+may attack the iterator deferral); the first embedder customer for
+continued search; [OPT-SIMD]'s design start.

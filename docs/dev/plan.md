@@ -637,6 +637,27 @@ execution speed trades the primary goal (D18) for the secondary one.
   everything below; an optimization the suite cannot referee does not land)
 - [BENCH-1] STATE:not-started — FEATURE-SPANNING BENCHMARK EXPANSION + THE PRIORITIZER (Frank, 2026-08-13 sixteenth session): today's bench is 9 cases (a-i) of deliberately basic shapes — good regression gates, not a capability map (Frank: "whenever i see benchmarks, its usually a series of rather basic benchmarks that do not really exercise the capabilities"). Build a benchmark that SPANS the feature set and the complexity range: per-feature-family case GROUPS (literal/memchr shapes, classes, alternation/trie widths, bounded repeats, anchors/EOL, dense/counting — the case-f family, captures (M4), backrefs/lookaround/atomic (M6), UTF-8/\p (M5), plus real-world-shaped patterns), each family at graded complexities; pattern sources = hand-designed families + the PCRE2 testdata import (M7 — this row is deliberately scheduled around that import so the corpus arrives with it) + generated shapes where a family needs a sweep. STRUCTURED FOR SPOT-CHECKS exactly like TT-1's tiers: every case and group individually addressable (make bench CASE=... / GROUP=...), the full sweep at evaluation points only. TWO INSTRUMENTS, deliberately distinct — M2.11's ruling stands: the regression GATE stays absolute per-case floors (cross-engine ratios move for reasons that are not our regression); the new PRIORITIZER is a cross-engine RELATIVE ranking vs libpcre2 — informational, never a gate — whose output is a worst-first worklist. Frank's stated optimization workflow, recorded as the row's purpose: (1) OPT-A's survey incl. the pattern-generation study, then (2) work the prioritizer list from the relative worst downward. Every number under D12/D17/R3.10 discipline; MECH-3's provenance-refusing wrapper is the intended measurement vehicle and lands first. Sequencing: after the main feature set is built and proven (post-M6, with M7's testdata), BEFORE the OPT waves open — this row is the OPT waves' worklist generator. AMENDED 2026-08-13 (same session, positioning discussion): the case groups include a LATENCY / SHORT-SUBJECT group — time-to-first-match from process start (the AOT structural win: tables page in from .rodata vs pcre2_compile + JIT warmup per process) and per-call overhead on short subjects (log lines, field validation — the dimension real workloads are dominated by and typical benchmarks skip); and the prioritizer gets a second reading — the BEST relative cells feed the positioning note (Beyond M7), not just the worst cells feeding the fix list.
 - [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it
+- [OPT-SIMD] STATE:not-started — SIMD EMISSION for candidate scanning
+  (Frank, 2026-08-14 nineteenth session, D41.6): AOT-composed SIMD
+  prefilters emitted directly into generated matchers — multi-literal
+  substring scanning, pshufb nibble-table class tests, 0x20-fold
+  case-insensitive comparison — operating 32–64 bytes per iteration with
+  little or no conditional branching. Frank's motivating example:
+  `((?i)abc|dev|bet|[a-f]{5})` built as a composed SIMD scanner, which
+  only an ahead-of-time compiler can specialize this way. Framing
+  recorded at D41: this EXTENDS the existing memchr/skip-loop lever
+  (libc memchr is already SIMD; this emits the multi-byte/class/
+  multi-literal generalizations directly), it is prefilter/DFA-engine
+  territory orthogonal to M4's captures work, and it overlaps OPT-A's
+  Teddy/shift-or leads — the survey there feeds this row; adoption
+  measured under BENCH-1's instruments. Portability is part of the
+  design: gcc vector extensions vs target-gated intrinsics vs scalar
+  fallback is a generation axis that must earn itself (D18), and the
+  no-libc/freestanding line must keep a scalar path. Interface
+  consequence already ruled (D41.5): one-shot search stays the
+  primitive; block-context preservation across matches belongs to
+  emitted loops now and the designated `<prefix>_iter` cursor entry
+  later — this row does not reopen that
 - [OPT-B] STATE:not-started — PROFILED code-level optimization, only after OPT-A. D13's correction says throughput here is dominated by transition PREDICTABILITY, so target branch behaviour and memory layout rather than instruction count. Every number under D12's rules and the R3.10 load guard
 - [OPT-C] STATE:not-started — COMPILE-TIME optimization, last. Must include what gcc does with our output, not only what pcrec does: after M2.8, gcc is the LARGER half (0.79 s vs 1.36 s at 3600 words) and M2.9's budgets measure only pcrec's
 

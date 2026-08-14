@@ -118,6 +118,22 @@ No deprecation period, no compat shim in the base contract — one break, one
 commit, D37's "announced-boundary" shape (a version-line boundary, not a
 silent drift).
 
+**RULED (D41.5, 2026-08-14) — the search entry's POSTURE.** One-shot
+`<prefix>_search` (find the leftmost match from `startpos`, return, caller
+restarts at the previous end) is the v1 primitive, as a CHOSEN posture, not
+a default: Frank raised the find-all / continued-search alternative
+(motivated by SIMD block scanning — a first-match return discards the
+block's remaining candidate work). Under PCRE2's sequential-match semantics
+"find all" is the same result set, so the question is redone work only.
+Ruled remedies: EMITTED LOOPS own dense-match iteration (the PC-5
+EMITTED-LOOP disposition — global subst today, V-C grep later; the
+generator owns the loop, so block context carries in locals); a
+cursor/iterator entry (`<prefix>_iter` over a caller-declared,
+per-pattern-sized carry struct) is the DESIGNATED ADDITIVE EXTENSION when
+an embedder customer appears — deliberately not designed now; batch
+find-all is REJECTED as a primitive (data-dependent output size,
+capacity negotiation reinvents the cursor). See D41 for the full record.
+
 ---
 
 ## 2. The caps array surface: `rx_ctx.caps`, `RX_NCAPS`, `RX_UNSET`, and the C1–C11 conformance table
@@ -604,31 +620,28 @@ house-style requirement:
 
 ## 13. ASKs for the manager / Frank
 
-1. **Confirm or correct §12.7**: should `rx_ctx`, `rx_matchfn`,
-   `rx_callout_ref` be literal, fixed names shared by every generated matcher
-   regardless of its own `--prefix` (this document's reading of
-   `design_callout_abi.md`'s consistent literal spelling), or should they be
-   `<prefix>_ctx`-scoped like `<prefix>_search`? The composability property
-   (R-a, F5/F6) only holds under the first reading; the source docs never
-   state which was intended.
-2. **Confirm §12.6**: is `<prefix>_match` an acceptable spelling for the
-   unconditional match-here entry, or does OS-0 (or Frank) want a different
-   name? No ruling picks one.
-3. **Confirm §5/§12.3-4**: is the group index scoped to NAMED groups only
-   (count 0 until `named-groups` lands), or should it include an entry per
-   capturing group (named or not) with `name = NULL` for unnamed ones? The
-   bsearch-by-name framing in D39 suggests named-only, but this is inference,
-   not a ruling.
-4. **§11 item 7 / §12.8**: what should a DFA-compiled, group-bearing,
-   non-backreference pattern's `caps[1..ngroups]` contain via the retrofitted
-   match-here entry, given the DFA engine has never tracked sub-group
-   offsets? Candidates: (a) leave `caps[1..]` at `RX_UNSET` always until the
-   pattern is routed to the VM (M4.6's engine selection), effectively
-   under-promising C6 for this interim population of patterns; (b) force
-   ANY capturing group (not just backrefs) onto the VM starting at M4.5,
-   simplifying the DFA's contract to always be 0-group; (c) something else.
-   This is genuinely M4.2/M4.6 territory, not M4.1's, but the freeze
-   document surfaces it because [M4.4] will hit it mechanically.
+1. **RULED (D41.1, 2026-08-14):** FIXED literal names, confirming §12.7's
+   reading — `rx_ctx`, `rx_matchfn`, `rx_callout_ref` are shared by every
+   generated matcher regardless of `--prefix`. Composability is the point;
+   safe under C's per-TU typedef scoping.
+2. **RULED (D41.2, 2026-08-14):** `<prefix>_match`, as proposed (§12.6).
+3. **RULED (D41.3, 2026-08-14):** NAMED-groups-only, as recommended —
+   count 0 until module `named-groups` lands; unnamed groups are reachable
+   by number via `caps[]`. The mechanism ships at [M4.4] regardless.
+4. **ANSWERED by engine_m4.md §5.7 (2026-08-14), with a sharpening this
+   document must absorb in the amendment round:** the match-here entry has
+   NO `caps` output for ANY engine (`rx_ctx.caps` is an input; the return
+   is a length — engine doc §11.2), so the question binds the
+   capture-DELIVERING entries instead. The answer: the capture-slot count
+   is a property of the ARTIFACT — a DFA-compiled artifact emits
+   `RX_NCAPS 1`, C6 never bends, and `RX_NCAPS > 1` implies the VM (one
+   structural check, live from [M4.4]). Candidate (a) is rejected there
+   (permanently ambiguous `RX_UNSET`; silent empty renders under D38's
+   subst-Q3). Frank's confirmation of the §5.7 rule rides engine ASK-12,
+   still pending. **RULED alongside it (D41.4): an anchored
+   capture-delivering entry (`<prefix>_match_caps` direction) JOINS the
+   freeze surface** — exact signature proposed by the amendment round,
+   reviewed at M4.3.
 5. **§6**: is `pcrec_err_input` / `PCREC_ERR_INPUT_PATTERN` /
    `PCREC_ERR_INPUT_TEMPLATE` an acceptable spelling, or does Frank want a
    different field name than `input` (e.g. `which`, `source`)?
@@ -638,3 +651,27 @@ encountered (ncap-as-watermark vs. C6's no-watermark rule, §2.1; the group
 index's "(empty-ref)" phrasing vs. this document's stronger "(empty,
 period)" reading, §5) resolved on inspection rather than blocking. The five
 items above are gaps the rulings left unfilled, not disagreements between them.
+
+---
+
+## 14. Amendment round owed (pre-[M4.3] panel)
+
+Recorded 2026-08-14 after D41 and engine_m4.md's merge; the amendment
+integrates rather than annotates:
+
+1. **`<prefix>_match_caps`** (D41.4): propose the exact signature and add it
+   to §3/§7's surface — anchored at pos, fills a caller-provided caps
+   array, returns length or −1; a thin wrapper over the same internal
+   implementation as `<prefix>_match` and `<prefix>_search` (engine doc
+   §4.4's layering).
+2. **Search-entry negative returns** (engine doc §4.4/§4.5 handback): the
+   `<prefix>_search` contract reserves negative returns for engine-give-up,
+   naming at least `RX_ERR_STEPS` and `RX_ERR_FRAMES`. Cheap now because
+   the space is empty (returns exactly 1/0 today, STRUCTURAL).
+3. **Absorb §13.4's sharpening**: state which entries deliver captures
+   (`<prefix>_search`, `<prefix>_match_caps`) and that `<prefix>_match`
+   does not and cannot; fold engine §5.7's `RX_NCAPS`-is-an-artifact-
+   property rule into §2 once ASK-12 is ruled.
+4. **`rx_ctx.caps` lifetime line** (engine ASK-3, pending ruling): "valid
+   for the duration of the call; the engine rewrites the storage
+   afterwards" joins the F-list if ruled.
