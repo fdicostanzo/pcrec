@@ -672,6 +672,16 @@ integrates rather than annotates:
    (`<prefix>_search`, `<prefix>_match_caps`) and that `<prefix>_match`
    does not and cannot; fold engine §5.7's `RX_NCAPS`-is-an-artifact-
    property rule into §2 once ASK-12 is ruled.
-4. **`rx_ctx.caps` lifetime line** (engine ASK-3, pending ruling): "valid
-   for the duration of the call; the engine rewrites the storage
-   afterwards" joins the F-list if ruled.
+4. **`rx_ctx.caps` lifetime line** — RULED (D42.5): "valid for the
+   duration of the call; the engine rewrites the storage afterwards;
+   retaining the pointer is the embedder's bug" JOINS the F-list; the
+   amendment writes it in.
+5. **`pcrec_err_input` compat note** — RULED (D42.4): spelling accepted
+   as §6 proposes; record beside it that the V-A compat surface will
+   also alias these names PCRE2-style with approximately the same error
+   meaning (D26 tiering governs the wording).
+6. **Captures-default consequence** — RULED (D42.1): captures ON by
+   default post-M4.5 (`--no-captures` recovers today's artifact); §2's
+   surface should note RX_NCAPS reflects the ARTIFACT per the confirmed
+   engine §5.7 rule (D42.2), and the search entry's negative space
+   carries RX_ERR_STEPS/RX_ERR_FRAMES per D42.3/§14.2.

@@ -1643,3 +1643,19 @@ Known M1 limitations (tracked for later milestones):
   property; DFA artifact emits RX_NCAPS 1; RX_NCAPS>1 implies VM);
   three ABI tensions reported not resolved (§11). PROPOSED until
   M4.3's panel; four handed-back M4.1 amendments pending pre-panel.
+
+- [DD-9] STATE:completed (2026-08-14, D42.8 — decided by design, engine_m4.md §8) — case (f) `[01]*1[01]{8}` dense/counting patterns: still a ~6x loss to PCRE2-interp and NO MILESTONE OWNS IT (R3 critic). M2.10 attempted it and produced a negative result; plan and review both say "an M4 concern" but [M4.0] never mentions it. Decide with the M4 hybrid-engine design whether the DFA-prefilter/VM split covers it, and note that the D13 correction makes computed goto a MEASURED win for predictable transition sequences
+
+  Landing record: the decision the row demanded was delivered by
+  [M4.2]'s engine document (engine_m4.md §8, merged b726386) and ratified
+  by Frank (D42.8): the hybrid does NOT own case (f) and structurally
+  cannot — the pattern is capture-free, so per-pattern selection keeps it
+  on ENG_UNANCH and no M4 machinery ever runs on it. Ownership moved to
+  [BENCH-1]'s prioritizer worklist (case (f) is its known head), carrying
+  three findings: computed goto is the WRONG lever (the pattern's DFA is
+  a 9-bit shift register over random input — D13's measured-loss regime,
+  contra this row's own closing hint); ~2x of the 6.61x gap is the
+  reverse pass (prediction P-5, instrument ASK-10); the algorithmic
+  candidate is bit-parallel shift-and, detectable from the built DFA as
+  an src/opt pass. M4.6 owes the family a non-regression floor via the
+  capture-bearing sibling (engine_m4.md §8.5).

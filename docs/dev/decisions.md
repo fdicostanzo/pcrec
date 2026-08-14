@@ -3650,3 +3650,66 @@ DD-7 absorption re-home (ASK-8); DD-9 re-tag (ASK-11).
 **Revisit-when:** the M4.3 panel (it reviews the match_caps signature and
 may attack the iterator deferral); the first embedder customer for
 continued search; [OPT-SIMD]'s design start.
+
+## D42 — M4 engine-contract rulings: captures default ON; RX_NCAPS artifact rule; budget reservation kept; error-tag spelling; four housekeeping amendments (2026-08-14)
+
+**Decision (Frank, nineteenth session, second interactive batch —
+engine_m4.md §12's ruling ASKs plus match_api_m4.md §13.5):**
+
+1. **Captures are ON by default** (ASK-5): after M4.5, `pcrec
+   'a(b|c)+d'` emits a capture-tracking matcher; `--no-captures` is the
+   generation axis recovering today's pure-DFA artifact. PCRE2's own
+   default; the hybrid keeps scanning on the DFA either way. The
+   generated-contract change for group-bearing patterns lands on the
+   SAME announced D37 boundary as the rx_span break (engine doc
+   §9.2(3)).
+2. **The §5.7 RX_NCAPS rule is CONFIRMED** (ASK-12): capture-slot count
+   is a property of the ARTIFACT; a DFA-compiled artifact emits
+   `RX_NCAPS 1`; C6 never bends; `RX_NCAPS > 1` implies the VM,
+   enforced by a tests/codegen structural check live from [M4.4].
+3. **The −1-only give-up stands; the < −1 reservation is kept intact**
+   (ASK-2): budget/frame exhaustion reports honestly on
+   `<prefix>_search` (`RX_ERR_STEPS`/`RX_ERR_FRAMES`); a composed
+   matcher used as a callout reports exhaustion as plain path failure in
+   v1 — the reporting hole is confined to the composition path, which
+   has no users. Re-open when a composition customer appears (cheap
+   pre-v1 per D40).
+4. **`pcrec_err_input` spelling ACCEPTED as proposed** (field `input`,
+   `PCREC_ERR_INPUT_PATTERN`/`PCREC_ERR_INPUT_TEMPLATE`) — **with a
+   compat obligation recorded**: the PCRE2-compat surface (V-A
+   direction) will also alias these names PCRE2-style with approximately
+   the same error meaning ("samish" — D26 tiering governs: the meaning
+   matches, the wording need not). Now or at V-A's landing; nothing
+   native ever uses the PCRE2_ spelling (D38 addendum unchanged).
+5. **Caps-lifetime line joins the freeze F-list** (ASK-3): `rx_ctx.caps`
+   handed to a callout is valid for the duration of the call only; the
+   engine rewrites the storage afterwards; retaining the pointer is the
+   embedder's bug.
+6. **DD-2's row names TWO bounds** (ASK-4): the step budget AND the
+   backtrack-frame/trail capacity — different failures, different
+   diagnoses.
+7. **DD-7's absorption half is RE-HOMED out of M4** (ASK-8) to a named
+   DFA-engine row ([ENG-ABS]), gated on [BENCH-1] first adding a
+   `^`-on-some-branches bench case — no measured loss exists today, and
+   scheduling unmeasured engine work inverts D12/D15. The
+   capture-prefilter half of DD-7 is answered by engine_m4.md §7.1
+   (both existing machines, unchanged), pending the panel.
+8. **DD-9 is RE-TAGGED** (ASK-11): decided per engine_m4.md §8 (the
+   hybrid structurally cannot own capture-free case (f)); the row
+   archives, and case (f) becomes the known head of [BENCH-1]'s
+   prioritizer worklist carrying the three §8.4 findings (computed goto
+   is the wrong lever there; ~2x of the 6.61x gap is the reverse pass;
+   bit-parallel shift-and is the algorithmic candidate, detectable from
+   the built DFA).
+
+**Why:** completes the pre-panel decision surface — every ruling ASK
+from both M4 design docs is now answered, so [M4.3]'s critics attack
+ruled ground and the amendment round can integrate rather than hedge.
+The measurement ASKs (engine §12: ASK-1 oracle-disagreement probe,
+ASK-6 hybrid threshold, ASK-7 VM compile-time scaling, ASK-9 D31 re-run,
+ASK-10 case-f pass split) are deliberately NOT ruled — they are lane
+work, scheduled with the substeps that consume them.
+
+**Revisit-when:** the M4.3 panel (any of these may be attacked with
+measurement); V-A's design (the compat alias obligation in 4);
+a composition customer appearing (3); [ENG-ABS]'s gate firing (7).
