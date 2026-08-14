@@ -279,7 +279,10 @@ extern const rx_callout_ref rx_callout_<name>;   /* one per callout binding */
   `NULL` second argument (the same signature tax D38's rejection
   recorded), and the Q13 renderer signature would grow to four
   parameters. `rx_ctx` purity is also not durable either way — the v2
-  declared-capture-export path is already a DD-3 struct revision.
+  declared-capture-export path is already a DD-3 struct revision. Frank
+  confirmed KEEP same day, adding that pre-v1 he is unconcerned with
+  backwards compatibility — so struct-stability arguments carry no
+  weight against this choice today.
 - **Composition is a one-line const wrap**: `const rx_callout_ref
   rx_callout_x = { inner_match_here, NULL };` — because the two struct
   shapes are identical, a compiled matcher links directly as a callout with
