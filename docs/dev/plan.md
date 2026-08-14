@@ -121,7 +121,7 @@ stated terms.
   is design-first-before-[M4.6]; the full battery (lint/bench/mech)
   remains owed at [M4.4]'s close per the standing schedule.
   IMPLEMENTATION IS OPEN from [M4.4]
-- [M4.4] STATE:not-started — IMPL: the API BREAK lands mechanically —
+- [M4.4] STATE:started — IMPL: the API BREAK lands mechanically —
   rx_span RETIRES for the caps-array search signature across
   emitters/harness/corpus (D44.2), the pcrec_error tag, PCREC_*
   constants, match-here export + the slot-bearing group index folded
