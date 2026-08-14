@@ -26,6 +26,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **empty_matches.rxt** — patterns matching empty strings
 - **precedence.rxt** — operator precedence and grouping
 - **leftmost_semantics.rxt** — leftmost-first match semantics (greedy/lazy precedence)
+- **review_r21.rxt** — K17's regressions (R21 finding E-1, fixed 2026-08-14): the empty-iteration exit redirect is not a one-shot. Six diverging family members needing all of a lazy nullable prefix, a nullable inner star and an outer `*`; one level deeper again (`(?:b*?(?:(?:a*)*)*)*`, which needs the redirect a third time); a witness the post-fix random sweep found on its own; and the four neighbours that were already correct, which are the over-reach controls for a fix that WIDENS when the redirect fires. Both oracles: 120/120 pairs python-vs-libpcre2 agree
 - **syntax_errors.rxt** — malformed patterns and diagnostic accuracy, including the K5/K6 brace miscompiles fixed 2026-08-10 (FIX-1). Two halves that must be read together: the `perr` blocks assert the rejections, and the literal-match blocks below them assert what must KEEP compiling (`a{`, `{}`, `{,}`, `a{65536x}`, …) — without those, the obvious over-reach of either fix passes every rejection. The seven K5 blocks carry `# pcre2-only` because python `re` accepts counts up to 4294967294 (U5); `tests/reject/` pins the DIAGNOSTIC for all of them, which `perr` cannot express
 
 ## Conventions

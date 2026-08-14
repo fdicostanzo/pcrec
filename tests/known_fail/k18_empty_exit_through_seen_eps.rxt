@@ -1,0 +1,234 @@
+# K18 (docs/dev/known_issues.md) — DEFERRED, asserts the CORRECT behaviour.
+#
+# The empty-iteration redirect cannot be reached through an ALREADY-SEEN
+# NON-LOOP epsilon state. `(?:(?:a|b*?)?)*` on "ab": after "a" the outer star
+# begins an iteration, the alternation prefers `a`, then the lazy `b*?` prefers
+# its EXIT — and that exit edge lands on the outer star's loop-back EPS, which
+# the closure already marked seen when it entered there. The walk dies one
+# state short of the loop entry whose exit is the ACCEPT, so the `b`-consuming
+# thread is emitted ahead of it and pcrec matches [0,2) where PCRE2 and python
+# both give [0,1).
+#
+# Sibling of K17 and NOT fixed by K17's fix (which widened the redirect at loop
+# entries; this one never reaches a loop entry). Same root design fact: the
+# closure's `seen` memo is global, but the empty-iteration rule makes closure
+# results depend on which loop iterations are open on the current path.
+#
+# Every expectation generated from python3 re and re-measured against libpcre2
+# 10.46 — 165 pattern/subject pairs, both oracles, zero disagreements.
+#
+# Group 1: the diverging shapes (these are what currently FAIL).
+
+# the minimal repro
+pattern (?:(?:a|b*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# capturing outer: identical, so priority, not erasure
+pattern ((?:a|b*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# consuming branch quantified
+pattern (?:(?:a+|b*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# lazy ?? instead of *?
+pattern (?:(?:a|b??)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# preferred branch also nullable
+pattern (?:(?:a?|b*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# outer + (unlike K17, + does NOT save this shape)
+pattern (?:(?:a|b*?)?)+
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# class atoms
+pattern (?:(?:[a]|[b]*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# ENG_ATTEMPT: the anchored engine has it too (K1s lesson)
+pattern ^(?:(?:a|b*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# Group 2: controls that are CORRECT today. They are here so that a future fix
+# is measured for over-reach in the same file: each removes one ingredient of
+# the shape above, and each must still pass after the fix.
+
+# greedy inner
+pattern (?:(?:a|b*)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 1
+m "ab" 0 2
+m "ba" 0 2
+m "aa" 0 2
+m "bb" 0 2
+m "aab" 0 3
+m "bab" 0 3
+m "abab" 0 4
+m "aabb" 0 4
+
+# lazy branch is the PREFERRED one
+pattern (?:(?:b*?|a)?)*
+m "" 0 0
+m "a" 0 0
+m "b" 0 0
+m "ab" 0 0
+m "ba" 0 0
+m "aa" 0 0
+m "bb" 0 0
+m "aab" 0 0
+m "bab" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+# inner * instead of ?
+pattern (?:(?:a|b*?)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# no ? wrapper
+pattern (?:(?:a|b*?))*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# no outer quantifier
+pattern (?:(?:a|b*?)?)
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 1
+m "bb" 0 0
+m "aab" 0 1
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 1
+
+# concatenation instead of alternation
+pattern (?:a(?:b*?)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2
+
+# empty alternative instead of a lazy quantifier
+pattern (?:(?:a|)?)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+m "aabb" 0 2

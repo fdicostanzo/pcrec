@@ -7,11 +7,19 @@ but deliberately deferred rather than fixed now; each one has an entry in
 `make test` stays green and honest — a known bug does not get to look fixed,
 and it does not get to break the build either.
 
-Currently empty: all bugs confirmed through checkpoint review R2 were fixed
-rather than deferred. That is the good state, not a missing-file problem.
-
 ## Files
 
+- **k18_empty_exit_through_seen_eps.rxt** — K18, a live tier-1 DFA miscompile
+  (`(?:(?:a|b*?)?)*` on "ab" → [0,2), both oracles [0,1)). Sibling of K1/K17:
+  the empty-iteration redirect cannot be reached through an already-seen
+  NON-LOOP ε state, so the walk dies one hop short of the loop entry whose
+  exit is the ACCEPT. Deferred because the principled fix — keying the closure
+  memo on (state, open-loop-set) instead of on state alone — is a rewrite of
+  `clo_visit` in a different risk class from K17's one-line change, and needs
+  a scheduling decision. The file carries seven CONTROL blocks that pass today
+  alongside the eight failing shapes, so whoever fixes it is measured for
+  over-reach in the same file; the ratchet only cares that the file as a whole
+  still fails
 - **run_known_fail.sh** — the "fixed by accident" ratchet (R2-PR8). Runs each
   `.rxt` here and INVERTS the verdict: still-failing is expected, and a file
   that has started PASSING is flagged and fails the script. Part of
