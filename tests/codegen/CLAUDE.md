@@ -40,7 +40,21 @@ or it has no regression net at all.
   bare-invocation check flipped to expect
   `/* Feature set: std1 (modules: classes,modifiers) */`, and a second
   check was added for `--features none` stamping `"none"` explicitly (the
-  escape hatch, unaffected by the flip) — 33 checks before, 34 now. Part
+  escape hatch, unaffected by the flip) — 33 checks before, 34 at [STD1b].
+  **[M4.4] (D44.2/D44.5, 2026-08-14) re-baseline: 37 checks.** The
+  `<prefix>_span` out-struct retires (D44.2) for a caps-array
+  `<prefix>_search` parameter, so the OS-1 entry-point-signature grep and
+  the multi-engine fixture's hand-written second-engine declaration both
+  update to the new signature; the multi-engine block's "exactly once per
+  file" assertion now targets the fixed ABI-types block's
+  `#define PCREC_RX_ABI_H` line instead of the retired span typedef, and
+  its duplicate-emission assertion INVERTS (see below); a new check builds
+  two DIFFERENTLY-PREFIXED generated headers together in one TU (D44/A-2's
+  own positive control); and two new structural checks assert
+  `rx_info.ncaps == RX_NCAPS` and `RX_NCAPS > 1 => VM` (D42.2/D44.5, §11
+  item 9 of docs/design/match_api_m4.md), both live from this commit and
+  trivially green pre-[M4.5] since `RX_NCAPS` is 1 on every artifact this
+  DFA-only emitter produces. Part
   of `make test`;
   env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
   (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
@@ -57,18 +71,33 @@ does" while still passing. All 19 grep sites across 11 generated files now run
 against a body extracted by entry name (`body()`).
 
 An extractor is itself a thing that can silently break, so it is not trusted on
-inspection. The multi-engine block builds a two-engine file by hand — one
-shared span typedef, a distinct entry name per engine, every other identifier
+inspection. The multi-engine block builds a two-engine file by hand — the
+fixed ABI-types block once for the file, a distinct entry name per engine,
+every other identifier
 untouched, i.e. exactly the transformation an engine finder (OS-0) will apply —
 and requires a scoped grep to find the skip table in the engine that HAS one
 ('.*=.*') and NOT in the engine that does not ('^a|b'). A `body()` returning
 the whole file fails the second; one returning nothing fails the first. The
-block also compiles the fixture under GENCFLAGS, and asserts that DUPLICATING
-the typedef breaks the build — the emit-once rule is verified, not folklore
-(gcc: `error: conflicting types for 'rx_span'`, since each occurrence declares
-a fresh anonymous struct; confirmed under -std=gnu11 and -std=c99).
+block also compiles the fixture under GENCFLAGS.
 
-Validated sabotages for run_codegen_tests.sh (22 checks pass clean). Each was
+**[M4.4] (D44.2/D44/A-2) INVERTS the duplicate-emission assertion, on
+purpose.** Before the API break, duplicating `emit_span_typedef`'s call
+broke the build (gcc: `error: conflicting types for 'rx_span'`, since each
+occurrence declared a fresh anonymous struct; confirmed under -std=gnu11
+and -std=c99) — the emit-once rule was load-bearing because nothing guarded
+re-inclusion. The fixed ABI types (`rx_ctx`, `rx_matchfn`, `rx_group_entry`,
+`rx_info`, ...) are wrapped in a PREFIX-INDEPENDENT `#ifndef PCREC_RX_ABI_H`
+guard instead (the R21 panel MEASURED that a per-prefix guard fails the
+exact case it exists for: two differently-prefixed generated headers in one
+TU, each deriving a DIFFERENT guard name, both bodies re-defining the fixed
+types), so the property worth asserting flipped: duplicating the WHOLE
+guarded block (guard included) must NOT break the build anymore, and the
+codegen suite's own positive control for the guard's necessity is instead
+the two-differently-prefixed-headers check below.
+
+Validated sabotages for run_codegen_tests.sh (37 checks pass clean, as of
+[M4.4] — read the current count from a run rather than this line, which has
+already drifted at least once). Each was
 applied to a FRESH tree, with the edit asserted to have landed before the tree
 was built:
 
@@ -77,7 +106,7 @@ was built:
 | `int nout = 0;` -> `int nout = 0; return 0;` in `pick_skip_states` (skip states off) | 7 fail — the 6 pre-OS-0b skip checks, unchanged by the scoping, plus the multi-engine control reporting its fixture can no longer discriminate |
 | in `body()`, `$0 ~ "^int " fn "\\(" { inside = 1 }` -> `{ inside = 1 }` (extractor returns the whole file) | 3 fail, incl. "scoped grep attributed engine A's skip table to engine B" |
 | replace only the attribution-step extraction: `&& body "$WORKDIR/multi.c" rx_search_b ...` -> `&& cp "$WORKDIR/multi.c" ...` (isolates scoping from fixture construction) | 1 fail — the attribution check alone |
-| duplicate the call: `emit_span_typedef(c, p);` -> `emit_span_typedef(c, p); emit_span_typedef(c, p);` | 2 fail — typedef-count and compile |
+| [M4.4] `tests/mech/sabotages/S04_duplicate_typedef.sh`, RETARGETED: neuter the `PCREC_RX_ABI_H` guard (`#ifndef PCREC_RX_ABI_H` -> an unconditional `#if 1`) | 2 fail — the D44/A-2 cross-prefix compile check and the OS-0b duplicated-block compile check; a single-prefix artifact still compiles, so nothing else regresses |
 | in the fixture's rename, `s/\brx_search\b/rx_search_b/g` -> `.../rx_search/g` (engines keep one name) | 1 fail — compile, `error: redefinition of 'rx_search'` |
 
 ## The OS-1 checks assert an ABSENCE, which the corpus cannot
@@ -91,11 +120,23 @@ and that the entry-point signature is unchanged (a compiled-away option must
 not surface at run time, D18). Implement caselessness as a runtime check and
 every one of them fails while the corpus stays green.
 
-These comparisons use `-o -` and strip line 1. That is not tidiness: writing
-two files emits two different `#include "<name>.h"` lines, so every comparison
-would differ for a reason unrelated to folding — the same trap
-`run_trie_identity.sh` documents at its `gen_a`/`gen_b`. The first version of
-these checks used `gen` and failed for exactly that reason.
+These comparisons use `-o -` and, since [M4.4], compare the `rx_search`
+ENGINE BODY (`body()`-extracted) rather than the whole file. That is not
+tidiness: writing two files emits two different `#include "<name>.h"`
+lines, so a whole-file comparison would differ for a reason unrelated to
+folding — the same trap `run_trie_identity.sh` documents at its
+`gen_a`/`gen_b`, and the reason the first version of these checks used
+`gen` and failed. **[M4.4] added a second, structurally similar reason to
+scope down to the engine body specifically**: `rx_info` (D43.1) embeds the
+source pattern text and the compiled `flags` word unconditionally, and
+both legitimately differ between two different pattern spellings (or
+between `-i` and no `-i`, even on a pattern `-i` has no folding effect on —
+the flag is still set as compiled) — the same "the stamp differs by
+design" shape D37's [STD1] case9/case10 already established in
+`tests/cli/`. D18's zero-cost claim was always about the AUTOMATON
+specifically, which is exactly what `body()` extracts; comparing the whole
+file would now fail these checks for a reason that has nothing to do with
+whether folding leaked into the runtime.
 
 `run_trie_identity.sh` also sweeps its 500-pattern corpus TWICE, once
 case-sensitive and once with `-i`. Folding rewrites the bitmaps the trie keys

@@ -227,9 +227,11 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
    result). An invalid escape prints a message to stderr and exits `2`.
 2. Parses `[startpos]`, if given, as a non-negative decimal integer; a
    malformed value prints a message to stderr and exits `2`.
-3. Calls `rx_search(buf, len, startpos, &m)`.
-4. Prints exactly one line to stdout: `match %zu %zu\n` (using `m.start`,
-   `m.end`) if a match was found, or `nomatch\n` otherwise, and exits `0`.
+3. Calls `rx_search(buf, len, startpos, caps)` ([M4.4], D44.2: `caps` is a
+   `ptrdiff_t (*)[2]`, not the retired `rx_span *m` out-struct).
+4. Prints exactly one line to stdout: `match %td %td\n` (using `caps[0][0]`,
+   `caps[0][1]`) if a match was found, or `nomatch\n` otherwise, and exits
+   `0`.
 
 The driver includes `"gen.h"`, so it must be compiled with `-I<dir>`
 pointing at the directory containing the pattern's generated `gen.h`. It has

@@ -69,6 +69,18 @@ That is the only direction it has power in. Its pairs are GENERATED across
 branch counts and group positions rather than hand-listed, because a hand-listed
 pair is how a check quietly narrows.
 
+**[M4.4] (D43.1, 2026-08-14) scopes "identical C" down to the `rx_search`
+ENGINE BODY**, not the whole file: `rx_info.pattern` (src/gen/emit_dfa.c)
+embeds the source pattern text unconditionally, and this check's own pairs
+are, by design, DIFFERENT pattern spellings that are AST-equivalent but
+textually distinct (`a|b|c` vs `a|(b|c)`) — so `rx_info.pattern` legitimately
+differs between them even when the compiled automaton does not. Comparing
+the whole file would fail every pair for a reason that has nothing to do
+with the AST-shape regression this check exists to catch (the same
+"stamp/reflection-struct content differs by design" shape D37's
+tests/cli/ case9/case10 and tests/codegen/CLAUDE.md's OS-1 section
+independently ran into at the same API break).
+
 ## Two properties this directory deliberately does NOT assert
 
 Stated in the runner's output on every run, so a green result is not mistaken

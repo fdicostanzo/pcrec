@@ -94,8 +94,8 @@ int main(int argc, char **argv)
             usage(stdout);
             return 0;
         }
-        else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.emit_main = 1;
-        else if (!no_more_opts && !strcmp(a, "-i")) opt.caseless = 1;
+        else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
+        else if (!no_more_opts && !strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
         else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
         else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;

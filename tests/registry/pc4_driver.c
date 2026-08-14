@@ -25,9 +25,9 @@ int main(void)
     for (int i = 0; i < (int)PC4_NSUBJ; i++) {
         size_t len;
         const unsigned char *s = pc4_subject(i, &one, &len);
-        rx_span m;
-        if (rx_search(s, len, 0, &m))
-            printf("match %zu %zu\n", m.start, m.end);
+        ptrdiff_t caps[RX_NCAPS][2];
+        if (rx_search(s, len, 0, caps))
+            printf("match %td %td\n", caps[0][0], caps[0][1]);
         else
             printf("nomatch\n");
     }

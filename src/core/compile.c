@@ -18,6 +18,11 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
         vsnprintf(cx->err->msg, sizeof(cx->err->msg), fmt, ap);
         va_end(ap);
         cx->err->pos = pos;
+        /* [M4.4] (subst note §9 Q8, D42.4): pcrec_compile()'s only input is
+         * the pattern text today — the substitution-template compiler
+         * ([M4-SUBST]) is the first future producer of
+         * PCREC_ERR_INPUT_TEMPLATE. */
+        cx->err->input = PCREC_ERR_INPUT_PATTERN;
     }
     longjmp(cx->jb, 1);
 }
@@ -63,7 +68,7 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
     pcrec_default_options(&defo);
     if (opt) defo = *opt;   /* local copy: keeps params setjmp-safe */
     if (out) memset(out, 0, sizeof(*out));
-    if (err) { err->msg[0] = 0; err->pos = 0; }
+    if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
 
     Ctx cx;
     memset(&cx, 0, sizeof(cx));
@@ -77,7 +82,7 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
      * (MOD-0.5c). Seeding here rather than at each read site is what stops
      * there being two homes for the same fact. The other fields seed to the
      * hardwired defaults — the same constants `(?^)` resets to. */
-    cx.mods = (ModState){ .caseless = defo.caseless != 0 };
+    cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
     cx.job = calloc(1, sizeof(Job));
     if (!cx.job || !out || !pattern) {
         job_cleanup(&cx);
@@ -157,7 +162,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
-    if (err) { err->msg[0] = 0; err->pos = 0; }
+    if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
 
     Ctx cx;
     memset(&cx, 0, sizeof(cx));
@@ -165,7 +170,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     cx.patlen = pattern ? strlen(pattern) : 0;
     cx.err = err;
     cx.opt = &defo;
-    cx.mods = (ModState){ .caseless = defo.caseless != 0 };
+    cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
         return -1;

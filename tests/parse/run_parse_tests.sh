@@ -80,6 +80,23 @@ done
 # The pairs are GENERATED rather than hand-listed: for each branch count and
 # each position, wrap a proper sub-run in a group and require the emitted C to
 # be unchanged. Hand-listing two pairs is how a check quietly narrows.
+#
+# [M4.4] (D43.1) SCOPES the comparison to the `rx_search` ENGINE BODY, not
+# the whole file: `rx_info.pattern` now embeds the source pattern text
+# unconditionally, and `flat`/`grouped` are, BY THIS CHECK'S OWN DESIGN,
+# DIFFERENT pattern spellings (e.g. `a|b|c` vs `a|(b|c)`) that are AST-
+# equivalent but textually distinct — so `rx_info.pattern` legitimately
+# differs between them even when the compiled automaton (what this check
+# actually cares about) does not. The same "the stamp differs by design"
+# shape D37's tests/cli/ case9/case10 and [M4.4]'s own
+# tests/codegen/CLAUDE.md OS-1 narrowing already established.
+rx_search_body() { # rx_search_body <whole-file-text-on-stdin>
+    awk '
+        $0 ~ /^int rx_search\(/ { inside = 1 }
+        inside                  { print }
+        inside && /^\}/         { exit }
+    '
+}
 idpass=0; idfail=0
 for n in 2 3 4 5; do
     for pos in 0 1 2; do
@@ -105,9 +122,16 @@ for n in 2 3 4 5; do
                 grouped="$grouped$atom"
             fi
         done
-        a_out="$("$PCREC" -p rx -o - -- "$flat" 2>/dev/null | tail -n +2)"
-        b_out="$("$PCREC" -p rx -o - -- "$grouped" 2>/dev/null | tail -n +2)"
-        if [ "$a_out" = "$b_out" ]; then idpass=$((idpass + 1))
+        a_out="$("$PCREC" -p rx -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
+        b_out="$("$PCREC" -p rx -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
+        if [ -z "$a_out" ] || [ -z "$b_out" ]; then
+            # An empty extraction must be a FAILURE, not a match of two empty
+            # strings: if the emitted signature ever stops matching
+            # rx_search_body's anchor, every pair would otherwise "pass"
+            # while comparing nothing (the vacuous-check class the codegen
+            # suite's body() helper already guards with its own -s test).
+            idfail=$((idfail + 1)); echo "  ast-identity: EMPTY rx_search body extraction: '$flat' vs '$grouped'" >&2
+        elif [ "$a_out" = "$b_out" ]; then idpass=$((idpass + 1))
         else idfail=$((idfail + 1)); echo "  ast-identity differs: '$flat' vs '$grouped'" >&2
         fi
     done
