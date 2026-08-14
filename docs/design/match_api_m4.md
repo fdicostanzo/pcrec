@@ -584,22 +584,26 @@ out, flagged for the panel:**
    the total; this split makes both facts available where the old design
    only exposed one).
 
-   **The SPLIT itself is RULED, not synthesis — D43 addendum (Frank, same
-   day, written before this round but after this lane's worktree
-   branched):** "rx_info carries TWO distinct counts... conflating them
-   would make the empty-index case read as 'zero capture groups'." What
-   REMAINS this document's own refinement (PROPOSED-here, for the panel):
-   the addendum's letter defines the first count as the caps[] geometry
-   ("= RX_NCAPS − 1"), where this document's `ngroups` is the PATTERN
-   total — two facts that diverge exactly on `--no-captures`/DFA builds
-   (the "why ngroups is a genuinely new fact" note below). That raises a
-   THIRD-count question the panel should answer: should `rx_info` ALSO
-   carry the artifact's slot count (`ncaps`) as a struct member, so a
-   generic multi-artifact reader (V-G/V-H shape) gets the artifact fact
-   without parsing the per-prefix `RX_NCAPS` macro — or is
-   engine-plus-ngroups enough to derive it? Flagged at §13 alongside the
-   frame-capacity question, which has the same "should rx_info widen"
-   shape.
+   **RULED (D43 addendum 2, 2026-08-14): rx_info carries ALL THREE
+   counts.** The third-count question this round briefly opened is closed
+   — Frank: "the more the merrier, its essentially free." The struct
+   carries `ncaps` (the ARTIFACT's caps[] geometry, = RX_NCAPS − 1 —
+   ALL-IN by definition, so V-E's referenced-pattern contributions never
+   make it wrong), `ngroups` (capturing groups in THIS pattern's own
+   TEXT, a lexical fact independent of `--no-captures` and references),
+   and `ngroups_named` (the index length; spellings remain PROPOSED-here).
+   The §5 struct sketch above should be read with `int ncaps;` added
+   between `encoding` and `pattern` (integration owed at the panel-fix
+   round rather than a third amendment pass). Ruled with it, a V-E
+   DIRECTION refining D39's addendum: a referenced regex's groups
+   contribute caps slots ONLY IF NAMED — named ones get slots and index
+   entries (ref-labeled); unnamed ones contribute nothing. Frank's
+   motivating scenario: a `--no-captures` primary referencing a
+   captures-on pattern with names reads as ngroups = primary text total,
+   the NO_CAPTURES flag bit (primary contributed zero), ncaps = just the
+   referenced names' contribution — no count carries two facts. The
+   frame-capacity question (below) remains the one open "should rx_info
+   widen" item.
 
 **Why `ngroups` is a genuinely new fact, not a restatement of `RX_NCAPS`.**
 `RX_NCAPS - 1` (§2.1, D42.2) states what the ARTIFACT can DELIVER — it is
