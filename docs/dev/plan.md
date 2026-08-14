@@ -142,7 +142,13 @@ stated terms.
   diagnostic flip lands (the VM now exists), full close battery +
   ratchets. M4-CALLOUTS step 2 stays a boonies row, NOT an M4 substep —
   the VM design must merely not preclude its call sites (F-obligations
-  already frozen)
+  already frozen). ALSO (Frank, 2026-08-14, with D40): the AS-BUILT
+  match-API contract graduates to docs/spec/ at this close — the first
+  spec document (design = what we want to build, spec = what we DID
+  build and becomes our contract; changeable but a deliberate
+  deliverable). Authored from the shipped surface, referencing
+  match_api_m4.md for reasoning per the spec charter; it is the natural
+  enumeration D40's future v1 declaration points at
 
 Design notes moved here from [MOD-0.1]'s archived entry (docs/dev/plan_completed.md),
 2026-08-13 — M4's design customers, per the Development order above:

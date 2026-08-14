@@ -3575,3 +3575,14 @@ compat shims before v1, and casually breaking ABI after it.
 **Revisit-when:** declaring v1 (that declaration should enumerate
 exactly which symbols/layouts are covered — the M4 freeze doc's
 contract is the natural core of that list); any DD-3 event after v1.
+
+**D40 addendum (Frank, same session): the VEHICLE for the
+compatibility-bound surface is a docs/spec/ document.** Frank: docs/design
+is what we WANT to build; docs/spec is what we DID build "and becomes our
+contract. we can change it but its a deliberate deliverable." So the
+as-built match-API contract graduates into docs/spec/ once M4's
+implementation lands ([M4.7] close carries the deliverable) — actively
+maintained, no build history, referencing docs/design/match_api_m4.md for
+reasoning per the spec charter. That spec document is the natural
+enumeration a future v1 declaration points at; post-v1, changing it is a
+deliberate compatibility event per D40's regime 2.
