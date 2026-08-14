@@ -125,9 +125,22 @@ append-only or historical records.
   THREE tensions with the ruled D38/D39 ABI rather than resolving them
   (§11: `rx_matchfn` has no room for "the engine gave up"; it cannot deliver
   captures at all, so match-here is not the capture primitive; and D31
-  rejected — on a measurement — the AST node captures now need). §12 carries
-  eleven numbered ASKs, §13 eight falsifiable predictions. Unpaneled: [M4.3]
-  reviews it alongside `match_api_m4.md` and the two ruled pre-freeze docs.
+  rejected — on a measurement — the AST node captures now need). **ANSWERS
+  `match_api_m4.md` §13 ASK 4** (§5.7, the capture contract of a DFA-compiled
+  group-bearing pattern): the slot count is a property of the ARTIFACT, not
+  the pattern text, so a DFA-compiled artifact emits `RX_NCAPS 1`, C6 never
+  bends, and `RX_NCAPS > 1` implies the VM — one checkable line, live from
+  [M4.4]. The freeze doc's candidate (b) corrected so the routing trigger is
+  the requested OUTPUT rather than the presence of a `(`; candidate (a)
+  rejected because it makes `RX_UNSET` permanently ambiguous and, via D38's
+  subst-Q3 ruling, renders silent empty strings. §5.7.1 first sharpens the
+  question: the retrofitted match-here entry has no `caps` output for ANY
+  engine, which is §11.2 reached independently from the other side. §12 carries
+  twelve numbered ASKs, §13 eight falsifiable predictions. §0.3 fixes the
+  namespace reading (ABI types literal per `match_api_m4.md` §12.7, everything
+  this doc invents per-artifact) and states what a reversal would cost: only
+  the callout call site. Unpaneled: [M4.3] reviews it alongside
+  `match_api_m4.md` and the two ruled pre-freeze docs.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

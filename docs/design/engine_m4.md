@@ -60,10 +60,45 @@ to them.
     The backrefs-finite and atomic-cut analyses are rewrites, not verdicts.
 11. Selection is reported by stamping the artifact (D37's precedent), not by a
     new CLI surface. §5.5.
-12. DD-9 (case (f)) is DECIDED: **not the hybrid, and it cannot be.** §8.
-13. SR-8's flip is SMALLER than its row implies: zero currently-refused
+12. `match_api_m4.md` §13 ASK 4 is ANSWERED: the capture-slot count is a
+    property of the ARTIFACT, so a DFA-compiled artifact emits `RX_NCAPS 1`
+    and C6 never bends. `RX_NCAPS > 1` implies the VM — one checkable line.
+    §5.7.
+13. DD-9 (case (f)) is DECIDED: **not the hybrid, and it cannot be.** §8.
+14. SR-8's flip is SMALLER than its row implies: zero currently-refused
     constructs become compilable when the VM exists. §9.
-14. Three tensions with the ruled D38/D39 ABI are reported, not resolved. §11.
+15. Three tensions with the ruled D38/D39 ABI are reported, not resolved. §11.
+
+### 0.3 Namespaces and spellings
+
+This document consumes `match_api_m4.md`'s naming decisions rather than
+restating them, and every identifier below falls in one of three families
+(`match_api_m4.md` §0 and §7):
+
+| family | examples used here | scoped by `--prefix`? |
+|---|---|---|
+| ABI types, deliberately FIXED literal names | `rx_ctx`, `rx_matchfn`, `rx_callout_ref` | **no** — `match_api_m4.md` §12.7 |
+| per-artifact emitted symbols | `<prefix>_match` (§12.6 there), `<prefix>_search`, `<prefix>_span`, and everything this document invents (`rx_work`, `RX_NCAPS`, `RX_UNSET`, `RX_ENGINE`, `RX_ERR_STEPS`, `RX_ERR_FRAMES`, `RX_BT_FRAMES`, `RX_TRAIL_FRAMES`, `RX_NSTATE`, `RX_HYBRID_MIN`, and the emitted labels) | yes; written here with the default `rx`/`RX` per that document's convention |
+| pcrec's own library surface | `PCREC_*`, `--step-budget`, `--engine` | no (namespace 2) |
+
+**This document introduces no new fixed-literal ABI type.** It consumes the
+three that exist and invents only per-artifact symbols, which is the family
+where prefix-scoping is already settled.
+
+**If Frank reverses §12.7** (making the ABI types `<prefix>_ctx`-scoped), the
+engine design is almost entirely insensitive: the resume stack, the trail, the
+budget, selection, the hybrid, islands, DD-9 and SR-8 do not mention those
+types. Exactly one thing changes, and it is the thing §12.7 predicts — the
+CALLOUT CALL SITE (§3.4, §6.3). A matcher compiled with `--prefix foo` calling
+a callout that is itself a matcher compiled with `--prefix bar` would face
+incompatible `foo_ctx`/`bar_ctx` types, so the call site would need a cast or a
+generated adapter struct, and F2's `__builtin_trap()` check would be
+per-type rather than per-ABI. That is a cost on the composition path only.
+
+Separately, and worth stating so a reversal does not look like it dissolves
+the finding: **§11.2 (match-here cannot deliver captures) is independent of
+the naming question.** It is a property of `rx_matchfn`'s parameter and return
+types, whatever those types are called.
 
 ---
 
@@ -71,24 +106,39 @@ to them.
 
 ### 1.1 Inputs consumed, not re-opened
 
-| Source | What it fixes |
-|---|---|
-| D38 §1 / `design_callout_abi.md` §1 | `rx_matchfn = ptrdiff_t (const rx_ctx *)`; `rx_ctx` fields; `rx_callout_ref` binding unit |
-| D38.3 / F1, F2 | match-here exported unconditionally; call sites emit `if (ret < -1) __builtin_trap();` |
-| D38.4 | native abort NONE in v1; return values `< -1` RESERVED |
-| D38.5 / F5 | captures visible IN to a callout, opaque OUT of a composed matcher |
-| D38.6 | `ncap` is a watermark at callout sites, pinned to `ngroups + 1` on a completed match |
-| D38 Q12 / subst C4, C5 | caps are `ptrdiff_t[2]` pairs, `{-1,-1}` unset; `rx_span` breaks at the M4 freeze |
-| D39.1 + addendum / F8 | exported `{name, number, ref}` group index per pattern |
-| D36 / F7 | callouts are engine-forcing; selection must answer per-pattern |
-| D22 | DD-2 is ROBUSTNESS, not a security boundary, and is not traded against speed |
-| D18 | options are compiled away; every option dimension must earn its axis |
-| D26 | PCRE2 is the source of truth for what MATCHES; diagnostic wording is tier 3 |
-| D19 / TS-1 | usable from threads, never threaded; all-const tables, no mutable globals |
-| PC-5 / D38 | `COPY_MATCHED_SUBJECT = NEVER` — allocation-free generated matchers, caller owns buffers |
+The third column cites where the surface is COLLECTED, so this document can
+consume it rather than restate it. `match_api_m4.md` is [M4.1]'s freeze
+document (merged on main, itself PROPOSED until [M4.3] closes); the [M4.3]
+panel reviews both together.
 
-All RULED. Where engine reality pulls against one of them, §11 reports it
-rather than quietly designing around it.
+| Source | What it fixes | Collected at |
+|---|---|---|
+| D38 §1 / `design_callout_abi.md` §1 | `rx_matchfn = ptrdiff_t (const rx_ctx *)`; `rx_ctx` fields; `rx_callout_ref` binding unit | `match_api_m4.md` §4 |
+| D38.3 / F1, F2 | match-here exported unconditionally; call sites emit `if (ret < -1) __builtin_trap();` | §3 (incl. its scope note: no call sites exist to attach the trap to until callouts or V-E land) |
+| D38.4 | native abort NONE in v1; return values `< -1` RESERVED | §3 |
+| D38.5 / F5 | captures visible IN to a callout, opaque OUT of a composed matcher | §4 |
+| D38.6 | `ncap` is a watermark at callout sites, pinned to `ngroups + 1` on a completed match | §2.1 — and note its reconciliation with C6: the two are properties of different MOMENTS, not a contradiction over one field |
+| D38 Q12 / subst C4, C5 | caps are `ptrdiff_t[2]` pairs, `{-1,-1}` unset; `rx_span` breaks at the M4 freeze | §1, §2.1; `RX_NCAPS`/`RX_UNSET` spellings at §2.1 |
+| subst C1–C11 | the capture-offset contract in full | §2.2's conformance table — consumed wholesale by §3.4 below |
+| D39.1 + addendum / F8 | exported `{name, number, ref}` group index per pattern | §5 |
+| D36 / F7 | callouts are engine-forcing; selection must answer per-pattern | this document, §5 |
+| D22 | DD-2 is ROBUSTNESS, not a security boundary, and is not traded against speed | — |
+| D18 | options are compiled away; every option dimension must earn its axis | — |
+| D26 | PCRE2 is the source of truth for what MATCHES; diagnostic wording is tier 3 | — |
+| D19 / TS-1 | usable from threads, never threaded; all-const tables, no mutable globals | — |
+| PC-5 / D38 | `COPY_MATCHED_SUBJECT = NEVER` — allocation-free generated matchers, caller owns buffers | — |
+| D40 + addendum | pre-v1, breaks carry no compatibility weight and are governed only in FORM (D37 announcement + DD-3 accounting); the as-built contract graduates to `docs/spec/` at [M4.7]'s close | ruled after this document's brief; consumed at §5.7.3 and §12 ASK-2 |
+
+All RULED (the `match_api_m4.md` sections cited are that document's collection
+of them, plus its own PROPOSED-here spellings, which this document adopts —
+§0.3). Where engine reality pulls against one of them, §11 reports it rather
+than quietly designing around it.
+
+**One question comes back the other way.** `match_api_m4.md` §11 item 7 /
+§12.8 / §13 ASK 4 records an open question and assigns it here: what a
+DFA-compiled, group-bearing, non-backreference pattern reports through
+`caps[1..ngroups]`. It is answered in §5.7, with the M4.4→M4.5 gap covered
+explicitly, and §11.2 sharpens the question itself before answering it.
 
 ### 1.2 What exists today, by inspection
 
@@ -167,7 +217,7 @@ typedef struct {
     long     budget;
 } rx_work;
 
-static ptrdiff_t rx_match_here_impl(const rx_ctx *ctx, rx_work *w)
+static ptrdiff_t rx_match_impl(const rx_ctx *ctx, rx_work *w)
 {
     const unsigned char *const s = ctx->subject;
     const size_t n = ctx->len;
@@ -311,7 +361,7 @@ F1 makes the anchored entry the primitive. Two search strategies sit on it:
   ```c
   for (size_t start = startpos; start <= n; start++) {
       /* reuse emit_dfa.c's first-byte / memchr skip to advance `start` */
-      ptrdiff_t r = rx_match_here_impl(&ctx_at(start), &w);
+      ptrdiff_t r = rx_match_impl(&ctx_at(start), &w);
       if (r >= 0) { /* copy caps out; $0 = [start, start+r) */ return 1; }
       if (r == RX_INTERNAL_STEPS) return RX_ERR_STEPS;
       rx_unwind(&w, 0);   /* trail back to mark 0: every slot the failed
@@ -580,8 +630,8 @@ So the emitted matcher has three layers:
 
 | symbol | type | budget behaviour |
 |---|---|---|
-| `rx_match_here_impl` | internal `static`, takes `(const rx_ctx *, rx_work *)` | decrements `w->budget`; returns a private sentinel on exhaustion |
-| `rx_match_here` | F1's export, `rx_matchfn` | fresh local budget; returns `-1` on exhaustion (indistinguishable from no-match, per D38's frozen space) |
+| `rx_match_impl` | internal `static`, takes `(const rx_ctx *, rx_work *)` | decrements `w->budget`; returns a private sentinel on exhaustion |
+| `rx_match` | F1's export, `rx_matchfn` | fresh local budget; returns `-1` on exhaustion (indistinguishable from no-match, per D38's frozen space) |
 | `rx_search` | pcrec's own entry | owns the budget across attempts; returns `RX_ERR_STEPS` (a negative code) |
 
 The frozen ABI is satisfied exactly, the honest diagnosis exists at the entry
@@ -823,6 +873,122 @@ override is `--engine=dfa|vm|auto`, default `auto`. Its value is diagnostic
 (reproduce a bug, measure the hybrid against VM-only) and it is the ONLY thing
 that makes SR-8's honest diagnostic reachable (§9.3). `--engine=dfa` on a
 VM-forced pattern is a clean refusal, never a silent fallback.
+
+### 5.7 What a DFA-compiled artifact promises through `caps` — answering `match_api_m4.md` §13 ASK 4
+
+PROPOSED. This is the freeze document's question, assigned here because it is
+engine-selection territory; §11.2 sharpens it first.
+
+#### 5.7.1 Sharpening the question
+
+ASK 4 asks what a group-bearing DFA-compiled pattern reports "through
+`caps[1..ngroups]` via the retrofitted match-here entry". That framing has a
+prior answer that dissolves half of it:
+
+> **The match-here entry reports NOTHING through `caps`, for ANY engine,
+> ever.** `rx_ctx.caps` is `const ptrdiff_t (*)[2]` — an INPUT (the outer
+> engine's captures-so-far, R-b) — and `rx_matchfn` returns a length. There is
+> no capture output channel in the F1 entry at all (§11.2).
+
+So `<prefix>_match` is not where the question bites, and [M4.4] retrofitting
+F1 onto a DFA matcher raises nothing: the retrofitted entry returns a length
+or `-1`, which the DFA has always been able to compute. The real question is
+about the CAPTURE-DELIVERING entry — `<prefix>_search` — and about what
+`RX_NCAPS` says.
+
+Worth recording as a convergence rather than a coincidence: [M4.1] reached
+this question mechanically (what does [M4.4] emit?) and this lane reached the
+same defect from the ABI side (§11.2, written before `match_api_m4.md` was
+readable here). Two independent derivations landing on one gap is the
+strongest evidence either lane produced that it is real.
+
+#### 5.7.2 The decision — option (c), a refinement of (b)
+
+> **The capture-slot count is a property of the generated ARTIFACT, not of the
+> pattern text. `RX_NCAPS` is emitted by the compiler, and the compiler chooses
+> the engine before it emits the macro. A DFA-compiled artifact therefore
+> always emits `RX_NCAPS 1`.**
+
+Two invariants follow, both stateable in one line and both checkable:
+
+- **`RX_NCAPS > 1` implies the VM engine.** A `tests/codegen/` structural
+  check, live from [M4.4] onward, and the cheapest possible guard against the
+  whole failure class ASK 4 is worried about.
+- **C6 never bends.** "Every pair `0..ngroups` written on a completed match"
+  holds exactly, where `ngroups` is the ARTIFACT's `RX_NCAPS - 1`. For a DFA
+  artifact that is precisely `caps[0]`, the whole-match span it has always
+  computed. There is no interim population with unwritten slots, because that
+  population has no slots.
+
+This is `match_api_m4.md`'s candidate (b) with one correction that matters
+(§5.3): the routing trigger is **the requested OUTPUT, not the presence of a
+`(`**. (b) as literally phrased — "force ANY capturing group onto the VM" —
+would move `a(b|c)+d`, a pure scanning pattern, onto a VM artifact
+permanently, for every caller who never wanted groups. Under the hybrid the
+scanning still happens on the DFA (§6.1), so the cost is bounded, but the
+artifact still carries a backtracker it never needs. `--no-captures` (§5.3,
+ASK-5) is what keeps that population on a pure DFA forever, and under this
+rule the two questions collapse into one: **if the artifact promises
+`RX_NCAPS > 1`, the VM must be selected; if the caller asked for no captures,
+`RX_NCAPS` is 1 and today's engine keeps it.**
+
+#### 5.7.3 What holds in the M4.4 → M4.5 gap
+
+[M4.4] retrofits the entry, the pair type and the group index onto EXISTING
+DFA matchers before the VM exists. In that window:
+
+- `RX_NCAPS` is **1 for every pattern**, capture-bearing or not, because no
+  engine can produce more and the macro states what the artifact does.
+- `a(b|c)+d` compiles exactly as it does today plus the new entry, the new
+  index and the pair type — which is what [M4.4]'s own plan row asks for
+  ("the API break lands mechanically... retrofitted onto the EXISTING DFA
+  matchers") and what §5.4's byte-identity gate wants to be able to assert.
+- **There is no surface for asking for captures yet, and that is deliberate.**
+  The capture REQUEST (whatever [M4.5] spells it) and the engine that can
+  honour it land in the SAME substep. So no window exists in which a caller
+  can ask for something nothing can deliver, and no diagnostic is needed for a
+  state that cannot be reached.
+- At [M4.5], `RX_NCAPS` for `a(b|c)+d` goes 1 → 2. That is a generated-contract
+  change, and it is the SAME item as §9.2(3) (groups start capturing) — so it
+  does not add a break, it dates one this document had already flagged.
+
+**What D40 changes about that last bullet** (ruled after this document's brief
+was written): pre-v1, the break carries no compatibility weight in substance
+and is governed only in FORM — D37's announced-boundary shape and DD-3's
+versioning-event discipline. So the `RX_NCAPS` 1 → 2 change needs an
+announcement and a conserved-populations accounting, not a migration path or a
+compat shim. The reason to keep it on ONE boundary with the `rx_span` break is
+therefore economy of announcements, not compatibility obligation. Post-v1 the
+same change would need a compatibility story, which is an argument for landing
+the capture contract's shape before that declaration rather than after —
+and D40's addendum already routes the as-built contract into `docs/spec/` at
+[M4.7]'s close, which is where the `RX_NCAPS > 1 ⇒ VM` invariant (§5.7.2)
+should be written down as a contract line rather than only as a codegen check.
+
+#### 5.7.4 Why candidate (a) is rejected
+
+(a) is "leave `caps[1..]` at `RX_UNSET` until selection routes the pattern to
+the VM, under-promising C6 for the interim population". Three reasons, in
+increasing order of severity:
+
+1. **It makes `RX_UNSET` permanently ambiguous.** A reader of a shipped
+   artifact could not distinguish "group 3 did not participate in this match"
+   from "this engine does not do groups". The sentinel's whole value is that
+   it means one thing.
+2. **It puts an asterisk on C6 that outlives the interim.** The freeze
+   document is trying to state C6 without one, and a contract weakened for a
+   population that will be empty in one substep is a permanent cost for a
+   temporary reason.
+3. **It has a concrete downstream miscompile-shaped consequence.** D38 ruled
+   subst Q3: an unset-but-existing group renders EMPTY by default. So a
+   template `$1$2` against an (a)-style artifact renders two empty strings and
+   reports success — silently wrong output, no diagnostic, from a matcher that
+   is behaving to its stated contract. That is exactly the "never miscompile"
+   line the project's compatibility standard draws, reached without anyone
+   writing a bug.
+
+Under §5.7.2 none of this is reachable, because a matcher that cannot fill a
+slot never advertises one.
 
 ---
 
@@ -1224,15 +1390,25 @@ composed matcher), so it is not a contradiction. But it means:
   capture-delivering sibling.
 - "Search wraps match-here, the anchored entry is the primitive" is true
   STRUCTURALLY (§4.4's three layers) but the shared primitive is the INTERNAL
-  `rx_match_here_impl(ctx, w)`. The exported `rx_matchfn` is a capture-dropping
+  `rx_match_impl(ctx, w)`. The exported `rx_matchfn` is a capture-dropping
   façade over it. That costs nothing and satisfies F1/F2 exactly — but the
   freeze document should say which entry a capture-consuming caller uses, and
   today no document does.
 
 **Handed to [M4.1]:** does an anchored capture-delivering entry exist, and
-what is it called? A caller who knows the start offset and wants groups
-(the substitution compiler's likely shape, and anyone doing tokenisation) has
-no entry today.
+what is it called? `match_api_m4.md` §7's symbol table names `<prefix>_search`
+and `<prefix>_match` and no third entry, so a caller who knows the start
+offset and wants groups (the substitution compiler's likely shape, and anyone
+doing tokenisation) has nothing to call. `<prefix>_match_caps` or an extra
+argument on a sibling entry — [M4.1]'s pick, but the gap should not survive
+the freeze.
+
+**Independently reached from the other side.** `match_api_m4.md` §11 item 7 /
+§12.8 / §13 ASK 4 arrives at the same defect by asking what [M4.4] should
+emit for a group-bearing DFA pattern's `caps[1..]` "via the retrofitted
+match-here entry" — a question whose premise is that the entry has a `caps`
+output. It does not. §5.7.1 sharpens the question on that basis and §5.7.2
+answers what remains of it.
 
 ### 11.3 D31 rejected the AST node that captures now need
 
@@ -1309,9 +1485,15 @@ run, per the docs-only scope.
   `rx_matchfn` for a future abort semantic, trap-enforced. §4.4 avoids needing
   it; §11.1 is the residual cost. Amending would mean `-2 = RX_STEPS`, F2's
   call-site check becoming `if (ret < -2) __builtin_trap();`, and a defined
-  propagate-or-fail rule. **Recommendation: do NOT amend in v1.** The hole is
-  confined to a composition path with no users, and re-opening a freeze item
-  for a hypothetical costs more than it buys.
+  propagate-or-fail rule. **Recommendation: do NOT amend, on the merits — not
+  on the cost of amending.** The distinction matters now that D40 is ruled:
+  pre-v1 the break itself is free (compat carries no weight, only D37's
+  announcement FORM), so "re-opening a freeze item is expensive" would have
+  been a bad reason and is withdrawn. The good reason is that the reservation
+  should be spent when a real customer appears, and the residual hole is
+  confined to a composition path that has none. If a composition customer
+  arrives before v1, amending is cheap and this ASK should simply be re-opened
+  then.
 - **ASK-3 — `rx_ctx.caps` lifetime joins the freeze.** "Valid for the
   duration of the call; the engine rewrites the storage afterwards" is a
   contract line F1–F8 does not carry and a callout author will otherwise
@@ -1330,15 +1512,28 @@ run, per the docs-only scope.
 - **ASK-11 — DD-9's re-tagging.** Accept §8's decision and re-tag DD-9 as the
   head of [BENCH-1]'s prioritizer worklist, carrying §8.4's three findings, so
   it stops being a floating unowned row.
+- **ASK-12 — confirm §5.7's answer to `match_api_m4.md` §13 ASK 4.** Capture
+  slot count is an ARTIFACT property; a DFA-compiled artifact emits
+  `RX_NCAPS 1`; `RX_NCAPS > 1` implies the VM; the M4.4→M4.5 window has
+  `RX_NCAPS 1` everywhere and no capture-request surface. This is the freeze
+  document's candidate (b) corrected so the routing trigger is the requested
+  OUTPUT rather than the presence of a `(` — so it is answered jointly with
+  ASK-5, and answering ASK-5 "opt-in" rather than "on by default" does not
+  change §5.7's rule, only which patterns land on which side of it.
 
 **Handed to the sibling [M4.1] lane** (not rulings, requirements):
 
 - The search entry must reserve NEGATIVE returns for engine-give-up, naming
   `RX_ERR_STEPS` and `RX_ERR_FRAMES` (§4.4, §4.5).
 - The freeze must say which entry a capture-consuming caller uses, and whether
-  an anchored capture-delivering entry exists (§11.2).
-- `RX_NCAPS`, `RX_UNSET`, and the group-index symbol names are M4.1's; this
-  document uses them as placeholders and defers.
+  an anchored capture-delivering entry exists — `match_api_m4.md` §7's symbol
+  table currently names none (§11.2).
+- `match_api_m4.md` §13 ASK 4 is answered at §5.7 and can be closed there; its
+  §11 item 7 checklist entry for [M4.4] resolves to "emit `RX_NCAPS 1`, and
+  add the `RX_NCAPS > 1 ⇒ VM` structural check".
+- `RX_NCAPS`, `RX_UNSET`, `<prefix>_match` and the group-index symbol names
+  are [M4.1]'s; this document adopts its §7/§12.6 spellings and defers on all
+  of them (§0.3).
 
 ---
 
