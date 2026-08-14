@@ -290,7 +290,7 @@ including V-G/V-H (added this session).
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
 
-- [M4-CALLOUTS] STATE:started (step 1 flip in flight; step 2 behavior stays M4-hosted) — module `callouts` (D36: Frank re-scoped
+- [M4-CALLOUTS] STATE:not-started (step 1 flip COMPLETED 2026-08-14, merge 84e5956 — all counts held at baseline, K14 check re-scoped to the RS_MODULE population; step 2 behavior awaits M4, its ABI ruled by D38/D39) — module `callouts` (D36: Frank re-scoped
   `(?C` from NEVER to PLANNED, 2026-08-12 — LOW PRIORITY, deliberately in
   the queue boonies). Two separable steps: (1) THE FLIP, schedulable any
   time a lane is free: registry `(?C` row ROADMAP_NEVER → PLANNED, the
@@ -623,6 +623,4 @@ Pointers, not queue positions — states live on the real rows cited.
 - module-swap / row-deletion guard — owed, unruled.
 - PC-4 missing shapes — caseless-negated, `\N{n,m}`, MODIFIER, zero-tail
   `(?P`.
-- M4-CALLOUTS step 1 — the registry flip to PLANNED; schedulable any free
-  lane.
 - PC-2 — re-survey.

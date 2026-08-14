@@ -7488,3 +7488,81 @@ side (two lanes needed completion nudges; the watcher pattern worked
 both times). (3) The check-rearm spec written BEFORE implementation held
 without amendment — and its one prediction (the aperture gap) was
 confirmed by the implementing lane's own nm discovery.
+
+## 2026-08-14 — Eighteenth session: M4 pre-freeze package landed AND ruled (D38/D39); (?C flip
+
+Frank opened with a general go ("start development, use parallel
+development if there is an opportunity"). Three lanes ran the plan-named
+pre-freeze work; every deliverable is merged, and Frank then ruled the
+entire decision surface interactively in-session.
+
+**Lanes (3, the cap; all worktree'd, all merged and cleaned up):**
+
+1. pc5-options (sonnet): docs/pcre2_options.md — 80 flags/values, 10
+   measured against libpcre2 10.46 with probe + transcript. Manager
+   review resolved its three flagged caveats before merge (modifiers
+   letter set verified J U a i m n r s x; ALT_VERBNAMES premise
+   corrected — named backtracking-control verbs are the OUT-OF-SCOPE
+   population, not verbs wholesale). Merged 258fd79.
+2. m4-subst-note (strong model): docs/design/subst_template_design.md —
+   C1-C11 capture-offset requirements ON M4's match API, module tiering
+   subst/subst-extended/subst-pcrec, 12 pre-stated probe predictions
+   with 3 refuted (unset-group err-55 default; global empty-match rule;
+   C6 poison-cell agreement). Merged 3d5a9e8; its rx_ctx reconciliation
+   amendment (adopting the callout ABI's pair type and returning the
+   rx_span-break, ncap-watermark and unsigned-char findings to the
+   freeze) merged same day.
+3. callouts-flip (sonnet): [M4-CALLOUTS] step 1 — registry (?C1) row
+   ROADMAP_NEVER -> PLANNED, pins moved failing-first in the same
+   commit (evidence in 1ee1c12), compliance prose + SR-4 index in the
+   same change, full suite green with EVERY count at the db86a69
+   baseline. Merged 84e5956. Its find: the K14 prose<->column check's
+   naive generalization to all-ROADMAP_NEVER rows is wrong — RS_REJECTED
+   rows carry the same column value for D34's unrelated
+   PCRE2-rejects-it-too pairing; re-scoped to RS_MODULE (the real K14
+   population, now zero, column-derived, re-arms on the next instance).
+   Caught by RUNNING the check, not inspection.
+
+**Manager-side design:** docs/design/design_callout_abi.md drafted, then
+rewritten twice as Frank ruled in-session (R-a..R-d): matcher entry and
+callout callback share ONE signature; captures-so-far travel in rx_ctx;
+syntax UNDECIDED (near-PCRE2 for callouts, embedded code maybe
+\{ ... }); collision rule (reinterpreting spellings are module-gated).
+
+**THE DECISION PASS (Frank, interactive):** D38 records ~25 rulings —
+rx_callout_ref {fn,user} binding structs (per-binding state; TLS for
+per-thread; rejected: global user, per-call user), unconditional
+match-here export, match-or-fail with <-1 reserved and
+__builtin_trap()-enforced (longjmp abort refuted on setjmp-entry cost +
+volatile hazards), captures opaque v1 with declared-in-syntax export as
+the v2 path, all fourteen subst questions (headliners: unset renders
+EMPTY by default as a generation axis making python the clean oracle;
+length-only no-NUL output; sizing exact-by-contract; rx_span BREAKS at
+the M4 freeze to the ptrdiff_t pair — Frank: clearer under UTF), and
+PC-5's disposition column ratified wholesale (3 rows individually).
+D38 addenda: PCREC_* is the sole native flag namespace, PCRE2_* is
+compat-only. D39 + addendum: every pattern exports a static
+{name, number, ref} group index (born with the ref column so V-E
+extends data not ABI); rx references use APPENDED numbering (primary
+1..N stable); collisions resolved by caller-supplied labeled references
+("a:reg1", nested paths "c:a"). Propagated into all carrying docs by
+the d38-apply lane (merged 7fb6646); [PC-5] archived completed.
+
+**State at this entry:** main at 84e5956 + this bookkeeping; smoke 6/6
+green on the composed tree; all counts at baseline (corpus 1284, cli
+247, reject 528, codegen 34, registry 168, PC-3 163, trie 7, thread 8,
+mech unchanged — no mech run this session, close battery owed if the
+session ends after more source work). Open on the design side: callout
+syntax spelling (§6 Q5) and embedded-code restrictions (Q6) only.
+NEXT: expand [M4.0] into substeps against the fully-ruled input set.
+
+**Lessons:** (1) A live decision pass with the user beats asynchronous
+ruling documents — ~25 rulings landed in one sitting because every
+question arrived with its measured context and a recommendation. (2)
+The K14 re-scoping is the check-design lesson again in a new costume:
+two populations sharing a column value for different reasons will
+false-positive any check that reads the column alone. (3) Two design
+docs converging on one ABI (F3's one-representation rule) surfaced the
+rx_span break BEFORE the freeze rather than after — the coupling rule
+did its job. (4) Lanes idling mid-async-run happened twice more; the
+artifact-watcher + nudge protocol recovered both without a wrong call.
