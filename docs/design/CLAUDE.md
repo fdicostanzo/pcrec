@@ -132,7 +132,12 @@ append-only or historical records.
   default (D42.1); `rx_ctx.caps`'s callout lifetime joins §4's F-list
   (D42.5); §6 records the `pcrec_err_input` V-A compat obligation (D42.4);
   the former §14 checklist is replaced by an "AMENDMENTS APPLIED" record.
-  **Still STATUS: PROPOSED** — the freeze does not take effect until
+  §8 also gains a manager-confirmed clarification: `PCREC_*` names
+  enum-valued constants only — the native option surface itself is the
+  `pcrec_options` STRUCT (`lib/pcrec.h`, named fields; CLI flags are a thin
+  veneer over it, e.g. `-i` sets `opt.caseless`), and PCRE2 bitmask
+  spellings reappear only at V-A's compat boundary, translated onto the
+  native struct's fields. **Still STATUS: PROPOSED** — the freeze does not take effect until
   [M4.3]'s panel closes; this round exists so the panel reviews one
   reconciled document instead of a stale one plus a decision log to
   cross-reference.

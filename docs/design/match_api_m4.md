@@ -619,6 +619,32 @@ of [M4.1]/[M4.4]; this section exists so that when one does (independently),
 its constant is `PCREC_*`-native by construction rather than by a
 case-by-case re-litigation.
 
+**Manager-confirmed today (2026-08-14) — what this ruling governs, stated so
+a panel critic does not have to re-derive it.** Frank asked whether
+`--no-captures`/`-i` map to `PCREC_*` options under the hood; the answer is
+recorded here rather than left to be rediscovered:
+
+- **The native option SURFACE is the `pcrec_options` STRUCT**
+  (`lib/pcrec.h`), not a bitmask — named fields (`prefix`, `encoding`,
+  `caseless`, `emit_main`, `header_name` today). M4-era additions land the
+  same way: the captures default's `--no-captures` becomes a field
+  (`int captures;` direction, or equivalent), not a `PCREC_*` bit.
+- **CLI flags are a thin veneer over the struct**: `-i` sets
+  `opt.caseless = 1`; `--no-captures` (once M4.5 lands) sets its field the
+  same way. No CLI flag is itself a `PCREC_*` constant.
+- **§8's `PCREC_*` ruling names the ENUM-VALUED constants** — `PCREC_ENC_ASCII`
+  today (the value a struct field like `encoding` HOLDS), and any future
+  flag-shaped constant of the same kind — not the struct's field names and
+  not the CLI flags that set them.
+- **V-A's compat layer is where bits reappear**: it translates PCRE2
+  bitmask spellings (`PCRE2_CASELESS`, etc.) onto the native struct's
+  fields AT THE BOUNDARY. Bits at the compat boundary, fields natively —
+  the same "PCRE2_* compat, PCREC_* native" split §8 states for constants
+  applies to the OPTION-SETTING mechanism too, one level up.
+- **No bitmask surface is being added natively.** If that changes, it is a
+  Frank ruling recorded here or in `docs/dev/decisions.md`, not a drift a
+  later reader should infer from an implementation detail.
+
 ---
 
 ## 9. Callout-pattern entry points thread nothing extra
