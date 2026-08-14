@@ -7566,3 +7566,19 @@ docs converging on one ABI (F3's one-representation rule) surfaced the
 rx_span break BEFORE the freeze rather than after — the coupling rule
 did its job. (4) Lanes idling mid-async-run happened twice more; the
 artifact-watcher + nudge protocol recovered both without a wrong call.
+
+### Eighteenth session close — [M4.0] expanded, dev deferred
+
+Frank's closing rulings: start the M4.0 expansion, save actual dev work
+for next session; the engine design gets its own doc in docs/design.
+Answered honestly in-session: the M4 DESIGN DOES NOT EXIST YET and
+nothing M4-shaped has been critiqued — today's ruled docs are inputs,
+and both are unpaneled. The expansion (5b48537) is therefore
+design-first and panel-gated: M4.1 match-API freeze doc
+(docs/design/match_api_m4.md), M4.2 engine doc (docs/design/engine_m4.md),
+M4.3 D6 panel over both PLUS the unpaneled design_callout_abi.md and
+subst_template_design.md as a HARD GATE, then M4.4-M4.7 (announced API
+break; VM emitter core + capture oracle + D27 author; selection/hybrid/
+islands measured; capture differential + SR-8 flip + close battery).
+Next session starts at M4.1/M4.2. Tree committed clean; smoke 6/6 green
+post-flip-merge; wake.md rewritten; pushed to origin per standing call.
