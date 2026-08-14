@@ -12,6 +12,10 @@ incorporating THREE in-session rulings from Frank (same day):
   code with restrictions: `(\d+)(<parse_int($1) > 100>)`.
 - R-c: *"it may be that there are two forms or a switch for group vs not
   group."*
+- R-d: *"syntax undecided. and the callout should probably use near
+  pcre2 standards but the embedded code might be different like
+  `\{ strlen($1) == 5 }` or something. tbd"* (supersedes the `(<name>)`
+  sketch — see §3).
 
 Remaining syntax and semantic choices are FRANK'S ([M4-CALLOUTS] 2026-08-13
 amendment). GATE: decided BEFORE M4's match-API design freezes (same gate
@@ -77,32 +81,42 @@ Semantic split the one signature carries (stated honestly):
   abort stays a PCRE2-compat-layer concept (§4). If Frank wants native
   abort, reserve −2 — default proposal is NOT to (§6 Q3).
 
-## 3. Syntax family (sketch only — spelling is Frank's)
+## 3. Syntax family — UNDECIDED (Frank, 2026-08-14 second ruling: *"syntax
+undecided. and the callout should probably use near pcre2 standards but
+the embedded code might be different like `\{ strlen($1) == 5 }` or
+something. tbd"*)
 
-Frank's sketched spelling: `(<name>)` binds the extern `name` as a
-callout/submatcher; distant-future embedded code puts a restricted
-expression inside the same brackets: `(<parse_int($1) > 100>)`.
+What IS directional, superseding this doc's earlier `(<name>)` sketch
+(recorded here so the earlier sketch is not mistaken for a leaning):
 
+- CALLOUT BINDING: probably NEAR-PCRE2 — the `(?C...)` family PCRE2
+  already owns. PCRE2's string form `(?C"text")` is the natural carrier
+  for a function name (`(?C"fn_gt_100")` binding the extern), which
+  keeps the callouts module's pattern layer D26-close and rides the
+  `(?C` doorway [M4-CALLOUTS] step 1 is flipping to PLANNED anyway.
+  Nothing here is ruled; "near pcre2 standards" is the constraint.
+- EMBEDDED CODE (distant future): possibly a DIFFERENT spelling from the
+  callout family — Frank's sketch: `\{ strlen($1) == 5 }`. A restricted
+  expression language over `$n` compiled INTO the generated C (AOT: the
+  pattern author is the developer, the expression lands as
+  compile-time-visible C — trusted input per D22, but "with
+  restrictions": no statements, no side effects; restriction set TBD).
+  The extern form remains the primitive; embedded code subsumes its
+  common cases without linking. Shares namespace discipline with
+  [M4-SUBST]'s template callbacks (SR-10).
 - R-c: possibly TWO FORMS or a switch — a GROUP form (the callee's
   consumed span is itself a capture group, numbered like any `(...)`)
   and a NON-GROUP form (zero-width predicate / non-capturing consumer).
-  Candidate shape: `(<fn>)` capturing vs `(?<fn>)`-style non-capturing —
-  actual spellings deliberately unproposed; recorded as §6 Q5.
-- COLLISION NOTE (flagged for the syntax ruling): today `(<x>)` is a
-  VALID pattern — a group matching the literal text `<x>`. Adopting the
-  spelling is a reinterpretation, so it MUST be module-gated: with
-  module `callouts` disabled, behaviour stays as today; enabled, `(<`
-  opens the callout doorway. D37's set-graduation mechanics govern when
-  (if ever) that lands in a bare default — a developer never sees the
-  reinterpretation without an announced boundary.
-- EMBEDDED CODE (distant future, recorded not scheduled): a restricted
-  expression language over `$n` compiled INTO the generated C (AOT means
-  the pattern author is the developer and the expression lands as
-  compile-time-visible C — trusted input per D22's threat model, but
-  "with restrictions" per Frank: no statements, no side effects;
-  restriction set TBD). This subsumes the extern form's common cases
-  without linking; the extern form remains the primitive. Shares
-  namespace discipline with [M4-SUBST]'s template callbacks (SR-10).
+  Spellings deliberately unproposed; recorded as §6 Q5.
+- COLLISION RULE (holds for ANY spelling chosen): a spelling that
+  reinterprets a currently-valid pattern must be MODULE-GATED. This
+  bites both sketches to date: `(<x>)` is today a group matching literal
+  `<x>`, and `\{` is today an escaped literal `{` — so with module
+  `callouts` (or the future embedded-code module) disabled, today's
+  parse stands; enabled, the new doorway opens. D37's set-graduation
+  mechanics govern if either ever reaches a bare default. The
+  near-PCRE2 `(?C...)` family is the one candidate with NO collision —
+  `(?C` is already a rejected doorway, which is a point in its favor.
 
 ## 4. Where the pcre2_callout_block mirror lives
 
@@ -161,10 +175,12 @@ rx_ctx that now carries captures anyway.
 3. Native abort: match-or-fail only (recommended), or reserve −2?
 4. Confirm F5's boundary: callouts see outer captures-so-far; inner
    captures of a composed matcher stay opaque in v1.
-5. The syntax family: `(<name>)` spelling, the R-c group-vs-non-group
-   pair (two forms? a switch character?), and the module-gating story
-   for the `(<x>)` literal-group collision (§3). Interacts with [V-E]'s
-   named-definitions question.
+5. The syntax family — open by explicit ruling ("syntax undecided"),
+   under the "near pcre2 standards" constraint for the callout binding:
+   is `(?C"name")` the extern-binding spelling? Plus the R-c
+   group-vs-non-group pair (two forms? a switch?), and the
+   embedded-code spelling (`\{ ... }` or other) whenever that distant
+   work is scheduled. Interacts with [V-E]'s named-definitions question.
 6. Embedded-code restrictions (distant future; no scheduling asked):
    expression-only over `$n` as sketched, or a broader-but-bounded set?
 

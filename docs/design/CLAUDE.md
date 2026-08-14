@@ -43,14 +43,16 @@ append-only or historical records.
   the callout-ABI ↔ match-here alignment owed to M4's match-API freeze
   ([M4-CALLOUTS] amendment), incorporating Frank's three same-day
   rulings (R-a same-interface, R-b captures-so-far structure + future
-  embedded code, R-c group vs non-group forms). ONE context-struct
+  embedded code, R-c group vs non-group forms; R-d same day: syntax
+  UNDECIDED — callout binding near-PCRE2 (`(?C...)` family favored, no
+  collision), embedded code possibly its own spelling like `\{...}`;
+  any reinterpreting spelling is module-gated). ONE context-struct
   signature `ptrdiff_t (const rx_ctx *)` on both sides — `rx_ctx`
   carries subject/len/pos + captures-so-far, so a compiled matcher
   links directly as a callout AND callouts can predicate on prior
   groups (`(\d+)(<fn_gt_100>)`); VM-forcing confirmed; the
   pcre2_callout_block mirror moves to PCRE2-compat GENERATION mode;
-  `(<x>)` literal-group collision flagged as module-gated; freeze
-  obligations F1–F7; six open questions for Frank. Unpaneled —
+  freeze obligations F1–F7; six open questions for Frank. Unpaneled —
   reviewed with the M4 match-API design.
 - `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
