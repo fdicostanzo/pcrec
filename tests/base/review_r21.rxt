@@ -1,0 +1,180 @@
+# Regressions from checkpoint review R21 finding E-1 / known_issues.md K17
+# (docs/dev/reviews/2026-08-14-r21-m4-design.md).
+#
+# THE BUG: the epsilon-closure followed a loop entry's exit edge only on the
+# FIRST re-arrival per closure (K1's 2026-08-09 fix, src/ir/dfa.c clo_visit).
+# A lazy nullable prefix inside an outer star spends that one-shot on an inner
+# star before the outer loop's own empty iteration needs it, so the exit /
+# ACCEPT lost its priority to a byte-consuming alternative and the DFA
+# over-consumed. `(?:b*?(?:a*)*)*` on "ab" matched [0,2) where PCRE2 and
+# python both give [0,1).
+#
+# Every expectation below was GENERATED from python3 re and then re-measured
+# against libpcre2 10.46: all 120 pattern/subject pairs, both oracles, zero
+# disagreements (consistent with R21's 225,240-pair python-vs-PCRE2 result on
+# this tier). So each row is what BOTH oracles say, not just the base-tier one.
+#
+# Group 1: the diverging family. Each needs all three of a lazy nullable
+# prefix, a nullable inner star, and an outer `*`.
+
+
+# K17's repro, non-capturing
+pattern (?:b*?(?:a*)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# capturing form: identical, so this is priority, not erasure
+pattern (b*?(a*)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# inner + instead of *
+pattern (b*?(a*)+)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# lazy ?? prefix instead of *?
+pattern (b??(a*)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# inner atom is a class
+pattern (b*?([a]*)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# inner body is a nullable alternation
+pattern (b*?(a*|b*)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# one nesting level deeper: the redirect must fire a third time
+pattern (?:b*?(?:(?:a*)*)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# found independently by the post-fix random sweep (seed 1)
+pattern ((?:([^a]{0,2})|(?:[a-c])??)+)*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "ab" 0 0
+m "ba" 0 1
+m "aa" 0 0
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "abab" 0 0
+
+# Group 2: the neighbours that were ALREADY correct before the fix. They are
+# here because the fix widens when the empty-iteration redirect fires, and
+# each of these removes exactly one of the three required ingredients — so
+# they are the controls that say the widening did not over-reach.
+
+# outer + rather than *
+pattern (b*?(a*)*)+
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# inner body non-nullable
+pattern (b*?(a+)*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# no outer quantifier
+pattern (b*?(a*)*)
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "ab" 0 1
+m "ba" 0 0
+m "aa" 0 2
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "abab" 0 1
+
+# greedy prefix
+pattern (b*a*)*
+m "" 0 0
+m "a" 0 1
+m "b" 0 1
+m "ab" 0 2
+m "ba" 0 2
+m "aa" 0 2
+m "bb" 0 2
+m "aab" 0 3
+m "bab" 0 3
+m "abab" 0 4

@@ -1010,7 +1010,7 @@ malformed-byte check would treat `\p{Sc!ript}` as a lookup miss rather than
 a shape PCRE2 never dispatches past — the K12/K13 "guard is the
 unimplemented-ness" pattern.
 
-## K17 — OPEN, found 2026-08-14 (R21 panel, engine critic — the P-1 probe the M4 engine design itself requested)
+## K17 — FIXED 2026-08-14, found 2026-08-14 (R21 panel, engine critic — the P-1 probe the M4 engine design itself requested)
 
 **A live tier-1 MISCOMPILE in the shipped DFA: leftmost-first priority is
 lost for a lazy nullable prefix followed by a nested nullable star inside
@@ -1050,3 +1050,229 @@ corpus with a three-way oracle) is the regression net.
 **Scheduled:** fix in the DFA priority construction before [M4.6]
 (tracked in the R21 review's disposition table); the failing repro joins
 tests/known_fail/ with the fix round.
+
+**FIXED 2026-08-14 (k17-fix lane, one commit on branch `k17-fix` carrying the
+fix and its guard tests together).** `src/ir/dfa.c` `clo_visit`: the
+empty-iteration redirect is no longer a ONE-SHOT. K1's fix followed a loop
+entry's exit edge only on the FIRST ε re-arrival per closure (`cl->reent`, a
+second generation-stamped mark array); that extra condition has no semantic
+reading. The rule is a property of the ARRIVAL, not of the loop — a second
+ε-arrival at the same loop entry is a second iteration that consumed nothing,
+and it must end the loop exactly like the first.
+
+**Mechanism, measured on the repro's own NFA** (states as pcrec numbers them
+for `(?:b*?(?:a*)*)*`: 0 = outer `*` entry, 1 = `b*?` entry, 3 = `(?:a*)*`
+entry, 4 = `a*` entry, 6 = ACCEPT). Closing the pre-set `{4}` — the position
+after "a" — walks 4 → exit → 3, and 3's own empty iteration spends the
+one-shot on the way to 0. The outer star then opens iteration 2, whose lazy
+`b*?` PREFERS to skip, which re-arrives at 3 — and with the one-shot spent
+that ε-path died. So the `b`-consuming thread (NFA state 2) was appended to
+the DFA state's priority list AHEAD of the ACCEPT that the empty outer
+iteration should have reached, giving the accepting two-state machine that
+matches [0,2). With the redirect firing again, 3 → exit → 0 → (0 is seen,
+so it redirects too) → ACCEPT lands first, accept-pruning cuts the `b`
+thread, and the span is [0,1).
+
+**Termination did not need the one-shot**, which is why removing it is safe
+rather than merely lucky: a state is EXPANDED at most once per closure
+(`seen`), so an unbounded walk would need an infinite suffix of redirects
+alone — and the redirect graph (loop entry → its continuation) only ever
+points outward past the loop, so it is acyclic and every redirect chain is
+bounded by loop-nesting depth. `reent` is deleted outright; the marks array
+is half the size it was. Compile time measured unchanged on twelve
+nested-star/nullable-alternation shapes (worst ratio 1.06, noise).
+
+**Why every net missed it** (house tradition; this one is the R2-M1 lesson
+one level deeper, and the answer is NOT that anything excluded the shape):
+
+1. **The corpus never had it — the code author's alphabet, D27's lesson.**
+   Measured over the 612 `pattern` lines in `tests/` before this fix: 44 use
+   a lazy quantifier, and only 3 of those 44 also contain a quantified group
+   with a quantifier inside it. All 3 are in review_r2.rxt and all 3 are
+   R2-M1's own shape — a lazy quantifier over an alternation of LITERALS
+   (`(?:ab|a){0,2}?b`). Not one paired a lazy NULLABLE prefix with a nested
+   NULLABLE star, and not one put that under an outer star. Tests written
+   from the fix that was just made inherit the shape of that fix.
+
+2. **The fuzzer could produce it and never did — probability, not
+   exclusion.** This is worth stating precisely because the tempting
+   conclusion is that a filter hid it, and no filter did: the fuzzer
+   compares EXACT SPANS against libpcre2, its grammar can generate every
+   piece, and nothing in `EXCLUDED FROM GENERATION` touches this class. It
+   needs four independent draws to land together — a quantified group, whose
+   body STARTS with a lazy nullable quantifier, followed by a nested nullable
+   quantified group, with an outer star over the whole thing — and then a
+   subject short enough to expose it. Joint probability ~1e-4..1e-5 per
+   pattern. The existing R2 trap templates did not help, because they encode
+   R2-M1's overlapping-prefix ALTERNATION, which is the level above this one.
+
+3. **What did find it was a probe aimed at a named blind spot.** The R21
+   engine critic ran the refutation that engine_m4.md §6.1's own P-1 asked
+   for — "the capture-erased DFA hands the VM an exact span" — instead of
+   sampling more of the same space. Seed 5 gave 910/910 agreement and said
+   nothing; the family fell out of seed 99. A claim the design marked
+   BELIEVED is a better place to point an instrument than a bigger random
+   sample, and this file's own history says so repeatedly (K15, K16).
+
+**Countermeasure, landed with this fix:** K17-family TRAP TEMPLATES in
+`tests/fuzz/fuzz.py` (six rows beside the R2 ones), which move the class from
+~1e-4 of generated patterns to a measured **4%** — 50% of trap draws, traps
+being 8% of patterns. They are sabotage-validated in the direction that
+matters: exhaustively expanded, the six rows give 111 distinct patterns, and
+against the PRE-fix compiler those produce 28 divergences over 1887
+pattern/subject cells, against the post-fix compiler 0. The second half of
+the countermeasure is the three-way differential gate ruled at D44 (any 2-1
+split with pcrec in the minority is a bug, never an oracle exclusion) — the
+mechanism that stops the next one being explained away.
+
+**Guard tests:** `tests/base/review_r21.rxt`, 120 cases — the six diverging
+family members, one nesting level deeper (`(?:b*?(?:(?:a*)*)*)*`, which
+needs the redirect a THIRD time), a witness the post-fix random sweep found
+independently, and the four non-diverging neighbours as over-reach controls.
+Every expectation generated from python3 `re` and re-measured against
+libpcre2 10.46: 120/120 pairs, both oracles, zero disagreements.
+
+**Validation:** the ten-pattern family check — this entry's six diverging
+shapes and four neighbours, on ten subjects each — went 18 divergences → 0
+with all four neighbours still correct. Random
+differential sweep vs python3 `re`, 2400 generated base-tier patterns × 16
+subjects over 8 seeds = 38,400 comparisons: **0 cells of K17's shape
+remaining, and 14 cells across 4 patterns that are K18 (below)** — every one
+of those 14 measured identical on the pre-fix binary, so the fix moved
+nothing away from the oracle.
+
+The load-bearing check is the old-binary-vs-new-binary isolation, which asks
+the right question directly — not "is pcrec correct" but "did this diff move
+any span, and in which direction". 7 seeds × 408 patterns × 18 subjects =
+**50,400 cells: 294 changed, 294 of those 294 old-wrong → new-right, 0
+regressed, 0 both-wrong.** (The 294 is inflated by the eight positive-control
+patterns being re-injected on every seed; the point of the count is the
+direction, which is unanimous.)
+
+**Blast radius by EMITTED SOURCE** — the stronger net, and the one
+run_trie_identity.sh's comment argues for over subject sampling, because it
+cannot miss a difference that the sampled subjects happen not to reach.
+Emitting C with the pre-fix and post-fix compilers over 4500 generated
+patterns: **4477 byte-identical, 23 differing** — of which 18 are the six
+injected controls re-emitted on each of three seeds, so only FIVE generated
+patterns changed at all:
+
+    ((?:([^a]{0,2})|(?:[a-c])??)+)*      (?:((?:[ab]{1,2}|[^a]*?){1,2}){2,})*
+    c?(?:(?:a?)+|[ab]{2,})*              ((?:(?:[a-c]*|.*)+?)+)*
+    ((?:(a*){1,2}|[a-c]{1,2}){2,})*
+
+Across all 23, 76 span cells moved, 76 of 76 toward the oracle, 0 regressed,
+0 both-wrong. So the fix's reach is precisely the shape it was aimed at, and
+for 99.5% of the sampled language the compiler emits the same bytes it did
+before. Full `make test` green, `make strict` clean.
+
+The first isolation attempt reported "0 changed" over 36,000 cells and was
+DISCARDED rather than reported: its generator used a broader quantifier
+alphabet and never produced a K17 shape at all, so it was a control that
+could not have failed — the recurring lesson in this file about checks that
+share a blind spot with the thing they check.
+
+**IT DID NOT CLOSE THE CLASS — see K18.** The sweep that validated this fix
+also found a structurally distinct sibling that this fix does not reach and
+never did: `(?:(?:a|b*?)?)*` on "ab", still [0,2) against both oracles'
+[0,1). K17's "requires all three: lazy nullable prefix, nullable inner
+star, outer `*`" was a description of the shrunk family, not of the defect
+class. Do not read this entry as evidence that the priority construction is
+now exact.
+
+---
+
+## K18 — OPEN, found 2026-08-14 (the K17 fix's own validation sweep)
+
+**A second live tier-1 MISCOMPILE in the shipped DFA, the same root design
+fact as K1/K17 and NOT fixed by either: the empty-iteration redirect cannot
+be reached through an ALREADY-SEEN NON-LOOP epsilon state.** K17 widened
+when the redirect fires AT a loop entry; this shape dies one state short of
+ever arriving at one.
+
+**Repro** (k17-fix HEAD, i.e. WITH the K17 fix applied):
+
+    pattern (?:(?:a|b*?)?)*   subject "ab"
+      pcrec  : MATCH span [0,2)
+      pcre2  : MATCH span [0,1)
+      python : MATCH span [0,1)
+
+**Mechanism.** For `(?:(?:a|b*?)?)*` pcrec builds 0 = outer `*` entry
+(exit → ACCEPT), 6 = the `?` split, 5 = the alternation split, 2 = `a`,
+3 = `b*?` entry, 4 = `b`, and **1 = an N_EPS, the outer star's loop-back
+edge**. Closing the pre-set `{1}` — the position after "a" — marks state 1
+seen immediately, since it IS the entry point. The walk then reaches the
+alternation, emits thread 2, and tries `b*?`, whose lazy PREFERRED branch is
+its exit — and that exit edge points at state 1. State 1 is seen and is not
+a loop entry, so `clo_visit` returns dead, one hop short of state 0, whose
+redirect would have produced the ACCEPT. Thread 4 (`b`) is emitted instead,
+ahead of the ACCEPT reached afterwards, and the DFA over-consumes.
+
+**Diverging family (measured):** `(?:(?:a|b*?)?)*`, `((?:a|b*?)?)*`,
+`(?:(a|b*?)?)*`, `(?:(?:a+|b*?)?)*`, `(?:(?:a|b??)?)*`, `(?:(?:a?|b*?)?)*`,
+`(?:(?:a|b*?)?)+` (on "aab"/"aabb"), `(?:(?:[a]|[b]*?)?)*`,
+`(?:(?:a|c|b*?)?)*`. **BOTH ENGINES** — `^(?:(?:a|b*?)?)*` diverges
+identically on ENG_ATTEMPT, which is K1's R2-S1a lesson repeating: do not
+scope this to one engine without measuring.
+**Does NOT diverge** (each removes one ingredient; these are EMPIRICAL
+controls — the mechanism above was traced only on the minimal repro, so do
+not read a cause into any single row): `(?:(?:a|b*)?)*` and `(?:(?:a|b?)?)*`
+(greedy inner), `(?:(?:b*?|a)?)*` (lazy branch preferred),
+`(?:(?:a|b*?)*)*` (inner `*` not `?`), `(?:(?:a|b*?))*` (no `?` wrapper),
+`(?:(?:a|b*?)?)` (no outer quantifier), `(?:a(?:b*?)?)*` (concatenation, not
+alternation), `(?:(?:a|)?)*` (an empty alternative instead of a lazy
+quantifier). Note that unlike K17, an outer `+` does NOT save the shape.
+
+One of these controls is worth reading before trusting the others: for
+`(?:(?:b*?|a)?)*` the closure at the position after "a" fails in EXACTLY the
+way traced above — thread `b` ahead of the ACCEPT — and the pattern is
+correct anyway, because the preferred lazy branch makes the START state
+accept an empty match, so both pcrec and both oracles answer [0,0) and the
+broken closure is never consulted. A control passing does not mean the
+mechanism is absent there; it means the mechanism is not observable there.
+
+**It is reachable by accident, not just by construction.** The four witnesses
+below are what a 38,400-comparison random sweep threw up on its own, before
+any shrinking; they are recorded because the shrunk repro above makes the
+shape look more contrived than it is. All four measured IDENTICAL on the
+pre-K17-fix binary, so they are this defect and not fallout from that fix.
+The first three are visibly the `(...?)*` shape; the fourth is listed as
+same-SIGNATURE (over-consumes by exactly the trailing byte) rather than
+same-mechanism, because only the minimal repro's NFA was traced.
+
+    (?:(?:(?:a+|[a-c]*?)?|(?:a+){2,})?)*   "ab"   [0,2) vs [0,1)
+    ((?:(?:a?){1,3}?|.+?)*)+?              "ab"   [0,2) vs [0,1)
+    ((?:(?:c{1,3}?|.*?)|(b{1,3}?)+?)?)*    "cba"  [0,2) vs [0,1)
+    (?:(?:b+|[^a]??)+?(?:a?|[^a]+)+|b{3})+ "abc"  [0,3) vs [0,2)
+
+**Why the K17 fix cannot reach it, and what a real fix costs.** Both bugs are
+the same underlying fact: **`clo_visit`'s `seen` set is a GLOBAL per-closure
+memo, but the empty-iteration rule makes a closure's result depend on which
+loop iterations are currently OPEN on the walk's own path.** Dedup by NFA
+state alone conflates two arrivals that the backtracker would treat
+differently. K17 was the sub-case where the conflated state is itself a loop
+entry, and there the redirect is a complete repair; K18 is the sub-case where
+it is an ordinary ε state on the way to one, and no rule stated at loop
+entries can see it. The principled fix is to key the closure memo on
+(state, open-loop-set) rather than on state alone — a path-sensitive closure,
+with the open set maintained as a properly-nested stack. That is a real
+rewrite of `clo_visit` with a real compile-time-blowup risk (the memo must
+distinguish contexts without losing the dedup that R2-A4's quadratic fix
+bought), which is why it is NOT bundled with K17's one-line change.
+
+**Severity: tier 1, same as K17** — a wrong span from the shipped compiler,
+both oracles agreeing against pcrec, capture-independent. It carries the same
+consequence K17's entry records for M4: it is a precondition for [M4.6]'s
+DFA-prefilter hybrid, which would publish this wrong span with matching-wrong
+capture offsets, and M4.5's span(VM) == span(DFA) internal differential is
+the net that must catch it.
+
+**Repro on file:** `tests/known_fail/k18_empty_exit_through_seen_eps.rxt`
+(165 cases: the eight diverging shapes plus seven over-reach controls that
+pass today and must still pass after a fix). Every expectation generated
+from python3 `re` and re-measured against libpcre2 10.46 — 165/165 pairs,
+both oracles, zero disagreements.
+
+**Scheduled:** UNASSIGNED — needs a manager/Frank decision, because the fix
+shape (path-sensitive closure) is a different risk class from K17's and
+sits on the same [M4.6] precondition.

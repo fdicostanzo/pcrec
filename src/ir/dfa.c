@@ -55,7 +55,7 @@ static void eqclasses(Nfa *nfa, Dfa *d)
  * (DFA state x byte class) x2, so total work was Theta(|DFA|*ncls*|NFA|) --
  * the quadratic behind R2-A4's "200 -> 25.6 ms, 1000 -> 239 ms". */
 typedef struct {
-    uint32_t *mark;   /* [0,n) = seen, [n,2n) = reent */
+    uint32_t *mark;   /* [0,n) = seen */
     uint32_t  gen;
     int       n;
 } Marks;
@@ -63,7 +63,7 @@ typedef struct {
 static void marks_next(Marks *mk)
 {
     if (++mk->gen == 0) {   /* wrap: stale stamps could alias, so clear */
-        memset(mk->mark, 0, (size_t)mk->n * 2 * sizeof(uint32_t));
+        memset(mk->mark, 0, (size_t)mk->n * sizeof(uint32_t));
         mk->gen = 1;
     }
 }
@@ -71,7 +71,6 @@ static void marks_next(Marks *mk)
 typedef struct {
     Nfa      *nfa;
     uint32_t *seen;
-    uint32_t *reent;
     uint32_t  gen;
     int      *out;
     int       nout;
@@ -95,13 +94,43 @@ static void clo_visit(Clo *cl, int s)
         if (cl->seen[s] == cl->gen) {
             /* PCRE empty-iteration rule: reaching a loop entry again by
              * epsilon means the iteration consumed nothing, which ENDS the
-             * loop. Follow the exit edge once, here — at this priority
-             * position, ahead of the loop body's lower-priority consuming
-             * alternatives. Without this the exit/ACCEPT is only reached after
-             * them and loses priority (R2 findings R2-S1 and K1). */
+             * loop. Follow the exit edge here — at this priority position,
+             * ahead of the loop body's lower-priority consuming alternatives.
+             * Without this the exit/ACCEPT is only reached after them and
+             * loses priority (R2 findings R2-S1 and K1).
+             *
+             * THE REDIRECT IS NOT A ONE-SHOT (K17). K1's fix followed the exit
+             * only on the FIRST re-arrival per closure, and that extra
+             * condition has no semantic reading: the rule is a property of the
+             * ARRIVAL, not of the loop. A second ε-arrival at the same loop
+             * entry is a second iteration that consumed nothing, and it must
+             * end the loop exactly like the first. `(?:b*?(?:a*)*)*` on "ab" is
+             * where the difference is observable: after "a", the lazy `b*?`
+             * prefers to skip, which re-arrives at the inner star; with the
+             * one-shot spent that ε-path died, so the `b`-consuming thread was
+             * emitted AHEAD of the ACCEPT the empty outer iteration should
+             * have reached, and the DFA matched [0,2) where PCRE2 and python
+             * both give [0,1).
+             *
+             * Termination does not need the one-shot. A state is EXPANDED (the
+             * switch below) at most once per closure, so an unbounded walk
+             * would have to be an infinite suffix of redirects alone — and the
+             * redirect graph (loop entry -> its continuation) only ever points
+             * outward past the loop, so it is acyclic. Each redirect chain is
+             * therefore bounded by the loop-nesting depth.
+             *
+             * STILL NOT EXACT — K18. This rule fires only when the re-arrival
+             * lands ON a loop entry. `seen` is a GLOBAL per-closure memo while
+             * the empty-iteration rule is PATH-dependent, so a redirect that
+             * has to be reached THROUGH an already-seen ordinary ε state is
+             * still lost: `(?:(?:a|b*?)?)*` on "ab" gives [0,2) against both
+             * oracles' [0,1), because the lazy exit edge lands on the outer
+             * star's loop-back N_EPS, which was the closure's own entry point.
+             * The principled repair is to key the memo on
+             * (state, open-loop-set) instead of on state alone. Read
+             * docs/dev/known_issues.md K17 and K18 together before editing. */
             const NState *ls = &cl->nfa->st[s];
-            if (ls->loop && cl->reent[s] != cl->gen) {
-                cl->reent[s] = cl->gen;
+            if (ls->loop) {
                 s = ls->exit_is_t2 ? ls->t2 : ls->t1;
                 continue;
             }
@@ -125,7 +154,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
                     bool prune, Marks *mk, int *out, int *nout, bool *accept)
 {
     marks_next(mk);
-    Clo cl = { nfa, mk->mark, mk->mark + nfa->n, mk->gen,
+    Clo cl = { nfa, mk->mark, mk->gen,
                out, 0, false, eol_ok, bot_ok, prune };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
@@ -237,7 +266,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
         d->maxstates = PCREC_MAX_TABLE_ENTRIES / d->ncls;
 
     Marks marks = {
-        arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(uint32_t)), 0, nfa->n
+        arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(uint32_t)), 0, nfa->n
     };  /* arena memory is zeroed, so generation 1 starts clean */
     int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
