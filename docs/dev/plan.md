@@ -71,11 +71,18 @@ setting the work order.
 ## Next: M4 (milestones start with Frank)
 
 [STD1] completed 2026-08-13 (seventeenth session) — archived in
-plan_completed.md. Per the ratified order M4 is next; before its match-API
-design freezes, the [PC-5] flag-disposition table must exist and the
-subst-template design note is owed (backrefs + atomic notes below are
-already drafted). The M4-CALLOUTS callout-ABI alignment proposal
-(2026-08-13 amendment) is a design input to the same freeze.
+plan_completed.md. Per the ratified order M4 is next, and all three
+pre-freeze design inputs are now LANDED AND RULED (D38, eighteenth
+session, 2026-08-14): the [PC-5] flag-disposition table landed (merge
+258fd79) and its dispositions are ruled wholesale, archived at
+plan_completed.md's 2026-08-14 group; the subst-template design note
+merged 3d5a9e8 with all fourteen of §9's questions fully ruled
+(docs/design/subst_template_design.md); the M4-CALLOUTS callout-ABI
+alignment proposal has its rulings applied
+(docs/design/design_callout_abi.md) with only the syntax spelling (§6 Q5)
+and the embedded-code restrictions (§6 Q6) left open. Next step: expand
+[M4.0] into substeps — milestones start with Frank, and the session-start
+go covers development; the manager will bring the expansion.
 
 ## M4 — Captures + backtracking VM engine
 
@@ -226,7 +233,15 @@ including V-G/V-H (added this session).
   recursion is non-regular; a future VM-side module's business, never
   inlining's). Positioning parity note: re2c and lex/flex both ship
   named-definition composition — established practice in exactly our
-  claimed niche; PCRE2 semantics on top is the differentiator
+  claimed niche; PCRE2 semantics on top is the differentiator.
+  AMENDED 2026-08-14 (D39.2, `docs/dev/decisions.md`): rx-reference group
+  numbering is APPENDED — the primary keeps its own 1..N stable; each
+  inserted regex's groups append at N+1.. in insertion order; names are
+  kept, and D39.1's exported name→number index is the lookup path.
+  Backrefs inside an inserted regex renumber to their appended positions
+  at insert time (compile-time). The name-collision policy (qualified
+  names, e.g. `sub.year`; compile error; first-wins) is the recorded
+  open sub-question, ruled at V-E design time
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
@@ -589,7 +604,6 @@ document). Mechanize instead.
 - [PC-2] STATE:not-started — periodic re-survey: re-read pcre2syntax.html,
   re-run tests/reject, move landed modules from REJECTED to OK, re-stamp the
   date. Do this whenever a module lands and at each checkpoint review
-- [PC-5] STATE:started (table LANDED 2026-08-14, merge 258fd79 — docs/pcre2_options.md, 80 flags, 10 measured; remaining work is FRANK'S RULINGS over the proposed-disposition column) — PCRE2 OPTION/FLAG DISPOSITION SURVEY (Frank, 2026-08-13 sixteenth session): every PCRE2 option, flag by flag — sibling to pcre2_compliance.md's construct-by-construct survey. Scope: compile options, match options, PCRE2_EXTRA_*, substitute options, DFA-match options, BSR/NEWLINE values. Columns: what it does, WHEN IT BINDS (pattern-compile vs match-call vs context), and a pcrec disposition from a small vocabulary: DONE-AS (already exists as X — e.g. CASELESS ≡ -i/(?i), D23), RIDES (lands with an owning module/milestone — MULTILINE → assertions/DD-6, UTF/UCP → M5), GENERATION-AXIS (D18 earn-its-axis candidate — ANCHORED/ENDANCHORED compile to the anchored variant; OS-0 named entry points serve callers wanting both), API-PARAM (runtime parameter on the generated entry point — NOTBOL/NOTEOL), EMITTED-LOOP (subsumed by generated iteration: NOTEMPTY/NOTEMPTY_ATSTART exist because PCRE2 callers hand-roll global-match loops around a raw single-match primitive; pcrec emits the loop itself at DD-4/M4-SUBST), LATER, and NEVER with reason (JIT options; NO_START_OPTIMIZE/NO_AUTO_POSSESS are generation-time decisions in an AOT compiler — cite M4-CALLOUTS' PCRE2_NO_START_OPTIMIZE-latitude precedent). Fiddly semantics MEASURED against libpcre2, never read from documentation alone (the Q2/K4 lesson: three candidate grammars refuted by measurement). Fact-gathering is subagent work; DISPOSITIONS ARE FRANK'S RULINGS over the finished table. Sequencing: the table exists BEFORE M4's match-API design freezes (bucket 2 is that design's input). Overlaps, deliberately not merged: DOC-BM owns the EXTRA_* effect on registry DISPATCH (this survey feeds it, does not replace it); DD-11 owns NEWLINE/BSR (those rows point there). Standing constraint to restate in the doc header: the suite's oracle is pinned at options=0 (R10 disposition 3), so adopting any flag is a deliberate re-measurement event. Output artifact: docs/pcre2_options.md, next to pcre2_compliance.md.
 
 ## Small-debt shelf (light-session filler; pointers, not new rows)
 
@@ -608,4 +622,3 @@ Pointers, not queue positions — states live on the real rows cited.
 - M4-CALLOUTS step 1 — the registry flip to PLANNED; schedulable any free
   lane.
 - PC-2 — re-survey.
-- PC-5 flag-disposition survey — fact-gathering lane any time; dispositions are Frank's; before M4's match-API design.

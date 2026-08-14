@@ -31,7 +31,12 @@ Process and status documents for pcrec. The architecture itself lives in
   standing constraint that the suite's oracle is pinned at options=0, so
   adopting any flag is a deliberate re-measurement event. Points to DD-11
   (NEWLINE/BSR) and DOC-BM (`EXTRA_*` dispatch effects) rather than
-  re-deriving their territory.
+  re-deriving their territory. **RULED (D38, 2026-08-14):** the `ruling`
+  column is filled wholesale (`RATIFIED 2026-08-14 (D38)`, three rows
+  ruled individually — LITERAL, DFA_SHORTEST, COPY_MATCHED_SUBJECT); rows
+  stay individually re-openable. Also carries the D38 naming-scheme
+  addenda: the native surface is uniformly `PCREC_*`, `PCRE2_*` is
+  compat-only.
 - `testing.md` — .rxt test-file format, harness usage, env vars, oracle
   exclusions, how to add a per-module test directory, and (added [TT-1])
   "Tiered testing": the measured per-section runtimes behind `make

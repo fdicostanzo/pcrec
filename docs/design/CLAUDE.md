@@ -53,7 +53,13 @@ append-only or historical records.
   groups (`(\d+)(<fn_gt_100>)`); VM-forcing confirmed; the
   pcre2_callout_block mirror moves to PCRE2-compat GENERATION mode;
   freeze obligations F1–F7; six open questions for Frank. Unpaneled —
-  reviewed with the M4 match-API design.
+  reviewed with the M4 match-API design. **RULED (D38, 2026-08-14):**
+  Frank's rulings applied throughout — `rx_ctx` gains `void *user` via
+  the new `rx_callout_ref` binding-unit struct (§1.1); native abort is
+  match-or-fail only in v1, −2+ reserved and `__builtin_trap()`-enforced
+  at call sites (F2); PCRE2-compat abort is discharged by generation-time
+  call-site control flow, no native mechanism. Only Q5 (syntax spelling)
+  and Q6 (embedded-code restrictions) remain OPEN.
 - `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
   because Frank's ratified observation is that the template compiler consumes
@@ -85,7 +91,11 @@ append-only or historical records.
   because `$0` is already `rx_span`. Every PCRE2 claim is MEASURED
   (`tests/probes/probe_subst.c` → `../measurements/probe_subst.txt`, 10.46),
   not read from documentation: three of the note's twelve stated predictions
-  were refuted, two of them changing the design.
+  were refuted, two of them changing the design. **RULED (D38,
+  2026-08-14):** all fourteen of §9's questions ruled (outcomes appended
+  in place, e.g. length-only no-NUL buffers, `pcrec_error`'s which-input
+  tag, `rx_span` breaking at the M4 freeze) and §10's summary asks marked
+  ACCEPTED; the design prose itself is unchanged, only annotated.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
