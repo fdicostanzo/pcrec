@@ -22,10 +22,18 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open at R11 close: K2 (cosmetic), K7 (a resource bug that also ABORTS the
-  caller's process under a memory limit), K9 (the public API takes no pattern
-  length, so a pattern containing NUL compiles as its prefix and reports
-  success), K10 (FIXED 2026-08-12 by MOD-0.6's K10 slice: `RF_CLASS_INVALID` removed
+  Open as of 2026-08-14 (R21 close): K2 (cosmetic), K7 (a resource bug that
+  also ABORTS the caller's process under a memory limit), K9 (the public API
+  takes no pattern length, so a pattern containing NUL compiles as its
+  prefix and reports success — rx_info.pattern_len at the M4 freeze is the
+  fix's API half), and K18 (empty-iteration exit lost when the ε re-arrival
+  passes THROUGH an already-seen state rather than landing ON a loop entry —
+  K17's structurally distinct sibling, found by K17's own validation sweep;
+  165 oracle-verified cases in tests/known_fail/; repair direction: key
+  clo_visit's memo on (state, open-loop-set); precondition for M4.6's
+  hybrid alongside K17's fix). K17 (FIXED 2026-08-14 same day as found —
+  R21 panel E-1; the K1 one-shot guard removed from clo_visit, 120
+  family tests, 294/294 changed cells toward the oracle), K10 (FIXED 2026-08-12 by MOD-0.6's K10 slice: `RF_CLASS_INVALID` removed
   from the `{U+` row, `[\N{U+41}]` now promises module `unicode-props`;
   guarded by `check_class_syntax_reach` and seven offset pins — see
   docs/dev/known_issues.md), K11 (FIXED 2026-08-11 by MOD-0.1's returned-claims epilogue: doorways
