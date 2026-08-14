@@ -3376,3 +3376,102 @@ deliberately NOT a D37 named set today; tests/registry relies on this
 (pcre2_check.c compiles at the empty set by construction and is
 flip-immune). The question "what default does a promoted library channel
 get" re-opens WITH that promotion, not before.
+
+## D38 — M4 pre-freeze rulings: callout/match ABI, substitution contract, PC-5 dispositions (2026-08-14)
+
+**Decision (Frank, eighteenth session, ruled interactively over the three
+pre-freeze design inputs — docs/design/design_callout_abi.md,
+docs/design/subst_template_design.md, docs/pcre2_options.md).** This entry
+is the authoritative record; the three documents carry the applied text.
+
+**Callout / match ABI:**
+
+1. The aligned primitive is `rx_matchfn = ptrdiff_t (const rx_ctx *)`,
+   `rx_ctx = { const unsigned char *subject; size_t len, pos, ncap;
+   const ptrdiff_t (*caps)[2]; void *user }`. Returns matched length >= 0
+   or -1.
+2. The BINDING UNIT is a struct, not a bare function symbol:
+   `rx_callout_ref { rx_matchfn *fn; void *user }`, one
+   `extern const rx_callout_ref rx_callout_<name>` per callout. The
+   engine copies `ref->user` into `ctx->user` before calling `ref->fn`.
+   Per-binding static state; per-thread state is the callout's own
+   business via `_Thread_local` (an `&tls_var` static initializer does
+   not compile — noted so nobody tries). Using a compiled matcher as a
+   callout is a one-line const struct wrap. Rejected: a single
+   process-global user pointer (one value shared by all callouts), and a
+   per-call user parameter (Frank: "ouch" — over-callback-friendly).
+3. The match-here entry is exported UNCONDITIONALLY on every generated
+   matcher (OS-0 naming; D37's artifacts-carry-their-contract precedent).
+4. Native abort: NONE in v1 — match-or-fail only. Return values < -1 are
+   RESERVED for a future abort semantic and enforced today by generated
+   call sites: `if (ret < -1) __builtin_trap();` (freestanding-safe;
+   libc abort() rejected for the no-libc line; longjmp abort rejected —
+   setjmp cost on the warm entry path + volatile-locals hazard at -O2,
+   and -2 gives the same expressiveness on the cold path).
+5. Captures: OPAQUE across the composition boundary in v1. A callout
+   sees the outer captures-so-far; a composed matcher's inner captures
+   are invisible; the group form captures only the consumed span. The
+   designated v2 path (recorded, not scheduled): declared-in-syntax
+   export — the outer pattern states the callee's exported group count
+   (direction: `(?Cc<n>"fn")`) because group numbering is compile-time
+   (subst C1); requires a non-const ctx + capacity field, i.e. a DD-3
+   struct revision.
+6. `ncap` is a mid-match watermark at callout sites and is pinned to
+   `ngroups + 1` with every pair written on a completed match (subst C6).
+7. Syntax remains UNDECIDED (R-d): callout binding near-PCRE2 (`(?C...)`
+   family favored — no collision, `(?C` is already a rejected doorway);
+   embedded code possibly its own spelling (`\{ strlen($1) == 5 }`
+   sketch); any spelling that reinterprets a currently-valid pattern is
+   module-gated.
+
+**Substitution (subst_template_design.md §9, all fourteen ruled):**
+
+- Q1 `$0` is core. Q2 bare `$name` supported (greedy; the compile-time
+  check defuses the footgun). Q3 unset-but-existing group renders EMPTY
+  by default, as a GENERATION AXIS with a strict PCRE2-error variant —
+  python becomes the clean oracle (§8.2). Q4 length-only, NO NUL
+  termination or budget (8-bit clean; embedded NULs are legal output —
+  Frank's own concern, answered by this shape). Q5 namespace rule
+  ADOPTED as testable (every pcrec-only form must be a spelling PCRE2
+  rejects) and `${!...}` reserved as the extension prefix. Q6 subsumed
+  by ruling 2 above: renderer bindings use the same ref-struct shape.
+  Q7 `--replace` now (repeatable per §5.5); V-E's manifest gains a
+  template field when designed. Q8 `pcrec_error` gains a WHICH-INPUT
+  tag (enum pattern/template) beside `pos` — lib/pcrec.h change at the
+  M4 freeze. Q9 confirmed (byte offsets per DD-12; UTF is M5's). Q10
+  duplicate names deferred with module named-groups. Q11 sizing is
+  EXACT BY CONTRACT: renderers must honor out==NULL sizing and be
+  deterministic across the passes; violations are the embedder's bug.
+  Q12 `rx_span` BREAKS AT THE M4 FREEZE — becomes the ptrdiff_t pair
+  type in one announced break (Frank: ptrdiff_t "clearer in a utf
+  environment"); no permanent conversion seam. Q13 renderer =
+  `rx_matchfn` + output buffer (`rx_renderfn(const rx_ctx*, unsigned
+  char *out, size_t cap) -> ptrdiff_t`), same return discipline, shared
+  out==NULL sizing. Q14 `const unsigned char *subject` (already
+  applied).
+- Also accepted: §2's C1–C11 as REQUIREMENTS on M4's match API (with
+  §2.2's non-requirements); the module tiering `subst` /
+  `subst-extended` / `subst-pcrec` (the run-time SUBSTITUTE_EXTENDED
+  bit ceases to exist — a template's dialect is a singleton dimension);
+  one function both modes with count-as-return.
+
+**PC-5 (docs/pcre2_options.md):** the PROPOSED disposition column is
+RATIFIED wholesale, with three rows ruled individually (outcomes match
+the proposals): LITERAL = GENERATION-AXIS, later; DFA_SHORTEST = LATER
+pending its own design note; COPY_MATCHED_SUBJECT = NEVER (allocation-
+free generated matchers; caller owns the buffer — a documented
+non-goal). Every row stays individually re-openable; adopting any flag
+remains a deliberate re-measurement event (oracle pinned at options=0).
+
+**Why:** these three documents are the declared inputs to M4's match-API
+freeze; ruling them before M4.0 expands means the freeze starts from
+settled ground. The rulings repeatedly chose: compile-time over
+run-time (tiering, bounds checks, bindings), lengths over terminators,
+per-binding state over globals, and reserved-and-trapped value space
+over speculative mechanism.
+
+**Revisit-when:** the M4 match-API design freeze itself (these are its
+inputs, and rx_span's break lands there); D20's promotion for anything
+library-default-shaped; V-E's manifest design for capture export and
+the template field; the abort reservation if a real customer for
+native abort appears.
