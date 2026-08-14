@@ -3530,3 +3530,19 @@ inserted-twice case), compile error on collision, first-wins.
 
 **Revisit-when:** M4 freeze (the index joins the artifact contract);
 V-E's design start (numbering + collision policy applied there).
+
+**D39 addendum (Frank, same session): the collision sub-question
+RESOLVES toward LABELED REFERENCES.** An insertion site carries a
+caller-supplied reference label — `"a:reg1"`, `"b:reg1"` for the same
+regex inserted twice — and that reference is saved as an ADDITIONAL
+COLUMN in the static name→number index. Nested insertions compose the
+labels into a PATH (Frank's example: `"c:a"`). Consequence adopted with
+it: the F8 index struct is BORN with the ref column at the M4 freeze —
+`{const char *name; int number; const char *ref}` with NULL/empty ref
+for the primary's own groups — so V-E's arrival extends data, not ABI
+(no DD-3 break of the exported index). Still open, ruled at V-E design
+time: the path spelling (order/separator of "c:a"), whether the label
+is mandatory per insertion or optional-with-default for single
+insertions, and lookup-key semantics (name-alone when unambiguous vs
+ref+name). Frank also notes more group-names-static questions may
+surface; they land here as further addenda.
