@@ -109,7 +109,7 @@ stated terms.
   ride to Frank/panel; four requirements handed back to
   match_api_m4.md (search-entry negative returns, the capture-delivering
   entry gap, ASK-4 closure per §5.7, symbol spellings)
-- [M4.3] STATE:not-started — D6 ADVERSARIAL PANEL over M4.1 + M4.2
+- [M4.3] STATE:started (2026-08-14, R21, 3 critics) — D6 ADVERSARIAL PANEL over M4.1 + M4.2
   TOGETHER WITH the still-unpaneled design_callout_abi.md and
   subst_template_design.md (their panel-outcome blocks land here).
   Findings file under docs/dev/reviews/; fix-with-measurement before
