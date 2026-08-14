@@ -216,6 +216,11 @@ which does not exist yet — `pcrec --count-groups '(?<g>a)(b)'` fails with
 *"(?<...) requires module 'named-groups'"*. So `${name}` is gated on that
 module, **not** on M4, and it tiers separately for that reason (§3.1).
 
+**AMENDED by D39:** the artifact DOES export a name→number index as a
+separate obligation (D39.1) — C10's statement that template resolution
+needs no runtime table stands; the index serves embedders and V-A, not
+`${name}` resolution.
+
 **C11 — Success/failure is a return value, not an error object.**
 The splice needs to know only whether a match occurred. No error codes, no
 match-data object, no diagnostic buffer.
@@ -231,6 +236,9 @@ over-deliver, and each of these would be cost with no consumer:
 - **No run-time "does group N exist" query.** That is §4's compile-time
   check.
 - **No run-time name lookup** (C10) and no `pcre2_substring_*` family.
+  **AMENDED by D39:** the artifact DOES export a name→number index as a
+  separate obligation (D39.1) — this non-requirement stands for template
+  resolution; the index serves embedders and V-A, not `${name}`.
 - **No partial-match or window states.** Streaming substitution is **[M3]**'s
   business if it ever is anyone's; this note is buffer-to-buffer.
 - **No callout or callback context threading from the matcher.** §7's

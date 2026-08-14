@@ -233,7 +233,15 @@ including V-G/V-H (added this session).
   recursion is non-regular; a future VM-side module's business, never
   inlining's). Positioning parity note: re2c and lex/flex both ship
   named-definition composition — established practice in exactly our
-  claimed niche; PCRE2 semantics on top is the differentiator
+  claimed niche; PCRE2 semantics on top is the differentiator.
+  AMENDED 2026-08-14 (D39.2, `docs/dev/decisions.md`): rx-reference group
+  numbering is APPENDED — the primary keeps its own 1..N stable; each
+  inserted regex's groups append at N+1.. in insertion order; names are
+  kept, and D39.1's exported name→number index is the lookup path.
+  Backrefs inside an inserted regex renumber to their appended positions
+  at insert time (compile-time). The name-collision policy (qualified
+  names, e.g. `sub.year`; compile error; first-wins) is the recorded
+  open sub-question, ruled at V-E design time
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to

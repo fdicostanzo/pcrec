@@ -237,6 +237,14 @@ runtime signal threaded back through `rx_matchfn`'s return convention.
 - **F7**: callout patterns force the VM engine; the registry/engine
   selection must be able to say so per-pattern (same per-pattern engine
   answer shape as the backrefs/atomic design notes under M4).
+- **F8** (D39.1, `docs/dev/decisions.md`): every generated pattern
+  EXPORTS a static const name→number group index — a sorted
+  `{const char *name; int number;}` array plus count, bsearch-able,
+  `.rodata` only, zero runtime cost. It does NOT travel in `rx_ctx` or
+  any callback parameter (it is a link-time constant per pattern, not
+  per-call state); a callout wanting it links against the exported
+  symbol directly. Second customer: V-A's
+  `pcre2_substring_number_from_name`.
 
 ## 6. Open questions for Frank (numbered, rulings requested)
 
