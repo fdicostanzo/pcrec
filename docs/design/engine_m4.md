@@ -77,13 +77,25 @@ restating them, and every identifier below falls in one of three families
 
 | family | examples used here | scoped by `--prefix`? |
 |---|---|---|
-| ABI types, deliberately FIXED literal names | `rx_ctx`, `rx_matchfn`, `rx_callout_ref` | **no** — `match_api_m4.md` §12.7 |
+| ABI types, deliberately FIXED literal names | `rx_ctx`, `rx_matchfn`, `rx_callout_ref` | **no** — `match_api_m4.md` §12.7, RULED (D41.1, 2026-08-14) |
 | per-artifact emitted symbols | `<prefix>_match` (§12.6 there), `<prefix>_search`, `<prefix>_span`, and everything this document invents (`rx_work`, `RX_NCAPS`, `RX_UNSET`, `RX_ENGINE`, `RX_ERR_STEPS`, `RX_ERR_FRAMES`, `RX_BT_FRAMES`, `RX_TRAIL_FRAMES`, `RX_NSTATE`, `RX_HYBRID_MIN`, and the emitted labels) | yes; written here with the default `rx`/`RX` per that document's convention |
 | pcrec's own library surface | `PCREC_*`, `--step-budget`, `--engine` | no (namespace 2) |
 
 **This document introduces no new fixed-literal ABI type.** It consumes the
 three that exist and invents only per-artifact symbols, which is the family
 where prefix-scoping is already settled.
+
+**RULED (D41.1, D41.2, 2026-08-14):** `match_api_m4.md` §12.6 (`<prefix>_match`
+as the match-here entry's name) and §12.7 (`rx_ctx`/`rx_matchfn`/
+`rx_callout_ref` as fixed literal, unprefixed names) are both ruled exactly
+as those sections proposed — Frank did not reverse §12.7, so the "if
+reversed" paragraph below is now a counterfactual, kept for the record
+rather than as an open risk. `match_api_m4.md` §7's naming table also now
+carries a new fourth entry this document did not have when §0.3 was
+written: `<prefix>_match_caps` (D41.4), the anchored capture-delivering
+entry — per-artifact, `--prefix`-scoped, same family as `<prefix>_match`.
+It does not change this table, since it falls in the same "per-artifact
+emitted symbols" row already covering `<prefix>_match`.
 
 **If Frank reverses §12.7** (making the ABI types `<prefix>_ctx`-scoped), the
 engine design is almost entirely insensitive: the resume stack, the trail, the
@@ -377,6 +389,15 @@ so the budget is threaded ACROSS attempts rather than reset per start
 (otherwise an O(n) sweep of O(budget) attempts is still unbounded, §4), and the
 slot array's `RX_UNSET` initialisation happens once rather than n times
 (§2.4).
+
+**RULED (D41.5, 2026-08-14) — this one-shot posture is a CHOSEN primitive,
+not merely today's default.** See D41 for the full record: SIMD block
+scanning motivated the find-all alternative, but under PCRE2's sequential
+semantics "find all" is the same result set as repeated one-shot search, so
+the question was redone work only. Both entries above stay exactly as
+designed; the ruling's remedies live outside this document — EMITTED LOOPS
+own dense-match iteration, and a designated `<prefix>_iter` cursor entry is
+the additive extension for a future embedder customer.
 
 ### 2.7 Where computed goto is used, and D13
 
@@ -825,6 +846,12 @@ generation axis that recovers today's code for callers who do not want it. The
 hybrid (§6) is what makes that affordable, because the scanning stays on the
 DFA either way.
 
+**RULED (D42.1, 2026-08-14):** the recommendation above is adopted exactly
+as stated — captures ON by default post-[M4.5]; `--no-captures` recovers
+today's pure-DFA artifact. The generated-contract change for group-bearing
+patterns lands on the SAME announced D37 boundary as the `rx_span` break
+(§9.2(3)).
+
 ### 5.4 Zero regression for capture-free patterns
 
 The mechanism is not "the VM is fast enough for them"; it is that they do not
@@ -964,6 +991,17 @@ the capture contract's shape before that declaration rather than after —
 and D40's addendum already routes the as-built contract into `docs/spec/` at
 [M4.7]'s close, which is where the `RX_NCAPS > 1 ⇒ VM` invariant (§5.7.2)
 should be written down as a contract line rather than only as a codegen check.
+
+**RULED (D42.1, D42.2, 2026-08-14):** both outstanding pieces of this
+section are now confirmed rather than proposed. D42.1 adopts §5.3's
+captures-ON-by-default recommendation, which is what makes the `RX_NCAPS`
+1 → 2 transition above a REAL event for `a(b|c)+d` specifically (not just
+for callers who explicitly opt in) — `--no-captures` is the only way to
+keep an artifact at `RX_NCAPS 1` past [M4.5]. D42.2 confirms §5.7.2's rule
+itself (ASK-12): the artifact-property framing, the `RX_NCAPS > 1 ⇒ VM`
+invariant, and "C6 never bends" all stand as stated, with no amendment.
+`match_api_m4.md` folds this into its own §2.1 in the same amendment
+round.
 
 #### 5.7.4 Why candidate (a) is rejected
 
@@ -1374,6 +1412,14 @@ That is a correctness-of-reporting hole, not a crash, and it is confined to
 the composition path, which has no users in v1. Recommend accepting it in v1
 and recording it. §12 ASK-2 is the amendment if Frank prefers to close it now.
 
+**RULED (D42.3, 2026-08-14):** the recommendation is accepted — the -1-only
+give-up stands, the `< -1` reservation stays intact and untouched, and this
+residual is explicitly confined to the composition path, which has no
+users. Re-open when a composition customer appears (cheap pre-v1 per D40).
+`<prefix>_search`'s own negative space (RX_ERR_STEPS/RX_ERR_FRAMES) is a
+separate, unaffected mechanism — see §4.4's own distinction and
+`match_api_m4.md` §1's amendment.
+
 ### 11.2 `rx_matchfn` cannot deliver captures, so match-here is not the capture primitive
 
 F1 calls the anchored match-here entry "the primitive", and F2 requires it to
@@ -1494,24 +1540,40 @@ run, per the docs-only scope.
   confined to a composition path that has none. If a composition customer
   arrives before v1, amending is cheap and this ASK should simply be re-opened
   then.
+  **RULED (D42.3, 2026-08-14): the reservation is kept intact, no amendment
+  — the recommendation is adopted exactly. See §11.1's own amendment.**
 - **ASK-3 — `rx_ctx.caps` lifetime joins the freeze.** "Valid for the
   duration of the call; the engine rewrites the storage afterwards" is a
   contract line F1–F8 does not carry and a callout author will otherwise
   guess wrong. Recommendation: add it to the F-list at M4.1.
+  **RULED (D42.5, 2026-08-14): adopted — the line joins the F-list.**
+  `match_api_m4.md` §4 carries the applied text.
 - **ASK-4 — DD-2's row names TWO bounds.** Step budget AND backtrack-frame
   capacity (§4.5). They are different failures with different diagnoses and
   the row currently names only one.
+  **RULED (D42.6, 2026-08-14): adopted — DD-2's row is amended to name
+  both bounds.**
 - **ASK-5 — are captures ON by default?** Does `pcrec 'a(b|c)+d'` emit a
   capture-tracking matcher after M4, or must the caller opt in? This decides
   §5.3's selection input and §9.2(3)'s announced-boundary content.
   **Recommendation: ON by default** (PCRE2's own default; least surprise),
   with `--no-captures` as the generation axis recovering today's code. The
   hybrid is what makes it affordable.
+  **RULED (D42.1, 2026-08-14): ON by default, exactly as recommended.**
+  See §5.3's and §5.7.3's own amendments.
 - **ASK-8 — re-home DD-7's absorption half** out of M4 to a named DFA-engine
   row, gated on [BENCH-1] adding a `^`-on-some-branches case first (§7.2).
+  **RULED (D42.7, 2026-08-14): adopted — re-homed to [ENG-ABS], gated on
+  [BENCH-1] adding the `^`-on-some-branches case first; no measured loss
+  exists today, and scheduling unmeasured engine work would invert
+  D12/D15. The capture-prefilter half of DD-7 stays answered by §7.1,
+  pending the panel.**
 - **ASK-11 — DD-9's re-tagging.** Accept §8's decision and re-tag DD-9 as the
   head of [BENCH-1]'s prioritizer worklist, carrying §8.4's three findings, so
   it stops being a floating unowned row.
+  **RULED (D42.8, 2026-08-14): adopted — DD-9 archives (decided per §8);
+  case (f) becomes the known head of [BENCH-1]'s prioritizer worklist,
+  carrying §8.4's three findings.**
 - **ASK-12 — confirm §5.7's answer to `match_api_m4.md` §13 ASK 4.** Capture
   slot count is an ARTIFACT property; a DFA-compiled artifact emits
   `RX_NCAPS 1`; `RX_NCAPS > 1` implies the VM; the M4.4→M4.5 window has
@@ -1520,6 +1582,9 @@ run, per the docs-only scope.
   OUTPUT rather than the presence of a `(` — so it is answered jointly with
   ASK-5, and answering ASK-5 "opt-in" rather than "on by default" does not
   change §5.7's rule, only which patterns land on which side of it.
+  **RULED (D42.2, 2026-08-14): CONFIRMED, exactly as §5.7 states.** See
+  §5.7.3's own amendment; `match_api_m4.md` §2.1 and §11 item 7 fold this
+  in on the freeze-document side.
 
 **Handed to the sibling [M4.1] lane** (not rulings, requirements):
 
@@ -1533,7 +1598,12 @@ run, per the docs-only scope.
   add the `RX_NCAPS > 1 ⇒ VM` structural check".
 - `RX_NCAPS`, `RX_UNSET`, `<prefix>_match` and the group-index symbol names
   are [M4.1]'s; this document adopts its §7/§12.6 spellings and defers on all
-  of them (§0.3).
+  of them (§0.3). **RULED (D41.1, D41.2, 2026-08-14):** §12.6/§12.7 ruled as
+  proposed — see §0.3's amendment. All four handoffs above are now
+  DISCHARGED: `RX_ERR_STEPS`/`RX_ERR_FRAMES` by D42.3 (`match_api_m4.md`
+  §1), the capture-delivering entry by D41.4/§3.1 (`<prefix>_match_caps`),
+  ASK 4 by D42.2 confirming this document's own §5.7 answer, and the
+  §7/§12.6 spellings by D41.1/D41.2 exactly as adopted here.
 
 ---
 

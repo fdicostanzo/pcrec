@@ -123,7 +123,19 @@ append-only or historical records.
   composability across differently-prefixed generated matchers holds) —
   and §13 lists five ASKs for Frank, none of which are ruling
   contradictions: every apparent tension between D38 and D39 resolved on
-  inspection.
+  inspection. **AMENDED (D41/D42, 2026-08-14, pre-[M4.3] amendment
+  round):** every D41/D42 ruling that touches this document is integrated
+  in place, not merely annotated — `<prefix>_match_caps` (D41.4) is new
+  §3.1 with a proposed signature and rationale; `<prefix>_search`'s
+  negative-return space is fixed (D42.3, §1); §2.1 folds in the
+  `RX_NCAPS`-is-an-artifact-property rule (D42.2) and captures-on-by-
+  default (D42.1); `rx_ctx.caps`'s callout lifetime joins §4's F-list
+  (D42.5); §6 records the `pcrec_err_input` V-A compat obligation (D42.4);
+  the former §14 checklist is replaced by an "AMENDMENTS APPLIED" record.
+  **Still STATUS: PROPOSED** — the freeze does not take effect until
+  [M4.3]'s panel closes; this round exists so the panel reviews one
+  reconciled document instead of a stale one plus a decision log to
+  cross-reference.
 - `engine_m4.md` — **PROPOSED** ([M4.2], 2026-08-14): the M4 ENGINE design —
   the backtracking VM as EMITTED SPECIALIZED C (no interpreter: one function
   per pattern, one label per pattern position, an explicit fixed-size resume
@@ -168,7 +180,18 @@ append-only or historical records.
   namespace reading (ABI types literal per `match_api_m4.md` §12.7, everything
   this doc invents per-artifact) and states what a reversal would cost: only
   the callout call site. Unpaneled: [M4.3] reviews it alongside
-  `match_api_m4.md` and the two ruled pre-freeze docs.
+  `match_api_m4.md` and the two ruled pre-freeze docs. **AMENDED (D41/D42,
+  2026-08-14, pre-[M4.3] amendment round):** the seven ASKs D42 rules are
+  annotated in place at §12 (ASK-2 reservation kept, ASK-3 caps-lifetime
+  adopted, ASK-4 DD-2's two bounds adopted, ASK-5 captures ON by default,
+  ASK-8 re-homed to [ENG-ABS] gated on [BENCH-1], ASK-11 DD-9 archived to
+  the worklist head, ASK-12 confirmed); §5.3, §5.7.3, §11.1 and §2.6 each
+  carry a RULED note where they discuss the point D41/D42 settled (captures
+  default, the M4.4→M4.5 gap, the give-up residual, and the search
+  posture respectively); §0.3 records that D41.1/D41.2 ruled §12.6/§12.7 as
+  proposed. The five untouched measurement ASKs (1, 6, 7, 9, 10) are
+  unchanged — deliberately unruled, lane work. **Still PROPOSED**,
+  unpaneled.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
