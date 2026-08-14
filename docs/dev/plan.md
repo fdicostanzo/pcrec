@@ -138,11 +138,54 @@ stated terms.
   awaiting a Frank ruling: `rx_info` is emitted as a struct TAG only
   (bare typedef collides with default-prefix `<prefix>_info` = literal
   `rx_info`) — see match_api_m4.md §5's as-built note
-- [M4.5] STATE:not-started — IMPL: VM emitter core — captures over the
-  base tier, search + match-here entries, DD-2 budget wired; .rxt
-  format extension for capture expectations (docs/testing.md updated),
-  python-re group-span oracle tier, and a D27-blinded capture test
-  author per convention
+- [M4.5] STATE:started 2026-08-14 (expanded on opening, twentieth
+  session) — IMPL: VM emitter core — captures over the base tier,
+  search + match-here entries, DD-2 budget wired; .rxt format extension
+  for capture expectations (docs/testing.md updated), python-re
+  group-span oracle tier, and a D27-blinded capture test author per
+  convention. Substeps:
+  - [M4.5a] STATE:started — capture TEST INFRASTRUCTURE: the .rxt
+    capture-expectation format extension, tests/harness caps-array
+    reading, the python `re` GROUP-SPAN oracle tier (engine_m4.md §3.6
+    as re-scoped by R21 E-ASK-1: the THREE-WAY pcrec/python/pcre2
+    2-1-minority rule is the governing rule, NEVER pre-built
+    exclusions — a python-vs-pcre2 disagreement is an
+    upstream_issues.md row + arbitration, not an exclusion),
+    docs/testing.md updated. Landable against [M4.4]'s DFA artifacts
+    (caps[0] is live today); the format must already carry group
+    slots for the VM. Disjoint from [M4.5b] by construction (tests/
+    harness + docs; no src/).
+  - [M4.5b] STATE:started — the VM EMITTER CORE (engine_m4.md is the
+    design of record): §2's emitted shape (explicit resume stack +
+    capture trail, one cold indirect jump, §2.5's cursor ladder), §3
+    captures under leftmost-first with exact-undo and the E-2-narrowed
+    empty-iteration guard (rmax == -1 only), §3.4 caps delivery, §4's
+    TWO bounds wired as MECHANISM (bring-up placeholder budget;
+    RX_ERR_STEPS/RX_ERR_FRAMES produced; [M4.6] calibrates), §2.6
+    search-wraps-match-here, §6.1's prefilter (the existing
+    capture-erased forward+reverse pair hands the VM an EXACT span —
+    the VM never scans), §5.1–5.3 selection as a pass with the
+    requested-OUTPUT trigger (D42.1 captures-on-default;
+    --no-captures recovers today's artifact), RX_NCAPS>1 artifacts +
+    rx_info engine/budget fields live, --engine=dfa|vm|auto do-or-die
+    (R21 E-6: --engine=vm disables the prefilter; --engine=dfa
+    REFUSES captures-default group-bearing patterns, D44.6). GATE
+    (§5.4): emitted C for the capture-free corpus byte-identical to
+    the pre-M4.5 emitter modulo stamp lines — a check, not a promise.
+  - [M4.5c] STATE:not-started — DD-8's VM TRACER with bring-up (Frank
+    REQUESTED): §10's emitted-program listing (labels, choice points
+    with preference order, capture slot assignments, island
+    boundaries, callout call sites) + optional one-subject
+    resume-frame push/pop trace; derives from the SAME structure the
+    emitter walks, never a parallel description. Rides or immediately
+    follows [M4.5b]'s lane.
+  - [M4.5d] STATE:not-started — D27-BLINDED capture test author
+    (CELL, scripts/mk_d27_cell.sh): spec-first capture tests from the
+    PROMISE (match_api_m4.md + testing.md's new format), denied src/
+    and tests/. Opens once [M4.5a]+[M4.5b] merge.
+  - [M4.5e] STATE:not-started — CLOSE: oracle-verified capture corpus
+    over the base tier, structural checks now non-trivially exercised
+    (RX_NCAPS>1⇒VM live), CLAUDE.md sweeps, full battery.
 - [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
   DFA-prefilter hybrid + DFA islands as designed; measured against
   bench floors under D12/R3.10 discipline; DD-9's decided outcome
