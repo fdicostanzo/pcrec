@@ -124,7 +124,14 @@ for n in 2 3 4 5; do
         done
         a_out="$("$PCREC" -p rx -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
         b_out="$("$PCREC" -p rx -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
-        if [ "$a_out" = "$b_out" ]; then idpass=$((idpass + 1))
+        if [ -z "$a_out" ] || [ -z "$b_out" ]; then
+            # An empty extraction must be a FAILURE, not a match of two empty
+            # strings: if the emitted signature ever stops matching
+            # rx_search_body's anchor, every pair would otherwise "pass"
+            # while comparing nothing (the vacuous-check class the codegen
+            # suite's body() helper already guards with its own -s test).
+            idfail=$((idfail + 1)); echo "  ast-identity: EMPTY rx_search body extraction: '$flat' vs '$grouped'" >&2
+        elif [ "$a_out" = "$b_out" ]; then idpass=$((idpass + 1))
         else idfail=$((idfail + 1)); echo "  ast-identity differs: '$flat' vs '$grouped'" >&2
         fi
     done
