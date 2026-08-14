@@ -3713,3 +3713,56 @@ work, scheduled with the substeps that consume them.
 **Revisit-when:** the M4.3 panel (any of these may be attacked with
 measurement); V-A's design (the compat alias obligation in 4);
 a composition customer appearing (3); [ENG-ABS]'s gate firing (7).
+
+## D43 — the rx_info reflection structure and the options funnel (2026-08-14)
+
+**Decision (Frank, nineteenth session — raised by him in the options
+discussion, adopted with all three recommendations):**
+
+1. **Every generated artifact exports a static REFLECTION structure**:
+   a fixed ABI type `rx_info` (fixed-literal name per D41.1's family),
+   one `extern const rx_info <prefix>_info` per artifact, `.rodata`
+   only, zero runtime cost. Members (exact layout is the amendment
+   round's proposal, panel-reviewed): the compile-time option FLAGS
+   (PCREC_* bits, exactly as compiled), the encoding, a pointer to the
+   SOURCE PATTERN string, the group count, a pointer to the group index
+   (D39/F8 FOLDS IN — the index becomes a member of rx_info rather than
+   freestanding symbols; its field set {name, number, ref}, born-with-ref
+   rule, and D41.3's named-only content are unchanged), the selected
+   engine, and the step budget. This SUPERSEDES the comment/macro-only
+   stamping direction of engine_m4.md §5.5 as the canonical
+   machine-readable record (comments stay for humans; macros where
+   compile-time-useful).
+2. **The options funnel is made consistent end-to-end**: CLI flag →
+   PCREC_* bit constant → `pcrec_options.flags` → reflected verbatim in
+   `rx_info.flags`. Boolean options (caseless, emit_main, the coming
+   no-captures) become PCREC_* bits in a single `flags` word;
+   non-boolean options (encoding, prefix, header_name, step budget)
+   stay named fields and are reflected as typed rx_info members. ONE
+   representation of the options fact end-to-end (F3's rule extended to
+   options); the alternative — keep boolean fields and translate to
+   bits only at emission — was REJECTED as two representations of one
+   fact. The `pcrec_options` struct break lands on the M4.4 announced
+   boundary (free pre-v1 per D40, one boundary per D37).
+3. **The pattern string is embedded UNCONDITIONALLY.** Artifacts carry
+   their contract (D37 spirit). An omission axis (size/secrecy) may
+   earn itself later if a real objector appears (D18); none exists.
+
+**Why (Frank's motivation, recorded):** the option spaces were funneling
+inconsistently — some choices spelled as PCREC_* constants, some placed
+directly into pcrec_options fields with no constant-space identity, so
+"which options built this artifact" was not representable in the
+artifact. A static per-pattern reflection structure makes the build
+reviewable, and the group names and pattern string belong in the same
+structure. Second customer: V-A's `pcre2_pattern_info` shim reads
+exactly this. Further customers queued: V-G (regex testing), V-H
+(debug/trace), F7's per-pattern selection reporting.
+
+**Bit naming left to the amendment as PROPOSED:** Frank sketched
+`PCREC_CASE_INSENSITIVE` "(or whatever)"; the D38 addendum's
+parallel-naming rule suggests `PCREC_CASELESS` (parallel to
+PCRE2_CASELESS). Amendment proposes, panel reviews, Frank disposes.
+
+**Revisit-when:** the M4.3 panel (layout + folded-F8 shape); V-A's
+design (pattern_info mapping); the first size/secrecy objector to the
+embedded pattern string; DD-3 if rx_info ever needs a revision post-v1.
