@@ -472,6 +472,21 @@ excluding captures wholesale). Two consequences:
   this extension is BUILT (§14's own scope line); this section records
   the design.
 
+**Alignment note (manager-recorded from Frank's question, 2026-08-14).**
+The measured entry sizes are the ALIGNED sizes, not waste: a frame is
+24 B (`void *` resume address + `size_t` pos + `unsigned` mark padded
+8/8/8) and a trail entry 16 B (`unsigned short` slot padded + `ptrdiff_t`
+old value) — both arrays stride at multiples of 8 with every 8-byte
+member naturally aligned, and the "~68 B/subject byte" figure is
+arithmetic ACROSS the two separately-aligned arrays, never a stride
+anything loads at. Any future field-packing (2-byte label index, 32-bit
+positions) must keep stride alignment; the clean shape for that is
+STRUCTURE-OF-ARRAYS (separate `slots[]`/`vals[]`, each naturally
+aligned, ~10 B/entry aggregate), never a packed interleaved struct.
+Recorded as a measured-optimization option for [M4.5]/[M4.6]; largely
+mooted for common shapes by the D44.1 cursor extension above, which
+deletes entries rather than shrinking them.
+
 ### 2.6 Search wraps match-here
 
 F1 makes the anchored entry the primitive. Two search strategies sit on it:

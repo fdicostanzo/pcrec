@@ -247,6 +247,46 @@ Two rules earned the hard way and enforced here:
   staleness fixes (the §5.3 location claim had aged through TWO moves) and
   the SR-6 as-built naming correction.
 
+- **2026-08-12-r19-mod06.md** — R19, MOD-0.6 close (module
+  `unicode-props`). One tier-2 opened (K16: the `\p{...}` body scanner
+  never detects libpcre2's malformed-body-byte class — 164 of 256 body
+  bytes; ruled DEFER to first producer), the sweep-template lesson's
+  fourth recurrence (three instruments all stopped at the same brace
+  boundary), mech's first UNDETECTED rows triaged as
+  predictions-misread rather than harness failures, and the
+  message-only-pin lesson recurring three lines below a comment citing
+  it. Session-shape note: both implementation lanes died mid-flight;
+  the manager finished the landings from worktree state.
+- **2026-08-12-r20-mod08.md** — R20, MOD-0.8 checkpoint (Q2+SR-9
+  option-run surface, MOD-0.7 `--explain`, docs). The option-run grammar
+  survived ~513M differential probes unrefuted; the tier-1 was an
+  INHERITED precondition nobody re-measured — probe/explain hand ports a
+  Ctx with no setjmp, safe only while no port could `ctx_fail`, and the
+  first producing port had ended that (`--features modifiers --explain
+  '(?i:[)'` → SIGSEGV). Both tier-1s (this and D27's `a(?i)*`
+  miscompile) were reached by GENERATION, fixed same session. Origin of
+  the differential-gate principle (gate-ON, focused per feature) and the
+  carried-forward-comment lesson.
+- **2026-08-14-r21-m4-design.md** — R21, the [M4.3] hard gate: three
+  critics over BOTH M4 design docs plus the two previously-unpaneled
+  ruled inputs. The panel drew blood everywhere it aimed: a LIVE shipped
+  miscompile (K17 — DFA loses leftmost-first priority on lazy nullable
+  prefix + nested nullable star + outer star; found by executing the
+  design's own P-1 probe; 1284 corpus tests and the span-comparing
+  fuzzer had missed it on joint-probability rarity), the design's
+  empty-guard wrong for bounded repeats (60/225,240 vs libpcre2; 0 with
+  guard iff rmax==-1), the Θ(n) frame/trail working set capping capture
+  matching at ~2 KB of subject under the thread-stack budget, a measured
+  silent-stack-smash hazard in the span array-typedef spelling, and the
+  fixed-literal ABI types failing to compile in their own composition
+  case. ASK-1's oracle-disagreement prediction REFUTED (python vs PCRE2:
+  0/225,240 — the planned exclusion mechanism would have hidden K17;
+  replaced by the three-way 2-1-minority rule). Dispositions ratified as
+  D44 (+ the D40 working-baseline calibration); fixes applied by the
+  r21-fixes lane same day; K17 fixed by its own code lane. Eleven of
+  eleven STRUCTURAL citations held; what broke was what was marked
+  BELIEVED.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
