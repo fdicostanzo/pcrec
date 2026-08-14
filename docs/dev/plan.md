@@ -117,9 +117,14 @@ stated terms.
   panel's tier-1/tier-2 findings are dispositioned; the match-API
   freeze is declared at this step's close
 - [M4.4] STATE:not-started — IMPL: the API BREAK lands mechanically —
-  rx_span becomes the pair type across emitters/harness/corpus, the
-  pcrec_error tag, PCREC_* constants, match-here export + (empty-ref)
-  group index retrofitted onto the EXISTING DFA matchers. Coverage
+  rx_span RETIRES for the caps-array search signature across
+  emitters/harness/corpus (D44.2), the pcrec_error tag, PCREC_*
+  constants, match-here export + the slot-bearing group index folded
+  into rx_info (D43.1/D44.3) retrofitted onto the EXISTING DFA matchers.
+  CORRECTED 2026-08-14 (R21 C-4): this clause previously said "rx_span
+  becomes the pair type" and "(empty-ref) group index retrofitted",
+  both stale against D44's search-signature reshape and D43.1's rx_info
+  fold — see docs/design/match_api_m4.md §1.0/§5. Coverage
   conservation per the STD1 re-baseline shape: suite populations
   conserved and accounted, one announced break commit. AMENDED
   2026-08-14 (D42, D43): the same boundary also carries the

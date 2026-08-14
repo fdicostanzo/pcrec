@@ -1,5 +1,32 @@
 # The M4 ENGINE design — the backtracking VM as emitted specialized C
 
+> ## PANEL OUTCOME (R21) — READ BEFORE ANY SECTION BELOW
+>
+> A three-critic panel (R21, `docs/dev/reviews/2026-08-14-r21-m4-design.md`)
+> reviewed this document alongside `match_api_m4.md`. Dispositions ratified
+> in `docs/dev/decisions.md` D44. Headline: **E-1, a live shipped DFA
+> priority miscompile** (K17, `../dev/known_issues.md`), was found by
+> running this document's own P-1 probe — the empty-iteration guard
+> §3.3 designs is correct, but the priority CONSTRUCTION it feeds has a
+> reachable bug in an unrelated shipped path, scheduled as a fix-now code
+> lane before [M4.4]. Every FIX-NOW and RULE disposition touching this
+> document is applied in place, marked **RULED (D44)**/**(R21)**: §3.3's
+> empty-iteration guard narrows to `rmax == -1` only (E-2, MEASURED
+> 0/225,240 vs the prior 60/225,240); §6.1's STRUCTURAL mark splits —
+> the erasure half held under attack, the semantic half drops to
+> BELIEVED-WITH-GATE citing K17 as the live counterexample; §3.7's
+> internal differential becomes a GATE running `--engine=vm` with the
+> prefilter off; §3.6/§12 ASK-1 re-scopes to a three-way pcrec/python/
+> pcre2 comparison with NO pre-built exclusion mechanism, since the
+> planned one would have hidden K17; §2.4/§2.5's cursor discipline is
+> written out explicitly and extended (D44.1) to deterministic
+> capture-bearing bodies, with the residual unbounded class carrying a
+> stamped ceiling; §4.2 charges one step per island ENTRY; §5.7.3/§9.2
+> add the `--engine=dfa` × captures-default refusal (E-7/D44.6); §8.4(i)'s
+> case-(f) numbers are corrected (768 states / 3 classes, not 512/2).
+> Superseded text is struck/annotated in place per house style, not
+> silently rewritten.
+
 STATUS: **PROPOSED** ([M4.2], 2026-08-14). Nothing here is built and nothing
 here is ruled. The [M4.3] D6 adversarial panel reviews this document together
 with `match_api_m4.md`, `design_callout_abi.md` and `subst_template_design.md`
@@ -77,9 +104,17 @@ restating them, and every identifier below falls in one of three families
 
 | family | examples used here | scoped by `--prefix`? |
 |---|---|---|
-| ABI types, deliberately FIXED literal names | `rx_ctx`, `rx_matchfn`, `rx_callout_ref` | **no** — `match_api_m4.md` §12.7, RULED (D41.1, 2026-08-14) |
-| per-artifact emitted symbols | `<prefix>_match` (§12.6 there), `<prefix>_search`, `<prefix>_span`, and everything this document invents (`rx_work`, `RX_NCAPS`, `RX_UNSET`, `RX_ENGINE`, `RX_ERR_STEPS`, `RX_ERR_FRAMES`, `RX_BT_FRAMES`, `RX_TRAIL_FRAMES`, `RX_NSTATE`, `RX_HYBRID_MIN`, and the emitted labels) | yes; written here with the default `rx`/`RX` per that document's convention |
+| ABI types, deliberately FIXED literal names | `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, **`rx_info`, `rx_group_entry`** (RULED D44, ratifying R21 C-6 — this row was missing them; `match_api_m4.md` §5's D44.5 hardened layout and D44.3's `slot` column apply to both) | **no** — `match_api_m4.md` §12.7, RULED (D41.1, 2026-08-14); `rx_info`/`rx_group_entry` per D43.1/D44 |
+| per-artifact emitted symbols | `<prefix>_match` (§12.6 there), `<prefix>_search` (RESHAPED, D44.2 — see `match_api_m4.md` §1.0), `<prefix>_info`, and everything this document invents (`rx_work`, `RX_NCAPS`, `RX_UNSET`, `RX_ENGINE`, `RX_ERR_STEPS`, `RX_ERR_FRAMES`, `RX_BT_FRAMES`, `RX_TRAIL_FRAMES`, `RX_NSTATE`, `RX_HYBRID_MIN`, and the emitted labels) | yes; written here with the default `rx`/`RX` per that document's convention |
 | pcrec's own library surface | `PCREC_*`, `--step-budget`, `--engine` | no (namespace 2) |
+
+**SUPERSEDED (D44.2) — `<prefix>_span` no longer belongs in this table at
+all.** A prior version of the middle row listed `<prefix>_span` among the
+per-artifact symbols this document consumes; it RETIRES at [M4.4]
+(`match_api_m4.md` §1.0, D44.2) rather than merely changing representation,
+so every reference to it below (§2.2's `RX_UNSET`/span discussion, §3.4's
+delivery description) should be read as referring to `caps[0]`, not a
+separate span object.
 
 **This document introduces no new fixed-literal ABI type.** It consumes the
 three that exist and invents only per-artifact symbols, which is the family
@@ -361,6 +396,82 @@ low-water mark, and backtracking decrements the cursor. So the residual
 unbounded-depth class is quantifiers CONTAINING a choice point or a capture,
 which is small and compile-time detectable.
 
+**RULED (D44, ratifying R21 E-4) — the cursor's HOME and its re-push
+discipline, both previously unshown.** The panel found the span-loop
+cursor had "no home in §2.4's layout" — §2.4's `stv` table lists capture
+pairs, repeat counters and empty-iteration guards, and nothing else, so a
+reader could reasonably ask where the cursor's own mutable value lives,
+and whether it is trailed (defeating the whole point of a mechanism
+designed to avoid per-iteration trail entries). It is not trailed:
+
+- **The cursor is a plain local, UNTRAILED, exactly like `pos` (§2.2
+  property 5).** It is restored directly from the resume frame's recorded
+  low-water mark on backtrack — `pos = w->bt[b].pos` in §2.2's sketch
+  already does this generically for every resume frame, including the
+  span loop's; the cursor needs no `RX_SET`/trail entry because a resume
+  frame IS its save point, the same relationship `pos` has to every other
+  resume frame in the VM. Nothing new is required in `stv`'s layout; the
+  cursor was never a candidate for a trail slot, and this section should
+  have said so rather than leaving the question open by omission.
+- **Re-push discipline, stated explicitly (previously "unshown"):** on
+  entry, the span loop consumes greedily to its furthest position and
+  pushes exactly ONE resume frame recording the low-water mark (the
+  loop's minimum acceptable length, e.g. 0 for `a*`, 1 for `a+`). On
+  BACKTRACK into that frame, the engine decrements the cursor one
+  position and re-tries the continuation from there. If the decremented
+  cursor is still above the low-water mark, the SAME resume frame is
+  RE-PUSHED (same label, new `pos`) before falling through to the
+  continuation attempt — so a second backtrack into the loop has
+  somewhere to land. If the cursor has reached the low-water mark, no
+  frame is re-pushed and this backtrack point is exhausted (`w->btn`
+  decrements permanently for it, matching `rx_fail`'s ordinary pop). This
+  is still O(1) frames on the resume STACK at any instant — never more
+  than one live frame per span loop — even though the loop may be
+  re-entered up to (furthest − low-water-mark) times across the whole
+  match; each re-push replaces the just-popped frame rather than growing
+  the stack.
+
+**RULED (D44.1, 2026-08-14) — [M4.5] EXTENDS this scheme to deterministic
+capture-bearing bodies, closing E-3's Θ(n) working-set finding.** The
+panel MEASURED that `rx_work` arrays are Θ(n) on benign matches
+(~68 B/subject byte for `(a|b)+c`) — as locals under D19's 128 KB thread
+stack, that caps captured matching at roughly 1.9 KB of subject, three
+orders of magnitude below where the step budget would notice (§4). The
+root cause: §2.5 as originally written excluded ANY capture-bearing body
+from the cursor scheme by definition (a capture write needs an `RX_SET`
+call, which the plain span-loop-plus-cursor above never makes), so every
+capture-bearing quantifier fell back to one resume frame PER ITERATION
+regardless of whether the body was actually deterministic. D44.1 corrects
+this: **the cursor scheme extends to any PROVABLY-SINGLE-PATH quantifier
+body, including one that writes captures**, on the condition that the
+body's own iteration is deterministic (no choice point inside it — the
+same "no choice point inside an unbounded quantifier" test the STRUCTURAL
+note above already uses, now applied per-quantifier rather than
+excluding captures wholesale). Two consequences:
+
+- **Group spans are computed FROM THE CURSOR AT LOOP EXIT**, not written
+  per iteration. A deterministic capture-bearing body like `(a)+` need not
+  call `RX_SET` on every iteration at all — the group's final `[start,
+  end)` is derivable from the cursor's low-water mark and its value at
+  exit, written ONCE when the loop's continuation is taken. This is what
+  deletes the Θ(n) resume-frame AND trail cost simultaneously: no
+  per-iteration frame (already true of the plain cursor scheme) and no
+  per-iteration trail entry either (new — a capture-bearing body was
+  previously assumed to need one write per iteration for backtracking
+  correctness, which the "write on traverse" rule in §3.2 states
+  generally; the deterministic case is the one where that generality is
+  provably unnecessary, because there is only one path to undo).
+- **The residual class — quantifier bodies that are NOT provably
+  single-path (contain a choice point) — carries an HONEST STAMPED
+  ceiling** in `rx_info` (`match_api_m4.md` §5's `frame_capacity`/
+  `subject_ceiling` members, D44.5): rather than silently capping at
+  whatever the default frame/trail array size happens to be, the
+  artifact states the subject length past which frame/trail exhaustion
+  becomes possible for THIS pattern, so a caller can know the limit
+  without discovering it by triggering `RX_ERR_FRAMES`. [M4.5] is where
+  this extension is BUILT (§14's own scope line); this section records
+  the design.
+
 ### 2.6 Search wraps match-here
 
 F1 makes the anchored entry the primitive. Two search strategies sit on it:
@@ -496,11 +607,42 @@ the capture slots at that instant are the answer.
 A quantifier whose body can match the empty string must not loop forever:
 `(a*)*`, `(|a)+`, `((?:))*`.
 
-Design: each unbounded (or high-bounded) quantifier whose body is
+~~Design: each unbounded (or high-bounded) quantifier whose body is
 nullable — a compile-time property — gets an empty-guard slot holding the
 position at which the current iteration began. At the iteration's close, if
 `pos` equals the guard, the loop does not iterate again; control takes the
-exit continuation.
+exit continuation.~~
+
+**RULED (D44, ratifying R21 E-2) — the guard applies IFF `rmax == -1`
+(truly unbounded), and the "or high-bounded" extension above is STRUCK,
+not merely narrowed.** The panel MEASURED the "high-bounded" reading
+against libpcre2: with the guard applied to bounded repeats too, 60 of
+225,240 generated pairs diverge; restricted to `rmax == -1` only, 0 of
+225,240 diverge. Witness: `(a*?){1,2}b` on `"ab"` — the guard-extended-to-
+bounded design gives `g1=(1,1)`, both oracles (python and PCRE2) give
+`(0,1)`. **PCRE2's actual behaviour is that bounded repeats REPLICATE**:
+a `{1,2}` body is compiled as body-body?, each copy an independent
+opportunity to match (empty or not) — an empty match at iteration 1 does
+not suppress iteration 2 the way it suppresses continuation of a truly
+unbounded loop, because there IS no "continuation" test at a bounded
+count; there is just the next copy. The corrected design: **the
+empty-guard mechanism exists ONLY for `rmax == -1`** (`*`, `+`, `{n,}`);
+every bounded quantifier (`{m,n}`, `?`) compiles as its `m` mandatory
+copies plus `n-m` optional copies, exactly as an unbounded-quantifier-free
+design would, with no guard slot and no suppression test at all — the
+"loop" framing in §2.2's illustrative code only ever applied to the
+`rmax == -1` case to begin with, and this ruling makes that scope
+explicit rather than implicit.
+
+**Compliance note (E-2's side-finding, flagged for a
+`docs/pcre2_compliance.md` row at implementation time, not resolved
+here):** PCRE2 itself REFUSES sufficiently large bounded repeats (`(a*)
+{0,5000}` errors "regular expression is too large" on the measured box)
+where pcrec's own repeat-count caps allow `(a*){0,10000}` to compile
+today. This is not a capture-semantics divergence — it is PCRE2 imposing
+a resource limit pcrec does not share — and D26 does not require pcrec to
+adopt someone else's resource ceiling. Recorded so it is not later read as
+an unnoticed compliance gap.
 
 BELIEVED, and this is where I expect a panel finding: PCRE2's actual
 behaviour for the capture VALUES left behind by a suppressed empty iteration
@@ -511,8 +653,21 @@ IS python `re` (D4). See §3.6.
 ### 3.4 Delivery into the D38 caps representation
 
 RULED shape: `ptrdiff_t caps[][2]`, `{-1,-1}` unset, byte offsets (subst C4,
-C5, Q9/DD-12), `RX_NCAPS` a compile-time constant equal to `ngroups + 1`
-(subst C1, C7).
+C5, Q9/DD-12), `RX_NCAPS` a compile-time constant equal to `ncaps`
+(D44/A-5 vocabulary restatement, `match_api_m4.md` §2 — was "`ngroups + 1`").
+
+**RULED (D44, ratifying R21 C-8) — one clarifying sentence, the two
+`ptrdiff_t[2]` arrays this section discusses are DIFFERENT objects.** The
+`ptrdiff_t caps[][2]` named just above is the CALLER-OWNED OUTPUT array
+`<prefix>_search`/`<prefix>_match_caps` write into on success
+(`match_api_m4.md` §1.0/§3.1) — mutable, caller-declared, written by the
+entry. It is textually easy to conflate with `const rx_ctx.caps` (§4's
+FROZEN INPUT field, read-only, populated by the OUTER engine at a callout
+site with captures-so-far) because both are `const`-or-not
+`ptrdiff_t[2]` pairs with the same element layout — that sameness is the
+POINT (F3's one-representation rule), but it means a reader must track
+which ROLE a given `caps` reference plays from context. This section's
+`caps` is always the output-array role unless stated otherwise.
 
 - The VM's working slots (`stv`) are LOCAL, and the ENTRY copies the capture
   region into the caller's `caps` array on a completed match — one linear copy
@@ -559,22 +714,52 @@ the only new thing is more columns.
 M4.7: libpcre2 ovectors, differential, gate-ON per `../testing.md`'s
 differential-gate principle, plus the fuzzer extended to compare spans.
 
-**The warning that belongs in the plan, not just here.** python `re` and PCRE2
-do not agree on every capture question, and the disagreements cluster in
-exactly the areas §3.3 flags: captures left by suppressed empty iterations,
-and repeated-group values after backtracking. Two consequences:
+**RULED (D44, ratifying R21's E-ASK-1 refutation) — ASK-1 REFUTED as
+stated, §3.6/§12 RE-SCOPED.** The panel ran the MEASUREMENT §12 ASK-1
+below asked for, before M4.5 writes any test: **python `re` and libpcre2
+disagreed ZERO times** across 225,240 generated pairs plus 53 targeted
+empty-iteration cases (base tier). The prediction this section made — "they
+disagree, and the disagreements cluster in the empty-iteration family" —
+did not hold. Every REAL disagreement found this round was pcrec-or-design
+vs. BOTH oracles agreeing with each other (E-1/K17 chief among them, and
+E-2's bounded-repeat guard finding above), never oracle-vs-oracle.
 
-1. The M4.5 capture corpus must carry an explicit oracle-exclusion mechanism
-   for these cases from the start, with each exclusion citing
-   `../dev/upstream_issues.md` — the existing home for "our tooling implicates
-   another engine". Retrofitting exclusions after the corpus exists is how a
-   wrong expectation gets frozen.
-2. The M4.7 differential is not a formality for this tier. It is where the
-   empty-iteration semantics are actually decided, because PCRE2 is the source
-   of truth (D26) and python is a stand-in.
+**~~The warning that belongs in the plan, not just here.~~** ~~python `re`
+and PCRE2 do not agree on every capture question, and the disagreements
+cluster in exactly the areas §3.3 flags... The M4.5 capture corpus must
+carry an explicit oracle-EXCLUSION mechanism for these cases from the
+start...~~ **This is the wrong instrument, and building it would have been
+actively harmful**: an exclusion mechanism built to protect expectations
+from oracle noise would have HIDDEN K17, because the noise it was designed
+to guard against measured zero — the one real bug found this round was
+pcrec disagreeing with BOTH oracles at once, which a python-vs-PCRE2
+exclusion list does nothing to catch and everything to obscure if someone
+later mis-scoped an exclusion to cover it. This is the check-design lesson
+recurring in a new costume: point instruments at pcrec first, oracles
+second.
 
-§12 ASK-1 wants the disagreement surface MEASURED (a probe) before M4.5 writes
-tests, not discovered during M4.7.
+**RE-SCOPED (D44) — the corpus mechanism is a THREE-WAY comparison, with
+NO pre-built exclusion list:**
+
+1. Every capture-bearing corpus expectation is checked against BOTH python
+   `re` and libpcre2 (once M4.7's differential exists; python alone at
+   M4.5 per D4's staged oracle discipline, unchanged).
+2. **A 2-1 split with pcrec in the MINORITY is a bug, never an exclusion
+   candidate.** There is no mechanism that lets a corpus author mark a
+   cell "expected to diverge from an oracle" ahead of investigating it —
+   the three-way comparison always runs, and a disagreement is triaged as
+   a finding (fix pcrec, or `../dev/upstream_issues.md` if the minority
+   view is actually correct and an oracle is wrong), never silently
+   swallowed.
+3. The base-tier caveat stands and is narrowed, not removed: the 225,240 +
+   53 sweep covered the base tier only (no lookaround, no backrefs);
+   disagreements in VM_ONLY-no-producer territory (module-gated, §9.1)
+   remain plausible and unmeasured, and the three-way rule applies to them
+   too once a producer exists.
+
+§12 ASK-1's own text is UNCHANGED below (kept as the record of what was
+asked and why it was worth running) but is now ANSWERED rather than open —
+see its own RULED annotation.
 
 ### 3.7 The free internal differential
 
@@ -588,6 +773,36 @@ nearly-free cross-check whose two sides do not share a derivation.
 That property is worth calling out against this project's recorded
 check-design failure mode (controls sharing a source with the thing they
 control): here they genuinely do not.
+
+**RULED (D44, ratifying R21 E-1/E-6) — this differential is a GATE, not
+merely a nice-to-have cross-check, and it runs `--engine=vm` with the
+prefilter OFF.** Two reasons converge on the same requirement:
+
+1. **§6.1's STRUCTURAL claim is now BELIEVED-WITH-GATE, not held
+   unconditionally** (see §6.1's own annotation below) — K17 is a live
+   counterexample to the semantic half of the exactness claim this
+   differential exists to check, so the differential graduates from
+   "worth building" to a REQUIRED gate before [M4.4]/[M4.5] can rely on
+   §6.1's claim for anything.
+2. **E-6: under the HYBRID, `span(VM) == span(DFA)` is not an independent
+   check at all — it is close to a TAUTOLOGY**, because the hybrid feeds
+   the VM the DFA's own answer as its anchored window (§2.6): `$0.start`
+   is literally the DFA's own computed value, echoed back, not an
+   independently-derived one. Comparing "the DFA's span" against "the
+   VM's span, which was TOLD the DFA's span as its starting point" proves
+   far less than the original framing implied — the VM could still get
+   $0.END or a capture wrong while trivially agreeing on $0.START. So the
+   differential's GATE mode runs `--engine=vm` (§5.6's override) to force
+   the VM-ONLY search loop (§2.6), which scans and matches with NO
+   DFA-derived window at all — a genuinely independent second derivation
+   of the whole span, not merely the tail of one the DFA already computed.
+   Frank independently requested this exact comparison mode (a plain
+   `--engine=vm` run with the prefilter disabled) for the same reason
+   this finding gives, so the ruling and the request converge.
+
+§5.6 gains this rule explicitly (below): `--engine=vm`'s diagnostic value
+now includes being the one mode in which §3.7's differential is actually
+independent.
 
 ---
 
@@ -625,9 +840,44 @@ Two accounting details:
 - A simple-repeat cursor retry (§2.5) goes through `rx_fail` like any other
   resumption, so shrinking `a*` one byte at a time costs one step per byte —
   correct, that IS the backtracking work.
-- A DFA island's internal scanning is bounded by `n` by construction and
+- ~~A DFA island's internal scanning is bounded by `n` by construction and
   charges ZERO steps. An island cannot be the source of unbounded work, and
-  instrumenting its inner loop would be exactly the speed trade D22 forbids.
+  instrumenting its inner loop would be exactly the speed trade D22 forbids.~~
+
+**RULED (D44, ratifying R21 E-5) — "an island cannot be the source of
+unbounded work" is TOO STRONG, and the counter now charges one step per
+island ENTRY, not only at `rx_fail`.** The claim survives for a SINGLE
+island scan (still bounded by `n`, still uninstrumented internally — that
+half is unchanged and correct). What breaks is REPEATED entry: a
+construct like `(ISLAND|x)*` where `ISLAND` is tried first at every outer
+iteration can enter the island up to `n` times over the course of one
+match, and each entry's internal scan can independently cost up to `O(n)`
+(e.g. an island like `[^"]*"` that finds no closing quote scans to the
+subject's end before failing). The BACKTRACK from a failed island entry to
+the `x` alternative is already charged (one step, ordinary `rx_fail`
+accounting) — but that charge reflects the CHOICE POINT, not the island
+SCAN that happened before the choice point was reached, and an island
+reached via plain forward fallthrough (no preceding choice, hence no
+charged backtrack at all) was previously entered for free every time. The
+aggregate is `O(n × resumptions)` real scanning work behind an `O(n)`
+step count — not unbounded in the sense of non-terminating, but a
+complexity gap the "cannot be the source" framing denied existed at all.
+
+**The fix**: the counter decrements by one at island ENTRY — every attempt
+to run an island's scan, whether reached via a freshly-charged backtrack
+or via forward fallthrough with no choice point at all — in addition to
+`rx_fail`'s existing per-resumption charge (the two are not double-counted
+when they coincide: a backtrack that IMMEDIATELY re-enters an island is
+one resumption event that happens to also be an island entry, charged
+once, not twice; they diverge only for forward-fallthrough entries, which
+previously had no charge point at all). This makes the TOTAL NUMBER of
+island entries over one match subject to the same budget that bounds
+ordinary backtracking, closing the loophole regardless of which path led
+to the entry. It does not make DD-2 a wall-clock bound (§13's reworded
+P-2 states the corrected claim precisely) — it restores the property DD-2
+actually needs per D22's ROBUSTNESS framing: a budget that catches
+absurd resumption/entry counts, not a guarantee that every budget-passing
+match ran in linear wall-clock time.
 
 ### 4.3 Where the counter lives
 
@@ -925,6 +1175,36 @@ override is `--engine=dfa|vm|auto`, default `auto`. Its value is diagnostic
 that makes SR-8's honest diagnostic reachable (§9.3). `--engine=dfa` on a
 VM-forced pattern is a clean refusal, never a silent fallback.
 
+**RULED (D44, ratifying R21 E-6) — `--engine=vm` DISABLES the DFA
+prefilter, and this is now the do-or-die comparison mode.** Stated
+explicitly here because §3.7's differential depends on it (§3.7's own
+GATE annotation): without this, `--engine=vm` could mean merely "prefer
+the VM's construction" while the hybrid's prefilter still runs underneath
+and hands the VM its anchored window — which would make `--engine=vm`
+useless as an independent check (E-6's own finding). `--engine=vm`
+therefore means the VM-ONLY search loop (§2.6) unconditionally: no
+forward/reverse DFA pass, no anchored-window handoff, a genuinely
+independent scan from `startpos`. This is both the R21 panel's own
+ratified reading and something Frank independently requested (a plain
+`--engine=vm` comparison mode with the prefilter off) for the identical
+reason — the two converge rather than one motivating the other.
+
+**RULED (D44.6, ratifying R21 E-7) — `--engine=dfa` on a captures-default
+pattern REFUSES, it does not silently imply `--no-captures`.** A prior
+gap: `--engine=dfa` was stated above as refusing a "VM-forced" pattern,
+but D42.1 makes CAPTURES THEMSELVES (when requested, i.e. by default post
+[M4.5]) a forcing condition (§5.3), and this document's own CLAUDE.md
+example, `a(b|c)+d`, is exactly such a pattern — so `--engine=dfa
+'a(b|c)+d'` must refuse cleanly rather than either (a) silently compiling
+a captures-dropping DFA artifact (surprising: the caller asked for
+captures by not passing `--no-captures`, and got none) or (b) crashing
+into an undefined state. The refusal names `--no-captures` explicitly as
+the way to get a DFA artifact for this pattern — "this pattern requires
+captures (default); pass --no-captures for a DFA-only artifact, or omit
+--engine=dfa" is the shape of the message, D26 tier 2 (pcrec's own
+diagnostic, no PCRE2 wording to match). §5.7.3/§9.2 carry the mechanical
+consequence.
+
 ### 5.7 What a DFA-compiled artifact promises through `caps` — answering `match_api_m4.md` §13 ASK 4
 
 PROPOSED. This is the freeze document's question, assigned here because it is
@@ -1002,6 +1282,18 @@ DFA matchers before the VM exists. In that window:
 - At [M4.5], `RX_NCAPS` for `a(b|c)+d` goes 1 → 2. That is a generated-contract
   change, and it is the SAME item as §9.2(3) (groups start capturing) — so it
   does not add a break, it dates one this document had already flagged.
+- **RULED (D44.6, ratifying R21 E-7) — from [M4.5] onward, `--engine=dfa
+  'a(b|c)+d'` REFUSES rather than compiling.** In the [M4.4]→[M4.5] gap
+  this bullet describes, `--engine=dfa` on this pattern is a no-op (it is
+  already the only engine that exists, so there is nothing to refuse
+  FROM), which is presumably why the refusal was not flagged earlier in
+  this document — the gap window made the question briefly moot. Once
+  [M4.5] makes captures the default (D42.1) and the VM exists, the same
+  invocation becomes a genuine engine-forcing conflict (§5.6's new
+  ruling): the caller asked for captures (by not passing
+  `--no-captures`) and separately asked for the DFA engine, and those two
+  requests cannot both be honoured. [M4.5] is therefore where this
+  refusal must first exist, not merely where `RX_NCAPS` first grows.
 
 **What D40 changes about that last bullet** (ruled after this document's brief
 was written): pre-v1, the break carries no compatibility weight in substance
@@ -1063,20 +1355,56 @@ DFA (backrefs → their referenced sub-pattern, lookarounds dropped) that cannot
 false-negative". For the M4 tier that description is too weak, and the
 stronger truth is what makes the hybrid nearly free:
 
-> **CLAIM (STRUCTURAL for the current implementation).** For a pattern whose
+> **CLAIM, MARK SPLIT (RULED D44, ratifying R21 E-1).** For a pattern whose
 > only VM-forcing feature is capturing groups — no backrefs, lookaround,
-> callouts, `\K`, atomic/possessive, `\G` — the capture-erased pattern has the
-> same language AND the same leftmost-first match span for every subject and
-> startpos. The prefilter is therefore EXACT, not an over-approximation.
+> callouts, `\K`, atomic/possessive, `\G` — the capture-erased pattern has
+> the same language (**STRUCTURAL, held**) AND the same leftmost-first
+> match span for every subject and startpos (**BELIEVED-WITH-GATE, NOT
+> held unconditionally — see below**). The prefilter is EXACT for the
+> erasure half; the span-equality half needs the gate §3.7 now provides.
 
-Why STRUCTURAL rather than BELIEVED: the erasure is not a transformation this
-design proposes. It is what the parser does today. `(a|b)` and `(?:a|b)`
-produce the identical `Ast` (§1.2, D31 — the erasure STAYS), so the DFA built
-for the capture pattern IS the DFA built for the erased pattern. There is no
-approximation step to be wrong about. The semantic half — that capture groups
-do not perturb alternation preference or greediness, which is what D3's
-priority construction derives the span from — is the part a critic should
-attack, and §13 P-1 states it as a prediction with its test.
+**The panel found a live counterexample to the span-equality half.** The
+claim above was marked STRUCTURAL in full until the R21 panel ran this
+document's own §13 P-1 probe and found K17
+(`../dev/known_issues.md`) — a REAL, shipped DFA priority miscompile:
+`(?:b*?(?:a*)*)*` on `"ab"` returns `[0,2)` from pcrec's DFA where both
+python and PCRE2 (the ruled leftmost-first standard, D3/D26) give
+`[0,1)`. The family that reproduces: a lazy nullable prefix, a nested
+nullable star, and an outer star (`(b*?(a*)*)*`, `(b*?(a*)+)*`,
+`(b??(a*)*)*`, and their close relatives); it does NOT reproduce with a
+non-nullable inner body, no outer star, or a greedy prefix (910/910
+random-sweep agreement holds on that wider neighbourhood). K1's residue —
+a prior fix in the same neighbourhood did not fully close it.
+
+**Why this splits the mark rather than refuting the whole claim.** K17 is
+a bug in the DFA's PRIORITY CONSTRUCTION (the machinery that decides
+which of several accepting paths is leftmost-first-preferred), not in the
+ERASURE (whether `(a|b)` and `(?:a|b)` build the same automaton — D31's
+STRUCTURAL fact, untouched, still true by inspection of
+`src/core/internal.h:41`'s `AKind` enum). A capture-only pattern in the
+K17 family gets the WRONG span from the DFA itself, entirely independent
+of whether captures are erased — so the bug is not evidence that erasure
+perturbs anything; it is evidence that the underlying automaton pcrec
+ships today already computes the wrong span on this family, which the
+hybrid would then faithfully hand to the VM as its anchored window,
+propagating the error rather than causing it.
+
+**Disposition (D44.4): FIX-CODE, before [M4.4], as a dedicated lane
+independent of M4.** K17 is a shipped miscompile in the DEFAULT engine,
+so it is fixed on its own schedule, not folded into M4's captures work —
+recorded as oracle-verified corpus tests (the K17 family) plus the
+three-way pcrec/python/pcre2 rule (§3.6's re-scope) plus the full battery.
+Once fixed, this claim's mark reverts to STRUCTURAL in full; until then,
+§3.7's differential is the load-bearing GATE (its own RULED annotation)
+that must pass before [M4.5]/[M4.6] may rely on span-equality for a given
+pattern family, and `--engine=vm` (§5.6's RULED note) is how that gate
+runs independently rather than tautologically.
+
+Why the erasure half stays STRUCTURAL rather than BELIEVED: the erasure is
+not a transformation this design proposes. It is what the parser does
+today. `(a|b)` and `(?:a|b)` produce the identical `Ast` (§1.2, D31 — the
+erasure STAYS), so the DFA built for the capture pattern IS the DFA built
+for the erased pattern. There is no approximation step to be wrong about.
 
 **Consequences, in order of importance:**
 
@@ -1273,9 +1601,24 @@ does not start from zero.
 **(i) Computed goto is the WRONG lever, contra the row's own hint.** The DD-9
 row says to "note that the D13 correction makes computed goto a MEASURED win
 for predictable transition sequences". It does — and case (f) is the opposite
-regime. The DFA of `[01]*1[01]{8}` is a 9-bit shift register over a two-symbol
-alphabet: its state IS the last nine input symbols, and the input is random
-bits. That is the maximally UNPREDICTABLE transition sequence, which is D13's
+regime. ~~The DFA of `[01]*1[01]{8}` is a 9-bit shift register over a
+two-symbol alphabet~~ — **CORRECTED (D44, ratifying R21 E-8): the BUILT
+DFA measures 768 forward states over 3 equivalence classes, not the
+naive 512-states/2-classes a bare "9-bit register, two symbols" reading
+implies.** `2^9 = 512` is the state count a pure bit-shift-register
+abstraction would have, and `{'0','1'}` is a two-symbol reading of the
+alphabet — but the ACTUAL construction adds a THIRD equivalence class (a
+"reset" class covering every byte that is neither `0` nor `1`, which
+resets the run rather than shifting it — the pattern's subject alphabet
+is bytes, not bits, and any non-`0`/`1` byte is a real, distinct
+transition the naive picture omits), and the extra bookkeeping states
+this reset class needs push the count from 512 to 768. The hypothesis
+this subsection argues for SURVIVES the correction: its state IS still
+effectively the last nine input symbols (the reset class only adds a
+"how did we get here" refinement, not a different KIND of dependency),
+and the input on the all-`[01]` bench subject is still random bits, so
+the maximally-UNPREDICTABLE-transition argument below is unaffected by
+which exact numbers describe the automaton. That is D13's
 measured 2.5x LOSS regime (144 vs 374 MB/s on random bytes), not its 0.28 win
 regime. D13's own sentence — "the predictable case is largely what the skip
 loops already cover" — already implied this. Falsifiable: §13 P-4.
@@ -1293,11 +1636,23 @@ from the constructed DFA rather than from the pattern text.** A DFA whose
 states correspond exactly to the last *k* input symbols over a small alphabet
 is a shift register, and shift registers admit a shift-and (Baeza-Yates–Gonnet)
 formulation: `w = ((w << 1) | bit) & MASK` plus a bitmap accept test — an ALU
-dependency chain instead of an L1 load dependency chain, per byte. BELIEVED,
-and named here so the OPT wave has a hypothesis rather than a survey. The
-detection is a property of the built machine (does the transition function
-factor as a shift?), which means it can be a `src/opt/` pass with no parser or
-IR change.
+dependency chain instead of a table-load dependency chain, per byte.
+**SOFTENED (D44, ratifying R21 E-8) — the "L1 load" framing overstated the
+table's cost.** A 768-state × 3-class transition table (the corrected
+count from (i) above) is on the order of 4.6 KB — comfortably
+L1-RESIDENT on any target this project plausibly runs on, so the table
+lookup itself is not paying a cache-miss penalty the shift-and
+alternative would avoid. The win this subsection argues for is real but
+narrower than "avoids an L1 load": it is about the DEPENDENCY CHAIN
+(each table lookup depends on the previous state, an inherently
+sequential load-use chain, versus shift-and's ALU-only chain, which a
+modern out-of-order core can pipeline more aggressively) and about
+avoiding the UNPREDICTABLE-BRANCH cost D13 measures for computed-goto
+dispatch on this transition pattern — not about cache residency, which
+the table already has. BELIEVED, and named here so the OPT wave has a
+hypothesis rather than a survey. The detection is a property of the
+built machine (does the transition function factor as a shift?), which
+means it can be a `src/opt/` pass with no parser or IR change.
 
 ### 8.5 What M4 DOES owe DD-9: a non-regression floor
 
@@ -1337,7 +1692,12 @@ it reads. Checked against `src/parse/registry.c` (STRUCTURAL):
   — `design_notes_mod06.md` §8.2), and `mod_verbs.c` says so about itself in
   its own header ("Building an aport/PORT_FN here would wire a PRODUCER…";
   "if a future slice needs a producer, the seam to extend is
-  `verb_rows[0]`").
+  `verb_rows[0]`"). **RULED (D44, ratifying R21 E-9) — the census GAINS
+  `branch_reset`** (`(?|...)`, `src/parse/registry.c:547`), missed by the
+  original `VM_ONLY` grep because it is module-gated under a name the
+  grep's magnitude count did not individually verify. It has no producer
+  either (same population as the rest of this list), so it changes the
+  COUNT this bullet's magnitudes describe but not the CONCLUSION below.
 
 > **Therefore: when the VM exists, ZERO currently-refused constructs become
 > compilable.** Every `VM_ONLY` construct is refused on the MODULE axis, and
@@ -1357,7 +1717,19 @@ it reads. Checked against `src/parse/registry.c` (STRUCTURAL):
    spelled differently or the diagnostic lies. The engine refusal is reachable
    ONLY through the §5.6 override, because `auto` always picks an engine that
    can compile the pattern. That is the honest scope of SR-8's flip: it makes
-   the override's refusal expressible, and nothing else.
+   the override's refusal expressible, and nothing else. **RULED (D44.6,
+   ratifying R21 E-7) — the engine-refusal population is LARGER than
+   "`VM_ONLY` construct under `--engine=dfa`."** §5.7.3's own new bullet
+   above records the second trigger: a captures-DEFAULT pattern (any
+   group-bearing pattern, post-[M4.5], with `--no-captures` not passed)
+   under `--engine=dfa` refuses too, even though the pattern uses no
+   `VM_ONLY` construct at all — the forcing condition is "captures were
+   requested" (§5.3's routing rule), not "the registry says `VM_ONLY`".
+   Both triggers share one mechanism (the §5.6 override making an
+   otherwise-`auto`-avoided conflict reachable) and one diagnostic shape
+   (D26 tier 2, naming the actual conflict), but a reader should not
+   conflate "SR-8's flip" with "every reason `--engine=dfa` can refuse" —
+   SR-8 is the `VM_ONLY`-registry half specifically.
 3. **A behaviour change to a currently-compiling construct** — which SR-8's
    row does not mention and which is bigger than everything in it.
    `build/pcrec -p rx 'a(b|c)+d'` compiles TODAY (it is the CLAUDE.md example)
@@ -1533,6 +1905,13 @@ run, per the docs-only scope.
   one case, and the disagreement is in the empty-iteration family.** Wanted
   BEFORE M4.5 writes the capture corpus, because the exclusions must exist
   before the expectations do.
+  **RULED (D44, ratifying R21's E-ASK-1 refutation, 2026-08-14): the
+  prediction is REFUTED.** The panel ran this exact measurement (225,240
+  generated pairs + 53 targeted empty-iteration cases): ZERO python/PCRE2
+  disagreements. §3.6's oracle-exclusion mechanism is therefore RE-SCOPED
+  rather than built as originally planned — see §3.6's own RULED
+  annotation for the three-way replacement rule and why an exclusion
+  mechanism built on this (wrong) prediction would have hidden K17 (§6.1).
 - **ASK-6 — `RX_HYBRID_MIN`.** The subject length below which hybrid (two DFA
   passes + one VM pass) loses to VM-only. Bench case (i)'s 60-byte regime is
   the target. **Prediction: the threshold is nonzero and small — low hundreds
@@ -1636,17 +2015,45 @@ run, per the docs-only scope.
 Stated so a critic can go straight at them rather than reconstructing what
 this design is betting on.
 
-- **P-1 (§6.1).** For a pattern whose only VM-forcing feature is capturing
-  groups, the capture-erased DFA computes the EXACT leftmost-first span, not
-  an over-approximation. *Refuted by:* one pattern + subject where the VM's
-  span differs from the DFA's. M4.5's internal differential (§3.7) is the
-  instrument, and it runs over the whole existing corpus.
-- **P-2 (§4.2).** Counting steps only at backtrack resumptions bounds every
-  pathological pattern. *Refuted by:* a pattern that runs unboundedly long
-  while making bounded resumptions. (The author cannot construct one — forward
-  progress is monotone in `pos` and bounded by `n` between resumptions — but
-  a nullable-loop bug in §3.3 would be exactly such a witness, which is why
-  the empty-guard is part of the same design.)
+- **P-1 (§6.1) — REFUTED IN THE STRONG FORM (K17), NOW A GATE.** ~~For a
+  pattern whose only VM-forcing feature is capturing groups, the
+  capture-erased DFA computes the EXACT leftmost-first span, not an
+  over-approximation.~~ **RULED (D44, ratifying R21 E-1):** the panel ran
+  this prediction's own instrument — the exact probe this line names —
+  and found K17: `(?:b*?(?:a*)*)*` on `"ab"` gives `[0,2)` from pcrec's
+  DFA where both oracles give `[0,1)`. The claim holds on 910/910 random
+  sweep cells and fails on a specific, narrow, reproducible family (§6.1's
+  own account). Because a real counterexample exists, P-1 can no longer
+  be stated as a prediction the panel might refute — it is a property
+  that must be CHECKED PER PATTERN FAMILY going forward. §3.7's internal
+  differential is therefore promoted from "instrument for this
+  prediction" to a GATE: no pattern family may rely on span-equality
+  between DFA and VM until the differential has run clean for it, and it
+  must run in `--engine=vm` mode (§5.6) so the check is genuinely
+  independent rather than tautological (§3.7's own RULED note explains
+  why). K17 itself is fixed on its own schedule (D44.4, before [M4.4]);
+  once fixed, re-running the full differential is what would justify
+  reverting §6.1's mark to unconditional STRUCTURAL again — a claim, not
+  an assumption.
+- **P-2 (§4.2) — REWORDED (D44, ratifying R21 E-5).** ~~Counting steps
+  only at backtrack resumptions bounds every pathological pattern.~~
+  **Corrected claim: counting steps at backtrack resumptions AND at
+  island entries (§4.2's own RULED fix) bounds the NUMBER of
+  entries/resumptions in every pathological pattern — it does NOT bound
+  TOTAL WALL-CLOCK WORK**, because each counted island entry can
+  independently cost up to `O(n)` internal scanning that the counter
+  never sees (E-5's finding: `O(n × resumptions)` real work behind an
+  `O(n)`-ish step count is possible and not a violation of this
+  narrower claim). *Refuted by:* a pattern whose step count stays well
+  under budget while its wall-clock time is unreasonable for a benign
+  input — which is now an EXPECTED possibility under the corrected
+  claim, not a counterexample to it; what WOULD refute the corrected
+  claim is a pattern that runs unboundedly long while making a BOUNDED
+  NUMBER of resumptions-plus-entries (forward progress between
+  resumptions is still monotone in `pos` and bounded by `n`, so the
+  author still cannot construct one — a nullable-loop bug in §3.3 would
+  be exactly such a witness, which is why the empty-guard, now scoped to
+  `rmax == -1` per E-2, is part of the same design).
 - **P-3 (§4.7).** No pattern that pcrec answers today at DFA speed reaches the
   step budget after M4. *Refuted by:* a capture-bearing pattern whose
   capture-erased prefilter says "match somewhere" but whose VM then burns the
@@ -1659,8 +2066,17 @@ this design is betting on.
 - **P-5 (§8.4(ii)).** Roughly 2x of case (f)'s 6.61x gap is the second
   (reverse) pass; dispatch and algorithm own the remaining ~3x. *Refuted by:*
   ASK-10's instrumentation.
-- **P-6 (§2.1, §2.5).** The VM's emitted code size is linear in pattern size
-  and never approaches R1 A-3's gcc-compile-time cliff. *Refuted by:* ASK-7.
+- **P-6 (§2.1, §2.5) — NIT (D44, ratifying R21 P-6 finding).** ~~The VM's
+  emitted code size is linear in pattern size~~ — **held, WITH A
+  CORRECTION**: linear in the EXPANDED NODE COUNT (post any AST rewrites —
+  §5.2's discharge-and-re-analyse fixpoint, the finite-backref expansion
+  chief among them — can grow the tree before the VM emitter ever sees
+  it), not in raw pattern CHARACTERS, which the original phrasing
+  conflated. A pattern with a compact textual form and a large expanded
+  node count (post-rewrite) is exactly where this distinction bites; the
+  claim about label-count linearity is unaffected, only the independent
+  variable it is linear IN. And never approaches R1 A-3's gcc-compile-time
+  cliff. *Refuted by:* ASK-7.
 - **P-7 (§5.4).** After M4, emitted C for every capture-free corpus pattern is
   byte-identical to pre-M4 output modulo the announced break and the stamp
   lines. *Refuted by:* the diff. This one should be a GATE, not a prediction.

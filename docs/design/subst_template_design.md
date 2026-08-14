@@ -1,5 +1,22 @@
 # Compiled substitution — the template compiler design (M4-SUBST, phase 1)
 
+> ## PANEL OUTCOME (R21) — READ BEFORE ANY SECTION BELOW
+>
+> This document's FIRST panel review (R21,
+> `docs/dev/reviews/2026-08-14-r21-m4-design.md`; dispositions ratified in
+> `docs/dev/decisions.md` D44) reviewed it as a ruled input alongside
+> `match_api_m4.md` and `engine_m4.md`. Two annotations land this round,
+> both FIX-NOW, house style (append/annotate, don't silently rewrite):
+> §2.4's `rx_ctx` sketch is marked SUPERSEDED — `subject` should already
+> read `const unsigned char *` and the struct gained `void *user` at
+> D38.1/D38's binding-unit ruling, neither of which this section's C code
+> block shows (A-13); §2.4(a)'s "`rx_search` keeps a compatibility
+> signature" idea is marked OVERRULED — D38 Q12 and D44.2 both closed
+> that door, no compatibility signature survives (A-13). §5.2 gains a
+> staleness banner: it predates D41–D44, `match_api_m4.md` is the applied
+> surface, and `rx_subst`'s return space gains `RX_ERR_*` codes plus the
+> A-9 compile-time-error obligation (D44.7).
+
 **Status: PROPOSED, §9 now fully RULED (D38, 2026-08-14).** `docs/dev/decisions.md`
 D38 rules all fourteen of §9's questions (and §10's summary asks) —
 outcomes appended in place below, marked **RULED (D38, 2026-08-14)**.
@@ -277,6 +294,21 @@ typedef struct rx_ctx {
 } rx_ctx;
 ```
 
+**SUPERSEDED (D38.1/D38.2, backported per R21 A-13) — kept as history,
+not the current shape.** This block still shows `const char *subject`
+and a five-field struct with no `void *user`. Two corrections landed the
+same session, both already applied at `design_callout_abi.md` §1 and
+carried forward into `match_api_m4.md` §4, neither reflected here: (1)
+`subject` is `const unsigned char *` (D38, applying this section's own
+finding (c) below — `char`'s signedness is implementation-defined and the
+emitter indexes 256-entry class tables with subject bytes); (2) the
+struct gains a `void *user` field via the `rx_callout_ref` binding-unit
+struct (D38.1, the callout-ABI's per-binding state mechanism) — this
+sketch predates that ruling and shows the struct without it. The CURRENT
+`rx_ctx` shape is `design_callout_abi.md` §1's, not this block; this
+block is preserved as the state of the design at the point this note's
+adoption argument was written, per this document's own house style.
+
 **[PROPOSED]** this note **adopts** `rx_ctx.caps` as the capture-offset
 contract. F3 is right that two representations with a conversion between them
 would be the worse outcome, and the fit is good: `const ptrdiff_t (*)[2]` is
@@ -295,9 +327,26 @@ alongside `rx_span` — it requires that `rx_span` either become the pair type
 or go away. That is a breaking change to a shipped generated contract, which
 is **[DD-3]**'s territory (generated-API versioning) and should be recorded
 as a cost of F3 rather than discovered at implementation time.
-**[PROPOSED]** the cheapest reconciliation is that the whole-match span
-becomes `caps[0]` and `rx_search` keeps a compatibility signature; but this
-note does not own that call and flags it as §9 question 12.
+~~**[PROPOSED]** the cheapest reconciliation is that the whole-match span
+becomes `caps[0]` and `rx_search` keeps a compatibility signature~~ — but
+this note does not own that call and flags it as §9 question 12.
+
+**OVERRULED (D38 Q12/D44.2, backported per R21 A-13).** Both halves of
+that proposal were decided, and NEITHER survived in the form sketched
+above: D38 Q12 rules "no permanent conversion seam" — `rx_span` breaks
+in ONE announced commit, not alongside a kept compatibility signature —
+and D44.2 (the R21 fix round) goes further, retiring `<prefix>_span`
+outright rather than converting it to a `ptrdiff_t[2]` typedef: the
+search entry's FINAL shape at [M4.4] is `int <prefix>_search(...,
+ptrdiff_t (*caps)[2])`, a caps-array PARAMETER, with `caps[0]` the
+whole-match span and no second name or second signature for it anywhere
+(`match_api_m4.md` §1.0). "Keeps a compatibility signature" is therefore
+not merely unadopted — it was actively ruled OUT twice, once by the
+no-conversion-seam principle and once by the panel's own measured
+stack-smash finding against the array-typedef shape a compatibility
+signature would have needed. §9 question 12's own RULED outcome (below)
+already carries this; this annotation exists so a reader stopping at (a)
+does not miss it.
 
 **(b) `size_t` → `ptrdiff_t` halves the representable subject length**, from
 `SIZE_MAX` to `PTRDIFF_MAX`. On any target pcrec plausibly serves this is
@@ -582,6 +631,30 @@ int rx_search(const unsigned char *s, size_t n, size_t startpos, rx_span *m);
 ```
 
 ### 5.2 Proposed generated surface
+
+**STALENESS BANNER (backported per R21, D44, 2026-08-14).** This sample
+predates D41–D44 and shows the PRE-reshape surface: an `RX_NCAPS`
+constant with no companion `caps` parameter shown on `rx_subst` itself,
+and no reference to `rx_info`, the `slot` column, or the search-entry
+reshape. `match_api_m4.md` is the applied surface for anything this
+sample conflicts with — this sample is not rewritten to track it, per
+house style. Two concrete corrections carried forward from D44.7/A-14,
+not shown in the code block below:
+
+- **`rx_subst`'s return space gains `RX_ERR_*` codes** (D44, ratifying
+  R21 A-14): the D42.3 negative-return-space sweep that gave
+  `<prefix>_search` its `RX_ERR_STEPS`/`RX_ERR_FRAMES` reservation
+  MISSED `rx_subst` when that ruling landed — this sample's own
+  `RX_SUBST_NOSPACE (-1)` constant is not the only negative value
+  `rx_subst` may need to return on a budget/frame-carrying artifact; the
+  space below `RX_SUBST_NOSPACE` is now reserved the same way, on the
+  same reservation basis.
+- **The `--no-captures` × `$n`-referencing-template compile-time error**
+  (D44.7, ratifying R21 A-9) applies to exactly the kind of template this
+  sample shows (`--replace '<$1>'` against a pattern compiled
+  `--no-captures` would be rejected at compile time, not silently
+  rendered as `<>`) — see `match_api_m4.md` §11 item 12 for the ruled
+  obligation text.
 
 **[PROPOSED]**, for `pcrec -p rx --replace '<$1>' -o out.c '(a+)b'`:
 
