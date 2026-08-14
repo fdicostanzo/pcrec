@@ -1,5 +1,22 @@
 # Callout-ABI ↔ match-here alignment — proposal for the M4 match-API freeze
 
+> ## PANEL OUTCOME (R21) — READ BEFORE ANY SECTION BELOW
+>
+> This document's FIRST panel review (R21,
+> `docs/dev/reviews/2026-08-14-r21-m4-design.md`; dispositions ratified in
+> `docs/dev/decisions.md` D44) reviewed it as a ruled input alongside
+> `match_api_m4.md` and `engine_m4.md`. Two backports land this round,
+> both FIX-NOW: **F8 is SUPERSEDED** — the group index it describes as
+> freestanding symbols folded into `rx_info` at D43.1 and gained a `slot`
+> column at D44.3; the customer this section named is also corrected
+> (C-2/A-13, §5 below). **A new F9** records D42.5's callout caps-lifetime
+> line, which this document never carried despite being the ABI's own
+> home (C-3, §5 below). A POST-RULING UPDATES block at §5's end records
+> that D41–D44 landed after this document's text and that
+> `match_api_m4.md` carries the applied surface — this document stays the
+> historical record, per house style, rather than being rewritten to
+> match it.
+
 STATUS: RULED (D38, 2026-08-14) — `docs/dev/decisions.md` D38 applies the
 rulings below to §1, §2, §4, §5 and §6. Two items remain OPEN: the syntax
 family (§6 Q5, per R-d) and the embedded-code restrictions (§6 Q6, distant
@@ -250,6 +267,53 @@ runtime signal threaded back through `rx_matchfn`'s return convention.
   symbol directly. Second customer: V-A's
   `pcre2_substring_number_from_name`.
 
+  **SUPERSEDED (D43.1/D44, ratifying R21 C-2/A-13) — kept as history, not
+  the current shape.** This section still describes F8 as FREESTANDING
+  symbols (`<prefix>_group_entry`/`<prefix>_groups[]`/`<PREFIX>_NGROUPS`)
+  — D43.1 (2026-08-14, same session, after this document's text was
+  written) folds the index into `rx_info` instead: it becomes the
+  `groups`/`nnames` members of one reflection struct, `extern const
+  rx_info <prefix>_info` per artifact, rather than three freestanding
+  per-artifact symbols. The R21 panel found this document was the ONE
+  place in the repository still specifying the superseded freestanding
+  form with zero D41/D42/D43 mentions (C-2) — a staleness gap this
+  backport closes. Three things changed beyond the container:
+  - **The element type gained a column.** D44.3 (ratifying R21 A-4) BORN
+    `rx_group_entry` with `{name, number, slot, ref}` — a `slot` field
+    between `number` and `ref` that this section's `{name, number, ref}`
+    triple does not have, closing a pre-V-E out-of-bounds read the panel
+    found reachable (`--no-captures '(?<g>a)'` names a group with no caps
+    slot to point at; `slot == -1` now says so explicitly instead of
+    leaving a reader to assume `slot == number`).
+  - **The customer this section names is CORRECTED.** "V-A's
+    `pcre2_substring_number_from_name`" is superseded by D43's own text:
+    the second customer is V-A's `pcre2_pattern_info`, which reads the
+    WHOLE `rx_info` struct (flags, encoding, the three counts, the
+    engine, the budget), not `rx_info.groups` in isolation the way the
+    narrower `pcre2_substring_number_from_name` framing implied.
+  - **The full current shape lives at `match_api_m4.md` §5**, D44.5's
+    hardened layout (`abi` first member, widened `flags`/`step_budget`,
+    the `ncaps`/`ngroups`/`nnames` three-count split, `engine`/
+    `engine_why`, `pattern`/`pattern_len`, `frame_capacity`/
+    `subject_ceiling`) — this section is not updated to match it in
+    place; the pointer is deliberate, per this document's own house
+    style of appending rather than rewriting.
+
+- **F9** (NEW, D42.5, backported per R21 C-3): `rx_ctx.caps` handed to a
+  callout is valid for the DURATION OF THE CALL ONLY. The engine rewrites
+  the same storage afterwards (trail-based undo, `engine_m4.md` §2.4/
+  §3.4 — the slots a callout reads are not a private copy). A callout
+  that retains the pointer past its own call and reads it later is the
+  EMBEDDER'S BUG, not a pcrec contract violation; nothing in the
+  generated code detects or guards against it. **The panel found this
+  line ABSENT from this document entirely** — not merely as an unnumbered
+  F-item, but nowhere in its text — despite being exactly the kind of
+  callout-lifetime property this document's F1–F8 exist to state, and
+  despite `rx_ctx.caps` (§1's own struct) being this document's own
+  field. It was raised at `engine_m4.md` §12 ASK-3 and ruled at D42.5 the
+  same session; this backport is the first time it lands in the document
+  that actually owns the `rx_ctx` type it constrains.
+
 ## 6. Open questions for Frank (numbered, rulings requested)
 
 1. **RULED (D38):** confirmed — the §1 `rx_ctx` field set is settled
@@ -275,6 +339,41 @@ runtime signal threaded back through `rx_matchfn`'s return convention.
    revisit when syntax work is scheduled.
 6. **OPEN** — embedded-code restrictions remain unruled; distant future,
    no scheduling asked, unchanged by D38.
+
+## POST-RULING UPDATES (D41–D44, backported 2026-08-14)
+
+This document's text predates D41, D42, D43 and D44 — all four landed in
+the SAME session that ruled D38 above, but later in it, after this
+document's prose was written. Rather than rewrite this document's body to
+track every subsequent ruling (the house-style choice this project makes
+throughout `docs/design/`: append, don't silently rewrite), this section
+records what changed and where the CURRENT applied surface lives:
+
+- **The ABI type family grew.** D41.1 confirms `rx_ctx`/`rx_matchfn`/
+  `rx_callout_ref` (this document's own types) as fixed-literal, never
+  `--prefix`-scoped — exactly as spelled throughout this document, now
+  RULED rather than merely this document's own convention. D43.1 adds
+  `rx_info`/`rx_group_entry` to the same family (§5's F8 backport above).
+- **`rx_ctx.caps`'s representation changed shape at the freeze**, per
+  `match_api_m4.md` §1.0 (D44.2): the SEARCH ENTRY that fills a caller's
+  caps array now takes `ptrdiff_t (*caps)[2]` directly rather than a
+  `<prefix>_span` out-parameter — `rx_ctx.caps` itself (this document's
+  own `const ptrdiff_t (*caps)[2]` field, §1) is UNCHANGED by that reshape,
+  since it was already the pair-array shape; only the SEARCH entry's own
+  parameter, a different struct this document does not define, changed.
+- **The match-here entry gained a capture-delivering sibling**
+  (`<prefix>_match_caps`, D41.4) and the search entry gained reserved
+  negative-return codes (D42.3) — neither is this document's business
+  (they are match-API surface, `match_api_m4.md` §3.1/§1), noted here only
+  so a reader of THIS document's F1/F2 does not assume `rx_matchfn` is the
+  only way to get captures out of a compiled matcher.
+- **`match_api_m4.md` is the applied surface.** Any conflict between a
+  reading of this document and `match_api_m4.md`'s current text resolves
+  in `match_api_m4.md`'s favor — this document remains authoritative for
+  the callout-ABI DESIGN RATIONALE (why one context struct, why the
+  binding-unit indirection, why captures are visible in/opaque out) but
+  not for the exact current struct layouts, which move faster than this
+  document is updated.
 
 ## 7. Explicitly out of scope
 
