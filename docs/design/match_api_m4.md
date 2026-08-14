@@ -264,6 +264,22 @@ extern const rx_callout_ref rx_callout_<name>;   /* one per callout binding */
   a per-call `user` parameter threaded through `rx_matchfn` itself
   (Frank: "ouch" — changes the signature for every caller to serve a
   minority need).
+
+  **Re-examined 2026-08-14 (Frank's question, post-D38; asked, not
+  directed — ruling unchanged):** would `(*fn)(const rx_ctx *, void
+  *data)` be better, keeping `user` out of `rx_ctx` so the struct stays
+  pure match state? Answer recorded so the panel need not re-derive it:
+  `rx_ctx` is a TRANSIENT, PER-CALL view whose instance the engine owns —
+  `pos` and the `ncap` watermark are already written between callout
+  sites, so `user` adds one store to a struct that is engine-local and
+  mutated per site regardless, and the callee's `const` view means no
+  aliasing is observable. The two-arg form's separation is conceptual
+  only, while its cost is concrete: composition requires the match-here
+  entry to share the type, so every non-callout embedder would carry a
+  `NULL` second argument (the same signature tax D38's rejection
+  recorded), and the Q13 renderer signature would grow to four
+  parameters. `rx_ctx` purity is also not durable either way — the v2
+  declared-capture-export path is already a DD-3 struct revision.
 - **Composition is a one-line const wrap**: `const rx_callout_ref
   rx_callout_x = { inner_match_here, NULL };` — because the two struct
   shapes are identical, a compiled matcher links directly as a callout with
