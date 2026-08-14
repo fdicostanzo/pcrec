@@ -537,7 +537,13 @@ GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtrackin
 GROUP('*',  "(?*a)",         lookaround,       VM_ONLY,
       "non-atomic positive lookahead — the (? spelling of (*napla:...)", QF_YES),
 GROUP_LEXICAL('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
-GROUP_NEVER('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- OUT-OF-SCOPE (K14): a callout suspends generated code that has no runtime to suspend into", QF_NO),
+/* [M4-CALLOUTS] step 1 (D36, 2026-08-12; flipped 2026-08-14): was
+ * GROUP_NEVER — K14's OUT-OF-SCOPE ruling on 2026-08-11. Frank re-scoped it
+ * to a PLANNED module the same session that discussion started, LOW
+ * priority, parked behind the M4 VM engine that hosts the behavior (step 2,
+ * separately scoped). This row only changes disposition; the syntax and
+ * PCRE2 semantics it describes are unchanged. */
+GROUP('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at", QF_NO),
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),

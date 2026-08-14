@@ -185,21 +185,45 @@ def main():
             return 1
         print(f"PASS: OUT-OF-SCOPE prose and ROADMAP_NEVER agree, both directions "
               f"({len(never_dump)} verb names)")
-        # ...and the registry-row instances: today exactly the callouts row.
-        never_rows = {r["syntax"] for r in rows if r["roadmap"] == "never"}
-        prose_has_callouts = any("OUT-OF-SCOPE" in ln and "(?C" in ln
-                                 for ln in text.splitlines())
-        if ("(?C1)" in never_rows) != prose_has_callouts:
-            print("FAIL: the callouts row's roadmap and the survey's callouts "
-                  "OUT-OF-SCOPE row disagree", file=sys.stderr)
+        # ...and the RS_MODULE registry-row instances at non-verb doorways
+        # (esc / group / class-bracket; verbs are the loop above via
+        # --list-verbs). RS_MODULE + ROADMAP_NEVER is the K14 shape this
+        # whole function is about — a construct real enough that PCRE2 has
+        # it and pcrec's OWN table would otherwise promise a module for it,
+        # deliberately refused instead. That is NOT the same population as
+        # "RS_REJECTED rows carry ROADMAP_NEVER too" (D34 item 1's mandatory
+        # pairing for constructs PCRE2 itself rejects — `(?PX)`, `(?q)`,
+        # `[[.a.]]`, `[[=a=]]`, `\N{name}` today): agreement-with-PCRE2's-own-
+        # rejection needs no OUT-OF-SCOPE prose link at all, and an earlier
+        # version of this generalization wrongly flagged all five as missing
+        # one (caught by running this check, not by inspection).
+        #
+        # UNTIL [M4-CALLOUTS] step 1 (2026-08-14) this block hardcoded the
+        # callouts row as the one RS_MODULE instance, matching its canonical
+        # syntax "(?C1)" against any prose line mentioning "(?C" OUT-OF-SCOPE
+        # — a hand link rather than a generic one, because (unlike verb
+        # names) a group-doorway row's canonical `syntax` and its prose
+        # spelling do not share a token a regex can extract cleanly (the
+        # prose row spelled three variants, `(?C)` `(?Cn)` `(?C"text")`, none
+        # equal to the row's own `(?C1)`). The flip moved the callouts row to
+        # PLANNED, dropping this population to ZERO. The branch stays
+        # COLUMN-DERIVED rather than deleted — it reads `rows` fresh every
+        # run, so a new RS_MODULE + ROADMAP_NEVER row makes it fail loudly
+        # instead of silently passing, and the failure is where the next
+        # author adds that row's own hand link (the way this comment now
+        # documents the callouts row's, for the historical link see the
+        # [M4-CALLOUTS] step 1 commit).
+        never_module_rows = sorted(r["syntax"] for r in rows
+                                   if r["roadmap"] == "never" and r["status"] == "module")
+        if never_module_rows:
+            print(f"FAIL: RS_MODULE registry rows are ROADMAP_NEVER but this "
+                  f"check has no prose link wired for them yet: "
+                  f"{never_module_rows} — add one (see this function's "
+                  f"comment)", file=sys.stderr)
             return 1
-        planned_out = sorted(r["syntax"] for r in rows
-                             if r["roadmap"] == "planned" and r["syntax"].startswith("(?C"))
-        if planned_out:
-            print(f"FAIL: rows promise a module for prose-OUT-OF-SCOPE constructs: "
-                  f"{planned_out}", file=sys.stderr)
-            return 1
-        print("PASS: the callouts row and the survey agree ((?C is ROADMAP_NEVER)")
+        print("PASS: no RS_MODULE ROADMAP_NEVER rows today (population 0 "
+              "since [M4-CALLOUTS] step 1's flip); the check stays "
+              "column-derived and re-arms the day one exists")
         return 0
 
     section = render(rows)

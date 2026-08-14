@@ -919,24 +919,22 @@ case11() {
         '\N{name}' "own names" "—"
     assert_field "case11: ...and that agrees" "$out" '\N{name}' "agree" "ok"
 
-    # --- THE ROADMAP_NEVER ROW: the defect MOD-0.7a found (note section 1) ---
-    # --explain promised module 'callouts' for a construct the compiler
-    # refuses with "no module will implement it". K14's over-promise, fixed in
-    # ext.c at MOD-0.1, still live on the query surface because syntax_dump.c
-    # never read `roadmap`. These three assertions were written BEFORE the fix
-    # and watched failing (the FIX-3 pattern; the recorded failure is in this
-    # slice's commit message) — the `agree` clause cannot see this defect,
-    # because both of its sides read the row.
+    # --- [M4-CALLOUTS] step 1 (D36, flipped 2026-08-14): (?C1) is now a
+    # PLANNED module row, not ROADMAP_NEVER. This block used to pin the
+    # ROADMAP_NEVER shape (K14, MOD-0.7a); it now pins the post-flip shape —
+    # a module row like any other, promising 'callouts'. The `agree` clause
+    # still cannot independently verify attribution (both its sides read the
+    # row), so this hand-written pin is still the only net.
     out="$("$PCREC" --explain '(?C1)')"
-    assert_field "case11: (?C1) carries roadmap never" "$out" "(?C1)" \
-        "roadmap" "never"
-    assert_field "case11: (?C1)'s status does NOT promise a module" "$out" \
+    assert_field "case11: (?C1) carries roadmap planned" "$out" "(?C1)" \
+        "roadmap" "planned"
+    assert_field "case11: (?C1)'s status promises module callouts" "$out" \
         "(?C1)" "status" \
-        "known, outside pcrec's scope — no module will implement it"
-    assert_field "case11: ...the row still records whose module it would be" \
+        "known, unimplemented — requires module 'callouts'"
+    assert_field "case11: ...the row records its module" \
         "$out" "(?C1)" "module" "callouts"
-    assert_field "case11: ...the live answer promises nothing" "$out" "(?C1)" \
-        "own names" "—"
+    assert_field "case11: ...the live answer promises it" "$out" "(?C1)" \
+        "own names" "callouts"
     assert_field "case11: ...and that is agreement, not a dissent" "$out" \
         "(?C1)" "agree" "ok"
 

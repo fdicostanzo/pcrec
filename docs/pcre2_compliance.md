@@ -424,11 +424,15 @@ and lookarounds, and correcting that belongs to SR-6 with the module itself.
 **Since MOD-0.1's K14 fix (2026-08-11) the diagnostic honours this section's
 own OUT-OF-SCOPE calls:** every name below marked OUT-OF-SCOPE carries
 `ROADMAP_NEVER` in the verb tables and answers "... is outside pcrec's scope
-and no module will implement it" instead of promising module `verbs`; the
-same for `(?C` callouts at the `(?` doorway. `compliance_section.py --names`
-holds this section and the column together in both directions, so editing an
-OUT-OF-SCOPE cell here without moving the column (or vice versa) fails
-`make test`.
+and no module will implement it" instead of promising module `verbs`.
+`compliance_section.py --names` holds this section and the column together in
+both directions, so editing an OUT-OF-SCOPE cell here without moving the
+column (or vice versa) fails `make test`. (`(?C` callouts at the `(?` doorway
+carried the same OUT-OF-SCOPE/`ROADMAP_NEVER` pairing until [M4-CALLOUTS] step
+1 moved it to `PLANNED` — see the Callouts section below. The live population
+of non-verb `ROADMAP_NEVER` rows is zero as a result; the check that ties this
+column to the prose stays column-derived rather than deleted, so it re-arms
+the day a second such row exists.)
 
 | syntax | status | becomes | notes |
 |---|---|---|---|
@@ -438,9 +442,24 @@ OUT-OF-SCOPE cell here without moving the column (or vice versa) fails
 
 ## Callouts
 
+**[M4-CALLOUTS] step 1 (D36, Frank, 2026-08-12; flipped 2026-08-14):**
+re-scoped from `OUT-OF-SCOPE` to `PLANNED`, module `callouts`, explicitly LOW
+priority — parked behind the M4 VM engine that hosts the behavior (callouts
+are engine-forcing like backrefs: the compiled DFA erases the pattern
+positions a callout fires at, so callout patterns compile to the VM engine
+only). The PATTERN layer (syntax, where callouts may appear) is D26-exact and
+PCRE2-compatible; the CALLBACK CONTRACT mirrors `pcre2_callout_block` field
+for field; the REGISTRATION API is pcrec-native (a compile-time-bound `extern`
+the embedding program defines, zero cost when absent) rather than a runtime
+`pcre2_set_callout`-style registration. The obstacle that kept this
+`OUT-OF-SCOPE` no longer applies as a permanent one: generated code's zero
+runtime dependency on pcrec is preserved by the static-extern binding, not by
+refusing the construct. Step 2 (the behavior itself) is not yet built — see
+`docs/dev/plan.md`'s `[M4-CALLOUTS]` row.
+
 | syntax | status | becomes | notes |
 |---|---|---|---|
-| `(?C)` `(?Cn)` `(?C"text")` | `OUT-OF-SCOPE` | — | for now — orthogonal to engine class — PCRE2 supports callouts even in DFA mode. The obstacle is pcrec-specific: generated code has ZERO runtime dependency on pcrec and a fixed `<prefix>_search` contract, and a callout means suspending the scan and calling application code through a defined interface. That is a generated-API change (DD-3) and would tax the hot loop, which D18 puts first. Revisit only with a concrete customer |
+| `(?C)` `(?Cn)` `(?C"text")` | `REJECTED` | `PLANNED` | module `callouts`, M4-hosted, VM-only (D36). Callback block and return semantics (0/positive/negative) mirror `pcre2_callout_block` field for field; fire-point precision is documented engine-relative, with PCRE2's own `PCRE2_NO_START_OPTIMIZE` latitude as the cited precedent that fire counts are not the contract |
 
 ## Replacement strings
 
@@ -626,7 +645,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `(?` | `(?>...)` | `REJECTED` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
 | after `(?` | `(?*a)` | `REJECTED` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
 | after `(?` | `(?#...)` | `REJECTED` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
-| after `(?` | `(?C1)` | `REJECTED` | never | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- OUT-OF-SCOPE (K14): a callout suspends generated code that has no runtime to suspend into |
+| after `(?` | `(?C1)` | `REJECTED` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
 | after `(?` | `(?\|...)` | `REJECTED` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
 | after `(?` | `(?(1)a\|b)` | `REJECTED` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
 | after `(?` | `(?&name)` | `REJECTED` | planned | `recursion` | vm | recurse into the named group |

@@ -846,10 +846,12 @@ static void check_table_to_parser(void)
         if (r->diag == RD_FIXED)
             snprintf(want, sizeof want, "%s", r->msg);
         else if (r->roadmap == ROADMAP_NEVER)
-            /* K14: a NEVER row must not promise its module (the callouts row
-             * is the only one today; this branch is derived, so a second one
-             * is covered the day it exists). The independent pin of WHICH
-             * rows are NEVER is hand-written in tests/reject/. */
+            /* K14: a NEVER row must not promise its module (zero at the GROUP
+             * doorway today — the callouts row carried it alone until
+             * [M4-CALLOUTS] step 1, D36, flipped it to PLANNED 2026-08-14;
+             * this branch is derived, so the next one is covered the day it
+             * exists). The independent pin of WHICH rows are NEVER is
+             * hand-written in tests/reject/. */
             snprintf(want, sizeof want, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", byte);
         else
             snprintf(want, sizeof want, "(?%c...) requires module '%s'", byte, r->module);

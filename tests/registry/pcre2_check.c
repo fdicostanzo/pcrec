@@ -1750,8 +1750,10 @@ static bool pcrec_promises_module(const char *pat)
      * shapes: the module promise, and the ROADMAP_NEVER scope refusal — which
      * also names the construct as real, it just refuses to promise a module
      * for it. The differential's question is attribution, not wording, so
-     * both count. `(?C` is the one byte in this sweep that answers the second
-     * way today. */
+     * both count. `(?C` was the one byte in this sweep that answered the
+     * second way, until [M4-CALLOUTS] step 1 (D36, 2026-08-14) flipped the
+     * callouts row to PLANNED — no byte answers via scope refusal here today;
+     * this branch stays live for the day one does. */
     return strstr(msg, "requires module") != NULL || is_scope_refusal(msg);
 }
 
