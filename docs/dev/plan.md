@@ -121,7 +121,15 @@ stated terms.
   pcrec_error tag, PCREC_* constants, match-here export + (empty-ref)
   group index retrofitted onto the EXISTING DFA matchers. Coverage
   conservation per the STD1 re-baseline shape: suite populations
-  conserved and accounted, one announced break commit
+  conserved and accounted, one announced break commit. AMENDED
+  2026-08-14 (D42, D43): the same boundary also carries the
+  `<prefix>_match_caps` entry (D41.4), the search entry's reserved
+  negative returns (RX_ERR_STEPS/RX_ERR_FRAMES, D42.3), the
+  RX_NCAPS>1⇒VM structural check (D42.2 — trivially green until M4.5),
+  the `pcrec_options` flags-word break (booleans → PCREC_* bits,
+  D43.2), and the `rx_info` reflection struct (D43.1 — flags, encoding,
+  pattern string, folded group index, engine, budget; the group index
+  no longer lands as freestanding symbols)
 - [M4.5] STATE:not-started — IMPL: VM emitter core — captures over the
   base tier, search + match-here entries, DD-2 budget wired; .rxt
   format extension for capture expectations (docs/testing.md updated),
