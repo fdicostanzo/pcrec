@@ -1009,3 +1009,44 @@ recorded: a producer built directly on the accumulated buffer without the
 malformed-byte check would treat `\p{Sc!ript}` as a lookup miss rather than
 a shape PCRE2 never dispatches past — the K12/K13 "guard is the
 unimplemented-ness" pattern.
+
+## K17 — OPEN, found 2026-08-14 (R21 panel, engine critic — the P-1 probe the M4 engine design itself requested)
+
+**A live tier-1 MISCOMPILE in the shipped DFA: leftmost-first priority is
+lost for a lazy nullable prefix followed by a nested nullable star inside
+an outer star.** K1's 2026-08-09 fix (empty iteration must reach the loop
+exit with its rightful priority) did not generalise to this shape.
+
+**Repro** (HEAD ee4a244):
+
+    pattern (?:b*?(?:a*)*)*   subject "ab"
+      pcrec  : MATCH span [0,2)
+      pcre2  : MATCH span [0,1)
+      python : MATCH span [0,1)
+
+Both oracles agree; pcrec's lazy `b*?` wrongly consumes the `b` after the
+empty outer iteration should have terminated the loop at pos 1.
+Capture-INDEPENDENT (the `(b*?(a*)*)*` capturing form is identical), so
+this is the priority subset construction, not erasure.
+
+**Shrunk family (R21 engine critic):** diverges — `(b*?(a*)*)*`,
+`(b*?(a*)+)*`, `(b??(a*)*)*`, `(b*?([a]*)*)*`, `(b*?(a*|b*)*)*`.
+Does NOT diverge — `(b*?(a*)*)+` (outer +), `(b*?(a+)*)*` (inner
+non-nullable), `(b*?(a*)*)` (no outer star), `(b*a*)*` (greedy prefix).
+Requires all three: lazy nullable prefix, nullable inner star, outer `*`.
+Absent from the corpus (no .rxt pairs a lazy quantifier with a nested
+star). Random-sweep context: 910/910 span agreements with libpcre2 on
+seed-5 generated capture patterns; only this family diverged.
+
+**Why it matters beyond itself:** it refutes the STRUCTURAL form of
+engine_m4.md §6.1's exactness claim (the capture-erased DFA hands the VM
+an EXACT span) — the erasure half held under attack; the semantic half
+(D3's priority construction computes leftmost-first exactly) is where
+this lives. M4.6's DFA-prefilter hybrid would publish the wrong span with
+matching-wrong capture offsets, so the FIX IS A PRECONDITION for the
+hybrid, and M4.5's internal differential (span(VM) == span(DFA) over the
+corpus with a three-way oracle) is the regression net.
+
+**Scheduled:** fix in the DFA priority construction before [M4.6]
+(tracked in the R21 review's disposition table); the failing repro joins
+tests/known_fail/ with the fix round.
