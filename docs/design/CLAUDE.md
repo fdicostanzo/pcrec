@@ -59,7 +59,13 @@ append-only or historical records.
   match-or-fail only in v1, −2+ reserved and `__builtin_trap()`-enforced
   at call sites (F2); PCRE2-compat abort is discharged by generation-time
   call-site control flow, no native mechanism. Only Q5 (syntax spelling)
-  and Q6 (embedded-code restrictions) remain OPEN.
+  and Q6 (embedded-code restrictions) remain OPEN. **PANELED R21
+  (2026-08-14):** reviewed as a ruled input alongside `match_api_m4.md`/
+  `engine_m4.md` — F8 marked SUPERSEDED (folds into `rx_info`, D43.1/
+  D44) and a new F9 backported (the D42.5 caps-lifetime line); see
+  `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
+  POST-RULING UPDATES section. Dispositions APPLIED; still PROPOSED
+  until [M4.3]'s close is declared by the manager.
 - `subst_template_design.md` — [M4-SUBST] phase-1 design note (2026-08-14):
   the SUBSTITUTION TEMPLATE COMPILER, written before M4's match-API freeze
   because Frank's ratified observation is that the template compiler consumes
@@ -96,6 +102,13 @@ append-only or historical records.
   in place, e.g. length-only no-NUL buffers, `pcrec_error`'s which-input
   tag, `rx_span` breaking at the M4 freeze) and §10's summary asks marked
   ACCEPTED; the design prose itself is unchanged, only annotated.
+  **PANELED R21 (2026-08-14):** reviewed as a ruled input; §2.4's
+  `rx_ctx` sketch and §2.4(a)'s compat-signature idea annotated
+  SUPERSEDED/OVERRULED against D38.1/D44.2, and §5.2 gained a staleness
+  banner (`match_api_m4.md` is the applied surface; `rx_subst` gains
+  `RX_ERR_*` codes and the A-9 compile-time-error obligation, D44.7); see
+  `docs/dev/reviews/2026-08-14-r21-m4-design.md`. Dispositions APPLIED;
+  still PROPOSED until [M4.3]'s close is declared by the manager.
 - `match_api_m4.md` — [M4.1] MATCH-API FREEZE document (2026-08-14):
   collects every already-ruled M4 obligation into ONE freezable contract —
   a collection-and-reconciliation document, not new design. STATUS:
@@ -159,7 +172,17 @@ append-only or historical records.
   PROPOSED** — the freeze does not take effect until [M4.3]'s panel
   closes; this round exists so the panel reviews one reconciled document
   instead of a stale one plus a decision log to
-  cross-reference.
+  cross-reference. **PANELED R21 (2026-08-14):** the panel's judgment
+  calls above are RESOLVED (D44) — `rx_group_entry` confirmed
+  fixed-literal, born with a `slot` column too (D44.3); `ngroups_named`
+  renamed `nnames`; `rx_info` hardened to its final layout (`abi` first
+  member, `uint64_t flags`/`int64_t step_budget`, `engine`/`engine_why`
+  split, `pattern_len`, `frame_capacity`/`subject_ceiling`, D44.5); the
+  search entry reshapes to a caps-array parameter and `<prefix>_span`
+  RETIRES (D44.2) rather than becoming a typedef. See
+  `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
+  §15. Dispositions APPLIED; still PROPOSED until [M4.3]'s close is
+  declared by the manager.
 - `engine_m4.md` — **PROPOSED** ([M4.2], 2026-08-14): the M4 ENGINE design —
   the backtracking VM as EMITTED SPECIALIZED C (no interpreter: one function
   per pattern, one label per pattern position, an explicit fixed-size resume
@@ -221,8 +244,21 @@ append-only or historical records.
   `RX_ENGINE`/`RX_ENGINE_WHY` macros are RETAINED alongside it
   (PROPOSED-here, this document's own call) because they are
   compile-time-visible where `rx_info` is only link/runtime-visible —
-  the two serve different consumers, not redundant ones. **Still
-  PROPOSED**, unpaneled.
+  the two serve different consumers, not redundant ones. **PANELED R21
+  (2026-08-14):** a live shipped DFA priority miscompile (K17) found by
+  running this document's own §13 P-1 probe — §6.1's exactness claim
+  mark SPLITS (erasure STRUCTURAL held, span-equality
+  BELIEVED-WITH-GATE); §3.3's empty-iteration guard narrows to
+  `rmax == -1` only (E-2, MEASURED); §3.6's oracle strategy re-scopes to
+  a three-way pcrec/python/pcre2 rule with no pre-built exclusion
+  mechanism (E-ASK-1 refuted, 0 disagreements); §2.4/§2.5's cursor
+  discipline is written out and extended to deterministic
+  capture-bearing bodies with a stamped residual ceiling (D44.1); §4.2
+  now charges one step per island entry (E-5); `--engine=dfa` refuses
+  captures-default patterns (D44.6). See
+  `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
+  panel-outcome block. Dispositions APPLIED; still PROPOSED until
+  [M4.3]'s close is declared by the manager.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
