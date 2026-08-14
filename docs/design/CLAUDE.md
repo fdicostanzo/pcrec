@@ -96,6 +96,38 @@ append-only or historical records.
   in place, e.g. length-only no-NUL buffers, `pcrec_error`'s which-input
   tag, `rx_span` breaking at the M4 freeze) and §10's summary asks marked
   ACCEPTED; the design prose itself is unchanged, only annotated.
+- `engine_m4.md` — **PROPOSED** ([M4.2], 2026-08-14): the M4 ENGINE design —
+  the backtracking VM as EMITTED SPECIALIZED C (no interpreter: one function
+  per pattern, one label per pattern position, an explicit fixed-size resume
+  stack + capture TRAIL, and exactly one cold indirect jump), capture tracking
+  under PCRE2 leftmost-first priority (write-on-traverse, exact old-value undo,
+  the empty-iteration guard), DD-2's step budget (a step IS a backtrack
+  resumption, counted at one place, so forward progress is free — plus the
+  SECOND bound allocation-freedom forces and DD-2's row omits: backtrack-frame
+  capacity), per-pattern engine selection as a pass with a socket whose future
+  customers (backrefs-finite, atomic-cut) are REWRITES that discharge a
+  verdict rather than analyses that return one — hence a fixpoint, the DFA
+  prefilter + islands, DD-7, DD-9 and SR-8's flip. Its load-bearing structural
+  claim is that for a capture-ONLY pattern the capture-erased DFA is not an
+  over-approximation but literally the SAME machine the compiler builds today
+  (D31's erasure), so the existing forward+reverse pair hands the VM an EXACT
+  span and the VM never scans the subject — which is also the guard on the
+  measured cliff (bench case (e): pcrec 25.4 GB/s vs pcre2-interp DNF>90s; a
+  naive VM on `(a*)b` would land on the DNF side). **DD-9 DECIDED:** the
+  hybrid does NOT and structurally CANNOT own case (f) — `[01]*1[01]{8}` is
+  capture-free, so no M4 machinery ever runs on it; re-homed to [BENCH-1]'s
+  prioritizer worklist with three findings attached (computed goto is the
+  WRONG lever there, contra DD-9's own hint; ~2x of the 6.61x gap is the
+  reverse pass; the algorithmic candidate is bit-parallel shift-and, detectable
+  from the built DFA). **SR-8's flip is SMALLER than its row implies:** zero
+  currently-refused constructs become compilable when the VM exists, because
+  every VM_ONLY row is module-gated by a module with no producer. Reports
+  THREE tensions with the ruled D38/D39 ABI rather than resolving them
+  (§11: `rx_matchfn` has no room for "the engine gave up"; it cannot deliver
+  captures at all, so match-here is not the capture primitive; and D31
+  rejected — on a measurement — the AST node captures now need). §12 carries
+  eleven numbered ASKs, §13 eight falsifiable predictions. Unpaneled: [M4.3]
+  reviews it alongside `match_api_m4.md` and the two ruled pre-freeze docs.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
