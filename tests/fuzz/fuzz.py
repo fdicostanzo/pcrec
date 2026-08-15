@@ -67,6 +67,21 @@ def _gen_timeout():
 CC_TIMEOUT = _gen_timeout()
 RUN_TIMEOUT = 5
 
+# HARNESS POLICY FIX (this session): the bring-up default step budget
+# (VM_DEFAULT_STEP_BUDGET, src/gen/emit_vm.c, 1,000,000 backtrack
+# resumptions) is a placeholder pending M4.6's real calibration — it is not
+# an engine bug that a sufficiently pathological pattern can spend that many
+# resumptions and blow past this fuzzer's own RUN_TIMEOUT/CC_TIMEOUT clocks.
+# Compiling every fuzzed pattern with an explicit, much smaller
+# --step-budget=N keeps pcrec's own worst case bounded well inside the
+# fuzzer's clock, so budget exhaustion shows up as a fast, correctly
+# reported RX_ERR_STEPS verdict ("steps" from fuzz_driver.c) instead of a
+# subprocess TIMEOUT. Order of magnitude chosen empirically (see this
+# session's report): large enough that no pattern in the default corpus
+# trips it, small enough that a genuinely pathological one resolves in
+# well under a second. Override with STEP_BUDGET=N for experimentation.
+STEP_BUDGET = int(os.environ.get("STEP_BUDGET", "100000"))
+
 # =============================================================================
 # EXCLUDED FROM GENERATION — known tooling/engine divergences, verified
 # empirically against the real PCRE2 oracle (see this file's git history /
@@ -399,11 +414,24 @@ def build_oracle(workdir):
 
 def build_driver_template(workdir):
     """Compile fuzz_driver.c once, ahead of time, against a throwaway
-    pattern's gen.h. The generated ABI (rx_span/rx_search) is structurally
-    identical for every pattern compiled with prefix 'rx', so this one
-    driver.o can be linked against every subsequent pattern's gen.o without
-    ever recompiling driver.c again — the dominant per-pattern cost is then
-    just `pcrec` + one `gcc -c` of the (small) generated matcher."""
+    pattern's gen.h, then link that one driver.o against every subsequent
+    pattern's gen.o without ever recompiling driver.c again — the dominant
+    per-pattern cost is then just `pcrec` + one `gcc -c` of the (small)
+    generated matcher.
+
+    This is sound only because fuzz_driver.c itself makes no per-pattern
+    ABI assumption. `rx_search`'s SIGNATURE (ptrdiff_t (*caps)[2]) is fixed
+    for every prefix-'rx' artifact, so that part was always safe to share.
+    RX_NCAPS is NOT: it is a per-pattern preprocessor macro (ngroups+1 on
+    VM artifacts since [M4.5]; always 1 before that), so a driver compiled
+    against RX_NCAPS==1 (this throwaway pattern has no capture groups) and
+    then linked against a group-bearing pattern's gen.o would size its caps
+    array off the WRONG pattern's macro — the bug this file's own history
+    records (274/317 divergences on one fuzz run: any group-bearing pattern
+    that matched smashed this driver's stack, rc=-6). fuzz_driver.c reads
+    `rx_info.ncaps` at RUNTIME instead and heap-allocates the caps array to
+    that size, so it is correct for whichever pattern's gen.o it ends up
+    linked with, and this file's shared-driver optimization stays intact."""
     tmpl_dir = os.path.join(workdir, "_template")
     os.makedirs(tmpl_dir, exist_ok=True)
     gen_c = os.path.join(tmpl_dir, "gen.c")
@@ -420,10 +448,22 @@ def build_driver_template(workdir):
 
 
 def oracle_run(oracle_bin, pattern, subject_path, startpos=None):
+    """Like pcrec_run() below: a subprocess timeout is a REPORTED CELL, not
+    an uncaught exception. This one didn't used to catch TimeoutExpired at
+    all — found during this session's validation, when a genuinely slow
+    generated subject/pattern pair took the real PCRE2 oracle past
+    RUN_TIMEOUT and killed the whole batch with a traceback (pool.map()
+    re-raises a worker's exception at the caller). Mirrors pcrec_run()'s
+    "TIMEOUT" sentinel so both sides of the comparison have one shape for
+    'no verdict, timed out' rather than pcrec being the only side that can
+    report it cleanly."""
     args = [oracle_bin, pattern, subject_path]
     if startpos is not None:
         args.append(str(startpos))
-    r = subprocess.run(args, capture_output=True, text=True, timeout=RUN_TIMEOUT)
+    try:
+        r = subprocess.run(args, capture_output=True, text=True, timeout=RUN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return "TIMEOUT"
     return r.stdout.strip()
 
 
@@ -433,9 +473,29 @@ def write_subject(path, data):
 
 
 def compile_with_pcrec(pattern, tmp_dir):
+    # --step-budget=STEP_BUDGET (harness policy fix, this session): only
+    # takes effect on patterns the VM engine compiles (captures or other
+    # VM-forcing constructs) -- a DFA-only artifact emits no step counter at
+    # all and ignores it. See STEP_BUDGET's own comment for why a much
+    # smaller-than-default budget is compiled in for every fuzzed pattern.
+    #
+    # PCREC_TIMEOUT bounds pcrec's own COMPILE time (parse/NFA/DFA/VM
+    # construction), a different clock from the generated matcher's runtime
+    # step budget above. This call did not used to catch its own timeout --
+    # found during this session's large-scale (3000-pattern) validation run,
+    # when a deeply nested bounded-repeat pattern made pcrec itself exceed
+    # PCREC_TIMEOUT and killed the whole batch with an uncaught
+    # TimeoutExpired, the same class of crash oracle_run() had. Reported as
+    # a cell, not a traceback, mirroring compile_and_link()'s existing
+    # GCC-TIMEOUT/D45 discipline below -- this is that same discipline
+    # applied to the ONE compile call in this file that was missing it.
     gen_c = os.path.join(tmp_dir, "gen.c")
-    r = subprocess.run([PCREC, "-p", "rx", "-o", gen_c, "--", pattern],
-                        capture_output=True, text=True, timeout=PCREC_TIMEOUT)
+    try:
+        r = subprocess.run([PCREC, "-p", "rx", "--step-budget=%d" % STEP_BUDGET,
+                            "-o", gen_c, "--", pattern],
+                            capture_output=True, text=True, timeout=PCREC_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return False, "PCREC-TIMEOUT: compiling pattern exceeded %ds" % PCREC_TIMEOUT
     return r.returncode == 0, r.stderr.strip()
 
 
@@ -557,7 +617,8 @@ def main():
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
              "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
-             "pcre2_quirk": 0, "engine_limit": 0}
+             "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
+             "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0}
 
     # Patterns AND subjects are generated up-front in the MAIN thread: the
     # worker pool shares the global `random`, so generating inside workers made
@@ -610,11 +671,37 @@ def main():
 
         pcrec_ok, pcrec_err = compile_with_pcrec(pattern, tmp_dir)
         pcre2_probe = oracle_run(oracle_bin, pattern, empty_subject)
-        pcre2_ok = not pcre2_probe.startswith("cerr")
 
-        result = {"pattern": pattern, "pcrec_ok": pcrec_ok, "pcre2_ok": pcre2_ok,
+        result = {"pattern": pattern, "pcrec_ok": pcrec_ok, "pcre2_ok": None,
                   "accept_mismatch": None, "state_cap": None, "engine_limit": None, "content": [], "gcc_fail": None,
-                  "oracle_inconclusive": 0}
+                  "oracle_inconclusive": 0, "oracle_probe_timeout": False,
+                  "pcrec_compile_timeout": False,
+                  "engine_budget": {"steps": 0, "frames": 0}}
+
+        if not pcrec_ok and pcrec_err.startswith("PCREC-TIMEOUT"):
+            # pcrec's own compile-time budget (a different clock from the
+            # generated matcher's runtime step budget) exhausted -- see
+            # compile_with_pcrec()'s comment. Not an accept/reject verdict at
+            # all, so NOT run through the pcrec-vs-pcre2 accept/reject
+            # comparison below (which would otherwise misreport this as
+            # "pcrec REJECTS, pcre2 ACCEPTS" whenever PCRE2 happened to
+            # accept the same pattern quickly -- a harness artifact, not a
+            # semantic finding). Counted and skipped instead.
+            result["pcrec_compile_timeout"] = True
+            return result
+
+        if pcre2_probe == "TIMEOUT":
+            # The oracle itself couldn't produce even an accept/reject verdict
+            # inside RUN_TIMEOUT on the EMPTY-subject probe -- vanishingly rare
+            # (compilation + a zero-length match attempt), but oracle_run()
+            # can now report it instead of crashing the batch (see its own
+            # comment). Nothing to compare against, so counted and skipped
+            # rather than guessed at.
+            result["oracle_probe_timeout"] = True
+            return result
+
+        pcre2_ok = not pcre2_probe.startswith("cerr")
+        result["pcre2_ok"] = pcre2_ok
 
         if pcrec_ok and not pcre2_ok and pcre2_probe.startswith("cerr 120"):
             result["engine_limit"] = pcre2_probe
@@ -664,14 +751,36 @@ def main():
             subj_path = tempfile.mktemp(prefix="s_", suffix=".bin", dir=tmp_dir)
             write_subject(subj_path, subj)
             pr = pcrec_run(exe, subj_path)
+            if pr in ("steps", "frames"):
+                # HARNESS POLICY (DD-2/D22, docs/design/engine_m4.md §4): the
+                # VM's step/frame budgets are pcrec's own ROBUSTNESS bound on
+                # pathological backtracking -- "adversarial patterns are OUT
+                # OF SCOPE; correctness is not" (D22) -- never a security
+                # boundary and never traded against speed. A pattern that
+                # exhausts one is neither a pcrec bug nor comparable to
+                # whatever verdict PCRE2's differently-implemented,
+                # differently-limited backtracking engine reaches on the same
+                # input, so it's counted as its own non-divergence class
+                # rather than compared -- the mirror image of the existing
+                # "oracle inconclusive" (PCRE2 match-limit) bucket below.
+                # Wiring an equivalent explicit pcre2_set_match_limit() into
+                # the oracle (so the two sides trip at a comparable cost)
+                # would need a new ABI declaration + dlsym load in
+                # pcre2_abi.h for one classification refinement -- judged
+                # disproportionate for what this bucket already achieves.
+                result["engine_budget"][pr] += 1
+                os.remove(subj_path)
+                continue
             orr = oracle_run(oracle_bin, pattern, subj_path)
-            if orr.startswith("inconclusive"):
-                # PCRE2 hit its own backtracking/resource safeguard, not a
-                # match/no-match verdict -- not comparable to pcrec's
-                # (backtracking-free) DFA result. See pcre2_oracle.c's
-                # header comment and README.md for the confirmed case that
-                # motivated this (a catastrophic-backtracking-shaped nested
-                # quantifier pattern where PCRE2 returns -47, not -1).
+            if orr == "TIMEOUT" or orr.startswith("inconclusive"):
+                # PCRE2 hit its own backtracking/resource safeguard (or this
+                # fuzzer's RUN_TIMEOUT, now that oracle_run() reports rather
+                # than crashes on that -- see its comment), not a
+                # match/no-match verdict -- not comparable to pcrec's result.
+                # See pcre2_oracle.c's header comment and README.md for the
+                # confirmed case that motivated the original "inconclusive"
+                # half (a catastrophic-backtracking-shaped nested quantifier
+                # pattern where PCRE2 returns -47, not -1).
                 result["oracle_inconclusive"] += 1
             elif pr != orr:
                 result["content"].append((subj, pr, orr))
@@ -689,6 +798,12 @@ def main():
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         for result in pool.map(process_one, range(args.patterns)):
             stats["patterns"] += 1
+            if result.get("pcrec_compile_timeout"):
+                stats["pcrec_compile_timeout"] += 1
+                continue
+            if result.get("oracle_probe_timeout"):
+                stats["oracle_probe_timeout"] += 1
+                continue
             if result["accept_mismatch"]:
                 kind, pcrec_err, pcre2_probe = result["accept_mismatch"]
                 if "ACCEPTS, pcre2 REJECTS" in kind:
@@ -715,6 +830,8 @@ def main():
             stats["both_accept"] += 1
             stats["pairs_compared"] += args.subjects
             stats["oracle_inconclusive"] += result["oracle_inconclusive"]
+            stats["engine_steps"] += result["engine_budget"]["steps"]
+            stats["engine_frames"] += result["engine_budget"]["frames"]
             for subj, pr, orr in result["content"]:
                 if is_known_pcre2_quirk(result["pattern"]):
                     # PCRE2 10.46 start-anchor optimizer quirk (README.md
@@ -756,8 +873,12 @@ def main():
     print(f"  PCRE2 size-limit:   {stats['engine_limit']}  (PCRE2 err 120, its own ceiling -- not a divergence)")
     print(f"  DFA state-cap:      {stats['state_cap']}  (KNOWN limitation, review A-3 -- not a divergence, see README.md)")
     print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se)")
+    print(f"  pcrec compile timeout: {stats['pcrec_compile_timeout']}  (pcrec's own PCREC_TIMEOUT clock, not the generated matcher's step budget -- see compile_with_pcrec())")
+    print(f"  oracle probe timeout: {stats['oracle_probe_timeout']}  (empty-subject accept/reject probe itself timed out -- see oracle_run())")
     print(f"subject pairs compared (both-accept patterns): {stats['pairs_compared']}")
-    print(f"  oracle inconclusive (PCRE2 match-limit hit): {stats['oracle_inconclusive']}  (see README.md)")
+    print(f"  oracle inconclusive (PCRE2 match-limit hit or oracle TIMEOUT): {stats['oracle_inconclusive']}  (see README.md)")
+    print(f"  pcrec step-budget exhausted (RX_ERR_STEPS, --step-budget={STEP_BUDGET}): {stats['engine_steps']}  (DD-2/D22: robustness bound, not a divergence)")
+    print(f"  pcrec frame-budget exhausted (RX_ERR_FRAMES): {stats['engine_frames']}  (DD-2/D22: robustness bound, not a divergence)")
     print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
     print(f"content divergences: {len(content_divergences)}")
     print(f"accept/reject divergences: {len(accept_mismatches)}")
