@@ -463,13 +463,23 @@ compiler on real patterns.
 ### 2d. Recommendation
 
 **Prototype A2 — (state, open-loop-context) memo with an empty-context fast
-path — with a nesting-depth threshold at D=64 pending the ruling in §6.**
+path. No threshold, no fallback, exact everywhere. [R23]**
 
 B is rejected on exactness (98-0 against the oracle), not on cost — on cost it
-wins. C is rejected on cost (2ⁿ), not on exactness. A2 is the only candidate
-that is acceptable on both, and its residual — Θ(d⁴) beyond nesting depth ~64,
-topping out at a MEASURED 39.25 s at the parser's own nesting cap — is
-addressable by a threshold whose worst case is also measured.
+still wins, though by far less than this note originally reported. C is
+rejected on cost (2ⁿ), not on exactness. A2 is the only candidate acceptable
+on both.
+
+The recommendation used to carry "with a nesting-depth threshold at D=64
+pending the ruling in §6", on the strength of a residual that no longer
+exists: the 39 s worst case was the prototype's stack bug, and with it fixed
+the deepest pattern the parser will accept compiles in **0.35 s** (§2a). What
+survives as a genuine residual is smaller and differently shaped — a
+constant-factor cost that tracks the number of distinct open-loop CONTEXTS a
+pattern creates, worst measured case 3.6x the shipped compiler on a pattern
+the shipped compiler already spends ~0.8 s on. That is an ordinary
+optimisation-pass cost, not a ruling-grade one, and §5 item 6 gates it rather
+than trading exactness away to bound it.
 
 ---
 
@@ -568,6 +578,19 @@ termination proof is exactly what those two guard.
 ---
 
 ## 4. Blast radius, predicted
+
+**[R23] Every number in this section survives the prototype fix, and was
+independently reproduced.** The fix changes cost, not answers: the fixed and
+unfixed prototypes emit byte-identical C on the corpus (622), on two
+independent generated corpora (1,001 and 523), on a 38-pattern nesting ladder
+spanning depths 1–250, and on the bounded-repeat family of §2a — 0 differ
+everywhere, against a non-vacuity control of 405 of 1,001 differing
+base-vs-A2. So the blast-radius and direction results below were measured on
+a prototype that emits exactly what the fixed one emits. Separately, the
+panel's measurement critic rebuilt every prototype from scratch and
+re-derived §4.1, §4.2 and §4.3 exactly, digit for digit, including the 8
+differing corpus patterns being the 8 named here and the 1704/1704 suite run
+against A2 with the real harness.
 
 ### 4.1 The 165 acceptance cases
 
