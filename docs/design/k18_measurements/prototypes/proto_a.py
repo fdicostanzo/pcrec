@@ -8,7 +8,11 @@ touched. The design note docs/design/k18_memo_design.md is the deliverable.
 The rewrite:
   * an open-loop STACK is maintained along the walk's own path; entries are
     pushed when a loop entry's BODY edge is taken and dropped when the frame
-    that pushed them returns or a redirect truncates the stack;
+    that pushed them returns or a redirect truncates the stack. A frame
+    saves and restores the stack's ENTRIES as well as its depth — see the
+    comment in clo_visit; restoring depth alone (this prototype's first
+    version, which the design note's original cost table was measured on)
+    corrupts an ancestor's stack and loses redirects (R23 S3/S16);
   * each stack prefix is INTERNED to a small integer context id, so the memo
     key (state, ctx) is two ints;
   * the empty-iteration redirect fires on "this loop entry is OPEN on my
@@ -206,8 +210,27 @@ typedef struct {
 
 static void clo_visit(Clo *cl, int s)
 {
+    /* The frame must restore the open-loop stack's ENTRIES, not only its
+     * depth. A redirect sets cl->depth = at with `at` possibly BELOW this
+     * frame's save_depth (the re-arrived loop was pushed by an ANCESTOR
+     * frame), and the continuation then pushes over open[at .. save_depth).
+     * Restoring depth alone hands the caller a stack whose entries name the
+     * wrong loops, and the caller's redirect scan reads them -- a MISSED
+     * empty-iteration redirect, which is verbatim the defect K18 is.
+     * Found by R23 (S3/S16, docs/dev/reviews/2026-08-15-r23-k18-memo.md);
+     * the first version of this prototype restored depth only, and that one
+     * omission was the whole of the note's original cost residual.
+     * The save is deliberately NAIVE (malloc per frame) so it cannot be
+     * accused of hiding cost: every number taken on this prototype is an
+     * upper bound on what a bump-allocated equivalent would cost. */
     int save_depth = cl->depth;
     int save_ctx = cl->ctx;
+    OpenEnt *save_open = NULL;
+    if (save_depth > 0) {
+        save_open = malloc((size_t)save_depth * sizeof(OpenEnt));
+        if (!save_open) abort();
+        memcpy(save_open, cl->open, (size_t)save_depth * sizeof(OpenEnt));
+    }
     for (;;) {
         if (s < 0) break;
         if (cl->prune && cl->accept) break;
@@ -290,6 +313,10 @@ static void clo_visit(Clo *cl, int s)
 done:
     cl->depth = save_depth;
     cl->ctx = save_ctx;
+    if (save_open) {
+        memcpy(cl->open, save_open, (size_t)save_depth * sizeof(OpenEnt));
+        free(save_open);
+    }
 }
 
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
