@@ -47,7 +47,26 @@ enum {
     PCREC_MAX_NFA_STATES       = 131072,
     PCREC_MAX_DFA_STATES_GOTO  = 10000,   /* computed-goto attempt engine */
     PCREC_MAX_DFA_STATES_TABLE = 32000,   /* table engine; must fit in short */
-    PCREC_MAX_TABLE_ENTRIES    = 2000000  /* states*ncls bound (~12 MB source) */
+    PCREC_MAX_TABLE_ENTRIES    = 2000000, /* states*ncls bound (~12 MB source) */
+
+    /* [M4.5b] The VM emitter's own size backstop, and the reason it needs one
+     * separate from the NFA cap above: a bounded repeat REPLICATES its body
+     * (docs/design/engine_m4.md §3.3's RULED reading — `X{m,n}` is m mandatory
+     * copies plus n-m optional ones, with no counter and no suppression test),
+     * so `(a|b){0,10000}` emits ten thousand copies of the body's labels. The
+     * NFA cap normally binds first, because the NFA replicates the same way —
+     * but `--engine=vm` skips machine construction entirely (§5.6: the
+     * prefilter is OFF in that mode, so there is no NFA to cap), which is
+     * exactly the invocation where nothing else would stop it.
+     *
+     * The number is the NFA cap's, deliberately: the two count comparable
+     * things (one emitted node per label, one NFA state per position) and a
+     * pattern that fits one should not surprise a reader by failing the
+     * other. It is NOT grounded in gcc compile time the way the DFA caps are
+     * (R1 A-3), because §2.1's whole point is that VM code size is linear in
+     * the expanded node count where DFA state counts are exponential —
+     * measuring where the VM's gcc cliff actually sits is ASK-7, unowned. */
+    PCREC_MAX_VM_NODES         = 131072
 };
 
 /* ---- PCRE2 SYNTAX — exact, and part of the language -------------------- *

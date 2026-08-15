@@ -26,6 +26,24 @@ static void usage(FILE *f)
           "  -i             match case-insensitively (ASCII letters); folded\n"
           "                 into the automaton, no run-time cost\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
+          "  --no-captures  emit a matcher with no capture output (RX_NCAPS 1,\n"
+          "                 DFA engine). Captures are ON by default; this is\n"
+          "                 the generation axis that recovers the pre-M4.5\n"
+          "                 pure-DFA artifact for a group-bearing pattern\n"
+          "  --engine=E     dfa | vm | auto (default auto). Diagnostic: a\n"
+          "                 request the pattern cannot honour is REFUSED, never\n"
+          "                 silently downgraded. --engine=vm also disables the\n"
+          "                 DFA prefilter, so the VM derives the whole span\n"
+          "                 independently -- which is what makes it usable as a\n"
+          "                 cross-check against the DFA rather than an echo of it\n"
+          "  --step-budget=N  backtrack resumptions the emitted VM may spend\n"
+          "                 before returning <PREFIX>_ERR_STEPS (default is a\n"
+          "                 bring-up placeholder; M4.6 calibrates it)\n"
+          "  --fno-step-budget  emit no step counter at all. Zero cost, and\n"
+          "                 honest because the artifact says so\n"
+          "  --backtrack-frames=N  the resume-stack capacity. Default: sized\n"
+          "                 exactly where the pattern's depth is statically\n"
+          "                 bounded, a stamped default otherwise\n"
           "  -h, --help     this help\n"
           "\n"
           "syntax queries (no pattern, no -o):\n"
@@ -96,6 +114,46 @@ int main(int argc, char **argv)
         }
         else if (!no_more_opts && !strcmp(a, "--emit-main")) opt.flags |= PCREC_EMIT_MAIN;
         else if (!no_more_opts && !strcmp(a, "-i")) opt.flags |= PCREC_CASELESS;
+        /* [M4.5b] the generation axes engine_m4.md §4.6/§5.3/§5.6 name.
+         * `--engine=` takes its value with `=` rather than as a separate
+         * argument because it is a MODE, not a file or a name — and the
+         * separate-argument forms above (-o/-p/-e) all take one. */
+        else if (!no_more_opts && !strcmp(a, "--no-captures"))
+            opt.flags |= PCREC_NO_CAPTURES;
+        else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
+            opt.step_budget = PCREC_STEP_BUDGET_NONE;
+        else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
+            const char *v = a + 9;
+            if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;
+            else if (!strcmp(v, "dfa"))  opt.engine = PCREC_ENGINE_DFA;
+            else if (!strcmp(v, "vm"))   opt.engine = PCREC_ENGINE_VM;
+            else {
+                fprintf(stderr, "pcrec: --engine must be auto, dfa or vm "
+                                "(got '%s')\n", v);
+                return 1;
+            }
+        }
+        else if (!no_more_opts && !strncmp(a, "--step-budget=", 14)) {
+            char *end = NULL;
+            long long v = strtoll(a + 14, &end, 10);
+            if (!end || *end || v < 1) {
+                fprintf(stderr, "pcrec: --step-budget wants a positive integer "
+                                "(use --fno-step-budget for no counter)\n");
+                return 1;
+            }
+            opt.step_budget = v;
+        }
+        else if (!no_more_opts && !strncmp(a, "--backtrack-frames=", 19)) {
+            char *end = NULL;
+            long v = strtol(a + 19, &end, 10);
+            if (!end || *end || v < 1 || v > 1000000) {
+                fprintf(stderr, "pcrec: --backtrack-frames wants a positive "
+                                "integer (the array is a LOCAL of the search "
+                                "entry, so this is stack)\n");
+                return 1;
+            }
+            opt.frame_capacity = (int)v;
+        }
         else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
         else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;

@@ -175,11 +175,20 @@ static void emit_search_decl(StrBuf *sb, const char *fn)
                   "size_t startpos, ptrdiff_t (*caps)[2]);\n", fn);
 }
 
-/* The definition's signature, kept next to the declaration it must match. */
-static void emit_search_head(StrBuf *c, const char *fn)
+/* The definition's signature, kept next to the declaration it must match.
+ *
+ * [M4.5b] `storage` is "" for the exported entry and "static " for the VM
+ * hybrid's PREFILTER (engine_m4.md §6.1), which is this same engine emitted
+ * under a private name inside a VM artifact. Passing the storage class rather
+ * than forking the emitter is the M2.12 lesson applied ahead of time: the `$`
+ * fork is exactly how the prefilter and skip loops silently went missing from
+ * one path for a whole milestone. `emit_search_head`'s two callers below both
+ * pass it straight through from their own caller, so the DFA-only path's
+ * output is unchanged byte for byte (storage == ""). */
+static void emit_search_head(StrBuf *c, const char *fn, const char *storage)
 {
-    sb_printf(c, "int %s(const unsigned char *s, size_t n, "
-                 "size_t startpos, ptrdiff_t (*caps)[2])\n{\n", fn);
+    sb_printf(c, "%sint %s(const unsigned char *s, size_t n, "
+                 "size_t startpos, ptrdiff_t (*caps)[2])\n{\n", storage, fn);
 }
 
 static void emit_match_decl(StrBuf *sb, const char *fn)
@@ -335,9 +344,9 @@ static void emit_rx_abi_types(StrBuf *sb)
  * never promises more than the whole-match slot, capture-bearing or not.
  * RX_ERR_STEPS/RX_ERR_FRAMES are RESERVED here (D42.3) — no engine produces
  * either value until [M4.5] wires the step/frame-capacity counters. */
-static void emit_ncaps_macros(StrBuf *sb, const char *upper)
+static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
 {
-    sb_printf(sb, "#define %s_NCAPS 1\n", upper);
+    sb_printf(sb, "#define %s_NCAPS %d\n", upper, ncaps);
     sb_printf(sb, "#define %s_UNSET ((ptrdiff_t)-1)\n", upper);
     sb_printf(sb, "#define %s_ERR_STEPS  (-2)\n", upper);
     sb_printf(sb, "#define %s_ERR_FRAMES (-3)\n", upper);
@@ -400,8 +409,26 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
  * until module `named-groups`; step_budget/frame_capacity/subject_ceiling
  * until [M4.5]'s counter mechanism; engine_why until a construct forces a
  * non-default engine, which cannot happen before the VM exists) — the same
- * shape the freestanding group index had before D43.1 folded it in here. */
-static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname, const char *upper)
+ * shape the freestanding group index had before D43.1 folded it in here.
+ *
+ * [M4.5b] The five fields whose "trivially default until later" window has
+ * now closed for the VM — engine, engine_why, step_budget, frame_capacity,
+ * subject_ceiling — come in through `st` instead of being hardcoded, and the
+ * DFA path passes exactly the constants that were here before, so its output
+ * is unchanged byte for byte. The VM's values are what the artifact ACTUALLY
+ * ENFORCES, not what was requested (engine_m4.md §4.6's stamping rule and
+ * D44.1's honest stamped ceiling): a caller must be able to learn the limit
+ * from the artifact rather than by triggering <PREFIX>_ERR_FRAMES. */
+typedef struct {
+    int         engine;          /* ENGM_DFA=1 / ENGM_VM=2 */
+    const char *engine_why;      /* free text, or NULL */
+    long long   step_budget;     /* -1 = none */
+    long long   frame_capacity;  /* -1 = unbounded */
+    long long   subject_ceiling; /* 0 = unset/not applicable */
+} InfoStamp;
+
+static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
+                          const char *upper, const InfoStamp *st)
 {
     sb_printf(c, "const struct rx_info %s = {\n", infoname);
     sb_puts(c,   "    .abi = 1,\n");
@@ -410,22 +437,29 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname, const char *
     sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
     sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap);
     sb_puts(c,   "    .nnames = 0,\n");
-    sb_puts(c,   "    .engine = 1, /* ENGM_DFA */\n");
-    sb_puts(c,   "    .step_budget = -1,\n");
-    sb_puts(c,   "    .frame_capacity = -1,\n");
-    sb_puts(c,   "    .subject_ceiling = 0,\n");
+    sb_printf(c, "    .engine = %d, /* %s */\n", st->engine,
+              st->engine == 2 ? "ENGM_VM" : "ENGM_DFA");
+    sb_printf(c, "    .step_budget = %lld,\n", st->step_budget);
+    sb_printf(c, "    .frame_capacity = %lld,\n", st->frame_capacity);
+    sb_printf(c, "    .subject_ceiling = %lld,\n", st->subject_ceiling);
     sb_puts(c,   "    .pattern = ");
     emit_c_string_literal(c, cx->pat, cx->patlen);
     sb_puts(c,   ",\n");
     sb_printf(c, "    .pattern_len = %zu,\n", cx->patlen);
     sb_puts(c,   "    .groups = NULL,\n");
-    sb_puts(c,   "    .engine_why = NULL,\n");
+    if (st->engine_why) {
+        sb_puts(c, "    .engine_why = ");
+        emit_c_string_literal(c, st->engine_why, strlen(st->engine_why));
+        sb_puts(c, ",\n");
+    } else {
+        sb_puts(c, "    .engine_why = NULL,\n");
+    }
     sb_puts(c,   "};\n");
 }
 
 static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
                          const char *matchcapsfn, const char *infoname,
-                         const char *upper)
+                         const char *upper, int ncaps)
 {
     StrBuf *h = &cx->job->hsb;
     const char *p = cx->opt->prefix;
@@ -441,7 +475,7 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     sb_puts(h, "#include <stddef.h>\n#include <stdint.h>\n\n");
     emit_rx_abi_types(h);
     sb_putc(h, '\n');
-    emit_ncaps_macros(h, upper);
+    emit_ncaps_macros(h, upper, ncaps);
     sb_putc(h, '\n');
     emit_search_decl(h, fn);
     emit_match_decl(h, matchfn);
@@ -575,7 +609,7 @@ static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
  * used for the transition is never stale. The forward prefilter additionally
  * must NOT keep its `return 0` early-out, since the start state's EOL variant
  * may still accept at n-1 or n. */
-static void emit_unanchored(Ctx *cx, const char *fn)
+static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
 {
     Job *job = cx->job;
     Dfa *fd = &job->dfa, *rd = &job->rdfa;
@@ -587,7 +621,7 @@ static void emit_unanchored(Ctx *cx, const char *fn)
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
 
-    emit_search_head(c, fn);
+    emit_search_head(c, fn, storage);
 
     if (fs < 0 || rs < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
@@ -782,14 +816,14 @@ static void emit_target(StrBuf *c, const char *p, int tgt)
     else         sb_printf(c, "&&%s_s%d", p, tgt);
 }
 
-static void emit_attempt(Ctx *cx, const char *fn)
+static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
 {
     Job *job = cx->job;
     Dfa *d = &job->dfa;
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
-    emit_search_head(c, fn);
+    emit_search_head(c, fn, storage);
 
     if (d->n == 0) {
         /* no live start state: the pattern matches nothing */
@@ -872,19 +906,48 @@ static void emit_attempt(Ctx *cx, const char *fn)
                "}\n");
 }
 
-void pcrec_emit_dfa(Ctx *cx)
+/* ---- [M4.5b] the shared artifact surface ----------------------------------
+ *
+ * The VM emitter (src/gen/emit_vm.c) produces an artifact with the SAME
+ * prologue, the SAME four entry points and — under the hybrid — the SAME DFA
+ * engine body as this file's, differing only in what `<prefix>_search` does
+ * with them. Everything below that both emitters need is exported through
+ * these five functions rather than copied, which is the M2.12 rule ("M2.7
+ * forked a second copy, and the fork is exactly how the prefilter and skip
+ * loops went missing from the `$` path for a whole milestone") applied to a
+ * fork that has not happened yet. */
+
+void pcrec_gen_names(Ctx *cx, GenNames *g)
 {
-    Job *job = cx->job;
-    StrBuf *c = &job->csb;
-    const char *fn = engine_entry_name(cx);
-    const char *matchfn = match_entry_name(cx);
-    const char *matchcapsfn = match_caps_entry_name(cx);
-    const char *infoname = info_entry_name(cx);
-    char upper[80];
-    prefix_upper(cx->opt->prefix, upper, sizeof upper);
+    g->searchfn     = engine_entry_name(cx);
+    g->matchfn      = match_entry_name(cx);
+    g->matchcapsfn  = match_caps_entry_name(cx);
+    g->infoname     = info_entry_name(cx);
+    prefix_upper(cx->opt->prefix, g->upper, sizeof g->upper);
+}
+
+void pcrec_emit_abi_types(StrBuf *sb) { emit_rx_abi_types(sb); }
+
+void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
+{
+    emit_c_string_literal(sb, s, len);
+}
+
+/* Everything from the pattern comment through the four declarations, in the
+ * exact order pcrec_emit_dfa emitted it before this refactor — including the
+ * `#include <string.h>` the unanchored engine's memchr prefilter needs, which
+ * the VM's hybrid needs for the same reason and its VM-only mode does not. */
+void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
+{
+    StrBuf *c = &cx->job->csb;
+    bool need_string_h = cx->job->fit.chosen == ENGM_VM
+                             ? cx->job->fit.prefilter &&
+                               cx->job->engine == PCREC_ENG_UNANCH
+                             : cx->job->engine == PCREC_ENG_UNANCH;
 
     if (cx->opt->header_name)
-        emit_header(cx, fn, matchfn, matchcapsfn, infoname, upper);
+        emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
+                    g->upper, ncaps);
 
     emit_pattern_comment(c, cx->pat);
     emit_feature_comment(c);
@@ -896,43 +959,79 @@ void pcrec_emit_dfa(Ctx *cx)
         /* file-scope, shared by every engine here; per-engine below */
         emit_rx_abi_types(c);
         sb_putc(c, '\n');
-        emit_ncaps_macros(c, upper);
+        emit_ncaps_macros(c, g->upper, ncaps);
         sb_putc(c, '\n');
-        emit_search_decl(c, fn);
-        emit_match_decl(c, matchfn);
-        emit_match_caps_decl(c, matchcapsfn);
-        emit_info_decl(c, infoname);
+        emit_search_decl(c, g->searchfn);
+        emit_match_decl(c, g->matchfn);
+        emit_match_caps_decl(c, g->matchcapsfn);
+        emit_info_decl(c, g->infoname);
     }
-    if (job->engine == PCREC_ENG_UNANCH)
+    if (need_string_h)
         sb_puts(c, "#include <string.h>\n");
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
     sb_puts(c, "\n");
+}
 
-    if (job->engine == PCREC_ENG_UNANCH)
-        emit_unanchored(cx, fn);
-    else
-        emit_attempt(cx, fn);
+/* The `.rodata` reflection instance. The VM passes what it ACTUALLY enforces;
+ * see emit_info_def's own comment. */
+void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
+                     long long budget, long long frames, long long ceiling)
+{
+    InfoStamp st = { engine, why, budget, frames, ceiling };
+    emit_info_def(cx, &cx->job->csb, g->infoname, g->upper, &st);
+}
+
+void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
+{
+    if (cx->job->engine == PCREC_ENG_UNANCH) emit_unanchored(cx, fn, storage);
+    else                                     emit_attempt(cx, fn, storage);
+}
+
+/* The standalone main(), shared verbatim: it drives `<prefix>_search` through
+ * the caps array and prints caps[0], which is engine-independent. */
+void pcrec_emit_main(Ctx *cx, const GenNames *g)
+{
+    sb_puts(&cx->job->csb, "\n");
+    sb_printf(&cx->job->csb,
+        "int main(int argc, char **argv)\n{\n"
+        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
+        "    if (%s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps)) {\n"
+        "        printf(\"match %%td %%td\\n\", caps[0][0], caps[0][1]);\n"
+        "        return 0;\n"
+        "    }\n"
+        "    printf(\"nomatch\\n\");\n"
+        "    return 1;\n"
+        "}\n", g->upper, g->searchfn);
+}
+
+void pcrec_emit_dfa(Ctx *cx)
+{
+    StrBuf *c = &cx->job->csb;
+    GenNames g;
+    pcrec_gen_names(cx, &g);
+
+    /* RX_NCAPS is 1 on every artifact this emitter produces (D42.2): a
+     * DFA-compiled pattern never promises more than the whole-match slot,
+     * capture-bearing or not. RX_NCAPS > 1 implies the VM — one checkable
+     * line, and tests/codegen checks it. */
+    pcrec_emit_prologue(cx, &g, 1);
+    pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     sb_puts(c, "\n");
-    emit_match_def(c, matchfn, fn, upper);
+    emit_match_def(c, g.matchfn, g.searchfn, g.upper);
     sb_puts(c, "\n");
-    emit_match_caps_def(c, matchcapsfn, fn, upper);
+    emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
     sb_puts(c, "\n");
-    emit_info_def(cx, c, infoname, upper);
-
-    if (cx->opt->flags & PCREC_EMIT_MAIN) {
-        sb_puts(c, "\n");
-        sb_printf(c,
-            "int main(int argc, char **argv)\n{\n"
-            "    ptrdiff_t caps[%s_NCAPS][2];\n"
-            "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
-            "    if (%s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps)) {\n"
-            "        printf(\"match %%td %%td\\n\", caps[0][0], caps[0][1]);\n"
-            "        return 0;\n"
-            "    }\n"
-            "    printf(\"nomatch\\n\");\n"
-            "    return 1;\n"
-            "}\n", upper, fn);
+    {
+        /* The DFA artifact's stamp, unchanged from [M4.4]: it cannot
+         * backtrack, so neither bound applies to it and both read as absent
+         * rather than as some notional large number. */
+        InfoStamp st = { 1, NULL, -1, -1, 0 };
+        emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
+
+    if (cx->opt->flags & PCREC_EMIT_MAIN)
+        pcrec_emit_main(cx, &g);
 }

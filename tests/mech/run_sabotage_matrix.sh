@@ -54,6 +54,7 @@
 # SUITE VOCABULARY (the words that may appear in a sabotage's SAB_SUITES):
 #   codegen  trie  reject  harness   — the original four
 #   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
+#   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -205,6 +206,34 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/trie.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/trie.log" | grep -oE '[0-9]+')"
                 suite_bits+=("trie:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            vmidentity)
+                # [M4.5b] the §5.4 zero-regression gate. A separate arm from
+                # `codegen` on purpose: the property it guards (a capture-free
+                # pattern's emitted bytes do not move) is orthogonal to every
+                # optimization-present check in that script, and a sabotage of
+                # one should not be reported as coverage by the other.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_vm_identity.sh" \
+                    > "$work/vmidentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("vmid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            vm)
+                # [M4.5b] the VM engine section: the two bounds, the stamps,
+                # and the oracle+differential sweep. The sweep dominates the
+                # runtime, which is why this arm is assigned only to sabotages
+                # whose signal is a WRONG SPAN — a bounds sabotage gets the
+                # arm too, but the arm is never assigned "just in case".
+                PCREC="$pcrec" CC="$CC" JOBS="${JOBS:-4}" \
+                    bash "$tree/tests/vm/run_vm_tests.sh" > "$work/vm.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/vm.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/vm.log" | grep -oE '[0-9]+')"
+                suite_bits+=("vm:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

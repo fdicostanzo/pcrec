@@ -55,6 +55,7 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->rdfa.tab);
         sb_free(&cx->job->csb);
         sb_free(&cx->job->hsb);
+        sb_free(&cx->job->vmsb);
         free(cx->job);
         cx->job = NULL;
     }
@@ -83,6 +84,14 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
      * there being two homes for the same fact. The other fields seed to the
      * hardwired defaults — the same constants `(?^)` resets to. */
     cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
+    /* [M4.5b] (D42.1): captures are ON BY DEFAULT — PCRE2's own default and
+     * the principle of least surprise — and --no-captures (PCREC_NO_CAPTURES)
+     * is the generation axis that recovers the pre-M4.5 pure-DFA artifact.
+     * This one bool is read at exactly one place (parse.c's capturing-`(`
+     * hook) and is what makes "--no-captures reproduces today's AST, and
+     * therefore today's bytes" true by construction rather than by audit. */
+    cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
+    cx.first_cap_pos = (size_t)-1;
     cx.job = calloc(1, sizeof(Job));
     if (!cx.job || !out || !pattern) {
         job_cleanup(&cx);
@@ -122,25 +131,44 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
         ctx_fail(&cx, 0, "unknown encoding");
 
     Ast *root = pcrec_parse(&cx);
-    pcrec_build_nfa(&cx, root, &cx.job->nfa, false);
-    if (!nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
-        /* D7 fast path: O(n) unanchored forward + reverse machines */
-        cx.job->engine = PCREC_ENG_UNANCH;
-        nfa_wrap_unanchored(&cx, &cx.job->nfa);
-        pcrec_build_nfa(&cx, root, &cx.job->rnfa, true);
-        pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
-                        PCREC_MAX_DFA_STATES_TABLE);
-        pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false,
-                        PCREC_MAX_DFA_STATES_TABLE);
-        pcrec_minimize_dfa(&cx, &cx.job->dfa);
-        pcrec_minimize_dfa(&cx, &cx.job->rdfa);
-    } else {
-        cx.job->engine = PCREC_ENG_ATTEMPT;
-        pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
-                        PCREC_MAX_DFA_STATES_GOTO);
-        pcrec_minimize_dfa(&cx, &cx.job->dfa);
+
+    /* [M4.5b] Engine selection is a PASS now (engine_m4.md §5.1), run after
+     * parse and before machine construction. It also owns the §5.6 override's
+     * refusals, which is why it runs before anything expensive: a caller who
+     * asked for a combination pcrec cannot honour gets the diagnostic without
+     * paying for an automaton first. */
+    pcrec_select_engine(&cx, root);
+
+    /* The DFA pair is built when the DFA IS the engine, and also when the VM
+     * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the
+     * prefilter is deliberately off (D44/R21 E-6) and so nothing needs an
+     * automaton at all. That is what makes `--engine=vm` a genuinely
+     * independent second derivation of the match span rather than an echo of
+     * the DFA's: it is not merely told to ignore the DFA's answer, the DFA is
+     * never constructed. */
+    if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
+        pcrec_build_nfa(&cx, root, &cx.job->nfa, false);
+        if (!nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
+            /* D7 fast path: O(n) unanchored forward + reverse machines */
+            cx.job->engine = PCREC_ENG_UNANCH;
+            nfa_wrap_unanchored(&cx, &cx.job->nfa);
+            pcrec_build_nfa(&cx, root, &cx.job->rnfa, true);
+            pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
+                            PCREC_MAX_DFA_STATES_TABLE);
+            pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false,
+                            PCREC_MAX_DFA_STATES_TABLE);
+            pcrec_minimize_dfa(&cx, &cx.job->dfa);
+            pcrec_minimize_dfa(&cx, &cx.job->rdfa);
+        } else {
+            cx.job->engine = PCREC_ENG_ATTEMPT;
+            pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
+                            PCREC_MAX_DFA_STATES_GOTO);
+            pcrec_minimize_dfa(&cx, &cx.job->dfa);
+        }
     }
-    pcrec_emit_dfa(&cx);
+
+    if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
+    else                               pcrec_emit_dfa(&cx);
 
     out->c_src = sb_take(&cx.job->csb);
     out->h_src = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
@@ -171,6 +199,12 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     cx.err = err;
     cx.opt = &defo;
     cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
+    /* Parse-only: nothing is emitted, so no capture node is wanted and the
+     * tree stays exactly D31's. This matters beyond tidiness — --count-groups
+     * pins its refusal behaviour to pcrec_compile's, and an AST that differed
+     * between the two would be one more way for them to drift apart. */
+    cx.want_caps = false;
+    cx.first_cap_pos = (size_t)-1;
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
         return -1;
