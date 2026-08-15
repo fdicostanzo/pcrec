@@ -1479,3 +1479,40 @@ two-line `match `/`nomatch` --emit-main contract was found scanning
 tests/, scripts/, docs/ for a parser that would choke on the new third
 line — the existing green tests never reached the give-up path before
 this fix.
+
+**Class closure (2026-08-15, same lane, on review request).** K21 is one
+instance of a recorded SHAPE — `if (rx_search(...))`, testing a
+three-valued return as a boolean, so a negative give-up sentinel takes
+the match branch under C truthiness — not a one-off in `pcrec_emit_main`
+alone. Per the K20 lesson (record against the shape, not the site), the
+other known readers of `rx_search`'s return were surveyed:
+
+- `tests/fuzz/fuzz_driver.c` — already correct (the fuzzfix arc,
+  `c225a9f`/`7e27c19`): discriminates `found == 1`/`== 0`/
+  `RX_ERR_STEPS`/`RX_ERR_FRAMES` explicitly.
+- `tests/harness/driver.c` — HAD the bug (`if (found) { ...caps... }`),
+  now FIXED in this same lane: discriminates explicitly, prints
+  `steps`/`frames` and exits 3 on a give-up (matching
+  `pcrec_emit_main`'s exit-code choice for cross-site consistency), and
+  `tests/harness/run.sh`'s per-case loop gained an explicit `trc -eq 3`
+  branch treating it as a HARD harness-level failure, the same shape as
+  its existing timeout/crash branches — never compared against a
+  `match`/`nomatch` expectation. Verified live: the pre-fix driver
+  against a `--engine=vm --step-budget=50` artifact printed a fabricated
+  `match` line with garbage capture spans; the fixed driver correctly
+  prints `steps` and exits 3 on the identical artifact/subject.
+  Dormant over the base .rxt corpus (no `flags`/`features` directive can
+  select `--engine=vm` or a tiny budget), so no .rxt test was added — see
+  the driver's own comment and docs/testing.md's driver-protocol section.
+- `tests/registry/pc4_driver.c` — **STILL HAS THE BUG**
+  (`if (rx_search(s, len, 0, caps))` at time of writing). The
+  `89ccd89` "sibling" fix in the fuzzfix arc fixed a DIFFERENT bug in
+  this same file (the `caps[RX_NCAPS][2]` stack-array sizing hazard,
+  since this driver is compiled once against a throwaway pattern and
+  reused across the PC-4 sweep) — it did not touch the truthiness check.
+  Dormant for the same reason as `tests/harness/driver.c` (PC-4 never
+  selects `--engine=vm`), but genuinely unfixed. NOT addressed by this
+  lane — PC-4 is a different subsystem (tests/registry/) with its own
+  sabotage battery, outside this fix's authorized scope. Flagged here so
+  the class is not later assumed closed by a stale reading of the
+  `89ccd89` commit message.

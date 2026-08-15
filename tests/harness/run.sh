@@ -352,6 +352,22 @@ flush_block() {
                 "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
             record_case_group_fail "$cur_file" "$i" "test binary crashed"
             continue
+        elif [ $trc -eq 3 ]; then
+            # [K21-class fix, 2026-08-15] driver.c's own give-up exit (see its
+            # header comment): rx_search returned a negative VM budget-give-up
+            # sentinel, not a match or a no-match. A HARD harness-level
+            # failure, same shape as the timeout/crash branches above and for
+            # the same reason — the give-up path must never be compared
+            # against a `match`/`nomatch` expectation and silently score as
+            # whichever one it happens not to equal. This is dormant for the
+            # base .rxt corpus today: nothing in the `flags`/`features`
+            # directive vocabulary can select `--engine=vm` or a tiny
+            # `--step-budget`/`--backtrack-frames`, so no case reaches it
+            # currently, and none is added here — see docs/testing.md.
+            record_fail "$cur_file" "$line" \
+                "test binary GAVE UP ($out — VM budget exhausted) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            record_case_group_fail "$cur_file" "$i" "test binary gave up ($out)"
+            continue
         fi
         local base_ok=0
         if [ "$kind" = "m" ]; then
