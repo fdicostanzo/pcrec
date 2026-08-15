@@ -150,6 +150,13 @@ typedef struct {
                              * only be computed from the TOTAL, never from
                              * the running assignment counter */
     int       nlow;       /* cursor low-water slots assigned so far */
+    long long npush;      /* [M4.5c fix] emitted RX_PUSH sites, counted in the
+                           * pre-pass. Reported in the listing so a check can
+                           * hold it against the artifact; not itself a cap. */
+    long long maxcopies;  /* the largest REPLICATION FACTOR any one bounded
+                           * repeat over a choice-bearing body demands. This is
+                           * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
+                           * known before emission — which is the point. */
     long long nodes;      /* emitted-node budget, against PCREC_MAX_VM_NODES */
     bool      used_cursor;
     bool      tracing;    /* --trace: emit an instrumented artifact */
@@ -237,15 +244,38 @@ static const Ast *bare(const Ast *a)
  * guard is emitted at all. */
 static bool vm_nullable(const Ast *a)
 {
-    switch (a->k) {
-    case A_CLASS: return false;
-    case A_EMPTY: case A_BOL: case A_EOL: return true;
-    case A_CAP:   return vm_nullable(a->l);
-    case A_CAT:   return vm_nullable(a->l) && vm_nullable(a->r);
-    case A_ALT:   return vm_nullable(a->l) || vm_nullable(a->r);
-    case A_REP:   return a->rmin == 0 || vm_nullable(a->l);
+    /* A_CAT and A_ALT spines are walked ITERATIVELY, not recursed on. That is
+     * R1's R-2 hardening and D10/DD-10's rule, and this function violated it
+     * until a 20,000-character literal SEGFAULTED pcrec at the default 8 MB
+     * stack (`(aaa...)`, no special flag — measured, and the threshold tracks
+     * `ulimit -s`, which is what identifies it as stack exhaustion rather than
+     * anything subtler). src/ir/nfa.c's compile_ast flattens for exactly this
+     * reason and says so; three functions in this file did not, and this is
+     * one of them. The recursion that REMAINS is on a spine node's RIGHT
+     * child, whose own depth is bounded by the parser's group-nesting cap. */
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: return false;
+        case A_EMPTY: case A_BOL: case A_EOL: return true;
+        case A_CAP:   a = a->l; continue;
+        case A_REP:   if (a->rmin == 0) return true; a = a->l; continue;
+        case A_CAT:
+            /* nullable iff EVERY element is */
+            while (a->k == A_CAT) {
+                if (!vm_nullable(a->r)) return false;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            /* nullable iff ANY branch is */
+            while (a->k == A_ALT) {
+                if (vm_nullable(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        return true;
     }
-    return true;
 }
 
 /* ---- the class pool -----------------------------------------------------*/
@@ -526,26 +556,60 @@ static Cost vm_cost(Vm *v, const Ast *a)
         c.trail += 2;
         return c;
     case A_CAT: {
-        Cost l = vm_cost(v, a->l), r = vm_cost(v, a->r);
-        c.frames = l.frames + r.frames;
-        c.trail = l.trail + r.trail;
-        c.pf = l.pf + r.pf;
-        c.pt = l.pt + r.pt;
-        c.unbounded = l.unbounded || r.unbounded;
-        c.growable = l.growable || r.growable;
+        /* Spine walked ITERATIVELY (R1 R-2 / D10) — see vm_nullable's comment
+         * for the segfault that says why. The accumulation order reproduces
+         * the recursive definition exactly: A_CAT sums both sides, so summing
+         * along the spine is the same number. */
+        const Ast *t = a;
+        while (t->k == A_CAT) {
+            Cost r = vm_cost(v, t->r);
+            c.frames += r.frames;
+            c.trail  += r.trail;
+            c.pf     += r.pf;
+            c.pt     += r.pt;
+            c.unbounded = c.unbounded || r.unbounded;
+            c.growable  = c.growable  || r.growable;
+            t = t->l;
+        }
+        {
+            Cost h = vm_cost(v, t);
+            c.frames += h.frames;
+            c.trail  += h.trail;
+            c.pf     += h.pf;
+            c.pt     += h.pt;
+            c.unbounded = c.unbounded || h.unbounded;
+            c.growable  = c.growable  || h.growable;
+        }
         return c;
     }
     case A_ALT: {
         /* The chain shape keeps exactly ONE alternation frame live at a time
          * (see vm_alt), and a failed branch's own frames are popped before the
-         * next branch runs — so this is max-plus-one, not a sum. */
-        Cost l = vm_cost(v, a->l), r = vm_cost(v, a->r);
-        c.frames = 1 + (l.frames > r.frames ? l.frames : r.frames);
-        c.trail = l.trail > r.trail ? l.trail : r.trail;
-        c.pf = l.pf > r.pf ? l.pf : r.pf;
-        c.pt = l.pt > r.pt ? l.pt : r.pt;
-        c.unbounded = l.unbounded || r.unbounded;
-        c.growable = l.growable || r.growable;
+         * next branch runs — so this is max-plus-one, not a sum.
+         *
+         * Iterative, and the fold is INNERMOST-FIRST because that is the shape
+         * the recursion had: a flat alternation is a LEFT-NESTED chain, so
+         * `1 + max` applied at each node accumulates outward. Folding in any
+         * other order would silently change the number this function reports,
+         * which is what sizes the frame array. */
+        int nbr = 1;
+        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
+        int i = nbr;
+        const Ast *t = a;
+        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+        br[0] = t;
+
+        c = vm_cost(v, br[0]);
+        for (int j = 1; j < nbr; j++) {
+            Cost r = vm_cost(v, br[j]);
+            c.frames = 1 + (c.frames > r.frames ? c.frames : r.frames);
+            c.trail  = c.trail > r.trail ? c.trail : r.trail;
+            c.pf     = c.pf > r.pf ? c.pf : r.pf;
+            c.pt     = c.pt > r.pt ? c.pt : r.pt;
+            c.unbounded = c.unbounded || r.unbounded;
+            c.growable  = c.growable  || r.growable;
+        }
         return c;
     }
     case A_REP:
@@ -556,6 +620,16 @@ static Cost vm_cost(Vm *v, const Ast *a)
 
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
+/* Counts stv slots AND emitted resume points, in one walk that mirrors the
+ * emitter's own rung decisions and its replication. Both counts have to be
+ * exact for the same reason: a slot count that under-counts makes two live
+ * loops share one slot, and a resume-point count that under-counts lets an
+ * artifact past the cap that the cap exists to stop. The push arithmetic
+ * matches the emitter site for site — vm_alt pushes nbr-1 for an nbr-branch
+ * alternation (which is one per A_ALT node, since a flat alternation is
+ * left-nested), vm_cursor_rep pushes 1, the unbounded star pushes 1, and
+ * vm_opt_chain pushes one per optional copy. Verified against the emitted
+ * `&&label` count over the corpus. */
 static void vm_count_slots(Vm *v, const Ast *a)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
@@ -565,11 +639,30 @@ static void vm_count_slots(Vm *v, const Ast *a)
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
         return;
     case A_CAP: vm_count_slots(v, a->l); return;
-    case A_CAT: case A_ALT:
-        vm_count_slots(v, a->l); vm_count_slots(v, a->r); return;
+    case A_ALT:
+        /* Iterative spine walk (R1 R-2 / D10) — see vm_nullable. One push per
+         * A_ALT NODE, which for a left-nested flat alternation of k branches
+         * is k-1, exactly what vm_alt emits. */
+        while (a->k == A_ALT) {
+            v->npush++;
+            vm_count_slots(v, a->r);
+            a = a->l;
+        }
+        vm_count_slots(v, a);
+        return;
+    case A_CAT:
+        while (a->k == A_CAT) { vm_count_slots(v, a->r); a = a->l; }
+        vm_count_slots(v, a);
+        return;
     case A_REP:
         if (a->rmin == 0 && a->rmax == 0) return;
-        if (vm_cursor_fits(a, seq, &stride, caps, &nc)) { v->nlow++; return; }
+        if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
+            v->nlow++;
+            v->npush++;                  /* vm_cursor_rep: exactly one */
+            return;
+        }
+        /* frames rung: the star's own push, or one per optional copy */
+        v->npush += a->rmax < 0 ? 1 : (a->rmax - a->rmin);
         /* Frames rung: the body's code is REPLICATED once per mandatory copy
          * and once per optional copy, and each copy's own loops need their own
          * slots — so the count must replicate exactly as the emitter does or
@@ -577,6 +670,11 @@ static void vm_count_slots(Vm *v, const Ast *a)
         {
             int copies = a->rmax < 0 ? a->rmin + 1 : a->rmax;
             if (copies < 1) copies = 1;
+            /* THE REPLICATION FACTOR, recorded before any of it is emitted.
+             * Only the frames rung reaches here: a body the cursor rung
+             * accepts is single-path and compiles to a span loop whatever the
+             * count, so `a{0,65535}` never contributes. */
+            if (copies > v->maxcopies) v->maxcopies = copies;
             for (int i = 0; i < copies; i++) vm_count_slots(v, a->l);
             if (a->rmax < 0 && vm_nullable(a->l)) v->nguard++;
         }
@@ -1157,6 +1255,13 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     else
         sb_puts(o, " (exact: no subject ceiling)\n");
     sb_printf(o, "; program      %d labels, %d events\n", v->nlabel, v->nev);
+    /* The PRE-PASS count, not a recount of the event stream. It is what
+     * PCREC_MAX_VM_RESUME_POINTS is checked against before emission, so
+     * printing it here is what lets a check compare the cap's own input
+     * against the artifact that came out (tests/codegen/run_ir_listing.sh). */
+    sb_printf(o, "; resume pts   %lld\n", v->npush);
+    sb_printf(o, "; max replicas %lld (limit %d, checked before emission)\n",
+              v->maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
 
     /* ---- SLOTS ---------------------------------------------------------
      * The layout comes from vm_slot_guard/vm_slot_low, the same two functions
@@ -1320,6 +1425,22 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * assign — so the counter mirrors the emitter's own rung decisions rather
      * than approximating them. */
     vm_count_slots(&v, root);
+    /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
+     * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
+     * compiler-side bound that stops it, and it is checked here — after the
+     * pre-pass, before a single byte of the matcher is written — because the
+     * whole point is not to do the work. See limits.h for the measurement
+     * behind the number and for why the cap is on REPLICATION rather than on
+     * total emitted size. */
+    if (v.maxcopies > PCREC_MAX_VM_REPEAT_COPIES)
+        ctx_fail(cx, cx->first_cap_pos == (size_t)-1 ? 0 : cx->first_cap_pos,
+                 /* Inside pcrec_error.msg's 256 bytes on purpose: a diagnostic
+                  * that names the fix and is then truncated has not named it. */
+                 "pattern too large: a bounded repeat would replicate its body "
+                 "%lld times (limit %d). A body containing an alternation is "
+                 "copied once per repetition -- lower the count, or remove the "
+                 "alternation so the body compiles to a span loop instead",
+                 v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
     v.nguard_total = nguard_total;
     v.nguard = v.nlow = 0;

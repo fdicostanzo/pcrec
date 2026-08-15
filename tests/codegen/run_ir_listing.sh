@@ -47,6 +47,11 @@ GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 KEEP="${KEEP:-0}"
 
+# D45 (docs/dev/decisions.md): every compile of GENERATED C in this file runs
+# under the shared budget -- a timeout is a FAILURE naming the case, never a
+# hang. One implementation for the whole tree.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "ir-listing: KEEP=1, temp dir: $WORKDIR" >&2
@@ -146,6 +151,20 @@ for pat in "${PATTERNS[@]}"; do
         bad "ir-listing[$pat]: header disagrees with the artifact: NCAPS $cn vs $ir_n, frames $cbt vs $ir_bt, trail $ctr vs $ir_tr"
     fi
 
+    # ---- the CAP's own counter, against the artifact ---------------------
+    # PCREC_MAX_VM_RESUME_POINTS is checked against a PRE-PASS count, before a
+    # byte is emitted — so the cap is only as good as that count matching what
+    # the emitter goes on to write. Under-count and an artifact the cap exists
+    # to stop sails through. The listing reports the pre-pass number; this
+    # compares it to the `&&label` operands actually emitted.
+    ir_rp="$(grep -oE '^; resume pts +[0-9]+' "$d/ir" | grep -oE '[0-9]+')"
+    c_rp="$(grep -oE '&&rx_L[0-9]+' "$d/gen.c" | wc -l)"
+    if [ -n "$ir_rp" ] && [ "$ir_rp" = "$c_rp" ]; then
+        ok "ir-listing[$pat]: the cap's pre-pass count ($ir_rp resume points) equals the artifact's emitted RX_PUSH sites"
+    else
+        bad "ir-listing[$pat]: the cap counts $ir_rp resume points but the artifact emits $c_rp — PCREC_MAX_VM_RESUME_POINTS is being checked against the wrong number"
+    fi
+
     # ---- islands / callouts: empty AND the artifact agrees ---------------
     isl="$(grep -oE '^DFA ISLANDS \([0-9]+\)' "$d/ir" | grep -oE '[0-9]+')"
     cal="$(grep -oE '^CALLOUT SITES \([0-9]+\)' "$d/ir" | grep -oE '[0-9]+')"
@@ -162,6 +181,51 @@ for pat in "${PATTERNS[@]}"; do
         bad "ir-listing[$pat]: island/callout accounting disagrees — listing says $isl/$cal, artifact says $art_isl/$art_cal"
     fi
 done
+
+# ---- PCREC_MAX_VM_REPEAT_COPIES, at its boundary ------------------------
+#
+# D45's consequence 1: PCREC_MAX_VM_NODES let ((a)|b){0,4000}c emit 3.5 MB.
+# The replication cap is the compiler-side bound that stops it. Checked at the
+# boundary in BOTH directions, because a cap that refuses everything and a cap
+# that refuses nothing both pass a one-sided test.
+if "$PCREC" -p rx -o "$WORKDIR/cap_ok.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+    ok "[M4.5c] the replication cap ADMITS the largest legal artifact (64 copies, $(stat -c %s "$WORKDIR/cap_ok.c") bytes)"
+else
+    bad "[M4.5c] '((a)|b){0,64}c' was refused; it is exactly at the cap and must compile"
+fi
+if out="$("$PCREC" -p rx -o "$WORKDIR/cap_no.c" -- '((a)|b){0,65}c' 2>&1)"; then
+    bad "[M4.5c] '((a)|b){0,65}c' compiled; it is one copy over the cap and must be refused"
+elif printf '%s' "$out" | grep -q 'replicate its body 65 times' \
+     && printf '%s' "$out" | grep -q 'span loop'; then
+    ok "[M4.5c] ...and REFUSES one copy over it, naming the count, the limit and the way out"
+else
+    bad "[M4.5c] refused over the cap, but the diagnostic does not name the count and the fix: $out"
+fi
+# the case D45 was ruled over
+if "$PCREC" -p rx -o "$WORKDIR/cap_d45.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    bad "[M4.5c] '((a)|b){0,4000}c' still compiles — this is the 3.5 MB artifact that pegged cc1 for 100+ minutes (D45)"
+else
+    ok "[M4.5c] '((a)|b){0,4000}c' — D45's own case — is refused before emitting anything"
+fi
+#
+# ...and the cap must NOT refuse a pattern whose size is PROPORTIONATE to what
+# its author wrote. A first draft capped TOTAL resume points instead of
+# replication and refused a 200-branch capture-bearing keyword alternation —
+# 199 resume points, and MEASURED 0.50 s at -O2 for the 100-branch version, so
+# nothing about it is pathological. The defect is disproportion, not size, and
+# a cap that cannot tell them apart refuses the wrong patterns.
+wide="($(python3 -c "print('|'.join('kw%d' % i for i in range(500)))"))"
+if "$PCREC" -p rx -o "$WORKDIR/wide.c" -- "$wide" >/dev/null 2>&1; then
+    ok "[M4.5c] a 500-branch capture-bearing alternation still compiles — the cap targets REPLICATION, not size"
+else
+    bad "[M4.5c] a 500-branch capture-bearing alternation was refused; its size is proportionate to the pattern and the cap must not bite it"
+fi
+# a single-path body never replicates, whatever the count (S2.5's cursor rung)
+if "$PCREC" -p rx -o "$WORKDIR/span.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+    ok "[M4.5c] '(ab){0,4000}c' compiles: a single-path body takes the span-loop rung and replicates nothing"
+else
+    bad "[M4.5c] '(ab){0,4000}c' was refused; it has no choice point, so the cap must not see it"
+fi
 
 # ---- a NON-DEFAULT --prefix ---------------------------------------------
 #
@@ -222,9 +286,11 @@ for pat in '(a|ab)(c|bcd)' '((a)|b)+c' '(a*)b'; do
     "$PCREC" -p rx --emit-main -o "$d/plain/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
     "$PCREC" -p rx --trace --emit-main -o "$d/traced/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
     # shellcheck disable=SC2086
-    $CC $GENCFLAGS -I "$d/plain"  -o "$d/plain/t"  "$d/plain/gen.c"  2>"$d/plain.cc"  || { trace_ok=0; echo "  trace: plain build failed: $(head -3 "$d/plain.cc")" >&2; break; }
+    gen_cc "trace plain '$pat'" "$CC" $GENCFLAGS -I "$d/plain" -o "$d/plain/t" "$d/plain/gen.c" \
+        || { trace_ok=0; echo "  trace: plain build failed: $(printf '%s' "$GEN_CC_LOG" | head -3)" >&2; break; }
     # shellcheck disable=SC2086
-    $CC $GENCFLAGS -I "$d/traced" -o "$d/traced/t" "$d/traced/gen.c" 2>"$d/traced.cc" || { trace_ok=0; echo "  trace: TRACED build failed under $GENCFLAGS: $(head -3 "$d/traced.cc")" >&2; break; }
+    gen_cc "trace TRACED '$pat'" "$CC" $GENCFLAGS -I "$d/traced" -o "$d/traced/t" "$d/traced/gen.c" \
+        || { trace_ok=0; echo "  trace: TRACED build failed: $(printf '%s' "$GEN_CC_LOG" | head -3)" >&2; break; }
     for subj in abcd xxabcd aab bbb '' a aaa; do
         p_out="$("$d/plain/t" "$subj" 2>/dev/null)"
         t_out="$("$d/traced/t" "$subj" 2>/dev/null)"

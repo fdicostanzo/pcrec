@@ -55,6 +55,7 @@ test: all
 	bash tests/reject/run_reject_tests.sh
 	bash tests/registry/run_registry_tests.sh
 	bash tests/parse/run_parse_tests.sh
+	bash tests/lib/run_gen_timeout_tests.sh
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
 	bash tests/codegen/run_vm_identity.sh
@@ -113,6 +114,13 @@ test-codegen: all
 # `make test-vm` runs the --quick oracle sweep (the same one `test:` runs);
 # `bash tests/vm/run_vm_tests.sh full` adds the fuzzer's trap-template shapes
 # under every quantifier and is a checkpoint-scale run, not an inner-loop one.
+# [M4.5c fix] D45's own checks: the generated-code compile budget fires, says
+# so, and every compile site routes through the one helper. Cheap (~2s) and in
+# `test:` proper, because a test-infrastructure property nothing else can see
+# is exactly the kind that erodes silently.
+test-gentimeout: all
+	bash tests/lib/run_gen_timeout_tests.sh
+
 test-vm: all
 	bash tests/codegen/run_vm_identity.sh
 	bash tests/codegen/run_ir_listing.sh
@@ -237,6 +245,7 @@ ubsan:
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
 	    env $(UBSAN_ENV) bash "$$s" || exit 1; \
@@ -273,6 +282,7 @@ asan:
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
 	    env $(ASAN_ENV) bash "$$s" || exit 1; \

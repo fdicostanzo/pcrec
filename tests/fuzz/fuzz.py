@@ -47,7 +47,24 @@ DRIVER_SRC = os.path.join(HERE, "fuzz_driver.c")
 FAILURES_DIR = os.path.join(HERE, "failures")
 
 PCREC_TIMEOUT = 10
-CC_TIMEOUT = 30
+
+
+# D45 (docs/dev/decisions.md): every compile of generated C runs under a
+# budget, and exceeding it is a FAILURE. This file already had a CC_TIMEOUT —
+# the mechanism predates the ruling — but its number was its own. It now comes
+# from tests/lib/gen_timeout.sh, the same file the shell suites source, so the
+# tree has ONE rule and one place to raise it.
+def _gen_timeout():
+    import subprocess as _sp
+    try:
+        r = _sp.run(["bash", os.path.join(REPO_ROOT, "tests", "lib", "gen_timeout.sh"),
+                     "secs"], capture_output=True, text=True, timeout=30)
+        return int(r.stdout.strip())
+    except Exception:
+        return 5      # fail closed on the shorter budget, never on none
+
+
+CC_TIMEOUT = _gen_timeout()
 RUN_TIMEOUT = 5
 
 # =============================================================================
@@ -426,12 +443,23 @@ def compile_and_link(tmp_dir, driver_o):
     gen_c = os.path.join(tmp_dir, "gen.c")
     gen_o = os.path.join(tmp_dir, "gen.o")
     exe = os.path.join(tmp_dir, "t")
-    r = subprocess.run([CC] + GENCFLAGS + ["-c", "-I", tmp_dir, "-o", gen_o, gen_c],
-                        capture_output=True, text=True, timeout=CC_TIMEOUT)
+    # A compile that exceeds the budget is a REPORTED CELL, not a traceback:
+    # the fuzzer's whole value is that every pattern it tries produces a
+    # verdict, and an uncaught TimeoutExpired would end the run instead.
+    try:
+        r = subprocess.run([CC] + GENCFLAGS + ["-c", "-I", tmp_dir, "-o", gen_o, gen_c],
+                            capture_output=True, text=True, timeout=CC_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return None, ("GCC-TIMEOUT: compiling generated C exceeded %ds "
+                      "(D45)" % CC_TIMEOUT)
     if r.returncode != 0:
         return None, "GCC-COMPILE-FAIL: " + r.stderr[:500]
-    r = subprocess.run([CC, "-o", exe, gen_o, driver_o],
-                        capture_output=True, text=True, timeout=CC_TIMEOUT)
+    try:
+        r = subprocess.run([CC, "-o", exe, gen_o, driver_o],
+                            capture_output=True, text=True, timeout=CC_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return None, ("GCC-TIMEOUT: linking generated C exceeded %ds "
+                      "(D45)" % CC_TIMEOUT)
     if r.returncode != 0:
         return None, "GCC-LINK-FAIL: " + r.stderr[:500]
     return exe, None

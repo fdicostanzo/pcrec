@@ -56,6 +56,7 @@
 #   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
 #   irlisting                          — added 2026-08-15 ([M4.5c])
+#   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -221,6 +222,18 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("vmid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            gentimeout)
+                # [M4.5c fix] D45's own checks. Its own arm because what it
+                # guards is a property of the TEST INFRASTRUCTURE, which no
+                # other arm can see.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/lib/run_gen_timeout_tests.sh" \
+                    > "$work/gentimeout.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/gentimeout.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/gentimeout.log" | grep -oE '[0-9]+')"
+                suite_bits+=("gentmo:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

@@ -17,6 +17,8 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# D45: one shared generated-code compile budget (docs/dev/decisions.md).
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 KEEP="${KEEP:-0}"
 
@@ -383,7 +385,7 @@ elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
         bad "OS-0b [M4.4]: the fixed ABI-types block is not emitted exactly once per file"
     fi
 
-    if $CC -c $GENCFLAGS -o "$WORKDIR/multi.o" "$WORKDIR/multi.c" 2>"$WORKDIR/multi.log"; then
+    if gen_cc "multi-engine fixture" "$CC" -c $GENCFLAGS -o "$WORKDIR/multi.o" "$WORKDIR/multi.c"; then
         ok "OS-0b: two engines compile in one file (shared ABI types, distinct entry names)"
     else
         bad "OS-0b: two-engine file failed to compile: $(head -3 "$WORKDIR/multi.log" | tr '\n' ' ')"
@@ -417,7 +419,7 @@ elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
         { print }
     ' "$WORKDIR/multi.c" > "$WORKDIR/multi_dup.c"
     if [ "$(grep -c '^#define PCREC_RX_ABI_H$' "$WORKDIR/multi_dup.c")" -eq 2 ] \
-        && $CC -c $GENCFLAGS -o "$WORKDIR/multi_dup.o" "$WORKDIR/multi_dup.c" 2>"$WORKDIR/multi_dup.log"; then
+        && gen_cc "duplicated ABI block" "$CC" -c $GENCFLAGS -o "$WORKDIR/multi_dup.o" "$WORKDIR/multi_dup.c"; then
         ok "OS-0b [M4.4]: a DUPLICATED (guard-included) ABI-types block still compiles — the prefix-independent #ifndef guard (D44/A-2) makes re-inclusion a no-op"
     else
         bad "OS-0b [M4.4]: duplicating the guarded ABI-types block broke the build: $(head -3 "$WORKDIR/multi_dup.log" 2>/dev/null | tr '\n' ' ')"
@@ -462,7 +464,7 @@ fi
 if "$PCREC" -p rx -o "$WORKDIR/dprx.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
    && "$PCREC" -p qq -o "$WORKDIR/dpqq.c" -- 'x(y|z)+w' >/dev/null 2>&1; then
     printf '#include "dprx.h"\n#include "dpqq.h"\nint main(void){return 0;}\n' > "$WORKDIR/dp_main.c"
-    if $CC -c $GENCFLAGS -I"$WORKDIR" -o "$WORKDIR/dp_main.o" "$WORKDIR/dp_main.c" 2>"$WORKDIR/dp_main.log"; then
+    if gen_cc "cross-prefix one-TU" "$CC" -c $GENCFLAGS -I"$WORKDIR" -o "$WORKDIR/dp_main.o" "$WORKDIR/dp_main.c"; then
         ok "D44/A-2: two differently-prefixed generated headers compile together in one TU (prefix-independent ABI guard)"
     else
         bad "D44/A-2: two differently-prefixed generated headers FAILED to compile together: $(head -3 "$WORKDIR/dp_main.log" | tr '\n' ' ')"

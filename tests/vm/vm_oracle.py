@@ -52,6 +52,23 @@ if os.environ.get("LINTGEN", "0") == "1":
 
 DRIVER = os.path.join(ROOT, "tests", "vm", "vm_driver.c")
 
+# D45 (docs/dev/decisions.md): every compile of generated C runs under a
+# budget, and exceeding it is a FAILURE naming the case. The number comes from
+# tests/lib/gen_timeout.sh — the SAME file the shell suites source — rather
+# than being re-derived here, so there is one implementation of the rule and
+# not one per language.
+def _gen_timeout():
+    try:
+        r = subprocess.run(["bash", os.path.join(ROOT, "tests", "lib", "gen_timeout.sh"),
+                            "secs"], capture_output=True, text=True, timeout=30)
+        return int(r.stdout.strip())
+    except Exception:
+        # The helper is the source of truth; if it cannot run, fail closed on
+        # the SHORTER budget rather than silently reverting to no bound.
+        return 5
+
+GEN_TIMEOUT = _gen_timeout()
+
 
 # ---------------------------------------------------------------- the cases
 #
@@ -247,9 +264,14 @@ def build(workdir, pat, extra):
     if r.returncode != 0:
         return None, "pcrec failed: " + r.stderr.strip()
     exe = os.path.join(d, "t")
-    r = subprocess.run([CC] + GENCFLAGS + ["-DVM_CHECK_ANCHORED", "-I", d,
-                                           "-o", exe, DRIVER, cfile],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run([CC] + GENCFLAGS + ["-DVM_CHECK_ANCHORED", "-I", d,
+                                               "-o", exe, DRIVER, cfile],
+                           capture_output=True, text=True, timeout=GEN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return None, ("D45 TIMEOUT: compiling generated C exceeded %ds. This is a "
+                      "FAILURE, not a slow box (decisions.md D45) — a normal "
+                      "generated-artifact compile is sub-second." % GEN_TIMEOUT)
     if r.returncode != 0:
         return None, "gcc failed: " + r.stderr.strip()[:1200]
     return exe, None

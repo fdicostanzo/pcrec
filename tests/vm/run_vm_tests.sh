@@ -41,6 +41,11 @@ KEEP="${KEEP:-0}"
 JOBS="${JOBS:-4}"
 MODE="${1:-quick}"
 
+# D45 (docs/dev/decisions.md): every compile of GENERATED C in this file runs
+# under the shared budget -- a timeout is a FAILURE naming the case, never a
+# hang. One implementation for the whole tree.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "vm: KEEP=1, temp dir: $WORKDIR" >&2
@@ -60,9 +65,9 @@ build() {
     "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$name/err" || return 1
     # shellcheck disable=SC2086
-    $CC $GENCFLAGS -I "$WORKDIR/$name" -o "$WORKDIR/$name/t" \
-        "$SCRIPT_DIR/vm_driver.c" "$WORKDIR/$name/gen.c" \
-        2>"$WORKDIR/$name/cc" || return 2
+    gen_cc "$name '$pat'" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
+           -o "$WORKDIR/$name/t" "$SCRIPT_DIR/vm_driver.c" "$WORKDIR/$name/gen.c" \
+        || { printf '%s\n' "$GEN_CC_LOG" > "$WORKDIR/$name/cc"; return 2; }
     return 0
 }
 
@@ -190,9 +195,16 @@ fi
 # for 1h40m and 55m on this one file before anyone noticed. The knee is
 # between N=200 and N=400; N=50 is 1.9 s.
 #
-# So the case is `{0,50}` under an explicit `--backtrack-frames=32`. The
-# property is IDENTICAL — a requirement (50 frames) that exceeds the capacity
-# (32) — and the artifact is 53 KB instead of 3.5 MB.
+# So the case is `{0,20}` under an explicit `--backtrack-frames=32`. The
+# property is IDENTICAL — a frame requirement (40) that exceeds the capacity
+# (32) — and the artifact is ~26 KB instead of 3.5 MB.
+#
+# [M4.5c fix] The count is ALSO sized against PCREC_MAX_VM_RESUME_POINTS, the
+# compiler-side bound D45's consequence 1 asks for: 40 resume points is 31% of
+# that 128-point cap, so the case sits well clear of a limit that would
+# otherwise refuse it outright the day someone tightens the cap. An earlier
+# draft of this fix used `{0,50}` (100 points, 78% of the cap) — inside it, but
+# not by a margin worth relying on.
 #
 # The correctness third: the old pair was coupled to the DEFAULT capacity,
 # which is a BRING-UP PLACEHOLDER [M4.6] is going to calibrate. Had M4.6 raised
@@ -208,7 +220,7 @@ fi
 # The default-capacity path is still covered, twice: `exact` below (statically
 # bounded, sized exactly, ceiling 0) and `residual` (unbounded, default
 # capacity, ceiling stamped).
-if build bigbounded '((a)|b){0,50}c' --backtrack-frames=32 \
+if build bigbounded '((a)|b){0,20}c' --backtrack-frames=32 \
    && build smallbounded '((a)|b){0,3}c' --backtrack-frames=32; then
     bsc="$(info_field bigbounded subject_ceiling)"
     bfc="$(info_field bigbounded frame_capacity)"
@@ -217,7 +229,7 @@ if build bigbounded '((a)|b){0,50}c' --backtrack-frames=32 \
     if [ "$bsc" -gt 0 ]; then
         ok "[M4.5b] D44.1: a LARGE bounded repeat whose exact requirement does not fit stamps a real ceiling ($bsc bytes at frame_capacity=$bfc), not 'not applicable'"
     else
-        bad "[M4.5b] D44.1: '((a)|b){0,50}c' at --backtrack-frames=32 stamped subject_ceiling=$bsc — its requirement is 50 frames against a capacity of $bfc, so a 0 here claims a limit it does not have"
+        bad "[M4.5b] D44.1: '((a)|b){0,20}c' at --backtrack-frames=32 stamped subject_ceiling=$bsc — its requirement is 40 frames against a capacity of $bfc, so a 0 here claims a limit it does not have"
     fi
     if [ "$ssc" = "0" ]; then
         ok "[M4.5b] D44.1: a SMALL bounded repeat whose requirement FITS the same capacity ($sfc) declares no ceiling — the rule does not just always declare one"
@@ -291,8 +303,9 @@ cliff_run() {  # cliff_run <name> [pcrec args...]
     mkdir -p "$WORKDIR/$name"
     "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- '(a*)b' >/dev/null 2>&1 || return 1
     # shellcheck disable=SC2086
-    $CC $GENCFLAGS -I "$WORKDIR/$name" -o "$WORKDIR/$name/t" \
-        "$WORKDIR/cliff/main.c" "$WORKDIR/$name/gen.c" 2>/dev/null || return 2
+    gen_cc "cliff $name" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
+           -o "$WORKDIR/$name/t" "$WORKDIR/cliff/main.c" "$WORKDIR/$name/gen.c" \
+        || return 2
     "$WORKDIR/$name/t"
 }
 hy="$(cliff_run cliffhy)"
@@ -313,17 +326,23 @@ else
     bad "[M4.5b] caps == NULL disagreed with the caps-passing form"
 fi
 
-# The emitted-node backstop (PCREC_MAX_VM_NODES). A bounded repeat REPLICATES
-# its body (§3.3's ruled reading), and --engine=vm skips machine construction
-# entirely — so this is the one invocation where nothing else would stop
-# `(a|b){0,65535}`. The refusal must be pcrec's own clean diagnostic, never a
-# hang or an abort.
-if out="$("$PCREC" -p rx --engine=vm -o "$WORKDIR/toobig.c" -- '(a|b){0,65535}' 2>&1)"; then
-    bad "[M4.5b] PCREC_MAX_VM_NODES: '(a|b){0,65535}' compiled under --engine=vm; the emitted-node backstop did not fire"
-elif printf '%s' "$out" | grep -q 'VM exceeds'; then
-    ok "[M4.5b] PCREC_MAX_VM_NODES: a replicated bounded repeat too large to emit is refused cleanly, naming the bound"
+# The compiler-side SIZE backstop (D45 consequence 1). A bounded repeat
+# REPLICATES its body, so `{0,N}` over a choice-bearing body costs N copies --
+# `((a)|b){0,4000}c` is sixteen characters and 3.5 MB of C, which pegged cc1
+# for 100+ minutes and is what D45 was ruled over. The refusal must land BEFORE
+# emission and must name the construct, and it must not fire on a body with no
+# choice point, which replicates nothing whatever the count.
+if out="$("$PCREC" -p rx --engine=vm -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
+    bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles"
+elif printf '%s' "$out" | grep -q 'replicate its body 4000 times'; then
+    ok "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's 3.5 MB case is refused before emission, naming the replication count"
 else
-    bad "[M4.5b] PCREC_MAX_VM_NODES: refused, but not with the emitted-node diagnostic: $out"
+    bad "[M4.5c] refused, but not with the replication diagnostic: $out"
+fi
+if "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+    ok "[M4.5c] ...and a single-path body at the same count still compiles (span-loop rung, no replication)"
+else
+    bad "[M4.5c] '(ab){0,4000}c' was refused; it replicates nothing and the cap must not see it"
 fi
 
 # ---- 3. the engine-selection surface ------------------------------------

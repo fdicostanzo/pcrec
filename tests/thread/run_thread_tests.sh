@@ -89,6 +89,10 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# D45: one shared generated-code compile budget. TS-2's two builds compile a
+# GENERATED matcher and are wrapped; TS-3's build the LIBRARY (compiler axis,
+# not emitted code) and keep their own timeouts.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
@@ -232,9 +236,12 @@ for idx in "${!TS2_NAMES[@]}"; do
         continue
     fi
 
-    berr="$(timeout 60 "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$dir" \
-        -o "$dir/ts2" "$SCRIPT_DIR/ts2_driver.c" "$dir/gen.c" -lpthread 2>&1)"
-    if [ $? -ne 0 ]; then
+    # D45: the shared budget, not a local 60. TSANFLAGS carries -fsanitize=,
+    # so gen_timeout_secs reports the SANITIZER budget here automatically.
+    gen_cc "TS-2 '$name'" "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$dir" \
+        -o "$dir/ts2" "$SCRIPT_DIR/ts2_driver.c" "$dir/gen.c" -lpthread
+    berr_rc=$?; berr="$GEN_CC_LOG"
+    if [ "$berr_rc" -ne 0 ]; then
         bad "TS-2 '$name': $CC failed to build the TSan driver: $berr"
         continue
     fi
@@ -322,9 +329,10 @@ if [ "$nmarks" -ne 2 ]; then
     bad "TS-2 sabotage: the sed patch did not apply as expected ($nmarks/2 markers) -- ts2_driver.c's shape changed and this sabotage needs updating, so it proves nothing this run"
 else
     # reuse the 'anchored' fixture's gen.c -- any of the five would do
-    berr="$(timeout 60 "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$WORKDIR/ts2_anchored" \
-        -o "$sab_dir/ts2_sab" "$sab_dir/ts2_driver_sabotaged.c" "$WORKDIR/ts2_anchored/gen.c" -lpthread 2>&1)"
-    if [ $? -ne 0 ]; then
+    gen_cc "TS-2 sabotage" "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$WORKDIR/ts2_anchored" \
+        -o "$sab_dir/ts2_sab" "$sab_dir/ts2_driver_sabotaged.c" "$WORKDIR/ts2_anchored/gen.c" -lpthread
+    berr_rc=$?; berr="$GEN_CC_LOG"
+    if [ "$berr_rc" -ne 0 ]; then
         bad "TS-2 sabotage: $CC failed to build the sabotaged driver: $berr"
     else
         sab_out="$(TSAN_OPTIONS="halt_on_error=1" timeout "$TIMEOUT" "$sab_dir/ts2_sab" 8 "$ITERS" 2>&1)"

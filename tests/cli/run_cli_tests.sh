@@ -22,6 +22,10 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# D45: one shared generated-code compile budget (docs/dev/decisions.md). The
+# library-API smoke case is deliberately NOT wrapped: it links libpcrec.a, so
+# it is compiler-axis code, not a generated matcher.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
@@ -126,9 +130,10 @@ int main(int argc, char **argv) {
     return 0;
 }
 EOF
-    local build_log
-    build_log="$("$CC" $CFLAGS -o "$d/t" "$d/gen.c" "$d/mymain.c" 2>&1)"
-    if [ $? -eq 0 ]; then
+    local build_log build_rc
+    gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -o "$d/t" "$d/gen.c" "$d/mymain.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
         pass "case1: gcc compiles the -o - output standalone with an appended main"
     else
         fail "case1: gcc compiles the -o - output standalone with an appended main" "$build_log"
@@ -152,9 +157,10 @@ case2() {
     rc=$?
     assert_eq "case2: --emit-main -o - exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
 
-    local build_log
-    build_log="$("$CC" $CFLAGS -o "$d/t" "$d/gen.c" 2>&1)"
-    if [ $? -eq 0 ]; then
+    local build_log build_rc
+    gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -o "$d/t" "$d/gen.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
         pass "case2: --emit-main output compiles into a runnable binary"
     else
         fail "case2: --emit-main output compiles into a runnable binary" "$build_log"
@@ -185,8 +191,9 @@ case3() {
     "$PCREC" -p "$p60" --emit-main -o - -- 'a' >"$d/g60.c" 2>"$d/e1.txt"
     rc=$?
     assert_eq "case3: 60-char prefix accepted (pcrec exit 0)" "0" "$rc" "stderr: $(cat "$d/e1.txt")"
-    build_log="$("$CC" $CFLAGS -o "$d/t60" "$d/g60.c" 2>&1)"
-    if [ $? -eq 0 ]; then
+    gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -o "$d/t60" "$d/g60.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
         pass "case3: 60-char-prefix generated code compiles"
     else
         fail "case3: 60-char-prefix generated code compiles" "$build_log"
@@ -233,9 +240,10 @@ case4() {
         return
     fi
 
-    local build_log
-    build_log="$("$CC" $CFLAGS -I"$sub" -o "$d/t" "$ROOT_DIR/tests/harness/driver.c" "$sub/gen.c" 2>&1)"
-    if [ $? -eq 0 ]; then
+    local build_log build_rc
+    gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -I"$sub" -o "$d/t" "$ROOT_DIR/tests/harness/driver.c" "$sub/gen.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
         pass "case4: subdir output compiles with -I subdir"
     else
         fail "case4: subdir output compiles with -I subdir" "$build_log"
@@ -259,9 +267,10 @@ case5() {
     rc=$?
     assert_eq "case5: -- allows a pattern starting with '-' (exit 0)" "0" "$rc" \
         "stderr: $(cat "$d/stderr.txt")"
-    local build_log
-    build_log="$("$CC" $CFLAGS -o "$d/t" "$d/gen.c" 2>&1)"
-    if [ $? -eq 0 ]; then
+    local build_log build_rc
+    gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -o "$d/t" "$d/gen.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
         pass "case5: '-foo' pattern generated code compiles"
         local runout
         runout="$("$d/t" 'xx-fooxx')"
@@ -363,7 +372,7 @@ int main(void) {
     return 0;
 }
 EOF
-    local build_log
+    local build_log build_rc
     build_log="$("$CC" $CFLAGS -I"$LIBDIR" -o "$d/smoke" "$d/smoke.c" "$LIBA" 2>&1)"
     if [ $? -eq 0 ]; then
         pass "case7: library-API smoke test compiles against pcrec.h + libpcrec.a"
@@ -438,8 +447,9 @@ case9() {
     rc=$?
     assert_eq "case9: -i exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
 
-    build_log="$("$CC" $CFLAGS -o "$d/t" "$d/gen.c" 2>&1)"
-    if [ $? -ne 0 ]; then
+    gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -o "$d/t" "$d/gen.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -ne 0 ]; then
         fail "case9: -i output compiles" "$build_log"
         return
     fi
@@ -453,7 +463,7 @@ case9() {
     # ...and the same pattern WITHOUT -i must not: a compile option must not
     # leak into builds that did not request it
     "$PCREC" --emit-main -o - -- 'aBc' > "$d/gens.c" 2>/dev/null
-    if "$CC" $CFLAGS -o "$d/ts" "$d/gens.c" 2>/dev/null; then
+    if gen_cc "${FUNCNAME[0]} (gens.c)" "$CC" $CFLAGS -o "$d/ts" "$d/gens.c"; then
         runout="$("$d/ts" xxABCxx)"
         assert_eq "case9: without -i, 'aBc' does NOT match 'ABC'" "nomatch" "$runout"
     else
@@ -1472,7 +1482,7 @@ case14() {
     if command -v python3 >/dev/null 2>&1; then
         "$PCREC" --features std1 --emit-main -o - -- '(?i)cat\d+' \
             > "$d/m.c" 2>"$d/e_m.txt"
-        if "$CC" $CFLAGS -o "$d/m" "$d/m.c" 2>"$d/build_m.txt"; then
+        if gen_cc "${FUNCNAME[0]} (m.c)" "$CC" $CFLAGS -o "$d/m" "$d/m.c"; then
             pass "case14: --features std1 '(?i)cat\\d+' compiles"
             local py rx got
             for subj in 'xxCAT123xx' 'xxcatxx'; do
