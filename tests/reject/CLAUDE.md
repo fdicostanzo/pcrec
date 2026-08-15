@@ -299,3 +299,15 @@ that flips the default — a construct cannot be both accepted-by-default and
 asserted-rejected. Update `docs/pcre2_compliance.md` in the same change
 either way; its `REJECTED`/`OK-GATED` rows are only true because this table
 and the corpus say so.
+
+**[TT-2] (2026-08-15): `PROCS=N` internal parallelism.** The 528-check total
+above is now shardable — every check call increments a shared call-index
+counter and only does its real work in the shard whose turn it is
+(`callidx % SHARD_TOTAL == SHARD_INDEX`), rather than by file (there is only
+one file). `PROCS=1` (default) is byte-for-byte the pre-TT-2 script; `PROCS=N`
+re-invokes the whole script N times and aggregates. Measured: 59.5s ->
+~5.8s at PROCS=12. Output order is NOT preserved at PROCS>1 (shard-grouped,
+not call-order), though the checked set and the `== Summary ==` figures are
+exact either way. See docs/testing.md "Internal parallelism and section
+composition ([TT-2])" for the mechanism and the sabotage validation
+(a killed shard hard-fails, never silently passes).

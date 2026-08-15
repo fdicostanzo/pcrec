@@ -627,6 +627,159 @@ a failing local gate.
 CI itself stays deferred, not rejected (Frank, 2026-08-12): revisit when a
 red lands on `main` that this local pre-push discipline should have caught,
 or when a second regular contributor appears.
+
+## Internal parallelism and section composition ([TT-2], 2026-08-15)
+
+TT-1 gave `make test` PROCS-based parallelism for the corpus (`test-corpus`,
+via `tests/harness/run.sh`'s own file-level worker mechanism). TT-2 extends
+the same idea to the rest of `test:`'s section targets, on two axes: sharding
+work WITHIN a single script (reject), and running INDEPENDENT scripts within
+one section CONCURRENTLY (codegen, vm). A third axis — composing the section
+targets themselves under `make -j` — falls out of `test:` already being
+prerequisite-based (see "Tiered testing" above) rather than a flat recipe.
+
+Every path here follows the same discipline `tests/harness/run.sh`'s own
+PROCS mechanism set: **a lost or crashed worker is a HARD FAILURE, never
+silently read as a pass** — validated for each new path below by planting a
+`kill -9` mid-run and confirming a loud, nonzero-exit failure.
+
+### `test-reject`: call-index sharding
+
+`tests/reject/run_reject_tests.sh` has one file with hundreds of independent
+`timeout ... $PCREC ...` checks (`reject`/`accept`/`reject_gated`/`pinned`/
+`row_reject`), not many files — there is no natural file-level split the way
+the corpus has one. Instead, every check call increments ONE shared
+`callidx`, and only does its real work (the subprocess invocation and every
+counter it drives) when `callidx % SHARD_TOTAL == SHARD_INDEX`.
+
+`PROCS=1` (the default) makes `SHARD_TOTAL=1`, so `callidx % 1 == 0` always
+— every check runs, in the same order, exactly as before; this path is
+byte-for-byte unchanged from the pre-TT-2 script. `PROCS=N>1` re-invokes the
+whole script N times as shard workers (`REJECT_SHARD_INDEX`/
+`REJECT_SHARD_TOTAL` env vars), each with its own `mktemp -d` workdir,
+waits, and aggregates: counters are summed, each shard's slice of `$seen`
+(the MANIFEST's dedup set) is concatenated, and the unchanged
+duplicate-check/MANIFEST/final-count tail then runs ONCE against the true
+aggregate. A shard that produces no machine-readable result block (crashed,
+timed out, killed) is counted as a hard failure, never silently dropped from
+the denominator.
+
+Each shard writes its result block (`shard_pass:`, `shard_nrej:`, ...) to
+its OWN file (`REJECT_RESULT_FILE`), separate from the `.out`/`.err` the
+parent replays for a human to read — an earlier version of this mechanism
+wrote the result block to the same stream it displayed, which leaked ~80
+lines of shard bookkeeping into `make test-reject`'s visible output at
+PROCS>1; fixed before landing.
+
+**Not byte-identical at PROCS>1**: shard output is replayed in shard order,
+not call order, so individual `PASS`/`FAIL` lines interleave differently
+than a serial run's. The underlying set is exactly conserved (verified with
+`LC_ALL=C sort` — a locale-default `sort` was internally inconsistent run to
+run on this file's punctuation-heavy lines and is not a safe comparison tool
+here), and the `== Summary ==` block's format and figures are unchanged
+either way, since it is printed once, by the parent, from the aggregate.
+
+Measured on the project box (12 cores): 59.5s at `PROCS=1` -> ~5.8s at
+`PROCS=12`.
+
+### `test-codegen` / `test-vm`: independent-script groups
+
+`tests/lib/run_group.sh` runs N independent shell commands concurrently as
+one Makefile recipe, with the same hard-fail-on-lost-worker discipline. It
+takes `GROUP_PROCS`: `1` runs the scripts serially in argument order with no
+backgrounding at all (byte-for-byte the old flat multi-line recipe); any
+other value runs every script at once (there are only ever 2-3 scripts per
+group here, never enough to want real job-pool throttling). Each script's
+complete stdout+stderr is captured to its own file and replayed as one
+contiguous block, in argument order, once every script has finished, so
+output never interleaves mid-line; a script whose wrapping subshell dies
+before it can record an exit code is a HARD FAILURE distinct from an
+ordinary nonzero exit, and is named as such.
+
+`test-codegen` (`run_codegen_tests.sh` + `run_trie_identity.sh`) and
+`test-vm` (`run_vm_identity.sh` + `run_ir_listing.sh` + `run_vm_tests.sh`)
+both use it, with `GROUP_PROCS=$${PROCS:-$$(nproc)}` — the same `PROCS`
+knob every other TT-2 path honours, so `PROCS=1 make test` serializes
+everything uniformly. `test-vm` was the actual long pole under `make -j
+-Otarget test` (three scripts run sequentially in one recipe, ~32s), more
+so than `test-known-fail`'s ~23s single-file cost, which is not
+parallelizable (one file, nothing to shard).
+
+Measured on the project box: `test-vm` 30.4s -> 14.9s (PROCS=1 vs default);
+`test-codegen` 10.1s -> 8.7s (the group's own long pole, `run_trie_identity.sh`
+at ~10s, dominates either way — the win here is smaller by construction).
+
+### Section composition: `make -j -Otarget test`
+
+`test:` is prerequisite-based (`test: test-corpus test-cli test-reject ...`,
+see "Tiered testing" above), not a flat multi-line recipe, specifically so
+GNU make's own dependency engine can parallelize it: `make -j$(nproc)
+-Otarget test` runs the ten independent section targets concurrently.
+`-Otarget`/`--output-sync=target` buffers each target's output and prints it
+as one contiguous block when that target finishes, so nothing interleaves
+mid-line even though the targets themselves run concurrently — the same
+legibility rule every other TT-2 path follows. No suite reads or writes
+another's output (each has always used its own `mktemp -d` workdir and only
+ever reads `build/pcrec`/`build/libpcrec.a`), so this is safe by the same
+argument the PROCS mechanisms above already rely on. Plain `make test`
+(no `-j`) is unaffected: GNU make runs a target's prerequisites in listed
+order without `-j`, so it is still the same ten scripts run back to back,
+same order, same claim.
+
+Measured on the project box (12 cores): serial section sum (each target's
+own runtime added up) is on the order of 6-7 minutes; `make -j12 -Otarget
+test` completes in ~43-45s. This is noticeably more than the single longest
+target under composition (`test-vm` at ~15s after its own internal
+parallelism, above) — the gap is CPU oversubscription, not a missed
+optimization: `test-corpus` and `test-reject` each fan out to `PROCS=nproc`
+workers internally, and under `-j$(nproc)` up to nine OTHER section targets
+can be runnable at the same time, so peak concurrent process demand well
+exceeds the box's 12 cores. Total wall time is bounded by total CPU work
+divided by available cores, not by the critical path alone. `PROCS=1 make
+-j$(nproc) -Otarget test` would remove the internal fan-out's contribution
+to that oversubscription while keeping section-level concurrency, for a
+board with fewer cores or a noisier one — not benchmarked here because the
+default composition already lands the full suite comfortably under a
+minute, which was the point.
+
+Verified: `make -j$(nproc) -Otarget test` and `PROCS=1 make test` both green,
+with every suite's population exactly conserved (corpus 1679, cli 247,
+reject 528, codegen 38, trie identity 7, registry 168, PC-3 163, vm 19,
+thread 8, known-fail 1 deferred bug still failing as expected).
+
+### `test-cli` / `test-registry`: considered, declined
+
+The TT-2 plan row names these two alongside reject/codegen/vm. Both were
+measured (`test-cli` 7.2s, `test-registry` 14.6s across four sub-phases:
+`registry_check`, `compliance_section.py` x2, PC-3, PC-4/`run_pc4.sh`) and
+both declined, for the same reason in each case: neither is on the critical
+path under `make -j -Otarget test` — the ceiling there is `test-vm` (~15s
+after its own TT-2 fix) and `test-known-fail` (~23s, one file, not
+parallelizable), so shaving either script's own runtime would not move the
+suite's overall wall time at all. `run_registry_tests.sh` in particular is
+not `test-reject`-shaped for a callidx-style split (its 168+163 checks run
+inside two compiled C binaries, one process each, not as hundreds of
+independent shell-level calls) and is a dense, heavily correction-scarred
+file (its own CLAUDE.md and the R9/C1 series comments throughout) where a
+control-flow restructuring risks reintroducing exactly the "coverage
+silently changed and nothing compared" failure mode that file has been
+fixed for at least twice. Splitting its four phases into a `run_group.sh`
+call remains possible future work if `test-registry` (or `test-cli`) ever
+becomes the actual long pole — re-run this section's measurements first;
+that is the trigger, not the plan row's original naming.
+
+### mech's own PROCS mechanism (pre-existing, not TT-2 work)
+
+`tests/mech/run_sabotage_matrix.sh` already had `PROCS=N` support (added
+2026-08-12, three days before this row opened) — see "Running the tests"
+above: N sabotages built and run concurrently, each in its own scratch tree
+(so parallel rows need, and already get, per-row build dirs), rows merged
+in sabotage-listing order so the matrix stays byte-identical to a serial
+run's, and the row-count guard against the sabotage-definition count applies
+in both modes. No new implementation work was needed for TT-2's mech item;
+this note exists so a future reader of the TT-2 plan row does not go
+looking for parallel mech and conclude it is missing.
+
 ## Sanitizer + lint battery (SAN-1, 2026-08-13)
 
 Three opt-in targets, the same shape as `make strict`: never part of `make

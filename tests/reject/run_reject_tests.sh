@@ -48,16 +48,132 @@ WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "reject: KEEP=1, temp dir: $WORKDIR" >&2
     else rm -rf "$WORKDIR"; fi
+    if [ -n "${pardir:-}" ]; then
+        if [ "$KEEP" = "1" ]; then echo "reject: KEEP=1, shard temp dir: $pardir" >&2
+        else rm -rf "$pardir"; fi
+    fi
 }
 trap cleanup EXIT
 
+# [TT-2] internal parallelism, PROCS=N (default 1, unchanged behaviour).
+# run.sh's own worker-reinvocation pattern, sharded by CALL INDEX rather
+# than by FILE: this is one file with hundreds of independent
+# subprocess-bound checks (`timeout ... $PCREC ...`), not many files, so
+# there is no natural file-level split — see docs/testing.md "Internal
+# parallelism" for the design and the measured wall-time.
+#
+# Every reject/accept/reject_gated/row_reject/pinned call increments ONE
+# shared `callidx` and only does its real work when
+# `callidx % SHARD_TOTAL == SHARD_INDEX` — SHARD_TOTAL=1 (PROCS=1, the
+# default) makes every call match (n % 1 == 0 always), so serial behaviour
+# is untouched, byte for byte, and not one check call site changes.
+PROCS="${PROCS:-1}"
+case "$PROCS" in (''|*[!0-9]*) echo "reject: PROCS must be a positive integer, got '$PROCS'" >&2; exit 2;; esac
+[ "$PROCS" -ge 1 ] || { echo "reject: PROCS must be >= 1, got '$PROCS'" >&2; exit 2; }
+SHARD_INDEX="${REJECT_SHARD_INDEX:-0}"
+SHARD_TOTAL="${REJECT_SHARD_TOTAL:-1}"
+callidx=0
+
 pass=0; fail=0
 seen=""   # every pattern that actually PASSED a check, for the manifest below
+# [TT-2] every counter EACH check function drives is initialized HERE, once,
+# rather than scattered as a bare `nrej=0`/`naccept=0`/... right before each
+# function's own definition (where it used to live) — those are ordinary
+# top-level statements, not inside any function, so they run unconditionally
+# every time execution reaches them. The PARENT process in the PROCS>1
+# dispatch below (see the DISPATCHER block a few lines down) sets these same
+# variables to the AGGREGATED totals and then falls through the rest of this
+# file with every check call gated into a no-op — and a stray `nrej=0`
+# sitting later in the file, reached by that same fallthrough, would silently
+# re-zero the aggregate the instant execution passed it. Consolidating them
+# here, before the dispatcher can possibly run, is what makes that
+# impossible rather than merely unlikely.
+nrej=0; naccept=0; ngated=0; niter=0; nwrong=0
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
-nrej=0
+# [TT-2] the PROCS>1 DISPATCHER. Only the TOP-LEVEL invocation takes this
+# branch (a re-invoked shard child always has REJECT_SHARD_TOTAL set, so it
+# skips straight past this whole block and into the real body below). It
+# spawns PROCS shard workers — each the WHOLE, UNMODIFIED rest of this
+# script, re-invoked with REJECT_SHARD_INDEX/REJECT_SHARD_TOTAL set — waits,
+# and aggregates. "aggregates" means literally: sum every shard's counters,
+# concatenate every shard's `$seen` slice into THIS process's own `$seen`,
+# then fall through into the body with SHARD_INDEX/SHARD_TOTAL set so every
+# check call below no-ops (n % 1 == -1 can never hold) — the real work
+# already happened in the children, so the parent must not redo it. The
+# UNCHANGED tail at the end of this file (duplicate check, MANIFEST,
+# final-count assertions, summary) then runs ONCE, here, against the true
+# aggregate — exactly the same logic a plain PROCS=1 run reaches at the same
+# place, just fed pre-summed numbers instead of directly-accumulated ones.
+if [ "$PROCS" -gt 1 ] && [ -z "${REJECT_SHARD_TOTAL:-}" ]; then
+    pardir="$(mktemp -d)"
+    for ((_i = 0; _i < PROCS; _i++)); do
+        REJECT_SHARD_INDEX="$_i" REJECT_SHARD_TOTAL="$PROCS" \
+            REJECT_SEEN_FILE="$pardir/$_i.seen" \
+            REJECT_RESULT_FILE="$pardir/$_i.result" PCREC="$PCREC" KEEP="$KEEP" \
+            bash "${BASH_SOURCE[0]}" > "$pardir/$_i.out" 2> "$pardir/$_i.err" &
+    done
+    wait
+
+    pass=0; fail=0; nrej=0; naccept=0; ngated=0; niter=0; nwrong=0; seen=""
+    reports=0
+    for ((_i = 0; _i < PROCS; _i++)); do
+        # replay each shard's own DISPLAY output only (PASS/FAIL lines and
+        # any diagnostics) — the machine-readable result block lives in its
+        # own .result file (below), never mixed into .out/.err, so it can
+        # never leak into what a human reading `make test-reject` sees. In
+        # shard order, so nothing interleaves mid-line — the same
+        # legibility rule run.sh's own PROCS>1 parent aggregation follows.
+        cat "$pardir/$_i.err" >&2
+        cat "$pardir/$_i.out"
+        p="$(grep -m1 '^shard_pass:'    "$pardir/$_i.result" 2>/dev/null | grep -oE '[0-9]+$')"
+        x="$(grep -m1 '^shard_fail:'    "$pardir/$_i.result" 2>/dev/null | grep -oE '[0-9]+$')"
+        if [ -z "$p" ] || [ -z "$x" ]; then
+            # [TT-2 discipline] a lost/crashed worker is a HARD FAIL, never
+            # read as a pass — it never gets to contribute a shard_pass/
+            # shard_fail line, so its absence is what this branch catches.
+            echo "reject: HARD FAILURE: shard $_i produced no result block (crashed, timed out, or was killed) — counting as failed" >&2
+            fail=$((fail + 1))
+            continue
+        fi
+        reports=$((reports + 1))
+        r="$(grep -m1  '^shard_nrej:'    "$pardir/$_i.result" | grep -oE '[0-9]+$')"
+        a="$(grep -m1  '^shard_naccept:' "$pardir/$_i.result" | grep -oE '[0-9]+$')"
+        g="$(grep -m1  '^shard_ngated:'  "$pardir/$_i.result" | grep -oE '[0-9]+$')"
+        it="$(grep -m1 '^shard_niter:'   "$pardir/$_i.result" | grep -oE '[0-9]+$')"
+        w="$(grep -m1  '^shard_nwrong:'  "$pardir/$_i.result" | grep -oE '[0-9]+$')"
+        pass=$((pass + p)); fail=$((fail + x))
+        nrej=$((nrej + ${r:-0})); naccept=$((naccept + ${a:-0}))
+        ngated=$((ngated + ${g:-0})); niter=$((niter + ${it:-0}))
+        nwrong=$((nwrong + ${w:-0}))
+        [ -s "$pardir/$_i.seen" ] && seen="$seen
+$(cat "$pardir/$_i.seen")"
+    done
+    if [ "$reports" -ne "$PROCS" ]; then
+        echo "reject: HARD FAILURE: $((PROCS - reports)) of $PROCS shard worker(s) vanished without a result block — a lost worker is never counted as a pass" >&2
+    fi
+
+    # From here on this process must NOT also run the checks for real (the
+    # children already did): SHARD_INDEX=-1 can never equal callidx %
+    # SHARD_TOTAL for any SHARD_TOTAL >= 1 (a mod is never negative), so
+    # every reject/accept/reject_gated/row_reject/pinned call below is a
+    # guaranteed no-op and the counters/`$seen` set above survive untouched
+    # into the tail.
+    SHARD_INDEX=-1
+    SHARD_TOTAL=1
+fi
+
 reject() { # reject <pattern> <expected-substring> [display-label]
+    # [TT-2] internal-parallelism gate: one shared call counter across every
+    # check function in this file; a call only does its real work (the
+    # `timeout ... $PCREC` invocation and every counter it drives) in the
+    # shard it belongs to. SHARD_TOTAL=1 (PROCS=1, the default) makes this
+    # always true -- n % 1 == 0 for every n -- so serial behaviour is
+    # untouched, byte for byte. See the PROCS dispatch block near the top of
+    # this file and docs/testing.md's "Internal parallelism" section.
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
     # `timeout` on every invocation is load-bearing, not defensive (R7/T-11):
     # this file's header promises rc >= 124 is a failure, and without it that
     # branch was UNREACHABLE — pcrec cannot return 124 on its own, so a hanging
@@ -153,8 +269,10 @@ $show"
     ok "reject '$show' -> $want"
 }
 
-naccept=0
 accept() { # accept <pattern> [display-label]
+    # [TT-2] internal-parallelism gate; see reject()'s comment above.
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
     # The control: the table must not pass by rejecting everything.
     # The optional label is for patterns containing RAW control bytes, which
     # would otherwise put a newline or a non-UTF-8 byte into this script's own
@@ -197,6 +315,9 @@ $show"
 # other than the bare default is the same kind of pin regardless of WHICH
 # named set it pins against.
 reject_gated() { # reject_gated <features> <pattern> <expected-substring>
+    # [TT-2] internal-parallelism gate; see reject()'s comment above.
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
     local feats="$1" pat="$2" want="$3" out rc
     case "$want" in
         *[![:space:]]*) ;;
@@ -224,7 +345,6 @@ reject_gated() { # reject_gated <features> <pattern> <expected-substring>
     fi
     ok "reject_gated [$feats] '$pat' -> $want"
 }
-ngated=0
 
 # ---- a class-opening construct as a RANGE ENDPOINT (R9/SPEC-FA) ----
 # PCRE2 error 150. pcrec read the `[` as an ordinary literal upper bound and
@@ -1246,8 +1366,10 @@ echo "== KNOWN-WRONG, pinned so a change is VISIBLE (K3, K4) =="
 # above, in the same commit. A failure here means "you changed the behaviour" —
 # check it against libpcre2, then move the line. It does not mean "you broke
 # something".
-nwrong=0
 pinned() { # pinned <pattern> <accept|reject> <expected-msg-or-dash> <why it is wrong>
+    # [TT-2] internal-parallelism gate; see reject()'s comment above.
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
     local pat="$1" want="$2" msg="$3" why="$4" rc out
     nwrong=$((nwrong + 1))
     out="$(timeout 60 "$PCREC" -p rx -o "$WORKDIR/kw.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
@@ -1317,8 +1439,11 @@ echo "== every registry row covers itself (SR-4) =="
 # in-class spelling of an escape (`[\d]`) is a different diagnostic from the
 # atom spelling that the `syntax` field probes. All three are covered above,
 # by hand, and iteration must never be read as covering them.
-niter=0
 row_reject() { # like reject(), but counted separately so the floors stay honest
+    # [TT-2] internal-parallelism gate; see reject()'s comment near the top
+    # of this file.
+    callidx=$((callidx + 1))
+    [ $((callidx % SHARD_TOTAL)) -eq "$SHARD_INDEX" ] || return 0
     local pat="$1" want="$2" mod="${3:-}" out rc
     # Same empty-expectation trap as reject() (R9/C4-1). The BADROW filter below
     # already drops dump rows with an empty `expect` field, so this is the
@@ -1387,7 +1512,14 @@ else
         { print $3 "\t" $11 "\t" $4 }
     ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
 
-    if [ -s "$WORKDIR/badrows.txt" ]; then
+    # [TT-2] the BADROW diagnostic and the coverage-count assertion below are
+    # GLOBAL: a child shard's own $niter is only a partial slice (never 99),
+    # so evaluating "did we iterate every row" against a fraction would
+    # spuriously fail there. Both run once — a plain PROCS=1 run or the
+    # top-level dispatcher after aggregation, never a child (which would
+    # otherwise fail a check that only looks wrong because it only ran a
+    # fraction of the rows).
+    if [ -s "$WORKDIR/badrows.txt" ] && [ -z "${REJECT_SHARD_TOTAL:-}" ]; then
         bad "dump rows with an empty syntax or expect field: $(wc -l < "$WORKDIR/badrows.txt")"
         cat "$WORKDIR/badrows.txt" >&2
     fi
@@ -1402,11 +1534,41 @@ else
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
     # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).
-    if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 99 ]; then
-        ok "iterated every non-base row in the dump ($niter)"
-    else
-        bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
+    if [ -z "${REJECT_SHARD_TOTAL:-}" ]; then
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 99 ]; then
+            ok "iterated every non-base row in the dump ($niter)"
+        else
+            bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
+        fi
     fi
+fi
+
+# [TT-2] a CHILD shard worker (REJECT_SHARD_TOTAL was set by the dispatcher
+# above when it spawned this process) stops HERE: it writes a compact,
+# machine-readable result block to its OWN result file (never to stdout —
+# stdout is what the parent `cat`s verbatim for a human to read, so a result
+# block written there would leak into `make test-reject`'s visible output)
+# plus its own slice of `$seen`, then exits. The duplicate-check/MANIFEST/
+# final-count tail below needs the FULL aggregate — every shard's
+# pass/fail/.../seen — which only the top-level dispatcher (after collecting
+# every shard's files, see above) or a plain PROCS=1 run (which never sets
+# REJECT_SHARD_TOTAL at all) ever has.
+if [ -n "${REJECT_SHARD_TOTAL:-}" ]; then
+    if [ -z "${REJECT_RESULT_FILE:-}" ]; then
+        echo "reject: shard $REJECT_SHARD_INDEX invoked with no REJECT_RESULT_FILE — dispatcher bug, refusing to leak the result block onto a displayed stream" >&2
+        exit 3
+    fi
+    {
+        echo "shard_pass: $pass"
+        echo "shard_fail: $fail"
+        echo "shard_nrej: $nrej"
+        echo "shard_naccept: $naccept"
+        echo "shard_ngated: $ngated"
+        echo "shard_niter: $niter"
+        echo "shard_nwrong: $nwrong"
+    } > "$REJECT_RESULT_FILE"
+    [ -n "${REJECT_SEEN_FILE:-}" ] && printf '%s\n' "$seen" > "$REJECT_SEEN_FILE"
+    exit 0
 fi
 
 echo
