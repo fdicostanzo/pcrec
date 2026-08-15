@@ -94,6 +94,46 @@ or it has no regression net at all.
   env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
   (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
 
+## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
+
+Three checks in `run_codegen_tests.sh` had to move when the VM engine landed,
+and in each case the fix is a NARROWING that adds coverage rather than a
+loosening that removes it. Read them together, because they are the same
+lesson three times: a check written when only one shape existed can encode
+that shape by accident.
+
+1. **The minimization check's group is now `(?:...)`.** It was
+   `(get|post|put|delete|patch)`, and the group was incidental to what the
+   check measures (a DFA table's size) — until D42.1 made captures the
+   default, at which point the capturing spelling routes to a VM artifact
+   where the table lives in `rx_prefilter`, not in the `rx_search` body
+   `body()` extracts. A NEW companion check then asserts the same alternation
+   in its CAPTURING spelling gets a minimized table inside the prefilter,
+   which is coverage that did not exist before: the hybrid runs the same
+   forward+reverse pair through the same passes, so a minimization bug scoped
+   to that path was previously invisible.
+
+2. **`body()`'s anchor accepts an optional `static`.** The VM's prefilter is
+   the same emitter's output under a private name and a different storage
+   class, and it must be per-engine extractable for exactly the reason every
+   other body is.
+
+3. **TS-1 now distinguishes a static FUNCTION from a static OBJECT.** D19's
+   property is "no mutable file/function-scope STATE", and a function has no
+   storage to race on — but while every emitted `static` was a table, "static
+   and not const" and "mutable state" were the same set and the check could
+   not tell them apart. A VM artifact emits five static functions and keeps its
+   whole mutable working set in a LOCAL of the search entry, which is what D19
+   asks for. The discriminator is C's declarator syntax (a `(` with no `=`,
+   `;` or `[` before it), not a list of known function names, so
+   `static unsigned char rx_tbl[256] = {` — S06's sabotage, a table with its
+   `const` dropped — still has no `(` at all and is still caught, and so is
+   anything of the shape `static int rx_counter = f(0);`.
+
+   S02 and S06 were RE-RUN through `tests/mech` after these edits, because a
+   narrowed check whose sabotage was validated against the wide version has
+   not been validated at all.
+
 ## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)
 
 Every symbol these checks look for is a function-local static or a statement
