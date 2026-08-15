@@ -27,7 +27,17 @@ directory asserts that the description and the shipped parser actually agree.
   spellings × 6 shapes, + 39 caseless bare forms — the first time `-i` has
   met an external oracle in this repository) × 271 shared subjects (every
   single byte + curated multis, ONE header embedded by both sides so the
-  probed set cannot drift). Populations are EXACT predictions stated in
+  probed set cannot drift). Like `tests/fuzz/fuzz_driver.c`, pc4_driver.c is
+  compiled ONCE against a throwaway pattern's gen.h and reused across every
+  swept pattern's gen.o, so it sizes its caps array from `rx_info.ncaps`
+  read at RUNTIME rather than the compile-time `RX_NCAPS` macro (which
+  would be baked in from the throwaway pattern, not whichever pattern's
+  gen.o driver.o ends up linked against). This was a live latent instance of
+  the fuzz harness's own [M4.5]-era stack-smash bug — dormant only because
+  today's PC-4 pattern space (escape classes, POSIX classes, quantifiers,
+  anchors) has zero capturing constructs — found and fixed alongside the
+  fuzzer's copy of the same bug (see tests/fuzz/README.md's "RX_NCAPS is NOT
+  part of what's shared" section for the full mechanism). Populations are EXACT predictions stated in
   pc4_check.c before the first run and confirmed on it: 232 both-accepted,
   41 refusal agreements (both directions checked — over-acceptance and
   over-rejection each fail naming the cell), 62,872 match cells, mlimit
