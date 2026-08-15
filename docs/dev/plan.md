@@ -215,7 +215,27 @@ stated terms.
   above as the motivating cell); (3) the K-axis for what remains. Supersedes
   the "cap emitted size" half of the D45 follow-up as the ENDGAME
   (the cap stays as the backstop whose diagnostic can honestly
-  point here).
+  point here). THIRD AMENDMENT (R23 panel, 2026-08-15 evening,
+  semantics critic S14 — reviews/2026-08-15-r23-k18-memo.md):
+  replication has a third victim beyond emitted size and gcc time —
+  THE COMPILER'S OWN CLOSURE WALK. A_REP's nested copies multiply the
+  loop-nesting depth the epsilon-closure's open-loop machinery
+  actually sees: a 78-char pattern with source-visible nesting ~3
+  measured at EFFECTIVE depth 11, and under the K18 path-sensitive
+  memo the cost driver is the CONTEXT COUNT, which grows with the
+  unrolled copy count while depth stays constant (k∈{2..5} sweep:
+  depth pinned at 11, contexts 450→40k, compile 0.3s→52s on the
+  unfixed prototype; 0.11-0.12s after the S16 stack fix, but the
+  depth-multiplication mechanism is prototype-independent and
+  MEASURED). Consequences carried forward: (a) any depth- or
+  context-shaped budget anywhere in the compiler must be posed on the
+  UNROLLED quantity, never on nesting as a reader counts it in the
+  pattern; (b) ENG-BREP's replication reduction (possessify /
+  rung-select / counter-K) also shrinks pcrec's own DFA-construction
+  work, an additional measured motivation for this row; (c) the
+  bounded-repeat-times-nullable-loop family (S14's witnesses, ~0.1%
+  of random patterns) joins the cost-gate families any strategy
+  bench must sweep.
 - [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
   DFA-prefilter hybrid + DFA islands as designed; measured against
   bench floors under D12/R3.10 discipline; DD-9's decided outcome
