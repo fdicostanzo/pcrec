@@ -7764,3 +7764,115 @@ three-way differential rule, D27-blinded capture test author, DD-8
 tracer scheduled with bring-up). [M4.6] still gated on K18 design-first.
 Open Frank items: the struct-rx_info spelling ruling (above), callout
 syntax Q5/Q6, V-E-time items.
+
+## 2026-08-15 — Twenty-first session (continuation): M4.5a/b/c LANDED — the VM exists; D45/D46 ruled live; K19/K20; the fan-out finding; parallel testing opened
+
+Continuation of the session begun 2026-08-14 (M4.4 close, journal above).
+Frank present throughout; four of his live observations became recorded
+design/process rulings.
+
+**[M4.5a] + [M4.5b] built concurrently in disjoint lanes and merged.**
+m45a-oracle (sonnet): the g/gp .rxt capture-expectation format,
+RX_NCAPS-aware harness accounting (out-of-range g = hard fail; gp =
+pending-VM bucket that SELF-ACTIVATES when RX_NCAPS grows), the python
+group-span oracle tier under the three-way no-exclusions rule, 14-case
+seed corpus. m45b-vm (opus): src/gen/emit_vm.c — the backtracking VM as
+emitted specialized C (resume stack + capture trail, exact-undo, ONE
+cold indirect jump), A_CAP born only when captures are requested and
+invisible to the NFA builder (D31 erasure holds BY CONSTRUCTION),
+E-2-narrowed empty-iteration guard, both DD-2 bounds as mechanism,
+selection pass + socket, --engine do-or-die with prefilter-off vm,
+§5.4's byte-identity gate as a PERMANENT check (run_vm_identity.sh,
+verified against a pre-lane compiler), 65,046 oracle pairs (startpos
+axis included) 0 failures, sabotages S36–S40 from its own first-draft
+bugs. INTEGRATION BREAK on compose: m45a's m-case check string-compared
+the driver line — coincidence-green at RX_NCAPS=1, 219 corpus failures
+at RX_NCAPS>1 (every SPAN was correct); fixed by parsed-field
+comparison + a new wrong-whole-match/correct-groups sabotage; the 28 gp
+cases self-activated and PASSED against the VM (the format's first
+integration test, for free).
+
+**The D45 incident (Frank: "testing has been running for hours").** Two
+cc1 processes pegged 100+ and 55 minutes on ONE generated file:
+tests/vm's bigbounded, ((a)|b){0,4000}c — the bounded repeat REPLICATES
+its body, 113,545 lines / 3.5 MB of C. Compounded by process failures:
+concurrent batteries (lane started a second without killing the first)
+and my own `| tail` pipe bug that made two EXIT=0 reports meaningless.
+Killed everything; took over serialization. **D45 RULED (Frank, live):
+every harness compile of generated C runs under a timeout; timeout =
+loud FAILURE, never a hang** — 5s plain / 60s sanitizer,
+GENTIMEOUT(_SAN) overrides. Landed as ONE helper
+(tests/lib/gen_timeout.sh, axis DERIVED from -fsanitize= in the flags),
+its own 8-check suite incl. a coverage assertion over all compile
+sites, sabotages S43/S44. The 100-minute artifact now fails in 5.04s
+with a diagnostic.
+
+**The fan-out finding (refutes engine_m4.md P-6, answers ASK-7,
+annotated inline):** gcc -O2 is superlinear in the FAN-OUT of the
+single `goto *` (address-taken labels), not file size or label count —
+2004 labels/0 address-taken: 2.70s; 2003 labels/400 address-taken:
+11.21s; plain -O2 is WORSE than UBSan -O1. Compiler-side:
+PCREC_MAX_VM_REPEAT_COPIES=64 (K19; cap on REPLICATION not size — a
+proportionate 200-branch alternation stays legal), knee measured and
+tabled in docs/testing.md. **K20 found-and-fixed while probing K19's
+boundary: a SHIPPED default-path segfault** — three [M4.5b] pre-pass
+helpers recursed on A_CAT/A_ALT spines (DD-10's class, THIRD
+occurrence; the rule had been recorded against a FUNCTION, not the AST
+shape); flattened, verified at 1 MB stack × 100k-char pattern.
+Residual recorded, needs ruling: a 20k-char capture-bearing literal
+emits 2.3 MB/>180s, proportionate, node-cap-bounded — D45's wrapper
+catches it loudly.
+
+**Frank's design rulings this session (each recorded at arrival):**
+D45 (compile budget). D46 (every strategy-selection point OBSERVABLE
+and FORCEABLE, do-or-die — generalizes R21 E-6; rung STAMP is an
+[M4.5e] close obligation). [ENG-BREP] queued alongside M4.6 with his
+three escalating observations: counter rung with partial-unroll K as a
+bench-measured dial + replication as the forced GROUND-TRUTH
+differential ("optimization needs a true version to test against");
+rung-selection-first after his [ab]{0,4000} erasure observation
+(measured: erased artifact 1,378 lines/0.078s vs 113,545 replicated —
+the count lives in DFA tables, DATA not code; only last-iteration
+captures are observable); possessification FIRST after his
+disjoint-follow proof sketch ("going back through an a and b string
+isn't going to find c") — question order: possessify → rung-select →
+K-axis, all in seams the paneled design already owns (§6.4, §2.5,
+§5.2). [TT-2] parallel testing (Frank: "we have 6 cores. we should
+open it up"): step 1 landed — make test now runs the harness's dormant
+PROCS mechanism at nproc, corpus 5min → 56s at PROCS=12; the remaining
+suites queued as a lane.
+
+**[M4.5c] the DD-8 tracer (Frank-requested) landed:** --emit-ir as a
+query (labels, choice points with preference order, capture slots,
+honestly-empty island/callout sections derived from counts);
+PCREC_TRACE generation axis for the one-subject resume-frame trace;
+structural agreement checks + sabotages S41/S42.
+
+**Bench correction (D42.1 meets the floors):** captures-default routed
+group-bearing bench cases (c)/(d) to the hybrid — (d) breached its
+pure-DFA floor (293.7 vs 330 MB/s). Pinned --no-captures per D46 (pin
+the configuration you measure); the hybrid figure recorded as
+BENCH-1's first informational captures cell.
+
+**State at close: FULL battery green at 94abf78, all seven legs** —
+test (corpus 1449/0 incl. 28 activated gp; cli 247; reject 528;
+registry 168; PC-3 163; PC-4 62,872 cells/0; parse; codegen 38; trie
+7; vm-identity 8; vm 19; gen-timeout; thread 8; known_fail 1 = K18
+deliberate), strict, ubsan, asan, lint, bench (0 budget failures),
+mech 44 rows/0 undetected/0 anomalies. Open K-list: K2, K7, K9, K18,
+K19 (capped, ENG-BREP is the endgame), K20 FIXED same day. NEXT:
+[M4.5d] blinded capture author (cell) + [TT-2] lane; then [M4.5e]
+close (rung stamp rides it); [M4.6] still gated on K18 design-first.
+
+**Lessons:** (1) An integration seam both lanes tested green in
+isolation broke exactly at the composition point neither could reach
+alone — compose EARLY when a format lane and a producer lane ship
+halves of one contract. (2) The pipe-exit bug (`make test | tail` then
+`$?`): never put a pipe between a gated command and its exit status.
+(3) Unbounded compiles read as "still running", never as "failed" —
+D45 turns the hang class into a red check. (4) Frank's four
+observations each took minutes to record and each reordered real work
+— the live channel remains the cheapest high-quality critic. (5) A
+positive control that inherits the environment it simulates can go
+vacuous on exactly the axes it exists to guard (the gen-timeout units'
+lesson — state the COMPLETE environment per scenario).

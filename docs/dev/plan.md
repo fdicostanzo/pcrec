@@ -144,8 +144,9 @@ stated terms.
   for capture expectations (docs/testing.md updated), python-re
   group-span oracle tier, and a D27-blinded capture test author per
   convention. Substeps:
-  - [M4.5a] STATE:started (DELIVERED 2026-08-15, lane m45a-oracle,
-    commit 81b8b43, merged; completes at the composed-tree battery) —
+  - [M4.5a] STATE:completed 2026-08-15 (lane m45a-oracle, 81b8b43 +
+    manager-landed comparison fix c021d6e after the RX_NCAPS>1
+    integration break; full battery green at 94abf78) —
     capture TEST INFRASTRUCTURE: the .rxt
     capture-expectation format extension, tests/harness caps-array
     reading, the python `re` GROUP-SPAN oracle tier (engine_m4.md §3.6
@@ -157,9 +158,8 @@ stated terms.
     (caps[0] is live today); the format must already carry group
     slots for the VM. Disjoint from [M4.5b] by construction (tests/
     harness + docs; no src/).
-  - [M4.5b] STATE:started (DELIVERED 2026-08-15, lane m45b-vm, 7
-    commits ending c0f24bc, merged; completes at the composed-tree
-    battery. As built: src/gen/emit_vm.c; A_CAP born only when
+  - [M4.5b] STATE:completed 2026-08-15 (lane m45b-vm, 7 commits ending
+    c0f24bc; full battery green at 94abf78. As built: src/gen/emit_vm.c; A_CAP born only when
     captures requested and invisible to the NFA builder so D31's
     erasure holds by construction; the §5.4 gate is a PERMANENT check,
     tests/codegen/run_vm_identity.sh, verified once against a compiler
@@ -184,8 +184,12 @@ stated terms.
     REFUSES captures-default group-bearing patterns, D44.6). GATE
     (§5.4): emitted C for the capture-free corpus byte-identical to
     the pre-M4.5 emitter modulo stamp lines — a check, not a promise.
-  - [M4.5c] STATE:done (DELIVERED 2026-08-15, lane m45b-vm) — DD-8's VM
-    TRACER. As built: `--emit-ir` is a QUERY (shaped like --count-groups:
+  - [M4.5c] STATE:completed 2026-08-15 (lane m45b-vm, d3714b9..de21cce;
+    landed WITH the D45 compile-budget wrapper +
+    PCREC_MAX_VM_REPEAT_COPIES=64/K19 + the K20 spine-recursion
+    segfault find-and-fix + bigbounded resize + hermetic gen-timeout
+    units + bench (c)/(d) --no-captures pins; full battery green at
+    94abf78) — DD-8's VM TRACER. As built: `--emit-ir` is a QUERY (shaped like --count-groups:
     real pipeline, prints the listing, no -o, no C) printing labels, choice
     points with preference order, capture slot assignments, and honestly
     empty island/callout sections whose emptiness is derived from a COUNT
@@ -213,7 +217,7 @@ stated terms.
     emitter walks, never a parallel description. Rides or immediately
     follows [M4.5b]'s lane. DD-8's row stays OPEN for `--emit-dot`, which
     this substep deliberately did not build.
-  - [M4.5d] STATE:not-started — D27-BLINDED capture test author
+  - [M4.5d] STATE:started 2026-08-15 — D27-BLINDED capture test author
     (CELL, scripts/mk_d27_cell.sh): spec-first capture tests from the
     PROMISE (match_api_m4.md + testing.md's new format), denied src/
     and tests/. Opens once [M4.5a]+[M4.5b] merge.
