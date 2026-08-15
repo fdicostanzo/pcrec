@@ -16,6 +16,18 @@ shape the ruled ABI leaves open at all: `rx_matchfn`'s signature is frozen
 with no slot for a budget, and adding one to `rx_ctx` is a DD-3 struct
 revision D38 reserved for capture export.
 
+**[M4.5c] (2026-08-15):** DD-8's two debug surfaces. `--emit-ir` is a QUERY
+shaped like `--count-groups` — it runs the real pipeline (nothing cheaper
+could honestly describe the emitted program), prints the VM program listing,
+takes no `-o` and emits no C. On a pattern that compiles to the DFA engine it
+REFUSES and names the two ways to get a listing, which is an as-built decision:
+engine_m4.md §10 and DD-8's row are both silent, and the alternatives were
+inventing a DFA listing this milestone was not asked for or printing an empty
+one that looks like a bug. `--trace` is a generation axis (`PCREC_TRACE`)
+producing an instrumented artifact that prints every resume-frame push/pop and
+capture write to stderr; never the default, and the artifact stamps that it is
+traced.
+
 `--engine` is DO-OR-DIE: a request the pattern cannot honour is a clean
 refusal, never a silent downgrade. `--engine=vm` additionally turns the DFA
 prefilter OFF (D44/R21 E-6), which is what makes it usable as an independent

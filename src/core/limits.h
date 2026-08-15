@@ -66,7 +66,43 @@ enum {
      * (R1 A-3), because §2.1's whole point is that VM code size is linear in
      * the expanded node count where DFA state counts are exponential —
      * measuring where the VM's gcc cliff actually sits is ASK-7, unowned. */
-    PCREC_MAX_VM_NODES         = 131072
+    PCREC_MAX_VM_NODES         = 131072,
+
+    /* [M4.5c fix] The SECOND VM size bound, and the one D45's consequence 1
+     * asks for: how many times a bounded repeat may REPLICATE a body that
+     * contains a choice point.
+     *
+     * PCREC_MAX_VM_NODES above is not enough, which D45 records as a defect:
+     * it refused `(a|b){0,65535}` and let `((a)|b){0,4000}c` emit 3.5 MB that
+     * pegged cc1 for 100+ minutes.
+     *
+     * WHY THIS CAP IS ON REPLICATION AND NOT ON TOTAL SIZE. gcc's cost is
+     * superlinear in the emitted program, so a naive reading caps total size —
+     * and a first draft of this did, at 128 total backtrack resume points.
+     * MEASURED, that refuses the wrong patterns: a 200-branch capture-bearing
+     * keyword alternation has 199 resume points and compiles in 0.50 s at -O2
+     * (100 branches measured), because its size is PROPORTIONATE to what the
+     * author wrote. `((a)|b){0,4000}c` is sixteen characters and 3.5 MB. The
+     * defect is DISPROPORTION, not size, and only replication produces it.
+     *
+     * THE NUMBER (project box, 2026-08-15; the full curves are in
+     * docs/testing.md's battery section):
+     *
+     *   ((a)|b){0,N}c    bytes    -O1     -O2     ubsan -O1
+     *      N =  64       65 KB   0.50 s  1.40 s     2.30 s   <- the cap
+     *      N = 128      120 KB   0.90 s  4.61 s     6.11 s
+     *      N = 400      355 KB   3.50 s 51.54 s    49.94 s
+     *
+     * D45's plain budget is 5 s. At 64 copies the worst allowed artifact costs
+     * 1.40 s at -O2 (28% of it) and 2.30 s under UBSan (4% of the 60 s
+     * sanitizer budget); 128 copies would sit at 92% of the plain budget,
+     * which is not a margin.
+     *
+     * A body with NO choice point does not replicate at all — it compiles to a
+     * span loop (engine_m4.md S2.5's cursor rung) — so `a{0,65535}` and
+     * `(?:ab){0,9999}` are unaffected, and the diagnostic can name the one
+     * construct that reaches this cap without guessing. */
+    PCREC_MAX_VM_REPEAT_COPIES = 64
 };
 
 /* ---- PCRE2 SYNTAX — exact, and part of the language -------------------- *

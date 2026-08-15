@@ -30,6 +30,16 @@ static void usage(FILE *f)
           "                 DFA engine). Captures are ON by default; this is\n"
           "                 the generation axis that recovers the pre-M4.5\n"
           "                 pure-DFA artifact for a group-bearing pattern\n"
+          "  --emit-ir      print the VM PROGRAM LISTING for the pattern and exit:\n"
+          "                 labels, choice points with their preference order,\n"
+          "                 capture slot assignments, island boundaries and\n"
+          "                 callout sites. A query -- takes no -o, emits no C.\n"
+          "                 Produced by the emitter's own walk, so it cannot\n"
+          "                 drift from the code it describes\n"
+          "  --trace        emit an INSTRUMENTED matcher that prints every\n"
+          "                 resume-frame push/pop and capture write to stderr\n"
+          "                 as it runs. A generation axis: never the default,\n"
+          "                 and the artifact says so\n"
           "  --engine=E     dfa | vm | auto (default auto). Diagnostic: a\n"
           "                 request the pattern cannot honour is REFUSED, never\n"
           "                 silently downgraded. --engine=vm also disables the\n"
@@ -101,6 +111,7 @@ int main(int argc, char **argv)
     const char *explain = NULL, *flavour = NULL;
     int list_verbs = 0;
     int count_groups = 0;
+    int emit_ir = 0;
     const char *probe_want = NULL;
     const char *features = NULL;
 
@@ -120,6 +131,9 @@ int main(int argc, char **argv)
          * separate-argument forms above (-o/-p/-e) all take one. */
         else if (!no_more_opts && !strcmp(a, "--no-captures"))
             opt.flags |= PCREC_NO_CAPTURES;
+        else if (!no_more_opts && !strcmp(a, "--trace"))
+            opt.flags |= PCREC_TRACE;
+        else if (!no_more_opts && !strcmp(a, "--emit-ir")) emit_ir = 1;
         else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
         else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
@@ -284,6 +298,38 @@ int main(int argc, char **argv)
         fputs(line, stdout);
         free(line);
         return 0;
+    }
+
+    /* [M4.5c] DD-8's listing. Shaped like --count-groups: it runs the REAL
+     * pipeline (nothing less could honestly describe the emitted program) and
+     * prints, taking no -o and writing no C. A pattern pcrec refuses is
+     * refused here with pcrec_compile's exact diagnostic. */
+    if (emit_ir) {
+        if (list_syntax || list_verbs || explain || count_groups) {
+            fprintf(stderr, "pcrec: --emit-ir is a separate query; use one\n");
+            return 1;
+        }
+        if (outpath) {
+            fprintf(stderr, "pcrec: --emit-ir takes no -o (it prints the "
+                            "listing, not C)\n");
+            return 1;
+        }
+        if (!pattern) {
+            fprintf(stderr, "pcrec: --emit-ir needs a pattern\n");
+            return 1;
+        }
+        {
+            pcrec_error err;
+            char *text = pcrec_emit_ir(pattern, &opt, &err);
+            if (!text) {
+                fprintf(stderr, "pcrec: %s (pattern offset %zu)\n",
+                        err.msg, err.pos);
+                return 1;
+            }
+            fputs(text, stdout);
+            free(text);
+            return 0;
+        }
     }
 
     if (count_groups) {

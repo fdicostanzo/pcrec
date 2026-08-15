@@ -25,6 +25,8 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# D45: one shared generated-code compile budget (docs/dev/decisions.md).
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
@@ -113,9 +115,17 @@ one_pattern() {
         echo "REFUSED" > "$WORKDIR/results/$pid"
         return 0
     fi
-    if ! "$CC" $GENCFLAGS -I "$d" -c -o "$d/gen.o" "$d/gen.c" 2>"$d/cc.log" ||
-       ! "$CC" $GENCFLAGS -o "$d/t" "$d/gen.o" "$WORKDIR/pc4_driver.o" 2>>"$d/cc.log"; then
+    # D45: both halves under the shared budget. A pc4 cell that times out is
+    # GCC-FAILED like any other build failure -- the cell fails loudly either
+    # way, and the diagnostic in cc.log says which it was.
+    if ! gen_cc "pc4 '$pat'" "$CC" $GENCFLAGS -I "$d" -c -o "$d/gen.o" "$d/gen.c"; then
+        printf '%s\n' "$GEN_CC_LOG" > "$d/cc.log"
         echo "GCC-FAILED" > "$WORKDIR/results/$pid"   # pc4_check fails the cell loudly
+        return 0
+    fi
+    if ! gen_cc "pc4 link '$pat'" "$CC" $GENCFLAGS -o "$d/t" "$d/gen.o" "$WORKDIR/pc4_driver.o"; then
+        printf '%s\n' "$GEN_CC_LOG" > "$d/cc.log"
+        echo "GCC-FAILED" > "$WORKDIR/results/$pid"
         return 0
     fi
     "$d/t" > "$WORKDIR/results/$pid"

@@ -112,6 +112,20 @@ and K17 family shapes appear in this directory's pattern list as ordinary
 adversarial cases and are expected to pass. That touches nothing on the
 ratchet, which pins the DFA path.
 
+## The large-bounded-repeat case is sized by LOWERING THE CAPACITY
+
+`((a)|b){0,50}c` under `--backtrack-frames=32`, not `{0,4000}` against the
+default. A bounded repeat replicates its body (engine_m4.md §3.3), so the
+emitted C is linear in the count, and gcc goes superlinear on the resulting
+address-taken-label fan-out — measured, and NOT a sanitizer-only effect: plain
+`-O2` is worse than UBSan at `-O1`. The full curve and the control that
+identifies the cost driver are in docs/testing.md's battery section.
+
+Naming the capacity also decouples the case from a number it does not own:
+the default capacity is a bring-up placeholder [M4.6] will calibrate, and had
+[M4.6] raised it above 4000 the old case would have started fitting and gone
+silently vacuous while still passing.
+
 ## Sabotage validation
 
 Four of this directory's properties have sabotages in `tests/mech/sabotages/`

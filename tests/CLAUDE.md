@@ -4,6 +4,15 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 
 ## Files
 
+- **lib/** — infrastructure shared by every suite. `gen_timeout.sh` is D45's
+  ONE implementation of the generated-code compile budget (5s plain, 60s
+  sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`, axis derived from the flags):
+  every compile of emitted C in the tree runs through its `gen_cc`, and
+  exceeding the budget is a loud FAILURE naming the case, never a hang.
+  `run_gen_timeout_tests.sh` is its own section in `make test` — a positive
+  control that the wrapper FIRES, plus a coverage assertion that every suite
+  routes through it, because a test-infrastructure property is invisible to
+  every other suite in the tree
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
@@ -35,7 +44,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   checks: bounds, stamps and cross-engine agreement are not expressible as
   .rxt expectations. Part of `make test`; `make test-vm` is the section
   target, `bash tests/vm/run_vm_tests.sh full` the checkpoint-scale sweep
-- **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal), plus a differential check that the M2.8 trie is output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3)
+- **codegen/** — structural assertions that behavior-preserving optimizations
+  are actually PRESENT in emitted code (R2-PR3: three could be disabled with
+  zero test signal), plus a differential check that the M2.8 trie is
+  output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3), the
+  [M4.5b] §5.4 byte-identity gate, and [M4.5c]'s DD-8 program-listing check.
+  The last two RUN under `make test-vm` rather than `make test-codegen`, on a
+  measured smoke-budget argument recorded in its CLAUDE.md
 - **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2] N
   threads share one compiled matcher over different subjects across five
   differently-shaped emitted engines, [TS-3] concurrent `pcrec_compile()` on

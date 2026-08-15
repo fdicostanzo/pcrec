@@ -56,14 +56,26 @@ static void job_cleanup(Ctx *cx)
         sb_free(&cx->job->csb);
         sb_free(&cx->job->hsb);
         sb_free(&cx->job->vmsb);
+        sb_free(&cx->job->irsb);
         free(cx->job);
         cx->job = NULL;
     }
     arena_free(&cx->arena);
 }
 
-int pcrec_compile(const char *pattern, const pcrec_options *opt,
-                  pcrec_output *out, pcrec_error *err)
+/* [M4.5c] ONE driver, two callers. `pcrec_compile` and DD-8's `pcrec_emit_ir`
+ * differ only in whether the VM emitter also renders its program listing, and
+ * that difference is a single bool — so they share this function rather than
+ * forking a second pipeline. The fork is the thing to avoid on principle
+ * (M2.12's `$`-engine fork is this project's standing example) and here it
+ * would also break engine_m4.md S10's constraint at the pipeline level: a
+ * listing produced by a second driver would describe a compile that never
+ * happened.
+ *
+ * `ir_out`, when non-NULL, receives the malloc'd listing and turns the listing
+ * on; the caller owns it. */
+static int compile_driver(const char *pattern, const pcrec_options *opt,
+                          pcrec_output *out, pcrec_error *err, char **ir_out)
 {
     pcrec_options defo;
     pcrec_default_options(&defo);
@@ -92,6 +104,7 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
      * therefore today's bytes" true by construction rather than by audit. */
     cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
     cx.first_cap_pos = (size_t)-1;
+    cx.want_ir = ir_out != NULL;
     cx.job = calloc(1, sizeof(Job));
     if (!cx.job || !out || !pattern) {
         job_cleanup(&cx);
@@ -167,13 +180,63 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
         }
     }
 
+    /* [M4.5c] DD-8's listing describes a VM PROGRAM, and a DFA artifact has
+     * none — it has a transition table, which engine_m4.md S10 points out is
+     * already readable by a human and is the whole reason the VM needed
+     * different tooling ("a DFA's correctness is visible in a transition table
+     * a human can read, while a backtracker's correctness is a sequence of
+     * decisions over time").
+     *
+     * S10 and DD-8's row are both silent on what `--emit-ir` should do here.
+     * The honest option is a clean refusal that names the two ways to get a
+     * listing, rather than either inventing a DFA listing this milestone was
+     * not asked for or printing an empty one that looks like a bug. AS-BUILT
+     * NOTE for the manager: this is a picked answer, not a ruled one. */
+    if (cx.want_ir && cx.job->fit.chosen != ENGM_VM)
+        ctx_fail(&cx, 0,
+                 "--emit-ir lists a VM program and this pattern compiles to the "
+                 "DFA engine (it requests no captures). Add a capturing group, "
+                 "or pass --engine=vm to see the VM program for this pattern");
+
     if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
     else                               pcrec_emit_dfa(&cx);
 
     out->c_src = sb_take(&cx.job->csb);
     out->h_src = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
+    if (ir_out) *ir_out = sb_take(&cx.job->irsb);
     job_cleanup(&cx);
     return 0;
+}
+
+int pcrec_compile(const char *pattern, const pcrec_options *opt,
+                  pcrec_output *out, pcrec_error *err)
+{
+    return compile_driver(pattern, opt, out, err, NULL);
+}
+
+/* DD-8's listing entry. It runs a REAL compile and throws the C away, because
+ * the listing describes the program the emitter actually wrote — anything
+ * cheaper would be describing a program that was never emitted, which is
+ * engine_m4.md S10's constraint one level up from the emitter itself. It is a
+ * debug tool; the wasted emission is the price of the guarantee. */
+char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
+                    pcrec_error *err)
+{
+    pcrec_options defo;
+    pcrec_output out;
+    char *text = NULL;
+
+    pcrec_default_options(&defo);
+    if (opt) defo = *opt;
+    /* A paired header would only put an #include line in output nobody reads. */
+    defo.header_name = NULL;
+
+    if (compile_driver(pattern, &defo, &out, err, &text) != 0) {
+        free(text);
+        return NULL;
+    }
+    pcrec_output_free(&out);
+    return text;
 }
 
 /* Parse-only entry for the running capture count (MOD-0.1, §18.1): the

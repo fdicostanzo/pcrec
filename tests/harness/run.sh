@@ -38,6 +38,9 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# D45: ONE shared generated-code compile budget for the whole tree.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
@@ -295,9 +298,15 @@ flush_block() {
         return 0
     fi
 
-    local build_log
-    build_log="$(timeout 120 "$CC" $GENCFLAGS -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c" 2>&1)"
-    if [ $? -ne 0 ]; then
+    local build_log build_rc
+    # D45: the budget comes from tests/lib/gen_timeout.sh, not a number here.
+    # It was a hardcoded 120 -- generous enough that the bounded-repeat
+    # pathology (100+ minutes) would have tripped it, but only after two
+    # minutes per case, and nothing else in the tree shared the number.
+    gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+    build_rc=$?
+    build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -ne 0 ]; then
         echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: $CC failed to compile generated code for pattern '$cur_pattern'" >&2
         echo "$build_log" >&2
         local i

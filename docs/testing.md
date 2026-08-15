@@ -425,8 +425,8 @@ project journal entry.
 | `make test-reject` | `tests/reject/run_reject_tests.sh` | yes |
 | `make test-registry` | `tests/registry/run_registry_tests.sh` (registry_check, compliance_section.py, PC-3, PC-4) | yes |
 | `make test-parse` | `tests/parse/run_parse_tests.sh` | yes |
-| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` + `run_vm_identity.sh` | yes |
-| `make test-vm` | `tests/vm/run_vm_tests.sh` | yes |
+| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
+| `make test-vm` | `tests/codegen/run_vm_identity.sh` + `run_ir_listing.sh` + `tests/vm/run_vm_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
@@ -447,6 +447,33 @@ against subjects, which no script in `tests/codegen/` does.
 runs. The full sweep — the fuzzer's trap-template shapes instantiated with
 capturing groups under every quantifier — is `bash tests/vm/run_vm_tests.sh
 full` and is a checkpoint-scale run, not an inner-loop one.
+
+**[M4.5c] (2026-08-15) — `test:` is TWELVE script invocations, and two of them
+moved sections.** `run_ir_listing.sh` is new (DD-8's program listing held to
+the artifact it describes). More interestingly, `run_vm_identity.sh` MOVED
+from `test-codegen` to `test-vm`, and `run_ir_listing.sh` joined it there
+rather than beside it in `test-codegen` — for the measured reason this
+document asks about whenever a section grows.
+
+Both scripts LIVE in `tests/codegen/` (they are identity and structural
+differentials, kin to `run_trie_identity.sh` by technique) but they RUN under
+`test-vm`, because `make smoke` includes `test-codegen` and they cost 8.0s and
+2.9s against that section's own 0.7s + 7.4s. Measured on the project box,
+2026-08-15:
+
+| target | on merged main | after the move |
+|---|---|---|
+| `make test-codegen` | 16.28s | **9.33s** |
+| `make smoke` | **62.98s** | **54.76s** |
+
+**Two findings in that table, and the second is not [M4.5c]'s.** First, the
+move is what puts smoke back inside its 60s target. Second, smoke was ALREADY
+OVER that target on the main this lane merged — 62.98s — and the dominant term
+is `test-known-fail` at **23.26s**, a section that used to be nearly free.
+The K18 ratchet runs the corpus harness, and the harness grew the
+capture-expectation machinery at [M4.5a]; the ratchet now pays for it on one
+`.rxt` file. That is worth someone's attention on its own terms and is
+recorded here rather than fixed by this lane, which does not own the harness.
 
 Each target depends on `all`, so a stale binary never reads as a pass.
 `make mech`, `make bench`, `make fuzz`, and `make strict` already had their
@@ -516,7 +543,7 @@ at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
 | Touched path | Spot-check with | Why |
 |---|---|---|
 | `src/parse/*` (`parse.c`, `registry.c`, `enabled.c`, `ext.c`, `scans.c`, `syntax_dump.c`, `mod_*.c`) | `test-reject`, `test-registry`, `test-spec`, `test-cli` | reject asserts the "never miscompile" mandate per construct; registry checks the SR-1 table against the parser AND against libpcre2 (PC-3/PC-4); spec_mod0 is the D27 promise-derived suite, blind to `src/`'s own alphabet; cli exercises the CLI surface these modules gate ("requires module 'X'") |
-| `src/gen/emit_vm.c`, `src/opt/select_engine.c`, `A_CAP`'s parse hook | `test-vm`, `test-codegen` (for `run_vm_identity.sh`'s §5.4 gate), `test-parse` | test-vm is where a wrong capture span or a broken bound shows up, and it is the ONLY section that runs a VM artifact against subjects; the §5.4 gate is what catches a capture-free pattern's bytes moving, which no correctness test can see because the VM computes the same spans; test-parse's ast-identity check is the D31 erasure's own net |
+| `src/gen/emit_vm.c`, `src/opt/select_engine.c`, `A_CAP`'s parse hook | `test-vm` (which carries the §5.4 gate and DD-8's listing check), `test-codegen`, `test-parse` | test-vm is where a wrong capture span or a broken bound shows up, and it is the ONLY section that runs a VM artifact against subjects; the §5.4 gate is what catches a capture-free pattern's bytes moving, which no correctness test can see because the VM computes the same spans; test-parse's ast-identity check is the D31 erasure's own net |
 | `src/ir/*` (`nfa.c`, `dfa.c`) + `src/opt/*` (`minimize.c`) + `src/gen/*` (`emit_dfa.c`) | `test-corpus`, `test-codegen` (includes the trie identity differential and the §5.4 VM gate), `test-vm`, `bench` | corpus is correctness of what the emitted matcher actually matches; codegen asserts the optimization signatures (skip tables, fast paths, minimization) are structurally present, per R2-PR3's finding that these can be silently disabled with zero other signal; bench guards the throughput/compile-time budgets these components produce |
 | `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
 | `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
@@ -530,7 +557,10 @@ never vibes. Runs the real section targets it lists, not a weakened variant
 of any of them.
 
 **Composition**: `test-cli`, `test-registry`, `test-parse`, `test-codegen`,
-`test-known-fail`, `test-thread`. Deliberately excludes the three slow
+`test-known-fail`, `test-thread`. (Unchanged at [M4.5c] — what changed is what
+`test-codegen` CONTAINS; see the re-check above, and note the measured total
+has moved a long way from the ~32s recorded below, mostly in
+`test-known-fail`.) Deliberately excludes the three slow
 sections: `test-corpus` (~304s, two orders of magnitude over budget),
 `test-reject` (~55s, which alone would consume nearly the whole budget and
 leave no room for anything else), and `test-spec` (~27s, which — added to
@@ -902,6 +932,104 @@ principle be optimized away before ASan's instrumentation sees it at `-O1`.
 Recorded as a known limit of the chosen build flags rather than fixed
 (`-O0` would close it but cost real coverage speed across a suite this
 size — a tradeoff for the manager, not decided here).
+
+### D45 — every generated-code compile runs under a budget (2026-08-15)
+
+`docs/dev/decisions.md` D45, ruled live: **every compile of generated C in the
+test infrastructure runs under a timeout, and exceeding it is a loud FAILURE
+naming the case — never a hang, never a silent skip.**
+
+It came out of a battery in which two `cc1` processes ground for 1h40m and 55m
+on one generated file. The reason nobody noticed for that long is the whole
+point of the ruling: an unbounded compile reads as "still running", never as
+"failed", so a suite with no compile bound cannot tell a slow machine from a
+hung one and reports neither.
+
+**One implementation**: `tests/lib/gen_timeout.sh`, sourced by all seven shell
+suites that compile emitted C, and read as a command (`bash
+tests/lib/gen_timeout.sh secs`) by the two python ones, so the rule lives in
+one file rather than one per language. `gen_cc <case-label> <cc-argv...>` runs
+the compile and leaves the compiler's output — or the timeout diagnostic — in
+`$GEN_CC_LOG`, so a caller reports the same way whichever happened.
+
+**Defaults**: 5s on the plain axes, 60s on the sanitizer axes, both
+env-overridable (`GENTIMEOUT`, `GENTIMEOUT_SAN`). The axis is DERIVED from the
+flags — `-fsanitize=` appears in `GENCFLAGS`/`CFLAGS`/`TSANFLAGS` exactly when
+the compile is instrumented — so no site has to declare which axis it is on and
+a site added later gets the right budget for free. `124` is checked exactly,
+not as `>= 124`: a compiler that segfaults exits 139 and one that is OOM-killed
+exits 137 (K7's `a{0,65535}` really does), and calling either a timeout would
+send the reader looking for a slow machine instead of a crash.
+
+**Deliberately NOT converted**: `tests/bench`'s compile timeouts, because they
+ARE its measurement — it reports DNF against a compile-time budget, so
+replacing them with a shared number would delete the instrument. And
+`tests/thread`'s TS-3 builds, which compile libpcrec itself (compiler axis, not
+emitted code).
+
+**Its own checks**: `tests/lib/run_gen_timeout_tests.sh` (8 checks, in
+`make test`). A positive control proves the wrapper FIRES on a real
+over-budget compile and names the case; a coverage assertion proves every
+suite routes through the one helper, which is the check that survives future
+work, since a new compile site added without the wrapper is the realistic way
+this protection erodes. Sabotage S43.
+
+### The pathology D45 was ruled over, and the compiler-side bound
+
+`tests/vm`'s large-bounded-repeat case was `((a)|b){0,4000}c` — sixteen
+characters, 3.5 MB and 113,545 lines of emitted C, because engine_m4.md §3.3's
+ruled reading is that a bounded repeat REPLICATES its body.
+
+**It is not a sanitizer pathology, and it is not the label count.** Measured on
+the project box, 2026-08-15:
+
+| N | labels | `&&label` | plain -O1 | plain **-O2** | ubsan -O1 | asan -O1 |
+|---|---|---|---|---|---|---|
+| 25 | 253 | 50 | 0.20 s | 0.40 s | 0.80 s | — |
+| 50 | 503 | 100 | 0.40 s | 1.00 s | 1.71 s | — |
+| 64 | 643 | 128 | 0.50 s | **1.40 s** | 2.30 s | — |
+| 100 | 1003 | 200 | 0.70 s | 2.90 s | 4.11 s | 1.80 s |
+| 128 | 1283 | 256 | 0.90 s | 4.61 s | 6.11 s | — |
+| 200 | 2003 | 400 | 1.60 s | 11.21 s | 13.91 s | 3.60 s |
+| 400 | 4003 | 800 | 3.50 s | 51.54 s | 49.94 s | 5.31 s |
+
+ASan is linear; plain `-O2` is superlinear and *worse* than UBSan at `-O1`. So
+UBSan and `-O2` are two routes to one wall, and the wall is R1 A-3's
+computed-goto compile-time cliff reached from the VM side.
+
+A control settles the cause: `(a×2000)b` emits 2004 labels with **zero**
+address-taken labels and compiles in **2.70 s** at `-O2`, where
+`((a)|b){0,200}c`'s 2003 labels with **400** address-taken labels take
+**11.21 s**. Every `&&label` becomes a potential successor of the VM's single
+`goto *`, so the indirect edge's fan-out is what gcc's dataflow goes
+superlinear in.
+
+**The compiler-side bound is on REPLICATION, not on size**
+(`PCREC_MAX_VM_REPEAT_COPIES = 64`, src/core/limits.h). A first draft capped
+total resume points at 128 and refused the wrong patterns: a 200-branch
+capture-bearing keyword alternation has 199 resume points and is entirely
+healthy (the 100-branch version measures 0.50 s at `-O2`), because its size is
+PROPORTIONATE to what its author wrote. The defect is DISPROPORTION — sixteen
+characters producing 3.5 MB — and only replication produces it. A body with no
+choice point compiles to a span loop and never replicates, so `a{0,65535}` and
+`(?:ab){0,9999}` are untouched.
+
+**The case itself** is now `((a)|b){0,20}c` under an explicit
+`--backtrack-frames=32`: the same D44.1 property (a frame requirement of 40
+against a capacity of 32), 28 KB instead of 3.5 MB, 0.31 s at `-O2`, and 40
+replicas against the 64 cap. Naming the capacity also decouples it from a
+number it does not own — the default capacity is a bring-up placeholder [M4.6]
+will calibrate, and had [M4.6] raised it above 4000 the old case would have
+started fitting and gone silently vacuous while still passing.
+
+**Residual, recorded not fixed**: the two guards are independent and neither
+covers everything. A very long capture-bearing LITERAL still emits a large
+artifact with zero resume points (20,000 characters → 2.3 MB, >180 s at both
+`-O1` and `-O2`), bounded only by `PCREC_MAX_VM_NODES`, which at 131,072 is far
+above what the compile budget can absorb. That shape is proportionate to the
+pattern rather than disproportionate to it, so it is not what the replication
+cap is for — and D45's harness wrapper now catches it loudly rather than
+hanging. Lowering the node cap is a refusal decision for the manager.
 
 ### Exclusions
 

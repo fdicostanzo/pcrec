@@ -55,9 +55,11 @@ test: all
 	bash tests/reject/run_reject_tests.sh
 	bash tests/registry/run_registry_tests.sh
 	bash tests/parse/run_parse_tests.sh
+	bash tests/lib/run_gen_timeout_tests.sh
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
 	bash tests/codegen/run_vm_identity.sh
+	bash tests/codegen/run_ir_listing.sh
 	bash tests/vm/run_vm_tests.sh
 	bash tests/known_fail/run_known_fail.sh
 	bash tests/thread/run_thread_tests.sh
@@ -95,14 +97,33 @@ test-parse: all
 test-codegen: all
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
-	bash tests/codegen/run_vm_identity.sh
 
-# [M4.5b] the VM engine's own section: the two bounds as MECHANISM, the
-# honest artifact stamps, and the capture oracle + the §3.7 differential.
+# [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
+# honest artifact stamps, the capture oracle + the §3.7 differential, the
+# §5.4 byte-identity gate, and DD-8's program listing held to the artifact.
+#
+# The last two SCRIPTS live in tests/codegen/ — they are identity and
+# structural differentials, kin to run_trie_identity.sh by technique — but
+# they run HERE by subject matter, and for a measured reason: `make smoke`
+# includes test-codegen, and MEASURED 2026-08-15 those two add 8.0s and 2.9s
+# to its 0.7s + 7.4s, which would take smoke from ~33s to ~44s against a
+# documented 60s target. docs/testing.md asks for exactly this re-check when
+# a section grows. The touched-path table already routes src/gen changes to
+# test-vm, so nothing loses its inner-loop home.
+#
 # `make test-vm` runs the --quick oracle sweep (the same one `test:` runs);
 # `bash tests/vm/run_vm_tests.sh full` adds the fuzzer's trap-template shapes
 # under every quantifier and is a checkpoint-scale run, not an inner-loop one.
+# [M4.5c fix] D45's own checks: the generated-code compile budget fires, says
+# so, and every compile site routes through the one helper. Cheap (~2s) and in
+# `test:` proper, because a test-infrastructure property nothing else can see
+# is exactly the kind that erodes silently.
+test-gentimeout: all
+	bash tests/lib/run_gen_timeout_tests.sh
+
 test-vm: all
+	bash tests/codegen/run_vm_identity.sh
+	bash tests/codegen/run_ir_listing.sh
 	bash tests/vm/run_vm_tests.sh
 
 test-known-fail: all
@@ -222,7 +243,9 @@ ubsan:
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
 	         tests/codegen/run_vm_identity.sh \
+	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
 	    env $(UBSAN_ENV) bash "$$s" || exit 1; \
@@ -257,7 +280,9 @@ asan:
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
 	         tests/codegen/run_vm_identity.sh \
+	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
 	    env $(ASAN_ENV) bash "$$s" || exit 1; \

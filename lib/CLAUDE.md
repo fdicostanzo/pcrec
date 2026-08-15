@@ -18,6 +18,12 @@ the ruled ABI leaves open: `rx_matchfn`'s signature is frozen with no slot for
 one, and adding one to `rx_ctx` is a DD-3 struct revision D38 reserved for
 capture export (engine_m4.md §4.6).
 
+**[M4.5c] (2026-08-15)** adds one flag bit, `PCREC_TRACE` (DD-8): emit an
+instrumented matcher that prints every resume-frame push/pop and capture write
+to stderr. A generation axis like the rest (D18), never the default, and the
+artifact stamps that it is traced — a traced matcher writes to stderr, which
+is not something a shipped one should ever do.
+
 ## Conventions
 
 This is the sole public interface; everything under src/ is internal. The library works in two modes: -o out.c writes a self-contained .c file (no header), or -o out.c with options.header_name='out.h' writes paired .c/.h files. Generated code has no dependency on pcrec at runtime.
