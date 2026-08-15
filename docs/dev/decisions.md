@@ -3936,3 +3936,45 @@ unroll K as a bench-measured dial), design-first alongside M4.6, with
 replication kept as the forced-strategy semantic ground truth for the
 pcrec-vs-pcrec differential. The D45 timeout + size-cap remain the
 standing guards; the cap's diagnostic may point at the row.
+
+## D46 — every strategy-selection point is OBSERVABLE and FORCEABLE (Frank, 2026-08-15, twenty-first session)
+
+Ruled during the [ENG-BREP] discussion, generalizing R21 E-6's
+`--engine=vm`-disables-the-prefilter pattern into a standing principle.
+Motivating scenario (Frank's): a contrived test pattern built to hit the
+frames rung or the counter loop would, once the reverse-deterministic
+rung exists, be silently captured by it — and the test would silently
+stop testing what it was written for. Every optimization added ABOVE a
+strategy un-tests the strategy below it unless the harness can pin the
+selection.
+
+The principle, two halves plus a posture:
+
+1. KNOWING (observability): every selection the compiler makes — engine
+   (exists: rx_info.engine/engine_why, RX_ENGINE/RX_ENGINE_WHY), cursor
+   ladder RUNG (gap today: [M4.5b] landed two rungs and selects between
+   them silently), bounded-repeat strategy/K when [ENG-BREP] lands,
+   prefilter on/off, islands when they exist — is REPORTED in the
+   artifact's reflection surface (rx_info and/or the compile-time macro
+   family; member details belong to the design notes that implement
+   them). A test that depends on a strategy ASSERTS the stamp instead of
+   assuming pattern construction implies selection.
+
+2. SELECTING (controllability): every such point is individually
+   forceable/deniable at GENERATION time (the `--engine=...` shape).
+
+3. DO-OR-DIE, no silent fallback (the E-6/D44.6 posture): a forced
+   strategy that cannot handle the pattern REFUSES with a diagnostic.
+   A silent fallback would un-test the target exactly the way the
+   unpinned selection did, while claiming otherwise.
+
+Consequences attached now: [M4.5b]'s existing rung-boundary tests (33
+nested groups → cursor rung, 70 → frames rung) assume selection by
+construction — they gain a rung stamp + assertion when the stamp lands
+(scheduled with [M4.5e]'s close or the first follow-on lane, not
+mid-task). [ENG-BREP]'s "forceable strategies" requirement is an
+instance of this rule, not a special case. The M4.6 selection design and
+the DD-8 tracer listing both inherit it as an input.
+
+Revisit-when: a selection point is measured to be genuinely
+un-forceable (then record why here, with the measurement).
