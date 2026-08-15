@@ -20,6 +20,19 @@ fuzz`), not part of `make test` — see README.md for why.
   `mlimit <code>` (PCRE2 match-limit safeguard tripped — not a verdict).
 - **fuzz_driver.c** — subject-from-file driver template for pcrec-generated
   matchers, owned by this fuzzer (not a reuse of tests/harness/driver.c).
+  Compiled ONCE against a throwaway pattern and reused for every subsequent
+  pattern's gen.o (fuzz.py's dominant per-pattern cost saver — see
+  README.md "Performance"), which is only safe because this file reads
+  `rx_info.ncaps` at RUNTIME rather than the compile-time `RX_NCAPS` macro
+  (that macro is baked in from the THROWAWAY pattern, wrong for any other
+  pattern's own group count — see this file's own header comment and
+  README.md's "RX_NCAPS is NOT part of what's shared" section for the
+  274/317-divergence stack-smash this caused before the fix, this session).
+  Prints `match S E` / `nomatch` / `steps` (RX_ERR_STEPS) / `frames`
+  (RX_ERR_FRAMES) — never `TIMEOUT`, that's fuzz.py's own subprocess-level
+  sentinel for a hung child, distinct from a bounded-budget verdict.
+  `tests/registry/pc4_driver.c` shares the identical shared-driver trick and
+  had the identical latent bug, fixed the same session (README.md).
 - **fuzz.py** — generator + comparator + runner:
   `python3 tests/fuzz/fuzz.py [--seed N] [--patterns 300] [--subjects 15]
   [--keep] [--jobs N]`. Deterministic per `--seed`. See its module
@@ -37,7 +50,19 @@ fuzz`), not part of `make test` — see README.md for why.
   the fixed one) — a trap that never fired against the bug it names is
   decoration. Do not add a row for a bug that is still OPEN: traps run inside
   `make fuzz`, which must stay green, so deferred bugs belong in
-  `tests/known_fail/` instead.
+  `tests/known_fail/` instead. Compiles every pattern with an explicit
+  `--step-budget=STEP_BUDGET` (env-overridable, README.md "Step/frame budget
+  policy") rather than the VM's bring-up 1,000,000 default, so a
+  pathological pattern resolves to a fast, correctly bucketed
+  `RX_ERR_STEPS`/`RX_ERR_FRAMES` verdict instead of a harness-clock
+  collision. Every subprocess call this file makes (pcrec compile, gcc
+  compile/link, the generated matcher, the PCRE2 oracle) now catches its own
+  `TimeoutExpired` and reports a classified cell rather than raising — the
+  oracle side (`oracle_run()`) and the pcrec-compile side
+  (`compile_with_pcrec()`) were the two found missing this discipline this
+  session (both crashed a multi-thousand-pattern run outright before the
+  fix; `compile_and_link()`'s GCC-TIMEOUT handling was always correct and is
+  the pattern the fix generalizes).
 - **README.md** — full usage, exception-list rationale, output-bucket
   reference, triage process, and documented findings from this tool's
   build session (a real PCRE2 match-limit oracle bug now fixed, and a
@@ -51,9 +76,12 @@ fuzz`), not part of `make test` — see README.md for why.
 Exit code 0 iff zero accept/reject and zero content divergences (the DFA
 state-cap bucket — review finding A-3, a known unimplemented-VM-fallback
 limitation — and oracle-inconclusive `mlimit` count never affect exit
-status). A divergence always gets a bundle under `failures/`; triage by
-reproducing independently of the fuzzer and minimizing before concluding
-it's a real engine bug (see README.md's "Triaging a divergence").
+status; nor do the harness-level buckets added this session: pcrec compile
+timeout, oracle probe timeout, and pcrec step/frame-budget exhaustion —
+see README.md's "Step/frame budget policy"). A divergence always gets a
+bundle under `failures/`; triage by reproducing independently of the
+fuzzer and minimizing before concluding it's a real engine bug (see
+README.md's "Triaging a divergence").
 
 Maintenance: update this file and README.md when the generator's covered
 feature set, the exclusion list, or the output-bucket classification changes.

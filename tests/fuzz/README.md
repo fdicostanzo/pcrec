@@ -226,14 +226,74 @@ compared across the two runs) — rare enough not to need suppressing.
 The dominant per-pattern cost is compiling the pcrec-generated matcher.
 `fuzz.py` avoids recompiling `fuzz_driver.c` from source for every
 pattern: since every pattern is compiled with a fixed prefix (`rx`), the
-generated `gen.h` (the `rx_span` typedef and `rx_search` prototype) is
-byte-for-byte identical across every pattern (only a leading comment
-differs). `fuzz.py` compiles `fuzz_driver.c` to a `.o` once at startup
-against a throwaway pattern's header, then for every subsequent pattern
-only runs `pcrec` (generate) → `gcc -c` (compile the small generated
-matcher) → link against the pre-built driver object — no driver
-recompilation, ever. Pattern compilation and subject runs are also
-parallelized across `--jobs` worker threads (subprocess calls release the
-GIL while waiting on the child process). A default run (300 patterns, 15
-subjects each ≈ 1500-2000 comparisons after accounting for rejects) takes
-roughly 3-5 seconds on this box.
+generated `rx_search` prototype (`ptrdiff_t (*caps)[2]`, the [M4.4] FINAL
+ABI shape) is byte-for-byte identical across every pattern. `fuzz.py`
+compiles `fuzz_driver.c` to a `.o` once at startup against a throwaway
+pattern's header, then for every subsequent pattern only runs `pcrec`
+(generate) → `gcc -c` (compile the small generated matcher) → link against
+the pre-built driver object — no driver recompilation, ever. Pattern
+compilation and subject runs are also parallelized across `--jobs` worker
+threads (subprocess calls release the GIL while waiting on the child
+process). A default run (300 patterns, 15 subjects each ≈ 1500-2000
+comparisons after accounting for rejects) takes roughly 3-5 seconds on
+this box.
+
+**`RX_NCAPS` is NOT part of what's shared, and this bit a real run.**
+`RX_NCAPS` is a per-pattern preprocessor macro (`ngroups+1` on VM
+artifacts since [M4.5]; always 1 before that — a DFA-only artifact never
+promises more than the whole-match slot), unlike the fixed `rx_search`
+signature above. `fuzz_driver.c` used to size its caps array with
+`ptrdiff_t caps[RX_NCAPS][2]`, a stack array whose size is baked in at
+THIS FILE's own compile time — i.e. from the throwaway one-off pattern's
+macro (`RX_NCAPS==1`, no capture groups), not from whatever pattern's
+`gen.o` the resulting `driver.o` later gets linked against. Every
+group-bearing pattern that reported a match wrote its capture pairs past
+that 1-slot array and smashed this driver's own stack (found this
+session: 274 of 317 divergences on one run, all `rc=-6`/stack-smashing
+aborts against patterns pcrec compiled and matched correctly — the
+generated matcher was innocent; sizing the array from the same run against
+a right-sized array reproduced the correct verdict). The fix keeps the
+shared-driver optimization (it's the dominant cost saver above) but stops
+reading `RX_NCAPS` at driver-compile time entirely: `fuzz_driver.c` reads
+`rx_info.ncaps` — the [M4.4] reflection struct's `ncaps` field — at
+RUNTIME, off whichever artifact it's actually linked against, and
+`calloc()`s the caps array to that size. One compiled driver.o, correct
+for every pattern, by construction rather than by luck of the throwaway
+pattern's shape. `tests/registry/pc4_driver.c` uses the identical
+shared-driver trick and had the identical latent bug (dormant only because
+its pattern space has no capturing constructs today) — fixed the same way,
+same session.
+
+## Step/frame budget policy
+
+Every pattern is compiled with an explicit `--step-budget=N` (see
+`fuzz.py`'s `STEP_BUDGET`, overridable via the `STEP_BUDGET` env var)
+rather than the bring-up default (`VM_DEFAULT_STEP_BUDGET`,
+`src/gen/emit_vm.c`, 1,000,000 — a placeholder pending [M4.6]'s real
+calibration). Without this, a sufficiently pathological VM-forced pattern
+could spend a million backtrack resumptions and blow past this fuzzer's
+own `RUN_TIMEOUT`/`CC_TIMEOUT` clocks — not an engine bug (DD-2/D22: the
+step budget is a robustness bound on pathological backtracking, never a
+security boundary, never traded against speed), but a harness-clock
+collision the M4.6 calibration question arrived at early. A pcrec
+`RX_ERR_STEPS`/`RX_ERR_FRAMES` verdict (`fuzz_driver.c` prints `steps` /
+`frames` for these — never `TIMEOUT`, since the budget is what keeps the
+matcher itself fast) is reported as its own counted **non-divergence**
+class in the summary (`pcrec step-budget exhausted` / `frame-budget
+exhausted`) rather than compared against whatever verdict PCRE2's
+differently-limited backtracking engine reaches on the same input — the
+mirror image of the existing "oracle inconclusive" (PCRE2 match-limit)
+bucket. Wiring an equivalent explicit `pcre2_set_match_limit()` call into
+the oracle so the two sides trip at directly comparable cost would need a
+new ABI declaration + `dlsym` load in `pcre2_abi.h` for one classification
+refinement; judged disproportionate against what the non-divergence bucket
+already achieves.
+
+Separately, `oracle_run()` (the PCRE2 side) did not used to catch its own
+subprocess timeout at all — found during this fix's validation, when a
+slow oracle invocation on a large/generated subject killed an entire
+multi-thousand-pattern run with an uncaught `TimeoutExpired` traceback.
+`oracle_run()` now mirrors `pcrec_run()`'s existing convention and returns
+the sentinel `"TIMEOUT"` instead, folded into the same "oracle
+inconclusive" bucket as a PCRE2 match-limit trip (both mean "the oracle
+produced no usable verdict").
