@@ -89,6 +89,20 @@ ordering rule means the prefilter ANSWERS these patterns before the VM runs,
 which is the entire point of the prefilter, so reaching a bound requires
 reaching the engine that has it.
 
+## "Statically bounded" and "fits the emitted array" are different claims
+
+D44.1's honest stamp exists to replace a SILENT cap, so the rule that decides
+whether to declare a `subject_ceiling` has to be about what the artifact
+ENFORCES, not about whether an exact requirement exists. `((a)|b){0,4000}c`
+has an exact requirement — 4000 resume frames — and does not get it, because
+the arrays are locals under D19's 128 KB thread-stack budget. An artifact like
+that must declare a ceiling; its small sibling `((a)|b){0,3}c` is sized exactly
+at 7 frames and must declare none. Both directions are checked, since a rule
+that always declares a ceiling is as uninformative as one that never does.
+
+This was a real bug in the first draft of the capacity analysis, which treated
+"bounded" as "no limit to declare" and stamped 0 for the 4000 case.
+
 ## K18 is a DFA-side known_fail and the VM passing its family is EXPECTED
 
 `tests/known_fail/k18_empty_exit_through_seen_eps.rxt` pins a DFA-construction

@@ -157,6 +157,33 @@ else
     bad "[M4.5b] could not build the stamp cases"
 fi
 
+# A LARGE BOUNDED repeat is the case that separates "statically known" from
+# "fits the emitted array", and the two are easy to conflate: `((a)|b){0,4000}c`
+# has an exact requirement (4000 frames) and does not get it (1024). Stamping
+# subject_ceiling = 0 there would say "no limit" about an artifact that has
+# one — the silent cap D44.1's honest stamp exists to replace — while its
+# SMALL sibling `((a)|b){0,3}c` genuinely has no limit to declare and must
+# stamp 0. Both directions are checked, because a rule that only ever declares
+# a ceiling is as uninformative as one that never does.
+if build bigbounded '((a)|b){0,4000}c' && build smallbounded '((a)|b){0,3}c'; then
+    bsc="$(info_field bigbounded subject_ceiling)"
+    bfc="$(info_field bigbounded frame_capacity)"
+    ssc="$(info_field smallbounded subject_ceiling)"
+    sfc="$(info_field smallbounded frame_capacity)"
+    if [ "$bsc" -gt 0 ]; then
+        ok "[M4.5b] D44.1: a LARGE bounded repeat whose exact requirement does not fit stamps a real ceiling ($bsc bytes at frame_capacity=$bfc), not 'not applicable'"
+    else
+        bad "[M4.5b] D44.1: '((a)|b){0,4000}c' stamped subject_ceiling=$bsc at frame_capacity=$bfc — its requirement is 4000 frames, so a 0 here claims a limit it does not have"
+    fi
+    if [ "$ssc" = "0" ] && [ "$sfc" -lt 64 ]; then
+        ok "[M4.5b] D44.1: a SMALL bounded repeat is sized exactly (frame_capacity=$sfc) and declares no ceiling — the rule does not just always declare one"
+    else
+        bad "[M4.5b] D44.1: '((a)|b){0,3}c' stamped frame_capacity=$sfc subject_ceiling=$ssc; expected an exact small capacity and ceiling 0"
+    fi
+else
+    bad "[M4.5b] could not build the bounded-repeat stamp cases"
+fi
+
 # The stamped ceiling must be a REAL floor on behaviour, not a decoration:
 # a subject comfortably under it must not hit the frame bound.
 if build ceil '((a)|b)*c'; then

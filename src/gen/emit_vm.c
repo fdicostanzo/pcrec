@@ -359,8 +359,21 @@ static bool vm_cursor_fits(const Ast *rep, const uint8_t **seq, int *stride,
  * the stamped ceiling, which under-promises rather than over-promises. */
 typedef struct {
     long long frames, trail;  /* max simultaneously live (bounded part) */
-    long long pf, pt;         /* per-consumed-byte frames/trail (unbounded part) */
-    bool      unbounded;
+    long long pf, pt;         /* per-ITERATION frames/trail of the outermost
+                               * growing quantifier — the divisor the stamped
+                               * ceiling is computed from. Read as per-byte,
+                               * which is the conservative direction: an
+                               * iteration consumes at least one byte unless the
+                               * body is nullable, and a nullable body's loop is
+                               * stopped by the empty-iteration guard after one
+                               * such iteration (S3.3). */
+    bool      unbounded;      /* depth grows without a static bound */
+    bool      growable;       /* depth grows WITH the subject at all — true for
+                               * `unbounded`, and ALSO for a bounded repeat
+                               * whose count is large. The two are stamped the
+                               * same way and the distinction only decides
+                               * whether the EXACT requirement is worth trying
+                               * to honour. */
 } Cost;
 
 static Cost vm_cost(Vm *v, const Ast *a);
@@ -370,7 +383,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
     const uint8_t *seq[VM_MAX_STRIDE];
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, nc = 0;
-    Cost c = { 0, 0, 0, 0, false };
+    Cost c = { 0, 0, 0, 0, false, false };
     Cost body = vm_cost(v, a->l);
 
     if (a->rmin == 0 && a->rmax == 0) return c;
@@ -388,7 +401,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
         /* frames rung, unbounded: one frame per iteration, and an iteration
          * that consumes nothing terminates the loop (§3.3's guard), so every
          * completed iteration but the last consumes at least one byte. */
-        c.unbounded = true;
+        c.unbounded = c.growable = true;
         c.pf = 1 + body.frames + body.pf;
         c.pt = (vm_nullable(a->l) ? 1 : 0) + body.trail + body.pt;
         c.frames = (long long)a->rmin * body.frames;
@@ -399,19 +412,29 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
     /* frames rung, bounded: rmin mandatory copies plus (rmax - rmin) nested
      * optionals, each optional contributing its own live frame (§3.3's RULED
      * replication reading — a bounded quantifier compiles as its copies, with
-     * no guard slot and no suppression test at all). */
+     * no guard slot and no suppression test at all).
+     *
+     * `growable` is set here too, and that is the point of the flag. A bounded
+     * repeat's requirement IS statically known — but "statically known" and
+     * "fits the emitted array" are different claims, and `((a)|b){0,4000}c`
+     * satisfies the first and not the second. Stamping subject_ceiling = 0
+     * ("not applicable") for such an artifact says there is no limit when
+     * there is one, which is exactly the silent cap D44.1's honest stamp
+     * exists to replace. The per-iteration costs below let pcrec_emit_vm
+     * stamp a real ceiling whenever the requirement does not fit. */
     c.frames = (long long)a->rmin * body.frames
              + (long long)(a->rmax - a->rmin) * (1 + body.frames);
     c.trail = (long long)a->rmax * body.trail;
     c.unbounded = body.unbounded;
-    c.pf = (long long)a->rmax * body.pf;
-    c.pt = (long long)a->rmax * body.pt;
+    c.growable = true;
+    c.pf = 1 + body.frames + body.pf;
+    c.pt = body.trail + body.pt;
     return c;
 }
 
 static Cost vm_cost(Vm *v, const Ast *a)
 {
-    Cost c = { 0, 0, 0, 0, false };
+    Cost c = { 0, 0, 0, 0, false, false };
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
         return c;
@@ -426,6 +449,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
         c.pf = l.pf + r.pf;
         c.pt = l.pt + r.pt;
         c.unbounded = l.unbounded || r.unbounded;
+        c.growable = l.growable || r.growable;
         return c;
     }
     case A_ALT: {
@@ -438,6 +462,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
         c.pf = l.pf > r.pf ? l.pf : r.pf;
         c.pt = l.pt > r.pt ? l.pt : r.pt;
         c.unbounded = l.unbounded || r.unbounded;
+        c.growable = l.growable || r.growable;
         return c;
     }
     case A_REP:
@@ -920,6 +945,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root);
     long long bt_frames, trail_frames, ceiling = 0;
+    bool fits;
     if (cx->opt->frame_capacity > 0) {
         bt_frames = cx->opt->frame_capacity;
         trail_frames = cx->opt->frame_capacity;
@@ -935,7 +961,19 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     }
     if (bt_frames < 1) bt_frames = 1;
     if (trail_frames < 1) trail_frames = 1;
-    if (cost.unbounded) {
+
+    /* THE STAMP IS ABOUT WHAT THE ARTIFACT ENFORCES, NOT WHAT IT WANTED.
+     * A ceiling is owed whenever the depth grows with the subject AND the
+     * exact requirement does not fit the arrays actually emitted — which
+     * covers the unbounded class (where no exact requirement exists) and the
+     * large-bounded one (where it exists and is too big) with one rule. A
+     * pattern whose requirement DOES fit has no limit to declare, and stamps
+     * 0 truthfully. Getting this wrong in the other direction is what a
+     * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
+     * frames, gets 1024, and would otherwise have stamped "not applicable". */
+    fits = !cost.unbounded && cost.frames + 1 <= bt_frames
+                           && cost.trail + 1 <= trail_frames;
+    if (cost.growable && !fits) {
         long long a = vm_ceiling(bt_frames, cost.pf);
         long long b = vm_ceiling(trail_frames, cost.pt);
         ceiling = (a && b) ? (a < b ? a : b) : (a ? a : b);
