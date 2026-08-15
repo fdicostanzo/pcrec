@@ -749,11 +749,18 @@ run_bdriver() {
 
 # build_bench_bin <patdir> <pattern> -> compiles gen.c + bdriver.c into
 # <patdir>/t ; sets BB_OK=1/0
+# build_bench_bin <dir> <pattern> [extra pcrec flags...]
+#
+# The extra flags exist for D46's sake: a benched case must PIN the
+# configuration it measures, or a later default change silently re-points the
+# measurement at a different strategy while the floor keeps claiming otherwise.
+# Case (d) is the first user — see its own comment.
 build_bench_bin() {
     local patdir="$1" pattern="$2"
+    shift 2
     mkdir -p "$patdir"
     local perr
-    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$patdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx "$@" -o "$patdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         record_hard_error "pcrec failed to compile THROUGHPUT pattern '$pattern': $perr"
         BB_OK=0
@@ -814,8 +821,22 @@ if [ $py_rc -eq 0 ]; then
     fi
 
     # ---- (c) a(b|c)+d over 8 MB random text with NO match: full scan ----
+    #
+    # PINNED to --no-captures for the SAME reason as (d) below (D46, D42.1),
+    # and NOT because it failed — it did not, and that is the part worth
+    # recording. (c)'s subject has no match anywhere, so under captures-on the
+    # prefilter answers `nomatch` in one pass and the VM is never entered: the
+    # hybrid costs what the pure DFA costs and the number did not move.
+    #
+    # The number not moving is exactly why this needed finding by inspection.
+    # This case's own subject comment says it measures "the byte-class
+    # structure the pattern's DFA actually walks", and after D42.1 it was
+    # measuring a hybrid artifact instead — the floor stopped pinning what the
+    # comment says it pins, while still passing. A measurement whose MEANING
+    # drifts without its VALUE drifting is the harder half of D46's problem,
+    # and the only reason (d) was caught first is that (d) has a match.
     tdir="$WORKDIR/tp_alt"
-    build_bench_bin "$tdir" 'a(b|c)+d'
+    build_bench_bin "$tdir" 'a(b|c)+d' --no-captures
     if [ "$BB_OK" = "1" ]; then
         run_bdriver "$tdir/t" "$subj_dir/altd_nomatch_8mb.bin" 10 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
@@ -834,8 +855,29 @@ if [ $py_rc -eq 0 ]; then
     fi
 
     # ---- (d) bitmap prefilter: 5 distinct first bytes, no match ----
+    #
+    # PINNED to --no-captures, and the pin is the point (D46: every
+    # strategy-selection point is observable and FORCEABLE, and a test that
+    # depends on a strategy pins it instead of assuming pattern construction
+    # implies selection).
+    #
+    # This case measures the BITMAP half of the start prefilter on the DFA
+    # engine. Its capturing group was always INCIDENTAL — before M4 there was
+    # no capture channel at all, so `(alpha|...)` and `(?:alpha|...)` compiled
+    # to the same matcher and the parentheses were just grouping. D42.1 made
+    # captures the default at [M4.5], which routed this pattern to the VM
+    # hybrid and changed what the floor was measuring: 293.709 MB/s against a
+    # 330 MB/s floor set for the pure-DFA scan. That is the announced change
+    # doing exactly what it says, not a regression — but a floor that silently
+    # starts measuring a different engine has stopped being a floor.
+    #
+    # The 293.709 MB/s hybrid figure is recorded here as the INFORMATIONAL
+    # first cell of [BENCH-1]'s future captures group. It is deliberately not
+    # a benched case with a floor of its own: one run is not a measurement,
+    # and D12/M2.11's discipline wants trials and an absolute floor set from
+    # them, which is [BENCH-1]'s job and not this fix's.
     tdir="$WORKDIR/tp_bitmap"
-    build_bench_bin "$tdir" '(alpha|beta|gamma|delta|epsilon)'
+    build_bench_bin "$tdir" '(alpha|beta|gamma|delta|epsilon)' --no-captures
     if [ "$BB_OK" = "1" ]; then
         run_bdriver "$tdir/t" "$subj_dir/bitmap_8mb.bin" 10 "$RUN_TIMEOUT"
         if [ "$RB_RC" = "ok" ]; then
