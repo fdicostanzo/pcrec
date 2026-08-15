@@ -86,6 +86,11 @@ enum {
  * wide conjunction for no gain. */
 enum { VM_MAX_STRIDE = 32 };
 
+/* Capture groups a cursor-rung body may contain. A body of stride <= 32 can
+ * still nest arbitrarily many groups (`((((a))))` is four groups in one byte),
+ * so this is NOT implied by VM_MAX_STRIDE and needs its own bound. */
+enum { VM_MAX_BODY_CAPS = 64 };
+
 /* ---- the emitter's state -------------------------------------------------*/
 
 typedef struct {
@@ -309,6 +314,34 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
     }
 }
 
+/* THE RUNG DECISION, in ONE place (§2.5's ladder, D44.1's extension).
+ *
+ * Three call sites need it and they MUST agree: the slot counter (which sizes
+ * `stv` before anything is emitted), the capacity analysis (which sizes the
+ * two arrays and stamps the ceiling), and the emitter itself. Two of them
+ * disagreeing does not produce a diagnostic — it produces a matcher whose
+ * arrays are sized for a shape it does not have.
+ *
+ * It returns false when the body is not deterministic-fixed-length, AND when
+ * its captures overflow `VM_MAX_BODY_CAPS`. The second condition is not a
+ * tidiness bound: the cursor rung writes each group's span from the cursor at
+ * loop exit, so a group the offset table could not hold would simply never be
+ * written and would report UNSET on a match it participated in — a silent
+ * wrong span, the one failure mode this project's compatibility standard
+ * refuses outright. Falling back to the frames rung costs frames and is
+ * always correct. */
+static bool vm_cursor_fits(const Ast *rep, const uint8_t **seq, int *stride,
+                           CapOff *caps, int *ncaps)
+{
+    int n = 0;
+    int len = vm_det_seq(rep->l, seq, VM_MAX_STRIDE);
+    if (len <= 0) return false;
+    if (vm_cap_offsets(rep->l, 0, caps, &n, VM_MAX_BODY_CAPS) < 0) return false;
+    *stride = len;
+    *ncaps = n;
+    return true;
+}
+
 /* ---- capacity analysis (§2.5's two capacities, §4.5's SECOND bound) -------
  *
  * Two bounds, two errors, and they are different failures with different
@@ -335,18 +368,17 @@ static Cost vm_cost(Vm *v, const Ast *a);
 static Cost vm_cost_rep(Vm *v, const Ast *a)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, nc = 0;
     Cost c = { 0, 0, 0, 0, false };
     Cost body = vm_cost(v, a->l);
 
     if (a->rmin == 0 && a->rmax == 0) return c;
 
-    if (vm_det_seq(a->l, seq, VM_MAX_STRIDE) > 0) {
+    if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
          * plus one write per capture in the body per (re)try — all of which
          * the resume frame's own mark rewinds, so they do not accumulate. */
-        CapOff caps[VM_MAX_STRIDE];
-        int nc = 0;
-        (void)vm_cap_offsets(a->l, 0, caps, &nc, VM_MAX_STRIDE);
         c.frames = 1;
         c.trail = 1 + 2 * nc;
         return c;
@@ -419,6 +451,8 @@ static Cost vm_cost(Vm *v, const Ast *a)
 static void vm_count_slots(Vm *v, const Ast *a)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, nc = 0;
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
         return;
@@ -427,7 +461,7 @@ static void vm_count_slots(Vm *v, const Ast *a)
         vm_count_slots(v, a->l); vm_count_slots(v, a->r); return;
     case A_REP:
         if (a->rmin == 0 && a->rmax == 0) return;
-        if (vm_det_seq(a->l, seq, VM_MAX_STRIDE) > 0) { v->nlow++; return; }
+        if (vm_cursor_fits(a, seq, &stride, caps, &nc)) { v->nlow++; return; }
         /* Frames rung: the body's code is REPLICATED once per mandatory copy
          * and once per optional copy, and each copy's own loops need their own
          * slots — so the count must replicate exactly as the emitter does or
@@ -528,16 +562,14 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
  * relative offset `off`. The writes go AFTER the push, so the frame's own mark
  * rewinds them on every retreat and they never accumulate on the trail. */
 static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
-                          const uint8_t **seq, int stride)
+                          const uint8_t **seq, int stride,
+                          const CapOff *caps, int ncaps)
 {
     StrBuf *b = v->b;
     int low = vm_slot_low(v, v->nlow++);
     int retry = vm_label(v), again = vm_label(v);
-    CapOff caps[VM_MAX_STRIDE];
-    int ncaps = 0;
     long long lo_off = (long long)a->rmin * stride;
 
-    (void)vm_cap_offsets(a->l, 0, caps, &ncaps, VM_MAX_STRIDE);
     v->used_cursor = true;
 
     /* class ids first, so the pool is stable before any test is written */
@@ -676,7 +708,8 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
-    int stride;
+    CapOff caps[VM_MAX_BODY_CAPS];
+    int stride = 0, ncaps = 0;
 
     if (a->rmin == 0 && a->rmax == 0) {   /* X{0} matches empty */
         vm_lbl(v, entry);
@@ -684,8 +717,10 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         return;
     }
 
-    stride = vm_det_seq(a->l, seq, VM_MAX_STRIDE);
-    if (stride > 0) { vm_cursor_rep(v, entry, a, next, seq, stride); return; }
+    if (vm_cursor_fits(a, seq, &stride, caps, &ncaps)) {
+        vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps);
+        return;
+    }
 
     /* ---- the frames rung ------------------------------------------------
      * rmin mandatory copies, then either the unbounded star or (rmax - rmin)
