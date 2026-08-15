@@ -272,9 +272,10 @@ append-only or historical records.
   different rungs (corrected mid-lane from an initial scalar draft) — the
   observability half only, landed as this document's close obligation.
   Rung FORCING (D46's controllability half) has no producer yet.
-- `k18_memo_design.md` — **PROPOSED** (2026-08-15, K18 design-first lane): the
+- `k18_memo_design.md` — **PROPOSED, AMENDED PER R23 (2026-08-15)** (K18
+  design-first lane): the
   repair of K18, the second live tier-1 DFA priority miscompile — written
-  before any rewrite lane per the R21-close scheduling, and unpaneled. The
+  before any rewrite lane per the R21-close scheduling. The
   defect: `clo_visit`'s `seen` is a GLOBAL per-closure memo while the
   empty-iteration rule is PATH-dependent, so the redirect is lost when the
   ε re-arrival passes THROUGH an already-seen ordinary ε state instead of
@@ -289,22 +290,48 @@ append-only or historical records.
   oracle agrees with A on **98 of 98**, every one a `{0,2}`-bodied shape where
   the conflation happens at a SPLIT rather than an ε. The naive no-memo
   variant (C) is MEASURED exponential, Θ(2ⁿ) on `(?:a*|b*){n}`, confirming the
-  K18 entry's own sketch. Cost of the recommendation: corpus loop-nesting
-  depth is ≤5 (353 of 555 patterns never open a loop), aggregate expansion
-  inflation **x1.006**, blast radius on the real corpus **547 of 555
-  byte-identical with all 8 differing patterns exactly the K18 shapes**,
-  1704/1704 corpus three ways, and 226/226 changed cells old-wrong→new-right.
-  Residual: Θ(d⁴) in loop-nesting depth, bounded by the parser's own 250-paren
-  cap, for which §6 asks a RULING on a depth threshold (D=64 recommended). Two
-  lane-own instrumentation defects are recorded in §7 because both produced
-  numbers that would otherwise have entered the note as findings — a
-  fixed-capacity memo that HANGS rather than slows when full, and a
+  K18 entry's own sketch. Cost of the recommendation (re-taken on the fixed
+  prototype, see the R23 block below): corpus loop-nesting depth is ≤4 (353 of
+  555 patterns never open a loop), aggregate inflation **x1.004 expansions /
+  x0.996 visits**, blast radius on the real corpus **547 of 555 byte-identical
+  with all 8 differing patterns exactly the K18 shapes**, 1704/1704 corpus
+  three ways, and 226/226 changed cells old-wrong→new-right.
+  Three lane-own instrumentation defects are recorded in §7 because each
+  produced numbers that would otherwise have entered the note as findings — a
+  fixed-capacity memo that HANGS rather than slows when full, a
   linear-scan interner that would have priced the prototype instead of the
-  design. §4.4 additionally reports, as NOT this lane's finding, that the
-  differential fuzzer is already red on the current tree (8 diverging patterns
-  per seed, generated matchers aborting on stack smashing, all `{28,30}`
-  capture-bearing VM shapes) — with base-vs-A2 pattern sets identical, so it
-  is pre-existing and someone should decide what it is.
+  design, and (added by R23) the stack-entry restore below.
+  **PANELED R23 (2026-08-15, `../dev/reviews/2026-08-15-r23-k18-memo.md`):
+  the DESIGN was affirmed and the PROTOTYPE was refuted.** `clo_visit`
+  restored the open-loop stack's depth per frame but not its ENTRIES, so a
+  redirect crossing a frame boundary corrupted an ancestor's stack — and that
+  single omission was simultaneously the refutation of §2a's `nonstacktop ==
+  0` cell (which the note told the rewrite lane to land AS AN ASSERTION;
+  it fires on 358 of 4,369 patterns) and the ENTIRE cost residual §6 was
+  built on. With the entries restored the note's headline 39 s compile at the
+  parser's nesting cap is **0.35 s**, the Θ(d⁴) "cost law" dissolves, and
+  **§6 ruling 1 (the D=64 inexactness threshold) is WITHDRAWN rather than
+  answered** — no Frank rulings remain open from this note. A2 itself
+  survived every attack: zero cells A2-wrong-shipped-right across ~330,000
+  independent span cells, and every population count reproduced exactly. Also
+  amended: §1.5 records a fourth sub-case (the ingredient is the PREFERRED
+  alternation arm, not laziness — two of `../dev/known_issues.md` K18's own
+  controls are live miscompiles with their arms swapped, corrected there),
+  §3's "strictly stronger, subsumes K17" withdrawn, `gen_adversarial.py`'s
+  two invalid families fixed and re-run, and §5 grown to 13 items.
+  §4.4's out-of-lane fuzzer-red report is back-annotated **RESOLVED
+  2026-08-15** (fuzzfix, 7e27c19): the cause was `tests/fuzz/fuzz_driver.c`'s
+  stale-macro caps array — a test-harness stack smash, 274 → 0 — **not** the
+  M4.5 VM path the note's BELIEVED mark attributed it to. The revision's own
+  re-measurement then produced **one new defect the panel had not predicted,
+  refuting a STRUCTURAL claim of the note's own**: §2a's "the tail recursion
+  does not deepen" is true of recursion SITES and false of recursion DEPTH —
+  `clo_visit` recurses **Θ(d²)**, 31,377 frames at the parser's 250-paren cap
+  against the shipped closure's 253, so the design needs ~7 MB of the default
+  8 MB stack there on the PLAIN build (shipped: 192 KB) and overflows under
+  asan at depth 210. Not the stack fix (the unfixed prototype measures
+  identical depths), and invisible to the suite, whose corpus tops out at
+  depth 4. The rewrite lane owes a decision on it (§5 item 12).
 - `k18_measurements/` — the lane's prototypes, harnesses and generators; see
   its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors

@@ -227,10 +227,25 @@ stated terms.
   depth pinned at 11, contexts 450→40k, compile 0.3s→52s on the
   unfixed prototype; 0.11-0.12s after the S16 stack fix, but the
   depth-multiplication mechanism is prototype-independent and
-  MEASURED). Consequences carried forward: (a) any depth- or
+  MEASURED). **CORRECTED 2026-08-15 (k18-revision lane's re-measurement
+  on the FIXED prototype): the depth-multiplication half is REFUTED
+  and is NOT prototype-independent.** Same patterns, same binary but
+  with the open-loop stack's ENTRIES restored per frame: max open
+  depth is **1**, not 11, and contexts grow LINEARLY (13/19/25/31/37/
+  43/49 for k=2..8) against the unfixed prototype's 450/2,834/11,770/
+  40,422 — compile time 2.9ms → 8.7ms across k=2..8, linear, where
+  unfixed was 0.22s → 50.7s over k=2..5 and did not finish beyond.
+  The depth of 11 was the CORRUPTED stack failing to pop loops whose
+  redirects were missed; A_REP's copies sit in SEQUENCE, so a walk is
+  inside at most one at a time and the open-loop depth does not
+  multiply. Consequences carried forward: (a) any depth- or
   context-shaped budget anywhere in the compiler must be posed on the
   UNROLLED quantity, never on nesting as a reader counts it in the
-  pattern; (b) ENG-BREP's replication reduction (possessify /
+  pattern — the surviving evidence for this is the NFA itself (405
+  states at k=2, 1,485 at k=8, from a pattern whose visible nesting
+  never moves) plus the rule that the closure's cost driver is the
+  CONTEXT COUNT, which the memo keys on, and not reader-visible
+  nesting; (b) ENG-BREP's replication reduction (possessify /
   rung-select / counter-K) also shrinks pcrec's own DFA-construction
   work, an additional measured motivation for this row; (c) the
   bounded-repeat-times-nullable-loop family (S14's witnesses, ~0.1%

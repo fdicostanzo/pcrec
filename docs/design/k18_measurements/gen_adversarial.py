@@ -31,11 +31,18 @@ for n in range(1, 13):
     out.append(("chain%d" % n, "".join("(?:a*|b*)" for _ in range(n))))
 for n in (2, 4, 8, 12, 16, 20, 24, 32, 48, 64):
     out.append(("bounded%d" % n, "(?:a*|b*){%d}" % n))
+# The outer quantifier MUST wrap the body in a group. Appending `*` to a string
+# that already ends in `?` is `?*`, which every engine rejects as "multiple
+# repeat" -- and it did: all 10 altnest and all 8 k18nest patterns were
+# syntactically invalid, so the two families named after K18's own shape
+# contributed ZERO patterns to every "52 adversarial patterns" measurement in
+# the design note. Found by R23 (M-B1); k18_stats.py's own `refused=18` line
+# had been reporting it on stderr all along.
 for n in range(1, 11):
     s = "a"
     for _ in range(n):
         s = "(?:%s|b*?)?" % s
-    out.append(("altnest%d" % n, s + "*"))
+    out.append(("altnest%d" % n, "(?:%s)*" % s))
 for n in (2, 4, 8, 16, 32, 64):
     out.append(("wide%d" % n,
                 "(?:" + "|".join("[%s]*" % chr(ord('a') + (i % 26)) for i in range(n)) + ")*"))
@@ -44,7 +51,7 @@ for n in range(1, 9):
     s = "(?:a|b*?)?"
     for _ in range(n):
         s = "(?:%s|c*?)?" % s
-    out.append(("k18nest%d" % n, s + "*"))
+    out.append(("k18nest%d" % n, "(?:%s)*" % s))
 
 for name, p in out:
     print(p)

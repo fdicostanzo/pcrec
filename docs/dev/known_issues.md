@@ -1203,7 +1203,10 @@ ever arriving at one.
 edge**. Closing the pre-set `{1}` — the position after "a" — marks state 1
 seen immediately, since it IS the entry point. The walk then reaches the
 alternation, emits thread 2, and tries `b*?`, whose lazy PREFERRED branch is
-its exit — and that exit edge points at state 1. State 1 is seen and is not
+its exit — and that exit edge points at state 1. (**The load-bearing word is
+PREFERRED, not lazy** — R23 S8, see the correction below the control list: a
+greedy nullable arm written FIRST reaches the same state the same way.)
+State 1 is seen and is not
 a loop entry, so `clo_visit` returns dead, one hop short of state 0, whose
 redirect would have produced the ACCEPT. Thread 4 (`b`) is emitted instead,
 ahead of the ACCEPT reached afterwards, and the DFA over-consumes.
@@ -1222,6 +1225,40 @@ not read a cause into any single row): `(?:(?:a|b*)?)*` and `(?:(?:a|b?)?)*`
 `(?:(?:a|b*?)?)` (no outer quantifier), `(?:a(?:b*?)?)*` (concatenation, not
 alternation), `(?:(?:a|)?)*` (an empty alternative instead of a lazy
 quantifier). Note that unlike K17, an outer `+` does NOT save the shape.
+
+> **CORRECTION 2026-08-15 [R23 S8]: two of those parenthesised causes are
+> wrong, and their mirror images are LIVE MISCOMPILES.** The rows above still
+> measure as stated — each of those patterns really does answer correctly —
+> but the reason given for three of them is ARM ORDER, not the ingredient
+> named. The defect does not need laziness. It needs the arm whose exit edge
+> lands on the already-seen ε state to be the PREFERRED one, and a GREEDY
+> nullable arm achieves that simply by being written FIRST:
+>
+>     (?:(?:b*|a)?)*        "ba"   pcrec [0,2)  both oracles [0,1)   <- "greedy inner", swapped
+>     (?:(?:b?|a)?)*        "ba"   pcrec [0,2)  both oracles [0,1)   <- ditto
+>     (?:(?:(?:b|)|a)?)*    "ba"   pcrec [0,2)  both oracles [0,1)   <- an EMPTY arm, no quantifier
+>     (?:(?:b?|a)(?:b?|d))* "ba"   pcrec [0,2)  both oracles [0,1)   <- CONCATENATION of two
+>                                                                       nullable alternations
+>
+> So "greedy inner" does not save the shape (arm order did), "an empty
+> alternative instead of a lazy quantifier" does not save it (arm order did),
+> and "concatenation, not alternation" does not save it either. Both oracles
+> agree on all four; the divergence is pcrec's. All four are fixed by the
+> design note's recommended repair, which covers this sub-case already — the
+> defect here is in this entry's CHARACTERISATION and in the acceptance
+> corpus, not in the repair.
+>
+> **Consequence for the corpus below.** All 15 patterns in the .rxt file are
+> the lazy shape and its only two non-lazy entries are CONTROLS, so none of
+> the four witnesses above is on file. The rewrite lane's guard corpus owes an
+> ARM-ORDER axis: every diverging shape in both orders, greedy and lazy
+> nullable arms (`k18_memo_design.md` §1.5 and §5 item 1). They are NOT added
+> to `tests/known_fail/` here — the ratchet counts that file, and the rewrite
+> lane re-scopes the corpus when it moves it live.
+>
+> This entry's own warning — "do not read a cause into any single row" — was
+> right, and was not enough: the causes were written into the parentheses
+> anyway, and a reader building a corpus from them built a lazy-only one.
 
 One of these controls is worth reading before trusting the others: for
 `(?:(?:b*?|a)?)*` the closure at the position after "a" fails in EXACTLY the
@@ -1286,16 +1323,21 @@ span differential is the net; [M4.6] does NOT open with K18 unfixed
 (same precondition status as K17, R21 review E-1 disposition).
 
 **DESIGN NOTE DELIVERED 2026-08-15: `docs/design/k18_memo_design.md`**
-(PROPOSED, unpaneled; the rewrite lane has NOT opened and this entry stays
-OPEN). It recommends the (state, open-loop-context) memo this entry sketched,
-plus an empty-context fast path, and it settles three things this entry left
-as expectations:
+(PROPOSED, **AMENDED PER R23** — `docs/dev/reviews/2026-08-15-r23-k18-memo.md`;
+the rewrite lane has NOT opened and this entry stays OPEN). It recommends the
+(state, open-loop-context) memo this entry sketched, plus an empty-context
+fast path, and it settles three things this entry left as expectations:
 
-* **The cost is polynomial, not exponential.** MEASURED Θ(d⁴) in loop-nesting
-  depth, with contexts fitting d³/6; the corpus maximum depth is 5 and 353 of
-  555 patterns never open a loop, so aggregate expansion inflation is x1.006.
-  This entry's "real compile-time-blowup risk" is real but bounded, and lands
-  past nesting depth ~64 — the note asks for a ruling on a threshold there.
+* **The cost is polynomial, and smaller than the note first reported.** The
+  note's original Θ(d⁴) cost law and its 39 s worst case were a PROTOTYPE BUG
+  (R23 S16: `clo_visit` restored the open-loop stack's depth but not its
+  entries), not a property of the design. Re-measured on the fixed prototype:
+  the deepest pattern the parser accepts — 250 nested nullable stars —
+  compiles in **0.35 s** against the shipped compiler's 0.004 s, contexts fit
+  d²/2 and redirects d³/3, the corpus maximum depth is 4, and aggregate
+  inflation is **x1.004 expansions / x0.996 visits**. This entry's "real
+  compile-time-blowup risk" is real but small, and **no threshold is proposed
+  or needed** — the note's §6 ruling request is WITHDRAWN.
 * **The exponential the entry attributes to the naive path-local version is
   CONFIRMED, and it is the absence of the memo, not the path-sensitivity.**
   MEASURED Θ(2ⁿ) on `(?:a*|b*){n}`, out of budget at n=22.
@@ -1308,6 +1350,10 @@ as expectations:
   SPLIT instead of at an ε, which is a THIRD sub-case of the root fact and is
   not covered by the family recorded above. The rewrite lane owes those 83 a
   guard corpus.
+* **A FOURTH sub-case, added by R23 S8: the ingredient is the PREFERRED
+  alternation arm, not laziness** — see the correction under this entry's own
+  control list. The guard corpus therefore also owes an ARM-ORDER axis, and
+  the note's §5 item 1 specifies it.
 
 ---
 
