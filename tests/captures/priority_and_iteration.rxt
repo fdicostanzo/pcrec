@@ -1,0 +1,204 @@
+# Territory A (alternation priority / leftmost-first, not longest-match) and
+# Territory B (which quantifier ITERATION's value a group reports, incl.
+# empty final iterations and bounded {n,m}/lazy forms).
+
+# case: alt-priority-01
+pattern (a|ab)
+# shorter first alt wins, leftmost-first not longest-match
+m "ab" 0 1
+gp 1 0 1
+
+# case: alt-priority-02
+pattern (ab|a)
+# first alt that matches at all is 'ab' itself
+m "ab" 0 2
+gp 1 0 2
+
+# case: alt-priority-03
+pattern (a|ab)(c|bcd)
+# group1 tries 'a' first; group2 must then backtrack from 'c' to 'bcd'
+m "abcd" 0 4
+gp 1 0 1
+gp 2 1 4
+
+# case: alt-priority-04
+pattern (a|ab)(c|bcd)(d*)
+# three-way split, group3 ends up a zero-width final iteration
+m "abcd" 0 4
+gp 1 0 1
+gp 2 1 4
+gp 3 4 4
+
+# case: alt-priority-05
+pattern (x|xy)(y|z)
+# match is 'xy' not 'xyz' -- unanchored leftmost-first, not longest overall
+m "xyz" 0 2
+gp 1 0 1
+gp 2 1 2
+
+# case: alt-priority-06
+pattern ^(a|ab)$
+# anchors force backtracking through the alternation to the second branch
+m "ab" 0 2
+gp 1 0 2
+# anchors satisfied by the first branch directly
+m "a" 0 1
+gp 1 0 1
+
+# case: alt-priority-07
+pattern (a+|a)
+# first alternative is greedy and consumes everything
+m "aaa" 0 3
+gp 1 0 3
+
+# case: alt-priority-08
+pattern (a|a+)
+# first alternative just needs ANY match; it does not compete with the second on length
+m "aaa" 0 1
+gp 1 0 1
+
+# case: alt-priority-09
+pattern (ab|a)(b|)
+# group2's empty alternative fires because 'b' already consumed by group1
+m "ab" 0 2
+gp 1 0 2
+gp 2 2 2
+
+# case: alt-priority-10
+pattern ((a|b)|c)
+# outer group mirrors whichever inner alternative matched
+m "b" 0 1
+gp 1 0 1
+gp 2 0 1
+# inner alternation fails entirely; group2 never participates
+m "c" 0 1
+gp 1 0 1
+gp 2 -1 -1
+
+# case: alt-backtrack-11
+pattern (a)?a
+# group1 greedily matches 'a' then backtracks to empty so the trailing literal 'a' can match
+m "a" 0 1
+gp 1 -1 -1
+
+# case: alt-backtrack-12
+pattern (a*)a
+# group1 greedily grabs everything, backtracks one char for the trailing literal
+m "aaa" 0 3
+gp 1 0 2
+
+# case: iter-13
+pattern (a)+
+# capturing group under + reports only the LAST iteration's span
+m "aaa" 0 3
+gp 1 2 3
+
+# case: iter-14
+pattern (ab)+
+# last iteration of a two-char body
+m "ababab" 0 6
+gp 1 4 6
+
+# case: iter-15
+pattern (a|b)+
+# alternation body, one char consumed per iteration
+m "aabba" 0 5
+gp 1 4 5
+
+# case: iter-16-empty-final
+pattern (a?)*
+# star over an optional body -- does a trailing empty iteration overwrite the group?
+m "aaa" 0 3
+gp 1 3 3
+
+# case: iter-17-empty-final
+pattern (a*)*
+# star-of-star, same empty-final-iteration question with a starred body
+m "aaa" 0 3
+gp 1 3 3
+
+# case: iter-18-empty-body
+pattern (a*)+
+# plus over a nullable body on an empty subject
+m "" 0 0
+gp 1 0 0
+
+# case: iter-19-bounded
+pattern (a){0,3}
+# bounded repeat, fewer than the max available
+m "aa" 0 2
+gp 1 1 2
+
+# case: iter-20-bounded
+pattern (a){2,4}
+# greedy bounded repeat takes its max (4), one 'a' left over
+m "aaaaa" 0 4
+gp 1 3 4
+
+# case: iter-21-bounded-lazy
+pattern (a){2,4}?
+# lazy bounded repeat takes only its minimum (2)
+m "aaaaa" 0 2
+gp 1 1 2
+
+# case: iter-22-bounded
+pattern (ab){1,3}
+# bounded repeat over a two-char body, full three iterations
+m "ababab" 0 6
+gp 1 4 6
+
+# case: iter-23-alt-body
+pattern (a|bb)+
+# mixed-length alternatives inside a repeated group
+m "abba" 0 4
+gp 1 3 4
+
+# case: iter-24-nested
+pattern ((a)+)+
+# nested repetition: outer captures the whole run, inner captures only its last char
+m "aaa" 0 3
+gp 1 0 3
+gp 2 2 3
+
+# case: iter-25-split
+pattern (a+)(a+)
+# greedy group1 gives back exactly one char so group2 (a+) can match at all
+m "aaaa" 0 4
+gp 1 0 3
+gp 2 3 4
+
+# case: iter-26-exact
+pattern (a){3}
+# exact-count repeat, one 'a' left unconsumed
+m "aaaa" 0 3
+gp 1 2 3
+
+# case: iter-27-zero-count
+pattern (a){0}
+# a repeat count of exactly zero: the group is structurally never entered
+m "aaa" 0 0
+gp 1 -1 -1
+
+# case: iter-28-lazy-vs-greedy-a
+pattern (a+)
+# greedy control case
+m "aaa" 0 3
+gp 1 0 3
+
+# case: iter-29-lazy-vs-greedy-b
+pattern (a+?)
+# lazy: minimal match suffices since nothing forces more
+m "aaa" 0 1
+gp 1 0 1
+
+# case: iter-30-lazy-forced
+pattern (a+?)b
+# lazy group forced to extend by what follows it
+m "aaab" 0 4
+gp 1 0 3
+
+# case: iter-31-anchor-alt
+pattern (^a|b)+
+# ^ inside an alternative only ever fires at the true start; loop stops when neither branch matches
+m "ba" 0 1
+gp 1 0 1
