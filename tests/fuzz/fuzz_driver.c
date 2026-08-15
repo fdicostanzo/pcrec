@@ -7,6 +7,26 @@
  * harness and may change shape independently (its subject comes from argv
  * with escape-decoding, not from a raw file).
  *
+ * fuzz.py compiles this file ONCE, ahead of time, against a throwaway
+ * pattern's gen.h, then links the resulting driver.o against EVERY
+ * subsequent pattern's gen.o without ever recompiling driver.c again (the
+ * dominant per-pattern cost is then just `pcrec` + one `gcc -c` of the
+ * small generated matcher). That optimization is only sound if this file's
+ * own compiled code makes NO assumption that varies per pattern. It used
+ * to declare `ptrdiff_t caps[RX_NCAPS][2]` as a stack array — RX_NCAPS is a
+ * preprocessor macro, baked in at THIS file's compile time from whichever
+ * pattern the template happened to be built against, not the pattern the
+ * resulting caps array is actually used with. Before [M4.5] every pattern's
+ * RX_NCAPS was 1 (DFA-only, whole-match slot only) so the mismatch was
+ * invisible; since RX_NCAPS is per-pattern (ngroups+1 on VM artifacts), any
+ * group-bearing pattern that matches writes past a 1-slot stack array and
+ * smashes this driver's own stack. The fix: never read RX_NCAPS at all.
+ * `rx_info` (declared in gen.h, defined in each pattern's own gen.c) is
+ * this ABI's reflection struct, and `rx_info.ncaps` is the SAME fact
+ * available at RUNTIME, correct for whichever pattern's gen.o this driver.o
+ * is linked against. The caps array is heap-allocated to that size, so this
+ * file compiles once and is correct for every pattern.
+ *
  * Usage: t <subject-file> [startpos]
  *   <subject-file>  path to a file whose raw bytes are the subject (no
  *                   escape decoding — the fuzzer writes exact bytes,
@@ -17,7 +37,13 @@
  * for its match/nomatch cases (a compiled matcher never emits "cerr"):
  *   "match <start> <end>"
  *   "nomatch"
- * and exits 0. Exits 2 on a usage or file I/O error.
+ * or, on a VM artifact whose step or frame budget ran out before a verdict
+ * (RX_ERR_STEPS / RX_ERR_FRAMES — never produced by a DFA-only artifact):
+ *   "steps"
+ *   "frames"
+ * and exits 0. Exits 2 on a usage or file I/O error, or if rx_info.ncaps is
+ * somehow 0 (would make a 0-byte allocation for a slot 0 the ABI always
+ * requires — a harness bug, not a fuzzer finding).
  */
 
 #include <stdio.h>
@@ -83,14 +109,36 @@ int main(int argc, char **argv)
     size_t len = 0;
     unsigned char *buf = read_file(argv[1], &len);
 
-    ptrdiff_t caps[RX_NCAPS][2];
-    int found = rx_search(buf, len, startpos, caps);
-    if (found) {
-        printf("match %td %td\n", caps[0][0], caps[0][1]);
-    } else {
-        printf("nomatch\n");
+    if (rx_info.ncaps < 1) {
+        fprintf(stderr, "fuzz_driver: rx_info.ncaps=%d (expected >= 1)\n",
+                rx_info.ncaps);
+        free(buf);
+        return 2;
+    }
+    ptrdiff_t (*caps)[2] = calloc((size_t)rx_info.ncaps, sizeof *caps);
+    if (!caps) {
+        fprintf(stderr, "fuzz_driver: out of memory (ncaps=%d)\n", rx_info.ncaps);
+        free(buf);
+        return 2;
     }
 
+    int found = rx_search(buf, len, startpos, caps);
+    if (found == 1) {
+        printf("match %td %td\n", caps[0][0], caps[0][1]);
+    } else if (found == 0) {
+        printf("nomatch\n");
+    } else if (found == RX_ERR_STEPS) {
+        printf("steps\n");
+    } else if (found == RX_ERR_FRAMES) {
+        printf("frames\n");
+    } else {
+        fprintf(stderr, "fuzz_driver: rx_search returned unrecognized %d\n", found);
+        free(caps);
+        free(buf);
+        return 2;
+    }
+
+    free(caps);
     free(buf);
     return 0;
 }
