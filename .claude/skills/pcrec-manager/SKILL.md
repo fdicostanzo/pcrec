@@ -95,6 +95,30 @@ Rules of engagement (from CLAUDE.md conventions, D5/D6/D27):
   to messages while the run executes. Before finishing an "idle" lane's
   landing, check the worktree for fresh mtimes AND send a status message
   first; only take over on silence or an explicit handback.
+- **STALL WATCHDOG (Frank, 2026-08-15, twenty-first session): whenever
+  subagents or async background processes are in flight, set up a
+  10-minute cron** (CronCreate) that checks for stalls — lanes or
+  background scripts that are dead, stalled, or running longer than
+  their work justifies. LIVENESS SIGNALS in order of trust: the lane's
+  WIP-commit age (`git log -1 --format=%cr` in its worktree) +
+  uncommitted-delta mtimes, background-log tails, process table.
+  ListAgents does NOT show spawned lanes even when alive — never
+  declare death from it. (`find -newermt` needs ISO timestamps on this
+  box; relative strings silently fail.) Stale >20 min with no process →
+  SendMessage ping; stale AND silent one tick later → dead, take over
+  the landing (the twenty-first session lost a lane for eleven hours
+  by "waiting" with no watchdog). Tear the cron down when no lanes or
+  background work remain. Brief every lane to COMMIT INCREMENTALLY
+  (WIP commits) — the watchdog's best signal, and a death then strands
+  minutes, not hours.
+- **`timeout` on every command of uncertain run length** — yours AND
+  your subagents' (put it in every brief). Anything you cannot bound
+  from experience gets a timeout sized generously from what the work
+  should take; a timeout firing is a FINDING to investigate, never a
+  reason to simply re-run longer. (Generated-code compiles have their
+  own ruled bound — decisions.md D45 — enforced in the harness; this
+  bullet is the general rule for everything else: builds, sweeps,
+  probes, oracle runs.)
 
 ## 4. Review their work
 
