@@ -180,19 +180,24 @@ nullable arm achieves exactly the same thing by being written FIRST in the
 alternation. So does an empty arm, and so does a concatenation of two nullable
 alternations — none of which contains a lazy quantifier at all.
 
-Three witnesses, oracle-confirmed by python3 `re` and libpcre2 with zero
+Four witnesses, oracle-confirmed by python3 `re` and libpcre2 with zero
 disagreements between them, all fixed by A2:
 
-| pattern | subject | shipped | A2 and both oracles |
-|---|---|---|---|
-| `(?:(?:b*\|a)?)*` | `ba` | [0,2) | [0,1) |
-| `(?:(?:(?:b\|)\|a)?)*` | `ba` | [0,2) | [0,1) |
-| `(?:(?:b?\|a)(?:b?\|d))*` | `ba` | [0,2) | [0,1) |
+| pattern | subject | shipped | A2 and both oracles | what it refutes |
+|---|---|---|---|---|
+| `(?:(?:b*\|a)?)*` | `ba` | [0,2) | [0,1) | the "greedy inner" control, arms swapped |
+| `(?:(?:b?\|a)?)*` | `ba` | [0,2) | [0,1) | its sibling, same way |
+| `(?:(?:(?:b\|)\|a)?)*` | `ba` | [0,2) | [0,1) | "an empty alternative instead of a lazy quantifier" |
+| `(?:(?:b?\|a)(?:b?\|d))*` | `ba` | [0,2) | [0,1) | "concatenation, not alternation" |
 
-The first is `docs/dev/known_issues.md` K18's own control `(?:(?:a|b*)?)*`
-with its two arms SWAPPED, and the third refutes that entry's
-"concatenation, not alternation" control. Both of those entries are corrected
-there in the same change as this note.
+**MEASURED**, re-run by this lane rather than copied: over those four plus the
+five controls the K18 entry lists as non-diverging plus the original witness,
+15 subjects each, **the shipped compiler disagrees with the oracle on 19 cells
+across 5 patterns and A2 on 0**. The five controls, with their arms in the
+order the entry writes them, do not diverge — which is the point: the entry's
+parenthesised CAUSES are wrong even though its rows are right. Every one of
+those entries is corrected in `docs/dev/known_issues.md` in the same change as
+this note.
 
 **Why this matters even though A2 fixes all three.** The dense shape sweep
 does generate the swapped order (`gen_shapes.py` emits `"%s|%s"` both ways),
@@ -568,8 +573,6 @@ All re-taken on the fixed prototypes, min-of-N, 0.9 ms floor:
 |---|---|---|---|---|
 | `(1{0,30}?[^]abc][^abc]){28,30}0+\|a` (to refusal) | 0.621 s | 13.530 s | **0.820 s** | 0.817 s |
 | same, `{8,8}` (compiles) | 0.159 s | 1.428 s | **0.192 s** | — |
-| corpus aggregate, 622 patterns | 0.575 s | — | **0.573 s** | — |
-| corpus aggregate, net of the 0.9 ms floor | 0.070 s | — | **0.069 s** | — |
 | nest100 / nest200 / nest250 | 0.003 / 0.002 / 0.004 s | — | **0.045 / 0.222 / 0.350 s** | 1.59 / 20.4 / 37.0 s |
 
 **The fast path is still needed, and the stack fix does not substitute for
@@ -580,14 +583,24 @@ while the fast path is the whole of the 13.5 s → 0.82 s. Symmetrically, on the
 deep-nesting family the fast path does nothing and the stack fix is the whole
 of the 37 s → 0.35 s. Both are required; neither is the other's substitute.
 
-**The corpus aggregate, measured so the answer is not the process spawner.**
-The old figure (0.671 s against 0.662 s over 555 patterns) could not
-distinguish the two arms, because 622 process spawns at ~0.9 ms each are
-0.57 s of the 0.575 s measured. Subtracting the floor — measured per binary,
-per run, against the pattern `a` — the whole corpus costs **0.070 s under the
-shipped compiler and 0.069 s under A2**. That is the honest form of "the memo
-is free on real patterns": not a ratio near 1 because both numbers are
-dominated by `fork`, but 70 ms of closure work against 69 ms.
+**The corpus aggregate is WITHDRAWN as a wall-clock figure, because it cannot
+be measured that way on this box.** The old row read "corpus aggregate compile
+time: 0.671 s shipped, 0.662 s A" and invited the reading that A costs 1.4%
+less. It cannot support that reading in either direction: 622 process spawns
+at ~0.9 ms are essentially the whole of the ~0.6 s measured, and the ~0.1 ms
+of per-pattern closure work sits under the spawn's own variance. Subtracting a
+measured floor does not rescue it — three repeated trials of exactly that
+measurement, each against a matched null corpus of 555 compiles of `a`, gave
+nets of 0.089 / 0.121 / **−0.053** s for the shipped compiler and 0.138 /
+**−0.266** / 0.341 s for A2. A quantity whose measurement changes sign
+between trials is not a measurement.
+
+**The counters are the instrument for this question**, and they already
+answer it exactly, with a denominator and no clock: **x1.004 expansions,
+x0.996 visits** over the same 554 patterns (the inflation table above). This
+is also why §5 item 6's cost gates name specific expensive patterns rather
+than a corpus total — a gate on a floor-dominated aggregate would pass
+whatever the compiler did.
 
 The fast path removes the constant-factor regression and leaves the
 deep-nesting cost untouched, which is correct — that cost is real work, not
@@ -823,18 +836,26 @@ termination proof is exactly what those two guard.
 
 ## 4. Blast radius, predicted
 
-**[R23] Every number in this section survives the prototype fix, and was
-independently reproduced.** The fix changes cost, not answers: the fixed and
-unfixed prototypes emit byte-identical C on the corpus (622), on two
-independent generated corpora (1,001 and 523), on a 38-pattern nesting ladder
-spanning depths 1–250, and on the bounded-repeat family of §2a — 0 differ
-everywhere, against a non-vacuity control of 405 of 1,001 differing
-base-vs-A2. So the blast-radius and direction results below were measured on
-a prototype that emits exactly what the fixed one emits. Separately, the
-panel's measurement critic rebuilt every prototype from scratch and
-re-derived §4.1, §4.2 and §4.3 exactly, digit for digit, including the 8
-differing corpus patterns being the 8 named here and the 1704/1704 suite run
-against A2 with the real harness.
+**[R23] Every number in this section survives the prototype fix, and it was
+checked rather than argued.** The fix changes cost, not answers. Emitted-C
+identity, fixed prototype against unfixed:
+
+| corpus | patterns | differ |
+|---|---|---|
+| the dense shape space (`gen_shapes.py`) | 18,858 | **0** |
+| the existing corpus (`harvest_patterns.py`) | 622 | **0** |
+| two independent R23 generators | 1,001 + 523 | **0** |
+| nesting ladder, depths 1–250, greedy and lazy | 38 | **0** |
+| the bounded-repeat family of §2a | 3 | **0** |
+| *non-vacuity control: base vs A2, same harness* | 1,001 | *405* |
+
+And every blast-radius figure below re-derives on the FIXED prototype, exactly:
+**249** of 18,858 shape-space patterns differ base-vs-A (§4.3), **83** differ
+A-vs-B (§2b), **8** of 622 corpus patterns differ base-vs-A and they are
+precisely the 8 named in §4.2, and A and A2 remain byte-identical on all
+18,858. Separately, the panel's measurement critic rebuilt every prototype
+from scratch and re-derived §4.1, §4.2 and §4.3 digit for digit, including the
+1704/1704 suite run against A2 with the real harness.
 
 ### 4.1 The 165 acceptance cases
 
