@@ -1265,7 +1265,7 @@ discharged, and the third ask is a scheduling detail the rewrite lane owns.
    D=64 on the strength of a MEASURED 39.25 s compile at the parser's own
    nesting cap. **That 39 s was a prototype bug, not a property of the
    design.** With the open-loop stack's entries restored per frame — a change
-   that only ADDS per-frame work — the same worst case is 0.41 s (§2a), and
+   that only ADDS per-frame work — the same worst case is 0.35 s (§2a), and
    the four randomly-generated patterns that did not finish under the unfixed
    prototype compile in 0.01–2.9 s (three of them; the fourth is cleanly
    refused by the existing DFA state cap, under the shipped compiler too).
