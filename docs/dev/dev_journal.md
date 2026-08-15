@@ -7895,3 +7895,13 @@ the K17/K18 fuzz alphabet — hand-curated this time; revisit
 mk_d27_cell.sh before the next D27 lane) both recorded in R22.
 Corpus baseline: 1679. [M4.5d] COMPLETED (merge dc5a29a); cell and
 worktree removed. In flight: [TT-2] (m45a lane). Next: [M4.5e] close.
+
+## 2026-08-15 (EDT) — timezone note
+
+The box moved from UTC to America/New_York (EST/EDT) today at ~12:25 EDT
+/ 16:25 UTC. EVERY date and time in this journal, wake.md, reviews, and
+commit-message prose UP TO THIS POINT was UTC — in particular, the
+"2026-08-15" early-morning entries above (the D45 incident at ~02:40,
+the M4.5 landings through ~05:00) happened the evening of 2026-08-14
+EDT. From this entry on, dates and times are LOCAL (EDT/EST). Git
+commit timestamps carry their own offsets and need no reconciliation.
