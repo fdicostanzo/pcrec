@@ -50,7 +50,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
 test: all
-	bash tests/harness/run.sh
+	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/harness/run.sh
 	bash tests/cli/run_cli_tests.sh
 	bash tests/reject/run_reject_tests.sh
 	bash tests/registry/run_registry_tests.sh
@@ -75,7 +75,7 @@ test: all
 # as a black box the way its own runner already does) so a stale binary never
 # reads as a pass.
 test-corpus: all
-	bash tests/harness/run.sh
+	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/harness/run.sh
 
 test-cli: all
 	bash tests/cli/run_cli_tests.sh
