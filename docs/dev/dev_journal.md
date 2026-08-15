@@ -7932,3 +7932,39 @@ from midday today.
 M4.5 substeps a–d are now ALL COMPLETE. Remaining before [M4.6]:
 [M4.5e] close (D46 rung stamp + assertions, CLAUDE.md sweeps, full
 battery) — then the K18 design-first gate.
+
+## 2026-08-15 (EDT), afternoon — [M4.5] MILESTONE COMPLETED; close battery seven-for-seven
+
+[M4.5e] (lane m45e-close): the D46 rung stamp landed CORRECTED mid-lane
+after Frank's per-section question — the rung is selected PER QUANTIFIER
+BODY (vm_cursor_fits per A_REP), so the stamp is a BITMASK
+(<PREFIX>_VM_RUNGS: CURSOR 0x1 / FRAMES_BOUNDED 0x2 / FRAMES_UNBOUNDED
+0x4, the lane's own bounded/unbounded split) plus a per-quantifier RUNGS
+section in --emit-ir, both off the same vm_rung_mark() data at the
+emitter's real decision points; a scalar would misreport mixed-rung
+patterns, proven by the new three-rung case a*(a|b){0,3}c((x)|y)+z
+(mask 0x7). HONESTY FINDING: the "33/70 rung-boundary tests" D46 and
+the brief described as existing NEVER EXISTED — m45b's boundary check
+was a one-off verification, not a landed test; the lane measured the
+real boundary (VM_MAX_BODY_CAPS=64) and built them fresh. Coverage
+assessment filled three real gaps (+25 cases: bracket classes in
+groups, 4-/5-way shared-prefix captured alternations, a K19-cap-boundary
+choice-bearing body); caseless/anchors/startpos found adequate and left
+alone. CLAUDE.md sweep caught one unrelated drift (ir-listing count
+62→78).
+
+CLOSE BATTERY at merge 7e3ff93: test, strict, ubsan, asan, lint, bench,
+mech — ALL GREEN (mech 44 rows/0 undetected/0 anomalies; bench 0 budget
+failures). Corpus baseline 1704. [M4.5] archived to plan_completed.md.
+
+Also landed after Frank's "only 1 process pegged" observation: the
+ubsan/asan ENV blocks and the mech target now pass PROCS (default
+nproc) + TMPDIR=/var/tmp through to the suites — the battery's long
+legs go parallel; a timed parallel make ubsan validates the change and
+MEASURES the D45 sanitizer-axis timeout tail under 12-way load (D45's
+revisit clause requires the measurement before trusting the 60s budget
+at parallel load).
+
+NEXT: [M4.6] gate — the K18 design-first note (memo-cost measurement,
+panel-eyed) — and [ENG-BREP] design alongside. Open Frank rulings:
+struct rx_info spelling; K19 residual; callout Q5/Q6.
