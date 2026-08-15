@@ -528,7 +528,9 @@ constant.
 **On the fixed prototype this family is LINEAR in k, at open-loop depth 1.**
 On the unfixed prototype it was 231x over k=2..5 and did not finish beyond
 that, with contexts 450 → 2,834 → 11,770 → 40,422 and **max depth pinned at
-11**.
+11**. (The k=3 and k=4 counters were re-measured here and reproduce S14's
+bit for bit — 2,834 and 11,770 contexts, 274,312 and 1,056,992 redirects,
+83,904 and 272,576 nonstacktop; k=2 and k=5 are S14's own.)
 
 That last number deserves care, because the panel drew a conclusion from it
 that this re-measurement narrows. S14 read depth-11-at-visible-nesting-3 as
@@ -1213,7 +1215,9 @@ discharged, and the third ask is a scheduling detail the rewrite lane owns.
    design.** With the open-loop stack's entries restored per frame — a change
    that only ADDS per-frame work — the same worst case is 0.41 s (§2a), and
    the four randomly-generated patterns that did not finish under the unfixed
-   prototype compile in 0.11–2.9 s. There is nothing left for a threshold to
+   prototype compile in 0.01–2.9 s (three of them; the fourth is cleanly
+   refused by the existing DFA state cap, under the shipped compiler too).
+   There is nothing left for a threshold to
    mitigate, so asking for one would be asking Frank to authorise a
    deliberately inexact compiler to work around a defect this note has since
    fixed. The recommendation is **NO THRESHOLD**.
