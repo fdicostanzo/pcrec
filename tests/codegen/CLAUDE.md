@@ -83,7 +83,9 @@ or it has no regression net at all.
   hardcoded `RX_` in the listing's own text — and there was one, so a
   `-p myrx` listing named a `RX_NCAPS` macro the artifact does not contain.
   When a check's fixture is the default of the thing it checks, it is blind to
-  exactly the class of bug that only shows up off the default. 62 checks;
+  exactly the class of bug that only shows up off the default. 78 checks
+  ([M4.5e]'s figure — read the current count from a run rather than this
+  line, per this file's own standing note below on hand-copied counts);
   sabotages S41 and S42.
 
   Runs under `make test-vm`, not `make test-codegen`, for a measured reason —
