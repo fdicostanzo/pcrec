@@ -254,9 +254,20 @@ stated terms.
   (here: group1 = [end-2,end-1), group2 = same iff subject[end-2]
   == 'a'). The counter-K loop is the fallback ONLY for genuinely
   nondeterministic bodies where per-iteration backtracking is real.
-  The design note therefore covers: which bounded-repeat bodies
-  each ladder rung captures (with the erasure measurement above as
-  the motivating cell), THEN the K-axis for the residue. Supersedes
+  SECOND AMENDMENT same day (Frank: "going back through an a and b
+  string isn't going to find c"): DISJOINT-FOLLOW POSSESSIFICATION is
+  the analysis that PROVES backtracking dead for this class — body
+  consumes only [ab], follow requires c, so giveback re-examines a
+  byte that cannot be c (and a|b's branches are per-byte disjoint, so
+  intra-body backtracking is dead too): the quantifier is
+  possessive-equivalent, zero frames. This is already designed
+  (engine_m4.md §6.4 "disjoint-follow possessification, built M4.6";
+  PCRE2 precedent: pcre2_auto_possess.c) and its delivery seam is
+  §5.2's verdict-discharging rewrite socket (the atomic-cut row). The
+  design note's question ORDER is therefore: (1) possessify — which
+  bounded repeats provably need NO backtracking machinery; (2) which
+  residual bodies each ladder rung captures (erasure measurement
+  above as the motivating cell); (3) the K-axis for what remains. Supersedes
   the "cap emitted size" half of the D45 follow-up as the ENDGAME
   (the cap stays as the backstop whose diagnostic can honestly
   point here).
