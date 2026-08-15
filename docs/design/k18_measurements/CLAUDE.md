@@ -65,4 +65,10 @@ that moves them fails loudly instead of silently patching the wrong thing.
   sub-5 ms patterns are noise, and only aggregates and expensive patterns mean
   anything.
 
+- `r23_semantics/` — the R23 panel's semantics-critic toolkit, archived as
+  evidence (see its README): the S16 stack-fix prototype, shadow/dup
+  counter prototypes, the §1.4 half-prototypes, independent generators and
+  sweep harnesses behind docs/dev/reviews/2026-08-15-r23-k18-memo.md.
+  Static, like `outputs/`.
+
 Maintenance: update this file when files are added/removed or change roles.

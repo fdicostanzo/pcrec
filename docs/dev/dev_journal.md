@@ -8022,3 +8022,57 @@ did in practice what it was adopted to do. The only losses were
 in-flight critic context (relaunchable) and the session's own
 bookkeeping (reconstructable from artifacts in ~30 minutes). Panels are
 cheap to lose; uncommitted lanes are not.
+
+## 2026-08-15 (EDT), evening — R23 PANEL ON THE K18 NOTE: ruling 1 WITHDRAWN; the cost residual was a prototype bug; A2 the design AFFIRMED
+
+Three critics (semantics/opus, measure/sonnet, valplan/sonnet), relaunched
+after the crash, all COMPLETE. Compiled review:
+docs/dev/reviews/2026-08-15-r23-k18-memo.md (+ verbatim appendix; the
+semantics toolkit archived at docs/design/k18_measurements/r23_semantics/).
+Watchdog cron ran the whole panel (10-min ticks, findings-file mtimes as
+the liveness signal); one path-convention nudge to the measure lane was
+the only intervention. Frank live-spotted A2-prototype compiles running
+minutes mid-panel — which turned out to be S14/S16 forming.
+
+**The decisive finding (S16, BLOCKER):** the prototype's clo_visit
+restores the open-loop stack's DEPTH per frame but not its ENTRIES.
+That one bug was (a) the whole cost residual — 44 s at nest250 becomes
+0.419 s with a two-line fix; the Θ(d⁴) "law" dissolves; all four
+random >60s patterns drop to 0.11–2.9 s — and (b) the refutation of
+`nonstacktop == 0` (S10: fires 358/4,369; the note's own corpora cannot
+reach the failure — its generator tops out at two loop levels), and
+(c) latent K18-class missed redirects on the reverse machine (S3).
+**§6 ruling 1 (the D=64 inexactness threshold) is WITHDRAWN, not put to
+Frank** — it asked him to authorise a deliberately inexact compiler to
+mitigate a bug (V2 had independently flagged it as unciting D22, V3 as
+unciting D46). Ruling 2 discharged by measurement (S5: half-2 reproduces
+the shipped bug exactly; half-1 does not terminate).
+
+Also: S14 — cost tracks CONTEXT COUNT, not nesting depth (bounded
+repeats replicate; depth-11 pattern at 0.1% random incidence; D=64
+would never fire); S8 — fourth sub-case, PREFERRED-ARM not laziness:
+`(?:(?:b*|a)?)*` is a live shipped miscompile and two of the K18 entry's
+controls are wrong; the 165-case corpus is lazy-only; S12 — §3's
+"subsumes K17" downgraded; M-B1 — 18/70 adversarial patterns (the two
+K18-named families) syntactically invalid, silently excluded. In A2's
+favour: zero cells A2-wrong-shipped-right across ~330,000 independent
+span cells; five attacks survived and recorded; every population count
+in the note reproduced exactly (no "33/70" recurrence); 998,535
+oracle-vs-oracle cells, 0 disagreements.
+
+**NEXT: a note-REVISION lane** (opus): stack fix + full re-measure, §1/§3
+re-characterisation, §4.4 back-annotation, generator fix, §5 additions
+(trie gate, strict+PROCS=1, ratchet move, TS-3 scoping, compile budgets,
+run.sh:256/D45 fold — the full AMEND list is in the review). Then the
+rewrite lane against amended §5. **PROBE owed:** S15's capture-garbage
+witnesses (3 short patterns print uninitialised spans under base AND A2
+— critic-harness artifact vs real bug vs K19-adjacent new K-entry).
+mk_d27_cell.sh allowlist still owed (R22). No Frank rulings remain open
+from the note.
+
+**Lesson:** the panel refused a STRUCTURAL mark and read the prototype's
+code against its prose — that is where the blocker was. Byte-identical
+output is blind to cost bugs: the note measured a defect for a law while
+its correctness oracle stayed green. And the check-design memory held a
+third time: a MEASURED 0 on a corpus that cannot reach the failure is
+not a measured 0.

@@ -287,6 +287,34 @@ Two rules earned the hard way and enforced here:
   eleven STRUCTURAL citations held; what broke was what was marked
   BELIEVED.
 
+- **2026-08-15-r22-m45d-capture-author.md** — R22, the [M4.5d] D27-blinded
+  capture author's cell delivery: 85 m/ms cases + 145 group lines,
+  python-derived and twice-verified, 230/230 green against the VM after a
+  whole-line comment normalisation — the strongest independent
+  capture-correctness evidence in the project. Two contract-text gaps
+  (cross-iteration retention; empty-final-iteration overwrite) arbitrated
+  three-way UNANIMOUS and recorded as match_api_m4.md §2.2. Also records
+  the manager's cell-hygiene slip and the stale mk_d27_cell.sh allowlist
+  (still owed). Appendix: 2026-08-15-r22-appendix-author-notes.md (the
+  author's own notes, verbatim).
+- **2026-08-15-r23-k18-memo.md** — R23, panel on the K18 memo design note.
+  The decisive finding (S16): the prototype's `clo_visit` restores the
+  open-loop stack's depth but not its entries, and that single bug WAS the
+  note's entire cost residual — 44 s at the parser's nesting cap becomes
+  0.419 s with a two-line fix — so §6 ruling 1 (the D=64 inexactness
+  threshold) was WITHDRAWN rather than put to Frank. Also: `nonstacktop==0`
+  refuted on the note's own prototype (358/4,369; the corpus could not
+  reach the failure), the cost law posed on the wrong variable (context
+  count, not depth — bounded repeats replicate), a fourth K18 sub-case
+  (preferred-arm, not laziness; two of the K18 entry's controls are live
+  miscompiles with arms swapped), and an invalid-pattern hole in the
+  adversarial generator. A2 itself survived every attack: zero cells
+  A2-wrong-shipped-right across ~330,000 independent span cells; every
+  population count reproduced exactly. Appendix:
+  2026-08-15-r23-appendix-critic-findings.md (three lanes' findings,
+  verbatim); the semantics critic's toolkit archived at
+  docs/design/k18_measurements/r23_semantics/.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
