@@ -2154,7 +2154,22 @@ this design is betting on.
   node count (post-rewrite) is exactly where this distinction bites; the
   claim about label-count linearity is unaffected, only the independent
   variable it is linear IN. And never approaches R1 A-3's gcc-compile-time
-  cliff. *Refuted by:* ASK-7.
+  cliff. *Refuted by:* ASK-7. **REFUTED 2026-08-15 (the D45 incident —
+  MEASURED, tables in docs/testing.md's battery section):** emitted SIZE
+  is linear in expanded nodes as corrected, but COMPILE TIME is not
+  linear in size: gcc -O2 is superlinear in the FAN-OUT of the single
+  `goto *` (the address-taken-label count). At matched file sizes, 2004
+  labels with ZERO address-taken compile in 2.70s where 2003 labels
+  with 400 address-taken take 11.21s; ((a)|b){0,4000}c (113,545 lines,
+  8000 address-taken) ground cc1 for 100+ minutes, and plain -O2 is
+  WORSE than UBSan -O1 — never sanitizer-specific. "Never approaches
+  R1 A-3's cliff" is therefore FALSE for replication-heavy
+  capture-bearing bounded repeats; the guards are D45's compile budget
+  (harness) + PCREC_MAX_VM_REPEAT_COPIES=64 (compiler, K19), and the
+  endgame is [ENG-BREP]'s possessify → rung-select → counter-K ladder.
+  This also ANSWERS ASK-7: the curve is in docs/testing.md, and the
+  prediction's error was assuming label COUNT was the driver — the
+  driver is indirect-jump fan-out.
 - **P-7 (§5.4).** After M4, emitted C for every capture-free corpus pattern is
   byte-identical to pre-M4 output modulo the announced break and the stamp
   lines. *Refuted by:* the diff. This one should be a GATE, not a prediction.
