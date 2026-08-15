@@ -989,7 +989,20 @@ void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
 }
 
 /* The standalone main(), shared verbatim: it drives `<prefix>_search` through
- * the caps array and prints caps[0], which is engine-independent. */
+ * the caps array and prints caps[0], which is engine-independent.
+ *
+ * [K21 fix] `<prefix>_search`'s return is THREE-VALUED (match_api_m4.md
+ * §4.5): 1 match, 0 no-match, or a negative give-up sentinel
+ * (%s_ERR_STEPS/%s_ERR_FRAMES) when a VM artifact exhausts its step budget
+ * or backtrack-frame capacity — DFA artifacts never return the sentinels.
+ * The prior version tested the result as a boolean, so C truthiness took
+ * the match branch on a negative return and printed `caps`, which the
+ * give-up path never wrote — uninitialized-stack output reported as a
+ * confident match (K21, docs/dev/known_issues.md). Branch on the actual
+ * value instead, mirroring tests/fuzz/fuzz_driver.c's three-way
+ * discrimination, and give the give-up case its own exit code (3) so it
+ * cannot be mistaken for either match (0) or no-match (1) — or for this
+ * main()'s own usage error, which already claims 2. */
 void pcrec_emit_main(Ctx *cx, const GenNames *g)
 {
     sb_puts(&cx->job->csb, "\n");
@@ -997,13 +1010,22 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
         "int main(int argc, char **argv)\n{\n"
         "    ptrdiff_t caps[%s_NCAPS][2];\n"
         "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
-        "    if (%s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps)) {\n"
+        "    int rc = %s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps);\n"
+        "    if (rc == 1) {\n"
         "        printf(\"match %%td %%td\\n\", caps[0][0], caps[0][1]);\n"
         "        return 0;\n"
         "    }\n"
-        "    printf(\"nomatch\\n\");\n"
-        "    return 1;\n"
-        "}\n", g->upper, g->searchfn);
+        "    if (rc == 0) {\n"
+        "        printf(\"nomatch\\n\");\n"
+        "        return 1;\n"
+        "    }\n"
+        "    if (rc == %s_ERR_STEPS) {\n"
+        "        printf(\"steps\\n\");\n"
+        "        return 3;\n"
+        "    }\n"
+        "    printf(\"frames\\n\");\n"
+        "    return 3;\n"
+        "}\n", g->upper, g->searchfn, g->upper);
 }
 
 void pcrec_emit_dfa(Ctx *cx)

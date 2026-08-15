@@ -266,6 +266,19 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
    `gp` capture-expectation line (see "Capture-group expectations" below)
    picks its slot's pair out of this line by position: fields `1+2*slot` and
    `2+2*slot` after the leading `match` token.
+5. **[K21-class fix, 2026-08-15]**: `rx_search`'s return is actually
+   three-valued, not boolean — a VM artifact can also GIVE UP (a negative
+   RX_ERR_STEPS/RX_ERR_FRAMES sentinel when it exhausts its step budget or
+   backtrack-frame capacity; a DFA artifact never returns one). The driver
+   discriminates this explicitly rather than treating the return as a bool
+   (the shape that was wrong — see docs/dev/known_issues.md K21): on a
+   give-up it prints `steps\n` or `frames\n` and exits `3`, not `0`, and
+   `run.sh`'s per-case loop treats exit `3` as its own HARD harness-level
+   failure — alongside the existing timeout (`124`) and crash (`>=126`)
+   branches, never compared against a `match`/`nomatch` expectation. Dormant
+   over the base .rxt corpus today: nothing in the `flags`/`features`
+   directive vocabulary can select `--engine=vm` or a tiny `--step-budget`/
+   `--backtrack-frames`, so no case currently reaches this path.
 
 The driver includes `"gen.h"`, so it must be compiled with `-I<dir>`
 pointing at the directory containing the pattern's generated `gen.h`. It has

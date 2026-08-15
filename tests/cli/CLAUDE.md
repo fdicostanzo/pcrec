@@ -210,6 +210,27 @@ Part of `make test` since M2.
   case14's byte-identity proof already covers "bare behaves like std1"
   more strongly than any single field would.
 
+- **case 15 (K21 fix, 2026-08-15)** — the third leg of `--emit-main`'s
+  contract, which case2 could not reach: `<prefix>_search`'s return is
+  THREE-valued (match/no-match/give-up), and the pre-fix `main()` tested it
+  as a boolean, so C truthiness took the match branch on a negative
+  give-up sentinel and printed `caps` the give-up path never wrote —
+  uninitialized stack reported as a confident match
+  (docs/dev/known_issues.md K21). Driven the same way
+  `tests/vm/run_vm_tests.sh` §4/§4.5 drive the two bounds to their own
+  limit — a tiny `--step-budget`/`--backtrack-frames` on a shape that
+  burns it in a handful of resumptions — rather than the R23 fuzzer's
+  witness pattern, which is a much less reliable repro to pin a test to.
+  Two witnesses (`(a*)*b` under `--step-budget=50`, `((a)|b)*c` under
+  `--backtrack-frames=4`), each asserting the exact give-up stdout line
+  (`steps`/`frames`) and the distinct exit code (3, colliding with
+  neither match=0, nomatch=1, nor this same `main()`'s own usage-error=2),
+  PLUS the non-firing controls — the same two patterns under an ample
+  budget/capacity still print an honest `match START END` — so a give-up
+  path that fired unconditionally could not pass silently. Verified
+  failing against the pre-fix emitter first (4 of 10 assertions fail,
+  exactly the give-up-path ones).
+
 ## Conventions
 
 Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation

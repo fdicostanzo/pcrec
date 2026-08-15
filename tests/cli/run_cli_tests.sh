@@ -1567,6 +1567,89 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     fi
 }
 
+# ---------------------------------------------------------------------------
+# 15. K21 (docs/dev/known_issues.md) — --emit-main's three-way contract on a
+#     VM artifact that GIVES UP. `<prefix>_search` is three-valued (1 match,
+#     0 no-match, negative RX_ERR_STEPS/RX_ERR_FRAMES give-up on a VM
+#     artifact's budget exhaustion; DFA artifacts never return the
+#     sentinels). The pre-fix `pcrec_emit_main` tested the result as a bool,
+#     so C truthiness took the MATCH branch on a negative return and printed
+#     `caps`, which the give-up path never wrote — confidently-reported
+#     uninitialized stack bytes ("match 0 0"). Case2 already covers match/
+#     nomatch; this case is the third leg, driven the same way §4/§4.5 of
+#     tests/vm/run_vm_tests.sh drive the two bounds to their own limit (a
+#     tiny --step-budget / --backtrack-frames on a shape that burns it in a
+#     handful of resumptions), rather than the R23 fuzzer witness, which is
+#     harder to reproduce reliably.
+# ---------------------------------------------------------------------------
+case15() {
+    local d="$WORKDIR/case15"
+    mkdir -p "$d"
+
+    # (a) the step budget. `(a*)*b`'s O(n^2) resumption count burns a
+    # --step-budget=50 well inside 20 bytes of 'a' with no 'b' to end it.
+    local rc build_log build_rc
+    "$PCREC" --emit-main --engine=vm --step-budget=50 -o "$d/steps.c" \
+        -- '(a*)*b' >/dev/null 2>"$d/steps.err"
+    rc=$?
+    assert_eq "case15: steps witness compiles pcrec-side" "0" "$rc" \
+        "stderr: $(cat "$d/steps.err")"
+    gen_cc "${FUNCNAME[0]}-steps" "$CC" $CFLAGS -o "$d/steps" "$d/steps.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
+        pass "case15: steps witness's --emit-main output compiles"
+    else
+        fail "case15: steps witness's --emit-main output compiles" "$build_log"
+        return
+    fi
+    local out rc2
+    out="$("$d/steps" 'aaaaaaaaaaaaaaaaaaaa')"; rc2=$?
+    assert_eq "case15: step-budget exhaustion prints the honest give-up line, not a fabricated match" \
+        "steps" "$out"
+    assert_eq "case15: step-budget exhaustion exits 3 (distinct from match=0, nomatch=1, usage=2)" \
+        "3" "$rc2"
+
+    # (b) the frame capacity. `((a)|b)*c` overflows a --backtrack-frames=4
+    # array in a handful of choice points.
+    "$PCREC" --emit-main --engine=vm --backtrack-frames=4 -o "$d/frames.c" \
+        -- '((a)|b)*c' >/dev/null 2>"$d/frames.err"
+    rc=$?
+    assert_eq "case15: frames witness compiles pcrec-side" "0" "$rc" \
+        "stderr: $(cat "$d/frames.err")"
+    gen_cc "${FUNCNAME[0]}-frames" "$CC" $CFLAGS -o "$d/frames" "$d/frames.c"
+    build_rc=$?; build_log="$GEN_CC_LOG"
+    if [ "$build_rc" -eq 0 ]; then
+        pass "case15: frames witness's --emit-main output compiles"
+    else
+        fail "case15: frames witness's --emit-main output compiles" "$build_log"
+        return
+    fi
+    out="$("$d/frames" 'aaaaaaaaaaaaaaaaaaaa')"; rc2=$?
+    assert_eq "case15: frame-capacity exhaustion prints the honest give-up line, not a fabricated match" \
+        "frames" "$out"
+    assert_eq "case15: frame-capacity exhaustion exits 3 (distinct from match=0, nomatch=1, usage=2)" \
+        "3" "$rc2"
+
+    # (c) the non-firing controls: the SAME two patterns under an ample
+    # budget/capacity must still match honestly — a give-up path that always
+    # fired would trivially "pass" (a) and (b) above without proving anything.
+    "$PCREC" --emit-main --engine=vm --step-budget=1000000 -o "$d/steps_ok.c" \
+        -- '(a*)*b' >/dev/null 2>"$d/steps_ok.err"
+    gen_cc "${FUNCNAME[0]}-steps-ok" "$CC" $CFLAGS -o "$d/steps_ok" "$d/steps_ok.c" \
+        && out="$("$d/steps_ok" 'aaaaaaaaaaaaaaaaaaaab')" \
+        && assert_eq "case15 CONTRAST: an ample step budget on the same shape still matches honestly" \
+            "match 0 21" "$out" \
+        || fail "case15 CONTRAST: could not build/run the ample-step-budget control" "$GEN_CC_LOG"
+
+    "$PCREC" --emit-main --engine=vm --backtrack-frames=4096 -o "$d/frames_ok.c" \
+        -- '((a)|b)*c' >/dev/null 2>"$d/frames_ok.err"
+    gen_cc "${FUNCNAME[0]}-frames-ok" "$CC" $CFLAGS -o "$d/frames_ok" "$d/frames_ok.c" \
+        && out="$("$d/frames_ok" 'aaaaaaaaaaaaaaaaaaaac')" \
+        && assert_eq "case15 CONTRAST: an ample frame capacity on the same shape still matches honestly" \
+            "match 0 21" "$out" \
+        || fail "case15 CONTRAST: could not build/run the ample-frame-capacity control" "$GEN_CC_LOG"
+}
+
 case1
 case2
 case3
@@ -1581,6 +1664,7 @@ case11
 case12
 case13
 case14
+case15
 
 echo
 echo "== Summary =="

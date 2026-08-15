@@ -1404,7 +1404,7 @@ against the AST shape, so the next three functions to walk the same shape
 inherited nothing. Any new walk over `A_CAT`/`A_ALT` needs the same treatment,
 and `vm_nullable` now carries the comment that says so.
 
-## K21 — OPEN, found 2026-08-15 (R23 semantics critic S15; triaged by a follow-up read-only probe)
+## K21 — FIXED 2026-08-15 (found same day, R23 semantics critic S15; triaged by a follow-up read-only probe)
 
 **The `--emit-main` convenience `main()` treats `<prefix>_search`'s
 three-valued return as a boolean, so VM step/frame-budget exhaustion
@@ -1450,3 +1450,88 @@ rc==0 nomatch, rc<0 a distinct give-up line + distinct exit code),
 matching fuzz_driver.c; plus a test that forces a budget exhaustion under
 --emit-main and pins the three-way stdout. Scheduled: immediate small
 lane (2026-08-15, R23 close), not deferred.
+
+**Fix landed 2026-08-15.** `pcrec_emit_main` (src/gen/emit_dfa.c) now
+captures `rc = %s(...)` and branches on the VALUE: `rc == 1` prints
+`match START END` and exits 0 (unchanged), `rc == 0` prints `nomatch` and
+exits 1 (unchanged), and `rc < 0` prints a one-word honest give-up line —
+`steps` or `frames`, distinguishing which sentinel fired, via the
+`%s_ERR_STEPS`/`%s_ERR_FRAMES` macros the same emitted file already
+defines — and exits 3, a code that collides with neither match/nomatch
+(0/1) nor this same `main()`'s own usage-error exit (2). The wording
+mirrors `tests/fuzz/fuzz_driver.c`'s existing `"steps"`/`"frames"` tone
+(D26: the exact word is ours to choose; kept short, stable, and
+consistent with the driver that already got this right).
+
+Pinned by `tests/cli/run_cli_tests.sh` case15: two small, reliable
+witnesses driven to their own limit exactly the way
+`tests/vm/run_vm_tests.sh` §4/§4.5 already do — `(a*)*b` under
+`--engine=vm --step-budget=50` (step budget) and `((a)|b)*c` under
+`--engine=vm --backtrack-frames=4` (frame capacity) — each asserting the
+exact stdout line and exit code 3, PLUS the non-firing controls (the same
+two patterns under an ample budget/capacity still print an honest
+`match START END`), so a give-up path that fired unconditionally could
+not pass silently. Verified FAILING against the pre-fix emitter first
+(4 of case15's 10 assertions fail — exactly the give-up-path ones; the
+match/nomatch and control assertions stay green either way), then
+verified green again after restoring the fix. No consumer of the old
+two-line `match `/`nomatch` --emit-main contract was found scanning
+tests/, scripts/, docs/ for a parser that would choke on the new third
+line — the existing green tests never reached the give-up path before
+this fix.
+
+**Class closure (2026-08-15, same lane, on review request; 4 of 4
+fixed).** K21 is one instance of a recorded SHAPE — `if (rx_search(...))`,
+testing a three-valued return as a boolean, so a negative give-up
+sentinel takes the match branch under C truthiness — not a one-off in
+`pcrec_emit_main` alone. Per the K20 lesson (record against the shape,
+not the site), the other known readers of `rx_search`'s return were
+surveyed:
+
+- `tests/fuzz/fuzz_driver.c` — already correct (the fuzzfix arc,
+  `c225a9f`/`7e27c19`): discriminates `found == 1`/`== 0`/
+  `RX_ERR_STEPS`/`RX_ERR_FRAMES` explicitly.
+- `tests/harness/driver.c` — HAD the bug (`if (found) { ...caps... }`),
+  now FIXED in this same lane: discriminates explicitly, prints
+  `steps`/`frames` and exits 3 on a give-up (matching
+  `pcrec_emit_main`'s exit-code choice for cross-site consistency), and
+  `tests/harness/run.sh`'s per-case loop gained an explicit `trc -eq 3`
+  branch treating it as a HARD harness-level failure, the same shape as
+  its existing timeout/crash branches — never compared against a
+  `match`/`nomatch` expectation. Verified live: the pre-fix driver
+  against a `--engine=vm --step-budget=50` artifact printed a fabricated
+  `match` line with garbage capture spans; the fixed driver correctly
+  prints `steps` and exits 3 on the identical artifact/subject.
+  Dormant over the base .rxt corpus (no `flags`/`features` directive can
+  select `--engine=vm` or a tiny budget), so no .rxt test was added — see
+  the driver's own comment and docs/testing.md's driver-protocol section.
+- `tests/registry/pc4_driver.c` — HAD the bug too
+  (`if (rx_search(s, len, 0, caps))`), independently of the `89ccd89`
+  "sibling" fix in the fuzzfix arc, which fixed a DIFFERENT bug in this
+  same file (the `caps[RX_NCAPS][2]` stack-array sizing hazard, since this
+  driver is compiled once against a throwaway pattern and reused across
+  the PC-4 sweep) — `89ccd89` never touched the truthiness check, so this
+  file was genuinely still open when it was first flagged here 2026-08-15.
+  **NOW FIXED, same day, same lane.** pc4_driver.c is a DIFFERENTIAL
+  driver, not a match/nomatch-only one, so the fix follows a different
+  shape from the other three: `pc4_check.c` (the libpcre2 side) already
+  had a bucket for a NON-comparable outcome — `mlimits`, libpcre2's own
+  match-time give-up, counted separately, excluded from `cells`, never
+  compared as a verdict, asserted zero. pc4_driver.c now discriminates
+  `found == 1`/`== 0`/otherwise explicitly and prints `giveup steps`/
+  `giveup frames` for that subject instead of a fabricated verdict;
+  `pc4_check.c` gained the symmetric `pcrec_giveups` bucket, checked
+  BEFORE the match/nomatch comparison so a give-up can never enter it as
+  a fabricated match, and asserted zero alongside `mlimits`. Verified two
+  ways: (1) directly — PC-4's real 271-subject set has nothing long
+  enough to burn a tiny step/frame budget, so a scratch driver using the
+  identical discrimination logic against a `--engine=vm --step-budget=50`/
+  `--backtrack-frames=4` artifact was run standalone, correctly printing
+  `giveup steps`/`giveup frames`; (2) `pc4_check.c`'s new branch verified
+  in the FAILING direction by splicing one synthetic `giveup steps` line
+  into a real `\d` sweep's results file — `cells` dropped by exactly 1,
+  `pcrec_giveups` fired naming the count, and no spurious match/nomatch
+  disagreement appeared for that cell. The real `run_pc4.sh` sweep is
+  unaffected (still dormant: DFA-only pattern space) — unchanged
+  273/232/41/62,872/0 populations. See tests/registry/CLAUDE.md for the
+  full account.

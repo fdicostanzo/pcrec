@@ -37,11 +37,37 @@ directory asserts that the description and the shipped parser actually agree.
   today's PC-4 pattern space (escape classes, POSIX classes, quantifiers,
   anchors) has zero capturing constructs — found and fixed alongside the
   fuzzer's copy of the same bug (see tests/fuzz/README.md's "RX_NCAPS is NOT
-  part of what's shared" section for the full mechanism). Populations are EXACT predictions stated in
+  part of what's shared" section for the full mechanism). **[K21-class fix,
+  2026-08-15]:** that stack-array fix ("the fuzz-driver stack smash",
+  `89ccd89`) was a DIFFERENT bug from this one, in the same file — it did
+  not touch pc4_driver.c's per-subject `if (rx_search(...))` truthiness
+  check, which had the SAME shape as K21 (docs/dev/known_issues.md):
+  `rx_search`'s return is three-valued, C-truthy on the negative
+  RX_ERR_STEPS/RX_ERR_FRAMES give-up sentinels, so a give-up would have
+  taken the match branch and printed `caps`. Fixed now: the driver
+  discriminates `found == 1`/`== 0`/otherwise explicitly and prints
+  `giveup steps`/`giveup frames` for that subject rather than fabricating
+  a verdict. pc4_check.c treats a `giveup` line the same way it already
+  treats libpcre2's OWN give-up (`mlimits`, below) — a non-comparable
+  outcome, counted in its own `pcrec_giveups` bucket, excluded from
+  `cells`, never entered into the match/nomatch agreement check, and
+  asserted zero. Verified directly (not through the fixed 271-subject set,
+  which has nothing long enough to burn a tiny step/frame budget): a
+  scratch driver using the identical discrimination logic against a
+  `--engine=vm --step-budget=50`/`--backtrack-frames=4` artifact prints
+  `giveup steps`/`giveup frames` correctly; and pc4_check.c's new branch
+  was verified in the FAILING direction by splicing one synthetic `giveup
+  steps` line into a real `\d` sweep's results file — `cells` dropped by
+  exactly 1, `pcrec_giveups` fired naming the count, and no spurious
+  match/nomatch disagreement was reported for that cell. Dormant on the
+  real sweep today (DFA-only pattern space, no `--engine=vm` anywhere in
+  run_pc4.sh) — the real sweep's own 62,872-cell, 0-disagreement result is
+  unchanged. Populations are EXACT predictions stated in
   pc4_check.c before the first run and confirmed on it: 232 both-accepted,
   41 refusal agreements (both directions checked — over-acceptance and
   over-rejection each fail naming the cell), 62,872 match cells, mlimit
-  asserted zero on a backtrack-free space. The pcrec side runs one process
+  and (since the K21-class fix) `pcrec_giveups` both asserted zero on a
+  backtrack-free, DFA-only pattern space. The pcrec side runs one process
   per PATTERN (all subjects in-process), whole sweep ~2.5 s. Skips loudly
   without libpcre2, probed BEFORE the gcc sweep is paid for; the runner
   carries a population-line needle so an unwired PC-4 fails rather than

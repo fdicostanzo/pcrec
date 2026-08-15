@@ -22,9 +22,15 @@
  *                        this is a superset, not a reshape. A .rxt `g`/`gp`
  *                        capture-expectation line picks its slot's pair out
  *                        of these fields by position; see docs/testing.md)
- *   "nomatch\n"         (rx_search found no match)
- * and exits 0. On a malformed escape in argv[1] or a malformed [startpos],
- * prints a message to stderr and exits 2.
+ *   "nomatch\n"         (rx_search found no match) — exits 0
+ *   "steps\n" / "frames\n"
+ *                       ([K21-class fix, 2026-08-15] rx_search found neither:
+ *                        it GAVE UP, VM-artifact budget exhaustion, and
+ *                        exits 3, not 0 — see the discrimination at the call
+ *                        site below for why this is its own outcome, never
+ *                        folded into "match" or "nomatch")
+ * On a malformed escape in argv[1] or a malformed [startpos], prints a
+ * message to stderr and exits 2.
  */
 
 #include <stdio.h>
@@ -140,16 +146,47 @@ int main(int argc, char **argv) {
     unsigned char *buf = decode(argv[1], &len);
     if (!buf) return 2;
 
+    /* [K21-class fix, 2026-08-15] `rx_search`'s return is THREE-valued (1
+     * match, 0 no-match, a negative give-up sentinel — RX_ERR_STEPS/
+     * RX_ERR_FRAMES — when a VM artifact exhausts its step budget or
+     * backtrack-frame capacity; a DFA artifact never returns the
+     * sentinels). Testing the result with `if (found)` is C-truthy on a
+     * negative return too, so the ORIGINAL version of this driver took the
+     * match branch on a give-up and printed `caps`, which the give-up path
+     * never writes — uninitialized stack reported as a confident match.
+     * This is one instance of a recorded SHAPE, not a one-off: the same
+     * truthy-check-on-three-valued-return bug has now been found and fixed
+     * at three other sites reading this same API —
+     * tests/fuzz/fuzz_driver.c (the fuzzfix arc, discriminates found==1/
+     * found==0/RX_ERR_STEPS/RX_ERR_FRAMES explicitly), and
+     * src/gen/emit_dfa.c's `pcrec_emit_main` (docs/dev/known_issues.md K21,
+     * the CLI's `--emit-main` generated main()). A FOURTH site,
+     * tests/registry/pc4_driver.c, has the identical `if (rx_search(...))`
+     * shape TODAY and is NOT yet fixed — flagged for the manager rather
+     * than silently patched here, since PC-4 is a different subsystem with
+     * its own sabotage battery outside this fix's scope. Any new driver
+     * against this API should discriminate explicitly, the way this one
+     * now does, rather than add a fifth instance of the shape.
+     *
+     * Exit code 3 mirrors `pcrec_emit_main`'s choice, for the same reason:
+     * distinct from a normal run (0) and this driver's own usage/malformed-
+     * input exit (2), and it lets run.sh treat a give-up as its own HARD
+     * harness-level failure (never compared against a `match`/`nomatch`
+     * expectation) the same way it already treats a crash or a timeout. */
     ptrdiff_t caps[RX_NCAPS][2];
     int found = rx_search(buf, len, startpos, caps);
-    if (found) {
+    if (found == 1) {
         printf("match");
         for (int k = 0; k < RX_NCAPS; k++) {
             printf(" %td %td", caps[k][0], caps[k][1]);
         }
         printf("\n");
-    } else {
+    } else if (found == 0) {
         printf("nomatch\n");
+    } else {
+        printf("%s\n", found == RX_ERR_STEPS ? "steps" : "frames");
+        free(buf);
+        return 3;
     }
 
     free(buf);
