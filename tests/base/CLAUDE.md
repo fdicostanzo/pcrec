@@ -52,13 +52,26 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   at an `N_EPS`. These are the cells that separate the landed repair from the
   cheap two-line alternative the design note rejected: python `re` agrees with
   the repair on 98 of 98 and with the alternative on 0
-- **k18_deep_nesting.rxt** — 6 patterns / 18 cases guarding a RESOURCE class,
-  not an answer: nullable loops nested to the parser's own 250-paren cap,
-  where the path-sensitive closure's context count grows as d²/2. The design's
+- **k18_deep_nesting.rxt** — 8 patterns / 24 cases guarding a RESOURCE class,
+  not an answer: the nesting ladder to the parser's own 250-paren cap, where
+  the path-sensitive closure's context count grows as d²/2, plus a lazy inner
+  quantifier at that depth and forty nullable loops in SEQUENCE. The design's
   prototype descended once per context with a C stack frame (31,377 deep at
   250, an asan stack overflow at 210); the shipped `clo_walk` is iterative, and
   these blocks are what would notice if that regressed. The rest of the corpus
-  tops out at loop-nesting depth 4
+  tops out at loop-nesting depth 4. It is also the deliberate GROW-PATH test
+  for the three tables the repair adds — 31,627 contexts against initial
+  capacities of 64 and 256, so every doubling/rehash path runs, under asan too
+- **k18_cost_gates.rxt** — 6 patterns / 28 cases whose point is COMPILE TIME
+  rather than spans, riding the harness's own per-invocation pcrec budget
+  (`pcrec_timeout_secs`, which K18's lane made axis-aware for exactly this).
+  Two families, neither of them the obvious one: the fuzz-found witness that
+  caught a 7x CONSTANT-FACTOR regression in the design's prototype on
+  byte-identical work — a `perr` block, since every binary refuses it on the
+  DFA state cap after doing the work — and bounded-repeat × nullable-loop
+  swept in k, which is why the honest cost variable is the number of open-loop
+  CONTEXTS and not the nesting depth a reader can see (it runs at depth 1 and
+  was 231x on the broken prototype, invisible to any depth-based gate)
 - **syntax_errors.rxt** — malformed patterns and diagnostic accuracy, including the K5/K6 brace miscompiles fixed 2026-08-10 (FIX-1). Two halves that must be read together: the `perr` blocks assert the rejections, and the literal-match blocks below them assert what must KEEP compiling (`a{`, `{}`, `{,}`, `a{65536x}`, …) — without those, the obvious over-reach of either fix passes every rejection. The seven K5 blocks carry `# pcre2-only` because python `re` accepts counts up to 4294967294 (U5); `tests/reject/` pins the DIAGNOSTIC for all of them, which `perr` cannot express
 
 ## Conventions

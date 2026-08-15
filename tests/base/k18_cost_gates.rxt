@@ -1,0 +1,82 @@
+# K18 COST GATES (docs/design/k18_memo_design.md §5 item 6; K18 fixed
+# 2026-08-15). These blocks are here for their COMPILE TIME, not only for
+# their spans — the correctness of the answers is guarded by the other three
+# k18_*.rxt files, and what this one adds is that the two families whose cost
+# the design lane had to bound cannot regress silently.
+#
+# They gate by riding the harness's own per-invocation pcrec budget
+# (tests/lib/gen_timeout.sh `pcrec_timeout_secs`, 20 s plain / 60 s
+# sanitizer), which is the mechanism D45 built and which K18's lane made
+# axis-aware precisely so this would work. Exceeding it is a loud HARNESS
+# FAILURE naming the case, never a hang.
+#
+# WHY THESE TWO FAMILIES, and neither is the obvious one:
+#
+# 1. THE FUZZ-FOUND CONSTANT-FACTOR WITNESS. The `perr` block below is the
+#    pattern the repo's own differential fuzzer produced within 129 draws at
+#    seed 99, and it is the one that caught a 7x constant-factor regression in
+#    the design's first prototype: pcrec and the prototype did BYTE-IDENTICAL
+#    work (332,476 closures, 15,743,238 states visited, maxdepth 1, 2
+#    contexts) and the prototype still took 13.5 s against 0.62 s, all of it
+#    one hash probe replacing one array access 15.7 million times. That is
+#    what the empty-context fast path exists to prevent, and this pattern is
+#    what would notice it going away. It is a `perr` block because every
+#    binary REFUSES it on the DFA state cap (>32,000 states) — the refusal is
+#    the point: the work of building 32,000 states happens first, so the
+#    compile time is real even though no code is emitted. Measured 0.68 s.
+#    The `{8,8}` shrink beside it is the same shape that actually compiles.
+#
+# 2. BOUNDED REPEAT x NULLABLE LOOP, swept in k. `A_REP` lowers `{0,k}` into
+#    nested COPIES of the body, so the NFA grows with k (405 states at k=2,
+#    1,485 at k=8) while the nesting a reader counts in the pattern does not
+#    move at all. This family is why the honest cost variable is the number of
+#    distinct open-loop CONTEXTS and not the loop-nesting depth a reader sees:
+#    it runs at open depth 1 and was the family that made the design lane's
+#    broken prototype 231x slower, invisible to any depth-based gate. On the
+#    landed compiler it is LINEAR in k (measured 0.003 s at k=2, 0.009 s at
+#    k=8).
+#
+# Every expectation generated from python3 `re` AND libpcre2 10.46, both
+# oracles agreeing on every cell (D44's three-way rule).
+
+# The fuzz-found witness: must be REFUSED cleanly, and must get there fast.
+pattern (1{0,30}?[^]abc][^abc]){28,30}0+|a
+perr
+
+pattern (1{0,30}?[^]abc][^abc]){8,8}0+|a
+n ""
+m "a" 0 1
+n "b"
+n "c"
+m "aa" 0 1
+m "ab" 0 1
+m "ac" 0 1
+m "ba" 1 2
+n "bb"
+n "bc"
+m "ca" 1 2
+n "cb"
+n "cc"
+m "aab" 0 1
+m "bab" 1 2
+m "aba" 0 1
+
+pattern ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,2}(){2,3}){1,2}){2,3}
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,4}(){2,3}){1,2}){2,3}
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,6}(){2,3}){1,2}){2,3}
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0

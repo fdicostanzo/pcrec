@@ -39,16 +39,29 @@ fuzz`), not part of `make test` — see README.md for why.
   docstring and `EXCLUDED FROM GENERATION` block for what's not generated
   and why. Beside the general grammar it carries `TRAP_TEMPLATES` (~8% of
   generated patterns), shape-focused rows for preference bugs the unbiased
-  generator CAN produce but essentially never rolls. Two classes today: R2's
-  overlapping-prefix alternation under a lazy quantifier (R2-M1/R2-S1), and
+  generator CAN produce but essentially never rolls. Three classes today:
+  R2's overlapping-prefix alternation under a lazy quantifier (R2-M1/R2-S1),
   R21/K17's outer star over a lazy nullable prefix plus a nested nullable
   quantified group — the latter measured to move its class from ~1e-4 of
-  patterns to 4%. **Add a row whenever a preference bug is found by something
-  other than this fuzzer**; that is what the block is for. Check each
-  addition in the FAILING direction (the K17 rows expand to 111 distinct
+  patterns to 4% — and K18's sibling family (fixed 2026-08-15), where the
+  redirect is lost one hop SHORT of a loop entry rather than at one. The K18
+  rows pin BOTH alternation orders on purpose: the ingredient is that the arm
+  whose exit edge lands on the already-seen state is the PREFERRED one, not
+  that it is lazy, and a greedy nullable arm gets that by being written first
+  — two of the K18 entry's own "does not diverge" controls were live
+  miscompiles with their arms swapped. Two rows carry a `{0,2}` body, which is
+  a separately-reachable sub-case a corpus built from the original witness
+  cannot produce at all. **Add a row whenever a preference bug is found by
+  something other than this fuzzer**; that is what the block is for. Check
+  each addition in the FAILING direction (the K17 rows expand to 111 distinct
   patterns giving 28 divergences against the pre-fix compiler and 0 against
-  the fixed one) — a trap that never fired against the bug it names is
-  decoration. Do not add a row for a bug that is still OPEN: traps run inside
+  the fixed one; the nine K18 rows expand to 64 distinct patterns giving 56
+  divergences over 543 cells against the pre-K18 compiler and 0 against the
+  fixed one) — a trap that never fired against the bug it names is
+  decoration. A template is `.format`ted with `{a}/{b}/{q}`, so a literal
+  brace in a row must be DOUBLED (`{{0,2}}`); an unescaped one raises
+  `KeyError` inside `gen_trap` on the draw that picks it, which is a broken
+  fuzzer rather than a broken trap. Do not add a row for a bug that is still OPEN: traps run inside
   `make fuzz`, which must stay green, so deferred bugs belong in
   `tests/known_fail/` instead. Compiles every pattern with an explicit
   `--step-budget=STEP_BUDGET` (env-overridable, README.md "Step/frame budget

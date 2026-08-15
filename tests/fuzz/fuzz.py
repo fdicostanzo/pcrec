@@ -269,6 +269,32 @@ TRAP_TEMPLATES = [
     "(?:{a}??(?:{b}*)+){q}",       # lazy `??` prefix, inner `+`
     "(?:{a}*?(?:{b}*|{a}*)*){q}",  # nullable ALTERNATION as the inner body
     "(?:{a}*?(?:(?:{b}*)*)*){q}",  # one nesting level deeper again
+
+    # K18 family (fixed 2026-08-15) — K17's structurally distinct SIBLING, and
+    # the rows are separate for the reason the two entries are: K17's redirect
+    # is lost AT a loop entry, K18's is lost one hop SHORT of one, when the
+    # walk has to reach it through an already-seen ordinary epsilon state.
+    # `(?:(?:a|b*?)?)*` on "ab" was [0,2) against both oracles' [0,1).
+    #
+    # THE INGREDIENT IS THE PREFERRED ARM, NOT LAZINESS (R23 S8), which is why
+    # these rows are not just K17's with a `?` added: the arm whose exit edge
+    # lands on the already-seen state has to be the one the walk PREFERS, and a
+    # GREEDY nullable arm achieves that simply by being written FIRST. Two of
+    # the K18 entry's own "does not diverge" controls turned out to be live
+    # miscompiles with their arms swapped, so both orders are pinned here.
+    # The `{0,2}` rows are a THIRD sub-case (the conflation at a SPLIT rather
+    # than an epsilon) that a corpus built from the original witness cannot
+    # reach at all — a two-line candidate repair passed all 165 acceptance
+    # cases and got every one of those cells wrong.
+    "(?:(?:{a}|{b}*?)?)*",             # K18's own repro shape
+    "((?:{a}|{b}*?)?)*",               # capturing: same span, so priority
+    "(?:(?:{b}*|{a})?)*",              # ARM ORDER: greedy nullable arm FIRST
+    "(?:(?:{b}?|{a})?)*",              # ditto, `?` instead of `*`
+    "(?:(?:(?:{b}|)|{a})?)*",          # an EMPTY arm: no quantifier at all
+    "(?:(?:{b}?|{a})(?:{b}?|{a}))*",   # CONCATENATION of two nullable alts
+    "(?:(?:{a}|{b}*?){{0,2}})*",       # the {0,2}-bodied sub-case
+    "(?:(?:{b}*|{a}){{0,2}})*",        # {0,2}, arms the other way round
+    "(?:(?:{a}|{b}*?)?){q}",           # the body under every outer quantifier
 ]
 TRAP_QUANTS = ["*", "+", "?", "*?", "+?", "{0,2}", "{0,2}?", "{1,3}?", "{2,}?"]
 
