@@ -190,13 +190,24 @@ def cases(quick):
 
 # ------------------------------------------------------------------- oracle
 
-def oracle(pat, subj):
-    """python `re`'s answer as the flat [s0,e0,s1,e1,...] the driver prints."""
+def oracle(pat, subj, startpos=0):
+    """python `re`'s answer as the flat [s0,e0,s1,e1,...] the driver prints.
+
+    `Pattern.search(string, pos)` is the right oracle for a non-zero startpos
+    and not merely a convenient one: python does NOT let `^` match at `pos`,
+    only at the real start of the string, which is exactly the contract
+    lib/pcrec.h states for the emitted searcher ("`^` anchors to absolute
+    offset 0 regardless of startpos"). The `re.match`-with-a-slice
+    alternative would disagree on every `^` pattern.
+    """
     try:
         rx = re.compile(pat.encode("latin-1"))
     except re.error:
         return None
-    m = rx.search(subj.encode("latin-1"))
+    b = subj.encode("latin-1")
+    if startpos > len(b):
+        return "nomatch"
+    m = rx.search(b, startpos)
     if not m:
         return "nomatch"
     out = []
@@ -244,8 +255,9 @@ def build(workdir, pat, extra):
     return exe, None
 
 
-def run(exe, subj):
-    r = subprocess.run([exe, esc(subj)], capture_output=True, text=True)
+def run(exe, subj, startpos=0):
+    argv = [exe, esc(subj)] + ([str(startpos)] if startpos else [])
+    r = subprocess.run(argv, capture_output=True, text=True)
     if r.returncode != 0:
         return "DRIVER_EXIT_%d: %s" % (r.returncode, r.stderr.strip()[:300])
     line = r.stdout.strip()
@@ -293,6 +305,26 @@ def check_pattern(workdir, pat, subs):
         if got_auto != got_vm:
             fails.append('%-24s "%s" HYBRID/VM-ONLY DIVERGENCE: %s vs %s'
                          % (pat, esc(subj), got_auto, got_vm))
+
+        # STARTPOS. Its own axis because the two engines reach it by
+        # completely different routes: the hybrid hands `startpos` to the DFA
+        # prefilter and anchors the VM at whatever window comes back, while
+        # --engine=vm begins its own scan there. And `^` must still anchor to
+        # ABSOLUTE offset 0 either way (lib/pcrec.h's stated contract), which
+        # is a rule a start-offset implementation gets wrong by default.
+        for sp in (1, 2):
+            if sp > len(subj):
+                continue
+            w = oracle(pat, subj, sp)
+            ga = run(built["auto"], subj, sp)
+            gv = run(built["vmonly"], subj, sp)
+            n += 1
+            if ga != w:
+                fails.append('%-24s "%s"@%d auto: got %s want %s'
+                             % (pat, esc(subj), sp, ga, w))
+            if gv != w:
+                fails.append('%-24s "%s"@%d --engine=vm: got %s want %s'
+                             % (pat, esc(subj), sp, gv, w))
     return fails, n
 
 

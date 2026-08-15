@@ -56,6 +56,22 @@ the other:
   and runs the oracle sweep. `bash tests/vm/run_vm_tests.sh full` swaps the
   quick sweep for the full one.
 
+## §4.7's ordering rule is checked as a CONTRAST, not an assertion
+
+"The DFA prefilter runs BEFORE the VM. A pattern whose prefilter can answer
+must never reach the step budget" is engine_m4.md §4.7, and it exists because
+of a measurement: bench case (e), `a*b` over 8 MB of all-`a`, is 25,371 MB/s
+on pcrec against pcre2-interp's DNF>90s. `(a*)b` is the same pattern WITH
+CAPTURES and is O(n²) on a naive VM, so adding two parentheses must not move
+pcrec onto the DNF side. A budget-exceeded return on a pattern pcrec answers
+today is a REGRESSION, not robustness.
+
+The runner compiles the SAME pattern over the SAME 1 MB subject both ways and
+requires the default artifact to answer `nomatch` while the `--engine=vm`
+build returns `RX_ERR_STEPS`. Asserting only the first proves nothing on its
+own — a fast box or a pattern that never needed a prefilter would satisfy it
+identically. The contrast is what makes it evidence.
+
 ## The two bounds are checked separately, on purpose
 
 engine_m4.md §4.5: a pattern can overflow the frame array in a handful of

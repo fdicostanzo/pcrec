@@ -174,6 +174,87 @@ if build ceil '((a)|b)*c'; then
     fi
 fi
 
+# ---- 2b. §4.7's ORDERING RULE, as a CONTRAST rather than an assertion ----
+#
+# "The DFA prefilter runs BEFORE the VM. A pattern whose prefilter can answer
+# must never reach the step budget." §4.7 calls this the sharpest thing in its
+# section, and the reason is a measurement: bench case (e), `a*b` over 8 MB of
+# all-`a`, is 25,371 MB/s on pcrec against pcre2-interp's DNF>90s. `(a*)b` is
+# the same pattern WITH CAPTURES, and on a naive VM it is O(n^2) — roughly
+# 7e13 resumptions — so it would burn any budget and "fail honestly" where
+# pcrec today returns nomatch at 25 GB/s. A budget-exceeded return on a
+# pattern pcrec answers today is a REGRESSION, not robustness.
+#
+# The check runs the SAME pattern over the SAME subject both ways. That is
+# what makes it evidence rather than a claim: asserting the hybrid answers
+# quickly proves nothing on its own (a fast box, a lucky pattern), but the
+# prefilter-free build burning the budget on the identical input shows what
+# the prefilter is actually buying. This is engine_m4.md §13's P-3 as a gate.
+mkdir -p "$WORKDIR/cliff"
+cat > "$WORKDIR/cliff/main.c" <<'CLIFF_EOF'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "gen.h"
+int main(void)
+{
+    size_t n = 1000000;
+    unsigned char *s = malloc(n);
+    ptrdiff_t caps[RX_NCAPS][2];
+    int r;
+    if (!s) return 3;
+    memset(s, 'a', n);
+    r = rx_search(s, n, 0, caps);
+    /* caps == NULL is the existence-only form and today's ENTIRE caller
+     * population; it must agree with the caps-passing form on match/no-match
+     * and must not be reached with a NULL dereference on either path. */
+    if (r != rx_search(s, n, 0, NULL)) { printf("caps-null-disagrees\n"); return 0; }
+    printf("%d\n", r);
+    free(s);
+    return 0;
+}
+CLIFF_EOF
+cliff_run() {  # cliff_run <name> [pcrec args...]
+    local name="$1"
+    shift
+    mkdir -p "$WORKDIR/$name"
+    "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- '(a*)b' >/dev/null 2>&1 || return 1
+    # shellcheck disable=SC2086
+    $CC $GENCFLAGS -I "$WORKDIR/$name" -o "$WORKDIR/$name/t" \
+        "$WORKDIR/cliff/main.c" "$WORKDIR/$name/gen.c" 2>/dev/null || return 2
+    "$WORKDIR/$name/t"
+}
+hy="$(cliff_run cliffhy)"
+vmo="$(cliff_run cliffvm --engine=vm)"
+if [ "$hy" = "0" ]; then
+    ok "[M4.5b] §4.7/P-3: the DEFAULT artifact answers '(a*)b' over 1 MB of 'a' as nomatch — the prefilter answered and the VM was never entered"
+else
+    bad "[M4.5b] §4.7/P-3: the default artifact returned '$hy' on '(a*)b' over 1 MB of 'a'; a budget-exceeded return on a pattern pcrec answers today at DFA speed is a REGRESSION, not robustness"
+fi
+if [ "$vmo" = "-2" ]; then
+    ok "[M4.5b] §4.7/P-3 CONTRAST: the same pattern and subject with the prefilter OFF returns RX_ERR_STEPS — so the check above is measuring the prefilter, not a fast box"
+else
+    bad "[M4.5b] §4.7/P-3 CONTRAST: --engine=vm on '(a*)b' over 1 MB of 'a' returned '$vmo', expected -2 (RX_ERR_STEPS). Without this contrast the hybrid check above cannot distinguish a working prefilter from a pattern that never needed one"
+fi
+if [ "$hy" != "caps-null-disagrees" ] && [ "$vmo" != "caps-null-disagrees" ]; then
+    ok "[M4.5b] caps == NULL (the existence-only search, today's entire caller population) agrees with the caps-passing form on both engines"
+else
+    bad "[M4.5b] caps == NULL disagreed with the caps-passing form"
+fi
+
+# The emitted-node backstop (PCREC_MAX_VM_NODES). A bounded repeat REPLICATES
+# its body (§3.3's ruled reading), and --engine=vm skips machine construction
+# entirely — so this is the one invocation where nothing else would stop
+# `(a|b){0,65535}`. The refusal must be pcrec's own clean diagnostic, never a
+# hang or an abort.
+if out="$("$PCREC" -p rx --engine=vm -o "$WORKDIR/toobig.c" -- '(a|b){0,65535}' 2>&1)"; then
+    bad "[M4.5b] PCREC_MAX_VM_NODES: '(a|b){0,65535}' compiled under --engine=vm; the emitted-node backstop did not fire"
+elif printf '%s' "$out" | grep -q 'VM exceeds'; then
+    ok "[M4.5b] PCREC_MAX_VM_NODES: a replicated bounded repeat too large to emit is refused cleanly, naming the bound"
+else
+    bad "[M4.5b] PCREC_MAX_VM_NODES: refused, but not with the emitted-node diagnostic: $out"
+fi
+
 # ---- 3. the engine-selection surface ------------------------------------
 if build sel 'a(b|c)+d'; then
     [ "$(info_field sel engine)" = "2" ] \
