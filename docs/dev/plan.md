@@ -652,6 +652,25 @@ after waits for a forcing function. Frank's priority stands throughout: the
 95% path stays fast and simple, and exotic constructs earn only the right to be
 named, cleanly rejected and queried.
 
+- [TT-2] STATE:not-started — PARALLEL TEST INFRASTRUCTURE (Frank,
+  2026-08-15, twenty-first session: "we have 6 cores. we should open it
+  up"). Step 1 DONE same day (Makefile commit): make test/test-corpus
+  set PROCS=nproc + TMPDIR=/var/tmp for the harness's existing worker
+  mechanism — corpus 1449/0 in 56s at PROCS=12, was ~5min serial. The
+  REMAINING work, one lane once the D45-stopgap branch merges (its
+  timeout wrapper touches the same runner scripts — disjointness):
+  internal parallelism for the other serial suites (reject 528, codegen,
+  vm, cli, registry — xargs -P or run.sh's worker-reinvocation pattern,
+  whichever fits each script), section-level composition (make -j over
+  the TT-1 section targets, output legibility preserved), and a mech
+  assessment (parallel sabotage rows need per-row build dirs — measure
+  whether the win justifies it). DISCIPLINES that travel with it:
+  run.sh's own aggregation rules are the house template — a lost worker
+  HARD-FAILS (never reads as a pass), summary-line format stays
+  grep-identical in both modes (mech reads it); population accounting
+  exact at every PROCS; D45 timeouts must hold under full parallel load
+  (sub-second compiles × 12 workers is fine at 5s — but MEASURE the
+  tail, don't assume); wall-time before/after recorded per suite.
 - [SR-5] STATE:not-started — guard the fast path CLAIM, do not just assert it.
   REWRITE THE ASSERTION FIRST (R6): the claim as written here — "base-tier
   patterns must perform ZERO registry lookups (`(?:` excepted)" — is FALSE in
