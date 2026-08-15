@@ -344,19 +344,43 @@ flush_block() {
             record_case_group_fail "$cur_file" "$i" "test binary crashed"
             continue
         fi
+        local base_ok=0
         if [ "$kind" = "m" ]; then
             expect="match ${case_start[$i]} ${case_end[$i]}"
+            # [M4.5a fix, R-post-merge] compare only the WHOLE-MATCH pair
+            # (the first two numbers after 'match'), not the whole line.
+            # driver.c prints one pair per RX_NCAPS slot (this file's own
+            # design, for the g/gp checks below to consume) — a byte-for-byte
+            # whole-line compare against "match <start> <end>" only ever held
+            # while RX_NCAPS was 1 (this lane's own DFA-only test
+            # environment) and breaks the instant an artifact delivers real
+            # group slots (RX_NCAPS > 1, [M4.5]'s VM). This is a PARSED-FIELD
+            # compare, not a substring/prefix match: 'match' vs 'nomatch',
+            # a malformed/short line, or a wrong whole-match pair all still
+            # fail loudly below — only extra TRAILING group pairs are now
+            # ignored by this specific check (the g/gp checks verify those).
+            local outfields0
+            read -ra outfields0 <<< "$out"
+            if [ "${outfields0[0]:-}" = "match" ] && [ "${#outfields0[@]}" -ge 3 ] \
+                && [ "${outfields0[1]}" = "${case_start[$i]}" ] \
+                && [ "${outfields0[2]}" = "${case_end[$i]}" ]; then
+                [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: '$cur_pattern' subject=\"$subj\" startpos=$pos"
+                record_pass
+                base_ok=1
+            else
+                record_fail "$cur_file" "$line" \
+                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            fi
         else
             expect="nomatch"
-        fi
-        local base_ok=0
-        if [ "$out" = "$expect" ]; then
-            [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: '$cur_pattern' subject=\"$subj\" startpos=$pos"
-            record_pass
-            base_ok=1
-        else
-            record_fail "$cur_file" "$line" \
-                "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            if [ "$out" = "$expect" ]; then
+                [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: '$cur_pattern' subject=\"$subj\" startpos=$pos"
+                record_pass
+                base_ok=1
+            else
+                record_fail "$cur_file" "$line" \
+                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            fi
         fi
 
         # [M4.5a] capture-group expectations ('g'/'gp' lines) attached to
