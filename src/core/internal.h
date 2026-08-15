@@ -45,7 +45,26 @@ typedef enum {
     A_REP,     /* l{rmin,rmax}, rmax == -1 for unbounded; greedy flag */
     A_EMPTY,   /* matches empty string */
     A_BOL,     /* ^ : start of subject */
-    A_EOL      /* $ : end of subject or before a final \n */
+    A_EOL,     /* $ : end of subject or before a final \n */
+    /* [M4.5b] capturing group `(l)`, group number in `capno`.
+     *
+     * D31 ruled the group erasure STAYS, on a MEASURED compile-time cost, and
+     * engine_m4.md §11.3 records that the VM nonetheless needs SOME node to
+     * know where to emit a capture write. Both hold at once because this node
+     * is BORN ONLY WHEN CAPTURES ARE REQUESTED (`Ctx.want_caps`, i.e. neither
+     * --no-captures nor a capture-free pattern) and because every consumer
+     * other than the VM emitter treats it as TRANSPARENT — see ast_bare() in
+     * src/ir/nfa.c. So:
+     *   - a capture-free pattern's AST is byte-identical to D31's, always;
+     *   - `--no-captures` reproduces D31's AST for ANY pattern;
+     *   - the prefilter NFA/DFA built for a capture pattern is the SAME
+     *     machine the capture-ERASED pattern builds (engine_m4.md §6.1's
+     *     STRUCTURAL erasure half, preserved by construction rather than by a
+     *     second lowering — §11.3's "two lowerings from one parse" mitigation,
+     *     obtained without copying the tree).
+     * That is also what makes §5.4's byte-identity gate hold by construction
+     * instead of by inspection. */
+    A_CAP
 } AKind;
 
 typedef struct Ast Ast;
@@ -54,6 +73,7 @@ struct Ast {
     uint8_t  cls[32];       /* A_CLASS: 256-bit membership bitmap */
     Ast     *l, *r;
     int      rmin, rmax;
+    int      capno;         /* A_CAP: 1-based capturing group number */
     bool     greedy;
     /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
      * quantifier after this node is an error rather than a repetition of it.
@@ -132,14 +152,34 @@ typedef struct {
  * ^/$ stay on the per-start attempt engine (computed goto) for now */
 enum { PCREC_ENG_ATTEMPT, PCREC_ENG_UNANCH };
 
+/* [M4.5b] engine_m4.md §5.1: selection's answer, computed by a PASS
+ * (src/opt/select_engine.c) rather than by compile.c's old inline `if`.
+ * `engines` uses the registry's own ENGM_* vocabulary (§5.1), which is what
+ * makes SR-8 a consumption rather than a new schema. */
+typedef struct {
+    unsigned    engines;    /* ENGM_* mask: which engines CAN compile this */
+    unsigned    chosen;     /* exactly one ENGM_* bit */
+    const char *why;        /* the forcing construct, for the stamp and F7 */
+    size_t      why_pos;    /* pattern offset of it */
+    bool        prefilter;  /* §6: is a DFA prefilter emitted alongside */
+} EngineFit;
+
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */
     Nfa    nfa;      /* forward NFA (unanchored-wrapped for ENG_UNANCH) */
     Nfa    rnfa;     /* reversed-pattern NFA (ENG_UNANCH only) */
     Dfa    dfa;      /* forward DFA */
     Dfa    rdfa;     /* reverse DFA, non-pruning (ENG_UNANCH only) */
-    int    engine;
+    int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
+    EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
     StrBuf csb, hsb;
+    /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
+     * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
+     * must be produced BEFORE the text that precedes it (the class pool, the
+     * cursor local, RX_NSTATE are all discovered by emitting), and any
+     * ctx_fail during that emission longjmps out — a stack-local StrBuf would
+     * leak its heap buffer on exactly the path the sanitizer battery checks. */
+    StrBuf vmsb;
 } Job;
 
 typedef struct {
@@ -196,6 +236,17 @@ typedef struct {
      * `--count-groups`, the external channel tests/spec_mod0/check02
      * compares against libpcre2's CAPTURECOUNT and err-115 boundary. */
     unsigned             ncap;
+    /* [M4.5b] Does this compile want capture OFFSETS out of the matcher?
+     * engine_m4.md §5.3: the selection input is the requested OUTPUT, not the
+     * presence of a `(`. Seeded from PCREC_NO_CAPTURES at compile entry and
+     * read at exactly one place, p_group_body's capturing-`(` hook, which is
+     * what makes "--no-captures reproduces today's AST" true by construction
+     * rather than by a later erasure pass. Cleared for pcrec_count_groups and
+     * the syntax-query surfaces, which never emit. */
+    bool                 want_caps;
+    /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
+     * engine_why stamp's `why_pos` (§5.5). */
+    size_t               first_cap_pos;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
@@ -1235,5 +1286,36 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
                      bool prune, int maxstates);
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
+
+/* ---- [M4.5b] the VM engine (docs/design/engine_m4.md) ---- */
+
+/* engine_m4.md §5.1: per-pattern engine selection as a PASS, run after parse
+ * and before machine construction. Fills cx->job->fit, and ctx_fails with the
+ * §5.6/D44.6 refusal when --engine conflicts with what the pattern needs. */
+void pcrec_select_engine(Ctx *cx, const Ast *root);  /* src/opt/select_engine.c */
+
+/* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
+ * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
+ * says so, the VM itself, and the four entry points). */
+void pcrec_emit_vm(Ctx *cx, const Ast *root);        /* src/gen/emit_vm.c */
+
+/* src/gen/emit_dfa.c, exported for emit_vm.c: the shared artifact-prologue
+ * and entry-point emitters. `pcrec_emit_dfa_engine` emits ONE engine function
+ * body (the same forward+reverse or attempt code pcrec_emit_dfa emits) under
+ * a caller-chosen name and storage class, which is how the VM's hybrid gets
+ * its prefilter without a second copy of that emitter (§6.1, §2.8's "reused
+ * unchanged" table). */
+typedef struct {
+    const char *searchfn, *matchfn, *matchcapsfn, *infoname;
+    char        upper[80];
+} GenNames;
+void pcrec_gen_names(Ctx *cx, GenNames *g);
+void pcrec_emit_abi_types(StrBuf *sb);
+void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
+void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps);
+void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
+void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
+                     long long budget, long long frames, long long ceiling);
+void pcrec_emit_main(Ctx *cx, const GenNames *g);
 
 #endif /* PCREC_INTERNAL_H */

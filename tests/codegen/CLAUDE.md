@@ -21,6 +21,41 @@ or it has no regression net at all.
   `$PCREC` is already overridable and carries the PRIMARY compiler-axis
   sanitizer coverage for free; see docs/testing.md "Sanitizer + lint
   battery" for a real finding (F1) this SANFLAGS wiring surfaced).
+- **run_vm_identity.sh** — [M4.5b] THE ZERO-REGRESSION GATE (engine_m4.md
+  §5.4, §13 P-7: "this one should be a GATE, not a prediction"). Its claim is
+  that a capture-free pattern does not touch any new code — same AST, same
+  NFA, same DFA, same emitter, same bytes — now that a second emitter and a
+  capture AST node exist.
+
+  It does NOT pin a historical commit, which is what §5.4's literal wording
+  ("byte-identical to the pre-M4 emitter's output") would require: a check
+  written that way fails the first time anyone legitimately changes the DFA
+  emitter, which is a built-in expiry date and worse than no check because it
+  teaches people to edit the pin. The permanent formulation compares the
+  DEFAULT compile against `--no-captures` over every `pattern` line in every
+  .rxt under tests/ (so the population grows with the corpus, not with the
+  script), plus: `--no-captures` yields a DFA artifact for EVERY pattern, and
+  `RX_NCAPS > 1 ⇒ VM` now holds NON-VACUOUSLY — that check had no population
+  at all before [M4.5b] and this file's own [M4.4] note said so.
+
+  ONE normalization, and it is ARITHMETIC rather than a filter: `rx_info.flags`
+  legitimately differs by exactly the `PCREC_NO_CAPTURES` bit, so that bit is
+  subtracted from the `--no-captures` side and every other byte must still
+  match. Deliberately not a `grep -v` of "the stamp lines" — this project's
+  recorded check-design failure is controls sharing a source with what they
+  control, and its close cousin is a comparison loosened until it stops
+  discriminating. Both compiles also use the SAME BASENAME in different
+  directories, or the `#include "<name>.h"` line alone would differ (the exact
+  trap run_trie_identity.sh documents at its own gen_a/gen_b — the first
+  version of this script reported all 260 capture-free patterns divergent for
+  precisely that reason).
+
+  Also asserts the §5.6 override's refusals: `--engine=dfa` on a
+  captures-default group-bearing pattern refuses AND names `--no-captures`,
+  that named escape actually works, `--engine=vm` emits NO prefilter (D44/R21
+  E-6 — without which tests/vm's differential is near-tautological), and the
+  default hybrid DOES emit one (§4.7's cliff guard). 8 checks; sabotage S40.
+
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
@@ -58,6 +93,46 @@ or it has no regression net at all.
   of `make test`;
   env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
   (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
+
+## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
+
+Three checks in `run_codegen_tests.sh` had to move when the VM engine landed,
+and in each case the fix is a NARROWING that adds coverage rather than a
+loosening that removes it. Read them together, because they are the same
+lesson three times: a check written when only one shape existed can encode
+that shape by accident.
+
+1. **The minimization check's group is now `(?:...)`.** It was
+   `(get|post|put|delete|patch)`, and the group was incidental to what the
+   check measures (a DFA table's size) — until D42.1 made captures the
+   default, at which point the capturing spelling routes to a VM artifact
+   where the table lives in `rx_prefilter`, not in the `rx_search` body
+   `body()` extracts. A NEW companion check then asserts the same alternation
+   in its CAPTURING spelling gets a minimized table inside the prefilter,
+   which is coverage that did not exist before: the hybrid runs the same
+   forward+reverse pair through the same passes, so a minimization bug scoped
+   to that path was previously invisible.
+
+2. **`body()`'s anchor accepts an optional `static`.** The VM's prefilter is
+   the same emitter's output under a private name and a different storage
+   class, and it must be per-engine extractable for exactly the reason every
+   other body is.
+
+3. **TS-1 now distinguishes a static FUNCTION from a static OBJECT.** D19's
+   property is "no mutable file/function-scope STATE", and a function has no
+   storage to race on — but while every emitted `static` was a table, "static
+   and not const" and "mutable state" were the same set and the check could
+   not tell them apart. A VM artifact emits five static functions and keeps its
+   whole mutable working set in a LOCAL of the search entry, which is what D19
+   asks for. The discriminator is C's declarator syntax (a `(` with no `=`,
+   `;` or `[` before it), not a list of known function names, so
+   `static unsigned char rx_tbl[256] = {` — S06's sabotage, a table with its
+   `const` dropped — still has no `(` at all and is still caught, and so is
+   anything of the shape `static int rx_counter = f(0);`.
+
+   S02 and S06 were RE-RUN through `tests/mech` after these edits, because a
+   narrowed check whose sabotage was validated against the wide version has
+   not been validated at all.
 
 ## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)
 

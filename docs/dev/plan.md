@@ -144,7 +144,9 @@ stated terms.
   for capture expectations (docs/testing.md updated), python-re
   group-span oracle tier, and a D27-blinded capture test author per
   convention. Substeps:
-  - [M4.5a] STATE:started — capture TEST INFRASTRUCTURE: the .rxt
+  - [M4.5a] STATE:started (DELIVERED 2026-08-15, lane m45a-oracle,
+    commit 81b8b43, merged; completes at the composed-tree battery) —
+    capture TEST INFRASTRUCTURE: the .rxt
     capture-expectation format extension, tests/harness caps-array
     reading, the python `re` GROUP-SPAN oracle tier (engine_m4.md §3.6
     as re-scoped by R21 E-ASK-1: the THREE-WAY pcrec/python/pcre2
@@ -155,7 +157,17 @@ stated terms.
     (caps[0] is live today); the format must already carry group
     slots for the VM. Disjoint from [M4.5b] by construction (tests/
     harness + docs; no src/).
-  - [M4.5b] STATE:started — the VM EMITTER CORE (engine_m4.md is the
+  - [M4.5b] STATE:started (DELIVERED 2026-08-15, lane m45b-vm, 7
+    commits ending c0f24bc, merged; completes at the composed-tree
+    battery. As built: src/gen/emit_vm.c; A_CAP born only when
+    captures requested and invisible to the NFA builder so D31's
+    erasure holds by construction; the §5.4 gate is a PERMANENT check,
+    tests/codegen/run_vm_identity.sh, verified once against a compiler
+    built from the pre-lane commit; §3.7's differential is a GATE with
+    the prefilter off; new sections tests/vm (18) + run_vm_identity;
+    sabotages S36–S40 all DETECTED; also --step-budget/
+    --fno-step-budget/--backtrack-frames CLI axes) — the VM EMITTER
+    CORE (engine_m4.md is the
     design of record): §2's emitted shape (explicit resume stack +
     capture trail, one cold indirect jump, §2.5's cursor ladder), §3
     captures under leftmost-first with exact-undo and the E-2-narrowed

@@ -90,6 +90,24 @@ done
 # actually cares about) does not. The same "the stamp differs by design"
 # shape D37's tests/cli/ case9/case10 and [M4.4]'s own
 # tests/codegen/CLAUDE.md OS-1 narrowing already established.
+#
+# [M4.5b] BOTH SIDES NOW COMPILE WITH --no-captures, and that is a
+# re-statement of the property in the new vocabulary rather than a weakening.
+#
+# D42.1 makes captures ON by default, so `a|(b|c)` — this check's own grouped
+# spelling — is a capture REQUEST and compiles to a VM artifact, while `a|b|c`
+# stays on the DFA. The two emitted files then differ for a reason that has
+# nothing to do with D31: the caller asked for different OUTPUT. That is
+# engine_m4.md §9.2 item 3's announced behaviour change, not a regression, and
+# it is pinned as its own check below rather than left to be rediscovered here.
+#
+# What D31 actually rules is that the group node is ERASED — that `(a|b)` and
+# `(?:a|b)` produce the identical tree — and --no-captures is exactly the mode
+# in which that erasure is still observable end-to-end (src/core/internal.h's
+# A_CAP comment: with want_caps false, parse.c creates no capture node and the
+# AST is D31's). So the pairs compare under --no-captures, and the check gets
+# STRONGER for it: it now asserts the erasure survives the introduction of a
+# capture node, which is the thing [M4.5b] could plausibly have broken.
 rx_search_body() { # rx_search_body <whole-file-text-on-stdin>
     awk '
         $0 ~ /^int rx_search\(/ { inside = 1 }
@@ -122,8 +140,8 @@ for n in 2 3 4 5; do
                 grouped="$grouped$atom"
             fi
         done
-        a_out="$("$PCREC" -p rx -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
-        b_out="$("$PCREC" -p rx -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
+        a_out="$("$PCREC" -p rx --no-captures -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
+        b_out="$("$PCREC" -p rx --no-captures -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
         if [ -z "$a_out" ] || [ -z "$b_out" ]; then
             # An empty extraction must be a FAILURE, not a match of two empty
             # strings: if the emitted signature ever stops matching
@@ -136,12 +154,39 @@ for n in 2 3 4 5; do
         fi
     done
 done
-if [ "$idpass" -eq 0 ]; then
+if [ "$idpass" -eq 0 ] && [ "$idfail" -eq 0 ]; then
+    # Ordering matters here and it cost a diagnosis once ([M4.5b]): the
+    # vacuous-check guard used to fire on `idpass == 0` ALONE, so a run where
+    # every pair genuinely DIFFERED reported "the check asserted nothing" and
+    # buried nine real differences under a message about coverage. Vacuity is
+    # "no pair was compared at all", which is both counters at zero.
     bad "ast-identity: NO pair was compared — the check asserted nothing"
 elif [ "$idfail" -eq 0 ]; then
     ok "ast-identity: $idpass generated pairs emit identical C (regression net; see header)"
 else
     bad "ast-identity: $idfail of $((idpass + idfail)) generated pairs differ"
+fi
+
+# ---- 2b. [M4.5b] the OTHER half: the announced behaviour change ------------
+#
+# The check above deliberately compiles with --no-captures, so on its own it
+# would let the DEFAULT behaviour drift unobserved. engine_m4.md §9.2 item 3
+# says the same invocation that compiles a scanning matcher today emits a
+# capture-tracking one after M4, and that it "should be announced as one
+# boundary with two items, not discovered as a surprise by whoever ports
+# first". Pinning it here is what makes the --no-captures scoping above a
+# NARROWING of what this check covers rather than a hole in it.
+def_out="$("$PCREC" -p rx -o - -- 'a|(b|c)' 2>/dev/null)"
+nc_out="$("$PCREC" -p rx --no-captures -o - -- 'a|(b|c)' 2>/dev/null)"
+if [ -z "$def_out" ] || [ -z "$nc_out" ]; then
+    bad "ast-identity/default: 'a|(b|c)' would not compile"
+elif printf '%s' "$def_out" | grep -q '^#define RX_NCAPS 2$' \
+     && printf '%s' "$def_out" | grep -q '^#define RX_ENGINE "vm"$' \
+     && printf '%s' "$nc_out" | grep -q '^#define RX_NCAPS 1$' \
+     && ! printf '%s' "$nc_out" | grep -q 'RX_ENGINE'; then
+    ok "ast-identity/default: the SAME grouped spelling emits a capture-tracking VM artifact by default and today's DFA artifact under --no-captures (§9.2 item 3's announced change, pinned)"
+else
+    bad "ast-identity/default: 'a|(b|c)' did not produce RX_NCAPS 2 + VM by default and RX_NCAPS 1 + DFA under --no-captures"
 fi
 
 # ---- 3. the depth discipline ----------------------------------------------

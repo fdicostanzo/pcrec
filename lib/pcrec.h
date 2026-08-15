@@ -19,11 +19,34 @@ enum {
  * PCRE2 equivalent. `PCREC_NO_CAPTURES` is RESERVED here (D42.1's
  * captures-default axis is M4.5-era) — no CLI flag or compile-time behavior
  * sets or reads it yet; the bit exists so a caller's code compiled against
- * this header does not need revisiting when M4.5 wires it. */
+ * this header does not need revisiting when M4.5 wires it.
+ *
+ * [M4.5b] PCREC_NO_CAPTURES is now LIVE (D42.1: captures are ON by default;
+ * this bit recovers the pre-M4.5 pure-DFA artifact, RX_NCAPS 1). */
 enum {
     PCREC_CASELESS    = 1u << 0,  /* was pcrec_options.caseless */
     PCREC_EMIT_MAIN   = 1u << 1,  /* was pcrec_options.emit_main */
-    PCREC_NO_CAPTURES = 1u << 2   /* reserved; M4.5-era: --no-captures */
+    PCREC_NO_CAPTURES = 1u << 2   /* --no-captures (D42.1) */
+};
+
+/* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.
+ * AUTO is APPROACH §2's "automatic per pattern"; the other two are diagnostic
+ * (reproduce a bug, measure the hybrid against VM-only) and REFUSE cleanly
+ * rather than falling back silently. PCREC_ENGINE_VM additionally DISABLES
+ * the DFA prefilter (D44/R21 E-6), which is what makes it an independent
+ * second derivation of the match span rather than an echo of the DFA's. */
+enum {
+    PCREC_ENGINE_AUTO = 0,
+    PCREC_ENGINE_DFA  = 1,
+    PCREC_ENGINE_VM   = 2
+};
+
+/* [M4.5b] `step_budget`'s sentinels (engine_m4.md §4.6). The default is a
+ * BRING-UP PLACEHOLDER: D12 rules that budgets come from measured medians and
+ * [M4.6] is where the measurement happens. */
+enum {
+    PCREC_STEP_BUDGET_DEFAULT = 0,   /* emit the placeholder default */
+    PCREC_STEP_BUDGET_NONE    = -1   /* --fno-step-budget: emit no counter */
 };
 
 typedef struct {
@@ -47,6 +70,19 @@ typedef struct {
     const char *header_name; /* name used in the generated #include "...";
                                 NULL = self-contained .c (declarations inlined,
                                 h_src not produced) */
+    int         engine;      /* [M4.5b] PCREC_ENGINE_* (default AUTO) */
+    int64_t     step_budget; /* [M4.5b] backtrack resumptions the emitted VM
+                                 will spend before returning <PREFIX>_ERR_STEPS;
+                                 PCREC_STEP_BUDGET_DEFAULT / _NONE. A GENERATION
+                                 AXIS, not a runtime parameter (D18) — and the
+                                 only shape the frozen rx_matchfn signature
+                                 leaves open (engine_m4.md §4.6). Ignored on a
+                                 DFA artifact, which cannot backtrack. */
+    int         frame_capacity; /* [M4.5b] <PREFIX>_BT_FRAMES, the resume-stack
+                                 capacity (engine_m4.md §4.5's SECOND bound);
+                                 0 = let the compiler size it (exactly, where
+                                 the pattern's dynamic depth is statically
+                                 bounded; the default otherwise). */
 } pcrec_options;
 
 /* [M4.4] (subst note §9 Q8, D42.4): which input string pcrec_error.pos

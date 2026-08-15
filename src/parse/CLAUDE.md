@@ -34,7 +34,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   drift) module list — static, fixed-size buffers filled once by `install()`
   at spec-parse time, matching the file's existing write-once/read-many
   contract; src/gen's artifact stamping is their only consumer today
-- **parse.c** — see also **PARSE-1 (2026-08-11)** below, which changed the
+- **parse.c** — **[M4.5b]: the capturing-`(` hook now also builds the AST's
+  capture node.** `p_group_body`'s existing hook is the one place that knows
+  "is this `(` a capturing group", so `Ctx.ncap++`, the group NUMBER and the
+  `A_CAP` wrapper all live there together; the number is taken BEFORE the body
+  parse for the same reason the increment is, since PCRE2 assigns numbers by
+  opening-paren order and an inner group must not steal an outer one's.
+  `Ctx.want_caps` is the ONLY gate — with it false the tree produced is
+  byte-identical to D31's, which is what makes engine_m4.md §5.4's gate
+  structural rather than audited. The wrapper PROPAGATES `not_repeatable`
+  rather than defaulting it: leaving it at the arena's zero would make
+  `((?i))*` legal with captures on and error 109 with `--no-captures`, a
+  divergence between the two modes, and whether pcrec should reject that
+  spelling at all is a separate pre-existing question this node must not
+  silently answer. The capture wrap goes OUTSIDE the bare-anchor `A_CAT` wrap,
+  so `(^)`'s group spans the whole (empty) match rather than only the anchor.
+  Otherwise: see also **PARSE-1 (2026-08-11)** below, which changed the
   group case's SHAPE without adding a construct — the base grammar AND NOTHING
   ELSE (SR-2): literals, `.`,
   classes, quantifiers, `|`, `(...)`, `(?:...)`, `^`, `$`, the plain character

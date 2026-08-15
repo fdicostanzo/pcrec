@@ -395,10 +395,28 @@ project journal entry.
 | `make test-reject` | `tests/reject/run_reject_tests.sh` | yes |
 | `make test-registry` | `tests/registry/run_registry_tests.sh` (registry_check, compliance_section.py, PC-3, PC-4) | yes |
 | `make test-parse` | `tests/parse/run_parse_tests.sh` | yes |
-| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
+| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` + `run_vm_identity.sh` | yes |
+| `make test-vm` | `tests/vm/run_vm_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+
+**[M4.5b] (2026-08-15) — the count moves from nine script invocations to
+eleven, and the section list from eight to nine.** `test-codegen` gains
+`run_vm_identity.sh` (engine_m4.md §5.4's zero-regression gate: a capture-free
+pattern's emitted bytes must not move now that a second emitter and a capture
+AST node exist), joining the two scripts it already wraps under the same
+"codegen structural checks" concept. `test-vm` is a NEW section wrapping
+`tests/vm/run_vm_tests.sh` — the VM engine's two bounds, its artifact stamps,
+its selection surface, and the capture oracle plus engine_m4.md §3.7's
+differential. It is a section of its own rather than a codegen line because
+what it asserts is behavioural, not structural: it compiles and RUNS matchers
+against subjects, which no script in `tests/codegen/` does.
+
+`make test-vm` runs the QUICK oracle sweep, which is the same one `make test`
+runs. The full sweep — the fuzzer's trap-template shapes instantiated with
+capturing groups under every quantifier — is `bash tests/vm/run_vm_tests.sh
+full` and is a checkpoint-scale run, not an inner-loop one.
 
 Each target depends on `all`, so a stale binary never reads as a pass.
 `make mech`, `make bench`, `make fuzz`, and `make strict` already had their
@@ -468,7 +486,8 @@ at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
 | Touched path | Spot-check with | Why |
 |---|---|---|
 | `src/parse/*` (`parse.c`, `registry.c`, `enabled.c`, `ext.c`, `scans.c`, `syntax_dump.c`, `mod_*.c`) | `test-reject`, `test-registry`, `test-spec`, `test-cli` | reject asserts the "never miscompile" mandate per construct; registry checks the SR-1 table against the parser AND against libpcre2 (PC-3/PC-4); spec_mod0 is the D27 promise-derived suite, blind to `src/`'s own alphabet; cli exercises the CLI surface these modules gate ("requires module 'X'") |
-| `src/ir/*` (`nfa.c`, `dfa.c`) + `src/opt/*` (`minimize.c`) + `src/gen/*` (`emit_dfa.c`) | `test-corpus`, `test-codegen` (includes the trie identity differential), `bench` | corpus is correctness of what the emitted matcher actually matches; codegen asserts the optimization signatures (skip tables, fast paths, minimization) are structurally present, per R2-PR3's finding that these can be silently disabled with zero other signal; bench guards the throughput/compile-time budgets these components produce |
+| `src/gen/emit_vm.c`, `src/opt/select_engine.c`, `A_CAP`'s parse hook | `test-vm`, `test-codegen` (for `run_vm_identity.sh`'s §5.4 gate), `test-parse` | test-vm is where a wrong capture span or a broken bound shows up, and it is the ONLY section that runs a VM artifact against subjects; the §5.4 gate is what catches a capture-free pattern's bytes moving, which no correctness test can see because the VM computes the same spans; test-parse's ast-identity check is the D31 erasure's own net |
+| `src/ir/*` (`nfa.c`, `dfa.c`) + `src/opt/*` (`minimize.c`) + `src/gen/*` (`emit_dfa.c`) | `test-corpus`, `test-codegen` (includes the trie identity differential and the §5.4 VM gate), `test-vm`, `bench` | corpus is correctness of what the emitted matcher actually matches; codegen asserts the optimization signatures (skip tables, fast paths, minimization) are structurally present, per R2-PR3's finding that these can be silently disabled with zero other signal; bench guards the throughput/compile-time budgets these components produce |
 | `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
 | `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
 | `lib/pcrec.h` | `test-cli` (the library-API smoke test), `test-thread` (both TS-2 and TS-3 call the public API directly) | |
@@ -595,6 +614,7 @@ code had their own hardcoded flags and were completely deaf to it:
 | `tests/registry/run_registry_tests.sh` | links `libpcrec.a` (`registry_check.c`, `pcre2_check.c`) | hardcoded `LIB=.../build/libpcrec.a` | `LIB="${LIBPCREC:-...same default...}"`, plus `$SANFLAGS` appended to both builds |
 | `tests/parse/run_parse_tests.sh` | links `libpcrec.a` (`branch_count_check.c`) | same | same fix |
 | `tests/codegen/run_trie_identity.sh` | the `-DPCREC_NO_TRIE` reference compiler, built from source | `PCREC` was already overridable (free compiler-axis coverage); `$REF`'s own build had no hook | `$SANFLAGS` appended to the `$REF` build |
+| `tests/vm/run_vm_tests.sh` + `vm_oracle.py` ([M4.5b], 2026-08-15) | `gen.c` + `vm_driver.c`, once per pattern per engine mode | — (new) | born reading `GENCFLAGS` and `PCREC`, so both axes are covered from the first commit rather than retrofitted |
 
 Two new env vars carry this, both empty/default-preserving when unset:
 `LIBPCREC` (default `<repo-root>/build/libpcrec.a`) lets a suite that links
@@ -615,6 +635,14 @@ hook) and needed no change.
 - **`make asan`** — `-fsanitize=address,leak`, same `-O1 -g` / `GENCFLAGS`
   shape. `ASAN_OPTIONS="detect_leaks=1"` is set explicitly since LSan's
   default varies by platform.
+  **[M4.5b] (2026-08-15)**: both targets' suite lists gain
+  `tests/codegen/run_vm_identity.sh` and `tests/vm/run_vm_tests.sh`. The
+  second matters more than a new line usually does — it is the only suite
+  that RUNS a VM artifact, so it is the only place the sanitizers see the
+  emitted resume stack, the capture trail, the computed `goto *`, and the
+  span-loop cursor's pointer arithmetic at all. Everything else in the
+  battery exercises DFA-emitted table walks.
+
 - **`make lint`** — static analysis survey, degrading loudly-but-gracefully
   per tool present (the PC-3 libpcre2-absent SKIP pattern), never failing
   the target just because a tool is missing:

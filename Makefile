@@ -57,6 +57,8 @@ test: all
 	bash tests/parse/run_parse_tests.sh
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
+	bash tests/codegen/run_vm_identity.sh
+	bash tests/vm/run_vm_tests.sh
 	bash tests/known_fail/run_known_fail.sh
 	bash tests/thread/run_thread_tests.sh
 
@@ -93,6 +95,15 @@ test-parse: all
 test-codegen: all
 	bash tests/codegen/run_codegen_tests.sh
 	bash tests/codegen/run_trie_identity.sh
+	bash tests/codegen/run_vm_identity.sh
+
+# [M4.5b] the VM engine's own section: the two bounds as MECHANISM, the
+# honest artifact stamps, and the capture oracle + the §3.7 differential.
+# `make test-vm` runs the --quick oracle sweep (the same one `test:` runs);
+# `bash tests/vm/run_vm_tests.sh full` adds the fuzzer's trap-template shapes
+# under every quantifier and is a checkpoint-scale run, not an inner-loop one.
+test-vm: all
+	bash tests/vm/run_vm_tests.sh
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh
@@ -210,6 +221,8 @@ ubsan:
 	         tests/parse/run_parse_tests.sh \
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_vm_identity.sh \
+	         tests/vm/run_vm_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
 	    env $(UBSAN_ENV) bash "$$s" || exit 1; \
@@ -243,6 +256,8 @@ asan:
 	         tests/parse/run_parse_tests.sh \
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_vm_identity.sh \
+	         tests/vm/run_vm_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
 	    env $(ASAN_ENV) bash "$$s" || exit 1; \

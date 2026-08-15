@@ -20,6 +20,33 @@
 
 typedef struct { Ctx *cx; Nfa *nfa; bool rev; } NB;
 
+/* [M4.5b] A_CAP IS INVISIBLE HERE, and that is load-bearing in two places at
+ * once (engine_m4.md §6.1 and §5.4).
+ *
+ * §6.1's STRUCTURAL half is that for a capture-only pattern the capture-erased
+ * DFA is not an over-approximation — it is literally the SAME machine, because
+ * D31 erases the group at parse time. [M4.5b] introduces A_CAP, which would
+ * break that by inspection unless the NFA builder erases it again. It does,
+ * here, by dereferencing every A_CAP before looking at a node's kind. The
+ * consequence is stronger than "the languages agree": the NFA built for
+ * `(a|b)+c` is STATE-FOR-STATE the NFA built for `(?:a|b)+c`, so the prefilter
+ * pair and every downstream DFA/minimization/emission step is bit-identical to
+ * what the same pattern compiles to today. §11.3's "two lowerings from one
+ * parse" mitigation, obtained without a second tree — the VM emitter is the
+ * ONE consumer that reads A_CAP.
+ *
+ * It must therefore be applied at EVERY place this file dispatches on `->k` or
+ * walks a spine: compile_ast's entry, trie_key's spine head and leaves, and
+ * the A_CAT/A_ALT spine flattening (whose `->l`/`->r` children can each be an
+ * A_CAP). Missing one does not miscompile — the fallback is compile_ast's own
+ * entry deref — but it does perturb trie ELIGIBILITY, which would show up as a
+ * §5.4 byte-identity gate failure rather than as a wrong answer. */
+static const Ast *ast_bare(const Ast *a)
+{
+    while (a->k == A_CAP) a = a->l;
+    return a;
+}
+
 /* Dangling out-edges are encoded as state*2 + slot (slot 0 = t1, 1 = t2). */
 typedef struct { int *v; int n, cap; } Patch;
 
@@ -428,8 +455,9 @@ static Frag trie_build(NB *b, const TItem *items, int n, int depth, int rdepth)
  * flipped, since rev(X.Y) = rev(Y).rev(X). */
 static bool trie_key(NB *b, const Ast *a, TItem *out)
 {
+    a = ast_bare(a);
     int nsp = 0;
-    for (const Ast *t = a; ; t = t->l) {
+    for (const Ast *t = a; ; t = ast_bare(t->l)) {
         nsp++;
         if (t->k != A_CAT) break;
     }
@@ -437,7 +465,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
     const Ast **leaf = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
     int i = nsp;
     const Ast *t = a;
-    while (t->k == A_CAT) { leaf[--i] = t->r; t = t->l; }
+    while (t->k == A_CAT) { leaf[--i] = ast_bare(t->r); t = ast_bare(t->l); }
     leaf[--i] = t;
     if (i != 0) return false;   /* defensive: spine walk must be exact */
 
@@ -456,6 +484,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
 
 static Frag compile_ast(NB *b, const Ast *a)
 {
+    a = ast_bare(a);   /* [M4.5b]: the group erasure, re-applied — see above */
     switch (a->k) {
     case A_CLASS: {
         Frag f = frag_single(b, N_CLASS);
@@ -470,11 +499,11 @@ static Frag compile_ast(NB *b, const Ast *a)
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
         int nsp = 0;
         const Ast *t = a;
-        while (t->k == A_CAT) { nsp++; t = t->l; }
+        while (t->k == A_CAT) { nsp++; t = ast_bare(t->l); }
         const Ast **rs = arena_alloc(&b->cx->arena, (size_t)nsp * sizeof(Ast *));
         int i = nsp;
         t = a;
-        while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
+        while (t->k == A_CAT) { rs[--i] = t->r; t = ast_bare(t->l); }
         /* forward order: t, rs[0], ..., rs[nsp-1] */
         Frag f;
         if (!b->rev) {
@@ -492,11 +521,11 @@ static Frag compile_ast(NB *b, const Ast *a)
     case A_ALT: {
         /* flatten, then chain splits so branch order = priority order */
         int nbr = 1;
-        for (const Ast *t2 = a; t2->k == A_ALT; t2 = t2->l) nbr++;
+        for (const Ast *t2 = a; t2->k == A_ALT; t2 = ast_bare(t2->l)) nbr++;
         const Ast **br = arena_alloc(&b->cx->arena, (size_t)nbr * sizeof(Ast *));
         int i = nbr;
         const Ast *t2 = a;
-        while (t2->k == A_ALT) { br[--i] = t2->r; t2 = t2->l; }
+        while (t2->k == A_ALT) { br[--i] = t2->r; t2 = ast_bare(t2->l); }
         br[0] = t2;
 
         /* M2.8: factor shared prefixes. Eligible branches are grouped into
@@ -570,6 +599,11 @@ static Frag compile_ast(NB *b, const Ast *a)
         }
         return f;
     }
+    case A_CAP:
+        break;   /* unreachable: ast_bare() above strips every A_CAP. Listed
+                  * so -Wswitch keeps this exhaustive, and falling into the
+                  * internal-error below rather than silently recursing means
+                  * a future path that reaches here says so loudly. */
     }
     ctx_fail(b->cx, 0, "internal error: bad AST node");
 }

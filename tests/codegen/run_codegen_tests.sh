@@ -45,9 +45,13 @@ bad()  { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # this file builds a two-engine file and requires a scoped grep to find the
 # skip table in the engine that has one and NOT in the engine that does not —
 # which neither a whole-file extractor nor an empty one can satisfy.
+# [M4.5b] the anchor accepts an optional `static`: a VM artifact emits the DFA
+# engine under a private name as its prefilter (engine_m4.md §6.1), which is
+# the SAME emitter's output with a different storage class, and it must be
+# extractable for the same per-engine scoping reason every other body is.
 body() { # body <file> <entry-name> <out-file>
     awk -v fn="$2" '
-        $0 ~ "^int " fn "\\(" { inside = 1 }
+        $0 ~ "^(static )?int " fn "\\(" { inside = 1 }
         inside                { print }
         inside && /^\}/       { exit }
     ' "$1" > "$3"
@@ -110,7 +114,15 @@ fi
 # Minimization is behavior-preserving, so only table SIZE can detect it.
 # This alternation is provably non-minimal after subset construction: the
 # five branches converge on equivalent tail states that must merge.
-if gen minim '(get|post|put|delete|patch)'; then
+#
+# [M4.5b] The group is NON-CAPTURING now. It was incidental to what this check
+# measures (a DFA table's size) and became load-bearing in the wrong direction
+# when D42.1 made captures the default: the capturing spelling routes to a VM
+# artifact, where the table lives in `rx_prefilter` and not in the `rx_search`
+# body `gen` extracts. Making the pattern say what it means is the fix; the
+# prefilter's OWN minimization is then checked separately below, which is
+# coverage this check did not have before.
+if gen minim '(?:get|post|put|delete|patch)'; then
     entries=$(grep -oE 'rx_ftr\[[0-9]+\]' "$WORKDIR/minim.body" | grep -oE '[0-9]+' | head -1)
     if [ -z "${entries:-}" ]; then
         bad "minimization: could not find rx_ftr[] table in generated code"
@@ -119,6 +131,29 @@ if gen minim '(get|post|put|delete|patch)'; then
     else
         bad "minimization: keyword alternation table is $entries entries (> 200; minimization disabled/broken?)"
     fi
+fi
+
+# [M4.5b] ...and the VM's DFA PREFILTER is minimized too. The hybrid runs the
+# same forward+reverse pair through the same passes (engine_m4.md §6.1, §2.8's
+# "reused unchanged" table), so a minimization bug scoped to that path would be
+# invisible to the check above — which only ever looks at an artifact where the
+# DFA IS the engine. Same alternation, capturing, so the routing differs and
+# nothing else does.
+if "$PCREC" -p rx -o "$WORKDIR/minimvm.c" -- '(get|post|put|delete|patch)' >/dev/null 2>&1; then
+    if ! body "$WORKDIR/minimvm.c" rx_prefilter "$WORKDIR/minimvm.body"; then
+        bad "minimization/prefilter: could not extract rx_prefilter from the VM artifact"
+    else
+        ventries=$(grep -oE 'rx_ftr\[[0-9]+\]' "$WORKDIR/minimvm.body" | grep -oE '[0-9]+' | head -1)
+        if [ -z "${ventries:-}" ]; then
+            bad "minimization/prefilter: no rx_ftr[] table inside the VM artifact's prefilter"
+        elif [ "$ventries" -le 200 ]; then
+            ok "minimization/prefilter: the VM hybrid's prefilter table is $ventries entries (<= 200) — the same passes run on that path"
+        else
+            bad "minimization/prefilter: prefilter table is $ventries entries (> 200; minimization skipped on the hybrid's path?)"
+        fi
+    fi
+else
+    bad "minimization/prefilter: could not compile the capturing alternation"
 fi
 
 # ---- M2.7: `$` patterns must use the O(n) engine, not per-start attempts ----
@@ -510,10 +545,28 @@ TS1_DENY='malloc|calloc|realloc|free|errno|getenv|setenv|putenv|setlocale|strtok
 
 ts1_scan() { # ts1_scan <label> <file>
     local lbl="$1" f="$2" hit
+    # [M4.5b] NARROWED, and narrowed CONSCIOUSLY (this file's own instruction
+    # two paragraphs up): a static FUNCTION is excluded, a static OBJECT is
+    # not. D19's property is "no mutable file/function-scope STATE", and a
+    # function has no storage to race on — but until the VM emitter existed,
+    # every emitted `static` was a table, so "static and not const" and "mutable
+    # state" were the same set and the check could not tell them apart. The VM
+    # artifact emits five static functions (rx_match_impl, rx_work_init,
+    # rx_unwind, rx_caps_out, rx_prefilter) and its whole mutable working set is
+    # a LOCAL of the search entry, which is exactly what D19 asks for.
+    #
+    # The discriminator is C's declarator syntax, not a name list: a function
+    # declarator has `(` with no `=`, `;` or `[` before it. So
+    # `static void rx_unwind(rx_work *w)` is excluded and
+    # `static unsigned char rx_tbl[256] = {` (S06's sabotage — a table with its
+    # const dropped) still has no `(` at all and is still caught, as is anything
+    # of the shape `static int rx_counter = f(0);`, where `=` precedes the `(`.
+    # Validated by re-running S06 through tests/mech after the narrowing.
     hit="$(tail -n +2 "$f" | grep -nE '^[[:space:]]*static ' \
-           | grep -vE ':[[:space:]]*static const ' | head -2)"
+           | grep -vE ':[[:space:]]*static const ' \
+           | grep -vE ':[[:space:]]*static [^=;[]*\(' | head -2)"
     if [ -n "$hit" ]; then
-        bad "TS-1 [$lbl]: emitted a NON-CONST static — generated code must have no mutable file/function-scope state (D19): $hit"
+        bad "TS-1 [$lbl]: emitted a NON-CONST static OBJECT — generated code must have no mutable file/function-scope state (D19): $hit"
         return 1
     fi
     hit="$(tail -n +2 "$f" | grep -nE "\\b($TS1_DENY)\\b" | head -2)"
@@ -578,7 +631,7 @@ if "$PCREC" -p rx -o - -- 'a(b|c)+d' > "$WORKDIR/m44info.c" 2>/dev/null; then
     elif [ "$ncaps_val" -gt 1 ] && [ "$engine_val" -ne 2 ]; then
         bad "[M4.4]: RX_NCAPS ($ncaps_val) > 1 but rx_info.engine ($engine_val) is not ENGM_VM (2) — RX_NCAPS>1 must imply the VM engine (D42.2)"
     else
-        ok "[M4.4]: RX_NCAPS ($ncaps_val) > 1 => VM structural check holds (trivially green pre-[M4.5]: RX_NCAPS is always 1 on this DFA-only emitter)"
+        ok "[M4.4/M4.5b]: RX_NCAPS ($ncaps_val) > 1 => VM structural check holds — NON-VACUOUSLY since [M4.5b] (this cell had no population at all while the DFA was the only emitter; tests/codegen/run_vm_identity.sh runs it over the whole corpus)"
     fi
 else
     bad "[M4.4]: pcrec failed to compile 'a(b|c)+d' for the structural NCAPS/engine checks"

@@ -619,8 +619,22 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * whole-pattern count "wants a lexical pre-scan instead" is RETIRED —
      * §18.1's measured resolution is deferred resolution against this
      * counter's end-of-parse value; the pre-scan is dead. */
-    if (cx->pat[cx->pos - 1] == '(' && !cx->mods.nocap)
+    /* [M4.5b] The same hook now also decides whether this group gets an
+     * A_CAP node. `capno` is read BEFORE the body parse for the same reason
+     * the increment sits here — PCRE2 numbers groups by opening-paren order,
+     * so an inner group must not steal the outer group's number. `want_caps`
+     * is the ONLY gate: when it is false (--no-captures, --count-groups, the
+     * syntax queries) the tree produced below is byte-identical to D31's,
+     * which is what makes engine_m4.md §5.4's byte-identity gate structural.
+     * See A_CAP's own comment in core/internal.h. */
+    int capno = 0;
+    if (cx->pat[cx->pos - 1] == '(' && !cx->mods.nocap) {
         cx->ncap++;
+        if (cx->want_caps) {
+            capno = (int)cx->ncap;
+            if (cx->first_cap_pos == (size_t)-1) cx->first_cap_pos = apos;
+        }
+    }
     /* The scope boundary (moved from p_group at MOD-0.5c — see its comment):
      * a body-carrying group saves/restores the scoped state around ITS body,
      * so `(?i)` inside restores at this `)` and a bare `(?i)` (which returned
@@ -640,6 +654,23 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
         cat->l = body;
         cat->r = node(cx, A_EMPTY);
         body = cat;
+    }
+    /* The capture wrap goes OUTSIDE the bare-anchor wrap above, so `(^)`'s
+     * group spans the whole (empty) match rather than only the anchor. */
+    if (capno) {
+        Ast *cap = node(cx, A_CAP);
+        cap->l = body;
+        cap->capno = capno;
+        /* PROPAGATED, not defaulted: `not_repeatable` is a property of what
+         * the group RETURNS to p_rep, and p_rep tests the returned node's own
+         * flag. Leaving the wrapper at the arena's zero would make `((?i))*`
+         * legal with captures on and error 109 with --no-captures — a
+         * divergence between the two modes, which is precisely what §5.4's
+         * gate exists to forbid. Whether pcrec should reject `((?i))*` at all
+         * is a separate, pre-existing question this node must not silently
+         * answer. */
+        cap->not_repeatable = body->not_repeatable;
+        body = cap;
     }
     return body;
 }

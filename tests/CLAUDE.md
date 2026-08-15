@@ -22,7 +22,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   regression net, not evidence the feature is there
 - **registry/** — the SR-1 syntax construct table checked TWICE: against the parser in both directions (including a 255-byte sweep of each of the four doorways, which catches a construct added to parse.c with no registry row, D24), and — since PC-3 — against **libpcre2**, which is the first check in this repo that is not pcrec reading pcrec. Since Q2/SR-9 the `(?` doorway has three generated differentials of its own — a byte sweep, an option-run sweep and per-prefix tail sweeps — so it is no longer the case that only `(*` is name-checked. Plus compliance_section.py, which holds docs/pcre2_compliance.md to the dump (SR-4)
 - **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
-- **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/dev/known_issues.md); excluded from `make test` so the suite stays honest. Currently empty (all known bugs fixed at R2)
+- **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/dev/known_issues.md); excluded from `make test` so the suite stays honest. Holds K18 (the empty-iteration exit lost through a seen ε state), which is a DFA-CONSTRUCTION bug: the VM's own §3.3 guard is a separate mechanism, so tests/vm exercising the K18 family and passing is EXPECTED and touches nothing on this ratchet
+- **vm/** — the [M4.5b] backtracking VM engine's own tests: the two bounds
+  (step budget, frame capacity) each driven to ITS OWN limit and required to
+  produce its own code, the honest artifact stamps (frame_capacity,
+  subject_ceiling) read and then triggered, the engine-selection surface, and
+  vm_oracle.py's capture sweep — every group span against python `re`, every
+  span derived a SECOND time by a prefilter-free `--engine=vm` build
+  (engine_m4.md §3.7's differential, run as a gate rather than a
+  nice-to-have). Separate from harness/ because the .rxt capture-expectation
+  format is [M4.5a]'s concurrent work, and permanently separate for what it
+  checks: bounds, stamps and cross-engine agreement are not expressible as
+  .rxt expectations. Part of `make test`; `make test-vm` is the section
+  target, `bash tests/vm/run_vm_tests.sh full` the checkpoint-scale sweep
 - **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal), plus a differential check that the M2.8 trie is output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3)
 - **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2] N
   threads share one compiled matcher over different subjects across five
