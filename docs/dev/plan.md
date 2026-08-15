@@ -138,105 +138,19 @@ stated terms.
   awaiting a Frank ruling: `rx_info` is emitted as a struct TAG only
   (bare typedef collides with default-prefix `<prefix>_info` = literal
   `rx_info`) — see match_api_m4.md §5's as-built note
-- [M4.5] STATE:started 2026-08-14 (expanded on opening, twentieth
-  session) — IMPL: VM emitter core — captures over the base tier,
-  search + match-here entries, DD-2 budget wired; .rxt format extension
-  for capture expectations (docs/testing.md updated), python-re
-  group-span oracle tier, and a D27-blinded capture test author per
-  convention. Substeps:
-  - [M4.5a] STATE:completed 2026-08-15 (lane m45a-oracle, 81b8b43 +
-    manager-landed comparison fix c021d6e after the RX_NCAPS>1
-    integration break; full battery green at 94abf78) —
-    capture TEST INFRASTRUCTURE: the .rxt
-    capture-expectation format extension, tests/harness caps-array
-    reading, the python `re` GROUP-SPAN oracle tier (engine_m4.md §3.6
-    as re-scoped by R21 E-ASK-1: the THREE-WAY pcrec/python/pcre2
-    2-1-minority rule is the governing rule, NEVER pre-built
-    exclusions — a python-vs-pcre2 disagreement is an
-    upstream_issues.md row + arbitration, not an exclusion),
-    docs/testing.md updated. Landable against [M4.4]'s DFA artifacts
-    (caps[0] is live today); the format must already carry group
-    slots for the VM. Disjoint from [M4.5b] by construction (tests/
-    harness + docs; no src/).
-  - [M4.5b] STATE:completed 2026-08-15 (lane m45b-vm, 7 commits ending
-    c0f24bc; full battery green at 94abf78. As built: src/gen/emit_vm.c; A_CAP born only when
-    captures requested and invisible to the NFA builder so D31's
-    erasure holds by construction; the §5.4 gate is a PERMANENT check,
-    tests/codegen/run_vm_identity.sh, verified once against a compiler
-    built from the pre-lane commit; §3.7's differential is a GATE with
-    the prefilter off; new sections tests/vm (18) + run_vm_identity;
-    sabotages S36–S40 all DETECTED; also --step-budget/
-    --fno-step-budget/--backtrack-frames CLI axes) — the VM EMITTER
-    CORE (engine_m4.md is the
-    design of record): §2's emitted shape (explicit resume stack +
-    capture trail, one cold indirect jump, §2.5's cursor ladder), §3
-    captures under leftmost-first with exact-undo and the E-2-narrowed
-    empty-iteration guard (rmax == -1 only), §3.4 caps delivery, §4's
-    TWO bounds wired as MECHANISM (bring-up placeholder budget;
-    RX_ERR_STEPS/RX_ERR_FRAMES produced; [M4.6] calibrates), §2.6
-    search-wraps-match-here, §6.1's prefilter (the existing
-    capture-erased forward+reverse pair hands the VM an EXACT span —
-    the VM never scans), §5.1–5.3 selection as a pass with the
-    requested-OUTPUT trigger (D42.1 captures-on-default;
-    --no-captures recovers today's artifact), RX_NCAPS>1 artifacts +
-    rx_info engine/budget fields live, --engine=dfa|vm|auto do-or-die
-    (R21 E-6: --engine=vm disables the prefilter; --engine=dfa
-    REFUSES captures-default group-bearing patterns, D44.6). GATE
-    (§5.4): emitted C for the capture-free corpus byte-identical to
-    the pre-M4.5 emitter modulo stamp lines — a check, not a promise.
-  - [M4.5c] STATE:completed 2026-08-15 (lane m45b-vm, d3714b9..de21cce;
-    landed WITH the D45 compile-budget wrapper +
-    PCREC_MAX_VM_REPEAT_COPIES=64/K19 + the K20 spine-recursion
-    segfault find-and-fix + bigbounded resize + hermetic gen-timeout
-    units + bench (c)/(d) --no-captures pins; full battery green at
-    94abf78) — DD-8's VM TRACER. As built: `--emit-ir` is a QUERY (shaped like --count-groups:
-    real pipeline, prints the listing, no -o, no C) printing labels, choice
-    points with preference order, capture slot assignments, and honestly
-    empty island/callout sections whose emptiness is derived from a COUNT
-    rather than blanked; `--trace` is a generation axis (PCREC_TRACE)
-    emitting an instrumented artifact that prints every resume-frame
-    push/pop and capture write to stderr, never the default and stamped as
-    traced. §10's one constraint is STRUCTURAL, not a discipline: the
-    listing is an EVENT STREAM appended by the emitter's own primitives
-    (vm_lbl/vm_push_at/vm_set each write C and record what they wrote), and
-    every section is a view over that one stream. New check
-    tests/codegen/run_ir_listing.sh (60), which caught a real drift on its
-    FIRST run — the accept label was emitted by a direct sb_printf and so
-    was missing from the listing; sabotages S41/S42 both DETECTED. As-built
-    decisions for the manager: --emit-ir REFUSES on a pure-DFA artifact
-    (§10 and DD-8's row are silent; the alternatives were inventing a DFA
-    listing or printing an empty one that looks like a bug), --emit-dot is
-    NOT built (§10 steers away from the automaton picture), and
-    run_vm_identity.sh + run_ir_listing.sh moved to the test-vm section on
-    a measured smoke-budget argument. Original charter: DD-8's VM TRACER
-    with bring-up (Frank
-    REQUESTED): §10's emitted-program listing (labels, choice points
-    with preference order, capture slot assignments, island
-    boundaries, callout call sites) + optional one-subject
-    resume-frame push/pop trace; derives from the SAME structure the
-    emitter walks, never a parallel description. Rides or immediately
-    follows [M4.5b]'s lane. DD-8's row stays OPEN for `--emit-dot`, which
-    this substep deliberately did not build.
-  - [M4.5d] STATE:completed 2026-08-15 (cell m45d-capauthor; merge
-    dc5a29a; R22 review + author-notes appendix in docs/dev/reviews/;
-    230/230 green, corpus 1449→1679; two contract-text gaps found and
-    dispositioned — retention + empty-final-overwrite, three-way
-    unanimous, match_api_m4.md §2.2 addendum; M4.7 wording pass owed)
-    — D27-BLINDED capture test author
-    (CELL, scripts/mk_d27_cell.sh): spec-first capture tests from the
-    PROMISE (match_api_m4.md + testing.md's new format), denied src/
-    and tests/. Opens once [M4.5a]+[M4.5b] merge.
-  - [M4.5e] STATE:started 2026-08-15 — CLOSE: oracle-verified capture corpus
-    over the base tier, structural checks now non-trivially exercised
-    (RX_NCAPS>1⇒VM live), CLAUDE.md sweeps, full battery. ADDED
-    2026-08-15 (D46): the cursor-ladder RUNG STAMP — the selection
-    [M4.5b] makes silently between its two rungs becomes observable
-    (rx_info/macro family per D46's observability half), and the
-    existing rung-boundary tests (33-nested → cursor, 70 → frames)
-    ASSERT the stamp instead of assuming selection by construction.
-    Rung FORCING (D46's controllability half) may land here if cheap
-    or ride [ENG-BREP]/[M4.6], whichever comes first — but the stamp
-    itself is a close obligation.
+- [M4.5] COMPLETED 2026-08-15 — row archived in plan_completed.md.
+  VM emitter core LANDED end to end across five substeps (a: capture
+  .rxt format + python span oracle; b: src/gen/emit_vm.c, 65k-pair
+  oracle sweep, §5.4 byte-identity gate; c: DD-8 tracer + D45 compile
+  budget + K19 cap + K20 fix; d: D27-blinded author, 230/230, two
+  contract-text gaps -> §2.2 addendum; e: D46 per-quantifier rung
+  bitmask + boundary tests + coverage fill). Close battery all seven
+  legs green at 7e3ff93; counts: corpus 1704, cli 247, reject 528,
+  codegen 38, registry 168, PC-3 163, PC-4 62,872/0, trie 7,
+  vm-identity 8, ir-listing 78, vm 28, thread 8, known_fail 1 (K18
+  deliberate), mech 44 rows/0 undetected. Standing consequences:
+  [M4.6] gate = K18 design-first; [ENG-BREP] alongside it; struct
+  rx_info spelling + K19 residual rulings open with Frank.
 - [ENG-BREP] STATE:not-started — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but
