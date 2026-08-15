@@ -12,7 +12,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `run_gen_timeout_tests.sh` is its own section in `make test` — a positive
   control that the wrapper FIRES, plus a coverage assertion that every suite
   routes through it, because a test-infrastructure property is invisible to
-  every other suite in the tree
+  every other suite in the tree. `run_group.sh` ([TT-2], 2026-08-15) runs N
+  independent suite scripts concurrently as one Makefile section recipe
+  (`test-codegen`, `test-vm`), with the lost-worker-hard-fails discipline
+  every other parallel path in the tree follows; see its own CLAUDE.md and
+  docs/testing.md "Internal parallelism and section composition ([TT-2])"
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`

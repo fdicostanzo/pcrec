@@ -104,11 +104,19 @@ test-parse: all
 	bash tests/parse/run_parse_tests.sh
 
 # Both scripts here are the "codegen structural checks" docs/testing.md
-# already describes as one thing; `test:` runs them as consecutive lines,
-# so this target does too.
+# already describes as one thing; `test:` runs them as consecutive lines
+# at PROCS=1 (tests/lib/run_group.sh's serial path is byte-for-byte that),
+# and concurrently otherwise — independent scripts, each its own `mktemp -d`
+# workdir, read-only against build/pcrec (docs/testing.md "Internal
+# parallelism"). Neither script alone is worth internally sharding
+# (run_codegen_tests.sh is ~1.3s; run_trie_identity.sh, the long one at
+# ~10s, is a differential over a fixed small pattern list, not hundreds of
+# independent checks the way reject's table is) — running the TWO scripts
+# side by side is the whole win here.
 test-codegen: all
-	bash tests/codegen/run_codegen_tests.sh
-	bash tests/codegen/run_trie_identity.sh
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/codegen/run_codegen_tests.sh' \
+	    'bash tests/codegen/run_trie_identity.sh'
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
 # honest artifact stamps, the capture oracle + the §3.7 differential, the
@@ -133,10 +141,16 @@ test-codegen: all
 test-gentimeout: all
 	bash tests/lib/run_gen_timeout_tests.sh
 
+# [TT-2] the three scripts are independent (own mktemp -d workdir each,
+# read-only against build/pcrec) and this section is the true long pole
+# under `make -j -Otarget test` — sequentially ~32s (10.4 + 6.2 + 15.2),
+# measured 2026-08-15 — so it gets the same tests/lib/run_group.sh treatment
+# test-codegen above does. PROCS=1 keeps the exact old sequential order.
 test-vm: all
-	bash tests/codegen/run_vm_identity.sh
-	bash tests/codegen/run_ir_listing.sh
-	bash tests/vm/run_vm_tests.sh
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/codegen/run_vm_identity.sh' \
+	    'bash tests/codegen/run_ir_listing.sh' \
+	    'bash tests/vm/run_vm_tests.sh'
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh
