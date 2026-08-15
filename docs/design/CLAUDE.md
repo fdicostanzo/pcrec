@@ -272,8 +272,8 @@ append-only or historical records.
   different rungs (corrected mid-lane from an initial scalar draft) — the
   observability half only, landed as this document's close obligation.
   Rung FORCING (D46's controllability half) has no producer yet.
-- `k18_memo_design.md` — **PROPOSED, AMENDED PER R23 (2026-08-15)** (K18
-  design-first lane): the
+- `k18_memo_design.md` — **BUILT 2026-08-15 (k18-rewrite lane); PROPOSED,
+  AMENDED PER R23 the same day** (K18 design-first lane): the
   repair of K18, the second live tier-1 DFA priority miscompile — written
   before any rewrite lane per the R21-close scheduling. The
   defect: `clo_visit`'s `seen` is a GLOBAL per-closure memo while the
@@ -332,6 +332,18 @@ append-only or historical records.
   asan at depth 210. Not the stack fix (the unfixed prototype measures
   identical depths), and invisible to the suite, whose corpus tops out at
   depth 4. The rewrite lane owes a decision on it (§5 item 12).
+  **BUILT 2026-08-15 (k18-rewrite lane, src/ir/dfa.c).** A2 landed as
+  designed, semantics unchanged. §5 item 12 is answered ITERATIVE, with the
+  decision recorded inline at the item: the prototype's `open[]` array is a
+  redundant materialisation of the interned context chain, so dropping it
+  turns R23 S3's per-frame entry save into one carried int, makes the
+  ancestor-clobber defect inexpressible, and leaves per-frame state small
+  enough that the Θ(d²) descent becomes an explicit LIFO of deferred
+  branches — after which C-stack depth does not depend on the pattern at
+  all. All thirteen §5 items discharged; the landing record, the reproduced
+  measurements (corpus blast radius 547 identical / 8 differing, 249 on the
+  shape space, 226/226 direction) and the four-file guard corpus are in
+  `../dev/known_issues.md` K18.
 - `k18_measurements/` — the lane's prototypes, harnesses and generators; see
   its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors

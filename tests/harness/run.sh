@@ -253,7 +253,12 @@ flush_block() {
     fi
 
     local pcrec_err
-    pcrec_err="$(timeout 60 "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
+    # The budget is AXIS-AWARE (R23 V1): pcrec's own invocation used to carry a
+    # bare hardcoded `timeout 60` that did not scale with the sanitizer axes,
+    # which is the one compile a change to the compiler can actually slow down.
+    # gen_timeout.sh derives it from the same flags everything else does, and
+    # carries the measurement the numbers come from.
+    pcrec_err="$(timeout "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
     local pcrec_rc=$?
 
     if [ "$cur_is_perr" = "1" ]; then

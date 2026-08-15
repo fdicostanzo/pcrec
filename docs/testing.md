@@ -1137,12 +1137,34 @@ replacing them with a shared number would delete the instrument. And
 `tests/thread`'s TS-3 builds, which compile libpcrec itself (compiler axis, not
 emitted code).
 
-**Its own checks**: `tests/lib/run_gen_timeout_tests.sh` (8 checks, in
+**pcrec's OWN invocation is in the mechanism too, since 2026-08-15 (K18's
+rewrite lane, discharging R23 V1).** `tests/harness/run.sh` wrapped the
+compiler's own invocation in a bare, hardcoded `timeout 60` that predated D45
+and sat outside it: the budget above is derived from a GENERATED-CODE compile's
+flags, and pcrec's own invocation passes none — so the one compile a change to
+pcrec can actually slow down had the one budget that did not scale with the
+axis, and blowing it is scored `HARNESS FAILURE` rather than a graceful skip.
+K18's path-sensitive closure is exactly such a change, so it folded the timeout
+in rather than documenting the gap as acceptable. `pcrec_timeout_secs` reads
+the same four flag variables and answers **20s plain / 60s sanitizer**
+(`PCRECTIMEOUT`, `PCRECTIMEOUT_SAN`). The numbers are a different quantity from
+the generated-code ones and are calibrated on their own measurement: pcrec's
+own compiles are sub-millisecond for ordinary patterns, and MEASURED 0.38 s
+plain / 0.84 s asan / 0.85 s ubsan for the worst case the corpus contains —
+`tests/base/k18_deep_nesting.rxt`'s 250 nested nullable stars, which is the
+deepest nesting the parser accepts at all. So the plain budget is ~50x the
+worst legitimate case, with the same revisit-when as D45's own: raise it WITH
+the measurement, never silently.
+
+**Its own checks**: `tests/lib/run_gen_timeout_tests.sh` (10 checks, in
 `make test`). A positive control proves the wrapper FIRES on a real
 over-budget compile and names the case; a coverage assertion proves every
 suite routes through the one helper, which is the check that survives future
 work, since a new compile site added without the wrapper is the realistic way
-this protection erodes. Sabotage S43.
+this protection erodes. Sabotage S43. The two added with the pcrec budget hold
+it the same way: one asserts the per-axis numbers and the overrides, and one
+greps `run.sh` for a hand-rolled numeric timeout on `$PCREC` — a literal is
+exactly how this reverts.
 
 ### The pathology D45 was ruled over, and the compiler-side bound
 
