@@ -197,7 +197,15 @@ stated terms.
     and tests/. Opens once [M4.5a]+[M4.5b] merge.
   - [M4.5e] STATE:not-started — CLOSE: oracle-verified capture corpus
     over the base tier, structural checks now non-trivially exercised
-    (RX_NCAPS>1⇒VM live), CLAUDE.md sweeps, full battery.
+    (RX_NCAPS>1⇒VM live), CLAUDE.md sweeps, full battery. ADDED
+    2026-08-15 (D46): the cursor-ladder RUNG STAMP — the selection
+    [M4.5b] makes silently between its two rungs becomes observable
+    (rx_info/macro family per D46's observability half), and the
+    existing rung-boundary tests (33-nested → cursor, 70 → frames)
+    ASSERT the stamp instead of assuming selection by construction.
+    Rung FORCING (D46's controllability half) may land here if cheap
+    or ride [ENG-BREP]/[M4.6], whichever comes first — but the stamp
+    itself is a close obligation.
 - [ENG-BREP] STATE:not-started — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but
