@@ -49,29 +49,31 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(ALLFLAGS) -o $@ cli/main.c $(BUILD_DIR)/libpcrec.a
 
-test: all
-	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/harness/run.sh
-	bash tests/cli/run_cli_tests.sh
-	bash tests/reject/run_reject_tests.sh
-	bash tests/registry/run_registry_tests.sh
-	bash tests/parse/run_parse_tests.sh
-	bash tests/lib/run_gen_timeout_tests.sh
-	bash tests/codegen/run_codegen_tests.sh
-	bash tests/codegen/run_trie_identity.sh
-	bash tests/codegen/run_vm_identity.sh
-	bash tests/codegen/run_ir_listing.sh
-	bash tests/vm/run_vm_tests.sh
-	bash tests/known_fail/run_known_fail.sh
-	bash tests/thread/run_thread_tests.sh
+# [TT-2] `test:` is PREREQUISITE-based, not a 13-line recipe of its own —
+# each line moved to become the section target's OWN recipe below (unchanged
+# byte for byte), and `test:` simply depends on all ten in the SAME order the
+# old recipe ran them in. This is what "section composition" means
+# concretely: GNU make runs a target's prerequisites in listed order when
+# invoked without `-j` (so plain `make test` is UNCHANGED — same suites, same
+# order, same claim — full suite, still the merge/close standard), and runs
+# INDEPENDENT prerequisites concurrently under `-j` (so `make -j$(nproc)
+# -Otarget test` parallelizes across suites with no interleaved output —
+# `-Otarget`/`--output-sync=target` buffers each target's output and prints
+# it as one contiguous block when that target finishes). No suite reads or
+# writes another's output; each has always used its own `mktemp -d` workdir
+# and only ever READS `build/pcrec`/`build/libpcrec.a`, so running them
+# concurrently is safe by the same argument PROCS=N already relies on inside
+# tests/harness/run.sh and (since [TT-2]) tests/reject/run_reject_tests.sh.
+# See docs/testing.md "Section composition" for the measured wall-time.
+test: test-corpus test-cli test-reject test-registry test-parse \
+      test-gentimeout test-codegen test-vm test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
-# runs, one target per section, so a developer can spot-check just the
-# section a change touches instead of paying for the whole suite. `test:`
-# itself is UNTOUCHED by this: it is still the full nine-script run above,
-# byte for byte the same claim as before tiering existed. See docs/testing.md
-# "Tiered testing" for the measured per-section runtimes, the touched-path
-# guidance table, and why `test-spec` exists even though it is not (yet) one
-# of the nine lines in `test:` above.
+# depends on, one target per section, so a developer can spot-check just the
+# section a change touches instead of paying for the whole suite. See
+# docs/testing.md "Tiered testing" for the measured per-section runtimes, the
+# touched-path guidance table, and why `test-spec` exists even though it is
+# not (yet) one of `test:`'s ten prerequisites above.
 #
 # Each target rebuilds `all` first (bar test-spec, which treats build/pcrec
 # as a black box the way its own runner already does) so a stale binary never
@@ -82,8 +84,18 @@ test-corpus: all
 test-cli: all
 	bash tests/cli/run_cli_tests.sh
 
+# [TT-2] PROCS defaults to nproc here too, same as test-corpus above:
+# run_reject_tests.sh gained the harness's own worker-reinvocation pattern
+# (sharded by CALL INDEX — see its own header comment), measured 59.5s at
+# PROCS=1 down to ~5.8s at PROCS=12. Output at PROCS>1 is content-identical
+# (same PASS/FAIL multiset, same Summary counts) but NOT byte-identical to a
+# serial run — shard output is concatenated in shard order, not call order,
+# so individual PASS/FAIL lines interleave differently (docs/testing.md
+# "Internal parallelism"). `PROCS=1 make test-reject` (or `make test`) still
+# gets the exact serial run, line order included — nothing about that path
+# changed.
 test-reject: all
-	bash tests/reject/run_reject_tests.sh
+	PROCS=$${PROCS:-$$(nproc)} bash tests/reject/run_reject_tests.sh
 
 test-registry: all
 	bash tests/registry/run_registry_tests.sh
@@ -350,5 +362,5 @@ clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
-        test-codegen test-known-fail test-thread test-spec smoke hooks \
-        strict ubsan asan lint mech bench fuzz clean
+        test-gentimeout test-codegen test-vm test-known-fail test-thread \
+        test-spec smoke hooks strict ubsan asan lint mech bench fuzz clean
