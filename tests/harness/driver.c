@@ -12,8 +12,16 @@
  *   explicitly — see docs/testing.md).
  *
  * Prints exactly one line to stdout:
- *   "match %td %td\n"   (rx_search found a match: caps[0][0], caps[0][1] —
- *                        [M4.4], D44.2: the caps-array search signature)
+ *   "match %td %td [%td %td ...]\n"
+ *                       (rx_search found a match: caps[0][0], caps[0][1] —
+ *                        the whole-match span, [M4.4]/D44.2's caps-array
+ *                        search signature — followed by caps[k][0]/caps[k][1]
+ *                        for every k in [1, RX_NCAPS), [M4.5a]: today
+ *                        RX_NCAPS is always 1 on a DFA-compiled artifact, so
+ *                        the line is exactly "match %td %td\n" as before —
+ *                        this is a superset, not a reshape. A .rxt `g`/`gp`
+ *                        capture-expectation line picks its slot's pair out
+ *                        of these fields by position; see docs/testing.md)
  *   "nomatch\n"         (rx_search found no match)
  * and exits 0. On a malformed escape in argv[1] or a malformed [startpos],
  * prints a message to stderr and exits 2.
@@ -135,7 +143,11 @@ int main(int argc, char **argv) {
     ptrdiff_t caps[RX_NCAPS][2];
     int found = rx_search(buf, len, startpos, caps);
     if (found) {
-        printf("match %td %td\n", caps[0][0], caps[0][1]);
+        printf("match");
+        for (int k = 0; k < RX_NCAPS; k++) {
+            printf(" %td %td", caps[k][0], caps[k][1]);
+        }
+        printf("\n");
     } else {
         printf("nomatch\n");
     }

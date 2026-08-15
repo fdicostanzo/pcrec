@@ -48,7 +48,12 @@ Process and status documents for pcrec. The architecture itself lives in
   targets, the GENCFLAGS compile-site audit, LINTGEN=1, the findings
   inventory (F1), sabotage validations, quiet-box runtimes, and the
   battery-placement ruling (ubsan+asan+lint join the merge/close battery;
-  smoke never).
+  smoke never). Also (added [M4.5a]) "Capture-group expectations": the
+  `g`/`gp` `.rxt` line kinds for per-group capture-slot spans, the
+  live-vs-pending-VM population-accounting rule (an out-of-range `g` is a
+  hard failure, an out-of-range `gp` is counted separately and
+  self-activates once `RX_NCAPS` grows to cover it), and the python-`re`
+  oracle tier that checks both identically.
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and

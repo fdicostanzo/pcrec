@@ -1,0 +1,96 @@
+# tests/captures/basic.rxt — [M4.5a] capture-group expectation seed corpus.
+#
+# Every `m`/`ms` line here is verified the same way the base tier is: the
+# whole-match span is checked against the compiled artifact by
+# tests/harness/run.sh (and cross-verified against python re by
+# verify_rxt.py, same as tests/base/). What's new is the `g`/`gp` lines that
+# follow each case — per-GROUP capture-slot expectations, oracle-verified
+# against python re's match.span(slot) (see docs/testing.md's "Capture-group
+# expectations" section for the full format).
+#
+# `g <slot> <start> <end>` = LIVE: must be checkable NOW. `gp` = PENDING-VM:
+# may be beyond what today's DFA-only artifacts deliver (RX_NCAPS is 1 for
+# every pattern before [M4.5]'s VM lands — see match_api_m4.md D42.2), and is
+# counted separately rather than run, until RX_NCAPS grows to cover it.
+#
+# Almost every group slot here is >= 1, i.e. PENDING today by construction —
+# that's expected, not a gap: the DFA engine computes the correct overall
+# match span (already exercised, unaffected by this file) but does not
+# deliver per-group offsets, only the VM does ([M4.5]). A handful of `g 0`
+# lines are included deliberately: slot 0 (the whole match) IS deliverable by
+# every artifact today (RX_NCAPS >= 1 always, C3), so those are LIVE checks,
+# exercising the non-pending path of the same mechanism the pending lines use.
+
+pattern (a)(b)(c)
+m "abc" 0 3
+g 0 0 3
+gp 1 0 1
+gp 2 1 2
+gp 3 2 3
+
+pattern (foo)?bar
+m "bar" 0 3
+gp 1 -1 -1
+
+pattern (foo)?bar
+m "foobar" 0 6
+gp 1 0 3
+
+pattern a(b|c)+d
+m "abccbd" 0 6
+gp 1 4 5
+
+pattern (\d+)-(\d+)
+m "12-345" 0 6
+g 0 0 6
+gp 1 0 2
+gp 2 3 6
+
+pattern ((a)(b))c
+m "abc" 0 3
+gp 1 0 2
+gp 2 0 1
+gp 3 1 2
+
+pattern (a)|(b)
+m "b" 0 1
+gp 1 -1 -1
+gp 2 0 1
+
+pattern (a)|(b)
+m "a" 0 1
+gp 1 0 1
+gp 2 -1 -1
+
+pattern (a)*b
+m "b" 0 1
+gp 1 -1 -1
+
+pattern (a)*b
+m "aaab" 0 4
+gp 1 2 3
+
+pattern (x)(y)?(z)
+m "xz" 0 2
+gp 1 0 1
+gp 2 -1 -1
+gp 3 1 2
+
+pattern (x)(y)?(z)
+m "xyz" 0 3
+g 0 0 3
+gp 1 0 1
+gp 2 1 2
+gp 3 2 3
+
+pattern (ab|a)(c|bcd)(d*)
+m "abcd" 0 4
+gp 1 0 2
+gp 2 2 3
+gp 3 3 4
+
+# startpos integration: g/gp lines attach to `ms` exactly like `m`.
+pattern (a+)(b+)
+ms 2 "xxaabbyy" 2 6
+gp 1 2 4
+gp 2 4 6
