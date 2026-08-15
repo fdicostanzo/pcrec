@@ -25,6 +25,14 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   PCREC_NO_CAPTURES) and `Ctx.first_cap_pos` are seeded here too, and cleared
   for pcrec_count_groups, which emits nothing.
 
+  **[M4.5c]** `pcrec_compile` and DD-8's `pcrec_emit_ir` are now two thin
+  callers of ONE driver, `compile_driver`, differing in a single bool. The
+  fork is the thing to avoid on principle (M2.12's `$`-engine fork is the
+  standing example) and here it would also break engine_m4.md §10's constraint
+  at the pipeline level: a listing produced by a second driver would describe
+  a compile that never happened. `--emit-ir` therefore runs a REAL compile and
+  throws the C away — the cost of the guarantee, on a debug tool.
+
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block
 - **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf
 - **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or

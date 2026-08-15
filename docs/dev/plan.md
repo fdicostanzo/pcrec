@@ -184,13 +184,35 @@ stated terms.
     REFUSES captures-default group-bearing patterns, D44.6). GATE
     (§5.4): emitted C for the capture-free corpus byte-identical to
     the pre-M4.5 emitter modulo stamp lines — a check, not a promise.
-  - [M4.5c] STATE:not-started — DD-8's VM TRACER with bring-up (Frank
+  - [M4.5c] STATE:done (DELIVERED 2026-08-15, lane m45b-vm) — DD-8's VM
+    TRACER. As built: `--emit-ir` is a QUERY (shaped like --count-groups:
+    real pipeline, prints the listing, no -o, no C) printing labels, choice
+    points with preference order, capture slot assignments, and honestly
+    empty island/callout sections whose emptiness is derived from a COUNT
+    rather than blanked; `--trace` is a generation axis (PCREC_TRACE)
+    emitting an instrumented artifact that prints every resume-frame
+    push/pop and capture write to stderr, never the default and stamped as
+    traced. §10's one constraint is STRUCTURAL, not a discipline: the
+    listing is an EVENT STREAM appended by the emitter's own primitives
+    (vm_lbl/vm_push_at/vm_set each write C and record what they wrote), and
+    every section is a view over that one stream. New check
+    tests/codegen/run_ir_listing.sh (60), which caught a real drift on its
+    FIRST run — the accept label was emitted by a direct sb_printf and so
+    was missing from the listing; sabotages S41/S42 both DETECTED. As-built
+    decisions for the manager: --emit-ir REFUSES on a pure-DFA artifact
+    (§10 and DD-8's row are silent; the alternatives were inventing a DFA
+    listing or printing an empty one that looks like a bug), --emit-dot is
+    NOT built (§10 steers away from the automaton picture), and
+    run_vm_identity.sh + run_ir_listing.sh moved to the test-vm section on
+    a measured smoke-budget argument. Original charter: DD-8's VM TRACER
+    with bring-up (Frank
     REQUESTED): §10's emitted-program listing (labels, choice points
     with preference order, capture slot assignments, island
     boundaries, callout call sites) + optional one-subject
     resume-frame push/pop trace; derives from the SAME structure the
     emitter walks, never a parallel description. Rides or immediately
-    follows [M4.5b]'s lane.
+    follows [M4.5b]'s lane. DD-8's row stays OPEN for `--emit-dot`, which
+    this substep deliberately did not build.
   - [M4.5d] STATE:not-started — D27-BLINDED capture test author
     (CELL, scripts/mk_d27_cell.sh): spec-first capture tests from the
     PROMISE (match_api_m4.md + testing.md's new format), denied src/

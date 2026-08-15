@@ -108,6 +108,24 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     with an honest `subject_ceiling` stamped for the residual class (D44.1).
     The defaults are BRING-UP PLACEHOLDERS — D12 rules budgets come from
     measured medians and [M4.6] takes the measurement.
+  - **[M4.5c] the LISTING and the TRACE (DD-8, §10).** §10's one constraint —
+    "the dump must be derived from the same structure the emitter walks, never
+    a parallel description" — is why the listing is an EVENT STREAM (`VEvent`)
+    appended by the emitter's own primitives rather than a second walk over the
+    AST. `vm_lbl`, `vm_push_at` and `vm_set` each write C *and* record what
+    they wrote; every listing SECTION is then a view over that one stream, so
+    the sections cannot disagree with each other either. If you add a way to
+    emit a label, a push or a slot write, add it THROUGH those primitives —
+    the accept label was emitted by a direct `sb_printf` in the first draft and
+    `tests/codegen/run_ir_listing.sh` caught it on its first run (sabotage
+    S41 restores it). The `role` strings are decoration: they say WHY a choice
+    point exists, never that one does, and the check pins the derivable half.
+
+    `--trace` (`PCREC_TRACE`) emits the same program with instrumented
+    macros. The traced and untraced forms keep the SAME order of operations on
+    purpose — a debug build that took a different path would be a tool that
+    lies — and the untraced artifact's bytes are unchanged, which
+    `run_ir_listing.sh` and `run_vm_identity.sh` both depend on.
 
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 

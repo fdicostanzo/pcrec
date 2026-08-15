@@ -56,6 +56,32 @@ or it has no regression net at all.
   E-6 — without which tests/vm's differential is near-tautological), and the
   default hybrid DOES emit one (§4.7's cliff guard). 8 checks; sabotage S40.
 
+- **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
+  to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
+  derive from the same structure the emitter walks; the emitter satisfies that
+  structurally (one event stream, appended by the primitives that write the C),
+  and this checks it anyway, because the structural argument holds only while
+  there is genuinely one call. Each listing SECTION is pinned to a fact
+  derivable from the `.c`: the label SET both directions and duplicate-free,
+  every `RX_PUSH` with its resume target, the set of `stv` slots actually
+  written, the header's RX_NCAPS/frames/trail against the artifact's own
+  macros, and the island/callout counts against the artifact rather than
+  against the listing's own claim (so those sections begin working the day a
+  producer exists rather than needing a rewrite). Also pins `--emit-ir`'s
+  refusal on a pure-DFA artifact — an as-built decision, §10 and DD-8's row
+  are silent — and holds `--trace` to the property its own source comment
+  claims: the instrumented artifact must agree with the plain one on every
+  answer, trace on stderr, and the plain one must trace nothing. 60 checks;
+  sabotages S41 and S42.
+
+  It found a real drift on its FIRST run: the accept label was emitted by a
+  direct `sb_printf`, so the artifact carried a label the listing did not.
+  That is the entire failure mode §10 names, and it existed for the length of
+  one commit.
+
+  Runs under `make test-vm`, not `make test-codegen`, for a measured reason —
+  see the note below.
+
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
@@ -133,6 +159,24 @@ that shape by accident.
    S02 and S06 were RE-RUN through `tests/mech` after these edits, because a
    narrowed check whose sabotage was validated against the wide version has
    not been validated at all.
+
+## Two scripts here RUN under `make test-vm`, and the reason is measured
+
+`run_vm_identity.sh` and `run_ir_listing.sh` live in this directory because
+they are identity and structural differentials — kin to `run_trie_identity.sh`
+by technique — but `make test-codegen` does not run them. `make smoke`
+includes `test-codegen`, and the two cost 8.0s and 2.9s against this section's
+own 0.7s + 7.4s (measured 2026-08-15). Leaving them here took `test-codegen`
+from 9.33s to 16.28s and `make smoke` to 62.98s, against a documented 60s
+target; moving them to `test-vm` puts smoke back at 54.76s.
+
+docs/testing.md asks for exactly this re-check whenever a section grows, and
+records the second finding the measurement turned up: smoke was ALREADY over
+its target on the main this lane merged, dominated by `test-known-fail`'s
+23.26s — a section that used to be nearly free, and is not this directory's to
+fix.
+
+`make test` runs all four scripts either way; only the section wrapper moved.
 
 ## Engine-scoped greps, and why a whole-file grep stopped being enough (OS-0b)
 

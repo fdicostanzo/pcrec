@@ -35,7 +35,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   checks: bounds, stamps and cross-engine agreement are not expressible as
   .rxt expectations. Part of `make test`; `make test-vm` is the section
   target, `bash tests/vm/run_vm_tests.sh full` the checkpoint-scale sweep
-- **codegen/** — structural assertions that behavior-preserving optimizations are actually PRESENT in emitted code (R2-PR3: three could be disabled with zero test signal), plus a differential check that the M2.8 trie is output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3)
+- **codegen/** — structural assertions that behavior-preserving optimizations
+  are actually PRESENT in emitted code (R2-PR3: three could be disabled with
+  zero test signal), plus a differential check that the M2.8 trie is
+  output-preserving against a `-DPCREC_NO_TRIE` reference build (R3.3), the
+  [M4.5b] §5.4 byte-identity gate, and [M4.5c]'s DD-8 program-listing check.
+  The last two RUN under `make test-vm` rather than `make test-codegen`, on a
+  measured smoke-budget argument recorded in its CLAUDE.md
 - **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2] N
   threads share one compiled matcher over different subjects across five
   differently-shaped emitted engines, [TS-3] concurrent `pcrec_compile()` on
