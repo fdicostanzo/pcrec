@@ -230,9 +230,28 @@ stated terms.
   loop; (4) E-2's ruling is load-bearing: bounded repeats take NO
   empty-iteration guard, and the counter's strict increase is what
   makes that safe — the design note must state the termination
-  argument explicitly. Supersedes the "cap emitted size" half of the
-  D45 follow-up as the ENDGAME (the cap stays as the backstop whose
-  diagnostic can honestly point here).
+  argument explicitly. AMENDED same day (Frank's [ab]{0,4000}
+  observation, MEASURED): RUNG SELECTION COMES BEFORE STRATEGY K —
+  the capture-ERASED artifact of ((a)|b){0,4000}c is 1,378 lines /
+  0.078s to compile (the count lives in table-driven DFA states:
+  DATA, which gcc swallows; determinization already collapses
+  single-byte alternation into class transitions, no AST rewrite
+  needed), vs the VM's 113,545-line replication — and PCRE2
+  semantics report only the LAST iteration's capture, so the
+  replicas' 3999 other capture writes are unobservable by
+  definition. This class belongs to §2.5's REVERSE-DETERMINISTIC
+  rung (Frank's play-the-regex-backwards rung, UNBUILT — [M4.5b]
+  landed 2 of the 5 rungs): DFA pair delivers the exact span,
+  last-iteration captures derived by walking backward from end
+  (here: group1 = [end-2,end-1), group2 = same iff subject[end-2]
+  == 'a'). The counter-K loop is the fallback ONLY for genuinely
+  nondeterministic bodies where per-iteration backtracking is real.
+  The design note therefore covers: which bounded-repeat bodies
+  each ladder rung captures (with the erasure measurement above as
+  the motivating cell), THEN the K-axis for the residue. Supersedes
+  the "cap emitted size" half of the D45 follow-up as the ENDGAME
+  (the cap stays as the backstop whose diagnostic can honestly
+  point here).
 - [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
   DFA-prefilter hybrid + DFA islands as designed; measured against
   bench floors under D12/R3.10 discipline; DD-9's decided outcome
