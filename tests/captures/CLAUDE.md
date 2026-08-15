@@ -52,3 +52,23 @@ are "live" vs "pending" in a way worth a fresh summary line.
   green after whole-line comment normalization (testing.md's comment rule
   is whole-line only). Provenance + findings:
   docs/dev/reviews/2026-08-15-r22-m45d-capture-author.md.
+
+## [M4.5e] close-lane coverage fill (2026-08-15)
+
+- `classes_trie_bounded.rxt` — 11 m cases / 14 `g` (all LIVE — every pattern
+  here is captures-default, so RX_NCAPS > 1 on every build this corpus runs
+  against post-[M4.5b], unlike the `gp`-heavy files above which predate the
+  VM emitter). A targeted assessment against the base-tier construct list
+  found the corpus thin or absent in three places and filled ONLY those:
+  bracket-expression classes inside a capturing group (`[a-z]`, `[^0-9]`,
+  `\w`/`\s` — previously `\d` only), a multi-branch (4-/5-way,
+  prefix-sharing) alternation under a capturing group (previously 3-way
+  max), and a bounded-repeat capture case whose body is CHOICE-BEARING at
+  the K19 replication cap (`PCREC_MAX_VM_REPEAT_COPIES=64`,
+  docs/dev/known_issues.md) — every prior bounded-repeat capture case used a
+  single-path body, which never replicates at any count. Caseless via `-i`,
+  anchors `^`/`$`, and startpos were assessed and found already adequately
+  covered (basic.rxt, structure_anchors_misc.rxt) — not repeated. Every
+  case oracle-verified against python3 `re` (`tests/harness/verify_rxt.py`)
+  and checked against real `build/pcrec` VM output before landing, same as
+  basic.rxt's own convention. File's own header has the full assessment.
