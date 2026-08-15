@@ -7876,3 +7876,22 @@ observations each took minutes to record and each reordered real work
 positive control that inherits the environment it simulates can go
 vacuous on exactly the axes it exists to guard (the gen-timeout units'
 lesson — state the COMPLETE environment per scenario).
+
+## 2026-08-15 — Twenty-first session, addendum: [M4.5d] the blinded capture author
+
+Cell delivery (see R22, docs/dev/reviews/2026-08-15-r22-m45d-capture-
+author.md): 85 m/ms cases + 145 group lines, python-derived twice-
+verified, binary used accept/reject only. Initially 0/230 — the .rxt
+parser (correctly, per its own spec) hard-errors on the author's INLINE
+comments; normalized to whole-line, then **230/230 GREEN, all group
+lines live against the VM** — the strongest independent capture-
+correctness evidence the project has. Two contract-text gaps (cross-
+iteration retention; empty-final-iteration overwrite) arbitrated
+three-way UNANIMOUS (python + libpcre2-via-ABI-probe + pcrec) and
+recorded as the §2.2 as-built addendum; M4.7 wording pass owed.
+Process: manager cell-hygiene slip (leftover probe.h, glob missed the
+paired header) and the stale default cell allowlist (would have leaked
+the K17/K18 fuzz alphabet — hand-curated this time; revisit
+mk_d27_cell.sh before the next D27 lane) both recorded in R22.
+Corpus baseline: 1679. [M4.5d] COMPLETED (merge dc5a29a); cell and
+worktree removed. In flight: [TT-2] (m45a lane). Next: [M4.5e] close.

@@ -217,7 +217,12 @@ stated terms.
     emitter walks, never a parallel description. Rides or immediately
     follows [M4.5b]'s lane. DD-8's row stays OPEN for `--emit-dot`, which
     this substep deliberately did not build.
-  - [M4.5d] STATE:started 2026-08-15 — D27-BLINDED capture test author
+  - [M4.5d] STATE:completed 2026-08-15 (cell m45d-capauthor; merge
+    dc5a29a; R22 review + author-notes appendix in docs/dev/reviews/;
+    230/230 green, corpus 1449→1679; two contract-text gaps found and
+    dispositioned — retention + empty-final-overwrite, three-way
+    unanimous, match_api_m4.md §2.2 addendum; M4.7 wording pass owed)
+    — D27-BLINDED capture test author
     (CELL, scripts/mk_d27_cell.sh): spec-first capture tests from the
     PROMISE (match_api_m4.md + testing.md's new format), denied src/
     and tests/. Opens once [M4.5a]+[M4.5b] merge.
