@@ -7968,3 +7968,57 @@ at parallel load).
 NEXT: [M4.6] gate — the K18 design-first note (memo-cost measurement,
 panel-eyed) — and [ENG-BREP] design alongside. Open Frank rulings:
 struct rx_info spelling; K19 residual; callout Q5/Q6.
+
+## 2026-08-15 (EDT), late afternoon — twenty-second session CRASHED mid-panel; reconstruction
+
+The twenty-second session crashed at ~15:38 EDT leaving no journal
+entry and a stale wake.md. This entry is the TWENTY-THIRD session's
+reconstruction from commits, the crashed session's scratchpad, and its
+gate log — written before resuming the work, so the record is honest
+about provenance: everything below is read off artifacts, not remembered.
+
+**K18 DESIGN NOTE DELIVERED** (lane k18-design, merge 95cba2d, 15:08):
+docs/design/k18_memo_design.md + docs/design/k18_measurements/, status
+PROPOSED / UNPANELED. Three candidate repairs prototyped head-to-head in
+scratch copies (mkproto.sh — nothing entered src/ or the ratchet's line
+of sight): **A2 (empty-context fast path) recommended** — restores
+parity and removes a 21x regression plain-A carried; **B
+(transparent-eps) refuted 98–0** by a dense sweep that surfaced a third
+sub-case; **C (no memo) measured exponential**. Cost law measured
+Theta(d^4) in loop-nesting depth; termination argument, blast-radius
+prediction and the rewrite lane's validation plan included; claims
+marked STRUCTURAL/MEASURED/BELIEVED per the R21 lesson.
+
+**DIFFERENTIAL FUZZER RED — ROOT-CAUSED AND FIXED** (branch fuzzfix,
+merge 7e27c19, 15:31, pushed): the shared fuzz driver read RX_NCAPS at
+COMPILE time instead of rx_info.ncaps at RUNTIME — 274 stack smashes →
+0 (c225a9f); the dormant sibling in registry pc4_driver.c fixed
+(89ccd89); step-budget policy turned 43 timeouts into a counted
+non-divergence bucket + oracle/compile timeout robustness (5cf31bc);
+README/CLAUDE.md updated (4639b4b). POST-MERGE GATE GREEN at 7e27c19
+(ffix-gate.log): make test EXIT=0 (corpus 1704/0, 38/38 workers), fuzz
+EXIT=0 (0 accept/reject divergences; 11 DFA state-cap hits in the known
+non-divergence bucket). Full seven-leg battery NOT run — a deliberate
+two-leg gate for a fuzz-driver/test-infra fix; last full battery
+remains 7e3ff93.
+
+**CRASH POINT:** the D6 critic panel R23 on the K18 design note was in
+flight — three lenses (valplan, measure, semantics; the semantics
+critic was compiling probe cases at 15:38, the last mtime anywhere).
+No critic delivered findings; no reviews/ file exists. The panel died
+with the session and is relaunched from scratch by the twenty-third
+session (raw sweep data survives in the dead session's scratchpad but
+no critic analysis does).
+
+**Recovery actions (twenty-third session):** SKILL.md watchdog+timeout
+rules committed (d8c1e05 — ruled twenty-first session, left uncommitted
+through two sessions); stale worktrees/d27-selftest-cell/ (Aug 11
+debris) deleted; wake.md rewritten to reality; R23 panel relaunched
+WITH the stall watchdog cron up from the first lane.
+
+**Lesson:** the crash cost almost nothing BECAUSE everything of value
+was already committed, merged, and gated — the incremental-commit rule
+did in practice what it was adopted to do. The only losses were
+in-flight critic context (relaunchable) and the session's own
+bookkeeping (reconstructable from artifacts in ~30 minutes). Panels are
+cheap to lose; uncommitted lanes are not.
