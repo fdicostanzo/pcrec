@@ -40,3 +40,15 @@ change — in particular, once [M4.5]'s VM emitter lands and `RX_NCAPS` grows
 past 1 for group-bearing patterns, the `gp` lines here will start
 self-activating into real checks; note here if that changes which counts
 are "live" vs "pending" in a way worth a fresh summary line.
+
+## [M4.5d] D27-blinded author files (2026-08-15, R22)
+
+- `priority_and_iteration.rxt`, `participation_and_zerowidth.rxt`,
+  `structure_anchors_misc.rxt` — 85 m/ms cases + 145 group lines by the
+  D27-blinded capture author (cell: match_api_m4.md + testing.md + binary
+  only; python-derived, twice-verified; binary used accept/reject only).
+  All gp by design (the author could not read RX_NCAPS without running
+  the implementation); they self-activate per artifact. Landed 230/230
+  green after whole-line comment normalization (testing.md's comment rule
+  is whole-line only). Provenance + findings:
+  docs/dev/reviews/2026-08-15-r22-m45d-capture-author.md.

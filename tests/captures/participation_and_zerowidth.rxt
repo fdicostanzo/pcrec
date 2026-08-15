@@ -1,0 +1,150 @@
+# Territory C (RX_UNSET participation: never-entered branches, zero-iteration
+# stars, nested unset-inside-set / set-inside-unset) and Territory D
+# (zero-width group matches at various positions, adjacent empty groups).
+
+# case: unset-01
+pattern (a)|(b)
+# group2 never entered
+m "a" 0 1
+gp 1 0 1
+gp 2 -1 -1
+# group1 never entered
+m "b" 0 1
+gp 1 -1 -1
+gp 2 0 1
+
+# case: unset-02
+pattern (foo)?bar
+# optional group not taken at all
+m "bar" 0 3
+gp 1 -1 -1
+# optional group taken
+m "foobar" 0 6
+gp 1 0 3
+
+# case: unset-03-zero-iter
+pattern (a)*b
+# star taken zero times: unset, not an empty span
+m "b" 0 1
+gp 1 -1 -1
+# star taken twice: last iteration's span reported
+m "aab" 0 3
+gp 1 1 2
+
+# case: unset-04-nested-set-in-set
+pattern (a(b)?)
+# outer set, inner optional not taken
+m "a" 0 1
+gp 1 0 1
+gp 2 -1 -1
+
+# case: unset-05-nested-unset
+pattern (a(b))?x
+# outer optional not taken at all: BOTH outer and nested inner group are unset
+m "x" 0 1
+gp 1 -1 -1
+gp 2 -1 -1
+# outer taken: both outer and inner participate
+m "abx" 0 3
+gp 1 0 2
+gp 2 1 2
+
+# case: unset-06-three-way
+pattern (a)|(b)|(c)
+# third alternative fires, first two unset
+m "c" 0 1
+gp 1 -1 -1
+gp 2 -1 -1
+gp 3 0 1
+# middle alternative fires, first and third unset
+m "b" 0 1
+gp 1 -1 -1
+gp 2 0 1
+gp 3 -1 -1
+
+# case: unset-07-inner-quantified
+pattern (a(b)*c)?d
+# outer optional not taken: outer AND inner both unset
+m "d" 0 1
+gp 1 -1 -1
+gp 2 -1 -1
+# outer taken, inner star taken zero times: outer set, inner unset
+m "acd" 0 3
+gp 1 0 2
+gp 2 -1 -1
+# outer taken, inner star taken twice: both set, inner reports last iteration
+m "abbcd" 0 5
+gp 1 0 4
+gp 2 2 3
+
+# case: unset-08-groupless-branch
+pattern (a)|b
+# the winning alternative has no group at all
+m "b" 0 1
+gp 1 -1 -1
+
+# case: unset-09-star-of-alt-empty
+pattern ((a)|(b))*
+# zero iterations of the whole alternation: every group unset
+m "" 0 0
+gp 1 -1 -1
+gp 2 -1 -1
+gp 3 -1 -1
+# two iterations, different branches each time -- does an EARLIER iteration's capture survive when a LATER iteration takes the other branch?
+m "ab" 0 2
+gp 1 1 2
+gp 2 0 1
+gp 3 1 2
+
+# case: zw-01
+pattern (a*)
+# a* matches zero a's at the very first position; both match and group are the empty span at 0
+m "bbb" 0 0
+gp 1 0 0
+
+# case: zw-02
+pattern b(a*)b
+# zero-width group sandwiched between two literal matches
+m "bb" 0 2
+gp 1 1 1
+
+# case: zw-03-end-anchor
+pattern (a*)$
+# search must walk all the way to the end before a* can match (zero a's) and $ is satisfied
+m "bbb" 3 3
+gp 1 3 3
+
+# case: zw-04-start-anchor
+pattern ^(a*)
+# anchored at the very start, zero-width
+m "bbb" 0 0
+gp 1 0 0
+
+# case: zw-05-adjacent-empty
+pattern (a?)(b?)
+# both groups non-empty, back to back
+m "ab" 0 2
+gp 1 0 1
+gp 2 1 2
+# both groups collapse to the same empty position
+m "" 0 0
+gp 1 0 0
+gp 2 0 0
+# first group empty, second non-empty, same start position
+m "b" 0 1
+gp 1 0 0
+gp 2 0 1
+
+# case: zw-06-three-adjacent
+pattern (x?)(y?)(z?)
+# three adjacent optional groups, all empty, all at position 0
+m "" 0 0
+gp 1 0 0
+gp 2 0 0
+gp 3 0 0
+
+# case: zw-07-sandwiched
+pattern a(x?)b
+# zero-width group strictly between two consumed characters
+m "ab" 0 2
+gp 1 1 1
