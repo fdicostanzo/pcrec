@@ -255,7 +255,8 @@ UBSAN_ENV    = PCREC=$(CURDIR)/$(UBSAN_DIR)/pcrec CC=$(CC) \
                LIBA=$(CURDIR)/$(UBSAN_DIR)/libpcrec.a \
                GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(UBSAN_CFLAGS)" \
                SANFLAGS="$(UBSAN_CFLAGS)" \
-               UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1"
+               UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
+               PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
 
 ubsan:
 	@echo "== ubsan: building the compiler axis at $(UBSAN_DIR)/ =="
@@ -286,7 +287,8 @@ ASAN_ENV     = PCREC=$(CURDIR)/$(ASAN_DIR)/pcrec CC=$(CC) \
                GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(ASAN_CFLAGS)" \
                SANFLAGS="$(ASAN_CFLAGS)" \
                ASAN_OPTIONS="detect_leaks=1" \
-               LSAN_OPTIONS=""
+               LSAN_OPTIONS="" \
+               PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
 
 # K7 (docs/dev/known_issues.md) has NO automated repro in `make test` today — it
 # is reproduced only by hand (`ulimit -v ...; pcrec -p rx ... 'a{0,65535}'`)
@@ -352,7 +354,7 @@ lint:
 # tree ~20 times (about 6 minutes); run it when a sabotage table's figures are
 # in doubt and after changing any file a sabotage targets.
 mech:
-	bash tests/mech/run_sabotage_matrix.sh
+	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/mech/run_sabotage_matrix.sh
 
 bench: all
 	bash tests/bench/run_bench.sh
