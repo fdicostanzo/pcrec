@@ -163,6 +163,33 @@ for pat in "${PATTERNS[@]}"; do
     fi
 done
 
+# ---- a NON-DEFAULT --prefix ---------------------------------------------
+#
+# Every check above uses the default `rx`, which cannot see a hardcoded `RX_`
+# in the listing's own text — and there was one: the header named RX_NCAPS
+# whatever --prefix said, pointing a reader of a `-p myrx` listing at a macro
+# the artifact does not contain. Cheap to check, invisible without it.
+mkdir -p "$WORKDIR/pfx"
+if "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1    && "$PCREC" -p myrx --emit-ir -- '(a)b' > "$WORKDIR/pfx/ir" 2>&1; then
+    if grep -qE '(^|[^A-Z_])RX_' "$WORKDIR/pfx/ir"; then
+        bad "[M4.5c] a -p myrx listing still names RX_* macros: $(grep -m1 'RX_' "$WORKDIR/pfx/ir")"
+    elif grep -q 'MYRX_NCAPS' "$WORKDIR/pfx/ir"          && grep -q '^#define MYRX_NCAPS' "$WORKDIR/pfx/gen.c" "$WORKDIR/pfx/gen.h"; then
+        ok "[M4.5c] the listing names the artifact's OWN macros under a non-default --prefix"
+    else
+        bad "[M4.5c] a -p myrx listing does not name MYRX_NCAPS, or the artifact does not define it"
+    fi
+    # the label set must still line up under a different prefix
+    grep -oE '^myrx_L[0-9]+:' "$WORKDIR/pfx/gen.c" | tr -d ':' | sed 's/^myrx_L//' | sort -n > "$WORKDIR/pfx/c.l"
+    grep -oE '^  L[0-9]+' "$WORKDIR/pfx/ir" | sed 's/^ *L//' | sort -n > "$WORKDIR/pfx/i.l"
+    if [ -s "$WORKDIR/pfx/c.l" ] && diff -q "$WORKDIR/pfx/c.l" "$WORKDIR/pfx/i.l" >/dev/null; then
+        ok "[M4.5c] ...and its label set matches the artifact's too"
+    else
+        bad "[M4.5c] -p myrx: label sets differ between the .c and the listing"
+    fi
+else
+    bad "[M4.5c] could not produce a -p myrx artifact and listing"
+fi
+
 # ---- the DFA refusal (an as-built decision, so it is pinned) -------------
 if out="$("$PCREC" -p rx --emit-ir -- 'abc' 2>&1)"; then
     bad "[M4.5c] --emit-ir on a pure-DFA artifact PRINTED a listing; there is no VM program to list"

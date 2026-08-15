@@ -71,13 +71,20 @@ or it has no regression net at all.
   refusal on a pure-DFA artifact — an as-built decision, §10 and DD-8's row
   are silent — and holds `--trace` to the property its own source comment
   claims: the instrumented artifact must agree with the plain one on every
-  answer, trace on stderr, and the plain one must trace nothing. 60 checks;
-  sabotages S41 and S42.
+  answer, trace on stderr, and the plain one must trace nothing.
 
   It found a real drift on its FIRST run: the accept label was emitted by a
   direct `sb_printf`, so the artifact carried a label the listing did not.
   That is the entire failure mode §10 names, and it existed for the length of
   one commit.
+
+  It carries a NON-DEFAULT `--prefix` case for a second reason found the same
+  way: every other check here uses the default `rx`, which cannot see a
+  hardcoded `RX_` in the listing's own text — and there was one, so a
+  `-p myrx` listing named a `RX_NCAPS` macro the artifact does not contain.
+  When a check's fixture is the default of the thing it checks, it is blind to
+  exactly the class of bug that only shows up off the default. 62 checks;
+  sabotages S41 and S42.
 
   Runs under `make test-vm`, not `make test-codegen`, for a measured reason —
   see the note below.

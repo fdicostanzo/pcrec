@@ -1139,8 +1139,13 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
               ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
                 " an exact window (S6.1); the VM never scans"
               : "NO (--engine=vm) -- the VM scans from startpos itself (R21 E-6)");
-    sb_printf(o, "; caps         RX_NCAPS %d (%d capturing group%s in the pattern text)\n",
-              st->ncaps, (int)cx->ncap, cx->ncap == 1 ? "" : "s");
+    /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
+     * does not contain would send a reader of a `-p myrx` listing looking for
+     * a symbol that is not there. Every emitted name in this listing comes
+     * from the same v->up/v->p the emitter used. */
+    sb_printf(o, "; caps         %s_NCAPS %d (%d capturing group%s in the"
+                 " pattern text)\n",
+              v->up, st->ncaps, (int)cx->ncap, cx->ncap == 1 ? "" : "s");
     if (st->has_budget)
         sb_printf(o, "; step budget  %lld backtrack resumptions\n", st->budget);
     else
