@@ -1,0 +1,6 @@
+
+cells where the two binaries differ: 98
+  A agrees with oracle: 98
+  B agrees with oracle: 0
+  neither agrees:        0
+  patterns skipped (refused/uncompilable): 0

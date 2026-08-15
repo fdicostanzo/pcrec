@@ -468,8 +468,9 @@ which are the K18 known-fail shapes and nothing else. **So the fix's reach on
 the corpus is precisely the shape it is aimed at, with no collateral at all**,
 and the predicted change to live corpus cells is zero because no live corpus
 pattern's emitted bytes move. **MEASURED.** Corroborated independently: the
-full `.rxt` suite under A is **1704/1704**, identical to the shipped
-compiler's 1704/1704.
+full `.rxt` suite is **1704/1704 under A, 1704/1704 under A2, and 1704/1704
+under the shipped compiler** — the same number three ways, which is what "zero
+changed cells" has to look like.
 
 ### 4.3 Direction, where things do change
 
@@ -485,7 +486,39 @@ Note the denominator honestly: the shape space is a DENSE sample of the defect
 class, deliberately so. 249 of 18,858 differing is **not** a "1 in 76 patterns"
 figure for real inputs; §4.2's 8 of 555 is the realistic figure.
 
-### 4.4 `make test`
+### 4.4 The differential fuzzer, and a finding that is not mine
+
+Two seeds, 400 patterns x 16 subjects each, shipped compiler vs A2:
+
+| | seed 99 | seed 5 |
+|---|---|---|
+| content divergences, shipped | 347 | 442 |
+| content divergences, A2 | 343 | 446 |
+| distinct diverging patterns, shipped | 8 | 8 |
+| distinct diverging patterns, A2 | 8 | 8 |
+| **patterns diverging under A2 but not the shipped compiler** | **0** | **0** |
+| patterns diverging under the shipped compiler but not A2 | 0 | 0 |
+
+The diverging-pattern SETS are identical, element for element, on both seeds.
+The cell counts wobble by ~4 in ~2,000 because some cells are runaway matchers
+whose outcome is `TIMEOUT` on one execution and `CRASH` on another:
+CRASH+TIMEOUT totals are **39 vs 39** at seed 99 and **40 vs 40** at seed 5.
+**MEASURED. A2 introduces no divergence and removes none.**
+
+**Reporting the part that is not about K18:** the differential fuzzer is
+already RED on the current tree. The shipped compiler produces 347 and 442
+content divergences on these seeds, across 8 patterns each, and 23 and 12 of
+those cells are generated matchers ABORTING with `*** stack smashing detected
+***`. Every one of the 8 patterns per seed carries a `{28,30}`-class bounded
+repeat over a capture-bearing body — the [M4.5] VM path, not the DFA closure.
+This is not K18, it is not caused by anything in this note, and it is outside
+this lane's brief; it is recorded here because the lane ran into it and M4.5
+closed green, so someone should decide whether it is K19/K20 fallout, a
+known-and-excluded fuzz category, or a new K-entry. **The measurement is
+MEASURED; the attribution to the VM path is BELIEVED**, from the shape of the
+patterns, since I did not open a repro bundle.
+
+### 4.5 `make test`
 
 **MEASURED**, full `make test` in a scratch tree with A applied: every leg
 passes except the known-fail ratchet, which fails with EXIT=2 and the message
@@ -494,7 +527,7 @@ the ratchet working as designed. The rewrite lane's landing must move that file
 into a live corpus directory and close the K18 entry in the same commit, or
 `make test` stays red.
 
-### 4.5 What I did NOT measure, and where the risk sits
+### 4.6 What I did NOT measure, and where the risk sits
 
 * **Captures.** Every measurement here is spans-only. K18's entry marks the
   defect capture-independent, and the corpus run includes the capture suites,

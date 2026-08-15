@@ -1,0 +1,25 @@
+# K18 design lane — archived measurement outputs
+#
+# D35 shape: stable filenames, so a re-measurement lands as a git diff.
+# These are LANE outputs, not tests/probes/ reports, so they live beside the
+# design note rather than in docs/measurements/.
+#
+date:        2026-08-15T18:56:11Z
+repo commit: f4089d479fe4b354f55b30e46a027af7acf31c3a  (branch k18-design)
+base commit: 9df434d81aea0428d04984157a24ad5d0010f9bb
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python3:     Python 3.14.4
+libpcre2:    10.46-1build1
+box:         Linux 7.0.0-29-generic, 12 cpus
+#
+# files
+stats_corpus.tsv          k18_stats.py, prototype A, 555 corpus patterns
+stats_corpus_base.tsv     k18_stats.py, INSTRUMENTED SHIPPED closure, same 555 (the denominator)
+stats_adv_A.tsv           k18_stats.py, prototype A, adversarial families
+stats_adv_base.tsv        k18_stats.py, instrumented shipped closure, same families
+emitdiff_AB.log           emitted-source A vs B over the 18858-pattern shape space
+emitdiff_baseA.log        emitted-source shipped vs A over the same space
+diff_AB.txt               the 83 patterns where A and B emit different C
+diff_corpus_baseA.txt     the 8 corpus patterns where shipped and A emit different C
+oracle_AB.tsv/.err        python3 re verdict on the A-vs-B cells (A 98, B 0, neither 0)
+oracle_baseA.err          python3 re verdict on the shipped-vs-A cells (A 226, shipped 0, neither 0)

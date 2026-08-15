@@ -1,0 +1,7 @@
+
+cells where the two binaries differ: 226
+  BASE agrees with oracle: 0
+  A agrees with oracle: 226
+  neither agrees:        0
+  patterns skipped (refused/uncompilable): 0
+DONE
