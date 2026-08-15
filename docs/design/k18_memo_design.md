@@ -121,6 +121,12 @@ span [0,2) against both oracles' [0,1).
 ARRIVALS AT LOOP ENTRIES; the arrival that is lost here is at state 2, which is
 not a loop entry and never becomes one. **STRUCTURAL.**
 
+**Read the trace for the mechanism, not for the `?` in `b*?`.** What matters
+above is that the arm whose exit edge lands on the already-seen state is the
+one the walk PREFERS. Laziness is one way to arrange that and it is not the
+only one — see §1.5, which the panel had to find because this section did not
+say so.
+
 ### 1.4 The same closure, repaired
 
 Prototype A (§2a) keys the memo on (state, open-loop-set). **MEASURED:**
@@ -152,9 +158,55 @@ Two things changed, and it is worth separating them:
 
 (2) alone would not fix K18 — the walk still dies at state 2 before reaching
 any loop entry. (1) alone would not either — without (2) there is no redirect
-to reach. **BELIEVED**, from reading the two changes; I did not build the two
-half-prototypes to confirm it, and a panel that wants it MEASURED should say
-so, since it is cheap.
+to reach. **MEASURED [R23 S5]**, and it was cheap: the note left this BELIEVED
+and asked for a ruling on whether to measure it (§6 ruling 2), and the panel
+simply built both halves. Change (2) alone (`proto_half2.py`, the open-loop
+stack and the open-path redirect trigger, memo context forced to 0)
+reproduces the shipped compiler's wrong answers **cell for cell** — 8 cells on
+2 patterns, the same 8 the shipped compiler gets wrong, against A2's 0.
+Change (1) alone (`proto_half1.py`, context-keyed memo with the shipped
+redirect trigger) does not merely fail — **it does not terminate**, SIGABRT on
+the 15-character `(?:(?:a|b*?)?)*` and SIGSEGV even with the open-loop stack
+sized 20,000x. That second result is stronger than the claim it was built to
+check, and §3 now carries it: the open-set test is what BOUNDS THE STACK.
+
+### 1.5 A fourth sub-case: the ingredient is the PREFERRED arm, not laziness [R23 S8]
+
+Everything above characterises the defect with a lazy quantifier in it, and
+that characterisation is too narrow. **What the defect needs is that the arm
+whose EXIT edge lands on the already-seen epsilon state is the PREFERRED
+one.** A lazy quantifier achieves that by preferring its exit. A GREEDY
+nullable arm achieves exactly the same thing by being written FIRST in the
+alternation. So does an empty arm, and so does a concatenation of two nullable
+alternations — none of which contains a lazy quantifier at all.
+
+Three witnesses, oracle-confirmed by python3 `re` and libpcre2 with zero
+disagreements between them, all fixed by A2:
+
+| pattern | subject | shipped | A2 and both oracles |
+|---|---|---|---|
+| `(?:(?:b*\|a)?)*` | `ba` | [0,2) | [0,1) |
+| `(?:(?:(?:b\|)\|a)?)*` | `ba` | [0,2) | [0,1) |
+| `(?:(?:b?\|a)(?:b?\|d))*` | `ba` | [0,2) | [0,1) |
+
+The first is `docs/dev/known_issues.md` K18's own control `(?:(?:a|b*)?)*`
+with its two arms SWAPPED, and the third refutes that entry's
+"concatenation, not alternation" control. Both of those entries are corrected
+there in the same change as this note.
+
+**Why this matters even though A2 fixes all three.** The dense shape sweep
+does generate the swapped order (`gen_shapes.py` emits `"%s|%s"` both ways),
+so §4.3's 226/226 already covers the sub-case and A2 has no hole here. The
+damage is to the PROSE and to the acceptance corpus, and it has already been
+done once: all 15 patterns in
+`tests/known_fail/k18_empty_exit_through_seen_eps.rxt` carry the lazy shape,
+its only two non-lazy entries are there as CONTROLS, and none of the three
+witnesses above is in the file. §4.1's headline — "all 7 over-reach controls
+emit byte-identical C" — therefore proves less than it reads: at least one of
+those controls is non-diverging for an ARM-ORDER reason rather than a
+structural one, and its mirror image is a live miscompile. **A control that is
+one character away from a witness is not an over-reach control**, and §5 item
+1 now specifies the arm-order axis that would have caught it.
 
 ---
 

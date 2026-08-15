@@ -1203,7 +1203,10 @@ ever arriving at one.
 edge**. Closing the pre-set `{1}` — the position after "a" — marks state 1
 seen immediately, since it IS the entry point. The walk then reaches the
 alternation, emits thread 2, and tries `b*?`, whose lazy PREFERRED branch is
-its exit — and that exit edge points at state 1. State 1 is seen and is not
+its exit — and that exit edge points at state 1. (**The load-bearing word is
+PREFERRED, not lazy** — R23 S8, see the correction below the control list: a
+greedy nullable arm written FIRST reaches the same state the same way.)
+State 1 is seen and is not
 a loop entry, so `clo_visit` returns dead, one hop short of state 0, whose
 redirect would have produced the ACCEPT. Thread 4 (`b`) is emitted instead,
 ahead of the ACCEPT reached afterwards, and the DFA over-consumes.
@@ -1222,6 +1225,40 @@ not read a cause into any single row): `(?:(?:a|b*)?)*` and `(?:(?:a|b?)?)*`
 `(?:(?:a|b*?)?)` (no outer quantifier), `(?:a(?:b*?)?)*` (concatenation, not
 alternation), `(?:(?:a|)?)*` (an empty alternative instead of a lazy
 quantifier). Note that unlike K17, an outer `+` does NOT save the shape.
+
+> **CORRECTION 2026-08-15 [R23 S8]: two of those parenthesised causes are
+> wrong, and their mirror images are LIVE MISCOMPILES.** The rows above still
+> measure as stated — each of those patterns really does answer correctly —
+> but the reason given for three of them is ARM ORDER, not the ingredient
+> named. The defect does not need laziness. It needs the arm whose exit edge
+> lands on the already-seen ε state to be the PREFERRED one, and a GREEDY
+> nullable arm achieves that simply by being written FIRST:
+>
+>     (?:(?:b*|a)?)*        "ba"   pcrec [0,2)  both oracles [0,1)   <- "greedy inner", swapped
+>     (?:(?:b?|a)?)*        "ba"   pcrec [0,2)  both oracles [0,1)   <- ditto
+>     (?:(?:(?:b|)|a)?)*    "ba"   pcrec [0,2)  both oracles [0,1)   <- an EMPTY arm, no quantifier
+>     (?:(?:b?|a)(?:b?|d))* "ba"   pcrec [0,2)  both oracles [0,1)   <- CONCATENATION of two
+>                                                                       nullable alternations
+>
+> So "greedy inner" does not save the shape (arm order did), "an empty
+> alternative instead of a lazy quantifier" does not save it (arm order did),
+> and "concatenation, not alternation" does not save it either. Both oracles
+> agree on all four; the divergence is pcrec's. All four are fixed by the
+> design note's recommended repair, which covers this sub-case already — the
+> defect here is in this entry's CHARACTERISATION and in the acceptance
+> corpus, not in the repair.
+>
+> **Consequence for the corpus below.** All 15 patterns in the .rxt file are
+> the lazy shape and its only two non-lazy entries are CONTROLS, so none of
+> the four witnesses above is on file. The rewrite lane's guard corpus owes an
+> ARM-ORDER axis: every diverging shape in both orders, greedy and lazy
+> nullable arms (`k18_memo_design.md` §1.5 and §5 item 1). They are NOT added
+> to `tests/known_fail/` here — the ratchet counts that file, and the rewrite
+> lane re-scopes the corpus when it moves it live.
+>
+> This entry's own warning — "do not read a cause into any single row" — was
+> right, and was not enough: the causes were written into the parentheses
+> anyway, and a reader building a corpus from them built a lazy-only one.
 
 One of these controls is worth reading before trusting the others: for
 `(?:(?:b*?|a)?)*` the closure at the position after "a" fails in EXACTLY the
