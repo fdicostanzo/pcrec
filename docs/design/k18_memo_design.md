@@ -265,6 +265,31 @@ push made on an iterative tail edge is always unwound by one of those two.
 The preferred-branch recursion is the only recursion, exactly as today.
 **STRUCTURAL**, from the prototype's control flow.
 
+**A frame must restore the stack's ENTRIES, not only its depth — and the
+sentence above is where this note got that wrong. [R23 S3/S16.]** "A frame
+restores the saved depth on return" is true and was not enough. A redirect
+sets the depth to the re-arrived loop's index `at`, and `at` can be BELOW the
+current frame's saved depth, because the re-arrived loop was pushed by an
+ANCESTOR frame — which is reachable, and is precisely the K18 shape: the only
+epsilon exit from a loop body runs through the loop's own entry split, so a
+walk inside loop L can redirect at L and then immediately redirect at an
+enclosing loop O. The continuation then PUSHES over `open[at .. save_depth)`.
+Restoring only the depth hands the caller a stack whose entries name the wrong
+loops, and the caller's redirect scan reads them.
+
+The consequence is a MISSED empty-iteration redirect — verbatim the defect
+this note exists to repair, reintroduced by the repair. It was measured
+reaching the redirect decision on 552 of 1,001 patterns, overwhelmingly on the
+reverse machine, and every divergence was a miss rather than a spurious fire.
+It changed no answers (0 emitted-C differ against a variant that restores the
+entries, on 1,001 + 1,728 patterns), which is why nothing in this lane's own
+apparatus caught it — but it did three other things, and §2a's cost numbers,
+§2a's `nonstacktop == 0` cell and §6's ruling request were all downstream of
+it. The prototype now saves and restores the entries (`proto_a.py`'s
+`clo_visit`, a deliberately naive `malloc`+`memcpy` per frame so that no
+number below can be accused of hiding the fix's own cost), and every cost
+figure in this section has been re-taken on it.
+
 #### Cost: what the open-loop set actually costs
 
 The open set's cardinality is the loop-NESTING depth. **MEASURED**, over the
@@ -288,46 +313,133 @@ The memo's inflation over the shipped walk, same patterns, same counters
 | states expanded | **x1.006** | 1.00 | 1.00 | 1.29 | 1.76 | 527 / 554 |
 | states visited | **x1.001** | 1.00 | 1.00 | 1.05 | 1.65 | 482 / 554 |
 
-**The worst case is NOT exponential in nesting depth.** Nested nullable stars,
-`(?:(?:...(?:a*)*...)*)*`, measured at depths 20 to 60:
+#### The deep-nesting worst case, re-measured [R23 S16, M-m1]
 
-| nesting depth d | 20 | 30 | 40 | 60 | 97 | 220 |
-|---|---|---|---|---|---|---|
-| distinct contexts | 1,507 | 4,907 | 11,407 | 37,707 | 151,911 | 1,798,507 |
-| states expanded | 3,454 | 10,764 | 24,474 | 79,094 | 313,154 | 3,645,654 |
-| redirects | — | — | — | — | 6,966,548 | 193,628,274 |
+Nested nullable stars, `(?:(?:...(?:a*)*...)*)*`, at the depths that matter,
+with the parser's own cap as the last column. Times are min-of-3 wall clock
+from a python harness whose per-invocation floor is **0.92 ms** on this box,
+measured against the pattern `a` at every run — not the 0.12 s this note
+originally printed, which was its shell harness's own overhead and made every
+cheap compile look identical. (M-m1 also found the old table's d=97 row off
+3–6% on all three counters against bit-exact neighbours; the re-measurement
+below replaces it rather than patching it.)
 
-Contexts fit **d³/6** closely (d=40: predicted 10,667, measured 11,407; d=60:
-36,000 vs 37,707), and the redirect count — which is where the time goes —
-fits **d⁴**: the measured ratios 3.16, 2.45, 2.08 across d = 49→65→81→97
-against predicted 3.10, 2.41, 2.06. **MEASURED. The cost law is Θ(d⁴) in loop
-nesting depth, and it is polynomial, not exponential.**
-
-Wall-clock, against the shipped compiler:
-
-| d | 16 | 32 | 48 | 64 | 96 | 100 | 200 | 250 (the cap) |
+| nesting depth d | 16 | 32 | 48 | 64 | 96 | 100 | 200 | 250 (the cap) |
 |---|---|---|---|---|---|---|---|---|
-| shipped | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | **0.12 s** |
-| prototype A/A2 | 0.12 s | 0.12 s | 0.22 s | 0.32 s | 1.41 s | 1.62 s | 20.5 s | **39.25 s** |
+| shipped | 0.0009 s | 0.0010 | 0.0011 | 0.0013 | 0.0027 | 0.0027 | 0.0018 | **0.0044 s** |
+| A2, stack UNFIXED | 0.0026 s | 0.0321 | 0.1136 | 0.2800 | 1.3367 | 1.5947 | 20.4461 | **37.02 s** |
+| **A2, as designed** | **0.0011 s** | 0.0026 | 0.0081 | 0.0175 | 0.0512 | 0.0450 | 0.2221 | **0.3501 s** |
 
-At that worst case the counters read `maxdepth=251 ctxs=2,635,007
-expansions=5,332,784 redirects=323,161,504 nonstacktop=0` — so the 39 s is
-323 million redirects, the interner holds 2.6 million contexts (~21 MB), and
-the properly-nested-stack property still holds at the deepest pattern the
-parser will accept. **This is a real, user-reachable 39-second compile where
-the shipped compiler takes 0.12 s, on a 1500-character pattern.** It is the
-strongest argument for the threshold below, and it is why this note asks for a
-ruling instead of assuming one.
+The middle row is the prototype this note originally measured, and it
+reproduces the old table (37.0 s against the old 39.25 s, box noise). The
+bottom row is the same binary with the stack entries restored. **The worst
+case a user can reach through the parser is 0.35 s**, not 39 s.
 
-(0.12 s is this box's process-startup floor; everything at that figure is doing
-no measurable closure work.) **The depth is bounded**: `src/parse/parse.c:549`
-refuses when parentheses nest too deeply, and a loop can only nest inside
-another loop through a group, so d is capped by that refusal —
-**STRUCTURAL** that loop nesting requires parentheses (`frag_star` is reached
-only through a quantified group), **MEASURED** at the boundary: 250 nested
-`(?:...)*` wrappers compile, 251 are refused. That makes nest250 the true
-worst case a user can reach, and it is measured, not extrapolated — see the
-table's last column.
+The counters say why, and they are more informative than the clock
+(`PCREC_K18_STATS=1`, dominant machine):
+
+| d | 16 | 32 | 48 | 64 | 96 | 100 | 200 | 250 |
+|---|---|---|---|---|---|---|---|---|
+| contexts | 154 | 562 | 1,226 | 2,146 | 4,754 | 5,152 | 20,302 | 31,627 |
+| states expanded | 418 | 1,330 | 2,754 | 4,690 | 10,098 | 10,918 | 41,818 | 64,768 |
+| redirects | 2,176 | 14,080 | 43,904 | 99,840 | 322,816 | 363,600 | 2,787,200 | 5,396,500 |
+| nonstacktop | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Against the unfixed prototype at the same depths — same pattern, same binary,
+one changed function:
+
+| d | 64 | 100 | 200 |
+|---|---|---|---|
+| contexts, unfixed / fixed | 45,639 / 2,146 | 171,507 / 5,152 | 1,353,007 / 20,302 |
+| redirects, unfixed / fixed | 1,370,468 / 99,840 | 8,205,854 / 363,600 | 132,156,704 / 2,787,200 |
+| visits, unfixed / fixed | — | — | 137,570,342 / 2,870,018 |
+
+**67x fewer contexts and 48x fewer visits at d=200, for byte-identical
+emitted C.** The mechanism is compounding: a missed redirect does not merely
+lose a rule, it makes the walk EXPAND a loop it should have exited, which
+pushes that loop, which mints a fresh context, which defeats the memo for the
+entire subtree below it. The context explosion IS the missed redirects
+accumulating.
+
+**The "cost law" was a law about the bug.** On the fixed prototype the same
+family fits contexts ≈ **d²/2** (d=250: 31,250 predicted against 31,627
+measured; d=200: 20,000 against 20,302) and redirects ≈ **d³/3** (5,208,333
+against 5,396,500; 2,666,667 against 2,787,200). The unfixed prototype fitted
+d³/6 and Θ(d⁴) — the numbers this note published — so **the stack fix removes
+one whole factor of d from both counters.** Marked as what it is: a FIT TO ONE
+FAMILY, on a generator of pure nesting with no bounded repeats, not a law of
+the design. The next subsection is a different family that this fit does not
+predict at all.
+
+**The depth is bounded**: `src/parse/parse.c:549` refuses when parentheses
+nest too deeply, and a loop can only nest inside another loop through a group,
+so d is capped by that refusal — **STRUCTURAL** that loop nesting requires
+parentheses (`frag_star` is reached only through a quantified group),
+**MEASURED** at the boundary: 250 nested `(?:...)*` wrappers compile, 251 are
+refused (`PCREC_MAX_GROUP_DEPTH = 250`, `src/core/limits.h:125`). That makes
+nest250 the true worst case a user can reach on this family, and it is
+measured, not extrapolated — see the table's last column.
+
+#### The family the depth model does not predict [R23 S14]
+
+A depth fit is the wrong instrument, and the panel found the family that shows
+it: bounded repeats crossed with a nullable loop. `A_REP` lowers `{0,k}` into
+nested COPIES of the body (`src/ir/nfa.c`), so the machine's NFA grows with k
+while the nesting a reader counts in the pattern does not move at all — 405
+NFA states at k=2, 1,485 at k=8, from a pattern whose visible nesting is
+constant.
+
+    ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,k}(){2,3}){1,2}){2,3}
+
+| k | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|
+| shipped | 0.0022 s | 0.0062 | 0.0040 | 0.0039 | 0.0043 | 0.0054 | 0.0123 |
+| A2, stack UNFIXED | 0.2192 s | 2.2503 | 17.1465 | 50.6882 | — | — | — |
+| **A2, as designed** | **0.0029 s** | 0.0039 | 0.0049 | 0.0064 | 0.0072 | 0.0078 | **0.0087 s** |
+| contexts (fixed) | 13 | 19 | 25 | 31 | 37 | 43 | 49 |
+| max open depth (fixed) | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+
+**On the fixed prototype this family is LINEAR in k, at open-loop depth 1.**
+On the unfixed prototype it was 231x over k=2..5 and did not finish beyond
+that, with contexts 450 → 2,834 → 11,770 → 40,422 and **max depth pinned at
+11**.
+
+That last number deserves care, because the panel drew a conclusion from it
+that this re-measurement narrows. S14 read depth-11-at-visible-nesting-3 as
+`A_REP`'s copies MULTIPLYING the depth the open-loop machinery sees, and
+called the mechanism prototype-independent. It is not: with the entries
+restored the same patterns measure **max depth 1**, because the copies sit in
+SEQUENCE rather than one inside another — a walk is inside at most one of them
+at a time. The depth of 11 was the corrupted stack failing to pop loops whose
+redirects were missed. (`docs/dev/plan.md`'s ENG-BREP third amendment is
+corrected accordingly; its other two consequences stand.)
+
+**What survives, and it is the part that matters for §5:** the cost driver is
+the number of distinct open-loop CONTEXTS, not the nesting depth a reader
+counts — contexts are what the memo keys on and what the interner holds, and
+they grow with the unrolled copy count. Any budget or gate posed on
+"nesting depth" is posed on a quantity the compiler does not use. §5 item 6
+gains this family as a gate row for exactly that reason.
+
+**The four patterns that did not finish.** Over 3,993 randomly generated
+patterns with no knowledge of K18, four exceeded a 60 s compile budget under
+the unfixed prototype and none under the shipped compiler (one was still
+running at 900 s). On the fixed prototype:
+
+| | shipped | A2 unfixed | **A2 as designed** |
+|---|---|---|---|
+| `((?:(?:(?:[^a]{1,2}\|[^a]??\|.{0,2}?)+){0,3}((?:[^a]*?\|){1,2}?){2,3}...` | 0.0038 s | >900 s | **0.0103 s** |
+| `(?:(?:(?:.{0,3}\|[^a]?)+(?:b?){0,2}(.*?))*[a-c]{2,3}...` | refused | >60 s | **refused** |
+| `(?:(?:.{0,3}d+a*?){0,3}(?:a{0,4}?\|\|d{2,3})+(?:.*?.*.??){0,4}?){0,4}?` | 0.3872 s | >60 s | **1.2199 s** |
+| `(?:[^a]{0,3}\|c{0,3}\|(?:(?:(?:a??c??)*?(.{1,2})*)*\|...){0,4}?\|d{1,2}){2,3}` | 0.7879 s | >60 s | **2.8504 s** |
+
+The second is refused by the existing DFA state cap (>32,000 states) under the
+shipped compiler and A2 alike — a clean, attributable error, which is what D22
+says that case should get. **The worst residual on this set is 3.6x the
+shipped compiler on a pattern the shipped compiler already spends 0.79 s on.**
+That is an ordinary optimisation-pass cost. It is not a reason to make the
+compiler deliberately inexact, which is why §6 ruling 1 is withdrawn rather
+than answered.
 
 #### The regression the fuzzer found, and the fast path that removes it
 
@@ -444,21 +556,32 @@ so the difference between them is the memo's contribution and nothing else.
 Without it, "the memo is what makes the exact rule affordable" would be an
 assertion.
 
-**MEASURED**, on `(?:a*|b*){n}`, the family the K18 entry names:
+**MEASURED**, on `(?:a*|b*){n}`, the family the K18 entry names — re-taken on
+the fixed prototypes with the 0.9 ms-floor harness [R23 S16 item 3]:
 
 | n | 14 | 16 | 18 | 19 | 20 | 21 | 22 |
 |---|---|---|---|---|---|---|---|
-| shipped | 0.11 s | 0.11 s | 0.11 s | 0.11 s | 0.12 s | 0.11 s | 0.12 s |
-| A | 0.11 s | 0.11 s | 0.11 s | 0.11 s | 0.11 s | 0.11 s | 0.11 s |
-| C (no memo) | 0.11 s | 0.41 s | 1.51 s | 3.11 s | 6.31 s | 12.63 s | budget |
+| shipped | 0.0010 s | 0.0014 | 0.0026 | 0.0017 | 0.0028 | 0.0027 | 0.0015 |
+| A2, as designed | 0.0012 s | 0.0016 | 0.0017 | 0.0015 | 0.0035 | 0.0016 | 0.0018 |
+| C (no memo) | 0.0942 s | 0.3940 | 1.6337 | 3.3561 | 6.8409 | 14.0510 | **budget** |
 
-A clean doubling per unit of n — **Θ(2ⁿ)** — running out of a 3x10⁸-visit
-budget at n=22. This CONFIRMS the K18 entry's own sketch ("the naive
-path-local version was exponential on `(?:a*|b*){20}`-class shapes") as a
-measurement rather than a recollection, and it settles the shape of the answer:
-the expensive thing is dropping the dedup, not making the rule path-sensitive.
-A is exponentially cheaper than C and, per §2a, within 0.6% of the shipped
-compiler on real patterns.
+A clean doubling per unit of n — **Θ(2ⁿ)**, measured ratios 2.05, 2.04, 2.05
+across n = 19→20→21→22 — running out of the 3x10⁸-visit budget at n=22 (exit
+97, `K18BUDGET exceeded`). This CONFIRMS the K18 entry's own sketch ("the
+naive path-local version was exponential on `(?:a*|b*){20}`-class shapes") as
+a measurement rather than a recollection, and it settles the shape of the
+answer: the expensive thing is dropping the dedup, not making the rule
+path-sensitive. A is exponentially cheaper than C, and on this family it is
+indistinguishable from the shipped compiler.
+
+**And the premise the pricing rests on is now measured too. [R23 S6.]** This
+section asserted that "A and C give the same answers, so the difference
+between them is the memo's contribution and nothing else" — an assertion, not
+a measurement, and the whole argument-from-cost depends on it. The panel built
+a third binary (`proto_ref.py`: no memo at all, plus the per-frame stack-entry
+restore, i.e. the most conservative reading of the design's own rule) and
+diffed emitted C three ways against A2 and C over 1,001 patterns: **0 differ,
+all three.** The memo suppresses nothing that matters.
 
 ### 2d. Recommendation
 
