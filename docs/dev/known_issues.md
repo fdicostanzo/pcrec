@@ -1404,7 +1404,7 @@ against the AST shape, so the next three functions to walk the same shape
 inherited nothing. Any new walk over `A_CAT`/`A_ALT` needs the same treatment,
 and `vm_nullable` now carries the comment that says so.
 
-## K21 — OPEN, found 2026-08-15 (R23 semantics critic S15; triaged by a follow-up read-only probe)
+## K21 — FIXED 2026-08-15 (found same day, R23 semantics critic S15; triaged by a follow-up read-only probe)
 
 **The `--emit-main` convenience `main()` treats `<prefix>_search`'s
 three-valued return as a boolean, so VM step/frame-budget exhaustion
@@ -1450,3 +1450,32 @@ rc==0 nomatch, rc<0 a distinct give-up line + distinct exit code),
 matching fuzz_driver.c; plus a test that forces a budget exhaustion under
 --emit-main and pins the three-way stdout. Scheduled: immediate small
 lane (2026-08-15, R23 close), not deferred.
+
+**Fix landed 2026-08-15.** `pcrec_emit_main` (src/gen/emit_dfa.c) now
+captures `rc = %s(...)` and branches on the VALUE: `rc == 1` prints
+`match START END` and exits 0 (unchanged), `rc == 0` prints `nomatch` and
+exits 1 (unchanged), and `rc < 0` prints a one-word honest give-up line —
+`steps` or `frames`, distinguishing which sentinel fired, via the
+`%s_ERR_STEPS`/`%s_ERR_FRAMES` macros the same emitted file already
+defines — and exits 3, a code that collides with neither match/nomatch
+(0/1) nor this same `main()`'s own usage-error exit (2). The wording
+mirrors `tests/fuzz/fuzz_driver.c`'s existing `"steps"`/`"frames"` tone
+(D26: the exact word is ours to choose; kept short, stable, and
+consistent with the driver that already got this right).
+
+Pinned by `tests/cli/run_cli_tests.sh` case15: two small, reliable
+witnesses driven to their own limit exactly the way
+`tests/vm/run_vm_tests.sh` §4/§4.5 already do — `(a*)*b` under
+`--engine=vm --step-budget=50` (step budget) and `((a)|b)*c` under
+`--engine=vm --backtrack-frames=4` (frame capacity) — each asserting the
+exact stdout line and exit code 3, PLUS the non-firing controls (the same
+two patterns under an ample budget/capacity still print an honest
+`match START END`), so a give-up path that fired unconditionally could
+not pass silently. Verified FAILING against the pre-fix emitter first
+(4 of case15's 10 assertions fail — exactly the give-up-path ones; the
+match/nomatch and control assertions stay green either way), then
+verified green again after restoring the fix. No consumer of the old
+two-line `match `/`nomatch` --emit-main contract was found scanning
+tests/, scripts/, docs/ for a parser that would choke on the new third
+line — the existing green tests never reached the give-up path before
+this fix.
