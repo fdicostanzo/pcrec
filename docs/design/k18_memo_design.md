@@ -529,10 +529,22 @@ did not diverge — it **timed out**, on
 
     (1{0,30}?[^]abc][^abc]){28,30}0+|a
 
-which the shipped compiler processes in 0.61 s and prototype A in **13.33 s**.
+which the shipped compiler processes in 0.62 s and prototype A in **13.53 s**.
 This is not a contrived pattern; the general fuzzer produced it within 129
 draws, which is the same standard of "reachable by accident" the K18 entry
 applies to the bug itself.
+
+**[R23] One correction to what that number is.** This pattern does not
+compile: every binary — the shipped compiler, A, A2, and the repo's own
+committed `build/pcrec` — REFUSES it with `pattern too complex for the DFA
+engine (>32,000 states; VM engine arrives in M4)`, exit 1. The times above and
+below are therefore **time-to-refusal**: the work of building 32,000 DFA states
+before the cap fires. That is still real closure work and still the right
+measurement for a constant-factor comparison, but the note called it
+"processes" and it is not a compile. (The panel's measurement critic found the
+pattern in the state-cap bucket and read it as staleness; it is not — `src/` is
+byte-identical to the note's own base commit. The number was always
+time-to-refusal.)
 
 The counters explain it, and they say something the wall clock does not.
 **MEASURED**, on the `{8,8}` shrink of that pattern, shipped build vs
@@ -550,29 +562,47 @@ need distinguishing. **STRUCTURAL** that this changes no answers; **MEASURED**
 that it does not: A and A2 emit **byte-identical C on all 18,858 shape-space
 patterns and all 555 corpus patterns**.
 
-| | shipped | A | **A2** |
-|---|---|---|---|
-| `(1{0,30}?[^]abc][^abc]){28,30}0+\|a` | 0.61 s | 13.33 s | **0.82 s** |
-| same, `{8,8}` | 0.21 s | 1.52 s | **0.22 s** |
-| corpus aggregate compile time | 0.671 s | 0.662 s | (A2 ≡ A) |
-| nest100 / nest200 | 0.12 / 0.12 s | 1.62 / 20.4 s | 1.62 / 20.5 s |
+All re-taken on the fixed prototypes, min-of-N, 0.9 ms floor:
 
-The fast path removes the constant-factor regression and leaves the Θ(d⁴)
+| | shipped | A | **A2** | A2, stack unfixed |
+|---|---|---|---|---|
+| `(1{0,30}?[^]abc][^abc]){28,30}0+\|a` (to refusal) | 0.621 s | 13.530 s | **0.820 s** | 0.817 s |
+| same, `{8,8}` (compiles) | 0.159 s | 1.428 s | **0.192 s** | — |
+| corpus aggregate, 622 patterns | 0.575 s | — | **0.573 s** | — |
+| corpus aggregate, net of the 0.9 ms floor | 0.070 s | — | **0.069 s** | — |
+| nest100 / nest200 / nest250 | 0.003 / 0.002 / 0.004 s | — | **0.045 / 0.222 / 0.350 s** | 1.59 / 20.4 / 37.0 s |
+
+**The fast path is still needed, and the stack fix does not substitute for
+it.** [R23 S16 addendum.] The two mitigations are orthogonal and the last
+column proves it: on this pattern the stack fix changes nothing (0.820 against
+0.817 — it is a maxdepth-1, 2-context walk, so there is no stack to corrupt),
+while the fast path is the whole of the 13.5 s → 0.82 s. Symmetrically, on the
+deep-nesting family the fast path does nothing and the stack fix is the whole
+of the 37 s → 0.35 s. Both are required; neither is the other's substitute.
+
+**The corpus aggregate, measured so the answer is not the process spawner.**
+The old figure (0.671 s against 0.662 s over 555 patterns) could not
+distinguish the two arms, because 622 process spawns at ~0.9 ms each are
+0.57 s of the 0.575 s measured. Subtracting the floor — measured per binary,
+per run, against the pattern `a` — the whole corpus costs **0.070 s under the
+shipped compiler and 0.069 s under A2**. That is the honest form of "the memo
+is free on real patterns": not a ratio near 1 because both numbers are
+dominated by `fork`, but 70 ms of closure work against 69 ms.
+
+The fast path removes the constant-factor regression and leaves the
 deep-nesting cost untouched, which is correct — that cost is real work, not
 overhead.
 
-**A recommended cheap mitigation for the residual.** 353 of 555 corpus
-patterns never open a loop at all and the corpus maximum is 5, while the
-compile-time risk begins somewhere past depth 64. A depth threshold — full
-path-sensitivity at nesting depth ≤ D, falling back to today's global memo
-beyond it — bounds the worst case at whatever D buys while leaving every
-realistic pattern exact. **MEASURED:** D=32 bounds it at 0.12 s, D=48 at
-0.22 s, D=64 at 0.32 s. I recommend **D=64**, on the grounds that it is 12x the
-deepest pattern in the corpus and holds the worst case to a third of a second.
-The honest cost of the threshold is that beyond D the compiler is K18-buggy
-again — but no worse than it is today, and the fallback is a documented,
-testable boundary rather than a silent one. This is a RULING I am asking for,
-not a decision I have taken: see §6.
+**The threshold this section used to recommend is withdrawn. [R23 S16.]** It
+read: full path-sensitivity at nesting depth ≤ D, falling back to today's
+global memo beyond it, D=64 recommended, "MEASURED: D=32 bounds it at 0.12 s,
+D=48 at 0.22 s, D=64 at 0.32 s". Every one of those numbers was a measurement
+of the stack bug. With the entries restored the *entire* depth range up to the
+parser's own cap costs 0.35 s, so a threshold at any D buys nothing and pays
+for it in exactness. It is also posed on the wrong variable: the family that
+actually blew up (§2a, S14) runs at open-loop depth 1, so D=64 would never
+have fired on it at all. See §6, where the ruling request is withdrawn rather
+than answered.
 
 ### 2b. The cheap alternative: transparent epsilon states
 
@@ -1143,9 +1173,11 @@ as findings.
 first prototype's open-addressed table never grew. Every slot carried the
 current generation and none matched the key, so the probe loop never found a
 free slot. It presented as `(?:...(?:a*)*...)*` at 17 nesting levels running
-forever while 16 finished in 0.12 s — a cliff so sharp that I nearly wrote it
+forever while 16 finished instantly — a cliff so sharp that I nearly wrote it
 up as an algorithmic explosion. It was a full hash table. After adding growth,
-depth 40 compiles in 0.12 s.
+depth 40 compiles in single-digit milliseconds. (This paragraph originally
+quoted both of those as "0.12 s", which was this lane's shell harness's own
+overhead rather than any measurement of pcrec — see §2a.)
 
 **A linear-scan interner prices the prototype, not the design.** Context
 interning was a linear scan over all contexts. At the depths where contexts run

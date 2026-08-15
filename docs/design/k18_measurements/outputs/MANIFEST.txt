@@ -7,6 +7,38 @@
 date:        2026-08-15T18:56:11Z
 repo commit: f4089d479fe4b354f55b30e46a027af7acf31c3a  (branch k18-design)
 base commit: 9df434d81aea0428d04984157a24ad5d0010f9bb
+#
+# RE-TAKEN 2026-08-15 (branch k18-revision, the R23 note-revision lane) on the
+# FIXED prototype -- proto_a.py's clo_visit now restores the open-loop stack's
+# ENTRIES, not only its depth (R23 S3/S16). src/ is byte-identical to the base
+# commit above (`git diff 9df434d..HEAD -- src/` is empty), so the CONTROL side
+# is unchanged; what moved is the prototype.
+#
+#   stats_corpus.tsv       RE-TAKEN, fixed prototype A. Corpus depth max 5->4,
+#                          context max 19->13; inflation x1.006/x1.001 becomes
+#                          x1.004 expansions / x0.996 visits.
+#   stats_corpus_base.tsv  RE-TAKEN (unchanged in substance: same 555, same
+#                          instrumented shipped closure).
+#   stats_adv_A.tsv        RE-TAKEN and the DENOMINATOR CHANGED: 52 rows -> 70.
+#   stats_adv_base.tsv     ditto.
+#
+#     DISCLOSURE (R23 M-B1). The 52 rows in the previous archive were 52 OF 70:
+#     gen_adversarial.py's `altnest` and `k18nest` families appended the outer
+#     `*` to a body already ending in `?`, so all 18 of their patterns were the
+#     invalid `?*` and every engine refused them. The two families named after
+#     K18's own shape therefore contributed ZERO patterns to the note's "52
+#     adversarial patterns", and nothing here or in the note said so --
+#     k18_stats.py printed `refused=18` on stderr and it never reached the
+#     prose. The generator now wraps (`"(?:%s)*"`); all 70 compile
+#     (`refused=0`).
+#
+#   emitdiff_*.log, diff_*.txt, oracle_*  CARRIED FORWARD unchanged. The fixed
+#     and unfixed prototypes emit byte-identical C -- verified on the corpus
+#     (622), two independent generated corpora (1,001 + 523), a 38-pattern
+#     nesting ladder to depth 250, and the bounded-repeat family, 0 differ
+#     against a non-vacuity control of 405/1,001 differing base-vs-A2 -- so
+#     every emitted-source and oracle result in these files is unaffected by
+#     the fix. See the note's §4 preamble.
 gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
 python3:     Python 3.14.4
 libpcre2:    10.46-1build1
