@@ -1,5 +1,19 @@
 # K18 — a path-sensitive epsilon-closure memo
 
+**STATUS: AMENDED PER R23 (2026-08-15)** —
+`docs/dev/reviews/2026-08-15-r23-k18-memo.md`, raw evidence in
+`2026-08-15-r23-appendix-critic-findings.md`. The panel affirmed the DESIGN
+(A2) and refuted the note's PROTOTYPE: `clo_visit` restored the open-loop
+stack's depth but not its ENTRIES, and that one omission was simultaneously
+the refutation of §2a's `nonstacktop == 0` cell and the ENTIRE cost residual
+§6 asked a ruling about. The prototype is fixed and every cost number below
+has been re-taken on the fixed prototype. **§6 ruling 1 is WITHDRAWN**; no
+Frank rulings remain open from this note. What else changed: §1's ingredient
+re-characterised (the PREFERRED arm, not laziness), §3's comparative claim
+withdrawn, §4.4 back-annotated RESOLVED, `gen_adversarial.py`'s two invalid
+families fixed and re-run, and §5 grown by nine items. Sections carry
+**[R23]** markers where the panel's finding is what changed them.
+
 Design note for the repair of K18 (docs/dev/known_issues.md), written
 DESIGN-FIRST and panel-eyed before any rewrite lane opens, per the scheduling
 ruled at R21 close. **This note is not the fix.** It carries the defect
@@ -413,15 +427,44 @@ In the style the K17 fix's comment carries, for A/A2 as recommended.
 
 **Claim.** Every `clo_visit` walk terminates.
 
-**Setup, all STRUCTURAL.** (i) A (state, context) pair is EXPANDED — reaches
+**Setup.** (i) **STRUCTURAL:** a (state, context) pair is EXPANDED — reaches
 the switch — at most once per closure, because expansion is guarded by an
-insert into the memo that fails on the second attempt. (ii) The set of
-contexts is finite: a context is an open-loop stack, the stack contains no
-repeats (a re-arrival at an open loop redirects instead of pushing), and there
-are finitely many loop states. (iii) `frag_star` at src/ir/nfa.c:115-131 is the
-only construction that creates a back edge, and its target always carries
+insert into the memo that fails on the second attempt. (ii) **AN OBLIGATION,
+NOT A FACT** — see below: the set of contexts is finite, because a context is
+an open-loop stack, the stack contains no repeats (a re-arrival at an open
+loop redirects instead of pushing), and there are finitely many loop states.
+(iii) **STRUCTURAL:** `frag_star` at src/ir/nfa.c:115-131 is the only
+construction that creates a back edge, and its target always carries
 `loop=1`, so every cycle in the epsilon graph passes through a loop-entry
 split.
+
+**[R23] Setup (ii) is the load-bearing premise, and it is promoted here from
+a parenthesis to an obligation the rewrite must ASSERT** (§5 item 6). It is
+not a property of the NFA; it is a property of the walk, and it holds only if
+the redirect fires on EVERY re-arrival at an open loop — which in turn holds
+only if the redirect's scan reads an accurate stack. R23 measured that scan
+missing open loops on 358 of 4,369 patterns on the prototype as first built,
+for exactly the reason §2a now records (S3/S10). Two independent measurements
+say how thin the margin is:
+
+* **Removing the open-set test loses termination outright.** [R23 S5.] A
+  half-prototype with the context-keyed memo but the SHIPPED redirect trigger
+  (`proto_half1.py`) does not merely fail to fix K18 — it SIGABRTs on the
+  15-character `(?:(?:a|b*?)?)*`, and with the `openst` array oversized
+  20,000x (`proto_half1b.py`) it still SIGSEGVs on the same pattern: without
+  the open-set test a loop entry is pushed again at every fresh context, and
+  every fresh context makes a fresh memo key. So the open-set test is not
+  only what makes the redirect fire, **it is the only thing bounding the
+  stack** against `openst`'s `nfa->n + 2` sizing.
+* **The no-repeat invariant survived the corrupted stack by coincidence, not
+  by design.** [R23 S9.] `proto_a2_dup.py` scans `open[0..depth)` for the
+  state before every push: 0 duplicates on 1,001 patterns even on the
+  UNFIXED prototype — because the slot the corruption overwrites is exactly
+  the slot of the loop whose redirect is then missed, so a missed redirect
+  pushes a loop that is by then genuinely absent. That is a mechanism
+  coincidence, and it is why §5 item 6 keeps BOTH assertions: `nonstacktop`
+  does not cover the no-repeat push, and the no-repeat push does not cover
+  `nonstacktop`.
 
 **Argument.** Suppose a walk does not terminate. By (i) and (ii) it performs
 finitely many expansions, so it must perform infinitely many NON-expanding
@@ -437,14 +480,31 @@ strictly decreases at every redirect. Depth is a non-negative integer. There
 can be at most `depth` consecutive redirects, and depth is bounded by the loop
 nesting depth. Contradiction.
 
-**This is stronger than K17's argument and subsumes it.** K17's comment argues
-that the redirect graph is acyclic because loop exits point outward past the
-loop — a statement about the NFA's shape that has to be re-checked whenever a
-construction is added. The version above is a decreasing measure on the walk's
-own state, so it holds regardless of what the NFA looks like, and in
-particular it would survive a future construct that made loop exits point
-somewhere surprising. **BELIEVED** that this is strictly stronger; the
-decreasing-measure part is STRUCTURAL from the prototype's code.
+The decreasing-measure argument above is **STRUCTURAL** from the prototype's
+code, and that mark stands.
+
+**[R23] What does NOT hold is the comparative claim this section used to
+make.** It said the argument was "strictly stronger than K17's and subsumes
+it", on the grounds that a measure on the walk's own state survives changes to
+the NFA's shape that K17's exit-points-outward argument would have to
+re-check. That was marked BELIEVED and the panel broke it (S12), twice over:
+
+* **It trades one premise for another, and the new one is the fragile one.**
+  K17's argument needs no finite-context premise; this one needs setup (ii),
+  which is a claim about the accuracy of the redirect scan and was measured
+  FALSE on the prototype. "Holds regardless of what the NFA looks like" is
+  true, but it holds only as long as something else — now an assertion —
+  holds instead.
+* **It proves a weaker property.** Termination is not correctness. A future
+  construct whose loop exit pointed back INTO the loop would keep the measure
+  decreasing (depth still drops at every redirect) while putting the
+  empty-iteration redirect in the wrong place. K17's shape-based argument
+  catches that; a decreasing measure cannot. Whatever "stronger" means, it is
+  not this.
+
+The two arguments are therefore kept as siblings, not as a replacement: the
+decreasing measure for termination, K17's shape argument for where the
+redirect lands. A new construction owes both.
 
 **What could still break it.** If a future change let the redirect truncate to
 a depth that is not strictly less than the current one — for instance, a
@@ -532,6 +592,27 @@ known-and-excluded fuzz category, or a new K-entry. **The measurement is
 MEASURED; the attribution to the VM path is BELIEVED**, from the shape of the
 patterns, since I did not open a repro bundle.
 
+> **RESOLVED 2026-08-15 — and the BELIEVED attribution above was WRONG.**
+> [R23 M-M1/V5.] A concurrent lane root-caused and fixed this 32 minutes
+> after this note's last commit (`fuzzfix`, merged at 7e27c19). The cause was
+> **not** the M4.5 VM path and not any emitted matcher: `tests/fuzz/fuzz_driver.c`
+> declared `ptrdiff_t caps[RX_NCAPS][2]` as a stack array sized by a
+> preprocessor macro baked in when the SHARED driver was compiled against a
+> throwaway pattern, then reused that driver unmodified against every later
+> pattern whose real `rx_info.ncaps` was larger — a test-infrastructure
+> stack smash, 274 of them, now 0. The fuzzer is green on both seeds at HEAD
+> (R23 re-ran seeds 99 and 5: `content divergences: 0`), and the pattern this
+> section names as the timing trigger now lands in the DFA state-cap refusal
+> bucket instead.
+>
+> Two things are worth keeping rather than deleting. The hedge was
+> well-calibrated — the attribution was wrong *precisely* because "I did not
+> open a repro bundle", and opening it was cheap. And none of the three
+> dispositions this section offered ("K19/K20 fallout, a known-and-excluded
+> fuzz category, or a new K-entry") named the answer: a bug in the harness
+> itself. A defect list that cannot spell "the instrument is broken" is §7's
+> lesson wearing different clothes.
+
 ### 4.5 `make test`
 
 **MEASURED**, full `make test` in a scratch tree with A applied: every leg
@@ -563,12 +644,22 @@ into a live corpus directory and close the K18 entry in the same commit, or
 
 The K17 methodology, with the additions this lane's own findings demand.
 
-1. **Oracle-verified family tests.** A live `.rxt` guard corpus: the 8
-   diverging shapes, the 7 controls, **plus the `{0,2}`-bodied family from
-   §2b** — the 83 patterns where B and A disagree are a ready-made,
-   independently-derived extension of the class, and they are not in the
-   current 165. Every expectation from python3 `re` AND libpcre2, both oracles
-   agreeing, per D44.
+1. **Oracle-verified family tests.** A live `.rxt` guard corpus, on **three**
+   axes rather than the current one:
+   * the 8 diverging shapes and the 7 controls already on file;
+   * **the `{0,2}`-bodied family from §2b** — the 83 patterns where B and A
+     disagree are a ready-made, independently-derived extension of the class,
+     and they are not in the current 165;
+   * **[R23 S8] an ARM-ORDER axis: every diverging shape in BOTH alternation
+     orders, with greedy as well as lazy nullable arms.** §1.5 is why. The
+     current 165 are lazy-only, and the two non-lazy entries in the file are
+     there as CONTROLS — so the corpus contains no member of the sub-case
+     whose witnesses are `(?:(?:b*|a)?)*`, `(?:(?:(?:b|)|a)?)*` and
+     `(?:(?:b?|a)(?:b?|d))*`. A corpus derived from the bug as FOUND inherits
+     the finder's alphabet; this axis is the cheapest known correction.
+
+   Every expectation from python3 `re` AND libpcre2, both oracles agreeing,
+   per D44.
 2. **Isolation sweep with changed-cell accounting**, old-binary vs new-binary,
    reporting old-wrong→new-right / regressed / both-wrong. §4.3's 226-0-0 is
    the shape; the lane should reproduce it at a larger scale with injected
@@ -595,39 +686,136 @@ The K17 methodology, with the additions this lane's own findings demand.
    does:
    * the counter-instrumented base build (`proto_basestats.py`) kept, so
      inflation is reported with a denominator;
-   * the `nonstacktop` counter kept as an assertion;
+   * **BOTH invariant assertions, not one.** [R23 S3/S9/S10.] The
+     `nonstacktop` assertion (no redirect at a non-top position) AND the
+     **no-repeat push scan** (`for i < depth: open[i].loop != s` before every
+     push). Neither covers the other: on the unfixed prototype `nonstacktop`
+     fired 358 times in 4,369 patterns while the no-repeat scan stayed at 0,
+     and §3's termination proof rests on the one that stayed silent. An
+     assertion that cannot fail on the bug it is named for is a sentence.
    * timing on the fuzz-found `(1{0,30}?[^]abc][^abc]){28,30}0+|a` and on
-     nested-star depths 16/64/100/200 as explicit gates — that pattern is the
-     one that caught the constant-factor regression and it should not be
+     nested-star depths 16/64/100/200/250 as explicit gates — that pattern is
+     the one that caught the constant-factor regression and it should not be
      allowed to regress silently;
-   * at least two fuzzer seeds run to completion, since seed 99 found the cost
-     defect that no corpus run did.
+   * **[R23 S14] a BOUNDED-REPEAT-times-NULLABLE-LOOP row**, e.g.
+     `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,k}(){2,3}){1,2}){2,3}` swept in
+     k. Neither of the two families above has this shape, and it is the one
+     that showed cost tracking CONTEXT COUNT rather than nesting depth (§2a).
+     The honest gate is a context-count or expansion budget, not a depth one.
+   * at least two fuzzer seeds run to completion, **each with a per-pattern
+     COMPILE-TIME budget reported as a count.** [R23 S14.] §4.4's fuzz result
+     could not have seen the cost defect, because a compile that never
+     finishes is not a divergence — it is invisible to a differential that
+     compares answers. A budget turns it into a number.
 7. **`make ubsan` and `make asan`, both axes.** The design adds two heap
    tables with growth and rehash paths — the first version of the prototype
    had a table that deadlocked when full (§7) — and neither the corpus nor the
    fuzzer exercises the grow path deliberately. A test that drives a closure
    past the initial capacity should be written on purpose.
+8. **[R23 S7] `tests/codegen/run_trie_identity.sh` as an explicit gate.** A2
+   creates this obligation and the note did not name it: the gate requires the
+   shipped compiler and a `-DPCREC_NO_TRIE` build to emit byte-identical C, on
+   the argument that subset construction plus minimization erases what the
+   M2.8 trie does to the NFA — and that argument was written for a
+   path-INSENSITIVE closure. A2 makes the closure path-sensitive over the
+   epsilon graph and the trie CHANGES that graph, so the erasure does not
+   automatically carry. It HOLDS under A2 on the panel's 180-pattern crossing
+   of flat alternations with nullable-quantified branches under a nullable
+   loop (0 differ, both directions) — but that is not the gate's own 500
+   random patterns plus its `-i` sweep, which is what the rewrite lane owes.
+9. **[R23 V6] `make strict`, and one serial `PROCS=1` pass.** Both are in
+   K17's own close record ("full `make test` + `strict` green"), so §5's
+   framing as "the K17 methodology plus additions" already implied them and
+   the checklist omitted them. They are cheap and they are aimed at exactly
+   what this design adds: new hash-table code with growth paths (`-Wall
+   -Wextra`), and a result that must not depend on the harness fan-out.
+10. **[R23 V4] The known-fail ratchet move, in the SAME COMMIT as the fix.**
+    §4.5 measures the ratchet going red with `NOW PASSING:
+    tests/known_fail/k18_empty_exit_through_seen_eps.rxt`, which is the
+    ratchet working as designed. The landing must move that file into a live
+    corpus directory (folded into item 1's re-scoped corpus) and close the
+    `docs/dev/known_issues.md` K18 entry in the same commit, or `make test`
+    stays red. Stated here as its own checklist line because a requirement
+    stated three sections away from the checklist is a requirement someone
+    executes the checklist without.
+11. **[R23 V7] Thread scoping — a STRUCTURAL claim to re-check, or TS-3 to
+    run.** Concurrent `pcrec_compile()` is in the STANDING `make test`
+    battery (TS-3, `tests/thread/`, sabotage-validated with planted races),
+    and this design adds two heap tables to the DFA-construction path.
+    **STRUCTURAL, in the prototype:** both are per-compile automatic locals
+    of `pcrec_build_dfa` (`prototypes/proto_a.py:370-371` — `PMemo memo;
+    LCtxTab ctxs = {...}`) and the open-loop stack comes from the compile's
+    own arena (`:373`, `arena_alloc(&cx->arena, ...)`); the only file-scope
+    state in the prototype is the measurement counters at `:68-69`, which do
+    not ship. So there is nothing shared to race, BY CONSTRUCTION. The
+    obligation on the rewrite is to keep it that way and to say so at the
+    declaration — and if any part of the real implementation becomes shared
+    (a cache across compiles is the obvious temptation), TS-3 runs before it
+    lands rather than after.
+12. **[R23 V1] The harness's own pcrec budget, and the sanitizer axis.**
+    `tests/harness/run.sh:256` wraps pcrec's OWN invocation in a bare,
+    hardcoded `timeout 60`. That predates D45 and is outside its mechanism:
+    `tests/lib/gen_timeout.sh` derives the budget from `-fsanitize=` in the
+    flags of a GENERATED-CODE compile, and pcrec's own invocation passes no
+    such flags — so the one compile this design can actually slow down has
+    the one budget that does not scale with the axis, and blowing it is
+    scored `HARNESS FAILURE`, not a graceful skip. With the stack fixed the
+    margin is no longer an emergency (worst measured residual 0.35 s at the
+    parser's cap, §2a), but the gap is real. The rewrite lane either folds
+    that timeout into the `gen_timeout.sh` mechanism so it becomes
+    axis-aware, or documents in `docs/testing.md` why pcrec's own invocation
+    is exempt — with reasons, not silence. Either way it MEASURES
+    nest100/200/250 under a ubsan- and asan-instrumented pcrec, since every
+    timing number in this note is a plain-axis number.
+13. **[R23 S4] A comment obligation on the `marks_next` 2^32 wrap.** The
+    empty-context fast path threads a SECOND `Marks` whose generation is
+    advanced in lockstep with the first, so a wrap is safe only because both
+    advance together. The panel attacked the fast path on key aliasing and
+    generation desync and could not break it (0 of 1,001 and 0 of 523 emitted
+    C differ; 44,455 span cells, A2 = oracle on all) — but nothing reaches
+    2^32 closures, so the wrap itself is safe BY INSPECTION and will stay
+    that way. The rewrite writes that down at the second `marks_next` call
+    rather than leaving it implicit.
 
 ---
 
 ## 6. Rulings requested
 
-1. **The nesting-depth threshold.** Take D=64 (worst case 0.32 s, exact for
-   everything within 12x of the corpus maximum), take a different D, or take
-   none and accept the MEASURED 39.25 s at the parser's nesting cap. I
-   recommend D=64. If a threshold is taken, it needs a decisions.md entry,
-   because it makes the compiler deliberately inexact in a bounded region and
-   that must not become folklore. Note the alternative shape the panel may
-   prefer: REFUSE past D rather than silently falling back, which trades a
-   wrong answer for a diagnostic and fits D26's "requires module 'X'" habit of
-   naming what is not supported — but it refuses patterns that compile
-   correctly today, which is a bigger break than the fallback.
-2. **Whether §2a's "(1) and (2) are each necessary" claim needs measuring**
-   before the rewrite. It is cheap (two half-prototypes) and it is currently
-   BELIEVED.
+**NONE remain open. [R23]** Both of the note's original rulings are
+discharged, and the third ask is a scheduling detail the rewrite lane owns.
+
+1. **The nesting-depth threshold — WITHDRAWN, not answered.** This note
+   asked Frank to choose a depth D past which the compiler would fall back to
+   today's global memo and be deliberately K18-buggy again, recommending
+   D=64 on the strength of a MEASURED 39.25 s compile at the parser's own
+   nesting cap. **That 39 s was a prototype bug, not a property of the
+   design.** With the open-loop stack's entries restored per frame — a change
+   that only ADDS per-frame work — the same worst case is 0.41 s (§2a), and
+   the four randomly-generated patterns that did not finish under the unfixed
+   prototype compile in 0.11–2.9 s. There is nothing left for a threshold to
+   mitigate, so asking for one would be asking Frank to authorise a
+   deliberately inexact compiler to work around a defect this note has since
+   fixed. The recommendation is **NO THRESHOLD**.
+
+   Recorded for whoever proposes one later, because the panel found the note
+   had engaged neither ruling (V2/V3): a threshold proposal must answer
+   **D22** (adversarial patterns are out of scope, and its own prescription
+   for a legitimate-but-extreme pattern is a clean REFUSAL with a diagnostic,
+   never silent degradation — so silent fallback is the shape that needs the
+   extra justification, not refusal) and **D46** (every strategy-selection
+   point must be OBSERVABLE and FORCEABLE — a silent per-closure fallback is
+   exactly the selection point D46 governs, and without a stamp a sabotage
+   test written for the exact path would silently exercise the buggy one).
+2. **Whether §2a's "(1) and (2) are each necessary" claim needs measuring —
+   DISCHARGED.** R23 built both half-prototypes (S5). Change (2) alone
+   reproduces the shipped compiler's wrong answers cell for cell; change (1)
+   alone does not terminate. §1.4 is re-marked MEASURED and §3 now carries
+   the stronger fact that came out of it.
 3. **Whether the 83 `{0,2}` patterns from §2b become a live guard corpus in
-   this lane or the rewrite lane.** They are oracle-verified against python3
-   `re` today but not yet against libpcre2.
+   this lane or the rewrite lane.** The rewrite lane, as one input to the
+   re-scoped corpus §5 item 1 now specifies — which also owes the arm-order
+   axis §1.5 found. No ruling needed; the second oracle is D44's standing
+   requirement either way.
 
 ---
 
