@@ -1007,12 +1007,18 @@ into a live corpus directory and close the K18 entry in the same commit, or
 * **Captures.** Every measurement here is spans-only. K18's entry marks the
   defect capture-independent, and the corpus run includes the capture suites,
   but I did not do a capture-offset differential of my own. **The rewrite lane
-  must**, because M4.5's VM consumes the DFA's span. *[R23: still open, and
-  now with a lead — S15 found three short capture-bearing patterns whose
-  generated matchers print uninitialised memory as spans under BOTH the
-  shipped compiler and A2. Not A2's and not K18's, but the panel's PROBE 1
-  and the nearest thing to a live shipped-compiler defect this review
-  produced; witnesses in the R23 appendix under S15.]*
+  must**, because M4.5's VM consumes the DFA's span. *[R23: still open as a
+  capture differential. The lead attached to it is NOT — S15 found three
+  short capture-bearing patterns whose generated matchers print uninitialised
+  memory as spans under BOTH the shipped compiler and A2, the panel filed it
+  as PROBE 1, and it is now **RESOLVED 2026-08-15 as K21** (fixed on main,
+  merge 6eeedbb): `--emit-main`'s convenience `main()` read
+  `<prefix>_search`'s three-valued return as a boolean, so a VM step- or
+  frame-budget exhaustion (`RX_ERR_STEPS`/`RX_ERR_FRAMES`, negative and
+  therefore C-truthy) printed as a successful match with uninitialised capture
+  spans. A reporting bug in the emitted `main()`, not a matcher defect and not
+  A2's — and the fourth instance in two days of a defect living in the
+  INSTRUMENT rather than the thing measured, which is §7's subject.]*
 * **The reverse machine (D7) in isolation.** It is exercised throughout (the
   counters aggregate both machines) but never singled out. `prune` is off
   there, so the closure keeps every thread alive — a different code path
