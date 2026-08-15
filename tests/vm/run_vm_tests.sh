@@ -75,6 +75,17 @@ info_field() {   # info_field <name> <field>
     grep -oE "^\s*\.$2 = -?[0-9]+" "$WORKDIR/$1/gen.c" | grep -oE -- '-?[0-9]+$'
 }
 
+# [M4.5e] D46's rung stamp. rung_field reads it straight from a built
+# artifact's gen.c; assert_rung is the ONE assertion shape every §5 check
+# below uses, so the sabotage control at the end can run it against a
+# corrupted copy and prove it is not vacuous.
+rung_field() {   # rung_field <name> -> the stamped RX_VM_RUNG value, or ""
+    grep -oE '_VM_RUNG "[a-z]+"' "$WORKDIR/$1/gen.c" | grep -oE '"[a-z]+"' | tr -d '"'
+}
+assert_rung() {  # assert_rung <name> <expected> -> 0 iff the stamp matches
+    [ "$(rung_field "$1")" = "$2" ]
+}
+
 # ---- 1. the two bounds, each driven to ITS OWN limit ---------------------
 #
 # `--engine=vm` on both, because the prefilter would answer these before the
@@ -372,6 +383,115 @@ if PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
 else
     sed -n '1,40p' "$WORKDIR/oracle.out" >&2
     bad "[M4.5b] vm_oracle: $(tail -1 "$WORKDIR/oracle.out")"
+fi
+
+# ---- 5. THE D46 RUNG STAMP (docs/dev/decisions.md D46) -------------------
+#
+# §2.5's two rungs (the deterministic span-loop cursor vs. one resume frame
+# per iteration) are selected silently per quantifier; D46 requires the
+# selection to be OBSERVABLE. <PREFIX>_VM_RUNG is the compile-time stamp — a
+# SMALL NAMED VALUE SET (none/cursor/frames/mixed), not free text — and
+# --emit-ir's "; rung" line is its human-readable twin; both are read from
+# the same used_cursor/used_frames flags the real emission walk (vm_rep)
+# sets, never re-derived. Checks (a)-(c) below assert the stamp on the
+# suite's OWN existing rung-adjacent pairs from §2 above, which until now
+# assumed selection by construction; (d) exercises the listing's own render
+# path; (e) is the positive control D46 asks for — a stamp that lies must be
+# caught, not just "usually agree by construction".
+
+# (a) exact/residual, built in §2: the cleanest minimal pair. §2.5's
+# exactness condition is "no A_ALT breaks the constant stride", so a
+# capture-only conjunction always fits the cursor rung and any alternation
+# never does — independent of length or count.
+if [ -d "$WORKDIR/exact" ] && [ -d "$WORKDIR/residual" ]; then
+    if assert_rung exact cursor; then
+        ok "[M4.5e] D46: '(\d+)-(\d+)' (deterministic body, §2's 'exact') stamps RX_VM_RUNG=cursor"
+    else
+        bad "[M4.5e] D46: '(\d+)-(\d+)' stamped RX_VM_RUNG=$(rung_field exact), expected cursor"
+    fi
+    if assert_rung residual frames; then
+        ok "[M4.5e] D46: '((a)|b)*c' (choice-bearing body, §2's 'residual') stamps RX_VM_RUNG=frames"
+    else
+        bad "[M4.5e] D46: '((a)|b)*c' stamped RX_VM_RUNG=$(rung_field residual), expected frames"
+    fi
+else
+    bad "[M4.5e] D46: exact/residual builds from §2 are missing, cannot stamp-check them"
+fi
+
+# (b) bigbounded/smallbounded, built in §2: BOTH stamp frames, and that is
+# the point of checking them here rather than treating them as redundant
+# with (a) — the D44.1 CEILING boundary (does the exact requirement fit the
+# emitted array) and the D46 RUNG boundary (cursor or frames) are different
+# axes. `((a)|b)` never qualifies for the cursor rung at any count (it is an
+# alternation), so a stamp that said "cursor" for either would be lying
+# about the rung regardless of what it said about the ceiling.
+if [ -d "$WORKDIR/bigbounded" ] && [ -d "$WORKDIR/smallbounded" ]; then
+    if assert_rung bigbounded frames && assert_rung smallbounded frames; then
+        ok "[M4.5e] D46: the bigbounded/smallbounded pair (D44.1's ceiling boundary) both stamp RX_VM_RUNG=frames — the alternation body never reaches the cursor rung at either count, so the ceiling boundary and the rung boundary are independent here, not the same fact twice"
+    else
+        bad "[M4.5e] D46: bigbounded stamped $(rung_field bigbounded), smallbounded stamped $(rung_field smallbounded); both should be frames (alternation body)"
+    fi
+else
+    bad "[M4.5e] D46: bigbounded/smallbounded builds from §2 are missing, cannot stamp-check them"
+fi
+
+# (c) a DEDICATED pair at the rung ladder's OWN boundary: VM_MAX_BODY_CAPS
+# (src/gen/emit_vm.c) caps a cursor-rung body at 64 nested capture groups —
+# D44.1's tidiness bound, so a group the fixed-size offset table cannot hold
+# is never silently mis-stamped, only honestly refused the rung. 33 fits; 70
+# does not — MEASURED against build/pcrec directly, not assumed from the
+# constant.
+nested_star() { python3 -c "print('('*$1 + 'a' + ')'*$1 + '*')"; }
+if build nest33 "$(nested_star 33)" && build nest70 "$(nested_star 70)"; then
+    if assert_rung nest33 cursor; then
+        ok "[M4.5e] D46: 33 nested capture groups under one outer '*' fit VM_MAX_BODY_CAPS (64) and stamp RX_VM_RUNG=cursor"
+    else
+        bad "[M4.5e] D46: 33-nested stamped RX_VM_RUNG=$(rung_field nest33), expected cursor"
+    fi
+    if assert_rung nest70 frames; then
+        ok "[M4.5e] D46: 70 nested capture groups exceed VM_MAX_BODY_CAPS (64) and stamp RX_VM_RUNG=frames — the honest fallback, not a silently wrong span"
+    else
+        bad "[M4.5e] D46: 70-nested stamped RX_VM_RUNG=$(rung_field nest70), expected frames"
+    fi
+else
+    bad "[M4.5e] D46: could not build the 33/70-nested rung-boundary pair"
+fi
+
+# (d) --emit-ir's human-readable line, on the one shape above that actually
+# exercises "mixed" (every pair in (a)-(c) is a single quantifier, so it can
+# only ever be cursor or frames). Checked independently of the macro because
+# it is rendered through a DIFFERENT path (vm_render_listing vs. the macro
+# emission site in pcrec_emit_vm) off the SAME two flags — so the two
+# agreeing is evidence the flags are the one source of truth, not a
+# tautology of one code path checking itself.
+if ir="$("$PCREC" -p rx --emit-ir -- 'a*((b)|c)*d' 2>/dev/null)"; then
+    if printf '%s' "$ir" | grep -q '^; rung         mixed --'; then
+        ok "[M4.5e] D46: --emit-ir's human-readable rung line agrees with the macro on a pattern using BOTH rungs ('a*((b)|c)*d')"
+    else
+        bad "[M4.5e] D46: --emit-ir's rung line did not say 'mixed' for 'a*((b)|c)*d': $(printf '%s' "$ir" | grep '^; rung')"
+    fi
+else
+    bad "[M4.5e] D46: --emit-ir failed on 'a*((b)|c)*d'"
+fi
+
+# (e) POSITIVE CONTROL: a stamp that LIES must be caught. Inline rather than
+# a tests/mech sabotage — this is a single boolean property of one assertion
+# shape (assert_rung), not a figure worth a matrix row. Takes the honest
+# nest33 artifact (real RX_VM_RUNG=cursor, confirmed by (c) above), corrupts
+# ONLY its stamp text to the wrong rung, and re-runs the SAME assert_rung
+# used by every check above against the corrupted copy — proving the shape
+# fails on a lie rather than passing vacuously.
+if [ -d "$WORKDIR/nest33" ]; then
+    mkdir -p "$WORKDIR/nest33_lied"
+    sed 's/_VM_RUNG "cursor"/_VM_RUNG "frames"/' \
+        "$WORKDIR/nest33/gen.c" > "$WORKDIR/nest33_lied/gen.c"
+    if assert_rung nest33_lied cursor; then
+        bad "[M4.5e] D46 SABOTAGE: a stamp corrupted from cursor to frames still satisfied assert_rung's cursor check — the assertion shape is vacuous"
+    else
+        ok "[M4.5e] D46 SABOTAGE: a stamp corrupted from cursor to frames is CAUGHT by the same assert_rung shape every check above uses (expected cursor, corrupted artifact reads $(rung_field nest33_lied))"
+    fi
+else
+    bad "[M4.5e] D46 SABOTAGE: nest33 build missing, cannot run the stamp-lie control"
 fi
 
 echo "== Summary =="
