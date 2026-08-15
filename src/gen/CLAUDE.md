@@ -139,25 +139,40 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     lies — and the untraced artifact's bytes are unchanged, which
     `run_ir_listing.sh` and `run_vm_identity.sh` both depend on.
 
-  - **[M4.5e] the D46 RUNG STAMP.** §2.5's two rungs (the deterministic
-    span-loop cursor vs. one resume frame per iteration) were selected
-    silently per quantifier until this close obligation (D46,
-    docs/dev/decisions.md); now the selection is OBSERVABLE. Two new `Vm`
-    flags, `used_cursor` (already existed) and `used_frames` (new), are set
-    exactly once each by the REAL emission walk (`vm_cursor_rep` /
-    `vm_rep`'s frames fallthrough) — never re-derived, the same one-truth
-    rule §10's listing already follows. `vm_rung_name()` folds them into a
-    small named value set — `none`/`cursor`/`frames`/`mixed` — emitted as
-    `#define <PREFIX>_VM_RUNG "..."` next to `RX_ENGINE`/`RX_ENGINE_WHY`
-    (same VM-artifacts-only placement and §5.4 byte-identity rationale) and
-    as a new `; rung ...` line in `--emit-ir`'s header, rendered
-    independently off the same two flags. `rx_info` gains no member for
-    this: the struct's layout is the frozen M4 ABI (match_api_m4.md §5,
-    D44.5's "layout below is FINAL"), so a field would be an
-    abi-version-bump event this close did not take on — flagged for the
-    manager rather than done here. Rung FORCING (D46's controllability
-    half) has no producer yet; only the observability half landed at
-    [M4.5e]. Tests: `tests/vm/run_vm_tests.sh` §5.
+  - **[M4.5e] the D46 RUNG STAMP.** §2.5's rungs (the deterministic
+    span-loop cursor, the bounded-frames rung, the unbounded-frames rung)
+    are selected silently PER QUANTIFIER BODY — `vm_cursor_fits` is
+    consulted once per `A_REP` node, at this file's own three call sites
+    (`vm_cost_rep`, `vm_count_slots`, `vm_rep`'s real emission), so a
+    pattern with two quantified bodies can and does mix rungs — until this
+    close obligation (D46, docs/dev/decisions.md); now the selection is
+    OBSERVABLE. **A per-artifact SCALAR summary was the first draft and was
+    corrected mid-lane** (Frank's design question) precisely because it
+    lies on that mixed case: a single `"cursor"`/`"frames"`/`"mixed"` value
+    cannot say WHICH quantifier took which rung, and a caller pinning
+    selection for one quantified body has no way to address it. The fix:
+    `v->rungs`, a BITMASK (`VmRungKind`: `VM_RUNG_CURSOR`/
+    `_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`), OR'd in by `vm_rung_mark()` — a
+    sixth listing primitive alongside `vm_lbl`/`vm_push_at`/`vm_set`, called
+    once per `A_REP` at the same point `vm_cursor_rep` / `vm_rep`'s frames
+    fallthrough already knows the rung, appending a `VE_RUNG` event AND
+    setting the mask bit in one call so the two views can never drift
+    apart. Emitted as three named bit constants plus the artifact's own
+    OR'd `#define <PREFIX>_VM_RUNGS 0x...u` next to `RX_ENGINE`/
+    `RX_ENGINE_WHY` (same VM-artifacts-only placement and §5.4
+    byte-identity rationale), and as a NEW `RUNGS` listing section in
+    `--emit-ir` (one row per quantifier, `at L<label> <kind> <role>`) plus
+    a header `; rungs ...` summary line — all three read off the same
+    `v->rungs`/`VE_RUNG` data the real walk built, never re-derived.
+    `rx_info` gains no member for this: the struct's layout is the frozen
+    M4 ABI (match_api_m4.md §5, D44.5's "layout below is FINAL"), so a
+    field would be an abi-version-bump event this close did not take on —
+    flagged for the manager rather than done here. Rung FORCING (D46's
+    controllability half) has no producer yet; only the observability half
+    landed at [M4.5e]. Tests: `tests/vm/run_vm_tests.sh` §5, including a
+    deliberately three-way-mixed pattern (`a*(a|b){0,3}c((x)|y)+z`) that is
+    exactly the case the corrected, scalar-first design would have gotten
+    wrong.
 
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 

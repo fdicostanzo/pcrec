@@ -128,8 +128,25 @@ typedef enum {
     VE_ASSERT,   /* text: the assertion's name                     */
     VE_NOTE,     /* text: an inline note on the current label      */
     VE_ISLAND,   /* reserved: no producer (engine_m4.md S6.3)      */
-    VE_CALLOUT   /* reserved: no producer (module 'callouts')      */
+    VE_CALLOUT,  /* reserved: no producer (module 'callouts')      */
+    VE_RUNG      /* [D46] a: the A_REP's own entry label id,
+                  *       b: VmRungKind ordinal                     */
 } VEKind;
+
+/* [D46] the S2.5 rung ladder's own small named value set, ONE PER
+ * QUANTIFIER BODY (never per artifact — vm_cursor_fits is consulted once
+ * per A_REP node, at this file's own three call sites, so two quantifiers
+ * in one pattern can and do land on different rungs). Bit values, not
+ * sequential ordinals, because the compile-time macro is a SUMMARY BITMASK
+ * over however many distinct rungs one program's quantifiers actually use. */
+typedef enum {
+    VM_RUNG_CURSOR           = 0,  /* index into vm_rung_bit[], not a bit */
+    VM_RUNG_FRAMES_BOUNDED   = 1,
+    VM_RUNG_FRAMES_UNBOUNDED = 2
+} VmRungKind;
+static const unsigned vm_rung_bit[3] = { 0x1u, 0x2u, 0x4u };
+static const char    *const vm_rung_kindname[3] =
+    { "cursor", "frames-bounded", "frames-unbounded" };
 
 typedef struct {
     VEKind      k;
@@ -158,21 +175,21 @@ typedef struct {
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
                            * known before emission — which is the point. */
     long long nodes;      /* emitted-node budget, against PCREC_MAX_VM_NODES */
-    bool      used_cursor; /* [D46] some A_REP in this program took S2.5's
-                            * cursor rung — set in vm_cursor_rep, the real
-                            * emission call, not the cursor_fits pre-passes
-                            * (vm_cost_rep/vm_count_slots also call
-                            * vm_cursor_fits but only to cost/count; the
-                            * SELECTION this flag reports is made once, by
-                            * vm_rep's real walk). */
-    bool      used_frames; /* [D46] some A_REP fell back to the frames rung
-                            * (engine_m4.md S2.5's other rung) — set at
-                            * vm_rep's frames-rung fallthrough, the mirror
-                            * of used_cursor above. Together the two answer
-                            * D46's observability half: "none" (no A_REP at
-                            * all), "cursor", "frames", or "mixed" (both
-                            * rungs fire for different quantifiers in one
-                            * program) — see vm_rung_name(). */
+    unsigned  rungs;       /* [D46] BITMASK of VmRungKind values PRESENT in
+                            * this program — the rung decision is PER
+                            * QUANTIFIER BODY (vm_cursor_fits is consulted
+                            * once per A_REP, emit_vm.c's own emission and
+                            * slot-counting call sites), so a pattern with
+                            * two quantified bodies can and does mix rungs;
+                            * a SCALAR "the rung" would lie on that case.
+                            * Set bit-by-bit, once per A_REP, by
+                            * vm_rung_mark() — called from the same real
+                            * emission sites that already label that A_REP's
+                            * own entry (vm_cursor_rep / vm_rep's frames
+                            * fallthrough), never re-derived from the AST.
+                            * See vm_rung_mark() and the VE_RUNG listing
+                            * section for the per-quantifier detail this
+                            * mask summarizes. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     /* class bitmap pool, deduplicated */
     uint8_t (*cls)[32];
@@ -755,6 +772,21 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
     vm_ev(v, VE_SET, slot, 0, role);
 }
 
+/* [D46] the SIXTH primitive: writes no C (the rung was already selected by
+ * the C written around this call), but records the SAME "one call, one
+ * truth" way every other primitive does — sets the artifact-wide summary
+ * bit AND appends the per-quantifier VE_RUNG event in one place, so the
+ * bitmask macro and the RUNGS listing section can never drift apart. Called
+ * once per A_REP, at the point vm_cursor_rep / vm_rep's frames fallthrough
+ * already knows which rung THIS quantifier took — never a second pass over
+ * the AST re-deciding it (that would risk drifting from vm_cursor_fits's
+ * three real call sites, exactly what the 0b4b0be fix consolidated away). */
+static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, const char *role)
+{
+    v->rungs |= vm_rung_bit[k];
+    vm_ev(v, VE_RUNG, lblid, (int)k, role);
+}
+
 /* Flat alternation as a CHAIN (§2.2 property 4, refined). The design's text
  * says "N-way alternation pushes a chain, one frame per untried branch, in
  * reverse preference order"; pushing all N-1 frames eagerly and pushing them
@@ -829,8 +861,6 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     int retry = vm_label(v), again = vm_label(v);
     long long lo_off = (long long)a->rmin * stride;
 
-    v->used_cursor = true;
-
     /* class ids first, so the pool is stable before any test is written */
     int *ci = arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
     for (int i = 0; i < stride; i++) ci[i] = vm_cls(v, seq[i]);
@@ -854,6 +884,11 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                                 bounds, stride,
                                 a->greedy ? "greedy" : "lazy");
     vm_lbl(v, entry, rung);
+    /* [D46] this A_REP's own rung, reusing the SAME role text vm_lbl just
+     * wrote — one description, two views (the PROGRAM section's label line
+     * and the RUNGS section's per-quantifier entry), not two computations
+     * of "what is this quantifier doing" that could disagree. */
+    vm_rung_mark(v, entry, VM_RUNG_CURSOR, rung);
     /* The loop's ENTRY position, trailed. Both rungs derive their bounds from
      * it: low-water is entry + stride*rmin, ceiling is entry + stride*rmax. */
     vm_set(v, low, "(ptrdiff_t)pos", "span-loop low-water mark (loop entry pos)");
@@ -1002,8 +1037,21 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 
     /* [D46] the fallthrough below is the WHOLE frames rung for this
      * quantifier — mandatory copies, the bounded opt-chain and the unbounded
-     * star all set it once here rather than at each of their own returns. */
-    v->used_frames = true;
+     * star are marked once here rather than at each of their own returns.
+     * `a->rmax` already distinguishes bounded from unbounded at this point
+     * (nothing downstream can change it), so the split is made HERE rather
+     * than duplicated at each return site below. */
+    {
+        char fbounds[32];
+        bool bounded = a->rmax >= 0;
+        if (bounded) snprintf(fbounds, sizeof fbounds, "{%d,%d}", a->rmin, a->rmax);
+        else         snprintf(fbounds, sizeof fbounds, "{%d,}", a->rmin);
+        const char *frole = vm_rolef(v, "frames rung, %s %s, %s",
+                                     bounded ? "bounded" : "unbounded", fbounds,
+                                     a->greedy ? "greedy" : "lazy");
+        vm_rung_mark(v, entry, bounded ? VM_RUNG_FRAMES_BOUNDED
+                                        : VM_RUNG_FRAMES_UNBOUNDED, frole);
+    }
 
     /* ---- the frames rung ------------------------------------------------
      * rmin mandatory copies, then either the unbounded star or (rmax - rmin)
@@ -1232,24 +1280,27 @@ typedef struct {
     const char *why;
 } VmStamp;
 
-/* [D46] the rung stamp's own small named value set. Read from used_cursor/
- * used_frames, which are set exactly once each, by the real emission walk
- * (vm_cursor_rep / vm_rep's frames fallthrough) — never re-derived from the
- * AST, per the same rule S10 states for the listing (engine_m4.md S10): one
- * structure, walked once, is what every view of it has to agree with.
- *
- * "none" is a real, distinct answer (e.g. `abc`, no A_REP at all) rather than
- * folded into "cursor": a caller asking "did this artifact's cursor rung ever
- * run" needs to tell "it did not because there was nothing to select between"
- * from "it did not because frames won", and D46's controllability half (rung
- * FORCING) will need the same four-way distinction to report a forced
- * selection that had nothing to act on. */
-static const char *vm_rung_name(bool used_cursor, bool used_frames)
+/* [D46] renders v->rungs (the summary bitmask) as a comma-joined list of
+ * kind names, e.g. "cursor, frames-unbounded", or "none" for a pattern with
+ * no A_REP at all (a real, distinct answer — a caller asking "did the
+ * cursor rung ever run" needs to tell "there was nothing to select between"
+ * from "frames won every time", and D46's controllability half will need
+ * the same distinction to report a forced selection with nothing to act
+ * on). Read straight from the mask vm_rung_mark() built during the real
+ * emission walk — never re-derived from the AST, per S10's own rule
+ * (engine_m4.md S10): one structure, walked once, is what every view has
+ * to agree with. The PER-QUANTIFIER detail this summarizes is the RUNGS
+ * listing section below, built from the same VE_RUNG events. */
+static void vm_rungs_describe(unsigned mask, StrBuf *o)
 {
-    if (used_cursor && used_frames) return "mixed";
-    if (used_cursor)                return "cursor";
-    if (used_frames)                return "frames";
-    return "none";
+    if (!mask) { sb_puts(o, "none"); return; }
+    bool first = true;
+    for (int k = 0; k < 3; k++) {
+        if (!(mask & vm_rung_bit[k])) continue;
+        if (!first) sb_puts(o, ", ");
+        sb_puts(o, vm_rung_kindname[k]);
+        first = false;
+    }
 }
 
 static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
@@ -1276,29 +1327,17 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
               ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
                 " an exact window (S6.1); the VM never scans"
               : "NO (--engine=vm) -- the VM scans from startpos itself (R21 E-6)");
-    /* [D46] the rung stamp, read from v->used_cursor/v->used_frames -- the
-     * same two flags vm_rep's real emission walk set, not a re-derivation
-     * from the AST (the S10 rule this whole listing follows). Named-value
-     * set: none/cursor/frames/mixed, per vm_rung_name(). The macro form
-     * (<PREFIX>_VM_RUNG) carries the same four values for a compile-time
-     * consumer; this line is its human-readable twin. */
-    {
-        const char *rung = vm_rung_name(v->used_cursor, v->used_frames);
-        const char *why =
-            !v->used_cursor && !v->used_frames
-                ? "no quantifier in this pattern needed a rung at all"
-            : v->used_cursor && v->used_frames
-                ? "some quantifier(s) took the deterministic span-loop rung"
-                  " (S2.5), others fell back to one resume frame per"
-                  " iteration (S2.5's frames rung)"
-            : v->used_cursor
-                ? "every quantifier's body was a deterministic fixed-stride"
-                  " run, so none needed a per-iteration resume frame (S2.5)"
-                : "no quantifier's body qualified for the deterministic"
-                  " span-loop rung (S2.5), so each fell back to one resume"
-                  " frame per iteration";
-        sb_printf(o, "; rung         %s -- %s\n", rung, why);
-    }
+    /* [D46] the rung stamp's QUICK-GLANCE summary: which rung KINDS appear
+     * ANYWHERE in this program, not which one "the" program uses -- the
+     * rung is selected per A_REP, so a pattern with two quantified bodies
+     * can and does mix rungs (that is exactly the case a scalar summary
+     * would get wrong). Read straight off v->rungs, the same bitmask the
+     * <PREFIX>_VM_RUNGS macro below is built from. The RUNGS section further
+     * down is the per-quantifier detail this line summarizes. */
+    sb_puts(o, "; rungs        ");
+    vm_rungs_describe(v->rungs, o);
+    sb_puts(o, " -- see the RUNGS section below for which quantifier took"
+               " which\n");
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes
@@ -1357,6 +1396,28 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_low(v, i),
                   "span-loop low-water", "the loop's entry position (S2.5)");
 
+    /* ---- RUNGS -----------------------------------------------------------
+     * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
+     * folds into one bitmask. One row per A_REP, in emission order, each
+     * naming the label the rung was recorded against (vm_rung_mark's own
+     * `entry` argument) and the rung kind — never re-derived: every row
+     * below is a VE_RUNG event vm_cursor_rep / vm_rep's frames fallthrough
+     * appended at the same call that decided the rung. */
+    sb_puts(o, "\nRUNGS (engine_m4.md S2.5; D46's per-quantifier stamp)\n");
+    {
+        int n = 0;
+        for (int i = 0; i < v->nev; i++) {
+            if (v->ev[i].k != VE_RUNG) continue;
+            n++;
+            sb_printf(o, "  at L%-6d %-18s %s\n", v->ev[i].a,
+                      vm_rung_kindname[v->ev[i].b],
+                      v->ev[i].role ? v->ev[i].role : "");
+        }
+        if (n == 0)
+            sb_puts(o, "  (none: no quantifier in this program consulted the"
+                       " rung ladder at all)\n");
+    }
+
     /* ---- PROGRAM -------------------------------------------------------*/
     sb_puts(o, "\nPROGRAM\n");
     for (int i = 0; i < v->nev; i++) {
@@ -1406,6 +1467,11 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             sb_puts(o, "         -> accept\n");
             break;
         case VE_ISLAND: case VE_CALLOUT:
+            break;
+        case VE_RUNG:
+            /* the RUNGS section above is this event's own view; PROGRAM
+             * stays a straight-line trace of what actually executes, and a
+             * rung selection writes no C of its own to trace. */
             break;
         }
     }
@@ -1604,23 +1670,32 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
                                 strlen(job->fit.why ? job->fit.why : "--engine=vm"));
     sb_puts(c, "\n");
-    /* [D46] the RUNG STAMP: same shape as RX_ENGINE/RX_ENGINE_WHY above (a
-     * per-prefix, preprocessor-visible macro, VM-artifacts-only for the same
-     * §5.4 byte-identity reason the comment above states), but a SMALL NAMED
-     * VALUE SET rather than free text -- {"none","cursor","frames","mixed"}
-     * -- because the consumer is a build-time #ifdef/grep, not a human
-     * reading a forcing reason. v.used_cursor/v.used_frames are already
-     * final here: vm_emit's real walk (above, in the scratch buffer) is the
-     * ONLY place either flag is set, so this is the same selection the
-     * emitted C actually made, not a second computation of it.
+    /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
+     * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
+     * for the same §5.4 byte-identity reason the comment above states), but
+     * a SUMMARY BITMASK rather than a scalar -- the rung is selected PER
+     * QUANTIFIER BODY (vm_cursor_fits is consulted once per A_REP, at this
+     * file's three real call sites), so a pattern with two quantified
+     * bodies can and does mix rungs, and a scalar "the rung" would LIE on
+     * that case. Named bit constants first (fixed values, independent of
+     * this artifact), then the artifact's own OR'd value -- v.rungs is
+     * already final here: vm_emit's real walk (above, in the scratch
+     * buffer) is the ONLY place vm_rung_mark() runs, so this is the same
+     * per-quantifier selection the emitted C actually made, not a second
+     * computation of it. The PER-QUANTIFIER detail (which A_REP took which
+     * rung) is --emit-ir's RUNGS section, off the same v->rungs-building
+     * VE_RUNG events; this macro is deliberately only the summary a
+     * build-time #ifdef/grep can act on.
      *
      * rx_info deliberately does NOT gain a member for this at [M4.5e]: the
      * struct's layout is the frozen M4 ABI (match_api_m4.md S5, D44.5's
      * "the layout below is FINAL" ruling), and adding a field is an abi-
      * version-bump event this close does not take on its own -- flagged for
      * the manager rather than done here. */
-    sb_printf(c, "#define %s_VM_RUNG \"%s\"\n", v.up,
-              vm_rung_name(v.used_cursor, v.used_frames));
+    sb_printf(c, "#define %s_VM_RUNG_CURSOR           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_CURSOR]);
+    sb_printf(c, "#define %s_VM_RUNG_FRAMES_BOUNDED   0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_BOUNDED]);
+    sb_printf(c, "#define %s_VM_RUNG_FRAMES_UNBOUNDED 0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_UNBOUNDED]);
+    sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
     if (v.tracing) {
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
@@ -1796,7 +1871,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    size_t pos = ctx->pos;\n"
         "    ptrdiff_t *const stv = w->stv;\n",
         v.p, v.p);
-    if (v.used_cursor)
+    if (v.rungs & vm_rung_bit[VM_RUNG_CURSOR])
         sb_printf(c, "    size_t %s_cur = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
                      "                             point is a resume frame */\n",

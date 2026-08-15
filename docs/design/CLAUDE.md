@@ -265,10 +265,13 @@ append-only or historical records.
   ladder rung, bounded-repeat strategy once [ENG-BREP] lands, prefilter
   on/off, islands) must be OBSERVABLE and FORCEABLE. §5.5's `RX_ENGINE`/
   `RX_ENGINE_WHY` pair is D46's own worked example of the observability
-  half; [M4.5e] extends the SAME macro family to the cursor-ladder rung
-  (`<PREFIX>_VM_RUNG`, src/gen/CLAUDE.md) — the observability half only,
-  landed as this document's close obligation. Rung FORCING (D46's
-  controllability half) has no producer yet.
+  half; [M4.5e] extends the family to the cursor-ladder rung — but as a
+  BITMASK (`<PREFIX>_VM_RUNGS`, src/gen/CLAUDE.md), not a same-shaped
+  scalar macro, because the rung is selected PER QUANTIFIER BODY and a
+  single value would misreport a pattern whose quantifiers land on
+  different rungs (corrected mid-lane from an initial scalar draft) — the
+  observability half only, landed as this document's close obligation.
+  Rung FORCING (D46's controllability half) has no producer yet.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
