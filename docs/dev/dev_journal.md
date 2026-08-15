@@ -8145,3 +8145,80 @@ counts vs baseline: cli 247→257. Open K-list: K2, K7, K9, K18, K19
 (K21 same-day fixed). NEXT: the K18 REWRITE lane against amended §5
 (13 items, the Θ(d²) decision first among them); [ENG-BREP] design
 note; then [M4.6].
+
+## 2026-08-15 (EDT), night — K18 REWRITE LANE: A2 landed, the Θ(d²) recursion answered ITERATIVE, guard corpus grown 1704 → 3198
+
+Lane `k18-rewrite` (worktree, branch delivered for manager review, not
+merged). The panel-affirmed A2 design from `docs/design/k18_memo_design.md`
+is BUILT in `src/ir/dfa.c`: the epsilon closure's memo is keyed on (state,
+OPEN-LOOP CONTEXT) and the empty-iteration redirect fires on "this loop is
+OPEN on my path", with the empty-context fast path keeping the pre-K18
+per-state stamp array for ctx 0. Semantics are the note's, unchanged.
+
+**§5 item 12 — the note's one open decision — is answered ITERATIVE, and
+the reason it is affordable is a REPRESENTATION change rather than a
+transliteration.** The prototype's `open[]` array is a redundant
+materialisation of the interned context chain (it maintains `open[i].ctx ==
+intern(open[i-1].ctx, open[i].loop)` and `cl->ctx == open[depth-1].ctx`
+everywhere), so the chain becomes the open-loop stack's ONLY representation.
+Three things fall out at once: R23 S3's per-frame ENTRY save becomes one
+carried int and its ancestor-clobber defect stops being EXPRESSIBLE (the
+chain is immutable — nothing to overwrite); per-frame state shrinks to a
+12-byte deferred-branch record, so the Θ(d²) descent becomes an explicit
+LIFO and `clo_walk` has no recursion at all; and item 11's non-main-thread
+stack hazard disappears rather than being documented. MEASURED: nest250
+needs the SAME stack as the shipped compiler (both survive `ulimit -s 256`,
+both die at 128) against the prototype's 7,168 KB, compiles in 0.38 s plain
+/ 0.84 s asan, and the prototype built with identical asan flags dies with
+`stack-overflow` at depth 210 — which is the sabotage validation for the new
+deep-nesting guard, the one guard file with no pre-fix failures.
+
+Refused, with reasons recorded: refuse-above-a-depth (a D46-observable
+selection point for a class that compiles in a third of a second — exactly
+what §6 ruling 1 was withdrawn to avoid) and deliberate stack sizing
+(unavailable in a library whose `pcrec_compile()` runs on caller threads).
+
+**All thirteen §5 items discharged.** The measurements the note asked to be
+reproduced came back digit for digit: corpus blast radius **547 identical /
+8 differing of 555**, the 8 exactly the K18 shapes; **249 of 18,858**
+shape-space patterns differ; direction **251 changed cells, 251
+old-wrong→new-right, 0 regressed, 0 both-wrong** (226 shape space + 25
+corpus). No positive controls were injected in either sweep, so nothing
+inflates those counts; the acceptance corpus's 26 fail→pass is the separate
+positive control.
+
+Corpus 1704 → **3198** cases (+1494 = 165 activated from `tests/known_fail/`
++ 1,329 new), on four axes the deferred repro's own alphabet could not
+reach: ARM ORDER (both alternation orders, greedy as well as lazy nullable
+arms, the empty-alternative and concatenation forms — 62 pre-fix failures),
+the `{0,2}` SPLIT family (63 pre-fix failures — the cells that separate this
+repair from the cheap two-line one that passes all 165), DEEP NESTING (also
+the grow-path test for the three new tables) and COST GATES. Every
+expectation from python3 `re` AND libpcre2 10.46 via the repo's own runtime
+ABI header, **zero disagreements**. `tests/known_fail/` is now empty and
+the ratchet says so.
+
+Nine K18 fuzz trap rows land beside K17's six, validated in the failing
+direction (**56 divergences pre-fix, 0 post-fix** over 64 patterns / 543
+cells). Validating them found a bug in the rows themselves: templates are
+`.format`ted, so a literal `{0,2}` raises KeyError inside `gen_trap` — a
+broken fuzzer, not a broken trap. Both fuzzer seeds green with **0 pcrec
+compile timeouts of 400 patterns each**.
+
+R23 V1's other half is discharged too: the harness's bare `timeout 60` on
+pcrec's OWN invocation is folded into D45's mechanism as `pcrec_timeout_secs`
+(20 s plain / 60 s sanitizer, measured against the 0.38/0.84/0.85 s worst
+case), with two checks holding it — a budget nothing asserts becomes a
+literal again.
+
+Battery, all legs on the final tree: `make -j12 test` 3198/0, serial
+`PROCS=1 make test` green (TS-3 included, with its planted-race sabotage),
+`strict` clean, `ubsan` 0 findings, `asan` 0 findings (both axes, corpus
+included), `lint` clean, `bench` 0 budget failures (compile-speed 0.117 s
+against a 0.4 s budget), `mech` 44 rows / 0 undetected, and the
+trie-identity gate run EXPLICITLY (500 patterns + the `-i` sweep, 0
+differing) because that gate's erasure argument was written for a
+path-INSENSITIVE closure and A2 makes the closure path-sensitive over a
+graph the M2.8 trie changes.
+
+NEXT: manager review and merge; [M4.6]'s K18 gate is discharged.
