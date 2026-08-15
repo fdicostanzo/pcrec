@@ -221,6 +221,8 @@ ubsan:
 	         tests/parse/run_parse_tests.sh \
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_vm_identity.sh \
+	         tests/vm/run_vm_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
 	    env $(UBSAN_ENV) bash "$$s" || exit 1; \
@@ -254,6 +256,8 @@ asan:
 	         tests/parse/run_parse_tests.sh \
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_vm_identity.sh \
+	         tests/vm/run_vm_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
 	    env $(ASAN_ENV) bash "$$s" || exit 1; \

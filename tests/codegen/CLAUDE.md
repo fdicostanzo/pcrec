@@ -21,6 +21,41 @@ or it has no regression net at all.
   `$PCREC` is already overridable and carries the PRIMARY compiler-axis
   sanitizer coverage for free; see docs/testing.md "Sanitizer + lint
   battery" for a real finding (F1) this SANFLAGS wiring surfaced).
+- **run_vm_identity.sh** — [M4.5b] THE ZERO-REGRESSION GATE (engine_m4.md
+  §5.4, §13 P-7: "this one should be a GATE, not a prediction"). Its claim is
+  that a capture-free pattern does not touch any new code — same AST, same
+  NFA, same DFA, same emitter, same bytes — now that a second emitter and a
+  capture AST node exist.
+
+  It does NOT pin a historical commit, which is what §5.4's literal wording
+  ("byte-identical to the pre-M4 emitter's output") would require: a check
+  written that way fails the first time anyone legitimately changes the DFA
+  emitter, which is a built-in expiry date and worse than no check because it
+  teaches people to edit the pin. The permanent formulation compares the
+  DEFAULT compile against `--no-captures` over every `pattern` line in every
+  .rxt under tests/ (so the population grows with the corpus, not with the
+  script), plus: `--no-captures` yields a DFA artifact for EVERY pattern, and
+  `RX_NCAPS > 1 ⇒ VM` now holds NON-VACUOUSLY — that check had no population
+  at all before [M4.5b] and this file's own [M4.4] note said so.
+
+  ONE normalization, and it is ARITHMETIC rather than a filter: `rx_info.flags`
+  legitimately differs by exactly the `PCREC_NO_CAPTURES` bit, so that bit is
+  subtracted from the `--no-captures` side and every other byte must still
+  match. Deliberately not a `grep -v` of "the stamp lines" — this project's
+  recorded check-design failure is controls sharing a source with what they
+  control, and its close cousin is a comparison loosened until it stops
+  discriminating. Both compiles also use the SAME BASENAME in different
+  directories, or the `#include "<name>.h"` line alone would differ (the exact
+  trap run_trie_identity.sh documents at its own gen_a/gen_b — the first
+  version of this script reported all 260 capture-free patterns divergent for
+  precisely that reason).
+
+  Also asserts the §5.6 override's refusals: `--engine=dfa` on a
+  captures-default group-bearing pattern refuses AND names `--no-captures`,
+  that named escape actually works, `--engine=vm` emits NO prefilter (D44/R21
+  E-6 — without which tests/vm's differential is near-tautological), and the
+  default hybrid DOES emit one (§4.7's cliff guard). 8 checks; sabotage S40.
+
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored

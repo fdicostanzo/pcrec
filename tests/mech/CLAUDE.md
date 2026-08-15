@@ -53,7 +53,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   (BEFORE is a prefix of AFTER), or a deletion (AFTER is empty).
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
-  `reject` `harness`), `SAB_DESC`, `SAB_BEFORE`, `SAB_AFTER`, and optionally
+  `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`), `SAB_DESC`,
+  `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
   scope the `harness` suite to, instead of the whole corpus). Each file also
   carries `SAB_DOC_FIGURE`, a comment-and-string record of what the source
@@ -78,6 +79,17 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   run time and **skips loudly per row** when it is absent (see below).
 - `cli` → `tests/cli/run_cli_tests.sh`. Note the scrape: this script counts
   `cases`, like the corpus harness, not `checks` like every other arm.
+- `vmidentity` → `tests/codegen/run_vm_identity.sh`, the [M4.5b]
+  zero-regression gate. A SEPARATE arm from `codegen` even though the script
+  lives in that directory: what it guards (a capture-free pattern's emitted
+  bytes do not move) is orthogonal to every optimization-present check in
+  `run_codegen_tests.sh`, and a sabotage of one should not be reported as
+  coverage by the other.
+- `vm` → `tests/vm/run_vm_tests.sh`, the [M4.5b] VM engine section (the two
+  bounds, the artifact stamps, and the capture oracle + §3.7 differential
+  sweep). The sweep dominates its runtime, which is why this arm is assigned
+  only where a sabotage's signal is a WRONG SPAN or a broken bound — never
+  "just in case".
 
 The last three landed 2026-08-12 (MOD-0.8c slice 1), and **neither arm runs
 `run_registry_tests.sh` itself** even though that is what `make test` runs.
@@ -135,6 +147,21 @@ trailer's `pc3-skipped` count both fired.
 deliberately NOT wired, for the same reason: no sabotage's ONLY signal is a
 throughput budget or a semantic differential today. Add the arm in the same
 change as the first sabotage that needs it.
+
+## [M4.5b]'s five rows (2026-08-15)
+
+S36-S40 cover the VM emitter, and two of them are not invented failures:
+**S38** (an empty iteration rolled back instead of taking the loop's exit
+continuation) and **S39** (the span-loop cursor emitting its greedy shape for
+lazy quantifiers) are the two bugs that emitter actually shipped in its first
+draft. `tests/vm/vm_oracle.py` found both against python `re`; the sabotages
+restore them verbatim so the sweep is required to keep finding them. A
+sabotage whose edit is a real past bug is worth more than an invented one —
+it proves the check catches what the code is actually prone to, not what the
+check's author imagined.
+
+Run them as `bash tests/mech/run_sabotage_matrix.sh S36` (and S37..S40), and
+read the numbers from that output, never from prose anywhere.
 
 ## Which rows were retagged, and what the new arms measured
 

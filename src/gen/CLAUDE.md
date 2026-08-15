@@ -50,7 +50,64 @@ by the multi-engine block in tests/codegen/run_codegen_tests.sh, which
 compiles a two-engine file; the cross-prefix guard property has its own check
 there too (a two-differently-prefixed-headers-in-one-TU build).
 
+## The VM engine joins ([M4.5b])
+
+`emit_vm.c` is the second emitter. It does NOT fork emit_dfa.c: the artifact
+prologue, the fixed ABI types, the string-literal escaper, `rx_info`, the
+standalone `main()` and — under the hybrid — the whole DFA engine body are
+SHARED through five exported entry points (`pcrec_gen_names`,
+`pcrec_emit_prologue`, `pcrec_emit_dfa_engine`, `pcrec_emit_info`,
+`pcrec_emit_main`). That is the M2.12 lesson applied before the fork happens
+rather than after: M2.7 forked a second copy of the unanchored emitter for `$`
+patterns, and the fork is exactly how the prefilter and skip loops silently
+went missing from that path for an entire milestone. `pcrec_emit_dfa_engine`
+takes a NAME and a STORAGE CLASS, so the VM's prefilter is the same emitter's
+output under `static` — one copy, two callers.
+
+The DFA-only path's output is unchanged BYTE FOR BYTE by this refactor, which
+is not an aspiration: `tests/codegen/run_vm_identity.sh` is the permanent gate
+and the landing evidence included a whole-corpus diff against a compiler built
+from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
+
 ## Files
+
+- **emit_vm.c** — the backtracking VM as emitted specialized C
+  (docs/design/engine_m4.md §2). ONE function per pattern, one label per
+  pattern position, every continuation resolved at compile time into a
+  fallthrough or a direct `goto`, and exactly one indirect jump (the `goto *`
+  at the fail label). §2.7 is why D13's table-vs-computed-goto arbitration
+  does not arise: the VM has no per-byte dispatch at all, so its one indirect
+  jump is on the cold path by construction.
+
+  The pieces worth knowing before editing it:
+
+  - **`stv`, one flat array** (§2.4) holding capture pairs, empty-iteration
+    guards and cursor low-water marks. One restore loop, one overflow bound,
+    and a future slot class costs a layout row rather than a new save/restore
+    path. `vm_count_slots` must mirror the emitter's own rung decisions
+    EXACTLY — including the replication a bounded repeat performs — or two
+    live loops share one slot.
+  - **The trail** is exact old-value undo, never a clear (§3.2). The naive
+    version is wrong in both directions and the three cases that pin it are in
+    that section; sabotage S36 neuters it.
+  - **The cursor ladder** (§2.5, `vm_det_seq`). The deterministic
+    fixed-stride rung is NOT an optimization that could be deferred: without
+    it an 8 MB `a*` would need 8 M resume frames in an allocation-free
+    matcher. D44.1 extends it to capture-bearing bodies by deriving group
+    spans from the cursor at loop exit. The rungs NOT built (disjoint-follow
+    possessification, the reverse-deterministic backwards walk, the
+    boundary-record rung) are named in `vm_det_seq`'s comment so they are not
+    mistaken for oversights; §6.4 schedules the first at M4.6.
+  - **The empty-iteration rule** (§3.3) applies IFF `rmax == -1`, and takes
+    the loop's EXIT continuation rather than failing the path — the empty
+    iteration's capture writes STAND. Both readings are available from the
+    mechanism and only one is right; the wrong one is sabotage S38 and was
+    this emitter's own first-draft bug.
+  - **The two capacities** (§2.5, §4.5) are computed exactly where the
+    pattern's dynamic depth is statically bounded and defaulted otherwise,
+    with an honest `subject_ceiling` stamped for the residual class (D44.1).
+    The defaults are BRING-UP PLACEHOLDERS — D12 rules budgets come from
+    measured medians and [M4.6] takes the measurement.
 
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 
@@ -67,6 +124,10 @@ there too (a two-differently-prefixed-headers-in-one-TU build).
 
 ## Conventions
 
-The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this). Future encoding backends (UTF-8) and the VM engine emitter will coexist here as separate files.
+The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this). Future encoding backends (UTF-8) coexist here as separate files, the way emit_vm.c does.
+
+Emitted text is ASCII-only, including inside generated comments: the artifact
+is source someone else's toolchain compiles, and this project already
+hex-escapes the pattern comment for the same reason.
 
 Maintenance: update this file when files are added/removed or their roles change.

@@ -138,11 +138,39 @@ stated terms.
   awaiting a Frank ruling: `rx_info` is emitted as a struct TAG only
   (bare typedef collides with default-prefix `<prefix>_info` = literal
   `rx_info`) — see match_api_m4.md §5's as-built note
-- [M4.5] STATE:not-started — IMPL: VM emitter core — captures over the
+- [M4.5] STATE:started — IMPL: VM emitter core — captures over the
   base tier, search + match-here entries, DD-2 budget wired; .rxt
   format extension for capture expectations (docs/testing.md updated),
   python-re group-span oracle tier, and a D27-blinded capture test
-  author per convention
+  author per convention. EXPANDED into two disjoint lanes 2026-08-15:
+  the oracle/format half and the emitter half were built concurrently
+  in separate worktrees, with the shared capture corpus over the shared
+  format landing after both merge
+  - [M4.5a] STATE:started — the .rxt capture-expectation format
+    (tests/harness + docs/testing.md), the python-re group-span oracle
+    tier, and the D27-blinded capture test author
+  - [M4.5b] STATE:done — THE VM EMITTER CORE (src/gen/emit_vm.c): one
+    function per pattern, one label per pattern position, an explicit
+    resume stack + capture trail with exact old-value undo, exactly one
+    indirect jump; A_CAP born only when captures are requested and
+    invisible to the NFA builder, so D31's erasure and engine_m4.md
+    §6.1's STRUCTURAL half hold by construction; §2.5's cursor ladder at
+    its deterministic fixed-stride rung with D44.1's capture extension;
+    §3.3's empty-iteration guard narrowed to `rmax == -1` per E-2;
+    §4's two bounds as MECHANISM with placeholder budgets and honest
+    rx_info stamps; §5.1's selection PASS with §5.2's socket and
+    fixpoint (zero discharge hooks, as designed); §6.1's hybrid and
+    §4.7's prefilter-before-VM ordering; `--engine=dfa|vm|auto`,
+    `--no-captures`, `--step-budget`, `--fno-step-budget`,
+    `--backtrack-frames`. §5.4's byte-identity gate landed as a
+    permanent check (tests/codegen/run_vm_identity.sh) and verified
+    once against a compiler built from the pre-lane commit. §3.7's
+    differential landed as a GATE running `--engine=vm` with the
+    prefilter off. New sections: tests/vm (12 checks) and
+    run_vm_identity (8); five new sabotages S36-S40, all DETECTED.
+    [M4.6] still owns islands, the disjoint-follow possessification,
+    RX_HYBRID_MIN, the trie-factored first-byte switch, and CALIBRATING
+    every number this lane left as a bring-up placeholder
 - [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
   DFA-prefilter hybrid + DFA islands as designed; measured against
   bench floors under D12/R3.10 discipline; DD-9's decided outcome
