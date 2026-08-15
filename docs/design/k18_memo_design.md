@@ -466,6 +466,35 @@ refused (`PCREC_MAX_GROUP_DEPTH = 250`, `src/core/limits.h:125`). That makes
 nest250 the true worst case a user can reach on this family, and it is
 measured, not extrapolated — see the table's last column.
 
+**A NEW limit, found by measuring the sanitizer axis this note had never
+measured. [R23 V1 asked for this; it did not find what it expected.]** Under
+AddressSanitizer the prototype's `clo_visit` **overflows the 8 MB stack at
+nesting depth 210**, where the shipped compiler compiles the same pattern
+fine to 250:
+
+| nesting depth | 200 | 210 | 220 | 230 | 240 | 250 |
+|---|---|---|---|---|---|---|
+| shipped, asan | ok | ok | ok | ok | ok | ok |
+| **A2, asan** | ok | **stack-overflow** | overflow | overflow | overflow | overflow |
+| shipped / A2, ubsan | ok | ok | ok | ok | ok | ok |
+
+The cause is frame SIZE, not the fix: the unfixed prototype overflows at the
+same depth (210), so this is the open-loop bookkeeping the design adds to a
+function that already recurses once per nesting level, plus ASan's redzones,
+against `ulimit -s 8192`. `limits.h` records that `clo_visit`'s tail edges
+were made iterative precisely to keep C-stack depth off the pattern's size;
+the preferred-branch recursion was left, bounded by the parser's cap — and
+this design makes each of those 250 frames bigger.
+
+Three things follow, and none of them is "ignore it". `make asan` is in the
+merge/close battery, so this is a real failure mode for the rewrite, not a
+curiosity. The suite would NOT currently catch it: corpus loop-nesting depth
+is 4, so no test goes near 210. And the honest cost figure for the sanitizer
+axis is not a timeout at all — timing was what V1 predicted would be tight,
+and timing is fine (A2 at nest250 is 0.85 s under ubsan against 0.36 s plain,
+and asan is faster still where it survives). §5 item 12 carries the
+obligation.
+
 #### The family the depth model does not predict [R23 S14]
 
 A depth fit is the wrong instrument, and the panel found the family that shows
@@ -1129,9 +1158,19 @@ The K17 methodology, with the additions this lane's own findings demand.
     parser's cap, §2a), but the gap is real. The rewrite lane either folds
     that timeout into the `gen_timeout.sh` mechanism so it becomes
     axis-aware, or documents in `docs/testing.md` why pcrec's own invocation
-    is exempt — with reasons, not silence. Either way it MEASURES
-    nest100/200/250 under a ubsan- and asan-instrumented pcrec, since every
-    timing number in this note is a plain-axis number.
+    is exempt — with reasons, not silence.
+
+    **The instrumented measurement this item asked for is DONE, and it found a
+    failure the timing worry did not predict** (§2a): under asan the
+    prototype's `clo_visit` overflows the 8 MB stack at nesting depth 210,
+    inside the parser's own 250 cap, where the shipped compiler survives —
+    frame size, not the stack fix, since the unfixed prototype overflows at
+    the same depth. Timing on the instrumented axes is comfortable
+    (nest250: 0.85 s ubsan, 0.36 s plain). So the rewrite lane owes, on top of
+    the timeout question: a `clo_visit` frame small enough to recurse 250 deep
+    under asan, or an explicit refusal below that depth, or a deliberate
+    stack-size decision — **and a deep-nesting test in the suite, since the
+    corpus tops out at depth 4 and would never have found this.**
 13. **[R23 S4] A comment obligation on the `marks_next` 2^32 wrap.** The
     empty-context fast path threads a SECOND `Marks` whose generation is
     advanced in lockstep with the first, so a wrap is safe only because both

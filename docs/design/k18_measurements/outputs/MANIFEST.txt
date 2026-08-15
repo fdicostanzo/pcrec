@@ -32,6 +32,21 @@ base commit: 9df434d81aea0428d04984157a24ad5d0010f9bb
 #     prose. The generator now wraps (`"(?:%s)*"`); all 70 compile
 #     (`refused=0`).
 #
+#     READING THE DIFF. Nearly every row of the two stats_corpus files shows
+#     as changed, and almost all of that is the `secs` column, which is wall
+#     time and therefore never reproduces. Dropping that column:
+#       stats_corpus_base.tsv  0 rows differ -- the CONTROL side is bit-exact,
+#                              which is the check that only the prototype moved.
+#       stats_corpus.tsv       exactly 3 rows differ, and they are the three
+#                              corpus patterns the stack corruption actually
+#                              reached:
+#                                ((?:([^a]{0,2})|(?:[a-c])??)+)*  ctxs 5->4
+#                                (b*?(a*|b*)*)*                   depth 4->3, ctxs 18->12
+#                                (?:b*?(?:(?:a*)*)*)*             depth 5->4, ctxs 19->13
+#                              Every counter moved DOWN. This is where the
+#                              corpus depth maximum 5->4 and context maximum
+#                              19->13 come from.
+#
 #   emitdiff_*.log, diff_*.txt, oracle_*  CARRIED FORWARD unchanged. The fixed
 #     and unfixed prototypes emit byte-identical C -- verified on the corpus
 #     (622), two independent generated corpora (1,001 + 523), a 38-pattern
