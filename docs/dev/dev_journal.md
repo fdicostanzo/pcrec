@@ -7905,3 +7905,30 @@ commit-message prose UP TO THIS POINT was UTC — in particular, the
 the M4.5 landings through ~05:00) happened the evening of 2026-08-14
 EDT. From this entry on, dates and times are LOCAL (EDT/EST). Git
 commit timestamps carry their own offsets and need no reconciliation.
+
+## 2026-08-15 (EDT) — [TT-2] parallel test infrastructure landed; watchdog process rules adopted
+
+Frank found the box serial ("we have 6 cores. we should open it up")
+and, later, a lane dead for eleven hours while the manager "waited" —
+two process rulings now in the pcrec-manager skill: a 10-MINUTE STALL
+WATCHDOG cron whenever lanes/async work are in flight (liveness from
+WIP-commit age + mtimes, NEVER ListAgents — it omits live lanes), and
+`timeout` on every command of uncertain run length, subagent briefs
+included. Lanes now COMMIT INCREMENTALLY as the watchdog's best signal.
+
+[TT-2] itself (merge ce2a080, second lane after the first died — its
+uncommitted sharding was adopted with two real defects fixed: a
+result-block leak into visible output at PROCS=12, and a
+"byte-identical" claim that was only content-identical): reject
+call-index sharding 59.5s→5.8s; tests/lib/run_group.sh (vanished
+worker ≠ nonzero exit, argument-order replay) takes test-vm 30.4→14.9s;
+`make -j -Otarget test` composes the whole suite in ~44.6s vs 8m49s
+serial (measured both, both green, populations conserved at corpus
+1679 baseline). cli/registry: measured, DECLINED with recorded
+reasoning + re-trigger. mech: already parallel since 2026-08-12 —
+verified, not reimplemented. Timezone note above applies: box is EDT
+from midday today.
+
+M4.5 substeps a–d are now ALL COMPLETE. Remaining before [M4.6]:
+[M4.5e] close (D46 rung stamp + assertions, CLAUDE.md sweeps, full
+battery) — then the K18 design-first gate.

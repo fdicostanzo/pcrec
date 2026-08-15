@@ -683,7 +683,17 @@ after waits for a forcing function. Frank's priority stands throughout: the
 95% path stays fast and simple, and exotic constructs earn only the right to be
 named, cleanly rejected and queried.
 
-- [TT-2] STATE:not-started — PARALLEL TEST INFRASTRUCTURE (Frank,
+- [TT-2] STATE:completed 2026-08-15 (lane tt2-parallel — relaunched after
+  the first lane died mid-work, its sharding adopted with two defects
+  fixed; merge ce2a080. Measured: reject 59.5s→5.8s at PROCS=12;
+  test-vm 30.4→14.9s and test-codegen 10.1→8.7s via tests/lib/
+  run_group.sh; `make -j$(nproc) -Otarget test` composes the full suite
+  in ~44.6s vs ~8m49s serial; cli/registry measured and DECLINED with
+  a re-measurement trigger (registry is correction-scarred, off the
+  critical path); mech already had PROCS since 2026-08-12, verified.
+  Sabotages both shapes per new path; serial PROCS=1 full suite green
+  8m48.9s; populations conserved. docs/testing.md "Internal
+  parallelism" section) — PARALLEL TEST INFRASTRUCTURE (Frank,
   2026-08-15, twenty-first session: "we have 6 cores. we should open it
   up"). Step 1 DONE same day (Makefile commit): make test/test-corpus
   set PROCS=nproc + TMPDIR=/var/tmp for the harness's existing worker
