@@ -226,7 +226,7 @@ stated terms.
     (CELL, scripts/mk_d27_cell.sh): spec-first capture tests from the
     PROMISE (match_api_m4.md + testing.md's new format), denied src/
     and tests/. Opens once [M4.5a]+[M4.5b] merge.
-  - [M4.5e] STATE:not-started — CLOSE: oracle-verified capture corpus
+  - [M4.5e] STATE:started 2026-08-15 — CLOSE: oracle-verified capture corpus
     over the base tier, structural checks now non-trivially exercised
     (RX_NCAPS>1⇒VM live), CLAUDE.md sweeps, full battery. ADDED
     2026-08-15 (D46): the cursor-ladder RUNG STAMP — the selection
