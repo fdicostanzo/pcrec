@@ -108,6 +108,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     total_pass=0
     total_fail=0
     total_cfail=0
+    total_pending=0
     summaries=0
     fail_files=()
 
@@ -119,6 +120,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         p="$(grep -m1 '^cases passed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
         x="$(grep -m1 '^cases failed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
         c="$(grep -m1 '^pattern-compile failures (distinct):' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
+        gp="$(grep -m1 '^group cases pending-vm:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         if [ -z "$p" ] || [ -z "$x" ]; then
             echo "$f: HARNESS FAILURE: worker produced no summary (crashed or was killed) — counting as failed" >&2
             total_fail=$((total_fail + 1))
@@ -129,6 +131,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         total_pass=$((total_pass + p))
         total_fail=$((total_fail + x))
         total_cfail=$((total_cfail + ${c:-0}))
+        total_pending=$((total_pending + ${gp:-0}))
         [ "$x" -gt 0 ] && fail_files+=("$f: $x")
     done
 
@@ -141,6 +144,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         for line in "${fail_files[@]}"; do echo "  $line"; done | sort
     fi
     echo "pattern-compile failures (distinct): $total_cfail"
+    echo "group cases pending-vm: $total_pending"
     echo "parallel: $summaries of ${#files[@]} file workers reported (PROCS=$PROCS)"
 
     if [ "$summaries" -ne "${#files[@]}" ]; then
@@ -159,6 +163,9 @@ fi
 
 total_pass=0
 total_fail=0
+total_pending=0        # [M4.5a] 'gp' (pending-VM) capture-group cases: out of
+                        # the artifact's RX_NCAPS range, population-accounted
+                        # separately from pass/fail — not skipped silently
 declare -A file_fail_count=()
 declare -A features_seen=()
 compile_fail_set=()   # distinct "file:line" pattern-compile failures
@@ -185,9 +192,29 @@ record_pass() {
     total_pass=$(( total_pass + 1 ))
 }
 
+# [M4.5a] record_case_group_fail <file> <case-index> <reason> — fails every
+# 'g'/'gp' capture-group expectation attached to case <case-index> (via
+# case_gspec[<case-index>], "slot,start,end,pending;..."), for use when the
+# WHOLE block never got far enough to check anything (pattern-compile
+# failure, driver-build failure, missing gen.h, ...). A block-level failure
+# must fail its attached group checks too, not leave them silently
+# unaccounted — the same "no vacuous pass" discipline as the base m/n cases
+# right next to them.
+record_case_group_fail() {
+    local f="$1" i="$2" reason="$3"
+    [ -z "${case_gspec[$i]:-}" ] && return 0
+    local gentries gentry gslot gstart gend gpend
+    IFS=';' read -ra gentries <<< "${case_gspec[$i]}"
+    for gentry in "${gentries[@]}"; do
+        [ -z "$gentry" ] && continue
+        IFS=',' read -r gslot gstart gend gpend <<< "$gentry"
+        record_fail "$f" "${case_line[$i]}" "group slot $gslot: $reason"
+    done
+}
+
 # Compile and run the current pattern block (globals cur_file, cur_pattern,
 # cur_pattern_line, cur_is_perr) against its accumulated cases (parallel
-# arrays case_kind/case_line/case_subject/case_start/case_end).
+# arrays case_kind/case_line/case_subject/case_start/case_end/case_gspec).
 flush_block() {
     block_counter=$((block_counter + 1))
     local bdir="$WORKDIR/b$block_counter"
@@ -253,6 +280,7 @@ flush_block() {
         for i in "${!case_kind[@]}"; do
             record_fail "$cur_file" "${case_line[$i]}" \
                 "pattern '$cur_pattern' failed to compile: $pcrec_err"
+            record_case_group_fail "$cur_file" "$i" "pattern failed to compile"
         done
         return 0
     fi
@@ -262,6 +290,7 @@ flush_block() {
         for i in "${!case_kind[@]}"; do
             record_fail "$cur_file" "${case_line[$i]}" \
                 "pcrec exited 0 but did not produce gen.c/gen.h for pattern '$cur_pattern'"
+            record_case_group_fail "$cur_file" "$i" "gen.c/gen.h not produced"
         done
         return 0
     fi
@@ -274,6 +303,25 @@ flush_block() {
         local i
         for i in "${!case_kind[@]}"; do
             record_fail "$cur_file" "${case_line[$i]}" "compile failure (see above)"
+            record_case_group_fail "$cur_file" "$i" "compile failure (see above)"
+        done
+        return 0
+    fi
+
+    # [M4.5a] the artifact's DELIVERED capture-slot count, read straight from
+    # the generated header — this is what makes a 'g' (LIVE) expectation on a
+    # slot beyond it a HARD failure (population accounting) rather than a
+    # silent skip, and what makes a 'gp' (pending-VM) expectation on such a
+    # slot self-activate into a real check the moment RX_NCAPS grows to cover
+    # it, with no corpus edit required.
+    local artifact_ncaps
+    artifact_ncaps="$(grep -oE '^#define RX_NCAPS [0-9]+' "$bdir/gen.h" | awk '{print $3}')"
+    if [ -z "$artifact_ncaps" ]; then
+        echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: RX_NCAPS not found in generated gen.h for pattern '$cur_pattern'" >&2
+        local i
+        for i in "${!case_kind[@]}"; do
+            record_fail "$cur_file" "${case_line[$i]}" "HARNESS FAILURE: RX_NCAPS not found in gen.h"
+            record_case_group_fail "$cur_file" "$i" "RX_NCAPS not found in gen.h"
         done
         return 0
     fi
@@ -288,10 +336,12 @@ flush_block() {
         if [ $trc -eq 124 ]; then
             record_fail "$cur_file" "$line" \
                 "test binary TIMED OUT (>10s) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            record_case_group_fail "$cur_file" "$i" "test binary timed out"
             continue
         elif [ $trc -ge 126 ]; then
             record_fail "$cur_file" "$line" \
                 "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            record_case_group_fail "$cur_file" "$i" "test binary crashed"
             continue
         fi
         if [ "$kind" = "m" ]; then
@@ -299,12 +349,54 @@ flush_block() {
         else
             expect="nomatch"
         fi
+        local base_ok=0
         if [ "$out" = "$expect" ]; then
             [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: '$cur_pattern' subject=\"$subj\" startpos=$pos"
             record_pass
+            base_ok=1
         else
             record_fail "$cur_file" "$line" \
                 "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+        fi
+
+        # [M4.5a] capture-group expectations ('g'/'gp' lines) attached to
+        # this case. Only 'm'/'ms' cases can carry them (enforced at parse
+        # time — an n/ns case's case_gspec is always empty).
+        if [ -n "${case_gspec[$i]:-}" ]; then
+            local gentries gentry gslot gstart gend gpend
+            IFS=';' read -ra gentries <<< "${case_gspec[$i]}"
+            for gentry in "${gentries[@]}"; do
+                [ -z "$gentry" ] && continue
+                IFS=',' read -r gslot gstart gend gpend <<< "$gentry"
+                if [ "$gslot" -ge "$artifact_ncaps" ]; then
+                    if [ "$gpend" = "1" ]; then
+                        total_pending=$((total_pending + 1))
+                        [ "$VERBOSE" = "1" ] && echo "PENDING-VM $cur_file:$line: group slot $gslot (artifact RX_NCAPS=$artifact_ncaps) for pattern '$cur_pattern' subject \"$subj\""
+                    else
+                        record_fail "$cur_file" "$line" \
+                            "group slot $gslot claimed with 'g' (LIVE) but artifact's RX_NCAPS=$artifact_ncaps does not deliver it — use 'gp' (pending-VM) for a slot beyond today's DFA-only artifacts"
+                    fi
+                    continue
+                fi
+                if [ "$base_ok" != "1" ]; then
+                    record_fail "$cur_file" "$line" \
+                        "group slot $gslot: cannot verify, base match assertion failed for pattern '$cur_pattern' subject \"$subj\""
+                    continue
+                fi
+                local outfields fi0 fi1 got_s got_e
+                read -ra outfields <<< "$out"
+                fi0=$((1 + 2 * gslot))
+                fi1=$((2 + 2 * gslot))
+                got_s="${outfields[$fi0]:-}"
+                got_e="${outfields[$fi1]:-}"
+                if [ "$got_s" = "$gstart" ] && [ "$got_e" = "$gend" ]; then
+                    [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: group slot $gslot ($gstart,$gend) for pattern '$cur_pattern' subject \"$subj\""
+                    record_pass
+                else
+                    record_fail "$cur_file" "$line" \
+                        "group slot $gslot: expected ($gstart,$gend) got (${got_s:-?},${got_e:-?}) for pattern '$cur_pattern' subject \"$subj\""
+                fi
+            done
         fi
     done
 }
@@ -340,7 +432,7 @@ for file in "${files[@]}"; do
             cur_is_perr=0
             cur_flags=""
             cur_features=""
-            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
+            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
             # per-block compile options. Only `i` (case-insensitive, OS-1) is
@@ -376,6 +468,7 @@ for file in "${files[@]}"; do
             case_start+=("${BASH_REMATCH[2]}")
             case_end+=("${BASH_REMATCH[3]}")
             case_startpos+=("0")
+            case_gspec+=("")
         elif [[ "$line" =~ ^n[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
@@ -383,6 +476,7 @@ for file in "${files[@]}"; do
             case_start+=("")
             case_end+=("")
             case_startpos+=("0")
+            case_gspec+=("")
         elif [[ "$line" =~ ^ms[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
             case_kind+=("m")
             case_line+=("$lineno")
@@ -390,6 +484,7 @@ for file in "${files[@]}"; do
             case_subject+=("${BASH_REMATCH[2]}")
             case_start+=("${BASH_REMATCH[3]}")
             case_end+=("${BASH_REMATCH[4]}")
+            case_gspec+=("")
         elif [[ "$line" =~ ^ns[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
@@ -397,6 +492,32 @@ for file in "${files[@]}"; do
             case_subject+=("${BASH_REMATCH[2]}")
             case_start+=("")
             case_end+=("")
+            case_gspec+=("")
+        elif [[ "$line" =~ ^(gp|g)[[:space:]]+([0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]*$ ]]; then
+            # [M4.5a] capture-group expectation attached to the MOST RECENT
+            # m/ms case in this block. 'g' = LIVE (must be checkable now: a
+            # slot beyond the artifact's RX_NCAPS is a hard failure, never a
+            # silent skip — population accounting). 'gp' = PENDING-VM (a slot
+            # beyond RX_NCAPS is counted separately, not pass/fail; once
+            # RX_NCAPS grows to cover it the line self-activates into a real
+            # check with no corpus edit). RX_UNSET is spelled '-1 -1' (both
+            # slots), matching the ABI's own convention exactly.
+            gkind="${BASH_REMATCH[1]}"
+            gslot="${BASH_REMATCH[2]}"
+            gstart="${BASH_REMATCH[3]}"
+            gend="${BASH_REMATCH[4]}"
+            if { [ "$gstart" = "-1" ] && [ "$gend" != "-1" ]; } || { [ "$gstart" != "-1" ] && [ "$gend" = "-1" ]; }; then
+                record_fail "$file" "$lineno" \
+                    "'$gkind' line: RX_UNSET must be '-1 -1' in BOTH slots, not one (got '$gstart $gend')"
+            elif [ "$have_block" != "1" ] || [ "${#case_kind[@]}" -eq 0 ] || [ "${case_kind[$((${#case_kind[@]} - 1))]}" != "m" ]; then
+                record_fail "$file" "$lineno" \
+                    "'$gkind' line must immediately follow (or otherwise attach to) an 'm'/'ms' case in the same block — no such case precedes it"
+            else
+                last_idx=$((${#case_kind[@]} - 1))
+                gpend=0
+                [ "$gkind" = "gp" ] && gpend=1
+                case_gspec[$last_idx]="${case_gspec[$last_idx]}${gslot},${gstart},${gend},${gpend};"
+            fi
         else
             # unparseable non-blank/non-comment lines are hard errors: a
             # corrupted corpus must not silently degrade to zero coverage
@@ -424,6 +545,7 @@ if [ ${#file_fail_count[@]} -gt 0 ]; then
     done | sort
 fi
 echo "pattern-compile failures (distinct): ${#compile_fail_set[@]}"
+echo "group cases pending-vm: $total_pending"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
     echo "run.sh: NO CASES RUN — corpus missing or fully unparseable" >&2

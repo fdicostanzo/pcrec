@@ -54,6 +54,15 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   oracle where it agrees, `# pcre2-only` elsewhere (xxmode entirely —
   docs/dev/upstream_issues.md U8 is the measured python divergence); see its
   CLAUDE.md for the §9.3 record and the escape-vs-raw-tab landing correction
+- **captures/** — [M4.5a] capture-group expectation corpus: the `g`/`gp`
+  `.rxt` line kinds (per-GROUP capture-slot spans, attached to the preceding
+  `m`/`ms` case — see docs/testing.md's "Capture-group expectations" section
+  for the full format, the live-vs-pending-VM population-accounting rule,
+  and the python-oracle tier). `basic.rxt`: 14 `m`/`ms` cases carrying 3
+  live `g` + 28 pending-VM `gp` group checks, all oracle-verified against
+  python `re`. Runs today against [M4.4]'s DFA-only artifacts (`RX_NCAPS` is
+  always 1, so every non-slot-0 expectation is pending-VM by construction
+  until [M4.5]'s VM emitter lands); see its own CLAUDE.md
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

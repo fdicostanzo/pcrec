@@ -135,6 +135,20 @@ lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
   `<P>` is a non-negative decimal integer, given before the quoted subject.
 - `ns <P> "<subject>"` — asserts that searching `<subject>` with
   `startpos = <P>` finds **no** match.
+- `g <slot> <start> <end>` / `gp <slot> <start> <end>` — **[M4.5a]** asserts a
+  per-GROUP capture-slot expectation, attached to the most recently preceding
+  `m`/`ms` case in the current block (never `n`/`ns` — a no-match assertion
+  has no captures). `<slot>` is a non-negative decimal integer indexing
+  `caps[]` exactly as the frozen match API does (slot 0 is the whole match,
+  same value as the case's own `<start> <end>`; group *k* occupies slot *k*
+  when every group up to it delivers a slot — match_api_m4.md §2.2 C2/C9).
+  `<start>`/`<end>` are two non-negative decimal integers for a real span, or
+  the literal pair `-1 -1` for `RX_UNSET` (the group didn't participate) —
+  one `-1` without the other is a hard parse error, since `RX_UNSET` is
+  symmetric in both slots (C5). `g` is LIVE: the slot must be checkable
+  *now*; `gp` is PENDING-VM: the slot may be beyond what today's DFA-only
+  artifacts deliver. See "Capture-group expectations" below for the full
+  design and the population-accounting rule.
 
 `m`/`n` are exactly `ms`/`ns` with `<P>` fixed at 0; see "startpos support"
 below for the `rx_search` contract these exercise.
@@ -228,10 +242,19 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
 2. Parses `[startpos]`, if given, as a non-negative decimal integer; a
    malformed value prints a message to stderr and exits `2`.
 3. Calls `rx_search(buf, len, startpos, caps)` ([M4.4], D44.2: `caps` is a
-   `ptrdiff_t (*)[2]`, not the retired `rx_span *m` out-struct).
-4. Prints exactly one line to stdout: `match %td %td\n` (using `caps[0][0]`,
-   `caps[0][1]`) if a match was found, or `nomatch\n` otherwise, and exits
-   `0`.
+   `ptrdiff_t (*)[2]`, not the retired `rx_span *m` out-struct), where `caps`
+   is declared `ptrdiff_t caps[RX_NCAPS][2]` — `RX_NCAPS` comes from the
+   pattern's own generated `gen.h`, so the array is always exactly the size
+   the artifact under test actually delivers.
+4. On a match, prints `match` followed by **every** `caps[k][0] caps[k][1]`
+   pair for `k` in `[0, RX_NCAPS)` (`%td` each), then a newline; on no match,
+   prints `nomatch\n`; exits `0` either way. **[M4.5a]**: since `RX_NCAPS` is
+   1 on every artifact before [M4.5]'s VM lands (match_api_m4.md D42.2), this
+   is exactly `match %td %td\n` today — the multi-pair form is a superset
+   that activates automatically once `RX_NCAPS` grows, not a reshape. A `g`/
+   `gp` capture-expectation line (see "Capture-group expectations" below)
+   picks its slot's pair out of this line by position: fields `1+2*slot` and
+   `2+2*slot` after the leading `match` token.
 
 The driver includes `"gen.h"`, so it must be compiled with `-I<dir>`
 pointing at the directory containing the pattern's generated `gen.h`. It has
@@ -914,3 +937,136 @@ Measured (table above), the ruling:
 - `make asan` red BLOCKS a merge the way a red `make test` does; findings
   land in the inventory above with a triage before any fix (the
   findings-discipline that produced F1's clean arc).
+
+## Capture-group expectations ([M4.5a], 2026-08-14)
+
+engine_m4.md §3.6/§3.7 and match_api_m4.md §2 (the C1–C11 caps-array
+contract) needed a test-format and oracle-tier home before [M4.5]'s VM
+emitter lands and starts delivering per-group offsets. This section is that
+home: the `g`/`gp` line syntax (already listed under "The `.rxt` format"
+above), what `run.sh` and `verify_rxt.py` do with it, and the seed corpus at
+`tests/captures/basic.rxt`.
+
+### Design: backward-compatible, artifact-size-agnostic
+
+Every `.rxt` file that existed before this landed is still valid and still
+means exactly what it meant — `g`/`gp` are new, purely additive line kinds;
+no existing line's grammar or semantics changed. `driver.c` prints one pair
+per `RX_NCAPS` slot instead of a fixed two numbers, but `RX_NCAPS` is 1 on
+every artifact today (match_api_m4.md D42.2 — captures only exist behind
+[M4.5]'s VM), so the printed line is byte-identical to before on the entire
+existing corpus; nothing needed re-verifying.
+
+The format is deliberately artifact-size-agnostic rather than pinned to
+today's `RX_NCAPS == 1` ceiling: a `.rxt` case can assert group spans for
+slots the CURRENT compiled artifact cannot yet deliver (`gp`, pending-VM —
+see below), so the corpus can be authored once, against the pattern's true
+semantics, and grow LIVE automatically as the VM emitter lands, rather than
+being rewritten when it does.
+
+### `g` vs `gp`: live vs pending-VM, and the population-accounting rule
+
+- **`g <slot> <start> <end>`** claims the slot is checkable RIGHT NOW. `run.sh`
+  reads the artifact's actual `RX_NCAPS` out of its generated `gen.h` (the
+  same value the compiled matcher itself was built against, not a guess) and
+  compares it to `<slot>`. If `<slot> >= RX_NCAPS`, that is **a hard FAILURE,
+  never a silent skip** — a corpus author claiming `g` for a slot the
+  artifact cannot deliver is a corpus bug, not a harness gap, and the harness
+  says so by name ("claimed with 'g' (LIVE) but artifact's RX_NCAPS=... does
+  not deliver it — use 'gp'"). This is the population-accounting discipline
+  the brief asked for: an out-of-range capture expectation is counted as a
+  failure, so it cannot vanish from the pass/fail total by accident.
+- **`gp <slot> <start> <end>`** claims the slot MAY be beyond today's
+  artifact. If `<slot> >= RX_NCAPS`, the case is counted in a separate
+  **pending-vm** bucket — not pass, not fail, printed on its own summary
+  line (`group cases pending-vm: N`) so it is never invisible and never
+  silently mixed into either count. This is deliberately NOT shaped like
+  `tests/known_fail/` (a ratchet for a CONFIRMED, deferred BUG): a pending-vm
+  case asserts nothing is wrong — it is a true statement about the pattern
+  that today's DFA-only engine structurally cannot check yet, not a bug
+  anyone is tracking. If `<slot> < RX_NCAPS` (the VM has landed and now
+  covers this slot, or a future engine's ceiling simply grew), a `gp` line
+  **self-activates**: it is checked exactly like `g`, no corpus edit
+  required, and a wrong value fails it like any other live case. Authors are
+  free to leave the `gp` marker in place after that point (it costs nothing)
+  or promote it to `g` for documentation clarity — the harness behaves
+  identically either way once the slot is in range.
+- Both `g` and `gp` require an immediately-attachable `m`/`ms` case earlier
+  in the same block (the most recent one) — a `g`/`gp` line after an `n`/`ns`
+  case, or with no case at all yet, is a hard parse-time failure (a no-match
+  assertion has no captures to check).
+- `RX_UNSET` is spelled `-1 -1`, matching the ABI's own `{-1,-1}` convention
+  exactly (match_api_m4.md §2.1, C5) — a lone `-1` in only one slot is a
+  hard parse error in both `run.sh` and `verify_rxt.py`, since `RX_UNSET` is
+  defined as symmetric.
+- A block-level compile/build failure (pattern rejected, driver failed to
+  build, `RX_NCAPS` unreadable from `gen.h`) fails every attached `g`/`gp`
+  expectation too, `gp` included — "the block never got far enough to check
+  anything" is not a reason to call a pending case's non-result a pass, or
+  to leave it uncounted; extraction failure is FAIL, never a vacuous pass or
+  a silent pending.
+
+### The python `re` oracle tier
+
+`verify_rxt.py` checks every `g`/`gp` line against python `re`'s
+`match.span(<slot>)` on the same subject/startpos as the case's preceding
+`m`/`ms` line, **identically for `g` and `gp`** — pending-ness is a fact
+about what pcrec's CURRENT artifact can deliver (`RX_NCAPS`), which the
+python oracle has no notion of and does not need: it verifies the
+EXPECTATION written in the corpus, independent of whether `run.sh` can check
+it yet. A `<slot>` beyond the pattern's own lexical group count
+(`compiled.groups`) is a hard failure regardless of `g`/`gp` — that is
+always a corpus authoring bug, never a pending-VM situation, since python
+already knows the pattern's true group count without needing any engine to
+run.
+
+**The oracle rule governing this tier is the three-way rule from
+engine_m4.md §3.6 (R21 E-ASK-1/D44)**, unchanged by this landing: python and
+libpcre2 are BOTH checked once the libpcre2 differential exists ([M4.7]);
+there is no pre-built exclusion mechanism, and a case where pcrec disagrees
+with both oracles is a bug, never a silent exclusion. This tier is the
+python half of that rule, staged first per D4's discipline — the same
+staging the base tier already used.
+
+### Seed corpus: `tests/captures/basic.rxt`
+
+14 `m`/`ms` cases (13 `m`, 1 `ms` exercising startpos + group attachment
+together) carrying 3 `g` (live, slot 0 — the whole match, deliverable by
+every artifact today, C3) and 28 `gp` (pending-VM, slots 1+) capture
+expectations — 45 total oracle-verified lines, all group values computed
+from and cross-checked against python `re`'s own `match.span()`, all
+whole-match spans additionally verified against the real `build/pcrec`
+output before landing (not merely believed correct). Patterns cover:
+sequential groups (`(a)(b)(c)`), an optional group both matching and
+not-matching (`(foo)?bar`, exercising `RX_UNSET`), a repeated capturing
+group keeping only its LAST iteration's span (`a(b|c)+d`, PCRE2
+leftmost-first priority — engine_m4.md §3.1), nested groups
+(`((a)(b))c`), alternation where exactly one branch's group participates
+(`(a)|(b)`), a zero-iteration group (`(a)*b`), an optional MIDDLE group
+(`(x)(y)?(z)`), and a three-way alternation/repetition mix
+(`(ab|a)(c|bcd)(d*)`).
+
+Directory tree row (already listed under "Organizing tests by component"
+above) needed no change — `captures/` was always the planned home for this
+corpus; this landing is what actually populates it.
+
+### Sabotage validation
+
+Every failure path this section describes was planted and observed to fire,
+then reverted (scratch `.rxt` files, never committed):
+
+- a wrong LIVE (`g`) group span — caught, `expected (...) got (...)`
+- a `g` (LIVE, non-pending) line claiming a slot beyond the artifact's
+  `RX_NCAPS` — caught, the "use 'gp'" message, NOT a silent skip
+- an asymmetric `RX_UNSET` (`-1` in one slot only) — caught at parse time,
+  both in `run.sh` and in `verify_rxt.py`
+- a `g`/`gp` line with no preceding `m`/`ms` case, and one immediately after
+  an `n`/`ns` case — both caught at parse time
+- a pattern that fails to compile with a `gp` (pending-VM) expectation
+  attached — the attached `gp` case is reported FAILED, not silently
+  dropped and not counted as pending (a block that never ran proves nothing
+  about a slot being "future-live")
+- on the python oracle side: a wrong `gp` span, and a slot number exceeding
+  the pattern's own group count — both caught, independent of the
+  live/pending distinction (the python oracle only cares whether the
+  EXPECTATION is correct, never whether pcrec can check it yet)

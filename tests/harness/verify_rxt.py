@@ -3,7 +3,15 @@
 oracle, decisions.md D4). Usage: verify_rxt.py [files-or-dirs...]; default is
 <repo>/tests/base. A comment line `# pcre2-only` immediately before a
 `pattern` line skips python verification for that block (used where python re
-diverges from real PCRE, e.g. quantified anchors — see docs/testing.md)."""
+diverges from real PCRE, e.g. quantified anchors — see docs/testing.md).
+
+[M4.5a] `g <slot> <start> <end>` / `gp <slot> <start> <end>` capture-group
+expectation lines (attached to the most recent `m`/`ms` case) are checked
+against python re's `match.span(slot)`, identically for 'g' (live) and 'gp'
+(pending-VM) — pending-ness is a fact about what pcrec's CURRENT compiled
+artifact can deliver (RX_NCAPS), which this oracle has no notion of and does
+not need; it verifies the EXPECTATION itself, independent of whether
+tests/harness/run.sh can check it yet. See docs/testing.md."""
 import re
 import sys
 import glob
@@ -87,8 +95,23 @@ def parse_startpos_tail(line, prefix):
     return p, tail
 
 
+def parse_group_tail(line, prefix):
+    """line starts with `<prefix> ` ('g ' or 'gp '); return (slot, start, end)
+    from the remaining `<slot> <start> <end>` tail. RX_UNSET is '-1 -1' in
+    BOTH slots — one -1 without the other is a hard parse error, matching
+    tests/harness/run.sh's own check."""
+    rest = line[len(prefix):].strip()
+    parts = rest.split()
+    if len(parts) != 3:
+        raise ValueError(f"bad {prefix.strip()!r} line tail {rest!r}")
+    slot, start, end = int(parts[0]), int(parts[1]), int(parts[2])
+    if (start == -1) != (end == -1):
+        raise ValueError(f"RX_UNSET must be -1 in BOTH slots, not one: {rest!r}")
+    return slot, start, end
+
+
 def parse_rxt(path):
-    """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','ms','ns','perr'}."""
+    """Yield (lineno, kind, data) tuples. kind in {'pattern','m','n','ms','ns','perr','g','gp'}."""
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     results = []
@@ -142,6 +165,18 @@ def parse_rxt(path):
             if tail != '':
                 raise ValueError(f"{path}:{lineno}: unexpected trailing content on ns line: {tail!r}")
             results.append((lineno, 'ns', (p, subj)))
+        elif line.startswith('gp '):
+            try:
+                slot, start, end = parse_group_tail(line, 'gp ')
+            except ValueError as e:
+                raise ValueError(f"{path}:{lineno}: {e}")
+            results.append((lineno, 'gp', (slot, start, end)))
+        elif line.startswith('g '):
+            try:
+                slot, start, end = parse_group_tail(line, 'g ')
+            except ValueError as e:
+                raise ValueError(f"{path}:{lineno}: {e}")
+            results.append((lineno, 'g', (slot, start, end)))
         else:
             raise ValueError(f"{path}:{lineno}: unrecognized line: {line!r}")
     return results
@@ -174,6 +209,15 @@ def main():
         compiled = None
         compile_error = None
         m_count = n_count = ms_count = ns_count = perr_count = 0
+        g_count = gp_count = 0
+        # [M4.5a] the most recent m/ms case in the CURRENT block, so a
+        # following g/gp line knows what subject/startpos to re-search —
+        # last_case_kind is 'm' (an m/ms case is live), 'n' (an n/ns case
+        # came instead — g/gp after it is a hard error, no captures on a
+        # no-match assertion), or None (no case yet in this block).
+        last_case_kind = None
+        last_case_subj = None
+        last_case_pos = None
         skipped = 0
         cur_skip = False
         cur_reflags = 0
@@ -186,6 +230,9 @@ def main():
                 compile_error = None
                 compiled = None
                 cur_reflags = 0
+                last_case_kind = None
+                last_case_subj = None
+                last_case_pos = None
                 if not cur_skip:
                     try:
                         compiled = re.compile(cur_pattern)
@@ -244,6 +291,9 @@ def main():
             elif kind == 'm':
                 m_count += 1
                 subj, start, end = data
+                last_case_kind = 'm'
+                last_case_subj = subj
+                last_case_pos = 0
                 if compiled is None:
                     file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check m line"))
                 else:
@@ -258,6 +308,9 @@ def main():
             elif kind == 'n':
                 n_count += 1
                 subj = data
+                last_case_kind = 'n'
+                last_case_subj = None
+                last_case_pos = None
                 if compiled is None:
                     file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check n line"))
                 else:
@@ -270,6 +323,9 @@ def main():
             elif kind == 'ms':
                 ms_count += 1
                 p, subj, start, end = data
+                last_case_kind = 'm'
+                last_case_subj = subj
+                last_case_pos = p
                 if compiled is None:
                     file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check ms line"))
                 else:
@@ -284,6 +340,9 @@ def main():
             elif kind == 'ns':
                 ns_count += 1
                 p, subj = data
+                last_case_kind = 'n'
+                last_case_subj = None
+                last_case_pos = None
                 if compiled is None:
                     file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check ns line"))
                 else:
@@ -293,9 +352,38 @@ def main():
                     else:
                         total_pass += 1
                         continue
+            elif kind in ('g', 'gp'):
+                # [M4.5a] capture-group expectation, oracle-verified against
+                # python re's match.span(slot) regardless of the 'g'/'gp'
+                # (live/pending-VM) distinction — pending-ness is a property
+                # of what pcrec's CURRENT artifact can deliver (RX_NCAPS),
+                # never of whether the expectation itself is correct, so this
+                # oracle checks BOTH kinds identically.
+                if kind == 'gp':
+                    gp_count += 1
+                else:
+                    g_count += 1
+                slot, start, end = data
+                if last_case_kind != 'm':
+                    file_failures.append((lineno, f"'{kind}' line with no preceding m/ms case in this block"))
+                elif compiled is None:
+                    file_failures.append((lineno, f"pattern {cur_pattern!r} failed to compile ({compile_error}), cannot check {kind} line"))
+                else:
+                    mo = compiled.search(last_case_subj, last_case_pos)
+                    if mo is None:
+                        file_failures.append((lineno, f"pattern {cur_pattern!r} subject {last_case_subj!r} startpos {last_case_pos}: preceding case implies a match but oracle found none, cannot check group slot {slot}"))
+                    elif slot > compiled.groups:
+                        file_failures.append((lineno, f"pattern {cur_pattern!r}: group slot {slot} exceeds pattern's group count ({compiled.groups})"))
+                    else:
+                        got = mo.span(slot)
+                        if got != (start, end):
+                            file_failures.append((lineno, f"pattern {cur_pattern!r} subject {last_case_subj!r} startpos {last_case_pos}: group slot {slot} expected ({start},{end}) but got {got}"))
+                        else:
+                            total_pass += 1
+                            continue
             total_fail += 1
 
-        per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, len(file_failures))
+        per_file_counts[fname] = (m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, len(file_failures))
         if skipped:
             print(f"  {fname}: {skipped} case(s) in '# pcre2-only' blocks skipped (not python-verifiable)")
         if file_failures:
@@ -305,18 +393,19 @@ def main():
 
     print()
     print("=== Summary ===")
-    grand_m = grand_n = grand_ms = grand_ns = grand_p = grand_f = 0
+    grand_m = grand_n = grand_ms = grand_ns = grand_p = grand_g = grand_gp = grand_f = 0
     for fname in sorted(per_file_counts):
-        m_count, n_count, ms_count, ns_count, perr_count, fails = per_file_counts[fname]
+        m_count, n_count, ms_count, ns_count, perr_count, g_count, gp_count, fails = per_file_counts[fname]
         grand_m += m_count; grand_n += n_count
         grand_ms += ms_count; grand_ns += ns_count
         grand_p += perr_count; grand_f += fails
-        total = m_count + n_count + ms_count + ns_count + perr_count
+        grand_g += g_count; grand_gp += gp_count
+        total = m_count + n_count + ms_count + ns_count + perr_count + g_count + gp_count
         status = "OK" if fails == 0 else f"{fails} FAIL"
-        print(f"  {fname:28s} m={m_count:3d} n={n_count:3d} ms={ms_count:3d} ns={ns_count:3d} perr={perr_count:3d} total={total:3d}  [{status}]")
+        print(f"  {fname:28s} m={m_count:3d} n={n_count:3d} ms={ms_count:3d} ns={ns_count:3d} perr={perr_count:3d} g={g_count:3d} gp={gp_count:3d} total={total:3d}  [{status}]")
     print()
-    grand_total = grand_m + grand_n + grand_ms + grand_ns + grand_p
-    print(f"TOTAL: m={grand_m} n={grand_n} ms={grand_ms} ns={grand_ns} perr={grand_p} cases={grand_total}")
+    grand_total = grand_m + grand_n + grand_ms + grand_ns + grand_p + grand_g + grand_gp
+    print(f"TOTAL: m={grand_m} n={grand_n} ms={grand_ms} ns={grand_ns} perr={grand_p} g={grand_g} gp={grand_gp} cases={grand_total}")
     print(f"PASS={total_pass} FAIL={total_fail}")
     if grand_f == 0:
         print("ALL CHECKS PASSED (100%)")
