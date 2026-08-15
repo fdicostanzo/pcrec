@@ -1323,16 +1323,21 @@ span differential is the net; [M4.6] does NOT open with K18 unfixed
 (same precondition status as K17, R21 review E-1 disposition).
 
 **DESIGN NOTE DELIVERED 2026-08-15: `docs/design/k18_memo_design.md`**
-(PROPOSED, unpaneled; the rewrite lane has NOT opened and this entry stays
-OPEN). It recommends the (state, open-loop-context) memo this entry sketched,
-plus an empty-context fast path, and it settles three things this entry left
-as expectations:
+(PROPOSED, **AMENDED PER R23** — `docs/dev/reviews/2026-08-15-r23-k18-memo.md`;
+the rewrite lane has NOT opened and this entry stays OPEN). It recommends the
+(state, open-loop-context) memo this entry sketched, plus an empty-context
+fast path, and it settles three things this entry left as expectations:
 
-* **The cost is polynomial, not exponential.** MEASURED Θ(d⁴) in loop-nesting
-  depth, with contexts fitting d³/6; the corpus maximum depth is 5 and 353 of
-  555 patterns never open a loop, so aggregate expansion inflation is x1.006.
-  This entry's "real compile-time-blowup risk" is real but bounded, and lands
-  past nesting depth ~64 — the note asks for a ruling on a threshold there.
+* **The cost is polynomial, and smaller than the note first reported.** The
+  note's original Θ(d⁴) cost law and its 39 s worst case were a PROTOTYPE BUG
+  (R23 S16: `clo_visit` restored the open-loop stack's depth but not its
+  entries), not a property of the design. Re-measured on the fixed prototype:
+  the deepest pattern the parser accepts — 250 nested nullable stars —
+  compiles in **0.35 s** against the shipped compiler's 0.004 s, contexts fit
+  d²/2 and redirects d³/3, the corpus maximum depth is 4, and aggregate
+  inflation is **x1.004 expansions / x0.996 visits**. This entry's "real
+  compile-time-blowup risk" is real but small, and **no threshold is proposed
+  or needed** — the note's §6 ruling request is WITHDRAWN.
 * **The exponential the entry attributes to the naive path-local version is
   CONFIRMED, and it is the absence of the memo, not the path-sensitivity.**
   MEASURED Θ(2ⁿ) on `(?:a*|b*){n}`, out of budget at n=22.
@@ -1345,6 +1350,10 @@ as expectations:
   SPLIT instead of at an ε, which is a THIRD sub-case of the root fact and is
   not covered by the family recorded above. The rewrite lane owes those 83 a
   guard corpus.
+* **A FOURTH sub-case, added by R23 S8: the ingredient is the PREFERRED
+  alternation arm, not laziness** — see the correction under this entry's own
+  control list. The guard corpus therefore also owes an ARM-ORDER axis, and
+  the note's §5 item 1 specifies it.
 
 ---
 

@@ -290,11 +290,12 @@ append-only or historical records.
   oracle agrees with A on **98 of 98**, every one a `{0,2}`-bodied shape where
   the conflation happens at a SPLIT rather than an ε. The naive no-memo
   variant (C) is MEASURED exponential, Θ(2ⁿ) on `(?:a*|b*){n}`, confirming the
-  K18 entry's own sketch. Cost of the recommendation: corpus loop-nesting
-  depth is ≤5 (353 of 555 patterns never open a loop), aggregate expansion
-  inflation **x1.006**, blast radius on the real corpus **547 of 555
-  byte-identical with all 8 differing patterns exactly the K18 shapes**,
-  1704/1704 corpus three ways, and 226/226 changed cells old-wrong→new-right.
+  K18 entry's own sketch. Cost of the recommendation (re-taken on the fixed
+  prototype, see the R23 block below): corpus loop-nesting depth is ≤4 (353 of
+  555 patterns never open a loop), aggregate inflation **x1.004 expansions /
+  x0.996 visits**, blast radius on the real corpus **547 of 555 byte-identical
+  with all 8 differing patterns exactly the K18 shapes**, 1704/1704 corpus
+  three ways, and 226/226 changed cells old-wrong→new-right.
   Three lane-own instrumentation defects are recorded in §7 because each
   produced numbers that would otherwise have entered the note as findings — a
   fixed-capacity memo that HANGS rather than slows when full, a

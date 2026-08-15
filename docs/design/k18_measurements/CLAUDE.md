@@ -78,10 +78,18 @@ that moves them fails loudly instead of silently patching the wrong thing.
   where two binaries DISAGREE, which one matches python3 `re`. Reports
   both-wrong cells separately, since those are not a difference between
   candidates.
-- `timecmp.py` — alternating min-of-N compile timing for two binaries. Note
-  its floor: this box spawns a process in ~1 ms, so per-pattern ratios on
-  sub-5 ms patterns are noise, and only aggregates and expensive patterns mean
-  anything.
+- `timecmp.py` — alternating min-of-N compile timing for two binaries.
+  **AMENDED 2026-08-15 (R23):** it now MEASURES the per-invocation floor per
+  binary and per run (min over 15 compiles of `a`) and reports the aggregate
+  both raw and net of it, because a raw aggregate over cheap patterns compares
+  the two arms' `fork`. Its docstring carries the two lessons this cost round
+  produced: never time pcrec from a shell loop with `date` (the note's
+  original table read 0.12 s for everything, which was the shell's overhead
+  and hid a 100x prototype defect by making every cheap compile look
+  identical), and subtracting a floor does not create resolution — on the
+  555-pattern corpus the net swings through zero between trials, so **the
+  corpus is priced with the COUNTERS** (`k18_stats.py` + `inflation.py`), not
+  the clock. Use the clock for patterns costing milliseconds or more.
 
 - `r23_semantics/` — the R23 panel's semantics-critic toolkit, archived as
   evidence (see its README): the S16 stack-fix prototype, shadow/dup
