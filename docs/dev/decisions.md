@@ -3894,3 +3894,37 @@ implementation substeps open as soon as it lands; and disagreements
 discovered while building are resolved toward getting it running, then
 recorded for the post-run review, rather than re-litigated at design
 altitude first.
+
+## D45 — generated-code compile time is a BOUNDED RESOURCE: every harness compile of emitted C runs under a timeout, and a timeout is a FAILURE (Frank, 2026-08-15, twenty-first session)
+
+Ruled live after tests/vm's `bigbounded` case (`((a)|b){0,4000}c`, whose
+emitted C is 113,545 lines / 3.5 MB — the bounded repeat replicates its
+body 4000 times) pegged cc1 for 100+ minutes under `-fsanitize=undefined`
+during a battery, and the plain `-O2` compile of the same file is itself
+minutes-long. The hang was invisible precisely because no compile had a
+bound: an unbounded compile reads as "still running", never as "failed".
+
+The decision: every compile of GENERATED code in the test infrastructure
+(harness, codegen, vm, mech, fuzz, bench drivers — the SAN-1 GENCFLAGS
+compile-site audit enumerates the sites) is wrapped in a timeout;
+exceeding it is a loud test FAILURE naming the case, never a hang and
+never a silent skip. Frank's calibration: "anything over 60 seconds is a
+failure ... and i'm being generous with 60s. maybe 5s" — a normal
+generated-artifact compile is sub-second. Defaults: 5s on the plain axes,
+60s on sanitizer axes (instrumentation is legitimately slower), both
+env-overridable (GENTIMEOUT / GENTIMEOUT_SAN) for slow boxes.
+
+Two consequences deliberately attached:
+1. The pathological case class itself (emitted-C SIZE from bounded-repeat
+   replication) is a real compiler defect surface: PCREC_MAX_VM_NODES
+   refused {0,65535} but let {0,4000} emit 3.5 MB. The cap must ALSO
+   bound total replicated output size — assigned with the bigbounded
+   follow-up; the compile-time bound is the harness-side guard, the size
+   bound is the compiler-side one, and they are different obligations.
+2. A timeout FAILURE is evidence, not noise: it pins the compile-time
+   regression class the way the ratchet pins behavior — new emitter work
+   that makes gcc superlinear now fails fast in make test instead of
+   hanging a battery for hours.
+
+Revisit-when: a legitimate generated artifact is measured needing >5s
+plain (then raise with the measurement recorded here, not silently).
