@@ -41,15 +41,36 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # ---- 1. the budget, per axis and per override ---------------------------
-b_plain="$(GENCFLAGS='-O1 -std=gnu11' gen_timeout_secs)"
-b_san="$(GENCFLAGS='-O1 -fsanitize=undefined' gen_timeout_secs)"
-b_tsan="$(GENCFLAGS='' TSANFLAGS='-fsanitize=thread' gen_timeout_secs)"
-b_env="$(GENTIMEOUT=9 GENCFLAGS='-O1' gen_timeout_secs)"
-b_envs="$(GENTIMEOUT_SAN=99 GENCFLAGS='-fsanitize=address' gen_timeout_secs)"
-if [ "$b_plain" = "5" ] && [ "$b_san" = "60" ] && [ "$b_tsan" = "60" ]; then
-    ok "D45 budgets: 5s plain, 60s sanitizer, and the axis is read from the FLAGS (GENCFLAGS or TSANFLAGS), so a site never has to declare which axis it is on"
+#
+# Every scenario states its COMPLETE environment, all six variables, rather
+# than setting the one it cares about and inheriting the rest.
+#
+# That is not tidiness. `gen_timeout_secs` reads GENCFLAGS, CFLAGS, SANFLAGS
+# AND TSANFLAGS, so under `make ubsan`/`make asan` the ambient environment
+# already carries `-fsanitize=` in several of them — and a "plain axis"
+# scenario that sets only GENCFLAGS INHERITS THE VERY AXIS IT IS SIMULATING
+# and reports 60 where it asserted 5. These checks failed exactly that way on
+# the sanitizer legs of the composed battery while passing on the plain one: a
+# unit check that reads its own ambient state is not a unit check.
+#
+# The checks BELOW this section deliberately do NOT do this — they compile real
+# artifacts and should follow whichever axis the suite is actually running on.
+axis() {   # axis <GENCFLAGS> <CFLAGS> <SANFLAGS> <TSANFLAGS> <GENTIMEOUT> <GENTIMEOUT_SAN>
+    GENCFLAGS="$1" CFLAGS="$2" SANFLAGS="$3" TSANFLAGS="$4" \
+    GENTIMEOUT="$5" GENTIMEOUT_SAN="$6" gen_timeout_secs
+}
+b_plain="$(axis '-O1 -std=gnu11' '' '' '' '' '')"
+b_gen="$(axis '-O1 -fsanitize=undefined' '' '' '' '' '')"
+b_cf="$(axis '-O1' '-fsanitize=address' '' '' '' '')"
+b_san="$(axis '-O1' '' '-fsanitize=undefined' '' '' '')"
+b_tsan="$(axis '-O1' '' '' '-fsanitize=thread' '' '')"
+b_env="$(axis '-O1' '' '' '' 9 '')"
+b_envs="$(axis '-fsanitize=address' '' '' '' '' 99)"
+if [ "$b_plain" = "5" ] && [ "$b_gen" = "60" ] && [ "$b_cf" = "60" ] \
+   && [ "$b_san" = "60" ] && [ "$b_tsan" = "60" ]; then
+    ok "D45 budgets: 5s plain, 60s sanitizer, and the axis is read from ANY of the four flag variables (GENCFLAGS/CFLAGS/SANFLAGS/TSANFLAGS), so a site never has to declare which axis it is on"
 else
-    bad "D45 budgets wrong: plain=$b_plain san=$b_san tsan=$b_tsan (expected 5/60/60)"
+    bad "D45 budgets wrong: plain=$b_plain gencflags=$b_gen cflags=$b_cf sanflags=$b_san tsanflags=$b_tsan (expected 5/60/60/60/60)"
 fi
 if [ "$b_env" = "9" ] && [ "$b_envs" = "99" ]; then
     ok "D45 budgets: GENTIMEOUT / GENTIMEOUT_SAN override, per the ruling's slow-box escape"
@@ -62,11 +83,17 @@ fi
 # A real artifact, deliberately near the compiler-side cap, under a
 # deliberately tiny budget. Using a real one matters: a `sleep` stub would
 # prove `timeout` works, not that this wrapper is wired into a compile.
+#
+# HERMETIC for the same reason as section 1 — this scenario is "the plain axis
+# with a 1s budget", and inheriting an ambient `-fsanitize=` would silently
+# make the budget 60s and the compile succeed, turning a positive control into
+# a vacuous pass on exactly the axes it most needs to hold.
 mkdir -p "$WORKDIR/slow"
 if ! "$PCREC" -p rx -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     bad "gen-timeout: could not build the positive-control artifact"
 else
-    if GENTIMEOUT=1 GENCFLAGS='-O2 -std=gnu11' \
+    if GENCFLAGS='-O2 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
+       GENTIMEOUT=1 GENTIMEOUT_SAN='' \
        gen_cc "the positive control" "$CC" -O2 -std=gnu11 -c -o /dev/null "$WORKDIR/slow/gen.c"; then
         bad "gen-timeout: a compile that must exceed a 1s budget returned SUCCESS — the wrapper is not applying the timeout"
     else
