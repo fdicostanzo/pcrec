@@ -246,13 +246,84 @@ a small integer context id, so the memo key is two ints. Then:
   **STRUCTURAL:** a thread's future depends only on its NFA state, so the
   first (highest-priority) occurrence is the only one that can matter.
 
-**The stack is a stack, not a set.** The open loops on any path are properly
-nested, so the loop re-arrived at is always the TOP of the stack. That is an
-assumption the prototype could have hidden, so it is instrumented instead: the
-prototype counts every redirect where the open loop was NOT the stack top.
-**MEASURED: 0, over 555 corpus patterns and 52 adversarial patterns**, including
-every nesting family up to 60 levels deep. The rewrite should keep that counter
-as an assertion rather than delete it.
+**Which of "set" and "stack" is the invariant. [R23 S13.]** This section's
+heading says the memo is keyed on (state, open-loop-SET) and the prototype
+interns an ordered CHAIN — `lctx_intern(ctxs, parent_ctx, loop)`, so two paths
+holding the same loops in a different ORDER get different context ids. They
+are not the same thing and the note owes a statement of which is which:
+
+* **The SET is the invariant.** Correctness asks one question — "is this loop
+  entry open on the path that reached it?" — and that is set membership. Every
+  claim in §1 and §3 is a claim about the set.
+* **The ordered chain is the implementation**, chosen because the redirect must
+  truncate the stack to the re-arrived loop's POSITION (which needs an order)
+  and because interning a chain is one hash probe per push where interning a
+  set is not.
+* **They coincide exactly while loop nesting is proper**, which it is today.
+  If a future construct ever broke proper nesting, the chain would
+  over-distinguish contexts (a cost bug: more contexts than the set needs) and
+  the truncate-to-index would land in the wrong place (a correctness bug). The
+  `nonstacktop` counter below is the standing check on the coincidence, and it
+  is the only thing that would notice.
+
+**The stack invariant, stated explicitly, and measured on the fixed
+prototype.** *Every redirect must find the re-arrived loop at the TOP of the
+open-loop stack* — `at == depth - 1` at every redirect. The prototype counts
+violations rather than assuming none.
+
+| corpus | patterns | `nonstacktop > 0` on |
+|---|---|---|
+| 8 corpora: the note's 622 + 70 adversarial + 6 independently-generated families | 2,475 | **0** |
+| random-grammar corpus, seed 20260815 | 4,000 | **0** |
+| **the same 2,475 against the UNFIXED prototype (non-vacuity control)** | 2,475 | **30** |
+| the note's OWN corpora only, against the UNFIXED prototype | 691 | **0** |
+
+**MEASURED: 0 over 6,475 patterns**, at open depths to 251 and 93 million
+redirects, with 0 compile timeouts at 180 s. The rewrite should keep that
+counter as an assertion — **and this note previously told it to do so on
+evidence that could not have failed.**
+
+That last row is the finding. The original cell read "MEASURED: 0, over 555
+corpus patterns and 52 adversarial patterns", and the panel reproduced that 0
+exactly — then fired the same counter 358 times over 4,369 patterns of its own
+(S10), because this lane's generator tops out at two loop levels and the
+failure needs three under a `{0,2}`. A rewrite following §2a and §5 literally
+would have shipped an assertion that aborts the compiler on a 28-character
+regex. The reason it fires is the stack-entry bug above (S3): a clobbered
+entry makes the scan find its loop at the wrong index, or miss it entirely.
+With the entries restored the invariant is sound and the cell is true as
+written — but it is true now because the prototype was fixed, not because the
+original measurement was right. **A cell measured on a corpus that cannot
+reach the failure is not a measurement of the design; it is a measurement of
+the corpus.**
+
+Two further disclosures the original numbers owed:
+
+* **The "52 adversarial patterns" were 52 of 70. [R23 M-B1.]** The `altnest`
+  and `k18nest` families — the two named after K18's own shape, the ones most
+  on-point for "does the open-loop invariant survive K18-shaped nesting" —
+  appended the outer `*` to a body already ending in `?`, so all 18 of their
+  patterns were `?*` and every engine rejected them. They contributed ZERO
+  patterns to this cell and to every other adversarial figure in the note.
+  Nothing disclosed it: `k18_stats.py` printed `refused=18` on stderr exactly
+  to prevent this, and the number never reached the prose. The generator is
+  fixed, all **70 of 70** now compile (`refused=0`), and the table above is
+  measured on all of them.
+* **`nonstacktop` is necessarily self-instrumented** — the counter lives
+  inside the prototype whose invariant it checks, because there is no external
+  oracle for "was the open loop ever not the stack top". The panel flagged
+  that as the one place independence is structurally impossible (M-O2), and
+  S10 then demonstrated exactly the risk the flag named. The mitigation is not
+  independence, which is unavailable, but the non-vacuity control in the table
+  above: a corpus on which the counter is known to FIRE, run against the
+  binary that is supposed to make it stop.
+
+**And the assertion is not sufficient on its own.** `nonstacktop` measured 0
+on the corrupted stack for a mechanical reason (S9, recorded in §3): the slot
+the clobber overwrites is the slot of the loop whose redirect is then missed,
+so the scan still finds its match at the top. §3's termination proof rests on
+a DIFFERENT invariant — the stack holds no repeats — and §5 item 6 therefore
+requires both assertions.
 
 **The tail recursion does not deepen.** The push for a loop's body has to be
 undone when the walk leaves the loop, and the obvious way to arrange that is to
@@ -292,26 +363,36 @@ figure in this section has been re-taken on it.
 
 #### Cost: what the open-loop set actually costs
 
-The open set's cardinality is the loop-NESTING depth. **MEASURED**, over the
-555 compiling corpus patterns (`summarise.py`):
+The open set's cardinality is the loop-NESTING depth. **MEASURED** on the
+FIXED prototype, over the 555 compiling corpus patterns (`summarise.py`):
 
-| max open-set size | 0 | 1 | 2 | 3 | 4 | 5 |
-|---|---|---|---|---|---|---|
-| patterns | 353 | 176 | 17 | 7 | 1 | 1 |
+| max open-set size | 0 | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|---|
+| patterns | 353 | 176 | 17 | 8 | 1 |
 
-So the brief's question — "is real nesting depth ever >3?" — answers **twice in
-555**, and those two are `(b*?(a*|b*)*)*` and `(?:b*?(?:(?:a*)*)*)*`, both of
-which are K17's own guard-test patterns rather than anything a user wrote.
-Distinct contexts per pattern: 353 patterns need exactly 1 (the empty one), and
-the maximum over the whole corpus is **19**.
+So the brief's question — "is real nesting depth ever >3?" — answers **once in
+555**, on `(?:b*?(?:(?:a*)*)*)*`, which is one of K17's own guard-test patterns
+rather than anything a user wrote. Distinct contexts per pattern: 353 patterns
+need exactly 1 (the empty one), and the maximum over the whole corpus is
+**13**. (The unfixed prototype reported one pattern at depth 5 and a corpus
+maximum of 19 contexts; the extra depth and the extra contexts were the
+corruption, on the corpus as much as on the deep-nesting families.)
 
 The memo's inflation over the shipped walk, same patterns, same counters
-(`inflation.py`):
+(`inflation.py`, 554 patterns compared, 0 dropped as one-sided):
 
 | | aggregate | p50 | p90 | p99 | max | unchanged |
 |---|---|---|---|---|---|---|
-| states expanded | **x1.006** | 1.00 | 1.00 | 1.29 | 1.76 | 527 / 554 |
-| states visited | **x1.001** | 1.00 | 1.00 | 1.05 | 1.65 | 482 / 554 |
+| states expanded | **x1.004** | 1.00 | 1.00 | 1.29 | 1.40 | 527 / 554 |
+| states visited | **x0.996** | 1.00 | 1.00 | 1.05 | 1.22 | 482 / 554 |
+
+Visits now come in slightly UNDER the shipped compiler in aggregate (127,197
+against 127,766), which is not a rounding artifact and is worth one sentence:
+the path-sensitive redirect ENDS walks the global memo lets continue, so on the
+patterns where the two differ the exact rule sometimes does strictly less work.
+The worst per-pattern case is 1.40x expansions on `(?:b*?(?:(?:a*)*)*)*`. This
+is the figure quoted as the reason the design is affordable, so it is the one
+the panel asked to see re-taken; it improved.
 
 #### The deep-nesting worst case, re-measured [R23 S16, M-m1]
 
@@ -517,12 +598,22 @@ grepping every `.loop` assignment: there is exactly one, at nfa.c:122, and the
 
 **It is cheap and it works — on the acceptance corpus.** **MEASURED:** 165/165
 on the K18 corpus, 1704/1704 on the full `.rxt` suite, and compile time
-indistinguishable from the shipped build on every family measured — the
-fuzz-found pattern at 0.62 s against the shipped 0.61 s, and nested nullable
-stars at depth 100 and 200 at 0.11 s where the recommended design costs 1.6 s
-and 20.5 s. **On cost, B beats A2 outright**, which is worth stating plainly
-rather than burying: if exactness were not the deciding axis, B would be the
-recommendation.
+indistinguishable from the shipped build on every family measured. Re-taken on
+the 0.9 ms-floor harness against the FIXED A2, nested nullable stars:
+
+| nesting depth | 100 | 200 | 250 (the cap) |
+|---|---|---|---|
+| shipped | 0.0011 s | 0.0017 | 0.0025 |
+| B | 0.0011 s | 0.0019 | 0.0020 |
+| A2, as designed | 0.0450 s | 0.2157 | 0.3541 |
+
+**On cost, B still beats A2**, and that is worth stating plainly rather than
+burying: if exactness were not the deciding axis, B would be the
+recommendation. But the stakes changed with the stack fix and the note should
+not keep quoting the old ones. This section originally set B's 0.11 s against
+"the recommended design costs 1.6 s and 20.5 s"; the real comparison is 2 ms
+against a third of a second, at the deepest pattern the parser will accept. B
+wins a race in which both candidates finish before a human notices.
 
 **And it is not exact, which is why it is rejected.** A and B were compared by
 emitted source over the 18,858-pattern shape space: **18,775 byte-identical,
