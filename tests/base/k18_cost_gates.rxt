@@ -40,6 +40,18 @@
 # oracles agreeing on every cell (D44's three-way rule).
 
 # The fuzz-found witness: must be REFUSED cleanly, and must get there fast.
+#
+# `# pcre2-only` is doing something unusual here and the reason has to be
+# written down. Everywhere else in this corpus the directive means "python re
+# reads this pattern differently"; here BOTH oracles accept the pattern
+# happily and it is PCREC that refuses it — on the DFA state cap, which is a
+# RESOURCE refusal with a clean diagnostic (D22's prescription for a
+# legitimate-but-extreme pattern), not a syntax error. verify_rxt.py's `perr`
+# branch asks whether python also fails to compile, which is the wrong
+# question for this block; the directive skips exactly that check while
+# run.sh still asserts the refusal, and the refusal has to happen inside the
+# harness's pcrec budget, which is the gate.
+# pcre2-only
 pattern (1{0,30}?[^]abc][^abc]){28,30}0+|a
 perr
 

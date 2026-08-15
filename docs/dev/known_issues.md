@@ -1410,10 +1410,22 @@ Three properties of the implementation are worth reading before editing it:
   where the conflation happens at a SPLIT rather than an ε. This is the file
   that matters most: the cheap two-line candidate repair passes all 165 of the
   acceptance cases and gets all 98 of these cells wrong;
-* `k18_deep_nesting.rxt` — 6 patterns / 18 cases, the resource guard above.
+* `k18_deep_nesting.rxt` — 8 patterns / 24 cases, the resource guard above;
+  also the deliberate GROW-PATH test for the three tables the repair adds
+  (31,627 contexts against initial capacities of 64 and 256), which neither
+  the corpus nor the fuzzer would otherwise drive past their first
+  allocation;
+* `k18_cost_gates.rxt` — 6 patterns / 29 cases whose point is COMPILE TIME
+  rather than spans, riding the harness's own per-invocation pcrec budget:
+  the fuzz-found witness that caught the design prototype's 7x
+  constant-factor regression on byte-identical work (a `perr` block — every
+  binary refuses it on the DFA state cap AFTER building 32,000 states), and
+  bounded-repeat × nullable-loop swept in k, the family that runs at
+  open-loop depth 1 and would therefore be invisible to any depth-based gate.
 
-1,294 new cases, every expectation generated from python3 `re` AND libpcre2
-10.46 with **zero disagreements** (D44's three-way rule).
+1,329 new cases, every expectation generated from python3 `re` AND libpcre2
+10.46 with **zero disagreements** (D44's three-way rule). The full `.rxt`
+corpus goes **1,704 → 3,198 cases**.
 
 **Non-vacuity, per file, measured by running the PRE-FIX compiler against the
 new corpus** — a guard corpus its own bug passes is a control that could not
@@ -1424,13 +1436,26 @@ have failed:
 | `k18_empty_exit_through_seen_eps.rxt` | 165 | 26 | 0 |
 | `k18_arm_order.rxt` | 667 | **62** | 0 |
 | `k18_split_shapes.rxt` | 609 | **63** | 0 |
-| `k18_deep_nesting.rxt` | 18 | 0 | 0 |
+| `k18_deep_nesting.rxt` | 24 | 0 | 0 |
+| `k18_cost_gates.rxt` | 29 | 0 | 0 |
 
-The deep-nesting file is the deliberate exception and is marked as such: it
-guards a RESOURCE class, so its failure mode is a stack overflow under `make
-asan`, not a wrong span. It was sabotage-validated in that direction instead —
-the design's own prototype, built with the identical asan flags, dies with
-`stack-overflow` on the 250-deep block that the shipped repair compiles.
+The last two files are the deliberate exceptions and are marked as such: they
+guard RESOURCE classes, so their failure modes are a stack overflow under
+`make asan` and a blown compile budget, not a wrong span. They are
+sabotage-validated in those directions instead — the design's own prototype,
+built with the identical asan flags, dies with `stack-overflow` at nesting
+depth 210 and 250 where the shipped repair compiles both (0.84 s at 250 under
+asan), and the same prototype takes 13.5 s on the cost file's `perr` witness
+against the shipped 0.62 s.
+
+The K18 fuzz TRAP TEMPLATES (`tests/fuzz/fuzz.py`, nine rows beside K17's
+six) are validated the same way and in the direction that matters:
+exhaustively expanded they give 64 distinct patterns / 543 cells, **56
+divergences against the pre-fix compiler and 0 against the fixed one**. Both
+fuzzer seeds run to completion on the fixed compiler with 0 content
+divergences, 0 accept/reject divergences and **0 pcrec compile timeouts of
+400 patterns each** — a compile that never finishes is invisible to a
+differential that compares answers, so the budget is reported as a count.
 
 **Validation.** Emitted-source blast radius against the pre-fix compiler:
 **622 corpus patterns, 555 accepted by both, 547 byte-identical, 8 differing,
@@ -1440,7 +1465,8 @@ lane's dense 18,858-pattern shape space: 18,609 identical, **249 differing**.
 Changed-cell direction against python3 `re`, both sweeps: **251 changed cells,
 251 old-wrong → new-right, 0 regressed, 0 both-wrong** (226 on the shape
 space, reproducing §4.3 digit for digit; 25 on the eight corpus patterns).
-Full `make test` green with the corpus grown by 1,294 cases; `make strict`,
+Full `make test` green with the corpus grown by 1,494 cases (the 1,329 new
+plus the 165 activated); `make strict`,
 `make ubsan`, `make asan` (the deep-nesting case included), `make lint`,
 `make bench`, `make mech` green; the trie-identity gate run explicitly, since
 a path-sensitive closure over an epsilon graph the M2.8 trie CHANGES is

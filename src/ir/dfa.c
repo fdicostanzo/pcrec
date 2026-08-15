@@ -486,9 +486,10 @@ static void clo_walk(Clo *cl, int s)
                 }
                 /* Lazy: t1 is the EXIT and runs at this context; t2 is the
                  * body, so the deferred branch opens the loop when it
-                 * resumes. Opening it there rather than now is what keeps the
-                 * context set identical to the recursive formulation's -- a
-                 * path that never reaches the body never mints its context. */
+                 * RESUMES rather than now. That ordering is deliberate: a
+                 * walk that never gets back to the body -- because the exit
+                 * branch reached ACCEPT and pruning cut everything below it
+                 * -- never mints the body's context at all. */
                 cont_push(cl->ks, st->t2, ctx, s);
                 s = st->t1;
                 continue;

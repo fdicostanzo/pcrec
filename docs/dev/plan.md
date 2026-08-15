@@ -151,7 +151,7 @@ stated terms.
   deliberate), mech 44 rows/0 undetected. Standing consequences:
   [M4.6] gate = K18 design-first — **DISCHARGED 2026-08-15**, design
   note paneled (R23) and BUILT by the k18-rewrite lane ([K18-FIX] in
-  plan_completed.md; corpus 1704 → 3163); [ENG-BREP] alongside it;
+  plan_completed.md; corpus 1704 → 3198); [ENG-BREP] alongside it;
   struct rx_info spelling + K19 residual rulings open with Frank.
 - [ENG-BREP] STATE:not-started — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue

@@ -1859,10 +1859,11 @@ Known M1 limitations (tracked for later milestones):
   depth was rejected as a D46-observable selection point for a class that
   compiles in 0.37 s; deliberate stack sizing is unavailable in a library.
 
-  All thirteen §5 items discharged. Corpus 1704 → 3163 cases (+1459: the
-  165 activated from `tests/known_fail/` plus 1,294 new on the arm-order,
-  `{0,2}`-split and deep-nesting axes, every expectation agreed by python3
-  `re` AND libpcre2 10.46). Blast radius: 547 identical / 8 differing of
+  All thirteen §5 items discharged. Corpus 1704 → 3198 cases (+1494: the
+  165 activated from `tests/known_fail/` plus 1,329 new on the arm-order,
+  `{0,2}`-split, deep-nesting and cost-gate axes, every expectation agreed by
+  python3 `re` AND libpcre2 10.46, and the nine K18 fuzz trap rows validated
+  at 56 divergences pre-fix / 0 post-fix). Blast radius: 547 identical / 8 differing of
   555 compiling corpus patterns, the 8 exactly the K18 shapes; 249 of
   18,858 shape-space patterns. Direction: 251 changed cells, 251
   old-wrong → new-right, 0 regressed, 0 both-wrong. Non-vacuity measured
