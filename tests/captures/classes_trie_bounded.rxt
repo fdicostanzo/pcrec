@@ -1,0 +1,126 @@
+# tests/captures/classes_trie_bounded.rxt — [M4.5e] close-lane coverage fill.
+#
+# A targeted assessment against the base tier's construct list (docs/dev/
+# plan.md [M4.5e]) found the existing corpus (basic.rxt + the three D27
+# territory files) thin or absent in three places, and adequate everywhere
+# else it was checked (caseless via -i: 2 cases already; anchors ^/$: covered
+# by zw-03/zw-04/alt-priority-06/anchor-01; startpos: covered by basic.rxt's
+# `ms` case plus five anchor-0X-startpos cases) — those are NOT repeated
+# here.
+#
+#   CLASSES: every existing capture case that touches module `classes` uses
+#   `\d` only (basic.rxt's `(\d+)-(\d+)`, structure_anchors_misc.rxt's
+#   `classes-bounded`). No bracket expression `[...]` — base grammar, no
+#   module needed — ever appears inside a capturing group anywhere in the
+#   corpus, and neither does `\w`/`\s`.
+#
+#   TRIE-SHAPED ALTERNATIONS: the corpus's largest alternation under a
+#   capturing group is 3-way (`(a)|(b)|(c)`, unset-06-three-way). The trie
+#   prefix-factoring pass (M2.8, src/ir/nfa.c) is proved output-preserving
+#   independently (tests/codegen/run_trie_identity.sh, 500 generated
+#   patterns) and never touches the VM's own alt-chain emission (emit_vm.c's
+#   vm_alt walks the SAME AST directly, no trie involved) — so what is
+#   actually missing is confidence that the VM's alt-chain gets captures
+#   right at a branch count and prefix-sharing shape beyond the smallest
+#   cases, not a trie-specific correctness question.
+#
+#   BOUNDED REPEATS AT THE K19 CAP BOUNDARY: every bounded-repeat capture
+#   case in priority_and_iteration.rxt (iter-19..iter-27) uses a body with NO
+#   alternation, so none of them ever engages replication at all — a bounded
+#   repeat over a single-path body compiles to the §2.5 span-loop cursor
+#   regardless of its count (tests/vm/run_vm_tests.sh's `spanok` case).
+#   PCREC_MAX_VM_REPEAT_COPIES=64 (docs/dev/known_issues.md K19) only
+#   applies to a bounded repeat over a CHOICE-BEARING body, and no existing
+#   capture case has one anywhere near that count (run_vm_tests.sh's own
+#   bigbounded/smallbounded pair, {0,20}/{0,3}, is a codegen-size check, not
+#   a captures.rxt case, and neither approaches 64).
+#
+# Every expectation below is oracle-verified against python3 `re` AND
+# checked against the real build/pcrec VM output before landing (same
+# double-check basic.rxt's own header describes). All slots here are LIVE
+# (`g`, not `gp`): every pattern below is captures-default, so it compiles
+# to the VM (RX_NCAPS > 1) on every build this corpus runs against — no
+# DFA-only pending case applies post-[M4.5b].
+
+# ---- classes: bracket expressions, never exercised inside a capture -------
+
+# case: classes-b01-bracket-range
+pattern ([a-z]+)
+# a bracket range, not \d -- base grammar, no module needed
+m "abc123" 0 3
+g 0 0 3
+g 1 0 3
+
+# case: classes-b02-negated-bracket
+pattern ([^0-9]+)
+# negated bracket class
+m "abc123" 0 3
+g 1 0 3
+
+# case: classes-b03-inline-class
+pattern (a[bc]d)
+# a small in-line class as one element of a literal run, sandwiched inside
+# other text on both sides
+m "xacdx" 1 4
+g 1 1 4
+
+# case: classes-b04-w-s-two-groups
+pattern (\w+)\s(\w+)
+features classes
+# \w and \s together, two groups separated by the class that matches neither
+m "hello world" 0 11
+g 1 0 5
+g 2 6 11
+
+# case: classes-b05-caseless-bracket
+pattern ([a-z]+)
+flags i
+# a bracket class made case-insensitive: covers the classes gap and the
+# caseless tier together rather than as two separate near-duplicate cases
+m "ABCxyz" 0 6
+g 1 0 6
+
+# ---- trie-shaped alternations: beyond the corpus's existing 3-way cap -----
+
+# case: trie-01-shared-prefix-5way
+pattern (cat|car|carpet|dog|do)
+# 5-way alternation with TWO disjoint shared-prefix families ("ca-", "do-"),
+# each family itself ordered shorter-before-longer -- exactly
+# run_trie_identity.sh's rule-1 shape (a branch that ENDS at a shared prefix
+# node competes with a longer branch continuing through it), now checked
+# with the alternation inside a CAPTURING group instead of a bare match.
+m "carpet" 0 3
+g 1 0 3
+m "cat" 0 3
+g 1 0 3
+m "dog" 0 3
+g 1 0 3
+m "dolly" 0 2
+g 1 0 2
+
+# case: trie-02-disjoint-4way
+pattern (dog|cat|bird|fish)
+# a 4-way alternation with no shared prefixes at all -- the companion shape
+# to trie-01, at the same branch count tests/codegen/CLAUDE.md's own
+# 4-branch trie-eligibility control uses, captured instead of bare
+m "fish" 0 4
+g 1 0 4
+
+# ---- bounded repeats at the K19 replication-cap boundary -------------------
+
+# case: bounded-k19-01-at-cap
+pattern ((a)|b){0,64}c
+# a CHOICE-BEARING body ((a)|b) at exactly 64 repetitions -- the largest
+# count PCREC_MAX_VM_REPEAT_COPIES allows before D45/K19's pre-emission
+# refusal fires (checked separately, at 65, by tests/vm/run_vm_tests.sh's
+# PCREC_MAX_VM_REPEAT_COPIES case, which asserts only that the artifact
+# compiles -- this case asserts what it COMPUTES). 20 real iterations of
+# alternating a/b, one char consumed per copy: the LAST iteration (index 19,
+# 'b') writes only group 1 (the outer group wraps both branches); the
+# iteration before it (index 18, 'a') was the last one to take the 'a'
+# branch and write group 2, and that value persists through the final 'b'
+# iteration, which never touches it -- ordinary "unwritten slots retain
+# their last value" behaviour (S3.2), now checked at the replication cap.
+m "ababababababababababc" 0 21
+g 1 19 20
+g 2 18 19

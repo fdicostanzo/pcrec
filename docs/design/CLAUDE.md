@@ -260,7 +260,18 @@ append-only or historical records.
   `docs/dev/reviews/2026-08-14-r21-m4-design.md` and this document's own
   panel-outcome block. Dispositions APPLIED; [M4.3] CLOSED
   2026-08-14 (these two remain design inputs; the applied surface is
-  match_api_m4.md, now FROZEN as the working baseline).
+  match_api_m4.md, now FROZEN as the working baseline). **D46 (2026-08-15,
+  twenty-first session):** every strategy-selection point (engine, cursor-
+  ladder rung, bounded-repeat strategy once [ENG-BREP] lands, prefilter
+  on/off, islands) must be OBSERVABLE and FORCEABLE. §5.5's `RX_ENGINE`/
+  `RX_ENGINE_WHY` pair is D46's own worked example of the observability
+  half; [M4.5e] extends the family to the cursor-ladder rung — but as a
+  BITMASK (`<PREFIX>_VM_RUNGS`, src/gen/CLAUDE.md), not a same-shaped
+  scalar macro, because the rung is selected PER QUANTIFIER BODY and a
+  single value would misreport a pattern whose quantifiers land on
+  different rungs (corrected mid-lane from an initial scalar draft) — the
+  observability half only, landed as this document's close obligation.
+  Rung FORCING (D46's controllability half) has no producer yet.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

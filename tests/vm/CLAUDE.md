@@ -54,7 +54,21 @@ the other:
   `make test`'s lines). Drives each bound to ITS OWN limit, reads the stamps
   and then triggers the error they describe, checks the selection surface,
   and runs the oracle sweep. `bash tests/vm/run_vm_tests.sh full` swaps the
-  quick sweep for the full one.
+  quick sweep for the full one. **[M4.5e] §5** asserts the D46 rung stamp —
+  a BITMASK (`<PREFIX>_VM_RUNGS`, named bits `_VM_RUNG_CURSOR`/
+  `_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`), because the rung is selected PER
+  QUANTIFIER BODY and a scalar would lie on a pattern that mixes them (the
+  design's own first draft was corrected mid-lane for exactly this) — on
+  the section's own existing rung-adjacent pairs (exact/residual,
+  bigbounded/smallbounded), a dedicated 33/70-nested-capture-groups pair
+  pinning the `VM_MAX_BODY_CAPS=64` selection boundary directly, a
+  deliberately THREE-WAY-MIXED pattern (`a*(a|b){0,3}c((x)|y)+z`) checking
+  both the exact mask AND all three of `--emit-ir`'s new per-quantifier
+  `RUNGS` section rows — the case a per-artifact scalar could never have
+  gotten wrong because it never had more than one bit to report — and an
+  inline positive control (not a `tests/mech` sabotage — see below) proving
+  the mask assertion actually fails on a corrupted stamp rather than
+  passing vacuously.
 
 ## §4.7's ordering rule is checked as a CONTRAST, not an assertion
 
@@ -134,6 +148,14 @@ friends; the fifth (S40) belongs to the §5.4 gate in `tests/codegen/`. Read
 the numbers from a matrix run, never from prose here — that is [MECH-1]'s
 whole founding argument, and this project has had a hand-copied figure go
 stale twice in a single review.
+
+**[M4.5e]'s D46 stamp control is INLINE, not a `tests/mech` sabotage** — a
+single boolean property of one assertion shape (`assert_rungs` in
+`run_vm_tests.sh` §5), not a figure worth a matrix row. It corrupts a real
+artifact's own `<PREFIX>_VM_RUNGS` hex value (`0x1` → `0x4`, i.e. cursor →
+frames-unbounded) and re-runs `assert_rungs` against the corrupted copy,
+proving the shape fails on a lie rather than passing vacuously. Not counted
+in the "four" above.
 
 Two of the five are not invented failures. S38 (an empty iteration rolled back
 instead of taking the loop's exit) and S39 (the span-loop cursor emitting its
