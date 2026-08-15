@@ -4,6 +4,30 @@
  *
  *     match <start> <end>
  *     nomatch
+ *     giveup steps | giveup frames
+ *
+ * The third line is [K21-class fix, 2026-08-15]: `rx_search`'s return is
+ * THREE-valued, not boolean (1 match, 0 no-match, a negative
+ * RX_ERR_STEPS/RX_ERR_FRAMES give-up sentinel on a VM artifact's budget
+ * exhaustion — a DFA artifact never returns one). The ORIGINAL version of
+ * this loop tested the result with `if (rx_search(...))`, which is
+ * C-truthy on a negative return too, so a give-up took the match branch
+ * and printed `caps`, which the give-up path never writes — uninitialized
+ * stack reported as a confident match. Same bug shape, same fix pattern,
+ * as three other readers of this API: tests/fuzz/fuzz_driver.c (fixed,
+ * fuzzfix arc), tests/harness/driver.c (fixed alongside this file,
+ * 2026-08-15), and src/gen/emit_dfa.c's `pcrec_emit_main`
+ * (docs/dev/known_issues.md K21, the CLI's `--emit-main`). NOTE the
+ * `89ccd89` "sibling" fix in THIS file predates this one and fixed a
+ * DIFFERENT bug (the `caps[RX_NCAPS][2]` stack-array sizing hazard below)
+ * — it did not touch this truthiness check, so this file was genuinely
+ * still open until now; see known_issues.md's K21 "Class closure" note.
+ * `pc4_check.c` (the libpcre2 side) treats a `giveup` line as a
+ * NON-COMPARABLE outcome, symmetric to its own `mlimits` bucket for
+ * libpcre2's own give-up — never entered into the match/nomatch agreement
+ * check as a fabricated verdict, counted separately, and asserted zero
+ * (PC-4's pattern space is DFA-only today, so this is dormant: nothing in
+ * run_pc4.sh selects `--engine=vm` or a tiny budget).
  *
  * Subjects are embedded from pc4_subjects.h — the same header pc4_check.c
  * (the libpcre2 side) embeds — so a subject-set drift between the two
@@ -47,10 +71,13 @@ int main(void)
     for (int i = 0; i < (int)PC4_NSUBJ; i++) {
         size_t len;
         const unsigned char *s = pc4_subject(i, &one, &len);
-        if (rx_search(s, len, 0, caps))
+        int found = rx_search(s, len, 0, caps);
+        if (found == 1)
             printf("match %td %td\n", caps[0][0], caps[0][1]);
-        else
+        else if (found == 0)
             printf("nomatch\n");
+        else
+            printf("giveup %s\n", found == RX_ERR_STEPS ? "steps" : "frames");
     }
     free(caps);
     return 0;

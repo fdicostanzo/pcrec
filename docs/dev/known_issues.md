@@ -1480,12 +1480,13 @@ tests/, scripts/, docs/ for a parser that would choke on the new third
 line — the existing green tests never reached the give-up path before
 this fix.
 
-**Class closure (2026-08-15, same lane, on review request).** K21 is one
-instance of a recorded SHAPE — `if (rx_search(...))`, testing a
-three-valued return as a boolean, so a negative give-up sentinel takes
-the match branch under C truthiness — not a one-off in `pcrec_emit_main`
-alone. Per the K20 lesson (record against the shape, not the site), the
-other known readers of `rx_search`'s return were surveyed:
+**Class closure (2026-08-15, same lane, on review request; 4 of 4
+fixed).** K21 is one instance of a recorded SHAPE — `if (rx_search(...))`,
+testing a three-valued return as a boolean, so a negative give-up
+sentinel takes the match branch under C truthiness — not a one-off in
+`pcrec_emit_main` alone. Per the K20 lesson (record against the shape,
+not the site), the other known readers of `rx_search`'s return were
+surveyed:
 
 - `tests/fuzz/fuzz_driver.c` — already correct (the fuzzfix arc,
   `c225a9f`/`7e27c19`): discriminates `found == 1`/`== 0`/
@@ -1504,15 +1505,33 @@ other known readers of `rx_search`'s return were surveyed:
   Dormant over the base .rxt corpus (no `flags`/`features` directive can
   select `--engine=vm` or a tiny budget), so no .rxt test was added — see
   the driver's own comment and docs/testing.md's driver-protocol section.
-- `tests/registry/pc4_driver.c` — **STILL HAS THE BUG**
-  (`if (rx_search(s, len, 0, caps))` at time of writing). The
-  `89ccd89` "sibling" fix in the fuzzfix arc fixed a DIFFERENT bug in
-  this same file (the `caps[RX_NCAPS][2]` stack-array sizing hazard,
-  since this driver is compiled once against a throwaway pattern and
-  reused across the PC-4 sweep) — it did not touch the truthiness check.
-  Dormant for the same reason as `tests/harness/driver.c` (PC-4 never
-  selects `--engine=vm`), but genuinely unfixed. NOT addressed by this
-  lane — PC-4 is a different subsystem (tests/registry/) with its own
-  sabotage battery, outside this fix's authorized scope. Flagged here so
-  the class is not later assumed closed by a stale reading of the
-  `89ccd89` commit message.
+- `tests/registry/pc4_driver.c` — HAD the bug too
+  (`if (rx_search(s, len, 0, caps))`), independently of the `89ccd89`
+  "sibling" fix in the fuzzfix arc, which fixed a DIFFERENT bug in this
+  same file (the `caps[RX_NCAPS][2]` stack-array sizing hazard, since this
+  driver is compiled once against a throwaway pattern and reused across
+  the PC-4 sweep) — `89ccd89` never touched the truthiness check, so this
+  file was genuinely still open when it was first flagged here 2026-08-15.
+  **NOW FIXED, same day, same lane.** pc4_driver.c is a DIFFERENTIAL
+  driver, not a match/nomatch-only one, so the fix follows a different
+  shape from the other three: `pc4_check.c` (the libpcre2 side) already
+  had a bucket for a NON-comparable outcome — `mlimits`, libpcre2's own
+  match-time give-up, counted separately, excluded from `cells`, never
+  compared as a verdict, asserted zero. pc4_driver.c now discriminates
+  `found == 1`/`== 0`/otherwise explicitly and prints `giveup steps`/
+  `giveup frames` for that subject instead of a fabricated verdict;
+  `pc4_check.c` gained the symmetric `pcrec_giveups` bucket, checked
+  BEFORE the match/nomatch comparison so a give-up can never enter it as
+  a fabricated match, and asserted zero alongside `mlimits`. Verified two
+  ways: (1) directly — PC-4's real 271-subject set has nothing long
+  enough to burn a tiny step/frame budget, so a scratch driver using the
+  identical discrimination logic against a `--engine=vm --step-budget=50`/
+  `--backtrack-frames=4` artifact was run standalone, correctly printing
+  `giveup steps`/`giveup frames`; (2) `pc4_check.c`'s new branch verified
+  in the FAILING direction by splicing one synthetic `giveup steps` line
+  into a real `\d` sweep's results file — `cells` dropped by exactly 1,
+  `pcrec_giveups` fired naming the count, and no spurious match/nomatch
+  disagreement appeared for that cell. The real `run_pc4.sh` sweep is
+  unaffected (still dormant: DFA-only pattern space) — unchanged
+  273/232/41/62,872/0 populations. See tests/registry/CLAUDE.md for the
+  full account.

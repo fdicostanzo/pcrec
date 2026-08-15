@@ -40,7 +40,10 @@
  *                                    for the gcc sweep)
  * patterns.tsv: <id>\t<i-flag 0|1>\t<pattern>, ids dense from 0.
  * results-dir:  per id, a file `<id>` holding either the single line
- *               REFUSED or PC4_NSUBJ verdict lines from pc4_driver. */
+ *               REFUSED or PC4_NSUBJ verdict lines from pc4_driver — each
+ *               either `match <s> <e>`, `nomatch`, or [K21-class fix,
+ *               2026-08-15] `giveup steps`/`giveup frames` (a VM budget
+ *               give-up, never a comparable verdict — see pc4_driver.c). */
 
 /* pcre2_abi.h FIRST: it defines _GNU_SOURCE (dlinfo) and must do so before
  * any libc header locks the feature macros — the same order PC-3 uses. */
@@ -96,7 +99,7 @@ int main(int argc, char **argv)
     if (!pf) { fprintf(stderr, "pc4_check: cannot open %s\n", argv[1]); return 2; }
 
     long npat = 0, accepted_both = 0, refuse_agree = 0;
-    long cells = 0, mlimits = 0;
+    long cells = 0, mlimits = 0, pcrec_giveups = 0;
     char line[512];
 
     while (fgets(line, sizeof line, pf)) {
@@ -155,6 +158,15 @@ int main(int argc, char **argv)
                      id, shown(pat), si);
                 break;
             }
+            /* [K21-class fix, 2026-08-15] pc4_driver.c's own give-up line
+             * (see its header comment): rx_search returned a negative VM
+             * budget sentinel for this subject, not a match or a no-match.
+             * Symmetric to libpcre2's own give-up bucket below (mlimits):
+             * NEITHER side's give-up is a comparable verdict, so this must
+             * never fall through into the match/nomatch agreement check
+             * as a fabricated match. Counted separately and asserted zero
+             * — dormant on PC-4's DFA-only pattern space today. */
+            if (strncmp(rline, "giveup", 6) == 0) { pcrec_giveups++; continue; }
             int rc = abi.match(code, s, slen, 0, 0, md, NULL);
             if (rc < -1) { mlimits++; continue; }
             cells++;
@@ -197,6 +209,10 @@ int main(int argc, char **argv)
     if (mlimits != 0)
         fail("%ld mlimit cells on a backtrack-free space — not a verdict, "
              "and not expected here", mlimits);
+    if (pcrec_giveups != 0)
+        fail("%ld pcrec driver give-up cells (RX_ERR_STEPS/RX_ERR_FRAMES) "
+             "— not a verdict, and not expected on PC-4's DFA-only pattern "
+             "space [K21-class]", pcrec_giveups);
 
     printf("pc4: %ld patterns (%ld both-accepted, %ld refusal agreements), "
            "%ld match cells compared, %ld disagreements\n",
