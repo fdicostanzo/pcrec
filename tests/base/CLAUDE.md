@@ -27,6 +27,38 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **precedence.rxt** — operator precedence and grouping
 - **leftmost_semantics.rxt** — leftmost-first match semantics (greedy/lazy precedence)
 - **review_r21.rxt** — K17's regressions (R21 finding E-1, fixed 2026-08-14): the empty-iteration exit redirect is not a one-shot. Six diverging family members needing all of a lazy nullable prefix, a nullable inner star and an outer `*`; one level deeper again (`(?:b*?(?:(?:a*)*)*)*`, which needs the redirect a third time); a witness the post-fix random sweep found on its own; and the four neighbours that were already correct, which are the over-reach controls for a fix that WIDENS when the redirect fires. Both oracles: 120/120 pairs python-vs-libpcre2 agree
+- **k18_empty_exit_through_seen_eps.rxt** — K18's own 165 acceptance cases
+  (docs/dev/known_issues.md K18, fixed 2026-08-15), moved here from
+  `tests/known_fail/` in the commit that closed the entry: the
+  empty-iteration redirect reached THROUGH an already-seen non-loop ε state,
+  `(?:(?:a|b*?)?)*` on "ab" → [0,2) where both oracles give [0,1). 26 of the
+  165 failed before the fix. **Read it with the three files below and do not
+  treat it as the acceptance criterion for the class** — it was derived from
+  the bug as found, so every diverging pattern in it carries a lazy nullable
+  arm, and a candidate repair that passes all 165 was measured still wrong on
+  83 patterns of the same severity
+- **k18_arm_order.rxt** — the R23 S8 axis, 54 patterns / 667 cases: every K18
+  diverging shape in BOTH alternation orders, greedy as well as lazy nullable
+  arms, plus the empty-alternative (`(?:(?:(?:b|)|a)?)*`) and concatenation
+  (`(?:(?:b?|a)(?:b?|d))*`) forms, which contain no lazy quantifier anywhere.
+  The defect never needed laziness — it needs the arm whose EXIT edge lands on
+  the already-seen ε state to be the PREFERRED one, and a greedy nullable arm
+  gets that by being written FIRST. Two of the K18 entry's own "does NOT
+  diverge" controls were live miscompiles with their arms swapped. Nine
+  over-reach controls, including K17's repro and a pattern with no nullable
+  loop at all (the closure's empty-context fast path)
+- **k18_split_shapes.rxt** — 83 patterns / 609 cases, the `{0,2}`-bodied
+  family where the conflation happens at a nested optional SPLIT rather than
+  at an `N_EPS`. These are the cells that separate the landed repair from the
+  cheap two-line alternative the design note rejected: python `re` agrees with
+  the repair on 98 of 98 and with the alternative on 0
+- **k18_deep_nesting.rxt** — 6 patterns / 18 cases guarding a RESOURCE class,
+  not an answer: nullable loops nested to the parser's own 250-paren cap,
+  where the path-sensitive closure's context count grows as d²/2. The design's
+  prototype descended once per context with a C stack frame (31,377 deep at
+  250, an asan stack overflow at 210); the shipped `clo_walk` is iterative, and
+  these blocks are what would notice if that regressed. The rest of the corpus
+  tops out at loop-nesting depth 4
 - **syntax_errors.rxt** — malformed patterns and diagnostic accuracy, including the K5/K6 brace miscompiles fixed 2026-08-10 (FIX-1). Two halves that must be read together: the `perr` blocks assert the rejections, and the literal-match blocks below them assert what must KEEP compiling (`a{`, `{}`, `{,}`, `a{65536x}`, …) — without those, the obvious over-reach of either fix passes every rejection. The seven K5 blocks carry `# pcre2-only` because python `re` accepts counts up to 4294967294 (U5); `tests/reject/` pins the DIAGNOSTIC for all of them, which `perr` cannot express
 
 ## Conventions

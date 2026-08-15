@@ -1,0 +1,795 @@
+# K18 guard corpus — THE {0,2} SPLIT-SHAPE FAMILY (docs/design/k18_memo_design.md
+# §2b, §5 item 1; docs/dev/known_issues.md K18, FIXED 2026-08-15).
+#
+# These 83 patterns are the design lane's central result, and they are here
+# because they are the sub-case an acceptance corpus derived from K18's own
+# witnesses cannot reach. A two-line candidate repair (B: walk THROUGH an
+# already-seen ordinary epsilon state instead of dying there) passes all 165
+# cases of the acceptance corpus and is still wrong. Over a dense
+# 18,858-pattern shape sweep it differs from the landed repair on exactly
+# these 83 patterns / 98 cells, and python3 `re` agrees with the landed repair
+# on 98 of 98 and with B on 0.
+#
+# Every one has a `{0,2}`-quantified body: the conflation happens at a nested
+# optional SPLIT rather than at an N_EPS, which is a THIRD sub-case of the
+# root fact (a per-closure memo keyed on the NFA state alone, against an
+# empty-iteration rule that is a property of the walk's own path). Passing the
+# 165 is not an acceptance criterion for this class; these are.
+#
+# Every expectation generated from python3 `re` AND libpcre2 10.46, both
+# oracles agreeing on every cell (D44's three-way rule).
+
+pattern (?:(?:b*|a){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:a|b*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:a|b*?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:b?|a){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:b?|a){0,2})+
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:a|b??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:a|b??){0,2})+
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:b{0,2}|a){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:b{0,2}|a){0,2})+
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:a|b{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:a|b{0,2}?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:a|[a-c]*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a|[a-c]*?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a|[a-c]??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a|[a-c]??){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a|[a-c]{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a|[a-c]{0,2}?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a|.*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|.*?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|.??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|.??){0,2})+
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|.{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|.{0,2}?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:[^a]*|a){0,2})*
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:a|[^a]*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|[^a]*?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:[^a]?|a){0,2})*
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:[^a]?|a){0,2})+
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:a|[^a]??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|[^a]??){0,2})+
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:[^a]{0,2}|a){0,2})*
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:[^a]{0,2}|a){0,2})+
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:a|[^a]{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a|[^a]{0,2}?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:b*|a+){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:a+|b*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:b?|a+){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:b?|a+){0,2})+
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:a+|b??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:b{0,2}|a+){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:b{0,2}|a+){0,2})+
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "aa" 0 0
+m "ab" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+m "abab" 0 0
+m "aabb" 0 0
+
+pattern (?:(?:a+|b{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "b" 0 0
+m "aa" 0 2
+m "ab" 0 1
+m "ba" 0 0
+m "bb" 0 0
+m "aab" 0 2
+m "bab" 0 0
+m "aba" 0 1
+m "abab" 0 1
+m "aabb" 0 2
+
+pattern (?:(?:a+|[a-c]*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a+|[a-c]??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a+|[a-c]{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a+|.*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a+|.??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a+|.{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:[^a]*|a+){0,2})*
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:a+|[^a]*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:[^a]?|a+){0,2})*
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:[^a]?|a+){0,2})+
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:a+|[^a]??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:[^a]{0,2}|a+){0,2})*
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:[^a]{0,2}|a+){0,2})+
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+
+pattern (?:(?:a+|[^a]{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+
+pattern (?:(?:a*|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a?|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a?|[a-c]){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a{0,2}|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:a{0,2}|[a-c]){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 0
+m "aa" 0 2
+m "ac" 0 1
+m "ca" 0 0
+m "cc" 0 0
+
+pattern (?:(?:b*|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "c" 0 0
+m "aa" 0 0
+m "ab" 0 0
+m "ac" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "bc" 0 1
+m "ca" 0 0
+m "cb" 0 0
+m "cc" 0 0
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+
+pattern (?:(?:b?|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "c" 0 0
+m "aa" 0 0
+m "ab" 0 0
+m "ac" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "bc" 0 1
+m "ca" 0 0
+m "cb" 0 0
+m "cc" 0 0
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+
+pattern (?:(?:b?|[a-c]){0,2})+
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "c" 0 0
+m "aa" 0 0
+m "ab" 0 0
+m "ac" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "bc" 0 1
+m "ca" 0 0
+m "cb" 0 0
+m "cc" 0 0
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+
+pattern (?:(?:b{0,2}|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "c" 0 0
+m "aa" 0 0
+m "ab" 0 0
+m "ac" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "bc" 0 1
+m "ca" 0 0
+m "cb" 0 0
+m "cc" 0 0
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+
+pattern (?:(?:b{0,2}|[a-c]){0,2})+
+m "" 0 0
+m "a" 0 0
+m "b" 0 1
+m "c" 0 0
+m "aa" 0 0
+m "ab" 0 0
+m "ac" 0 0
+m "ba" 0 1
+m "bb" 0 2
+m "bc" 0 1
+m "ca" 0 0
+m "cb" 0 0
+m "cc" 0 0
+m "aab" 0 0
+m "bab" 0 1
+m "aba" 0 0
+
+pattern (?:(?:[a-c]|.*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|.*?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|.??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|.??){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|.{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|.{0,2}?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[^a]*|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 0
+m "c" 0 1
+m "aa" 0 0
+m "ac" 0 0
+m "ca" 0 1
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|[^a]*?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|[^a]*?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[^a]?|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 0
+m "c" 0 1
+m "aa" 0 0
+m "ac" 0 0
+m "ca" 0 1
+m "cc" 0 2
+
+pattern (?:(?:[^a]?|[a-c]){0,2})+
+m "" 0 0
+m "a" 0 0
+m "c" 0 1
+m "aa" 0 0
+m "ac" 0 0
+m "ca" 0 1
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|[^a]??){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|[^a]??){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[^a]{0,2}|[a-c]){0,2})*
+m "" 0 0
+m "a" 0 0
+m "c" 0 1
+m "aa" 0 0
+m "ac" 0 0
+m "ca" 0 1
+m "cc" 0 2
+
+pattern (?:(?:[^a]{0,2}|[a-c]){0,2})+
+m "" 0 0
+m "a" 0 0
+m "c" 0 1
+m "aa" 0 0
+m "ac" 0 0
+m "ca" 0 1
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|[^a]{0,2}?){0,2})*
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2
+
+pattern (?:(?:[a-c]|[^a]{0,2}?){0,2})+
+m "" 0 0
+m "a" 0 1
+m "c" 0 1
+m "aa" 0 2
+m "ac" 0 2
+m "ca" 0 2
+m "cc" 0 2

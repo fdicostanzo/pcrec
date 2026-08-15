@@ -9,17 +9,16 @@ and it does not get to break the build either.
 
 ## Files
 
-- **k18_empty_exit_through_seen_eps.rxt** — K18, a live tier-1 DFA miscompile
-  (`(?:(?:a|b*?)?)*` on "ab" → [0,2), both oracles [0,1)). Sibling of K1/K17:
-  the empty-iteration redirect cannot be reached through an already-seen
-  NON-LOOP ε state, so the walk dies one hop short of the loop entry whose
-  exit is the ACCEPT. Deferred because the principled fix — keying the closure
-  memo on (state, open-loop-set) instead of on state alone — is a rewrite of
-  `clo_visit` in a different risk class from K17's one-line change, and needs
-  a scheduling decision. The file carries seven CONTROL blocks that pass today
-  alongside the eight failing shapes, so whoever fixes it is measured for
-  over-reach in the same file; the ratchet only cares that the file as a whole
-  still fails
+- **(no `.rxt` files)** — as of 2026-08-15 no confirmed bug is deferred with a
+  repro on file, which the ratchet treats as a legitimate good state (it
+  reports "nothing to ratchet" and exits 0). The last resident was
+  `k18_empty_exit_through_seen_eps.rxt`, which moved to `tests/base/` when K18
+  was fixed; it is worth reading as the worked example of this directory's
+  contract, because the ratchet is what forced the move and the
+  `known_issues.md` close to land in the SAME commit. Three sibling files
+  joined it there (arm-order, `{0,2}` split shapes, deep nesting) — a deferred
+  bug's repro is written from the bug as FOUND, and the fix lane owes the axes
+  that repro's own alphabet could not reach
 - **run_known_fail.sh** — the "fixed by accident" ratchet (R2-PR8). Runs each
   `.rxt` here and INVERTS the verdict: still-failing is expected, and a file
   that has started PASSING is flagged and fails the script. Part of

@@ -1,4 +1,14 @@
-# K18 (docs/dev/known_issues.md) — DEFERRED, asserts the CORRECT behaviour.
+# K18 (docs/dev/known_issues.md) — FIXED 2026-08-15; this is the LIVE guard
+# corpus it was deferred as. It lived in tests/known_fail/ from 2026-08-14
+# until the repair landed, and moved here in the same commit that closed the
+# entry (the known-fail ratchet is what enforces that pairing).
+#
+# READ tests/base/k18_arm_order.rxt AND tests/base/k18_split_shapes.rxt WITH
+# IT. These 165 cases are NOT a sufficient acceptance criterion for the class
+# and were measured not to be: a two-line candidate repair passes all 165 and
+# still leaves 83 patterns of the same severity wrong. Every diverging pattern
+# below carries a LAZY nullable arm because the witness did — the arm-order
+# file is the correction.
 #
 # The empty-iteration redirect cannot be reached through an ALREADY-SEEN
 # NON-LOOP epsilon state. `(?:(?:a|b*?)?)*` on "ab": after "a" the outer star
