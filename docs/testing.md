@@ -213,8 +213,15 @@ For each pattern block, `run.sh`:
    clearly, separately from ordinary case failures.
 5. For each `m`/`n`/`ms`/`ns` case, runs `<tmp>/t '<subject>' '<P>'` (quotes
    stripped, escapes still encoded — the driver decodes them; `<P>` is `0`
-   for `m`/`n`) and compares stdout exactly against `match <start> <end>` or
-   `nomatch`.
+   for `m`/`n`). For `n`/`ns`, stdout must be exactly `nomatch`. For `m`/`ms`,
+   stdout must start with `match` followed by the WHOLE-MATCH pair
+   (`<start> <end>`, parsed positionally as fields 2 and 3) — **[M4.5a
+   fix]**: this is a parsed-field comparison, not a whole-line compare,
+   because the driver line also carries every subsequent `RX_NCAPS` group
+   pair (see "Capture-group expectations" below); trailing pairs are simply
+   not looked at by this check. It is still strict, not a substring match:
+   `match` vs `nomatch`, a short/malformed line, or a wrong whole-match pair
+   all fail loudly.
 
 Failures are printed as `file:line: expected ... got ...` along with the
 pattern under test, so a failure can be traced straight back to the
