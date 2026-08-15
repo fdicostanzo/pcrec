@@ -1403,3 +1403,50 @@ that — it is that the rule was recorded against ONE function rather than
 against the AST shape, so the next three functions to walk the same shape
 inherited nothing. Any new walk over `A_CAT`/`A_ALT` needs the same treatment,
 and `vm_nullable` now carries the comment that says so.
+
+## K21 — OPEN, found 2026-08-15 (R23 semantics critic S15; triaged by a follow-up read-only probe)
+
+**The `--emit-main` convenience `main()` treats `<prefix>_search`'s
+three-valued return as a boolean, so VM step/frame-budget exhaustion
+(RX_ERR_STEPS/RX_ERR_FRAMES, both negative and both C-truthy) is reported
+as a successful match with UNINITIALIZED capture-span output.**
+
+**Repro:**
+
+    pattern: (?:(?:(?:(c??){0,4}?(?:d{0,2}?a{0,2}){1,2}){0,3})+.(?:(d{0,2}){2,3}((?:[a-c]{1,2}?|b*?){1,2})?){0,2})*
+    subject: "" (this pattern exhausts the step budget on every subject tried,
+                 up to length 3)
+    the --emit-main binary prints: match 32768 140721206985752  (varies run to run)
+    correct behaviour: rx_search returns RX_ERR_STEPS (-2); there is no match
+                       to report
+
+Minimal ingredient: any pattern whose VM-emitted `rx_search` exhausts
+`RX_STEP_BUDGET`/`RX_BT_FRAMES` on the tested subject. Two more witnesses
+(R23 appendix, S15; probe findings) show the same mechanism producing
+small plausible-looking wrong numbers instead of obvious garbage — zeroed
+stack bytes printed as `match 0 0` — which makes this bug easy to mistake
+for a semantic miscompile. Do not triage a "plausible but wrong span from
+an emit-main binary" as a priority/closure bug without first ruling out
+RX_ERR_STEPS/FRAMES by checking the raw `rx_search` return code (the probe
+itself chased that false lead partway).
+
+**Mechanism.** `pcrec_emit_main` (src/gen/emit_dfa.c:993, shared by both
+emitters): `if (%s(...caps)) { printf("match ...", caps[0][0], caps[0][1]);`.
+The search's give-up path returns the negative sentinel BEFORE calling
+`rx_caps_out`, so `main()`'s stack `caps` array is never written; C
+truthiness makes -2/-3 take the match branch and print uninitialized
+memory. `tests/fuzz/fuzz_driver.c:130-133` already discriminates the
+sentinels correctly (the fuzzfix arc's fix) — `pcrec_emit_main` is a
+separate call site that arc did not touch. DFA-only artifacts never return
+the sentinels, so the bug is VM-artifact-only.
+
+**Severity.** Not a wrong match from the engine — `rx_search` itself
+returns the correct sentinel — but the CLI-facing convenience `main()`
+fabricates match data when the honest answer is "budget exhausted", which
+is worse than silence (D26 tier-1-adjacent).
+
+**Fix direction.** Branch three ways in `pcrec_emit_main` (rc==1 match,
+rc==0 nomatch, rc<0 a distinct give-up line + distinct exit code),
+matching fuzz_driver.c; plus a test that forces a budget exhaustion under
+--emit-main and pins the three-way stdout. Scheduled: immediate small
+lane (2026-08-15, R23 close), not deferred.
