@@ -323,13 +323,15 @@ append-only or historical records.
   2026-08-15** (fuzzfix, 7e27c19): the cause was `tests/fuzz/fuzz_driver.c`'s
   stale-macro caps array — a test-harness stack smash, 274 → 0 — **not** the
   M4.5 VM path the note's BELIEVED mark attributed it to. The revision's own
-  re-measurement then produced **one new defect** the panel had not predicted:
-  measuring the sanitizer axis for the first time (R23 V1), the prototype's
-  `clo_visit` OVERFLOWS the 8 MB stack under asan at nesting depth 210 —
-  inside the parser's 250 cap, where the shipped compiler survives — because
-  the design enlarges each of 250 recursion frames; not the stack fix (the
-  unfixed prototype overflows identically), and invisible to the suite, whose
-  corpus tops out at depth 4.
+  re-measurement then produced **one new defect the panel had not predicted,
+  refuting a STRUCTURAL claim of the note's own**: §2a's "the tail recursion
+  does not deepen" is true of recursion SITES and false of recursion DEPTH —
+  `clo_visit` recurses **Θ(d²)**, 31,377 frames at the parser's 250-paren cap
+  against the shipped closure's 253, so the design needs ~7 MB of the default
+  8 MB stack there on the PLAIN build (shipped: 192 KB) and overflows under
+  asan at depth 210. Not the stack fix (the unfixed prototype measures
+  identical depths), and invisible to the suite, whose corpus tops out at
+  depth 4. The rewrite lane owes a decision on it (§5 item 12).
 - `k18_measurements/` — the lane's prototypes, harnesses and generators; see
   its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors

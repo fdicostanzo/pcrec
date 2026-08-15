@@ -14,14 +14,17 @@ withdrawn, §4.4 back-annotated RESOLVED, `gen_adversarial.py`'s two invalid
 families fixed and re-run, and §5 grown by nine items. Sections carry
 **[R23]** markers where the panel's finding is what changed them.
 
-**One NEW defect came out of the re-measurement itself**, from measuring the
-sanitizer axis the note had never touched: under AddressSanitizer the
-prototype's `clo_visit` overflows the 8 MB stack at nesting depth **210** —
-inside the parser's own 250 cap, where the shipped compiler is fine — because
-this design makes each of 250 recursion frames bigger. It is not the stack
-fix (the unfixed prototype overflows at the same depth) and the suite would
-not catch it (corpus depth tops out at 4). §2a measures it, §5 item 12 owes
-it. Also withdrawn as unmeasurable: the corpus-aggregate wall-clock figure,
+**One NEW defect came out of the re-measurement itself, and it refutes a
+STRUCTURAL claim this note made that R23 did not catch either.** §2a said "the
+tail recursion does not deepen"; that is true of the number of recursion SITES
+and false of the DEPTH. **MEASURED: `clo_visit` recurses Θ(d²) — 31,377 frames
+at the parser's 250-paren cap, against the shipped closure's 253.** The
+consequence is that the design needs ~7 MB of the default 8 MB stack at that
+cap on the PLAIN build (shipped: 192 KB, 42x headroom), and overflows outright
+under AddressSanitizer at depth **210**. It is not the stack fix — the unfixed
+prototype measures identical recursion depths — and the suite would not catch
+it, since corpus loop-nesting depth tops out at 4. §2a measures it, §5 item 12
+turns it into a decision the rewrite lane owes. Also withdrawn as unmeasurable: the corpus-aggregate wall-clock figure,
 whose signal sits under process-spawn noise — the counters answer that
 question and the note now says so.
 
@@ -352,6 +355,45 @@ push made on an iterative tail edge is always unwound by one of those two.
 The preferred-branch recursion is the only recursion, exactly as today.
 **STRUCTURAL**, from the prototype's control flow.
 
+**But it DOES deepen, and this note did not notice. [Found by the R23
+revision lane's own re-measurement; the panel did not catch it either.]** The
+sentence above is true about the number of recursion SITES and was silently
+read as a claim about recursion DEPTH. Those are different, and the depth
+changes asymptotically. **MEASURED**, a counter around `clo_visit`'s entry and
+exit, nested nullable stars:
+
+| nesting depth d | 50 | 100 | 200 | 250 (the cap) |
+|---|---|---|---|---|
+| shipped, max recursion depth | 53 | 103 | 203 | **253** |
+| A2, max recursion depth | 1,277 | 5,052 | 20,102 | **31,377** |
+
+The shipped closure recurses **d+3** deep — linear, which is what `limits.h`
+was protecting when it made the tail edges iterative. A2 recurses **≈ d²/2**,
+because the same state is descended into once per CONTEXT rather than once,
+and the context count is itself ≈ d²/2 (31,627 at d=250, the same curve). The
+recursion site did not multiply; the recursion depth acquired a power of d.
+
+**What that costs, on the PLAIN build, at the parser's own cap.** Minimum
+stack at which nest250 still compiles, bisected with `ulimit -s`:
+
+| | shipped | A2 |
+|---|---|---|
+| minimum stack for nest250 | **192 KB** | **7,168 KB** |
+| headroom against the default 8 MB | 42x | **1.15x** |
+
+A2 segfaults at `ulimit -s 4096`. It is not frame bloat — A2 averages ~228
+bytes per frame against the shipped closure's ~780; there are simply 124x more
+frames. And it is **not the stack-entry fix**: the unfixed prototype measures
+an identical 1,277 / 5,052 / 20,102, so this belongs to prototype A's design,
+not to the repair of it.
+
+This is the one place where the design as prototyped is close to a hard edge,
+and the note reached its recommendation without measuring it. §5 item 12 now
+carries it, and the honest framing for the rewrite lane is that a Θ(d²) C
+recursion on a fixed 8 MB stack is a design question — shrink the recursion,
+bound the depth explicitly, or size the stack deliberately — not a tuning
+detail.
+
 **A frame must restore the stack's ENTRIES, not only its depth — and the
 sentence above is where this note got that wrong. [R23 S3/S16.]** "A frame
 restores the saved depth on return" is true and was not enough. A redirect
@@ -489,17 +531,20 @@ fine to 250:
 | **A2, asan** | ok | **stack-overflow** | overflow | overflow | overflow | overflow |
 | shipped / A2, ubsan | ok | ok | ok | ok | ok | ok |
 
-The cause is frame SIZE, not the fix: the unfixed prototype overflows at the
-same depth (210), so this is the open-loop bookkeeping the design adds to a
-function that already recurses once per nesting level, plus ASan's redzones,
-against `ulimit -s 8192`. `limits.h` records that `clo_visit`'s tail edges
-were made iterative precisely to keep C-stack depth off the pattern's size;
-the preferred-branch recursion was left, bounded by the parser's cap — and
-this design makes each of those 250 frames bigger.
+**The cause is recursion DEPTH, not frame size, and not the fix** — it is the
+Θ(d²) recursion measured under "The tail recursion does not deepen" above.
+A2 recurses ≈ d²/2 frames deep where the shipped closure recurses d+3, so at
+the parser's cap it already needs ~7 MB of the default 8 MB stack on the PLAIN
+build; ASan's redzones then push the same walk over at depth 210. A2's frames
+are in fact SMALLER than the shipped closure's (~228 bytes against ~780) —
+there are just 124x more of them. The unfixed prototype overflows at the
+identical depth and measures identical recursion depths, so the stack-entry
+repair is not implicated.
 
 Three things follow, and none of them is "ignore it". `make asan` is in the
-merge/close battery, so this is a real failure mode for the rewrite, not a
-curiosity. The suite would NOT currently catch it: corpus loop-nesting depth
+merge/close battery, so this is a real failure mode for the rewrite — and the
+plain build is at 1.15x headroom, so it is not an asan-only story either. The
+suite would NOT currently catch it: corpus loop-nesting depth
 is 4, so no test goes near 210. And the honest cost figure for the sanitizer
 axis is not a timeout at all — timing was what V1 predicted would be tight,
 and timing is fine (A2 at nest250 is 0.85 s under ubsan against 0.36 s plain,
@@ -1180,16 +1225,23 @@ The K17 methodology, with the additions this lane's own findings demand.
     is exempt — with reasons, not silence.
 
     **The instrumented measurement this item asked for is DONE, and it found a
-    failure the timing worry did not predict** (§2a): under asan the
-    prototype's `clo_visit` overflows the 8 MB stack at nesting depth 210,
-    inside the parser's own 250 cap, where the shipped compiler survives —
-    frame size, not the stack fix, since the unfixed prototype overflows at
-    the same depth. Timing on the instrumented axes is comfortable
-    (nest250: 0.85 s ubsan, 0.36 s plain). So the rewrite lane owes, on top of
-    the timeout question: a `clo_visit` frame small enough to recurse 250 deep
-    under asan, or an explicit refusal below that depth, or a deliberate
-    stack-size decision — **and a deep-nesting test in the suite, since the
-    corpus tops out at depth 4 and would never have found this.**
+    failure the timing worry did not predict** (§2a): the design's `clo_visit`
+    recursion is **Θ(d²)** where the shipped closure's is Θ(d) — 31,377 frames
+    at the parser's 250-paren cap against 253 — so it needs ~7 MB of the
+    default 8 MB stack on the PLAIN build (shipped: 192 KB) and overflows
+    outright under asan at depth 210. Not the stack fix: the unfixed prototype
+    measures identical recursion depths. Timing on the instrumented axes is
+    comfortable by comparison (nest250: 0.85 s ubsan, 0.36 s plain), so the
+    axis-aware-timeout question this item started as is the smaller half of it.
+
+    The rewrite lane owes a DECISION here, not a tweak: bound the recursion
+    (make the context-split descent iterative, as `limits.h` already did for
+    the tail edges), or refuse above a measured depth, or size the stack
+    deliberately and say so — **plus a deep-nesting case in the suite, since
+    the corpus tops out at depth 4 and would never have found this.** Note the
+    interaction with item 11: `pcrec_compile()` on a non-main thread gets
+    whatever stack that thread was created with, which is frequently less than
+    8 MB, and TS-3 is in the standing battery.
 13. **[R23 S4] A comment obligation on the `marks_next` 2^32 wrap.** The
     empty-context fast path threads a SECOND `Marks` whose generation is
     advanced in lockstep with the first, so a wrap is safe only because both
