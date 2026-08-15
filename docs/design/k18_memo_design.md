@@ -241,17 +241,27 @@ Wall-clock, against the shipped compiler:
 
 | d | 16 | 32 | 48 | 64 | 96 | 100 | 200 | 250 (the cap) |
 |---|---|---|---|---|---|---|---|---|
-| shipped | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s |
-| prototype A | 0.12 s | 0.12 s | 0.22 s | 0.32 s | 1.41 s | 1.62 s | **20.5 s** | ~40 s (extrapolated) |
+| shipped | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | 0.12 s | **0.12 s** |
+| prototype A/A2 | 0.12 s | 0.12 s | 0.22 s | 0.32 s | 1.41 s | 1.62 s | 20.5 s | **39.25 s** |
+
+At that worst case the counters read `maxdepth=251 ctxs=2,635,007
+expansions=5,332,784 redirects=323,161,504 nonstacktop=0` — so the 39 s is
+323 million redirects, the interner holds 2.6 million contexts (~21 MB), and
+the properly-nested-stack property still holds at the deepest pattern the
+parser will accept. **This is a real, user-reachable 39-second compile where
+the shipped compiler takes 0.12 s, on a 1500-character pattern.** It is the
+strongest argument for the threshold below, and it is why this note asks for a
+ruling instead of assuming one.
 
 (0.12 s is this box's process-startup floor; everything at that figure is doing
 no measurable closure work.) **The depth is bounded**: `src/parse/parse.c:549`
-refuses at 250 nested parentheses, and loop nesting requires parentheses, so
-d ≤ 250 — **STRUCTURAL** on the parser's cap, **MEASURED** at the boundary
-(nest249 compiles, nest255 refuses). The 250-deep worst case is the
-extrapolation in that table and is the one number here I did not run to
-completion; the d⁴ fit is good enough that I would defend ~40 s, but it is
-**BELIEVED**, not MEASURED.
+refuses when parentheses nest too deeply, and a loop can only nest inside
+another loop through a group, so d is capped by that refusal —
+**STRUCTURAL** that loop nesting requires parentheses (`frag_star` is reached
+only through a quantified group), **MEASURED** at the boundary: 250 nested
+`(?:...)*` wrappers compile, 251 are refused. That makes nest250 the true
+worst case a user can reach, and it is measured, not extrapolated — see the
+table's last column.
 
 #### The regression the fuzzer found, and the fast path that removes it
 
@@ -286,7 +296,7 @@ patterns and all 555 corpus patterns**.
 | `(1{0,30}?[^]abc][^abc]){28,30}0+\|a` | 0.61 s | 13.33 s | **0.82 s** |
 | same, `{8,8}` | 0.21 s | 1.52 s | **0.22 s** |
 | corpus aggregate compile time | 0.671 s | 0.662 s | (A2 ≡ A) |
-| nest100 / nest200 | 0.12 s | 1.62 / 20.4 s | 1.62 / 20.5 s |
+| nest100 / nest200 | 0.12 / 0.12 s | 1.62 / 20.4 s | 1.62 / 20.5 s |
 
 The fast path removes the constant-factor regression and leaves the Θ(d⁴)
 deep-nesting cost untouched, which is correct — that cost is real work, not
@@ -327,10 +337,14 @@ edge and its target is always such a split. **STRUCTURAL**, verified by
 grepping every `.loop` assignment: there is exactly one, at nfa.c:122, and the
 `A_REP` bounded-repeat path builds nested optionals with no back edge at all.
 
-**It is cheap and it works — on the acceptance corpus.** **MEASURED:** 165/165,
-full corpus 1704/1704, compile time indistinguishable from the shipped build on
-every family measured, including the fuzz-found pattern (0.62 s vs the shipped
-0.61 s) and nest200.
+**It is cheap and it works — on the acceptance corpus.** **MEASURED:** 165/165
+on the K18 corpus, 1704/1704 on the full `.rxt` suite, and compile time
+indistinguishable from the shipped build on every family measured — the
+fuzz-found pattern at 0.62 s against the shipped 0.61 s, and nested nullable
+stars at depth 100 and 200 at 0.11 s where the recommended design costs 1.6 s
+and 20.5 s. **On cost, B beats A2 outright**, which is worth stating plainly
+rather than burying: if exactness were not the deciding axis, B would be the
+recommendation.
 
 **And it is not exact, which is why it is rejected.** A and B were compared by
 emitted source over the 18,858-pattern shape space: **18,775 byte-identical,
@@ -385,11 +399,11 @@ compiler on real patterns.
 **Prototype A2 — (state, open-loop-context) memo with an empty-context fast
 path — with a nesting-depth threshold at D=64 pending the ruling in §6.**
 
-B is rejected on exactness (98-0 against the oracle), not on cost. C is
-rejected on cost (2ⁿ), not on exactness. A2 is the only candidate that is both,
-and its residual — Θ(d⁴) beyond nesting depth ~64, bounded at ~40 s by the
-parser's own 250-paren cap — is addressable by a threshold whose worst case is
-measured.
+B is rejected on exactness (98-0 against the oracle), not on cost — on cost it
+wins. C is rejected on cost (2ⁿ), not on exactness. A2 is the only candidate
+that is acceptable on both, and its residual — Θ(d⁴) beyond nesting depth ~64,
+topping out at a MEASURED 39.25 s at the parser's own nesting cap — is
+addressable by a threshold whose worst case is also measured.
 
 ---
 
@@ -537,7 +551,6 @@ into a live corpus directory and close the K18 entry in the same commit, or
   counters aggregate both machines) but never singled out. `prune` is off
   there, so the closure keeps every thread alive — a different code path
   through the same walk.
-* **The 250-deep worst case**, run to completion (§2a).
 * **libpcre2 as a second oracle** on the A-vs-B and base-vs-A cells. python3
   `re` alone was used. The K17/K18 entries record zero disagreements between
   the two oracles across this whole space, so I judged one oracle sufficient
@@ -599,12 +612,16 @@ The K17 methodology, with the additions this lane's own findings demand.
 
 ## 6. Rulings requested
 
-1. **The nesting-depth threshold.** Take D=64 (worst case ~0.32 s, exact for
+1. **The nesting-depth threshold.** Take D=64 (worst case 0.32 s, exact for
    everything within 12x of the corpus maximum), take a different D, or take
-   none and accept ~40 s at the parser's 250-paren cap. I recommend D=64. If a
-   threshold is taken, it needs a decisions.md entry, because it makes the
-   compiler deliberately inexact in a bounded region and that must not become
-   folklore.
+   none and accept the MEASURED 39.25 s at the parser's nesting cap. I
+   recommend D=64. If a threshold is taken, it needs a decisions.md entry,
+   because it makes the compiler deliberately inexact in a bounded region and
+   that must not become folklore. Note the alternative shape the panel may
+   prefer: REFUSE past D rather than silently falling back, which trades a
+   wrong answer for a diagnostic and fits D26's "requires module 'X'" habit of
+   naming what is not supported — but it refuses patterns that compile
+   correctly today, which is a bigger break than the fallback.
 2. **Whether §2a's "(1) and (2) are each necessary" claim needs measuring**
    before the rewrite. It is cheap (two half-prototypes) and it is currently
    BELIEVED.
