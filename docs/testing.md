@@ -926,6 +926,57 @@ Recorded as a known limit of the chosen build flags rather than fixed
 (`-O0` would close it but cost real coverage speed across a suite this
 size — a tradeoff for the manager, not decided here).
 
+### A test case RESIZED for the sanitizer axis ([M4.5c], 2026-08-15)
+
+Not an exclusion — the case still runs on every axis — but it belongs beside
+them, because it is the same question asked about a suite's cost and answered
+by shrinking a fixture instead of dropping one.
+
+`tests/vm/run_vm_tests.sh`'s large-bounded-repeat stamp case was
+`((a)|b){0,4000}c`. engine_m4.md §3.3's ruled reading is that a bounded repeat
+REPLICATES its body, so the emitted C is linear in the count: 3.5 MB and
+40,003 labels in one computed-goto function. Two `cc1` processes ground for
+**1h40m and 55m** on that single file under `make ubsan` before anyone
+noticed. The case is now `((a)|b){0,50}c` under an explicit
+`--backtrack-frames=32` — the same property (a requirement of 50 frames
+against a capacity of 32) in 53 KB instead of 3.5 MB.
+
+**The measurement, because the obvious diagnosis is wrong.** Project box,
+2026-08-15, `-O1 -std=gnu11 -Wall -Wextra` plus each axis's own flags:
+
+| N | labels | `&&label` | plain -O1 | ubsan -O1 | asan -O1 | plain **-O2** |
+|---|---|---|---|---|---|---|
+| 25 | 253 | 50 | 0.20 s | 0.90 s | — | — |
+| 50 | 503 | 100 | 0.40 s | 1.90 s | — | — |
+| 100 | 1003 | 200 | 0.70 s | 4.51 s | 1.80 s | 2.90 s |
+| 200 | 2003 | 400 | 1.60 s | 13.91 s | 3.60 s | 11.21 s |
+| 400 | 4003 | 800 | 3.50 s | 49.94 s | 5.31 s | 51.54 s |
+
+**It is not a sanitizer pathology.** ASan is linear and plain `-O2` is
+superlinear — *worse* than UBSan at `-O1`. UBSan and `-O2` are two ways of
+hitting one wall, and it is R1 A-3's own computed-goto cliff, reached from the
+VM side.
+
+**And it is not the label count either.** A control at the same size settles
+it: `(a×2000)b` emits 2004 labels with **zero** address-taken labels and
+compiles in **2.70 s** at `-O2`, where `((a)|b){0,200}c`'s 2003 labels with
+**400** address-taken labels take **11.21 s**. The cost tracks the number of
+`&&label` operands — every one becomes a potential successor of the single
+`goto *`, so the indirect edge's fan-out is what gcc's dataflow goes quadratic
+in. Growth per doubling of that count: 3.9x then 4.6x.
+
+The knee is between N=200 and N=400 on both slow axes; the resized case sits
+at N=50 (1.9 s under UBSan). After the resize the largest artifact any
+`tests/vm` or `tests/codegen` case produces is 53 KB, verified by sweeping all
+51 compilable test patterns in those suites.
+
+Recorded here rather than fixed, because the fix is engine work: see the
+[M4.5c] commit for the recommendation (cap or stamp the RESUME-TARGET count,
+never the node count, and the real remedy is a counter-based bounded repeat
+for choice-bearing bodies). It also refutes engine_m4.md §2.1/§13 P-6's
+"the VM should therefore never approach" R1 A-3's cliff, and answers §12
+ASK-7 unbidden.
+
 ### Exclusions
 
 - **`tests/thread/`** — NOT re-run under `make ubsan`/`make asan`. TSan

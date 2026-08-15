@@ -158,14 +158,58 @@ else
 fi
 
 # A LARGE BOUNDED repeat is the case that separates "statically known" from
-# "fits the emitted array", and the two are easy to conflate: `((a)|b){0,4000}c`
-# has an exact requirement (4000 frames) and does not get it (1024). Stamping
-# subject_ceiling = 0 there would say "no limit" about an artifact that has
-# one — the silent cap D44.1's honest stamp exists to replace — while its
-# SMALL sibling `((a)|b){0,3}c` genuinely has no limit to declare and must
-# stamp 0. Both directions are checked, because a rule that only ever declares
-# a ceiling is as uninformative as one that never does.
-if build bigbounded '((a)|b){0,4000}c' && build smallbounded '((a)|b){0,3}c'; then
+# "fits the emitted array", and the two are easy to conflate: a bounded repeat
+# whose exact requirement EXCEEDS the emitted arrays still has a limit, and
+# stamping subject_ceiling = 0 there would say "no limit" about an artifact
+# that has one — the silent cap D44.1's honest stamp exists to replace. Its
+# SMALL sibling genuinely has no limit to declare and must stamp 0. Both
+# directions are checked, because a rule that only ever declares a ceiling is
+# as uninformative as one that never does.
+#
+# THE SIZE IS SET BY LOWERING THE CAPACITY, NOT BY RAISING THE COUNT, and the
+# reason is two-thirds performance and one-third correctness.
+#
+# This pair used to be `{0,4000}` against the default 1024-frame capacity.
+# engine_m4.md S3.3's ruled reading is that a bounded repeat REPLICATES its
+# body, so the emitted C is linear in the count: `{0,4000}` is 3.5 MB and
+# 40,003 labels in ONE computed-goto function. gcc's UBSan instrumentation
+# scales SUPERLINEARLY on that shape — MEASURED on the project box,
+# 2026-08-15, `-O1 -Wall -Wextra` plus
+# `-fsanitize=undefined -fno-sanitize-recover=undefined`:
+#
+#     N      labels   plain -O1   ubsan -O1   asan -O1
+#     25        253      0.20 s      0.90 s          -
+#     50        503      0.40 s      1.90 s          -
+#    100       1003      0.70 s      4.51 s     1.80 s
+#    200       2003      1.60 s     13.91 s     3.60 s
+#    400       4003      3.50 s     49.94 s     5.31 s
+#
+# Plain and ASan are LINEAR. UBSan multiplies by ~3.1x and then ~3.6x per
+# DOUBLING (roughly O(N^1.85) and worsening), which extrapolates to about an
+# hour at N=4000 — and that is exactly what happened: two cc1 processes ground
+# for 1h40m and 55m on this one file before anyone noticed. The knee is
+# between N=200 and N=400; N=50 is 1.9 s.
+#
+# So the case is `{0,50}` under an explicit `--backtrack-frames=32`. The
+# property is IDENTICAL — a requirement (50 frames) that exceeds the capacity
+# (32) — and the artifact is 53 KB instead of 3.5 MB.
+#
+# The correctness third: the old pair was coupled to the DEFAULT capacity,
+# which is a BRING-UP PLACEHOLDER [M4.6] is going to calibrate. Had M4.6 raised
+# it above 4000, `{0,4000}` would have started fitting and this check would
+# have gone silently vacuous while still passing. Naming the capacity is what
+# makes the pair test the comparison rather than a number someone else owns.
+#
+# Note `--backtrack-frames=N` sets the TRAIL capacity to N as well, which its
+# name does not say — 32 is chosen so the small sibling's ~13 trail entries fit
+# too, and a smaller value would make it "not fit" for a reason that has
+# nothing to do with frames. Flagged for the manager; not this commit's to fix.
+#
+# The default-capacity path is still covered, twice: `exact` below (statically
+# bounded, sized exactly, ceiling 0) and `residual` (unbounded, default
+# capacity, ceiling stamped).
+if build bigbounded '((a)|b){0,50}c' --backtrack-frames=32 \
+   && build smallbounded '((a)|b){0,3}c' --backtrack-frames=32; then
     bsc="$(info_field bigbounded subject_ceiling)"
     bfc="$(info_field bigbounded frame_capacity)"
     ssc="$(info_field smallbounded subject_ceiling)"
@@ -173,12 +217,12 @@ if build bigbounded '((a)|b){0,4000}c' && build smallbounded '((a)|b){0,3}c'; th
     if [ "$bsc" -gt 0 ]; then
         ok "[M4.5b] D44.1: a LARGE bounded repeat whose exact requirement does not fit stamps a real ceiling ($bsc bytes at frame_capacity=$bfc), not 'not applicable'"
     else
-        bad "[M4.5b] D44.1: '((a)|b){0,4000}c' stamped subject_ceiling=$bsc at frame_capacity=$bfc — its requirement is 4000 frames, so a 0 here claims a limit it does not have"
+        bad "[M4.5b] D44.1: '((a)|b){0,50}c' at --backtrack-frames=32 stamped subject_ceiling=$bsc — its requirement is 50 frames against a capacity of $bfc, so a 0 here claims a limit it does not have"
     fi
-    if [ "$ssc" = "0" ] && [ "$sfc" -lt 64 ]; then
-        ok "[M4.5b] D44.1: a SMALL bounded repeat is sized exactly (frame_capacity=$sfc) and declares no ceiling — the rule does not just always declare one"
+    if [ "$ssc" = "0" ]; then
+        ok "[M4.5b] D44.1: a SMALL bounded repeat whose requirement FITS the same capacity ($sfc) declares no ceiling — the rule does not just always declare one"
     else
-        bad "[M4.5b] D44.1: '((a)|b){0,3}c' stamped frame_capacity=$sfc subject_ceiling=$ssc; expected an exact small capacity and ceiling 0"
+        bad "[M4.5b] D44.1: '((a)|b){0,3}c' at --backtrack-frames=32 stamped subject_ceiling=$ssc (capacity $sfc); its requirement FITS, so it must declare no ceiling"
     fi
 else
     bad "[M4.5b] could not build the bounded-repeat stamp cases"
