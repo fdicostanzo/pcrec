@@ -158,7 +158,21 @@ typedef struct {
                            * what PCREC_MAX_VM_REPEAT_COPIES bounds, and it is
                            * known before emission — which is the point. */
     long long nodes;      /* emitted-node budget, against PCREC_MAX_VM_NODES */
-    bool      used_cursor;
+    bool      used_cursor; /* [D46] some A_REP in this program took S2.5's
+                            * cursor rung — set in vm_cursor_rep, the real
+                            * emission call, not the cursor_fits pre-passes
+                            * (vm_cost_rep/vm_count_slots also call
+                            * vm_cursor_fits but only to cost/count; the
+                            * SELECTION this flag reports is made once, by
+                            * vm_rep's real walk). */
+    bool      used_frames; /* [D46] some A_REP fell back to the frames rung
+                            * (engine_m4.md S2.5's other rung) — set at
+                            * vm_rep's frames-rung fallthrough, the mirror
+                            * of used_cursor above. Together the two answer
+                            * D46's observability half: "none" (no A_REP at
+                            * all), "cursor", "frames", or "mixed" (both
+                            * rungs fire for different quantifiers in one
+                            * program) — see vm_rung_name(). */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     /* class bitmap pool, deduplicated */
     uint8_t (*cls)[32];
@@ -986,6 +1000,11 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         return;
     }
 
+    /* [D46] the fallthrough below is the WHOLE frames rung for this
+     * quantifier — mandatory copies, the bounded opt-chain and the unbounded
+     * star all set it once here rather than at each of their own returns. */
+    v->used_frames = true;
+
     /* ---- the frames rung ------------------------------------------------
      * rmin mandatory copies, then either the unbounded star or (rmax - rmin)
      * nested optionals. RULED (D44/R21 E-2): the empty-iteration guard exists
@@ -1213,6 +1232,26 @@ typedef struct {
     const char *why;
 } VmStamp;
 
+/* [D46] the rung stamp's own small named value set. Read from used_cursor/
+ * used_frames, which are set exactly once each, by the real emission walk
+ * (vm_cursor_rep / vm_rep's frames fallthrough) — never re-derived from the
+ * AST, per the same rule S10 states for the listing (engine_m4.md S10): one
+ * structure, walked once, is what every view of it has to agree with.
+ *
+ * "none" is a real, distinct answer (e.g. `abc`, no A_REP at all) rather than
+ * folded into "cursor": a caller asking "did this artifact's cursor rung ever
+ * run" needs to tell "it did not because there was nothing to select between"
+ * from "it did not because frames won", and D46's controllability half (rung
+ * FORCING) will need the same four-way distinction to report a forced
+ * selection that had nothing to act on. */
+static const char *vm_rung_name(bool used_cursor, bool used_frames)
+{
+    if (used_cursor && used_frames) return "mixed";
+    if (used_cursor)                return "cursor";
+    if (used_frames)                return "frames";
+    return "none";
+}
+
 static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 {
     Ctx *cx = v->cx;
@@ -1237,6 +1276,29 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
               ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
                 " an exact window (S6.1); the VM never scans"
               : "NO (--engine=vm) -- the VM scans from startpos itself (R21 E-6)");
+    /* [D46] the rung stamp, read from v->used_cursor/v->used_frames -- the
+     * same two flags vm_rep's real emission walk set, not a re-derivation
+     * from the AST (the S10 rule this whole listing follows). Named-value
+     * set: none/cursor/frames/mixed, per vm_rung_name(). The macro form
+     * (<PREFIX>_VM_RUNG) carries the same four values for a compile-time
+     * consumer; this line is its human-readable twin. */
+    {
+        const char *rung = vm_rung_name(v->used_cursor, v->used_frames);
+        const char *why =
+            !v->used_cursor && !v->used_frames
+                ? "no quantifier in this pattern needed a rung at all"
+            : v->used_cursor && v->used_frames
+                ? "some quantifier(s) took the deterministic span-loop rung"
+                  " (S2.5), others fell back to one resume frame per"
+                  " iteration (S2.5's frames rung)"
+            : v->used_cursor
+                ? "every quantifier's body was a deterministic fixed-stride"
+                  " run, so none needed a per-iteration resume frame (S2.5)"
+                : "no quantifier's body qualified for the deterministic"
+                  " span-loop rung (S2.5), so each fell back to one resume"
+                  " frame per iteration";
+        sb_printf(o, "; rung         %s -- %s\n", rung, why);
+    }
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes
@@ -1542,6 +1604,23 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
                                 strlen(job->fit.why ? job->fit.why : "--engine=vm"));
     sb_puts(c, "\n");
+    /* [D46] the RUNG STAMP: same shape as RX_ENGINE/RX_ENGINE_WHY above (a
+     * per-prefix, preprocessor-visible macro, VM-artifacts-only for the same
+     * §5.4 byte-identity reason the comment above states), but a SMALL NAMED
+     * VALUE SET rather than free text -- {"none","cursor","frames","mixed"}
+     * -- because the consumer is a build-time #ifdef/grep, not a human
+     * reading a forcing reason. v.used_cursor/v.used_frames are already
+     * final here: vm_emit's real walk (above, in the scratch buffer) is the
+     * ONLY place either flag is set, so this is the same selection the
+     * emitted C actually made, not a second computation of it.
+     *
+     * rx_info deliberately does NOT gain a member for this at [M4.5e]: the
+     * struct's layout is the frozen M4 ABI (match_api_m4.md S5, D44.5's
+     * "the layout below is FINAL" ruling), and adding a field is an abi-
+     * version-bump event this close does not take on its own -- flagged for
+     * the manager rather than done here. */
+    sb_printf(c, "#define %s_VM_RUNG \"%s\"\n", v.up,
+              vm_rung_name(v.used_cursor, v.used_frames));
     if (v.tracing) {
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
