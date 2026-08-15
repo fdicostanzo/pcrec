@@ -1285,6 +1285,30 @@ Until then: the known_fail ratchet holds it visible; [M4.5]'s three-way
 span differential is the net; [M4.6] does NOT open with K18 unfixed
 (same precondition status as K17, R21 review E-1 disposition).
 
+**DESIGN NOTE DELIVERED 2026-08-15: `docs/design/k18_memo_design.md`**
+(PROPOSED, unpaneled; the rewrite lane has NOT opened and this entry stays
+OPEN). It recommends the (state, open-loop-context) memo this entry sketched,
+plus an empty-context fast path, and it settles three things this entry left
+as expectations:
+
+* **The cost is polynomial, not exponential.** MEASURED Θ(d⁴) in loop-nesting
+  depth, with contexts fitting d³/6; the corpus maximum depth is 5 and 353 of
+  555 patterns never open a loop, so aggregate expansion inflation is x1.006.
+  This entry's "real compile-time-blowup risk" is real but bounded, and lands
+  past nesting depth ~64 — the note asks for a ruling on a threshold there.
+* **The exponential the entry attributes to the naive path-local version is
+  CONFIRMED, and it is the absence of the memo, not the path-sensitivity.**
+  MEASURED Θ(2ⁿ) on `(?:a*|b*){n}`, out of budget at n=22.
+* **This file's 165 cases are NOT a sufficient acceptance criterion.** A
+  two-line alternative (an already-seen ordinary ε walked through rather than
+  killing the walk) passes all 165 and is still wrong: over a dense
+  18,858-pattern sweep it differs from the recommended design on 83 patterns /
+  98 cells, and the oracle agrees with the recommended design on 98 of 98.
+  Every one is a `{0,2}`-bodied shape — the same conflation happening at a
+  SPLIT instead of at an ε, which is a THIRD sub-case of the root fact and is
+  not covered by the family recorded above. The rewrite lane owes those 83 a
+  guard corpus.
+
 ---
 
 ## K19 — FIXED 2026-08-15, found 2026-08-15 (D45's own ruling; the battery that pegged cc1 for 100+ minutes)

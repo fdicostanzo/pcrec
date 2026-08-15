@@ -272,6 +272,41 @@ append-only or historical records.
   different rungs (corrected mid-lane from an initial scalar draft) — the
   observability half only, landed as this document's close obligation.
   Rung FORCING (D46's controllability half) has no producer yet.
+- `k18_memo_design.md` — **PROPOSED** (2026-08-15, K18 design-first lane): the
+  repair of K18, the second live tier-1 DFA priority miscompile — written
+  before any rewrite lane per the R21-close scheduling, and unpaneled. The
+  defect: `clo_visit`'s `seen` is a GLOBAL per-closure memo while the
+  empty-iteration rule is PATH-dependent, so the redirect is lost when the
+  ε re-arrival passes THROUGH an already-seen ordinary ε state instead of
+  landing on a loop entry. Recommends **prototype A2** — memo keyed on
+  (state, open-loop-context), the redirect re-stated as "this loop is OPEN on
+  my path", plus an EMPTY-CONTEXT FAST PATH that keeps the shipped per-state
+  stamp array for the (state, 0) key. Three candidates were built and measured
+  head to head, and the comparison is the document's point: the cheap
+  two-line alternative (B, transparent already-seen ε states) passes the
+  entire 165-case K18 acceptance corpus and is still WRONG — over a dense
+  18,858-pattern shape sweep A and B differ on 83 patterns / 98 cells and the
+  oracle agrees with A on **98 of 98**, every one a `{0,2}`-bodied shape where
+  the conflation happens at a SPLIT rather than an ε. The naive no-memo
+  variant (C) is MEASURED exponential, Θ(2ⁿ) on `(?:a*|b*){n}`, confirming the
+  K18 entry's own sketch. Cost of the recommendation: corpus loop-nesting
+  depth is ≤5 (353 of 555 patterns never open a loop), aggregate expansion
+  inflation **x1.006**, blast radius on the real corpus **547 of 555
+  byte-identical with all 8 differing patterns exactly the K18 shapes**,
+  1704/1704 corpus three ways, and 226/226 changed cells old-wrong→new-right.
+  Residual: Θ(d⁴) in loop-nesting depth, bounded by the parser's own 250-paren
+  cap, for which §6 asks a RULING on a depth threshold (D=64 recommended). Two
+  lane-own instrumentation defects are recorded in §7 because both produced
+  numbers that would otherwise have entered the note as findings — a
+  fixed-capacity memo that HANGS rather than slows when full, and a
+  linear-scan interner that would have priced the prototype instead of the
+  design. §4.4 additionally reports, as NOT this lane's finding, that the
+  differential fuzzer is already red on the current tree (8 diverging patterns
+  per seed, generated matchers aborting on stack smashing, all `{28,30}`
+  capture-bearing VM shapes) — with base-vs-A2 pattern sets identical, so it
+  is pre-existing and someone should decide what it is.
+- `k18_measurements/` — the lane's prototypes, harnesses and generators; see
+  its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
