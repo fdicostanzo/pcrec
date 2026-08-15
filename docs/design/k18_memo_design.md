@@ -679,16 +679,41 @@ into a live corpus directory and close the K18 entry in the same commit, or
 * **Captures.** Every measurement here is spans-only. K18's entry marks the
   defect capture-independent, and the corpus run includes the capture suites,
   but I did not do a capture-offset differential of my own. **The rewrite lane
-  must**, because M4.5's VM consumes the DFA's span.
+  must**, because M4.5's VM consumes the DFA's span. *[R23: still open, and
+  now with a lead — S15 found three short capture-bearing patterns whose
+  generated matchers print uninitialised memory as spans under BOTH the
+  shipped compiler and A2. Not A2's and not K18's, but the panel's PROBE 1
+  and the nearest thing to a live shipped-compiler defect this review
+  produced; witnesses in the R23 appendix under S15.]*
 * **The reverse machine (D7) in isolation.** It is exercised throughout (the
   counters aggregate both machines) but never singled out. `prune` is off
   there, so the closure keeps every thread alive — a different code path
-  through the same walk.
+  through the same walk. *[R23 S11: CLOSED for spans, and it mattered. Every
+  pattern in the K18 family is fully nullable, so it matches at offset 0 and
+  the reverse machine's job is trivially answered — which every corpus in
+  this note inherited. A corpus of 240 shapes with a MANDATORY leading atom
+  forces a computed match start: 81,840 cells, the shipped compiler wrong on
+  1,980, A2 wrong on **0**. This is also where the stack corruption lived —
+  S10's missed redirects are overwhelmingly on the reverse machine — so the
+  axis this section flagged as unmeasured is exactly the axis the defect was
+  hiding on.]*
 * **libpcre2 as a second oracle** on the A-vs-B and base-vs-A cells. python3
   `re` alone was used. The K17/K18 entries record zero disagreements between
   the two oracles across this whole space, so I judged one oracle sufficient
   for a design screen — but D44's three-way rule means the rewrite lane owes
-  the second oracle.
+  the second oracle. *[R23 S15: the judgement is now MEASURED rather than
+  believed — 998,535 oracle-vs-oracle cells across this note's own 18,858
+  shapes plus three independent corpora, **0 disagreements**. D44 still binds
+  the rewrite lane's expectations.]*
+* **[R23 V7] Thread safety of the two new tables.** This section listed three
+  gaps and this was a fourth. Concurrent `pcrec_compile()` is in the STANDING
+  `make test` battery (TS-3), and a design that adds heap tables to the
+  DFA-construction path owes an answer about where they live. **STRUCTURAL,
+  and clean:** in the prototype both are per-compile automatic locals of
+  `pcrec_build_dfa` (`prototypes/proto_a.py:370-371`) and the open-loop stack
+  comes from the compile's own arena (`:373`); the only file-scope state is
+  the measurement counters at `:68-69`, which do not ship. Nothing is shared,
+  so nothing can race. §5 item 11 carries the obligation to keep it that way.
 
 ---
 
@@ -897,3 +922,28 @@ UNMODIFIED closure instrumented with the identical counters and to check that
 the instrumented build emits byte-identical C — which is what turned the
 13.33 s fuzz timeout from "the design is too slow" into "the design does
 identical work and my probe is slow", and produced the fast path in §2a.
+
+**A third defect, and the defence above is exactly what could not see it.
+[R23 S3/S16.]** `clo_visit` restored the open-loop stack's depth per frame and
+not its entries, so a redirect crossing a frame boundary handed the caller a
+stack naming the wrong loops. Every consequence of that bug was in the COST,
+never in the ANSWERS: the corrupted scan misses a redirect, the walk then
+expands a loop it should have exited, the expansion pushes that loop, the push
+mints a fresh context, and the fresh context defeats the memo for the whole
+subtree beneath it. Missed redirects compounding IS the context explosion —
+100x of compile time, 48x the visits, 67x the contexts, and byte-identical
+emitted C at the end of it.
+
+So the byte-identity defence was not merely insufficient here, it was
+STRUCTURALLY blind: **byte-identical output cannot see a cost bug.** The note
+built its cost numbers against a correct-output oracle and was measuring a
+defect the whole time, while §2a's own `nonstacktop` counter — the one thing
+positioned to notice — read 0 because the corpus behind it could not reach a
+three-loop-deep shape under a `{0,2}` (§2a). Two independent instruments, one
+blind by construction and one blind by corpus.
+
+The correction that found it is worth more than the fix: the panel refused to
+take a STRUCTURAL mark on trust and read the prototype's control flow against
+the sentence claiming it. Every marked-STRUCTURAL claim in this note is a
+claim about code someone can read, which means every one of them is falsifiable
+by reading — and the one that was false was the one nobody had read.
