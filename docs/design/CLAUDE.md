@@ -322,7 +322,14 @@ append-only or historical records.
   §4.4's out-of-lane fuzzer-red report is back-annotated **RESOLVED
   2026-08-15** (fuzzfix, 7e27c19): the cause was `tests/fuzz/fuzz_driver.c`'s
   stale-macro caps array — a test-harness stack smash, 274 → 0 — **not** the
-  M4.5 VM path the note's BELIEVED mark attributed it to.
+  M4.5 VM path the note's BELIEVED mark attributed it to. The revision's own
+  re-measurement then produced **one new defect** the panel had not predicted:
+  measuring the sanitizer axis for the first time (R23 V1), the prototype's
+  `clo_visit` OVERFLOWS the 8 MB stack under asan at nesting depth 210 —
+  inside the parser's 250 cap, where the shipped compiler survives — because
+  the design enlarges each of 250 recursion frames; not the stack fix (the
+  unfixed prototype overflows identically), and invisible to the suite, whose
+  corpus tops out at depth 4.
 - `k18_measurements/` — the lane's prototypes, harnesses and generators; see
   its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors

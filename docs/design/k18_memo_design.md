@@ -14,6 +14,17 @@ withdrawn, §4.4 back-annotated RESOLVED, `gen_adversarial.py`'s two invalid
 families fixed and re-run, and §5 grown by nine items. Sections carry
 **[R23]** markers where the panel's finding is what changed them.
 
+**One NEW defect came out of the re-measurement itself**, from measuring the
+sanitizer axis the note had never touched: under AddressSanitizer the
+prototype's `clo_visit` overflows the 8 MB stack at nesting depth **210** —
+inside the parser's own 250 cap, where the shipped compiler is fine — because
+this design makes each of 250 recursion frames bigger. It is not the stack
+fix (the unfixed prototype overflows at the same depth) and the suite would
+not catch it (corpus depth tops out at 4). §2a measures it, §5 item 12 owes
+it. Also withdrawn as unmeasurable: the corpus-aggregate wall-clock figure,
+whose signal sits under process-spawn noise — the counters answer that
+question and the note now says so.
+
 Design note for the repair of K18 (docs/dev/known_issues.md), written
 DESIGN-FIRST and panel-eyed before any rewrite lane opens, per the scheduling
 ruled at R21 close. **This note is not the fix.** It carries the defect
