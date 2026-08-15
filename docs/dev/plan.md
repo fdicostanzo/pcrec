@@ -198,6 +198,41 @@ stated terms.
   - [M4.5e] STATE:not-started — CLOSE: oracle-verified capture corpus
     over the base tier, structural checks now non-trivially exercised
     (RX_NCAPS>1⇒VM live), CLAUDE.md sweeps, full battery.
+- [ENG-BREP] STATE:not-started — BOUNDED-REPEAT EMISSION STRATEGY: the
+  counter rung (Frank, 2026-08-15, twenty-first session — queue
+  placement ruled alongside M4.6; "sort-of an optimization, but
+  strictly the result was intractable, so not"). Today the VM emits
+  {0,N} by FULL REPLICATION (N body copies), which is O(N·body)
+  emitted C — ((a)|b){0,4000}c produced 113,545 lines / 3.5 MB and
+  gcc goes superlinear on it (the D45 incident); the interim guard is
+  the D45 compile timeouts + the refuse-above-cap backstop. The real
+  fix is DESIGN-FIRST (short note against engine_m4.md §2.5, panel
+  eyes, K17-lane validation methodology): ONE body copy + an
+  iteration counter in the backtrack frame. The strategy space is one
+  axis — unroll factor K: replication is K=N, the pure counter loop
+  K=1, and Frank's partial-unroll suggestion K=8/16/... amortizes
+  counter bookkeeping over straight-line copies; choice points (one
+  per iteration, semantics-dictated) are IDENTICAL across all K, so K
+  is purely a speed/size dial picked by BENCH MEASUREMENT (sweep
+  N × K × body size, compile time AND throughput — BENCH-1's
+  bounded-repeats family is the home). FOUR ruled requirements
+  (Frank, same discussion): (1) ACCURACY HAS A TRUE VERSION —
+  replication is the semantic ground truth (literally {0,N} unrolled)
+  and is tractable below the knee, so the primary instrument is a
+  pcrec-vs-pcrec differential: same pattern under forced-replication
+  vs forced-counter(-K), subjects swept, spans + EVERY capture slot +
+  the FAILURE SURFACE (RX_ERR_FRAMES at the same iteration count)
+  byte-equal — any disagreement is a bug by construction; (2) every
+  strategy stays FORCEABLE end-to-end via a generation flag,
+  do-or-die (the R21 E-6 testability pattern); (3) the three-way
+  python/pcre2 oracle sweep rides on top, dense at the K-threshold
+  boundary, N=0/1, rmin>0, empty-capable bodies, captures in the
+  loop; (4) E-2's ruling is load-bearing: bounded repeats take NO
+  empty-iteration guard, and the counter's strict increase is what
+  makes that safe — the design note must state the termination
+  argument explicitly. Supersedes the "cap emitted size" half of the
+  D45 follow-up as the ENDGAME (the cap stays as the backstop whose
+  diagnostic can honestly point here).
 - [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
   DFA-prefilter hybrid + DFA islands as designed; measured against
   bench floors under D12/R3.10 discipline; DD-9's decided outcome

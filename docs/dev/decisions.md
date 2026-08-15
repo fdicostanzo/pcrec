@@ -3928,3 +3928,11 @@ Two consequences deliberately attached:
 
 Revisit-when: a legitimate generated artifact is measured needing >5s
 plain (then raise with the measurement recorded here, not silently).
+
+**D45 addendum (2026-08-15, same session):** the endgame for the
+pathological class is ruled and queued as plan row [ENG-BREP] — the
+bounded-repeat COUNTER RUNG (one body copy + frame counter; partial
+unroll K as a bench-measured dial), design-first alongside M4.6, with
+replication kept as the forced-strategy semantic ground truth for the
+pcrec-vs-pcrec differential. The D45 timeout + size-cap remain the
+standing guards; the cap's diagnostic may point at the row.
