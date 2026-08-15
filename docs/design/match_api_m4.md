@@ -381,6 +381,22 @@ lands on the SAME announced D37 boundary as the `rx_span` break (§1; engine
 | C10 | name→number is compile-time, no runtime lookup REQUIRED for `${name}` resolution | the template compiler resolves `${name}` at pcrec-compile time and emits no names; **AMENDED by D39** — F8's group index (§5) is exported anyway, but for a DIFFERENT customer (embedders, V-A), not to satisfy C10 |
 | C11 | success/failure is a return value, not an error object | `rx_matchfn`/the match-here entry returns `ptrdiff_t` (length, or `-1`); no error struct on the match path |
 
+**[M4.5d] AS-BUILT ADDENDUM (2026-08-15, R22 — WHAT VALUE a written slot
+carries; C6 says every slot is written, not what with):** two rules the
+D27-blinded capture author found stated nowhere, MEASURED three-way
+unanimous (python `re`, libpcre2 10.46 via probe, pcrec — R22 findings
+1–2, review file 2026-08-15-r22-m45d-capture-author.md):
+1. **Cross-iteration RETENTION**: a group inside a quantifier whose
+   subexpression did not run in the FINAL iteration retains its value
+   from the last iteration in which it DID run — `((a)|(b))*` on "ab"
+   reports g2 = [0,1), not unset. Unset means "never participated in
+   the whole match", not "didn't participate in the last iteration".
+2. **Empty final iteration OVERWRITES**: `(a*)*` / `(a?)*` on "aaa"
+   report g1 = [3,3) — an empty final iteration's write is a write.
+Wording pass owed at M4.7's post-run review; recorded here so the
+contract text stops under-specifying what the three engines already
+agree on.
+
 ### 2.3 Explicit non-requirements (§2.2 of the subst note), carried forward as NOT promised
 
 - No ovector sizing negotiation (pcrec knows the group count at compile time).

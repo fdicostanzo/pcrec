@@ -98,7 +98,11 @@ starts with a `pattern` line and is followed by zero or more expectation
 lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
 `pattern` line or end of file.
 
-- Blank lines and lines starting with `#` are ignored (comments).
+- Blank lines and lines starting with `#` are ignored (comments). Comments
+  are WHOLE-LINE ONLY: a `#` after case fields is NOT a comment — it makes
+  the line unparseable, a hard error. (Deliberate: a pattern or subject may
+  legitimately contain `#`, so the parser never guesses where data ends and
+  commentary begins. Found the hard way by the R22 D27 author.)
 - `pattern <regex>` — starts a new block. `<regex>` is everything after the
   first space on the line, taken verbatim through to the end of the line
   (no quoting, no escaping — write the pattern exactly as PCRE would see
