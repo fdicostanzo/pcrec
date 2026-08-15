@@ -8076,3 +8076,72 @@ output is blind to cost bugs: the note measured a defect for a law while
 its correctness oracle stayed green. And the check-design memory held a
 third time: a MEASURED 0 on a corpus that cannot reach the failure is
 not a measured 0.
+
+## 2026-08-15 (EDT), night — R23 CLOSED OUT: K21 found+fixed (class 4-of-4), the note AMENDED and merged, a Θ(d²) recursion obligation found, ENG-BREP corrected
+
+Three lanes ran back-to-back off the R23 dispositions, all landed:
+
+**K21** (probe s15 + lane k21-fix, merge 6eeedbb): R23's S15
+capture-garbage witnesses were ONE real bug — pcrec_emit_main tested the
+THREE-valued <prefix>_search return as a boolean, so VM budget
+exhaustion (RX_ERR_STEPS/FRAMES, negative, C-truthy) printed "match" +
+uninitialized caps. The probe's sharpest note: zeroed stack made one
+witness look like a plausible small wrong span — do not triage an
+emit-main span error as a semantic miscompile without checking the raw
+rc. Fixed with a three-way branch (match/nomatch/steps|frames, exit
+0/1/3), cli case15 pins the contract (pre-fix-failing, +10 → cli 257).
+THE CLASS CLOSED 4-OF-4: tests/harness/driver.c (dormant; run.sh scores
+give-up as a hard failure) and tests/registry/pc4_driver.c+pc4_check.c
+(give-up = non-comparable bucket symmetric to mlimits, asserted zero) —
+where the lane corrected MY brief: 89ccd89 had fixed pc4_driver's
+caps-SIZING bug, not this class; a commit message believed, not grepped,
+by the manager this time. Validated: test EXIT=0, strict, mech 44/0 at
+the branch tip.
+
+**K18 note revision** (lane k18-revision, 17 commits, merge c91c2de;
+verified by re-read critic R23b — 9/9 new claims independently
+reproduced, 17/17 AMEND items discharged, one stale figure fixed at
+merge): all R23 dispositions executed — stack fix in the prototype,
+every cost number re-taken (0.35 s at nest250; contexts d²/2; Θ(d⁴)
+re-marked a one-family fit; inflation x1.004/x0.996; corpus wall-clock
+aggregate WITHDRAWN as unmeasurable, counters are the instrument),
+§1.5 preferred-arm re-characterization + known_issues K18 control-list
+correction, §3 comparative claim deleted, §4.4/§4.6 back-annotated
+RESOLVED, gen_adversarial 70/70 with the 18/70 exclusion disclosed,
+§6 ruling 1 WITHDRAWN, §5 grown 7→13 items. NO FRANK RULINGS REMAIN
+OPEN FROM THE NOTE.
+
+**The revision's own new finding (nobody predicted it, R23 included):
+A2's clo_visit recursion is Θ(d²)** — once per CONTEXT, not per state:
+31,377 frames at the parser's 250 cap vs shipped 253; plain-build
+stack headroom 1.15x at the cap (shipped 42x, ~150-192 KB), segfault
+at ulimit -s 4096, ASan overflow from depth 210. Refutes §2a's
+unmeasured "recursion does not deepen" STRUCTURAL claim. First
+attributed to frame size; corrected to recursion depth when the
+manager asked for the mechanism. The rewrite lane owes the decision
+(§5 item 12: iterative descent / refuse-above-depth / deliberate stack
+sizing + a deep-nesting suite case — corpus tops out at depth 4 and
+cannot see this). Interaction flagged for Frank: TS-3's non-main
+threads often have <8 MB stacks.
+
+**ENG-BREP third amendment CORRECTED** (in place, original preserved):
+S14's depth-11 was the corrupted stack failing to pop, not A_REP —
+fixed prototype: depth 1, contexts LINEAR in k (13→49), compile
+2.9→8.7 ms. Surviving evidence for Frank's row: the NFA itself grows
+405→1,485 states at constant visible nesting; budgets stay posed on
+the unrolled quantity via CONTEXT COUNT.
+
+Process notes: the idle-notification-races-SendMessage pattern
+recurred all evening (harmless — sends resume completed agents); one
+merge misfired into a lane's worktree because the persistent shell's
+cwd had drifted there (caught immediately, redone from the main tree —
+absolute paths, always); the watchdog ran the whole span with zero
+lane deaths.
+
+State at close: HEAD = c91c2de + close bookkeeping, pushed. Smoke 6/6
+after each merge. Full seven-leg battery still 7e3ff93 (K21 branch ran
+test+strict+mech at its tip; the revision is docs+toolkit only). New
+counts vs baseline: cli 247→257. Open K-list: K2, K7, K9, K18, K19
+(K21 same-day fixed). NEXT: the K18 REWRITE lane against amended §5
+(13 items, the Θ(d²) decision first among them); [ENG-BREP] design
+note; then [M4.6].

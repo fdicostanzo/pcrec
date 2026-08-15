@@ -1470,3 +1470,259 @@ question.
   is correct as stated.
 
 == r23-valplan COMPLETE ==
+
+---
+
+# R23b — the close re-read of the k18-revision branch (verbatim)
+
+# R23b Re-read Findings — k18-revision branch (17 commits over main)
+
+Read-only critic pass. All builds done in
+/tmp/claude-1001/-home-duxevents-pcrec/60beed03-a1ef-4a00-ba48-76e468397d0d/scratchpad/r23b/k18out/,
+via mkproto.sh with K18_OUT overridden into this session's scratchpad. Nothing
+in worktrees/k18-revision or the main tree was written to; no `make` was run
+there. Independent instrumentation (depthctr.py, a wrapper-based recursion
+depth counter distinct from the note's own k18_stats.max_depth mechanism) was
+written fresh for this pass rather than reusing the note's instruments where
+the brief asked for independence.
+
+## Priority 1 — reproduce the new headline claims
+
+**F1 (Θ(d²) recursion depth) — REPRODUCED.** Independent wrapper-based depth
+counter (clo_visit renamed clo_visit_inner, wrapped with a global
+increment/max-track/decrement, no relation to the note's own counters) on
+fresh scratch builds of shipped and the fixed A2 prototype, run on the
+nest{50,100,200,250} ladder:
+
+    d     shipped(mine) A2(mine)   note's shipped  note's A2
+    50    52            1227       53              1,277
+    100   102           4952       103             5,052
+    200   202           19902      203              20,102
+    250   252           31127      253              31,377
+
+Shipped is linear (d+2, note says d+3 — the off-by-one is almost certainly a
+"which of forward/reverse machine, or +1 base frame" bookkeeping difference
+between the two instruments, not a disagreement on the phenomenon). A2 scales
+quadratically: d=100 is ~4.04x d=50, d=200 is ~4.02x d=100, d=250/d=200 ratio
+matches (250/200)² almost exactly. The qualitative claim (linear vs quadratic)
+and the quantitative claim (within ~2-4% of the note's own numbers, using a
+genuinely independent instrument) both hold.
+
+**F2 (ASan overflow boundary at depth 210) — REPRODUCED, exactly.** Built the
+COMPILER axis under ASan (`make BUILD_DIR=build-asan CFLAGS="-O1 -g
+-fsanitize=address,leak" all`) for both shipped and the fixed A2 prototype in
+scratch copies. Depth 200: both `ok`. Depth 210/220/250: A2 gives
+`AddressSanitizer: stack-overflow ... in clo_visit` every time; shipped
+compiles cleanly through 250 at every depth tested. Matches the note's table
+cell for cell.
+
+**F3 (plain-build stack headroom, ~192KB shipped / ~7168KB A2) —
+REPRODUCED, order of magnitude and ratio; my bisection boundary is a bit
+tighter than the note's stated numbers.** `ulimit -s` bisection on nest250,
+plain (non-sanitized) builds:
+  - A2: segfaults at 6144 KB, succeeds at 7000 KB (boundary in [6144,7000],
+    narrower bisection put it in [6900,7000]) — consistent with "~7,168 KB
+    needed". Also confirmed: segfaults at ulimit -s 4096, as claimed.
+  - shipped: segfaults at 130 KB, succeeds at 150 KB (boundary in
+    [140,150]) — the note's "192 KB" is a safe-headroom figure sitting above
+    my measured crash boundary, not a contradiction, but my bisection puts
+    the true minimum lower than 192 KB. Ratio either way (~46-50x on my
+    numbers vs. the note's ~37x) is the same order of magnitude and the same
+    conclusion (A2 costs one to two orders of magnitude more stack). Not
+    something I'd block on, but the note's exact "192 KB" figure reads as
+    generous relative to what I measured as the actual crash boundary — worth
+    the rewrite lane re-checking with a tighter bisection than mine before
+    citing it as a precise number rather than a safety margin.
+
+**F4 (nesting-ladder cost table, ~0.35s at d=250) — REPRODUCED exactly.**
+5 runs each: shipped ~0.00s, A2(fixed) 0.35-0.36s at nest250. Matches the
+note's 0.3501s cell precisely.
+
+**F5 (S14 bounded-repeat family, linear in k) — REPRODUCED.** Ran
+`k18_stats.py` against the fixed A2 build on the S14 pattern family, k=2..8:
+maxdepth pinned at **1** for every k (matches the claim exactly); ctxs
+progression **13, 19, 25, 31, 37, 43, 49** (matches the brief's "13/19/25..."
+literally, and matches `docs/dev/plan.md`'s ENG-BREP correction verbatim);
+redirects grow linearly (2208, 3312, 4416, ... step 1104) though the absolute
+values differ somewhat from the number I was pointed at in the brief
+("1,968/2,952/3,936") — I could not find that exact triple anywhere in the
+branch text either, so I treat it as a paraphrase in the task brief rather
+than a citable branch claim; what the branch itself asserts (ctxs 13/19/25...,
+maxdepth 1) reproduced exactly. Timings all sub-25ms, consistent with "cost
+tracks context count, not depth."
+
+**F6 (nonstacktop=0 fixed / fires unfixed) — REPRODUCED exactly, both
+directions.** Built a genuinely UNFIXED prototype (checked out `proto_a.py`
+from `main`, confirmed by grep that it lacks the `save_open`/entries-restore
+code) and ran the four S10 witness patterns from the appendix:
+
+    pattern                                    unfixed nonstacktop   fixed nonstacktop
+    (?:(?:(?:(?:a|b*)?)+){0,2})*                60                    0
+    (?:(?:(?:(?:a|b*)?)*){0,2})*                 12                    0
+    (?:(?:(?:(?:(?:b|)|a)?)+){0,2})*             16                    0
+    (?:(?:(?:(?:a|b*?)?)+)+)*                    84                    0
+
+Both nonstacktop AND redirects (488/220/272/632 on the unfixed build) match
+the appendix's cited numbers exactly, digit for digit.
+
+**F7 (gen_adversarial.py 70/70 compile) — REPRODUCED exactly.** Ran the
+branch's own `gen_adversarial.py` fresh, got 70 patterns, all 70 compiled
+under the fixed A2 build with `refused=0`.
+
+**F8 (fuzz-found pattern is time-to-refusal, DFA state cap) — REPRODUCED
+exactly.** `(1{0,30}?[^]abc][^abc]){28,30}0+|a'` against the scratch-built
+shipped binary (built from an unmodified tar of the worktree's src/, i.e.
+what `build/pcrec` on this branch actually is): refuses with `pattern too
+complex for the DFA engine (>32000 states; VM engine arrives in M4)` in
+0.607s wall (note: 0.621s). Same pattern against the fixed A2 build: same
+refusal message, 0.811s wall (note: 0.820s/0.817s). Both essentially exact.
+
+**Bonus correctness check on S8 (not in the priority list, but cheap and
+load-bearing for the AMEND-completeness question below) — REPRODUCED.** Ran
+python3 `re` as oracle and the scratch shipped/A2 binaries on all four §1.5
+witnesses (`(?:(?:b*|a)?)*`, `(?:(?:b?|a)?)*`, `(?:(?:(?:b|)|a)?)*`,
+`(?:(?:b?|a)(?:b?|d))*`, subject `"ba"`): oracle gives (0,1) on all four;
+shipped gives (0,2) — a live miscompile — on all four; A2 gives (0,1) on the
+two I spot-checked end to end. Confirms the "PREFERRED arm, not laziness"
+finding is a real, currently-shipped tier-1 bug, not just a prototype
+artifact.
+
+## Priority 2 — AMEND-list completeness
+
+Walked every BLOCKER/MAJOR/MINOR against the branch diff rather than trusting
+the note's own "discharged" language:
+
+  S16  — DONE. §2a fully re-taken on the fixed prototype (F4 above); §6
+         ruling 1 explicitly WITHDRAWN with reasoning.
+  S14  — DONE. §2a gains "the family the depth model does not predict"
+         subsection (F5); §5 item 6 adds the bounded-repeat-times-nullable-
+         loop cost gate AND a per-pattern compile-time budget requirement for
+         fuzzer legs.
+  S10  — DONE. §2a states the invariant is TRUE on the fixed prototype
+         (verified, F6); §5 item 6 explicitly keeps BOTH assertions
+         (nonstacktop + no-repeat push scan) with the S9 mechanism-coincidence
+         argument stated inline (§3, ~line 870).
+  M-B1 — DONE. gen_adversarial.py fixed (grep confirms `"(?:%s)*" % s` wrap
+         applied to altnest/k18nest), re-run 70/70 (F7), disclosed in the
+         CLAUDE.md and the note's §2a/§1.4 text and MANIFEST.txt.
+  S3   — DONE via S16's fix; §3's no-repeat-invariant-survives-by-coincidence
+         argument is recorded explicitly (~line 870-873).
+  S8   — DONE. §1.5 added with all four witnesses (verified end to end, see
+         bonus check above); known_issues.md K18 entry gets a dated
+         CORRECTION block with the same four witnesses, matching prose.
+  S12  — DONE. §3's comparative "strictly stronger, subsumes K17" sentence is
+         explicitly withdrawn with the two counter-arguments (fragile new
+         premise; proves a weaker property); setup (ii) is named as the
+         premise the argument now depends on, with an explicit assertion
+         obligation recorded ("open loop is the stack top" + "at < cl->depth").
+  M-M1
+  +V5  — DONE. §4.4 carries a dated (2026-08-15) RESOLVED block citing
+         fuzzfix/7e27c19 by name and correcting the BELIEVED attribution;
+         7e27c19 is a real commit (visible at the top of `git log` on main).
+  V1   — DONE, and it's the item that FOUND the new Θ(d²) defect (§5 item 12
+         is the longest item in the list precisely because V1's ask turned up
+         something bigger than what it was written to check).
+  V2/V3— Recorded in §6's ruling-1 paragraph, explicitly subsumed by WITHDRAW,
+         with both D22 and D46 named for any future threshold proposal.
+  V7   — DONE. §5 item 11, a STRUCTURAL claim with file:line citations
+         (proto_a.py:370-371, :373) plus the TS-3 fallback instruction.
+  S7   — DONE. §5 item 8, names run_trie_identity.sh explicitly, records the
+         panel's 180-pattern crossing as partial evidence and states what the
+         rewrite lane still owes (the gate's own 500-pattern sweep).
+  S13  — DONE. §2a gains a "[R23 S13]" subsection (~line 268) that names the
+         SET-vs-CHAIN distinction explicitly and states today they coincide.
+  M-m1 — DONE. The whole §2a table was re-taken (per the MANIFEST's own
+         "READING THE DIFF" note); the old d=97 anomaly is gone because the
+         table changed shape entirely rather than being patched in place.
+  V4   — DONE. §5 item 10, explicit same-commit requirement for the ratchet
+         move.
+  V6   — DONE. §5 item 9, make strict + serial PROCS=1.
+
+§5 now has 13 numbered items, matching the note's own "grown to 13 items"
+claim in docs/design/CLAUDE.md.
+
+**Verdict: every AMEND item is discharged where claimed**, and I could find
+the specific text/line for each rather than just the landing summary's say-so.
+
+## Priority 3 — internal consistency
+
+**F9 (MINOR) — stale/inconsistent cost figure at line 1268.** §6 ruling 1's
+own paragraph says "the same worst case is 0.41 s (§2a)" — but §2a itself
+(the table it's citing), the top-of-file summary block, §5 item 12, and
+`docs/design/CLAUDE.md`'s summary all consistently say **0.35 s** (0.3501s
+precisely, which I independently reproduced at F4 above). "0.41 s" appears
+nowhere else in the document and does not match any table cell I could find.
+This looks like a leftover from an intermediate re-measurement pass that
+never got swept into the ruling section when §2a's numbers were finalized.
+Low stakes (it doesn't change the WITHDRAW conclusion, and 0.41s would still
+support "no threshold needed" just as well as 0.35s) but it is exactly the
+kind of stale-number drift the brief asked me to grep for, and the ruling
+section is the one place in the document a future reader is most likely to
+quote without cross-checking.
+
+**Stale-number sweep, otherwise clean.** Grepped for 39.25, 44.36, "Θ(d⁴)",
+"52 adversarial", "depth max 5" across the whole branch diff. Every hit is
+either (a) explicitly historical prose ("the old table read...", "this note
+originally printed...", "the numbers this note published") or (b) inside the
+§6 ruling-1 paragraph correctly describing what the WITHDRAWN request used to
+say. No stray live claim anywhere still asserts the old numbers as current.
+
+**ENG-BREP correction in plan.md — consistent with §2a.** `docs/dev/plan.md`'s
+c16a41a amendment cites "contexts grow LINEARLY (13/19/25/31/37/43/49 for
+k=2..8)" and "compile time 2.9ms → 8.7ms" — both match the memo's own §2a
+table and my independent F5 reproduction (ctxs 13..49 exact; timings same
+order of magnitude, mine 5.2-20.7ms vs the note's 2.9-8.7ms, likely
+measurement-harness overhead difference, not a substantive disagreement).
+
+**MANIFEST.txt vs actual outputs/ — consistent, checked directly rather than
+by eye.** All 12 files the MANIFEST lists exist in `outputs/` with matching
+row/byte-level claims I could check: `stats_corpus.tsv` has exactly 555 data
+rows, max `maxdepth` column = 4, max `ctxs` column = 13 (MANIFEST claims
+"depth max 5->4, context max 19->13" — confirmed); the three named
+re-measured patterns (`((?:([^a]{0,2})|(?:[a-c])??)+)*`, `(b*?(a*|b*)*)*`,
+`(?:b*?(?:(?:a*)*)*)*`) show ctxs 4/12/13 in the file exactly as the MANIFEST
+states; `stats_adv_A.tsv` has exactly 70 data rows.
+
+## Priority 4 — withdrawn corpus aggregate
+
+**Sound.** The withdrawal argument (§2a, ~line 673-690) is that three
+repeated trials of the floor-subtracted corpus aggregate gave nets of
+0.089/0.121/−0.053s (shipped) and 0.138/−0.266/0.341s (A2) — a quantity that
+changes SIGN between trials cannot be a measurement, and the replacement
+instrument (the inflation counters, x1.004 expansions / x0.996 visits) has a
+denominator and doesn't depend on the clock. This is the right call and the
+right replacement. Grepped for the old figures (0.671s/0.662s) elsewhere in
+the branch — the only occurrence is inside the withdrawal paragraph itself,
+quoting what the old row used to say; nothing else still cites it as live.
+
+## Summary
+
+  REPRODUCED:    9  (F1-F8 plus the S8 bonus check)
+  MINOR:         1  (F9, stale 0.41s vs 0.35s in §6)
+  DIVERGED:      0
+  UNVERIFIABLE:  0  (the one soft spot is F3's exact "192 KB" figure, which
+                     I'd call NEEDS-TIGHTER-BISECTION rather than wrong — the
+                     conclusion it supports is unaffected)
+
+Completeness checklist: 17/17 AMEND items discharged with a locatable line,
+not just a landing-summary claim.
+
+== r23b-reread COMPLETE ==
+
+## Recommendation: MERGE
+
+Every new headline claim in this revision reproduced under independent
+instrumentation and independent builds — including the one genuinely novel
+result (Θ(d²) recursion depth / ASan overflow at depth 210), which nobody
+had eyes on before this branch existed and which the branch itself found
+by doing exactly the re-measurement R23 demanded (V1). The AMEND list from
+R23 is fully discharged, each item locatable in the diff rather than taken on
+faith. The two things I'd flag are both small: the stale 0.41s in §6 (one
+edit, doesn't change the recommendation it supports) and the plain-build
+stack headroom figure (192 KB) reading a bit generous against my own
+bisection (140-150 KB) — worth a tighter re-check before the number is quoted
+elsewhere, but not a reason to hold the branch, since the qualitative
+conclusion (A2 costs one-to-two orders of magnitude more stack, real but
+sizeable-and-decidable, not a blocker) is unaffected either way. Neither
+issue rises to BLOCKER or MAJOR. This branch does what R23 asked: it turned
+a refuted note into one whose numbers I could independently regenerate.
