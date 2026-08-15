@@ -45,6 +45,8 @@ typedef struct { int parent; int loop; } LCtx;
 typedef struct {
     LCtx  *v;
     int    n, cap;
+    int   *tab;       /* open-addressed (parent,loop) -> id, -1 empty */
+    size_t tabcap;
 } LCtxTab;
 
 /* K18 measurement counters (PCREC_K18_STATS=1) */
@@ -62,10 +64,35 @@ typedef struct {
 static K18Stats k18_stats;
 static int k18_stats_on = -1;
 
+/* Interning must be a HASH, not the linear scan the first draft used: with a
+ * linear scan the measured cost of a deep-nesting pattern is the scan, not the
+ * design, and the note would have priced the prototype instead of the memo. */
+static size_t lctx_slot(const LCtxTab *t, int parent, int loop)
+{
+    uint64_t k = ((uint64_t)(uint32_t)parent << 32) | (uint32_t)loop;
+    size_t i = (size_t)((k * 1099511628211ull) >> 20) & (t->tabcap - 1);
+    while (t->tab[i] >= 0 &&
+           !(t->v[t->tab[i]].parent == parent && t->v[t->tab[i]].loop == loop))
+        i = (i + 1) & (t->tabcap - 1);
+    return i;
+}
+
+static void lctx_rehash(LCtxTab *t)
+{
+    t->tabcap = t->tabcap ? t->tabcap * 2 : 1024;
+    free(t->tab);
+    t->tab = malloc(t->tabcap * sizeof(int));
+    if (!t->tab) abort();
+    for (size_t i = 0; i < t->tabcap; i++) t->tab[i] = -1;
+    for (int i = 0; i < t->n; i++)
+        t->tab[lctx_slot(t, t->v[i].parent, t->v[i].loop)] = i;
+}
+
 static int lctx_intern(LCtxTab *t, int parent, int loop)
 {
-    for (int i = 0; i < t->n; i++)
-        if (t->v[i].parent == parent && t->v[i].loop == loop) return i;
+    if (t->tabcap == 0 || (size_t)(t->n + 1) * 2 >= t->tabcap) lctx_rehash(t);
+    size_t slot = lctx_slot(t, parent, loop);
+    if (t->tab[slot] >= 0) return t->tab[slot];
     if (t->n == t->cap) {
         t->cap = t->cap ? t->cap * 2 : 64;
         t->v = realloc(t->v, (size_t)t->cap * sizeof(LCtx));
@@ -73,15 +100,17 @@ static int lctx_intern(LCtxTab *t, int parent, int loop)
     }
     t->v[t->n].parent = parent;
     t->v[t->n].loop = loop;
+    t->tab[slot] = t->n;
     return t->n++;
 }
 
 /* Open-addressed (state,ctx) memo, generation-stamped so a closure resets in
  * O(1) like the old per-state mark array did. */
 typedef struct {
-    uint64_t *key;    /* (state<<32)|ctx, +1 so 0 is empty */
+    uint64_t *key;    /* (state<<32)|ctx */
     uint32_t *gen;
     size_t    cap;
+    size_t    used;   /* live entries THIS generation */
     uint32_t  g;
 } PMemo;
 
@@ -94,32 +123,66 @@ static void pmemo_init(PMemo *m, size_t want)
     m->gen = calloc(c, sizeof(uint32_t));
     if (!m->key || !m->gen) abort();
     m->g = 0;
+    m->used = 0;
 }
 
 static void pmemo_free(PMemo *m) { free(m->key); free(m->gen); }
 
 static void pmemo_next(PMemo *m)
 {
+    m->used = 0;
     if (++m->g == 0) {
         memset(m->gen, 0, m->cap * sizeof(uint32_t));
         m->g = 1;
     }
 }
 
+static size_t pmemo_slot(const PMemo *m, uint64_t k)
+{
+    size_t i = (size_t)((k * 1099511628211ull) >> 20) & (m->cap - 1);
+    while (m->gen[i] == m->g && m->key[i] != k) i = (i + 1) & (m->cap - 1);
+    return i;
+}
+
+/* The table MUST grow. A fixed-capacity open-addressed table whose live set
+ * outgrows it does not merely slow down, it does not terminate: every slot
+ * carries the current generation and none matches, so the probe never finds a
+ * free one. The first version of this prototype had exactly that bug and it
+ * presented as a compile that ran forever at 17 nested nullable stars while
+ * 16 finished in 0.12 s -- a cliff so sharp it read as an algorithmic
+ * explosion. It was a full hash table. */
+static void pmemo_grow(PMemo *m)
+{
+    size_t ncap = m->cap * 2;
+    uint64_t *nk = calloc(ncap, sizeof(uint64_t));
+    uint32_t *ng = calloc(ncap, sizeof(uint32_t));
+    if (!nk || !ng) abort();
+    PMemo nm = { nk, ng, ncap, m->used, m->g };
+    for (size_t i = 0; i < m->cap; i++) {
+        if (m->gen[i] != m->g) continue;
+        size_t j = pmemo_slot(&nm, m->key[i]);
+        nm.gen[j] = m->g;
+        nm.key[j] = m->key[i];
+    }
+    free(m->key);
+    free(m->gen);
+    *m = nm;
+}
+
 /* true if newly inserted (i.e. not already present this generation) */
 static bool pmemo_add(PMemo *m, int s, int ctx)
 {
     uint64_t k = ((uint64_t)(uint32_t)s << 32) | (uint32_t)ctx;
-    size_t i = (size_t)((k * 1099511628211ull) >> 20) & (m->cap - 1);
-    for (;;) {
-        if (m->gen[i] != m->g) {
-            m->gen[i] = m->g;
-            m->key[i] = k;
-            return true;
-        }
-        if (m->key[i] == k) return false;
-        i = (i + 1) & (m->cap - 1);
+    size_t i = pmemo_slot(m, k);
+    if (m->gen[i] == m->g) return false;
+    if ((m->used + 1) * 2 >= m->cap) {
+        pmemo_grow(m);
+        i = pmemo_slot(m, k);
     }
+    m->gen[i] = m->g;
+    m->key[i] = k;
+    m->used++;
+    return true;
 }
 
 typedef struct { int loop; int ctx; } OpenEnt;
@@ -278,7 +341,7 @@ src = src.replace(
     if (k18_stats_on < 0) k18_stats_on = getenv("PCREC_K18_STATS") ? 1 : 0;
     if (k18_stats_on) memset(&k18_stats, 0, sizeof k18_stats);
     PMemo memo; pmemo_init(&memo, (size_t)nfa->n);
-    LCtxTab ctxs = { NULL, 0, 0 };
+    LCtxTab ctxs = { NULL, 0, 0, NULL, 0 };
     lctx_intern(&ctxs, -1, -1);   /* id 0 = empty stack */
     OpenEnt *openst = arena_alloc(&cx->arena, (size_t)(nfa->n + 2) * sizeof(OpenEnt));
 
@@ -312,6 +375,7 @@ src = src.replace(
     }
     pmemo_free(&memo);
     free(ctxs.v);
+    free(ctxs.tab);
 }""")
 
 src = src.replace('#include <stdlib.h>\n#include <string.h>',
