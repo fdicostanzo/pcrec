@@ -180,6 +180,9 @@ typedef struct {
      * ctx_fail during that emission longjmps out — a stack-local StrBuf would
      * leak its heap buffer on exactly the path the sanitizer battery checks. */
     StrBuf vmsb;
+    /* [M4.5c] the emitted-program LISTING (DD-8, engine_m4.md S10), filled
+     * only when Ctx.want_ir is set. Job-owned for vmsb's reason. */
+    StrBuf irsb;
 } Job;
 
 typedef struct {
@@ -244,6 +247,12 @@ typedef struct {
      * rather than by a later erasure pass. Cleared for pcrec_count_groups and
      * the syntax-query surfaces, which never emit. */
     bool                 want_caps;
+    /* [M4.5c] Produce the emitted-program listing alongside the artifact
+     * (DD-8's `--emit-ir`). A QUERY, not a generation axis: it changes what
+     * pcrec REPORTS, never a byte of what it emits — which is why it lives on
+     * Ctx rather than in pcrec_options, and why the listing is rendered from
+     * the emitter's own event stream instead of from a second walk. */
+    bool                 want_ir;
     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
      * engine_why stamp's `why_pos` (§5.5). */
     size_t               first_cap_pos;
@@ -1271,6 +1280,13 @@ Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL
  * value (§18.1; the CLI's --count-groups channel), or -1 with `err` filled
  * on the same refusal pcrec_compile would give. Internal, like the dumps. */
 int pcrec_count_groups(const char *pattern, pcrec_error *err);
+/* src/core/compile.c — [M4.5c] DD-8's `--emit-ir`: compile as usual but return
+ * the VM program LISTING instead of the C. malloc'd, caller frees; NULL with
+ * `err` filled on any refusal, including the honest one for a pattern that
+ * does not compile to the VM at all. Internal, like the syntax dumps: the CLI
+ * and the test suite are its only consumers. */
+char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
+                    pcrec_error *err);
 /* PARSE-1: the MODULE CALLBACK. Parses a nested body and stops AT its
  * terminator without consuming it — the caller consumes its own `)` and owns
  * its own unterminated-construct diagnostic. Do NOT hand a module

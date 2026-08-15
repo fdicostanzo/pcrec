@@ -418,8 +418,8 @@ project journal entry.
 | `make test-reject` | `tests/reject/run_reject_tests.sh` | yes |
 | `make test-registry` | `tests/registry/run_registry_tests.sh` (registry_check, compliance_section.py, PC-3, PC-4) | yes |
 | `make test-parse` | `tests/parse/run_parse_tests.sh` | yes |
-| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` + `run_vm_identity.sh` | yes |
-| `make test-vm` | `tests/vm/run_vm_tests.sh` | yes |
+| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
+| `make test-vm` | `tests/codegen/run_vm_identity.sh` + `run_ir_listing.sh` + `tests/vm/run_vm_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
@@ -440,6 +440,33 @@ against subjects, which no script in `tests/codegen/` does.
 runs. The full sweep — the fuzzer's trap-template shapes instantiated with
 capturing groups under every quantifier — is `bash tests/vm/run_vm_tests.sh
 full` and is a checkpoint-scale run, not an inner-loop one.
+
+**[M4.5c] (2026-08-15) — `test:` is TWELVE script invocations, and two of them
+moved sections.** `run_ir_listing.sh` is new (DD-8's program listing held to
+the artifact it describes). More interestingly, `run_vm_identity.sh` MOVED
+from `test-codegen` to `test-vm`, and `run_ir_listing.sh` joined it there
+rather than beside it in `test-codegen` — for the measured reason this
+document asks about whenever a section grows.
+
+Both scripts LIVE in `tests/codegen/` (they are identity and structural
+differentials, kin to `run_trie_identity.sh` by technique) but they RUN under
+`test-vm`, because `make smoke` includes `test-codegen` and they cost 8.0s and
+2.9s against that section's own 0.7s + 7.4s. Measured on the project box,
+2026-08-15:
+
+| target | on merged main | after the move |
+|---|---|---|
+| `make test-codegen` | 16.28s | **9.33s** |
+| `make smoke` | **62.98s** | **54.76s** |
+
+**Two findings in that table, and the second is not [M4.5c]'s.** First, the
+move is what puts smoke back inside its 60s target. Second, smoke was ALREADY
+OVER that target on the main this lane merged — 62.98s — and the dominant term
+is `test-known-fail` at **23.26s**, a section that used to be nearly free.
+The K18 ratchet runs the corpus harness, and the harness grew the
+capture-expectation machinery at [M4.5a]; the ratchet now pays for it on one
+`.rxt` file. That is worth someone's attention on its own terms and is
+recorded here rather than fixed by this lane, which does not own the harness.
 
 Each target depends on `all`, so a stale binary never reads as a pass.
 `make mech`, `make bench`, `make fuzz`, and `make strict` already had their
@@ -509,7 +536,7 @@ at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
 | Touched path | Spot-check with | Why |
 |---|---|---|
 | `src/parse/*` (`parse.c`, `registry.c`, `enabled.c`, `ext.c`, `scans.c`, `syntax_dump.c`, `mod_*.c`) | `test-reject`, `test-registry`, `test-spec`, `test-cli` | reject asserts the "never miscompile" mandate per construct; registry checks the SR-1 table against the parser AND against libpcre2 (PC-3/PC-4); spec_mod0 is the D27 promise-derived suite, blind to `src/`'s own alphabet; cli exercises the CLI surface these modules gate ("requires module 'X'") |
-| `src/gen/emit_vm.c`, `src/opt/select_engine.c`, `A_CAP`'s parse hook | `test-vm`, `test-codegen` (for `run_vm_identity.sh`'s §5.4 gate), `test-parse` | test-vm is where a wrong capture span or a broken bound shows up, and it is the ONLY section that runs a VM artifact against subjects; the §5.4 gate is what catches a capture-free pattern's bytes moving, which no correctness test can see because the VM computes the same spans; test-parse's ast-identity check is the D31 erasure's own net |
+| `src/gen/emit_vm.c`, `src/opt/select_engine.c`, `A_CAP`'s parse hook | `test-vm` (which carries the §5.4 gate and DD-8's listing check), `test-codegen`, `test-parse` | test-vm is where a wrong capture span or a broken bound shows up, and it is the ONLY section that runs a VM artifact against subjects; the §5.4 gate is what catches a capture-free pattern's bytes moving, which no correctness test can see because the VM computes the same spans; test-parse's ast-identity check is the D31 erasure's own net |
 | `src/ir/*` (`nfa.c`, `dfa.c`) + `src/opt/*` (`minimize.c`) + `src/gen/*` (`emit_dfa.c`) | `test-corpus`, `test-codegen` (includes the trie identity differential and the §5.4 VM gate), `test-vm`, `bench` | corpus is correctness of what the emitted matcher actually matches; codegen asserts the optimization signatures (skip tables, fast paths, minimization) are structurally present, per R2-PR3's finding that these can be silently disabled with zero other signal; bench guards the throughput/compile-time budgets these components produce |
 | `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
 | `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
@@ -523,7 +550,10 @@ never vibes. Runs the real section targets it lists, not a weakened variant
 of any of them.
 
 **Composition**: `test-cli`, `test-registry`, `test-parse`, `test-codegen`,
-`test-known-fail`, `test-thread`. Deliberately excludes the three slow
+`test-known-fail`, `test-thread`. (Unchanged at [M4.5c] — what changed is what
+`test-codegen` CONTAINS; see the re-check above, and note the measured total
+has moved a long way from the ~32s recorded below, mostly in
+`test-known-fail`.) Deliberately excludes the three slow
 sections: `test-corpus` (~304s, two orders of magnitude over budget),
 `test-reject` (~55s, which alone would consume nearly the whole budget and
 leave no room for anything else), and `test-spec` (~27s, which — added to

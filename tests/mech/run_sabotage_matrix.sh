@@ -55,6 +55,7 @@
 #   codegen  trie  reject  harness   — the original four
 #   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
+#   irlisting                          — added 2026-08-15 ([M4.5c])
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -220,6 +221,20 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("vmid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            irlisting)
+                # [M4.5c] DD-8's program listing held to the artifact it
+                # describes. Its own arm rather than `codegen`, for the same
+                # reason vmidentity is: the property is orthogonal to every
+                # optimization-present check in that script, and a sabotage of
+                # one must not be reported as coverage by the other.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_ir_listing.sh" \
+                    > "$work/irlisting.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/irlisting.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/irlisting.log" | grep -oE '[0-9]+')"
+                suite_bits+=("irlist:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

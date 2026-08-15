@@ -26,7 +26,16 @@ enum {
 enum {
     PCREC_CASELESS    = 1u << 0,  /* was pcrec_options.caseless */
     PCREC_EMIT_MAIN   = 1u << 1,  /* was pcrec_options.emit_main */
-    PCREC_NO_CAPTURES = 1u << 2   /* --no-captures (D42.1) */
+    PCREC_NO_CAPTURES = 1u << 2,  /* --no-captures (D42.1) */
+    /* [M4.5c] (DD-8, engine_m4.md S10): emit an INSTRUMENTED matcher that
+     * prints every resume-frame push/pop and capture write to stderr as it
+     * runs. A GENERATION AXIS like every other option here (D18) — the
+     * instrumentation is compiled in, not switched at run time — and never
+     * the default: a traced artifact writes to stderr, which is not something
+     * a shipped matcher should ever do. The artifact stamps that it is
+     * traced, so no one has to guess. VM artifacts only; a DFA matcher has
+     * no resume frames to trace. */
+    PCREC_TRACE       = 1u << 3
 };
 
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.
