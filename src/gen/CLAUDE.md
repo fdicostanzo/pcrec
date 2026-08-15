@@ -108,6 +108,18 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     with an honest `subject_ceiling` stamped for the residual class (D44.1).
     The defaults are BRING-UP PLACEHOLDERS — D12 rules budgets come from
     measured medians and [M4.6] takes the measurement.
+  - **[M4.5c fix] the REPLICATION cap and the pre-pass's recursion.** A
+    bounded repeat replicates its body (§3.3), so `{0,N}` over a
+    choice-bearing body emits N copies — `((a)|b){0,4000}c` is sixteen
+    characters and 3.5 MB, and gcc is superlinear in the resulting
+    address-taken-label fan-out (K19). `PCREC_MAX_VM_REPEAT_COPIES` is checked
+    in the PRE-PASS, before a byte is emitted; limits.h carries the
+    measurement and the reason the cap is on replication rather than on size.
+    Separately, the pre-pass functions (`vm_nullable`, `vm_count_slots`,
+    `vm_cost`) walk `A_CAT`/`A_ALT` spines ITERATIVELY. They did not, and a
+    20,000-character pattern SEGFAULTED pcrec (K20) — DD-10/D10/R1 R-2's class
+    for the third time. Any new walk over those shapes needs the same
+    treatment; `vm_nullable` carries the comment that says so.
   - **[M4.5c] the LISTING and the TRACE (DD-8, §10).** §10's one constraint —
     "the dump must be derived from the same structure the emitter walks, never
     a parallel description" — is why the listing is an EVENT STREAM (`VEvent`)

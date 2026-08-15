@@ -1284,3 +1284,98 @@ emitted-source diff + isolation sweep with an injected positive control).
 Until then: the known_fail ratchet holds it visible; [M4.5]'s three-way
 span differential is the net; [M4.6] does NOT open with K18 unfixed
 (same precondition status as K17, R21 review E-1 disposition).
+
+---
+
+## K19 — FIXED 2026-08-15, found 2026-08-15 (D45's own ruling; the battery that pegged cc1 for 100+ minutes)
+
+**A shipped compiler defect in [M4.5b]'s VM emitter: a bounded repeat over a
+choice-bearing body emits megabytes of C that no cap stopped, and gcc's
+compile time on that shape is superlinear.**
+
+Not a miscompile — the emitted matcher is CORRECT. The defect is
+DISPROPORTION between what the author writes and what the compiler emits, and
+its consequence is a build that never finishes.
+
+**Repro** (before the fix):
+
+    $ build/pcrec -p rx -o /tmp/o.c '((a)|b){0,4000}c'   # 16 characters
+    $ wc -l /tmp/o.c
+    113545 /tmp/o.c                                       # 3.5 MB
+    $ gcc -O2 -c /tmp/o.c                                 # minutes
+    $ gcc -O1 -fsanitize=undefined -c /tmp/o.c            # 100+ minutes
+
+`PCREC_MAX_VM_NODES` did not stop it: it refused `(a|b){0,65535}` and let this
+through, which is what D45's consequence 1 records as the gap.
+
+**Why the emitted size is linear in a number written in three characters:**
+engine_m4.md §3.3's ruled reading is that a bounded repeat REPLICATES its body
+(PCRE2's own semantics — each copy is an independent opportunity to match), so
+`{0,N}` over a body containing an alternation costs N copies of that body's
+code.
+
+**Why gcc goes superlinear on it**, measured (project box, 2026-08-15; the full
+curves are in docs/testing.md's battery section): the cost tracks the number of
+ADDRESS-TAKEN LABELS, not the label count. At the same size, `(a×2000)b` emits
+2004 labels with ZERO address-taken labels and compiles in 2.70 s at -O2, while
+`((a)|b){0,200}c`'s 2003 labels with 400 address-taken labels take 11.21 s.
+Each `&&label` becomes a potential successor of the VM's single `goto *`, so the
+indirect edge's fan-out is what gcc's dataflow goes superlinear in. It is R1
+A-3's computed-goto cliff, reached from the VM side — which REFUTES
+engine_m4.md §2.1 and §13's P-6 ("the VM should therefore never approach" it)
+and answers §12's ASK-7 unbidden.
+
+**Fixed** by `PCREC_MAX_VM_REPEAT_COPIES = 64` (src/core/limits.h), checked in
+the pre-pass BEFORE emission, with a diagnostic that names the replication
+count, the limit, and the two ways out. The number is measured: at 64 copies
+the worst allowed artifact costs 1.40 s at -O2 (28% of D45's 5 s plain budget)
+and 2.30 s under UBSan; 128 copies would sit at 92% of the plain budget.
+
+The cap is on REPLICATION rather than total size on purpose. A first draft
+capped total resume points and refused a 200-branch capture-bearing keyword
+alternation, which is entirely healthy — its size is proportionate to the
+pattern. Sabotage S44.
+
+**Residual, open and recorded**: a very long capture-bearing LITERAL still
+emits a large artifact with zero resume points (20,000 characters → 2.3 MB,
+>180 s at both -O1 and -O2), bounded only by `PCREC_MAX_VM_NODES` at 131,072 —
+far above what the compile budget absorbs. That shape is proportionate to the
+pattern, so the replication cap correctly does not see it, and D45's harness
+wrapper now catches it loudly instead of hanging. Lowering the node cap would
+refuse patterns that work today and is a ruling, not a fix.
+
+---
+
+## K20 — FIXED 2026-08-15, found 2026-08-15 (while probing K19's boundary)
+
+**A shipped CRASH in [M4.5b]'s VM emitter: unbounded C recursion on the AST
+spine, SIGSEGV on the default path with no special flag.**
+
+    $ build/pcrec -p rx -o /tmp/o.c "($(python3 -c "print('a'*20000)"))"
+    Segmentation fault (core dumped)          # rc 139, empty stderr
+
+The threshold tracks `ulimit -s` — 8 MB crashes at ~20,000 characters, 2 MB at
+~6,000, 64 MB survives — which is what identifies it as stack exhaustion
+rather than anything subtler. Capture-bearing patterns only (the VM path);
+larger sizes were masked on the default path because the DFA state cap fires
+first, but `--engine=vm` crashed at every size above the threshold.
+
+**Root cause**: three pre-pass functions added at [M4.5b] — `vm_nullable`,
+`vm_count_slots` and `vm_cost` — recursed on `A_CAT`/`A_ALT` children, so a
+left-leaning spine of N elements recursed N deep.
+
+**This is DD-10 / D10 / R1 R-2's bug class for the THIRD time.** `src/ir/nfa.c`
+flattens its `A_CAT`/`A_ALT` spines iteratively for exactly this reason and
+says so in a comment; `vm_emit` (the emitter proper) was written to match; the
+three helper functions beside it were not, and nothing in the tree could see
+the difference because no test compiles a 20,000-character pattern.
+
+**Fixed** by flattening all three iteratively, matching nfa.c. Verified at a
+1 MB stack: a 100,000-character capture-bearing literal now compiles, where
+8 MB previously failed at 20,000 — the recursion is gone, not merely deeper.
+
+**The lesson worth keeping** is not "flatten spines" — the tree already knew
+that — it is that the rule was recorded against ONE function rather than
+against the AST shape, so the next three functions to walk the same shape
+inherited nothing. Any new walk over `A_CAT`/`A_ALT` needs the same treatment,
+and `vm_nullable` now carries the comment that says so.

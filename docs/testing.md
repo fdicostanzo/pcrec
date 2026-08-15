@@ -933,56 +933,103 @@ Recorded as a known limit of the chosen build flags rather than fixed
 (`-O0` would close it but cost real coverage speed across a suite this
 size — a tradeoff for the manager, not decided here).
 
-### A test case RESIZED for the sanitizer axis ([M4.5c], 2026-08-15)
+### D45 — every generated-code compile runs under a budget (2026-08-15)
 
-Not an exclusion — the case still runs on every axis — but it belongs beside
-them, because it is the same question asked about a suite's cost and answered
-by shrinking a fixture instead of dropping one.
+`docs/dev/decisions.md` D45, ruled live: **every compile of generated C in the
+test infrastructure runs under a timeout, and exceeding it is a loud FAILURE
+naming the case — never a hang, never a silent skip.**
 
-`tests/vm/run_vm_tests.sh`'s large-bounded-repeat stamp case was
-`((a)|b){0,4000}c`. engine_m4.md §3.3's ruled reading is that a bounded repeat
-REPLICATES its body, so the emitted C is linear in the count: 3.5 MB and
-40,003 labels in one computed-goto function. Two `cc1` processes ground for
-**1h40m and 55m** on that single file under `make ubsan` before anyone
-noticed. The case is now `((a)|b){0,50}c` under an explicit
-`--backtrack-frames=32` — the same property (a requirement of 50 frames
-against a capacity of 32) in 53 KB instead of 3.5 MB.
+It came out of a battery in which two `cc1` processes ground for 1h40m and 55m
+on one generated file. The reason nobody noticed for that long is the whole
+point of the ruling: an unbounded compile reads as "still running", never as
+"failed", so a suite with no compile bound cannot tell a slow machine from a
+hung one and reports neither.
 
-**The measurement, because the obvious diagnosis is wrong.** Project box,
-2026-08-15, `-O1 -std=gnu11 -Wall -Wextra` plus each axis's own flags:
+**One implementation**: `tests/lib/gen_timeout.sh`, sourced by all seven shell
+suites that compile emitted C, and read as a command (`bash
+tests/lib/gen_timeout.sh secs`) by the two python ones, so the rule lives in
+one file rather than one per language. `gen_cc <case-label> <cc-argv...>` runs
+the compile and leaves the compiler's output — or the timeout diagnostic — in
+`$GEN_CC_LOG`, so a caller reports the same way whichever happened.
 
-| N | labels | `&&label` | plain -O1 | ubsan -O1 | asan -O1 | plain **-O2** |
+**Defaults**: 5s on the plain axes, 60s on the sanitizer axes, both
+env-overridable (`GENTIMEOUT`, `GENTIMEOUT_SAN`). The axis is DERIVED from the
+flags — `-fsanitize=` appears in `GENCFLAGS`/`CFLAGS`/`TSANFLAGS` exactly when
+the compile is instrumented — so no site has to declare which axis it is on and
+a site added later gets the right budget for free. `124` is checked exactly,
+not as `>= 124`: a compiler that segfaults exits 139 and one that is OOM-killed
+exits 137 (K7's `a{0,65535}` really does), and calling either a timeout would
+send the reader looking for a slow machine instead of a crash.
+
+**Deliberately NOT converted**: `tests/bench`'s compile timeouts, because they
+ARE its measurement — it reports DNF against a compile-time budget, so
+replacing them with a shared number would delete the instrument. And
+`tests/thread`'s TS-3 builds, which compile libpcrec itself (compiler axis, not
+emitted code).
+
+**Its own checks**: `tests/lib/run_gen_timeout_tests.sh` (8 checks, in
+`make test`). A positive control proves the wrapper FIRES on a real
+over-budget compile and names the case; a coverage assertion proves every
+suite routes through the one helper, which is the check that survives future
+work, since a new compile site added without the wrapper is the realistic way
+this protection erodes. Sabotage S43.
+
+### The pathology D45 was ruled over, and the compiler-side bound
+
+`tests/vm`'s large-bounded-repeat case was `((a)|b){0,4000}c` — sixteen
+characters, 3.5 MB and 113,545 lines of emitted C, because engine_m4.md §3.3's
+ruled reading is that a bounded repeat REPLICATES its body.
+
+**It is not a sanitizer pathology, and it is not the label count.** Measured on
+the project box, 2026-08-15:
+
+| N | labels | `&&label` | plain -O1 | plain **-O2** | ubsan -O1 | asan -O1 |
 |---|---|---|---|---|---|---|
-| 25 | 253 | 50 | 0.20 s | 0.90 s | — | — |
-| 50 | 503 | 100 | 0.40 s | 1.90 s | — | — |
-| 100 | 1003 | 200 | 0.70 s | 4.51 s | 1.80 s | 2.90 s |
-| 200 | 2003 | 400 | 1.60 s | 13.91 s | 3.60 s | 11.21 s |
-| 400 | 4003 | 800 | 3.50 s | 49.94 s | 5.31 s | 51.54 s |
+| 25 | 253 | 50 | 0.20 s | 0.40 s | 0.80 s | — |
+| 50 | 503 | 100 | 0.40 s | 1.00 s | 1.71 s | — |
+| 64 | 643 | 128 | 0.50 s | **1.40 s** | 2.30 s | — |
+| 100 | 1003 | 200 | 0.70 s | 2.90 s | 4.11 s | 1.80 s |
+| 128 | 1283 | 256 | 0.90 s | 4.61 s | 6.11 s | — |
+| 200 | 2003 | 400 | 1.60 s | 11.21 s | 13.91 s | 3.60 s |
+| 400 | 4003 | 800 | 3.50 s | 51.54 s | 49.94 s | 5.31 s |
 
-**It is not a sanitizer pathology.** ASan is linear and plain `-O2` is
-superlinear — *worse* than UBSan at `-O1`. UBSan and `-O2` are two ways of
-hitting one wall, and it is R1 A-3's own computed-goto cliff, reached from the
-VM side.
+ASan is linear; plain `-O2` is superlinear and *worse* than UBSan at `-O1`. So
+UBSan and `-O2` are two routes to one wall, and the wall is R1 A-3's
+computed-goto compile-time cliff reached from the VM side.
 
-**And it is not the label count either.** A control at the same size settles
-it: `(a×2000)b` emits 2004 labels with **zero** address-taken labels and
-compiles in **2.70 s** at `-O2`, where `((a)|b){0,200}c`'s 2003 labels with
-**400** address-taken labels take **11.21 s**. The cost tracks the number of
-`&&label` operands — every one becomes a potential successor of the single
-`goto *`, so the indirect edge's fan-out is what gcc's dataflow goes quadratic
-in. Growth per doubling of that count: 3.9x then 4.6x.
+A control settles the cause: `(a×2000)b` emits 2004 labels with **zero**
+address-taken labels and compiles in **2.70 s** at `-O2`, where
+`((a)|b){0,200}c`'s 2003 labels with **400** address-taken labels take
+**11.21 s**. Every `&&label` becomes a potential successor of the VM's single
+`goto *`, so the indirect edge's fan-out is what gcc's dataflow goes
+superlinear in.
 
-The knee is between N=200 and N=400 on both slow axes; the resized case sits
-at N=50 (1.9 s under UBSan). After the resize the largest artifact any
-`tests/vm` or `tests/codegen` case produces is 53 KB, verified by sweeping all
-51 compilable test patterns in those suites.
+**The compiler-side bound is on REPLICATION, not on size**
+(`PCREC_MAX_VM_REPEAT_COPIES = 64`, src/core/limits.h). A first draft capped
+total resume points at 128 and refused the wrong patterns: a 200-branch
+capture-bearing keyword alternation has 199 resume points and is entirely
+healthy (the 100-branch version measures 0.50 s at `-O2`), because its size is
+PROPORTIONATE to what its author wrote. The defect is DISPROPORTION — sixteen
+characters producing 3.5 MB — and only replication produces it. A body with no
+choice point compiles to a span loop and never replicates, so `a{0,65535}` and
+`(?:ab){0,9999}` are untouched.
 
-Recorded here rather than fixed, because the fix is engine work: see the
-[M4.5c] commit for the recommendation (cap or stamp the RESUME-TARGET count,
-never the node count, and the real remedy is a counter-based bounded repeat
-for choice-bearing bodies). It also refutes engine_m4.md §2.1/§13 P-6's
-"the VM should therefore never approach" R1 A-3's cliff, and answers §12
-ASK-7 unbidden.
+**The case itself** is now `((a)|b){0,20}c` under an explicit
+`--backtrack-frames=32`: the same D44.1 property (a frame requirement of 40
+against a capacity of 32), 28 KB instead of 3.5 MB, 0.31 s at `-O2`, and 40
+replicas against the 64 cap. Naming the capacity also decouples it from a
+number it does not own — the default capacity is a bring-up placeholder [M4.6]
+will calibrate, and had [M4.6] raised it above 4000 the old case would have
+started fitting and gone silently vacuous while still passing.
+
+**Residual, recorded not fixed**: the two guards are independent and neither
+covers everything. A very long capture-bearing LITERAL still emits a large
+artifact with zero resume points (20,000 characters → 2.3 MB, >180 s at both
+`-O1` and `-O2`), bounded only by `PCREC_MAX_VM_NODES`, which at 131,072 is far
+above what the compile budget can absorb. That shape is proportionate to the
+pattern rather than disproportionate to it, so it is not what the replication
+cap is for — and D45's harness wrapper now catches it loudly rather than
+hanging. Lowering the node cap is a refusal decision for the manager.
 
 ### Exclusions
 

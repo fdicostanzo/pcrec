@@ -4,6 +4,15 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 
 ## Files
 
+- **lib/** — infrastructure shared by every suite. `gen_timeout.sh` is D45's
+  ONE implementation of the generated-code compile budget (5s plain, 60s
+  sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`, axis derived from the flags):
+  every compile of emitted C in the tree runs through its `gen_cc`, and
+  exceeding the budget is a loud FAILURE naming the case, never a hang.
+  `run_gen_timeout_tests.sh` is its own section in `make test` — a positive
+  control that the wrapper FIRES, plus a coverage assertion that every suite
+  routes through it, because a test-infrastructure property is invisible to
+  every other suite in the tree
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`

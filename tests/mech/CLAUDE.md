@@ -85,6 +85,10 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   bytes do not move) is orthogonal to every optimization-present check in
   `run_codegen_tests.sh`, and a sabotage of one should not be reported as
   coverage by the other.
+- `gentimeout` → `tests/lib/run_gen_timeout_tests.sh`, D45's own checks. Its
+  own arm because what it guards is a property of the TEST INFRASTRUCTURE,
+  which no other arm can see: with the budget removed every suite still
+  passes and only the next multi-hour hang notices.
 - `irlisting` → `tests/codegen/run_ir_listing.sh`, [M4.5c]'s DD-8 listing
   check. Its own arm rather than `codegen` or `vmidentity`, for the reason
   those two are separate from each other: what it guards (the program listing
@@ -180,6 +184,18 @@ anywhere in the tree can see either.
 S41 is the third sabotage in this directory whose edit is a real past bug
 rather than an invented one: the accept label really was emitted by a direct
 `sb_printf`, and `run_ir_listing.sh` caught it on its first run.
+
+## [M4.5c fix]'s two rows (2026-08-15, D45)
+
+S43 removes D45's compile budget and S44 raises the replication cap out of the
+way. Both restore a state the tree really shipped in: S43's is how every
+compile looked before the ruling (which is why a 100-minute hang went
+unnoticed), and S44's is what let `((a)|b){0,4000}c` emit 3.5 MB (K19).
+
+They also demonstrate that the two guards are INDEPENDENT, which is worth
+having in the matrix: the compiler-side cap stops the artifact existing, the
+harness-side budget stops any artifact hanging a battery, and neither
+subsumes the other.
 
 ## Which rows were retagged, and what the new arms measured
 
