@@ -104,6 +104,38 @@ enum {
      * construct that reaches this cap without guessing. */
     PCREC_MAX_VM_REPEAT_COPIES = 64,
 
+    /* [K22] The THIRD VM size bound, and the one the other two structurally
+     * cannot provide: how many times a body may be replicated in TOTAL along a
+     * chain of NESTED bounded repeats.
+     *
+     * WHY NEITHER OF THE TWO ABOVE COVERS IT. `PCREC_MAX_VM_REPEAT_COPIES`
+     * bounds ONE quantifier's own factor, and nesting MULTIPLIES factors that
+     * are individually tiny: a depth-40 tower of `{0,2}` has a maximum factor
+     * of 2 and replicates the innermost body 2^40 times.
+     * `PCREC_MAX_VM_NODES` would catch it, and does — but it is charged DURING
+     * emission, while `vm_count_slots` must walk the same copy tree BEFORE a
+     * byte is emitted, so the walk itself is the Theta(2^d) work nobody
+     * bounded. K22: depth 30 refused in 11.8 s and depth 35 hung with no
+     * diagnostic, on a 320-character pattern (docs/dev/known_issues.md K22,
+     * docs/design/possessify_impl/k22_repro.txt).
+     *
+     * IT IS THE NODE CAP'S OWN VALUE, and that is a structural identity rather
+     * than a coincidence worth tuning separately. Every replicated copy of a
+     * body costs at least one `vm_charge` (one `vm_emit` call per copy), so
+     * the total replication product is a LOWER BOUND on the emitted node
+     * count. Refusing above `PCREC_MAX_VM_NODES` therefore refuses only
+     * patterns `PCREC_MAX_VM_NODES` was going to refuse anyway — the guard
+     * moves the refusal EARLIER, never wider, so it cannot cost a pattern that
+     * compiles today. MEASURED on the K22 tower: depth 16 (product 65,536)
+     * compiles before and after; depth 17 (product 131,072, exactly at this
+     * limit) still reaches the node cap in 0.7 s; depth 18 and up now refuse
+     * in ~0.1 s where depth 35 used to hang.
+     *
+     * The REAL fix is [ENG-BREP]'s counter-K rung, which stops replicating for
+     * exactly these shapes. This is the interim guard that makes the failure
+     * honest in the meantime. */
+    PCREC_MAX_VM_REPLICATION_PRODUCT = PCREC_MAX_VM_NODES,
+
     /* [ENG-BREP] How many byte-consuming POSITIONS a quantifier body may have
      * before src/opt/possessify.c gives up on it. It bounds the position
      * (Glushkov) automaton the §2.2 unique-iteration test is decided on: the
@@ -119,7 +151,25 @@ enum {
      * class bitmap), so the two limits are one number rather than two that
      * could drift; a body with more than 256 literal positions is not a
      * bounded repeat anybody is waiting on. */
-    PCREC_MAX_POSSESS_POSITIONS = 256
+    PCREC_MAX_POSSESS_POSITIONS = 256,
+
+    /* [ENG-BREP] How many CAPTURING GROUPS a quantifier body may contain before
+     * src/opt/revdet.c declines the reverse-deterministic rung.
+     *
+     * It is a bound on EMITTED LOCALS, not on analysis: the rung recovers the
+     * last iteration's captures by a backward walk that accumulates one span
+     * pair and one seen-flag per body group before publishing them, and those
+     * live in the matcher's frame. Same number and same reason as the cursor
+     * rung's own `VM_MAX_BODY_CAPS` (src/gen/emit_vm.c), which bounds the same
+     * kind of table for the same failure: a group the table could not hold
+     * would never be written and would report UNSET on a match it participated
+     * in — a silent wrong span, which is the one outcome D26 refuses outright.
+     *
+     * Like every other decision in that pass, exceeding it DECLINES: the
+     * quantifier keeps the machinery it has today and matches exactly what it
+     * matches today, so this number can change how fast an artifact runs and
+     * can never change what it answers. */
+    PCREC_MAX_REVDET_BODY_GROUPS = 64
 };
 
 /* ---- PCRE2 SYNTAX — exact, and part of the language -------------------- *

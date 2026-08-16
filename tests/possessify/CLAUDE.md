@@ -72,6 +72,15 @@ in a specific way.
   two prefixes into one TU. That is itself a real property being exercised:
   the fixed ABI types are emitted under a prefix-INDEPENDENT include guard so
   differently-prefixed headers can share a TU (D44/A-2).
+
+  **It is now SHARED with `tests/rungselect/`** ([ENG-BREP]'s next rung), which
+  links it with its own pair of artifacts. The comparison this file makes — two
+  artifacts of one pattern must agree on span, every slot and the failure
+  surface — is the same claim for every member of D47.3's deny family, and only
+  the words in the divergence report differ. Those come in through
+  `-DDIFF_A_LABEL`/`-DDIFF_B_LABEL`, which default to this suite's own wording,
+  so nothing here changed behaviour. Keep it that way: a second copy of this
+  comparison would be a second thing to keep in step with the first.
 - **`run_possdiff.sh`**, **`run_possessify_tests.sh`** — the two suites,
   wired into `make test` as `make test-possessify` and into the `make
   ubsan`/`make asan` both-axes batteries. EXECUTION of every generated
@@ -190,6 +199,25 @@ artifact that gcc legitimately takes ~2.4 s on. Running `make test` while
 seconds: that pattern's emitted C is BYTE-IDENTICAL with the pass on and off
 (it possessifies nothing) and gcc times 2.39 s against 2.40 s, so
 possessification cannot be the cause. Serialize the batteries.
+
+## [ENG-BREP] Three checks here PIN THE NEXT RUNG OUT
+
+`run_possessify_tests.sh`'s frames-rung shape block, §7's ceiling prediction and
+its capture-bearing counterpart all pass `-fno-revdet` as of the
+reverse-deterministic rung's landing. Not a workaround — each names the FRAMES
+RUNG in what it asserts, and `(?:a|bc)` is reverse-deterministic, so at the
+default those quantifiers stopped taking that rung. The failures read as "the
+cut is missing from the possessified build" and "subject_ceiling did not move as
+§7 predicts", neither of which was true: the rung the assertion names was no
+longer the rung that ran. D46's pin-the-selection rule.
+
+The third one is worth reading for a reason of its own. It asserts that a
+possessified loop with CAPTURES in its body still declares a ceiling, because
+the cut discards frames and deliberately does not rewind the trail. On the
+reverse-deterministic rung that stamp is 0 and it is TRUE — that rung SUPPRESSES
+the body's capture writes and recovers the same values by a backward walk at
+commit, so nothing grows per iteration. Two different facts about two different
+emissions, and the denial is what keeps this file asserting its own.
 
 ## Failing-direction controls
 

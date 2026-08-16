@@ -145,11 +145,17 @@ typedef enum {
 typedef enum {
     VM_RUNG_CURSOR           = 0,  /* index into vm_rung_bit[], not a bit */
     VM_RUNG_FRAMES_BOUNDED   = 1,
-    VM_RUNG_FRAMES_UNBOUNDED = 2
+    VM_RUNG_FRAMES_UNBOUNDED = 2,
+    /* [ENG-BREP] engine_m4.md §2.5's REVERSE-DETERMINISTIC rung, between the
+     * cursor and the frames: ONE body copy, a deterministic forward scan, one
+     * resume frame for the whole loop, and a backward walk over the reversed
+     * body for the retreat and for §3.4's last-iteration captures. */
+    VM_RUNG_REVDET           = 3
 } VmRungKind;
-static const unsigned vm_rung_bit[3] = { 0x1u, 0x2u, 0x4u };
-static const char    *const vm_rung_kindname[3] =
-    { "cursor", "frames-bounded", "frames-unbounded" };
+enum { VM_NRUNG = 4 };
+static const unsigned vm_rung_bit[VM_NRUNG] = { 0x1u, 0x2u, 0x4u, 0x8u };
+static const char    *const vm_rung_kindname[VM_NRUNG] =
+    { "cursor", "frames-bounded", "frames-unbounded", "revdet" };
 
 /* [ENG-BREP/D46] the LADDER's first rung as its own small named value set,
  * sitting BESIDE the rung rather than inside it: a possessified quantifier
@@ -193,6 +199,22 @@ typedef struct {
                            * base, for vm_slot_low's own reason */
     int       nmark;      /* [ENG-BREP] possessive cut-mark slots so far */
     int       nmark_total;
+    int       nrev;       /* [ENG-BREP] revdet LOOPS so far (3 slots each) */
+    int       nrev_total;
+    int       nrevcaps;   /* the largest capture-group count any one revdet
+                           * body has — sizes the SHARED recovery locals. One
+                           * array serves every revdet loop because a walk's
+                           * results are PUBLISHED into stv before control
+                           * leaves the loop, so nothing outlives its own
+                           * commit. */
+    int       nocap;      /* [ENG-BREP] >0 while emitting (or costing) a revdet
+                           * loop's FORWARD body, where capture writes are
+                           * SUPPRESSED: they are what would otherwise make the
+                           * trail grow per iteration, and they are redundant,
+                           * because §3.4's backward walk recovers every one of
+                           * them from the committed span. A counter rather
+                           * than a bool so a nested construct cannot clear a
+                           * suppression it did not set. */
     long long npush;      /* [M4.5c fix] emitted RX_PUSH sites, counted in the
                            * pre-pass. Reported in the listing so a check can
                            * hold it against the artifact; not itself a cap. */
@@ -303,6 +325,26 @@ static int vm_slot_low(Vm *v, int i)   { return 2 * (v->ngroups + 1) + v->nguard
 static int vm_slot_mark(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total + i;
+}
+/* [ENG-BREP] the fifth slot class: THREE per reverse-deterministic loop, and
+ * three whatever the preference or the verdict.
+ *
+ *   +0  `entry` — the loop's start position. The capture walk's FLOOR.
+ *   +1  `low`   — the boundary after `rmin` iterations. The retreat's FLOOR.
+ *   +2  `hi`    — the maximal boundary the forward scan reached. The lazy
+ *                 extension's CEILING, which is what lets a lazy loop enforce
+ *                 its `{m,n}` cap POSITIONALLY instead of with a per-extension
+ *                 trailed counter.
+ *
+ * A uniform three even where a given shape reads only two: the count has to
+ * agree across vm_count_slots, vm_cost_rep and the emitter, and a
+ * per-preference rule would put that agreement in three places instead of one.
+ * All three are written ONCE per loop ENTRY, never per iteration, which is the
+ * property this whole rung exists for. */
+static int vm_slot_rev(Vm *v, int loop, int which)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
+         + v->nmark_total + 3 * loop + which;
 }
 
 /* ---- AST predicates ------------------------------------------------------*/
@@ -529,6 +571,58 @@ static bool vm_cursor_fits(const Ast *rep, const uint8_t **seq, int *stride,
     return true;
 }
 
+/* ---- §2.5's REVERSE-DETERMINISTIC rung: the two facts every site needs ----
+ *
+ * The VERDICT itself is not computed here: src/opt/revdet.c decides it and
+ * leaves the body's REVERSED AST on `Ast.revbody`, non-NULL exactly when the
+ * rung applies. That is deliberate — the rung has three call sites that must
+ * agree (the slot counter, the capacity analysis and the emitter) and the
+ * cursor rung's own history is that a condition read three times is a condition
+ * that can drift. One field, read three times, cannot.
+ *
+ * These two helpers are the DERIVED facts the three sites still share.
+ *
+ * `vm_rev_canmove`: whether the loop owes a resume frame at all. It does not
+ * when it is possessified (no retreat is reachable, by §2.2's verdict) and it
+ * does not at an EXACT count (there is one exit, so top and bottom of §2.3's
+ * chain are the same position). Both cases still run the backward walk when the
+ * body has groups, because the captures still have to be derived. */
+static bool vm_rev_canmove(const Ast *a)
+{
+    return !a->possessive && (a->rmax < 0 || a->rmax > a->rmin);
+}
+
+/* `vm_rev_caps`: the body's capturing group NUMBERS, in AST order, which is the
+ * dense index the emitted recovery locals are addressed by. One number per
+ * A_CAP node and not per emitted instance — a fixed-count repeat around a group
+ * emits it several times and they all share one number and one pair of slots
+ * (revdet.c's shape scan counts the same way, which is what keeps its
+ * PCREC_MAX_REVDET_BODY_GROUPS bound meaning the same thing this array's size
+ * means). */
+static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+            return;
+        case A_CAP:
+            if (*n < cap) out[(*n)++] = a->capno;
+            a = a->l;
+            continue;
+        case A_REP:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) { vm_rev_caps(a->r, out, n, cap); a = a->l; }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) { vm_rev_caps(a->r, out, n, cap); a = a->l; }
+            continue;
+        }
+        return;
+    }
+}
+
 /* ---- capacity analysis (§2.5's two capacities, §4.5's SECOND bound) -------
  *
  * Two bounds, two errors, and they are different failures with different
@@ -571,9 +665,77 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, nc = 0;
     Cost c = { 0, 0, 0, 0, false, false };
-    Cost body = vm_cost(v, a->l);
 
     if (a->rmin == 0 && a->rmax == 0) return c;
+
+    /* [ENG-BREP] The REVERSE-DETERMINISTIC arm is taken BEFORE the body's cost
+     * is computed, because on this rung the body is costed with capture writes
+     * SUPPRESSED and that changes the number. The ladder order is the emitter's
+     * (vm_rep): cursor first, then this, then frames.
+     *
+     * THE HEADLINE IS `pf = 0`. Frames do not grow with the iteration count —
+     * the scan cuts the body's choice points at every iteration boundary and
+     * the whole loop owes ONE resume frame — so an artifact whose only growing
+     * quantifier is on this rung declares no subject ceiling at all, where the
+     * frames rung declared one per iteration.
+     *
+     * The TRAIL still can grow, and saying so is the honest half (the same
+     * honesty the possessive arm below already carries). Suppressed captures
+     * cost nothing per iteration, so a body like `((a)|b)` grows nothing; a
+     * body containing a nested quantifier that owns slots of its own still
+     * writes them once per iteration, and that case earns a real ceiling from a
+     * real per-iteration divisor. */
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && a->revbody) {
+        const bool move = vm_rev_canmove(a);
+        int grp[PCREC_MAX_REVDET_BODY_GROUPS];
+        int ng = 0;
+        Cost body;
+        vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
+        v->nocap++;
+        body = vm_cost(v, a->l);
+        v->nocap--;
+        c.frames = 1 + body.frames + (move ? 1 : 0);
+        c.pf     = 0;
+        /* THE TRAIL ACCUMULATES ACROSS ITERATIONS AND THE FRAMES DO NOT, and
+         * the asymmetry is the cut's doing: the scan discards the body's frames
+         * at every boundary and deliberately does NOT rewind its trail (the
+         * same rule vm_cut carries, for the same reason — a failure OUTSIDE the
+         * loop still has to restore what the loop wrote). So a body that owns
+         * any trailed slot of its own pays for it once per ITERATION.
+         *
+         * Counting one iteration's worth here was this arm's first version and
+         * it is a SILENT CAP, which is the one failure mode this analysis
+         * exists to prevent. MEASURED: `(?:x((a)|b){2}y){0,3}z`'s body contains
+         * a possessified exact-count repeat, whose cut mark is one trailed
+         * write per entry, so three outer iterations need three of them — and
+         * the artifact stamped a capacity for one and returned RX_ERR_FRAMES on
+         * "xabyxabyxaayz", a subject it should answer. Caught by this rung's
+         * own .rxt corpus on the run that added the nested-repeat family.
+         *
+         * Capture writes inside the body are SUPPRESSED on this rung, so the
+         * common case has `periter == 0` and nothing accumulates at all — which
+         * is why the defect needed a body with a nested quantifier owning a
+         * slot to show up. */
+        {
+            const long long periter = body.trail + body.pt;
+            const long long base = 3 + 2 * (long long)ng;
+            c.pt = periter;
+            if (a->rmax >= 0) {
+                c.trail = base + (long long)a->rmax * periter;
+                c.unbounded = body.unbounded;
+            } else {
+                /* No static iteration bound, so no exact requirement exists
+                 * when the body writes anything: the ceiling machinery takes
+                 * over from `pt`. */
+                c.trail = base + periter;
+                c.unbounded = body.unbounded || periter > 0;
+            }
+            c.growable = body.growable || c.unbounded || periter > 0;
+        }
+        return c;
+    }
+
+    Cost body = vm_cost(v, a->l);
 
     if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
@@ -589,7 +751,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
          * nothing to declare a ceiling for. Under-reporting here would be a
          * silent cap, so the branch has to mirror the emitter exactly. */
         c.frames = a->possessive ? 0 : 1;
-        c.trail  = (a->possessive ? 0 : 1) + 2 * nc;
+        c.trail  = (a->possessive ? 0 : 1) + (v->nocap ? 0 : 2 * nc);
         return c;
     }
 
@@ -666,7 +828,10 @@ static Cost vm_cost(Vm *v, const Ast *a)
         return c;
     case A_CAP:
         c = vm_cost(v, a->l);
-        c.trail += 2;
+        /* [ENG-BREP] no trail entry while capture writes are suppressed —
+         * vm_emit's own A_CAP arm reads the same flag, so the cost and the
+         * emitted code cannot disagree about whether the write happens. */
+        if (!v->nocap) c.trail += 2;
         return c;
     case A_CAT: {
         /* Spine walked ITERATIVELY (R1 R-2 / D10) — see vm_nullable's comment
@@ -742,8 +907,21 @@ static Cost vm_cost(Vm *v, const Ast *a)
  * alternation (which is one per A_ALT node, since a flat alternation is
  * left-nested), vm_cursor_rep pushes 1, the unbounded star pushes 1, and
  * vm_opt_chain pushes one per optional copy. Verified against the emitted
- * `&&label` count over the corpus. */
-static void vm_count_slots(Vm *v, const Ast *a)
+ * `&&label` count over the corpus.
+ *
+ * [K22] `repl` is the PRODUCT of the replication factors of every frames-rung
+ * bounded repeat this call is nested inside — 1 at the root. It exists because
+ * this walk is the one place in the compiler that pays the copy tree's full
+ * cost before anything bounds it: `PCREC_MAX_VM_REPEAT_COPIES` bounds one
+ * quantifier's own factor (a `{0,2}` tower never comes near it) and
+ * `PCREC_MAX_VM_NODES` is charged during EMISSION, which this pre-pass runs
+ * before. So a depth-40 `{0,2}` tower walked 2^40 nodes here and hung the
+ * compiler with no diagnostic. Multiplying the factors down the nesting path
+ * and refusing above PCREC_MAX_VM_REPLICATION_PRODUCT costs one multiply per
+ * A_REP and turns the hang into the refusal the node cap was always going to
+ * produce; see limits.h for why the two share a value and why that makes the
+ * check unable to refuse anything that compiles today. */
+static void vm_count_slots(Vm *v, const Ast *a, long long repl)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
     CapOff caps[VM_MAX_BODY_CAPS];
@@ -751,21 +929,21 @@ static void vm_count_slots(Vm *v, const Ast *a)
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
         return;
-    case A_CAP: vm_count_slots(v, a->l); return;
+    case A_CAP: vm_count_slots(v, a->l, repl); return;
     case A_ALT:
         /* Iterative spine walk (R1 R-2 / D10) — see vm_nullable. One push per
          * A_ALT NODE, which for a left-nested flat alternation of k branches
          * is k-1, exactly what vm_alt emits. */
         while (a->k == A_ALT) {
             v->npush++;
-            vm_count_slots(v, a->r);
+            vm_count_slots(v, a->r, repl);
             a = a->l;
         }
-        vm_count_slots(v, a);
+        vm_count_slots(v, a, repl);
         return;
     case A_CAT:
-        while (a->k == A_CAT) { vm_count_slots(v, a->r); a = a->l; }
-        vm_count_slots(v, a);
+        while (a->k == A_CAT) { vm_count_slots(v, a->r, repl); a = a->l; }
+        vm_count_slots(v, a, repl);
         return;
     case A_REP:
         if (a->rmin == 0 && a->rmax == 0) return;
@@ -778,6 +956,36 @@ static void vm_count_slots(Vm *v, const Ast *a)
                 v->nlow++;
                 v->npush++;              /* vm_cursor_rep: exactly one */
             }
+            return;
+        }
+        /* [ENG-BREP] the REVERSE-DETERMINISTIC rung. Three slots, one loop, and
+         * NO REPLICATION — which is the whole point, and is also why this arm
+         * returns before the `maxcopies` line below ever sees the quantifier:
+         * `((a)|b){0,4000}c` demands one body copy here where the frames rung
+         * demanded four thousand.
+         *
+         * The push arithmetic, site for site with vm_revdet_rep:
+         *   1  the scan's exit frame (this iteration cannot run -> leave)
+         *   1  the retreat/extension frame, only when the loop can move
+         * and NOTHING for the backward walk, which is emitted as a
+         * DETERMINISTIC matcher with no choice point at all — reverse
+         * one-unambiguity is exactly the licence to dispatch on the next byte
+         * instead of pushing a frame per branch.
+         *
+         * The forward body is walked ONCE, or twice for a lazy loop that can
+         * move, because that shape emits a second forward copy for its
+         * extension step. The REVERSED body allocates no slots and pushes
+         * nothing, so it is not walked here at all. */
+        if (a->revbody) {
+            int grp[PCREC_MAX_REVDET_BODY_GROUPS];
+            int ng = 0;
+            bool move = vm_rev_canmove(a);
+            vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
+            if (ng > v->nrevcaps) v->nrevcaps = ng;
+            v->nrev++;
+            v->npush += 1 + (move ? 1 : 0);
+            vm_count_slots(v, a->l, repl);
+            if (move && !a->greedy) vm_count_slots(v, a->l, repl);
             return;
         }
         /* frames rung: the star's own push, or one per optional copy. The
@@ -799,7 +1007,27 @@ static void vm_count_slots(Vm *v, const Ast *a)
              * accepts is single-path and compiles to a span loop whatever the
              * count, so `a{0,65535}` never contributes. */
             if (copies > v->maxcopies) v->maxcopies = copies;
-            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l);
+            /* [K22] and the factor's PRODUCT down the nesting path, checked
+             * BEFORE the loop below walks it. `v->maxcopies` above is a MAX and
+             * structurally cannot see this: nesting multiplies factors that are
+             * individually far under PCREC_MAX_VM_REPEAT_COPIES. The check is
+             * placed here rather than after the walk for the only reason it
+             * exists — the walk is the cost. Overflow is not reachable: the
+             * running product is refused the moment it exceeds the limit, so it
+             * never carries more than limit * PCREC_MAX_REPEAT. */
+            {
+                long long total = repl * copies;
+                if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
+                    ctx_fail(v->cx, 0,
+                             "pattern too large: nested bounded repeats would "
+                             "replicate a body %lld times in total (limit %d). "
+                             "Repetition counts MULTIPLY through nesting, so "
+                             "depth costs far more than any one count suggests "
+                             "-- lower a count, or reduce the nesting",
+                             total, PCREC_MAX_VM_REPLICATION_PRODUCT);
+                for (int i = 0; i < copies; i++)
+                    vm_count_slots(v, a->l, total);
+            }
             if (a->rmax < 0 && vm_nullable(a->l)) v->nguard++;
         }
         return;
@@ -989,6 +1217,12 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * and vm_count_slots carry the same branch; all three must agree or two
      * live loops share one slot. */
     const bool poss = a->possessive;
+    /* [ENG-BREP] a cursor loop NESTED in a revdet loop's forward scan writes no
+     * captures either (v->nocap): the enclosing rung's backward walk recovers
+     * this body's groups along with every other group in it, and a per-iteration
+     * write here would reintroduce the trail growth the enclosing rung removed.
+     * vm_cost_rep's cursor arm reads the same flag for the same number. */
+    if (v->nocap) ncaps = 0;
     int low = poss ? -1 : vm_slot_low(v, v->nlow++);
     int retry = poss ? -1 : vm_label(v), again = poss ? -1 : vm_label(v);
     long long lo_off = (long long)a->rmin * stride;
@@ -1323,6 +1557,383 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot)
     vm_goto(v, next);
 }
 
+/* ---- [ENG-BREP] the REVERSE-DETERMINISTIC rung ---------------------------
+ *
+ * engine_m4.md §2.5's rung, between the cursor and the frames. Design and the
+ * full derivation: docs/design/rungselect_impl/rungselect_design.md.
+ *
+ * ONE body copy instead of `rmax` of them. The emitted loop is a deterministic
+ * FORWARD SCAN that counts iterations, ONE resume frame for the whole loop, and
+ * a BACKWARD WALK over the reversed body that serves two jobs at once — it
+ * finds the previous iteration boundary for a retreat, and it recovers §3.4's
+ * last-iteration captures.
+ *
+ * THE BACKWARD WALK HAS NO CHOICE POINTS, and that is the rung's name made
+ * concrete. src/opt/revdet.c only selects the rung when the REVERSED body is
+ * one-unambiguous, so at an alternation the next byte decides the branch and
+ * the walk dispatches on it instead of pushing a frame per branch. A failure
+ * anywhere in a step is therefore final for that step, which is why every
+ * failure edge below goes to ONE label (the walk's end) rather than to
+ * `rx_fail`.
+ *
+ * IT NEVER TOUCHES `pos`. The walk is a DERIVATION, not a move: it runs on its
+ * own cursor local, so the boundary the loop committed at is still `pos` when
+ * the walk finishes and the continuation is taken. */
+typedef struct {
+    const char *cur;    /* the walk's own cursor local */
+    const char *floor;  /* the loop's entry position, as an stv read */
+    const char *ga;     /* the capture-recovery locals: spans */
+    const char *gs;     /* ... and their seen flags */
+    const char *ns;     /* the seen counter */
+    const int  *grp;    /* body group numbers, in the dense index's order */
+    int         ngrp;
+    int         faill;  /* where any failure in a step lands */
+} Rev;
+
+static int vm_rev_index(const Rev *R, int capno)
+{
+    for (int i = 0; i < R->ngrp; i++) if (R->grp[i] == capno) return i;
+    return -1;
+}
+
+static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
+{
+    StrBuf *b = v->b;
+    char byte[80];
+    vm_charge(v);
+    snprintf(byte, sizeof byte, "s[%s - 1]", R->cur);
+
+    switch (a->k) {
+    case A_CLASS: {
+        int ci = vm_cls(v, a->cls);
+        vm_lbl(v, entry, NULL);
+        vm_ev(v, VE_CLASS, ci, next, "consumed BACKWARD");
+        sb_printf(b, "    if (%s > %s && (", R->cur, R->floor);
+        vm_cls_test(v, b, ci, byte);
+        sb_printf(b, ")) { %s--; goto %s_L%d; }\n", R->cur, v->p, next);
+        vm_goto(v, R->faill);
+        return;
+    }
+    case A_CAP: {
+        /* §3.4's rule, delivered by the direction of travel. Going backward the
+         * FIRST time a group is met is the LAST iteration that ENTERED it,
+         * which is exactly the value PCRE2 reports — and exactly what the plan
+         * row's constant-offset formula got wrong on 1,799 of 15,036 matches,
+         * because a later iteration taking the other branch does not CLEAR a
+         * group an earlier one wrote.
+         *
+         * The writes go to LOCALS, not through RX_SET. Two reasons and both are
+         * load-bearing: the values must be published AFTER the loop's resume
+         * frame is pushed (so a retreat rewinds them rather than accumulating
+         * them, the cursor rung's own ordering rule), and a walk that wrote
+         * through the trail would cost entries per ITERATION where publishing
+         * costs them per GROUP.
+         *
+         * A partially-written group is harmless: `seen` is set only at the
+         * group's left edge, i.e. only once the whole group has matched, so a
+         * step that dies in the middle leaves a stale span nobody publishes. */
+        int j = vm_rev_index(R, a->capno);
+        int inner = vm_label(v), close = vm_label(v);
+        vm_lbl(v, entry, vm_rolef(v, "group %d: its END, met first going backward",
+                                  a->capno));
+        if (j >= 0)
+            sb_printf(b, "    if (!%s[%d]) %s[%d][1] = (ptrdiff_t)%s;\n",
+                      R->gs, j, R->ga, j, R->cur);
+        vm_goto(v, inner);
+        vm_rev_emit(v, inner, a->l, close, R);
+        vm_lbl(v, close, vm_rolef(v, "group %d: its START -- the last iteration "
+                                     "that entered it wins", a->capno));
+        if (j >= 0)
+            sb_printf(b, "    if (!%s[%d]) { %s[%d][0] = (ptrdiff_t)%s;"
+                         " %s[%d] = 1; %s++; }\n",
+                      R->gs, j, R->ga, j, R->cur, R->gs, j, R->ns);
+        vm_goto(v, next);
+        return;
+    }
+    case A_CAT: {
+        /* The tree is ALREADY reversed (src/opt/revdet.c swapped every A_CAT's
+         * children), so this walks it in the ordinary left-to-right way and the
+         * reversal is not re-applied here. Spine flattened iteratively for
+         * nfa.c's R-2 reason. */
+        int nsp = 0;
+        const Ast *t = a;
+        while (t->k == A_CAT) { nsp++; t = t->l; }
+        const Ast **rs = arena_alloc(&v->cx->arena, (size_t)nsp * sizeof(Ast *));
+        int i = nsp;
+        t = a;
+        while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
+        int cur = entry, nx = vm_label(v);
+        vm_rev_emit(v, cur, t, nx, R);
+        cur = nx;
+        for (int j = 0; j < nsp; j++) {
+            int after = (j + 1 == nsp) ? next : vm_label(v);
+            vm_rev_emit(v, cur, rs[j], after, R);
+            cur = after;
+        }
+        return;
+    }
+    case A_ALT: {
+        /* THE BYTE DECIDES, so there is no frame here. Reverse one-unambiguity
+         * makes the branches' first sets pairwise disjoint — checked directly
+         * on this tree by src/opt/revdet.c's `rd_alt_disjoint`, at the place the
+         * emitter depends on it rather than inherited from (U1) three functions
+         * away — so at most one test below can succeed and a branch that fails
+         * after being chosen has no alternative to try. */
+        int nbr = 1;
+        for (const Ast *t = a; t->k == A_ALT; t = t->l) nbr++;
+        const Ast **br = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(Ast *));
+        int i = nbr;
+        const Ast *t = a;
+        while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
+        br[0] = t;
+        int *bentry = arena_alloc(&v->cx->arena, (size_t)nbr * sizeof(int));
+        for (int j = 0; j < nbr; j++) bentry[j] = vm_label(v);
+
+        vm_lbl(v, entry, vm_rolef(v, "backward alternation (%d branches):"
+                                     " the byte selects, no frame", nbr));
+        sb_printf(b, "    if (%s <= %s) goto %s_L%d;\n",
+                  R->cur, R->floor, v->p, R->faill);
+        for (int j = 0; j < nbr; j++) {
+            uint8_t f[32];
+            pcrec_revdet_first(br[j], f);
+            int ci = vm_cls(v, f);
+            sb_puts(b, "    if (");
+            vm_cls_test(v, b, ci, byte);
+            sb_printf(b, ") goto %s_L%d;\n", v->p, bentry[j]);
+        }
+        vm_goto(v, R->faill);
+        for (int j = 0; j < nbr; j++) vm_rev_emit(v, bentry[j], br[j], next, R);
+        return;
+    }
+    case A_REP: {
+        /* Only an EXACT count reaches here (revdet.c's shape scan declines
+         * every other kind), and an exact count is literal replication, which
+         * reverses to literal replication of the reversed sub-body. */
+        int cur = entry;
+        for (int i = 0; i < a->rmin; i++) {
+            int nx = (i + 1 == a->rmin) ? next : vm_label(v);
+            vm_rev_emit(v, cur, a->l, nx, R);
+            cur = nx;
+        }
+        return;
+    }
+    default:
+        break;
+    }
+    ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
+}
+
+static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+    const int loop = v->nrev++;
+    const int se = vm_slot_rev(v, loop, 0);
+    const int sl = vm_slot_rev(v, loop, 1);
+    const int sh = vm_slot_rev(v, loop, 2);
+    const bool move   = vm_rev_canmove(a);
+    const bool greedy = a->greedy;
+    int grp[PCREC_MAX_REVDET_BODY_GROUPS];
+    int ng = 0;
+    vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
+    /* The walk runs when something needs it: a GREEDY loop that can move needs
+     * the previous boundary, and any loop with groups needs their values. A
+     * lazy loop moves FORWARD, so it needs the walk only for captures. */
+    const bool walk = (greedy && move) || ng > 0;
+
+    /* One named scalar per field per loop, rather than one array of structs.
+     * Not a style choice: the emitted matcher is built -Wall -Wextra -Werror,
+     * and gcc cannot see through a computed-goto control flow well enough to
+     * prove an array element is written before it is read, so the array form
+     * failed -Wmaybe-uninitialized on four corpus patterns. A scalar carries
+     * its own `= 0` at its declaration and the question does not arise. */
+    char rv[80], cur[96], flr[32];
+    snprintf(rv,  sizeof rv,  "%s_rv%d", v->p, loop);
+    snprintf(cur, sizeof cur, "%s_rv%d_c", v->p, loop);
+    snprintf(flr, sizeof flr, "(size_t)stv[%d]", se);
+
+    char bounds[32];
+    if (a->rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->rmin);
+    else             snprintf(bounds, sizeof bounds, "{%d,%d}", a->rmin, a->rmax);
+    const char *role = vm_rolef(v, "reverse-deterministic rung %s, %s%s"
+                                   " -- ONE body copy, no replication",
+                                bounds, greedy ? "greedy" : "lazy",
+                                a->possessive ? ", POSSESSIFIED" : "");
+
+    int scanl = vm_label(v), bodyl = vm_label(v), bodyok = vm_label(v);
+    int shortl = vm_label(v), fulll = vm_label(v), commitl = vm_label(v);
+    int walkl = 0, revl = 0, wstepl = 0, wendl = 0, extl = 0, extbl = 0, extok = 0;
+    if (walk) {
+        walkl = vm_label(v); revl = vm_label(v);
+        wstepl = vm_label(v); wendl = vm_label(v);
+    }
+    if (move && !greedy) {
+        extl = vm_label(v); extbl = vm_label(v); extok = vm_label(v);
+    }
+
+    /* ---- entry ---------------------------------------------------------- */
+    vm_lbl(v, entry, role);
+    vm_rung_mark(v, entry, VM_RUNG_REVDET, a->possessive, role);
+    vm_set(v, se, "(ptrdiff_t)pos",
+           "revdet: the loop's entry position (the capture walk's floor)");
+    if (a->rmin == 0)
+        vm_set(v, sl, "(ptrdiff_t)pos",
+               "revdet: low-water = the entry, since rmin is 0");
+    sb_printf(b, "    %s_it = 0;\n", rv);
+    vm_goto(v, scanl);
+
+    /* ---- the forward scan ------------------------------------------------
+     * One body copy, run to the maximal boundary. The CUT at every iteration
+     * boundary is what makes the resume stack O(1) in the iteration count, and
+     * it is licensed by the forward unique-iteration property: once the body
+     * has matched [p,q) there is no other way to match an iteration there, so
+     * its internal choice points are provably dead. The cut is at a BOUNDARY
+     * and never inside a body — a one-unambiguous body still needs its own
+     * frames to FIND its match, which is vm_poss_chain's own recorded lesson. */
+    vm_lbl(v, scanl, "revdet scan: try one more iteration");
+    if (a->rmax >= 0)
+        sb_printf(b, "    if (%s_it >= %dUL) goto %s_L%d;\n",
+                  rv, a->rmax, v->p, fulll);
+    sb_printf(b, "    %s_mk = w->btn;\n", rv);
+    vm_push_at(v, shortl, "pos",
+               "this iteration cannot run -- leave the loop with the ones that did");
+    vm_goto(v, bodyl);
+
+    /* Capture writes SUPPRESSED for the whole forward body: they are what would
+     * make the trail grow per iteration, and the backward walk recovers every
+     * one of them from the committed span. */
+    v->nocap++;
+    vm_emit(v, bodyl, a->l, bodyok);
+    v->nocap--;
+
+    vm_lbl(v, bodyok, "revdet scan: one iteration committed");
+    sb_printf(b, "    w->btn = %s_mk;\n", rv);
+    vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
+                            " body has no second parse of what just matched");
+    sb_printf(b, "    %s_it++;\n", rv);
+    if (a->rmin > 0) {
+        sb_printf(b, "    if (%s_it == %dUL) {\n", rv, a->rmin);
+        vm_set(v, sl, "(ptrdiff_t)pos",
+               "revdet: low-water = the boundary after rmin iterations");
+        sb_puts(b, "    }\n");
+    }
+    vm_goto(v, scanl);
+
+    /* `it` is read HERE and never at the commit label, which a retreat re-enters
+     * long after an outer backtrack may have re-entered the loop and reset it.
+     * Everything the commit tests is a slot or `pos`. */
+    vm_lbl(v, shortl, "revdet scan: the body could not run at this boundary");
+    if (a->rmin > 0)
+        sb_printf(b, "    if (%s_it < %dUL) goto %s_fail;\n", rv, a->rmin, v->p);
+    vm_goto(v, fulll);
+
+    vm_lbl(v, fulll, "revdet: the forward scan is complete");
+    vm_set(v, sh, "(ptrdiff_t)pos",
+           "revdet: the maximal boundary reached (the lazy extension's ceiling)");
+    if (!greedy && move) {
+        sb_printf(b, "    pos = (size_t)stv[%d];\n", sl);
+        vm_ev(v, VE_NOTE, 0, 0,
+              "lazy: commit at the MINIMUM and extend on backtrack");
+    }
+    vm_goto(v, commitl);
+
+    /* ---- commit ---------------------------------------------------------- */
+    vm_lbl(v, commitl, "revdet: commit at this boundary");
+    if (walk) {
+        Rev R;
+        char ga[64], gs[64], ns[64];
+        snprintf(ga, sizeof ga, "%s_rvg", v->p);
+        snprintf(gs, sizeof gs, "%s_rvs", v->p);
+        snprintf(ns, sizeof ns, "%s_rv%d_ns", v->p, loop);
+        R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;
+        R.grp = grp; R.ngrp = ng; R.faill = wendl;
+
+        sb_printf(b, "    %s_c = pos;\n", rv);
+        sb_printf(b, "    %s_prev = -1;\n", rv);
+        if (ng) {
+            sb_printf(b, "    %s_ns = 0;\n", rv);
+            sb_printf(b, "    { int i_; for (i_ = 0; i_ < %d; i_++)"
+                         " %s_rvs[i_] = 0; }\n", ng, v->p);
+        }
+        vm_goto(v, walkl);
+
+        vm_lbl(v, walkl, "revdet walk: one step back over the committed span");
+        sb_printf(b, "    if (%s <= %s) goto %s_L%d;\n",
+                  cur, flr, v->p, wendl);
+        vm_goto(v, revl);
+        vm_rev_emit(v, revl, a->revbody, wstepl, &R);
+
+        vm_lbl(v, wstepl, "revdet walk: landed on the previous boundary");
+        sb_printf(b, "    if (%s_prev < 0) %s_prev = (ptrdiff_t)%s;\n",
+                  rv, rv, cur);
+        if (ng) {
+            sb_printf(b, "    if (%s_ns >= %d) goto %s_L%d;\n",
+                      rv, ng, v->p, wendl);
+            vm_goto(v, walkl);
+        } else {
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "no group to witness: one step is all the retreat needs");
+            vm_goto(v, wendl);
+        }
+        vm_lbl(v, wendl, "revdet walk: done (all groups witnessed, or the "
+                         "loop's entry reached)");
+    }
+
+    /* The frame is pushed BEFORE the captures are published, so its trail mark
+     * sits below them and every retreat rewinds the previous commit's values
+     * instead of accumulating them (the cursor rung's own ordering rule). */
+    if (move) {
+        if (greedy) {
+            char pv[112];
+            snprintf(pv, sizeof pv, "(size_t)%s_prev", rv);
+            sb_printf(b, "    if ((ptrdiff_t)pos > stv[%d] && %s_prev >= 0) {\n",
+                      sl, rv);
+            vm_push_at(v, commitl, pv,
+                       "retreat: resume this very label with pos at the "
+                       "PREVIOUS boundary, and re-derive from there");
+            sb_puts(b, "    }\n");
+        } else {
+            sb_printf(b, "    if ((ptrdiff_t)pos < stv[%d]) {\n", sh);
+            vm_push_at(v, extl, "pos",
+                       "extend: one more iteration is the lazy resume");
+            sb_puts(b, "    }\n");
+        }
+    }
+    for (int j = 0; j < ng; j++) {
+        char val[64];
+        sb_printf(b, "    if (%s_rvs[%d]) {\n", v->p, j);
+        snprintf(val, sizeof val, "%s_rvg[%d][0]", v->p, j);
+        vm_set(v, 2 * grp[j], val,
+               vm_rolef(v, "group %d open, recovered by the backward walk",
+                        grp[j]));
+        snprintf(val, sizeof val, "%s_rvg[%d][1]", v->p, j);
+        vm_set(v, 2 * grp[j] + 1, val,
+               vm_rolef(v, "group %d close, recovered by the backward walk",
+                        grp[j]));
+        sb_puts(b, "    }\n");
+    }
+    vm_ev(v, VE_NOTE, 0, 0, "a group the walk never witnessed keeps its previous"
+                            " value -- which is §3.4's ZERO-ITERATION clause at"
+                            " the boundary where the loop never ran");
+    vm_goto(v, next);
+
+    /* ---- the lazy extension --------------------------------------------- */
+    if (move && !greedy) {
+        vm_lbl(v, extl, "revdet: extend by one iteration (lazy resume)");
+        sb_printf(b, "    %s_mk = w->btn;\n", rv);
+        vm_goto(v, extbl);
+        v->nocap++;
+        vm_emit(v, extbl, a->l, extok);
+        v->nocap--;
+        vm_lbl(v, extok, "revdet: the extra iteration matched");
+        sb_printf(b, "    w->btn = %s_mk;\n", rv);
+        vm_goto(v, commitl);
+        /* The body FAILING here needs no frame of its own: the push above only
+         * happens below `hi`, and below `hi` the chain guarantees a next
+         * boundary — so a failure means this path is genuinely exhausted, which
+         * is what falling through to rx_fail already means. */
+    }
+}
+
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
@@ -1337,6 +1948,15 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 
     if (vm_cursor_fits(a, seq, &stride, caps, &ncaps)) {
         vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps);
+        return;
+    }
+
+    /* [ENG-BREP] the ladder's second rung, below the cursor and above the
+     * frames. `a->revbody` is src/opt/revdet.c's verdict AND the material the
+     * backward walk is emitted from, so this site cannot select the rung
+     * without having the thing the rung needs. */
+    if (a->revbody) {
+        vm_revdet_rep(v, entry, a, next);
         return;
     }
 
@@ -1517,13 +2137,20 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * site, is where that lives. */
         int inner = vm_label(v), close = vm_label(v);
         vm_lbl(v, entry, vm_rolef(v, "group %d opens", a->capno));
-        vm_set(v, 2 * a->capno, "(ptrdiff_t)pos",
-               vm_rolef(v, "group %d open, written on traverse", a->capno));
+        /* [ENG-BREP] SUPPRESSED inside a revdet loop's forward scan (v->nocap):
+         * a per-iteration write is exactly the trail growth that rung exists to
+         * remove, and §3.4's backward walk recovers the value the scan would
+         * have left. vm_cost's A_CAP arm reads the same flag, so the emitted
+         * code and the number the capacities are sized from cannot disagree. */
+        if (!v->nocap)
+            vm_set(v, 2 * a->capno, "(ptrdiff_t)pos",
+                   vm_rolef(v, "group %d open, written on traverse", a->capno));
         vm_goto(v, inner);
         vm_emit(v, inner, a->l, close);
         vm_lbl(v, close, vm_rolef(v, "group %d closes", a->capno));
-        vm_set(v, 2 * a->capno + 1, "(ptrdiff_t)pos",
-               vm_rolef(v, "group %d close, written on traverse", a->capno));
+        if (!v->nocap)
+            vm_set(v, 2 * a->capno + 1, "(ptrdiff_t)pos",
+                   vm_rolef(v, "group %d close, written on traverse", a->capno));
         vm_goto(v, next);
         return;
     }
@@ -1631,7 +2258,7 @@ static void vm_rungs_describe(unsigned mask, StrBuf *o)
 {
     if (!mask) { sb_puts(o, "none"); return; }
     bool first = true;
-    for (int k = 0; k < 3; k++) {
+    for (int k = 0; k < VM_NRUNG; k++) {
         if (!(mask & vm_rung_bit[k])) continue;
         if (!first) sb_puts(o, ", ");
         sb_puts(o, vm_rung_kindname[k]);
@@ -1773,6 +2400,14 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_mark(v, i),
                   "possessive cut mark",
                   "resume-stack depth at loop entry (eng_brep_design.md S2)");
+    for (int i = 0; i < v->nrev; i++) {
+        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 0),
+                  "revdet loop entry", "the capture walk's floor (S2.5)");
+        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 1),
+                  "revdet low-water", "boundary after rmin iterations: the retreat's floor");
+        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 2),
+                  "revdet ceiling", "maximal boundary reached: the lazy extension's cap");
+    }
 
     /* ---- RUNGS -----------------------------------------------------------
      * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
@@ -1962,7 +2597,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * is emitted, and it must agree EXACTLY with what the emitter goes on to
      * assign — so the counter mirrors the emitter's own rung decisions rather
      * than approximating them. */
-    vm_count_slots(&v, root);
+    vm_count_slots(&v, root, 1);
     /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
      * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
      * compiler-side bound that stops it, and it is checked here — after the
@@ -1981,11 +2616,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                  v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
     const int nmark_total = v.nmark;   /* [ENG-BREP] possessive cut marks */
+    const int nrev_total  = v.nrev;    /* [ENG-BREP] revdet loops, 3 slots each */
     v.nguard_total = nguard_total;
     v.nlow_total   = nlow_total;
     v.nmark_total  = nmark_total;
-    v.nguard = v.nlow = v.nmark = 0;
-    const int nstate = 2 * ncaps + nguard_total + nlow_total + nmark_total;
+    v.nrev_total   = nrev_total;
+    v.nguard = v.nlow = v.nmark = v.nrev = 0;
+    const int nstate = 2 * ncaps + nguard_total + nlow_total + nmark_total
+                     + 3 * nrev_total;
 
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root);
@@ -2108,6 +2746,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_VM_RUNG_CURSOR           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_CURSOR]);
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_BOUNDED   0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_BOUNDED]);
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_UNBOUNDED 0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_UNBOUNDED]);
+    sb_printf(c, "#define %s_VM_RUNG_REVDET           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_REVDET]);
     sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
     /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
      * first rung, in the same shape and the same place and for the same
@@ -2315,7 +2954,39 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                      "                             a plain local, UNTRAILED, whose save\n"
                      "                             point is a resume frame */\n",
                   v.p);
+    /* [ENG-BREP] the reverse-deterministic rung's working locals. All UNTRAILED
+     * and all read only where they are provably live: `it`/`mk` inside the
+     * forward scan, `c`/`prev`/`ns` inside one commit's own backward walk. What
+     * has to survive a backtrack lives in stv (the three slots per loop) or in
+     * the resume frame's recorded position, which is where the retreat target
+     * rides.
+     *
+     * The capture-recovery arrays are SHARED across every revdet loop in the
+     * program and sized by the widest body, because a walk's results are
+     * published into stv before control leaves the loop that ran it — nothing
+     * here outlives its own commit. */
+    for (int i = 0; i < nrev_total; i++)
+        sb_printf(c,
+            "    size_t %s_rv%d_c = 0; unsigned long %s_rv%d_it = 0;\n"
+            "    unsigned %s_rv%d_mk = 0; ptrdiff_t %s_rv%d_prev = -1;\n"
+            "    int %s_rv%d_ns = 0;\n",
+            v.p, i, v.p, i, v.p, i, v.p, i, v.p, i);
+    if (nrev_total && v.nrevcaps) {
+        sb_printf(c, "    ptrdiff_t %s_rvg[%d][2] = {{0}};\n", v.p, v.nrevcaps);
+        sb_printf(c, "    unsigned char %s_rvs[%d] = {0};\n", v.p, v.nrevcaps);
+    }
     sb_puts(c, "    (void)s; (void)n; (void)stv;\n");
+    /* Three of the five per-loop locals are used only by shapes that do not
+     * always occur — the walk cursor and `prev` exist only when a walk is
+     * emitted, and the seen-counter only when the body has groups — and the
+     * generated matcher is built -Wall -Wextra -Werror. `--no-captures` on a
+     * possessified rung loop is the combination that has none of them, and it
+     * failed -Wunused-variable before this line. `it` and `mk` are used by every
+     * shape and are deliberately not listed, so a future shape that stops using
+     * one still gets caught. */
+    for (int i = 0; i < nrev_total; i++)
+        sb_printf(c, "    (void)%s_rv%d_c; (void)%s_rv%d_prev; (void)%s_rv%d_ns;\n",
+                  v.p, i, v.p, i, v.p, i);
     if (v.tracing)
         sb_printf(c, "    fprintf(stderr, \"[%s] enter at pos %%zu of %%zu\\n\","
                      " pos, n);\n", v.p);

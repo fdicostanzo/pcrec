@@ -1,0 +1,12 @@
+# K22 nested-bounded-repeat compile sweep -- after the product guard
+# produced by: bash docs/design/rungselect_impl/k22_sweep.sh
+# date: 2026-08-16   branch base: 894706e   gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# compiler: with PCREC_MAX_VM_REPLICATION_PRODUCT in vm_count_slots
+#
+depth   chars   seconds   exit      outcome
+15      140     0.22      0         compiles
+18      167     0.72      1         refuses: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+19      176     0.12      1         refuses: pcrec: pattern too large: nested bounded repeats would replicate a body 262144 times in to
+20      185     0.12      1         refuses: pcrec: pattern too large: nested bounded repeats would replicate a body 262144 times in to
+30      275     0.12      1         refuses: pcrec: pattern too large: nested bounded repeats would replicate a body 262144 times in to
+40      365     0.12      1         refuses: pcrec: pattern too large: nested bounded repeats would replicate a body 262144 times in to

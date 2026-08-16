@@ -62,13 +62,63 @@ the other:
   the section's own existing rung-adjacent pairs (exact/residual,
   bigbounded/smallbounded), a dedicated 33/70-nested-capture-groups pair
   pinning the `VM_MAX_BODY_CAPS=64` selection boundary directly, a
-  deliberately THREE-WAY-MIXED pattern (`a*(a|b){0,3}c((x)|y)+z`) checking
-  both the exact mask AND all three of `--emit-ir`'s new per-quantifier
-  `RUNGS` section rows — the case a per-artifact scalar could never have
-  gotten wrong because it never had more than one bit to report — and an
-  inline positive control (not a `tests/mech` sabotage — see below) proving
-  the mask assertion actually fails on a corrupted stamp rather than
-  passing vacuously.
+  deliberately MIXED pattern checking both the exact mask AND every one of
+  `--emit-ir`'s per-quantifier `RUNGS` section rows — the case a per-artifact
+  scalar could never have gotten wrong because it never had more than one bit
+  to report — and an inline positive control (not a `tests/mech` sabotage — see
+  below) proving the mask assertion actually fails on a corrupted stamp rather
+  than passing vacuously. The mask family grew a fourth bit at [ENG-BREP]'s
+  rung-select landing (`_VM_RUNG_REVDET`) and the mixed pattern grew with it;
+  see the section below for what happened to the old one.
+
+## [ENG-BREP] Five checks here PIN A RUNG now, and the denials are the point
+
+`-fno-revdet` appears on the D44.1 ceiling pair, the ceiling floor check, and
+the `PCREC_MAX_VM_REPEAT_COPIES` case. None of them is a workaround. Each was
+written around a pattern that was expensive BECAUSE THE EMITTER REPLICATED ITS
+BODY — one frame per iteration, one copy per repetition — and the
+reverse-deterministic rung removed the replication, so each check went
+green-because-fast or failed reporting a mechanism as broken when what had
+changed was which strategy ran. D46's rule is to pin the selection, and denying
+the rung puts the quantifier back on the frames rung, which is where replication
+lives and what these checks are about.
+
+**Every denial is paired with the OTHER side of the same fact**, because a
+denial alone reads as evasion: the ceiling pair gains a row asserting that the
+SAME pattern at the SAME capacity declares NO ceiling once the rung has it
+(eng_brep_design.md §7's prediction), and the cap case gains a row asserting
+that D45's own `((a)|b){0,4000}c` now COMPILES at the default in under 2,000
+lines (D47.1's endgame). Read alone, the refusal row would say pcrec still
+cannot compile that pattern, which stopped being true.
+
+**The mixed-rung check grew a fourth arm, and that is D46 happening to the check
+D46's own text nominated.** `a*(a|b){0,3}c((x)|y)+z` stamped 0x7 for three
+quantifiers on three rungs; the rung absorbed two of the three and the mask
+became 0x9 — still "mixed", still passing a weaker check, no longer testing what
+it was written for. D46 predicted precisely this ("a contrived test pattern
+built to hit the frames rung would, once the reverse-deterministic rung exists,
+be silently captured by it"). The EXACT-mask assertion is what caught it, which
+is the argument for asserting the exact mask rather than "some bits". The
+replacement covers all four rungs and spells its frames arms with
+reverse-AMBIGUOUS bodies (`(?:ab|b)`, `(?:pq|q)`) on purpose: a body the next
+rung could absorb would put the check straight back where it was.
+
+## The K22 guard's check is a TIMEOUT, and that is the assertion
+
+The nested-repeat product guard's block puts `timeout 5` on the depth-30 and
+depth-40 towers and treats exit ≥ 124 as a FAILURE naming K22. That is not
+belt-and-braces around an exit-code check — it is the only part of the check
+that tests the fix. "Is refused" was already true at depth 30 BEFORE the guard
+existed; what was wrong was that the refusal took 11.8 s and became an
+unbounded hang two levels further up, so a check asserting only the exit code
+would have passed on the defect it was written for.
+
+The block leads with a POSITIVE CONTROL — a depth-15 tower must still compile —
+for the symmetric reason: a guard that refuses everything also makes the hang
+go away. Depth 15 is `docs/design/possessify_impl/k22_repro.txt`'s own
+"compiles" row, and the guard's soundness argument (it shares
+`PCREC_MAX_VM_NODES`'s value because a replication product is a lower bound on
+the node count) says it cannot cost that pattern.
 
 ## §4.7's ordering rule is checked as a CONTRAST, not an assertion
 

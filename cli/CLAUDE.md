@@ -39,8 +39,24 @@ ladder skipping denied steps, so a denial composes per-quantifier with no need
 to ADDRESS one quantifier inside a pattern. The do-or-die half lives in
 OBSERVABILITY rather than in a refusal: the artifact stamps
 `<PREFIX>_VM_STRATS`, and a denied strategy appearing there is a hard test
-failure. The rest of the family (`-fno-counter`, a rung selector, a value
-parameter for K) arrives with the strategies it denies.
+failure.
+
+`-fno-revdet` (`PCREC_NO_REVDET`) is the family's SECOND member, arriving with
+the reverse-deterministic rung it denies (docs/design/engine_m4.md §2.5), and
+everything above applies to it unchanged — including that its do-or-die is
+asserted against `<PREFIX>_VM_RUNGS`'s REVDET bit rather than against the flag
+having been passed. What is specific to it: denying the rung drops a qualifying
+quantifier one rung to FRAMES, which for a bounded repeat is literal
+replication, which is the semantic ground truth its differential compares
+against — so the deny flag is not merely how the rung is tested, it is what
+makes the ground truth reachable at all. Denying it must not, and does not, deny
+possessification: the two are independent, and possessification is a modifier at
+every rung rather than a rung of its own.
+
+Neither appears in `--help`, deliberately and per D47.3: these are testing and
+tuning axes, documented here and in docs/testing.md, not sprawling top-level
+user features. The rest of the family (`-fno-counter`, a value parameter for K)
+arrives with the strategies it denies.
 
 `--engine` is DO-OR-DIE: a request the pattern cannot honour is a clean
 refusal, never a silent downgrade. `--engine=vm` additionally turns the DFA

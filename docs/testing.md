@@ -445,9 +445,45 @@ project journal entry.
 | `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
 | `make test-vm` | `tests/codegen/run_vm_identity.sh` + `run_ir_listing.sh` + `tests/vm/run_vm_tests.sh` | yes |
 | `make test-possessify` | `tests/possessify/run_possdiff.sh` + `run_possessify_tests.sh` | yes |
+| `make test-rungselect` | `tests/rungselect/run_rungdiff.sh` + `run_rungselect_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+
+**[ENG-BREP] (2026-08-16) — the D45 positive control needed `-fno-revdet`, and
+that is D46's own scenario reached from the outside.** `run_gen_timeout_tests.sh`
+proves the compile budget FIRES by compiling a real artifact that must exceed
+it, and the artifact it used was `((a)|b){0,64}c` — slow because the VM emitter
+replicated its body sixty-four times (1,939 lines, 2.3 s at −O2). The
+reverse-deterministic rung emits that same pattern as ONE body copy in 293 lines
+and 0.12 s, so the control went green-because-fast: a positive control that had
+stopped controlling anything, reported as "the CPU limit is not being applied".
+Fixed the way D46 prescribes — PIN THE SELECTION — by denying the rung, plus a
+SIZE FLOOR on the artifact so that the next strategy to absorb this shape fails
+with a diagnostic naming the cause rather than looking like a broken budget.
+Counter-K will meet the same line when it lands.
+
+**[ENG-BREP] (2026-08-16) — an eleventh section, `test-rungselect`.** The
+REVERSE-DETERMINISTIC rung's suite, the same three-part shape as
+`test-possessify` one rung down the ladder, and everything said below about that
+section applies here with `-fno-revdet` in place of `-fno-possessify`. Two
+things are specific to it and worth knowing before reading a failure.
+
+**Denying this rung falls to LITERAL REPLICATION, which is the ground truth in
+the strongest sense available anywhere in the project** (§5.1): `X{m,n}` on the
+frames rung is not an approximation of `{m,n}` semantics, it is `{m,n}`
+unrolled, and it is what shipped before the rung existed. So `run_rungdiff.sh`
+needs no external oracle to have an opinion.
+
+**Its count ceiling is 64, and that is a property of the GROUND TRUTH rather
+than of the rung.** §5.1 suggests keeping the differential below the replication
+knee at N ≤ 256; the binding constraint here is tighter and it is
+`PCREC_MAX_VM_REPEAT_COPIES`, because the DENIED build is the one that
+replicates. A pattern above it compiles on the rung and is REFUSED on the ground
+truth, and the script reports that as a FAILURE rather than skipping — a ground
+truth that cannot be built is exactly the blindness §5.1 discloses, and it
+should be visible. Above the cap, the `.rxt` corpus and the oracles are what
+check the rung.
 
 **[ENG-BREP] (2026-08-16) — a tenth section, `test-possessify`.** The
 possessification rung's `.rxt` corpus rides `test-corpus` like every other

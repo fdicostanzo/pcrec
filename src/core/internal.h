@@ -107,6 +107,24 @@ struct Ast {
      * sound default, and the reason `-fno-possessify` is byte-identity-safe:
      * denying the pass leaves every node in the state it was born in. */
     bool     possessive;
+    /* [ENG-BREP] REVERSE-DETERMINISTIC (A_REP only). Set by src/opt/revdet.c to
+     * the body's REVERSED AST when engine_m4.md §2.5's rung applies, and left
+     * NULL otherwise — so this one field is BOTH the verdict and the artifact
+     * the emitter needs, and the three sites that must agree about the rung
+     * (vm_cost_rep, vm_count_slots, vm_rep) read one field instead of each
+     * re-deciding. Ast.possessive's precedent, one rung down.
+     *
+     * The reversed body is what the emitted backward walk matches: it recovers
+     * the previous iteration boundary for a retreat and, per §3.4's corrected
+     * derivation, the LAST iteration's captures. Reversal is A_CAT children
+     * swapped, recursively; every other node kind reverses to itself.
+     *
+     * Same annotation-not-a-spelling rule as `possessive`: it changes the
+     * emitted machinery and never what the quantifier matches, so every
+     * consumer other than src/gen/emit_vm.c ignores it. The arena zeroes, so a
+     * node nothing analysed keeps its machinery, which is what makes
+     * `-fno-revdet` byte-identity-safe. */
+    const Ast *revbody;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -1369,6 +1387,41 @@ void pcrec_select_engine(Ctx *cx, Ast *root);        /* src/opt/select_engine.c 
  * Runs only for a VM artifact and only when the pass is allowed — see the call
  * site in pcrec_select_engine, which owns both conditions. */
 int  pcrec_possessify(Ctx *cx, Ast *root);           /* src/opt/possessify.c */
+
+/* §2.2's "X admits a unique iteration" — (U1) one-unambiguous, (U2)
+ * prefix-free, and non-nullable, decided on the body's position (Glushkov)
+ * automaton — exported from possessify.c because the REVERSE-DETERMINISTIC rung
+ * needs the identical predicate on the identical construction and a second
+ * implementation of a rule that carries three measured refutations is the
+ * worst possible place for this project to keep two sources of truth.
+ *
+ * `pcrec_uniq_scratch` arena-allocates the position state ONCE per pass; the
+ * struct is deliberately opaque here because its only property a caller needs
+ * is that it is reusable. `*why` names the failing condition
+ * ("nullable-body", "ambiguous-body", "not-prefix-free", "model-error") or
+ * "unique-iteration" on success. */
+void *pcrec_uniq_scratch(Ctx *cx);                   /* src/opt/possessify.c */
+bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
+
+/* ---- [ENG-BREP] the reverse-deterministic rung (engine_m4.md §2.5) ---- */
+
+/* Mark every A_REP whose consumed run decomposes into iterations UNIQUELY and
+ * RECOVERABLY FROM THE RIGHT, by setting Ast.revbody to the body's reversed
+ * AST. The emitter then owes it ONE body copy instead of `rmax` of them.
+ *
+ * Not monotone in possessify's sense and not a fixpoint: the verdict depends
+ * only on the body's own shape and its nesting, so one walk decides every
+ * quantifier. Returns how many it marked, for the census line.
+ *
+ * Runs only for a VM artifact and only when the rung is allowed — same call
+ * site and same reasoning as pcrec_possessify. */
+int  pcrec_revdet(Ctx *cx, Ast *root);               /* src/opt/revdet.c */
+
+/* The set of bytes a node can BEGIN with, over the restricted tree the rung
+ * admits (non-nullable, assertion-free), exported so that the emitted backward
+ * walk's byte dispatch and the analysis's own check that the dispatch is
+ * well-defined read ONE computation. `out` is a 32-byte class bitmap. */
+void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
 
 /* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit

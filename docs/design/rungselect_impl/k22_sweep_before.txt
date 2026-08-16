@@ -1,0 +1,16 @@
+# K22 nested-bounded-repeat compile sweep -- before the product guard
+# produced by: bash docs/design/rungselect_impl/k22_sweep.sh
+# date: 2026-08-16   branch base: 894706e   gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# compiler: the branch point (no product guard) -- reproduces
+#           docs/design/possessify_impl/k22_repro.txt exactly
+#
+depth   chars   seconds   exit      outcome
+10      95      0.11      0         compiles
+15      140     0.32      0         compiles
+17      158     0.82      1         refuses: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+18      167     0.71      1         refuses: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+20      185     0.71      1         refuses: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+25      230     1.11      1         refuses: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+30      275     11.82     1         refuses: pcrec: pattern too large (VM exceeds 131072 emitted nodes) (pattern offset 0)
+35      320     30.04     124       HANG (timeout 30s)
+40      365     30.04     124       HANG (timeout 30s)

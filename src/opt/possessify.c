@@ -426,6 +426,24 @@ static bool body_admits_unique_iteration(Gk *g, const Ast *body,
     return true;
 }
 
+/* The same predicate, exported for src/opt/revdet.c (internal.h carries the
+ * contract). The REVERSE-DETERMINISTIC rung asks the identical question of the
+ * REVERSED body, and every conjunct above is a refutation somebody measured —
+ * so the one thing that must not happen is a second implementation of it
+ * drifting from this one. The scratch is opaque to the caller because its only
+ * relevant property is that it is reusable across quantifiers: it is 16 KB of
+ * position state, and allocating one per verdict would be the pass's whole
+ * cost. */
+void *pcrec_uniq_scratch(Ctx *cx)
+{
+    return arena_alloc(&cx->arena, sizeof(Gk));
+}
+
+bool pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why)
+{
+    return body_admits_unique_iteration((Gk *)scratch, body, why);
+}
+
 /* ---- the walk: FOLLOW, transitively, and the verdict ---------------------
  *
  * FOLLOW(Q) is the set of bytes that can begin whatever runs after `Q`,

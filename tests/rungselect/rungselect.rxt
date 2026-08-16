@@ -1,0 +1,2156 @@
+# tests/rungselect/rungselect.rxt — the [ENG-BREP] REVERSE-DETERMINISTIC rung's
+# oracle-verified corpus (docs/design/engine_m4.md §2.5,
+# docs/design/eng_brep_design.md §3).
+#
+# GENERATED, do not hand-edit. Producer:
+# docs/design/rungselect_impl/make_corpus.py (committed, re-runnable).
+#
+# EVERY EXPECTATION HERE WAS PRODUCED BY BOTH ORACLES AND AGREED. Each
+# (pattern, subject) cell's span and every capture slot were taken from python3
+# `re` AND from libpcre2, and a cell the two disagreed on was reported rather
+# than resolved.
+#
+# WHAT THIS FILE IS FOR, and what it is NOT for. It pins the ANSWERS around the
+# rung -- what each pattern matches, whether or not the rung fires on it. It
+# cannot see the rung itself: a quantifier emitted as one body copy plus a
+# backward walk and the same quantifier replicated `n` times match identically,
+# which IS the claim. The check that can see the rung is the pcrec-vs-pcrec
+# differential (run_rungdiff.sh); the check that says WHICH quantifier took
+# which rung is the artifact's own <PREFIX>_VM_RUNGS stamp
+# (run_rungselect_tests.sh). All three are needed and none substitutes for
+# another.
+#
+# EVERY PATTERN IS CAPTURE-BEARING on purpose. A capture-free pattern routes to
+# the DFA under the default engine choice and never reaches src/gen/emit_vm.c,
+# so a rung would be structurally invisible to it -- the defect the
+# possessification lane measured on its own first corpus (33 of 38 patterns
+# DFA-routed, 3 carrying the feature under test).
+
+# THE MOTIVATING CELL, at a count small enough that the GROUND TRUTH still
+# exists: `((a)|b){0,4000}c` is what this rung is for, and replication is
+# refused above PCREC_MAX_VM_REPEAT_COPIES, so the answers are pinned here
+# at a count both emissions can produce.
+# 
+# Group 2 is the whole point. It is inside ONE BRANCH, so an iteration that
+# takes `b` does not enter it -- and PCRE2 keeps the value from the last
+# iteration that DID. That is the clause the plan row's constant-offset
+# derivation got wrong on 1,799 of 15,036 matches (eng_brep_design.md
+# §3.4), and the cells below are where a regression to it would show:
+# "abbc" must give group 2 = the leading `a`, not unset.
+pattern ((a)|b){0,4}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 0 3
+g 1 1 2
+g 2 0 1
+m "bac" 0 3
+g 1 1 2
+g 2 1 2
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "bbc" 0 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 0 4
+g 1 2 3
+g 2 0 1
+m "babc" 0 4
+g 1 2 3
+g 2 1 2
+m "aabbc" 0 5
+g 1 3 4
+g 2 1 2
+m "ababc" 0 5
+g 1 3 4
+g 2 2 3
+m "bababc" 1 6
+g 1 4 5
+g 2 3 4
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 0 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 1 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 1 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 2 7
+g 1 5 6
+g 2 4 5
+m "aabbaabbc" 4 9
+g 1 7 8
+g 2 5 6
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 1 4
+g 1 2 3
+g 2 1 2
+m "zaabbc" 1 6
+g 1 4 5
+g 2 2 3
+n "q"
+n "aq"
+m "cq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abcq" 0 3
+g 1 1 2
+g 2 0 1
+
+# The same loop with an OVERLAPPING follow. FIRST(body) = {a,b} and the
+# follow is `a`, so the quantifier is NOT possessifiable and the emitted
+# loop owes a real RETREAT -- the backward walk's hard half, and the only
+# family in this file that exercises it.
+pattern ((a)|b){0,4}a
+n ""
+m "a" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "b"
+n "c"
+n "d"
+m "ac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "bc"
+m "abc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "bac" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aac" 0 2
+g 1 0 1
+g 2 0 1
+n "bbc"
+m "abbc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "babc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aabbc" 0 2
+g 1 0 1
+g 2 0 1
+m "ababc" 0 3
+g 1 1 2
+g 2 0 1
+m "bababc" 0 4
+g 1 2 3
+g 2 1 2
+m "aaaac" 0 4
+g 1 2 3
+g 2 2 3
+n "bbbbc"
+m "aaaaac" 0 5
+g 1 3 4
+g 2 3 4
+n "bbbbbc"
+m "abababc" 0 5
+g 1 3 4
+g 2 2 3
+m "aabbaabbc" 0 5
+g 1 3 4
+g 2 1 2
+m "aa" 0 2
+g 1 0 1
+g 2 0 1
+m "ab" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ba" 0 2
+g 1 0 1
+g 2 -1 -1
+n "bb"
+m "aaa" 0 3
+g 1 1 2
+g 2 1 2
+m "aab" 0 2
+g 1 0 1
+g 2 0 1
+m "aba" 0 3
+g 1 1 2
+g 2 0 1
+m "abb" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "baa" 0 3
+g 1 1 2
+g 2 1 2
+m "bab" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aaaa" 0 4
+g 1 2 3
+g 2 2 3
+m "abab" 0 3
+g 1 1 2
+g 2 0 1
+m "bbaa" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaaa" 0 5
+g 1 3 4
+g 2 3 4
+m "ababab" 0 5
+g 1 3 4
+g 2 2 3
+m "za" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "zab" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "zabc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "zaabbc" 1 3
+g 1 1 2
+g 2 1 2
+n "q"
+m "aq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "cq"
+m "abcq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+
+# LAZY, which emits a genuinely different shape: it commits at the MINIMUM
+# and extends forward, where the greedy form commits at the maximum and
+# retreats. R24 S-F1's rule that an all-greedy sweep is structurally blind
+# applies to the emitted shape as much as to the analysis.
+pattern ((a)|b){0,4}?a
+n ""
+m "a" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "b"
+n "c"
+n "d"
+m "ac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "bc"
+m "abc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "bac" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "bbc"
+m "abbc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "babc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aabbc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ababc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "bababc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aaaac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "bbbbc"
+m "aaaaac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "bbbbbc"
+m "abababc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "aabbaabbc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "aa" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ab" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ba" 0 2
+g 1 0 1
+g 2 -1 -1
+n "bb"
+m "aaa" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "aab" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "aba" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abb" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "baa" 0 2
+g 1 0 1
+g 2 -1 -1
+m "bab" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aaaa" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abab" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "bbaa" 0 3
+g 1 1 2
+g 2 -1 -1
+m "aaaaa" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ababab" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "za" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "zab" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "zabc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "zaabbc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "q"
+m "aq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "cq"
+m "abcq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+
+# LAZY with a disjoint follow, where the loop is possessified and both
+# preferences are forced to the same maximal exit (§2.2's own conclusion).
+pattern ((a)|b){1,3}?c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 0 3
+g 1 1 2
+g 2 0 1
+m "bac" 0 3
+g 1 1 2
+g 2 1 2
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "bbc" 0 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 0 4
+g 1 2 3
+g 2 0 1
+m "babc" 0 4
+g 1 2 3
+g 2 1 2
+m "aabbc" 1 5
+g 1 3 4
+g 2 1 2
+m "ababc" 1 5
+g 1 3 4
+g 2 2 3
+m "bababc" 2 6
+g 1 4 5
+g 2 3 4
+m "aaaac" 1 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 1 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 2 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 2 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 3 7
+g 1 5 6
+g 2 4 5
+m "aabbaabbc" 5 9
+g 1 7 8
+g 2 5 6
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 1 4
+g 1 2 3
+g 2 1 2
+m "zaabbc" 2 6
+g 1 4 5
+g 2 2 3
+n "q"
+n "aq"
+n "cq"
+m "abcq" 0 3
+g 1 1 2
+g 2 0 1
+
+# m > 0: the mandatory iterations are counted by the same scan, and the
+# low-water slot is written at the m-th boundary rather than at entry.
+pattern ((a)|b){2,4}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+m "abc" 0 3
+g 1 1 2
+g 2 0 1
+m "bac" 0 3
+g 1 1 2
+g 2 1 2
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "bbc" 0 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 0 4
+g 1 2 3
+g 2 0 1
+m "babc" 0 4
+g 1 2 3
+g 2 1 2
+m "aabbc" 0 5
+g 1 3 4
+g 2 1 2
+m "ababc" 0 5
+g 1 3 4
+g 2 2 3
+m "bababc" 1 6
+g 1 4 5
+g 2 3 4
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 0 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 1 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 1 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 2 7
+g 1 5 6
+g 2 4 5
+m "aabbaabbc" 4 9
+g 1 7 8
+g 2 5 6
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 1 4
+g 1 2 3
+g 2 1 2
+m "zaabbc" 1 6
+g 1 4 5
+g 2 2 3
+n "q"
+n "aq"
+n "cq"
+m "abcq" 0 3
+g 1 1 2
+g 2 0 1
+
+# m == n: one exit, so no retreat frame is owed at all -- a distinct
+# emitted shape, not a special case of the bounded one.
+pattern ((a)|b){3}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+m "abbc" 0 4
+g 1 2 3
+g 2 0 1
+m "babc" 0 4
+g 1 2 3
+g 2 1 2
+m "aabbc" 1 5
+g 1 3 4
+g 2 1 2
+m "ababc" 1 5
+g 1 3 4
+g 2 2 3
+m "bababc" 2 6
+g 1 4 5
+g 2 3 4
+m "aaaac" 1 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 1 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 2 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 2 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 3 7
+g 1 5 6
+g 2 4 5
+m "aabbaabbc" 5 9
+g 1 7 8
+g 2 5 6
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+m "zaabbc" 2 6
+g 1 4 5
+g 2 2 3
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# UNBOUNDED, which takes the same code path with no ceiling. Worth pinning
+# separately because the frames rung treats bounded and unbounded as two
+# rungs and this one does not.
+pattern ((a)|b)*c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 0 3
+g 1 1 2
+g 2 0 1
+m "bac" 0 3
+g 1 1 2
+g 2 1 2
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "bbc" 0 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 0 4
+g 1 2 3
+g 2 0 1
+m "babc" 0 4
+g 1 2 3
+g 2 1 2
+m "aabbc" 0 5
+g 1 3 4
+g 2 1 2
+m "ababc" 0 5
+g 1 3 4
+g 2 2 3
+m "bababc" 0 6
+g 1 4 5
+g 2 3 4
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 0 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 0 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 0 7
+g 1 5 6
+g 2 4 5
+m "aabbaabbc" 0 9
+g 1 7 8
+g 2 5 6
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 1 4
+g 1 2 3
+g 2 1 2
+m "zaabbc" 1 6
+g 1 4 5
+g 2 2 3
+n "q"
+n "aq"
+m "cq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abcq" 0 3
+g 1 1 2
+g 2 0 1
+
+# UNBOUNDED with m > 0 and an overlapping follow.
+pattern ((a)|b)+a
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+m "bac" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aac" 0 2
+g 1 0 1
+g 2 0 1
+n "bbc"
+n "abbc"
+m "babc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aabbc" 0 2
+g 1 0 1
+g 2 0 1
+m "ababc" 0 3
+g 1 1 2
+g 2 0 1
+m "bababc" 0 4
+g 1 2 3
+g 2 1 2
+m "aaaac" 0 4
+g 1 2 3
+g 2 2 3
+n "bbbbc"
+m "aaaaac" 0 5
+g 1 3 4
+g 2 3 4
+n "bbbbbc"
+m "abababc" 0 5
+g 1 3 4
+g 2 2 3
+m "aabbaabbc" 0 6
+g 1 4 5
+g 2 4 5
+m "aa" 0 2
+g 1 0 1
+g 2 0 1
+n "ab"
+m "ba" 0 2
+g 1 0 1
+g 2 -1 -1
+n "bb"
+m "aaa" 0 3
+g 1 1 2
+g 2 1 2
+m "aab" 0 2
+g 1 0 1
+g 2 0 1
+m "aba" 0 3
+g 1 1 2
+g 2 0 1
+n "abb"
+m "baa" 0 3
+g 1 1 2
+g 2 1 2
+m "bab" 0 2
+g 1 0 1
+g 2 -1 -1
+m "aaaa" 0 4
+g 1 2 3
+g 2 2 3
+m "abab" 0 3
+g 1 1 2
+g 2 0 1
+m "bbaa" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaaa" 0 5
+g 1 3 4
+g 2 3 4
+m "ababab" 0 5
+g 1 3 4
+g 2 2 3
+n "za"
+n "zab"
+n "zabc"
+m "zaabbc" 1 3
+g 1 1 2
+g 2 1 2
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# BRANCHES OF DIFFERENT LENGTH, which is where a backward walk has to
+# DECIDE the iteration's length from the byte it lands on rather than
+# subtract a constant stride. `(ab){0,4}` would take the cursor rung one
+# step up the ladder; this cannot.
+pattern ((x)y|z){0,4}w
+n ""
+m "w" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "x"
+n "y"
+n "z"
+n "xy"
+m "xyw" 0 3
+g 1 0 2
+g 2 0 1
+m "zw" 0 2
+g 1 0 1
+g 2 -1 -1
+m "xyzw" 0 4
+g 1 2 3
+g 2 0 1
+m "zxyw" 0 4
+g 1 1 3
+g 2 1 2
+m "zzzw" 0 4
+g 1 2 3
+g 2 -1 -1
+m "xyxyw" 0 5
+g 1 2 4
+g 2 2 3
+m "zxyzw" 0 5
+g 1 3 4
+g 2 1 2
+m "xyzxyw" 0 6
+g 1 3 5
+g 2 3 4
+m "xyxyxyw" 0 7
+g 1 4 6
+g 2 4 5
+m "zzw" 0 3
+g 1 1 2
+g 2 -1 -1
+m "wq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "xyq"
+n "p"
+n "pq"
+n "r"
+n "pqd"
+n "rd"
+n "pqrd"
+n "rpqd"
+n "pqpqd"
+n "rrd"
+n "d"
+n "pqrpqd"
+n "cpqd"
+n "crd"
+n "cd"
+
+# Two groups in one body, only ONE of which any given iteration enters --
+# so the two are witnessed at different iterations by the same walk, which
+# is the general form of the `((a)|b)` case above.
+pattern (?:(p)q|(r)){0,4}d
+n ""
+n "w"
+n "x"
+n "y"
+n "z"
+n "xy"
+n "xyw"
+n "zw"
+n "xyzw"
+n "zxyw"
+n "zzzw"
+n "xyxyw"
+n "zxyzw"
+n "xyzxyw"
+n "xyxyxyw"
+n "zzw"
+n "wq"
+n "xyq"
+n "p"
+n "pq"
+n "r"
+m "pqd" 0 3
+g 1 0 1
+g 2 -1 -1
+m "rd" 0 2
+g 1 -1 -1
+g 2 0 1
+m "pqrd" 0 4
+g 1 0 1
+g 2 2 3
+m "rpqd" 0 4
+g 1 1 2
+g 2 0 1
+m "pqpqd" 0 5
+g 1 2 3
+g 2 -1 -1
+m "rrd" 0 3
+g 1 -1 -1
+g 2 1 2
+m "d" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "pqrpqd" 0 6
+g 1 3 4
+g 2 2 3
+m "cpqd" 1 4
+g 1 1 2
+g 2 -1 -1
+m "crd" 1 3
+g 1 -1 -1
+g 2 1 2
+m "cd" 1 2
+g 1 -1 -1
+g 2 -1 -1
+
+# The same, with something in front of it, so the search entry has to
+# advance the start position before the loop ever runs.
+pattern c(?:(p)q|(r)){0,4}d
+n ""
+n "w"
+n "x"
+n "y"
+n "z"
+n "xy"
+n "xyw"
+n "zw"
+n "xyzw"
+n "zxyw"
+n "zzzw"
+n "xyxyw"
+n "zxyzw"
+n "xyzxyw"
+n "xyxyxyw"
+n "zzw"
+n "wq"
+n "xyq"
+n "p"
+n "pq"
+n "r"
+n "pqd"
+n "rd"
+n "pqrd"
+n "rpqd"
+n "pqpqd"
+n "rrd"
+n "d"
+n "pqrpqd"
+m "cpqd" 0 4
+g 1 1 2
+g 2 -1 -1
+m "crd" 0 3
+g 1 -1 -1
+g 2 1 2
+m "cd" 0 2
+g 1 -1 -1
+g 2 -1 -1
+
+# DECLINE: reverse-ambiguous. Forward-deterministic, but a backward walk
+# from a boundary of "abab" can stop at 3 (branch `b`) or at 2 (branch
+# `ab`), both genuine body matches. It stays on the FRAMES rung, and its
+# answers are pinned here so that a future widening of the analysis that
+# took it would have to keep them.
+pattern (x)(?:ab|b){0,4}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# DECLINE: forward-ambiguous (U1) -- `(a|ab)` is the body whose iteration
+# can end in two places, the 117-counterexample family of §2.4.
+pattern (x)(a|ab){0,4}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# DECLINE: not prefix-free (U2). No alternation is needed for this one:
+# `(?:ab?)`'s accepting position `a` simply has an outgoing edge.
+pattern (x)(?:ab?){0,4}b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# DECLINE: a nullable body has no strictly-increasing exit chain, and the
+# empty-iteration territory §6 is about.
+pattern (x)(?:a|){0,4}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# DECLINE (single-level scope bound): the INNER quantifier qualifies on its
+# own shape and is declined because it sits inside another quantifier's
+# body. The answers are pinned so that lifting the bound later has to keep
+# them.
+pattern (x)(?:((a)|b){0,2}c){0,3}d
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# A THREE-RUNG artifact: `a*` on the cursor, `((a)|b){0,3}` on this rung,
+# and `(?:ab|b){0,3}` reverse-ambiguous on the frames. One pattern whose
+# answers depend on all three emissions agreeing.
+pattern a*((a)|b){0,3}c(?:ab|b){0,3}d
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# TWO rung loops in one pattern, so the per-loop slot triples and the
+# SHARED capture-recovery locals are exercised at once.
+pattern ((a)|b){0,3}c(?:(p)q|(r)){0,3}d
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+n ""
+n "w"
+n "x"
+n "y"
+n "z"
+n "xy"
+n "xyw"
+n "zw"
+n "xyzw"
+n "zxyw"
+n "zzzw"
+n "xyxyw"
+n "zxyzw"
+n "xyzxyw"
+n "xyxyxyw"
+n "zzw"
+n "wq"
+n "xyq"
+n "p"
+n "pq"
+n "r"
+n "pqd"
+n "rd"
+n "pqrd"
+n "rpqd"
+n "pqpqd"
+n "rrd"
+n "d"
+n "pqrpqd"
+m "cpqd" 0 4
+g 1 -1 -1
+g 2 -1 -1
+g 3 1 2
+g 4 -1 -1
+m "crd" 0 3
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 1 2
+m "cd" 0 2
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+g 4 -1 -1
+
+# The rung INSIDE a group, so the group's own span has to survive every
+# retreat the inner loop performs.
+pattern (((a)|b){0,4})c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 0 0
+g 2 -1 -1
+g 3 -1 -1
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+g 3 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 0 1
+g 3 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 1 2
+g 3 0 1
+m "bac" 0 3
+g 1 0 2
+g 2 1 2
+g 3 1 2
+m "aac" 0 3
+g 1 0 2
+g 2 1 2
+g 3 1 2
+m "bbc" 0 3
+g 1 0 2
+g 2 1 2
+g 3 -1 -1
+m "abbc" 0 4
+g 1 0 3
+g 2 2 3
+g 3 0 1
+m "babc" 0 4
+g 1 0 3
+g 2 2 3
+g 3 1 2
+m "aabbc" 0 5
+g 1 0 4
+g 2 3 4
+g 3 1 2
+m "ababc" 0 5
+g 1 0 4
+g 2 3 4
+g 3 2 3
+m "bababc" 1 6
+g 1 1 5
+g 2 4 5
+g 3 3 4
+m "aaaac" 0 5
+g 1 0 4
+g 2 3 4
+g 3 3 4
+m "bbbbc" 0 5
+g 1 0 4
+g 2 3 4
+g 3 -1 -1
+m "aaaaac" 1 6
+g 1 1 5
+g 2 4 5
+g 3 4 5
+m "bbbbbc" 1 6
+g 1 1 5
+g 2 4 5
+g 3 -1 -1
+m "abababc" 2 7
+g 1 2 6
+g 2 5 6
+g 3 4 5
+m "aabbaabbc" 4 9
+g 1 4 8
+g 2 7 8
+g 3 5 6
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 1 4
+g 1 1 3
+g 2 2 3
+g 3 1 2
+m "zaabbc" 1 6
+g 1 1 5
+g 2 4 5
+g 3 2 3
+n "q"
+n "aq"
+m "cq" 0 1
+g 1 0 0
+g 2 -1 -1
+g 3 -1 -1
+m "abcq" 0 3
+g 1 0 2
+g 2 1 2
+g 3 0 1
+
+# A NESTED FIXED-COUNT quantifier, which is the ONLY nested quantifier the
+# rung admits and the only shape that exercises the backward emitter's own
+# replication arm. It has to sit in the MIDDLE of the body, and that is
+# measured rather than stylistic: the Glushkov construction models `{2}` as
+# a LOOP (it links last to first whenever rmax > 1), so a fixed repeat at
+# either END of a body gives that end's positions a back edge and
+# prefix-freeness fails in that direction. Hence the `x` and the `y`.
+pattern (?:x((a)|b){2}y){0,3}z
+n ""
+m "z" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "xaby"
+m "xabyz" 0 5
+g 1 2 3
+g 2 1 2
+m "xaayz" 0 5
+g 1 2 3
+g 2 2 3
+m "xbbyz" 0 5
+g 1 2 3
+g 2 -1 -1
+m "xbayz" 0 5
+g 1 2 3
+g 2 2 3
+m "xabyxbayz" 0 9
+g 1 6 7
+g 2 6 7
+m "xabyxaayz" 0 9
+g 1 6 7
+g 2 6 7
+m "xaayxbbyz" 0 9
+g 1 6 7
+g 2 2 3
+m "xabyxabyxaayz" 0 13
+g 1 10 11
+g 2 10 11
+m "xayz" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "xaaayz" 5 6
+g 1 -1 -1
+g 2 -1 -1
+n "xy"
+m "xz" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abyz" 3 4
+g 1 -1 -1
+g 2 -1 -1
+n "q"
+n "xabyq"
+
+# The same shape lazy, and the same shape without the inner group.
+pattern (?:x((a)|b){2}y){0,3}?z
+n ""
+m "z" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "xabyz" 0 5
+g 1 2 3
+g 2 1 2
+m "xaayz" 0 5
+g 1 2 3
+g 2 2 3
+m "xbbyz" 0 5
+g 1 2 3
+g 2 -1 -1
+m "xabyxbayz" 0 9
+g 1 6 7
+g 2 6 7
+m "xabyxaayz" 0 9
+g 1 6 7
+g 2 6 7
+m "xayz" 3 4
+g 1 -1 -1
+g 2 -1 -1
+
+# A group in EVERY branch, so one walk publishes two groups per step and
+# each keeps the value from the last iteration that entered ITS branch.
+pattern (?:(x)(?:y|z)){0,3}w
+n ""
+m "w" 0 1
+g 1 -1 -1
+n "x"
+n "y"
+n "z"
+n "xy"
+m "xyw" 0 3
+g 1 0 1
+m "zw" 1 2
+g 1 -1 -1
+m "xyzw" 3 4
+g 1 -1 -1
+m "zxyw" 1 4
+g 1 1 2
+m "zzzw" 3 4
+g 1 -1 -1
+m "xyxyw" 0 5
+g 1 2 3
+m "zxyzw" 4 5
+g 1 -1 -1
+m "xyzxyw" 3 6
+g 1 3 4
+m "xyxyxyw" 0 7
+g 1 4 5
+m "zzw" 2 3
+g 1 -1 -1
+m "wq" 0 1
+g 1 -1 -1
+n "xyq"
+n "p"
+n "pq"
+n "r"
+n "pqd"
+n "rd"
+n "pqrd"
+n "rpqd"
+n "pqpqd"
+n "rrd"
+n "d"
+n "pqrpqd"
+n "cpqd"
+n "crd"
+n "cd"
+
+# §5.3: N = 0 and N = 1, the smallest counts, where a loop that never runs
+# and a loop that runs once are the two clauses of §3.4's capture rule.
+pattern ((a)|b){0,1}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "bac" 1 3
+g 1 1 2
+g 2 1 2
+m "aac" 1 3
+g 1 1 2
+g 2 1 2
+m "bbc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "babc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "aabbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "ababc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "bababc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "aaaac" 3 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 4 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 5 7
+g 1 5 6
+g 2 -1 -1
+m "aabbaabbc" 7 9
+g 1 7 8
+g 2 -1 -1
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "zaabbc" 4 6
+g 1 4 5
+g 2 -1 -1
+n "q"
+n "aq"
+m "cq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abcq" 1 3
+g 1 1 2
+g 2 -1 -1
+
+# §5.3: m == n == 1, one mandatory iteration and no freedom at all.
+pattern ((a)|b){1}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "bac" 1 3
+g 1 1 2
+g 2 1 2
+m "aac" 1 3
+g 1 1 2
+g 2 1 2
+m "bbc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "babc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "aabbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "ababc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "bababc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "aaaac" 3 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 4 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 5 7
+g 1 5 6
+g 2 -1 -1
+m "aabbaabbc" 7 9
+g 1 7 8
+g 2 -1 -1
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "zaabbc" 4 6
+g 1 4 5
+g 2 -1 -1
+n "q"
+n "aq"
+n "cq"
+m "abcq" 1 3
+g 1 1 2
+g 2 -1 -1
+
+# §5.3: an EMPTY-CAPABLE body -- §6's termination territory. The rung
+# declines it (no strictly-increasing exit chain), and E-2's ruling that a
+# bounded repeat takes NO empty-iteration guard is what these answers pin.
+pattern (x)(a?){0,4}b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# §5.3: the same, unbounded, where the guard DOES exist.
+pattern (x)(a?)*b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# §5.3: `(|a){m,n}` SPECIFICALLY -- named as its own cell because R24
+# measured it as the family where the ORACLES THEMSELVES disagree (106 of
+# 15,600 cells; upstream_issues.md U9's neighbourhood). A two-way
+# python-only check here would raise a FALSE alarm against pcrec. The
+# generator reports a disagreement rather than resolving it, and a cell
+# whose two oracles agree on the SPAN but differ on a slot is kept
+# SPAN-ONLY with the divergence recorded inline.
+pattern (|a){0,3}b
+n ""
+n "a"
+m "b" 0 1
+g 1 0 0
+n "c"
+n "d"
+n "ac"
+m "bc" 0 1
+g 1 0 0
+m "abc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "bac" 0 1
+g 1 0 0
+n "aac"
+m "bbc" 0 1
+g 1 0 0
+m "abbc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "babc" 0 1
+g 1 0 0
+m "aabbc" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "ababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "bababc" 0 1
+g 1 0 0
+n "aaaac"
+m "bbbbc" 0 1
+g 1 0 0
+n "aaaaac"
+m "bbbbbc" 0 1
+g 1 0 0
+m "abababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aabbaabbc" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "aa"
+m "ab" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "ba" 0 1
+g 1 0 0
+m "bb" 0 1
+g 1 0 0
+n "aaa"
+m "aab" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aba" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "abb" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "baa" 0 1
+g 1 0 0
+m "bab" 0 1
+g 1 0 0
+n "aaaa"
+m "abab" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "bbaa" 0 1
+g 1 0 0
+n "aaaaa"
+m "ababab" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "za"
+m "zab" 1 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "zabc" 1 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "zaabbc" 1 4
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((3, 3),), libpcre2 ((2, 3),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "q"
+n "aq"
+n "cq"
+m "abcq" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+
+# §5.3: the same family with a capture wrapper, so it reaches the VM.
+pattern (x)(|a){2,4}b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# §5.3: a capture inside an alternation inside the loop, which §3.4 calls
+# the place the last-iteration rule is least intuitive -- here with THREE
+# branches, so two of the three leave the group untouched.
+pattern (?:(a)|b|c){0,4}d
+n ""
+n "a"
+n "b"
+n "c"
+m "d" 0 1
+g 1 -1 -1
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"

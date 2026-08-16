@@ -1,0 +1,34 @@
+# The REVERSE-DETERMINISTIC rung's ACCEPTANCE CELL, ((a)|b){0,N}c.
+# produced by: bash docs/design/rungselect_impl/acceptance_cell.sh 8 16 64 256 1000 4000
+# date: 2026-08-16   commit: 4204a18   gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+#
+# 'rung' is the default build; 'replicate' is the SAME compiler with
+# -fno-revdet, which drops the quantifier to the frames rung -- i.e. to
+# literal replication, i.e. to exactly what shipped before this rung.
+#
+# READ THE 'lines' COLUMN DOWN THE RUNG ROWS: 293 at every N. The emitted
+# size stopped depending on the count, which is the whole claim. Under
+# replication it is 427 / 643 / 1,939 and then the pattern is REFUSED,
+# because PCREC_MAX_VM_REPEAT_COPIES = 64 is the backstop D45 left in
+# place until this rung arrived (D47.1 names its arrival as when the
+# refuse-cap endgame lands).
+#
+# WHAT THE REFUSED ROWS COST BEFORE THE CAP EXISTED, for scale, is not
+# reproducible from this tree and is not re-measured here: with the cap
+# raised, eng_brep_design.md S3.3 measures N=4000 at 113,549 lines /
+# 2.72 s of pcrec / gcc -O2 NOT FINISHING in 300 s. The rung's row for
+# the same N is 293 lines / 0.12 s / 0.12 s.
+#
+N      rung       lines     pcrec_s   gcc_O2_s  outcome
+8      rung       293       0.12      0.22      ok
+8      replicate  427       0.12      0.22      ok
+16     rung       293       0.12      0.12      ok
+16     replicate  643       0.12      0.32      ok
+64     rung       293       0.11      0.12      ok
+64     replicate  1939      0.12      2.32      ok
+256    rung       293       0.12      0.12      ok
+256    replicate  -         -         -         REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 25
+1000   rung       293       0.12      0.12      ok
+1000   replicate  -         -         -         REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 10
+4000   rung       293       0.12      0.12      ok
+4000   replicate  -         -         -         REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 40

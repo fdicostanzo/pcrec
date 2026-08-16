@@ -91,6 +91,61 @@ construction (src/ir) and emission (src/gen).
   checks are needed and what each is blind to); failing-direction controls
   tests/mech/sabotages/S45-S49.
 
+  It also EXPORTS its unique-iteration predicate (`pcrec_uniq_scratch` /
+  `pcrec_uniq_iteration`, declared in core/internal.h) for revdet.c below, which
+  asks the identical question of the REVERSED body. The export exists so that
+  there is one implementation of a rule carrying three measured refutations,
+  not two that could drift.
+
+- **revdet.c** — [ENG-BREP] the REVERSE-DETERMINISTIC RUNG's analysis
+  (docs/design/engine_m4.md §2.5, docs/design/eng_brep_design.md §3, and the
+  lane's emitted-shape sketch at
+  docs/design/rungselect_impl/rungselect_design.md). Marks every `A_REP` whose
+  consumed run decomposes into iterations UNIQUELY and RECOVERABLY FROM THE
+  RIGHT, so src/gen/emit_vm.c can emit ONE body copy instead of `rmax` of them.
+
+  **The verdict and the material for it are ONE FIELD.** `Ast.revbody` holds the
+  body's REVERSED AST and is non-NULL exactly when the rung applies, so the
+  three emitter sites that must agree about the rung (`vm_cost_rep`,
+  `vm_count_slots`, `vm_rep`) read one field rather than each re-deciding — and
+  the site that selects the rung cannot select it without having the thing the
+  rung needs. `Ast.possessive`'s precedent, one rung down.
+
+  **The rule is TWO unique-iteration checks and each has a witness.** FORWARD
+  (on the body) is what makes the emitted scan deterministic and licenses the
+  per-iteration cut; its witness is `(aa?)`, which fails (U2). REVERSE (on the
+  reversed body, the identical predicate on the identical construction) is what
+  makes the retreat computable locally; its witness is `(?:ab|b)`, which PASSES
+  forward and fails reversed, because reversed it is `(?:ba|b)` whose two
+  initial positions are both `b`. That second class is exactly the residual
+  engine_m4.md §2.5 predicts the boundary-record rung shrinks to.
+
+  The forward predicate is IMPORTED from possessify.c (`pcrec_uniq_iteration`,
+  with `pcrec_uniq_scratch` for the reusable position workspace) rather than
+  reimplemented. Every conjunct in it is a refutation somebody measured, and a
+  second copy of that rule is the worst place in this tree to keep two sources
+  of truth.
+
+  **`rd_alt_disjoint` checks a property that is already implied**, and that is
+  deliberate. The emitted backward walk has no choice points — at an alternation
+  it reads the next byte and jumps to the one branch that can begin with it —
+  which is a strictly stronger thing to depend on than "the walk lands in the
+  right place". (U1) implies it, but "implied by" is how a dependency quietly
+  survives a change to what it depends on, so the check is re-derived directly
+  on the reversed tree the emitter will walk. `pcrec_revdet_first` is exported
+  so the check and the emitted dispatch read one computation.
+
+  Same two inheritances as possessify.c and for the same reasons. Every decision
+  is in the SOUND direction, so anything unmodellable DECLINES and a declined
+  quantifier matches exactly what it matches today — which is also what makes
+  `-fno-revdet` byte-identity-safe. And A_CAT/A_ALT spines are walked
+  ITERATIVELY (D10/DD-10/R1 R-2, K20): the REVERSAL is the harder half of that
+  obligation, because reversing a spine means REBUILDING one, and a quantifier
+  body is allowed to be a 20,000-element concatenation.
+
+  Tests: tests/rungselect/ (its own CLAUDE.md explains why three separate checks
+  are needed); failing-direction controls tests/mech/sabotages/S50-S52.
+
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
   alphabet symbol so `$`-machines minimize correctly. Behavior-preserving:
