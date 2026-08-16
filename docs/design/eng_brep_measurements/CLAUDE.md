@@ -56,6 +56,19 @@ The archived outputs are **EVIDENCE, NEVER AN ORACLE** — no check reads them.
   from one base count, so omitting one now requires deleting a loop.
   `BREP_NO_LAZY_CONJUNCT=1` is the failing-direction control: it reverts the
   analysis to the refuted rule and reproduces the panel's 316 counterexamples.
+  **[D47.6] `subjects()`'s alphabet excluded the discriminating character.**
+  The original `ALPHA = "abcd "` never contained `z`, the byte every
+  non-empty `PREFIXES` member (`"z"`, `"(?:z|)"`) is built from, so every
+  z-prefixed pattern was swept without a subject that could enter its own
+  loop — the lazy conjunct's reported "20 false declines" were this defect's
+  visible symptom (all 20 genuinely diverge; see
+  `../eng_brep_design.md` §2.4/§10.2 and `docs/dev/decisions.md` D47.6).
+  Fixed: `z` joins `ALPHA`, and `subjects()` now also generates
+  deterministic repetition-heavy subjects (long single-byte runs and
+  two-byte cycles at lengths 6/8/10/12, each also prefixed by every pattern
+  byte) instead of relying on the random tail to find depth by luck. The 20
+  patterns this found are now guarded permanently at
+  `../../../tests/base/possess_lazy_guard.rxt`.
 - `census_rungs.py [OUTPUTS_DIR]` — **[R24 M-F1/M-F2/M-F3]** derives every
   rung-census figure the note quotes, in python, from the archived census
   files. It exists because the first version of those figures came from an
@@ -95,7 +108,7 @@ than duplicating it.
 | `replication_sweep.tsv` | `probe_replication.sh` | §1.2's cost table; the D45 cell reproduced at N=4000 |
 | `erased_path_cost.txt` | ad hoc, serial | §1.4: pcrec's own time is quadratic; where the count lives in the emitted tables |
 | `nfa_growth.txt` | `nfastats` scratch | §1.4: NFA states = 6N+3, and that `emit_vm.c` cannot change it |
-| `possess_differential.tsv` / `.summary` | `probe_possess.py` | §2.4's v3 table: 0 soundness counterexamples in BOTH preference families |
+| `possess_differential.tsv` / `.summary` | `probe_possess.py` | §2.4's v3 table: 0 soundness counterexamples in BOTH preference families. **[D47.6] re-archived** with the fixed `subjects()` (see the probe's own entry above) — same 0 counterexamples, but the `no` row's same/DIVERGES split moved (deeper subjects find more genuine divergence among already-declined cells); supersedes the 2026-08-16T01:41 run (reason recorded in the archive's own header) |
 | `possess_differential_lazy_control.summary` | `probe_possess.py`, `BREP_NO_LAZY_CONJUNCT=1` | §2.4's lazy refutation: 316 counterexamples without the conjunct, matching R24's independent 316 |
 | `rung_census_derived.txt` | `census_rungs.py` | §3.2's whole table and §7's distinct-pattern count |
 | `cell33_motivating_cell.txt` | `probe_cell33.sh` | §3.3's table, single-sourced |

@@ -513,6 +513,15 @@ preference families in one run:
 | lazy | possessifiable | 1,695 | **0** |
 | lazy | no | 1,338 | 1,983 |
 
+**The `no` row's same/DIVERGES split above is the PRE-D47.6 figure, kept for
+history** (see the corrected bullet below for why); the possessifiable rows
+are exact and unaffected. Re-run with the fixed subject generator, the split
+moves to greedy `no` 1,320/1,665 and lazy `no` 1,154/2,167 — the possessifiable
+rows are byte-identical (2,031/0 and 1,695/0) because that population never
+depended on the missing subjects; only how many of the ALREADY-DECLINED `no`
+cells the differential could see diverging changed. Current archive:
+`outputs/possess_differential.summary`.
+
 Three things to read off this, none of them automatic:
 
 - **The greedy rows are byte-identical to v2's** (2,031 / 1,522 / 1,463). The
@@ -522,10 +531,24 @@ Three things to read off this, none of them automatic:
 - **The conjunct is what removes the 316**, not something else that changed
   underneath: the control above is the same binary with one flag flipped, and
   it is committed so the control can be re-run rather than believed.
-- **It costs 20 false declines** (1,715 → 1,695 possessifiable-and-same), so
-  the repair is tight rather than a retreat to declining everything lazy. The
-  lazy possessifiable population is 1,695 against greedy's 2,031: laziness
-  costs about 17% of the class, all of it the nullable-rest tail.
+- **It costs ZERO false declines — corrected 2026-08-16 (D47.6).** This
+  bullet originally read "It costs 20 false declines (1,715 → 1,695
+  possessifiable-and-same)". Pulling those 20 for Frank's inspection refuted
+  the claim: all 20 GENUINELY diverge lazy-vs-possessive (e.g. `za{1,3}?` on
+  "zaa": lazy `(0,2)`, possessified `(0,3)`) on subjects
+  `probe_possess.py`'s `subjects()` could not produce — its random alphabet
+  was `"abcd "`, which never contained the prefix byte `z` that every
+  non-empty `PREFIXES` member is built from, so every z-prefixed pattern in
+  exactly this cost bucket was swept without the depth to even enter its own
+  loop. Fixed in the same ruling (`z` joins the alphabet, plus deterministic
+  repetition-heavy subjects — see the probe's own docstring). Re-swept over
+  the full 3,726-row possessifiable population (both preferences): 0
+  counterexamples, and the 336 lazy+nullable-rest `no` cells that used to
+  include those 20 "same" rows now show 0 same / 336 DIVERGES. The lazy
+  possessifiable population is still 1,695 against greedy's 2,031: laziness
+  still costs about 17% of the class, all of it the nullable-rest tail — but
+  the conjunct itself, which is what this bullet is about, costs nothing
+  measurable. See D47 ruling 6 and §10.1's new entry.
 
 **One thing v1 got right by accident, disclosed.** v1's follow set contained
 no follow beginning with a body's SECOND byte, so the `(?:ab|a)` family — just
@@ -621,7 +644,9 @@ is the arm real patterns use.
 ### 2.7 Conservatism, named rather than smoothed over
 
 1,522 "no" verdicts never diverged in the differential — the analysis is
-sound, not tight. The identified sources, in order of how much they cost:
+sound, not tight. (This is the greedy `no`/same count from §2.4's v3 table,
+pre-D47.6; the fixed subject generator moves it to 1,320 — same table, same
+caveat.) The identified sources, in order of how much they cost:
 
 - **`$` follows** (`a{0,4}$`, `\d{2,4}$`): declined by §2.5's blanket
   assertion rule, and — as of [R24 S-F2] — **recoverable**, because `$` is
@@ -632,11 +657,18 @@ sound, not tight. The identified sources, in order of how much they cost:
   `b?`, but a `b` at any retreat position was already consumable by the loop,
   so the retreat cannot help. PCRE2's `pcre2_auto_possess.c` does exactly this
   kind of subsumption reasoning; pcrec's first version should not.
-- **The lazy conjunct's own cost** [R24 S-F1]: 20 quantifiers the greedy rule
-  admits are declined in the lazy spelling without the differential showing a
-  divergence. That is the price of stating the conjunct on "the rest is
-  nullable" rather than on the sharper "some non-maximal exit actually
-  succeeds", and it is the right trade for a first version.
+- **The lazy conjunct's own cost** [R24 S-F1] — **corrected 2026-08-16
+  (D47.6): ZERO, not 20.** This bullet originally read "20 quantifiers the
+  greedy rule admits are declined in the lazy spelling without the
+  differential showing a divergence" and attributed that as the price of
+  stating the conjunct on "the rest is nullable" rather than the sharper
+  "some non-maximal exit actually succeeds". The 20 were pulled for
+  inspection and all genuinely diverge — see the §2.4 correction and D47
+  ruling 6 for the full account (the instrument's subject alphabet, not the
+  conjunct, was at fault). The conjunct is stated on the coarser condition
+  because it is one predicate and provably sound, which remains the right
+  trade for a first version, but it is not buying that soundness with any
+  measured cost.
 - **`\d`, `\w` and every other CATEGORY** widen to all bytes in the probe's
   model. In pcrec they would not — the real implementation has exact 256-bit
   class bitmaps and can intersect them precisely, so the shipped analysis
@@ -1485,3 +1517,26 @@ entered the note as findings.
   (M-F4); the mislabelled row is this lane's own finding on re-measurement.
   `probe_cell33.sh` now reads the engine out of `--emit-ir`'s header per row,
   so a row cannot claim a rung the compiler did not take.
+
+### 10.2 The defect [D47.6] added
+
+- **`probe_possess.py`'s subject alphabet excluded the discriminating
+  character.** This is the fifth-or-so instance in this lane alone of the
+  corpus-cannot-reach-the-failure lesson (§2.4's `(?:ab|a)` follow gap and
+  §10.1's lazy-family omission are its siblings above) — this time the thing
+  that could not be reached was not a construct or a preference family but a
+  single BYTE. `subjects()`'s random tail was drawn from `ALPHA = "abcd "`,
+  which never contained `z`, the byte every non-empty `PREFIXES` member
+  (`"z"`, `"(?:z|)"`) is built from; the handful of fixed literal `z`-subjects
+  carried too little post-`z` repetition to enter a `{3,}`-bodied loop at
+  all. §2.4's "20 false declines" was this defect's visible symptom: the
+  differential reported "same" for 20 z-prefixed lazy+nullable-rest
+  quantifiers not because they were safe, but because no subject in the swept
+  set could exercise the divergence. Pulling those 20 for Frank's inspection
+  (D47 ruling 6) found this rather than a real cost. Fixed by adding `z` to
+  `ALPHA` and, more durably, by generating deterministic repetition-heavy
+  subjects (long single-byte runs and two-byte cycles, each also emitted
+  prefixed by every pattern byte) instead of relying on a random walk to find
+  depth by luck — so the next byte a `PREFIXES`/`BODIES`/`FOLLOWS` edit
+  introduces is swept with real depth from the start rather than needing its
+  own inspection to notice the alphabet never grew to match it.

@@ -1,9 +1,9 @@
 # ENG-BREP design lane -- archived probe output
 #
-# probe_possess.py [R24] confusion matrix: 0 soundness counterexamples in BOTH preference families.
+# probe_possess.py [D47.6] confusion matrix: 0 soundness counterexamples in BOTH preference families under the fixed subject generator. Supersedes the 2026-08-16T01:41 run (see possess_differential.tsv's header for why) -- greedy possessifiable/same stays 2031 byte-identical, lazy possessifiable/same stays 1695, and the 336 lazy+nullable-rest 'no' cells that used to include 20 false-decline 'same' rows now show 0 same / 336 DIVERGES: the conjunct's measured cost is ZERO, per D47 ruling 6.
 #
-date:        2026-08-16T01:41:46Z
-repo commit: ac5b1f980d71d28e7a2f55cde941f03bdc425bef  (branch eng-brep-r24)
+date:        2026-08-16T02:51:32Z
+repo commit: f7ae5f9460645b4a421e655eb26feee0f4e24ee1  (branch brep-guards)
 gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
 python:      Python 3.14.4
 host:        Linux 7.0.0-29-generic, 12 cores
@@ -11,16 +11,16 @@ host:        Linux 7.0.0-29-generic, 12 cores
 # EVIDENCE, NEVER AN ORACLE: no check reads this file.
 #
 # --- confusion matrix (preference, verdict, differential) ---
-#   ('greedy', 'no', 'DIVERGES')             1463
-#   ('greedy', 'no', 'same')                 1522
+#   ('greedy', 'no', 'DIVERGES')             1665
+#   ('greedy', 'no', 'same')                 1320
 #   ('greedy', 'possessifiable', 'same')     2031
-#   ('lazy', 'no', 'DIVERGES')               1983
-#   ('lazy', 'no', 'same')                   1338
+#   ('lazy', 'no', 'DIVERGES')               2167
+#   ('lazy', 'no', 'same')                   1154
 #   ('lazy', 'possessifiable', 'same')       1695
 # SOUNDNESS [greedy]: 0 counterexample(s) to 'possessifiable => identical'
 # SOUNDNESS [lazy]: 0 counterexample(s) to 'possessifiable => identical'
 # SOUNDNESS [both]: 0
-# CONSERVATISM [greedy]: 1522 'no' verdicts whose differential never diverged
+# CONSERVATISM [greedy]: 1320 'no' verdicts whose differential never diverged
 #   'a{0,4}$'
 #   'a{1,3}$'
 #   'a{1,3}^'
@@ -31,7 +31,7 @@ host:        Linux 7.0.0-29-generic, 12 cores
 #   'a{3,}^'
 #   'a*$'
 #   'a+$'
-# CONSERVATISM [lazy]: 1338 'no' verdicts whose differential never diverged
+# CONSERVATISM [lazy]: 1154 'no' verdicts whose differential never diverged
 #   'a{0,4}?$'
 #   'a{1,3}?$'
 #   'a{1,3}?^'

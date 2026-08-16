@@ -349,13 +349,68 @@ FOLLOWS = ["c", "[cd]", "(?:c|d)", "a", "[ac]", "b?c", "", "c?", "$", "ac",
            r"\\b", r"\\bc", r"\\B", r"\\Bc", "^"]
 PREFIXES = ["", "z", "(?:z|)"]
 
-ALPHA = "abcd "
+# [D47.6] THIS ALPHABET WAS BLIND TO ITS OWN PREFIXES. `ALPHA` fed only the
+# random tail of subjects() and originally read "abcd " -- it never contained
+# `z`, the one byte every PREFIXES member other than "" is built from. Every
+# z-prefixed pattern in the family was therefore swept on subjects that could
+# supply the "" prefix's bytes but never `z` itself outside the 3 fixed
+# literals below, and those 3 ("zabc", "zababc", "zc") carry at most one
+# post-z repeat -- not enough depth to even ENTER a `{3,}`-bodied loop, let
+# alone reach a retreat position inside one. Pulling the lazy conjunct's "20
+# false declines" for inspection (D47.6) found this: all 20 GENUINELY diverge
+# lazy-vs-possessive on subjects this generator structurally could not
+# produce, e.g. `za{1,3}?` on "zaa" (lazy (0,2), possessive (0,3)) or
+# `(?:ab){3,}?` on "abababab" (lazy (0,6), possessive (0,8)). The fix is two
+# parts: `z` joins ALPHA so the random tail can find these subjects too (by
+# luck, eventually), and deterministic repetition-heavy subjects are added
+# so the discriminating cases are CONSTRUCTED rather than hoped for -- the
+# same lesson `pcrec-check-design-lessons` names elsewhere in this lane
+# (§2.4's `(?:ab|a)` follow gap, §2.5's `\b` witness): a check whose inputs
+# come from the same head as the design inherits that head's blind spots,
+# and an alphabet is exactly such an input.
+ALPHA = "abcdz "
+
+# Characters actually used to build patterns (bodies, follows, prefixes) --
+# the deterministic repetition sweep below runs over exactly these, so a
+# future body/follow/prefix byte is not silently unswept the way `z` was.
+_PATTERN_BYTES = "abcdz"
 
 
 def subjects(seed=7, n=260):
+    """Subject strings the differential runs every generated pattern against.
+
+    [D47.6] WAS BLIND TO ITS OWN PREFIXES: the original version built its
+    random tail from ALPHA = "abcd " (no `z`) and its fixed literals carried
+    at most one post-`z` repeat, so every z-prefixed PREFIXES member ("z",
+    "(?:z|)") was swept without a subject that could ever enter, let alone
+    move through, a `{3,}`-bodied loop after the prefix. The lazy conjunct's
+    reported "20 false declines" were an artifact of this: pulled for
+    inspection, all 20 genuinely diverge lazy-vs-possessive on subjects this
+    function could not produce (e.g. `za{1,3}?` on "zaa"). Fixed by adding
+    `z` to ALPHA and, below, deterministic long runs / two-byte cycles of
+    every pattern byte, each also emitted prefixed by every pattern byte --
+    so the discriminating subjects are constructed, not hoped for.
+    """
     r = random.Random(seed)
     s = ["", "a", "b", "c", "ab", "abc", "aabc", "ababc", "aaaa", "abababc",
          "zabc", "zababc", "zc", "aabbcc", "abcabc"]
+    # Deterministic repetition-heavy subjects [D47.6]: long enough single-byte
+    # runs and two-byte cycles to enter and move through a `{3,}`-bodied loop
+    # (or any bounded count up to the family's own {2,2}/{1,3}/{0,4}), each
+    # also emitted with every alphabet byte as a PREFIX -- so a z-prefixed
+    # pattern gets a subject that actually starts with its prefix followed by
+    # real depth, instead of relying on the random tail to stumble onto one.
+    for length in (6, 8, 10, 12):
+        for ch in _PATTERN_BYTES:
+            run = ch * length
+            s.append(run)
+            for pfx in _PATTERN_BYTES:
+                s.append(pfx + run)
+        for cyc in ("ab", "bc", "ac", "cd"):
+            rep = (cyc * (length // len(cyc) + 1))[:length]
+            s.append(rep)
+            for pfx in _PATTERN_BYTES:
+                s.append(pfx + rep)
     while len(s) < n:
         s.append("".join(r.choice(ALPHA) for _ in range(r.randrange(0, 9))))
     return s
