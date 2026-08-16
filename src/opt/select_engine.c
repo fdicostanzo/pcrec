@@ -137,6 +137,27 @@ static void run_possessify(Ctx *cx, Ast *root, const EngineFit *fit)
         if (pcrec_possessify(cx, root) == 0) break;
 }
 
+/* [ENG-BREP] The ladder's SECOND rung, driven from the same place and under the
+ * same two conditions, because the reasoning that put possessification here
+ * (the honest driver is the CHOSEN ENGINE, not the `discharge` socket) applies
+ * to it unchanged.
+ *
+ * It is NOT a fixpoint and does not need to be. Possessification is monotone
+ * and iterated because marking one quantifier can change another's FOLLOW;
+ * reverse-determinism is a property of the body's own shape and its nesting
+ * alone, so one walk decides every quantifier and a second would mark nothing.
+ *
+ * ORDER: after possessification, not before. The two are independent — the
+ * emitter treats possessification as a modifier at every rung — but running the
+ * rung analysis second keeps the ladder's stated application order (D47.1:
+ * possessify, then rung-select) visible in the code that drives it. */
+static void run_revdet(Ctx *cx, Ast *root, const EngineFit *fit)
+{
+    if (fit->chosen != ENGM_VM) return;
+    if (cx->opt->flags & PCREC_NO_REVDET) return;
+    (void)pcrec_revdet(cx, root);
+}
+
 void pcrec_select_engine(Ctx *cx, Ast *root)
 {
     EngineFit fit;
@@ -239,7 +260,9 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
 
     cx->job->fit = fit;
 
-    /* [ENG-BREP] rung 1 of the bounded-repeat ladder, run last because it is
-     * the only step here that needs the engine ALREADY chosen. */
+    /* [ENG-BREP] the bounded-repeat ladder's analyses, run last and in the
+     * ladder's own application order (D47.1), because they are the only steps
+     * here that need the engine ALREADY chosen. */
     run_possessify(cx, root, &fit);
+    run_revdet(cx, root, &fit);
 }

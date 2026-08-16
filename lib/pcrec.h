@@ -53,7 +53,26 @@ enum {
      * inside a pattern. It is the first member of a family — the rest of the
      * ladder's denials (`-fno-counter`, a rung selector, a value parameter for
      * K) arrive with the strategies they deny. */
-    PCREC_NO_POSSESSIFY = 1u << 4
+    PCREC_NO_POSSESSIFY = 1u << 4,
+    /* [ENG-BREP] `-fno-revdet`: DENY the REVERSE-DETERMINISTIC rung
+     * (docs/design/engine_m4.md §2.5, D47.3), the second member of the family
+     * the bit above opened.
+     *
+     * Same shape and same reasons. The rung changes no answer — a quantifier
+     * emitted as one body copy plus a backward walk matches exactly what the
+     * same quantifier replicated `n` times matches — so the only reason to turn
+     * it off is to CHECK that claim, and the check is a pcrec-vs-pcrec
+     * differential in which the DENIED build falls one rung to frames, i.e. to
+     * literal replication, i.e. to the semantic ground truth
+     * (eng_brep_design.md §5.1). A strategy that cannot be denied cannot be
+     * differentially tested.
+     *
+     * DENY rather than FORCE, so it composes per quantifier with no need to
+     * ADDRESS one quantifier inside a pattern: each walks its own ladder
+     * skipping the denied rungs. Denying this one drops a qualifying
+     * quantifier to frames; denying it does not, and must not, deny
+     * possessification, which is an orthogonal modifier at every rung. */
+    PCREC_NO_REVDET     = 1u << 5
 };
 
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.

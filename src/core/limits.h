@@ -151,7 +151,25 @@ enum {
      * class bitmap), so the two limits are one number rather than two that
      * could drift; a body with more than 256 literal positions is not a
      * bounded repeat anybody is waiting on. */
-    PCREC_MAX_POSSESS_POSITIONS = 256
+    PCREC_MAX_POSSESS_POSITIONS = 256,
+
+    /* [ENG-BREP] How many CAPTURING GROUPS a quantifier body may contain before
+     * src/opt/revdet.c declines the reverse-deterministic rung.
+     *
+     * It is a bound on EMITTED LOCALS, not on analysis: the rung recovers the
+     * last iteration's captures by a backward walk that accumulates one span
+     * pair and one seen-flag per body group before publishing them, and those
+     * live in the matcher's frame. Same number and same reason as the cursor
+     * rung's own `VM_MAX_BODY_CAPS` (src/gen/emit_vm.c), which bounds the same
+     * kind of table for the same failure: a group the table could not hold
+     * would never be written and would report UNSET on a match it participated
+     * in — a silent wrong span, which is the one outcome D26 refuses outright.
+     *
+     * Like every other decision in that pass, exceeding it DECLINES: the
+     * quantifier keeps the machinery it has today and matches exactly what it
+     * matches today, so this number can change how fast an artifact runs and
+     * can never change what it answers. */
+    PCREC_MAX_REVDET_BODY_GROUPS = 64
 };
 
 /* ---- PCRE2 SYNTAX — exact, and part of the language -------------------- *

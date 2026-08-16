@@ -143,6 +143,12 @@ int main(int argc, char **argv)
          * way, which is exactly what the differential it exists for checks. */
         else if (!no_more_opts && !strcmp(a, "-fno-possessify"))
             opt.flags |= PCREC_NO_POSSESSIFY;
+        /* [ENG-BREP] the family's second member. Denying it drops a qualifying
+         * quantifier one rung, to frames — which for a bounded repeat is
+         * literal replication and therefore the semantic ground truth the
+         * differential compares against. */
+        else if (!no_more_opts && !strcmp(a, "-fno-revdet"))
+            opt.flags |= PCREC_NO_REVDET;
         else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;
