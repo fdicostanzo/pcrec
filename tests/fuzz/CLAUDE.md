@@ -75,7 +75,14 @@ fuzz`), not part of `make test` — see README.md for why.
   (`compile_with_pcrec()`) were the two found missing this discipline this
   session (both crashed a multi-thousand-pattern run outright before the
   fix; `compile_and_link()`'s GCC-TIMEOUT handling was always correct and is
-  the pattern the fix generalizes).
+  the pattern the fix generalizes). `RUN_TIMEOUT` (the generated-matcher and
+  oracle execution bound, `pcrec_run()`/`oracle_run()`) now reads
+  `tests/lib/gen_timeout.sh runsecs` the same way `tests/vm/vm_oracle.py`'s
+  `RUN_TIMEOUT` does — one shared number rather than this file's own
+  literal — via `subprocess.run(..., timeout=RUN_TIMEOUT)` rather than a
+  per-run `scripts/watchdog` wrapper, since this is a thousands-of-cells
+  inner loop where watchdog's fixed per-run startup cost would multiply the
+  campaign's runtime.
 - **README.md** — full usage, exception-list rationale, output-bucket
   reference, triage process, and documented findings from this tool's
   build session (a real PCRE2 match-limit oracle bug now fixed, and a

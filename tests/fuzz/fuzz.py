@@ -65,7 +65,27 @@ def _gen_timeout():
 
 
 CC_TIMEOUT = _gen_timeout()
-RUN_TIMEOUT = 5
+
+
+# EXECUTION is bounded too (gen_run_secs, same file): a merely-slow generated
+# matcher (or the oracle binary) must read as a FAILURE, not a hang. This
+# inner loop runs one subprocess per fuzzed pattern/subject cell, so the
+# bound is subprocess's own in-process timeout= -- the shape this file
+# already uses for D45 compiles above -- rather than a per-run
+# scripts/watchdog wrapper, whose fixed startup cost would multiply the
+# campaign's runtime; the NUMBER still comes from the one shared
+# implementation (tests/vm/vm_oracle.py's _run_timeout(), mirrored here).
+def _run_timeout():
+    import subprocess as _sp
+    try:
+        r = _sp.run(["bash", os.path.join(REPO_ROOT, "tests", "lib", "gen_timeout.sh"),
+                     "runsecs"], capture_output=True, text=True, timeout=30)
+        return int(r.stdout.strip())
+    except Exception:
+        return 10  # fail closed on the shorter (plain-axis) budget, as _gen_timeout does
+
+
+RUN_TIMEOUT = _run_timeout()
 
 # HARNESS POLICY FIX (this session): the bring-up default step budget
 # (VM_DEFAULT_STEP_BUDGET, src/gen/emit_vm.c, 1,000,000 backtrack

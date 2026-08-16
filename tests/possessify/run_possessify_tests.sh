@@ -40,8 +40,11 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 # D45's shared generated-code compile budget (this file compiles emitted C in
-# the boundary check below).
+# the boundary check below). EXECUTION of the compiled boundary binaries
+# below is bounded too (gen_run, same file) -- a handful of runs, not an
+# inner loop, so it goes through the watchdog.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="possessify"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/possessify.XXXXXX")"
 cleanup() { [ -n "${KEEP:-}" ] || rm -rf "$WORKDIR"; }
@@ -236,10 +239,10 @@ BND_EOF
     done
     if [ "$bnd_ok" -eq 1 ] && [ "${ceil:-0}" -gt 1 ]; then
         below=$((ceil - 1))
-        a_below="$("$WORKDIR/ceil_on.d/t" "$below")"
-        b_below="$("$WORKDIR/ceil_off.d/t" "$below")"
-        a_above="$("$WORKDIR/ceil_on.d/t" "$ceil")"
-        b_above="$("$WORKDIR/ceil_off.d/t" "$ceil")"
+        a_below="$(gen_run "possessify boundary ceil_on below" "$WORKDIR/ceil_on.d/t" "$below")"
+        b_below="$(gen_run "possessify boundary ceil_off below" "$WORKDIR/ceil_off.d/t" "$below")"
+        a_above="$(gen_run "possessify boundary ceil_on above" "$WORKDIR/ceil_on.d/t" "$ceil")"
+        b_above="$(gen_run "possessify boundary ceil_off above" "$WORKDIR/ceil_off.d/t" "$ceil")"
         if [ "$a_below" = "$b_below" ]; then
             ok "the failure surfaces AGREE inside the denied build's declared limit (length $below, both '$a_below')"
         else

@@ -275,11 +275,16 @@ fi
 # listed here that drops the helper is caught the same way section 5's
 # compile list catches it.
 runmissing=""
-for f in tests/vm/run_vm_tests.sh; do
+for f in tests/vm/run_vm_tests.sh tests/possessify/run_possdiff.sh \
+         tests/possessify/run_possessify_tests.sh tests/codegen/run_ir_listing.sh \
+         tests/thread/run_thread_tests.sh tests/cli/run_cli_tests.sh \
+         tests/registry/run_pc4.sh; do
     grep -q 'gen_run ' "$ROOT_DIR/$f" || runmissing="$runmissing $f"
 done
 grep -q 'runsecs' "$ROOT_DIR/tests/vm/vm_oracle.py" \
     || runmissing="$runmissing tests/vm/vm_oracle.py(runsecs)"
+grep -q 'runsecs' "$ROOT_DIR/tests/fuzz/fuzz.py" \
+    || runmissing="$runmissing tests/fuzz/fuzz.py(runsecs)"
 if [ -z "$runmissing" ]; then
     ok "gen_run coverage: the wired suites route matcher EXECUTION through the shared run budget"
 else

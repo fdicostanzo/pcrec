@@ -25,7 +25,11 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # D45: one shared generated-code compile budget (docs/dev/decisions.md). The
 # library-API smoke case is deliberately NOT wrapped: it links libpcrec.a, so
 # it is compiler-axis code, not a generated matcher.
+#
+# EXECUTION of the emitted --emit-main/driver binaries below is bounded too
+# (gen_run, same file): a handful of runs per case, not an inner loop.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="cli"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
@@ -140,9 +144,9 @@ EOF
         return
     fi
     local runout
-    runout="$("$d/t" xxabcxx)"
+    runout="$(gen_run "${FUNCNAME[0]} match" "$d/t" xxabcxx)"
     assert_eq "case1: standalone binary matches 'abc' in 'xxabcxx'" "match 2 5" "$runout"
-    runout="$("$d/t" zzz)"
+    runout="$(gen_run "${FUNCNAME[0]} nomatch" "$d/t" zzz)"
     assert_eq "case1: standalone binary reports nomatch for 'zzz'" "nomatch" "$runout"
 }
 
@@ -168,11 +172,11 @@ case2() {
     fi
 
     local runout runrc
-    runout="$("$d/t" xxabcxx)"; runrc=$?
+    runout="$(gen_run "${FUNCNAME[0]} match" "$d/t" xxabcxx)"; runrc=$?
     assert_eq "case2: emitted main prints 'match START END' for a match" "match 2 5" "$runout"
     assert_eq "case2: emitted main exits 0 on match" "0" "$runrc"
 
-    runout="$("$d/t" zzz)"; runrc=$?
+    runout="$(gen_run "${FUNCNAME[0]} nomatch" "$d/t" zzz)"; runrc=$?
     assert_eq "case2: emitted main prints 'nomatch' for no match" "nomatch" "$runout"
     assert_eq "case2: emitted main exits 1 on no match" "1" "$runrc"
 }
@@ -250,7 +254,7 @@ case4() {
         return
     fi
     local runout
-    runout="$("$d/t" 'xxabcxx')"
+    runout="$(gen_run "${FUNCNAME[0]}" "$d/t" 'xxabcxx')"
     assert_eq "case4: subdir-built binary matches correctly" "match 2 5" "$runout"
 }
 
@@ -273,7 +277,7 @@ case5() {
     if [ "$build_rc" -eq 0 ]; then
         pass "case5: '-foo' pattern generated code compiles"
         local runout
-        runout="$("$d/t" 'xx-fooxx')"
+        runout="$(gen_run "${FUNCNAME[0]}" "$d/t" 'xx-fooxx')"
         assert_eq "case5: '-foo' literal matches its own text" "match 2 6" "$runout"
     else
         fail "case5: '-foo' pattern generated code compiles" "$build_log"
@@ -455,16 +459,16 @@ case9() {
     fi
     pass "case9: -i output compiles warning-clean"
 
-    runout="$("$d/t" xxABCxx)"
+    runout="$(gen_run "${FUNCNAME[0]} -i match ABC" "$d/t" xxABCxx)"
     assert_eq "case9: -i 'aBc' matches 'ABC'" "match 2 5" "$runout"
-    runout="$("$d/t" xxabcxx)"
+    runout="$(gen_run "${FUNCNAME[0]} -i match abc" "$d/t" xxabcxx)"
     assert_eq "case9: -i 'aBc' still matches 'abc'" "match 2 5" "$runout"
 
     # ...and the same pattern WITHOUT -i must not: a compile option must not
     # leak into builds that did not request it
     "$PCREC" --emit-main -o - -- 'aBc' > "$d/gens.c" 2>/dev/null
     if gen_cc "${FUNCNAME[0]} (gens.c)" "$CC" $CFLAGS -o "$d/ts" "$d/gens.c"; then
-        runout="$("$d/ts" xxABCxx)"
+        runout="$(gen_run "${FUNCNAME[0]} case-sensitive control" "$d/ts" xxABCxx)"
         assert_eq "case9: without -i, 'aBc' does NOT match 'ABC'" "nomatch" "$runout"
     else
         fail "case9: case-sensitive control build" "compile failed"
@@ -1491,7 +1495,7 @@ import re
 m = re.search(r'(?i)cat\d+', '$subj')
 print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
 ")"
-                got="$("$d/m" "$subj")"
+                got="$(gen_run "${FUNCNAME[0]} '$subj'" "$d/m" "$subj")"
                 assert_eq "case14: '(?i)cat\\d+' vs python re on '$subj'" \
                     "$py" "$got"
             done
@@ -1603,7 +1607,7 @@ case15() {
         return
     fi
     local out rc2
-    out="$("$d/steps" 'aaaaaaaaaaaaaaaaaaaa')"; rc2=$?
+    out="$(gen_run "${FUNCNAME[0]}-steps" "$d/steps" 'aaaaaaaaaaaaaaaaaaaa')"; rc2=$?
     assert_eq "case15: step-budget exhaustion prints the honest give-up line, not a fabricated match" \
         "steps" "$out"
     assert_eq "case15: step-budget exhaustion exits 3 (distinct from match=0, nomatch=1, usage=2)" \
@@ -1624,7 +1628,7 @@ case15() {
         fail "case15: frames witness's --emit-main output compiles" "$build_log"
         return
     fi
-    out="$("$d/frames" 'aaaaaaaaaaaaaaaaaaaa')"; rc2=$?
+    out="$(gen_run "${FUNCNAME[0]}-frames" "$d/frames" 'aaaaaaaaaaaaaaaaaaaa')"; rc2=$?
     assert_eq "case15: frame-capacity exhaustion prints the honest give-up line, not a fabricated match" \
         "frames" "$out"
     assert_eq "case15: frame-capacity exhaustion exits 3 (distinct from match=0, nomatch=1, usage=2)" \
@@ -1636,7 +1640,7 @@ case15() {
     "$PCREC" --emit-main --engine=vm --step-budget=1000000 -o "$d/steps_ok.c" \
         -- '(a*)*b' >/dev/null 2>"$d/steps_ok.err"
     gen_cc "${FUNCNAME[0]}-steps-ok" "$CC" $CFLAGS -o "$d/steps_ok" "$d/steps_ok.c" \
-        && out="$("$d/steps_ok" 'aaaaaaaaaaaaaaaaaaaab')" \
+        && out="$(gen_run "${FUNCNAME[0]}-steps-ok" "$d/steps_ok" 'aaaaaaaaaaaaaaaaaaaab')" \
         && assert_eq "case15 CONTRAST: an ample step budget on the same shape still matches honestly" \
             "match 0 21" "$out" \
         || fail "case15 CONTRAST: could not build/run the ample-step-budget control" "$GEN_CC_LOG"
@@ -1644,7 +1648,7 @@ case15() {
     "$PCREC" --emit-main --engine=vm --backtrack-frames=4096 -o "$d/frames_ok.c" \
         -- '((a)|b)*c' >/dev/null 2>"$d/frames_ok.err"
     gen_cc "${FUNCNAME[0]}-frames-ok" "$CC" $CFLAGS -o "$d/frames_ok" "$d/frames_ok.c" \
-        && out="$("$d/frames_ok" 'aaaaaaaaaaaaaaaaaaaac')" \
+        && out="$(gen_run "${FUNCNAME[0]}-frames-ok" "$d/frames_ok" 'aaaaaaaaaaaaaaaaaaaac')" \
         && assert_eq "case15 CONTRAST: an ample frame capacity on the same shape still matches honestly" \
             "match 0 21" "$out" \
         || fail "case15 CONTRAST: could not build/run the ample-frame-capacity control" "$GEN_CC_LOG"

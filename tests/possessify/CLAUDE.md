@@ -74,7 +74,19 @@ in a specific way.
   differently-prefixed headers can share a TU (D44/A-2).
 - **`run_possdiff.sh`**, **`run_possessify_tests.sh`** — the two suites,
   wired into `make test` as `make test-possessify` and into the `make
-  ubsan`/`make asan` both-axes batteries. `run_possdiff.sh --corpus`
+  ubsan`/`make asan` both-axes batteries. EXECUTION of every generated
+  binary in both scripts is bounded via `gen_run` (`tests/lib/gen_timeout.sh`,
+  `WATCHDOG_SECTION=possdiff`/`possessify`) — the run budget, a 512m RSS
+  ceiling, and a log line per run in `build/watchdog.log`. `run_possdiff.sh`'s
+  driver reads its subject sweep on STDIN, and `gen_run`/`scripts/watchdog`
+  backgrounds its child (`setsid ... &`); with job control off (a script's
+  default) bash gives a backgrounded job's stdin from `/dev/null` regardless
+  of a redirection written on the `gen_run` call itself, so that site opens
+  the subject file INSIDE a `bash -c` `gen_run` runs, where the redirection
+  is resolved by that process rather than inherited — silently swept 0
+  subjects on the first wiring attempt (this file's own D47.6 "measured
+  nothing" shape), caught by comparing the cell count against a run before
+  the change. `run_possdiff.sh --corpus`
   additionally derives, at run time, every `.rxt` corpus pattern the analysis
   gives a positive verdict on and sweeps those too — a DIFFERENT population
   from `patterns.txt`, which is built to exercise the rule's own arms and

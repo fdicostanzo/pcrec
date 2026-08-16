@@ -43,7 +43,13 @@ CC="${CC:-gcc}"
 # budget, and exceeding it is a loud failure naming the case rather than a
 # hang. This suite compiles two artifacts per pattern, so it is exactly the
 # kind of site the ruling is about.
+#
+# EXECUTION is bounded too (gen_run, same file): one driver run per pattern,
+# which internally sweeps every subject for that pattern -- a per-pattern
+# site, not a hundreds-of-runs inner loop, so it goes through the watchdog
+# rather than a bare timeout.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="possdiff"
 
 WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/possdiff.XXXXXX")
 cleanup() { [ -n "$POSSDIFF_KEEP" ] || rm -rf "$WORKDIR"; }
@@ -179,7 +185,19 @@ one_pattern() {
     fi
 
     subjects_for "$pat" > "$d/subj"
-    if out=$("$d/t" < "$d/subj" 2>"$d/diverge"); then
+    # gen_run/watchdog BACKGROUNDS the child (`setsid ... &`); with job
+    # control off (the default in a non-interactive script), bash gives a
+    # backgrounded job's stdin from /dev/null regardless of what redirection
+    # is written on the gen_run CALL -- confirmed by direct test, since
+    # gen_timeout.sh's own contract only promises stdout/stderr pass
+    # through untouched, never stdin. `"$d/t" < "$d/subj"` under gen_run
+    # therefore fed the driver an EMPTY subject sweep (0 cells compared,
+    # exactly this file's own D47.6 "measured nothing" failure mode) rather
+    # than erroring, so this needed a real run to catch, not just a review.
+    # The fix: open the file INSIDE the command gen_run backgrounds, where
+    # the redirection is resolved by that process itself rather than
+    # inherited from the caller.
+    if out=$(gen_run "possdiff '$pat'" bash -c '"$1" < "$2"' -- "$d/t" "$d/subj" 2>"$d/diverge"); then
         n=$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')
         cells_total=$((cells_total + ${n:-0}))
         ok
