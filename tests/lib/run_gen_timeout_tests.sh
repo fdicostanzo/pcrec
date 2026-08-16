@@ -106,6 +106,28 @@ else
     ok "R23 V1: no hand-rolled numeric timeout remains on pcrec's own invocation in the harness"
 fi
 
+# ---- 1c. the same, for EXECUTION of generated matchers (gen_run) ---------
+#
+# The twenty-fifth session's addition: D45 bounded every COMPILE and nothing
+# bounded EXECUTION, so a merely-slow matcher read as a hang (nine battery
+# minutes, 2026-08-15, tests/vm/CLAUDE.md). Same rule, same shape, same
+# hermeticity reasoning as sections 1/1b.
+raxis() {  # raxis <GENCFLAGS> <CFLAGS> <SANFLAGS> <TSANFLAGS> <GENRUNTIMEOUT> <GENRUNTIMEOUT_SAN>
+    GENCFLAGS="$1" CFLAGS="$2" SANFLAGS="$3" TSANFLAGS="$4" \
+    GENRUNTIMEOUT="$5" GENRUNTIMEOUT_SAN="$6" gen_run_secs
+}
+r_plain="$(raxis '-O1 -std=gnu11' '' '' '' '' '')"
+r_cf="$(raxis '-O1' '-fsanitize=address' '' '' '' '')"
+r_san="$(raxis '-O1' '' '-fsanitize=undefined' '' '' '')"
+r_env="$(raxis '-O1' '' '' '' 3 '')"
+r_envs="$(raxis '-fsanitize=address' '' '' '' '' 33)"
+if [ "$r_plain" = "10" ] && [ "$r_cf" = "60" ] && [ "$r_san" = "60" ] \
+   && [ "$r_env" = "3" ] && [ "$r_envs" = "33" ]; then
+    ok "gen_run budgets: matcher EXECUTION is axis-aware too (10s plain, 60s sanitizer, GENRUNTIMEOUT/GENRUNTIMEOUT_SAN overrides)"
+else
+    bad "gen_run budgets wrong: plain=$r_plain cflags=$r_cf sanflags=$r_san env=$r_env envsan=$r_envs (expected 10/60/60/3/33)"
+fi
+
 # ---- 2. the wrapper FIRES, and says so ----------------------------------
 #
 # A real artifact, deliberately near the compiler-side cap, under a
@@ -135,6 +157,60 @@ else
         else
             bad "gen-timeout: fired, but the diagnostic does not name the case and the override: $GEN_CC_LOG"
         fi
+    fi
+fi
+
+# ---- 2b. gen_run FIRES on a real over-budget RUN -------------------------
+#
+# A REAL generated matcher whose execution is budget-bound to a few seconds:
+# `(a*)*b` under --engine=vm with a step budget sized so the run takes ~5 s
+# NATURALLY (measured 4.6 s at --step-budget=400000000 on 'a'x200, ending in
+# an honest err_steps) — so if the wrapper silently stopped killing, this
+# control still terminates instead of hanging the section. A sleep stub would
+# prove watchdog works (scripts/test_watchdog.sh already does); a real
+# artifact proves the wrapper is WIRED into a matcher execution.
+#
+# There is deliberately NO memory-kill (122) sibling control here: a generated
+# matcher is allocation-free by construction, so no real artifact can runaway
+# on RSS — the 122 path's positive control lives in scripts/test_watchdog.sh
+# (case 5), and gen_run adds only the budget selection this section covers.
+mkdir -p "$WORKDIR/slowrun"
+slow_subj="$(printf 'a%.0s' $(seq 200))"
+if ! "$PCREC" -p rx --engine=vm --step-budget=400000000 \
+        -o "$WORKDIR/slowrun/gen.c" -- '(a*)*b' >/dev/null 2>&1 \
+   || ! gen_cc "the run positive control" "$CC" -O1 -std=gnu11 \
+        -I "$WORKDIR/slowrun" -o "$WORKDIR/slowrun/t" \
+        "$ROOT_DIR/tests/vm/vm_driver.c" "$WORKDIR/slowrun/gen.c"; then
+    bad "gen-run: could not build the run positive-control artifact"
+else
+    run_out="$(GENCFLAGS='-O1 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
+        GENRUNTIMEOUT=1 GENRUNTIMEOUT_SAN='' \
+        WATCHDOG_SECTION=gen-timeout WATCHDOG_LOG="$WORKDIR/wd.log" \
+        gen_run "the run positive control" "$WORKDIR/slowrun/t" "$slow_subj" 2>"$WORKDIR/wd.err")"
+    rc=$?
+    if [ "$rc" -ne 124 ]; then
+        bad "gen-run: a run that must exceed a 1s budget returned $rc, not 124 — the wrapper is not applying the run timeout (output: '$run_out')"
+    elif ! grep -q "verdict=timeout" "$WORKDIR/wd.log" 2>/dev/null \
+         || ! grep -q "the run positive control" "$WORKDIR/wd.log" 2>/dev/null; then
+        bad "gen-run: fired with 124 but the watchdog log line is missing or does not name the case: $(tail -c 300 "$WORKDIR/wd.log" 2>/dev/null)"
+    else
+        ok "gen-run: an over-budget matcher EXECUTION is killed with 124 and a log line naming the case (never a hang) — a real artifact, budget-bound so the control terminates even if the wrapper breaks"
+    fi
+fi
+
+# ...and an ordinary run is untouched, hermetically on the plain axis.
+if [ -x "$WORKDIR/slowrun/t" ]; then
+    fast_out="$(GENCFLAGS='-O1 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
+        GENRUNTIMEOUT='' GENRUNTIMEOUT_SAN='' \
+        WATCHDOG_SECTION=gen-timeout WATCHDOG_LOG="$WORKDIR/wd.log" \
+        gen_run "the run pass-through control" "$WORKDIR/slowrun/t" 'aaab')"
+    fast_rc=$?
+    # 'match 0 4 3 3' is oracle-verified: python re.match(r'(a*)*b','aaab')
+    # gives span (0,4), span(1) (3,3) — the last (a*) iteration is empty.
+    if [ "$fast_rc" -eq 0 ] && [ "$fast_out" = "match 0 4 3 3" ]; then
+        ok "gen-run: an ordinary run passes through untouched (stdout intact, exit 0, inside the budget)"
+    else
+        bad "gen-run: ordinary run disturbed under the wrapper: rc=$fast_rc out='$fast_out'"
     fi
 fi
 
@@ -182,6 +258,25 @@ if [ -z "$missing" ]; then
 else
     bad "D45 coverage: these compile generated C but do not source tests/lib/gen_timeout.sh:$missing"
 fi
+# EXECUTION coverage (twenty-fifth session): suites that RUN generated
+# matchers route the run through gen_run (shell) or read the run budget from
+# this file (python inner loops, where a per-run watchdog's startup cost
+# would multiply the sweep's runtime — the number is shared even where the
+# wrapper is not). This list grows as suites adopt the run bound; a suite
+# listed here that drops the helper is caught the same way section 5's
+# compile list catches it.
+runmissing=""
+for f in tests/vm/run_vm_tests.sh; do
+    grep -q 'gen_run ' "$ROOT_DIR/$f" || runmissing="$runmissing $f"
+done
+grep -q 'runsecs' "$ROOT_DIR/tests/vm/vm_oracle.py" \
+    || runmissing="$runmissing tests/vm/vm_oracle.py(runsecs)"
+if [ -z "$runmissing" ]; then
+    ok "gen_run coverage: the wired suites route matcher EXECUTION through the shared run budget"
+else
+    bad "gen_run coverage: these no longer route matcher execution through the shared budget:$runmissing"
+fi
+
 # the two python suites take the SAME number from the SAME file rather than
 # re-deriving the rule
 pymissing=""

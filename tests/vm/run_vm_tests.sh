@@ -46,6 +46,13 @@ MODE="${1:-quick}"
 # hang. One implementation for the whole tree.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 
+# Execution is bounded too (gen_run, same file): every generated-matcher run
+# below goes through watchdog with the axis-derived run budget + memory
+# ceiling, closing the gap this directory's CLAUDE.md flagged (a merely-slow
+# matcher read as a hang — nine battery minutes, 2026-08-15). The section tag
+# makes these runs findable in build/watchdog.log among every suite's lines.
+export WATCHDOG_SECTION="vm"
+
 WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "vm: KEEP=1, temp dir: $WORKDIR" >&2
@@ -100,7 +107,7 @@ assert_rungs() { # assert_rungs <name> <expected-hex, e.g. 0x5> -> 0 iff exact
 # (a) STEP BUDGET. `(a*)*b` on all-`a` is the O(n^2) resumption shape §4.7
 # names; with a tiny budget it must give up honestly and say WHICH bound.
 if build steps '(a*)*b' --engine=vm --step-budget=50 --backtrack-frames=4096; then
-    out="$("$WORKDIR/steps/t" 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')"
+    out="$(gen_run "steps budget-fires" "$WORKDIR/steps/t" 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')"
     if [ "$out" = "err_steps" ]; then
         ok "[M4.5b] §4: the step budget FIRES and reports RX_ERR_STEPS ('(a*)*b', --step-budget=50)"
     else
@@ -109,7 +116,7 @@ if build steps '(a*)*b' --engine=vm --step-budget=50 --backtrack-frames=4096; th
     # ...and a budget that is not exceeded must not fire: a bound that always
     # trips is not a bound.
     if build steps2 '(a*)*b' --engine=vm --step-budget=1000000; then
-        out2="$("$WORKDIR/steps2/t" 'aaaaaaaaaab')"
+        out2="$(gen_run "steps ample-budget" "$WORKDIR/steps2/t" 'aaaaaaaaaab')"
         [ "$out2" = "match 0 11 10 10" ] \
             && ok "[M4.5b] §4: an ample budget does NOT fire on the same shape (it matches: $out2)" \
             || bad "[M4.5b] §4: ample budget gave '$out2'"
@@ -124,7 +131,7 @@ fi
 # code. `((a)|b)*` has a choice point inside an unbounded quantifier, which is
 # exactly D44.1's residual class: one frame per iteration.
 if build frames '((a)|b)*c' --engine=vm --backtrack-frames=4; then
-    out="$("$WORKDIR/frames/t" 'aaaaaaaaaaaaaaaaaaaa')"
+    out="$(gen_run "frames budget-fires" "$WORKDIR/frames/t" 'aaaaaaaaaaaaaaaaaaaa')"
     if [ "$out" = "err_frames" ]; then
         ok "[M4.5b] §4.5: the frame capacity FIRES and reports RX_ERR_FRAMES, distinctly from the step budget"
     else
@@ -262,7 +269,7 @@ if build ceil '((a)|b)*c'; then
     n="$(info_field ceil subject_ceiling)"
     if [ "$n" -gt 8 ]; then
         short="$(printf 'a%.0s' $(seq 1 $((n / 2))))"
-        out="$("$WORKDIR/ceil/t" "${short}c")"
+        out="$(gen_run "frames ceiling" "$WORKDIR/ceil/t" "${short}c")"
         case "$out" in
             err_frames|err_steps)
                 bad "[M4.5b] D44.1: a subject at HALF the stamped ceiling ($((n / 2)) of $n bytes) already gave '$out' — the stamp over-promises" ;;
@@ -326,7 +333,7 @@ cliff_run() {  # cliff_run <name> [pcrec args...]
     gen_cc "cliff $name" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
            -o "$WORKDIR/$name/t" "$WORKDIR/cliff/main.c" "$WORKDIR/$name/gen.c" \
         || return 2
-    "$WORKDIR/$name/t"
+    gen_run "cliff $name" "$WORKDIR/$name/t"
 }
 hy="$(cliff_run cliffhy)"
 # [ENG-BREP] `-fno-possessify` ON THE CONTRAST, and this is D46's own scenario

@@ -70,6 +70,25 @@ def _gen_timeout():
 GEN_TIMEOUT = _gen_timeout()
 
 
+# EXECUTION is bounded too (gen_run_secs, same file): a merely-slow matcher
+# must read as a FAILURE, not a hang. This inner loop runs thousands of
+# sub-millisecond matcher executions, so the bound is subprocess's own
+# in-process timeout= (the shape this file already uses for D45 compiles)
+# rather than a per-run scripts/watchdog wrapper, whose fixed startup cost
+# would multiply the sweep's runtime; the NUMBER still comes from the one
+# shared implementation.
+def _run_timeout():
+    try:
+        r = subprocess.run(["bash", os.path.join(ROOT, "tests", "lib", "gen_timeout.sh"),
+                            "runsecs"], capture_output=True, text=True, timeout=30)
+        return int(r.stdout.strip())
+    except Exception:
+        # Fail closed on the shorter (plain-axis) budget, as _gen_timeout does.
+        return 10
+
+RUN_TIMEOUT = _run_timeout()
+
+
 # ---------------------------------------------------------------- the cases
 #
 # Subjects are chosen per pattern from a small alphabet sweep rather than
@@ -279,7 +298,13 @@ def build(workdir, pat, extra):
 
 def run(exe, subj, startpos=0):
     argv = [exe, esc(subj)] + ([str(startpos)] if startpos else [])
-    r = subprocess.run(argv, capture_output=True, text=True)
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=RUN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return ("RUN TIMEOUT: executing the generated matcher exceeded %ds. This "
+                "is a FAILURE, not a slow box — a normal generated-matcher run "
+                "is sub-millisecond (gen_run_secs; raise GENRUNTIMEOUT only with "
+                "the measurement recorded)." % RUN_TIMEOUT)
     if r.returncode != 0:
         return "DRIVER_EXIT_%d: %s" % (r.returncode, r.stderr.strip()[:300])
     line = r.stdout.strip()

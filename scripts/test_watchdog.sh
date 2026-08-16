@@ -40,7 +40,7 @@ log_has_keys() {
     # log_has_keys FILE : true if the last line has all required keys.
     local f="$1" line
     line="$(tail -n1 "$f")"
-    for key in ts label verdict wall cpu peak_rss_kb exit cmd; do
+    for key in ts section label verdict wall cpu peak_rss_kb exit cmd; do
         case "$line" in
             *"$key="*) ;;
             *) return 1 ;;
@@ -218,6 +218,18 @@ else
     fail "case10: wall=${wall:-<missing>}, want >=0.3"
 fi
 [ "$ok" -eq 1 ] && pass "case10: metrics-only mode runs to completion, logs plausibly"
+
+# ---- case 11: section tag (env inheritance + CLI override) --------------------
+
+log11="$SCRATCH/case11.log"
+WATCHDOG_SECTION=envsec timeout 10 "$WD" -l case11a -L "$log11" -- bash -c 'exit 0'
+ok=1
+tail -n1 "$log11" | grep -q "section='envsec'" \
+    || { ok=0; fail "case11: WATCHDOG_SECTION=envsec not in log line"; }
+WATCHDOG_SECTION=envsec timeout 10 "$WD" -l case11b -S clisec -L "$log11" -- bash -c 'exit 0'
+tail -n1 "$log11" | grep -q "section='clisec'" \
+    || { ok=0; fail "case11: -S clisec did not override WATCHDOG_SECTION"; }
+[ "$ok" -eq 1 ] && pass "case11: section tag from env, CLI -S wins over it"
 
 # ---- summary --------------------------------------------------------------
 

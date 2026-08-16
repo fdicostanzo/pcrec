@@ -98,6 +98,59 @@ gen_cc() {
     return $rc
 }
 
+# gen_run_secs — the budget for ONE EXECUTION of a generated matcher (or a
+# driver binary built around one) on the current axis, in seconds.
+#
+# WHY THIS EXISTS (2026-08-16, twenty-fifth session; the gap is flagged in
+# tests/vm/CLAUDE.md). D45 bounds every COMPILE of emitted C and nothing
+# bounded its EXECUTION, so a matcher that is merely slow read as a hang for
+# as long as it took — the [ENG-BREP] battery leg spent nine minutes that way
+# on a run that was quadratic-and-correct. Same rule as D45: exceeding the
+# budget is a loud FAILURE naming the case, never a hang, never a silent skip.
+#
+# WHY THE NUMBERS. A normal generated-matcher run is sub-millisecond;
+# tests/harness/run.sh has bounded its per-cell runs at a flat 10 s since
+# before D45 and nothing legitimate has ever approached it. 10 s plain keeps
+# that calibration; 60 s on the sanitizer axes matches the D45 ratio
+# (instrumentation is legitimately several times slower). Env-overridable,
+# same revisit-when: a LEGITIMATE run measured needing more raises the
+# default WITH the measurement recorded, never silently.
+gen_run_secs() {
+    case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
+        *-fsanitize=*) printf '%s\n' "${GENRUNTIMEOUT_SAN:-60}" ;;
+        *)             printf '%s\n' "${GENRUNTIMEOUT:-10}" ;;
+    esac
+}
+
+# gen_run <case-label> <argv...>
+#
+# Runs one generated-matcher execution under the budget above PLUS a memory
+# ceiling, via scripts/watchdog (which see): wall timeout, peak-tree-RSS
+# limit, and one log line per execution in build/watchdog.log (override:
+# WATCHDOG_LOG). Suites set WATCHDOG_SECTION once so the label is findable
+# among every other suite's lines. stdout/stderr pass through untouched —
+# callers capture stdout exactly as they would running the binary bare.
+#
+#   0    ran to completion with status 0
+#   124  TIMED OUT — a FAILURE (this file's rule), watchdog logged it
+#   122  KILLED ON MEMORY — a FAILURE; generated matchers are allocation-free
+#        by construction, so tree RSS beyond subject + driver overhead is a
+#        runaway, not a big workload (default ceiling 512m: GENRUNMEM)
+#   n    the binary's own status
+#
+# 124/122 are checked EXACTLY by callers, same reasoning as gen_cc: 139 is a
+# crash and 137 an external OOM-kill, and either called "timeout" sends the
+# reader hunting a slow box instead of a bug.
+GEN_LIB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
+gen_run() {
+    local what="$1"
+    shift
+    "$GEN_LIB_ROOT/scripts/watchdog" \
+        -l "$what" -s "$(gen_run_secs)" -m "${GENRUNMEM:-512m}" \
+        -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" -- "$@"
+}
+
 # Runnable as a command so NON-SHELL suites get the same number from the same
 # file rather than re-deriving the rule:  bash tests/lib/gen_timeout.sh secs
 if [ "${1:-}" = "secs" ]; then gen_timeout_secs; fi
+if [ "${1:-}" = "runsecs" ]; then gen_run_secs; fi

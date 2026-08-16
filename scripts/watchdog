@@ -33,6 +33,10 @@
 #
 # Options:
 #   -l LABEL   label for the log line (default: basename of COMMAND)
+#   -S SECTION section tag for the log line (default: empty) — which suite or
+#              phase this execution belongs to, so a label like "case7" is
+#              findable among thousands of lines. Best set once per runner
+#              via WATCHDOG_SECTION; every invocation underneath inherits it.
 #   -s SECS    wall-clock timeout (integer or decimal seconds)
 #   -m MEM     peak tree RSS limit. Suffix k/m/g (case-insensitive), optional
 #              trailing 'b' (10mb, 512K, 2g all valid); no suffix = bytes.
@@ -47,8 +51,8 @@
 # in metrics-only mode: it supervises and logs but never kills.
 #
 # Env vars (Makefile-friendly; CLI flags win over these):
-#   WATCHDOG_LABEL WATCHDOG_TIMEOUT WATCHDOG_MEM WATCHDOG_GRACE
-#   WATCHDOG_INTERVAL WATCHDOG_LOG
+#   WATCHDOG_LABEL WATCHDOG_SECTION WATCHDOG_TIMEOUT WATCHDOG_MEM
+#   WATCHDOG_GRACE WATCHDOG_INTERVAL WATCHDOG_LOG
 #
 # Exit codes:
 #   <child's own exit code>   passed through verbatim
@@ -75,8 +79,10 @@ prog="watchdog"
 
 usage() {
     # Usage text is printed to stdout for -h (conventional), never during
-    # a normal run — normal runs never touch stdout at all.
-    sed -n '2,65p' "$0" | sed 's/^# \{0,1\}//'
+    # a normal run — normal runs never touch stdout at all. The header
+    # comment IS the usage text: print from line 2 to the first
+    # non-comment line, so the range tracks the header as it grows.
+    awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"
 }
 
 die_usage() {
@@ -88,16 +94,18 @@ die_usage() {
 # ---- option parsing -------------------------------------------------------
 
 opt_label=""
+opt_section=""
 opt_timeout=""
 opt_mem=""
 opt_grace=""
 opt_interval=""
 opt_log=""
-have_l=0 have_s=0 have_m=0 have_k=0 have_i=0 have_L=0
+have_l=0 have_S=0 have_s=0 have_m=0 have_k=0 have_i=0 have_L=0
 
-while getopts ":l:s:m:k:i:L:h" opt; do
+while getopts ":l:S:s:m:k:i:L:h" opt; do
     case "$opt" in
         l) opt_label="$OPTARG"; have_l=1 ;;
+        S) opt_section="$OPTARG"; have_S=1 ;;
         s) opt_timeout="$OPTARG"; have_s=1 ;;
         m) opt_mem="$OPTARG"; have_m=1 ;;
         k) opt_grace="$OPTARG"; have_k=1 ;;
@@ -118,6 +126,9 @@ fi
 
 label="$opt_label"
 [ "$have_l" -eq 1 ] || label="${WATCHDOG_LABEL:-}"
+
+section="$opt_section"
+[ "$have_S" -eq 1 ] || section="${WATCHDOG_SECTION:-}"
 
 timeout_secs="$opt_timeout"
 [ "$have_s" -eq 1 ] || timeout_secs="${WATCHDOG_TIMEOUT:-}"
@@ -339,8 +350,8 @@ cpu="$(awk -v t="$peak_cpu_ticks" -v c="$clk_tck" 'BEGIN{printf "%.2f", t/c}')"
 ts="$(date -Is)"
 cmd_str="$*"
 
-log_line="$(printf 'ts=%s label=%s verdict=%s wall=%s cpu=%s peak_rss_kb=%s exit=%s cmd=%s' \
-    "$ts" "$(sq_quote "$label")" "$verdict" "$wall" "$cpu" "$peak_rss_kb" "$exit_code" "$(sq_quote "$cmd_str")")"
+log_line="$(printf 'ts=%s section=%s label=%s verdict=%s wall=%s cpu=%s peak_rss_kb=%s exit=%s cmd=%s' \
+    "$ts" "$(sq_quote "$section")" "$(sq_quote "$label")" "$verdict" "$wall" "$cpu" "$peak_rss_kb" "$exit_code" "$(sq_quote "$cmd_str")")"
 
 (
     flock -x 200
