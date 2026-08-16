@@ -69,8 +69,12 @@ pcrec (the Makefile owns that).
   `peak_rss_kb=0`/`cpu=0.00` means the child finished inside one poll
   interval — a fast-run marker, not a measurement.
 
-- **test_watchdog.sh** — standalone self-test for `watchdog` (deliberately
-  NOT wired into `make test` — that's a manager/Frank decision for later).
+- **tests/** — self-tests for this directory's scripts, run ON CHANGE via
+  `make testscripts` / `make -C scripts test`, never in `make test` (Frank's
+  ruling, 2026-08-16, D48 — settling the deferred wiring question). The
+  Makefile here is one derived pattern rule with wildcard auto-discovery;
+  see tests/CLAUDE.md. `tests/watchdog.test` is the watchdog's 16-case
+  self-test (moved from scripts/test_watchdog.sh at D48).
   Every case is bounded by coreutils `timeout`, never by watchdog itself —
   a control must not share a mechanism with the thing it controls, so a
   test that relied on watchdog to bound its own run could hang forever
@@ -78,7 +82,8 @@ pcrec (the Makefile owns that).
   exit/signal pass-through, timeout and memory kills (including whole-tree
   kill for a process that backgrounds a grandchild), RSS-accuracy
   calibration, log-line shape, env-vs-CLI precedence, missing command, and
-  metrics-only mode. Run with `timeout 300 scripts/test_watchdog.sh`.
+  metrics-only mode. Run with `make testscripts` (no-op when nothing
+  changed) or directly: `timeout 300 bash scripts/tests/watchdog.test`.
 
 - **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
   full suite, not a tier) and blocks the push on failure. Installed ONLY by

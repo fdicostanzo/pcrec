@@ -21,3 +21,4 @@ tests/fuzz/failures/
 # a tool enforces beats a rule a comment states.
 /docs/dev/wake.md
 worktrees/
+scripts/tests/*.testreport

@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 #
-# test_watchdog.sh — standalone self-test for scripts/watchdog.
+# watchdog.test — standalone self-test for scripts/watchdog.
+#
+# NAMING: <script-full-filename>.test, the convention scripts/Makefile's
+# derived pattern rule depends on — the stem names the script under test,
+# extension included, so the rule can list BOTH prerequisites without a
+# per-script Makefile line (Frank's ruling, 2026-08-16; decisions.md D48).
 #
 # Deliberately NOT wired into `make test` (a manager/Frank decision for
 # later). Run directly:
 #
-#   timeout 300 scripts/test_watchdog.sh
+#   timeout 300 bash scripts/tests/watchdog.test   # or: make testscripts
 #
 # CRITICAL DESIGN RULE (project lesson): every test case here is bounded by
 # coreutils `timeout`, NEVER by watchdog itself. A control must not share a
@@ -18,7 +23,7 @@
 set -u
 
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
-WD="$SELF_DIR/watchdog"
+WD="$SELF_DIR/../watchdog"
 
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/wd_test.XXXXXX")"
 trap 'rm -rf "$SCRATCH"' EXIT

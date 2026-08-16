@@ -4105,3 +4105,44 @@ Revisit-when: the §4.4 bench moves K (expected, ruled anticipatable);
 module `assertions` lands multiline (ruling 5's gate becomes live-fire);
 a real population appears that the lazy conjunct declines wrongly
 (none measured today).
+
+## D48 — scripts are tested ON CHANGE, not per suite run (Frank, 2026-08-16, twenty-sixth session)
+
+Settles the queued ruling from the twenty-fifth session: does
+scripts/test_watchdog.sh join `make test`? It does not. Scripts like
+watchdog are independent instruments — a suite run exercises them
+incidentally at every gen_run site anyway, and re-validating an
+unchanged script 16 ways per `make test` buys nothing.
+
+The mechanism (Frank sketched it; the derived form is his second ask):
+**scripts/Makefile with ONE pattern rule and wildcard auto-discovery.**
+A script's self-test lives at `scripts/tests/<script-full-filename>.test`
+and produces `<script-full-filename>.testreport` depending on BOTH the
+test file and the script — so the test re-runs exactly when either
+changes, and `make testscripts` (top level, opt-in like `make strict`,
+NEVER part of `make test`) is a no-op otherwise. The stem carries the
+script's full filename, extension included, which is what lets one rule
+serve `watchdog` and a future `mk_d27_cell.sh` with zero per-script
+Makefile lines.
+
+Two properties are load-bearing and were validated in the failing
+direction at build time:
+- `.DELETE_ON_ERROR`: a red run must leave NO report — a stale green
+  report satisfying the dependency is a control that silently stopped
+  controlling (this project's recorded check-design failure mode).
+  Verified: a deliberately failing probe test left no report and failed
+  the make.
+- The self-test bounds its own runtime with coreutils `timeout`
+  internally (watchdog.test must never be bounded BY watchdog — a
+  control must not share a mechanism with what it controls); the
+  recipe's outer `timeout 600` is only the harness backstop.
+
+Why: a future reader will ask why the watchdog's 16-case self-test is
+not in the suite that everything else joins, and why scripts/ has its
+own Makefile in a plain-GNU-make repo (D2: it IS plain make, delegated
+to, not recursed into by default).
+
+Revisit-when: a script's self-test needs an oracle or corpus `make test`
+already builds (the delegation would then need ordering); or the .test
+population grows enough that `make testscripts` deserves a suite-style
+summary line.

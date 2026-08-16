@@ -1305,7 +1305,8 @@ pass-through control, a run-coverage list that grows as suites adopt, and
 the hand-rolled-number grep on the harness's per-cell run site. There is
 deliberately NO memory-kill sibling control there: no real generated
 artifact can runaway on RSS (allocation-free), so the 122 path's positive
-control lives in `scripts/test_watchdog.sh` where a synthetic allocator is
+control lives in `scripts/tests/watchdog.test` (D48: run on change via
+`make testscripts`, not per suite run) where a synthetic allocator is
 honest rather than a stub pretending to be an artifact.
 
 ### The pathology D45 was ruled over, and the compiler-side bound

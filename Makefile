@@ -254,6 +254,13 @@ strict:
 	done
 	@echo "strict: whole tree compiles clean with -Werror"
 
+# Self-tests for scripts/ (watchdog today), run ON CHANGE via make dependency
+# rather than per suite run — opt-in like strict, never part of `make test`
+# (Frank, 2026-08-16; decisions.md D48; the mechanism is scripts/Makefile's
+# one derived pattern rule).
+testscripts:
+	$(MAKE) -C scripts test
+
 # ---------------------------------------------------------------------------
 # SAN-1: the sanitizer + lint battery (docs/dev/plan_completed.md [SAN-1], R7/T-3 carry).
 #
@@ -413,4 +420,5 @@ clean:
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-known-fail test-thread \
-        test-spec smoke hooks strict ubsan asan lint mech bench fuzz clean
+        test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
+        fuzz clean
