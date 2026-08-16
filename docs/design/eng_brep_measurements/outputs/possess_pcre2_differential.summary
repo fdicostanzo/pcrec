@@ -1,0 +1,34 @@
+# ENG-BREP design lane -- archived probe output
+#
+# Task B item 1: flat family vs libpcre2 summary -- confusion matrix, soundness counts, U9-shape split
+#
+date:        2026-08-16T17:46:27Z
+repo commit: 0b9da1f14436cd3c18f4994b0ffef0d74b8bfcd7  (branch lane/nestedlazy)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# --- pairs swept: 10032, libpcre2 available: True (10.46 2025-08-27) ---
+# --- confusion matrix (pref, verdict, py_status, pcre2_status, u9_shape) ---
+#   ('greedy', 'no', 'DIVERGES', 'DIVERGES', False)                        1333
+#   ('greedy', 'no', 'DIVERGES', 'DIVERGES', True)                         308
+#   ('greedy', 'no', 'DIVERGES', 'same', False)                            16
+#   ('greedy', 'no', 'DIVERGES', 'same', True)                             8
+#   ('greedy', 'no', 'same', 'same', False)                                1071
+#   ('greedy', 'no', 'same', 'same', True)                                 249
+#   ('greedy', 'possessifiable', 'same', 'same', False)                    1646
+#   ('greedy', 'possessifiable', 'same', 'same', True)                     385
+#   ('lazy', 'no', 'DIVERGES', 'DIVERGES', False)                          1753
+#   ('lazy', 'no', 'DIVERGES', 'DIVERGES', True)                           396
+#   ('lazy', 'no', 'DIVERGES', 'same', False)                              12
+#   ('lazy', 'no', 'DIVERGES', 'same', True)                               6
+#   ('lazy', 'no', 'same', 'same', False)                                  935
+#   ('lazy', 'no', 'same', 'same', True)                                   219
+#   ('lazy', 'possessifiable', 'same', 'same', False)                      1366
+#   ('lazy', 'possessifiable', 'same', 'same', True)                       329
+# PYTHON SOUNDNESS [greedy]: 0 counterexample(s)
+# PYTHON SOUNDNESS [lazy]: 0 counterexample(s)
+# LIBPCRE2 SOUNDNESS [greedy]: 0 counterexample(s) NOT matching U9's shape (escalate if any), 0 matching U9's shape (upstream-note candidates, U9-explained)
+# LIBPCRE2 SOUNDNESS [lazy]: 0 counterexample(s) NOT matching U9's shape (escalate if any), 0 matching U9's shape (upstream-note candidates, U9-explained)

@@ -49,7 +49,7 @@ for p in pats:
     if not info:
         tally["no-quantifier"] += 1
         continue
-    for op, lo, hi, bf, eff, verdict, why in info:
+    for op, lo, hi, bf, eff, verdict, why, _body in info:
         bounded = hi is not _pp.C.MAXREPEAT
         kind = ("bounded" if bounded else "unbounded")
         tally["%s/%s" % (kind, verdict)] += 1

@@ -101,6 +101,84 @@ The archived outputs are **EVIDENCE, NEVER AN ORACLE** — no check reads them.
 Pattern harvesting reuses `../k18_measurements/harvest_patterns.py` rather
 than duplicating it.
 
+**Added by the nested-lazy measurement lane (2026-08-16), closing the R24
+NOTED residuals at §8 items 6 and 8 — see `outputs/nestedlazy_findings.txt`
+for the full numbers per item:**
+
+- `pcre2_ctypes.py` — a minimal python/ctypes binding to the installed
+  libpcre2-8-0 RUNTIME (compile/match/ovector/free), the same dlopen
+  precedent `tests/fuzz/pcre2_abi.h` uses for this box (runtime present, no
+  `-dev` package, no `pcre2.h`). `version()` reads the live libpcre2 version
+  string rather than hand-typing it. Self-check at `__main__` reproduces
+  U9's own witness. Every probe below that talks to libpcre2 imports this,
+  not a fresh binding.
+- `probe_possess_nested.py` — the NESTED-LAZY differential (§8 item 8): a
+  two-quantifier family (`PFX '(' INNER_ATOM INNER_SPELL MIDFIX ')'
+  OUTER_SPELL FOLLOW`, 9,216 patterns) testing BOTH the outer's own verdict
+  and the inner's, across all four preference combinations (greedy/greedy
+  baseline + the three previously-unmeasured lazy combos). `info[0]`/
+  `info[1]` targeting is asserted against each row's own `(lo, hi)`, not
+  assumed. Two failing-direction controls, both via `probe_possess.py`
+  module-level toggles (see below): `BREP_NO_LAZY_CONJUNCT` (existing) and
+  the new `NO_ENCLOSING_FIRST`. Real analysis: 0/9,216×2 counterexamples.
+  Both controls catch real divergences (68 and 212) when sabotaged.
+- `probe_possess_pcre2.py` — Task B item 1: `probe_possess.py`'s own flat
+  family (both preference families) re-run as TWO separate
+  self-consistent differentials (all-python, all-libpcre2) rather than a
+  cross-engine one, because U9 makes a cross-engine possessive comparison
+  the wrong question. Carries a `is_u9_shape()` classifier so any
+  libpcre2-only divergence is checked against U9's known trigger shape
+  before it would be escalated. 10,032 pairs, 0 counterexamples either
+  oracle, either preference, 0 U9-shaped.
+- `probe_dollar_multiline_pcre2.py` — Task B item 3's remainder (the `$`
+  MULTILINE gate, §2.5). `qualifies_except_for_follow()` filters the
+  population to rows the current analysis already calls possessifiable for
+  a benign follow (an unfiltered first run's 63/528 non-multiline
+  divergences turned out to be almost entirely ambiguous/nullable bodies
+  unrelated to `$`, disclosed in the script's own docstring and in the
+  findings file). Split by which arm qualified the row: EXACT-COUNT is
+  cleanly follow-independent (0/48 both prefs, both multiline settings);
+  GREEDY DISJOINT reproduces "$ safe non-multiline, unsafe under (?m)"
+  against BOTH oracles; LAZY DISJOINT diverges even without `(?m)`, and the
+  probe's own docstring/findings explain why that is the PRE-EXISTING lazy
+  conjunct (a bare `$` follow makes the remainder nullable, which the
+  conjunct already declines for ordinary follows) rather than a new `$`
+  defect — a note for whoever implements D47 ruling 5's live gate.
+- `regen_body.py` — unparses a quantifier's own parsed BODY sequence back
+  to regex source text, scoped deliberately to exactly the opcode set
+  `first_and_nullable()`/`Glushkov` already model (anything else is
+  declined by the analysis before reaching "possessifiable", so this
+  module never needs to round-trip it — see its own docstring). Raises
+  `Unsupported` (counted by the caller, never silently skipped) outside
+  that set. Self-check at `__main__` round-trips 17 cases including
+  ambiguous/nullable bodies, `\d`, ranges, and assertions, checking
+  SEMANTIC (re-parse and match) not textual equality.
+- `probe_corpus_diff_pcre2.py` — Task B item 2: extends
+  `probe_possess_corpus.py`'s census (verdict COUNTS only) into a real
+  DIFFERENTIAL over the .rxt corpus and `realistic_patterns.txt`. Every
+  verdict=="possessifiable" row is tested as a minimal standalone
+  reconstruction `(?:BODY){lo,hi}[?] FOLLOW` vs `(?:BODY){lo,hi}+ FOLLOW`,
+  with BODY from `regen_body.unparse()` and FOLLOW/subjects built from the
+  row's own computed `bf`/`eff` byte sets (never a fixed alphabet — the
+  D47.6 lesson applied to a population this lane does not choose the bytes
+  of). 306 possessifiable rows (230 corpus + 76 realistic — the realistic
+  figure matches the design note's own 69+7 exactly), 0 python/libpcre2
+  counterexamples; 6 cells hit libpcre2's own 65535 repeat-count limit
+  (benign, not a divergence — python has no such cap); 1 body
+  (`a(?i:b)*`'s inline-flag group) `regen_body.py` declines, disclosed.
+- `outputs/nestedlazy_findings.txt` — the findings summary for this whole
+  lane: populations, verdict splits, divergence counts, control catches,
+  per Task/item, plus a closing table. Read this first for the numbers;
+  the probes' own docstrings for method and rationale.
+
+**`probe_possess.py` itself grew two things for this lane**, both additive
+and backward-compatible: a second failing-direction control
+`NO_ENCLOSING_FIRST` (mirrors the existing `NO_LAZY_CONJUNCT`, drops S2.2's
+transitive-FOLLOW term for a nested quantifier), and an 8th element on every
+`walk()` row tuple (`body`, the row's own parsed body sequence) — appended,
+not inserted, so index-based consumers are unaffected; the one 7-tuple
+unpacking consumer (`probe_possess_corpus.py`) was updated to match.
+
 ## Outputs
 
 | file | probe | what the note takes from it |
@@ -118,16 +196,26 @@ than duplicating it.
 | `lastiter_capture_derivation.txt` | ad hoc | §3.4: the plan row's capture formula refuted (1,799/15,036) and repaired (0/15,036) |
 | `throughput_sweep.tsv` | `probe_throughput.sh` | §4.3's knee at K ≈ 16 |
 | `termination.txt` | `probe_termination.sh` | §6's guard table and its 0 divergences |
+| `nested_possess_differential.tsv` / `.summary` | `probe_possess_nested.py` | §8 item 8: nested-lazy differential, 0/9,216×2 counterexamples, both controls catch (68, 212) |
+| `possess_pcre2_differential.tsv` / `.summary` | `probe_possess_pcre2.py` | §8 item 6: flat family (both prefs) vs libpcre2, 0/10,032, 0 U9-shaped |
+| `dollar_multiline_pcre2.tsv` / `.summary` | `probe_dollar_multiline_pcre2.py` | §8 item 6 / §2.5: `$`-follow safety, both oracles, split by arm and multiline |
+| `corpus_diff_pcre2.tsv` / `.summary` | `probe_corpus_diff_pcre2.py` | §8 item 6: the two §2.6 censuses' possessifiable rows, differentially checked, 0/306 both oracles |
+| `nestedlazy_findings.txt` | (findings summary, hand-written from the above) | per-item counts and what's closed vs still open |
 
 ## Known limits of these instruments
 
-- **The oracle everywhere in THIS directory is python3 `re`.** No libpcre2
-  check was run by this lane. **[R24] the panel ran one from outside** and
-  confirmed the note's headline soundness result against libpcre2 (0
-  counterexamples, identical population) plus §6's family three ways; those
-  runs are the panel's instruments, not these, and are reported in
-  `../../dev/reviews/2026-08-15-r24-eng-brep.md`. The note's §5.3 specifies
-  the full three-way sweep; nothing here is it.
+- **The oracle everywhere in THIS directory WAS python3 `re` only, until the
+  nested-lazy lane (2026-08-16).** [R24]'s panel ran libpcre2 from OUTSIDE
+  this repo (0 counterexamples, identical population, plus §6's family
+  three ways — `../../dev/reviews/2026-08-15-r24-eng-brep.md`). The
+  nested-lazy lane's four new probes above (`pcre2_ctypes.py` +
+  `probe_possess_pcre2.py` / `probe_dollar_multiline_pcre2.py` /
+  `probe_corpus_diff_pcre2.py`) bring libpcre2 INTO this directory as a
+  committed, re-runnable instrument, and cover what was still python-only
+  after R24: the LAZY family, both §2.6 censuses' differential-relevant
+  rows, and the `$`/assertion follow sweep. The note's §5.3 full three-way
+  sweep (adding pcrec itself, once possessify has an implementation) is
+  still not run by anything here — there is no pcrec artifact to run yet.
 - **`probe_possess.py`'s model widens `\d`/`\w` and every unmodelled construct
   to all 256 bytes.** pcrec has exact class bitmaps and would be strictly less
   conservative, so the census rates are LOWER bounds on what the shipped
@@ -138,16 +226,42 @@ than duplicating it.
   own summary counts them under a nonsense rung name; `census_rungs.py` drops
   any row without exactly five fields and reports the surviving count, which
   is why its cursor stamp total is 1,402 where the probe's summary says 1,404.
-- **`probe_possess.py` tests only the OUTERMOST quantifier of each generated
-  pattern.** Its `info[0]` selection is correct here because no PREFIX in the
-  family contains a quantifier — now asserted rather than assumed — but the
-  R24 soundness critic's warning stands: an extension that adds
-  quantifier-bearing prefixes or tests nested quantifiers must not inherit
-  that selection. Nested LAZY quantifiers are consequently unmeasured.
+- **`probe_possess.py` itself still tests only the OUTERMOST quantifier of
+  each generated pattern** (`info[0]`, correct here because no PREFIX in its
+  family contains a quantifier — asserted, not assumed). That limitation is
+  now measured around rather than open: `probe_possess_nested.py` is the
+  dedicated instrument for nested quantifiers (both `info[0]` outer and
+  `info[1]` inner, structurally verified per-row), and nested LAZY
+  quantifiers — the R24 soundness critic's specific worry — are covered
+  there at 0/9,216×2 counterexamples with both controls catching real
+  divergences when sabotaged. A future extension that adds
+  quantifier-bearing PREFIXES to either probe must not inherit either
+  probe's own index-based targeting without re-deriving it.
 - **python-possessive is not PCRE2-possessive** (`docs/dev/upstream_issues.md`
   U9). PCRE2 10.46 does not backtrack into a preceding item after a
   possessive bounded repeat of a group, so the possessive SIDE of this
-  probe's comparison is python-specific in exactly the swept family.
+  probe's comparison is python-specific in exactly the swept family. This is
+  why the libpcre2 probes above run TWO separate self-consistent
+  differentials (all-python, all-libpcre2) rather than one cross-engine
+  comparison — `probe_possess_pcre2.py` additionally classifies each row
+  against U9's own trigger shape; 0 of the flat family's 10,032 rows
+  actually diverged on it (U9's own note is that it surfaced in only 3
+  cells of a much larger, captures-focused sweep elsewhere).
+
+- **libpcre2 refuses a repeat count above 65535** (its own compiled-in
+  limit; python3 `re` has none). `probe_corpus_diff_pcre2.py` hit this on 6
+  cells (`a{65536}`-shaped rows harvested from the .rxt corpus, which
+  exists to probe pcrec's OWN `PCREC_MAX_VM_REPEAT_COPIES`-adjacent limits)
+  — reported as `pcre2_status = compile-error`, not a divergence; python's
+  own differential still covers those rows at "same".
+- **`regen_body.py` only round-trips the opcode set `first_and_nullable()`/
+  `Glushkov` already model.** An inline-flag group (`(?i:...)`) inside a
+  quantifier's body is the one construct this lane's corpus sweep actually
+  hit (`a(?i:b)*`) — `regen_body.py` declines it (`Unsupported`, counted),
+  which is correct because such a body is already declined by the analysis
+  before reaching "possessifiable" (its opcode isn't in
+  `first_and_nullable`'s modeled set either), so nothing possessifiable was
+  left untested by the decline.
 
 Maintenance: update this file when probes or outputs are added, removed, or
 change role.

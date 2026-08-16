@@ -1,0 +1,235 @@
+# ENG-BREP nested-lazy measurement lane -- findings summary
+#
+# Closes the R24 NOTED residuals: eng_brep_design.md S8 item 8 (nested-lazy
+# differential, never run) and the python-only parts of S8 item 6 (the
+# S2.4 LAZY family, the S2.6 censuses, and the S2.5 $/assertion sweep
+# against libpcre2). Full method and rationale are in each probe's own
+# docstring (docs/design/eng_brep_measurements/probes/); this file is the
+# numbers, in one place, per-item.
+#
+# date:        2026-08-16
+# repo commit: 0b9da1f (branch lane/nestedlazy, based on main @ 894706e)
+# python:      Python 3.14.4 (see each archived output's own header for the
+#              exact `python3 -V` string)
+# gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0 (not used to build
+#              anything for this lane -- no scratch compiler was needed,
+#              recorded per the archive.sh header convention only)
+# libpcre2:    10.46 2025-08-27 (read live via pcre2_config, not hand-typed --
+#              see pcre2_ctypes.py)
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+
+
+## TASK A -- nested-lazy differential (S8 item 8)                    CLOSED
+
+Instrument: probes/probe_possess_nested.py. Archived:
+outputs/nested_possess_differential.tsv (raw, 18,432 rows) /
+.summary (confusion matrix + controls).
+
+Population: 9,216 patterns, shape
+  PFX '(' INNER_ATOM INNER_SPELL MIDFIX ')' OUTER_SPELL FOLLOW
+6 inner bodies (mix of unique-iteration and ambiguous) x 4 inner counts x
+3 midfixes x 4 outer counts x 4 follows x 2 prefixes x 4 preference combos
+(greedy/greedy baseline, greedy/lazy, lazy/lazy, lazy/greedy). Every
+quantifier's index (info[0]=outer, info[1]=inner) is asserted against its
+own (lo,hi), not assumed -- the R24 soundness critic's "info[0] is correct
+only by accident" warning was read as directed at this probe too.
+
+REAL ANALYSIS, both targets (outer's own verdict AND inner's own verdict),
+all four combos:
+  0 / 9,216 x 2 = 18,432 soundness counterexamples. 0 timeouts.
+
+  Verdict split (real analysis), possessifiable rows only:
+    outer, greedy/greedy: 160      outer, greedy/lazy: 160
+    outer, lazy/greedy:   112      outer, lazy/lazy:   112
+    inner, greedy/greedy: 480      inner, greedy/lazy: 480
+    inner, lazy/greedy:   480      inner, lazy/lazy:   480
+  (all "same" -- 0 diverging in every possessifiable bucket)
+
+FAILING-DIRECTION CONTROLS, both via new probe_possess.py module toggles:
+  BREP_NO_LAZY_CONJUNCT (existing, R24):
+    2,560 rows newly "possessifiable" under sabotage, 68 DIVERGE (caught).
+  NO_ENCLOSING_FIRST (new this lane -- drops S2.2's transitive-FOLLOW term
+  for a NESTED quantifier specifically):
+    3,952 rows newly "possessifiable" under sabotage, 212 DIVERGE (caught).
+
+Both controls catch real, nontrivial numbers of divergences on THIS
+family -- a control that cannot fail proves nothing, and both fail here
+when sabotaged. Combined with 0 counterexamples under the real (unsabotaged)
+analysis across all four preference combinations (including the two --
+lazy-in-greedy, lazy-in-lazy -- that were never run before this lane, and
+greedy-in-lazy for completeness), S8 item 8's residual is closed: a LAZY
+quantifier nested inside another quantifier's body, of either preference,
+is sound under the current (post-R24, lazy-conjunct) rule.
+
+One caveat, disclosed: this instrument (like probe_possess.py) checks
+python3 `re` self-consistency only (as-written vs its own possessive
+respelling, same engine) -- consistent with S5.1's argument for why that is
+the PRIMARY instrument (U9 makes a cross-engine possessive comparison the
+wrong question, not a stronger one). See Task B for the libpcre2 half.
+
+
+## TASK B item 1 -- LAZY family vs libpcre2 (S8 item 6, part)         CLOSED
+
+Instrument: probes/probe_possess_pcre2.py. Archived:
+outputs/possess_pcre2_differential.tsv (10,032 rows) / .summary.
+
+Re-runs probe_possess.py's own generated family (both preference families;
+greedy already covered from OUTSIDE this repo by the R24 panel, reproduced
+here as a same-instrument cross-check) as TWO separate self-consistent
+differentials -- all-python and all-libpcre2 -- rather than a cross-engine
+comparison, for the reason U9 gives (python-possessive and PCRE2-possessive
+are not interchangeable, so a cross-engine comparison would conflate "is
+the rule sound" with "do the two engines agree on what possessive means").
+
+  10,032 pairs swept (5,016 greedy + 5,016 lazy, both compiling under
+  python3 `re`).
+
+  PYTHON SOUNDNESS: greedy 0 counterexamples, lazy 0 counterexamples.
+  LIBPCRE2 SOUNDNESS: greedy 0 counterexamples (0 U9-shaped, 0 other),
+                       lazy   0 counterexamples (0 U9-shaped, 0 other).
+
+  U9-shape classifier (PREFIX="(?:z|)" -- the only PREFIXES member that is
+  both optional and consuming -- immediately before a possessive BOUNDED
+  repeat of a GROUP body): present in the family (verified nonzero rows
+  match the shape) but 0 of them actually diverged in this sweep -- U9's
+  own note that it surfaced in only 3 cells of a much larger,
+  captures-focused sweep is consistent with that.
+
+The lazy family -- the specific gap S8 item 6 names -- is now libpcre2-
+verified at 0/5,016 counterexamples, same population the panel already
+cleared for greedy. Both preference families now have both oracles behind
+them.
+
+
+## TASK B item 2 -- corpus/realistic census differential (S8 item 6)  CLOSED
+
+Instruments: probes/regen_body.py (body unparser) +
+probes/probe_corpus_diff_pcre2.py. Archived: outputs/corpus_diff_pcre2.tsv
+(376 rows) / .summary.
+
+Extends probe_possess_corpus.py's census (verdict COUNTS only, no oracle)
+into a real differential: every verdict=="possessifiable" quantifier found
+in the harvested .rxt corpus (849 patterns, up from 756 at the design
+note's writing -- the corpus has grown) and realistic_patterns.txt (40
+patterns), tested as a MINIMAL standalone reconstruction --
+`(?:BODY){lo,hi}[?] FOLLOW` vs `(?:BODY){lo,hi}+ FOLLOW` -- built from the
+row's own parsed body and its own computed FIRST/FOLLOW byte sets (walk()
+now appends the body as an 8th tuple element for exactly this purpose; the
+one 7-tuple consumer, probe_possess_corpus.py, was updated to match).
+
+  306 unique possessifiable quantifier rows tested (230 in the harvested
+  corpus, 76 in realistic_patterns.txt -- the realistic set's 76 matches
+  the design note's own 69+7=76 EXACTLY, a clean cross-check; the
+  corpus's 230 is larger than the note's 174 because the corpus itself has
+  grown by 93 patterns since).
+
+  112 patterns unparsed by python3 `re` (matches the design note's own
+  disclosed figure for the corpus at the time; PCRE-only syntax, reported
+  not dropped, same as probe_possess_corpus.py's own convention).
+
+  1 body regen_body.py could not round-trip, COUNTED not silently skipped:
+  `a(?i:b)*`'s `(?i:b)` -- an inline-flag group, outside regen_body.py's
+  modeled set by design (see that module's docstring: any body opcode
+  outside the analysis's OWN modeled set is already declined before
+  reaching "possessifiable", so this is expected, not a gap in what
+  matters -- the row this body belongs to was never in the 306 tested).
+
+  SOUNDNESS: 0 python counterexamples, 0 libpcre2 counterexamples, across
+  all 306 rows and both the "eff-byte" and "end-here" follow variants
+  (greedy's own argument is exercised both ways, per S2.3 step 3's "holds
+  regardless of nullable remainder" claim).
+
+  6 cells hit "pcre2_status = compile-error" -- NOT a divergence. All 6
+  are `a{65536}` / `a{100000}` / `a{0,65536}` / `a{65536,}` / `a{,65536}` /
+  `a{65535,65536}`-shaped rows: libpcre2 refuses a repeat count above its
+  own compiled-in limit (65535), python3 `re` has no such cap. Benign and
+  expected -- python's own differential covers these rows at "same" in
+  every case, so soundness is still established for them, just not via
+  the libpcre2 leg.
+
+The .rxt corpus and realistic-set possessifiable populations are now
+differentially verified (not just counted) against both oracles.
+
+
+## TASK B item 3 -- $/assertion follow sweep vs libpcre2 (S8 item 6)  CLOSED
+
+Instrument: probes/probe_dollar_multiline_pcre2.py. Archived:
+outputs/dollar_multiline_pcre2.tsv (768 rows) / .summary.
+
+Two parts.
+
+(a) probe_possess_pcre2.py's own flat-family run (Task B item 1) already
+    covers `\b`/`\B`/`^`/`$` as ordinary FOLLOWS members against BOTH
+    oracles at 0 soundness counterexamples (verdict=="possessifiable" rows
+    with these follows are widened/declined by the current analysis, so
+    this is the NON-VACUITY side, already folded into item 1's 0/10,032).
+
+(b) The MULTILINE gate for `$` specifically needed a dedicated sweep
+    (probe_possess.py's FOLLOWS has no `(?m)` variant). First run,
+    UNFILTERED over all (pref, prefix, body, count): 63/528 diverging even
+    with multiline OFF -- this is NOT a refutation of S2.5's "0 of 720,
+    safe" claim; it is mostly bodies the analysis already declines for
+    reasons unrelated to `$` (ambiguous/nullable bodies diverge against ANY
+    follow). Refiltered to `qualifies_except_for_follow()` -- exactly the
+    population that IS possessifiable against a benign literal follow, the
+    population S2.5's own claim is about:
+
+      384 qualified pairs per multiline setting (144 skipped as
+      unqualified-regardless-of-$).
+
+      GREEDY, non-multiline: 0/192 diverging  -- matches "$ safe" exactly.
+      GREEDY, multiline:     12/192 diverging -- matches "unsafe under
+                              (?m)" qualitatively (design note's own sweep,
+                              a different population, measured 180/720;
+                              same direction, different population size).
+      LAZY,   non-multiline: 21/192 diverging -- NOT a new $-specific
+                              defect (see below).
+      LAZY,   multiline:     21/192 diverging -- identical count to
+                              non-multiline; (?m) adds nothing on top for
+                              this population.
+
+    Both python and libpcre2 status agree on EVERY cell in this sweep (0
+    cross-oracle mismatches, 384 x 2 = 768 rows) -- so the "$ safe /
+    unsafe" figures are now cross-verified, not python-only.
+
+    Split by which analysis ARM qualified the row (against the benign "c"
+    follow):
+      EXACT-COUNT arm: 0/48 diverging, BOTH prefs, BOTH multiline settings
+        -- confirms the arm is genuinely follow-independent (it never
+        inspects FOLLOW at all), as designed.
+      GREEDY DISJOINT arm: 0/168 non-multiline, 12/168 multiline -- the
+        clean "$ safe (gated)" result.
+      LAZY DISJOINT arm: 21/168 BOTH multiline settings -- every one of
+        these rows is exactly the "lazy+nullable-rest" shape S2.2's lazy
+        conjunct already declines for an ORDINARY follow (the conjunct
+        requires the remainder to be non-nullable; a bare `$` follow makes
+        the remainder match-may-end-here, i.e. nullable in S2.2's sense,
+        REGARDLESS of (?m)). This is not a new `$`-specific bug: it is the
+        SAME already-accepted lazy conjunct, triggered because swapping a
+        row's follow from "c" to "$" changes its nullability, not because
+        `$` needs its own separate lazy-side carve-out. The finding for
+        D47/D47 ruling-5's implementation: a real `$` exemption must feed
+        `$`'s presence into the SAME lazy-conjunct machinery (mark
+        end_here=True when the follow can be `$`) rather than bypass it as
+        an independent rule -- if it bypasses the conjunct, it will ship
+        exactly this 21/192 defect for lazy quantifiers.
+
+
+## Summary table
+
+| item                                | population         | py div | pcre2 div |
+|--------------------------------------|--------------------|--------|-----------|
+| A: nested, real analysis (both tgts) | 18,432 comparisons | 0      | n/a (py-only, see caveat) |
+| A: control NO_LAZY_CONJUNCT          | 2,560 sabotaged    | 68 caught | -- |
+| A: control NO_ENCLOSING_FIRST        | 3,952 sabotaged    | 212 caught | -- |
+| B1: flat LAZY family                 | 5,016 pairs        | 0      | 0 (0 U9)  |
+| B1: flat GREEDY family (cross-check) | 5,016 pairs        | 0      | 0 (0 U9)  |
+| B2: corpus+realistic possessifiable  | 306 rows           | 0      | 0 (6 pcre2-count-limit, benign) |
+| B3: $ follow, qualified population   | 384 pairs x 2 ml   | 54     | 54 (all lazy-conjunct-explained or greedy-multiline, see above) |
+
+All "escalate" gates (LIBPCRE2 SOUNDNESS non-U9 counterexamples in B1;
+python or libpcre2 counterexamples anywhere in A or B2) came back at 0.
+Nothing here requires manager escalation; the B3 lazy/$ interaction is a
+DESIGN note for whoever implements D47 ruling 5, not a bug in anything
+shipped or in this note's own analysis.
