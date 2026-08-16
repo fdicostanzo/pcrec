@@ -1340,6 +1340,23 @@ Ordered by how likely it is to matter.
    is still python-only here: the LAZY family added at [R24] (§2.4), the two
    censuses of §2.6, and the `$`/assertion sweeps. §5.3's three-way sweep
    remains specified and not run by anyone.
+
+   **[NESTED-LAZY LANE, 2026-08-16] the python-only residual is CLOSED**
+   (`outputs/nestedlazy_findings.txt`, probes committed): the lazy family
+   0/5,016 vs libpcre2 (10.46); the censuses' possessifiable rows
+   differentially checked for the first time (306 rows, 0 counterexamples,
+   both oracles; one `(?i:...)` body disclosed as out of the unparser's
+   scope); the `$`-follow sweep split by arm — exact-count
+   follow-independent (0/48), greedy disjoint safe non-multiline / unsafe
+   under `(?m)` (0/168 and 12/168, reproducing §2.5's gate numbers against
+   BOTH oracles), and the lazy disjoint arm's 21/168 divergences are the
+   ALREADY-DECLINED lazy+nullable-rest shape (`$` makes the remainder
+   nullable regardless of `(?m)`), verified against the SHIPPED pass by the
+   manager at merge: `([^c]{0,4}?)$` stamps 0-of-1 possessified while the
+   greedy control stamps 1-of-1. MAINTAINER NOTE with teeth: any future
+   `$`-exemption rework must feed `$`'s presence through the SAME
+   lazy-conjunct machinery, never bypass it as an independent rule — a
+   bypass ships exactly those 21 cells as miscompiles.
 7. **The realistic pattern set is hand-written from memory of the shapes**, by
    the same author who wrote the analysis. That is the exact control-shares-a-
    source failure this project has hit before. A set harvested from real
@@ -1366,6 +1383,17 @@ Ordered by how likely it is to matter.
    quantifier's body has never been differentially tested. The panel's own
    note that `info[0]` is "correct only by accident" applies with more force
    now that there are two rules to get right instead of one.
+
+   **[NESTED-LAZY LANE, 2026-08-16] the residual is CLOSED**
+   (`probes/probe_possess_nested.py`, `outputs/nestedlazy_findings.txt`):
+   a 9,216-pattern two-quantifier family across all four preference
+   combinations, testing BOTH the outer's and the inner's verdict with the
+   target's identity asserted against its own (lo,hi) rather than assumed
+   — 18,432 comparisons, 0 soundness counterexamples on the real analysis.
+   Failing-direction controls both catch: dropping the lazy conjunct
+   yields 68/2,560 divergences, dropping the enclosing-loop-FIRST term
+   212/3,952. The `info[0]`-by-accident concern is retired by
+   construction, not by luck.
 9. **Assertions INSIDE the body are ignored by the unique-iteration check**
    (`Glushkov.build` skips `AT`), while assertions in the FOLLOW widen to all
    bytes (§2.5). The asymmetry is deliberate and BELIEVED sound in the

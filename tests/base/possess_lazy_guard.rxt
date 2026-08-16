@@ -18,13 +18,13 @@
 # subject that actually has depth behind the prefix (see the probe's own
 # fixed `subjects()` and docstring, and eng_brep_design.md §2.4/§10.2).
 #
-# THESE PATTERNS COMPILE WITH TODAY'S VM, unmodified — nothing here is
-# implemented yet; possessification does not exist in this compiler. Every
-# expectation below pins pcrec's CURRENT correct lazy-quantifier behavior.
-# Their guard value is future: if a possessification pass ever ships and
-# wrongly treats one of these lazy loops as possessive-equivalent, the
-# compiled matcher would stop at the loop's maximal exit instead of its
-# lazy (minimal legal) one, and the `disc` case below would fail. The
+# THE POSSESSIFICATION PASS NOW EXISTS (src/opt/possessify.c, merged
+# 2026-08-16 at 1eac1b9), so these cells are LIVE-FIRE, not anticipatory:
+# every expectation below pins the lazy-quantifier behavior the shipped
+# pass must preserve by DECLINING these loops. If the pass ever wrongly
+# treats one of these lazy loops as possessive-equivalent, the compiled
+# matcher would stop at the loop's maximal exit instead of its lazy
+# (minimal legal) one, and the `disc` case below would fail. The
 # `min`/`no` cases pin ordinary correctness (lazy loop takes exactly the
 # floor at minimum-satisfying input; no match below the floor) so a
 # regression can't hide behind "well the guard cell was contrived".
@@ -151,3 +151,30 @@ pattern (?:z|)(?:ab){3,}?c?
 m "ababab" 0 6
 m "abababab" 0 6
 n "abab"
+
+# --- lazy + `$` follow (nested-lazy lane, 2026-08-16;
+# outputs/nestedlazy_findings.txt Task B item 3). A bare `$` follow makes
+# the remainder nullable in §2.2's sense REGARDLESS of (?m), so the lazy
+# conjunct must decline these even though the greedy twin possessifies
+# under the D47.5 `$` exemption. The discriminating subjects end in a
+# newline: `$` also holds BEFORE a final \n, so a wrongly-possessified
+# lazy loop would swallow the \n and report the longer span. Verified
+# against python3 `re` and libpcre2 10.46 (both agree on every cell) and
+# against the shipped pass's own stamp (0-of-1 possessified for the lazy
+# spellings, 1-of-1 for the greedy control) at merge.
+
+pattern [^c]{0,4}?$
+m "ab\n" 0 2
+m "ab" 0 2
+m "abcde\n" 3 5
+
+pattern ([^c]{0,4}?)$
+m "ab\n" 0 2
+g 1 0 2
+
+# greedy control: the `$` exemption DOES possessify this one, and the
+# possessified matcher must still take the full greedy span through the
+# final newline — pins the exemption's soundness on the trickiest subject.
+pattern [^c]{0,4}$
+m "ab\n" 0 3
+m "abcde\n" 3 6
