@@ -30,6 +30,26 @@ confused for one another.
 - **`census.txt`** — an archived run (D35's stable-name convention: same name
   across re-runs, so a re-measurement is a diff).
 
+- **`throughput.sh`** / **`throughput.txt`** — two archived cells and NOT a
+  bench floor: possessification removes machinery, so there is nothing here a
+  floor could guard, and a floor would only pin a number the next ladder rung
+  moves. Cell 1 is throughput inside both artifacts' declared limits; cell 2
+  is the CAPABILITY BOUNDARY, which is the more interesting one and was found
+  by cell 1 going wrong — run past the denied build's ceiling, the two builds
+  returned different answers, which is not a divergence but the feature. They
+  agree on every length the denied build declares it can handle and part at
+  exactly its stamped `subject_ceiling`.
+
+- **`make_corpus.py`** / **`gen_rxt.py`** — the PRODUCER of
+  `tests/possessify/possessify.rxt`, committed for R24 M-F1/M-F2's reason: a
+  corpus whose expectations were hand-written, or produced by a script nobody
+  kept, cannot be re-derived when the oracles move. Running it reproduces that
+  file BYTE-IDENTICALLY. `gen_rxt.py` asks both oracles per cell and carries
+  its own instrument note — `pcre2_match` returns the number of ovector PAIRS
+  it filled, not the pattern's group count, and reading only `rc` pairs made
+  every trailing UNSET group vanish rather than read as unset, which showed up
+  as seven phantom "oracle disagreements" on this generator's first run.
+
 ## The numbers, and how they sit against §7
 
 Read them from `census.txt`, not from here. The two comparisons worth knowing:

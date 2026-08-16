@@ -44,13 +44,25 @@ in a specific way.
 
 ## Files
 
-- **`possessify.rxt`** — 1,028 oracle-verified cases over the §2.2 rule's own
+- **`possessify.rxt`** — oracle-verified cases over the §2.2 rule's own
   families: both arms (exact-count and disjointness) in both preferences, one
   block per DECLINING condition (ambiguous body, not prefix-free, nullable
   body, overlapping follow, subsumed follow, `^` in the follow), the lazy
   conjunct's guard cells that D47.6 ruled into the corpus, the `$`-follow
   exemption with newline subjects, and the nested-quantifier family the
   transitive-FOLLOW line is about.
+
+  **Every family appears TWICE, and the second half is the one that tests the
+  emitter.** Under the default engine choice a capture-free pattern routes to
+  the DFA and never reaches `src/gen/emit_vm.c`, so possessification is
+  structurally invisible to it — measured on this file's first version, 33 of
+  38 patterns were DFA-routed and only THREE carried a possessified
+  quantifier, which is an oracle-verified corpus for a VM rewrite that almost
+  never ran the VM. Wrapping each pattern in one capture forces the VM
+  artifact while changing nothing the analysis sees (A_CAP is transparent to
+  FIRST, to FOLLOW and to the Glushkov construction) and group 1 is then the
+  whole match, so the capture slot is checked too. With both halves: 43
+  VM-routed patterns, 28 of them possessified.
 - **`patterns.txt`** — the differential's population, built as §2.4's family
   (prefix × body × count × follow) with every count spelled BOTH ways. The
   both-ways part is not optional: R24 found the lazy defect precisely because
