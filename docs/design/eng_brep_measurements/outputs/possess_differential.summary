@@ -1,0 +1,33 @@
+# ENG-BREP design lane -- archived probe output
+#
+# probe_possess.py confusion matrix: 0 counterexamples to soundness.
+#
+date:        2026-08-16T00:52:27Z
+repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# --- confusion matrix ---
+#   ('no', 'DIVERGES')                 1463
+#   ('no', 'same')                     1522
+#   ('possessifiable', 'same')         2031
+# SOUNDNESS: 0 counterexample(s) to 'possessifiable => identical'
+# CONSERVATISM: 1522 'no' verdicts whose differential never diverged
+#   'a{0,4}$'
+#   'a{1,3}$'
+#   'a{1,3}^'
+#   'a{0,2}$'
+#   'a{3,}$'
+#   'a{3,}ac'
+#   'a{3,}ab'
+#   'a{3,}^'
+#   'a*$'
+#   'a+$'
+#   'a+^'
+#   'a?$'
+#   '[ab]{0,4}b?c'
+#   '[ab]{0,4}$'
+#   '[ab]{1,3}b?c'

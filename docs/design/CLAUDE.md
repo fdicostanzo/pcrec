@@ -346,6 +346,43 @@ append-only or historical records.
   `../dev/known_issues.md` K18.
 - `k18_measurements/` — the lane's prototypes, harnesses and generators; see
   its own CLAUDE.md.
+- `eng_brep_design.md` — **PROPOSED** ([ENG-BREP], 2026-08-15): the
+  BOUNDED-REPEAT EMISSION STRATEGY, written design-first on K18's scheduling
+  precedent. Answers Frank's ruled question order — (1) POSSESSIFY, (2) rung
+  selection, (3) the unroll factor K — and proposes a ladder: prove no retreat
+  can succeed and emit no machinery; else take the §2.5 rung the body admits;
+  else one body copy per K iterations plus a counter; with replication
+  retained as ground truth. Four refutations, three of them the note's own:
+  **the possessification analysis as the plan row states it is UNSOUND**
+  (disjointness alone, 117 measured counterexamples, every one a `(a|ab)`-
+  shaped body whose iteration can end in two places) and is repaired by
+  requiring the body to admit a UNIQUE iteration (one-unambiguous +
+  prefix-free), which then survives 5,016 patterns × 260 subjects at 0
+  counterexamples; **a zero-width assertion in the follow breaks the
+  first-set model** (`[ab]{0,4}\b` on "abc" is (0,0) greedy, (3,3)
+  possessive); **the plan row's last-iteration capture derivation for the
+  motivating cell is wrong** on 1,799 of 15,036 matches, because a group
+  inside a loop keeps the value from the last iteration that ENTERED it —
+  repaired to a backward scan, 0 of 15,036, which is the
+  reverse-deterministic rung's own argument sharpened; and **third-amendment
+  consequence (b) is reported NOT established**, because `src/ir/nfa.c`'s
+  `A_REP` arm replicates independently of `emit_vm.c` (what IS established, and
+  is new, is that the compiler's own cost on the capture-erased path is
+  QUADRATIC in the unrolled count — 0.012 s at N=64 to 2.689 s at N=4000 —
+  with the whole count living in the REVERSE DFA, 4,002 states, while the
+  forward DFA is 2 states at every N). Censuses on two populations because
+  either alone misleads: 18% of bounded quantifiers possessifiable on the
+  adversarial `.rxt` corpus, **82%** on a realistic set. K is measured on both
+  its curves (gcc −O2 quadratic in copies; throughput advantage exhausted by
+  K ≈ 16) and both agree — recommendation K = 8. Discharges the row's four
+  ruled validation requirements explicitly, including an
+  explicit termination argument (the counter's strict increase, not subject
+  progress, is what makes E-2's no-guard-for-bounded ruling safe — checked in
+  the emitter's listing and against python3 `re`, 0 divergences). §8 lists
+  nine things NOT measured, headed by the counter loop itself, which does not
+  exist. Unpaneled. Measurements: `eng_brep_measurements/`.
+- `eng_brep_measurements/` — the ENG-BREP lane's probes, scratch-compiler
+  builder and archived outputs; see its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

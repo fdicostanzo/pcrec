@@ -1,0 +1,54 @@
+# ENG-BREP design lane -- archived probe output
+#
+# probe_possess.py v1 -- disjointness ALONE, REFUTED: 117 counterexamples. Kept because the refutation is what shaped the analysis.
+#
+date:        2026-08-16T00:52:27Z
+repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# --- confusion matrix ---
+#   ('no', 'DIVERGES')                 773
+#   ('no', 'same')                     619
+#   ('possessifiable', 'DIVERGES')     117
+#   ('possessifiable', 'same')         1395
+# SOUNDNESS: 117 counterexample(s) to 'possessifiable => identical'
+#   '(a|ab){0,4}c'  subject='abc' greedy=((0, 3), ('ab',)) possessive=((2, 3), (None,))
+#   '(a|ab){0,4}[cd]'  subject='abc' greedy=((0, 3), ('ab',)) possessive=((2, 3), (None,))
+#   '(a|ab){0,4}(?:c|d)'  subject='abc' greedy=((0, 3), ('ab',)) possessive=((2, 3), (None,))
+#   '(a|ab){0,4}b?c'  subject='ababc' greedy=((0, 5), ('a',)) possessive=((2, 5), ('a',))
+#   '(a|ab){0,4}$'  subject='ab' greedy=((0, 2), ('ab',)) possessive=((2, 2), (None,))
+#   '(a|ab){1,3}c'  subject='abc' greedy=((0, 3), ('ab',)) possessive=None
+#   '(a|ab){1,3}[cd]'  subject='abc' greedy=((0, 3), ('ab',)) possessive=None
+#   '(a|ab){1,3}(?:c|d)'  subject='abc' greedy=((0, 3), ('ab',)) possessive=None
+#   '(a|ab){1,3}b?c'  subject='ababc' greedy=((0, 5), ('a',)) possessive=((2, 5), ('a',))
+#   '(a|ab){1,3}$'  subject='ab' greedy=((0, 2), ('ab',)) possessive=None
+#   '(a|ab){2,2}c'  subject='aabc' greedy=((0, 4), ('ab',)) possessive=None
+#   '(a|ab){2,2}[cd]'  subject='aabc' greedy=((0, 4), ('ab',)) possessive=None
+#   '(a|ab){2,2}(?:c|d)'  subject='aabc' greedy=((0, 4), ('ab',)) possessive=None
+#   '(a|ab){2,2}b?c'  subject='ababc' greedy=((0, 5), ('a',)) possessive=None
+#   '(a|ab){2,2}'  subject='ababc' greedy=((0, 3), ('a',)) possessive=None
+#   '(a|ab){2,2}c?'  subject='ababc' greedy=((0, 3), ('a',)) possessive=None
+#   '(a|ab){2,2}$'  subject='bacaaab' greedy=((4, 7), ('ab',)) possessive=None
+#   '(a|ab){0,2}c'  subject='abc' greedy=((0, 3), ('ab',)) possessive=((2, 3), (None,))
+#   '(a|ab){0,2}[cd]'  subject='abc' greedy=((0, 3), ('ab',)) possessive=((2, 3), (None,))
+#   '(a|ab){0,2}(?:c|d)'  subject='abc' greedy=((0, 3), ('ab',)) possessive=((2, 3), (None,))
+# CONSERVATISM: 619 'no' verdicts whose differential never diverged
+#   'a{2,2}a'
+#   'a{2,2}[ac]'
+#   'a{2,2}ac'
+#   'a{2,2}(?:c|a)'
+#   'a{3,}ac'
+#   '[ab]{0,4}b?c'
+#   '[ab]{1,3}b?c'
+#   '[ab]{2,2}a'
+#   '[ab]{2,2}[ac]'
+#   '[ab]{2,2}b?c'
+#   '[ab]{2,2}ac'
+#   '[ab]{2,2}(?:c|a)'
+#   '[ab]{0,2}b?c'
+#   '[ab]{3,}b?c'
+#   '[ab]{3,}ac'

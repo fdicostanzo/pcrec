@@ -1,0 +1,49 @@
+# ENG-BREP design lane -- archived probe output
+#
+# probe_replication.sh: emitted size and gcc time vs N for the three strategies. vm_caps rows use the raised-cap scratch compiler (mkscratch.sh bigcap).
+#
+date:        2026-08-16T00:52:27Z
+repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+case	N	lines	bytes	pcrec_s	gcc_O1_s	gcc_O2_s	note
+vm_caps	1	350	13170	0.114	0.114	0.220	-
+dfa_erased	1	151	6136	0.119	0.120	0.120	-
+cursor_caps	1	151	6156	0.120	0.119	0.116	-
+vm_caps	2	378	13986	0.119	0.115	0.217	-
+dfa_erased	2	151	6153	0.119	0.116	0.113	-
+cursor_caps	2	152	6200	0.118	0.116	0.117	-
+vm_caps	4	435	15627	0.119	0.218	0.219	-
+dfa_erased	4	152	6195	0.119	0.116	0.115	-
+cursor_caps	4	153	6281	0.121	0.114	0.117	-
+vm_caps	8	548	18903	0.117	0.219	0.220	-
+dfa_erased	8	153	6272	0.120	0.118	0.120	-
+cursor_caps	8	156	6457	0.119	0.118	0.116	-
+vm_caps	16	775	25606	0.117	0.219	0.417	-
+dfa_erased	16	156	6451	0.116	0.114	0.120	-
+cursor_caps	16	161	6805	0.117	0.119	0.117	-
+vm_caps	32	1228	39072	0.116	0.319	0.617	-
+dfa_erased	32	161	6796	0.120	0.118	0.119	-
+cursor_caps	32	171	7493	0.113	0.114	0.110	-
+vm_caps	64	2134	66003	0.117	0.520	1.518	-
+dfa_erased	64	171	7484	0.121	0.117	0.113	-
+cursor_caps	64	191	8900	0.113	0.110	0.210	-
+vm_caps	128	3946	120517	0.114	1.012	4.717	-
+dfa_erased	128	191	8924	0.119	0.117	0.120	-
+cursor_caps	128	231	11784	0.118	0.111	0.117	-
+vm_caps	256	7570	231175	0.120	2.018	19.136	-
+dfa_erased	256	231	11933	0.115	0.120	0.114	-
+cursor_caps	256	311	17544	0.114	0.118	0.221	-
+vm_caps	400	11647	355665	0.117	3.223	51.961	-
+dfa_erased	400	276	15317	0.118	0.113	0.114	-
+cursor_caps	400	401	24024	0.116	0.113	0.110	-
+vm_caps	1000	28634	874378	0.220	10.027	TIMEOUT>240	-
+dfa_erased	1000	463	29421	0.220	0.115	0.121	-
+cursor_caps	1000	776	52030	0.220	0.119	0.217	-
+vm_caps	4000	113572	3536883	2.721	152.640	TIMEOUT>240	-
+dfa_erased	4000	1401	105926	3.218	0.212	0.214	-
+cursor_caps	4000	2651	193031	2.115	0.214	0.215	-

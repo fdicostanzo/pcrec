@@ -1,0 +1,23 @@
+# ENG-BREP design lane -- archived probe output
+#
+# probe_throughput.sh at -O2: replication (K=N) vs the frames-rung star (K=1 code shape), min of 3 trials, both artifacts checked to agree on span+group1.
+#
+date:        2026-08-16T00:52:27Z
+repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+N	reps	rep_ns	star_ns	ratio	rep_span	star_span	agree
+1	1000000	42.4	110.0	2.59	0,2	0,2	yes
+2	666666	59.8	129.8	2.17	0,3	0,3	yes
+4	400000	82.8	138.8	1.68	0,5	0,5	yes
+8	222222	131.9	173.6	1.32	0,9	0,9	yes
+16	117647	229.7	258.0	1.12	0,17	0,17	yes
+32	60606	653.7	521.6	0.80	0,33	0,33	yes
+64	30769	913.3	856.7	0.94	0,65	0,65	yes
+128	15503	1700.7	1761.7	1.04	0,129	0,129	yes
+256	7782	4285.1	3065.9	0.72	0,257	0,257	yes
+400	4987	5718.9	4489.0	0.78	0,401	0,401	yes

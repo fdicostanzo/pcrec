@@ -1,0 +1,27 @@
+# ENG-BREP design lane -- archived probe output
+#
+# probe_termination.sh: R21 E-2's no-guard-for-bounded ruling, checked in the emitter's listing and against python3 re.
+#
+date:        2026-08-16T00:53:29Z
+repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+=== (1) guard slots, from --emit-ir's own SLOTS section ===
+pattern	bound	guard_slots
+(a?){0,4}b	bounded	0
+(a*){0,3}b	bounded	0
+((?:a|)){2,4}b	bounded	0
+(b*){1,3}c	bounded	0
+(|a){0,3}b	bounded	0
+((a)|){0,2}b	bounded	0
+(a?)*b	unbounded	3
+(a*)*b	unbounded	3
+((?:a|))*b	unbounded	3
+(|a)*b	unbounded	3
+
+=== (2) the same patterns against python3 re ===
+# divergences: 0 over 10 patterns x 14 subjects
