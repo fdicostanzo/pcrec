@@ -136,6 +136,13 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "--emit-ir")) emit_ir = 1;
         else if (!no_more_opts && !strcmp(a, "--fno-step-budget"))
             opt.step_budget = PCREC_STEP_BUDGET_NONE;
+        /* [ENG-BREP] the first of D47.3's DENY family. Spelled `-fno-` in the
+         * gcc style the ruling names, and as a bare flag rather than an
+         * `=value` mode because a denial has no value to carry. It denies a
+         * STRATEGY, never an answer: the artifact matches identically either
+         * way, which is exactly what the differential it exists for checks. */
+        else if (!no_more_opts && !strcmp(a, "-fno-possessify"))
+            opt.flags |= PCREC_NO_POSSESSIFY;
         else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;

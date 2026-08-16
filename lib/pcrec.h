@@ -35,7 +35,25 @@ enum {
      * a shipped matcher should ever do. The artifact stamps that it is
      * traced, so no one has to guess. VM artifacts only; a DFA matcher has
      * no resume frames to trace. */
-    PCREC_TRACE       = 1u << 3
+    PCREC_TRACE       = 1u << 3,
+    /* [ENG-BREP] `-fno-possessify`: DENY the possessification rewrite
+     * (docs/design/eng_brep_design.md §2, D47.3).
+     *
+     * A TESTING AND TUNING AXIS, not a user feature. Possessification changes
+     * no answer — that is its entire claim — so the only reason to turn it off
+     * is to CHECK that claim: the row's primary instrument is a
+     * pcrec-vs-pcrec differential that compiles the same pattern twice, once
+     * with the rewrite and once without, and compares spans, every capture
+     * slot and the failure surface. A strategy that cannot be denied cannot be
+     * differentially tested.
+     *
+     * DENY rather than FORCE, and D47.3 rules the difference load-bearing:
+     * each quantifier walks its own ladder skipping the denied steps, so a
+     * denial composes per-quantifier with no need to ADDRESS one quantifier
+     * inside a pattern. It is the first member of a family — the rest of the
+     * ladder's denials (`-fno-counter`, a rung selector, a value parameter for
+     * K) arrive with the strategies they deny. */
+    PCREC_NO_POSSESSIFY = 1u << 4
 };
 
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.

@@ -129,8 +129,11 @@ typedef enum {
     VE_NOTE,     /* text: an inline note on the current label      */
     VE_ISLAND,   /* reserved: no producer (engine_m4.md S6.3)      */
     VE_CALLOUT,  /* reserved: no producer (module 'callouts')      */
-    VE_RUNG      /* [D46] a: the A_REP's own entry label id,
+    VE_RUNG,     /* [D46] a: the A_REP's own entry label id,
                   *       b: VmRungKind ordinal                     */
+    VE_STRAT,    /* [ENG-BREP] a: the A_REP's own entry label id,
+                  *       b: VmStratKind ordinal                    */
+    VE_CUT       /* [ENG-BREP] a: the cut-mark stv slot            */
 } VEKind;
 
 /* [D46] the S2.5 rung ladder's own small named value set, ONE PER
@@ -147,6 +150,25 @@ typedef enum {
 static const unsigned vm_rung_bit[3] = { 0x1u, 0x2u, 0x4u };
 static const char    *const vm_rung_kindname[3] =
     { "cursor", "frames-bounded", "frames-unbounded" };
+
+/* [ENG-BREP/D46] the LADDER's first rung as its own small named value set,
+ * sitting BESIDE the rung rather than inside it: a possessified quantifier
+ * still takes a rung (it is the rung's machinery that shrinks), so folding
+ * possessification into VmRungKind would make the two facts compete for one
+ * value. Same bitmask shape and same reason — the strategy is chosen PER
+ * A_REP, so an artifact whose quantifiers differ needs a mask, not a scalar.
+ *
+ * The do-or-die half D47.3 moves to observability rides on this: under
+ * `-fno-possessify` the POSSESSIVE bit must not appear in any artifact, and
+ * tests/possessify/run_possessify_tests.sh asserts exactly that rather than
+ * trusting the flag. */
+typedef enum {
+    VM_STRAT_POSSESSIVE   = 0,   /* index into vm_strat_bit[], not a bit */
+    VM_STRAT_BACKTRACKING = 1
+} VmStratKind;
+static const unsigned vm_strat_bit[2] = { 0x1u, 0x2u };
+static const char    *const vm_strat_kindname[2] =
+    { "possessive", "backtracking" };
 
 typedef struct {
     VEKind      k;
@@ -167,6 +189,10 @@ typedef struct {
                              * only be computed from the TOTAL, never from
                              * the running assignment counter */
     int       nlow;       /* cursor low-water slots assigned so far */
+    int       nlow_total; /* the count vm_count_slots found — vm_slot_mark's
+                           * base, for vm_slot_low's own reason */
+    int       nmark;      /* [ENG-BREP] possessive cut-mark slots so far */
+    int       nmark_total;
     long long npush;      /* [M4.5c fix] emitted RX_PUSH sites, counted in the
                            * pre-pass. Reported in the listing so a check can
                            * hold it against the artifact; not itself a cap. */
@@ -190,6 +216,15 @@ typedef struct {
                             * See vm_rung_mark() and the VE_RUNG listing
                             * section for the per-quantifier detail this
                             * mask summarizes. */
+    unsigned  strats;      /* [ENG-BREP] the same shape one rung down the
+                            * ladder: BITMASK of VmStratKind values present,
+                            * set by the same vm_rung_mark() call that sets
+                            * `rungs`, from the same `a->possessive` the
+                            * emitter is about to act on. One call, one
+                            * truth — the macro, the listing section and the
+                            * emitted machinery cannot disagree about whether
+                            * a quantifier was possessified, because there is
+                            * one place that says so. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     /* class bitmap pool, deduplicated */
     uint8_t (*cls)[32];
@@ -261,6 +296,14 @@ static void vm_charge(Vm *v)
  */
 static int vm_slot_guard(Vm *v, int i) { return 2 * (v->ngroups + 1) + i; }
 static int vm_slot_low(Vm *v, int i)   { return 2 * (v->ngroups + 1) + v->nguard_total + i; }
+/* [ENG-BREP] the fourth slot class: a possessified frames-rung loop's CUT
+ * MARK, the resume-stack depth to truncate back to. It sits above the low-water
+ * marks, so like them its base is computed from the TOTALS the pre-pass found
+ * and never from a running counter. */
+static int vm_slot_mark(Vm *v, int i)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total + i;
+}
 
 /* ---- AST predicates ------------------------------------------------------*/
 
@@ -535,9 +578,48 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
     if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
          * plus one write per capture in the body per (re)try — all of which
-         * the resume frame's own mark rewinds, so they do not accumulate. */
-        c.frames = 1;
-        c.trail = 1 + 2 * nc;
+         * the resume frame's own mark rewinds, so they do not accumulate.
+         *
+         * [ENG-BREP] Possessified, the frame and the low-water write are both
+         * gone (vm_cursor_rep's possessive path emits neither), so the honest
+         * requirement is zero frames and the capture writes alone. This is
+         * where §7's "those artifacts newly stamp no limit truthfully" comes
+         * from: an artifact whose every quantifier is possessified reports a
+         * frame requirement of 0, and pcrec_emit_vm's `fits` test then finds
+         * nothing to declare a ceiling for. Under-reporting here would be a
+         * silent cap, so the branch has to mirror the emitter exactly. */
+        c.frames = a->possessive ? 0 : 1;
+        c.trail  = (a->possessive ? 0 : 1) + 2 * nc;
+        return c;
+    }
+
+    /* [ENG-BREP] the possessified frames rung, both bounds in one arm because
+     * the whole point is that the two now cost the same: ONE loop frame is
+     * live at a time (vm_poss_chain / vm_poss_star cut back to the mark at
+     * every copy boundary), so the frame requirement stops depending on the
+     * iteration count entirely.
+     *
+     * The TRAIL still does depend on it, and saying so is the honest half. The
+     * cut discards frames and deliberately does not rewind the trail, so a
+     * body that writes captures still adds entries per iteration. That is why
+     * `growable` is decided on the trail here rather than assumed false: for a
+     * capture-free body nothing grows and the artifact stamps "no limit"
+     * truthfully (§7's prediction), while for a capture-bearing one the
+     * ceiling machinery still has a real per-iteration divisor to work from —
+     * just no longer a frames one. */
+    if (a->possessive) {
+        long long peak_mandatory = (long long)a->rmin * body.frames;
+        long long peak_loop      = 1 + body.frames;
+        c.frames = peak_mandatory > peak_loop ? peak_mandatory : peak_loop;
+        c.trail  = 1 + (a->rmax < 0 ? (long long)a->rmin
+                                    : (long long)a->rmax) * body.trail;
+        c.pf     = body.pf;                    /* frames: NOT per iteration */
+        c.pt     = body.trail + body.pt;       /* trail: still per iteration */
+        {
+            bool grows = body.unbounded || body.growable || c.pt > 0;
+            c.unbounded = a->rmax < 0 ? grows : body.unbounded;
+            c.growable  = a->rmax < 0 ? grows : (body.growable || c.pt > 0);
+        }
         return c;
     }
 
@@ -688,12 +770,23 @@ static void vm_count_slots(Vm *v, const Ast *a)
     case A_REP:
         if (a->rmin == 0 && a->rmax == 0) return;
         if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
-            v->nlow++;
-            v->npush++;                  /* vm_cursor_rep: exactly one */
+            /* [ENG-BREP] the possessive span loop allocates NEITHER — no
+             * low-water slot and no resume point. Mirrors vm_cursor_rep's own
+             * branch; the two are the same condition read twice, which is the
+             * standing hazard this function's header comment is about. */
+            if (!a->possessive) {
+                v->nlow++;
+                v->npush++;              /* vm_cursor_rep: exactly one */
+            }
             return;
         }
-        /* frames rung: the star's own push, or one per optional copy */
+        /* frames rung: the star's own push, or one per optional copy. The
+         * possessive shapes push at the SAME sites (vm_poss_star once,
+         * vm_poss_chain once per optional copy) — what changes is how many are
+         * live at a time, not how many are emitted — so this arithmetic is
+         * unchanged. The cut mark is the one new slot. */
         v->npush += a->rmax < 0 ? 1 : (a->rmax - a->rmin);
+        if (a->possessive) v->nmark++;
         /* Frames rung: the body's code is REPLICATED once per mandatory copy
          * and once per optional copy, and each copy's own loops need their own
          * slots — so the count must replicate exactly as the emitter does or
@@ -772,6 +865,27 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
     vm_ev(v, VE_SET, slot, 0, role);
 }
 
+/* [ENG-BREP] THE CUT — the possessive loop's one new operation, and a
+ * primitive rather than an inline sb_printf for the same "one call, one truth"
+ * reason as the five above.
+ *
+ * It truncates the resume stack back to the depth recorded in `slot`,
+ * discarding every frame the loop and its body pushed since. That is exactly
+ * what a positive §2.2 verdict licenses: no retreat into this loop can produce
+ * a match the preferred path does not, so those frames are provably dead.
+ *
+ * IT DOES NOT TOUCH THE TRAIL, and must not. The frames are dead; the capture
+ * writes they would have rewound are NOT, because a failure OUTSIDE the loop
+ * still has to restore the loop's groups to their pre-loop values. A frame
+ * below the cut carries a trail mark from before the loop ran, so unwinding to
+ * it still rewinds everything the loop wrote — which is why discarding frames
+ * without rewinding the trail is safe rather than merely convenient. */
+static void vm_cut(Vm *v, int slot, const char *role)
+{
+    sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
+    vm_ev(v, VE_CUT, slot, 0, role);
+}
+
 /* [D46] the SIXTH primitive: writes no C (the rung was already selected by
  * the C written around this call), but records the SAME "one call, one
  * truth" way every other primitive does — sets the artifact-wide summary
@@ -781,10 +895,14 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  * already knows which rung THIS quantifier took — never a second pass over
  * the AST re-deciding it (that would risk drifting from vm_cursor_fits's
  * three real call sites, exactly what the 0b4b0be fix consolidated away). */
-static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, const char *role)
+static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, bool possessive,
+                         const char *role)
 {
-    v->rungs |= vm_rung_bit[k];
-    vm_ev(v, VE_RUNG, lblid, (int)k, role);
+    VmStratKind s = possessive ? VM_STRAT_POSSESSIVE : VM_STRAT_BACKTRACKING;
+    v->rungs  |= vm_rung_bit[k];
+    v->strats |= vm_strat_bit[s];
+    vm_ev(v, VE_RUNG,  lblid, (int)k, role);
+    vm_ev(v, VE_STRAT, lblid, (int)s, role);
 }
 
 /* Flat alternation as a CHAIN (§2.2 property 4, refined). The design's text
@@ -857,9 +975,27 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                           const CapOff *caps, int ncaps)
 {
     StrBuf *b = v->b;
-    int low = vm_slot_low(v, v->nlow++);
-    int retry = vm_label(v), again = vm_label(v);
+    /* [ENG-BREP] A POSSESSIFIED span loop owes NOTHING but the scan: no resume
+     * frame, no low-water slot and no trail entry of its own.
+     *
+     * The low-water slot exists so the RETREAT can tell "still above rmin"
+     * from "exhausted", and it has to be a trailed slot rather than a local
+     * because the frame that resumes the retreat may be popped long after the
+     * loop was left. With no retreat there is no such reader — and `pos` is
+     * still the loop's entry position at every point below, because the scan
+     * writes only `<p>_cur` and `pos` is not assigned until the loop commits.
+     * So the possessive path reads `pos` where the backtracking one reads
+     * `stv[low]`, allocates no slot, and writes no trail entry. vm_cost_rep
+     * and vm_count_slots carry the same branch; all three must agree or two
+     * live loops share one slot. */
+    const bool poss = a->possessive;
+    int low = poss ? -1 : vm_slot_low(v, v->nlow++);
+    int retry = poss ? -1 : vm_label(v), again = poss ? -1 : vm_label(v);
     long long lo_off = (long long)a->rmin * stride;
+    /* The loop's entry position, spelled for whichever of the two it is. */
+    char entrypos[32];
+    if (poss) snprintf(entrypos, sizeof entrypos, "(ptrdiff_t)pos");
+    else      snprintf(entrypos, sizeof entrypos, "stv[%d]", low);
 
     /* class ids first, so the pool is stable before any test is written */
     int *ci = arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
@@ -880,18 +1016,76 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     char bounds[32];
     if (a->rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->rmin);
     else             snprintf(bounds, sizeof bounds, "{%d,%d}", a->rmin, a->rmax);
-    const char *rung = vm_rolef(v, "span-loop cursor %s, stride %d, %s",
+    /* The PREFERENCE disappears when the quantifier is possessified, and that
+     * is the analysis's conclusion rather than a shortcut. On the exact-count
+     * arm there is one exit, so top and bottom of §2.3's chain are the same
+     * position. On the disjointness arm a greedy loop tops out by preference,
+     * and a LAZY one is FORCED to the same top: at any non-maximal exit the
+     * body could iterate again, so that byte is in FIRST(X), so by
+     * disjointness the follow cannot begin there — and the lazy conjunct
+     * (non-nullable remainder) is what rules out the match simply ENDING
+     * there instead. Both preferences therefore land on the maximal exit,
+     * which is what makes one emitted shape correct for both. */
+    const char *rung = vm_rolef(v, "span-loop cursor %s, stride %d, %s%s",
                                 bounds, stride,
-                                a->greedy ? "greedy" : "lazy");
+                                a->greedy ? "greedy" : "lazy",
+                                poss ? ", POSSESSIFIED (no frame, no giveback)"
+                                     : "");
     vm_lbl(v, entry, rung);
     /* [D46] this A_REP's own rung, reusing the SAME role text vm_lbl just
      * wrote — one description, two views (the PROGRAM section's label line
      * and the RUNGS section's per-quantifier entry), not two computations
      * of "what is this quantifier doing" that could disagree. */
-    vm_rung_mark(v, entry, VM_RUNG_CURSOR, rung);
+    vm_rung_mark(v, entry, VM_RUNG_CURSOR, poss, rung);
     /* The loop's ENTRY position, trailed. Both rungs derive their bounds from
-     * it: low-water is entry + stride*rmin, ceiling is entry + stride*rmax. */
-    vm_set(v, low, "(ptrdiff_t)pos", "span-loop low-water mark (loop entry pos)");
+     * it: low-water is entry + stride*rmin, ceiling is entry + stride*rmax.
+     * The possessive path reads `pos` for the same quantity and writes no
+     * slot at all — see the note at the top of this function. */
+    if (!poss)
+        vm_set(v, low, "(ptrdiff_t)pos",
+               "span-loop low-water mark (loop entry pos)");
+
+    if (poss) {
+        /* The scan, and then the commit. One straight line: consume to the
+         * furthest position the bound allows, refuse if that is short of
+         * rmin, publish the groups, take the continuation. Nothing here can
+         * be resumed, which is the whole point — the emitted C contains no
+         * label the loop could come back to. */
+        sb_puts(b, "    {\n");
+        if (a->rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
+        sb_printf(b, "        %s_cur = pos;\n", v->p);
+        sb_printf(b, "        while (%s_cur + %d <= n", v->p, stride);
+        if (a->rmax >= 0) sb_printf(b, " && it_ < %dUL", a->rmax);
+        sb_printf(b, "%s) { %s_cur += %d;", test, v->p, stride);
+        if (a->rmax >= 0) sb_puts(b, " it_++;");
+        sb_puts(b, " }\n    }\n");
+        sb_printf(b, "    if ((ptrdiff_t)%s_cur < %s + %lld) goto %s_fail;\n",
+                  v->p, entrypos, lo_off, v->p);
+        vm_ev(v, VE_NOTE, 0, 0,
+              "fewer than rmin iterations: the loop cannot be satisfied");
+        if (ncaps) {
+            sb_printf(b, "    if ((ptrdiff_t)%s_cur >= %s + %d) {\n",
+                      v->p, entrypos, stride);
+            for (int i = 0; i < ncaps; i++) {
+                char val[96];
+                snprintf(val, sizeof val, "(ptrdiff_t)(%s_cur - %d)", v->p,
+                         stride - caps[i].off);
+                vm_set(v, 2 * caps[i].group, val,
+                       vm_rolef(v, "group %d open, derived from the cursor",
+                                caps[i].group));
+                snprintf(val, sizeof val, "(ptrdiff_t)(%s_cur - %d)", v->p,
+                         stride - caps[i].off - caps[i].len);
+                vm_set(v, 2 * caps[i].group + 1, val,
+                       vm_rolef(v, "group %d close, derived from the cursor",
+                                caps[i].group));
+            }
+            sb_puts(b, "    }\n");
+        }
+        sb_printf(b, "    pos = %s_cur;\n", v->p);
+        vm_goto(v, next);
+        sb_free(&t);
+        return;
+    }
 
     if (a->greedy) {
         /* consume greedily to the furthest position */
@@ -1018,6 +1212,117 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
     vm_opt_chain(v, inner, body, count - 1, next, greedy);
 }
 
+/* [ENG-BREP] The possessified frames rung, bounded: `X{m,n}` after its `m`
+ * mandatory copies, with `count` optional copies left to run.
+ *
+ * The shape, and why it is not simply vm_opt_chain minus the pushes. In this
+ * VM a frame serves TWO purposes at an optional copy — resume when the
+ * CONTINUATION fails (retreat into the loop), and resume when the BODY fails
+ * (this copy cannot run, so exit the loop). Possessification kills the first
+ * and leaves the second completely alive: `(?:a|bc){0,4}d` still has to notice
+ * that neither branch matches and leave the loop. Deleting the push would
+ * break that, which is why this is a different emission rather than a smaller
+ * one.
+ *
+ * So exactly ONE loop frame is live at a time, whatever the count:
+ *
+ *     Lj:  CUT(mark)          <- the previous copy is committed; its frames,
+ *                                and its body's, are dead by the verdict
+ *          PUSH(exit, pos)    <- the only loop frame: if this copy's body
+ *                                fails, resume here with pos back at the
+ *                                start of the copy that failed
+ *          <body>  -> L(j+1)
+ *     L(count+1): CUT(mark); goto next     <- every copy taken
+ *     exit:       goto next                <- the pop already restored pos,
+ *                                             and left btn exactly at mark
+ *
+ * The body's OWN frames are not disturbed while it runs, which matters: a
+ * one-unambiguous body still needs them to FIND its match (`(?:a|bc)` on "bc"
+ * tries `a` first and backtracks). One-unambiguity says at most one branch can
+ * SUCCEED, not that the emitter guesses right — so the cut is at the copy
+ * boundary, where the previous body has already succeeded, and never inside
+ * one.
+ *
+ * The frame requirement is therefore `1 + body` instead of
+ * `(n-m) * (1 + body)`, and it no longer depends on the count at all. That is
+ * the §7 prediction about `rx_info`'s stamped ceiling, and vm_cost_rep carries
+ * the matching arithmetic. */
+static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
+                          int next, int mslot)
+{
+    int exitl = vm_label(v);
+    int cur = entry;
+
+    for (int j = 0; j < count; j++) {
+        int bentry = vm_label(v), after = vm_label(v);
+        vm_lbl(v, cur, vm_rolef(v, "possessified optional copy (%d remaining)",
+                                count - j));
+        vm_cut(v, mslot,
+               "cut: the previous copy is committed, its choice points are dead");
+        vm_push_at(v, exitl, "pos",
+                   "the loop's ONLY frame: this copy failing leaves the loop");
+        vm_goto(v, bentry);
+        vm_emit(v, bentry, body, after);
+        cur = after;
+    }
+
+    vm_lbl(v, cur, "possessified repeat: every copy taken");
+    vm_cut(v, mslot, "cut: the loop is complete and owns no live choice point");
+    vm_goto(v, next);
+
+    if (count > 0) {
+        vm_lbl(v, exitl, "possessified repeat: a copy could not run -- exit "
+                         "with the iterations that did");
+        /* The pop restored `pos` to this copy's start AND left the resume
+         * stack at exactly `mark`, because the frame it popped was the one
+         * this loop pushed at that depth. Nothing to undo. */
+        vm_goto(v, next);
+    } else {
+        /* X{m,m}: no optional copy, so nothing ever pushed `exitl`. The label
+         * is still emitted so the listing's label set matches the artifact's
+         * — vm_lbl is the only way to emit one, and a label the emitter
+         * allocated but never wrote would break that correspondence. */
+        vm_lbl(v, exitl, "possessified repeat: unreachable (exact count)");
+        vm_goto(v, next);
+    }
+}
+
+/* [ENG-BREP] The possessified frames rung, UNBOUNDED (`X{m,}`). Same one-frame
+ * discipline as the bounded chain, with the copies replaced by a real loop.
+ *
+ * NO EMPTY-ITERATION GUARD IS NEEDED, and that is structural rather than an
+ * omission. §3.3's guard exists to stop a NULLABLE body iterating forever;
+ * §2.2's rule refuses to possessify a nullable body at all, and the two
+ * nullability predicates are the same function computed twice — src/opt/
+ * possessify.c's Glushkov nullability (A_CLASS false, zero-width true, CAT
+ * and, ALT or, REP `|| rmin == 0`, A_CAP transparent) is `vm_nullable` above,
+ * arm for arm. So `a->possessive` on an unbounded repeat implies
+ * `!vm_nullable(a->l)`, every iteration consumes at least one byte, and the
+ * loop terminates on the subject rather than on a guard. */
+static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot)
+{
+    int bentry = vm_label(v), bend = vm_label(v), exitl = vm_label(v);
+
+    vm_lbl(v, entry, "possessified unbounded repeat: one frame for the whole "
+                     "loop, however many iterations run");
+    vm_cut(v, mslot,
+           "cut: the previous iteration is committed, its choice points are dead");
+    vm_push_at(v, exitl, "pos",
+               "the loop's ONLY frame: the iteration failing leaves the loop");
+    vm_goto(v, bentry);
+
+    vm_emit(v, bentry, body, bend);
+
+    vm_lbl(v, bend, "possessified unbounded repeat: one iteration done");
+    vm_goto(v, entry);
+
+    vm_lbl(v, exitl, "possessified unbounded repeat: the exit");
+    /* No cut here: the frame this loop pushed sat at depth `mark`, so popping
+     * it left the stack there already, and the body's frames above it were
+     * popped on the way. */
+    vm_goto(v, next);
+}
+
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
@@ -1046,11 +1351,15 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         bool bounded = a->rmax >= 0;
         if (bounded) snprintf(fbounds, sizeof fbounds, "{%d,%d}", a->rmin, a->rmax);
         else         snprintf(fbounds, sizeof fbounds, "{%d,}", a->rmin);
-        const char *frole = vm_rolef(v, "frames rung, %s %s, %s",
+        const char *frole = vm_rolef(v, "frames rung, %s %s, %s%s",
                                      bounded ? "bounded" : "unbounded", fbounds,
-                                     a->greedy ? "greedy" : "lazy");
+                                     a->greedy ? "greedy" : "lazy",
+                                     a->possessive
+                                       ? ", POSSESSIFIED (one frame for the"
+                                         " whole loop, no giveback)" : "");
         vm_rung_mark(v, entry, bounded ? VM_RUNG_FRAMES_BOUNDED
-                                        : VM_RUNG_FRAMES_UNBOUNDED, frole);
+                                        : VM_RUNG_FRAMES_UNBOUNDED,
+                     a->possessive, frole);
     }
 
     /* ---- the frames rung ------------------------------------------------
@@ -1064,6 +1373,33 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * not, because there IS no "continuation" test at a bounded count — there
      * is just the next copy. */
     int cur = entry;
+
+    /* [ENG-BREP] The possessified frames rung takes the SAME mandatory copies
+     * and then a different tail. The cut mark is recorded FIRST, before the
+     * mandatory copies rather than after them, so the cut at the first
+     * optional copy also discards the mandatory bodies' own dead frames — the
+     * loop is atomic as a whole, which is what "possessive" means. Leaving
+     * them would also be correct (the verdict says they are dead, so resuming
+     * one cannot change the answer); discarding them is simply the win. */
+    if (a->possessive) {
+        int mslot = vm_slot_mark(v, v->nmark++);
+        int body0 = vm_label(v);
+        vm_lbl(v, entry, "possessified repeat: record the resume-stack depth "
+                         "to cut back to");
+        vm_set(v, mslot, "(ptrdiff_t)w->btn",
+               "possessive cut mark (resume-stack depth at loop entry)");
+        vm_goto(v, body0);
+        cur = body0;
+        for (int i = 0; i < a->rmin; i++) {
+            int nx = vm_label(v);
+            vm_emit(v, cur, a->l, nx);
+            cur = nx;
+        }
+        if (a->rmax >= 0) vm_poss_chain(v, cur, a->l, a->rmax - a->rmin, next, mslot);
+        else              vm_poss_star(v, cur, a->l, next, mslot);
+        return;
+    }
+
     for (int i = 0; i < a->rmin; i++) {
         int nx = vm_label(v);
         vm_emit(v, cur, a->l, nx);
@@ -1275,7 +1611,7 @@ static void vm_cls_describe(Vm *v, StrBuf *o, int ci)
 
 typedef struct {
     long long budget, bt_frames, trail_frames, ceiling;
-    int       nstate, nguard, nlow, ncaps;
+    int       nstate, nguard, nlow, nmark, ncaps;
     bool      has_budget, prefilter;
     const char *why;
 } VmStamp;
@@ -1299,6 +1635,18 @@ static void vm_rungs_describe(unsigned mask, StrBuf *o)
         if (!(mask & vm_rung_bit[k])) continue;
         if (!first) sb_puts(o, ", ");
         sb_puts(o, vm_rung_kindname[k]);
+        first = false;
+    }
+}
+
+static void vm_strats_describe(unsigned mask, StrBuf *o)
+{
+    if (!mask) { sb_puts(o, "none"); return; }
+    bool first = true;
+    for (int k = 0; k < 2; k++) {
+        if (!(mask & vm_strat_bit[k])) continue;
+        if (!first) sb_puts(o, ", ");
+        sb_puts(o, vm_strat_kindname[k]);
         first = false;
     }
 }
@@ -1338,6 +1686,15 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     vm_rungs_describe(v->rungs, o);
     sb_puts(o, " -- see the RUNGS section below for which quantifier took"
                " which\n");
+    /* [ENG-BREP] the ladder's first rung, summarized the same way and for the
+     * same reason. "possessive" appearing here means at least one quantifier
+     * needs no backtracking machinery at all; "backtracking" means at least
+     * one still does. Both appearing is the mixed artifact a scalar would
+     * misreport. */
+    sb_puts(o, "; strategies   ");
+    vm_strats_describe(v->strats, o);
+    sb_puts(o, " -- see the STRATEGIES section below for which quantifier"
+               " took which\n");
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes
@@ -1395,6 +1752,10 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     for (int i = 0; i < v->nlow; i++)
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_low(v, i),
                   "span-loop low-water", "the loop's entry position (S2.5)");
+    for (int i = 0; i < v->nmark; i++)
+        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_mark(v, i),
+                  "possessive cut mark",
+                  "resume-stack depth at loop entry (eng_brep_design.md S2)");
 
     /* ---- RUNGS -----------------------------------------------------------
      * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
@@ -1416,6 +1777,27 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         if (n == 0)
             sb_puts(o, "  (none: no quantifier in this program consulted the"
                        " rung ladder at all)\n");
+    }
+
+    /* ---- STRATEGIES ------------------------------------------------------
+     * [ENG-BREP] the per-quantifier possessification verdict, as ACTED ON:
+     * every row is a VE_STRAT event appended by the same vm_rung_mark() call
+     * that decided the emitted shape, so a row saying "possessive" and an
+     * artifact that emitted a resume frame for that quantifier are not two
+     * things that could disagree — there is one call and it did both. */
+    sb_puts(o, "\nSTRATEGIES (eng_brep_design.md S2; D47.3's per-quantifier"
+               " stamp)\n");
+    {
+        int n = 0;
+        for (int i = 0; i < v->nev; i++) {
+            if (v->ev[i].k != VE_STRAT) continue;
+            n++;
+            sb_printf(o, "  at L%-6d %-14s %s\n", v->ev[i].a,
+                      vm_strat_kindname[v->ev[i].b],
+                      v->ev[i].role ? v->ev[i].role : "");
+        }
+        if (n == 0)
+            sb_puts(o, "  (none: this program has no quantifier to possessify)\n");
     }
 
     /* ---- PROGRAM -------------------------------------------------------*/
@@ -1469,10 +1851,21 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         case VE_ISLAND: case VE_CALLOUT:
             break;
         case VE_RUNG:
-            /* the RUNGS section above is this event's own view; PROGRAM
-             * stays a straight-line trace of what actually executes, and a
-             * rung selection writes no C of its own to trace. */
+        case VE_STRAT:
+            /* the RUNGS and STRATEGIES sections above are these events' own
+             * views; PROGRAM stays a straight-line trace of what actually
+             * executes, and neither a rung nor a strategy selection writes C
+             * of its own to trace. */
             break;
+        case VE_CUT: {
+            /* [ENG-BREP] this one DOES write C, so unlike the two above it
+             * belongs in the trace. */
+            char slot[32];
+            snprintf(slot, sizeof slot, "frames <- stv[%d]", e->a);
+            sb_printf(o, "         CUT     %-28s ; %s\n", slot,
+                      e->role ? e->role : "commit: discard the loop's frames");
+            break;
+        }
         }
     }
     sb_puts(o, "  accept   ; return pos - ctx->pos; the capture slots at this"
@@ -1570,9 +1963,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                  "alternation so the body compiles to a span loop instead",
                  v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
+    const int nmark_total = v.nmark;   /* [ENG-BREP] possessive cut marks */
     v.nguard_total = nguard_total;
-    v.nguard = v.nlow = 0;
-    const int nstate = 2 * ncaps + nguard_total + nlow_total;
+    v.nlow_total   = nlow_total;
+    v.nmark_total  = nmark_total;
+    v.nguard = v.nlow = v.nmark = 0;
+    const int nstate = 2 * ncaps + nguard_total + nlow_total + nmark_total;
 
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root);
@@ -1696,6 +2092,20 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_BOUNDED   0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_BOUNDED]);
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_UNBOUNDED 0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_UNBOUNDED]);
     sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
+    /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
+     * first rung, in the same shape and the same place and for the same
+     * reason: possessification is decided PER A_REP, so an artifact whose
+     * quantifiers differ needs a mask.
+     *
+     * It also carries D47.3's do-or-die half. `-fno-possessify` denies the
+     * rewrite, and the way a check knows the denial was honoured is that
+     * <PREFIX>_VM_STRAT_POSSESSIVE is absent from this value — not that the
+     * flag was passed. A denied strategy appearing in a stamp is a hard test
+     * failure, which is testable precisely because the stamp is built from
+     * `a->possessive` at the point the emitter acts on it. */
+    sb_printf(c, "#define %s_VM_STRAT_POSSESSIVE   0x%xu\n", v.up, vm_strat_bit[VM_STRAT_POSSESSIVE]);
+    sb_printf(c, "#define %s_VM_STRAT_BACKTRACKING 0x%xu\n", v.up, vm_strat_bit[VM_STRAT_BACKTRACKING]);
+    sb_printf(c, "#define %s_VM_STRATS 0x%xu\n", v.up, v.strats);
     if (v.tracing) {
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
@@ -1753,8 +2163,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "        w->bt[w->btn].pos = (p_);                             \\\n"
             "        w->bt[w->btn].mark = w->trn;                          \\\n"
             "        w->btn++;                                             \\\n"
+            "    } while (0)\n"
+            /* [ENG-BREP] the possessive CUT. No trail rewind, deliberately —
+             * see vm_cut()'s comment: the frames are dead, the capture writes
+             * they would have rewound are not. */
+            "#define %s_CUT(slot_) do {                                   \\\n"
+            "        w->btn = (unsigned)stv[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up);
+            v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up);
     } else {
         /* The traced forms. Same mechanism, same order of operations, one
          * fprintf each — deliberately NOT a separate implementation: a traced
@@ -1782,8 +2198,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                         " (trail %%u)\\n\",                                 \\\n"
             "                w->btn, (id_), (size_t)(p_), w->trn);         \\\n"
             "        w->btn++;                                             \\\n"
+            "    } while (0)\n"
+            "#define %s_CUT(slot_) do {                                   \\\n"
+            "        fprintf(stderr, \"[%s] cut   %%u -> %%td frame(s)\\n\",   \\\n"
+            "                w->btn, stv[(slot_)]);                        \\\n"
+            "        w->btn = (unsigned)stv[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v.up, v.up, v.up, v.up, v.p, v.up, v.up, v.up, v.up, v.p);
+            v.up, v.up, v.up, v.up, v.p, v.up, v.up, v.up, v.up, v.p,
+            v.up, v.p);
     }
 
     /* The per-search reset (§2.4): stv is initialised to UNSET ONCE per
@@ -2079,6 +2501,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         st.nstate = nstate;
         st.nguard = nguard_total;
         st.nlow = nlow_total;
+        st.nmark = nmark_total;
         st.ncaps = ncaps;
         st.has_budget = has_budget;
         st.prefilter = prefn != NULL;

@@ -90,6 +90,23 @@ struct Ast {
      * That measured boundary is what this flag marks, and both sides of it
      * are pinned in tests/reject/. */
     bool     not_repeatable;
+    /* [ENG-BREP] POSSESSIFIED (A_REP only). Set by src/opt/possessify.c when
+     * the eng_brep_design.md §2.2 rule proves that no retreat into this loop
+     * can ever produce a match the PREFERRED path does not, so the emitter
+     * owes it no resume frames and no giveback.
+     *
+     * IT IS AN ANNOTATION, NOT A SPELLING. `a{2,4}` and a possessified
+     * `a{2,4}` match the same strings by construction — that is the whole
+     * claim — so every consumer other than src/gen/emit_vm.c ignores this
+     * field, exactly as they ignore A_CAP. In particular src/ir/nfa.c lowers
+     * A_REP by replication regardless (§2.8), which is why the prefilter DFA
+     * is unchanged and why possessification is a run-time and emitted-size
+     * win rather than a compiler-time one.
+     *
+     * The arena zeroes, so a node nothing analysed keeps its machinery — the
+     * sound default, and the reason `-fno-possessify` is byte-identity-safe:
+     * denying the pass leaves every node in the state it was born in. */
+    bool     possessive;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -217,6 +234,24 @@ typedef struct {
         bool    caseless;   /* i — the OS-1/D23 fold, applied at class
                              * construction time (char_node/from_bits) */
         bool    dotall;     /* s — `.` keeps 0x0A instead of clearing it */
+        /* m — `^`/`$` match at every newline rather than only at the subject
+         * ends. NO WRITER TODAY: pcrec refuses `(?m)` and has no `-m`, so
+         * this is false for every compile that reaches the analysis, and
+         * module `assertions` is the writer that makes it live.
+         *
+         * It exists as a FIELD rather than as a comment because D47.5 rules
+         * the `$`-follow exemption's gate a LIVE CHECK. eng_brep_design.md
+         * §2.5 measures `$` in a quantifier's follow safe at 0/720 diverging
+         * cells and UNSAFE at 180/720 under `(?m)` — the upward-closure
+         * argument that makes `$` exempt ("no retreat can reach a position
+         * satisfying `$` from further left") collapses per-line when `$` is
+         * true before every newline. A comment saying "pcrec does not support
+         * (?m) yet" is exactly the kind of fact that stops being true without
+         * anyone revisiting the analysis; src/opt/possessify.c reads THIS,
+         * and the module that lands `m` inherits the test obligation D47.5
+         * attaches (a `(?m)` pattern whose `$`-follow quantifier must NOT
+         * possessify). */
+        bool    multiline;
         bool    ungreedy;   /* U — quantifier greed default inverted; a
                              * trailing `?` then RE-inverts. NOT reset by ^ */
         bool    nocap;      /* n — plain `(` stops counting as a capture */
@@ -1308,7 +1343,23 @@ void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job
 /* engine_m4.md §5.1: per-pattern engine selection as a PASS, run after parse
  * and before machine construction. Fills cx->job->fit, and ctx_fails with the
  * §5.6/D44.6 refusal when --engine conflicts with what the pattern needs. */
-void pcrec_select_engine(Ctx *cx, const Ast *root);  /* src/opt/select_engine.c */
+void pcrec_select_engine(Ctx *cx, Ast *root);        /* src/opt/select_engine.c */
+
+/* ---- [ENG-BREP] possessification (docs/design/eng_brep_design.md §2) ---- */
+
+/* The §2.2 rule as a pass: mark every A_REP for which no retreat into the loop
+ * can produce a match the preferred path does not. A REWRITE, not an analysis
+ * that returns a verdict (§2.8) — it does not observe that the loop needs no
+ * frames, it MAKES the quantifier one that needs none, by setting Ast.possessive
+ * for src/gen/emit_vm.c to act on.
+ *
+ * Returns the number of quantifiers it newly marked, which is what makes it
+ * MONOTONE and lets a caller drive it to a fixpoint: a second call over the
+ * same tree marks nothing and returns 0.
+ *
+ * Runs only for a VM artifact and only when the pass is allowed — see the call
+ * site in pcrec_select_engine, which owns both conditions. */
+int  pcrec_possessify(Ctx *cx, Ast *root);           /* src/opt/possessify.c */
 
 /* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
