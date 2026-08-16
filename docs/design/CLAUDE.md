@@ -272,6 +272,17 @@ append-only or historical records.
   different rungs (corrected mid-lane from an initial scalar draft) — the
   observability half only, landed as this document's close obligation.
   Rung FORCING (D46's controllability half) has no producer yet.
+  **ANNOTATED 2026-08-15/16 (R24 C-F1, by the [ENG-BREP] lane):** §6.3's
+  disjoint-follow auto-possessification bullet, §6.4's "designed, built M4.6"
+  status row and §2.5's `z(ab)*y` aside all stated the disjoint-follow-ONLY
+  possessification rule that `eng_brep_design.md` §2.4 measured UNSOUND (117
+  counterexamples). All three are annotated in place — house style, not
+  rewritten — pointing at that note's §2.2 for the repaired rule
+  (unique-iteration + non-nullable + disjoint-or-exact, with a lazy-only
+  non-nullable-remainder conjunct). The `z(ab)*y` example itself SURVIVES the
+  correction; the general claim does not. The DELIVERY seam (§5.2's
+  `discharge` hook) and the M4.6 schedule are unchanged — only the analysis
+  behind the hook is bigger than §6.3 assumed.
 - `k18_memo_design.md` — **BUILT 2026-08-15 (k18-rewrite lane); PROPOSED,
   AMENDED PER R23 the same day** (K18 design-first lane): the
   repair of K18, the second live tier-1 DFA priority miscompile — written
@@ -379,8 +390,46 @@ append-only or historical records.
   explicit termination argument (the counter's strict increase, not subject
   progress, is what makes E-2's no-guard-for-bounded ruling safe — checked in
   the emitter's listing and against python3 `re`, 0 divergences). §8 lists
-  nine things NOT measured, headed by the counter loop itself, which does not
-  exist. Unpaneled. Measurements: `eng_brep_measurements/`.
+  ELEVEN things NOT measured, headed by the counter loop itself, which does
+  not exist. Measurements: `eng_brep_measurements/`.
+  **PANELED R24 (2026-08-15/16, `../dev/reviews/2026-08-15-r24-eng-brep.md`):
+  the central result HELD and was STRENGTHENED; one design claim was REFUTED
+  and five narrowed.** The repaired possessification rule is sound for GREEDY
+  quantifiers against **libpcre2** as well as python (0 counterexamples over
+  the full 5,016 × 260 family, identical population — closing §8 item 6's own
+  disclosed gap from outside), and §2.2's transitive-FOLLOW line — which §8
+  nominated as the most likely hiding place for a soundness bug — survived a
+  42,336-pair attack at 0 divergences with failing-direction controls. What
+  did NOT survive is the note's own **LAZY** extension: greedy, lazy and
+  possessive do not agree on the span when the remainder is NULLABLE (316
+  cells, both oracles; `a{1,3}?` on "aaaa" is (0,1) lazy, (0,3) possessive),
+  because the disjointness argument's follow test is vacuous there and a lazy
+  loop stops at the bottom of the exit chain where a greedy one tops out. The
+  rule now carries a lazy-only non-nullable-remainder conjunct; the lane's
+  probe structurally could not see it (a lazy quantifier has no possessive
+  spelling, so its helper returned `None` and half the design's claim left the
+  differential silently) and now sweeps both preference families, with a
+  committed failing-direction control reproducing the 316. No live
+  miscompile — nothing is implemented. Five narrowings applied: `$` in the
+  follow promoted to MEASURED-WITH-GATE (0/720 safe, 180/720 under `(?m)`, so
+  the gate must be a LIVE check); §3.4's capture derivation regains the
+  ZERO-ITERATION clause the prose dropped (42% of its own validated
+  population); §2.7's "wrong in the right direction" qualified to CATEGORIES,
+  with the structural reason pcrec is exact for caseless (`cls_casefold` folds
+  at parse time); §6's instrument disclosed as span/python-only, with the
+  panel's captures-aware three-way rebuild confirming it at 15,600 cells; and
+  U9 cited where the oracle choice matters. Four measurement discrepancies in
+  the rung census all had ONE cause, recorded in §10.1: an uncommitted
+  `sort -u` pipeline under a UTF-8 locale, whose collation merges strings
+  differing only in punctuation — close to a worst case for a corpus of
+  regexes — so every "distinct" figure was an undercount (11 → 15,
+  311/111/96 → 398/191/148). Re-derived by two new committed scripts
+  (`census_rungs.py`, `probe_cell33.sh`); the latter also found, on
+  re-measurement rather than from the panel, that §3.3's "cursor rung" row had
+  been measuring the DFA (`(?:ab){0,N}y` is non-capturing, so it requests no
+  captures and never reaches the VM). `engine_m4.md` §6.3/§6.4/§2.5 are
+  annotated in place (C-F1) — they still stated the refuted
+  disjoint-follow-only rule as "designed, built M4.6".
 - `eng_brep_measurements/` — the ENG-BREP lane's probes, scratch-compiler
   builder and archived outputs; see its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
