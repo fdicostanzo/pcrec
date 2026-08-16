@@ -453,10 +453,12 @@ append-only or historical records.
   separate from the three lane directories above for the same
   never-confuse-the-lanes reason those are separate. Its note is DESIGN-FIRST
   and PROPOSED — no engine code exists. **PANELED R25 (2026-08-16,
-  `../dev/reviews/2026-08-16-r25-counterk.md`): four blockers and nine majors,
-  all applied in place; two questions left with Frank (F-1, whether K may vary
-  per quantifier at all, which `eng_brep_design.md` §4.5 forbids and the note
-  had self-authorized; F-2, the replacement step charge and its SHIFT).** Read
+  `../dev/reviews/2026-08-16-r25-counterk.md`): four blockers, nine majors and
+  a second adversarial pass (findings 17-25) — all applied in place. F-1 is
+  RULED (D47 ADDENDUM: strict §4.5, K stays ONE per-artifact constant and the
+  CLAMP moves whole to plan row [ENG-CLAMP], withdrawing one acceptance cell
+  and leaving the rest of the rung untouched). F-2 is WITHDRAWN and returning
+  measured — the second pass blocked the note's replacement step charge too.** Read
   the note's PANEL OUTCOME block before any section. Claims that carry it, and
   where the panel moved them: the counter must be a TRAILED `stv` slot, but for
   a sharper reason than the first draft gave — a plain local is a correctness
@@ -474,9 +476,15 @@ append-only or historical records.
   ceiling (E7); and **the owed E-5 one-step-per-loop-ENTRY
   charge is MEASURED NOT TO WORK** — entries and steps are the same number at
   every size (10,001 / 50,001 / 100,001 against 10,001 / 50,001 / 100,001), so
-  it halves a crossover that is three orders of magnitude out, and §7.3
-  replaces it with `iterations >> SHIFT` charged at the exit of loops that push
-  no per-iteration frame. The same measurement establishes that the whole debt
+  it halves a crossover that is three orders of magnitude out — **and its
+  replacement was refuted in turn**, because that rule's predicate keyed on
+  PUSHES while its justification keyed on POPS and `RX_CUT` charges nothing,
+  so the revdet scan, `vm_poss_chain` and counter-K's own possessive arm all
+  sat in the excluded class of a rule advertising strategy-invariance. The
+  redesign charges what the fail label does not see, at the CUT and at
+  frameless scan completion, in exact work UNITS rather than a shifted
+  quantity — measured at 8x more work uncharged than charged on the
+  push-and-cut shapes. The same measurement establishes that the whole debt
   is reachable only on `--engine=vm`: the DFA prefilter means the VM is never
   entered on the shipped path (0 steps, 0.003 s where `--engine=vm` takes
   >120 s). Also records

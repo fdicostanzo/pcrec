@@ -25,18 +25,21 @@ cannot be re-run is not a measurement.
   level and dies on the depth-shaped vector nesting would need, and the first
   draft conflated the two); a counter LOOP is preference-equivalent to
   `vm_opt_chain`'s NESTED optional chain and not to a chained one (§3.3, whose
-  witness `(?:ab|a){0,2}?b` is already a measured defect in `nfa.c`); K needs a
-  CLAMP or it does nothing at all for K22, and the clamp needs a BOTTOM-UP
-  subtree pass rather than the ancestors-only product the first draft specified
-  (§4.2, proved by probe); the rung shrinks SIZE and not FRAMES, so the endgame
-  cell trades a compile-time refusal for a ~512-byte runtime ceiling (§3.5);
-  and the owed E-5 step charge is REFUTED — see §7, which started as a cost
-  estimate for it and became the measurement that killed it.
+  witness `(?:ab|a){0,2}?b` is already a measured defect in `nfa.c`); the rung shrinks SIZE and not
+  FRAMES, so the endgame cell trades a compile-time refusal for a ~512-byte
+  runtime ceiling (§3.5); and **§7 has refuted two step-charge proposals, the
+  note's own both times** — start there, since it is the section most likely
+  to move again.
 
-  Two questions are open with Frank and the sections say so: F-1 (may K vary
-  per quantifier at all — `../eng_brep_design.md` §4.5 says no and this note
-  self-authorized the exception) gates §4.2; F-2 (§7.3's replacement charge and
-  its SHIFT) gates §7.3.
+  **F-1 is RULED** (D47 ADDENDUM): strict §4.5, K stays one per-artifact
+  constant, and the CLAMP moved whole to plan row [ENG-CLAMP]. §4.2 is now the
+  refutation plus a pointer; acceptance cell 2 is withdrawn; `clamp_arith.py`
+  stays here as that row's inherited evidence. **F-2 is WITHDRAWN and
+  returning measured**: the engine critic's pass (findings 17-25) blocked the
+  first replacement too, because its predicate keyed on PUSHES while its
+  justification keyed on POPS and `RX_CUT` charges nothing — so the revdet
+  scan, `vm_poss_chain` and counter-K's own possessive arm were all excluded
+  from a rule advertising strategy-invariance. §7.4 is the redesign.
 
 ## Probes
 
@@ -55,28 +58,38 @@ cannot be re-run is not a measurement.
   as "counter-K already works"; `(a|ab)` is the body that declines both
   earlier rungs.
 
-- **`probes/step_charge.sh`** — the note's §7 measurement, and the one that
-  REFUTED the fix it was written to size. It counts, in the EMITTED ARTIFACT
-  and at the two real charge sites rather than at proxies for them, what the
-  budget is charged today (`rx_fail:` resumptions) beside what the owed
-  E-5 entry charge would ADD (visits to the label `--emit-ir`'s RUNGS rows
-  name for each quantifier). They are the SAME NUMBER at every size, which is
-  the refutation. Three blocks: A what the charge would cost on legitimate
-  linear work, B the blind spot with `-fno-possessify` as the control that
-  shows where the number needs to land, C whether the pathology is reachable
-  on the DEFAULT path at all (it is not).
+- **`probes/step_charge.sh`** — the note's §7 measurement, and the probe that
+  has now refuted TWO proposals, the note's own both times. It counts three
+  populations at their REAL sites in the emitted artifact: `rx_fail:`
+  resumptions (charged today), frames discarded by a CUT, and frameless
+  span-loop iterations. The last two are the uncharged work, and the rule §7.4
+  proposes is defined by exactly them.
 
-  Two instrument notes worth keeping. The run budget is raised to 10^12 and
-  the DEFAULT budget applied on paper afterwards, because an artifact that
-  gives up early UNDERCOUNTS the thing being counted. And a DFA-only artifact
-  legitimately has no quantifier rows and no fail label, so the probe reports
-  zero there rather than calling its own instrumentation broken — while any
-  OTHER count mismatch is a hard failure, since a probe that silently
-  instruments nothing is the check-design failure this project has recorded
-  twice.
+  **Four instrument lessons, each of which produced a wrong reading first:**
+  (1) the run budget is raised to 10^12 and the default applied on paper
+  afterwards, because an artifact that gives up early UNDERCOUNTS the thing
+  being counted; (2) THERE ARE TWO SPELLINGS OF A CUT — the `RX_CUT` macro and
+  revdet's direct `w->btn = rx_rvN_mk` — and instrumenting only the macro
+  reported a confident zero for revdet; (3) the B2 witnesses must have a loop
+  REACHABLE AT EVERY START POSITION, and the first draft's `(x)`-prefixed
+  patterns never matched their subject, so every row read zero; (4) the
+  `sites` column reports how many anchors were instrumented, so "0 discarded"
+  is distinguishable from "0 instrumented", which is the distinction that
+  produced (2) and (3).
 
-- **`probes/clamp_arith.py`** — §4.2's clamp, PROVED ARITHMETICALLY before the
-  code exists, which R25 E1 required before the design could be accepted. It
+  Round 1's blindness is the standing lesson: its single shape `([a-z]+)9` is
+  the possessified CURSOR rung, the one genuinely frameless member of the
+  class, so the boundary the rule turned on was invisible to the instrument
+  that priced the rule.
+
+- **`probes/clamp_arith.py`** — the clamp, PROVED ARITHMETICALLY before the
+  code exists (R25 E1 required this before acceptance). **Kept here after the
+  F-1 ruling moved the clamp to plan row [ENG-CLAMP]**: it is that row's
+  inherited evidence, and it carries the two results the lane established
+  before the deferral — the mechanism is a BOTTOM-UP subtree product (the
+  ancestors-only one parks the K22 tower at 2^17 and still refuses), and the
+  PRODUCT rule is right where the SHAPE rule over-clamps `(a(b|c)?){0,4000}`.
+  It
   models the emitted-copy count and the nesting-path product rather than
   compiling, because the pass does not exist and a compile today would measure
   replication. Reads `PCREC_MAX_*` out of `limits.h` rather than copying the

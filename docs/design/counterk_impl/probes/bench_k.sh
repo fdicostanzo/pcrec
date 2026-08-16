@@ -57,6 +57,78 @@
 # is never printed as if it were a real measurement -- a silently wrong
 # subject makes every number meaningless.
 #
+# PER-BODY-KIND CURVES (added per Frank, informed by studies/simd1 -- see the
+# hardware caveat below). Rows are grouped and tagged by BODY KIND ("kind"
+# column, first on the line) rather than merged into one population, because
+# simd1 S13's haystack-size tiering shows the same shape of fact for a
+# different axis: the profitable strategy (few-constant filter vs full chain
+# vs unrolling) has a KNEE that moves with the shape of the problem, not just
+# its size, and a strategy picked from one shape's knee silently mis-serves
+# another. A future SIMD-META work item needs to know, per bounded-repeat
+# body, whether ITS knee was unroll-limited or engine-limited -- exactly the
+# distinction the merged single number threw away. cand_alt.c's ~L164 note
+# ("the class branch is not special ... only the way the mask is computed
+# differs") is the same lesson from the other side: composing body shapes
+# into one lane hides which one is doing the work.
+#
+# Three kinds, each verified against the constraint below with
+# `--engine=vm --emit-ir` (grep the RUNGS section / RX_VM_RUNGS):
+#   - single class        : one character class, capture-wrapped for routing.
+#   - alternation          : a top-level (X|Y) body.
+#   - group-with-capture   : a body whose capturing content is a NESTED group
+#                             (optional or itself alternating), not a bare
+#                             top-level alternation.
+#
+# CONSTRAINT, why it matters, and the finding it produced: a body must be
+# capture-bearing (or it never reaches the VM at all) AND must stamp
+# VM_RUNGS 0x2 (frames-bounded) -- a body taken by another rung measures
+# THAT rung under counter-K's name. Checked 2026-08-16 with
+# `--engine=vm -o g.c -- '<body>{0,N}c'` + `grep _VM_RUNGS g.c` at
+# N in {1, 16, 4000}:
+#   - alternation and group-with-capture bodies below: RX_VM_RUNGS 0x2 at
+#     every N checked (frames-bounded, as intended).
+#   - single class: `([a-c]){0,N}c` stamps RX_VM_RUNGS 0x1 -- the CURSOR
+#     rung -- at every N checked, NOT 0x2. THIS IS A FINDING, not a gap in
+#     this script: a bounded single character class has only one way to
+#     match, so rung-select routes it to the cheaper deterministic cursor
+#     rung before counter-K is ever a candidate. The single-class BODY KIND
+#     IS THEREFORE NOT IN COUNTER-K'S POPULATION AT ALL. No cells run for
+#     it below; the sweep prints a labeled, empty "single-class" section
+#     saying so instead of substituting a body that would silently measure
+#     the cursor rung under this kind's name.
+#
+# ONE PRAGMA COMPARISON CELL (added per Frank). Compares a K=1 counter loop
+# built with `#pragma GCC unroll N` against manual K=8 emission -- see
+# run_pragma_cell below. Neither `--unroll` nor `-fno-counter` exists in the
+# compiler yet, so the cell CANNOT run today; it is written out in full and
+# gated on the same have_unroll capability probe as the rest of the K axis,
+# printing a "waiting on --unroll" line (matching the existing K-axis INERT
+# banner) until the flag lands, at which point it runs unmodified.
+#
+# EXPECTATION (BELIEVED -- house claim-marking style STRUCTURAL / MEASURED /
+# BELIEVED; informed by studies/simd1 S8's codegen lesson, not measured here):
+# the pragma is expected to FAIL to match manual K=8 for the FRAMES-BEARING
+# arm, because the emitted loop body contains computed-goto resume labels
+# that gcc's unroller will not cross -- simd1 S8's own finding is that gcc
+# will not specialize/unroll through indirection it cannot see through
+# without being shown explicit code, and a computed-goto resume point is the
+# same kind of opacity. It MAY work for a frameless arm, where no such label
+# exists in the loop body -- though this bench's body population is, by the
+# constraint above, entirely frames-bearing (VM_RUNGS 0x2), so no frameless
+# candidate exists here to exercise that branch; it is left as a written,
+# reachable code path for whenever one does. If the pragma ever DOES match
+# manual unrolling for some arm, that arm's K machinery can shrink to a
+# compiler hint (simd1 S8's own fallback order: emit explicit code first,
+# trust `#pragma GCC unroll` / flattening only where verified with objdump --
+# a verification this cell does not yet perform).
+#
+# HARDWARE CAVEAT (D12): every studies/simd1 number cited above (or anywhere
+# in this file) is Zen 1 hardware (AMD Ryzen 5 1600, GCC 15.2, -O3 -mavx2)
+# and MUST BE RE-MEASURED before any load-bearing use in this project. The
+# study is a HYPOTHESIS SOURCE ONLY here -- never a citable measurement --
+# and nothing above cites a simd1 NUMBER as evidence, only its qualitative
+# findings (knees vary by shape; gcc needs explicit code, not indirection).
+#
 # Usage: bench_k.sh [--full]
 # Env:   PCREC (default build/pcrec), CC (default cc), CFLAGS_OPT (default -O2),
 #        TRIALS (default 3), TIMEOUT (default 300)
@@ -119,6 +191,32 @@ declare -A BODY_TAIL=(
     ["((a)|ab|abc|abcd|abcde)"]="c"
     ["((a)|a(b|c))"]="c"
 )
+
+# BODY_KIND: which of the three curves (see header) each body belongs to.
+# "alt"   = top-level (X|Y), no nested capturing group beyond the outer one.
+# "group" = the capturing content is a NESTED group (optional, or itself
+#           alternating inside one branch) -- "((a)|a(b|c))" is the body the
+#           header above at the DROPPED-body note kept for exactly this
+#           "group inside an alternation" shape, verified VM_RUNGS 0x2.
+# "class" has no entries: no single-class body stamps 0x2 (see header finding);
+# the sweep prints its section as an explicit, empty, explained exclusion.
+declare -A BODY_KIND=(
+    ["((a)|ab)"]="alt"
+    ["((ab)|b)"]="alt"
+    ["(a(b|c)?)"]="group"
+    ["((a)|ab|abc|abcd|abcde)"]="alt"
+    ["((a)|a(b|c))"]="group"
+)
+KIND_ORDER="class alt group"
+declare -A KIND_LABEL=(
+    ["class"]="single-class"
+    ["alt"]="alternation"
+    ["group"]="group-with-capture"
+)
+# The single-class probe body and its measured stamp, cited by the header
+# finding and printed again at the section banner below so the claim is
+# re-checkable from the script's own output, not just its comment.
+CLASS_PROBE_BODY='([a-c])'
 
 # ---- capability probe: is there a rung to bench? --------------------------
 have_unroll=0
@@ -233,19 +331,21 @@ int main(int argc, char **argv)
 }
 EOF
 
-# run_cell body n kshow uflag
+# run_cell kind body n kshow uflag
 # Compile-time metrics on the emit-main artifact (unchanged from before), then
 # -- when that succeeds -- a second, library-mode artifact + the throughput
 # driver above, run once per subject regime and validated before its number
-# is trusted.
+# is trusted. `kind` (see BODY_KIND above) tags every printed row so the
+# three body-kind curves stay separable in the raw output, not just in the
+# section banners.
 run_cell () {
-    body=$1; n=$2; kshow=$3; uflag=$4
+    kind=$1; body=$2; n=$3; kshow=$4; uflag=$5
     pat="${body}{0,${n}}c"
     t0=$(date +%s.%N)
     # shellcheck disable=SC2086
     if ! timeout "$TMO" "$PCREC" -p rx --engine=vm $uflag --emit-main \
              -o "$OUT/g.c" -- "$pat" >/dev/null 2>&1; then
-        printf '%-16s %-6s %-5s %s\n' "$body" "$n" "$kshow" \
+        printf '%-10s %-16s %-6s %-5s %s\n' "$kind" "$body" "$n" "$kshow" \
                'REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)'
         return
     fi
@@ -253,7 +353,7 @@ run_cell () {
     lines=$(wc -l < "$OUT/g.c")
     t2=$(date +%s.%N)
     if ! timeout "$TMO" "$CC" $OPT -o "$OUT/g" "$OUT/g.c" 2>/dev/null; then
-        printf '%-16s %-6s %-5s %-8s GCC-FAILED\n' "$body" "$n" "$kshow" "$lines"
+        printf '%-10s %-16s %-6s %-5s %-8s GCC-FAILED\n' "$kind" "$body" "$n" "$kshow" "$lines"
         return
     fi
     t3=$(date +%s.%N)
@@ -265,14 +365,14 @@ run_cell () {
     # shellcheck disable=SC2086
     if ! timeout "$TMO" "$PCREC" -p rx --engine=vm $uflag \
              -o "$OUT/gen.c" -- "$pat" >/dev/null 2>&1; then
-        printf '%-16s %-6s %-5s %-8s %-10s %-10s GEN-REFUSED (emit-main artifact compiled, library-mode did not -- a finding)\n' \
-               "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s"
+        printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s GEN-REFUSED (emit-main artifact compiled, library-mode did not -- a finding)\n' \
+               "$kind" "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s"
         return
     fi
     if ! timeout "$TMO" "$CC" $OPT -Wall -Wextra -I"$OUT" \
              -o "$OUT/drv" "$OUT/driver.c" 2>"$OUT/drv.err"; then
-        printf '%-16s %-6s %-5s %-8s %-10s %-10s DRV-CC-FAILED: %s\n' \
-               "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s" \
+        printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s DRV-CC-FAILED: %s\n' \
+               "$kind" "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s" \
                "$(head -1 "$OUT/drv.err")"
         return
     fi
@@ -286,16 +386,16 @@ run_cell () {
             fail)          want=nomatch ;;
         esac
         if ! res=$(timeout "$TMO" "$OUT/drv" "$n" "$fill" "$tail" "$regime" "$TRIALS" 2>/dev/null); then
-            printf '%-16s %-6s %-5s %-8s regime=%-9s TIMEOUT >%ss -- A FINDING, recorded, not re-run longer\n' \
-                   "$body" "$n" "$kshow" "$lines" "$regime" "$TMO"
+            printf '%-10s %-16s %-6s %-5s %-8s regime=%-9s TIMEOUT >%ss -- A FINDING, recorded, not re-run longer\n' \
+                   "$kind" "$body" "$n" "$kshow" "$lines" "$regime" "$TMO"
             continue
         fi
         # shellcheck disable=SC2086
         set -- $res
         got_verdict=$1; got_bytes=$2; got_ns=$3
         if [ "$got_verdict" != "$want" ]; then
-            printf '%-16s %-6s %-5s %-8s regime=%-9s VALIDATION-FAILED: wanted %s, got %s on %s bytes -- number DISCARDED\n' \
-                   "$body" "$n" "$kshow" "$lines" "$regime" "$want" "$got_verdict" "$got_bytes"
+            printf '%-10s %-16s %-6s %-5s %-8s regime=%-9s VALIDATION-FAILED: wanted %s, got %s on %s bytes -- number DISCARDED\n' \
+                   "$kind" "$body" "$n" "$kshow" "$lines" "$regime" "$want" "$got_verdict" "$got_bytes"
             continue
         fi
         case $regime in
@@ -305,28 +405,140 @@ run_cell () {
         esac
     done
 
-    printf '%-16s %-6s %-5s %-8s %-10s %-10s %-12s %-12s %s\n' \
-           "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s" \
+    printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s %-12s %-12s %s\n' \
+           "$kind" "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s" \
            "$ns_max" "$ns_below" "$ns_fail"
 }
 
-# ---- the sweep --------------------------------------------------------------
+# ---- the sweep, grouped and tagged by body kind ----------------------------
 # Every cell runs under `timeout`, and a timeout is a RECORDED FINDING rather
 # than a reason to re-run longer (D45's posture applied to a bench that is not
 # itself budgeted). This runs UNCONDITIONALLY -- with K collapsed to
 # "shipped" when --unroll has no producer, walked for real once it does.
-printf '%-16s %-6s %-5s %-8s %-10s %-10s %-12s %-12s %s\n' \
-       body N K lines pcrec_s gcc_s 'ns/max' 'ns/belowmax' 'ns/fail'
-for body in $BODIES; do
-  for n in $NS; do
-    if [ "$have_unroll" -eq 0 ]; then
-        run_cell "$body" "$n" shipped ""
+# Grouped by KIND_ORDER (see header: PER-BODY-KIND CURVES) rather than by the
+# flat $BODIES list, so the three curves print as separable sections; every
+# row also carries the "kind" column so a reader can still re-group by
+# grep/awk on the raw output alone.
+printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s %-12s %-12s %s\n' \
+       kind body N K lines pcrec_s gcc_s 'ns/max' 'ns/belowmax' 'ns/fail'
+for kind in $KIND_ORDER; do
+    echo
+    echo "== body-kind: ${KIND_LABEL[$kind]} =="
+    if [ "$kind" = "class" ]; then
+        cat <<EOF
+EXCLUDED (structural finding, see header PER-BODY-KIND CURVES / CONSTRAINT):
+probe body '$CLASS_PROBE_BODY' stamps RX_VM_RUNGS 0x1 (the CURSOR rung) at
+N in {1, 16, 4000}, never 0x2 (frames-bounded) --
+verify: $PCREC -p rx --engine=vm -o /tmp/g.c -- '${CLASS_PROBE_BODY}{0,16}c'
+        grep _VM_RUNGS /tmp/g.c
+A bounded single character class has only one way to match, so rung-select
+takes it before counter-K is ever a candidate: single-class bodies are NOT
+IN COUNTER-K'S POPULATION. No cells run for this kind.
+EOF
         continue
     fi
-    for k in $KS; do
-        if [ "$k" -eq 0 ]; then uflag="-fno-counter"; kshow="rep"
-        else uflag="--unroll=$k"; kshow="$k"; fi
-        run_cell "$body" "$n" "$kshow" "$uflag"
+    kind_bodies=""
+    for body in $BODIES; do
+        [ "${BODY_KIND[$body]:-}" = "$kind" ] && kind_bodies="$kind_bodies $body"
     done
-  done
+    if [ -z "$kind_bodies" ]; then
+        echo "(no body in this run's BODIES list maps to kind '$kind')"
+        continue
+    fi
+    for body in $kind_bodies; do
+        for n in $NS; do
+            if [ "$have_unroll" -eq 0 ]; then
+                run_cell "$kind" "$body" "$n" shipped ""
+                continue
+            fi
+            for k in $KS; do
+                if [ "$k" -eq 0 ]; then uflag="-fno-counter"; kshow="rep"
+                else uflag="--unroll=$k"; kshow="$k"; fi
+                run_cell "$kind" "$body" "$n" "$kshow" "$uflag"
+            done
+        done
+    done
 done
+
+# ---- pragma comparison cell -------------------------------------------------
+# See header: ONE PRAGMA COMPARISON CELL / EXPECTATION. K=1 counter loop
+# compiled with `#pragma GCC unroll 8`, versus manual K=8 emission
+# (`--unroll=8`), on one frames-bearing body. Gated on the same have_unroll
+# capability probe as the rest of the K axis -- both arms need `--unroll` to
+# exist -- so it is INERT today and prints the same style of "waiting on"
+# line the K-axis banner above prints, rather than silently doing nothing.
+echo
+echo "== pragma comparison cell (K=1 + #pragma GCC unroll 8  vs  manual K=8) =="
+run_pragma_cell () {
+    body=$1; n=$2
+    if [ "$have_unroll" -eq 0 ]; then
+        echo "PRAGMA CELL: waiting on --unroll -- K=1+pragma vs manual K=8 not yet producible"
+        return
+    fi
+    pat="${body}{0,${n}}c"
+    fill=${BODY_FILL[$body]}
+    tail=${BODY_TAIL[$body]}
+
+    mkdir -p "$OUT/pragma_k1" "$OUT/pragma_k8"
+
+    # ---- arm A: --unroll=1 emission, wrapped so its loop is pragma'd ------
+    # Best-effort placement: `#pragma GCC unroll N` binds to the NEXT loop
+    # statement lexically encountered. A file-scope pragma immediately above
+    # the #include only reaches the counter loop because the emitted TU is
+    # one function per pattern (APPROACH.md) with that loop as the first one
+    # defined -- NOT independently verified here. Per simd1 S8's own rule,
+    # the real check is `objdump -d` for the loop actually unrolling (no
+    # residual branch back to itself at 8 iterations); this cell does not
+    # yet do that -- a follow-up once it can run at all.
+    if ! timeout "$TMO" "$PCREC" -p rx --engine=vm --unroll=1 \
+             -o "$OUT/pragma_k1/inner.c" -- "$pat" >/dev/null 2>&1; then
+        echo "PRAGMA CELL: --unroll=1 emission REFUSED-OR-TIMEOUT -- a finding"
+        return
+    fi
+    {
+        echo '#pragma GCC unroll 8'
+        echo '#include "inner.c"'
+    } > "$OUT/pragma_k1/gen.c"
+    if ! timeout "$TMO" "$CC" $OPT -Wall -Wextra -I"$OUT/pragma_k1" \
+             -o "$OUT/pragma_k1/drv" "$OUT/driver.c" 2>"$OUT/pragma_k1/drv.err"; then
+        echo "PRAGMA CELL arm=pragma-k1: DRV-CC-FAILED: $(head -1 "$OUT/pragma_k1/drv.err")"
+        return
+    fi
+
+    # ---- arm B: manual K=8 emission, no pragma -----------------------------
+    if ! timeout "$TMO" "$PCREC" -p rx --engine=vm --unroll=8 \
+             -o "$OUT/pragma_k8/gen.c" -- "$pat" >/dev/null 2>&1; then
+        echo "PRAGMA CELL: --unroll=8 emission REFUSED-OR-TIMEOUT -- a finding"
+        return
+    fi
+    if ! timeout "$TMO" "$CC" $OPT -Wall -Wextra -I"$OUT/pragma_k8" \
+             -o "$OUT/pragma_k8/drv" "$OUT/driver.c" 2>"$OUT/pragma_k8/drv.err"; then
+        echo "PRAGMA CELL arm=manual-k8: DRV-CC-FAILED: $(head -1 "$OUT/pragma_k8/drv.err")"
+        return
+    fi
+
+    for arm in pragma_k1 pragma_k8; do
+        if ! res=$(timeout "$TMO" "$OUT/$arm/drv" "$n" "$fill" "$tail" max "$TRIALS" 2>/dev/null); then
+            echo "PRAGMA CELL arm=$arm: TIMEOUT >${TMO}s -- A FINDING, recorded, not re-run longer"
+            return
+        fi
+        # shellcheck disable=SC2086
+        set -- $res
+        got_verdict=$1; got_bytes=$2; got_ns=$3
+        if [ "$got_verdict" != "match" ]; then
+            echo "PRAGMA CELL arm=$arm: VALIDATION-FAILED: wanted match, got $got_verdict on $got_bytes bytes -- number DISCARDED"
+            return
+        fi
+        case $arm in
+            pragma_k1) ns_pragma=$got_ns ;;
+            pragma_k8) ns_manual=$got_ns ;;
+        esac
+    done
+    delta=$(echo "$ns_pragma $ns_manual" | awk '{printf "%+.1f%%", 100.0*($1-$2)/$2}')
+    printf 'PRAGMA CELL body=%s N=%s: pragma-k1=%sns manual-k8=%sns delta=%s\n' \
+           "$body" "$n" "$ns_pragma" "$ns_manual" "$delta"
+}
+# Representative frames-bearing body/N (see header CONSTRAINT: every body in
+# this file's population stamps VM_RUNGS 0x2, so there is currently no
+# frameless arm here to exercise the "MAY work" branch of the expectation).
+run_pragma_cell '((a)|ab)' 64

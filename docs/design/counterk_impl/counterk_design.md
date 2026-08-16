@@ -43,10 +43,16 @@ directory's house style.** What a returning reader most needs:
   rung shrinks SIZE but not FRAMES, so the endgame cell trades a compile-time
   refusal for a ~512-byte runtime ceiling — now stated, with a Cost arm
   (§3.5) the first draft did not specify at all.
-- **Two questions go to Frank**: F-1, whether K may vary per quantifier at all
-  (§4.2's licence — `eng_brep_design.md` §4.5 says no, and the note
-  self-authorized the exception); and F-2, §7.3's replacement step charge and
-  its SHIFT. §4.2 and §7.3 are marked pending those rulings.
+- **F-1 is RULED and F-2 is WITHDRAWN.** Frank ruled strict §4.5 (D47
+  ADDENDUM): K stays one per-artifact constant, and the CLAMP moves whole to
+  the new plan row [ENG-CLAMP] — §4.2 is now the refutation plus a pointer,
+  §8.5 cell 2 is withdrawn, and C1's site needs no rewrite after all. F-2 went
+  back off Frank's desk because the engine critic's adversarial pass
+  (findings 17-25) BLOCKED §7.3 too: its predicate keyed on PUSHES while its
+  justification keyed on POPS, and `RX_CUT` charges nothing — so the revdet
+  scan, `vm_poss_chain` and counter-K's own possessive arm were all excluded
+  from a rule that advertised strategy-invariance. §7.4 is the redesign,
+  measured this time.
 - **Verified clean and not to be re-checked**: every spelling and citation the
   docs critic examined, the differential's failure-surface premise, the
   four-of-five green-because-fast survivors, §8.1's 33-frames/65-trail
@@ -482,109 +488,61 @@ deny cannot express it"). `--unroll=1` is the pure counter loop, and
 `--unroll=<large>` is replication reached through the counter path, which §8.1
 uses.
 
-### 4.2 The CLAMP, which is what makes counter-K K22's real fix
+### 4.2 The CLAMP — RULED OUT of this lane, and re-homed
 
-> **PENDING F-1.** `../eng_brep_design.md` §4.5 (paneled R24) rules that K
-> "must not become a per-pattern heuristic in v1", and everything in this
-> section varies K per quantifier. The note is not entitled to carve itself an
-> exception, and the first draft did exactly that. Frank rules whether K may
-> vary at all in v1; this section specifies what to build if it may, and §11
-> records what is lost if it may not.
+> **RULED (Frank, 2026-08-16 — decisions.md D47 ADDENDUM, on R25's D1+E1):
+> strict `../eng_brep_design.md` §4.5. K stays ONE per-artifact constant in
+> v1 (`PCREC_DEFAULT_UNROLL_K`), with no per-quantifier variation of any
+> kind.** The clamp — algorithm, probe and residuals — moves whole to the new
+> plan row **[ENG-CLAMP]**. This section is what counter-K keeps: the
+> refutation that motivated the clamp, and a pointer to where the rest went.
 
-**First finding: K = 8 alone does nothing for K22.** K22's repro is a
-depth-35/40 tower of `(?:…(?:a){0,2}…){0,2}` and every count in it is 2. With
-K = 8 the trip guard skips the loop at every level (§3.2), the tail emits both
-copies, and the copy tree K22 asks to stop existing keeps existing at 2 copies
-per level. The plan row and the K22 entry both credit counter-K with the fix;
-counter-K without a clamp does not deliver it.
+**The refutation stands regardless of the ruling, and the record still needs
+it: K = 8 alone does NOTHING for K22.** The repro is a depth-35/40 tower of
+`(?:…(?:a){0,2}…){0,2}` and every count in it is 2. With K = 8 the trip guard
+skips the loop at every level (§3.2), the tail emits both copies, and the copy
+tree the K22 entry asks to stop existing keeps existing at 2 copies per level.
+The plan row and the K22 entry both credited counter-K with that fix; **that
+claim was false before this ruling and is false after it**, and correcting it
+is landing bookkeeping either way (§9).
 
-**Second finding, R25 E1, and it refutes this note's own first repair.** That
-draft specified the clamp as a predicate over `vm_count_slots`'s running `repl`
-product and claimed, as one of its two justifying properties, that it therefore
-"introduces no new analysis". `repl` is ANCESTORS-ONLY and top-down
-(`emit_vm.c:924,1019,1028), so on the tower nothing clamps until level 18, the
-product parks at 2^17 = `PCREC_MAX_VM_NODES`, and depths 35/40 still refuse —
-the acceptance cell red on first run. **The two claimed properties were not
-simultaneously satisfiable**, and the honest statement is the one the first
-draft avoided: making the clamp work REQUIRES a new analysis. It is a
-whole-subtree, descendant-aware quantity, and no top-down product can compute
-it.
+**What the lane established before the deferral, carried to [ENG-CLAMP] rather
+than lost.** Both results are in `probes/clamp_arith.py` and its archived
+output, which stay committed here as that row's inherited evidence:
 
-#### The algorithm
+1. **The mechanism is a BOTTOM-UP subtree product, not the ancestors-only
+   running product** the note first specified [R25 E1]. `vm_count_slots`'s
+   `repl` is top-down, so nothing clamps until level 18, the product parks at
+   2^17 = `PCREC_MAX_VM_NODES`, and depths 35/40 still refuse. Under the
+   corrected pass — `K = the constant` where the subtree product below is 1,
+   `K = 1` otherwise, in one sentence *unroll only where unrolling multiplies
+   nothing* — the towers collapse to product **2 at any depth** against a
+   limit of 131,072.
+2. **The PRODUCT rule is right and the SHAPE rule is not.** "K = 1 if the body
+   contains another bounded repeat" over-clamps `(a(b|c)?){0,4000}`, because
+   `{0,1}` is a nested `A_REP` that multiplies nothing. This inverts the first
+   draft's own recommendation, which offered the shape rule as the cheap
+   fallback.
 
-A post-order (BOTTOM-UP) pass over the `A_REP` nesting forest. With
-`copies(v, K)` the body copies one quantifier emits — §3.1's mandatory phase
-plus §3.2's optional phase, `count` if `K > count` and `K + (count mod K)`
-otherwise, and zero for an empty phase (E14):
+Also carried: the `{1,2}`-tower residual (those levels emit two copies at
+K = 1, so a depth-20 tower still refuses; collapsing them needs the mandatory
+and optional phases MERGED into one loop with a runtime `ctr >= m` test).
 
-```
-sub(v) = 1                              if v has no A_REP descendant
-       = max over immediate A_REP children c of ( copies(c, K_c) · sub(c) )
+**Why the deferral is clean, which is the part worth understanding rather than
+just recording.** Plain counter-K already serves every motivating shape —
+single-level large counts, and realistic nested shapes whose counts exceed K
+engage the loop per level with no clamp at all. The clamp's sole rescued
+population is degenerate SMALL-COUNT towers, which D22 scopes to fail
+honestly, and K22's interim guard already does that in 0.12 s. And adding the
+clamp later moves patterns only from refused to compiled — the safe direction
+— so nothing shipped changes out from under anyone.
 
-K_v    = PCREC_DEFAULT_UNROLL_K         if sub(v) == 1
-       = 1                              otherwise
-```
-
-`K_c` is already decided when `v` is visited, which is what makes the pass
-bottom-up and what the ancestors-only product structurally could not do.
-
-**In one sentence: unroll only where unrolling multiplies nothing.** Unrolling
-costs multiplicatively down a nesting path, so it is taken at the innermost
-replicating level and nowhere above it.
-
-The downshift is BINARY — `PCREC_DEFAULT_UNROLL_K` or 1, no intermediate
-values. Intermediate values would be a tuning heuristic; two values are a
-tractability switch, which is the distinction F-1 turns on.
-
-#### The arithmetic, PROVED before the code
-
-`probes/clamp_arith.py`, archived at `clamp_arith.txt`. It models the shape
-rather than compiling, because the pass does not exist and a compile today
-would measure replication; it reads `PCREC_MAX_*` out of `limits.h` rather than
-copying the numbers, since a constant transcribed into a check is a control
-sharing a source with the thing it controls.
-
-| cell | product today | product clamped | verdict |
-|---|---|---|---|
-| `((a)\|ab){0,4000}c` | 4,000 | **8** | compiles |
-| `((a)\|ab){4000}` | 4,000 | **8** | compiles |
-| `((a)\|ab){4000,}` | 4,001 | **9** | compiles |
-| `((a)\|ab){8,4000}c` | 4,000 | **16** | compiles |
-| `((a)\|ab){65}` | 65 | **9** | compiles (refused today) |
-| `((a)\|b){0,3}c` | 3 | 3 | replication, unchanged |
-| `(a(b\|c)?){0,4000}` | 4,000 | **8** | compiles — the nested `{0,1}` does NOT over-clamp |
-| K22 tower d=18 | 262,144 | **2** | compiles |
-| K22 tower d=30 | 1.07 × 10⁹ | **2** | compiles |
-| K22 tower d=35 | 3.44 × 10¹⁰ | **2** | compiles |
-| K22 tower d=40 | 1.10 × 10¹² | **2** | compiles |
-| `{1,2}` tower d=20 | 1,048,576 | 1,048,576 | **still REFUSES** |
-
-against `PCREC_MAX_VM_REPLICATION_PRODUCT` = 131,072. The tower is flat at 2 at
-ANY depth: the innermost replicating level takes K = 8 and contributes 2, every
-level above it is clamped to 1 and contributes a factor of ONE.
-
-The `(a(b|c)?){0,4000}` row is the one that kills the cheap alternative. "K = 1
-for any quantifier whose body contains another bounded repeat" — offered in the
-first draft as the simpler option — would clamp it, because `(b|c)?` IS a
-nested `A_REP`. But `{0,1}` emits one copy and multiplies nothing, so the
-subtree PRODUCT is 1 and the real rule leaves the unrolling alone. A shape rule
-over-clamps a common shape; the product rule does not. This inverts the first
-draft's recommendation, which called the shape rule the cheap fallback and the
-product rule the principled one: the product rule is right, and it is right
-because it is a product and not a shape.
-
-The `{1,2}` rows are in the probe because a probe that shows only its own
-successes is not evidence. §6 carries them as the named residual.
-
-#### What this costs, stated plainly
-
-The "no new analysis" property is GONE. This is a second traversal of the AST
-computing a quantity nothing else needs, in a new pass, and the note previously
-claimed the opposite. What survives from the first draft's two properties is
-the other one, and it is the one that matters: the clamp only ever moves K
-DOWNWARD, so its failure mode is "less unrolling" and never "different
-semantics" — §4.1's structural result is that K is not a semantics at any
-value.
+**What this costs counter-K: one acceptance cell and nothing else.** §8.5
+cell 2 (the towers compile) is WITHDRAWN; the tower sabotage row is dropped;
+`tests/vm/run_vm_tests.sh`'s K22 block keeps asserting refusal and needs no
+rewrite. The counter, both phases, the cost arm, the observability surface and
+the size win on flat bounded repeats are untouched — which §11 stated as a
+contingency before the ruling and the panel verified.
 
 ### 4.3 Where K is DECIDED, and the three-call-sites hazard
 
@@ -600,20 +558,16 @@ The pass is `src/opt/counterk.c`, driven from `src/opt/select_engine.c` beside
 `run_possessify` and `run_revdet`, gated on `fit->chosen == ENGM_VM` and on
 `PCREC_NO_COUNTER` — so `-fno-counter` is the pass not running, `unroll_k`
 stays 0, and the emitter falls through to replication with no emitter-side
-check at all. Same three-point plumbing as the two flags before it. §4.2's
-bottom-up traversal is this pass's whole body; it runs once, post-order, and
-writes one field per node.
+check at all. Same three-point plumbing as the two flags before it.
 
-**One disclosed conservatism.** The clamp needs to know which nested
-quantifiers actually replicate, and `vm_cursor_fits` is an emitter-internal
-predicate the pass cannot see (`a->revbody` and `a->possessive` it can). The
-pass therefore treats every nested `A_REP` as replicating. That over-estimates
-the subtree product, so the clamp fires slightly early on patterns with a
-nested cursor-rung quantifier — costing unrolling and nothing else, which is
-the direction an error here has to point. The K22 tower is exactly such a
-pattern: its innermost `(?:a){0,2}` takes the cursor rung and replicates
-nothing, and `probes/clamp_arith.py` models it as replicating anyway, so the
-proved product of 2 is itself the conservative answer.
+**Under the F-1 ruling the pass is trivial**, and saying so is worth a line
+because the first draft's version was not: with K a single per-artifact
+constant, `Ast.unroll_k` is set to that constant for every bounded `A_REP` the
+rung takes and to 0 otherwise. There is no traversal computing anything, no
+subtree quantity, and no conservatism to disclose — all of that moved to
+[ENG-CLAMP] with §4.2. The field still exists, and still exists for the reason
+that survives the ruling: three call sites must agree, and one field they all
+read is how they cannot drift.
 
 ### 4.4 The bench sweep
 
@@ -629,9 +583,37 @@ proved product of 2 is itself the conservative answer.
   maximal consumption, where backtracking actually runs and where K should
   matter most.
 
-The harness is scaffolded in this directory (`probes/bench_k.sh`) while the
-panel runs, per the lane brief. It is a measurement, not a gate: D18 says the
-dial must earn its value, and the value that ships is whatever the sweep says.
+**Three additions from the SIMD study** (Frank, 2026-08-16, on
+`studies/simd1/`; that study does unrolling as part of its own work and bears
+on this axis). The standing caution first: every number in it is Zen 1 and
+must be RE-MEASURED before any load-bearing use (D12) — it is a hypothesis
+source, never a citable measurement here.
+
+- **PER-BODY-KIND curves, not one number.** The sweep records single-class,
+  alternation and group-with-capture bodies as SEPARATE series, because
+  simd1 §13's tiers show the unroll knee varies by body kind and a later
+  SIMD-META row needs to know which bodies were unroll-limited and which were
+  engine-limited. **One finding already, from building it:** a single-class
+  body is NOT IN THIS RUNG'S POPULATION AT ALL — `([a-c]){0,N}c` stamps
+  `VM_RUNGS 0x1`, the cursor rung, at every N, because a bounded single class
+  has one way to match and rung-select takes it long before counter-K is a
+  candidate. The harness reports that kind as EXCLUDED with the verify command
+  rather than substituting a body that would silently measure another rung.
+- **One PRAGMA COMPARISON cell**: K = 1 plus `#pragma GCC unroll` against
+  manual K = 8 emission. **BELIEVED**, to be measured rather than assumed: the
+  pragma FAILS on the frames-bearing arm, because the emitted body contains
+  computed-goto resume labels gcc's unroller will not cross, and may work on a
+  frameless arm. If it ever matches manual unrolling for some arm, that arm's
+  K machinery collapses to a compiler hint — which is the cheapest possible
+  outcome and worth one cell to find out. The cell is written out and skipped
+  with a "waiting on `--unroll`" line today.
+- **The three subject regimes and a real throughput driver** [R25 C2], since
+  stub columns are not a sweep.
+
+The harness runs end to end TODAY with the K column collapsed to the shipped
+strategy; only the K axis waits on `--unroll`. It is a measurement, not a
+gate: D18 says the dial must earn its value, and the value that ships is
+whatever the sweep says.
 
 ---
 
@@ -676,35 +658,35 @@ reason the counter is a slot rather than a local.
 The consequence that matters is on `vm_count_slots`, not on the emitted code.
 Today that pre-pass walks the body once per copy (`for i < copies:
 vm_count_slots(a->l, total)`) — the Θ(2^d) walk that IS K22 — and under
-counter-K it walks `c(m,K) + c(NOPT,K)` times, bounded by `2K−1` per phase and
-by 1 under the clamp. With the clamp the walk down a `{0,n}` tower is LINEAR in
-depth.
+counter-K it walks `c(m,K) + c(NOPT,K)` times, bounded by `2K−1` per phase.
+For a quantifier whose count EXCEEDS K that is a large reduction, and for one
+below K it is exactly today's walk, because below K the emitter is today's
+emitter.
 
-**The K22 interim product guard STAYS, and stops being reachable on the default
-path.** It keeps its exact value and its exact safety argument (the product is
-a lower bound on the emitted node count, so it can only move a refusal earlier),
-and it keeps firing for `-fno-counter` builds and for the residual §9 names. It
-becomes what the size cap becomes: a backstop for the strategy below.
-`docs/dev/known_issues.md` K22 closes when the depth-35/40 tower COMPILES on
-the default path, which §8 makes an acceptance cell.
+**Nesting is where that distinction bites, and the F-1 ruling decides who owns
+it.** A tower of counts ABOVE K collapses per level with no clamp at all — the
+loop engages at every level and the walk is linear in depth. A tower of counts
+BELOW K replicates at every level exactly as today, so its product is
+unchanged and it still refuses. That second population is the clamp's, and it
+is now [ENG-CLAMP]'s (§4.2).
 
-**The residual, named rather than smoothed over.** At K = 1 an `{m,n}` with
-`m > 0` still emits two body copies (one loop per phase), so a `{1,2}` tower
-multiplies by 2 per level and is refused — honestly and in 0.12 s, but refused.
-Merging the two phases into one loop with a runtime `ctr >= m` test before the
-`PUSH` would emit ONE copy for any `{m,n}` and would close it; it costs a
-predictable per-iteration branch on the 0 < m < n shapes and is not proposed
-here. §10.3 ASK 2a offers it.
+**The K22 interim product guard STAYS, unchanged, and is now the whole
+answer for small-count towers.** It keeps its value and its safety argument
+(the product is a lower bound on the emitted node count, so it can only move a
+refusal earlier, never widen one). `docs/dev/known_issues.md` K22 is CLOSED by
+the same ruling: its hang half was fixed by that guard, and its
+compile-these-shapes half is re-homed as [ENG-CLAMP]'s charter rather than
+standing as an open bug.
 
 ---
 
-## 7. The step charge — the fix of record is REFUTED, and replaced
+## 7. The step charge — TWO proposals refuted, and the redesign
 
 **This section was written as a cost estimate for the E-5-shaped entry charge
 and turned into a refutation of it.** The measurement is
-`probes/step_charge.sh`; every number below is from one run of it at `4d1306f`,
-and the probe counts both quantities at the two REAL charge sites in the
-emitted artifact rather than at proxies — `--emit-ir`'s RUNGS rows name the
+`probes/step_charge.sh`; every number in §7.2 and §7.4 is MEASURED from one run
+of it, and the probe counts each quantity at its REAL site in the emitted
+artifact rather than at a proxy — `--emit-ir`'s RUNGS rows name the
 exact label `vm_rung_mark(v, entry, ...)` was called with, which is the label
 an entry charge would sit at, and `rx_fail:` is the one charge site that exists
 today.
@@ -751,83 +733,181 @@ proposed fix closes half of one.
 `([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9`) the entry count is IDENTICAL — 1,001 /
 100,001 / 1,000,001 at 1 KB / 100 KB / 1 MB for all three. A quantifier the
 attempt never REACHES is never entered, so entries scale with the quantifiers
-actually run, not with the pattern's quantifier count. The cost of an entry
-charge is at most a doubling, not a q-fold increase.
+actually run, not with the pattern's quantifier count.
 
-### 7.3 The replacement: charge the ITERATION COUNT at loop EXIT
+[R25 23] The first draft went on to generalise this to "at most a doubling,
+never q-fold". **That over-claims from this population**: the fill byte here
+is rejected by the FIRST quantifier, so quantifier 2 is never reached in any
+row, and nothing was measured about a subject that reaches several. The
+careful sentence above is what the numbers support; the general one is
+withdrawn.
 
-> **At the exit of every repeat loop that pushes NO per-iteration resume frame,
-> charge `iterations >> PCREC_STEP_SCAN_SHIFT` steps. Loops that push a frame
-> per iteration are already charged one step per iteration and get nothing.**
+### 7.3 REFUTED AGAIN: the replacement's predicate was vacuous
 
-**Why the exclusion is exact, not a judgement call.** MEASURED: at n = 10,000
-the `-fno-possessify` build charges 50,015,001 steps, and
-n(n+1)/2 + (n+1) = 50,005,000 + 10,001 = 50,015,001 — the identity holds at all
-three sizes. So a loop with a per-iteration frame ALREADY charges exactly one
-step per iteration through the fail label, and charging again would double-count
-the one case that was never broken. The blind spot is precisely and only the
-loops that push no per-iteration frame: the possessive arms on every rung, the
-cursor scan, the revdet forward scan, and the revdet backward walk.
+> The first replacement charged `iterations >> SHIFT` at the exit of loops
+> that "push no per-iteration resume frame". **R25 finding 17 (BLOCKER)
+> refuted it, and the refutation is sharper than the first one.**
 
-**Why this respects D22.** The charge is one shift and one subtract at loop
-EXIT, not per iteration. D22 forbids trading the budget against execution
-speed, and a per-iteration decrement inside a possessified scan is exactly that
-trade; a single arithmetic operation on a path that runs once per loop entry is
-not.
+The predicate keyed on PUSHES; the justification keyed on POPS THROUGH THE
+FAIL LABEL. Those coincide only when every pushed frame is eventually popped
+there — and `RX_CUT` truncates `w->btn` with no charge at all
+(`emit_vm.c:2826-2828`). So a loop that pushes a frame per iteration and then
+CUTS it is excluded by the predicate while charging nothing in fact. Three
+shapes do exactly that: the revdet forward scan, `vm_poss_chain`, and
+**counter-K's own §3.4 possessive arm**.
 
-**Why it stays strategy-invariant, which §8.1's differential requires.** The
-charge attaches to the loop's SHAPE and its ITERATION COUNT. Under
-`-fno-counter` a possessified bounded repeat is `vm_poss_chain` (replicated
-copies, one cut frame, no per-iteration frame); under counter-K it is the §3.4
-counted loop (no per-iteration frame). Both are in the charged class, both run
-the same number of iterations on the same subject, so both charge the same
-amount and the failure surface stays aligned. The backtracking arms need no
-charge at all and are aligned trivially. This is a better answer than §7.2's
-forced uniformity: it aligns because the quantity is real, not because the rule
-was made blunt.
+**The strategy-invariance §7.3 advertised was therefore vacuous**: under
+`-fno-counter` a possessified bounded repeat is `vm_poss_chain` and under
+counter-K it is the counted possessive loop, and BOTH sit in the excluded
+class. The two differential sides agreed because neither was charged.
 
-**What the shift buys, arithmetically.** The quadratic charges
-n²/2^(SHIFT+1), so the give-up point moves as 2^((SHIFT+1)/2)·1,414:
+**And round 1's probe structurally could not have seen it.** Its single shape
+`([a-z]+)9` is the possessified CURSOR rung — the one genuinely frameless
+member of the class. The boundary the rule turns on was invisible to the
+instrument that priced the rule, which is the same failure as R24's
+lazy-quantifier probe and R25 E2's sabotage witnesses, three times in three
+rounds.
 
-| SHIFT | gives up at | work done by then | cost to a legitimate linear match |
+### 7.4 The redesign: charge what the fail label does not see
+
+The charged class is not "loops without frames". It is **work the fail label
+never accounts for**, which has exactly two forms, and each has a site where
+its size is already known exactly:
+
+| form | site | the count, exactly |
+|---|---|---|
+| pushed, then CUT | every cut | `w->btn − stv[mark]` — the frames being discarded |
+| never pushed | scan completion | the scan's iteration count |
+
+**MEASURED** (`probes/step_charge.sh`, archived `step_charge.txt`), and these
+are the numbers the first replacement had no instrument for — round 1 counted
+ENTRIES, the refuted quantity, and never iterations or discarded frames:
+
+| shape | path | n | steps charged | CUT-discarded | scan iters | UNCHARGED |
+|---|---|---|---|---|---|---|
+| `((a)\|b){0,4}d` possessified frames | `-fno-revdet` | 10,000 | 10,009 | **79,988** | 0 | 79,988 |
+| `((a)\|b){0,4}d` revdet | default | 10,000 | 10,009 | **79,988** | 0 | 79,988 |
+| `([a-z]+)9` possessified cursor | `--engine=vm` | 10,000 | 10,001 | 0 | **50,005,000** | 50,005,000 |
+| `(a(b\|c)?){0,4}d` mixed | `-fno-revdet` | 10,000 | 129,987 | 0 | 0 | **0** |
+
+Two things read straight off it. The push-and-cut shapes leave **eight times
+more work uncharged than charged** — invisible to round 1 entirely. And the
+last row is the control that shows the rule is not vacuous in the other
+direction: a shape whose frames really do reach the fail label charges
+everything and would gain nothing from this design.
+
+#### The unit, which dissolves the truncation problem rather than patching it
+
+R25 finding 18 objected that a per-exit `>> SHIFT` truncates: a loop entered
+10⁶ times at 900 iterations charges zero forever. The fix is not a residue
+accumulator. It is to **stop dividing**:
+
+> **The budget counts WORK UNITS. A backtrack resumption costs
+> `PCREC_STEP_SCALE` units; each piece of otherwise-uncharged work costs 1.
+> The default budget is `VM_DEFAULT_STEP_BUDGET × PCREC_STEP_SCALE`.**
+
+Today's behaviour is preserved EXACTLY at the default — a pattern that only
+backtracks reaches the budget at precisely the same resumption count as now —
+and the uncharged work becomes visible at 1/`PCREC_STEP_SCALE` of a
+resumption's weight. Nothing is ever divided, so nothing truncates, no residue
+state is needed, and each site is one subtraction. `PCREC_STEP_SCALE = 1024`
+is the proposal, by the arithmetic below; it is a `limits.h` constant on K's
+precedent (D47.2).
+
+**What the scale buys, now from MEASURED counts rather than a closed form:**
+
+| | measured quantity | units at scale 1024 | against a 1.02×10⁹ budget |
 |---|---|---|---|
-| 0 | n ≈ 1,414 | ~10⁶ ops — the `-fno-possessify` build's own point, restored exactly | a 1 MB single-pass match charges 10⁶: at the budget |
-| 6 | n ≈ 11,300 | ~6 × 10⁷ | a 64 MB match charges 10⁶ |
-| 10 | n ≈ 45,000 | ~10⁹, about 1 s | a 1 GB match charges 10⁶ |
+| the possessify quadratic at n = 45,000 | ~1.0×10⁹ scan iters | ~1.0×10⁹ | **fires**, at ~1 s of work |
+| the same at n = 100,000 (2.1 s today) | 5.0×10⁹ scan iters | 5.0×10⁹ | fires at ~20% of the work |
+| `-fno-possessify` control, n = 10,000 | 50,015,001 steps | 5.1×10¹⁰ | fires — as it does today |
+| a legitimate 1 GB single-pass match | ~10⁹ scan iters | ~10⁹ | **at the boundary** (§7.5) |
 
-SHIFT is the trade between catching the pathology early and letting a genuinely
-linear match over a huge subject run, it is a named `limits.h` constant on
-K's own precedent (D47.2), and it is picked by measurement rather than here.
-SHIFT = 10 is the recommendation: it keeps single-pass matching viable to ~1 GB
-while cutting the pathological give-up point from 1 MB of subject and 200
-seconds to 45 KB and about one second.
+The third row is the calibration that matters: the control's step count
+(50,015,001) and the possessified build's scan count (50,005,000 + 10,001
+steps) are THE SAME QUANTITY, exactly, at all three measured sizes. Charging
+scan iterations restores precisely what possessification removed — which the
+first replacement claimed only by derivation and this one shows by
+measurement.
 
-### 7.4 Blast radius, and the honest scope of the whole debt
+#### The sites, and what they cost — stated because the cost is real
 
-MEASURED, the same pathological input on the DEFAULT (prefiltered) path:
+- **There are TWO emission spellings of a cut**, not one, and this probe found
+  the second the hard way: `RX_CUT` is the macro, and the REVDET rung cuts by
+  assigning `w->btn` from its own per-loop local. An implementation that
+  charges only the macro leaves revdet entirely uncharged, and the first
+  version of the probe reported a confident 0 for revdet before the second
+  anchor was added.
+- **The BACKWARD WALK is in the second class, not the first** [R25 19,
+  confirmed but re-derived]. The panel asked for the walk to get its own
+  counter because it has three exits; the actual reason it needs its own site
+  is that it pushes NOTHING (`rungselect_design.md` §2.4 — reverse
+  one-unambiguity lets it dispatch on the next byte), so there is no cut to
+  hang a charge on. **DISCLOSED: this probe does not measure the walk**; its
+  scan anchor is the cursor rung's span loop. That is the largest unmeasured
+  quantity in this section.
+- **`w->budget` exists only under `has_budget`** (`emit_vm.c:2793`), so the
+  new sites must be `has_budget`-gated exactly like the fail label's, and
+  `tests/vm/run_vm_tests.sh:147-157` pins `--fno-step-budget` emitting NO
+  counter — it joins §9's survey with E11's step-budget sites.
+- **The subtraction is on unsigned values** (`w->btn` is `unsigned`,
+  `stv[]` is `ptrdiff_t`); the cast order must be pinned or a negative
+  intermediate wraps.
+
+#### Test, or only decrement — the honest trade [R25 20]
+
+The emitter's stated one-charge-site invariant (`emit_vm.c:3028-3034`) does
+not survive this either way; what is left to choose is whether the new sites
+merely DECREMENT or also TEST and return `R_STEPS`.
+
+**Proposed: they test.** An untested decrement means a loop that SUCCEEDS can
+overrun the budget by orders of magnitude and still return a match, which is
+the DD-2 failure mode the budget exists to prevent — a budget consulted only
+where it was already consulted is not a budget. The costs, stated rather than
+discovered later: `R_STEPS` can now return from a rung's exit and from inside
+a loop body, so `has_budget` must be threaded to three emission sites, the
+invariant comment must be rewritten rather than left lying, and the
+implementer should expect `-Wmaybe-uninitialized` on the new return paths —
+the revdet rung hit exactly that on four corpus patterns and the precedent is
+recorded at `emit_vm.c:1743-1748`.
+
+### 7.5 Who pays, and who benefits — they are not the same population
+
+**The COST is universal and the BENEFIT is diagnostic-path-only** [R25 24],
+and the note owes that sentence plainly. Every artifact pays the sites; every
+artifact's budget now counts work it did not count before. MEASURED on the
+DEFAULT path: `([a-z]+)9` matching inside a 100 KB subject performs 100,000
+scan iterations — today uncharged, and under this design 100,000 units. Scaled
+up, a single-pass match over ~1 GB lands at ~10⁹ units against a 1.02×10⁹
+budget: **at the boundary**, on the shipped path, for a completely ordinary
+linear match.
+
+The benefit, meanwhile, is only reachable where the prefilter is off:
 
 | n | default path | `--engine=vm` |
 |---|---|---|
-| 10,000 | 0.000 s, 0 steps, 0 entries | 0.023 s |
-| 100,000 | 0.001 s, 0 steps, 0 entries | 2.121 s |
-| 1,000,000 | 0.003 s, 0 steps, 0 entries | >120 s (extrapolates to ~213 s from the 100 KB row; the possessify lane measured 228.5 s) |
+| 10,000 | 0.000 s, 0 steps, 0 uncharged | 0.020 s, 50,005,000 uncharged |
+| 100,000 | 0.001 s, 0 steps, 0 uncharged | 2.132 s, 5.0×10⁹ uncharged |
+| 1,000,000 | 0.003 s, 0 steps, 0 uncharged | >120 s (~213 s extrapolated; the possessify lane measured 228.5 s) |
 
-**The DFA prefilter chooses the start positions, so the VM is never entered at
-all and the quadratic is unreachable on the shipped path.** `--engine=vm`
-disables the prefilter deliberately (R21 E-6) so the VM can be cross-checked
-against the DFA instead of echoing it, which is what makes that path
-diagnostic. So the whole debt — all four shapes — is a DIAGNOSTIC-PATH
-exposure, and this is the fact that should decide how much is spent on it. It
-is not an argument for doing nothing: `--engine=vm` is how every differential
-in this project's last three lanes was run, and a diagnostic mode that takes
-200 seconds where it should take one is a real cost to the people who use it
-most. It is an argument for §7.3 rather than for anything larger.
+So the honest framing is a TRADE, not a free repair: the budget stops being
+blind to the four shapes, and in exchange the default step budget acquires a
+subject-length sensitivity it does not have today. Three ways to settle it,
+and the lane does not think this is its call:
 
-**And E-5's own limitation survives either way.** None of this makes DD-2 a
-wall-clock bound. It makes the budget proportional to work for the loops where
-it currently is not, which is what D22's ROBUSTNESS framing actually asks for.
+1. **Accept and raise the default** with the measurement recorded (D12's
+   posture; the current default is a bring-up placeholder M4.6 calibrates
+   anyway).
+2. **Charge only where the prefilter is off** — the exposure is exactly the
+   `--engine=vm` path — at the cost of a budget whose meaning depends on the
+   engine selection, which is its own kind of dishonesty.
+3. **Do nothing, and record the four shapes as a permanent disclosed limit**
+   of DD-2, on the grounds that a diagnostic path taking 200 s where it should
+   take 1 s is a cost to lane authors and to nobody else.
 
----
+The lane's recommendation is 1, with `PCREC_STEP_SCALE = 1024` and the default
+re-derived from it — but §7.5's table is the argument, and it should be Frank's
+ruling with the numbers in front of him rather than a lane's preference.
 
 ## 8. Validation
 
@@ -887,7 +967,7 @@ not select the strategy tests the rung below it under this rung's name.
 | `((ab)\|b){0,N}b` | reverse-ambiguous, `rungselect_design.md` §5 residual 1, also `0x2`/`0x2` |
 | `X{m,n}` with `m > 0`, and `m == n` (`NOPT = 0`) | §3.1's mandatory-phase loop, and §2.3's emits-nothing carve-out |
 | `N = K−1, K, K+1` and `N ≡ 0, 1, K−1 (mod K)` | §3.2's residue arithmetic and E3's strict `K > NOPT` boundary — the off-by-one's home |
-| a revdet or cursor loop NESTED inside a counter loop at `NOPT > K` | E16: the one place trip-to-trip local sharing could leak, paired with sabotage S58 |
+| a revdet or cursor loop NESTED inside a counter loop at `NOPT > K` | E16: the one place trip-to-trip local sharing could leak, paired with sabotage S57 |
 | a counter loop nested inside a counter loop | §4.2's clamp in its normal (non-tower) form |
 | `(a?){0,12}`, `(a*){0,12}`, `(\|a){m,n}` with `NOPT > K` | §5's territory; the last is where the ORACLES disagree (R24: python vs libpcre2 on 106 of 15,600 cells) |
 | every shape GREEDY, LAZY and POSSESSIVE | R24 S-F1: a greedy-only sweep is the experiment that missed the lazy conjunct |
@@ -958,20 +1038,19 @@ Following S45–S52's shape, in a `counterkdiff` arm:
 | S53 | the counter's `RX_SET` becomes a plain store (untrailed) | `(a\|b){0,4}c` **at `--unroll=1`**, and `(a\|b){0,32}c` at the default | §2.2's exact defect: any body with an internal choice point |
 | S54 | the residue tail emitted at `NOPT mod K` becomes `0` | `((a)\|ab){0,20}c` (20 ≡ 4 mod 8) | §8.1's `N ≢ 0 (mod K)` cells |
 | S55 | the optional phase's `PUSH` moved after the body | `(?:ab\|a){0,2}?b` **at `--unroll=1`**, and `(?:ab\|a){0,12}?b` at the default | preference order (§3.3) |
-| S56 | the §4.2 clamp forced to `K_default` everywhere | K22 tower depth 35 | the tower stops compiling |
-| S57 | the empty-iteration guard ADDED to the bounded path | `(a?){0,12}b` (12 > K) | E-2's 60-of-225,240 family |
-| S58 | a resume label reads an untrailed loop local | a revdet or cursor loop nested inside a counter loop at `NOPT > K` | E16's invariant, below |
+| S56 | the empty-iteration guard ADDED to the bounded path | `(a?){0,12}b` (12 > K) | E-2's 60-of-225,240 family |
+| S57 | a resume label reads an untrailed loop local | a revdet or cursor loop nested inside a counter loop at `NOPT > K` | E16's invariant, below |
 
 Each row is paired with a POSITIVE CONTROL asserting `VM_RUNG_COUNTER` is
 stamped for its witness on the unsabotaged build. A sabotage row whose witness
 does not select the strategy is a green row that proves nothing, which is
 exactly what the first draft shipped.
 
-S57 is deliberately the sabotage that ADDS something. §5 says the one thing an
+S56 is deliberately the sabotage that ADDS something. §5 says the one thing an
 implementation lane must not do is add the guard for safety, and a sabotage row
 is how that instruction acquires a check.
 
-**S58 and the invariant it attacks** [R25 E16, verified by the panel]. Counter-K
+**S57 and the invariant it attacks** [R25 E16, verified by the panel]. Counter-K
 makes slot and local SHARING ACROSS TRIPS load-bearing: one emitted body copy
 is re-entered at every iteration, so any per-loop local inside it is reused
 where replication gave each copy its own. That is safe today only because of an
@@ -999,18 +1078,12 @@ across an outer trip boundary.
    subject well above it returns `RX_ERR_FRAMES` rather than a wrong answer.
    Writing the cell as "the pattern the cap refused now compiles" would be
    true and would hide the trade.
-2. **The K22 tower at depth 35 and 40 compiles and runs.** Today: refused in
-   0.12 s by the interim guard (and, before that guard, a hang). Measured by
-   `../rungselect_impl/k22_sweep.sh`, unchanged, which is the point — the
-   sweep is committed and re-runnable and this lane re-runs it rather than
-   writing a new one.
-
-   **This cell depends on §4.2's clamp and on nothing else in the rung**, and
-   its arithmetic is proved ahead of the code by `probes/clamp_arith.py`
-   (product 2 at any depth, against a limit of 131,072). Without the clamp it
-   is red on first run — which is what R25 E1 found and why the probe exists.
-   It is therefore also the cell that F-1 can remove: if K may not vary per
-   quantifier, this cell is withdrawn and K22 closes as fast-refusal only.
+2. **WITHDRAWN — the K22 towers.** This cell asserted that the depth-35/40
+   towers compile. It depended entirely on §4.2's clamp, which the F-1 ruling
+   moved to [ENG-CLAMP], so the cell moves with it. `tests/vm/run_vm_tests.sh`'s
+   K22 block keeps asserting REFUSAL and needs no change on this landing.
+   Recorded as withdrawn rather than deleted because the note argued for it at
+   length and a reader of §4.2 will look for it here.
 3. **`((a)|ab){4000}`, `((a)|ab){4000,}` and `((a)|ab){8,4000}c` compile**,
    §3.1's mandatory-phase half. MEASURED: all three are refused today (the
    `{4000,}` row reports 4,001 copies, which is `rmin + 1`), and `((a)|ab){65}`
@@ -1058,7 +1131,7 @@ compile**, denial flags or not.
 
 | site | what happens | action |
 |---|---|---|
-| `tests/vm/run_vm_tests.sh:507-519` | **BREAKS `make test` ON LANDING.** Asserts depth-30/40 towers refuse; §8.5 cell 2 says they compile | REWRITE, not re-pin. The default-path rows assert compiles-and-runs-correctly; the refusal, its "MULTIPLY through nesting" diagnostic and the no-output-file check are re-pinned under `-fno-counter`, which is where replication — and therefore the product — still lives |
+| `tests/vm/run_vm_tests.sh:507-519` | **NO LONGER AFFECTED.** R25 C1 found this site breaking `make test` on landing, because §8.5 cell 2 asserted the towers compile while this block asserts they refuse. The F-1 ruling withdrew that cell, so the block stays exactly as it is | none. Kept in the table because the SEARCH KEY it exposed is permanent: "every site asserting a REFUSAL of a shape this rung is meant to compile", which the survey's original key could not find, since this site denies nothing |
 | `tests/lib/run_gen_timeout_tests.sh:184` | the positive control's artifact drops under the 1,000-line floor and the tripwire FIRES, exactly as written | add `-fno-counter`. **The firing happens ONCE, during bring-up, as evidence that the prediction was right; the SHIPPED check is green with the denial in place** [R25 C5]. A red positive control is never committed — the point of the tripwire is that it fired when it should, not that it stays firing |
 | `tests/vm/run_vm_tests.sh:454` | asserts `((a)\|b){0,4000}c` under `-fno-revdet` is REFUSED naming "replicate its body 4000 times" — it now compiles | add `-fno-counter`; pair with the other side (§8.5 cell 1 compiles at default) |
 | `tests/codegen/run_ir_listing.sh` `cap_no`, `cap_d45` | same, at `{0,65}` and `{0,4000}` | same |
@@ -1119,13 +1192,17 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
   withdrawn, K22 closes as fast-refusal only on the interim guard already
   landed, and the clamp becomes its own ruled row later; the rest of the rung
   is unaffected, which is worth knowing before ruling.
-- **F-2: §7.3's step charge, and SHIFT.** The E-5 entry charge is refuted by
-  measurement (§7.2); §7.3 proposes `iterations >> SHIFT` at the exit of loops
-  that push no per-iteration frame, SHIFT = 10 recommended. §7.4 should size
-  the effort before it is spent: the entire four-shape debt is reachable only
-  on `--engine=vm`, since the prefilter means the VM is never entered on the
-  shipped path. DD-2/D22 territory with the D44/R21 E-5 precedent, so not a
-  lane or manager call.
+- **F-2: the step charge — WITHDRAWN from Frank's desk and returning
+  measured.** Two proposals have now been refuted: the E-5 entry charge
+  (§7.2, by this lane) and its first replacement (§7.3, by the engine critic —
+  the predicate was vacuous). §7.4 is the redesign, and unlike its predecessor
+  every number in it is measured rather than derived. What Frank rules when it
+  returns is §7.5's trade, not a mechanism: the charge's COST is universal
+  (a ~1 GB single-pass match lands at the default budget's boundary on the
+  SHIPPED path) while its BENEFIT is diagnostic-path-only. Three settlements
+  are laid out there with the numbers; the lane recommends accepting and
+  re-deriving the default from `PCREC_STEP_SCALE`, but says plainly that this
+  is DD-2/D22 territory and not a lane call.
 
 ### 10.3 Still open for the manager
 
@@ -1151,6 +1228,23 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
 
 ---
 
+## 10.4 A forward-compatibility observation, recorded not designed
+
+Counter-K's structure — ONE emitted body copy per quantifier instead of N
+replicated ones — is the natural substitution site for a later SIMD
+RUN-EXTENSION tier (`studies/simd1/precompiled-simd-matchers.md` §15: a
+`[class]+` atom iterated 16 or 32 bytes per vector operation). Under
+replication a vectorised body would have to be substituted into N copies;
+under this rung there is one site per quantifier. No design change follows
+from this and none is proposed — it is recorded so that a future SIMD-META row
+finds the seam instead of re-deriving it.
+
+The standing caution applies to everything taken from that study: every number
+in it is Zen 1 hardware and must be RE-MEASURED before any load-bearing use
+(D12). It is a hypothesis source, never a citable measurement here.
+
+---
+
 ## 11. The residual, collected
 
 What counter-K does NOT do, each with its reason:
@@ -1158,18 +1252,21 @@ What counter-K does NOT do, each with its reason:
 1. **Unbounded quantifiers** (`X*`, `X+`, `X{m,}`'s tail) stay on the frames
    star, which already emits one body copy. Only `{m,}`'s MANDATORY prefix is
    taken (§3.1).
-2. **`{1,2}`-style towers** still multiply by 2 per level at K = 1 (§6), and
-   are refused rather than compiled. The merged-phase loop would close it;
-   §10.3 ASK 2a.
+2. **Nested SMALL-COUNT towers of any shape are refused, not compiled** — the
+   whole clamp population, moved to [ENG-CLAMP] by the F-1 ruling (§4.2).
+   D22 scopes them to fail honestly and K22's interim guard already does, in
+   0.12 s.
 3. **The step budget still does not bound wall time** (§7.3), and neither the
    refuted entry charge nor its replacement claims to. E-5's own limitation,
    inherited deliberately. What §7.3 changes is that the budget becomes
    PROPORTIONAL to work for the loops where it currently is not.
-4. **§7.3's charge is designed and unmeasured against a real implementation.**
-   The arithmetic in its SHIFT table is derived from the measured step and
-   iteration counts, not from a build that charges this way — the charge does
-   not exist any more than the counter loop does. It is the same disclosure
-   `../eng_brep_design.md` §8 item 1 makes about K itself.
+4. **§7.4's charge is specified and unmeasured against a real
+   implementation.** Its COUNTS are measured; its BEHAVIOUR is not, because no
+   build charges this way — the same disclosure `../eng_brep_design.md` §8
+   item 1 makes about K itself. Two specific gaps: the revdet BACKWARD WALK's
+   iterations are uncharged today and are NOT measured by the probe (its scan
+   anchor is the cursor rung's span loop), and no measurement covers a nested
+   counter loop inside a possessified outer one.
 5. **The frame requirement is UNTOUCHED, so the endgame cell gains a runtime
    ceiling where it loses a compile-time refusal** (§3.5). One choice point per
    iteration is semantics-dictated; no value of K moves it, and growable frames
@@ -1178,11 +1275,10 @@ What counter-K does NOT do, each with its reason:
    frames, which is the possessive arm's second independent justification.
 6. **The clamp over-estimates the subtree product** where a nested quantifier
    takes the cursor rung (§4.3), costing unrolling on those shapes.
-7. **Everything in §4.2 is contingent on F-1.** If K may not vary per
-   quantifier, the clamp does not exist, §8.5 cell 2 is withdrawn, and K22
-   closes as fast-refusal only on the interim guard already landed. The rest
-   of the rung — the counter, the two phases, the cost arm, the size win on
-   flat bounded repeats — is unaffected either way.
+7. **K does not adapt to anything** (F-1, ruled): one per-artifact constant,
+   so a pattern mixing a `{0,3}` and a `{0,4000}` unrolls both by the same
+   number, and the first is replication either way (§3.2). Adaptive K is
+   [ENG-CLAMP]'s and the §4.4 bench's territory, not v1's.
 8. **`../eng_brep_design.md` §8 item 4 — nested bounded repeats generally —
    shrinks but does not close.** This rung makes the emitted size of a nesting
    path linear where the clamp applies, and says nothing new about the CAPTURE
