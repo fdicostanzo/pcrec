@@ -137,9 +137,12 @@ several landings since the row was written. The cause of the 27 lines was not
 chased; the point of the row is that the order of magnitude and the shape both
 reproduce.
 
-**gcc's cost is linear at −O1 and quadratic at −O2.** −O1 doubles when N
-doubles (0.52 → 1.01 → 2.02 → 3.22 across 64/128/256/400); −O2 goes ×3.1,
-×4.1, ×2.7 over the same steps, i.e. an exponent of about 2. `limits.h`'s
+**gcc's cost is linear at −O1 and quadratic at −O2.** −O1 tracks N closely
+(0.52 → 1.01 → 2.02 → 3.22 across 64/128/256/400 — the first two intervals
+double, the third is ×1.56 against a ×1.56 step in N, so "doubles" was the
+wrong word for a claim that is really "exponent 1"; a regression over the
+whole sweep gives **0.99**). −O2 goes ×3.1, ×4.1, ×2.7 over the same steps,
+i.e. an exponent of about 2. `limits.h`'s
 recorded curve (0.50 / 1.40 at N=64, 3.50 / 51.54 at N=400) is reproduced to
 within the noise of a different machine. This is the whole justification for
 `PCREC_MAX_VM_REPEAT_COPIES = 64` and it survives re-measurement.
@@ -500,7 +503,7 @@ The 0 is not inert: on the same instrument `\b`/`\B` follows give 332 of 720
 diverging and `^` gives 80 of 240, so the sweep can and does find divergence
 where divergence exists.
 
-### 2.6 What it covers — two censuses, and they disagree by 4×
+### 2.6 What it covers — two censuses, and they disagree by more than four times
 
 `probes/probe_possess_corpus.py` runs the same analysis (imported, not copied,
 so a refutation moves both numbers at once) over two populations.
@@ -633,9 +636,18 @@ PCRE2 does subsumption reasoning this note explicitly defers (§2.7).
 deterministic → boundary record → frames + stamped ceiling. [M4.5b] landed 2
 of the 5 rungs. What exists in `emit_vm.c` today is a two-way choice made per
 `A_REP` by `vm_cursor_fits` — a deterministic FIXED-LENGTH body (via
-`vm_det_seq`, plus D44.1's capture-offset extension) takes the cursor rung;
-everything else falls through to frames, bounded or unbounded. D46 stamps the
-choice per quantifier and `--emit-ir` reports it.
+`vm_det_seq`, plus D44.1's capture-offset extension) takes the span-loop
+cursor; everything else falls through to frames, bounded or unbounded. D46
+stamps the choice per quantifier and `--emit-ir` reports it.
+
+**A naming note, because this note and `engine_m4.md` count rungs
+differently** [R24 C-F3]. `--emit-ir` stamps the three values `cursor`,
+`frames-bounded` and `frames-unbounded`, and the census below is keyed on
+those stamps — so "cursor" here is an EMITTED-STRATEGY name, not a ladder
+position. In §2.5's own hierarchy the cursor is the fixed-stride rung (the
+single-byte body is just its stride-1 case), and `cursor` as emitted today
+covers fixed-stride and nothing below it. Where this note says "the cursor
+rung" it means the stamp; where it discusses the ladder it uses §2.5's names.
 
 ### 3.2 The census: what the rungs catch today
 
@@ -645,27 +657,72 @@ it cannot drift from what is emitted). Over the 756 harvested patterns, with
 `--engine=vm` forced so every pattern reaches the VM
 (`outputs/rung_census_forcedvm.tsv`):
 
-| rung | emitted stamps | distinct (pattern, quantifier) |
-|---|---|---|
-| cursor | 1,404 | 311 |
-| frames-unbounded | 1,234 | 111 |
-| frames-bounded | 236 | 96 |
+**Every figure in this section is now produced by `probes/census_rungs.py`,
+which is committed and reads the archived census files.** The first version
+computed them in an uncommitted shell pipeline; two of the three columns were
+wrong and none could be re-derived. See the end of this section for what went
+wrong, and §10.
 
-**Read the two columns, not one.** The stamp count is what the EMITTER sees
-and the distinct count is what the AUTHOR wrote, and they differ by 4× for
-exactly the reason this row exists: replication multiplies the quantifiers the
-emitter handles. One 60-character corpus pattern,
+| rung | emitted stamps | distinct (pattern, rung, detail) | distinct patterns |
+|---|---|---|---|
+| cursor | 1,402 | 398 | 349 |
+| frames-unbounded | 1,234 | 191 | 188 |
+| frames-bounded | 236 | 148 | 140 |
+
+The middle column is a LOWER BOUND on distinct source quantifiers, and the
+script says so where it computes it: `detail` is the emitter's role text
+(`"frames rung, bounded {0,4}, greedy"`), so two copies of one source
+quantifier collapse — which is the point — but so do two genuinely different
+quantifiers with the same bounds and preference. The emitted `label` cannot be
+used instead: replication assigns a fresh label per copy, which is the very
+inflation the column exists to see past.
+
+**Read the columns together, not one.** The stamp count is what the EMITTER
+sees and the distinct counts are closer to what the AUTHOR wrote. Across the
+table stamps exceed distinct triples by **3.9×** (2,872 against 737), and on
+the cursor row by 3.5× — replication multiplying the quantifiers the emitter
+handles. The sharpest single cell: one 60-character corpus pattern,
 `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}`, contributes
-**352** rung stamps from three source quantifiers. This is the third
-amendment's surviving consequence (a) — budgets go on the unrolled quantity —
-observed on a second, independent quantity.
+**352 rung stamps**. Its source has **7** distinct quantifier shapes in all,
+of which **3** are on the frames-bounded rung; the original text said "three
+source quantifiers" without that narrowing and so understated the pattern's
+own complexity while overstating the inflation ratio. Either way the point
+stands and is the third amendment's surviving consequence (a) — budgets go on
+the unrolled quantity — observed on a second, independent quantity.
 
 Under DEFAULT engine selection (`outputs/rung_census_default.tsv`) the picture
-is smaller still: 613 of 756 patterns request no captures and never reach the
-VM at all, and only 11 distinct patterns put any quantifier on the
-frames-bounded rung. **The population this row is about is small and the
-compiler already knows how to identify it** — which is the argument for
-solving it well rather than cheaply.
+is smaller: 613 of 756 patterns request no captures and never reach the VM at
+all, and **15** distinct patterns put a quantifier on the frames-bounded rung
+(822 / 164 / 75 stamps across cursor / frames-unbounded / frames-bounded).
+**The population this row is about is small and the compiler already knows how
+to identify it** — which is the argument for solving it well rather than
+cheaply.
+
+**What went wrong the first time, because the cause is reusable** [R24
+M-F1/M-F2]. The original numbers came from a pipeline ending in
+`sort -u`, run under `LANG=en_US.UTF-8`. That locale's collation treats
+strings differing only in punctuation as EQUAL, so `sort -u` silently merged
+distinct patterns:
+
+```
+$ printf '%s\n' '\d+' '[\d]+' | sort -u | wc -l
+1
+$ printf '%s\n' '\d+' '[\d]+' | LC_ALL=C sort -u | wc -l
+2
+```
+
+Every "distinct" figure from that pipeline was therefore an UNDERCOUNT — 11
+instead of 15, 311/111/96 instead of 398/191/148 — while the stamp tallies,
+which never passed through `sort -u`, were right. The panel found the wrong
+number and found the column unreproducible; this is why. A regex test corpus
+is close to a worst case for locale collation, since its patterns differ
+mostly in punctuation. The replacement script counts in python with exact
+string equality and never shells out.
+
+(The stamp total also moves by 2, from 1,404 to 1,402 cursor: two corpus
+patterns contain a literal tab, which shifts the fields of a TSV row. The
+census script drops rows without exactly five fields rather than
+misattributing them, and reports the count so the loss is visible.)
 
 ### 3.3 The motivating cell, reproduced
 
@@ -959,10 +1016,26 @@ design has edges:
   territory;
 - captures inside the loop, including a group inside an alternation inside the
   loop, which §3.4 shows is where the last-iteration rule is least intuitive;
-- greedy AND lazy at every shape, since §2.3's lazy argument is BELIEVED.
+- **`(|a){m,n}` specifically** — a nullable-FIRST-branch group in a bounded
+  repeat. Named as its own cell because R24 measured it as the family where
+  the oracles themselves disagree: over 15,600 cells, pcrec agreed with
+  libpcre2 on every one, while **python disagreed with libpcre2 on 106 cells,
+  all of them `(|a){m,n}` captures**. A two-way python-only check on this
+  family would have raised a false alarm against pcrec. That is a measured
+  argument that D44's three-way rule earns itself on this row rather than
+  being ceremony;
+- **greedy AND lazy at every shape — MANDATORY, not a nice-to-have** [R24
+  S-F1]. §2.3's lazy argument was BELIEVED and was REFUTED; the repaired rule
+  has a lazy-only conjunct, so a sweep that spells every shape greedy is
+  structurally incapable of exercising the conjunct. Any implementation lane
+  that omits the lazy half is re-running the exact experiment that missed the
+  defect the first time.
 
 §3.6's no-pre-built-exclusion rule stands: a three-way disagreement is
-investigated, not filtered.
+investigated, not filtered. Note U9 (`docs/dev/upstream_issues.md`) before
+investigating one in a possessive-spelled family: PCRE2 10.46 and python
+disagree there for a reason that is neither engine's fault and none of
+pcrec's.
 
 ### 5.4 A gate the lane gets for free
 
@@ -1019,6 +1092,19 @@ and the same ten patterns against python3 `re` over 14 subjects each: **0
 divergences**. The omission is deliberate, visible in the listing, and matches
 the oracle.
 
+**Scope of that instrument, and the stronger result that replaced it** [R24
+S-F5]. This lane's check compared SPANS ONLY and against python ONLY — it
+could not have seen a capture-slot divergence, and it had no second oracle. The
+R24 panel rebuilt it captures-aware and three-way: **15,600 cells, pcrec equal
+to libpcre2 on every one, span and every capture slot.** So §6's claim is now
+confirmed at a strength this lane did not reach, and the confirmation is the
+panel's, not this note's.
+
+The rebuild also produced the S-F5 finding that §5.3 now carries as a named
+cell: python disagreed with libpcre2 on 106 of those cells, all `(|a){m,n}`
+captures. Had the panel checked two ways instead of three, §6's own family
+would have produced a false alarm against pcrec.
+
 **The one thing an implementation lane must not do:** add the guard "for
 safety" when the counter arrives. It would be a semantic change, it is exactly
 what E-2 measured as wrong on 60 of 225,240 pairs, and the counter makes it
@@ -1031,8 +1117,9 @@ unnecessary.
 - **Capture-free patterns: zero change.** They never reach `emit_vm.c`; §5.4's
   byte-identity gate covers them and 613 of 756 corpus patterns are in this
   class.
-- **The corpus: small and predictable.** 11 distinct patterns put a quantifier
-  on the frames-bounded rung under default selection. Possessification touches
+- **The corpus: small and predictable.** 15 distinct patterns put a quantifier
+  on the frames-bounded rung under default selection (§3.2; the figure was 11
+  before [R24 M-F1] and the undercount's cause is recorded there). Possessification touches
   more (183 of 1,725 quantifiers across both bounds), and every one of those
   changes emitted C while changing no answer — which is precisely what
   `emitdiff`-style checking is for and what the §5.1 differential asserts.
@@ -1066,14 +1153,25 @@ Ordered by how likely it is to matter.
    lacks a counter the loop would have (so slower). The knee's LOCATION is
    the claim most exposed to this, though the compile-time curve alone would
    put it in the same place.
-2. **`$` as a follow.** §2.5 declines every zero-width assertion, which is
-   sound and costs the common `X{m,n}$` shape. Whether `$` is separately safe
-   is BELIEVED-yes and unmeasured; it is the single highest-value follow-up
-   because end-anchored bounded repeats are everywhere.
-3. **Lazy quantifiers under possessification.** §2.3 argues the chain is
-   preference-independent, and the differential could not check it because
-   there is no possessive spelling of a lazy quantifier. A pcrec-vs-pcrec
-   differential (§5.1) CAN check it once forcing exists, and should.
+2. **ANSWERED at [R24], kept for the record: `$` as a follow.** This entry
+   read "BELIEVED-yes and unmeasured; the single highest-value follow-up". It
+   is now MEASURED-WITH-GATE — safe at 0 of 720, unsafe at 180 of 720 under
+   `(?m)` — and §2.5 carries the result and the live-gate requirement. Left in
+   place rather than deleted because the note's own prediction about which
+   unmeasured item mattered most turned out to be right, and that is worth
+   being able to check next time.
+3. **Lazy quantifiers under possessification — PARTLY ANSWERED, and the answer
+   was a REFUTATION** [R24 S-F1]. This entry recorded that the differential
+   could not check lazy "because there is no possessive spelling of a lazy
+   quantifier", and proposed deferring the check to §5.1's pcrec-vs-pcrec
+   differential once forcing exists. Both halves were wrong in a way worth
+   keeping visible: the comparison `X{m,n}?` against `X{m,n}+` is perfectly
+   well-formed and needed no forcing, no implementation and no new
+   instrument — only the realisation that the possessive form is the right
+   right-hand side for BOTH preferences. Deferring a cheap check to a lane
+   that does not exist yet is how the defect survived the note. §2.4's lazy
+   family now runs; what remains unmeasured is lazy under NESTING (item 8) and
+   lazy against libpcre2 (item 6).
 4. **Nested bounded repeats.** Every measurement here uses a single level. The
    replication factors multiply, `vm_count_slots` records only the maximum,
    and §3.4's capture derivation is single-level. This is the largest
@@ -1082,23 +1180,42 @@ Ordered by how likely it is to matter.
    "byte set" is still the right object (the automaton is over bytes), so the
    analysis should carry over unchanged — BELIEVED, unmeasured, and the
    multi-byte-class shapes are the place to check it.
-6. **libpcre2 anywhere in this lane.** Every oracle check here is python3 `re`.
-   §5.3's three-way sweep is specified and not run; a design note is not the
-   place, but the panel should not read any number here as PCRE2-verified.
+6. **libpcre2 anywhere in THIS LANE.** Every oracle check this lane ran is
+   python3 `re`. **[R24] closed the most important part of this gap from the
+   outside:** the panel re-ran the full 5,016 × 260 greedy family against
+   libpcre2 and reports 0 counterexamples with an identical possessifiable
+   population, and re-ran §6's own family three ways at 15,600 cells with
+   pcrec matching libpcre2 on every span and every slot. So the headline
+   soundness result IS PCRE2-verified — by the panel, not by this note. What
+   is still python-only here: the LAZY family added at [R24] (§2.4), the two
+   censuses of §2.6, and the `$`/assertion sweeps. §5.3's three-way sweep
+   remains specified and not run by anyone.
 7. **The realistic pattern set is hand-written from memory of the shapes**, by
    the same author who wrote the analysis. That is the exact control-shares-a-
    source failure this project has hit before. A set harvested from real
    sources would be a strictly better denominator and this one should be
    treated as indicative, not measured.
 8. **NESTED quantifiers' verdicts are censused but not differentially
-   validated.** `probe_possess.py` compares the greedy and possessive forms of
-   the pattern's OUTERMOST quantifier only, because that is the one it can
-   respell possessively by construction. The FOLLOW computation for a
+   validated.** `probe_possess.py` compares the outermost quantifier's
+   preference spelling against its possessive spelling, and only the
+   OUTERMOST one. The FOLLOW computation for a
    quantifier inside another quantifier's body — where the enclosing loop's
    own FIRST set joins the follow, which is the subtlest line in §2.2 — is
    therefore exercised by §2.6's censuses and checked by nothing. It is the
    single most likely place for a soundness bug to be hiding, and §5.1's
    pcrec-vs-pcrec differential is what should close it.
+
+   **[R24] partly retired this, and the residual is narrower than it was.**
+   The panel attacked exactly this line — 42,336 pairs × 200 subjects, 0
+   diverging, with failing-direction controls that confirm the line is
+   load-bearing (dropping the enclosing-loop-FIRST term yields 172
+   divergences; dropping U1+U2 yields 551). So the transitive FOLLOW rule is
+   now measured, not merely censused. What is still unchecked is the same
+   nesting question for the LAZY conjunct, which postdates that sweep: the
+   probe's `info[0]` selection means a lazy quantifier nested inside another
+   quantifier's body has never been differentially tested. The panel's own
+   note that `info[0]` is "correct only by accident" applies with more force
+   now that there are two rules to get right instead of one.
 9. **Assertions INSIDE the body are ignored by the unique-iteration check**
    (`Glushkov.build` skips `AT`), while assertions in the FOLLOW widen to all
    bytes (§2.5). The asymmetry is deliberate and BELIEVED sound in the
@@ -1167,7 +1284,43 @@ entered the note as findings.
   serially before being quoted, and §1.4's table is the serial one. The
   archived sweep still contains the loaded cells, which is why the note quotes
   §1.4's table and not the sweep's `pcrec_s` column for those rows.
+  **[R24 M-F4] found the sequel to this and it is worse than the original
+  defect:** the serial re-measurement was never ARCHIVED, so §3.3 ended up
+  quoting a number that existed only in a transcript. A number that cannot be
+  re-run is not a measurement, whether or not it is correct. §3.3's table is
+  now produced whole by `probes/probe_cell33.sh`, serially, into one file.
 - **Every scratch compiler was built by `probes/mkscratch.sh`**, which asserts
   that each patch actually changed its file — so a `sed` whose anchor moved
   fails loudly instead of silently building the stock compiler and reporting
   its numbers under a prototype's name.
+
+### 10.1 The three defects [R24] added
+
+- **The lazy preference family was never in the differential** (§2.3, §2.4).
+  `probe_possess.py` built a possessive respelling of each generated pattern,
+  a lazy quantifier has no possessive spelling, and the helper that noticed
+  that returned `None` — silently dropping half the design's claim from a
+  check the note described as covering it. The defect is not the `None`; it is
+  that the skip was invisible in the output, so nothing in 5,016 rows of TSV
+  said "and half the question was not asked". The replacement derives BOTH
+  spellings from one base count, so omitting a family now requires deleting a
+  loop rather than falling through a helper. §8 item 3 records the reasoning
+  error that kept it there: the note KNEW lazy was unchecked, wrote it down as
+  a limitation, and proposed deferring it to an implementation lane that does
+  not exist — when the check cost one afternoon and needed nothing new.
+- **`sort -u` under a UTF-8 locale silently merged distinct patterns** (§3.2),
+  making every "distinct" figure in the rung census an undercount. Two of the
+  panel's findings (M-F1's wrong count, M-F2's unreproducible column) are the
+  same defect seen from two angles. Two aggravating factors, both mine: the
+  pipeline was never committed, so nobody could re-derive it; and a regex test
+  corpus is close to a worst case for locale collation, since its patterns
+  differ mostly in punctuation. `probes/census_rungs.py` now produces every
+  figure §3.2, §3.3 and §7 quote, in python, with exact string equality.
+- **§3.3's table mixed three sources and mislabelled a row.** Its line count
+  came from one archived file, its pcrec time from an unarchived transcript,
+  and the row it called "cursor rung" used `(?:ab){0,N}y` — non-capturing,
+  therefore requesting no captures, therefore compiled by the DFA and never
+  reaching the VM's cursor rung at all. The panel caught the mixed sources
+  (M-F4); the mislabelled row is this lane's own finding on re-measurement.
+  `probe_cell33.sh` now reads the engine out of `--emit-ir`'s header per row,
+  so a row cannot claim a rung the compiler did not take.
