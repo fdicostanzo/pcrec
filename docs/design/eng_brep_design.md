@@ -1353,6 +1353,30 @@ Ordered by how likely it is to matter.
 
 ## 9. Rulings requested
 
+**ALL SIX RULED (Frank, 2026-08-16 — docs/dev/decisions.md D47; outcomes
+here, reasoning there):** (1) possessify-first CONFIRMED for BOTH
+application and build order, eyes open that the D45 refuse-cap endgame
+arrives with a later ladder step. (2) K = 8, as a NAMED CONSTANT in
+src/core/limits.h (PCREC_DEFAULT_UNROLL_K), sweep may move it. (3) The
+four force flags are RESHAPED: gcc-style ALLOW/DENY flags (deny
+composes per-quantifier — each quantifier walks its own ladder skipping
+denied steps), one K value parameter, per-quantifier strategy STAMPS
+with denied-strategy-appears = hard failure, denying both universal
+fallbacks = compile error; documented as testing/tuning axes, one
+spelling family, not top-level user features. In-pattern `(*...)` hints
+DEFERRED (oracle string-identity + module-gating costs; see D47.3).
+(4) Third-amendment consequence (b) STRUCK-AND-REPLACED in the plan row.
+(5) The `$` exemption SHIPS in v1 with the LIVE !multiline gate; module
+`assertions` row inherits the gate-test obligation. (6) The lazy
+conjunct ACCEPTED — and ruling on it CORRECTED ITS OWN PREMISE: the "20
+false declines" below are refuted, all 20 GENUINELY diverge on subjects
+probe_possess.py's generator could not produce (its ALPHA omits the
+prefix `z`), the full 3,726-row possessifiable population re-swept
+targeted is 0 counterexamples both preferences, and the conjunct's
+measured cost is ZERO. The 20 cells join the .rxt corpus as guards.
+The original asks are retained below unedited; ask 6's premise is
+corrected where §2.4/§10 discuss the sweep.
+
 1. **The ladder order and the recommendation to build possessification
    FIRST.** §2 is the largest win on the realistic population (82% of bounded
    quantifiers) and it is the only one of the three that removes machinery

@@ -3978,3 +3978,78 @@ the DD-8 tracer listing both inherit it as an input.
 
 Revisit-when: a selection point is measured to be genuinely
 un-forceable (then record why here, with the measurement).
+
+## D47 — the six [ENG-BREP] §9 rulings (Frank, 2026-08-16, twenty-fourth session continuation)
+
+Ruled in conversation against eng_brep_design.md §9 (post-R24 text) and
+docs/dev/reviews/2026-08-15-r24-eng-brep.md.
+
+1. **Possessify-first, CONFIRMED for BOTH orders.** Application order:
+   each quantifier walks possessify → rung-select → counter-K, cheapest
+   provable machinery first. Build order: the possessification pass is
+   built first — with eyes open that the D45 refuse-cap endgame
+   (`((a)|b){0,4000}c` compiling) arrives only when a later ladder step
+   lands, since that pattern is not possessifiable; the cap + timeouts
+   stay the guard until then.
+2. **K = 8 as the shipped default unroll factor — as a NAMED CONSTANT in
+   the constants file** (src/core/limits.h, e.g. PCREC_DEFAULT_UNROLL_K),
+   never inline in the emitter ("this is a magic number. put it in a
+   file of constants"). Subject to §4.4's bench sweep moving it once the
+   counter loop exists.
+3. **Forcing surface: gcc-style ALLOW/DENY flags, adopted; in-pattern
+   `(*...)` hints, deferred.** Frank's per-pattern-vs-per-section concern
+   is resolved by DENY semantics (each quantifier walks its own ladder
+   skipping denied steps — composes per-quantifier with no addressing),
+   not by force semantics. One spelling family (`-fno-possessify`,
+   `-fno-counter`, ... or a single keyed option), documented as
+   testing/tuning axes, NOT sprawling top-level user features. Plus: a
+   value parameter for K (deny cannot express it), and the do-or-die
+   half moves to OBSERVABILITY — per-quantifier strategy stamps
+   (VM_RUNGS-bitmask precedent, D46), a denied strategy appearing in a
+   stamp is a hard test failure, and denying both universal fallbacks
+   where nothing else applies is a compile ERROR, never a silent
+   un-deny. Every differential remains expressible as denials because
+   replication and counter sit at the ladder's bottom. The `(*...)`
+   hint mechanism is DEFERRED: it breaks pattern-string identity with
+   the oracles (every sweep would need a hint-stripping seam), and it
+   is a reinterpreting pcrec-only spelling — module-gated per the R-d
+   precedent — whose unique benefit (per-section attribution) is served
+   by minimal repro patterns. If contextual tuning is ever wanted as a
+   USER feature it gets designed then, as a module.
+4. **Third-amendment consequence (b): STRUCK-AND-REPLACED** in the plan
+   row (applied same conversation). Emitter-side strategies cannot
+   shrink nfa.c's A_REP replication; the surviving measured fact is the
+   quadratic-in-unrolled-count reverse-DFA compile cost, an IR-level
+   lever belonging to a different (unproposed) row.
+5. **The `$`-follow exemption SHIPS in v1, gated LIVE** — delegated to
+   the manager and so decided: the analysis consults the multiline
+   option bit at verdict time (a real branch, not a comment), and the
+   module `assertions` plan row inherits a test obligation NOW (a
+   `(?m)` pattern whose `$`-follow quantifier must NOT possessify).
+   Frank also ruled the general point: ordering/path decisions are
+   delegated to the manager within bounds — "more about the goal than
+   the path".
+6. **The lazy conjunct is ACCEPTED — and its measured cost is now ZERO,
+   not 20.** Pulling the "20 false declines" for Frank's inspection
+   refuted the claim: all 20 GENUINELY diverge (e.g. `za{1,3}?` on
+   "zaa": lazy (0,2), possessified (0,3)) on subjects the archived
+   sweep could not generate — probe_possess.py's random-subject
+   alphabet "abcd " omits the prefix character `z`, so every
+   z-prefixed pattern was swept essentially without its prefix. The
+   full 3,726-row possessifiable population (both preferences,
+   conjunct live) re-swept with targeted repetition-heavy subjects: 0
+   counterexamples both families — the headline soundness HOLDS under
+   the fixed instrument. No sharper v2: there is no population to
+   recover. Frank additionally ruled the 20 cells join the .rxt corpus
+   as oracle-verified guards (the cells a regressed lazy conjunct
+   would miscompile).
+
+Why: recorded because five of the six change what the [M4.6]
+implementation lane builds (the flags surface most of all), and because
+ruling 6's premise was corrected DURING the ruling — the decision log
+should show the number Frank actually ruled on.
+
+Revisit-when: the §4.4 bench moves K (expected, ruled anticipatable);
+module `assertions` lands multiline (ruling 5's gate becomes live-fire);
+a real population appears that the lazy conjunct declines wrongly
+(none measured today).

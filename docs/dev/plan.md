@@ -255,9 +255,18 @@ stated terms.
   states at k=2, 1,485 at k=8, from a pattern whose visible nesting
   never moves) plus the rule that the closure's cost driver is the
   CONTEXT COUNT, which the memo keys on, and not reader-visible
-  nesting; (b) ENG-BREP's replication reduction (possessify /
-  rung-select / counter-K) also shrinks pcrec's own DFA-construction
-  work, an additional measured motivation for this row; (c) the
+  nesting; (b) ~~ENG-BREP's replication reduction also shrinks pcrec's
+  own DFA-construction work~~ **STRUCK-AND-REPLACED (Frank, 2026-08-16,
+  R24 ruling 4; refutation measured in eng_brep_design.md §1.4):**
+  possessify/rung-select/counter-K are EMITTER-side strategies, while
+  the replication the compiler itself suffers happens upstream in
+  src/ir/nfa.c's A_REP lowering — this row shrinks nothing there. The
+  SURVIVING measured fact: the compiler's own cost on the
+  capture-erased path is QUADRATIC in the unrolled count and lives
+  almost entirely in the REVERSE DFA (4,002 states at N=4000 vs a
+  2-state forward DFA at every N; 0.012 s → 2.689 s over N=64..4000).
+  Shrinking THAT would be an IR-level lowering change — a different,
+  currently unproposed row; (c) the
   bounded-repeat-times-nullable-loop family (S14's witnesses, ~0.1%
   of random patterns) joins the cost-gate families any strategy
   bench must sweep.
@@ -325,7 +334,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M6 — PCRE feature modules
 
-- [M6.0] STATE:not-started — milestone (expand on arrival): classes+ (\d \w \s, POSIX classes), assertions (\b \A \z, mid-pattern $), modifiers, lookaround, backrefs, atomic groups
+- [M6.0] STATE:not-started — milestone (expand on arrival): classes+ (\d \w \s, POSIX classes), assertions (\b \A \z, mid-pattern $), modifiers, lookaround, backrefs, atomic groups. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m))
 
 (2026-08-13: the classes+ and modifiers halves already landed as gated
 modules — MOD-0.3 and MOD-0.5, see docs/dev/plan_completed.md. Remaining:
