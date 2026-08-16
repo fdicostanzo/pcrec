@@ -1411,6 +1411,48 @@ Ordered by how likely it is to matter.
 
 ---
 
+### 8.1 Follow-up, ratified for benching (Frank, 2026-08-16): CAPTURE-WALK SINKING
+
+Recorded during the rung-select lane's flight, from conversation on the
+as-built revdet listing. The revdet rung derives last-iteration captures
+by a backward walk AT EACH COMMIT, then tries the follow — so a retreat
+that dies in the follow's first byte has paid a walk (bounded by the
+committed span) for captures nothing ever observed. Since no construct in
+the current tier can read a capture slot before ACCEPT, the walk is free
+to move later, and the design space is ONE knob — how far the walk SINKS:
+
+- **eager** (as built): walk at every commit; O(span) per retreat,
+  O(span²) worst case on a long failing follow (disclosed at §3.4).
+- **n-step / sink-to-first-branch** (Frank's proposal): in an AOT
+  emitter this is pure CODE MOTION, no runtime counter — emit the walk
+  block after the follow's first n consume events, stopping at the first
+  choice point so nothing duplicates. n is pattern-determined and
+  maximal for free (`abba` gives n=4). Retreats that die before the sink
+  point never pay the walk; the retreat frame is pushed at commit as
+  today, so frames/trail accounting is unchanged.
+- **accept-time** (n=∞): retreat pays only the one reverse step that
+  locates the previous boundary; ONE walk per loop at the accept label
+  derives everything. O(span) total. Needs the loop's entry/boundary
+  slots trailed (per pass, not per iteration) so a path that abandons
+  the loop entirely cannot leak stale spans.
+
+The unifying rule: the walk sinks to the LATEST POINT DOMINATING EVERY
+OBSERVER of its slots. Base tier: that is accept. A future `backrefs` or
+callout module is an observer that pulls the sink point earlier
+AUTOMATICALLY, per pattern — no eager/lazy mode switch. Both sunk
+variants stay forceable against eager for §5.1's differential.
+
+Why gcc cannot do this for us (and what it may do anyway): capture
+writes are TRAILED — each store pushes an undo record the backtrack path
+reads — so the walk is live on the fail path as far as gcc can prove,
+and neither the walk loop nor its trail traffic can be compiler-
+eliminated. Plain untrailed stores gcc may sink or kill on its own. So
+the bench question is the DELTA the manual sink adds over gcc's share:
+BENCH-1's bounded-repeats family, non-disjoint follows, eager vs sunk
+forced both ways, compile time and throughput. Per D18 the optimization
+is built only if that delta earns it; "negligible" is a good, cheap
+outcome.
+
 ## 9. Rulings requested
 
 **ALL SIX RULED (Frank, 2026-08-16 — docs/dev/decisions.md D47; outcomes
