@@ -8937,3 +8937,79 @@ waiting for red. D46's stamp machinery made each re-pin assertable.
 corpus 7,655 + cli 257; known_fail EMPTY; K-list K2, K7, K9, K22(half);
 no lanes; rungselect worktree removed, branch deleted. NEXT: the
 testscripts pattern (ruled above), then counter-K with Frank.
+
+## 2026-08-16 (EDT), twenty-seventh session — counter-K design paneled (R25); D27 quantifier corpus LANDED with K23; the lane refuted its own fix-of-record
+
+Two lanes ran concurrently on a smoke-verified 673992a baseline.
+
+**[ENG-BREP] counter-K (opus lane, worktrees/counterk) — design-first, still
+NO engine code.** The lane delivered the design note (4d1306f) and, assigned
+the §7.2 cost measurement while the panel ran, REFUTED the fix-of-record
+(b0b9b8c): possessified loops do NOT charge zero steps — an unanchored
+failing search charges one per start position through the fail label, steps
+≡ entries exactly (three sizes), so the E-5-shaped entry charge closes half
+an order where the gap is three; the q·n cost model was also wrong; and the
+whole four-shape debt is DIAGNOSTIC-PATH-ONLY (--engine=vm; default
+prefiltered path: 0 steps / 0.003 s at 1 MB). Its §7.3 replacement
+(iterations >> SHIFT at frameless-loop exit) was then itself BLOCKED by the
+engine critic: the predicate keys on pushes where the justification needs
+pops-through-the-fail-label — RX_CUT charges nothing, so the revdet scan and
+counter-K's own possessive arm are excluded by the rule that claims them,
+and the advertised strategy-invariance is vacuous.
+
+**R25 panel** (docs/dev/reviews/2026-08-16-r25-counterk.md, commits 5a1e2b2
++ 3b11b61): three read-only critics, distinct lenses. FIVE blockers total:
+E1 (the §4.2 clamp's ancestors-only product parks the K22 tower at exactly
+the node cap — depth 35/40 still refuse; needs a whole-subtree algorithm +
+arithmetic probe), E2 (both sabotage witnesses sit below K — undetectable),
+C1 (tests/vm/run_vm_tests.sh:507-519 asserts the towers REFUSE on the
+default path — the literal negation of the acceptance cell, unfixable by
+-fno-counter; found because the survey's search key was "denial falls back
+to replication" and this site denies nothing), D1 (per-quantifier K collides
+with eng_brep_design.md §4.5's ruled prohibition — FRANK, F-1, pending),
+and addendum 17 (§7.3 above). Plus 13 majors incl. a mandatory-phase
+possessive miscompile hazard (E5) and the endgame cell trading compile-time
+refusal for RX_ERR_FRAMES at ~512 subject bytes (E7). ASK 3/4 ruled at
+manager altitude (uniform trailed counter slot v1; one slot per quantifier).
+F-2 (step charge) WITHDRAWN from Frank until a redesigned, MEASURED charge
+exists. Frank flagged mid-session that studies/simd1's unrolling work bears
+on the K axis — three items folded into the lane's bench plan (per-body-kind
+K curves; K=1+pragma-unroll comparison cell; the forward-compat note that
+counter-K's one-body-copy is the natural SIMD run-extension substitution
+site). Lane is revising against both packages.
+
+**BOOKKEEPING OWED (manager, main tree, after F-2 is re-ruled):** the
+refuted entry-charge fix-of-record wording stands in the [ENG-BREP] plan
+row, known_issues.md (K22 sibling note), and rungselect_design.md §5 item 8.
+
+**D27 blinded quantifier corpus (sonnet cell brepspec) — LANDED, merge
+e6d37f0.** 81 blocks / 677 live oracle-verified cases in
+tests/base/d27_*.rxt (every repeat spelling greedy+lazy; bodies; 2-3-level
+nesting; nullable edges; last-iteration-wins captures incl. the
+branch-not-reset rule; 500-2000 counts; the 64-copy cap boundary as perr).
+Expectations from python re, re-verified by an independent from-scratch
+checker (678/678). ONE REAL FINDING → **K23 filed**: (a{10,20}){10,50} on
+the exact-minimum 100-byte subject returns RX_ERR_STEPS (default 10^6
+budget) where the oracle answers instantly — reproduced by the manager at
+merge; boundary is narrow (99 bytes: instant nomatch; 150+: instant match);
+NOT fixed by counter-K (choice points identical across K); owned [M4.6].
+Its regression is tests/known_fail/d27_nested_min_boundary.rxt — the
+ratchet's first resident since K18 moved out ("still failing: 1, now
+passing: 0"). Validation: all six files green (677/0) + ratchet EXIT=0 in
+the worktree, smoke 6/6 post-merge on main, pushed. Author disclosure
+handled: an incidental ps-aux exposure to the counterk lane's command line
+(post-authoring, during the author's own timeout diagnosis) — recorded;
+independence intact except possibly the direction of Finding 1, noted
+honestly. Cell + worktree removed.
+
+**Lessons:** (1) A measurement assigned to size a fix can refute it —
+cheaper before code than after; the §7.2 probe was the best money of the
+session. (2) The re-pin survey's search key IS the survey — C1 was
+invisible to "what relies on denial" because the breaking site denies
+nothing; sweep by CONSEQUENCE (what asserts the old behavior), not by
+mechanism. (3) An idle notification is not a deliverable — two lane
+reports raced their idle signals; the resend-request habit caught both.
+
+**State at entry:** HEAD e6d37f0 pushed; corpus grew by 677 live cases +
+1 known_fail resident; K-list K2, K7, K9, K22(half), K23; lanes: counterk
+(revising, no engine code); watchdog cron live; F-1 with Frank.
