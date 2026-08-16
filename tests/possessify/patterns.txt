@@ -214,3 +214,41 @@ A{2,4}a
 # loop's only remaining freedom.
 \d{4}5
 \d{4}x
+
+# ---- the CUT vs the TRAIL, and NESTED possessified loops -----------------
+# The frames-rung cut discards FRAMES and deliberately does not rewind the
+# TRAIL, because a failure OUTSIDE the loop still has to restore the loop's
+# groups to their pre-loop values. These are the cells where that distinction
+# is load-bearing: a capture written inside a possessified loop, and then an
+# outer construct that fails and must see the group restored. `ZZZ` and
+# trailing `q` follows exist to force exactly that failure after the loop has
+# already committed.
+((a)|bc){0,3}dZZZ
+((a)|bc){0,3}d
+(?:((a)|bc){0,3}d|((a)|bc){0,3}e)
+(x)((a)|bc){1,3}dq
+((a)|bc){2,2}x
+(?:((a)|bc){0,2}z)+q
+((a)|bc)+dq
+(?:(a)(b)|c){0,3}dq
+((a)(b)|(c)){0,3}d
+(?:((a)|bc){0,3}d)+q
+# NESTED possessified frames-rung loops, where each loop needs its OWN cut-mark
+# slot. The pre-pass and the emitter allocate those independently and must
+# agree exactly -- a bounded repeat REPLICATES its body, so an inner loop
+# inside a {2,2} gets two marks, and a count that under-counts would make two
+# live loops share one slot.
+(?:(?:a|bc){2,2}z){2,2}
+(?:(?:a|bc){2,2}z){2,2}d
+(?:(?:a|bc){0,2}z){0,2}d
+(?:(?:a|bc){0,2}z){2,2}
+(x)(?:(?:a|bc){2,2}z){2,2}
+(x)(?:(?:a|bc){0,2}z){0,3}d
+((?:a|bc){2,2})(?:(?:a|bc){2,2}z){2,2}
+(?:(?:(?:a|bc){2,2}z){2,2}y){2,2}
+(?:(a|bc){0,2}z){0,2}d
+(?:(?:ab|cd){2,2}z){0,3}
+(?:a{2,2}(?:b|cd){0,2}z){0,2}q
+(x)(?:(?:a|bc)+z)+d
+(x)(?:(?:a|bc){1,3}z){1,3}d
+(x)(?:(?:a|bc){0,2}z)+
