@@ -1066,6 +1066,18 @@ into a live corpus directory and close the K18 entry in the same commit, or
   spans. A reporting bug in the emitted `main()`, not a matcher defect and not
   A2's — and the fourth instance in two days of a defect living in the
   INSTRUMENT rather than the thing measured, which is §7's subject.]*
+  *[**DISCHARGED 2026-08-15 (k18-capdiff lane, merge 415587e):** the dedicated
+  capture-offset differential now exists — `k18_measurements/capdiff/`, 526
+  capture-bearing patterns on the K18 axes, 16,081 cells, 0 disagreements
+  four ways (default build vs python `re`, vs libpcre2, vs `--engine=vm`;
+  oracle-vs-oracle sanity), with a REAL-HISTORICAL-BUILD positive control
+  (pre-fix 9d39b97 scratch binary: 1,070 diverging span cells on the R23
+  SEQ family, every one END-only) and a mechanistic account of why no
+  capture-visible K18-class defect exists under the current wiring: the
+  hybrid entry consumes only the DFA's computed START, the VM re-derives
+  the end and every capture, and the reverse machine (which computes the
+  start) runs prune=0 where K18's defect requires the prune path. See
+  capdiff/CLAUDE.md.]*
 * **The reverse machine (D7) in isolation.** It is exercised throughout (the
   counters aggregate both machines) but never singled out. `prune` is off
   there, so the closure keeps every thread alive — a different code path
