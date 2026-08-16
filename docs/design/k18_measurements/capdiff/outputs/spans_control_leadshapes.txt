@@ -1,0 +1,58 @@
+# POSITIVE CONTROL, attempt 1 (spans, --no-captures, gen_shapes.py x leading atoms).
+# RESULT: 0 DIVERGENCES. This is a FINDING about the CORPUS, not proof the
+# instrument is insensitive -- see outputs/spans_control_r23family.txt for the
+# same instrument (oracle_cmp.py) firing on a different corpus, and this
+# file's own tail for the explanation.
+#
+# date (UTC):    2026-08-16 01:03 (re-run; original run 2026-08-15 20:48-20:52,
+#                identical result)
+# repo commit:   3898e066ea10df6fb4c25092d0553d2c4cf1980e (worktree k18-capdiff)
+# PREFIX binary: scratch build from git commit 9d39b97 (the commit immediately
+#                before 8f1f8c5 "K18 fix: path-sensitive epsilon closure"
+#                landed; 9d39b97 itself is design-prose-only, so its
+#                src/ir/dfa.c is byte-identical to the pre-fix shipped
+#                compiler). Built via `git archive HEAD | tar -x` into a
+#                scratch directory + `git show 9d39b97:src/ir/dfa.c` swapped
+#                in + `make`. NOT committed (scope mandate); scratch dir was
+#                /tmp/capdiff-scratch-prefix for this run.
+# FIXED binary:  ./build/pcrec (plain `make` on this worktree, commit above)
+# python3:       3.14.4
+# gcc:           15.2.0 (Ubuntu 15.2.0-16ubuntu1)
+# corpus:        outputs/corpora/leadshapes.txt (committed alongside this
+#                transcript) -- 6,000 patterns: docs/design/k18_measurements/
+#                gen_shapes.py's own dense K17/K18 shape-space sweep (first
+#                1,500 patterns), each prefixed with one of four leading
+#                atoms ("x", "xy", "(?:x)", "xx") meant to force the reverse
+#                machine to compute a non-trivial match START (the axis
+#                k18_memo_design.md Sec.4.6's R23 addendum names as where the
+#                stack-entry corruption actually lived, S11: 1,980/81,840
+#                cells wrong on the unfixed prototype).
+# command:       python3 docs/design/k18_measurements/oracle_cmp.py \
+#                  <PREFIX-binary> PREFIX <FIXED-binary> FIXED \
+#                  outputs/corpora/leadshapes.txt --subjects 20
+#
+# ---- raw stdout below ----
+
+cells where the two binaries differ: 0
+  PREFIX agrees with oracle: 0
+  FIXED agrees with oracle: 0
+  neither agrees:        0
+  patterns skipped (refused/uncompilable): 0
+pattern	subject	PREFIX	FIXED	oracle	verdict
+
+# ---- why this file reads 0/0/0/0 -----------------------------------------
+# This construction (a single K18 nullable-loop shape, prefixed by a plain
+# leading literal, at gen_shapes.py's own nesting depth of 1-2 levels) does
+# NOT reach the K18 defect on the reverse machine, on this box, at this
+# sample size. It is not evidence the defect is unreachable via a leading
+# atom -- outputs/spans_control_r23family.txt runs the SAME instrument
+# (oracle_cmp.py, same two binaries) against a DIFFERENT corpus (the R23
+# panel's own F1 "SEQ" family: an inner K18 loop followed by a SIBLING loop,
+# both inside an outer loop, THEN leading-atom-prefixed) and finds 1,070
+# diverging cells across 1,032 of 6,096 patterns -- so the instrument is
+# sensitive; this specific corpus shape just does not land on the bug.
+# Kept as a committed, honestly-reported negative result rather than
+# silently discarded, per this project's own instrumentation-defect lesson
+# (k18_memo_design.md Sec.7): a corpus that could not have failed is not
+# a measurement, and knowing WHICH corpus shapes can and cannot reach a
+# defect is itself part of the record.

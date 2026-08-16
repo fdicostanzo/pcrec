@@ -1,0 +1,79 @@
+# POSITIVE CONTROL, attempt 2 (spans, --no-captures, R23-family SEQ shapes x
+# leading atoms). This is the control that FIRES -- non-vacuous proof the
+# instrument (a direct pre-fix-vs-fixed binary diff, --no-captures, over a
+# subject sweep) detects a real K18-class divergence on a real, non-
+# source-shared build, once the corpus uses the right shape family.
+#
+# RESULT: 1,070 diverging cells across 1,032 of 6,096 patterns (398,877
+# cells checked, 0 build failures).
+#
+# date (UTC):    2026-08-16 00:56-00:59
+# repo commit:   3898e066ea10df6fb4c25092d0553d2c4cf1980e (worktree k18-capdiff)
+# PREFIX binary: scratch build from git commit 9d39b97 (see
+#                spans_control_leadshapes.txt's header for the exact
+#                construction; same binary)
+# FIXED binary:  ./build/pcrec (plain `make` on this worktree, commit above)
+# python3:       3.14.4
+# gcc:           15.2.0 (Ubuntu 15.2.0-16ubuntu1)
+# corpus:        outputs/corpora/r23leads.txt (committed alongside this
+#                transcript) -- 6,096 patterns: the R23 semantics panel's own
+#                independent shape generators
+#                (docs/design/k18_measurements/r23_semantics/gen_r23.py's
+#                1,001-pattern F1-F6 families + gen_r23b.py's 523-pattern
+#                G1-G7 families, both archived evidence from the K18 design
+#                lane's own panel review), each prefixed with one of four
+#                leading atoms ("x", "xy", "(?:x)", "xx"). The families that
+#                land the hit are gen_r23.py's F1 "SEQ" shapes: an inner
+#                K18-shaped nullable loop followed by a SIBLING loop, both
+#                inside an outer loop -- gen_r23.py's own docstring names
+#                this "the shape that makes an inner redirect truncate the
+#                open-loop stack and then PUSH over the truncated slots (the
+#                S1 hypothesis)", i.e. exactly R23's own diagnosis of where
+#                the ancestor-clobber defect (S3) lived.
+# command (ad hoc, no committed script -- reproduced inline below rather
+#          than via oracle_cmp.py, which was ALSO tried on this corpus with
+#          --emit-main and gave the same population; this transcript is the
+#          faster direct-diff variant actually run):
+#     python3 -c '<inline script comparing PREFIX/FIXED --no-captures output
+#                  over outputs/corpora/r23leads.txt, subjects = up to
+#                  4-letter alphabet cross product length <=3, ThreadPoolExecutor(8)>'
+#
+# ---- raw stdout below ----
+patterns: 6096 skipped: 0 cells: 398877 differing cells: 1070 differing patterns: 1032
+('x(?:(?:(?:a|b*?)?)*c*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:(?:a|b*?)?)*c*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:c*(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:c*(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:(?:(?:a|b*?)?)*c*?)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:(?:a|b*?)?)*c*?)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:c*?(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:c*?(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:(?:(?:a|b*?)?)*(?:c)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:(?:a|b*?)?)*(?:c)*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:(?:c)*(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:c)*(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:(?:(?:a|b*?)?)*(?:c*)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:(?:a|b*?)?)*(?:c*)*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:(?:c*)*(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:c*)*(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:(?:(?:a|b*?)?)*c{0,2})*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:(?:(?:a|b*?)?)*c{0,2})*', 'xab', 'match 0 3', 'match 0 2')
+('x(?:c{0,2}(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+('(?:x)(?:c{0,2}(?:(?:a|b*?)?)*)*', 'xab', 'match 0 3', 'match 0 2')
+
+# ---- what this control establishes -----------------------------------
+# 1. This project's build/scratch/diff/subject-sweep machinery correctly
+#    detects a real K18-class divergence on a real, historically-accurate
+#    pre-fix binary -- the instrument is not vacuous.
+# 2. In EVERY example above (and by inspection of the pattern shapes
+#    driving the population), the divergence is END-only: the two builds
+#    agree on the match START (both begin at the leading "x") and disagree
+#    on the END (pre-fix over-consumes by one byte). This is the FORWARD
+#    machine's own priority defect re-appearing through the SEQ/sibling-loop
+#    shape, independent of any leading atom or reverse-machine involvement
+#    -- it is not, by itself, evidence of a reverse-machine START defect
+#    reachable through THIS corpus's leading-atom construction.
+# 3. capdiff_prefix_control.txt's manual follow-up confirms the practical
+#    consequence: add one capturing group to a diverging pattern from this
+#    population and the divergence disappears, because the hybrid search
+#    entry never reads the corrupted END (src/gen/emit_vm.c).

@@ -1,0 +1,69 @@
+# POSITIVE CONTROL: capdiff.py's own capture corpus (outputs/capshapes.tsv)
+# run with PCREC pointed at a scratch pre-K18-fix binary instead of the
+# current fixed one.
+#
+# RESULT: 0 disagreements on every axis, same as the spans-only control
+# (outputs/spans_control_leadshapes.txt) -- and for the SAME mechanistic
+# reason, now directly confirmed rather than inferred (see the appended
+# manual check below): src/gen/emit_vm.c's hybrid `<prefix>_search` reads
+# only the DFA prefilter's computed START (`win[0][0]`), discarding its
+# computed END entirely and re-deriving it via the VM's own backtracking.
+# K18's defect corrupts the FORWARD machine's computed END under `prune=1`
+# (confirmed reachable below, spans-only, --no-captures, on
+# `x((?:(?:a|b*?)?)*c*)*`-shaped patterns: pre-fix "match 0 3" against
+# fixed/oracle "match 0 2"). Once a capturing group forces VM routing, the
+# corrupted END is never consulted, so the SAME pattern with a capturing
+# group added shows ZERO divergence between the two binaries -- verified
+# directly, not merely predicted from reading the emitter.
+#
+# date (UTC):    2026-08-16 01:01
+# repo commit:   3898e066ea10df6fb4c25092d0553d2c4cf1980e (worktree k18-capdiff)
+# PREFIX binary: scratch build from git commit 9d39b97 (see
+#                spans_control_leadshapes.txt's header for the exact
+#                construction; same binary, not committed)
+# python3:       3.14.4
+# gcc:           15.2.0 (Ubuntu 15.2.0-16ubuntu1)
+# libpcre2-8-0:  10.46-1build1
+# corpus:        outputs/capshapes.tsv (same 526-pattern file the main
+#                capdiff_fixed_full.txt run used)
+# command:       PCREC=<PREFIX-binary> python3 \
+#                  docs/design/k18_measurements/capdiff/capdiff.py \
+#                  outputs/capshapes.tsv --jobs 8
+#
+# ---- raw stdout below ----
+capdiff: 526 patterns, PCREC=/tmp/capdiff-scratch-prefix/build/pcrec, jobs=8
+capdiff: 50/526 patterns done
+capdiff: 100/526 patterns done
+capdiff: 150/526 patterns done
+capdiff: 200/526 patterns done
+capdiff: 250/526 patterns done
+capdiff: 300/526 patterns done
+capdiff: 350/526 patterns done
+capdiff: 400/526 patterns done
+capdiff: 450/526 patterns done
+capdiff: 500/526 patterns done
+==============================================================================
+capdiff summary
+patterns:                    526
+patterns with a build failure: 0
+pattern/subject cells:       16081
+AUTO vs python re disagreements:   0
+AUTO vs libpcre2 disagreements:    0
+AUTO vs VMONLY (prefilter) disagreements: 0
+python vs libpcre2 (oracle/oracle sanity) disagreements: 0
+==============================================================================
+
+# ---- direct manual confirmation of the masking mechanism -----------------
+# A capturing variant of a KNOWN-diverging SEQ-family pattern (see
+# spans_control_r23family.txt), built and run against BOTH binaries via
+# vm_driver.c (subjects: xab, xa, x, xabc, xb):
+#
+#   x((?:(?:a|b*?)?)*c*)*   xab   pre-fix=[match 0 2 2 2]  fixed=[match 0 2 2 2]
+#   x(?:((?:a|b*?)?)*c*)*   xab   pre-fix=[match 0 2 2 2]  fixed=[match 0 2 2 2]
+#
+# (all five subjects identical both ways for both variants; not truncated).
+# The non-capturing sibling of the FIRST pattern (drop the outer capturing
+# parens) is exactly the diverging spans-control example
+# `x(?:(?:(?:a|b*?)?)*c*)*` on "xab": pre-fix [0,3), fixed/oracle [0,2). Add
+# one capturing group and the divergence vanishes -- consistent with, and a
+# direct test of, the win[0][0]-only mechanism above.

@@ -116,19 +116,64 @@ outside the repository (a `git archive` of the worktree's `HEAD` into a
 scratch directory with `dfa.c` swapped for the pre-fix version, then
 `make`), never committed, per the scope mandate.
 
-That control confirmed the instrument works on two levels:
+That control was run at THREE levels, and it did not confirm sensitivity on
+the first try — reported honestly rather than smoothed over, per the
+project's instrumentation-defect lesson (§7 of the memo):
 
-1. **Spans, `--no-captures`**: reproduces the textbook K18 divergence
-   directly (`((?:a|b*?)?)*` on `"ab"`: pre-fix `[0,2)` against the oracle's
-   `[0,1)`), and the leading-atom sweep below finds the reverse-machine
-   sub-class of it (§4.6's own open finding) on a real, non-source-shared
-   binary.
-2. **Captures, AUTO (default)**: `capdiff.py` pointed at the SAME scratch
-   binary via `PCREC=`, over this lane's own capture corpus — see
-   `outputs/capdiff_prefix_control.txt` for the exact counts.
+1. **Spans, `--no-captures`, this lane's own leading-atom corpus**
+   (`outputs/corpora/leadshapes.txt` — `gen_shapes.py`'s dense K18 shapes,
+   single loop level, plain leading literal): **0 divergences, 6,000
+   patterns, 20 subjects each** (`outputs/spans_control_leadshapes.txt`).
+   This construction does not reach the defect at this sample size — a
+   negative result about THIS corpus shape, not proof the instrument is
+   insensitive.
+2. **Spans, `--no-captures`, the R23 panel's own SEQ-family corpus**
+   (`outputs/corpora/r23leads.txt` — an inner K18 loop followed by a
+   SIBLING loop, both inside an outer loop, R23's own S1/S3 diagnosis
+   shape, leading-atom-prefixed): **1,070 diverging cells across 1,032 of
+   6,096 patterns** (`outputs/spans_control_r23family.txt`) — a real,
+   non-source-shared divergence on a real historical binary. This is what
+   establishes the instrument is sensitive: the SAME diff machinery, the
+   SAME two binaries, a different corpus shape, and it fires. Every
+   diverging cell found is END-only (both binaries agree on the computed
+   START), which is the FORWARD machine's own defect re-appearing through
+   the sibling-loop shape — not, on inspection, evidence that THIS
+   corpus's leading atom drove a reverse-machine START defect specifically.
+3. **Captures, AUTO (default)**, both on this lane's own capture corpus
+   (`outputs/capdiff_prefix_control.txt`, `PCREC=` pointed at the SAME
+   scratch binary over `outputs/capshapes.tsv`: 0/16,081 cells) AND, as a
+   direct follow-up, a capturing variant of a KNOWN-diverging pattern from
+   level 2 (`x(?:(?:(?:a|b*?)?)*c*)*`, diverges `--no-captures`; add one
+   capturing group and it stops diverging — both binaries agree, appended
+   to `outputs/capdiff_prefix_control.txt`). This is the direct
+   confirmation of the finding at the top of this file: a REAL, CONFIRMED
+   span defect becomes invisible to captures once it forces VM routing,
+   because the hybrid entry never reads the DFA prefilter's computed END.
 
 See `outputs/` for the actual numbers; this file states the METHOD, the
 transcripts are the evidence.
+
+### `outputs/` listing
+
+- `capshapes.tsv` — the generator's default 526-pattern output, frozen (the
+  exact corpus `capdiff_fixed_full.txt` and `capdiff_prefix_control.txt`
+  both ran against).
+- `capdiff_fixed_full.txt` — the main result: the corpus above against the
+  CURRENT (K18-fixed) build. 0/16,081 on every axis.
+- `capdiff_prefix_control.txt` — the same corpus against the pre-fix
+  scratch binary, plus the direct capturing-variant follow-up. 0/16,081 on
+  the sweep; the follow-up confirms WHY (the prefilter-END-is-never-read
+  mechanism) rather than just re-reporting the same zero.
+- `spans_control_leadshapes.txt` — positive control attempt 1
+  (`--no-captures`, this lane's own leading-atom corpus): 0/many. A
+  negative result about the corpus, explained inline.
+- `spans_control_r23family.txt` — positive control attempt 2
+  (`--no-captures`, the R23 panel's SEQ-family corpus): the one that
+  fires — 1,070/398,877, non-source-shared, proving the instrument
+  sensitive.
+- `corpora/leadshapes.txt`, `corpora/r23leads.txt` — the exact pattern
+  files the two spans-control transcripts ran against, committed verbatim
+  (the corpus an instrument ran on is part of the evidence).
 
 ## Maintenance
 
