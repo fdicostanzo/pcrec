@@ -8329,3 +8329,56 @@ changes this session). Open K-list: K2, K7, K9, K19. NEXT: Frank's six
 delivery seam §5.2 confirmed unchanged by the R24 corrections). Owed:
 mk_d27_cell.sh allowlist (R22); M4.7 wording pass; nested-lazy
 differential + libpcre2 on the lazy/census/$ sweeps (R24 NOTED list).
+
+## 2026-08-16 (EDT), twenty-fourth session CONTINUATION — Frank rules all six [ENG-BREP] §9 asks (D47); ruling 6's premise refuted mid-ruling; possessify implementation launched
+
+Frank returned and ruled the six §9 asks in conversation, recorded as
+decisions.md D47: (1) possessify-first CONFIRMED for both application
+and build order — with the explicit trade acknowledged that the D45
+refuse-cap endgame ships with a later ladder step; (2) K=8, ruled with
+the rider that it lands as a NAMED CONSTANT in src/core/limits.h
+("this is a magic number. put it in a file of constants"); (3) the
+forcing surface RESHAPED around Frank's own two mechanisms — gcc-style
+ALLOW/DENY flags adopted (deny semantics resolves his
+per-pattern-vs-per-quantifier concern by construction: every quantifier
+walks its own ladder skipping denied steps), in-pattern (*...) hints
+DEFERRED (oracle string-identity cost + module-gating precedent);
+(4) third-amendment consequence (b) STRUCK-AND-REPLACED in the plan
+row after confirming it was simply wrong — emitter-side strategies
+cannot reach nfa.c's A_REP replication; (5) the $-follow exemption
+delegated and decided: SHIPS in v1 with a LIVE !multiline gate, and
+[M6.0] now carries the inherited gate-test obligation. Frank also
+ruled generally: ordering/path decisions are delegated to the manager
+within bounds ("more about the goal than the path").
+
+**Ruling 6 corrected its own premise.** Frank asked for pattern
+examples of the lazy conjunct's "20 false declines"; pulling the
+actual cells from the archive and testing them refuted the claim —
+ALL 20 genuinely diverge (za{1,3}? on "zaa": lazy (0,2), possessified
+(0,3); (?:ab){3,}? on "abababab": (0,6) vs (0,8)) on subjects the
+archived sweep could not generate, because probe_possess.py's
+random-subject alphabet "abcd " omits the prefix character z — every
+z-prefixed pattern was swept essentially without its prefix. The full
+3,726-row possessifiable population (both preferences, conjunct live)
+re-swept with targeted repetition-heavy subjects: 0 counterexamples
+both families, so the soundness headline HOLDS under the fixed
+instrument and the conjunct's measured cost is ZERO, not 20. Frank
+accepted the conjunct and ruled the 20 cells INTO the test corpus as
+guards. Lesson (the alphabet-blindness form of the standing lesson):
+a subject generator whose alphabet excludes a pattern character
+measures the pattern minus that character.
+
+**Lanes launched:** brep-guards (sonnet — probe subjects() fix +
+re-archive, note "20 false declines" correction, the 20-cell
+tests/base/possess_lazy_guard.rxt with both-oracle expectations, full
+make test async) and, on Frank's order, **possessify (opus)** — the
+D47.1 first build step: §2.2's repaired rule as a per-A_REP analysis,
+the §5.2 verdict-discharging rewrite, -fno-possessify + per-quantifier
+strategy stamps (D46/D47.3), the pcrec-vs-pcrec differential as
+primary instrument, byte-identity gate on the verdict-negative
+corpus, full battery at close. Lanes are disjoint by path; merges
+serialize through the manager; watchdog re-armed for both.
+
+State at entry-write: HEAD f7ae5f9 (D47) pushed; worktrees brep-guards
+and possessify in flight; [ENG-BREP] row updated to reflect rulings +
+lanes. Open K-list unchanged: K2, K7, K9, K19.

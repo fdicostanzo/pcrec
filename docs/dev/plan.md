@@ -155,13 +155,19 @@ stated terms.
   struct rx_info spelling + K19 residual rulings open with Frank.
 - [ENG-BREP] STATE:started (2026-08-15/16, twenty-fourth session — DESIGN
   NOTE BUILT, PANELED R24, dispositions applied: docs/design/
-  eng_brep_design.md + reviews/2026-08-15-r24-eng-brep.md. The note's §9
-  asks SIX rulings of Frank — ladder order, K=8, the four forcing flags,
-  striking third-amendment consequence (b) (§1.4 reports it NOT
-  established: nfa.c's A_REP replicates independently of emit_vm.c), the
-  $-exemption's v1 shipping, the lazy conjunct's 20 false declines.
-  IMPLEMENTATION blocked on those rulings; note the R24-corrected census
-  is 17%/82%) — BOUNDED-REPEAT EMISSION STRATEGY: the
+  eng_brep_design.md + reviews/2026-08-15-r24-eng-brep.md. **ALL SIX §9
+  RULINGS RULED 2026-08-16 — decisions.md D47** (possessify-first both
+  orders; K=8 as a limits.h constant; deny-flag surface, (*...) hints
+  deferred; consequence (b) struck-and-replaced below; $-gate ships in
+  v1, M6.0 carries the inherited test obligation; lazy conjunct accepted
+  at measured cost ZERO — the "20 false declines" were refuted during
+  the ruling, all 20 genuinely diverge, subject-alphabet blindness in
+  the probe). IMPLEMENTATION IN FLIGHT: lane `possessify` (opus,
+  worktree possessify — the D47.1 first build step: §2.2 analysis +
+  §5.2 rewrite + -fno-possessify + stamps); lane `brep-guards` (sonnet
+  — probe subject-generator fix, re-archive, note correction, the 20
+  guard cells into tests/base/possess_lazy_guard.rxt). R24-corrected
+  census: 17%/82%) — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but
   strictly the result was intractable, so not"). Today the VM emits
