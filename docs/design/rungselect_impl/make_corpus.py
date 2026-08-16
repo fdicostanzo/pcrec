@@ -17,6 +17,19 @@ phantom "oracle disagreements" on that lane's first run; it would have produced
 more here, because this rung's whole capture story is about groups that some
 iterations do not enter.
 
+THE `(|a){m,n}` FAMILY REPRODUCED R24's ORACLE SPLIT, which is worth knowing
+before reading this file's inline SPAN-ONLY notes. Over the subjects here,
+python3 `re` and libpcre2 agree on every SPAN and disagree on group 1 in 16
+cells -- python reports an empty span at the loop's end where libpcre2 reports
+the last iteration that consumed. §3.6's rule is investigate, not filter, so the
+span is kept (both authorities assert it) and the slot is dropped with the
+divergence recorded in place rather than pinned to whichever oracle was asked
+first. MEASURED on this branch: pcrec agrees with LIBPCRE2 on all of them
+(`(|a){0,3}b` on "ab" is group 1 = (0,1) for pcrec and libpcre2, (1,1) for
+python), which is what R24 measured at 15,600 cells. A two-way python-only check
+would have raised a false alarm against pcrec on sixteen cells of this file, so
+D44's three-way rule earns itself here rather than being ceremony.
+
 EVERY PATTERN IS CAPTURE-BEARING, and that is not decoration. Under the DEFAULT
 engine choice a capture-free pattern routes to the DFA and never reaches
 src/gen/emit_vm.c at all, so a rung in that file would be structurally invisible
