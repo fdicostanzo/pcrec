@@ -218,10 +218,19 @@ the erased path has its own ceiling that nobody wrote down:
 ### 2.1 The claim
 
 For a large and precisely-characterisable class of quantifiers, NO retreat
-into the loop can ever produce a match the maximal path does not. For those,
+into the loop can ever produce a match the PREFERRED path does not. For those,
 the emitter owes zero resume frames, zero trail entries and no counter — the
 loop is a forward scan. This is the cheapest rung and it must be tried first,
 which is why Frank ruled it question 1.
+
+"Preferred path" rather than "maximal path" is deliberate [R24 S-F1]: for a
+greedy quantifier the preferred path IS the maximal one, but a lazy
+quantifier prefers the minimum, and the class of quantifiers that owe zero
+frames is correspondingly narrower for lazy than for greedy. §2.2's rule
+carries the difference as an explicit conjunct and §2.3 shows the witness
+that forced it. A reader who takes "zero resume frames" from this section
+alone and applies it to a lazy quantifier on the disjointness arm will emit a
+wrong span on a measured family.
 
 ### 2.2 The analysis, stated precisely
 
@@ -246,12 +255,22 @@ Say `X` **admits a unique iteration** when both hold on `X`'s position
 - **(U2) prefix-free** — no ACCEPTING position has an outgoing edge. No proper
   prefix of an iteration is itself a complete iteration.
 
-**THE RULE.** `Q` is possessive-equivalent when
+**THE RULE** (the lazy conjunct added at [R24 S-F1]). `Q` is
+possessive-equivalent when
 
 > `X` admits a unique iteration, `X` is not nullable, and **either**
-> FIRST(X) ∩ FOLLOW(Q) = ∅ **or** `m == n`.
+>
+> - `m == n` — the EXACT-COUNT arm, which holds for either preference; **or**
+> - FIRST(X) ∩ FOLLOW(Q) = ∅ — the DISJOINTNESS arm, which holds
+>   unconditionally for a GREEDY `Q`, and for a LAZY `Q` only when the match
+>   cannot also END at the quantifier (everything after `Q`, out to the end of
+>   the pattern, is non-nullable).
 
-Three notes on the shape of that rule.
+Four notes on the shape of that rule.
+
+- **The lazy conjunct is not decoration; without it the arm is unsound.**
+  MEASURED: 316 counterexamples, e.g. `a{1,3}?` on `"aaaa"` is `(0,1)` lazy
+  and `(0,3)` possessive. §2.3 and §2.4.
 
 - **The exact-count arm is free and it is not in the plan row.** With a
   unique-iteration body there is exactly one way to run `k` iterations from a
@@ -292,23 +311,71 @@ position RIGHT rather than left, because re-choosing inside the body changes
 the iteration's LENGTH. Without (U2), the same happens without any alternation
 at all. Both are measured witnesses, not hypotheticals — §2.4.
 
-**Lazy quantifiers.** Steps 1–2 do not mention preference, so the chain is the
-same; only the order of trying is reversed. Under the disjointness arm exactly
-one exit in the chain can be followed successfully, so greedy, lazy and
-possessive agree on the span, and the emitter owes no frames for either
-preference. What a lazy quantifier does NOT admit is the literal `X{m,n}+`
-spelling, so the differential in §2.4 skips lazy rows and this paragraph is
-marked **BELIEVED**, not measured. §8 carries it.
+**Lazy quantifiers — the argument above is GREEDY-ONLY, and the first version
+of this note got that wrong [R24 S-F1, REFUTED].** Step 3 is where preference
+enters, and the original paragraph waved it away: steps 1–2 do not mention
+preference, so the chain is the same, and it concluded that greedy, lazy and
+possessive therefore agree on the span. They do not.
 
-### 2.4 The differential that refuted the first version
+The hole is in step 5. "The follow's first-byte test fails at every
+non-maximal exit" is VACUOUSLY TRUE when the follow can match empty and the
+match can end at the quantifier — there is no first byte to test. A greedy
+loop is unharmed by that: it tops out at the chain's top (step 3), and the
+vacuous follow succeeds there just as it would anywhere, so greedy and
+possessive still agree. **A lazy loop stops at the BOTTOM of the chain**, where
+the same vacuous follow also succeeds — and reports a shorter span than the
+possessive form. MEASURED, `a{1,3}?` on `"aaaa"`:
+
+| form | span |
+|---|---|
+| `a{1,3}?` (lazy) | `(0,1)` |
+| `a{1,3}+` (possessive) | `(0,3)` |
+
+so the loop's exits are not interchangeable and the emitter cannot drop the
+machinery. This is why the rule in §2.2 carries a lazy-only conjunct: on the
+disjointness arm a lazy `Q` additionally requires that the match cannot end at
+the quantifier — everything after `Q`, propagated outward to the end of the
+pattern, must be non-nullable. With that conjunct the differential is clean in
+both preference families (§2.4).
+
+**The EXACT-COUNT arm is preference-independent and needs no conjunct.** There
+is one exit, so top and bottom of the chain are the same position and step 3
+is vacuous rather than the follow test being vacuous. MEASURED at 0
+counterexamples for lazy as well as greedy, which is also why this arm carried
+the largest share of the realistic census (§2.6) through the refutation
+unchanged.
+
+**Why this lane could not see it.** `probe_possess.py` built a possessive
+respelling of each generated pattern to compare against, and a lazy quantifier
+has no possessive spelling — `X{m,n}?+` is not a thing. So the probe's helper
+returned `None` for every lazy row and the whole preference family was
+silently absent from a differential the note described as covering the design.
+The repair is to compare a LAZY pattern against the POSSESSIVE form of the
+same base count (`X{m,n}?` vs `X{m,n}+`), which is a valid pair and is what
+§2.4's second family now does. §10 records this as the lane's own
+instrumentation defect, because it is one.
+
+### 2.4 The differentials that refuted the first two versions
 
 `probes/probe_possess.py` states the analysis as code and checks it against an
 oracle in both directions over a generated family (3 prefixes × 12 bodies ×
-8 possessifiable counts × 19 follows, of which **5,016 compile as a
-greedy/possessive pair**, 260 subjects each — about 1.3 M pattern-subject
-comparisons). The oracle is python3 `re`, whose
-possessive quantifiers are the mechanised statement of "no retreat into this
-loop"; this is a BASE-TIER oracle, not the three-way sweep §5.3 specifies.
+8 base counts × 19 follows, each base count spelled BOTH ways — `X{m,n}`
+against `X{m,n}+` and `X{m,n}?` against `X{m,n}+` — for **8,032 compiling
+pairs**, 260 subjects each, about 2.1 M pattern-subject comparisons). The
+oracle is python3 `re`, whose possessive quantifiers are the mechanised
+statement of "no retreat into this loop"; this is a BASE-TIER oracle, not the
+three-way sweep §5.3 specifies. **The lazy half of that family did not exist
+before [R24]** — see §2.3's closing paragraph and §10.
+
+One caveat on the oracle, measured by the R24 panel and recorded in
+`docs/dev/upstream_issues.md` U9: python-possessive and PCRE2-possessive are
+**not interchangeable**. PCRE2 10.46 does not backtrack into a PRECEDING item
+after a possessive bounded repeat of a GROUP (`a?(?:b){0,4}+a` on `"a"`:
+PCRE2 reports no match, python and the correct answer are `(0,1)`), and that
+shape sits inside exactly the family swept here. It does not touch any verdict
+below — the divergence is on the possessive SIDE of the comparison, not on the
+analysis — but it is the measured reason §5.1's pcrec-vs-pcrec differential is
+the primary instrument and an oracle is the ride-along.
 
 Two directions, because they are different questions:
 
@@ -338,7 +405,7 @@ alternation at all: `(?:ab?){0,4}b` on `"ab"` is `(0,2)` greedy and no match
 possessive. The body is one-unambiguous; its accepting position `a` (with `b?`
 empty) simply has an outgoing edge. That is (U2).
 
-**v2, the rule of §2.2** (`outputs/possess_differential.summary`), with the
+**v2, the rule of §2.2 without the lazy conjunct — GREEDY ONLY**, with the
 assertion follows of §2.5 and three follows added that the v1 family lacked:
 
 | verdict | differential same | differential DIVERGES |
@@ -349,6 +416,44 @@ assertion follows of §2.5 and three follows added that the v1 family lacked:
 0 counterexamples to soundness, and 1,463 divergences among the noes, so the
 analysis is not vacuous. Note the population GREW (1,395 → 2,031) while
 getting sound, which is the exact-count arm paying for itself.
+
+**And v2 is where the note stopped, which is why R24 found a third defect.**
+Running the same rule over the LAZY spelling of the same family
+(`outputs/possess_differential_lazy_control.summary`, the probe's
+`BREP_NO_LAZY_CONJUNCT=1` mode):
+
+| lazy, no conjunct | differential same | differential DIVERGES |
+|---|---|---|
+| possessifiable | 1,715 | **316** |
+| no | 1,318 | 1,667 |
+
+316 counterexamples — and this lane's 316 is the same number the panel reached
+independently on its own instrument, which is the strongest form of agreement
+two measurements of one defect can have.
+
+**v3, with the lazy conjunct** (`outputs/possess_differential.summary`), both
+preference families in one run:
+
+| preference | verdict | differential same | differential DIVERGES |
+|---|---|---|---|
+| greedy | possessifiable | 2,031 | **0** |
+| greedy | no | 1,522 | 1,463 |
+| lazy | possessifiable | 1,695 | **0** |
+| lazy | no | 1,338 | 1,983 |
+
+Three things to read off this, none of them automatic:
+
+- **The greedy rows are byte-identical to v2's** (2,031 / 1,522 / 1,463). The
+  conjunct is scoped to lazy and provably did not disturb the family that was
+  already clean — which a restructuring this size could easily have done
+  silently.
+- **The conjunct is what removes the 316**, not something else that changed
+  underneath: the control above is the same binary with one flag flipped, and
+  it is committed so the control can be re-run rather than believed.
+- **It costs 20 false declines** (1,715 → 1,695 possessifiable-and-same), so
+  the repair is tight rather than a retreat to declining everything lazy. The
+  lazy possessifiable population is 1,695 against greedy's 2,031: laziness
+  costs about 17% of the class, all of it the nullable-rest tail.
 
 **One thing v1 got right by accident, disclosed.** v1's follow set contained
 no follow beginning with a body's SECOND byte, so the `(?:ab|a)` family — just
@@ -371,8 +476,29 @@ consumes nothing" is unsound:
 `\b` at a retreat position can succeed where it fails at the maximal exit,
 which is precisely the thing a first-BYTE set cannot express. **The rule:** an
 assertion reachable at the follow's first position widens FOLLOW to all bytes,
-i.e. the analysis declines. Sound, one line, and it costs the `X{m,n}$` shape,
-which §2.7 accounts for.
+i.e. the analysis declines. Sound, one line.
+
+**`$` is the exception, and it is now MEASURED-WITH-GATE rather than a
+conservatism [R24 S-F2].** This note originally declined `$` with the rest and
+filed "is `$` separately safe?" as its highest-value follow-up; the panel
+answered it. `$` in the follow IS safe — **0 of 720 diverging cells** — and
+the argument is an upward-closure one: `$` is true only at the subject end
+(and before a final newline), which no retreat can reach from a position
+further left, so a retreat position that satisfies `$` cannot exist below the
+maximal exit.
+
+**But only while MULTILINE is off.** Under `(?m)`, `$` is true before EVERY
+newline, the upward-closure argument collapses per-line, and the same sweep
+gives **180 of 720 diverging**. So the exemption is conditional and the
+condition must be a LIVE CHECK in the implementation — a test on the pattern's
+actual multiline state at analysis time, not a comment saying pcrec does not
+support `(?m)` yet. pcrec refuses `(?m)` today (module `assertions`), which is
+what makes the exemption safe NOW and is exactly the kind of fact that stops
+being true without anyone revisiting this note.
+
+The 0 is not inert: on the same instrument `\b`/`\B` follows give 332 of 720
+diverging and `^` gives 80 of 240, so the sweep can and does find divergence
+where divergence exists.
 
 ### 2.6 What it covers — two censuses, and they disagree by 4×
 
@@ -413,20 +539,40 @@ disjoint + unique-iteration, 27 overlap, 3 not-prefix-free.
 sound, not tight. The identified sources, in order of how much they cost:
 
 - **`$` follows** (`a{0,4}$`, `\d{2,4}$`): declined by §2.5's blanket
-  assertion rule. `$`'s truth at a position does not depend on the byte AT the
-  position the way `\b`'s does, so it is plausibly always safe — **BELIEVED,
-  not measured**, and §8 carries it as the highest-value follow-up because
-  end-anchored bounded repeats are common.
+  assertion rule, and — as of [R24 S-F2] — **recoverable**, because `$` is
+  measured safe with a live `!multiline` gate. This was the largest single
+  source of conservatism in the greedy family and the implementation lane
+  should take it; §2.5 states the gate.
 - **Subsumed follows** (`[ab]{0,4}b?c`): FOLLOW contains `b` because of the
   `b?`, but a `b` at any retreat position was already consumable by the loop,
   so the retreat cannot help. PCRE2's `pcre2_auto_possess.c` does exactly this
   kind of subsumption reasoning; pcrec's first version should not.
+- **The lazy conjunct's own cost** [R24 S-F1]: 20 quantifiers the greedy rule
+  admits are declined in the lazy spelling without the differential showing a
+  divergence. That is the price of stating the conjunct on "the rest is
+  nullable" rather than on the sharper "some non-maximal exit actually
+  succeeds", and it is the right trade for a first version.
 - **`\d`, `\w` and every other CATEGORY** widen to all bytes in the probe's
   model. In pcrec they would not — the real implementation has exact 256-bit
   class bitmaps and can intersect them precisely, so the shipped analysis
-  should be STRICTLY less conservative here than the probe that validated it.
-  The realistic census's 82% is therefore a LOWER bound on what pcrec can
-  achieve, which is the right direction for a probe to be wrong in.
+  should be STRICTLY less conservative here for CATEGORIES than the probe that
+  validated it.
+
+  **This is a claim about categories only, and the original wording
+  over-generalised it** [R24 S-F4]. "The probe is wrong in the right
+  direction" is NOT a blanket property: the probe's IGNORECASE handling is
+  unsound in the OTHER direction, because python folds case at compile time,
+  so the probe computes FIRST(`(?i)a`) = `{a}` and misses `A`. A porting lane
+  that inherited the probe's model along with its conclusions would inherit
+  that hole.
+
+  **pcrec itself is safe here STRUCTURALLY, for a reason worth writing down:**
+  `src/parse/parse.c`'s `cls_casefold` folds case into every `A_CLASS` bitmap
+  at PARSE time, and every literal in pcrec is an `A_CLASS` — so by the time
+  any analysis sees the AST, a caseless `a` already has both `a` and `A` in
+  its bitmap and the byte-set model is exact rather than approximate. The
+  probe's defect is a property of python's parse tree, not of the design.
+  Census impact was one harmless row; the 18%/82% figures survive.
 
 ### 2.8 Delivery seam: §5.2's socket, and why the socket and not the emitter
 
@@ -553,9 +699,29 @@ right. Group 2 is not, because a group INSIDE a loop keeps the value from the
 last iteration that entered it — a later `b` iteration does not clear it —
 so on `"abc"` group 2 is `(0,1)`, not unset.
 
-The corrected derivation, **0 mismatches over the same 15,036**: group 2 =
-`[p, p+1)` where `p` is the last `a` in `[start, end−1)`, unset if there is
-none.
+The corrected derivation, **0 mismatches over the same 15,036**, in two
+clauses:
+
+- **Zero iterations** (the span is just the `c`, i.e. `end − start == 1`):
+  BOTH groups are unset. There is no iteration to have written them.
+- **One or more iterations:** group 1 = `[end−2, end−1)`; group 2 =
+  `[p, p+1)` where `p` is the last `a` in `[start, end−1)`, unset if there is
+  none.
+
+**The zero-iteration clause is not a footnote and the first version of this
+note dropped it** [R24 S-F3]. The archived probe always had it — its own
+output records 6,259 zero-iteration matches out of 15,036, **42% of the
+validated population**, at 0 mismatches — but the write-up stated only the
+second clause, whose `[end−2, end−1)` is meaningless when the loop never ran.
+An implementation lane building the reverse-deterministic rung from the prose
+alone would emit a wrong group on 42% of the motivating cell's own matches.
+Recorded here rather than quietly patched because the failure mode — a
+validated derivation losing a clause on the way into prose — is one a reader
+should expect to look for elsewhere in this note.
+
+Bonus, from the same re-check: with the zero-iteration clause stated, the
+derivation is also 0-mismatch on `m > 0` shapes, where the clause is
+unreachable by construction.
 
 That repair is the rung's own argument, sharpened. A constant-offset formula
 was never the right shape; what recovers group 2 is a BACKWARD SCAN that
