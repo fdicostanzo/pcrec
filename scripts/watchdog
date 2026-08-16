@@ -256,7 +256,14 @@ now_epoch() { date +%s.%N; }
 
 # ---- run the child ------------------------------------------------------
 
-setsid "$@" &
+# <&0 is load-bearing: a background job in a job-control-less shell gets its
+# stdin implicitly redirected from /dev/null "in the absence of any explicit
+# redirections" (POSIX), so without it every wrapped command that reads stdin
+# silently reads EOF instead — found in the wild when a wrapped test driver
+# read zero subjects from its redirected stdin and its cell count fell to 0
+# while every other number stayed plausible. Explicitly duplicating fd 0 onto
+# itself is the defined way to defeat the implicit redirect.
+setsid "$@" <&0 &
 child_pid=$!
 pgid="$child_pid"   # setsid() with no forced fork makes pid==sid==pgid
 

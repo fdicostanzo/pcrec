@@ -231,6 +231,21 @@ tail -n1 "$log11" | grep -q "section='clisec'" \
     || { ok=0; fail "case11: -S clisec did not override WATCHDOG_SECTION"; }
 [ "$ok" -eq 1 ] && pass "case11: section tag from env, CLI -S wins over it"
 
+# ---- case 12: stdin passes through to the child -------------------------------
+#
+# watchdog backgrounds its child, and a background job in a job-control-less
+# shell implicitly gets /dev/null stdin unless the spawn defeats it — so a
+# wrapped `cat` reading nothing would mean every stdin-consuming wrapped
+# command silently reads EOF (a real wiring bug: a wrapped test driver read
+# zero subjects and measured nothing while looking healthy).
+log12="$SCRATCH/case12.log"
+out12="$(printf 'stdin-payload\n' | timeout 10 "$WD" -l case12 -L "$log12" -- cat)"
+if [ "$out12" = "stdin-payload" ]; then
+    pass "case12: stdin reaches the wrapped child (cat echoes it back)"
+else
+    fail "case12: wrapped cat read '$out12', want 'stdin-payload' — stdin is being swallowed"
+fi
+
 # ---- summary --------------------------------------------------------------
 
 total=$((pass_count + fail_count))
