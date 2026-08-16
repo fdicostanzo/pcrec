@@ -85,6 +85,27 @@ discriminates puts the inner quantifier at the END of the enclosing body.
 Twelve witnesses were added and S48 is now DETECTED. The term is load-bearing;
 the first population simply could not see it.
 
+## What "the failure surfaces agree" means, and why it is not the obvious thing
+
+§5.1 asks the two builds to agree on the FAILURE SURFACE, not merely on
+matches. Read literally that is in tension with the feature: possessification
+CHANGES the frame requirement — §7 predicts exactly that — so an artifact that
+answers a 200,000-byte subject and one that honestly returns `RX_ERR_FRAMES`
+at 512 do not have the same failure surface, and neither is wrong.
+
+The requirement is a claim about the INTERSECTION of the two artifacts'
+DECLARED limits, and the measurement turned out sharper than the claim: on
+`(x)(?:a|bc)+d` the two agree on every length the denied build says it can
+handle and part at EXACTLY its stamped `subject_ceiling`, 511 against 512. The
+stamp is exact at its boundary rather than conservative, which is what makes
+the intersection computable instead of guessed, and the divergence above it
+runs only in the direction of the possessified build being MORE capable. Both
+halves are pinned in `run_possessify_tests.sh`; the archived cell is
+`docs/design/possessify_impl/throughput.txt`.
+
+It was found by a throughput cell run OUTSIDE the denied build's limit, which
+returned two different answers and looked for a moment like a divergence.
+
 ## Failing-direction controls
 
 Five `tests/mech/sabotages/` rows, one per refuted rule the design records —

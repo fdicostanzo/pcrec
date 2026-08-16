@@ -1,0 +1,33 @@
+== [ENG-BREP] possessification: two archived cells ==
+date:    2026-08-16T03:49:35Z
+commit:  23684e11cc44344b445ea172cac6e309e48cb25d
+gcc:     gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+pattern: (x)(?:a|bc)+d
+subject: 'x' followed by N x 'a', no trailing 'd'
+
+-- cell 1: throughput at N=500 (200000 reps), inside both declared limits
+  possessified   result=0    0.9436 s  106.2 MB/s                 RX_BT_FRAMES=3  subject_ceiling=0
+  denied         result=0    1.3983 s  71.7 MB/s                 RX_BT_FRAMES=1024  subject_ceiling=512
+  Both results must be equal, or the timing compares two programs.
+
+-- cell 2: the capability boundary (0 = nomatch, -3 = RX_ERR_FRAMES)
+  length   possessified   denied
+  100      0              0
+  400      0              0
+  500      0              0
+  510      0              0
+  511      0              0
+  512      0              -3
+  513      0              -3
+  1000     0              -3
+  200000   0              -3
+
+  The two agree on every length the DENIED artifact declares it can
+  handle, and part at exactly its stamped subject_ceiling. Above it the
+  denied build fails honestly (which is D44.1's honest-stamp design
+  working) and the possessified build answers, because its loop no longer
+  owes a frame per iteration. That is §7's prediction as a measurement:
+  the stamp is EXACT at its boundary rather than conservative, in both
+  builds, which is also why the failure-surface half of §5.1's comparison
+  is well defined -- it is a claim about the intersection of the two
+  declared limits, and this is where that intersection ends.

@@ -23,6 +23,8 @@
 
 set -u
 
+CC="${CC:-gcc}"
+
 # LC_ALL=C, and it is NOT cosmetic. R24 M-F1/M-F2 found every "distinct" figure
 # in the [ENG-BREP] rung census to be an undercount with ONE cause: a `sort -u`
 # running under a UTF-8 locale, whose collation treats strings differing only
@@ -36,6 +38,10 @@ export LC_ALL=C
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+
+# D45's shared generated-code compile budget (this file compiles emitted C in
+# the boundary check below).
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/possessify.XXXXXX")"
 cleanup() { [ -n "${KEEP:-}" ] || rm -rf "$WORKDIR"; }
@@ -176,6 +182,74 @@ if gen ceilcap_on '(x)((a)|bc)+d'; then
         ok "a possessified loop with CAPTURES in its body still declares a ceiling ($c bytes) -- the trail still grows, and the stamp says so"
     else
         bad "a possessified capture-bearing loop stamped 'no limit' ($c); its trail still grows per iteration, so that would be a silent cap"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# 3b. WHAT "THE FAILURE SURFACES AGREE" ACTUALLY MEANS, pinned because the
+#     answer is not the obvious one and this lane found it the hard way.
+#
+# §5.1 requires the two builds to agree on the FAILURE SURFACE, not merely on
+# matches. Taken literally that is in tension with the feature: possessification
+# CHANGES the frame requirement — §7 predicts exactly that — so an artifact
+# that can answer a 200,000-byte subject and one that honestly returns
+# RX_ERR_FRAMES at 512 do not have the same failure surface, and neither is
+# wrong. A throughput cell run outside the denied build's limit is what
+# surfaced it (docs/design/possessify_impl/throughput.txt).
+#
+# The requirement is therefore a claim about the INTERSECTION of the two
+# artifacts' DECLARED limits, and the measurement is sharper than the claim:
+# the two agree on every length the denied build says it can handle and part at
+# EXACTLY its stamped `subject_ceiling`. The stamp is exact at its boundary
+# rather than conservative, which is what makes the intersection computable
+# instead of guessed — and the direction of the divergence above it is the
+# feature (the possessified build is strictly more capable, never less).
+# ---------------------------------------------------------------------------
+if gen ceil_on '(x)(?:a|bc)+d' >/dev/null 2>&1; then
+    ceil="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceil_off.c" | grep -oE '[0-9]+$')"
+    cat > "$WORKDIR/bnd.c" <<'BND_EOF'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "gen.h"
+int main(int argc, char **argv)
+{
+    size_t n = (size_t)atol(argv[1]);
+    unsigned char *s = malloc(n + 2);
+    ptrdiff_t caps[RX_NCAPS][2];
+    s[0] = 'x';
+    memset(s + 1, 'a', n);
+    printf("%d\n", rx_search(s, n + 1, 0, caps));
+    free(s);
+    return 0;
+}
+BND_EOF
+    bnd_ok=1
+    for m in ceil_on ceil_off; do
+        mkdir -p "$WORKDIR/$m.d"
+        cp "$WORKDIR/$m.c" "$WORKDIR/$m.d/gen.c"
+        cp "$WORKDIR/$m.h" "$WORKDIR/$m.d/gen.h" 2>/dev/null || true
+        sed -i 's/#include "'"$m"'\.h"/#include "gen.h"/' "$WORKDIR/$m.d/gen.c"
+        gen_cc "possessify boundary $m" "$CC" ${GENCFLAGS:-} -O1 -w \
+               -I "$WORKDIR/$m.d" -o "$WORKDIR/$m.d/t" "$WORKDIR/bnd.c" \
+               "$WORKDIR/$m.d/gen.c" || bnd_ok=0
+    done
+    if [ "$bnd_ok" -eq 1 ] && [ "${ceil:-0}" -gt 1 ]; then
+        below=$((ceil - 1))
+        a_below="$("$WORKDIR/ceil_on.d/t" "$below")"
+        b_below="$("$WORKDIR/ceil_off.d/t" "$below")"
+        a_above="$("$WORKDIR/ceil_on.d/t" "$ceil")"
+        b_above="$("$WORKDIR/ceil_off.d/t" "$ceil")"
+        if [ "$a_below" = "$b_below" ]; then
+            ok "the failure surfaces AGREE inside the denied build's declared limit (length $below, both '$a_below')"
+        else
+            bad "the two builds disagree BELOW the denied build's stamped ceiling: length $below gave '$a_below' vs '$b_below'"
+        fi
+        if [ "$b_above" != "$b_below" ] && [ "$a_above" = "$a_below" ]; then
+            ok "and part at EXACTLY the stamped subject_ceiling ($ceil): the denied build fails honestly there ('$b_above') where the possessified one still answers ('$a_above')"
+        else
+            bad "the stamped ceiling $ceil is not the boundary: denied gave '$b_below'->'$b_above', possessified '$a_below'->'$a_above'"
+        fi
     fi
 fi
 
