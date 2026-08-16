@@ -70,6 +70,17 @@ in a specific way.
   Derived from the pass's own census line rather than kept as a second file
   that could go stale against the analysis.
 
+## The two differential populations, and why both
+
+Read from a run, not from here — but for orientation, the last full sweep was
+365 patterns and 158,827 pattern-subject-startpos cells at zero divergences:
+155 patterns from `patterns.txt` (the designed family, built to exercise the
+rule's own arms and each of its refutations) and 210 derived by `--corpus`
+(every `.rxt` pattern the analysis gives a positive verdict on). Neither
+subsumes the other. The designed family contains shapes the corpus does not —
+nobody writes `(?:ab?){0,4}b` on purpose — and the corpus contains shapes
+nobody designed for, which is the whole reason it is adversarial.
+
 ## Two lessons this directory paid for, recorded so they are not re-paid
 
 **The subject generator can silently measure nothing.** D47.6: the design
