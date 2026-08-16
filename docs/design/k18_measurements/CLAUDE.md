@@ -96,5 +96,21 @@ that moves them fails loudly instead of silently patching the wrong thing.
   counter prototypes, the §1.4 half-prototypes, independent generators and
   sweep harnesses behind docs/dev/reviews/2026-08-15-r23-k18-memo.md.
   Static, like `outputs/`.
+- `capdiff/` — the CAPTURE-OFFSET differential `../k18_memo_design.md` §4.6
+  flagged as owed: every measurement above is spans-only. Builds
+  capture-bearing patterns on the K18/K17 axes (plus a mandatory-leading-
+  atom cross forcing the reverse machine to compute a non-trivial match
+  start — the axis R23 found the stack-entry corruption on) against the
+  CURRENT (post-K18-fix) `build/pcrec`, comparing the default DFA-
+  prefiltered VM build against python `re`, libpcre2 and a prefilter-free
+  `--engine=vm` build. Also documents a load-bearing finding about the
+  current [M4.5]/[M4.6] wiring: the hybrid search entry consumes only the
+  DFA prefilter's computed START, never its END, so a K18-class defect
+  (which corrupts the FORWARD machine's computed END) cannot reach a
+  capture for the fully-nullable-at-offset-0 shapes this directory's own
+  and the original K18 corpus are built from — narrowing where a defect
+  could actually propagate to the REVERSE machine's START computation. See
+  its own CLAUDE.md for the corpus, the instruments and the positive
+  control.
 
 Maintenance: update this file when files are added/removed or change roles.
