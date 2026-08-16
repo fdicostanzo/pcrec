@@ -493,6 +493,36 @@ including V-G/V-H (added this session).
   a failing user test plus a traced matcher is a debugging story no
   regex library offers
 
+- [SIMD-META] STATE:not-started — META-PLAN ROW for the studies/simd1
+  research (Frank, 2026-08-16, at adoption): a thinking/triage row whose
+  DELIVERABLE IS PLAN ROWS — "wrap most of it into a meta-plan item that
+  thinks about how to use this research and which would create those plan
+  items." Do not spawn per-finding rows ahead of it; this row decides
+  which follow-ups exist and their shapes. The two integration hypotheses
+  it must weigh (Frank's framing): (1) PRE-SEARCH — the study's §14
+  find-all mode as an exact anchor source feeding the engine (its
+  contract was designed for exactly this; touches M4.6's
+  prefilter/islands territory and V-C's grep CLI); (2) SNIPPETS INTO
+  REGEX PROPER — "some findings suggest snippets could be integrated
+  into regex proper if the statistical analysis held up": the §3
+  position-encoder menu, §15 run extension for [class]+ atoms, and
+  literal-factor scanning emitted INLINE in generated matchers as a SIMD
+  emission tier under D18 — gated on the §16 exemplar-statistics /
+  background-frequency machinery actually predicting well (the
+  "statistical analysis holds up" condition; folds in the [ENG-PGO]
+  profile-guided-generation idea from the adoption discussion — the
+  exemplar axis is an input to BOTH hypotheses, not its own island).
+  Constraints the meta-row must answer, not inherit silently: generated
+  code is today SELF-CONTAINED gcc-dialect C with no CPU dispatch — a
+  SIMD tier raises ISA flags (-mavx2), runtime dispatch vs
+  generation-axis targeting, and fallback tiers (the study's §11
+  ~10-macro ISA layer is the candidate shape); every study number is
+  Zen 1 and must be RE-MEASURED before load-bearing use (D12/bench
+  discipline); reconcile with DD-9/[BENCH-1]'s case-(f) worklist row
+  (the study's §12-B shift-and measurement bears directly on it —
+  studies/simd1/CLAUDE.md flags this) rather than duplicating it.
+  Output: a short design note (panel-eligible) + the created rows.
+
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
 
