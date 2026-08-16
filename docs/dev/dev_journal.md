@@ -8222,3 +8222,34 @@ path-INSENSITIVE closure and A2 makes the closure path-sensitive over a
 graph the M2.8 trie changes.
 
 NEXT: manager review and merge; [M4.6]'s K18 gate is discharged.
+
+## 2026-08-15/16 (EDT), session close — K18 rewrite MERGED (ac9a791); the twenty-third session ends
+
+Manager review of the k18-rewrite branch: the deferred-branch LIFO's
+preorder equivalence checked against the old recursion (and pinned by
+emitted-source identity over 20k+ patterns), the prune unwinding
+equivalence, both DFA_INVARIANTs, the lazy-split deferred-open, and
+the structural thread scoping — plus every battery trailer verified
+from the logs live during the run, two full passes (the second at the
+final tree after the corpus grew). Merged ac9a791, worktree removed,
+post-merge smoke 6/6.
+
+The lane's representation finding deserves the record: the prototype's
+open[] array was a redundant materialisation of the interned context
+chain, so the production closure carries ONE INT, the R23 S3 clobber
+becomes inexpressible by construction, and clo_walk has NO recursion —
+C-stack depth is now pattern-independent, strictly better than the
+pre-K18 closure. The verification layers held to the end: the lane's
+own sabotage validation caught a bug in its fuzz-trap templates, and
+its item-12 measurement reproduced the R23 asan overflow on the
+prototype while the landed compiler passes at the cap.
+
+Session totals (twenty-third, one long day): crash recovery; R23
+panel (3 critics) + close-out; K21 found, fixed, class closed 4-of-4;
+the K18 note amended + independently re-read; the K18 REWRITE designed,
+built, validated and merged — K18 CLOSED, [M4.6] ungated. Corpus
+1704→3198; cli 247→257; gen-timeout 8→10; known_fail EMPTY (ratchet
+reports nothing to ratchet). Open K-list: K2, K7, K9, K19. Residual
+owed: the §4.6 capture-offset differential (short lane); mk_d27_cell.sh
+allowlist; M4.7 wording pass. HEAD pushed at session close; wake.md
+rewritten for the twenty-fourth.
