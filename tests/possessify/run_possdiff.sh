@@ -26,6 +26,12 @@
 
 set -e
 
+# LC_ALL=C for the alphabet extraction below: `sort -u` under a UTF-8 locale
+# merges characters its collation considers equal, which would quietly shrink
+# the subject alphabet this sweep is built from. R24 M-F1's cause, and this
+# lane hit it in its sibling script (see run_possessify_tests.sh's own note).
+export LC_ALL=C
+
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"

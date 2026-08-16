@@ -288,6 +288,15 @@ typedef struct {
      * Ctx rather than in pcrec_options, and why the listing is rendered from
      * the emitter's own event stream instead of from a second walk. */
     bool                 want_ir;
+    /* [ENG-BREP] the possessification pass's own census, set by
+     * pcrec_possessify on every call (SET, not accumulated, so the fixpoint's
+     * second round reports the final state rather than double-counting).
+     * `poss_total` counts A_REP nodes in the SOURCE tree, which is the only
+     * quantifier population comparable with eng_brep_design.md §2.6's — the
+     * emitter's rung marks count a replicated body's copies once EACH, so a
+     * census read off those measures replication as much as it measures
+     * quantifiers. Reported in --emit-ir's header; nothing else reads it. */
+    int                  poss_marked, poss_total;
     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
      * engine_why stamp's `why_pos` (§5.5). */
     size_t               first_cap_pos;

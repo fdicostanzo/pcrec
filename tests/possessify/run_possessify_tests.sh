@@ -23,6 +23,16 @@
 
 set -u
 
+# LC_ALL=C, and it is NOT cosmetic. R24 M-F1/M-F2 found every "distinct" figure
+# in the [ENG-BREP] rung census to be an undercount with ONE cause: a `sort -u`
+# running under a UTF-8 locale, whose collation treats strings differing only
+# in punctuation as equal — which for a corpus of REGEXES is close to a worst
+# case (`\d+` and `[\d]+` collate the same). This file reproduced that bug on
+# its own first run: the corpus sweep below reported 470 distinct patterns
+# where there are 793, so a third of the population was silently dropped from
+# the do-or-die and byte-identity gates. Byte comparison, explicitly.
+export LC_ALL=C
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"

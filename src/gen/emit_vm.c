@@ -1695,6 +1695,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     vm_strats_describe(v->strats, o);
     sb_puts(o, " -- see the STRATEGIES section below for which quantifier"
                " took which\n");
+    /* [ENG-BREP] the pass's OWN census, from src/opt/possessify.c, and it is
+     * deliberately not derived from the STRATEGIES rows below. Those are per
+     * EMITTED quantifier, so a replicated bounded-repeat body contributes one
+     * row per copy; these are per SOURCE `A_REP`, which is the only population
+     * comparable with eng_brep_design.md §2.6's own census. Counting the rows
+     * instead would measure replication as much as it measures the rule. */
+    sb_printf(o, "; possessify   %d of %d source quantifier%s possessified"
+                 " (eng_brep_design.md S2)\n",
+              cx->poss_marked, cx->poss_total,
+              cx->poss_total == 1 ? "" : "s");
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes

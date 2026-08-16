@@ -448,7 +448,9 @@ typedef struct {
     Ctx  *cx;
     Gk   *g;
     bool  multiline;
-    int   marked;
+    int   marked;      /* newly marked on THIS call — the fixpoint's signal */
+    int   seen;        /* A_REP nodes walked */
+    int   possessive;  /* A_REP nodes possessive AFTER this call */
 } Pss;
 
 static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
@@ -457,6 +459,8 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                     const uint8_t *encl)
 {
+    P->seen++;
+
     First body = first_of(P->multiline, a->l);
 
     /* The effective follow: what comes after Q here, plus what every
@@ -490,6 +494,7 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         a->possessive = true;
         P->marked++;
     }
+    if (a->possessive) P->possessive++;
 
     /* Descend into the body. Its own quantifiers see this loop's follow AND
      * this loop's FIRST as part of theirs. */
@@ -568,5 +573,7 @@ int pcrec_possessify(Ctx *cx, Ast *root)
     bs_clear(none);
     pss_walk(&P, root, none, true, none);
 
+    cx->poss_total  = P.seen;
+    cx->poss_marked = P.possessive;
     return P.marked;
 }
