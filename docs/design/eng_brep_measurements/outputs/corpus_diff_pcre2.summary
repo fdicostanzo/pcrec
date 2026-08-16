@@ -1,0 +1,28 @@
+# ENG-BREP design lane -- archived probe output
+#
+# Task B item 2: corpus/realistic differential summary -- confusion matrix, regen_body.py coverage, soundness counts
+#
+date:        2026-08-16T17:44:12Z
+repo commit: 0b9da1f14436cd3c18f4994b0ffef0d74b8bfcd7  (branch lane/nestedlazy)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+<sys>:0: FutureWarning: Possible nested set at position 1
+<sys>:0: FutureWarning: Possible nested set at position 2
+# --- rows: 306 possessifiable quantifiers tested, 112 patterns unparsed by python re, 1 bodies regen_body.py could not round-trip (counted, not silently skipped) ---
+# --- libpcre2: True (10.46 2025-08-27) ---
+# --- confusion matrix (source, pref, variant, py_status, pcre2_status) ---
+#   ('harvested_patterns.txt', 'greedy', 'eff-byte', 'same', 'same')       58
+#   ('harvested_patterns.txt', 'greedy', 'end-here', 'same', 'compile-error') 4
+#   ('harvested_patterns.txt', 'greedy', 'end-here', 'same', 'same')       193
+#   ('harvested_patterns.txt', 'greedy', 'exact', 'same', 'compile-error') 2
+#   ('harvested_patterns.txt', 'greedy', 'exact', 'same', 'same')          22
+#   ('harvested_patterns.txt', 'lazy', 'eff-byte', 'same', 'same')         7
+#   ('harvested_patterns.txt', 'lazy', 'exact', 'same', 'same')            2
+#   ('realistic_patterns.txt', 'greedy', 'eff-byte', 'same', 'same')       11
+#   ('realistic_patterns.txt', 'greedy', 'end-here', 'same', 'same')       24
+#   ('realistic_patterns.txt', 'greedy', 'exact', 'same', 'same')          52
+# SOUNDNESS: 0 python counterexample(s), 0 libpcre2 counterexample(s) (expected 0 both)

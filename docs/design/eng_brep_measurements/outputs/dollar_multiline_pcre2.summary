@@ -1,0 +1,37 @@
+# ENG-BREP design lane -- archived probe output
+#
+# Task B item 3: $-follow summary -- split by exact-count vs disjoint arm, greedy vs lazy, multiline on/off, against both oracles
+#
+date:        2026-08-16T17:44:12Z
+repo commit: 0b9da1f14436cd3c18f4994b0ffef0d74b8bfcd7  (branch lane/nestedlazy)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# --- pairs per multiline setting: 384 qualified (would be possessifiable for a benign follow), 144 skipped (declined regardless of $ -- ambiguous/nullable body etc.), libpcre2: True (10.46 2025-08-27) ---
+# --- confusion matrix (pref, multiline, py_status, pcre2_status) ---
+#   ('greedy', False, 'same', 'same')                            192
+#   ('greedy', True, 'DIVERGES', 'DIVERGES')                     12
+#   ('greedy', True, 'same', 'same')                             180
+#   ('lazy', False, 'DIVERGES', 'DIVERGES')                      21
+#   ('lazy', False, 'same', 'same')                              171
+#   ('lazy', True, 'DIVERGES', 'DIVERGES')                       21
+#   ('lazy', True, 'same', 'same')                               171
+# multiline=False: python 21/384 diverging, libpcre2 21/384 diverging
+# multiline=True: python 33/384 diverging, libpcre2 33/384 diverging
+# --- split by which arm qualified the row for follow="c" (pref, arm, multiline, python status) ---
+#   ('greedy', 'disjoint', False, 'same')                   168
+#   ('greedy', 'disjoint', True, 'DIVERGES')                12
+#   ('greedy', 'disjoint', True, 'same')                    156
+#   ('greedy', 'exact-count', False, 'same')                24
+#   ('greedy', 'exact-count', True, 'same')                 24
+#   ('lazy', 'disjoint', False, 'DIVERGES')                 21
+#   ('lazy', 'disjoint', False, 'same')                     147
+#   ('lazy', 'disjoint', True, 'DIVERGES')                  21
+#   ('lazy', 'disjoint', True, 'same')                      147
+#   ('lazy', 'exact-count', False, 'same')                  24
+#   ('lazy', 'exact-count', True, 'same')                   24
+# EXACT-COUNT ARM is follow-independent by construction (the rule never inspects FOLLOW): every exact-count row above should read 'same' regardless of pref/multiline, or the arm itself is unsound -- not just the $ exemption.
+# DISJOINT ARM, LAZY: a `$` follow makes the remainder match-may-end-here (nullable-rest in S2.2's sense) whether or not (?m) is set, which is exactly the condition the LAZY CONJUNCT already declines for an ordinary follow -- so a lazy divergence here even at multiline=False is not a NEW `$` defect, it is the existing lazy+nullable-rest rule, and a real `$` exemption must feed `$`'s presence into that SAME conjunct (end_here=True) rather than bypass it.

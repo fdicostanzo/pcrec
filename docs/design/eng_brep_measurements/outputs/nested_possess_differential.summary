@@ -1,0 +1,61 @@
+# ENG-BREP design lane -- archived probe output
+#
+# Task A: nested-lazy differential summary -- confusion matrix + both failing-direction controls (NO_LAZY_CONJUNCT, NO_ENCLOSING_FIRST)
+#
+date:        2026-08-16T17:44:12Z
+repo commit: 0b9da1f14436cd3c18f4994b0ffef0d74b8bfcd7  (branch lane/nestedlazy)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# population: 9216 generated, 0 dropped (base pattern does not compile under python re), 9216 swept
+# SOUNDNESS [real, all targets/combos]: 0 counterexample(s)/timeout(s) (expected 0)
+# CONTROL [NO_LAZY_CONJUNCT]: 2560 rows newly 'possessifiable' under sabotage, 68 DIVERGE (caught), 0 TIMEOUT
+#   caught: '(a{0,4}?b){0,4}?' target=outer detail=('b', ((0, 0), (None,)), ((0, 1), ('b',)))
+#   caught: '(a{0,4}b){0,4}?' target=outer detail=('b', ((0, 0), (None,)), ((0, 1), ('b',)))
+#   caught: 'z(a{0,4}?b){0,4}?' target=outer detail=('zabc', ((0, 1), (None,)), ((0, 3), ('ab',)))
+#   caught: 'z(a{0,4}b){0,4}?' target=outer detail=('zabc', ((0, 1), (None,)), ((0, 3), ('ab',)))
+#   caught: '(a{0,4}?b){1,3}?' target=outer detail=('ababc', ((0, 2), ('ab',)), ((0, 4), ('ab',)))
+#   caught: '(a{0,4}b){1,3}?' target=outer detail=('ababc', ((0, 2), ('ab',)), ((0, 4), ('ab',)))
+#   caught: 'z(a{0,4}?b){1,3}?' target=outer detail=('zababc', ((0, 3), ('ab',)), ((0, 5), ('ab',)))
+#   caught: 'z(a{0,4}b){1,3}?' target=outer detail=('zababc', ((0, 3), ('ab',)), ((0, 5), ('ab',)))
+#   caught: '(a{0,4}?b)*?' target=outer detail=('b', ((0, 0), (None,)), ((0, 1), ('b',)))
+#   caught: '(a{0,4}b)*?' target=outer detail=('b', ((0, 0), (None,)), ((0, 1), ('b',)))
+# CONTROL [NO_ENCLOSING_FIRST]: 3952 rows newly 'possessifiable' under sabotage, 212 DIVERGE (caught), 0 TIMEOUT
+#   caught: '(a{0,4}?){0,4}?c' target=inner detail=('aacacac', ((0, 3), ('a',)), ((0, 3), ('aa',)))
+#   caught: '(a{0,4}?){1,3}c' target=inner detail=('aacacac', ((0, 3), ('a',)), ((0, 3), ('',)))
+#   caught: '(a{0,4}?){1,3}?c' target=inner detail=('aacacac', ((0, 3), ('a',)), ((0, 3), ('aa',)))
+#   caught: '(a{0,4}?){2,2}c' target=inner detail=('acccccc', ((0, 2), ('a',)), ((0, 2), ('',)))
+#   caught: '(a{0,4}?){2,2}?c' target=inner detail=('acccccc', ((0, 2), ('a',)), ((0, 2), ('',)))
+#   caught: 'z(a{0,4}?){2,2}c' target=inner detail=('zacacac', ((0, 3), ('a',)), ((0, 3), ('',)))
+#   caught: 'z(a{0,4}?){2,2}?c' target=inner detail=('zacacac', ((0, 3), ('a',)), ((0, 3), ('',)))
+#   caught: '(a{0,4}?)*?c' target=inner detail=('aacacac', ((0, 3), ('a',)), ((0, 3), ('aa',)))
+#   caught: '(a{1,3}?){0,4}c' target=inner detail=('aacacac', ((0, 3), ('a',)), ((0, 3), ('aa',)))
+#   caught: '(a{1,3}?){0,4}?c' target=inner detail=('aacacac', ((0, 3), ('a',)), ((0, 3), ('aa',)))
+# --- confusion matrix (mode, target, combo, verdict, status) ---
+#   ('real', 'inner', ('greedy', 'greedy'), 'no', 'DIVERGES')              643
+#   ('real', 'inner', ('greedy', 'greedy'), 'no', 'same')                  1181
+#   ('real', 'inner', ('greedy', 'greedy'), 'possessifiable', 'same')      480
+#   ('real', 'inner', ('greedy', 'lazy'), 'no', 'DIVERGES')                1003
+#   ('real', 'inner', ('greedy', 'lazy'), 'no', 'same')                    821
+#   ('real', 'inner', ('greedy', 'lazy'), 'possessifiable', 'same')        480
+#   ('real', 'inner', ('lazy', 'greedy'), 'no', 'DIVERGES')                496
+#   ('real', 'inner', ('lazy', 'greedy'), 'no', 'same')                    1328
+#   ('real', 'inner', ('lazy', 'greedy'), 'possessifiable', 'same')        480
+#   ('real', 'inner', ('lazy', 'lazy'), 'no', 'DIVERGES')                  828
+#   ('real', 'inner', ('lazy', 'lazy'), 'no', 'same')                      996
+#   ('real', 'inner', ('lazy', 'lazy'), 'possessifiable', 'same')          480
+#   ('real', 'outer', ('greedy', 'greedy'), 'no', 'DIVERGES')              322
+#   ('real', 'outer', ('greedy', 'greedy'), 'no', 'same')                  1822
+#   ('real', 'outer', ('greedy', 'greedy'), 'possessifiable', 'same')      160
+#   ('real', 'outer', ('greedy', 'lazy'), 'no', 'DIVERGES')                592
+#   ('real', 'outer', ('greedy', 'lazy'), 'no', 'same')                    1552
+#   ('real', 'outer', ('greedy', 'lazy'), 'possessifiable', 'same')        160
+#   ('real', 'outer', ('lazy', 'greedy'), 'no', 'DIVERGES')                1021
+#   ('real', 'outer', ('lazy', 'greedy'), 'no', 'same')                    1171
+#   ('real', 'outer', ('lazy', 'greedy'), 'possessifiable', 'same')        112
+#   ('real', 'outer', ('lazy', 'lazy'), 'no', 'DIVERGES')                  1085
+#   ('real', 'outer', ('lazy', 'lazy'), 'no', 'same')                      1107
+#   ('real', 'outer', ('lazy', 'lazy'), 'possessifiable', 'same')          112
