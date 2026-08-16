@@ -441,6 +441,12 @@ append-only or historical records.
   `LC_ALL=C` explicitly and says why: R24 M-F1's collation defect, which this
   lane reproduced in its own test script before the census caught it. See its
   own CLAUDE.md.
+- `rungselect_impl/` — the [ENG-BREP] RUNG-SELECT lane's own probes and
+  archived outputs (the reverse-deterministic rung, plus the K22 interim
+  product guard it landed first as a separate slice), kept separate from
+  `eng_brep_measurements/` and `possessify_impl/` for the same
+  never-confuse-the-lanes reason those two are separate. See its own
+  CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

@@ -70,6 +70,23 @@ the other:
   the mask assertion actually fails on a corrupted stamp rather than
   passing vacuously.
 
+## The K22 guard's check is a TIMEOUT, and that is the assertion
+
+The nested-repeat product guard's block puts `timeout 5` on the depth-30 and
+depth-40 towers and treats exit ≥ 124 as a FAILURE naming K22. That is not
+belt-and-braces around an exit-code check — it is the only part of the check
+that tests the fix. "Is refused" was already true at depth 30 BEFORE the guard
+existed; what was wrong was that the refusal took 11.8 s and became an
+unbounded hang two levels further up, so a check asserting only the exit code
+would have passed on the defect it was written for.
+
+The block leads with a POSITIVE CONTROL — a depth-15 tower must still compile —
+for the symmetric reason: a guard that refuses everything also makes the hang
+go away. Depth 15 is `docs/design/possessify_impl/k22_repro.txt`'s own
+"compiles" row, and the guard's soundness argument (it shares
+`PCREC_MAX_VM_NODES`'s value because a replication product is a lower bound on
+the node count) says it cannot cost that pattern.
+
 ## §4.7's ordering rule is checked as a CONTRAST, not an assertion
 
 "The DFA prefilter runs BEFORE the VM. A pattern whose prefilter can answer

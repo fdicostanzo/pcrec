@@ -742,8 +742,21 @@ static Cost vm_cost(Vm *v, const Ast *a)
  * alternation (which is one per A_ALT node, since a flat alternation is
  * left-nested), vm_cursor_rep pushes 1, the unbounded star pushes 1, and
  * vm_opt_chain pushes one per optional copy. Verified against the emitted
- * `&&label` count over the corpus. */
-static void vm_count_slots(Vm *v, const Ast *a)
+ * `&&label` count over the corpus.
+ *
+ * [K22] `repl` is the PRODUCT of the replication factors of every frames-rung
+ * bounded repeat this call is nested inside — 1 at the root. It exists because
+ * this walk is the one place in the compiler that pays the copy tree's full
+ * cost before anything bounds it: `PCREC_MAX_VM_REPEAT_COPIES` bounds one
+ * quantifier's own factor (a `{0,2}` tower never comes near it) and
+ * `PCREC_MAX_VM_NODES` is charged during EMISSION, which this pre-pass runs
+ * before. So a depth-40 `{0,2}` tower walked 2^40 nodes here and hung the
+ * compiler with no diagnostic. Multiplying the factors down the nesting path
+ * and refusing above PCREC_MAX_VM_REPLICATION_PRODUCT costs one multiply per
+ * A_REP and turns the hang into the refusal the node cap was always going to
+ * produce; see limits.h for why the two share a value and why that makes the
+ * check unable to refuse anything that compiles today. */
+static void vm_count_slots(Vm *v, const Ast *a, long long repl)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
     CapOff caps[VM_MAX_BODY_CAPS];
@@ -751,21 +764,21 @@ static void vm_count_slots(Vm *v, const Ast *a)
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
         return;
-    case A_CAP: vm_count_slots(v, a->l); return;
+    case A_CAP: vm_count_slots(v, a->l, repl); return;
     case A_ALT:
         /* Iterative spine walk (R1 R-2 / D10) — see vm_nullable. One push per
          * A_ALT NODE, which for a left-nested flat alternation of k branches
          * is k-1, exactly what vm_alt emits. */
         while (a->k == A_ALT) {
             v->npush++;
-            vm_count_slots(v, a->r);
+            vm_count_slots(v, a->r, repl);
             a = a->l;
         }
-        vm_count_slots(v, a);
+        vm_count_slots(v, a, repl);
         return;
     case A_CAT:
-        while (a->k == A_CAT) { vm_count_slots(v, a->r); a = a->l; }
-        vm_count_slots(v, a);
+        while (a->k == A_CAT) { vm_count_slots(v, a->r, repl); a = a->l; }
+        vm_count_slots(v, a, repl);
         return;
     case A_REP:
         if (a->rmin == 0 && a->rmax == 0) return;
@@ -799,7 +812,27 @@ static void vm_count_slots(Vm *v, const Ast *a)
              * accepts is single-path and compiles to a span loop whatever the
              * count, so `a{0,65535}` never contributes. */
             if (copies > v->maxcopies) v->maxcopies = copies;
-            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l);
+            /* [K22] and the factor's PRODUCT down the nesting path, checked
+             * BEFORE the loop below walks it. `v->maxcopies` above is a MAX and
+             * structurally cannot see this: nesting multiplies factors that are
+             * individually far under PCREC_MAX_VM_REPEAT_COPIES. The check is
+             * placed here rather than after the walk for the only reason it
+             * exists — the walk is the cost. Overflow is not reachable: the
+             * running product is refused the moment it exceeds the limit, so it
+             * never carries more than limit * PCREC_MAX_REPEAT. */
+            {
+                long long total = repl * copies;
+                if (total > PCREC_MAX_VM_REPLICATION_PRODUCT)
+                    ctx_fail(v->cx, 0,
+                             "pattern too large: nested bounded repeats would "
+                             "replicate a body %lld times in total (limit %d). "
+                             "Repetition counts MULTIPLY through nesting, so "
+                             "depth costs far more than any one count suggests "
+                             "-- lower a count, or reduce the nesting",
+                             total, PCREC_MAX_VM_REPLICATION_PRODUCT);
+                for (int i = 0; i < copies; i++)
+                    vm_count_slots(v, a->l, total);
+            }
             if (a->rmax < 0 && vm_nullable(a->l)) v->nguard++;
         }
         return;
@@ -1962,7 +1995,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * is emitted, and it must agree EXACTLY with what the emitter goes on to
      * assign — so the counter mirrors the emitter's own rung decisions rather
      * than approximating them. */
-    vm_count_slots(&v, root);
+    vm_count_slots(&v, root, 1);
     /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
      * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
      * compiler-side bound that stops it, and it is checked here — after the

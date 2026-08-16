@@ -104,6 +104,38 @@ enum {
      * construct that reaches this cap without guessing. */
     PCREC_MAX_VM_REPEAT_COPIES = 64,
 
+    /* [K22] The THIRD VM size bound, and the one the other two structurally
+     * cannot provide: how many times a body may be replicated in TOTAL along a
+     * chain of NESTED bounded repeats.
+     *
+     * WHY NEITHER OF THE TWO ABOVE COVERS IT. `PCREC_MAX_VM_REPEAT_COPIES`
+     * bounds ONE quantifier's own factor, and nesting MULTIPLIES factors that
+     * are individually tiny: a depth-40 tower of `{0,2}` has a maximum factor
+     * of 2 and replicates the innermost body 2^40 times.
+     * `PCREC_MAX_VM_NODES` would catch it, and does — but it is charged DURING
+     * emission, while `vm_count_slots` must walk the same copy tree BEFORE a
+     * byte is emitted, so the walk itself is the Theta(2^d) work nobody
+     * bounded. K22: depth 30 refused in 11.8 s and depth 35 hung with no
+     * diagnostic, on a 320-character pattern (docs/dev/known_issues.md K22,
+     * docs/design/possessify_impl/k22_repro.txt).
+     *
+     * IT IS THE NODE CAP'S OWN VALUE, and that is a structural identity rather
+     * than a coincidence worth tuning separately. Every replicated copy of a
+     * body costs at least one `vm_charge` (one `vm_emit` call per copy), so
+     * the total replication product is a LOWER BOUND on the emitted node
+     * count. Refusing above `PCREC_MAX_VM_NODES` therefore refuses only
+     * patterns `PCREC_MAX_VM_NODES` was going to refuse anyway — the guard
+     * moves the refusal EARLIER, never wider, so it cannot cost a pattern that
+     * compiles today. MEASURED on the K22 tower: depth 16 (product 65,536)
+     * compiles before and after; depth 17 (product 131,072, exactly at this
+     * limit) still reaches the node cap in 0.7 s; depth 18 and up now refuse
+     * in ~0.1 s where depth 35 used to hang.
+     *
+     * The REAL fix is [ENG-BREP]'s counter-K rung, which stops replicating for
+     * exactly these shapes. This is the interim guard that makes the failure
+     * honest in the meantime. */
+    PCREC_MAX_VM_REPLICATION_PRODUCT = PCREC_MAX_VM_NODES,
+
     /* [ENG-BREP] How many byte-consuming POSITIONS a quantifier body may have
      * before src/opt/possessify.c gives up on it. It bounds the position
      * (Glushkov) automaton the §2.2 unique-iteration test is decided on: the

@@ -420,6 +420,55 @@ else
     bad "[M4.5c] '(ab){0,4000}c' was refused; it replicates nothing and the cap must not see it"
 fi
 
+# ---- K22: the NESTED-repeat product guard -------------------------------
+#
+# The cap above bounds ONE quantifier's factor and structurally cannot see
+# this: nesting MULTIPLIES factors that are individually far under 64. A
+# depth-40 tower of `{0,2}` has a maximum factor of 2 and replicates its
+# innermost body 2^40 times, and `vm_count_slots` walked that copy tree BEFORE
+# PCREC_MAX_VM_NODES could be charged -- so the compiler hung with no
+# diagnostic on a 365-character pattern (K22).
+#
+# `timeout` IS THE ASSERTION here, not a safety net. "Refuses" was already true
+# at depth 30 before the guard; what was wrong was that the refusal took 11.8 s
+# and became a hang two levels up, so a check that only asserted the exit code
+# would have passed on the defect. A generous 5 s bound separates the guard's
+# ~0.1 s from both.
+k22_tower() { # k22_tower <depth>  -> the pattern on stdout
+    local d="$1" i pat='(x)'
+    for ((i = 0; i < d; i++)); do pat="$pat(?:"; done
+    pat="${pat}a"
+    for ((i = 0; i < d; i++)); do pat="$pat){0,2}"; done
+    printf '%s' "${pat}z"
+}
+# The POSITIVE CONTROL FIRST, because a guard that refuses everything also
+# makes the hang go away. Depth 15 is k22_repro.txt's own "compiles" row.
+if timeout 20 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22ok.c" \
+        -- "$(k22_tower 15)" >/dev/null 2>&1; then
+    ok "[K22] a depth-15 nested-{0,2} tower still compiles -- the product guard refuses only what the node cap was going to refuse anyway"
+else
+    bad "[K22] the depth-15 tower was refused; the guard is wider than PCREC_MAX_VM_NODES, which its soundness argument says it cannot be"
+fi
+rm -f "$WORKDIR/k22.c"
+for k22d in 30 40; do
+    out="$(timeout 5 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22.c" \
+           -- "$(k22_tower "$k22d")" 2>&1)"; rc=$?
+    if [ "$rc" -eq 0 ]; then
+        bad "[K22] a depth-$k22d nested-{0,2} tower COMPILED; it replicates its body 2^$k22d times"
+    elif [ "$rc" -ge 124 ]; then
+        bad "[K22] a depth-$k22d nested-{0,2} tower took over 5 s (exit $rc). That is the K22 hang: the product guard fires before the copy-tree walk or it does not fire at all"
+    elif printf '%s' "$out" | grep -q 'MULTIPLY through nesting'; then
+        ok "[K22] a depth-$k22d nested-{0,2} tower is refused in under 5 s, naming nesting rather than any one count (was 11.8 s at 30, a hang at 40)"
+    else
+        bad "[K22] depth-$k22d refused quickly but not with the nesting diagnostic: $out"
+    fi
+done
+if [ -f "$WORKDIR/k22.c" ]; then
+    bad "[K22] the refused tower still wrote an output file"
+else
+    ok "[K22] ...and wrote no output file"
+fi
+
 # ---- 3. the engine-selection surface ------------------------------------
 if build sel 'a(b|c)+d'; then
     [ "$(info_field sel engine)" = "2" ] \

@@ -120,6 +120,24 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     20,000-character pattern SEGFAULTED pcrec (K20) — DD-10/D10/R1 R-2's class
     for the third time. Any new walk over those shapes needs the same
     treatment; `vm_nullable` carries the comment that says so.
+
+    **[K22] the third bound: the REPLICATION PRODUCT, checked DURING the
+    pre-pass rather than after it.** The copies cap above bounds ONE
+    quantifier's factor and structurally cannot see nesting, where factors
+    MULTIPLY: a depth-40 tower of `{0,2}` has a maximum factor of 2 and
+    replicates its innermost body 2^40 times. `PCREC_MAX_VM_NODES` would catch
+    that, and did — but it is charged during EMISSION, while `vm_count_slots`
+    walks the same copy tree BEFORE emission, so the walk itself was the
+    Θ(2^d) work nobody bounded and the compiler hung with no diagnostic on a
+    365-character pattern. `vm_count_slots` now carries a `repl` argument (the
+    product of the enclosing frames-rung factors, 1 at the root) and refuses
+    above `PCREC_MAX_VM_REPLICATION_PRODUCT` before it recurses. The bound IS
+    `PCREC_MAX_VM_NODES`'s value, and that identity is the check's whole
+    safety argument rather than a coincidence: every replicated copy costs at
+    least one `vm_charge`, so the product is a lower bound on the node count
+    and the guard can only move a refusal earlier, never widen one. The REAL
+    fix is [ENG-BREP]'s counter-K rung; this is the interim guard that makes
+    the failure honest. Measurements: `docs/design/rungselect_impl/`.
   - **[M4.5c] the LISTING and the TRACE (DD-8, §10).** §10's one constraint —
     "the dump must be derived from the same structure the emitter walks, never
     a parallel description" — is why the listing is an EVENT STREAM (`VEvent`)
