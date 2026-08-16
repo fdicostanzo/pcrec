@@ -136,7 +136,17 @@ fi
 # The frames rung's own shape: same push SITES, but one live frame instead of
 # one per optional copy. The site count staying equal is the point -- the win
 # is in the capacity, not in the emitted size.
-if gen fr_on '(x)(?:a|bc){0,4}d' && gen fr_off '(x)(?:a|bc){0,4}d' -fno-possessify; then
+#
+# `-fno-revdet` ON BOTH SIDES, and it is what keeps this block about the FRAMES
+# RUNG ([ENG-BREP] rung-select, 2026-08-16). `(?:a|bc)` is reverse-deterministic,
+# so at the default this quantifier now takes the reverse-deterministic rung,
+# which emits its own commit shape and no `RX_CUT` at all -- and the check
+# reported that as "the cut is missing from the possessified build". It was not
+# missing; the rung it belongs to was no longer the rung that ran. D46's
+# pin-the-selection rule, applied so the block keeps testing the shape it names.
+# The rung's own possessified shape is covered in tests/rungselect/.
+if gen fr_on '(x)(?:a|bc){0,4}d' -fno-revdet \
+   && gen fr_off '(x)(?:a|bc){0,4}d' -fno-possessify -fno-revdet; then
     bt_on="$(sed -n 's/^#define RX_BT_FRAMES //p' "$WORKDIR/fr_on.c")"
     bt_off="$(sed -n 's/^#define RX_BT_FRAMES //p' "$WORKDIR/fr_off.c")"
     if [ "$(cuts "$WORKDIR/fr_on.c")" -gt 0 ] && [ "$(cuts "$WORKDIR/fr_off.c")" -eq 0 ]; then
@@ -164,7 +174,12 @@ fi
 # it, nothing grows with the subject any more, so there is no ceiling left to
 # declare.
 # ---------------------------------------------------------------------------
-if gen ceil_on '(x)(?:a|bc)+d' && gen ceil_off '(x)(?:a|bc)+d' -fno-possessify; then
+# `-fno-revdet` for the reason the frames block above carries: this prediction
+# is about what POSSESSIFICATION removes from the FRAMES rung, and the
+# reverse-deterministic rung removes the same frames on its own, which would
+# leave both sides stamping 0 and the comparison measuring nothing.
+if gen ceil_on '(x)(?:a|bc)+d' -fno-revdet \
+   && gen ceil_off '(x)(?:a|bc)+d' -fno-possessify -fno-revdet; then
     c_on="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceil_on.c" | grep -oE '[0-9]+$')"
     c_off="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceil_off.c" | grep -oE '[0-9]+$')"
     if [ "${c_off:-0}" -gt 0 ] && [ "${c_on:-1}" -eq 0 ]; then
@@ -179,7 +194,12 @@ fi
 # The honest other half, asserted so nobody reads the line above as more than
 # it is: the cut discards FRAMES and deliberately does not rewind the TRAIL,
 # so a capture-bearing body still grows per iteration and still owes a ceiling.
-if gen ceilcap_on '(x)((a)|bc)+d'; then
+# `-fno-revdet` again, and here the reason is sharper than "keep the rung out":
+# the trail growth this row is about comes from the body's PER-ITERATION CAPTURE
+# WRITES, and the reverse-deterministic rung SUPPRESSES those (it recovers the
+# same values by a backward walk at commit). So on that rung the stamp is 0 and
+# it is TRUE, which is a different fact from the one this row asserts.
+if gen ceilcap_on '(x)((a)|bc)+d' -fno-revdet; then
     c="$(grep -oE '\.subject_ceiling = [0-9]+' "$WORKDIR/ceilcap_on.c" | grep -oE '[0-9]+$')"
     if [ "${c:-0}" -gt 0 ]; then
         ok "a possessified loop with CAPTURES in its body still declares a ceiling ($c bytes) -- the trail still grows, and the stamp says so"

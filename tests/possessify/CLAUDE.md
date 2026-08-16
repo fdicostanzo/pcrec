@@ -200,6 +200,25 @@ seconds: that pattern's emitted C is BYTE-IDENTICAL with the pass on and off
 (it possessifies nothing) and gcc times 2.39 s against 2.40 s, so
 possessification cannot be the cause. Serialize the batteries.
 
+## [ENG-BREP] Three checks here PIN THE NEXT RUNG OUT
+
+`run_possessify_tests.sh`'s frames-rung shape block, §7's ceiling prediction and
+its capture-bearing counterpart all pass `-fno-revdet` as of the
+reverse-deterministic rung's landing. Not a workaround — each names the FRAMES
+RUNG in what it asserts, and `(?:a|bc)` is reverse-deterministic, so at the
+default those quantifiers stopped taking that rung. The failures read as "the
+cut is missing from the possessified build" and "subject_ceiling did not move as
+§7 predicts", neither of which was true: the rung the assertion names was no
+longer the rung that ran. D46's pin-the-selection rule.
+
+The third one is worth reading for a reason of its own. It asserts that a
+possessified loop with CAPTURES in its body still declares a ceiling, because
+the cut discards frames and deliberately does not rewind the trail. On the
+reverse-deterministic rung that stamp is 0 and it is TRUE — that rung SUPPRESSES
+the body's capture writes and recovers the same values by a backward walk at
+commit, so nothing grows per iteration. Two different facts about two different
+emissions, and the denial is what keeps this file asserting its own.
+
 ## Failing-direction controls
 
 Five `tests/mech/sabotages/` rows, one per refuted rule the design records —
