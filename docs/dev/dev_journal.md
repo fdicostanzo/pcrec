@@ -8371,8 +8371,11 @@ preferences.
 **Measured.** Corpus census (committed producer, `LC_ALL=C`): 226 of 1,784
 SOURCE quantifiers possessified against §2.6's post-R24 183 of 1,725; 577 of
 725 corpus patterns DFA-routed and never reaching the pass, against §7's
-predicted 613 of 756. Differential: 131 patterns, 56,391 pattern-subject-
-startpos cells, 0 divergences, 83 patterns possessified. Corpus: 1,028
+predicted 613 of 756. Differential: TWO populations, 365 patterns and
+158,827 pattern-subject-startpos cells at 0 divergences — 155 from the designed
+family (§2.4's shapes in both preferences, plus the cut-vs-trail and
+nested-possessified-loop stress families) and 210 derived at run time as every
+corpus pattern the analysis gives a positive verdict on. Corpus: 1,028
 oracle-verified cases, every expectation agreed by python3 `re` AND libpcre2.
 Byte-identity: all 519 verdict-free corpus patterns emit identical C with the
 pass on and off. `rx_info`: `(x)(?:a|bc)+d` goes from a stamped 512-byte
