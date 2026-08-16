@@ -54,6 +54,21 @@
 #include "pa.h"
 #include "pb.h"
 
+/* WHICH TWO BUILDS these are is the caller's business, not this file's. The
+ * driver's whole content is "two artifacts of the same pattern must agree on
+ * span, every slot and the failure surface", which is the same claim for every
+ * member of D47.3's deny family — so the [ENG-BREP] rung-select suite
+ * (tests/rungselect/) links this same driver with its own pair rather than
+ * keeping a second copy of a comparison that would then have to be kept in
+ * step. Only the words in the divergence report differ, and they come in
+ * through these two defines. */
+#ifndef DIFF_A_LABEL
+#define DIFF_A_LABEL "possessified"
+#endif
+#ifndef DIFF_B_LABEL
+#define DIFF_B_LABEL "-fno-possessify"
+#endif
+
 #if PA_NCAPS != PB_NCAPS
 #error "the two builds disagree on the capture count: not the same pattern"
 #endif
@@ -160,8 +175,8 @@ int main(void)
                 describe(rb, cb, db, sizeof db);
                 fprintf(stderr,
                         "DIVERGENCE subject=%s startpos=%zu\n"
-                        "  possessified: %s\n"
-                        "  -fno-possessify: %s\n",
+                        "  " DIFF_A_LABEL ": %s\n"
+                        "  " DIFF_B_LABEL ": %s\n",
                         line, sp, da, db);
                 diverged++;
                 if (diverged > 20) {

@@ -1708,9 +1708,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * lazy loop moves FORWARD, so it needs the walk only for captures. */
     const bool walk = (greedy && move) || ng > 0;
 
-    char rv[64], cur[80], flr[32];
-    snprintf(rv,  sizeof rv,  "%s_rv[%d]", v->p, loop);
-    snprintf(cur, sizeof cur, "%s_rv[%d].c", v->p, loop);
+    /* One named scalar per field per loop, rather than one array of structs.
+     * Not a style choice: the emitted matcher is built -Wall -Wextra -Werror,
+     * and gcc cannot see through a computed-goto control flow well enough to
+     * prove an array element is written before it is read, so the array form
+     * failed -Wmaybe-uninitialized on four corpus patterns. A scalar carries
+     * its own `= 0` at its declaration and the question does not arise. */
+    char rv[80], cur[96], flr[32];
+    snprintf(rv,  sizeof rv,  "%s_rv%d", v->p, loop);
+    snprintf(cur, sizeof cur, "%s_rv%d_c", v->p, loop);
     snprintf(flr, sizeof flr, "(size_t)stv[%d]", se);
 
     char bounds[32];
@@ -1740,7 +1746,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     if (a->rmin == 0)
         vm_set(v, sl, "(ptrdiff_t)pos",
                "revdet: low-water = the entry, since rmin is 0");
-    sb_printf(b, "    %s.it = 0;\n", rv);
+    sb_printf(b, "    %s_it = 0;\n", rv);
     vm_goto(v, scanl);
 
     /* ---- the forward scan ------------------------------------------------
@@ -1753,9 +1759,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * frames to FIND its match, which is vm_poss_chain's own recorded lesson. */
     vm_lbl(v, scanl, "revdet scan: try one more iteration");
     if (a->rmax >= 0)
-        sb_printf(b, "    if (%s.it >= %dUL) goto %s_L%d;\n",
+        sb_printf(b, "    if (%s_it >= %dUL) goto %s_L%d;\n",
                   rv, a->rmax, v->p, fulll);
-    sb_printf(b, "    %s.mk = w->btn;\n", rv);
+    sb_printf(b, "    %s_mk = w->btn;\n", rv);
     vm_push_at(v, shortl, "pos",
                "this iteration cannot run -- leave the loop with the ones that did");
     vm_goto(v, bodyl);
@@ -1768,12 +1774,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     v->nocap--;
 
     vm_lbl(v, bodyok, "revdet scan: one iteration committed");
-    sb_printf(b, "    w->btn = %s.mk;\n", rv);
+    sb_printf(b, "    w->btn = %s_mk;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
                             " body has no second parse of what just matched");
-    sb_printf(b, "    %s.it++;\n", rv);
+    sb_printf(b, "    %s_it++;\n", rv);
     if (a->rmin > 0) {
-        sb_printf(b, "    if (%s.it == %dUL) {\n", rv, a->rmin);
+        sb_printf(b, "    if (%s_it == %dUL) {\n", rv, a->rmin);
         vm_set(v, sl, "(ptrdiff_t)pos",
                "revdet: low-water = the boundary after rmin iterations");
         sb_puts(b, "    }\n");
@@ -1785,7 +1791,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * Everything the commit tests is a slot or `pos`. */
     vm_lbl(v, shortl, "revdet scan: the body could not run at this boundary");
     if (a->rmin > 0)
-        sb_printf(b, "    if (%s.it < %dUL) goto %s_fail;\n", rv, a->rmin, v->p);
+        sb_printf(b, "    if (%s_it < %dUL) goto %s_fail;\n", rv, a->rmin, v->p);
     vm_goto(v, fulll);
 
     vm_lbl(v, fulll, "revdet: the forward scan is complete");
@@ -1805,14 +1811,14 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
         char ga[64], gs[64], ns[64];
         snprintf(ga, sizeof ga, "%s_rvg", v->p);
         snprintf(gs, sizeof gs, "%s_rvs", v->p);
-        snprintf(ns, sizeof ns, "%s_rv[%d].ns", v->p, loop);
+        snprintf(ns, sizeof ns, "%s_rv%d_ns", v->p, loop);
         R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;
         R.grp = grp; R.ngrp = ng; R.faill = wendl;
 
-        sb_printf(b, "    %s.c = pos;\n", rv);
-        sb_printf(b, "    %s.prev = -1;\n", rv);
+        sb_printf(b, "    %s_c = pos;\n", rv);
+        sb_printf(b, "    %s_prev = -1;\n", rv);
         if (ng) {
-            sb_printf(b, "    %s.ns = 0;\n", rv);
+            sb_printf(b, "    %s_ns = 0;\n", rv);
             sb_printf(b, "    { int i_; for (i_ = 0; i_ < %d; i_++)"
                          " %s_rvs[i_] = 0; }\n", ng, v->p);
         }
@@ -1825,10 +1831,10 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
         vm_rev_emit(v, revl, a->revbody, wstepl, &R);
 
         vm_lbl(v, wstepl, "revdet walk: landed on the previous boundary");
-        sb_printf(b, "    if (%s.prev < 0) %s.prev = (ptrdiff_t)%s;\n",
+        sb_printf(b, "    if (%s_prev < 0) %s_prev = (ptrdiff_t)%s;\n",
                   rv, rv, cur);
         if (ng) {
-            sb_printf(b, "    if (%s.ns >= %d) goto %s_L%d;\n",
+            sb_printf(b, "    if (%s_ns >= %d) goto %s_L%d;\n",
                       rv, ng, v->p, wendl);
             vm_goto(v, walkl);
         } else {
@@ -1845,9 +1851,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * instead of accumulating them (the cursor rung's own ordering rule). */
     if (move) {
         if (greedy) {
-            char pv[80];
-            snprintf(pv, sizeof pv, "(size_t)%s.prev", rv);
-            sb_printf(b, "    if ((ptrdiff_t)pos > stv[%d] && %s.prev >= 0) {\n",
+            char pv[112];
+            snprintf(pv, sizeof pv, "(size_t)%s_prev", rv);
+            sb_printf(b, "    if ((ptrdiff_t)pos > stv[%d] && %s_prev >= 0) {\n",
                       sl, rv);
             vm_push_at(v, commitl, pv,
                        "retreat: resume this very label with pos at the "
@@ -1881,13 +1887,13 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     /* ---- the lazy extension --------------------------------------------- */
     if (move && !greedy) {
         vm_lbl(v, extl, "revdet: extend by one iteration (lazy resume)");
-        sb_printf(b, "    %s.mk = w->btn;\n", rv);
+        sb_printf(b, "    %s_mk = w->btn;\n", rv);
         vm_goto(v, extbl);
         v->nocap++;
         vm_emit(v, extbl, a->l, extok);
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
-        sb_printf(b, "    w->btn = %s.mk;\n", rv);
+        sb_printf(b, "    w->btn = %s_mk;\n", rv);
         vm_goto(v, commitl);
         /* The body FAILING here needs no frame of its own: the push above only
          * happens below `hi`, and below `hi` the chain guarantees a next
@@ -2927,15 +2933,15 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * program and sized by the widest body, because a walk's results are
      * published into stv before control leaves the loop that ran it — nothing
      * here outlives its own commit. */
-    if (nrev_total) {
-        sb_printf(c, "    struct { size_t c; unsigned long it; unsigned mk;\n"
-                     "             ptrdiff_t prev; int ns; } %s_rv[%d];\n",
-                  v.p, nrev_total);
-        sb_printf(c, "    (void)%s_rv;\n", v.p);
-        if (v.nrevcaps) {
-            sb_printf(c, "    ptrdiff_t %s_rvg[%d][2];\n", v.p, v.nrevcaps);
-            sb_printf(c, "    unsigned char %s_rvs[%d];\n", v.p, v.nrevcaps);
-        }
+    for (int i = 0; i < nrev_total; i++)
+        sb_printf(c,
+            "    size_t %s_rv%d_c = 0; unsigned long %s_rv%d_it = 0;\n"
+            "    unsigned %s_rv%d_mk = 0; ptrdiff_t %s_rv%d_prev = -1;\n"
+            "    int %s_rv%d_ns = 0;\n",
+            v.p, i, v.p, i, v.p, i, v.p, i, v.p, i);
+    if (nrev_total && v.nrevcaps) {
+        sb_printf(c, "    ptrdiff_t %s_rvg[%d][2] = {{0}};\n", v.p, v.nrevcaps);
+        sb_printf(c, "    unsigned char %s_rvs[%d] = {0};\n", v.p, v.nrevcaps);
     }
     sb_puts(c, "    (void)s; (void)n; (void)stv;\n");
     if (v.tracing)
