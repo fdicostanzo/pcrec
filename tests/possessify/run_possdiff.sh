@@ -43,7 +43,13 @@ CC="${CC:-gcc}"
 # budget, and exceeding it is a loud failure naming the case rather than a
 # hang. This suite compiles two artifacts per pattern, so it is exactly the
 # kind of site the ruling is about.
+#
+# EXECUTION is bounded too (gen_run, same file): one driver run per pattern,
+# which internally sweeps every subject for that pattern -- a per-pattern
+# site, not a hundreds-of-runs inner loop, so it goes through the watchdog
+# rather than a bare timeout.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="possdiff"
 
 WORKDIR=$(mktemp -d "${TMPDIR:-/tmp}/possdiff.XXXXXX")
 cleanup() { [ -n "$POSSDIFF_KEEP" ] || rm -rf "$WORKDIR"; }
@@ -179,7 +185,7 @@ one_pattern() {
     fi
 
     subjects_for "$pat" > "$d/subj"
-    if out=$("$d/t" < "$d/subj" 2>"$d/diverge"); then
+    if out=$(gen_run "possdiff '$pat'" "$d/t" < "$d/subj" 2>"$d/diverge"); then
         n=$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')
         cells_total=$((cells_total + ${n:-0}))
         ok

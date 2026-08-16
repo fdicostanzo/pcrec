@@ -92,7 +92,14 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # D45: one shared generated-code compile budget. TS-2's two builds compile a
 # GENERATED matcher and are wrapped; TS-3's build the LIBRARY (compiler axis,
 # not emitted code) and keep their own timeouts.
+#
+# EXECUTION follows the same split: TS-2's driver runs a GENERATED matcher
+# under TSan and goes through gen_run (which reads the axis off TSANFLAGS,
+# defined below, so a TSan run gets the 60s sanitizer budget automatically).
+# TS-3's driver calls pcrec_compile() directly -- the compiler itself, not
+# emitted code -- so it keeps its own $TIMEOUT, same reasoning as its build.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="thread"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
@@ -246,7 +253,7 @@ for idx in "${!TS2_NAMES[@]}"; do
         continue
     fi
 
-    out="$(timeout "$TIMEOUT" "$dir/ts2" 8 "$ITERS" 2>&1)"; rc=$?
+    out="$(gen_run "TS-2 '$name'" "$dir/ts2" 8 "$ITERS" 2>&1)"; rc=$?
     if echo "$out" | grep -q "WARNING: ThreadSanitizer"; then
         bad "TS-2 '$name' ($pattern): ThreadSanitizer reported a race -- see output below"
         echo "$out" >&2
@@ -335,7 +342,7 @@ else
     if [ "$berr_rc" -ne 0 ]; then
         bad "TS-2 sabotage: $CC failed to build the sabotaged driver: $berr"
     else
-        sab_out="$(TSAN_OPTIONS="halt_on_error=1" timeout "$TIMEOUT" "$sab_dir/ts2_sab" 8 "$ITERS" 2>&1)"
+        sab_out="$(TSAN_OPTIONS="halt_on_error=1" gen_run "TS-2 sabotage" "$sab_dir/ts2_sab" 8 "$ITERS" 2>&1)"
         if echo "$sab_out" | grep -q "SUMMARY: ThreadSanitizer: data race.*ts2_driver_sabotaged\.c"; then
             ok "TS-2 sabotage: TSan caught the planted race -- $(echo "$sab_out" | grep "SUMMARY: ThreadSanitizer")"
         else

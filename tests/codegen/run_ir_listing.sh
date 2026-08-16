@@ -50,7 +50,11 @@ KEEP="${KEEP:-0}"
 # D45 (docs/dev/decisions.md): every compile of GENERATED C in this file runs
 # under the shared budget -- a timeout is a FAILURE naming the case, never a
 # hang. One implementation for the whole tree.
+#
+# EXECUTION of the trace-check plain/traced binaries below is bounded too
+# (gen_run, same file): a handful of runs per pattern, not an inner loop.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="codegen"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -292,8 +296,8 @@ for pat in '(a|ab)(c|bcd)' '((a)|b)+c' '(a*)b'; do
     gen_cc "trace TRACED '$pat'" "$CC" $GENCFLAGS -I "$d/traced" -o "$d/traced/t" "$d/traced/gen.c" \
         || { trace_ok=0; echo "  trace: TRACED build failed: $(printf '%s' "$GEN_CC_LOG" | head -3)" >&2; break; }
     for subj in abcd xxabcd aab bbb '' a aaa; do
-        p_out="$("$d/plain/t" "$subj" 2>/dev/null)"
-        t_out="$("$d/traced/t" "$subj" 2>/dev/null)"
+        p_out="$(gen_run "ir-listing trace plain '$pat' '$subj'" "$d/plain/t" "$subj" 2>/dev/null)"
+        t_out="$(gen_run "ir-listing trace TRACED '$pat' '$subj'" "$d/traced/t" "$subj" 2>/dev/null)"
         if [ "$p_out" != "$t_out" ]; then
             bad "[M4.5c] --trace CHANGED THE ANSWER for '$pat' on \"$subj\": plain '$p_out' vs traced '$t_out'"
             trace_ok=0
@@ -301,11 +305,11 @@ for pat in '(a|ab)(c|bcd)' '((a)|b)+c' '(a*)b'; do
     done
     # ...and it must actually trace: a silent "instrumented" build is the
     # vacuous-check shape (the trace fires on stderr, the result on stdout).
-    if ! "$d/traced/t" abcd 2>&1 >/dev/null | grep -q '^\[rx\] '; then
+    if ! gen_run "ir-listing trace stderr TRACED '$pat'" "$d/traced/t" abcd 2>&1 >/dev/null | grep -q '^\[rx\] '; then
         bad "[M4.5c] --trace produced no trace output for '$pat' — the instrumentation is not live"
         trace_ok=0
     fi
-    if "$d/plain/t" abcd 2>&1 >/dev/null | grep -q '^\[rx\] '; then
+    if gen_run "ir-listing trace stderr plain '$pat'" "$d/plain/t" abcd 2>&1 >/dev/null | grep -q '^\[rx\] '; then
         bad "[M4.5c] the PLAIN artifact for '$pat' emitted trace output — --trace is not opt-in"
         trace_ok=0
     fi

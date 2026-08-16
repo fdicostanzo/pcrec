@@ -26,7 +26,11 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # D45: one shared generated-code compile budget (docs/dev/decisions.md).
+# EXECUTION is bounded too (gen_run, same file): one driver run per pattern,
+# which sweeps the whole shared subject set in-process -- a per-pattern
+# site, not an inner loop of its own.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="registry"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
@@ -128,7 +132,7 @@ one_pattern() {
         echo "GCC-FAILED" > "$WORKDIR/results/$pid"
         return 0
     fi
-    "$d/t" > "$WORKDIR/results/$pid"
+    gen_run "pc4 '$pat'" "$d/t" > "$WORKDIR/results/$pid"
 }
 
 running=0
