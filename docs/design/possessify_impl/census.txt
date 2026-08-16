@@ -1,36 +1,36 @@
 == [ENG-BREP] possessification census ==
-date:   2026-08-16T03:40:48Z
-commit: baeadb8c3c58d2934119daecbf8f7bfe9269263f
+date:   2026-08-16T04:27:25Z
+commit: ae71f7db62b5cb3be8e4d1935a98061547e55ed2
 pcrec:  /home/duxevents/pcrec/worktrees/possessify/build/pcrec
 locale: LC_ALL=C (R24 M-F1: collation is why this is set)
 
 -- corpus
-  distinct patterns in tests/**/*.rxt : 793
-  compile under the default options   : 725  (refused: 68)
+  distinct patterns in tests/**/*.rxt : 831
+  compile under the default options   : 763  (refused: 68)
 
 -- DEFAULT routing (what ships)
   routed to the DFA, never reach the pass : 577
-  routed to the VM                        : 148
-  ... of those, with >=1 possessified     : 59
+  routed to the VM                        : 186
+  ... of those, with >=1 possessified     : 84
 
 -- FORCED --engine=vm (the analysis over the whole corpus)
-  patterns measured                       : 726
-  SOURCE quantifiers (A_REP nodes)        : 1784
-  ... POSSESSIFIED                        : 226
-  ... backtracking                        : 1558
-  patterns with >=1 possessified          : 210
+  patterns measured                       : 764
+  SOURCE quantifiers (A_REP nodes)        : 1832
+  ... POSSESSIFIED                        : 252
+  ... backtracking                        : 1580
+  patterns with >=1 possessified          : 235
 
-  emitted quantifiers (rung marks)        : 2929
-  ... POSSESSIFIED                        : 223
+  emitted quantifiers (rung marks)        : 2985
+  ... POSSESSIFIED                        : 249
   (the gap against the SOURCE counts above IS the replication a bounded
    repeat performs: the emitter marks a rung once per emitted copy.)
-  possessification rate (quantifiers)     : 12%
+  possessification rate (quantifiers)     : 13%
 
 -- against eng_brep_design.md §7's predictions
   §7 predicted 613 of 756 corpus patterns capture-free/DFA-routed and
-  untouched; measured here: 577 of 725 DFA-routed.
+  untouched; measured here: 577 of 763 DFA-routed.
   §7 predicted 174 of 1,725 quantifiers touched (both bounds) and the R24
-  fix-lane census 183 possessifiable; measured here: 226 of 1784
+  fix-lane census 183 possessifiable; measured here: 252 of 1832
   SOURCE quantifiers.
 
   The denominators are close but NOT the same population, and the
@@ -40,3 +40,4 @@ locale: LC_ALL=C (R24 M-F1: collation is why this is set)
   counts A_REP nodes in pcrec's OWN tree, over the patterns pcrec
   compiles, so it includes those 112 and excludes the ones pcrec refuses.
   The corpus has also grown since §2.6 was measured. Read the RATE.
+CENSUS_EXIT=0
