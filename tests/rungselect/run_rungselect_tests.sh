@@ -98,7 +98,7 @@ check_rung no  '(x)(?:ab|b){0,4}c' 'REVERSE-ambiguous: forward-deterministic, an
 check_rung no  '(x)(a|ab){0,4}c'   'forward-ambiguous (U1): the iteration can end in two places'
 check_rung no  '(x)(?:aa?){0,4}c'  'not prefix-free (U2): an accepting position continues'
 check_rung no  '(x)(?:a|){0,4}c'   'nullable body: no strictly-increasing chain'
-check_rung no  '(x)(?:a\bb){0,4}c' 'an assertion in the body is declined rather than modelled backward' 2>/dev/null || true
+check_rung no  '(x)(?:a|^b){0,4}c' 'an assertion in the body is DECLINED rather than modelled backward'
 check_rung no  '(x)(?:(?:a|b){0,2}c){0,3}d' 'single-level scope bound: the INNER quantifier declines'
 check_rung no  '(x)(ab){0,4}c'     'a deterministic FIXED-LENGTH body belongs one rung up, on the cursor'
 
@@ -173,17 +173,40 @@ fi
 # checked, because a rule that always declares a ceiling is as uninformative as
 # one that never does.
 # ---------------------------------------------------------------------------
+cap_of() {    # cap_of <pattern> [args...] -> the stamped resume-frame requirement
+    local pat="$1"; shift
+    "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" 2>/dev/null \
+        | sed -n 's/^; capacities  *\([0-9]*\) resume frames.*/\1/p'
+}
 ceil_of() {   # ceil_of <pattern> [args...] -> the stamped subject ceiling
     local pat="$1"; shift
     "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" 2>/dev/null \
         | sed -n 's/^; capacities .*(subject ceiling \([0-9]*\) bytes)$/\1/p'
 }
-con="$(ceil_of '((a)|b){0,60}c')"
-coff="$(ceil_of '((a)|b){0,60}c' -fno-revdet)"
-if [ -z "$con" ] && [ -n "$coff" ]; then
-    ok "capacity: '((a)|b){0,60}c' declares NO subject ceiling on the rung and $coff bytes without it -- the frame requirement stopped depending on the count"
+# THE PATTERN HAS TO BE ONE THE ANALYSIS DECLINES TO POSSESSIFY, and the first
+# version of this check was not: `((a)|b){0,60}c`'s follow `c` is disjoint from
+# its body's first set, so it possessifies and `vm_poss_chain` ALREADY collapses
+# it to one frame — both builds stamped "no ceiling" and the check measured
+# nothing. `...{0,60}a` has an OVERLAPPING follow, so the denied build keeps a
+# real frame per optional copy and the two are actually comparable.
+fon="$(cap_of '((a)|b){0,20}a')"
+foff="$(cap_of '((a)|b){0,20}a' -fno-revdet)"
+fon60="$(cap_of '((a)|b){0,60}a')"
+foff60="$(cap_of '((a)|b){0,60}a' -fno-revdet)"
+if [ -n "$fon" ] && [ "$fon" = "$fon60" ] && [ "$foff" != "$foff60" ]; then
+    ok "capacity: the rung's frame requirement does not depend on the count ($fon at {0,20} and at {0,60}), where replication's does ($foff -> $foff60)"
 else
-    bad "capacity: expected no ceiling on the rung and a real one under -fno-revdet; got on='${con:-none}' off='${coff:-none}'"
+    bad "capacity: expected the rung's frame requirement to be count-INDEPENDENT; got rung $fon/$fon60, replication $foff/$foff60"
+fi
+# ...and the honest stamp follows from it. Squeezed into 8 frames, the denied
+# build must DECLARE the length past which it can fail (D44.1's honest ceiling
+# replacing a silent cap) and the rung build has nothing to declare.
+con="$(ceil_of '((a)|b){0,60}a' --backtrack-frames=8)"
+coff="$(ceil_of '((a)|b){0,60}a' --backtrack-frames=8 -fno-revdet)"
+if [ -z "$con" ] && [ -n "$coff" ]; then
+    ok "capacity: at --backtrack-frames=8 the rung declares NO subject ceiling and replication declares $coff bytes -- the stamp moved with the machinery"
+else
+    bad "capacity: at --backtrack-frames=8 expected no ceiling on the rung and a real one under -fno-revdet; got on='${con:-none}' off='${coff:-none}'"
 fi
 
 # ---------------------------------------------------------------------------

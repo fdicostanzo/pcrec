@@ -66,8 +66,8 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # tests/harness/run.sh and (since [TT-2]) tests/reject/run_reject_tests.sh.
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
-      test-gentimeout test-codegen test-vm test-possessify test-known-fail \
-      test-thread
+      test-gentimeout test-codegen test-vm test-possessify test-rungselect \
+      test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -164,6 +164,18 @@ test-possessify: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/possessify/run_possdiff.sh' \
 	    'bash tests/possessify/run_possessify_tests.sh'
+
+# [ENG-BREP] The REVERSE-DETERMINISTIC rung's two non-.rxt suites, the same
+# shape as test-possessify one rung up. Its .rxt corpus rides test-corpus like
+# every other module's; these two check what a .rxt file structurally cannot —
+# that the rung build and the -fno-revdet (replication = ground truth) build
+# AGREE over a subject sweep (run_rungdiff.sh, the row's PRIMARY validation
+# instrument), and that the rung was selected where the artifact's stamp says
+# and nowhere when denied (run_rungselect_tests.sh).
+test-rungselect: all
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/rungselect/run_rungdiff.sh' \
+	    'bash tests/rungselect/run_rungselect_tests.sh'
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh
@@ -287,6 +299,8 @@ ubsan:
 	         tests/vm/run_vm_tests.sh \
 	         tests/possessify/run_possdiff.sh \
 	         tests/possessify/run_possessify_tests.sh \
+	         tests/rungselect/run_rungdiff.sh \
+	         tests/rungselect/run_rungselect_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -327,6 +341,8 @@ asan:
 	         tests/vm/run_vm_tests.sh \
 	         tests/possessify/run_possdiff.sh \
 	         tests/possessify/run_possessify_tests.sh \
+	         tests/rungselect/run_rungdiff.sh \
+	         tests/rungselect/run_rungselect_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
@@ -395,6 +411,6 @@ clean:
 	rm -rf build $(UBSAN_DIR) $(ASAN_DIR)
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
-        test-gentimeout test-codegen test-vm test-possessify test-known-fail \
-        test-thread \
+        test-gentimeout test-codegen test-vm test-possessify test-rungselect \
+        test-known-fail test-thread \
         test-spec smoke hooks strict ubsan asan lint mech bench fuzz clean

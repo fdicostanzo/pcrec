@@ -246,6 +246,62 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     is asserted against the STAMP rather than against the flag having been
     passed.
 
+  - **[ENG-BREP] THE REVERSE-DETERMINISTIC RUNG, the ladder's second rung**
+    (engine_m4.md §2.5; design sketch
+    `docs/design/rungselect_impl/rungselect_design.md`). It slots between the
+    cursor and the frames, and it is what makes a bounded repeat's emitted size
+    independent of its COUNT: `((a)|b){0,4000}c` was refused by the replication
+    cap and now compiles to 292 lines. `src/opt/revdet.c` selects it and leaves
+    the body's reversed AST on `Ast.revbody`; `vm_revdet_rep` emits it.
+
+    Four things to understand before editing it:
+
+    - **The forward scan CUTS at every iteration boundary.** That is what makes
+      the resume stack O(1) in the iteration count instead of O(n), and it is
+      licensed by forward unique-iteration: once the body has matched `[p,q)`
+      there is no other way to match an iteration there. The cut is at a
+      BOUNDARY and never inside a body — `vm_poss_chain`'s own recorded lesson,
+      that a one-unambiguous body still needs its own frames to FIND its match.
+    - **Capture writes are SUPPRESSED in the forward body** (`v->nocap`, read by
+      `vm_emit`'s A_CAP arm, `vm_cursor_rep` and `vm_cost`, so the emitted code
+      and the number the capacities are sized from cannot disagree). They are
+      the trail growth the rung exists to remove, and they are redundant.
+    - **The BACKWARD WALK does two jobs with one emission**: it finds the
+      previous iteration boundary for a retreat, and it recovers §3.4's
+      last-iteration captures. It has NO CHOICE POINTS — reverse
+      one-unambiguity lets `vm_rev_emit` dispatch an alternation on the next
+      byte — so it pushes nothing, and every failure edge goes to the walk's
+      end rather than to `rx_fail`. It runs on its own cursor local and never
+      touches `pos`, because it is a derivation and not a move.
+    - **The captures go to LOCALS and are published AFTER the resume frame is
+      pushed.** Both halves are load-bearing: publishing after the push puts the
+      frame's trail mark BELOW them so a retreat rewinds the previous commit's
+      values instead of accumulating them (the cursor rung's own ordering rule),
+      and walking into locals costs trail entries per GROUP rather than per
+      ITERATION. A group the walk never witnesses is never published, so its
+      previous value stands — which is how §3.4's ZERO-ITERATION clause falls
+      out as a special case rather than as an extra branch.
+
+    Three slots per loop (`vm_slot_rev`: entry, low-water, ceiling), a uniform
+    three whatever the preference, because the count has to agree across
+    `vm_count_slots`, `vm_cost_rep` and the emitter and a per-preference rule
+    would put that agreement in three places. All three are written ONCE per
+    loop ENTRY. `vm_cost_rep`'s arm sets `pf = 0` — the headline: frames stop
+    depending on the iteration count, so an artifact whose only growing
+    quantifier is on this rung declares no `subject_ceiling` at all.
+
+    The emitted working locals are per-loop SCALARS rather than an array of
+    structs, and that is a constraint rather than a preference: generated code
+    is built `-Wall -Wextra -Werror`, and gcc cannot see through a
+    computed-goto flow well enough to prove an array element is written before
+    it is read (`-Wmaybe-uninitialized`, measured on four corpus patterns).
+
+    Observed through `<PREFIX>_VM_RUNGS`'s fourth bit
+    (`<PREFIX>_VM_RUNG_REVDET`, `0x8`) and `--emit-ir`'s RUNGS section, both set
+    by the same `vm_rung_mark()` call every other rung goes through.
+    `-fno-revdet` denies it, and D47.3's do-or-die is asserted against the STAMP
+    rather than against the flag having been passed. Tests: tests/rungselect/.
+
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 
   **[ENG-BREP] the STRATEGY-DENIAL mask.** `emit_info_def` masks

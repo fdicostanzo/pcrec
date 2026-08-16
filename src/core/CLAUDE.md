@@ -70,7 +70,12 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   byte-identity gate hold by construction rather than by audit
 
   **[ENG-BREP]** `Ast` gains `possessive` (A_REP only, set by
-  src/opt/possessify.c) and `ModState` gains `multiline`. The second has NO
+  src/opt/possessify.c), `revbody` (A_REP only, set by src/opt/revdet.c to the
+  body's REVERSED AST when engine_m4.md §2.5's reverse-deterministic rung
+  applies, and NULL otherwise — so one field is both the verdict and the
+  material the emitter's backward walk is built from, which is what stops the
+  emitter's three rung-reading sites from each re-deciding), and `ModState`
+  gains `multiline`. The second has NO
   WRITER today and exists as a field rather than as a comment because D47.5
   rules the `$`-follow exemption's gate a LIVE CHECK: `$` in a quantifier's
   follow is measured safe at 0/720 diverging cells and UNSAFE at 180/720 under

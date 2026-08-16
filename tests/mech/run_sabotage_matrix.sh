@@ -58,6 +58,7 @@
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
+#   rungdiff                           — added 2026-08-16 ([ENG-BREP] rung-select)
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -279,6 +280,22 @@ run_one() {
                 p="$(grep -m1 '^possdiff: [0-9]* patterns agreed' "$work/possdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^possdiff: [0-9]* patterns agreed' "$work/possdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
                 suite_bits+=("possdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            rungdiff)
+                # [ENG-BREP] the REVERSE-DETERMINISTIC rung's differential, and
+                # the arm exists for the same reason possdiff's does, one rung
+                # down: a rung selected on an unsound condition still matches
+                # correctly on most subjects, so the signal is a divergence
+                # between the rung build and the `-fno-revdet` (replication,
+                # i.e. ground truth) one rather than a corpus failure.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/rungselect/run_rungdiff.sh" \
+                    > "$work/rungdiff.log" 2>&1
+                p="$(grep -m1 '^rungdiff: [0-9]* patterns agreed' "$work/rungdiff.log" | grep -oE '[0-9]+' | head -1)"
+                f="$(grep -m1 '^rungdiff: [0-9]* patterns agreed' "$work/rungdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
+                suite_bits+=("rungdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

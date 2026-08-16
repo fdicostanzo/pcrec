@@ -99,6 +99,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   three: they see different things and none substitutes for another, and it
   records the two ways this directory's own instruments measured nothing at
   first
+- **rungselect/** — [ENG-BREP]'s REVERSE-DETERMINISTIC rung, in the same three
+  shapes tests/possessify/ uses one rung up: its oracle-verified `.rxt` corpus
+  (generated, both oracles, 0 disagreements), the pcrec-vs-pcrec DIFFERENTIAL
+  that is the row's primary instrument (the same pattern with the rung and with
+  `-fno-revdet`, where denying it falls to literal replication — the semantic
+  ground truth — linked into one TU and compared on span + every capture slot +
+  the failure surface), and the structural checks a `.rxt` file cannot make
+  (rung selection pinned per DECLINE REASON, the bitmask on a three-rung
+  artifact, D47.3's do-or-die, corpus-wide byte identity, and the acceptance
+  cell's size). Part of `make test` as `make test-rungselect`. Its CLAUDE.md
+  records the one thing that surprises: the differential's count ceiling is 64
+  and it is a property of the GROUND TRUTH, since the denied build is the one
+  that replicates
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

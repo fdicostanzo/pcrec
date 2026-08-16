@@ -331,3 +331,32 @@ WRONG SPANS in a 1,259 sample, the discriminating shape being an inner
 quantifier at the END of the enclosing body. Twelve witnesses were added and
 S48 is now DETECTED. This is exactly what the driver's own banner says a green
 row means: not a bug in the script, the finding it exists to surface.
+
+## [ENG-BREP] S50-S52, the reverse-deterministic rung's controls
+
+Three sabotages for the ladder's second rung, on the same argument S45-S49 rest
+on one rung up: a rung selected on an unsound condition still matches correctly
+on most subjects, so the signal is a DIVERGENCE between the rung build and the
+`-fno-revdet` (replication, i.e. ground truth) one. They run the new `rungdiff`
+arm (tests/rungselect/run_rungdiff.sh).
+
+Each removes ONE thing, because the point is to say which thing is load-bearing:
+
+- **S50** drops the REVERSE unique-iteration check and keeps the forward one.
+  This is the sabotage the rung's name is about — forward determinism makes the
+  SCAN work, reverse determinism is a separate property and it is what makes the
+  RETREAT computable locally. Its witness is `(?:ab|b)`, which passes forward
+  and fails reversed.
+- **S51** removes the forward scan's per-ITERATION cut. It produces no wrong
+  answer on a short subject, which is exactly why it needs a control rather than
+  trust: the leftover frames are dead by the verdict, so re-entering one cannot
+  change the result. What it produces is frame exhaustion below the length the
+  artifact stamps, caught by the differential's FAILURE-SURFACE comparison —
+  §5.1's third item, and the one a weaker check would drop.
+- **S52** defeats the backward capture walk's first-seen-wins guard, so a group
+  reports the EARLIEST iteration that entered it instead of the latest. That is
+  precisely the clause eng_brep_design.md §3.4 records the plan row getting
+  wrong on 1,799 of 15,036 matches, and it is the only one of the three whose
+  signal is visible in the `.rxt` corpus as well as in the differential — so it
+  carries both arms, which is also a check that the corpus is not merely
+  decorative.
