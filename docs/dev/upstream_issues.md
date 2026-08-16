@@ -201,3 +201,29 @@ exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
   reproducible measurement of the hazard). Outside-class `x`/`xx` lexing
   (tests/modifiers/xmode.rxt) stays python-verified as usual, since that
   half is where the two engines actually agree.
+
+## U9 — PCRE2 10.46: no backtrack into a PRECEDING item after a possessive/atomic BOUNDED repeat of a GROUP
+
+- **Found**: 2026-08-15/16, R24 panel (soundness critic F6), sweeping the
+  [ENG-BREP] possessification family with possessive spellings against
+  both oracles (docs/dev/reviews/2026-08-15-r24-eng-brep.md).
+- **Divergence**: `a?(?:b){0,4}+a` on `"a"` — PCRE2 10.46 reports NO
+  MATCH; python `re` (and a hand derivation) give (0,1): the possessive
+  quantifier should forbid retreat into ITS OWN loop only, not freeze the
+  preceding `a?`. Same result for `(a?)(b){0,4}+a` and the atomic-group
+  spelling `(a?)(?>(b){0,4})a`.
+- **Isolation**: BOTH conditions are necessary — all of these MATCH in
+  PCRE2: `a?b{0,4}+a` (character item, not a group), `a?(?:b)*+a`
+  (`*+`, not `{m,n}+`), `x?(?:b){0,4}+a` (preceding optional matched
+  nothing), `a??(?:b){0,4}+a` (lazy prefix), `(?:b){0,4}+a` (no
+  preceding item). The trigger is a possessive/atomic BOUNDED repeat of
+  a GROUP with a preceding backtrack point that actually consumed.
+- **Impact**: python-possessive and PCRE2-possessive are NOT
+  interchangeable oracles for `{m,n}+`-over-group families — a three-way
+  sweep over possessive SPELLINGS in that family will report
+  disagreements that are not pcrec's. [ENG-BREP]'s possessification is an
+  internal rewrite that never emits `+` (and pcrec refuses the spelling
+  today, module `atomic-groups`), so §5.1's pcrec-vs-pcrec differential
+  is the primary instrument for a measured reason, not just a ruled one.
+  These 3 cells were the only "counterexamples" in the critic's 1,889×300
+  capture-focused sweep — all PCRE2-side, none analysis-side.
