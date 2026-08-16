@@ -8810,3 +8810,62 @@ backstop + cheap-shape bound), PCRECTIMEOUT 20/60, GENRUNMEM 512m.
 gentimeout section 18 checks; watchdog self-test 16/16. Counts
 otherwise unchanged (corpus 5,784, cli 257, known_fail EMPTY).
 K-list unchanged. No lanes, no crons, no background work.
+
+## 2026-08-16 (EDT), twenty-sixth session — R24 NOTED residuals closed (nested-lazy lane merged); lazy-$ conjunct interaction verified against the shipped pass; RUNG-SELECT lane launched
+
+Session opened on the ruled queue: [ENG-BREP] next rungs, D47.1 order.
+Baseline re-verified (smoke 6/6 on 894706e). Two lanes launched; the
+stall-watchdog cron armed per the twenty-first-session rule.
+
+**Manager-tier owed items discharged (652af2f):** mk_d27_cell.sh's
+hardcoded default allowlist REMOVED — the allowlist is now a required
+per-invocation argument (R22 item 5: the stale default would have
+leaked the K17/K18 fuzz alphabet; a hardcoded default goes stale in the
+LEAK direction, an explicit list is a per-lane manager decision). The
+M4.7 row now records the owed match_api §2.2 contract-text wording pass
+(cross-iteration retention; empty-final-iteration overwrite) so it
+survives wake.md rotation.
+
+**NESTED-LAZY LANE (sonnet, measurement-only) DELIVERED AND MERGED
+(dee0ef0 + fold-in 8cb3f9d).** Both R24 NOTED residuals closed:
+- §8 item 8 (nested-lazy differential, never run): 9,216-pattern
+  two-quantifier family, all four preference combos, BOTH outer and
+  inner verdicts tested with target identity asserted per-row —
+  18,432 comparisons, 0 soundness counterexamples. Failing-direction
+  controls both catch (drop lazy conjunct: 68/2,560; drop
+  enclosing-loop-FIRST: 212/3,952). The "info[0] correct only by
+  accident" concern is retired by construction.
+- §8 item 6 (libpcre2 on the python-only sweeps): lazy family 0/5,016
+  vs libpcre2 10.46; the censuses' 306 possessifiable rows
+  differentially checked for the first time, 0 counterexamples both
+  oracles; $-follow sweep split by arm — exact-count follow-independent
+  (0/48), greedy disjoint safe/gated exactly as §2.5 claims (0/168
+  plain, 12/168 under (?m)) against BOTH oracles.
+- The one finding needing manager verification: the LAZY disjoint arm
+  diverges 21/168 regardless of (?m). The lane traced it to the
+  ALREADY-DECLINING lazy conjunct (a bare $ makes the remainder
+  nullable), not a new $ defect — and the manager verified the SHIPPED
+  pass at merge: `([^c]{0,4}?)$` stamps 0-of-1 possessified, greedy
+  control 1-of-1. No product bug. The maintainer note (a $-exemption
+  rework must feed $ through the lazy-conjunct machinery, never bypass
+  it) is recorded in eng_brep_design.md §8 item 6's closure block.
+- Guard corpus: the lazy-$ family joined possess_lazy_guard.rxt with
+  newline-ending discriminating subjects ($ holds before a final \n, so
+  a wrongly-possessified lazy loop swallows it) plus the greedy
+  $-exemption control — 79 cases, both oracles + shipped stamps.
+  File header and tests/base/CLAUDE.md de-staled ("nothing is
+  implemented yet" predated the possessify merge).
+Merge validation: docs+tests-only change → smoke 6/6 post-merge, plus
+the touched .rxt run directly (79/79). Worktree removed, branch
+deleted.
+
+**Lesson:** a measurement lane's "not a bug, here's why" still gets
+verified against the SHIPPED artifact before merge — the lane swept its
+probe-side reimplementation of the analysis; the manager's two-pattern
+stamp check closed the gap between "the analysis declines this" and
+"the built pass declines this" in one minute. Cheap, and the only step
+that made the maintainer note trustworthy.
+
+**In flight at this entry:** rungselect lane (opus) — K22 interim guard
+committed and its worktree make test EXIT=0; revdet analysis pass
+(src/opt/revdet.c, -fno-revdet) committed; emitter work in progress.
