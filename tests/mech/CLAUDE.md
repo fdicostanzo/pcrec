@@ -309,3 +309,25 @@ that happens; do not weaken the count check.
 Maintenance: when a codegen/reject/trie sabotage table gains a new row with an
 exact literal edit, add a matching `sabotages/S<NN>_*.sh` here in the same
 change, per the project's own sabotage-validation convention.
+
+## [ENG-BREP] S45-S49, and the row that came back green
+
+Five sabotages for the possessification rung, one per rule the design records
+as REFUTED — S45 the lazy conjunct, S46 (U1) one-unambiguity, S47 (U2)
+prefix-freeness, S48 the enclosing-loop FOLLOW term, S49 the assertion
+exemption leaking from `$` to `^`. They run the new `possdiff` arm
+(tests/possessify/run_possdiff.sh), which is the only suite that can see a
+wrong possessification verdict: a quantifier the analysis admits unsoundly
+still matches correctly on most subjects, so the signal is a DIVERGENCE
+between the two builds, not a corpus failure.
+
+**S48 is the row that earned this directory its keep.** It came back
+UNDETECTED on its first run — and the finding was about the POPULATION, not
+the term: every nested cell in the differential's pattern file put a
+NON-NULLABLE item after the inner quantifier, a shape where the enclosing-loop
+term is merely conservative. A generated search over an 18,480-pattern nested
+family then found 7,553 patterns whose verdict changes without the term and 44
+WRONG SPANS in a 1,259 sample, the discriminating shape being an inner
+quantifier at the END of the enclosing body. Twelve witnesses were added and
+S48 is now DETECTED. This is exactly what the driver's own banner says a green
+row means: not a bug in the script, the finding it exists to surface.

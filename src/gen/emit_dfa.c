@@ -432,7 +432,31 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
 {
     sb_printf(c, "const struct rx_info %s = {\n", infoname);
     sb_puts(c,   "    .abi = 1,\n");
-    sb_printf(c, "    .flags = %lluULL,\n", (unsigned long long)cx->opt->flags);
+    /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
+     * the reason is the same one that makes them safe to ship.
+     *
+     * `rx_info.flags` is D43's record of the options the artifact was compiled
+     * WITH, and its consumers read it to learn what the matcher DOES.
+     * `-fno-possessify` changes what the matcher does by exactly nothing —
+     * that is the claim the flag exists to test — so stamping it here would
+     * make two artifacts that behave identically differ in their reflection
+     * surface over a knob with no observable effect. It would also destroy the
+     * byte-identity gate that is this pass's own safety argument: "a pattern
+     * the analysis declines emits the bytes it emits today" is checkable only
+     * while the flag itself leaves no trace, and a gate that has to FILTER a
+     * known-differing line is the check-design failure this project has
+     * recorded twice.
+     *
+     * What the ladder's choices ARE recorded in is `<PREFIX>_VM_STRATS`
+     * (src/gen/emit_vm.c), which reports what the emitter actually DID rather
+     * than what it was asked — the D46 half that a denial can be checked
+     * against. Each further denial in D47.3's family joins this mask as it
+     * lands. */
+    {
+        const uint64_t strategy_denials = PCREC_NO_POSSESSIFY;
+        sb_printf(c, "    .flags = %lluULL,\n",
+                  (unsigned long long)(cx->opt->flags & ~strategy_denials));
+    }
     sb_printf(c, "    .encoding = %d,\n", cx->opt->encoding);
     sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
     sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap);

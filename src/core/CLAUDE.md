@@ -69,6 +69,15 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   obtained without a second tree. That is also what makes §5.4's
   byte-identity gate hold by construction rather than by audit
 
+  **[ENG-BREP]** `Ast` gains `possessive` (A_REP only, set by
+  src/opt/possessify.c) and `ModState` gains `multiline`. The second has NO
+  WRITER today and exists as a field rather than as a comment because D47.5
+  rules the `$`-follow exemption's gate a LIVE CHECK: `$` in a quantifier's
+  follow is measured safe at 0/720 diverging cells and UNSAFE at 180/720 under
+  `(?m)`, so the exemption is conditional on a fact that would otherwise stop
+  being true without anyone revisiting the analysis. Module `assertions` is its
+  writer and inherits the test obligation.
+
 ## Conventions
 
 All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.

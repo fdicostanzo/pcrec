@@ -82,6 +82,17 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   python `re`. Runs today against [M4.4]'s DFA-only artifacts (`RX_NCAPS` is
   always 1, so every non-slot-0 expectation is pending-VM by construction
   until [M4.5]'s VM emitter lands); see its own CLAUDE.md
+- **possessify/** — [ENG-BREP]'s possessification rung: its oracle-verified
+  `.rxt` corpus, the pcrec-vs-pcrec DIFFERENTIAL that is the row's primary
+  validation instrument (the same pattern compiled with the rewrite and with
+  `-fno-possessify`, linked into one TU, compared on span + every capture slot
+  + the failure surface), and the structural checks a `.rxt` file cannot make
+  (the stamp matches the emitted machinery, D47.3's do-or-die, the
+  byte-identity gate over verdict-free patterns). Part of `make test` as
+  `make test-possessify`. Read its CLAUDE.md before adding to any of the
+  three: they see different things and none substitutes for another, and it
+  records the two ways this directory's own instruments measured nothing at
+  first
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
