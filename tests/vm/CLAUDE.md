@@ -62,13 +62,14 @@ the other:
   the section's own existing rung-adjacent pairs (exact/residual,
   bigbounded/smallbounded), a dedicated 33/70-nested-capture-groups pair
   pinning the `VM_MAX_BODY_CAPS=64` selection boundary directly, a
-  deliberately THREE-WAY-MIXED pattern (`a*(a|b){0,3}c((x)|y)+z`) checking
-  both the exact mask AND all three of `--emit-ir`'s new per-quantifier
-  `RUNGS` section rows — the case a per-artifact scalar could never have
-  gotten wrong because it never had more than one bit to report — and an
-  inline positive control (not a `tests/mech` sabotage — see below) proving
-  the mask assertion actually fails on a corrupted stamp rather than
-  passing vacuously.
+  deliberately MIXED pattern checking both the exact mask AND every one of
+  `--emit-ir`'s per-quantifier `RUNGS` section rows — the case a per-artifact
+  scalar could never have gotten wrong because it never had more than one bit
+  to report — and an inline positive control (not a `tests/mech` sabotage — see
+  below) proving the mask assertion actually fails on a corrupted stamp rather
+  than passing vacuously. The mask family grew a fourth bit at [ENG-BREP]'s
+  rung-select landing (`_VM_RUNG_REVDET`) and the mixed pattern grew with it;
+  see the section below for what happened to the old one.
 
 ## [ENG-BREP] Five checks here PIN A RUNG now, and the denials are the point
 
