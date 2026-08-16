@@ -164,9 +164,29 @@ fi
 # with a 1s budget", and inheriting an ambient `-fsanitize=` would silently
 # make the budget 60s and the compile succeed, turning a positive control into
 # a vacuous pass on exactly the axes it most needs to hold.
+#
+# `-fno-revdet` IS WHAT MAKES THIS ARTIFACT SLOW, and it is not optional
+# ([ENG-BREP] rung-select, 2026-08-16). `((a)|b){0,64}c` was slow because the VM
+# emitter REPLICATED its body sixty-four times (1,939 lines, 2.3 s at -O2); the
+# reverse-deterministic rung emits it as ONE body copy in 293 lines and 0.12 s,
+# and this control went green-because-fast — a positive control that stopped
+# controlling anything. That is exactly D46's own motivating scenario ("an
+# optimization added ABOVE a strategy un-tests the strategy below it unless the
+# harness can pin the selection"), reached here rather than in the rung's own
+# tests, and the fix is D46's: PIN THE SELECTION. Denying the rung puts the
+# quantifier back on the frames rung, where replication is what this control has
+# always been made of.
+#
+# THE NEXT RUNG DOWN THE LADDER WILL MEET THIS AGAIN. Counter-K is the strategy
+# that replaces replication for exactly this shape, so when it lands this line
+# needs its denial too, or the control goes quiet a second time.
 mkdir -p "$WORKDIR/slow"
-if ! "$PCREC" -p rx -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+if ! "$PCREC" -p rx -fno-revdet -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     bad "gen-timeout: could not build the positive-control artifact"
+elif [ "$(wc -l < "$WORKDIR/slow/gen.c")" -lt 1000 ]; then
+    # A SIZE FLOOR, so the next time a strategy quietly absorbs this shape the
+    # failure names the cause instead of reading as "the budget is not wired".
+    bad "gen-timeout: the positive-control artifact is only $(wc -l < "$WORKDIR/slow/gen.c") lines — it is no longer big enough to exceed a 1s CPU budget, so some emission strategy has absorbed it and this control needs that strategy denied too"
 else
     # (a) CPU fire: a real compile that needs >1s of CPU, under GENCPU=1 with
     # a generous wall — the CPU budget must kill it and say CPU, not wall.
