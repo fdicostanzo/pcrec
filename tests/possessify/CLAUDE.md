@@ -106,6 +106,29 @@ halves are pinned in `run_possessify_tests.sh`; the archived cell is
 It was found by a throughput cell run OUTSIDE the denied build's limit, which
 returned two different answers and looked for a moment like a divergence.
 
+## The finding this lane owes the manager: the step budget cannot see a
+## possessified loop
+
+Not a defect in this directory's checks — a design consequence, recorded here
+because it was found here and because the next ladder rung will meet it again.
+
+§4.2 charges a step per backtrack RESUMPTION, deliberately, so that forward
+progress is free and the budget is subject-length-independent. A possessified
+loop performs no resumptions, so it charges NO STEPS. With the prefilter off
+(`--engine=vm`), the search then rescans from every start position with nothing
+to stop it: on `(a*)b` over a subject of all `a`, MEASURED 0.033 s at 10 KB,
+0.581 s at 50 KB, 2.297 s at 100 KB — quadratic — where the `-fno-possessify`
+build gives up in constant time after 1M steps.
+
+It is not a regression in what SHIPS: under the default engine choice §4.7's
+ordering rule applies, the prefilter answers `(a*)b` outright and the VM never
+scans. The exposure is `--engine=vm`, which turns the prefilter off on purpose
+(R21 E-6) and is a diagnostic mode. But the trade — a fast honest give-up
+becomes a correct slow answer — is a robustness posture D22 rules on, so it is
+a manager call rather than this lane's. It is how the finding surfaced, too:
+the check that measures it hung the ubsan battery for ten minutes before the
+size was dropped to 10 KB.
+
 ## Failing-direction controls
 
 Five `tests/mech/sabotages/` rows, one per refuted rule the design records —

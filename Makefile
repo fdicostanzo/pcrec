@@ -285,6 +285,8 @@ ubsan:
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/possessify/run_possdiff.sh \
+	         tests/possessify/run_possessify_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -323,6 +325,8 @@ asan:
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/possessify/run_possdiff.sh \
+	         tests/possessify/run_possessify_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \

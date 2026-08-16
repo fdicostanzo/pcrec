@@ -297,7 +297,7 @@ cat > "$WORKDIR/cliff/main.c" <<'CLIFF_EOF'
 #include "gen.h"
 int main(void)
 {
-    size_t n = 1000000;
+    size_t n = getenv("CLIFF_N") ? (size_t)atol(getenv("CLIFF_N")) : 1000000;
     unsigned char *s = malloc(n);
     ptrdiff_t caps[RX_NCAPS][2];
     int r;
@@ -313,6 +313,10 @@ int main(void)
     return 0;
 }
 CLIFF_EOF
+# CLIFF_N lets one call run at a smaller size. Only the [ENG-BREP] row uses it:
+# the possessified prefilter-free build is quadratic in the subject (see the
+# note below), so measuring it at the 1 MB the other rows use would cost
+# minutes for a fact 10 KB establishes just as well.
 cliff_run() {  # cliff_run <name> [pcrec args...]
     local name="$1"
     shift
@@ -344,13 +348,31 @@ hy="$(cliff_run cliffhy)"
 # possessification. It is still measuring the prefilter, and it is now doing so
 # for a stated reason instead of by luck.
 vmo="$(cliff_run cliffvm --engine=vm -fno-possessify)"
-# ...and the win itself, pinned so it cannot silently go away: the SAME
-# prefilter-free build WITH possessification answers, where the denied one
-# cannot. This is the cliff engine_m4.md §4.7 is about, closed from a second
-# direction — §4.7 keeps `(a*)b` off the DNF side by handing the VM the DFA's
-# window; possessification keeps it off by making the loop unable to backtrack
-# in the first place.
-vmp="$(cliff_run cliffvmposs --engine=vm)"
+# ...and what possessification does to the SAME prefilter-free build, pinned at
+# a size both can finish, because the honest answer is more interesting than
+# "it got faster" and this lane measured it the hard way.
+#
+# [ENG-BREP] THE STEP BUDGET CANNOT SEE A POSSESSIFIED LOOP, and that is
+# structural rather than a bug in the budget. §4.2 charges a step per backtrack
+# RESUMPTION — deliberately, so forward progress is free and the budget is
+# subject-length-independent — and a possessified loop performs no resumptions
+# at all. So on `(a*)b` with the prefilter OFF the denied build gives up after
+# 1M steps in constant time, while the possessified build computes the right
+# answer by rescanning from every start position: MEASURED quadratic, 0.033 s
+# at 10 KB, 0.581 s at 50 KB, 2.297 s at 100 KB, and nothing stops it. At 1 MB
+# — the size the cliff cases above use — that is minutes, which is how this was
+# found: the check hung the ubsan battery.
+#
+# It is NOT a regression in what ships. Under the default engine choice §4.7's
+# ordering rule applies and the prefilter answers `(a*)b` outright, so the VM
+# never scans; the exposure is `--engine=vm`, which turns the prefilter off on
+# purpose (R21 E-6) and is a diagnostic mode. But it IS a new class the budget
+# does not bound, D22 rules DD-2 to be robustness rather than a speed trade,
+# and the trade here — a fast honest give-up becomes a correct slow answer —
+# is a call for the manager rather than for this lane. Recorded here and in the
+# lane's landing report; the size below is 10 KB so this check measures the
+# behaviour without paying for it.
+vmp="$(CLIFF_N=10000 cliff_run cliffvmposs --engine=vm)"
 if [ "$hy" = "0" ]; then
     ok "[M4.5b] §4.7/P-3: the DEFAULT artifact answers '(a*)b' over 1 MB of 'a' as nomatch — the prefilter answered and the VM was never entered"
 else
@@ -362,9 +384,9 @@ else
     bad "[M4.5b] §4.7/P-3 CONTRAST: --engine=vm -fno-possessify on '(a*)b' over 1 MB of 'a' returned '$vmo', expected -2 (RX_ERR_STEPS). Without this contrast the hybrid check above cannot distinguish a working prefilter from a pattern that never needed one"
 fi
 if [ "$vmp" = "0" ]; then
-    ok "[ENG-BREP] the same prefilter-free build WITH possessification answers '(a*)b' over 1 MB of 'a' — the loop cannot backtrack, so §4.7's cliff is closed from a second direction"
+    ok "[ENG-BREP] the same prefilter-free build WITH possessification ANSWERS '(a*)b' where the denied one gives up — the loop cannot backtrack, so it charges no steps (and, unbounded by the budget, rescans quadratically: see the note above)"
 else
-    bad "[ENG-BREP] --engine=vm on '(a*)b' over 1 MB of 'a' returned '$vmp', expected 0; possessification should make this loop a forward scan (its FIRST {a} is disjoint from its FOLLOW {b} over a unique-iteration non-nullable body)"
+    bad "[ENG-BREP] --engine=vm on '(a*)b' returned '$vmp', expected 0; possessification should make this loop a forward scan (its FIRST {a} is disjoint from its FOLLOW {b} over a unique-iteration non-nullable body)"
 fi
 if [ "$hy" != "caps-null-disagrees" ] && [ "$vmo" != "caps-null-disagrees" ]; then
     ok "[M4.5b] caps == NULL (the existence-only search, today's entire caller population) agrees with the caps-passing form on both engines"
