@@ -132,6 +132,33 @@ z(?:a{0,3}b)*c
 (?:a{0,2}?b)+c
 (?:a{0,2}?b)*
 
+# ---- the ENCLOSING-LOOP term's own discriminating shape -------------------
+# The block above is NOT enough, and finding that out is the reason these
+# exist. Dropping the enclosing-FIRST term (sabotage S45..S49's S48) left the
+# first version of this file entirely GREEN — because in `(?:a{0,2}b)+c` the
+# inner quantifier is followed by a NON-NULLABLE `b`, so the enclosing loop's
+# first set is not actually reachable at the inner loop's exit and the term is
+# merely conservative there.
+#
+# The shape where the term is LOAD-BEARING puts the inner quantifier at the
+# END of the enclosing body (or behind a nullable tail), so control really can
+# arrive at the enclosing loop's next iteration with the inner loop's own
+# first byte available. Found by generated search: 7,553 patterns in an
+# 18,480-pattern nested family change verdict without the term, and 44 of
+# 1,259 sampled produce a WRONG SPAN. `(?:a{1,2}){2,2}b` is the smallest.
+(?:a{1,2}){2,2}b
+(?:a{1,2}){2,2}
+(?:a+a?){2,2}
+(?:aa{0,2}){2,2}
+(?:aa{0,3}){2,2}b
+(?:a+b?){2,2}c
+(?:aa*b?){2,2}
+(?:aa{1,2}){1,3}b
+(?:aba*a?){2,2}
+(?:ba*b?){2,2}
+(?:a{2,2}a?)*?b
+(?:a(?:ab){0,2})+?b
+
 # ---- nesting and captures inside the loop --------------------------------
 ((a)|b){0,4}c
 ((a)|b){2,2}c

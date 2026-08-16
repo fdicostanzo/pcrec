@@ -1,0 +1,1292 @@
+# tests/possessify/possessify.rxt — module-free corpus for [ENG-BREP]'s
+# possessification rung (docs/design/eng_brep_design.md §2).
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY BOTH ORACLES AND AGREED.
+# Each (pattern, subject) cell's span and every capture slot were taken from
+# python3 `re` AND from libpcre2 10.46, and a cell the two disagreed on was
+# reported rather than resolved -- none survived into this file. That is D44's
+# three-way rule applied where §5.3 says it earns itself: `(|a){m,n}` is
+# measured as the family where the oracles themselves disagree (106 of 15,600
+# cells at R24), so a two-way python-only check on it would have raised a
+# FALSE alarm against pcrec.
+#
+# WHAT THIS FILE IS FOR, and what it is NOT for. It pins the ANSWERS around
+# the possessification rule -- what each pattern matches, whether or not the
+# rule fires on it. It cannot see the rule itself: a possessified quantifier
+# and a backtracking one match identically by construction, which is the
+# claim. The check that can see the rule is the pcrec-vs-pcrec differential
+# (run_possdiff.sh), and the check that says WHICH quantifiers were
+# possessified is the artifact's own <PREFIX>_VM_STRATS stamp
+# (run_possessify_tests.sh). All three are needed and none substitutes for
+# another.
+
+
+# ======================================================================
+# POSITIVE VERDICTS
+# ======================================================================
+
+# EXACT-COUNT arm, greedy. m == n leaves the loop one exit, so the arm holds
+# for either preference and needs no reference to what follows (§2.2).
+pattern a{2,2}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+m "aac" 0 3
+m "aaac" 1 4
+m "aaaac" 2 5
+m "aaaaac" 3 6
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+m "zaac" 1 4
+m "zaaac" 2 5
+n "q"
+n "aq"
+
+# EXACT-COUNT arm, LAZY. The arm is preference-independent because top and
+# bottom of §2.3's exit chain are the same position -- which is why it
+# survived every attack the R24 panel made [R24 H8].
+pattern a{2,2}?c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+m "aac" 0 3
+m "aaac" 1 4
+m "aaaac" 2 5
+m "aaaaac" 3 6
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+m "zaac" 1 4
+m "zaaac" 2 5
+n "q"
+n "aq"
+
+# EXACT-COUNT over a class: the shape real bounded repeats actually take.
+# 52 of the 76 possessifiable verdicts on the realistic pattern set (§2.6).
+pattern [ab]{3,3}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+m "aaac" 0 4
+m "aaaac" 1 5
+m "aaaaac" 2 6
+n "c"
+n "bc"
+n "abc"
+m "aabc" 0 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+n "zaac"
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# EXACT-COUNT over a multi-byte body. Reaches further than PCRE2's own
+# item-wise auto-possessification, which compares one repeated ITEM (§2.9).
+pattern (?:ab){2,2}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+n "zaac"
+n "zaaac"
+n "q"
+n "aq"
+
+# EXACT-COUNT with a capture inside the loop: the group must still report
+# the last iteration that entered it.
+pattern (a){2,2}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+m "aac" 0 3
+g 1 1 2
+m "aaac" 1 4
+g 1 2 3
+m "aaaac" 2 5
+g 1 3 4
+m "aaaaac" 3 6
+g 1 4 5
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+m "zaac" 1 4
+g 1 2 3
+m "zaaac" 2 5
+g 1 3 4
+n "q"
+n "aq"
+
+# DISJOINTNESS arm, greedy, bounded.
+pattern a{0,4}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 1 6
+m "c" 0 1
+m "bc" 1 2
+m "abc" 2 3
+m "aabc" 3 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# DISJOINTNESS arm, greedy, unbounded -- §2.2's chain argument does not
+# depend on n being finite.
+pattern a{3,}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 0 6
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+n "zaac"
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# DISJOINTNESS arm over a star.
+pattern a*c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 0 6
+m "c" 0 1
+m "bc" 1 2
+m "abc" 2 3
+m "aabc" 3 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# DISJOINTNESS arm, multi-byte alternation body. One-unambiguous (the
+# branches differ in their first byte) and prefix-free.
+pattern (?:a|bc){0,4}d
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+n "zaac"
+n "zaaac"
+n "q"
+n "aq"
+m "bcd" 0 3
+m "abcd" 0 4
+m "abcbcd" 0 6
+n "bcbc"
+m "ad" 0 2
+
+# DISJOINTNESS arm, LAZY, with a NON-NULLABLE remainder -- the side of
+# [R24 S-F1]'s conjunct that still possessifies. A verdict-positive lazy
+# quantifier is forced to the SAME maximal exit a greedy one tops out at:
+# at any non-maximal exit the body could iterate again, so that byte is in
+# FIRST(X), so by disjointness the follow cannot begin there.
+pattern a{1,3}?c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 1 5
+m "aaaaac" 2 6
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# DISJOINTNESS arm, LAZY, unbounded, non-nullable remainder.
+pattern a+?c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 0 6
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# The example engine_m4.md §2.5 uses, annotated by [R24 C-F1] as SURVIVING
+# the correction: the body is non-nullable and admits a unique iteration,
+# so the repaired rule admits it too even though the refuted
+# disjoint-follow-ONLY rule is what originally admitted it.
+pattern z(ab)*y
+m "zy" 0 2
+g 1 -1 -1
+m "zaby" 0 4
+g 1 1 3
+m "zababy" 0 6
+g 1 3 5
+n "zababab"
+n "zab"
+m "zaby!" 0 4
+g 1 1 3
+n "ab"
+n "zabay"
+
+# Several quantifiers in one pattern, landing on DIFFERENT strategies --
+# the mixed artifact a scalar stamp would misreport.
+pattern a{2,2}b{0,4}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+m "aac" 0 3
+m "aaac" 1 4
+m "aaaac" 2 5
+m "aaaaac" 3 6
+n "c"
+n "bc"
+n "abc"
+m "aabc" 0 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+m "zaac" 1 4
+m "zaaac" 2 5
+n "q"
+n "aq"
+m "aabc" 0 4
+m "aabbc" 0 5
+m "aabbbbc" 0 7
+n "aabbbbbc"
+m "aac" 0 3
+
+
+# ======================================================================
+# DECLINES, one per declining condition
+# ======================================================================
+
+# DECLINE, (U1) ambiguous body. THE 117-COUNTEREXAMPLE FAMILY (§2.4): the
+# branches share a first byte, so one iteration has TWO possible ends and a
+# retreat can move the exit position RIGHT rather than only left.
+# `(a|ab){0,4}c` on "abc" is (0,3) greedy with group 1 = "ab" and would be
+# (2,3) with group 1 unset if this were possessified.
+pattern (a|ab){0,4}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+g 1 0 1
+m "aac" 0 3
+g 1 1 2
+m "aaac" 0 4
+g 1 2 3
+m "aaaac" 0 5
+g 1 3 4
+m "aaaaac" 1 6
+g 1 4 5
+m "c" 0 1
+g 1 -1 -1
+m "bc" 1 2
+g 1 -1 -1
+m "abc" 0 3
+g 1 0 2
+m "aabc" 0 4
+g 1 1 3
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+g 1 1 2
+m "zaac" 1 4
+g 1 2 3
+m "zaaac" 1 5
+g 1 3 4
+n "q"
+n "aq"
+m "abc" 0 3
+g 1 0 2
+m "ababc" 0 5
+g 1 2 4
+n "abab"
+m "abababc" 0 7
+g 1 4 6
+
+# DECLINE, (U1), the same ambiguity spelled the other way round. §2.4's
+# "one thing v1 got right by accident": this family passed the first
+# differential only because its follow set had no follow beginning with the
+# body's SECOND byte.
+pattern (?:ab|a){0,4}b
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+m "b" 0 1
+m "ab" 0 2
+m "abab" 0 4
+m "ababab" 0 6
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+m "bc" 0 1
+m "abc" 0 2
+m "aabc" 0 3
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+n "zaac"
+n "zaaac"
+n "q"
+n "aq"
+m "abb" 0 3
+m "ababb" 0 5
+m "aab" 0 3
+m "abab" 0 4
+
+# DECLINE, (U2) not prefix-free -- and it needs no alternation at all. The
+# body is one-unambiguous; its accepting position `a` (with `b?` matching
+# empty) simply has an outgoing edge. `(?:ab?){0,4}b` on "ab" is (0,2)
+# greedy and NO MATCH possessive.
+pattern (?:ab?){0,4}b
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+m "b" 0 1
+m "ab" 0 2
+m "abab" 0 4
+m "ababab" 0 6
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+m "bc" 0 1
+m "abc" 0 2
+m "aabc" 0 3
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+n "zac"
+n "zaac"
+n "zaaac"
+n "q"
+n "aq"
+m "ab" 0 2
+m "abab" 0 4
+m "abb" 0 3
+m "aab" 0 3
+
+# DECLINE, nullable body. §2.3's chain is strictly increasing only because
+# the body consumes; a nullable body has no chain.
+pattern (?:a|){0,4}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 1 6
+m "c" 0 1
+m "bc" 1 2
+m "abc" 2 3
+m "aabc" 3 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+
+# DECLINE, nullable body with a capture -- §5.3 names `(|a){m,n}` as its
+# own dense cell because R24 measured it as the family where the ORACLES
+# disagree (python vs libpcre2 on 106 of 15,600 cells, all of them this
+# shape's captures). Every expectation here agreed three ways or it is not
+# in this file.
+pattern (|a){2,4}c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aac" 0 3
+g 1 1 2
+m "aaac" 0 4
+g 1 2 3
+m "aaaac" 0 5
+g 1 3 4
+m "aaaaac" 1 6
+g 1 4 5
+m "c" 0 1
+g 1 0 0
+m "bc" 1 2
+g 1 1 1
+m "abc" 2 3
+g 1 2 2
+m "aabc" 3 4
+g 1 3 3
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "zaac" 1 4
+g 1 2 3
+m "zaaac" 1 5
+g 1 3 4
+n "q"
+n "aq"
+
+# DECLINE, overlapping follow. FIRST(body) meets FOLLOW, so a retreat can
+# genuinely help.
+pattern a{0,4}a
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "aaaaa" 0 5
+n "b"
+m "ab" 0 1
+m "abab" 0 1
+m "ababab" 0 1
+m "ac" 0 1
+m "aac" 0 2
+m "aaac" 0 3
+m "aaaac" 0 4
+m "aaaaac" 0 5
+n "c"
+n "bc"
+m "abc" 0 1
+m "aabc" 0 2
+m "za" 1 2
+m "zaa" 1 3
+m "zaaa" 1 4
+m "zaaaa" 1 5
+m "zac" 1 2
+m "zaac" 1 3
+m "zaaac" 1 4
+n "q"
+m "aq" 0 1
+
+# DECLINE, SUBSUMED follow -- §2.7's named conservatism. FOLLOW contains
+# `b` because of the `b?`, and a `b` at any retreat position was already
+# consumable by the loop, so the retreat cannot actually help. PCRE2's
+# auto-possessification does this subsumption reasoning; pcrec's first
+# version deliberately does not, and this cell is what that costs.
+pattern [ab]{0,4}b?c
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 1 6
+m "c" 0 1
+m "bc" 0 2
+m "abc" 0 3
+m "aabc" 0 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+m "abbc" 0 4
+m "abc" 0 3
+m "bbc" 0 3
+m "abbbc" 0 5
+
+# DECLINE, `^` in the follow. An assertion reached at the follow's first
+# position widens FOLLOW to all bytes: `^` is DOWNWARD-closed, so a retreat
+# CAN reach a position satisfying it from one that does not (80 of 240
+# diverging cells on the panel's instrument).
+pattern a{0,4}^
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+m "aaa" 0 0
+m "aaaa" 0 0
+m "aaaaa" 0 0
+m "b" 0 0
+m "ab" 0 0
+m "abab" 0 0
+m "ababab" 0 0
+m "ac" 0 0
+m "aac" 0 0
+m "aaac" 0 0
+m "aaaac" 0 0
+m "aaaaac" 0 0
+m "c" 0 0
+m "bc" 0 0
+m "abc" 0 0
+m "aabc" 0 0
+m "za" 0 0
+m "zaa" 0 0
+m "zaaa" 0 0
+m "zaaaa" 0 0
+m "zac" 0 0
+m "zaac" 0 0
+m "zaaac" 0 0
+m "q" 0 0
+m "aq" 0 0
+
+
+# ======================================================================
+# THE LAZY CONJUNCT'S GUARD CELLS
+# ======================================================================
+
+# THE LAZY CONJUNCT'S OWN GUARD CELLS (D47.6, ruled into this corpus).
+# 
+# These are the cells a regressed lazy conjunct would miscompile. The
+# remainder is NULLABLE -- the match can simply END at the quantifier -- so
+# the follow's first-byte test is VACUOUS and the disjointness argument
+# says nothing. A greedy loop is unharmed (it tops out at the chain's top,
+# where the vacuous follow succeeds anyway); a LAZY loop stops at the
+# BOTTOM of the same chain and reports a shorter span.
+# 
+# `a{1,3}?` on "aaaa" is (0,1) lazy and (0,3) possessive: 316 measured
+# diverging cells, python and libpcre2 agreeing [R24 S-F1].
+# 
+# The `z`-prefixed rows are the D47.6 lesson itself. The design lane's own
+# sweep reported these as twenty FALSE declines; pulling them for
+# inspection showed all twenty GENUINELY diverge, and the reason the sweep
+# could not see it is that its random-subject alphabet was "abcd " -- so
+# every z-prefixed pattern was swept essentially without its prefix. A
+# generator whose alphabet omits a pattern character measures the
+# generator.
+pattern a{1,3}?
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "aaaaa" 0 1
+n "b"
+m "ab" 0 1
+m "abab" 0 1
+m "ababab" 0 1
+m "ac" 0 1
+m "aac" 0 1
+m "aaac" 0 1
+m "aaaac" 0 1
+m "aaaaac" 0 1
+n "c"
+n "bc"
+m "abc" 0 1
+m "aabc" 0 1
+m "za" 1 2
+m "zaa" 1 2
+m "zaaa" 1 2
+m "zaaaa" 1 2
+m "zac" 1 2
+m "zaac" 1 2
+m "zaaac" 1 2
+n "q"
+m "aq" 0 1
+
+# 
+pattern za{1,3}?
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+m "za" 0 2
+m "zaa" 0 2
+m "zaaa" 0 2
+m "zaaaa" 0 2
+m "zac" 0 2
+m "zaac" 0 2
+m "zaaac" 0 2
+n "q"
+n "aq"
+
+# 
+pattern a{0,4}?
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+m "aaa" 0 0
+m "aaaa" 0 0
+m "aaaaa" 0 0
+m "b" 0 0
+m "ab" 0 0
+m "abab" 0 0
+m "ababab" 0 0
+m "ac" 0 0
+m "aac" 0 0
+m "aaac" 0 0
+m "aaaac" 0 0
+m "aaaaac" 0 0
+m "c" 0 0
+m "bc" 0 0
+m "abc" 0 0
+m "aabc" 0 0
+m "za" 0 0
+m "zaa" 0 0
+m "zaaa" 0 0
+m "zaaaa" 0 0
+m "zac" 0 0
+m "zaac" 0 0
+m "zaaac" 0 0
+m "q" 0 0
+m "aq" 0 0
+
+# 
+pattern za{0,2}?
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+m "za" 0 1
+m "zaa" 0 1
+m "zaaa" 0 1
+m "zaaaa" 0 1
+m "zac" 0 1
+m "zaac" 0 1
+m "zaaac" 0 1
+n "q"
+n "aq"
+
+# A nullable remainder spelled as an optional follow rather than as the
+# end of the pattern -- the same vacuity, one construct further out.
+pattern a{1,3}?c?
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "aaaaa" 0 1
+n "b"
+m "ab" 0 1
+m "abab" 0 1
+m "ababab" 0 1
+m "ac" 0 2
+m "aac" 0 1
+m "aaac" 0 1
+m "aaaac" 0 1
+m "aaaaac" 0 1
+n "c"
+n "bc"
+m "abc" 0 1
+m "aabc" 0 1
+m "za" 1 2
+m "zaa" 1 2
+m "zaaa" 1 2
+m "zaaaa" 1 2
+m "zac" 1 3
+m "zaac" 1 2
+m "zaaac" 1 2
+n "q"
+m "aq" 0 1
+
+# 
+pattern za{1,3}?c?
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+m "za" 0 2
+m "zaa" 0 2
+m "zaaa" 0 2
+m "zaaaa" 0 2
+m "zac" 0 3
+m "zaac" 0 2
+m "zaaac" 0 2
+n "q"
+n "aq"
+
+# The GREEDY spelling of the same shape, which possessifies: the conjunct
+# is scoped to lazy and provably does not disturb the family that was
+# already clean (§2.4's v3 greedy rows are byte-identical to v2's).
+pattern a{1,3}
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 3
+m "aaaaa" 0 3
+n "b"
+m "ab" 0 1
+m "abab" 0 1
+m "ababab" 0 1
+m "ac" 0 1
+m "aac" 0 2
+m "aaac" 0 3
+m "aaaac" 0 3
+m "aaaaac" 0 3
+n "c"
+n "bc"
+m "abc" 0 1
+m "aabc" 0 2
+m "za" 1 2
+m "zaa" 1 3
+m "zaaa" 1 4
+m "zaaaa" 1 4
+m "zac" 1 2
+m "zaac" 1 3
+m "zaaac" 1 4
+n "q"
+m "aq" 0 1
+
+# 
+pattern za{1,3}
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+m "za" 0 2
+m "zaa" 0 3
+m "zaaa" 0 4
+m "zaaaa" 0 4
+m "zac" 0 2
+m "zaac" 0 3
+m "zaaac" 0 4
+n "q"
+n "aq"
+
+
+# ======================================================================
+# THE `$`-FOLLOW EXEMPTION AND ITS LIVE GATE
+# ======================================================================
+
+# THE `$`-FOLLOW EXEMPTION (D47.5, [R24 S-F2]) -- the only §2 rule whose
+# correctness depends on a pattern OPTION rather than on structure.
+# 
+# `$` in the follow is MEASURED safe at 0 of 720 diverging cells, on an
+# upward-closure argument: `$` holds only at the subject end (and before a
+# final newline), which is the top one or two positions, and a retreat
+# moves strictly LEFT -- so no retreat position below a failing maximal
+# exit can satisfy it. Under `(?m)` that argument collapses per-line and
+# the same sweep gives 180 of 720 diverging, which is why D47.5 rules the
+# gate a LIVE check on the compile's own multiline state rather than a
+# comment about what pcrec does not support yet.
+# 
+# pcrec refuses `(?m)` today (module `assertions`), and that module's plan
+# row inherits D47.5's test obligation: a `(?m)` pattern whose `$`-follow
+# quantifier must NOT possessify. The newline subjects below are here
+# because `$` in pcrec means end-of-subject OR before a final newline, so
+# the exemption's argument has to hold for both.
+pattern a{0,4}$
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "aaaaa" 1 5
+m "b" 1 1
+m "ab" 2 2
+m "abab" 4 4
+m "ababab" 6 6
+m "ac" 2 2
+m "aac" 3 3
+m "aaac" 4 4
+m "aaaac" 5 5
+m "aaaaac" 6 6
+m "c" 1 1
+m "bc" 2 2
+m "abc" 3 3
+m "aabc" 4 4
+m "za" 1 2
+m "zaa" 1 3
+m "zaaa" 1 4
+m "zaaaa" 1 5
+m "zac" 3 3
+m "zaac" 4 4
+m "zaaac" 5 5
+m "q" 1 1
+m "aq" 2 2
+m "aaa\n" 0 3
+m "a\n" 0 1
+m "\n" 0 0
+m "aaaa\n" 0 4
+m "caaa\n" 1 4
+
+# 
+pattern [ab]{0,4}$
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "aaaaa" 1 5
+m "b" 0 1
+m "ab" 0 2
+m "abab" 0 4
+m "ababab" 2 6
+m "ac" 2 2
+m "aac" 3 3
+m "aaac" 4 4
+m "aaaac" 5 5
+m "aaaaac" 6 6
+m "c" 1 1
+m "bc" 2 2
+m "abc" 3 3
+m "aabc" 4 4
+m "za" 1 2
+m "zaa" 1 3
+m "zaaa" 1 4
+m "zaaaa" 1 5
+m "zac" 3 3
+m "zaac" 4 4
+m "zaaac" 5 5
+m "q" 1 1
+m "aq" 2 2
+m "abab\n" 0 4
+m "ab\n" 0 2
+m "b\n" 0 1
+
+# 
+pattern a{1,3}?$
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 1 4
+m "aaaaa" 2 5
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+n "ac"
+n "aac"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "c"
+n "bc"
+n "abc"
+n "aabc"
+m "za" 1 2
+m "zaa" 1 3
+m "zaaa" 1 4
+m "zaaaa" 2 5
+n "zac"
+n "zaac"
+n "zaaac"
+n "q"
+n "aq"
+m "aaa\n" 0 3
+m "a\n" 0 1
+
+# 
+pattern a{0,4}c$
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "aaaaa"
+n "b"
+n "ab"
+n "abab"
+n "ababab"
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 1 6
+m "c" 0 1
+m "bc" 1 2
+m "abc" 2 3
+m "aabc" 3 4
+n "za"
+n "zaa"
+n "zaaa"
+n "zaaaa"
+m "zac" 1 3
+m "zaac" 1 4
+m "zaaac" 1 5
+n "q"
+n "aq"
+m "aac\n" 0 3
+m "ac\n" 0 2
+m "c\n" 0 1
+
+
+# ======================================================================
+# NESTED QUANTIFIERS AND THE TRANSITIVE FOLLOW
+# ======================================================================
+
+# THE TRANSITIVE-FOLLOW LINE (§2.2), which §8 nominated as "the single
+# most likely place for a soundness bug to be hiding" and which survived a
+# 42,336-pair targeted attack at 0 divergences [R24 H1].
+# 
+# An inner quantifier's FOLLOW must include FIRST(B) for the body B of
+# every ENCLOSING loop, because the enclosing loop can start another
+# iteration once the inner one's parent finishes. Dropping that term yields
+# 172 counterexamples on the panel's instrument; here it is the difference
+# between the two blocks below -- `(?:a{0,2}b)+c` possessifies its inner
+# quantifier and `(?:a{0,2}a)+c` must not, and the ONLY thing that
+# distinguishes them is the enclosing body's first set.
+pattern (?:a{0,2}b)+c
+m "abc" 0 3
+m "aabc" 0 4
+m "ababc" 0 5
+m "aabaabc" 0 7
+m "bc" 0 2
+n "c"
+m "aaabc" 1 5
+n "ab"
+n "abab"
+n "aabaab"
+m "aabc!" 0 4
+m "abbc" 0 4
+
+# 
+pattern (?:a{0,2}a)+c
+m "ac" 0 2
+m "aac" 0 3
+m "aaac" 0 4
+m "aaaac" 0 5
+m "aaaaac" 0 6
+n "c"
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+
+# 
+pattern (?:[ab]{0,2}c)+d
+m "cd" 0 2
+m "acd" 0 3
+m "abcd" 0 4
+m "accd" 0 4
+m "ababccd" 2 7
+n "d"
+n "abc"
+m "abcabcd" 0 7
+
+# A capture inside a nested loop: §3.4's finding is that a group inside a
+# loop keeps the value from the last iteration that ENTERED it, and a later
+# iteration that does not enter it does not clear it.
+pattern (?:(a){0,2}b)+c
+m "abc" 0 3
+g 1 0 1
+m "aabc" 0 4
+g 1 1 2
+m "ababc" 0 5
+g 1 2 3
+m "babc" 0 4
+g 1 1 2
+m "bbc" 0 3
+g 1 -1 -1
+m "bc" 0 2
+g 1 -1 -1
+m "abbc" 0 4
+g 1 0 1
+
+# The LAZY inner spelling of the same nesting -- §5.3 makes greedy AND
+# lazy mandatory at every shape, because a sweep that spells every shape
+# greedy is structurally incapable of exercising the lazy conjunct.
+pattern (?:a{0,2}?b)+c
+m "abc" 0 3
+m "aabc" 0 4
+m "ababc" 0 5
+m "bc" 0 2
+n "c"
+m "aaabc" 1 5
