@@ -206,6 +206,100 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
     return rd_node(cx, a);
 }
 
+/* ---- FIRST, and the property the BACKWARD EMITTER actually depends on ----
+ *
+ * The emitted backward walk has NO choice points: at an alternation it reads
+ * the next byte and jumps straight to the one branch that can begin with it.
+ * That is a strictly stronger thing to rely on than "the walk lands in the
+ * right place", and it deserves to be CHECKED WHERE IT IS USED rather than
+ * inherited from a proof three functions away.
+ *
+ * It IS implied by (U1): one-unambiguity says at most one position is live
+ * after any prefix, so an alternation's branches cannot share a first byte —
+ * at the top level that is the initial-position clause and inside the body it
+ * is the follow-set clause. But "implied by" is how a dependency quietly
+ * survives a change to the thing it depends on, so `rd_alt_disjoint` re-derives
+ * it directly on the reversed tree the emitter will walk, and a failure
+ * DECLINES like every other failure here.
+ *
+ * FIRST is simple on this restricted tree because every body that reaches here
+ * is NON-NULLABLE and assertion-free: no nullability propagation, no widening
+ * cases, and a concatenation's first set is its leftmost element's. */
+void pcrec_revdet_first(const Ast *a, uint8_t *out)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS:
+            memcpy(out, a->cls, 32);
+            return;
+        case A_CAP: case A_REP:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) a = a->l;   /* the leftmost element */
+            continue;
+        case A_ALT: {
+            uint8_t acc[32], br[32];
+            memset(acc, 0, 32);
+            const Ast *t = a;
+            while (t->k == A_ALT) {
+                pcrec_revdet_first(t->r, br);
+                for (int i = 0; i < 32; i++) acc[i] |= br[i];
+                t = t->l;
+            }
+            pcrec_revdet_first(t, br);
+            for (int i = 0; i < 32; i++) acc[i] |= br[i];
+            memcpy(out, acc, 32);
+            return;
+        }
+        default:
+            /* Unreachable on a shape-scanned body; widening to ALL BYTES is
+             * the sound direction, because it makes the disjointness test
+             * below fail and the quantifier keep its machinery. */
+            memset(out, 0xff, 32);
+            return;
+        }
+    }
+}
+
+static bool rd_alt_disjoint(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+            return true;
+        case A_CAP: case A_REP:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (!rd_alt_disjoint(a->r)) return false;
+                a = a->l;
+            }
+            continue;
+        case A_ALT: {
+            uint8_t seen[32], br[32];
+            memset(seen, 0, 32);
+            /* Pairwise disjointness checked INCREMENTALLY against the union of
+             * the branches already seen — the same shape, and for the same
+             * reason, as possessify.c's `funion`/`fconflict` pair. */
+            for (const Ast *t = a;; t = t->l) {
+                const Ast *br_ast = (t->k == A_ALT) ? t->r : t;
+                if (!rd_alt_disjoint(br_ast)) return false;
+                pcrec_revdet_first(br_ast, br);
+                for (int i = 0; i < 32; i++) {
+                    if (seen[i] & br[i]) return false;
+                    seen[i] |= br[i];
+                }
+                if (t->k != A_ALT) break;
+            }
+            return true;
+        }
+        }
+        return false;
+    }
+}
+
 /* ---- the walk ------------------------------------------------------------ */
 
 typedef struct {
@@ -230,7 +324,8 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
             const char *why = NULL;
             if (pcrec_uniq_iteration(R->scratch, a->l, &why)) {
                 const Ast *rev = rd_reverse(R->cx, a->l);
-                if (pcrec_uniq_iteration(R->scratch, rev, &why)) {
+                if (pcrec_uniq_iteration(R->scratch, rev, &why)
+                    && rd_alt_disjoint(rev)) {
                     a->revbody = rev;
                     R->marked++;
                 }

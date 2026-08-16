@@ -1417,6 +1417,12 @@ bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
  * site and same reasoning as pcrec_possessify. */
 int  pcrec_revdet(Ctx *cx, Ast *root);               /* src/opt/revdet.c */
 
+/* The set of bytes a node can BEGIN with, over the restricted tree the rung
+ * admits (non-nullable, assertion-free), exported so that the emitted backward
+ * walk's byte dispatch and the analysis's own check that the dispatch is
+ * well-defined read ONE computation. `out` is a 32-byte class bitmap. */
+void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
+
 /* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
  * says so, the VM itself, and the four entry points). */
