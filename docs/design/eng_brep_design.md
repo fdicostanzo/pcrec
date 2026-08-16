@@ -144,7 +144,7 @@ order is Frank's ruled question order:
 
 | # | Rung | What it costs at run time | Owner |
 |---|---|---|---|
-| 1 | **Possessify** — prove no retreat into the loop can ever succeed | zero frames, zero trail | a `discharge` hook on §5.2's socket |
+| 1 | **Possessify** — prove no retreat into the loop can ever succeed (the rule is preference-sensitive: §2.2) | zero frames, zero trail | a `discharge` hook on §5.2's socket |
 | 2 | **Rung-select** — the §2.5 ladder: cursor / fixed stride / reverse-deterministic / boundary record | one frame per LOOP, not per iteration | `emit_vm.c`'s per-`A_REP` rung choice (partly built) |
 | 3 | **Counter-K** — one body copy per K iterations plus a counter | one frame per iteration, K amortised | new, `emit_vm.c` |
 | — | Replication (today) | one frame per iteration, O(N·body) emitted C | the status quo, retained as ground truth |
@@ -1360,6 +1360,25 @@ Ordered by how likely it is to matter.
    row.** §0.2 item 4 and §1.4 report it as not established. The row's other
    consequences are unaffected. I have not edited the row; that is the
    manager's call.
+5. **[R24] Whether the `$`-follow exemption ships in v1 or waits.** §2.5 now
+   has it measured safe under a live `!multiline` gate, and §2.7 records it as
+   the largest single source of conservatism in the greedy family. The case
+   for taking it is that end-anchored bounded repeats are common; the case for
+   waiting is that it is the only rule in §2 whose correctness depends on a
+   pattern option rather than on pattern structure, so it is the first place
+   an `(?m)` implementation would silently break the analysis. My
+   recommendation is to TAKE it, with the gate written as an assertion against
+   the pattern's live multiline state rather than a comment — but a manager
+   who would rather have one fewer option-coupled rule before module
+   `assertions` lands has a real argument.
+6. **[R24] Whether the lazy conjunct's 20 false declines are worth a v2.**
+   §2.4 measures the conjunct as costing 20 quantifiers that the differential
+   shows no divergence for; the conjunct is stated on "the remainder is
+   nullable" where the sharp condition is "some non-maximal exit actually
+   succeeds". I recommend NOT sharpening it in v1 — 20 out of 2,031 is a 1%
+   cost for a rule that is one predicate and provably sound, and §2.3's
+   history is that the elaborate version of this argument is the one that was
+   wrong.
 
 ---
 
