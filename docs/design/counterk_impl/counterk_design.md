@@ -832,9 +832,8 @@ measurement.
   version of the probe reported a confident 0 for revdet before the second
   anchor was added.
 - **The BACKWARD WALK is in the second class, not the first** [R25 19,
-  confirmed but re-derived]. The panel asked for the walk to get its own
-  counter because it has three exits; the actual reason it needs its own site
-  is that it pushes NOTHING (`rungselect_design.md` §2.4 — reverse
+  confirmed but re-derived]. It does need its own COUNTER and its own SITE, as
+  the panel said. The reason is not the three exits, though: it pushes NOTHING (`rungselect_design.md` §2.4 — reverse
   one-unambiguity lets it dispatch on the next byte), so there is no cut to
   hang a charge on. **DISCLOSED: this probe does not measure the walk**; its
   scan anchor is the cursor rung's span loop. That is the largest unmeasured
@@ -1133,7 +1132,8 @@ compile**, denial flags or not.
 | `tests/possessify/run_possessify_tests.sh:149,182` | stack `-fno-possessify -fno-revdet` to keep the block about the FRAMES rung | add `-fno-counter` for the same stated reason |
 | `tests/mech/sabotages/S44_vm_repeat_cap_off.sh` | raises the copies cap so a bounded repeat replicates unbounded; its detectability runs through the rows above | inherits their re-pins |
 | `tests/captures/classes_trie_bounded.rxt` header | prose tied to the cap bounding the count | prose correction only (D26 tier: no behaviour) |
-| `tests/vm/run_vm_tests.sh:109` (`--step-budget=50` pin), `:428` (prefilter contrast), `tests/lib/run_gen_timeout_tests.sh:250` (budget sized to complete), `tests/cli/run_cli_tests.sh:1594` | **step-budget-pinned checks** [R25 E11]. They do not care about replication and are not re-pinned by `-fno-counter` — they care about the step COUNT, so any change to what is charged moves them | join §7.3's landing, not this table's. Listed here because the two lists are otherwise easy to confuse: this table is about the SIZE strategy, that one is about the BUDGET |
+| `tests/vm/run_vm_tests.sh:109` (`--step-budget=50` pin), `:428` (prefilter contrast), `tests/lib/run_gen_timeout_tests.sh:250` (budget sized to complete), `tests/cli/run_cli_tests.sh:1594` | **step-budget-pinned checks** [R25 E11]. They do not care about replication and are not re-pinned by `-fno-counter` — they care about the step COUNT, so any change to what is charged moves them | join §7's landing, not this table's. Listed here because the two lists are otherwise easy to confuse: this table is about the SIZE strategy, that one is about the BUDGET |
+| `tests/vm/run_vm_tests.sh:147-157` | **the `--fno-step-budget` MEMBER-EXISTENCE pin** [R25 20]. It asserts that denying the budget emits NO counter at all. §7.4 adds two more charge sites, each of which must be `has_budget`-gated exactly like the fail label's, so this check is what catches an ungated one | joins §7's landing with the row above. It is the only check in the tree that would notice a new site emitted unconditionally, which is precisely the mistake three sites invite |
 | `docs/dev/known_issues.md` K22, and the `[ENG-BREP]` plan row | both credit "counter-K" alone with a fix that §4.2's CLAMP structurally provides — counter-K without the clamp leaves the tower exactly where it is | [R25 D5] corrected at landing, in the same change, naming the clamp |
 
 Checked and found NOT exposed, which is worth recording so the next lane does
