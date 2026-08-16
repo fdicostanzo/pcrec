@@ -44,7 +44,12 @@ Part of `make test` since M2.
   version paid a third time. Sabotage: gate ignoring the set is caught by
   the answered_at pin; check01's one-reference-from-the-scans-TU sabotage
   is the spec suite's own).
-  Env: PCREC, CC, LIBA, LIBDIR, KEEP=1.
+  Env: PCREC, CC, LIBA, LIBDIR, KEEP=1. EXECUTION of every emitted
+  `--emit-main`/driver binary a case runs (a handful of runs per case, not
+  an inner loop) goes through `gen_run` (`tests/lib/gen_timeout.sh`,
+  `WATCHDOG_SECTION=cli`) — the shared run budget plus a 512m RSS ceiling
+  and a `build/watchdog.log` line per run; the library-API smoke case's own
+  binary stays unwrapped for the same compiler-axis reason its build is.
 - **case 11 (MOD-0.7)** — `--explain`, the CROSS-SOURCE query surface, and the
   first case in this file written under a stated assertion rule. **case10's
   eight `--explain` content assertions were DELETED, not moved**: R10/C4-1

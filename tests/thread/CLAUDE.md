@@ -25,7 +25,14 @@ section target, `make test-thread`.
   false failure. Env: `PCREC` (default `<root>/build/pcrec`, used **black
   box** only to generate the TS-2 fixtures' C — never itself run under
   TSan), `CC` (default gcc), `KEEP=1`, `THREAD_TEST_TIMEOUT` (default 60s),
-  `THREAD_TEST_ITERS` (default 300 per thread).
+  `THREAD_TEST_ITERS` (default 300 per thread). TS-2's driver run (and its
+  sabotaged copy) EXECUTES a GENERATED matcher under TSan and goes through
+  `gen_run` (`tests/lib/gen_timeout.sh`, `WATCHDOG_SECTION=thread`), which
+  reads the axis off `TSANFLAGS` so a TSan run gets the 60s sanitizer run
+  budget automatically, plus a 512m RSS ceiling and a `build/watchdog.log`
+  line per run. TS-3's driver (and its sabotaged copy) calls
+  `pcrec_compile()` directly — the compiler itself, not emitted code — so
+  it keeps its own `$TIMEOUT`, the same split its build already draws.
 - **ts2_driver.c** — the TS-2 driver. `#include`s a `gen.h`/`gen.c` pair the
   shell script generates per pattern and a per-pattern `subjects.inc` it
   writes via heredoc. Computes a single-threaded baseline (found, start,

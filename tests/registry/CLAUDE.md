@@ -68,7 +68,13 @@ directory asserts that the description and the shipped parser actually agree.
   over-rejection each fail naming the cell), 62,872 match cells, mlimit
   and (since the K21-class fix) `pcrec_giveups` both asserted zero on a
   backtrack-free, DFA-only pattern space. The pcrec side runs one process
-  per PATTERN (all subjects in-process), whole sweep ~2.5 s. Skips loudly
+  per PATTERN (all subjects in-process) through `gen_run`
+  (`tests/lib/gen_timeout.sh`, `WATCHDOG_SECTION=registry`) — the shared
+  run budget, a 512m RSS ceiling, and a `build/watchdog.log` line per run.
+  whole sweep ~2.5 s bare; MEASURED (2026-08-16, isolated `run_pc4.sh`
+  runs, this box): 9.2 s without the wrapper, 13.6 s with it (+~48%) across
+  the 273 per-pattern runs, each individually well under a second (watchdog
+  logged wall=0.10s per run). Skips loudly
   without libpcre2, probed BEFORE the gcc sweep is paid for; the runner
   carries a population-line needle so an unwired PC-4 fails rather than
   vanishes. LIVENESS proven in both axes before the zero was trusted: a

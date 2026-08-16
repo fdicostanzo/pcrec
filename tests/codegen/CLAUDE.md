@@ -78,6 +78,11 @@ or it has no regression net at all.
   That is the entire failure mode §10 names, and it existed for the length of
   one commit.
 
+  The trace check's plain/traced binary runs (a handful per pattern, not an
+  inner loop) go through `gen_run` (`tests/lib/gen_timeout.sh`,
+  `WATCHDOG_SECTION=codegen`), the shared run budget plus a 512m RSS
+  ceiling and a `build/watchdog.log` line per run.
+
   It carries a NON-DEFAULT `--prefix` case for a second reason found the same
   way: every other check here uses the default `rx`, which cannot see a
   hardcoded `RX_` in the listing's own text — and there was one, so a
