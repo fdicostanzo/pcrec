@@ -582,8 +582,8 @@ python3 `re` cannot parse and which are reported rather than dropped:
 
 | | possessifiable | no | rate |
 |---|---|---|---|
-| bounded | 55 | 246 | **18%** |
-| unbounded | 128 | 1,296 | 9% |
+| bounded | 51 | 250 | **17%** |
+| unbounded | 123 | 1,301 | 9% |
 
 **A realistic set** — `probes/realistic_patterns.txt`, 40 patterns of the kind
 bounded repeats actually appear in (dates, UUIDs, IPs, MACs, fixed-width
@@ -594,16 +594,29 @@ fields, versions, log lines):
 | bounded | 69 | 15 | **82%** |
 | unbounded | 7 | 15 | 32% |
 
+**These figures moved at [R24 S-F1]**, because the lazy conjunct declines
+quantifiers the old rule admitted. Nine corpus quantifiers changed verdict —
+4 bounded (55 → 51) and 5 unbounded (128 → 123) — every one of them
+lazy + disjointness-arm + nullable-remainder, which is exactly the class §2.3's
+refutation identifies. The realistic set did NOT move at all: it contains no
+lazy quantifier, so 69/84 stands unchanged. (The panel's own blast-radius
+estimate was 10 quantifiers where the committed script measures 9; the
+one-cell difference is not explained here, and the script's number is the one
+quoted because it can be re-run.)
+
 **The gap is the finding.** The .rxt corpus is a COMPILER test corpus,
 adversarial by construction — its bounded repeats were chosen to break things,
 so a possessification rate measured on it says nothing about the population the
 feature is for. On patterns people write, four bounded repeats in five need no
-backtracking machinery at all. Both denominators are reported because either
+backtracking machinery at all, against roughly one in six on the corpus. Both denominators are reported because either
 one alone would mislead: the first understates the win, the second is a
 hand-written list and says so in its own header.
 
 Reasons, realistic set: 52 exact-count + unique-iteration, 24
-disjoint + unique-iteration, 27 overlap, 3 not-prefix-free.
+disjoint + unique-iteration, 27 overlap, 3 not-prefix-free. The exact-count
+arm carries 52 of the 76 — which is also why the realistic figure survived a
+refutation that moved the corpus figure: the arm the refutation did not touch
+is the arm real patterns use.
 
 ### 2.7 Conservatism, named rather than smoothed over
 
@@ -644,7 +657,7 @@ sound, not tight. The identified sources, in order of how much they cost:
   any analysis sees the AST, a caseless `a` already has both `a` and `A` in
   its bitmap and the byte-set model is exact rather than approximate. The
   probe's defect is a property of python's parse tree, not of the design.
-  Census impact was one harmless row; the 18%/82% figures survive.
+  Census impact was one harmless row; the census figures survive it.
 
 ### 2.8 Delivery seam: §5.2's socket, and why the socket and not the emitter
 
@@ -915,7 +928,7 @@ or its iteration is ambiguous), and NOT deterministic enough for any cursor
 rung, and whose per-iteration backtracking is therefore real. `((a)|b){0,N}c`
 with `c` replaced by something starting with `a` or `b` is the archetype. On
 the realistic census, that residual is 15 of 84 bounded quantifiers; on the
-adversarial corpus it is 246 of 301.
+adversarial corpus it is 250 of 301.
 
 ---
 
@@ -1225,7 +1238,7 @@ unnecessary.
 - **The corpus: small and predictable.** 15 distinct patterns put a quantifier
   on the frames-bounded rung under default selection (§3.2; the figure was 11
   before [R24 M-F1] and the undercount's cause is recorded there). Possessification touches
-  more (183 of 1,725 quantifiers across both bounds), and every one of those
+  more (174 of 1,725 quantifiers across both bounds), and every one of those
   changes emitted C while changing no answer — which is precisely what
   `emitdiff`-style checking is for and what the §5.1 differential asserts.
 - **The cap's diagnostic gets to stop being the endgame.** Today

@@ -382,7 +382,7 @@ append-only or historical records.
   QUADRATIC in the unrolled count — 0.012 s at N=64 to 2.689 s at N=4000 —
   with the whole count living in the REVERSE DFA, 4,002 states, while the
   forward DFA is 2 states at every N). Censuses on two populations because
-  either alone misleads: 18% of bounded quantifiers possessifiable on the
+  either alone misleads: 17% of bounded quantifiers possessifiable on the
   adversarial `.rxt` corpus, **82%** on a realistic set. K is measured on both
   its curves (gcc −O2 quadratic in copies; throughput advantage exhausted by
   K ≈ 16) and both agree — recommendation K = 8. Discharges the row's four

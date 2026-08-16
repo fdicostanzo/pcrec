@@ -100,7 +100,7 @@ than duplicating it.
 | `rung_census_derived.txt` | `census_rungs.py` | §3.2's whole table and §7's distinct-pattern count |
 | `cell33_motivating_cell.txt` | `probe_cell33.sh` | §3.3's table, single-sourced |
 | `possess_differential_v1_REFUTED.summary` | `probe_possess.py` v1 | §2.4's refutation: 117 counterexamples to disjointness alone. Kept because the refutation shaped the analysis |
-| `corpus_possess.tsv`, `realistic_possess.tsv`, `census_summaries.txt` | `probe_possess_corpus.py` | §2.6's 18% vs 82% |
+| `corpus_possess.tsv`, `realistic_possess.tsv`, `census_summaries.txt` | `probe_possess_corpus.py` | §2.6's 17% vs 82% |
 | `rung_census_default.tsv`, `rung_census_forcedvm.tsv` | `probe_rungs.py` | the RAW census rows; every figure §3.2 quotes is derived from these by `census_rungs.py`, never read off by hand |
 | `lastiter_capture_derivation.txt` | ad hoc | §3.4: the plan row's capture formula refuted (1,799/15,036) and repaired (0/15,036) |
 | `throughput_sweep.tsv` | `probe_throughput.sh` | §4.3's knee at K ≈ 16 |
