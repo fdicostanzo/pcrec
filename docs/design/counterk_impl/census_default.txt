@@ -1,0 +1,43 @@
+== counter-K: the DEFAULT-path rung/strategy census (R25 E10) ==
+date:   2026-08-16T23:15:52Z
+commit: b0b9b8c
+pcrec:  /home/duxevents/pcrec/worktrees/counterk/build/pcrec
+locale: LC_ALL=C (R24 M-F1: collation is why this is set)
+
+corpus: 881 distinct patterns under tests/**.rxt
+
+-- DEFAULT routing (what ships) --
+patterns reaching the VM emitter: 166 of 881
+rung                 quantifiers of which POSS
+cursor                    891           75
+revdet                     33           30
+frames-bounded             94            6
+frames-unbounded          162            8
+
+THE §1.2 CELL: frames-bounded AND possessified = 6
+  non-empty, so the size trap is REAL. Members (up to 8 shown):
+    (?:x((a)|b){2}y){0,3}?z
+    (?:x((a)|b){2}y){0,3}z
+    (a(b)*c)?d
+    (x)(?:((a)|b){0,2}c){0,3}d
+    (x)(?:ab|b){0,4}c
+    a*((a)|b){0,3}c(?:ab|b){0,3}d
+
+-- FORCED --engine=vm --
+patterns reaching the VM emitter: 513 of 881
+rung                 quantifiers of which POSS
+cursor                   1531          232
+revdet                     38           33
+frames-bounded            258            6
+frames-unbounded         1234           11
+
+THE §1.2 CELL: frames-bounded AND possessified = 6
+  non-empty, so the size trap is REAL. Members (up to 8 shown):
+    (?:x((a)|b){2}y){0,3}?z
+    (?:x((a)|b){2}y){0,3}z
+    (a(b)*c)?d
+    (x)(?:((a)|b){0,2}c){0,3}d
+    (x)(?:ab|b){0,4}c
+    a*((a)|b){0,3}c(?:ab|b){0,3}d
+
+EXIT=0

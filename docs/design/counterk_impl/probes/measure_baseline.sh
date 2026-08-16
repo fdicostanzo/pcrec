@@ -65,10 +65,17 @@ cat > "$OUT/pad.c" <<'EOF'
 typedef struct { const void *k; size_t pos; unsigned mark; }             F;
 typedef struct { const void *k; size_t pos; unsigned mark; unsigned it; } Fit;
 typedef struct { const void *k; size_t pos; unsigned mark; int id; }     Ftr;
+/* R25 E13: the prose prices the --trace case ("tracing would pay 8"), so the
+ * probe has to contain the struct that claim is about. Without this row the
+ * sentence is an assertion with a measurement standing next to it. */
+typedef struct { const void *k; size_t pos; unsigned mark; int id;
+                 unsigned it; }                                          Fboth;
 int main(void) {
-    printf("bt[] element today            %zu bytes\n", sizeof(F));
-    printf("bt[] element + unsigned it    %zu bytes\n", sizeof(Fit));
-    printf("bt[] element + --trace int id %zu bytes\n", sizeof(Ftr));
+    printf("bt[] element today             %zu bytes\n", sizeof(F));
+    printf("bt[] element + unsigned it     %zu bytes\n", sizeof(Fit));
+    printf("bt[] element + --trace int id  %zu bytes\n", sizeof(Ftr));
+    printf("bt[] element + BOTH id and it  %zu bytes  <- the --trace cost\n",
+           sizeof(Fboth));
     return 0;
 }
 EOF
@@ -101,8 +108,12 @@ echo "== S8.5: the acceptance cells, as they behave TODAY =="
 # declines revdet too. `((a)|bc){4000}` compiles in 299 lines TODAY -- an exact
 # count over a reverse-deterministic body is already the rung-select landing's,
 # not counter-K's. `(a|ab)` is the body that declines both earlier rungs.
+# R25 C4: the {64}/{65} cap-boundary pair is a MEASURED claim in the note's
+# §3.1 and was absent from this probe -- a number in prose with no producer is
+# exactly what R24 M-F4 ruled against, so it is a row here now.
 for pat in '((a)|ab){0,4000}c' '((a)|b){0,4000}c' \
            '((a)|ab){4000}' '((a)|ab){4000,}' '((a)|ab){8,4000}c' \
+           '((a)|ab){64}' '((a)|ab){65}' \
            '((a)|bc){4000}'; do
     if timeout "$TMO" "$PCREC" -p rx --engine=vm -o "$OUT/p.c" -- "$pat" \
            2>"$OUT/err"; then

@@ -1,0 +1,40 @@
+== clamp_arith: counterk_design.md S4.2, proved before the code ==
+limits.h            /home/duxevents/pcrec/worktrees/counterk/src/core/limits.h
+PCREC_MAX_VM_NODES  131072
+..REPLICATION_PRODUCT 131072
+..MAX_VM_REPEAT_COPIES 64
+K_DEFAULT           8 (NOT YET IN limits.h -- D47.2 names it; counter-K lands it)
+
+cell                   product TODAY product CLAMP verdict   note
+((a)|ab){0,4000}c      4000          8             compiles  S8.5 cell 1, the endgame  <- counter-K WINS this cell
+((a)|ab){4000}         4000          8             compiles  S8.5 cell 3, mandatory phase  <- counter-K WINS this cell
+((a)|ab){4000,}        4001          9             compiles  S8.5 cell 3, unbounded tail  <- counter-K WINS this cell
+((a)|ab){8,4000}c      4000          16            compiles  S8.5 cell 3, both phases  <- counter-K WINS this cell
+((a)|ab){64}           64            8             compiles  the measured cap boundary
+((a)|ab){65}           65            9             compiles  one copy over the cap today  <- counter-K WINS this cell
+((a)|b){0,3}c          3             3             compiles  below K: must be replication
+((a)|b){0,8}c          8             8             compiles  K == NOPT: loop RUNS (E3)
+((a)|b){0,9}c          9             9             compiles  K < NOPT: loop runs, residue 1
+(a(b|c)?){0,4000}      4000          8             compiles  nested {0,1}: must NOT over-clamp  <- counter-K WINS this cell
+K22 tower d=18         262144        2             compiles  refuses today at 0.72 s (node cap)  <- counter-K WINS this cell
+K22 tower d=30         1073741824    2             compiles  11.8 s before the interim guard  <- counter-K WINS this cell
+K22 tower d=35         34359738368   2             compiles  S8.5 cell 2: hung; must COMPILE  <- counter-K WINS this cell
+K22 tower d=40         1099511627776 2             compiles  S8.5 cell 2: hung; must COMPILE  <- counter-K WINS this cell
+{1,2} tower d=20       1048576       1048576       REFUSES   S6 RESIDUAL: must still refuse  <- still refused
+{1,2} tower d=40       1099511627776 1099511627776 REFUSES   S6 RESIDUAL: must still refuse  <- still refused
+
+-- the tower, level by level: where the clamp actually engages --
+level    K    copies   product below
+1        1    1        2
+2        1    1        2
+3        1    1        2
+...      (levels 4..33 identical: K=1, copies=1)
+34       1    1        2
+35       8    2        1
+
+The innermost replicating level takes K=8; every level above it is
+clamped to K=1 and contributes a factor of ONE, so the tower's whole
+product is 2 at any depth. That is the property the ancestors-only
+product could not deliver, and it needs a bottom-up pass to compute.
+
+All cells behave as their notes require.

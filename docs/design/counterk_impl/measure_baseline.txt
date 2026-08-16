@@ -1,8 +1,8 @@
 == source ==
 repo    /home/duxevents/pcrec/worktrees/counterk
-commit  4d1306f
+commit  b0b9b8c
 gcc     cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
-date    2026-08-16T22:57:27Z
+date    2026-08-16T23:25:17Z
 
 == S1.2: possessified bounded repeats still replicate ==
 pattern            flags                          lines    VM_STRATS
@@ -12,9 +12,10 @@ pattern            flags                          lines    VM_STRATS
 ((a)|b){0,16}c     -fno-revdet -fno-possessify    653      0x2
 
 == S2.2: the resume frame's tail padding ==
-bt[] element today            24 bytes
-bt[] element + unsigned it    24 bytes
-bt[] element + --trace int id 24 bytes
+bt[] element today             24 bytes
+bt[] element + unsigned it     24 bytes
+bt[] element + --trace int id  24 bytes
+bt[] element + BOTH id and it  32 bytes  <- the --trace cost
 
 == S8.1: which candidate bodies reach the frames-bounded rung ==
 pattern              lines    VM_RUNGS VM_STRATS  note
@@ -30,6 +31,8 @@ pattern              lines    VM_RUNGS VM_STRATS  note
 ((a)|ab){4000}       REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 4000 times (limit 64). A body containing a
 ((a)|ab){4000,}      REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 4001 times (limit 64). A body containing a
 ((a)|ab){8,4000}c    REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 4000 times (limit 64). A body containing a
+((a)|ab){64}         COMPILES, 1866 lines
+((a)|ab){65}         REFUSED: pcrec: pattern too large: a bounded repeat would replicate its body 65 times (limit 64). A body containing an 
 ((a)|bc){4000}       COMPILES, 299 lines
 
 == S8.1: stamped capacities on the endgame body at N=16 ==

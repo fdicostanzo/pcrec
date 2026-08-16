@@ -452,15 +452,26 @@ append-only or historical records.
   iterations plus an iteration counter, replacing full replication), kept
   separate from the three lane directories above for the same
   never-confuse-the-lanes reason those are separate. Its note is DESIGN-FIRST
-  and PROPOSED — no engine code exists. Four claims carry it and are where a
-  reader should start: the counter must be a TRAILED `stv` slot rather than a
-  frame field or a plain local, because a resume into the BODY has to restore
-  it (`(a|b){0,4}c`); a counter loop is preference-equivalent to
-  `vm_opt_chain`'s NESTED optional chain rather than to a chained one (witness
-  `(?:ab|a){0,2}?b`, already a measured defect in `src/ir/nfa.c`); **K = 8
-  alone does NOTHING for K22**, whose tower is all `{0,2}` counts and so sits
-  below K entirely — a downward SAFETY CLAMP on K is what makes counter-K the
-  real fix the K22 entry promises; and **the owed E-5 one-step-per-loop-ENTRY
+  and PROPOSED — no engine code exists. **PANELED R25 (2026-08-16,
+  `../dev/reviews/2026-08-16-r25-counterk.md`): four blockers and nine majors,
+  all applied in place; two questions left with Frank (F-1, whether K may vary
+  per quantifier at all, which `eng_brep_design.md` §4.5 forbids and the note
+  had self-authorized; F-2, the replacement step charge and its SHIFT).** Read
+  the note's PANEL OUTCOME block before any section. Claims that carry it, and
+  where the panel moved them: the counter must be a TRAILED `stv` slot, but for
+  a sharper reason than the first draft gave — a plain local is a correctness
+  failure (`(a|b){0,4}c`) while a per-frame field is CORRECT at one nesting
+  level and dies on the depth-shaped vector nesting would demand; a counter
+  loop is preference-equivalent to `vm_opt_chain`'s NESTED optional chain
+  rather than to a chained one (witness `(?:ab|a){0,2}?b`, already a measured
+  defect in `src/ir/nfa.c`); **K = 8 alone does NOTHING for K22**, whose tower
+  is all `{0,2}` counts and so sits below K entirely, and the CLAMP that fixes
+  it needs a BOTTOM-UP subtree pass — the ancestors-only product the first
+  draft specified parks the tower at 2^17 and leaves depth 35/40 refusing
+  (E1), with the corrected arithmetic proved ahead of the code by
+  `counterk_impl/probes/clamp_arith.py`; the rung shrinks SIZE and not FRAMES,
+  so the endgame cell trades a compile-time refusal for a ~512-byte runtime
+  ceiling (E7); and **the owed E-5 one-step-per-loop-ENTRY
   charge is MEASURED NOT TO WORK** — entries and steps are the same number at
   every size (10,001 / 50,001 / 100,001 against 10,001 / 50,001 / 100,001), so
   it halves a crossover that is three orders of magnitude out, and §7.3
@@ -471,8 +482,13 @@ append-only or historical records.
   >120 s). Also records
   the measured finding that possessification does NOT stop a bounded repeat
   replicating (1,939 vs 1,997 lines at `{0,64}`), so counter-K must cover the
-  possessive arm or D47.1's possessify-first order becomes a size trap. See
-  its own CLAUDE.md.
+  possessive arm — though NOT, as the first draft said, because D47.1's
+  possessify-first order is a trap: possessification is an orthogonal modifier
+  and claims nothing away from any rung, so the trap would be in DECLINING the
+  arm, which is a choice this rung makes (E10). The arm's population is
+  measured non-empty on the path that ships (6 of 94 frames-bounded
+  quantifiers, `counterk_impl/census_default.txt`), which is the honest
+  argument for covering it. See its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

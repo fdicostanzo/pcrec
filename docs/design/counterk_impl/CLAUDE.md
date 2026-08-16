@@ -14,16 +14,29 @@ cannot be re-run is not a measurement.
 ## Files
 
 - **`counterk_design.md`** — the emitted-shape design note, written before the
-  code on this project's design-first precedent (the manager reviews direction
-  from it, and the D6 panel reviews it before any engine code is written).
-  Its four structural loads, for a reader deciding what to check first:
-  the counter must be a TRAILED slot rather than a frame field or a local
-  (§2.2, with the `(a|b){0,4}c` counterexample); a counter LOOP is preference-
-  equivalent to `vm_opt_chain`'s NESTED optional chain and not to a chained one
-  (§3.3, whose witness `(?:ab|a){0,2}?b` is already a measured defect in
-  `nfa.c`); K needs a CLAMP or it does nothing at all for K22 (§4.2); and the
-  owed E-5 step charge is REFUTED — see §7, which started as a cost estimate
-  for it and became the measurement that killed it.
+  code on this project's design-first precedent. **PANELED R25
+  (`../../dev/reviews/2026-08-16-r25-counterk.md`): four blockers and nine
+  majors, all applied IN PLACE.** Read the PANEL OUTCOME block at the top
+  before any section.
+
+  Its structural loads, for a reader deciding what to check first: the counter
+  must be a TRAILED slot (§2.2 — a plain local is a correctness failure with
+  `(a|b){0,4}c` as the witness, a per-frame field is CORRECT at one nesting
+  level and dies on the depth-shaped vector nesting would need, and the first
+  draft conflated the two); a counter LOOP is preference-equivalent to
+  `vm_opt_chain`'s NESTED optional chain and not to a chained one (§3.3, whose
+  witness `(?:ab|a){0,2}?b` is already a measured defect in `nfa.c`); K needs a
+  CLAMP or it does nothing at all for K22, and the clamp needs a BOTTOM-UP
+  subtree pass rather than the ancestors-only product the first draft specified
+  (§4.2, proved by probe); the rung shrinks SIZE and not FRAMES, so the endgame
+  cell trades a compile-time refusal for a ~512-byte runtime ceiling (§3.5);
+  and the owed E-5 step charge is REFUTED — see §7, which started as a cost
+  estimate for it and became the measurement that killed it.
+
+  Two questions are open with Frank and the sections say so: F-1 (may K vary
+  per quantifier at all — `../eng_brep_design.md` §4.5 says no and this note
+  self-authorized the exception) gates §4.2; F-2 (§7.3's replacement charge and
+  its SHIFT) gates §7.3.
 
 ## Probes
 
@@ -62,20 +75,48 @@ cannot be re-run is not a measurement.
   instruments nothing is the check-design failure this project has recorded
   twice.
 
+- **`probes/clamp_arith.py`** — §4.2's clamp, PROVED ARITHMETICALLY before the
+  code exists, which R25 E1 required before the design could be accepted. It
+  models the emitted-copy count and the nesting-path product rather than
+  compiling, because the pass does not exist and a compile today would measure
+  replication. Reads `PCREC_MAX_*` out of `limits.h` rather than copying the
+  numbers — a constant transcribed into a check is a control sharing a source
+  with the thing it controls. Carries the `{1,2}` tower as a MUST-STILL-REFUSE
+  row and fails if it compiles: a probe that shows only its own successes is
+  not evidence.
+
+- **`probes/census_default.sh`** — R25 E10's owed census: quantifiers by rung
+  and by possessification, on the DEFAULT routing (what ships) and under
+  `--engine=vm`, read from `--emit-ir`'s RUNGS section so it cannot drift from
+  the emission. It exists because §1.2 argued the possessive arm's necessity
+  over a `-fno-revdet` table — a population the default path never reaches —
+  and exhibited no member of the cell it was arguing about. `LC_ALL=C` is set
+  explicitly for R24 M-F1's collation reason, as the possessify lane's census
+  does.
+
 - **`probes/bench_k.sh`** — the K sweep of `../eng_brep_design.md` §4.4, with
-  this note's §4.4 additions (a real counter loop at K = 1, and the three
-  subject regimes rather than only the satisfied-at-maximum one). Scaffolded
-  during the design phase and INERT until the counter rung exists: with no
-  `--unroll` in the compiler it reports the axes it cannot yet walk instead of
-  printing numbers that are secretly about something else. It is a
+  this note's §4.4 additions. **The K axis is inert until `--unroll` exists;
+  the harness is not** [R25 C2]: it carries a real throughput driver (subject
+  built in memory, min-of-N-trials ns/search) and the THREE subject regimes —
+  loop satisfied at maximum, satisfied well below it, and FAILING after
+  maximal consumption, which is where backtracking runs and where K should
+  matter most. Every cell validates its verdict before any time is reported,
+  so a wrong subject fails loudly instead of producing a meaningless number.
+  It runs end to end today with the K column collapsed to "shipped". It is a
   measurement, never a gate (D18).
+
+  One body was dropped when the harness became real: `(a(b|(c|d)))` stamps
+  `VM_RUNGS 0x8`, the reverse-deterministic rung, so it would have measured
+  rung-select under counter-K's name. Replaced by `((a)|a(b|c))`, verified
+  `0x2` at every N in the sweep.
 
 ## Archived outputs
 
-- **`measure_baseline.txt`** / **`step_charge.txt`** — one run of each probe
-  above, with its own source header (repo, commit, gcc, date). Stable-named so
-  a re-run diffs against them, D35's shape. Evidence for the panel, never an
-  oracle: no check reads them.
+- **`measure_baseline.txt`** / **`step_charge.txt`** / **`clamp_arith.txt`** /
+  **`census_default.txt`** — one run of each probe above, with its own source
+  header (repo, commit, gcc, date). Stable-named so a re-run diffs against
+  them, D35's shape. Evidence for the panel, never an oracle: no check reads
+  them.
 
   `step_charge.txt`'s 1 MB `--engine=vm` quadratic row is absent on purpose and
   its absence is the finding — the row exceeded a 120 s wrapper during
