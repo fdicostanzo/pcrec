@@ -432,6 +432,15 @@ append-only or historical records.
   disjoint-follow-only rule as "designed, built M4.6".
 - `eng_brep_measurements/` — the ENG-BREP lane's probes, scratch-compiler
   builder and archived outputs; see its own CLAUDE.md.
+- `possessify_impl/` — the [ENG-BREP] POSSESSIFICATION implementation lane's
+  own measurements, kept separate from `eng_brep_measurements/` (the design
+  lane's territory) so the two are never confused: the corpus census held
+  against §7's predictions, and two archived cells (throughput, and the
+  capability boundary where the possessified and denied builds part — exactly
+  at the denied build's stamped `subject_ceiling`). Its census script sets
+  `LC_ALL=C` explicitly and says why: R24 M-F1's collation defect, which this
+  lane reproduced in its own test script before the census caught it. See its
+  own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

@@ -165,3 +165,31 @@ restore them verbatim so the sweep is required to keep finding them.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
+
+## [ENG-BREP] the P-3 cliff rows, amended (2026-08-16)
+
+§4.7/P-3's CONTRAST row now passes `-fno-possessify`, and the amendment is
+D46's own scenario arriving exactly as D46 predicted it would.
+
+The contrast exists to show the row above it measures the PREFILTER rather than
+a fast box: with the prefilter off, `(a*)b` over 1 MB of 'a' must burn the step
+budget. Possessification then landed a rung ABOVE the prefilter and captured
+the case — `a*` there has FIRST {a} disjoint from FOLLOW {b} over a
+unique-iteration non-nullable body, so it possessifies, the loop becomes a
+forward scan, and the prefilter-free build answers `nomatch` in one pass
+instead of giving up. The check went from GREEN to RED while the thing it
+guards got strictly better. D46's remedy is that a test depending on a strategy
+DENIES the ones above it rather than assuming pattern construction implies
+selection, so the contrast denies possessification and is measuring the
+prefilter for a stated reason instead of by luck.
+
+A third row was added beside it, and it carries a finding rather than a
+celebration: the possessified prefilter-free build ANSWERS where the denied one
+gives up, and it does so QUADRATICALLY, because §4.2 charges a step per
+backtrack RESUMPTION and a possessified loop performs none. MEASURED 0.033 s at
+10 KB, 0.581 s at 50 KB, 2.297 s at 100 KB, against a constant give-up from the
+denied build. That is why the row runs at `CLIFF_N=10000` — at the 1 MB the
+other rows use it hung the ubsan battery for ten minutes, which is how it was
+found. Not a regression in what ships (the default engine choice's prefilter
+answers `(a*)b` outright), but a class the budget does not bound; the trade is
+flagged for a manager ruling in the lane's landing report.

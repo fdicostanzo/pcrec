@@ -61,7 +61,14 @@ in a specific way.
   the fixed ABI types are emitted under a prefix-INDEPENDENT include guard so
   differently-prefixed headers can share a TU (D44/A-2).
 - **`run_possdiff.sh`**, **`run_possessify_tests.sh`** — the two suites,
-  wired into `make test` as `make test-possessify`.
+  wired into `make test` as `make test-possessify` and into the `make
+  ubsan`/`make asan` both-axes batteries. `run_possdiff.sh --corpus`
+  additionally derives, at run time, every `.rxt` corpus pattern the analysis
+  gives a positive verdict on and sweeps those too — a DIFFERENT population
+  from `patterns.txt`, which is built to exercise the rule's own arms and
+  refutations while the corpus is what pcrec is actually asked to compile.
+  Derived from the pass's own census line rather than kept as a second file
+  that could go stale against the analysis.
 
 ## Two lessons this directory paid for, recorded so they are not re-paid
 

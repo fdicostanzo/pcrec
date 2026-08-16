@@ -19,8 +19,10 @@
 # the discriminating family is PREFIX + REPEATED BODY. A generator whose
 # alphabet omits a pattern character measures the generator.
 #
-# Usage: run_possdiff.sh [patternfile ...]
+# Usage: run_possdiff.sh [--corpus] [patternfile ...]
 #   With no argument it runs tests/possessify/patterns.txt.
+#   `--corpus` additionally derives and sweeps every .rxt corpus pattern the
+#   analysis gives a positive verdict on.
 # Env: PCREC (compiler), CC, GENCFLAGS (the sanitizer battery's hook),
 #      POSSDIFF_KEEP=1 to keep the work directory.
 
@@ -187,6 +189,29 @@ one_pattern() {
     fi
     [ -n "$POSSDIFF_KEEP" ] || rm -rf "$d"
 }
+
+# `--corpus` sweeps the .rxt CORPUS's verdict-positive patterns instead of (or
+# as well as) the designed family. The row's validation asks for both, and they
+# are different populations: patterns.txt is built to exercise the RULE's own
+# arms and refutations, while the corpus is what pcrec is actually asked to
+# compile — adversarial by construction, and the place a shape nobody designed
+# for turns up. The list is derived at run time from the pass's own census line
+# rather than kept as a second file that could go stale against the analysis.
+if [ "${1:-}" = "--corpus" ]; then
+    shift
+    derived="$WORKDIR/corpus_positive.txt"
+    : > "$derived"
+    grep -rhs '^pattern ' "$ROOT_DIR/tests" --include='*.rxt' | sed 's/^pattern //' \
+        | sort -u > "$WORKDIR/all.txt"
+    while IFS= read -r cp; do
+        [ -n "$cp" ] || continue
+        n="$("$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+             | sed -n 's/^; possessify   \([0-9]*\) of .*/\1/p')"
+        [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null && printf '%s\n' "$cp" >> "$derived"
+    done < "$WORKDIR/all.txt"
+    echo "possdiff: derived $(wc -l < "$derived") verdict-positive corpus patterns"
+    set -- "$derived" "$@"
+fi
 
 files="$*"
 [ -n "$files" ] || files="$SCRIPT_DIR/patterns.txt"
