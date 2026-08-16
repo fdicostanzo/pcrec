@@ -49,6 +49,20 @@ VERBOSE = "--verbose" in sys.argv
 # nobody can tell from a coincidence.
 NO_LAZY_CONJUNCT = os.environ.get("BREP_NO_LAZY_CONJUNCT") == "1"
 
+# SECOND FAILING-DIRECTION CONTROL, added by the nested-lazy measurement lane
+# (R24 residual, eng_brep_design.md S8 item 8). With this set, FOLLOW(Q) for a
+# quantifier nested inside another quantifier's body is computed WITHOUT the
+# enclosing loop's own FIRST set -- i.e. the transitive-FOLLOW term S2.2 calls
+# "the subtlest line" is dropped. R24's own nested sweep (H1) measured that
+# dropping this term produces 172 divergences over its 42,336-pair family;
+# this module-level toggle lets a NEW nested probe reproduce that shape of
+# control against a differently-built family, the same way NO_LAZY_CONJUNCT
+# lets probe_possess.py's own family reproduce the 316. Both toggles are
+# ordinary module globals, re-read on every call (not baked into a default
+# argument), so a caller can flip `pp.NO_LAZY_CONJUNCT` / `pp.NO_ENCLOSING_FIRST`
+# between two `analyse()` calls in the same process without re-importing.
+NO_ENCLOSING_FIRST = os.environ.get("BREP_NO_ENCLOSING_FIRST") == "1"
+
 # ---- the analysis ---------------------------------------------------------
 
 ALL = frozenset(range(256))
@@ -247,7 +261,17 @@ def body_admits_unique_iteration(body):
 
 
 def walk(seq, follow, may_end, out, enclosing=()):
-    """Emit (node, FIRST(body), FOLLOW, verdict) for every repeat in `seq`.
+    """Emit (op, lo, hi, FIRST(body), FOLLOW, verdict, why, body) for every
+    repeat in `seq`. `body` (the row's own parsed body sequence, `av[2]` of
+    the MAX_REPEAT/MIN_REPEAT/POSSESSIVE_REPEAT node) is appended LAST and
+    is new -- added for the nested-lazy measurement lane's corpus
+    differential (probe_corpus_diff_pcre2.py), which needs to regenerate
+    source text for a real pattern's quantifier body. Appended, not
+    inserted, so existing 7-element consumers that unpack positionally by
+    NAME (`op, lo, hi, bf, eff, verdict, why = row`) still break loudly on
+    an arity mismatch rather than silently misreading a field -- the two
+    consumers in this lane were updated to match (probe_possess_corpus.py);
+    index-based consumers (`info[0][5]`, ...) are unaffected either way.
 
     `follow` is the byte set that can begin what runs after `seq`; `may_end` is
     true when the match can legitimately finish there.
@@ -268,7 +292,14 @@ def walk(seq, follow, may_end, out, enclosing=()):
             bf, bn = first_and_nullable(body)
             # An enclosing loop may start another iteration after this one
             # exits, so its body's FIRST is part of what can follow.
-            eff = frozenset(f_here | set().union(*enclosing) if enclosing else f_here)
+            # BREP_NO_ENCLOSING_FIRST is the failing-direction control that
+            # drops this term (see the flag's own comment above); with it
+            # set, FOLLOW is computed exactly as if this quantifier were not
+            # nested at all, which is the bug S8 item 8 describes.
+            if enclosing and not NO_ENCLOSING_FIRST:
+                eff = frozenset(f_here | set().union(*enclosing))
+            else:
+                eff = frozenset(f_here)
             disjoint = not (bf & eff)
             uniq, uwhy = body_admits_unique_iteration(body)
             # CONDITION E, independent of the follow: with a unique-iteration
@@ -309,7 +340,7 @@ def walk(seq, follow, may_end, out, enclosing=()):
                 # disjoint, but the body itself disqualifies it
                 verdict = "no"
                 why = uwhy if not uniq else "nullable-body"
-            out.append((op, lo, hi, bf, eff, verdict, why))
+            out.append((op, lo, hi, bf, eff, verdict, why, body))
             walk(body, eff, end_here, out, enclosing + (bf,))
             continue
         if op is C.SUBPATTERN:
