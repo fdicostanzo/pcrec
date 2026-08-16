@@ -29,6 +29,42 @@ pcrec (the Makefile owns that).
   dependencies (Frank's refinement). Reports are review evidence, never an
   oracle — no check reads them.
 
+- **watchdog** — `timeout`-like supervisor for wrapping dev-process commands
+  (compiler invocations, generated-matcher runs, subagent batteries) that
+  can hang or runaway-allocate: wall-clock timeout, peak-tree-RSS memory
+  limit, and one greppable log line per execution, GNU-timeout-compatible
+  exit codes (124 timeout, 122 memkill) passed through to the caller. Polls
+  `/proc` for tree RSS instead of using `RLIMIT_AS`, deliberately: `RLIMIT_AS`
+  caps virtual address space, not resident memory, and an ASan build's ~20 TB
+  VA reservation would trip it on startup every time; VA also overcounts
+  ordinary mmap, and no single-process rlimit can express a limit — or record
+  a peak for the log — over a whole process tree. Known tradeoff: sampling
+  (default `-i 0.2`) can miss a spike that both happens and is freed inside
+  one poll interval — acceptable, since this is runaway detection for
+  development, not a hard cap (that would need cgroups). The child's own
+  stdin/stdout/stderr pass through completely untouched — watchdog writes
+  nothing to stdout ever, and exactly one line to stderr on a breach; getting
+  that clean required routing the parent's own fd 2 through a saved
+  duplicate (fd 3) after forking the child, because bash's own asynchronous
+  "Terminated"/"User defined signal N" job-notify message for a
+  signal-killed background job is not reliably suppressed by redirecting
+  any single `wait` call — it can print on whatever command bash next
+  happens to run. CLI flags (`-l -s -m -k -i -L`) and an
+  `WATCHDOG_TIMEOUT`/`WATCHDOG_MEM`/etc. env-var channel (Makefile-friendly;
+  CLI wins) cover the same knobs. Metrics-only mode (neither `-s` nor `-m`
+  given) supervises and logs without ever killing.
+
+- **test_watchdog.sh** — standalone self-test for `watchdog` (deliberately
+  NOT wired into `make test` — that's a manager/Frank decision for later).
+  Every case is bounded by coreutils `timeout`, never by watchdog itself —
+  a control must not share a mechanism with the thing it controls, so a
+  test that relied on watchdog to bound its own run could hang forever
+  right alongside a broken watchdog, or pass for the wrong reason. Covers
+  exit/signal pass-through, timeout and memory kills (including whole-tree
+  kill for a process that backgrounds a grandchild), RSS-accuracy
+  calibration, log-line shape, env-vs-CLI precedence, missing command, and
+  metrics-only mode. Run with `timeout 300 scripts/test_watchdog.sh`.
+
 - **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
   full suite, not a tier) and blocks the push on failure. Installed ONLY by
   `make hooks`, which copies it to `git rev-parse --git-path hooks` (not a

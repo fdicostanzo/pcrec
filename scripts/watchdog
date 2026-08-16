@@ -1,0 +1,350 @@
+#!/usr/bin/env bash
+#
+# watchdog — timeout-like supervisor with memory (peak-RSS) limiting and
+# per-execution logging, for wrapping pcrec dev-process commands (compiler
+# invocations, generated-matcher runs, subagent batteries) that can hang or
+# runaway-allocate.
+#
+# Usage:
+#   scripts/watchdog [-l LABEL] [-s SECS] [-m MEM] [-k SECS] [-i SECS]
+#                     [-L FILE] [--] COMMAND [ARG...]
+#   scripts/watchdog -h
+#
+# Why RSS-polling instead of RLIMIT_AS/setrlimit:
+#   RLIMIT_AS caps virtual address space, not resident memory. An ASan (or
+#   MSan) build reserves on the order of tens of terabytes of VA up front as
+#   part of its shadow-memory layout — an RLIMIT_AS limit sized for a real
+#   memory runaway would kill an ASan child instantly, on startup, every
+#   time. VA size also overcounts ordinary mmap'd-but-untouched pages, so
+#   even for non-sanitized builds it does not track "how much memory is this
+#   thing actually using" the way RSS does. Separately, no single-process
+#   rlimit can express a limit over an entire process TREE (a compile that
+#   forks cc1/as/ld), and rlimits don't give you a peak value to put in the
+#   log — you'd still need to poll for that. Polling /proc for tree RSS is
+#   slower and coarser than a kernel-enforced limit, but it is the only
+#   mechanism that answers the question this tool exists to answer: is the
+#   whole tree's resident memory blowing up.
+#
+# Known limitation: sampling can miss a sub-interval spike (allocate past
+# the limit, free it, all inside one poll interval — see -i). This is
+# runaway detection for development use, not a hard security boundary; a
+# real cap would need cgroups. Widen -i is the wrong fix for a real leak;
+# it's a diagnostic tradeoff, not a correctness bug.
+#
+# Options:
+#   -l LABEL   label for the log line (default: basename of COMMAND)
+#   -s SECS    wall-clock timeout (integer or decimal seconds)
+#   -m MEM     peak tree RSS limit. Suffix k/m/g (case-insensitive), optional
+#              trailing 'b' (10mb, 512K, 2g all valid); no suffix = bytes.
+#              k/m/g are binary (1024-based), matching /proc's kB unit.
+#   -k SECS    grace period between SIGTERM and SIGKILL (default 2)
+#   -i SECS    poll interval (default 0.2)
+#   -L FILE    log file (default build/watchdog.log, relative to CWD;
+#              its directory is created if missing)
+#   -h         this usage text
+#
+# If NEITHER -s/WATCHDOG_TIMEOUT nor -m/WATCHDOG_MEM is given, watchdog runs
+# in metrics-only mode: it supervises and logs but never kills.
+#
+# Env vars (Makefile-friendly; CLI flags win over these):
+#   WATCHDOG_LABEL WATCHDOG_TIMEOUT WATCHDOG_MEM WATCHDOG_GRACE
+#   WATCHDOG_INTERVAL WATCHDOG_LOG
+#
+# Exit codes:
+#   <child's own exit code>   passed through verbatim
+#   128+N                     child was killed by signal N (its own doing,
+#                             not watchdog's — e.g. it segfaulted)
+#   124                       watchdog wall-clock timeout kill
+#   122                       watchdog memory (peak-RSS) kill
+#   125                       watchdog internal error (bad args, etc.)
+#   126 / 127                 COMMAND found-but-not-executable / not-found
+#                             (setsid/exec's own convention, relayed)
+#
+# stdout is never touched by watchdog — only the child's own stdout appears
+# there. On a breach, watchdog writes exactly one line to stderr. Every
+# execution (not bare usage errors) appends exactly one line to the log.
+
+set -u
+set +b   # suppress bash's own async "Terminated"/"User defined signal N" job
+         # notifications for the backgrounded child — those are bash's
+         # interactive-shell notify feature, not part of watchdog's own
+         # stderr contract; without this a child that dies by signal leaks
+         # an extra, uncontrolled line to our stderr.
+
+prog="watchdog"
+
+usage() {
+    # Usage text is printed to stdout for -h (conventional), never during
+    # a normal run — normal runs never touch stdout at all.
+    sed -n '2,65p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+die_usage() {
+    printf '%s: %s\n' "$prog" "$1" >&2
+    printf 'Try '"'"'%s -h'"'"' for usage.\n' "$prog" >&2
+    exit 125
+}
+
+# ---- option parsing -------------------------------------------------------
+
+opt_label=""
+opt_timeout=""
+opt_mem=""
+opt_grace=""
+opt_interval=""
+opt_log=""
+have_l=0 have_s=0 have_m=0 have_k=0 have_i=0 have_L=0
+
+while getopts ":l:s:m:k:i:L:h" opt; do
+    case "$opt" in
+        l) opt_label="$OPTARG"; have_l=1 ;;
+        s) opt_timeout="$OPTARG"; have_s=1 ;;
+        m) opt_mem="$OPTARG"; have_m=1 ;;
+        k) opt_grace="$OPTARG"; have_k=1 ;;
+        i) opt_interval="$OPTARG"; have_i=1 ;;
+        L) opt_log="$OPTARG"; have_L=1 ;;
+        h) usage; exit 0 ;;
+        \?) die_usage "unknown option: -$OPTARG" ;;
+        :) die_usage "option -$OPTARG requires an argument" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ "$#" -eq 0 ]; then
+    die_usage "no COMMAND given"
+fi
+
+# ---- resolve config: CLI > env > default -----------------------------------
+
+label="$opt_label"
+[ "$have_l" -eq 1 ] || label="${WATCHDOG_LABEL:-}"
+
+timeout_secs="$opt_timeout"
+[ "$have_s" -eq 1 ] || timeout_secs="${WATCHDOG_TIMEOUT:-}"
+
+mem_spec="$opt_mem"
+[ "$have_m" -eq 1 ] || mem_spec="${WATCHDOG_MEM:-}"
+
+grace_secs="$opt_grace"
+[ "$have_k" -eq 1 ] || grace_secs="${WATCHDOG_GRACE:-2}"
+
+interval_secs="$opt_interval"
+[ "$have_i" -eq 1 ] || interval_secs="${WATCHDOG_INTERVAL:-0.2}"
+
+logfile="$opt_log"
+[ "$have_L" -eq 1 ] || logfile="${WATCHDOG_LOG:-build/watchdog.log}"
+
+[ -n "$label" ] || label="$(basename -- "$1")"
+
+# ---- validation -------------------------------------------------------------
+
+is_number() {
+    case "$1" in
+        ''|*[!0-9.]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+if [ -n "$timeout_secs" ] && ! is_number "$timeout_secs"; then
+    die_usage "invalid -s value: $timeout_secs"
+fi
+if [ -n "$grace_secs" ] && ! is_number "$grace_secs"; then
+    die_usage "invalid -k value: $grace_secs"
+fi
+if [ -n "$interval_secs" ] && ! is_number "$interval_secs"; then
+    die_usage "invalid -i value: $interval_secs"
+fi
+
+mem_limit_kb=""
+if [ -n "$mem_spec" ]; then
+    if [[ "$mem_spec" =~ ^([0-9]+)([kKmMgG]?)[bB]?$ ]]; then
+        num="${BASH_REMATCH[1]}"
+        unit="${BASH_REMATCH[2]}"
+        case "${unit,,}" in
+            k) mem_limit_kb=$(( num )) ;;
+            m) mem_limit_kb=$(( num * 1024 )) ;;
+            g) mem_limit_kb=$(( num * 1024 * 1024 )) ;;
+            '') mem_limit_kb=$(( (num + 1023) / 1024 )) ;;
+        esac
+    else
+        die_usage "invalid -m value: $mem_spec (want e.g. 10mb, 512K, 2g, or a byte count)"
+    fi
+fi
+
+if ! command -v setsid >/dev/null 2>&1; then
+    printf '%s: setsid not found (util-linux required)\n' "$prog" >&2
+    exit 125
+fi
+
+mkdir -p "$(dirname -- "$logfile")" 2>/dev/null || {
+    printf '%s: cannot create log directory for %s\n' "$prog" "$logfile" >&2
+    exit 125
+}
+
+metrics_only=1
+[ -n "$timeout_secs" ] && metrics_only=0
+[ -n "$mem_limit_kb" ] && metrics_only=0
+
+# ---- helpers ----------------------------------------------------------------
+
+clk_tck="$(getconf CLK_TCK 2>/dev/null || echo 100)"
+
+# proc_running PID: true if PID exists and is not a zombie (i.e. still
+# actually running, not merely un-reaped).
+proc_running() {
+    local pid="$1" line="" state
+    { read -r line < "/proc/$pid/stat"; } 2>/dev/null
+    [ -n "$line" ] || return 1
+    line="${line##*) }"
+    state="${line%% *}"
+    [ "$state" != "Z" ]
+}
+
+# collect_stats PGID: prints "RSS_KB CPU_TICKS" summed over every /proc
+# entry whose pgrp (field 5 of /proc/PID/stat) equals PGID. Best-effort:
+# entries that vanish mid-scan (race with process exit) are silently
+# skipped rather than treated as an error.
+collect_stats() {
+    local pgid="$1" rss_kb=0 ticks=0
+    local statfile pid line rest state ppid pgrp session tty tpgid flags \
+          minflt cminflt majflt cmajflt utime stime
+    for statfile in /proc/[0-9]*/stat; do
+        line=""
+        { read -r line < "$statfile"; } 2>/dev/null
+        [ -n "$line" ] || continue
+        rest="${line##*) }"
+        read -r state ppid pgrp session tty tpgid flags minflt cminflt \
+                majflt cmajflt utime stime _rest <<<"$rest"
+        [ "$pgrp" = "$pgid" ] || continue
+        pid="${statfile#/proc/}"
+        pid="${pid%/stat}"
+        ticks=$(( ticks + utime + stime ))
+        {
+            while IFS=: read -r key val; do
+                if [ "$key" = "VmRSS" ]; then
+                    val="${val//kB/}"
+                    val="${val// /}"
+                    val="${val//$'\t'/}"
+                    [ -n "$val" ] && rss_kb=$(( rss_kb + val ))
+                    break
+                fi
+            done < "/proc/$pid/status"
+        } 2>/dev/null
+    done
+    printf '%s %s\n' "$rss_kb" "$ticks"
+}
+
+# sq_quote STRING: single-quote-escape STRING for a one-line, shell-parseable
+# log field (newlines flattened to spaces first).
+sq_quote() {
+    local s="${1//$'\n'/ }"
+    printf "'%s'" "${s//\'/\'\\\'\'}"
+}
+
+now_epoch() { date +%s.%N; }
+
+# ---- run the child ------------------------------------------------------
+
+setsid "$@" &
+child_pid=$!
+pgid="$child_pid"   # setsid() with no forced fork makes pid==sid==pgid
+
+# The child (forked above) has already inherited the real stderr on fd 2.
+# From here on, silence the PARENT's own fd 2 and keep a saved duplicate on
+# fd 3 for watchdog's own breach message: bash prints an asynchronous
+# "Terminated"/"User defined signal N" job-notify line to the shell's
+# CURRENT fd 2 whenever it next gets to check on a backgrounded job that
+# died abnormally (a bash shell-interaction feature, unrelated to and not
+# reliably suppressed by redirecting any single `wait` invocation) — this
+# is not part of watchdog's stderr contract, and would otherwise leak an
+# uncontrolled extra line for e.g. a child killed by its own signal.
+exec 3>&2 2>/dev/null
+
+start_epoch="$(now_epoch)"
+peak_rss_kb=0
+peak_cpu_ticks=0
+verdict="ok"
+breach=""
+
+while :; do
+    read -r rss ticks <<<"$(collect_stats "$pgid")"
+    [ "${rss:-0}" -gt "$peak_rss_kb" ] && peak_rss_kb="$rss"
+    [ "${ticks:-0}" -gt "$peak_cpu_ticks" ] && peak_cpu_ticks="$ticks"
+
+    proc_running "$child_pid" || break
+
+    if [ "$metrics_only" -eq 0 ]; then
+        now="$(now_epoch)"
+        elapsed="$(awk -v a="$now" -v b="$start_epoch" 'BEGIN{printf "%.3f", a-b}')"
+
+        if [ -n "$timeout_secs" ] && awk -v e="$elapsed" -v t="$timeout_secs" 'BEGIN{exit !(e>t)}'; then
+            verdict="timeout"
+            breach="wall timeout after ${timeout_secs}s"
+            break
+        fi
+        if [ -n "$mem_limit_kb" ] && [ "$peak_rss_kb" -gt "$mem_limit_kb" ]; then
+            verdict="memkill"
+            breach="memory limit exceeded (limit ${mem_limit_kb} kB)"
+            break
+        fi
+    fi
+
+    sleep "$interval_secs"
+done
+
+exit_code=""
+
+if [ -n "$breach" ]; then
+    kill -TERM "-$pgid" 2>/dev/null
+
+    waited="0"
+    while proc_running "$child_pid" && awk -v w="$waited" -v g="$grace_secs" 'BEGIN{exit !(w<g)}'; do
+        sleep "$interval_secs"
+        read -r rss ticks <<<"$(collect_stats "$pgid")"
+        [ "${rss:-0}" -gt "$peak_rss_kb" ] && peak_rss_kb="$rss"
+        [ "${ticks:-0}" -gt "$peak_cpu_ticks" ] && peak_cpu_ticks="$ticks"
+        waited="$(awk -v w="$waited" -v s="$interval_secs" 'BEGIN{printf "%.3f", w+s}')"
+    done
+    if proc_running "$child_pid"; then
+        kill -KILL "-$pgid" 2>/dev/null
+    fi
+
+    wait "$child_pid" 2>/dev/null
+    printf '%s: %s: %s (TERM->KILL), peak rss %s kB\n' "$prog" "$label" "$breach" "$peak_rss_kb" >&3
+
+    case "$verdict" in
+        timeout) exit_code=124 ;;
+        memkill) exit_code=122 ;;
+    esac
+else
+    # 2>/dev/null: suppresses bash's own async "Terminated"/"User defined
+    # signal N" job-notify message for the backgrounded child (a bash
+    # shell-interaction feature, not part of watchdog's stderr contract);
+    # it does NOT affect the child's own stderr, which was never routed
+    # through this fd — the child's fds are inherited untouched from launch.
+    wait "$child_pid" 2>/dev/null
+    exit_code=$?
+    if [ "$exit_code" -eq 126 ] || [ "$exit_code" -eq 127 ]; then
+        verdict="exec-fail"
+    elif [ "$exit_code" -gt 128 ]; then
+        verdict="signal"
+    fi
+fi
+
+exec 2>&3 3>&-   # restore real stderr; drop the saved duplicate
+
+end_epoch="$(now_epoch)"
+wall="$(awk -v a="$end_epoch" -v b="$start_epoch" 'BEGIN{printf "%.2f", a-b}')"
+cpu="$(awk -v t="$peak_cpu_ticks" -v c="$clk_tck" 'BEGIN{printf "%.2f", t/c}')"
+ts="$(date -Is)"
+cmd_str="$*"
+
+log_line="$(printf 'ts=%s label=%s verdict=%s wall=%s cpu=%s peak_rss_kb=%s exit=%s cmd=%s' \
+    "$ts" "$(sq_quote "$label")" "$verdict" "$wall" "$cpu" "$peak_rss_kb" "$exit_code" "$(sq_quote "$cmd_str")")"
+
+(
+    flock -x 200
+    printf '%s\n' "$log_line" >> "$logfile"
+) 200>>"$logfile.lock" 2>/dev/null || printf '%s\n' "$log_line" >> "$logfile"
+
+exit "$exit_code"
