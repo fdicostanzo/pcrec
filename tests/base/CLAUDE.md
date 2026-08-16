@@ -16,6 +16,17 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   differential fuzzer. Sabotage-validated: that edit fails 4 cases here
 - **quantifiers.rxt** — *, +, ? quantifiers
 - **bounded_repeats.rxt** — {m,n} repeat syntax
+- **d27_forms.rxt / d27_bodies.rxt / d27_nesting.rxt / d27_edge.rxt /
+  d27_captures.rxt / d27_large_counts.rxt** — the D27 blinded quantifier /
+  bounded-repeat corpus (2026-08-16, cell `brepspec`): 81 blocks / 676 live
+  case-lines written from the PCRE promise by an author denied `src/` and
+  `tests/`, every expectation computed from python `re` and independently
+  re-verified by a from-scratch checker. Covers every repeat spelling
+  greedy+lazy, class/alternation/group/multi-char bodies, 2-3-level nesting
+  with mixed preference, nullable-body edges, last-iteration-wins captures
+  (incl. the branch-not-reset rule), 500-2000 counts and the 64-copy
+  replication-cap boundary (`perr`). Two case-lines from the corpus live in
+  `tests/known_fail/d27_nested_min_boundary.rxt` (K23) instead of here.
 - **alternation.rxt** — | alternation and precedence
 - **alternation_trie.rxt** — priority hazards of M2.8 prefix-trie factoring (D9): shorter-branch-first shapes, overlapping-but-distinct classes, mixed eligible/ineligible runs. Each guard is sabotage-validated — disabling the disjointness guard fails 2 cases, disabling index-range partitioning fails 7
 - **anchors.rxt** — ^ and $ anchors

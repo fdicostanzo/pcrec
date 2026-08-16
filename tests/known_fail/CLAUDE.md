@@ -9,7 +9,12 @@ and it does not get to break the build either.
 
 ## Files
 
-- **(no `.rxt` files)** — as of 2026-08-15 no confirmed bug is deferred with a
+- **d27_nested_min_boundary.rxt** — K23 (2026-08-16): `(a{10,20}){10,50}`
+  on the exact-minimum 100-byte subject returns `RX_ERR_STEPS` where the
+  oracle answers span (0,100)/group (90,100) instantly. Asserts the correct
+  behaviour per this directory's contract; owning milestone [M4.6]. Found by
+  the D27 blinded quantifier corpus (its live siblings: `tests/base/d27_*.rxt`).
+- **(previously empty)** — from 2026-08-15 until K23, no confirmed bug was deferred with a
   repro on file, which the ratchet treats as a legitimate good state (it
   reports "nothing to ratchet" and exits 0). The last resident was
   `k18_empty_exit_through_seen_eps.rxt`, which moved to `tests/base/` when K18
