@@ -132,8 +132,10 @@ Two things to read off this table.
 
 **The N=4000 row is the D45 incident, reproduced.** The plan row records
 113,545 lines / 3.5 MB; this lane measures 113,572 lines / 3,536,883 bytes at
-commit 0a082ea. The 27-line delta is the D46 rung-stamp lines added since the
-row was written, so the reproduction is exact where it should be.
+commit 0a082ea — a delta of 27 lines, 0.02%, on a compiler that has taken
+several landings since the row was written. The cause of the 27 lines was not
+chased; the point of the row is that the order of magnitude and the shape both
+reproduce.
 
 **gcc's cost is linear at −O1 and quadratic at −O2.** −O1 doubles when N
 doubles (0.52 → 1.01 → 2.02 → 3.22 across 64/128/256/400); −O2 goes ×3.1,
@@ -302,8 +304,9 @@ marked **BELIEVED**, not measured. §8 carries it.
 
 `probes/probe_possess.py` states the analysis as code and checks it against an
 oracle in both directions over a generated family (3 prefixes × 12 bodies ×
-10 counts × 14 follows, 5,016 compiling greedy patterns, 260 subjects each —
-about 1.3 M pattern-subject comparisons). The oracle is python3 `re`, whose
+8 possessifiable counts × 19 follows, of which **5,016 compile as a
+greedy/possessive pair**, 260 subjects each — about 1.3 M pattern-subject
+comparisons). The oracle is python3 `re`, whose
 possessive quantifiers are the mechanised statement of "no retreat into this
 loop"; this is a BASE-TIER oracle, not the three-way sweep §5.3 specifies.
 
@@ -608,9 +611,17 @@ construction, with no "but they are allowed to differ here" case to argue.
 ### 4.2 The emitted shape
 
 One counter per bounded repeat, living in the `stv` array beside the capture
-pairs and the empty-iteration guards (§2.4 already lists "repeat counters" as
-an `stv` inhabitant, so no layout change is required), trailed on the same
-write-on-traverse discipline as everything else in `stv`.
+pairs and the empty-iteration guards, trailed on the same write-on-traverse
+discipline as everything else in `stv`.
+
+**No layout change is required, and this is not a coincidence.** §2.4's ruled
+`stv` layout table already has the row — "next `R` — bounded-repeat counters
+(`{m,n}`)" — sitting between the capture pairs and the empty-iteration
+guards. It has no producer today (`vm_count_slots` computes
+`nstate = 2*ncaps + nguard_total + nlow_total`, with no `R` term), so this row
+is filling in a slot class the engine design reserved and the replication
+reading then made unnecessary. An implementation lane should read that as
+confirmation of the shape rather than as licence to skip §5's validation.
 
 ```
   ; X{m,n}, unroll K
@@ -913,11 +924,27 @@ Ordered by how likely it is to matter.
    source failure this project has hit before. A set harvested from real
    sources would be a strictly better denominator and this one should be
    treated as indicative, not measured.
-8. **Compile-time cost of the possessification analysis itself.** Glushkov
+8. **NESTED quantifiers' verdicts are censused but not differentially
+   validated.** `probe_possess.py` compares the greedy and possessive forms of
+   the pattern's OUTERMOST quantifier only, because that is the one it can
+   respell possessively by construction. The FOLLOW computation for a
+   quantifier inside another quantifier's body — where the enclosing loop's
+   own FIRST set joins the follow, which is the subtlest line in §2.2 — is
+   therefore exercised by §2.6's censuses and checked by nothing. It is the
+   single most likely place for a soundness bug to be hiding, and §5.1's
+   pcrec-vs-pcrec differential is what should close it.
+9. **Assertions INSIDE the body are ignored by the unique-iteration check**
+   (`Glushkov.build` skips `AT`), while assertions in the FOLLOW widen to all
+   bytes (§2.5). The asymmetry is deliberate and BELIEVED sound in the
+   direction it matters: dropping an assertion from the body can only ADD
+   paths, and both (U1) and (U2) are preserved downward — a deterministic,
+   prefix-free superset has a deterministic, prefix-free subset. Argued, not
+   measured; no body in the differential family contains an assertion.
+10. **Compile-time cost of the possessification analysis itself.** Glushkov
    first/last/follow over a body is linear-ish in body size, and the bodies are
    small, so this is believed negligible — unmeasured, and the pathological
    case (a body that is one enormous alternation) was not tried.
-9. **Interaction with `--trace` and the step budget.** A counter loop's step
+11. **Interaction with `--trace` and the step budget.** A counter loop's step
    accounting (§4.2 charges nothing per trip) was not checked against §4.2's
    "a step IS a backtrack resumption" rule. Probably free; unverified.
 
