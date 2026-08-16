@@ -9,12 +9,30 @@ section targets depend on.
   compile budget (5s plain, 60s sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`,
   axis derived from the flags): every compile of emitted C in the tree
   routes through its `gen_cc`, and exceeding the budget is a loud FAILURE
-  naming the case, never a hang.
+  naming the case, never a hang. Since 2026-08-16 (D45 second addendum) it
+  also owns the EXECUTION budget for generated matchers: `gen_run_secs`
+  (10s plain, 60s sanitizer, `GENRUNTIMEOUT`/`GENRUNTIMEOUT_SAN`; also
+  runnable as `bash tests/lib/gen_timeout.sh runsecs` for python callers)
+  and `gen_run <label> <argv...>`, which routes a run through
+  `scripts/watchdog` — run budget plus a 512m peak-tree-RSS ceiling
+  (`GENRUNMEM`) plus one section-tagged log line per execution in
+  `build/watchdog.log`; 124 = run timeout, 122 = memory kill, both loud
+  failures checked exactly. Per-pattern run sites use `gen_run`; inner
+  loops with hundreds+ of sub-millisecond runs use bare
+  `timeout`/`subprocess timeout=` reading the same number, because
+  watchdog's fixed startup cost would multiply the loop's runtime.
 - **run_gen_timeout_tests.sh** — its own section in `make test`
   (`test-gentimeout`) — a positive control that the wrapper FIRES, plus a
   coverage assertion that every suite routes through it, because a
   test-infrastructure property is invisible to every other suite in the
-  tree.
+  tree. The run bound gets the full mirror: per-axis budget checks, a fire
+  control on a REAL over-budget run (budget-bound so the control
+  terminates even if the wrapper breaks), an oracle-verified pass-through
+  control, a growing run-coverage list, and hand-rolled-number greps. The
+  122 memory path's positive control deliberately lives in
+  `scripts/test_watchdog.sh` instead: no real generated artifact can
+  runaway on RSS (allocation-free), so a synthetic allocator there is
+  honest where a stub here would only pretend to be an artifact.
 - **run_group.sh** ([TT-2], 2026-08-15) — runs N independent shell commands
   (suite scripts) CONCURRENTLY as one Makefile section recipe, used by
   `test-codegen` (`run_codegen_tests.sh` + `run_trie_identity.sh`) and

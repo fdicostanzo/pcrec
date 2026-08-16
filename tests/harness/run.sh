@@ -40,6 +40,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # D45: ONE shared generated-code compile budget for the whole tree.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+RUN_SECS="$(gen_run_secs)"   # per-cell matcher-run budget; see the run site
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
@@ -345,11 +346,18 @@ flush_block() {
         local kind="${case_kind[$i]}" line="${case_line[$i]}" subj="${case_subject[$i]}"
         local pos="${case_startpos[$i]}"
         local out expect trc
-        out="$(timeout 10 "$bdir/t" "$subj" "$pos")"
+        # The run budget comes from tests/lib/gen_timeout.sh (gen_run_secs),
+        # not a number here — the old hardcoded 10 was the R23-V1 shape
+        # again: axis-blind, so sanitizer cells shared the plain budget.
+        # Coreutils `timeout` rather than the full gen_run/watchdog wrapper,
+        # deliberately: this loop runs thousands of sub-millisecond cells,
+        # and watchdog's fixed per-invocation cost belongs on per-pattern
+        # and long-run sites, not here. $RUN_SECS is computed once above.
+        out="$(timeout "$RUN_SECS" "$bdir/t" "$subj" "$pos")"
         trc=$?
         if [ $trc -eq 124 ]; then
             record_fail "$cur_file" "$line" \
-                "test binary TIMED OUT (>10s) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                "test binary TIMED OUT (>${RUN_SECS}s, gen_run_secs; raise GENRUNTIMEOUT only with the measurement recorded) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
             record_case_group_fail "$cur_file" "$i" "test binary timed out"
             continue
         elif [ $trc -ge 126 ]; then

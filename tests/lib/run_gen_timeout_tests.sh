@@ -105,6 +105,15 @@ if grep -qE 'timeout[ \t]+[0-9]+[ \t]+"\$PCREC"' "$ROOT_DIR/tests/harness/run.sh
 else
     ok "R23 V1: no hand-rolled numeric timeout remains on pcrec's own invocation in the harness"
 fi
+# ...and the same for the harness's per-cell MATCHER run, which carried a
+# hardcoded `timeout 10` from before D45 (axis-blind: sanitizer cells shared
+# the plain budget) until the twenty-fifth session routed it through
+# gen_run_secs.
+if grep -qE 'timeout[ \t]+[0-9]+[ \t]+"\$bdir/t"' "$ROOT_DIR/tests/harness/run.sh"; then
+    bad "gen_run: tests/harness/run.sh has gone back to a hand-rolled numeric timeout on the per-cell matcher run"
+else
+    ok "gen_run: the harness's per-cell matcher run reads the shared run budget, not a hand-rolled number"
+fi
 
 # ---- 1c. the same, for EXECUTION of generated matchers (gen_run) ---------
 #

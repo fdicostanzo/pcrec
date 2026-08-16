@@ -49,10 +49,18 @@ pcrec (the Makefile owns that).
   "Terminated"/"User defined signal N" job-notify message for a
   signal-killed background job is not reliably suppressed by redirecting
   any single `wait` call — it can print on whatever command bash next
-  happens to run. CLI flags (`-l -s -m -k -i -L`) and an
+  happens to run. CLI flags (`-l -S -s -m -k -i -L`) and an
   `WATCHDOG_TIMEOUT`/`WATCHDOG_MEM`/etc. env-var channel (Makefile-friendly;
   CLI wins) cover the same knobs. Metrics-only mode (neither `-s` nor `-m`
-  given) supervises and logs without ever killing.
+  given) supervises and logs without ever killing. `-S SECTION` /
+  `WATCHDOG_SECTION` adds a `section=` field to the log line — a runner
+  exports it once and every invocation underneath inherits it, so a label
+  like `case7` stays findable among thousands of lines from other suites.
+  The test tree consumes watchdog through `tests/lib/gen_timeout.sh`'s
+  `gen_run` (the D45-second-addendum execution budget); keep the two in
+  sync when changing flags or the log format. A log line with
+  `peak_rss_kb=0`/`cpu=0.00` means the child finished inside one poll
+  interval — a fast-run marker, not a measurement.
 
 - **test_watchdog.sh** — standalone self-test for `watchdog` (deliberately
   NOT wired into `make test` — that's a manager/Frank decision for later).

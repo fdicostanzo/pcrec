@@ -1178,15 +1178,59 @@ deepest nesting the parser accepts at all. So the plain budget is ~50x the
 worst legitimate case, with the same revisit-when as D45's own: raise it WITH
 the measurement, never silently.
 
-**Its own checks**: `tests/lib/run_gen_timeout_tests.sh` (10 checks, in
-`make test`). A positive control proves the wrapper FIRES on a real
-over-budget compile and names the case; a coverage assertion proves every
-suite routes through the one helper, which is the check that survives future
-work, since a new compile site added without the wrapper is the realistic way
-this protection erodes. Sabotage S43. The two added with the pcrec budget hold
-it the same way: one asserts the per-axis numbers and the overrides, and one
-greps `run.sh` for a hand-rolled numeric timeout on `$PCREC` — a literal is
-exactly how this reverts.
+**EXECUTION is bounded too, since 2026-08-16 (the twenty-fifth session,
+closing the gap tests/vm/CLAUDE.md flagged).** D45 bounded every COMPILE of
+emitted C and nothing bounded its execution, so a merely-slow generated
+matcher read as a hang for as long as it took — nine minutes of a battery
+leg, 2026-08-15, on a run that was quadratic-and-correct. Same rule, same
+file: `gen_run_secs` answers **10s plain / 60s sanitizer** (`GENRUNTIMEOUT`,
+`GENRUNTIMEOUT_SAN`; the plain number keeps the calibration of the
+harness's old per-cell `timeout 10`, which had never been approached by a
+legitimate run), and exceeding it is a loud FAILURE naming the case. Two
+shapes, chosen by invocation count:
+
+- **`gen_run <label> <argv...>`** for per-pattern and one-off runs: routes
+  the execution through `scripts/watchdog` (which see), adding a **512m
+  peak-tree-RSS ceiling** (`GENRUNMEM`; a generated matcher is
+  allocation-free by construction, so RSS beyond subject + driver overhead
+  is a runaway, not a big workload) and **one key=value log line per
+  execution** in `build/watchdog.log` — `section=` (from
+  `WATCHDOG_SECTION`, exported once per runner) and `label=` make a run
+  findable among every suite's lines, and `wall=` vs `cpu=` answers
+  slow-vs-hung after the fact (cpu≈wall is spinning, cpu≪wall is blocked).
+  Exit **124** = run timeout, **122** = memory kill, both checked EXACTLY
+  (139 is a crash, 137 an external OOM-kill; calling either a timeout sends
+  the reader hunting a slow box instead of a bug).
+- **The cheap shape** for inner loops running hundreds+ of sub-millisecond
+  executions, where watchdog's fixed per-invocation startup cost would
+  multiply the loop's runtime: coreutils `timeout "$RUN_SECS"` with the
+  number precomputed from `gen_run_secs` (`tests/harness/run.sh`'s per-cell
+  runs), or python `subprocess.run(..., timeout=RUN_TIMEOUT)` reading `bash
+  tests/lib/gen_timeout.sh runsecs` (`tests/vm/vm_oracle.py`). The NUMBER is
+  shared even where the wrapper is not.
+
+`tests/bench` stays excluded for the same reason it is excluded from the
+compile rule: its budgets ARE its measurement.
+
+**Its own checks**: `tests/lib/run_gen_timeout_tests.sh` (in `make test`;
+read the count from a run, not from here). A positive control proves the
+wrapper FIRES on a real over-budget compile and names the case; a coverage
+assertion proves every suite routes through the one helper, which is the
+check that survives future work, since a new compile site added without the
+wrapper is the realistic way this protection erodes. Sabotage S43. The two
+added with the pcrec budget hold it the same way: one asserts the per-axis
+numbers and the overrides, and one greps `run.sh` for a hand-rolled numeric
+timeout on `$PCREC` — a literal is exactly how this reverts. The run bound
+gets the full mirror: per-axis budget/override checks, a fire control on a
+REAL over-budget run (`(a*)*b` under `--engine=vm` with the step budget
+sized so the natural run is ~5s — budget-bound, so the control terminates
+instead of hanging even if the wrapper breaks), an oracle-verified
+pass-through control, a run-coverage list that grows as suites adopt, and
+the hand-rolled-number grep on the harness's per-cell run site. There is
+deliberately NO memory-kill sibling control there: no real generated
+artifact can runaway on RSS (allocation-free), so the 122 path's positive
+control lives in `scripts/test_watchdog.sh` where a synthetic allocator is
+honest rather than a stub pretending to be an artifact.
 
 ### The pathology D45 was ruled over, and the compiler-side bound
 

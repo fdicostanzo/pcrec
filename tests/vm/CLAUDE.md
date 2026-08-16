@@ -214,10 +214,15 @@ nullable body. MEASURED: the growth is cleanly quadratic (0.146 s at 25 KB,
 the full 1 MB cell **terminates in 228.5 s with the correct answer**, against
 a 224 s prediction from the law. Terminating, correct, quadratic.
 
-**HARNESS GAP, flagged for the manager rather than fixed here:** this suite has
-no per-RUN timeout on generated matchers. D45 bounds every COMPILE of emitted
-C and nothing bounds its EXECUTION, so a matcher that is merely slow reads as a
-hang for as long as it takes — which is exactly how this cell consumed nine
-minutes of a battery before anyone looked. The local fix is applied (this
-cell runs at `CLIFF_N=10000`, where it finishes in 0.033 s); the general one
-is not this lane's to make.
+**HARNESS GAP — CLOSED 2026-08-16 (twenty-fifth session).** As flagged: this
+suite had no per-RUN timeout on generated matchers — D45 bounded every
+COMPILE of emitted C and nothing bounded its EXECUTION, which is exactly how
+this cell consumed nine battery minutes before anyone looked (the local fix,
+`CLIFF_N=10000`, remains). The general mechanism is now
+`tests/lib/gen_timeout.sh`'s `gen_run` (D45 second addendum): every
+shell-level matcher execution in `run_vm_tests.sh` routes through it
+(watchdog-backed — axis-aware run budget, RSS ceiling, one `section='vm'`
+log line per run in `build/watchdog.log`), and `vm_oracle.py`'s inner loop
+is bounded by `subprocess timeout=` reading the same `runsecs` number.
+Controls live in `tests/lib/run_gen_timeout_tests.sh`, including a fire
+control on a real budget-bound slow run.

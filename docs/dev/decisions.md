@@ -3937,6 +3937,26 @@ replication kept as the forced-strategy semantic ground truth for the
 pcrec-vs-pcrec differential. The D45 timeout + size-cap remain the
 standing guards; the cap's diagnostic may point at the row.
 
+**D45 second addendum (2026-08-16, twenty-fifth session): EXECUTION of
+generated matchers joins the rule.** The original ruling bounded every
+compile and nothing bounded a matcher's run, so a merely-slow run read as
+a hang (nine battery minutes on the [ENG-BREP] quadratic cell, and the
+diagnosis had to be made by hand afterward). Same rule, same one
+implementation: `gen_run_secs` (10 s plain / 60 s sanitizer,
+GENRUNTIMEOUT/GENRUNTIMEOUT_SAN) in tests/lib/gen_timeout.sh, applied as
+`gen_run` (scripts/watchdog-backed: adds a 512m peak-tree-RSS ceiling,
+GENRUNMEM, and one section-tagged log line per execution in
+build/watchdog.log) at per-pattern run sites, and as bare
+`timeout`/`subprocess timeout=` reading the same number inside
+hundreds-of-runs inner loops where a wrapper's fixed cost would multiply
+the loop (tests/harness per-cell, vm_oracle.py). Exit 124 run-timeout /
+122 memory-kill are loud failures checked exactly. tests/bench stays
+excluded (its budgets ARE its measurement). Fire/pass-through/coverage
+controls in run_gen_timeout_tests.sh; watchdog's own mechanics in
+scripts/test_watchdog.sh. Same revisit-when as the parent ruling: a
+LEGITIMATE run measured needing more raises the default WITH the
+measurement recorded.
+
 ## D46 — every strategy-selection point is OBSERVABLE and FORCEABLE (Frank, 2026-08-15, twenty-first session)
 
 Ruled during the [ENG-BREP] discussion, generalizing R21 E-6's

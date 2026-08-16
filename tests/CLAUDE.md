@@ -9,6 +9,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`, axis derived from the flags):
   every compile of emitted C in the tree runs through its `gen_cc`, and
   exceeding the budget is a loud FAILURE naming the case, never a hang.
+  Since 2026-08-16 (D45 second addendum) it also owns the EXECUTION budget
+  for generated matchers — `gen_run_secs`/`gen_run` (scripts/watchdog-backed:
+  run timeout + RSS ceiling + a section-tagged log line per run in
+  `build/watchdog.log`) at per-pattern sites, the bare number at
+  high-count inner loops; see lib/CLAUDE.md and docs/testing.md.
   `run_gen_timeout_tests.sh` is its own section in `make test` — a positive
   control that the wrapper FIRES, plus a coverage assertion that every suite
   routes through it, because a test-infrastructure property is invisible to
