@@ -8593,3 +8593,51 @@ next rungs rung-select, counter-K (which also owes the E-5 charge and
 retires K22). [SIMD-META] awaits Frank's start. Owed: tests/vm per-run
 timeout mechanism (manager); mk_d27_cell.sh allowlist; M4.7 wording
 pass; R24 NOTED residuals.
+
+## 2026-08-16 (EDT), twenty-fifth session — scripts/watchdog lands (Frank's ask): timeout + memory supervisor with per-execution logging
+
+Frank opened the session asking for a `timeout`-like process supervisor
+("watchdog") adding memory limiting, per-execution logging, env-var/CLI
+config, exit-code pass-through, Makefile-friendliness. Prior-art survey:
+runlim/runsolver (SAT community) are the closest shape but unpackaged
+here; RLIMIT_AS rejected (caps VA not RSS — ASan's ~20 TB reservation
+would trip instantly; can't aggregate a tree or record a peak);
+systemd-run/cgroups rejected as heavy for dev tooling. Built our own:
+one sonnet lane, worktree, merged at 8cbaa6f.
+
+**Delivered:** scripts/watchdog (bash, ~350 lines) — `-l label -s secs
+-m mem -k grace -i interval -L log`, WATCHDOG_* env channel (CLI wins),
+metrics-only mode when no limits given, setsid process-group isolation
+with TERM->grace->KILL of the whole tree, /proc-polling tree RSS + CPU,
+single flock-protected key=value log line per execution, exit codes
+child-verbatim / 128+N / 124 timeout / 122 memkill / 125 internal /
+126/127. scripts/test_watchdog.sh: 12/12 assertions, every case bounded
+by coreutils `timeout`, never by watchdog itself (the check-design
+lesson: a control must not share a mechanism with what it controls).
+Lane's build found four bash traps worth remembering: per-poll fork
+cost fakes wall time; $() strips the trailing newline off a log line;
+`read < file 2>/dev/null` doesn't silence a failed redirect (group it);
+bash's async job-notify for signal-killed children isn't suppressible
+at any single `wait` — the parent must re-route its own fd 2 after
+forking the child.
+
+**Manager review:** independent self-test re-run 12/12; real-world
+smoke wrapped a normal compile (verdict=ok wall=0.07) and the K22
+depth-40 vm repro — killed at -s 5 with wall=5.32 cpu=4.99, the
+cpu~wall "spinning" signature visible in the log line, i.e. the tool
+answers the slow-vs-hung question the twenty-fourth session had to
+answer by hand. Known minor artifacts, accepted: sub-interval children
+can log peak_rss_kb=0 (sampling, same class as the documented spike
+limitation); usage text extracted by a fixed sed line-range (fragile if
+the header shifts); peak CPU undercounts across sequential children
+(best-effort per brief). make smoke green 6/6 on the merged tree.
+
+**Not done, deliberately:** wiring into make test / the tests/vm
+harness. Watchdog is the natural mechanism for the owed per-RUN timeout
+on generated matchers (D45 bounds compiles only), but that wiring is
+its own change with its own review — still owed, still manager-tier.
+Also left out at medium effort (re-openable): cgroup hard caps,
+CPU-time limit flag, stall (no-output) detection.
+
+**State:** HEAD 8cbaa6f pushed, worktree/branch/cron torn down. Counts
+unchanged (corpus 5,784, cli 257, known_fail empty). K-list unchanged.
