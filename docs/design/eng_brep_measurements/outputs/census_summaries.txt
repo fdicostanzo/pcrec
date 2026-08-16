@@ -1,0 +1,64 @@
+# ENG-BREP design lane -- archived probe output
+#
+# Verdict tallies for both censuses above, corpus first then realistic.
+#
+date:        2026-08-16T00:52:27Z
+repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+<sys>:0: FutureWarning: Possible nested set at position 1
+<sys>:0: FutureWarning: Possible nested set at position 2
+# --- corpus verdicts ---
+#   bounded/no                     246
+#   bounded/possessifiable         55
+#   no-quantifier                  263
+#   unbounded/no                   1296
+#   unbounded/possessifiable       128
+#   unparsed-by-python-re          112
+# --- reasons ---
+#   overlap                        1359
+#   nullable-body                  177
+#   disjoint+unique-iteration      169
+#   exact-count+unique-iteration   14
+#   not-prefix-free                6
+# patterns in 756, unparsed by python re 112
+#   unparsed '\\h+': bad escape \h at position 0
+#   unparsed '\\H+': bad escape \H at position 0
+#   unparsed '\\V+': bad escape \V at position 0
+#   unparsed '\\N+': missing { at position 2
+#   unparsed '[\\h\\d]+': bad escape \h at position 1
+#   unparsed '^\\N{2,3}$': undefined character name '2,3' at position 1
+#   unparsed '\\N{2}': undefined character name '2' at position 0
+#   unparsed '\\N{3,2}': undefined character name '3,2' at position 0
+#   unparsed '\\N{abc}': undefined character name 'abc' at position 0
+#   unparsed '[\\N]': missing { at position 3
+#   unparsed '[0-\\d]': bad character range 0-\d at position 1
+#   unparsed '(?[[a]])': unknown extension ?[ at position 1
+#   unparsed '[\\400]': octal escape value \400 outside of range 0-0o377 at position
+#   unparsed '[\\777]': octal escape value \777 outside of range 0-0o377 at position
+#   unparsed '[a-\\1]': bad character range a-\1 at position 1
+#   unparsed '[0-\\12]': bad character range 0-\1 at position 2
+#   unparsed '[\\k-\\g]': bad escape \k at position 1
+#   unparsed '[\\8]': bad escape \8 at position 1
+#   unparsed '[\\9]': bad escape \9 at position 1
+#   unparsed '[\\g]': bad escape \g at position 1
+#   unparsed '[\\k]': bad escape \k at position 1
+#   unparsed '[^\\k]': bad escape \k at position 2
+#   unparsed '[\\g\\k]': bad escape \g at position 1
+#   unparsed '[\\81]': bad escape \8 at position 1
+#   unparsed '[\\89]': bad escape \8 at position 1
+# --- corpus verdicts ---
+#   bounded/no                     15
+#   bounded/possessifiable         69
+#   unbounded/no                   15
+#   unbounded/possessifiable       7
+# --- reasons ---
+#   exact-count+unique-iteration   52
+#   overlap                        27
+#   disjoint+unique-iteration      24
+#   not-prefix-free                3
+# patterns in 40, unparsed by python re 0
