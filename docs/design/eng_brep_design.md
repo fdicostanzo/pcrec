@@ -1,6 +1,58 @@
 # ENG-BREP — the bounded-repeat emission strategy
 
-**STATUS: PROPOSED.** Design note for the `[ENG-BREP]` plan row, written
+**STATUS: PROPOSED, AMENDED PER R24 (2026-08-15/16)** —
+`../dev/reviews/2026-08-15-r24-eng-brep.md`. Three read-only critics
+(soundness, measurements-vs-prose, consistency). **The central result HELD and
+was strengthened; one design claim was REFUTED and five were narrowed.**
+
+What held, and by more than this note could show. The repaired
+possessification rule of §2.2 — unique-iteration + non-nullable +
+disjoint-or-exact — is sound for GREEDY quantifiers against **libpcre2** as
+well as python, at 0 counterexamples over the full 5,016 × 260 family with an
+identical possessifiable population; that closes §8 item 6's own disclosed gap
+from the outside. §2.2's transitive-FOLLOW line — which §8 item 8 nominated as
+"the single most likely place for a soundness bug to be hiding" — survived a
+42,336-pair targeted attack at 0 divergences, with failing-direction controls
+confirming it is load-bearing rather than inert. Both censuses in §2.6 recount
+exactly from raw data and are robust to leave-one-out. All four plan-row
+requirements were confirmed accurately discharged.
+
+**What did NOT survive: §2.3's lazy paragraph.** The note claimed greedy, lazy
+and possessive agree on the span whenever the disjointness arm applies. They
+do not: on a NULLABLE remainder the follow's first-byte test is vacuous, and a
+lazy quantifier stops at the bottom of the exit chain where a greedy one tops
+out. 316 diverging cells, both oracles agreeing; `a{1,3}?` on `"aaaa"` is
+`(0,1)` lazy and `(0,3)` possessive. §2.2's rule now carries a lazy-only
+conjunct, §2.3 states the corrected argument, and §2.4 runs the lazy family
+that this lane's probe structurally could not — its helper returned `None` for
+every lazy row, because a lazy quantifier has no possessive spelling, and
+nothing in the output said half the question was unasked. **No live
+miscompile: nothing is implemented.** This is the design-first process
+catching a defect before an emitter exists, which is what it is for.
+
+Five narrowings, applied: `$` in the follow is promoted from BELIEVED to
+MEASURED-WITH-GATE (safe at 0/720, unsafe at 180/720 under `(?m)`, so the gate
+must be a live check — §2.5); §3.4's capture derivation regains the
+ZERO-ITERATION clause the archived probe had and the prose dropped, 42% of its
+own validated population (§3.4); §2.7's "the probe is wrong in the right
+direction" is qualified to CATEGORIES, with the structural reason pcrec itself
+is exact for caseless (§2.7); §6's instrument is disclosed as span-only and
+python-only, and the panel's captures-aware three-way rebuild confirms the
+claim at 15,600 cells (§6); and U9 is cited where the oracle choice matters
+(§2.4, §5.3). §5.3's greedy-AND-lazy sweep is now mandatory rather than
+advisory.
+
+Four measurement discrepancies, all in the rung census, all fixed by
+re-derivation with a COMMITTED script (`probes/census_rungs.py`,
+`probes/probe_cell33.sh`) — and the shared cause is recorded in §10.1: an
+uncommitted `sort -u` pipeline running under a UTF-8 locale, whose collation
+merges strings differing only in punctuation, which is close to a worst case
+for a corpus of regexes. §3.2 and §7 carry the corrected figures.
+
+Sections carry **[R24]** markers where the panel's finding is what changed
+them.
+
+Design note for the `[ENG-BREP]` plan row, written
 DESIGN-FIRST and panel-eyed before any implementation lane opens, on the
 scheduling precedent K18 set at the R21/R23 close. **This note is not the
 fix.** It carries the analysis, the strategy ladder, the measurements that
@@ -30,10 +82,12 @@ argument I find convincing but did not reduce to either of the other two).
 R21's and R23's shared lesson is that panels break what is BELIEVED, so the
 marks point at the soft places rather than making the note look strong.
 
-### 0.2 Four things this lane refuted, three of them its own
+### 0.2 Six things refuted here, five of them this note's own
 
 Put first, because a note whose refutations are buried reads as an advocacy
-document.
+document. Items 1–4 are this lane's; items 5–6 were found by R24 and are
+listed with the rest rather than quarantined in the panel block, because a
+reader deciding how much to trust this note should see them together.
 
 1. **The possessification analysis as the plan row states it is UNSOUND.**
    "Body's consumable set disjoint from the follow's first set → giveback is
@@ -42,7 +96,7 @@ document.
    in two places. §2.4. The repair — the body must also admit a UNIQUE
    iteration — is the analysis this note actually proposes, and it survives
    the same differential at 0 counterexamples over 5,016 patterns × 260
-   subjects.
+   subjects, and (R24) at 0 against libpcre2 as well.
 
 2. **A zero-width assertion in the follow breaks the first-set model.**
    MEASURED: `[ab]{0,4}\b` on `"abc"` matches `(0,0)` greedy and `(3,3)`
@@ -67,6 +121,21 @@ document.
    is new, is that the compiler's own cost on the erased path is
    **quadratic** in the unrolled count — 0.012 s at N=64 to 2.689 s at
    N=4000 — and that it lives in a different module than this row. §1.4.
+
+5. **This note's own LAZY extension was unsound** [R24 S-F1, the panel's one
+   design-level hit]. §2.3 claimed greedy, lazy and possessive agree on the
+   span under the disjointness arm; on a nullable remainder they do not, at
+   316 measured cells. The rule now carries a lazy-only conjunct. The probe
+   could not have caught it: it compared each pattern against a possessive
+   respelling, and a lazy quantifier has no possessive spelling, so the helper
+   that noticed returned `None` and the family vanished from the differential
+   without a word in the output. §2.3, §2.4, §10.1.
+
+6. **Every "distinct" figure in the rung census was an undercount** [R24
+   M-F1/M-F2], because an uncommitted `sort -u` pipeline ran under a UTF-8
+   locale whose collation treats `\d+` and `[\d]+` as the same string. 11
+   distinct patterns was 15; 311/111/96 was 398/191/148. The stamp tallies,
+   which never passed through `sort -u`, were right all along. §3.2, §10.1.
 
 ### 0.3 The design, in brief
 
@@ -619,6 +688,17 @@ justified on its own terms — which §2.3 does and §2.4 checks — and any pla
 the two engines possessify different sets is not a compatibility defect,
 because both compute the same answers.
 
+**Where this note's rule and pcrec's own prior design disagree** [R24 C-F1].
+`engine_m4.md` §6.3 names disjoint-follow possessification as "the one real
+piece of new analysis M4.6 owes" and states it in exactly the form §2.4
+measured unsound; §6.4's status table calls it "designed, built M4.6". Both
+are now annotated in place to point here, and §2.5's `z(ab)*y` example is
+annotated as surviving (its body is non-nullable and admits a unique
+iteration, so the repaired rule admits it too). The DELIVERY seam that
+document specifies — §5.2's `discharge` hook, §2.8 above — is unaffected; what
+changed is only that the analysis behind the hook is bigger than a first-set
+comparison.
+
 Two differences worth recording so a later reader does not assume parity.
 PCRE2's analysis works on compiled opcodes and handles a fixed repertoire of
 item shapes; the one proposed here works on the AST before lowering and keys
@@ -726,19 +806,44 @@ misattributing them, and reports the count so the loss is visible.)
 
 ### 3.3 The motivating cell, reproduced
 
-`((a)|b){0,4000}c`, three ways, at commit 0a082ea:
+N = 4000, three ways. **Every cell below comes from ONE serial run of
+`probes/probe_cell33.sh`** (`outputs/cell33_motivating_cell.txt`), with the
+`engine` column read out of `--emit-ir`'s own header per row so that no row
+can claim a rung the compiler did not take:
 
-| | emitted lines | pcrec | gcc −O2 |
-|---|---|---|---|
-| VM, captures, replicated | 113,572 | 2.7 s | > 240 s (timeout) |
-| capture-ERASED (`--no-captures`, DFA) | 1,378 | 2.7 s | 0.098 s |
-| choice-free body `(?:ab){0,4000}y` (cursor rung) | 2,628 | 1.6 s | 0.215 s |
+| | pattern | engine | emitted lines | pcrec | gcc −O2 |
+|---|---|---|---|---|---|
+| replicated | `((a)\|b){0,4000}c` | vm | 113,549 | 2.72 s | **> 300 s (timeout)** |
+| capture-ERASED (`--no-captures`) | `((a)\|b){0,4000}c` | dfa | 1,378 | 2.62 s | 0.118 s |
+| span-loop cursor | `(ab){0,4000}y` | vm | 2,822 | 1.62 s | 0.219 s |
 
-The erasure cell is real and it is an 82× reduction in emitted lines. §1.4
-corrects what it costs. Note the third row: a body with no choice point never
-replicates in the emitter at all, which is why `a{0,65535}` and
+The erasure cell is real and it is an **82× reduction in emitted lines**. §1.4
+corrects what it costs — the cost moves from gcc to pcrec rather than
+vanishing. Row 3 is the point of §2's whole argument in miniature: a body with
+no choice point never replicates in the emitter, which is why `a{0,65535}` and
 `(?:ab){0,9999}` have never been a problem and why the cap's diagnostic
 already names "remove the alternation" as the fix.
+
+**Two things about this table were wrong before [R24 M-F4]**, and both are
+worth stating because they are ordinary rather than exotic.
+
+Its three rows came from three different places — a line count from one
+archived file, a pcrec time from an unarchived transcript, a gcc time from a
+sweep run under load. Mixing sources inside one table is how a table stops
+being a measurement and starts being an assembly.
+
+And row 3 used `(?:ab){0,4000}y`, which is NON-CAPTURING. A pattern with no
+capturing group requests no captures, so it never reaches the VM at all — the
+row labelled "cursor rung" was measuring the DFA, the same engine as row 2.
+The body is `(ab)` here, and `--emit-ir` confirms `engine vm` / `rungs cursor`
+before the row is timed. (This one the panel did not catch; it surfaced on
+re-measurement, which is the argument for re-measuring rather than
+re-sourcing.)
+
+Line counts differ slightly from §1.2's table (113,549 here against 113,572
+there) because that sweep passed `--emit-main` and this one does not. Same
+compiler, same pattern, different artifact shape — stated so the two tables do
+not read as a contradiction.
 
 ### 3.4 The reverse-deterministic rung, and what it can and cannot derive
 

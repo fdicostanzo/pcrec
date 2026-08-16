@@ -1,0 +1,23 @@
+# ENG-BREP design lane -- archived probe output
+#
+# probe_cell33.sh [R24 M-F4]: the design note's S3.3 table, all three rows from ONE serial run, no --emit-main, engine read from --emit-ir per row. Replaces a table that mixed three sources and labelled a DFA artifact as the VM's cursor rung.
+#
+date:        2026-08-16T01:56:41Z
+repo commit: a62db36511b56fe6634515b100ab0fcffb81977b  (branch eng-brep-r24)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+N = 4000
+
+row	pattern	flags	engine	lines	pcrec_s	gcc_O2_s
+vm_replicated	((a)|b){0,4000}c	-	vm (forced by: capture group at pattern offset 0)	113549	2.720	TIMEOUT>300
+dfa_erased	((a)|b){0,4000}c	--no-captures	dfa (--emit-ir declined: no captures requested)	1378	2.623	0.118
+vm_cursor	(ab){0,4000}y	-	vm (forced by: capture group at pattern offset 0)	2822	1.619	0.219
+
+# No --emit-main anywhere above, and gcc compiles to an object rather
+# than linking, so every cell in this table is the same artifact shape.
+# The engine column is read from --emit-ir's own header, so a row cannot
+# claim a rung the compiler did not take.
