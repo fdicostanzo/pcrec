@@ -191,5 +191,33 @@ backtrack RESUMPTION and a possessified loop performs none. MEASURED 0.033 s at
 denied build. That is why the row runs at `CLIFF_N=10000` — at the 1 MB the
 other rows use it hung the ubsan battery for ten minutes, which is how it was
 found. Not a regression in what ships (the default engine choice's prefilter
-answers `(a*)b` outright), but a class the budget does not bound; the trade is
-flagged for a manager ruling in the lane's landing report.
+answers `(a*)b` outright), but a class the budget does not bound.
+
+**RULED (manager, 2026-08-16): land as-is; the fix-of-record is an E-5-SHAPED
+CHARGE** — one step per possessified-loop ENTRY, exactly the island-entry
+precedent §4.2 already carries, which restores budget visibility on this
+rescan shape (n start positions produce n entries, so `RX_ERR_STEPS` fires
+again). It is OWED WITH THE COUNTER-K STEP, which touches the same budget
+accounting, rather than gold-plated into the possessification landing. The
+measurement above is the motivating cell.
+
+**IT IS SLOW, NOT LOOPING, and that was established rather than assumed.** The
+cell hung a battery leg for nine minutes at 99.9% CPU and the serious reading
+had to be ruled out: a wrongly-admitted nullable body would spin forward
+charging zero steps and look identical from outside. Two independent
+disconfirmations. STRUCTURAL: the emitted loop is
+`while (rx_cur + 1 <= n && s[rx_cur] == 'a') { rx_cur += 1; }` — the cursor
+strictly increases and is hard-bounded by `n`, so it cannot spin, which is
+§6's termination argument holding exactly because §2.2 refuses to possessify a
+nullable body. MEASURED: the growth is cleanly quadratic (0.146 s at 25 KB,
+0.566 s at 50 KB, 2.265 s at 100 KB, 8.944 s at 200 KB — 4x per doubling) and
+the full 1 MB cell **terminates in 228.5 s with the correct answer**, against
+a 224 s prediction from the law. Terminating, correct, quadratic.
+
+**HARNESS GAP, flagged for the manager rather than fixed here:** this suite has
+no per-RUN timeout on generated matchers. D45 bounds every COMPILE of emitted
+C and nothing bounds its EXECUTION, so a matcher that is merely slow reads as a
+hang for as long as it takes — which is exactly how this cell consumed nine
+minutes of a battery before anyone looked. The local fix is applied (this
+cell runs at `CLIFF_N=10000`, where it finishes in 0.033 s); the general one
+is not this lane's to make.

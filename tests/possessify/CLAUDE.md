@@ -153,11 +153,20 @@ build gives up in constant time after 1M steps.
 It is not a regression in what SHIPS: under the default engine choice §4.7's
 ordering rule applies, the prefilter answers `(a*)b` outright and the VM never
 scans. The exposure is `--engine=vm`, which turns the prefilter off on purpose
-(R21 E-6) and is a diagnostic mode. But the trade — a fast honest give-up
-becomes a correct slow answer — is a robustness posture D22 rules on, so it is
-a manager call rather than this lane's. It is how the finding surfaced, too:
-the check that measures it hung the ubsan battery for ten minutes before the
-size was dropped to 10 KB.
+(R21 E-6) and is a diagnostic mode.
+
+**RULED (manager, 2026-08-16): land as-is.** The fix-of-record is an
+E-5-SHAPED CHARGE — one step per possessified-loop ENTRY, the island-entry
+precedent §4.2 already carries — OWED WITH THE COUNTER-K STEP, which touches
+the same accounting. Not gold-plated into this landing.
+
+**SLOW, NOT LOOPING**, and the difference was established rather than assumed,
+because a wrongly-admitted nullable body would spin forward charging zero
+steps and look identical from outside. The emitted loop's cursor strictly
+increases under a hard bound (§6's termination argument holding exactly
+because §2.2 refuses a nullable body), the growth is cleanly quadratic, and
+the full 1 MB cell terminates in 228.5 s with the correct answer. See
+tests/vm/CLAUDE.md for the numbers.
 
 ## A note for whoever runs this suite alongside something else
 

@@ -1,0 +1,47 @@
+# K22 REPRO — nested bounded repeats hang the COMPILER under --engine=vm
+#
+# PRE-EXISTING, not [ENG-BREP]'s. Reproduced identically on main 949f867, a
+# build with ZERO possessify symbols (`nm build/pcrec | grep -c possessify`).
+# Found by this lane while probing the possessification pass's own compile-time
+# behaviour on large bodies; recorded here so the manager can file the row from
+# exact text rather than from a description.
+#
+# THE PRECONDITION IS `--engine=vm`, AND THAT IS WHY IT DOES NOT REPRODUCE BY
+# DEFAULT. On the default path every depth below refuses INSTANTLY (0.11 s)
+# with "pattern too large (NFA exceeds 131072 states)" -- the NFA state cap is
+# an accidental guard that fires long before anything else can. `--engine=vm`
+# SKIPS building the NFA/DFA pair entirely (src/core/compile.c, the R21 E-6
+# prefilter-off behaviour), so that guard never runs.
+#
+# WHAT THEN HAPPENS. `A_REP` replicates its body, and nested bounded repeats
+# MULTIPLY: `vm_count_slots` recurses `copies` times per level, so a depth-d
+# tower of `{0,2}` walks 2^d. `PCREC_MAX_VM_NODES` is checked AFTER that
+# pre-pass, so above a certain depth the check is never reached and the
+# compiler spins with no diagnostic. This is eng_brep_design.md §7's own named
+# known-risk interaction: "bounded repeat nested inside a bounded repeat, where
+# the replication factors MULTIPLY and `v.maxcopies` currently records only the
+# max".
+#
+# The leading `(x)` is NOT required -- a pure non-capturing tower hangs the
+# same way under `--engine=vm`. It is kept below only because that is the shape
+# this lane measured.
+#
+# MEASURED, main 949f867 and this branch alike, `--engine=vm`:
+#   depth 10  ( 95 chars)  compiles          0.11 s
+#   depth 15  (140 chars)  compiles          0.32 s
+#   depth 20  (185 chars)  refuses cleanly   0.82 s   "VM exceeds 131072 emitted nodes"
+#   depth 25  (230 chars)  refuses cleanly   1.11 s
+#   depth 30  (275 chars)  refuses cleanly  11.82 s   <- the refusal itself is now slow
+#   depth 35  (320 chars)  HANGS            >30 s     no diagnostic
+#   depth 40  (365 chars)  HANGS            >30 s     no diagnostic
+#
+# Reproduce:  build/pcrec --engine=vm -o /tmp/out.c -- "$(sed -n 'Np' this-file)"
+
+# depth 15, 140 chars
+(x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
+# depth 30, 275 chars
+(x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
+# depth 35, 320 chars
+(x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
+# depth 40, 365 chars
+(x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z

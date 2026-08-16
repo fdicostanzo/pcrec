@@ -8429,6 +8429,33 @@ flag sizes both the frame and trail arrays and the trail genuinely still grows
 per iteration. Correct and over-allocated, not wrong; splitting the flag is a
 small follow-on nobody needs yet.
 
+**Manager rulings at landing (2026-08-16).** The step-budget finding LANDS
+AS-IS, emitter untouched, so the battery stays valid; the fix-of-record is an
+E-5-shaped charge (one step per possessified-loop ENTRY, the island-entry
+precedent §4.2 already carries) OWED WITH THE COUNTER-K STEP, which touches
+the same accounting. All three reported deviations accepted pending merge
+review. And the finding was run to ground rather than left as a suspicion: the
+cell hung a battery leg for nine minutes, and "slow" vs "looping" had to be
+separated because a wrongly-admitted nullable body would spin forward charging
+zero steps and look identical from outside. It is SLOW — the emitted cursor
+strictly increases under a hard bound (§6's termination argument holding
+because §2.2 refuses nullable bodies), growth is cleanly quadratic (0.146 /
+0.566 / 2.265 / 8.944 s at 25/50/100/200 KB), and the full 1 MB cell
+terminates in 228.5 s with the correct answer against a 224 s prediction.
+
+**Two gaps flagged for the manager, neither fixed here.** (1) The vm harness
+has NO PER-RUN TIMEOUT on generated matchers — D45 bounds every compile of
+emitted C and nothing bounds its execution, so a merely-slow matcher reads as
+a hang for as long as it takes, which is how that nine minutes was spent. The
+local fix is applied (the cell runs at 10 KB); the mechanism is not this
+lane's. (2) K22, and the reason it did not reproduce for the manager: the
+precondition is `--engine=vm`. On the default path every depth refuses
+INSTANTLY at the NFA 131072-state cap, an accidental guard; `--engine=vm`
+skips building the NFA/DFA pair entirely (R21 E-6) so that guard never runs,
+and `vm_count_slots`'s 2^depth replication walk is then unbounded before
+`PCREC_MAX_VM_NODES` is checked. Exact patterns at all four depths:
+`docs/design/possessify_impl/k22_repro.txt`.
+
 **Owed / next.** Module `assertions` inherits D47.5's obligation (a `(?m)`
 pattern whose `$`-follow quantifier must NOT possessify) — the gate is live in
 the code and has no population to test against today. §2.7's subsumption
