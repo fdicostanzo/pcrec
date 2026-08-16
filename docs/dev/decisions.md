@@ -3931,8 +3931,31 @@ plain (then raise with the measurement recorded here, not silently).
 FIRED 2026-08-16 (twenty-fifth session): plain raised 5s → 10s on the
 k18_cost_gates.rxt measurement — a legitimate 6,433-line artifact at
 2.53s quiet crossed 5s under `make -j12` contention, failing one battery
-run nondeterministically. Full measurement in docs/testing.md's D45
-section; the sanitizer axis and the ruling itself are unchanged.
+run nondeterministically. Superseded the same day by the third addendum
+below.
+
+**D45 third addendum (Frank, 2026-08-16, twenty-fifth session): the
+budget is CPU-PRIMARY with a wall backstop.** The k18_cost_gates flake
+exposed that wall time measures scheduling, not work: the compile needs
+2.53s of CPU on any load, and only its wall time moved under -j12.
+Ruling: a CPU-time budget (GENCPU 5s plain / GENCPU_SAN 60s — Frank's
+original "maybe 5s" calibration, now attached to the right clock;
+integer seconds, RLIMIT_CPU soft so the death is a clean SIGXCPU
+distinguishable from an OOM-kill) is the PRIMARY bound for generated-code
+compiles AND matcher executions (watchdog -c, exit 123,
+verdict=cpukill); the wall bound remains as a loose BACKSTOP
+(GENTIMEOUT 60s / GENTIMEOUT_SAN 180s — sized above CPU budget × worst
+contention so the verdict never lies about which failure happened) for
+the stuck-without-working class CPU cannot see (blocked, deadlocked).
+Two bounds, two failure classes, two diagnoses — the DD-2 step/frames
+precedent applied to the harness itself. gen_run's own wall backstop
+stays tight at 10s/60s (legitimate runs are three orders of magnitude
+below it; a tight backstop bounds waste, and the log line's cpu= field
+disambiguates any verdict mislabel). Cheap-shape inner-loop sites stay
+wall-only (their legit costs never approach the bound, so the
+contention-flake geometry cannot arise). Controls: four fire controls in
+run_gen_timeout_tests.sh (CPU + backstop, compile + run) and the
+spinner/sleeper discriminator pair in scripts/test_watchdog.sh.
 
 **D45 addendum (2026-08-15, same session):** the endgame for the
 pathological class is ruled and queued as plan row [ENG-BREP] — the

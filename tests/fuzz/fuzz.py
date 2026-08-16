@@ -67,6 +67,29 @@ def _gen_timeout():
 CC_TIMEOUT = _gen_timeout()
 
 
+# CPU-primary compile budget (D45 third addendum, 2026-08-16): CC_TIMEOUT
+# above is now the loose wall BACKSTOP; the tight, load-independent bound is
+# CPU time, applied to GENERATED-code compiles via a bash ulimit shim (soft
+# RLIMIT_CPU -> clean SIGXCPU; not preexec_fn, unsafe with pools). The
+# oracle-shim and driver-template compiles are hand-written C, not emitted —
+# outside D45's scope, left on the wall backstop alone.
+def _cpu_timeout():
+    import subprocess as _sp
+    try:
+        r = _sp.run(["bash", os.path.join(REPO_ROOT, "tests", "lib", "gen_timeout.sh"),
+                     "cpusecs"], capture_output=True, text=True, timeout=30)
+        return int(r.stdout.strip())
+    except Exception:
+        return 5
+
+CPU_TIMEOUT = _cpu_timeout()
+
+def _cpu_limited(argv):
+    return ["bash", "-c",
+            'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; exec "$@"',
+            "_", str(CPU_TIMEOUT)] + argv
+
+
 # EXECUTION is bounded too (gen_run_secs, same file): a merely-slow generated
 # matcher (or the oracle binary) must read as a FAILURE, not a hang. This
 # inner loop runs one subprocess per fuzzed pattern/subject cell, so the
@@ -553,7 +576,7 @@ def compile_and_link(tmp_dir, driver_o):
     # the fuzzer's whole value is that every pattern it tries produces a
     # verdict, and an uncaught TimeoutExpired would end the run instead.
     try:
-        r = subprocess.run([CC] + GENCFLAGS + ["-c", "-I", tmp_dir, "-o", gen_o, gen_c],
+        r = subprocess.run(_cpu_limited([CC] + GENCFLAGS + ["-c", "-I", tmp_dir, "-o", gen_o, gen_c]),
                             capture_output=True, text=True, timeout=CC_TIMEOUT)
     except subprocess.TimeoutExpired:
         return None, ("GCC-TIMEOUT: compiling generated C exceeded %ds "
@@ -561,7 +584,7 @@ def compile_and_link(tmp_dir, driver_o):
     if r.returncode != 0:
         return None, "GCC-COMPILE-FAIL: " + r.stderr[:500]
     try:
-        r = subprocess.run([CC, "-o", exe, gen_o, driver_o],
+        r = subprocess.run(_cpu_limited([CC, "-o", exe, gen_o, driver_o]),
                             capture_output=True, text=True, timeout=CC_TIMEOUT)
     except subprocess.TimeoutExpired:
         return None, ("GCC-TIMEOUT: linking generated C exceeded %ds "

@@ -38,6 +38,13 @@
 #              findable among thousands of lines. Best set once per runner
 #              via WATCHDOG_SECTION; every invocation underneath inherits it.
 #   -s SECS    wall-clock timeout (integer or decimal seconds)
+#   -c SECS    CPU-time limit for the whole process tree (summed utime+stime
+#              across the tree, sampled). CPU is load-independent: a busy box
+#              stretches wall time but not the work a child actually does, so
+#              -c is the right primary bound for "is it doing too much work"
+#              while -s catches "stuck without working" (blocked, deadlocked
+#              -- burns no CPU, only wall can see it). Known undercount:
+#              sequential children that exit drop out of the sampled sum.
 #   -m MEM     peak tree RSS limit. Suffix k/m/g (case-insensitive), optional
 #              trailing 'b' (10mb, 512K, 2g all valid); no suffix = bytes.
 #              k/m/g are binary (1024-based), matching /proc's kB unit.
@@ -47,18 +54,19 @@
 #              its directory is created if missing)
 #   -h         this usage text
 #
-# If NEITHER -s/WATCHDOG_TIMEOUT nor -m/WATCHDOG_MEM is given, watchdog runs
-# in metrics-only mode: it supervises and logs but never kills.
+# If NONE of -s/WATCHDOG_TIMEOUT, -c/WATCHDOG_CPU, -m/WATCHDOG_MEM is given,
+# watchdog runs in metrics-only mode: it supervises and logs but never kills.
 #
 # Env vars (Makefile-friendly; CLI flags win over these):
-#   WATCHDOG_LABEL WATCHDOG_SECTION WATCHDOG_TIMEOUT WATCHDOG_MEM
-#   WATCHDOG_GRACE WATCHDOG_INTERVAL WATCHDOG_LOG
+#   WATCHDOG_LABEL WATCHDOG_SECTION WATCHDOG_TIMEOUT WATCHDOG_CPU
+#   WATCHDOG_MEM WATCHDOG_GRACE WATCHDOG_INTERVAL WATCHDOG_LOG
 #
 # Exit codes:
 #   <child's own exit code>   passed through verbatim
 #   128+N                     child was killed by signal N (its own doing,
 #                             not watchdog's — e.g. it segfaulted)
 #   124                       watchdog wall-clock timeout kill
+#   123                       watchdog CPU-time kill
 #   122                       watchdog memory (peak-RSS) kill
 #   125                       watchdog internal error (bad args, etc.)
 #   126 / 127                 COMMAND found-but-not-executable / not-found
@@ -96,17 +104,19 @@ die_usage() {
 opt_label=""
 opt_section=""
 opt_timeout=""
+opt_cpu=""
 opt_mem=""
 opt_grace=""
 opt_interval=""
 opt_log=""
-have_l=0 have_S=0 have_s=0 have_m=0 have_k=0 have_i=0 have_L=0
+have_l=0 have_S=0 have_s=0 have_c=0 have_m=0 have_k=0 have_i=0 have_L=0
 
-while getopts ":l:S:s:m:k:i:L:h" opt; do
+while getopts ":l:S:s:c:m:k:i:L:h" opt; do
     case "$opt" in
         l) opt_label="$OPTARG"; have_l=1 ;;
         S) opt_section="$OPTARG"; have_S=1 ;;
         s) opt_timeout="$OPTARG"; have_s=1 ;;
+        c) opt_cpu="$OPTARG"; have_c=1 ;;
         m) opt_mem="$OPTARG"; have_m=1 ;;
         k) opt_grace="$OPTARG"; have_k=1 ;;
         i) opt_interval="$OPTARG"; have_i=1 ;;
@@ -133,6 +143,9 @@ section="$opt_section"
 timeout_secs="$opt_timeout"
 [ "$have_s" -eq 1 ] || timeout_secs="${WATCHDOG_TIMEOUT:-}"
 
+cpu_secs="$opt_cpu"
+[ "$have_c" -eq 1 ] || cpu_secs="${WATCHDOG_CPU:-}"
+
 mem_spec="$opt_mem"
 [ "$have_m" -eq 1 ] || mem_spec="${WATCHDOG_MEM:-}"
 
@@ -158,6 +171,9 @@ is_number() {
 
 if [ -n "$timeout_secs" ] && ! is_number "$timeout_secs"; then
     die_usage "invalid -s value: $timeout_secs"
+fi
+if [ -n "$cpu_secs" ] && ! is_number "$cpu_secs"; then
+    die_usage "invalid -c value: $cpu_secs"
 fi
 if [ -n "$grace_secs" ] && ! is_number "$grace_secs"; then
     die_usage "invalid -k value: $grace_secs"
@@ -194,6 +210,7 @@ mkdir -p "$(dirname -- "$logfile")" 2>/dev/null || {
 
 metrics_only=1
 [ -n "$timeout_secs" ] && metrics_only=0
+[ -n "$cpu_secs" ] && metrics_only=0
 [ -n "$mem_limit_kb" ] && metrics_only=0
 
 # ---- helpers ----------------------------------------------------------------
@@ -305,6 +322,11 @@ while :; do
             breach="memory limit exceeded (limit ${mem_limit_kb} kB)"
             break
         fi
+        if [ -n "$cpu_secs" ] && awk -v t="$peak_cpu_ticks" -v c="$clk_tck" -v l="$cpu_secs" 'BEGIN{exit !(t/c > l)}'; then
+            verdict="cpukill"
+            breach="CPU limit exceeded (limit ${cpu_secs}s of CPU time)"
+            break
+        fi
     fi
 
     sleep "$interval_secs"
@@ -332,6 +354,7 @@ if [ -n "$breach" ]; then
 
     case "$verdict" in
         timeout) exit_code=124 ;;
+        cpukill) exit_code=123 ;;
         memkill) exit_code=122 ;;
     esac
 else

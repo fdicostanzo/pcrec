@@ -6,10 +6,14 @@ section targets depend on.
 ## Files
 
 - **gen_timeout.sh** — D45's ONE implementation of the generated-code
-  compile budget (10s plain, 60s sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`,
-  axis derived from the flags): every compile of emitted C in the tree
-  routes through its `gen_cc`, and exceeding the budget is a loud FAILURE
-  naming the case, never a hang. Since 2026-08-16 (D45 second addendum) it
+  compile budget — CPU-PRIMARY since the D45 third addendum (2026-08-16):
+  `gen_cpu_secs` (5s plain / 60s sanitizer, `GENCPU`/`GENCPU_SAN`,
+  RLIMIT_CPU — load-independent, never flakes under -j) with
+  `gen_timeout_secs` as the wall BACKSTOP (60s/180s,
+  `GENTIMEOUT`/`GENTIMEOUT_SAN`) for the stuck-without-working class CPU
+  cannot see; axis derived from the flags. Every compile of emitted C
+  routes through its `gen_cc`, and exceeding either budget is a loud
+  FAILURE naming the case AND the clock that fired, never a hang. Since 2026-08-16 (D45 second addendum) it
   also owns the EXECUTION budget for generated matchers: `gen_run_secs`
   (10s plain, 60s sanitizer, `GENRUNTIMEOUT`/`GENRUNTIMEOUT_SAN`; also
   runnable as `bash tests/lib/gen_timeout.sh runsecs` for python callers)

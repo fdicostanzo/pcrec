@@ -246,6 +246,34 @@ else
     fail "case12: wrapped cat read '$out12', want 'stdin-payload' — stdin is being swallowed"
 fi
 
+# ---- case 13: CPU limit kills a spinner -------------------------------------
+
+log13="$SCRATCH/case13.log"
+t0=$(date +%s)
+timeout 15 "$WD" -l case13 -L "$log13" -c 1 -- sh -c 'while :; do :; done'
+rc=$?
+t1=$(date +%s)
+elapsed=$((t1 - t0))
+ok=1
+[ "$rc" -eq 123 ] || { ok=0; fail "case13: CPU spinner under -c 1 -> got $rc, want 123"; }
+[ "$elapsed" -lt 10 ] || { ok=0; fail "case13: took ${elapsed}s, want well under the outer 15s"; }
+[ "$(log_verdict "$log13")" = "cpukill" ] || { ok=0; fail "case13: verdict $(log_verdict "$log13"), want cpukill"; }
+[ "$ok" -eq 1 ] && pass "case13: -c 1 kills a CPU spinner with 123 and verdict=cpukill"
+
+# ---- case 14: the discriminator — a sleeper burns no CPU, -c must NOT fire ----
+#
+# This is what makes -c a different instrument from -s: wall time passes for
+# a sleeping child but CPU time does not, so a CPU limit smaller than the
+# child's wall duration must still let it finish. A -c implementation that
+# secretly measured wall would fail exactly here.
+log14="$SCRATCH/case14.log"
+timeout 15 "$WD" -l case14 -L "$log14" -c 1 -- sleep 3
+rc=$?
+ok=1
+[ "$rc" -eq 0 ] || { ok=0; fail "case14: sleep 3 under -c 1 -> got $rc, want 0 (sleep burns no CPU)"; }
+[ "$(log_verdict "$log14")" = "ok" ] || { ok=0; fail "case14: verdict $(log_verdict "$log14"), want ok"; }
+[ "$ok" -eq 1 ] && pass "case14: -c 1 does NOT kill a 3s sleeper — CPU limit measures work, not wall"
+
 # ---- summary --------------------------------------------------------------
 
 total=$((pass_count + fail_count))

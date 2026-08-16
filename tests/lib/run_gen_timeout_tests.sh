@@ -66,11 +66,28 @@ b_san="$(axis '-O1' '' '-fsanitize=undefined' '' '' '')"
 b_tsan="$(axis '-O1' '' '' '-fsanitize=thread' '' '')"
 b_env="$(axis '-O1' '' '' '' 9 '')"
 b_envs="$(axis '-fsanitize=address' '' '' '' '' 99)"
-if [ "$b_plain" = "10" ] && [ "$b_gen" = "60" ] && [ "$b_cf" = "60" ] \
-   && [ "$b_san" = "60" ] && [ "$b_tsan" = "60" ]; then
-    ok "D45 budgets: 10s plain (raised 2026-08-16 with the k18_cost_gates measurement — see gen_timeout.sh), 60s sanitizer, and the axis is read from ANY of the four flag variables (GENCFLAGS/CFLAGS/SANFLAGS/TSANFLAGS), so a site never has to declare which axis it is on"
+if [ "$b_plain" = "60" ] && [ "$b_gen" = "180" ] && [ "$b_cf" = "180" ] \
+   && [ "$b_san" = "180" ] && [ "$b_tsan" = "180" ]; then
+    ok "D45 wall BACKSTOP: 60s plain / 180s sanitizer (CPU-primary since 2026-08-16 — see gen_timeout.sh header), axis read from ANY of the four flag variables"
 else
-    bad "D45 budgets wrong: plain=$b_plain gencflags=$b_gen cflags=$b_cf sanflags=$b_san tsanflags=$b_tsan (expected 10/60/60/60/60)"
+    bad "D45 wall backstop wrong: plain=$b_plain gencflags=$b_gen cflags=$b_cf sanflags=$b_san tsanflags=$b_tsan (expected 60/180/180/180/180)"
+fi
+
+# ---- 1a2. the CPU-PRIMARY budget (D45 third addendum, 2026-08-16) --------
+caxis() {  # caxis <GENCFLAGS> <CFLAGS> <SANFLAGS> <TSANFLAGS> <GENCPU> <GENCPU_SAN>
+    GENCFLAGS="$1" CFLAGS="$2" SANFLAGS="$3" TSANFLAGS="$4" \
+    GENCPU="$5" GENCPU_SAN="$6" gen_cpu_secs
+}
+c_plain="$(caxis '-O1 -std=gnu11' '' '' '' '' '')"
+c_cf="$(caxis '-O1' '-fsanitize=address' '' '' '' '')"
+c_san="$(caxis '-O1' '' '-fsanitize=undefined' '' '' '')"
+c_env="$(caxis '-O1' '' '' '' 2 '')"
+c_envs="$(caxis '-fsanitize=address' '' '' '' '' 22)"
+if [ "$c_plain" = "5" ] && [ "$c_cf" = "60" ] && [ "$c_san" = "60" ] \
+   && [ "$c_env" = "2" ] && [ "$c_envs" = "22" ]; then
+    ok "D45 CPU budget (the PRIMARY bound): 5s plain / 60s sanitizer, GENCPU/GENCPU_SAN overrides — load-independent, so it never flakes under -j"
+else
+    bad "D45 CPU budget wrong: plain=$c_plain cflags=$c_cf sanflags=$c_san env=$c_env envsan=$c_envs (expected 5/60/60/2/22)"
 fi
 if [ "$b_env" = "9" ] && [ "$b_envs" = "99" ]; then
     ok "D45 budgets: GENTIMEOUT / GENTIMEOUT_SAN override, per the ruling's slow-box escape"
@@ -151,20 +168,45 @@ mkdir -p "$WORKDIR/slow"
 if ! "$PCREC" -p rx -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     bad "gen-timeout: could not build the positive-control artifact"
 else
+    # (a) CPU fire: a real compile that needs >1s of CPU, under GENCPU=1 with
+    # a generous wall — the CPU budget must kill it and say CPU, not wall.
+    # The rc is the gcc DRIVER's own report of cc1's SIGXCPU death (measured
+    # 1 or 4 depending on how gcc words it), so the assertion is on the
+    # diagnostic, plus rc != 124 (it must NOT read as a wall timeout).
     if GENCFLAGS='-O2 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
-       GENTIMEOUT=1 GENTIMEOUT_SAN='' \
+       GENCPU=1 GENCPU_SAN='' GENTIMEOUT=60 GENTIMEOUT_SAN='' \
        gen_cc "the positive control" "$CC" -O2 -std=gnu11 -c -o /dev/null "$WORKDIR/slow/gen.c"; then
-        bad "gen-timeout: a compile that must exceed a 1s budget returned SUCCESS — the wrapper is not applying the timeout"
+        bad "gen-timeout: a compile that must exceed a 1s CPU budget returned SUCCESS — the CPU limit is not being applied"
+    else
+        rc=$?
+        if [ "$rc" -eq 124 ]; then
+            bad "gen-timeout: the over-CPU-budget compile was reported as a WALL timeout (124) — the two bounds are confused"
+        elif printf '%s' "$GEN_CC_LOG" | grep -q 'D45 CPU BUDGET' \
+             && printf '%s' "$GEN_CC_LOG" | grep -q 'the positive control' \
+             && printf '%s' "$GEN_CC_LOG" | grep -q 'GENCPU'; then
+            ok "gen-timeout: an over-CPU-budget compile FAILS with a diagnostic naming the case, the CPU clock, and the override (never a hang)"
+        else
+            bad "gen-timeout: CPU control fired (rc=$rc) but the diagnostic is wrong: $GEN_CC_LOG"
+        fi
+    fi
+    # (b) wall backstop WIRED: same real compile, GENTIMEOUT=1 with a
+    # generous CPU budget — coreutils timeout must fire and the diagnostic
+    # must say BACKSTOP. (A working compile hitting the backstop is the
+    # verdict-mislabel geometry the defaults are sized to avoid; here it is
+    # forced deliberately, as a WIRING control, because a genuinely blocked
+    # compile cannot be staged with a real artifact.)
+    if GENCFLAGS='-O2 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
+       GENCPU=999 GENCPU_SAN='' GENTIMEOUT=1 GENTIMEOUT_SAN='' \
+       gen_cc "the backstop control" "$CC" -O2 -std=gnu11 -c -o /dev/null "$WORKDIR/slow/gen.c"; then
+        bad "gen-timeout: a compile that must exceed a 1s wall backstop returned SUCCESS — the backstop is not wired"
     else
         rc=$?
         if [ "$rc" -ne 124 ]; then
-            bad "gen-timeout: the over-budget compile returned $rc, not 124 (timeout); the caller cannot tell a timeout from a crash"
-        elif printf '%s' "$GEN_CC_LOG" | grep -q 'D45 TIMEOUT' \
-             && printf '%s' "$GEN_CC_LOG" | grep -q 'the positive control' \
-             && printf '%s' "$GEN_CC_LOG" | grep -q 'GENTIMEOUT'; then
-            ok "gen-timeout: an over-budget compile FAILS with 124 and a diagnostic naming the case and the override (never a hang, never a silent skip)"
+            bad "gen-timeout: the backstop control returned $rc, not 124"
+        elif printf '%s' "$GEN_CC_LOG" | grep -q 'D45 WALL BACKSTOP'; then
+            ok "gen-timeout: the wall backstop is wired through a real compile and its diagnostic says BACKSTOP (stuck), not work"
         else
-            bad "gen-timeout: fired, but the diagnostic does not name the case and the override: $GEN_CC_LOG"
+            bad "gen-timeout: backstop fired but the diagnostic is wrong: $GEN_CC_LOG"
         fi
     fi
 fi
@@ -192,18 +234,34 @@ if ! "$PCREC" -p rx --engine=vm --step-budget=400000000 \
         "$ROOT_DIR/tests/vm/vm_driver.c" "$WORKDIR/slowrun/gen.c"; then
     bad "gen-run: could not build the run positive-control artifact"
 else
+    # (a) CPU fire: the artifact spins CPU by construction, so under GENCPU=1
+    # with a generous wall it must die by cpukill (123), not timeout.
     run_out="$(GENCFLAGS='-O1 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
-        GENRUNTIMEOUT=1 GENRUNTIMEOUT_SAN='' \
+        GENCPU=1 GENCPU_SAN='' GENRUNTIMEOUT=30 GENRUNTIMEOUT_SAN='' \
+        WATCHDOG_SECTION=gen-timeout WATCHDOG_LOG="$WORKDIR/wd.log" \
+        gen_run "the run cpu control" "$WORKDIR/slowrun/t" "$slow_subj" 2>"$WORKDIR/wd.err")"
+    rc=$?
+    if [ "$rc" -ne 123 ]; then
+        bad "gen-run: a run that must exceed a 1s CPU budget returned $rc, not 123 (output: '$run_out')"
+    elif ! grep -q "verdict=cpukill" "$WORKDIR/wd.log" 2>/dev/null; then
+        bad "gen-run: CPU control killed with 123 but the log verdict is not cpukill: $(tail -c 300 "$WORKDIR/wd.log" 2>/dev/null)"
+    else
+        ok "gen-run: an over-CPU-budget matcher EXECUTION is killed with 123 and verdict=cpukill — load-independent, a real artifact"
+    fi
+    # (b) wall fire: same artifact under GENRUNTIMEOUT=1 with a generous CPU
+    # budget — the wall bound must fire with 124/verdict=timeout.
+    run_out="$(GENCFLAGS='-O1 -std=gnu11' CFLAGS='' SANFLAGS='' TSANFLAGS='' \
+        GENCPU=999 GENCPU_SAN='' GENRUNTIMEOUT=1 GENRUNTIMEOUT_SAN='' \
         WATCHDOG_SECTION=gen-timeout WATCHDOG_LOG="$WORKDIR/wd.log" \
         gen_run "the run positive control" "$WORKDIR/slowrun/t" "$slow_subj" 2>"$WORKDIR/wd.err")"
     rc=$?
     if [ "$rc" -ne 124 ]; then
-        bad "gen-run: a run that must exceed a 1s budget returned $rc, not 124 — the wrapper is not applying the run timeout (output: '$run_out')"
+        bad "gen-run: a run that must exceed a 1s wall budget returned $rc, not 124 — the wrapper is not applying the run timeout (output: '$run_out')"
     elif ! grep -q "verdict=timeout" "$WORKDIR/wd.log" 2>/dev/null \
          || ! grep -q "the run positive control" "$WORKDIR/wd.log" 2>/dev/null; then
         bad "gen-run: fired with 124 but the watchdog log line is missing or does not name the case: $(tail -c 300 "$WORKDIR/wd.log" 2>/dev/null)"
     else
-        ok "gen-run: an over-budget matcher EXECUTION is killed with 124 and a log line naming the case (never a hang) — a real artifact, budget-bound so the control terminates even if the wrapper breaks"
+        ok "gen-run: an over-wall-budget matcher EXECUTION is killed with 124 and a log line naming the case (never a hang) — a real artifact, budget-bound so the control terminates even if the wrapper breaks"
     fi
 fi
 

@@ -11,22 +11,39 @@
 # "still running", never as "failed". A test suite with no compile bound
 # cannot tell a slow machine from a hung one, so it reports neither.
 #
-# WHY THE NUMBERS. A normal generated-artifact compile is sub-second. Frank's
-# calibration: "anything over 60 seconds is a failure ... and i'm being
-# generous with 60s. maybe 5s". Plain was 5s from the ruling until 2026-08-16,
-# when the revisit-when clause fired: tests/base/k18_cost_gates.rxt's
-# '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}' emits 6,433
-# lines and compiles in a MEASURED 2.53 s on a quiet box — legitimate, green
-# for days — and crossed 5 s under `make -j12` contention (12 concurrent gcc
-# jobs), failing a battery run. 10 s keeps ~4x headroom over that worst
-# measured legitimate compile and still fails the 100-minute pathology class
-# instantly. So 10s on the plain axes and 60s on the
-# sanitizer axes, where instrumentation is legitimately several times slower
-# (MEASURED on the bounded-repeat shape: UBSan is 4.5x plain at a size where
-# both are fast, and diverges from there — docs/testing.md's battery section
-# has the curve). Both env-overridable for a slow box, and D45's revisit-when
-# is explicit: if a LEGITIMATE artifact is measured needing more, raise the
-# default WITH the measurement recorded, never silently.
+# THE BUDGET IS CPU-PRIMARY WITH A WALL BACKSTOP (Frank, 2026-08-16,
+# twenty-fifth session; D45 third addendum). The original wall-only budget
+# measured the wrong clock: tests/base/k18_cost_gates.rxt's 6,433-line
+# artifact needs a MEASURED 2.53 s of CPU whether the box is quiet or not,
+# but under `make -j12` contention its WALL time crossed the then-5 s budget
+# and flaked a battery — the work didn't change, the scheduling did. So:
+#
+#   - gen_cpu_secs: CPU-time budget, 5 s plain / 60 s sanitizer
+#     (GENCPU/GENCPU_SAN) — the PRIMARY bound. CPU is load-independent, so
+#     it can sit tight (2x the worst measured legitimate compile) without
+#     ever flaking under parallel load, and a pathological compile is
+#     killed after 5 s of actual work no matter how loaded the box is.
+#     Frank's original calibration ("maybe 5s") was right — it was
+#     attached to the wrong clock. INTEGER seconds (RLIMIT_CPU is).
+#     One shared pair for compiles AND matcher runs; if the two ever need
+#     different CPU budgets, split the knob WITH the measurement.
+#   - gen_timeout_secs: wall-clock BACKSTOP, 60 s plain / 180 s sanitizer
+#     (GENTIMEOUT/GENTIMEOUT_SAN). CPU cannot see a process that is stuck
+#     WITHOUT working (blocked on I/O, deadlocked — burns no CPU), so wall
+#     stays, loose. It must sit ABOVE the CPU budget times the worst
+#     plausible contention factor, or a working-but-contended process hits
+#     the wall first and the verdict lies about which failure happened
+#     (hence 180 on the sanitizer axis, 3x its 60 s CPU budget).
+#
+# Two bounds, two failure classes, two diagnoses — the step-budget /
+# frame-capacity precedent (engine_m4.md par.4.5) applied to the harness
+# itself. Sanitizer instrumentation is legitimately several times slower
+# (MEASURED: UBSan 4.5x plain on the bounded-repeat shape — docs/testing.md
+# has the curve). All env-overridable; D45's revisit-when is explicit: if a
+# LEGITIMATE artifact is measured needing more, raise the default WITH the
+# measurement recorded, never silently. (History: plain wall was 5 s from
+# the ruling, 10 s briefly on 2026-08-16 when the k18_cost_gates flake
+# first fired the revisit-when — superseded the same day by CPU-primary.)
 #
 # WHY THE AXIS IS DETECTED RATHER THAN PASSED. Every call site already carries
 # the axis in its flags — `-fsanitize=` is in GENCFLAGS (or CFLAGS, or
@@ -38,8 +55,17 @@
 # gen_timeout_secs — the budget for the CURRENT axis, in seconds.
 gen_timeout_secs() {
     case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
-        *-fsanitize=*) printf '%s\n' "${GENTIMEOUT_SAN:-60}" ;;
-        *)             printf '%s\n' "${GENTIMEOUT:-10}" ;;
+        *-fsanitize=*) printf '%s\n' "${GENTIMEOUT_SAN:-180}" ;;
+        *)             printf '%s\n' "${GENTIMEOUT:-60}" ;;
+    esac
+}
+
+# gen_cpu_secs — the CPU-time budget (the PRIMARY bound; see the header) for
+# one generated-code compile or one matcher execution, on the current axis.
+gen_cpu_secs() {
+    case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
+        *-fsanitize=*) printf '%s\n' "${GENCPU_SAN:-60}" ;;
+        *)             printf '%s\n' "${GENCPU:-5}" ;;
     esac
 }
 
@@ -88,19 +114,42 @@ pcrec_timeout_secs() {
 gen_cc() {
     local what="$1"
     shift
-    local secs rc
-    secs="$(gen_timeout_secs)"
-    GEN_CC_LOG="$(timeout "$secs" "$@" 2>&1)"
+    local cpu wall rc
+    cpu="$(gen_cpu_secs)"
+    wall="$(gen_timeout_secs)"
+    # RLIMIT_CPU soft-only (hard raised as an escalation backstop, failure
+    # ignored): at the soft limit the kernel delivers SIGXCPU, which gcc's
+    # driver reports as "CPU time limit exceeded signal terminated program
+    # cc1" (MEASURED) — textually distinct from an OOM-kill's "Killed
+    # signal", so a CPU breach never masquerades as a crash or vice versa.
+    # Soft=hard would escalate straight to SIGKILL and destroy exactly that
+    # distinction. The rlimit is per-process, not per-tree; the pathology
+    # class is one cc1 grinding, and cc1 gets its own bounded counter.
+    GEN_CC_LOG="$(timeout "$wall" bash -c \
+        'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; exec "$@"' \
+        _ "$cpu" "$@" 2>&1)"
     rc=$?
-    if [ "$rc" -eq 124 ]; then
-        GEN_CC_LOG="D45 TIMEOUT: compiling generated C for [$what] exceeded ${secs}s.
-  This is a FAILURE, not a slow box (docs/dev/decisions.md D45): a normal
-  generated-artifact compile is sub-second, so a compile this slow is a
-  compile-time regression in the emitter or a pathological emitted shape.
+    if [ "$rc" -eq 152 ] || printf '%s' "$GEN_CC_LOG" | grep -q 'CPU time limit exceeded'; then
+        GEN_CC_LOG="D45 CPU BUDGET: compiling generated C for [$what] exceeded ${cpu}s of CPU time.
+  This is a FAILURE, not a slow box (docs/dev/decisions.md D45): CPU time is
+  load-independent, so this compile genuinely NEEDS more than ${cpu}s of work —
+  a compile-time regression in the emitter or a pathological emitted shape.
   Reproduce:  $*
-  If the artifact is legitimately this large, raise the budget with the
-  measurement recorded in docs/testing.md -- GENTIMEOUT (plain, now ${GENTIMEOUT:-10}s)
-  or GENTIMEOUT_SAN (sanitizer axes, now ${GENTIMEOUT_SAN:-60}s)."
+  If the artifact legitimately needs more, raise the budget with the
+  measurement recorded in docs/testing.md -- GENCPU (plain, now ${GENCPU:-5}s)
+  or GENCPU_SAN (sanitizer axes, now ${GENCPU_SAN:-60}s).
+  Compiler output was:
+$GEN_CC_LOG"
+        [ "$rc" -ne 0 ] || rc=1
+    elif [ "$rc" -eq 124 ]; then
+        GEN_CC_LOG="D45 WALL BACKSTOP: compiling generated C for [$what] exceeded ${wall}s of
+  wall time WITHOUT exceeding ${cpu}s of CPU — it was STUCK, not working
+  (blocked, deadlocked, or swapping; a compile doing too much work is killed
+  by the CPU budget first). Investigate what it was waiting on, not how big
+  the artifact is.
+  Reproduce:  $*
+  Overrides: GENTIMEOUT (plain, now ${GENTIMEOUT:-60}s) / GENTIMEOUT_SAN
+  (sanitizer axes, now ${GENTIMEOUT_SAN:-180}s)."
     fi
     return $rc
 }
@@ -122,6 +171,18 @@ gen_cc() {
 # (instrumentation is legitimately several times slower). Env-overridable,
 # same revisit-when: a LEGITIMATE run measured needing more raises the
 # default WITH the measurement recorded, never silently.
+#
+# SINCE THE CPU-PRIMARY ruling (see the header), this wall number plays two
+# roles: (a) gen_run's wall BACKSTOP behind the gen_cpu_secs primary — kept
+# TIGHT (not 60/180 like the compile backstop) because legitimate runs are
+# three orders of magnitude below it, and a tight backstop bounds the waste
+# from a stuck run; the cost is that a SPINNER under >2x contention can hit
+# wall before CPU and draw verdict=timeout instead of cpukill, which the log
+# line's own cpu= field disambiguates at a glance; (b) the SOLE bound at
+# cheap-shape inner-loop sites (harness cells, vm_oracle/fuzz run loops),
+# which have no CPU limit — fine, because their legit costs never approach
+# it, so the contention-flake geometry that bit the compile budget cannot
+# arise there.
 gen_run_secs() {
     case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
         *-fsanitize=*) printf '%s\n' "${GENRUNTIMEOUT_SAN:-60}" ;;
@@ -153,7 +214,7 @@ gen_run() {
     local what="$1"
     shift
     "$GEN_LIB_ROOT/scripts/watchdog" \
-        -l "$what" -s "$(gen_run_secs)" -m "${GENRUNMEM:-512m}" \
+        -l "$what" -c "$(gen_cpu_secs)" -s "$(gen_run_secs)" -m "${GENRUNMEM:-512m}" \
         -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" -- "$@"
 }
 
@@ -161,3 +222,4 @@ gen_run() {
 # file rather than re-deriving the rule:  bash tests/lib/gen_timeout.sh secs
 if [ "${1:-}" = "secs" ]; then gen_timeout_secs; fi
 if [ "${1:-}" = "runsecs" ]; then gen_run_secs; fi
+if [ "${1:-}" = "cpusecs" ]; then gen_cpu_secs; fi

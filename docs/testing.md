@@ -1144,20 +1144,43 @@ one file rather than one per language. `gen_cc <case-label> <cc-argv...>` runs
 the compile and leaves the compiler's output — or the timeout diagnostic — in
 `$GEN_CC_LOG`, so a caller reports the same way whichever happened.
 
-**Defaults**: 10s on the plain axes, 60s on the sanitizer axes, both
-env-overridable (`GENTIMEOUT`, `GENTIMEOUT_SAN`). Plain was 5s from the
-ruling until 2026-08-16, when the revisit-when clause fired on a MEASURED
-legitimate case: `tests/base/k18_cost_gates.rxt`'s
+**The budget is CPU-PRIMARY with a wall backstop** (Frank, 2026-08-16, D45
+third addendum). The original wall-only budget measured the wrong clock,
+and the flake that proved it is the recorded measurement:
+`tests/base/k18_cost_gates.rxt`'s
 `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}` emits 6,433
-lines of C and compiles in 2.53s on a quiet box (green in every battery for
-days), and crossed 5s under `make -j12` contention — twelve concurrent gcc
-jobs — failing one full-suite run while an identical run minutes earlier
-passed. A budget within ~2x of a legitimate compile flakes on load. 10s
-keeps ~4x headroom over that worst measured legitimate compile and still
-fails the 100-minute pathology class instantly. (The artifact itself is the
+lines of C and needs 2.53s of CPU whether the box is quiet or loaded — but
+under `make -j12` contention its WALL time crossed the then-5s budget and
+failed one full-suite run while an identical run minutes earlier passed.
+The work didn't change; the scheduling did. (The artifact itself is the
 bounded-repeat replication class whose compiler-side SIZE cap is queued
-with [ENG-BREP] counter-K — this raise is the harness-side accommodation,
-not a verdict that 6,433-line artifacts are fine.) The axis is DERIVED from the
+with [ENG-BREP] counter-K.)
+
+- **CPU budget (primary): 5s plain / 60s sanitizer** (`GENCPU`,
+  `GENCPU_SAN`; integer seconds — it is `RLIMIT_CPU`). Load-independent,
+  so it sits tight (~2x the worst measured legitimate compile) and can
+  never flake under parallel load; a pathological compile dies after 5s of
+  actual work no matter what else runs. Enforced as a soft rlimit so cc1
+  dies by a clean SIGXCPU that gcc reports as "CPU time limit exceeded" —
+  textually distinct from an OOM-kill's "Killed signal", keeping the
+  crash/timeout/CPU diagnoses separate. One shared knob pair for compiles
+  AND matcher runs (watchdog `-c`, exit 123, `verdict=cpukill`); split it
+  only with a measurement.
+- **Wall backstop: 60s plain / 180s sanitizer** (`GENTIMEOUT`,
+  `GENTIMEOUT_SAN`). CPU cannot see a process stuck WITHOUT working
+  (blocked, deadlocked — burns no CPU), so wall stays, loose: it must sit
+  above the CPU budget times the worst plausible contention factor or a
+  contended-but-working compile hits it first and the verdict lies (hence
+  180 = 3x on the sanitizer axis). Its diagnostic says "STUCK, not
+  working" and points the reader at what the compile was waiting on, not
+  at the artifact's size.
+
+Two bounds, two failure classes, two diagnoses — the step-budget /
+frame-capacity precedent applied to the harness itself. (History: plain
+wall was 5s from the ruling; raised to 10s on 2026-08-16 when the
+k18_cost_gates flake first fired the revisit-when; superseded the same day
+by CPU-primary, which is the durable fix — headroom pushes the flake
+boundary back, the right clock removes it.) The axis is DERIVED from the
 flags — `-fsanitize=` appears in `GENCFLAGS`/`CFLAGS`/`TSANFLAGS` exactly when
 the compile is instrumented — so no site has to declare which axis it is on and
 a site added later gets the right budget for free. `124` is checked exactly,

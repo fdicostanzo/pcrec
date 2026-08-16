@@ -49,7 +49,10 @@ pcrec (the Makefile owns that).
   "Terminated"/"User defined signal N" job-notify message for a
   signal-killed background job is not reliably suppressed by redirecting
   any single `wait` call — it can print on whatever command bash next
-  happens to run. CLI flags (`-l -S -s -m -k -i -L`) and an
+  happens to run. CLI flags (`-l -S -s -c -m -k -i -L`; `-c` is a sampled
+  tree-CPU limit — load-independent "too much work", exit 123
+  `verdict=cpukill`, vs `-s`'s "stuck" wall clock, and the self-test's
+  spinner/sleeper pair discriminates the two) and an
   `WATCHDOG_TIMEOUT`/`WATCHDOG_MEM`/etc. env-var channel (Makefile-friendly;
   CLI wins) cover the same knobs. Metrics-only mode (neither `-s` nor `-m`
   given) supervises and logs without ever killing. `-S SECTION` /

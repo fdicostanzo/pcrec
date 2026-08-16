@@ -70,6 +70,27 @@ def _gen_timeout():
 GEN_TIMEOUT = _gen_timeout()
 
 
+# CPU-primary compile budget (D45 third addendum, 2026-08-16): the wall
+# timeout= above became a loose BACKSTOP for stuck-not-working; the tight,
+# load-independent bound is CPU time, applied via a bash ulimit shim around
+# the compiler argv (soft RLIMIT_CPU -> clean SIGXCPU; NOT preexec_fn, which
+# is unsafe under this file's ThreadPoolExecutor). Same number, same file.
+def _cpu_timeout():
+    try:
+        r = subprocess.run(["bash", os.path.join(ROOT, "tests", "lib", "gen_timeout.sh"),
+                            "cpusecs"], capture_output=True, text=True, timeout=30)
+        return int(r.stdout.strip())
+    except Exception:
+        return 5
+
+CPU_TIMEOUT = _cpu_timeout()
+
+def _cpu_limited(argv):
+    return ["bash", "-c",
+            'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; exec "$@"',
+            "_", str(CPU_TIMEOUT)] + argv
+
+
 # EXECUTION is bounded too (gen_run_secs, same file): a merely-slow matcher
 # must read as a FAILURE, not a hang. This inner loop runs thousands of
 # sub-millisecond matcher executions, so the bound is subprocess's own
@@ -284,8 +305,9 @@ def build(workdir, pat, extra):
         return None, "pcrec failed: " + r.stderr.strip()
     exe = os.path.join(d, "t")
     try:
-        r = subprocess.run([CC] + GENCFLAGS + ["-DVM_CHECK_ANCHORED", "-I", d,
-                                               "-o", exe, DRIVER, cfile],
+        r = subprocess.run(_cpu_limited([CC] + GENCFLAGS +
+                                        ["-DVM_CHECK_ANCHORED", "-I", d,
+                                         "-o", exe, DRIVER, cfile]),
                            capture_output=True, text=True, timeout=GEN_TIMEOUT)
     except subprocess.TimeoutExpired:
         return None, ("D45 TIMEOUT: compiling generated C exceeded %ds. This is a "
