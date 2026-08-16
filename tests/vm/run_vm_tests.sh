@@ -166,7 +166,20 @@ fi
 # statically bounded depth, so the emitter sizes the arrays EXACTLY (§2.5) and
 # there is no subject ceiling to declare. One with a choice point inside an
 # unbounded quantifier is D44.1's residual class and MUST declare one.
-if build exact '(\d+)-(\d+)' && build residual '((a)|b)*c'; then
+#
+# THE RESIDUAL ROW NOW DENIES A RUNG, and the denial is the point rather than a
+# workaround ([ENG-BREP] rung-select, 2026-08-16). "Choice point inside an
+# unbounded quantifier" was a proxy for "one frame per iteration", and the
+# reverse-deterministic rung broke the proxy: `((a)|b)*c` is choice-bearing and
+# now owes ONE frame for the whole loop, so it truthfully declares NO ceiling
+# and this check read that as a silent cap. D46's rule is to pin the selection,
+# so the row denies the rung and keeps testing the mechanism it was written for.
+# The rung's own side of the same fact — that an artifact whose frame
+# requirement stopped depending on the count declares no limit, which is §7's
+# prediction — is asserted in tests/rungselect/run_rungselect_tests.sh, and a
+# NEW row below pins it here too, because the two facts are only meaningful
+# together.
+if build exact '(\d+)-(\d+)' && build residual '((a)|b)*c' -fno-revdet; then
     ec="$(info_field exact frame_capacity)"
     esc="$(info_field exact subject_ceiling)"
     rc="$(info_field residual frame_capacity)"
@@ -243,8 +256,14 @@ fi
 # The default-capacity path is still covered, twice: `exact` below (statically
 # bounded, sized exactly, ceiling 0) and `residual` (unbounded, default
 # capacity, ceiling stamped).
-if build bigbounded '((a)|b){0,20}c' --backtrack-frames=32 \
-   && build smallbounded '((a)|b){0,3}c' --backtrack-frames=32; then
+#
+# BOTH ROWS DENY THE REVERSE-DETERMINISTIC RUNG, for the same reason the
+# residual row above does: the comparison this pair makes is between a
+# REPLICATED requirement that exceeds the capacity and one that fits, and the
+# rung removes the replication from both sides, which would leave the pair
+# comparing nothing. Pinned rather than re-shaped (D46).
+if build bigbounded '((a)|b){0,20}c' --backtrack-frames=32 -fno-revdet \
+   && build smallbounded '((a)|b){0,3}c' --backtrack-frames=32 -fno-revdet; then
     bsc="$(info_field bigbounded subject_ceiling)"
     bfc="$(info_field bigbounded frame_capacity)"
     ssc="$(info_field smallbounded subject_ceiling)"
@@ -259,13 +278,33 @@ if build bigbounded '((a)|b){0,20}c' --backtrack-frames=32 \
     else
         bad "[M4.5b] D44.1: '((a)|b){0,3}c' at --backtrack-frames=32 stamped subject_ceiling=$ssc (capacity $sfc); its requirement FITS, so it must declare no ceiling"
     fi
+    # [ENG-BREP] The OTHER SIDE of the same fact, and the pair only means
+    # something together: the SAME large-bounded pattern, at the SAME capacity,
+    # with the rung ALLOWED, must declare NO ceiling — because its frame
+    # requirement genuinely stopped depending on the count (eng_brep_design.md
+    # §7's prediction, held as a gate). Without this row the denial above would
+    # read as a workaround; with it, the two rows say what the rung changed.
+    if build rungbounded '((a)|b){0,20}c' --backtrack-frames=32; then
+        rbsc="$(info_field rungbounded subject_ceiling)"
+        rbfc="$(info_field rungbounded frame_capacity)"
+        if [ "$rbsc" = "0" ]; then
+            ok "[ENG-BREP] §7: the SAME '((a)|b){0,20}c' at capacity $rbfc declares NO ceiling once the reverse-deterministic rung has it — the frame requirement stopped depending on the count"
+        else
+            bad "[ENG-BREP] §7: '((a)|b){0,20}c' on the revdet rung stamped subject_ceiling=$rbsc; the rung owes ONE frame for the whole loop, so there is no limit to declare"
+        fi
+    else
+        bad "[ENG-BREP] could not build the rung-allowed bounded stamp case"
+    fi
 else
     bad "[M4.5b] could not build the bounded-repeat stamp cases"
 fi
 
 # The stamped ceiling must be a REAL floor on behaviour, not a decoration:
 # a subject comfortably under it must not hit the frame bound.
-if build ceil '((a)|b)*c'; then
+# `-fno-revdet` for the reason its siblings above carry: the artifact whose
+# ceiling this exercises is a REPLICATING one, and the rung removes the
+# replication, leaving a stamped 0 and nothing to check against (D46).
+if build ceil '((a)|b)*c' -fno-revdet; then
     n="$(info_field ceil subject_ceiling)"
     if [ "$n" -gt 8 ]; then
         short="$(printf 'a%.0s' $(seq 1 $((n / 2))))"
@@ -407,12 +446,27 @@ fi
 # for 100+ minutes and is what D45 was ruled over. The refusal must land BEFORE
 # emission and must name the construct, and it must not fire on a body with no
 # choice point, which replicates nothing whatever the count.
-if out="$("$PCREC" -p rx --engine=vm -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
-    bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles"
+#
+# `-fno-revdet` PINS THE STRATEGY the cap bounds ([ENG-BREP] rung-select): the
+# cap counts REPLICATED copies, and this pattern is no longer replicated at the
+# default, so without the denial the check would be asserting which rung won
+# rather than that the cap works (D46).
+if out="$("$PCREC" -p rx --engine=vm -fno-revdet -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
+    bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles under -fno-revdet"
 elif printf '%s' "$out" | grep -q 'replicate its body 4000 times'; then
     ok "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's 3.5 MB case is refused before emission, naming the replication count"
 else
     bad "[M4.5c] refused, but not with the replication diagnostic: $out"
+fi
+# ...and D47.1's ENDGAME beside it, because the refusal above read alone says
+# pcrec cannot compile this pattern, which stopped being true.
+if "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    eg="$(wc -l < "$WORKDIR/endgame.c")"
+    [ "$eg" -lt 2000 ] \
+        && ok "[ENG-BREP] D45's endgame: the same pattern compiles at the DEFAULT in $eg lines -- the reverse-deterministic rung emits one body copy, so the count stops driving the size" \
+        || bad "[ENG-BREP] '((a)|b){0,4000}c' compiled but emitted $eg lines; the rung must make the count irrelevant to the size"
+else
+    bad "[ENG-BREP] '((a)|b){0,4000}c' does not compile at the default; D47.1 names this rung's arrival as when D45's refuse-cap endgame lands"
 fi
 if "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
     ok "[M4.5c] ...and a single-path body at the same count still compiles (span-loop rung, no replication)"
@@ -595,28 +649,46 @@ fi
 # emission site in pcrec_emit_vm vs. vm_render_listing) off the SAME
 # v->rungs / VE_RUNG data — agreement here is evidence the data is the one
 # source of truth, not a tautology of one path checking itself.
-if build mix3 'a*(a|b){0,3}c((x)|y)+z'; then
-    if assert_rungs mix3 0x7; then
-        ok "[M4.5e] D46: 'a*(a|b){0,3}c((x)|y)+z' (three quantifiers, three different rungs) stamps the EXACT mask RX_VM_RUNGS=0x7 (cursor|frames-bounded|frames-unbounded)"
+# [ENG-BREP] THE MIX GREW A FOURTH ARM, and this row is D46's own motivating
+# scenario happening to the check D46's own text nominated. The old pattern was
+# `a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e` and it stamped 0x7 for three quantifiers on three
+# rungs; the reverse-deterministic rung then ABSORBED two of the three (the
+# alternation bodies are reverse-deterministic), and the mask became 0x9 —
+# still "mixed", still passing a weaker check, and no longer testing what it was
+# written for. D46 predicted exactly this: "a contrived test pattern built to
+# hit the frames rung would, once the reverse-deterministic rung exists, be
+# silently captured by it". The EXACT-mask assertion is what caught it, which is
+# the argument for asserting the exact mask rather than "some bits".
+#
+# The replacement keeps one quantifier per rung and now covers all FOUR:
+# `a*` (cursor) / `((a)|b){0,3}` (revdet) / `(?:ab|b){0,3}` (frames-bounded,
+# because that body is reverse-AMBIGUOUS) / `(?:pq|q)+` (frames-unbounded, same
+# reason). The frames arms are spelled with reverse-ambiguous bodies
+# deliberately: a body the next rung down the ladder could absorb would put this
+# check right back where it was.
+if build mix3 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e'; then
+    if assert_rungs mix3 0xf; then
+        ok "[M4.5e] D46: 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' (four quantifiers, four different rungs) stamps the EXACT mask RX_VM_RUNGS=0xf (cursor|frames-bounded|frames-unbounded|revdet)"
     else
-        bad "[M4.5e] D46: 'a*(a|b){0,3}c((x)|y)+z' stamped RX_VM_RUNGS=$(rungs_field mix3), expected 0x7 (all three rungs)"
+        bad "[M4.5e] D46: the four-rung pattern stamped RX_VM_RUNGS=$(rungs_field mix3), expected 0xf (all four rungs)"
     fi
-    if ir="$("$PCREC" -p rx --emit-ir -- 'a*(a|b){0,3}c((x)|y)+z' 2>/dev/null)"; then
+    if ir="$("$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' 2>/dev/null)"; then
         ncursor="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +cursor ')"
         nbounded="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +frames-bounded ')"
         nunbounded="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +frames-unbounded ')"
-        if [ "$ncursor" = "1" ] && [ "$nbounded" = "1" ] && [ "$nunbounded" = "1" ]; then
-            ok "[M4.5e] D46: --emit-ir's RUNGS section carries exactly one cursor, one frames-bounded and one frames-unbounded row for the three-quantifier mix — the per-quantifier detail the 0x7 mask above summarizes"
+        nrevdet="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +revdet ')"
+        if [ "$ncursor" = "1" ] && [ "$nbounded" = "1" ] && [ "$nunbounded" = "1" ] && [ "$nrevdet" = "1" ]; then
+            ok "[M4.5e] D46: --emit-ir's RUNGS section carries exactly one row per rung for the four-quantifier mix — the per-quantifier detail the 0xf mask above summarizes"
         else
-            bad "[M4.5e] D46: RUNGS section row counts were cursor=$ncursor frames-bounded=$nbounded frames-unbounded=$nunbounded, expected 1/1/1"
+            bad "[M4.5e] D46: RUNGS section row counts were cursor=$ncursor frames-bounded=$nbounded frames-unbounded=$nunbounded revdet=$nrevdet, expected 1/1/1/1"
         fi
-        if printf '%s' "$ir" | grep -q '^; rungs        cursor, frames-bounded, frames-unbounded '; then
-            ok "[M4.5e] D46: --emit-ir's header summary line lists all three rung names for the mixed pattern"
+        if printf '%s' "$ir" | grep -q '^; rungs        cursor, frames-bounded, frames-unbounded, revdet '; then
+            ok "[M4.5e] D46: --emit-ir's header summary line lists all four rung names for the mixed pattern"
         else
-            bad "[M4.5e] D46: header summary line did not list all three rungs: $(printf '%s' "$ir" | grep '^; rungs')"
+            bad "[M4.5e] D46: header summary line did not list all four rungs: $(printf '%s' "$ir" | grep '^; rungs')"
         fi
     else
-        bad "[M4.5e] D46: --emit-ir failed on 'a*(a|b){0,3}c((x)|y)+z'"
+        bad "[M4.5e] D46: --emit-ir failed on the four-rung pattern"
     fi
 else
     bad "[M4.5e] D46: could not build the three-way mixed-rung pattern"

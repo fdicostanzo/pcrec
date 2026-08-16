@@ -70,6 +70,38 @@ the other:
   the mask assertion actually fails on a corrupted stamp rather than
   passing vacuously.
 
+## [ENG-BREP] Five checks here PIN A RUNG now, and the denials are the point
+
+`-fno-revdet` appears on the D44.1 ceiling pair, the ceiling floor check, and
+the `PCREC_MAX_VM_REPEAT_COPIES` case. None of them is a workaround. Each was
+written around a pattern that was expensive BECAUSE THE EMITTER REPLICATED ITS
+BODY — one frame per iteration, one copy per repetition — and the
+reverse-deterministic rung removed the replication, so each check went
+green-because-fast or failed reporting a mechanism as broken when what had
+changed was which strategy ran. D46's rule is to pin the selection, and denying
+the rung puts the quantifier back on the frames rung, which is where replication
+lives and what these checks are about.
+
+**Every denial is paired with the OTHER side of the same fact**, because a
+denial alone reads as evasion: the ceiling pair gains a row asserting that the
+SAME pattern at the SAME capacity declares NO ceiling once the rung has it
+(eng_brep_design.md §7's prediction), and the cap case gains a row asserting
+that D45's own `((a)|b){0,4000}c` now COMPILES at the default in under 2,000
+lines (D47.1's endgame). Read alone, the refusal row would say pcrec still
+cannot compile that pattern, which stopped being true.
+
+**The mixed-rung check grew a fourth arm, and that is D46 happening to the check
+D46's own text nominated.** `a*(a|b){0,3}c((x)|y)+z` stamped 0x7 for three
+quantifiers on three rungs; the rung absorbed two of the three and the mask
+became 0x9 — still "mixed", still passing a weaker check, no longer testing what
+it was written for. D46 predicted precisely this ("a contrived test pattern
+built to hit the frames rung would, once the reverse-deterministic rung exists,
+be silently captured by it"). The EXACT-mask assertion is what caught it, which
+is the argument for asserting the exact mask rather than "some bits". The
+replacement covers all four rungs and spells its frames arms with
+reverse-AMBIGUOUS bodies (`(?:ab|b)`, `(?:pq|q)`) on purpose: a body the next
+rung could absorb would put the check straight back where it was.
+
 ## The K22 guard's check is a TIMEOUT, and that is the assertion
 
 The nested-repeat product guard's block puts `timeout 5` on the depth-30 and

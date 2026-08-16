@@ -192,13 +192,23 @@ done
 # The replication cap is the compiler-side bound that stops it. Checked at the
 # boundary in BOTH directions, because a cap that refuses everything and a cap
 # that refuses nothing both pass a one-sided test.
-if "$PCREC" -p rx -o "$WORKDIR/cap_ok.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+#
+# EVERY ROW BELOW NOW PASSES `-fno-revdet`, and the reason is the endgame rather
+# than an inconvenience ([ENG-BREP] rung-select, 2026-08-16). The cap bounds the
+# REPLICATION STRATEGY, and `((a)|b){0,N}c` is no longer replicated: the
+# reverse-deterministic rung emits it as one body copy at 293 lines whatever N
+# is, so at the default it sails past a cap that has nothing to count. Denying
+# the rung puts the quantifier back on the frames rung, which is where
+# replication — and therefore the cap — lives. That is D46's pin-the-selection
+# rule, and it keeps this block testing the cap instead of testing which rung
+# won. The endgame itself is asserted separately, below.
+if "$PCREC" -p rx -fno-revdet -o "$WORKDIR/cap_ok.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     ok "[M4.5c] the replication cap ADMITS the largest legal artifact (64 copies, $(stat -c %s "$WORKDIR/cap_ok.c") bytes)"
 else
-    bad "[M4.5c] '((a)|b){0,64}c' was refused; it is exactly at the cap and must compile"
+    bad "[M4.5c] '((a)|b){0,64}c' was refused under -fno-revdet; it is exactly at the cap and must compile"
 fi
-if out="$("$PCREC" -p rx -o "$WORKDIR/cap_no.c" -- '((a)|b){0,65}c' 2>&1)"; then
-    bad "[M4.5c] '((a)|b){0,65}c' compiled; it is one copy over the cap and must be refused"
+if out="$("$PCREC" -p rx -fno-revdet -o "$WORKDIR/cap_no.c" -- '((a)|b){0,65}c' 2>&1)"; then
+    bad "[M4.5c] '((a)|b){0,65}c' compiled under -fno-revdet; it is one copy over the cap and must be refused"
 elif printf '%s' "$out" | grep -q 'replicate its body 65 times' \
      && printf '%s' "$out" | grep -q 'span loop'; then
     ok "[M4.5c] ...and REFUSES one copy over it, naming the count, the limit and the way out"
@@ -206,10 +216,29 @@ else
     bad "[M4.5c] refused over the cap, but the diagnostic does not name the count and the fix: $out"
 fi
 # the case D45 was ruled over
-if "$PCREC" -p rx -o "$WORKDIR/cap_d45.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
-    bad "[M4.5c] '((a)|b){0,4000}c' still compiles — this is the 3.5 MB artifact that pegged cc1 for 100+ minutes (D45)"
+if "$PCREC" -p rx -fno-revdet -o "$WORKDIR/cap_d45.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    bad "[M4.5c] '((a)|b){0,4000}c' still compiles under -fno-revdet — this is the 3.5 MB artifact that pegged cc1 for 100+ minutes (D45)"
 else
-    ok "[M4.5c] '((a)|b){0,4000}c' — D45's own case — is refused before emitting anything"
+    ok "[M4.5c] '((a)|b){0,4000}c' — D45's own case — is refused before emitting anything, whenever replication is the strategy"
+fi
+#
+# ---- D47.1's ENDGAME, now that it has arrived ---------------------------
+#
+# D45's follow-up said the emitted-size cap was an INTERIM backstop and named
+# [ENG-BREP]'s ladder as the endgame; D47.1 named this rung specifically. So the
+# same pattern that must be REFUSED under replication must COMPILE at the
+# default, small, and the two facts belong next to each other — a reader who
+# sees only the refusal above would reasonably conclude pcrec still cannot do
+# this.
+if "$PCREC" -p rx -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    eg_lines="$(wc -l < "$WORKDIR/endgame.c")"
+    if [ "$eg_lines" -lt 2000 ]; then
+        ok "[ENG-BREP] D45's endgame: the SAME pattern compiles at the default in $eg_lines lines (the reverse-deterministic rung emits one body copy, so the count stops driving the size)"
+    else
+        bad "[ENG-BREP] '((a)|b){0,4000}c' compiled but emitted $eg_lines lines — the rung is meant to make the count irrelevant to the emitted size"
+    fi
+else
+    bad "[ENG-BREP] '((a)|b){0,4000}c' does not compile at the default; D47.1 names this rung's arrival as when D45's refuse-cap endgame lands"
 fi
 #
 # ...and the cap must NOT refuse a pattern whose size is PROPORTIONATE to what
