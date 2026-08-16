@@ -313,7 +313,13 @@ stated terms.
   build and becomes our contract; changeable but a deliberate
   deliverable). Authored from the shipped surface, referencing
   match_api_m4.md for reasoning per the spec charter; it is the natural
-  enumeration D40's future v1 declaration points at
+  enumeration D40's future v1 declaration points at. OWED AT THIS STEP
+  (R22, 2026-08-15, recorded here 2026-08-16 so it survives wake.md
+  rotation): the CONTRACT-TEXT WORDING PASS over match_api_m4.md §2.2 —
+  the two gaps the blinded capture author found (cross-iteration
+  retention; empty-final-iteration overwrite), arbitrated three-way
+  unanimous and recorded as the §2.2 as-built addendum, get folded into
+  the graduated spec text properly rather than living as an addendum
 
 Design notes moved here from [MOD-0.1]'s archived entry (docs/dev/plan_completed.md),
 2026-08-13 — M4's design customers, per the Development order above:

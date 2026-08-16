@@ -22,8 +22,9 @@
 # reveals symbol names only, which is that check's permitted oracle).
 #
 # FLOW:
-#   scripts/mk_d27_cell.sh NAME            # create worktrees/NAME (+branch)
-#                                          # and worktrees/NAME-cell
+#   scripts/mk_d27_cell.sh NAME allowed-path...   # create worktrees/NAME
+#                                                 # (+branch) and
+#                                                 # worktrees/NAME-cell
 #   ... author works ONLY in worktrees/NAME-cell ...
 #   # diff back (this script prints the exact commands on creation):
 #   rsync -ai --delete NAME-cell/<dir>/ NAME/<dir>/   per allowed dir
@@ -36,17 +37,24 @@
 set -euo pipefail
 
 usage() {
-    echo "usage: scripts/mk_d27_cell.sh NAME [allowed-path...]" >&2
-    echo "  default allowlist: tests/spec_mod0 tests/probes tests/fuzz/pcre2_abi.h" >&2
+    echo "usage: scripts/mk_d27_cell.sh NAME allowed-path [allowed-path...]" >&2
+    echo "  The allowlist is REQUIRED and is a per-lane decision: curate it" >&2
+    echo "  against the lane's brief (R22 found the old hardcoded default was" >&2
+    echo "  stale for post-M4.5 authors and would have leaked the K17/K18 fuzz" >&2
+    echo "  alphabet). Example (the R22 capture-author cell):" >&2
+    echo "    scripts/mk_d27_cell.sh capauthor docs/design/match_api_m4.md docs/testing.md" >&2
     exit 2
 }
 
-[ $# -ge 1 ] || usage
+# No default allowlist (manager ruling, 2026-08-16, discharging R22 item 5):
+# a hardcoded default goes stale silently and staleness fails in the LEAK
+# direction; requiring the list makes cell contents an explicit per-lane
+# decision, which is the only version that stays correct by construction.
+[ $# -ge 2 ] || usage
 NAME="$1"; shift
 case "$NAME" in */*|.*) echo "mk_d27_cell: NAME must be a bare name" >&2; exit 2;; esac
 
 ALLOW=("$@")
-[ ${#ALLOW[@]} -gt 0 ] || ALLOW=(tests/spec_mod0 tests/probes tests/fuzz/pcre2_abi.h)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WT="$ROOT/worktrees/$NAME"

@@ -12,7 +12,11 @@ pcrec (the Makefile owns that).
   construction — harness CLAUDE.md auto-injection (files that do not exist
   cannot be injected; five recorded instances) and git history (`git show`
   needs a .git the cell does not have). Allowlist, never denylist: a
-  denylist miss leaks silently, an allowlist miss fails loudly. build/ is
+  denylist miss leaks silently, an allowlist miss fails loudly. The
+  allowlist is REQUIRED per invocation — no hardcoded default (R22 item 5,
+  discharged 2026-08-16: the old default went stale and would have leaked
+  the K17/K18 fuzz alphabet; cell contents are a per-lane manager
+  decision). build/ is
   prebuilt inside the worktree so the author never runs make. The script
   self-verifies cell hygiene and prints the exact diff-back / review /
   teardown commands. Residual spawn-time leak (session-root CLAUDE.md and
