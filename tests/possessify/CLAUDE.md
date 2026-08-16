@@ -159,6 +159,17 @@ a manager call rather than this lane's. It is how the finding surfaced, too:
 the check that measures it hung the ubsan battery for ten minutes before the
 size was dropped to 10 KB.
 
+## A note for whoever runs this suite alongside something else
+
+`tests/base/k18_cost_gates.rxt` gates on COMPILE TIME — it rides D45's
+generated-code budget (5 s plain), and one of its patterns emits a 205 KB
+artifact that gcc legitimately takes ~2.4 s on. Running `make test` while
+`make mech` is building whole trees pushed it over and produced three
+"failures" that were pure CPU contention. The check that settles it takes ten
+seconds: that pattern's emitted C is BYTE-IDENTICAL with the pass on and off
+(it possessifies nothing) and gcc times 2.39 s against 2.40 s, so
+possessification cannot be the cause. Serialize the batteries.
+
 ## Failing-direction controls
 
 Five `tests/mech/sabotages/` rows, one per refuted rule the design records —
