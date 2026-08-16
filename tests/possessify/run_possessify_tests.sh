@@ -368,6 +368,27 @@ else
     bad "$ndfa_bad of $ndfa capture-free patterns changed under a pass that cannot reach them"
 fi
 
+# The other half of the same claim: `--no-captures` (D42.1's escape hatch) puts
+# a CAPTURE-BEARING pattern back on the DFA too, so the pass cannot reach it
+# either. Worth its own rows because the population is different -- these
+# patterns DO possessify when compiled normally, so if the pass were reached
+# through some path other than the chosen engine, this is where it would show.
+nnc=0; nnc_bad=0
+for pat in '(x)a{2,4}c' '((a)|bc){0,3}d' '(a)\d{4}z' '(x)(?:a|bc)+d'; do
+    "$PCREC" -p rx --no-captures -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    "$PCREC" -p rx --no-captures -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
+        >/dev/null 2>&1 || continue
+    nnc=$((nnc + 1))
+    cmp -s "$WORKDIR/on/gen.c" "$WORKDIR/off/gen.c" || nnc_bad=$((nnc_bad + 1))
+    grep -q '^#define RX_ENGINE "vm"' "$WORKDIR/on/gen.c" \
+        && nnc_bad=$((nnc_bad + 1))
+done
+if [ "$nnc" -gt 0 ] && [ "$nnc_bad" -eq 0 ]; then
+    ok "--no-captures puts capture-BEARING patterns back on the DFA, where the pass cannot reach them either ($nnc patterns, byte-identical)"
+else
+    bad "$nnc_bad of $nnc --no-captures compiles either changed or stayed on the VM"
+fi
+
 echo
 echo "checks passed: $pass"
 echo "checks failed: $fail"
