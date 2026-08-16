@@ -413,7 +413,11 @@ cursor)` at exit — no trail. And the ladder has a rung BELOW even this:
 when the follow set is DISJOINT from the body's interior bytes
 (`z(ab)*y` — every retreat position holds `a`, which can never match
 `y`), §6.3's disjoint-follow auto-possessification proves NO retreat can
-ever succeed and emits a pure forward scan with no cursor at all. The
+ever succeed and emits a pure forward scan with no cursor at all.
+**(The `z(ab)*y` example SURVIVES `eng_brep_design.md` §2's correction to
+that analysis — `(ab)` is non-nullable and admits a unique iteration, so
+it satisfies the repaired rule too. The general claim in §6.3 does not;
+see the annotation there.)** The
 compile-time ladder [M4.5] implements, cheapest first: disjoint follow →
 no machinery; fixed-stride deterministic → cursor, stride-k retreat;
 deterministic variable-length → cursor + boundary record; choice-bearing
@@ -1550,6 +1554,23 @@ APPROACH §2 defines three strengths. What M4 does with each:
   version is the disjoint-follow special case the atomic-groups design note
   already describes as "free in both directions": `a*b ≡ a*+b` when nothing
   that can follow the loop can start with an `a`.
+
+  **REFUTED AS STATED (2026-08-15/16, [ENG-BREP] + R24) — the disjoint-follow
+  rule is NOT sufficient on its own, and the corrected rule lives in
+  `eng_brep_design.md` §2.2.** The sentence above is the exact rule
+  `eng_brep_design.md` §2.4 measured unsound at 117 counterexamples: `a*b`
+  happens to be safe because its body is a single class, but the rule as
+  written also admits `(a|ab){0,4}c`, where a retreat re-decides the SAME
+  iteration to a LONGER one and moves the loop's exit RIGHT rather than left
+  (`"abc"` → `(0,3)` greedy, `(2,3)` possessive). Two further conditions are
+  required — the body must admit a UNIQUE ITERATION (one-unambiguous AND
+  prefix-free on its position automaton), and a LAZY quantifier additionally
+  needs a non-nullable remainder (R24 S-F1, `a{1,3}?` on `"aaaa"`). A third
+  correction: a zero-width assertion in the follow is not absent from it
+  (`[ab]{0,4}\b`), though `$` specifically is safe under a live `!multiline`
+  gate. Read `eng_brep_design.md` §2 before implementing this bullet; the
+  version above is retained because §6.4's status row and §2.5's `z(ab)*y`
+  example both cite it, and because the refutation is the point.
 - **Islands may not span a callout call point** (ABI §2: the callee is opaque,
   atomic and un-fusable). Call points partition the pattern into island
   candidates. Structural, cheap, and it is the whole of what the callout ABI
@@ -1561,7 +1582,7 @@ APPROACH §2 defines three strengths. What M4 does with each:
 |---|---|
 | Prefilter = existing forward+reverse pair, exact for capture-only | designed, §6.1 |
 | Prefilter-before-VM ordering rule | designed, §4.7 — this one is a correctness-of-expectation rule, not a tuning knob |
-| Exact islands + disjoint-follow possessification | designed, built M4.6 |
+| Exact islands + disjoint-follow possessification | designed, built M4.6 — **but the possessification half's rule is SUPERSEDED**: §6.3's disjoint-follow sentence was measured unsound (117 counterexamples) by `eng_brep_design.md` §2.4, whose §2.2 carries the corrected rule (unique-iteration + non-nullable + disjoint-or-exact, with a lazy-only non-nullable-remainder conjunct). The DELIVERY seam is unchanged — §5.2's `discharge` hook — and so is the schedule; only the analysis is bigger than this row assumed |
 | Short-subject threshold `RX_HYBRID_MIN` | seam designed, value MEASURED at M4.6 |
 | Accept-list islands | deferred, §6.3 |
 | Tagged automata (islands spanning captures) | deferred beyond M4 |

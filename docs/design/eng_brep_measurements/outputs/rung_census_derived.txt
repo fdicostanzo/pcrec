@@ -1,0 +1,58 @@
+# ENG-BREP design lane -- archived probe output
+#
+# census_rungs.py [R24 M-F1/M-F2/M-F3]: every rung-census figure the note quotes, derived in python from the archived census files. Replaces an uncommitted sort -u pipeline whose UTF-8 collation merged distinct patterns.
+#
+date:        2026-08-16T01:58:09Z
+repo commit: 79a8847eedde3c775b6a21f22c302b29efcc01b8  (branch eng-brep-r24)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+=== --engine=vm FORCED (rung_census_forcedvm.tsv) ===
+  data rows (EMITTED RUNG STAMPS): 2872
+  -- stamps per rung (one per emitted quantifier instance)
+       cursor               1402
+       frames-unbounded     1234
+       frames-bounded       236
+  -- distinct (pattern, rung, detail) triples  [LOWER BOUND on
+     distinct source quantifiers; see the comment in this script]
+       cursor               398
+       frames-unbounded     191
+       frames-bounded       148
+  -- distinct PATTERNS having at least one quantifier on the rung
+       cursor               349
+       frames-unbounded     188
+       frames-bounded       140
+  -- most-stamped pattern
+       '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
+       stamps 352; distinct detail texts 7 overall, 3 on the
+       frames-bounded rung specifically
+
+=== DEFAULT engine selection (rung_census_default.tsv) ===
+  data rows (EMITTED RUNG STAMPS): 1061
+  -- stamps per rung (one per emitted quantifier instance)
+       cursor               822
+       frames-unbounded     164
+       frames-bounded       75
+  -- distinct (pattern, rung, detail) triples  [LOWER BOUND on
+     distinct source quantifiers; see the comment in this script]
+       cursor               89
+       frames-unbounded     42
+       frames-bounded       23
+  -- distinct PATTERNS having at least one quantifier on the rung
+       cursor               71
+       frames-unbounded     39
+       frames-bounded       15
+  -- most-stamped pattern
+       '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
+       stamps 352; distinct detail texts 7 overall, 3 on the
+       frames-bounded rung specifically
+
+=== DEFAULT census, capture-free population ===
+  `#   refused ...DFA engine` lines listed in the summary: 40
+  (the probe prints only the first 40 refusals; the SUMMARY's own
+   `refused` tally is the population figure the note should quote)
+  #   refused                      613
+  # patterns in: 756, refused: 613

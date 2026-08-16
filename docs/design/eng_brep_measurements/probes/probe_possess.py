@@ -33,6 +33,7 @@ claim to be the three-way sweep the design note's S5 specifies.
 Usage: probe_possess.py [--verbose] > possess.tsv
 """
 import itertools
+import os
 import random
 import re
 import re._constants as C
@@ -40,6 +41,13 @@ import re._parser as P
 import sys
 
 VERBOSE = "--verbose" in sys.argv
+
+# FAILING-DIRECTION CONTROL for [R24 S-F1]. With this set the lazy conjunct is
+# disabled and the analysis reverts to the refuted rule, so a run can show that
+# the conjunct is what removes the counterexamples rather than something else
+# having changed underneath. A fix whose control is not measured is a fix
+# nobody can tell from a coincidence.
+NO_LAZY_CONJUNCT = os.environ.get("BREP_NO_LAZY_CONJUNCT") == "1"
 
 # ---- the analysis ---------------------------------------------------------
 
@@ -269,18 +277,38 @@ def walk(seq, follow, may_end, out, enclosing=()):
             # even that. `X{2,2}` over such a body has one exit, whatever
             # follows it.
             exact = lo == hi and hi is not C.MAXREPEAT
-            verdict = ("possessifiable"
-                       if (uniq and not bn and (disjoint or exact)) else "no")
-            if exact and uniq and not bn:
+            # THE LAZY CONJUNCT [R24 S-F1]. The disjointness arm says the
+            # follow's first-byte test fails at every non-maximal exit -- which
+            # is VACUOUS when the follow can match empty and the match can end
+            # there. A greedy loop is unharmed (it tops out at the chain's top,
+            # where the vacuous follow also succeeds); a LAZY loop stops at the
+            # bottom and reports a shorter span. Repro: `a{1,3}?` on "aaaa" is
+            # (0,1) lazy and (0,3) possessive.
+            #
+            # `end_here` -- the remainder is nullable AND the match may finish
+            # here -- was computed by this walk from the first version and never
+            # consulted. That dead code was the repair.
+            lazy = op is C.MIN_REPEAT and not NO_LAZY_CONJUNCT
+            base_ok = uniq and not bn
+            if base_ok and exact:
+                verdict = "possessifiable"
                 why = "exact-count+unique-iteration"
+            elif base_ok and disjoint and lazy and end_here:
+                verdict = "no"
+                why = "lazy+nullable-rest"
+            elif base_ok and disjoint:
+                verdict = "possessifiable"
+                why = ("disjoint+unique-iteration+non-nullable-rest" if lazy
+                       else "disjoint+unique-iteration")
             elif not disjoint:
+                verdict = "no"
                 why = "overlap:" + ",".join(
                     sorted(chr(c) if 32 <= c < 127 else "\\x%02x" % c
                            for c in sorted(bf & eff))[:6])
-            elif not uniq:
-                why = uwhy
             else:
-                why = "disjoint+unique-iteration"
+                # disjoint, but the body itself disqualifies it
+                verdict = "no"
+                why = uwhy if not uniq else "nullable-body"
             out.append((op, lo, hi, bf, eff, verdict, why))
             walk(body, eff, end_here, out, enclosing + (bf,))
             continue
@@ -303,8 +331,13 @@ def analyse(pat):
 
 BODIES = ["a", "[ab]", "(a|b)", "((a)|b)", "(?:ab)", "(?:a|bc)", "(a)",
           "[^c]", "(a|ab)", "(?:a|)", "b*", "(?:ab|a)"]
-COUNTS = ["{0,4}", "{1,3}", "{2,2}", "{0,2}", "{3,}", "*", "+", "?", "*?",
-          "{0,4}?"]
+# BASE counts, written greedy. `?` lazifies and `+` possessifies each, so both
+# preference families come from one list and neither can be silently omitted
+# the way the lazy family was before [R24 S-F1]. The GREEDY family this
+# produces is identical to the pre-R24 one: the old COUNTS list also carried
+# `*?` and `{0,4}?`, and the old `possessive_form` skipped exactly those two.
+BASE_COUNTS = ["{0,4}", "{1,3}", "{2,2}", "{0,2}", "{3,}", "*", "+", "?"]
+PREFS = ["greedy", "lazy"]
 FOLLOWS = ["c", "[cd]", "(?:c|d)", "a", "[ac]", "b?c", "", "c?", "$", "ac",
            "(?:c|a)",
            # added after v1: a follow starting with the body's SECOND byte is
@@ -328,27 +361,27 @@ def subjects(seed=7, n=260):
     return s
 
 
-def possessive_form(pfx, body, count):
-    """The same quantifier, made possessive. `?`/`*`/`+`/`{m,n}` take a
-    trailing `+`; a LAZY quantifier has no possessive spelling, so those rows
-    are skipped rather than mis-formed."""
-    if count.endswith("?") and count not in ("?",):
-        return None
-    return pfx + body + count + "+"
+def spellings(count, pref):
+    """(preference spelling, possessive spelling) for one base count.
+
+    The base counts are written GREEDY; `?` makes the quantifier lazy and `+`
+    makes it possessive, so one base count yields both families. Before
+    [R24 S-F1] this function existed only to SKIP lazy rows -- which is
+    exactly why the lane's differential could not see the lazy defect.
+    """
+    return (count + "?" if pref == "lazy" else count), count + "+"
 
 
 def main():
     subs = subjects()
-    print("pattern\tverdict\twhy\tdifferential\tn_subjects")
+    print("pref\tpattern\tverdict\twhy\tdifferential\tn_subjects")
     tally = {}
     examples = {}
-    for pfx, body, count, follow in itertools.product(
-            PREFIXES, BODIES, COUNTS, FOLLOWS):
-        pat = pfx + body + count + follow
-        poss = possessive_form(pfx, body, count)
-        if poss is None:
-            continue
-        poss += follow
+    for pref, pfx, body, count, follow in itertools.product(
+            PREFS, PREFIXES, BODIES, BASE_COUNTS, FOLLOWS):
+        cpref, cposs = spellings(count, pref)
+        pat = pfx + body + cpref + follow
+        poss = pfx + body + cposs + follow
         try:
             rx, rp = re.compile(pat), re.compile(poss)
         except re.error:
@@ -356,15 +389,23 @@ def main():
         try:
             info = analyse(pat)
         except Exception as e:                # noqa: BLE001 - a parse we do
-            tally["analysis-error"] = tally.get("analysis-error", 0) + 1
+            tally[(pref, "analysis-error")] = \
+                tally.get((pref, "analysis-error"), 0) + 1
             if VERBOSE:
                 print("# analysis error %r: %s" % (pat, e), file=sys.stderr)
             continue
-        # the quantifier under test is the OUTERMOST repeat at top level
-        top = [t for t in info]
-        if not top:
+        # The quantifier under test is the OUTERMOST repeat at top level.
+        # R24's soundness critic warns that `info[0]` is the right row only
+        # because no PREFIX in this family contains a quantifier; that is true
+        # by construction here and is asserted rather than assumed.
+        if not info:
             continue
-        verdict, why = top[0][5], top[0][6]
+        # Checked by ANALYSING the prefix rather than by scanning it for
+        # quantifier characters: `(?:z|)` contains a `?` that is group syntax,
+        # and the character heuristic this replaced fired on it.
+        assert not analyse(pfx), \
+            "a prefix containing a quantifier makes info[0] the wrong row"
+        verdict, why = info[0][5], info[0][6]
 
         diverged = None
         for s in subs:
@@ -375,25 +416,33 @@ def main():
                 diverged = (s, a, b)
                 break
         d = "same" if diverged is None else "DIVERGES"
-        key = (verdict, d)
+        key = (pref, verdict, d)
         tally[key] = tally.get(key, 0) + 1
         examples.setdefault(key, []).append((pat, diverged))
-        print("%s\t%s\t%s\t%s\t%d" % (pat, verdict, why, d, len(subs)))
+        print("%s\t%s\t%s\t%s\t%s\t%d"
+              % (pref, pat, verdict, why, d, len(subs)))
 
-    print("# --- confusion matrix ---", file=sys.stderr)
+    print("# --- confusion matrix (preference, verdict, differential) ---",
+          file=sys.stderr)
     for k in sorted(tally, key=str):
-        print("#   %-34s %d" % (str(k), tally[k]), file=sys.stderr)
-    bad = examples.get(("possessifiable", "DIVERGES"), [])
-    print("# SOUNDNESS: %d counterexample(s) to 'possessifiable => identical'"
-          % len(bad), file=sys.stderr)
-    for pat, dv in bad[:20]:
-        print("#   %r  subject=%r greedy=%r possessive=%r"
-              % (pat, dv[0], dv[1], dv[2]), file=sys.stderr)
-    cons = examples.get(("no", "same"), [])
-    print("# CONSERVATISM: %d 'no' verdicts whose differential never diverged"
-          % len(cons), file=sys.stderr)
-    for pat, _ in cons[:15]:
-        print("#   %r" % pat, file=sys.stderr)
+        print("#   %-40s %d" % (str(k), tally[k]), file=sys.stderr)
+    total_bad = 0
+    for pref in PREFS:
+        bad = examples.get((pref, "possessifiable", "DIVERGES"), [])
+        total_bad += len(bad)
+        print("# SOUNDNESS [%s]: %d counterexample(s) to "
+              "'possessifiable => identical'" % (pref, len(bad)),
+              file=sys.stderr)
+        for pat, dv in bad[:20]:
+            print("#   %r  subject=%r %s=%r possessive=%r"
+                  % (pat, dv[0], pref, dv[1], dv[2]), file=sys.stderr)
+    print("# SOUNDNESS [both]: %d" % total_bad, file=sys.stderr)
+    for pref in PREFS:
+        cons = examples.get((pref, "no", "same"), [])
+        print("# CONSERVATISM [%s]: %d 'no' verdicts whose differential never "
+              "diverged" % (pref, len(cons)), file=sys.stderr)
+        for pat, _ in cons[:10]:
+            print("#   %r" % pat, file=sys.stderr)
 
 
 main()

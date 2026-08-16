@@ -1,6 +1,58 @@
 # ENG-BREP — the bounded-repeat emission strategy
 
-**STATUS: PROPOSED.** Design note for the `[ENG-BREP]` plan row, written
+**STATUS: PROPOSED, AMENDED PER R24 (2026-08-15/16)** —
+`../dev/reviews/2026-08-15-r24-eng-brep.md`. Three read-only critics
+(soundness, measurements-vs-prose, consistency). **The central result HELD and
+was strengthened; one design claim was REFUTED and five were narrowed.**
+
+What held, and by more than this note could show. The repaired
+possessification rule of §2.2 — unique-iteration + non-nullable +
+disjoint-or-exact — is sound for GREEDY quantifiers against **libpcre2** as
+well as python, at 0 counterexamples over the full 5,016 × 260 family with an
+identical possessifiable population; that closes §8 item 6's own disclosed gap
+from the outside. §2.2's transitive-FOLLOW line — which §8 item 8 nominated as
+"the single most likely place for a soundness bug to be hiding" — survived a
+42,336-pair targeted attack at 0 divergences, with failing-direction controls
+confirming it is load-bearing rather than inert. Both censuses in §2.6 recount
+exactly from raw data and are robust to leave-one-out. All four plan-row
+requirements were confirmed accurately discharged.
+
+**What did NOT survive: §2.3's lazy paragraph.** The note claimed greedy, lazy
+and possessive agree on the span whenever the disjointness arm applies. They
+do not: on a NULLABLE remainder the follow's first-byte test is vacuous, and a
+lazy quantifier stops at the bottom of the exit chain where a greedy one tops
+out. 316 diverging cells, both oracles agreeing; `a{1,3}?` on `"aaaa"` is
+`(0,1)` lazy and `(0,3)` possessive. §2.2's rule now carries a lazy-only
+conjunct, §2.3 states the corrected argument, and §2.4 runs the lazy family
+that this lane's probe structurally could not — its helper returned `None` for
+every lazy row, because a lazy quantifier has no possessive spelling, and
+nothing in the output said half the question was unasked. **No live
+miscompile: nothing is implemented.** This is the design-first process
+catching a defect before an emitter exists, which is what it is for.
+
+Five narrowings, applied: `$` in the follow is promoted from BELIEVED to
+MEASURED-WITH-GATE (safe at 0/720, unsafe at 180/720 under `(?m)`, so the gate
+must be a live check — §2.5); §3.4's capture derivation regains the
+ZERO-ITERATION clause the archived probe had and the prose dropped, 42% of its
+own validated population (§3.4); §2.7's "the probe is wrong in the right
+direction" is qualified to CATEGORIES, with the structural reason pcrec itself
+is exact for caseless (§2.7); §6's instrument is disclosed as span-only and
+python-only, and the panel's captures-aware three-way rebuild confirms the
+claim at 15,600 cells (§6); and U9 is cited where the oracle choice matters
+(§2.4, §5.3). §5.3's greedy-AND-lazy sweep is now mandatory rather than
+advisory.
+
+Four measurement discrepancies, all in the rung census, all fixed by
+re-derivation with a COMMITTED script (`probes/census_rungs.py`,
+`probes/probe_cell33.sh`) — and the shared cause is recorded in §10.1: an
+uncommitted `sort -u` pipeline running under a UTF-8 locale, whose collation
+merges strings differing only in punctuation, which is close to a worst case
+for a corpus of regexes. §3.2 and §7 carry the corrected figures.
+
+Sections carry **[R24]** markers where the panel's finding is what changed
+them.
+
+Design note for the `[ENG-BREP]` plan row, written
 DESIGN-FIRST and panel-eyed before any implementation lane opens, on the
 scheduling precedent K18 set at the R21/R23 close. **This note is not the
 fix.** It carries the analysis, the strategy ladder, the measurements that
@@ -30,10 +82,12 @@ argument I find convincing but did not reduce to either of the other two).
 R21's and R23's shared lesson is that panels break what is BELIEVED, so the
 marks point at the soft places rather than making the note look strong.
 
-### 0.2 Four things this lane refuted, three of them its own
+### 0.2 Six things refuted here, five of them this note's own
 
 Put first, because a note whose refutations are buried reads as an advocacy
-document.
+document. Items 1–4 are this lane's; items 5–6 were found by R24 and are
+listed with the rest rather than quarantined in the panel block, because a
+reader deciding how much to trust this note should see them together.
 
 1. **The possessification analysis as the plan row states it is UNSOUND.**
    "Body's consumable set disjoint from the follow's first set → giveback is
@@ -42,7 +96,7 @@ document.
    in two places. §2.4. The repair — the body must also admit a UNIQUE
    iteration — is the analysis this note actually proposes, and it survives
    the same differential at 0 counterexamples over 5,016 patterns × 260
-   subjects.
+   subjects, and (R24) at 0 against libpcre2 as well.
 
 2. **A zero-width assertion in the follow breaks the first-set model.**
    MEASURED: `[ab]{0,4}\b` on `"abc"` matches `(0,0)` greedy and `(3,3)`
@@ -68,6 +122,21 @@ document.
    **quadratic** in the unrolled count — 0.012 s at N=64 to 2.689 s at
    N=4000 — and that it lives in a different module than this row. §1.4.
 
+5. **This note's own LAZY extension was unsound** [R24 S-F1, the panel's one
+   design-level hit]. §2.3 claimed greedy, lazy and possessive agree on the
+   span under the disjointness arm; on a nullable remainder they do not, at
+   316 measured cells. The rule now carries a lazy-only conjunct. The probe
+   could not have caught it: it compared each pattern against a possessive
+   respelling, and a lazy quantifier has no possessive spelling, so the helper
+   that noticed returned `None` and the family vanished from the differential
+   without a word in the output. §2.3, §2.4, §10.1.
+
+6. **Every "distinct" figure in the rung census was an undercount** [R24
+   M-F1/M-F2], because an uncommitted `sort -u` pipeline ran under a UTF-8
+   locale whose collation treats `\d+` and `[\d]+` as the same string. 11
+   distinct patterns was 15; 311/111/96 was 398/191/148. The stamp tallies,
+   which never passed through `sort -u`, were right all along. §3.2, §10.1.
+
 ### 0.3 The design, in brief
 
 Bounded repeats are answered by a LADDER, cheapest first, and the ladder's
@@ -75,7 +144,7 @@ order is Frank's ruled question order:
 
 | # | Rung | What it costs at run time | Owner |
 |---|---|---|---|
-| 1 | **Possessify** — prove no retreat into the loop can ever succeed | zero frames, zero trail | a `discharge` hook on §5.2's socket |
+| 1 | **Possessify** — prove no retreat into the loop can ever succeed (the rule is preference-sensitive: §2.2) | zero frames, zero trail | a `discharge` hook on §5.2's socket |
 | 2 | **Rung-select** — the §2.5 ladder: cursor / fixed stride / reverse-deterministic / boundary record | one frame per LOOP, not per iteration | `emit_vm.c`'s per-`A_REP` rung choice (partly built) |
 | 3 | **Counter-K** — one body copy per K iterations plus a counter | one frame per iteration, K amortised | new, `emit_vm.c` |
 | — | Replication (today) | one frame per iteration, O(N·body) emitted C | the status quo, retained as ground truth |
@@ -137,9 +206,12 @@ several landings since the row was written. The cause of the 27 lines was not
 chased; the point of the row is that the order of magnitude and the shape both
 reproduce.
 
-**gcc's cost is linear at −O1 and quadratic at −O2.** −O1 doubles when N
-doubles (0.52 → 1.01 → 2.02 → 3.22 across 64/128/256/400); −O2 goes ×3.1,
-×4.1, ×2.7 over the same steps, i.e. an exponent of about 2. `limits.h`'s
+**gcc's cost is linear at −O1 and quadratic at −O2.** −O1 tracks N closely
+(0.52 → 1.01 → 2.02 → 3.22 across 64/128/256/400 — the first two intervals
+double, the third is ×1.56 against a ×1.56 step in N, so "doubles" was the
+wrong word for a claim that is really "exponent 1"; a regression over the
+whole sweep gives **0.99**). −O2 goes ×3.1, ×4.1, ×2.7 over the same steps,
+i.e. an exponent of about 2. `limits.h`'s
 recorded curve (0.50 / 1.40 at N=64, 3.50 / 51.54 at N=400) is reproduced to
 within the noise of a different machine. This is the whole justification for
 `PCREC_MAX_VM_REPEAT_COPIES = 64` and it survives re-measurement.
@@ -218,10 +290,19 @@ the erased path has its own ceiling that nobody wrote down:
 ### 2.1 The claim
 
 For a large and precisely-characterisable class of quantifiers, NO retreat
-into the loop can ever produce a match the maximal path does not. For those,
+into the loop can ever produce a match the PREFERRED path does not. For those,
 the emitter owes zero resume frames, zero trail entries and no counter — the
 loop is a forward scan. This is the cheapest rung and it must be tried first,
 which is why Frank ruled it question 1.
+
+"Preferred path" rather than "maximal path" is deliberate [R24 S-F1]: for a
+greedy quantifier the preferred path IS the maximal one, but a lazy
+quantifier prefers the minimum, and the class of quantifiers that owe zero
+frames is correspondingly narrower for lazy than for greedy. §2.2's rule
+carries the difference as an explicit conjunct and §2.3 shows the witness
+that forced it. A reader who takes "zero resume frames" from this section
+alone and applies it to a lazy quantifier on the disjointness arm will emit a
+wrong span on a measured family.
 
 ### 2.2 The analysis, stated precisely
 
@@ -246,12 +327,22 @@ Say `X` **admits a unique iteration** when both hold on `X`'s position
 - **(U2) prefix-free** — no ACCEPTING position has an outgoing edge. No proper
   prefix of an iteration is itself a complete iteration.
 
-**THE RULE.** `Q` is possessive-equivalent when
+**THE RULE** (the lazy conjunct added at [R24 S-F1]). `Q` is
+possessive-equivalent when
 
 > `X` admits a unique iteration, `X` is not nullable, and **either**
-> FIRST(X) ∩ FOLLOW(Q) = ∅ **or** `m == n`.
+>
+> - `m == n` — the EXACT-COUNT arm, which holds for either preference; **or**
+> - FIRST(X) ∩ FOLLOW(Q) = ∅ — the DISJOINTNESS arm, which holds
+>   unconditionally for a GREEDY `Q`, and for a LAZY `Q` only when the match
+>   cannot also END at the quantifier (everything after `Q`, out to the end of
+>   the pattern, is non-nullable).
 
-Three notes on the shape of that rule.
+Four notes on the shape of that rule.
+
+- **The lazy conjunct is not decoration; without it the arm is unsound.**
+  MEASURED: 316 counterexamples, e.g. `a{1,3}?` on `"aaaa"` is `(0,1)` lazy
+  and `(0,3)` possessive. §2.3 and §2.4.
 
 - **The exact-count arm is free and it is not in the plan row.** With a
   unique-iteration body there is exactly one way to run `k` iterations from a
@@ -292,23 +383,71 @@ position RIGHT rather than left, because re-choosing inside the body changes
 the iteration's LENGTH. Without (U2), the same happens without any alternation
 at all. Both are measured witnesses, not hypotheticals — §2.4.
 
-**Lazy quantifiers.** Steps 1–2 do not mention preference, so the chain is the
-same; only the order of trying is reversed. Under the disjointness arm exactly
-one exit in the chain can be followed successfully, so greedy, lazy and
-possessive agree on the span, and the emitter owes no frames for either
-preference. What a lazy quantifier does NOT admit is the literal `X{m,n}+`
-spelling, so the differential in §2.4 skips lazy rows and this paragraph is
-marked **BELIEVED**, not measured. §8 carries it.
+**Lazy quantifiers — the argument above is GREEDY-ONLY, and the first version
+of this note got that wrong [R24 S-F1, REFUTED].** Step 3 is where preference
+enters, and the original paragraph waved it away: steps 1–2 do not mention
+preference, so the chain is the same, and it concluded that greedy, lazy and
+possessive therefore agree on the span. They do not.
 
-### 2.4 The differential that refuted the first version
+The hole is in step 5. "The follow's first-byte test fails at every
+non-maximal exit" is VACUOUSLY TRUE when the follow can match empty and the
+match can end at the quantifier — there is no first byte to test. A greedy
+loop is unharmed by that: it tops out at the chain's top (step 3), and the
+vacuous follow succeeds there just as it would anywhere, so greedy and
+possessive still agree. **A lazy loop stops at the BOTTOM of the chain**, where
+the same vacuous follow also succeeds — and reports a shorter span than the
+possessive form. MEASURED, `a{1,3}?` on `"aaaa"`:
+
+| form | span |
+|---|---|
+| `a{1,3}?` (lazy) | `(0,1)` |
+| `a{1,3}+` (possessive) | `(0,3)` |
+
+so the loop's exits are not interchangeable and the emitter cannot drop the
+machinery. This is why the rule in §2.2 carries a lazy-only conjunct: on the
+disjointness arm a lazy `Q` additionally requires that the match cannot end at
+the quantifier — everything after `Q`, propagated outward to the end of the
+pattern, must be non-nullable. With that conjunct the differential is clean in
+both preference families (§2.4).
+
+**The EXACT-COUNT arm is preference-independent and needs no conjunct.** There
+is one exit, so top and bottom of the chain are the same position and step 3
+is vacuous rather than the follow test being vacuous. MEASURED at 0
+counterexamples for lazy as well as greedy, which is also why this arm carried
+the largest share of the realistic census (§2.6) through the refutation
+unchanged.
+
+**Why this lane could not see it.** `probe_possess.py` built a possessive
+respelling of each generated pattern to compare against, and a lazy quantifier
+has no possessive spelling — `X{m,n}?+` is not a thing. So the probe's helper
+returned `None` for every lazy row and the whole preference family was
+silently absent from a differential the note described as covering the design.
+The repair is to compare a LAZY pattern against the POSSESSIVE form of the
+same base count (`X{m,n}?` vs `X{m,n}+`), which is a valid pair and is what
+§2.4's second family now does. §10 records this as the lane's own
+instrumentation defect, because it is one.
+
+### 2.4 The differentials that refuted the first two versions
 
 `probes/probe_possess.py` states the analysis as code and checks it against an
 oracle in both directions over a generated family (3 prefixes × 12 bodies ×
-8 possessifiable counts × 19 follows, of which **5,016 compile as a
-greedy/possessive pair**, 260 subjects each — about 1.3 M pattern-subject
-comparisons). The oracle is python3 `re`, whose
-possessive quantifiers are the mechanised statement of "no retreat into this
-loop"; this is a BASE-TIER oracle, not the three-way sweep §5.3 specifies.
+8 base counts × 19 follows, each base count spelled BOTH ways — `X{m,n}`
+against `X{m,n}+` and `X{m,n}?` against `X{m,n}+` — for **8,032 compiling
+pairs**, 260 subjects each, about 2.1 M pattern-subject comparisons). The
+oracle is python3 `re`, whose possessive quantifiers are the mechanised
+statement of "no retreat into this loop"; this is a BASE-TIER oracle, not the
+three-way sweep §5.3 specifies. **The lazy half of that family did not exist
+before [R24]** — see §2.3's closing paragraph and §10.
+
+One caveat on the oracle, measured by the R24 panel and recorded in
+`docs/dev/upstream_issues.md` U9: python-possessive and PCRE2-possessive are
+**not interchangeable**. PCRE2 10.46 does not backtrack into a PRECEDING item
+after a possessive bounded repeat of a GROUP (`a?(?:b){0,4}+a` on `"a"`:
+PCRE2 reports no match, python and the correct answer are `(0,1)`), and that
+shape sits inside exactly the family swept here. It does not touch any verdict
+below — the divergence is on the possessive SIDE of the comparison, not on the
+analysis — but it is the measured reason §5.1's pcrec-vs-pcrec differential is
+the primary instrument and an oracle is the ride-along.
 
 Two directions, because they are different questions:
 
@@ -338,7 +477,7 @@ alternation at all: `(?:ab?){0,4}b` on `"ab"` is `(0,2)` greedy and no match
 possessive. The body is one-unambiguous; its accepting position `a` (with `b?`
 empty) simply has an outgoing edge. That is (U2).
 
-**v2, the rule of §2.2** (`outputs/possess_differential.summary`), with the
+**v2, the rule of §2.2 without the lazy conjunct — GREEDY ONLY**, with the
 assertion follows of §2.5 and three follows added that the v1 family lacked:
 
 | verdict | differential same | differential DIVERGES |
@@ -349,6 +488,44 @@ assertion follows of §2.5 and three follows added that the v1 family lacked:
 0 counterexamples to soundness, and 1,463 divergences among the noes, so the
 analysis is not vacuous. Note the population GREW (1,395 → 2,031) while
 getting sound, which is the exact-count arm paying for itself.
+
+**And v2 is where the note stopped, which is why R24 found a third defect.**
+Running the same rule over the LAZY spelling of the same family
+(`outputs/possess_differential_lazy_control.summary`, the probe's
+`BREP_NO_LAZY_CONJUNCT=1` mode):
+
+| lazy, no conjunct | differential same | differential DIVERGES |
+|---|---|---|
+| possessifiable | 1,715 | **316** |
+| no | 1,318 | 1,667 |
+
+316 counterexamples — and this lane's 316 is the same number the panel reached
+independently on its own instrument, which is the strongest form of agreement
+two measurements of one defect can have.
+
+**v3, with the lazy conjunct** (`outputs/possess_differential.summary`), both
+preference families in one run:
+
+| preference | verdict | differential same | differential DIVERGES |
+|---|---|---|---|
+| greedy | possessifiable | 2,031 | **0** |
+| greedy | no | 1,522 | 1,463 |
+| lazy | possessifiable | 1,695 | **0** |
+| lazy | no | 1,338 | 1,983 |
+
+Three things to read off this, none of them automatic:
+
+- **The greedy rows are byte-identical to v2's** (2,031 / 1,522 / 1,463). The
+  conjunct is scoped to lazy and provably did not disturb the family that was
+  already clean — which a restructuring this size could easily have done
+  silently.
+- **The conjunct is what removes the 316**, not something else that changed
+  underneath: the control above is the same binary with one flag flipped, and
+  it is committed so the control can be re-run rather than believed.
+- **It costs 20 false declines** (1,715 → 1,695 possessifiable-and-same), so
+  the repair is tight rather than a retreat to declining everything lazy. The
+  lazy possessifiable population is 1,695 against greedy's 2,031: laziness
+  costs about 17% of the class, all of it the nullable-rest tail.
 
 **One thing v1 got right by accident, disclosed.** v1's follow set contained
 no follow beginning with a body's SECOND byte, so the `(?:ab|a)` family — just
@@ -371,10 +548,31 @@ consumes nothing" is unsound:
 `\b` at a retreat position can succeed where it fails at the maximal exit,
 which is precisely the thing a first-BYTE set cannot express. **The rule:** an
 assertion reachable at the follow's first position widens FOLLOW to all bytes,
-i.e. the analysis declines. Sound, one line, and it costs the `X{m,n}$` shape,
-which §2.7 accounts for.
+i.e. the analysis declines. Sound, one line.
 
-### 2.6 What it covers — two censuses, and they disagree by 4×
+**`$` is the exception, and it is now MEASURED-WITH-GATE rather than a
+conservatism [R24 S-F2].** This note originally declined `$` with the rest and
+filed "is `$` separately safe?" as its highest-value follow-up; the panel
+answered it. `$` in the follow IS safe — **0 of 720 diverging cells** — and
+the argument is an upward-closure one: `$` is true only at the subject end
+(and before a final newline), which no retreat can reach from a position
+further left, so a retreat position that satisfies `$` cannot exist below the
+maximal exit.
+
+**But only while MULTILINE is off.** Under `(?m)`, `$` is true before EVERY
+newline, the upward-closure argument collapses per-line, and the same sweep
+gives **180 of 720 diverging**. So the exemption is conditional and the
+condition must be a LIVE CHECK in the implementation — a test on the pattern's
+actual multiline state at analysis time, not a comment saying pcrec does not
+support `(?m)` yet. pcrec refuses `(?m)` today (module `assertions`), which is
+what makes the exemption safe NOW and is exactly the kind of fact that stops
+being true without anyone revisiting this note.
+
+The 0 is not inert: on the same instrument `\b`/`\B` follows give 332 of 720
+diverging and `^` gives 80 of 240, so the sweep can and does find divergence
+where divergence exists.
+
+### 2.6 What it covers — two censuses, and they disagree by more than four times
 
 `probes/probe_possess_corpus.py` runs the same analysis (imported, not copied,
 so a refutation moves both numbers at once) over two populations.
@@ -384,8 +582,8 @@ python3 `re` cannot parse and which are reported rather than dropped:
 
 | | possessifiable | no | rate |
 |---|---|---|---|
-| bounded | 55 | 246 | **18%** |
-| unbounded | 128 | 1,296 | 9% |
+| bounded | 51 | 250 | **17%** |
+| unbounded | 123 | 1,301 | 9% |
 
 **A realistic set** — `probes/realistic_patterns.txt`, 40 patterns of the kind
 bounded repeats actually appear in (dates, UUIDs, IPs, MACs, fixed-width
@@ -396,16 +594,29 @@ fields, versions, log lines):
 | bounded | 69 | 15 | **82%** |
 | unbounded | 7 | 15 | 32% |
 
+**These figures moved at [R24 S-F1]**, because the lazy conjunct declines
+quantifiers the old rule admitted. Nine corpus quantifiers changed verdict —
+4 bounded (55 → 51) and 5 unbounded (128 → 123) — every one of them
+lazy + disjointness-arm + nullable-remainder, which is exactly the class §2.3's
+refutation identifies. The realistic set did NOT move at all: it contains no
+lazy quantifier, so 69/84 stands unchanged. (The panel's own blast-radius
+estimate was 10 quantifiers where the committed script measures 9; the
+one-cell difference is not explained here, and the script's number is the one
+quoted because it can be re-run.)
+
 **The gap is the finding.** The .rxt corpus is a COMPILER test corpus,
 adversarial by construction — its bounded repeats were chosen to break things,
 so a possessification rate measured on it says nothing about the population the
 feature is for. On patterns people write, four bounded repeats in five need no
-backtracking machinery at all. Both denominators are reported because either
+backtracking machinery at all, against roughly one in six on the corpus. Both denominators are reported because either
 one alone would mislead: the first understates the win, the second is a
 hand-written list and says so in its own header.
 
 Reasons, realistic set: 52 exact-count + unique-iteration, 24
-disjoint + unique-iteration, 27 overlap, 3 not-prefix-free.
+disjoint + unique-iteration, 27 overlap, 3 not-prefix-free. The exact-count
+arm carries 52 of the 76 — which is also why the realistic figure survived a
+refutation that moved the corpus figure: the arm the refutation did not touch
+is the arm real patterns use.
 
 ### 2.7 Conservatism, named rather than smoothed over
 
@@ -413,20 +624,40 @@ disjoint + unique-iteration, 27 overlap, 3 not-prefix-free.
 sound, not tight. The identified sources, in order of how much they cost:
 
 - **`$` follows** (`a{0,4}$`, `\d{2,4}$`): declined by §2.5's blanket
-  assertion rule. `$`'s truth at a position does not depend on the byte AT the
-  position the way `\b`'s does, so it is plausibly always safe — **BELIEVED,
-  not measured**, and §8 carries it as the highest-value follow-up because
-  end-anchored bounded repeats are common.
+  assertion rule, and — as of [R24 S-F2] — **recoverable**, because `$` is
+  measured safe with a live `!multiline` gate. This was the largest single
+  source of conservatism in the greedy family and the implementation lane
+  should take it; §2.5 states the gate.
 - **Subsumed follows** (`[ab]{0,4}b?c`): FOLLOW contains `b` because of the
   `b?`, but a `b` at any retreat position was already consumable by the loop,
   so the retreat cannot help. PCRE2's `pcre2_auto_possess.c` does exactly this
   kind of subsumption reasoning; pcrec's first version should not.
+- **The lazy conjunct's own cost** [R24 S-F1]: 20 quantifiers the greedy rule
+  admits are declined in the lazy spelling without the differential showing a
+  divergence. That is the price of stating the conjunct on "the rest is
+  nullable" rather than on the sharper "some non-maximal exit actually
+  succeeds", and it is the right trade for a first version.
 - **`\d`, `\w` and every other CATEGORY** widen to all bytes in the probe's
   model. In pcrec they would not — the real implementation has exact 256-bit
   class bitmaps and can intersect them precisely, so the shipped analysis
-  should be STRICTLY less conservative here than the probe that validated it.
-  The realistic census's 82% is therefore a LOWER bound on what pcrec can
-  achieve, which is the right direction for a probe to be wrong in.
+  should be STRICTLY less conservative here for CATEGORIES than the probe that
+  validated it.
+
+  **This is a claim about categories only, and the original wording
+  over-generalised it** [R24 S-F4]. "The probe is wrong in the right
+  direction" is NOT a blanket property: the probe's IGNORECASE handling is
+  unsound in the OTHER direction, because python folds case at compile time,
+  so the probe computes FIRST(`(?i)a`) = `{a}` and misses `A`. A porting lane
+  that inherited the probe's model along with its conclusions would inherit
+  that hole.
+
+  **pcrec itself is safe here STRUCTURALLY, for a reason worth writing down:**
+  `src/parse/parse.c`'s `cls_casefold` folds case into every `A_CLASS` bitmap
+  at PARSE time, and every literal in pcrec is an `A_CLASS` — so by the time
+  any analysis sees the AST, a caseless `a` already has both `a` and `A` in
+  its bitmap and the byte-set model is exact rather than approximate. The
+  probe's defect is a property of python's parse tree, not of the design.
+  Census impact was one harmless row; the census figures survive it.
 
 ### 2.8 Delivery seam: §5.2's socket, and why the socket and not the emitter
 
@@ -470,6 +701,17 @@ justified on its own terms — which §2.3 does and §2.4 checks — and any pla
 the two engines possessify different sets is not a compatibility defect,
 because both compute the same answers.
 
+**Where this note's rule and pcrec's own prior design disagree** [R24 C-F1].
+`engine_m4.md` §6.3 names disjoint-follow possessification as "the one real
+piece of new analysis M4.6 owes" and states it in exactly the form §2.4
+measured unsound; §6.4's status table calls it "designed, built M4.6". Both
+are now annotated in place to point here, and §2.5's `z(ab)*y` example is
+annotated as surviving (its body is non-nullable and admits a unique
+iteration, so the repaired rule admits it too). The DELIVERY seam that
+document specifies — §5.2's `discharge` hook, §2.8 above — is unaffected; what
+changed is only that the analysis behind the hook is bigger than a first-set
+comparison.
+
 Two differences worth recording so a later reader does not assume parity.
 PCRE2's analysis works on compiled opcodes and handles a fixed repertoire of
 item shapes; the one proposed here works on the AST before lowering and keys
@@ -487,9 +729,18 @@ PCRE2 does subsumption reasoning this note explicitly defers (§2.7).
 deterministic → boundary record → frames + stamped ceiling. [M4.5b] landed 2
 of the 5 rungs. What exists in `emit_vm.c` today is a two-way choice made per
 `A_REP` by `vm_cursor_fits` — a deterministic FIXED-LENGTH body (via
-`vm_det_seq`, plus D44.1's capture-offset extension) takes the cursor rung;
-everything else falls through to frames, bounded or unbounded. D46 stamps the
-choice per quantifier and `--emit-ir` reports it.
+`vm_det_seq`, plus D44.1's capture-offset extension) takes the span-loop
+cursor; everything else falls through to frames, bounded or unbounded. D46
+stamps the choice per quantifier and `--emit-ir` reports it.
+
+**A naming note, because this note and `engine_m4.md` count rungs
+differently** [R24 C-F3]. `--emit-ir` stamps the three values `cursor`,
+`frames-bounded` and `frames-unbounded`, and the census below is keyed on
+those stamps — so "cursor" here is an EMITTED-STRATEGY name, not a ladder
+position. In §2.5's own hierarchy the cursor is the fixed-stride rung (the
+single-byte body is just its stride-1 case), and `cursor` as emitted today
+covers fixed-stride and nothing below it. Where this note says "the cursor
+rung" it means the stamp; where it discusses the ladder it uses §2.5's names.
 
 ### 3.2 The census: what the rungs catch today
 
@@ -499,43 +750,113 @@ it cannot drift from what is emitted). Over the 756 harvested patterns, with
 `--engine=vm` forced so every pattern reaches the VM
 (`outputs/rung_census_forcedvm.tsv`):
 
-| rung | emitted stamps | distinct (pattern, quantifier) |
-|---|---|---|
-| cursor | 1,404 | 311 |
-| frames-unbounded | 1,234 | 111 |
-| frames-bounded | 236 | 96 |
+**Every figure in this section is now produced by `probes/census_rungs.py`,
+which is committed and reads the archived census files.** The first version
+computed them in an uncommitted shell pipeline; two of the three columns were
+wrong and none could be re-derived. See the end of this section for what went
+wrong, and §10.
 
-**Read the two columns, not one.** The stamp count is what the EMITTER sees
-and the distinct count is what the AUTHOR wrote, and they differ by 4× for
-exactly the reason this row exists: replication multiplies the quantifiers the
-emitter handles. One 60-character corpus pattern,
+| rung | emitted stamps | distinct (pattern, rung, detail) | distinct patterns |
+|---|---|---|---|
+| cursor | 1,402 | 398 | 349 |
+| frames-unbounded | 1,234 | 191 | 188 |
+| frames-bounded | 236 | 148 | 140 |
+
+The middle column is a LOWER BOUND on distinct source quantifiers, and the
+script says so where it computes it: `detail` is the emitter's role text
+(`"frames rung, bounded {0,4}, greedy"`), so two copies of one source
+quantifier collapse — which is the point — but so do two genuinely different
+quantifiers with the same bounds and preference. The emitted `label` cannot be
+used instead: replication assigns a fresh label per copy, which is the very
+inflation the column exists to see past.
+
+**Read the columns together, not one.** The stamp count is what the EMITTER
+sees and the distinct counts are closer to what the AUTHOR wrote. Across the
+table stamps exceed distinct triples by **3.9×** (2,872 against 737), and on
+the cursor row by 3.5× — replication multiplying the quantifiers the emitter
+handles. The sharpest single cell: one 60-character corpus pattern,
 `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}`, contributes
-**352** rung stamps from three source quantifiers. This is the third
-amendment's surviving consequence (a) — budgets go on the unrolled quantity —
-observed on a second, independent quantity.
+**352 rung stamps**. Its source has **7** distinct quantifier shapes in all,
+of which **3** are on the frames-bounded rung; the original text said "three
+source quantifiers" without that narrowing and so understated the pattern's
+own complexity while overstating the inflation ratio. Either way the point
+stands and is the third amendment's surviving consequence (a) — budgets go on
+the unrolled quantity — observed on a second, independent quantity.
 
 Under DEFAULT engine selection (`outputs/rung_census_default.tsv`) the picture
-is smaller still: 613 of 756 patterns request no captures and never reach the
-VM at all, and only 11 distinct patterns put any quantifier on the
-frames-bounded rung. **The population this row is about is small and the
-compiler already knows how to identify it** — which is the argument for
-solving it well rather than cheaply.
+is smaller: 613 of 756 patterns request no captures and never reach the VM at
+all, and **15** distinct patterns put a quantifier on the frames-bounded rung
+(822 / 164 / 75 stamps across cursor / frames-unbounded / frames-bounded).
+**The population this row is about is small and the compiler already knows how
+to identify it** — which is the argument for solving it well rather than
+cheaply.
+
+**What went wrong the first time, because the cause is reusable** [R24
+M-F1/M-F2]. The original numbers came from a pipeline ending in
+`sort -u`, run under `LANG=en_US.UTF-8`. That locale's collation treats
+strings differing only in punctuation as EQUAL, so `sort -u` silently merged
+distinct patterns:
+
+```
+$ printf '%s\n' '\d+' '[\d]+' | sort -u | wc -l
+1
+$ printf '%s\n' '\d+' '[\d]+' | LC_ALL=C sort -u | wc -l
+2
+```
+
+Every "distinct" figure from that pipeline was therefore an UNDERCOUNT — 11
+instead of 15, 311/111/96 instead of 398/191/148 — while the stamp tallies,
+which never passed through `sort -u`, were right. The panel found the wrong
+number and found the column unreproducible; this is why. A regex test corpus
+is close to a worst case for locale collation, since its patterns differ
+mostly in punctuation. The replacement script counts in python with exact
+string equality and never shells out.
+
+(The stamp total also moves by 2, from 1,404 to 1,402 cursor: two corpus
+patterns contain a literal tab, which shifts the fields of a TSV row. The
+census script drops rows without exactly five fields rather than
+misattributing them, and reports the count so the loss is visible.)
 
 ### 3.3 The motivating cell, reproduced
 
-`((a)|b){0,4000}c`, three ways, at commit 0a082ea:
+N = 4000, three ways. **Every cell below comes from ONE serial run of
+`probes/probe_cell33.sh`** (`outputs/cell33_motivating_cell.txt`), with the
+`engine` column read out of `--emit-ir`'s own header per row so that no row
+can claim a rung the compiler did not take:
 
-| | emitted lines | pcrec | gcc −O2 |
-|---|---|---|---|
-| VM, captures, replicated | 113,572 | 2.7 s | > 240 s (timeout) |
-| capture-ERASED (`--no-captures`, DFA) | 1,378 | 2.7 s | 0.098 s |
-| choice-free body `(?:ab){0,4000}y` (cursor rung) | 2,628 | 1.6 s | 0.215 s |
+| | pattern | engine | emitted lines | pcrec | gcc −O2 |
+|---|---|---|---|---|---|
+| replicated | `((a)\|b){0,4000}c` | vm | 113,549 | 2.72 s | **> 300 s (timeout)** |
+| capture-ERASED (`--no-captures`) | `((a)\|b){0,4000}c` | dfa | 1,378 | 2.62 s | 0.118 s |
+| span-loop cursor | `(ab){0,4000}y` | vm | 2,822 | 1.62 s | 0.219 s |
 
-The erasure cell is real and it is an 82× reduction in emitted lines. §1.4
-corrects what it costs. Note the third row: a body with no choice point never
-replicates in the emitter at all, which is why `a{0,65535}` and
+The erasure cell is real and it is an **82× reduction in emitted lines**. §1.4
+corrects what it costs — the cost moves from gcc to pcrec rather than
+vanishing. Row 3 is the point of §2's whole argument in miniature: a body with
+no choice point never replicates in the emitter, which is why `a{0,65535}` and
 `(?:ab){0,9999}` have never been a problem and why the cap's diagnostic
 already names "remove the alternation" as the fix.
+
+**Two things about this table were wrong before [R24 M-F4]**, and both are
+worth stating because they are ordinary rather than exotic.
+
+Its three rows came from three different places — a line count from one
+archived file, a pcrec time from an unarchived transcript, a gcc time from a
+sweep run under load. Mixing sources inside one table is how a table stops
+being a measurement and starts being an assembly.
+
+And row 3 used `(?:ab){0,4000}y`, which is NON-CAPTURING. A pattern with no
+capturing group requests no captures, so it never reaches the VM at all — the
+row labelled "cursor rung" was measuring the DFA, the same engine as row 2.
+The body is `(ab)` here, and `--emit-ir` confirms `engine vm` / `rungs cursor`
+before the row is timed. (This one the panel did not catch; it surfaced on
+re-measurement, which is the argument for re-measuring rather than
+re-sourcing.)
+
+Line counts differ slightly from §1.2's table (113,549 here against 113,572
+there) because that sweep passed `--emit-main` and this one does not. Same
+compiler, same pattern, different artifact shape — stated so the two tables do
+not read as a contradiction.
 
 ### 3.4 The reverse-deterministic rung, and what it can and cannot derive
 
@@ -553,9 +874,29 @@ right. Group 2 is not, because a group INSIDE a loop keeps the value from the
 last iteration that entered it — a later `b` iteration does not clear it —
 so on `"abc"` group 2 is `(0,1)`, not unset.
 
-The corrected derivation, **0 mismatches over the same 15,036**: group 2 =
-`[p, p+1)` where `p` is the last `a` in `[start, end−1)`, unset if there is
-none.
+The corrected derivation, **0 mismatches over the same 15,036**, in two
+clauses:
+
+- **Zero iterations** (the span is just the `c`, i.e. `end − start == 1`):
+  BOTH groups are unset. There is no iteration to have written them.
+- **One or more iterations:** group 1 = `[end−2, end−1)`; group 2 =
+  `[p, p+1)` where `p` is the last `a` in `[start, end−1)`, unset if there is
+  none.
+
+**The zero-iteration clause is not a footnote and the first version of this
+note dropped it** [R24 S-F3]. The archived probe always had it — its own
+output records 6,259 zero-iteration matches out of 15,036, **42% of the
+validated population**, at 0 mismatches — but the write-up stated only the
+second clause, whose `[end−2, end−1)` is meaningless when the loop never ran.
+An implementation lane building the reverse-deterministic rung from the prose
+alone would emit a wrong group on 42% of the motivating cell's own matches.
+Recorded here rather than quietly patched because the failure mode — a
+validated derivation losing a clause on the way into prose — is one a reader
+should expect to look for elsewhere in this note.
+
+Bonus, from the same re-check: with the zero-iteration clause stated, the
+derivation is also 0-mismatch on `m > 0` shapes, where the clause is
+unreachable by construction.
 
 That repair is the rung's own argument, sharpened. A constant-offset formula
 was never the right shape; what recovers group 2 is a BACKWARD SCAN that
@@ -587,7 +928,7 @@ or its iteration is ambiguous), and NOT deterministic enough for any cursor
 rung, and whose per-iteration backtracking is therefore real. `((a)|b){0,N}c`
 with `c` replaced by something starting with `a` or `b` is the archetype. On
 the realistic census, that residual is 15 of 84 bounded quantifiers; on the
-adversarial corpus it is 246 of 301.
+adversarial corpus it is 250 of 301.
 
 ---
 
@@ -793,10 +1134,26 @@ design has edges:
   territory;
 - captures inside the loop, including a group inside an alternation inside the
   loop, which §3.4 shows is where the last-iteration rule is least intuitive;
-- greedy AND lazy at every shape, since §2.3's lazy argument is BELIEVED.
+- **`(|a){m,n}` specifically** — a nullable-FIRST-branch group in a bounded
+  repeat. Named as its own cell because R24 measured it as the family where
+  the oracles themselves disagree: over 15,600 cells, pcrec agreed with
+  libpcre2 on every one, while **python disagreed with libpcre2 on 106 cells,
+  all of them `(|a){m,n}` captures**. A two-way python-only check on this
+  family would have raised a false alarm against pcrec. That is a measured
+  argument that D44's three-way rule earns itself on this row rather than
+  being ceremony;
+- **greedy AND lazy at every shape — MANDATORY, not a nice-to-have** [R24
+  S-F1]. §2.3's lazy argument was BELIEVED and was REFUTED; the repaired rule
+  has a lazy-only conjunct, so a sweep that spells every shape greedy is
+  structurally incapable of exercising the conjunct. Any implementation lane
+  that omits the lazy half is re-running the exact experiment that missed the
+  defect the first time.
 
 §3.6's no-pre-built-exclusion rule stands: a three-way disagreement is
-investigated, not filtered.
+investigated, not filtered. Note U9 (`docs/dev/upstream_issues.md`) before
+investigating one in a possessive-spelled family: PCRE2 10.46 and python
+disagree there for a reason that is neither engine's fault and none of
+pcrec's.
 
 ### 5.4 A gate the lane gets for free
 
@@ -853,6 +1210,19 @@ and the same ten patterns against python3 `re` over 14 subjects each: **0
 divergences**. The omission is deliberate, visible in the listing, and matches
 the oracle.
 
+**Scope of that instrument, and the stronger result that replaced it** [R24
+S-F5]. This lane's check compared SPANS ONLY and against python ONLY — it
+could not have seen a capture-slot divergence, and it had no second oracle. The
+R24 panel rebuilt it captures-aware and three-way: **15,600 cells, pcrec equal
+to libpcre2 on every one, span and every capture slot.** So §6's claim is now
+confirmed at a strength this lane did not reach, and the confirmation is the
+panel's, not this note's.
+
+The rebuild also produced the S-F5 finding that §5.3 now carries as a named
+cell: python disagreed with libpcre2 on 106 of those cells, all `(|a){m,n}`
+captures. Had the panel checked two ways instead of three, §6's own family
+would have produced a false alarm against pcrec.
+
 **The one thing an implementation lane must not do:** add the guard "for
 safety" when the counter arrives. It would be a semantic change, it is exactly
 what E-2 measured as wrong on 60 of 225,240 pairs, and the counter makes it
@@ -865,9 +1235,10 @@ unnecessary.
 - **Capture-free patterns: zero change.** They never reach `emit_vm.c`; §5.4's
   byte-identity gate covers them and 613 of 756 corpus patterns are in this
   class.
-- **The corpus: small and predictable.** 11 distinct patterns put a quantifier
-  on the frames-bounded rung under default selection. Possessification touches
-  more (183 of 1,725 quantifiers across both bounds), and every one of those
+- **The corpus: small and predictable.** 15 distinct patterns put a quantifier
+  on the frames-bounded rung under default selection (§3.2; the figure was 11
+  before [R24 M-F1] and the undercount's cause is recorded there). Possessification touches
+  more (174 of 1,725 quantifiers across both bounds), and every one of those
   changes emitted C while changing no answer — which is precisely what
   `emitdiff`-style checking is for and what the §5.1 differential asserts.
 - **The cap's diagnostic gets to stop being the endgame.** Today
@@ -900,14 +1271,25 @@ Ordered by how likely it is to matter.
    lacks a counter the loop would have (so slower). The knee's LOCATION is
    the claim most exposed to this, though the compile-time curve alone would
    put it in the same place.
-2. **`$` as a follow.** §2.5 declines every zero-width assertion, which is
-   sound and costs the common `X{m,n}$` shape. Whether `$` is separately safe
-   is BELIEVED-yes and unmeasured; it is the single highest-value follow-up
-   because end-anchored bounded repeats are everywhere.
-3. **Lazy quantifiers under possessification.** §2.3 argues the chain is
-   preference-independent, and the differential could not check it because
-   there is no possessive spelling of a lazy quantifier. A pcrec-vs-pcrec
-   differential (§5.1) CAN check it once forcing exists, and should.
+2. **ANSWERED at [R24], kept for the record: `$` as a follow.** This entry
+   read "BELIEVED-yes and unmeasured; the single highest-value follow-up". It
+   is now MEASURED-WITH-GATE — safe at 0 of 720, unsafe at 180 of 720 under
+   `(?m)` — and §2.5 carries the result and the live-gate requirement. Left in
+   place rather than deleted because the note's own prediction about which
+   unmeasured item mattered most turned out to be right, and that is worth
+   being able to check next time.
+3. **Lazy quantifiers under possessification — PARTLY ANSWERED, and the answer
+   was a REFUTATION** [R24 S-F1]. This entry recorded that the differential
+   could not check lazy "because there is no possessive spelling of a lazy
+   quantifier", and proposed deferring the check to §5.1's pcrec-vs-pcrec
+   differential once forcing exists. Both halves were wrong in a way worth
+   keeping visible: the comparison `X{m,n}?` against `X{m,n}+` is perfectly
+   well-formed and needed no forcing, no implementation and no new
+   instrument — only the realisation that the possessive form is the right
+   right-hand side for BOTH preferences. Deferring a cheap check to a lane
+   that does not exist yet is how the defect survived the note. §2.4's lazy
+   family now runs; what remains unmeasured is lazy under NESTING (item 8) and
+   lazy against libpcre2 (item 6).
 4. **Nested bounded repeats.** Every measurement here uses a single level. The
    replication factors multiply, `vm_count_slots` records only the maximum,
    and §3.4's capture derivation is single-level. This is the largest
@@ -916,23 +1298,42 @@ Ordered by how likely it is to matter.
    "byte set" is still the right object (the automaton is over bytes), so the
    analysis should carry over unchanged — BELIEVED, unmeasured, and the
    multi-byte-class shapes are the place to check it.
-6. **libpcre2 anywhere in this lane.** Every oracle check here is python3 `re`.
-   §5.3's three-way sweep is specified and not run; a design note is not the
-   place, but the panel should not read any number here as PCRE2-verified.
+6. **libpcre2 anywhere in THIS LANE.** Every oracle check this lane ran is
+   python3 `re`. **[R24] closed the most important part of this gap from the
+   outside:** the panel re-ran the full 5,016 × 260 greedy family against
+   libpcre2 and reports 0 counterexamples with an identical possessifiable
+   population, and re-ran §6's own family three ways at 15,600 cells with
+   pcrec matching libpcre2 on every span and every slot. So the headline
+   soundness result IS PCRE2-verified — by the panel, not by this note. What
+   is still python-only here: the LAZY family added at [R24] (§2.4), the two
+   censuses of §2.6, and the `$`/assertion sweeps. §5.3's three-way sweep
+   remains specified and not run by anyone.
 7. **The realistic pattern set is hand-written from memory of the shapes**, by
    the same author who wrote the analysis. That is the exact control-shares-a-
    source failure this project has hit before. A set harvested from real
    sources would be a strictly better denominator and this one should be
    treated as indicative, not measured.
 8. **NESTED quantifiers' verdicts are censused but not differentially
-   validated.** `probe_possess.py` compares the greedy and possessive forms of
-   the pattern's OUTERMOST quantifier only, because that is the one it can
-   respell possessively by construction. The FOLLOW computation for a
+   validated.** `probe_possess.py` compares the outermost quantifier's
+   preference spelling against its possessive spelling, and only the
+   OUTERMOST one. The FOLLOW computation for a
    quantifier inside another quantifier's body — where the enclosing loop's
    own FIRST set joins the follow, which is the subtlest line in §2.2 — is
    therefore exercised by §2.6's censuses and checked by nothing. It is the
    single most likely place for a soundness bug to be hiding, and §5.1's
    pcrec-vs-pcrec differential is what should close it.
+
+   **[R24] partly retired this, and the residual is narrower than it was.**
+   The panel attacked exactly this line — 42,336 pairs × 200 subjects, 0
+   diverging, with failing-direction controls that confirm the line is
+   load-bearing (dropping the enclosing-loop-FIRST term yields 172
+   divergences; dropping U1+U2 yields 551). So the transitive FOLLOW rule is
+   now measured, not merely censused. What is still unchecked is the same
+   nesting question for the LAZY conjunct, which postdates that sweep: the
+   probe's `info[0]` selection means a lazy quantifier nested inside another
+   quantifier's body has never been differentially tested. The panel's own
+   note that `info[0]` is "correct only by accident" applies with more force
+   now that there are two rules to get right instead of one.
 9. **Assertions INSIDE the body are ignored by the unique-iteration check**
    (`Glushkov.build` skips `AT`), while assertions in the FOLLOW widen to all
    bytes (§2.5). The asymmetry is deliberate and BELIEVED sound in the
@@ -972,6 +1373,25 @@ Ordered by how likely it is to matter.
    row.** §0.2 item 4 and §1.4 report it as not established. The row's other
    consequences are unaffected. I have not edited the row; that is the
    manager's call.
+5. **[R24] Whether the `$`-follow exemption ships in v1 or waits.** §2.5 now
+   has it measured safe under a live `!multiline` gate, and §2.7 records it as
+   the largest single source of conservatism in the greedy family. The case
+   for taking it is that end-anchored bounded repeats are common; the case for
+   waiting is that it is the only rule in §2 whose correctness depends on a
+   pattern option rather than on pattern structure, so it is the first place
+   an `(?m)` implementation would silently break the analysis. My
+   recommendation is to TAKE it, with the gate written as an assertion against
+   the pattern's live multiline state rather than a comment — but a manager
+   who would rather have one fewer option-coupled rule before module
+   `assertions` lands has a real argument.
+6. **[R24] Whether the lazy conjunct's 20 false declines are worth a v2.**
+   §2.4 measures the conjunct as costing 20 quantifiers that the differential
+   shows no divergence for; the conjunct is stated on "the remainder is
+   nullable" where the sharp condition is "some non-maximal exit actually
+   succeeds". I recommend NOT sharpening it in v1 — 20 out of 2,031 is a 1%
+   cost for a rule that is one predicate and provably sound, and §2.3's
+   history is that the elaborate version of this argument is the one that was
+   wrong.
 
 ---
 
@@ -1001,7 +1421,43 @@ entered the note as findings.
   serially before being quoted, and §1.4's table is the serial one. The
   archived sweep still contains the loaded cells, which is why the note quotes
   §1.4's table and not the sweep's `pcrec_s` column for those rows.
+  **[R24 M-F4] found the sequel to this and it is worse than the original
+  defect:** the serial re-measurement was never ARCHIVED, so §3.3 ended up
+  quoting a number that existed only in a transcript. A number that cannot be
+  re-run is not a measurement, whether or not it is correct. §3.3's table is
+  now produced whole by `probes/probe_cell33.sh`, serially, into one file.
 - **Every scratch compiler was built by `probes/mkscratch.sh`**, which asserts
   that each patch actually changed its file — so a `sed` whose anchor moved
   fails loudly instead of silently building the stock compiler and reporting
   its numbers under a prototype's name.
+
+### 10.1 The three defects [R24] added
+
+- **The lazy preference family was never in the differential** (§2.3, §2.4).
+  `probe_possess.py` built a possessive respelling of each generated pattern,
+  a lazy quantifier has no possessive spelling, and the helper that noticed
+  that returned `None` — silently dropping half the design's claim from a
+  check the note described as covering it. The defect is not the `None`; it is
+  that the skip was invisible in the output, so nothing in 5,016 rows of TSV
+  said "and half the question was not asked". The replacement derives BOTH
+  spellings from one base count, so omitting a family now requires deleting a
+  loop rather than falling through a helper. §8 item 3 records the reasoning
+  error that kept it there: the note KNEW lazy was unchecked, wrote it down as
+  a limitation, and proposed deferring it to an implementation lane that does
+  not exist — when the check cost one afternoon and needed nothing new.
+- **`sort -u` under a UTF-8 locale silently merged distinct patterns** (§3.2),
+  making every "distinct" figure in the rung census an undercount. Two of the
+  panel's findings (M-F1's wrong count, M-F2's unreproducible column) are the
+  same defect seen from two angles. Two aggravating factors, both mine: the
+  pipeline was never committed, so nobody could re-derive it; and a regex test
+  corpus is close to a worst case for locale collation, since its patterns
+  differ mostly in punctuation. `probes/census_rungs.py` now produces every
+  figure §3.2, §3.3 and §7 quote, in python, with exact string equality.
+- **§3.3's table mixed three sources and mislabelled a row.** Its line count
+  came from one archived file, its pcrec time from an unarchived transcript,
+  and the row it called "cursor rung" used `(?:ab){0,N}y` — non-capturing,
+  therefore requesting no captures, therefore compiled by the DFA and never
+  reaching the VM's cursor rung at all. The panel caught the mixed sources
+  (M-F4); the mislabelled row is this lane's own finding on re-measurement.
+  `probe_cell33.sh` now reads the engine out of `--emit-ir`'s header per row,
+  so a row cannot claim a rung the compiler did not take.

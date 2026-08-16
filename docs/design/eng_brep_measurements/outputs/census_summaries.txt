@@ -1,9 +1,9 @@
 # ENG-BREP design lane -- archived probe output
 #
-# Verdict tallies for both censuses above, corpus first then realistic.
+# Verdict tallies for both censuses, corpus first then realistic. [R24] re-run with the lazy conjunct.
 #
-date:        2026-08-16T00:52:27Z
-repo commit: 19f5c120258729fab816704dfda8848e0ea28780  (branch eng-brep)
+date:        2026-08-16T02:00:50Z
+repo commit: 56bdc2c10f5813e203b97cba1e1de1cf235c1659  (branch eng-brep-r24)
 gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
 python:      Python 3.14.4
 host:        Linux 7.0.0-29-generic, 12 cores
@@ -13,18 +13,20 @@ host:        Linux 7.0.0-29-generic, 12 cores
 <sys>:0: FutureWarning: Possible nested set at position 1
 <sys>:0: FutureWarning: Possible nested set at position 2
 # --- corpus verdicts ---
-#   bounded/no                     246
-#   bounded/possessifiable         55
+#   bounded/no                     250
+#   bounded/possessifiable         51
 #   no-quantifier                  263
-#   unbounded/no                   1296
-#   unbounded/possessifiable       128
+#   unbounded/no                   1301
+#   unbounded/possessifiable       123
 #   unparsed-by-python-re          112
 # --- reasons ---
 #   overlap                        1359
 #   nullable-body                  177
-#   disjoint+unique-iteration      169
+#   disjoint+unique-iteration      157
 #   exact-count+unique-iteration   14
+#   lazy+nullable-rest             9
 #   not-prefix-free                6
+#   disjoint+unique-iteration+non-nullable-rest 3
 # patterns in 756, unparsed by python re 112
 #   unparsed '\\h+': bad escape \h at position 0
 #   unparsed '\\H+': bad escape \H at position 0

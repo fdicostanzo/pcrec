@@ -1,0 +1,65 @@
+# ENG-BREP design lane -- archived probe output
+#
+# FAILING-DIRECTION CONTROL, BREP_NO_LAZY_CONJUNCT=1: the S-F1 refutation reproduced at 316 counterexamples, matching R24's independently measured 316. The conjunct removes all 316 and costs 20 false declines.
+#
+date:        2026-08-16T01:41:46Z
+repo commit: ac5b1f980d71d28e7a2f55cde941f03bdc425bef  (branch eng-brep-r24)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# --- confusion matrix (preference, verdict, differential) ---
+#   ('greedy', 'no', 'DIVERGES')             1463
+#   ('greedy', 'no', 'same')                 1522
+#   ('greedy', 'possessifiable', 'same')     2031
+#   ('lazy', 'no', 'DIVERGES')               1667
+#   ('lazy', 'no', 'same')                   1318
+#   ('lazy', 'possessifiable', 'DIVERGES')   316
+#   ('lazy', 'possessifiable', 'same')       1715
+# SOUNDNESS [greedy]: 0 counterexample(s) to 'possessifiable => identical'
+# SOUNDNESS [lazy]: 316 counterexample(s) to 'possessifiable => identical'
+#   'a{0,4}?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a{0,4}?c?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a{1,3}?'  subject='aabc' lazy=((0, 1), ()) possessive=((0, 2), ())
+#   'a{1,3}?c?'  subject='aabc' lazy=((0, 1), ()) possessive=((0, 2), ())
+#   'a{0,2}?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a{0,2}?c?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a{3,}?'  subject='aaaa' lazy=((0, 3), ()) possessive=((0, 4), ())
+#   'a{3,}?c?'  subject='aaaa' lazy=((0, 3), ()) possessive=((0, 4), ())
+#   'a*?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a*?c?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a+?'  subject='aabc' lazy=((0, 1), ()) possessive=((0, 2), ())
+#   'a+?c?'  subject='aabc' lazy=((0, 1), ()) possessive=((0, 2), ())
+#   'a??'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   'a??c?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   '[ab]{0,4}?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   '[ab]{0,4}?c?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   '[ab]{1,3}?'  subject='ab' lazy=((0, 1), ()) possessive=((0, 2), ())
+#   '[ab]{1,3}?c?'  subject='ab' lazy=((0, 1), ()) possessive=((0, 2), ())
+#   '[ab]{0,2}?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+#   '[ab]{0,2}?c?'  subject='a' lazy=((0, 0), ()) possessive=((0, 1), ())
+# SOUNDNESS [both]: 316
+# CONSERVATISM [greedy]: 1522 'no' verdicts whose differential never diverged
+#   'a{0,4}$'
+#   'a{1,3}$'
+#   'a{1,3}^'
+#   'a{0,2}$'
+#   'a{3,}$'
+#   'a{3,}ac'
+#   'a{3,}ab'
+#   'a{3,}^'
+#   'a*$'
+#   'a+$'
+# CONSERVATISM [lazy]: 1318 'no' verdicts whose differential never diverged
+#   'a{0,4}?$'
+#   'a{1,3}?$'
+#   'a{1,3}?^'
+#   'a{0,2}?$'
+#   'a{3,}?$'
+#   'a{3,}?ac'
+#   'a{3,}?ab'
+#   'a{3,}?^'
+#   'a*?$'
+#   'a+?$'
