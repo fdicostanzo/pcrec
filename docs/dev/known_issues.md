@@ -1767,3 +1767,31 @@ counter-K step, which stops the copy tree from existing for these shapes.
 The reverse-deterministic rung landed the same day does NOT discharge it —
 it declines nested quantifiers by scope bound (single-level only), so a
 `{0,2}` tower still replicates.
+
+## K23 — exact-minimum ambiguous-decomposition boundary exhausts the step budget on a 100-byte ordinary input (found 2026-08-16, D27 blinded quantifier corpus)
+
+`(a{10,20}){10,50}` against `'a' * 100` — exactly the minimum total, the
+ONLY valid decomposition (10 outer x inner minimum 10; 11 outer would need
+110 bytes) — makes the compiled VM matcher return `RX_ERR_STEPS` against
+the default 1,000,000-step budget instead of the match. python `re` (the
+oracle) answers instantly: span (0,100), group 1 (90,100). Reproduced by
+the manager at merge on HEAD's build (exit 3, "steps"). The boundary is
+NARROW: 99 bytes reports nomatch in <1 ms (min-total check fails fast);
+150+ bytes matches instantly (greedy satisfies an unambiguous
+decomposition). The give-up itself is DESIGNED behavior (DD-2/D22:
+honest RX_ERR_STEPS, not a hang or wrong answer) — the issue is the
+search-space explosion that makes a 100-byte non-adversarial input hit it.
+
+D27 author's characterization (probed black-box, recorded so the fix lane
+does not re-derive it): inner-range WIDTH and total interact — `(a{10,12}){10,50}`
+(width 2) at 100 matches instantly; `(a{10,15}){10,40}` (width 5) at 100
+exhausts; reducing the outer max alone (`{10,30}` vs `{10,50}`) does NOT
+avoid it, so it is not simply proportional to the outer ceiling.
+
+NOT fixed by counter-K (choice points are identical across all K by
+design — the emission strategy changes size, not the decomposition
+space). Candidate mechanisms live with the OPT waves (memoization /
+decomposition pruning) or [M4.6]'s engine-selection work; owning
+milestone [M4.6] until a better owner exists. Regression:
+`tests/known_fail/d27_nested_min_boundary.rxt` (ratchet-watched); the
+99/500/1000-byte siblings stay live in `tests/base/d27_nesting.rxt`.

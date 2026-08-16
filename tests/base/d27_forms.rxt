@@ -1,0 +1,139 @@
+# Quantifier FORMS: every repeat operator, greedy and lazy, on a single-char body.
+# Auto-generated for the D27 quantifier/bounded-repeat corpus.
+# Every expectation is computed directly from python's re module.
+
+# form '?': min=0 max=1
+pattern a?b
+m "b" 0 1
+m "ab" 0 2
+m "aab" 1 3
+m "aaab" 2 4
+n "aaa"
+m "xxab" 2 4
+
+# form '??': min=0 max=1
+pattern a??b
+m "b" 0 1
+m "ab" 0 2
+m "aab" 1 3
+m "aaab" 2 4
+n "aaa"
+m "xxab" 2 4
+
+# form '*': min=0 max=None
+pattern a*b
+m "b" 0 1
+m "ab" 0 2
+m "aaaab" 0 5
+n "aa"
+m "xxab" 2 4
+
+# form '*?': min=0 max=None
+pattern a*?b
+m "b" 0 1
+m "ab" 0 2
+m "aaaab" 0 5
+n "aa"
+m "xxab" 2 4
+
+# form '+': min=1 max=None
+pattern a+b
+n "b"
+m "ab" 0 2
+m "aab" 0 3
+m "aaaaab" 0 6
+n "aaa"
+m "xxab" 2 4
+
+# form '+?': min=1 max=None
+pattern a+?b
+n "b"
+m "ab" 0 2
+m "aab" 0 3
+m "aaaaab" 0 6
+n "aaa"
+m "xxab" 2 4
+
+# form '{3}': min=3 max=3
+pattern a{3}b
+n "b"
+n "aab"
+m "aaab" 0 4
+m "aaaab" 1 5
+m "aaaaab" 2 6
+n "aaaaa"
+m "xxaaab" 2 6
+
+# form '{3}?': min=3 max=3
+pattern a{3}?b
+n "b"
+n "aab"
+m "aaab" 0 4
+m "aaaab" 1 5
+m "aaaaab" 2 6
+n "aaaaa"
+m "xxaaab" 2 6
+
+# form '{2,4}': min=2 max=4
+pattern a{2,4}b
+n "b"
+n "ab"
+m "aab" 0 3
+m "aaab" 0 4
+m "aaaab" 0 5
+m "aaaaab" 1 6
+m "aaaaaab" 2 7
+n "aaaaaa"
+m "xxaab" 2 5
+
+# form '{2,4}?': min=2 max=4
+pattern a{2,4}?b
+n "b"
+n "ab"
+m "aab" 0 3
+m "aaab" 0 4
+m "aaaab" 0 5
+m "aaaaab" 1 6
+m "aaaaaab" 2 7
+n "aaaaaa"
+m "xxaab" 2 5
+
+# form '{2,}': min=2 max=None
+pattern a{2,}b
+n "b"
+n "ab"
+m "aab" 0 3
+m "aaab" 0 4
+m "aaaaaab" 0 7
+n "aaaa"
+m "xxaab" 2 5
+
+# form '{2,}?': min=2 max=None
+pattern a{2,}?b
+n "b"
+n "ab"
+m "aab" 0 3
+m "aaab" 0 4
+m "aaaaaab" 0 7
+n "aaaa"
+m "xxaab" 2 5
+
+# form '{0,4}': min=0 max=4
+pattern a{0,4}b
+m "b" 0 1
+m "aab" 0 3
+m "aaaab" 0 5
+m "aaaaab" 1 6
+m "aaaaaab" 2 7
+n "aaaaaa"
+m "xxab" 2 4
+
+# form '{0,4}?': min=0 max=4
+pattern a{0,4}?b
+m "b" 0 1
+m "aab" 0 3
+m "aaaab" 0 5
+m "aaaaab" 1 6
+m "aaaaaab" 2 7
+n "aaaaaa"
+m "xxab" 2 4

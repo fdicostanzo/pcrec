@@ -1,0 +1,213 @@
+# EDGE SEMANTICS: nullable bodies, {0,0}, {n,n}, boundary subjects, greedy-vs-lazy span divergence, anchor interaction, outer alternation.
+# Auto-generated for the D27 quantifier/bounded-repeat corpus.
+# Every expectation is computed directly from python's re module.
+
+# nullable body (optional), bounded repeat
+pattern (a?){2,5}
+m "aa" 0 2
+g 1 2 2
+m "a" 0 1
+g 1 1 1
+m "" 0 0
+g 1 0 0
+m "aaa" 0 3
+g 1 3 3
+m "aaaaa" 0 5
+g 1 4 5
+m "aaaaaa" 0 5
+g 1 4 5
+
+# nullable body (star), bounded repeat incl. zero reps
+pattern (a*){0,3}
+m "" 0 0
+g 1 0 0
+m "a" 0 1
+g 1 1 1
+m "aaa" 0 3
+g 1 3 3
+m "aaaaaa" 0 6
+g 1 6 6
+
+# nullable via empty alt arm ('a' preferred first)
+pattern (a|){2,4}
+m "aaaa" 0 4
+g 1 3 4
+m "aa" 0 2
+g 1 2 2
+m "a" 0 1
+g 1 1 1
+m "" 0 0
+g 1 0 0
+m "aaaaa" 0 4
+g 1 3 4
+
+# nullable via empty alt arm (empty preferred first)
+pattern (|a){2,4}
+m "aaaa" 0 0
+g 1 0 0
+m "aa" 0 0
+g 1 0 0
+m "a" 0 0
+g 1 0 0
+m "" 0 0
+g 1 0 0
+
+# zero-max quantifier -- body must contribute nothing
+pattern a{0,0}b
+m "b" 0 1
+m "ab" 1 2
+m "aab" 2 3
+n ""
+
+# zero-max quantified GROUP -- group never participates
+pattern (a){0,0}b
+m "b" 0 1
+g 1 -1 -1
+m "ab" 1 2
+g 1 -1 -1
+n ""
+
+# bare zero-max quantifier, whole pattern
+pattern a{0,0}
+m "" 0 0
+m "a" 0 0
+m "b" 0 0
+
+# exact-count form spelled as {n,n}
+pattern a{4,4}
+n "aaa"
+m "aaaa" 0 4
+m "aaaaa" 0 4
+m "aaaaaa" 0 4
+n ""
+
+# exact-count on a capturing group body
+pattern (ab){3,3}
+m "ababab" 0 6
+g 1 4 6
+n "abab"
+m "abababab" 0 6
+g 1 4 6
+n ""
+
+# boundary subjects: below-min, exact-min, mid, exact-max, above-max
+pattern a{3,5}
+n "aa"
+m "aaa" 0 3
+m "aaaa" 0 4
+m "aaaaa" 0 5
+m "aaaaaa" 0 5
+m "aaaaaaa" 0 5
+
+# two adjacent greedy quantifiers over one run: split point
+pattern (a+)(a+)
+m "aaaa" 0 4
+g 1 0 3
+g 2 3 4
+m "aa" 0 2
+g 1 0 1
+g 2 1 2
+m "aaaaaaaa" 0 8
+g 1 0 7
+g 2 7 8
+
+# first lazy, second greedy: split point moves
+pattern (a+?)(a+)
+m "aaaa" 0 4
+g 1 0 1
+g 2 1 4
+m "aa" 0 2
+g 1 0 1
+g 2 1 2
+m "aaaaaaaa" 0 8
+g 1 0 1
+g 2 1 8
+
+# first greedy, second lazy: split point moves again
+pattern (a+)(a+?)
+m "aaaa" 0 4
+g 1 0 3
+g 2 3 4
+m "aa" 0 2
+g 1 0 1
+g 2 1 2
+m "aaaaaaaa" 0 8
+g 1 0 7
+g 2 7 8
+
+# greedy dot-star: matches to the LAST b
+pattern a.*b
+m "axbxb" 0 5
+m "axb" 0 3
+m "axbxbxb" 0 7
+m "ab" 0 2
+
+# lazy dot-star: matches to the FIRST b
+pattern a.*?b
+m "axbxb" 0 3
+m "axb" 0 3
+m "axbxbxb" 0 3
+m "ab" 0 2
+
+# quantified group containing '^': only the first iteration can ever satisfy it (absolute-offset anchor)
+pattern (^a){1,3}
+m "aaa" 0 1
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+n "baa"
+n ""
+
+# quantified group containing '$': only an iteration ending at end-of-subject can satisfy it
+pattern (a$){1,3}
+m "aaa" 2 3
+g 1 2 3
+m "a" 0 1
+g 1 0 1
+n "ab"
+n ""
+
+# whole pattern anchored both ends around a bounded repeat
+pattern ^a{2,4}$
+n "a"
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+n "aaaaa"
+n ""
+
+# anchored optional bounded-repeat group
+pattern ^(a{2,4})?$
+m "" 0 0
+g 1 -1 -1
+n "a"
+m "aa" 0 2
+g 1 0 2
+m "aaaa" 0 4
+g 1 0 4
+n "aaaaa"
+
+# top-level alternation, quantifier local to each branch
+pattern ab{2,3}|cd{1,2}
+m "abb" 0 3
+m "abbb" 0 4
+m "abbbb" 0 4
+m "cd" 0 2
+m "cdd" 0 3
+m "cddd" 0 3
+n "ab"
+n "x"
+
+# quantified alternation whose arms are themselves quantified
+pattern (ab{2,3}|cd{1,2})+
+m "abbcdabbb" 0 9
+g 1 5 9
+m "abb" 0 3
+g 1 0 3
+m "cd" 0 2
+g 1 0 2
+m "abbabbabb" 0 9
+g 1 6 9
+n "x"
+m "cddcddabb" 0 9
+g 1 6 9
