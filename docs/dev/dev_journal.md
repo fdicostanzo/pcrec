@@ -8739,3 +8739,74 @@ budget raise + this bookkeeping, pushed. Counts: corpus 5,784, cli 257,
 known_fail EMPTY, gentimeout section 15 checks (was 10), watchdog
 self-test 14/14. Open K-list unchanged: K2, K7, K9, K19, K22. No lanes,
 no crons, no background work.
+
+## 2026-08-16 (EDT), twenty-fifth session (cont. 2) — D45 THIRD ADDENDUM (Frank's ruling): budgets go CPU-PRIMARY with a wall backstop; the battery catches the manager's own calibration error; seven legs green
+
+Frank, on the morning's contention flake: "would having a cpu=5s max
+option fix that? cpu is independent on load." Assessment agreed with
+one amendment (CPU can't see blocked-not-working → wall stays as a
+loose backstop; two bounds, two failure classes, the DD-2 step/frames
+precedent); Frank ruled "agree with all points. go ahead."
+
+**Built (commits c78ef6b, 8cf2e5e):** watchdog `-c`/WATCHDOG_CPU
+(sampled tree-CPU limit, exit 123, verdict=cpukill; self-test grew the
+DISCRIMINATOR pair — a spinner under -c 1 dies at 123, a 3 s sleeper
+under -c 1 survives, proving -c measures work, not wall; 16/16).
+gen_cpu_secs (GENCPU/GENCPU_SAN, shared by compiles and runs); gen_cc
+enforces it via SOFT RLIMIT_CPU — soft-only is load-bearing: bash's
+default soft=hard escalates to SIGKILL, making a CPU kill TEXTUALLY
+IDENTICAL to an OOM-kill in gcc's output ("Killed signal terminated
+program cc1", measured); soft-only delivers clean SIGXCPU, which gcc
+reports as "CPU time limit exceeded" — the crash/CPU/wall diagnoses
+stay separate. Wall becomes the backstop (GENTIMEOUT 60 s plain /
+GENTIMEOUT_SAN 180 s — sized ABOVE cpu-budget × contention so the
+verdict never lies; its diagnostic says STUCK, investigate the wait,
+not the artifact). gen_run passes -c; gen_run's wall stays tight at
+10/60 (legit runs 1000x below; the log's cpu= field disambiguates).
+Python compile sites (vm_oracle, fuzz gen.c+link) get the ulimit argv
+shim — NOT preexec_fn, unsafe under their thread pools; fuzz's
+hand-written-C compiles stay wall-only (outside D45 scope). Four fire
+controls in run_gen_timeout_tests.sh (CPU + backstop, compile + run,
+all against the real budget-bound artifact); 18/18.
+
+**THE BATTERY CAUGHT THE MANAGER'S OWN ERROR.** First battery of the
+change: test-parallel EXIT=2 — the SAME k18_cost_gates artifact, now
+failing the 5 s CPU budget under -j12. Measured chain: 2.53 s CPU
+quiet → 3.52 s under 11 register-spinners → >5 s under a real -j12
+gcc mix. "CPU is load-independent" was TOO STRONG: contention
+inflates cycles-per-instruction (memory-subsystem thrash from twelve
+concurrent compilers), >2x for this workload. The honest claim,
+recorded everywhere: CPU is load-RESILIENT — inflation tops out near
+2x where wall stretches without bound — which is still exactly why
+CPU-primary is right; the number needed the measured margin. GENCPU
+plain 5 → 10 (~4x quiet, ~2x worst real-contended), GENCPU_SAN 60
+unchanged, backstops unchanged.
+
+**SEVEN-LEG BATTERY GREEN at GENCPU=10** (test parallel — the exact
+previously-failing condition — serial, strict, ubsan, asan, lint,
+mech: all EXIT=0, 36 min).
+
+**Process fixes from this arc:** the battery script now keeps every
+leg's FULL log (leg-1's discarded output cost a diagnosis round);
+`pkill -f "make test"` matched the manager's own tool shell TWICE
+(compound commands quoting their own kill pattern) — kill by PID or
+use non-self-matching patterns.
+
+**Lessons.** (1) An instrument's own first battery is a test OF the
+instrument, round two: the CPU-primary change's battery caught the
+CPU-primary change's calibration. (2) "Load-independent" was an
+assumption stated as a fact; the measurement (spinners vs real gcc
+mix) split it into the true claim (bounded ~2x inflation) and the
+false one (invariance) — and the true half still carries the design.
+(3) A budget's number is not portable across clocks: 5 s wall flaked
+at 2x contention, 5 s CPU flaked at 2x CPI inflation; every clock
+needs its own headroom measurement. (4) Discarding a validation
+run's output saves nothing and costs a reproduce cycle.
+
+**State at close of arc:** HEAD = 8cf2e5e + fuzz-CLAUDE.md note +
+this bookkeeping, pushed. Budget table: GENCPU 10/60 (primary),
+GENTIMEOUT 60/180 (compile backstop), GENRUNTIMEOUT 10/60 (run
+backstop + cheap-shape bound), PCRECTIMEOUT 20/60, GENRUNMEM 512m.
+gentimeout section 18 checks; watchdog self-test 16/16. Counts
+otherwise unchanged (corpus 5,784, cli 257, known_fail EMPTY).
+K-list unchanged. No lanes, no crons, no background work.
