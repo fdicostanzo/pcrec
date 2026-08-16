@@ -82,7 +82,11 @@ fuzz`), not part of `make test` — see README.md for why.
   literal — via `subprocess.run(..., timeout=RUN_TIMEOUT)` rather than a
   per-run `scripts/watchdog` wrapper, since this is a thousands-of-cells
   inner loop where watchdog's fixed per-run startup cost would multiply the
-  campaign's runtime.
+  campaign's runtime. GENERATED-code compiles (the gen.c compile and its
+  link) additionally carry the D45-third-addendum CPU-primary budget via
+  the `_cpu_limited` ulimit shim reading `gen_timeout.sh cpusecs`; the
+  oracle-shim and driver-template compiles are hand-written C, outside
+  D45's scope, and deliberately stay on the wall bound alone.
 - **README.md** — full usage, exception-list rationale, output-bucket
   reference, triage process, and documented findings from this tool's
   build session (a real PCRE2 match-limit oracle bug now fixed, and a
