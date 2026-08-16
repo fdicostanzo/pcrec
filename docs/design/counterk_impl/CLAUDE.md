@@ -22,8 +22,8 @@ cannot be re-run is not a measurement.
   equivalent to `vm_opt_chain`'s NESTED optional chain and not to a chained one
   (§3.3, whose witness `(?:ab|a){0,2}?b` is already a measured defect in
   `nfa.c`); K needs a CLAMP or it does nothing at all for K22 (§4.2); and the
-  owed E-5 step charge has to be strategy-INVARIANT or it turns the lane's
-  primary differential red by construction (§7.2).
+  owed E-5 step charge is REFUTED — see §7, which started as a cost estimate
+  for it and became the measurement that killed it.
 
 ## Probes
 
@@ -42,6 +42,26 @@ cannot be re-run is not a measurement.
   as "counter-K already works"; `(a|ab)` is the body that declines both
   earlier rungs.
 
+- **`probes/step_charge.sh`** — the note's §7 measurement, and the one that
+  REFUTED the fix it was written to size. It counts, in the EMITTED ARTIFACT
+  and at the two real charge sites rather than at proxies for them, what the
+  budget is charged today (`rx_fail:` resumptions) beside what the owed
+  E-5 entry charge would ADD (visits to the label `--emit-ir`'s RUNGS rows
+  name for each quantifier). They are the SAME NUMBER at every size, which is
+  the refutation. Three blocks: A what the charge would cost on legitimate
+  linear work, B the blind spot with `-fno-possessify` as the control that
+  shows where the number needs to land, C whether the pathology is reachable
+  on the DEFAULT path at all (it is not).
+
+  Two instrument notes worth keeping. The run budget is raised to 10^12 and
+  the DEFAULT budget applied on paper afterwards, because an artifact that
+  gives up early UNDERCOUNTS the thing being counted. And a DFA-only artifact
+  legitimately has no quantifier rows and no fail label, so the probe reports
+  zero there rather than calling its own instrumentation broken — while any
+  OTHER count mismatch is a hard failure, since a probe that silently
+  instruments nothing is the check-design failure this project has recorded
+  twice.
+
 - **`probes/bench_k.sh`** — the K sweep of `../eng_brep_design.md` §4.4, with
   this note's §4.4 additions (a real counter loop at K = 1, and the three
   subject regimes rather than only the satisfied-at-maximum one). Scaffolded
@@ -49,6 +69,19 @@ cannot be re-run is not a measurement.
   `--unroll` in the compiler it reports the axes it cannot yet walk instead of
   printing numbers that are secretly about something else. It is a
   measurement, never a gate (D18).
+
+## Archived outputs
+
+- **`measure_baseline.txt`** / **`step_charge.txt`** — one run of each probe
+  above, with its own source header (repo, commit, gcc, date). Stable-named so
+  a re-run diffs against them, D35's shape. Evidence for the panel, never an
+  oracle: no check reads them.
+
+  `step_charge.txt`'s 1 MB `--engine=vm` quadratic row is absent on purpose and
+  its absence is the finding — the row exceeded a 120 s wrapper during
+  development and extrapolates to ~213 s from the 100 KB row, against the
+  possessify lane's independently measured 228.5 s. A timeout is a recorded
+  finding, never a reason to re-run longer (D45's posture).
 
 Maintenance: update this file when files are added/removed or their roles
 change.

@@ -435,65 +435,134 @@ here. §10 ASK 2 offers it.
 
 ---
 
-## 7. The E-5-shaped step charge — now owed for FOUR shapes
+## 7. The step charge — the fix of record is REFUTED, and replaced
 
-### 7.1 The debt, collected
+**This section was written as a cost estimate for the E-5-shaped entry charge
+and turned into a refutation of it.** The measurement is
+`probes/step_charge.sh`; every number below is from one run of it at `4d1306f`,
+and the probe counts both quantities at the two REAL charge sites in the
+emitted artifact rather than at proxies — `--emit-ir`'s RUNGS rows name the
+exact label `vm_rung_mark(v, entry, ...)` was called with, which is the label
+an entry charge would sit at, and `rx_fail:` is the one charge site that exists
+today.
 
-The plan row and `rungselect_design.md` §5 item 8 carry it: three shapes
-perform real work and charge no steps, because a step is a backtrack
-resumption counted at exactly one place (the fail label's
-`if (--w->budget < 0)`), and none of them resumes.
+### 7.1 The debt as it was recorded
 
-1. **Possessified loops.** MEASURED at the possessify landing: under
-   `--engine=vm` a fast `RX_ERR_STEPS` give-up became a correct-but-quadratic
-   answer — 0.033 / 0.581 / 2.297 s at 10 / 50 / 100 KB, and 228.5 s at 1 MB.
-2. **The revdet forward scan.**
-3. **The revdet backward capture walk**, O(span) per commit.
-4. **And counter-K's possessive arm**, which is shape 1 at a new rung.
+The plan row and `rungselect_design.md` §5 item 8 carry it: shapes that perform
+real work and charge no steps, because a step is a backtrack resumption counted
+at exactly one place and none of them resumes — possessified loops (measured at
+the possessify landing as 0.033 / 0.581 / 2.297 s at 10 / 50 / 100 KB and
+228.5 s at 1 MB), the revdet forward scan, the revdet backward walk, and now
+counter-K's own possessive arm. The fix of record, in all three documents, is
+"an E-5-shaped one-step-per-loop-ENTRY charge".
 
-The mechanism behind the quadratic is worth stating because "one step per loop
-entry" sounds too weak until you see it: the cost is not one long scan, it is
-the SEARCH loop entering the loop once per start position — n entries, each
-O(n). Charging at entry makes the ENTRY COUNT budgeted, which is exactly what
-E-5 did for islands.
+### 7.2 REFUTED: entries and steps are the same number
 
-### 7.2 The proposal: charge at entry, on EVERY rung, uniformly
+MEASURED, `([a-z]+)9` against a subject of `n` bytes of `a` under
+`--engine=vm`, which is the possessify lane's own shape:
 
-> **One step is charged at the entry of every `A_REP`'s loop, on every rung and
-> under every strategy, in addition to the fail label's existing
-> per-resumption charge.**
+| n | seconds | steps today | entries an entry charge would add | `-fno-possessify` steps |
+|---|---|---|---|---|
+| 10,000 | 0.023 | 10,001 | **10,001** | 50,015,001 (0.404 s) |
+| 50,000 | 0.536 | 50,001 | **50,001** | 1,250,075,001 (9.320 s) |
+| 100,000 | 2.121 | 100,001 | **100,001** | 5,000,150,001 (37.875 s) |
 
-The uniformity is not tidiness; it is forced, and by this rung's own validation
-plan. §8.1's differential compares the FAILURE SURFACE of a replication build
-against a counter build. If counter-K charged an entry step and replication did
-not, the two builds would exhaust the budget at different iteration counts and
-the primary instrument would be red by construction, for a reason that is not a
-bug. A charge attached to the QUANTIFIER rather than to the STRATEGY is
-invariant under every denial flag, which is the property the differential needs.
+Three things fall out, and the first two were not known when §7 was written.
 
-It is also one line at one place per quantifier, and it discharges all four
-shapes plus the non-possessive cursor scan (whose forward scan is O(n) and
-uncharged today) without an exception list.
+**The loop does not charge NOTHING.** An unanchored failing search already
+charges one step per start position, on every rung, possessified or not,
+because each attempt's final failure goes through the fail label. So the defect
+is not the one the plan row describes. **The defect is that the charge is
+LINEAR while the work is QUADRATIC**, and an entry charge is also linear.
 
-**What it does not claim.** E-5's own limitation applies verbatim: this does
-not make DD-2 a wall-clock bound. At 1 MB the possessify case charges ~10^6
-steps against a 10^6 default budget, so it fires near the end of the work
-rather than near the start. It restores the property D22 asks for — a budget
-that catches absurd entry counts — and nothing more.
+**So the entry charge moves the crossover by a factor of two.** Against the
+`1,000,000` default budget: today the possessified build gives up at
+n = 1,000,000 bytes, by which point it has done ~5 × 10¹¹ byte-operations; with
+an entry charge added it gives up at n = 500,000, at ~1.25 × 10¹¹. The
+`-fno-possessify` control shows where the number needs to land — its steps are
+n²/2, so it gives up at n ≈ 1,414. The gap is three orders of magnitude and the
+proposed fix closes half of one.
 
-**What it costs, and the measurement that decides it.** A search over an n-byte
-subject with q quantifiers now charges q·n steps even when every match is
-linear, where today forward progress is free. On the DEFAULT path the prefilter
-gates start positions and the exposure is small; under `--engine=vm` (which
-disables the prefilter, R21 E-6) it is n. The deciding measurement, owed before
-this lands: sweep subject size against a linear-matching pattern on both paths
-and find where the default budget begins refusing legitimate work, against
-today's baseline. If the crossover is uncomfortably low, the fallback is the
-narrower rule — charge only where per-entry work is not bounded by a
-compile-time constant, i.e. the four shapes and the cursor scan but not the
-backtracking arms — which costs an exception list and keeps the differential
-aligned only because the shapes it names are the ones both builds share. The
-recommendation is uniform; the number decides.
+**The `q·n` cost model in the first draft was also wrong.** MEASURED: at q = 1,
+2 and 4 (`([a-z]+)9`, `([a-z]+)-([0-9]+)9`,
+`([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9`) the entry count is IDENTICAL — 1,001 /
+100,001 / 1,000,001 at 1 KB / 100 KB / 1 MB for all three. A quantifier the
+attempt never REACHES is never entered, so entries scale with the quantifiers
+actually run, not with the pattern's quantifier count. The cost of an entry
+charge is at most a doubling, not a q-fold increase.
+
+### 7.3 The replacement: charge the ITERATION COUNT at loop EXIT
+
+> **At the exit of every repeat loop that pushes NO per-iteration resume frame,
+> charge `iterations >> PCREC_STEP_SCAN_SHIFT` steps. Loops that push a frame
+> per iteration are already charged one step per iteration and get nothing.**
+
+**Why the exclusion is exact, not a judgement call.** MEASURED: at n = 10,000
+the `-fno-possessify` build charges 50,015,001 steps, and
+n(n+1)/2 + (n+1) = 50,005,000 + 10,001 = 50,015,001 — the identity holds at all
+three sizes. So a loop with a per-iteration frame ALREADY charges exactly one
+step per iteration through the fail label, and charging again would double-count
+the one case that was never broken. The blind spot is precisely and only the
+loops that push no per-iteration frame: the possessive arms on every rung, the
+cursor scan, the revdet forward scan, and the revdet backward walk.
+
+**Why this respects D22.** The charge is one shift and one subtract at loop
+EXIT, not per iteration. D22 forbids trading the budget against execution
+speed, and a per-iteration decrement inside a possessified scan is exactly that
+trade; a single arithmetic operation on a path that runs once per loop entry is
+not.
+
+**Why it stays strategy-invariant, which §8.1's differential requires.** The
+charge attaches to the loop's SHAPE and its ITERATION COUNT. Under
+`-fno-counter` a possessified bounded repeat is `vm_poss_chain` (replicated
+copies, one cut frame, no per-iteration frame); under counter-K it is the §3.4
+counted loop (no per-iteration frame). Both are in the charged class, both run
+the same number of iterations on the same subject, so both charge the same
+amount and the failure surface stays aligned. The backtracking arms need no
+charge at all and are aligned trivially. This is a better answer than §7.2's
+forced uniformity: it aligns because the quantity is real, not because the rule
+was made blunt.
+
+**What the shift buys, arithmetically.** The quadratic charges
+n²/2^(SHIFT+1), so the give-up point moves as 2^((SHIFT+1)/2)·1,414:
+
+| SHIFT | gives up at | work done by then | cost to a legitimate linear match |
+|---|---|---|---|
+| 0 | n ≈ 1,414 | ~10⁶ ops — the `-fno-possessify` build's own point, restored exactly | a 1 MB single-pass match charges 10⁶: at the budget |
+| 6 | n ≈ 11,300 | ~6 × 10⁷ | a 64 MB match charges 10⁶ |
+| 10 | n ≈ 45,000 | ~10⁹, about 1 s | a 1 GB match charges 10⁶ |
+
+SHIFT is the trade between catching the pathology early and letting a genuinely
+linear match over a huge subject run, it is a named `limits.h` constant on
+K's own precedent (D47.2), and it is picked by measurement rather than here.
+SHIFT = 10 is the recommendation: it keeps single-pass matching viable to ~1 GB
+while cutting the pathological give-up point from 1 MB of subject and 200
+seconds to 45 KB and about one second.
+
+### 7.4 Blast radius, and the honest scope of the whole debt
+
+MEASURED, the same pathological input on the DEFAULT (prefiltered) path:
+
+| n | default path | `--engine=vm` |
+|---|---|---|
+| 10,000 | 0.000 s, 0 steps, 0 entries | 0.023 s |
+| 100,000 | 0.001 s, 0 steps, 0 entries | 2.121 s |
+| 1,000,000 | 0.003 s, 0 steps, 0 entries | >120 s (extrapolates to ~213 s from the 100 KB row; the possessify lane measured 228.5 s) |
+
+**The DFA prefilter chooses the start positions, so the VM is never entered at
+all and the quadratic is unreachable on the shipped path.** `--engine=vm`
+disables the prefilter deliberately (R21 E-6) so the VM can be cross-checked
+against the DFA instead of echoing it, which is what makes that path
+diagnostic. So the whole debt — all four shapes — is a DIAGNOSTIC-PATH
+exposure, and this is the fact that should decide how much is spent on it. It
+is not an argument for doing nothing: `--engine=vm` is how every differential
+in this project's last three lanes was run, and a diagnostic mode that takes
+200 seconds where it should take one is a real cost to the people who use it
+most. It is an argument for §7.3 rather than for anything larger.
+
+**And E-5's own limitation survives either way.** None of this makes DD-2 a
+wall-clock bound. It makes the budget proportional to work for the loops where
+it currently is not, which is what D22's ROBUSTNESS framing actually asks for.
 
 ---
 
@@ -669,12 +738,19 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
 
 ## 10. Open questions for the panel and the manager
 
-1. **§7's step charge: uniform, or the narrow exception list?** The
-   recommendation is uniform-at-every-`A_REP`-entry, because the differential's
-   failure-surface comparison needs a charge that is invariant under strategy
-   denial. The cost is that forward progress stops being free on the
-   `--engine=vm` path. The deciding measurement is specified in §7.2 and is
-   owed before the code, not after.
+1. **§7's step charge — the fix of record is REFUTED and needs re-ruling.**
+   The E-5-shaped one-step-per-loop-ENTRY charge, which the plan row,
+   `rungselect_design.md` §5 item 8 and this note's own first draft all carry
+   as the fix, is MEASURED not to work: entries and steps are the same number
+   at every size, so it halves a crossover that is three orders of magnitude
+   out. §7.3 proposes charging `iterations >> SHIFT` at the exit of loops that
+   push no per-iteration frame, which restores the property exactly at
+   SHIFT = 0 and costs one shift per loop exit. Two things to rule: the
+   replacement itself, and SHIFT's value (recommendation 10, by the §7.3
+   table). Note §7.4 before spending much on either — the entire debt is
+   reachable only on `--engine=vm`, because the DFA prefilter means the VM is
+   never entered on the shipped path (MEASURED: 0 steps, 0 entries, 0.003 s
+   where `--engine=vm` takes >120 s).
 2. **§4.2's clamp: product-driven, or "K = 1 when the body contains another
    bounded repeat"?** Product-driven is proposed (it is a bound rule, not a
    shape rule, and reuses machinery that exists). And, separately, whether §6's
@@ -700,8 +776,15 @@ What counter-K does NOT do, each with its reason:
 2. **`{1,2}`-style towers** still multiply by 2 per level at K = 1 (§6), and
    are refused rather than compiled. The merged-phase loop would close it;
    §10 ASK 2.
-3. **The step budget still does not bound wall time** (§7.2), and the entry
-   charge is not claimed to. E-5's own limitation, inherited deliberately.
+3. **The step budget still does not bound wall time** (§7.3), and neither the
+   refuted entry charge nor its replacement claims to. E-5's own limitation,
+   inherited deliberately. What §7.3 changes is that the budget becomes
+   PROPORTIONAL to work for the loops where it currently is not.
+7. **§7.3's charge is designed and unmeasured against a real implementation.**
+   The arithmetic in its SHIFT table is derived from the measured step and
+   iteration counts, not from a build that charges this way — the charge does
+   not exist any more than the counter loop does. It is the same disclosure
+   `../eng_brep_design.md` §8 item 1 makes about K itself.
 4. **The clamp over-estimates the product** where an enclosing quantifier takes
    the cursor rung (§4.3), costing unrolling on those shapes.
 5. **`../eng_brep_design.md` §8 item 4 — nested bounded repeats generally —

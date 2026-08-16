@@ -460,9 +460,15 @@ append-only or historical records.
   `(?:ab|a){0,2}?b`, already a measured defect in `src/ir/nfa.c`); **K = 8
   alone does NOTHING for K22**, whose tower is all `{0,2}` counts and so sits
   below K entirely — a downward SAFETY CLAMP on K is what makes counter-K the
-  real fix the K22 entry promises; and the owed E-5 step charge must be
-  strategy-INVARIANT (charged on every rung including replication) or it turns
-  the lane's own pcrec-vs-pcrec differential red by construction. Also records
+  real fix the K22 entry promises; and **the owed E-5 one-step-per-loop-ENTRY
+  charge is MEASURED NOT TO WORK** — entries and steps are the same number at
+  every size (10,001 / 50,001 / 100,001 against 10,001 / 50,001 / 100,001), so
+  it halves a crossover that is three orders of magnitude out, and §7.3
+  replaces it with `iterations >> SHIFT` charged at the exit of loops that push
+  no per-iteration frame. The same measurement establishes that the whole debt
+  is reachable only on `--engine=vm`: the DFA prefilter means the VM is never
+  entered on the shipped path (0 steps, 0.003 s where `--engine=vm` takes
+  >120 s). Also records
   the measured finding that possessification does NOT stop a bounded repeat
   replicating (1,939 vs 1,997 lines at `{0,64}`), so counter-K must cover the
   possessive arm or D47.1's possessify-first order becomes a size trap. See
