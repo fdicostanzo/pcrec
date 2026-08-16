@@ -1701,10 +1701,17 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * row per copy; these are per SOURCE `A_REP`, which is the only population
      * comparable with eng_brep_design.md §2.6's own census. Counting the rows
      * instead would measure replication as much as it measures the rule. */
-    sb_printf(o, "; possessify   %d of %d source quantifier%s possessified"
-                 " (eng_brep_design.md S2)\n",
-              cx->poss_marked, cx->poss_total,
-              cx->poss_total == 1 ? "" : "s");
+    if (cx->opt->flags & PCREC_NO_POSSESSIFY)
+        /* "0 of 0" would read as "this program has no quantifiers", which is
+         * a different fact and usually a false one. A denied pass has not
+         * counted anything, and the line says so. */
+        sb_puts(o, "; possessify   DENIED (-fno-possessify): the pass did not"
+                   " run, so nothing here was analysed\n");
+    else
+        sb_printf(o, "; possessify   %d of %d source quantifier%s possessified"
+                     " (eng_brep_design.md S2)\n",
+                  cx->poss_marked, cx->poss_total,
+                  cx->poss_total == 1 ? "" : "s");
     /* The macro is <PREFIX>_NCAPS, not RX_NCAPS: naming a macro the artifact
      * does not contain would send a reader of a `-p myrx` listing looking for
      * a symbol that is not there. Every emitted name in this listing comes
