@@ -1,0 +1,980 @@
+# ENG-BREP — the bounded-repeat emission strategy
+
+**STATUS: PROPOSED.** Design note for the `[ENG-BREP]` plan row, written
+DESIGN-FIRST and panel-eyed before any implementation lane opens, on the
+scheduling precedent K18 set at the R21/R23 close. **This note is not the
+fix.** It carries the analysis, the strategy ladder, the measurements that
+picked between the candidates, a termination argument, and the validation plan
+an implementation lane should execute.
+
+Written against `engine_m4.md` §2.5 (the rung ladder), §5.2 (the
+verdict-discharging rewrite socket) and §6.3/§6.4 (disjoint-follow
+possessification, "built M4.6"), and against the plan row's own rulings and
+three amendments.
+
+Measurement scripts, generated pattern families and archived probe output:
+`eng_brep_measurements/`. Every scratch compiler this lane built was built
+into a COPY of the tree by `probes/mkscratch.sh`, so no measurement here ever
+entered `src/`, `build/`, or the known-fail ratchet's line of sight.
+
+---
+
+## 0. How to read this
+
+### 0.1 Claim marking (house style, inherited from `k18_memo_design.md`)
+
+Every claim below is marked **STRUCTURAL** (follows from the code's own
+construction, and the note says which construction), **MEASURED** (a number
+this lane produced, with the probe that produced it), or **BELIEVED** (an
+argument I find convincing but did not reduce to either of the other two).
+R21's and R23's shared lesson is that panels break what is BELIEVED, so the
+marks point at the soft places rather than making the note look strong.
+
+### 0.2 Four things this lane refuted, three of them its own
+
+Put first, because a note whose refutations are buried reads as an advocacy
+document.
+
+1. **The possessification analysis as the plan row states it is UNSOUND.**
+   "Body's consumable set disjoint from the follow's first set → giveback is
+   dead" is false on its own. MEASURED: 117 counterexamples in the first
+   differential run, every one a body like `(a|ab)` whose iterations can end
+   in two places. §2.4. The repair — the body must also admit a UNIQUE
+   iteration — is the analysis this note actually proposes, and it survives
+   the same differential at 0 counterexamples over 5,016 patterns × 260
+   subjects.
+
+2. **A zero-width assertion in the follow breaks the first-set model.**
+   MEASURED: `[ab]{0,4}\b` on `"abc"` matches `(0,0)` greedy and `(3,3)`
+   possessive, so an assertion is not "absent from the follow" merely because
+   it consumes nothing. §2.5.
+
+3. **The plan row's last-iteration capture derivation for the motivating cell
+   is wrong.** "group2 = [end−2, end−1) iff `subject[end−2] == 'a'`" fails on
+   1,799 of 15,036 matches, because a group inside a loop keeps the value from
+   the last iteration that ENTERED it and a later `b` iteration does not clear
+   it. The corrected derivation — a backward scan to the last `a` in the
+   loop's span — is 0 of 15,036. §3.4. This does not damage the rung; it
+   sharpens why the rung has to be a reversed-automaton WALK and not a
+   constant-offset formula.
+
+4. **Third-amendment consequence (b) is NOT established, and this note
+   reports that rather than repeating it.** "ENG-BREP's replication reduction
+   also shrinks pcrec's own DFA-construction work" does not follow, because
+   `src/ir/nfa.c`'s `A_REP` arm replicates the body independently of anything
+   `emit_vm.c` does (STRUCTURAL, src/ir/nfa.c:561). An emitter-side counter
+   changes the emitted C and nothing upstream of it. What IS established, and
+   is new, is that the compiler's own cost on the erased path is
+   **quadratic** in the unrolled count — 0.012 s at N=64 to 2.689 s at
+   N=4000 — and that it lives in a different module than this row. §1.4.
+
+### 0.3 The design, in brief
+
+Bounded repeats are answered by a LADDER, cheapest first, and the ladder's
+order is Frank's ruled question order:
+
+| # | Rung | What it costs at run time | Owner |
+|---|---|---|---|
+| 1 | **Possessify** — prove no retreat into the loop can ever succeed | zero frames, zero trail | a `discharge` hook on §5.2's socket |
+| 2 | **Rung-select** — the §2.5 ladder: cursor / fixed stride / reverse-deterministic / boundary record | one frame per LOOP, not per iteration | `emit_vm.c`'s per-`A_REP` rung choice (partly built) |
+| 3 | **Counter-K** — one body copy per K iterations plus a counter | one frame per iteration, K amortised | new, `emit_vm.c` |
+| — | Replication (today) | one frame per iteration, O(N·body) emitted C | the status quo, retained as ground truth |
+
+The dial nobody has to guess is K: choice points are identical across K
+(STRUCTURAL, §4.1), so K is purely a speed/size trade, and both of its curves
+are MEASURED in §4.3. They agree on the answer.
+
+### 0.4 What this note is not
+
+It does not re-open D26 (diagnostic wording is tier 3; the existing cap
+diagnostic is fine and §7 only asks it to point here). It does not re-argue
+D45's compile budgets. It does not design DFA islands or accept-list islands.
+It does not touch backrefs or atomic groups beyond noting that §5.2's socket
+is the seam all three share.
+
+---
+
+## 1. What the emitter does today, and what it costs
+
+### 1.1 The RULED replication reading
+
+`X{m,n}` compiles as `m` mandatory copies followed by `n − m` NESTED optional
+copies — `(X(X(X)?)?)?`, not chained optionals — with no counter and no
+empty-iteration suppression test at all. That reading is RULED (D44 / R21 E-2)
+and MEASURED into place: with the empty-iteration guard applied to bounded
+repeats too, 60 of 225,240 generated pairs diverge from libpcre2; restricted
+to `rmax == -1`, 0 of 225,240. The nesting (rather than chaining) is likewise
+a measured choice, from `(?:ab|a){0,2}?b` on `"abab"`.
+
+Both `src/gen/emit_vm.c` (`vm_opt_chain`) and `src/ir/nfa.c` (the `A_REP`
+arm) implement this, INDEPENDENTLY. That independence is invisible in the
+plan row and it is load-bearing for §0.2 item 4.
+
+### 1.2 The three victims
+
+STRUCTURAL: emitted C is O(N · body). MEASURED, on
+`((a)|b){0,N}c` with captures, compiled by a scratch compiler whose
+`PCREC_MAX_VM_REPEAT_COPIES` was raised so the sweep could see past the cap
+(`probes/mkscratch.sh bigcap`, `outputs/replication_sweep.tsv`):
+
+| N | emitted lines | emitted bytes | gcc −O1 | gcc −O2 |
+|---|---|---|---|---|
+| 1 | 350 | 13 KB | 0.11 s | 0.22 s |
+| 16 | 775 | 26 KB | 0.22 s | 0.42 s |
+| 64 | 2,134 | 66 KB | 0.52 s | **1.52 s** |
+| 128 | 3,946 | 121 KB | 1.01 s | 4.72 s |
+| 256 | 7,570 | 231 KB | 2.02 s | 19.14 s |
+| 400 | 11,647 | 356 KB | 3.22 s | 51.96 s |
+| 1000 | 28,634 | 874 KB | 10.03 s | **TIMEOUT > 240 s** |
+| 4000 | **113,572** | **3.5 MB** | 152.64 s | **TIMEOUT > 240 s** |
+
+Two things to read off this table.
+
+**The N=4000 row is the D45 incident, reproduced.** The plan row records
+113,545 lines / 3.5 MB; this lane measures 113,572 lines / 3,536,883 bytes at
+commit 0a082ea. The 27-line delta is the D46 rung-stamp lines added since the
+row was written, so the reproduction is exact where it should be.
+
+**gcc's cost is linear at −O1 and quadratic at −O2.** −O1 doubles when N
+doubles (0.52 → 1.01 → 2.02 → 3.22 across 64/128/256/400); −O2 goes ×3.1,
+×4.1, ×2.7 over the same steps, i.e. an exponent of about 2. `limits.h`'s
+recorded curve (0.50 / 1.40 at N=64, 3.50 / 51.54 at N=400) is reproduced to
+within the noise of a different machine. This is the whole justification for
+`PCREC_MAX_VM_REPEAT_COPIES = 64` and it survives re-measurement.
+
+### 1.3 The interim backstop, and what it refuses
+
+`PCREC_MAX_VM_REPEAT_COPIES = 64` is checked in the pre-pass, BEFORE emission,
+against `v.maxcopies` — the largest replication factor any one bounded repeat
+over a choice-bearing body demands. Its diagnostic already names the fix
+("remove the alternation so the body compiles to a span loop instead"). This
+note does not propose removing it; §7 proposes what it should say once there
+is somewhere better to point.
+
+The cap is on REPLICATION and not on total size, and that is right: MEASURED,
+a 200-branch capture-bearing keyword alternation has 199 resume points and
+compiles in 0.50 s, while `((a)|b){0,4000}c` is sixteen characters and 3.5 MB.
+The defect is DISPROPORTION.
+
+### 1.4 The compiler's OWN cost — the third amendment, checked
+
+The third amendment as corrected carries consequence (b): the replication
+reduction "also shrinks pcrec's own DFA-construction work, an additional
+measured motivation for this row." This lane measured that and **it does not
+hold as stated**, for a structural reason.
+
+MEASURED (`outputs/nfa_growth.txt`), NFA states for `((a)|b){0,N}c`, from a
+scratch compiler with one `fprintf` at the end of `pcrec_build_nfa`:
+
+| N | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 1000 | 4000 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| NFA states (each direction) | 15 | 27 | 51 | 99 | 195 | 387 | 771 | 1,539 | 6,003 | 24,003 |
+
+Exactly `6N + 3`, linear, and it is produced by `src/ir/nfa.c`'s own
+replication loop. **Nothing `emit_vm.c` does changes this number** — the VM
+emitter and the NFA lowering replicate independently from the same AST. An
+emitter-side counter-K therefore shrinks the emitted C and leaves pcrec's own
+machine construction exactly where it was. So does possessification, which
+rewrites the quantifier's STRATEGY and not the AST's repeat count.
+
+What the measurement did turn up is worth more than the claim it refutes.
+MEASURED (`outputs/erased_path_cost.txt`), the capture-ERASED path — the one
+the plan row holds up as cheap:
+
+| N | pcrec's own time | gcc −O2 | emitted lines |
+|---|---|---|---|
+| 64 | 0.012 s | 0.060 s | 148 |
+| 256 | 0.025 s | 0.073 s | 208 |
+| 1000 | 0.181 s | 0.082 s | 440 |
+| 2000 | 0.656 s | 0.088 s | 753 |
+| 4000 | **2.689 s** | 0.098 s | 1,378 |
+
+The 1,378 lines reproduce the plan row's figure EXACTLY. The 0.078 s does
+not: at N=4000 the artifact takes **2.7 seconds of pcrec's own time** and
+0.098 s of gcc's. (0.078 s is very close to this lane's gcc-only figure at
+N=1000, so the plan row's number is most likely a gcc time recorded as a
+total. Reported, not adjudicated.)
+
+STRUCTURAL, and the mechanism is visible in the emitted artifact: at every N,
+the FORWARD DFA is **2 states** (`rx_ftr[8]`), and the whole count lives in
+the REVERSE machine — `rx_racc[66]` / `rx_rtr[264]` at N=64, `rx_racc[4002]` /
+`rx_rtr[16008]` at N=4000. Subset construction builds Θ(N) reverse states,
+each closing over a Θ(N) NFA, which is where the quadratic comes from.
+
+**The consequence that survives, restated so a budget can be posed on it:** any
+depth- or size-shaped budget in the compiler must be posed on the UNROLLED
+quantity. The surviving evidence is this table plus the NFA row above — a
+pattern whose reader-visible nesting never moves produces 24,003 NFA states
+and 4,002 reverse DFA states — not the refuted depth-multiplication claim. And
+the erased path has its own ceiling that nobody wrote down:
+`PCREC_MAX_DFA_STATES_TABLE = 32000` caps this shape at roughly N = 32,000.
+
+---
+
+## 2. Question 1 — POSSESSIFY: which bounded repeats need no backtracking at all
+
+### 2.1 The claim
+
+For a large and precisely-characterisable class of quantifiers, NO retreat
+into the loop can ever produce a match the maximal path does not. For those,
+the emitter owes zero resume frames, zero trail entries and no counter — the
+loop is a forward scan. This is the cheapest rung and it must be tried first,
+which is why Frank ruled it question 1.
+
+### 2.2 The analysis, stated precisely
+
+Let `Q = X{m,n}` be a quantifier occurrence in a pattern. Define, over bytes:
+
+- **FIRST(X)** — the set of bytes that can begin one iteration of `X`.
+- **FOLLOW(Q)** — the set of bytes that can begin whatever runs after `Q`,
+  computed transitively: the first set of `Q`'s remaining siblings, extended
+  outward past nullable siblings to the enclosing constructs, and INCLUDING
+  FIRST(B) for the body `B` of every enclosing loop (an enclosing loop can
+  start another iteration once `Q`'s parent finishes).
+
+Say `X` **admits a unique iteration** when both hold on `X`'s position
+(Glushkov) automaton:
+
+- **(U1) one-unambiguous** — the initial position set is pairwise byte-disjoint
+  and every position's follow set is pairwise byte-disjoint. Equivalently: at
+  most one position is live after any prefix. This is Brüggemann-Klein &
+  Wood's 1-unambiguity, and it is exactly what "per-byte-disjoint branches"
+  means once it is stated for the whole body rather than for a top-level
+  alternation.
+- **(U2) prefix-free** — no ACCEPTING position has an outgoing edge. No proper
+  prefix of an iteration is itself a complete iteration.
+
+**THE RULE.** `Q` is possessive-equivalent when
+
+> `X` admits a unique iteration, `X` is not nullable, and **either**
+> FIRST(X) ∩ FOLLOW(Q) = ∅ **or** `m == n`.
+
+Three notes on the shape of that rule.
+
+- **The exact-count arm is free and it is not in the plan row.** With a
+  unique-iteration body there is exactly one way to run `k` iterations from a
+  given start, so the loop's ONLY freedom is `k`; `m == n` removes it without
+  any reference to what follows. MEASURED, it is not a curiosity: it is 52 of
+  the 76 possessifiable verdicts on the realistic pattern set (§2.6), because
+  real bounded repeats are `\d{4}`, `[0-9a-f]{8}`, `\d{2}` — exact counts over
+  classes.
+- **Every set is computed in the SOUND direction.** A construct the analysis
+  cannot model widens to "all bytes", which makes the disjointness test fail
+  and the quantifier keep its machinery. Declining is always available.
+- **The condition is on the QUANTIFIER, not the pattern.** D46 already
+  established the rung as a per-`A_REP` property with a per-quantifier stamp;
+  this joins that family.
+
+### 2.3 Why it is sound
+
+STRUCTURAL, given (U1)+(U2)+non-nullable:
+
+1. From any start position `p`, at most one iteration of `X` can run, and it
+   has exactly one end. (U1) makes the position path deterministic; (U2) stops
+   it at the first accepting position, which is therefore the only one.
+2. So the loop's reachable exit positions from `p` form a strictly increasing
+   chain `p = q₀ < q₁ < q₂ < …`, with `q_{i+1}` determined by `q_i`. Strict
+   because non-nullable.
+3. The greedy path takes the largest `k` in `[m, n]` for which `q_k` exists —
+   it reaches the top of the chain. (A lazy quantifier walks the same chain
+   from the bottom; see below.)
+4. For any non-maximal exit `q_i`, another iteration ran from `q_i`, so
+   `subject[q_i] ∈ FIRST(X)`.
+5. FIRST(X) ∩ FOLLOW(Q) = ∅ therefore says the follow's first byte test fails
+   at every non-maximal exit. No retreat can succeed. ∎ (In the `m == n` arm,
+   step 3 leaves one exit and steps 4–5 are unnecessary.)
+
+**Where each premise is load-bearing, with its witness.** Step 2 is where the
+plan row's version breaks: without (U1), a "retreat" can move the exit
+position RIGHT rather than left, because re-choosing inside the body changes
+the iteration's LENGTH. Without (U2), the same happens without any alternation
+at all. Both are measured witnesses, not hypotheticals — §2.4.
+
+**Lazy quantifiers.** Steps 1–2 do not mention preference, so the chain is the
+same; only the order of trying is reversed. Under the disjointness arm exactly
+one exit in the chain can be followed successfully, so greedy, lazy and
+possessive agree on the span, and the emitter owes no frames for either
+preference. What a lazy quantifier does NOT admit is the literal `X{m,n}+`
+spelling, so the differential in §2.4 skips lazy rows and this paragraph is
+marked **BELIEVED**, not measured. §8 carries it.
+
+### 2.4 The differential that refuted the first version
+
+`probes/probe_possess.py` states the analysis as code and checks it against an
+oracle in both directions over a generated family (3 prefixes × 12 bodies ×
+10 counts × 14 follows, 5,016 compiling greedy patterns, 260 subjects each —
+about 1.3 M pattern-subject comparisons). The oracle is python3 `re`, whose
+possessive quantifiers are the mechanised statement of "no retreat into this
+loop"; this is a BASE-TIER oracle, not the three-way sweep §5.3 specifies.
+
+Two directions, because they are different questions:
+
+- **SOUNDNESS** — every quantifier called possessive-equivalent must behave
+  identically greedy and possessive on every subject. One counterexample
+  refutes the design.
+- **NON-VACUITY** — the analysis must also say no to things, and those noes
+  must be where the divergences are. An analysis that says yes to nothing is
+  sound and worthless.
+
+**v1, disjointness alone** (`outputs/possess_differential_v1_REFUTED.summary`):
+
+| verdict | differential same | differential DIVERGES |
+|---|---|---|
+| possessifiable | 1,395 | **117** |
+| no | 619 | 773 |
+
+All 117 counterexamples are one body, `(a|ab)`. The witness:
+`(a|ab){0,4}c` on `"abc"` is `(0,3)` greedy with group 1 = `"ab"`, and `(2,3)`
+possessive with group 1 unset. FIRST is `{a}`, FOLLOW is `{c}`, disjoint — and
+the analysis was still wrong, because the greedy path takes `a`, stalls at
+offset 1, and the retreat re-decides the SAME iteration as `ab`, moving the
+exit from 1 to 2. Step 2 of §2.3 is exactly the premise that fails.
+
+A second witness, found by direct probe rather than by the sweep, needs no
+alternation at all: `(?:ab?){0,4}b` on `"ab"` is `(0,2)` greedy and no match
+possessive. The body is one-unambiguous; its accepting position `a` (with `b?`
+empty) simply has an outgoing edge. That is (U2).
+
+**v2, the rule of §2.2** (`outputs/possess_differential.summary`), with the
+assertion follows of §2.5 and three follows added that the v1 family lacked:
+
+| verdict | differential same | differential DIVERGES |
+|---|---|---|
+| possessifiable | 2,031 | **0** |
+| no | 1,522 | 1,463 |
+
+0 counterexamples to soundness, and 1,463 divergences among the noes, so the
+analysis is not vacuous. Note the population GREW (1,395 → 2,031) while
+getting sound, which is the exact-count arm paying for itself.
+
+**One thing v1 got right by accident, disclosed.** v1's follow set contained
+no follow beginning with a body's SECOND byte, so the `(?:ab|a)` family — just
+as ambiguous as `(a|ab)` — passed v1's differential clean. v2 adds `b`, `ab`
+and `bc` as follows. A family that passes because the harness never asked the
+question is the failure mode `pcrec-check-design-lessons` is about, and it
+happened here.
+
+### 2.5 The third refutation: assertions in the follow
+
+MEASURED. Modelling a zero-width assertion as "not in the follow, because it
+consumes nothing" is unsound:
+
+| pattern | greedy | possessive |
+|---|---|---|
+| `[ab]{0,4}\b` on `"abc"` | `(0,0)` | `(3,3)` |
+| `(?:a\|bc){0,4}\b` on `"ab"` | `(0,0)` | `(2,2)` |
+| `a{0,4}\B` on `"ba"` | `(1,1)` | no match |
+
+`\b` at a retreat position can succeed where it fails at the maximal exit,
+which is precisely the thing a first-BYTE set cannot express. **The rule:** an
+assertion reachable at the follow's first position widens FOLLOW to all bytes,
+i.e. the analysis declines. Sound, one line, and it costs the `X{m,n}$` shape,
+which §2.7 accounts for.
+
+### 2.6 What it covers — two censuses, and they disagree by 4×
+
+`probes/probe_possess_corpus.py` runs the same analysis (imported, not copied,
+so a refutation moves both numbers at once) over two populations.
+
+**The .rxt corpus** — 756 harvested patterns, 1,725 quantifiers, 112 patterns
+python3 `re` cannot parse and which are reported rather than dropped:
+
+| | possessifiable | no | rate |
+|---|---|---|---|
+| bounded | 55 | 246 | **18%** |
+| unbounded | 128 | 1,296 | 9% |
+
+**A realistic set** — `probes/realistic_patterns.txt`, 40 patterns of the kind
+bounded repeats actually appear in (dates, UUIDs, IPs, MACs, fixed-width
+fields, versions, log lines):
+
+| | possessifiable | no | rate |
+|---|---|---|---|
+| bounded | 69 | 15 | **82%** |
+| unbounded | 7 | 15 | 32% |
+
+**The gap is the finding.** The .rxt corpus is a COMPILER test corpus,
+adversarial by construction — its bounded repeats were chosen to break things,
+so a possessification rate measured on it says nothing about the population the
+feature is for. On patterns people write, four bounded repeats in five need no
+backtracking machinery at all. Both denominators are reported because either
+one alone would mislead: the first understates the win, the second is a
+hand-written list and says so in its own header.
+
+Reasons, realistic set: 52 exact-count + unique-iteration, 24
+disjoint + unique-iteration, 27 overlap, 3 not-prefix-free.
+
+### 2.7 Conservatism, named rather than smoothed over
+
+1,522 "no" verdicts never diverged in the differential — the analysis is
+sound, not tight. The identified sources, in order of how much they cost:
+
+- **`$` follows** (`a{0,4}$`, `\d{2,4}$`): declined by §2.5's blanket
+  assertion rule. `$`'s truth at a position does not depend on the byte AT the
+  position the way `\b`'s does, so it is plausibly always safe — **BELIEVED,
+  not measured**, and §8 carries it as the highest-value follow-up because
+  end-anchored bounded repeats are common.
+- **Subsumed follows** (`[ab]{0,4}b?c`): FOLLOW contains `b` because of the
+  `b?`, but a `b` at any retreat position was already consumable by the loop,
+  so the retreat cannot help. PCRE2's `pcre2_auto_possess.c` does exactly this
+  kind of subsumption reasoning; pcrec's first version should not.
+- **`\d`, `\w` and every other CATEGORY** widen to all bytes in the probe's
+  model. In pcrec they would not — the real implementation has exact 256-bit
+  class bitmaps and can intersect them precisely, so the shipped analysis
+  should be STRICTLY less conservative here than the probe that validated it.
+  The realistic census's 82% is therefore a LOWER bound on what pcrec can
+  achieve, which is the right direction for a probe to be wrong in.
+
+### 2.8 Delivery seam: §5.2's socket, and why the socket and not the emitter
+
+§5.2 rules that the future customers of engine selection "are not analyses
+that return a verdict, they are REWRITES that discharge a verdict", and gives
+them a `discharge` hook in a fixpoint pass. Possessification is exactly that
+shape: it does not observe that the loop needs no frames, it MAKES the
+quantifier one that needs none.
+
+The registration is an `EngineAnalysis` row owned by the core (unlike
+`backrefs` or `atomic_groups`, possessification is not a module's construct —
+it is an optimisation over the base tier), whose `discharge` rewrites the
+`A_REP` node's strategy in place. Two properties this inherits for free:
+
+- **The fixpoint bound already exists.** §5.2 requires the pass to be bounded
+  from day one so a later rewrite pair cannot loop. Possessification is
+  monotone (a possessified quantifier is never re-examined) so it terminates
+  in one pass, but it does not have to argue that separately.
+- **The size-estimate obligation does not bind.** §5.2's rewrite author owes a
+  size estimate before committing, because the archetypal rewrite (finite
+  backref expansion) makes the AST BIGGER. This one only ever removes
+  machinery.
+
+**What the socket does NOT buy, stated because §0.2 item 4 is about it.** The
+rewrite lands on the AST, but `src/ir/nfa.c` lowers `A_REP` by replication
+regardless of any strategy annotation, so the prefilter's NFA is unchanged.
+Possessification is a run-time and emitted-size win, not a compiler-time one.
+Making it a compiler-time win would mean teaching the NFA lowering an atomic
+construction, which is a different row and is not proposed here.
+
+### 2.9 Prior art: `pcre2_auto_possess.c`
+
+PCRE2 performs auto-possessification at compile time in
+`pcre2_auto_possess.c`, comparing the repeated item's character set against
+what can follow it and rewriting the opcode to its possessive form when they
+cannot overlap. It is cited here as **prior art that the transformation is
+real and safe in a production engine**, not as a specification: D26 makes
+PCRE2 the source of truth for what a pattern MATCHES, and possessification by
+construction changes no match. pcrec's own analysis must therefore be
+justified on its own terms — which §2.3 does and §2.4 checks — and any place
+the two engines possessify different sets is not a compatibility defect,
+because both compute the same answers.
+
+Two differences worth recording so a later reader does not assume parity.
+PCRE2's analysis works on compiled opcodes and handles a fixed repertoire of
+item shapes; the one proposed here works on the AST before lowering and keys
+on a whole-body automaton property, so it reaches multi-byte bodies like
+`(?:a|bc)` that an item-wise comparison does not. In the other direction,
+PCRE2 does subsumption reasoning this note explicitly defers (§2.7).
+
+---
+
+## 3. Question 2 — RUNG SELECTION: which residual bodies each rung catches
+
+### 3.1 The ladder, as designed and as built
+
+§2.5's ladder, cheapest first: disjoint follow → fixed stride → reverse
+deterministic → boundary record → frames + stamped ceiling. [M4.5b] landed 2
+of the 5 rungs. What exists in `emit_vm.c` today is a two-way choice made per
+`A_REP` by `vm_cursor_fits` — a deterministic FIXED-LENGTH body (via
+`vm_det_seq`, plus D44.1's capture-offset extension) takes the cursor rung;
+everything else falls through to frames, bounded or unbounded. D46 stamps the
+choice per quantifier and `--emit-ir` reports it.
+
+### 3.2 The census: what the rungs catch today
+
+`probes/probe_rungs.py` reads the rung out of the emitter's OWN listing
+(`--emit-ir`'s RUNGS section, written by the same walk that writes the C, so
+it cannot drift from what is emitted). Over the 756 harvested patterns, with
+`--engine=vm` forced so every pattern reaches the VM
+(`outputs/rung_census_forcedvm.tsv`):
+
+| rung | emitted stamps | distinct (pattern, quantifier) |
+|---|---|---|
+| cursor | 1,404 | 311 |
+| frames-unbounded | 1,234 | 111 |
+| frames-bounded | 236 | 96 |
+
+**Read the two columns, not one.** The stamp count is what the EMITTER sees
+and the distinct count is what the AUTHOR wrote, and they differ by 4× for
+exactly the reason this row exists: replication multiplies the quantifiers the
+emitter handles. One 60-character corpus pattern,
+`((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}`, contributes
+**352** rung stamps from three source quantifiers. This is the third
+amendment's surviving consequence (a) — budgets go on the unrolled quantity —
+observed on a second, independent quantity.
+
+Under DEFAULT engine selection (`outputs/rung_census_default.tsv`) the picture
+is smaller still: 613 of 756 patterns request no captures and never reach the
+VM at all, and only 11 distinct patterns put any quantifier on the
+frames-bounded rung. **The population this row is about is small and the
+compiler already knows how to identify it** — which is the argument for
+solving it well rather than cheaply.
+
+### 3.3 The motivating cell, reproduced
+
+`((a)|b){0,4000}c`, three ways, at commit 0a082ea:
+
+| | emitted lines | pcrec | gcc −O2 |
+|---|---|---|---|
+| VM, captures, replicated | 113,572 | 2.7 s | > 240 s (timeout) |
+| capture-ERASED (`--no-captures`, DFA) | 1,378 | 2.7 s | 0.098 s |
+| choice-free body `(?:ab){0,4000}y` (cursor rung) | 2,628 | 1.6 s | 0.215 s |
+
+The erasure cell is real and it is an 82× reduction in emitted lines. §1.4
+corrects what it costs. Note the third row: a body with no choice point never
+replicates in the emitter at all, which is why `a{0,65535}` and
+`(?:ab){0,9999}` have never been a problem and why the cap's diagnostic
+already names "remove the alternation" as the fix.
+
+### 3.4 The reverse-deterministic rung, and what it can and cannot derive
+
+PCRE2 reports only the LAST iteration's captures, so the 3,999 other capture
+writes a replicated `((a)|b){0,4000}c` performs are unobservable by
+definition. The rung's promise is that the DFA pair delivers the exact span
+and the last-iteration captures are recovered by walking the REVERSED body
+automaton backward from the end — O(1) memory, no trail.
+
+**The plan row's worked derivation for this cell is wrong, and the way it is
+wrong is instructive.** As stated: group 1 = `[end−2, end−1)`, group 2 = the
+same iff `subject[end−2] == 'a'`. MEASURED over 15,036 matches
+(`outputs/lastiter_capture_derivation.txt`): **1,799 mismatches.** Group 1 is
+right. Group 2 is not, because a group INSIDE a loop keeps the value from the
+last iteration that entered it — a later `b` iteration does not clear it —
+so on `"abc"` group 2 is `(0,1)`, not unset.
+
+The corrected derivation, **0 mismatches over the same 15,036**: group 2 =
+`[p, p+1)` where `p` is the last `a` in `[start, end−1)`, unset if there is
+none.
+
+That repair is the rung's own argument, sharpened. A constant-offset formula
+was never the right shape; what recovers group 2 is a BACKWARD SCAN that
+continues until it finds the last iteration which took the branch the group
+lives in. That is a reversed-automaton walk — exactly what §2.5's
+reverse-deterministic rung is — and its cost is bounded by the loop's span,
+not by O(1), which the rung's "O(1) per retreat" phrasing should be read
+against.
+
+**What the rung cannot do**, stated so the ladder's residual is honest:
+
+- **Reverse-ambiguous bodies stay on the frames rung.** §2.5's own
+  counterexample, `(aa?)*` on `"aaa"`, is undiminished: the rightmost byte
+  cannot say which iteration ended there.
+- **A group whose branch is never taken has no backward witness to find**, and
+  the scan must still be bounded by the loop's start. The derivation above
+  terminates because the loop's span is known; a rung that did not have the
+  span first could not do this at all — which is why this rung sits behind the
+  DFA pair and not in front of it.
+- **Nested loops multiply the walk.** The derivation above is single-level. A
+  capture inside a nested bounded repeat needs the enclosing iteration's
+  boundary first. Not designed here; §8.
+
+### 3.5 The residual
+
+After questions 1 and 2, what is left for question 3 is: a bounded repeat over
+a body that is NOT possessive-equivalent (its follow overlaps its first set,
+or its iteration is ambiguous), and NOT deterministic enough for any cursor
+rung, and whose per-iteration backtracking is therefore real. `((a)|b){0,N}c`
+with `c` replaced by something starting with `a` or `b` is the archetype. On
+the realistic census, that residual is 15 of 84 bounded quantifiers; on the
+adversarial corpus it is 246 of 301.
+
+---
+
+## 4. Question 3 — COUNTER-K for the genuinely nondeterministic remainder
+
+### 4.1 K changes no choice point — STRUCTURAL
+
+Replication of `X{0,N}` produces N nested optional copies, each with one
+choice point ("take this copy" vs "skip the rest"), and `vm_opt_chain` pushes
+exactly one resume frame per copy. A counter loop with unroll factor K
+produces `ceil(N/K)` trips through a block containing K copies, and each copy
+keeps its own choice point in the same preference order. The number of choice
+points, their order, and the frame pushed at each are therefore identical for
+every K from 1 to N; only the emitted CODE that hosts them differs.
+
+That is what makes K a dial and not a semantics — and it is also what makes
+the §5.1 differential a total check rather than a sampling one: if choice
+points are identical, then any disagreement between two K values is a bug by
+construction, with no "but they are allowed to differ here" case to argue.
+
+### 4.2 The emitted shape
+
+One counter per bounded repeat, living in the `stv` array beside the capture
+pairs and the empty-iteration guards (§2.4 already lists "repeat counters" as
+an `stv` inhabitant, so no layout change is required), trailed on the same
+write-on-traverse discipline as everything else in `stv`.
+
+```
+  ; X{m,n}, unroll K
+  L_entry:   stv[ctr] = 0
+  L_trip:    if (stv[ctr] + K > n) goto L_tail   ; the partial last trip
+             <K copies of X's code, each with its own choice point>
+             RX_SET(ctr, stv[ctr] + K)
+             goto L_trip
+  L_tail:    <(n - stv[ctr]) copies, i.e. the residue, emitted as today>
+             goto L_next
+```
+
+The tail is the existing `vm_opt_chain` at a smaller count, which is why this
+is an extension rather than a rewrite: at K = N the loop never runs and the
+emitter reduces to exactly today's output, which §5.2 turns into a
+zero-regression gate.
+
+The mandatory `m` copies are emitted ahead of the loop as today. The counter
+starts at 0 and counts the OPTIONAL copies, so the comparison in `L_trip` is
+against `n − m`.
+
+### 4.3 The two curves, MEASURED
+
+**Compile time.** §1.2's table IS the K curve, because a counter loop with
+factor K emits K body copies regardless of N. Reading gcc −O2 as a function of
+copies: 1.52 s at 64, 4.72 s at 128, 19.14 s at 256 — quadratic. At K ≤ 16 the
+compile cost of the unrolled block is under 0.5 s and is not the binding
+constraint on anything.
+
+**Throughput.** The counter loop is not built, so its speed cannot be
+measured. What CAN be measured is the two ENDS of the axis, because both ship
+today: K = N is full replication (`((a)|b){0,N}c`) and K = 1 is the same code
+shape as the frames-rung star (`((a)|b)*c` — one body copy, one resume frame
+per iteration, a backward jump). The star is NOT the counter loop (no counter,
+and it carries the empty-iteration guard a bounded repeat does not), so this is
+an ESTIMATE of the axis and is labelled as one. `probes/probe_throughput.sh`,
+−O2, min of 3 trials, both artifacts checked to agree on span and group 1
+before any time is compared (`outputs/throughput_sweep.tsv`):
+
+| N | replication (ns/search) | one-copy loop (ns/search) | loop ÷ replication |
+|---|---|---|---|
+| 1 | 42.4 | 110.0 | 2.59 |
+| 2 | 59.8 | 129.8 | 2.17 |
+| 4 | 82.8 | 138.8 | 1.68 |
+| 8 | 131.9 | 173.6 | 1.32 |
+| 16 | 229.7 | 258.0 | **1.12** |
+| 32 | 653.7 | 521.6 | 0.80 |
+| 64 | 913.3 | 856.7 | 0.94 |
+| 128 | 1,700.7 | 1,761.7 | 1.04 |
+| 256 | 4,285.1 | 3,065.9 | 0.72 |
+
+**The knee is at K ≈ 16, and both curves agree on it.** Unrolling buys 2.6× at
+one copy, 1.3× at eight, 1.1× at sixteen — and by 32 the advantage is gone
+(0.72–1.04, i.e. at or below parity; the straight-line code stops paying once
+it stops fitting in cache). Meanwhile the compile-time cost of the unrolled
+block is quadratic in exactly that variable. There is no region above ~32
+where unrolling is worth anything.
+
+**RECOMMENDATION (MEASURED, on the estimate above): K = 8, with 16 as the
+alternative if the implementation lane's real counter loop measures a larger
+per-trip overhead than the star's.** K = 8 keeps ~1.3× of the ~2.6× available
+and costs 0.22 s of gcc −O2. This is Frank's own suggested range, arrived at
+from the curves rather than from the suggestion.
+
+### 4.4 The sweep that should decide it for real
+
+The estimate above is two ends of an axis. The real sweep, whose home is
+[BENCH-1]'s bounded-repeats family:
+
+- **Axes.** N ∈ {1, 2, 4, 8, 16, 32, 64, 128, 256, 1000, 4000} × K ∈ {1, 2, 4,
+  8, 16, 32, N} × body ∈ {`(a|b)`, `((a)|b)`, `(a|bc)`, a 5-branch keyword
+  alternation, a nested `(a(b|c))`} — body SIZE is a third axis and the §1.2
+  table only walks one body.
+- **Both metrics per cell.** Compile time (pcrec and gcc, −O1 and −O2
+  separately, since they differ by an exponent) and match throughput.
+- **Three subject regimes**, because a bounded repeat's cost is dominated by
+  which one it is in: the loop SATISFIED at its maximum, the loop satisfied
+  well below its maximum, and the loop FAILING after maximal consumption
+  (where backtracking actually runs and where K should matter most — the
+  throughput table above measures only the first).
+- **The cost-gate families ride along**, per third-amendment consequence (c):
+  the bounded-repeat × nullable-loop family (S14's witnesses, ~0.1% of random
+  patterns) joins the sweep, since its interaction with the counter is the one
+  place termination could go wrong (§6).
+- **Every cell under `timeout`**, generously sized; a timeout is a recorded
+  finding, as the `> 240 s` cells in §1.2 are.
+
+### 4.5 What the sweep must NOT be allowed to decide
+
+K is per-artifact tuning; it must not become a per-pattern heuristic in v1.
+D18's "an axis must earn itself" applies: one measured constant, forceable per
+§5.2, and a later row may make it adaptive if a measurement ever asks for it.
+
+---
+
+## 5. Validation — the four ruled requirements, discharged
+
+### 5.1 Requirement 1 — replication is the ground truth, so the primary instrument is a pcrec-vs-pcrec differential
+
+**Why this is the strongest instrument available anywhere in the project.**
+Replication is not an approximation of `{0,N}` semantics; it is literally
+`{0,N}` unrolled, it is what ships today, and §1.2 measures it as tractable
+below the knee (N ≤ 256 compiles in 19 s at −O2, N ≤ 64 in 1.5 s). So the
+check does not need an external oracle to have an opinion: two pcrec artifacts
+for the same pattern, one forced to replication and one forced to
+counter-K/possessive/rung-X, must agree, and **any disagreement is a bug by
+construction** because §4.1 makes the choice points identical.
+
+The comparison is on four things, and the last two are the ones a weaker check
+would drop:
+
+1. the match span;
+2. **EVERY capture slot** — all `RX_NCAPS` pairs, including the ones the test
+   subject leaves unset, compared as `ptrdiff_t` pairs against `RX_UNSET`;
+3. the FAILURE SURFACE — a subject that exhausts the frame array must produce
+   `RX_ERR_FRAMES` from BOTH artifacts **at the same iteration count**, not
+   merely both fail. This is what stops a strategy from passing by being
+   quietly more forgiving than the ground truth;
+4. `rx_info`'s stamped `frame_capacity` / `subject_ceiling`, which D44.5 makes
+   the artifact's honest declaration of its own limit. A strategy that changes
+   the real limit and not the stamp has broken the stamp's contract, and the
+   differential is where that shows.
+
+**Subjects**, swept rather than chosen: for each pattern, the loop satisfied at
+0, 1, m−1, m, m+1, n−1, n and n+1 iterations; each of those with the follow
+present and absent; plus a random sweep over the body's own alphabet. The
+harness precedent is `tests/vm/`'s existing identity checks and
+`tests/codegen/run_trie_identity.sh`, which already builds a reference compiler
+behind a flag and diffs emitted C — the same technique, one axis over.
+
+**Where the differential is blind, disclosed:** above the replication knee
+there is no ground truth to compare against, so `N = 4000` is checked by §5.3's
+oracle sweep and by extrapolation of the strategy's own N-independence, not by
+this instrument. That is the honest limit of "replication is the true version".
+
+### 5.2 Requirement 2 — every strategy forceable end to end, do or die
+
+The R21 E-6 testability pattern, and D46's controllability half, which
+currently has no producer. Concretely:
+
+- `--repeat-strategy=replicate|counter|auto` and `--unroll=K`, per invocation,
+  refusing rather than silently downgrading when the pattern cannot honour the
+  request (the `--engine=` precedent exactly: "a request the pattern cannot
+  honour is REFUSED, never silently downgraded").
+- `--no-possessify` — the negative axis, so the possessification rewrite can be
+  turned OFF and the differential can compare with against without.
+- `--rung=cursor|frames|auto`, completing D46: today the rung is observable
+  (the `<PREFIX>_VM_RUNGS` bitmask, `--emit-ir`'s RUNGS section) and not
+  forceable.
+- Each choice reported in `rx_info` and in `--emit-ir`'s header, so a check can
+  assert that the artifact did what it was told rather than trusting the flag.
+  `--emit-ir` already prints `rungs` and `max replicas`; this adds the
+  strategy and K beside them.
+
+"Do or die" is the point: a strategy that cannot be forced cannot be
+differentially tested, and this row's entire validation story is a
+differential.
+
+### 5.3 Requirement 3 — the three-way oracle sweep on top
+
+Per D44's three-way rule (pcrec / python3 `re` / libpcre2), riding on top of
+the pcrec-vs-pcrec differential rather than replacing it, and DENSE where the
+design has edges:
+
+- at and around the K threshold — K−1, K, K+1 iterations, and N ≡ 0, 1, K−1
+  (mod K), which is where an off-by-one in the residue tail lives;
+- N = 0 and N = 1, and `m > 0` (`X{2,5}`), and `m == n`;
+- empty-capable bodies (`(a?){0,4}`, `(a*){0,3}`, `((?:a|)){2,4}`) — §6's
+  territory;
+- captures inside the loop, including a group inside an alternation inside the
+  loop, which §3.4 shows is where the last-iteration rule is least intuitive;
+- greedy AND lazy at every shape, since §2.3's lazy argument is BELIEVED.
+
+§3.6's no-pre-built-exclusion rule stands: a three-way disagreement is
+investigated, not filtered.
+
+### 5.4 A gate the lane gets for free
+
+At K = N the counter loop never runs and the emitter reduces to today's
+`vm_opt_chain` output (§4.2). So **`--repeat-strategy=counter --unroll=N` must
+emit BYTE-IDENTICAL C to `--repeat-strategy=replicate`** for every corpus
+pattern. That is the §5.4 zero-regression technique applied to this row, it is
+cheap, and it fails loudly if the residue-tail arithmetic is wrong.
+
+---
+
+## 6. Termination, stated explicitly
+
+R21 E-2's ruling is load-bearing here and the plan row is right to demand this
+section: **bounded repeats take NO empty-iteration guard.**
+
+**Why the guard exists at all.** For `X*` with a nullable `X`, an iteration
+that consumes nothing can be repeated forever; §3.3's guard records the
+position at which the loop last iterated and suppresses a repeat at the same
+position. It is a slot in `stv` and a test per iteration.
+
+**Why a bounded repeat does not need it, today.** STRUCTURAL: under
+replication there is no loop. `X{0,4}` is four nested optional copies, and
+"four" is a property of the emitted code, not of anything checked at run time.
+Each copy is either taken or skipped, so at most four iterations run, and an
+empty iteration simply produces a shorter path, not a longer computation.
+Termination is by construction, and there is nothing to guard.
+
+**Why a counter loop keeps that true, which is the claim this row owes.**
+STRUCTURAL: `L_trip` in §4.2 increments `stv[ctr]` by K on every trip and the
+loop's guard is `stv[ctr] + K > n − m`. The counter is monotonically strictly
+increasing and bounded above by `n − m`, so at most `ceil((n−m)/K)` trips
+happen — **whatever the body consumes, including nothing**. The bound is on
+the COUNTER, not on progress through the subject. That is the exact difference
+from the unbounded star, where no counter exists and the only available bound
+IS subject progress, which is why the star needs the guard and the bounded
+repeat does not.
+
+The backtracking direction terminates for the same reason from the other side:
+each resume frame belongs to one copy at one counter value, `rx_fail` pops
+monotonically, and the counter is restored from the trail on unwind, so no
+frame can be re-entered at the same (copy, counter) pair twice.
+
+**And this is not merely intentional, it is correct.** MEASURED
+(`outputs/termination.txt`, `probes/probe_termination.sh`), read out of the
+emitter's own `--emit-ir` SLOTS section:
+
+| pattern | bound | guard slot emitted |
+|---|---|---|
+| `(a?){0,4}b`, `(a*){0,3}b`, `((?:a\|)){2,4}b`, `(b*){1,3}c`, `(\|a){0,3}b`, `((a)\|){0,2}b` | bounded | **none** |
+| `(a?)*b`, `(a*)*b`, `((?:a\|))*b`, `(\|a)*b` | unbounded | present |
+
+and the same ten patterns against python3 `re` over 14 subjects each: **0
+divergences**. The omission is deliberate, visible in the listing, and matches
+the oracle.
+
+**The one thing an implementation lane must not do:** add the guard "for
+safety" when the counter arrives. It would be a semantic change, it is exactly
+what E-2 measured as wrong on 60 of 225,240 pairs, and the counter makes it
+unnecessary.
+
+---
+
+## 7. Blast radius, predicted
+
+- **Capture-free patterns: zero change.** They never reach `emit_vm.c`; §5.4's
+  byte-identity gate covers them and 613 of 756 corpus patterns are in this
+  class.
+- **The corpus: small and predictable.** 11 distinct patterns put a quantifier
+  on the frames-bounded rung under default selection. Possessification touches
+  more (183 of 1,725 quantifiers across both bounds), and every one of those
+  changes emitted C while changing no answer — which is precisely what
+  `emitdiff`-style checking is for and what the §5.1 differential asserts.
+- **The cap's diagnostic gets to stop being the endgame.** Today
+  `PCREC_MAX_VM_REPEAT_COPIES` refuses `((a)|b){0,4000}c` with advice to
+  rewrite the pattern. Once the counter exists, the same pattern compiles; the
+  cap stays as the backstop for the replication STRATEGY and its diagnostic
+  can honestly point at `--repeat-strategy=counter`. That is D26 tier 3 work
+  and should not be gold-plated.
+- **`rx_info`'s stamped ceiling moves, for the better.** A counter-K artifact's
+  frame requirement is `ceil((n−m)/K)`-independent — still one frame per
+  iteration — so `subject_ceiling` is unchanged in kind. Possessification
+  removes frames entirely for its class, so those artifacts newly stamp
+  "no limit" truthfully where today they stamp a real one.
+- **Two known-risk interactions**, both to be swept rather than argued:
+  bounded repeat × nullable loop (§4.4, third-amendment consequence (c)), and
+  bounded repeat nested inside a bounded repeat, where the replication factors
+  MULTIPLY and `v.maxcopies` currently records only the max.
+
+---
+
+## 8. What I did NOT measure, and where the risk sits
+
+Ordered by how likely it is to matter.
+
+1. **The counter loop itself, at all.** It does not exist. §4.3's throughput
+   estimate substitutes the frames-rung star for K = 1, which differs from a
+   counter loop by a counter increment, a compare and the ABSENCE of the
+   empty-iteration guard. The direction of that error is unknown: the star
+   carries a guard the counter would not (so the counter should be faster) and
+   lacks a counter the loop would have (so slower). The knee's LOCATION is
+   the claim most exposed to this, though the compile-time curve alone would
+   put it in the same place.
+2. **`$` as a follow.** §2.5 declines every zero-width assertion, which is
+   sound and costs the common `X{m,n}$` shape. Whether `$` is separately safe
+   is BELIEVED-yes and unmeasured; it is the single highest-value follow-up
+   because end-anchored bounded repeats are everywhere.
+3. **Lazy quantifiers under possessification.** §2.3 argues the chain is
+   preference-independent, and the differential could not check it because
+   there is no possessive spelling of a lazy quantifier. A pcrec-vs-pcrec
+   differential (§5.1) CAN check it once forcing exists, and should.
+4. **Nested bounded repeats.** Every measurement here uses a single level. The
+   replication factors multiply, `vm_count_slots` records only the maximum,
+   and §3.4's capture derivation is single-level. This is the largest
+   unexplored corner and §7 names it as a sweep axis.
+5. **UTF-8.** The whole analysis is stated over BYTES. In pcrec's UTF-8 mode a
+   "byte set" is still the right object (the automaton is over bytes), so the
+   analysis should carry over unchanged — BELIEVED, unmeasured, and the
+   multi-byte-class shapes are the place to check it.
+6. **libpcre2 anywhere in this lane.** Every oracle check here is python3 `re`.
+   §5.3's three-way sweep is specified and not run; a design note is not the
+   place, but the panel should not read any number here as PCRE2-verified.
+7. **The realistic pattern set is hand-written from memory of the shapes**, by
+   the same author who wrote the analysis. That is the exact control-shares-a-
+   source failure this project has hit before. A set harvested from real
+   sources would be a strictly better denominator and this one should be
+   treated as indicative, not measured.
+8. **Compile-time cost of the possessification analysis itself.** Glushkov
+   first/last/follow over a body is linear-ish in body size, and the bodies are
+   small, so this is believed negligible — unmeasured, and the pathological
+   case (a body that is one enormous alternation) was not tried.
+9. **Interaction with `--trace` and the step budget.** A counter loop's step
+   accounting (§4.2 charges nothing per trip) was not checked against §4.2's
+   "a step IS a backtrack resumption" rule. Probably free; unverified.
+
+---
+
+## 9. Rulings requested
+
+1. **The ladder order and the recommendation to build possessification
+   FIRST.** §2 is the largest win on the realistic population (82% of bounded
+   quantifiers) and it is the only one of the three that removes machinery
+   rather than reshaping it. It is also the only one that needs a new analysis
+   pass. Confirm it leads.
+2. **K = 8 as the shipped default**, subject to §4.4's sweep moving it. The
+   alternative reading of §4.3 is K = 16 (which keeps a little more of the
+   speed and still compiles in 0.42 s); the case for 8 is that the curve is
+   already flat there and smaller is cheaper to compile and to reason about.
+3. **The forcing-flag surface of §5.2.** Four new generation axes
+   (`--repeat-strategy`, `--unroll`, `--no-possessify`, `--rung`) is a lot of
+   surface for one row, and D18 says an axis must earn itself. My reading is
+   that all four earn themselves as TESTABILITY axes (each one is what makes a
+   differential possible) rather than as user features, and that they should be
+   documented as such. Confirm, or cut `--rung` — it is the one whose
+   differential D46's observability half already partly covers.
+4. **Whether third-amendment consequence (b) should be struck from the plan
+   row.** §0.2 item 4 and §1.4 report it as not established. The row's other
+   consequences are unaffected. I have not edited the row; that is the
+   manager's call.
+
+---
+
+## 10. A note on this lane's own instrumentation
+
+Recorded because each of these produced numbers that would otherwise have
+entered the note as findings.
+
+- **The analysis was wrong and the probe caught it — twice.** §2.4's 117
+  counterexamples and §2.5's `\b` witness both came from running the analysis
+  against an oracle rather than from reading it. The version of this note
+  written without the differential would have proposed an unsound
+  transformation with a confident soundness argument attached, because the
+  argument's broken step (exits form an increasing chain) is the step that
+  looks least like an assumption.
+- **v1's differential passed a family it should have failed** (§2.4, the
+  `(?:ab|a)` disclosure), because the harness's follow set never asked a
+  question that family could get wrong. The fix was to add three follows. The
+  lesson is the recorded one: a check whose inputs come from the same head as
+  the design inherits that head's blind spots.
+- **`probe_throughput.sh` reported every row under the wrong N** on its first
+  run, because `sh` has no locals and a helper's `n=$1` ate the caller's loop
+  variable. Caught by the smoke run producing rows labelled `starrep4`. The
+  script now prefixes helper variables and says why in a comment.
+- **Two cells of the replication sweep were measured under load** from a
+  parallel probe and reported pcrec times ~30% high; they were re-measured
+  serially before being quoted, and §1.4's table is the serial one. The
+  archived sweep still contains the loaded cells, which is why the note quotes
+  §1.4's table and not the sweep's `pcrec_s` column for those rows.
+- **Every scratch compiler was built by `probes/mkscratch.sh`**, which asserts
+  that each patch actually changed its file — so a `sed` whose anchor moved
+  fails loudly instead of silently building the stock compiler and reporting
+  its numbers under a prototype's name.
