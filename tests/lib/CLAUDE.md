@@ -6,7 +6,7 @@ section targets depend on.
 ## Files
 
 - **gen_timeout.sh** — D45's ONE implementation of the generated-code
-  compile budget (5s plain, 60s sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`,
+  compile budget (10s plain, 60s sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`,
   axis derived from the flags): every compile of emitted C in the tree
   routes through its `gen_cc`, and exceeding the budget is a loud FAILURE
   naming the case, never a hang. Since 2026-08-16 (D45 second addendum) it

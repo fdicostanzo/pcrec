@@ -66,11 +66,11 @@ b_san="$(axis '-O1' '' '-fsanitize=undefined' '' '' '')"
 b_tsan="$(axis '-O1' '' '' '-fsanitize=thread' '' '')"
 b_env="$(axis '-O1' '' '' '' 9 '')"
 b_envs="$(axis '-fsanitize=address' '' '' '' '' 99)"
-if [ "$b_plain" = "5" ] && [ "$b_gen" = "60" ] && [ "$b_cf" = "60" ] \
+if [ "$b_plain" = "10" ] && [ "$b_gen" = "60" ] && [ "$b_cf" = "60" ] \
    && [ "$b_san" = "60" ] && [ "$b_tsan" = "60" ]; then
-    ok "D45 budgets: 5s plain, 60s sanitizer, and the axis is read from ANY of the four flag variables (GENCFLAGS/CFLAGS/SANFLAGS/TSANFLAGS), so a site never has to declare which axis it is on"
+    ok "D45 budgets: 10s plain (raised 2026-08-16 with the k18_cost_gates measurement — see gen_timeout.sh), 60s sanitizer, and the axis is read from ANY of the four flag variables (GENCFLAGS/CFLAGS/SANFLAGS/TSANFLAGS), so a site never has to declare which axis it is on"
 else
-    bad "D45 budgets wrong: plain=$b_plain gencflags=$b_gen cflags=$b_cf sanflags=$b_san tsanflags=$b_tsan (expected 5/60/60/60/60)"
+    bad "D45 budgets wrong: plain=$b_plain gencflags=$b_gen cflags=$b_cf sanflags=$b_san tsanflags=$b_tsan (expected 10/60/60/60/60)"
 fi
 if [ "$b_env" = "9" ] && [ "$b_envs" = "99" ]; then
     ok "D45 budgets: GENTIMEOUT / GENTIMEOUT_SAN override, per the ruling's slow-box escape"

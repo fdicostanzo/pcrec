@@ -3928,6 +3928,11 @@ Two consequences deliberately attached:
 
 Revisit-when: a legitimate generated artifact is measured needing >5s
 plain (then raise with the measurement recorded here, not silently).
+FIRED 2026-08-16 (twenty-fifth session): plain raised 5s → 10s on the
+k18_cost_gates.rxt measurement — a legitimate 6,433-line artifact at
+2.53s quiet crossed 5s under `make -j12` contention, failing one battery
+run nondeterministically. Full measurement in docs/testing.md's D45
+section; the sanitizer axis and the ruling itself are unchanged.
 
 **D45 addendum (2026-08-15, same session):** the endgame for the
 pathological class is ruled and queued as plan row [ENG-BREP] — the

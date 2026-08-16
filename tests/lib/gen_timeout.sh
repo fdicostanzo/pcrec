@@ -13,7 +13,14 @@
 #
 # WHY THE NUMBERS. A normal generated-artifact compile is sub-second. Frank's
 # calibration: "anything over 60 seconds is a failure ... and i'm being
-# generous with 60s. maybe 5s". So 5s on the plain axes and 60s on the
+# generous with 60s. maybe 5s". Plain was 5s from the ruling until 2026-08-16,
+# when the revisit-when clause fired: tests/base/k18_cost_gates.rxt's
+# '((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}' emits 6,433
+# lines and compiles in a MEASURED 2.53 s on a quiet box — legitimate, green
+# for days — and crossed 5 s under `make -j12` contention (12 concurrent gcc
+# jobs), failing a battery run. 10 s keeps ~4x headroom over that worst
+# measured legitimate compile and still fails the 100-minute pathology class
+# instantly. So 10s on the plain axes and 60s on the
 # sanitizer axes, where instrumentation is legitimately several times slower
 # (MEASURED on the bounded-repeat shape: UBSan is 4.5x plain at a size where
 # both are fast, and diverges from there — docs/testing.md's battery section
@@ -32,7 +39,7 @@
 gen_timeout_secs() {
     case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
         *-fsanitize=*) printf '%s\n' "${GENTIMEOUT_SAN:-60}" ;;
-        *)             printf '%s\n' "${GENTIMEOUT:-5}" ;;
+        *)             printf '%s\n' "${GENTIMEOUT:-10}" ;;
     esac
 }
 
@@ -92,7 +99,7 @@ gen_cc() {
   compile-time regression in the emitter or a pathological emitted shape.
   Reproduce:  $*
   If the artifact is legitimately this large, raise the budget with the
-  measurement recorded in docs/testing.md -- GENTIMEOUT (plain, now ${GENTIMEOUT:-5}s)
+  measurement recorded in docs/testing.md -- GENTIMEOUT (plain, now ${GENTIMEOUT:-10}s)
   or GENTIMEOUT_SAN (sanitizer axes, now ${GENTIMEOUT_SAN:-60}s)."
     fi
     return $rc

@@ -1144,8 +1144,20 @@ one file rather than one per language. `gen_cc <case-label> <cc-argv...>` runs
 the compile and leaves the compiler's output — or the timeout diagnostic — in
 `$GEN_CC_LOG`, so a caller reports the same way whichever happened.
 
-**Defaults**: 5s on the plain axes, 60s on the sanitizer axes, both
-env-overridable (`GENTIMEOUT`, `GENTIMEOUT_SAN`). The axis is DERIVED from the
+**Defaults**: 10s on the plain axes, 60s on the sanitizer axes, both
+env-overridable (`GENTIMEOUT`, `GENTIMEOUT_SAN`). Plain was 5s from the
+ruling until 2026-08-16, when the revisit-when clause fired on a MEASURED
+legitimate case: `tests/base/k18_cost_gates.rxt`'s
+`((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}` emits 6,433
+lines of C and compiles in 2.53s on a quiet box (green in every battery for
+days), and crossed 5s under `make -j12` contention — twelve concurrent gcc
+jobs — failing one full-suite run while an identical run minutes earlier
+passed. A budget within ~2x of a legitimate compile flakes on load. 10s
+keeps ~4x headroom over that worst measured legitimate compile and still
+fails the 100-minute pathology class instantly. (The artifact itself is the
+bounded-repeat replication class whose compiler-side SIZE cap is queued
+with [ENG-BREP] counter-K — this raise is the harness-side accommodation,
+not a verdict that 6,433-line artifacts are fine.) The axis is DERIVED from the
 flags — `-fsanitize=` appears in `GENCFLAGS`/`CFLAGS`/`TSANFLAGS` exactly when
 the compile is instrumented — so no site has to declare which axis it is on and
 a site added later gets the right budget for free. `124` is checked exactly,

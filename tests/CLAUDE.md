@@ -5,7 +5,7 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 ## Files
 
 - **lib/** — infrastructure shared by every suite. `gen_timeout.sh` is D45's
-  ONE implementation of the generated-code compile budget (5s plain, 60s
+  ONE implementation of the generated-code compile budget (10s plain, 60s
   sanitizer, `GENTIMEOUT`/`GENTIMEOUT_SAN`, axis derived from the flags):
   every compile of emitted C in the tree runs through its `gen_cc`, and
   exceeding the budget is a loud FAILURE naming the case, never a hang.

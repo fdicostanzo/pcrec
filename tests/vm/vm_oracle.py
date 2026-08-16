@@ -65,7 +65,7 @@ def _gen_timeout():
     except Exception:
         # The helper is the source of truth; if it cannot run, fail closed on
         # the SHORTER budget rather than silently reverting to no bound.
-        return 5
+        return 10
 
 GEN_TIMEOUT = _gen_timeout()
 
