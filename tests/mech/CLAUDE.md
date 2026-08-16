@@ -342,11 +342,28 @@ arm (tests/rungselect/run_rungdiff.sh).
 
 Each removes ONE thing, because the point is to say which thing is load-bearing:
 
-- **S50** drops the REVERSE unique-iteration check and keeps the forward one.
+- **S50** leaves the REVERSE DIRECTION unchecked and keeps the forward one.
   This is the sabotage the rung's name is about — forward determinism makes the
   SCAN work, reverse determinism is a separate property and it is what makes the
   RETREAT computable locally. Its witness is `(?:ab|b)`, which passes forward
-  and fails reversed.
+  and is ambiguous reversed.
+
+  **It came back green in its first form, and the finding was NOT about the
+  population.** That version removed only the reverse unique-iteration test and
+  measured 0 divergences over 201 patterns — with the discriminating body
+  present. The cause is that `rd_alt_disjoint`, which the same pass runs on the
+  same reversed tree, independently declines the same family: over the shapes
+  this rung admits, reverse ambiguity always presents as an alternation whose
+  branches share a first byte. So the two reverse-direction checks are MUTUALLY
+  REDUNDANT there, and the row is now stated as the property that is actually
+  load-bearing. Removing both diverges at once. The full account, including when
+  the redundancy would end, is in
+  `docs/design/rungselect_impl/rungselect_design.md` §1.0.1.
+
+  Worth putting beside S48: that row was green because the population could not
+  reach the defect, this one because the thing it removed was not the thing
+  carrying the weight. Both are findings; they are different findings, and only
+  running the row tells you which.
 - **S51** removes the forward scan's per-ITERATION cut. It produces no wrong
   answer on a short subject, which is exactly why it needs a control rather than
   trust: the leftover frames are dead by the verdict, so re-entering one cannot

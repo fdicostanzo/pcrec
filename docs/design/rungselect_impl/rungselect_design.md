@@ -60,6 +60,37 @@ BOUNDARY-RECORD rung shrinks to ("bodies deterministic forward but ambiguous
 backward"). Recording it here is the honest statement that this rung does not
 take it.
 
+### 1.0.1 The two reverse checks are MUTUALLY REDUNDANT, MEASURED
+
+There are two reverse-direction tests in the shipped analysis — reverse
+unique-iteration, and `rd_alt_disjoint`, which re-derives on the reversed tree
+the branch-first-set disjointness the emitted backward walk's byte dispatch
+depends on. §1.2 below says the second is kept because "implied by" is how a
+dependency quietly survives a change to what it implies.
+
+**MEASURED, by a sabotage that came back green:** on the shape space this rung
+admits, either check ALONE declines everything the other does. Sabotage S50's
+first version removed reverse unique-iteration and kept `rd_alt_disjoint`, and
+the differential reported **0 divergences over 201 patterns** — not for want of
+a discriminating pattern (`(?:ab|b)` is in the population) but because reverse
+ambiguity over the admitted shapes always presents as an alternation whose
+branches share a first byte, which is exactly what `rd_alt_disjoint` tests.
+Removing BOTH diverges immediately: on `":abb:ab"` the rung build answers `(5,6)`
+where replication answers `(1,2)`.
+
+The mechanism is worth stating, because it also says when the redundancy would
+END. §1.1's scope bounds exclude ranged nested quantifiers, nullable bodies and
+assertions, so every remaining source of a reverse follow-set conflict is an
+alternation. A body admitting a ranged nested quantifier could conflict without
+one — the two checks would then diverge, and the reverse unique-iteration test
+would become independently load-bearing. Both are kept for that reason and
+because either alone is cheap; S50 is stated as "the reverse direction is
+unchecked", which is the property that actually carries the rung.
+
+A green sabotage row is a finding about the population OR about the redundancy
+of what it removed, and this one turned out to be the second — the same shape as
+S48 one rung up, reached from the other direction.
+
 ### 1.1 The four additional scope bounds, each with its reason
 
 1. **No assertion in the body** (`A_BOL`/`A_EOL`). The Glushkov model skips

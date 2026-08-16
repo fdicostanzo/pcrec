@@ -37,5 +37,28 @@ to exactly that.
   reverse-deterministic rung, written before the code (the manager reviews
   direction from it).
 
+
+## The rung's own files
+
+- **`gen_patterns.py`** — produces `tests/rungselect/patterns.txt`, the
+  differential's designed population, with a `--full` mode that widens every
+  axis for a deeper sweep run by hand. Its docstring says what each axis
+  discriminates, which is the part a bare list of patterns cannot carry.
+- **`make_corpus.py`** — produces `tests/rungselect/rungselect.rxt`. It IMPORTS
+  the possessification lane's `../possessify_impl/gen_rxt.py` rather than
+  copying its oracle plumbing, which is how it inherits that file's instrument
+  note for free: `pcre2_match` returns the number of ovector pairs it FILLED,
+  not the pattern's group count, so reading only `rc` pairs makes every trailing
+  UNSET group vanish rather than read as unset. That defect produced seven
+  phantom "oracle disagreements" on that lane's first run and would have
+  produced more here, because this rung's whole capture story is about groups
+  some iterations do not enter.
+- **`acceptance_cell.sh`** / **`acceptance_cell.txt`** — `((a)|b){0,N}c`
+  measured BOTH WAYS from one compiler, one invocation apart: `-fno-revdet` is
+  "before", because denying the rung drops the quantifier to frames, i.e. to
+  literal replication, i.e. to exactly what shipped before it existed. Better
+  than a scratch build of the old tree for R24 M-F4's reason — it re-runs from
+  the committed tree with no patching step to go stale.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
