@@ -3938,8 +3938,12 @@ below.
 budget is CPU-PRIMARY with a wall backstop.** The k18_cost_gates flake
 exposed that wall time measures scheduling, not work: the compile needs
 2.53s of CPU on any load, and only its wall time moved under -j12.
-Ruling: a CPU-time budget (GENCPU 5s plain / GENCPU_SAN 60s — Frank's
-original "maybe 5s" calibration, now attached to the right clock;
+Ruling: a CPU-time budget (GENCPU 10s plain / GENCPU_SAN 60s; the first
+default was Frank's original "maybe 5s" on the CPU clock, raised to 10s
+the same day when the CPU-primary battery itself measured >2x CPU
+inflation under a real -j12 gcc mix — 2.53s quiet / 3.52s under
+spinners / >5s contended — CPU is load-RESILIENT, its inflation topping
+out near 2x, not load-independent;
 integer seconds, RLIMIT_CPU soft so the death is a clean SIGXCPU
 distinguishable from an OOM-kill) is the PRIMARY bound for generated-code
 compiles AND matcher executions (watchdog -c, exit 123,

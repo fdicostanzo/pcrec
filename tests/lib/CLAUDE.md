@@ -7,8 +7,9 @@ section targets depend on.
 
 - **gen_timeout.sh** — D45's ONE implementation of the generated-code
   compile budget — CPU-PRIMARY since the D45 third addendum (2026-08-16):
-  `gen_cpu_secs` (5s plain / 60s sanitizer, `GENCPU`/`GENCPU_SAN`,
-  RLIMIT_CPU — load-independent, never flakes under -j) with
+  `gen_cpu_secs` (10s plain / 60s sanitizer, `GENCPU`/`GENCPU_SAN`,
+  RLIMIT_CPU — load-resilient: contention inflates CPU ~2x at worst,
+  measured, where wall stretches unboundedly) with
   `gen_timeout_secs` as the wall BACKSTOP (60s/180s,
   `GENTIMEOUT`/`GENTIMEOUT_SAN`) for the stuck-without-working class CPU
   cannot see; axis derived from the flags. Every compile of emitted C

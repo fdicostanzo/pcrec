@@ -18,11 +18,17 @@
 # but under `make -j12` contention its WALL time crossed the then-5 s budget
 # and flaked a battery — the work didn't change, the scheduling did. So:
 #
-#   - gen_cpu_secs: CPU-time budget, 5 s plain / 60 s sanitizer
-#     (GENCPU/GENCPU_SAN) — the PRIMARY bound. CPU is load-independent, so
-#     it can sit tight (2x the worst measured legitimate compile) without
-#     ever flaking under parallel load, and a pathological compile is
-#     killed after 5 s of actual work no matter how loaded the box is.
+#   - gen_cpu_secs: CPU-time budget, 10 s plain / 60 s sanitizer
+#     (GENCPU/GENCPU_SAN) — the PRIMARY bound. CPU is load-RESILIENT, not
+#     perfectly load-independent: contention inflates cycles-per-
+#     instruction, MEASURED on the k18_cost_gates artifact at 2.53 s CPU
+#     quiet -> 3.52 s under 11 register-spinners -> >5 s under a real
+#     `make -j12` gcc mix (memory-subsystem thrash; that >2x inflation
+#     failed the first 5 s CPU default in battery). 10 s is ~4x the quiet
+#     cost and ~2x the worst real-contended measurement — far tighter than
+#     any wall bound can safely sit, because wall stretches WITHOUT BOUND
+#     under load while CPU inflation tops out near 2x. A pathological
+#     compile still dies after 10 s of actual work no matter the load.
 #     Frank's original calibration ("maybe 5s") was right — it was
 #     attached to the wrong clock. INTEGER seconds (RLIMIT_CPU is).
 #     One shared pair for compiles AND matcher runs; if the two ever need
@@ -65,7 +71,7 @@ gen_timeout_secs() {
 gen_cpu_secs() {
     case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
         *-fsanitize=*) printf '%s\n' "${GENCPU_SAN:-60}" ;;
-        *)             printf '%s\n' "${GENCPU:-5}" ;;
+        *)             printf '%s\n' "${GENCPU:-10}" ;;
     esac
 }
 
@@ -136,7 +142,7 @@ gen_cc() {
   a compile-time regression in the emitter or a pathological emitted shape.
   Reproduce:  $*
   If the artifact legitimately needs more, raise the budget with the
-  measurement recorded in docs/testing.md -- GENCPU (plain, now ${GENCPU:-5}s)
+  measurement recorded in docs/testing.md -- GENCPU (plain, now ${GENCPU:-10}s)
   or GENCPU_SAN (sanitizer axes, now ${GENCPU_SAN:-60}s).
   Compiler output was:
 $GEN_CC_LOG"

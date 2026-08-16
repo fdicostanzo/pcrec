@@ -83,11 +83,11 @@ c_cf="$(caxis '-O1' '-fsanitize=address' '' '' '' '')"
 c_san="$(caxis '-O1' '' '-fsanitize=undefined' '' '' '')"
 c_env="$(caxis '-O1' '' '' '' 2 '')"
 c_envs="$(caxis '-fsanitize=address' '' '' '' '' 22)"
-if [ "$c_plain" = "5" ] && [ "$c_cf" = "60" ] && [ "$c_san" = "60" ] \
+if [ "$c_plain" = "10" ] && [ "$c_cf" = "60" ] && [ "$c_san" = "60" ] \
    && [ "$c_env" = "2" ] && [ "$c_envs" = "22" ]; then
-    ok "D45 CPU budget (the PRIMARY bound): 5s plain / 60s sanitizer, GENCPU/GENCPU_SAN overrides — load-independent, so it never flakes under -j"
+    ok "D45 CPU budget (the PRIMARY bound): 10s plain / 60s sanitizer, GENCPU/GENCPU_SAN overrides — load-resilient (CPU inflation under contention tops out ~2x, measured; wall stretches unboundedly)"
 else
-    bad "D45 CPU budget wrong: plain=$c_plain cflags=$c_cf sanflags=$c_san env=$c_env envsan=$c_envs (expected 5/60/60/2/22)"
+    bad "D45 CPU budget wrong: plain=$c_plain cflags=$c_cf sanflags=$c_san env=$c_env envsan=$c_envs (expected 10/60/60/2/22)"
 fi
 if [ "$b_env" = "9" ] && [ "$b_envs" = "99" ]; then
     ok "D45 budgets: GENTIMEOUT / GENTIMEOUT_SAN override, per the ruling's slow-box escape"

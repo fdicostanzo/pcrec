@@ -1156,10 +1156,15 @@ The work didn't change; the scheduling did. (The artifact itself is the
 bounded-repeat replication class whose compiler-side SIZE cap is queued
 with [ENG-BREP] counter-K.)
 
-- **CPU budget (primary): 5s plain / 60s sanitizer** (`GENCPU`,
-  `GENCPU_SAN`; integer seconds — it is `RLIMIT_CPU`). Load-independent,
-  so it sits tight (~2x the worst measured legitimate compile) and can
-  never flake under parallel load; a pathological compile dies after 5s of
+- **CPU budget (primary): 10s plain / 60s sanitizer** (`GENCPU`,
+  `GENCPU_SAN`; integer seconds — it is `RLIMIT_CPU`). Load-RESILIENT
+  rather than perfectly load-independent: contention inflates
+  cycles-per-instruction, measured on the k18_cost_gates artifact at
+  2.53s CPU quiet → 3.52s under 11 register-spinners → >5s under a real
+  `make -j12` gcc mix (memory-subsystem thrash — the CPU-primary change's
+  own first battery failed exactly there, at a 5s default). CPU inflation tops out near 2x where wall stretches without
+  bound, so 10s (~4x quiet, ~2x worst real-contended) sits far tighter
+  than any safe wall bound; a pathological compile dies after 10s of
   actual work no matter what else runs. Enforced as a soft rlimit so cc1
   dies by a clean SIGXCPU that gcc reports as "CPU time limit exceeded" —
   textually distinct from an OOM-kill's "Killed signal", keeping the

@@ -80,7 +80,7 @@ def _cpu_timeout():
                      "cpusecs"], capture_output=True, text=True, timeout=30)
         return int(r.stdout.strip())
     except Exception:
-        return 5
+        return 10
 
 CPU_TIMEOUT = _cpu_timeout()
 
