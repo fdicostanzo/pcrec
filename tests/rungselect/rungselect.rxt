@@ -1597,3 +1597,560 @@ n "pqrpqd"
 n "cpqd"
 n "crd"
 n "cd"
+
+# §5.3: N = 0 and N = 1, the smallest counts, where a loop that never runs
+# and a loop that runs once are the two clauses of §3.4's capture rule.
+pattern ((a)|b){0,1}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "bac" 1 3
+g 1 1 2
+g 2 1 2
+m "aac" 1 3
+g 1 1 2
+g 2 1 2
+m "bbc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "babc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "aabbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "ababc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "bababc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "aaaac" 3 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 4 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 5 7
+g 1 5 6
+g 2 -1 -1
+m "aabbaabbc" 7 9
+g 1 7 8
+g 2 -1 -1
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "zaabbc" 4 6
+g 1 4 5
+g 2 -1 -1
+n "q"
+n "aq"
+m "cq" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abcq" 1 3
+g 1 1 2
+g 2 -1 -1
+
+# §5.3: m == n == 1, one mandatory iteration and no freedom at all.
+pattern ((a)|b){1}c
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 0 2
+g 1 0 1
+g 2 -1 -1
+m "abc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "bac" 1 3
+g 1 1 2
+g 2 1 2
+m "aac" 1 3
+g 1 1 2
+g 2 1 2
+m "bbc" 1 3
+g 1 1 2
+g 2 -1 -1
+m "abbc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "babc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "aabbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "ababc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "bababc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "aaaac" 3 5
+g 1 3 4
+g 2 3 4
+m "bbbbc" 3 5
+g 1 3 4
+g 2 -1 -1
+m "aaaaac" 4 6
+g 1 4 5
+g 2 4 5
+m "bbbbbc" 4 6
+g 1 4 5
+g 2 -1 -1
+m "abababc" 5 7
+g 1 5 6
+g 2 -1 -1
+m "aabbaabbc" 7 9
+g 1 7 8
+g 2 -1 -1
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+m "zabc" 2 4
+g 1 2 3
+g 2 -1 -1
+m "zaabbc" 4 6
+g 1 4 5
+g 2 -1 -1
+n "q"
+n "aq"
+n "cq"
+m "abcq" 1 3
+g 1 1 2
+g 2 -1 -1
+
+# §5.3: an EMPTY-CAPABLE body -- §6's termination territory. The rung
+# declines it (no strictly-increasing exit chain), and E-2's ruling that a
+# bounded repeat takes NO empty-iteration guard is what these answers pin.
+pattern (x)(a?){0,4}b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# §5.3: the same, unbounded, where the guard DOES exist.
+pattern (x)(a?)*b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# §5.3: `(|a){m,n}` SPECIFICALLY -- named as its own cell because R24
+# measured it as the family where the ORACLES THEMSELVES disagree (106 of
+# 15,600 cells; upstream_issues.md U9's neighbourhood). A two-way
+# python-only check here would raise a FALSE alarm against pcrec. The
+# generator reports a disagreement rather than resolving it, and a cell
+# whose two oracles agree on the SPAN but differ on a slot is kept
+# SPAN-ONLY with the divergence recorded inline.
+pattern (|a){0,3}b
+n ""
+n "a"
+m "b" 0 1
+g 1 0 0
+n "c"
+n "d"
+n "ac"
+m "bc" 0 1
+g 1 0 0
+m "abc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "bac" 0 1
+g 1 0 0
+n "aac"
+m "bbc" 0 1
+g 1 0 0
+m "abbc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "babc" 0 1
+g 1 0 0
+m "aabbc" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "ababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "bababc" 0 1
+g 1 0 0
+n "aaaac"
+m "bbbbc" 0 1
+g 1 0 0
+n "aaaaac"
+m "bbbbbc" 0 1
+g 1 0 0
+m "abababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aabbaabbc" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "aa"
+m "ab" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "ba" 0 1
+g 1 0 0
+m "bb" 0 1
+g 1 0 0
+n "aaa"
+m "aab" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aba" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "abb" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "baa" 0 1
+g 1 0 0
+m "bab" 0 1
+g 1 0 0
+n "aaaa"
+m "abab" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "bbaa" 0 1
+g 1 0 0
+n "aaaaa"
+m "ababab" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "za"
+m "zab" 1 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "zabc" 1 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "zaabbc" 1 4
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((3, 3),), libpcre2 ((2, 3),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "q"
+n "aq"
+n "cq"
+m "abcq" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+
+# §5.3: the same family with a capture wrapper, so it reaches the VM.
+pattern (x)(|a){2,4}b
+n ""
+n "a"
+n "b"
+n "c"
+n "d"
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"
+
+# §5.3: a capture inside an alternation inside the loop, which §3.4 calls
+# the place the last-iteration rule is least intuitive -- here with THREE
+# branches, so two of the three leave the group untouched.
+pattern (?:(a)|b|c){0,4}d
+n ""
+n "a"
+n "b"
+n "c"
+m "d" 0 1
+g 1 -1 -1
+n "ac"
+n "bc"
+n "abc"
+n "bac"
+n "aac"
+n "bbc"
+n "abbc"
+n "babc"
+n "aabbc"
+n "ababc"
+n "bababc"
+n "aaaac"
+n "bbbbc"
+n "aaaaac"
+n "bbbbbc"
+n "abababc"
+n "aabbaabbc"
+n "aa"
+n "ab"
+n "ba"
+n "bb"
+n "aaa"
+n "aab"
+n "aba"
+n "abb"
+n "baa"
+n "bab"
+n "aaaa"
+n "abab"
+n "bbaa"
+n "aaaaa"
+n "ababab"
+n "za"
+n "zab"
+n "zabc"
+n "zaabbc"
+n "q"
+n "aq"
+n "cq"
+n "abcq"

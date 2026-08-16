@@ -162,6 +162,37 @@ BLOCKS = [
  (["A group in EVERY branch, so one walk publishes two groups per step and",
    "each keeps the value from the last iteration that entered ITS branch."],
   "(?:(x)(?:y|z)){0,3}w", T),
+
+ # ---- eng_brep_design.md §5.3's NAMED CELLS --------------------------------
+ # These are the families §5.3 requires the three-way sweep to be DENSE at.
+ # Most of them the rung DECLINES; they are here because §5.3 asks about the
+ # answers, not about the verdict, and because a rung that later widened to
+ # take one of them would have to keep them.
+ (["§5.3: N = 0 and N = 1, the smallest counts, where a loop that never runs",
+   "and a loop that runs once are the two clauses of §3.4's capture rule."],
+  "((a)|b){0,1}c", S),
+ (["§5.3: m == n == 1, one mandatory iteration and no freedom at all."],
+  "((a)|b){1}c", S),
+ (["§5.3: an EMPTY-CAPABLE body -- §6's termination territory. The rung",
+   "declines it (no strictly-increasing exit chain), and E-2's ruling that a",
+   "bounded repeat takes NO empty-iteration guard is what these answers pin."],
+  "(x)(a?){0,4}b", S),
+ (["§5.3: the same, unbounded, where the guard DOES exist."],
+  "(x)(a?)*b", S),
+ (["§5.3: `(|a){m,n}` SPECIFICALLY -- named as its own cell because R24",
+   "measured it as the family where the ORACLES THEMSELVES disagree (106 of",
+   "15,600 cells; upstream_issues.md U9's neighbourhood). A two-way",
+   "python-only check here would raise a FALSE alarm against pcrec. The",
+   "generator reports a disagreement rather than resolving it, and a cell",
+   "whose two oracles agree on the SPAN but differ on a slot is kept",
+   "SPAN-ONLY with the divergence recorded inline."],
+  "(|a){0,3}b", S),
+ (["§5.3: the same family with a capture wrapper, so it reaches the VM."],
+  "(x)(|a){2,4}b", S),
+ (["§5.3: a capture inside an alternation inside the loop, which §3.4 calls",
+   "the place the last-iteration rule is least intuitive -- here with THREE",
+   "branches, so two of the three leave the group untouched."],
+  "(?:(a)|b|c){0,4}d", S),
 ]
 
 HEADER = """\
