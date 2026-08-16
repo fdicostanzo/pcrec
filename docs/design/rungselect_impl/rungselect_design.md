@@ -350,7 +350,19 @@ Bodies that stay on frames, each with the reason:
    possessify lane's owed item (1), INHERITED here rather than fixed: a
    possessified revdet loop charges no steps for the same reason a possessified
    cursor loop does not. Fix of record is unchanged (an E-5-shaped one-step
-   charge per loop entry, owed with the counter-K step).
+   charge per loop entry, owed with the counter-K step). The forward SCAN and
+   the backward WALK are both real work that charges nothing, so this rung
+   widens the exposure rather than merely inheriting it, and that is worth
+   carrying into the counter-K step's own accounting.
+9. **A body ENDING in a fixed nested quantifier declines, and it is a MODELLING
+   decline rather than a real ambiguity.** MEASURED: `(?:(?:a|b){2}c){0,3}d`'s
+   body is admitted forward and refused in reverse, because the Glushkov
+   construction models `{2}` as a LOOP (it links last to first whenever
+   `rmax > 1`), so the reversed body's accepting position carries a back edge
+   and (U2) fails. The reversed language `c(a|b)(a|b)` is fixed-length and
+   perfectly decodable; nothing is actually ambiguous. Sharpening the
+   construction for exact counts would recover the shape and is not proposed
+   here — it is one more place where declining is free and being right is not.
 
 ---
 

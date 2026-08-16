@@ -1741,3 +1741,29 @@ far. Related: the step-budget blind spot recorded in the [ENG-BREP]
 plan row (same lane, same session) is the RUNTIME sibling of this
 COMPILE-TIME gap — both are "possessification/replication moved work
 where an existing budget cannot see it".
+
+**INTERIM GUARD LANDED 2026-08-16 (rung-select lane); the entry stays
+OPEN because half (1) is still owed.** `vm_count_slots` now carries a
+running PRODUCT of the replication factors down the nesting path and
+refuses above `PCREC_MAX_VM_REPLICATION_PRODUCT` (src/core/limits.h)
+BEFORE it recurses. The bound is `PCREC_MAX_VM_NODES`'s own value, and
+that identity is the guard's whole safety argument rather than a number
+to tune: every replicated copy costs at least one `vm_charge`, so the
+product is a LOWER BOUND on the emitted node count and the guard can only
+move a refusal EARLIER, never widen one. MEASURED (committed and
+re-runnable: `docs/design/rungselect_impl/k22_sweep.sh`, outputs
+`k22_sweep_{before,after}.txt`) — depth 15 compiles before and after;
+depth 30 goes 11.82 s → 0.12 s; depth 35 and 40 go from HANG >30 s to
+0.12 s. Depth 18 did not move and refuses through the NODE cap in 0.72 s
+both times, because the tower's innermost `(?:a){0,2}` takes the cursor
+rung and replicates nothing, so a depth-*d* tower's product is 2^(d−1)
+and 18's sits exactly at the limit rather than over it. Pinned by
+`tests/vm/run_vm_tests.sh`, where `timeout 5` IS the assertion (a plain
+exit-code check would have passed on the defect, since depth 30 already
+"refused" before the guard) and a depth-15 positive control leads,
+because a guard that refuses everything also makes the hang go away.
+The REAL fix, half (1), is unchanged and still owed: [ENG-BREP]'s
+counter-K step, which stops the copy tree from existing for these shapes.
+The reverse-deterministic rung landed the same day does NOT discharge it —
+it declines nested quantifiers by scope bound (single-level only), so a
+`{0,2}` tower still replicates.
