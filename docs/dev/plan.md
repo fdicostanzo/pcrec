@@ -153,7 +153,7 @@ stated terms.
   note paneled (R23) and BUILT by the k18-rewrite lane ([K18-FIX] in
   plan_completed.md; corpus 1704 → 3198); [ENG-BREP] alongside it;
   struct rx_info spelling + K19 residual rulings open with Frank.
-- [ENG-BREP] STATE:not-started — BOUNDED-REPEAT EMISSION STRATEGY: the
+- [ENG-BREP] STATE:started (2026-08-15, twenty-fourth session — design-note lane in flight, worktree eng-brep) — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but
   strictly the result was intractable, so not"). Today the VM emits
