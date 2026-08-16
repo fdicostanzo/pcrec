@@ -22,11 +22,17 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-15: K2 (cosmetic), K7 (a resource bug that
-  also ABORTS the caller's process under a memory limit) and K9 (the public
+  Open as of 2026-08-16: K2 (cosmetic), K7 (a resource bug that
+  also ABORTS the caller's process under a memory limit), K9 (the public
   API takes no pattern length, so a pattern containing NUL compiles as its
   prefix and reports success — rx_info.pattern_len at the M4 freeze is the
-  fix's API half). K18 (FIXED 2026-08-15, k18-rewrite lane: the
+  fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
+  exhausts the step budget on a 100-byte ordinary input; found by the D27
+  blinded quantifier corpus 2026-08-16; regression in
+  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K22
+  (CLOSED 2026-08-16 by the F-1 ruling, decisions.md D47 ADDENDUM: hang
+  half fixed by the interim product guard; the compile-these-shapes half
+  re-homed as plan row [ENG-CLAMP]'s charter, not a bug). K18 (FIXED 2026-08-15, k18-rewrite lane: the
   empty-iteration exit lost when the ε re-arrival passes THROUGH an
   already-seen state rather than landing ON a loop entry — K17's structurally
   distinct sibling. The closure memo is now keyed on (state, open-loop

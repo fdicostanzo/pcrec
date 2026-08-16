@@ -1795,3 +1795,20 @@ decomposition pruning) or [M4.6]'s engine-selection work; owning
 milestone [M4.6] until a better owner exists. Regression:
 `tests/known_fail/d27_nested_min_boundary.rxt` (ratchet-watched); the
 99/500/1000-byte siblings stay live in `tests/base/d27_nesting.rxt`.
+
+**K22 CLOSED 2026-08-16 (F-1 ruling, decisions.md D47 ADDENDUM,
+twenty-seventh session).** The two halves resolve separately: the HANG
+half was fixed by the interim product guard above (landed with
+rung-select, pinned in tests/vm/run_vm_tests.sh — refusal in 0.12 s at
+every depth). The "these shapes should COMPILE" half is NOT a bug under
+the ruling: Frank ruled strict eng_brep_design.md §4.5 (K is one
+per-artifact constant in v1, no per-quantifier variation), so the
+small-count tower family's ruled behavior IS the guard's fast honest
+refusal (D22's bar), and compiling them is re-homed as the charter of
+plan row [ENG-CLAMP] (deferred; carries the counterk lane's respecified
+bottom-up-product algorithm and clamp_arith.py probe as its seed). The
+prior sentence in this entry claiming counter-K "stops the copy tree
+from existing for these shapes" was REFUTED by the counter-K lane's own
+analysis regardless of the ruling (R25 E1: at K=8 every tower count
+sits below K and replicates; only a per-quantifier downshift reaches
+them) — the record is corrected here rather than rewritten above.

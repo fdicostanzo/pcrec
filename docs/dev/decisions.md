@@ -4146,3 +4146,51 @@ Revisit-when: a script's self-test needs an oracle or corpus `make test`
 already builds (the delegation would then need ordering); or the .test
 population grows enough that `make testscripts` deserves a suite-style
 summary line.
+
+## D47 ADDENDUM — F-1 ruled: K does NOT vary per-quantifier in v1; the clamp is DEFERRED to its own row (Frank, 2026-08-16, twenty-seventh session, on the R25 panel)
+
+The counter-K design note proposed a downward-only per-quantifier clamp
+on K (K -> 1 where the emitted-copy product would exceed
+PCREC_MAX_VM_REPLICATION_PRODUCT) as "what makes counter-K K22's real
+fix". The R25 panel found it collides with eng_brep_design.md §4.5's
+paneled "K must not become a per-pattern heuristic in v1" (R25 D1,
+BLOCKER) and that, as first specified over the ancestors-only running
+product, it does not even discharge K22 (R25 E1, BLOCKER) — a
+whole-subtree bottom-up product is required, which the lane then
+respecified and PROVED by arithmetic probe (clamp_arith.py: towers
+d=18/30/35/40 collapse to product 2).
+
+RULED: strict §4.5. K stays ONE per-artifact constant in v1
+(PCREC_DEFAULT_UNROLL_K = 8, D47.2), no per-quantifier variation of any
+kind. The clamp — algorithm, probe, and residuals — moves whole to the
+new plan row [ENG-CLAMP] (boonies-queued). Frank's stated rationale,
+recorded because it is the project's queue discipline in one line:
+do not overcomplicate current work that can be pushed off to a
+different item CLEANLY — and this deferral was shown clean on three
+measured facts: (1) plain counter-K already serves every motivating
+shape (single-level large counts, and realistic nested shapes whose
+counts exceed K engage the loop per level with no clamp); the clamp's
+sole rescued population is degenerate small-count towers, which D22
+scopes to fail-honestly — already delivered by K22's interim guard in
+0.12 s; (2) adding the clamp later only moves patterns refused -> 
+compiled, the safe direction, so nothing shipped changes out from under
+anyone; (3) the rung is otherwise unaffected (the note's §11 residual 7
+states this and the panel verified it).
+
+Consequences applied with the ruling: acceptance cell 2 (towers compile)
+is WITHDRAWN from the counter-K landing; tests/vm/run_vm_tests.sh's K22
+block keeps asserting refusal (R25 C1's rewrite is no longer needed —
+the site stays as-is); the clamp sabotage rows and clamped/unclamped
+differential cells drop from the landing's surface; known_issues.md K22
+is CLOSED (hang half: the interim guard, landed; compile-these-shapes
+half: re-homed as [ENG-CLAMP]'s charter, not an open bug — the record's
+"counter-K is the real fix" claim was refuted by the lane regardless of
+this ruling, since at K=8 every tower count sits below K and replicates).
+
+Revisit-when: [ENG-CLAMP] opens (a user needs a small-count tower to
+compile, or the later row's bench asks for adaptive K with a measurement
+behind it). Its charter carries the lane's finding that the PRODUCT rule
+is the right mechanism and the shape rule is not (the shape rule
+over-clamps `(a(b|c)?){0,4000}` — a nested A_REP that multiplies
+nothing), plus the {1,2}-tower residual (mandatory+optional phases must
+merge into one loop with a runtime ctr>=m test to collapse those).

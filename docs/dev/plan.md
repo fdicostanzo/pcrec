@@ -582,10 +582,48 @@ including V-G/V-H (added this session).
   (the study's §12-B shift-and measurement bears directly on it —
   studies/simd1/CLAUDE.md flags this) rather than duplicating it.
   Output: a short design note (panel-eligible) + the created rows.
+  AMENDED 2026-08-16 (Frank, twenty-seventh session, during the counter-K
+  arc): SCALAR-FIRST is the ruled integration posture — figure out how
+  SIMD plays in OVERALL before any of it touches current work; the ideal
+  shape is "our best non-SIMD approach, then backend VARIANTS on top of
+  it". Consequences: (a) in-flight engine lanes take NO SIMD-derived
+  design inputs or bench cells (three counter-K bench items sourced from
+  studies/simd1 were retracted under this directive the day it was
+  given); (b) thinking and planning ARE in-scope and live HERE — two
+  parked observations from the counter-K arc are this row's first
+  evaluation inputs: (1) counter-K's one-body-copy emission is the
+  natural substitution site for a §15-style SIMD run-extension variant
+  (one site per quantifier vs N replicated copies — an argument the
+  backend-variant layering is cheap over the counter design, worth
+  verifying when this row opens); (2) the `#pragma GCC unroll` question
+  (simd1 JOURNAL.md:63 — could a pragma replace manual K-copy emission
+  on frameless arms?) is parked here, NOT in counter-K's bench, until
+  the variants architecture is thought through.
 
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
 
+- [ENG-CLAMP] STATE:not-started — the DEFERRED per-quantifier K downshift
+  (Frank, 2026-08-16, twenty-seventh session: F-1 ruled strict-§4.5 on the
+  R25 panel — decisions.md D47 ADDENDUM has the full ruling and rationale).
+  Charter: the binary tractability clamp (K = the constant, or 1 — never an
+  intermediate value) computed by a BOTTOM-UP SUBTREE-PRODUCT pass, so that
+  small-count nested towers (K22's family: every count below K, blowup from
+  depth) COMPILE instead of hitting the interim product guard's fast
+  refusal. Seeded work, already committed on the counterk lane and carried
+  at docs/design/counterk_impl/: the respecified algorithm, the
+  clamp_arith.py arithmetic probe (towers d=18/30/35/40 collapse to product
+  2 under it; carries the {1,2} tower as a MUST-STILL-REFUSE row), and two
+  findings that are this row's design constraints — the PRODUCT rule is the
+  right mechanism, not the body-contains-a-repeat shape rule (which
+  over-clamps `(a(b|c)?){0,4000}`), and the {1,2}-tower residual needs the
+  mandatory+optional phases merged into one loop with a runtime ctr>=m test.
+  Opening this row is a Frank event and REQUIRES amending eng_brep_design.md
+  §4.5 (a fresh ruling — that is the point of the deferral); until then K is
+  one per-artifact constant and the interim guard's refusal is the ruled
+  behavior for the tower family. When it lands, tests/vm/run_vm_tests.sh's
+  K22 block inverts (refusal -> compiles-and-runs, refusal re-pinned under
+  the deny flag) per R25 C1's rewrite plan.
 - [M4-CALLOUTS] STATE:not-started (step 1 flip COMPLETED 2026-08-14, merge 84e5956 — all counts held at baseline, K14 check re-scoped to the RS_MODULE population; step 2 behavior awaits M4, its ABI ruled by D38/D39) — module `callouts` (D36: Frank re-scoped
   `(?C` from NEVER to PLANNED, 2026-08-12 — LOW PRIORITY, deliberately in
   the queue boonies). Two separable steps: (1) THE FLIP, schedulable any
