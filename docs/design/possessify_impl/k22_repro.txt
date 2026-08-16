@@ -35,13 +35,29 @@
 #   depth 35  (320 chars)  HANGS            >30 s     no diagnostic
 #   depth 40  (365 chars)  HANGS            >30 s     no diagnostic
 #
-# Reproduce:  build/pcrec --engine=vm -o /tmp/out.c -- "$(sed -n 'Np' this-file)"
+# HOW TO RUN THIS FILE. Every non-comment line below is one pattern, verbatim,
+# in the order compile / refuse / hang / hang. To re-measure all four:
+#
+#   grep -vE '^#|^$' docs/design/possessify_impl/k22_repro.txt | while IFS= read -r p; do
+#       printf '%-6s ' "${#p}"
+#       timeout 30 build/pcrec --engine=vm -o /tmp/k22.c -- "$p" >/tmp/k22.err 2>&1
+#       echo "rc=$? $(head -c 60 /tmp/k22.err)"
+#   done
+#
+# rc=0 compiles, rc=1 refuses cleanly, rc=124 is the hang. DROP `--engine=vm`
+# and ALL FOUR refuse instantly at the NFA cap instead — that is the whole
+# reason this did not reproduce from a description.
 
 # depth 15, 140 chars
+
+# COMPILES -- depth 15, 140 chars: 0.32 s, exit 0 — the pattern compiles normally
 (x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
-# depth 30, 275 chars
+
+# REFUSES -- depth 30, 275 chars: 11.82 s, exit 1 — clean diagnostic "pattern too large (VM exceeds 131072 emitted nodes)", but the REFUSAL itself is already slow
 (x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
-# depth 35, 320 chars
+
+# HANGS -- depth 35, 320 chars: >30 s, no diagnostic, killed by timeout
 (x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
-# depth 40, 365 chars
+
+# HANGS -- depth 40, 365 chars: >30 s, no diagnostic, killed by timeout — the 365-char headline case
 (x)(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:(?:a){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}){0,2}z
