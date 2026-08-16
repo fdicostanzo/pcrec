@@ -102,7 +102,24 @@ enum {
      * span loop (engine_m4.md S2.5's cursor rung) — so `a{0,65535}` and
      * `(?:ab){0,9999}` are unaffected, and the diagnostic can name the one
      * construct that reaches this cap without guessing. */
-    PCREC_MAX_VM_REPEAT_COPIES = 64
+    PCREC_MAX_VM_REPEAT_COPIES = 64,
+
+    /* [ENG-BREP] How many byte-consuming POSITIONS a quantifier body may have
+     * before src/opt/possessify.c gives up on it. It bounds the position
+     * (Glushkov) automaton the §2.2 unique-iteration test is decided on: the
+     * analysis carries one byte set and one follow-union per position, and
+     * the pairwise-disjointness sweep is quadratic in them.
+     *
+     * It changes what pcrec PROMISES only in the direction that is always
+     * safe. Exceeding it DECLINES — the quantifier keeps its backtracking
+     * machinery and matches exactly as it does today — so raising or lowering
+     * this number can change how fast an artifact runs and can never change
+     * what it matches. 256 because that is also the width of the position
+     * SET representation (one bit per position in the same 32-byte shape as a
+     * class bitmap), so the two limits are one number rather than two that
+     * could drift; a body with more than 256 literal positions is not a
+     * bounded repeat anybody is waiting on. */
+    PCREC_MAX_POSSESS_POSITIONS = 256
 };
 
 /* ---- PCRE2 SYNTAX — exact, and part of the language -------------------- *

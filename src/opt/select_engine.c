@@ -94,7 +94,50 @@ static const char *why_text(Ctx *cx, const char *what, size_t pos)
     return p;
 }
 
-void pcrec_select_engine(Ctx *cx, const Ast *root)
+/* [ENG-BREP] The possessification REWRITE, driven to its fixpoint.
+ *
+ * WHY IT IS CALLED HERE AND NOT REGISTERED IN `discharge` ABOVE — a deliberate
+ * deviation from eng_brep_design.md §2.8's literal reading, reported rather
+ * than silently taken. §2.8 says possessification "is exactly that shape" (a
+ * rewrite, not an analysis returning a verdict) and proposes it as an
+ * `EngineAnalysis` row whose `discharge` rewrites the A_REP's strategy in
+ * place. The SHAPE claim is right and this file keeps it. The REGISTRATION is
+ * not available, for two reasons that only appear once the socket exists:
+ *
+ *   1. `discharge`'s contract is "rewrite the AST so the ENGINE FORCING no
+ *      longer applies". Possessification cannot do that and must not claim to
+ *      — a capture-bearing pattern still needs the VM after every one of its
+ *      quantifiers is possessified. A hook that rewrites and never changes the
+ *      mask would spin the fixpoint against a verdict it cannot move.
+ *   2. The fixpoint only reaches `discharge` when the pattern is VM-FORCED, so
+ *      registering there would possessify a capture-bearing pattern and SKIP a
+ *      capture-free one compiled with `--engine=vm` — the same artifact kind,
+ *      built by the same emitter, optimised differently for a reason nobody
+ *      could see from the outside. That would also make the differential this
+ *      row is validated by lie about its own coverage.
+ *
+ * So the driver is the CHOSEN engine, which is the honest condition: the mark
+ * is read by src/gen/emit_vm.c and by nothing else, so a DFA artifact cannot
+ * observe it and pays nothing for it. Capture-free patterns stay byte-identical
+ * by construction rather than by audit, which is §5.4's gate held the way §7
+ * predicts (613 of 756 corpus patterns never reach this line).
+ *
+ * The loop is the fixpoint §2.8 asks for, and possessification's own
+ * monotonicity is what bounds it: `pcrec_possessify` returns how many
+ * quantifiers it NEWLY marked, a marked quantifier is never unmarked, and a
+ * second pass over a fully-marked tree returns 0. It therefore runs twice on
+ * any pattern with a positive verdict and once otherwise. SELECT_MAX_ROUNDS
+ * bounds it anyway, because a bound that depends on an argument in a comment
+ * is not a bound. */
+static void run_possessify(Ctx *cx, Ast *root, const EngineFit *fit)
+{
+    if (fit->chosen != ENGM_VM) return;
+    if (cx->opt->flags & PCREC_NO_POSSESSIFY) return;
+    for (int round = 0; round < SELECT_MAX_ROUNDS; round++)
+        if (pcrec_possessify(cx, root) == 0) break;
+}
+
+void pcrec_select_engine(Ctx *cx, Ast *root)
 {
     EngineFit fit;
     memset(&fit, 0, sizeof fit);
@@ -195,4 +238,8 @@ void pcrec_select_engine(Ctx *cx, const Ast *root)
     fit.prefilter = (fit.chosen == ENGM_VM) && (cx->opt->engine != PCREC_ENGINE_VM);
 
     cx->job->fit = fit;
+
+    /* [ENG-BREP] rung 1 of the bounded-repeat ladder, run last because it is
+     * the only step here that needs the engine ALREADY chosen. */
+    run_possessify(cx, root, &fit);
 }

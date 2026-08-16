@@ -1,0 +1,254 @@
+# tests/possessify/patterns.txt — the differential's pattern population.
+#
+# Built as §2.4's family: PREFIX x BODY x COUNT x FOLLOW, with every count
+# spelled BOTH ways. The both-ways part is not decoration and it is not
+# optional — [R24 S-F1] found the lazy defect precisely because the design
+# lane's own probe could not express a lazy row, so its differential silently
+# covered half the question. §5.3 makes greedy-AND-lazy MANDATORY for exactly
+# this reason: a sweep that spells every shape greedy is structurally
+# incapable of exercising the lazy conjunct.
+#
+# The follows include `b`, `ab` and `bc` — follows beginning with a BODY'S
+# SECOND BYTE. The design's v1 family had no such follow, which is why the
+# `(?:ab|a)` family passed a differential that could not ask the question it
+# existed to ask (§2.4's "one thing v1 got right by accident"). They are here
+# so this sweep does not repeat that.
+#
+# Prefixes carry `z`, a character no body contains, because D47.6's whole
+# lesson is that a sweep whose subjects omit a pattern character measures
+# nothing about the patterns using it. run_possdiff.sh derives its subject
+# alphabet from each pattern's own text so this stays true by construction.
+
+# ---- the exact-count arm: possessifiable under EITHER preference ----------
+a{2,2}c
+a{2,2}?c
+[ab]{3,3}c
+[ab]{3,3}?c
+(?:ab){2,2}c
+(?:ab){2,2}?c
+(a){2,2}c
+(a){2,2}?c
+z(?:a|bc){2,2}c
+z(?:a|bc){2,2}?c
+\d{4}x
+\d{4}?x
+[0-9a-f]{8}z
+
+# ---- the disjointness arm, GREEDY: possessifiable -------------------------
+a{0,4}c
+a{1,3}c
+a{3,}c
+a*c
+a+c
+[ab]{0,4}c
+(?:ab){0,4}c
+(?:a|bc){0,4}d
+(a){0,4}c
+((a)|b){0,4}c
+z(ab)*y
+za{0,4}c
+z[^c]{0,4}c
+
+# ---- the disjointness arm, LAZY: the conjunct's two sides -----------------
+# Non-nullable remainder -> possessifiable; nullable remainder -> declined.
+# `a{1,3}?` on "aaaa" is (0,1) lazy and (0,3) possessive, which is the
+# 316-cell witness [R24 S-F1]; it is a DECLINE cell here and the sweep must
+# still agree, because a declined quantifier keeps today's machinery.
+a{0,4}?c
+a{1,3}?c
+a{3,}?c
+a*?c
+a+?c
+[ab]{0,4}?c
+(?:ab){0,4}?c
+(?:a|bc){0,4}?d
+za{1,3}?c
+# nullable remainder: the decline side of the same conjunct
+a{1,3}?
+a{0,4}?
+za{1,3}?
+a{1,3}?c?
+za{1,3}?c?
+[ab]{0,4}?
+(?:ab){0,4}?
+
+# ---- (U1) ambiguous bodies: the 117-counterexample family, DECLINED -------
+(a|ab){0,4}c
+(a|ab){0,4}?c
+(?:ab|a){0,4}c
+(?:ab|a){0,4}?c
+(a|ab){0,4}b
+(?:ab|a){0,4}b
+(a|ab)*c
+z(a|ab){1,3}c
+
+# ---- (U2) not prefix-free: the second witness, DECLINED -------------------
+(?:ab?){0,4}b
+(?:ab?){0,4}?b
+(?:ab?){0,4}c
+(?:ab?)*b
+(?:a?b?){0,3}c
+
+# ---- nullable bodies: DECLINED -------------------------------------------
+(?:a|){0,4}c
+(a*){0,3}b
+(a?){2,4}c
+(|a){2,4}c
+(|a){0,3}b
+z(?:a|){2,4}c
+
+# ---- overlapping follow: DECLINED ----------------------------------------
+a{0,4}a
+a{0,4}?a
+[ab]{0,4}b
+[ab]{0,4}b?c
+a{0,4}[ac]
+(?:ab){0,4}ab
+(?:ab){0,4}b
+a{0,4}(?:c|a)
+
+# ---- assertion follows: `^` declines, `$` is D47.5's exemption ------------
+a{0,4}$
+a{1,3}?$
+[ab]{0,4}$
+(?:ab){0,4}$
+a{0,4}^
+a{0,4}c$
+za{0,4}$
+
+# ---- ENCLOSING LOOPS: the transitive-FOLLOW line ([R24 H1], 42,336 pairs) -
+# The inner quantifier's follow must include FIRST of every enclosing loop's
+# body, because the enclosing loop can start another iteration once the inner
+# one's parent finishes. Dropping that term yielded 172 counterexamples on the
+# panel's instrument, so these cells are where a regression of it would show.
+(?:a{0,2}b)+c
+(?:a{0,2}b)*c
+(?:a{0,2}c)+c
+(?:a{0,2}a)+c
+(?:[ab]{0,2}c)+d
+(?:a{2,2}b)+a
+z(?:a{0,3}b)*c
+(?:(a){0,2}b)+c
+(?:a{0,2}?b)+c
+(?:a{0,2}?b)*
+
+# ---- the ENCLOSING-LOOP term's own discriminating shape -------------------
+# The block above is NOT enough, and finding that out is the reason these
+# exist. Dropping the enclosing-FIRST term (sabotage S45..S49's S48) left the
+# first version of this file entirely GREEN — because in `(?:a{0,2}b)+c` the
+# inner quantifier is followed by a NON-NULLABLE `b`, so the enclosing loop's
+# first set is not actually reachable at the inner loop's exit and the term is
+# merely conservative there.
+#
+# The shape where the term is LOAD-BEARING puts the inner quantifier at the
+# END of the enclosing body (or behind a nullable tail), so control really can
+# arrive at the enclosing loop's next iteration with the inner loop's own
+# first byte available. Found by generated search: 7,553 patterns in an
+# 18,480-pattern nested family change verdict without the term, and 44 of
+# 1,259 sampled produce a WRONG SPAN. `(?:a{1,2}){2,2}b` is the smallest.
+(?:a{1,2}){2,2}b
+(?:a{1,2}){2,2}
+(?:a+a?){2,2}
+(?:aa{0,2}){2,2}
+(?:aa{0,3}){2,2}b
+(?:a+b?){2,2}c
+(?:aa*b?){2,2}
+(?:aa{1,2}){1,3}b
+(?:aba*a?){2,2}
+(?:ba*b?){2,2}
+(?:a{2,2}a?)*?b
+(?:a(?:ab){0,2})+?b
+
+# ---- nesting and captures inside the loop --------------------------------
+((a)|b){0,4}c
+((a)|b){2,2}c
+(a(b))+c
+(a(b)){2,2}c
+((ab)|c){0,3}d
+(a)(b){2,4}c
+z((a)b){0,3}c
+
+# ---- shapes with several quantifiers, so one artifact MIXES strategies ----
+a{2,2}b{0,4}c
+a{0,4}c[ab]{2,2}d
+\d{4}-\d{2}-\d{2}
+(a)\d{4}(b)\d{2}z
+a*b*c
+a{2,2}(a|ab){0,3}c
+
+# ---- boundary counts ------------------------------------------------------
+a{0,1}c
+a{1,1}c
+a{0,0}c
+a{1,2}c
+a{5,5}c
+a{0,8}c
+a{2,}c
+a{0,}c
+
+# ---- pcrec's byte sets are EXACT where the reference probe approximates ----
+# [R24 S-F4]. The design's probe models python's parse tree, and python folds
+# case at COMPILE time — so the probe computes FIRST((?i)a) = {a}, misses `A`,
+# and its IGNORECASE handling is unsound in the direction that ADMITS too
+# much. pcrec is safe here STRUCTURALLY rather than by care: src/parse/parse.c's
+# `cls_casefold` folds case into every A_CLASS bitmap at parse time and every
+# literal is an A_CLASS, so by the time the analysis runs a caseless `a`
+# already carries both. The pairs below are the discriminating control — the
+# caseless spelling must DECLINE where the case-sensitive one possessifies.
+(?i)a{2,4}A
+a{2,4}A
+(?i)A{2,4}a
+A{2,4}a
+(?i)[ab]{0,3}B
+[ab]{0,3}B
+# CATEGORIES go the other way: the probe widens \d and \w to all bytes and
+# declines, where pcrec intersects real 256-bit bitmaps and can admit. §2.7
+# predicted the shipped analysis would be STRICTLY less conservative here.
+\w{3,5}-
+\w{3,5}a
+\d{2,4}-
+\d{2,4}5
+# ...and the EXACT-COUNT arm ignores the follow entirely, so `\d{4}5`
+# possessifies even though the follow is a digit: with a unique-iteration body
+# there is exactly one way to run four iterations, and m == n removes the
+# loop's only remaining freedom.
+\d{4}5
+\d{4}x
+
+# ---- the CUT vs the TRAIL, and NESTED possessified loops -----------------
+# The frames-rung cut discards FRAMES and deliberately does not rewind the
+# TRAIL, because a failure OUTSIDE the loop still has to restore the loop's
+# groups to their pre-loop values. These are the cells where that distinction
+# is load-bearing: a capture written inside a possessified loop, and then an
+# outer construct that fails and must see the group restored. `ZZZ` and
+# trailing `q` follows exist to force exactly that failure after the loop has
+# already committed.
+((a)|bc){0,3}dZZZ
+((a)|bc){0,3}d
+(?:((a)|bc){0,3}d|((a)|bc){0,3}e)
+(x)((a)|bc){1,3}dq
+((a)|bc){2,2}x
+(?:((a)|bc){0,2}z)+q
+((a)|bc)+dq
+(?:(a)(b)|c){0,3}dq
+((a)(b)|(c)){0,3}d
+(?:((a)|bc){0,3}d)+q
+# NESTED possessified frames-rung loops, where each loop needs its OWN cut-mark
+# slot. The pre-pass and the emitter allocate those independently and must
+# agree exactly -- a bounded repeat REPLICATES its body, so an inner loop
+# inside a {2,2} gets two marks, and a count that under-counts would make two
+# live loops share one slot.
+(?:(?:a|bc){2,2}z){2,2}
+(?:(?:a|bc){2,2}z){2,2}d
+(?:(?:a|bc){0,2}z){0,2}d
+(?:(?:a|bc){0,2}z){2,2}
+(x)(?:(?:a|bc){2,2}z){2,2}
+(x)(?:(?:a|bc){0,2}z){0,3}d
+((?:a|bc){2,2})(?:(?:a|bc){2,2}z){2,2}
+(?:(?:(?:a|bc){2,2}z){2,2}y){2,2}
+(?:(a|bc){0,2}z){0,2}d
+(?:(?:ab|cd){2,2}z){0,3}
+(?:a{2,2}(?:b|cd){0,2}z){0,2}q
+(x)(?:(?:a|bc)+z)+d
+(x)(?:(?:a|bc){1,3}z){1,3}d
+(x)(?:(?:a|bc){0,2}z)+

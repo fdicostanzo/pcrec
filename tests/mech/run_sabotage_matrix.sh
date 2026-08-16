@@ -57,6 +57,7 @@
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
+#   possdiff                           — added 2026-08-16 ([ENG-BREP])
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -262,6 +263,22 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/vm.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vm.log" | grep -oE '[0-9]+')"
                 suite_bits+=("vm:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            possdiff)
+                # [ENG-BREP] the possessification differential. The arm exists
+                # because it is the ONLY suite that can see a wrong
+                # possessification verdict: a quantifier the analysis admits
+                # unsoundly still matches correctly on most subjects, so the
+                # signal is a divergence between the possessified build and
+                # the `-fno-possessify` one, not a corpus failure.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/possessify/run_possdiff.sh" \
+                    > "$work/possdiff.log" 2>&1
+                p="$(grep -m1 '^possdiff: [0-9]* patterns agreed' "$work/possdiff.log" | grep -oE '[0-9]+' | head -1)"
+                f="$(grep -m1 '^possdiff: [0-9]* patterns agreed' "$work/possdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
+                suite_bits+=("possdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

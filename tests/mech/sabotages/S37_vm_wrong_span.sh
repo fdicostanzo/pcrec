@@ -13,6 +13,17 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vm"
 SAB_DESC="the cursor rung derives a group's END from the same offset as its START (every deterministic-body group reports a zero-length span)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails (zero-length groups on every fixed-stride repeat)"
-SAB_COUNT=1
+# [ENG-BREP] TWO occurrences since 2026-08-16, not one. The cursor rung now
+# has two emission paths -- the backtracking one and the possessified one --
+# and each derives the group's end from the cursor the same way. The count is
+# raised rather than the anchor narrowed to one of them ON PURPOSE: the defect
+# this sabotage plants exists in BOTH paths, so a sabotage that planted it in
+# only one would leave the other silently unmeasured, and the whole point of a
+# sabotage is to ask whether the checks can see the defect wherever it lives.
+#
+# replace.py REFUSING when the count drifted is the tool working: this file
+# came back ANOMALY rather than quietly sabotaging one of the two paths, which
+# is exactly the anchor-mismatch failure mode it exists to make loud.
+SAB_COUNT=2
 SAB_BEFORE="                     stride - caps[i].off - caps[i].len);"
 SAB_AFTER="                     stride - caps[i].off);  /* SABOTAGE S37 */"

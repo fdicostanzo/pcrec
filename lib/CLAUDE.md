@@ -29,3 +29,11 @@ is not something a shipped one should ever do.
 This is the sole public interface; everything under src/ is internal. The library works in two modes: -o out.c writes a self-contained .c file (no header), or -o out.c with options.header_name='out.h' writes paired .c/.h files. Generated code has no dependency on pcrec at runtime.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+**[ENG-BREP] (2026-08-16):** `PCREC_NO_POSSESSIFY` (`1u << 4`) joins the flags
+word as the first STRATEGY-DENIAL bit — `-fno-possessify`, D47.3's deny family.
+It is unlike every other bit here in one way worth stating: it is a testing and
+tuning axis, not a semantic option, so it changes no answer and
+`src/gen/emit_dfa.c` deliberately MASKS it out of the emitted `rx_info.flags`.
+Two artifacts differing only in this bit are byte-identical, which is what
+makes the pass's own byte-identity gate expressible at all.

@@ -28,6 +28,20 @@ producing an instrumented artifact that prints every resume-frame push/pop and
 capture write to stderr; never the default, and the artifact stamps that it is
 traced.
 
+**[ENG-BREP] (2026-08-16):** `-fno-possessify` (`PCREC_NO_POSSESSIFY`) is the
+first member of D47.3's DENY family — gcc-style spelling, bare flag, a TESTING
+AND TUNING AXIS rather than a user feature. It denies the possessification
+rewrite (docs/design/eng_brep_design.md §2), which changes no answer by
+construction, so the only reason to turn it off is to CHECK that: the row's
+primary instrument compiles the same pattern both ways and compares. DENY
+rather than FORCE is load-bearing per D47.3 — each quantifier walks its own
+ladder skipping denied steps, so a denial composes per-quantifier with no need
+to ADDRESS one quantifier inside a pattern. The do-or-die half lives in
+OBSERVABILITY rather than in a refusal: the artifact stamps
+`<PREFIX>_VM_STRATS`, and a denied strategy appearing there is a hard test
+failure. The rest of the family (`-fno-counter`, a rung selector, a value
+parameter for K) arrives with the strategies it denies.
+
 `--engine` is DO-OR-DIE: a request the pattern cannot honour is a clean
 refusal, never a silent downgrade. `--engine=vm` additionally turns the DFA
 prefilter OFF (D44/R21 E-6), which is what makes it usable as an independent

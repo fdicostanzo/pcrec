@@ -444,9 +444,31 @@ project journal entry.
 | `make test-parse` | `tests/parse/run_parse_tests.sh` | yes |
 | `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
 | `make test-vm` | `tests/codegen/run_vm_identity.sh` + `run_ir_listing.sh` + `tests/vm/run_vm_tests.sh` | yes |
+| `make test-possessify` | `tests/possessify/run_possdiff.sh` + `run_possessify_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+
+**[ENG-BREP] (2026-08-16) — a tenth section, `test-possessify`.** The
+possessification rung's `.rxt` corpus rides `test-corpus` like every other
+module's; the two scripts this section wraps check what a `.rxt` file
+structurally CANNOT. `run_possdiff.sh` is the row's primary validation
+instrument: it compiles the same pattern twice — once with the rewrite, once
+with `-fno-possessify` — links both artifacts into ONE translation unit, and
+compares the span, every capture slot and the failure surface at every start
+position. Because the denied build is the shipped semantics rather than an
+approximation of them, a disagreement is a bug by construction. It carries a
+NON-VACUITY control (a sweep in which nothing possessified compared identical
+artifacts and measured nothing, and fails saying so), and `--corpus` derives
+and additionally sweeps every `.rxt` corpus pattern the analysis gives a
+positive verdict on. `run_possessify_tests.sh` asserts the artifact's
+per-quantifier `<PREFIX>_VM_STRATS` stamp against the emitted machinery, D47.3's
+do-or-die (no artifact may stamp POSSESSIVE under `-fno-possessify`, checked
+against the ARTIFACT and never against the flag having been passed), and the
+BYTE-IDENTITY gate: every corpus pattern with zero positive verdicts must emit
+identical C with the pass on and off. Both scripts also join the `make
+ubsan`/`make asan` both-axes lists. See `tests/possessify/CLAUDE.md` — it
+records the two ways this suite's own instruments measured nothing at first.
 
 **[M4.5b] (2026-08-15) — the count moves from nine script invocations to
 eleven, and the section list from eight to nine.** `test-codegen` gains

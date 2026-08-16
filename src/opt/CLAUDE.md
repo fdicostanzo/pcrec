@@ -26,6 +26,20 @@ construction (src/ir) and emission (src/gen).
   smaller than its row implies (§9.1: zero currently-refused constructs become
   compilable when the VM exists).
 
+  It also DRIVES possessify.c, and the placement is a reported deviation from
+  §2.8's literal reading rather than a silent choice. §2.8 proposes
+  possessification as an `EngineAnalysis` row whose `discharge` hook does the
+  rewrite; the SHAPE claim is right and possessify.c keeps it, but the
+  registration is not available. `discharge`'s contract is "rewrite so the
+  ENGINE FORCING no longer applies", which possessification cannot do and must
+  not claim to — a capture-bearing pattern still needs the VM afterwards — and
+  the fixpoint only reaches `discharge` when the pattern is VM-FORCED, so
+  registering there would possessify a capture-bearing pattern and SKIP a
+  capture-free one built with `--engine=vm`: the same artifact kind, the same
+  emitter, optimised differently for a reason invisible from outside. The
+  driver is therefore the CHOSEN engine, which is the honest condition — see
+  `run_possessify` and its comment.
+
   This file also owns the §5.6 override's REFUSALS, and it runs before machine
   construction so a caller who asked for an impossible combination pays no
   automaton for the diagnostic. The two refusal triggers are spelled
@@ -34,6 +48,48 @@ construction (src/ir) and emission (src/gen).
   not passing it; a `VM_ONLY`-construct conflict names the construct. Only the
   first has a population today, and the second is empty BY POPULATION, not by
   omission.
+
+- **possessify.c** — [ENG-BREP] POSSESSIFICATION
+  (docs/design/eng_brep_design.md §2, D47.1: possessify-first in both the
+  application order and the build order). Marks every `A_REP` for which no
+  retreat into the loop can produce a match the PREFERRED path does not, so
+  src/gen/emit_vm.c can emit it with no resume frames and no giveback.
+
+  A REWRITE, not an analysis that returns a verdict (§2.8's shape claim): it
+  does not observe that the loop needs no frames, it MAKES the quantifier one
+  that needs none. It is monotone — it returns how many quantifiers it NEWLY
+  marked, a marked quantifier is never unmarked — which is what lets
+  select_engine.c drive it to a fixpoint in two rounds.
+
+  **The rule is REPAIRED, and the obvious version of it is measured WRONG.**
+  "FIRST(body) disjoint from FOLLOW(quantifier), body non-nullable" is the
+  analysis as [ENG-BREP]'s own plan row stated it and it is UNSOUND: 117
+  counterexamples, every one a body like `(a|ab)` whose iterations can end in
+  two places. The body must ALSO admit a unique iteration — (U1)
+  one-unambiguous and (U2) prefix-free on its position (Glushkov) automaton —
+  and the disjointness arm carries a LAZY-ONLY conjunct (a lazy `Q` needs a
+  non-nullable remainder, 316 measured cells) that the R24 panel added after
+  the design lane's own probe structurally could not see the question. Read
+  the file's header before touching the verdict ladder; every conjunct in it
+  is a refutation somebody paid for.
+
+  Two things it inherits that are easy to lose. Every set is computed in the
+  SOUND direction, so anything unmodellable widens to all bytes and DECLINES —
+  declining is always available and always safe. And A_CAT/A_ALT spines are
+  walked ITERATIVELY (D10/DD-10/R1 R-2, and K20 the third time): a
+  20,000-character pattern segfaulted pcrec once already for want of that, and
+  three of this file's walks descend those spines.
+
+  The `$`-follow exemption's gate is LIVE (D47.5): the analysis reads
+  `cx->mods.multiline` at verdict time rather than carrying a comment about
+  what pcrec does not support yet. `$` in a quantifier's follow is measured
+  safe at 0/720 diverging cells and unsafe at 180/720 under `(?m)`, so the
+  exemption is conditional on a fact that stops being true without anyone
+  revisiting the analysis. Module `assertions` inherits the test obligation.
+
+  Tests: tests/possessify/ (its own CLAUDE.md explains why three separate
+  checks are needed and what each is blind to); failing-direction controls
+  tests/mech/sabotages/S45-S49.
 
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra

@@ -174,11 +174,11 @@ missing=""
 for f in tests/harness/run.sh tests/cli/run_cli_tests.sh \
          tests/codegen/run_codegen_tests.sh tests/codegen/run_ir_listing.sh \
          tests/vm/run_vm_tests.sh tests/registry/run_pc4.sh \
-         tests/thread/run_thread_tests.sh; do
+         tests/thread/run_thread_tests.sh tests/possessify/run_possdiff.sh; do
     grep -q 'gen_timeout\.sh' "$ROOT_DIR/$f" || missing="$missing $f"
 done
 if [ -z "$missing" ]; then
-    ok "D45 coverage: all 7 shell suites that compile generated C source the shared helper"
+    ok "D45 coverage: all 8 shell suites that compile generated C source the shared helper"
 else
     bad "D45 coverage: these compile generated C but do not source tests/lib/gen_timeout.sh:$missing"
 fi
