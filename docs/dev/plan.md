@@ -162,12 +162,31 @@ stated terms.
   v1, M6.0 carries the inherited test obligation; lazy conjunct accepted
   at measured cost ZERO — the "20 false declines" were refuted during
   the ruling, all 20 genuinely diverge, subject-alphabet blindness in
-  the probe). IMPLEMENTATION IN FLIGHT: lane `possessify` (opus,
-  worktree possessify — the D47.1 first build step: §2.2 analysis +
-  §5.2 rewrite + -fno-possessify + stamps); lane `brep-guards` (sonnet
-  — probe subject-generator fix, re-archive, note correction, the 20
-  guard cells into tests/base/possess_lazy_guard.rxt). R24-corrected
-  census: 17%/82%) — BOUNDED-REPEAT EMISSION STRATEGY: the
+  the probe). **POSSESSIFICATION BUILT AND MERGED 2026-08-16 (D47.1's
+  first rung; merge 1eac1b9):** src/opt/possessify.c (the §2.2 repaired
+  rule, lazy conjunct, LIVE multiline gate — cx->mods.multiline has no
+  writer until module `assertions`, which inherits the M6.0 gate-test
+  obligation), two emitter shapes (cursor: zero machinery; frames: ONE
+  frame via the new vm_cut/RX_CUT primitive), -fno-possessify +
+  <PREFIX>_VM_STRATS stamps (D46 both halves), differential 365
+  patterns/158,827 cells/0 divergences, byte-identity on all
+  verdict-free patterns, mech S45-S49 + re-verified emitter sabotages,
+  corpus 3,270 → 5,984 expected post-merge. Guard corpus for the lazy
+  conjunct: tests/base/possess_lazy_guard.rxt (D47.6). OWED FROM THIS
+  LANDING, recorded: (1) the STEP-BUDGET BLIND SPOT — a possessified
+  loop charges no steps, so --engine=vm (diagnostic mode only; the
+  default prefilter path is unaffected) turns a fast RX_ERR_STEPS
+  give-up into a correct-but-quadratic answer (measured 0.033/0.581/
+  2.297 s at 10/50/100 KB; 228.5 s at 1 MB, terminating and correct) —
+  fix-of-record is an E-5-SHAPED one-step-per-possessified-loop-ENTRY
+  charge, OWED WITH THE COUNTER-K STEP; (2) tests/vm has no per-RUN
+  timeout on generated matchers (D45 bounds compiles only) — harness
+  mechanism owed, manager's; (3) K22 filed (nested-bounded-repeat
+  compile hang under --engine=vm, known_issues.md — interim product
+  guard or counter-K). NEXT LADDER STEPS: rung-select, then counter-K.
+  R24-corrected census: 17%/82%; as-built verdict census 252/1,832
+  source quantifiers (13%), archived docs/design/possessify_impl/) —
+  BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but
   strictly the result was intractable, so not"). Today the VM emits

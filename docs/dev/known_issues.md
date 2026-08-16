@@ -1705,3 +1705,39 @@ surveyed:
   unaffected (still dormant: DFA-only pattern space) — unchanged
   273/232/41/62,872/0 populations. See tests/registry/CLAUDE.md for the
   full account.
+
+## K22 — OPEN, found 2026-08-16 (possessify lane, while probing pass compile-time on large bodies)
+
+Nested bounded repeats HANG THE COMPILER with no diagnostic — but ONLY
+under `--engine=vm`. `vm_count_slots` (src/gen/emit_vm.c) walks the
+replicated copy tree, so nesting depth d costs Θ(2^d) work BEFORE
+`PCREC_MAX_VM_NODES` can fire; on the DEFAULT path the NFA 131072-state
+cap refuses every such pattern instantly (0.11 s) and is an ACCIDENTAL
+guard — `--engine=vm` skips building the NFA/DFA pair entirely (R21
+E-6's prefilter-off behavior), so nothing bounds the walk.
+
+Minimal repro (exact patterns + timing sweep + reproduce-loop:
+docs/design/possessify_impl/k22_repro.txt; verified on main 949f867
+with zero possessify symbols AND by the manager's own run at merge):
+a `(?:...){0,2}` tower at depth 15 (140 chars) compiles in 0.32 s;
+depth 20–30 refuses cleanly but increasingly slowly (11.82 s at depth
+30 — the REFUSAL itself is already exponential); depth ≥35 hangs >30 s
+with no diagnostic. Not adversary-tier only in theory: a 365-character
+pattern is user-writable.
+
+Tier: robustness (D22) — a pathological pattern must fail honestly,
+never hang. The harness is protected (D45 bounds pcrec's own invocation
+at 20 s in-suite); an end user on `--engine=vm` is not.
+
+Fix direction, two halves: (1) the REAL fix is [ENG-BREP]'s counter-K
+step, which eliminates replication for exactly these shapes (the copy
+tree stops existing); (2) the interim guard is a cheap PRODUCT check —
+multiply the nesting-path copy counts BEFORE walking (the exact
+known-risk interaction eng_brep_design.md §7 names: "replication
+factors MULTIPLY and v.maxcopies records only the max") and refuse
+above a bound with a D26-tier diagnostic. Scheduled: with [ENG-BREP]'s
+counter-K step, or as a small standalone guard lane if that step is
+far. Related: the step-budget blind spot recorded in the [ENG-BREP]
+plan row (same lane, same session) is the RUNTIME sibling of this
+COMPILE-TIME gap — both are "possessification/replication moved work
+where an existing budget cannot see it".

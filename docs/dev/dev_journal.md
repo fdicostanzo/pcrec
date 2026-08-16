@@ -8537,3 +8537,59 @@ the code and has no population to test against today. §2.7's subsumption
 reasoning is still deliberately not done (`[ab]{0,4}b?c` declines). The rest of
 D47.3's deny family (`-fno-counter`, a rung selector, the K parameter) lands
 with the strategies it denies.
+
+## 2026-08-16 (EDT), twenty-fourth session CLOSE — possessification merged (1eac1b9), battery green, K22 filed; the session that took [ENG-BREP] from plan row to running code
+
+Close-out of the long twenty-fourth session (its earlier entries: the
+two-lane morning, R24, D47, studies/simd1, the lanes' own entries).
+
+**Possessify lane merged** (1eac1b9 + a2089cb repro-doc polish;
+journal's append-only conflict resolved keep-both). Manager review
+verified the load-bearing pieces in the diff: the §2.2 rule with its
+witness cells and LIVE multiline gate in src/opt/possessify.c, the
+vm_cut/RX_CUT single-frame shape with role-documented call sites, the
+D46 remedy on tests/vm's P-3 contrast (the contrast now DENIES the rung
+above it — D46's predicted scenario arrived and was answered verbatim),
+and the three accepted deviations' reasoning recorded at their sites.
+Mid-arc the manager caught the lane's battery hung on a 9-minute
+generated-matcher run; the lane's diagnosis was exemplary — STRUCTURAL
+disconfirmation (the emitted possessified loop strictly increases a
+cursor bounded by n; a nullable body is unpossessifiable by the same
+nullability function the emitter uses) plus MEASURED confirmation of
+slow-not-looping (quadratic law, 228.5 s at 1 MB terminating CORRECT).
+
+**FINAL BATTERY, merged tree, all green:** test parallel 5,784/0
+(3,270 + the lane's 2,514, exactly additive), serial green, strict 0,
+ubsan 0, asan 0, lint 0. mech at the lane tip: 9/9 (S45-S49 new +
+S37/S38/S39/S44 re-verified).
+
+**K22 FILED** (known_issues.md): nested bounded repeats hang the
+COMPILER under --engine=vm — vm_count_slots walks the 2^depth copy
+tree before PCREC_MAX_VM_NODES fires; the default path's NFA state cap
+is an ACCIDENTAL guard the vm path skips. Manager-verified from the
+committed repro (depth 15 compiles 0.2 s; depth 40 hangs >15 s, main
+build). Fix: counter-K (real) or an interim copy-count PRODUCT check.
+
+**Recorded dispositions** (plan row): the step-budget blind spot
+(possessified loops charge no steps; --engine=vm quadratic; E-5-shaped
+per-entry charge owed with counter-K); tests/vm per-RUN timeout gap
+(D45 bounds compiles only — harness mechanism owed, manager's); K22.
+
+**Lessons.** (1) The manager's process-table glance caught what no
+notification could: a lane's battery hung on work its own timeout
+would have surfaced 40 minutes later. Watchdogs should look at CPU,
+not just logs. (2) A "hang" is a diagnosis, not an observation —
+slow-and-correct vs looping was settled by reading the emitted loop
+and fitting the growth law, and the two answers demand opposite
+actions. (3) D46 predicted its own test failure mode ("an optimization
+above un-tests the strategy below") within days of being written, and
+its remedy worked verbatim. (4) Append-only files conflict trivially
+and resolve trivially: keep both, in order.
+
+**State at close:** HEAD = 1eac1b9 + a2089cb + this bookkeeping,
+pushed. Corpus floor 5,784; cli 257; known_fail EMPTY; mech 44+9 rows.
+Open K-list: K2, K7, K9, K19, K22. [ENG-BREP]: possessify rung SHIPPED;
+next rungs rung-select, counter-K (which also owes the E-5 charge and
+retires K22). [SIMD-META] awaits Frank's start. Owed: tests/vm per-run
+timeout mechanism (manager); mk_d27_cell.sh allowlist; M4.7 wording
+pass; R24 NOTED residuals.
