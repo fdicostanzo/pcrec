@@ -1206,11 +1206,11 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
 
 ### 10.3 Still open for the manager
 
-1. **ASK 2a — §6's `{1,2}`-tower residual**: worth the merged-phase loop now
-   (one body copy for any `{m,n}`, at the cost of a runtime `ctr >= m` test on
-   the `0 < m < n` shapes), or a recorded residual? The note recommends
-   recording it: the shape is rare and the merge complicates the one place
-   §3.2's byte-identity argument is currently clean.
+1. **ASK 2a — CLOSED by the F-1 ruling.** It asked whether the `{1,2}`-tower
+   residual earned the merged-phase loop now. That residual belongs to
+   [ENG-CLAMP] with the rest of the clamp (§4.2), and the D47 ADDENDUM records
+   the merge as that row's own inherited item. Left in the list rather than
+   deleted so a reader of §6 does not go looking for it.
 2. **ASK 2b — should the POSSESSIVE arm gain a K-unrolled trip/tail?**
    [R25 E6] Today it has none, which is why §8.5 cell 4 excludes it and
    §8.3's per-quantifier K row has nothing to report for it. Giving it the
