@@ -72,6 +72,15 @@ in a specific way.
   two prefixes into one TU. That is itself a real property being exercised:
   the fixed ABI types are emitted under a prefix-INDEPENDENT include guard so
   differently-prefixed headers can share a TU (D44/A-2).
+
+  **It is now SHARED with `tests/rungselect/`** ([ENG-BREP]'s next rung), which
+  links it with its own pair of artifacts. The comparison this file makes — two
+  artifacts of one pattern must agree on span, every slot and the failure
+  surface — is the same claim for every member of D47.3's deny family, and only
+  the words in the divergence report differ. Those come in through
+  `-DDIFF_A_LABEL`/`-DDIFF_B_LABEL`, which default to this suite's own wording,
+  so nothing here changed behaviour. Keep it that way: a second copy of this
+  comparison would be a second thing to keep in step with the first.
 - **`run_possdiff.sh`**, **`run_possessify_tests.sh`** — the two suites,
   wired into `make test` as `make test-possessify` and into the `make
   ubsan`/`make asan` both-axes batteries. EXECUTION of every generated
