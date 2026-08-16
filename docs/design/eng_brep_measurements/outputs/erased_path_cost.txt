@@ -1,0 +1,25 @@
+# ENG-BREP design lane -- archived probe output
+#
+# The capture-erased DFA path's cost curve, and where the repeat count actually lives in the emitted tables.
+#
+date:        2026-08-16T00:56:14Z
+repo commit: eb6fd2ad85d0fedbb98cd79ee913848501e16752  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+N	pcrec_erased_s	gcc_erased_s	lines
+64	0.012	0.060	148
+256	0.025	0.073	208
+1000	0.181	0.082	440
+2000	0.656	0.088	753
+4000	2.689	0.098	1378
+
+# where the count lives, from the emitted --no-captures artifact:
+#   N=64   : rx_ftr[8] (2 forward states)   rx_rtr[264]   rx_racc[66]
+#   N=4000 : rx_ftr[8] (2 forward states)   rx_rtr[16008] rx_racc[4002]
+# The FORWARD DFA is 2 states at every N; the count lives entirely in the
+# REVERSE machine, which is why the erased artifact is small and why
+# pcrec's OWN time is quadratic (N reverse states x an O(N) NFA closure).

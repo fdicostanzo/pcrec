@@ -1,0 +1,23 @@
+# ENG-BREP design lane -- archived probe output
+#
+# The plan row's last-iteration capture derivation for ((a)|b){0,N}c: as stated it is wrong on 1799/15036 matches; the corrected backward-scan derivation is 0/15036.
+#
+date:        2026-08-16T00:56:14Z
+repo commit: eb6fd2ad85d0fedbb98cd79ee913848501e16752  (branch eng-brep)
+gcc:         gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+python:      Python 3.14.4
+host:        Linux 7.0.0-29-generic, 12 cores
+#
+# EVIDENCE, NEVER AN ORACLE: no check reads this file.
+#
+# The plan row's derivation for ((a)|b){0,N}c, checked and CORRECTED.
+# As stated:  group1 = [end-2,end-1);  group2 = the same iff s[end-2]=='a'.
+# group1 holds. group2 does NOT: a group inside the loop keeps the value
+# from the last iteration that ENTERED it, so a later `b` iteration does
+# not clear it. The corrected derivation is a BACKWARD SCAN to the last
+# 'a' in the loop's own span -- which is what the reverse-deterministic
+# rung does anyway, and is why a constant-offset formula was never the
+# right shape for this.
+matches 15036 (zero-iteration 6259)
+mismatches, derivation AS STATED IN THE PLAN ROW: 1799
+mismatches, CORRECTED derivation (backward scan): 0
