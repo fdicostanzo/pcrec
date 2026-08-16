@@ -447,6 +447,26 @@ append-only or historical records.
   `eng_brep_measurements/` and `possessify_impl/` for the same
   never-confuse-the-lanes reason those two are separate. See its own
   CLAUDE.md.
+- `counterk_impl/` — the [ENG-BREP] COUNTER-K lane's design note, probes and
+  archived outputs (the bounded-repeat COUNTER rung: one body copy per K
+  iterations plus an iteration counter, replacing full replication), kept
+  separate from the three lane directories above for the same
+  never-confuse-the-lanes reason those are separate. Its note is DESIGN-FIRST
+  and PROPOSED — no engine code exists. Four claims carry it and are where a
+  reader should start: the counter must be a TRAILED `stv` slot rather than a
+  frame field or a plain local, because a resume into the BODY has to restore
+  it (`(a|b){0,4}c`); a counter loop is preference-equivalent to
+  `vm_opt_chain`'s NESTED optional chain rather than to a chained one (witness
+  `(?:ab|a){0,2}?b`, already a measured defect in `src/ir/nfa.c`); **K = 8
+  alone does NOTHING for K22**, whose tower is all `{0,2}` counts and so sits
+  below K entirely — a downward SAFETY CLAMP on K is what makes counter-K the
+  real fix the K22 entry promises; and the owed E-5 step charge must be
+  strategy-INVARIANT (charged on every rung including replication) or it turns
+  the lane's own pcrec-vs-pcrec differential red by construction. Also records
+  the measured finding that possessification does NOT stop a bounded repeat
+  replicating (1,939 vs 1,997 lines at `{0,64}`), so counter-K must cover the
+  possessive arm or D47.1's possessify-first order becomes a size trap. See
+  its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
