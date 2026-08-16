@@ -185,3 +185,32 @@ a{5,5}c
 a{0,8}c
 a{2,}c
 a{0,}c
+
+# ---- pcrec's byte sets are EXACT where the reference probe approximates ----
+# [R24 S-F4]. The design's probe models python's parse tree, and python folds
+# case at COMPILE time — so the probe computes FIRST((?i)a) = {a}, misses `A`,
+# and its IGNORECASE handling is unsound in the direction that ADMITS too
+# much. pcrec is safe here STRUCTURALLY rather than by care: src/parse/parse.c's
+# `cls_casefold` folds case into every A_CLASS bitmap at parse time and every
+# literal is an A_CLASS, so by the time the analysis runs a caseless `a`
+# already carries both. The pairs below are the discriminating control — the
+# caseless spelling must DECLINE where the case-sensitive one possessifies.
+(?i)a{2,4}A
+a{2,4}A
+(?i)A{2,4}a
+A{2,4}a
+(?i)[ab]{0,3}B
+[ab]{0,3}B
+# CATEGORIES go the other way: the probe widens \d and \w to all bytes and
+# declines, where pcrec intersects real 256-bit bitmaps and can admit. §2.7
+# predicted the shipped analysis would be STRICTLY less conservative here.
+\w{3,5}-
+\w{3,5}a
+\d{2,4}-
+\d{2,4}5
+# ...and the EXACT-COUNT arm ignores the follow entirely, so `\d{4}5`
+# possessifies even though the follow is a digit: with a unique-iteration body
+# there is exactly one way to run four iterations, and m == n removes the
+# loop's only remaining freedom.
+\d{4}5
+\d{4}x

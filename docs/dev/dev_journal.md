@@ -8329,3 +8329,106 @@ changes this session). Open K-list: K2, K7, K9, K19. NEXT: Frank's six
 delivery seam §5.2 confirmed unchanged by the R24 corrections). Owed:
 mk_d27_cell.sh allowlist (R22); M4.7 wording pass; nested-lazy
 differential + libpcre2 on the lazy/census/$ sweeps (R24 NOTED list).
+
+## 2026-08-16 — [ENG-BREP] POSSESSIFICATION BUILT (possessify lane)
+
+D47.1's build order says the possessification pass comes first, and this is
+that lane: the §2.2 rule as a real pass over pcrec's own AST, both emitter
+rewrites, the D46/D47.3 observability-and-denial surface, and the validation
+the row rules for it. Branch `possessify`, worktree `worktrees/possessify`.
+
+**What landed.** `src/opt/possessify.c` implements the REPAIRED rule exactly —
+unique iteration ((U1) one-unambiguous + (U2) prefix-free on the body's
+Glushkov automaton), non-nullable body, and either `m == n` or FIRST(X)
+disjoint from a transitively-computed FOLLOW(Q) including FIRST of every
+enclosing loop body, with R24 S-F1's lazy-only non-nullable-remainder conjunct
+and D47.5's LIVE multiline gate on the `$`-follow exemption. It is a REWRITE
+(§2.8's shape), monotone, driven to a two-round fixpoint. Every verdict cell
+the design note states is reproduced: `(a|ab){0,4}c` and `(?:ab?){0,4}b`
+decline, `a{1,3}?` declines and `a{1,3}?b` does not, `\d{4}` and
+`(?:a|bc){0,4}d` and `z(ab)*y` possessify, `a{0,4}$` possessifies and
+`a{0,4}^` does not.
+
+**Two emitter shapes, because the two rungs owe different machinery.** A
+possessified CURSOR-rung loop emits the scan and nothing else — no resume
+frame, no low-water slot, no trail entry (the low-water slot exists for the
+retreat, and `pos` is still the loop's entry position throughout). A
+possessified FRAMES-rung loop keeps ONE frame for the whole loop via a new
+`RX_CUT` primitive that truncates the resume stack at each COPY BOUNDARY —
+never inside a copy, because a one-unambiguous body still needs its own frames
+to FIND its match (`(?:a|bc)` on "bc" tries `a` first). Deleting the pushes is
+not available: in this VM an optional copy's frame serves the retreat AND the
+"this copy cannot run, leave the loop" exit, and only the first is dead.
+
+**The preference disappears under a positive verdict**, and that is the
+analysis's conclusion rather than a shortcut: on the disjointness arm a LAZY
+loop is FORCED to the same maximal exit a greedy one tops out at, because at
+any non-maximal exit the body could iterate again, so that byte is in FIRST(X)
+and by disjointness the follow cannot begin there — and the lazy conjunct is
+what rules out the match simply ENDING there. One emitted shape, both
+preferences.
+
+**Measured.** Corpus census (committed producer, `LC_ALL=C`): 226 of 1,784
+SOURCE quantifiers possessified against §2.6's post-R24 183 of 1,725; 577 of
+725 corpus patterns DFA-routed and never reaching the pass, against §7's
+predicted 613 of 756. Differential: 131 patterns, 56,391 pattern-subject-
+startpos cells, 0 divergences, 83 patterns possessified. Corpus: 1,028
+oracle-verified cases, every expectation agreed by python3 `re` AND libpcre2.
+Byte-identity: all 519 verdict-free corpus patterns emit identical C with the
+pass on and off. `rx_info`: `(x)(?:a|bc)+d` goes from a stamped 512-byte
+`subject_ceiling` to an honest "no limit", which is §7's prediction as a
+measurement.
+
+**Four findings, and every one came from running something outside where it
+was comfortable.**
+
+1. **Sabotage S48 came back UNDETECTED** — the enclosing-loop FOLLOW term
+   dropped, and nothing failed. The finding was about the POPULATION, not the
+   term: every nested cell in the first pattern file put a NON-NULLABLE item
+   after the inner quantifier, a shape where the term is merely conservative.
+   A generated search over an 18,480-pattern nested family found 7,553
+   verdict-changing patterns and 44 WRONG SPANS in a 1,259 sample; the
+   discriminating shape puts the inner quantifier at the END of the enclosing
+   body. Twelve witnesses added, smallest `(?:a{1,2}){2,2}b`; S48 now DETECTED.
+2. **This lane reproduced R24 M-F1's own collation bug**, in the test script
+   written the same week the lesson was recorded: `sort -u` without `LC_ALL=C`
+   reported 470 distinct corpus patterns where there are 793, so a third of
+   the population was silently missing from the do-or-die and byte-identity
+   gates. A locale is an instrument, and knowing that is not the same as
+   remembering it.
+3. **`make test` went RED on tests/vm's P-3 CONTRAST — D46's own scenario,
+   arriving exactly as D46 predicted.** The contrast exists to prove the check
+   above it measures the PREFILTER; possessification landed a rung ABOVE the
+   prefilter and captured the case, because `(a*)b` possessifies and the
+   prefilter-free build now answers in one forward pass instead of burning the
+   step budget. The check went RED while the thing it guards got strictly
+   better. D46's remedy applied verbatim: the contrast now DENIES the rung
+   above it, and the win is pinned as its own new check.
+4. **"The failure surfaces must agree" is a claim about the INTERSECTION of
+   the two declared limits**, found by a throughput cell run past the denied
+   build's ceiling that returned two different answers and looked for a moment
+   like a divergence. The boundary is EXACT: the two builds agree at 511 bytes
+   and part at 512, the denied build's stamped `subject_ceiling` to the byte.
+
+**Reported deviations, not silently taken.** (a) The pass is driven from
+`pcrec_select_engine`'s tail on the CHOSEN engine rather than registered in
+§2.8's `discharge` slot: that hook's contract is "rewrite so the engine
+forcing no longer applies", which possessification cannot do, and the fixpoint
+only reaches it when VM-FORCED — so registering there would possessify a
+capture-bearing pattern and skip a capture-free one built with `--engine=vm`.
+(b) `PCREC_NO_POSSESSIFY` is MASKED out of the emitted `rx_info.flags`: a
+strategy denial changes nothing the reflection surface describes, and stamping
+it would have forced the byte-identity gate to filter a known-differing line —
+the check-design failure this project has recorded twice. (c) A possessified
+UNBOUNDED loop with captures in its body still allocates the default 1,024
+frames rather than its true requirement of two, because one `Cost.unbounded`
+flag sizes both the frame and trail arrays and the trail genuinely still grows
+per iteration. Correct and over-allocated, not wrong; splitting the flag is a
+small follow-on nobody needs yet.
+
+**Owed / next.** Module `assertions` inherits D47.5's obligation (a `(?m)`
+pattern whose `$`-follow quantifier must NOT possessify) — the gate is live in
+the code and has no population to test against today. §2.7's subsumption
+reasoning is still deliberately not done (`[ab]{0,4}b?c` declines). The rest of
+D47.3's deny family (`-fno-counter`, a rung selector, the K parameter) lands
+with the strategies it denies.
