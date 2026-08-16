@@ -8253,3 +8253,79 @@ reports nothing to ratchet). Open K-list: K2, K7, K9, K19. Residual
 owed: the §4.6 capture-offset differential (short lane); mk_d27_cell.sh
 allowlist; M4.7 wording pass. HEAD pushed at session close; wake.md
 rewritten for the twenty-fourth.
+
+## 2026-08-15/16 (EDT), twenty-fourth session — [ENG-BREP] design note: built, merged, PANELED (R24), fixed; K18 §4.6 capture differential DISCHARGED
+
+Two lanes launched from wake.md's cleared queue, both landed and merged;
+one D6 panel (R24) convened, compiled, and its dispositions applied by
+the note's own author lane — all in one session.
+
+**Lane 1, k18-capdiff (sonnet):** the K18 note §4.6 capture-offset
+differential. 526 capture-bearing patterns on the K18 axes, 16,081
+cells, 0 disagreements four ways (default build vs python re, vs
+libpcre2, vs --engine=vm; oracle-vs-oracle). The mechanistic finding is
+the keeper: emit_vm.c's hybrid entry consumes only the DFA's computed
+START (the VM re-derives end + every capture), and the reverse machine
+runs prune=0 where K18's defect requires the prune path — so no
+capture-visible K18-class defect can exist under the current wiring.
+Positive controls on a REAL pre-fix binary (9d39b97 scratch build):
+first corpus honestly 0 (disclosed, not discarded), R23 SEQ-family
+corpus 1,070 diverging cells — every one END-only, confirming the
+mechanism experimentally. Merge 415587e; §4.6's captures bullet
+back-annotated DISCHARGED (271e0dd). No known_issues row owed. Lane
+process note: it repeatedly idled mid-landing while its own background
+runs were in flight — four pings needed; the deliverable was worth it.
+
+**Lane 2, eng-brep (opus):** the [ENG-BREP] design note against the plan
+row's ruled question order (possessify → rung-select → counter-K).
+Merged a2d0306: 992 lines + 9 probes + archived outputs. Four
+refutations, three of the plan row's own claims: disjointness-alone
+possessification UNSOUND (117 counterexamples, repaired with
+unique-iteration = one-unambiguous + prefix-free); a zero-width
+assertion breaks the first-set model; the row's last-iteration capture
+derivation wrong on 1,799/15,036 (repaired to a backward scan, 0);
+third-amendment consequence (b) reported NOT established (nfa.c
+replicates independently of the emitter). Recommendation: K=8, both
+curves agreeing (knee ≈ 16).
+
+**R24 panel (3 read-only critics: soundness/opus, measurements/sonnet,
+consistency/sonnet), compiled in reviews/2026-08-15-r24-eng-brep.md:**
+the central greedy rule HELD against libpcre2 (0/5,016×260, closing §8
+item 6's gap from outside) and the transitive-FOLLOW line held under a
+42,336-pair attack; the LAZY extension was REFUTED (316 cells both
+oracles — the note's probe structurally skipped lazy rows and nothing
+disclosed the unasked half); five narrowings ($ safe iff !multiline,
+gate must be LIVE; §3.4's dropped zero-iteration clause = 42% of its
+own validation population; caseless probe model; §6 instrument scope;
+rung-census figures). One new upstream row U9 (PCRE2 10.46 won't
+backtrack into a preceding item past a possessive bounded group
+repeat). Fix lane (the author, resumed, worktree eng-brep-r24) applied
+all ten dispositions, merge 9c7a257 — and found the ROOT CAUSE of every
+census discrepancy: an uncommitted sort -u under a UTF-8 locale whose
+collation merges regexes differing only in punctuation (11→15,
+311/111/96→398/191/148); plus §3.3's "cursor" row had been measuring
+the DFA (non-capturing pattern never reaches the VM). The lazy conjunct
+moves the corpus census 18%→17%; the realistic set is unmoved — it
+contains no lazy quantifiers. probe_cell33.sh now reads the engine from
+--emit-ir per row so a cell cannot claim a rung the compiler didn't take.
+
+**Lessons.** (1) The blindness pattern recurred in its purest form yet:
+the note's differential was clean on greedy because greedy structurally
+cannot expose the lazy defect, and the helper returned None for lazy
+rows without saying half the question was unasked. An instrument must
+disclose its own skips. (2) A locale is an instrument: sort -u under
+en_US.UTF-8 silently merged distinct regexes — count with exact
+equality, always. (3) A row can misreport its own engine: verify with
+--emit-ir per cell, not by intent. (4) The three-way oracle rule earned
+itself on a measurement: a two-way python check on §6's own family
+would have raised a 106-cell FALSE alarm against pcrec ((|a){m,n}
+capture semantics).
+
+**State at close:** HEAD 9c7a257 + close bookkeeping, pushed. Smoke 6/6
+after every merge (three merges, serialized). No worktrees, no lanes.
+Corpus counts unchanged (all four merges docs-only — no src/ or tests/
+changes this session). Open K-list: K2, K7, K9, K19. NEXT: Frank's six
+[ENG-BREP] §9 rulings; then [M4.6] (K18 gate discharged; possessify
+delivery seam §5.2 confirmed unchanged by the R24 corrections). Owed:
+mk_d27_cell.sh allowlist (R22); M4.7 wording pass; nested-lazy
+differential + libpcre2 on the lazy/census/$ sweeps (R24 NOTED list).

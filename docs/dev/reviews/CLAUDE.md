@@ -315,6 +315,27 @@ Two rules earned the hard way and enforced here:
   verbatim); the semantics critic's toolkit archived at
   docs/design/k18_measurements/r23_semantics/.
 
+- **2026-08-15-r24-eng-brep.md** — R24, panel on the [ENG-BREP] design
+  note, run the same session the note was written and merged. The central
+  result HELD and was strengthened (the repaired greedy possessification
+  rule at 0 counterexamples against libpcre2 too — closing the note's own
+  §8 gap from outside — and the transitive-FOLLOW line surviving a
+  42,336-pair attack with failing-direction controls); the note's LAZY
+  extension was REFUTED (316 cells both oracles; the note's own probe
+  structurally skipped every lazy row and nothing said half the question
+  was unasked), §3.4's derivation had dropped its zero-iteration clause
+  (42% of its own validated population), and every rung-census "distinct"
+  figure was an undercount with ONE cause found at fix time — an
+  uncommitted `sort -u` under a UTF-8 locale, whose collation merges
+  regexes differing only in punctuation. Fixes applied by the note's own
+  author lane same session (merge 9c7a257), including the corpus census
+  moving 18%→17% under the repaired rule and engine_m4.md §6.3/§6.4 —
+  which still stated the refuted rule as "designed, built M4.6" —
+  annotated in place both directions. One new upstream row (U9: PCRE2
+  10.46 won't backtrack into a preceding item after a possessive bounded
+  repeat of a group — python-possessive and PCRE2-possessive are not
+  interchangeable oracles). §9 carries SIX rulings for Frank.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 

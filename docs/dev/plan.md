@@ -153,7 +153,15 @@ stated terms.
   note paneled (R23) and BUILT by the k18-rewrite lane ([K18-FIX] in
   plan_completed.md; corpus 1704 → 3198); [ENG-BREP] alongside it;
   struct rx_info spelling + K19 residual rulings open with Frank.
-- [ENG-BREP] STATE:started (2026-08-15, twenty-fourth session — design-note lane in flight, worktree eng-brep) — BOUNDED-REPEAT EMISSION STRATEGY: the
+- [ENG-BREP] STATE:started (2026-08-15/16, twenty-fourth session — DESIGN
+  NOTE BUILT, PANELED R24, dispositions applied: docs/design/
+  eng_brep_design.md + reviews/2026-08-15-r24-eng-brep.md. The note's §9
+  asks SIX rulings of Frank — ladder order, K=8, the four forcing flags,
+  striking third-amendment consequence (b) (§1.4 reports it NOT
+  established: nfa.c's A_REP replicates independently of emit_vm.c), the
+  $-exemption's v1 shipping, the lazy conjunct's 20 false declines.
+  IMPLEMENTATION blocked on those rulings; note the R24-corrected census
+  is 17%/82%) — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but
   strictly the result was intractable, so not"). Today the VM emits
