@@ -400,7 +400,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M6 — PCRE feature modules
 
-- [M6.0] STATE:not-started — milestone (expand on arrival): classes+ (\d \w \s, POSIX classes), assertions (\b \A \z, mid-pattern $), modifiers, lookaround, backrefs, atomic groups. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m))
+- [M6.0] STATE:not-started — milestone (expand on arrival): assertions (\b \B, \A \z, (?m) multiline, \G, \K — module `assertions` per the shipped diagnostics), lookaround, backrefs, atomic groups + possessive-quantifier SPELLINGS (module `atomic-groups`; note the possessify OPTIMIZATION already exists internally — this is the surface syntax), named groups (module `named-groups`). ROW TEXT CORRECTED 2026-08-16 (manager probe, twenty-seventh session): classes+ (\d \w \s, POSIX [[:...:]]), (?i), (?s), and mid-pattern $ are ALREADY IMPLEMENTED and compiling on HEAD — they are not M6 content; what remains is the list above. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m))
 
 (2026-08-13: the classes+ and modifiers halves already landed as gated
 modules — MOD-0.3 and MOD-0.5, see docs/dev/plan_completed.md. Remaining:
@@ -603,6 +603,38 @@ including V-G/V-H (added this session).
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
 
+- [ENG-PGO] STATE:not-started — PROFILE-GUIDED GENERATION (Frank,
+  2026-08-16, twenty-seventh session — promoted from the parenthetical
+  inside [SIMD-META] to its own row at his ask; the SIMD-META exemplar-axis
+  mention now points here). The idea: compile a pattern exactly as today,
+  but with an opt-in `--profile` emission mode whose matcher TRACKS HOW IT
+  RAN on the user's exemplar inputs — a PROFILE, not a trace: counters at
+  the observation points the emitter already names (D46 stamp points,
+  DD-8's tracer sites; same structural constraint — derived from the
+  structure the emitter walks, never a parallel description). Stats out
+  (candidate-start density, prefilter hit/miss, per-arm hit distribution,
+  iteration-count histograms per quantifier, match/fail mix, subject byte
+  frequencies), then a RECOMPILE-WITH-STATS channel feeds them back as
+  generation inputs. SCALAR CUSTOMERS EXIST — this row is not
+  SIMD-contingent: alternation/trie arm ordering by hit frequency;
+  prefilter literal choice by measured-rarest byte (scalar memchr benefits
+  identically to any SIMD scanner); the §8.1 capture-walk sink knob
+  (eager/n-step/accept-time is a match/fail-mix question); [M4.6] engine
+  selection; step-budget sizing near K23-style boundaries. RELATION TO
+  F-1/D18, stated so the tension is on record as a resolution: per-pattern
+  adaptive choices keep getting deferred because an axis must earn itself
+  with a measurement — PGO is the EARNING MECHANISM, the standing vehicle
+  for every deferred adaptivity question ([ENG-CLAMP], adaptive K, arm
+  order), so those rows cite this one instead of re-inventing a
+  measurement channel. SEQUENCING: design sketch is panel-eligible any
+  time (thinking is cheap); implementation AFTER the M4 spine closes and
+  WITH [BENCH-1] (the profile without the bench is a dial with no meter —
+  BENCH-1's prioritizer is also this row's proving ground), BEFORE the OPT
+  waves it would guide. The stats interface is designed scalar-first;
+  later SIMD backend variants ([SIMD-META] hypothesis 2's density/
+  statistics dependence) consume the SAME channel — which is exactly the
+  "best non-SIMD approach, then backend variants on top" architecture
+  Frank ruled.
 - [ENG-CLAMP] STATE:not-started — the DEFERRED per-quantifier K downshift
   (Frank, 2026-08-16, twenty-seventh session: F-1 ruled strict-§4.5 on the
   R25 panel — decisions.md D47 ADDENDUM has the full ruling and rationale).
