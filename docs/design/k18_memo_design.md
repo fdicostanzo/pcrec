@@ -1242,6 +1242,56 @@ The K17 methodology, with the additions this lane's own findings demand.
     interaction with item 11: `pcrec_compile()` on a non-main thread gets
     whatever stack that thread was created with, which is frequently less than
     8 MB, and TS-3 is in the standing battery.
+
+    > **REWRITE-LANE DECISION (2026-08-15, k18-rewrite): ITERATIVE — the
+    > option this item prefers — and the reason it is affordable is a
+    > REPRESENTATION change, not a transliteration of the recursion into an
+    > explicit frame stack.**
+    >
+    > A literal iterative rewrite of `proto_a.py`'s `clo_visit` would have to
+    > push a frame carrying the saved open-loop stack's ENTRIES (S3's
+    > blocker), which is O(d) bytes per frame across Θ(d²) frames — Θ(d³)
+    > memory, worse than the thing it replaces. It is not needed, because
+    > **the prototype's `open[]` array is a redundant materialisation of the
+    > interned context chain.** The prototype maintains, everywhere and
+    > without exception, `open[i].ctx == lctx_intern(open[i-1].ctx,
+    > open[i].loop)` and `cl->ctx == (depth ? open[depth-1].ctx : 0)`. So the
+    > whole open-loop stack is recoverable from the single integer `ctx` by
+    > walking `LCtx.parent`, and the two operations the array existed for
+    > become chain operations:
+    >
+    > * the redirect's scan "find loop `s` in `open[depth-1 .. 0]`" is "walk
+    >   `ctx`'s parent chain for a node whose `loop == s`" — same order, same
+    >   nearest-match rule;
+    > * the redirect's truncate "`depth = at; ctx = open[at-1].ctx`" is
+    >   "`ctx = that node's parent`".
+    >
+    > The chain is IMMUTABLE (interning never rewrites a node), so **S3's
+    > ancestor-clobber defect cannot be expressed in this representation at
+    > all**: there is no entry to overwrite, and "restore the entries" is
+    > discharged by carrying one `int` rather than by a `memcpy`. That is the
+    > load-bearing invariant of the design preserved by construction rather
+    > than by a save/restore the next editor can forget.
+    >
+    > With per-frame state down to one int, the recursion becomes an explicit
+    > LIFO of deferred branches — `{state, ctx, pending-push}`, 12 bytes — in
+    > a per-compile growable array: at a split, push the deferred branch with
+    > the `ctx` it must resume under and continue into the preferred branch;
+    > when a path dies, pop. That is DFS preorder, which is exactly what the
+    > recursion computed, so ANSWERS are unchanged (measured, not argued: see
+    > the landing record). `clo_walk` then contains NO recursion, so C-stack
+    > depth is O(1) in pattern nesting — better than the shipped closure's
+    > Θ(d), not merely equal to it — and the asan-at-depth-210 failure, the
+    > 1.15x plain-build headroom and item 11's non-main-thread hazard all
+    > vanish together. The Θ(d²) frames become Θ(d²) × 12 bytes of heap
+    > (≈380 KB at the parser's cap), which is bounded by the expansion count
+    > the memo already bounds.
+    >
+    > The other two options are NOT taken. "Refuse above a measured depth"
+    > would create exactly the D46-observable selection point §6 ruling 1 was
+    > withdrawn to avoid, for a pattern class that compiles in 0.35 s.
+    > "Size the stack deliberately" is unavailable in a library: TS-3's
+    > `pcrec_compile()` runs on threads whose stacks the caller chose.
 13. **[R23 S4] A comment obligation on the `marks_next` 2^32 wrap.** The
     empty-context fast path threads a SECOND `Marks` whose generation is
     advanced in lockstep with the first, so a wrap is safe only because both

@@ -36,6 +36,34 @@ gen_timeout_secs() {
     esac
 }
 
+# pcrec_timeout_secs — the budget for ONE pcrec INVOCATION on the current axis.
+#
+# WHY THIS EXISTS SEPARATELY (R23 V1, the K18 design note's §5 item 12).
+# tests/harness/run.sh wrapped pcrec's own invocation in a bare, hardcoded
+# `timeout 60`. That predates D45 and sat OUTSIDE its mechanism: the budget
+# above is derived from `-fsanitize=` in the flags of a GENERATED-CODE compile,
+# and pcrec's own invocation passes no such flags — so the one compile a change
+# to the compiler can actually slow down had the one budget that did not scale
+# with the axis, and blowing it is scored HARNESS FAILURE rather than a graceful
+# skip. K18's path-sensitive closure is exactly such a change, so it folds that
+# timeout in here rather than leaving the gap documented as acceptable.
+#
+# WHY THESE NUMBERS, and they are NOT the generated-code ones. pcrec's own
+# compiles are a different quantity: sub-millisecond for ordinary patterns, and
+# MEASURED 2026-08-15 at 0.38 s plain / 0.84 s asan / 0.85 s ubsan for the
+# worst case in the corpus — `tests/base/k18_deep_nesting.rxt`'s 250 nested
+# nullable stars, which is the deepest nesting the parser will accept at all
+# (PCREC_MAX_GROUP_DEPTH). 20 s and 60 s are ~50x and ~70x that, which is
+# headroom for a slow box without being the "still running, not failed" hole
+# D45 exists to close. Same revisit-when as above: if a LEGITIMATE pattern is
+# measured needing more, raise the default WITH the measurement recorded.
+pcrec_timeout_secs() {
+    case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
+        *-fsanitize=*) printf '%s\n' "${PCRECTIMEOUT_SAN:-60}" ;;
+        *)             printf '%s\n' "${PCRECTIMEOUT:-20}" ;;
+    esac
+}
+
 # gen_cc <case-label> <compiler-argv...>
 #
 # Runs one compile of GENERATED C under the budget. Always leaves the

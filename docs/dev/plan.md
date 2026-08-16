@@ -149,8 +149,10 @@ stated terms.
   codegen 38, registry 168, PC-3 163, PC-4 62,872/0, trie 7,
   vm-identity 8, ir-listing 78, vm 28, thread 8, known_fail 1 (K18
   deliberate), mech 44 rows/0 undetected. Standing consequences:
-  [M4.6] gate = K18 design-first; [ENG-BREP] alongside it; struct
-  rx_info spelling + K19 residual rulings open with Frank.
+  [M4.6] gate = K18 design-first — **DISCHARGED 2026-08-15**, design
+  note paneled (R23) and BUILT by the k18-rewrite lane ([K18-FIX] in
+  plan_completed.md; corpus 1704 → 3198); [ENG-BREP] alongside it;
+  struct rx_info spelling + K19 residual rulings open with Frank.
 - [ENG-BREP] STATE:not-started — BOUNDED-REPEAT EMISSION STRATEGY: the
   counter rung (Frank, 2026-08-15, twenty-first session — queue
   placement ruled alongside M4.6; "sort-of an optimization, but

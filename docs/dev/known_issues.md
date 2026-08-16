@@ -3,7 +3,9 @@
 Confirmed correctness bugs in pcrec itself (distinct from docs/dev/upstream_issues.md,
 which tracks OTHER engines). Each has a minimal repro and a scheduled fix. Repros
 live in tests/known_fail/ (NOT run by `make test`, so the suite stays honest about
-what it certifies) and become passing regressions when fixed.
+what it certifies) and become passing regressions when fixed. That directory is
+EMPTY as of 2026-08-15: no confirmed bug is currently deferred with a repro on
+file.
 
 Status: `deferred` (scheduled) | `fixing` | `fixed` (moved to a passing corpus).
 
@@ -1182,7 +1184,7 @@ now exact.
 
 ---
 
-## K18 — OPEN, found 2026-08-14 (the K17 fix's own validation sweep)
+## K18 — FIXED 2026-08-15, found 2026-08-14 (the K17 fix's own validation sweep)
 
 **A second live tier-1 MISCOMPILE in the shipped DFA, the same root design
 fact as K1/K17 and NOT fixed by either: the empty-iteration redirect cannot
@@ -1354,6 +1356,128 @@ fast path, and it settles three things this entry left as expectations:
   alternation arm, not laziness** — see the correction under this entry's own
   control list. The guard corpus therefore also owes an ARM-ORDER axis, and
   the note's §5 item 1 specifies it.
+
+**FIXED 2026-08-15 (k18-rewrite lane, branch `k18-rewrite`).** `src/ir/dfa.c`:
+the epsilon closure is now PATH-SENSITIVE. The memo is keyed on (state,
+OPEN-LOOP CONTEXT) and the empty-iteration redirect fires on "this loop is
+OPEN on my path" rather than on "this state has been seen somewhere in this
+closure" — the design note's prototype A2, unchanged in semantics.
+
+**Mechanism.** A context is an interned chain: ctx 0 is the empty open-loop
+stack, every other ctx is (parent ctx, loop-entry state). Taking a loop's BODY
+edge opens the loop (interning a child context); a redirect pops the
+re-arrived loop AND everything above it by moving to that context's parent.
+The memo suppresses a re-arrival only at the same (state, ctx), so the second
+arrival at K18's already-seen ε state — which is now in a DIFFERENT context —
+survives, reaches the outer loop entry one hop later, and redirects to the
+ACCEPT at the priority position the empty iteration earns.
+
+Three properties of the implementation are worth reading before editing it:
+
+* **The empty-context fast path is not optional.** With the stack empty,
+  (state, 0) and `state` are the same key, so ctx 0 keeps the pre-K18
+  per-state stamp array. Without it a fuzz-found pattern did byte-identical
+  work 7x slower, all of it one hash probe replacing one array access 15.7
+  million times (note §2a).
+* **`clo_walk` has NO recursion.** The design as prototyped descends once per
+  CONTEXT rather than once per state, which measures 31,377 C frames at the
+  parser's 250-paren nesting cap against the old closure's 253 — ~7 MB of the
+  default 8 MB stack, and an outright stack overflow under AddressSanitizer at
+  nesting depth 210 (§5 item 12, the one defect R23's own re-measurement
+  found). The split's preferred branch now pushes its deferred branch onto an
+  explicit LIFO instead, so C-stack depth no longer depends on the pattern.
+  `tests/base/k18_deep_nesting.rxt` is the guard, since the rest of the corpus
+  tops out at loop-nesting depth 4.
+* **The chain is immutable, and that is load-bearing.** The design's hardest
+  prototype bug (R23 S3) was a frame restoring the open-loop stack's depth but
+  not its ENTRIES, which silently lost redirects — the very defect being
+  repaired, reintroduced by the repair. A deferred branch here carries its
+  context as one interned int that nothing can rewrite, so the bug is not
+  expressible. Both of §3's invariants ship as live `DFA_INVARIANT` aborts:
+  the redirect's open loop is the chain top, and no already-open loop is ever
+  pushed.
+
+**Guard corpus** (`tests/base/`, moved and grown in the same commit as the fix
+— the known-fail ratchet enforces that pairing):
+
+* `k18_empty_exit_through_seen_eps.rxt` — the original 165 acceptance cases,
+  moved out of `tests/known_fail/` (26 of which failed before this fix);
+* `k18_arm_order.rxt` — 54 patterns / 667 cases, the R23 S8 axis: every
+  diverging shape in BOTH alternation orders, greedy as well as lazy nullable
+  arms, the empty-alternative and concatenation forms that contain no lazy
+  quantifier at all, and nine over-reach controls including K17's own repro;
+* `k18_split_shapes.rxt` — 83 patterns / 609 cases, the `{0,2}`-bodied family
+  where the conflation happens at a SPLIT rather than an ε. This is the file
+  that matters most: the cheap two-line candidate repair passes all 165 of the
+  acceptance cases and gets all 98 of these cells wrong;
+* `k18_deep_nesting.rxt` — 8 patterns / 24 cases, the resource guard above;
+  also the deliberate GROW-PATH test for the three tables the repair adds
+  (31,627 contexts against initial capacities of 64 and 256), which neither
+  the corpus nor the fuzzer would otherwise drive past their first
+  allocation;
+* `k18_cost_gates.rxt` — 6 patterns / 29 cases whose point is COMPILE TIME
+  rather than spans, riding the harness's own per-invocation pcrec budget:
+  the fuzz-found witness that caught the design prototype's 7x
+  constant-factor regression on byte-identical work (a `perr` block — every
+  binary refuses it on the DFA state cap AFTER building 32,000 states), and
+  bounded-repeat × nullable-loop swept in k, the family that runs at
+  open-loop depth 1 and would therefore be invisible to any depth-based gate.
+
+1,329 new cases, every expectation generated from python3 `re` AND libpcre2
+10.46 with **zero disagreements** (D44's three-way rule). The full `.rxt`
+corpus goes **1,704 → 3,198 cases**.
+
+**Non-vacuity, per file, measured by running the PRE-FIX compiler against the
+new corpus** — a guard corpus its own bug passes is a control that could not
+have failed:
+
+| file | cases | pre-fix failures | post-fix |
+|---|---|---|---|
+| `k18_empty_exit_through_seen_eps.rxt` | 165 | 26 | 0 |
+| `k18_arm_order.rxt` | 667 | **62** | 0 |
+| `k18_split_shapes.rxt` | 609 | **63** | 0 |
+| `k18_deep_nesting.rxt` | 24 | 0 | 0 |
+| `k18_cost_gates.rxt` | 29 | 0 | 0 |
+
+The last two files are the deliberate exceptions and are marked as such: they
+guard RESOURCE classes, so their failure modes are a stack overflow under
+`make asan` and a blown compile budget, not a wrong span. They are
+sabotage-validated in those directions instead — the design's own prototype,
+built with the identical asan flags, dies with `stack-overflow` at nesting
+depth 210 and 250 where the shipped repair compiles both (0.84 s at 250 under
+asan), and the same prototype takes 13.5 s on the cost file's `perr` witness
+against the shipped 0.62 s.
+
+The K18 fuzz TRAP TEMPLATES (`tests/fuzz/fuzz.py`, nine rows beside K17's
+six) are validated the same way and in the direction that matters:
+exhaustively expanded they give 64 distinct patterns / 543 cells, **56
+divergences against the pre-fix compiler and 0 against the fixed one**. Both
+fuzzer seeds run to completion on the fixed compiler with 0 content
+divergences, 0 accept/reject divergences and **0 pcrec compile timeouts of
+400 patterns each** — a compile that never finishes is invisible to a
+differential that compares answers, so the budget is reported as a count.
+
+**Validation.** Emitted-source blast radius against the pre-fix compiler:
+**622 corpus patterns, 555 accepted by both, 547 byte-identical, 8 differing,
+0 accepted by only one — and the 8 are exactly the eight K18 shapes**, which
+is the design note's §4.2 prediction reproduced pattern for pattern. Over the
+lane's dense 18,858-pattern shape space: 18,609 identical, **249 differing**.
+Changed-cell direction against python3 `re`, both sweeps: **251 changed cells,
+251 old-wrong → new-right, 0 regressed, 0 both-wrong** (226 on the shape
+space, reproducing §4.3 digit for digit; 25 on the eight corpus patterns).
+Full `make test` green with the corpus grown by 1,494 cases (the 1,329 new
+plus the 165 activated); `make strict`,
+`make ubsan`, `make asan` (the deep-nesting case included), `make lint`,
+`make bench`, `make mech` green; the trie-identity gate run explicitly, since
+a path-sensitive closure over an epsilon graph the M2.8 trie CHANGES is
+exactly what that gate's erasure argument was not written for.
+
+**What this does NOT close.** The class is K1/K17/K18's shared root fact, and
+this repair addresses that fact rather than a shape — but the same sentence
+was written about K17. The honest statement is narrower: the closure now
+computes the empty-iteration rule as stated, the three known sub-cases (arrival
+AT a loop entry, arrival THROUGH a seen ε state, conflation at a SPLIT) are
+one mechanism, and the corpus above covers all three in both arm orders.
 
 ---
 

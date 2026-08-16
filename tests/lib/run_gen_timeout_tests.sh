@@ -78,6 +78,34 @@ else
     bad "D45 env overrides wrong: GENTIMEOUT->$b_env GENTIMEOUT_SAN->$b_envs"
 fi
 
+# ---- 1b. the same, for PCREC's OWN invocation (R23 V1) -------------------
+#
+# The harness's pcrec invocation carried a bare hardcoded `timeout 60` that
+# did not scale with the axis, which is the gap the K18 rewrite folded into
+# this file. Checked here for the reason section 1 exists at all: a budget
+# nothing asserts is a budget that quietly becomes a literal again. Hermetic
+# in the same way and for the same reason.
+paxis() {  # paxis <GENCFLAGS> <CFLAGS> <SANFLAGS> <TSANFLAGS> <PCRECTIMEOUT> <PCRECTIMEOUT_SAN>
+    GENCFLAGS="$1" CFLAGS="$2" SANFLAGS="$3" TSANFLAGS="$4" \
+    PCRECTIMEOUT="$5" PCRECTIMEOUT_SAN="$6" pcrec_timeout_secs
+}
+p_plain="$(paxis '-O1 -std=gnu11' '' '' '' '' '')"
+p_cf="$(paxis '-O1' '-fsanitize=address' '' '' '' '')"
+p_san="$(paxis '-O1' '' '-fsanitize=undefined' '' '' '')"
+p_env="$(paxis '-O1' '' '' '' 7 '')"
+p_envs="$(paxis '-fsanitize=address' '' '' '' '' 77)"
+if [ "$p_plain" = "20" ] && [ "$p_cf" = "60" ] && [ "$p_san" = "60" ] \
+   && [ "$p_env" = "7" ] && [ "$p_envs" = "77" ]; then
+    ok "R23 V1: pcrec's OWN invocation budget is axis-aware too (20s plain, 60s sanitizer, PCRECTIMEOUT/PCRECTIMEOUT_SAN overrides) — not the hardcoded 60 it used to carry"
+else
+    bad "pcrec budget wrong: plain=$p_plain cflags=$p_cf sanflags=$p_san env=$p_env envsan=$p_envs (expected 20/60/60/7/77)"
+fi
+if grep -qE 'timeout[ \t]+[0-9]+[ \t]+"\$PCREC"' "$ROOT_DIR/tests/harness/run.sh"; then
+    bad "R23 V1: tests/harness/run.sh has gone back to a hand-rolled numeric timeout on pcrec's own invocation"
+else
+    ok "R23 V1: no hand-rolled numeric timeout remains on pcrec's own invocation in the harness"
+fi
+
 # ---- 2. the wrapper FIRES, and says so ----------------------------------
 #
 # A real artifact, deliberately near the compiler-side cap, under a

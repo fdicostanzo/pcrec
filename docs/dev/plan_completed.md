@@ -1832,3 +1832,43 @@ Known M1 limitations (tracked for later milestones):
     Rung FORCING (D46's controllability half) may land here if cheap
     or ride [ENG-BREP]/[M4.6], whichever comes first — but the stamp
     itself is a close obligation.
+
+## 2026-08-15 (twenty-third session — the K18 rewrite)
+
+- [K18-FIX] STATE:completed 2026-08-15 (lane k18-rewrite, branch
+  `k18-rewrite`) — IMPL: the path-sensitive epsilon closure, built from
+  `docs/design/k18_memo_design.md` as amended by R23. Scheduled DESIGN-FIRST
+  at R21 close and gating [M4.6]; that gate is now DISCHARGED.
+  `src/ir/dfa.c`'s closure memo is keyed on (state, OPEN-LOOP CONTEXT) and
+  the empty-iteration redirect fires on "this loop is OPEN on my path",
+  with A2's empty-context fast path (ctx 0 keeps the pre-K18 per-state
+  stamp array, which is worth 7x on a real pattern for byte-identical
+  work).
+
+  **§5 item 12, the note's one open decision, is answered ITERATIVE** —
+  and the reason it is affordable is a representation change, written up
+  in the note at the item and in the code: the prototype's `open[]` array
+  is a redundant materialisation of the interned context chain, so the
+  chain becomes the open-loop stack's only representation. R23 S3's
+  per-frame ENTRY save collapses to one carried int and its
+  ancestor-clobber defect stops being expressible; per-frame state then
+  fits in a 12-byte deferred-branch record, so the Θ(d²) recursion
+  becomes an explicit LIFO and C-stack depth stops depending on the
+  pattern at all (better than the pre-K18 Θ(d), and it removes item 11's
+  non-main-thread hazard rather than documenting it). Refusing above a
+  depth was rejected as a D46-observable selection point for a class that
+  compiles in 0.37 s; deliberate stack sizing is unavailable in a library.
+
+  All thirteen §5 items discharged. Corpus 1704 → 3198 cases (+1494: the
+  165 activated from `tests/known_fail/` plus 1,329 new on the arm-order,
+  `{0,2}`-split, deep-nesting and cost-gate axes, every expectation agreed by
+  python3 `re` AND libpcre2 10.46, and the nine K18 fuzz trap rows validated
+  at 56 divergences pre-fix / 0 post-fix). Blast radius: 547 identical / 8 differing of
+  555 compiling corpus patterns, the 8 exactly the K18 shapes; 249 of
+  18,858 shape-space patterns. Direction: 251 changed cells, 251
+  old-wrong → new-right, 0 regressed, 0 both-wrong. Non-vacuity measured
+  per guard file against the PRE-FIX compiler (26 / 62 / 63 failures).
+  Full close battery green: test (parallel and serial PROCS=1), strict,
+  ubsan, asan, lint, bench, mech, plus the trie-identity gate run
+  explicitly (500 patterns + the `-i` sweep, 0 differing) because that
+  gate's erasure argument was written for a path-INSENSITIVE closure.
