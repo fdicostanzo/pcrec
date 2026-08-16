@@ -1,0 +1,96 @@
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 22
+
+== correctness ==
+PASS  alt_names 11094 cases
+
+== bench: alt_names (pattern "fred|bob|janet|frederick" ci=0 nbr=4 k=3..9) ==
+  libc ref: 4 x memmem (earliest)   fold+mm ref: none   speedup vs 4 x memmem (earliest)
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.092      0.958          -      4.347     4.54x
+  text           64 KiB      0.093      0.965          -      4.471     4.64x
+  text            1 MiB      0.093      0.975          -      4.480     4.59x
+  text            8 MiB      0.092      0.970          -      4.415     4.55x
+  first-byte      4 KiB      0.088      1.269          -      4.350     3.43x
+  first-byte     64 KiB      0.088      1.310          -      4.475     3.42x
+  first-byte      1 MiB      0.087      1.311          -      4.484     3.42x
+  first-byte      8 MiB      0.087      1.277          -      4.385     3.43x
+  prefix          4 KiB      0.106      0.760          -      4.356     5.73x
+  prefix         64 KiB      0.106      0.755          -      4.456     5.90x
+  prefix          1 MiB      0.104      0.792          -      4.460     5.63x
+  prefix          8 MiB      0.105      0.787          -      4.405     5.60x
+  fl-trap         4 KiB      0.094      1.260          -      4.363     3.46x
+  fl-trap        64 KiB      0.094      1.312          -      4.473     3.41x
+  fl-trap         1 MiB      0.094      1.311          -      4.480     3.42x
+  fl-trap         8 MiB      0.092      1.271          -      4.367     3.44x
+  bytes           4 KiB      0.105      0.987          -      4.380     4.44x
+  bytes          64 KiB      0.105      1.050          -      4.471     4.26x
+  bytes           1 MiB      0.103      1.026          -      4.485     4.37x
+  bytes           8 MiB      0.103      1.022          -      4.404     4.31x
+
+1 matcher(s) selected, 0 failed correctness
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 22
+
+== correctness ==
+PASS  alt_mixed 11090 cases
+
+== bench: alt_mixed (pattern "bob|[0123456789]{5}|ted" ci=0 nbr=3 k=3..5) ==
+  libc ref: none   fold+mm ref: none   speedup vs oracle
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.123          -          -      5.479    44.43x
+  text           64 KiB      0.124          -          -      5.880    47.34x
+  text            1 MiB      0.124          -          -      5.909    47.53x
+  text            8 MiB      0.124          -          -      5.658    45.51x
+  first-byte      4 KiB      0.141          -          -      5.574    39.52x
+  first-byte     64 KiB      0.141          -          -      5.876    41.75x
+  first-byte      1 MiB      0.139          -          -      5.889    42.24x
+  first-byte      8 MiB      0.139          -          -      5.734    41.23x
+  prefix          4 KiB      0.140          -          -      5.506    39.25x
+  prefix         64 KiB      0.141          -          -      5.872    41.57x
+  prefix          1 MiB      0.138          -          -      5.872    42.67x
+  prefix          8 MiB      0.140          -          -      5.638    40.28x
+  fl-trap         4 KiB      0.128          -          -      5.430    42.41x
+  fl-trap        64 KiB      0.129          -          -      5.886    45.55x
+  fl-trap         1 MiB      0.130          -          -      5.897    45.30x
+  fl-trap         8 MiB      0.129          -          -      5.639    43.67x
+  bytes           4 KiB      0.129          -          -      5.475    42.50x
+  bytes          64 KiB      0.131          -          -      5.903    44.96x
+  bytes           1 MiB      0.131          -          -      5.901    45.14x
+  bytes           8 MiB      0.131          -          -      5.662    43.32x
+
+1 matcher(s) selected, 0 failed correctness
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 22
+
+== correctness ==
+PASS  alt_plus 11088 cases
+
+== bench: alt_plus (pattern "bob|[0123456789]+|ted" ci=0 nbr=3 k=1..3) ==
+  libc ref: none   fold+mm ref: none   speedup vs oracle
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.122          -          -      9.924    81.39x
+  text           64 KiB      0.125          -          -     10.730    86.11x
+  text            1 MiB      0.123          -          -     10.789    87.69x
+  text            8 MiB      0.122          -          -     10.259    83.81x
+  first-byte      4 KiB      0.124          -          -      9.907    79.87x
+  first-byte     64 KiB      0.124          -          -     10.762    86.76x
+  first-byte      1 MiB      0.125          -          -     10.795    86.50x
+  first-byte      8 MiB      0.124          -          -     10.296    83.21x
+  prefix          4 KiB      0.141          -          -      9.934    70.57x
+  prefix         64 KiB      0.141          -          -     10.769    76.50x
+  prefix          1 MiB      0.141          -          -     10.771    76.54x
+  prefix          8 MiB      0.138          -          -     10.338    74.94x
+  fl-trap         4 KiB      0.123          -          -      9.928    80.59x
+  fl-trap        64 KiB      0.129          -          -     10.771    83.57x
+  fl-trap         1 MiB      0.129          -          -     10.798    83.80x
+  fl-trap         8 MiB      0.126          -          -     10.259    81.24x
+  bytes           4 KiB      0.138          -          -      9.919    71.86x
+  bytes          64 KiB      0.139          -          -     10.766    77.65x
+  bytes           1 MiB      0.138          -          -     10.796    78.00x
+  bytes           8 MiB      0.137          -          -     10.303    75.00x
+
+1 matcher(s) selected, 0 failed correctness

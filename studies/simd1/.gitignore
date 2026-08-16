@@ -1,0 +1,6 @@
+*.o
+harness
+findall
+coldmap
+runext
+coldmap.dat

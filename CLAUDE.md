@@ -67,6 +67,8 @@ tier, and PCRE2 is a moving target with no specification.
 - `docs/testing.md` — .rxt test format and harness usage.
 - `lib/pcrec.h` — the only public header. `src/` is internal (core/, parse/,
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
+- `studies/` — adopted exploratory work (reference material, own Makefiles,
+  never built or tested by pcrec's make). See studies/CLAUDE.md.
 
 ## Conventions
 

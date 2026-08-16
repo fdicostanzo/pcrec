@@ -8382,3 +8382,25 @@ serialize through the manager; watchdog re-armed for both.
 State at entry-write: HEAD f7ae5f9 (D47) pushed; worktrees brep-guards
 and possessify in flight; [ENG-BREP] row updated to reflect rulings +
 lanes. Open K-list unchanged: K2, K7, K9, K19.
+
+## 2026-08-16 (EDT), continuation — studies/simd1 adopted (Frank's SIMD exploration)
+
+Frank's precompiled-SIMD-matcher exploration (~/simd/test1, built with a
+separate Claude session) reviewed and adopted as studies/simd1/ — the
+repo's first studies/ entry (reference material, own Makefile, never in
+pcrec's build/test). 580 KB of sources + the findings doc
+(precompiled-simd-matchers.md, §1–§16) + archived bench transcripts;
+binaries, .o files and the 1 GiB coldmap.dat gitignored. Review verdict:
+the methodology is house-grade (universal oracle, guard pages both ends,
+red-teamed detectors, an adversary per optimization, corpus scrubbing)
+and the findings are measured with refutations recorded inline.
+
+Direct pcrec connections flagged in the study's CLAUDE.md: §12 Study B
+measured blockwise shift-and LOSING 2–6× to AND-chains on Zen 1 — which
+bears directly on engine_m4/DD-9's worklist naming shift-and the
+algorithmic candidate for bench case (f); §14's find-all pre-searcher
+contract is the DFA-prefilter/anchor territory of M4.6 and V-C; §16 is
+Frank's exemplar-statistics idea (profile-guided generation) developed
+into a statistic→knob table.
+
+In flight, unchanged: possessify (opus) and brep-guards (sonnet) lanes.

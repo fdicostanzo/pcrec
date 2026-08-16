@@ -1,0 +1,315 @@
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: enzyme_chain (pattern "enzyme" ci=0 k=6) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.297      4.058          -     11.749     2.90x
+  text           64 KiB      0.298      4.848          -     11.718     2.42x
+  text            1 MiB      0.297      4.774          -     11.728     2.46x
+  text            8 MiB      0.296      4.330          -     11.041     2.55x
+  first-byte      4 KiB      0.260      6.297          -     11.670     1.85x
+  first-byte     64 KiB      0.257      6.888          -     11.733     1.70x
+  first-byte      1 MiB      0.260      6.790          -     11.761     1.73x
+  first-byte      8 MiB      0.260      5.409          -     10.991     2.03x
+  prefix          4 KiB      0.338     36.874          -     11.829     0.32x
+  prefix         64 KiB      0.339     45.559          -     11.648     0.26x
+  prefix          1 MiB      0.338     45.746          -     11.744     0.26x
+  prefix          8 MiB      0.338     24.153          -     11.030     0.46x
+  fl-trap         4 KiB      0.305      6.359          -     11.559     1.82x
+  fl-trap        64 KiB      0.301      6.879          -     11.721     1.70x
+  fl-trap         1 MiB      0.305      6.768          -     11.753     1.74x
+  fl-trap         8 MiB      0.304      5.871          -     11.047     1.88x
+  bytes           4 KiB      0.336      4.989          -     11.790     2.36x
+  bytes          64 KiB      0.335      5.086          -     11.725     2.31x
+  bytes           1 MiB      0.333      5.185          -     11.745     2.27x
+  bytes           8 MiB      0.334      4.580          -     11.065     2.42x
+  pf-trap         4 KiB      0.317      0.640          -     11.633    18.17x
+  pf-trap        64 KiB      0.323      0.641          -     11.750    18.33x
+  pf-trap         1 MiB      0.323      0.640          -     11.750    18.36x
+  pf-trap         8 MiB      0.321      0.627          -     11.026    17.58x
+  english         4 KiB      0.229      4.400          -     11.740     2.67x
+  english        64 KiB      0.227      4.872          -     11.739     2.41x
+  english         1 MiB      0.227      4.804          -     11.757     2.45x
+  english         8 MiB      0.226      4.401          -     11.089     2.52x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: enzyme_fl (pattern "enzyme" ci=0 k=6) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.297      4.038          -     20.574     5.09x
+  text           64 KiB      0.298      4.859          -     21.916     4.51x
+  text            1 MiB      0.297      4.780          -     20.439     4.28x
+  text            8 MiB      0.297      4.317          -     16.704     3.87x
+  first-byte      4 KiB      0.260      6.372          -      0.966     0.15x
+  first-byte     64 KiB      0.258      6.893          -      0.962     0.14x
+  first-byte      1 MiB      0.260      6.753          -      0.961     0.14x
+  first-byte      8 MiB      0.260      5.820          -      0.958     0.16x
+  prefix          4 KiB      0.338     36.880          -     29.043     0.79x
+  prefix         64 KiB      0.339     46.250          -     33.048     0.71x
+  prefix          1 MiB      0.339     45.941          -     32.978     0.72x
+  prefix          8 MiB      0.337     19.439          -     18.881     0.97x
+  fl-trap         4 KiB      0.303      6.354          -      4.900     0.77x
+  fl-trap        64 KiB      0.305      6.942          -      5.035     0.73x
+  fl-trap         1 MiB      0.305      6.746          -      5.025     0.74x
+  fl-trap         8 MiB      0.305      5.849          -      4.910     0.84x
+  bytes           4 KiB      0.336      4.954          -     29.716     6.00x
+  bytes          64 KiB      0.335      5.082          -     33.047     6.50x
+  bytes           1 MiB      0.334      5.186          -     32.780     6.32x
+  bytes           8 MiB      0.334      4.575          -     20.097     4.39x
+  pf-trap         4 KiB      0.322      0.640          -     28.408    44.38x
+  pf-trap        64 KiB      0.323      0.641          -     32.996    51.50x
+  pf-trap         1 MiB      0.319      0.641          -     32.978    51.48x
+  pf-trap         8 MiB      0.320      0.629          -     20.330    32.32x
+  english         4 KiB      0.229      4.414          -     15.366     3.48x
+  english        64 KiB      0.226      4.875          -      8.342     1.71x
+  english         1 MiB      0.227      4.815          -      5.238     1.09x
+  english         8 MiB      0.227      4.348          -      4.878     1.12x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: enzyme_rare2 (pattern "enzyme" ci=0 k=6) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.297      4.017          -     17.249     4.29x
+  text           64 KiB      0.299      4.867          -     19.951     4.10x
+  text            1 MiB      0.297      4.778          -     20.295     4.25x
+  text            8 MiB      0.296      4.087          -     16.329     4.00x
+  first-byte      4 KiB      0.260      6.333          -     28.655     4.52x
+  first-byte     64 KiB      0.252      6.916          -     32.127     4.65x
+  first-byte      1 MiB      0.254      6.743          -     31.823     4.72x
+  first-byte      8 MiB      0.260      5.818          -     20.394     3.51x
+  prefix          4 KiB      0.339     36.799          -      3.533     0.10x
+  prefix         64 KiB      0.339     45.671          -      3.512     0.08x
+  prefix          1 MiB      0.338     45.563          -      3.471     0.08x
+  prefix          8 MiB      0.337     23.670          -      3.303     0.14x
+  fl-trap         4 KiB      0.305      6.426          -     27.774     4.32x
+  fl-trap        64 KiB      0.306      6.943          -     32.014     4.61x
+  fl-trap         1 MiB      0.305      6.760          -     31.878     4.72x
+  fl-trap         8 MiB      0.304      5.854          -     20.664     3.53x
+  bytes           4 KiB      0.336      4.974          -     29.211     5.87x
+  bytes          64 KiB      0.334      5.078          -     31.642     6.23x
+  bytes           1 MiB      0.334      5.195          -     31.604     6.08x
+  bytes           8 MiB      0.334      4.586          -     20.719     4.52x
+  pf-trap         4 KiB      0.323      0.638          -      4.980     7.80x
+  pf-trap        64 KiB      0.322      0.642          -      5.094     7.93x
+  pf-trap         1 MiB      0.321      0.641          -      5.096     7.96x
+  pf-trap         8 MiB      0.322      0.632          -      5.012     7.94x
+  english         4 KiB      0.229      4.460          -     28.754     6.45x
+  english        64 KiB      0.227      4.875          -     31.548     6.47x
+  english         1 MiB      0.226      4.803          -     31.635     6.59x
+  english         8 MiB      0.227      4.365          -     20.308     4.65x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: gen_backfire (pattern "backfire" ci=0 k=8) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.295      6.167          -     14.999     2.43x
+  text           64 KiB      0.297      6.072          -     18.963     3.12x
+  text            1 MiB      0.298      5.943          -     18.597     3.13x
+  text            8 MiB      0.297      5.183          -     15.078     2.91x
+  first-byte      4 KiB      0.242      8.178          -     16.338     2.00x
+  first-byte     64 KiB      0.249      9.230          -     24.972     2.71x
+  first-byte      1 MiB      0.260      8.911          -     25.621     2.88x
+  first-byte      8 MiB      0.260      7.356          -     17.940     2.44x
+  prefix          4 KiB      0.254      8.194          -      5.554     0.68x
+  prefix         64 KiB      0.261      9.122          -      6.192     0.68x
+  prefix          1 MiB      0.260      8.908          -      6.236     0.70x
+  prefix          8 MiB      0.260      7.336          -      5.920     0.81x
+  fl-trap         4 KiB      0.187      8.186          -     18.517     2.26x
+  fl-trap        64 KiB      0.191      9.172          -     25.247     2.75x
+  fl-trap         1 MiB      0.191      8.887          -     25.664     2.89x
+  fl-trap         8 MiB      0.190      7.105          -     17.429     2.45x
+  bytes           4 KiB      0.334      6.725          -     18.938     2.82x
+  bytes          64 KiB      0.334      6.536          -     25.148     3.85x
+  bytes           1 MiB      0.334      6.417          -     25.656     4.00x
+  bytes           8 MiB      0.333      5.376          -     18.012     3.35x
+  pf-trap         4 KiB      0.339     36.901          -     18.665     0.51x
+  pf-trap        64 KiB      0.339     45.895          -     25.252     0.55x
+  pf-trap         1 MiB      0.335     45.567          -     25.575     0.56x
+  pf-trap         8 MiB      0.337     23.009          -     17.999     0.78x
+  english         4 KiB      0.319      5.101          -     13.274     2.60x
+  english        64 KiB      0.320      5.163          -     19.402     3.76x
+  english         1 MiB      0.321      4.983          -     19.789     3.97x
+  english         8 MiB      0.321      4.532          -     15.852     3.50x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: backfire_sa (pattern "backfire" ci=0 k=8) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.296      6.054          -      7.618     1.26x
+  text           64 KiB      0.297      6.045          -      8.020     1.33x
+  text            1 MiB      0.297      5.923          -      8.008     1.35x
+  text            8 MiB      0.297      5.197          -      7.777     1.50x
+  first-byte      4 KiB      0.255      8.160          -      7.584     0.93x
+  first-byte     64 KiB      0.252      9.125          -      7.981     0.87x
+  first-byte      1 MiB      0.260      8.897          -      7.983     0.90x
+  first-byte      8 MiB      0.260      7.326          -      7.720     1.05x
+  prefix          4 KiB      0.259      8.223          -      7.557     0.92x
+  prefix         64 KiB      0.260      9.184          -      8.016     0.87x
+  prefix          1 MiB      0.258      8.886          -      8.001     0.90x
+  prefix          8 MiB      0.259      7.347          -      7.682     1.05x
+  fl-trap         4 KiB      0.188      8.116          -      7.600     0.94x
+  fl-trap        64 KiB      0.188      9.181          -      8.022     0.87x
+  fl-trap         1 MiB      0.190      8.955          -      8.004     0.89x
+  fl-trap         8 MiB      0.190      7.114          -      7.672     1.08x
+  bytes           4 KiB      0.335      6.775          -      7.610     1.12x
+  bytes          64 KiB      0.334      6.506          -      7.992     1.23x
+  bytes           1 MiB      0.334      6.399          -      8.008     1.25x
+  bytes           8 MiB      0.334      5.594          -      7.617     1.36x
+  pf-trap         4 KiB      0.339     36.795          -      7.604     0.21x
+  pf-trap        64 KiB      0.339     45.957          -      8.025     0.17x
+  pf-trap         1 MiB      0.339     45.936          -      8.004     0.17x
+  pf-trap         8 MiB      0.338     23.674          -      7.745     0.33x
+  english         4 KiB      0.321      5.053          -      7.577     1.50x
+  english        64 KiB      0.320      5.136          -      8.016     1.56x
+  english         1 MiB      0.321      4.984          -      8.015     1.61x
+  english         8 MiB      0.319      4.528          -      7.740     1.71x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: gen_k16 (pattern "incomprehensible" ci=0 k=16) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.301      9.444          -     14.264     1.51x
+  text           64 KiB      0.297      9.108          -     18.007     1.98x
+  text            1 MiB      0.297      8.742          -     18.657     2.13x
+  text            8 MiB      0.297      7.373          -     15.081     2.05x
+  first-byte      4 KiB      0.261     13.464          -     17.458     1.30x
+  first-byte     64 KiB      0.260     16.591          -     25.019     1.51x
+  first-byte      1 MiB      0.261     15.816          -     25.661     1.62x
+  first-byte      8 MiB      0.260     11.566          -     18.272     1.58x
+  prefix          4 KiB      0.207     13.209          -      2.715     0.21x
+  prefix         64 KiB      0.206     16.596          -      2.830     0.17x
+  prefix          1 MiB      0.214     15.776          -      2.842     0.18x
+  prefix          8 MiB      0.212     11.593          -      2.835     0.24x
+  fl-trap         4 KiB      0.280     13.364          -     19.062     1.43x
+  fl-trap        64 KiB      0.280     16.623          -     25.221     1.52x
+  fl-trap         1 MiB      0.279     15.862          -     25.692     1.62x
+  fl-trap         8 MiB      0.279     11.598          -     17.843     1.54x
+  bytes           4 KiB      0.336      9.248          -     19.141     2.07x
+  bytes          64 KiB      0.333      9.764          -     25.256     2.59x
+  bytes           1 MiB      0.334      9.647          -     25.619     2.66x
+  bytes           8 MiB      0.334      7.883          -     17.789     2.26x
+  pf-trap         4 KiB      0.279      1.742          -     18.790    10.79x
+  pf-trap        64 KiB      0.278      1.788          -     25.259    14.13x
+  pf-trap         1 MiB      0.279      1.775          -     25.693    14.47x
+  pf-trap         8 MiB      0.279      1.711          -     18.202    10.64x
+  english         4 KiB      0.274      7.153          -     13.531     1.89x
+  english        64 KiB      0.265      7.350          -     12.361     1.68x
+  english         1 MiB      0.266      7.315          -     11.378     1.56x
+  english         8 MiB      0.267      6.054          -     10.677     1.76x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: k16_sa (pattern "incomprehensible" ci=0 k=16) ==
+  libc ref: strstr   fold+mm ref: none   speedup vs strstr
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.301      9.300          -      3.992     0.43x
+  text           64 KiB      0.293      9.080          -      4.025     0.44x
+  text            1 MiB      0.297      8.714          -      3.996     0.46x
+  text            8 MiB      0.296      7.363          -      3.989     0.54x
+  first-byte      4 KiB      0.261     13.421          -      4.007     0.30x
+  first-byte     64 KiB      0.260     16.350          -      4.013     0.25x
+  first-byte      1 MiB      0.255     15.733          -      4.019     0.26x
+  first-byte      8 MiB      0.260     11.437          -      4.007     0.35x
+  prefix          4 KiB      0.207     13.604          -      3.966     0.29x
+  prefix         64 KiB      0.207     16.591          -      4.039     0.24x
+  prefix          1 MiB      0.212     15.756          -      4.028     0.26x
+  prefix          8 MiB      0.215     11.589          -      3.998     0.34x
+  fl-trap         4 KiB      0.280     13.510          -      3.973     0.29x
+  fl-trap        64 KiB      0.279     16.565          -      4.043     0.24x
+  fl-trap         1 MiB      0.278     15.842          -      4.020     0.25x
+  fl-trap         8 MiB      0.278     10.785          -      4.012     0.37x
+  bytes           4 KiB      0.335      9.139          -      3.982     0.44x
+  bytes          64 KiB      0.334      9.817          -      4.032     0.41x
+  bytes           1 MiB      0.334      9.702          -      4.010     0.41x
+  bytes           8 MiB      0.334      7.919          -      4.003     0.51x
+  pf-trap         4 KiB      0.280      1.745          -      3.990     2.29x
+  pf-trap        64 KiB      0.279      1.788          -      4.038     2.26x
+  pf-trap         1 MiB      0.279      1.779          -      4.025     2.26x
+  pf-trap         8 MiB      0.278      1.717          -      4.007     2.33x
+  english         4 KiB      0.274      7.289          -      3.990     0.55x
+  english        64 KiB      0.267      7.368          -      4.029     0.55x
+  english         1 MiB      0.266      7.312          -      4.026     0.55x
+  english         8 MiB      0.267      6.404          -      4.006     0.63x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: alt8_union (pattern "fred|bob|janet|frederick|alice|megan|carol|dave" ci=0 nbr=8 k=3..9) ==
+  libc ref: 8 x memmem (earliest)   fold+mm ref: none   speedup vs 8 x memmem (earliest)
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.044      0.515          -      2.865     5.56x
+  text           64 KiB      0.044      0.514          -      2.766     5.39x
+  text            1 MiB      0.044      0.515          -      2.208     4.28x
+  text            8 MiB      0.044      0.512          -      2.065     4.03x
+  first-byte      4 KiB      0.048      0.664          -      5.447     8.20x
+  first-byte     64 KiB      0.048      0.690          -      5.972     8.65x
+  first-byte      1 MiB      0.047      0.690          -      6.006     8.71x
+  first-byte      8 MiB      0.047      0.677          -      5.758     8.50x
+  prefix          4 KiB      0.044      0.494          -      1.553     3.14x
+  prefix         64 KiB      0.044      0.503          -      1.587     3.15x
+  prefix          1 MiB      0.044      0.513          -      1.585     3.09x
+  prefix          8 MiB      0.044      0.503          -      1.579     3.14x
+  fl-trap         4 KiB      0.049      0.664          -      5.458     8.22x
+  fl-trap        64 KiB      0.049      0.691          -      5.980     8.65x
+  fl-trap         1 MiB      0.049      0.690          -      6.007     8.71x
+  fl-trap         8 MiB      0.049      0.678          -      5.753     8.48x
+  bytes           4 KiB      0.051      0.514          -      5.513    10.72x
+  bytes          64 KiB      0.051      0.539          -      5.970    11.07x
+  bytes           1 MiB      0.051      0.534          -      5.988    11.21x
+  bytes           8 MiB      0.051      0.532          -      5.740    10.79x
+  pf-trap         4 KiB      0.040      0.492          -      1.550     3.15x
+  pf-trap        64 KiB      0.040      0.520          -      1.585     3.05x
+  pf-trap         1 MiB      0.040      0.520          -      1.579     3.04x
+  pf-trap         8 MiB      0.040      0.513          -      1.581     3.09x
+  english         4 KiB      0.045      0.469          -      2.040     4.35x
+  english        64 KiB      0.045      0.483          -      2.077     4.30x
+  english         1 MiB      0.046      0.482          -      1.748     3.63x
+  english         8 MiB      0.045      0.481          -      1.648     3.42x
+avx2: yes
+seed: 0x243f6a8885a308d3
+matchers registered: 40
+
+== bench: alt8_teddy (pattern "fred|bob|janet|frederick|alice|megan|carol|dave" ci=0 nbr=8 k=3..9) ==
+  libc ref: 8 x memmem (earliest)   fold+mm ref: none   speedup vs 8 x memmem (earliest)
+  kind             size     oracle       libc    fold+mm       cand   speedup
+  text            4 KiB      0.044      0.516          -      4.298     8.33x
+  text           64 KiB      0.044      0.515          -      3.583     6.96x
+  text            1 MiB      0.045      0.516          -      3.007     5.82x
+  text            8 MiB      0.044      0.514          -      2.934     5.70x
+  first-byte      4 KiB      0.047      0.667          -      7.693    11.54x
+  first-byte     64 KiB      0.047      0.690          -      8.920    12.92x
+  first-byte      1 MiB      0.047      0.690          -      9.007    13.06x
+  first-byte      8 MiB      0.047      0.673          -      8.666    12.88x
+  prefix          4 KiB      0.044      0.496          -      7.693    15.50x
+  prefix         64 KiB      0.044      0.500          -      8.832    17.65x
+  prefix          1 MiB      0.044      0.513          -      9.007    17.55x
+  prefix          8 MiB      0.044      0.505          -      8.648    17.13x
+  fl-trap         4 KiB      0.049      0.666          -      7.697    11.55x
+  fl-trap        64 KiB      0.049      0.691          -      8.922    12.91x
+  fl-trap         1 MiB      0.049      0.691          -      8.992    13.02x
+  fl-trap         8 MiB      0.049      0.676          -      8.696    12.86x
+  bytes           4 KiB      0.052      0.520          -      7.820    15.03x
+  bytes          64 KiB      0.051      0.541          -      8.731    16.15x
+  bytes           1 MiB      0.051      0.535          -      8.788    16.42x
+  bytes           8 MiB      0.051      0.533          -      8.522    15.98x
+  pf-trap         4 KiB      0.040      0.491          -      1.338     2.73x
+  pf-trap        64 KiB      0.040      0.519          -      1.330     2.56x
+  pf-trap         1 MiB      0.040      0.519          -      1.327     2.56x
+  pf-trap         8 MiB      0.040      0.515          -      1.330     2.58x
+  english         4 KiB      0.045      0.468          -      3.345     7.14x
+  english        64 KiB      0.045      0.487          -      2.881     5.92x
+  english         1 MiB      0.045      0.482          -      2.399     4.97x
+  english         8 MiB      0.045      0.481          -      2.347     4.88x
