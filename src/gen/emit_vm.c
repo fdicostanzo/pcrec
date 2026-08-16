@@ -2976,6 +2976,17 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         sb_printf(c, "    unsigned char %s_rvs[%d] = {0};\n", v.p, v.nrevcaps);
     }
     sb_puts(c, "    (void)s; (void)n; (void)stv;\n");
+    /* Three of the five per-loop locals are used only by shapes that do not
+     * always occur — the walk cursor and `prev` exist only when a walk is
+     * emitted, and the seen-counter only when the body has groups — and the
+     * generated matcher is built -Wall -Wextra -Werror. `--no-captures` on a
+     * possessified rung loop is the combination that has none of them, and it
+     * failed -Wunused-variable before this line. `it` and `mk` are used by every
+     * shape and are deliberately not listed, so a future shape that stops using
+     * one still gets caught. */
+    for (int i = 0; i < nrev_total; i++)
+        sb_printf(c, "    (void)%s_rv%d_c; (void)%s_rv%d_prev; (void)%s_rv%d_ns;\n",
+                  v.p, i, v.p, i, v.p, i);
     if (v.tracing)
         sb_printf(c, "    fprintf(stderr, \"[%s] enter at pos %%zu of %%zu\\n\","
                      " pos, n);\n", v.p);
