@@ -8641,3 +8641,101 @@ CPU-time limit flag, stall (no-output) detection.
 
 **State:** HEAD 8cbaa6f pushed, worktree/branch/cron torn down. Counts
 unchanged (corpus 5,784, cli 257, known_fail empty). K-list unchanged.
+
+## 2026-08-16 (EDT), twenty-fifth session (cont.) — gen_run: matcher EXECUTION joins D45's rule, wired tree-wide; watchdog stdin fix; D45 plain budget 5s→10s (revisit-when fired); full seven-leg battery green
+
+Frank: "wire it up — do a section first, then the general range where
+it makes sense; review the logs." Landed in two stages, both merged.
+
+**Stage 1 (manager, tests/vm first):** gen_run_secs (10s plain / 60s
+san, GENRUNTIMEOUT/_SAN) + gen_run (watchdog-backed: run budget + 512m
+GENRUNMEM tree-RSS ceiling + one section-tagged log line per run) in
+tests/lib/gen_timeout.sh — D45's execution-side sibling, closing the
+gap tests/vm/CLAUDE.md flagged after the nine-minute battery leg.
+tests/vm's five shell run sites wired; vm_oracle.py's inner loop uses
+subprocess timeout= reading the same runsecs number (a per-run wrapper
+would multiply the sweep). watchdog grew -S/WATCHDOG_SECTION (Frank's
+mid-flight ask: a label like "case7" must be findable among thousands
+of lines — a runner exports the section once). run_gen_timeout_tests.sh
+grew the full mirror: axis/override checks, a fire control on a REAL
+budget-bound slow run ((a*)*b, --engine=vm, --step-budget=4e8: 4.6s
+natural, killed at 1s, so the control terminates even if the wrapper
+breaks), an oracle-verified pass-through control (the manager's
+hand-guessed expectation was WRONG — match 0 4 3 3, not 0 4 0 3; D27's
+lesson caught in the act), coverage rows. The harness's per-cell
+`timeout 10` (hardcoded, axis-blind since before D45) now reads
+gen_run_secs, with a revert-grep control. First in-situ kill test
+FAILED TO FIRE — cliff_run hardcodes CLIFF_N=10000, overriding the env;
+a control that didn't control — which is why the fire control uses its
+own artifact.
+
+**Stage 2 (sonnet lane, general range; merged clean):** possdiff (365
+per-pattern driver runs), possessify (4), ir-listing trace runs,
+thread TS-2 (TSan legs — axis detection verified live: TSANFLAGS as a
+plain shell var is read fine, gen_run is a sourced function, not an
+external command), cli (13 sites), pc4 (273), fuzz.py (cheap shape).
+True negatives surveyed and recorded: three codegen scripts never
+execute generated code; TS-3 + cli case 7 are compiler-axis; spec_mod0's
+D27 checks carry their OWN deadline loops (charter isolation, verified
+per check). tests/bench excluded (budgets ARE its measurement), mech
+inherits.
+
+**Two real bugs found by the rollout, both fixed at mechanism level:**
+(1) watchdog swallowed stdin — a backgrounded job in a job-control-less
+shell gets /dev/null stdin (POSIX), so possdiff's first wiring fed the
+driver ZERO subjects: 77,725 cells → 0 while "0 diverged" stayed green,
+the D47.6 "measured nothing" failure mode by the book, caught ONLY
+against the recorded cell-count baseline. Lane worked around at the
+site; manager fixed watchdog itself (`<&0` at the spawn, self-test case
+12), then simplified the site back to a plain redirect and re-verified
+77,725 exactly. (2) D45's plain 5s compile budget FLAKED under load:
+k18_cost_gates.rxt's 6,433-line artifact compiles in a measured 2.53s
+quiet and crossed 5s under make -j12 contention, failing one full-suite
+run while an identical run minutes earlier passed. Revisit-when fired
+as written: plain 5s→10s with the measurement recorded (gen_timeout.sh
+header, testing.md, decisions.md). The artifact is the bounded-repeat
+replication class whose compiler-side size cap rides counter-K — the
+raise is harness-side accommodation, not absolution.
+
+**Log review (Frank's acceptance question):** 1,558 wrapped executions
+across six sections, all correctly section-tagged, ZERO lines wall>1s
+(maxima 0.07-0.64s). The log answers per run: which suite, which case,
+wall, spinning-vs-blocked (cpu vs wall — the K22 smoke shows
+wall=5.32/cpu=4.99, the "spinning" signature read straight off the
+line). peak_rss_kb=0 marks sub-interval runs (fast-run proof, not
+data). One benign verdict=signal: ir-listing's deliberate
+pipe-into-grep -q SIGPIPEs by design.
+
+**Overhead ledger:** pc4 the worst at +4.4s isolated (+48% for that
+suite; registry doesn't gate suite wall). watchdog fixed cost measured
+~145ms/invocation in the sandbox (upper bound), fine at per-pattern
+sites, wrong for inner loops — hence the two shapes.
+
+**MERGE BATTERY, merged tree, ALL SEVEN LEGS GREEN:** test parallel
+EXIT=0, serial 0, strict 0, ubsan 0 (first exercise of the 60s
+GENRUNTIMEOUT_SAN axis + instrumented runs through watchdog), asan 0,
+lint 0, mech 0. 36 minutes total.
+
+**Dispositions:** the [ENG-BREP] row's owed item (2) — tests/vm per-RUN
+timeout — DISCHARGED (row updated). Deferred, re-openable: pc4
+cheap-shape flip if suite wall matters; splitting fuzz.py's shared
+RUN_TIMEOUT between matcher and oracle runs; wiring test_watchdog.sh
+into make test (Frank's call).
+
+**Lessons.** (1) An in-situ positive control can silently not-control
+(CLIFF_N was hardcoded past the env override) — a fire control needs
+its OWN artifact with a bounded natural runtime. (2) The stdin bug's
+tell was a COUNT, not a failure: instruments must be checked against
+recorded baselines after rewiring, because "0 diverged" is compatible
+with "measured nothing". (3) A budget within ~2x of a legitimate cost
+flakes under parallel load — headroom is part of the calibration, and
+the revisit-when clause worked exactly as designed. (4) The manager's
+cwd is state: two mid-session commands ran against the wrong tree
+(self-test in the worktree, corpus exit unchecked) — absolute paths and
+checked exit codes, every time.
+
+**State at close of arc:** HEAD = merge + possdiff simplification +
+budget raise + this bookkeeping, pushed. Counts: corpus 5,784, cli 257,
+known_fail EMPTY, gentimeout section 15 checks (was 10), watchdog
+self-test 14/14. Open K-list unchanged: K2, K7, K9, K19, K22. No lanes,
+no crons, no background work.

@@ -179,9 +179,11 @@ stated terms.
   give-up into a correct-but-quadratic answer (measured 0.033/0.581/
   2.297 s at 10/50/100 KB; 228.5 s at 1 MB, terminating and correct) —
   fix-of-record is an E-5-SHAPED one-step-per-possessified-loop-ENTRY
-  charge, OWED WITH THE COUNTER-K STEP; (2) tests/vm has no per-RUN
-  timeout on generated matchers (D45 bounds compiles only) — harness
-  mechanism owed, manager's; (3) K22 filed (nested-bounded-repeat
+  charge, OWED WITH THE COUNTER-K STEP; (2) tests/vm per-RUN timeout —
+  DISCHARGED 2026-08-16, twenty-fifth session: gen_run/gen_run_secs in
+  tests/lib/gen_timeout.sh (D45 second addendum; scripts/watchdog-backed,
+  wired tree-wide), fire-controls in run_gen_timeout_tests.sh; (3) K22
+  filed (nested-bounded-repeat
   compile hang under --engine=vm, known_issues.md — interim product
   guard or counter-K). NEXT LADDER STEPS: rung-select, then counter-K.
   R24-corrected census: 17%/82%; as-built verdict census 252/1,832
