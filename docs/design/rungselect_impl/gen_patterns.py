@@ -124,6 +124,18 @@ def main():
         "((a)|b){3}c",
         # the body's own alphabet is the follow's, so every retreat is live
         "((a)|b){0,6}ab",
+        # A NESTED FIXED-COUNT quantifier, which is the only nested quantifier
+        # the rung admits and the only thing that exercises the backward
+        # emitter's own replication arm. It has to sit in the MIDDLE of the
+        # body: the Glushkov construction models `{2}` as a loop, so a fixed
+        # repeat at either END of a body makes that end's positions carry a back
+        # edge and prefix-freeness fails in that direction. Measured, and the
+        # reason this shape is spelled with an `x` and a `y` around it.
+        "(?:x((a)|b){2}y){0,3}z",
+        "(?:x((a)|b){2}y){0,3}?z",
+        "(?:x(?:a|b){2}y){0,3}z",
+        # a group in EVERY branch, so the walk publishes two groups per step
+        "(?:(x)(?:y|z)){0,3}w",
     ]
     for p in extra:
         emit(p, seen, out)

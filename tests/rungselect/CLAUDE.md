@@ -86,6 +86,20 @@ artifacts of today. That is what makes the rung safe to ship, held as a gate
 rather than promised, and it is the §5.4 technique the possessification lane
 used one rung up.
 
+## The nested fixed-count quantifier, and why it is spelled with an x and a y
+
+The rung admits exactly one kind of nested quantifier — an EXACT count — and it
+is the only shape that exercises the backward emitter's own replication arm, so
+both the corpus and the differential carry it deliberately. It is spelled
+`(?:x((a)|b){2}y){0,3}z`, with the repeat in the MIDDLE of the body, and that is
+measured rather than stylistic: the Glushkov construction models `{2}` as a LOOP
+(it links last to first whenever `rmax > 1`), so a fixed repeat at either END of
+a body gives that end's positions a back edge and prefix-freeness fails in that
+direction. `(?:(?:a|b){2}c){0,3}d` therefore declines, and it declines as a
+MODELLING artifact rather than a real ambiguity — `c(a|b)(a|b)` is fixed-length
+and perfectly decodable. Recorded in the design file's residual list as
+something a sharper construction would recover.
+
 ## The lesson this directory inherits rather than re-pays
 
 **A subject generator can silently measure nothing** (D47.6, and

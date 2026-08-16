@@ -142,6 +142,26 @@ BLOCKS = [
  (["The rung INSIDE a group, so the group's own span has to survive every",
    "retreat the inner loop performs."],
   "(((a)|b){0,4})c", S),
+
+ # ---- the only nested quantifier the rung admits ---------------------------
+ (["A NESTED FIXED-COUNT quantifier, which is the ONLY nested quantifier the",
+   "rung admits and the only shape that exercises the backward emitter's own",
+   "replication arm. It has to sit in the MIDDLE of the body, and that is",
+   "measured rather than stylistic: the Glushkov construction models `{2}` as",
+   "a LOOP (it links last to first whenever rmax > 1), so a fixed repeat at",
+   "either END of a body gives that end's positions a back edge and",
+   "prefix-freeness fails in that direction. Hence the `x` and the `y`."],
+  "(?:x((a)|b){2}y){0,3}z",
+  ["", "z", "xaby", "xabyz", "xaayz", "xbbyz", "xbayz",
+   "xabyxbayz", "xabyxaayz", "xaayxbbyz", "xabyxabyxaayz", "xayz", "xaaayz",
+   "xy", "xz", "abyz", "q", "xabyq"]),
+ (["The same shape lazy, and the same shape without the inner group."],
+  "(?:x((a)|b){2}y){0,3}?z",
+  ["", "z", "xabyz", "xaayz", "xbbyz", "xabyxbayz", "xabyxaayz", "xayz"]),
+
+ (["A group in EVERY branch, so one walk publishes two groups per step and",
+   "each keeps the value from the last iteration that entered ITS branch."],
+  "(?:(x)(?:y|z)){0,3}w", T),
 ]
 
 HEADER = """\

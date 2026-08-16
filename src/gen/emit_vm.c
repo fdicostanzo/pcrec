@@ -695,11 +695,43 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
         body = vm_cost(v, a->l);
         v->nocap--;
         c.frames = 1 + body.frames + (move ? 1 : 0);
-        c.trail  = 3 + 2 * (long long)ng + body.trail + body.pt;
         c.pf     = 0;
-        c.pt     = body.trail + body.pt;
-        c.unbounded = body.unbounded;
-        c.growable  = body.growable || body.unbounded || c.pt > 0;
+        /* THE TRAIL ACCUMULATES ACROSS ITERATIONS AND THE FRAMES DO NOT, and
+         * the asymmetry is the cut's doing: the scan discards the body's frames
+         * at every boundary and deliberately does NOT rewind its trail (the
+         * same rule vm_cut carries, for the same reason — a failure OUTSIDE the
+         * loop still has to restore what the loop wrote). So a body that owns
+         * any trailed slot of its own pays for it once per ITERATION.
+         *
+         * Counting one iteration's worth here was this arm's first version and
+         * it is a SILENT CAP, which is the one failure mode this analysis
+         * exists to prevent. MEASURED: `(?:x((a)|b){2}y){0,3}z`'s body contains
+         * a possessified exact-count repeat, whose cut mark is one trailed
+         * write per entry, so three outer iterations need three of them — and
+         * the artifact stamped a capacity for one and returned RX_ERR_FRAMES on
+         * "xabyxabyxaayz", a subject it should answer. Caught by this rung's
+         * own .rxt corpus on the run that added the nested-repeat family.
+         *
+         * Capture writes inside the body are SUPPRESSED on this rung, so the
+         * common case has `periter == 0` and nothing accumulates at all — which
+         * is why the defect needed a body with a nested quantifier owning a
+         * slot to show up. */
+        {
+            const long long periter = body.trail + body.pt;
+            const long long base = 3 + 2 * (long long)ng;
+            c.pt = periter;
+            if (a->rmax >= 0) {
+                c.trail = base + (long long)a->rmax * periter;
+                c.unbounded = body.unbounded;
+            } else {
+                /* No static iteration bound, so no exact requirement exists
+                 * when the body writes anything: the ceiling machinery takes
+                 * over from `pt`. */
+                c.trail = base + periter;
+                c.unbounded = body.unbounded || periter > 0;
+            }
+            c.growable = body.growable || c.unbounded || periter > 0;
+        }
         return c;
     }
 
