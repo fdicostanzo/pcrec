@@ -583,32 +583,25 @@ read is how they cannot drift.
   maximal consumption, where backtracking actually runs and where K should
   matter most.
 
-**Three additions from the SIMD study** (Frank, 2026-08-16, on
-`studies/simd1/`; that study does unrolling as part of its own work and bears
-on this axis). The standing caution first: every number in it is Zen 1 and
-must be RE-MEASURED before any load-bearing use (D12) — it is a hypothesis
-source, never a citable measurement here.
+**PER-BODY-KIND curves, not one aggregate number.** The sweep records
+alternation and group-with-capture bodies as SEPARATE series. The reason is
+counter-K's own: K is one dial for all bodies (F-1), the sweep is what picks
+its value, and a knee that sits in a different place for a two-branch
+alternation than for a capture-bearing body would be averaged into
+invisibility by a single curve. A dial chosen from an aggregate over shapes
+that disagree is chosen from a number describing none of them.
 
-- **PER-BODY-KIND curves, not one number.** The sweep records single-class,
-  alternation and group-with-capture bodies as SEPARATE series, because
-  simd1 §13's tiers show the unroll knee varies by body kind and a later
-  SIMD-META row needs to know which bodies were unroll-limited and which were
-  engine-limited. **One finding already, from building it:** a single-class
-  body is NOT IN THIS RUNG'S POPULATION AT ALL — `([a-c]){0,N}c` stamps
-  `VM_RUNGS 0x1`, the cursor rung, at every N, because a bounded single class
-  has one way to match and rung-select takes it long before counter-K is a
-  candidate. The harness reports that kind as EXCLUDED with the verify command
-  rather than substituting a body that would silently measure another rung.
-- **One PRAGMA COMPARISON cell**: K = 1 plus `#pragma GCC unroll` against
-  manual K = 8 emission. **BELIEVED**, to be measured rather than assumed: the
-  pragma FAILS on the frames-bearing arm, because the emitted body contains
-  computed-goto resume labels gcc's unroller will not cross, and may work on a
-  frameless arm. If it ever matches manual unrolling for some arm, that arm's
-  K machinery collapses to a compiler hint — which is the cheapest possible
-  outcome and worth one cell to find out. The cell is written out and skipped
-  with a "waiting on `--unroll`" line today.
-- **The three subject regimes and a real throughput driver** [R25 C2], since
-  stub columns are not a sweep.
+**One finding already, from building the harness rather than from running it:
+a single-class body is NOT IN THIS RUNG'S POPULATION AT ALL.** `([a-c]){0,N}c`
+stamps `VM_RUNGS 0x1` — the cursor rung — at every N, because a bounded single
+class has one way to match and rung-select takes it long before counter-K is a
+candidate. The harness reports that body kind as EXCLUDED, with the command to
+verify it, rather than substituting some other body and silently measuring
+another rung. Two series, then, not three, and the missing one is a fact about
+the ladder rather than a gap in the sweep.
+
+**The three subject regimes and a real throughput driver** [R25 C2], since stub
+columns are not a sweep.
 
 The harness runs end to end TODAY with the K column collapsed to the shipped
 strategy; only the K axis waits on `--unroll`. It is a measurement, not a
@@ -1131,7 +1124,7 @@ compile**, denial flags or not.
 
 | site | what happens | action |
 |---|---|---|
-| `tests/vm/run_vm_tests.sh:507-519` | **NO LONGER AFFECTED.** R25 C1 found this site breaking `make test` on landing, because §8.5 cell 2 asserted the towers compile while this block asserts they refuse. The F-1 ruling withdrew that cell, so the block stays exactly as it is | none. Kept in the table because the SEARCH KEY it exposed is permanent: "every site asserting a REFUSAL of a shape this rung is meant to compile", which the survey's original key could not find, since this site denies nothing |
+| `tests/vm/run_vm_tests.sh:507-519` | **UNCHANGED UNDER F-1; INVERTS WHEN [ENG-CLAMP] LANDS.** R25 C1 found this site breaking `make test` on landing, because §8.5 cell 2 asserted the towers compile while this block asserts they refuse. F-1 withdrew that cell, so the towers keep refusing and the block stays exactly as written | none now. [ENG-CLAMP] inherits the obligation: the day the clamp lands, this block's assertion inverts and needs the rewrite R25 C1 specified. Kept in this table for that reason AND because the SEARCH KEY it exposed is permanent — "every site asserting a REFUSAL of a shape a rung is meant to compile", which the survey's denial-based key structurally cannot find |
 | `tests/lib/run_gen_timeout_tests.sh:184` | the positive control's artifact drops under the 1,000-line floor and the tripwire FIRES, exactly as written | add `-fno-counter`. **The firing happens ONCE, during bring-up, as evidence that the prediction was right; the SHIPPED check is green with the denial in place** [R25 C5]. A red positive control is never committed — the point of the tripwire is that it fired when it should, not that it stays firing |
 | `tests/vm/run_vm_tests.sh:454` | asserts `((a)\|b){0,4000}c` under `-fno-revdet` is REFUSED naming "replicate its body 4000 times" — it now compiles | add `-fno-counter`; pair with the other side (§8.5 cell 1 compiles at default) |
 | `tests/codegen/run_ir_listing.sh` `cap_no`, `cap_d45` | same, at `{0,65}` and `{0,4000}` | same |
@@ -1228,20 +1221,18 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
 
 ---
 
-## 10.4 A forward-compatibility observation, recorded not designed
+## 10.4 RETRACTED — a forward-compatibility observation
 
-Counter-K's structure — ONE emitted body copy per quantifier instead of N
-replicated ones — is the natural substitution site for a later SIMD
-RUN-EXTENSION tier (`studies/simd1/precompiled-simd-matchers.md` §15: a
-`[class]+` atom iterated 16 or 32 bytes per vector operation). Under
-replication a vectorised body would have to be substituted into N copies;
-under this rung there is one site per quantifier. No design change follows
-from this and none is proposed — it is recorded so that a future SIMD-META row
-finds the seam instead of re-deriving it.
+This section recorded counter-K's one-body-copy structure as the natural
+substitution site for a later SIMD run-extension tier. **Frank's scalar-first
+directive retracts it** (recorded on the `[SIMD-META]` plan row): the best
+non-SIMD approach ships, backend variants come later on top of it, and
+in-flight lanes take no SIMD-derived design inputs. The observation is parked
+on `[SIMD-META]` as a planning input.
 
-The standing caution applies to everything taken from that study: every number
-in it is Zen 1 hardware and must be RE-MEASURED before any load-bearing use
-(D12). It is a hypothesis source, never a citable measurement here.
+Left as a stub rather than deleted because the note argued for it in a
+committed revision, and a reader following that history should find out it was
+retracted rather than that it vanished.
 
 ---
 

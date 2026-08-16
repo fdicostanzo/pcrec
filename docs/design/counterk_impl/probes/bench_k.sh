@@ -57,19 +57,20 @@
 # is never printed as if it were a real measurement -- a silently wrong
 # subject makes every number meaningless.
 #
-# PER-BODY-KIND CURVES (added per Frank, informed by studies/simd1 -- see the
-# hardware caveat below). Rows are grouped and tagged by BODY KIND ("kind"
-# column, first on the line) rather than merged into one population, because
-# simd1 S13's haystack-size tiering shows the same shape of fact for a
-# different axis: the profitable strategy (few-constant filter vs full chain
-# vs unrolling) has a KNEE that moves with the shape of the problem, not just
-# its size, and a strategy picked from one shape's knee silently mis-serves
-# another. A future SIMD-META work item needs to know, per bounded-repeat
-# body, whether ITS knee was unroll-limited or engine-limited -- exactly the
-# distinction the merged single number threw away. cand_alt.c's ~L164 note
-# ("the class branch is not special ... only the way the mask is computed
-# differs") is the same lesson from the other side: composing body shapes
-# into one lane hides which one is doing the work.
+# PER-BODY-KIND CURVES. Rows are grouped and tagged by BODY KIND ("kind"
+# column, first on the line) rather than merged into one population, on this
+# project's own terms: counter-K's K is ONE dial for every quantifier body
+# (a project ruling -- K does not vary per quantifier, see the K-AXIS banner
+# below and eng_brep_design.md S4.5's "per-artifact tuning, not a per-pattern
+# heuristic"). THIS SWEEP IS WHAT PICKS K'S VALUE. If the knee -- the N or K
+# where the advantage saturates -- sits in a different place for an
+# alternation body than for a capture-bearing group body, a single curve
+# aggregated across both shapes averages them into invisibility: the
+# aggregate knee is not either shape's knee, so a K chosen from an aggregate
+# over shapes that disagree is a number that describes none of them. Keeping
+# the curves separate, tagged by kind, is how this sweep can tell the
+# difference between "K=8 is right for every body" and "K=8 happens to
+# average two bodies that disagree."
 #
 # Three kinds, each verified against the constraint below with
 # `--engine=vm --emit-ir` (grep the RUNGS section / RX_VM_RUNGS):
@@ -96,38 +97,6 @@
 #     it below; the sweep prints a labeled, empty "single-class" section
 #     saying so instead of substituting a body that would silently measure
 #     the cursor rung under this kind's name.
-#
-# ONE PRAGMA COMPARISON CELL (added per Frank). Compares a K=1 counter loop
-# built with `#pragma GCC unroll N` against manual K=8 emission -- see
-# run_pragma_cell below. Neither `--unroll` nor `-fno-counter` exists in the
-# compiler yet, so the cell CANNOT run today; it is written out in full and
-# gated on the same have_unroll capability probe as the rest of the K axis,
-# printing a "waiting on --unroll" line (matching the existing K-axis INERT
-# banner) until the flag lands, at which point it runs unmodified.
-#
-# EXPECTATION (BELIEVED -- house claim-marking style STRUCTURAL / MEASURED /
-# BELIEVED; informed by studies/simd1 S8's codegen lesson, not measured here):
-# the pragma is expected to FAIL to match manual K=8 for the FRAMES-BEARING
-# arm, because the emitted loop body contains computed-goto resume labels
-# that gcc's unroller will not cross -- simd1 S8's own finding is that gcc
-# will not specialize/unroll through indirection it cannot see through
-# without being shown explicit code, and a computed-goto resume point is the
-# same kind of opacity. It MAY work for a frameless arm, where no such label
-# exists in the loop body -- though this bench's body population is, by the
-# constraint above, entirely frames-bearing (VM_RUNGS 0x2), so no frameless
-# candidate exists here to exercise that branch; it is left as a written,
-# reachable code path for whenever one does. If the pragma ever DOES match
-# manual unrolling for some arm, that arm's K machinery can shrink to a
-# compiler hint (simd1 S8's own fallback order: emit explicit code first,
-# trust `#pragma GCC unroll` / flattening only where verified with objdump --
-# a verification this cell does not yet perform).
-#
-# HARDWARE CAVEAT (D12): every studies/simd1 number cited above (or anywhere
-# in this file) is Zen 1 hardware (AMD Ryzen 5 1600, GCC 15.2, -O3 -mavx2)
-# and MUST BE RE-MEASURED before any load-bearing use in this project. The
-# study is a HYPOTHESIS SOURCE ONLY here -- never a citable measurement --
-# and nothing above cites a simd1 NUMBER as evidence, only its qualitative
-# findings (knees vary by shape; gcc needs explicit code, not indirection).
 #
 # Usage: bench_k.sh [--full]
 # Env:   PCREC (default build/pcrec), CC (default cc), CFLAGS_OPT (default -O2),
@@ -243,11 +212,12 @@ Axes a real K sweep will walk once the rung lands:
   regime  max / below-max / failing-after-maximal-consumption
   metric  pcrec compile s, gcc $OPT compile s, emitted lines, ns/search
 
-What is NOT allowed to be decided here (eng_brep_design.md S4.5): K is
-per-artifact tuning and must not become a per-pattern heuristic in v1. The
-only per-pattern movement of K that this lane proposes is S4.2's SAFETY CLAMP,
-which moves K downward to keep a bound the compiler already enforces, and it
-is not a bench outcome.
+What is NOT allowed to be decided here (eng_brep_design.md S4.5, RULED strict
+by the F-1 ruling in decisions.md's D47 ADDENDUM): K is ONE per-artifact
+constant in v1 and does not vary per quantifier by any mechanism. An earlier
+draft of this lane proposed a downward safety clamp; that moved whole to plan
+row [ENG-CLAMP] and is not this sweep's to reopen. What the sweep decides is
+the CONSTANT'S VALUE, and nothing else.
 
 >>> THE K COLUMN IS "shipped" FOR EVERY ROW BELOW. Everything else --
 >>> body x N x regime x compile time x throughput -- runs for real, on
@@ -459,86 +429,3 @@ EOF
         done
     done
 done
-
-# ---- pragma comparison cell -------------------------------------------------
-# See header: ONE PRAGMA COMPARISON CELL / EXPECTATION. K=1 counter loop
-# compiled with `#pragma GCC unroll 8`, versus manual K=8 emission
-# (`--unroll=8`), on one frames-bearing body. Gated on the same have_unroll
-# capability probe as the rest of the K axis -- both arms need `--unroll` to
-# exist -- so it is INERT today and prints the same style of "waiting on"
-# line the K-axis banner above prints, rather than silently doing nothing.
-echo
-echo "== pragma comparison cell (K=1 + #pragma GCC unroll 8  vs  manual K=8) =="
-run_pragma_cell () {
-    body=$1; n=$2
-    if [ "$have_unroll" -eq 0 ]; then
-        echo "PRAGMA CELL: waiting on --unroll -- K=1+pragma vs manual K=8 not yet producible"
-        return
-    fi
-    pat="${body}{0,${n}}c"
-    fill=${BODY_FILL[$body]}
-    tail=${BODY_TAIL[$body]}
-
-    mkdir -p "$OUT/pragma_k1" "$OUT/pragma_k8"
-
-    # ---- arm A: --unroll=1 emission, wrapped so its loop is pragma'd ------
-    # Best-effort placement: `#pragma GCC unroll N` binds to the NEXT loop
-    # statement lexically encountered. A file-scope pragma immediately above
-    # the #include only reaches the counter loop because the emitted TU is
-    # one function per pattern (APPROACH.md) with that loop as the first one
-    # defined -- NOT independently verified here. Per simd1 S8's own rule,
-    # the real check is `objdump -d` for the loop actually unrolling (no
-    # residual branch back to itself at 8 iterations); this cell does not
-    # yet do that -- a follow-up once it can run at all.
-    if ! timeout "$TMO" "$PCREC" -p rx --engine=vm --unroll=1 \
-             -o "$OUT/pragma_k1/inner.c" -- "$pat" >/dev/null 2>&1; then
-        echo "PRAGMA CELL: --unroll=1 emission REFUSED-OR-TIMEOUT -- a finding"
-        return
-    fi
-    {
-        echo '#pragma GCC unroll 8'
-        echo '#include "inner.c"'
-    } > "$OUT/pragma_k1/gen.c"
-    if ! timeout "$TMO" "$CC" $OPT -Wall -Wextra -I"$OUT/pragma_k1" \
-             -o "$OUT/pragma_k1/drv" "$OUT/driver.c" 2>"$OUT/pragma_k1/drv.err"; then
-        echo "PRAGMA CELL arm=pragma-k1: DRV-CC-FAILED: $(head -1 "$OUT/pragma_k1/drv.err")"
-        return
-    fi
-
-    # ---- arm B: manual K=8 emission, no pragma -----------------------------
-    if ! timeout "$TMO" "$PCREC" -p rx --engine=vm --unroll=8 \
-             -o "$OUT/pragma_k8/gen.c" -- "$pat" >/dev/null 2>&1; then
-        echo "PRAGMA CELL: --unroll=8 emission REFUSED-OR-TIMEOUT -- a finding"
-        return
-    fi
-    if ! timeout "$TMO" "$CC" $OPT -Wall -Wextra -I"$OUT/pragma_k8" \
-             -o "$OUT/pragma_k8/drv" "$OUT/driver.c" 2>"$OUT/pragma_k8/drv.err"; then
-        echo "PRAGMA CELL arm=manual-k8: DRV-CC-FAILED: $(head -1 "$OUT/pragma_k8/drv.err")"
-        return
-    fi
-
-    for arm in pragma_k1 pragma_k8; do
-        if ! res=$(timeout "$TMO" "$OUT/$arm/drv" "$n" "$fill" "$tail" max "$TRIALS" 2>/dev/null); then
-            echo "PRAGMA CELL arm=$arm: TIMEOUT >${TMO}s -- A FINDING, recorded, not re-run longer"
-            return
-        fi
-        # shellcheck disable=SC2086
-        set -- $res
-        got_verdict=$1; got_bytes=$2; got_ns=$3
-        if [ "$got_verdict" != "match" ]; then
-            echo "PRAGMA CELL arm=$arm: VALIDATION-FAILED: wanted match, got $got_verdict on $got_bytes bytes -- number DISCARDED"
-            return
-        fi
-        case $arm in
-            pragma_k1) ns_pragma=$got_ns ;;
-            pragma_k8) ns_manual=$got_ns ;;
-        esac
-    done
-    delta=$(echo "$ns_pragma $ns_manual" | awk '{printf "%+.1f%%", 100.0*($1-$2)/$2}')
-    printf 'PRAGMA CELL body=%s N=%s: pragma-k1=%sns manual-k8=%sns delta=%s\n' \
-           "$body" "$n" "$ns_pragma" "$ns_manual" "$delta"
-}
-# Representative frames-bearing body/N (see header CONSTRAINT: every body in
-# this file's population stamps VM_RUNGS 0x2, so there is currently no
-# frameless arm here to exercise the "MAY work" branch of the expectation).
-run_pragma_cell '((a)|ab)' 64

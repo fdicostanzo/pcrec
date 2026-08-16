@@ -107,8 +107,12 @@ cannot be re-run is not a measurement.
   explicitly for R24 M-F1's collation reason, as the possessify lane's census
   does.
 
-- **`probes/bench_k.sh`** — the K sweep of `../eng_brep_design.md` §4.4, with
-  this note's §4.4 additions. **The K axis is inert until `--unroll` exists;
+- **`probes/bench_k.sh`** — the K sweep of `../eng_brep_design.md` §4.4.
+  Records PER-BODY-KIND series (alternation, group-with-capture) rather than
+  one aggregate curve, on counter-K's own reasoning: K is ONE dial for every
+  body under F-1, this sweep is what picks its value, and a knee sitting in
+  different places for different body shapes would be averaged into
+  invisibility by a single curve. **The K axis is inert until `--unroll` exists;
   the harness is not** [R25 C2]: it carries a real throughput driver (subject
   built in memory, min-of-N-trials ns/search) and the THREE subject regimes —
   loop satisfied at maximum, satisfied well below it, and FAILING after
@@ -118,10 +122,17 @@ cannot be re-run is not a measurement.
   It runs end to end today with the K column collapsed to "shipped". It is a
   measurement, never a gate (D18).
 
-  One body was dropped when the harness became real: `(a(b|(c|d)))` stamps
-  `VM_RUNGS 0x8`, the reverse-deterministic rung, so it would have measured
-  rung-select under counter-K's name. Replaced by `((a)|a(b|c))`, verified
-  `0x2` at every N in the sweep.
+  Two findings came out of building it rather than running it. One body was
+  dropped: `(a(b|(c|d)))` stamps `VM_RUNGS 0x8`, the reverse-deterministic
+  rung, so it would have measured rung-select under counter-K's name (replaced
+  by `((a)|a(b|c))`, verified `0x2` at every N). And a SINGLE-CLASS body is not
+  in this rung's population at all — `([a-c]){0,N}c` stamps `0x1`, the cursor
+  rung, at every N — so the harness reports that kind EXCLUDED with the verify
+  command instead of substituting a body that would measure elsewhere.
+
+  A pragma-unroll comparison cell and every citation of `studies/simd1` were
+  added at one point and then RETRACTED under the scalar-first directive; the
+  file carries no external-study input.
 
 ## Archived outputs
 
