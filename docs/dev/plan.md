@@ -185,7 +185,40 @@ stated terms.
   wired tree-wide), fire-controls in run_gen_timeout_tests.sh; (3) K22
   filed (nested-bounded-repeat
   compile hang under --engine=vm, known_issues.md — interim product
-  guard or counter-K). NEXT LADDER STEPS: rung-select, then counter-K.
+  guard or counter-K). **RUNG-SELECT BUILT AND MERGED 2026-08-16
+  (D47.1's second rung; merge 274e5a0, 8-leg battery green incl.
+  bench):** src/opt/revdet.c (TWO unique-iteration checks, forward
+  imported from possessify.c, reverse on the REVERSED AST which is
+  also the verdict field Ast.revbody; every unmodeled shape DECLINES),
+  vm_revdet_rep in emit_vm.c (ONE body copy; forward scan cutting
+  choice points at iteration boundaries — O(1) frames; retreat = ONE
+  re-pushed frame stepping boundaries backward via the reversed body,
+  which doubles as §3.4's last-iteration capture walk, zero-iteration
+  clause structural; lazy commits at minimum and extends). K22 INTERIM
+  GUARD in the same landing (product-of-replication-factors refusal,
+  bound = PCREC_MAX_VM_NODES so it only moves refusals EARLIER; depth
+  35/40 hang → 0.12 s refusal; K22 stays OPEN for counter-K).
+  Acceptance cell: ((a)|b){0,4000}c compiles 293 lines / 0.12 s pcrec
+  / 0.12 s gcc, size count-independent (was cap-refused; 113k lines
+  uncapped) — D47.1's refuse-cap ENDGAME landed. Differential 205
+  patterns / 395,757 cells / 0 divergences; corpus 5,984 → 7,655;
+  -fno-revdet + VM_RUNG_REVDET stamp (D46/D47.3). FIVE existing
+  checks went GREEN-BECAUSE-FAST (D46's motivating scenario, incl.
+  the D45 compile-budget positive control and the exact-mask
+  mixed-rung stamp D46's text nominated) — all re-pinned with
+  -fno-revdet AND paired with the other side of the fact (no-ceiling
+  gate, endgame-compiles rows); D45 control gained a SIZE FLOOR that
+  counter-K will meet. Residuals (design file §5, nine): single-level
+  scope, reverse/forward-ambiguous bodies, nullable, assertions,
+  ranged nested, >64 groups, a Glushkov modelling decline, and the
+  STEP-BUDGET BLIND SPOT now WIDENED (possessified loops, the revdet
+  scan AND the walk all charge nothing — the E-5-shaped entry charge
+  owed with counter-K now covers three shapes). Follow-up recorded
+  eng_brep_design.md §8.1: capture-walk sinking (eager/n-step/
+  accept-time; bench eager-vs-sunk with counter-K's harness).
+  NEXT LADDER STEP: counter-K (carries: E-5 entry charge ×3 shapes,
+  K=8 limits.h constant, K22's real fix, size cap → backstop-only,
+  -fno-counter, the gen_timeout size-floor tripwire).
   R24-corrected census: 17%/82%; as-built verdict census 252/1,832
   source quantifiers (13%), archived docs/design/possessify_impl/) —
   BOUNDED-REPEAT EMISSION STRATEGY: the

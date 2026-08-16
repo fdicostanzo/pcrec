@@ -8869,3 +8869,71 @@ that made the maintainer note trustworthy.
 **In flight at this entry:** rungselect lane (opus) — K22 interim guard
 committed and its worktree make test EXIT=0; revdet analysis pass
 (src/opt/revdet.c, -fno-revdet) committed; emitter work in progress.
+
+## 2026-08-16 (EDT), twenty-sixth session (cont.) — RUNG-SELECT LANDED: the reverse-deterministic rung + K22 interim guard; 8-leg battery green; five checks caught going green-because-fast
+
+The rungselect lane (opus, worktree) delivered 20 commits; review found
+NO change requests; merged 274e5a0; battery = the seven legs PLUS
+make bench (emitter changed; lane left ubsan/asan/bench to the merge
+gate) — ALL EIGHT EXIT=0, ~64 min, every leg log kept.
+
+**What landed** (full account in the lane's summary commit 3bac439 and
+docs/design/rungselect_impl/rungselect_design.md):
+- **K22 interim guard**: product-of-replication-factors refusal BEFORE
+  the vm_count_slots walk; bound IS PCREC_MAX_VM_NODES's value (product
+  is a lower bound on emitted nodes → refusals only move EARLIER).
+  Depth 30: 11.82 s → 0.12 s; depth 35/40: hang → 0.12 s; depth 18
+  deliberately unmoved (sits exactly AT the limit — the soundness
+  property visible as a measurement). timeout-IS-the-assertion pinning.
+  K22 stays OPEN (counter-K is the real fix).
+- **The reverse-deterministic rung**: revdet.c decides (forward
+  unique-iteration IMPORTED from possessify.c — one source of truth for
+  a rule with three measured refutations; reverse re-checked on the
+  reversed AST; alt-first-byte disjointness re-derived where the
+  emitter uses it); verdict = Ast.revbody (verdict and material are one
+  field). vm_revdet_rep: one body copy, boundary cuts license O(1)
+  frames, single re-pushed retreat frame, the reversed-body backward
+  walk doing retreat targeting AND last-iteration captures in one
+  emission, captures published AFTER the push so retreats rewind.
+  Acceptance cell ((a)|b){0,4000}c: cap-refusal → 293 lines / 0.12 s /
+  0.12 s, size independent of N (the D47.1 endgame). Differential
+  395,757 cells / 0 divergences; corpus 5,984 → 7,655; §5.3's
+  (|a){m,n} family reproduced R24's oracle split (16 cells, pcrec
+  agrees with libpcre2 against python) — D44's three-way rule earned
+  itself again.
+- **FIVE existing checks went GREEN-BECAUSE-FAST** — D46's motivating
+  scenario arriving for real, including the check D46's text nominated
+  (the exact-mask mixed-rung stamp) and D45's compile-budget positive
+  control, whose slow artifact stopped being slow. All re-pinned with
+  -fno-revdet, every denial PAIRED with the other side of the fact,
+  and the D45 control gained a SIZE FLOOR that fails naming the cause
+  when counter-K absorbs the shape next.
+- Lane found three defects in its own work (a silent cost-cap it
+  introduced, S50 initially vacuous from analysis-internal redundancy
+  — re-aimed with the account recorded, and two self-checks measuring
+  nothing); all fixed in-lane with the accounts written down.
+
+**Rulings from Frank during the flight:**
+- test_watchdog.sh does NOT join make test. Scripts are tested ON
+  CHANGE via make dependencies: scripts/Makefile with a derived
+  PATTERN RULE (tests/%.testreport: tests/%.test %— the stem is the
+  script's FULL filename so extensions survive), wildcard
+  auto-discovery (zero Makefile edits per future script),
+  .DELETE_ON_ERROR so a red run cannot leave a stale green report;
+  top-level `make testscripts` delegates, opt-in like make strict.
+  TO BUILD next (small manager-tier item).
+- Capture-walk sinking recorded at eng_brep_design.md §8.1 (Frank's
+  n-step idea unified with accept-time as one sink knob; gcc provably
+  cannot eliminate the trailed walk; bench eager-vs-sunk when
+  counter-K's harness exists).
+
+**Lesson:** the green-because-fast sweep is the landing's most
+transferable artifact — an optimization that removes a cost un-tests
+every check whose signal WAS that cost, and the lane found five by
+asking "what was slow or big because of replication?" rather than
+waiting for red. D46's stamp machinery made each re-pin assertable.
+
+**State at close of arc:** HEAD 274e5a0 pushed; battery green ×8;
+corpus 7,655 + cli 257; known_fail EMPTY; K-list K2, K7, K9, K22(half);
+no lanes; rungselect worktree removed, branch deleted. NEXT: the
+testscripts pattern (ruled above), then counter-K with Frank.
