@@ -1,8 +1,29 @@
 # MRL family 10 (SPECIFICALLY OWED): (a{1,3}){65} against subjects of
 # 65..100 'a' characters.
 #
-# *** FINDING, confirmed 2026-08-17, reported prominently in the final
-# *** report: every 'm'/'g' case in this file FAILS against the pcrec
+# *** FINDING -- RESOLVED 2026-08-17 by the build lane, kept in place
+# *** rather than edited away because it is the reason this file exists.
+# *** WHAT THE BLINDED AUTHOR FOUND, verbatim below, and what happened to
+# *** it: the gap was real and their diagnosis was right. On the counter
+# *** rung ONE emitted body copy serves every trip, so the compiler's
+# *** compile-time view of "how many mandatory iterations still follow"
+# *** tops out at K + residue -- 9 here, where the truth is 65 -- and the
+# *** bound never bit. k23_design.md S4.5 had DESIGNED the runtime form
+# *** (read the count out of the trailed counter slot) and the build lane
+# *** had deferred it as a residual on S9.3's "once-per-trip is believed
+# *** enough"; that split into a FREQUENCY which holds and a VALUE which
+# *** does not. Building the runtime term makes every case below pass and
+# *** answers N=65 in 0.13 s. Nothing in this file was weakened.
+# *** THE EXPECTATIONS WERE INDEPENDENTLY RE-CONFIRMED (build lane, python
+# *** re over 105 (reps, N) cells at reps 5-15, 0 mismatches): the closed
+# *** form below is exact, and its "last repetition is one byte" clause
+# *** holds while N - 65 <= 2*64 = 128, i.e. N <= 193 -- comfortably
+# *** outside the N <= 100 this file pins. The clause is NOT unconditional:
+# *** at N = 3*reps - 1 the last repetition takes 2, which is where a
+# *** careless restatement of the rule goes wrong.
+# ***
+# *** THE ORIGINAL FINDING, as written when it was live:
+# *** every 'm'/'g' case in this file FAILS against the pcrec
 # *** binary under test -- not because the expectations below are wrong
 # *** (they check out, see "THE REASONING" and the cross-checks below,
 # *** and were independently confirmed correct once the matcher was

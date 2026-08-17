@@ -446,6 +446,8 @@ project journal entry.
 | `make test-vm` | `tests/codegen/run_vm_identity.sh` + `run_ir_listing.sh` + `tests/vm/run_vm_tests.sh` | yes |
 | `make test-possessify` | `tests/possessify/run_possdiff.sh` + `run_possessify_tests.sh` | yes |
 | `make test-rungselect` | `tests/rungselect/run_rungdiff.sh` + `run_rungselect_tests.sh` | yes |
+| `make test-counterk` | `tests/counterk/run_counterkdiff.sh` + `run_counterk_tests.sh` | yes |
+| `make test-mrl` | `tests/mrl/run_mrldiff.sh` + `run_mrl_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
@@ -462,6 +464,49 @@ Fixed the way D46 prescribes — PIN THE SELECTION — by denying the rung, plus
 SIZE FLOOR on the artifact so that the next strategy to absorb this shape fails
 with a diagnostic naming the cause rather than looking like a broken budget.
 Counter-K will meet the same line when it lands.
+
+**[M4.6d] (2026-08-17) — `test-mrl`, and TWO things about it that do not
+apply to the three deny-family sections below.**
+
+MINIMUM-REMAINING-LENGTH pruning (K23's fix, D51 ruling 1) is NOT A RUNG. It
+is a bound emitted ON whichever rung a quantifier already took, so
+`-fno-length-prune` changes no rung, no slot and no capacity, and a denied
+artifact is byte-for-byte the one pcrec emitted before MRL existed —
+`run_mrl_tests.sh` asserts exactly that over every pattern in the tree (701 of
+944 compilable ones carry no bound and are byte-identical). That is the
+strongest form of "the denied build is the ground truth" available in this
+project. It is also why the DENIAL LEAVES NO TRACE, including in the stamps:
+`<PREFIX>_VM_PRUNE_CEILING` reads `"none"` under `-fno-length-prune`, exactly
+as it does for a bound-free pattern, because a stamp announcing the denial
+would destroy the byte-identity property it is there to support. The do-or-die
+is asserted by the ABSENCE of a bound in the artifact.
+
+**`run_mrldiff.sh` sweeps BOTH ENGINES, which no other differential in the
+tree does, and the reason is that the two get DIFFERENT CEILINGS.**
+`--engine=vm` turns the DFA prefilter off, so the bound measures to the subject
+end; the default path threads the prefilter's match-end window (D51 ruling 2),
+which is tighter and is the form that ships. A sweep on either alone leaves the
+other's arithmetic untested, and the window form is the only conservative
+choice in this design whose error direction is UNSOUND — a stale window is too
+SMALL, which deletes real matches rather than merely pruning less. It also
+carries the STRIDE axis for R26 E1/E2's reason (an 855-cell differential once
+blessed an unsound clamp because every body in its corpus was single-byte, and
+at stride 1 the broken clamp and the correct one emit equal code).
+
+**Its driver carries the tree's one COMPARISON ASYMMETRY, opt-in and off by
+default.** An optimization whose purpose is to turn a resource REFUSAL into an
+ANSWER cannot be held to "the failure surfaces are identical" — taken
+literally, that requirement forbids the feature. `possdiff_driver.c` gains
+`-DDIFF_A_MAY_ANSWER_MORE`, which only `run_mrldiff.sh` passes: arm A may
+ANSWER where arm B gave up, the reverse is still a divergence, and two arms
+that both answer must still agree on the span and every slot. A give-up
+carries no captures, so no cell where the answers COULD differ is excused.
+Measured at the pinned budget: 2 of 176,276 cells take the exemption.
+
+**The `.rxt` corpus in `tests/mrl/` is D27-BLINDED**, and it found a real gap
+in the first implementation — see that directory's CLAUDE.md, which is the
+worked example of why an instrument derived from the implementation can only
+find defects the implementation's own model admits.
 
 **[ENG-BREP] (2026-08-16) — an eleventh section, `test-rungselect`.** The
 REVERSE-DETERMINISTIC rung's suite, the same three-part shape as

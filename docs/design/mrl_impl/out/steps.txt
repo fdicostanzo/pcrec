@@ -1,0 +1,19 @@
+# probes/mrl.py steps — [M4.6d] MRL build lane
+# date: 2026-08-17
+# repo: 6a2f875 (lane/mrl)
+# gcc:  gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# The step figure is the smallest power-of-two step budget at which the
+# artifact stops returning RX_ERR_STEPS, i.e. an upper BOUND on the count.
+# 'unpruned' is the same compiler with -fno-length-prune.
+
+(a{10,20}){10,50}              n=100    pruned<=1            unpruned<=16777216       0,100 90,100 | 0,100 90,100
+(a{10,20}){10,50}              n=101    pruned<=1            unpruned<=16777216       0,101 91,101 | 0,101 91,101
+(a{10,20}){10,50}              n=110    pruned<=1            unpruned<=2097152        0,110 100,110 | 0,110 100,110
+(a{10,20}){10,50}              n=150    pruned<=1            unpruned<=4096           0,150 140,150 | 0,150 140,150
+(a{10,20}){10,50}?             n=100    pruned<=1            unpruned<=16777216       0,100 90,100 | 0,100 90,100
+((?:ab){10,20}){10,50}         n=200    pruned<=1            unpruned<=16777216       0,200 180,200 | 0,200 180,200
+((a|b){7,12}){7,20}            n=49     pruned<=1            unpruned<=65536          0,49 42,49 48,49 | 0,49 42,49 48,49
+(a{1,3}){65}                   n=65     pruned<=1            unpruned<=None           0,65 64,65 | giveup
+(a{1,3}){65}                   n=80     pruned<=1            unpruned<=None           0,80 79,80 | giveup
+# ((a{2,4}){5,10}){5,20} at n=50: pruned <=1 with vector (0,50)(40,50)(48,50);
+# the unpruned arm does not terminate under a 2x10^9 budget (design note: 11,906,349,370).

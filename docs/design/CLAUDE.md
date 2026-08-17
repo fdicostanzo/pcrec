@@ -586,6 +586,36 @@ append-only or historical records.
   than by arithmetic and so need their own lattice argument. Probes and
   archived outputs in `k23_impl/probes/` and `k23_impl/out/`; see those
   directories' own CLAUDE.md files.
+  **BUILT 2026-08-17 ([M4.6d], the mrl lane); the note gains §14, its BUILD
+  OUTCOME section.** The recommendation landed as designed and nothing in §4
+  was refuted: `pcrec_minw` in a new `src/opt/mrl.c`, the follow-min threaded
+  down `src/gen/emit_vm.c`'s existing walk (closing §9.4 — no restructuring
+  was needed), the lattice-rounded clamp folded into the greedy cursor scan's
+  own bound, and the prefilter-window ceiling with D51 ruling 2's three
+  obligations as code rather than as prose. Exemplar ≤1 step, three-level
+  shape ≤1, differential 176,276 cells / 0 divergences over strides 1-3 and
+  BOTH ceiling forms. **PREDICTION 6 is ANSWERED IN THE NEGATIVE**: the
+  reverse-deterministic rung needs no lattice argument at all, because its
+  forward scan IS the walk onto the boundary set — the bound stops the scan
+  one boundary early, and E1's substitution failure mode has no spelling
+  there. **The E1 CLASS RECURRED ONE RUNG FURTHER DOWN and a D27-BLINDED test
+  author found it**: on the counter rung one body copy serves every trip, so
+  the compile-time follow-min tops out at `K + residue` — 9 on `(a{1,3}){65}`
+  where the truth is 65 — and K23 stayed alive on that shape while the
+  differential, the structural checks and the acceptance cell all agreed with
+  the bug, because all three were derived from the model the bug was in.
+  §4.5's runtime term (read from the trailed counter slot) is the fix. §14.7
+  lists what the build corrected in this note: §9.1's `rx_work` sketch is
+  superseded by a match-function parameter, and §4.5's "once-per-trip is
+  BELIEVED enough" splits into a FREQUENCY that holds and a VALUE that does
+  not.
+- `mrl_impl/` — the [M4.6d] MRL BUILD lane's own probe and archived outputs,
+  kept separate from `k23_impl/` (the DESIGN lane's territory) for the same
+  never-confuse-the-lanes reason `possessify_impl/` and its siblings are
+  separate from `eng_brep_measurements/`: the design lane's numbers come from
+  prototypes that patch already-emitted C, this lane's from the shipped
+  compiler. Its step figures are BOUNDS (a doubling search over the emitted
+  step budget), not counts, and say so. See its own CLAUDE.md.
 - `m46a_impl/` — **[M4.6a] BUDGET CALIBRATION** (2026-08-17): measures the four
   runtime-bound bring-up placeholders (`VM_DEFAULT_STEP_BUDGET`,
   `VM_DEFAULT_WORK_BUDGET`, `VM_DEFAULT_BT_FRAMES`/`VM_DEFAULT_TRAIL_FRAMES`)

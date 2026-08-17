@@ -1772,7 +1772,7 @@ The reverse-deterministic rung landed the same day does NOT discharge it —
 it declines nested quantifiers by scope bound (single-level only), so a
 `{0,2}` tower still replicates.
 
-## K23 — exact-minimum ambiguous-decomposition boundary exhausts the step budget on a 100-byte ordinary input (found 2026-08-16, D27 blinded quantifier corpus)
+## K23 — FIXED 2026-08-17, found 2026-08-16 (D27 blinded quantifier corpus): exact-minimum ambiguous-decomposition boundary exhausts the step budget on a 100-byte ordinary input
 
 `(a{10,20}){10,50}` against `'a' * 100` — exactly the minimum total, the
 ONLY valid decomposition (10 outer x inner minimum 10; 11 outer would need
@@ -1799,6 +1799,59 @@ decomposition pruning) or [M4.6]'s engine-selection work; owning
 milestone [M4.6] until a better owner exists. Regression:
 `tests/known_fail/d27_nested_min_boundary.rxt` (ratchet-watched); the
 99/500/1000-byte siblings stay live in `tests/base/d27_nesting.rxt`.
+
+**K23 CLOSED 2026-08-17 ([M4.6d], the mrl lane).** THE FIX IS
+MINIMUM-REMAINING-LENGTH (MRL) PRUNING, adopted by D51 ruling 1 on the
+twice-panel-verified design note (`docs/design/k23_impl/k23_design.md`; the
+build outcome is that note's §14). At every point where the emitted VM commits
+to a subject position it now knows a compile-time lower bound on the bytes any
+accepting continuation must still consume, and a position with fewer bytes
+left is cut before a choice point is pushed for it. On the exemplar the search
+goes from **10.6 M steps (`RX_ERR_STEPS`) to ≤1**, with the capture vector
+identical to python's and to the unpruned build's; `((a{2,4}){5,10}){5,20}` at
+50 bytes goes from 11,906,349,370 steps to ≤1. The bound is the same variable
+the explosion is: it BITES at slack 0, where the tree is worst, and is vacuous
+where slack is large.
+
+Soundness is PREFERENCE-BLIND and that is why it is a fix rather than a
+heuristic: `minrest` bounds whether an accepting continuation EXISTS, which is
+a property of the LANGUAGE and therefore order-invariant, so a subtree it
+deletes contained no leaf any preference order could have selected. Validated
+as a pcrec-vs-pcrec differential against `-fno-length-prune`
+(`tests/mrl/run_mrldiff.sh`): **176,276 cells, 0 divergences**, across strides
+1-3, subject lengths on and off the iteration lattice, all four greedy/lazy
+combinations, and BOTH ceiling forms.
+
+**Three things in this entry's own text are corrected rather than rewritten,
+because the design note measured them:**
+
+- "python `re` answers instantly" is true of the exemplar and false of its
+  mechanism. Python explores the SAME tree — its measured times track the
+  closed form's node counts within 5% over four size steps — and takes 2.8 s
+  one size up, 31 s two up and 370 s three up. pcrec's honest refusal was the
+  better behaviour by D22's own bar; K23's justification is "answer a question
+  we can answer cheaply", not "catch up to python".
+- "The boundary is NARROW" is right about the number and wrong about the
+  variable: it is narrow in SLACK (`n − p·m`), not in `n`, and the decay from
+  the peak is geometric over ~50 bytes rather than a cliff (8.0 M steps still
+  at 5 bytes of slack).
+- The stated class is WIDER than the live one. An exact-count inner
+  (`(a{6,6}){3,17}`) is possessified today, the outer takes the fixed-stride
+  cursor rung, and the shape costs 0 steps at every length — so K23's live
+  population was inner width ≥ 1, and the [ENG-BREP] ladder had already
+  disposed of the width-0 edge before this fix existed.
+
+The ratchet's resident moved to `tests/base/d27_nested_min_boundary.rxt` in
+the same change, which is what the ratchet exists to force. The fix's own
+corpus is `tests/mrl/` and is **D27-BLINDED** — and it earned that: the owed
+`(a{1,3}){65}` family FAILED the build lane's first implementation and located
+a real gap on the counter rung (one body copy serves every trip, so the
+compile-time follow-min tops out at `K + residue`, 9 where the truth is 65).
+The differential agreed, the structural checks agreed and the acceptance cell
+agreed, because all three were derived from the same model the bug was in.
+D51 ruling 3's step-budget move (10^6 → 5×10^8) lands with this change and
+NOT before, so the test that flips says what it means: the defect is fixed,
+not outspent.
 
 **K22 CLOSED 2026-08-16 (F-1 ruling, decisions.md D47 ADDENDUM,
 twenty-seventh session).** The two halves resolve separately: the HANG
