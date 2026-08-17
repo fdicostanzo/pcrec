@@ -1077,6 +1077,20 @@ Both pcrec arms are emitted with an effectively infinite step budget, so a
 budget refusal can never masquerade as a difference in what the engine
 explores. The budget is applied afterwards, on paper.
 
+Two properties added after R26, both of them about the instrument rather
+than the result:
+
+- **It can be run in the FAILING direction.** `K23_PRUNE_EXTRA=--no-lattice`
+  re-emits the pre-R26 unrounded clamp across the whole corpus, so the
+  corpus's power against the lattice rule is a measured number rather than
+  an assumption (§7.2.1). This is what the note's first version had no way
+  to state, and its absence is why 855 green cells read as reassurance.
+- **A zero exit with no output file is a hard failure**, not a crash later.
+  It happened for real mid-revision (§11.5), and without the check the
+  harness could have compared the baseline arm against itself and reported
+  agreement — the exact check-design failure this project keeps
+  rediscovering.
+
 ### 7.2 The populations, and the result
 
 **These are the POST-R26 populations**, over corpora that gained stride and
