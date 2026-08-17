@@ -12,22 +12,30 @@ pcrec's `make`.
 
 ## Files
 
-- `k23_design.md` — the note. Recommends MINIMUM-REMAINING-LENGTH (MRL)
-  pruning: at every point where the emitted VM commits to a subject position
-  it already knows a compile-time lower bound on the bytes any accepting
-  continuation must still consume, and a position with fewer bytes left is
-  provably doomed. On the exemplar `(a{10,20}){10,50}` at 100 bytes this
-  takes the search from **10,621,636 steps (10.6x the default budget, hence
-  `RX_ERR_STEPS`) to 1**, and the forward scan work from 55,684,363 to 109 —
-  the quantity D49's new `RX_ERR_WORK` bound meters. Contains the step
-  count's exact CLOSED FORM (compositions of every subject prefix into parts
-  from the inner range, minus the accepting path; 9 of 9 measured instances
-  exact), the head-to-head against memoization (sound, 5,100x, and it loses
-  on memory: Theta(points x subject) with a ~21 KB subject ceiling under
-  D19's 128 KB stack) and against engine routing (the DFA answers this
-  pattern instantly but is capture-blind, and D44.6 refuses it), an 855-cell
-  three-way differential at 0 disagreements, and five refutations — three of
-  them of the K23 entry's own text, one of this lane's own prototype.
+- `k23_design.md` — the note. **PANELED R26 2026-08-17; read its PANEL
+  OUTCOME block first.** Recommends MINIMUM-REMAINING-LENGTH (MRL) pruning:
+  at every point where the emitted VM commits to a subject position it
+  already knows a compile-time lower bound on the bytes any accepting
+  continuation must still consume, so a position with fewer bytes left is
+  provably doomed and is cut before a choice point is pushed — with the clamp
+  **rounded down onto the cursor's iteration lattice**, which is the half R26
+  E1 found missing and measured unsound at stride > 1. On the exemplar
+  `(a{10,20}){10,50}` at 100 bytes this takes the search from **10,621,636
+  steps (10.6x the default budget, hence `RX_ERR_STEPS`) to 1**, and the
+  forward scan work from 55,684,363 to **100** — one pass over the subject,
+  measured with a lane PROXY that the note is careful to distinguish from
+  D49's `RX_ERR_WORK` meter. Contains the step count's exact CLOSED FORM
+  (compositions of every subject prefix into parts from the inner range,
+  minus the accepting path; 9 of 9 measured instances exact, and exact out of
+  sample under the panel), the head-to-head against memoization (sound,
+  5,100x, and it loses on memory: Theta(points x subject) with a ~21 KB
+  subject ceiling under D19's 128 KB stack) and against engine routing (the
+  DFA answers this pattern instantly but is capture-blind, and D44.6 refuses
+  it), a **1,059-cell** three-way differential at 0 disagreements across
+  strides 1-3, residues and all four greedy/lazy combinations, and seven
+  refutations — three of the K23 entry's own text, three of this lane's own
+  work (including its clamp and its generator), and one of a prediction it
+  made about the shipped compiler.
 
 ## Subdirectories
 
