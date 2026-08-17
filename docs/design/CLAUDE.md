@@ -456,10 +456,11 @@ append-only or historical records.
   left is provably doomed, so it is cut before a choice point is pushed. On
   the exemplar `(a{10,20}){10,50}` at 100 bytes the search goes from
   **10,621,636 steps (10.6x the default budget — the reported
-  `RX_ERR_STEPS`) to 1**, and the forward scan work — D49's brand-new
-  `RX_ERR_WORK` metric — from 55,684,363 to **109**, one pass over the
-  subject. On the three-level `((a{2,4}){5,10}){5,20}` at 50 bytes it goes
-  from **11,906,349,370 steps to 6** with a byte-identical capture vector.
+  `RX_ERR_STEPS`) to 1**, and the forward scan work — a LANE PROXY for the
+  quantity D49's `RX_ERR_WORK` bounds, explicitly not that meter's number —
+  from 55,684,363 to **100**, exactly one pass over the subject. On the
+  three-level `((a{2,4}){5,10}){5,20}` at 50 bytes it goes from
+  **11,906,349,370 steps to 6** with a byte-identical capture vector.
   The note's spine is that the step count has an exact CLOSED FORM
   (`Σ_{s≤n} Comp[m,M](s) − p`, the compositions of every subject prefix into
   parts from the inner range; 9 of 9 measured instances exact), from which
@@ -469,8 +470,9 @@ append-only or historical records.
   byte subjects). Soundness is STRUCTURAL — pruning removes only leaves with
   no accepting descendant, so the first accepting path in preference order is
   untouched and PCRE2 leftmost-greedy captures are exact — and was attacked
-  with an **855-cell three-way differential (baseline / pruned / python `re`,
-  full capture vector) at 0 disagreements**. The two rivals are priced and
+  with a **1,059-cell three-way differential (baseline / pruned / python
+  `re`, full capture vector) at 0 disagreements**, across strides 1-3,
+  subject-length residues and all four greedy/lazy combinations. The two rivals are priced and
   lose on their own terms: MEMOIZATION is sound (a pure DFS backtracker
   cannot revisit a state whose subtree succeeded) and gets 5,100x, but needs
   Θ(points × subject) memory — measured 25,650 B for a 4 KB subject cap, a
@@ -480,27 +482,52 @@ append-only or historical records.
   including 100,000) and is unavailable, because the DFA is capture-blind and
   D44.6 refuses a captures-default pattern. **Five refutations, three of them
   of the K23 entry's own text**: python `re` does NOT answer instantly — it
-  explores the same tree at a comparable per-node cost (272 ms vs pcrec's
-  222 ms with the budget lifted) and takes **32 s** one size up and **384 s**
-  two sizes up, so pcrec's honest refusal is the better behaviour by D22's
-  own bar and K23's justification is "answer a cheap question", not "catch up
-  to python"; the boundary is narrow in SLACK, not in `n`, and spans ~50
-  bytes rather than being a cliff; and a slice of the entry's stated class is
-  ALREADY FIXED — an exact-count inner is possessified today and the outer
-  takes the fixed-stride cursor rung at 0 steps, so the live population is
-  inner width ≥ 1. The fourth refutation is the lane's OWN: the prototype
-  silently mis-patched 44 cells (returning nomatch where the oracle matched)
-  because it assumed every span-loop scan site was an inner loop, and the
-  RANDOMIZED corpus caught what the hand-chosen one structurally could not —
-  the fix is an assumption GUARD that declines out-of-shape files, not better
-  arithmetic. Cost on the common path is measured with a PLACEBO control
-  (same sites, same instruction shape, bound forced vacuous) separating the
-  clamp's own instructions from code-layout drift: ±3%, sign varying by
-  shape, about a third of the worst case attributable to layout. §10 lists
-  nine things not measured, headed by the frames rung under pruning and an
-  independent oracle for the three-level rows. Probes and archived outputs
-  in `k23_impl/probes/` and `k23_impl/out/`; see those directories' own
-  CLAUDE.md files.
+  explores the same tree (its measured times track the closed form's node
+  counts within 5% across four size steps) and takes **2.8 s** one size up,
+  **31 s** two sizes up and **368 s** three sizes up, so pcrec's honest
+  refusal is the better behaviour by D22's own bar and K23's justification is
+  "answer a cheap question", not "catch up to python"; the boundary is narrow
+  in SLACK, not in `n`, and spans ~50 bytes rather than being a cliff; and a
+  slice of the entry's stated class is ALREADY FIXED — an exact-count inner
+  is possessified today and the outer takes the fixed-stride cursor rung at 0
+  steps, so the live population is inner width ≥ 1. Three further refutations
+  are the lane's OWN: the prototype silently mis-patched 44 cells (returning
+  nomatch where the oracle matched) because it assumed every span-loop scan
+  site was an inner loop; the explosion needs a GREEDY INNER rather than a
+  greedy outer (a lazy outer explodes identically, a lazy inner costs one
+  step); and — found by the panel — the CLAMP ITSELF was unsound at stride >
+  1. Cost on the common path is measured with a PLACEBO control (same sites,
+  same instruction shape, bound forced vacuous) separating the clamp's own
+  instructions from code-layout drift: ±3% at both sparse and full clamp
+  density, sign varying by shape.
+  **PANELED R26 (2026-08-17, `../dev/reviews/2026-08-17-r26-k23.md`): the
+  design core HELD and was STRENGTHENED; the EMITTED FORM was REFUTED and the
+  EVIDENCE re-anchored.** The soundness argument is PREFERENCE-BLIND and the
+  panel's derivation of that is better than the note's own (minrest bounds
+  whether an accepting continuation EXISTS — a language property, hence
+  order-invariant), confirmed by measuring the lazy-outer exemplar to 0 steps
+  with identical captures; the closed form held exact on three out-of-sample
+  instances. What fell: **§4.1's clamp was UNSOUND on any cursor rung with
+  stride > 1** — it landed the cursor off the iteration lattice, deleting the
+  correct position from the choice set, 5 of 8 subjects wrong on a shape with
+  the exemplar's identical baseline step count — and **the 855-cell
+  differential was structurally blind to it**, because every body came from a
+  single-byte alphabet and at stride 1 the broken clamp and the correct one
+  emit equal code. Both fixed: the clamp is lattice-rounded
+  (`cap = pos + W·⌊(CEIL − minrest − pos)/W⌋`, soundness re-derived over it),
+  the generator gained STRIDE and RESIDUE axes with a committed
+  failing-direction control, and the re-run is the 1,059 cells above. Also:
+  the forward-work numbers gained a real archived probe and were relabelled a
+  PROXY with ruling 5 withdrawn; §9.1's trailing-suffix residual turned out
+  to be a CURVE on which **K23 returns at a 16-byte suffix**, and the
+  panel-contributed fix — thread the prefilter's match-end window, which
+  `rx_search` already computes and discards — is prototyped and MEASURED to
+  close it entirely (1 step at every suffix length), now ruling request 6.
+  §10 lists eleven things not measured, headed by the reverse-deterministic
+  rung, whose iteration boundaries are recovered by a backwards walk rather
+  than by arithmetic and so need their own lattice argument. Probes and
+  archived outputs in `k23_impl/probes/` and `k23_impl/out/`; see those
+  directories' own CLAUDE.md files.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

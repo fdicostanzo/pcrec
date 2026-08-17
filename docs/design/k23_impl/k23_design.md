@@ -128,17 +128,20 @@ Three things make it the recommendation rather than one option of three:
 3. **It cannot change an answer.** It removes only positions from which no
    accepting continuation exists, so the FIRST accepting path in preference
    order is untouched and PCRE2 leftmost-greedy captures are exact. Argued
-   STRUCTURALLY in §4.2 and attacked with an 855-cell three-way differential
-   in §7, which found 0 disagreements — after it found 44 in the prototype,
-   §11.1.
+   STRUCTURALLY in §4.2 and attacked with a **1,059-cell** three-way
+   differential in §7 — across strides 1–3, residues, and all four
+   greedy/lazy combinations — which found 0 disagreements. It found 44 in the
+   prototype first (§11.1) and, after R26, a real unsoundness in the emitted
+   FORM that no cell count could have caught without a stride axis (§4.1,
+   §11.4).
 
-### 0.3 Five things this note refutes, three of them the K23 entry's own
+### 0.3 Seven things this note refutes, three of them the K23 entry's own and three its own
 
 1. **"python `re` answers instantly"** (`known_issues.md` K23) is true of the
-   exemplar and false of its mechanism. Python explores the SAME tree at a
-   comparable per-node cost — 265 ms on the exemplar against pcrec's 222 ms
-   with the budget lifted — and it takes **2.8 s** one size up, **31 s** two
-   sizes up and **368 s** three sizes up. §3.
+   exemplar and false of its mechanism. Python explores the SAME tree — its
+   measured times track the closed form's node counts within 5% across four
+   size steps (§3) — and it takes **2.8 s** one size up, **31 s** two sizes
+   up and **368 s** three sizes up.
 2. **"The boundary is NARROW"** is right about the number and wrong about the
    variable. It is not narrow in `n`; it is narrow in SLACK (`n − p·m`), and
    the decay from the peak is geometric over ~50 bytes, not a cliff. §2.1.
@@ -150,9 +153,18 @@ Three things make it the recommendation rather than one option of three:
    entry does not say so: an exact-count inner (`(a{6,6}){3,17}`) is
    possessified today, the OUTER takes the fixed-stride cursor rung, and the
    shape costs 0 steps. K23's live population is inner width ≥ 1 only. §2.4.
-5. **This lane's own prototype was wrong about 44 cells before the
+5. **The explosion needs a GREEDY INNER, not a greedy outer.** A lazy outer
+   explodes identically (10,621,635); a lazy inner costs one step. The note's
+   first version measured only the all-greedy corner and said nothing about
+   the other three. §2.7.
+6. **This lane's own prototype was wrong about 44 cells before the
    differential caught it**, and the reason is item 4 — it patched a shape
    whose emitted form is not what it assumed. §11.1.
+7. **This lane's own CLAMP was unsound at stride > 1, and its own randomized
+   generator could not see it** — because the generator drew every body from
+   a single-byte alphabet, and at stride 1 the broken clamp and the correct
+   one are arithmetically identical. Found by R26 E1; fixed at §4.1; the
+   generator lesson is §11.4.
 
 ### 0.4 What this note is not
 
@@ -340,7 +352,9 @@ The explosion is the same class there, multiplied by a bounded factor:
 
 The alternation contributes its own choice points as a roughly constant
 multiplier; it does not change the class or the law's shape. BELIEVED that
-the multiplier stays bounded in general — two points is two points.
+the multiplier stays bounded in general — two points is two points. All four
+cells re-measured and archived at `out/multiplier.txt` (R26 M4: the
+454,858 row had no archive in the first version).
 
 **And the bound reaches it.** A choice-bearing body has no cursor range to
 clamp, so §4.1's TEST form applies instead, at each iteration entry
@@ -375,14 +389,18 @@ session). Recorded so the next lane does not rediscover it as a hang.
 MEASURED. `((a{2,4}){5,10}){5,20}` at its own exact minimum
 `n = 5 × 5 × 2 = 50`:
 
-| arm | steps @ n=50 | span | group 1 | group 2 |
-|---|---|---|---|---|
-| shipped | **11,906,349,370** | (0,50) | (40,50) | (48,50) |
-| MRL pruning | **6** | (0,50) | (40,50) | (48,50) |
+| n | shipped steps | pruned steps | span / g1 / g2, BOTH arms |
+|---|---|---|---|
+| 50 | **11,906,349,370** | **6** | (0,50) (40,50) (48,50) |
+| 51 | 9,609,677,279 | 6 | (0,51) (41,51) (49,51) |
+| 55 | 2,379,665,827 | 6 | (0,55) (45,55) (53,55) |
+| 60 | 363,901,065 | 6 | (0,60) (50,60) (58,60) |
 
 Twelve thousand times the default budget, on a fifty-byte subject of `a`s.
-The pruned arm's capture vector is byte-identical to the baseline's at
-n = 50, 51, 55 and 60, and its step count is 6 at every one of them.
+The capture vectors are byte-identical between the arms at every row. **All
+four baseline rows are now archived** (`out/three_level.txt`); the first
+version claimed byte-identity at all four and had archived only 50 and 51
+(R26 M17).
 
 Three things follow.
 
@@ -1156,7 +1174,7 @@ testing the lattice rule, and this one does.
   position), so clamps WILL be emitted for them — the prediction is that they
   never fire and never change a verdict. BELIEVED, and it is the prediction
   most worth attacking; §6's throughput measurement is its only support and
-  is three shapes wide.
+  is six shapes wide.
 - **The `.rxt` corpus: zero changed cells.** STRUCTURAL from §4.2 if the
   analysis is sound, and the pcrec-vs-pcrec differential is how it gets
   checked rather than asserted.
@@ -1167,6 +1185,14 @@ testing the lattice rule, and this one does.
   `--fno-length-prune` escape, on D46's terms, not on this note's.
 - **`rx_info`**: nothing. No new field, no new error code, no ABI event —
   which is worth saying explicitly in a week where D47/D49 opened three.
+- **`rx_work` gains ONE `size_t`** if ruling 6 is taken (§9.1's prefilter
+  window). That is a local struct in the emitted matcher, not an ABI type, so
+  the line above still holds; it is called out because "nothing changes" was
+  easier to say before the panel improved the design.
+- **The stride becomes load-bearing at the clamp site** (§4.3). A rung that
+  reports its stride wrongly now produces a WRONG ANSWER rather than a slow
+  one, which raises what D46's per-quantifier rung stamp is worth: it is the
+  observability half of a value that correctness now depends on.
 
 ---
 
@@ -1273,7 +1299,7 @@ bitmap and is not designed here.
 1. **`make test`.** Not run. No `src/` change exists to test, and running the
    suite would have measured the unmodified compiler.
 2. **The bench matrix.** §6's throughput probe is a purpose-built harness on
-   three shapes, not `make bench`, which gates on load average and must run
+   six shapes, not `make bench`, which gates on load average and must run
    alone (D12/D17).
 3. **libpcre2 as a third oracle.** python `re` only, per the base-tier rule.
    `eng_brep_design.md` §8 item 6 disclosed the same gap and R24 closed it
@@ -1290,18 +1316,32 @@ bitmap and is not designed here.
    answered n = 50 (in 451.6 s, agreeing on every slot) and was not run to
    completion on 51/55/60; libpcre2 was not used at all. The small three-level shape `((a{1,2}){1,2}){1,2}` is in the
    corpus, was DECLINED by the prototype's guard, and costs ≤ 1 step anyway.
-6. **Lazy and possessive outer quantifiers.** Every measured shape is greedy
-   throughout. `eng_brep_design.md`'s R24 outcome is the standing warning here
-   — the lazy half of that note's rule was the half that fell, and for a
-   reason (`§2` there) that a length bound should be immune to but that
-   nobody has checked.
-7. **Subjects above ~300 bytes**, and the interaction with D49's work bound
-   at the scale where that bound actually binds.
-8. **Whether the clamp changes gcc's ability to compile the large replicated
-   functions** of §2.5's family. The one shape that matters there could not be
-   compiled at all.
-9. **Anything about `(*ATOMIC)`, backrefs, or lookaround**, none of which have
-   producers.
+6. ~~**Lazy and possessive outer quantifiers.**~~ **CLOSED for lazy** by R26
+   E3 and §2.7/§2.8: all four greedy/lazy combinations are measured and in
+   the corpus, the lazy-outer explosion is the same size and prunes to 0, and
+   §2.8 states why preference cannot enter the soundness argument at all.
+   What remains open here is narrower: the **lazy cursor rung's own emitted
+   form** (§2.7's last paragraph) is designed and unmeasured, because the
+   prototype's scan-site pattern cannot match it and there is no explosion
+   behind it; and **possessive** quantifiers are untouched.
+7. **The REVERSE-DETERMINISTIC cursor rung** (§4.5). Its iteration boundaries
+   are recovered by a backwards walk rather than by arithmetic, so §4.1's
+   division does not apply and the lattice argument has to be re-made. No
+   shape on that rung was pruned. This is the successor to item 4 as the
+   likeliest place for the E1 class of bug to recur, and §13's new
+   prediction 6 says so.
+8. **Subjects above ~600 bytes**, and the interaction with D49's work bound
+   at the scale where that bound actually binds — which needs the real meter
+   (§4.6), not this lane's proxy.
+9. **The prefilter-window ceiling beyond the exemplar** (§9.1). One shape,
+   seven suffix lengths, and a prototype that plumbs the window through a
+   file-scope variable rather than `rx_work`. The three obligations §9.1
+   names for a build lane are stated, not tested.
+10. **Whether the clamp changes gcc's ability to compile the large replicated
+    functions** of §2.5's family. The one shape that matters there could not
+    be compiled at all.
+11. **Anything about `(*ATOMIC)`, backrefs, or lookaround**, none of which
+    have producers.
 
 ---
 
@@ -1360,6 +1400,41 @@ with what it controls.
 it was gcc, on a 20,941-line function (§2.5). The lane's `timeout` discipline
 turned it into a data point instead of a dead agent, which is the whole
 reason the brief mandates it.
+
+### 11.4 The generator inherited the defect's alphabet — the same lesson, one level up
+
+Recorded because it is §11.1's lesson recurring against the lane that had
+just written §11.1, which is worth more than either instance alone.
+
+§11.1 ends by saying that a corpus derived from the defect inherits the
+defect's alphabet, and that the randomized generator is the cure. It was —
+for the axis it varied. But the generator drew every inner body from a
+SINGLE-BYTE alphabet, so every cursor rung it produced had stride 1, and at
+stride 1 the correct clamp and the broken one emit arithmetically equal code.
+855 cells could not distinguish them under any subject. R26 E1 found the bug
+in ten minutes with a two-byte body.
+
+The generalisation, sharper than §11.1 reached: **randomising a corpus
+protects only the axes the generator can express.** The fix was not more
+cells — it was two new AXES (§7.2.1), and the check that they work is the
+failing-direction control (`--no-lattice`), not the cell count.
+
+### 11.5 A truncating edit destroyed the prototype mid-session
+
+While applying R26's dispositions, a scripted edit to `prune_proto.py` opened
+the file for writing and then raised before writing anything, leaving it
+zero bytes. The file was restored from the last commit and the intervening
+work redone — about twenty minutes.
+
+It is recorded for two reasons. First, the failure was silent in exactly the
+shape this directory's CLAUDE.md warns about: an empty python file exits 0
+and writes no output, so `diff3.py` saw a SUCCESSFUL prune step and then died
+on a missing file, and a differently-written harness would have reported the
+baseline arm twice and called it agreement. `diff3.py` now asserts the output
+file exists after a zero exit, which is a real check the harness lacked.
+Second, the lesson is the boring one: commit after each measured result, not
+after each section. Every WIP commit in this lane's history is there because
+of the watchdog; this is the first time one earned its keep as a backup.
 
 ---
 
