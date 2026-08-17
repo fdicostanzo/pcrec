@@ -180,8 +180,22 @@ fi
 # THE NEXT RUNG DOWN THE LADDER WILL MEET THIS AGAIN. Counter-K is the strategy
 # that replaces replication for exactly this shape, so when it lands this line
 # needs its denial too, or the control goes quiet a second time.
+#
+# IT LANDED, AND IT DID (2026-08-17, the counter-K lane). The prediction above
+# was exact: with the counter rung selecting, this artifact fell to 398 lines
+# and the size floor below fired — naming the cause, which is the whole reason
+# the floor exists rather than the section simply reading as "the budget is not
+# wired". `-fno-counter` joins `-fno-revdet` for the same reason and by the same
+# rule: this control is MADE OF replication, so every strategy that replaces
+# replication for this shape has to be denied for the control to keep
+# controlling anything.
+#
+# The ladder is now fully denied for this shape — cursor declines an
+# alternation body on its own, revdet and counter are denied here, and there is
+# no rung below replication. A future rung that absorbs it again will trip the
+# same floor and get the same treatment.
 mkdir -p "$WORKDIR/slow"
-if ! "$PCREC" -p rx -fno-revdet -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+if ! "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     bad "gen-timeout: could not build the positive-control artifact"
 elif [ "$(wc -l < "$WORKDIR/slow/gen.c")" -lt 1000 ]; then
     # A SIZE FLOOR, so the next time a strategy quietly absorbs this shape the

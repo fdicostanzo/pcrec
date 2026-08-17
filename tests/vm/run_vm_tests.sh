@@ -262,8 +262,16 @@ fi
 # REPLICATED requirement that exceeds the capacity and one that fits, and the
 # rung removes the replication from both sides, which would leave the pair
 # comparing nothing. Pinned rather than re-shaped (D46).
-if build bigbounded '((a)|b){0,20}c' --backtrack-frames=32 -fno-revdet \
-   && build smallbounded '((a)|b){0,3}c' --backtrack-frames=32 -fno-revdet; then
+# `-fno-counter` joins `-fno-revdet` for the reason the denial was added in the
+# first place: this pair exists to test D44.1's CEILING boundary over a body
+# that REPLICATES, and counter-K absorbs the big member (NOPT 20 >= K) while
+# leaving the small one (3 < K) on frames. Without the denial the pair would
+# straddle two rungs, and §5's stamp check over it would be asserting which
+# rung won rather than that the ceiling boundary and the rung boundary are
+# INDEPENDENT — which is the one thing that check says. Counter-K's own ceiling
+# behaviour is its own block's to check, not this pair's to be repurposed for.
+if build bigbounded '((a)|b){0,20}c' --backtrack-frames=32 -fno-revdet -fno-counter \
+   && build smallbounded '((a)|b){0,3}c' --backtrack-frames=32 -fno-revdet -fno-counter; then
     bsc="$(info_field bigbounded subject_ceiling)"
     bfc="$(info_field bigbounded frame_capacity)"
     ssc="$(info_field smallbounded subject_ceiling)"
@@ -450,9 +458,13 @@ fi
 # `-fno-revdet` PINS THE STRATEGY the cap bounds ([ENG-BREP] rung-select): the
 # cap counts REPLICATED copies, and this pattern is no longer replicated at the
 # default, so without the denial the check would be asserting which rung won
-# rather than that the cap works (D46).
-if out="$("$PCREC" -p rx --engine=vm -fno-revdet -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
-    bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles under -fno-revdet"
+# rather than that the cap works (D46). `-fno-counter` joins it for exactly the
+# same reason one rung further down — counter-K replaces replication for this
+# shape too, and a cap on replication cannot be tested by a build that does not
+# replicate. The ladder is now fully denied here; there is no rung below
+# replication, so this list is complete unless a new one is added above.
+if out="$("$PCREC" -p rx --engine=vm -fno-revdet -fno-counter -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
+    bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles under -fno-revdet -fno-counter"
 elif printf '%s' "$out" | grep -q 'replicate its body 4000 times'; then
     ok "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's 3.5 MB case is refused before emission, naming the replication count"
 else

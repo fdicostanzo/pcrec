@@ -1,0 +1,130 @@
+# tests/counterk/patterns.txt — the COUNTER rung's differential population
+# (counterk_design.md §8.1). One pattern per line; `#` comments and blank lines
+# are skipped. Every line is swept against its own `-fno-counter` build.
+#
+# THE COUNTS ARE CHOSEN FOR THEIR RESIDUE MOD K (K = 8), not for roundness.
+# This rung's boundary arithmetic lives on that lattice — the trip guard is
+# `stv[ctr] + K > count` and the tail is `count mod K` copies — so a population
+# whose counts share a residue is a population that cannot see a parity bug.
+# This lane's own first sweep used residues {4,4,1,1} and reported 576 green
+# cells (R26 E1/E2's lesson, reproduced in miniature before this file existed).
+#
+# EVERY COUNT STAYS UNDER PCREC_MAX_VM_REPEAT_COPIES (64), because the DENIED
+# build is the one that replicates and is refused above it. §8.1's blindness
+# above the replication knee is real and is covered by §8.5's acceptance cells
+# and the oracle sweep instead, never by pretending this instrument reaches it.
+
+# ---------------------------------------------------------------------------
+# RESIDUE AXIS, optional phase (NOPT = the count), greedy and lazy.
+#
+# SABOTAGE S53 (the counter slot made untrailed) NEEDS A BODY WITH AN INTERNAL
+# CHOICE POINT and a resume that lands inside it — the alternation bodies here
+# and nowhere else in this file; margin 1 fail / 58 pass. A single-path body
+# never resumes inside itself and cannot see the difference.
+# 7 is K-1 (loop never runs, byte-identical), 8 is K (loop runs one trip, zero
+# residue), 9..15 walk residues 1..7, 16 returns to residue 0 at two trips.
+((a)|ab){0,7}c
+((a)|ab){0,8}c
+((a)|ab){0,9}c
+((a)|ab){0,10}c
+((a)|ab){0,11}c
+((a)|ab){0,12}c
+((a)|ab){0,13}c
+((a)|ab){0,14}c
+((a)|ab){0,15}c
+((a)|ab){0,16}c
+((a)|ab){0,17}c
+((a)|ab){0,23}c
+((a)|ab){0,24}c
+((a)|ab){0,12}?c
+((a)|ab){0,15}?c
+((a)|ab){0,16}?c
+((a)|ab){0,17}?c
+
+# A reverse-AMBIGUOUS body (rungselect_design.md §5 residual 1): it declines the
+# revdet rung for a different reason than the alternation above does, so it is
+# a second independent body on the same residue axis.
+((ab)|b){0,12}b
+((ab)|b){0,16}b
+((ab)|b){0,17}b
+((ab)|b){0,15}?b
+
+# ---------------------------------------------------------------------------
+# RESIDUE AXIS, mandatory phase (§3.1), including the NOPT == 0 carve-out where
+# the optional phase must emit NOTHING at all (§2.3's explicit rule).
+((a)|ab){8}c
+((a)|ab){9}c
+((a)|ab){12}c
+((a)|ab){15}c
+((a)|ab){16}c
+((a)|ab){17}c
+
+# BOTH phases live at once, which is the cell the possessive silent cap lived
+# in: a mandatory phase at or above K AND an optional phase. Residues varied on
+# both halves independently.
+((a)|ab){8,16}c
+((a)|ab){9,17}c
+((a)|ab){9,20}c
+((a)|ab){11,19}c
+((a)|ab){12,20}c
+((a)|ab){16,24}c
+((a)|ab){9,17}?c
+
+# ---------------------------------------------------------------------------
+# SABOTAGE S57 (a resume reading an untrailed local across a trip boundary) IS
+# CAUGHT BY THESE CELLS AND BY NOTHING ELSE IN THIS FILE — margin 1 fail / 58
+# pass. A NESTED loop inside a counter loop is the only shape that can express
+# the failure; a flat counter loop cannot.
+#
+# STRIDE AXIS: an inner quantifier with stride > 1, so a nested cursor rung runs
+# INSIDE the counter loop. This is also the only shape that exercises §7.4's one
+# division (the frameless scan's charge is `(cur - pos) / stride`), and it is
+# §8.1's "a revdet or cursor loop NESTED inside a counter loop" cell [R25 E16] —
+# the shape where an untrailed inner local would be read across a trip boundary.
+(x(?:ab){2,4}){0,12}c
+(x(?:ab){2,4}){0,17}c
+(x(?:abc){1,3}){0,12}c
+((?:ab)|(?:cd)){0,12}e
+((?:ab)|(?:cd)){0,17}e
+([ab][cd]){0,12}e
+([ab][cd]){0,17}?e
+
+# ---------------------------------------------------------------------------
+# NULLABLE bodies (§5's territory).
+#
+# SABOTAGE S56 (the empty-iteration guard ADDED to the bounded path) IS CAUGHT
+# BY THESE CELLS AND BY NOTHING ELSE IN THIS FILE — margin 1 fail / 58 pass.
+# Delete them and that row goes UNDETECTED while the file still looks well
+# populated. A nullable body ABOVE K is the requirement; below K no counter is
+# emitted at all. Spelled at {0,12} rather than {0,4} for the
+# reason §8.1 gives: at {0,4} the counter is never emitted and the cell would be
+# checking replication's termination, which E-2 already settled.
+(a?){0,12}b
+(a?){0,17}b
+(a*){0,12}b
+(|a){0,12}b
+(|a){9,17}b
+(a?){0,12}?b
+
+# ---------------------------------------------------------------------------
+# POSSESSIFIED shapes (§3.4). NOT written with `+` — that spelling needs module
+# `atomic-groups`, which has no producer, so the only way into the arm is the
+# possessify PASS marking an A_REP automatically. `((a)|bc)` qualifies: a
+# one-unambiguous, prefix-free body with a follow disjoint from its FIRST.
+((a)|bc){0,12}d
+((a)|bc){0,16}d
+((a)|bc){0,17}d
+((a)|bc){12}d
+((a)|bc){9,20}d
+((a)|bc){11,19}d
+((a)|bc){16,24}d
+(x)((a)|bc){0,12}d
+
+# ---------------------------------------------------------------------------
+# §3.3's NAMED PREFERENCE WITNESS, already a measured defect in nfa.c and
+# vm_opt_chain. At {0,2} the rung does not fire at the default K, so the
+# residue-bearing sibling carries the counter-selecting version.
+(?:ab|a){0,2}?b
+(?:ab|a){0,12}?b
+(?:ab|a){0,17}?b
+(?:ab|a){0,12}b

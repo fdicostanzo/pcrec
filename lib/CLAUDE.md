@@ -37,3 +37,33 @@ tuning axis, not a semantic option, so it changes no answer and
 `src/gen/emit_dfa.c` deliberately MASKS it out of the emitted `rx_info.flags`.
 Two artifacts differing only in this bit are byte-identical, which is what
 makes the pass's own byte-identity gate expressible at all.
+
+**[ENG-BREP counter-K] (2026-08-17):** the family reaches its third and last
+v1 member and gains the rung's two value knobs.
+
+`PCREC_NO_COUNTER` (`1u << 6`, `-fno-counter`) denies the COUNTER rung. Same
+masked-out-of-`rx_info.flags` treatment as its two siblings, and the same
+role — except that denying THIS one drops a bounded repeat to literal
+replication, which is what ships today and is therefore the semantic ground
+truth its differential compares against. `unroll_k` is its value parameter
+(K, `PCREC_UNROLL_K_DEFAULT` = 0 meaning `PCREC_DEFAULT_UNROLL_K` in
+src/core/limits.h): ONE value per artifact, never per quantifier (D47
+ADDENDUM held §4.5 strictly; the clamp that would have varied K moved whole
+to plan row [ENG-CLAMP]).
+
+`work_budget` (`PCREC_WORK_BUDGET_DEFAULT`/`_NONE`, `--work-budget=N`) is the
+THIRD DD-2 bound, ruled at the D47 SECOND ADDENDUM's settlement 4: work units
+spent on forward work the fail label never sees — frames discarded at a cut,
+frameless scan iterations — reported as `<PREFIX>_ERR_WORK`. It is a SEPARATE
+counter from `step_budget`, which keeps its exact meaning of one backtrack
+resumption; nothing is scaled into anything. ONE existence gate in v1 (D49):
+`--fno-step-budget` suppresses both counters, which keeps the tests/vm
+no-counter pin true as written; splitting the gate later is additive.
+
+Note the deliberate split of homes, since the two constants look alike and are
+not: K lives in `src/core/limits.h` because changing it changes what pcrec
+ACCEPTS (it decides how many copies a bounded repeat emits, against the
+replication caps), while the work budget's default lives beside its siblings in
+`src/gen/emit_vm.c` because a runtime give-up budget changes nothing pcrec
+accepts, rejects or promises — limits.h's own stated inclusion rule, applied in
+both directions.

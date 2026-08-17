@@ -1,0 +1,245 @@
+# docs/design/counterk_impl — the [ENG-BREP] COUNTER-K lane's design and measurements
+
+The lane that builds `../eng_brep_design.md` §4's COUNTER RUNG — one body copy
+(or K) plus an iteration counter, replacing the frames rung's full replication
+of bounded repeats. Its own design note, probes and archived outputs, kept
+separate from `../eng_brep_measurements/` (the design lane's territory),
+`../possessify_impl/` and `../rungselect_impl/` (the two earlier rung lanes')
+so the four are never confused — the same separation `possessify_impl` was
+created for.
+
+Everything here is COMMITTED AND RE-RUNNABLE. R24 M-F4's lesson: a number that
+cannot be re-run is not a measurement.
+
+## Files
+
+- **`counterk_design.md`** — the emitted-shape design note, written before the
+  code on this project's design-first precedent. **PANELED R25
+  (`../../dev/reviews/2026-08-16-r25-counterk.md`): four blockers and nine
+  majors, all applied IN PLACE.** Read the PANEL OUTCOME block at the top
+  before any section.
+
+  Its structural loads, for a reader deciding what to check first: the counter
+  must be a TRAILED slot (§2.2 — a plain local is a correctness failure with
+  `(a|b){0,4}c` as the witness, a per-frame field is CORRECT at one nesting
+  level and dies on the depth-shaped vector nesting would need, and the first
+  draft conflated the two); a counter LOOP is preference-equivalent to
+  `vm_opt_chain`'s NESTED optional chain and not to a chained one (§3.3, whose
+  witness `(?:ab|a){0,2}?b` is already a measured defect in `nfa.c`); the rung shrinks SIZE and not
+  FRAMES, so the endgame cell trades a compile-time refusal for a ~512-byte
+  runtime ceiling (§3.5); and **§7 has refuted two step-charge proposals, the
+  note's own both times** — start there, since it is the section most likely
+  to move again.
+
+  **F-1 is RULED** (D47 ADDENDUM): strict §4.5, K stays one per-artifact
+  constant, and the CLAMP moved whole to plan row [ENG-CLAMP]. §4.2 is now the
+  refutation plus a pointer; acceptance cell 2 is withdrawn; `clamp_arith.py`
+  stays here as that row's inherited evidence.
+
+  **F-2 is RULED too** (D47 SECOND ADDENDUM, 2026-08-17): **settlement 4** —
+  the frameless forward work §7.4 meters gets its OWN bound beside frames and
+  trail, with its own `rx_info` field and its own `RX_ERR_*` code, because the
+  meter must see the FULL work. The step budget does not move (same meaning,
+  same unit, every pin untouched), so §7.4's `PCREC_STEP_SCALE` apparatus is
+  DELETED rather than retuned and R25 finding 27 evaporates; finding 29's
+  measured ~16:1 work ratio survives with a changed job, as the exchange rate
+  that prices a candidate default. Three proposals were refuted before this
+  one — the E-5 entry charge (§7.2), the engine critic's target (§7.3, whose
+  predicate keyed on PUSHES while its justification keyed on POPS, so the
+  revdet scan, `vm_poss_chain` and counter-K's own possessive arm were all
+  excluded from a rule advertising strategy-invariance), and the corrected
+  predicate (finding 26, which double-billed the non-possessified cursor
+  rung). §7.4 is the surviving redesign.
+
+  **What is still owed is §10.5**, and it is the first thing a reader should
+  check for staleness: the new bound's DEFAULT VALUE (held back by the ruling
+  itself, returning to Frank as a one-liner at implementation), the SECOND
+  ADDENDUM's pre-release ABI rider (a recommendation, not a decision — the
+  lane recommends `<prefix>_match` carry the same distinct negative codes as
+  its siblings), and PROPOSED spellings for the new surface. Nothing in §10.5
+  is ruled and no frozen document is edited by it.
+
+## Probes
+
+- **`probes/measure_baseline.sh`** — every MEASURED claim in the note,
+  reproduced from the committed tree in one run, in the note's own order:
+  §1.2's possessified-repeats-still-replicate table (which is why counter-K
+  must cover the possessive arm), §2.2's frame-padding measurement (the
+  cheaper mechanism the note refutes is FREE, and refuting a free alternative
+  needs the argument to be structural), §8.1's rung census over candidate
+  endgame bodies, §8.5's acceptance cells as they behave TODAY, and the
+  stamped capacities the trail arithmetic is predicted against.
+
+  Its own recorded instrument note, because the first draft got it wrong: a
+  mandatory-phase cell MUST use a body that declines the reverse-deterministic
+  rung too. `((a)|bc){4000}` compiles today in 299 lines and would have read
+  as "counter-K already works"; `(a|ab)` is the body that declines both
+  earlier rungs.
+
+- **`probes/step_charge.sh`** — the note's §7 measurement, and the probe that
+  has now refuted TWO proposals, the note's own both times. It counts three
+  populations at their REAL sites in the emitted artifact: `rx_fail:`
+  resumptions (charged today), frames discarded by a CUT, and frameless
+  span-loop iterations. The last two are the uncharged work, and the rule §7.4
+  proposes is defined by exactly them.
+
+  **Four instrument lessons, each of which produced a wrong reading first:**
+  (1) the run budget is raised to 10^12 and the default applied on paper
+  afterwards, because an artifact that gives up early UNDERCOUNTS the thing
+  being counted; (2) THERE ARE TWO SPELLINGS OF A CUT — the `RX_CUT` macro and
+  revdet's direct `w->btn = rx_rvN_mk` — and instrumenting only the macro
+  reported a confident zero for revdet; (3) the B2 witnesses must have a loop
+  REACHABLE AT EVERY START POSITION, and the first draft's `(x)`-prefixed
+  patterns never matched their subject, so every row read zero; (4) the
+  `sites` column reports how many anchors were instrumented, so "0 discarded"
+  is distinguishable from "0 instrumented", which is the distinction that
+  produced (2) and (3).
+
+  **The column-adjacency lesson, recorded four times now: READ ACROSS THE
+  CONTROL ROWS.** Finding 26's refuting number (the same 50,005,000 under
+  `steps` and under `scan`) and finding 29's deriving numbers (the seconds
+  column, which prices a resumption at ~16 scan iterations) were BOTH already
+  sitting in rows this note quoted. Neither needed a new measurement — only
+  reading two columns of an existing row against each other.
+
+  Round 1's blindness is the standing lesson: its single shape `([a-z]+)9` is
+  the possessified CURSOR rung, the one genuinely frameless member of the
+  class, so the boundary the rule turned on was invisible to the instrument
+  that priced the rule.
+
+- **`probes/work_charge.sh`** — §10.5.4's CALIBRATION of the shipped work bound
+  (settlement 4), and deliberately a SECOND INSTRUMENT rather than a re-run of
+  `step_charge.sh`. That one answers "how much uncharged work is there" by
+  sed-instrumenting the artifact and running a build that charges nothing; this
+  one answers "how much does the shipped bound actually charge" by running the
+  REAL artifact and finding the budget at which it gives up. It instruments
+  nothing and patches nothing — its only inputs are `--work-budget=N` and an
+  exit status.
+
+  **The independence is the design, not a convenience.** If the charge were
+  calibrated by the same instrumentation that predicted it, agreement would be
+  near-tautological: the sed anchors and the emitter's charge sites would be two
+  renderings of one belief. That is this directory's recorded controls-share-a-
+  source failure, avoided ahead of time rather than after.
+
+  **A THIRD calibrated class joined at the possessive arm's landing** (the
+  manager's standing term: each new charge site returns here predicted-then-
+  measured). §3.4's possessive cut is the first site the RUNG ITSELF
+  contributes to the meter, and its law — `work = q(2n−q+1)` for
+  `((a)|bc){0,q}d` — was derived from three sizes and verified OUT OF SAMPLE at
+  three further (q,n) pairs. Structural, not fitted: two frames per cut (the
+  loop's stop frame plus the body's one choice point) times the iterations an
+  unanchored search runs from each start, less a tail shortfall of q(q−1) whose
+  values 132/56/240 at q=12/8/16 were checked against the measurement rather
+  than assumed.
+
+  The scan cells are PINS against a closed form derived before the run
+  (n(n+1)/2 for an unanchored search over n bytes) — the artifact completes at
+  the predicted budget and gives up at one unit less, at both sizes. The CUT
+  cell is BISECTED with no prediction and is the stronger of the two results:
+  it landed on 79,988, to the unit the figure §7.4's instrumented table already
+  reported. Two controls keep it from being a probe that shows only its own
+  successes: the MIXED shape (charged nothing) and the DEFAULT path (prefilter
+  answers, VM never entered) must both survive a budget of 1. `--bisect`
+  reports the TRUE boundary when a pin fails, so a wrong prediction yields a
+  number rather than a bare red.
+
+- **`probes/counter_diff.sh`** — §8.1's pcrec-vs-pcrec differential: the counter
+  rung against `-fno-counter` replication, compared on span, every capture slot
+  and the failure surface.
+
+  **It carries a RESIDUE axis and a STRIDE axis, and it exists in that shape
+  because of R26 E1/E2** (the K23 lane): a clamp that was sound at stride 1 and
+  wrong above it had been blessed by an 855-cell differential that could not
+  have seen it — single-byte bodies, no residue axis. This rung's whole boundary
+  arithmetic lives on the mod-K lattice (`stv[ctr] + K > count`, a tail of
+  `count mod K` copies), so it has the same exposure class from its own
+  structure rather than by analogy. **This lane's FIRST sweep used counts whose
+  residues mod 8 were {4,4,1,1} — two of eight — and reported 576 green cells.**
+  The committed instrument walks every residue 0..K-1 on BOTH phases plus the
+  K-1/K/K+1 boundary, and includes stride>1 bodies so a nested cursor rung runs
+  inside the counter loop (also the only shape that exercises §7.4's one
+  division, the frameless scan's `/stride`).
+
+  Three non-vacuity obligations, each written down because this lane violated it
+  once first: both sides BUILT (a silent `cc` failure makes both sides empty and
+  empty compares equal — 0 divergences over 50 cells, once); every cell produced
+  OUTPUT; and the rung was SELECTED, asserted from the artifact's stamp, because
+  a witness that does not select the strategy tests the rung below it under this
+  rung's name — §3.3's preference witness is non-capturing and was measured
+  against the DFA before that check existed. The report prints the SELECTED
+  count, and the script exits non-zero if it is zero.
+
+  `-O1` deliberately, never `-O2`: the ground-truth arm is the REPLICATED
+  emission, which at these shapes is a function gcc `-O2` can spend minutes on.
+  A semantic check gains nothing from optimisation and risks a timeout that
+  reads as a hang.
+
+- **`probes/clamp_arith.py`** — the clamp, PROVED ARITHMETICALLY before the
+  code exists (R25 E1 required this before acceptance). **Kept here after the
+  F-1 ruling moved the clamp to plan row [ENG-CLAMP]**: it is that row's
+  inherited evidence, and it carries the two results the lane established
+  before the deferral — the mechanism is a BOTTOM-UP subtree product (the
+  ancestors-only one parks the K22 tower at 2^17 and still refuses), and the
+  PRODUCT rule is right where the SHAPE rule over-clamps `(a(b|c)?){0,4000}`.
+  It
+  models the emitted-copy count and the nesting-path product rather than
+  compiling, because the pass does not exist and a compile today would measure
+  replication. Reads `PCREC_MAX_*` out of `limits.h` rather than copying the
+  numbers — a constant transcribed into a check is a control sharing a source
+  with the thing it controls. Carries the `{1,2}` tower as a MUST-STILL-REFUSE
+  row and fails if it compiles: a probe that shows only its own successes is
+  not evidence.
+
+- **`probes/census_default.sh`** — R25 E10's owed census: quantifiers by rung
+  and by possessification, on the DEFAULT routing (what ships) and under
+  `--engine=vm`, read from `--emit-ir`'s RUNGS section so it cannot drift from
+  the emission. It exists because §1.2 argued the possessive arm's necessity
+  over a `-fno-revdet` table — a population the default path never reaches —
+  and exhibited no member of the cell it was arguing about. `LC_ALL=C` is set
+  explicitly for R24 M-F1's collation reason, as the possessify lane's census
+  does.
+
+- **`probes/bench_k.sh`** — the K sweep of `../eng_brep_design.md` §4.4.
+  Records PER-BODY-KIND series (alternation, group-with-capture) rather than
+  one aggregate curve, on counter-K's own reasoning: K is ONE dial for every
+  body under F-1, this sweep is what picks its value, and a knee sitting in
+  different places for different body shapes would be averaged into
+  invisibility by a single curve. **The K axis is inert until `--unroll` exists;
+  the harness is not** [R25 C2]: it carries a real throughput driver (subject
+  built in memory, min-of-N-trials ns/search) and the THREE subject regimes —
+  loop satisfied at maximum, satisfied well below it, and FAILING after
+  maximal consumption, which is where backtracking runs and where K should
+  matter most. Every cell validates its verdict before any time is reported,
+  so a wrong subject fails loudly instead of producing a meaningless number.
+  It runs end to end today with the K column collapsed to "shipped". It is a
+  measurement, never a gate (D18).
+
+  Two findings came out of building it rather than running it. One body was
+  dropped: `(a(b|(c|d)))` stamps `VM_RUNGS 0x8`, the reverse-deterministic
+  rung, so it would have measured rung-select under counter-K's name (replaced
+  by `((a)|a(b|c))`, verified `0x2` at every N). And a SINGLE-CLASS body is not
+  in this rung's population at all — `([a-c]){0,N}c` stamps `0x1`, the cursor
+  rung, at every N — so the harness reports that kind EXCLUDED with the verify
+  command instead of substituting a body that would measure elsewhere.
+
+  A pragma-unroll comparison cell and every citation of `studies/simd1` were
+  added at one point and then RETRACTED under the scalar-first directive; the
+  file carries no external-study input.
+
+## Archived outputs
+
+- **`measure_baseline.txt`** / **`step_charge.txt`** / **`clamp_arith.txt`** /
+  **`census_default.txt`** / **`work_charge.txt`** / **`counter_diff.txt`** — one run of each probe above, with its own source
+  header (repo, commit, gcc, date). Stable-named so a re-run diffs against
+  them, D35's shape. Evidence for the panel, never an oracle: no check reads
+  them.
+
+  `step_charge.txt`'s 1 MB `--engine=vm` quadratic row is absent on purpose and
+  its absence is the finding — the row exceeded a 120 s wrapper during
+  development and extrapolates to ~213 s from the 100 KB row, against the
+  possessify lane's independently measured 228.5 s. A timeout is a recorded
+  finding, never a reason to re-run longer (D45's posture).
+
+Maintenance: update this file when files are added/removed or their roles
+change.

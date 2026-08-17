@@ -996,6 +996,33 @@ is filling in a slot class the engine design reserved and the replication
 reading then made unnecessary. An implementation lane should read that as
 confirmation of the shape rather than as licence to skip §5's validation.
 
+> **[COUNTER-K LANE, R25, 2026-08-16] §4.2 is CORRECTED IN FOUR PLACES by
+> `counterk_impl/counterk_design.md`.** Annotated here rather than rewritten,
+> per this directory's house style, because the corrections are what the next
+> reader needs and the original claim is what they will otherwise carry
+> forward.
+>
+> 1. **"No layout change is required, and this is not a coincidence" is right
+>    about the slot and gives no REASON.** The reason (that note's §2.2): the
+>    counter must be restored on resumes into the BODY, not only at the loop
+>    label, and the trail is the only mechanism in this VM that does that. A
+>    per-frame field is correct at one nesting level and dies on cost.
+> 2. **The sketch's tail is not "(n − stv[ctr]) copies".** The tail is reached
+>    only from the trip guard with `ctr` a multiple of K, so the residue is the
+>    COMPILE-TIME constant `NOPT mod K` and the tail is the existing
+>    `vm_opt_chain` at a smaller count. Related: the guard skips the loop at
+>    `K > NOPT` STRICTLY, so byte-identity with today's output holds at
+>    `K > NOPT` and not at `K == NOPT`.
+> 3. **"The counter starts at 0 and counts the OPTIONAL copies" leaves the
+>    MANDATORY prefix replicating**, so `X{4000}` and `X{4000,}` stay refused
+>    over a choice-bearing body. That note's §3.1 gives the mandatory phase its
+>    own counted loop.
+> 4. **K = 8 does NOTHING for K22**, whose tower is all `{0,2}` counts and so
+>    sits below K entirely. A downward safety CLAMP on K, computed bottom-up
+>    over the nesting subtree, is what makes counter-K the fix the plan row and
+>    the K22 entry both credit it with — and whether K may vary per quantifier
+>    at all is F-1, open with Frank against §4.5 below.
+
 ```
   ; X{m,n}, unroll K
   L_entry:   stv[ctr] = 0
@@ -1117,6 +1144,26 @@ would drop:
    the artifact's honest declaration of its own limit. A strategy that changes
    the real limit and not the stamp has broken the stamp's contract, and the
    differential is where that shows.
+
+> **[COUNTER-K LANE, R25, 2026-08-16] items 3 and 4 are NARROWED by
+> `counterk_impl/counterk_design.md` §8.1.** Annotated in place per house
+> style; the requirement is right and two of its four comparisons cannot be
+> made as written.
+>
+> - **Item 4 asks the two builds' stamps to AGREE, and they must not.** A
+>   counter build writes `1 + ⌈NOPT/K⌉` trail entries per phase that a
+>   replication build does not, so its honest `cost.trail` is larger and its
+>   stamped ceiling correspondingly tighter. The checkable property is not
+>   equality between builds but HONESTY per artifact — run at the stamped
+>   ceiling and confirm no give-up, the shape `tests/vm/run_vm_tests.sh`
+>   already uses. Frames DO agree exactly, because one choice point per
+>   iteration is semantics-dictated and no strategy moves it.
+> - **Item 3's "at the same iteration count" is not observable as the emitter
+>   stands.** Trail overflow and frame overflow return the SAME sentinel and
+>   `--backtrack-frames=` sets both capacities from one number, so a
+>   differential cannot tell which array gave up or provision one without the
+>   other. Either a distinct trail sentinel is added, or the differential
+>   over-provisions and checks frames only.
 
 **Subjects**, swept rather than chosen: for each pattern, the loop satisfied at
 0, 1, m−1, m, m+1, n−1, n and n+1 iterations; each of those with the follow

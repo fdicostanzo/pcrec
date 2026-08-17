@@ -447,6 +447,64 @@ append-only or historical records.
   `eng_brep_measurements/` and `possessify_impl/` for the same
   never-confuse-the-lanes reason those two are separate. See its own
   CLAUDE.md.
+- `counterk_impl/` — the [ENG-BREP] COUNTER-K lane's design note, probes and
+  archived outputs (the bounded-repeat COUNTER rung: one body copy per K
+  iterations plus an iteration counter, replacing full replication), kept
+  separate from the three lane directories above for the same
+  never-confuse-the-lanes reason those are separate. Its note is DESIGN-FIRST
+  and PROPOSED — no engine code exists. **PANELED R25 (2026-08-16,
+  `../dev/reviews/2026-08-16-r25-counterk.md`): four blockers, nine majors and
+  a second adversarial pass (findings 17-25) — all applied in place. F-1 is
+  RULED (D47 ADDENDUM: strict §4.5, K stays ONE per-artifact constant and the
+  CLAMP moves whole to plan row [ENG-CLAMP], withdrawing one acceptance cell
+  and leaving the rest of the rung untouched). F-2 is RULED too (D47
+  SECOND ADDENDUM, 2026-08-17): SETTLEMENT 4 — the frameless forward work
+  §7.4 meters gets its OWN bound beside frames and trail, own `rx_info` field
+  and own `RX_ERR_*` code, because the meter must see the FULL work; the step
+  budget keeps its exact meaning and unit, so every existing pin is untouched
+  and the note's `PCREC_STEP_SCALE` apparatus is deleted rather than retuned.
+  Its DEFAULT VALUE is deliberately unruled and returns to Frank as a
+  one-liner at implementation (the note's §10.5, which also carries the
+  addendum's pre-release ABI rider and the PROPOSED names for the new
+  surface).** Read the note's PANEL OUTCOME block and then §10.5 before any
+  other section. Claims that carry it, and
+  where the panel moved them: the counter must be a TRAILED `stv` slot, but for
+  a sharper reason than the first draft gave — a plain local is a correctness
+  failure (`(a|b){0,4}c`) while a per-frame field is CORRECT at one nesting
+  level and dies on the depth-shaped vector nesting would demand; a counter
+  loop is preference-equivalent to `vm_opt_chain`'s NESTED optional chain
+  rather than to a chained one (witness `(?:ab|a){0,2}?b`, already a measured
+  defect in `src/ir/nfa.c`); **K = 8 alone does NOTHING for K22**, whose tower
+  is all `{0,2}` counts and so sits below K entirely, and the CLAMP that fixes
+  it needs a BOTTOM-UP subtree pass — the ancestors-only product the first
+  draft specified parks the tower at 2^17 and leaves depth 35/40 refusing
+  (E1), with the corrected arithmetic proved ahead of the code by
+  `counterk_impl/probes/clamp_arith.py`; the rung shrinks SIZE and not FRAMES,
+  so the endgame cell trades a compile-time refusal for a ~512-byte runtime
+  ceiling (E7); and **the owed E-5 one-step-per-loop-ENTRY
+  charge is MEASURED NOT TO WORK** — entries and steps are the same number at
+  every size (10,001 / 50,001 / 100,001 against 10,001 / 50,001 / 100,001), so
+  it halves a crossover that is three orders of magnitude out — **and its
+  replacement was refuted in turn**, because that rule's predicate keyed on
+  PUSHES while its justification keyed on POPS and `RX_CUT` charges nothing,
+  so the revdet scan, `vm_poss_chain` and counter-K's own possessive arm all
+  sat in the excluded class of a rule advertising strategy-invariance. The
+  redesign charges what the fail label does not see, at the CUT and at
+  frameless scan completion, in exact work UNITS rather than a shifted
+  quantity — measured at 8x more work uncharged than charged on the
+  push-and-cut shapes. The same measurement establishes that the whole debt
+  is reachable only on `--engine=vm`: the DFA prefilter means the VM is never
+  entered on the shipped path (0 steps, 0.003 s where `--engine=vm` takes
+  >120 s). Also records
+  the measured finding that possessification does NOT stop a bounded repeat
+  replicating (1,939 vs 1,997 lines at `{0,64}`), so counter-K must cover the
+  possessive arm — though NOT, as the first draft said, because D47.1's
+  possessify-first order is a trap: possessification is an orthogonal modifier
+  and claims nothing away from any rung, so the trap would be in DECLINING the
+  arm, which is a choice this rung makes (E10). The arm's population is
+  measured non-empty on the path that ships (6 of 94 frames-bounded
+  quantifiers, `counterk_impl/census_default.txt`), which is the honest
+  argument for covering it. See its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

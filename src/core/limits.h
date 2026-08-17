@@ -136,6 +136,30 @@ enum {
      * honest in the meantime. */
     PCREC_MAX_VM_REPLICATION_PRODUCT = PCREC_MAX_VM_NODES,
 
+    /* [ENG-BREP] K, the COUNTER rung's unroll factor (D47.2; counter-K design
+     * note §4.1). One body copy per K iterations plus an iteration counter,
+     * replacing the full replication the two caps above exist to bound.
+     *
+     * WHY IT BELONGS IN THIS FILE, where VM_DEFAULT_WORK_BUDGET deliberately
+     * does not: changing K changes what pcrec ACCEPTS. The emitted copy count
+     * for a bounded repeat is a function of K, so K and the caps above jointly
+     * decide which patterns compile and which are refused — this file's own
+     * inclusion rule, met exactly. A runtime give-up budget meets none of it
+     * and lives beside its siblings in the emitter.
+     *
+     * THE VALUE IS MEASURED, on two curves that agree (eng_brep_design.md
+     * §4.4): gcc -O2 compile time is quadratic in emitted copies, and the
+     * throughput advantage of unrolling is exhausted by K ~= 16. 8 sits below
+     * the knee on both.
+     *
+     * ONE PER ARTIFACT, and that is RULED rather than chosen (D47 ADDENDUM,
+     * holding eng_brep_design.md §4.5 strictly): K does not vary per
+     * quantifier in v1. The downward clamp that would have varied it — the
+     * thing that actually fixes small-count nesting towers — moved whole to
+     * plan row [ENG-CLAMP]. So a pattern mixing `{0,3}` and `{0,4000}` unrolls
+     * both by 8, and the first replicates either way. */
+    PCREC_DEFAULT_UNROLL_K = 8,
+
     /* [ENG-BREP] How many byte-consuming POSITIONS a quantifier body may have
      * before src/opt/possessify.c gives up on it. It bounds the position
      * (Glushkov) automaton the §2.2 unique-iteration test is decided on: the

@@ -1444,7 +1444,8 @@ void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps);
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
-                     long long budget, long long frames, long long ceiling);
+                     long long budget, long long work, long long frames,
+                     long long ceiling);
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
 
 #endif /* PCREC_INTERNAL_H */

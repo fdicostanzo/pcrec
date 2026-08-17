@@ -81,6 +81,32 @@ enum {
 /* §4.6's provisional placeholder, named rather than spelled inline. */
 #define VM_DEFAULT_STEP_BUDGET 1000000LL
 
+/* [ENG-BREP counter-K] The THIRD bound's default (D47 SECOND ADDENDUM
+ * settlement 4; the VALUE ruled at D49). Its unit is a WORK UNIT — one frame
+ * discarded at a cut, one iteration of a frameless scan — and it is a
+ * SEPARATE counter from the step budget, which keeps its exact meaning of one
+ * backtrack resumption. Nothing is scaled into anything.
+ *
+ * WHY 10^9 AND WHAT IT COSTS, because the number is a judgement and not a
+ * measurement. A frameless scan charges one unit per subject byte, so an
+ * ordinary single-pass linear match reaches this bound at roughly 1 GB of
+ * subject, and the possessify quadratic (n^2/2 units) trips at n ~= 45,000,
+ * about a second of work. The measured alternative was ~1.6x10^7 — the value
+ * commensurate with a backtrack resumption at the MEASURED 16:1 work ratio
+ * (a resumption costs about 16 scan iterations; counterk_design.md 7.4) —
+ * which would trip the quadratic at n ~= 5,700 but refuse ordinary linear
+ * matching above ~16 MB. D49 took 10^9 on the failure-direction asymmetry:
+ * too high costs diagnostic-path time, too low is a WRONG ANSWER on the
+ * shipped path.
+ *
+ * A BRING-UP VALUE in exactly the sense VM_DEFAULT_STEP_BUDGET is one — D12
+ * rules budgets come from measured medians, and [M4.6] takes the measurement
+ * for both. This is NOT in src/core/limits.h, and deliberately: that file's
+ * own inclusion rule is "a number belongs here if changing it changes what
+ * pcrec ACCEPTS, REJECTS or PROMISES", and a runtime give-up budget changes
+ * none of the three at compile time. It lives beside its two siblings. */
+#define VM_DEFAULT_WORK_BUDGET 1000000000LL
+
 /* The §2.5 cursor rung only fires for bodies whose emitted inline test stays
  * small; past this the body goes to the frames rung, which is correct and
  * merely costs frames. Keeps `(?:abcdef){3}*`-shaped bodies from emitting a
@@ -150,12 +176,19 @@ typedef enum {
      * cursor and the frames: ONE body copy, a deterministic forward scan, one
      * resume frame for the whole loop, and a backward walk over the reversed
      * body for the retreat and for §3.4's last-iteration captures. */
-    VM_RUNG_REVDET           = 3
+    VM_RUNG_REVDET           = 3,
+    /* [ENG-BREP] the COUNTER rung, the ladder's last step before replication:
+     * ONE body copy per K iterations plus a TRAILED iteration counter, so the
+     * emitted size of a bounded repeat stops being a function of its COUNT.
+     * It sits BELOW revdet — a body that admits the backward walk should take
+     * that rung, which owes no per-iteration frames at all; the counter rung
+     * is what catches the bodies both earlier rungs decline. */
+    VM_RUNG_COUNTER          = 4
 } VmRungKind;
-enum { VM_NRUNG = 4 };
-static const unsigned vm_rung_bit[VM_NRUNG] = { 0x1u, 0x2u, 0x4u, 0x8u };
+enum { VM_NRUNG = 5 };
+static const unsigned vm_rung_bit[VM_NRUNG] = { 0x1u, 0x2u, 0x4u, 0x8u, 0x10u };
 static const char    *const vm_rung_kindname[VM_NRUNG] =
-    { "cursor", "frames-bounded", "frames-unbounded", "revdet" };
+    { "cursor", "frames-bounded", "frames-unbounded", "revdet", "counter" };
 
 /* [ENG-BREP/D46] the LADDER's first rung as its own small named value set,
  * sitting BESIDE the rung rather than inside it: a possessified quantifier
@@ -201,6 +234,22 @@ typedef struct {
     int       nmark_total;
     int       nrev;       /* [ENG-BREP] revdet LOOPS so far (3 slots each) */
     int       nrev_total;
+    int       nctr;       /* [ENG-BREP counter-K] counter LOOPS so far, one
+                           * TRAILED iteration-counter slot each. Trailed and
+                           * not a local: RULED (R25 ASK 3), and the saving the
+                           * design note proposed for the possessive arm was a
+                           * MANDATORY-PHASE MISCOMPILE — the mandatory copies
+                           * have no cut between them, so a body-internal frame
+                           * from iteration 1 resumes reading a stale local and
+                           * `(?:a|bc){3}+` runs one iteration where it must run
+                           * three. */
+    int       nctr_total;
+    int       unroll_k;   /* [ENG-BREP counter-K] K, resolved ONCE from the
+                           * options (PCREC_DEFAULT_UNROLL_K when unset). One
+                           * per artifact, never per quantifier — D47 ADDENDUM
+                           * holds eng_brep_design.md §4.5 strictly. Read here
+                           * rather than at each site so the emitter and the
+                           * two pre-passes cannot disagree about it. */
     int       nrevcaps;   /* the largest capture-group count any one revdet
                            * body has — sizes the SHARED recovery locals. One
                            * array serves every revdet loop because a walk's
@@ -248,6 +297,18 @@ typedef struct {
                             * a quantifier was possessified, because there is
                             * one place that says so. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
+    bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
+                           * artifact (ONE gate for both, D49). Read by the
+                           * WORK charge sites, which are emitted DURING the
+                           * walk — unlike the fail label's step charge, which
+                           * is emitted afterwards and can read the local.
+                           * Set before vm_emit for exactly that reason. */
+    long long nwork;      /* [ENG-BREP counter-K] emitted WORK charge sites,
+                           * counted as they are written. Reported in the
+                           * listing so a check can assert the sites exist
+                           * rather than trusting that the flag was passed —
+                           * D47.3's do-or-die discipline, applied to a
+                           * charge instead of to a rung. */
     /* class bitmap pool, deduplicated */
     uint8_t (*cls)[32];
     int       ncls, clscap;
@@ -345,6 +406,86 @@ static int vm_slot_rev(Vm *v, int loop, int which)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
          + v->nmark_total + 3 * loop + which;
+}
+
+/* [ENG-BREP counter-K] the ITERATION COUNTER, one slot per counter loop, the
+ * fifth and last slot class. Sits above the revdet block for the same reason
+ * every class above sits above the one before it: the base is computed from
+ * the TOTALS the pre-pass found, never from the running assignment counters,
+ * so an emitter that assigns its Nth counter cannot land on a slot the
+ * pre-pass had earmarked for something else.
+ *
+ * ONE slot, not the revdet rung's three: this loop's bounds are compile-time
+ * constants (m, NOPT and K are all known when the C is written), so nothing
+ * needs a low-water mark or a ceiling recorded at run time. The counter is the
+ * only run-time quantity the shape has. */
+static int vm_slot_ctr(Vm *v, int i)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
+         + v->nmark_total + 3 * v->nrev_total + i;
+}
+
+/* [ENG-BREP counter-K] Does this quantifier take the COUNTER rung, and is the
+ * shape the one implemented so far?
+ *
+ * ONE predicate, called from all three sites that must agree — vm_cost_rep,
+ * vm_count_slots and vm_rep's real emission — for the reason src/gen/CLAUDE.md
+ * states about `vm_cursor_fits`: a rung decided by three separate readings of
+ * "does this look like a counter loop" is a rung that will eventually be
+ * emitted by one of them and not costed by another, and the failure mode is a
+ * slot two live loops share.
+ *
+ * SCOPE: §3.1's mandatory phase AND §3.2/§3.3's optional phase, greedy and
+ * lazy. The POSSESSIVE arm (§3.4) is a separate slice and still falls through
+ * to the frames rung, as does any unbounded tail.
+ *
+ * THE THRESHOLD IS PER PHASE, and that is deliberate rather than a shortcut:
+ * K is a threshold on emitted SIZE and the two phases contribute to it
+ * independently, so `{20,22}` counts its mandatory half and replicates its two
+ * optional copies. A single whole-quantifier test would either unroll two
+ * copies for nothing or leave twenty replicated.
+ *
+ * THE STRICTNESS IS §3.2's [R25 E3] and it is structural, not arithmetic. A
+ * phase's trip guard is `stv[ctr] + K > count` evaluated at ctr = 0, so at
+ * count < K it takes the tail immediately and the tail emits all `count`
+ * copies — which for the optional phase IS `vm_opt_chain`, so the emission is
+ * byte-identical to the frames rung by construction. At count == K the loop
+ * RUNS one trip: the same NUMBER of copies as replication, not the same CODE.
+ * So byte-identity holds at K > count and nowhere else. */
+static bool vm_counter_fits(const Vm *v, const Ast *a)
+{
+    if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
+    if (a->rmin == 0 && a->rmax == 0) return false;
+    /* UNBOUNDED: only the MANDATORY prefix is the counter's (§11 residual 1).
+     * The tail stays on the frames star, which already emits one body copy and
+     * has nothing to gain. `X*` and `X+` therefore never reach this rung —
+     * their rmin is 0 or 1 — while `X{4000,}` does, and before this clause it
+     * did not: it replicated 4,001 mandatory copies and was REFUSED while
+     * `X{4000}` compiled. §8.5 cell 3 names both spellings. */
+    if (a->rmax < 0) return a->rmin >= v->unroll_k;
+    return a->rmin >= v->unroll_k
+        || (a->rmax - a->rmin) >= v->unroll_k;
+}
+
+/* How many times the counter rung EMITS the body for an exact count: K copies
+ * inside the trip, plus the `m mod K` residue copies in the tail. This is the
+ * number that replaces `m` everywhere the frames rung would have replicated,
+ * and it is what makes `((a)|ab){4000}` compile — 8 copies where the frames
+ * rung wanted four thousand. Shared by the emitter and both pre-passes so the
+ * three cannot disagree about how much body there is. */
+static int vm_counter_copies(const Vm *v, const Ast *a)
+{
+    const int K = v->unroll_k;
+    const int m = a->rmin, nopt = a->rmax - a->rmin;
+    const int mand = (m >= K ? K + m % K : m);
+    if (a->rmax < 0) return mand + 1;   /* + the star's own single body copy */
+    /* The POSSESSIVE optional phase has NO trip, NO tail and NO K [R25 E6]:
+     * it is ONE emitted body re-entered per iteration, because the cut at each
+     * iteration boundary is what the shape buys and unrolling buys nothing on
+     * top of it. That is also why §8.5's byte-identity cell is scoped away
+     * from this arm — a possessified repeat cannot satisfy it at any --unroll. */
+    if (a->possessive) return mand + (nopt >= K ? 1 : nopt);
+    return mand + (nopt >= K ? K + nopt % K : nopt);
 }
 
 /* ---- AST predicates ------------------------------------------------------*/
@@ -685,6 +826,103 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
      * body containing a nested quantifier that owns slots of its own still
      * writes them once per iteration, and that case earns a real ceiling from a
      * real per-iteration divisor. */
+    /* [ENG-BREP counter-K] §3.1's mandatory phase, costed BEFORE the frames
+     * arm for the same ladder-order reason the revdet arm below is.
+     *
+     * FRAMES ARE NOT WHAT THIS RUNG SHRINKS, and the note owes that plainly
+     * (§3.5, [R25 E7]). The rung shrinks emitted SIZE; the frame requirement is
+     * whatever the body needs, times the iterations that can be live at once.
+     * The mandatory phase pushes nothing of its own — a mandatory copy that
+     * fails fails the quantifier — but the BODY's choice points are still live
+     * across all m iterations, exactly as under replication, because nothing
+     * cuts between mandatory copies. So the requirement is per-ITERATION and
+     * counted over m, not over the K + residue copies the emitter writes.
+     *
+     * Counting the EMITTED copies here instead of the ITERATIONS would be a
+     * silent cap of precisely the kind the revdet arm below records finding the
+     * hard way: the artifact would size for 8 iterations and take 4000. */
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && !a->revbody
+        && vm_counter_fits(v, a)) {
+        Cost body = vm_cost(v, a->l);
+        const long long K = v->unroll_k;
+        const long long mm = a->rmin;
+        if (a->rmax < 0) {
+            /* UNBOUNDED: only the mandatory prefix is the counter's, so this
+             * is the frames rung's own unbounded arm plus the counter's trail
+             * writes. Computing `rmax - rmin` here would be -1 - m, a negative
+             * count that made the frame requirement garbage and returned
+             * RX_ERR_FRAMES on every subject — found by writing §8.5 cell 3's
+             * `{4000,}` member as a check the moment the emitter accepted it. */
+            c.unbounded = c.growable = true;
+            c.pf = 1 + body.frames + body.pf;
+            c.pt = (vm_nullable(a->l) ? 1 : 0) + body.trail + body.pt;
+            c.frames = mm * body.frames;
+            c.trail  = mm * body.trail + (mm >= K ? 1 + mm / K : 0);
+            return c;
+        }
+        const long long nn = a->rmax - a->rmin;
+        /* Frames and trail are the frames rung's OWN numbers, and they must
+         * be: the rung changes how much C is WRITTEN, not how many iterations
+         * RUN or what they push. This is the frames arm's bounded expression
+         * verbatim — mandatory copies contribute the body only, optional
+         * copies contribute a loop frame each as well. If these lines ever
+         * diverge from the frames arm below, one of them is wrong. */
+        if (a->possessive) {
+            /* Possessified, the frame requirement stops depending on the
+             * iteration count entirely — the cut at every iteration boundary
+             * keeps ONE loop frame live at a time — so this mirrors the frames
+             * rung's own possessive arm rather than the bounded one. The TRAIL
+             * still depends on the count, because the cut deliberately does not
+             * rewind it, and saying so is the honest half. */
+            /* THE TWO PHASES' PEAKS ADD; they do not max. The frames rung's
+             * own possessive arm takes the max, and copying that here was a
+             * SILENT CAP measured by §8.1's differential: `((a)|bc){9,20}d` on
+             * twelve 'a's returned RX_ERR_FRAMES where replication matched.
+             *
+             * The reason is an ordering the max reading assumes away. The cut
+             * mark is recorded BEFORE the mandatory copies, and nothing cuts
+             * between them, so all `mm * body.frames` mandatory frames are
+             * still live when the optional loop pushes its stop frame and
+             * enters its body. Only the cut at the END of that first optional
+             * iteration discards them. So the peak is during optional
+             * iteration 1, with both phases resident at once — and after it,
+             * exactly one frame survives, which is what the rung buys.
+             *
+             * Over-counting here costs capacity; under-counting is a wrong
+             * answer on a subject the artifact should have matched. */
+            long long peak_mandatory = mm * body.frames;
+            long long peak_loop      = 1 + body.frames;
+            c.frames = peak_mandatory + peak_loop;
+            c.trail  = (mm + nn) * body.trail
+                     + 1                                  /* the cut mark */
+                     + (mm >= K ? 1 + mm / K : 0)
+                     + (nn >= K ? 1 + nn : 0);            /* +1 per iteration */
+            c.pf     = body.pf;
+            c.pt     = 1 + body.trail + body.pt;
+            c.unbounded = body.unbounded;
+            c.growable  = true;
+            return c;
+        }
+        c.frames = mm * body.frames + nn * (1 + body.frames);
+        c.trail  = (mm + nn) * body.trail
+                 /* the counter: an init plus one write per TRIP, per PHASE
+                  * that actually runs a loop. A phase below K replicates and
+                  * writes the counter not at all. */
+                 + (mm >= K ? 1 + mm / K : 0)
+                 + (nn >= K ? 1 + nn / K : 0);
+        /* The per-iteration divisors the ceiling machinery uses. Taken from
+         * the frames arm for the same reason, with the counter rounded UP from
+         * its true 1/K to 1: over-counting here tightens a stamped ceiling,
+         * while under-counting is a SILENT CAP — the failure the revdet arm
+         * below records finding the hard way, and the asymmetry that decides
+         * which way to round when the honest number is fractional. */
+        c.pf     = 1 + body.frames + body.pf;
+        c.pt     = 1 + body.trail + body.pt;
+        c.unbounded = body.unbounded;
+        c.growable  = true;
+        return c;
+    }
+
     if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && a->revbody) {
         const bool move = vm_rev_canmove(a);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
@@ -988,6 +1226,43 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
             if (move && !a->greedy) vm_count_slots(v, a->l, repl);
             return;
         }
+        /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
+         * it returns BEFORE the `copies` replication line — which is the whole
+         * point of the rung. The body is emitted K + (m mod K) times, not m
+         * times, so `((a)|ab){4000}` charges 8 copies against
+         * PCREC_MAX_VM_REPEAT_COPIES where the frames rung charged four
+         * thousand and was refused.
+         *
+         * NO PUSHES: §3.1's mandatory phase has no choice point at the loop
+         * level (a mandatory copy that fails fails the quantifier), so the only
+         * frames are the body's own, counted by the walk below. ONE slot, the
+         * trailed counter.
+         *
+         * `repl` is passed through UNCHANGED rather than multiplied by the copy
+         * count: K22's product guard bounds the replication a nesting path
+         * performs, and this rung does not replicate per iteration — it emits a
+         * fixed K + residue whatever `m` is. Multiplying here would re-import
+         * exactly the explosion the rung removes. */
+        if (vm_counter_fits(v, a)) {
+            const int K = v->unroll_k;
+            const int nopt = a->rmax - a->rmin;
+            int copies = vm_counter_copies(v, a);
+            v->nctr++;
+            if (a->possessive) v->nmark++;   /* the cut mark, as the frames rung */
+            /* Emitted PUSH sites: the mandatory phase has none, and the
+             * optional phase has one per emitted optional copy — K inside the
+             * trip plus the residue's, which is what vm_opt_chain emits for
+             * the tail. The POSSESSIVE optional phase emits exactly ONE, at
+             * its single re-entered body. Emitted SITES, not live frames:
+             * vm_cost_rep counts the runtime requirement, which is still one
+             * per ITERATION for the non-possessive shapes and ONE for the
+             * whole loop possessified. */
+            v->npush += a->possessive ? (nopt >= K ? 1 : nopt)
+                                      : (nopt >= K ? K + nopt % K : nopt);
+            if (copies > v->maxcopies) v->maxcopies = copies;
+            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl);
+            return;
+        }
         /* frames rung: the star's own push, or one per optional copy. The
          * possessive shapes push at the SAME sites (vm_poss_star once,
          * vm_poss_chain once per optional copy) — what changes is how many are
@@ -1108,8 +1383,53 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  * below the cut carries a trail mark from before the loop ran, so unwinding to
  * it still rewinds everything the loop wrote — which is why discarding frames
  * without rewinding the trail is safe rather than merely convenient. */
+/* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM, settlement 4;
+ * counterk_design.md §7.4). A SEVENTH primitive, and a primitive for a reason
+ * this section learned the hard way: the charge has THREE emission sites in
+ * two different spellings, and the probe that priced this design reported a
+ * confident zero for the revdet rung because the first version instrumented
+ * only the `RX_CUT` macro and missed the rung that cuts by assigning `w->btn`
+ * directly. One call here is what keeps a fourth site from repeating that.
+ *
+ * WHAT IS CHARGED, and equally WHAT IS NOT. The rule is "per-iteration work
+ * the fail label NEVER SEES", and the second half is the part two earlier
+ * drafts got wrong:
+ *
+ *   pushed, then CUT            -> CHARGED, at every cut: the frames being
+ *                                  discarded were never popped through
+ *                                  rx_fail, so nothing counted them.
+ *   never pushed, no retreat    -> CHARGED, at scan completion: the
+ *     frame (possessified scan)    frameless scan's iteration count.
+ *   scanned, then RETREATED     -> NOT CHARGED. Its iterations pop through
+ *     one stride per pop          the fail label 1:1 and are ALREADY charged
+ *                                 in full. Charging here double-bills the
+ *                                 triangular quantity, which is exactly what
+ *                                 R25 finding 26 refuted — and the refuting
+ *                                 number (the same 50,005,000 under `steps`
+ *                                 and under `scan`) was sitting in the note's
+ *                                 own published control row.
+ *
+ * The emitted subtraction is SIGNED and the cast order is load-bearing:
+ * `w->btn` is `unsigned` and `stv[]` is `ptrdiff_t`, so the count must be
+ * taken as `(ptrdiff_t)w->btn - stv[slot]` and never the other way, or a
+ * momentarily-negative intermediate wraps to an enormous positive charge. */
+static void vm_work(Vm *v, const char *countexpr, const char *role)
+{
+    if (!v->has_budget) return;
+    sb_printf(v->b, "    %s_WORK(%s);\n", v->up, countexpr);
+    v->nwork++;
+    vm_ev(v, VE_NOTE, 0, 0, role);
+}
+
 static void vm_cut(Vm *v, int slot, const char *role)
 {
+    /* BEFORE the cut, necessarily: RX_CUT overwrites `w->btn` with the mark,
+     * so after it runs the count this charge needs no longer exists. */
+    {
+        char cnt[192];
+        snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - stv[%d]", slot);
+        vm_work(v, cnt, "work charge: frames discarded by this cut");
+    }
     sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
     vm_ev(v, VE_CUT, slot, 0, role);
 }
@@ -1293,6 +1613,28 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "%s) { %s_cur += %d;", test, v->p, stride);
         if (a->rmax >= 0) sb_puts(b, " it_++;");
         sb_puts(b, " }\n    }\n");
+        /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
+         * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
+         * rmin test. The scan has completed, `pos` is still the loop's entry
+         * (the possessive path writes no low-water slot and never moves `pos`),
+         * so the cursor delta IS the work done; after the rmin test the value
+         * is consumed. Charging here rather than one line later is what makes a
+         * scan that then FAILS the rmin test still pay for the bytes it read.
+         *
+         * Divided by the stride because the unit is an ITERATION, not a byte —
+         * a compile-time constant division that folds away entirely at the
+         * stride of 1 every measured shape has. Whether a wide-stride iteration
+         * should cost proportionally more is a real question the measurement
+         * does not answer (it swept stride-1 shapes only); iterations is what
+         * §7.4 specifies and what its calibration identity is stated over, so
+         * iterations is what ships. Recorded as a residual rather than decided
+         * here. */
+        {
+            char cnt[192];
+            snprintf(cnt, sizeof cnt,
+                     "((ptrdiff_t)(%s_cur - %s)) / %d", v->p, entrypos, stride);
+            vm_work(v, cnt, "work charge: frameless scan iterations");
+        }
         sb_printf(b, "    if ((ptrdiff_t)%s_cur < %s + %lld) goto %s_fail;\n",
                   v->p, entrypos, lo_off, v->p);
         vm_ev(v, VE_NOTE, 0, 0,
@@ -1806,6 +2148,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     v->nocap--;
 
     vm_lbl(v, bodyok, "revdet scan: one iteration committed");
+    /* [counter-K] THE SECOND SPELLING OF A CUT, and the one the step-charge
+     * probe first reported a confident zero for. This is a cut — it discards
+     * every frame the body pushed — and it is charged like one, even though it
+     * never goes near the RX_CUT macro. */
+    {
+        char cnt[192];
+        snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - (ptrdiff_t)%s_mk", rv);
+        vm_work(v, cnt, "work charge: frames discarded by the revdet scan cut");
+    }
     sb_printf(b, "    w->btn = %s_mk;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
                             " body has no second parse of what just matched");
@@ -1925,6 +2276,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
         vm_emit(v, extbl, a->l, extok);
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
+        {
+            char cnt[192];
+            snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - (ptrdiff_t)%s_mk", rv);
+            vm_work(v, cnt, "work charge: frames discarded by the revdet "
+                            "extra-iteration cut");
+        }
         sb_printf(b, "    w->btn = %s_mk;\n", rv);
         vm_goto(v, commitl);
         /* The body FAILING here needs no frame of its own: the push above only
@@ -1933,6 +2290,383 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
          * is what falling through to rx_fail already means. */
     }
 }
+
+/* [ENG-BREP counter-K] §3.1's MANDATORY PHASE: m iterations, no choice point
+ * at the loop level.
+ *
+ *   L_min:    RX_SET(ctr, 0)
+ *   L_mtrip:  if (stv[ctr] + K > m) goto L_mtail
+ *             <K copies of the body>       ; no PUSH: a mandatory copy that
+ *             RX_SET(ctr, stv[ctr] + K)    ; fails fails the whole quantifier
+ *             goto L_mtrip
+ *   L_mtail:  <m mod K copies>             ; the residue, as emitted today
+ *             goto next
+ *
+ * WHY NO PUSH ANYWHERE IN IT. A mandatory copy is not optional: if it cannot
+ * match, the quantifier cannot match, and falling through to `rx_fail` is
+ * already the right answer. The BODY's own choice points still push, which is
+ * the whole reason the counter has to be trailed.
+ *
+ * THE RESIDUE IS A COMPILE-TIME CONSTANT, not a runtime remainder. `L_mtail`
+ * is reachable only through the trip guard, and `stv[ctr]` is only ever 0 or
+ * incremented by exactly K, so the tail is entered at ctr = K*floor(m/K) and
+ * the residue is exactly `m mod K` copies. eng_brep_design.md §4.2 writes the
+ * tail as "(n - stv[ctr]) copies", which reads as a runtime quantity; it is
+ * not, and that is what keeps the tail as ordinary replication at a smaller
+ * count rather than something new.
+ *
+ * THE COUNTER IS WRITTEN ONCE PER TRIP, not per iteration — a second,
+ * independent reason K > 1 pays, and one the §4.4 curves do not measure: the
+ * counter's trail cost is 1/K per iteration. Inside a trip the K copies are
+ * distinct code and the program counter distinguishes them, which is
+ * replication's own encoding used at scale K. */
+static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
+                         int next, bool greedy);
+static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
+                          int next, int mslot);
+static void vm_star(Vm *v, int cur, const Ast *a, int next);
+
+/* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
+ * `count mod K` residue emitted by the caller's own tail.
+ *
+ * The two phases differ in exactly one way and share everything else, which is
+ * why they are one function: the MANDATORY phase pushes nothing (a mandatory
+ * copy that fails fails the whole quantifier, so falling through to rx_fail is
+ * already right), while the OPTIONAL phase pushes one frame per iteration
+ * because each iteration is a choice point.
+ *
+ * WHY A LOOP IS NEST-EQUIVALENT AND NOT CHAIN-EQUIVALENT, which is the one
+ * place getting this shape wrong is a MEASURED live defect rather than a
+ * slowdown. `vm_opt_chain` emits X{0,3} as (X(X(X)?)?)? -- NESTED -- and its
+ * own comment records why: with CHAINED optionals a later copy's alternation
+ * choice outranks an earlier copy's, and `(?:ab|a){0,2}?b` on "abab" gives
+ * [0,2) where PCRE2 and python give [0,4).
+ *
+ * A counter loop LOOKS like a chain and is not. An iteration's skip frame
+ * means "the loop ran j-1 times and then left", which is identical to the
+ * nested form's `other` label; the frames are pushed in the same order and
+ * popped LIFO in the same order, so the preference sequence is the same --
+ * n, n-1, ..., 0 greedy and 0, 1, ..., n lazy. What a CHAIN would additionally
+ * admit is skipping copy 1 and taking copy 2, and a loop structurally cannot
+ * express that. Unrolling does not disturb it: at K > 1 the pushes occur in
+ * the same order and mean the same thing. */
+static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
+                             int next, int ctr, bool optional)
+{
+    StrBuf *b = v->b;
+    const int K = v->unroll_k;
+    const int residue = count % K;
+    const int trip = vm_label(v);
+    const int tail = vm_label(v);
+    const int skip = optional ? vm_label(v) : -1;
+
+    vm_lbl(v, entry, optional ? "counter: optional phase begins"
+                              : "counter: mandatory phase begins");
+    /* The reset is TRAILED like every other write to this slot, and that is
+     * what makes ONE slot serve both phases (§2.3, RULED): a resume into a
+     * MANDATORY-phase body frame rewinds past the optional phase's reset and
+     * recovers the mandatory count. */
+    vm_set(v, ctr, "0", "counter rung: iteration counter (trailed)");
+    vm_goto(v, trip);
+
+    {
+        int body0 = vm_label(v);
+        int cur;
+        vm_lbl(v, trip, "counter trip: another K iterations, or the residue");
+        sb_printf(b, "    if (stv[%d] + %d > %d) goto %s_L%d;\n",
+                  ctr, K, count, v->p, tail);
+        vm_ev(v, VE_NOTE, 0, 0,
+              "trip guard: the residue is a compile-time constant");
+        vm_goto(v, body0);
+        cur = body0;
+        for (int i = 0; i < K; i++) {
+            int nx = vm_label(v);
+            if (!optional) {
+                vm_emit(v, cur, a->l, nx);
+            } else if (a->greedy) {
+                /* GREEDY: the body is the preferred path and LEAVING is the
+                 * resume, so the frame carries the skip label. */
+                int bodyl = vm_label(v);
+                vm_lbl(v, cur, "counter iteration (greedy): body preferred");
+                vm_push(v, skip, "greedy: leaving the loop here is the resume");
+                vm_goto(v, bodyl);
+                vm_emit(v, bodyl, a->l, nx);
+            } else {
+                /* LAZY: leaving is the preferred path and TAKING another
+                 * iteration is the resume, mirroring vm_opt_chain's own lazy
+                 * arm. Greedy vs lazy is which side is the fallthrough. */
+                int bodyl = vm_label(v);
+                vm_lbl(v, cur, "counter iteration (lazy): leaving preferred");
+                vm_push(v, bodyl, "lazy: taking another iteration is the resume");
+                vm_goto(v, skip);
+                vm_emit(v, bodyl, a->l, nx);
+            }
+            cur = nx;
+        }
+        vm_lbl(v, cur, "counter trip complete: charge K and go round");
+        {
+            char val[64];
+            snprintf(val, sizeof val, "stv[%d] + %d", ctr, K);
+            vm_set(v, ctr, val, "counter rung: += K, once per TRIP");
+        }
+        vm_goto(v, trip);
+    }
+
+    /* THE RESIDUE. For the optional phase the tail IS `vm_opt_chain` at a
+     * smaller count -- today's emission, verbatim -- which is what makes the
+     * K > count case byte-identical to the frames rung by construction rather
+     * than by careful arithmetic. */
+    if (optional) {
+        vm_opt_chain(v, tail, a->l, residue, next, a->greedy);
+        vm_lbl(v, skip, "counter: the loop is done, take the continuation");
+        vm_goto(v, next);
+        return;
+    }
+    if (residue == 0) {
+        /* The tail label still EXISTS -- the trip guard branches to it -- so
+         * it is emitted and hands straight over rather than being elided,
+         * which would leave the guard jumping at an undefined label. */
+        vm_lbl(v, tail, "counter residue: none (count is a multiple of K)");
+        vm_goto(v, next);
+        return;
+    }
+    {
+        int res0 = vm_label(v);
+        int cur;
+        vm_lbl(v, tail, "counter residue: count mod K copies, replicated");
+        vm_goto(v, res0);
+        cur = res0;
+        for (int i = 0; i < residue; i++) {
+            int nx = vm_label(v);
+            vm_emit(v, cur, a->l, nx);
+            cur = nx;
+        }
+        vm_lbl(v, cur, "counter residue complete");
+        vm_goto(v, next);
+    }
+}
+
+/* [ENG-BREP counter-K] §3.4's POSSESSIVE optional phase: ONE frame for the
+ * whole loop instead of one per iteration, via RX_CUT against a mark recorded
+ * at loop entry — `vm_poss_chain`'s discipline applied per ITERATION rather
+ * than per COPY.
+ *
+ *   L_trip:  if (stv[ctr] >= NOPT) goto next
+ *            PUSH(L_stop)          ; this iteration cannot run -> leave
+ *            <body>  -> L_step
+ *   L_step:  RX_CUT(mark); RX_SET(ctr, stv[ctr] + 1); goto L_trip
+ *   L_stop:  RX_CUT(mark); goto next
+ *
+ * THE PUSH STAYS, and deleting it is not available. `vm_poss_chain`'s recorded
+ * lesson applies unchanged: a frame at an iteration serves TWO purposes —
+ * resume when the CONTINUATION fails, which possessification kills, and resume
+ * when the BODY fails (this iteration cannot run, so leave the loop), which
+ * stays completely alive. Cutting at the boundary is what possessification
+ * buys; removing the frame is not.
+ *
+ * NO TRIP, NO TAIL, NO K [R25 E6]. Unrolling buys nothing here: the cut at
+ * every iteration boundary already makes the frame requirement independent of
+ * the count, which is the only thing K was bought for. One emitted body copy,
+ * re-entered.
+ *
+ * THE COUNTER IS THE SAME TRAILED SLOT AS EVERYWHERE ELSE, and the "saving"
+ * an earlier draft proposed for it — a plain untrailed local, on the revdet
+ * rung's `_it` precedent — was a MANDATORY-PHASE MISCOMPILE [R25 E5]. The cut
+ * argument that licenses an untrailed local is true of THIS phase and false of
+ * the mandatory one: mandatory copies have no cut between them, so a
+ * body-internal frame pushed during mandatory iteration 1 survives, resumes
+ * reading a stale local, and `(?:a|bc){3}+` runs one iteration where it must
+ * run three. */
+static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
+                                int next, int ctr, int mark)
+{
+    StrBuf *b = v->b;
+    const int trip = vm_label(v);
+    const int body0 = vm_label(v);
+    const int step = vm_label(v);
+    const int stop = vm_label(v);
+
+    vm_lbl(v, entry, "counter: possessive optional phase begins");
+    vm_set(v, ctr, "0", "counter rung: iteration counter (trailed)");
+    vm_goto(v, trip);
+
+    vm_lbl(v, trip, "counter trip (possessive): one iteration, or leave");
+    sb_printf(b, "    if (stv[%d] >= %d) goto %s_L%d;\n", ctr, nopt, v->p, next);
+    vm_ev(v, VE_NOTE, 0, 0, "the bound is a compile-time constant");
+    vm_push(v, stop, "possessive: this iteration cannot run, so leave the loop");
+    vm_goto(v, body0);
+    vm_emit(v, body0, a->l, step);
+
+    vm_lbl(v, step, "counter iteration committed: cut, count, go round");
+    vm_cut(v, mark, "cut: the iteration is committed and owns no live choice point");
+    {
+        char val[64];
+        snprintf(val, sizeof val, "stv[%d] + 1", ctr);
+        vm_set(v, ctr, val, "counter rung: += 1 (possessive: no trip, no K)");
+    }
+    vm_goto(v, trip);
+
+    vm_lbl(v, stop, "counter: the loop is done (possessive), take the continuation");
+    vm_cut(v, mark, "cut: the loop is complete and owns no live choice point");
+    vm_goto(v, next);
+}
+
+/* [ENG-BREP counter-K] §3's COUNTER RUNG: the two phases composed.
+ *
+ * `X{m,n}` is a MANDATORY phase of m iterations (no choice point) followed by
+ * an OPTIONAL phase of n-m (one choice point each). Each phase independently
+ * takes the counter loop when its own count reaches K and ordinary replication
+ * when it does not, so a `{20,22}` unrolls its mandatory half and replicates
+ * its two optional copies -- which is the right split, because K is a
+ * threshold on emitted SIZE and the two phases contribute independently.
+ *
+ * ONE counter slot serves both (§2.3, RULED ASK 4), with the explicit
+ * NOPT == 0 carve-out: a quantifier with rmin == rmax emits no optional-phase
+ * reset at all, because a slot written but never read would break the
+ * byte-identity property §3.2 promises unconditionally at K > NOPT. */
+static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
+{
+    const int K = v->unroll_k;
+    const int m = a->rmin;
+    const bool unbounded = a->rmax < 0;
+    const int nopt = unbounded ? 0 : a->rmax - a->rmin;
+    const int ctr = vm_slot_ctr(v, v->nctr++);
+    /* The possessive arm needs a cut mark as well, recorded BEFORE the
+     * mandatory copies rather than after them: the cut at the first optional
+     * iteration then also discards the mandatory bodies' own dead frames, so
+     * the loop is atomic as a whole, which is what "possessive" means. */
+    const int mark = a->possessive ? vm_slot_mark(v, v->nmark++) : -1;
+    int cur;
+
+    const char *role;
+    if (unbounded)
+        role = vm_rolef(v, "counter rung, {%d,}, K=%d, %s "
+                           "(mandatory counted, tail on the frames star)",
+                        a->rmin, K, a->greedy ? "greedy" : "lazy");
+    else
+        role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
+                           "(mandatory %s, optional %s)",
+                        a->rmin, a->rmax, K,
+                        a->greedy ? "greedy" : "lazy",
+                        m >= K ? "counted" : "replicated",
+                        nopt == 0 ? "none"
+                                  : (nopt >= K ? "counted" : "replicated"));
+    vm_lbl(v, entry, role);
+    vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    if (a->possessive)
+        vm_set(v, mark, "(ptrdiff_t)w->btn",
+               "possessive cut mark (resume-stack depth at loop entry)");
+    cur = vm_label(v);
+    vm_goto(v, cur);
+
+    if (m >= K) {
+        int done = vm_label(v);
+        vm_counter_phase(v, cur, a, m, done, ctr, false);
+        cur = done;
+    } else {
+        for (int i = 0; i < m; i++) {
+            int nx = vm_label(v);
+            vm_emit(v, cur, a->l, nx);
+            cur = nx;
+        }
+    }
+
+    if (unbounded) {
+        /* §11 residual 1: the TAIL is the frames star's, unchanged. The
+         * counter shrank the mandatory prefix and claims nothing else. */
+        vm_star(v, cur, a, next);
+        return;
+    }
+    if (nopt == 0) {
+        vm_lbl(v, cur, "counter: exact count complete");
+        vm_goto(v, next);
+        return;
+    }
+    if (a->possessive) {
+        if (nopt >= K) vm_counter_poss_opt(v, cur, a, nopt, next, ctr, mark);
+        else           vm_poss_chain(v, cur, a->l, nopt, next, mark);
+        return;
+    }
+    if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true);
+    else           vm_opt_chain(v, cur, a->l, nopt, next, a->greedy);
+}
+
+/* [ENG-BREP counter-K] THE UNBOUNDED STAR, extracted from vm_rep so the
+ * COUNTER rung can hand its tail to it.
+ *
+ * `X{m,}` is a mandatory phase of m iterations followed by an unbounded tail,
+ * and §11 residual 1 is explicit that only the tail stays on the frames star —
+ * the mandatory prefix is the counter's, exactly as it is for `X{m,n}`. Before
+ * this extraction the counter rung declined `rmax < 0` outright, so
+ * `((a)|ab){4000,}` still replicated its 4,001 mandatory copies and was
+ * REFUSED while `((a)|ab){4000}` compiled. §8.5 cell 3 names all three
+ * spellings, and the gap was found by writing that cell as a check rather than
+ * by reading the code.
+ *
+ * The body is moved VERBATIM: same locals, same order, same emitted text. Its
+ * one parameter change is the entry label's name. */
+static void vm_star(Vm *v, int cur, const Ast *a, int next)
+{
+    /* the unbounded star */
+    bool guard = vm_nullable(a->l);
+    int gslot = guard ? vm_slot_guard(v, v->nguard++) : -1;
+    int bentry = vm_label(v), bend = vm_label(v), exit = vm_label(v);
+
+    vm_lbl(v, cur, vm_rolef(v, "unbounded repeat, %s, frames rung%s",
+                            a->greedy ? "greedy" : "lazy",
+                            guard ? ", nullable body (empty-iteration guard)"
+                                  : ""));
+    if (guard)
+        vm_set(v, gslot, "(ptrdiff_t)pos",
+               "empty-iteration guard: where this iteration began");
+    if (a->greedy) {
+        vm_push(v, exit, "another iteration preferred; resume is the EXIT");
+        vm_goto(v, bentry);
+    } else {
+        vm_push(v, bentry, "the exit is preferred; resume is another ITERATION");
+        vm_goto(v, exit);
+    }
+
+    vm_emit(v, bentry, a->l, bend);
+
+    vm_lbl(v, bend, "unbounded repeat: one iteration done");
+    if (guard) {
+        /* THE EMPTY-ITERATION RULE (§3.3), and its exact shape matters.
+         *
+         * An iteration that consumed nothing must not iterate again — but it
+         * is NOT rolled back. Control takes the EXIT CONTINUATION, so the
+         * empty iteration's own capture writes STAND. §3.3 says exactly this
+         * ("control takes the exit continuation") and it is worth stating why,
+         * because the mechanism invites the other reading: failing the path
+         * instead would let the trail undo the write for free, and it is
+         * WRONG. Both oracles give `(a*)*` on "a" a group 1 of [1,1) — the
+         * second, empty iteration at position 1 ran, wrote its group, and then
+         * stopped the loop. The roll-back reading reports [0,1), the FIRST
+         * iteration's value, across the whole nullable-body family; `(|a)+`
+         * additionally loses the WHOLE MATCH, reporting [0,1) where both
+         * oracles give [0,0), because rolling back the empty iteration lets
+         * the loop go round again.
+         *
+         * The exit frame this iteration pushed stays on the stack, so a later
+         * failure of the continuation resumes it and enters the exit once more
+         * with the empty iteration's writes rewound. That duplicate is
+         * harmless — same position, same continuation, and base-tier matching
+         * never reads captures, so the second attempt fails exactly as the
+         * first did — but it is real work and one charged step. Dropping the
+         * frame instead is not available: it need not be on top, because the
+         * body may have left its own choice points above it and those must
+         * still get their turn. Recorded for [M4.6] rather than solved with a
+         * mechanism that mutates a frame in place, which does not survive the
+         * loop being re-entered. */
+        sb_printf(v->b, "    if ((ptrdiff_t)pos != stv[%d]) goto %s_L%d;\n",
+                  gslot, v->p, cur);
+        vm_goto(v, exit);
+    } else {
+        vm_goto(v, cur);
+    }
+
+    vm_lbl(v, exit, "unbounded repeat: the exit");
+    vm_goto(v, next);}
 
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 {
@@ -1957,6 +2691,15 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * without having the thing the rung needs. */
     if (a->revbody) {
         vm_revdet_rep(v, entry, a, next);
+        return;
+    }
+
+    /* [ENG-BREP counter-K] the ladder's LAST rung before replication, and the
+     * one that catches the bodies all three above decline. Selected by the one
+     * shared predicate the two pre-passes also call, never by a second reading
+     * of the same conditions. */
+    if (vm_counter_fits(v, a)) {
+        vm_counter_rep(v, entry, a, next);
         return;
     }
 
@@ -2031,66 +2774,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         return;
     }
 
-    /* the unbounded star */
-    bool guard = vm_nullable(a->l);
-    int gslot = guard ? vm_slot_guard(v, v->nguard++) : -1;
-    int bentry = vm_label(v), bend = vm_label(v), exit = vm_label(v);
-
-    vm_lbl(v, cur, vm_rolef(v, "unbounded repeat, %s, frames rung%s",
-                            a->greedy ? "greedy" : "lazy",
-                            guard ? ", nullable body (empty-iteration guard)"
-                                  : ""));
-    if (guard)
-        vm_set(v, gslot, "(ptrdiff_t)pos",
-               "empty-iteration guard: where this iteration began");
-    if (a->greedy) {
-        vm_push(v, exit, "another iteration preferred; resume is the EXIT");
-        vm_goto(v, bentry);
-    } else {
-        vm_push(v, bentry, "the exit is preferred; resume is another ITERATION");
-        vm_goto(v, exit);
-    }
-
-    vm_emit(v, bentry, a->l, bend);
-
-    vm_lbl(v, bend, "unbounded repeat: one iteration done");
-    if (guard) {
-        /* THE EMPTY-ITERATION RULE (§3.3), and its exact shape matters.
-         *
-         * An iteration that consumed nothing must not iterate again — but it
-         * is NOT rolled back. Control takes the EXIT CONTINUATION, so the
-         * empty iteration's own capture writes STAND. §3.3 says exactly this
-         * ("control takes the exit continuation") and it is worth stating why,
-         * because the mechanism invites the other reading: failing the path
-         * instead would let the trail undo the write for free, and it is
-         * WRONG. Both oracles give `(a*)*` on "a" a group 1 of [1,1) — the
-         * second, empty iteration at position 1 ran, wrote its group, and then
-         * stopped the loop. The roll-back reading reports [0,1), the FIRST
-         * iteration's value, across the whole nullable-body family; `(|a)+`
-         * additionally loses the WHOLE MATCH, reporting [0,1) where both
-         * oracles give [0,0), because rolling back the empty iteration lets
-         * the loop go round again.
-         *
-         * The exit frame this iteration pushed stays on the stack, so a later
-         * failure of the continuation resumes it and enters the exit once more
-         * with the empty iteration's writes rewound. That duplicate is
-         * harmless — same position, same continuation, and base-tier matching
-         * never reads captures, so the second attempt fails exactly as the
-         * first did — but it is real work and one charged step. Dropping the
-         * frame instead is not available: it need not be on top, because the
-         * body may have left its own choice points above it and those must
-         * still get their turn. Recorded for [M4.6] rather than solved with a
-         * mechanism that mutates a frame in place, which does not survive the
-         * loop being re-entered. */
-        sb_printf(v->b, "    if ((ptrdiff_t)pos != stv[%d]) goto %s_L%d;\n",
-                  gslot, v->p, cur);
-        vm_goto(v, exit);
-    } else {
-        vm_goto(v, cur);
-    }
-
-    vm_lbl(v, exit, "unbounded repeat: the exit");
-    vm_goto(v, next);
+    vm_star(v, cur, a, next);
 }
 
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
@@ -2587,6 +3271,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     /* Set BEFORE the walk: vm_push_at reads it to decide whether the emitted
      * RX_PUSH carries its label id. */
     v.tracing = (cx->opt->flags & PCREC_TRACE) != 0;
+    /* [ENG-BREP counter-K] K, resolved ONCE here. Set BEFORE vm_count_slots,
+     * which is the first of the three consumers to run — vm_counter_fits reads
+     * it, and a zero would make every quantifier "below K" and silently
+     * disable the rung in the pre-pass while the emitter used the real value. */
+    v.unroll_k = cx->opt->unroll_k > 0 ? cx->opt->unroll_k
+                                       : PCREC_DEFAULT_UNROLL_K;
 
     pcrec_gen_names(cx, &g);
     memcpy(v.up, g.upper, sizeof v.up);
@@ -2616,14 +3306,16 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                  v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
     const int nmark_total = v.nmark;   /* [ENG-BREP] possessive cut marks */
+    const int nctr_total  = v.nctr;    /* [ENG-BREP] counter loops, 1 slot each */
     const int nrev_total  = v.nrev;    /* [ENG-BREP] revdet loops, 3 slots each */
     v.nguard_total = nguard_total;
     v.nlow_total   = nlow_total;
     v.nmark_total  = nmark_total;
     v.nrev_total   = nrev_total;
-    v.nguard = v.nlow = v.nmark = v.nrev = 0;
+    v.nctr_total   = nctr_total;
+    v.nguard = v.nlow = v.nmark = v.nrev = v.nctr = 0;
     const int nstate = 2 * ncaps + nguard_total + nlow_total + nmark_total
-                     + 3 * nrev_total;
+                     + 3 * nrev_total + nctr_total;
 
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root);
@@ -2665,6 +3357,23 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     long long budget = cx->opt->step_budget;
     if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
     const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
+
+    /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
+     * `--fno-step-budget` suppresses BOTH counters, which is what keeps
+     * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
+     * written. `--work-budget=N` is the independent VALUE knob, so the two are
+     * separately tunable while they exist; splitting the gate later is purely
+     * additive. */
+    long long work_budget = cx->opt->work_budget;
+    if (work_budget == PCREC_WORK_BUDGET_DEFAULT)
+        work_budget = VM_DEFAULT_WORK_BUDGET;
+    if (!has_budget) work_budget = PCREC_WORK_BUDGET_NONE;
+
+    /* Set BEFORE the walk, and that is not incidental: the WORK charge sites
+     * are emitted DURING vm_emit (at each cut, at each frameless scan
+     * completion), unlike the fail label's step charge, which is written after
+     * the walk and can simply read the local. */
+    v.has_budget = has_budget;
 
     /* Emit the program into the scratch buffer FIRST: the class pool, the
      * cursor-local's presence and the emitted-node count are all discovered
@@ -2747,6 +3456,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_BOUNDED   0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_BOUNDED]);
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_UNBOUNDED 0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_UNBOUNDED]);
     sb_printf(c, "#define %s_VM_RUNG_REVDET           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_REVDET]);
+    sb_printf(c, "#define %s_VM_RUNG_COUNTER          0x%xu\n", v.up, vm_rung_bit[VM_RUNG_COUNTER]);
     sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
     /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
      * first rung, in the same shape and the same place and for the same
@@ -2777,6 +3487,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_TRAIL_FRAMES %lld\n", v.up, trail_frames);
     if (has_budget)
         sb_printf(c, "#define %s_STEP_BUDGET %lldLL\n", v.up, budget);
+    if (work_budget != PCREC_WORK_BUDGET_NONE)
+        sb_printf(c, "#define %s_WORK_BUDGET %lldLL\n", v.up, work_budget);
     sb_puts(c, "\n");
 
     /* ---- rx_work: the whole mutable working set, §2.2 ------------------
@@ -2791,6 +3503,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    unsigned btn, trn;\n",
         v.up, v.tracing ? " int id;" : "", v.up, v.up);
     if (has_budget) sb_puts(c, "    long long budget;\n");
+    if (work_budget != PCREC_WORK_BUDGET_NONE)
+        sb_puts(c, "    long long work;\n");
     sb_printf(c, "} %s_work;\n\n", v.p);
 
     /* The internal give-up sentinels. They share the search entry's public
@@ -2800,7 +3514,35 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * and only <prefix>_search — which D38 says nothing about — has room for
      * the honest code), so they get their own names. */
     sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)%s_ERR_STEPS)\n", v.up, v.up);
-    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)%s_ERR_FRAMES)\n\n", v.up, v.up);
+    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)%s_ERR_FRAMES)\n", v.up, v.up);
+    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)%s_ERR_WORK)\n\n", v.up, v.up);
+
+    /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
+     *
+     * It TESTS as well as decrements, which is a decision with a cost and is
+     * made deliberately: an untested decrement means a loop that SUCCEEDS can
+     * overrun the bound by orders of magnitude and still return a match, which
+     * is the exact DD-2 failure mode a bound exists to prevent. A budget
+     * consulted only where it was already consulted is not a budget. The price
+     * is that the emitter's former one-charge-site invariant is gone and a
+     * give-up can now return from inside a loop body.
+     *
+     * The `> 0` guard is not defensive noise. It skips the whole operation for
+     * the zero-work cut that is the common case, and it makes a hypothetically
+     * inverted count (which would be a real bug elsewhere) unable to REFUND
+     * budget, which is the one failure mode that would silently disarm the
+     * bound rather than merely mis-size it. */
+    if (work_budget != PCREC_WORK_BUDGET_NONE) {
+        sb_printf(c,
+            "#define %s_WORK(n_) do {                                    \\\n"
+            "        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \\\n"
+            "        if (nw_ > 0) {                                       \\\n"
+            "            w->work -= (long long)nw_;                       \\\n"
+            "            if (w->work < 0) return %s_R_WORK;               \\\n"
+            "        }                                                    \\\n"
+            "    } while (0)\n\n",
+            v.up, v.up);
+    }
 
     if (!v.tracing) {
         sb_printf(c,
@@ -2878,6 +3620,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    w->btn = 0; w->trn = 0;\n",
         v.p, v.p, v.up, v.up);
     if (has_budget) sb_printf(c, "    w->budget = %s_STEP_BUDGET;\n", v.up);
+    if (work_budget != PCREC_WORK_BUDGET_NONE)
+        sb_printf(c, "    w->work = %s_WORK_BUDGET;\n", v.up);
     sb_puts(c, "}\n\n");
 
     sb_printf(c,
@@ -3122,6 +3866,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "        r = %s_match_impl(&ctx, &w);\n"
         "        if (r == %s_R_STEPS)  return %s_ERR_STEPS;\n"
         "        if (r == %s_R_FRAMES) return %s_ERR_FRAMES;\n"
+        "        if (r == %s_R_WORK)   return %s_ERR_WORK;\n"
         "        if (r >= 0) break;\n"
         "        %s_unwind(&w);\n"
         "        if (start >= n) return 0;\n"
@@ -3130,21 +3875,28 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    if (caps) %s_caps_out(&w, caps, start, r);\n"
         "    return 1;\n"
         "}\n\n",
-        v.p, v.p, v.up, v.up, v.up, v.up, v.p, v.p);
+        v.p, v.p, v.up, v.up, v.up, v.up, v.up, v.up, v.p, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     sb_printf(c,
-        "/* F1's unconditional export, typed rx_matchfn. Budget exhaustion and\n"
-        " * frame overflow both report -1 here — INDISTINGUISHABLE from no-match,\n"
-        " * because D38.4 froze this return space (>= 0 length, -1 fail, < -1\n"
-        " * RESERVED and __builtin_trap()-enforced at call sites) and D42.3 kept\n"
-        " * that reservation intact rather than spending it on DD-2. The residual\n"
-        " * is real and narrow and is recorded rather than hidden: a compiled\n"
-        " * matcher used AS a callout cannot tell its caller it gave up. That is\n"
-        " * confined to the composition path, which has no users in v1; re-open\n"
-        " * when a composition customer appears (cheap pre-v1 per D40). The\n"
-        " * honest codes live on %s, whose negative space D38 never\n"
-        " * touched (4.4's three layers). */\n"
+        "/* F1's unconditional export, typed rx_matchfn.\n"
+        " *\n"
+        " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
+        " * return space is >= 0 matched length, -1 no match, and a distinct\n"
+        " * code in [%s_ERR_FLOOR, -2] for each way the engine can give up\n"
+        " * (%s_ERR_STEPS, %s_ERR_FRAMES, %s_ERR_WORK). Anything BELOW the floor\n"
+        " * stays reserved for the future abort semantic and is what a callout\n"
+        " * call site traps on.\n"
+        " *\n"
+        " * This SUPERSEDES D42.3, which collapsed every give-up to -1 because\n"
+        " * D38.4 had reserved the whole < -1 space. Three things moved: pcrec is\n"
+        " * pre-release, so a 'final' label reads as 'stable absent a reason';\n"
+        " * the typedef is BIDIRECTIONAL, so under the collapse an\n"
+        " * embedder-WRITTEN callout had no legal spelling for 'I gave up' at\n"
+        " * all (anything below -1 traps the process); and the collapse let an\n"
+        " * inner give-up read as a plain path failure, so an outer match could\n"
+        " * report an ANSWER where a bound had actually blown. A caller that\n"
+        " * only asks 'did it match' still writes `r < 0` and is unaffected. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    %s_work w;\n"
@@ -3152,11 +3904,21 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
         "    r = %s_match_impl(ctx, &w);\n"
-        "    return r < 0 ? -1 : r;\n"
+        "    /* No translation and no clamp: the impl's return space IS this\n"
+        "     * contract's -- >= 0, -1, or one of the three R_ sentinels, which\n"
+        "     * are the ERR_ codes. A defensive floor test here would be dead\n"
+        "     * code pretending to be a safeguard. */\n"
+        "    return r;\n"
         "}\n\n",
-        g.searchfn, g.matchfn, v.p, v.p, v.p);
+        v.up, v.up, v.up, v.up, g.matchfn, v.p, v.p, v.p);
 
     sb_printf(c,
+        "/* The capture-delivering sibling. Same D49 return space as\n"
+        " * <prefix>_match above -- it always had room for the codes (it is not\n"
+        " * an rx_matchfn), and now the two agree instead of differing over a\n"
+        " * reservation only one of them was bound by. caps_out is UNTOUCHED on\n"
+        " * every negative return, give-up included: a caller that gave up has\n"
+        " * no captures, and A-8's untouched-wins rule does not bend for it. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
         "{\n"
         "    %s_work w;\n"
@@ -3164,14 +3926,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
         "    r = %s_match_impl(ctx, &w);\n"
-        "    if (r < 0) return -1;\n"
+        "    if (r < 0) return r;\n"
         "    if (caps_out) %s_caps_out(&w, caps_out, ctx->pos, r);\n"
         "    return r;\n"
         "}\n\n",
         g.matchcapsfn, v.p, v.p, v.p, v.p);
 
     pcrec_emit_info(cx, &g, 2, job->fit.why,
-                    has_budget ? budget : -1, bt_frames, ceiling);
+                    has_budget ? budget : -1, work_budget, bt_frames, ceiling);
 
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         pcrec_emit_main(cx, &g);

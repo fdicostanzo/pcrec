@@ -67,7 +67,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-known-fail test-thread
+      test-counterk test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -176,6 +176,21 @@ test-rungselect: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/rungselect/run_rungdiff.sh' \
 	    'bash tests/rungselect/run_rungselect_tests.sh'
+
+# [ENG-BREP] The COUNTER rung's differential, the third member of the deny
+# family's suite set and the same shape as the two above. `-fno-counter` is the
+# ground truth for the same reason `-fno-revdet` is one rung up: denying the
+# rung leaves the quantifier on FRAMES, which for a bounded repeat is literal
+# replication -- what ships today.
+#
+# It carries RESIDUE and STRIDE axes the two suites above do not, and that is
+# not symmetry for its own sake: this rung's boundary arithmetic is the mod-K
+# lattice, and R26 E1/E2 measured a differential blessing an unsound clamp over
+# 855 cells because its corpus had neither axis. See the script's header.
+test-counterk: all
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/counterk/run_counterkdiff.sh' \
+	    'bash tests/counterk/run_counterk_tests.sh'
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh

@@ -112,6 +112,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   records the one thing that surprises: the differential's count ceiling is 64
   and it is a property of the GROUND TRUTH, since the denied build is the one
   that replicates
+- **`counterk/`** — the [ENG-BREP] COUNTER rung's differential: the counter
+  build against its own `-fno-counter` (replication = ground truth) build, over
+  a population whose counts are chosen for their RESIDUE MOD K and whose bodies
+  include stride > 1. Carries the two axes R26 E1/E2 proved a differential is
+  structurally blind without. See its own CLAUDE.md.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
