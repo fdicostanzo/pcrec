@@ -549,10 +549,15 @@ CONTROLLABILITY layer on top of an axis that already existed, so one
 structural script is the whole of what the row owes. Its independent
 controls (matching the K24-lane convention that a check must be shown able
 to go red) pair every stamp assertion with a read of the actual emitted
-`_prefilter(` machinery, never the stamp text alone; see
-`tests/prefilter/CLAUDE.md` for the two live sabotages that verified this
-(the do-or-die refusal removed, and the `rx_info.flags` mask bits dropped)
-before the check was accepted.
+`_prefilter(` machinery, never the stamp text alone; per R28-1
+(`docs/dev/reviews/2026-08-17-r28-mrl-landing.md`: ad-hoc, reverted
+sabotages are not validation — MRL had to add S58-S63 retroactively for
+exactly this), the two failing directions verified during development are
+PERMANENT rows, `tests/mech/sabotages/S64_*.sh`/`S65_*.sh` (their own
+`prefilter` arm in `tests/mech/run_sabotage_matrix.sh`, both confirmed
+DETECTED — the do-or-die refusal removed, and the `rx_info.flags` mask
+bits dropped; see `tests/mech/CLAUDE.md`'s "[M4.6f] S64-S65" section for
+the measured fail counts).
 
 **[ENG-BREP] (2026-08-16) — an eleventh section, `test-rungselect`.** The
 REVERSE-DETERMINISTIC rung's suite, the same three-part shape as

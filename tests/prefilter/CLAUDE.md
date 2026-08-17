@@ -65,16 +65,21 @@ whole of what the row owes.
   forward+reverse DFA pair `pcrec_emit_dfa_engine` writes), never the stamp
   text alone — a check that only re-read the macro would pass even if the
   stamp and the emitter's real behavior had drifted apart, which is the
-  controls-sharing-a-source failure this project's memory records. This was
-  verified able to go red with two live, reverted sabotages during the
-  lane that built this file (not committed, not scripted here — the
-  K24/D46-family convention is to prove the check CAN fail before trusting
-  that it does not): removing the do-or-die refusal in
-  `src/opt/select_engine.c` turned the two refusal checks red; dropping
-  `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` from `emit_dfa.c`'s
-  `strategy_denials` mask turned the mask check AND (as a bonus) both
-  byte-identity checks red, because the leaking bit changed the emitted
-  `.flags` value.
+  controls-sharing-a-source failure this project's memory records. **Per
+  R28-1** (`docs/dev/reviews/2026-08-17-r28-mrl-landing.md`: ad-hoc,
+  reverted sabotages do not count as validation — MRL shipped without
+  permanent sabotage coverage the same way and had to add S58-S63
+  retroactively), the two directions verified during this lane's own
+  development are PERMANENT rows, `tests/mech/sabotages/S64_*.sh` and
+  `S65_*.sh` (their own arm, `prefilter`, in
+  `tests/mech/run_sabotage_matrix.sh`; see `tests/mech/CLAUDE.md`'s
+  "[M4.6f] S64-S65" section for the measured fail counts) — removing the
+  do-or-die refusal in `src/opt/select_engine.c` (S64) turns the two
+  refusal checks red; dropping `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER`
+  from `emit_dfa.c`'s `strategy_denials` mask (S65) turns the mask check
+  AND (as a bonus) both byte-identity checks red, because the leaking bit
+  changed the emitted `.flags` value. Both confirmed DETECTED via
+  `bash tests/mech/run_sabotage_matrix.sh S64`/`S65` before landing.
 
 Maintenance: update this file when the check vocabulary grows (a new
 prefilter form, e.g. islands' own D46 pair per plan row [ENG-ISL], would be

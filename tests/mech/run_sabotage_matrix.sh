@@ -61,6 +61,7 @@
 #   rungdiff                           — added 2026-08-16 ([ENG-BREP] rung-select)
 #   counterkdiff                       — added 2026-08-17 ([ENG-BREP] counter-K)
 #   mrldiff  mrl                       — added 2026-08-17 ([M4.6d] MRL pruning)
+#   prefilter                          — added 2026-08-17 ([M4.6f] D46 prefilter close-out)
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -359,6 +360,25 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/mrl.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/mrl.log" | grep -oE '[0-9]+')"
                 suite_bits+=("mrl:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            prefilter)
+                # [M4.6f] the D46 close-out for the PREFILTER axis: the stamp
+                # (RX_VM_PREFILTER) and the -fprefilter/-fno-prefilter force
+                # pair. Its own arm rather than riding `vm` or `mrl`, for the
+                # reason every other structural-check arm here is separate:
+                # what it guards (the stamp agreeing with the actual emitted
+                # _prefilter() machinery, the do-or-die refusal, the
+                # rx_info.flags mask) is orthogonal to what those arms check,
+                # and a sabotage of one must not be reported as coverage by
+                # another.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/prefilter/run_prefilter_tests.sh" \
+                    > "$work/prefilter.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/prefilter.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/prefilter.log" | grep -oE '[0-9]+')"
+                suite_bits+=("prefilter:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

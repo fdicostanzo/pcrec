@@ -293,19 +293,19 @@ stated terms.
     siblings. tests/prefilter/run_prefilter_tests.sh: 18 structural
     checks, no differential sibling (the prefilter's correctness already
     rides tests/vm's S3.7 differential and tests/mrl's ceiling coverage —
-    this substep is observability+controllability only). TWO LIVE
-    SABOTAGES verified the checks can go red before landing (removing the
-    do-or-die refusal; dropping the two bits from the `rx_info.flags`
-    mask), both reverted. Islands' own pair stays deferred to [ENG-ISL],
+    this substep is observability+controllability only). Islands' own
+    pair stays deferred to [ENG-ISL],
     which already records the obligation ("carries its own D46
-    stamp+force obligation when built"). Battery: `make strict` clean
-    (confirmed); full `make -j12 -Otarget test` launched and its new
-    `test-prefilter` section is green (18/18) — final whole-suite
-    pass count to follow once the run completes (WIP checkpoint,
-    committed live per Frank's async-validation convention rather than
-    holding the commit for it). No sanitizer run planned: no runtime
-    match code path changed, only selection (compile-time) and emitted
-    stamp text — judged unnecessary per
+    stamp+force obligation when built"). Battery: `make strict` clean;
+    full `make -j12 -Otarget test` CONFIRMED GREEN — 10,257/0 corpus
+    cases (exactly the expected count, unchanged), ratchet "nothing to
+    ratchet", zero FAIL lines across every section including the new
+    `test-prefilter` (18/18). Also added S64/S65 to tests/mech/sabotages/
+    (the R28-1 convention: dev-time failing-direction checks must be
+    PERMANENT sabotage rows, not ad-hoc and reverted) — both validated
+    DETECTED via `bash tests/mech/run_sabotage_matrix.sh`. No sanitizer
+    run: no runtime match code path changed, only selection (compile-time)
+    and emitted stamp text — judged unnecessary per
     docs/testing.md's SAN-1 scope (a stamp is emitted text; the force
     flag touches selection, not the matcher body).
 - [M4.7] STATE:not-started — DIFFERENTIAL + CLOSE: capture differential
