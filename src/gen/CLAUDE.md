@@ -41,6 +41,50 @@ engines in two functions cannot collide on them. The file-scope names are:
   engine's own entry name(s), kept adjacent to their definitions so
   declaration and definition cannot drift apart.
 
+## `<prefix>_search` carries `noclone`, and it is the fix for K24 ([K24])
+
+`emit_search_head` emits `__attribute__((noclone))` above every
+`<prefix>_search` definition, with a `/* K24: ... */` comment in the artifact
+saying so. **Do not delete it as decoration, and do not "simplify" it to a
+`hot`/`cold` pair.** Full reasoning at the function itself; the ruling and the
+measurements are in docs/dev/known_issues.md's K24 CLOSED block and
+docs/design/k24bisect_impl/k24_fix_note.md. The short form:
+
+gcc -O2's partial-inlining pass sees this function's cheap entry guard in
+front of a large scan body and SPLITS it into a trampoline plus a
+separately-placed `<prefix>_search.part.0` holding the loop. The split loop's
+instructions are IDENTICAL — the entire cost is code placement — and it is a
+MEASURED 1.33x on a scan-bound pattern (293.5 vs 391.6 MB/s, pinned, 10
+trials), which is what held compare.sh case (c)'s D12 floor red for three
+days. `noclone` forbids exactly the one thing that pass needs, and the emitted
+assembly is then byte-identical to the same source built `-O2
+-fno-partial-inlining` — the bisect's own causal control. The lever must live
+in the EMITTED TEXT because pcrec cannot dictate its users' CFLAGS.
+
+Three measured facts to know before touching it:
+
+- **The wrapper-side fix does not work.** `noipa`/`noinline` on
+  `<prefix>_match`/`<prefix>_match_caps` leave the clone and the slow number
+  in place. gcc's `pass_split_functions` runs on the CALLEE and never consults
+  its callers' attributes. The wrappers' arrival at `[M4.4]` is what DATED the
+  regression, not what the denial has to be spelled against.
+- **`hot`/`cold` layout steering recovers the number while leaving the split
+  in place, and the two combined measured WORSE than doing nothing** (288.7 vs
+  293.5). Placement luck in one link is not a fix; a stranger's link is not
+  this one.
+- One site serves both engines: `emit_search_head` is the DFA artifact's
+  exported entry AND (`storage == "static "`) the VM hybrid's prefilter, so
+  both engines' DFA scan code is covered by one emission point. `noclone` does
+  not block inlining, so the VM's full inline of that prefilter into its own
+  `<prefix>_search` still happens (verified via `nm`), and case (j) measured
+  neutral.
+
+The VM's own hot path was never at risk and still isn't — `<prefix>_match_impl`
+is a computed-goto function, and gcc cannot outline a body whose labels are
+address-taken. Same reason the ENG_ATTEMPT engine was the one DFA shape that
+never split. That is a property of those designs rather than luck, but nothing
+CHECKS it, so it is written down rather than assumed.
+
 The entry name comes from `engine_entry_name()` / `derived_name()` and is read
 nowhere else, so a finder can hand each engine a distinct name without any
 emitter learning that options have a product. Today there is one engine per

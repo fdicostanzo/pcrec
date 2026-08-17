@@ -407,4 +407,38 @@ reads `seq + depth*32` past the allocated key — a 32-byte arena over-read, so
 the count is unstable between builds (171 and 176 observed for the same edit).
 The hoist form above is memory-safe by construction.
 
+## The [K24] partial-inlining check, and the two things that make it non-vacuous
+
+Added 2026-08-17 (k24fix lane) to `run_codegen_tests.sh`. It asserts that
+`<prefix>_search` is NOT split into a `.part` clone by gcc's partial-inlining
+pass — the property `__attribute__((noclone))` in `emit_search_head` buys, and
+the one this file's founding charter describes exactly: behaviour-preserving,
+invisible to the corpus, and worth a measured 1.33x on
+tests/bench/compare case (c). See docs/dev/known_issues.md K24 and
+docs/design/k24bisect_impl/k24_fix_note.md.
+
+Two design points, both of which this directory has learned the hard way and
+which a future editor must not "simplify" away:
+
+1. **It compiles at `-O2` EXPLICITLY, not under `$GENCFLAGS`** (which defaults
+   to `-O1`). Partial inlining is an `-O2` pass. Run at `-O1` the check would
+   pass forever, attribute present or not — a green cell with no population,
+   which is the exact failure the 256-branch-control lesson above is about.
+2. **It carries its own CONTROL, and the control's source is INDEPENDENT of
+   what it controls.** The positive asks `nm` — gcc's own output — whether a
+   clone exists. The control strips the attribute back out of the SAME
+   generated file and asserts gcc DOES clone it. Without that, a future gcc
+   that stopped splitting would make the positive vacuously green and the
+   guard would quietly stop guarding, with nobody the wiser until a bench
+   floor went red again. If the control stops firing the check FAILS and says
+   the population is gone, rather than reporting success.
+
+Validated sabotage: delete the `sb_printf(c, "__attribute__((noclone))\n");`
+line from `emit_search_head` in src/gen/emit_dfa.c, rebuild, re-run — the check
+FAILS with "emitted artifact carries no `__attribute__((noclone))` at all"
+(measured 2026-08-17; codegen checks went 39/39 pass to 1 failure). Note the
+sabotage-then-restore rebuilds `build/pcrec`, so do it when nothing else is
+running against that binary — doing it during a `make test` contaminates that
+run and it has to be discarded and redone.
+
 Maintenance: update this file when checks are added/removed.

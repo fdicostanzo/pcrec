@@ -173,4 +173,39 @@ header). **`floors.tsv` is therefore deliberately left at 388.615/0.900 for
 reporting case (c) RED — a live, correct flag for whoever bisects the
 residual regression next, not a stale one.
 
+**(c) IS NOW FULLY RESOLVED (2026-08-17, k24fix lane) — and the floor was
+never touched.** The residual gap above was K24, filed, bisected and closed
+the same day. It was not a DFA regression at all and not pattern-specific in
+the way this note guessed: gcc -O2's partial-inlining pass had been splitting
+`rx_search` into a trampoline plus a separately-placed `rx_search.part.0` in
+EVERY unanchored DFA artifact pcrec emitted since the `[M4.4]` API break, with
+identical loop instructions — a pure code-PLACEMENT cost. Case (c) is simply
+where the placement penalty landed hard enough to break a floor; a 25-pattern
+sweep found 12 of 13 DFA artifacts split, and the others matched or beat their
+floors anyway. Fixed in the EMITTER (`__attribute__((noclone))` on
+`<prefix>_search`, src/gen/emit_dfa.c's `emit_search_head`) because pcrec
+cannot dictate its users' CFLAGS. Evidence:
+docs/dev/known_issues.md K24 CLOSED, docs/design/k24bisect_impl/.
+
+Acceptance run `results-ubuntubudu-20260817-2.md`: **10/10 cases ok, 0
+failures**, case (c) at **391.063 MB/s, spread 1.02x** against the unmoved
+388.615/0.900 floor. The recovered SPREAD matters as much as the recovered
+median — 1.02x is this case's own historical tightness, where the split
+produced 1.13x-1.16x, so it is an independent signature of the clone being
+gone rather than of a lucky run.
+
+Two lessons for this directory specifically:
+
+- **The floor-left-red posture worked exactly as designed.** A red gate is
+  what carried the finding across three lanes and two days; had the number
+  been re-baselined to 294 to make the run green, K24 would have been a
+  permanent 1.3x tax with nothing anywhere to notice it. Keep doing this.
+- **A number measured here is only commensurable with `floors.tsv` when it
+  comes from `floors.tsv`'s own link.** The split's cost is placement, so the
+  identical artifact measured ~290 through `compare.sh`'s build and ~390
+  through a differently-linked hand-built driver. Any future harness that
+  compares against these floors must reuse this directory's build line
+  (`gcc -O2 -std=gnu11 -Wall -Wextra -Werror` + `eng_pcrec.c`), not merely a
+  similarly-shaped one.
+
 Maintenance: update this file when cases, engines or gating rules change.
