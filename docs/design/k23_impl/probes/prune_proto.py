@@ -80,6 +80,18 @@ def main():
                          'replicas, and the per-replica minrest formula is '
                          'then simply the wrong arithmetic. See '
                          'k23_design.md section 11.1.')
+    ap.add_argument('--minrest-py', default=None,
+                    help='Override the two-level formula with a python '
+                         'expression in `k` (the 0-based scan-site index) and '
+                         '`nsites`. For nesting deeper than two levels the '
+                         'per-site minrest is still pure compile-time '
+                         'arithmetic, but it is no longer one formula -- see '
+                         'k23_design.md section 4.3, where the emitter derives '
+                         'it by threading an accumulator rather than by '
+                         'indexing. Example, for ((a{2,4}){5,10}){5,20} with '
+                         'site k = 10*i + j: '
+                         '"max(0,5-(j+1))*2 + max(0,5-(i+1))*10" written out '
+                         'with i,j derived from k.')
     ap.add_argument('--clamp-scan', action='store_true',
                     help='Fold the clamp into the greedy scan\'s OWN bound '
                          'instead of clamping after it. Same cut, but the '
@@ -115,8 +127,13 @@ def main():
         k = int(h.group('slot')) - base
         if k < 0:
             continue
-        minrest = max(0, a.outer_min - (k + 1)) * a.inner_min * a.stride \
-            + a.follow_min
+        if a.minrest_py:
+            minrest = int(eval(a.minrest_py,  # noqa: S307 - a lane probe
+                               {'__builtins__': {'max': max, 'min': min}},
+                               {'k': k, 'nsites': len(hits)})) + a.follow_min
+        else:
+            minrest = max(0, a.outer_min - (k + 1)) * a.inner_min * a.stride \
+                + a.follow_min
         if minrest == 0:
             out.append(text[last:h.end()])
             last = h.end()
