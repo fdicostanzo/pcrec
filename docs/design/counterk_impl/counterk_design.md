@@ -950,6 +950,49 @@ under `has_budget` (`emit_vm.c:2793`) and `tests/vm/run_vm_tests.sh:147-157`
 pins `--fno-step-budget` emitting NO counter. §10.5 proposes riding that one
 gate in v1, which keeps the pin true as written.
 
+#### THE METER'S PROPERTY: its output is predictable from the emitted structure
+
+Stated here as a PROPERTY of the mechanism rather than as three probe results,
+because it is the property downstream work depends on and the three results are
+only its evidence.
+
+> **For every charged class, the number of work units a shape consumes is
+> derivable from the emitted code by counting sites — not merely bounded,
+> not merely monotone, but EXACT.**
+
+The evidence, three classes measured by two instruments that share no code
+(`step_charge.sh` counts by sed-instrumenting a build that charges nothing;
+`work_charge.sh` bisects the budget at which the real charging build gives up):
+
+| class | derivation | predicted | measured |
+|---|---|---|---|
+| frameless scan | one unit per scan iteration; an unanchored search over n bytes runs n(n+1)/2 | 500,500 / 50,005,000 | **exact, both** |
+| cut | frames discarded per cut, summed | — (bisected first) | **79,988, matching the instrumented count to the unit** |
+| possessive cut | 2 frames per committed iteration × iterations, less a tail shortfall | `q(2n − q + 1)` | **exact, 4 cells, 3 out of sample** |
+
+**"Structural, not fitted" has a bar, and the third class is where it was
+actually met.** A leading coefficient can be fitted to any straight line; what
+cannot be fitted after the fact is a term derived from the emission and then
+found to reproduce measured constants it was not tuned against. The tail
+shortfall `q(q−1)` — derived as `2·Σ(q−k)` from "the last q−1 start positions
+cannot run q iterations" — predicts **132, 56 and 240** at q = 12, 8 and 16, and
+those are the three constants the measurement independently produced. That is
+the check that separates a law from a curve.
+
+**Why the property matters more than the numbers.** Two consumers need it.
+[M4.6a] calibrates this bound's default against real corpora rather than three
+probe shapes, and a meter whose output can only be discovered by running it
+gives a calibration no way to reason about coverage. And a user who hits
+`RX_ERR_WORK` deserves an explanation better than "it did too much work" — a
+bound whose consumption is derivable from the pattern's own emitted shape can
+say WHICH construct spent it. Neither is possible if the meter is merely
+correct.
+
+**The honest limit**: the property is established on three classes over the
+shapes measured, and the stride residual below is exactly a place it is NOT yet
+established — a wide-stride iteration's cost is charged as 1 and no measurement
+here says whether that is the right unit.
+
 #### The sites, and what they cost — stated because the cost is real
 
 - **There are TWO emission spellings of a cut**, not one, and this probe found
