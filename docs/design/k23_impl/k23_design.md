@@ -333,6 +333,71 @@ Three things follow.
   the emitter's walk (§4.3) instead of indexing replicas. The prototype gets
   `--minrest-py` for this; the emitter does not need it.
 
+### 2.7 The preference family: it is the INNER quantifier that explodes
+
+MEASURED (`probes/steps.sh`), all four combinations at n = 100, and the
+result is not what the note's first version assumed by omission:
+
+| pattern | inner | outer | baseline steps | pruned |
+|---|---|---|---|---|
+| `(a{10,20}){10,50}` | greedy | greedy | 10,621,636 | 1 |
+| `(a{10,20}){10,50}?` | greedy | **lazy** | **10,621,635** | **0** |
+| `(a{10,20}?){10,50}` | **lazy** | greedy | **1** | — |
+| `(a{10,20}?){10,50}?` | **lazy** | lazy | **0** | — |
+
+**The explosion needs a GREEDY INNER and is indifferent to the outer.** A
+lazy outer costs one step less than the all-greedy exemplar; a lazy inner
+costs one step, full stop. §2.2 says why: the inner's preference is what
+orders the decomposition search, and the unique all-minimum solution is the
+LAST leaf only when the inner prefers maxima. Flip the inner and the same
+solution is the FIRST leaf.
+
+Two consequences.
+
+- **The lazy-inner shapes need no fix**, and the prototype's structural
+  inability to patch them (its scan-site pattern does not match the
+  lazy cursor's emitted form, which walks UP from the minimum rather than
+  down from the maximum) costs K23 nothing. It is still a coverage gap and
+  §10 keeps it.
+- **The lazy-OUTER shape is a live K23 instance that the note's first
+  version did not contain**, and it is the one that matters: 10,621,635
+  steps, `RX_ERR_STEPS` at the default budget, and the pruned arm answers in
+  **0** steps with a capture vector identical to python's at every length.
+  It is now in `cases_prune.tsv` with all four combinations.
+
+**The lazy emitted form, for the build lane.** A lazy cursor rung emits the
+mirror shape — consume exactly `rmin` iterations mandatorily, then EXTEND by
+one stride per backtrack (`rx_L6` in the emitted listing:
+`if (rx_cur >= low + rmax) goto rx_fail; rx_cur += W;`). The bound applies
+unchanged in meaning and mirrored in form: rather than clamping the starting
+maximum DOWN, it caps how far the extension may go, `cap` computed by the
+same lattice-rounded expression of §4.1. It is the same `minrest`, the same
+rounding, and the same soundness argument; only the direction of travel
+differs. NOT MEASURED (§10) — the prototype cannot reach it, and there is no
+explosion behind it to make the measurement urgent.
+
+### 2.8 Why preference does not enter the soundness argument at all
+
+STRUCTURAL, and stated explicitly because R26's engine critic derived it more
+sharply than this note originally did — the argument is theirs, recorded with
+provenance.
+
+`minrest(q)` bounds **whether an accepting continuation EXISTS** from a
+program point. Existence is a property of the LANGUAGE, not of the search
+order: the set of accepting continuations from `(q, pos)` is the same set
+whichever arm the engine tries first. So a subtree with no accepting leaf has
+no accepting leaf under greedy, under lazy, and under any future preference
+spelling; deleting it cannot move the first accepting leaf in ANY order,
+because it contained no leaf that any order could have selected.
+
+That is why §4.2 never mentions greedy or lazy and does not need to. It is
+also the strongest available answer to R24's standing warning that the lazy
+half is where rules fall: the possessification rule R24 refuted was
+order-DEPENDENT (it reasoned about which position a loop stops at, which is
+exactly what preference decides), where this one is order-INVARIANT by
+construction. The measurement in §2.7 is a check on that argument, not its
+basis — 155 cells across all four preference combinations, 0 disagreements.
+
 ---
 
 ## 3. Why python is fast, answered — and it is not fast
@@ -402,16 +467,48 @@ if ((size_t)(n - pos) < MINREST_q) goto rx_fail;   /* frames rung */
 
 and, at a cursor rung — where the engine is choosing among a RANGE of
 positions rather than one — the same test is expressed as a clamp on the
-range's upper end, which cuts the whole doomed suffix in one operation:
+range's upper end, which cuts the whole doomed suffix in one operation.
+
+**The clamp must land ON THE CURSOR'S ITERATION LATTICE. (R26 E1 — this
+note's first version got it wrong, measurably.)** A stride-W span loop
+admits only the positions `pos, pos+W, pos+2W, …`. The obvious clamp,
 
 ```c
-if (n < MINREST_q) goto rx_fail;
-if (rx_cur > n - MINREST_q) rx_cur = n - MINREST_q;
+if (rx_cur > n - MINREST_q) rx_cur = n - MINREST_q;   /* WRONG for W > 1 */
 ```
 
-That second form is the one that matters for K23, and it is why the exemplar
-collapses to a single step rather than merely to a smaller number: the
-clamp deletes ten of the eleven inner choices at every replica at once.
+lands the cursor between two lattice points whenever `n − MINREST_q − pos`
+is not a multiple of `W`, and an off-lattice cursor poisons the entire
+retreat chain: the retreat walks down by `W` from a position that was never
+an iteration boundary, so every position it visits is also off-lattice and
+the CORRECT cursor value is deleted from the choice set. That is not pruning
+— it is substitution, and it breaks §4.2's soundness step 3 in the
+introducing direction (it adds a candidate that was never there). MEASURED
+on `((?:ab){10,20}){10,50}`, which has the same rung structure and the
+IDENTICAL baseline step count as the exemplar (10,621,636), so it is
+squarely in K23's live population: **5 of 8 subjects answered `nomatch`
+where baseline and python match.** At W = 1 the defect is invisible, which
+is why 855 cells of single-byte corpus never saw it (§7.1).
+
+The repair is to round DOWN onto the lattice, and it is cheap arithmetic:
+
+```c
+if (CEIL < MINREST_q || CEIL - MINREST_q < pos) goto rx_fail;
+{ const size_t cap = pos + W * ((CEIL - MINREST_q - pos) / W);
+  if (rx_cur > cap) rx_cur = cap; }
+```
+
+`pos` is the iteration start, which the emitted scan block already has in
+hand — it is what the low-water slot was just written to (§1) — so nothing
+new has to be tracked. `CEIL` is the subject end `n` in the plain form and
+the prefilter's match-end window in the tighter one (§9.1). A ceiling below
+`pos` means the continuation is infeasible outright and the replica fails.
+At W = 1 the rounding is the identity, so every stride-1 measurement in this
+note is unchanged by it (verified: exemplar still 1 step).
+
+This form is why the exemplar collapses to a single step rather than merely
+to a smaller number: the clamp deletes ten of the eleven inner choices at
+every replica at once, and now does so at every stride.
 
 ### 4.2 Soundness — STRUCTURAL
 
@@ -425,7 +522,17 @@ The claim: pruning changes no answer, including no capture.
 3. Preference order among the SURVIVING positions is untouched. The clamp
    deletes candidates and the subtrees below them; it never reorders
    alternatives, never converts greedy to lazy, never changes which branch is
-   the fallthrough, and never introduces a candidate that was not there.
+   the fallthrough, and **never introduces a candidate that was not there.**
+   That last clause is load-bearing and is exactly what the unrounded clamp
+   violated (§4.1, R26 E1): substituting an off-lattice position for a real
+   one satisfies "removes only doomed candidates" and still changes the
+   answer, because the candidate it leaves behind is not in the loop's choice
+   set at all. Re-derived over the lattice form: `cap` is `pos + W·j` for an
+   integer `j ≥ 0`, so `cap` is a real iteration boundary; clamping `rx_cur`
+   to it therefore selects an EXISTING member of the choice set, and the
+   retreat chain below it visits exactly the members it would have visited
+   anyway. Soundness needs both halves — the bound must be a lower bound AND
+   the clamped value must be a position the loop could have reached.
 4. PCRE2 leftmost-first is "FIRST COMPLETE MATCH WINS" (`engine_m4.md` §3.1),
    so the answer is determined by the first accepting leaf in preference
    order. Deleting subtrees that contain no accepting leaf cannot move it.
@@ -444,8 +551,9 @@ prototype's `--follow-min 0` default does (§7.3).
 
 ### 4.3 Computing `minrest` — a small AST walk, and a threading rule
 
-The minimum-width function over the AST (`src/core/internal.h`'s seven node
-kinds):
+The minimum-width function over the AST (`src/core/internal.h`'s eight node
+kinds — `A_CLASS`, `A_CAT`, `A_ALT`, `A_REP`, `A_EMPTY`, `A_BOL`, `A_EOL`,
+`A_CAP`; the prose said seven, the table was always complete, R26 D4):
 
 | node | `minw` |
 |---|---|
@@ -469,15 +577,32 @@ That second line is the whole of K23's fix, and under replication it is a
 COMPILE-TIME CONSTANT — no counter is read, nothing is added to `stv`, and
 `rx_work` does not grow.
 
-Two implementation notes that are design decisions, not details:
+**A second compile-time quantity has to reach the clamp site: the cursor's
+STRIDE** (R26 E1). The emitter already computes it — it is what the rung
+selection printed as "stride 2" in §1's dump and what the scan block
+increments by — so this is a value already in hand at the emission point,
+not a new analysis. It is nonetheless a second thing the clamp depends on,
+and a clamp emitted without it is unsound rather than merely weak, which is
+why it is called out here rather than left to the codegen step.
 
-- **`minw` must not recurse on pattern structure.** D10/DD-10 exist because
-  `compile_ast` and `clo_visit` did, and R1's fix flattens `A_CAT`/`A_ALT`
-  spines iteratively (`src/ir/nfa.c`). `minw` must follow the same discipline
-  — it is the same walk over the same trees, and it would inherit the same
-  bug at the parser's 250-paren cap.
-- **The threading seam already exists.** `src/opt/possessify.c`'s `pss_walk`
-  threads a FOLLOW first-set down the same tree for the same reason.
+Two implementation notes that are design decisions, not details. **The first
+one is CORRECTED here — as first written the two contradicted each other
+(R26 E7), and the one that was wrong was mine.**
+
+- ~~`minw` must not recurse on pattern structure.~~ **Refuted by the shipped
+  compiler.** `src/opt/possessify.c`'s `pss_walk` recurses on pattern
+  structure today, and `build/pcrec` compiles a 249-paren-deep pattern
+  without trouble (MEASURED: depths 100, 200 and 249 all compile). The real
+  rule, which is what D10/DD-10 and K18 actually teach, is narrower:
+  **the walk's C-stack depth must be at most LINEAR in pattern depth.** K18's
+  `clo_visit` was not a problem because it recursed; it was a problem because
+  it recursed **Θ(d²)** — 31,377 frames at the parser's cap
+  (`k18_memo_design.md` §2a's own re-measurement). `minw` is a single
+  post-order pass with one frame per node on the path, i.e. Θ(d), and is in
+  the same class as the walk that already ships.
+- **The threading seam already exists**, and this is now consistent with the
+  bullet above rather than in tension with it: `pss_walk` threads a FOLLOW
+  first-set down the same tree for the same reason, recursively and safely.
   `minrest` is the arithmetic sibling of that analysis and should ride the
   same walk shape rather than inventing a second one.
 
@@ -527,10 +652,22 @@ of that claim, measured.
   possessification are complementary and do not overlap: possessification
   removes retreats that provably cannot succeed for a LANGUAGE reason;
   MRL removes positions that cannot succeed for a LENGTH reason.
-- **The cursor ladder.** MRL is expressible on every rung. On disjoint-follow
-  there is nothing to prune (no machinery is emitted). On fixed-stride and
-  reverse-deterministic it is the clamp form of §4.1. On frames it is the
-  test form. Nothing in the ladder has to move.
+- **The cursor ladder.** MRL is expressible on every rung, and each rung
+  fixes which FORM applies — this is the list R26 E1 found the note leaning
+  on without stating:
+  - *disjoint-follow*: nothing to prune, no machinery is emitted.
+  - *fixed-stride cursor*: the clamp form, rounded to `W` = the stride.
+  - *reverse-deterministic cursor*: the clamp form, but the iteration
+    boundaries are NOT an arithmetic lattice — they are recovered by walking
+    the reversed body automaton (`engine_m4.md` §2.5). Rounding "down to the
+    nearest boundary" is therefore a WALK, not a division, and the
+    lattice argument of §4.2 step 3 has to be re-made in terms of that walk.
+    **NOT MEASURED — no reverse-deterministic shape was pruned in this lane**
+    (§10), and this is the rung where a build lane should expect the E1 class
+    of bug to recur in a new spelling.
+  - *frames*: the test form, at each iteration entry (§2.5, measured).
+  - *variable-length with a boundary record*: the record IS the lattice;
+    clamp to the largest recorded boundary that satisfies the bound.
 
 ### 4.6 The refinement that also cuts FORWARD work (D49)
 
@@ -545,19 +682,47 @@ while (rx_cur <= cap_ && rx_cur + 1 <= n && it_ < 20UL && s[rx_cur] == 97)
     { rx_cur += 1; it_++; }
 ```
 
-MEASURED on the exemplar at n = 100 (scan-loop iterations, instrumented at
-the loop body; `probes/prune_proto.py --clamp-scan`):
+**What is being counted, stated before the numbers (R26 M2/E6 found the
+first version of this section asserting more than it had).** This is a LANE
+PROXY, not D49's meter:
 
-| arm | steps | scan work |
-|---|---|---|
-| shipped | 10,621,636 | 55,684,363 |
-| MRL, clamp after the scan | 1 | 190 |
-| MRL, clamp folded into the scan bound | 1 | **109** |
+> one unit = one iteration of a span-loop scan body, i.e. one stride of
+> greedy forward walking.
 
-109 on a 100-byte subject is one forward pass plus the nine clamp
-evaluations. The work bound's metric drops by five and a half orders of
-magnitude, and the shipped arm's 5.24 work-per-step ratio on this shape is
-itself a data point for [M4.6]'s calibration of D49's default.
+That is the forward work the step counter is structurally blind to, which is
+the *quantity* D49 exists to bound. It is **not** `RX_ERR_WORK`'s number:
+that meter charges at emitter-chosen sites and landed in the counter-K build
+after this lane measured, so no matcher this lane can produce contains a
+single one of its charge points. Any ratio below is a proxy ratio.
+
+MEASURED by `probes/work.sh`, archived at `out/work.txt` — the probe the
+first version of this section did not have:
+
+| shape | n | arm | steps | scan work |
+|---|---|---|---|---|
+| `(a{10,20}){10,50}` | 100 | shipped | 10,621,636 | 55,684,363 |
+| | | clamp after the scan | 1 | 190 |
+| | | clamp folded into the scan bound | 1 | **100** |
+| `(a{11,22}){11,50}` | 121 | shipped | 111,354,519 | 624,582,267 |
+| | | folded | 1 | **121** |
+| `((?:ab){10,20}){10,50}` | 200 | shipped | 10,621,636 | 55,684,363 |
+| | | folded | 1 | **100** |
+| `((?:abc){7,14}){7,30}` | 147 | shipped | 15,499 | 63,190 |
+| | | folded | 1 | **49** |
+
+The folded arm costs exactly one scan step per iteration of the accepting
+decomposition — 100 at n = 100, 121 at n = 121, 49 for a 147-byte subject
+walked in 3-byte strides. That is a single forward pass, and it is the
+strongest form of the argument for the folded emission: the proxy drops by
+five to six orders of magnitude and lands on its floor.
+
+**Ruling request 5 is WITHDRAWN** (§12). The shipped arm's work-per-step
+ratio here is 5.24, and it is a proxy ratio measured on a proxy quantity; it
+is not a defensible calibration input for D49's default, and the manager's
+provisional adoption of it is correctly retracted. Re-anchoring against the
+real meter costs one lane-hour once counter-K lands on main — the probe and
+the shapes already exist, only the counting site changes. The DESIGN
+argument for the folded form does not depend on the number and stands.
 
 ### 4.7 The symmetric half, designed and NOT recommended for v1
 
@@ -754,25 +919,70 @@ explores. The budget is applied afterwards, on paper.
 
 ### 7.2 The populations, and the result
 
-| corpus | shapes | measured | cells | AGREE | DIFFER |
-|---|---|---|---|---|---|
-| `cases_prune.tsv` (chosen around known boundaries) | 16 | 13 | 93 | 93 | **0** |
-| `cases_random.tsv` (seeded, `gen_cases.py --seed 23`) | 120 | 78 | 762 | 762 | **0** |
+**These are the POST-R26 populations**, over corpora that gained stride and
+residue axes (§7.2.1) and the lazy preference family (§2.7). The pre-R26
+figures were 855 cells over single-byte-body corpora, and they were blind by
+construction to the defect R26 E1 found.
 
-**855 cells, 0 disagreements, on the full capture vector.**
+| corpus | shapes | measured | guard-declined | no-clamp | cells | AGREE | DIFFER |
+|---|---|---|---|---|---|---|---|
+| `cases_prune.tsv` (chosen around known boundaries) | 25 | 19 | 0 | 6 | 155 | 155 | **0** |
+| `cases_random.tsv` (seeded, `gen_cases.py --seed 23`) | 140 | 95 | 15 | 30 | 904 | 904 | **0** |
+
+**1,059 cells, 0 disagreements, on the full capture vector.**
+
+**The two exclusion paths are different things and the first version of this
+note ran them together (R26 M1).** They are separated above:
+
+- *guard-declined* — the shape reached `prune_proto.py`'s assumption guard
+  and was REFUSED as out-of-shape (§11.1). 15 of 140 random shapes.
+- *no-clamp* — the shape was patched successfully and the arithmetic put
+  `minrest` at 0 everywhere, so no clamp was emitted and the pruned arm is
+  byte-identical to the baseline. 30 of 140. These cells are real AGREEs but
+  they exercise nothing.
+
+So the randomized corpus exercises the mechanism on **95 of 140 shapes
+(68%)**, not the ~88% a single "excluded" bucket would have implied. Neither
+path can inflate the AGREE count — an excluded shape contributes no cells at
+all — but the coverage narrative was overstated and is corrected here.
 
 Both corpora exist because either alone misleads. The hand-chosen one
-contains the defect — 28 of its 93 cells exceed the 10⁶ default budget in the
-baseline arm, up to 111,354,519 steps, and every one of those 28 costs
-between 1 and 4,996 steps under pruning. The randomized one contains almost
-none of it (its parameter box is capped at `p·m ≤ 60` so that python can
-serve as oracle at all, and its worst cell is 416,662 steps) but it samples
-the shape space the hand-chosen one cannot, which is where a soundness bug
-would hide. Aggregate over the random corpus: 2,179,620 baseline steps →
-528 pruned.
+contains the defect: **64 of its 155 cells exceed the 10⁶ default budget in
+the baseline arm**, up to 111,354,519 steps, and the worst pruned cell among
+them is 4,996 (the trailing-suffix residual, §9.1). The randomized one
+contains far less of it — its box is capped at `p·m ≤ 60` iterations so that
+python can serve as oracle at all, and only 9 of its 904 cells cross the
+budget — but it samples the shape space the hand-chosen one cannot, which is
+where a soundness bug hides. Aggregate over the random corpus: 28,768,539
+baseline steps → **619** pruned, maximum 1.
 
-The random corpus is what caught this lane's own defect (§11.1); the chosen
-corpus never would have.
+The random corpus is what caught both of this lane's own defects (§11.1,
+§11.4); the chosen corpus would have caught neither.
+
+### 7.2.1 The two axes R26 E2 added, and why 855 cells could not see E1
+
+Every inner body in the first version's corpora was drawn from a single-byte
+alphabet, so every cursor rung it produced had **stride 1** — and at stride 1
+the lattice rounding is the identity. The corpus could not distinguish the
+correct clamp from the broken one under any subject, because the two emit
+arithmetically equal code there.
+
+- **STRIDE.** Bodies of width 1, 2 and 3 (`a`, `[ab]`, `(?:ab)`, `(?:abc)`,
+  `(?:[ab][cd])`). The regenerated random corpus is 81 stride-1, 42 stride-2,
+  17 stride-3 shapes.
+- **RESIDUE.** The subject is now built as a UNIT repeated and TRUNCATED to
+  the requested byte length, so a length that is not a multiple of the stride
+  leaves a half-unit tail; and non-empty prefixes shift the lattice origin off
+  zero. Without a residue axis every length is a multiple of `W` and agrees
+  with the broken clamp by parity accident — which is precisely how the one
+  row that DID agree in E1's eight (`z`+`ab`×100) agreed.
+
+**Validated in the failing direction, which is the part that makes it a
+check.** `prune_proto.py --no-lattice` re-emits the pre-R26 clamp. Under it
+the new rows go RED (measured: `((?:ab){10,20}){10,50}` answers `nomatch` at
+lengths 201, 203 and 205 where the lattice build matches, matching E1's
+original 5-of-8). A corpus that does not go red under that flag is not
+testing the lattice rule, and this one does.
 
 ### 7.3 The axes deliberately included
 
@@ -832,13 +1042,71 @@ corpus never would have.
 
 ## 9. Residuals, stated plainly
 
-### 9.1 The bound is measured to the SUBJECT END, not to the match end
+### 9.1 The bound is measured to the SUBJECT END — and that is not a residual, it is a CURVE with a break-even
+
+**Corrected per R26 E4; the first version of this section reported one data
+point and called it a limit, and the point it chose was the flattering one.**
 
 When the match need not consume the whole subject, `minrest` under-counts by
-however many bytes trail the match, and pruning is correspondingly looser.
-Measured at §7.3: 4,996 steps instead of 1 with a five-byte trailing suffix.
-Still sound, still a 2,100× reduction, and no fix is proposed — a tighter
-bound would need the match end, which is what the search is looking for.
+however many bytes trail the match, and pruning loosens accordingly. Sweeping
+the trailing-suffix length `t` on the exemplar at n = 100 (MEASURED, the
+lattice build):
+
+| t | 0 | 2 | 5 | 8 | 11 | 14 | **16** | 18 | 20 | 25 | 40 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| steps | 1 | 211 | 4,996 | 48,611 | 218,303 | 579,515 | **1,153,352** | 2,220,924 | 4,066,274 | 6,163,467 | 10,619,634 |
+
+**K23 RETURNS at a 16-byte trailing suffix** — 1,153,352 steps is
+`RX_ERR_STEPS` against the default budget — and by t = 40 the pruned matcher
+is back within 0.02% of the unpruned one. Reporting this as "4,996 instead of
+1, still a 2,100× reduction" was true and misleading: the mechanism has a
+break-even, and it is at sixteen bytes.
+
+**The tight bound already exists at run time and is thrown away.** This is
+the panel's finding, adopted, provenance recorded (R26 E4 — the same shape as
+R25's settlement 4, where the critic's option was the better one). The
+emitted `rx_search` contains:
+
+```c
+ptrdiff_t win[1][2];
+if (rx_prefilter(s, n, startpos, win) != 1) return 0;
+start = (size_t)win[0][0];          /* win[0][1] is never read */
+```
+
+The capture-erased forward+reverse DFA pair computes the match-END window
+and the next line discards it. Threading `min(n, win[0][1])` as the clamp's
+`CEIL` (§4.1) closes the residual on the default path.
+
+**MEASURED, as a prototype** (`probes/prune_proto.py --prefilter-ceiling`,
+which plumbs `win[0][1]` through a file-scope variable — a prototype
+shortcut; TS-1 forbids mutable globals in generated code, so a real version
+carries it in `rx_work`, which every entry already threads):
+
+| t | 0 | 5 | 14 | 16 | 20 | 25 | 40 |
+|---|---|---|---|---|---|---|---|
+| subject-end ceiling | 1 | 4,996 | 579,515 | 1,153,352 | 4,066,274 | 6,163,467 | 10,619,634 |
+| prefilter-window ceiling | **1** | **1** | **1** | **1** | **1** | **1** | **1** |
+
+The curve does not flatten, it disappears — one step at every suffix length,
+answers unchanged. The whole residual is closed.
+
+**POSITION, since the manager asked for one: adopt it in v1.** The window is
+already computed on the default path, so the run-time cost is carrying one
+`size_t` in `rx_work` and reading it instead of `n`; the correctness argument
+is unchanged (a tighter CEIL is still an upper bound on what an accepting
+continuation can consume, so §4.2 goes through verbatim with `CEIL` in place
+of `n`). Three things a build lane must handle, none of them large:
+- the entries that run NO prefilter (`rx_match`, and `--engine=vm`, which
+  disables it) must default `CEIL` to the subject end, or the clamp reads a
+  stale window;
+- the window is per-SEARCH-ATTEMPT, and `rx_search`'s retry loop advances
+  `start` without recomputing it — a build lane must confirm `win[0][1]`
+  stays valid across those retries or recompute it;
+- it makes the prune's tightness depend on the prefilter being ON, which is a
+  D46 strategy-selection interaction and should be visible in the stamp.
+
+If any of those turns out to bite, the fallback is the subject-end ceiling
+already measured — strictly weaker, never wrong.
 
 ### 9.2 It bounds LENGTH, and only length
 

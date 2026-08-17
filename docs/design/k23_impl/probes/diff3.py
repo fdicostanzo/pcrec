@@ -117,6 +117,13 @@ def build(tmp, name, pattern, prune=None):
             return None, 'declined: ' + p.stderr.strip().splitlines()[-1]
         if p.returncode != 0:
             return None, 'prune-fail: ' + p.stderr.strip()
+        # A zero exit that produced no file is the silent-no-op failure mode
+        # this project keeps rediscovering -- it once happened here for real,
+        # when the prototype was momentarily an empty file: exit 0, no output,
+        # and without this check the run dies with a confusing traceback
+        # instead of saying which arm failed.
+        if not os.path.exists(pruned):
+            return None, 'prune-fail: exit 0 but no output file'
         src = pruned
     inst = os.path.join(tmp, name + '.i.c')
     with open(inst, 'w') as f:
