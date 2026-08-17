@@ -144,6 +144,23 @@ def main():
                          'removes FORWARD work -- the quantity D49 gave its '
                          'own bound (RX_ERR_WORK), which the step counter '
                          'does not see.')
+    ap.add_argument('--no-lattice', action='store_true',
+                    help='SABOTAGE CONTROL: emit the clamp WITHOUT rounding '
+                         'onto the iteration lattice, i.e. this note\'s '
+                         'pre-R26 form. Exists so the stride/residue corpus '
+                         'can be validated in the failing direction -- a '
+                         'corpus that does not go red under this flag is not '
+                         'testing the lattice rule. Never a candidate.')
+    ap.add_argument('--prefilter-ceiling', action='store_true',
+                    help='R26 E4 PROTOTYPE: use the DFA prefilter\'s MATCH-END '
+                         'window as the clamp ceiling instead of the subject '
+                         'end. rx_search already computes win[0][1] and drops '
+                         'it on the next line; this plumbs it through a '
+                         'file-scope variable, which is a PROTOTYPE shortcut '
+                         '(TS-1 forbids mutable globals in generated code, so '
+                         'a real version carries it in rx_work). Closes the '
+                         'trailing-suffix residual -- not a curiosity: K23 '
+                         'RETURNS at a 16-byte suffix.')
     ap.add_argument('--placebo', action='store_true',
                     help='THROUGHPUT CONTROL: emit the clamp at exactly the '
                          'same sites, same instruction shape, but with '
@@ -197,42 +214,108 @@ def main():
             continue                      # nothing to clamp against
         if a.placebo:
             minrest = 0
+        # THE LATTICE RULE (R26 E1). A stride-W span loop admits ONLY the
+        # positions pos, pos+W, pos+2W, ...  Clamping to the raw
+        # `ceiling - minrest` lands the cursor OFF that lattice whenever the
+        # gap is not a multiple of W, and an off-lattice cursor poisons the
+        # whole retreat chain: the retreat walks down by W from a position
+        # that was never an iteration boundary, so the CORRECT cursor value is
+        # DELETED from the choice set. That is not pruning, it is
+        # substitution, and it violates soundness step 3 ("never introduces a
+        # candidate that was not there") in the introducing direction.
+        # Measured before the fix on ((?:ab){10,20}){10,50}: 5 of 8 subjects
+        # answered nomatch where baseline and python matched.
+        # The repair rounds DOWN onto the lattice:
+        #     cap = pos + W * floor((ceiling - minrest - pos) / W)
+        # `pos` is the iteration start, which the scan block has in hand (it
+        # is what the low-water slot was just set to). A ceiling below `pos`
+        # means the whole continuation is infeasible and the replica fails.
+        W = 1 if a.no_lattice else a.stride
+        ceil_ = 'rx_ceil_' if a.prefilter_ceiling else 'n'
+        clampblk = (
+            '    /* MRL prune (K23 prototype): replica %d still owes %d bytes,\n'
+            '     * rounded onto the stride-%d iteration lattice (R26 E1). */\n'
+            '    if (%s < %dUL || %s - %dUL < pos) goto rx_fail;\n'
+            '    { const size_t cap_ = pos + %dUL * ((%s - %dUL - pos) / %dUL);\n'
+            '      if (rx_cur > cap_) rx_cur = cap_; }\n'
+            % (k, minrest, W, ceil_, minrest, ceil_, minrest,
+               W, ceil_, minrest, W))
         if a.clamp_scan:
-            # rewrite the scan block itself: bound the walk by the feasible
-            # end rather than by the subject end
+            # Same cap, computed BEFORE the greedy walk and used as its bound,
+            # so the scan never steps past the feasible end either -- the half
+            # the step counter cannot see (D49's territory).
             blk = text[h.start():h.end()]
             new = blk.replace(
                 '        unsigned long it_ = 0;\n',
                 '        unsigned long it_ = 0;\n'
-                '        const size_t cap_ = (n < %dUL) ? (size_t)0 : n - %dUL;\n'
-                % (minrest, minrest))
-            new = new.replace('while (rx_cur + ', 'while (rx_cur <= cap_ && rx_cur + ', 1)
+                '        const size_t cap_ = (%s < %dUL || %s - %dUL < pos)\n'
+                '            ? pos : pos + %dUL * ((%s - %dUL - pos) / %dUL);\n'
+                % (ceil_, minrest, ceil_, minrest, W, ceil_, minrest, W))
+            new = new.replace('while (rx_cur + ',
+                              'while (rx_cur < cap_ && rx_cur + ', 1)
             if new == blk:
                 print('prune_proto: --clamp-scan did not land at slot %d'
                       % (k + base), file=sys.stderr)
                 sys.exit(1)
             out.append(text[last:h.start()])
             out.append(new)
-            out.append(
-                '    if (n < %dUL) goto rx_fail;\n'
-                '    if (rx_cur > n - %dUL) rx_cur = n - %dUL;\n'
-                % (minrest, minrest, minrest))
+            out.append(clampblk)
             last = h.end()
         else:
             out.append(text[last:h.end()])
             last = h.end()
-            out.append(
-                '    /* MRL prune (K23 prototype): replica %d still owes %d bytes */\n'
-                '    if (n < %dUL) goto rx_fail;\n'
-                '    if (rx_cur > n - %dUL) rx_cur = n - %dUL;\n'
-                % (k, minrest, minrest, minrest, minrest))
+            out.append(clampblk)
         n_patched += 1
     out.append(text[last:])
-    open(a.dst, 'w').write(''.join(out))
-    print('prune_proto: %d scan sites, %d clamps inserted (slot base %d)'
-          % (len(hits), n_patched, base), file=sys.stderr)
+    text = ''.join(out)
+    if a.prefilter_ceiling:
+        text = plumb_ceiling(text)
+    open(a.dst, 'w').write(text)
+    print('prune_proto: %d scan sites, %d clamps inserted (slot base %d)%s'
+          % (len(hits), n_patched, base,
+             ', prefilter ceiling' if a.prefilter_ceiling else ''),
+          file=sys.stderr)
     if n_patched == 0:
         sys.exit(1)
+
+
+def plumb_ceiling(text):
+    """Make the prefilter's match-END window visible to the clamp.
+
+    `rx_search` computes `win[0][1]` and uses only `win[0][0]` on the very
+    next line -- the tight ceiling the clamp wants already exists at runtime
+    and is discarded. This carries it in a file-scope variable, which a real
+    implementation may NOT do (TS-1: no mutable globals in generated code);
+    there it belongs in `rx_work`, which every entry already threads. The
+    entries that run no prefilter (`rx_match`) default it to the subject end,
+    so the clamp degrades to the plain form rather than reading a stale value.
+    """
+    anchor = 'static ptrdiff_t rx_match_impl'
+    if anchor not in text:
+        print('prune_proto: impl anchor not found', file=sys.stderr)
+        sys.exit(1)
+    text = text.replace(
+        anchor,
+        "/* R26 E4 prototype: the prefilter's match-end window, which\n"
+        " * rx_search computes and then discards. File-scope ONLY because\n"
+        " * this is a patch on emitted C -- see plumb_ceiling()'s docstring. */\n"
+        'static size_t rx_ceil_;\n\n' + anchor, 1)
+    text = text.replace(
+        '        start = (size_t)win[0][0];\n',
+        '        start = (size_t)win[0][0];\n'
+        '        rx_ceil_ = (size_t)win[0][1];\n', 1)
+    text = text.replace(
+        'ptrdiff_t rx_match(const rx_ctx *ctx)\n{\n',
+        'ptrdiff_t rx_match(const rx_ctx *ctx)\n{\n'
+        '    rx_ceil_ = ctx->len;\n', 1)
+    for needle in ('rx_ceil_ = (size_t)win[0][1];',
+                   'rx_ceil_ = ctx->len;',
+                   'static size_t rx_ceil_;'):
+        if text.count(needle) != 1:
+            print('prune_proto: --prefilter-ceiling plumbing did not land: %s'
+                  % needle, file=sys.stderr)
+            sys.exit(1)
+    return text
 
 
 if __name__ == '__main__':

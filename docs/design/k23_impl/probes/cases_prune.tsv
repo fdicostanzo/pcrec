@@ -47,3 +47,37 @@
 (b{10,20}){10,50}	10	10	1	99,100,110	b
 ([ab]{10,20}){10,50}	10	10	1	99,100,101,110	a
 (a{10,20}){10,50}	10	10	1	100,110	b
+#
+# --- R26 E1: STRIDE > 1 cursor rungs, the lattice axis ---
+# ((?:ab){10,20}){10,50} has the IDENTICAL baseline step count to the
+# exemplar (10,621,636) and the same rung structure, but its cursor retreats
+# by 2. The unrounded clamp of the note's first version landed the cursor off
+# that lattice and answered nomatch on 5 of these 8 rows. These rows are the
+# committed FAILING-DIRECTION control for the lattice rule: they fail against
+# a prune_proto.py with the rounding removed and pass with it.
+# Residues arrive for free -- the subject is the unit repeated and truncated,
+# so an odd length is a half-unit tail.
+((?:ab){10,20}){10,50}	10	10	2	198,199,200,201,202,203,205,210,211,220	ab
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab		z
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab		zzz
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab	z
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab	zz
+((?:abc){7,14}){7,30}	7	7	3	146,147,148,149,150,151,152,200	abc
+((?:abc){7,14}){7,30}	7	7	3	147,148,149	abc	z
+((?:[ab][cd]){10,20}){10,50}	10	10	2	198,199,200,201,202,210	ac
+((?:[ab][cd]){10,20}){10,50}	10	10	2	200,201,202	ac	z
+#
+# --- R26 E3: the LAZY family, on both quantifiers independently ---
+# Measured first (probes/steps.sh, baseline): the explosion needs a GREEDY
+# INNER, not a greedy outer. (a{10,20}){10,50}? -- lazy OUTER -- costs
+# 10,621,635 steps, one less than the all-greedy exemplar; (a{10,20}?){10,50}
+# -- lazy INNER -- costs 1, and both-lazy costs 0. So the inner's preference
+# is what orders the decomposition search and puts the exact-minimum solution
+# last. These rows keep all four preference combinations in the differential,
+# which is what R24's lazy refutation says a corpus owes.
+(a{10,20}){10,50}?	10	10	1	99,100,101,105,110,150,200	a
+(a{10,20}?){10,50}	10	10	1	99,100,101,105,110,150,200	a
+(a{10,20}?){10,50}?	10	10	1	99,100,101,105,110,150,200	a
+((?:ab){10,20}){10,50}?	10	10	2	198,199,200,201,202,210,211	ab
+(a{5,10}){5,50}?	5	5	1	24,25,26,30,50,100	a
+(a{5,10}?){5,50}	5	5	1	24,25,26,30,50,100	a

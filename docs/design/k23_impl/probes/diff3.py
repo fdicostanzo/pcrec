@@ -21,8 +21,12 @@ Usage:
   diff3.py --cases CASES.tsv [--out REPORT.tsv]
 CASES.tsv columns (tab-separated, '#' comments, blank lines ignored):
   pattern <TAB> outer_min <TAB> inner_min <TAB> stride <TAB> len[,len...]
-          [<TAB> char [<TAB> prefix [<TAB> suffix]]]
-The subject is `prefix + char*len + suffix`, so a case can put the match
+          [<TAB> unit [<TAB> prefix [<TAB> suffix]]]
+`unit` is the byte string the inner body matches (`a`, `ab`, `abc`, ...);
+the middle of the subject is that unit repeated and TRUNCATED to `len`
+bytes, so a `len` that is not a multiple of the unit's width is a RESIDUE
+case -- the axis R26 E2 found missing. The subject is
+`prefix + that + suffix`, so a case can put the match
 somewhere other than offset 0 (the unanchored-search axis: the clamp is
 stated against the SUBJECT END, and a match that starts late must still be
 found) and can give the outer loop a non-empty follow.
@@ -46,7 +50,11 @@ RUN_TIMEOUT = int(os.environ.get('K23_TIMEOUT', '300'))
 
 # `(BODY{m,M}){p,P}` -- P is what a REPLICATED outer must produce in scan
 # sites; anything else means the shape is not what the prototype assumes.
-OUTER_MAX = _re.compile(r'^\([^()]*\{\d+,\d+\}\)\{\d+,(\d+)\}')
+# The body may itself be a non-capturing group (`(?:ab)`), which is how the
+# R26 E2 corpus reaches stride > 1, so the body pattern allows one nesting
+# level rather than forbidding parentheses outright.
+OUTER_MAX = _re.compile(
+    r'^\((?:[^()]|\(\?:[^()]*\))*\{\d+,\d+\}\??\)\{\d+,(\d+)\}')
 
 HEAD = '''#include <stdio.h>
 #include <stdlib.h>
@@ -182,7 +190,8 @@ def main():
                 print('%s\t-\t-\t-\t-\t-\t-\t%s' % (pat, err), file=out)
                 continue
             for L in (int(x) for x in lens.split(',')):
-                subj = pre + ch * L + suf
+                reps = -(-L // len(ch)) if ch else 0
+                subj = pre + (ch * reps)[:L] + suf
                 bs, bv = run(b, subj)
                 ps, pv = run(p, subj)
                 ov = oracle(pat, subj)

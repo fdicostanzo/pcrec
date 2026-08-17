@@ -64,6 +64,28 @@ hdr() {
 } > "$OUT/throughput.txt"
 
 {
+    hdr 'Forward scan work (LANE PROXY -- not D49 RX_ERR_WORK)' 'work.sh'
+    printf '# one unit = one span-loop scan-body iteration (one stride of\n'
+    printf '# greedy forward walking). See work.sh header for why this is NOT\n'
+    printf '# the D49 meter and what re-anchoring against it would cost.\n'
+    printf '# columns: n  steps  work  verdict\n'
+    for spec in '(a{10,20}){10,50}|100|a|10 10 1 50' \
+                '(a{11,22}){11,50}|121|a|11 11 1 50' \
+                '((?:ab){10,20}){10,50}|200|ab|10 10 2 50'; do
+        PAT=${spec%%|*}; R=${spec#*|}; N=${R%%|*}; R=${R#*|}
+        U=${R%%|*}; A=${R#*|}
+        set -- $A
+        printf '\n== %s  n=%s ==\n' "$PAT" "$N"
+        printf 'baseline    '; "$HERE/work.sh" "$PAT" "$N" "$U"
+        printf 'prune       '; "$HERE/work.sh" "$PAT" "$N" "$U" \
+            --outer-min "$1" --inner-min "$2" --stride "$3" --replicas "$4"
+        printf 'prune+scan  '; "$HERE/work.sh" "$PAT" "$N" "$U" \
+            --outer-min "$1" --inner-min "$2" --stride "$3" --replicas "$4" \
+            --clamp-scan
+    done
+} > "$OUT/work.txt"
+
+{
     hdr 'python re on the K23 family: the same tree, no pruning rule' 'archive.sh'
     printf '# NOTE: the last row costs ~6.4 minutes. That is the finding.\n#\n'
     timeout 1800 python3 -u -c "
