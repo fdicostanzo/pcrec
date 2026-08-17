@@ -435,25 +435,31 @@ static int vm_slot_ctr(Vm *v, int i)
  * emitted by one of them and not costed by another, and the failure mode is a
  * slot two live loops share.
  *
- * SCOPE, stated because it is narrower than the design note's §3: this is the
- * EXACT-COUNT arm only (`X{m}`, NOPT == 0) — §3.1's mandatory phase. The
- * optional phase (§3.2 greedy, §3.3 lazy) and the possessive arm (§3.4) are
- * separate slices and fall through to the frames rung until they land.
+ * SCOPE: §3.1's mandatory phase AND §3.2/§3.3's optional phase, greedy and
+ * lazy. The POSSESSIVE arm (§3.4) is a separate slice and still falls through
+ * to the frames rung, as does any unbounded tail.
  *
- * The threshold is `m >= K`, and the strictness is §3.2's [R25 E3] applied to
- * this phase: §3.1's trip guard is `stv[ctr] + K > m` evaluated at ctr = 0, so
- * at m < K it takes the tail immediately and the tail emits all m copies —
- * byte-identical to replication. At m == K the loop RUNS one trip, emitting
- * the same NUMBER of copies as replication but not the same CODE. So the rung
- * changes the output exactly at m >= K and nowhere below it. */
+ * THE THRESHOLD IS PER PHASE, and that is deliberate rather than a shortcut:
+ * K is a threshold on emitted SIZE and the two phases contribute to it
+ * independently, so `{20,22}` counts its mandatory half and replicates its two
+ * optional copies. A single whole-quantifier test would either unroll two
+ * copies for nothing or leave twenty replicated.
+ *
+ * THE STRICTNESS IS §3.2's [R25 E3] and it is structural, not arithmetic. A
+ * phase's trip guard is `stv[ctr] + K > count` evaluated at ctr = 0, so at
+ * count < K it takes the tail immediately and the tail emits all `count`
+ * copies — which for the optional phase IS `vm_opt_chain`, so the emission is
+ * byte-identical to the frames rung by construction. At count == K the loop
+ * RUNS one trip: the same NUMBER of copies as replication, not the same CODE.
+ * So byte-identity holds at K > count and nowhere else. */
 static bool vm_counter_fits(const Vm *v, const Ast *a)
 {
     if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
     if (a->possessive) return false;          /* §3.4, a later slice */
     if (a->rmax < 0) return false;            /* unbounded tail: frames star */
-    if (a->rmax != a->rmin) return false;     /* NOPT > 0: §3.2/§3.3, later */
-    if (a->rmin < v->unroll_k) return false;  /* below K: replication, verbatim */
-    return true;
+    if (a->rmin == 0 && a->rmax == 0) return false;
+    return a->rmin >= v->unroll_k
+        || (a->rmax - a->rmin) >= v->unroll_k;
 }
 
 /* How many times the counter rung EMITS the body for an exact count: K copies
@@ -464,7 +470,10 @@ static bool vm_counter_fits(const Vm *v, const Ast *a)
  * three cannot disagree about how much body there is. */
 static int vm_counter_copies(const Vm *v, const Ast *a)
 {
-    return v->unroll_k + (a->rmin % v->unroll_k);
+    const int K = v->unroll_k;
+    const int m = a->rmin, nopt = a->rmax - a->rmin;
+    return (m    >= K ? K + m    % K : m)
+         + (nopt >= K ? K + nopt % K : nopt);
 }
 
 /* ---- AST predicates ------------------------------------------------------*/
@@ -823,16 +832,21 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
     if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && !a->revbody
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l);
-        const long long mm = a->rmin;
-        /* Frames and trail are the frames rung's OWN numbers at rmax == rmin,
-         * and they must be: the rung changes how much C is written, not how
-         * many iterations run or what they push. `(rmax - rmin) * (1 +
-         * body.frames)` is zero for an exact count, so what is left is the
-         * mandatory term, verbatim. If these two lines ever diverge from the
-         * frames arm below for this shape, one of them is wrong. */
-        c.frames = mm * body.frames;
-        c.trail  = mm * body.trail
-                 + 1 + mm / v->unroll_k;   /* the counter: init + one per TRIP */
+        const long long K = v->unroll_k;
+        const long long mm = a->rmin, nn = a->rmax - a->rmin;
+        /* Frames and trail are the frames rung's OWN numbers, and they must
+         * be: the rung changes how much C is WRITTEN, not how many iterations
+         * RUN or what they push. This is the frames arm's bounded expression
+         * verbatim — mandatory copies contribute the body only, optional
+         * copies contribute a loop frame each as well. If these lines ever
+         * diverge from the frames arm below, one of them is wrong. */
+        c.frames = mm * body.frames + nn * (1 + body.frames);
+        c.trail  = (mm + nn) * body.trail
+                 /* the counter: an init plus one write per TRIP, per PHASE
+                  * that actually runs a loop. A phase below K replicates and
+                  * writes the counter not at all. */
+                 + (mm >= K ? 1 + mm / K : 0)
+                 + (nn >= K ? 1 + nn / K : 0);
         /* The per-iteration divisors the ceiling machinery uses. Taken from
          * the frames arm for the same reason, with the counter rounded UP from
          * its true 1/K to 1: over-counting here tightens a stamped ceiling,
@@ -1167,8 +1181,16 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
          * fixed K + residue whatever `m` is. Multiplying here would re-import
          * exactly the explosion the rung removes. */
         if (vm_counter_fits(v, a)) {
+            const int K = v->unroll_k;
+            const int nopt = a->rmax - a->rmin;
             int copies = vm_counter_copies(v, a);
             v->nctr++;
+            /* Emitted PUSH sites: the mandatory phase has none, and the
+             * optional phase has one per emitted optional copy — K inside the
+             * trip plus the residue's, which is what vm_opt_chain emits for
+             * the tail. Emitted SITES, not live frames: vm_cost_rep counts the
+             * runtime requirement, which is still one per ITERATION. */
+            v->npush += (nopt >= K ? K + nopt % K : nopt);
             if (copies > v->maxcopies) v->maxcopies = copies;
             for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl);
             return;
@@ -2230,40 +2252,84 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
  * counter's trail cost is 1/K per iteration. Inside a trip the K copies are
  * distinct code and the program counter distinguishes them, which is
  * replication's own encoding used at scale K. */
-static void vm_counter_exact(Vm *v, int entry, const Ast *a, int next)
+static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
+                         int next, bool greedy);
+
+/* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
+ * `count mod K` residue emitted by the caller's own tail.
+ *
+ * The two phases differ in exactly one way and share everything else, which is
+ * why they are one function: the MANDATORY phase pushes nothing (a mandatory
+ * copy that fails fails the whole quantifier, so falling through to rx_fail is
+ * already right), while the OPTIONAL phase pushes one frame per iteration
+ * because each iteration is a choice point.
+ *
+ * WHY A LOOP IS NEST-EQUIVALENT AND NOT CHAIN-EQUIVALENT, which is the one
+ * place getting this shape wrong is a MEASURED live defect rather than a
+ * slowdown. `vm_opt_chain` emits X{0,3} as (X(X(X)?)?)? -- NESTED -- and its
+ * own comment records why: with CHAINED optionals a later copy's alternation
+ * choice outranks an earlier copy's, and `(?:ab|a){0,2}?b` on "abab" gives
+ * [0,2) where PCRE2 and python give [0,4).
+ *
+ * A counter loop LOOKS like a chain and is not. An iteration's skip frame
+ * means "the loop ran j-1 times and then left", which is identical to the
+ * nested form's `other` label; the frames are pushed in the same order and
+ * popped LIFO in the same order, so the preference sequence is the same --
+ * n, n-1, ..., 0 greedy and 0, 1, ..., n lazy. What a CHAIN would additionally
+ * admit is skipping copy 1 and taking copy 2, and a loop structurally cannot
+ * express that. Unrolling does not disturb it: at K > 1 the pushes occur in
+ * the same order and mean the same thing. */
+static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
+                             int next, int ctr, bool optional)
 {
     StrBuf *b = v->b;
     const int K = v->unroll_k;
-    const int m = a->rmin;
-    const int residue = m % K;
-    const int ctr = vm_slot_ctr(v, v->nctr++);
+    const int residue = count % K;
     const int trip = vm_label(v);
     const int tail = vm_label(v);
+    const int skip = optional ? vm_label(v) : -1;
 
-    const char *role = vm_rolef(v, "counter rung, exact {%d}, K=%d "
-                                   "(%d trip copies + %d residue)",
-                                m, K, K, residue);
-    vm_lbl(v, entry, role);
-    vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    vm_lbl(v, entry, optional ? "counter: optional phase begins"
+                              : "counter: mandatory phase begins");
+    /* The reset is TRAILED like every other write to this slot, and that is
+     * what makes ONE slot serve both phases (§2.3, RULED): a resume into a
+     * MANDATORY-phase body frame rewinds past the optional phase's reset and
+     * recovers the mandatory count. */
     vm_set(v, ctr, "0", "counter rung: iteration counter (trailed)");
     vm_goto(v, trip);
 
-    /* The trip. `vm_emit` emits its OWN entry label, so the body starts at a
-     * label of its own and the guard jumps into it — the same shape the
-     * possessified frames rung uses for exactly the same reason. */
     {
         int body0 = vm_label(v);
         int cur;
-        vm_lbl(v, trip, "counter trip: another K iterations, or take the residue");
+        vm_lbl(v, trip, "counter trip: another K iterations, or the residue");
         sb_printf(b, "    if (stv[%d] + %d > %d) goto %s_L%d;\n",
-                  ctr, K, m, v->p, tail);
+                  ctr, K, count, v->p, tail);
         vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");
         vm_goto(v, body0);
         cur = body0;
         for (int i = 0; i < K; i++) {
             int nx = vm_label(v);
-            vm_emit(v, cur, a->l, nx);
+            if (!optional) {
+                vm_emit(v, cur, a->l, nx);
+            } else if (a->greedy) {
+                /* GREEDY: the body is the preferred path and LEAVING is the
+                 * resume, so the frame carries the skip label. */
+                int bodyl = vm_label(v);
+                vm_lbl(v, cur, "counter iteration (greedy): body preferred");
+                vm_push(v, skip, "greedy: leaving the loop here is the resume");
+                vm_goto(v, bodyl);
+                vm_emit(v, bodyl, a->l, nx);
+            } else {
+                /* LAZY: leaving is the preferred path and TAKING another
+                 * iteration is the resume, mirroring vm_opt_chain's own lazy
+                 * arm. Greedy vs lazy is which side is the fallthrough. */
+                int bodyl = vm_label(v);
+                vm_lbl(v, cur, "counter iteration (lazy): leaving preferred");
+                vm_push(v, bodyl, "lazy: taking another iteration is the resume");
+                vm_goto(v, skip);
+                vm_emit(v, bodyl, a->l, nx);
+            }
             cur = nx;
         }
         vm_lbl(v, cur, "counter trip complete: charge K and go round");
@@ -2275,19 +2341,28 @@ static void vm_counter_exact(Vm *v, int entry, const Ast *a, int next)
         vm_goto(v, trip);
     }
 
+    /* THE RESIDUE. For the optional phase the tail IS `vm_opt_chain` at a
+     * smaller count -- today's emission, verbatim -- which is what makes the
+     * K > count case byte-identical to the frames rung by construction rather
+     * than by careful arithmetic. */
+    if (optional) {
+        vm_opt_chain(v, tail, a->l, residue, next, a->greedy);
+        vm_lbl(v, skip, "counter: the loop is done, take the continuation");
+        vm_goto(v, next);
+        return;
+    }
     if (residue == 0) {
-        /* The exact-multiple case. The tail label still EXISTS — the trip
-         * guard branches to it — so it is emitted and hands straight over to
-         * the continuation rather than being elided, which would leave the
-         * guard jumping at a label the artifact never defines. */
-        vm_lbl(v, tail, "counter residue: none (m is a multiple of K)");
+        /* The tail label still EXISTS -- the trip guard branches to it -- so
+         * it is emitted and hands straight over rather than being elided,
+         * which would leave the guard jumping at an undefined label. */
+        vm_lbl(v, tail, "counter residue: none (count is a multiple of K)");
         vm_goto(v, next);
         return;
     }
     {
         int res0 = vm_label(v);
         int cur;
-        vm_lbl(v, tail, "counter residue: m mod K copies, ordinary replication");
+        vm_lbl(v, tail, "counter residue: count mod K copies, replicated");
         vm_goto(v, res0);
         cur = res0;
         for (int i = 0; i < residue; i++) {
@@ -2298,6 +2373,60 @@ static void vm_counter_exact(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, cur, "counter residue complete");
         vm_goto(v, next);
     }
+}
+
+/* [ENG-BREP counter-K] §3's COUNTER RUNG: the two phases composed.
+ *
+ * `X{m,n}` is a MANDATORY phase of m iterations (no choice point) followed by
+ * an OPTIONAL phase of n-m (one choice point each). Each phase independently
+ * takes the counter loop when its own count reaches K and ordinary replication
+ * when it does not, so a `{20,22}` unrolls its mandatory half and replicates
+ * its two optional copies -- which is the right split, because K is a
+ * threshold on emitted SIZE and the two phases contribute independently.
+ *
+ * ONE counter slot serves both (§2.3, RULED ASK 4), with the explicit
+ * NOPT == 0 carve-out: a quantifier with rmin == rmax emits no optional-phase
+ * reset at all, because a slot written but never read would break the
+ * byte-identity property §3.2 promises unconditionally at K > NOPT. */
+static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
+{
+    const int K = v->unroll_k;
+    const int m = a->rmin;
+    const int nopt = a->rmax - a->rmin;
+    const int ctr = vm_slot_ctr(v, v->nctr++);
+    int cur;
+
+    const char *role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
+                                   "(mandatory %s, optional %s)",
+                                a->rmin, a->rmax, K,
+                                a->greedy ? "greedy" : "lazy",
+                                m >= K ? "counted" : "replicated",
+                                nopt == 0 ? "none"
+                                          : (nopt >= K ? "counted" : "replicated"));
+    vm_lbl(v, entry, role);
+    vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    cur = vm_label(v);
+    vm_goto(v, cur);
+
+    if (m >= K) {
+        int done = vm_label(v);
+        vm_counter_phase(v, cur, a, m, done, ctr, false);
+        cur = done;
+    } else {
+        for (int i = 0; i < m; i++) {
+            int nx = vm_label(v);
+            vm_emit(v, cur, a->l, nx);
+            cur = nx;
+        }
+    }
+
+    if (nopt == 0) {
+        vm_lbl(v, cur, "counter: exact count complete");
+        vm_goto(v, next);
+        return;
+    }
+    if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true);
+    else           vm_opt_chain(v, cur, a->l, nopt, next, a->greedy);
 }
 
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
@@ -2331,7 +2460,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * shared predicate the two pre-passes also call, never by a second reading
      * of the same conditions. */
     if (vm_counter_fits(v, a)) {
-        vm_counter_exact(v, entry, a, next);
+        vm_counter_rep(v, entry, a, next);
         return;
     }
 
