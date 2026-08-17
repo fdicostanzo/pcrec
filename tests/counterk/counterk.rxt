@@ -1,0 +1,1891 @@
+# tests/counterk/counterk.rxt -- GENERATED, do not hand-edit.
+# Producer: docs/design/counterk_impl/make_corpus.py
+# Expectations come from BOTH oracles (python3 re + libpcre2);
+# a cell the two disagree on is reported, never silently resolved.
+#
+# The high-count blocks at the end are the ONLY check in the tree
+# that the shapes above the replication knee MATCH correctly:
+# tests/counterk/'s differential cannot reach them, because its
+# ground truth is the build the replication cap refuses.
+
+# RESIDUE 7 mod 8 -- K-1, so the loop NEVER RUNS and the emitter reduces to
+# vm_opt_chain's output byte-identically (§3.2's structural property). The
+# block is here as the CONTROL for the ones below it: if the counter rung
+# changed an answer, this is the count at which it provably did not.
+pattern ((a)|ab){0,7}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 1 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 2 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 3 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 5 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 10 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 2 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# RESIDUE 0 at exactly K: one trip, zero residue. R25 E3's strictness lives
+# here -- byte-identity holds at K > NOPT and NOWHERE ELSE, so this count
+# emits the same NUMBER of body copies as replication and not the same code.
+pattern ((a)|ab){0,8}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 1 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 2 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 4 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 9 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# RESIDUE 1: one trip plus a one-copy tail, the smallest non-empty residue.
+pattern ((a)|ab){0,9}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 1 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 3 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 8 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# RESIDUE 4: one trip plus a four-copy tail. This is the residue sabotage
+# S54 (the tail deleted) is visible at and residue 0 is not.
+pattern ((a)|ab){0,12}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 5 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# RESIDUE 7 at two trips -- the largest residue, and the count where the
+# tail is nearly a whole trip's worth of copies.
+pattern ((a)|ab){0,15}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 2 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# RESIDUE 0 at two trips: the loop runs twice with no tail at all.
+pattern ((a)|ab){0,16}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 1 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# RESIDUE 1 at two trips.
+pattern ((a)|ab){0,17}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# LAZY at a non-zero residue. §3.3's claim is that a counter LOOP is
+# preference-equivalent to the NESTED optional chain and not to a chained
+# one; greedy and lazy must both be swept or half the claim leaves the
+# corpus silently (R24 S-F1's rule, which cost that lane its lazy result).
+pattern ((a)|ab){0,12}?c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 5 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# LAZY at residue 1, two trips.
+pattern ((a)|ab){0,17}?c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# MANDATORY PHASE at residue 4 (§3.1). NOPT == 0, so §2.3's carve-out
+# applies: the optional phase must emit NOTHING, not even a counter reset,
+# or the byte-identity property §3.2 promises at K > NOPT breaks at every K.
+pattern ((a)|ab){12}c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 5 18
+g 1 16 17
+g 2 16 17
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# MANDATORY PHASE at residue 0 -- an exact multiple of K, where the residue
+# tail is empty and the trip guard's target label still has to exist.
+pattern ((a)|ab){16}c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+n "aaaaaaaaaaaac"
+m "aaaaaaaaaaaaaaaaac" 1 18
+g 1 16 17
+g 2 16 17
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# MANDATORY PHASE at residue 1.
+pattern ((a)|ab){17}c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+n "aaaaaaaaaaaac"
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# BOTH PHASES LIVE, which is the cell the possessive arm's silent cap lived
+# in: a mandatory phase at or above K AND an optional phase. Residues varied
+# on the two halves independently (9 mod 8 = 1, 8 mod 8 = 0).
+pattern ((a)|ab){9,17}c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# BOTH PHASES, different residues again (11 mod 8 = 3, 8 mod 8 = 0).
+pattern ((a)|ab){11,19}c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# BOTH PHASES, lazy.
+pattern ((a)|ab){9,17}?c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# A REVERSE-AMBIGUOUS body (rungselect_design.md §5 residual 1). It declines
+# the revdet rung for a DIFFERENT reason than the alternation above does, so
+# it is a second independent body on the same axis rather than a rephrasing.
+pattern ((ab)|b){0,12}b
+n ""
+n "a"
+m "b" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "c"
+n "ac"
+m "bc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "aac"
+m "abac" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "aabc" 2 3
+g 1 -1 -1
+g 2 -1 -1
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+m "ababababc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abababababc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "aabbc" 1 4
+g 1 1 3
+g 2 1 3
+m "abbc" 0 3
+g 1 0 2
+g 2 0 2
+m "baac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "aaaaaaaaaaaac"
+n "aaaaaaaaaaaaaaaaac"
+m "ababababababababc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "q"
+n "aq"
+m "abq" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "za"
+m "zabc" 2 3
+g 1 -1 -1
+g 2 -1 -1
+
+# The same body at residue 1.
+pattern ((ab)|b){0,17}b
+n ""
+n "a"
+m "b" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "c"
+n "ac"
+m "bc" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "aac"
+m "abac" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "aabc" 2 3
+g 1 -1 -1
+g 2 -1 -1
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+m "ababababc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abababababc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "aabbc" 1 4
+g 1 1 3
+g 2 1 3
+m "abbc" 0 3
+g 1 0 2
+g 2 0 2
+m "baac" 0 1
+g 1 -1 -1
+g 2 -1 -1
+n "aaaaaaaaaaaac"
+n "aaaaaaaaaaaaaaaaac"
+m "ababababababababc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "q"
+n "aq"
+m "abq" 1 2
+g 1 -1 -1
+g 2 -1 -1
+n "za"
+m "zabc" 2 3
+g 1 -1 -1
+g 2 -1 -1
+
+# A NULLABLE body above K (§5's territory), spelled at {0,12} rather than
+# {0,4} because below K no counter is emitted and the cell would be checking
+# replication's termination, which D44/R21 E-2 already settled. E-2 also
+# RULED that the empty-iteration guard exists for rmax == -1 ONLY: with it
+# applied to bounded repeats, 60 of 225,240 pairs diverge from libpcre2.
+# These cells are what a regression to that reading would break.
+pattern (a?){0,12}b
+n ""
+n "a"
+m "b" 0 1
+g 1 0 0
+n "c"
+n "ac"
+m "bc" 0 1
+g 1 0 0
+m "abc" 0 2
+g 1 1 1
+n "aac"
+m "abac" 0 2
+g 1 1 1
+m "aabc" 0 3
+g 1 2 2
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+m "ababababc" 0 2
+g 1 1 1
+m "abababababc" 0 2
+g 1 1 1
+m "aabbc" 0 3
+g 1 2 2
+m "abbc" 0 2
+g 1 1 1
+m "baac" 0 1
+g 1 0 0
+n "aaaaaaaaaaaac"
+n "aaaaaaaaaaaaaaaaac"
+m "ababababababababc" 0 2
+g 1 1 1
+n "q"
+n "aq"
+m "abq" 0 2
+g 1 1 1
+n "za"
+m "zabc" 1 3
+g 1 2 2
+
+# A nullable body that can consume MORE than one byte per iteration.
+pattern (a*){0,12}b
+n ""
+n "a"
+m "b" 0 1
+g 1 0 0
+n "c"
+n "ac"
+m "bc" 0 1
+g 1 0 0
+m "abc" 0 2
+g 1 1 1
+n "aac"
+m "abac" 0 2
+g 1 1 1
+m "aabc" 0 3
+g 1 2 2
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+m "ababababc" 0 2
+g 1 1 1
+m "abababababc" 0 2
+g 1 1 1
+m "aabbc" 0 3
+g 1 2 2
+m "abbc" 0 2
+g 1 1 1
+m "baac" 0 1
+g 1 0 0
+n "aaaaaaaaaaaac"
+n "aaaaaaaaaaaaaaaaac"
+m "ababababababababc" 0 2
+g 1 1 1
+n "q"
+n "aq"
+m "abq" 0 2
+g 1 1 1
+n "za"
+m "zabc" 1 3
+g 1 2 2
+
+# The EMPTY BRANCH form, which is R24's own oracle-split family: python and
+# libpcre2 agree on every span and can differ on group 1 (python reports an
+# empty span at the loop's end where libpcre2 reports the last iteration
+# that consumed). §3.6's rule is INVESTIGATE, not filter -- the span is kept
+# because both authorities assert it, and a slot-only divergence is dropped
+# with a note rather than pinned to whichever oracle was asked first.
+pattern (|a){0,12}b
+n ""
+n "a"
+m "b" 0 1
+g 1 0 0
+n "c"
+n "ac"
+m "bc" 0 1
+g 1 0 0
+m "abc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "aac"
+m "abac" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aabc" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+m "ababababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "abababababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "aabbc" 0 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "abbc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+m "baac" 0 1
+g 1 0 0
+n "aaaaaaaaaaaac"
+n "aaaaaaaaaaaaaaaaac"
+m "ababababababababc" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "q"
+n "aq"
+m "abq" 0 2
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((1, 1),), libpcre2 ((0, 1),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+n "za"
+m "zabc" 1 3
+# ^ SPAN ONLY: the two oracles disagree on this
+#   cell's group 1 (python ((2, 2),), libpcre2 ((1, 2),)) and
+#   this is the `(|a){m,n}` family [R24 S-F5]
+#   measured as the one where they do. pcrec agreed
+#   with libpcre2 on all 15,600 cells of that sweep,
+#   so the slot is not pinned here rather than pinned
+#   to whichever oracle was asked first.
+
+# STRIDE > 1: a nested cursor rung runs INSIDE the counter loop. This is the
+# shape R26 E1/E2 found an 855-cell differential structurally blind to, and
+# for this rung it is also §8.1's [R25 E16] nested cell -- the only place an
+# untrailed inner local could be read across an OUTER trip boundary -- and
+# the only shape exercising §7.4's one division, the frameless scan's
+# `(cur - pos) / stride`.
+pattern (x(?:ab){2,4}){0,12}c
+n ""
+n "x"
+n "e"
+n "ab"
+m "cd" 0 1
+g 1 -1 -1
+n "abe"
+m "cde" 0 1
+g 1 -1 -1
+m "abcde" 2 3
+g 1 -1 -1
+n "ababe"
+m "cdcde" 0 1
+g 1 -1 -1
+m "abcdabcde" 2 3
+g 1 -1 -1
+n "xababe"
+n "xabababe"
+n "abababababe"
+m "cdcdcdcde" 0 1
+g 1 -1 -1
+n "xq"
+n "abq"
+n "e"
+m "abcdabcdabcde" 2 3
+g 1 -1 -1
+
+# Branches of DIFFERENT length inside the counter loop, so an iteration's
+# width is not a constant the emitter can subtract.
+pattern ((?:ab)|(?:cd)){0,12}e
+n ""
+n "x"
+m "e" 0 1
+g 1 -1 -1
+n "ab"
+n "cd"
+m "abe" 0 3
+g 1 0 2
+m "cde" 0 3
+g 1 0 2
+m "abcde" 0 5
+g 1 2 4
+m "ababe" 0 5
+g 1 2 4
+m "cdcde" 0 5
+g 1 2 4
+m "abcdabcde" 0 9
+g 1 6 8
+m "xababe" 1 6
+g 1 3 5
+m "xabababe" 1 8
+g 1 5 7
+m "abababababe" 0 11
+g 1 8 10
+m "cdcdcdcde" 0 9
+g 1 6 8
+n "xq"
+n "abq"
+m "e" 0 1
+g 1 -1 -1
+m "abcdabcdabcde" 0 13
+g 1 10 12
+
+# A two-byte class body at residue 1.
+pattern ([ab][cd]){0,17}e
+n ""
+n "x"
+m "e" 0 1
+g 1 -1 -1
+n "ab"
+n "cd"
+m "abe" 2 3
+g 1 -1 -1
+m "cde" 2 3
+g 1 -1 -1
+m "abcde" 4 5
+g 1 -1 -1
+m "ababe" 4 5
+g 1 -1 -1
+m "cdcde" 4 5
+g 1 -1 -1
+m "abcdabcde" 8 9
+g 1 -1 -1
+m "xababe" 5 6
+g 1 -1 -1
+m "xabababe" 7 8
+g 1 -1 -1
+m "abababababe" 10 11
+g 1 -1 -1
+m "cdcdcdcde" 8 9
+g 1 -1 -1
+n "xq"
+n "abq"
+m "e" 0 1
+g 1 -1 -1
+m "abcdabcdabcde" 12 13
+g 1 -1 -1
+
+# POSSESSIFIED (§3.4), reached through the possessify PASS rather than
+# through `+` -- that spelling needs module `atomic-groups`, which has no
+# producer, so a `+`-written pattern is REFUSED and would test nothing.
+# `((a)|bc)` qualifies: one-unambiguous, prefix-free, follow disjoint from
+# its FIRST. U9 is the thing to consult before investigating a disagreement
+# in this family (PCRE2 10.46 will not backtrack into a preceding item after
+# a possessive bounded repeat of a group, so python-possessive and
+# PCRE2-possessive are not interchangeable oracles).
+pattern ((a)|bc){0,12}d
+n ""
+m "d" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ad" 0 2
+g 1 0 1
+g 2 0 1
+m "bcd" 0 3
+g 1 0 2
+g 2 -1 -1
+m "abcd" 0 4
+g 1 1 3
+g 2 0 1
+m "aad" 0 3
+g 1 1 2
+g 2 1 2
+m "aaad" 0 4
+g 1 2 3
+g 2 2 3
+m "bcbcd" 0 5
+g 1 2 4
+g 2 -1 -1
+m "abcbcd" 0 6
+g 1 3 5
+g 2 0 1
+m "aaaaaaaad" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaad" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaaaad" 0 13
+g 1 11 12
+g 2 11 12
+m "bcbcbcbcd" 0 9
+g 1 6 8
+g 2 -1 -1
+m "aaaaaaaaaaaaaaaaad" 5 18
+g 1 16 17
+g 2 16 17
+m "abcabcd" 0 7
+g 1 4 6
+g 2 3 4
+n "q"
+n "aq"
+n "bcq"
+
+# POSSESSIFIED with BOTH phases -- the exact shape whose frame peak was
+# under-counted (max instead of sum) and returned RX_ERR_FRAMES where
+# replication matched.
+pattern ((a)|bc){9,20}d
+n ""
+n "d"
+n "ad"
+n "bcd"
+n "abcd"
+n "aad"
+n "aaad"
+n "bcbcd"
+n "abcbcd"
+n "aaaaaaaad"
+m "aaaaaaaaad" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaaaad" 0 13
+g 1 11 12
+g 2 11 12
+n "bcbcbcbcd"
+m "aaaaaaaaaaaaaaaaad" 0 18
+g 1 16 17
+g 2 16 17
+n "abcabcd"
+n "q"
+n "aq"
+n "bcq"
+
+# POSSESSIFIED, exact count.
+pattern ((a)|bc){12}d
+n ""
+n "d"
+n "ad"
+n "bcd"
+n "abcd"
+n "aad"
+n "aaad"
+n "bcbcd"
+n "abcbcd"
+n "aaaaaaaad"
+n "aaaaaaaaad"
+m "aaaaaaaaaaaad" 0 13
+g 1 11 12
+g 2 11 12
+n "bcbcbcbcd"
+m "aaaaaaaaaaaaaaaaad" 5 18
+g 1 16 17
+g 2 16 17
+n "abcabcd"
+n "q"
+n "aq"
+n "bcq"
+
+# ABOVE THE REPLICATION KNEE. `-fno-counter` cannot build this at all --
+# PCREC_MAX_VM_REPEAT_COPIES refuses 100 copies -- so §8.1's differential is
+# structurally blind here and this is the ONLY check in the tree that the
+# answer is right rather than merely produced. Subjects stay far inside the
+# stamped subject_ceiling (§3.5: this rung shrinks SIZE, not FRAMES).
+pattern ((a)|ab){0,100}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# FIVE HUNDRED. The emitted size is K + 500 mod K copies whatever the count
+# is, so this artifact is the same size as the one above; that is the rung's
+# entire claim, and these cells are it being true rather than asserted.
+pattern ((a)|ab){0,500}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# TWO THOUSAND AND FORTY-SEVEN -- the LARGEST count libpcre2 will compile
+# for this shape, bisected. One more and it answers error 120, 'regular
+# expression is too large'. So this is the last block in the file where the
+# three-way rule is even available, and it is deliberately pinned at the
+# boundary rather than at a round number below it.
+pattern ((a)|ab){0,2047}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# ----------------------------------------------------------------------
+# ABOVE LIBPCRE2'S OWN SIZE LIMIT. Python is the only oracle
+# below this line, and each block says why in its own header.
+
+# THE ENDGAME COUNT. `((a)|ab){0,4000}c` is D45's own case one body over:
+# refused by pcrec before this rung existed, compiled now. §8.5 cell 1
+# asserts that it COMPILES and stamps an honest ceiling; this block asserts
+# what it MATCHES, which nothing else in the tree does.
+# 
+# AND PCRE2 CANNOT COMPILE IT AT ALL, which is the finding that reshaped
+# this file: PCRE2 replicates a capture-bearing quantified group exactly as
+# pcrec's frames rung does, so it hits its own compiled-pattern limit at the
+# same kind of boundary pcrec's replication cap sets. The counter rung lifts
+# pcrec's; PCRE2's stands.
+# ORACLE: python3 `re` ONLY. libpcre2 refuses this pattern -- error 120, "regular expression is too large" --
+# because it REPLICATES a capture-bearing quantified group just as pcrec's frames
+# rung does, so the count overflows its compiled-pattern limit (measured boundary
+# for this shape: 2047 compiles, 2048 does not). It has no opinion here rather than
+# a different one, which is a CAPABILITY difference and not an oracle disagreement.
+pattern ((a)|ab){0,4000}c
+n ""
+n "a"
+n "b"
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+m "bc" 1 2
+g 1 -1 -1
+g 2 -1 -1
+m "abc" 0 3
+g 1 0 2
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abac" 0 4
+g 1 2 3
+g 2 2 3
+m "aabc" 0 4
+g 1 1 3
+g 2 0 1
+m "aaac" 0 4
+g 1 2 3
+g 2 2 3
+m "aaaac" 0 5
+g 1 3 4
+g 2 3 4
+m "aaaaac" 0 6
+g 1 4 5
+g 2 4 5
+m "aaaaaaaac" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaac" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaac" 0 11
+g 1 9 10
+g 2 9 10
+m "ababababc" 0 9
+g 1 6 8
+g 2 -1 -1
+m "abababababc" 0 11
+g 1 8 10
+g 2 -1 -1
+m "aabbc" 4 5
+g 1 -1 -1
+g 2 -1 -1
+m "abbc" 3 4
+g 1 -1 -1
+g 2 -1 -1
+m "baac" 1 4
+g 1 2 3
+g 2 2 3
+m "aaaaaaaaaaaac" 0 13
+g 1 11 12
+g 2 11 12
+m "aaaaaaaaaaaaaaaaac" 0 18
+g 1 16 17
+g 2 16 17
+m "ababababababababc" 0 17
+g 1 14 16
+g 2 -1 -1
+n "q"
+n "aq"
+n "abq"
+n "za"
+m "zabc" 1 4
+g 1 1 3
+g 2 -1 -1
+
+# The endgame count with a MANDATORY phase, which takes §3.1's loop rather
+# than §3.2's -- a different emitted shape at the same count.
+# ORACLE: python3 `re` ONLY. libpcre2 refuses this pattern -- error 120, "regular expression is too large" --
+# because it REPLICATES a capture-bearing quantified group just as pcrec's frames
+# rung does, so the count overflows its compiled-pattern limit (measured boundary
+# for this shape: 2047 compiles, 2048 does not). It has no opinion here rather than
+# a different one, which is a CAPABILITY difference and not an oracle disagreement.
+pattern ((a)|ab){4000}c
+n ""
+n "a"
+n "b"
+n "c"
+n "ac"
+n "bc"
+n "abc"
+n "aac"
+n "abac"
+n "aabc"
+n "aaac"
+n "aaaac"
+n "aaaaac"
+n "aaaaaaaac"
+n "aaaaaaaaac"
+n "aaaaaaaaaac"
+n "ababababc"
+n "abababababc"
+n "aabbc"
+n "abbc"
+n "baac"
+n "aaaaaaaaaaaac"
+n "aaaaaaaaaaaaaaaaac"
+n "ababababababababc"
+n "q"
+n "aq"
+n "abq"
+n "za"
+n "zabc"
+
+# The endgame count POSSESSIFIED, where the optional phase has no trip and
+# no K at all (§3.4) and the emitted body is a single re-entered copy.
+# ORACLE: python3 `re` ONLY. libpcre2 refuses this pattern -- error 120, "regular expression is too large" --
+# because it REPLICATES a capture-bearing quantified group just as pcrec's frames
+# rung does, so the count overflows its compiled-pattern limit (measured boundary
+# for this shape: 2047 compiles, 2048 does not). It has no opinion here rather than
+# a different one, which is a CAPABILITY difference and not an oracle disagreement.
+pattern ((a)|bc){0,4000}d
+n ""
+m "d" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "ad" 0 2
+g 1 0 1
+g 2 0 1
+m "bcd" 0 3
+g 1 0 2
+g 2 -1 -1
+m "abcd" 0 4
+g 1 1 3
+g 2 0 1
+m "aad" 0 3
+g 1 1 2
+g 2 1 2
+m "aaad" 0 4
+g 1 2 3
+g 2 2 3
+m "bcbcd" 0 5
+g 1 2 4
+g 2 -1 -1
+m "abcbcd" 0 6
+g 1 3 5
+g 2 0 1
+m "aaaaaaaad" 0 9
+g 1 7 8
+g 2 7 8
+m "aaaaaaaaad" 0 10
+g 1 8 9
+g 2 8 9
+m "aaaaaaaaaaaad" 0 13
+g 1 11 12
+g 2 11 12
+m "bcbcbcbcd" 0 9
+g 1 6 8
+g 2 -1 -1
+m "aaaaaaaaaaaaaaaaad" 0 18
+g 1 16 17
+g 2 16 17
+m "abcabcd" 0 7
+g 1 4 6
+g 2 3 4
+n "q"
+n "aq"
+n "bcq"
