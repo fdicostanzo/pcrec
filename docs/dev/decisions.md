@@ -4194,3 +4194,46 @@ is the right mechanism and the shape rule is not (the shape rule
 over-clamps `(a(b|c)?){0,4000}` — a nested A_REP that multiplies
 nothing), plus the {1,2}-tower residual (mandatory+optional phases must
 merge into one loop with a runtime ctr>=m test to collapse those).
+
+## D47 SECOND ADDENDUM — F-2 ruled: the uncharged forward work gets its OWN bound (settlement 4); plus a pre-release ABI rider (Frank, 2026-08-17, twenty-eighth session, on the R25 §7 arc)
+
+The counter-K lane's §7 arc established (R25 findings 24-29, twice
+verified) that the step budget is blind to frameless forward work in
+four emitted shapes — possessify deleted the METERED half (retreats)
+while keeping the unmetered half (re-scans), so the meter counted a
+proxy for the work and the optimization deleted the proxy. The verified
+redesign (counterk_design.md §7.4, "charge what the fail label does not
+see") meters that work; §7.5 laid out four settlements for WHERE the
+charge lands, every one leaving the same tolerance number to pick.
+
+RULED: **settlement 4.** The forward work gets its own bound beside
+frames and trail — its own `rx_info` field and its own `RX_ERR_*` code
+(a third capacity, DD-2's "different failures, different diagnoses"
+applied once more; the settlement came from the R25 verification pass,
+not the lane, recorded as provenance). Frank's stated rationale: the
+meter must see the FULL work ("we need to consider the full budget") —
+settlements 2 (engine-dependent charging) and 3 (do nothing/disclose)
+are rejected on that ground; between 1 and 4 he took 4 as recommended.
+Consequences: the step budget keeps its exact current meaning and unit
+(a step = one backtrack resumption); every existing step-budget pin
+stays untouched; finding 27's unit/frozen-field question evaporates
+(nothing is scaled into an existing counter); the refusal tells callers
+WHICH kind of work blew up. The DEFAULT VALUE of the new bound is the
+relocated tolerance judgement (R25 29: a default near 10^9 puts the
+ordinary-linear-match boundary at ~1 GB; the measured ~16:1 work ratio
+implies ~1.6x10^7 and a ~16 MB boundary) — it RETURNS TO FRANK as an
+explicit one-liner at implementation, per the F-2 package's standing
+term. Nothing about the ruling picks that number today.
+
+RIDER (Frank, same conversation): pcrec is PRE-RELEASE — until the
+first release, API/ABI changes are ON THE TABLE, including surfaces
+previously labeled final/frozen (the D44.5 rx_info struct; D42.3's
+rx_matchfn type), and Frank likes CONSISTENCY. Specifically re-opened:
+the bare `<prefix>_match` collapse of give-up to −1 (the sole
+deliberate exception to the distinct-codes contract, forced only by
+the frozen typedef). The counter-K lane is tasked to work through
+whether the bare match carrying the same distinct negative codes as
+`<prefix>_match_caps` has any real cost beyond the typedef (the
+composition-primitive angle), and return a RECOMMENDATION one-liner to
+Frank rather than deciding silently. "Final" labels on pre-release
+surfaces are hereafter read as "stable absent a reason", not immovable.

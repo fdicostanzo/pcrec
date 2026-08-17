@@ -178,8 +178,13 @@ stated terms.
   default prefilter path is unaffected) turns a fast RX_ERR_STEPS
   give-up into a correct-but-quadratic answer (measured 0.033/0.581/
   2.297 s at 10/50/100 KB; 228.5 s at 1 MB, terminating and correct) —
-  fix-of-record is an E-5-SHAPED one-step-per-possessified-loop-ENTRY
-  charge, OWED WITH THE COUNTER-K STEP; (2) tests/vm per-RUN timeout —
+  fix-of-record CORRECTED 2026-08-17: the E-5-shaped entry charge was
+  REFUTED by the counter-K lane's own measurement (R25 §7.2 — entries
+  and steps are already the same number; the charge is linear while the
+  work is quadratic); the ruled fix is the counter-K design note §7.4's
+  forward-work meter under F-2 SETTLEMENT 4 (its own bound, rx_info
+  field and RX_ERR_* code — decisions.md D47 SECOND ADDENDUM), owed
+  with the counter-K step; (2) tests/vm per-RUN timeout —
   DISCHARGED 2026-08-16, twenty-fifth session: gen_run/gen_run_secs in
   tests/lib/gen_timeout.sh (D45 second addendum; scripts/watchdog-backed,
   wired tree-wide), fire-controls in run_gen_timeout_tests.sh; (3) K22
@@ -212,13 +217,16 @@ stated terms.
   scope, reverse/forward-ambiguous bodies, nullable, assertions,
   ranged nested, >64 groups, a Glushkov modelling decline, and the
   STEP-BUDGET BLIND SPOT now WIDENED (possessified loops, the revdet
-  scan AND the walk all charge nothing — the E-5-shaped entry charge
-  owed with counter-K now covers three shapes). Follow-up recorded
+  scan AND the walk all charge nothing — covered by the counter-K
+  design note §7.4's forward-work meter under F-2 settlement 4, which
+  REPLACED the refuted E-5 entry charge; D47 SECOND ADDENDUM). Follow-up recorded
   eng_brep_design.md §8.1: capture-walk sinking (eager/n-step/
   accept-time; bench eager-vs-sunk with counter-K's harness).
-  NEXT LADDER STEP: counter-K (carries: E-5 entry charge ×3 shapes,
-  K=8 limits.h constant, K22's real fix, size cap → backstop-only,
-  -fno-counter, the gen_timeout size-floor tripwire).
+  NEXT LADDER STEP: counter-K (carries: the §7.4 forward-work meter
+  under F-2 settlement 4 [replaces the refuted E-5 entry charge, R25
+  §7.2], K=8 limits.h constant, size cap → backstop-only, -fno-counter,
+  the gen_timeout size-floor tripwire; K22 CLOSED separately by F-1 —
+  D47 ADDENDUM, compile half re-homed to [ENG-CLAMP]).
   R24-corrected census: 17%/82%; as-built verdict census 252/1,832
   source quantifiers (13%), archived docs/design/possessify_impl/) —
   BOUNDED-REPEAT EMISSION STRATEGY: the

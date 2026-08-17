@@ -1740,7 +1740,11 @@ counter-K step, or as a small standalone guard lane if that step is
 far. Related: the step-budget blind spot recorded in the [ENG-BREP]
 plan row (same lane, same session) is the RUNTIME sibling of this
 COMPILE-TIME gap — both are "possessification/replication moved work
-where an existing budget cannot see it".
+where an existing budget cannot see it". (That sibling's fix of record
+has since MOVED, 2026-08-17: the E-5-shaped entry charge was refuted by
+the counter-K lane's measurement — R25 §7.2 — and the ruled fix is the
+counter-K design note §7.4's forward-work meter under F-2 settlement 4,
+its own bound/field/error code; decisions.md D47 SECOND ADDENDUM.)
 
 **INTERIM GUARD LANDED 2026-08-16 (rung-select lane); the entry stays
 OPEN because half (1) is still owed.** `vm_count_slots` now carries a

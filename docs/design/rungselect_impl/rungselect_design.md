@@ -349,8 +349,12 @@ Bodies that stay on frames, each with the reason:
 8. the step budget still cannot see a loop that performs no resumptions — the
    possessify lane's owed item (1), INHERITED here rather than fixed: a
    possessified revdet loop charges no steps for the same reason a possessified
-   cursor loop does not. Fix of record is unchanged (an E-5-shaped one-step
-   charge per loop entry, owed with the counter-K step). The forward SCAN and
+   cursor loop does not. Fix of record UPDATED 2026-08-17: the E-5-shaped
+   entry charge was REFUTED by the counter-K lane's measurement (R25 §7.2 —
+   entries and steps are the same number; the charge is linear while the work
+   is quadratic); the ruled fix is the counter-K design note §7.4's
+   forward-work meter under F-2 settlement 4 (its own bound, rx_info field
+   and RX_ERR_* code — decisions.md D47 SECOND ADDENDUM). The forward SCAN and
    the backward WALK are both real work that charges nothing, so this rung
    widens the exposure rather than merely inheriting it, and that is worth
    carrying into the counter-K step's own accounting.
