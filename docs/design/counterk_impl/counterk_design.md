@@ -1527,7 +1527,7 @@ What each caller class must do:
 
 | caller of `<prefix>_match` | (a) status quo: −1 collapse | (b) uniform distinct codes |
 |---|---|---|
-| direct embedder, hand-written C | cannot tell "no match" from any of three give-ups; must abandon the anchored primitive for `<prefix>_search`/`_match_caps` to find out | `ret >= 0` matched, `ret == -1` no match, `ret <= RX_ERR_STEPS` gave up and says which; `if (ret < 0)` code is unaffected, only exact `== -1` tests move |
+| direct embedder, hand-written C | cannot tell "no match" from any of three give-ups; must abandon the anchored primitive for `<prefix>_search`/`_match_caps` to find out | `ret >= 0` matched, `ret == -1` no match, any other negative is a give-up code naming WHICH bound; `if (ret < 0)` code is unaffected, only exact `== -1` tests move |
 | generated callout call site (composition, `../design_callout_abi.md` §1.1) | three lines: advance on `>= 0`, fail this path on `-1`, `__builtin_trap()` below — and an inner give-up silently becomes a path failure, so the OUTER can report a clean match or no-match where a bound was actually blown | one line more: propagate the code up before the trap check, and derive the trap's floor rather than writing `-1`. **This codegen does not exist** — module `callouts` has no producer |
 | embedder-WRITTEN callout (same typedef, opposite direction) | has no spelling for "I gave up": anything below −1 traps the process, so its only option is −1 and the fact is lost | gains a legitimate way to report exhaustion from its own bounded work — a capability, not just a diagnostic |
 | `rx_renderfn` (`../subst_template_design.md`: `rx_matchfn` plus an output buffer) | inherits whichever contract `rx_matchfn` has | inherits it too, at no cost of its own |
