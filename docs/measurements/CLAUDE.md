@@ -40,5 +40,14 @@ Reports present:
   ../design/subst_template_design.md. Its section 0 is the behavioural
   confirmation of the PCRE2_SUBSTITUTE_* bit values themselves, which are
   not includable on this box.
+- `probe_altcls_pcre2norm.txt` — [OPT-ALTCLS]'s "what does PCRE2 normalize
+  here" survey (2026-08-17): PCRE2_INFO_SIZE/MINLENGTH/FIRSTCODETYPE/etc for
+  the alternation vs. class/factored spelling of both stages. MEASURED
+  answer: PCRE2 does neither — the alternation spelling is consistently
+  SMALLER in PCRE2's own compiled bytecode than the class/factored spelling,
+  the opposite direction from pcrec's own win, because the two compilers pay
+  for the construct along different axes (a bytecode interpreter's per-opcode
+  cost vs. an AOT emitter's branch/table cost). See the probe's own header
+  for the full reading.
 
 Maintenance: update this file when reports are added/removed.

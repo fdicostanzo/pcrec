@@ -1,0 +1,23 @@
+# probe_altcls_pcre2norm — archived measurement report (D35: evidence, never an oracle)
+# regenerate: scripts/measure.sh probe_altcls_pcre2norm   (git diff shows what changed)
+# check validity without re-running: scripts/measure.sh --stale
+# date: 2026-08-17
+# repo: 3834dbc +dirty
+# probe-blob: 6e5d601120dd407692b0dd5b4d0554a13cf54b5e (git hash-object tests/probes/probe_altcls_pcre2norm.c)
+# abi-blob: fc641df02ab249b4b4ea6a56f6ba2b82c5117936 (tests/fuzz/pcre2_abi.h)
+# oracle: libpcre2-8-0 10.46-1build1
+# compiler: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+
+libpcre2 10.46 2025-08-27 at /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0
+
+-- stage 1: single-char alternation vs class --
+a(b|c)+d                                 size=178    minlen=3   firstcodetype=1 firstcodeunit=97 firstbitmap=set
+a([bc])+d                                size=204    minlen=3   firstcodetype=1 firstcodeunit=97 firstbitmap=set
+b|c|d|e|f                                size=181    minlen=1   firstcodetype=0 firstcodeunit=0 firstbitmap=set
+[b-f]                                    size=192    minlen=1   firstcodetype=0 firstcodeunit=0 firstbitmap=set
+
+-- stage 2: prefix-shared alternation vs manually factored --
+frank|fred|brad|bobby|janet              size=217    minlen=4   firstcodetype=0 firstcodeunit=0 firstbitmap=set
+fr(?:ank|ed)|b(?:rad|obby)|janet         size=223    minlen=4   firstcodetype=0 firstcodeunit=0 firstbitmap=set
+(?:frank|fred|brad|bobby|janet)+         size=223    minlen=4   firstcodetype=0 firstcodeunit=0 firstbitmap=set
+(?:fr(?:ank|ed)|b(?:rad|obby)|janet)+    size=229    minlen=4   firstcodetype=0 firstcodeunit=0 firstbitmap=set
