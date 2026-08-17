@@ -462,11 +462,19 @@ mirror shape — consume exactly `rmin` iterations mandatorily, then EXTEND by
 one stride per backtrack (`rx_L6` in the emitted listing:
 `if (rx_cur >= low + rmax) goto rx_fail; rx_cur += W;`). The bound applies
 unchanged in meaning and mirrored in form: rather than clamping the starting
-maximum DOWN, it caps how far the extension may go, `cap` computed by the
-same lattice-rounded expression of §4.1. It is the same `minrest`, the same
-rounding, and the same soundness argument; only the direction of travel
-differs. NOT MEASURED (§10) — the prototype cannot reach it, and there is no
-explosion behind it to make the measurement urgent.
+maximum DOWN, it caps how far the ascent may go.
+
+**And it needs NO lattice rounding** (R26 V7). The distinction is the same
+one §4.1 draws between the clamp and the frames-rung test: rounding is
+required when the bound ASSIGNS a value to the cursor, because an assigned
+value must be a position the loop could occupy. The lazy form does not
+assign — it TESTS a cursor that is already on the lattice by construction
+(it started at `pos + rmin·W` and has only ever been incremented by `W`), so
+`if (rx_cur > CEIL − minrest) goto rx_fail;` is both sufficient and exact. A
+build lane that mechanically copies the greedy expression here will get the
+right answer and pay for a division it does not need. NOT MEASURED (§10) —
+the prototype cannot reach this rung, and there is no explosion behind it to
+make the measurement urgent.
 
 ### 2.8 Why preference does not enter the soundness argument at all
 
@@ -586,6 +594,14 @@ match-end window in the tighter one (§9.1). The frames form needs no lattice
 rounding — it tests a single position the engine has already reached, rather
 than selecting one from a range.
 
+**That is the general rule, and it is worth stating once here rather than
+per rung: rounding is owed wherever the bound ASSIGNS a cursor value, and
+not owed wherever it merely TESTS one.** An assigned value must be a
+position the loop could occupy; a tested one already is. The greedy cursor
+clamp assigns (§4.1 below), the frames test does not, and neither does the
+lazy cursor's ascent cap (§2.7) — which is why only one of the three carries
+a division.
+
 and, at a cursor rung — where the engine is choosing among a RANGE of
 positions rather than one — the same test is expressed as a clamp on the
 range's upper end, which cuts the whole doomed suffix in one operation.
@@ -672,6 +688,17 @@ only the first, and R26 E1 was the second:
    always safe (it prunes less), which is the direction every conservative
    case below takes, and which is what the prototype's `--follow-min 0`
    default does (§7.3).
+
+   **This obligation binds the SWITCH, not just the arithmetic** (R26 V7's
+   sharpening, adopted). `minw` is a dispatch over AST node kinds, and a
+   kind that falls through to a nonzero default over-estimates SILENTLY —
+   the ninth node kind someone adds after this note is written would inherit
+   whatever the default returns, with no compile error and no test failure
+   unless a corpus happens to contain it. The switch must therefore be
+   EXHAUSTIVE with no default arm (so a new kind is a compile error), or the
+   default must return 0 (the safe direction) and say why in a comment. This
+   is cheap to get right once and invisible when got wrong, which is the
+   worst combination a rule can have.
 2. an UNSOUND CLAMP — a correct bound applied to a position the loop cannot
    occupy. This one is not about the analysis at all; it is about the
    arithmetic at the emission site, it is invisible at stride 1, and it is
@@ -795,7 +822,9 @@ of that claim, measured.
   fixes which FORM applies — this is the list R26 E1 found the note leaning
   on without stating:
   - *disjoint-follow*: nothing to prune, no machinery is emitted.
-  - *fixed-stride cursor*: the clamp form, rounded to `W` = the stride.
+  - *fixed-stride cursor*: the clamp form, rounded to `W` = the stride
+    (greedy — it assigns). A LAZY fixed-stride cursor caps its ascent with a
+    test and needs no rounding, §2.7.
   - *reverse-deterministic cursor*: the clamp form, but the iteration
     boundaries are NOT an arithmetic lattice — they are recovered by walking
     the reversed body automaton (`engine_m4.md` §2.5). Rounding "down to the
@@ -851,9 +880,15 @@ first version of this section did not have:
 
 The folded arm costs exactly one scan step per iteration of the accepting
 decomposition — 100 at n = 100, 121 at n = 121, 49 for a 147-byte subject
-walked in 3-byte strides. That is a single forward pass, and it is the
-strongest form of the argument for the folded emission: the proxy drops by
-five to six orders of magnitude and lands on its floor.
+walked in 3-byte strides. That is a single forward pass **THROUGH THE VM**,
+and the scoping matters (R26 V7): the DFA prefilter has already walked the
+subject forward and backward before the VM starts, and those two passes are
+outside this proxy entirely — it counts span-loop scan bodies, which exist
+only in the VM. The honest claim is that the VM's own forward work drops from
+55 M units to the minimum any matcher must spend, not that the whole match
+costs one pass over the subject. With that scoping it is still the strongest
+form of the argument for the folded emission: the proxy drops five to six
+orders of magnitude and lands on its floor.
 
 **Ruling request 5 is WITHDRAWN** (§12). The shipped arm's work-per-step
 ratio here is 5.24, and it is a proxy ratio measured on a proxy quantity; it
@@ -1032,25 +1067,33 @@ clamp's own instructions with layout drift subtracted.
 
 **The sparse-density rows, kept** (empty follow, 9 of 50 sites), because they
 are what the note originally reported and dropping them would hide the
-correction:
+correction. Re-quoted from the CURRENT archive; the pre-R26 figures for the
+same three shapes were 1969.4/1989.5/2027.8, 1588.1/1586.1/1572.6 and
+597.1/600.0/600.3, i.e. the same reading (R26 V4 caught this table still
+quoting the superseded run — the carried-stale-number defect, which is worth
+naming because it is the same class as finding 10(a) and it recurred here
+inside a correction):
 
 | shape | n | base | placebo | prune | total |
 |---|---|---|---|---|---|
-| `(a{10,20}){10,50}` | 300 | 1969.4 ns | 1989.5 ns | 2027.8 ns | +3.0% |
-| `(a{2,4}){10,50}` | 200 | 1588.1 ns | 1586.1 ns | 1572.6 ns | −1.0% |
-| `(a{1,2}){10,50}` | 60 | 597.1 ns | 600.0 ns | 600.3 ns | +0.5% |
+| `(a{10,20}){10,50}` | 300 | 1984.0 ns | 2010.0 ns | 2042.5 ns | +3.0% |
+| `(a{2,4}){10,50}` | 200 | 1595.9 ns | 1582.5 ns | 1580.3 ns | −1.0% |
+| `(a{1,2}){10,50}` | 60 | 598.7 ns | 599.7 ns | 598.2 ns | −0.1% |
 
 Read honestly across both tables: the effect is inside a ±3% band whose sign
 varies by shape, and DENSITY DOES NOT DRIVE IT — the dense rows, at 5.6× the
 clamp count, are cheaper than the worst sparse one. That is the useful thing
-this correction produced. Half
-or more of the largest observed penalty is code LAYOUT rather than the
-clamp's instructions, which is what the placebo arm exists to separate.
+this correction produced. The placebo arm's job is to keep code LAYOUT out of
+the clamp's account, and its contribution swings from 12% to 59% of the total
+across the three dense shapes — which is itself the argument for having the
+arm at all.
 
-Run-to-run variation is of the same order as the effect: an earlier
-nine-repetition run of the identical sparse harness gave +3.7% / +1.7 layout
-on the first shape. Both runs support the same reading and neither supports a
-tighter one.
+Run-to-run variation is of the same order as the effect: three separate
+nine-repetition runs of the identical sparse harness gave +3.7%, +3.0% and
++3.0% on the first shape. All three support the same reading and none
+supports a tighter one. **Every number in both tables is from the archive at
+`out/throughput.txt`**, which is the discipline V4 found this section
+breaking.
 
 MEASURED, not extrapolated: six shapes on one box, on a harness built for
 this question rather than `make bench`. What it supports is "the clamp is not
@@ -1070,7 +1113,8 @@ per site and no new symbols, macros or struct members — except the one
 §4.6's table, measured by `probes/work.sh` and archived at `out/work.txt`.
 The clamp REDUCES the forward-work proxy by five to six orders of magnitude
 on the exploding shapes and adds a bounded constant elsewhere; in its folded
-form it lands on exactly one forward pass over the subject.
+form it lands on one forward pass **through the VM** — the prefilter's own
+two passes are outside the proxy (§4.6).
 
 ---
 
@@ -1110,27 +1154,40 @@ residue axes (§7.2.1) and the lazy preference family (§2.7). The pre-R26
 figures were 855 cells over single-byte-body corpora, and they were blind by
 construction to the defect R26 E1 found.
 
-| corpus | shapes | measured | guard-declined | no-clamp | cells | AGREE | DIFFER |
-|---|---|---|---|---|---|---|---|
-| `cases_prune.tsv` (chosen around known boundaries) | 25 | 19 | 0 | 6 | 155 | 155 | **0** |
-| `cases_random.tsv` (seeded, `gen_cases.py --seed 23`) | 140 | 95 | 15 | 30 | 904 | 904 | **0** |
+| corpus | shapes | measured | guard-declined | instrument-blind | no-clamp | cells | AGREE | DIFFER |
+|---|---|---|---|---|---|---|---|---|
+| `cases_prune.tsv` (chosen around known boundaries) | 25 | 19 | 0 | 3 | 3 | 155 | 155 | **0** |
+| `cases_random.tsv` (seeded, `gen_cases.py --seed 23`) | 140 | 95 | 15 | 0 | 30 | 904 | 904 | **0** |
 
 **1,059 cells, 0 disagreements, on the full capture vector.**
 
-**The two exclusion paths are different things and the first version of this
-note ran them together (R26 M1).** They are separated above:
+**The exclusion paths are THREE different things.** The note's first version
+ran two of them together (R26 M1) and the revision then filed the third under
+the wrong one (R26 V7); both are separated above:
 
 - *guard-declined* — the shape reached `prune_proto.py`'s assumption guard
   and was REFUSED as out-of-shape (§11.1). 15 of 140 random shapes.
+- *instrument-blind* — the shape is a LAZY INNER, whose emitted cursor walks
+  UP from the minimum and does not match the prototype's scan-site pattern at
+  all (§2.7). The prototype cannot patch it; that is a limitation of the
+  instrument, not an outcome of the arithmetic, and filing it under "no-clamp"
+  claimed the arithmetic had run when it had not. 3 shapes, all in the hand
+  corpus: `(a{10,20}?){10,50}`, `(a{10,20}?){10,50}?`, `(a{5,10}?){5,50}`.
+  All three cost ≤ 1 baseline step, so nothing is hidden behind the gap.
 - *no-clamp* — the shape was patched successfully and the arithmetic put
   `minrest` at 0 everywhere, so no clamp was emitted and the pruned arm is
-  byte-identical to the baseline. 30 of 140. These cells are real AGREEs but
-  they exercise nothing.
+  byte-identical to the baseline. 30 of 140 random, 3 of 25 hand. These cells
+  are real AGREEs but they exercise nothing.
 
 So the randomized corpus exercises the mechanism on **95 of 140 shapes
-(68%)**, not the ~88% a single "excluded" bucket would have implied. Neither
-path can inflate the AGREE count — an excluded shape contributes no cells at
-all — but the coverage narrative was overstated and is corrected here.
+(68%)**, not the ~88% a single "excluded" bucket would have implied, and the
+hand corpus on **19 of 25 (76%)**. No exclusion path can inflate the AGREE
+count — an excluded shape contributes no cells at all — but the coverage
+narrative was overstated and is corrected here.
+
+The distinction that matters for reading the table: *guard-declined* and
+*instrument-blind* are limits of the PROTOTYPE, and *no-clamp* is an outcome
+of the ARITHMETIC. Only the third tells you anything about the mechanism.
 
 Both corpora exist because either alone misleads. The hand-chosen one
 contains the defect: **64 of its 155 cells exceed the 10⁶ default budget in
@@ -1324,7 +1381,19 @@ of `n`). Three things a build lane must handle, none of them large:
   stale window;
 - the window is per-SEARCH-ATTEMPT, and `rx_search`'s retry loop advances
   `start` without recomputing it — a build lane must confirm `win[0][1]`
-  stays valid across those retries or recompute it;
+  stays valid across those retries or recompute it. **The direction of error
+  is the dangerous one** (R26 V3, the critic's sharpening, adopted with
+  provenance): the prefilter's forward scan terminates on a dead transition,
+  so `win[0][1]` is the last accepting position BEFORE that break — on a
+  subject holding a second, later match the window is therefore too SMALL,
+  not too large. A too-small ceiling makes `minrest` bind harder than it
+  should and can cut a position an accepting continuation needed, which is
+  the UNSOUND direction. Every other conservative choice in this note errs
+  the safe way; this one does not, and that asymmetry is the reason the
+  obligation is stated rather than assumed. The critic could not make the
+  retry loop fire in 99 trials, so whether it is reachable at all is OPEN —
+  unreachable-in-practice is not the same as safe, and a build lane owes
+  either a proof it cannot fire or a recompute;
 - it makes the prune's tightness depend on the prefilter being ON, which is a
   D46 strategy-selection interaction and should be visible in the stamp.
 
