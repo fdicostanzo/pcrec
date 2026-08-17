@@ -455,7 +455,6 @@ static int vm_slot_ctr(Vm *v, int i)
 static bool vm_counter_fits(const Vm *v, const Ast *a)
 {
     if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
-    if (a->possessive) return false;          /* §3.4, a later slice */
     if (a->rmax < 0) return false;            /* unbounded tail: frames star */
     if (a->rmin == 0 && a->rmax == 0) return false;
     return a->rmin >= v->unroll_k
@@ -472,8 +471,14 @@ static int vm_counter_copies(const Vm *v, const Ast *a)
 {
     const int K = v->unroll_k;
     const int m = a->rmin, nopt = a->rmax - a->rmin;
-    return (m    >= K ? K + m    % K : m)
-         + (nopt >= K ? K + nopt % K : nopt);
+    const int mand = (m >= K ? K + m % K : m);
+    /* The POSSESSIVE optional phase has NO trip, NO tail and NO K [R25 E6]:
+     * it is ONE emitted body re-entered per iteration, because the cut at each
+     * iteration boundary is what the shape buys and unrolling buys nothing on
+     * top of it. That is also why §8.5's byte-identity cell is scoped away
+     * from this arm — a possessified repeat cannot satisfy it at any --unroll. */
+    if (a->possessive) return mand + (nopt >= K ? 1 : nopt);
+    return mand + (nopt >= K ? K + nopt % K : nopt);
 }
 
 /* ---- AST predicates ------------------------------------------------------*/
@@ -840,6 +845,42 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
          * verbatim — mandatory copies contribute the body only, optional
          * copies contribute a loop frame each as well. If these lines ever
          * diverge from the frames arm below, one of them is wrong. */
+        if (a->possessive) {
+            /* Possessified, the frame requirement stops depending on the
+             * iteration count entirely — the cut at every iteration boundary
+             * keeps ONE loop frame live at a time — so this mirrors the frames
+             * rung's own possessive arm rather than the bounded one. The TRAIL
+             * still depends on the count, because the cut deliberately does not
+             * rewind it, and saying so is the honest half. */
+            /* THE TWO PHASES' PEAKS ADD; they do not max. The frames rung's
+             * own possessive arm takes the max, and copying that here was a
+             * SILENT CAP measured by §8.1's differential: `((a)|bc){9,20}d` on
+             * twelve 'a's returned RX_ERR_FRAMES where replication matched.
+             *
+             * The reason is an ordering the max reading assumes away. The cut
+             * mark is recorded BEFORE the mandatory copies, and nothing cuts
+             * between them, so all `mm * body.frames` mandatory frames are
+             * still live when the optional loop pushes its stop frame and
+             * enters its body. Only the cut at the END of that first optional
+             * iteration discards them. So the peak is during optional
+             * iteration 1, with both phases resident at once — and after it,
+             * exactly one frame survives, which is what the rung buys.
+             *
+             * Over-counting here costs capacity; under-counting is a wrong
+             * answer on a subject the artifact should have matched. */
+            long long peak_mandatory = mm * body.frames;
+            long long peak_loop      = 1 + body.frames;
+            c.frames = peak_mandatory + peak_loop;
+            c.trail  = (mm + nn) * body.trail
+                     + 1                                  /* the cut mark */
+                     + (mm >= K ? 1 + mm / K : 0)
+                     + (nn >= K ? 1 + nn : 0);            /* +1 per iteration */
+            c.pf     = body.pf;
+            c.pt     = 1 + body.trail + body.pt;
+            c.unbounded = body.unbounded;
+            c.growable  = true;
+            return c;
+        }
         c.frames = mm * body.frames + nn * (1 + body.frames);
         c.trail  = (mm + nn) * body.trail
                  /* the counter: an init plus one write per TRIP, per PHASE
@@ -1185,12 +1226,17 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
             const int nopt = a->rmax - a->rmin;
             int copies = vm_counter_copies(v, a);
             v->nctr++;
+            if (a->possessive) v->nmark++;   /* the cut mark, as the frames rung */
             /* Emitted PUSH sites: the mandatory phase has none, and the
              * optional phase has one per emitted optional copy — K inside the
              * trip plus the residue's, which is what vm_opt_chain emits for
-             * the tail. Emitted SITES, not live frames: vm_cost_rep counts the
-             * runtime requirement, which is still one per ITERATION. */
-            v->npush += (nopt >= K ? K + nopt % K : nopt);
+             * the tail. The POSSESSIVE optional phase emits exactly ONE, at
+             * its single re-entered body. Emitted SITES, not live frames:
+             * vm_cost_rep counts the runtime requirement, which is still one
+             * per ITERATION for the non-possessive shapes and ONE for the
+             * whole loop possessified. */
+            v->npush += a->possessive ? (nopt >= K ? 1 : nopt)
+                                      : (nopt >= K ? K + nopt % K : nopt);
             if (copies > v->maxcopies) v->maxcopies = copies;
             for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl);
             return;
@@ -2254,6 +2300,8 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
  * replication's own encoding used at scale K. */
 static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
                          int next, bool greedy);
+static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
+                          int next, int mslot);
 
 /* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
  * `count mod K` residue emitted by the caller's own tail.
@@ -2375,6 +2423,71 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
     }
 }
 
+/* [ENG-BREP counter-K] §3.4's POSSESSIVE optional phase: ONE frame for the
+ * whole loop instead of one per iteration, via RX_CUT against a mark recorded
+ * at loop entry — `vm_poss_chain`'s discipline applied per ITERATION rather
+ * than per COPY.
+ *
+ *   L_trip:  if (stv[ctr] >= NOPT) goto next
+ *            PUSH(L_stop)          ; this iteration cannot run -> leave
+ *            <body>  -> L_step
+ *   L_step:  RX_CUT(mark); RX_SET(ctr, stv[ctr] + 1); goto L_trip
+ *   L_stop:  RX_CUT(mark); goto next
+ *
+ * THE PUSH STAYS, and deleting it is not available. `vm_poss_chain`'s recorded
+ * lesson applies unchanged: a frame at an iteration serves TWO purposes —
+ * resume when the CONTINUATION fails, which possessification kills, and resume
+ * when the BODY fails (this iteration cannot run, so leave the loop), which
+ * stays completely alive. Cutting at the boundary is what possessification
+ * buys; removing the frame is not.
+ *
+ * NO TRIP, NO TAIL, NO K [R25 E6]. Unrolling buys nothing here: the cut at
+ * every iteration boundary already makes the frame requirement independent of
+ * the count, which is the only thing K was bought for. One emitted body copy,
+ * re-entered.
+ *
+ * THE COUNTER IS THE SAME TRAILED SLOT AS EVERYWHERE ELSE, and the "saving"
+ * an earlier draft proposed for it — a plain untrailed local, on the revdet
+ * rung's `_it` precedent — was a MANDATORY-PHASE MISCOMPILE [R25 E5]. The cut
+ * argument that licenses an untrailed local is true of THIS phase and false of
+ * the mandatory one: mandatory copies have no cut between them, so a
+ * body-internal frame pushed during mandatory iteration 1 survives, resumes
+ * reading a stale local, and `(?:a|bc){3}+` runs one iteration where it must
+ * run three. */
+static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
+                                int next, int ctr, int mark)
+{
+    StrBuf *b = v->b;
+    const int trip = vm_label(v);
+    const int body0 = vm_label(v);
+    const int step = vm_label(v);
+    const int stop = vm_label(v);
+
+    vm_lbl(v, entry, "counter: possessive optional phase begins");
+    vm_set(v, ctr, "0", "counter rung: iteration counter (trailed)");
+    vm_goto(v, trip);
+
+    vm_lbl(v, trip, "counter trip (possessive): one iteration, or leave");
+    sb_printf(b, "    if (stv[%d] >= %d) goto %s_L%d;\n", ctr, nopt, v->p, next);
+    vm_ev(v, VE_NOTE, 0, 0, "the bound is a compile-time constant");
+    vm_push(v, stop, "possessive: this iteration cannot run, so leave the loop");
+    vm_goto(v, body0);
+    vm_emit(v, body0, a->l, step);
+
+    vm_lbl(v, step, "counter iteration committed: cut, count, go round");
+    vm_cut(v, mark, "cut: the iteration is committed and owns no live choice point");
+    {
+        char val[64];
+        snprintf(val, sizeof val, "stv[%d] + 1", ctr);
+        vm_set(v, ctr, val, "counter rung: += 1 (possessive: no trip, no K)");
+    }
+    vm_goto(v, trip);
+
+    vm_lbl(v, stop, "counter: the loop is done (possessive), take the continuation");
+    vm_cut(v, mark, "cut: the loop is complete and owns no live choice point");
+    vm_goto(v, next);
+}
+
 /* [ENG-BREP counter-K] §3's COUNTER RUNG: the two phases composed.
  *
  * `X{m,n}` is a MANDATORY phase of m iterations (no choice point) followed by
@@ -2394,6 +2507,11 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
     const int m = a->rmin;
     const int nopt = a->rmax - a->rmin;
     const int ctr = vm_slot_ctr(v, v->nctr++);
+    /* The possessive arm needs a cut mark as well, recorded BEFORE the
+     * mandatory copies rather than after them: the cut at the first optional
+     * iteration then also discards the mandatory bodies' own dead frames, so
+     * the loop is atomic as a whole, which is what "possessive" means. */
+    const int mark = a->possessive ? vm_slot_mark(v, v->nmark++) : -1;
     int cur;
 
     const char *role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
@@ -2405,6 +2523,9 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
                                           : (nopt >= K ? "counted" : "replicated"));
     vm_lbl(v, entry, role);
     vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    if (a->possessive)
+        vm_set(v, mark, "(ptrdiff_t)w->btn",
+               "possessive cut mark (resume-stack depth at loop entry)");
     cur = vm_label(v);
     vm_goto(v, cur);
 
@@ -2423,6 +2544,11 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
     if (nopt == 0) {
         vm_lbl(v, cur, "counter: exact count complete");
         vm_goto(v, next);
+        return;
+    }
+    if (a->possessive) {
+        if (nopt >= K) vm_counter_poss_opt(v, cur, a, nopt, next, ctr, mark);
+        else           vm_poss_chain(v, cur, a->l, nopt, next, mark);
         return;
     }
     if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true);

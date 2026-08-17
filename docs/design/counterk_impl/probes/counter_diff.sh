@@ -184,6 +184,29 @@ for body in '(x(?:ab){2,4})' '((?:ab)|(?:cd))' '((?:abc){1,3}|x)' '([ab][cd])'; 
     done
 done
 
+# ---- POSSESSIFIED shapes (§3.4's arm) -------------------------------------
+# NOT written with `+`: the possessive SPELLING needs module `atomic-groups`,
+# which has no producer, so the only way into this arm is the possessify PASS
+# marking an A_REP automatically. `((a)|bc)` qualifies — one-unambiguous and
+# prefix-free body, follow `d` disjoint from FIRST — and the artifacts below
+# stamp VM_STRATS 0x1 to prove it rather than assuming it.
+#
+# This block earns its place: it CAUGHT A SILENT CAP. The first version of the
+# possessive cost arm copied the frames rung's `max(mandatory, loop)` frame
+# peak, and `((a)|bc){9,20}d` on twelve 'a's returned RX_ERR_FRAMES where
+# replication matched. The two phases' peaks ADD — the cut mark sits below the
+# mandatory copies and nothing cuts between them, so they are all still live
+# during the first optional iteration. Only shapes with BOTH a mandatory phase
+# at or above K and an optional phase reach it, which is why the residue axis
+# alone would not have found it either.
+S3=(d ad abcd bcd aaad bcbcbcd aaaaaaaaaaaad abcabcabcd aaaaaaaaaaaaaaaaaaaaad
+    bcbcbcbcbcbcbcbcbcbcd aabcd bcaad xaaad aaaaaaaaad)
+for body in '((a)|bc)' '(x)((a)|bc)'; do
+    for q in '{0,12}' '{12}' '{9,20}' '{0,16}' '{0,17}' '{11,19}' '{10,18}' '{16,24}' '{0,23}' '{8}'; do
+        run_pair "${body}${q}d" "${S3[@]}"
+    done
+done
+
 printf 'pattern pairs built      %d\n' "$pairs"
 printf 'refused by both (skipped) %d\n' "$skipped"
 printf 'SELECTED the counter rung %d\n' "$selected"
