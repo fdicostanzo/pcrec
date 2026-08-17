@@ -1217,6 +1217,25 @@ comparison whose two inputs share a FAILURE MODE. Cheap to prevent (one
 non-empty check per cell, one abort on a non-zero compiler exit) and, on the
 evidence of this session, not optional.
 
+**AND THE AXES MATTER MORE THAN THE CELL COUNT, which is the durable form of
+R26's lesson and the thing this section most wants a future reader to take.**
+The instrument (`probes/counter_diff.sh`) carries a RESIDUE axis (counts
+spanning every value mod K on BOTH phases) and a STRIDE axis (bodies whose
+inner quantifier has stride > 1), because R26 E1/E2 showed a differential
+blessing an unsound clamp over 855 cells that could not have seen it —
+single-byte bodies, no residue axis. This lane then reproduced the same
+blindness in miniature: a sweep over counts whose residues mod 8 were {4,4,1,1}
+reported 576 green cells.
+
+**The possessive arm's silent cap is the proof, and it is a sharper argument
+than the R26 case because it needed BOTH axes at once.** `((a)|bc){9,20}d`
+under-sized its frame capacity and returned `RX_ERR_FRAMES` where replication
+matched. Reaching it requires a mandatory phase at or above K *and* an optional
+phase — the residue axis alone does not produce it, and the possessive block
+alone does not either. No amount of MORE CELLS along one axis finds a defect
+that lives in the cell of a cross-product. Size a differential by the axes the
+MECHANISM has, never by how many rows it can be made to print.
+
 ### 8.2 The oracle sweep on top (requirement 3)
 
 D44's three-way rule — pcrec / python3 `re` / libpcre2 — dense at the edges
@@ -1336,6 +1355,15 @@ move from refused to compiled, so nothing shipped changes under anyone.
    (limit 64)". It is the counter rung's own endgame, distinct from
    rung-select's `((a)|b){0,4000}c` (MEASURED: revdet takes that one, 296
    lines) precisely because both earlier rungs decline it.
+
+   **THIS CELL IS THE COUNTER RUNG'S CEILING COVERAGE.** Recorded explicitly
+   because the D44.1 `bigbounded`/`smallbounded` pair in
+   `tests/vm/run_vm_tests.sh` §2 now carries `-fno-counter` — that pair exists
+   to test whether the ceiling boundary and the RUNG boundary are INDEPENDENT,
+   and counter-K would make it straddle two rungs — so a reader greping for
+   "who tests the stamped ceiling under the counter rung" must land HERE rather
+   than concluding the denial removed the coverage. Two homes with different
+   claims is fine; an unfindable home is not.
 
    **The cell asserts the ceiling, not unbounded matching** [R25 E7]. §3.5's
    cost model says the frame requirement is untouched by K — ~8,000 frames,
