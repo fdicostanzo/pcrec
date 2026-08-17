@@ -145,6 +145,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
     Ast *root = pcrec_parse(&cx);
 
+    /* [OPT-ALTCLS] runs FIRST, immediately after parse and before every other
+     * pass -- select_engine's forcing analyses, possessify/revdet/mrl, both
+     * machine builds, both emitters all see the merged/factored shape rather
+     * than the alternation spelling (docs/dev/plan.md's interaction note).
+     * Self-gated on PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR; see
+     * src/opt/altcls.c. */
+    root = pcrec_altcls(&cx, root);
+
     /* [M4.5b] Engine selection is a PASS now (engine_m4.md §5.1), run after
      * parse and before machine construction. It also owns the §5.6 override's
      * refusals, which is why it runs before anything expensive: a caller who

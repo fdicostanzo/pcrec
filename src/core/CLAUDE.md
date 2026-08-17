@@ -11,6 +11,21 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `--count-groups` (MOD-0.1/§18.1 — reports Ctx.ncap's end-of-parse value
   with pcrec_compile's exact refusal behaviour; it lives here because this
   file holds the tree's ONLY setjmp)
+  **[OPT-ALTCLS] (2026-08-17)** the pipeline gains a THIRD thing, ahead of
+  the two below: immediately after `pcrec_parse`, `root = pcrec_altcls(&cx,
+  root)` runs the alternation->class normalization pass
+  (`src/opt/altcls.c`) and REPLACES `root` with its (possibly rewritten)
+  result, before `pcrec_select_engine` or anything it drives ever sees the
+  tree. Placement is load-bearing, not incidental: possessify/revdet/mrl and
+  both machine builds all analyze SHAPES the pass may have merged or
+  factored, and re-analyzing the alternation spelling instead would miss
+  exactly the wins the plan row measures (a merged class collapsing the VM's
+  cursor rung, the DFA's byte-equivalence-class table). Self-gated on
+  `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR`; `Job` gains
+  `altcls_merges`/`altcls_factored`, the D46 stamp source read by BOTH
+  emitters (src/gen/emit_dfa.c's shared `pcrec_emit_prologue`) since this
+  pass runs before either engine exists.
+
   **[M4.5b]** the pipeline gained two things. Engine selection moved OUT of
   this file's inline `if` into a pass (src/opt/select_engine.c) that runs
   after parse and BEFORE machine construction, so a `--engine` request pcrec

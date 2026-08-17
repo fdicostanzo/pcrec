@@ -143,6 +143,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   rides tests/vm's S3.7 differential and tests/mrl's ceiling-form
   coverage — this substep adds only observability and controllability on
   top. See its own CLAUDE.md for the independent-control verification.
+- **`altcls/`** — [OPT-ALTCLS]'s ALTERNATION -> CLASS NORMALIZATION, in the
+  same three-check shape tests/possessify/ established: an oracle-verified
+  `.rxt` corpus, the pcrec-vs-pcrec DIFFERENTIAL that is the row's primary
+  instrument (the pass live vs. `-fno-altcls-merge -fno-altcls-factor`,
+  SHARING tests/possessify/possdiff_driver.c rather than a second copy of
+  the same comparison — and, unlike possessify/revdet/counter-K, NOT forcing
+  `--engine=vm`, since this pass runs before engine selection and touches
+  both artifacts), and the structural checks a `.rxt` file cannot make
+  (exact merge/factor counts on both engines, D46 do-or-die/no-trace, the
+  two stages' independent controllability, `RX_NCAPS` invariance under
+  factoring). Part of `make test` as `make test-altcls`. See its own
+  CLAUDE.md for why the differential's engine choice differs from every
+  other deny-family suite's.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

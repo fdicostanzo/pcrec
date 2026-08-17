@@ -516,3 +516,38 @@ say so).
 
 Both validated DETECTED via `bash tests/mech/run_sabotage_matrix.sh S64`
 and `S65` before landing.
+
+## [OPT-ALTCLS] S66-S67, the ALTERNATION -> CLASS NORMALIZATION controls
+
+Two rows for `src/opt/altcls.c` (docs/dev/plan.md's `[OPT-ALTCLS]` row),
+running two new arms: `altdiff` (tests/altcls/run_altdiff.sh, the pass live
+vs. `-fno-altcls-merge -fno-altcls-factor` differential) and `altcls`
+(tests/altcls/run_altcls_tests.sh, the structural checks). Their own arms
+for the reason every differential/structural pair in this matrix is split:
+what each guards is orthogonal to `possdiff`/`prefilter`/etc., and a
+sabotage of this pass's rewrite must not be reported as coverage by another
+pass's checks.
+
+- **S66** removes stage 1's UNION LOOP — the merged class keeps only its
+  FIRST branch's bitmap instead of OR-ing every branch in the run into it.
+  `b|c` silently compiles to `[b]`, deleting the `c` alternative from the
+  language entirely: a real miscompile, not an invented one, and the shape
+  every soundness argument for a class-merging pass has to get right first.
+  `RX_ALTCLS_MERGES` still stamps 1 (the merge event fires; only the union
+  is wrong), so nothing observability-shaped sees it — it needs a check
+  that exercises the merged class against a subject only the DROPPED branch
+  could match, which `run_altdiff.sh`'s per-pattern-character subject sweep
+  (D47.6's rule) does by construction. **MEASURED: `altdiff` >0fail** (the
+  `b|c`-shaped patterns in `patterns.txt` diverge on the `c`-only subject).
+- **S67** drops `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` from
+  `emit_info_def`'s `strategy_denials` mask (src/gen/emit_dfa.c) — the S65
+  shape one pass over. The two deny bits leak into the emitted
+  `rx_info.flags` literal even though the axis changes no match behavior;
+  no correctness check anywhere else sees it, because the match behavior
+  really is unchanged (`altcls.rxt` and `run_altdiff.sh` both still agree).
+  Only `run_altcls_tests.sh`'s byte-identity check (pass-on vs. pass-off on
+  a verdict-free pattern) reads the leaking bit as the byte difference it
+  exists to rule out. **MEASURED: `altcls` >0fail** (the byte-identity
+  check and the direct do-or-die/no-trace stamp check both move).
+
+Validate with `bash tests/mech/run_sabotage_matrix.sh S66` and `S67`.

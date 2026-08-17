@@ -1,0 +1,76 @@
+# tests/altcls/patterns.txt — the [OPT-ALTCLS] differential's designed
+# population (run_altdiff.sh). Built to exercise both stages' own arms and
+# their decline conditions, the way tests/possessify/patterns.txt is built
+# around §2.2's arms rather than around what happens to compile. `--corpus`
+# adds the adversarial half nobody designed for.
+
+# ---- stage 1: single-char merge, plain ----
+a(b|c)+d
+a(b|c)*d
+a(b|c)?d
+a(b|c){2,5}d
+(b|c)
+b|c
+[ab]|[cd]
+b|[cd]
+[ab]|c
+a|b|c|d|e
+[ab]|[cd]|[ef]
+(?:b|c)|d
+a|(?:b|c)
+
+# ---- stage 1: quantified over the merged class (the plan row's own
+# motivating shape) ----
+a(b|c)+d(b|c)+e
+^(b|c)+$
+
+# ---- stage 1 boundary: adjacency matters, non-adjacent single-char
+# branches separated by a multi-char branch must NOT be merged across it ----
+b|ab|c
+a|bc|d
+
+# ---- stage 1 decline: a captured single-char branch must NOT merge ----
+(b)|c
+b|(c)
+(b)|(c)
+
+# ---- stage 2: prefix factoring, Frank's own exemplars ----
+frank|fred
+frank|fred|brad|bobby|janet
+(?:frank|fred|brad|bobby|janet)+
+frank|fred|brad|bobby|janet|frank|fred|brad|bobby|janet
+
+# ---- stage 2: prefix that is itself the whole branch (empty remainder) ----
+f|frank
+frank|f
+fo|foo|fool
+
+# ---- stage 2: three-way and deeper split ----
+cat|car|cap|dog
+aa|ab|ac|ba|bb|bc
+
+# ---- stage 2 decline: no shared literal first byte ----
+frank|zred|brad
+
+# ---- stage 2 decline: a branch starting with a wide class, not a literal ----
+[fg]rank|fred
+
+# ---- stage 2 decline: a captured branch ----
+(frank)|fred
+frank|(fred)
+
+# ---- stage 2 decline: a branch containing a quantifier before any split ----
+fra?nk|fred
+
+# ---- both stages together: stage 1 collapses a single-char run inside one
+# of stage 2's remainders ----
+fra(n|m)k|frost
+
+# ---- both stages, quantified, over a longer keyword list (the row's own
+# -15% shape, smaller instance for the differential) ----
+(?:frank|fred|brad|bobby|janet|carla|derek|elisa)+
+
+# ---- capture-bearing throughout, so both engines see this file (VM for the
+# top-level pattern once wrapped) ----
+(a(b|c)+d)
+(frank|fred|brad)

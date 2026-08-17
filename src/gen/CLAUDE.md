@@ -94,6 +94,26 @@ by the multi-engine block in tests/codegen/run_codegen_tests.sh, which
 compiles a two-engine file; the cross-prefix guard property has its own check
 there too (a two-differently-prefixed-headers-in-one-TU build).
 
+## [OPT-ALTCLS]'s stamp lives in the SHARED prologue, not in either engine ([2026-08-17])
+
+`emit_dfa.c`'s `pcrec_emit_prologue` gains `emit_altcls_macros`
+(`<PREFIX>_ALTCLS_MERGES`/`<PREFIX>_ALTCLS_FACTORED`, right beside the STD1
+feature stamp), read straight off `job->altcls_merges`/`job->altcls_factored`
+(`src/opt/altcls.c` increments them at the exact points it acts). Placement is
+the point worth stating: every OTHER D46 stamp in this file
+(`RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES`/`RX_VM_PREFILTER`) lives in
+`emit_vm.c` and is VM-artifacts-only, because possessify/revdet/MRL/prefilter
+are all decided or consumed only on the VM path. ALTCLS is a pure AST rewrite
+that runs BEFORE either engine is built (`src/core/compile.c`, immediately
+after parse), so a capture-free pattern's DFA-only artifact carries the stamp
+too — the plan row's own point that the DFA tier gets a real
+byte-equivalence-class win from stage 1, not merely the VM. Emitted
+unconditionally (STD1's own rule), including the honest `0`/`0` a pattern
+with no alternation at all stamps. `emit_info_def`'s `strategy_denials` mask
+also gained `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR`, for the same
+reason the D47.3 family and the prefilter force pair are both masked out of
+`rx_info.flags` there: the axis changes no answer, only the emitted shape.
+
 ## The VM engine joins ([M4.5b])
 
 `emit_vm.c` is the second emitter. It does NOT fork emit_dfa.c: the artifact

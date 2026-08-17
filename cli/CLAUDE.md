@@ -85,6 +85,19 @@ top-level user features. `--work-budget=N` DOES appear, and the difference is
 the point — it is a real generation axis on the same footing as
 `--step-budget=N` (the third DD-2 bound, settlement 4), not a strategy denial.
 
+**[OPT-ALTCLS] (2026-08-17):** `-fno-altcls-merge` (`PCREC_NO_ALTCLS_MERGE`)
+and `-fno-altcls-factor` (`PCREC_NO_ALTCLS_FACTOR`) join the DENY family —
+also absent from `--help` for the same reason. Two flags, not one: stage 2
+(prefix factoring, `src/opt/altcls.c`) runs on stage 1's output (single-char
+alternation merging), so denying stage 1 alone must still let stage 2 factor
+an unmerged run's literal spelling, and denying stage 2 alone must still
+leave stage 1's merge live — a differential holding one stage constant needs
+both knobs separately reachable. Unlike `-fprefilter`/`-fno-prefilter`
+immediately above, this pass is BACK to the deny-only shape: each
+mergeable/factorable alternation run is its own selection point, addressed
+independently, the same reason the five flags above it are deny-only rather
+than a force pair.
+
 **[M4.6f] (2026-08-17):** `-fno-prefilter` (`PCREC_NO_PREFILTER`) and
 `-fprefilter` (`PCREC_FORCE_PREFILTER`) are the D46 close-out for the
 PREFILTER axis, and also do not appear in `--help` for the same reason. A

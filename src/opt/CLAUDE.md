@@ -6,6 +6,44 @@ construction (src/ir) and emission (src/gen).
 
 ## Files
 
+- **altcls.c** — [OPT-ALTCLS] ALTERNATION -> CLASS NORMALIZATION
+  (docs/dev/plan.md's [OPT-ALTCLS] row). The FIRST pass in the pipeline —
+  `pcrec_altcls` runs immediately after parse, before `pcrec_select_engine`
+  and everything it drives (possessify/revdet/mrl, both machine builds, both
+  emitters), which is why this pass is declared in internal.h ahead of
+  `pcrec_select_engine` rather than grouped with the ENG-BREP passes below.
+
+  TWO STAGES, both AST-to-AST REWRITES (unlike possessify.c/revdet.c's
+  in-place annotation, this pass changes tree SHAPE and returns a possibly-
+  new root, the same shape select_engine.c's `discharge` hook uses). Stage 1
+  merges a maximal ADJACENT run of A_ALT branches that are each a bare
+  A_CLASS (parse.c already normalizes every literal to a singleton class)
+  into ONE class holding the union — `b|c` -> `[bc]`. Stage 2 runs on stage
+  1's output and factors a maximal ADJACENT run of branches sharing a
+  literal first byte into `byte + (?:remainder)` — `frank|fred` ->
+  `fr(?:ank|ed)` — recursively, via an ITERATIVE prefix-extension loop
+  (D10/DD-10/K20: prefix LENGTH is pattern-shaped) plus recursion bounded by
+  SPLIT depth only (`PCREC_MAX_ALTCLS_FACTOR_DEPTH`, core/limits.h;
+  branch-count-shaped, always safe to decline past the cap). NO CAPTURING
+  GROUPS are ever introduced — the file allocates A_CLASS/A_CAT/A_ALT/A_EMPTY
+  nodes only — which is what discharges the plan row's "must emit
+  non-capturing groups or it changes the group count" obligation BY
+  CONSTRUCTION rather than by a runtime check.
+
+  D46: both stages are independently gated (`PCREC_NO_ALTCLS_MERGE`/
+  `PCREC_NO_ALTCLS_FACTOR`, lib/pcrec.h — DENY-only, the original
+  per-selection-point family's shape, not the prefilter's force pair) and
+  independently stamped (`<PREFIX>_ALTCLS_MERGES`/`<PREFIX>_ALTCLS_FACTORED`,
+  src/gen/emit_dfa.c's shared `pcrec_emit_prologue` — this pass runs before
+  either engine exists, so unlike possessify/revdet/prefilter's VM-only
+  stamps this one is common to both emitters).
+
+  Full soundness argument, the generalization-ladder boundary (why stage 2
+  is prefix factoring rather than a wider multi-char class merge — that is
+  UNSOUND, `frank|fred` -> `fr[ae][nd]k?` accepts cross-products it must
+  not), and the recursion-discipline reasoning are all in the file's own
+  header. Tests: tests/altcls/. Sabotage: tests/mech/sabotages/ (S66/S67).
+
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass
@@ -220,5 +258,13 @@ place, and must be behavior-preserving — every pass needs corpus coverage that
 semantic change (the full suite runs against post-pass output). Scan-avoidance
 analyses that only inform codegen (prefilters, skip states) live in the
 emitter instead; move one here if it grows its own IR transformation.
+
+altcls.c is the one AST-LEVEL exception to the "mutates in place" half: it
+runs before NFA/DFA construction exists to mutate, so it takes (Ctx *, Ast *)
+and RETURNS the (possibly new) root instead — select_engine.c's `discharge`
+hook shape, for the same reason (the rewrite can change tree SHAPE, which an
+in-place field mutation cannot express). Still behavior-preserving, still
+corpus-covered, still deny-only + D46-stamped like every pass in this
+directory.
 
 Maintenance: update this file when passes are added/removed.

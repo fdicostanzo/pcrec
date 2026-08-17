@@ -193,7 +193,33 @@ enum {
      * quantifier keeps the machinery it has today and matches exactly what it
      * matches today, so this number can change how fast an artifact runs and
      * can never change what it answers. */
-    PCREC_MAX_REVDET_BODY_GROUPS = 64
+    PCREC_MAX_REVDET_BODY_GROUPS = 64,
+
+    /* [OPT-ALTCLS] stage 2 (src/opt/altcls.c): how many times prefix
+     * factoring may RECURSE into a group that just SPLIT (branches that
+     * shared a literal prefix diverging on the next byte), before it stops
+     * factoring that subtree further.
+     *
+     * It is NOT a bound on the shared-prefix LENGTH — extending a prefix
+     * while every branch in the group keeps agreeing is an ITERATIVE loop
+     * (D10/DD-10/R1 R-2's discipline: a long common literal run, like a
+     * quantifier body or a flat concatenation elsewhere in this tree, is a
+     * PATTERN-LENGTH-shaped input and must not cost a stack frame per byte).
+     * This bound is on SPLIT depth only — how many times one group's
+     * branches fork into two-or-more literal-byte sub-groups that each get
+     * factored again — which is shaped by branch COUNT, not by any single
+     * branch's length, and is the one axis the iterative loop cannot absorb
+     * because each split is a genuinely different recursive subproblem.
+     *
+     * Exceeding it DECLINES the remaining sub-groups (they stay spelled as
+     * alternation, unfactored) rather than refusing the compile — the same
+     * safe-fallback shape every other cap in this file uses: this number can
+     * change how much of a deeply-forking branch set gets factored and can
+     * never change what the pattern matches. 64 mirrors
+     * `PCREC_MAX_REVDET_BODY_GROUPS` above: a branch set that keeps forking
+     * new literal-prefix sub-groups 64 levels deep is not a keyword list
+     * anybody is waiting on. */
+    PCREC_MAX_ALTCLS_FACTOR_DEPTH = 64
 };
 
 /* ---- PCRE2 SYNTAX — exact, and part of the language -------------------- *

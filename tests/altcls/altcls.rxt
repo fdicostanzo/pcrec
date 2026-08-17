@@ -1,0 +1,134 @@
+# tests/altcls/altcls.rxt -- [OPT-ALTCLS] oracle-verified corpus
+# (docs/dev/plan.md's [OPT-ALTCLS] row). Every expectation below was
+# produced by python3 `re` (the base-tier oracle) against the pattern
+# text -- WHAT each pattern matches, not whether stage 1/2 fired on it.
+# Blind to the pass itself by construction (a merged/factored pattern
+# matches identically to its unmerged/unfactored spelling, which is the
+# claim); tests/altcls/run_altdiff.sh is what sees the pass, and
+# tests/altcls/run_altcls_tests.sh is what confirms it fired.
+
+pattern a(b|c)+d
+m "abcbcd" 0 6
+g 1 4 5
+m "abd" 0 3
+g 1 1 2
+n "axd"
+n ""
+n "abcbc"
+m "acd" 0 3
+g 1 1 2
+
+pattern (b|c)
+m "b" 0 1
+g 1 0 1
+m "c" 0 1
+g 1 0 1
+n "d"
+n ""
+
+pattern b|c
+m "b" 0 1
+m "c" 0 1
+n "a"
+n ""
+
+pattern [ab]|[cd]
+m "a" 0 1
+m "b" 0 1
+m "c" 0 1
+m "d" 0 1
+n "e"
+n ""
+
+pattern b|[cd]
+m "b" 0 1
+m "c" 0 1
+m "d" 0 1
+n "a"
+n ""
+
+pattern a|b|c|d|e
+m "a" 0 1
+m "e" 0 1
+n "f"
+n ""
+
+pattern frank|fred
+m "frank" 0 5
+m "fred" 0 4
+n "fra"
+n "frost"
+m "xfrank" 1 6
+n ""
+
+pattern frank|fred|brad|bobby|janet
+m "frank" 0 5
+m "fred" 0 4
+m "brad" 0 4
+m "bobby" 0 5
+m "janet" 0 5
+n "fran"
+n "bob"
+n ""
+
+pattern f|frank
+m "f" 0 1
+m "frank" 0 1
+m "fr" 0 1
+n ""
+
+pattern frank|f
+m "frank" 0 5
+m "f" 0 1
+m "fr" 0 1
+n ""
+
+pattern fo|foo|fool
+m "fo" 0 2
+m "foo" 0 2
+m "fool" 0 2
+n "f"
+m "foolish" 0 2
+
+pattern cat|car|cap|dog
+m "cat" 0 3
+m "car" 0 3
+m "cap" 0 3
+m "dog" 0 3
+n "ca"
+n "do"
+n ""
+
+pattern frank|zred|brad
+m "frank" 0 5
+m "zred" 0 4
+m "brad" 0 4
+m "zbrad" 1 5
+n ""
+
+pattern (b)|c
+m "b" 0 1
+g 1 0 1
+m "c" 0 1
+g 1 -1 -1
+n "d"
+n ""
+
+pattern (frank)|fred
+m "frank" 0 5
+g 1 0 5
+m "fred" 0 4
+g 1 -1 -1
+n "fra"
+n ""
+
+pattern fra(n|m)k|frost
+m "frank" 0 5
+g 1 3 4
+m "framk" 0 5
+g 1 3 4
+m "frost" 0 5
+g 1 -1 -1
+n "fra"
+n ""
+
