@@ -77,6 +77,13 @@ cannot be re-run is not a measurement.
   is distinguishable from "0 instrumented", which is the distinction that
   produced (2) and (3).
 
+  **The column-adjacency lesson, recorded four times now: READ ACROSS THE
+  CONTROL ROWS.** Finding 26's refuting number (the same 50,005,000 under
+  `steps` and under `scan`) and finding 29's deriving numbers (the seconds
+  column, which prices a resumption at ~16 scan iterations) were BOTH already
+  sitting in rows this note quoted. Neither needed a new measurement — only
+  reading two columns of an existing row against each other.
+
   Round 1's blindness is the standing lesson: its single shape `([a-z]+)9` is
   the possessified CURSOR rung, the one genuinely frameless member of the
   class, so the boundary the rule turned on was invisible to the instrument

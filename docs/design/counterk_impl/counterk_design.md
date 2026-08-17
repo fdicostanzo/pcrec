@@ -57,7 +57,11 @@ directory's house style.** What a returning reader most needs:
   cursor rung, which retreats one stride per pop and is already charged in
   full, so the rule double-billed the triangular quantity. The refuting number
   was in the note's own control row. §7.4 now excludes it and §7.5 is rebuilt
-  on corrected numbers.
+  on corrected numbers. A further finding (29) then showed
+  `PCREC_STEP_SCALE = 1024` is a BUDGET-PRESERVING weight and not the work
+  ratio the note implied — measured, a resumption is worth ~16 scan
+  iterations — so §7.4 and §7.5 now show what BOTH readings buy, because that
+  difference is the trade Frank rules on.
 - **Verified clean and not to be re-checked**: every spelling and citation the
   docs critic examined, the differential's failure-surface premise, the
   four-of-five green-because-fast survivors, §8.1's 33-frames/65-trail
@@ -839,38 +843,59 @@ accumulator. It is to **stop dividing**:
 Today's behaviour is preserved EXACTLY at the default — a pattern that only
 backtracks reaches the budget at precisely the same resumption count as now —
 and the uncharged work becomes visible at 1/`PCREC_STEP_SCALE` of a
-resumption's weight. Nothing is ever divided, so nothing truncates, no residue
-state is needed, and each site is one subtraction. `PCREC_STEP_SCALE = 1024`
-is the proposal, by the arithmetic below; it is a `limits.h` constant on K's
-precedent (D47.2).
+resumption's weight. Nothing is ever divided, so nothing truncates and no
+residue state is needed; each site is one subtraction.
 
-**THE UNIT, stated because two committed checks depend on it** [R25 27]. The
-scale is INTERNAL. `--step-budget=N` and `rx_info.step_budget` keep meaning
-RESUMPTIONS, exactly as they do today, and the emitter multiplies by
-`PCREC_STEP_SCALE` on its way into `w->budget`. This is not a preference: a
-raw-units reading would silently make `run_gen_timeout_tests.sh:250`'s budget
-pin 1,024x TIGHTER, inverting a check whose whole purpose is to be sized so
-the run COMPLETES, and `run_vm_tests.sh:154` asserts the stamped
-`step_budget` value directly. **`rx_info.step_budget` is a FROZEN int64 ABI
-field (D44.5)**, so keeping its meaning is not a free choice either — it is the
-only reading that leaves the frozen surface alone, and that consequence rides
-§7.5 to Frank rather than being settled here.
+**`PCREC_STEP_SCALE` IS A WEIGHT, NOT A WORK RATIO, and the first draft dressed
+a choice as physics** [R25 29]. The archive's own seconds column prices the two
+quantities against each other, and the numbers were already in rows this note
+quotes:
 
-**What the scale buys, now from MEASURED counts rather than a closed form:**
-
-| | measured quantity | units at scale 1024 | against a 1.02×10⁹ budget |
+| n | scan iteration | backtrack resumption | measured ratio |
 |---|---|---|---|
-| the possessify quadratic at n = 45,000 — **DERIVED**, not measured (extrapolated from the n(n+1)/2 fit the three measured sizes establish) | ~1.0×10⁹ scan iters | ~1.0×10⁹ | **fires**, at ~1 s of work |
-| the same at n = 100,000 (2.1 s today) | 5.0×10⁹ scan iters | 5.0×10⁹ | fires at ~20% of the work |
-| `-fno-possessify` control, n = 10,000 | 50,015,001 steps | 5.1×10¹⁰ | fires — as it does today |
-| a legitimate 1 GB single-pass match | ~10⁹ scan iters | ~10⁹ | **at the boundary** (§7.5) |
+| 10,000 | 0.440 ns | 6.959 ns | **15.8** |
+| 50,000 | 0.415 ns | 7.068 ns | **17.0** |
+| 100,000 | 0.425 ns | 6.992 ns | **16.4** |
 
-The third row is the calibration that matters: the control's step count
-(50,015,001) and the possessified build's scan count (50,005,000 + 10,001
-steps) are THE SAME QUANTITY, exactly, at all three measured sizes. Charging
-scan iterations restores precisely what possessification removed — which the
-first replacement claimed only by derivation and this one shows by
-measurement.
+(Each row is three subtractions against the `-fno-possessify` control: the
+control performs the same scan iterations plus ~n²/2 extra resumptions, so the
+time difference divided by the resumption difference prices a resumption, and
+the possessified row's own time divided by its scan count prices an iteration.)
+
+**A resumption costs about 16 scan iterations of real work, so
+`PCREC_STEP_SCALE = 1024` overweights it by roughly 64×.** That is not an
+error, but it must be named for what it is: 1024 is chosen to satisfy TWO
+BUDGET GOALS — keep the default's 10⁶ resumptions meaning exactly what they
+mean today, and place the linear-match boundary at ~1 GB — not to model
+relative cost. A weight picked to preserve a budget is a legitimate thing to
+choose; calling it a work ratio when the measurement says 16 is not. §7.5 shows
+what each reading buys, because the difference between them IS the trade.
+
+**What each reading buys.** The quadratic charges n²/2 units, so the give-up
+point moves with the weight:
+
+| | `SCALE = 1024` (budget-preserving) | `SCALE = 16` (the measured work ratio) |
+|---|---|---|
+| effective budget | 1.02×10⁹ units | 1.6×10⁷ units |
+| the possessify quadratic fires at | **n ≈ 45,000** (~1 s of work) | **n ≈ 5,700** (~0.02 s) |
+| a legitimate 1 GB single-pass match | ~10⁹ units — **at the boundary** | ~10⁹ units — **62× OVER** |
+| `-fno-possessify` control, n = 10,000 | 5.1×10¹⁰ — fires, as today | 8.0×10⁸ — fires, as today |
+
+Both readings catch the pathology, and both preserve today's behaviour for
+patterns that only backtrack. They differ on exactly one thing: **how much
+ordinary linear matching the budget tolerates.** 1024 buys ~1 GB and catches
+the quadratic after about a second of work; 16 is honest about relative cost
+and refuses ordinary linear matches above roughly 16 MB. That is the whole
+trade, and §7.5 puts it to Frank rather than settling it here.
+
+**THE UNIT, in one line** [R25 27, downgraded]: `w->budget` is held INTERNALLY
+as `N × PCREC_STEP_SCALE`; `--step-budget=N` and `rx_info.step_budget` keep
+meaning RESUMPTIONS, and nothing external moves — which leaves the frozen int64
+ABI field (D44.5) and both committed pins (`run_vm_tests.sh:154`'s stamp
+assertion, `run_gen_timeout_tests.sh:250`'s completion-sized budget) untouched.
+Two implementation caveats that are easy to get wrong: **clamp the multiply**,
+since a near-`INT64_MAX` budget overflows at ×1024, and **never scale
+`PCREC_STEP_BUDGET_NONE`**, which is a sentinel and not a quantity.
 
 #### The sites, and what they cost — stated because the cost is real
 
@@ -886,8 +911,11 @@ measurement.
   This is where the probe instruments it, so the measured column and the
   proposed site are the same place.
 - **The BACKWARD WALK is in the second class, not the first** [R25 19,
-  confirmed but re-derived]. It does need its own COUNTER and its own SITE, as
-  the panel said. The reason is not the three exits, though: it pushes NOTHING (`rungselect_design.md` §2.4 — reverse
+  19, CLOSED, with the critic's own reason refuted]. It needs its own COUNTER
+  and that is all: the "three exits" are three entry edges into ONE convergent
+  label (`wendl`, reached once per invocation), so the SITE is free. What the
+  walk genuinely lacks is a step count — it counts GROUPS WITNESSED, not steps.
+  It pushes NOTHING (`rungselect_design.md` §2.4 — reverse
   one-unambiguity lets it dispatch on the next byte), so there is no cut to
   hang a charge on. **DISCLOSED: this probe does not measure the walk**; its
   scan anchor is the cursor rung's span loop. That is the largest unmeasured
@@ -937,11 +965,18 @@ subject byte, so a single-pass match over ~1 GB reaches the 1.02×10⁹ default:
 **at the boundary, on the shipped path, for a completely ordinary linear
 match.**
 
-The ~1 GB figure is the CORRECTED one. Under the first redesign's predicate it
-would have been roughly half that, because the non-possessified cursor rung was
-double-billed [R25 26]; excluding it restores both the honesty of the number
-and the "today preserved exactly" claim for the most common quantifier shape,
-which the first rule quietly broke.
+The ~1 GB figure is CORRECTED in two senses. Under the first redesign's
+predicate it would have been roughly half, because the non-possessified cursor
+rung was double-billed [R25 26]; excluding it restores both the number and the
+"today preserved exactly" claim for the most common quantifier shape, which the
+first rule quietly broke.
+
+**And it is a figure the WEIGHT places, not one the work implies** [R25 29]. At
+`PCREC_STEP_SCALE = 1024` a 1 GB linear match sits at the boundary; at the
+MEASURED work ratio of ~16 the same match is **62× over**, and the budget would
+refuse ordinary linear matching above roughly 16 MB (§7.4's table). Frank is
+choosing between those two columns, and the note must not present the more
+comfortable one as though the measurement produced it.
 
 The benefit, meanwhile, is only reachable where the prefilter is off:
 
