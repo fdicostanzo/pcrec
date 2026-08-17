@@ -67,7 +67,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-known-fail test-thread
+      test-counterk test-mrl test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -191,6 +191,28 @@ test-counterk: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/counterk/run_counterkdiff.sh' \
 	    'bash tests/counterk/run_counterk_tests.sh'
+
+# [M4.6d] MINIMUM-REMAINING-LENGTH pruning's two non-.rxt suites, the same
+# shape as the three deny-family suites above. Its .rxt corpus rides
+# test-corpus like every other module's -- and it is the D27-BLINDED one, so
+# it is the half of this directory that was written from the promise rather
+# than from the code.
+#
+# `-fno-length-prune` is the ground truth for a REASON the three above do not
+# have: MRL is not a rung, it is a bound emitted ON whichever rung a
+# quantifier already took, so denying it changes no rung, no slot and no
+# capacity -- an artifact built with it is byte-for-byte the one pcrec emitted
+# before MRL existed, which run_mrl_tests.sh asserts over the whole corpus.
+#
+# The differential sweeps BOTH ENGINES, and that is this suite's own axis: the
+# two get different CEILINGS (`--engine=vm` measures to the subject end, the
+# default path threads the prefilter's match-end window, D51 ruling 2), and
+# the window form is both the one that ships and the one whose error direction
+# is unsound if it is ever stale.
+test-mrl: all
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/mrl/run_mrldiff.sh' \
+	    'bash tests/mrl/run_mrl_tests.sh'
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh

@@ -4154,9 +4154,19 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_VM_PRUNE_CLAMPED      0x%xu\n", v.up, vm_prune_bit[VM_PRUNE_CLAMPED]);
     sb_printf(c, "#define %s_VM_PRUNE_UNCLAMPED    0x%xu\n", v.up, vm_prune_bit[VM_PRUNE_UNCLAMPED]);
     sb_printf(c, "#define %s_VM_PRUNES 0x%xu\n", v.up, v.prunes);
+    /* The CEILING the artifact actually uses, and "none" when it uses none —
+     * which is the same word whether the analysis produced nothing or was
+     * DENIED. That identity is deliberate and load-bearing: `-fno-length-prune`
+     * has to leave no trace on a pattern that carries no bound, or the
+     * byte-identity property that makes the denied build the differential's
+     * ground truth is destroyed by the stamp announcing the denial. It is the
+     * same rule emit_dfa.c's strategy-denial mask states for `rx_info.flags`,
+     * one stamp over. Where a bound DOES exist the stamp names its form, which
+     * is what ruling 2 (c) asks for; where none exists there is no form to
+     * name. */
     sb_printf(c, "#define %s_VM_PRUNE_CEILING \"%s\"\n", v.up,
-              !v.mrl ? "none (-fno-length-prune)"
-                     : v.mrl_win ? "prefilter-window" : "subject-end");
+              v.nclamp == 0 ? "none"
+                            : v.mrl_win ? "prefilter-window" : "subject-end");
     if (v.tracing) {
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"

@@ -346,6 +346,87 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     `-fno-revdet` denies it, and D47.3's do-or-die is asserted against the STAMP
     rather than against the flag having been passed. Tests: tests/rungselect/.
 
+  - **[M4.6d] MINIMUM-REMAINING-LENGTH PRUNING** (K23's fix of record, D51
+    ruling 1; design `docs/design/k23_impl/k23_design.md`, build outcome in
+    that note's §14). `src/opt/mrl.c` supplies `pcrec_minw`; this file
+    supplies everything else, and the everything else is where the soundness
+    lives.
+
+    **The threading.** `Vm.fmin` is the follow-min at the current emission
+    point, mutated at ONE place (`vm_emit_f`) and inherited everywhere else,
+    so a site that does not change what follows is correct by saying nothing.
+    A_CAT computes its spine's follow-mins as a SUFFIX SUM in one backward
+    pass; a bounded repeat's mandatory copy `i` is emitted with
+    `(rmin - i - 1) * minw(body) + F`, which §4.3 calls "the whole of K23's
+    fix". Everything under a node inherits, which is why `A_CAP` and
+    `vm_alt`'s branches have no MRL code at all.
+
+    **Two forms, and which applies is fixed by the rung** — the rule stated
+    once at the top of the MRL block and worth knowing before touching any
+    site: rounding is owed wherever the bound ASSIGNS a cursor value, and not
+    owed wherever it merely TESTS one.
+      - the GREEDY CURSOR rung ASSIGNS, so its clamp is
+        `pos + W*floor((CEIL - minrest - pos)/W)` and is FOLDED INTO THE SCAN'S
+        OWN BOUND. Two different wins from one expression: the retreat chain
+        never walks the doomed suffix (10,621,636 steps -> 1), and the scan
+        never READS it (the forward-work proxy drops to one pass). R26 E1
+        measured the unrounded form UNSOUND at stride > 1 — it substitutes a
+        position the loop can never occupy for one it can, which satisfies
+        "removes only doomed candidates" and still deletes the answer.
+      - a LAZY cursor TESTS (it walks up from the minimum and is on the
+        lattice by construction), the FRAMES rung TESTS at each iteration
+        entry, and the possessive cursor arm TESTS after its scan. **The
+        possessive arm is a test rather than a clamp for a reason that is not
+        "which shape the rung wants"**: clamping there would move a
+        possessified loop to a smaller position and run the continuation from
+        it, i.e. re-introduce the retreat possessification proved dead. Under
+        a correct verdict that is harmless; under a subtly wrong one it
+        manufactures a match. MRL's soundness must not come to depend on
+        possessify's, so it does not.
+      - the REVERSE-DETERMINISTIC rung is prediction 6's site, and the answer
+        is the opposite of the one predicted: its boundaries are NOT an
+        arithmetic lattice, and it therefore needs no rounding at all. Its
+        FORWARD SCAN *is* the walk onto the boundary set — every value `pos`
+        takes during the scan is a boundary the body matched — so the bound is
+        applied by STOPPING the scan one boundary early, and the E1 class of
+        bug is inexpressible there because no code path writes a boundary the
+        rung did not reach by matching. The stop goes to `shortl` and not to
+        `fulll`, which is not cosmetic: `fulll` is reached only where the
+        iteration count is known to have met rmin.
+      - the COUNTER rung is the one place the bound is NOT a compile-time
+        constant. One body copy serves every trip, so the compile-time view of
+        "mandatory iterations still owed" tops out at `K + residue`; the truth
+        is `count - stv[ctr] - j`, read from the TRAILED counter slot.
+        `Vm.fdyn` carries that as a C expression alongside `fmin`. **Leaving
+        it out leaves K23 alive**, measured on `(a{1,3}){65}` (9 bytes of
+        visible follow against a real 65) by the D27-blinded test author, not
+        by anything derived from this file.
+
+    **The CEILING is a PARAMETER of `<prefix>_match_impl`, not a member of
+    `<prefix>_work`** as the design note's own sketch had it. D51 ruling 2 (a)
+    requires every entry that runs no prefilter to default it to the subject
+    end; the way to discharge an obligation of the form "every caller must
+    remember to set X" is to make forgetting a compile error. Its value is
+    `min(n, win[0][1])` — the prefilter's match-end window, ruling 2 — on the
+    search entry, and `ctx->len` on the two match-here entries. **The retry
+    loop RECOMPUTES it** (ruling 2 (b)): a structural argument that the retry
+    cannot fire at all is available and is written at the site, but it rests
+    on span-equality between the VM and the prefilter, which R21 split to
+    BELIEVED-WITH-GATE after two live priority miscompiles — and a stale
+    window is too SMALL, the unsound direction.
+
+    Observed through `<PREFIX>_VM_PRUNES` (a bitmask beside `_VM_RUNGS` and
+    `_VM_STRATS`, per-quantifier for the same reason: `(a{2,4}){3,9}b` clamps
+    at every replica and `(a{2,4}){3,9}` at none) plus
+    `<PREFIX>_VM_PRUNE_CEILING`, which names the ACTIVE ceiling form —
+    ruling 2 (c), so `--engine=vm`'s weaker subject-end form is disclosed
+    rather than discovered. The ceiling stamps `"none"` when the artifact
+    carries no bound, and stamps the same `"none"` under
+    `-fno-length-prune`: the denial must leave NO TRACE or the byte-identity
+    property that makes the denied build a ground truth dies at the stamp,
+    which is emit_dfa.c's strategy-denial rule one stamp over. Tests:
+    tests/mrl/.
+
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 
   **[ENG-BREP] the STRATEGY-DENIAL mask.** `emit_info_def` masks

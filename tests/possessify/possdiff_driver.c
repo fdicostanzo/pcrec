@@ -169,6 +169,38 @@ int main(void)
                         same = false;
                         break;
                     }
+#ifdef DIFF_A_MAY_ANSWER_MORE
+            /* THE ONE ASYMMETRY, opt-in and off by default.
+             *
+             * An optimization whose whole purpose is to turn a RESOURCE
+             * REFUSAL into an ANSWER cannot be held to "the failure surfaces
+             * are identical" -- that requirement, taken literally, forbids
+             * the feature. [M4.6d]'s MRL pruning is exactly that case: it
+             * removes positions from which nothing could have succeeded, so
+             * a search that used to exhaust the step budget now completes,
+             * and the differential saw `nomatch` against `err_steps` on two
+             * of 174,486 cells. (run_possdiff.sh's own header records the
+             * same tension one rung over, where possessification changes a
+             * loop's FRAME requirement.)
+             *
+             * So arm A is allowed to ANSWER where arm B GAVE UP, and nothing
+             * else moves. The reverse is still a divergence -- A giving up
+             * where B answers is a regression, which is the direction that
+             * matters. And two arms that both answer must still agree on the
+             * span and every capture slot, which is the claim this driver
+             * exists for and which is untouched: a give-up carries no
+             * captures to compare, so no cell where the answers could differ
+             * is excused by this branch.
+             *
+             * A cell that goes quiet this way is INVISIBLE to the sweep's
+             * own count, which is why the suite enabling it also pins the
+             * step budget: the exemption should be reached by a handful of
+             * genuinely pathological cells, not by a budget so low that half
+             * the corpus stops being compared. */
+            if (!same && ra != PA_ERR_STEPS && ra != PA_ERR_FRAMES &&
+                (rb == PA_ERR_STEPS || rb == PA_ERR_FRAMES))
+                same = true;
+#endif
             if (!same) {
                 char da[4096], db[4096];
                 describe(ra, ca, da, sizeof da);
