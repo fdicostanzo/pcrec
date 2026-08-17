@@ -1842,13 +1842,19 @@ because the design note measured them:**
   disposed of the width-0 edge before this fix existed.
 
 The ratchet's resident moved to `tests/base/d27_nested_min_boundary.rxt` in
-the same change, which is what the ratchet exists to force. The fix's own
-corpus is `tests/mrl/` and is **D27-BLINDED** — and it earned that: the owed
-`(a{1,3}){65}` family FAILED the build lane's first implementation and located
-a real gap on the counter rung (one body copy serves every trip, so the
-compile-time follow-min tops out at `K + residue`, 9 where the truth is 65).
-The differential agreed, the structural checks agreed and the acceptance cell
-agreed, because all three were derived from the same model the bug was in.
+the same change, which is what the ratchet exists to force. The **D27 corpus of
+record** for the ambiguous-decomposition region is
+`tests/base/d27_k23_ambiguous_decomposition.rxt`, authored blinded in the
+`d27k23` cell; `tests/mrl/` is the implementation lane's own test directory
+and deliberately does not duplicate that region. The episode worth keeping:
+the owed `(a{1,3}){65}` family FAILED the build lane's first implementation
+and located a real gap on the counter rung (one body copy serves every trip,
+so the compile-time follow-min tops out at `K + residue`, 9 where the truth is
+65). The differential agreed, the structural checks agreed and the
+step-collapse acceptance cell agreed, because all three were derived from the
+same model the bug was in — which is why the mechanism now has an acceptance
+cell of its own (`tests/mrl/run_mrl_tests.sh` §1b) rather than resting on a
+corpus this lane does not own.
 D51 ruling 3's step-budget move (10^6 → 5×10^8) lands with this change and
 NOT before, so the test that flips says what it means: the defect is fixed,
 not outspent.

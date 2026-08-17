@@ -6,10 +6,12 @@
 # The three checks in this directory see three different things and none
 # replaces another:
 #
-#   *.rxt                 what each pattern MATCHES, oracle-verified. Written
-#                         from the GOAL by a D27-BLINDED author (see
-#                         CLAUDE.md) — the corpus that found the counter
-#                         rung's missing runtime bound.
+#   *.rxt                 what each pattern MATCHES, oracle-verified against
+#                         python `re`. Ordinary implementation tests; the D27
+#                         corpus of record for K23 is elsewhere
+#                         (../base/d27_k23_ambiguous_decomposition.rxt) and
+#                         this directory deliberately does not duplicate it.
+#                         See CLAUDE.md.
 #   run_mrldiff.sh        that the pruned build and the `-fno-length-prune`
 #                         (ground-truth) build AGREE on span, every capture
 #                         slot and the failure surface, on BOTH ceilings.
@@ -142,6 +144,47 @@ if gen k23on "$K23" --step-budget=8 && gen k23off "$K23" --step-budget=8 -fno-le
     fi
 else
     bad "K23: the exemplar did not compile both ways"
+fi
+
+# ---------------------------------------------------------------------------
+# 1b. THE COUNTER RUNG'S RUNTIME BOUND — the second acceptance cell, and the
+#     one guarding the mechanism this lane got wrong first.
+#
+# On the counter rung ONE emitted body copy serves every trip, so the
+# compile-time view of "mandatory iterations still owed" tops out at
+# `K + residue`: 9 on the shape below, where the truth is 65. With only the
+# compile-time bound, K23 survives here — the exemplar in cell 1 above takes a
+# different path and answers either way, so cell 1 cannot see this.
+#
+# The REGION's own oracle-verified expectations are NOT here and are not this
+# lane's to write: they are the D27 corpus of record (authored blinded),
+# tests/base/d27_k23_ambiguous_decomposition.rxt, authored in a separate cell.
+# This cell asserts only the MECHANISM — that the bound collapses the search —
+# which is an implementation fact and therefore exactly what an implementation
+# lane may assert. The two are complementary and neither substitutes: a corpus
+# says what the pattern matches, this says how few steps it took to say so.
+# ---------------------------------------------------------------------------
+CTR='(a{1,3}){65}'
+if gen ctron "$CTR" --step-budget=8 && gen ctroff "$CTR" --step-budget=8 -fno-length-prune; then
+    a="$(build_run ctron a 65)"
+    b="$(build_run ctroff a 65)"
+    if [ "$a" = "0,65 64,65" ]; then
+        ok "counter rung: '(a{1,3}){65}' on 65 'a's answers (0,65)/(64,65) within EIGHT steps -- the follow-min read from the trailed counter slot, not from the trip"
+    else
+        bad "counter rung: '(a{1,3}){65}' gave '$a' at a step budget of 8; expected '0,65 64,65'. If this reads RX_ERR_STEPS the runtime follow-min term (Vm.fdyn) is gone and the compile-time view (K + residue = 9 bytes of follow, against a real 65) is back"
+    fi
+    if [ "$b" != "$a" ]; then
+        ok "counter rung control: the -fno-length-prune build does NOT answer at that budget ('$b')"
+    else
+        bad "counter rung control: the denied build also answered at a budget of 8 ('$b'); this check is measuring nothing"
+    fi
+    if [ "$(grep -c 'stv\[[0-9]*\])))' "$WORKDIR/ctron.c")" -gt 0 ]; then
+        ok "counter rung: the emitted bound READS THE COUNTER (a runtime term), which is what the compile-time form could not express"
+    else
+        bad "counter rung: no counter-derived bound in the artifact -- the bound is compile-time only, which is the defect this cell exists for"
+    fi
+else
+    bad "counter rung: '(a{1,3}){65}' did not compile both ways"
 fi
 
 # ---------------------------------------------------------------------------

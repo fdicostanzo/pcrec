@@ -511,10 +511,15 @@ that both answer must still agree on the span and every slot. A give-up
 carries no captures, so no cell where the answers COULD differ is excused.
 Measured at the pinned budget: 2 of 176,276 cells take the exemption.
 
-**The `.rxt` corpus in `tests/mrl/` is D27-BLINDED**, and it found a real gap
-in the first implementation — see that directory's CLAUDE.md, which is the
-worked example of why an instrument derived from the implementation can only
-find defects the implementation's own model admits.
+**`tests/mrl/`'s `.rxt` files are the IMPLEMENTATION lane's own**, and the
+D27 corpus of record for K23 is `tests/base/d27_k23_ambiguous_decomposition.rxt`
+from the separate `d27k23` cell — the two do not overlap, deliberately. That
+directory's CLAUDE.md carries the episode worth reading: a cell-isolated
+author's file located a real gap in the first implementation that the
+differential, the structural checks and the step-collapse acceptance cell all
+agreed with, because all three were derived from the model the bug was in. An
+instrument derived from an implementation can only find the defects that
+implementation's own model admits.
 
 **[ENG-BREP] (2026-08-16) — an eleventh section, `test-rungselect`.** The
 REVERSE-DETERMINISTIC rung's suite, the same three-part shape as

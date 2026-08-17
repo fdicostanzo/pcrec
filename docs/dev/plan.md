@@ -223,7 +223,7 @@ stated terms.
     subject-end fallback; a stale window errs UNSOUND, see the
     verification's direction-of-error note).
   - [M4.6d] STATE:completed (2026-08-17, twenty-ninth session; lanes: mrl
-    opus build in worktrees/mrl, plus a SECOND D27-blinded author this lane
+    opus build in worktrees/mrl, plus a cell-isolated test author this lane
     spawned in its own cell — see the finding below) — **K23 FIXED** by
     MINIMUM-REMAINING-LENGTH pruning per D51's three rulings, all in one
     change on lane/mrl. Exemplar `(a{10,20}){10,50}` at 100 bytes: 10.6 M steps
@@ -244,18 +244,26 @@ stated terms.
     direction**: the revdet rung needs NO lattice argument, because its
     forward scan IS the walk onto the boundary set — the bound stops the scan
     one boundary early and the E1 substitution has no spelling there. **AND
-    THE E1 CLASS RECURRED ONE RUNG DOWN, found by the D27-BLINDED test
-    author**: on the counter rung one body copy serves every trip, so the
+    THE E1 CLASS RECURRED ONE RUNG DOWN, found from OUTSIDE the
+    implementation's own model** (a cell-isolated author this lane spawned
+    before it knew the manager had one): on the counter rung one body copy serves every trip, so the
     compile-time follow-min tops out at `K + residue` (9 on `(a{1,3}){65}`
     where the truth is 65) and K23 stayed alive on it — the differential, the
     structural checks and the acceptance cell all agreed with the bug because
     all three were derived from the model the bug was in. Fixed by building
-    §4.5's runtime term (`Vm.fdyn`, read from the trailed counter slot); their
-    225-case corpus is now tests/mrl/ and passes 225/0. CROSS-CHECK: the
-    manager's OWN d27k23 blinded corpus (89 cases, a different author in a
-    different cell, expectations from a separately proven law) also passes
-    89/89 against this build, neither author having seen the other's work. Battery: test
-    10,202/0 (ratchet "nothing to ratchet"), strict, mrl 16/16 + 202,458
+    §4.5's runtime term (`Vm.fdyn`, read from the trailed counter slot). PER
+    THE MANAGER'S MID-FLIGHT CORRECTION the owed-region file is NOT delivered
+    here — the D27 corpus of record is d27k23's
+    tests/base/d27_k23_ambiguous_decomposition.rxt, and two corpora over one
+    region collide at merge; this lane keeps the MECHANISM guard instead
+    (tests/mrl/run_mrl_tests.sh §1b: (a{1,3}){65} answers inside eight steps
+    and the emitted bound reads the counter). The remaining tests/mrl/ .rxt
+    files are 191 ORDINARY implementation cases, labelled as such.
+    CROSS-CHECK, run before the removal: d27k23's corpus (89 cases, a
+    different author in a different cell, expectations from a separately
+    proven law) passes 89/89 against this build, neither author having seen
+    the other'"'"'s work, and it covers the same rung and the same runtime term. Battery: test
+    10,168/0 (ratchet "nothing to ratchet"), strict, mrl 16/16 + 202,458
     differential cells (per-rung coverage complete), gate.sh 10/10 with case
     (c) at 392.445 above its 388.615 floor, ubsan/asan. THREE HARNESS FIXES the budget move forced, reported
     as such: counterkdiff and the vm §4.7 contrast now PIN the step budget

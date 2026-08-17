@@ -118,18 +118,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   include stride > 1. Carries the two axes R26 E1/E2 proved a differential is
   structurally blind without. See its own CLAUDE.md.
 - **`mrl/`** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning (K23's fix, D51
-  ruling 1), in the same three shapes tests/possessify/ established. Its
-  `.rxt` corpus is **D27-BLINDED** — written from a one-page statement of what
-  MRL promises, by an author denied `src/`, the rest of `tests/`, the design
-  notes and the history — and it EARNED that: the owed `(a{1,3}){65}` family
-  failed the build lane's first implementation and located a real gap (the
-  counter rung's follow-min is a RUNTIME expression, not a compile-time
-  constant) that no instrument derived from the code was going to find. The
-  differential's own axis is the ENGINE: the two ceilings differ
-  (`--engine=vm` measures to the subject end, the default path threads the
-  prefilter's match-end window), and the window form is the only conservative
-  choice in this design whose error direction is unsound. See its own
-  CLAUDE.md.
+  ruling 1), in the same three shapes tests/possessify/ established. The
+  IMPLEMENTATION lane's own tests: the D27 corpus of record for K23 is
+  `base/d27_k23_ambiguous_decomposition.rxt` (the `d27k23` cell), and this
+  directory deliberately does not duplicate its region. The differential's own
+  axis is the ENGINE: the two ceilings differ (`--engine=vm` measures to the
+  subject end, the default path threads the prefilter's match-end window), and
+  the window form is the only conservative choice in this design whose error
+  direction is unsound. Read its CLAUDE.md for the episode that produced its
+  §1b acceptance cell — a cell-isolated author's owed-region file located a
+  real gap (the counter rung's follow-min is a RUNTIME expression, not a
+  compile-time constant) that the differential, the structural checks and the
+  step-collapse cell all agreed with, because all three were derived from the
+  model the bug was in.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

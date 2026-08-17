@@ -11,7 +11,8 @@ Three instruments, seeing three different things, none substituting for
 another — the shape `tests/possessify/` established and `tests/rungselect/`
 and `tests/counterk/` inherited:
 
-- the `.rxt` corpus — what each pattern MATCHES, oracle-verified;
+- the `.rxt` files — what each pattern MATCHES, oracle-verified against
+  python `re`;
 - `run_mrldiff.sh` — that the pruned build and the `-fno-length-prune` build
   AGREE, over a subject sweep, on span + every capture slot + the failure
   surface;
@@ -19,34 +20,54 @@ and `tests/counterk/` inherited:
   nowhere when denied, that D51 ruling 2's three obligations have code behind
   them, and that K23 actually COLLAPSED.
 
-## The `.rxt` corpus is D27-BLINDED, and that is the thing to know first
+## What this directory is, and what it is NOT
 
-Every `.rxt` file here was written by an author DENIED `src/`, the rest of
-`tests/`, the design notes and the git history — working in a
-`scripts/mk_d27_cell.sh` cell against a prebuilt binary, from a one-page
-statement of what MRL PROMISES and nothing else. That is D27's rule, applied
-to the fix for a defect D27 itself found.
+**It is the IMPLEMENTATION lane's test directory.** The `.rxt` files here are
+ordinary implementation tests: they pin what MRL's own machinery does, shape by
+shape, and they were written knowing the mechanism exists.
 
-**It paid, immediately and in the way D27 predicts.** The author's family 10 —
-`(a{1,3}){65}`, a shape the plan row specifically owed them — FAILED against
-the build lane's first implementation: 32 cases returning `RX_ERR_STEPS` where
-the promise says the matcher must answer. The cause was real and the build
-lane had reasoned itself past it: on the counter rung the emitter writes ONE
-body copy per K iterations, so the compile-time view of "how many mandatory
-iterations still follow" tops out at `K + residue` (9 here) where the truth is
-`count - stv[ctr] - j` (65 here). The design note had designed exactly that
-runtime expression (§4.5) and the build lane had deferred it as a residual on
-the reasoning that once-per-trip pruning was "enough". It was not, and no
-instrument derived from the implementation was going to say so — the
+**The D27 CORPUS OF RECORD for K23 is elsewhere** —
+`../base/d27_k23_ambiguous_decomposition.rxt`, authored in a separate cell by
+an author denied `src/`, the rest of `tests/`, the design notes and the
+history, and merged from the `d27k23` lane. That file owns the
+`(a{1,3}){64,65,66}` ambiguous-decomposition region the plan row owed. Nothing
+here duplicates it, and nothing here should: a corpus written by the lane that
+wrote the implementation is not a D27 corpus whatever its authoring
+arrangements, and two corpora over one region collide at merge.
+
+### The provenance of these files, stated because it is a fact and not a claim
+
+Before the manager's D27 author was known to this lane, this lane spawned its
+own cell-isolated author against the same one-page statement of what MRL
+promises. Ten of these eleven files came back from that cell; the eleventh —
+the owed `(a{1,3}){65}` region — was DROPPED from delivery on the manager's
+instruction, because it duplicated the corpus of record. That is the right
+call on collision grounds regardless of how either file was authored.
+
+**The exercise paid before it was dropped, and the finding is why this
+paragraph exists.** The owed-region file FAILED against this lane's first
+implementation: 32 cases returning `RX_ERR_STEPS` where the promise says the
+matcher must answer. The cause was real. On the counter rung the emitter
+writes ONE body copy per K iterations, so the compile-time view of "how many
+mandatory iterations still follow" tops out at `K + residue` (9 there) where
+the truth is `count - stv[ctr] - j` (65). `k23_design.md` §4.5 had designed
+exactly that runtime expression; this lane had deferred it as a residual on
+§9.3's "once-per-trip is believed enough", which splits into a FREQUENCY that
+holds and a VALUE that does not.
+
+No instrument derived from the implementation was going to say so — the
 differential agreed (both arms explored the same space), the corpus had no
-such shape, and the structural checks saw a bound emitted at every site.
+such shape, and the structural checks saw a bound emitted at every site with
+the right arithmetic for the model the emitter had. That is D27's claim
+measured again, and it is the reason the mechanism now has its own acceptance
+cell in `run_mrl_tests.sh` (§1b) rather than resting on a corpus this
+directory does not own.
 
-The remaining ten families came back CLEAN, which is also information: the
-author swept trailing constructs, alternation minima, zero-width and
-zero-minimum shapes, nesting, multi-byte bodies, laziness, partial and
-non-zero-start matches, required-no-match subjects and capture spans through
-all of the above, and found nothing. A clean family is a measured statement
-about where the bound is not wrong.
+The remaining ten families came back clean, which is also information: they
+sweep trailing constructs, alternation minima, zero-width and zero-minimum
+shapes, nesting, multi-byte bodies, laziness, partial and non-zero-start
+matches, required-no-match subjects and capture spans through all of the
+above, and found nothing.
 
 ## Files
 
@@ -70,14 +91,13 @@ about where the bound is not wrong.
   the direction in which a too-SMALL bound is invisible.
 - `09_captures.rxt` — group spans through the shapes above, including the
   `RX_UNSET` branches. Half the promise is where the groups land.
-- `10_owed_a1_3_65.rxt` — the owed `(a{1,3}){65}` region, 65..100 'a's. Python
-  `re` does not terminate here, so the expectations are derived in CLOSED FORM
-  from PCRE's leftmost-greedy semantics, with the reasoning in the file's own
-  comments; the author cross-validated that closed form against literal DFS
-  backtracking AND against python at counts 1..20 before applying it at 65.
-  **This is the file that found the counter-rung gap.** It also discharges the
-  counter-K lane's checkpoint-2 hand-off: `tests/base/d27_large_counts.rxt:58`
-  deliberately left the region unpinned, and it is pinned here.
+- (`10_owed_a1_3_65.rxt` was here and is DELIBERATELY ABSENT. The owed
+  `(a{1,3}){65}` region belongs to the D27 corpus of record,
+  `../base/d27_k23_ambiguous_decomposition.rxt`, which also discharges the
+  counter-K lane's checkpoint-2 hand-off — `../base/d27_large_counts.rxt:58`
+  deliberately left the region unpinned. What this directory keeps of that
+  episode is the MECHANISM guard in `run_mrl_tests.sh` §1b and the account
+  above.)
 - `11_motivating_shape_small.rxt` — a small-scale echo of the promise's own
   motivating shape, as a positive control that the "faster" half is real.
 - `patterns.txt` — the differential's designed family, organised by WHERE a

@@ -1810,8 +1810,10 @@ bound and emit byte-identical C with the pass on and off.
 
 ### 14.5 Validation
 
-- **The `.rxt` corpus**: 10,202 cases, 0 failures (9,975 base + the retired
-  K23 resident + 225 new D27-blinded cases). §10 item 1 is closed.
+- **The `.rxt` corpus**: 10,168 cases, 0 failures (9,975 base + the retired
+  K23 resident + 191 new implementation-lane cases in `tests/mrl/`). §10 item
+  1 is closed. The figure does NOT include the `d27k23` lane's 89-case corpus
+  of record, which merges separately.
 - **The pcrec-vs-pcrec differential** (§7.4's second item),
   `tests/mrl/run_mrldiff.sh`: the same pattern compiled with the pruning and
   with `-fno-length-prune`, linked into one TU, compared on span + every
@@ -1848,7 +1850,7 @@ bound and emit byte-identical C with the pass on and off.
   against libpcre2 ovectors is where it closes, and this lane did not
   anticipate it.
 
-### 14.6 THE R26 E1 CLASS DID RECUR — and a D27-BLINDED AUTHOR FOUND IT
+### 14.6 THE R26 E1 CLASS DID RECUR — and it was found from OUTSIDE the implementation's own model
 
 This is the finding of the build, and it is worth more than the collapse
 numbers because of WHERE it came from.
@@ -1875,23 +1877,36 @@ arithmetic for the model the emitter had. The `.rxt` corpus had no such shape.
 The step-collapse acceptance cell used the design note's own exemplar, which
 takes a different path.
 
-It was found by a **D27-BLINDED test author** — denied `src/`, the rest of
-`tests/`, this note, and the history; working in a `scripts/mk_d27_cell.sh`
-cell against a prebuilt binary and a one-page statement of what MRL PROMISES.
-`(a{1,3}){65}` was in their brief because the plan row owed it to them (the
-counter-K lane's checkpoint-2 hand-off), and they wrote 34 cases across it by
-deriving the answers in closed form, python `re` not terminating there. 32 of
-those cases failed. Their other ten families — trailing constructs,
-alternation minima, zero-width shapes, nesting, multi-byte bodies, laziness,
-partial and non-zero-start matches, no-match boundaries, capture spans — came
-back clean, which is also a measurement.
+It was found from OUTSIDE THE IMPLEMENTATION'S OWN MODEL, which is the part
+that generalises. The build lane spawned a cell-isolated author
+(`scripts/mk_d27_cell.sh`) against a prebuilt binary and a one-page statement
+of what MRL PROMISES, before it knew the manager had already spawned the
+project's D27 author for this row. `(a{1,3}){65}` was in the brief because the
+plan row owed it (the counter-K lane's checkpoint-2 hand-off); the answers had
+to be derived in closed form, python `re` not terminating there. 32 cases
+failed. The other ten families — trailing constructs, alternation minima,
+zero-width shapes, nesting, multi-byte bodies, laziness, partial and
+non-zero-start matches, no-match boundaries, capture spans — came back clean,
+which is also a measurement.
+
+**The owed-region file itself is NOT delivered by this lane** (manager
+instruction, mid-flight): the D27 corpus of record for that region is
+`tests/base/d27_k23_ambiguous_decomposition.rxt`, authored independently in
+the `d27k23` cell, and two corpora over one region collide at merge. What the
+build lane keeps of the episode is the MECHANISM guard — `tests/mrl/`'s §1b
+acceptance cell, which pins that `(a{1,3}){65}` answers inside eight steps and
+that the emitted bound READS THE COUNTER — plus this section. The corpus of
+record covers the same rung and the same runtime term and passes 89/89 against
+this build (§14.5).
 
 The fix is §4.5's expression, built: `Vm.fdyn` carries the runtime term
 `minw(body) · (count − stv[ctr] − j)` as a C expression beside the
 compile-time `fmin`, combined at each bound site. The counter slot is TRAILED
 (R25 E5), so a resume into a body frame restores the right value and the
 expression is correct on the backtracking path too. After it, `(a{1,3}){65}`
-answers in 0.13 s and all 225 blinded cases pass.
+answers in 0.13 s, every case from the cell passes, and — checked before the
+owed-region file was withdrawn from delivery — so does the `d27k23` corpus of
+record, 89 of 89.
 
 **The generalisation, and it is §11.4's lesson arriving one level up again.**
 §11.4 says randomising a corpus protects only the axes the generator can
@@ -1901,7 +1916,11 @@ of "the follow-min" was compile-time by construction, and every check it wrote
 inherited that model — the differential, the structural checks and the
 acceptance cell were all consistent with the bug. The corpus that was not
 derived from the implementation is the one that saw it. That is D27's claim,
-measured a second time, on the fix for the defect D27 found first.
+measured a second time, on the fix for the defect D27 found first — and the
+lesson survives the file that carried it being withdrawn, which is why the
+mechanism now carries its own acceptance cell (§1b of
+`tests/mrl/run_mrl_tests.sh`) instead of resting on a corpus the
+implementation lane does not own.
 
 ### 14.7 Corrections and additions to this note
 
