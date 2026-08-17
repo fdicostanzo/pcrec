@@ -830,26 +830,45 @@ charges 50,015,001 steps; the possessified build charges 10,001 and leaves
 sizes. So charging frameless scans restores precisely what possessification
 removed — and now does so without charging anything twice.
 
-#### The unit, which dissolves the truncation problem rather than patching it
+#### The unit — RULED: the work gets its OWN counter, so nothing is scaled and nothing is divided
 
-R25 finding 18 objected that a per-exit `>> SHIFT` truncates: a loop entered
-10⁶ times at 900 iterations charges zero forever. The fix is not a residue
-accumulator. It is to **stop dividing**:
+**RULED — settlement 4** (`../../dev/decisions.md` D47 SECOND ADDENDUM,
+2026-08-17). The charge does not land in the step budget at all. It lands in a
+SEPARATE bound with its own `rx_info` field and its own `RX_ERR_*` code, and
+that single fact deletes this subsection's entire scaling apparatus:
 
-> **The budget counts WORK UNITS. A backtrack resumption costs
-> `PCREC_STEP_SCALE` units; each piece of otherwise-uncharged work costs 1.
-> The default budget is `VM_DEFAULT_STEP_BUDGET × PCREC_STEP_SCALE`.**
+> **The new bound counts WORK UNITS: each piece of otherwise-uncharged work
+> (one discarded frame at a cut, one frameless scan iteration) costs 1, and
+> nothing else is counted in it. The step budget is untouched — a step is
+> still one backtrack resumption, counted at `rx_fail:`, with its own default
+> and its own `RX_ERR_STEPS`.**
 
-Today's behaviour is preserved EXACTLY at the default — a pattern that only
-backtracks reaches the budget at precisely the same resumption count as now —
-and the uncharged work becomes visible at 1/`PCREC_STEP_SCALE` of a
-resumption's weight. Nothing is ever divided, so nothing truncates and no
-residue state is needed; each site is one subtraction.
+There is no `PCREC_STEP_SCALE`. Each site is one subtraction against the new
+counter; nothing is multiplied into an existing quantity and nothing is
+divided out of one. The three consequences the ruling names: today's behaviour
+is preserved EXACTLY for patterns that only backtrack (their step budget is
+bit-for-bit what it is now), every committed step-budget pin stays true
+without inspection, and the refusal names WHICH kind of work blew up.
 
-**`PCREC_STEP_SCALE` IS A WEIGHT, NOT A WORK RATIO, and the first draft dressed
-a choice as physics** [R25 29]. The archive's own seconds column prices the two
-quantities against each other, and the numbers were already in rows this note
-quotes:
+**The analysis that got here is kept below rather than erased**, because two
+of its findings survive the ruling — finding 18's objection is what forced the
+no-division property the new counter still has, and finding 29's measurement
+is now the input to the one question the ruling deliberately did not answer.
+
+*Superseded, recorded:* the pre-ruling proposal read "a backtrack resumption
+costs `PCREC_STEP_SCALE` units; each piece of otherwise-uncharged work costs
+1; the default budget is `VM_DEFAULT_STEP_BUDGET × PCREC_STEP_SCALE`". It
+answered R25 finding 18 — a per-exit `>> SHIFT` truncates, so a loop entered
+10⁶ times at 900 iterations charges zero forever — by refusing to divide at
+all. **The no-division property is retained; the shared counter that made a
+scale factor necessary is not.**
+
+**`PCREC_STEP_SCALE` WAS A WEIGHT, NOT A WORK RATIO, and the first draft
+dressed a choice as physics** [R25 29]. The weight is gone with the shared
+counter, but the MEASUREMENT behind the finding is not, and it is now the
+evidence for the new bound's DEFAULT VALUE. The archive's own seconds column
+prices the two quantities against each other, and the numbers were already in
+rows this note quotes:
 
 | n | scan iteration | backtrack resumption | measured ratio |
 |---|---|---|---|
@@ -862,40 +881,48 @@ control performs the same scan iterations plus ~n²/2 extra resumptions, so the
 time difference divided by the resumption difference prices a resumption, and
 the possessified row's own time divided by its scan count prices an iteration.)
 
-**A resumption costs about 16 scan iterations of real work, so
-`PCREC_STEP_SCALE = 1024` overweights it by roughly 64×.** That is not an
-error, but it must be named for what it is: 1024 is chosen to satisfy TWO
-BUDGET GOALS — keep the default's 10⁶ resumptions meaning exactly what they
-mean today, and place the linear-match boundary at ~1 GB — not to model
-relative cost. A weight picked to preserve a budget is a legitimate thing to
-choose; calling it a work ratio when the measurement says 16 is not. §7.5 shows
-what each reading buys, because the difference between them IS the trade.
+**A resumption costs about 16 scan iterations of real work.** Under the shared
+counter that priced a `PCREC_STEP_SCALE` of 1024 as an overweight of roughly
+64× — chosen to satisfy two BUDGET goals (keep the default's 10⁶ resumptions
+meaning what they mean today, and place the linear-match boundary at ~1 GB)
+rather than to model relative cost. **Under the ruling the same number does a
+different job**: with a separate counter there is nothing to weight, so 16:1 is
+no longer a factor anyone applies — it is the exchange rate that tells you what
+a candidate DEFAULT for the new bound is worth in resumption-equivalents.
 
-**What each reading buys.** The quadratic charges n²/2 units, so the give-up
-point moves with the weight:
+**What each candidate default buys.** The quadratic charges n²/2 units, so the
+give-up point moves with the default:
 
-| | `SCALE = 1024` (budget-preserving) | `SCALE = 16` (the measured work ratio) |
+| | default ≈ 10⁹ units | default ≈ 1.6×10⁷ units |
 |---|---|---|
-| effective budget | 1.02×10⁹ units | 1.6×10⁷ units |
+| chosen to | put the linear-match boundary at ~1 GB | be commensurate with a resumption at the measured 16:1 |
 | the possessify quadratic fires at | **n ≈ 45,000** (~1 s of work) | **n ≈ 5,700** (~0.02 s) |
 | a legitimate 1 GB single-pass match | ~10⁹ units — **at the boundary** | ~10⁹ units — **62× OVER** |
 | `-fno-possessify` control, n = 10,000 | 5.1×10¹⁰ — fires, as today | 8.0×10⁸ — fires, as today |
 
-Both readings catch the pathology, and both preserve today's behaviour for
-patterns that only backtrack. They differ on exactly one thing: **how much
-ordinary linear matching the budget tolerates.** 1024 buys ~1 GB and catches
-the quadratic after about a second of work; 16 is honest about relative cost
-and refuses ordinary linear matches above roughly 16 MB. That is the whole
-trade, and §7.5 puts it to Frank rather than settling it here.
+Both defaults catch the pathology, and under settlement 4 both preserve
+today's behaviour for patterns that only backtrack — that is now true by
+construction, not by arithmetic, since the step budget is a different counter.
+They differ on exactly one thing: **how much ordinary linear matching the new
+bound tolerates.** ~10⁹ buys ~1 GB and catches the quadratic after about a
+second of work; ~1.6×10⁷ is commensurate with a resumption's real cost and
+refuses ordinary linear matching above roughly 16 MB. That is the whole
+question the ruling left open, and §10.5 carries it to Frank as the one-liner
+it owes him.
 
-**THE UNIT, in one line** [R25 27, downgraded]: `w->budget` is held INTERNALLY
-as `N × PCREC_STEP_SCALE`; `--step-budget=N` and `rx_info.step_budget` keep
-meaning RESUMPTIONS, and nothing external moves — which leaves the frozen int64
-ABI field (D44.5) and both committed pins (`run_vm_tests.sh:154`'s stamp
-assertion, `run_gen_timeout_tests.sh:250`'s completion-sized budget) untouched.
-Two implementation caveats that are easy to get wrong: **clamp the multiply**,
-since a near-`INT64_MAX` budget overflows at ×1024, and **never scale
-`PCREC_STEP_BUDGET_NONE`**, which is a sentinel and not a quantity.
+**THE UNIT, in one line** [R25 27 — EVAPORATED by the ruling, per the D47
+SECOND ADDENDUM's own text]: the new counter's unit is one piece of
+otherwise-uncharged work, and `--step-budget=N`, `rx_info.step_budget`, the
+frozen int64 ABI field (D44.5) and both committed pins (`run_vm_tests.sh:154`'s
+stamp assertion, `run_gen_timeout_tests.sh:250`'s completion-sized budget) are
+not merely preserved but UNTOUCHED — no code path reads or writes them
+differently. The two implementation caveats the scaling proposal owed die with
+it (there is no multiply to clamp and no sentinel to avoid scaling). What
+replaces them is a smaller obligation the new bound inherits from its sibling:
+it needs **its own sentinel and its own gating**, since `w->budget` exists only
+under `has_budget` (`emit_vm.c:2793`) and `tests/vm/run_vm_tests.sh:147-157`
+pins `--fno-step-budget` emitting NO counter. §10.5 proposes riding that one
+gate in v1, which keeps the pin true as written.
 
 #### The sites, and what they cost — stated because the cost is real
 
@@ -951,28 +978,48 @@ since a near-`INT64_MAX` budget overflows at ×1024, and **never scale
 
 The emitter's stated one-charge-site invariant (`emit_vm.c:3028-3034`) does
 not survive this either way; what is left to choose is whether the new sites
-merely DECREMENT or also TEST and return `R_STEPS`.
+merely DECREMENT or also TEST and return.
 
 **Proposed: they test.** An untested decrement means a loop that SUCCEEDS can
 overrun the budget by orders of magnitude and still return a match, which is
 the DD-2 failure mode the budget exists to prevent — a budget consulted only
 where it was already consulted is not a budget. The costs, stated rather than
-discovered later: `R_STEPS` can now return from a rung's exit and from inside
+discovered later: a give-up can now return from a rung's exit and from inside
 a loop body, so `has_budget` must be threaded to three emission sites, the
 invariant comment must be rewritten rather than left lying, and the
 implementer should expect `-Wmaybe-uninitialized` on the new return paths —
 the revdet rung hit exactly that on four corpus patterns and the precedent is
 recorded at `emit_vm.c:1743-1748`.
 
+**Under the ruling the returned value is the NEW code, not `R_STEPS`**
+(`../../dev/decisions.md` D47 SECOND ADDENDUM). Mechanically this costs one
+more internal sentinel beside `RX_INTERNAL_STEPS` and one more arm in the
+search wrapper's translation (`../engine_m4.md` §4.4's
+`if (r == RX_INTERNAL_STEPS) return RX_ERR_STEPS;`) — and it BUYS the thing
+the ruling was taken for: a caller that hits the new bound is told the forward
+work blew up, not that it ran out of backtracks. §10.5 proposes the spellings.
+
 ### 7.5 Who pays, and who benefits — they are not the same population
+
+> **RULED — SETTLEMENT 4** (`../../dev/decisions.md` D47 SECOND ADDENDUM,
+> 2026-08-17). The forward work gets its OWN bound beside frames and trail:
+> its own `rx_info` field, its own `RX_ERR_*` code. Frank's stated ground is
+> that the meter must see the FULL work; settlements 2 and 3 are REJECTED on
+> exactly that ground, and 4 was taken over 1 as recommended. **The DEFAULT
+> VALUE is deliberately NOT ruled** and returns to Frank as an explicit
+> one-liner at implementation (§10.5). This subsection is kept as written
+> below — the settlement analysis is what the ruling was taken on, and
+> erasing it would leave the ruling unexplained.
 
 **The COST is universal and the BENEFIT is diagnostic-path-only** [R25 24],
 and the note owes that plainly. MEASURED on the DEFAULT path: `([a-z]+)9`
 matching inside a 100 KB subject performs **100,000 frameless scan iterations**
 — today uncharged, and under §7.4 exactly 100,000 units. That is one unit per
-subject byte, so a single-pass match over ~1 GB reaches the 1.02×10⁹ default:
+subject byte, so a single-pass match over ~1 GB reaches a ~10⁹ bound:
 **at the boundary, on the shipped path, for a completely ordinary linear
-match.**
+match.** Under the ruling this cost is charged against the NEW bound rather
+than the step budget, so what it puts at risk is the new bound's default and
+nothing that exists today.
 
 The ~1 GB figure is CORRECTED in two senses. Under the first redesign's
 predicate it would have been roughly half, because the non-possessified cursor
@@ -980,12 +1027,14 @@ rung was double-billed [R25 26]; excluding it restores both the number and the
 "today preserved exactly" claim for the most common quantifier shape, which the
 first rule quietly broke.
 
-**And it is a figure the WEIGHT places, not one the work implies** [R25 29]. At
-`PCREC_STEP_SCALE = 1024` a 1 GB linear match sits at the boundary; at the
-MEASURED work ratio of ~16 the same match is **62× over**, and the budget would
-refuse ordinary linear matching above roughly 16 MB (§7.4's table). Frank is
-choosing between those two columns, and the note must not present the more
-comfortable one as though the measurement produced it.
+**And it is a figure the DEFAULT places, not one the work implies** [R25 29].
+At a default near 10⁹ a 1 GB linear match sits at the boundary; at the value
+commensurate with the MEASURED work ratio of ~16 the same match is **62×
+over**, and the bound would refuse ordinary linear matching above roughly
+16 MB (§7.4's table). Frank is choosing between those two columns — the ruling
+moved that choice from a scale factor onto a default, and did not make it. The
+note must not present the more comfortable column as though the measurement
+produced it.
 
 The benefit, meanwhile, is only reachable where the prefilter is off:
 
@@ -995,21 +1044,25 @@ The benefit, meanwhile, is only reachable where the prefilter is off:
 | 100,000 | 0.000 s, 0 steps, 0 uncharged | 2.126 s, 5.0×10⁹ uncharged |
 | 1,000,000 | 0.003 s, 0 steps, 0 uncharged | >120 s (~213 s extrapolated; the possessify lane measured 228.5 s) |
 
-So this is a TRADE, not a free repair: the budget stops being blind to the four
+So this is a TRADE, not a free repair: the meter stops being blind to the four
 shapes, and in exchange it acquires a subject-length sensitivity it does not
-have today. **Four settlements, and the lane does not think this is its call:**
+have today. **Four settlements were laid out; the ruling took 4.**
 
-1. **Accept and re-derive the default** from `PCREC_STEP_SCALE`, with the
-   measurement recorded (D12's posture; the current default is a bring-up
-   placeholder M4.6 calibrates anyway). Keeps one budget and one failure mode.
-2. **Charge only where the prefilter is off.** The exposure is exactly the
+1. **NOT TAKEN (the lane's fallback).** Accept and re-derive the step budget's
+   default from `PCREC_STEP_SCALE`, with the measurement recorded (D12's
+   posture; the current default is a bring-up placeholder M4.6 calibrates
+   anyway). Keeps one budget and one failure mode — and pays for that with a
+   step budget whose meaning changes under every existing pin.
+2. **REJECTED** (D47 SECOND ADDENDUM: the meter must see the FULL work).
+   Charge only where the prefilter is off. The exposure is exactly the
    `--engine=vm` path, so this costs nothing anyone runs in production — at the
    price of a budget whose meaning depends on engine selection, which is its
    own dishonesty.
-3. **Do nothing**, and record the four shapes as a permanent disclosed limit of
-   DD-2, on the grounds that a diagnostic path taking 200 s where it should
-   take 1 s costs lane authors and nobody else.
-4. **Give the uncharged work its OWN bound** [R25 28] — a third capacity beside
+3. **REJECTED** (same ground). Do nothing, and record the four shapes as a
+   permanent disclosed limit of DD-2, on the grounds that a diagnostic path
+   taking 200 s where it should take 1 s costs lane authors and nobody else.
+4. **RULED** (`../../dev/decisions.md` D47 SECOND ADDENDUM, 2026-08-17).
+   **Give the uncharged work its OWN bound** [R25 28] — a third capacity beside
    frames and trail, its own `rx_info` field, its own `RX_ERR_*` code. This is
    DD-2's own "different failures, different diagnoses" argument applied once
    more, and it **dominates 2 and 3**: every existing step-budget pin stays
@@ -1033,12 +1086,19 @@ have today. **Four settlements, and the lane does not think this is its call:**
    leaves Frank the identical judgement about how much linear matching a
    budget should tolerate. That judgement is the one thing none of the four
    settlements can make go away, and the note should not imply otherwise.
+   **The ruling confirms this reading explicitly** — it takes the mechanism
+   and holds the number back, which is exactly the split this paragraph
+   predicted. §10.5 carries the number.
 
-The lane's recommendation is **4**, with 1 as the fallback if the ABI addition
-is unwelcome — but the recommendation is about MECHANISM only. Every settlement
-leaves the same number to pick. Settlement 4 was not the lane's idea; it came from the
-verification pass, and it is better than what the lane proposed, which is worth
-recording as a fact about where the good option came from.
+The lane's recommendation was **4**, with 1 as the fallback if the ABI addition
+proved unwelcome — and the ABI cost turned out not to be the obstacle it was
+priced as, because pcrec is pre-release (the D47 SECOND ADDENDUM's rider: a
+"final" label on a pre-release surface reads as "stable absent a reason").
+The recommendation was about MECHANISM only; every settlement left the same
+number to pick, and picking it is still owed. Settlement 4 was not the lane's
+idea — it came from the verification pass, and it is better than what the lane
+proposed, which is worth recording as a fact about where the good option came
+from.
 
 ## 8. Validation
 
