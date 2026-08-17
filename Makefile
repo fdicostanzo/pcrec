@@ -188,7 +188,9 @@ test-rungselect: all
 # lattice, and R26 E1/E2 measured a differential blessing an unsound clamp over
 # 855 cells because its corpus had neither axis. See the script's header.
 test-counterk: all
-	bash tests/counterk/run_counterkdiff.sh
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/counterk/run_counterkdiff.sh' \
+	    'bash tests/counterk/run_counterk_tests.sh'
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh

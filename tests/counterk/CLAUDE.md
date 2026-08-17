@@ -70,6 +70,29 @@ family DENY rather than FORCE.
   replication knee is real; it is covered by §8.5's acceptance cells and the
   oracle sweep, never by pretending this instrument reaches it.
 
+- **`run_counterk_tests.sh`** — the STRUCTURAL checks and §8.5's ACCEPTANCE
+  CELLS: the things the differential and the corpus structurally cannot see.
+  23 checks. Selection asserted from the stamp at both sides of the K boundary
+  (7 declines, 8 selects — R25 E3's strictness as a row rather than a
+  sentence), D47.3's do-or-die, byte-identity below K, and every §8.5 cell.
+
+  **The acceptance cells are CHECKS here rather than numbers in the note**, per
+  R24 M-F4: a number that cannot be re-run is not a measurement. Cell 1 asserts
+  the endgame's stamped ceiling AND that a subject above it gives up with
+  `RX_ERR_FRAMES` rather than answering wrongly — writing it as "the pattern the
+  cap refused now compiles" would be true and would hide the trade. Cell 3
+  covers all three `{4000}` spellings, and the third of them is why the file
+  exists: `{4000,}` was still refused after the other two compiled, and writing
+  the row is what surfaced it.
+
+  **Its own byte-identity row failed on its own filenames first**, reporting
+  seven failures that were entirely the check's: the generated `.c` carries
+  `#include "<basename>.h"`, so emitting the two sides as `ia.c` and `ib.c`
+  makes every artifact differ on that one line. Verified before fixing, not
+  after — with matched basenames the same seven pairs are byte-identical. The
+  two sides now share a basename in different directories, and the comment says
+  why.
+
 ## The sabotage rows this suite catches, and their MARGINS
 
 `tests/mech/sabotages/S53..S57`, run through the `counterkdiff` arm. All five
