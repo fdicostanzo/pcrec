@@ -9371,3 +9371,71 @@ ruling 6 (prefilter-window ceiling); step-budget default (20M vs
 500M, lands with the first two). NEXT: K24 bisect lane; then [M4.6e]
 (RX_HYBRID_MIN + trie-switch) and [M4.6f] (D46 prefilter close-out)
 are all that remain of M4.6 besides the Frank-gated [M4.6d].
+
+## 2026-08-17 (EDT), twenty-eighth session CLOSE — K24 closed (noclone landed); D51; the learnings digest; the longest session ends clean
+
+**K24 CLOSED (merge 4c082ad).** The full arc ran inside one session:
+found by [M4.6b]'s new floor-gated case → bisected to 1dbb6ce (the M4.4
+API break; K18 exonerated by byte-identical artifacts) → root-caused to
+gcc -O2 partial-inlining splitting <prefix>_search once same-TU wrappers
+existed (loop instructions IDENTICAL; causally proven by
+-fno-partial-inlining recovering 390 from 290, pinned) → fixed with
+__attribute__((noclone)) at emit_search_head (ONE site, both engines),
+chosen from a measured four-lever head-to-head that REFUTED the obvious
+caller-side theory (gcc's split pass never consults callers) and showed
+hot/cold steering measures WORSE than nothing. Case (c) restored to its
+UNCHANGED floor with three independent pinned confirmations; gate 10/10;
+nm-based structural check with an independent control (strips the
+attribute, asserts gcc DOES clone — so a future gcc that stops splitting
+fails the check loudly instead of leaving it vacuous); full battery
+green incl. both sanitizer axes. The fix lane died to an API-529 storm
+mid-landing; the checkpoint-commit habit preserved everything and the
+manager finished per protocol. Incident lessons recorded in
+k24bisect_impl/CLAUDE.md: the POISONED PINNED CORE (a timeout-killed
+bench harness leaves pinned children; a later grid halves on the shared
+core while global load reads "quiet" at ~1.0 — check per-core occupancy
+before pinned measurement), the argless-vacuous probe, and the empty
+archived TSV.
+
+**D51 (693c08a): Frank's three K23-arc rulings** — MRL ADOPTED (on the
+1,059/0 number); RULING 6 = the prefilter-window ceiling in v1 with
+prove-or-recompute as a HARD gate (a stale window is too small = the
+UNSOUND direction; 0-in-99-trials explicitly not a discharge); STEP
+DEFAULT 500M (parity with the work bound's ~1GB-ordinary reasoning; the
+~10s worst-case honest-refusal delay accepted under DD-2's charter;
+lands WITH [M4.6d] so the K23 resident doesn't flip early). Frank also
+worked the 500M scenario to ground: the expensive shape is ONE match
+sweeping a huge subject; dropping unneeded captures routes to the pure
+DFA at zero steps; possessives are auto-applied where provably sound;
+lazy measurably does NOT shrink the K23-class space (greedy-INNER
+drives it) — the compiler owns search-space reduction, the budgets own
+honest refusal, [ENG-PGO] owns telling users their pattern structure is
+the lever.
+
+**docs/dev/learnings.md CREATED (68c5b15)** — Frank's session-end ask:
+the WHOLE journal read (126 entries), distilled into eight sections
+(measurement, oracles, check design, testing, design process,
+orchestration, durable technical facts, the meta-lesson). Indexed in
+docs/dev/CLAUDE.md; future sessions read it instead of the journal for
+inherited lessons; only NEW lesson classes get added.
+
+**Session totals (the longest single session on record):** F-2 ruled +
+executed; D49 (uniform codes, work default); counter-K BUILT through
+five checkpoints and MERGED — [ENG-BREP] COMPLETE, the ladder done;
+main-RED found/fixed (cap-divergence pin); K23 designed (MRL), paneled
+(R26 + verification), ACCEPTED, merged — [M4.6c] complete same day;
+[M4.6a] calibration landed (two-knob lesson; frames/trail 2x; work
+kept; steps → D51's 500M); [M4.6b] bench sibling + engine-drift fix +
+per-case engine assertions; K24 filed→bisected→root-caused→fixed→CLOSED;
+S43's silent drift fixed; D50 (islands deferred); D51; the learnings
+digest. Lanes run: counterk, m46scope, k23design, 3 R26 critics +
+verifier, m46a, m46b, k24bisect, k24fix — all released/complete, zero
+lost work across one lane death (529) and multiple message races.
+
+**State at close:** main 4c082ad pushed, clean; NO worktrees, NO lanes,
+cron torn down. Corpus 9,975; cli 257; known_fail 1 (K23 resident,
+retires at [M4.6d]). K-list: K2, K7, K9, K23 (K24 closed same-day-ish).
+M4.6 remaining: [M4.6d] (fully unblocked by D51 — MRL build + blinded
+tests + 500M default + window ceiling with its obligations),
+[M4.6e] (RX_HYBRID_MIN + trie-switch), [M4.6f] (D46 prefilter
+close-out). Then M4.6 closes → [M4.7]. NEXT SESSION picks up there.
