@@ -317,7 +317,9 @@ Three things follow.
   multiplies: each level's decomposition space is explored inside every leaf
   of the level above it.
 - **Python cannot serve as the oracle here.** `re.search` on this shape at
-  n = 50 did not return inside 100 s; the correctness check above is
+  n = 50 did not return inside **six minutes** (two separate attempts, one
+  bounded at 100 s and one still running when this note was closed); the
+  correctness check above is
   therefore pcrec-vs-pcrec — baseline replication as the ground truth,
   which is exactly the primary instrument `eng_brep_design.md` §5.1
   established for this territory, with python demoted to the shapes it can
@@ -978,6 +980,13 @@ None are blocking; the recommendation stands without them.
    walk that computes one computes the other.
 4. **Is the width-0 correction owed to `known_issues.md` K23?** §2.4 narrows
    the entry's stated class. This lane did not edit the entry.
+5. **Manager-level, not Frank-level:** §4.6's scan-bound form (109 units of
+   forward work rather than 190) is the one that touches D49's fresh
+   `RX_ERR_WORK` calibration. Recommend it as the default emission on the
+   cursor rung, and recommend that [M4.6]'s calibration of D49's number take
+   the shipped arm's measured 5.24 work-per-step ratio on this shape as one
+   of its inputs, since it is a ratio measured on a real explosion rather
+   than on a benign match.
 
 ---
 
