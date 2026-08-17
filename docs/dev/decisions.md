@@ -4305,3 +4305,47 @@ per the sweep — not a new analysis). M4.6 is correspondingly leaner:
 calibration, K23, the bench sibling, RX_HYBRID_MIN/trie-switch
 measurements, D46 prefilter close-out. Revisit when the gate's
 evidence exists or if M4.6e's measurements surprise.
+
+## D51 — the three K23-arc rulings: MRL adopted, the prefilter-window ceiling in v1, step default 500M (Frank, 2026-08-17, twenty-eighth session)
+
+Taken together on the R26-verified K23 design note (docs/design/
+k23_impl/k23_design.md, ACCEPTED) and [M4.6a]'s calibration measurement
+(docs/design/m46a_impl/). All three build at [M4.6d].
+
+**1. MRL PRUNING ADOPTED as K23's fix of record.** The compile-time
+minimum-remaining-length bound, cut-before-push, lattice-rounded per
+R26 E1; evidence bar at adoption: 1,059 differential cells / 0
+disagreements on a stride+residue corpus whose sabotage arm proves it
+sees the failure class; soundness proven preference-blind (the bound
+is a language property — it bounds EXISTENCE of an accepting
+continuation); ≤2% throughput at full clamp density. Residuals stand
+as §9 states them; the revdet rung's backwards-walk lattice argument
+must be RE-MADE at build (prediction 6, the expected E1-recurrence
+site, in the build charter). Closes K23 and retires the ratchet
+resident when built.
+
+**2. RULING 6: the PREFILTER-WINDOW CEILING ships in v1** —
+min(n, win[0][1]) as the clamp ceiling (the suffix residual disappears:
+1 step at suffixes 0-40, prototyped) — WITH the three obligations as
+HARD GATES on the build: (a) no-prefilter entries default to the
+subject end; (b) the start++ retry staleness is PROVED impossible
+structurally or the window is RECOMPUTED on retry — a stale window is
+too SMALL, the UNSOUND direction (deletes real matches; the two-match
+demonstration is in the R26 verification section), and 0-firings-in-99
+-trials is explicitly not a discharge; (c) the D46 stamps state which
+ceiling form is active (--engine=vm falls back to subject-end and
+keeps the suffix curve — disclosed, not discovered).
+
+**3. STEP-BUDGET DEFAULT: 500,000,000** (was the 1M bring-up
+placeholder), landing WITH [M4.6d] post-MRL so the K23 known_fail
+resident does not flip beforehand. Rationale: D49's own
+failure-direction asymmetry applied consistently — at the measured
+~0.5 steps/byte for ordinary capturing-alternation shapes, 500M means
+both budgets tolerate ~1 GB of ordinary subject (parity with the work
+bound's ruled ~10⁹); too-low refuses ordinary large-subject matches on
+the shipped path, the worse error. Cost accepted with eyes open:
+worst-case honest-refusal delay on a pathological input ~10 s at the
+measured ~50M steps/s (DD-2 is robustness, not a latency guarantee).
+The 20M measured-conservative option is recorded as the road not
+taken (m46a's proposal table). [M4.6a]'s calibration posture applies:
+a bring-up-calibrated value the project can move again with evidence.
