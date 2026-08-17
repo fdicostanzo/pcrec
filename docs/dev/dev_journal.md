@@ -9278,3 +9278,54 @@ Neither blocks counter-K.
 the watchdog ticked clean throughout; check-design memory gained three
 new lessons (empty-vs-empty; N-causes-N-diagnoses fallthrough; corpus
 needs the MECHANISM's axes, not the exemplar's).
+
+## 2026-08-17 (EDT), twenty-eighth session (cont.) — COUNTER-K MERGED, [ENG-BREP] COMPLETE; K23 note merged; S43 drift found and fixed
+
+**COUNTER-K LANDED (merge 78b891e; lane 43 commits, 50 files,
++8,740/-275).** The bounded-repeat ladder is COMPLETE: possessify,
+revdet, counter. The rung covers mandatory/optional-greedy/optional-
+lazy/possessive and {m,}'s mandatory prefix. Landing battery green on
+the lane AND re-confirmed on merged main (make test: 9,975 cases / 0
+failed, 53/53 workers; strict/ubsan/asan clean; mech 57 rows / 0
+undetected). Endgame: ((a)|ab){0,4000}c refused→compiles with honest
+subject_ceiling; the gcc-DNF shape 300s-DNF→16.7s at -O2. New surface
+per D49: work_budget/RX_ERR_WORK/uniform match codes (abi 1→2),
+--work-budget/--unroll/-fno-counter. New tests/counterk/ suite
+(differential 541,899 cells/0 div, oracle corpus +1,634 cases, 23
+structural checks), S53-S57 all DETECTED with margins recorded and
+sole-catcher comments. Blast radius carried in the merge: vm_identity
+cap-divergence pin re-pinned 1→0 (arm KEPT — later slices and
+ENG-CLAMP towers can still reach the cap), d27_large_counts re-expected
+(65..~100 region reserved for [M4.6d]'s blinded author), five denials
+on checks made of replication. Notable finds by building checks:
+{4000,} still refused (vm_counter_fits declined rmax<0 against §11
+residual 1) + the cost-arm bug its fix exposed; libpcre2 CANNOT compile
+the endgame counts (boundary exactly 2047, error 120 — pcrec now
+compiles patterns PCRE2 refuses; recorded §8.2 with a FATAL-on-expiry
+assertion); the work meter calibrated on THREE classes with closed
+forms exact out of sample — the meter's output is PREDICTABLE FROM THE
+EMITTED STRUCTURE, the property [M4.6a] calibrates on.
+
+**S43 WAS SILENTLY UNMEASURED and is fixed (fcd4623):** its anchor was
+rewritten under it by the D45 CPU-primary change (c78ef6b); APPLY-FAILED
+ever since; found by the landing battery's full matrix, attributed
+exactly by the lane. Anchor re-derived (both clocks removed as the
+edit); single-row mech validation launched. THE META-LESSON is a new
+check-design class: the row verifying a guard is WIRED is a different
+row from the one verifying its REMOVAL IS CAUGHT — a composition can go
+dark while both components stay honest. Recorded in the memory lessons
+with the lane's sharper articulation.
+
+**K23 NOTE MERGED (b50d8d9,** docs-only, conflict in
+docs/design/CLAUDE.md resolved keeping both new entries, k23_impl
+marked ACCEPTED). [ENG-BREP] row moved to plan_completed.md
+(STATE:completed 2026-08-17; 114 completed rows).
+
+**Vacuous-green inventory this arc (for the record): four-and-a-half
+in one lane** (empty-vs-empty; DFA-routed witness; never-ran builds;
+own-filename byte-identity; the inherited emit() contract-gap half),
+all self-caught, all now assertion-guarded in committed instruments.
+
+**NEXT:** [M4.6a] calibration + [M4.6b] bench sibling unblock (counter-K
+landed); [M4.6d] waits on Frank's adopt-MRL + ruling 6. Lanes released:
+counterk, k23design.
