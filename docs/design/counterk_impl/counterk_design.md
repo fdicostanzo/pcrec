@@ -1020,8 +1020,23 @@ have today. **Four settlements, and the lane does not think this is its call:**
    field and a new error code — a real surface addition, on a struct D44.5
    called final.
 
+   **But it does NOT escape the weight question — it relocates it** [R25 29].
+   A separate bound has no scale factor, so nothing is over- or
+   under-weighted; what it has instead is a DEFAULT VALUE, and choosing that
+   default is the same trade wearing different clothes. A default near 10⁹
+   uncharged units puts the ordinary-linear-match boundary at ~1 GB and
+   catches the possessify quadratic at n ≈ 45,000; a default near 1.6×10⁷ —
+   the value the measured ~16:1 work ratio implies if the new bound is meant
+   to be commensurate with a resumption — catches it at n ≈ 5,700 and refuses
+   ordinary matching above ~16 MB. So settlement 4 removes the dishonesty of
+   calling a weight a work ratio, and removes the frozen-field problem, and
+   leaves Frank the identical judgement about how much linear matching a
+   budget should tolerate. That judgement is the one thing none of the four
+   settlements can make go away, and the note should not imply otherwise.
+
 The lane's recommendation is **4**, with 1 as the fallback if the ABI addition
-is unwelcome. Settlement 4 was not the lane's idea; it came from the
+is unwelcome — but the recommendation is about MECHANISM only. Every settlement
+leaves the same number to pick. Settlement 4 was not the lane's idea; it came from the
 verification pass, and it is better than what the lane proposed, which is worth
 recording as a fact about where the good option came from.
 
