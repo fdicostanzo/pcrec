@@ -1044,13 +1044,17 @@ a throughput event"; it does not support a claim that the clamp is free, and
 ### 6.2 Compile-time and code size
 
 From §5.1: +1.6% of emitted C, and gcc −O2 got marginally FASTER
-(0.79 s → 0.74 s), which is noise at this scale. The clamp adds three lines
-per site and no new symbols, macros or struct members.
+(0.77 s → 0.74 s), which is noise at this scale. The clamp adds four lines
+per site (five after the lattice rule, §4.1) and no new symbols, macros or
+struct members — except the one `size_t` in `rx_work` if ruling 6's
+prefilter ceiling is taken (§8).
 
 ### 6.3 Forward work
 
-§4.6's table. The clamp REDUCES forward work by five and a half orders of
-magnitude on the exploding shape and adds a bounded constant elsewhere.
+§4.6's table, measured by `probes/work.sh` and archived at `out/work.txt`.
+The clamp REDUCES the forward-work proxy by five to six orders of magnitude
+on the exploding shapes and adds a bounded constant elsewhere; in its folded
+form it lands on exactly one forward pass over the subject.
 
 ---
 
@@ -1383,7 +1387,10 @@ was breaking patterns that never had the bug.
 The fix is an ASSUMPTION GUARD, not better arithmetic: `--replicas N` makes
 the prototype REFUSE any file whose scan-site count is not what a replicated
 outer must produce, and `diff3.py` passes the pattern's outer maximum. After
-the guard: 14 shapes DECLINED, 762 cells, 0 DIFFER.
+the guard: 14 shapes declined, 762 cells, 0 DIFFER. (Those are the
+PRE-R26 figures, kept because they are what the guard was validated against;
+the corpus has since gained two axes and the current populations are
+§7.2's.)
 
 Two things this cost, both worth stating:
 
