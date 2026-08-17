@@ -32,6 +32,24 @@ and one nobody re-runs is not a check).
 
   `LC_ALL=C` is set for every subprocess (R24 M-F1's collation defect).
 
+- `probes/throughput.sh` — what the bound COSTS on the forward path, which is
+  D18's mandate and D51 ruling 1's adoption bar (<= 2% at full clamp density).
+  THREE arms, and the third is the point: pruned, denied
+  (`-fno-length-prune`), and a PLACEBO — the pruned artifact with its two MRL
+  macros redefined so the bound is computed with the same instruction shape
+  and can never bind. `clamp` is pruned-vs-placebo, `layout` is
+  placebo-vs-denied.
+
+  **The placebo is not symmetry for its own sake, and this probe learned that
+  the hard way.** Its first version ran two arms and reported +27.8% on
+  `(\d{3})-(\d{4})b` — a 12 ns measurement on a digit-free subject, where the
+  DFA prefilter answers and the VM is never entered at all, so not one MRL
+  instruction executes. That number is entirely what inserting any code does
+  to the layout of a translation unit, which is exactly the attribution
+  k23_design.md §6 built its own placebo for. The row is KEPT rather than
+  replaced, because a demonstration that the instrument needs its control is
+  worth more than a tidier table.
+
 - `out/` — archived probe OUTPUT. Evidence, never an oracle: no check reads
   it.
 
