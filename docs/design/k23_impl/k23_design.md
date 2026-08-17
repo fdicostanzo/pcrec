@@ -660,14 +660,25 @@ The claim: pruning changes no answer, including no capture.
    capture spans D44.1 derives FROM THE CURSOR at loop exit rather than
    writing per iteration, since the cursor's surviving preferred value is by
    (3) the same value it would have taken unclamped.
-6. The clamp is stated against the absolute subject end `n`, not against the
+6. The clamp is stated against the absolute subject end (or the prefilter's
+   match-end window, §9.1) rather than against the
    attempt's start position, so it is unchanged by the search entry's
    start++ retry loop. §7.3 exercises that axis.
 
-The single failure mode is an UNSOUND analysis — a `minrest` that
-OVER-estimates. Under-estimating is always safe (it prunes less), which is
-the direction every conservative case below takes, and which is what the
-prototype's `--follow-min 0` default does (§7.3).
+**Two failure modes, not one** — the first version of this section named
+only the first, and R26 E1 was the second:
+
+1. an UNSOUND ANALYSIS — a `minrest` that OVER-estimates. Under-estimating is
+   always safe (it prunes less), which is the direction every conservative
+   case below takes, and which is what the prototype's `--follow-min 0`
+   default does (§7.3).
+2. an UNSOUND CLAMP — a correct bound applied to a position the loop cannot
+   occupy. This one is not about the analysis at all; it is about the
+   arithmetic at the emission site, it is invisible at stride 1, and it is
+   the one that shipped in this note's first version.
+
+Both have to be right, and they fail independently. A build lane that gets
+`minw` perfect and rounds wrongly still miscompiles.
 
 ### 4.3 Computing `minrest` — a small AST walk, and a threading rule
 
