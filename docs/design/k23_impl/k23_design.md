@@ -1832,6 +1832,17 @@ bound and emit byte-identical C with the pass on and off.
 - **The structural assertion the clamp is PRESENT** (§7.4's fourth item):
   `run_mrl_tests.sh`, plus a corpus-wide D47.3 do-or-die and the byte-identity
   gate above.
+- **AN INDEPENDENT BLINDED CORPUS, authored in a different cell by a different
+  author who never saw this build, passes 89/89.** The manager's own `d27k23`
+  lane wrote `tests/base/d27_k23_ambiguous_decomposition.rxt` — the same
+  `(a{1,3}){64,65,66}` region, expectations derived from its own separately
+  proven law because python does not terminate in the band — and this lane
+  ran it against the MRL build without either author having seen the other's
+  work. Two blinded corpora, written from the same one-page promise by
+  authors with no shared alphabet, agreeing on the same answers is a stronger
+  statement about the fix than either alone, and it is worth recording that
+  it came for free from the project's existing convention rather than from
+  anyone planning it.
 - **§10 item 3 (libpcre2 as a third oracle) remains OPEN.** The blinded corpus
   is python-verified per the base-tier rule; [M4.7]'s capture differential
   against libpcre2 ovectors is where it closes, and this lane did not

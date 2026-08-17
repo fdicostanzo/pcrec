@@ -251,7 +251,10 @@ stated terms.
     structural checks and the acceptance cell all agreed with the bug because
     all three were derived from the model the bug was in. Fixed by building
     §4.5's runtime term (`Vm.fdyn`, read from the trailed counter slot); their
-    225-case corpus is now tests/mrl/ and passes 225/0. Battery: test
+    225-case corpus is now tests/mrl/ and passes 225/0. CROSS-CHECK: the
+    manager's OWN d27k23 blinded corpus (89 cases, a different author in a
+    different cell, expectations from a separately proven law) also passes
+    89/89 against this build, neither author having seen the other's work. Battery: test
     10,202/0 (ratchet "nothing to ratchet"), strict, mrl 16/16 + 202,458
     differential cells (per-rung coverage complete), gate.sh 10/10 with case
     (c) at 392.445 above its 388.615 floor, ubsan/asan. THREE HARNESS FIXES the budget move forced, reported
