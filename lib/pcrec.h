@@ -103,7 +103,45 @@ enum {
      * ground truth of the differential: the same corpus, the same subjects,
      * pruned against unpruned, byte-identical answers expected on every
      * capture slot (§7.4's pcrec-vs-pcrec instrument). */
-    PCREC_NO_LENGTH_PRUNE = 1u << 7
+    PCREC_NO_LENGTH_PRUNE = 1u << 7,
+    /* [M4.6f] `-fno-prefilter`/`-fprefilter`: the D46 close-out for the
+     * PREFILTER axis (docs/design/engine_m4.md §6.1/§4.7, D46/D47.3).
+     *
+     * A DIFFERENT SHAPE from the four bits above, and deliberately so.
+     * Those deny a per-QUANTIFIER strategy, which is why D47.3 rules DENY
+     * (not FORCE) the right spelling for them — each quantifier walks its
+     * own ladder skipping a denied step, so "force possessify on THIS
+     * quantifier" has no addressing problem to solve because there is
+     * nothing to address. `fit.prefilter` (src/opt/select_engine.c) is not
+     * per-quantifier; it is ONE verdict for the whole artifact, decided
+     * jointly with `--engine`: auto+captures turns it on, `--engine=vm`
+     * turns it off (R21 E-6) as a SIDE EFFECT of choosing the engine, with
+     * no way to ask for the combination independently. D46's own
+     * motivating scenario is exactly this coupling: a test built to pin
+     * one axis silently moves on another. So this is a FORCE PAIR, not a
+     * deny-only flag — both directions are independently reachable, which
+     * is what decouples "which engine" from "does the hybrid prefilter
+     * run ahead of it".
+     *
+     * DO-OR-DIE (D47.3's posture) rather than a silent downgrade:
+     * `PCREC_FORCE_PREFILTER` on a pattern that compiles to the DFA engine
+     * (no VM artifact exists to attach a prefilter to) REFUSES, the same
+     * `--engine`-precedent shape as the DFA/VM engine conflicts in
+     * src/opt/select_engine.c's own switch. `PCREC_NO_PREFILTER` is always
+     * buildable — `--engine=vm` already ships that exact configuration
+     * today — so it never refuses.
+     *
+     * Same masked-out-of-`rx_info.flags` treatment as the four bits above
+     * and for the identical reason (src/gen/emit_dfa.c's emit_info_def):
+     * the prefilter changes no answer, only how one is found (§6.1's
+     * exactness claim), so two identically-behaving artifacts must not
+     * differ in their reflection surface over a knob with no observable
+     * effect. What the axis DOES is recorded in `<PREFIX>_VM_PREFILTER`
+     * (src/gen/emit_vm.c), which reports what the emitter did rather than
+     * what it was asked — the D46 half a denied-or-forced request can be
+     * checked against. */
+    PCREC_NO_PREFILTER    = 1u << 8,
+    PCREC_FORCE_PREFILTER = 1u << 9
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

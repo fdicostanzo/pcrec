@@ -427,6 +427,29 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     which is emit_dfa.c's strategy-denial rule one stamp over. Tests:
     tests/mrl/.
 
+  - **[M4.6f] THE PREFILTER STAMP + FORCE PAIR** (D46 close-out for
+    `fit.prefilter`, engine_m4.md §6.1/§4.7; src/opt/select_engine.c does
+    the selecting, this file does the reporting). `<PREFIX>_VM_PREFILTER`
+    is stamped `"hybrid"`/`"none"`, in the SAME PLACEMENT as
+    `RX_ENGINE`/`RX_ENGINE_WHY` and read straight off `job->fit.prefilter`
+    — the SAME value `prefn` (the private forward+reverse DFA pair, "the
+    prefilter (S6.1, S4.7)" below) is built from, never a second
+    computation of it. A SCALAR string, unlike `_VM_RUNGS`/`_VM_STRATS`/
+    `_VM_PRUNES`: those are bitmasks because the rung/strategy/clamp is
+    selected per `A_REP` and a scalar would lie on a mixed artifact
+    ([M4.5e]'s own corrected design note); `fit.prefilter` is ONE verdict
+    for the whole artifact, so there is no per-quantifier axis to mix and
+    a scalar is the honest shape, the same reason `RX_VM_PRUNE_CEILING`
+    (above) is a string rather than a mask. `-fprefilter`/`-fno-prefilter`
+    (`PCREC_FORCE_PREFILTER`/`PCREC_NO_PREFILTER`) are the controllability
+    half, applied in select_engine.c (its own CLAUDE.md carries the
+    do-or-die detail) — a FORCE pair rather than D47.3's DENY-only shape,
+    because there is no per-quantifier addressing problem to avoid here.
+    `--emit-ir`'s `; prefilter` listing line (`vm_render_listing`) also
+    names WHICH off-route fired (`-fno-prefilter` vs. the `--engine=vm`
+    side effect), since D46's observability extends to the debug listing
+    too. Tests: tests/prefilter/.
+
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 
   **[ENG-BREP] the STRATEGY-DENIAL mask.** `emit_info_def` masks
@@ -440,6 +463,11 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   known-differing line is the check-design failure this project has recorded
   twice. What the ladder's choices ARE recorded in is `<PREFIX>_VM_STRATS`,
   which reports what the emitter did rather than what it was asked.
+  **[M4.6f]** `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` join the same mask
+  for the identical reason, even though the axis is a FORCE pair rather than
+  deny-only: the rule is about OBSERVABLE EFFECT, not about spelling, and
+  forcing the hybrid prefilter changes no answer. Its own D46 record is
+  `<PREFIX>_VM_PREFILTER`, above.
 
   Additional [M4.4] entry points in emit_dfa.c: `emit_c_string_literal` (the
   A-11 string-literal escaper — `"`, `\`, control bytes; non-printables use a

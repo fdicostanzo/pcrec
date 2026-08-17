@@ -85,6 +85,21 @@ top-level user features. `--work-budget=N` DOES appear, and the difference is
 the point — it is a real generation axis on the same footing as
 `--step-budget=N` (the third DD-2 bound, settlement 4), not a strategy denial.
 
+**[M4.6f] (2026-08-17):** `-fno-prefilter` (`PCREC_NO_PREFILTER`) and
+`-fprefilter` (`PCREC_FORCE_PREFILTER`) are the D46 close-out for the
+PREFILTER axis, and also do not appear in `--help` for the same reason. A
+FORCE PAIR rather than a deny-only flag — `fit.prefilter` is one verdict for
+the whole artifact rather than a per-quantifier ladder step, so the D47.3
+reasoning that picks DENY over FORCE for the five flags above does not apply
+here: before this pair existed, the only way to get the hybrid OFF under an
+otherwise-auto selection was to also force `--engine=vm`, and the only way to
+get it back ON under `--engine=vm` was not to pass `--engine=vm` at all.
+`-fprefilter` is DO-OR-DIE like `--engine` itself: it REFUSES on a pattern
+that compiles to the DFA engine, since there is no VM artifact to attach a
+prefilter to. `-fno-prefilter` never refuses — `--engine=vm` already ships
+that exact prefilter-free configuration today. See lib/CLAUDE.md for the
+bit values and src/opt/CLAUDE.md for where the refusal is asserted.
+
 `--engine` is DO-OR-DIE: a request the pattern cannot honour is a clean
 refusal, never a silent downgrade. `--engine=vm` additionally turns the DFA
 prefilter OFF (D44/R21 E-6), which is what makes it usable as an independent

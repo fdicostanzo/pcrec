@@ -464,3 +464,55 @@ both instruments and why these rows split cleanly between them:
   the check it must defeat is a STRUCTURAL assertion that the recompute exists
   in the emitted C. This row is what proves that assertion can go red.
   **MEASURED: `mrl` 1 fail / 18 pass.**
+
+## [M4.6f] S64-S65, the PREFILTER axis's controls
+
+Two rows for D46's close-out on `fit.prefilter` (src/opt/select_engine.c,
+engine_m4.md §6.1/§4.7): the `RX_VM_PREFILTER` stamp and the
+`-fprefilter`/`-fno-prefilter` force pair (lib/pcrec.h). They run the new
+`prefilter` arm (tests/prefilter/run_prefilter_tests.sh) — its own arm for
+the same reason `vmidentity`/`irlisting` are separate from `codegen`: what
+this suite guards (the stamp agreeing with the actual emitted `_prefilter()`
+machinery, the do-or-die refusal, the `rx_info.flags` mask) is orthogonal to
+`vm`/`mrl`, and a sabotage of one must not be reported as coverage by
+another.
+
+**Both rows started as AD-HOC dev-time sabotages, applied and reverted by
+hand during the lane, and were converted to permanent rows before handback
+per R28-1's ruling** (`docs/dev/reviews/2026-08-17-r28-mrl-landing.md`: MRL
+landed with zero sabotage coverage despite having ad-hoc-validated its
+checks the same way, and the panel required S58-S63 be authored as the
+fix — the same requirement applied here on the same session's later
+ruling, before this row's own handback rather than after a panel had to
+say so).
+
+- **S64** removes the FORCE-ON do-or-die refusal itself
+  (`if (force_on && fit.chosen != ENGM_VM) ctx_fail(...)`), so
+  `--engine=dfa -fprefilter` and `--no-captures -fprefilter` compile
+  SUCCESSFULLY instead of refusing. What actually happens on the sabotaged
+  tree is worth recording rather than assuming: `fit.prefilter` is set
+  `true` unconditionally on the force-on path, but nothing on the DFA
+  emission path ever reads that field (`compile.c`'s DFA-pair build guard
+  already fires whenever `fit.chosen == ENGM_DFA`, independent of
+  `fit.prefilter`, and `emit_dfa.c` — the emitter that actually runs — has
+  no consumer for it at all), so the artifact compiles and is byte-for-byte
+  an ordinary unforced DFA build. The silent-honour failure mode is
+  therefore invisible to every other check in the tree: the emitted C is
+  unchanged, so no corpus, differential or byte-identity gate anywhere can
+  tell a refused request was silently granted. **MEASURED: `prefilter`
+  2 fail / 16 pass** (the two do-or-die refusal checks).
+- **S65** drops `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` from
+  `emit_info_def`'s `strategy_denials` mask (src/gen/emit_dfa.c), so the two
+  force-pair bits leak into the emitted `rx_info.flags` literal even though
+  the axis changes no match behavior. No correctness check anywhere sees
+  this — the .rxt corpus, the vm_oracle sweep and the §3.7 differential all
+  still agree, because the MATCH BEHAVIOR really is unchanged; only a check
+  that reads `rx_info.flags` as a NUMBER against the bit values, rather than
+  trusting the mask is complete, can see the leak. **MEASURED: `prefilter`
+  4 fail / 14 pass** — the two direct mask-value checks, plus (as a side
+  effect neither row's author predicted going in) the two byte-identity
+  checks, since the leaking bit is exactly the byte difference those exist
+  to rule out.
+
+Both validated DETECTED via `bash tests/mech/run_sabotage_matrix.sh S64`
+and `S65` before landing.
