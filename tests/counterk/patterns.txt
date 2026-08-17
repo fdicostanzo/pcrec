@@ -16,6 +16,11 @@
 
 # ---------------------------------------------------------------------------
 # RESIDUE AXIS, optional phase (NOPT = the count), greedy and lazy.
+#
+# SABOTAGE S53 (the counter slot made untrailed) NEEDS A BODY WITH AN INTERNAL
+# CHOICE POINT and a resume that lands inside it — the alternation bodies here
+# and nowhere else in this file; margin 1 fail / 58 pass. A single-path body
+# never resumes inside itself and cannot see the difference.
 # 7 is K-1 (loop never runs, byte-identical), 8 is K (loop runs one trip, zero
 # residue), 9..15 walk residues 1..7, 16 returns to residue 0 at two trips.
 ((a)|ab){0,7}c
@@ -66,6 +71,11 @@
 ((a)|ab){9,17}?c
 
 # ---------------------------------------------------------------------------
+# SABOTAGE S57 (a resume reading an untrailed local across a trip boundary) IS
+# CAUGHT BY THESE CELLS AND BY NOTHING ELSE IN THIS FILE — margin 1 fail / 58
+# pass. A NESTED loop inside a counter loop is the only shape that can express
+# the failure; a flat counter loop cannot.
+#
 # STRIDE AXIS: an inner quantifier with stride > 1, so a nested cursor rung runs
 # INSIDE the counter loop. This is also the only shape that exercises §7.4's one
 # division (the frameless scan's charge is `(cur - pos) / stride`), and it is
@@ -80,7 +90,13 @@
 ([ab][cd]){0,17}?e
 
 # ---------------------------------------------------------------------------
-# NULLABLE bodies (§5's territory). Spelled at {0,12} rather than {0,4} for the
+# NULLABLE bodies (§5's territory).
+#
+# SABOTAGE S56 (the empty-iteration guard ADDED to the bounded path) IS CAUGHT
+# BY THESE CELLS AND BY NOTHING ELSE IN THIS FILE — margin 1 fail / 58 pass.
+# Delete them and that row goes UNDETECTED while the file still looks well
+# populated. A nullable body ABOVE K is the requirement; below K no counter is
+# emitted at all. Spelled at {0,12} rather than {0,4} for the
 # reason §8.1 gives: at {0,4} the counter is never emitted and the cell would be
 # checking replication's termination, which E-2 already settled.
 (a?){0,12}b
