@@ -95,8 +95,36 @@ enum {
     VM_MAX_AUTO_TRAIL_FRAMES = 3072
 };
 
-/* §4.6's provisional placeholder, named rather than spelled inline. */
-#define VM_DEFAULT_STEP_BUDGET 1000000LL
+/* §4.6's budget, named rather than spelled inline. RULED 500,000,000 (D51
+ * ruling 3, 2026-08-17) — was 1,000,000, a bring-up placeholder.
+ *
+ * WHY IT MOVED, and it is D49's own failure-direction asymmetry applied
+ * consistently rather than a new argument. [M4.6a]'s calibration measured an
+ * ORDINARY capturing repeated-alternation shape — `(a|b)+c`-shaped, the stuff
+ * of log and token parsing — costing steps LINEARLY in subject length even on
+ * its optimized rung, about 0.5 steps per byte, so 4,000,002 steps at 8 MB.
+ * At 10^6 the shipped default refused a legitimate 2 MB match. At 500M both
+ * bounds tolerate roughly 1 GB of ordinary subject, which is parity with the
+ * work bound's own ruled ~10^9. Too LOW is a wrong answer on the shipped
+ * path; too high costs diagnostic-path time on a pathological one, and only
+ * the first is an error a caller cannot see.
+ *
+ * WHAT IT COSTS, accepted with eyes open: at the measured ~50M steps/s the
+ * worst-case delay before an honest refusal is about ten seconds. DD-2 is
+ * ROBUSTNESS, not a latency guarantee, and D22 says so.
+ *
+ * WHY IT LANDS WITH MRL AND NOT BEFORE. Post-MRL the K23 resident costs one
+ * step, so the ratchet's known_fail entry flips because the DEFECT is fixed.
+ * Raising the budget first would have flipped the same test by outspending
+ * the explosion — 10.6M steps against a 500M budget — and left the class
+ * itself untouched one size up (`(a{11,22}){11,50}` needs 111M, and the law
+ * climbs ~11x per unit of m). The two changes are ordered so the test that
+ * moves says what it means.
+ *
+ * The 20M measured-conservative option is the road not taken; it is recorded
+ * in docs/design/m46a_impl/'s proposal table. A bring-up-calibrated value the
+ * project can move again with evidence, in [M4.6a]'s own posture. */
+#define VM_DEFAULT_STEP_BUDGET 500000000LL
 
 /* [ENG-BREP counter-K] The THIRD bound's default (D47 SECOND ADDENDUM
  * settlement 4; the VALUE ruled at D49). Its unit is a WORK UNIT — one frame
@@ -366,6 +394,23 @@ typedef struct {
      * that does not change the follow (A_CAP, A_ALT's branches, an optional
      * copy). */
     long long fmin;
+    /* [M4.6d] the follow-min's RUNTIME half, as a C expression, or NULL.
+     *
+     * Almost every follow-min is a compile-time constant, because almost
+     * every loop the emitter walks is replicated or unrolled and the emitter
+     * therefore knows which copy it is writing. ONE rung breaks that: the
+     * counter rung's MANDATORY phase emits K body copies that serve every
+     * trip, so "how many mandatory iterations are still to come" is
+     * `count - stv[ctr] - j` and lives in a trailed slot rather than in the
+     * emitter. k23_design.md §4.5 designed exactly this expression; the
+     * blinded test author MEASURED that leaving it out leaves K23 alive on
+     * `(a{1,3}){65}`, where the compile-time view sees at most K iterations
+     * of follow and the real one is 65.
+     *
+     * Combined with `fmin` at each emission site as `fmin + (fdyn)`, so an
+     * inner site inside a counter trip inherits the outer trip's term
+     * automatically -- the same inherit-by-default rule `fmin` itself has. */
+    const char *fdyn;
     bool      mrl;        /* [M4.6d] MRL pruning is ON for this artifact
                            * (i.e. `-fno-length-prune` was not passed). Read
                            * at every emission site through vm_mrl_test /
@@ -1598,13 +1643,73 @@ static long long vm_fmul(long long a, long long b)
 
 /* Emit `a` with an explicit follow-min, restoring the caller's on the way
  * out. THE ONLY MUTATOR of `v->fmin`: a site that changes what follows says
- * so here and nowhere else, and a site that says nothing correctly inherits. */
+ * so here and nowhere else, and a site that says nothing correctly inherits.
+ * `v->fdyn` is deliberately NOT touched -- a runtime term set by an enclosing
+ * loop is still in force inside every node under it. */
 static void vm_emit_f(Vm *v, int entry, const Ast *a, int next, long long fmin)
 {
     long long save = v->fmin;
     v->fmin = fmin;
     vm_emit(v, entry, a, next);
     v->fmin = save;
+}
+
+/* The same, additionally setting the RUNTIME half. Only the counter rung's
+ * mandatory phase calls it. */
+static void vm_emit_fd(Vm *v, int entry, const Ast *a, int next,
+                       long long fmin, const char *fdyn)
+{
+    const char *sd = v->fdyn;
+    long long sf = v->fmin;
+    v->fdyn = fdyn;
+    v->fmin = fmin;
+    vm_emit(v, entry, a, next);
+    v->fmin = sf;
+    v->fdyn = sd;
+}
+
+/* Sum two runtime follow-min terms, either of which may be absent.
+ *
+ * THE LENGTH CAP IS A SOUNDNESS-PRESERVING RETREAT, not a defensive check.
+ * Nested counter trips concatenate their terms, and a deep enough tower would
+ * put an unbounded expression at every bound site in the emitted C. Past the
+ * cap the OUTER term is dropped, which UNDER-estimates the follow-min -- the
+ * safe direction, and the only one available: an expression that is merely
+ * long is not wrong, but silently emitting megabytes of it would be a
+ * different defect. Unreachable on anything pcrec compiles today; written
+ * down because the arithmetic must be right where nobody is watching. */
+enum { VM_MRL_DYN_MAX = 240 };
+
+static const char *vm_dyn_add(Vm *v, const char *a, const char *b)
+{
+    size_t n;
+    char *p;
+    if (!a) return b;
+    if (!b) return a;
+    n = strlen(a) + strlen(b) + 4;
+    if (n > VM_MRL_DYN_MAX) return b;
+    p = arena_alloc(&v->cx->arena, n);
+    snprintf(p, n, "%s + %s", a, b);
+    return p;
+}
+
+/* The minrest OPERAND as the emitted C spells it: a bare constant when the
+ * bound is wholly compile-time, and `k + (runtime term)` when a counter trip
+ * is in force. Arena-owned so the caller does not have to size a buffer for
+ * an expression whose length it cannot know. */
+static const char *vm_mrl_amt(Vm *v, long long k)
+{
+    size_t n;
+    char *p;
+    if (!v->fdyn) {
+        p = arena_alloc(&v->cx->arena, 32);
+        snprintf(p, 32, "%lld", k);
+        return p;
+    }
+    n = strlen(v->fdyn) + 40;
+    p = arena_alloc(&v->cx->arena, n);
+    snprintf(p, n, "%lld + (%s)", k, v->fdyn);
+    return p;
 }
 
 /* [M4.6d] the EIGHTH primitive, and vm_rung_mark's sibling: writes no C (the
@@ -1631,8 +1736,9 @@ static void vm_prune_mark(Vm *v, int lblid, bool clamped, const char *role)
 static bool vm_mrl_test(Vm *v, const char *posexpr, long long minrest,
                         int dst, const char *role)
 {
-    if (!v->mrl || minrest <= 0) return false;
-    sb_printf(v->b, "    if (%s_MRL_SHORT(%s, %lld)) ", v->up, posexpr, minrest);
+    if (!v->mrl || (minrest <= 0 && !v->fdyn)) return false;
+    sb_printf(v->b, "    if (%s_MRL_SHORT(%s, %s)) ", v->up, posexpr,
+              vm_mrl_amt(v, minrest));
     if (dst < 0) sb_printf(v->b, "goto %s_fail;\n", v->p);
     else         sb_printf(v->b, "goto %s_L%d;\n", v->p, dst);
     v->nclamp++;
@@ -1648,7 +1754,7 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
                        const char *role)
 {
     int pass;
-    if (!v->mrl || minrest <= 0) return entry;
+    if (!v->mrl || (minrest <= 0 && !v->fdyn)) return entry;
     pass = vm_label(v);
     vm_lbl(v, entry, role);
     vm_mrl_test(v, "pos", minrest, dst, role);
@@ -1801,7 +1907,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * replica, 80 at the second, and the clamp deletes ten of its eleven
      * choices at each one. */
     const long long mrl = v->mrl ? v->fmin : 0;
-    vm_prune_mark(v, entry, mrl > 0, rung);
+    vm_prune_mark(v, entry, v->mrl && (mrl > 0 || v->fdyn != NULL), rung);
     /* The loop's ENTRY position, trailed. Both rungs derive their bounds from
      * it: low-water is entry + stride*rmin, ceiling is entry + stride*rmax.
      * The possessive path reads `pos` for the same quantity and writes no
@@ -1929,8 +2035,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_puts(b, "    {\n");
         if (a->rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
         if (fold)
-            sb_printf(b, "        const size_t lim_ = %s_MRL_CAP(pos, %lld, %d);\n",
-                      v->up, mrl, stride);
+            sb_printf(b, "        const size_t lim_ = %s_MRL_CAP(pos, %s, %d);\n",
+                      v->up, vm_mrl_amt(v, mrl), stride);
         sb_printf(b, "        %s_cur = pos;\n", v->p);
         sb_printf(b, "        while (%s_cur + %d <= %s", v->p, stride,
                   fold ? "lim_" : "n");
@@ -2783,10 +2889,33 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
          * multiply and a subtract on the trip path to tighten a bound whose
          * population nobody has measured. Recorded as a residual rather than
          * guessed at. */
-        if (!optional)
-            vm_mrl_test(v, "pos", vm_fadd(vm_fmul(K, bw), TF), -1,
-                        "MRL: this trip's K mandatory iterations, the residue "
-                        "and the follow do not fit");
+        /* [M4.6d] THE RUNTIME FOLLOW-MIN (§4.5), and this rung is the only
+         * place it is needed. One body copy serves every trip, so the
+         * compile-time view sees at most `K + residue` iterations of follow
+         * where the truth is `count - stv[ctr] - j`. On `(a{1,3}){65}` those
+         * are 9 and 65: the compile-time bound leaves the whole ambiguous
+         * decomposition alive, and the blinded test author measured exactly
+         * that before this expression existed. The counter is a TRAILED slot
+         * (R25 E5), so a resume into a body frame restores the right value
+         * and the expression is correct on the backtracking path too. */
+        if (!optional) {
+            const char *dyn = NULL;
+            if (v->mrl && bw > 0) {
+                dyn = vm_dyn_add(v, v->fdyn,
+                                 vm_rolef(v, "%lld * ((ptrdiff_t)%d - stv[%d])",
+                                          bw, count, ctr));
+            }
+            {
+                const char *sd = v->fdyn;
+                v->fdyn = dyn ? dyn : v->fdyn;
+                vm_mrl_test(v, "pos", dyn ? F : vm_fadd(vm_fmul(K, bw), TF), -1,
+                            dyn ? "MRL: the mandatory iterations still owed "
+                                  "(counter-derived) plus the follow do not fit"
+                                : "MRL: this trip's K mandatory iterations, the "
+                                  "residue and the follow do not fit");
+                v->fdyn = sd;
+            }
+        }
         vm_goto(v, body0);
         cur = body0;
         for (int i = 0; i < K; i++) {
@@ -2797,7 +2926,21 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             const long long cf = optional ? F
                                           : vm_fadd(vm_fmul(K - 1 - i, bw), TF);
             if (!optional) {
-                vm_emit_f(v, cur, a->l, nx, cf);
+                /* Copy `i` is followed by `count - stv[ctr] - (i+1)` further
+                 * MANDATORY iterations -- across the rest of this trip, every
+                 * later trip, and the residue, all of which are certain to
+                 * run. The compile-time `cf` above is the same quantity seen
+                 * from inside one trip, and the two agree exactly at the LAST
+                 * trip; everywhere else the runtime form is larger, which is
+                 * the whole point. */
+                const char *dyn = NULL;
+                if (v->mrl && bw > 0) {
+                    dyn = vm_dyn_add(v, v->fdyn,
+                                     vm_rolef(v, "%lld * ((ptrdiff_t)%d - stv[%d])",
+                                              bw, count - (i + 1), ctr));
+                }
+                if (dyn) vm_emit_fd(v, cur, a->l, nx, F, dyn);
+                else     vm_emit_f(v, cur, a->l, nx, cf);
             } else if (a->greedy) {
                 /* GREEDY: the body is the preferred path and LEAVING is the
                  * resume, so the frame carries the skip label. */

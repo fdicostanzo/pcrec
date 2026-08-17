@@ -1,0 +1,33 @@
+# MRL family 8: subjects that must produce NO match.
+#
+# These are near-miss subjects: one repetition short of a quantifier's own
+# minimum, or missing the trailing construct entirely. The interesting
+# risk direction is a bound computed too LARGE: that kind of bug prunes
+# real matches (turns 'm' into 'n' elsewhere), so a genuine 'n' case here
+# is not itself proof of a too-large bound -- but combined with families
+# 1-7's positive matches at the true minimum, a too-large bound would show
+# up as one of THOSE turning into a wrong 'n', not as a case in this file
+# gaining a spurious match. Kept here as the complementary boundary check.
+
+
+# below the quantifier's own minimum -- no amount of searching finds a valid decomposition.
+pattern a{3,6}b
+n "aab"
+n "b"
+n ""
+
+# far below the nested minimum (4).
+pattern (a{2,3}){2,3}
+n "a"
+n ""
+n "aaa"
+
+# 2 reps of the SHORT branch -- below the outer quantifier's own minimum (3) even though the short branch is being used.
+pattern (?:xxxxx|y){3,4}z
+n "yyz"
+m "yyyz" 0 4
+
+# one 'b' short of the second quantifier's minimum -- the first quantifier being satisfied does not help.
+pattern a{5,10}b{5,10}$
+n "aaaaaaaaaabbbb"
+m "aaaaaaaaaabbbbb" 0 15

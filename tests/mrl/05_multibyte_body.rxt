@@ -1,0 +1,32 @@
+# MRL family 5: multi-byte quantifier bodies, non-multiple subject lengths.
+#
+# (?:ab){3,6} has a 2-byte body; its true minimum is 3*2=6 bytes, and any
+# valid match length must be a multiple of 2 within [6,12]. Subjects whose
+# length is NOT a multiple of the body width, or that are one byte short
+# of a legal boundary, are exactly where a bound computed per-repetition
+# instead of per-byte (or vice versa) would land between two legal
+# iteration boundaries and get the wrong answer.
+
+
+# 2-byte body, min 3 reps = 6 bytes.
+pattern (?:ab){3,6}
+n "abab"
+n "ababa"
+m "ababab" 0 6
+m "abababa" 0 6
+m "abababab" 0 8
+m "ababababababab" 0 12
+
+# same multi-byte body, now with a trailing literal forcing an exact rep count at the match.
+pattern (?:ab){3,6}c
+n "ababc"
+m "abababc" 0 7
+m "abababababc" 0 11
+m "ababababababababc" 4 17
+
+# 3-byte body: min 2 reps = 6 bytes, not a multiple of 2.
+pattern (?:abc){2,5}
+n "abcab"
+m "abcabc" 0 6
+m "abcabca" 0 6
+m "abcabcabc" 0 9

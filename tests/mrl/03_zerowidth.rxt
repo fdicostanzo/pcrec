@@ -1,0 +1,63 @@
+# MRL family 3: zero-width and zero-minimum constructs.
+#
+# A construct whose own minimum contribution to "bytes still needed" is
+# ZERO is the easiest place to accidentally compute a nonzero bound (off
+# by the construct's own body length instead of its minimum-repeat count).
+# X*, X{0,n}, X?, (), (a|), and the anchors ^ $ are all zero-width or
+# zero-minimum in this sense.
+
+
+# a* has minimum 0: 'b' alone (zero a's) must match.
+pattern a*b
+m "b" 0 1
+m "ab" 0 2
+m "aaab" 0 4
+n "a"
+n ""
+
+# a{0,5} spelled with an explicit zero minimum -- same claim as a* above, plus an upper bound to make sure the bound isn't accidentally keyed off the MAX instead of the min.
+pattern a{0,5}b
+m "b" 0 1
+m "aaaaab" 0 6
+
+# alternation with an EMPTY branch: minimum is 0 via the empty side.
+pattern (a|)b
+m "b" 0 1
+m "ab" 0 2
+n "a"
+
+# an empty capturing group ahead of a literal: the group contributes 0 bytes to the bound; group 1 is a real, zero-width, non-unset span at the match start.
+pattern ()a
+m "a" 0 1
+g 1 0 0
+n ""
+n "b"
+
+# doubly-anchored, zero-minimum body: empty subject must match (both anchors zero-width, body minimum 0).
+pattern ^a{0,3}$
+m "" 0 0
+m "aaa" 0 3
+n "aaaa"
+n "xaaa"
+
+# two zero-minimum quantifiers stacked before a trailing $: total minimum is 0+0=0, so the empty subject matches -- and so does the empty suffix of ANY subject, since $ can always be reached by consuming nothing at the very end. That degenerate always-matches-at-the-end property is itself worth pinning: a too-large bound would break even this trivial case.
+pattern a{0,5}b{0,5}$
+m "" 0 0
+m "aaabbb" 0 6
+m "bbb" 0 3
+m "aaa" 0 3
+m "aaabbbc" 7 7
+
+# same shape, now with a mandatory trailing literal 'c' before $ -- so a subject with no 'c' at all must genuinely fail, not fall back to a trivial empty match.
+pattern a{0,5}b{0,5}c$
+m "c" 0 1
+m "aaabbbc" 0 7
+n "aaabbb"
+
+# two independent zero-minimum quantifiers ahead of a mandatory literal: overall minimum is exactly 1 (the 'c').
+pattern a?b?c
+m "c" 0 1
+m "ac" 0 2
+m "bc" 0 2
+m "abc" 0 3
+n "ab"

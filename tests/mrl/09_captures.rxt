@@ -1,0 +1,52 @@
+# MRL family 9: capture-group spans alongside MRL pruning.
+#
+# Half the promise ("no answer changes, ever") is about capture spans, not
+# just the overall match span. These reuse shapes from earlier families
+# (nested quantifiers, alternation, near-minimum subjects) with real
+# capturing groups so a bound that quietly moves where a repetition
+# lands -- without changing the OVERALL match -- would still be caught
+# via a wrong group span.
+
+
+# two independent capturing quantifiers back to back -- each group's span must reflect its own greedy choice, at and around the joint minimum (4).
+pattern (a{2,3})(b{2,3})
+m "aabb" 0 4
+g 1 0 2
+g 2 2 4
+m "aaabbb" 0 6
+g 1 0 3
+g 2 3 6
+m "aabbb" 0 5
+g 1 0 2
+g 2 2 5
+m "aaabb" 0 5
+g 1 0 3
+g 2 3 5
+n "ab"
+
+# alternation with a capture group PER branch: the branch not taken must report RX_UNSET (-1,-1), not a stale or zero span. Exercises the SMALLER branch (y, group 2) as the common case near the minimum.
+pattern (?:(x{2,3})|(y))z
+m "xxz" 0 3
+g 1 0 2
+g 2 -1 -1
+m "xxxz" 0 4
+g 1 0 3
+g 2 -1 -1
+m "yz" 0 2
+g 1 -1 -1
+g 2 0 1
+
+# doubly-nested capturing groups around the SAME repeated quantifier: group 1 (outer) and group 2 (inner) both track the LAST iteration and must agree with each other, at the granularity boundaries family 4 already found (N=10 slides the match start).
+pattern ((a{2,3})){2,3}c
+m "aaaac" 0 5
+g 1 2 4
+g 2 2 4
+m "aaaaac" 0 6
+g 1 3 5
+g 2 3 5
+m "aaaaaaaaac" 0 10
+g 1 6 9
+g 2 6 9
+m "aaaaaaaaaac" 1 11
+g 1 7 10
+g 2 7 10

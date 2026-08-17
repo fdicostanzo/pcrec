@@ -1,0 +1,23 @@
+# MRL family 7: matches not anchored to the subject's start or end.
+#
+# MRL's bound is about bytes remaining IN THE SUBJECT relative to the
+# match's own progress, not about the subject's total length or a fixed
+# offset -- these cases have trailing bytes the match need not consume,
+# and/or start scanning from a nonzero startpos (`ms`/`ns`), to make sure
+# the bound is computed relative to the right anchor point.
+
+
+# trailing bytes after the match, leading bytes before it -- unanchored search, nothing consumed beyond what's needed.
+pattern a{3,5}b
+m "zzzaaaabzzz" 3 8
+
+# startpos support: same subject, several different starting points via ms.
+pattern a{3,5}
+m "xxaaaaaayy" 2 7
+ms 3 "xxaaaaaayy" 3 8
+ms 5 "xxaaaaaayy" 5 8
+
+# startpos landing inside the run of a's the quantifier will consume -- the bound must still be evaluated relative to the actual scan start, not offset 0.
+pattern a{2,4}b
+ms 1 "yyaabzz" 2 5
+ms 2 "yyaabzz" 2 5
