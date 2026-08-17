@@ -4432,3 +4432,17 @@ established precedent). Revisit-when, both: [ENG-PGO]/bench-class
 evidence surfaces a real customer (the D50 evidence-gate shape); or the
 start++ retry loop is ever vectorized, which would move the offset
 crossover and deserves a re-measure.
+
+**D53 ADDENDUM (Frank, 2026-08-17, same session): the refutation's
+boundary.** D53 item (1) kills the RUNTIME branch only — no search-time
+test can know the match offset before searching. It does NOT refute a
+GENERATION-TIME statistical choice: the offset DISTRIBUTION of a
+workload is a static fact an exemplar file exposes ([DD-13]'s exemplar
+file references are the designed carrier), and [ENG-PGO] may use it to
+pick the default entry per pattern — preferably in the pure form
+(build both variants, run the exemplars, keep the measured winner,
+which also absorbs the per-attempt-cost wrinkle that made one shape
+lose at every offset). Mixed/unknown workloads route to OS-0's named
+entry points (both emitted, caller chooses statically). Engine
+selection thereby becomes [ENG-PGO]'s SECOND named customer, alongside
+[ENG-THIN]'s clamp-cost tuning.

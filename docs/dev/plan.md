@@ -462,7 +462,15 @@ spine, not before):
 - [ENG-PGO] STATE:not-started — PROFILE-GUIDED GENERATION (Frank,
   2026-08-16, twenty-seventh session — promoted from the parenthetical
   inside [SIMD-META] to its own row at his ask; the SIMD-META exemplar-axis
-  mention now points here). The idea: compile a pattern exactly as today,
+  mention now points here). TWO NAMED CUSTOMERS as of 2026-08-17 (D53
+  addendum): (1) [ENG-THIN]'s clamp-cost tuning; (2) HYBRID-VS-VM-ONLY
+  ENGINE SELECTION per pattern — D53 killed the runtime length branch
+  (the deciding variable is match OFFSET, unknowable pre-search), but
+  the offset DISTRIBUTION is a static workload fact an exemplar file
+  exposes; preferred form is pure PGO (build both variants, run the
+  exemplars, keep the measured winner — absorbing per-attempt-cost
+  effects no distribution model sees), with OS-0 named entry points
+  for mixed/unknown workloads. The idea: compile a pattern exactly as today,
   but with an opt-in `--profile` emission mode whose matcher TRACKS HOW IT
   RAN on the user's exemplar inputs — a PROFILE, not a trace: counters at
   the observation points the emitter already names (D46 stamp points,
