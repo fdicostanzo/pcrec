@@ -83,6 +83,47 @@
 # same weakest-case number every other 0.90-margin row here carries (a, b,
 # c, h). Tighter is not warranted from three same-session runs without
 # EARN=1-style independent-date history (R3.7).
+# k/l/m ADDED ([BENCH-VM], 2026-08-17, twenty-ninth session): the thin
+# VM-tier bench slice closing the gap that (j) was the matrix's only
+# capture-bearing/VM case. Discipline follows (j)'s precedent exactly:
+# three independent quiet-box CASES=k,l,m runs, taskset -c 2,
+# BENCH_TRIALS=5 (default), one right after another with load checked
+# before/after each -- 1-min load stayed in 1.08-2.63 against the 6.00
+# limit throughout all three, never LOADED. Reference is the MEDIAN of the
+# three per-case values; margin is the standard R3.5 formula
+# (clamp(1/(spread*1.05), 0.70, 0.90)) at the WORST of the three
+# within-run spreads.
+#
+# k (throughput, `(a{10,20}){10,50}`): 23810.843 / 24892.958 / 25261.718
+# MB/s, spreads 1.13x / 1.07x / 1.19x. Reference 24892.958 (median), margin
+# clamp(1/(1.19*1.05), 0.70, 0.90) = 0.800. Fail threshold
+# 24892.958*0.800 = 19914.366 MB/s -- a regression exceeding 1.25x would be
+# needed to fire, but note the case's OWN signal is far louder than that:
+# the mechanics probe measured a ~54x gap between this pruned build and an
+# -fno-length-prune control on the identical subject, so a real MRL
+# regression will not be a borderline call against this margin.
+#
+# l (latency, `([a-z]{2,4}){2,8}b` over 40 bytes of 'b'): 317.29 / 311.37 /
+# 292.37 ns/call, spreads 1.19x / 1.14x / 1.07x. Reference 311.370
+# (median), margin clamp(1/(1.19*1.05), 0.70, 0.90) = 0.800. Fail threshold
+# 311.370/0.800 = 389.212 ns/call.
+#
+# m (latency, `a(b|c)+d` with captures ON, offset 40): 133.24 / 125.42 /
+# 108.94 ns/call, spreads 1.30x / 1.53x / 1.37x. Reference 125.420
+# (median), margin clamp(1/(1.53*1.05), 0.70, 0.90) = 0.700 (the widest
+# spread of the three cases here clamps to the D17 floor, same as case
+# (i)'s own margin -- a sub-150ns latency measurement is genuinely the
+# noisiest shape in this file, consistent with (i)'s own header note).
+# Fail threshold 125.420/0.700 = 179.171 ns/call.
+#
+# SEQUENCING NOTE (manager ruling, same session): (m)'s floor is
+# deliberately set NOW, PRE-[OPT-ALTCLS] -- `a(b|c)+d` is that row's
+# stage-1 exemplar pattern, so this floor becomes the BEFORE half of that
+# landing's before/after evidence. The floor stays valid post-merge: a
+# genuine OPT-ALTCLS speedup only clears this floor by a wider margin, it
+# cannot make (m) fail, and the reference gets rebaselined upward
+# afterward only if the earned improvement warrants it (R3.7/EARN=1
+# discipline, not an automatic bump).
 a	throughput	2192.358	0.900
 b	throughput	1970.443	0.900
 c	throughput	388.615	0.900
@@ -93,3 +134,6 @@ g	throughput	24674.218	0.781
 h	throughput	1303.477	0.900
 i	latency	83.36	0.700
 j	throughput	150.369	0.900
+k	throughput	24892.958	0.800
+l	latency	311.370	0.800
+m	latency	125.420	0.700
