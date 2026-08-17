@@ -33,7 +33,49 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   `subst_template_design.md` intersects narrowly — one deferred
   template-text field owed to the manifest (D38 Q7), no other coupling.
   Consumed by [DD-13b]; no parser exists yet (D6 panel gate at [DD-13c]
-  still applies).
+  still applies). **PANELED R27 (2026-08-17,
+  `../../dev/reviews/2026-08-17-r27-dd13a.md`): one BLOCKER, all
+  dispositions FIX-NOW (one deferred half).** F1 (both critics, both
+  three-way confirmed): the note's §7 claimed a `.rxt`/manifest grep over
+  `subst_template_design.md` returned three hits when the true count is
+  six — the miscount hid §5.5 (a second manifest hook) and, more
+  seriously, an unsurveyed §8 "Testing sketch" that works out a full
+  `.rxt` substitution-testing extension (`repl`/`s`/`sg`/`serr`), the
+  most concrete format-extension prior art in the repo. Fixed: §7
+  rewritten with the corrected grep, R-SUBST-3 records the prior art.
+  Five majors fixed: R-VE-12 (encoding field, plan.md's own manifest
+  field list), R-RXT-10 (`tests/reject/`'s documented perr-can't-say-WHY
+  limitation, a previously unsurveyed consumer), Appendix additions for
+  [M3.1] chunk-boundary tests and [DD-11]'s newline axis (neither
+  forecloseable, neither with a proposed directive), T-6 (per-file
+  population accounting vs FILE INCLUDES), and §9's compatibility answer
+  reargued with softened confidence (DIALECT still stands — r27b's own
+  steelman against it failed — but "import" is shown not to disambiguate
+  dialect from migration on its own, with APPROACH.md §8 Q1's "grown
+  from .rxt" added as a second, independent corroboration, and the g/gp
+  precedent marked categorically flatter than what DD-13 actually needs).
+  Six minors/nits fixed: the D26/D27 "gold-plate" citation reworded to
+  the brief's own do-not-design instruction (D27 had zero textual
+  support anywhere in the repo, raised to MAJOR on a same-day addendum
+  after a third sub-review); a footnote on `tests/base/CLAUDE.md`'s
+  drifted case-line count (676 quoted vs 679 recounted — the quoted file
+  drifted, not this note's arithmetic; left unedited to avoid a conflict
+  with a held branch); OD-2's semantic-vs-compile-option tweak split
+  marked as this note's own derived distinction, not Frank's; a
+  keyword-collision-risk appendix bullet; three citation-location
+  corrections (R-VE-1's quote lives in the [DD-13] row, not [V-E]'s;
+  R-BENCH-6's is APPROACH §2, not §3; R-VE-8's "measured, never read
+  from docs" restored in full); and R-BENCH-1's four-tag grouping
+  attributed as the note's own synthesis. One correction IN the note's
+  favor: §13's self-critique of R-GEN-1 as "one generator" was itself
+  wrong — the panel found four more independent no-forcing-function
+  instances (the R22 D27-blinded capture author, plus the possessify/
+  rungselect/counterk generated corpora), all using only existing
+  directive vocabulary — n=5, not n=1, now recorded in §6 with the
+  residual honestly narrowed (all five are flat corpora; none has
+  exercised cross-references, config sections, or includes). Fix pass
+  landed by the dd13afix lane same day; census and ~45/50 sampled
+  citations were independently re-verified and held throughout.
 
 Maintenance: update this file when files are added/removed or change
 roles.

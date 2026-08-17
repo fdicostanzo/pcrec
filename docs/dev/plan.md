@@ -550,6 +550,39 @@ including V-G/V-H (added this session).
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
 
+- [ENG-THIN] STATE:not-started — MRL CLAMP GATING/THINNING (Frank,
+  2026-08-17, twenty-ninth session, ruled at the [M4.6d] accept-as-is
+  decision — D51 addendum has the accepted +8% residual this row exists
+  to shrink): decide per PATTERN — or per SITE — whether the MRL clamp
+  is emitted at all. SOUNDNESS-FREE BY CONSTRUCTION: with or without
+  the clamp the VM returns identical answers (the 202,458-cell [M4.6d]
+  differential is the demonstration); gating errors cost budget
+  exposure or overhead, never wrong answers, so this is pure
+  measure-then-implement optimization. TWO HALVES, Frank's two
+  questions verbatim: (1) ANALYTIC, compile-time — the k23_design.md
+  closed-form step law (validated exact out of sample) gives a
+  worst-case unclamped step bound per pattern; clamp only where that
+  bound exceeds a threshold against the step budget. Boolean
+  is-it-ambiguous gating is NOT sufficient — the +8% shape
+  ([a-z]{2,4}){2,8}b IS ambiguous-class; the gate must be
+  quantitative. Conservative generalization of the law is this row's
+  engineering; when uncertain, KEEP the clamp (wrong-keep costs <=8%
+  on a bad shape, wrong-skip costs an honest refusal, neither is
+  unsound). Per-site refinement: clamp only quantifiers participating
+  in nests whose bound exceeds threshold. (2) EXEMPLAR-STATISTICAL —
+  owned by [ENG-PGO], linked: given representative subjects ([DD-13]'s
+  exemplar file references are the designed carrier), tune the COST
+  side where (1) says the clamp is not strictly needed; exemplar
+  stats must never override the safety side (tail inputs are exactly
+  what exemplars do not show; DD-2's budget refusal stays the
+  backstop). If a caller wants both variants, OS-0's named entry
+  points are the D18-compliant shape — no hot-loop dispatch.
+  REGRESSION TRIPWIRES already in place: run_mrl_tests.sh §1b (the
+  8-step counter-rung acceptance cell) and
+  tests/base/d27_k23_ambiguous_decomposition.rxt (89 blinded cells) —
+  over-thinning that reintroduces a K23-class blowup fails both,
+  loudly. Schedule: boonies-queued with a natural measurement window
+  alongside [M4.6e]'s VM perf work.
 - [ENG-PGO] STATE:not-started — PROFILE-GUIDED GENERATION (Frank,
   2026-08-16, twenty-seventh session — promoted from the parenthetical
   inside [SIMD-META] to its own row at his ask; the SIMD-META exemplar-axis
