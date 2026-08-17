@@ -67,7 +67,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-known-fail test-thread
+      test-counterk test-mrl test-prefilter test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -213,6 +213,17 @@ test-mrl: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/mrl/run_mrldiff.sh' \
 	    'bash tests/mrl/run_mrl_tests.sh'
+
+# [M4.6f] the D46 close-out for the PREFILTER axis: one script, no diff
+# sibling. Unlike the four suites above, this substep introduces no new
+# ALGORITHM to differentially validate — the hybrid prefilter's own
+# correctness already rides tests/vm's S3.7 differential and
+# tests/mrl's ceiling-form coverage; what is new here is purely the
+# OBSERVABILITY (the stamp) and CONTROLLABILITY (the force pair) D46 asks
+# for, so a single structural script with its own independent controls
+# (tests/prefilter/CLAUDE.md) is the whole of what this row owes.
+test-prefilter: all
+	bash tests/prefilter/run_prefilter_tests.sh
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh
@@ -456,6 +467,6 @@ clean:
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-        test-known-fail test-thread \
+        test-counterk test-mrl test-prefilter test-known-fail test-thread \
         test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
         fuzz clean

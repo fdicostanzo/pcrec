@@ -169,6 +169,16 @@ int main(int argc, char **argv)
          * truth rather than merely a slower arm. */
         else if (!no_more_opts && !strcmp(a, "-fno-length-prune"))
             opt.flags |= PCREC_NO_LENGTH_PRUNE;
+        /* [M4.6f] the D46 close-out for the PREFILTER axis: a FORCE PAIR,
+         * not a deny-only flag, because fit.prefilter is one verdict for
+         * the whole artifact rather than a per-quantifier ladder step (see
+         * lib/pcrec.h's PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER comment).
+         * Do-or-die on the FORCE-ON direction is asserted in
+         * src/opt/select_engine.c, not here — same posture as --engine. */
+        else if (!no_more_opts && !strcmp(a, "-fno-prefilter"))
+            opt.flags |= PCREC_NO_PREFILTER;
+        else if (!no_more_opts && !strcmp(a, "-fprefilter"))
+            opt.flags |= PCREC_FORCE_PREFILTER;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

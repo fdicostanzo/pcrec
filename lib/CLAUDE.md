@@ -76,3 +76,27 @@ bound on whichever rung a quantifier already took and changes no rung, slot or
 capacity, so a denied artifact is byte-for-byte pre-MRL pcrec — which is what
 makes it a differential ground truth, and what a stamp announcing the denial
 would destroy.
+
+**[M4.6f] (2026-08-17):** `PCREC_NO_PREFILTER` (`1u << 8`,
+`-fno-prefilter`) and `PCREC_FORCE_PREFILTER` (`1u << 9`, `-fprefilter`)
+are the D46 close-out for the PREFILTER axis (`fit.prefilter`,
+src/opt/select_engine.c, engine_m4.md §6.1/§4.7) — a DIFFERENT SHAPE from
+the four bits above and deliberately so: those deny a per-QUANTIFIER
+strategy (D47.3's reasoning for DENY over FORCE), while `fit.prefilter` is
+ONE verdict for the whole artifact, decided jointly with `--engine`
+(auto+captures turns it on, `--engine=vm` turns it off as a side effect,
+R21 E-6) with no way before this to ask for the combination independently.
+So this is a FORCE PAIR — both directions independently reachable, which is
+what decouples "which engine" from "does the hybrid prefilter run ahead of
+it". DO-OR-DIE on the FORCE-ON direction only: `PCREC_FORCE_PREFILTER` on a
+pattern that compiles to the DFA engine (no VM artifact exists to attach a
+prefilter to) REFUSES, the same `--engine`-precedent posture; `PCREC_NO_PREFILTER`
+never refuses, because `--engine=vm` already ships that exact
+prefilter-free configuration today. Same masked-out-of-`rx_info.flags`
+treatment as the four bits above and for the identical reason: the axis
+changes no answer, only how one is found. What it DOES is recorded in
+`RX_VM_PREFILTER` (src/gen/emit_vm.c, `"hybrid"`/`"none"`) — a SCALAR
+string like `RX_ENGINE`/`RX_VM_PRUNE_CEILING`, not a bitmask like
+`RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES`, because the verdict is
+artifact-level rather than per-quantifier and there is nothing to mix.
+Tests: tests/prefilter/.

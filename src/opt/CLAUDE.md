@@ -49,6 +49,24 @@ construction (src/ir) and emission (src/gen).
   first has a population today, and the second is empty BY POPULATION, not by
   omission.
 
+  **[M4.6f] (2026-08-17):** the PREFILTER FORCE PAIR (D46's controllability
+  half for `fit.prefilter`, §6.1/§4.7) is applied here, immediately after the
+  derived value's own computation and in the same do-or-die posture the
+  `--engine` switch above uses. `-fprefilter`/`-fno-prefilter`
+  (`PCREC_FORCE_PREFILTER`/`PCREC_NO_PREFILTER`) override the derived
+  boolean in EITHER direction — unlike the ladder's DENY-only family, because
+  `fit.prefilter` is one verdict for the whole artifact rather than a
+  per-quantifier step, so there is no addressing problem FORCE would create.
+  Both flags together refuse (ambiguous request); `-fprefilter` additionally
+  refuses whenever `fit.chosen != ENGM_VM` (no VM artifact exists to attach a
+  prefilter to — reachable via explicit `--engine=dfa` or auto routing to the
+  DFA because the pattern requests no captures). `-fno-prefilter` never
+  refuses: `--engine=vm` already ships a pure, prefilter-free VM artifact
+  today, so denying the hybrid is always buildable. The axis's D46
+  observability half — `RX_VM_PREFILTER` — lives in src/gen/emit_vm.c, read
+  from `job->fit.prefilter` directly rather than recomputed. Tests:
+  tests/prefilter/.
+
 - **possessify.c** — [ENG-BREP] POSSESSIFICATION
   (docs/design/eng_brep_design.md §2, D47.1: possessify-first in both the
   application order and the build order). Marks every `A_REP` for which no

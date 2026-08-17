@@ -555,11 +555,22 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * (src/gen/emit_vm.c), which reports what the emitter actually DID rather
      * than what it was asked — the D46 half that a denial can be checked
      * against. Each further denial in D47.3's family joins this mask as it
-     * lands. */
+     * lands.
+     *
+     * [M4.6f] `PCREC_NO_PREFILTER`/`PCREC_FORCE_PREFILTER` join the mask for
+     * the identical reason, even though the PREFILTER axis is a FORCE pair
+     * rather than a deny-only flag (lib/pcrec.h's comment on the two bits):
+     * the rule this mask states is about the axis's OBSERVABLE EFFECT, not
+     * about deny-vs-force spelling, and forcing the hybrid prefilter on or
+     * off changes no answer, only how one is found (engine_m4.md §6.1). The
+     * axis's own D46 record is `<PREFIX>_VM_PREFILTER` (src/gen/emit_vm.c),
+     * VM-artifacts-only for the same reason RX_ENGINE/RX_VM_STRATS/etc. are:
+     * a DFA artifact has no separate prefilter decision to report. */
     {
         const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
                                           PCREC_NO_COUNTER |
-                                          PCREC_NO_LENGTH_PRUNE;
+                                          PCREC_NO_LENGTH_PRUNE |
+                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

@@ -255,8 +255,39 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * running underneath, `span(VM) == span(DFA)` is close to a TAUTOLOGY,
      * because the hybrid hands the VM the DFA's own answer as its starting
      * window. Only a prefilter-free run is an independent second derivation,
-     * which is what §3.7's differential needs to be a real gate. */
-    fit.prefilter = (fit.chosen == ENGM_VM) && (cx->opt->engine != PCREC_ENGINE_VM);
+     * which is what §3.7's differential needs to be a real gate.
+     *
+     * [M4.6f] D46's controllability half for this axis: `-fprefilter`/
+     * `-fno-prefilter` OVERRIDE the derived value above in EITHER
+     * direction, decoupling "does the hybrid run" from "which engine was
+     * chosen" — up to now the only way to get it OFF under an
+     * otherwise-auto selection was to also force `--engine=vm`, and the
+     * only way to get it ON under `--engine=vm` was not to ask for
+     * `--engine=vm` at all. DO-OR-DIE (the same posture the switch above
+     * applies to `--engine` itself): forcing it ON when no VM artifact
+     * exists to attach a prefilter to (fit.chosen == ENGM_DFA) is not a
+     * request this pass can silently ignore or silently honour by
+     * building a VM artifact nobody asked for — it REFUSES. Forcing it
+     * OFF has no such hole: `--engine=vm` already ships a pure,
+     * prefilter-free VM artifact today, so PCREC_NO_PREFILTER is always
+     * buildable whatever engine was chosen. */
+    {
+        bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
+        bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
+        if (force_on && force_off)
+            ctx_fail(cx, why_pos,
+                     "-fprefilter and -fno-prefilter cannot both be requested");
+        if (force_on && fit.chosen != ENGM_VM)
+            ctx_fail(cx, why_pos,
+                     "-fprefilter requires the VM engine; this pattern "
+                     "compiles to the DFA engine, which carries no separate "
+                     "prefilter to force (pass --engine=vm, or drop "
+                     "-fprefilter)");
+        fit.prefilter = force_on ? true
+                       : force_off ? false
+                       : (fit.chosen == ENGM_VM) &&
+                         (cx->opt->engine != PCREC_ENGINE_VM);
+    }
 
     cx->job->fit = fit;
 

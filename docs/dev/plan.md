@@ -274,9 +274,40 @@ stated terms.
   - [M4.6e] STATE:not-started — RX_HYBRID_MIN measurement (resolves
     engine_m4.md §12 ASK-6; wire the `n < RX_HYBRID_MIN` VM-only
     branch) + trie-factored first-byte switch, measure-then-implement.
-  - [M4.6f] STATE:not-started — D46 CLOSE-OUT: stamp + force pair for
-    the prefilter axis (the `<PREFIX>_VM_RUNGS`/`VM_STRATS` precedent);
-    islands' pair moves to [ENG-ISL] with the mechanism.
+  - [M4.6f] STATE:completed (2026-08-17, lane m46f) — D46 CLOSE-OUT for
+    the PREFILTER axis DONE: `<PREFIX>_VM_PREFILTER` stamp (`"hybrid"`/
+    `"none"`, a SCALAR string like `RX_ENGINE`/`RX_VM_PRUNE_CEILING` —
+    `fit.prefilter` is one verdict per artifact, not per-quantifier, so
+    there is no mixed case for a bitmask to disambiguate) plus the
+    `-fprefilter`/`-fno-prefilter` FORCE pair (`PCREC_FORCE_PREFILTER`/
+    `PCREC_NO_PREFILTER`, `1u<<9`/`1u<<8`) in src/opt/select_engine.c,
+    applied AFTER the derived default and do-or-die on the impossible
+    direction only: `-fprefilter` REFUSES when `fit.chosen != ENGM_VM`
+    (verified against explicit `--engine=dfa` and auto-routed-to-DFA via
+    `--no-captures`), `-fno-prefilter` never refuses (`--engine=vm`
+    already ships that configuration). A FORCE pair rather than D47.3's
+    DENY-only shape — reported deviation, reasoned in src/opt/CLAUDE.md
+    and lib/CLAUDE.md: the axis is artifact-level, so there is no
+    per-quantifier addressing problem FORCE would create. Both new bits
+    masked out of `rx_info.flags` (emit_dfa.c) alongside the four D47.3
+    siblings. tests/prefilter/run_prefilter_tests.sh: 18 structural
+    checks, no differential sibling (the prefilter's correctness already
+    rides tests/vm's S3.7 differential and tests/mrl's ceiling coverage —
+    this substep is observability+controllability only). TWO LIVE
+    SABOTAGES verified the checks can go red before landing (removing the
+    do-or-die refusal; dropping the two bits from the `rx_info.flags`
+    mask), both reverted. Islands' own pair stays deferred to [ENG-ISL],
+    which already records the obligation ("carries its own D46
+    stamp+force obligation when built"). Battery: `make strict` clean
+    (confirmed); full `make -j12 -Otarget test` launched and its new
+    `test-prefilter` section is green (18/18) — final whole-suite
+    pass count to follow once the run completes (WIP checkpoint,
+    committed live per Frank's async-validation convention rather than
+    holding the commit for it). No sanitizer run planned: no runtime
+    match code path changed, only selection (compile-time) and emitted
+    stamp text — judged unnecessary per
+    docs/testing.md's SAN-1 scope (a stamp is emitted text; the force
+    flag touches selection, not the matcher body).
 - [M4.7] STATE:not-started — DIFFERENTIAL + CLOSE: capture differential
   vs libpcre2 ovectors (gate-ON per docs/testing.md's differential-gate
   principle), fuzzer extended to compare capture spans, SR-8's

@@ -456,6 +456,7 @@ project journal entry.
 | `make test-rungselect` | `tests/rungselect/run_rungdiff.sh` + `run_rungselect_tests.sh` | yes |
 | `make test-counterk` | `tests/counterk/run_counterkdiff.sh` + `run_counterk_tests.sh` | yes |
 | `make test-mrl` | `tests/mrl/run_mrldiff.sh` + `run_mrl_tests.sh` | yes |
+| `make test-prefilter` | `tests/prefilter/run_prefilter_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
@@ -525,6 +526,33 @@ differential, the structural checks and the step-collapse acceptance cell all
 agreed with, because all three were derived from the model the bug was in. An
 instrument derived from an implementation can only find the defects that
 implementation's own model admits.
+
+**[M4.6f] (2026-08-17) — a twelfth section, `test-prefilter`, and the ONE
+DELIBERATE DEPARTURE from the three-part shape every deny-family section
+above uses.** `docs/dev/decisions.md` D46 requires every strategy-selection
+point to be OBSERVABLE (a stamp) and FORCEABLE (a flag the artifact's own
+stamp can be checked against, do-or-die on the impossible direction); the
+`RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES` family already has both halves
+for their own axes, and this section gives `fit.prefilter`
+(src/opt/select_engine.c, §6.1/§4.7) the same pair — `RX_VM_PREFILTER`
+(`"hybrid"`/`"none"`) and the `-fprefilter`/`-fno-prefilter` FORCE PAIR
+(lib/pcrec.h; a force pair rather than a deny-only flag, because the axis is
+ONE verdict per artifact, not a per-quantifier ladder step D47.3's DENY
+reasoning applies to).
+
+There is no `run_prefilterdiff.sh` sibling, and that is not an oversight:
+this substep adds no new ALGORITHM needing a pcrec-vs-pcrec differential of
+its own — the hybrid prefilter's correctness is already carried by
+`test-vm`'s §3.7 differential and `test-mrl`'s ceiling-form coverage. What
+was missing before this substep was purely the OBSERVABILITY and
+CONTROLLABILITY layer on top of an axis that already existed, so one
+structural script is the whole of what the row owes. Its independent
+controls (matching the K24-lane convention that a check must be shown able
+to go red) pair every stamp assertion with a read of the actual emitted
+`_prefilter(` machinery, never the stamp text alone; see
+`tests/prefilter/CLAUDE.md` for the two live sabotages that verified this
+(the do-or-die refusal removed, and the `rx_info.flags` mask bits dropped)
+before the check was accepted.
 
 **[ENG-BREP] (2026-08-16) — an eleventh section, `test-rungselect`.** The
 REVERSE-DETERMINISTIC rung's suite, the same three-part shape as

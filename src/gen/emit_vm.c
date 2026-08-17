@@ -3655,9 +3655,18 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
     }
     sb_puts(o, "\n");
     sb_printf(o, "; engine       vm (forced by: %s)\n", st->why ? st->why : "--engine=vm");
+    /* [M4.6f] the "off" reason now has TWO routes -- an explicit
+     * -fno-prefilter, or the R21 E-6 side effect of --engine=vm with no
+     * -fprefilter to override it back on -- and the listing names the one
+     * that actually fired rather than assuming the older, single-route
+     * text. The "yes" text does not need the same split: a forced-on
+     * prefilter (-fprefilter under --engine=vm) is the SAME machinery as an
+     * auto-derived one, §6.1's exactness claim unchanged either way. */
     sb_printf(o, "; prefilter    %s\n", st->prefilter
               ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
                 " an exact window (S6.1); the VM never scans"
+              : (cx->opt->flags & PCREC_NO_PREFILTER)
+              ? "NO (-fno-prefilter) -- forced off; the VM scans from startpos itself"
               : "NO (--engine=vm) -- the VM scans from startpos itself (R21 E-6)");
     /* [D46] the rung stamp's QUICK-GLANCE summary: which rung KINDS appear
      * ANYWHERE in this program, not which one "the" program uses -- the
@@ -4143,6 +4152,34 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     pcrec_emit_c_string_literal(c, job->fit.why ? job->fit.why : "--engine=vm",
                                 strlen(job->fit.why ? job->fit.why : "--engine=vm"));
     sb_puts(c, "\n");
+    /* [M4.6f] THE PREFILTER STAMP: D46's observability half for
+     * select_engine.c's fit.prefilter, in the SAME PLACEMENT as
+     * RX_ENGINE/RX_ENGINE_WHY immediately above and for the same reason -- a
+     * per-prefix, preprocessor-visible macro, VM-artifacts-only (a DFA
+     * artifact has no separate prefilter DECISION: its own scan-avoidance
+     * memchr/bitmap prefilter, emit_dfa.c's unconditional `prefilter` local,
+     * is an unrelated always-on optimization, not a selection point D46
+     * governs).
+     *
+     * ARTIFACT-LEVEL, not per-quantifier -- select_engine.c decides
+     * fit.prefilter ONCE per pattern, so this is a SCALAR string like
+     * RX_ENGINE and RX_VM_PRUNE_CEILING rather than a bitmask like
+     * RX_VM_RUNGS/RX_VM_STRATS/RX_VM_PRUNES: those are masks because the
+     * rung/strategy/clamp is selected per A_REP and a scalar would lie on a
+     * mixed artifact ([M4.5e]'s own corrected design note); there is no
+     * per-quantifier axis here to mix.
+     *
+     * job->fit.prefilter is FINAL by the time this runs (this file's own
+     * comment at the MRL ceiling site: "fit.prefilter is select_engine's
+     * verdict and is final by now"), and it is the SAME value `prefn`
+     * below is built from -- one flag, read twice, never a second
+     * computation of it. It also carries D47.3's do-or-die: a request this
+     * artifact could not honour would have REFUSED in select_engine.c before
+     * emission ever started, so a build that reaches this line already
+     * reflects whatever `-fprefilter`/`-fno-prefilter` asked for (or the
+     * derived default when neither was passed). */
+    sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
+              job->fit.prefilter ? "hybrid" : "none");
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * for the same §5.4 byte-identity reason the comment above states), but

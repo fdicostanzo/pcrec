@@ -131,6 +131,18 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   compile-time constant) that the differential, the structural checks and the
   step-collapse cell all agreed with, because all three were derived from the
   model the bug was in.
+- **`prefilter/`** — [M4.6f] the D46 close-out for the PREFILTER axis:
+  `RX_VM_PREFILTER` (the stamp) and `-fprefilter`/`-fno-prefilter` (the
+  force pair) for `fit.prefilter` (src/opt/select_engine.c, engine_m4.md
+  §6.1/§4.7), giving the DFA-hybrid prefilter the same D46 pair
+  `RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES` already have. A FORCE pair
+  rather than a deny-only D47.3 flag, because the axis is one verdict per
+  artifact rather than a per-quantifier ladder step. One structural
+  script, deliberately no differential sibling: the prefilter is not a new
+  algorithm needing its own pcrec-vs-pcrec sweep, its correctness already
+  rides tests/vm's S3.7 differential and tests/mrl's ceiling-form
+  coverage — this substep adds only observability and controllability on
+  top. See its own CLAUDE.md for the independent-control verification.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`
