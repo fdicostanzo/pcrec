@@ -234,6 +234,22 @@ typedef struct {
     int       nmark_total;
     int       nrev;       /* [ENG-BREP] revdet LOOPS so far (3 slots each) */
     int       nrev_total;
+    int       nctr;       /* [ENG-BREP counter-K] counter LOOPS so far, one
+                           * TRAILED iteration-counter slot each. Trailed and
+                           * not a local: RULED (R25 ASK 3), and the saving the
+                           * design note proposed for the possessive arm was a
+                           * MANDATORY-PHASE MISCOMPILE — the mandatory copies
+                           * have no cut between them, so a body-internal frame
+                           * from iteration 1 resumes reading a stale local and
+                           * `(?:a|bc){3}+` runs one iteration where it must run
+                           * three. */
+    int       nctr_total;
+    int       unroll_k;   /* [ENG-BREP counter-K] K, resolved ONCE from the
+                           * options (PCREC_DEFAULT_UNROLL_K when unset). One
+                           * per artifact, never per quantifier — D47 ADDENDUM
+                           * holds eng_brep_design.md §4.5 strictly. Read here
+                           * rather than at each site so the emitter and the
+                           * two pre-passes cannot disagree about it. */
     int       nrevcaps;   /* the largest capture-group count any one revdet
                            * body has — sizes the SHARED recovery locals. One
                            * array serves every revdet loop because a walk's
@@ -390,6 +406,65 @@ static int vm_slot_rev(Vm *v, int loop, int which)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
          + v->nmark_total + 3 * loop + which;
+}
+
+/* [ENG-BREP counter-K] the ITERATION COUNTER, one slot per counter loop, the
+ * fifth and last slot class. Sits above the revdet block for the same reason
+ * every class above sits above the one before it: the base is computed from
+ * the TOTALS the pre-pass found, never from the running assignment counters,
+ * so an emitter that assigns its Nth counter cannot land on a slot the
+ * pre-pass had earmarked for something else.
+ *
+ * ONE slot, not the revdet rung's three: this loop's bounds are compile-time
+ * constants (m, NOPT and K are all known when the C is written), so nothing
+ * needs a low-water mark or a ceiling recorded at run time. The counter is the
+ * only run-time quantity the shape has. */
+static int vm_slot_ctr(Vm *v, int i)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
+         + v->nmark_total + 3 * v->nrev_total + i;
+}
+
+/* [ENG-BREP counter-K] Does this quantifier take the COUNTER rung, and is the
+ * shape the one implemented so far?
+ *
+ * ONE predicate, called from all three sites that must agree — vm_cost_rep,
+ * vm_count_slots and vm_rep's real emission — for the reason src/gen/CLAUDE.md
+ * states about `vm_cursor_fits`: a rung decided by three separate readings of
+ * "does this look like a counter loop" is a rung that will eventually be
+ * emitted by one of them and not costed by another, and the failure mode is a
+ * slot two live loops share.
+ *
+ * SCOPE, stated because it is narrower than the design note's §3: this is the
+ * EXACT-COUNT arm only (`X{m}`, NOPT == 0) — §3.1's mandatory phase. The
+ * optional phase (§3.2 greedy, §3.3 lazy) and the possessive arm (§3.4) are
+ * separate slices and fall through to the frames rung until they land.
+ *
+ * The threshold is `m >= K`, and the strictness is §3.2's [R25 E3] applied to
+ * this phase: §3.1's trip guard is `stv[ctr] + K > m` evaluated at ctr = 0, so
+ * at m < K it takes the tail immediately and the tail emits all m copies —
+ * byte-identical to replication. At m == K the loop RUNS one trip, emitting
+ * the same NUMBER of copies as replication but not the same CODE. So the rung
+ * changes the output exactly at m >= K and nowhere below it. */
+static bool vm_counter_fits(const Vm *v, const Ast *a)
+{
+    if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
+    if (a->possessive) return false;          /* §3.4, a later slice */
+    if (a->rmax < 0) return false;            /* unbounded tail: frames star */
+    if (a->rmax != a->rmin) return false;     /* NOPT > 0: §3.2/§3.3, later */
+    if (a->rmin < v->unroll_k) return false;  /* below K: replication, verbatim */
+    return true;
+}
+
+/* How many times the counter rung EMITS the body for an exact count: K copies
+ * inside the trip, plus the `m mod K` residue copies in the tail. This is the
+ * number that replaces `m` everywhere the frames rung would have replicated,
+ * and it is what makes `((a)|ab){4000}` compile — 8 copies where the frames
+ * rung wanted four thousand. Shared by the emitter and both pre-passes so the
+ * three cannot disagree about how much body there is. */
+static int vm_counter_copies(const Vm *v, const Ast *a)
+{
+    return v->unroll_k + (a->rmin % v->unroll_k);
 }
 
 /* ---- AST predicates ------------------------------------------------------*/
@@ -730,6 +805,47 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
      * body containing a nested quantifier that owns slots of its own still
      * writes them once per iteration, and that case earns a real ceiling from a
      * real per-iteration divisor. */
+    /* [ENG-BREP counter-K] §3.1's mandatory phase, costed BEFORE the frames
+     * arm for the same ladder-order reason the revdet arm below is.
+     *
+     * FRAMES ARE NOT WHAT THIS RUNG SHRINKS, and the note owes that plainly
+     * (§3.5, [R25 E7]). The rung shrinks emitted SIZE; the frame requirement is
+     * whatever the body needs, times the iterations that can be live at once.
+     * The mandatory phase pushes nothing of its own — a mandatory copy that
+     * fails fails the quantifier — but the BODY's choice points are still live
+     * across all m iterations, exactly as under replication, because nothing
+     * cuts between mandatory copies. So the requirement is per-ITERATION and
+     * counted over m, not over the K + residue copies the emitter writes.
+     *
+     * Counting the EMITTED copies here instead of the ITERATIONS would be a
+     * silent cap of precisely the kind the revdet arm below records finding the
+     * hard way: the artifact would size for 8 iterations and take 4000. */
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && !a->revbody
+        && vm_counter_fits(v, a)) {
+        Cost body = vm_cost(v, a->l);
+        const long long mm = a->rmin;
+        /* Frames and trail are the frames rung's OWN numbers at rmax == rmin,
+         * and they must be: the rung changes how much C is written, not how
+         * many iterations run or what they push. `(rmax - rmin) * (1 +
+         * body.frames)` is zero for an exact count, so what is left is the
+         * mandatory term, verbatim. If these two lines ever diverge from the
+         * frames arm below for this shape, one of them is wrong. */
+        c.frames = mm * body.frames;
+        c.trail  = mm * body.trail
+                 + 1 + mm / v->unroll_k;   /* the counter: init + one per TRIP */
+        /* The per-iteration divisors the ceiling machinery uses. Taken from
+         * the frames arm for the same reason, with the counter rounded UP from
+         * its true 1/K to 1: over-counting here tightens a stamped ceiling,
+         * while under-counting is a SILENT CAP — the failure the revdet arm
+         * below records finding the hard way, and the asymmetry that decides
+         * which way to round when the honest number is fractional. */
+        c.pf     = 1 + body.frames + body.pf;
+        c.pt     = 1 + body.trail + body.pt;
+        c.unbounded = body.unbounded;
+        c.growable  = true;
+        return c;
+    }
+
     if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && a->revbody) {
         const bool move = vm_rev_canmove(a);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
@@ -1031,6 +1147,30 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
             v->npush += 1 + (move ? 1 : 0);
             vm_count_slots(v, a->l, repl);
             if (move && !a->greedy) vm_count_slots(v, a->l, repl);
+            return;
+        }
+        /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
+         * it returns BEFORE the `copies` replication line — which is the whole
+         * point of the rung. The body is emitted K + (m mod K) times, not m
+         * times, so `((a)|ab){4000}` charges 8 copies against
+         * PCREC_MAX_VM_REPEAT_COPIES where the frames rung charged four
+         * thousand and was refused.
+         *
+         * NO PUSHES: §3.1's mandatory phase has no choice point at the loop
+         * level (a mandatory copy that fails fails the quantifier), so the only
+         * frames are the body's own, counted by the walk below. ONE slot, the
+         * trailed counter.
+         *
+         * `repl` is passed through UNCHANGED rather than multiplied by the copy
+         * count: K22's product guard bounds the replication a nesting path
+         * performs, and this rung does not replicate per iteration — it emits a
+         * fixed K + residue whatever `m` is. Multiplying here would re-import
+         * exactly the explosion the rung removes. */
+        if (vm_counter_fits(v, a)) {
+            int copies = vm_counter_copies(v, a);
+            v->nctr++;
+            if (copies > v->maxcopies) v->maxcopies = copies;
+            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl);
             return;
         }
         /* frames rung: the star's own push, or one per optional copy. The
@@ -2061,6 +2201,105 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     }
 }
 
+/* [ENG-BREP counter-K] §3.1's MANDATORY PHASE: m iterations, no choice point
+ * at the loop level.
+ *
+ *   L_min:    RX_SET(ctr, 0)
+ *   L_mtrip:  if (stv[ctr] + K > m) goto L_mtail
+ *             <K copies of the body>       ; no PUSH: a mandatory copy that
+ *             RX_SET(ctr, stv[ctr] + K)    ; fails fails the whole quantifier
+ *             goto L_mtrip
+ *   L_mtail:  <m mod K copies>             ; the residue, as emitted today
+ *             goto next
+ *
+ * WHY NO PUSH ANYWHERE IN IT. A mandatory copy is not optional: if it cannot
+ * match, the quantifier cannot match, and falling through to `rx_fail` is
+ * already the right answer. The BODY's own choice points still push, which is
+ * the whole reason the counter has to be trailed.
+ *
+ * THE RESIDUE IS A COMPILE-TIME CONSTANT, not a runtime remainder. `L_mtail`
+ * is reachable only through the trip guard, and `stv[ctr]` is only ever 0 or
+ * incremented by exactly K, so the tail is entered at ctr = K*floor(m/K) and
+ * the residue is exactly `m mod K` copies. eng_brep_design.md §4.2 writes the
+ * tail as "(n - stv[ctr]) copies", which reads as a runtime quantity; it is
+ * not, and that is what keeps the tail as ordinary replication at a smaller
+ * count rather than something new.
+ *
+ * THE COUNTER IS WRITTEN ONCE PER TRIP, not per iteration — a second,
+ * independent reason K > 1 pays, and one the §4.4 curves do not measure: the
+ * counter's trail cost is 1/K per iteration. Inside a trip the K copies are
+ * distinct code and the program counter distinguishes them, which is
+ * replication's own encoding used at scale K. */
+static void vm_counter_exact(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+    const int K = v->unroll_k;
+    const int m = a->rmin;
+    const int residue = m % K;
+    const int ctr = vm_slot_ctr(v, v->nctr++);
+    const int trip = vm_label(v);
+    const int tail = vm_label(v);
+
+    const char *role = vm_rolef(v, "counter rung, exact {%d}, K=%d "
+                                   "(%d trip copies + %d residue)",
+                                m, K, K, residue);
+    vm_lbl(v, entry, role);
+    vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    vm_set(v, ctr, "0", "counter rung: iteration counter (trailed)");
+    vm_goto(v, trip);
+
+    /* The trip. `vm_emit` emits its OWN entry label, so the body starts at a
+     * label of its own and the guard jumps into it — the same shape the
+     * possessified frames rung uses for exactly the same reason. */
+    {
+        int body0 = vm_label(v);
+        int cur;
+        vm_lbl(v, trip, "counter trip: another K iterations, or take the residue");
+        sb_printf(b, "    if (stv[%d] + %d > %d) goto %s_L%d;\n",
+                  ctr, K, m, v->p, tail);
+        vm_ev(v, VE_NOTE, 0, 0,
+              "trip guard: the residue is a compile-time constant");
+        vm_goto(v, body0);
+        cur = body0;
+        for (int i = 0; i < K; i++) {
+            int nx = vm_label(v);
+            vm_emit(v, cur, a->l, nx);
+            cur = nx;
+        }
+        vm_lbl(v, cur, "counter trip complete: charge K and go round");
+        {
+            char val[64];
+            snprintf(val, sizeof val, "stv[%d] + %d", ctr, K);
+            vm_set(v, ctr, val, "counter rung: += K, once per TRIP");
+        }
+        vm_goto(v, trip);
+    }
+
+    if (residue == 0) {
+        /* The exact-multiple case. The tail label still EXISTS — the trip
+         * guard branches to it — so it is emitted and hands straight over to
+         * the continuation rather than being elided, which would leave the
+         * guard jumping at a label the artifact never defines. */
+        vm_lbl(v, tail, "counter residue: none (m is a multiple of K)");
+        vm_goto(v, next);
+        return;
+    }
+    {
+        int res0 = vm_label(v);
+        int cur;
+        vm_lbl(v, tail, "counter residue: m mod K copies, ordinary replication");
+        vm_goto(v, res0);
+        cur = res0;
+        for (int i = 0; i < residue; i++) {
+            int nx = vm_label(v);
+            vm_emit(v, cur, a->l, nx);
+            cur = nx;
+        }
+        vm_lbl(v, cur, "counter residue complete");
+        vm_goto(v, next);
+    }
+}
+
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
@@ -2084,6 +2323,15 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * without having the thing the rung needs. */
     if (a->revbody) {
         vm_revdet_rep(v, entry, a, next);
+        return;
+    }
+
+    /* [ENG-BREP counter-K] the ladder's LAST rung before replication, and the
+     * one that catches the bodies all three above decline. Selected by the one
+     * shared predicate the two pre-passes also call, never by a second reading
+     * of the same conditions. */
+    if (vm_counter_fits(v, a)) {
+        vm_counter_exact(v, entry, a, next);
         return;
     }
 
@@ -2714,6 +2962,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     /* Set BEFORE the walk: vm_push_at reads it to decide whether the emitted
      * RX_PUSH carries its label id. */
     v.tracing = (cx->opt->flags & PCREC_TRACE) != 0;
+    /* [ENG-BREP counter-K] K, resolved ONCE here. Set BEFORE vm_count_slots,
+     * which is the first of the three consumers to run — vm_counter_fits reads
+     * it, and a zero would make every quantifier "below K" and silently
+     * disable the rung in the pre-pass while the emitter used the real value. */
+    v.unroll_k = cx->opt->unroll_k > 0 ? cx->opt->unroll_k
+                                       : PCREC_DEFAULT_UNROLL_K;
 
     pcrec_gen_names(cx, &g);
     memcpy(v.up, g.upper, sizeof v.up);
@@ -2743,14 +2997,16 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                  v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
     const int nmark_total = v.nmark;   /* [ENG-BREP] possessive cut marks */
+    const int nctr_total  = v.nctr;    /* [ENG-BREP] counter loops, 1 slot each */
     const int nrev_total  = v.nrev;    /* [ENG-BREP] revdet loops, 3 slots each */
     v.nguard_total = nguard_total;
     v.nlow_total   = nlow_total;
     v.nmark_total  = nmark_total;
     v.nrev_total   = nrev_total;
-    v.nguard = v.nlow = v.nmark = v.nrev = 0;
+    v.nctr_total   = nctr_total;
+    v.nguard = v.nlow = v.nmark = v.nrev = v.nctr = 0;
     const int nstate = 2 * ncaps + nguard_total + nlow_total + nmark_total
-                     + 3 * nrev_total;
+                     + 3 * nrev_total + nctr_total;
 
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root);
