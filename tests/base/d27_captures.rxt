@@ -1,0 +1,124 @@
+# CAPTURES under quantifiers: last-iteration-wins semantics, including the not-reset-if-not-exercised rule for alternation-branch groups.
+# Auto-generated for the D27 quantifier/bounded-repeat corpus.
+# Every expectation is computed directly from python's re module.
+
+# repeated capturing group, varying-length iterations -- last wins
+pattern (a{2,4})+
+m "aaaaaa" 0 6
+g 1 4 6
+m "aaaaaaaaaa" 0 10
+g 1 8 10
+m "aa" 0 2
+g 1 0 2
+m "aaaa" 0 4
+g 1 0 4
+
+# repeated capturing group of digits+literal, last iteration span
+pattern (\d{2}-){1,3}
+m "12-" 0 3
+g 1 0 3
+m "12-34-" 0 6
+g 1 3 6
+m "12-34-56-" 0 9
+g 1 6 9
+m "12-34-56-78-" 0 9
+g 1 6 9
+
+# alternation inside a repeated group: a branch group not exercised on the LAST iteration keeps its value from whichever earlier iteration last set it
+pattern ((a)|(b)){2}
+m "ab" 0 2
+g 1 1 2
+g 2 0 1
+g 3 1 2
+m "ba" 0 2
+g 1 1 2
+g 2 1 2
+g 3 0 1
+m "aa" 0 2
+g 1 1 2
+g 2 1 2
+g 3 -1 -1
+m "bb" 0 2
+g 1 1 2
+g 2 -1 -1
+g 3 1 2
+
+# same shape, three iterations
+pattern ((a)|(b)){3}
+m "aba" 0 3
+g 1 2 3
+g 2 2 3
+g 3 1 2
+m "bab" 0 3
+g 1 2 3
+g 2 1 2
+g 3 2 3
+m "aab" 0 3
+g 1 2 3
+g 2 1 2
+g 3 2 3
+m "bba" 0 3
+g 1 2 3
+g 2 2 3
+g 3 1 2
+
+# first group fixed, second group repeated -- last rep only
+pattern (a)(a)*
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+m "aaaa" 0 4
+g 1 0 1
+g 2 3 4
+m "aaaaaaaa" 0 8
+g 1 0 1
+g 2 7 8
+
+# nested capture: outer wraps the whole repeat, inner is per-iteration
+pattern ((ab)+)
+m "ab" 0 2
+g 1 0 2
+g 2 0 2
+m "abab" 0 4
+g 1 0 4
+g 2 2 4
+m "ababab" 0 6
+g 1 0 6
+g 2 4 6
+
+# three independently optional groups, only as many participate as subject allows
+pattern (a)?(a)?(a)?
+m "" 0 0
+g 1 -1 -1
+g 2 -1 -1
+g 3 -1 -1
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+g 3 -1 -1
+m "aa" 0 2
+g 1 0 1
+g 2 1 2
+g 3 -1 -1
+m "aaa" 0 3
+g 1 0 1
+g 2 1 2
+g 3 2 3
+
+# quantified group whose own body has an optional inner group
+pattern (a(b)?)+
+m "a" 0 1
+g 1 0 1
+g 2 -1 -1
+m "ab" 0 2
+g 1 0 2
+g 2 1 2
+m "aab" 0 3
+g 1 1 3
+g 2 2 3
+m "abab" 0 4
+g 1 2 4
+g 2 3 4
+m "aabab" 0 5
+g 1 3 5
+g 2 4 5

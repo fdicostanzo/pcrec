@@ -8937,3 +8937,188 @@ waiting for red. D46's stamp machinery made each re-pin assertable.
 corpus 7,655 + cli 257; known_fail EMPTY; K-list K2, K7, K9, K22(half);
 no lanes; rungselect worktree removed, branch deleted. NEXT: the
 testscripts pattern (ruled above), then counter-K with Frank.
+
+## 2026-08-16 (EDT), twenty-seventh session — counter-K design paneled (R25); D27 quantifier corpus LANDED with K23; the lane refuted its own fix-of-record
+
+Two lanes ran concurrently on a smoke-verified 673992a baseline.
+
+**[ENG-BREP] counter-K (opus lane, worktrees/counterk) — design-first, still
+NO engine code.** The lane delivered the design note (4d1306f) and, assigned
+the §7.2 cost measurement while the panel ran, REFUTED the fix-of-record
+(b0b9b8c): possessified loops do NOT charge zero steps — an unanchored
+failing search charges one per start position through the fail label, steps
+≡ entries exactly (three sizes), so the E-5-shaped entry charge closes half
+an order where the gap is three; the q·n cost model was also wrong; and the
+whole four-shape debt is DIAGNOSTIC-PATH-ONLY (--engine=vm; default
+prefiltered path: 0 steps / 0.003 s at 1 MB). Its §7.3 replacement
+(iterations >> SHIFT at frameless-loop exit) was then itself BLOCKED by the
+engine critic: the predicate keys on pushes where the justification needs
+pops-through-the-fail-label — RX_CUT charges nothing, so the revdet scan and
+counter-K's own possessive arm are excluded by the rule that claims them,
+and the advertised strategy-invariance is vacuous.
+
+**R25 panel** (docs/dev/reviews/2026-08-16-r25-counterk.md, commits 5a1e2b2
++ 3b11b61): three read-only critics, distinct lenses. FIVE blockers total:
+E1 (the §4.2 clamp's ancestors-only product parks the K22 tower at exactly
+the node cap — depth 35/40 still refuse; needs a whole-subtree algorithm +
+arithmetic probe), E2 (both sabotage witnesses sit below K — undetectable),
+C1 (tests/vm/run_vm_tests.sh:507-519 asserts the towers REFUSE on the
+default path — the literal negation of the acceptance cell, unfixable by
+-fno-counter; found because the survey's search key was "denial falls back
+to replication" and this site denies nothing), D1 (per-quantifier K collides
+with eng_brep_design.md §4.5's ruled prohibition — FRANK, F-1, pending),
+and addendum 17 (§7.3 above). Plus 13 majors incl. a mandatory-phase
+possessive miscompile hazard (E5) and the endgame cell trading compile-time
+refusal for RX_ERR_FRAMES at ~512 subject bytes (E7). ASK 3/4 ruled at
+manager altitude (uniform trailed counter slot v1; one slot per quantifier).
+F-2 (step charge) WITHDRAWN from Frank until a redesigned, MEASURED charge
+exists. Frank flagged mid-session that studies/simd1's unrolling work bears
+on the K axis — three items folded into the lane's bench plan (per-body-kind
+K curves; K=1+pragma-unroll comparison cell; the forward-compat note that
+counter-K's one-body-copy is the natural SIMD run-extension substitution
+site). Lane is revising against both packages.
+
+**BOOKKEEPING OWED (manager, main tree, after F-2 is re-ruled):** the
+refuted entry-charge fix-of-record wording stands in the [ENG-BREP] plan
+row, known_issues.md (K22 sibling note), and rungselect_design.md §5 item 8.
+
+**D27 blinded quantifier corpus (sonnet cell brepspec) — LANDED, merge
+e6d37f0.** 81 blocks / 677 live oracle-verified cases in
+tests/base/d27_*.rxt (every repeat spelling greedy+lazy; bodies; 2-3-level
+nesting; nullable edges; last-iteration-wins captures incl. the
+branch-not-reset rule; 500-2000 counts; the 64-copy cap boundary as perr).
+Expectations from python re, re-verified by an independent from-scratch
+checker (678/678). ONE REAL FINDING → **K23 filed**: (a{10,20}){10,50} on
+the exact-minimum 100-byte subject returns RX_ERR_STEPS (default 10^6
+budget) where the oracle answers instantly — reproduced by the manager at
+merge; boundary is narrow (99 bytes: instant nomatch; 150+: instant match);
+NOT fixed by counter-K (choice points identical across K); owned [M4.6].
+Its regression is tests/known_fail/d27_nested_min_boundary.rxt — the
+ratchet's first resident since K18 moved out ("still failing: 1, now
+passing: 0"). Validation: all six files green (677/0) + ratchet EXIT=0 in
+the worktree, smoke 6/6 post-merge on main, pushed. Author disclosure
+handled: an incidental ps-aux exposure to the counterk lane's command line
+(post-authoring, during the author's own timeout diagnosis) — recorded;
+independence intact except possibly the direction of Finding 1, noted
+honestly. Cell + worktree removed.
+
+**Lessons:** (1) A measurement assigned to size a fix can refute it —
+cheaper before code than after; the §7.2 probe was the best money of the
+session. (2) The re-pin survey's search key IS the survey — C1 was
+invisible to "what relies on denial" because the breaking site denies
+nothing; sweep by CONSEQUENCE (what asserts the old behavior), not by
+mechanism. (3) An idle notification is not a deliverable — two lane
+reports raced their idle signals; the resend-request habit caught both.
+
+**State at entry:** HEAD e6d37f0 pushed; corpus grew by 677 live cases +
+1 known_fail resident; K-list K2, K7, K9, K22(half), K23; lanes: counterk
+(revising, no engine code); watchdog cron live; F-1 with Frank.
+
+## 2026-08-17 (EDT, just past midnight), twenty-seventh session (cont.) — F-1 RULED AND EXECUTED; §7 rebuilt through two verification rounds; F-2 PACKAGE DELIVERED, awaiting Frank; UTF architecture ruled into DD-12; [ENG-PGO] created
+
+**F-1 RULED (Frank): strict §4.5** — K stays one per-artifact constant in
+v1; the per-quantifier clamp DEFERRED whole to new boonies row
+[ENG-CLAMP] (algorithm + clamp_arith.py as seed; product-not-shape and
+the {1,2} residual as charter constraints); **K22 CLOSED** (hang half:
+interim guard; compile half: [ENG-CLAMP]'s charter, not a bug). D47
+ADDENDUM records the ruling + the three measured facts that made the
+deferral clean (main 97b523f). Consequence: R25 C1's test rewrite
+evaporated — the K22 refusal block stays as-is until [ENG-CLAMP].
+
+**SIMD: scalar-first directive (Frank)** — best non-SIMD approach ships,
+backend variants later on top; in-flight lanes take no SIMD-derived
+inputs. Two of three counter-K bench items retracted (parked on
+[SIMD-META] as planning inputs); per-body-kind K curves survive
+SIMD-free. Lane's retraction sweep (grep, not memory) caught a stale
+banner still advertising the deferred clamp.
+
+**[ENG-PGO] created** (Frank's exemplar/profile idea): --profile emission
+mode at the D46/DD-8 observation points + recompile-with-stats channel;
+scalar customers enumerated (arm ordering, prefilter byte choice,
+capture-walk sink, M4.6, budget sizing); named as the EARNING MECHANISM
+for every deferred per-pattern adaptivity; sequenced with BENCH-1.
+**M6 row corrected against a manager probe**: \d \w \s, POSIX classes,
+(?i), (?s), mid-pattern $ are ALREADY implemented; M6 is assertions/
+lookaround/backrefs/atomic+possessive spellings/named groups. Feature
+inventory delivered to Frank with the M5-vs-M6 order flag (decide at
+M4.7's close).
+
+**UTF (Frank's clean-architecture concern) ruled into DD-12 item 7**:
+sealed encoding backends behind the one CharSet->fragment lowering; the
+include-package question answered with the two-seam characterization
+(inline decode headers WRONG for the hot path — gcc cannot invert
+decode+compare into byte automata; RIGHT for the enumerable
+runtime-identity residue, one embedded header per artifact); no-leak
+enforced by structural check when M5 lands; bytes-forever invariant;
+third-encoding recipe with the derailment signal named (touching a
+shared file outside the backend = design stop).
+
+**The §7 arc (the session's engineering core).** The lane's own
+measurement refuted the E-5 entry charge (steps ≡ entries; the charge is
+linear while the work is quadratic; the debt is diagnostic-path-only).
+Its first replacement (§7.3, iterations>>SHIFT at frameless-loop exit)
+was BLOCKED by the engine critic (17: predicate keyed on pushes where
+the justification needs pops-through-the-fail-label — cut frames charge
+nothing, so the rule excluded two of the four shapes it named; 18-25).
+The redesign (charge what the fail label does not see: cut-discarded
+frames + never-pushed iterations) VERIFIED across the class boundary,
+with the critic CONCEDING two of its own findings (19's three-exits
+reason refuted by the lane — one convergent label; the residue
+accumulator inferior to the lane's work-units). Two more rounds closed
+26 (the non-possessified cursor scan double-count — the refuting number
+sat in the lane's own published control row), 27 (downgraded: internal
+scaling, user units stay resumptions), 28 (fourth settlement from the
+critic), 29 (SCALE=1024 is a budget-preserving WEIGHT, not a work
+ratio — measured ~16; §7.5 shows the boundary under both readings), and
+the manager-caught consequence that settlement 4 RELOCATES the tolerance
+judgement rather than escaping it. R25 review file carries the full
+record (main b700243). Lane head c5dd4ae, 11 commits, NO engine code.
+
+**F-2 PACKAGE DELIVERED TO FRANK, awaiting his ruling**: mechanism
+choice among four settlements (lane and manager recommend 4 — the
+uncharged work gets its own bound/field/error code; 3 is the
+defer-cleanly option; every settlement leaves the same tolerance number,
+which returns to Frank as an explicit one-liner at implementation).
+AFTER THE RULING, owed: fix the three-doc fix-of-record staleness on
+main (plan row, known_issues K22-sibling note, rungselect_design §5
+item 8); declare the design note ACCEPTED; lane starts engine code.
+
+**Process lessons:** (1) FOUR-PLUS message races lane<->manager in one
+session — the working protocol became: lanes verify against main's
+COMMITTED docs (the F-1 self-application was correct because rulings
+land on main first), manager re-sends with a pointer to the committed
+file, both sides verify-after-apply (the lane now greps for text it
+believes it wrote — its scripted replace once failed SILENTLY). (2) The
+column-adjacency lesson, four instances: 26's refuting number and 29's
+deriving numbers were already IN published rows — read every column of
+a control row against the rule. (3) A critic that concedes findings
+(19, the residue) and contributes better options (settlement 4, with
+provenance recorded by the lane) is the panel working as designed.
+(4) M4.7's wording pass is NOT early-schedulable — its target is the
+graduated spec text that only exists at M4.7's close; wake.md shorthand
+had misfiled it as free-floating manager work.
+
+**State at entry:** main b700243 pushed; lane/counterk at c5dd4ae
+(clean, holding for F-2, no engine code); corpus ~8,332 live + 1
+known_fail resident; K-list K2, K7, K9, K23; watchdog cron live;
+ON FRANK'S DESK: F-2 mechanism ruling.
+
+## 2026-08-17 (EDT), twenty-seventh session close — shutdown mid-F-2 discussion
+
+Frank's machine shut down mid-conversation. F-2 remains UNRULED. The
+session's last arc was Frank working through the F-2 material
+question-by-question (recorded in wake.md so the thread can resume):
+n=subject bytes; the 50M = triangular forward-scan sum across start
+positions; possessify deleted the METERED half (retreats) while keeping
+the unmetered half (scans) — the meter counted a proxy, not the work;
+"count forward steps in both dimensions" is exactly the verified
+redesign, and the ruling is which meter + the tolerance number; his
+"give-up masquerades as no-match" concern is answered by the ruled
+contract (1/0/RX_ERR_STEPS/RX_ERR_FRAMES distinct; sole deliberate
+exception: bare <prefix>_match collapses to −1, forced by its frozen
+ABI type, D42.3, with match_caps carrying the distinction) — HE DID NOT
+SEE THIS LAST ANSWER (terminal died); restate it on wake. Lane
+counterk holds clean at c5dd4ae (11 commits, no engine code); its
+agent dies with the session — resume via the worktree per wake.md.
+Main pushed and clean at the journal commit; watchdog cron torn down
+(dies with session regardless).

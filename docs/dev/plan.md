@@ -178,8 +178,13 @@ stated terms.
   default prefilter path is unaffected) turns a fast RX_ERR_STEPS
   give-up into a correct-but-quadratic answer (measured 0.033/0.581/
   2.297 s at 10/50/100 KB; 228.5 s at 1 MB, terminating and correct) —
-  fix-of-record is an E-5-SHAPED one-step-per-possessified-loop-ENTRY
-  charge, OWED WITH THE COUNTER-K STEP; (2) tests/vm per-RUN timeout —
+  fix-of-record CORRECTED 2026-08-17: the E-5-shaped entry charge was
+  REFUTED by the counter-K lane's own measurement (R25 §7.2 — entries
+  and steps are already the same number; the charge is linear while the
+  work is quadratic); the ruled fix is the counter-K design note §7.4's
+  forward-work meter under F-2 SETTLEMENT 4 (its own bound, rx_info
+  field and RX_ERR_* code — decisions.md D47 SECOND ADDENDUM), owed
+  with the counter-K step; (2) tests/vm per-RUN timeout —
   DISCHARGED 2026-08-16, twenty-fifth session: gen_run/gen_run_secs in
   tests/lib/gen_timeout.sh (D45 second addendum; scripts/watchdog-backed,
   wired tree-wide), fire-controls in run_gen_timeout_tests.sh; (3) K22
@@ -212,13 +217,16 @@ stated terms.
   scope, reverse/forward-ambiguous bodies, nullable, assertions,
   ranged nested, >64 groups, a Glushkov modelling decline, and the
   STEP-BUDGET BLIND SPOT now WIDENED (possessified loops, the revdet
-  scan AND the walk all charge nothing — the E-5-shaped entry charge
-  owed with counter-K now covers three shapes). Follow-up recorded
+  scan AND the walk all charge nothing — covered by the counter-K
+  design note §7.4's forward-work meter under F-2 settlement 4, which
+  REPLACED the refuted E-5 entry charge; D47 SECOND ADDENDUM). Follow-up recorded
   eng_brep_design.md §8.1: capture-walk sinking (eager/n-step/
   accept-time; bench eager-vs-sunk with counter-K's harness).
-  NEXT LADDER STEP: counter-K (carries: E-5 entry charge ×3 shapes,
-  K=8 limits.h constant, K22's real fix, size cap → backstop-only,
-  -fno-counter, the gen_timeout size-floor tripwire).
+  NEXT LADDER STEP: counter-K (carries: the §7.4 forward-work meter
+  under F-2 settlement 4 [replaces the refuted E-5 entry charge, R25
+  §7.2], K=8 limits.h constant, size cap → backstop-only, -fno-counter,
+  the gen_timeout size-floor tripwire; K22 CLOSED separately by F-1 —
+  D47 ADDENDUM, compile half re-homed to [ENG-CLAMP]).
   R24-corrected census: 17%/82%; as-built verdict census 252/1,832
   source quantifiers (13%), archived docs/design/possessify_impl/) —
   BOUNDED-REPEAT EMISSION STRATEGY: the
@@ -400,7 +408,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M6 — PCRE feature modules
 
-- [M6.0] STATE:not-started — milestone (expand on arrival): classes+ (\d \w \s, POSIX classes), assertions (\b \A \z, mid-pattern $), modifiers, lookaround, backrefs, atomic groups. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m))
+- [M6.0] STATE:not-started — milestone (expand on arrival): assertions (\b \B, \A \z, (?m) multiline, \G, \K — module `assertions` per the shipped diagnostics), lookaround, backrefs, atomic groups + possessive-quantifier SPELLINGS (module `atomic-groups`; note the possessify OPTIMIZATION already exists internally — this is the surface syntax), named groups (module `named-groups`). ROW TEXT CORRECTED 2026-08-16 (manager probe, twenty-seventh session): classes+ (\d \w \s, POSIX [[:...:]]), (?i), (?s), and mid-pattern $ are ALREADY IMPLEMENTED and compiling on HEAD — they are not M6 content; what remains is the list above. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m))
 
 (2026-08-13: the classes+ and modifiers halves already landed as gated
 modules — MOD-0.3 and MOD-0.5, see docs/dev/plan_completed.md. Remaining:
@@ -582,10 +590,80 @@ including V-G/V-H (added this session).
   (the study's §12-B shift-and measurement bears directly on it —
   studies/simd1/CLAUDE.md flags this) rather than duplicating it.
   Output: a short design note (panel-eligible) + the created rows.
+  AMENDED 2026-08-16 (Frank, twenty-seventh session, during the counter-K
+  arc): SCALAR-FIRST is the ruled integration posture — figure out how
+  SIMD plays in OVERALL before any of it touches current work; the ideal
+  shape is "our best non-SIMD approach, then backend VARIANTS on top of
+  it". Consequences: (a) in-flight engine lanes take NO SIMD-derived
+  design inputs or bench cells (three counter-K bench items sourced from
+  studies/simd1 were retracted under this directive the day it was
+  given); (b) thinking and planning ARE in-scope and live HERE — two
+  parked observations from the counter-K arc are this row's first
+  evaluation inputs: (1) counter-K's one-body-copy emission is the
+  natural substitution site for a §15-style SIMD run-extension variant
+  (one site per quantifier vs N replicated copies — an argument the
+  backend-variant layering is cheap over the counter design, worth
+  verifying when this row opens); (2) the `#pragma GCC unroll` question
+  (simd1 JOURNAL.md:63 — could a pragma replace manual K-copy emission
+  on frameless arms?) is parked here, NOT in counter-K's bench, until
+  the variants architecture is thought through.
 
 M4-hosted, boonies-queued (Frank's queue discipline places these after the
 spine, not before):
 
+- [ENG-PGO] STATE:not-started — PROFILE-GUIDED GENERATION (Frank,
+  2026-08-16, twenty-seventh session — promoted from the parenthetical
+  inside [SIMD-META] to its own row at his ask; the SIMD-META exemplar-axis
+  mention now points here). The idea: compile a pattern exactly as today,
+  but with an opt-in `--profile` emission mode whose matcher TRACKS HOW IT
+  RAN on the user's exemplar inputs — a PROFILE, not a trace: counters at
+  the observation points the emitter already names (D46 stamp points,
+  DD-8's tracer sites; same structural constraint — derived from the
+  structure the emitter walks, never a parallel description). Stats out
+  (candidate-start density, prefilter hit/miss, per-arm hit distribution,
+  iteration-count histograms per quantifier, match/fail mix, subject byte
+  frequencies), then a RECOMPILE-WITH-STATS channel feeds them back as
+  generation inputs. SCALAR CUSTOMERS EXIST — this row is not
+  SIMD-contingent: alternation/trie arm ordering by hit frequency;
+  prefilter literal choice by measured-rarest byte (scalar memchr benefits
+  identically to any SIMD scanner); the §8.1 capture-walk sink knob
+  (eager/n-step/accept-time is a match/fail-mix question); [M4.6] engine
+  selection; step-budget sizing near K23-style boundaries. RELATION TO
+  F-1/D18, stated so the tension is on record as a resolution: per-pattern
+  adaptive choices keep getting deferred because an axis must earn itself
+  with a measurement — PGO is the EARNING MECHANISM, the standing vehicle
+  for every deferred adaptivity question ([ENG-CLAMP], adaptive K, arm
+  order), so those rows cite this one instead of re-inventing a
+  measurement channel. SEQUENCING: design sketch is panel-eligible any
+  time (thinking is cheap); implementation AFTER the M4 spine closes and
+  WITH [BENCH-1] (the profile without the bench is a dial with no meter —
+  BENCH-1's prioritizer is also this row's proving ground), BEFORE the OPT
+  waves it would guide. The stats interface is designed scalar-first;
+  later SIMD backend variants ([SIMD-META] hypothesis 2's density/
+  statistics dependence) consume the SAME channel — which is exactly the
+  "best non-SIMD approach, then backend variants on top" architecture
+  Frank ruled.
+- [ENG-CLAMP] STATE:not-started — the DEFERRED per-quantifier K downshift
+  (Frank, 2026-08-16, twenty-seventh session: F-1 ruled strict-§4.5 on the
+  R25 panel — decisions.md D47 ADDENDUM has the full ruling and rationale).
+  Charter: the binary tractability clamp (K = the constant, or 1 — never an
+  intermediate value) computed by a BOTTOM-UP SUBTREE-PRODUCT pass, so that
+  small-count nested towers (K22's family: every count below K, blowup from
+  depth) COMPILE instead of hitting the interim product guard's fast
+  refusal. Seeded work, already committed on the counterk lane and carried
+  at docs/design/counterk_impl/: the respecified algorithm, the
+  clamp_arith.py arithmetic probe (towers d=18/30/35/40 collapse to product
+  2 under it; carries the {1,2} tower as a MUST-STILL-REFUSE row), and two
+  findings that are this row's design constraints — the PRODUCT rule is the
+  right mechanism, not the body-contains-a-repeat shape rule (which
+  over-clamps `(a(b|c)?){0,4000}`), and the {1,2}-tower residual needs the
+  mandatory+optional phases merged into one loop with a runtime ctr>=m test.
+  Opening this row is a Frank event and REQUIRES amending eng_brep_design.md
+  §4.5 (a fresh ruling — that is the point of the deferral); until then K is
+  one per-artifact constant and the interim guard's refusal is the ruled
+  behavior for the tower family. When it lands, tests/vm/run_vm_tests.sh's
+  K22 block inverts (refusal -> compiles-and-runs, refusal re-pinned under
+  the deny flag) per R25 C1's rewrite plan.
 - [M4-CALLOUTS] STATE:not-started (step 1 flip COMPLETED 2026-08-14, merge 84e5956 — all counts held at baseline, K14 check re-scoped to the RS_MODULE population; step 2 behavior awaits M4, its ABI ruled by D38/D39) — module `callouts` (D36: Frank re-scoped
   `(?C` from NEVER to PLANNED, 2026-08-12 — LOW PRIORITY, deliberately in
   the queue boonies). Two separable steps: (1) THE FLIP, schedulable any
@@ -689,7 +767,33 @@ spine, not before):
   a generation-time scalar (D20, --encoding), named entry points via OS-0
   if anyone wants both from one binary. Owners: the CharSet widening is
   MOD-0.6's (D33 §7); the lowering instances and the UTF PC-4 twin are
-  M5's; DD-1 folds in at the CharSet level
+  M5's; DD-1 folds in at the CharSet level. (7) FRANK'S CONSTRAINTS
+  (2026-08-16, twenty-seventh session, ruled into this row as
+  requirements): NO encoding conditionals anywhere — no "if utf do x
+  else y" in the compiler, the emitter, or the emitted artifact;
+  encodings are SEALED backends behind the one lowering interface, all
+  specialized code within. The include-package question ANSWERED with
+  the two-seam characterization: per-encoding inline-function headers
+  are the WRONG seam for the hot path (gcc cannot invert decode+compare
+  back into a byte automaton; malformed-input handling degrades from
+  automaton structure to runtime branches; the reverse pass would need a
+  second backward-decode shim) and the RIGHT seam for the enumerable
+  runtime-identity RESIDUE (caseless backref comparison under M6xM5,
+  optional subject validation, grapheme \X if ever, trace printing) —
+  ONE per-encoding header embedded at generation, so the artifact
+  contains exactly one encoding's code and the "switch" is which header
+  text was emitted. ENFORCED BY CHECK, NOT CONVENTION, when M5 lands:
+  (a) OS-2's hot-loop shape-identity check ASCII-vs-UTF-8 as a pinned
+  structural test; (b) a codegen-structural check that no hot-loop label
+  calls into the encoding header (allowlist of named residual sites).
+  INVARIANTS: subject and all reported offsets are BYTES, permanently,
+  third encoding included; fixed-vs-variable width is a PROPERTY the
+  backend exploits (fixed-size lowers to fixed-length chains / direct
+  indexing), never an interface axis. THIRD-ENCODING RECIPE (the
+  planned-for threat): a new backend = one lowering module + one
+  residual header, core and emitter untouched — if adding one ever
+  requires touching a shared file outside the backend directory, that is
+  the derailment signal and a design stop
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,

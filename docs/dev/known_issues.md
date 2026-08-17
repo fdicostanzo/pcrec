@@ -1740,7 +1740,11 @@ counter-K step, or as a small standalone guard lane if that step is
 far. Related: the step-budget blind spot recorded in the [ENG-BREP]
 plan row (same lane, same session) is the RUNTIME sibling of this
 COMPILE-TIME gap — both are "possessification/replication moved work
-where an existing budget cannot see it".
+where an existing budget cannot see it". (That sibling's fix of record
+has since MOVED, 2026-08-17: the E-5-shaped entry charge was refuted by
+the counter-K lane's measurement — R25 §7.2 — and the ruled fix is the
+counter-K design note §7.4's forward-work meter under F-2 settlement 4,
+its own bound/field/error code; decisions.md D47 SECOND ADDENDUM.)
 
 **INTERIM GUARD LANDED 2026-08-16 (rung-select lane); the entry stays
 OPEN because half (1) is still owed.** `vm_count_slots` now carries a
@@ -1767,3 +1771,48 @@ counter-K step, which stops the copy tree from existing for these shapes.
 The reverse-deterministic rung landed the same day does NOT discharge it —
 it declines nested quantifiers by scope bound (single-level only), so a
 `{0,2}` tower still replicates.
+
+## K23 — exact-minimum ambiguous-decomposition boundary exhausts the step budget on a 100-byte ordinary input (found 2026-08-16, D27 blinded quantifier corpus)
+
+`(a{10,20}){10,50}` against `'a' * 100` — exactly the minimum total, the
+ONLY valid decomposition (10 outer x inner minimum 10; 11 outer would need
+110 bytes) — makes the compiled VM matcher return `RX_ERR_STEPS` against
+the default 1,000,000-step budget instead of the match. python `re` (the
+oracle) answers instantly: span (0,100), group 1 (90,100). Reproduced by
+the manager at merge on HEAD's build (exit 3, "steps"). The boundary is
+NARROW: 99 bytes reports nomatch in <1 ms (min-total check fails fast);
+150+ bytes matches instantly (greedy satisfies an unambiguous
+decomposition). The give-up itself is DESIGNED behavior (DD-2/D22:
+honest RX_ERR_STEPS, not a hang or wrong answer) — the issue is the
+search-space explosion that makes a 100-byte non-adversarial input hit it.
+
+D27 author's characterization (probed black-box, recorded so the fix lane
+does not re-derive it): inner-range WIDTH and total interact — `(a{10,12}){10,50}`
+(width 2) at 100 matches instantly; `(a{10,15}){10,40}` (width 5) at 100
+exhausts; reducing the outer max alone (`{10,30}` vs `{10,50}`) does NOT
+avoid it, so it is not simply proportional to the outer ceiling.
+
+NOT fixed by counter-K (choice points are identical across all K by
+design — the emission strategy changes size, not the decomposition
+space). Candidate mechanisms live with the OPT waves (memoization /
+decomposition pruning) or [M4.6]'s engine-selection work; owning
+milestone [M4.6] until a better owner exists. Regression:
+`tests/known_fail/d27_nested_min_boundary.rxt` (ratchet-watched); the
+99/500/1000-byte siblings stay live in `tests/base/d27_nesting.rxt`.
+
+**K22 CLOSED 2026-08-16 (F-1 ruling, decisions.md D47 ADDENDUM,
+twenty-seventh session).** The two halves resolve separately: the HANG
+half was fixed by the interim product guard above (landed with
+rung-select, pinned in tests/vm/run_vm_tests.sh — refusal in 0.12 s at
+every depth). The "these shapes should COMPILE" half is NOT a bug under
+the ruling: Frank ruled strict eng_brep_design.md §4.5 (K is one
+per-artifact constant in v1, no per-quantifier variation), so the
+small-count tower family's ruled behavior IS the guard's fast honest
+refusal (D22's bar), and compiling them is re-homed as the charter of
+plan row [ENG-CLAMP] (deferred; carries the counterk lane's respecified
+bottom-up-product algorithm and clamp_arith.py probe as its seed). The
+prior sentence in this entry claiming counter-K "stops the copy tree
+from existing for these shapes" was REFUTED by the counter-K lane's own
+analysis regardless of the ruling (R25 E1: at K=8 every tower count
+sits below K and replicates; only a per-quantifier downshift reaches
+them) — the record is corrected here rather than rewritten above.
