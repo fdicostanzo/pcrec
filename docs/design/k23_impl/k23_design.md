@@ -141,7 +141,7 @@ Three things make it the recommendation rather than one option of three:
    exemplar and false of its mechanism. Python explores the SAME tree — its
    measured times track the closed form's node counts within 5% across four
    size steps (§3) — and it takes **2.8 s** one size up, **31 s** two sizes
-   up and **368 s** three sizes up.
+   up and **370 s** three sizes up.
 2. **"The boundary is NARROW"** is right about the number and wrong about the
    variable. It is not narrow in `n`; it is narrow in SLACK (`n − p·m`), and
    the decay from the peak is geometric over ~50 bytes, not a cliff. §2.1.
@@ -502,12 +502,12 @@ MEASURED (`python3 -c` timing, reproduced in `out/python_growth.txt`):
 
 | shape | n | python `re` |
 |---|---|---|
-| `(a{10,12}){10,50}` | 100 | 0.86 ms |
+| `(a{10,12}){10,50}` | 100 | 0.87 ms |
 | `(a{10,15}){10,40}` | 100 | 34.8 ms |
-| `(a{10,20}){10,50}` | 100 | **265 ms** |
-| `(a{11,22}){11,50}` | 121 | **2.75 s** |
+| `(a{10,20}){10,50}` | 100 | **266 ms** |
+| `(a{11,22}){11,50}` | 121 | **2.76 s** |
 | `(a{12,24}){12,50}` | 144 | **30.8 s** |
-| `(a{13,26}){13,50}` | 169 | **368 s** |
+| `(a{13,26}){13,50}` | 169 | **370 s** |
 
 (The archived figures. An earlier run of the same code gave 1.11 ms /
 48.5 ms / 272 ms / 2.90 s / 32.4 s / 384 s — same shape, ±10%, and the ratio

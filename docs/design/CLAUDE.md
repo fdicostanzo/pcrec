@@ -480,11 +480,11 @@ append-only or historical records.
   K18's memo precedent was compile-time; ENGINE ROUTING is measured to work
   perfectly (`--no-captures` answers the exemplar instantly at every length
   including 100,000) and is unavailable, because the DFA is capture-blind and
-  D44.6 refuses a captures-default pattern. **Five refutations, three of them
+  D44.6 refuses a captures-default pattern. **Seven refutations, three of them
   of the K23 entry's own text**: python `re` does NOT answer instantly — it
   explores the same tree (its measured times track the closed form's node
   counts within 5% across four size steps) and takes **2.8 s** one size up,
-  **31 s** two sizes up and **368 s** three sizes up, so pcrec's honest
+  **31 s** two sizes up and **370 s** three sizes up, so pcrec's honest
   refusal is the better behaviour by D22's own bar and K23's justification is
   "answer a cheap question", not "catch up to python"; the boundary is narrow
   in SLACK, not in `n`, and spans ~50 bytes rather than being a cliff; and a
