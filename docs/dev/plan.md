@@ -162,19 +162,43 @@ stated terms.
   RX_ENGINE_WHY, D44.6 refusal); DFA ISLANDS DEFERRED OUT of this
   milestone (Frank, 2026-08-17, D50 — evidence-gated, new row
   [ENG-ISL]). What M4.6 actually delivers, as substeps:
-  - [M4.6a] STATE:not-started — BUDGET CALIBRATION per engine_m4.md
-    §4.6's stated method (corpus + bench matrix with counters
-    instrumented; max legitimate need + stated margin): step budget
-    (placeholder 1,000,000), work budget (D49 bring-up ~10⁹),
-    frame_capacity/subject_ceiling (src/gen/CLAUDE.md's bring-up
-    placeholders). ONE corpus run, one methodology, all four numbers —
-    confirm §4.6's procedure covers the non-step bounds rather than
-    inventing per-bound methods. NEEDS counter-K landed (the counters
-    are its deliverable).
-  - [M4.6b] STATE:not-started — DD-9 capture-bearing bench sibling:
-    add `([01]*)1([01]{8})` to the EXISTING tests/bench 9-case matrix
-    (NOT [BENCH-1]) with an absolute D12/M2.11 per-case floor
-    (engine_m4.md §8.5). Parallel-safe with counter-K.
+  - [M4.6a] STATE:completed 2026-08-17 — BUDGET CALIBRATION done
+    (lane m46a merged 0078ce1; docs/design/m46a_impl/ carries the
+    instrument + archived sweep; §4.6 EXTENDED to all four bounds via
+    one real-meter run, DEFAULT-engine numbers only — the forced
+    --engine=vm split was the sweep's key methodological catch).
+    LANDED: frame/trail 2x — BOTH knob pairs, VM_DEFAULT_* and
+    VM_MAX_AUTO_* (902cb91+5c838fc; the second pair discovered
+    half-landed when the endgame ceiling did not move; endgame 307→614
+    verified; zero re-pins — the counterk/possessify cells read stamps
+    dynamically). KEPT: work 10⁹ (empirically corroborated, 83x
+    headroom on the worst ordinary shape). DEFERRED TO FRANK: step
+    budget (1M → 20M rec / 500M parity option) — raising it flips the
+    K23 known_fail resident (10.6M steps) to passing, so it lands WITH
+    adopt-MRL/[M4.6d] where the interaction dissolves. Ratio re-anchor:
+    the retracted 5.24 proxy has NO real-meter analog (work=0 on the
+    exemplar); steps and work measured as genuinely disjoint cost
+    classes. Doc note owed sometime: --engine=vm users should pass
+    explicit --work-budget (diagnostic mode has no prefilter
+    protection).
+  - [M4.6b] STATE:completed 2026-08-17 — DD-9 capture-bearing bench
+    sibling DONE (lane m46b merged; case (j) in tests/bench/compare's
+    matrix, VM-hybrid confirmed, floor 150.369/0.900 from three
+    quiet-box runs). PLUS two findings out of the substep: (1) cases
+    (c)/(i) had silently measured the WRONG ENGINE since D42.1's
+    captures-default (floors captured on the DFA, patterns routing to
+    the hybrid) — RULED: pinned --no-captures per the run_bench case
+    (d) precedent, and the durable fix landed: PER-CASE
+    rx_info.engine ASSERTIONS in compare.sh (ENGINE MISMATCH
+    hard-errors before any number is trusted); compare/ marked
+    ages-freely rather than battery-wired. (2) K24 filed
+    (known_issues.md): the residual case (c) DFA regression (~300 vs
+    388 floor, engine-verified, gate deliberately RED) — bisect
+    queued. K-sweep archived INCONCLUSIVE
+    (docs/design/counterk_impl/bench_k.txt): the pre-recalibration
+    frame placeholder invalidated the high-N regime and the driver
+    lacks median/spread; re-run only after a driver upgrade or when a
+    K answer is actually needed.
   - [M4.6c] STATE:completed (2026-08-17, same session start-to-accept) —
     K23 DESIGN-FIRST note, **ACCEPTED**: docs/design/k23_impl/
     k23_design.md on lane/k23 (31 commits, docs-only). MRL PRUNING

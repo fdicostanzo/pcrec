@@ -9329,3 +9329,45 @@ all self-caught, all now assertion-guarded in committed instruments.
 **NEXT:** [M4.6a] calibration + [M4.6b] bench sibling unblock (counter-K
 landed); [M4.6d] waits on Frank's adopt-MRL + ruling 6. Lanes released:
 counterk, k23design.
+
+## 2026-08-17 (EDT), twenty-eighth session (cont.) — [M4.6a]+[M4.6b] complete same day; K24 found; calibration lands with a two-knob lesson
+
+**Both substeps ran as parallel sonnet lanes spawned the hour counter-K
+merged.** [M4.6a] (lane m46a): §4.6 extended to all four bounds via one
+real-meter instrument (927 corpus groups + scale layers); the sweep's
+key catch was the ENGINE-MODE SPLIT — forced --engine=vm numbers are
+orders of magnitude above the DEFAULT path (no prefilter), so only
+DEFAULT calibrates. Landed: frame/trail 2x — and the landing found the
+calibration HALF-DONE at first: two knob pairs share the values
+(VM_DEFAULT_* for the unbounded class, VM_MAX_AUTO_* clamping the
+large-bounded class), the endgame ceiling didn't move, and the
+suspicious-green discipline (verify a green you predicted red) caught
+it. Both pairs moved together (endgame 307→614 verified); ZERO re-pins
+— counterk/possessify cells read stamps dynamically, written
+recalibration-proof. Work budget KEPT at 10⁹ (83x headroom measured).
+STEP BUDGET DEFERRED TO FRANK (20M rec / 500M parity): raising it
+flips the K23 resident to passing, so it rides adopt-MRL/[M4.6d].
+The lane's "zero pins move" claim had two gaps (known_fail; the
+stamped-ceiling suites) — the second turned out covered by dynamic
+reads, the first drove the deferral; lesson recorded: sweep re-pin
+claims by CONSEQUENCE (what reads the touched artifact surface), not
+by grep for the default.
+
+**[M4.6b] (lane m46b): case (j) landed green** (VM-hybrid floor
+150.369/0.900) — and the substep paid for itself twice over: (1)
+cases (c)/(i) had silently measured the WRONG ENGINE since D42.1
+(floors captured pre-captures-default) — ruled: pinned --no-captures,
+plus the durable per-case ENGINE ASSERTION in compare.sh and an
+ages-freely marker (the fuzzer-red instrument-outside-battery lesson,
+recurring, now tripwired instead of battery-wired). (2) With the pin
+confirmed, case (c) recovers only to ~300 of its 388 floor — a REAL
+pattern-specific DFA regression, window 08-11..08-17, K18's dfa.c
+rewrite prime suspect: FILED AS K24 (cc7ef79), reproducer committed,
+gate deliberately left RED as the live flag. K-sweep INCONCLUSIVE for
+two structural reasons, archived with the verdict.
+
+**Frank's queue (3 items, none blocking current work):** adopt-MRL;
+ruling 6 (prefilter-window ceiling); step-budget default (20M vs
+500M, lands with the first two). NEXT: K24 bisect lane; then [M4.6e]
+(RX_HYBRID_MIN + trie-switch) and [M4.6f] (D46 prefilter close-out)
+are all that remain of M4.6 besides the Frank-gated [M4.6d].
