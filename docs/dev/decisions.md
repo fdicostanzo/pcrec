@@ -4287,3 +4287,21 @@ own inclusion rule — the lane's correction of the manager's brief),
 existence gate in v1 (`--fno-step-budget` suppresses both counters;
 the tests/vm no-counter pin stays true as written; splitting later is
 additive).
+
+## D50 — exact DFA islands deferred out of M4.6, evidence-gated (Frank, 2026-08-17, twenty-eighth session, on the M4.6 scoping sweep)
+
+engine_m4.md §6.3 designed and scheduled strength-1 exact islands for
+M4.6 — before the [ENG-BREP] ladder existed. The scoping sweep's
+finding: possessify.c/revdet.c now deliver much of the same
+frameless-execution win VM-internally for loop shapes, so the island
+emitter's marginal value dropped; its remaining distinct value is
+running arbitrary capture-free FRAGMENTS (not just loops) as DFA
+tables. RULED: defer to new plan row [ENG-ISL], gated on measured
+evidence ([BENCH-1] floors or [ENG-PGO] profiles showing hot
+VM-fallback fragments) — the [ENG-ABS] pattern, applied again. The
+design stands unbuilt and annotated in place; the atomicity analysis
+islands need is eng_brep_design.md §2.2's corrected rule (reusable,
+per the sweep — not a new analysis). M4.6 is correspondingly leaner:
+calibration, K23, the bench sibling, RX_HYBRID_MIN/trie-switch
+measurements, D46 prefilter close-out. Revisit when the gate's
+evidence exists or if M4.6e's measurements surprise.

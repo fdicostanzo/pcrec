@@ -347,16 +347,43 @@ stated terms.
   bounded-repeat-times-nullable-loop family (S14's witnesses, ~0.1%
   of random patterns) joins the cost-gate families any strategy
   bench must sweep.
-- [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
-  DFA-prefilter hybrid + DFA islands as designed; measured against
-  bench floors under D12/R3.10 discipline; DD-9's decided outcome
-  applied and measured. **AUTHORIZED (Frank, 2026-08-17, twenty-eighth
-  session): "continue through M4.6"** — starts when counter-K lands,
-  no further prompt needed. Known attached obligations beyond the row
-  text (scoping sweep to collect the full set): K23 ownership
-  (known_issues.md), step-budget AND work-budget calibration (D49's
-  bring-up ~10⁹), the capture-bearing bench sibling (engine_m4.md
-  §8.5), D46 observability/forceability for the selection point.
+- [M4.6] STATE:started (2026-08-17, twenty-eighth session) — CLOSE-OUT
+  of the engine-selection milestone. **AUTHORIZED (Frank, 2026-08-17):
+  "continue through M4.6".** ROW PROSE CORRECTED against the scoping
+  sweep (2026-08-17, read-only lane): "per-pattern engine selection +
+  DFA-prefilter hybrid" ALREADY SHIPPED in [M4.5b] (select_engine.c's
+  full §5 pass, fit.prefilter at :259, --engine=dfa|vm|auto, RX_ENGINE/
+  RX_ENGINE_WHY, D44.6 refusal); DFA ISLANDS DEFERRED OUT of this
+  milestone (Frank, 2026-08-17, D50 — evidence-gated, new row
+  [ENG-ISL]). What M4.6 actually delivers, as substeps:
+  - [M4.6a] STATE:not-started — BUDGET CALIBRATION per engine_m4.md
+    §4.6's stated method (corpus + bench matrix with counters
+    instrumented; max legitimate need + stated margin): step budget
+    (placeholder 1,000,000), work budget (D49 bring-up ~10⁹),
+    frame_capacity/subject_ceiling (src/gen/CLAUDE.md's bring-up
+    placeholders). ONE corpus run, one methodology, all four numbers —
+    confirm §4.6's procedure covers the non-step bounds rather than
+    inventing per-bound methods. NEEDS counter-K landed (the counters
+    are its deliverable).
+  - [M4.6b] STATE:not-started — DD-9 capture-bearing bench sibling:
+    add `([01]*)1([01]{8})` to the EXISTING tests/bench 9-case matrix
+    (NOT [BENCH-1]) with an absolute D12/M2.11 per-case floor
+    (engine_m4.md §8.5). Parallel-safe with counter-K.
+  - [M4.6c] STATE:started (2026-08-17) — K23 DESIGN-FIRST note
+    (k18_memo_design.md precedent): characterize the exact-minimum
+    ambiguous-decomposition explosion (D27's width×total finding,
+    known_issues.md K23), evaluate memoization vs decomposition
+    pruning vs engine-selection routing, propose one. Blocks [M4.6d]
+    only.
+  - [M4.6d] STATE:not-started — K23 FIX per (c)'s accepted note; tests
+    from a D27-BLINDED author (K23 was itself a D27 find); closes
+    known_issues.md K23 and retires the ratchet resident.
+  - [M4.6e] STATE:not-started — RX_HYBRID_MIN measurement (resolves
+    engine_m4.md §12 ASK-6; wire the `n < RX_HYBRID_MIN` VM-only
+    branch) + trie-factored first-byte switch, measure-then-implement.
+  - [M4.6f] STATE:not-started — D46 CLOSE-OUT: stamp + force pair for
+    the prefilter axis (the `<PREFIX>_VM_RUNGS`/`VM_STRATS` precedent);
+    islands' pair moves to [ENG-ISL] with the mechanism.
 - [M4.7] STATE:not-started — DIFFERENTIAL + CLOSE: capture differential
   vs libpcre2 ovectors (gate-ON per docs/testing.md's differential-gate
   principle), fuzzer extended to compare capture spans, SR-8's
@@ -658,6 +685,21 @@ spine, not before):
   statistics dependence) consume the SAME channel — which is exactly the
   "best non-SIMD approach, then backend variants on top" architecture
   Frank ruled.
+- [ENG-ISL] STATE:not-started — EXACT DFA ISLANDS, deferred OUT of
+  [M4.6] (Frank, 2026-08-17, twenty-eighth session, D50 — the
+  [ENG-ABS] pattern: build only behind a MEASURED loss). engine_m4.md
+  §6.3's strength-1 mechanism was designed and scheduled before the
+  [ENG-BREP] ladder existed; possessify.c/revdet.c now deliver much of
+  the same frameless-execution win VM-internally, so the emitter build
+  waits for evidence that capture-free VM-FALLBACK FRAGMENTS (not just
+  loops — the islands' remaining distinct value) are hot: [BENCH-1]
+  floors or [ENG-PGO] profiles showing it. The DESIGN STANDS unbuilt
+  (engine_m4.md §6.3, annotated in place): fragment→NFA→DFA→table-emit
+  seam inside the VM, reusing possessify's unique-iteration analysis
+  (the proof islands need is eng_brep_design.md §2.2's corrected rule,
+  NOT a new analysis — scoping sweep 2026-08-17). Carries its own D46
+  stamp+force obligation when built. Accept-list islands (strength 2)
+  and tagged automata remain deferred beyond this row per §6.3's table.
 - [ENG-CLAMP] STATE:not-started — the DEFERRED per-quantifier K downshift
   (Frank, 2026-08-16, twenty-seventh session: F-1 ruled strict-§4.5 on the
   R25 panel — decisions.md D47 ADDENDUM has the full ruling and rationale).
