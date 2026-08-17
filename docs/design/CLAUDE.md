@@ -586,6 +586,32 @@ append-only or historical records.
   than by arithmetic and so need their own lattice argument. Probes and
   archived outputs in `k23_impl/probes/` and `k23_impl/out/`; see those
   directories' own CLAUDE.md files.
+- `m46a_impl/` — **[M4.6a] BUDGET CALIBRATION** (2026-08-17): measures the four
+  runtime-bound bring-up placeholders (`VM_DEFAULT_STEP_BUDGET`,
+  `VM_DEFAULT_WORK_BUDGET`, `VM_DEFAULT_BT_FRAMES`/`VM_DEFAULT_TRAIL_FRAMES`)
+  against `engine_m4.md` §4.6's stated method, EXTENDED (§4.6's own text names
+  only the step budget) to all four via one generic instrument that reads the
+  real shipped counters (RX_ERR_WORK included, D49/settlement 4) rather than a
+  proxy. Three layers: the literal corpus+bench reading (finding: every
+  committed `tests/bench` THROUGHPUT case compiles `--no-captures`, so it
+  contributes ZERO VM-budget signal — the corpus alone underrepresents what
+  the bounds must hold against); SCALE, synthetic legitimate large-subject
+  probes split by engine mode (a load-bearing distinction found while
+  measuring it: `--engine=vm`-forced numbers can be orders of magnitude
+  above what the DEFAULT/production path — where the DFA prefilter still
+  runs ahead of a capture-bearing pattern's VM, engine_m4.md §4.7 — ever
+  sees); and a RATIO re-anchor of `k23_impl`'s retracted 5.24 proxy
+  work-per-step number against the real meter (measures 0 — the K23
+  exemplar shape is pure backtracking with no frameless-scan or cut site,
+  so the retracted proxy has no real-meter analog on it at all).
+  Headline finding: an ordinary capturing repeated-alternation pattern
+  (`(a|b)+c`-shaped, common in log/token parsing) costs steps and work
+  LINEARLY in subject length even on its OPTIMIZED rung (reverse-
+  deterministic, O(1) frames) — measured 4,000,002 steps at 8 MB under the
+  DEFAULT engine, 4x the shipped step-budget default — and a related shape
+  that misses the reverse-deterministic rung (`(GET |POST |...)*X`, whose
+  alternatives share a last byte) reaches the shipped frame capacity by
+  `subject_ceiling = 256` bytes. See its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

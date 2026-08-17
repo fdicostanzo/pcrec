@@ -1,0 +1,65 @@
+== m46a budget_calibration.py ==
+commit   f01bc4b
+gcc      cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+date     2026-08-17 07:12:44 -0400
+measurement ceilings: frames=20000 step=1000000000 work=100000000000 (NOT the shipped defaults -- see module docstring)
+
+== LAYER 1: corpus (tests/**/*.rxt, excluding known_fail/) ==
+files scanned: 53   distinct (pattern,flags,features) groups: 927
+groups: vm=300 dfa-only=627 refused/instr-failed=0
+
+== LAYER 1b: tests/bench throughput matrix (as committed) ==
+NOTE: every committed THROUGHPUT case compiles --no-captures (DD-9's choice), so the DFA answers and the VM is never entered -- recorded as ZERO VM-budget signal from the shipped bench matrix. The '-CAP' row re-runs case (c)'s pattern WITH captures forced, as the honest stand-in for what a capture-bearing throughput case would show (anticipating [M4.6b]).
+  bench-a-needle         n=  8000000 engine=dfa
+  bench-b-allastar       n=  8000000 engine=dfa
+  bench-c-altd-NOCAP     n=  8000000 engine=dfa
+  bench-c-altd-CAP       n=   200000 engine=vm
+   -> {'pattern': 'bench-c-altd-CAP :: a(b|c)+d', 'verdict': 'nomatch', 'n': 199998, 'steps': 0, 'work': 0, 'peak_btn': 0, 'peak_trn': 0}
+
+== LAYER 2: SCALE (synthetic legitimate large-subject) ==
+TWO ENGINE MODES, and the distinction is load-bearing (found by running this layer the first time): DEFAULT (auto) is the shipped production path, where engine_m4.md §4.7's DFA-prefilter-before-VM ordering rule applies even to capture-bearing patterns -- a NOMATCH the prefilter can answer never reaches the VM's counters at all. '--engine=vm' is a DIAGNOSTIC opt-out (used by vm_oracle.py, the possessify/rungselect/counterk differentials) that disables the prefilter on purpose, so its numbers are a worst-case UPPER bound on what the VM alone would need, not a number the shipped default path ever has to survive. DEFAULT is layer 2's calibration input; VM-FORCED is recorded for context and for the diagnostic-mode question (should --engine=vm get its own, larger defaults?).
+-- cursor-match: '([a-z]+)9' (possessified cursor, MATCH) --
+   [default  ] n=     1001 verdict=match          steps=           0 work=          1000 peak_btn=     0 peak_trn=     2
+   [vm-forced] n=     1001 verdict=match          steps=           0 work=          1000 peak_btn=     0 peak_trn=     2
+   [default  ] n=   100001 verdict=match          steps=           0 work=        100000 peak_btn=     0 peak_trn=     2
+   [vm-forced] n=   100001 verdict=match          steps=           0 work=        100000 peak_btn=     0 peak_trn=     2
+-- cursor-nomatch: '([a-z]+)9' (possessified cursor, NOMATCH (unanchored restart)) --
+   [default  ] n=     1000 verdict=nomatch        steps=           0 work=             0 peak_btn=     0 peak_trn=     0
+   [vm-forced] n=     1000 verdict=nomatch        steps=           0 work=        500500 peak_btn=     0 peak_trn=     2
+   [default  ] n=   100000 verdict=nomatch        steps=           0 work=             0 peak_btn=     0 peak_trn=     0
+   [vm-forced] n=   100000 verdict=nomatch        steps=           0 work=    5000050000 peak_btn=     0 peak_trn=     2
+-- alternation-loop: '(a|b)+c' (revdet rung, capturing repeated alternation) --
+   [default  ] n=     1001 verdict=match          steps=         502 work=          1500 peak_btn=     2 peak_trn=     5
+   [vm-forced] n=     1001 verdict=match          steps=         502 work=          1500 peak_btn=     2 peak_trn=     5
+   [default  ] n=   100001 verdict=match          steps=       50002 work=        150000 peak_btn=     2 peak_trn=     5
+   [vm-forced] n=   100001 verdict=match          steps=       50002 work=        150000 peak_btn=     2 peak_trn=     5
+-- frames-bounded-64: '((a)|b){0,64}d' (frames rung, bounded choice body) --
+   [default  ] n=     1001 verdict=match          steps=          32 work=            96 peak_btn=     2 peak_trn=     7
+   [vm-forced] n=     1001 verdict=match          steps=       29984 work=         89952 peak_btn=     2 peak_trn=     7
+   [default  ] n=   100001 verdict=match          steps=          32 work=            96 peak_btn=     2 peak_trn=     7
+   [vm-forced] n=   100001 verdict=match          steps=     3197984 work=       9593952 peak_btn=     2 peak_trn=     7
+-- m46b-anticipated: '([01]*)1([01]{8})' ([M4.6b]'s not-yet-landed capture-bearing bench sibling) --
+   [default  ] n=     1009 verdict=match          steps=           9 work=            20 peak_btn=     1 peak_trn=     5
+   [vm-forced] n=     1009 verdict=match          steps=           9 work=            20 peak_btn=     1 peak_trn=     5
+   [default  ] n=   100009 verdict=match          steps=           9 work=            20 peak_btn=     1 peak_trn=     5
+   [vm-forced] n=   100009 verdict=match          steps=           9 work=            20 peak_btn=     1 peak_trn=     5
+
+== LAYER 3: RATIO re-anchor -- k23_design.md's retracted 5.24 work-per-step proxy, re-measured against the REAL RX_ERR_WORK meter (D49/settlement 4) on the SAME shape/size ==
+NOTE: this shape IS the K23 pathology (the pre-MRL 'shipped arm' of the exemplar) -- NOT a legitimate workload, so it is excluded from the layer 1/2 maxima below. Measured for archival purposes only, as k23_design.md §12 item 5 owes.
+   pattern='(a{10,20}){10,50}' n=100 verdict=match steps=10621636 work=0
+   REAL-METER work/step ratio: 0.000 (retracted proxy was 5.24; counterk's independently-adopted exchange rate, from timing not counts, was ~16)
+
+== LAYER 4: FRAME/TRAIL REACH at the SHIPPED default (1024/1536) ==
+Static property of the compile (rx_info.subject_ceiling), not a runtime count -- no instrumentation. Answers: for an ORDINARY capturing/repeated-alternation pattern, past how many subject bytes does the SHIPPED default's frame/trail capacity become reachable? A small number here means the corpus's own small-subject max (layer 1's 298/204) understates real exposure, because the corpus never repeats these shapes past a few bytes.
+   alt-loop-1tok    '(a|b)+c'                      frame_capacity=3      subject_ceiling=0
+   alt-loop-4tok    '(GET |POST |PUT |DELETE )*X'  frame_capacity=1024   subject_ceiling=256
+   alt-loop-2tok    '(foo|bar)+baz'                frame_capacity=4      subject_ceiling=0
+   nested-opt       '(a(b|c)?){0,4}d'              frame_capacity=13     subject_ceiling=0
+
+== SUMMARY: measured maxima (layers 1+2, K23-ratio shape EXCLUDED) ==
+   max STEP       =          50002   pattern='alternation-loop [default] :: (a|b)+c' n=100001 verdict=match
+   max WORK       =         150000   pattern='alternation-loop [default] :: (a|b)+c' n=100001 verdict=match
+   max FRAME(bt)  =            298   pattern='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}' n=0 verdict=match
+   max TRAIL      =            204   pattern='(a{1,3}){65}' n=195 verdict=match
+
+   groups/cases measured: 3831
