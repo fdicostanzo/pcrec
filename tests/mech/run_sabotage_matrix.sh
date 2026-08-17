@@ -59,6 +59,7 @@
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
 #   rungdiff                           — added 2026-08-16 ([ENG-BREP] rung-select)
+#   counterkdiff                       — added 2026-08-17 ([ENG-BREP] counter-K)
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -296,6 +297,24 @@ run_one() {
                 p="$(grep -m1 '^rungdiff: [0-9]* patterns agreed' "$work/rungdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^rungdiff: [0-9]* patterns agreed' "$work/rungdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
                 suite_bits+=("rungdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            counterkdiff)
+                # [ENG-BREP] the COUNTER rung's differential, the third arm of
+                # the same shape and for the same reason: a rung whose boundary
+                # arithmetic is off still matches correctly on most subjects, so
+                # the signal is a divergence against the `-fno-counter`
+                # (replication = ground truth) build rather than a corpus
+                # failure. Its population carries RESIDUE and STRIDE axes,
+                # without which a sabotage like S54 (residue tail deleted) is
+                # invisible at every count that happens to be a multiple of K.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/counterk/run_counterkdiff.sh" \
+                    > "$work/counterkdiff.log" 2>&1
+                p="$(grep -m1 '^counterkdiff: [0-9]* patterns agreed' "$work/counterkdiff.log" | grep -oE '[0-9]+' | head -1)"
+                f="$(grep -m1 '^counterkdiff: [0-9]* patterns agreed' "$work/counterkdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
+                suite_bits+=("counterkdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
