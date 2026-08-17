@@ -155,6 +155,24 @@ int main(int argc, char **argv)
          * differential compares against. */
         else if (!no_more_opts && !strcmp(a, "-fno-revdet"))
             opt.flags |= PCREC_NO_REVDET;
+        /* [ENG-BREP] the family's THIRD member, and the one whose denial is
+         * load-bearing beyond testing: dropping the counter rung leaves a
+         * bounded repeat on frames, i.e. literal replication, i.e. what ships
+         * today — the ground truth §8.1's differential compares against. */
+        else if (!no_more_opts && !strcmp(a, "-fno-counter"))
+            opt.flags |= PCREC_NO_COUNTER;
+        /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
+         * never per quantifier (D47 ADDENDUM). */
+        else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {
+            char *end = NULL;
+            long v = strtol(a + 9, &end, 10);
+            if (!end || *end || v < 1 || v > 4096) {
+                fprintf(stderr, "pcrec: --unroll wants an integer in 1..4096 "
+                                "(got '%s')\n", a + 9);
+                return 1;
+            }
+            opt.unroll_k = (int)v;
+        }
         else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;

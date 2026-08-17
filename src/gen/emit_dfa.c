@@ -501,7 +501,8 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * against. Each further denial in D47.3's family joins this mask as it
      * lands. */
     {
-        const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET;
+        const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
+                                          PCREC_NO_COUNTER;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

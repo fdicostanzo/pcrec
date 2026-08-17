@@ -53,10 +53,22 @@ makes the ground truth reachable at all. Denying it must not, and does not, deny
 possessification: the two are independent, and possessification is a modifier at
 every rung rather than a rung of its own.
 
-Neither appears in `--help`, deliberately and per D47.3: these are testing and
-tuning axes, documented here and in docs/testing.md, not sprawling top-level
-user features. The rest of the family (`-fno-counter`, a value parameter for K)
-arrives with the strategies it denies.
+`-fno-counter` (`PCREC_NO_COUNTER`) is the family's THIRD and final v1 member,
+arriving with the counter rung (docs/design/counterk_impl/counterk_design.md),
+and everything above applies to it unchanged — including that its do-or-die is
+asserted against `<PREFIX>_VM_RUNGS`'s COUNTER bit (`0x10`) rather than against
+the flag having been passed. What is specific to it: denying the rung drops a
+bounded repeat to FRAMES, which for a bounded repeat is literal replication,
+which is exactly what ships today — so, as with `-fno-revdet`, the deny flag is
+what makes the differential's ground truth reachable at all. `--unroll=K`
+(1..4096) is its value parameter, ONE value per artifact and never per
+quantifier (D47 ADDENDUM).
+
+None of the four appears in `--help`, deliberately and per D47.3: these are
+testing and tuning axes, documented here and in docs/testing.md, not sprawling
+top-level user features. `--work-budget=N` DOES appear, and the difference is
+the point — it is a real generation axis on the same footing as
+`--step-budget=N` (the third DD-2 bound, settlement 4), not a strategy denial.
 
 `--engine` is DO-OR-DIE: a request the pattern cannot honour is a clean
 refusal, never a silent downgrade. `--engine=vm` additionally turns the DFA

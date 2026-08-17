@@ -72,7 +72,38 @@ enum {
      * skipping the denied rungs. Denying this one drops a qualifying
      * quantifier to frames; denying it does not, and must not, deny
      * possessification, which is an orthogonal modifier at every rung. */
-    PCREC_NO_REVDET     = 1u << 5
+    PCREC_NO_REVDET     = 1u << 5,
+    /* [ENG-BREP] `-fno-counter`: DENY the COUNTER rung
+     * (docs/design/counterk_impl/counterk_design.md), the THIRD member of the
+     * family, and the one whose denial is load-bearing beyond testing.
+     *
+     * Same shape and same reasons as the two above. What is specific to it:
+     * denying the rung drops a bounded repeat to VM_RUNG_FRAMES_BOUNDED, which
+     * for a bounded repeat is LITERAL REPLICATION — N copies of the body, which
+     * is exactly what ships today and is therefore the semantic GROUND TRUTH
+     * the differential compares against (§8.1). So this flag is not merely how
+     * the rung is tested; it is what makes the ground truth reachable at all,
+     * the same role `-fno-revdet` plays one rung up.
+     *
+     * That ground truth has a KNOWN LIMIT, and it is this rung's own endgame:
+     * above the replication cap there is no `-fno-counter` build to compare
+     * against, because the cap is what refuses it. §8.1's differential is blind
+     * there by construction, and §8.5 cell 1 covers that region by the oracle
+     * sweep and by the strategy's own N-independence instead. */
+    PCREC_NO_COUNTER    = 1u << 6
+};
+
+/* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
+ * eng_brep_design.md §4.5's "K must not become a per-pattern heuristic in v1",
+ * held strictly by D47's ADDENDUM). ONE per-artifact constant: every
+ * quantifier in a pattern unrolls by the same K, with no per-quantifier
+ * variation of any kind. The downward clamp that would have varied it moved
+ * whole to plan row [ENG-CLAMP].
+ *
+ * A TUNING AXIS, and the value parameter of the deny flag above. K = 0 means
+ * the built-in default (PCREC_DEFAULT_UNROLL_K, D47.2). */
+enum {
+    PCREC_UNROLL_K_DEFAULT = 0
 };
 
 /* [M4.5b] (docs/design/engine_m4.md §5.6): the per-pattern engine override.
@@ -149,6 +180,13 @@ typedef struct {
                                  one unit per frame discarded at a cut, one per
                                  frameless scan iteration. Ignored on a DFA
                                  artifact, which does neither. */
+    int         unroll_k;    /* [ENG-BREP] the counter rung's unroll factor K:
+                                 one emitted body copy per K iterations.
+                                 PCREC_UNROLL_K_DEFAULT (0) = the built-in
+                                 PCREC_DEFAULT_UNROLL_K. A TUNING AXIS; one
+                                 value per artifact, never per quantifier
+                                 (D47 ADDENDUM). Ignored on a DFA artifact and
+                                 wherever the counter rung is not selected. */
     int         frame_capacity; /* [M4.5b] <PREFIX>_BT_FRAMES, the resume-stack
                                  capacity (engine_m4.md §4.5's SECOND bound);
                                  0 = let the compiler size it (exactly, where

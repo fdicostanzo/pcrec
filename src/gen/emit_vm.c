@@ -176,12 +176,19 @@ typedef enum {
      * cursor and the frames: ONE body copy, a deterministic forward scan, one
      * resume frame for the whole loop, and a backward walk over the reversed
      * body for the retreat and for §3.4's last-iteration captures. */
-    VM_RUNG_REVDET           = 3
+    VM_RUNG_REVDET           = 3,
+    /* [ENG-BREP] the COUNTER rung, the ladder's last step before replication:
+     * ONE body copy per K iterations plus a TRAILED iteration counter, so the
+     * emitted size of a bounded repeat stops being a function of its COUNT.
+     * It sits BELOW revdet — a body that admits the backward walk should take
+     * that rung, which owes no per-iteration frames at all; the counter rung
+     * is what catches the bodies both earlier rungs decline. */
+    VM_RUNG_COUNTER          = 4
 } VmRungKind;
-enum { VM_NRUNG = 4 };
-static const unsigned vm_rung_bit[VM_NRUNG] = { 0x1u, 0x2u, 0x4u, 0x8u };
+enum { VM_NRUNG = 5 };
+static const unsigned vm_rung_bit[VM_NRUNG] = { 0x1u, 0x2u, 0x4u, 0x8u, 0x10u };
 static const char    *const vm_rung_kindname[VM_NRUNG] =
-    { "cursor", "frames-bounded", "frames-unbounded", "revdet" };
+    { "cursor", "frames-bounded", "frames-unbounded", "revdet", "counter" };
 
 /* [ENG-BREP/D46] the LADDER's first rung as its own small named value set,
  * sitting BESIDE the rung rather than inside it: a possessified quantifier
@@ -2884,6 +2891,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_BOUNDED   0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_BOUNDED]);
     sb_printf(c, "#define %s_VM_RUNG_FRAMES_UNBOUNDED 0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_UNBOUNDED]);
     sb_printf(c, "#define %s_VM_RUNG_REVDET           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_REVDET]);
+    sb_printf(c, "#define %s_VM_RUNG_COUNTER          0x%xu\n", v.up, vm_rung_bit[VM_RUNG_COUNTER]);
     sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
     /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
      * first rung, in the same shape and the same place and for the same
