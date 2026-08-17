@@ -61,6 +61,24 @@
 # (run_history.tsv + gate.sh's EARN mode) to raise it on real evidence instead
 # of guessing either number. Regenerate a-h together with:
 #   UPDATE=1 bash tests/bench/compare/gate.sh
+#
+# j ADDED (M4.6b, 2026-08-17, DD-9's non-regression floor — engine_m4.md
+# 8.5): '([01]*)1([01]{8})', the CAPTURE-BEARING sibling of (f), which
+# forces the VM+prefilter hybrid rather than (f)'s pure DFA (confirmed from
+# the generated artifact's rx_info.engine == ENGM_VM=2 and a non-NULL
+# engine_why, "capture group at pattern offset 0"). Three independent
+# quiet-box CASES=j runs (1-min load 0.21-0.64 throughout, LOAD_LIMIT 6.00,
+# `taskset -c 2`, BENCH_TRIALS=5 median each): 150.350 (spread 1.00x),
+# 150.369 (spread 1.00x), 150.397 (spread 1.01x) MB/s — essentially
+# noise-free, cross-run spread 1.0003x. Reference is the median of the
+# three, 150.369; margin is clamp(1/(spread*1.05), 0.70, 0.90) at the
+# worst of the three within-run spreads (1.01x), which clamps to the same
+# 0.90 ceiling every other spread here would too. Fail threshold
+# 150.369*0.900 = 135.332 MB/s, comfortably below all three healthy runs.
+# 1/margin = 1.11x is the smallest regression this margin can catch -- the
+# same weakest-case number every other 0.90-margin row here carries (a, b,
+# c, h). Tighter is not warranted from three same-session runs without
+# EARN=1-style independent-date history (R3.7).
 a	throughput	2192.358	0.900
 b	throughput	1970.443	0.900
 c	throughput	388.615	0.900
@@ -70,3 +88,4 @@ f	throughput	159.070	0.874
 g	throughput	24674.218	0.781
 h	throughput	1303.477	0.900
 i	latency	83.36	0.700
+j	throughput	150.369	0.900

@@ -27,7 +27,7 @@ default 0.3s), `RUN_TIMEOUT`, `PCREC_TIMEOUT`, `BUILD_TIMEOUT`,
 `BENCH_CPU` (core to pin to, default 2), `BENCH_TRIALS` (repeats per
 engine/case measurement, default 5), `CASES` (comma-separated case-id
 subset, e.g. `CASES=e,d`, for a fast mechanics check instead of the full
-9-case matrix).
+10-case matrix).
 
 Output: a streamed per-case log, a consolidated human-readable results
 table, a machine-readable TSV block, and a full copy of both written to
@@ -243,6 +243,7 @@ levels:
 | g | `x{40,60}y` | bounded repeat, one planted run near the end of 8 MB (match) |
 | h | `.*=.*` | greedy backtracking stressor, 1 MB single key=value line (match) |
 | i | `a(b|c)+d` | short-subject regime: 60-byte subject, measures **ns/call**, not MB/s |
+| j | `([01]*)1([01]{8})` | DD-9's capture-bearing sibling of (f): forces the VM+prefilter hybrid, 8 MB random bits (match likely) -- the M4.6b non-regression floor (engine_m4.md 8.5) |
 
 Subjects are generated deterministically (fixed `random.Random` seed) by
 an embedded python3 script in `compare.sh`. Two subjects need active
@@ -312,11 +313,15 @@ like `+` or `*` at the start of the pattern.)
 Read the ratios with these limits in mind — the comparison measures what pcrec
 CAN do, which is narrower than what the other engines do:
 
-- **No capture groups.** pcrec compiles span-only matching today. Every case
-  here avoids captures, so PCRE2/python are never charged for populating them
-  — but equally, a large slice of real-world regexes cannot run on pcrec at
-  all yet. (Measured: ovector size makes <1% difference on these patterns, so
-  this is a scope gap, not a timing thumb on the scale.)
+- **Mostly no capture groups.** Cases (a)-(i) are span-only matching, so
+  PCRE2/python are never charged for populating captures in those nine — but
+  equally, a large slice of real-world regexes exercise a shape those nine
+  cannot represent. Case (j) is the deliberate exception (added M4.6b, DD-9's
+  non-regression floor, engine_m4.md 8.5): it has two capturing groups, which
+  routes pcrec to the VM+prefilter hybrid rather than the pure DFA the other
+  nine take, and every engine pays for populating them there. (Measured on
+  the span-only cases: ovector size makes <1% difference, so their omission
+  of captures was a scope gap, not a timing thumb on the scale.)
 - **No case-insensitive matching.** pcrec's only option is class expansion
   (`[Nn][Ee]...`), which loses ~11x to PCRE2-JIT's native CASELESS. It still
   beats pcre2-interp (2.8x) and python (7.9x) — and pcre2-interp forced onto

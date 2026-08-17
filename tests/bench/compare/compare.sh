@@ -508,6 +508,21 @@ assert len(i_buf) == 60
 with open(os.path.join(outdir, "i_short.bin"), "wb") as f:
     f.write(i_buf)
 
+# (j) '([01]*)1([01]{8})' over 8 MB random '0'/'1' bytes (match likely) --
+# DD-9's non-regression floor (engine_m4.md 8.5): the CAPTURE-BEARING
+# sibling of case (f). Same alphabet/size as (f), own buffer (not a reuse of
+# f_bits.bin) for the same reason every other case here gets its own file --
+# but drawn from the shared rng at a different point in its sequence, so the
+# two buffers are not byte-identical. Unlike (f), this pattern has two
+# capturing groups, which routes it to the VM+prefilter hybrid engine
+# (D42.1: captures on by default) rather than the pure DFA (f) takes --
+# see compare.sh's case-processing loop, which builds pcrec with no
+# --no-captures flag for any case, and gate.sh/floors.tsv's provenance
+# comment for the measured floor this case pins.
+buf = bytes(rng.choices(b"01", k=n))
+with open(os.path.join(outdir, "j_bits_captures.bin"), "wb") as f:
+    f.write(buf)
+
 print("subjects generated in", outdir)
 PYEOF
 )"
@@ -524,10 +539,10 @@ echo
 # Case matrix
 # =========================================================================
 
-CASE_IDS=(a b c d e f g h i)
+CASE_IDS=(a b c d e f g h i j)
 # CASES=<comma-separated case ids> restricts which cases process_case runs,
 # e.g. CASES=e,d for a fast mechanics smoke-test instead of the full
-# 9-case/~4-engine run. Subjects for ALL cases are still generated (cheap
+# 10-case/~4-engine run. Subjects for ALL cases are still generated (cheap
 # relative to the per-case build+measure work), so this only trims the
 # expensive part.
 if [ -n "${CASES:-}" ]; then
@@ -544,6 +559,7 @@ declare -A CASE_DESC=(
     [g]="'x{40,60}y', one planted 50-x run + y near the end of 8 MB (match)"
     [h]="'.*=.*' greedy backtracking stressor over a 1 MB key=value line (match)"
     [i]="'a(b|c)+d' over a 60-byte subject -- short-subject per-call overhead regime"
+    [j]="'([01]*)1([01]{8})' over 8 MB random 0/1 bytes (match likely) -- DD-9 capture-bearing sibling of (f), engine_m4.md 8.5 non-regression floor for the VM+prefilter hybrid"
 )
 declare -A CASE_PATTERN=(
     [a]='needleXYZW'
@@ -555,6 +571,7 @@ declare -A CASE_PATTERN=(
     [g]='x{40,60}y'
     [h]='.*=.*'
     [i]='a(b|c)+d'
+    [j]='([01]*)1([01]{8})'
 )
 declare -A CASE_SUBJECT=(
     [a]="$subj_dir/a_needle.bin"
@@ -566,6 +583,7 @@ declare -A CASE_SUBJECT=(
     [g]="$subj_dir/g_runxy.bin"
     [h]="$subj_dir/h_kv.bin"
     [i]="$subj_dir/i_short.bin"
+    [j]="$subj_dir/j_bits_captures.bin"
 )
 # metric: "throughput" (MB/s, default) or "latency" (ns/call, case i)
 declare -A CASE_METRIC=( [i]="latency" )

@@ -58,4 +58,22 @@ so its "throughput" is exit latency (R2-B4, fixed in run_bench's sibling case
 but not here), and gate.sh has no minimum-coverage floor beyond requiring that
 every floor row was measured.
 
+**Case (j), added [M4.6b] (2026-08-17), is the one case in this matrix that is
+CAPTURE-BEARING on purpose.** `([01]*)1([01]{8})` is DD-9's capture-bearing
+sibling of case (f) — engine_m4.md §8.5's non-regression floor for the
+VM+prefilter hybrid: capture groups route pcrec off (f)'s pure DFA and onto
+the hybrid (confirmed per-run from the compiled artifact's
+`rx_info.engine == ENGM_VM` and a non-NULL `engine_why`), which is exactly
+the shape most likely to embarrass it — the DFA prefilter finds a span
+covering the whole 8 MB buffer (span/subject ratio 1.0, §6.2(a)'s stated
+worst case), so the VM then re-walks essentially all of it a third time.
+Floor derivation (floors.tsv): three independent quiet-box `CASES=j` runs,
+150.350/150.369/150.397 MB/s, spreads 1.00x-1.01x — reference is the median
+(150.369), margin is the standard R3.5 formula
+(`clamp(1/(spread*1.05), 0.70, 0.90)`) at the worst of the three spreads,
+which clamps to the 0.90 ceiling like most other rows here. Every other case
+in this file is deliberately span-only (see the Scope disclosure section of
+README.md); (j) is the sole exception and README.md's disclosure is worded
+to say so.
+
 Maintenance: update this file when cases, engines or gating rules change.
