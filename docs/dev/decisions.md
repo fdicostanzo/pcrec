@@ -4384,3 +4384,27 @@ d27k23 corpus) remains the strongest position when paired with one.
 Revisit when: bench build work actually starts (rule APPROACH.md §8's
 open questions first); or if the bench's differential sweeps start
 producing upstream findings faster than the manual flow absorbs them.
+
+**D51 ADDENDUM (Frank, 2026-08-17, twenty-ninth session, at the [M4.6d]
+landing): the +8% shape ACCEPTED AS-IS.** Ruling 1's "<=2% at full clamp
+density" was the ADOPTION EVIDENCE BAR, measured on the design note's
+three dense shapes — not a per-shape ceiling on the shipped
+implementation. The build's wider sweep found the cost distribution's
+tail: `([a-z]{2,4}){2,8}b` at n=40 — short subject, high bound-site
+density per unit of matching work — costs up to ~+8% total (clamp arm
++4.2–8.3% across three independent pinned runs, three-arm instrument
+with a placebo arm; the placebo is why the number is trusted — a naive
+two-arm read reported +28% on a control row where the VM never runs,
+pure code layout). Accepted with eyes open, D51's own style: the
+clamp's worst case is bounded and small on a shape class that completes
+in microseconds; the unclamped worst case is exponential (and is what
+makes ruling 3's 500M default safe to ship); the DFA path is untouched
+(byte-identical emission for rung-free patterns, 896-pattern check);
+`-fno-length-prune` and the `<PREFIX>_VM_PRUNE_CEILING` stamp make the
+lever visible and reversible per artifact. Emitted-C growth 3.7–10.9%
+noted as a known cost. The residual is chartered to shrink at
+[ENG-THIN] (analytic per-pattern/per-site step-law gating; exemplar-
+statistical tuning linked to [ENG-PGO]) — soundness-free by
+construction, so deliberately NOT a gate on this landing. Revisit when:
+[ENG-THIN] measures, or a real workload surfaces the site-dense class
+at long-subject scale (which would change the microseconds argument).
