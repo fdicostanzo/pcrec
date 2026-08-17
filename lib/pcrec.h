@@ -90,7 +90,20 @@ enum {
      * against, because the cap is what refuses it. §8.1's differential is blind
      * there by construction, and §8.5 cell 1 covers that region by the oracle
      * sweep and by the strategy's own N-independence instead. */
-    PCREC_NO_COUNTER    = 1u << 6
+    PCREC_NO_COUNTER    = 1u << 6,
+    /* [M4.6d] `-fno-length-prune`: DENY MINIMUM-REMAINING-LENGTH pruning
+     * (docs/design/k23_impl/k23_design.md, D51 ruling 1), the family's FOURTH
+     * member and D46's controllability half for this optimization.
+     *
+     * Same shape and same reasons as the three above, with one difference
+     * worth stating: MRL is not a RUNG, it is a bound emitted ON whichever
+     * rung a quantifier already took, so denying it changes no rung, no slot
+     * and no capacity — an artifact built with it is byte-for-byte the one
+     * pcrec emitted before MRL existed. That is what makes the denial the
+     * ground truth of the differential: the same corpus, the same subjects,
+     * pruned against unpruned, byte-identical answers expected on every
+     * capture slot (§7.4's pcrec-vs-pcrec instrument). */
+    PCREC_NO_LENGTH_PRUNE = 1u << 7
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

@@ -67,3 +67,12 @@ replication caps), while the work budget's default lives beside its siblings in
 `src/gen/emit_vm.c` because a runtime give-up budget changes nothing pcrec
 accepts, rejects or promises — limits.h's own stated inclusion rule, applied in
 both directions.
+
+**[M4.6d] (2026-08-17):** `PCREC_NO_LENGTH_PRUNE` (`1u << 7`,
+`-fno-length-prune`) denies MINIMUM-REMAINING-LENGTH pruning (D51 ruling 1).
+Same masked-out-of-`rx_info.flags` treatment as its three siblings and for the
+same reason. It is the strongest case in the family for that rule: MRL emits a
+bound on whichever rung a quantifier already took and changes no rung, slot or
+capacity, so a denied artifact is byte-for-byte pre-MRL pcrec — which is what
+makes it a differential ground truth, and what a stamp announcing the denial
+would destroy.

@@ -222,26 +222,55 @@ stated terms.
     (prefilter-window ceiling — v1 with three build obligations vs
     subject-end fallback; a stale window errs UNSOUND, see the
     verification's direction-of-error note).
-  - [M4.6d] STATE:started (2026-08-17, twenty-ninth session; lanes: mrl
-    opus build in worktrees/mrl, d27k23 blinded author in a cell) —
-    K23 FIX per (c)'s accepted note; tests
-    from a D27-BLINDED author (K23 was itself a D27 find); closes
-    known_issues.md K23 and retires the ratchet resident. SEQUENCED
-    AFTER counter-K merges (both rewrite emit_vm.c — no parallel lane);
-    needs Frank's adopt-MRL + ruling 6 first. Build charter carries:
-    prediction 6 (the reverse-deterministic rung recovers boundaries by
-    backwards WALK, not arithmetic — §4.1's division does not apply and
-    the lattice argument must be RE-MADE there; the E1 class's expected
-    recurrence site), the §9.1 ruling-6 obligations if v1, and the
-    exhaustive-switch rule (§4.2). ALSO OWED to
-    the blinded author (counter-K checkpoint 2, 2026-08-17): the
-    (a{1,3}){65} INTERMEDIATE region — 65..~100 'a's is an ambiguous
-    decomposition where pcrec returns RX_ERR_STEPS in ms and python re
-    does not terminate in 20 s; the counter-K re-pin of
-    tests/base/d27_large_counts.rxt:58 deliberately left it unpinned
-    (inheriting the adjacent {64} block's avoidance), and the proper
-    expectations for that region land WITH the K23 fix, authored
-    blinded.
+  - [M4.6d] STATE:completed (2026-08-17, twenty-ninth session; lanes: mrl
+    opus build in worktrees/mrl, plus a cell-isolated test author this lane
+    spawned in its own cell — see the finding below) — **K23 FIXED** by
+    MINIMUM-REMAINING-LENGTH pruning per D51's three rulings, all in one
+    change on lane/mrl. Exemplar `(a{10,20}){10,50}` at 100 bytes: 10.6 M steps
+    (RX_ERR_STEPS) -> **<=1**, captures identical to python and to the
+    unpruned build; the three-level shape 11,906,349,370 -> <=1. Validated
+    as a pcrec-vs-pcrec differential against `-fno-length-prune`
+    (tests/mrl/run_mrldiff.sh): **202,458 cells / 0 divergences**, strides
+    1-3, lengths on and off the lattice, all four greedy/lazy combinations,
+    BOTH ceiling forms. Ruling 2 taken with all three obligations as code:
+    the ceiling is a match-function PARAMETER (so an entry that forgets it is
+    a compile error, discharging (a)), the start++ retry RECOMPUTES the window
+    ((b) — the structural no-fire argument is written down and deliberately
+    NOT relied on, since it rests on the span-equality R21 split to
+    BELIEVED-WITH-GATE), and `<PREFIX>_VM_PRUNE_CEILING` names the active form
+    ((c)). Ruling 3's 500M step default lands WITH it, so the ratchet resident
+    flips because the defect is fixed rather than outspent; the resident moved
+    to tests/base/ and K23 is CLOSED. **PREDICTION 6 ANSWERED, in the negative
+    direction**: the revdet rung needs NO lattice argument, because its
+    forward scan IS the walk onto the boundary set — the bound stops the scan
+    one boundary early and the E1 substitution has no spelling there. **AND
+    THE E1 CLASS RECURRED ONE RUNG DOWN, found from OUTSIDE the
+    implementation's own model** (a cell-isolated author this lane spawned
+    before it knew the manager had one): on the counter rung one body copy serves every trip, so the
+    compile-time follow-min tops out at `K + residue` (9 on `(a{1,3}){65}`
+    where the truth is 65) and K23 stayed alive on it — the differential, the
+    structural checks and the acceptance cell all agreed with the bug because
+    all three were derived from the model the bug was in. Fixed by building
+    §4.5's runtime term (`Vm.fdyn`, read from the trailed counter slot). PER
+    THE MANAGER'S MID-FLIGHT CORRECTION the owed-region file is NOT delivered
+    here — the D27 corpus of record is d27k23's
+    tests/base/d27_k23_ambiguous_decomposition.rxt, and two corpora over one
+    region collide at merge; this lane keeps the MECHANISM guard instead
+    (tests/mrl/run_mrl_tests.sh §1b: (a{1,3}){65} answers inside eight steps
+    and the emitted bound reads the counter). The remaining tests/mrl/ .rxt
+    files are 191 ORDINARY implementation cases, labelled as such.
+    CROSS-CHECK, run before the removal: d27k23's corpus (89 cases, a
+    different author in a different cell, expectations from a separately
+    proven law) passes 89/89 against this build, neither author having seen
+    the other'"'"'s work, and it covers the same rung and the same runtime term. Battery: test
+    10,168/0 (ratchet "nothing to ratchet"), strict, mrl 19/19 + 202,458
+    differential cells (per-rung coverage complete), gate.sh 10/10 with case
+    (c) at 392.445 above its 388.615 floor, ubsan/asan. THREE HARNESS FIXES the budget move forced, reported
+    as such: counterkdiff and the vm §4.7 contrast now PIN the step budget
+    (they were measuring a calibration default), and the possessify stamped-
+    ceiling check becomes a floor-with-window because MRL legitimately makes
+    that artifact 2 bytes more capable than it declares. Design note gains
+    §14, its BUILD OUTCOME section.
   - [M4.6e] STATE:not-started — RX_HYBRID_MIN measurement (resolves
     engine_m4.md §12 ASK-6; wire the `n < RX_HYBRID_MIN` VM-only
     branch) + trie-factored first-byte switch, measure-then-implement.

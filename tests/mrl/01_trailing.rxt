@@ -1,0 +1,76 @@
+# MRL family 1: trailing constructs after a bounded quantifier.
+#
+# MRL's bound is "how many bytes must the REST of the pattern still
+# consume, at minimum". This family attacks the computation of that "rest"
+# for the plausible shapes that can follow a quantifier: a literal, an
+# end anchor, a trailing alternation whose branches are different widths
+# (bound must be the alternation's *smaller* branch), and nothing at all
+# (bound is 0). Subjects are chosen at and around the pattern's exact
+# minimum length, since that is where a too-large bound would wrongly
+# prune the one remaining valid position.
+
+
+# trailing literal 'b': min-remaining after the quantifier is 1.
+pattern a{2,4}b
+m "aab" 0 3
+m "aaab" 0 4
+m "aaaab" 0 5
+n "ab"
+n "b"
+
+# 5 a's + b: greedy backtracks fully at pos0 (no b follows any k in [2,4]), true match starts at pos1.
+pattern a{2,4}b
+m "aaaaab" 1 6
+
+# trailing $: forces total length to land inside [2,4] measured from the match start; MRL must not treat $ as consuming any bytes.
+pattern a{2,4}$
+n "a"
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+
+# 5 a's: pos0 can't land on $ (needs k=5, max is 4); true match starts at pos1 with k=4.
+pattern a{2,4}$
+m "aaaaa" 1 5
+
+# 6 a's: true match starts at pos2 with k=4.
+pattern a{2,4}$
+m "aaaaaa" 2 6
+
+# 7 a's: true match starts at pos3 with k=4 (the only start whose suffix length lands in [2,4]).
+pattern a{2,4}$
+m "aaaaaaa" 3 7
+
+# 1 a: below the quantifier's own minimum -- no match anywhere, trailing $ notwithstanding.
+pattern a{2,4}$
+n "a"
+
+# trailing alternation, branches of length 2 ('bb') and 1 ('c'). A bound that assumed the LARGER branch's width would wrongly require 1 extra byte here.
+pattern a{2,4}(?:bb|c)
+m "aac" 0 3
+m "aaaac" 0 5
+m "aabb" 0 4
+m "aaaabb" 0 6
+n "ac"
+n "c"
+
+# trailing alternation with an EMPTY branch: min-remaining after the quantifier is 0. First alternative 'bb' is preferred when it fits.
+pattern a{2,4}(?:bb|)
+m "aa" 0 2
+m "aaaa" 0 4
+m "aabb" 0 4
+m "aaaabb" 0 6
+
+# nothing follows the quantifier: min-remaining is 0. Unanchored search must not be forced to consume the whole subject.
+pattern a{2,4}
+n "a"
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "aaaaa" 0 4
+m "aaaaaa" 0 4
+
+# quantifier not at the very start of the subject: search must still find it (leftmost).
+pattern a{2,4}
+m "xxaaay" 2 5
+m "xxaay" 2 4

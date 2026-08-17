@@ -401,7 +401,14 @@ hy="$(cliff_run cliffhy)"
 # than assuming pattern construction implies selection. So the contrast denies
 # possessification. It is still measuring the prefilter, and it is now doing so
 # for a stated reason instead of by luck.
-vmo="$(cliff_run cliffvm --engine=vm -fno-possessify)"
+# [M4.6d] `--step-budget` PINNED on this row, and for the reason the paragraph
+# above already establishes: the contrast asserts that the prefilter-free build
+# BURNS the budget, so the budget is the subject of the check and must not be a
+# default someone else calibrates. D51 ruling 3 moved the default from 10^6 to
+# 5x10^8; the give-up is still correct at that value and takes 500x longer to
+# reach, which the run watchdog killed. Pinning restores what this row measured
+# and stops it depending on a knob it does not own.
+vmo="$(cliff_run cliffvm --engine=vm -fno-possessify --step-budget=1000000)"
 # ...and what possessification does to the SAME prefilter-free build, pinned at
 # a size both can finish, because the honest answer is more interesting than
 # "it got faster" and this lane measured it the hard way.

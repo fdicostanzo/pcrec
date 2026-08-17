@@ -161,6 +161,14 @@ int main(int argc, char **argv)
          * today — the ground truth §8.1's differential compares against. */
         else if (!no_more_opts && !strcmp(a, "-fno-counter"))
             opt.flags |= PCREC_NO_COUNTER;
+        /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
+         * (D51 ruling 1), D46's controllability half for it. Denying it is
+         * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever
+         * rung a quantifier already took and changes no rung, slot or capacity
+         * — which is what makes the denied build the differential's ground
+         * truth rather than merely a slower arm. */
+        else if (!no_more_opts && !strcmp(a, "-fno-length-prune"))
+            opt.flags |= PCREC_NO_LENGTH_PRUNE;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

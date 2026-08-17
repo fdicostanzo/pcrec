@@ -1,9 +1,0 @@
-# K23: exact-minimum ambiguous-decomposition boundary exhausts the step budget.
-# A 100-byte all-'a' subject against (a{10,20}){10,50} has exactly one valid
-# decomposition (10 x 10) but the VM explores the ambiguous space and returns
-# RX_ERR_STEPS against the default 1,000,000 budget where python re answers
-# instantly. Oracle-verified (python re): span (0,100), group 1 (90,100).
-# See docs/dev/known_issues.md K23. From the D27 blinded quantifier corpus.
-pattern (a{10,20}){10,50}
-m "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 0 100
-g 1 90 100

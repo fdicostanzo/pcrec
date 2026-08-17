@@ -268,10 +268,37 @@ BND_EOF
         else
             bad "the two builds disagree BELOW the denied build's stamped ceiling: length $below gave '$a_below' vs '$b_below'"
         fi
-        if [ "$b_above" != "$b_below" ] && [ "$a_above" = "$a_below" ]; then
-            ok "and part at EXACTLY the stamped subject_ceiling ($ceil): the denied build fails honestly there ('$b_above') where the possessified one still answers ('$a_above')"
+        # [M4.6d] THE STAMP IS A FLOOR, AND THE CHECK NOW SAYS SO. This row
+        # asserted the denied build parts from the possessified one at
+        # EXACTLY the stamped ceiling. That was true when it was written and
+        # is no longer, because MRL pruning (D51) declines to push the frames
+        # for the last `minrest` positions of the subject -- so the denied
+        # build is now capable two bytes FURTHER than it declares (measured:
+        # answers through 1025, fails at 1026, against a stamped 1024), which
+        # is exactly the length of this pattern's own follow-min bound.
+        #
+        # Conservative is the SAFE direction for a declared limit and the
+        # assertion moves rather than the feature: the stamp must never
+        # over-promise (the parting point is at or above it) and must not be
+        # so slack that the row stops measuring anything (within a window).
+        # Both halves are needed -- dropping the window would leave "the
+        # denied build fails eventually", which is not a claim about the
+        # stamp at all.
+        window=64
+        part=""
+        for probe in $(seq "$ceil" $((ceil + window))); do
+            if [ "$(gen_run "possessify boundary ceil_off probe" \
+                            "$WORKDIR/ceil_off.d/t" "$probe")" != "$b_below" ]; then
+                part="$probe"; break
+            fi
+        done
+        a_part=""
+        [ -n "$part" ] && a_part="$(gen_run "possessify boundary ceil_on probe" \
+                                            "$WORKDIR/ceil_on.d/t" "$part")"
+        if [ -n "$part" ] && [ "$a_part" = "$a_below" ]; then
+            ok "and part AT OR JUST ABOVE the stamped subject_ceiling (stamp $ceil, parted at $part): the denied build fails honestly there ('$(gen_run "possessify boundary ceil_off part" "$WORKDIR/ceil_off.d/t" "$part")') where the possessified one still answers ('$a_part'). The stamp is a floor, never an over-promise"
         else
-            bad "the stamped ceiling $ceil is not the boundary: denied gave '$b_below'->'$b_above', possessified '$a_below'->'$a_above'"
+            bad "the stamped ceiling $ceil is not a floor within $window bytes: denied gave '$b_below' at $below and did not part by $((ceil + window)) (parted at '${part:-never}'), possessified '$a_below'->'${a_part:-n/a}'"
         fi
     fi
 fi

@@ -1646,3 +1646,433 @@ None are blocking; the recommendation stands without them.
 5. Raising the step budget to any value that answers `(a{11,22}){11,50}`
    answers no more of the family than that: the next size up needs ~11× more.
    (§2.2, §5.5.)
+
+---
+
+## 14. BUILD OUTCOME — [M4.6d], 2026-08-17
+
+Appended by the BUILD LANE (branch `lane/mrl`), not by the design lane. §0.1's
+claim marking applies unchanged; every MEASURED number below is produced by a
+committed check or probe named at the point it is quoted, and the checks are in
+`../../../tests/mrl/` rather than in this note, per R24 M-F4.
+
+**The recommendation was built as designed. Nothing in §4 was refuted.** Four
+things moved, and only one of them is a correction to the design rather than an
+addition to it.
+
+### 14.1 What landed
+
+- `pcrec_minw` in a new `src/opt/mrl.c`, exhaustive switch, no live default
+  arm (§4.2's failure mode 1, R26 V7's sharpening), saturating at
+  `PCREC_MINW_MAX`.
+- The follow-min threaded down `src/gen/emit_vm.c`'s existing walk as `Vm.fmin`
+  — §4.3's accumulator, with ONE mutator (`vm_emit_f`) so that a site which does
+  not change the follow is correct by saying nothing. §9.4's residual ("what is
+  not established is that the emitter's walk can thread the accumulator without
+  restructuring") is CLOSED: no restructuring was needed, and the A_CAT arm is
+  one suffix-sum pass over the spine it already flattens.
+- The lattice-rounded clamp, FOLDED INTO THE GREEDY CURSOR SCAN'S OWN BOUND
+  (§4.6's variant, not the after-the-scan form), the lazy ascent cap, the test
+  form on the frames rung at every iteration entry, cut-before-push in
+  `vm_opt_chain` / `vm_poss_chain` / `vm_star` / `vm_poss_star`, and the two
+  counter-rung forms (§14.3).
+- The prefilter-window ceiling with D51 ruling 2's three obligations
+  (§14.4).
+- `-fno-length-prune`, `<PREFIX>_VM_PRUNES` and `<PREFIX>_VM_PRUNE_CEILING`,
+  and a `PRUNING` section in `--emit-ir` (D46, ruling 2 (c)).
+- Ruling request 3 taken as recommended: `--follow-min` is NOT a flag,
+  because the real emitter computes `minw` of the follow as a matter of course.
+  The prototype's 46-steps-versus-1 gap does not exist in the build.
+
+### 14.2 The numbers, re-measured against the build
+
+MEASURED by `probes/mrl.py steps` in `../mrl_impl/` (both arms emitted from
+one compiler, the second with `-fno-length-prune`; the step figure is the
+smallest power-of-two budget at which the artifact stops returning
+`RX_ERR_STEPS`, so it is an upper BOUND and is quoted as one):
+
+| shape | n | pruned | unpruned | capture vector, both arms |
+|---|---|---|---|---|
+| `(a{10,20}){10,50}` | 100 | **≤1** | ≤16,777,216 | (0,100) (90,100) |
+| `(a{10,20}){10,50}` | 101 | ≤1 | ≤16,777,216 | (0,101) (91,101) |
+| `(a{10,20}){10,50}` | 110 | ≤1 | ≤2,097,152 | (0,110) (100,110) |
+| `(a{10,20}){10,50}` | 150 | ≤1 | ≤4,096 | (0,150) (140,150) |
+| `(a{10,20}){10,50}?` (lazy outer) | 100 | ≤1 | ≤16,777,216 | (0,100) (90,100) |
+| `((?:ab){10,20}){10,50}` (stride 2) | 200 | ≤1 | ≤16,777,216 | (0,200) (180,200) |
+| `((a\|b){7,12}){7,20}` (frames rung) | 49 | ≤1 | ≤65,536 | (0,49) (42,49) (48,49) |
+| `((a{2,4}){5,10}){5,20}` (three levels) | 50 | ≤1 | did not finish under 2×10⁹ | (0,50) (40,50) (48,50) |
+
+Every pruned row is at or below the design's predicted count, and two are
+BELOW it: the frames-rung shape prunes to ≤1 where §2.5 measured the
+prototype at 21 and §13's prediction 3 asked only for "fewer than 50", and the
+three-level shape to ≤1 where §2.6 measured 6. The reason is §10 item 4's own
+disclosed prototype limit — it tested only at iteration ENTRIES and could not
+push the bound into a body's interior choice points, which a real emitter
+threading the accumulator does reach. The design predicted the direction and
+said the measured numbers were upper bounds; they were.
+
+**Prediction 4 held** (no two-level bounded shape leaves more than `p` steps at
+its exact-minimum length with an empty follow): every measured shape leaves ≤1.
+**Prediction 1 held**: the `.rxt` corpus is unchanged, 10,202 cases green, and
+the pcrec-vs-pcrec differential §7.4 asked for is
+`tests/mrl/run_mrldiff.sh` — see §14.5.
+
+### 14.3 PREDICTION 6, HUNTED — and the answer is the opposite of the prediction
+
+§13's prediction 6 said the reverse-deterministic rung "will need its own
+lattice argument and will not get it from §4.1's division — its iteration
+boundaries are recovered by a backwards walk, not by arithmetic — and that is
+where the E1 class of bug recurs if anywhere."
+
+**Both halves of the premise are right and the conclusion does not follow. The
+rung needs no rounding at all, and the E1 class of bug is INEXPRESSIBLE on
+it.** STRUCTURAL:
+
+- §4.1's rule is that rounding is owed wherever the bound ASSIGNS a cursor
+  value and not owed wherever it merely TESTS one. The cursor rung assigns —
+  it selects a value out of a range — and must therefore land on `pos + W·k`.
+- This rung never assigns a boundary. Its FORWARD SCAN is itself the walk onto
+  the boundary set: every value `pos` takes during the scan is a boundary the
+  body actually matched, by construction, because the only way the scan moves
+  is by matching one more iteration.
+- So the bound is applied by STOPPING the walk one boundary early — the TEST
+  form, at the scan's own loop head, cutting before the frame is pushed — and
+  the position it stops on is a member of the choice set for exactly the reason
+  `pos + W·k` is one on the cursor rung. There is nothing to round.
+- E1's failure mode was SUBSTITUTION: putting the cursor on a position the loop
+  could never occupy. No code path on this rung writes a boundary the rung did
+  not reach by matching, so the substitution has no spelling here.
+- The RETREAT chain needs no bound of its own, which is the second half. It
+  walks BACKWARDS from the committed boundary, so every position it visits has
+  MORE bytes remaining than the one the bound already admitted. The whole chain
+  below a viable commit is viable, and pruning it would be dead code.
+
+**AND THE SAME ARGUMENT TURNS OUT TO APPLY TO THE CURSOR RUNG ITSELF, which
+§4.1 did not notice and which the sabotage matrix forced out.** §4.1 rounds
+because the clamp ASSIGNS a cursor value. This build never assigns one: it
+FOLDS the cap into the scan's own bound (§4.6), and `cur` only ever moves by
+`W` from `pos`, so the largest value the loop reaches is
+`pos + W·floor((lim − pos)/W)` whether or not `lim` was pre-rounded. **The
+loop bound is SELF-ROUNDING, and R26 E1's off-lattice cursor has no spelling
+in the shipped emitter.** MEASURED by building `((?:ab){10,20}){10,50}` with
+the rounding removed and comparing at n = 198..201: answers identical. The
+rounding is KEPT in `<PREFIX>_MRL_CAP` so that a future site which does assign
+from it is correct by construction rather than by remembering this paragraph
+— but it carries no weight today, and saying so is worth more than an
+unearned claim that the emitted form is safe *because* of it. It is safe for a
+stronger reason. Found because sabotage S60's first form came back UNDETECTED
+(tests/mech/CLAUDE.md records all three of that row's turns).
+
+What IS load-bearing at that site is the UNDERFLOW GUARD in front of the cap —
+`ceil − minrest − pos` wraps without it, `lim` becomes an enormous `size_t`,
+and the folded bound stops bounding the subject at all (ASAN
+heap-buffer-overflow, measured). That is undefined behaviour rather than a
+wrong answer, so no subject sweep reaches it reliably; `run_mrl_tests.sh` §2b
+asserts it on the emitted TEXT instead.
+
+One thing the revdet hunt DID find, and it is a real trap a build lane could
+fall into: the scan-head stop must jump to the rung's `shortl` label and NOT to
+`fulll`. `fulll` is reached from the `it >= rmax` test, where the iteration
+count is known to have met `rmin`; an MRL stop can fire at any count, and
+jumping past the `rmin` check would commit a loop that had not run its
+mandatory iterations. Arriving at `shortl` directly leaves exactly the state
+the skipped frame's pop would have restored — `pos` is this boundary either
+way, `it` is untouched, `w->btn` is already at the right depth.
+
+MEASURED: `tests/mrl/patterns.txt` carries six revdet-rung shapes
+(`(ab){2,6}c` and family), swept on both engines with 0 disagreements. The
+lazy arm gets the mirror stop at the extension's own head, where the ascent
+FAILS rather than stopping — there is no shorter alternative left, which is
+what lazy means.
+
+**AND THE E1 CLASS DID RECUR — one rung further down, in a form §13 did not
+predict and which is not about lattices at all.** See §14.6.
+
+### 14.4 D51 ruling 2's three obligations, discharged
+
+- **(a) no-prefilter entries default to the subject end.** The ceiling is a
+  PARAMETER of `<prefix>_match_impl`, not a member of `<prefix>_work` as §9.1's
+  sketch had it. The obligation has the form "every entry must remember to set
+  X", and the way to discharge that is to make forgetting a COMPILE ERROR. The
+  parameter is emitted only when the artifact carries a bound, so a bound-free
+  artifact keeps the signature it had.
+- **(b) the start++ retry staleness.** The window is RECOMPUTED, which is the
+  ruling's second branch. A structural argument that the retry cannot fire at
+  all is available and is written at the site: the prefilter is the
+  capture-erased machine (D31's erasure, `engine_m4.md` §6.1), so it accepts
+  exactly the pattern's language, and having reported a match in that language
+  starting at `win[0][0]`, the VM searching the same language must find one
+  there — so `r ≥ 0` on the first pass and `start++` is unreachable. **That
+  argument is written down and is NOT what makes this safe.** It rests on
+  span-equality between the two machines, which R21 split into "erasure
+  STRUCTURAL, span-equality BELIEVED-WITH-GATE" after finding two live priority
+  miscompiles (K17, K18) in this exact territory. The ruling forbids resting an
+  unsound-direction property on a believed claim, so the recompute ships: the
+  same three lines as the entry call, deliberately, so there is one spelling of
+  "ask the prefilter where the next match is" rather than two that could drift.
+  It costs nothing on a path the argument says is dead, and re-seeding `start`
+  from the fresh window is both sound and strictly faster than stepping a byte.
+- **(c) the stamp states which form is active.** `<PREFIX>_VM_PRUNE_CEILING` is
+  `"prefilter-window"`, `"subject-end"` (`--engine=vm`) or `"none"`.
+
+**§9.1's residual is CLOSED, and the closure is a CHECK rather than a claim.**
+`tests/mrl/run_mrl_tests.sh` runs the exemplar with a 16-byte trailing suffix —
+the length at which §9.1's curve puts K23 back over the budget — at a step
+budget of 64: the default build answers, and the `--engine=vm` build (the
+disclosed weaker ceiling) does not. Both halves are asserted, because the first
+is only interesting against the second.
+
+**One correction to §9.1's own prose, found while building it.** The stamp for
+a bound-free artifact must read the same under `-fno-length-prune` as with the
+pass ON, or the byte-identity property that makes the denied build a ground
+truth is destroyed by the stamp announcing the denial — the same rule
+`emit_dfa.c`'s strategy-denial mask states for `rx_info.flags`. The denial is
+therefore checked by the ABSENCE of a bound, never by a stamp saying it was
+passed. MEASURED: 701 of the tree's 944 compilable corpus patterns carry no
+bound and emit byte-identical C with the pass on and off.
+
+### 14.5 Validation
+
+- **The `.rxt` corpus**: 10,168 cases, 0 failures (9,975 base + the retired
+  K23 resident + 191 new implementation-lane cases in `tests/mrl/`). §10 item
+  1 is closed. The figure does NOT include the `d27k23` lane's 89-case corpus
+  of record, which merges separately.
+- **The pcrec-vs-pcrec differential** (§7.4's second item),
+  `tests/mrl/run_mrldiff.sh`: the same pattern compiled with the pruning and
+  with `-fno-length-prune`, linked into one TU, compared on span + every
+  capture slot + the failure surface, over 73 designed shapes × 2 engines ×
+  a subject sweep = **202,458 cells**. It carries the STRIDE axis R26 E2 added
+  (bodies of width 1, 2 and 3 at lengths on and off the lattice) and one axis
+  this note did not have: **the ENGINE**, because the two ceilings are
+  different arithmetic and only one of them ships. 138 of 146 pattern-engine
+  pairs carried at least one bound; the sweep ASSERTS its answer-more
+  exemption at a pinned **22 cells** (two nullable/ambiguous towers under
+  `--engine=vm`, where the ambiguity is in CONTENT at constant length and this
+  bound reaches only LENGTH, §9.2) so that an exemption which grows is loud
+  rather than silent; and it additionally asserts PER-RUNG
+  coverage (mask 0x1f — every rung MRL emits a form for was reached). That
+  second control exists because the first version of the pattern file had a
+  section labelled "revdet" containing six shapes NONE of which reach that
+  rung: they are deterministic fixed-length bodies, so the cursor rung claims
+  them at stride 2 before revdet is ever consulted. The section was green and
+  measured nothing, which is §11.4's lesson recurring in this note's own build
+  — a corpus organised by what the author BELIEVES a shape does, rather than
+  by what the emitter says it does.
+- **The structural assertion the clamp is PRESENT** (§7.4's fourth item):
+  `run_mrl_tests.sh`, plus a corpus-wide D47.3 do-or-die and the byte-identity
+  gate above.
+- **AN INDEPENDENT BLINDED CORPUS, authored in a different cell by a different
+  author who never saw this build, passes 89/89.** The manager's own `d27k23`
+  lane wrote `tests/base/d27_k23_ambiguous_decomposition.rxt` — the same
+  `(a{1,3}){64,65,66}` region, expectations derived from its own separately
+  proven law because python does not terminate in the band — and this lane
+  ran it against the MRL build without either author having seen the other's
+  work. Two blinded corpora, written from the same one-page promise by
+  authors with no shared alphabet, agreeing on the same answers is a stronger
+  statement about the fix than either alone, and it is worth recording that
+  it came for free from the project's existing convention rather than from
+  anyone planning it.
+- **The EXCUSED cells are refereed against a THIRD, MRL-FREE ENGINE** (panel
+  F2). The answer-more asymmetry lets the pruned arm answer where the denied
+  arm exhausted a bound, and those cells are by construction the ones where
+  the bound did the MOST work — i.e. the least comfortable place for the
+  sweep to assert nothing. `run_mrldiff.sh` therefore builds the same pattern
+  `--no-captures`, which selects the pure DFA engine (table-driven,
+  linear-time, MRL never touches it, always terminates, capture-blind), and
+  re-derives the SPAN for every excused cell inside the same driver, on the
+  same decoded subject at the same start position. MEASURED: 22 of 22
+  refereed, 0 divergences. The referee lives in the driver rather than in a
+  second executable so that it cannot re-derive its own input from a second
+  source, which is the control-shares-its-source failure this project has
+  recorded twice.
+- **§10 item 3 (libpcre2 as a third oracle) remains OPEN.** The blinded corpus
+  is python-verified per the base-tier rule; [M4.7]'s capture differential
+  against libpcre2 ovectors is where it closes, and this lane did not
+  anticipate it.
+
+### 14.6 THE R26 E1 CLASS DID RECUR — and it was found from OUTSIDE the implementation's own model
+
+This is the finding of the build, and it is worth more than the collapse
+numbers because of WHERE it came from.
+
+§4.5 says that under counter-K the per-replica constant "becomes a runtime
+expression `max(0, rmin − stv[ctr]) · minw(body) + F`", and §9.3 files the
+check FREQUENCY as an unmeasured residual with the recommendation
+once-per-trip. The build lane read that, implemented the compile-time form
+(within-trip position plus the residue), reasoned that once-per-trip pruning
+was §4.5's own recommendation, and recorded the runtime expression as a
+deferred residual. **That was wrong, and it left K23 alive.**
+
+On the counter rung ONE body copy serves every trip, so the compile-time view
+of "how many mandatory iterations still follow" tops out at `K + residue`.
+On `(a{1,3}){65}` that is 9. The truth is 65. Nine bytes of visible follow
+leaves the entire ambiguous decomposition of a 65-byte subject unpruned, and
+the artifact returns `RX_ERR_STEPS` — the K23 symptom, on a shape squarely in
+K23's population, from the fix for K23.
+
+**Nothing derived from the implementation was going to find it.** The
+differential agreed: both arms explored the same space and both gave up. The
+structural checks agreed: a bound was emitted at every site, with the right
+arithmetic for the model the emitter had. The `.rxt` corpus had no such shape.
+The step-collapse acceptance cell used the design note's own exemplar, which
+takes a different path.
+
+It was found from OUTSIDE THE IMPLEMENTATION'S OWN MODEL, which is the part
+that generalises. The build lane spawned a cell-isolated author
+(`scripts/mk_d27_cell.sh`) against a prebuilt binary and a one-page statement
+of what MRL PROMISES, before it knew the manager had already spawned the
+project's D27 author for this row. `(a{1,3}){65}` was in the brief because the
+plan row owed it (the counter-K lane's checkpoint-2 hand-off); the answers had
+to be derived in closed form, python `re` not terminating there. 32 cases
+failed. The other ten families — trailing constructs, alternation minima,
+zero-width shapes, nesting, multi-byte bodies, laziness, partial and
+non-zero-start matches, no-match boundaries, capture spans — came back clean,
+which is also a measurement.
+
+**The owed-region file itself is NOT delivered by this lane** (manager
+instruction, mid-flight): the D27 corpus of record for that region is
+`tests/base/d27_k23_ambiguous_decomposition.rxt`, authored independently in
+the `d27k23` cell, and two corpora over one region collide at merge. What the
+build lane keeps of the episode is the MECHANISM guard — `tests/mrl/`'s §1b
+acceptance cell, which pins that `(a{1,3}){65}` answers inside eight steps and
+that the emitted bound READS THE COUNTER — plus this section. The corpus of
+record covers the same rung and the same runtime term and passes 89/89 against
+this build (§14.5).
+
+The fix is §4.5's expression, built: `Vm.fdyn` carries the runtime term
+`minw(body) · (count − stv[ctr] − j)` as a C expression beside the
+compile-time `fmin`, combined at each bound site. The counter slot is TRAILED
+(R25 E5), so a resume into a body frame restores the right value and the
+expression is correct on the backtracking path too. After it, `(a{1,3}){65}`
+answers in 0.13 s, every case from the cell passes, and — checked before the
+owed-region file was withdrawn from delivery — so does the `d27k23` corpus of
+record, 89 of 89.
+
+**The generalisation, and it is §11.4's lesson arriving one level up again.**
+§11.4 says randomising a corpus protects only the axes the generator can
+express. This says: **an instrument derived from the implementation can only
+find defects the implementation's own MODEL admits.** The build lane's model
+of "the follow-min" was compile-time by construction, and every check it wrote
+inherited that model — the differential, the structural checks and the
+acceptance cell were all consistent with the bug. The corpus that was not
+derived from the implementation is the one that saw it. That is D27's claim,
+measured a second time, on the fix for the defect D27 found first — and the
+lesson survives the file that carried it being withdrawn, which is why the
+mechanism now carries its own acceptance cell (§1b of
+`tests/mrl/run_mrl_tests.sh`) instead of resting on a corpus the
+implementation lane does not own.
+
+### 14.6a Two riders on obligations this build discharged but cannot exercise
+
+Both are stated because a property nothing can reach is a property nobody
+should be told is tested.
+
+**The retry recompute is STRUCTURALLY UNEXERCISED.** §14.4 (b) discharges D51
+ruling 2 (b) by recomputing the prefilter window on every `start++` retry, and
+the argument in the same section says that retry cannot fire at all on the
+prefilter path. Both are true at once, which means the recomputing code is
+correct-by-construction and **never executed by any test in this tree**: no
+subject in the 202,458-cell differential reaches it, the panel's critic could
+not make it fire in 99 trials, and `tests/mrl/run_mrl_tests.sh` asserts its
+PRESENCE in the emitted C rather than its behaviour, which is the honest
+available check and is what sabotage S63 defeats.
+
+One consequence worth writing down for whoever does make it fire: **the two
+differential arms then run different search loops.** The pruned build
+re-seeds `start` from the fresh window and may therefore SKIP forward past
+positions the `-fno-length-prune` build steps through one byte at a time.
+Both are sound — the prefilter only skips positions no match can start at —
+but they are not the same traversal, and a divergence observed on that path
+should be read as "the two loops differ" before it is read as "the bound is
+wrong".
+
+**`VM_MRL_DYN_MAX`'s retreat is now DISCLOSED rather than silent** (panel F4).
+`vm_dyn_add` drops an outer runtime follow-min term when the composed
+expression grows past 240 characters — sound, because dropping a term
+under-estimates, and unreachable on anything pcrec compiles today (it needs a
+tower of counter-rung mandatory phases deep enough to concatenate that much
+expression). It is counted (`Vm.ndynskip`) and reported in `--emit-ir`'s
+PRUNING section as "runtime-term length retreats", with the line saying what a
+nonzero value means. An unstamped fallback that starts firing is a silent loss
+of pruning nobody would attribute; a stamped one is a number someone can see.
+
+### 14.7 Corrections and additions to this note
+
+- **§9.1's `rx_work` sketch is superseded**: the ceiling is a match-function
+  PARAMETER, for obligation (a)'s reason. §8's "`rx_work` gains ONE `size_t`"
+  is therefore also superseded — `rx_work` gains nothing, and `rx_info` still
+  gains nothing.
+- **§4.5's counter-K bullet is promoted from BELIEVED to REQUIRED.** Its
+  "BELIEVED that once-per-trip is enough for K23's class; NOT MEASURED" is now
+  MEASURED FALSE for the check's VALUE (the compile-time constant), while
+  remaining true for its FREQUENCY (once per trip, with the runtime value, is
+  enough). The two were run together in the note's prose and are separate
+  facts; §14.6 is the measurement.
+- **§13's prediction 6 is ANSWERED, in the negative direction** (§14.3): the
+  revdet rung needs no lattice argument because its scan IS the walk. Kept and
+  marked rather than deleted, per house style.
+- **§10 item 4's "the measured 21 is an upper bound" is confirmed**: the real
+  emitter reaches ≤1 on that shape.
+- **§10 item 6's lazy-cursor residual is closed for the greedy/lazy cursor
+  pair** — both forms are built and swept — and item 9's "one shape, seven
+  suffix lengths, a prototype plumbing the window through a file-scope
+  variable" is closed by the real threading plus its committed check.
+- Still open, and stated so the next lane does not have to re-derive it:
+  §10 items 3 (libpcre2 as a third oracle — [M4.7]), 5, 8, 10 and 11; §9.2 and
+  §9.5 unchanged; §4.7's `maxrest` still not recommended and still not built.
+
+### 14.8 What it costs, measured against the shipped emitter
+
+§6's question, re-taken with the three arms §6 established — pruned, DENIED
+(`-fno-length-prune`, i.e. pre-MRL pcrec byte for byte) and PLACEBO (the
+pruned artifact with its two macros redefined so the bound is computed with
+the same instruction shape and can never bind). Three independent pinned runs,
+best of 9 trials each, `taskset -c 2`, quiet box; full output at
+`../mrl_impl/out/throughput.txt`.
+
+**The clamp's own instructions, at FULL clamp density** on §6's own three
+dense shapes (a real follow, so every replica carries a bound):
+
+| shape | W | clamp, three runs |
+|---|---|---|
+| `(a{2,4}){10,50}b` | 1 | +3.07% / +3.21% / +2.87% |
+| `((?:aa){2,4}){10,50}b` | 2 | +0.50% / +0.52% / +0.53% |
+| `((?:aaa){2,4}){10,50}b` | 3 | +0.34% / +0.49% / +0.40% |
+
+Reproducible to a few hundredths, and CHEAPER at the strides where the lattice
+rule's integer division actually exists than at stride 1, where it is the
+identity. §6 measured +1.16 / +0.83 / +0.48% for the same three shapes with
+its prototype: the two agree on the magnitude and disagree on the ordering,
+which is what a ~0.5% quantity measured two ways looks like.
+
+**The ADOPTION cost** (pruned vs denied, layout included) on those rows is
+−1.27% to +3.24%, sign varying by shape — §6's "inside a ±3% band whose sign
+varies by shape", reproduced against the emitter. The stride-1 dense row is
+FASTER pruned than denied in all three runs.
+
+**One shape is above the band and is reported rather than averaged away.**
+`([a-z]{2,4}){2,8}b` at n=40 costs +4.2 to +8.3% in the clamp column and ~+8%
+total. It is a short subject with a high ratio of bound SITES (two mandatory
+gates plus six cut-before-push tests) to matching WORK — the shape the cost is
+worst on, and one §6's three dense rows do not contain. D51's adoption bar was
+≤2% at full clamp density and this exceeds it.
+
+**The probe needed §6's placebo and learned so the hard way, which is worth
+recording because it is this note's own §11 discipline.** The first version
+ran two arms and reported +27.8% on `(\d{3})-(\d{4})b` — a 12 ns measurement
+on a digit-free subject, where the DFA prefilter answers and the VM is never
+entered, so not one MRL instruction executes on the timed path. Entirely
+layout. The row is KEPT in the archive as the control it turned out to be.
+
+**`make bench`'s gate**, which §10 item 2 records this lane as not having run:
+10/10 green on a quiet box. Case (c) measures 392.445 MB/s against its 388.615
+floor — above the reference, so K24's `noclone` fix holds and MRL did not
+disturb it. **Case (j) is the only bench case MRL can reach at all** (every
+other throughput case compiles `--no-captures` and routes to the DFA —
+`m46a_impl`'s own finding): 148.830 against a 150.369 reference, 1.0% low
+against a margin that catches 1.11x. That is inside the row's noise and is the
+honest reading rather than a claim that the bound is free.
+
+**Emitted C grows 3.7% to 10.9%** (`../mrl_impl/out/sizes.txt`), against §6.2's
++3.2% for the prototype. The exemplar itself is +4.8%. The bigger figures are
+short artifacts where the fixed prologue is a smaller share of the file.

@@ -1,0 +1,9 @@
+# probes/mrl.py sizes — emitted C, pruned vs -fno-length-prune
+# date: 2026-08-17
+
+(a{10,20}){10,50}                  pruned   57461 B   unpruned   54829 B   +4.8%
+(a{2,4}){10,50}b                   pruned   35499 B   unpruned   32014 B   +10.9%
+((?:ab){2,4}){3,6}c                pruned   21861 B   unpruned   20285 B   +7.8%
+(\d{3})-(\d{4})                    pruned   17542 B   unpruned   16916 B   +3.7%
+a(b|c)+d                           pruned   17455 B   unpruned   16834 B   +3.7%
+(a{1,3}){65}                       pruned   27896 B   unpruned   25817 B   +8.1%

@@ -1,0 +1,21 @@
+# MRL family 11: small-scale version of the promise's own motivating case,
+# (a{3,5}){3,6} -- outer and inner both RANGE quantifiers with slack, same
+# shape as the promise text's (a{10,20}){10,50}. Run through the normal
+# harness pipeline (captures ON by default, default step budget) as a
+# 'faster' positive control: this shape answers correctly and instantly.
+# Contrast with tests/mrl/10_owed_a1_3_65.rxt, whose shape (an EXACT-count
+# outer quantifier over a narrow inner range, at a larger total repeat
+# count) does NOT -- see the final report.
+
+
+# near the true minimum (9): little slack, the shape most likely to trigger the old exponential-explore-then-give-up pathology.
+pattern (a{3,5}){3,6}
+m "aaaaaaaaa" 0 9
+g 1 6 9
+m "aaaaaaaaaa" 0 10
+g 1 7 10
+m "aaaaaaaaaaaaa" 0 13
+g 1 10 13
+m "aaaaaaaaaaaaaaaaaa" 0 18
+g 1 15 18
+n "aaaaaaaa"

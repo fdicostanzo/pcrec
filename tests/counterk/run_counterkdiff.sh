@@ -95,6 +95,7 @@ export WATCHDOG_SECTION="counterkdiff"
 # bound (load-resilient) and GENRUNTIMEOUT is the wall backstop. Raising one and
 # not the other just moves which clock reports the same clipping — which is
 # exactly what happened on the first attempt here.
+: "${CKDIFF_STEPS:=1000000}"
 : "${GENCPU:=45}"
 : "${GENRUNTIMEOUT:=90}"
 export GENCPU GENRUNTIMEOUT
@@ -189,12 +190,22 @@ one_pattern() {
     # is selected at all) and it turns the DFA prefilter OFF, so the comparison
     # is of the VM's own derivation rather than of a window the DFA handed both
     # sides (R21 E-6).
-    if ! "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
+    # [M4.6d] THE STEP BUDGET IS PINNED, on both arms, and not left at the
+    # default. This differential compares two EMISSION STRATEGIES; a run-time
+    # give-up budget is not a strategy, and leaving it at the default made this
+    # suite's cost a function of a calibration knob. D51 ruling 3 moved that
+    # knob from 10^6 to 5x10^8, and a nullable-body shape that used to refuse
+    # `(a*){0,12}b` in constant time then ground 500x longer and blew this
+    # file's own CPU watchdog -- measuring the default, not the rung. The value
+    # below is what this suite was calibrated against, BOTH arms get it, and a
+    # divergence in the give-up surface is still reported as a divergence.
+    if ! "$PCREC" -p pa --engine=vm --step-budget=$CKDIFF_STEPS -o "$d/pa.c" -- "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! "$PCREC" -p pb --engine=vm -fno-counter -o "$d/pb.c" -- "$pat" \
+    if ! "$PCREC" -p pb --engine=vm -fno-counter --step-budget=$CKDIFF_STEPS \
+            -o "$d/pb.c" -- "$pat" \
             >/dev/null 2>"$d/err_b"; then
         # NOT a skip. The denied build IS the ground truth, so a pattern whose
         # ground truth cannot be built is a hole in the instrument, and the most

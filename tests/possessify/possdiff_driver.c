@@ -53,6 +53,23 @@
  * measurement that a per-prefix guard fails this exact case). */
 #include "pa.h"
 #include "pb.h"
+#ifdef DIFF_REFEREE
+/* [M4.6d] THE THIRD ARM, opt-in and used by tests/mrl/run_mrldiff.sh alone.
+ *
+ * `pc` is the SAME pattern built `--no-captures`, which selects the pure DFA
+ * engine: a table-driven linear-time machine that MRL does not touch at all
+ * and that always terminates. It is capture-blind, so it can referee the
+ * SPAN and nothing else — which is exactly the quantity an over-large
+ * minimum-remaining-length would delete, and exactly what neither of the two
+ * main arms can supply when one of them has given up.
+ *
+ * IT LIVES IN THIS DRIVER rather than in a second executable so that it reads
+ * the SAME decoded subject at the SAME start position as the cells it
+ * referees. A separate referee would need its own copy of decode() above, and
+ * a control that re-derives its own input from a second source is the failure
+ * this project has recorded twice. */
+#include "pc.h"
+#endif
 
 /* WHICH TWO BUILDS these are is the caller's business, not this file's. The
  * driver's whole content is "two artifacts of the same pattern must agree on
@@ -132,6 +149,15 @@ int main(void)
 {
     char line[65536];
     long long cells = 0, diverged = 0;
+#ifdef DIFF_A_MAY_ANSWER_MORE
+    /* Declared under the same guard as its only writer and its only reader:
+     * the other three suites build this driver -Wall -Wextra -Werror, and a
+     * counter they never touch is -Wunused-variable there. */
+    long long excused = 0;
+#ifdef DIFF_REFEREE
+    long long refereed = 0;
+#endif
+#endif
 
     while (fgets(line, sizeof line, stdin)) {
         size_t ll = strlen(line);
@@ -169,6 +195,72 @@ int main(void)
                         same = false;
                         break;
                     }
+#ifdef DIFF_A_MAY_ANSWER_MORE
+            /* THE ONE ASYMMETRY, opt-in and off by default.
+             *
+             * An optimization whose whole purpose is to turn a RESOURCE
+             * REFUSAL into an ANSWER cannot be held to "the failure surfaces
+             * are identical" -- that requirement, taken literally, forbids
+             * the feature. [M4.6d]'s MRL pruning is exactly that case: it
+             * removes positions from which nothing could have succeeded, so
+             * a search that used to exhaust the step budget now completes,
+             * and the differential saw `nomatch` against `err_steps` on 22 of
+             * 202,458 cells. (run_possdiff.sh's own header records the same
+             * tension one rung over, where possessification changes a loop's
+             * FRAME requirement.)
+             *
+             * So arm A is allowed to ANSWER where arm B GAVE UP, and nothing
+             * else moves. The reverse is still a divergence -- A giving up
+             * where B answers is a regression, which is the direction that
+             * matters. And two arms that both answer must still agree on the
+             * span and every capture slot, which is the claim this driver
+             * exists for and which is untouched: a give-up carries no
+             * captures to compare, so no cell where the answers could differ
+             * is excused by this branch.
+             *
+             * A cell that goes quiet this way is INVISIBLE to the sweep's
+             * own count, which is why the suite enabling it also pins the
+             * step budget: the exemption should be reached by a handful of
+             * genuinely pathological cells, not by a budget so low that half
+             * the corpus stops being compared. */
+            if (!same && ra != PA_ERR_STEPS && ra != PA_ERR_FRAMES &&
+                (rb == PA_ERR_STEPS || rb == PA_ERR_FRAMES)) {
+                same = true;
+                excused++;
+#ifdef DIFF_REFEREE
+                /* REFEREE THE EXCUSED CELL rather than taking it on trust.
+                 * Arm A answered and arm B gave up, so the sweep has no
+                 * second opinion on A's span — and the excused cells are by
+                 * construction the ones where MRL did the MOST work, i.e.
+                 * the least comfortable place to have none. The DFA arm has
+                 * one. */
+                {
+                    ptrdiff_t cc[PC_NCAPS][2];
+                    int rc = pc_search(subj, len, sp, cc);
+                    int a_matched = (ra == 1);
+                    int c_matched = (rc == 1);
+                    refereed++;
+                    if (a_matched != c_matched ||
+                        (a_matched && (ca[0][0] != cc[0][0] ||
+                                       ca[0][1] != cc[0][1]))) {
+                        fprintf(stderr,
+                                "REFEREE DIVERGENCE (excused cell) subject=%s"
+                                " startpos=%zu\n"
+                                "  " DIFF_A_LABEL ": %s\n"
+                                "  --no-captures (pure DFA, MRL-free): %s\n",
+                                line, sp,
+                                a_matched ? "match" : "nomatch",
+                                c_matched ? "match" : "nomatch");
+                        if (a_matched && c_matched)
+                            fprintf(stderr, "  spans: %td,%td vs %td,%td\n",
+                                    ca[0][0], ca[0][1], cc[0][0], cc[0][1]);
+                        same = false;   /* a real divergence after all */
+                        excused--;
+                    }
+                }
+#endif
+            }
+#endif
             if (!same) {
                 char da[4096], db[4096];
                 describe(ra, ca, da, sizeof da);
@@ -183,6 +275,9 @@ int main(void)
                     fprintf(stderr, "possdiff: too many divergences, stopping\n");
                     free(subj);
                     printf("cells %lld diverged %lld\n", cells, diverged);
+#ifdef DIFF_A_MAY_ANSWER_MORE
+                    printf("excused %lld\n", excused);
+#endif
                     return 1;
                 }
             }
@@ -191,5 +286,17 @@ int main(void)
     }
 
     printf("cells %lld diverged %lld\n", cells, diverged);
+#ifdef DIFF_A_MAY_ANSWER_MORE
+    /* COUNTED AND PRINTED, never silently swallowed. A cell the asymmetry
+     * excuses is a cell this sweep did NOT compare, so it has to be visible or
+     * the exemption can grow without anyone noticing — a differential whose
+     * excused count drifts up is losing power one cell at a time, and "2 of
+     * 202,458" is only reassuring while somebody re-reads the 2. The caller
+     * asserts this number against a pinned expectation. */
+    printf("excused %lld\n", excused);
+#ifdef DIFF_REFEREE
+    printf("refereed %lld\n", refereed);
+#endif
+#endif
     return diverged ? 1 : 0;
 }

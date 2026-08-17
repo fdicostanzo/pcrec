@@ -64,7 +64,22 @@ what makes the differential's ground truth reachable at all. `--unroll=K`
 (1..4096) is its value parameter, ONE value per artifact and never per
 quantifier (D47 ADDENDUM).
 
-None of the four appears in `--help`, deliberately and per D47.3: these are
+**[M4.6d] (2026-08-17):** `-fno-length-prune` (`PCREC_NO_LENGTH_PRUNE`) is the
+family's FOURTH member, arriving with MINIMUM-REMAINING-LENGTH pruning
+(docs/design/k23_impl/k23_design.md, D51 ruling 1 — K23's fix of record), and
+everything above applies to it unchanged. What is specific to it is that MRL is
+NOT A RUNG: it is a bound emitted ON whichever rung a quantifier already took,
+so denying it changes no rung, no slot and no capacity, and an artifact built
+with it is byte-for-byte the one pcrec emitted before MRL existed. That makes
+the denied build the differential's ground truth in the strongest available
+sense — and it is why the denial has to leave NO TRACE, including in the
+stamps: `<PREFIX>_VM_PRUNE_CEILING` reads `"none"` under the denial, exactly as
+it does for a pattern that carries no bound, and the do-or-die is asserted by
+the ABSENCE of a bound in the artifact rather than by a stamp announcing that
+the flag was passed. `tests/mrl/run_mrl_tests.sh` holds both halves over every
+pattern in the tree.
+
+None of the five appears in `--help`, deliberately and per D47.3: these are
 testing and tuning axes, documented here and in docs/testing.md, not sprawling
 top-level user features. `--work-budget=N` DOES appear, and the difference is
 the point — it is a real generation axis on the same footing as

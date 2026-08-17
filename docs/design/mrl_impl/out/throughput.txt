@@ -1,0 +1,84 @@
+# MRL pruning: cost on the common path, shipped compiler
+# date:    2026-08-17 16:35:35Z
+# repo:    5979afb
+# gcc:     gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# pinning: taskset -c 2
+# load:    0.30 0.93 1.44 (1/5/15 min, 12 cores)
+# reps:    20000 per trial, best of 9 (best, not median: the
+#          minimum is the least contaminated sample on a shared box)
+# arms:    pruned / placebo (bound cannot bind) / denied (-fno-length-prune).
+#          clamp = pruned vs placebo; layout = placebo vs denied; total = pruned vs denied.
+
+pattern                        W  n     pruned     placebo    denied     clamp     layout    total
+----                           -  ----  ----       ----       ----       ----      ----      ----
+(a{2,4}){10,50}b               1  200   1675.2     1625.3     1691.9     +3.07%    -3.94%    -0.99%
+((?:aa){2,4}){10,50}b          2  200   1514.1     1506.5     1467.5     +0.50%    +2.66%    +3.18%
+((?:aaa){2,4}){10,50}b         3  200   1445.4     1440.5     1402.3     +0.34%    +2.72%    +3.07%
+(a{10,20}){10,50}b             1  400   2916.2     2925.6     2887.9     -0.32%    +1.31%    +0.98%
+(\d{3})-(\d{4})b               1  16    12.1       12.4       9.7        -2.42%    +27.84%   +24.74%
+([a-z]{2,4}){2,8}b             1  40    323.8      307.1      298.7      +5.44%    +2.81%    +8.40%
+
+# ---- INDEPENDENT RE-RUN 2, same harness, same box ----
+# date:    2026-08-17 16:46:31Z
+# repo:    5979afb
+# pinning: taskset -c 2
+# load:    0.06 0.16 0.74 (1/5/15 min, 12 cores)
+
+pattern                        W  n     pruned     placebo    denied     clamp     layout    total
+----                           -  ----  ----       ----       ----       ----      ----      ----
+(a{2,4}){10,50}b               1  200   1676.4     1624.3     1692.5     +3.21%    -4.03%    -0.95%
+((?:aa){2,4}){10,50}b          2  200   1514.4     1506.6     1471.3     +0.52%    +2.40%    +2.93%
+((?:aaa){2,4}){10,50}b         3  200   1445.0     1438.0     1400.6     +0.49%    +2.67%    +3.17%
+(a{10,20}){10,50}b             1  400   2903.0     2921.4     2881.0     -0.63%    +1.40%    +0.76%
+(\d{3})-(\d{4})b               1  16    12.1       12.1       9.7        +0.00%    +24.74%   +24.74%
+([a-z]{2,4}){2,8}b             1  40    323.6      310.6      299.6      +4.19%    +3.67%    +8.01%
+
+# ---- INDEPENDENT RE-RUN 3, same harness, same box ----
+# date:    2026-08-17 16:46:44Z
+# repo:    5979afb
+# pinning: taskset -c 2
+# load:    0.27 0.21 0.75 (1/5/15 min, 12 cores)
+
+pattern                        W  n     pruned     placebo    denied     clamp     layout    total
+----                           -  ----  ----       ----       ----       ----      ----      ----
+(a{2,4}){10,50}b               1  200   1671.5     1624.8     1693.0     +2.87%    -4.03%    -1.27%
+((?:aa){2,4}){10,50}b          2  200   1513.5     1505.5     1466.9     +0.53%    +2.63%    +3.18%
+((?:aaa){2,4}){10,50}b         3  200   1445.3     1439.5     1399.9     +0.40%    +2.83%    +3.24%
+(a{10,20}){10,50}b             1  400   2915.7     2919.6     2881.1     -0.13%    +1.34%    +1.20%
+(\d{3})-(\d{4})b               1  16    13.3       12.1       9.7        +9.92%    +24.74%   +37.11%
+([a-z]{2,4}){2,8}b             1  40    324.0      299.3      299.8      +8.25%    -0.17%    +8.07%
+
+# ---- READING, across the three runs ----
+#
+# THE CLAMP'S OWN INSTRUCTIONS, at FULL clamp density (a real follow, so every
+# replica carries a bound), on the three shapes k23_design.md §6 used:
+#     W=1  +3.07 / +3.21 / +2.87 %
+#     W=2  +0.50 / +0.52 / +0.53 %
+#     W=3  +0.34 / +0.49 / +0.40 %
+# Reproducible to a few hundredths, and BETTER at the strides where the
+# lattice rule's integer division actually exists than at stride 1, where it
+# is the identity. §6 measured +1.16 / +0.83 / +0.48 % for the same three
+# shapes with its own prototype; the two agree on the size and disagree on the
+# ordering, which is what a ~0.5% quantity measured two ways looks like.
+#
+# THE ADOPTION COST (pruned vs denied, layout included) on those rows is
+# -1.27 % to +3.24 %, sign varying by shape — §6's "inside a ±3% band whose
+# sign varies by shape" reproduced against the shipped emitter. The stride-1
+# dense row is FASTER pruned than denied in all three runs.
+#
+# ONE SHAPE IS ABOVE THE BAND AND IS REPORTED RATHER THAN DROPPED:
+# `([a-z]{2,4}){2,8}b` at n=40 costs +4.2 to +8.3 % in the clamp column and
+# ~+8 % total. It is a short subject with a high ratio of bound SITES (two
+# mandatory gates plus six optional cut-before-push tests) to matching WORK,
+# which is the shape the cost is worst on and which §6's three dense rows do
+# not contain. D51's adoption bar was <= 2% at full clamp density and this
+# exceeds it; it is a real number on a real shape and the manager should have
+# it rather than a tidier average.
+#
+# `(\d{3})-(\d{4})b` IS THE CONTROL, not a result. The subject holds no digit,
+# so the DFA prefilter answers and the VM is never entered — not one MRL
+# instruction executes on the timed path. Its +25 to +37 % TOTAL is entirely
+# layout, and the clamp column wanders (-2.4 / 0.0 / +9.9 %) because 12 ns is
+# below what this harness can resolve. Kept because it is the row that proves
+# a two-arm instrument would have reported a 28% regression that does not
+# exist.

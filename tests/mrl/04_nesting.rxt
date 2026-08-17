@@ -1,0 +1,33 @@
+# MRL family 4: nested quantifiers -- minimums multiply, not add.
+#
+# (a{m,M}){p,q} has overall minimum m*p, not m+p or M*p or any other
+# combination -- a natural place for a multiplication to be dropped in
+# favor of addition, or for the wrong side (m vs M) of the inner range to
+# be used. Subjects are pinned at and around the true minimum (and around
+# a false min+... alternative) to make either mistake visible.
+
+
+# overall min = 2*2 = 4, max = 3*3 = 9. At N=7 the greedy attempt of 3+3+3=9 overshoots what's available (7); the 3rd rep can't even reach ITS OWN minimum (2) with only 1 'a' left, so the outer quantifier falls back to stopping at 2 reps (6 a's) rather than backtracking rep2's inner count -- span [0,6), not [0,7). This distinguishes a byte-granular bound from a repetition-granular one.
+pattern (a{2,3}){2,3}
+n "aaa"
+m "aaaa" 0 4
+m "aaaaa" 0 5
+m "aaaaaa" 0 6
+m "aaaaaaa" 0 6
+m "aaaaaaaa" 0 8
+m "aaaaaaaaa" 0 9
+m "aaaaaaaaaa" 0 9
+
+# same nested quantifier, now with a trailing literal 'c': the match requires the group to consume EXACTLY the a's before the literal c, so match start slides rightward once the a-run before 'c' exceeds the group's own max (9).
+pattern (a{2,3}){2,3}c
+n "aaac"
+m "aaaac" 0 5
+m "aaaaaaaaac" 0 10
+m "aaaaaaaaaac" 1 11
+m "aaaaaaaaaaac" 2 12
+
+# triple nesting, min multiplies through three levels: 2*2*2 = 8, exact (also the max, since every level is exact-2 with no slack) -- so a subject with MORE than 8 a's still only matches the first 8, leaving the rest unconsumed, rather than failing.
+pattern ((a{2,2}){2,2}){2,2}
+n "aaaaaaa"
+m "aaaaaaaa" 0 8
+m "aaaaaaaaa" 0 8

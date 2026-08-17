@@ -1,0 +1,126 @@
+# tests/mrl/patterns.txt — the MRL differential's designed family.
+#
+# One line per pattern; `#` comments and blank lines ignored. Every line is
+# swept on BOTH engines by run_mrldiff.sh (subject-end ceiling under
+# --engine=vm, prefilter-window ceiling on the default path) against the same
+# pattern built `-fno-length-prune`, comparing the span, every capture slot
+# and the failure surface.
+#
+# THE FAMILY IS ORGANISED BY WHERE A "MINIMUM BYTES STILL NEEDED" NUMBER CAN
+# BE WRONG, not by pattern shape. A wrong bound is silent: too large deletes
+# real matches, and only a differential finds it.
+#
+# Counts are kept SMALL on purpose. The denied arm is the ground truth and it
+# is the one that explodes — this file is about whether the answers agree, not
+# about how fast they arrive, and the exemplar's own step collapse is measured
+# in run_mrl_tests.sh where one shape is enough.
+
+# --- STRIDE, the axis R26 E1's unsound clamp lived in and 855 single-byte
+# --- cells could not see. Bodies of width 1, 2 and 3, greedy and lazy. These
+# --- are the CURSOR rung, where the bound ASSIGNS and must therefore round.
+(ab){2,6}c
+(ab){2,6}
+((a)b){2,6}c
+(a(b)){2,6}c
+(abc){2,5}z
+(ab){2,6}?c
+(a{2,4}){3,6}
+(a{2,4}){3,6}b
+((?:ab){2,4}){3,6}
+((?:ab){2,4}){3,6}c
+((?:abc){2,3}){2,4}
+((?:abc){2,3}){2,4}z
+((?:[ab][cd]){2,4}){2,5}
+((?:[ab][cd]){2,4}){2,5}z
+(a{2,4}?){3,6}b
+((?:ab){2,4}?){3,6}c
+(a{2,4}){3,6}?b
+((?:ab){2,4}){3,6}?c
+
+# --- THE FOLLOW, which is the quantity the bound is about. A follow whose
+# --- minimum is computed from the wrong branch, or from the greedy maximum,
+# --- is the classic over-estimate.
+(a{1,3}){2,5}bcd
+(a{1,3}){2,5}(bcd|z)
+(a{1,3}){2,5}(z|bcd)
+(a{1,3}){2,5}(bc)?d
+(a{1,3}){2,5}b{2,7}
+(a{1,3}){2,5}b*
+(a{1,3}){2,5}b+
+(a{1,3}){2,5}$
+(a{1,3}){2,5}
+^(a{1,3}){2,5}b
+
+# --- ZERO-MINIMUM AND NULLABLE, where the bound must be 0 and an off-by-one
+# --- deletes everything.
+(a{0,3}){2,4}
+(a{0,3}){2,4}b
+(a*){2,4}b
+(a*)*b
+(a?){3,7}b
+((a|)){2,5}b
+(()){2,4}b
+(a{0,2}b{0,2}){2,4}c
+
+# --- NESTING, where minimums MULTIPLY and a bound that adds instead of
+# --- multiplying is wrong in the dangerous direction.
+((a{2,3}){2,3}){2,3}
+((a{2,3}){2,3}){2,3}z
+((a{1,2}){1,2}){1,2}b
+(((a){1,2}){1,2}){1,2}b
+
+# --- ALTERNATION IN THE BODY, which puts the quantifier on the frames rung
+# --- (no cursor, so the TEST form rather than the clamp).
+((a|b){2,4}){2,4}
+((a|b){2,4}){2,4}c
+((a|bc){2,4}){2,4}d
+((a|b)){3,8}c
+((ab|a){1,3}){1,3}b
+
+# --- COUNTER-RUNG COUNTS, at and above K=8, where the follow-min becomes a
+# --- RUNTIME expression read out of the trailed counter slot. Both phases,
+# --- and the residues either side of a multiple of K.
+(a{1,2}){8}b
+(a{1,2}){9}b
+(a{1,2}){16}b
+(a{1,2}){17}b
+(a{1,2}){8,12}b
+(a{1,2}){12,20}b
+((a)|b){8,12}c
+((a)|b){9}c
+((?:ab){1,2}){8}c
+
+# --- REVDET-RUNG BODIES, prediction 6's site: the boundary set is recovered
+# --- by a backwards WALK rather than being an arithmetic lattice, and the
+# --- bound is applied by stopping the FORWARD scan one boundary early. The
+# --- rung wants a body the cursor rung declines — choice-bearing, so
+# --- deterministic fixed-length shapes like `(ab){2,6}c` will NOT reach it
+# --- (they take the cursor rung at stride 2, which is why they sit in the
+# --- STRIDE section above instead). Verified rung-by-rung against --emit-ir
+# --- rather than assumed from the shape, which is how the first version of
+# --- this section came to contain six patterns none of which reached it.
+((a)|b){2,6}c
+((a)|b){2,6}
+((a)|bc){3,7}d
+((a)|b){2,6}?c
+((a)|b){3,}c
+(x)((a)|b){2,5}y
+((ab)|c){2,5}d
+((a)b|c){2,5}d
+
+# --- POSSESSIFIABLE BODIES, where the loop has ONE exit and the bound must be
+# --- a test rather than a substitution.
+(a{2,4})b
+((?:a|bc)+)d
+(x)(?:a|bc)+d
+(a+)b
+(a{1,4})+b
+
+# --- ORDINARY PATTERNS, the population §8 predicts emits bounds that never
+# --- fire. Zero changed cells is the prediction; these are how it is checked.
+(\d{3})-(\d{4})
+(a|ab)(c|bcd)
+([a-z]+)@([a-z]+)\.([a-z]{2,4})
+(foo|foobar)(bar|)
+a(b|c)+d
+^(x{2,4})(y{2,4})$

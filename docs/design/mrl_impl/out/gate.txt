@@ -1,0 +1,33 @@
+# tests/bench/compare/gate.sh — the headline-performance ratchet, run on
+# lane/mrl with MRL pruning and the 500M step-budget default in place.
+# date: 2026-08-17, quiet box (1-min load 0.20 at launch), taskset -c 2.
+#
+# CASE (c) is the one that matters historically: 392.445 MB/s against its
+# 388.615 floor, i.e. ABOVE the reference, so K24's `noclone` fix holds and
+# MRL did not disturb it.
+#
+# CASE (j) IS THE ONLY BENCH CASE MRL CAN REACH AT ALL, and that is worth
+# saying out loud rather than leaving to be inferred: every other THROUGHPUT
+# case compiles --no-captures and routes to the DFA, where no VM machinery
+# runs (m46a_impl's own finding). (j) is the capture-bearing sibling that
+# forces the VM+prefilter hybrid. It measures 148.830 against a 150.369
+# reference -- 1.0% below, against a margin that catches 1.11x -- which is
+# inside this row's own noise and is the honest reading rather than a claim
+# that MRL is free.
+
+gate.sh: running compare.sh (this takes a while)...
+== COMPARE GATE (pcrec headline performance) ==
+  case  metric          measured        floor  margin  catches verdict
+  a     throughput      2202.203     1973.122   0.900    1.11x ok
+  b     throughput      1987.984     1773.399   0.900    1.11x ok
+  c     throughput       392.445      349.754   0.900    1.11x ok
+  d     throughput     25708.118    23379.962   0.898    1.11x ok
+  e     throughput     26161.196    18420.680   0.756    1.32x ok
+  f     throughput       159.635      139.027   0.874    1.14x ok
+  g     throughput     25487.373    19270.564   0.781    1.28x ok
+  h     throughput      1244.331     1173.129   0.900    1.11x ok
+  i     latency            64.58      119.086   0.700    1.43x ok
+  j     throughput       148.830      135.332   0.900    1.11x ok
+
+  cases checked: 10/10   failures: 0   (floors: floors.tsv)
+  weakest case: a uniform regression must exceed 1.43x to fail this gate

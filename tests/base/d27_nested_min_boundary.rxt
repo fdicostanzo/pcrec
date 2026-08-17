@@ -1,0 +1,17 @@
+# K23 (CLOSED 2026-08-17, [M4.6d]): the exact-minimum ambiguous-decomposition
+# boundary. A 100-byte all-'a' subject against (a{10,20}){10,50} has exactly
+# one valid decomposition (10 x 10) and the VM used to explore the whole
+# ambiguous space, returning RX_ERR_STEPS. MINIMUM-REMAINING-LENGTH pruning
+# (D51 ruling 1, docs/design/k23_impl/k23_design.md) cuts every position from
+# which no accepting continuation can fit: measured <= 1 step, where the
+# unpruned build (-fno-length-prune) still needs > 10^7.
+#
+# THIS FILE WAS THE KNOWN-FAIL RATCHET'S RESIDENT and moved here when the fix
+# landed; the ratchet is what makes that move mandatory rather than optional.
+# Oracle-verified (python re): span (0,100), group 1 (90,100). From the D27
+# blinded quantifier corpus (its siblings: the other tests/base/d27_*.rxt).
+# The MRL fix's own corpus, written from the goal by a second D27-blinded
+# author, is tests/mrl/.
+pattern (a{10,20}){10,50}
+m "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 0 100
+g 1 90 100

@@ -190,12 +190,28 @@ fi
 # replication for this shape has to be denied for the control to keep
 # controlling anything.
 #
-# The ladder is now fully denied for this shape — cursor declines an
-# alternation body on its own, revdet and counter are denied here, and there is
-# no rung below replication. A future rung that absorbs it again will trip the
-# same floor and get the same treatment.
+# AND AGAIN, ONE MORE TIME, IN A FORM THE SIZE FLOOR STRUCTURALLY CANNOT SEE
+# (2026-08-17, the [M4.6d] MRL lane). MINIMUM-REMAINING-LENGTH pruning is not a
+# rung and replaces no replication — this artifact is still 64 copies — but the
+# `c` in the follow gives every optional copy a cut-before-push test, and gcc
+# -O2 turns out to find the resulting control flow far cheaper: 2.45 s of CPU
+# became 0.88 s, on an artifact that grew from 2,157 to 2,244 LINES. So the
+# control went green-because-fast for the third time, and the SIZE FLOOR below
+# could not fire, because the artifact got BIGGER while getting cheaper.
+#
+# The lesson, which is worth more than the fix: the floor guards the mechanism
+# this control was absorbed by TWICE (a strategy shrinking the artifact) and is
+# blind to the one that absorbed it the third time. A CPU floor would be the
+# general guard and is not added here, because a wall/CPU number measured on
+# one box is exactly the thing D45 spent three revisions learning not to pin.
+# What is added is the denial, per the rule above, plus this paragraph so the
+# fourth occurrence is recognised rather than re-diagnosed.
+#
+# `-fno-length-prune` therefore joins the two denials, and the ladder plus the
+# bound are now all denied for this shape.
 mkdir -p "$WORKDIR/slow"
-if ! "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+if ! "$PCREC" -p rx -fno-revdet -fno-counter -fno-length-prune \
+        -o "$WORKDIR/slow/gen.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     bad "gen-timeout: could not build the positive-control artifact"
 elif [ "$(wc -l < "$WORKDIR/slow/gen.c")" -lt 1000 ]; then
     # A SIZE FLOOR, so the next time a strategy quietly absorbs this shape the

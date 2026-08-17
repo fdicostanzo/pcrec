@@ -146,6 +146,49 @@ construction (src/ir) and emission (src/gen).
   Tests: tests/rungselect/ (its own CLAUDE.md explains why three separate checks
   are needed); failing-direction controls tests/mech/sabotages/S50-S52.
 
+- **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half
+  (`pcrec_minw`; docs/design/k23_impl/k23_design.md §4.3, adopted by D51
+  ruling 1 as K23's fix of record). The least number of subject bytes any
+  match of a node can consume, over the eight AST kinds. That is the whole
+  file: where the numbers are USED, and the lattice rule that makes a clamp
+  sound at stride > 1, live at the emission sites in src/gen/emit_vm.c, which
+  threads `minw` down its own walk as a FOLLOW-MIN accumulator rather than
+  computing it per program point.
+
+  It is NOT a transformation and mutates nothing, which makes it the odd file
+  in this directory — it sits here rather than in the emitter because an error
+  in it is SILENT in the same way possessify.c's and revdet.c's are, and for
+  the same reason deserves its own file, its own tests and its own stated
+  direction of safety. Under-estimating always prunes less; OVER-estimating
+  deletes real matches with no compile error, no warning and no failing test
+  unless the corpus happens to contain the shape.
+
+  **The switch is EXHAUSTIVE with no live default arm, and that is a design
+  obligation rather than a style preference** (§4.2's failure mode 1, sharpened
+  by R26 V7). A node kind added after this file was written must be a COMPILE
+  ERROR here — under `-Wswitch`, which `make strict` promotes — rather than a
+  silent inheritance of whatever a default returned. The unreachable trailing
+  `return 0` is the safe value, and says so.
+
+  Two things it walks ITERATIVELY for src/ir/nfa.c's R-2 reason (D10/DD-10,
+  K20): a left-leaning `A_CAT` spine and an `A_CAP` chain are as long as the
+  PATTERN, not as deep as its nesting. What stays recursive descends one paren
+  level per frame, i.e. Θ(d) — which is what K18 actually teaches, and is the
+  correction to this design note's own refuted prediction 2 (`pss_walk`
+  recurses on pattern structure today and compiles a 249-paren pattern fine;
+  `clo_visit` was a problem because it recursed Θ(d²), not because it
+  recursed).
+
+  Arithmetic saturates at `PCREC_MINW_MAX` (core/internal.h, shared with the
+  emitter's accumulator so a long concatenation of saturated subtrees cannot
+  overflow past the ceiling that exists to prevent it). A wrapped product is
+  not merely wrong, it is wrong in the UNSOUND direction whenever it lands on
+  a small positive value; saturation is an under-estimate, which is safe
+  twice over.
+
+  Tests: tests/mrl/ (its own CLAUDE.md; the `.rxt` corpus there is
+  D27-BLINDED and found a real gap in the first implementation).
+
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
   alphabet symbol so `$`-machines minimize correctly. Behavior-preserving:
