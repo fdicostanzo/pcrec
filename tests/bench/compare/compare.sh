@@ -587,6 +587,49 @@ declare -A CASE_SUBJECT=(
 )
 # metric: "throughput" (MB/s, default) or "latency" (ns/call, case i)
 declare -A CASE_METRIC=( [i]="latency" )
+# CASE_FLAGS: extra pcrec flags for this case's build, same purpose D46 gave
+# run_bench.sh's build_bench_bin -- a benched case must PIN the configuration
+# it measures, or a later default change silently re-points the measurement
+# at a different strategy while the floor keeps claiming otherwise.
+#
+# (c) and (i) are PINNED to --no-captures (M4.6b, 2026-08-17, following
+# run_bench.sh's own precedent for the identical (c) pattern text). Both have
+# an INCIDENTAL capturing group -- grouping only, never read -- that, once
+# D42.1 made captures the default (2026-08-14), silently moved them off the
+# pure DFA their floors were captured against and onto the VM+prefilter
+# hybrid: found when adding (j) surfaced (c) as a 1.5x-looking "regression"
+# that was actually an engine switch three days old and completely
+# unflagged. Pinning restores what floors.tsv has measured for (c)/(i) since
+# 2026-08-09/2026-08-11; the capture-bearing DEFAULT-path number for a
+# similarly-shaped pattern is exactly what (j) exists to cover instead. See
+# this directory's CLAUDE.md for the full finding write-up and the measured
+# DFA-vs-hybrid gap on these two shapes (data, not a regression: the hybrid
+# buys capture extraction that (c)/(i) never asked for).
+declare -A CASE_FLAGS=(
+    [c]="--no-captures"
+    [i]="--no-captures"
+)
+# CASE_EXPECT_ENGINE: the durable fix for the finding above. Every case
+# declares which engine its artifact MUST stamp; process_case asserts
+# rx_info.engine against it right after the build, before any measurement is
+# trusted. A number pins a value; this pins what the number MEASURES -- the
+# next default flip that silently changes engine selection now fails loudly
+# as an ENGINE MISMATCH hard error instead of aging as an unflagged multi-day
+# throughput mystery the way (c)/(i) just did. "DFA" = ENGM_DFA (1), "VM" =
+# ENGM_VM (2) -- see lib/pcrec.h's rx_info.engine / RX_ENGINE_WHY comments
+# for what the artifact itself stamps.
+declare -A CASE_EXPECT_ENGINE=(
+    [a]="DFA"
+    [b]="DFA"
+    [c]="DFA"
+    [d]="DFA"
+    [e]="DFA"
+    [f]="DFA"
+    [g]="DFA"
+    [h]="DFA"
+    [i]="DFA"
+    [j]="VM"
+)
 
 # =========================================================================
 # Per-case processing
@@ -612,14 +655,42 @@ process_case() {
     mkdir -p "$cdir"
 
     # ---- build the pcrec matcher for this case's pattern ----
+    # shellcheck disable=SC2206
+    local extra_flags=(${CASE_FLAGS[$id]:-})
     local perr
-    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$cdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx "${extra_flags[@]}" -o "$cdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         record_hard_error "pcrec failed to compile case $id pattern '$pattern': $perr"
         CASE_VALID[$id]="error"; CASE_REASON[$id]="pcrec compile failure: $perr"
         echo "   SKIPPED (pcrec compile failure)"; echo
         return
     fi
+
+    # ---- engine assertion (M4.6b): the artifact must stamp the engine this
+    # case DECLARES, or the number about to be measured is not the number
+    # this case's floor claims to pin -- see CASE_EXPECT_ENGINE's own
+    # comment for the finding that made this necessary (cases (c)/(i) aged
+    # silently onto the VM+prefilter hybrid for three days with nothing red
+    # anywhere). A mismatch is a hard error, same severity as a build
+    # failure: a floor gated against the wrong engine is worse than no floor
+    # at all, since it looks measured. ----
+    local expect_engine="${CASE_EXPECT_ENGINE[$id]:-}"
+    if [ -n "$expect_engine" ]; then
+        local want_stamp got_stamp
+        case "$expect_engine" in
+            DFA) want_stamp="ENGM_DFA" ;;
+            VM)  want_stamp="ENGM_VM" ;;
+            *)   record_hard_error "case $id: CASE_EXPECT_ENGINE has an unknown value '$expect_engine'"; return ;;
+        esac
+        got_stamp="$(grep -oE '/\* ENGM_(DFA|VM) \*/' "$cdir/gen.c" | grep -oE 'ENGM_(DFA|VM)' | head -1)"
+        if [ "$got_stamp" != "$want_stamp" ]; then
+            record_hard_error "case $id: ENGINE MISMATCH -- expected $want_stamp, artifact stamps rx_info.engine = ${got_stamp:-<not found>} (see CASE_EXPECT_ENGINE and this directory's CLAUDE.md for the finding this assertion guards against)"
+            CASE_VALID[$id]="error"; CASE_REASON[$id]="engine mismatch: expected $want_stamp, got ${got_stamp:-<not found>}"
+            echo "   SKIPPED (engine mismatch: expected $want_stamp, got ${got_stamp:-<not found>})"; echo
+            return
+        fi
+    fi
+
     local berr
     berr="$(timeout "$BUILD_TIMEOUT" "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
         -I"$cdir" -o "$cdir/eng_pcrec" "$SCRIPT_DIR/eng_pcrec.c" "$cdir/gen.c" 2>&1)"
