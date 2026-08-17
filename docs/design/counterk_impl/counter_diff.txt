@@ -1,0 +1,12 @@
+== counter_diff: §8.1, counter rung vs -fno-counter replication ==
+commit  65f2826
+gcc     cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+K       8 (PCREC_DEFAULT_UNROLL_K)
+
+pattern pairs built      188
+refused by both (skipped) 0
+SELECTED the counter rung 77
+cells compared           2220
+divergences              0
+
+OK: 2220 cells, 188 pairs, 77 selecting, 0 divergences

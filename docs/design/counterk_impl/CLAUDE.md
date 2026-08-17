@@ -133,6 +133,37 @@ cannot be re-run is not a measurement.
   reports the TRUE boundary when a pin fails, so a wrong prediction yields a
   number rather than a bare red.
 
+- **`probes/counter_diff.sh`** — §8.1's pcrec-vs-pcrec differential: the counter
+  rung against `-fno-counter` replication, compared on span, every capture slot
+  and the failure surface.
+
+  **It carries a RESIDUE axis and a STRIDE axis, and it exists in that shape
+  because of R26 E1/E2** (the K23 lane): a clamp that was sound at stride 1 and
+  wrong above it had been blessed by an 855-cell differential that could not
+  have seen it — single-byte bodies, no residue axis. This rung's whole boundary
+  arithmetic lives on the mod-K lattice (`stv[ctr] + K > count`, a tail of
+  `count mod K` copies), so it has the same exposure class from its own
+  structure rather than by analogy. **This lane's FIRST sweep used counts whose
+  residues mod 8 were {4,4,1,1} — two of eight — and reported 576 green cells.**
+  The committed instrument walks every residue 0..K-1 on BOTH phases plus the
+  K-1/K/K+1 boundary, and includes stride>1 bodies so a nested cursor rung runs
+  inside the counter loop (also the only shape that exercises §7.4's one
+  division, the frameless scan's `/stride`).
+
+  Three non-vacuity obligations, each written down because this lane violated it
+  once first: both sides BUILT (a silent `cc` failure makes both sides empty and
+  empty compares equal — 0 divergences over 50 cells, once); every cell produced
+  OUTPUT; and the rung was SELECTED, asserted from the artifact's stamp, because
+  a witness that does not select the strategy tests the rung below it under this
+  rung's name — §3.3's preference witness is non-capturing and was measured
+  against the DFA before that check existed. The report prints the SELECTED
+  count, and the script exits non-zero if it is zero.
+
+  `-O1` deliberately, never `-O2`: the ground-truth arm is the REPLICATED
+  emission, which at these shapes is a function gcc `-O2` can spend minutes on.
+  A semantic check gains nothing from optimisation and risks a timeout that
+  reads as a hang.
+
 - **`probes/clamp_arith.py`** — the clamp, PROVED ARITHMETICALLY before the
   code exists (R25 E1 required this before acceptance). **Kept here after the
   F-1 ruling moved the clamp to plan row [ENG-CLAMP]**: it is that row's
@@ -188,7 +219,7 @@ cannot be re-run is not a measurement.
 ## Archived outputs
 
 - **`measure_baseline.txt`** / **`step_charge.txt`** / **`clamp_arith.txt`** /
-  **`census_default.txt`** / **`work_charge.txt`** — one run of each probe above, with its own source
+  **`census_default.txt`** / **`work_charge.txt`** / **`counter_diff.txt`** — one run of each probe above, with its own source
   header (repo, commit, gcc, date). Stable-named so a re-run diffs against
   them, D35's shape. Evidence for the panel, never an oracle: no check reads
   them.
