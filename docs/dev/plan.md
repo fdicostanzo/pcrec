@@ -153,14 +153,13 @@ stated terms.
   note paneled (R23) and BUILT by the k18-rewrite lane ([K18-FIX] in
   plan_completed.md; corpus 1704 → 3198); [ENG-BREP] alongside it;
   struct rx_info spelling + K19 residual rulings open with Frank.
-- [M4.7] STATE:not-started — **AUTHORIZED (Frank, 2026-08-17,
+- [M4.7] STATE:started — **AUTHORIZED (Frank, 2026-08-17,
   twenty-ninth session close): open at next session start, alongside
   the [OPT-ALTCLS] and [BENCH-VM] lanes (3 lanes; [DD-13b] stays
   paused). Sequencing constraint recorded: [OPT-ALTCLS] merges BEFORE
   the at-scale differential run so any divergence attributes cleanly.
-  Expand into substeps when work begins. K9's API half (pattern_len)
-  and K7 are natural residents — decide their substep homes at
-  expansion.** DIFFERENTIAL + CLOSE: capture differential
+  EXPANDED 2026-08-17 (thirtieth session) into the substeps below;
+  K9's API half and K7 HOMED here (rationale in each substep).** DIFFERENTIAL + CLOSE: capture differential
   vs libpcre2 ovectors (gate-ON per docs/testing.md's differential-gate
   principle), fuzzer extended to compare capture spans, SR-8's
   diagnostic flip lands (the VM now exists), full close battery +
@@ -179,6 +178,51 @@ stated terms.
   retention; empty-final-iteration overwrite), arbitrated three-way
   unanimous and recorded as the §2.2 as-built addendum, get folded into
   the graduated spec text properly rather than living as an addendum
+  - [M4.7d] STATE:started — FUZZER CAPTURE-SPAN EXTENSION: fuzz.py's
+    content-divergence comparison extended from whole-match spans to
+    ALL capture-group spans vs the PCRE2 ovector (unset groups
+    included — the -1/-1 convention vs pcrec's contract per
+    match_api_m4.md), generator extended to emit capture-bearing
+    shapes at meaningful density. Prerequisite of [M4.7e]; independent
+    of [OPT-ALTCLS], so it runs first-wave. Sonnet lane
+  - [M4.7a] STATE:not-started — SR-8 FLIP (the deferred row's charter,
+    now unblocked — the VM exists): the engine-capability check moves
+    out of the parser to a lowering-time check against the registry's
+    `engines` column; the honest diagnostic becomes "requires the VM
+    engine" territory rather than "requires module 'backrefs'" for
+    constructs that parse fine and cannot lower. NOTE the flip is
+    smaller than SR-8's row text (zero constructs become pending
+    today); D26 tiering governs wording effort
+  - [M4.7b] STATE:not-started — K7 FIX (homed here: the at-scale
+    differential/fuzzer run stresses exactly the compile-side
+    resource boundary K7 breaks, and M4.7 is the last stop before
+    M5/M6 widen the surface): a large bounded repeat must reach the
+    "too complex" diagnostic under bounded memory instead of 2-5 GB
+    RSS / SIGKILL / aborting a limited caller's process; reconcile
+    the two wrong docs/pcre2_compliance.md claims K7's entry records.
+    Engine-core resource accounting — opus-tier lane
+  - [M4.7c] STATE:not-started — K9 API HALF (homed here: the spec
+    graduation at [M4.7f] freezes the as-built contract, so the
+    rx_info.pattern_len field must exist BEFORE the freeze or the
+    first spec document is born stale): rx_info gains pattern_len
+    (byte length of the compiled pattern) so a caller can detect the
+    NUL-truncation silent-wrong-compile. The compile-entry length
+    parameter half stays with DD-3 (public-API compat policy), per
+    K9's own scheduling note
+  - [M4.7e] STATE:not-started — AT-SCALE CAPTURE DIFFERENTIAL vs
+    libpcre2 ovectors, gate-ON per docs/testing.md's differential-gate
+    principle. SEQUENCED: starts only after [OPT-ALTCLS] merges (so
+    divergences attribute cleanly) and [M4.7d] lands. D44 three-way
+    posture where python re can arbitrate
+  - [M4.7f] STATE:not-started — SPEC GRADUATION: the AS-BUILT
+    match-API contract authored into docs/spec/ (first spec document,
+    D40), from the shipped surface, referencing match_api_m4.md;
+    includes the R22 §2.2 CONTRACT-TEXT WORDING PASS (cross-iteration
+    retention; empty-final-iteration overwrite — folded into the
+    graduated text, not carried as an addendum). After [M4.7c] so
+    pattern_len is in the frozen surface
+  - [M4.7g] STATE:not-started — CLOSE: full close battery + ratchets;
+    M5-vs-M6 order decided WITH FRANK at this close (standing rule)
 
 Design notes moved here from [MOD-0.1]'s archived entry (docs/dev/plan_completed.md),
 2026-08-13 — M4's design customers, per the Development order above:
@@ -937,7 +981,7 @@ execution speed trades the primary goal (D18) for the secondary one.
   will be its testing suite. builds confidence and lets us go crazy when we
   get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
   everything below; an optimization the suite cannot referee does not land)
-- [BENCH-VM] STATE:not-started — VM-TIER MINI-BENCH CASES (manager
+- [BENCH-VM] STATE:started — VM-TIER MINI-BENCH CASES (manager
   proposal accepted into the queue 2026-08-17, twenty-ninth session;
   a deliberately thin EARLY SLICE of [BENCH-1], not a replacement):
   three new compare.sh cases with floors, closing the gap that the
@@ -957,7 +1001,7 @@ execution speed trades the primary goal (D18) for the secondary one.
   prerequisite, docs/design/counterk_impl/bench_k.txt). Sonnet-sized,
   one lane.
 - [BENCH-1] STATE:not-started — FEATURE-SPANNING BENCHMARK EXPANSION + THE PRIORITIZER (Frank, 2026-08-13 sixteenth session): today's bench is 9 cases (a-i) of deliberately basic shapes — good regression gates, not a capability map (Frank: "whenever i see benchmarks, its usually a series of rather basic benchmarks that do not really exercise the capabilities"). Build a benchmark that SPANS the feature set and the complexity range: per-feature-family case GROUPS (literal/memchr shapes, classes, alternation/trie widths, bounded repeats, anchors/EOL, dense/counting — the case-f family, captures (M4), backrefs/lookaround/atomic (M6), UTF-8/\p (M5), plus real-world-shaped patterns), each family at graded complexities; pattern sources = hand-designed families + the PCRE2 testdata import (M7 — this row is deliberately scheduled around that import so the corpus arrives with it) + generated shapes where a family needs a sweep. STRUCTURED FOR SPOT-CHECKS exactly like TT-1's tiers: every case and group individually addressable (make bench CASE=... / GROUP=...), the full sweep at evaluation points only. TWO INSTRUMENTS, deliberately distinct — M2.11's ruling stands: the regression GATE stays absolute per-case floors (cross-engine ratios move for reasons that are not our regression); the new PRIORITIZER is a cross-engine RELATIVE ranking vs libpcre2 — informational, never a gate — whose output is a worst-first worklist. Frank's stated optimization workflow, recorded as the row's purpose: (1) OPT-A's survey incl. the pattern-generation study, then (2) work the prioritizer list from the relative worst downward. Every number under D12/D17/R3.10 discipline; MECH-3's provenance-refusing wrapper is the intended measurement vehicle and lands first. Sequencing: after the main feature set is built and proven (post-M6, with M7's testdata), BEFORE the OPT waves open — this row is the OPT waves' worklist generator. AMENDED 2026-08-13 (same session, positioning discussion): the case groups include a LATENCY / SHORT-SUBJECT group — time-to-first-match from process start (the AOT structural win: tables page in from .rodata vs pcre2_compile + JIT warmup per process) and per-call overhead on short subjects (log lines, field validation — the dimension real workloads are dominated by and typical benchmarks skip); and the prioritizer gets a second reading — the BEST relative cells feed the positioning note (Beyond M7), not just the worst cells feeding the fix list. AMENDED 2026-08-14 (D42.8): the prioritizer worklist has a KNOWN HEAD before it runs — case (f) at 0.151 relative, re-homed here from [DD-9] (archived) with engine_m4.md §8.4's three findings attached (wrong-lever computed goto; ~2x reverse-pass share; bit-parallel shift-and candidate); [OPT-SIMD] is the adjacent lever row.
-- [OPT-ALTCLS] STATE:not-started — ALTERNATION→CLASS NORMALIZATION
+- [OPT-ALTCLS] STATE:started — ALTERNATION→CLASS NORMALIZATION
   (Frank, 2026-08-17, twenty-ninth session, from reading --emit-ir on
   `a(b|c)+d` vs `a([bc])+d`): an IR/AST pass merging maximal runs of
   ADJACENT single-character branches (1-char literal or class atoms:
