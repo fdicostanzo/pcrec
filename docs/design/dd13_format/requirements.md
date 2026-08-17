@@ -123,18 +123,39 @@ distinct failure taxonomies. A successor format inherits the same
 obligation: config/parse errors, compile errors, and expectation mismatches
 must stay separately attributable, not collapsed into one failure count.
 
+**R-RXT-10 (`perr` asserts THAT, never WHY — `tests/reject/`'s own
+documented limitation):** `tests/reject/CLAUDE.md` states directly: "A
+`perr` block cannot express the part that matters most — that the
+diagnostic names the RIGHT module. That name is the caller's only pointer
+to what would implement the construct, and `perr` asserts only that
+compilation failed." This is why `tests/reject/`'s 306+ hand-maintained
+rows (plus generated sweeps) live in a C table rather than `.rxt` at
+all — a structural gap in today's format, not an oversight, and the
+reason `tests/reject/` exists as a wholly separate consumer this note's
+earlier draft did not survey. Whether a successor format closes this gap
+(e.g. an expected-diagnostic-substring or expected-module assertion) is
+[DD-13b]'s decision, not this note's — but the requirements note may not
+omit a consumer whose entire existence is explained by a documented
+format limitation. Note the same THAT-not-WHY shape reappears
+independently in `subst_template_design.md`'s proposed `serr` directive
+(R-SUBST-3, §7) — a bare "the template fails to compile," no diagnostic
+content — so if [DD-13b] decides to close this gap, it likely wants one
+mechanism serving both `perr` and `serr`-shaped needs, not two.
+
 ---
 
 ## 2. [V-E] manifest + finder + compilation units
 
-Evidence: `docs/dev/plan.md` [V-E] row (lines ~374-432), D39 + addendum, D38
-Q7, D20.
+Evidence: `docs/dev/plan.md` [V-E] row (lines ~374-432) and, for R-VE-1
+specifically, the [DD-13] row itself (lines ~722-768, which restates and
+extends [V-E]'s scope); D39 + addendum, D38 Q7, D20.
 
 **R-VE-1 (N named patterns → one or more emitted units):** the manifest is a
-COMPILATION SOURCE — `docs/dev/plan.md`: "N named patterns → one emitted
-unit, perhaps several." The format must be able to name a compilation-unit
-boundary per pattern or group of patterns, not assume one-file-in →
-one-file-out.
+COMPILATION SOURCE — `docs/dev/plan.md`'s **[DD-13] row** (line 726, not
+[V-E]'s own row — corrected per R27 F11, which caught this note citing the
+wrong row): "N named patterns → one emitted unit, perhaps several." The
+format must be able to name a compilation-unit boundary per pattern or
+group of patterns, not assume one-file-in → one-file-out.
 
 **R-VE-2 (named entry points, no forced dispatch):** "per-pattern named
 entry points exactly as today (a statically-known caller pays no dispatch —
@@ -178,7 +199,7 @@ RULED toward caller-supplied labels per insertion site (`"a:reg1"`,
 `"b:reg1"` for the same regex inserted twice), composed into a path for
 nested insertions (`"c:a"`). The exported index gains a `ref` column, born
 at the M4 freeze with NULL/empty for the primary's own groups. **Still open
-(carried to OD-ledger below, §6):** path spelling/separator, whether the
+(carried to OD-ledger below, §11):** path spelling/separator, whether the
 label is mandatory or optional-with-default for a single insertion, and
 name-alone-vs-ref+name lookup semantics. The format must have a place for
 an optional reference label at each insertion site; the label's exact
@@ -194,8 +215,12 @@ cannot rely on runtime detection.
 inherited):** whether cross-references surface as `(?(DEFINE))`/`(?&name)`
 desugar (composed pattern stays valid PCRE2, subroutine-call semantics are
 ATOMIC and shift capture numbering) or pcrec's own reference spelling
-(plain inlining semantics, beyond-PCRE2) is explicitly UNRESOLVED — "Q2/
-K4-tier, measured never read." Carried to the OD ledger (§6, OD-5).
+(plain inlining semantics, beyond-PCRE2) is explicitly UNRESOLVED —
+"OPEN CHOICE (Frank's, **Q2/K4-tier — measured, never read from docs**)"
+(exact quote restored per R27 F11; an earlier draft compressed this to
+"measured never read," dropping "from docs," which is the operative part —
+it is an instruction about METHOD, not just a status tag). Carried to the
+OD ledger (§11, OD-5).
 
 **R-VE-9 (usage-mode duality: CLI args AND manifest file):** "CLI
 multi-pattern args with per-pattern names, and a manifest file for build
@@ -214,6 +239,18 @@ format as machine-only output that humans never read or hand-write.
 **R-VE-11 (template field, D38 Q7):** "V-E's manifest gains a template
 field when designed" — this is [M4-SUBST]'s own stated dependency on this
 format; expanded in §7 below.
+
+**R-VE-12 (a per-pattern encoding field):** `docs/dev/plan.md`'s [V-E] row
+states the manifest entry shape directly: "the MANIFEST is the user-facing
+FILE FORMAT for specifying regexes (**name, pattern, flags, encoding per
+entry** → one compiled unit)" (line 396). No requirement above covers this
+explicitly — R-VE-9/10 discuss usage modes and the manifest's status as a
+user surface, not the per-entry field list itself. The format needs a
+place for an ENCODING selector per named pattern, alongside its `flags`.
+This note does not survey what pcrec's encoding axis currently contains
+(that is APPROACH.md/D20/OS-1 territory, not this note's) — the
+requirement is only that the field exists per pattern; its value space is
+[DD-13b]'s (and ultimately the encoding axis's own design's) to define.
 
 ---
 
@@ -245,7 +282,7 @@ exposed").
 
 **R-VG-1 (the .rxt harness IS the packaging target):** "the machinery
 exists and is battle-proven (docs/testing.md); the work is packaging,
-scope... and docs." Every requirement in §1 (R-RXT-1..9) is therefore also
+scope... and docs." Every requirement in §1 (R-RXT-1..10) is therefore also
 a V-G requirement — V-G does not want a different testing model, it wants
 today's model made available to a `pcrec test`-shaped user surface, with a
 scoping decision (which harness features are dev-only vs user-grade) left
@@ -260,8 +297,8 @@ requirement that directly forces §1 and §2 to be THE SAME format rather
 than two formats that happen to interoperate: a named pattern inside a
 manifest needs to carry its own test cases, co-located, and be
 independently runnable through the harness. This is also where the
-interface-vs-reference-only tension (§6, OD-4) originates — see §5 of
-`frank_inputs.md`, restated in the OD ledger below.
+interface-vs-reference-only tension (§10 T-1, §11 OD-4) originates — see
+§5 of `frank_inputs.md`, restated in the OD ledger below.
 
 **R-VG-3 (oracle differentials are optional, not mandatory):** "optionally
 cross-check against the oracles" (python-re / libpcre2, where installed) —
@@ -291,7 +328,12 @@ independently" — this is not hypothetical, it is the method
 needs a place to carry: a set of tier tags, a hazard-class tag, a size
 class, and a verification-method tag PER CASE (not per file — APPROACH.md
 §5 is explicit that expectations can legitimately be verified by different
-methods within one hazard band).
+methods within one hazard band). **Attribution note (R27 F12):** grouping
+these four together as one "per-case tag set" is this note's own synthesis
+of §3's prose list — APPROACH.md §3 lists tier/hazard/size/
+verification-method as prose, not as a formal four-field schema; the
+GROUPING is this note's inference, not a structure APPROACH.md itself
+declares.
 
 **R-BENCH-2 (engine/config sections — the (engine, version,
 build-configuration) triple, §2.4/§4):** "A testee is an (engine, version,
@@ -328,10 +370,12 @@ specifically with "different semantics, admitted with its semantics
 tagged."
 
 **R-BENCH-6 (exemplar/corpus-file references, `frank_inputs.md` +
-APPROACH.md §3):** "large subjects/corpora live in external files,
+APPROACH.md §2):** "large subjects/corpora live in external files,
 referenced rather than inlined" (Frank, row creation) and independently,
-APPROACH.md §3's test-set component description assumes corpora can be
-large ("a larger test set than normal... big subjects"). The format needs
+APPROACH.md **§2**'s first founding principle assumes corpora can be large
+("a larger test set than normal... big subjects" — corrected per R27 F11;
+an earlier draft mis-cited this as §3, the architecture-sketch section,
+when it is actually §2's founding-principles list). The format needs
 subject-by-reference, not only subject-by-inline-string as `.rxt` has today
 (R-RXT-3's inline quoted-string model does not scale to "big subjects").
 
@@ -378,7 +422,18 @@ lines) plus one sibling in `tests/known_fail/`
 `tests/base/CLAUDE.md`: "81 blocks / 676 live case-lines written from the
 PCRE promise by an author denied `src/` and `tests/`, every expectation
 computed from python `re` and independently re-verified by a from-scratch
-checker."
+checker."[^676] 
+
+[^676]: This note's own direct count of case-lines across the six files
+    (`m` + `n` + `g`: 335 + 81 + 263) is **679**, not 676. The quoted
+    `tests/base/CLAUDE.md` figure has drifted — apparently during a later
+    re-pin unrelated to this note (the counter-K era) — not this note's
+    arithmetic, which is why the quote is kept verbatim above rather than
+    silently "corrected" to match a recount `tests/base/CLAUDE.md` itself
+    doesn't yet say. `tests/base/CLAUDE.md` is deliberately left unedited
+    here (R27 F8): it should be fixed after the held d27k23 branch merges,
+    since that branch touches the same file and a fix here would create a
+    gratuitous conflict.
 
 `d27_nesting.rxt`'s actual header (verbatim, read directly):
 ```
@@ -402,7 +457,50 @@ discipline provides no forcing function on the format's grammar — the
 current format is already sufficient for it, and the requirement is
 negative: whatever DD-13 becomes, it must not become HARDER for a
 constrained/blinded author to write correctly (see R-RXT-2's `#`-comment
-lesson, itself found BY a D27 author, and the anti-requirements in §8).
+lesson, itself found BY a D27 author, and the anti-requirements in §12).
+
+**Additional evidence (R27 F13): this is not a sample of one.** An earlier
+draft's own §13 self-critique called R-GEN-1 "a survey of ONE generator...
+a sample size of one generator, one feature area, one author" — the panel
+found this too harsh, because the note had not looked past the D27
+quantifier corpus for other generation events already in the repo. There
+are at least **five** independent instances of the same pattern (plain
+`.rxt`, no format-specific syntax, produced by something other than a
+human directly transcribing test cases), not one:
+
+1. The D27 quantifier corpus itself (`tests/base/d27_*.rxt`, above).
+2. **A second, independent D27-blinded generation event**: the [M4.5d]
+   capture author, `tests/captures/` (`docs/dev/reviews/2026-08-15-r22-m45d-capture-author.md`,
+   R22) — "85 m/ms cases + 145 group lines, python-derived and twice
+   verified, 230/230 green against the VM," described in that review as
+   "the strongest independent capture-correctness evidence in the
+   project." A different author, a different feature area (captures, not
+   quantifiers), same result: plain existing `.rxt` directive vocabulary
+   (`pattern`/`m`/`ms`/`g`/`gp`), no format extension needed.
+3. **`tests/possessify/possessify.rxt`** (76 pattern blocks, this note's
+   own §1 census) — a systematically GENERATED, non-blinded
+   oracle-verified corpus for the [ENG-BREP] possessification rung; per
+   `tests/possessify/CLAUDE.md`, "not a module directory... no block here
+   carries a `features` directive" — plain `pattern`/`m`/`n` (+ `g`
+   where captures are involved), nothing new.
+4. **`tests/rungselect/rungselect.rxt`** (29 pattern blocks) — the same
+   generated-corpus shape one rung up the [ENG-BREP] ladder, per
+   `tests/rungselect/CLAUDE.md` structurally identical in format
+   requirements to (3).
+5. **`tests/counterk/`'s `.rxt` corpus** (32 pattern blocks) — the
+   [ENG-BREP] COUNTER rung's own generated differential corpus, same
+   shape again.
+
+All five were checked directly (file counts from this note's own §1
+census; `tests/captures/CLAUDE.md`, `tests/possessify/CLAUDE.md`,
+`tests/rungselect/CLAUDE.md` read for their stated generation method) and
+all five use only directive vocabulary `docs/testing.md` already
+documents. The no-forcing-function finding is **n=5**, spanning two
+authoring modes (D27-blinded and systematically-generated-non-blinded),
+at least three feature areas (quantifiers, captures, emission-strategy
+differentials), and at least three separate authors/lanes — not the
+single narrow sample an earlier draft of this note's own §13 believed it
+was reporting.
 
 **R-GEN-2 (headers are a human convention, not a format feature):** the
 descriptive header comment (family name, generation method, oracle used) is
@@ -424,46 +522,114 @@ orthogonal to the requirements above.
 
 ---
 
-## 7. [M4-SUBST] intersection — YES, it intersects, narrowly
+## 7. [M4-SUBST] intersection — YES, and more than an earlier pass of this note found
 
-Evidence: `docs/design/subst_template_design.md` (full read of §1 and a
-grep for file-format/manifest references), D38 ruling Q7.
+Evidence: `docs/design/subst_template_design.md`, full read of every
+section (§1-§10), D38 ruling Q7.
 
-**Finding:** `subst_template_design.md` itself does NOT touch file-format
-territory — it is an ABI/compile-contract document (the capture-offset
-CONTRACT a template compiler consumes: `rx_ctx.caps`, group count as a
-compile-time constant, the `RX_UNSET` sentinel). A `grep` for
-`.rxt`/"file format"/`DD-13`/manifest across the whole document returns only
-three hits, all in §7 discussing `[V-E]`'s manifest as the future HOME for
-a template field, never proposing format syntax itself:
+**Correction (R27 F1, a blocker in the panel review of this note's first
+draft).** An earlier draft reported: *"a `grep` for `.rxt`/'file
+format'/`DD-13`/manifest across the whole document returns only three
+hits, all in §7."* That count was written down without being re-run, and
+it was wrong. Re-run directly:
 
-> "**[V-E]**'s manifest is the ratified home for [a replacement template]...
-> *Recommend: `--replace` now, and note the manifest gains a template field
-> when that design lands.*" (§7, ~line 1157-1163)
+```
+$ grep -n '\.rxt\|file format\|DD-13\|manifest' docs/design/subst_template_design.md
+756:natural hook for **[V-E]**'s manifest (a template becomes a field of a named
+992:neither of which `.rxt` can express. The extension follows the existing
+993:directive grammar exactly (`docs/testing.md`, "The `.rxt` format") — a
+1157:   the obvious flag. But **[V-E]**'s manifest is the ratified home for
+1159:   field of that entry. *Recommend: `--replace` now, and note the manifest
+1163:   `[V-E]`'s manifest gains a template field when that design lands.
+```
 
-This is confirmed independently by D38's own ruling text (§3 above, "Q7
-`--replace` now (repeatable per §5.5); V-E's manifest gains a template
-field when designed").
+Six hits, not three, and the earlier draft had surveyed only the three at
+§7 (lines 1157/1159/1163 above). Line 756 (§5.5) and lines 992-993
+(§8) were never read. §8 in particular is not a passing mention — it is a
+fully-worked, ten-question-earlier, PROPOSED (unpaneled) `.rxt` extension
+for substitution testing, and it is the single most concrete piece of
+format-extension prior art anywhere in this repository. Certifying it
+absent was the failure; both R27 panel lenses caught it independently.
+
+**§5.5 (line 756) — a second, independent manifest hook.** "*nothing in
+this design ties one pattern to one template. The splice code is
+per-template; the matcher is per-pattern and shared. Emitting
+`rx_subst_redact` and `rx_subst_expand` over one matcher is the same
+named-entry-point mechanism as §5.3 and needs no new machinery. This is
+the natural hook for **[V-E]**'s manifest (a template becomes a field of a
+named entry) and is noted so the design does not accidentally preclude
+it.*" This is the SAME field R-SUBST-1 already states as a requirement
+(one field, potentially many templates per pattern) — no new requirement
+follows, but it is independent corroboration that the design note itself
+already assumed a manifest field would exist, at two separate points in
+the document, not one.
+
+**§8 "Testing sketch" (lines 987-1090) — the prior art R-SUBST-3 records
+below.** §8.1 proposes a concrete `.rxt` extension (`repl`/`s`/`sg`/
+`serr`); §8.2 proposes an oracle strategy (python's `re.sub`, with one
+documented, measured exclusion); §8.3 is a phase-1 test plan identifying
+what is testable before M4/captures land; §8.4 argues this feature is "an
+unusually good D27 candidate." All of it PROPOSED, none of it panelled or
+ruled.
 
 **R-SUBST-1 (a template-text field per named pattern, deferred field
 shape):** the format needs, EVENTUALLY, a way to associate one or more
 replacement-template strings with a named pattern (mirroring `pcre2
 --replace`/`sed`-style templates: `$0`, `$1`, `${name}`). This is a real,
 ratified obligation on [V-E]'s manifest (and therefore on DD-13, since
-DD-13 subsumes V-E's manifest format per the plan row), but it has NO
-shape requirements beyond "a field can hold template text co-located with
-the pattern it replaces against" — the template's own internal grammar
-(`$1`/`${name}` substitution syntax) is `[M4-SUBST]`'s territory entirely
-and orthogonal to DD-13's grammar. **Do not design the template's internal
-syntax here** — the requirement is only that the CONTAINING format has
-somewhere for a template string to live per named pattern, the same way it
-needs somewhere for `flags`/`features` to live per pattern today.
+DD-13 subsumes V-E's manifest format per the plan row), corroborated
+independently at two points in `subst_template_design.md` (§5.5 and §7),
+but it has NO shape requirements beyond "a field can hold template text
+co-located with the pattern it replaces against" — the template's own
+internal grammar (`$1`/`${name}` substitution syntax) is `[M4-SUBST]`'s
+territory entirely and orthogonal to DD-13's grammar. **Do not design the
+template's internal syntax here** — the requirement is only that the
+CONTAINING format has somewhere for a template string to live per named
+pattern, the same way it needs somewhere for `flags`/`features` to live
+per pattern today.
 
-**R-SUBST-2 (no urgency, no other coupling):** `[M4-SUBST]` is explicitly
-independent of the match API and can (and did) proceed via `--replace` on
-the CLI without waiting on DD-13. There is no timing dependency forcing
-DD-13 to resolve R-SUBST-1 before M4-SUBST can ship further work — it is a
-"when the manifest exists" obligation, not a blocking one.
+**R-SUBST-2 (no urgency; the coupling is real but non-blocking):**
+`[M4-SUBST]` is explicitly independent of the match API and can (and did)
+proceed via `--replace` on the CLI without waiting on DD-13. There is no
+timing dependency forcing DD-13 to resolve R-SUBST-1 before M4-SUBST can
+ship further work. The "no other coupling" language an earlier draft used
+here was too strong given R-SUBST-3 below — read this item as "no
+*blocking* coupling," not "no coupling."
+
+**R-SUBST-3 (repl/s/sg/serr — PRIOR ART, not a binding requirement):**
+`subst_template_design.md` §8.1 works out a full block-scoped `.rxt`
+extension for substitution testing:
+
+```
+# repl <template>       — block-scoped, like flags/features; does not carry
+# s  "<subject>" "<expected output>"    — first-match substitution
+# sg "<subject>" "<expected output>"    — global substitution
+# serr                                  — the TEMPLATE fails to compile
+```
+
+with a worked example, an oracle strategy (§8.2: python's `re.sub` is
+measured a valid oracle for global-mode splice geometry — byte-for-byte
+agreement with libpcre2 on every empty-match cell measured — with one
+documented, measured exclusion: unset-but-existing groups diverge between
+the two oracles depending on how D38's Q3 ruling is read), and a
+phase-1 test plan (§8.3) identifying which parts are testable before
+M4/captures land at all (the whole template compiler minus `$1..$n`;
+every literal-only splice; the entire global-mode splice geometry, since
+`$0` is already `rx_span`). §8.4 argues this is "an unusually good D27
+candidate," for the same reason this note's own R-GEN findings (§6) argue
+the quantifier and capture corpora were.
+
+This is UNPANELED, PROPOSED design — not a Frank ruling, not a binding
+requirement on [DD-13b] — but [DD-13b] should read it directly rather than
+rediscover its shape. Two structural facts in it bear directly on this
+note's own OD-1/T-4 (§10/§11): the proposed `repl` directive is
+block-scoped and explicitly does **not** carry forward across `pattern`
+lines — the same non-carrying default R-RXT-1 already established for
+`flags`/`features` — and the `<expected output>` field reuses R-RXT-3's
+existing escape set unchanged, which is independent evidence (from a
+different author, a different feature) that R-RXT-3's byte-exact
+discipline is the thing to reuse rather than reinvent, relevant again to
+T-5's exemplar-file byte-exactness concern.
 
 ---
 
@@ -472,19 +638,27 @@ DD-13 to resolve R-SUBST-1 before M4-SUBST can ship further work — it is a
 | Consumer | Plan row | Status | Requirements |
 |---|---|---|---|
 | `.rxt` harness/corpus | (pre-existing) | LIVE, ~10k cases | R-RXT-1..9 |
-| Manifest + finder | [V-E] | not-started | R-VE-1..11 |
+| `tests/reject/` (module-diagnostic table) | (pre-existing) | LIVE, structurally separate from `.rxt` | R-RXT-10 |
+| Manifest + finder | [V-E] | not-started | R-VE-1..12 |
 | Source-scan transformer | [V-F] | not-started | R-VF-1..2 (rides V-E) |
 | User-facing testing | [V-G] | not-started | R-VG-1..3 (rides §1 + V-E) |
 | pcrec-bench sets | pcrec-bench §8 Q1 | SEED | R-BENCH-1..9 |
-| Machine generation | (D27 method) | LIVE | R-GEN-1..3 |
-| Substitution templates | [M4-SUBST] | §9 RULED, unbuilt | R-SUBST-1..2 |
+| Machine generation | (D27 method + 4 more, §6) | LIVE, n=5 sources | R-GEN-1..3 |
+| Substitution templates | [M4-SUBST] | §9 RULED, unbuilt | R-SUBST-1..3 |
 
 ---
 
-## 9. The `.rxt` compatibility answer: DIALECT, arguing from the survey data
+## 9. The `.rxt` compatibility answer: DIALECT — held under adversarial review, confidence softened (R27 F6)
 
 The plan row asks directly: "is `.rxt` a subset, a dialect, or migrated?"
-Argued from §1's census and §6's finding, not from opinion:
+**R27's panel attacked this conclusion directly** (r27b's brief was to
+steelman AGAINST it) and reported it could not construct a case where a
+strictly-additive dialect structurally violates any R-* requirement in
+this note; T-4's cascade-vs-non-carrying tension in particular looks
+resolvable by scoping cascades to new top-level constructs that legacy
+files never opt into. **The DIALECT conclusion stands** — but the earlier
+draft's evidence for it claimed more certainty than it supports, and this
+revision states the argument more carefully.
 
 - **Not "subset."** A subset would mean today's `.rxt` files stay valid
   under a SMALLER grammar than the new format defines — true in the trivial
@@ -495,19 +669,53 @@ Argued from §1's census and §6's finding, not from opinion:
   at all). Calling the relationship "subset" undersells how much new
   surface is required by §2 and §5 alone.
 
-- **Not "migrated" (in the rewrite-the-corpus sense).** R-BENCH-8 is direct
-  evidence against this: pcrec-bench's own charter *already assumes* `.rxt`
-  content is IMPORTABLE as-is ("grows partly by import from pcrec's
-  oracle-verified `.rxt` corpora"), written before DD-13a even started.
-  Combined with R-GEN-1 (the D27 generator needs nothing beyond today's
-  grammar) and the sheer size of the existing corpus (54 files, 1,100
-  pattern blocks, 9,977 expectation lines, all oracle-verified against
-  python `re` and, per `docs/testing.md`'s differential-gate principle,
-  partially against libpcre2) — a flag-day rewrite of that corpus is
-  expensive with no offsetting requirement demanding it. Nothing in §1-§7
-  needs today's blocks to change MEANING, only for the file that contains
-  them to gain new capabilities (names, references, sections, includes)
-  that today's files don't use.
+- **Not "migrated" (in the rewrite-the-corpus sense) — but this is weaker
+  evidence than an earlier draft treated it as (R27 F6).** R-BENCH-8 cites
+  pcrec-bench's charter: "grows partly by import from pcrec's
+  oracle-verified `.rxt` corpora." An earlier draft read "import" as
+  settling the question; it does not. "Import" is consistent with BOTH a
+  dialect (existing files parse unchanged under the new format) AND a
+  migration-with-tooling (existing files are mechanically converted by an
+  importer, which is also fairly described as "growing by import"). The
+  seed-doc sentence is one clause in a no-code-yet charter and does not by
+  itself disambiguate the two. **A second, independent corroboration this
+  note had not cited**: `pcrec-bench/APPROACH.md` §8 Q1 itself, ruled in
+  direction the same day DD-13 was created, describes the format as
+  "grown **from** `.rxt`" — directional language, closer to "dialect
+  extending a base" than to "migrated," and written by a different author
+  (Frank, in the row-creation ruling) than R-BENCH-8's charter prose. Two
+  independent sources leaning the same direction is stronger than one, but
+  neither is a proof, and this note treats both as corroborating evidence
+  for the argument below, not as the argument itself.
+
+- **The `.rxt`-import claim should read import-PLUS-AUGMENTATION, not
+  import-as-is (R27 F6).** R-BENCH-1..9 establish that bench needs
+  per-case tags (tier, hazard class, size, verification method) and
+  section/testee concepts that `.rxt` has no syntax for at all today.
+  So even under the DIALECT reading, an imported `.rxt` file does not
+  become a bench SET merely by being parsed — it becomes one after bench
+  augments it with the tags and sections its own requirements demand.
+  "Importable" is the right word for "existing files remain syntactically
+  valid input"; it is the wrong word for "existing files are already
+  complete bench sets," which nothing in this note establishes and
+  R-BENCH-1/2/5 argue directly against.
+
+- **The `.rxt`-precedent argument (g/gp) is real but categorically
+  FLATTER than what DD-13 needs (R27 F6).** [M4.5a]'s own `g`/`gp`
+  addition is genuine, measured precedent for "add new line kinds to
+  `.rxt` without disturbing existing semantics" ("purely additive line
+  kinds; no existing line's grammar or semantics changed... nothing
+  needed re-verifying" — `docs/testing.md`). But `g`/`gp` added two new
+  FLAT line kinds to an already-flat, single-file, non-hierarchical
+  model. DD-13's own requirements (§2, §5) are HIERARCHICAL
+  (named-pattern definitions, cross-references with appended numbering),
+  CROSS-FILE (includes, exemplar references), and CASCADING (per-testee
+  option composition, T-4/OD-1) — none of which `g`/`gp` exercised or
+  tested. The precedent supports "additive extension is possible in
+  principle and has one measured success," not "additive extension at
+  THIS scale of new structure is proven safe." This note downgrades that
+  claim accordingly: it is supporting evidence for the RECOMMENDATION
+  below, not proof that the recommendation is risk-free.
 
 - **"Dialect"**, meaning: today's block-oriented `pattern`/`flags`/
   `features`/`perr`/`m`/`n`/`ms`/`ns`/`g`/`gp` vocabulary is a valid,
@@ -516,21 +724,27 @@ Argued from §1's census and §6's finding, not from opinion:
   what it means today — while the new format ALSO defines a superset of
   syntax (names, references, sections, includes, exemplar files, and R-
   SUBST-1's eventual template field) that no existing file happens to use.
-  This is exactly the shape [M4.5a]'s own `g`/`gp` addition already
-  proved out IN today's format ("purely additive line kinds; no existing
-  line's grammar or semantics changed... nothing needed re-verifying" —
-  `docs/testing.md`, "Design: backward-compatible, artifact-size-agnostic")
-  — DD-13a's recommendation is that DD-13b extend that SAME precedent one
-  more level: new top-level constructs (names, refs, sections, includes)
-  alongside the untouched block grammar, not a replacement of it.
+  DD-13a's recommendation is that [DD-13b] extend the g/gp precedent one
+  more level — new top-level constructs (names, refs, sections, includes)
+  alongside the untouched block grammar, not a replacement of it — while
+  recognizing, per the point above, that this is a bigger step than g/gp
+  took and deserves its own verification (byte-identical re-parse of the
+  full existing corpus under the new grammar) before [DD-13c] treats
+  compatibility as settled.
 
 This is a REQUIREMENT worth stating explicitly for [DD-13b] even though it
 edges toward design: **R-COMPAT-1: existing `.rxt` files must remain valid,
 unmodified, and semantically unchanged under the new format** — evidenced
-by R-BENCH-8's import assumption, R-GEN-1's zero-forcing-function finding,
+by R-BENCH-8's and APPROACH §8 Q1's converging (not conclusive) import/
+grown-from language, R-GEN-1's now-n=5 zero-forcing-function finding (§6),
 and the corpus's own size/oracle-investment (9,977 lines, all previously
 oracle-verified — re-verifying them under new semantics would be pure cost
-with no corresponding requirement asking for it).
+with no corresponding requirement asking for it). R-COMPAT-1 itself is not
+weakened by any of the softening above — it is a requirement this note
+states regardless of which of the three compatibility answers turns out
+truest; what is weakened is only the confidence with which "dialect" is
+argued to be the descriptively correct label for what [DD-13b] will
+produce.
 
 ---
 
@@ -547,9 +761,11 @@ definition has no exported entry point to run the harness against — so
 artifact and run cases against it," or it needs a TEST-ONLY compiled
 surface that doesn't exist for any other purpose. `frank_inputs.md` already
 names this tension explicitly and defers it to [DD-13a]/[DD-13b]; this note
-carries it forward as OD-4 (§11) rather than resolving it, per the D26/D27
-"do not gold-plate" discipline and the brief's own instruction not to
-design.
+carries it forward as OD-4 (§11) rather than resolving it, per the brief's
+own do-not-design instruction (in D26's effort-tiering spirit — D26 itself
+is about PCRE2-diagnostic wording, not requirements-note scope, but the
+"spend effort where it's owed, not further out" logic generalizes and the
+brief's own wording invokes it this way).
 
 **T-2: source-level inlining (R-VE-4's default tier) vs per-library
 declared tweaks (R-BENCH-7).** Source-level composition is defined as
@@ -603,6 +819,27 @@ avoid — flagged as a requirement on WHATEVER reference mechanism DD-13b
 designs (byte-exact contents, no implicit encoding/newline transformation),
 not a specific mechanism.
 
+**T-6: R-RXT-9's per-FILE population accounting vs FILE INCLUDES.** R-RXT-9
+documents that `run.sh` already keeps three distinct failure taxonomies
+(pattern-compile failure, harness-level failure, ordinary case failure) —
+but this exists today because the ACCOUNTING UNIT is the FILE: `run.sh` is
+invoked per `.rxt` file (or discovers files recursively) and its summary is
+a per-invocation tally over that file. `frank_inputs.md`'s FILE INCLUDES
+requirement (case sets composed from included fragments, so a hand-written
+source isn't bloated by a machine-generated set, and per-engine/config
+fragments compose for the bench use) breaks that unit: once a named
+pattern's definition, or its test cases, can live across an included file
+and the file that includes it, "which file failed to compile" and "which
+file's case count is N" both stop being well-defined questions — the
+natural accounting unit becomes the INCLUDE CLOSURE (the entry file plus
+everything it transitively includes), not any single file within it. No
+requirement stated in this note anticipates that shift, R-RXT-9's own text
+included. [DD-13b]'s population-accounting design — which R-RXT-5's `g`/
+`gp` discipline shows the project already treats as a first-class
+concern, not an afterthought — needs to define explicitly what unit a
+summary line refers to once includes exist, rather than silently
+inheriting "the file" from today's harness.
+
 ---
 
 ## 11. Open-decision ledger (carried forward from `frank_inputs.md`, unresolved by design)
@@ -626,7 +863,12 @@ application.** Must satisfy: R-BENCH-7 (visible, never silent),
 R-BENCH-2 (per-testee application blocks), T-2 (must not silently break
 "one canonical pattern" — a tweak that changes match semantics needs to be
 distinguishable, at minimum by a human skimming the file, from one that
-only changes compile options).
+only changes compile options). **Note on provenance:** the
+semantic-tweak-vs-compile-option-tweak split just stated is this note's
+own derived distinction (T-2's synthesis of `frank_inputs.md` point 3
+against R-BENCH-2) — `frank_inputs.md` itself does not draw this line; it
+states only that a tweak must be declared and visible, not that there are
+two kinds of tweak with different stakes.
 
 **OD-3 — configuration-section syntax unifying bench testees and build
 variants.** Must satisfy: R-BENCH-2, R-BENCH-9 (explicitly the SAME
@@ -723,19 +965,40 @@ dispatch-adding codegen change would.
 Claims worth attacking, listed so the panel does not have to re-derive
 them:
 
-1. **The "dialect, not subset/migration" answer (§9)** rests on R-BENCH-8
-   (one sentence in a SEED-status, no-code-yet charter document) and
-   R-GEN-1 (one directory's generator practice). Both are real but narrow;
-   attack whether they generalize to the FULL consumer set, especially
-   [V-G]'s and [V-E]'s not-yet-written requirements.
-2. **R-GEN-1's "no forcing function" finding** is a survey of ONE
-   generator (the D27 quantifier corpus). It is the strongest evidence in
-   this note for "don't add grammar the current format can't already
-   express" (AR-1/AR-4), but it is a sample size of one generator, one
-   feature area (quantifiers), one author. Whether it generalizes to a
-   generator that (say) needs cross-references or config sections — which
-   don't exist yet for any generator to have exercised — is untested by
-   construction.
+1. **The "dialect, not subset/migration" answer (§9), already attacked once
+   (R27 F6/r27b's steelman) and held, but not proven.** R27's panel tried
+   directly to construct a case where a strictly-additive dialect
+   structurally violates an R-* requirement in this note and failed;
+   T-4's tension looked resolvable by scoping cascades to new top-level
+   constructs. §9 now states two independent, converging (not
+   conclusive) textual corroborations (R-BENCH-8's "import," APPROACH §8
+   Q1's "grown from .rxt") plus R-GEN-1's n=5 zero-forcing-function
+   finding — stronger than the earlier draft's single citation, but still
+   evidence about what has been NEEDED so far, not a proof about what
+   [DD-13b]'s actual grammar will require. The residual, sharpest version
+   of the attack: everything measured so far (§6's five generators, the
+   bench charter's own prose) predates any generator or consumer actually
+   exercising cross-references, config sections, or file includes — the
+   exact features that make DD-13 bigger than g/gp's precedent (§9's own
+   new point). A panel with more time could try to construct a HYPOTHETICAL
+   include/reference pattern and check whether it is even representable as
+   "existing files unchanged, new top-level constructs added," rather than
+   relying on absence-of-counterexample from a note that (by its own
+   admission) surveyed no generator that has tried.
+2. **R-GEN-1's "no forcing function" finding is n=5, not n=1** (§6,
+   corrected per R27 F13 — an earlier draft's self-critique here
+   undercounted its own evidence and the panel caught it). It is the
+   strongest evidence in this note for "don't add grammar the current
+   format can't already express" (AR-1/AR-4), and it now spans two
+   authoring modes and at least three feature areas. What is STILL
+   genuinely untested, and worth the panel's attention: none of the five
+   sources needed cross-references, config sections, file includes, or
+   anything else §2/§5 of this note require — every one of them is a flat
+   corpus of independent pattern blocks. Whether the no-forcing-function
+   finding generalizes to a generator that DOES need those (which don't
+   exist yet for any generator to have exercised, blinded or not) is
+   untested by construction, and n=5-with-zero-variance-on-the-untested-
+   axis is a different, narrower claim than n=5 alone might suggest.
 3. **T-3's claim that pcrec's numbering scheme can't be the ONLY capture
    expectation shape for bench** assumes bench needs engine-neutral group
    identification. Attack whether `.rxt`'s existing `g`/`gp` SLOT-NUMBER
@@ -766,8 +1029,9 @@ them:
 
 ## Appendix: observations for [DD-13b] (explicitly NOT requirements)
 
-Flagged and quarantined here per the brief's D26 instruction, rather than
-silently smuggled into the numbered requirements above:
+Flagged and quarantined here per the brief's own do-not-design instruction
+(in D26's effort-tiering spirit — see the T-1 note above on this label),
+rather than silently smuggled into the numbered requirements above:
 
 - **A structured provenance/generation-method header field** (R-GEN-2) is
   an idea, not a requirement — no consumer's evidence demands it, it only
@@ -779,7 +1043,46 @@ silently smuggled into the numbered requirements above:
   `pattern`/name line** is a grammar sketch and stays entirely out of this
   note by design; T-4 states only that both a resetting default and an
   accumulating cascade must be expressible, not how.
+- **Keyword-collision risk between reserved directive words and named
+  definitions is unexamined (R27 F10).** If [DD-13b]'s named-pattern
+  syntax resembles `frank_inputs.md`'s own working shorthand (`regexa =
+  abc|def`, quoted in the [DD-13] plan row), a name that collides with a
+  reserved first-token — `pattern`, `flags`, `features`, `m`, `n`, `ms`,
+  `ns`, `g`, `gp`, `perr`, and now (per R-SUBST-3) `repl`/`s`/`sg`/`serr`
+  — is ambiguous to a line-oriented, first-token-dispatching parser
+  unless [DD-13b] either reserves those words as illegal names or picks a
+  syntax where a name can never be mistaken for a directive (a sigil, a
+  required delimiter, a distinct keyword introducing a definition). Not
+  evidenced as a current problem — nothing today defines names — but the
+  risk is structural, grows with every directive this note's own R-SUBST-3
+  and R-VE-12 add to the reserved-word list, and is cheap to flag before
+  [DD-13b] commits to a grammar.
 - **Whether the `ref`/label mechanism (R-VE-6/D39 addendum) should be a
   file-path-like string, a dotted path, or something else** is,
   similarly, [DD-13b]'s to sketch; this note states only that a slot for
   it must exist.
+- **[M3.1]'s chunk-boundary tests are a future case SHAPE this note did
+  not survey (R27 F4).** `docs/dev/plan.md` [M3.1]: "*_stream_* API for
+  the DFA engine, chunk-boundary tests" — not-started, scheduled after
+  M6, no design note exists yet. A streaming match call is fed the
+  subject in pieces across multiple calls; a chunk-boundary case needs to
+  assert something about state AS OF a boundary partway through a
+  sequence of calls, not just a final span from one call. Today's `m`/
+  `n`/`ms`/`ns` model is one call against one whole subject. Flagged only
+  so [DD-13b] does not shape the case-expectation grammar in a way that
+  forecloses a later multi-call case kind — no requirement is stated,
+  because nothing in the repo yet specifies what such a case should look
+  like.
+- **[DD-11]'s newline-convention axis has no candidate `.rxt`-level
+  directive spelling anywhere in the repo (R27 F4).** Checked
+  `docs/pcre2_options.md`, `docs/testing.md`, and `docs/dev/decisions.md`
+  directly: every mention of DD-11 describes the PCRE2-SIDE mechanism
+  only (the start-only `(*CR)`-family verbs, or a compile-context API
+  option) — none proposes a test-format directive. [DD-11] is itself
+  not-started. The same caution as the M3.1 bullet applies one level
+  removed: once DD-11 lands, blocks will presumably need a way to select
+  a newline convention the same way they select `flags`/`features`
+  today (block-scoped, non-carrying, per R-RXT-1) — flagged as a future
+  axis the format's config-scoping mechanism (OD-1/T-4) should not
+  accidentally foreclose, not as a requirement, since nothing in the
+  repo yet specifies its shape.
