@@ -9174,3 +9174,43 @@ K9, K23; ON FRANK'S DESK: nothing — F-2 cleared; owed to Frank later:
 the default-value one-liner, the bare-match consistency recommendation,
 and the standing carried rulings (rx_info spelling, K19 residual,
 callout Q5/Q6, V-E items, M5-vs-M6 order at M4.7).
+
+## 2026-08-17 (EDT), twenty-eighth session (cont.) — ruling applied and reviewed; D49 (uniform codes + work default); note ACCEPTED; build phase released
+
+**Lane applied F-2 cleanly** (5 commits on lane/counterk through a9af66f
+after merging main): settlement 4 ruled in place, PCREC_STEP_SCALE
+apparatus deleted with the refutation history kept, §10.5 added (the
+default one-liner, the ABI-rider analysis, PROPOSED names). The lane
+CAUGHT ITS OWN carried-number error — §7.4's candidate-default table
+still showed the -fno-possessify control under scaled arithmetic
+(5.1×10¹⁰/8.0×10⁸), reading as though the new bound catches it; under
+finding 26's exclusion that population contributes ~0 units and fires
+on the STEP budget as today. Fifth instance of the error class, first
+one self-caught. It also corrected the manager's brief: the default
+lives in emit_vm.c beside VM_DEFAULT_STEP_BUDGET, not limits.h (whose
+inclusion rule excludes runtime budgets). Its report raced the idle
+signal AGAIN; the resend-request habit plus reviewing the diff directly
+covered it.
+
+**FRANK RULED BOTH §10.5 QUESTIONS (D49, main 1a9513b):** (1) UNIFORM
+CODES — bare <prefix>_match carries the distinct negative codes;
+D42.3's −1 collapse superseded; <−1 partitioned into give-up + abort
+blocks with a named floor; F2's trap respelled. Decisive facts: the
+typedef is bidirectional (embedder callouts gain a legal give-up
+spelling), the composition hole let an inner give-up become an outer
+ANSWER, and zero generated files contain the trap line today.
+(2) WORK DEFAULT ≈ 10⁹ (failure-direction asymmetry; bring-up value,
+M4.6 calibrates). §10.5.3 names manager-accepted (work_budget,
+RX_ERR_WORK unpinned vs RX_ERR_TRAIL, VM_DEFAULT_WORK_BUDGET, one
+existence gate in v1).
+
+**NOTE ACCEPTED (plan row updated); lane released into ENGINE CODE**
+per the panel-approved §8 validation plan, carrying D49's conforming
+edits (match_api_m4.md §1/§3.1, design_callout_abi.md F2, the emitted
+give-up comment block). Watchdog live.
+
+**Also this session, before the ruling:** Frank's residue question
+walked to ground (prefilter = the general linear check; K23 shown as
+the non-contrived post-prefilter exemplar; NP enters only with
+backrefs); candidate future OPT row noted but NOT filed: required-byte
+prescan / skip-past-failed-run for the VM path.

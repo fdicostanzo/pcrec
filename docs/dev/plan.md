@@ -227,6 +227,15 @@ stated terms.
   §7.2], K=8 limits.h constant, size cap → backstop-only, -fno-counter,
   the gen_timeout size-floor tripwire; K22 CLOSED separately by F-1 —
   D47 ADDENDUM, compile half re-homed to [ENG-CLAMP]).
+  **COUNTER-K DESIGN NOTE ACCEPTED 2026-08-17** (manager, after F-2 =
+  settlement 4 applied on the lane branch and reviewed; note at
+  docs/design/counterk_impl/counterk_design.md on lane/counterk, R25
+  twice-verified, findings 1-29 dispositioned). **BUILD PHASE STARTED
+  same day**, additionally carrying D49's conforming edits (uniform
+  rx_matchfn negative-code contract: match_api_m4.md §1/§3.1,
+  design_callout_abi.md F2's named-floor trap, the emitted give-up
+  comment block emit_vm.c:3137-3147) and the ruled work-bound surface
+  (work_budget default ~10⁹, RX_ERR_WORK, one existence gate in v1).
   R24-corrected census: 17%/82%; as-built verdict census 252/1,832
   source quantifiers (13%), archived docs/design/possessify_impl/) —
   BOUNDED-REPEAT EMISSION STRATEGY: the
