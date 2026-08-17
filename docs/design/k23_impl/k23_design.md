@@ -877,9 +877,13 @@ builds and runs all three arms and prints the table.
 
 | arm | .c bytes | gcc −O2 | steps @ n=100 | @101 | @110 | @150 | memo table |
 |---|---|---|---|---|---|---|---|
-| baseline | 80,356 | 0.77 s | 10,621,636 | 10,260,900 | 1,957,091 | 2,241 | — |
-| MRL prune | 81,661 (+1.6%) | 0.74 s | **1** | 1 | 1 | 1 | — |
-| memoization | 86,544 (+7.7%) | 0.94 s | 2,071 | 2,026 | 1,621 | 371 | 25,650 B |
+| baseline | 80,356 | 0.80 s | 10,621,636 | 10,260,900 | 1,957,091 | 2,241 | — |
+| MRL prune | 82,921 (+3.2%) | 0.76 s | **1** | 1 | 1 | 1 | — |
+| memoization | 86,544 (+7.7%) | 0.93 s | 2,071 | 2,026 | 1,621 | 371 | 25,650 B |
+
+(The prune arm's size is the POST-R26 figure: the lattice rule added a line
+and an expression per site, taking it from +1.6% to +3.2%. Still under half
+the memo arm's, and gcc is unchanged.)
 
 ### 5.2 MEASURED — `(a{11,22}){11,50}`, one size up
 
@@ -1043,11 +1047,11 @@ a throughput event"; it does not support a claim that the clamp is free, and
 
 ### 6.2 Compile-time and code size
 
-From §5.1: +1.6% of emitted C, and gcc −O2 got marginally FASTER
-(0.77 s → 0.74 s), which is noise at this scale. The clamp adds four lines
-per site (five after the lattice rule, §4.1) and no new symbols, macros or
-struct members — except the one `size_t` in `rx_work` if ruling 6's
-prefilter ceiling is taken (§8).
+From §5.1: **+3.2%** of emitted C (it was +1.6% before the lattice rule
+added a line and an expression per site), and gcc −O2 marginally FASTER
+(0.80 s → 0.76 s), which is noise at this scale. The clamp adds five lines
+per site and no new symbols, macros or struct members — except the one
+`size_t` in `rx_work` if ruling 6's prefilter ceiling is taken (§8).
 
 ### 6.3 Forward work
 
