@@ -29,7 +29,18 @@ Append-only where noted; the restart/status-recovery record for the project.
   fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
   exhausts the step budget on a 100-byte ordinary input; found by the D27
   blinded quantifier corpus 2026-08-16; regression in
-  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K22
+  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K24
+  (CLOSED 2026-08-17, k24fix lane — the only throughput-only entry this
+  file has carried: gcc -O2's partial-inlining pass was splitting
+  `<prefix>_search` into a trampoline plus a `.part.0` clone in every
+  unanchored DFA artifact since the [M4.4] API break, identical
+  instructions, a pure code-PLACEMENT cost that held compare.sh case
+  (c)'s D12 floor red. Fixed by `__attribute__((noclone))` on
+  `<prefix>_search` in the EMITTED text — pcrec cannot dictate its
+  users' CFLAGS. Floor never touched; case (c) came back to 391.063
+  MB/s at its historical spread, gate 10/10. The VM was never at risk,
+  and the reason is structural: a computed-goto body cannot be
+  outlined). K22
   (CLOSED 2026-08-16 by the F-1 ruling, decisions.md D47 ADDENDUM: hang
   half fixed by the interim product guard; the compile-these-shapes half
   re-homed as plan row [ENG-CLAMP]'s charter, not a bug). K18 (FIXED 2026-08-15, k18-rewrite lane: the

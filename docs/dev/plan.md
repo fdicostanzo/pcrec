@@ -194,7 +194,17 @@ stated terms.
     ages-freely rather than battery-wired. (2) K24 filed
     (known_issues.md): the residual case (c) DFA regression (~300 vs
     388 floor, engine-verified, gate deliberately RED) — bisect
-    queued. K-sweep archived INCONCLUSIVE
+    queued. **K24 IS NOW CLOSED (2026-08-17, k24bisect + k24fix
+    lanes): not a DFA regression at all — gcc -O2's partial-inlining
+    pass was splitting `<prefix>_search` into a trampoline plus a
+    `.part.0` clone in every unanchored DFA artifact since [M4.4],
+    identical instructions, a pure code-PLACEMENT cost. Fixed in the
+    EMITTER (`noclone` on `<prefix>_search`; pcrec cannot dictate its
+    users' CFLAGS). Floor NEVER touched — case (c) recovered to
+    391.063 MB/s at its historical 1.02x spread and the full gate is
+    10/10 green (results-ubuntubudu-20260817-2.md). The
+    deliberately-RED floor is what carried the finding across three
+    lanes; it is the posture that worked.** K-sweep archived INCONCLUSIVE
     (docs/design/counterk_impl/bench_k.txt): the pre-recalibration
     frame placeholder invalidated the high-N regime and the driver
     lacks median/spread; re-run only after a driver upgrade or when a

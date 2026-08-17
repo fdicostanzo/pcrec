@@ -639,6 +639,60 @@ else
     bad "[M4.4]: pcrec failed to compile 'a(b|c)+d' for the structural NCAPS/engine checks"
 fi
 
+# ---- [K24] <prefix>_search must not be SPLIT by gcc's partial inliner -----
+# This is the file's founding charter, exactly (see the header): a
+# behaviour-preserving property whose absence produces ZERO signal from the
+# corpus or from `make test`, and which cost a measured 1.33x on
+# tests/bench/compare case (c) for three days with only a bench floor
+# noticing. `emit_search_head` emits __attribute__((noclone)) to deny gcc
+# -O2's partial-inlining pass the `<prefix>_search.part.0` clone; the ONLY
+# symptom of that attribute going missing is throughput.
+#
+# TWO THINGS ABOUT THIS CHECK'S DESIGN, both learned the hard way in this repo:
+#
+# 1. IT COMPILES AT -O2 EXPLICITLY, not under $GENCFLAGS (which defaults to
+#    -O1). Partial inlining is an -O2 pass; run at -O1 this check would pass
+#    on every artifact forever, attribute or not — a green cell with no
+#    population, which is the failure this directory's CLAUDE.md is about.
+# 2. IT CARRIES ITS OWN CONTROL, and the control's source is INDEPENDENT of
+#    what it controls. The positive asks `nm` — gcc's own output — whether a
+#    clone exists; the control strips the attribute back out of the SAME
+#    generated file and asserts gcc DOES clone it. Without the control, a
+#    future gcc that stopped splitting (or a build where the pass is off)
+#    would make the positive vacuously green and this guard would quietly
+#    stop guarding. If the control fails, the check has lost its population
+#    and says so, rather than reporting success.
+if ! command -v nm >/dev/null 2>&1; then
+    bad "[K24]: nm is unavailable — this check cannot be skipped silently (it is the only guard on the noclone lever; see docs/dev/known_issues.md K24)"
+elif ! command -v "$CC" >/dev/null 2>&1; then
+    bad "[K24]: no C compiler ($CC) — this check cannot be skipped silently"
+elif "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|epsilon)' > "$WORKDIR/k24.c" 2>/dev/null; then
+    # -O2 is the point, and -Werror stays so the attribute cannot be landing
+    # only because nobody compiles this artifact strictly.
+    K24FLAGS="-O2 -std=gnu11 -Wall -Wextra -Werror"
+    sed '/__attribute__((noclone))/d' "$WORKDIR/k24.c" > "$WORKDIR/k24_stripped.c"
+
+    if [ "$(grep -c '__attribute__((noclone))' "$WORKDIR/k24.c")" -lt 1 ]; then
+        bad "[K24]: emitted artifact carries no __attribute__((noclone)) at all — the K24 lever has been removed from emit_search_head (docs/dev/known_issues.md K24, docs/design/k24bisect_impl/k24_fix_note.md)"
+    elif ! gen_cc "K24 noclone subject" "$CC" -c $K24FLAGS -o "$WORKDIR/k24.o" "$WORKDIR/k24.c"; then
+        bad "[K24]: the artifact failed to compile at -O2 -Werror: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+    elif ! gen_cc "K24 noclone control" "$CC" -c $K24FLAGS -o "$WORKDIR/k24_stripped.o" "$WORKDIR/k24_stripped.c"; then
+        bad "[K24]: the attribute-stripped CONTROL failed to compile at -O2 -Werror: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+    else
+        k24_clones="$(nm "$WORKDIR/k24.o" | grep -cE 'rx_search\.(part|constprop|isra)\.[0-9]+' || true)"
+        k24_ctl_clones="$(nm "$WORKDIR/k24_stripped.o" | grep -cE 'rx_search\.(part|constprop|isra)\.[0-9]+' || true)"
+        if [ "$k24_ctl_clones" -eq 0 ]; then
+            bad "[K24]: the CONTROL did not fire — with __attribute__((noclone)) stripped, $CC at -O2 still emitted no rx_search clone, so this check has NO POPULATION and cannot certify the lever. Do not delete the attribute on the strength of a green run here; find out why the compiler stopped splitting first (docs/design/k24bisect_impl/k24_fix_note.md)"
+        elif [ "$k24_clones" -ne 0 ]; then
+            bad "[K24]: rx_search is SPLIT at -O2 despite the noclone attribute ($(nm "$WORKDIR/k24.o" | grep -oE 'rx_search\.[a-z]+\.[0-9]+' | paste -sd, -)) — the partial-inlining regression is back; case (c)'s D12 floor will follow"
+        else
+            ok "[K24]: rx_search stays monolithic at -O2 under noclone, and the attribute-stripped control DOES split ($k24_ctl_clones clone(s)) — the guard is live, not vacuous"
+        fi
+    fi
+else
+    bad "[K24]: pcrec failed to compile '(alpha|beta|gamma|delta|epsilon)' --no-captures for the partial-inlining split check"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

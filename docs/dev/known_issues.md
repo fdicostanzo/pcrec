@@ -1865,3 +1865,104 @@ a miscompile. Owner: manager triage; bisect queued. Found because
 [M4.6b] added a NEW floor-gated case and re-ran the whole matrix —
 compare/'s floors are in no battery leg (now marked ages-freely, with
 the engine assertions as the cheap in-run tripwire).
+
+**K24 CLOSED 2026-08-17 (k24fix lane).** THE FIX IS ONE ATTRIBUTE IN THE
+EMITTED TEXT: `__attribute__((noclone))` on `<prefix>_search`, emitted by
+`emit_search_head` in src/gen/emit_dfa.c — the ONE site that serves both the
+DFA artifact's exported entry and the VM hybrid's `static` prefilter, so both
+engines' DFA scan code is covered by a single emission point. It has to live
+in the emitted artifact rather than in pcrec's own build: pcrec cannot dictate
+its users' CFLAGS, and `-fno-partial-inlining` (the bisect's causal control)
+is a flag only the artifact's compiler-invoker can pass. `noclone` forbids
+exactly the one thing gcc's partial-inlining pass needs — duplicating the
+function body — and the resulting assembly is **byte-identical** to the same
+source built `-O2 -fno-partial-inlining`, which is the strongest available
+statement that the lever reproduces the control and changes nothing else.
+
+VERIFICATION (the number recovered; the floor was NOT touched). `floors.tsv`
+case (c) stays at 388.615/0.900, and a full 10-case `gate.sh` run measures
+**391.063 MB/s at spread 1.02x** — back above the floor, and back to this
+case's *historical* 1.02x-1.06x tightness rather than the 1.13x-1.16x the
+split produced. Head-to-head selection evidence, all on compare.sh's own
+build line (`gcc -O2 -std=gnu11 -Wall -Wextra -Werror` + `eng_pcrec.c`),
+`taskset -c 2`, 10 trials, medians, quiet box (load5 0.19-0.26):
+
+| lever | median MB/s | `.part` clone still in `nm`? |
+|---|---|---|
+| none (the K24 state) | 293.500 | SPLIT |
+| `-fno-partial-inlining` (bisect's control) | 391.646 | mono |
+| `noipa` on the two cold WRAPPERS | 292.721 | SPLIT — **no effect** |
+| `noinline` on the two cold WRAPPERS | 295.315 | SPLIT — **no effect** |
+| `cold` on the wrappers | 397.076 | SPLIT — recovers by luck |
+| `hot` on `<prefix>_search` | 397.589 | SPLIT — recovers by luck |
+| `hot` on search + `cold` on wrappers | 288.745 | SPLIT — **WORSE than nothing** |
+| **`noclone` on `<prefix>_search` (CHOSEN)** | **391.061** | **mono** |
+| `optimize("no-partial-inlining")` on search | 390.873 | mono |
+| `noipa` on `<prefix>_search` | 390.786 | mono |
+
+Three findings in that table are worth more than the choice it settles:
+
+1. **THE OBVIOUS FIX DOES NOT WORK, and the reason corrects this entry's own
+   root-cause wording.** Marking the two cold wrappers `noipa`/`noinline`
+   leaves the split standing and the throughput at ~293. The entry above says
+   the wrappers "trigger" the split, which reads as though the split were a
+   decision about those callers; it is not. gcc's `pass_split_functions` runs
+   on the CALLEE and does not consult its callers' attributes, so severing IPA
+   at the call site cannot un-split the callee. The wrappers' ARRIVAL is still
+   what dated the regression to 1dbb6ce (the bisect stands), but the denial
+   has to be spelled at `<prefix>_search` itself.
+2. **LAYOUT STEERING IS NOT A FIX.** `hot` on the search entry, or `cold` on
+   the wrappers, each recover the number (397) while leaving the split in
+   place — and the two TOGETHER measure 288.745, worse than doing nothing.
+   That is the mechanism refusing to be steered: the cost is placement in one
+   particular link, and a stranger's link is not this one. Any future reader
+   tempted to swap the attribute for a hot/cold pair should read that row
+   first.
+3. `optimize("no-partial-inlining")` and `noipa` on the entry both work.
+   `noclone` was chosen over them as the smallest denial that is about the
+   mechanism: the `optimize` attribute replaces the function's whole
+   optimization environment to fix one pass, and `noipa` would additionally
+   forbid the VM hybrid's inlining of this same emitter's `static` prefilter
+   into `<prefix>_search` — an inline gcc performs today (verified: `nm` shows
+   no `<prefix>_prefilter` symbol in a VM artifact, before or after this fix,
+   because it is fully inlined; `noclone` does not disturb that).
+
+Portability, with measured and read kept apart: gcc 15.2.0 (the box's
+compiler) ACCEPTS `noclone` under `-Wattributes -Werror` with no
+ignored-attribute diagnostic — checked rather than assumed, because an
+attribute gcc merely ignored would make this fix a no-op that still looked
+landed. GCC's manual has documented it since 4.5 (read, not measured), and it
+sits inside the gcc-dialect mandate the emitter already lives under (computed
+goto, `__builtin_expect`). There is no clang on the box, so clang's treatment
+is UNMEASURED and recorded as such rather than assumed either way.
+
+**THE VM-ARTIFACT AUDIT (the charter's second half): the VM hot path is NOT
+being split, and the brief's premise for why it might be is wrong.** VM
+artifacts do NOT have the match/match_caps → search wrapper shape: emit_vm.c's
+`<prefix>_match` and `<prefix>_match_caps` call the `static`
+`<prefix>_match_impl` DIRECTLY, and `<prefix>_search` calls it too — so the VM's
+`search` has zero in-TU callers and is not a wrapper target at all. Measured
+across a 25-pattern sweep (14 DFA, 11 VM), compiled with the bench build line
+and audited with `nm` for every `.part`/`.constprop`/`.isra` clone:
+
+- BEFORE the fix: **13 of 14 DFA artifacts carried `rx_search.part.0`** — the
+  split was never specific to case (c)'s pattern; only its measured COST was.
+  **0 of 11 VM artifacts carried any clone.**
+- AFTER the fix: **zero clones anywhere**, both engines.
+- The one DFA artifact that was never split is `^abc`, and the reason is the
+  same structural one that protects the VM: it is the ENG_ATTEMPT
+  computed-goto engine (5 `goto *` sites). gcc cannot outline a function whose
+  labels are address-taken — they bind to one function — so a computed-goto
+  matcher is unsplittable by construction. The VM's hot loop is exactly that
+  shape (engine_m4.md §2.7: one function per pattern, one indirect jump at the
+  fail label), which is WHY the VM was never at risk. That is a property of
+  the VM's design, not luck, but it is also not a property anything checks, so
+  it is recorded here rather than relied on silently.
+- The attribute nonetheless rides the VM's `static` prefilter, since that is
+  the same `emit_search_head` output and the same split-eligible table-driven
+  shape. Measured neutral on the capture-bearing hybrid case (j): 150.237 MB/s
+  before, 150.433 after (floor 150.369, spread ≤1.01x either way).
+
+Measurement archive: docs/design/k24bisect_impl/k24_fix_note.md (this lane's
+head-to-head, the sweep tables and the reproduction recipe), alongside the
+bisect lane's k24_bisect_note.md that the fix answers.

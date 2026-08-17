@@ -612,17 +612,29 @@ append-only or historical records.
   that misses the reverse-deterministic rung (`(GET |POST |...)*X`, whose
   alternatives share a last byte) reaches the shipped frame capacity by
   `subject_ceiling = 256` bytes. See its own CLAUDE.md.
-- `k24bisect_impl/` — K24 bisect lane (2026-08-17): first-bad commit is
-  `1dbb6ce` (the `[M4.4]` API-break commit), NOT K18 (the brief's prime
-  suspect, exonerated — K18 never touches this pattern's emitted output).
-  Mechanism: `1dbb6ce`'s new same-TU `rx_match`/`rx_match_caps` wrappers
-  make gcc -O2's partial-inlining pass split `rx_search` into a trampoline
-  plus a separately-placed `rx_search.part.0`; the hot-loop instructions are
-  byte-identical before/after and all the way to the current tip, but the
-  split's layout-sensitivity costs ~25-26% throughput, confirmed causally
-  with a `-fno-partial-inlining` control (recovers the historical floor with
-  nothing else changed). Diagnosis only, no fix. See its own CLAUDE.md and
-  `k24_bisect_note.md` for the full per-point table and evidence chain.
+- `k24bisect_impl/` — K24's bisect AND fix lanes (2026-08-17, both closed).
+  Bisect: first-bad commit is `1dbb6ce` (the `[M4.4]` API-break commit), NOT
+  K18 (the brief's prime suspect, exonerated — K18 never touches this
+  pattern's emitted output). Mechanism: once `1dbb6ce` adds same-TU
+  `rx_match`/`rx_match_caps`, gcc -O2's partial-inlining pass splits
+  `rx_search` into a trampoline plus a separately-placed
+  `rx_search.part.0`; the hot-loop instructions are byte-identical
+  before/after and all the way to the current tip, but the split's
+  layout-sensitivity costs ~25-26% throughput, confirmed causally with a
+  `-fno-partial-inlining` control. **FIXED** (`k24_fix_note.md`):
+  `__attribute__((noclone))` on `<prefix>_search` in the EMITTED artifact —
+  pcrec cannot dictate its users' CFLAGS — emitted at
+  `emit_search_head`, the one site serving both the DFA entry and the VM
+  hybrid's static prefilter, with assembly byte-identical to the
+  `-fno-partial-inlining` control. Case (c) recovered to 391.063 MB/s at its
+  historical 1.02x spread with the floor untouched; full gate 10/10.
+  Two results in the head-to-head are worth more than the choice: attributes
+  on the WRAPPERS (`noipa`/`noinline`) do NOT work, because gcc's
+  `pass_split_functions` runs on the callee and ignores callers' attributes;
+  and `hot`/`cold` layout steering recovers the number while leaving the
+  split in place, with the two combined measuring WORSE than doing nothing.
+  The VM audit answered NO (its wrappers call `match_impl` directly, and a
+  computed-goto body cannot be outlined at all). See its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
