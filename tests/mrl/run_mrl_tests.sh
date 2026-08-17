@@ -207,6 +207,45 @@ if gen lat '((?:ab){10,20}){10,50}' --step-budget=64; then
 fi
 
 # ---------------------------------------------------------------------------
+# 2b. THE CLAMP'S UNDERFLOW GUARD, asserted STRUCTURALLY — and the reason it is
+#     structural rather than behavioural is worth knowing before "improving" it.
+#
+# `<PREFIX>_MRL_CAP` subtracts: `ceil - minrest - pos`. What establishes that
+# the subtraction does not wrap is `<PREFIX>_MRL_SHORT` in front of it (§4.1
+# writes the pair as one form). Vacuous, `lim_` becomes an enormous size_t and
+# the folded scan bound stops bounding the subject at all — MEASURED as an
+# AddressSanitizer heap-buffer-overflow on `(a{2,4}){3,9}bcdefghij` under
+# `--engine=vm` over an all-'a' subject.
+#
+# THAT IS UNDEFINED BEHAVIOUR, NOT A WRONG ANSWER, which is exactly why a
+# subject sweep cannot be trusted to catch it: sabotage S60 removed this guard
+# and the 202,458-cell differential and every other cell in this file stayed
+# GREEN, because reading a few bytes past a malloc'd block usually returns
+# something that fails the byte test anyway. The signal only exists on the
+# sanitizer axis, and the mech matrix has no sanitizer arm. So the property is
+# asserted on the emitted TEXT, where it is deterministic:
+#   - the guard macro must carry BOTH of its clauses (not be vacuous), and
+#   - no artifact may contain more CAP sites than guard sites.
+# ---------------------------------------------------------------------------
+if gen guard '(a{2,4}){3,9}bcdefghij'; then
+    gm="$(grep -A1 '^#define RX_MRL_SHORT' "$WORKDIR/guard.c" | tail -1)"
+    ncap="$(grep -c 'RX_MRL_CAP(' "$WORKDIR/guard.c")"
+    nshort="$(grep -c 'RX_MRL_SHORT(' "$WORKDIR/guard.c")"
+    case "$gm" in
+        *'< (size_t)(mr_)'*'- (size_t)(mr_) < (p_)'*)
+            ok "underflow guard: RX_MRL_SHORT carries BOTH clauses -- the ceiling-below-minrest test AND the minrest-below-pos test, which is what makes RX_MRL_CAP's subtraction well-defined" ;;
+        *)  bad "underflow guard: RX_MRL_SHORT is '$gm' -- it no longer carries both clauses, so RX_MRL_CAP's subtraction can wrap and the folded scan bound stops bounding the subject (ASAN heap-buffer-overflow, sabotage S60)" ;;
+    esac
+    # `nshort` counts the macro definition line too, so a strict > is the
+    # comparison: every CAP site needs a guard, and the definition is spare.
+    if [ "$ncap" -gt 0 ] && [ "$nshort" -gt "$ncap" ]; then
+        ok "underflow guard: $nshort guard sites against $ncap cap sites -- every clamp is preceded by one"
+    else
+        bad "underflow guard: $ncap cap sites against only $nshort guard sites -- a clamp whose subtraction nothing established is well-defined"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # 3. THE CEILING FORM IS DISCLOSED (D51 ruling 2 (c)). Three artifacts, three
 #    stamps, and `--engine=vm` says so rather than leaving it to be measured.
 # ---------------------------------------------------------------------------
