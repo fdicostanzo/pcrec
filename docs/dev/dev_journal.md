@@ -9102,3 +9102,23 @@ had misfiled it as free-floating manager work.
 (clean, holding for F-2, no engine code); corpus ~8,332 live + 1
 known_fail resident; K-list K2, K7, K9, K23; watchdog cron live;
 ON FRANK'S DESK: F-2 mechanism ruling.
+
+## 2026-08-17 (EDT), twenty-seventh session close — shutdown mid-F-2 discussion
+
+Frank's machine shut down mid-conversation. F-2 remains UNRULED. The
+session's last arc was Frank working through the F-2 material
+question-by-question (recorded in wake.md so the thread can resume):
+n=subject bytes; the 50M = triangular forward-scan sum across start
+positions; possessify deleted the METERED half (retreats) while keeping
+the unmetered half (scans) — the meter counted a proxy, not the work;
+"count forward steps in both dimensions" is exactly the verified
+redesign, and the ruling is which meter + the tolerance number; his
+"give-up masquerades as no-match" concern is answered by the ruled
+contract (1/0/RX_ERR_STEPS/RX_ERR_FRAMES distinct; sole deliberate
+exception: bare <prefix>_match collapses to −1, forced by its frozen
+ABI type, D42.3, with match_caps carrying the distinction) — HE DID NOT
+SEE THIS LAST ANSWER (terminal died); restate it on wake. Lane
+counterk holds clean at c5dd4ae (11 commits, no engine code); its
+agent dies with the session — resume via the worktree per wake.md.
+Main pushed and clean at the journal commit; watchdog cron torn down
+(dies with session regardless).
