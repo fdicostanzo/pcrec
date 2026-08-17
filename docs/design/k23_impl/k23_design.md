@@ -578,8 +578,13 @@ A position `pos` at `q` with `n − pos < minrest(q)` is DOOMED: no
 continuation from it can accept. The emitted check is
 
 ```c
-if ((size_t)(n - pos) < MINREST_q) goto rx_fail;   /* frames rung */
+if ((size_t)(CEIL - pos) < MINREST_q) goto rx_fail;   /* frames rung */
 ```
+
+where `CEIL` is the subject end `n` in the plain form and the prefilter's
+match-end window in the tighter one (§9.1). The frames form needs no lattice
+rounding — it tests a single position the engine has already reached, rather
+than selecting one from a range.
 
 and, at a cursor rung — where the engine is choosing among a RANGE of
 positions rather than one — the same test is expressed as a clamp on the
@@ -604,7 +609,7 @@ on `((?:ab){10,20}){10,50}`, which has the same rung structure and the
 IDENTICAL baseline step count as the exemplar (10,621,636), so it is
 squarely in K23's live population: **5 of 8 subjects answered `nomatch`
 where baseline and python match.** At W = 1 the defect is invisible, which
-is why 855 cells of single-byte corpus never saw it (§7.1).
+is why 855 cells of single-byte corpus never saw it (§7.2.1).
 
 The repair is to round DOWN onto the lattice, and it is cheap arithmetic:
 
@@ -616,9 +621,8 @@ if (CEIL < MINREST_q || CEIL - MINREST_q < pos) goto rx_fail;
 
 `pos` is the iteration start, which the emitted scan block already has in
 hand — it is what the low-water slot was just written to (§1) — so nothing
-new has to be tracked. `CEIL` is the subject end `n` in the plain form and
-the prefilter's match-end window in the tighter one (§9.1). A ceiling below
-`pos` means the continuation is infeasible outright and the replica fails.
+new has to be tracked. A ceiling below `pos` means the continuation is
+infeasible outright and the replica fails.
 At W = 1 the rounding is the identity, so every stride-1 measurement in this
 note is unchanged by it (verified: exemplar still 1 step).
 
@@ -1143,9 +1147,18 @@ testing the lattice rule, and this one does.
   a real fix computes `minw` of the follow and gets 1).
 - **Trailing bytes the match need not consume.** `bbbbb` suffix rows: 4,996
   steps rather than 1, because the clamp measures to the subject end and the
-  match ends five bytes earlier. Sound, and honestly less tight — a 2,100×
-  reduction rather than a 10,600,000× one. This is the mechanism's real
-  limit and §9.2 states it as a residual rather than burying it here.
+  match ends five bytes earlier. Sound, and less tight — and §9.1 now shows
+  that "less tight" is a CURVE that puts K23 back over the budget at sixteen
+  bytes, plus the fix for it. These rows are the corpus's five-byte sample of
+  that curve.
+- **STRIDE > 1 and subject-length RESIDUES** (added R26 E2, §7.2.1). The
+  `((?:ab){10,20}){10,50}`, `((?:abc){7,14}){7,30}` and
+  `((?:[ab][cd]){10,20}){10,50}` rows, at lengths on and off the stride
+  lattice, with prefixes that shift the lattice origin. These are the rows
+  that go RED under `--no-lattice`, which is what makes them a check.
+- **All four GREEDY/LAZY combinations** on both quantifiers (added R26 E3,
+  §2.7), including the lazy-outer explosion that costs 10,621,635 baseline
+  steps and 0 pruned.
 - **Nullable and unit-minimum inners** (`(a{0,3}){2,4}`, `(a{1,20}){1,50}`):
   `minrest` is 0 everywhere and no clamp is emitted. These shapes have ≤ 1
   baseline step anyway — declining them costs nothing.

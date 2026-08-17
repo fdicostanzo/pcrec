@@ -34,4 +34,5 @@ n	base_steps	base_out	prune_steps	prune_out	memo_steps	memo_out	memo_tableB
 120	0	nomatch	0	nomatch	0	nomatch	25650
 121	111354519	match 0 121	1	match 0 121	3081	match 0 121	25650
 122	108024204	match 0 122	1	match 0 122	3031	match 0 122	25650
-130	49674598	match 0 130
+130	49674598	match 0 130	1	match 0 130	2595	match 0 130	25650
+200	488	match 0 200	1	match 0 200	206	match 0 200	25650
