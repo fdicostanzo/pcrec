@@ -70,6 +70,35 @@ family DENY rather than FORCE.
   replication knee is real; it is covered by §8.5's acceptance cells and the
   oracle sweep, never by pretending this instrument reaches it.
 
+## The sabotage rows this suite catches, and their MARGINS
+
+`tests/mech/sabotages/S53..S57`, run through the `counterkdiff` arm. All five
+DETECTED, 0 undetected, 0 anomalies (mech at `bf4f567`). The margins are worth
+recording because they are not equal, and a thin margin is a maintenance fact
+rather than a pass:
+
+| row | what it breaks | margin |
+|---|---|---|
+| S53 | the counter slot made untrailed | 1 fail / 58 pass |
+| S54 | the residue tail deleted | 32 fail / 27 pass |
+| S55 | the greedy preference inverted | 30 fail / 29 pass |
+| S56 | an empty-iteration guard ADDED | 1 fail / 58 pass |
+| S57 | a nested untrailed local across a trip | 1 fail / 58 pass |
+
+**The three narrow rows are narrow BY CONSTRUCTION, not by accident**, and each
+names its own requirement: S53 needs a body with an internal choice point *and*
+a resume that lands inside it; S56 needs a NULLABLE body above K; S57 needs a
+nested loop inside a counter loop. Those are small populations in any honest
+corpus — but small is one deletion away from zero. **If a future edit removes
+the nullable cells, or the stride cells, or the alternation bodies from
+`patterns.txt`, the corresponding row goes UNDETECTED while the file still looks
+well populated.** That is the failure mode to watch here, and it is why those
+cells carry comments in `patterns.txt` naming what depends on them.
+
+S54 and S55 are broad because a deleted residue and an inverted preference are
+wrong on most subjects of most patterns. Breadth is not virtue here — it just
+means those two would be caught by a weaker instrument too.
+
 ## Why the possessive block earns its place
 
 It caught a SILENT CAP. The first version of the possessive cost arm copied the
