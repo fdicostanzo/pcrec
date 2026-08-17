@@ -55,6 +55,51 @@ SCAN = re.compile(
     re.VERBOSE)
 
 
+def frames_mode(a):
+    """The TEST form of the bound, at FRAMES-rung iteration entries.
+
+    A choice-bearing body cannot take the cursor rung, so there is no range
+    to clamp -- each iteration entry commits to ONE position and the bound is
+    the plain test of section 4.1. The anchor is the `RX_SET(slot, pos)` that
+    opens each iteration (a capture open, or the loop's own entry write);
+    `--minrest-py` supplies the per-site constant, because at two levels of
+    replication the site index encodes both loop counters and no single
+    formula covers it (k23_design.md section 2.6).
+    """
+    text = open(a.src).read()
+    anchor = '    RX_SET(%d, (ptrdiff_t)pos);\n' % a.frames_sites
+    parts = text.split(anchor)
+    nsites = len(parts) - 1
+    if nsites == 0:
+        print('prune_proto: no frames-rung entry sites at slot %d'
+              % a.frames_sites, file=sys.stderr)
+        sys.exit(1)
+    if a.replicas is not None and nsites != a.replicas:
+        print('prune_proto: DECLINED -- %d entry sites, expected %d'
+              % (nsites, a.replicas), file=sys.stderr)
+        sys.exit(2)
+    out = [parts[0]]
+    n_patched = 0
+    for k, seg in enumerate(parts[1:]):
+        minrest = int(eval(a.minrest_py,  # noqa: S307 - a lane probe
+                           {'__builtins__': {'max': max, 'min': min}},
+                           {'k': k, 'nsites': nsites})) + a.follow_min
+        if a.placebo:
+            minrest = 0
+        if minrest > 0:
+            out.append(
+                '    if (n < %dUL || n - %dUL < pos) goto rx_fail;\n'
+                % (minrest, minrest))
+            n_patched += 1
+        out.append(anchor)
+        out.append(seg)
+    open(a.dst, 'w').write(''.join(out))
+    print('prune_proto: %d frames entry sites, %d tests inserted'
+          % (nsites, n_patched), file=sys.stderr)
+    if n_patched == 0:
+        sys.exit(1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('src')
@@ -107,7 +152,19 @@ def main():
                          'the clamp; the difference between --placebo and the '
                          'unpatched build is code layout. Without this control '
                          'the two are reported as one number.')
+    ap.add_argument('--frames-sites', type=int, default=None, metavar='SLOT',
+                    help='FRAMES-RUNG mode: patch the TEST form of the bound '
+                         'at every `RX_SET(SLOT, pos)` iteration entry '
+                         'instead of clamping cursor scans. Requires '
+                         '--minrest-py.')
     a = ap.parse_args()
+
+    if a.frames_sites is not None:
+        if not a.minrest_py:
+            print('prune_proto: --frames-sites requires --minrest-py',
+                  file=sys.stderr)
+            sys.exit(1)
+        return frames_mode(a)
 
     text = open(a.src).read()
     hits = list(SCAN.finditer(text))

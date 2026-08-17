@@ -270,6 +270,22 @@ The alternation contributes its own choice points as a roughly constant
 multiplier; it does not change the class or the law's shape. BELIEVED that
 the multiplier stays bounded in general — two points is two points.
 
+**And the bound reaches it.** A choice-bearing body has no cursor range to
+clamp, so §4.1's TEST form applies instead, at each iteration entry
+(`probes/prune_proto.py --frames-sites`). MEASURED on
+`((a|b){7,12}){7,20}`, against python `re` as oracle:
+
+| n | 48 | 49 | 50 | 55 | 70 |
+|---|---|---|---|---|---|
+| baseline steps | 0 | 51,993 | 46,911 | 11,928 | 186 |
+| pruned steps | 0 | **21** | 21 | 18 | 9 |
+| span / g1 / g2 | nomatch | (0,49)(42,49)(48,49) | (0,50)(43,50)(49,50) | (0,55)(48,55)(54,55) | (0,70)(63,70)(69,70) |
+
+The capture vectors are identical across baseline, pruned and oracle at every
+length. This section was written as §13's prediction 3 ("fewer than 50
+steps") and then measured; the prediction is kept there, marked CONFIRMED,
+rather than quietly deleted.
+
 **A separate finding from that family, reported because a timeout is a
 finding.** `((a|b){10,20}){10,50}` emits in 0.105 s but produces a
 20,941-line, 670 KB function, and **gcc cannot compile it**: `-O0` 4.0 s,
@@ -858,10 +874,14 @@ bitmap and is not designed here.
 3. **libpcre2 as a third oracle.** python `re` only, per the base-tier rule.
    `eng_brep_design.md` §8 item 6 disclosed the same gap and R24 closed it
    from outside; the same is available here and would cost one lane-hour.
-4. **The frames rung under pruning.** §2.5 measures that the class EXISTS
-   there; the prototype patches cursor scan sites only, so no pruned
-   measurement of a choice-bearing body exists. This is the largest single
-   gap and the one a build lane will close first by construction.
+4. **The frames rung beyond ONE shape, and beyond iteration ENTRIES.** §2.5
+   measures `((a|b){7,12}){7,20}` pruned (51,993 → 21) and that is the whole
+   of the evidence: one pattern, five lengths. The prototype's frames mode
+   also tests only at iteration ENTRIES — it does not push the bound down
+   into the alternation's own choice points inside a body, which a real
+   emitter threading the accumulator would reach. Both of those are more
+   pruning, not less, so the measured 21 is an upper bound on what the
+   mechanism achieves there; that direction is argued, not measured.
 5. **An independent oracle for the three-level rows.** §2.6's correctness
    check is pcrec-vs-pcrec; python did not return inside 100 s and libpcre2
    was not used. The small three-level shape `((a{1,2}){1,2}){1,2}` is in the
@@ -966,8 +986,9 @@ None are blocking; the recommendation stands without them.
    cap, exactly as `clo_visit` did. (§4.3; R23's own re-measurement is the
    precedent and the reason this is stated as a prediction rather than a
    caution.)
-3. On the frames rung, the test form of §4.1 reduces `((a|b){7,12}){7,20}` at
-   n = 49 from 51,993 steps to fewer than 50. (§2.5, §10 item 4.)
+3. **CONFIRMED, 21 steps** (written as a prediction, then measured — §2.5).
+   On the frames rung, the test form of §4.1 reduces `((a|b){7,12}){7,20}` at
+   n = 49 from 51,993 steps to fewer than 50.
 4. There is no greedy two-level bounded shape, of any inner width, for which
    pruning leaves more than `p` steps at `n = p·m` with an empty follow.
    (§4.4; 855 cells consistent, no proof.)
