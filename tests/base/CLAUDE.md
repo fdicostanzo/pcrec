@@ -27,6 +27,15 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   (incl. the branch-not-reset rule), 500-2000 counts and the 64-copy
   replication-cap boundary (`perr`). Two case-lines from the corpus live in
   `tests/known_fail/d27_nested_min_boundary.rxt` (K23) instead of here.
+- **d27_k23_ambiguous_decomposition.rxt** — the D27 blinded corpus for the
+  K23 ambiguous-decomposition region (2026-08-17, cell `d27k23`): 3 pattern
+  blocks (`(a{1,3}){64,65,66}`) / 89 case-lines covering the 65..100 dense
+  region, the 3N span cap, broken-run and offset-start composites. The
+  region's python `re` oracle does not terminate, so expectations derive
+  from a stated law (leftmost run of length L>=N matches [start,
+  start+min(L,3N))) proven by exhaustive small-N induction and re-verified
+  independently at review; verification ledger in
+  docs/design/k23_impl/d27_corpus_notes.md. Lands WITH the [M4.6d] MRL fix.
 - **alternation.rxt** — | alternation and precedence
 - **alternation_trie.rxt** — priority hazards of M2.8 prefix-trie factoring (D9): shorter-branch-first shapes, overlapping-but-distinct classes, mixed eligible/ineligible runs. Each guard is sabotage-validated — disabling the disjointness guard fails 2 cases, disabling index-range partitioning fails 7
 - **anchors.rxt** — ^ and $ anchors

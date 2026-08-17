@@ -39,6 +39,12 @@ pcrec's `make`.
 
 ## Subdirectories
 
+- `d27_corpus_notes.md` — the D27 blinded author's verification ledger for
+  tests/base/d27_k23_ambiguous_decomposition.rxt (cell `d27k23`,
+  2026-08-17): the derived match law, the exhaustive small-N induction that
+  carries the python-hazard band, per-expectation verification methods, the
+  self-check that caught one hand-arithmetic slip pre-delivery, and the
+  CPython sre hazard anomaly (subjects outside [65,139] can still hang).
 - `probes/` — the lane's prototypes, harnesses and case files. See its own
   CLAUDE.md.
 - `out/` — archived probe OUTPUT with D35-style source-information headers,
