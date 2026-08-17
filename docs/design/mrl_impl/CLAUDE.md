@@ -50,8 +50,29 @@ and one nobody re-runs is not a check).
   replaced, because a demonstration that the instrument needs its control is
   worth more than a tidier table.
 
+- `probes/dfadiff.py` — **the LANDING PANEL's own instrument, adopted here.**
+  Not written by this lane: it is what the soundness lens used to reach its
+  ~285,000-cell verdict, and it is kept because an instrument built by someone
+  ATTACKING the change is worth more than one built by the person who wrote
+  it. The build lane's own differential compares two pcrec builds that share
+  every line of the analysis; this one uses pcrec's OWN DFA ENGINE
+  (`--no-captures`) as an independent oracle — MRL-free, terminating,
+  capture-blind, and therefore able to referee exactly the SPAN an over-large
+  bound would delete. Three arms: default hybrid, pure DFA, and `--engine=vm`
+  to separate the window ceiling from the bound.
+
+  Adopted verbatim in mechanism, with two changes and no third: its hardcoded
+  session paths are generalised, and its companion driver is INLINED so the
+  file stands alone (a probe that depends on an uncommitted sibling is a probe
+  that stops running). NOT battery-wired, deliberately — it generates random
+  patterns and builds three artifacts each, so its population is a seed rather
+  than a fixture. The narrower form of the same idea IS wired: `run_mrldiff.sh`
+  uses a `--no-captures` referee arm for the excused cells specifically.
+
 - `out/` — archived probe OUTPUT. Evidence, never an oracle: no check reads
-  it.
+  it. `dfadiff.txt` is the panel's own run against this branch (74 patterns x
+  1,305 subjects, 0 span divergences), archived with its provenance stated in
+  the header rather than left to be inferred from the numbers.
 
 ## The one thing worth knowing before re-running any of it
 

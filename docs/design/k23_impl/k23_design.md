@@ -1872,6 +1872,19 @@ bound and emit byte-identical C with the pass on and off.
   statement about the fix than either alone, and it is worth recording that
   it came for free from the project's existing convention rather than from
   anyone planning it.
+- **The EXCUSED cells are refereed against a THIRD, MRL-FREE ENGINE** (panel
+  F2). The answer-more asymmetry lets the pruned arm answer where the denied
+  arm exhausted a bound, and those cells are by construction the ones where
+  the bound did the MOST work — i.e. the least comfortable place for the
+  sweep to assert nothing. `run_mrldiff.sh` therefore builds the same pattern
+  `--no-captures`, which selects the pure DFA engine (table-driven,
+  linear-time, MRL never touches it, always terminates, capture-blind), and
+  re-derives the SPAN for every excused cell inside the same driver, on the
+  same decoded subject at the same start position. MEASURED: 22 of 22
+  refereed, 0 divergences. The referee lives in the driver rather than in a
+  second executable so that it cannot re-derive its own input from a second
+  source, which is the control-shares-its-source failure this project has
+  recorded twice.
 - **§10 item 3 (libpcre2 as a third oracle) remains OPEN.** The blinded corpus
   is python-verified per the base-tier rule; [M4.7]'s capture differential
   against libpcre2 ovectors is where it closes, and this lane did not
@@ -1948,6 +1961,40 @@ lesson survives the file that carried it being withdrawn, which is why the
 mechanism now carries its own acceptance cell (§1b of
 `tests/mrl/run_mrl_tests.sh`) instead of resting on a corpus the
 implementation lane does not own.
+
+### 14.6a Two riders on obligations this build discharged but cannot exercise
+
+Both are stated because a property nothing can reach is a property nobody
+should be told is tested.
+
+**The retry recompute is STRUCTURALLY UNEXERCISED.** §14.4 (b) discharges D51
+ruling 2 (b) by recomputing the prefilter window on every `start++` retry, and
+the argument in the same section says that retry cannot fire at all on the
+prefilter path. Both are true at once, which means the recomputing code is
+correct-by-construction and **never executed by any test in this tree**: no
+subject in the 202,458-cell differential reaches it, the panel's critic could
+not make it fire in 99 trials, and `tests/mrl/run_mrl_tests.sh` asserts its
+PRESENCE in the emitted C rather than its behaviour, which is the honest
+available check and is what sabotage S63 defeats.
+
+One consequence worth writing down for whoever does make it fire: **the two
+differential arms then run different search loops.** The pruned build
+re-seeds `start` from the fresh window and may therefore SKIP forward past
+positions the `-fno-length-prune` build steps through one byte at a time.
+Both are sound — the prefilter only skips positions no match can start at —
+but they are not the same traversal, and a divergence observed on that path
+should be read as "the two loops differ" before it is read as "the bound is
+wrong".
+
+**`VM_MRL_DYN_MAX`'s retreat is now DISCLOSED rather than silent** (panel F4).
+`vm_dyn_add` drops an outer runtime follow-min term when the composed
+expression grows past 240 characters — sound, because dropping a term
+under-estimates, and unreachable on anything pcrec compiles today (it needs a
+tower of counter-rung mandatory phases deep enough to concatenate that much
+expression). It is counted (`Vm.ndynskip`) and reported in `--emit-ir`'s
+PRUNING section as "runtime-term length retreats", with the line saying what a
+nonzero value means. An unstamped fallback that starts firing is a silent loss
+of pruning nobody would attribute; a stamped one is a number someone can see.
 
 ### 14.7 Corrections and additions to this note
 

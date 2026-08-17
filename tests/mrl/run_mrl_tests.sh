@@ -199,10 +199,34 @@ if gen lat '((?:ab){10,20}){10,50}' --step-budget=64; then
     else
         bad "lattice: '((?:ab){10,20}){10,50}' on 200 bytes gave '$got', expected '0,200 180,200'"
     fi
+    # THE GREP IS ON THE DIVISION, NOT ON THE STRIDE ARGUMENT, and the
+    # difference is this project's own control-shares-its-source failure
+    # family closing (panel F1).
+    #
+    # The first version of this row grepped `RX_MRL_CAP(pos, <mr>, 2)` — the
+    # stride ARGUMENT at a call site. That argument is present whether or not
+    # the macro does anything with it, so the check passed on an artifact
+    # whose rounding had been deleted: it asserted that the emitter knows the
+    # stride, not that the cap is rounded by it. What makes the rounding real
+    # is the integer DIVISION in the macro body, so that is what is asserted.
+    #
+    # The rounding is DELIBERATELY DEAD in the delivered form — the fold into
+    # the loop bound is self-rounding, so R26 E1's off-lattice cursor is
+    # inexpressible (see the emitter's own comment at the fold site, and
+    # sabotage S60). It is kept as defence-in-depth for a future site that
+    # consumes the cap by ASSIGNING it, and that is exactly why it needs a
+    # check: dead code with no assertion behind it is deleted by the next
+    # refactor that reads "dead" as "deletable".
+    capdef="$(grep -A1 '^#define RX_MRL_CAP' "$WORKDIR/lat.c" | tail -1)"
+    case "$capdef" in
+        *'/ (size_t)(w_)'*)
+            ok "lattice: RX_MRL_CAP's body carries the integer DIVISION by the stride -- the rounding is present, not merely the stride argument at the call site" ;;
+        *)  bad "lattice: RX_MRL_CAP's body is '$capdef' -- the division by the stride is gone, so the cap is no longer rounded onto the iteration lattice. It is deliberately dead TODAY (the folded loop bound is self-rounding) and it is kept as defence-in-depth for a future assigning site; removing it silently is what this check exists to stop" ;;
+    esac
     if grep -q 'RX_MRL_CAP(pos, [^,]*, 2)' "$WORKDIR/lat.c"; then
-        ok "lattice: the emitted cap carries the STRIDE (2), which is what rounds it onto the iteration lattice"
+        ok "lattice: the cap is applied at a stride-2 site, so the division above is reached with a stride the identity does not cover"
     else
-        bad "lattice: no stride-2 RX_MRL_CAP in the artifact -- the rounding argument has no code behind it"
+        bad "lattice: no stride-2 RX_MRL_CAP call site in the artifact -- the division is only ever exercised at W=1, where it is the identity"
     fi
 fi
 

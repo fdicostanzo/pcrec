@@ -110,6 +110,8 @@ clamped_patterns=0
 rungs_seen=0
 
 excused_total=0
+refereed_total=0
+norefetee=0
 # THE EXEMPTION'S PINNED SIZE. The driver's DIFF_A_MAY_ANSWER_MORE branch lets
 # the pruned arm ANSWER where the denied arm exhausted a bound, and a cell it
 # excuses is a cell this sweep did NOT compare. An uncounted exemption grows
@@ -212,6 +214,25 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
         return 0
     fi
 
+    # [M4.6d] THE REFEREE ARM (panel F2). The same pattern built
+    # `--no-captures`, which selects the pure DFA engine: MRL-free, always
+    # terminating, capture-blind. It exists to give the EXCUSED cells a second
+    # opinion — those are the cells where arm B gave up, so the sweep has none,
+    # and they are by construction the ones where MRL did the most work.
+    #
+    # It is OPTIONAL rather than required: a pattern `--no-captures` cannot
+    # compile leaves the sweep running without a referee, and the run SAYS so
+    # rather than skipping the pattern, because a missing referee is a smaller
+    # loss than a missing cell.
+    ref_flag=""
+    if "$PCREC" -p pc --no-captures --step-budget=$MRLDIFF_STEPS \
+            -o "$d/pc.c" -- "$pat" >/dev/null 2>"$d/err_c"; then
+        ref_flag="-DDIFF_REFEREE=1"
+    else
+        norefetee=$((norefetee + 1))
+        echo "mrldiff: '$pat' [$eng]: no --no-captures referee available ($(head -1 "$d/err_c"))"
+    fi
+
     this_clamp=0
     if grep -q '^#define PA_VM_PRUNES ' "$d/pa.c" && has_clamp "$d/pa.c" PA; then
         this_clamp=1
@@ -224,9 +245,9 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
     if ! gen_cc "mrldiff '$pat' [$eng]" $CC -O1 -Wall -Wextra -std=gnu11 $GENCFLAGS \
                 -DDIFF_A_LABEL='"MRL pruning"' \
                 -DDIFF_B_LABEL='"-fno-length-prune"' \
-                -DDIFF_A_MAY_ANSWER_MORE=1 \
+                -DDIFF_A_MAY_ANSWER_MORE=1 $ref_flag \
                 -I "$d" -o "$d/t" "$ROOT_DIR/tests/possessify/possdiff_driver.c" \
-                "$d/pa.c" "$d/pb.c"; then
+                "$d/pa.c" "$d/pb.c" ${ref_flag:+"$d/pc.c"}; then
         printf '%s\n' "$GEN_CC_LOG" > "$d/cc"
         bad "'$pat' [$eng]: the two-artifact driver did not compile"
         cat "$d/cc" >&2
@@ -247,6 +268,8 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
             return 0
         fi
         excused_total=$((excused_total + x))
+        r=$(printf '%s' "$out" | sed -n 's/^refereed \([0-9]*\)$/\1/p')
+        refereed_total=$((refereed_total + ${r:-0}))
         [ "$x" -gt 0 ] && echo "mrldiff: '$pat' [$eng]: $x cell(s) excused (pruned answered, denied gave up)"
         ok
     else
@@ -293,6 +316,14 @@ echo "mrldiff: $pass pattern-engine pairs agreed, $fail diverged, $skipped refus
 echo "mrldiff: $clamped_patterns of $pass carried at least one CLAMPED quantifier"
 echo "mrldiff: $cells_total pattern-subject-startpos cells compared"
 echo "mrldiff: $excused_total cell(s) excused by the answer-more asymmetry (pinned expectation $MRLDIFF_EXCUSED)"
+echo "mrldiff: $refereed_total excused cell(s) refereed against the pure DFA engine; $norefetee pattern-engine pair(s) had no referee available"
+if [ "$excused_total" -gt 0 ] && [ "$refereed_total" -lt "$excused_total" ]; then
+    echo "FAIL: $excused_total cells were excused but only $refereed_total were refereed." >&2
+    echo "      An excused cell with no second opinion is the one place this" >&2
+    echo "      sweep asserts nothing, and they are the cells where MRL did the" >&2
+    echo "      most work. Build the --no-captures arm for those patterns." >&2
+    fail=$((fail + 1))
+fi
 if [ "$excused_total" -ne "$MRLDIFF_EXCUSED" ]; then
     echo "FAIL: the answer-more exemption covered $excused_total cells, pinned at $MRLDIFF_EXCUSED." >&2
     echo "      An excused cell is one this differential did NOT compare. If the" >&2

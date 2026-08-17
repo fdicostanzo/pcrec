@@ -53,6 +53,23 @@
  * measurement that a per-prefix guard fails this exact case). */
 #include "pa.h"
 #include "pb.h"
+#ifdef DIFF_REFEREE
+/* [M4.6d] THE THIRD ARM, opt-in and used by tests/mrl/run_mrldiff.sh alone.
+ *
+ * `pc` is the SAME pattern built `--no-captures`, which selects the pure DFA
+ * engine: a table-driven linear-time machine that MRL does not touch at all
+ * and that always terminates. It is capture-blind, so it can referee the
+ * SPAN and nothing else — which is exactly the quantity an over-large
+ * minimum-remaining-length would delete, and exactly what neither of the two
+ * main arms can supply when one of them has given up.
+ *
+ * IT LIVES IN THIS DRIVER rather than in a second executable so that it reads
+ * the SAME decoded subject at the SAME start position as the cells it
+ * referees. A separate referee would need its own copy of decode() above, and
+ * a control that re-derives its own input from a second source is the failure
+ * this project has recorded twice. */
+#include "pc.h"
+#endif
 
 /* WHICH TWO BUILDS these are is the caller's business, not this file's. The
  * driver's whole content is "two artifacts of the same pattern must agree on
@@ -137,6 +154,9 @@ int main(void)
      * the other three suites build this driver -Wall -Wextra -Werror, and a
      * counter they never touch is -Wunused-variable there. */
     long long excused = 0;
+#ifdef DIFF_REFEREE
+    long long refereed = 0;
+#endif
 #endif
 
     while (fgets(line, sizeof line, stdin)) {
@@ -207,6 +227,38 @@ int main(void)
                 (rb == PA_ERR_STEPS || rb == PA_ERR_FRAMES)) {
                 same = true;
                 excused++;
+#ifdef DIFF_REFEREE
+                /* REFEREE THE EXCUSED CELL rather than taking it on trust.
+                 * Arm A answered and arm B gave up, so the sweep has no
+                 * second opinion on A's span — and the excused cells are by
+                 * construction the ones where MRL did the MOST work, i.e.
+                 * the least comfortable place to have none. The DFA arm has
+                 * one. */
+                {
+                    ptrdiff_t cc[PC_NCAPS][2];
+                    int rc = pc_search(subj, len, sp, cc);
+                    int a_matched = (ra == 1);
+                    int c_matched = (rc == 1);
+                    refereed++;
+                    if (a_matched != c_matched ||
+                        (a_matched && (ca[0][0] != cc[0][0] ||
+                                       ca[0][1] != cc[0][1]))) {
+                        fprintf(stderr,
+                                "REFEREE DIVERGENCE (excused cell) subject=%s"
+                                " startpos=%zu\n"
+                                "  " DIFF_A_LABEL ": %s\n"
+                                "  --no-captures (pure DFA, MRL-free): %s\n",
+                                line, sp,
+                                a_matched ? "match" : "nomatch",
+                                c_matched ? "match" : "nomatch");
+                        if (a_matched && c_matched)
+                            fprintf(stderr, "  spans: %td,%td vs %td,%td\n",
+                                    ca[0][0], ca[0][1], cc[0][0], cc[0][1]);
+                        same = false;   /* a real divergence after all */
+                        excused--;
+                    }
+                }
+#endif
             }
 #endif
             if (!same) {
@@ -242,6 +294,9 @@ int main(void)
      * 202,458" is only reassuring while somebody re-reads the 2. The caller
      * asserts this number against a pinned expectation. */
     printf("excused %lld\n", excused);
+#ifdef DIFF_REFEREE
+    printf("refereed %lld\n", refereed);
+#endif
 #endif
     return diverged ? 1 : 0;
 }

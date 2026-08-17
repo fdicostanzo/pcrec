@@ -422,6 +422,16 @@ typedef struct {
                            * ceiling is hidden behind the emitted macro — it
                            * exists so the stamp can DISCLOSE which form is
                            * active rather than leaving it to be discovered. */
+    long long ndynskip;   /* [M4.6d] times vm_dyn_add took its LENGTH RETREAT,
+                           * dropping an outer runtime follow-min term because
+                           * the composed expression grew past
+                           * VM_MRL_DYN_MAX. The retreat is sound (it
+                           * under-estimates) and is unreachable on anything
+                           * pcrec compiles today — which is exactly why it is
+                           * counted rather than trusted: an unstamped
+                           * fallback that starts firing is a silent loss of
+                           * pruning nobody would attribute. Reported in the
+                           * listing beside the bound-site count. */
     long long nclamp;     /* [M4.6d] emitted MRL bound sites, counted as they
                            * are written. Reported in the listing so a check
                            * can assert the bounds EXIST rather than trusting
@@ -1687,7 +1697,7 @@ static const char *vm_dyn_add(Vm *v, const char *a, const char *b)
     if (!a) return b;
     if (!b) return a;
     n = strlen(a) + strlen(b) + 4;
-    if (n > VM_MRL_DYN_MAX) return b;
+    if (n > VM_MRL_DYN_MAX) { v->ndynskip++; return b; }
     p = arena_alloc(&v->cx->arena, n);
     snprintf(p, n, "%s + %s", a, b);
     return p;
@@ -2017,18 +2027,44 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          *    100 — exactly one forward pass per accepting iteration, the
          *    floor.
          *
-         * THE LATTICE (§4.1, R26 E1). `<PREFIX>_MRL_CAP` rounds DOWN to
-         * `pos + W*k`, so the value the cursor stops at is a real iteration
-         * boundary. `pos` is the loop's entry — the scan does not move it —
-         * so the origin the rounding is taken from is the one the retreat
-         * chain descends from, and every position below the cap is a position
-         * the unclamped loop would also have visited. The guard above the
-         * block is what makes the subtraction inside `MRL_CAP` well-defined;
-         * a ceiling below `pos + minrest` means no continuation is feasible
-         * from here at all, which is a failure and not a clamp.
+         * THE LATTICE (§4.1, R26 E1), AND WHAT ACTUALLY MAKES IT HOLD —
+         * CREDIT THE FOLD, NOT THE ROUNDING. R26 E1's defect is an
+         * OFF-LATTICE CURSOR: a value assigned to `<p>_cur` that the span loop
+         * could never occupy, which poisons the whole retreat chain below it.
+         * §4.1 answers it by rounding the cap down to `pos + W*k`, because
+         * there the clamp ASSIGNS. Here it does not: the cap is the scan's own
+         * LOOP BOUND, and `<p>_cur` starts at `pos` and only ever moves by
+         * `W`. The largest value the loop can reach is therefore
+         * `pos + W*floor((lim_ - pos)/W)` whether or not `lim_` was
+         * pre-rounded — the bound is SELF-ROUNDING, and an off-lattice cursor
+         * has no spelling in this emission at all.
          *
-         * At W = 1 the rounding is the identity, which is why every stride-1
-         * measurement in the design note survives the repair unchanged. */
+         * MEASURED, twice and from both directions: sabotage S60's first form
+         * removed the rounding and came back UNDETECTED across a
+         * 202,458-cell differential; the landing panel's soundness critic
+         * independently removed it and got byte-identical answers at strides
+         * 2 and 3. Convergent, from opposite ends.
+         *
+         * `<PREFIX>_MRL_CAP` KEEPS THE ROUNDING ANYWAY, and this is the one
+         * thing to understand before deleting it as dead code. It is
+         * DEFENCE-IN-DEPTH FOR A FUTURE UN-FOLDING: the day a site consumes
+         * the cap by ASSIGNING it — a rung that picks a position rather than
+         * bounding a loop, which §4.5 says the variable-length boundary-record
+         * rung would — the rounding is what keeps that site sound, and it will
+         * be there rather than needing to be rediscovered from R26 E1.
+         * `run_mrl_tests.sh` cell 2 greps for the DIVISION so that this
+         * deliberately-dead defence cannot be quietly removed by a refactor
+         * that read "dead" as "deletable".
+         *
+         * WHAT IS LOAD-BEARING HERE IS THE GUARD ABOVE THE BLOCK. It is what
+         * makes the subtraction inside `MRL_CAP` well-defined: a ceiling below
+         * `pos + minrest` means no continuation is feasible from here at all,
+         * which is a failure and not a clamp. Vacuous, the subtraction wraps,
+         * `lim_` becomes enormous and the loop stops bounding the SUBJECT —
+         * measured as an ASAN heap-buffer-overflow (sabotage S60's second
+         * form, asserted structurally by `run_mrl_tests.sh` §2b).
+         *
+         * At W = 1 the rounding is the identity in any case. */
         const bool fold = vm_mrl_test(v, "pos", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
@@ -2046,8 +2082,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_puts(b, " }\n    }\n");
         if (fold)
             vm_ev(v, VE_NOTE, 0, 0,
-                  "MRL: the scan's own bound is the lattice-rounded clamp, so "
-                  "the doomed suffix is never scanned and never retreated over");
+                  "MRL: the clamp IS the scan's own bound, so the doomed suffix "
+                  "is never scanned and never retreated over -- and the bound "
+                  "is self-rounding, since the cursor only ever moves by W");
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
@@ -3779,11 +3816,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * hand, so "clamped" here and a bound in the emitted C are one fact
      * recorded once, not two that could disagree. */
     sb_printf(o, "\nPRUNING (k23_design.md; D51's per-quantifier stamp)"
-                 "\n  ceiling: %s\n  bound sites emitted: %lld\n",
+                 "\n  ceiling: %s\n  bound sites emitted: %lld\n"
+                 "  runtime-term length retreats: %lld%s\n",
               !v->mrl ? "none (-fno-length-prune)"
                       : v->mrl_win ? "min(n, prefilter window end) -- D51 ruling 2"
                                    : "the subject end (no prefilter on this artifact)",
-              v->nclamp);
+              v->nclamp, v->ndynskip,
+              v->ndynskip ? "  <- an outer counter-derived term was DROPPED"
+                            " (sound: it under-estimates), so this artifact"
+                            " prunes less than the analysis could"
+                          : "");
     {
         int n = 0;
         for (int i = 0; i < v->nev; i++) {
