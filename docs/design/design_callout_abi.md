@@ -154,6 +154,33 @@ taken, and it interacts badly with `volatile`-local requirements at
 on the (rare, cold) path a future real abort would take, at zero cost on
 the path that matters.
 
+**AMENDED (D49, 2026-08-17) — the trap SURVIVES; its BOUND moves from a
+literal to a name, and −2 is no longer the abort reservation's to spend.**
+D49 partitions the `< −1` space: `[RX_ERR_FLOOR, −2]` are TYPED GIVE-UP codes
+that a matcher legitimately returns (`RX_ERR_STEPS`, `RX_ERR_FRAMES`,
+`RX_ERR_WORK`), and only values strictly below the floor stay reserved for
+abort. F2's obligation therefore reads:
+
+    if (ret < RX_ERR_FLOOR) __builtin_trap();
+
+and a call site must ALSO propagate a give-up rather than treating it as a
+path failure — one line, before the trap check. That propagation is the point:
+under the old collapse an inner matcher's give-up became a plain "this path
+did not match", so the OUTER match could report an answer where a bound had
+blown.
+
+Two consequences worth stating for whoever writes the first call site. The
+sentence above about "−2 reserved" is the one part of this ruling that did not
+survive: a future native abort needs an encoding below the floor, and how much
+room the give-up block gets was fixed before anyone knew how many codes it
+would eventually hold. And the trap's own rationale is UNCHANGED and still
+correct — freestanding-safe, zero cost on the warm path, `abort()`/`longjmp`
+still rejected for the reasons above. Nothing here was cheap to change later
+and expensive now; it was the reverse, which is why it changed now: VERIFIED
+at ruling time that ZERO generated files contain the trap line, because this
+module has no producer (`emit_vm.c`'s `VE_CALLOUT` is marked reserved), so
+the codegen this amendment governs does not yet exist.
+
 ## 3. Syntax family — UNDECIDED (Frank, 2026-08-14 second ruling: *"syntax
 undecided. and the callout should probably use near pcre2 standards but
 the embedded code might be different like `\{ strlen($1) == 5 }` or

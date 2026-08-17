@@ -269,8 +269,32 @@ space is empty today (STRUCTURAL: `<prefix>_search` returns exactly `1` or
  *   0              no match; caps untouched (A-8)
  *   RX_ERR_STEPS   step budget (DD-2, engine §4.2) exhausted
  *   RX_ERR_FRAMES  backtrack-frame/trail capacity (engine §4.5) exhausted
+ *   RX_ERR_WORK    work bound exhausted -- ADDED by the D47 SECOND ADDENDUM
  */
 ```
+
+**AMENDED (D47 SECOND ADDENDUM + D49, 2026-08-17) — a THIRD code, and the
+partition of the space below it.** Settlement 4 gives the frameless forward
+work its own bound, so `RX_ERR_WORK` joins the two above on the same
+reservation basis (`counterk_design.md` §7.4/§7.5). The step budget is
+UNCHANGED — same meaning, same unit, same default — which is the property
+that settlement chose over the alternatives.
+
+D49 then partitions the negative space rather than leaving it open-ended:
+
+```c
+/* RX_ERR_FLOOR  the give-up block's floor. Codes in [RX_ERR_FLOOR, -2] are
+ *               TYPED GIVE-UPS a caller may read and propagate; anything
+ *               strictly BELOW the floor stays RESERVED for the future abort
+ *               semantic that design_callout_abi.md F2 traps on.
+ */
+```
+
+The floor is emitted as a NAME beside the codes (per-prefix, with its three
+siblings — see `src/gen/emit_dfa.c`'s `emit_ncaps_macros` for why that
+placement was chosen over the shared ABI block, and when to revisit it)
+precisely so F2's call-site check stops transcribing a literal that the next
+give-up code silently invalidates.
 
 **Today's `1`/`0` contract KEEPS its meanings** — this reservation adds new
 negative outcomes, it does not renumber the existing two. A DFA-only
@@ -419,9 +443,25 @@ enforcement folded into F2 as one property, not a separate freeze item.
 
 ```c
 typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
-/* returns matched length >= 0 (anchored at ctx->pos), or -1 (fail).
+/* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a typed
+ * give-up code in [RX_ERR_FLOOR, -2] (D49, superseding D42.3's collapse).
  * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
 ```
+
+**AMENDED (D49, 2026-08-17): the bare `<prefix>_match` CARRIES the give-up
+codes.** D42.3 had collapsed every give-up to `-1` here — the sole deliberate
+exception to the distinct-codes contract, forced only by the reservation this
+type's own `< -1` space was under. D49 supersedes it on three grounds, none
+of which is D42.3's own stated re-open trigger (a composition customer, which
+still has not appeared): pcrec is pre-release, so a "final" label reads as
+"stable absent a reason" (D47 SECOND ADDENDUM's rider); the typedef is
+BIDIRECTIONAL, so under the collapse an embedder-WRITTEN callout had no legal
+spelling for "I gave up" at all, its only option being a value that traps the
+process; and the collapse let an inner give-up read as a plain path failure,
+so an outer match could report an ANSWER where a bound had actually blown —
+a wrong answer, not merely a lost diagnostic. A caller that only asks "did it
+match" still writes `r < 0` and is unaffected; only an exact `== -1` test
+moves.
 
 - **F1**: name per OS-0 (§7 below — PROPOSED-here since neither ruling picks
   a literal symbol); the `rx_matchfn` type; `ptrdiff_t` return, matched
@@ -447,6 +487,26 @@ typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
   `abort()` (needs libc) and `longjmp` (setjmp cost on the warm path,
   `volatile`-local hazard at `-O2`) were both rejected in favour of
   `__builtin_trap()`, which is freestanding-safe.
+
+  **SUPERSEDED IN PART (D49, 2026-08-17) — the space is PARTITIONED, and the
+  trap's bound is a NAME.** `< -1` is no longer reserved WHOLE for abort. It
+  splits: `[RX_ERR_FLOOR, -2]` are typed give-up codes that a matcher DOES
+  produce (`RX_ERR_STEPS`, `RX_ERR_FRAMES`, `RX_ERR_WORK` — §1), and only
+  values strictly below the floor remain reserved for abort. F2's obligation
+  therefore respells, and every call site must use the name rather than the
+  literal:
+
+      if (ret < RX_ERR_FLOOR) __builtin_trap();
+
+  What this cost, stated because the ruling accepted it with eyes open: a
+  future abort semantic loses `-2` as its cheapest encoding and must live
+  below a give-up block whose size is fixed before anyone knows how many
+  give-up codes there will eventually be. Getting the partition wrong
+  pre-release costs a renumber and nothing else, which is the whole reason it
+  was affordable to take now — VERIFIED at the time of ruling: ZERO generated
+  files contain the trap line, because module `callouts` has no producer
+  (`src/gen/emit_vm.c`'s `VE_CALLOUT` is marked reserved), so the call-site
+  codegen that must change does not exist yet.
 - **F4** (confirmed, no longer pending): match-or-fail only in v1. Composed
   submatchers/callouts cannot abort the outer match.
 
@@ -537,6 +597,21 @@ collapse is FORCED by its frozen ABI type, and copying a forced limitation
 into an entry that has room for honesty inverts the reason the limitation
 was accepted (D42.3, §11.1 of engine_m4.md). Like the search codes, both
 values are reserved at [M4.4] and become live only when the counters exist.
+
+**AMENDED (D49, 2026-08-17) — the asymmetry this paragraph reasons about is
+GONE, and the paragraph is kept because its reasoning is what removed it.**
+Both entries now carry the same distinct codes (three of them: `RX_ERR_WORK`
+joined at the D47 SECOND ADDENDUM). So "rather than collapsing give-up into
+`-1` as `<prefix>_match` must" no longer describes anything — `<prefix>_match`
+must not, because D49 unfroze the reservation that forced it.
+
+The rejected alternative above was rejected for the right reason and the
+argument survives intact: the symmetry WAS with the wrong sibling, because
+`<prefix>_match`'s collapse was forced rather than chosen. D49 simply removed
+the force instead of continuing to work around it — which is what the
+paragraph's own sentence, "copying a forced limitation into an entry that has
+room for honesty inverts the reason the limitation was accepted", implies once
+the limitation itself becomes movable.
 
 **RULED (D44, R21 panel review) — both properties above CONFIRMED, no
 change.** The panel reviewed this signature (§13 ASK 4/D41.4's own

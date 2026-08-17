@@ -1472,16 +1472,27 @@ retracted rather than that it vanished.
 
 ---
 
-## 10.5 RECOMMENDATION — PENDING FRANK: the new bound's default, the ABI rider, and the names
+## 10.5 RULED (D49) — the new bound's default, the ABI rider, and the names
 
-Everything in this section is **PROPOSED**. The D47 SECOND ADDENDUM ruled the
-MECHANISM (settlement 4) and deliberately held back one number; the same
-addendum's rider tasked this lane with a recommendation rather than a decision
-on a second question. Neither is a lane call, and no frozen document is edited
-by this section — `../match_api_m4.md` and `lib/pcrec.h` are untouched until
-Frank rules.
+> **RULED — both questions** (`../../dev/decisions.md` D49, 2026-08-17).
+> **(1) The work bound's default is the ~10⁹ end**, on the failure-direction
+> asymmetry §10.5.1 argued: too high costs diagnostic-path time, too low is a
+> wrong answer on the shipped path. A bring-up value in the same sense the
+> step budget's 1,000,000 is; [M4.6] calibrates both. **(2) UNIFORM CODES —
+> the recommendation below was adopted on its stated grounds**: the bare
+> `<prefix>_match` carries the distinct negative codes, D42.3's collapse is
+> superseded, the `< -1` space partitions into a give-up block and an abort
+> block with a NAMED floor, and `../design_callout_abi.md` F2's trap respells
+> against that floor. **(3) The §10.5.3 spellings are manager-accepted as
+> proposed**, including the two things they deliberately did NOT settle
+> (`RX_ERR_WORK`'s numeric value stays unpinned against ASK 5's
+> `RX_ERR_TRAIL`; one existence gate in v1).
+>
+> The section is kept as the analysis the ruling was taken on, per house
+> style. What was PROPOSED here is now BUILT — see §10.5.4 for what landed
+> and the one calibration result that could not be taken before it existed.
 
-### 10.5.1 The one-liner Frank is owed at implementation
+### 10.5.1 The one-liner Frank was owed at implementation — ANSWERED ~10⁹
 
 > **What should the new work bound's default be — ~10⁹ units, which puts the
 > refusal boundary for an ordinary single-pass linear match at ~1 GB of
@@ -1503,7 +1514,7 @@ because a recommendation is more useful than a shrug, is the ~10⁹ end** — bu
 the lane has no basis for it beyond that asymmetry, and the ruling put the
 number on Frank's desk for a reason.
 
-### 10.5.2 RECOMMENDATION — the ABI rider: should `<prefix>_match` carry the distinct codes?
+### 10.5.2 RECOMMENDATION — the ABI rider: should `<prefix>_match` carry the distinct codes? — ADOPTED (D49)
 
 > **Recommendation, one line: YES — adopt the uniform contract. The only real
 > cost beyond the typedef's documented return contract is partitioning
@@ -1574,7 +1585,7 @@ commitment the rider's own "stable absent a reason" posture exists to permit,
 since getting the partition wrong pre-release costs a renumber and nothing
 else.
 
-### 10.5.3 PROPOSED names for the new surface
+### 10.5.3 Names for the new surface — ACCEPTED AS PROPOSED (D49)
 
 Spellings only — the mechanism is ruled, the names are not. Each follows the
 convention its neighbours already set (`../match_api_m4.md` §5's `rx_info`
@@ -1609,6 +1620,62 @@ VALUE flag, so the two are independently tunable; only their existence is
 shared. If a customer later needs one without the other, splitting the gate is
 additive.
 
+### 10.5.4 BUILT — what landed, and the calibration the note could not take before it existed
+
+The bound and D49's codes landed together as the first build slice (the rung
+itself is separate work). What is emitted, all of it gated on `has_budget`:
+`rx_info.work_budget` with the layout version stepped to `abi = 2` (the member
+is INSERTED beside `step_budget`, so following offsets move — which is what the
+version member is for, and what the pre-release posture licenses on a struct
+D44.5 called final); `RX_ERR_WORK`/`RX_ERR_FLOOR` beside their two siblings;
+`<PREFIX>_WORK_BUDGET`, a `work` counter in `rx_work`, and a `<PREFIX>_WORK()`
+macro that TESTS as well as decrements (§7.4's stated trade — an untested
+decrement lets a loop that SUCCEEDS overrun the bound and still return a
+match).
+
+**The charge routes through ONE emitter primitive** (`vm_work`), and that is
+this section's own lesson applied rather than repeated: the probe that priced
+this design reported a confident zero for revdet because it instrumented only
+the `RX_CUT` macro and missed the rung that cuts by assigning `w->btn`
+directly. All three site classes call the one primitive — the macro cut,
+revdet's two direct-assignment cuts, and the possessified cursor's frameless
+scan. The non-possessified cursor is NOT charged, which is finding 26's
+exclusion surviving contact with the emitter.
+
+**THE CALIBRATION IS EXACT, and this is the first time §7.4's numbers have been
+checked against a real implementation** — §11 residual 4 recorded that the
+counts were measured and the BEHAVIOUR was not, "because no build charges this
+way". One now does. `([a-z]+)9` over 10,000 bytes of `a` under `--engine=vm`:
+
+| `--work-budget=` | outcome |
+|---|---|
+| 50,005,001 | completes |
+| **50,005,000** | **completes — the predicted count exactly** |
+| 50,004,999 | `RX_ERR_WORK` |
+
+§7.4 predicted 50,005,000 uncharged units for that shape and size from
+instrumentation of an artifact that did not charge; the artifact that does
+charge consumes 50,005,000. Not "approximately" — the give-up boundary sits
+between 50,004,999 and 50,005,000. The default of 10⁹ leaves this shape two
+orders of magnitude of headroom, which is the ruled trade behaving as ruled.
+
+**One defect was found by running it, and it was ours.** The emitted `main()`
+reported every give-up that was not `RX_ERR_STEPS` as `"frames"`, so the new
+bound's first firing was misdiagnosed as a frame overflow. That is DD-2's own
+"different failures, different diagnoses" — the principle settlement 4 was
+taken on — failing inside our own harness, where it had been latent since the
+second bound landed and invisible because only one of the two codes was ever
+produced. One arm per code now, and the fallthrough prints the code rather than
+naming a bound it has not checked.
+
+**A residual the implementation created**, recorded rather than resolved: the
+frameless scan charges per ITERATION, so a stride-4 body reading four bytes per
+iteration is charged one unit, the same as a stride-1 body reading one. Per
+iteration is what §7.4 specifies and what its calibration identity is stated
+over, and every measured shape had stride 1 — so iterations is what ships.
+Whether a wide-stride iteration should cost proportionally more is a real
+question no measurement here answers.
+
 ---
 
 ## 11. The residual, collected
@@ -1628,13 +1695,17 @@ What counter-K does NOT do, each with its reason:
    the ruled design changes is that the METER becomes proportional to work for
    the loops where it currently is not, in a counter of its own (§7.5,
    settlement 4).
-4. **§7.4's charge is specified and unmeasured against a real
-   implementation.** Its COUNTS are measured; its BEHAVIOUR is not, because no
-   build charges this way — the same disclosure `../eng_brep_design.md` §8
-   item 1 makes about K itself. Two specific gaps: the revdet BACKWARD WALK's
-   iterations are uncharged today and are NOT measured by the probe (its scan
-   anchor is the cursor rung's span loop), and no measurement covers a nested
-   counter loop inside a possessified outer one.
+4. **§7.4's charge — PARTLY DISCHARGED (§10.5.4).** The note recorded this as
+   "specified and unmeasured against a real implementation ... because no build
+   charges this way". A build now does, and its calibration is EXACT on the
+   measured shape: the predicted 50,005,000 units is the give-up boundary to
+   the unit. What remains open is narrower than the original item and is
+   restated rather than closed: the revdet BACKWARD WALK's iterations are
+   still uncharged and still unmeasured (the probe's scan anchor is the cursor
+   rung's span loop, so the largest unmeasured quantity in §7.4 is unmeasured
+   for the same reason it always was); no measurement covers a nested counter
+   loop inside a possessified outer one, which cannot be taken until the rung
+   exists; and the per-ITERATION unit is uncalibrated at strides above 1.
 5. **The frame requirement is UNTOUCHED, so the endgame cell gains a runtime
    ceiling where it loses a compile-time refusal** (§3.5). One choice point per
    iteration is semantics-dictated; no value of K moves it, and growable frames
