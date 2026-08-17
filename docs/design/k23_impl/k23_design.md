@@ -532,10 +532,10 @@ retyped):
 
 | step from → to | python time ratio | closed-form step ratio (§2.2) | agreement |
 |---|---|---|---|
-| (10,15,10) → (10,20,10) | 7.61× | 7.99× | 4.7% |
-| (10,20,10) → (11,22,11) | 10.38× | 10.48× | 1.0% |
-| (11,22,11) → (12,24,12) | 11.19× | 11.27× | 0.7% |
-| (12,24,12) → (13,26,13) | 11.96× | 12.04× | 0.7% |
+| (10,15,10) → (10,20,10) | 7.63× | 7.99× | 4.5% |
+| (10,20,10) → (11,22,11) | 10.37× | 10.48× | 1.0% |
+| (11,22,11) → (12,24,12) | 11.18× | 11.27× | 0.8% |
+| (12,24,12) → (13,26,13) | 12.01× | 12.04× | **0.3%** |
 
 Python's measured times track the composition law's predicted NODE COUNTS
 within 5% across four size steps. A shared per-node constant is the only
@@ -1021,14 +1021,14 @@ rule's integer division:
 
 | shape | W | base | placebo | prune | clamp only | total |
 |---|---|---|---|---|---|---|
-| `(a{2,4}){10,50}b` | 1 | 1726.5 ns | 1749.7 ns | 1757.7 ns | +0.46% | **+1.8%** |
-| `((?:aa){2,4}){10,50}b` | 2 | 3003.0 ns | 3019.5 ns | 3061.0 ns | +1.37% | **+1.9%** |
-| `((?:aaa){2,4}){10,50}b` | 3 | 4276.2 ns | 4246.5 ns | 4270.5 ns | +0.57% | **−0.1%** |
+| `(a{2,4}){10,50}b` | 1 | 1727.7 ns | 1730.5 ns | 1750.6 ns | +1.16% | **+1.3%** |
+| `((?:aa){2,4}){10,50}b` | 2 | 2967.7 ns | 3003.2 ns | 3028.2 ns | +0.83% | **+2.0%** |
+| `((?:aaa){2,4}){10,50}b` | 3 | 4227.3 ns | 4249.2 ns | 4269.7 ns | +0.48% | **+1.0%** |
 
-At 5.6× the clamp density and with the division the lattice rule adds, the
-cost is **≤ 2%**, and on the stride-3 shape the pruned build is marginally
-faster than the unpruned one. "clamp only" is prune-vs-placebo, i.e. the
-clamp's own instructions with code-layout drift subtracted.
+At 5.6× the clamp density and with the integer division the lattice rule
+adds, the cost is **≤ 2%** at every stride, and roughly half of it is code
+layout rather than the clamp. "clamp only" is prune-vs-placebo, i.e. the
+clamp's own instructions with layout drift subtracted.
 
 **The sparse-density rows, kept** (empty follow, 9 of 50 sites), because they
 are what the note originally reported and dropping them would hide the
@@ -1041,8 +1041,9 @@ correction:
 | `(a{1,2}){10,50}` | 60 | 597.1 ns | 600.0 ns | 600.3 ns | +0.5% |
 
 Read honestly across both tables: the effect is inside a ±3% band whose sign
-varies by shape, and DENSITY DOES NOT DRIVE IT — the densest rows are not the
-most expensive ones, which is the useful thing this correction produced. Half
+varies by shape, and DENSITY DOES NOT DRIVE IT — the dense rows, at 5.6× the
+clamp count, are cheaper than the worst sparse one. That is the useful thing
+this correction produced. Half
 or more of the largest observed penalty is code LAYOUT rather than the
 clamp's instructions, which is what the placebo arm exists to separate.
 

@@ -31,3 +31,18 @@ prune	0.299092	598.2	60
 
 == (a{2,4}){10,50}b 10 2 1 200 200000 (dense) ==
 arm	best_s	ns_per_search	span_end
+base	0.345537	1727.7	201
+placebo	0.346094	1730.5	201
+prune	0.350120	1750.6	201
+
+== ((?:aa){2,4}){10,50}b 10 2 2 400 200000 (dense) ==
+arm	best_s	ns_per_search	span_end
+base	0.593544	2967.7	401
+placebo	0.600647	3003.2	401
+prune	0.605631	3028.2	401
+
+== ((?:aaa){2,4}){10,50}b 10 2 3 600 200000 (dense) ==
+arm	best_s	ns_per_search	span_end
+base	0.845465	4227.3	601
+placebo	0.849846	4249.2	601
+prune	0.853942	4269.7	601
