@@ -84,16 +84,34 @@ fi
 # ---- the three checks, one pass over the corpus --------------------------
 same=0; capfree=0; capbearing=0; skipped=0
 divergent=""; nocapbad=""; ncapsbad=""
+capdiv=0; capdivpats=""
 
 while IFS= read -r pat; do
     # Compile both ways. A pattern the compiler REFUSES (a reject-table row
     # that happens to live in a .rxt, a module-gated construct) must be
     # refused identically both ways — that is itself part of the property, so
     # a refusal is checked for agreement rather than skipped silently.
+    #
+    # ONE scoped exception, pinned below rather than silently skipped: a
+    # refusal from the VM's REPLICATION CAP (PCREC_MAX_VM_REPEAT_COPIES) is a
+    # VM-only resource limit the --no-captures DFA path structurally lacks,
+    # so at exactly the cap the two sides legitimately disagree on
+    # ACCEPTANCE. tests/base/d27_large_counts.rxt lands `(a{1,3}){65}` on
+    # that boundary deliberately (D27 corpus, commit df63549). Keyed on the
+    # cap's own diagnostic text, nothing wider; the divergent population is
+    # PINNED at exactly 1 as its own check line, so a new boundary pattern
+    # (re-pin upward, deliberately) or counter-K un-refusing this shape
+    # (population drops to 0 — re-pin and consider retiring the arm) both
+    # FAIL here instead of drifting.
     if ! "$PCREC" -p rx -o "$WORKDIR/def/gen.c" -- "$pat" >/dev/null 2>"$WORKDIR/def.err"; then
         if "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" -- "$pat" >/dev/null 2>&1; then
-            divergent="$divergent
+            if grep -q "would replicate its body" "$WORKDIR/def.err"; then
+                capdiv=$((capdiv + 1))
+                capdivpats="$capdivpats $pat"
+            else
+                divergent="$divergent
   REFUSAL MISMATCH: default refused, --no-captures accepted: $pat"
+            fi
         fi
         skipped=$((skipped + 1))
         continue
@@ -170,6 +188,14 @@ if [ "$capfree" -lt 100 ]; then
     bad "[M4.5b] §5.4: only $capfree capture-free patterns in the corpus — too small a population to call this a gate"
 else
     ok "[M4.5b] §5.4 population: $capfree capture-free + $capbearing capture-bearing patterns (of $npat, $skipped refused by both)"
+fi
+
+# The replication-cap acceptance divergence, pinned (see the comment at the
+# exclusion site). Movement in EITHER direction is a deliberate re-pin event.
+if [ "$capdiv" -eq 1 ]; then
+    ok "[M4.5b] §5.4 cap-divergence pinned: exactly 1 pattern refused by the VM replication cap while --no-captures/DFA accepts ($capdivpats )"
+else
+    bad "[M4.5b] §5.4 cap-divergence pin MOVED: expected exactly 1 replication-cap acceptance divergence, got $capdiv:$capdivpats — a new cap-boundary pattern (re-pin upward) or counter-K un-refusing the shape (re-pin to 0, consider retiring the arm)"
 fi
 
 if [ -z "$nocapbad" ]; then
