@@ -71,8 +71,19 @@ CC="${CC:-gcc}"
 # ANSWER where the denied arm exhausted a bound. The reverse is still a
 # divergence, and two arms that both answer must still agree on the span and
 # every capture slot; a give-up carries no captures, so no cell where the
-# answers COULD differ is excused. Measured at this budget: 2 of 174,486
-# cells take the exemption, both `(a*)`-shaped nullable towers.
+# answers COULD differ is excused. MEASURED at this budget on the 202,458-cell
+# population: 22 cells across two shapes -- `(a*)*b` (8) and `(a{1,4})+b` (14),
+# both nullable/ambiguous towers under `--engine=vm`, where the ambiguity is in
+# CONTENT at constant length and MRL bounds only LENGTH (§9.2). The count is
+# asserted below rather than described here, because a number in a comment is
+# not re-run.
+#
+# THE FIRST FIGURE THIS COMMENT CARRIED WAS 2, AND IT WAS WRONG IN A WAY WORTH
+# RECORDING: it came from counting the driver's DIVERGENCE REPORTS before the
+# exemption existed, and the driver reports per pattern, not per cell. Two
+# patterns, twenty-two cells. That is exactly the failure the assertion below
+# exists to prevent -- a hand-copied number describing a quantity nobody
+# measured.
 #
 # The budget must therefore not be set so LOW that the exemption starts
 # swallowing real cells -- an excused cell is invisible to the sweep's own
@@ -97,6 +108,16 @@ clamped_patterns=0
 # fixed-length bodies, so the cursor rung claims them at stride 2 before revdet
 # is consulted). The section was green and measured nothing.
 rungs_seen=0
+
+excused_total=0
+# THE EXEMPTION'S PINNED SIZE. The driver's DIFF_A_MAY_ANSWER_MORE branch lets
+# the pruned arm ANSWER where the denied arm exhausted a bound, and a cell it
+# excuses is a cell this sweep did NOT compare. An uncounted exemption grows
+# silently and takes the differential's power with it one cell at a time, so
+# the count is printed by the driver, summed here, and ASSERTED against this
+# number. RE-MEASURE and re-pin when the population or the budget changes;
+# never copy the figure forward from a comment.
+: "${MRLDIFF_EXCUSED:=22}"
 
 ok()  { pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
@@ -220,6 +241,13 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
     if out=$(gen_run "mrldiff '$pat' [$eng]" "$d/t" < "$d/subj" 2>"$d/diverge"); then
         n=$(printf '%s' "$out" | sed -n 's/^cells \([0-9]*\) .*/\1/p')
         cells_total=$((cells_total + ${n:-0}))
+        x=$(printf '%s' "$out" | sed -n 's/^excused \([0-9]*\)$/\1/p')
+        if [ -z "$x" ]; then
+            bad "'$pat' [$eng]: the driver printed no 'excused' line -- it was built without DIFF_A_MAY_ANSWER_MORE, so the exemption is unmeasurable and this sweep cannot say what it did not compare"
+            return 0
+        fi
+        excused_total=$((excused_total + x))
+        [ "$x" -gt 0 ] && echo "mrldiff: '$pat' [$eng]: $x cell(s) excused (pruned answered, denied gave up)"
         ok
     else
         bad "'$pat' [$eng] (clamped=$this_clamp): $(head -4 "$d/diverge" | tr '\n' ' ')"
@@ -264,6 +292,16 @@ done
 echo "mrldiff: $pass pattern-engine pairs agreed, $fail diverged, $skipped refused by pcrec"
 echo "mrldiff: $clamped_patterns of $pass carried at least one CLAMPED quantifier"
 echo "mrldiff: $cells_total pattern-subject-startpos cells compared"
+echo "mrldiff: $excused_total cell(s) excused by the answer-more asymmetry (pinned expectation $MRLDIFF_EXCUSED)"
+if [ "$excused_total" -ne "$MRLDIFF_EXCUSED" ]; then
+    echo "FAIL: the answer-more exemption covered $excused_total cells, pinned at $MRLDIFF_EXCUSED." >&2
+    echo "      An excused cell is one this differential did NOT compare. If the" >&2
+    echo "      population or MRLDIFF_STEPS moved, RE-MEASURE and re-pin the number" >&2
+    echo "      in this script (MRLDIFF_EXCUSED) rather than widening it silently;" >&2
+    echo "      if neither moved, a cell that used to be compared has stopped being" >&2
+    echo "      compared and that is the finding." >&2
+    fail=$((fail + 1))
+fi
 
 # NON-VACUITY, the control this check needs as much as the check itself. An
 # instrument that compares two identical artifacts agrees on everything and

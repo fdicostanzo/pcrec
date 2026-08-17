@@ -1822,7 +1822,11 @@ bound and emit byte-identical C with the pass on and off.
   (bodies of width 1, 2 and 3 at lengths on and off the lattice) and one axis
   this note did not have: **the ENGINE**, because the two ceilings are
   different arithmetic and only one of them ships. 138 of 146 pattern-engine
-  pairs carried at least one bound, and the sweep additionally asserts PER-RUNG
+  pairs carried at least one bound; the sweep ASSERTS its answer-more
+  exemption at a pinned **22 cells** (two nullable/ambiguous towers under
+  `--engine=vm`, where the ambiguity is in CONTENT at constant length and this
+  bound reaches only LENGTH, §9.2) so that an exemption which grows is loud
+  rather than silent; and it additionally asserts PER-RUNG
   coverage (mask 0x1f — every rung MRL emits a form for was reached). That
   second control exists because the first version of the pattern file had a
   section labelled "revdet" containing six shapes NONE of which reach that

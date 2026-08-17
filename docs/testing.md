@@ -509,7 +509,12 @@ literally, that requirement forbids the feature. `possdiff_driver.c` gains
 ANSWER where arm B gave up, the reverse is still a divergence, and two arms
 that both answer must still agree on the span and every slot. A give-up
 carries no captures, so no cell where the answers COULD differ is excused.
-Measured at the pinned budget: 2 of 176,276 cells take the exemption.
+Measured at the pinned budget: 22 of 202,458 cells take the exemption, across
+two shapes. The count is not a comment — `run_mrldiff.sh` ASSERTS it against a
+pinned expectation, so growth is loud and the figure is re-run rather than
+copied. (The first version of that comment said "2", which was the number of
+PATTERNS the driver reported, not cells; the assertion exists because a
+hand-copied number describing an unmeasured quantity is exactly what happened.)
 
 **`tests/mrl/`'s `.rxt` files are the IMPLEMENTATION lane's own**, and the
 D27 corpus of record for K23 is `tests/base/d27_k23_ambiguous_decomposition.rxt`

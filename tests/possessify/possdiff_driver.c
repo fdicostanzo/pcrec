@@ -132,6 +132,12 @@ int main(void)
 {
     char line[65536];
     long long cells = 0, diverged = 0;
+#ifdef DIFF_A_MAY_ANSWER_MORE
+    /* Declared under the same guard as its only writer and its only reader:
+     * the other three suites build this driver -Wall -Wextra -Werror, and a
+     * counter they never touch is -Wunused-variable there. */
+    long long excused = 0;
+#endif
 
     while (fgets(line, sizeof line, stdin)) {
         size_t ll = strlen(line);
@@ -178,10 +184,10 @@ int main(void)
              * the feature. [M4.6d]'s MRL pruning is exactly that case: it
              * removes positions from which nothing could have succeeded, so
              * a search that used to exhaust the step budget now completes,
-             * and the differential saw `nomatch` against `err_steps` on two
-             * of 174,486 cells. (run_possdiff.sh's own header records the
-             * same tension one rung over, where possessification changes a
-             * loop's FRAME requirement.)
+             * and the differential saw `nomatch` against `err_steps` on 22 of
+             * 202,458 cells. (run_possdiff.sh's own header records the same
+             * tension one rung over, where possessification changes a loop's
+             * FRAME requirement.)
              *
              * So arm A is allowed to ANSWER where arm B GAVE UP, and nothing
              * else moves. The reverse is still a divergence -- A giving up
@@ -198,8 +204,10 @@ int main(void)
              * genuinely pathological cells, not by a budget so low that half
              * the corpus stops being compared. */
             if (!same && ra != PA_ERR_STEPS && ra != PA_ERR_FRAMES &&
-                (rb == PA_ERR_STEPS || rb == PA_ERR_FRAMES))
+                (rb == PA_ERR_STEPS || rb == PA_ERR_FRAMES)) {
                 same = true;
+                excused++;
+            }
 #endif
             if (!same) {
                 char da[4096], db[4096];
@@ -215,6 +223,9 @@ int main(void)
                     fprintf(stderr, "possdiff: too many divergences, stopping\n");
                     free(subj);
                     printf("cells %lld diverged %lld\n", cells, diverged);
+#ifdef DIFF_A_MAY_ANSWER_MORE
+                    printf("excused %lld\n", excused);
+#endif
                     return 1;
                 }
             }
@@ -223,5 +234,14 @@ int main(void)
     }
 
     printf("cells %lld diverged %lld\n", cells, diverged);
+#ifdef DIFF_A_MAY_ANSWER_MORE
+    /* COUNTED AND PRINTED, never silently swallowed. A cell the asymmetry
+     * excuses is a cell this sweep did NOT compare, so it has to be visible or
+     * the exemption can grow without anyone noticing — a differential whose
+     * excused count drifts up is losing power one cell at a time, and "2 of
+     * 202,458" is only reassuring while somebody re-reads the 2. The caller
+     * asserts this number against a pinned expectation. */
+    printf("excused %lld\n", excused);
+#endif
     return diverged ? 1 : 0;
 }

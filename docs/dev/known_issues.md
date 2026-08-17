@@ -1818,7 +1818,7 @@ heuristic: `minrest` bounds whether an accepting continuation EXISTS, which is
 a property of the LANGUAGE and therefore order-invariant, so a subtree it
 deletes contained no leaf any preference order could have selected. Validated
 as a pcrec-vs-pcrec differential against `-fno-length-prune`
-(`tests/mrl/run_mrldiff.sh`): **176,276 cells, 0 divergences**, across strides
+(`tests/mrl/run_mrldiff.sh`): **202,458 cells, 0 divergences**, across strides
 1-3, subject lengths on and off the iteration lattice, all four greedy/lazy
 combinations, and BOTH ceiling forms.
 

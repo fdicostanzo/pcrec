@@ -60,6 +60,7 @@
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
 #   rungdiff                           — added 2026-08-16 ([ENG-BREP] rung-select)
 #   counterkdiff                       — added 2026-08-17 ([ENG-BREP] counter-K)
+#   mrldiff  mrl                       — added 2026-08-17 ([M4.6d] MRL pruning)
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -315,6 +316,49 @@ run_one() {
                 p="$(grep -m1 '^counterkdiff: [0-9]* patterns agreed' "$work/counterkdiff.log" | grep -oE '[0-9]+' | head -1)"
                 f="$(grep -m1 '^counterkdiff: [0-9]* patterns agreed' "$work/counterkdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
                 suite_bits+=("counterkdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            mrldiff)
+                # [M4.6d] MRL pruning's differential, the fourth arm of the
+                # same shape. The signal for a WRONG BOUND is a divergence
+                # against the `-fno-length-prune` build, not a corpus failure:
+                # an over-estimating bound still matches correctly on every
+                # subject with slack, and only a subject at or near the
+                # pattern's own minimum can tell. Its population carries the
+                # STRIDE axis R26 E1 proved a differential is blind without,
+                # and it sweeps BOTH ceilings.
+                #
+                # IT CANNOT SEE AN UNDER-ESTIMATE, and that is a property of
+                # the mechanism rather than of this arm: under-estimating
+                # prunes LESS, so both arms answer identically and the sweep
+                # is silent by construction. S58 is the row that measures
+                # that, and the `mrl` arm below is what catches it.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/mrl/run_mrldiff.sh" \
+                    > "$work/mrldiff.log" 2>&1
+                p="$(grep -m1 '^mrldiff: [0-9]* pattern-engine pairs agreed' "$work/mrldiff.log" | grep -oE '[0-9]+' | head -1)"
+                f="$(grep -m1 '^mrldiff: [0-9]* pattern-engine pairs agreed' "$work/mrldiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
+                suite_bits+=("mrldiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            mrl)
+                # [M4.6d] MRL's STRUCTURAL checks and acceptance cells. This
+                # arm exists because the differential above is structurally
+                # blind to the direction that makes the fix a fix: a bound
+                # that vanishes, or under-reports, changes NO answer and is
+                # invisible to any pcrec-vs-pcrec comparison. What it changes
+                # is the STEP COUNT, and the acceptance cells are what read
+                # that (the K23 exemplar inside eight steps, the counter
+                # rung's own cell, the suffix residual, D51 ruling 2's three
+                # obligations against the emitted C).
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/mrl/run_mrl_tests.sh" \
+                    > "$work/mrl.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/mrl.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/mrl.log" | grep -oE '[0-9]+')"
+                suite_bits+=("mrl:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

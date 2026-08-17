@@ -598,7 +598,7 @@ append-only or historical records.
   was needed), the lattice-rounded clamp folded into the greedy cursor scan's
   own bound, and the prefilter-window ceiling with D51 ruling 2's three
   obligations as code rather than as prose. Exemplar ≤1 step, three-level
-  shape ≤1, differential 176,276 cells / 0 divergences over strides 1-3 and
+  shape ≤1, differential 202,458 cells / 0 divergences over strides 1-3 and
   BOTH ceiling forms. **PREDICTION 6 is ANSWERED IN THE NEGATIVE**: the
   reverse-deterministic rung needs no lattice argument at all, because its
   forward scan IS the walk onto the boundary set — the bound stops the scan

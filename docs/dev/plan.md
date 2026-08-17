@@ -263,7 +263,7 @@ stated terms.
     different author in a different cell, expectations from a separately
     proven law) passes 89/89 against this build, neither author having seen
     the other'"'"'s work, and it covers the same rung and the same runtime term. Battery: test
-    10,168/0 (ratchet "nothing to ratchet"), strict, mrl 16/16 + 202,458
+    10,168/0 (ratchet "nothing to ratchet"), strict, mrl 19/19 + 202,458
     differential cells (per-rung coverage complete), gate.sh 10/10 with case
     (c) at 392.445 above its 388.615 floor, ubsan/asan. THREE HARNESS FIXES the budget move forced, reported
     as such: counterkdiff and the vm §4.7 contrast now PIN the step budget
