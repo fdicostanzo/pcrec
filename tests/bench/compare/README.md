@@ -27,7 +27,7 @@ default 0.3s), `RUN_TIMEOUT`, `PCREC_TIMEOUT`, `BUILD_TIMEOUT`,
 `BENCH_CPU` (core to pin to, default 2), `BENCH_TRIALS` (repeats per
 engine/case measurement, default 5), `CASES` (comma-separated case-id
 subset, e.g. `CASES=e,d`, for a fast mechanics check instead of the full
-10-case matrix).
+13-case matrix).
 
 Output: a streamed per-case log, a consolidated human-readable results
 table, a machine-readable TSV block, and a full copy of both written to
@@ -244,6 +244,9 @@ levels:
 | h | `.*=.*` | greedy backtracking stressor, 1 MB single key=value line (match) |
 | i | `a(b|c)+d` | short-subject regime: 60-byte subject, measures **ns/call**, not MB/s |
 | j | `([01]*)1([01]{8})` | DD-9's capture-bearing sibling of (f): forces the VM+prefilter hybrid, 8 MB random bits (match likely) -- the M4.6b non-regression floor (engine_m4.md 8.5) |
+| k | `(a{10,20}){10,50}` | BENCH-VM: the K23/MRL exemplar class, one planted 110-byte hazard-band run near 90% of 8 MB (match) -- floors that the MRL fix (D51 ruling 1) stays cheap |
+| l | `([a-z]{2,4}){2,8}b` | BENCH-VM: D51 ADDENDUM's site-dense +8%-cost shape, fixed 40-byte all-`b` subject, measures **ns/call** |
+| m | `a(b|c)+d` (captures ON) | BENCH-VM: D53's hybrid-wins-past-~8-12-bytes crossover regime, 100-byte subject, match at offset 40, measures **ns/call** -- case (i)'s sibling with captures left on instead of `--no-captures` |
 
 Subjects are generated deterministically (fixed `random.Random` seed) by
 an embedded python3 script in `compare.sh`. Two subjects need active
@@ -321,7 +324,10 @@ CAN do, which is narrower than what the other engines do:
   routes pcrec to the VM+prefilter hybrid rather than the pure DFA the other
   nine take, and every engine pays for populating them there. (Measured on
   the span-only cases: ovector size makes <1% difference, so their omission
-  of captures was a scope gap, not a timing thumb on the scale.)
+  of captures was a scope gap, not a timing thumb on the scale.) BENCH-VM's
+  three cases (k)/(l)/(m), added 2026-08-17, are ALSO capture-bearing and ALL
+  stamp `ENGM_VM` (see `CASE_EXPECT_ENGINE` in compare.sh) — (j) is no
+  longer the sole VM-tier case in this matrix, just the first one.
 - **No case-insensitive matching.** pcrec's only option is class expansion
   (`[Nn][Ee]...`), which loses ~11x to PCRE2-JIT's native CASELESS. It still
   beats pcre2-interp (2.8x) and python (7.9x) — and pcre2-interp forced onto

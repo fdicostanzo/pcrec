@@ -71,10 +71,40 @@ Floor derivation (floors.tsv): three independent quiet-box `CASES=j` runs,
 150.350/150.369/150.397 MB/s, spreads 1.00x-1.01x — reference is the median
 (150.369), margin is the standard R3.5 formula
 (`clamp(1/(spread*1.05), 0.70, 0.90)`) at the worst of the three spreads,
-which clamps to the 0.90 ceiling like most other rows here. Every other case
-in this file is deliberately span-only (see the Scope disclosure section of
-README.md); (j) is the sole exception and README.md's disclosure is worded
-to say so.
+which clamps to the 0.90 ceiling like most other rows here. Cases (a)-(i) are
+deliberately span-only (see the Scope disclosure section of README.md); (j)
+was the first capture-bearing case in this file, not the sole one anymore --
+see [BENCH-VM] below.
+
+**[BENCH-VM] (2026-08-17, twenty-ninth session): cases (k)/(l)/(m), a
+deliberately thin EARLY SLICE of [BENCH-1] closing the gap that (j) was the
+matrix's ONLY VM-tier case.** All three are capture-bearing and stamp
+`ENGM_VM` (`CASE_EXPECT_ENGINE`), following (j)'s engine-assertion
+discipline exactly. (k) `(a{10,20}){10,50}`, a throughput case, is the
+K23/MRL exemplar class (D51 ruling 1's fix of record) -- one planted
+110-byte hazard-band run near 90% of 8 MB, watching that the MRL pruning fix
+stays cheap (measured ~54x gap between the default build and an
+`-fno-length-prune` control on the identical subject). The plant length is
+110, not the design note's own worst point (100): checked directly against
+this exact 8 MB subject, libpcre2 itself hits `PCRE2_ERROR_MATCHLIMIT` at
+100 and 105 on this pattern (D52's "libpcre2 is not a terminating oracle in
+the K23 hazard band" grounding measurement, reproduced here, not just
+cited) -- which compare.sh's own agreement check correctly refuses to time
+as INVALID, so 110 is the shortest plant where every engine returns a clean
+verdict. (l) `([a-z]{2,4}){2,8}b`, a latency case, is D51 ADDENDUM's own
+measured shape ("`n=40` -- short subject, high bound-site density per unit
+of matching work", the accepted +4.2-8.3% clamp-arm cost) -- a fixed 40-byte
+all-`b` subject (every byte both a class member and the pattern's own
+trailing literal, which is what makes the decomposition ambiguous; a subject
+with no `b` at all was tried first and showed no signal, since the class
+then had nothing to be ambiguous about). (m) `a(b|c)+d` with captures LEFT
+ON (case (i)'s own pattern, but without its `--no-captures` pin), a latency
+case, floors D53's crossover evidence ("the hybrid wins at match offsets
+past ~8-12 bytes") at offset 40 -- confirmed directly before wiring in:
+1146.9 MB/s (default hybrid) vs 491.6 MB/s (`--engine=vm`, no prefilter) on
+the identical 100-byte subject. Mechanics validated with rough (unpinned)
+`CASES=k,l,m` runs; floors.tsv rows await a coordinated quiet window per
+this file's own manual-only posture.
 
 **FINDING, not fixed here (M4.6b, 2026-08-17): cases (c) and (i) were already
 silently measuring a different engine than their floors were set against, the
