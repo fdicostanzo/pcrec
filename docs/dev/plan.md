@@ -740,8 +740,11 @@ spine, not before):
   PROCESS, staged and gated — the format is hard to change once
   adopted ("we should get it right"), so it is built DESIGN-FIRST like
   the K23 arc:
-  - [DD-13a] STATE:started (2026-08-17, Frank-prompted parallel lane
-    dd13a while [M4.6d] runs its battery) — REQUIREMENTS note:
+  - [DD-13a] STATE:completed 2026-08-17 (lane dd13a, merged 52e2702 —
+    docs/design/dd13_format/requirements.md: census 54 files / 1,100
+    blocks / 9,977 expectation lines; compatibility answered DIALECT
+    with R-COMPAT-1; OD-1..5 carried unresolved; five tensions, seven
+    anti-requirements, panel attack list) — REQUIREMENTS note:
     enumerate every consumer's needs
     measured against real corpora — the .rxt harness as-is
     (docs/testing.md), the machine-generated D27 sets, [V-E]'s
