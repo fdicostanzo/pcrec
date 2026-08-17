@@ -1197,6 +1197,26 @@ already settled, instead of the counter's.
 Plus the non-vacuity control both earlier lanes carry: a sweep where the rung
 never fired must itself fail.
 
+**AND A SECOND NON-VACUITY CONTROL THE EARLIER LANES DO NOT CARRY, added
+because this lane's own throwaway differential produced a vacuous green during
+the build.** Checking the mandatory phase, a hand-rolled counter-vs-replication
+harness reported **0 divergences over 50 cells** — while the compile of BOTH
+sides was failing (the driver included the generated header but never compiled
+the generated `.c`, so the link failed), `stderr` was suppressed, and every cell
+compared an empty string to an empty string. Empty equals empty, so every cell
+passed, and the run looked like the strongest possible result.
+
+The rule that follows, and §8.1's instrument must carry it: **a differential
+must assert that its two sides were BUILT and that each cell produced OUTPUT,
+before it compares anything.** Two failures compare equal, which makes a broken
+harness indistinguishable from a perfect result — and the more thorough the
+sweep, the more convincing the vacuous green looks. This is the same shape as
+R25 E2's undetectable sabotages and round 1's cursor-only probe, reached from a
+third direction: not a control sharing a source with what it controls, but a
+comparison whose two inputs share a FAILURE MODE. Cheap to prevent (one
+non-empty check per cell, one abort on a non-zero compiler exit) and, on the
+evidence of this session, not optional.
+
 ### 8.2 The oracle sweep on top (requirement 3)
 
 D44's three-way rule — pcrec / python3 `re` / libpcre2 — dense at the edges

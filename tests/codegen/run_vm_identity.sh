@@ -192,10 +192,28 @@ fi
 
 # The replication-cap acceptance divergence, pinned (see the comment at the
 # exclusion site). Movement in EITHER direction is a deliberate re-pin event.
-if [ "$capdiv" -eq 1 ]; then
-    ok "[M4.5b] §5.4 cap-divergence pinned: exactly 1 pattern refused by the VM replication cap while --no-captures/DFA accepts ($capdivpats )"
+#
+# RE-PINNED 1 -> 0 by the [ENG-BREP] counter-K landing, which is the event this
+# pin was set up to catch and NOT a regression. `(a{1,3}){65}` was the sole
+# member: one copy past PCREC_MAX_VM_REPEAT_COPIES, so the VM refused it while
+# --no-captures routed it to the DFA, which has no replication cap. The counter
+# rung makes a bounded repeat's emitted size independent of its count — 65
+# copies become K + (65 mod K) = 9 — so the cap is no longer reached and both
+# engines now accept. The direction is the safe one D47's ADDENDUM named:
+# patterns move from refused to compiled, so nothing shipped changes under
+# anyone.
+#
+# The ARM IS KEPT rather than retired, deliberately. It is not dead: any future
+# pattern that reaches the replication cap on the VM while the DFA accepts is a
+# real designed divergence this check should exclude rather than report as an
+# identity violation, and counter-K does not cover every shape that can reach
+# the cap (the possessive arm and the optional phase land in later slices, and
+# nested towers are [ENG-CLAMP]'s). Pinning at 0 keeps the exclusion honest: if
+# the population comes back, the pin says so.
+if [ "$capdiv" -eq 0 ]; then
+    ok "[M4.5b] §5.4 cap-divergence pinned at 0: no pattern is refused by the VM replication cap while --no-captures/DFA accepts (counter-K un-refused the former sole member)"
 else
-    bad "[M4.5b] §5.4 cap-divergence pin MOVED: expected exactly 1 replication-cap acceptance divergence, got $capdiv:$capdivpats — a new cap-boundary pattern (re-pin upward) or counter-K un-refusing the shape (re-pin to 0, consider retiring the arm)"
+    bad "[M4.5b] §5.4 cap-divergence pin MOVED: expected 0 replication-cap acceptance divergences, got $capdiv:$capdivpats — a pattern now reaches the replication cap on the VM that the DFA accepts. Either a new cap-boundary shape (re-pin upward, and say which rung declined it) or a counter-K regression (the rung stopped selecting for a shape it used to take)"
 fi
 
 if [ -z "$nocapbad" ]; then
