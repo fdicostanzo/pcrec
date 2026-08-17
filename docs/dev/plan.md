@@ -369,15 +369,29 @@ stated terms.
     add `([01]*)1([01]{8})` to the EXISTING tests/bench 9-case matrix
     (NOT [BENCH-1]) with an absolute D12/M2.11 per-case floor
     (engine_m4.md §8.5). Parallel-safe with counter-K.
-  - [M4.6c] STATE:started (2026-08-17) — K23 DESIGN-FIRST note
-    (k18_memo_design.md precedent): characterize the exact-minimum
-    ambiguous-decomposition explosion (D27's width×total finding,
-    known_issues.md K23), evaluate memoization vs decomposition
-    pruning vs engine-selection routing, propose one. Blocks [M4.6d]
-    only.
+  - [M4.6c] STATE:completed (2026-08-17, same session start-to-accept) —
+    K23 DESIGN-FIRST note, **ACCEPTED**: docs/design/k23_impl/
+    k23_design.md on lane/k23 (31 commits, docs-only). MRL PRUNING
+    recommended and twice-panel-verified (R26 + same-day verification:
+    the lattice-rounded clamp, stride/residue corpus, 1,059 cells /
+    0 disagreements, sabotage arm 101-red-zero-at-stride-1 proving the
+    old corpus incapable; preference-blindness PROVEN — the explosion
+    needs a greedy INNER; closed-form step law exact out of sample;
+    memoization and routing priced and refuted). Review:
+    reviews/2026-08-17-r26-k23.md. TO FRANK: adopt-MRL, and ruling 6
+    (prefilter-window ceiling — v1 with three build obligations vs
+    subject-end fallback; a stale window errs UNSOUND, see the
+    verification's direction-of-error note).
   - [M4.6d] STATE:not-started — K23 FIX per (c)'s accepted note; tests
     from a D27-BLINDED author (K23 was itself a D27 find); closes
-    known_issues.md K23 and retires the ratchet resident. ALSO OWED to
+    known_issues.md K23 and retires the ratchet resident. SEQUENCED
+    AFTER counter-K merges (both rewrite emit_vm.c — no parallel lane);
+    needs Frank's adopt-MRL + ruling 6 first. Build charter carries:
+    prediction 6 (the reverse-deterministic rung recovers boundaries by
+    backwards WALK, not arithmetic — §4.1's division does not apply and
+    the lattice argument must be RE-MADE there; the E1 class's expected
+    recurrence site), the §9.1 ruling-6 obligations if v1, and the
+    exhaustive-switch rule (§4.2). ALSO OWED to
     the blinded author (counter-K checkpoint 2, 2026-08-17): the
     (a{1,3}){65} INTERMEDIATE region — 65..~100 'a's is an ambiguous
     decomposition where pcrec returns RX_ERR_STEPS in ms and python re

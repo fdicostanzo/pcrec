@@ -9214,3 +9214,67 @@ walked to ground (prefilter = the general linear check; K23 shown as
 the non-contrived post-prefilter exemplar; NP enters only with
 backrefs); candidate future OPT row noted but NOT filed: required-byte
 prescan / skip-past-failed-run for the VM path.
+
+## 2026-08-17 (EDT), twenty-eighth session (cont.) — counter-K builds through three checkpoints; main-RED found and fixed; R26 full arc; K23 note ACCEPTED
+
+**Counter-K checkpoints 1-3 (lane/counterk, no merge yet):** W1a landed
+the third bound + D49's uniform codes with an EXACT calibration (give-up
+boundary between 50,004,999 and 50,005,000 — §7.4's predicted count to
+the unit; later re-verified by a SECOND instrument sharing no code,
+including an unpredicted CUT-class figure landing exactly). W2 landed
+the rung: scaffolding first (fifth rung bit, -fno-counter, --unroll),
+then the mandatory phase (the §8.5 endgame cell compiles: ((a)|ab){4000}
+refused→4,550 lines, honest subject_ceiling 307), then the optional
+phase greedy+lazy (nest-equivalence HOLDS on the (?:ab|a){0,2}?b
+witness; 576 cells vs replication ground truth, 0 divergences; the K23
+lane's gcc-DNF shape 300s-DNF→16.7s at -O2, pinned as a NEW acceptance
+cell asserting the second half of "compiles"). Lane self-caught TWO
+vacuous greens (empty-vs-empty compile failure; a non-capturing witness
+testing the DFA under the rung's name) — both now §8.1 obligations and
+in the manager's check-design memory. Remaining: §3.4 possessive arm
+(first place the rung exercises the settlement-4 meter), then §8's
+instruments.
+
+**MAIN WAS RED and is green again (d137d39):** the D27 corpus had
+landed (a{1,3}){65} exactly on the 64-copy replication cap;
+vm_identity's refusal-agreement arm assumed acceptance parity, but the
+cap is VM-only and the DFA path legitimately accepts. Found by the
+counter-K lane probing clean main; reproduced by the manager before
+fixing. Fix: scoped exclusion keyed on the cap's own diagnostic +
+population PINNED at exactly 1 as a ninth check line, two sabotages
+validated (after the first validation run was itself invalid — scratch
+copies couldn't find the corpus and the no-population guard read as
+the sabotage firing; recorded in tests/codegen/CLAUDE.md). Counter-K's
+rung then moved the pin as predicted — at TWO sites (check re-pinned
+1→0 with the arm KEPT and ratified; d27_large_counts.rxt:58 re-expected
+oracle-verified, with the K23-shaped intermediate region 65..~100
+assigned to [M4.6d]'s blinded author, plan 2036a78).
+
+**R26 (the K23 note's panel + verification, review file committed
+20a086c/e5d46df/83eb39b):** three critics. Design core HELD and
+strengthened — preference-blindness PROVEN by the critic that tried to
+refute it; closed form exact out of sample. Emitted form REFUTED: the
+§4.1 clamp off-lattice on stride>1 (5/8 subjects wrong on a
+live-population shape), the 855-cell differential structurally blind
+(single-byte corpora — the lane's own §11.1 lesson against its own
+generator). Lane revision same session: lattice rule (reproduced the
+failure first), stride/residue corpus, 1,059/0, sabotage arm
+101-red-zero-at-stride-1 (the blindness PROOF), greedy-INNER finding
+(sharper than the panel's), prefilter-window-ceiling prototype (suffix
+residual DISAPPEARS — ruling 6). Verification: V1-V7, one PARTIAL
+(carried-stale sparse table), seven polish items applied with two more
+self-caught defects (a silent partial-apply; a tenth-point recompute).
+Critic self-disclosures recorded incl. R24 M-F1 reproduced verbatim by
+the critic's own sort -u. **NOTE ACCEPTED; [M4.6c] COMPLETED**
+(same-session start-to-accept). [M4.6d] sequenced after counter-K
+merges (both rewrite emit_vm.c) and after Frank's two rulings.
+
+**ON FRANK'S DESK when he returns:** (1) adopt-MRL on the 1,059/0
+number; (2) ruling 6 — prefilter-window ceiling, v1 (three build
+obligations; stale window errs UNSOUND) vs subject-end fallback.
+Neither blocks counter-K.
+
+**Process:** the resend-request habit caught three more raced reports;
+the watchdog ticked clean throughout; check-design memory gained three
+new lessons (empty-vs-empty; N-causes-N-diagnoses fallthrough; corpus
+needs the MECHANISM's axes, not the exemplar's).
