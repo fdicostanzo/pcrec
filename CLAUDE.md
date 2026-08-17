@@ -2,12 +2,14 @@
 
 ## MANDATE: repository scope
 
-Work in this project touches ONLY this repository (/home/duxevents/pcrec and
-its git remote github.com/fdicostanzo/pcrec). Do not create, modify, or delete
-files anywhere else on this machine — no other directories, no home-directory
-or system config, no other repos. Session-temporary files go in the session
-scratchpad, never committed. Subagents inherit this mandate; state it in
-their task briefs.
+Work in this project touches ONLY the two mandated repositories:
+/home/duxevents/pcrec (and its git remote github.com/fdicostanzo/pcrec) and
+/home/duxevents/pcrec-bench (the sibling comparative-benchmark project,
+added by Frank 2026-08-17; see its APPROACH.md — dependencies live THERE,
+never here). Do not create, modify, or delete files anywhere else on this
+machine — no other directories, no home-directory or system config, no
+other repos. Session-temporary files go in the session scratchpad, never
+committed. Subagents inherit this mandate; state it in their task briefs.
 
 Ahead-of-time compiler: takes a PCRE pattern, emits specialized, self-contained
 gcc-dialect C source that matches exactly that pattern (no runtime interpreter,

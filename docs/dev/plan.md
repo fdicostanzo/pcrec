@@ -222,13 +222,15 @@ stated terms.
     (prefilter-window ceiling — v1 with three build obligations vs
     subject-end fallback; a stale window errs UNSOUND, see the
     verification's direction-of-error note).
-  - [M4.6d] STATE:completed (2026-08-17) — **K23 FIXED** by MINIMUM-
-    REMAINING-LENGTH pruning per D51's three rulings, all in one change on
-    lane/mrl. Exemplar `(a{10,20}){10,50}` at 100 bytes: 10.6 M steps
+  - [M4.6d] STATE:completed (2026-08-17, twenty-ninth session; lanes: mrl
+    opus build in worktrees/mrl, plus a SECOND D27-blinded author this lane
+    spawned in its own cell — see the finding below) — **K23 FIXED** by
+    MINIMUM-REMAINING-LENGTH pruning per D51's three rulings, all in one
+    change on lane/mrl. Exemplar `(a{10,20}){10,50}` at 100 bytes: 10.6 M steps
     (RX_ERR_STEPS) -> **<=1**, captures identical to python and to the
     unpruned build; the three-level shape 11,906,349,370 -> <=1. Validated
     as a pcrec-vs-pcrec differential against `-fno-length-prune`
-    (tests/mrl/run_mrldiff.sh): **176,276 cells / 0 divergences**, strides
+    (tests/mrl/run_mrldiff.sh): **202,458 cells / 0 divergences**, strides
     1-3, lengths on and off the lattice, all four greedy/lazy combinations,
     BOTH ceiling forms. Ruling 2 taken with all three obligations as code:
     the ceiling is a match-function PARAMETER (so an entry that forgets it is
@@ -250,8 +252,9 @@ stated terms.
     all three were derived from the model the bug was in. Fixed by building
     §4.5's runtime term (`Vm.fdyn`, read from the trailed counter slot); their
     225-case corpus is now tests/mrl/ and passes 225/0. Battery: test
-    10,202/0 (ratchet "nothing to ratchet"), strict, mrl 16/16 + 176,276
-    differential cells. THREE HARNESS FIXES the budget move forced, reported
+    10,202/0 (ratchet "nothing to ratchet"), strict, mrl 16/16 + 202,458
+    differential cells (per-rung coverage complete), gate.sh 10/10 with case
+    (c) at 392.445 above its 388.615 floor, ubsan/asan. THREE HARNESS FIXES the budget move forced, reported
     as such: counterkdiff and the vm §4.7 contrast now PIN the step budget
     (they were measuring a calibration default), and the possessify stamped-
     ceiling check becomes a floor-with-window because MRL legitimately makes
@@ -440,7 +443,11 @@ including V-G/V-H (added this session).
   insertions compose a path ("c:a"). Still open, ruled at V-E design
   time: path spelling/separator, label mandatory-vs-optional for single
   insertions, and lookup-key semantics (name-alone when unambiguous vs
-  ref+name)
+  ref+name). FORMAT OWNERSHIP MOVED 2026-08-17: the manifest FILE
+  FORMAT itself is designed at [DD-13] (one unified format serving the
+  manifest, the test carrier, and pcrec-bench's sets); this row keeps
+  the compilation-unit + finder BUILD and its semantic rulings, which
+  [DD-13] inherits as constraints
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
@@ -730,6 +737,53 @@ spine, not before):
   residual header, core and emitter untouched — if adding one ever
   requires touching a shared file outside the backend directory, that is
   the derailment signal and a design stop
+- [DD-13] STATE:not-started — THE UNIFIED PATTERN-SOURCE / TEST FILE
+  FORMAT (Frank, 2026-08-17, twenty-ninth session; name TBD): ONE file
+  format, grown from .rxt, serving every consumer that today would need
+  its own file kind: (1) the [V-E] MANIFEST — a compilation SOURCE for
+  pcrec (N named patterns → one emitted unit, perhaps several; [V-E]'s
+  named definitions, cross-references via subroutine referencing, and
+  the D39.2 appended-numbering rules all bind here); (2) the TEST
+  CARRIER — cases exactly as .rxt carries them today, co-located per
+  named pattern ([V-G]'s bottom-up subpart testing rides this); (3) the
+  BENCH SET format for ~/pcrec-bench (its APPROACH.md §8 Q1 resolves
+  HERE) — which forces the format to understand DIFFERENT ENGINES /
+  CONFIGURATIONS, not just pcrec. Features Frank named at creation:
+  OPTIONS/CONFIG blocks including EXEMPLAR FILE REFERENCES (large
+  subjects/corpora live in external files, referenced rather than
+  inlined); FILE INCLUDES (so case sets can be extensive and
+  MACHINE-GENERATED without bloating the hand-written source, and so
+  per-engine/per-configuration fragments compose for the bench use);
+  NAMED patterns referring to one another (subroutine referencing).
+  PROCESS, staged and gated — the format is hard to change once
+  adopted ("we should get it right"), so it is built DESIGN-FIRST like
+  the K23 arc:
+  - [DD-13a] REQUIREMENTS note: enumerate every consumer's needs
+    measured against real corpora — the .rxt harness as-is
+    (docs/testing.md), the machine-generated D27 sets, [V-E]'s
+    manifest + finder, [V-F]'s transformer target, [V-G]'s user
+    testing, M4-SUBST templates if they intersect, and pcrec-bench's
+    set needs (feature tags, hazard classes, per-case
+    expectation-verification method, engine/config sections). The
+    compatibility question is answered here: is .rxt a subset, a
+    dialect, or migrated?
+  - [DD-13b] DESIGN note: grammar + semantics (include model, config
+    scoping/precedence, reference/namespace rules, exemplar-file
+    addressing, the machine-generation contract), the migration story
+    for the existing ~10k-case corpus, and single-vs-multiple emitted
+    outputs.
+  - [DD-13c] D6 ADVERSARIAL PANEL on the design, then Frank's ruling.
+    NO parser is written before (c) closes.
+  Scheduling: after the scale work ([M4.6]/[M4.7]) per Frank's
+  2026-08-17 sequencing; (a) is read-only fact-gathering and safely
+  early-schedulable in a session with spare capacity, but does not
+  start unprompted. FRANK'S DESIGN INPUTS accumulate ahead of (a) in
+  docs/design/dd13_format/frank_inputs.md (append-only, with the OD-n
+  open-decision ledger): per-engine option placement, the
+  last-reference-wins options CASCADE over ordered includes, declared
+  per-library pattern tweaks, configuration sections unifying bench
+  testees with build variants (avx2-vs-baseline), and the
+  interface-vs-reference-only pattern distinction.
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
