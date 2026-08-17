@@ -107,6 +107,32 @@ cannot be re-run is not a measurement.
   class, so the boundary the rule turned on was invisible to the instrument
   that priced the rule.
 
+- **`probes/work_charge.sh`** — §10.5.4's CALIBRATION of the shipped work bound
+  (settlement 4), and deliberately a SECOND INSTRUMENT rather than a re-run of
+  `step_charge.sh`. That one answers "how much uncharged work is there" by
+  sed-instrumenting the artifact and running a build that charges nothing; this
+  one answers "how much does the shipped bound actually charge" by running the
+  REAL artifact and finding the budget at which it gives up. It instruments
+  nothing and patches nothing — its only inputs are `--work-budget=N` and an
+  exit status.
+
+  **The independence is the design, not a convenience.** If the charge were
+  calibrated by the same instrumentation that predicted it, agreement would be
+  near-tautological: the sed anchors and the emitter's charge sites would be two
+  renderings of one belief. That is this directory's recorded controls-share-a-
+  source failure, avoided ahead of time rather than after.
+
+  The scan cells are PINS against a closed form derived before the run
+  (n(n+1)/2 for an unanchored search over n bytes) — the artifact completes at
+  the predicted budget and gives up at one unit less, at both sizes. The CUT
+  cell is BISECTED with no prediction and is the stronger of the two results:
+  it landed on 79,988, to the unit the figure §7.4's instrumented table already
+  reported. Two controls keep it from being a probe that shows only its own
+  successes: the MIXED shape (charged nothing) and the DEFAULT path (prefilter
+  answers, VM never entered) must both survive a budget of 1. `--bisect`
+  reports the TRUE boundary when a pin fails, so a wrong prediction yields a
+  number rather than a bare red.
+
 - **`probes/clamp_arith.py`** — the clamp, PROVED ARITHMETICALLY before the
   code exists (R25 E1 required this before acceptance). **Kept here after the
   F-1 ruling moved the clamp to plan row [ENG-CLAMP]**: it is that row's
@@ -162,7 +188,7 @@ cannot be re-run is not a measurement.
 ## Archived outputs
 
 - **`measure_baseline.txt`** / **`step_charge.txt`** / **`clamp_arith.txt`** /
-  **`census_default.txt`** — one run of each probe above, with its own source
+  **`census_default.txt`** / **`work_charge.txt`** — one run of each probe above, with its own source
   header (repo, commit, gcc, date). Stable-named so a re-run diffs against
   them, D35's shape. Evidence for the panel, never an oracle: no check reads
   them.

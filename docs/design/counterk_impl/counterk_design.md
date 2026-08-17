@@ -1279,6 +1279,36 @@ before, and an invariant with no check is a sentence. Hence the row, and hence
 `NOPT > K`, which is the shape where an untrailed inner local would be read
 across an outer trip boundary.
 
+### 8.4a The INHERITED obligation: a pin on main that this landing must move
+
+**`tests/codegen/run_vm_identity.sh` carries a check that is designed to go RED
+when this rung lands, and re-pinning it TRAVELS WITH THE LANDING** (manager,
+2026-08-17, main `d137d39`).
+
+The history matters because it is the reason the obligation exists rather than
+being a surprise. The D27 blinded corpus landed `(a{1,3}){65}` — deliberately
+one copy over `PCREC_MAX_VM_REPEAT_COPIES` — and turned main red: the VM refuses
+it at the replication cap while `--no-captures` routes it to the DFA, which has
+no such cap, so the identity script's refusal-agreement arm saw a mismatch. That
+was ruled a DESIGNED divergence rather than an identity violation (a VM-only
+resource cap is exactly the kind of thing the two engines are allowed to differ
+on), so the arm now excludes refusals keyed on the cap's own diagnostic text —
+nothing wider — and **the divergent population is PINNED at exactly 1**.
+
+Pinned at 1, not merely excluded, which is what makes it this lane's problem:
+when the counter rung makes the emitted size of a bounded repeat independent of
+its count, `(a{1,3}){65}` stops hitting the replication cap and compiles on the
+default path. The divergent population becomes 0 and the pin fails with "got 0,
+expected 1".
+
+**That failure is the check working, and this landing owes the re-pin** — to 0,
+or by retiring the arm if the population is provably empty, in the same change
+that makes the pattern compile. Two things follow. It is a LANDING GATE, not a
+nuisance: if the pin does NOT go red, the rung did not do what this note says it
+does for that shape, and that is a finding about the rung rather than about the
+check. And the direction is the safe one D47's ADDENDUM already named — patterns
+move from refused to compiled, so nothing shipped changes under anyone.
+
 ### 8.5 Acceptance cells
 
 1. **`((a)|ab){0,4000}c` compiles, and stamps an honest ceiling.** MEASURED
@@ -1642,22 +1672,47 @@ revdet's two direct-assignment cuts, and the possessified cursor's frameless
 scan. The non-possessified cursor is NOT charged, which is finding 26's
 exclusion surviving contact with the emitter.
 
-**THE CALIBRATION IS EXACT, and this is the first time §7.4's numbers have been
-checked against a real implementation** — §11 residual 4 recorded that the
-counts were measured and the BEHAVIOUR was not, "because no build charges this
-way". One now does. `([a-z]+)9` over 10,000 bytes of `a` under `--engine=vm`:
+**THE CALIBRATION IS EXACT ON BOTH CHARGED CLASSES, and it is taken by a
+SECOND, INDEPENDENT INSTRUMENT** (`probes/work_charge.sh`, archived
+`work_charge.txt`). §11 residual 4 recorded that the counts were measured and
+the BEHAVIOUR was not, "because no build charges this way". One now does.
 
-| `--work-budget=` | outcome |
-|---|---|
-| 50,005,001 | completes |
-| **50,005,000** | **completes — the predicted count exactly** |
-| 50,004,999 | `RX_ERR_WORK` |
+The independence is the part worth stating first, because agreement between two
+renderings of one belief would be worth nothing. `step_charge.sh` answers "how
+much uncharged work is there" by SED-INSTRUMENTING the artifact and running a
+build that charges nothing. `work_charge.sh` answers "how much does the shipped
+bound actually charge" by running the REAL artifact and finding the budget at
+which it gives up — it instruments nothing and patches nothing; its only inputs
+are `--work-budget=N` and an exit status. Different code, different runs,
+different builds. That is this directory's own recorded lesson about controls
+sharing a source with what they control, applied before the fact rather than
+after.
 
-§7.4 predicted 50,005,000 uncharged units for that shape and size from
-instrumentation of an artifact that did not charge; the artifact that does
-charge consumes 50,005,000. Not "approximately" — the give-up boundary sits
-between 50,004,999 and 50,005,000. The default of 10⁹ leaves this shape two
-orders of magnitude of headroom, which is the ruled trade behaving as ruled.
+| class | shape | n | predicted | measured boundary |
+|---|---|---|---|---|
+| frameless scan | `([a-z]+)9` | 1,000 | 500,500 | **500,500** |
+| frameless scan | `([a-z]+)9` | 10,000 | 50,005,000 | **50,005,000** |
+| **cut** | `((a)\|b){0,4}d` `-fno-revdet` | 10,000 | — (bisected) | **79,988** |
+
+The scan rows are PINS, not searches: the possessified cursor scans once per
+start position and never retreats, so an unanchored search over n bytes performs
+n(n+1)/2 iterations — a closed form derived before the run. At the predicted
+budget the artifact completes; at one unit less it returns `RX_ERR_WORK`. The
+boundary is exactly there, at both sizes.
+
+**The cut row is the stronger result, because nothing predicted it.** It was
+bisected with no closed form, and it landed on **79,988** — which is, to the
+unit, the CUT-discarded figure §7.4's instrumented table already reported for
+that shape. Two instruments that share no code agree on both charged classes.
+
+Two controls, because a probe that exhibits only the cases its rule fires on is
+not evidence that the rule has a boundary: the MIXED shape (whose frames all
+reach the fail label, §7.4's third class) completes at a budget of 1, and the
+DEFAULT path completes at a budget of 1 — the prefilter answers and the VM is
+never entered, which is §7.5's exposure claim as an executable check.
+
+The default of 10⁹ leaves the measured shapes two to four orders of magnitude
+of headroom, which is the ruled trade behaving as ruled.
 
 **One defect was found by running it, and it was ours.** The emitted `main()`
 reported every give-up that was not `RX_ERR_STEPS` as `"frames"`, so the new
@@ -1668,13 +1723,27 @@ second bound landed and invisible because only one of the two codes was ever
 produced. One arm per code now, and the fallthrough prints the code rather than
 naming a bound it has not checked.
 
-**A residual the implementation created**, recorded rather than resolved: the
-frameless scan charges per ITERATION, so a stride-4 body reading four bytes per
-iteration is charged one unit, the same as a stride-1 body reading one. Per
-iteration is what §7.4 specifies and what its calibration identity is stated
-over, and every measured shape had stride 1 — so iterations is what ships.
-Whether a wide-stride iteration should cost proportionally more is a real
-question no measurement here answers.
+**It belongs on this project's check-design list, and it is a NEW member of a
+known class.** The recorded failures so far are all controls that share a source
+with what they control. This one is different in shape and the same in effect: a
+DISCRIMINATOR that had never been exercised on more than one of its inputs. With
+only `RX_ERR_STEPS` reachable, "everything else is frames" and "it is frames"
+were indistinguishable, so the else-branch was never once wrong and never once
+right for a reason. The generalisation worth carrying: a branch that maps N
+causes to N diagnoses is untested while fewer than N causes exist, and it will
+report the (N+1)th as whatever its last arm says. Adding the third bound is what
+made the second arm's error observable — the same way a second engine is what
+makes an engine-selection bug observable.
+
+**A residual the implementation created — ACCEPTED for this landing and
+RE-HOMED** (manager, 2026-08-17): the frameless scan charges per ITERATION, so a
+stride-4 body reading four bytes per iteration is charged one unit, the same as
+a stride-1 body reading one. Per iteration is what §7.4 specifies and what its
+calibration identity is stated over, and every measured shape had stride 1 — so
+iterations ships. The proportionality question (should a wide-stride iteration
+cost more?) rides [M4.6a]'s calibration run and [ENG-PGO]'s profiles, which are
+where per-shape cost evidence is going to exist; it is not this lane's to
+settle, and no measurement here answers it.
 
 ---
 
