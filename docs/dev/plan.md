@@ -964,10 +964,19 @@ execution speed trades the primary goal (D18) for the secondary one.
   fredk/frad/fren: 4/6 probe mismatches vs python, verified). The
   correlation-preserving forms, cheap→general: (1) this row's
   single-char merge (no correlation exists); (2) PREFIX/SUFFIX
-  FACTORING at the AST level (`frank|fred`→`fr(ank|ed)` — sound,
-  branch-order-preserving; the DFA engine has it via M2.8's trie, VM
-  emission does NOT factor today — a candidate second stage of this
-  row if measured worth it); (3) full fragment DETERMINIZATION with
+  FACTORING at the AST level (`frank|fred`→`fr(?:ank|ed)` — sound,
+  branch-order-preserving, and the automatic pass must emit
+  NON-CAPTURING groups or it changes the group count; the DFA engine
+  has it via M2.8's trie, VM emission does NOT factor today —
+  MEASURED WORTH IT 2026-08-17 (manager probe, Frank's exemplar
+  `frank|fred|brad|bobby|janet` vs `fr(?:ank|ed)|b(?:rad|obby)|janet`,
+  pinned best-of-9 ×3 runs): single-shot marginal (first branch +1-2%,
+  late branches -5..-8%, no-match ±0.5% — the prefilter owns those),
+  but the QUANTIFIED form `(...)+` over 30 concatenated names is
+  -15.0..-15.6% reproducible — per-attempt savings amplify under
+  repetition, the keyword-tokenizer shape. Stage 2 is therefore
+  chartered WITH stage 1; probe was session-scratch, re-run under the
+  row's own D35-archived instrument at build); (3) full fragment DETERMINIZATION with
   direct automaton emission = [ENG-ISL] exactly (states encode the
   correlations; the overlap/preference subtlety — leftmost-FIRST vs
   DFA-longest on `foo|foobar` shapes — is the exactness proof that
