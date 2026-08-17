@@ -1,8 +1,8 @@
 == source ==
 repo    /home/duxevents/pcrec/worktrees/counterk
-commit  b0b9b8c
+commit  198854c
 gcc     cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
-date    2026-08-16T23:25:17Z
+date    2026-08-17T00:01:00Z
 
 == S1.2: possessified bounded repeats still replicate ==
 pattern            flags                          lines    VM_STRATS

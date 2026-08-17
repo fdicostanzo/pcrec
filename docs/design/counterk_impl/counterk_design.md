@@ -51,8 +51,13 @@ directory's house style.** What a returning reader most needs:
   (findings 17-25) BLOCKED §7.3 too: its predicate keyed on PUSHES while its
   justification keyed on POPS, and `RX_CUT` charges nothing — so the revdet
   scan, `vm_poss_chain` and counter-K's own possessive arm were all excluded
-  from a rule that advertised strategy-invariance. §7.4 is the redesign,
-  measured this time.
+  from a rule that advertised strategy-invariance. §7.4 is the redesign — and
+  a VERIFICATION PASS then confirmed its mechanism and refuted its predicate a
+  second time (finding 26): "never pushed" also captured the non-possessified
+  cursor rung, which retreats one stride per pop and is already charged in
+  full, so the rule double-billed the triangular quantity. The refuting number
+  was in the note's own control row. §7.4 now excludes it and §7.5 is rebuilt
+  on corrected numbers.
 - **Verified clean and not to be re-checked**: every spelling and citation the
   docs critic examined, the differential's failure-surface premise, the
   four-of-five green-because-fast survivors, §8.1's 33-frames/65-trail
@@ -684,6 +689,16 @@ exact label `vm_rung_mark(v, entry, ...)` was called with, which is the label
 an entry charge would sit at, and `rx_fail:` is the one charge site that exists
 today.
 
+**A PROCESS LESSON, recorded at the verification critic's suggestion because
+it has now cost three rounds: READ EVERY COLUMN OF A CONTROL ROW AGAINST THE
+RULE, not only the column the control was written to supply.** Finding 26's
+refuting number was sitting in this note's own published control row — the same
+50,005,000 appearing under `steps` and under `scan` at once — and nobody,
+including the author who put it there, read the two columns against each other.
+The three prior instances all have the same shape: R24's lazy probe, R25 E2's
+sabotage witnesses, and round 1's cursor-only shape, each an instrument that
+could not see the case its rule turned on.
+
 ### 7.1 The debt as it was recorded
 
 The plan row and `rungselect_design.md` §5 item 8 carry it: shapes that perform
@@ -763,31 +778,53 @@ rounds.
 
 ### 7.4 The redesign: charge what the fail label does not see
 
-The charged class is not "loops without frames". It is **work the fail label
-never accounts for**, which has exactly two forms, and each has a site where
-its size is already known exactly:
+The charged class is not "loops without frames". It is **per-iteration work the
+fail label NEVER SEES** — and the second half of that sentence is the part the
+first redesign got wrong [R25 26].
 
-| form | site | the count, exactly |
-|---|---|---|
-| pushed, then CUT | every cut | `w->btn − stv[mark]` — the frames being discarded |
-| never pushed | scan completion | the scan's iteration count |
+| form | charged? | site | the count, exactly |
+|---|---|---|---|
+| pushed, then CUT | **yes** | every cut | `w->btn − stv[mark]` — the frames being discarded |
+| never pushed, no retreat frame | **yes** | scan completion | the scan's iteration count |
+| scanned, then RETREATED one stride per pop | **no** | — | already charged 1:1 by the fail label |
 
-**MEASURED** (`probes/step_charge.sh`, archived `step_charge.txt`), and these
-are the numbers the first replacement had no instrument for — round 1 counted
-ENTRIES, the refuted quantity, and never iterations or discarded frames:
+**The third row is the correction, and its refuting number was sitting in this
+probe's own CONTROL column.** The non-possessified cursor rung scans forward
+and then retreats one stride per backtrack (`emit_vm.c:1400-1404`), so its
+iterations pop through the fail label 1:1 and are charged in full today. The
+first redesign's "never pushed" predicate captured it anyway, which would
+double-bill the triangular quantity — and the `-fno-possessify` control row
+showed **50,005,000 under `steps` and 50,005,000 under `scan` at the same
+time**, in a table I had already published. Reading a control row only for the
+column it was written for is how that survived; §7's process lesson now says
+so.
 
-| shape | path | n | steps charged | CUT-discarded | scan iters | UNCHARGED |
-|---|---|---|---|---|---|---|
-| `((a)\|b){0,4}d` possessified frames | `-fno-revdet` | 10,000 | 10,009 | **79,988** | 0 | 79,988 |
-| `((a)\|b){0,4}d` revdet | default | 10,000 | 10,009 | **79,988** | 0 | 79,988 |
-| `([a-z]+)9` possessified cursor | `--engine=vm` | 10,000 | 10,001 | 0 | **50,005,000** | 50,005,000 |
-| `(a(b\|c)?){0,4}d` mixed | `-fno-revdet` | 10,000 | 129,987 | 0 | 0 | **0** |
+The corrected exclusion is the same reasoning the MIXED row already carried: a
+loop whose frames reach the fail label needs nothing added.
 
-Two things read straight off it. The push-and-cut shapes leave **eight times
-more work uncharged than charged** — invisible to round 1 entirely. And the
-last row is the control that shows the rule is not vacuous in the other
-direction: a shape whose frames really do reach the fail label charges
-everything and would gain nothing from this design.
+**MEASURED** (`probes/step_charge.sh`, archived `step_charge.txt`), with the
+scan column now SPLIT so the distinction is visible rather than assumed:
+
+| shape | path | n | steps charged | CUT-discarded | scan frameless | scan retreat | UNCHARGED |
+|---|---|---|---|---|---|---|---|
+| `((a)\|b){0,4}d` possessified frames | `--engine=vm -fno-revdet` | 10,000 | 10,009 | **79,988** | 0 | 0 | 79,988 |
+| `((a)\|b){0,4}d` revdet | `--engine=vm` | 10,000 | 10,009 | **79,988** | 0 | 0 | 79,988 |
+| `([a-z]+)9` possessified cursor | `--engine=vm` | 10,000 | 10,001 | 0 | **50,005,000** | 0 | 50,005,000 |
+| `([a-z]+)9` NON-possessified cursor | `--engine=vm -fno-possessify` | 10,000 | 50,015,001 | 0 | 0 | 50,005,000 | **0** |
+| `(a(b\|c)?){0,4}d` mixed | `--engine=vm -fno-revdet` | 10,000 | 129,987 | 0 | 0 | 0 | **0** |
+
+Four things read straight off it. The push-and-cut shapes leave **eight times
+more work uncharged than charged**. The possessified cursor leaves the
+triangular quantity uncharged. **The non-possessified cursor leaves NOTHING
+uncharged** — the row that refutes the first redesign and validates this one.
+And the mixed row is the second non-vacuity control: a shape whose frames
+really do reach the fail label gains nothing from this design either.
+
+**The calibration identity survives the correction, exactly.** The control
+charges 50,015,001 steps; the possessified build charges 10,001 and leaves
+50,005,000 uncharged; 50,005,000 + 10,001 = 50,015,001 at all three measured
+sizes. So charging frameless scans restores precisely what possessification
+removed — and now does so without charging anything twice.
 
 #### The unit, which dissolves the truncation problem rather than patching it
 
@@ -807,11 +844,23 @@ state is needed, and each site is one subtraction. `PCREC_STEP_SCALE = 1024`
 is the proposal, by the arithmetic below; it is a `limits.h` constant on K's
 precedent (D47.2).
 
+**THE UNIT, stated because two committed checks depend on it** [R25 27]. The
+scale is INTERNAL. `--step-budget=N` and `rx_info.step_budget` keep meaning
+RESUMPTIONS, exactly as they do today, and the emitter multiplies by
+`PCREC_STEP_SCALE` on its way into `w->budget`. This is not a preference: a
+raw-units reading would silently make `run_gen_timeout_tests.sh:250`'s budget
+pin 1,024x TIGHTER, inverting a check whose whole purpose is to be sized so
+the run COMPLETES, and `run_vm_tests.sh:154` asserts the stamped
+`step_budget` value directly. **`rx_info.step_budget` is a FROZEN int64 ABI
+field (D44.5)**, so keeping its meaning is not a free choice either — it is the
+only reading that leaves the frozen surface alone, and that consequence rides
+§7.5 to Frank rather than being settled here.
+
 **What the scale buys, now from MEASURED counts rather than a closed form:**
 
 | | measured quantity | units at scale 1024 | against a 1.02×10⁹ budget |
 |---|---|---|---|
-| the possessify quadratic at n = 45,000 | ~1.0×10⁹ scan iters | ~1.0×10⁹ | **fires**, at ~1 s of work |
+| the possessify quadratic at n = 45,000 — **DERIVED**, not measured (extrapolated from the n(n+1)/2 fit the three measured sizes establish) | ~1.0×10⁹ scan iters | ~1.0×10⁹ | **fires**, at ~1 s of work |
 | the same at n = 100,000 (2.1 s today) | 5.0×10⁹ scan iters | 5.0×10⁹ | fires at ~20% of the work |
 | `-fno-possessify` control, n = 10,000 | 50,015,001 steps | 5.1×10¹⁰ | fires — as it does today |
 | a legitimate 1 GB single-pass match | ~10⁹ scan iters | ~10⁹ | **at the boundary** (§7.5) |
@@ -831,6 +880,11 @@ measurement.
   charges only the macro leaves revdet entirely uncharged, and the first
   version of the probe reported a confident 0 for revdet before the second
   anchor was added.
+- **The cursor rung's site is AFTER the scan loop and BEFORE the `rmin`
+  test** — the scan has completed and `pos` is still the loop's entry, so
+  `rx_cur − pos` is the iteration count; after the test the value is consumed.
+  This is where the probe instruments it, so the measured column and the
+  proposed site are the same place.
 - **The BACKWARD WALK is in the second class, not the first** [R25 19,
   confirmed but re-derived]. It does need its own COUNTER and its own SITE, as
   the panel said. The reason is not the three exits, though: it pushes NOTHING (`rungselect_design.md` §2.4 — reverse
@@ -838,6 +892,16 @@ measurement.
   hang a charge on. **DISCLOSED: this probe does not measure the walk**; its
   scan anchor is the cursor rung's span loop. That is the largest unmeasured
   quantity in this section.
+
+  **And its counter is not free, unlike the other two sites.** The cut and the
+  cursor scan both read a count that already exists (`w->btn − stv[mark]`;
+  `rx_cur − pos`); the walk has no such value, so charging it means an
+  increment in the walk's own inner loop — a real per-iteration cost in what
+  `rungselect_design.md` calls the rung's hottest loop. **BELIEVED negligible
+  against the walk's existing per-step work (a byte dispatch and a bounds
+  test) and UNMEASURED**; the first draft of this bullet asserted the size in
+  both directions with no number behind either, which is worse than admitting
+  it. Bounding it belongs with the implementation, not here.
 - **`w->budget` exists only under `has_budget`** (`emit_vm.c:2793`), so the
   new sites must be `has_budget`-gated exactly like the fail label's, and
   `tests/vm/run_vm_tests.sh:147-157` pins `--fno-step-budget` emitting NO
@@ -866,40 +930,56 @@ recorded at `emit_vm.c:1743-1748`.
 ### 7.5 Who pays, and who benefits — they are not the same population
 
 **The COST is universal and the BENEFIT is diagnostic-path-only** [R25 24],
-and the note owes that sentence plainly. Every artifact pays the sites; every
-artifact's budget now counts work it did not count before. MEASURED on the
-DEFAULT path: `([a-z]+)9` matching inside a 100 KB subject performs 100,000
-scan iterations — today uncharged, and under this design 100,000 units. Scaled
-up, a single-pass match over ~1 GB lands at ~10⁹ units against a 1.02×10⁹
-budget: **at the boundary**, on the shipped path, for a completely ordinary
-linear match.
+and the note owes that plainly. MEASURED on the DEFAULT path: `([a-z]+)9`
+matching inside a 100 KB subject performs **100,000 frameless scan iterations**
+— today uncharged, and under §7.4 exactly 100,000 units. That is one unit per
+subject byte, so a single-pass match over ~1 GB reaches the 1.02×10⁹ default:
+**at the boundary, on the shipped path, for a completely ordinary linear
+match.**
+
+The ~1 GB figure is the CORRECTED one. Under the first redesign's predicate it
+would have been roughly half that, because the non-possessified cursor rung was
+double-billed [R25 26]; excluding it restores both the honesty of the number
+and the "today preserved exactly" claim for the most common quantifier shape,
+which the first rule quietly broke.
 
 The benefit, meanwhile, is only reachable where the prefilter is off:
 
 | n | default path | `--engine=vm` |
 |---|---|---|
-| 10,000 | 0.000 s, 0 steps, 0 uncharged | 0.020 s, 50,005,000 uncharged |
-| 100,000 | 0.001 s, 0 steps, 0 uncharged | 2.132 s, 5.0×10⁹ uncharged |
+| 10,000 | 0.000 s, 0 steps, 0 uncharged | 0.022 s, 50,005,000 uncharged |
+| 100,000 | 0.000 s, 0 steps, 0 uncharged | 2.126 s, 5.0×10⁹ uncharged |
 | 1,000,000 | 0.003 s, 0 steps, 0 uncharged | >120 s (~213 s extrapolated; the possessify lane measured 228.5 s) |
 
-So the honest framing is a TRADE, not a free repair: the budget stops being
-blind to the four shapes, and in exchange the default step budget acquires a
-subject-length sensitivity it does not have today. Three ways to settle it,
-and the lane does not think this is its call:
+So this is a TRADE, not a free repair: the budget stops being blind to the four
+shapes, and in exchange it acquires a subject-length sensitivity it does not
+have today. **Four settlements, and the lane does not think this is its call:**
 
-1. **Accept and raise the default** with the measurement recorded (D12's
-   posture; the current default is a bring-up placeholder M4.6 calibrates
-   anyway).
-2. **Charge only where the prefilter is off** — the exposure is exactly the
-   `--engine=vm` path — at the cost of a budget whose meaning depends on the
-   engine selection, which is its own kind of dishonesty.
-3. **Do nothing, and record the four shapes as a permanent disclosed limit**
-   of DD-2, on the grounds that a diagnostic path taking 200 s where it should
-   take 1 s is a cost to lane authors and to nobody else.
+1. **Accept and re-derive the default** from `PCREC_STEP_SCALE`, with the
+   measurement recorded (D12's posture; the current default is a bring-up
+   placeholder M4.6 calibrates anyway). Keeps one budget and one failure mode.
+2. **Charge only where the prefilter is off.** The exposure is exactly the
+   `--engine=vm` path, so this costs nothing anyone runs in production — at the
+   price of a budget whose meaning depends on engine selection, which is its
+   own dishonesty.
+3. **Do nothing**, and record the four shapes as a permanent disclosed limit of
+   DD-2, on the grounds that a diagnostic path taking 200 s where it should
+   take 1 s costs lane authors and nobody else.
+4. **Give the uncharged work its OWN bound** [R25 28] — a third capacity beside
+   frames and trail, its own `rx_info` field, its own `RX_ERR_*` code. This is
+   DD-2's own "different failures, different diagnoses" argument applied once
+   more, and it **dominates 2 and 3**: every existing step-budget pin stays
+   untouched because the step budget stops changing meaning; there is no
+   engine-dependent dishonesty; and §7.4's whole unit question (finding 27,
+   including the frozen `rx_info.step_budget` field) evaporates, because
+   nothing is being scaled into an existing counter. Its cost is a new ABI
+   field and a new error code — a real surface addition, on a struct D44.5
+   called final.
 
-The lane's recommendation is 1, with `PCREC_STEP_SCALE = 1024` and the default
-re-derived from it — but §7.5's table is the argument, and it should be Frank's
-ruling with the numbers in front of him rather than a lane's preference.
+The lane's recommendation is **4**, with 1 as the fallback if the ABI addition
+is unwelcome. Settlement 4 was not the lane's idea; it came from the
+verification pass, and it is better than what the lane proposed, which is worth
+recording as a fact about where the good option came from.
 
 ## 8. Validation
 
@@ -1188,8 +1268,10 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
 - **F-2: the step charge — WITHDRAWN from Frank's desk and returning
   measured.** Two proposals have now been refuted: the E-5 entry charge
   (§7.2, by this lane) and its first replacement (§7.3, by the engine critic —
-  the predicate was vacuous). §7.4 is the redesign, and unlike its predecessor
-  every number in it is measured rather than derived. What Frank rules when it
+  the predicate was vacuous), then a THIRD time by the verification pass
+  (finding 26: the corrected predicate still double-billed the
+  non-possessified cursor rung). §7.4 as it now stands has its mechanism
+  VERIFIED by that pass and its numbers re-measured after the exclusion. What Frank rules when it
   returns is §7.5's trade, not a mechanism: the charge's COST is universal
   (a ~1 GB single-pass match lands at the default budget's boundary on the
   SHIPPED path) while its BENEFIT is diagnostic-path-only. Three settlements

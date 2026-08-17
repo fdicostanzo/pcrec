@@ -25,8 +25,12 @@
 #   cut    frames discarded by RX_CUT       — pushed, then made invisible to
 #                                             the fail label. `w->btn - stv[slot]`
 #                                             at the cut IS the count, exactly
-#   scan   frameless span-loop iterations   — never pushed at all, so neither
-#                                             the fail label nor a cut sees them
+#   scan   span-loop iterations, SPLIT IN TWO — a scan in a loop with no
+#          retreat frame is uncharged, while a scan in a loop that RETREATS
+#          pops once per stride and is already charged in full. Conflating
+#          them double-bills the triangular quantity [R25 26], and the
+#          refuting number sat in this probe's own CONTROL row: 50,005,000
+#          appeared under `steps` and under `scan` at the same time.
 #
 # `cut + scan` is the uncharged work. `steps` is the charged work. A rule that
 # claims to cover the blind spot must cover both of the first two, and §7.3's
@@ -71,7 +75,8 @@ cat > "$OUT/driver.c" <<'EOF'
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-static unsigned long long rxprobe_steps = 0, rxprobe_cut = 0, rxprobe_scan = 0;
+static unsigned long long rxprobe_steps = 0, rxprobe_cut = 0,
+                          rxprobe_scan_poss = 0, rxprobe_scan_bt = 0;
 #include "gen.c"
 /* driver SIZE FILL TAIL WHERE */
 int main(int argc, char **argv)
@@ -94,10 +99,10 @@ int main(int argc, char **argv)
     clock_gettime(CLOCK_MONOTONIC, &t0);
     int rc = rx_search(s, off, 0, caps);
     clock_gettime(CLOCK_MONOTONIC, &t1);
-    printf("%s %zu %llu %llu %llu %.3f\n",
+    printf("%s %zu %llu %llu %llu %llu %.3f\n",
            rc == 1 ? "match" : rc == 0 ? "nomatch"
                   : rc == RX_ERR_STEPS ? "STEPS" : "FRAMES",
-           off, rxprobe_steps, rxprobe_cut, rxprobe_scan,
+           off, rxprobe_steps, rxprobe_cut, rxprobe_scan_poss, rxprobe_scan_bt,
            (double)(t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) / 1e9);
     free(s);
     return 0;
@@ -126,18 +131,47 @@ measure () {
     sed -i 's/^rx_fail: __attribute__((unused));$/& rxprobe_steps++;/' "$OUT/gen.c"
     sed -i 's|^        w->btn = (unsigned)stv\[(slot_)\];\( *\)\\$|        rxprobe_cut += (unsigned long long)(w->btn - (unsigned)stv[(slot_)]); w->btn = (unsigned)stv[(slot_)];\1\\|' "$OUT/gen.c"
     sed -i 's|^\( *\)w->btn = \(rx_[a-z0-9_]*\);$|\1rxprobe_cut += (unsigned long long)(w->btn - \2); w->btn = \2;|' "$OUT/gen.c"
-    sed -i 's|^\( *\)\(while (rx_cur + [0-9]* <= n.*{ rx_cur += [0-9]*; }\)$|\1\2 rxprobe_scan += (unsigned long long)(rx_cur - pos);|' "$OUT/gen.c"
+    # THE SCAN SITE SPLITS IN TWO, and conflating them double-bills [R25 26].
+    # A cursor loop that RETREATS pushes a frame after its scan and pops once
+    # per stride, so the fail label already charges its iterations 1:1 -- the
+    # control row's own columns showed the same 50,005,000 under `steps` and
+    # under `scan`, which is the number that refuted the first rule. Only a
+    # loop with NO retreat frame is uncharged. The two are distinguished by
+    # whether an RX_PUSH appears between the scan and the `pos = rx_cur;` that
+    # ends it, which needs lookahead and so cannot be a sed.
+    python3 - "$OUT/gen.c" <<'PYINSTR'
+import re, sys
+path = sys.argv[1]
+lines = open(path).read().split("\n")
+scan = re.compile(r"^(\s*)(while \(rx_cur \+ \d+ <= n.*\{ rx_cur \+= \d+; \})$")
+out = []
+for i, ln in enumerate(lines):
+    m = scan.match(ln)
+    if not m:
+        out.append(ln); continue
+    # look ahead to the `pos = rx_cur;` that closes this scan
+    retreats = False
+    for j in range(i + 1, min(i + 12, len(lines))):
+        if "RX_PUSH" in lines[j]:
+            retreats = True
+        if "pos = rx_cur;" in lines[j]:
+            break
+    counter = "rxprobe_scan_bt" if retreats else "rxprobe_scan_poss"
+    out.append("%s %s += (unsigned long long)(rx_cur - pos);" % (ln, counter))
+open(path, "w").write("\n".join(out))
+PYINSTR
 
     nf=$(grep -c 'rxprobe_steps++;' "$OUT/gen.c" || true)
     nc=$(grep -c 'rxprobe_cut +=' "$OUT/gen.c" || true)
-    ns=$(grep -c 'rxprobe_scan +=' "$OUT/gen.c" || true)
+    ns=$(grep -c 'rxprobe_scan_poss +=' "$OUT/gen.c" || true)
+    nb=$(grep -c 'rxprobe_scan_bt +=' "$OUT/gen.c" || true)
     isvm=$(grep -c '^rx_fail:' "$OUT/gen.c" || true)
     # A DFA-only artifact has no fail label, no cut site and no span loop --
     # a real answer (zero VM work), not a broken probe. Anything else is.
     if [ "$isvm" -gt 0 ] && [ "$nf" -ne 1 ]; then
         printf '%-11s %-22s %-24s %-8s INSTRUMENTATION FAILED (fail=%s cut=%s scan=%s)\n' \
                "$lab" "$pat" "$path" "$size" "$nf" "$nc" "$ns"; return; fi
-    sites="$nf/$nc/$ns"
+    sites="$nf/$nc/$ns+$nb"
 
     if ! timeout "$TMO" "$CC" -O2 -I"$OUT" -o "$OUT/drv" "$OUT/driver.c" 2>"$OUT/cc.err"; then
         printf '%-11s %-22s %-24s %-8s CC-FAILED: %s\n' "$lab" "$pat" "$path" "$size" \
@@ -147,15 +181,15 @@ measure () {
                "$lab" "$pat" "$path" "$size" "$TMO"; return; fi
     # shellcheck disable=SC2086
     set -- $res
-    verdict=$1; n=$2; steps=$3; cut=$4; scan=$5; secs=$6
+    verdict=$1; n=$2; steps=$3; cut=$4; scan=$5; scanbt=$6; secs=$7
     unch=$((cut + scan))
-    printf '%-11s %-22s %-24s %-8s %-8s %-7s %-8s %-12s %-12s %-12s %s\n' \
-           "$lab" "$pat" "$path" "$n" "$verdict" "$sites" "$secs" "$steps" "$cut" "$scan" "$unch"
+    printf '%-11s %-22s %-24s %-8s %-8s %-9s %-7s %-12s %-11s %-12s %-12s %s\n' \
+           "$lab" "$pat" "$path" "$n" "$verdict" "$sites" "$secs" "$steps" "$cut" "$scan" "$scanbt" "$unch"
 }
 
 header () {
-    printf '\n%-11s %-22s %-24s %-8s %-8s %-7s %-8s %-12s %-12s %-12s %s\n' \
-           block pattern path bytes verdict sites seconds steps_today cut_frames scan_iters UNCHARGED
+    printf '\n%-11s %-22s %-24s %-8s %-8s %-9s %-7s %-12s %-11s %-12s %-12s %s\n' \
+           block pattern path bytes verdict sites seconds steps_today cut_frames scan_FRAMELESS scan_RETREAT UNCHARGED
 }
 
 echo "== step_charge: counterk_design.md §7 =="
@@ -166,8 +200,13 @@ echo "default budget $DEFAULT_BUDGET (VM_DEFAULT_STEP_BUDGET -- applied on paper
 echo
 echo "steps_today = fail-label resumptions: what the budget charges TODAY"
 echo "cut_frames  = frames RX_CUT discarded: pushed, then hidden from the fail label"
-echo "scan_iters  = frameless span-loop iterations: never pushed at all"
-echo "UNCHARGED   = cut + scan, the work no budget sees. THIS is what §7 must cover."
+echo "scan_FRAMELESS = span-loop iterations in a loop with NO retreat frame:"
+echo "                 never pushed, so the fail label never sees them"
+echo "scan_RETREAT   = span-loop iterations in a loop that RETREATS: its frame"
+echo "                 pops once per stride, so these are ALREADY charged in"
+echo "                 steps_today. Counted separately and EXCLUDED [R25 26] --"
+echo "                 conflating the two double-bills the triangular quantity."
+echo "UNCHARGED      = cut + scan_FRAMELESS. THIS is what S7 must cover."
 
 Q1='([a-z]+)9'                      # possessified CURSOR rung: frameless
 Q2='([a-z]+)-([0-9]+)9'

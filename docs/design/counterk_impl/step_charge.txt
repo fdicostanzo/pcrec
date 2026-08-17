@@ -1,66 +1,71 @@
 == step_charge: counterk_design.md §7 ==
-commit         2aeff8f
+commit         198854c
 gcc            cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
 run budget     1000000000000 (raised, so the counts are not truncated)
 default budget 1000000 (VM_DEFAULT_STEP_BUDGET -- applied on paper)
 
 steps_today = fail-label resumptions: what the budget charges TODAY
 cut_frames  = frames RX_CUT discarded: pushed, then hidden from the fail label
-scan_iters  = frameless span-loop iterations: never pushed at all
-UNCHARGED   = cut + scan, the work no budget sees. THIS is what §7 must cover.
+scan_FRAMELESS = span-loop iterations in a loop with NO retreat frame:
+                 never pushed, so the fail label never sees them
+scan_RETREAT   = span-loop iterations in a loop that RETREATS: its frame
+                 pops once per stride, so these are ALREADY charged in
+                 steps_today. Counted separately and EXCLUDED [R25 26] --
+                 conflating the two double-bills the triangular quantity.
+UNCHARGED      = cut + scan_FRAMELESS. THIS is what S7 must cover.
 
 -- BLOCK A: legitimate linear work (what any charge would cost) --
 
-block       pattern                path                     bytes    verdict  sites   seconds  steps_today  cut_frames   scan_iters   UNCHARGED
-LINEAR      ([a-z]+)9              --engine=vm              1000     nomatch  1/1/1   0.000    1001         0            0            0
-LINEAR      ([a-z]+)9              --engine=vm              100000   nomatch  1/1/1   0.002    100001       0            0            0
-LINEAR      ([a-z]+)9              --engine=vm              1000000  nomatch  1/1/1   0.007    1000001      0            0            0
-LINEAR      ([a-z]+)-([0-9]+)9     --engine=vm              1000     nomatch  1/1/2   0.000    1001         0            0            0
-LINEAR      ([a-z]+)-([0-9]+)9     --engine=vm              100000   nomatch  1/1/2   0.001    100001       0            0            0
-LINEAR      ([a-z]+)-([0-9]+)9     --engine=vm              1000000  nomatch  1/1/2   0.007    1000001      0            0            0
-LINEAR      ([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9 --engine=vm              1000     nomatch  1/1/4   0.000    1001         0            0            0
-LINEAR      ([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9 --engine=vm              100000   nomatch  1/1/4   0.001    100001       0            0            0
-LINEAR      ([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9 --engine=vm              1000000  nomatch  1/1/4   0.007    1000001      0            0            0
-LINEAR      ([a-z]+)9              DEFAULT                  1000     nomatch  1/1/1   0.000    0            0            0            0
-LINEAR      ([a-z]+)9              DEFAULT                  100000   nomatch  1/1/1   0.000    0            0            0            0
-LINEAR      ([a-z]+)9              DEFAULT                  1000000  nomatch  1/1/1   0.000    0            0            0            0
+block       pattern                path                     bytes    verdict  sites     seconds steps_today  cut_frames  scan_FRAMELESS scan_RETREAT UNCHARGED
+LINEAR      ([a-z]+)9              --engine=vm              1000     nomatch  1/1/1+0   0.000   1001         0           0            0            0
+LINEAR      ([a-z]+)9              --engine=vm              100000   nomatch  1/1/1+0   0.001   100001       0           0            0            0
+LINEAR      ([a-z]+)9              --engine=vm              1000000  nomatch  1/1/1+0   0.007   1000001      0           0            0            0
+LINEAR      ([a-z]+)-([0-9]+)9     --engine=vm              1000     nomatch  1/1/1+1   0.000   1001         0           0            0            0
+LINEAR      ([a-z]+)-([0-9]+)9     --engine=vm              100000   nomatch  1/1/1+1   0.002   100001       0           0            0            0
+LINEAR      ([a-z]+)-([0-9]+)9     --engine=vm              1000000  nomatch  1/1/1+1   0.008   1000001      0           0            0            0
+LINEAR      ([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9 --engine=vm              1000     nomatch  1/1/3+1   0.000   1001         0           0            0            0
+LINEAR      ([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9 --engine=vm              100000   nomatch  1/1/3+1   0.002   100001       0           0            0            0
+LINEAR      ([a-z]+)-([0-9]+)-([a-z]+)-([0-9]+)9 --engine=vm              1000000  nomatch  1/1/3+1   0.008   1000001      0           0            0            0
+LINEAR      ([a-z]+)9              DEFAULT                  1000     nomatch  1/1/1+0   0.000   0            0           0            0            0
+LINEAR      ([a-z]+)9              DEFAULT                  100000   nomatch  1/1/1+0   0.000   0            0           0            0            0
+LINEAR      ([a-z]+)9              DEFAULT                  1000000  nomatch  1/1/1+0   0.000   0            0           0            0            0
 
 -- BLOCK B1: frameless (possessified CURSOR) -- scan_iters is the blind spot --
 
-block       pattern                path                     bytes    verdict  sites   seconds  steps_today  cut_frames   scan_iters   UNCHARGED
-QUADRATIC   ([a-z]+)9              DEFAULT                  10000    nomatch  1/1/1   0.000    0            0            0            0
-QUADRATIC   ([a-z]+)9              --engine=vm              10000    nomatch  1/1/1   0.023    10001        0            50005000     50005000
-CONTROL     ([a-z]+)9              --engine=vm -fno-possessify 10000    nomatch  1/1/1   0.369    50015001     0            50005000     50005000
-QUADRATIC   ([a-z]+)9              DEFAULT                  50000    nomatch  1/1/1   0.000    0            0            0            0
-QUADRATIC   ([a-z]+)9              --engine=vm              50000    nomatch  1/1/1   0.521    50001        0            1250025000   1250025000
-CONTROL     ([a-z]+)9              --engine=vm -fno-possessify 50000    nomatch  1/1/1   9.354    1250075001   0            1250025000   1250025000
-QUADRATIC   ([a-z]+)9              DEFAULT                  100000   nomatch  1/1/1   0.001    0            0            0            0
-QUADRATIC   ([a-z]+)9              --engine=vm              100000   nomatch  1/1/1   2.132    100001       0            5000050000   5000050000
-CONTROL     ([a-z]+)9              --engine=vm -fno-possessify 100000   nomatch  1/1/1   37.285   5000150001   0            5000050000   5000050000
+block       pattern                path                     bytes    verdict  sites     seconds steps_today  cut_frames  scan_FRAMELESS scan_RETREAT UNCHARGED
+QUADRATIC   ([a-z]+)9              DEFAULT                  10000    nomatch  1/1/1+0   0.000   0            0           0            0            0
+QUADRATIC   ([a-z]+)9              --engine=vm              10000    nomatch  1/1/1+0   0.022   10001        0           50005000     0            50005000
+CONTROL     ([a-z]+)9              --engine=vm -fno-possessify 10000    nomatch  1/1/0+1   0.370   50015001     0           0            50005000     0
+QUADRATIC   ([a-z]+)9              DEFAULT                  50000    nomatch  1/1/1+0   0.000   0            0           0            0            0
+QUADRATIC   ([a-z]+)9              --engine=vm              50000    nomatch  1/1/1+0   0.519   50001        0           1250025000   0            1250025000
+CONTROL     ([a-z]+)9              --engine=vm -fno-possessify 50000    nomatch  1/1/0+1   9.354   1250075001   0           0            1250025000   0
+QUADRATIC   ([a-z]+)9              DEFAULT                  100000   nomatch  1/1/1+0   0.000   0            0           0            0            0
+QUADRATIC   ([a-z]+)9              --engine=vm              100000   nomatch  1/1/1+0   2.126   100001       0           5000050000   0            5000050000
+CONTROL     ([a-z]+)9              --engine=vm -fno-possessify 100000   nomatch  1/1/0+1   37.087  5000150001   0           0            5000050000   0
 
 -- BLOCK B2: PUSH-then-CUT shapes -- cut_frames is the blind spot, and
    these are the shapes §7.3's withdrawn predicate EXCLUDED (finding 17) --
 
-block       pattern                path                     bytes    verdict  sites   seconds  steps_today  cut_frames   scan_iters   UNCHARGED
-POSSCHAIN   ((a)|b){0,4}d          --engine=vm -fno-revdet  1000     nomatch  1/1/0   0.000    1009         7988         0            7988
-REVDET      ((a)|b){0,4}d          --engine=vm              1000     nomatch  1/2/0   0.000    1009         7988         0            7988
-MIXED       (a(b|c)?){0,4}d        --engine=vm -fno-revdet  1000     nomatch  1/1/0   0.000    12987        0            0            0
-POSSCHAIN   ((a)|b){0,4}d          --engine=vm -fno-revdet  10000    nomatch  1/1/0   0.001    10009        79988        0            79988
-REVDET      ((a)|b){0,4}d          --engine=vm              10000    nomatch  1/2/0   0.000    10009        79988        0            79988
-MIXED       (a(b|c)?){0,4}d        --engine=vm -fno-revdet  10000    nomatch  1/1/0   0.001    129987       0            0            0
+block       pattern                path                     bytes    verdict  sites     seconds steps_today  cut_frames  scan_FRAMELESS scan_RETREAT UNCHARGED
+POSSCHAIN   ((a)|b){0,4}d          --engine=vm -fno-revdet  1000     nomatch  1/1/0+0   0.000   1009         7988        0            0            7988
+REVDET      ((a)|b){0,4}d          --engine=vm              1000     nomatch  1/2/0+0   0.000   1009         7988        0            0            7988
+MIXED       (a(b|c)?){0,4}d        --engine=vm -fno-revdet  1000     nomatch  1/1/0+0   0.000   12987        0           0            0            0
+POSSCHAIN   ((a)|b){0,4}d          --engine=vm -fno-revdet  10000    nomatch  1/1/0+0   0.001   10009        79988       0            0            79988
+REVDET      ((a)|b){0,4}d          --engine=vm              10000    nomatch  1/2/0+0   0.001   10009        79988       0            0            79988
+MIXED       (a(b|c)?){0,4}d        --engine=vm -fno-revdet  10000    nomatch  1/1/0+0   0.001   129987       0           0            0            0
 
 -- BLOCK B3: the MATCH-SUCCEEDS rows (every row above is a nomatch) --
 
-block       pattern                path                     bytes    verdict  sites   seconds  steps_today  cut_frames   scan_iters   UNCHARGED
-MATCH       ([a-z]+)9              --engine=vm              100001   match    1/1/1   0.000    0            0            100000       100000
-MATCH       ([a-z]+)9              DEFAULT                  100001   match    1/1/1   0.001    0            0            100000       100000
-MATCH       ((a)|b){0,4}d          --engine=vm -fno-revdet  10001    match    1/1/0   0.001    9996         79976        0            79976
-MATCH       ((a)|b){0,4}d          --engine=vm              10001    match    1/2/0   0.001    9996         79976        0            79976
+block       pattern                path                     bytes    verdict  sites     seconds steps_today  cut_frames  scan_FRAMELESS scan_RETREAT UNCHARGED
+MATCH       ([a-z]+)9              --engine=vm              100001   match    1/1/1+0   0.000   0            0           100000       0            100000
+MATCH       ([a-z]+)9              DEFAULT                  100001   match    1/1/1+0   0.001   0            0           100000       0            100000
+MATCH       ((a)|b){0,4}d          --engine=vm -fno-revdet  10001    match    1/1/0+0   0.002   9996         79976       0            0            79976
+MATCH       ((a)|b){0,4}d          --engine=vm              10001    match    1/2/0+0   0.001   9996         79976       0            0            79976
 
 -- BLOCK C: is any of it reachable on the DEFAULT path? --
 
-block       pattern                path                     bytes    verdict  sites   seconds  steps_today  cut_frames   scan_iters   UNCHARGED
-DEFAULT     ([a-z]+)9              DEFAULT                  10000    nomatch  1/1/1   0.000    0            0            0            0
-DEFAULT     ([a-z]+)9              DEFAULT                  100000   nomatch  1/1/1   0.000    0            0            0            0
-DEFAULT     ([a-z]+)9              DEFAULT                  1000000  nomatch  1/1/1   0.003    0            0            0            0
+block       pattern                path                     bytes    verdict  sites     seconds steps_today  cut_frames  scan_FRAMELESS scan_RETREAT UNCHARGED
+DEFAULT     ([a-z]+)9              DEFAULT                  10000    nomatch  1/1/1+0   0.000   0            0           0            0            0
+DEFAULT     ([a-z]+)9              DEFAULT                  100000   nomatch  1/1/1+0   0.000   0            0           0            0            0
+DEFAULT     ([a-z]+)9              DEFAULT                  1000000  nomatch  1/1/1+0   0.003   0            0           0            0            0
 
