@@ -413,16 +413,40 @@ both instruments and why these rows split cleanly between them:
   direction, the one that deletes real matches. Carries `mrldiff harness`,
   because an over-estimate is exactly what a differential and a corpus CAN
   see and an acceptance cell cannot.
-- **S60** restores R26 E1: the clamp emitted without its lattice rounding, so
-  the cursor lands between two iteration boundaries and the whole retreat
-  chain below it is poisoned. Invisible at stride 1 by construction — the
-  broken and correct forms emit arithmetically equal code there — which is
-  why `tests/mrl/patterns.txt` carries bodies of width 1, 2 and 3, and why
-  this row exists separately from S59.
+- **S60 is the row that changed shape twice, and both changes are findings.**
+  Its first form restored R26 E1 — the clamp without its lattice rounding —
+  and came back UNDETECTED at `mrldiff 0 fail / 146 pass`, `mrl 0 fail / 19
+  pass`. Not a thin population: **the shipped emitter cannot express that
+  defect.** §4.1 rounds because the clamp ASSIGNS a cursor value; this emitter
+  never assigns one, it FOLDS the cap into the scan's own bound, and `cur`
+  only ever moves by `W` from `pos`, so the loop bound is SELF-ROUNDING and an
+  off-lattice cursor has no spelling (verified by hand, rounded vs unrounded
+  identical on a stride-2 shape at n = 198..201). The rounding stays in the
+  emitted macro so a future site that does assign from it is correct by
+  construction, but it carries no weight today and a row pretending otherwise
+  would be a green check nobody could read.
+
+  Rewritten to what IS load-bearing there — the UNDERFLOW GUARD in front of
+  the cap, without which `ceil - minrest - pos` wraps and the folded scan
+  bound stops bounding the subject. **It came back UNDETECTED a second time**,
+  and that was a third finding: the defect is UNDEFINED BEHAVIOUR (measured as
+  an ASAN heap-buffer-overflow), not a wrong answer, so no subject sweep
+  reliably reaches it and the mech matrix has no sanitizer arm. The check it
+  now defeats is therefore STRUCTURAL — `run_mrl_tests.sh` §2b asserts the
+  guard macro carries both clauses and that no artifact has more cap sites
+  than guard sites. **DETECTED, `mrl 1 fail / 20 pass`.**
+
+  Put beside S48 (green because the population could not reach the defect) and
+  S50 (green because the thing removed was not the thing carrying the weight),
+  this row is a third kind: green because the defect it described does not
+  exist in the shipped form, and then green again because the real defect is
+  invisible to the arms this matrix runs. Only running the row tells you
+  which, which is the whole argument for the directory.
 - **S61** deletes ONE rung's clamp (the greedy cursor's fold into its scan
   bound) and leaves every other rung's bound intact, including the stamp. S58
   removes the analysis and every rung loses together; this says which rung's
-  emission carries K23.
+  emission carries K23. **MEASURED: `mrl` 8 fail / 11 pass, `mrldiff` 0 fail /
+  146 pass — the same asymmetry S58 shows, one rung down.**
 - **S62** is the defect this lane actually shipped first, restored so it
   cannot return unannounced: the counter rung's per-copy follow-min drops its
   runtime term and keeps the within-trip constant. Nine bytes of visible
@@ -430,9 +454,13 @@ both instruments and why these rows split cleanly between them:
   ALONE, and that is the honest statement of what found it: the differential
   agreed with the bug, the corpus had no such shape, and the §1 acceptance
   cell uses an exemplar that reaches its collapse through a different rung.
+  **MEASURED: `mrl` 2 fail / 17 pass — and the two failures are §1b's own
+  cells, which is the narrowest signal in this set and the reason that cell
+  was written.**
 - **S63** carries the stale prefilter window across the `start++` retry —
   D51 ruling 2 (b), whose error direction is too SMALL, i.e. unsound. No
   subject sweep reliably reaches the state (the retry is argued unreachable on
   the prefilter path, and a critic could not make it fire in 99 trials), so
   the check it must defeat is a STRUCTURAL assertion that the recompute exists
   in the emitted C. This row is what proves that assertion can go red.
+  **MEASURED: `mrl` 1 fail / 18 pass.**

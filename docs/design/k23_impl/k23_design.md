@@ -1747,8 +1747,31 @@ it.** STRUCTURAL:
   MORE bytes remaining than the one the bound already admitted. The whole chain
   below a viable commit is viable, and pruning it would be dead code.
 
-One thing the hunt DID find, and it is a real trap a build lane could fall
-into: the scan-head stop must jump to the rung's `shortl` label and NOT to
+**AND THE SAME ARGUMENT TURNS OUT TO APPLY TO THE CURSOR RUNG ITSELF, which
+§4.1 did not notice and which the sabotage matrix forced out.** §4.1 rounds
+because the clamp ASSIGNS a cursor value. This build never assigns one: it
+FOLDS the cap into the scan's own bound (§4.6), and `cur` only ever moves by
+`W` from `pos`, so the largest value the loop reaches is
+`pos + W·floor((lim − pos)/W)` whether or not `lim` was pre-rounded. **The
+loop bound is SELF-ROUNDING, and R26 E1's off-lattice cursor has no spelling
+in the shipped emitter.** MEASURED by building `((?:ab){10,20}){10,50}` with
+the rounding removed and comparing at n = 198..201: answers identical. The
+rounding is KEPT in `<PREFIX>_MRL_CAP` so that a future site which does assign
+from it is correct by construction rather than by remembering this paragraph
+— but it carries no weight today, and saying so is worth more than an
+unearned claim that the emitted form is safe *because* of it. It is safe for a
+stronger reason. Found because sabotage S60's first form came back UNDETECTED
+(tests/mech/CLAUDE.md records all three of that row's turns).
+
+What IS load-bearing at that site is the UNDERFLOW GUARD in front of the cap —
+`ceil − minrest − pos` wraps without it, `lim` becomes an enormous `size_t`,
+and the folded bound stops bounding the subject at all (ASAN
+heap-buffer-overflow, measured). That is undefined behaviour rather than a
+wrong answer, so no subject sweep reaches it reliably; `run_mrl_tests.sh` §2b
+asserts it on the emitted TEXT instead.
+
+One thing the revdet hunt DID find, and it is a real trap a build lane could
+fall into: the scan-head stop must jump to the rung's `shortl` label and NOT to
 `fulll`. `fulll` is reached from the `it >= rmax` test, where the iteration
 count is known to have met `rmin`; an MRL stop can fire at any count, and
 jumping past the `rmin` check would commit a loop that had not run its
