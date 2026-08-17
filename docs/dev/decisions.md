@@ -4237,3 +4237,53 @@ whether the bare match carrying the same distinct negative codes as
 composition-primitive angle), and return a RECOMMENDATION one-liner to
 Frank rather than deciding silently. "Final" labels on pre-release
 surfaces are hereafter read as "stable absent a reason", not immovable.
+
+## D49 — the UNIFORM negative-code contract for `rx_matchfn` (supersedes D42.3's −1 collapse), and the work bound's bring-up default (Frank, 2026-08-17, twenty-eighth session)
+
+Two rulings taken together at the counter-K build-phase gate, on the
+lane's §10.5 analysis (counterk_design.md, R25 lineage).
+
+**1. UNIFORM CODES.** The bare `<prefix>_match` carries the same
+distinct negative codes as `<prefix>_match_caps` instead of collapsing
+every give-up to −1: `ret >= 0` match end, `-1` no match, distinct
+codes below −1 for typed give-ups (RX_ERR_STEPS, RX_ERR_FRAMES, and
+RX_ERR_WORK when settlement 4's bound lands). `rx_matchfn`'s `< -1`
+space is PARTITIONED into a give-up block and an abort block with a
+NAMED floor; design_callout_abi.md F2's `__builtin_trap()` obligation
+is respelled against that floor instead of the literal −1. This
+SUPERSEDES D42.3's collapse (its own re-open trigger — a composition
+customer — never fired; the pre-release ABI rider, D47 SECOND
+ADDENDUM, is the independent ground). Rationale, from the lane's
+verified survey: the typedef is BIDIRECTIONAL (embedder-written
+callouts today have no legal spelling for "I gave up" — anything below
+−1 traps the process); the composition hole let an inner give-up read
+as a path failure, so an outer match could report an ANSWER where a
+bound blew; and the cost is verified minimal NOW — zero generated
+files contain the trap line (module `callouts` has no producer,
+emit_vm.c:131/2562), so the codegen that must change does not exist
+yet. Cost accepted with eyes open: `< -1` stops being reserved whole
+for a future abort semantic; getting the partition wrong pre-release
+costs a renumber and nothing else. Conforming edits owed (travel with
+the counter-K build): match_api_m4.md §1/§3.1, design_callout_abi.md
+F2, and the emitted eleven-line give-up comment block
+(emit_vm.c:3137-3147), which settlement 4 forces open regardless.
+
+**2. WORK BOUND DEFAULT ≈ 10⁹ units.** The new bound's bring-up
+default sits at the ~10⁹ end (ordinary single-pass linear-match
+boundary ~1 GB of subject; catches the possessify quadratic at
+n ≈ 45,000, ~1 s of work). Basis: the failure-direction asymmetry —
+too high costs diagnostic-path time, too low refuses ordinary
+large-subject matches on the shipped path, which is the worse error.
+Bring-up value in the same sense as the step budget's 1,000,000:
+[M4.6] calibrates it against measurement (D12's posture).
+
+MANAGER-ACCEPTED alongside (conventions, individually re-openable):
+the §10.5.3 spellings — `rx_info.work_budget` (−1 = none),
+`RX_ERR_WORK` (value unpinned; shares the negative block with ASK 5's
+RX_ERR_TRAIL, landing order decides), `RX_INTERNAL_WORK`,
+`VM_DEFAULT_WORK_BUDGET` in emit_vm.c (NOT limits.h, per limits.h's
+own inclusion rule — the lane's correction of the manager's brief),
+`PCREC_WORK_BUDGET_DEFAULT/NONE`, CLI `--work-budget=N`, and ONE
+existence gate in v1 (`--fno-step-budget` suppresses both counters;
+the tests/vm no-counter pin stays true as written; splitting later is
+additive).

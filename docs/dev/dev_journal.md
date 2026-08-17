@@ -9122,3 +9122,95 @@ counterk holds clean at c5dd4ae (11 commits, no engine code); its
 agent dies with the session — resume via the worktree per wake.md.
 Main pushed and clean at the journal commit; watchdog cron torn down
 (dies with session regardless).
+
+## 2026-08-17 (EDT), twenty-eighth session — F-2 RULED (settlement 4) + pre-release ABI rider; lane restarted on the ruling
+
+**Conversation resumed per wake.md**: restated the answer Frank never saw
+(give-up is a typed refusal under the ruled contract, never no-match; the
+sole −1 collapse in bare `<prefix>_match` is D42.3-forced with match_caps
+carrying the distinction). Frank then worked the residue question to
+ground before ruling: layers walked were (1) the DFA prefilter IS the
+general check — set-simulation over all start positions, linear, proven
+"no match anywhere" at end-of-subject; (2) required-byte prescan as the
+cheap in-VM approximation (candidate future OPT row, not yet filed);
+(3) the true residue = ambiguous-decomposition shapes (K23 shown as the
+non-contrived exemplar: `(a{10,20}){10,50}` vs 100 a's — prefilter
+confirms the match then steps aside, the leftmost-greedy PATH search is
+what explodes) and backrefs at M6 (genuinely NP-complete). Also restated:
+capture extraction on the base tier is linear-time in principle (RE2-style
+priority lockstep) — the backtracker is the strategy that survives the
+backref roadmap; K23 is the tax, owned [M4.6].
+
+**F-2 RULED: SETTLEMENT 4** (decisions.md D47 SECOND ADDENDUM, main
+60a8af8, pushed). The §7.4-metered forward work gets its OWN bound —
+own rx_info field, own RX_ERR_* code. Frank's rationale: the meter must
+see the full work (2 and 3 rejected on that ground); between 1 and 4 he
+took the recommendation. Step budget keeps its meaning/unit; all pins
+untouched; finding 27 evaporates; the DEFAULT VALUE returns to Frank as
+a one-liner at implementation (nothing today picks the number).
+
+**RIDER (recorded in the addendum): pre-release ABI changes are ON THE
+TABLE** — "final/frozen" labels (D44.5 rx_info, D42.3 rx_matchfn) read
+as "stable absent a reason" until first release, and Frank likes
+consistency. The bare-match −1 collapse is re-opened; the lane owes a
+recommendation (not a decision) on uniform distinct codes.
+
+**Three-doc fix-of-record staleness FIXED on main** (same commit): plan
+[ENG-BREP] row (three sites incl. the NEXT-LADDER-STEP line, which also
+now records K22's F-1 closure), known_issues.md K22-sibling note,
+rungselect_design.md §5 item 8 — all now cite the §7.4 meter under
+settlement 4 instead of the refuted E-5 entry charge.
+
+**Lane restarted** (fresh opus agent on worktrees/counterk at c5dd4ae):
+tasks = merge main, apply the ruling to the note in place, ABI-rider
+analysis → recommendation one-liner, propose names for the new
+field/code/constant + the default-value question text; then STOP for
+manager review → ACCEPTED declaration → engine code. Watchdog cron
+re-armed (10 min).
+
+**State at entry:** main 60a8af8 pushed, clean; lane counterk applying
+the ruling; corpus ~8,332 live + 1 known_fail resident; K-list K2, K7,
+K9, K23; ON FRANK'S DESK: nothing — F-2 cleared; owed to Frank later:
+the default-value one-liner, the bare-match consistency recommendation,
+and the standing carried rulings (rx_info spelling, K19 residual,
+callout Q5/Q6, V-E items, M5-vs-M6 order at M4.7).
+
+## 2026-08-17 (EDT), twenty-eighth session (cont.) — ruling applied and reviewed; D49 (uniform codes + work default); note ACCEPTED; build phase released
+
+**Lane applied F-2 cleanly** (5 commits on lane/counterk through a9af66f
+after merging main): settlement 4 ruled in place, PCREC_STEP_SCALE
+apparatus deleted with the refutation history kept, §10.5 added (the
+default one-liner, the ABI-rider analysis, PROPOSED names). The lane
+CAUGHT ITS OWN carried-number error — §7.4's candidate-default table
+still showed the -fno-possessify control under scaled arithmetic
+(5.1×10¹⁰/8.0×10⁸), reading as though the new bound catches it; under
+finding 26's exclusion that population contributes ~0 units and fires
+on the STEP budget as today. Fifth instance of the error class, first
+one self-caught. It also corrected the manager's brief: the default
+lives in emit_vm.c beside VM_DEFAULT_STEP_BUDGET, not limits.h (whose
+inclusion rule excludes runtime budgets). Its report raced the idle
+signal AGAIN; the resend-request habit plus reviewing the diff directly
+covered it.
+
+**FRANK RULED BOTH §10.5 QUESTIONS (D49, main 1a9513b):** (1) UNIFORM
+CODES — bare <prefix>_match carries the distinct negative codes;
+D42.3's −1 collapse superseded; <−1 partitioned into give-up + abort
+blocks with a named floor; F2's trap respelled. Decisive facts: the
+typedef is bidirectional (embedder callouts gain a legal give-up
+spelling), the composition hole let an inner give-up become an outer
+ANSWER, and zero generated files contain the trap line today.
+(2) WORK DEFAULT ≈ 10⁹ (failure-direction asymmetry; bring-up value,
+M4.6 calibrates). §10.5.3 names manager-accepted (work_budget,
+RX_ERR_WORK unpinned vs RX_ERR_TRAIL, VM_DEFAULT_WORK_BUDGET, one
+existence gate in v1).
+
+**NOTE ACCEPTED (plan row updated); lane released into ENGINE CODE**
+per the panel-approved §8 validation plan, carrying D49's conforming
+edits (match_api_m4.md §1/§3.1, design_callout_abi.md F2, the emitted
+give-up comment block). Watchdog live.
+
+**Also this session, before the ruling:** Frank's residue question
+walked to ground (prefilter = the general linear check; K23 shown as
+the non-contrived post-prefilter exemplar; NP enters only with
+backrefs); candidate future OPT row noted but NOT filed: required-byte
+prescan / skip-past-failed-run for the VM path.
