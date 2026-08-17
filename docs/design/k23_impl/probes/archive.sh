@@ -54,12 +54,23 @@ hdr() {
 
 {
     hdr 'Clamp cost on the common path, with the placebo control' 'throughput.sh'
+    printf '# SPARSE clamp density (empty follow: 9 of 50 sites clamped)\n'
     for spec in '(a{10,20}){10,50} 10 10 1 300 200000' \
                 '(a{2,4}){10,50} 10 2 1 200 200000' \
                 '(a{1,2}){10,50} 10 1 1 60 500000'; do
         printf '\n== %s ==\n' "$spec"
         # shellcheck disable=SC2086
         "$HERE/throughput.sh" $spec 9 2>/dev/null
+    done
+    printf '\n# FULL clamp density (non-empty follow: 50 of 50 sites), which is\n'
+    printf '# what the note recommends shipping -- R26 E5 found the sparse rows\n'
+    printf '# above measuring 18%% of it. Trailing arg pair is FOLLOW_MIN SUFFIX.\n'
+    for spec in '(a{2,4}){10,50}b 10 2 1 200 200000' \
+                '((?:aa){2,4}){10,50}b 10 2 2 400 200000' \
+                '((?:aaa){2,4}){10,50}b 10 2 3 600 200000'; do
+        printf '\n== %s (dense) ==\n' "$spec"
+        # shellcheck disable=SC2086
+        "$HERE/throughput.sh" $spec 9 1 b 2>/dev/null
     done
 } > "$OUT/throughput.txt"
 
@@ -87,8 +98,10 @@ hdr() {
 
 {
     hdr 'python re on the K23 family: the same tree, no pruning rule' 'archive.sh'
-    printf '# NOTE: the last row costs ~6.4 minutes. That is the finding.\n#\n'
-    timeout 1800 python3 -u -c "
+    printf '# NOTE: the last row costs ~6 minutes on a quiet box, and MORE\n'
+    printf '# under contention -- a 1800 s bound lost it once when this ran\n'
+    printf '# alongside a differential sweep. Run archive.sh alone.\n#\n'
+    timeout 5400 python3 -u -c "
 import re, time
 for m, M, p, P, n in [(10,12,10,50,100),(10,15,10,40,100),(10,20,10,50,100),
                       (11,22,11,50,121),(12,24,12,50,144),(13,26,13,50,169)]:
