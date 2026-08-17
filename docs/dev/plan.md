@@ -759,7 +759,33 @@ spine, not before):
   a generation-time scalar (D20, --encoding), named entry points via OS-0
   if anyone wants both from one binary. Owners: the CharSet widening is
   MOD-0.6's (D33 §7); the lowering instances and the UTF PC-4 twin are
-  M5's; DD-1 folds in at the CharSet level
+  M5's; DD-1 folds in at the CharSet level. (7) FRANK'S CONSTRAINTS
+  (2026-08-16, twenty-seventh session, ruled into this row as
+  requirements): NO encoding conditionals anywhere — no "if utf do x
+  else y" in the compiler, the emitter, or the emitted artifact;
+  encodings are SEALED backends behind the one lowering interface, all
+  specialized code within. The include-package question ANSWERED with
+  the two-seam characterization: per-encoding inline-function headers
+  are the WRONG seam for the hot path (gcc cannot invert decode+compare
+  back into a byte automaton; malformed-input handling degrades from
+  automaton structure to runtime branches; the reverse pass would need a
+  second backward-decode shim) and the RIGHT seam for the enumerable
+  runtime-identity RESIDUE (caseless backref comparison under M6xM5,
+  optional subject validation, grapheme \X if ever, trace printing) —
+  ONE per-encoding header embedded at generation, so the artifact
+  contains exactly one encoding's code and the "switch" is which header
+  text was emitted. ENFORCED BY CHECK, NOT CONVENTION, when M5 lands:
+  (a) OS-2's hot-loop shape-identity check ASCII-vs-UTF-8 as a pinned
+  structural test; (b) a codegen-structural check that no hot-loop label
+  calls into the encoding header (allowlist of named residual sites).
+  INVARIANTS: subject and all reported offsets are BYTES, permanently,
+  third encoding included; fixed-vs-variable width is a PROPERTY the
+  backend exploits (fixed-size lowers to fixed-length chains / direct
+  indexing), never an interface axis. THIRD-ENCODING RECIPE (the
+  planned-for threat): a new backend = one lowering module + one
+  residual header, core and emitter untouched — if adding one ever
+  requires touching a shared file outside the backend directory, that is
+  the derailment signal and a design stop
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
