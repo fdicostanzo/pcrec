@@ -377,7 +377,15 @@ stated terms.
     only.
   - [M4.6d] STATE:not-started — K23 FIX per (c)'s accepted note; tests
     from a D27-BLINDED author (K23 was itself a D27 find); closes
-    known_issues.md K23 and retires the ratchet resident.
+    known_issues.md K23 and retires the ratchet resident. ALSO OWED to
+    the blinded author (counter-K checkpoint 2, 2026-08-17): the
+    (a{1,3}){65} INTERMEDIATE region — 65..~100 'a's is an ambiguous
+    decomposition where pcrec returns RX_ERR_STEPS in ms and python re
+    does not terminate in 20 s; the counter-K re-pin of
+    tests/base/d27_large_counts.rxt:58 deliberately left it unpinned
+    (inheriting the adjacent {64} block's avoidance), and the proper
+    expectations for that region land WITH the K23 fix, authored
+    blinded.
   - [M4.6e] STATE:not-started — RX_HYBRID_MIN measurement (resolves
     engine_m4.md §12 ASK-6; wire the `n < RX_HYBRID_MIN` VM-only
     branch) + trie-factored first-byte switch, measure-then-implement.
