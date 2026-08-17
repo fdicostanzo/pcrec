@@ -6,8 +6,12 @@ rung-select lanes' own notes). Design of record: `../eng_brep_design.md` §4
 (the K axis), `../engine_m4.md` §2.5 (the ladder) and §4 (the step budget and
 DD-2's two bounds). Rulings consumed: D45 (+ its three addenda), D46
 (observability + controllability), D47 (all six ENG-BREP rulings, D47.1's
-ladder order and D47.2's K-as-a-named-constant most of all), and R25's two
-manager rulings (§10.1). Open issue: K22. Open with Frank: F-1, F-2 (§10.2).
+ladder order and D47.2's K-as-a-named-constant most of all), D47's ADDENDUM
+(F-1) and SECOND ADDENDUM (F-2 = settlement 4, plus the pre-release ABI
+rider), and R25's two manager rulings (§10.1). Open issue: K22. **Nothing is
+open with Frank as a question**; what returns to him is §10.5 — the new
+bound's default value, held back by the ruling itself, and the rider's
+recommendation.
 
 Claims are marked STRUCTURAL / MEASURED / BELIEVED in the house style
 (`../eng_brep_design.md` §0.1). Every MEASURED claim below was taken from the
@@ -43,7 +47,18 @@ directory's house style.** What a returning reader most needs:
   rung shrinks SIZE but not FRAMES, so the endgame cell trades a compile-time
   refusal for a ~512-byte runtime ceiling — now stated, with a Cost arm
   (§3.5) the first draft did not specify at all.
-- **F-1 is RULED and F-2 is WITHDRAWN.** Frank ruled strict §4.5 (D47
+- **BOTH F-1 AND F-2 ARE NOW RULED.** F-2 landed as **settlement 4** (D47
+  SECOND ADDENDUM, 2026-08-17): the frameless forward work §7.4 meters gets
+  its OWN bound beside frames and trail, with its own `rx_info` field and its
+  own `RX_ERR_*` code, because the meter must see the FULL work. The step
+  budget does not move — same meaning, same unit, every pin untouched — so
+  §7.4's whole `PCREC_STEP_SCALE` apparatus is deleted rather than retuned,
+  and finding 27 evaporates. **The one thing NOT ruled is the new bound's
+  DEFAULT VALUE**, held back on purpose: §10.5 carries it to Frank, along with
+  the addendum's ABI rider (pre-release, so `rx_matchfn`'s −1 give-up collapse
+  is re-opened) and the proposed spellings for the new surface. What follows
+  is the pre-ruling history, kept because the ruling was taken on it.
+- **F-1 was RULED first, and F-2 had been WITHDRAWN.** Frank ruled strict §4.5 (D47
   ADDENDUM): K stays one per-artifact constant, and the CLAMP moves whole to
   the new plan row [ENG-CLAMP] — §4.2 is now the refutation plus a pointer,
   §8.5 cell 2 is withdrawn, and C1's site needs no rewrite after all. F-2 went
@@ -1384,19 +1399,25 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
   withdrawn, K22 closes as fast-refusal only on the interim guard already
   landed, and the clamp becomes its own ruled row later; the rest of the rung
   is unaffected, which is worth knowing before ruling.
-- **F-2: the step charge — WITHDRAWN from Frank's desk and returning
-  measured.** Two proposals have now been refuted: the E-5 entry charge
-  (§7.2, by this lane) and its first replacement (§7.3, by the engine critic —
-  the predicate was vacuous), then a THIRD time by the verification pass
-  (finding 26: the corrected predicate still double-billed the
-  non-possessified cursor rung). §7.4 as it now stands has its mechanism
-  VERIFIED by that pass and its numbers re-measured after the exclusion. What Frank rules when it
-  returns is §7.5's trade, not a mechanism: the charge's COST is universal
-  (a ~1 GB single-pass match lands at the default budget's boundary on the
-  SHIPPED path) while its BENEFIT is diagnostic-path-only. Three settlements
-  are laid out there with the numbers; the lane recommends accepting and
-  re-deriving the default from `PCREC_STEP_SCALE`, but says plainly that this
-  is DD-2/D22 territory and not a lane call.
+- **F-2: the step charge — RULED, SETTLEMENT 4**
+  (`../../dev/decisions.md` D47 SECOND ADDENDUM, 2026-08-17). Three proposals
+  were refuted before this one: the E-5 entry charge (§7.2, by this lane), its
+  first replacement (§7.3, by the engine critic — the predicate was vacuous),
+  and the corrected predicate (finding 26, by the verification pass — it still
+  double-billed the non-possessified cursor rung). §7.4's mechanism was
+  VERIFIED by that pass; what Frank ruled is §7.5's settlement, not the
+  mechanism. **The frameless forward work gets its OWN bound** beside frames
+  and trail — own `rx_info` field, own `RX_ERR_*` code — because the meter
+  must see the full work; the step budget keeps its exact current meaning and
+  unit, and every existing step-budget pin stays untouched. **What is still
+  owed to Frank is the new bound's DEFAULT VALUE**, held back deliberately and
+  returning as a one-liner at implementation: §10.5.
+- **F-2 RIDER: the pre-release ABI posture** (same addendum). Until the first
+  release, API/ABI changes are on the table including surfaces labelled
+  final/frozen (D44.5's `rx_info`, D42.3's `rx_matchfn`), and "final" reads as
+  "stable absent a reason". Specifically re-opened, and worked through in
+  §10.5: whether the bare `<prefix>_match` should carry the same distinct
+  negative codes as `<prefix>_match_caps` instead of collapsing give-up to −1.
 
 ### 10.3 Still open for the manager
 
@@ -1419,6 +1440,9 @@ the strategy instead — D26 tier 3 work, not to be gold-plated. Same for
    is not observable as the emitter stands. `rx_search`'s negative space has
    room (D42.3). It touches the emitted error surface, so it is asked rather
    than assumed; the fallback is over-provisioning and checking frames only.
+   **Now sharing a space with the F-2 ruling's own new code** (§10.5.3): both
+   want a value from the same negative block, so whichever lands first takes
+   the lower number and this note pins neither.
 
 ---
 
@@ -1437,6 +1461,145 @@ retracted rather than that it vanished.
 
 ---
 
+## 10.5 RECOMMENDATION — PENDING FRANK: the new bound's default, the ABI rider, and the names
+
+Everything in this section is **PROPOSED**. The D47 SECOND ADDENDUM ruled the
+MECHANISM (settlement 4) and deliberately held back one number; the same
+addendum's rider tasked this lane with a recommendation rather than a decision
+on a second question. Neither is a lane call, and no frozen document is edited
+by this section — `../match_api_m4.md` and `lib/pcrec.h` are untouched until
+Frank rules.
+
+### 10.5.1 The one-liner Frank is owed at implementation
+
+> **What should the new work bound's default be — ~10⁹ units, which puts the
+> refusal boundary for an ordinary single-pass linear match at ~1 GB of
+> subject and catches the possessify quadratic at n ≈ 45,000 (about a second
+> of work); or ~1.6×10⁷, the value commensurate with a backtrack resumption
+> at the MEASURED 16:1 work ratio, which moves that boundary to ~16 MB and
+> catches the quadratic at n ≈ 5,700 (about 0.02 s)?**
+
+The supporting numbers are §7.4's table and §7.5's exposure measurement (one
+unit per subject byte on the frameless cursor scan). Two things worth saying
+with the question rather than after it. The bound is a bring-up value in the
+same sense the step budget's 1,000,000 is — [M4.6] calibrates it against
+measurement, so this default is a starting point, not a permanent commitment
+(D12's posture). And the two candidates are not symmetric in their failure
+direction: too high leaves the pathology running longer than it should, which
+costs diagnostic-path time; too low refuses ordinary large-subject matches,
+which is a wrong answer on the shipped path. **The lane's own lean, stated
+because a recommendation is more useful than a shrug, is the ~10⁹ end** — but
+the lane has no basis for it beyond that asymmetry, and the ruling put the
+number on Frank's desk for a reason.
+
+### 10.5.2 RECOMMENDATION — the ABI rider: should `<prefix>_match` carry the distinct codes?
+
+> **Recommendation, one line: YES — adopt the uniform contract. The only real
+> cost beyond the typedef's documented return contract is partitioning
+> `rx_matchfn`'s `< -1` reserved space into a give-up block and an abort
+> block, and respelling F2's `if (ret < -1) __builtin_trap();` against a named
+> floor instead of the literal −1 — and both are strictly cheaper NOW than
+> after module `callouts` has a producer, because the call-site codegen that
+> must change does not exist yet.**
+
+The question, restated. `<prefix>_search` already returns distinct negative
+codes (`RX_ERR_STEPS`, `RX_ERR_FRAMES`; D42.3, `../match_api_m4.md` §1) and
+`<prefix>_match_caps` is proposed to (§3.1, "NOT an `rx_matchfn` … its
+negative return space below `-1` is pcrec's own"). Only the bare
+`<prefix>_match` collapses give-up to −1, and D42.3's own text says why: the
+`rx_matchfn` typedef reserves `< -1` WHOLE for a future abort semantic, so the
+give-up codes have nowhere to live. **Settlement 4 makes that hole one code
+wider** — three kinds of exhaustion now collapse into "no match" instead of
+two.
+
+What each caller class must do:
+
+| caller of `<prefix>_match` | (a) status quo: −1 collapse | (b) uniform distinct codes |
+|---|---|---|
+| direct embedder, hand-written C | cannot tell "no match" from any of three give-ups; must abandon the anchored primitive for `<prefix>_search`/`_match_caps` to find out | `ret >= 0` matched, `ret == -1` no match, `ret <= RX_ERR_STEPS` gave up and says which; `if (ret < 0)` code is unaffected, only exact `== -1` tests move |
+| generated callout call site (composition, `../design_callout_abi.md` §1.1) | three lines: advance on `>= 0`, fail this path on `-1`, `__builtin_trap()` below — and an inner give-up silently becomes a path failure, so the OUTER can report a clean match or no-match where a bound was actually blown | one line more: propagate the code up before the trap check, and derive the trap's floor rather than writing `-1`. **This codegen does not exist** — module `callouts` has no producer |
+| embedder-WRITTEN callout (same typedef, opposite direction) | has no spelling for "I gave up": anything below −1 traps the process, so its only option is −1 and the fact is lost | gains a legitimate way to report exhaustion from its own bounded work — a capability, not just a diagnostic |
+| `rx_renderfn` (`../subst_template_design.md`: `rx_matchfn` plus an output buffer) | inherits whichever contract `rx_matchfn` has | inherits it too, at no cost of its own |
+
+Three things this survey found that the question as posed did not assume.
+**The typedef is bidirectional** — pcrec emits functions of that type AND
+embedders write them as callouts — so a contract change is symmetric, and the
+symmetry is what makes (b) work: a user callout returning `RX_ERR_STEPS`
+means the same thing as a generated one returning it, and the engine's call
+site handles both with the same line. **The composition hole is not only a
+lost diagnostic**: converting an inner give-up into a path failure lets the
+outer match report an ANSWER where an honest engine would have reported
+exhaustion, which is a stronger reason to close it than D42.3's "confined to
+the composition path" framing suggests. And **D42.3 named its own re-open
+trigger** — "re-open when a composition customer appears (cheap pre-v1 per
+D40)". That trigger has NOT fired: there is still no composition customer.
+The rider is a different and independent reason to move, and the recommendation
+rests on the cost asymmetry (change the unwritten call site now, or migrate a
+written one later), not on a pretence that the stated trigger fired.
+
+**VERIFIED, and it is the reason the cost is as small as claimed**: the trap
+has ZERO emitted instances today. `emit_vm.c:131` marks `VE_CALLOUT`
+"reserved: no producer (module 'callouts')" and `emit_vm.c:2562` emits "(none:
+module 'callouts' has no producer)" into the artifact's own listing, so no
+generated file anywhere contains `if (ret < -1) __builtin_trap();`. The rule
+is a design obligation (`../design_callout_abi.md` F2) with nothing yet
+obeying it, and changing an obligation costs a paragraph where changing a
+generator costs a migration.
+
+The one place the status quo IS written into shipped output is a comment:
+`emit_vm.c:3137-3147` emits an eleven-line block into every VM artifact
+explaining that give-up "reports -1 here — INDISTINGUISHABLE from no-match",
+citing D38.4 and D42.3, and stating the composition residual and its
+re-open trigger. Adopting (b) means rewriting that block rather than leaving
+it lying, and settlement 4 requires touching it regardless, since it currently
+enumerates two exhaustion kinds where there will be three.
+
+The cost, named plainly so Frank is not choosing against a free option: the
+`< -1` space stops being reserved WHOLE for abort. A future abort semantic
+loses `-2` as its cheapest encoding and must live below a give-up block whose
+size is fixed now, before anyone knows how many give-up codes there will
+eventually be. That is a real commitment made early — and it is the sort of
+commitment the rider's own "stable absent a reason" posture exists to permit,
+since getting the partition wrong pre-release costs a renumber and nothing
+else.
+
+### 10.5.3 PROPOSED names for the new surface
+
+Spellings only — the mechanism is ruled, the names are not. Each follows the
+convention its neighbours already set (`../match_api_m4.md` §5's `rx_info`
+member list; `emit_vm.c`'s existing defaults; `../engine_m4.md` §4.4's
+internal-to-external translation).
+
+| what | PROPOSED | where, and the sibling it matches |
+|---|---|---|
+| `rx_info` member | `int64_t work_budget;` | beside `step_budget` in D44.5's scalar group; **`-1` = none**, exactly `step_budget`'s sentinel. "Budget" and not "capacity" because it DEPLETES — `frame_capacity` is a stack depth, this is a quantity spent |
+| emitted error code | `RX_ERR_WORK` | beside `RX_ERR_STEPS` / `RX_ERR_FRAMES`. **Do NOT pin its value to −4 in this note**: ASK 5's `RX_ERR_TRAIL` (§10.3) wants a value from the same space and landing order decides which gets which |
+| internal sentinel | `RX_INTERNAL_WORK` | beside `RX_INTERNAL_STEPS`; the search wrapper gains one translation arm (`../engine_m4.md` §4.4) |
+| emitted default | `VM_DEFAULT_WORK_BUDGET` | `src/gen/emit_vm.c`, beside `VM_DEFAULT_STEP_BUDGET 1000000LL`. **NOT `src/core/limits.h`** — see the note below |
+| public sentinels, IF it gets its own flag | `PCREC_WORK_BUDGET_DEFAULT = 0`, `PCREC_WORK_BUDGET_NONE = -1` | `lib/pcrec.h`, matching the `PCREC_STEP_BUDGET_*` pair exactly |
+| CLI | `--work-budget=N`, value only | no `--fno-work-budget` in v1 — see the gating proposal below |
+
+**On limits.h, and a correction to the ask as it reached this lane.** The
+brief that carried the ruling asked for "the limits.h default constant name",
+but the step budget's default does NOT live in `src/core/limits.h` — it is
+`VM_DEFAULT_STEP_BUDGET` in `src/gen/emit_vm.c`, beside `VM_DEFAULT_BT_FRAMES`
+and `VM_DEFAULT_TRAIL_FRAMES`. That is not an accident: limits.h states its own
+inclusion rule as "changing the number changes what pcrec ACCEPTS, REJECTS or
+PROMISES", and a runtime give-up budget changes none of the three at compile
+time. The new default belongs with its siblings in the emitter. Flagged rather
+than silently followed, since the ask said otherwise.
+
+**Gating, PROPOSED: one gate in v1.** `w->budget` exists only under
+`has_budget` (`emit_vm.c:2793`) and `tests/vm/run_vm_tests.sh:147-157` pins
+`--fno-step-budget` emitting NO counter. Riding that single gate — so
+`--fno-step-budget` suppresses both counters — keeps that pin true exactly as
+written and costs one flag nobody has asked for. The bound still gets its own
+VALUE flag, so the two are independently tunable; only their existence is
+shared. If a customer later needs one without the other, splitting the gate is
+additive.
+
+---
+
 ## 11. The residual, collected
 
 What counter-K does NOT do, each with its reason:
@@ -1448,10 +1611,12 @@ What counter-K does NOT do, each with its reason:
    whole clamp population, moved to [ENG-CLAMP] by the F-1 ruling (§4.2).
    D22 scopes them to fail honestly and K22's interim guard already does, in
    0.12 s.
-3. **The step budget still does not bound wall time** (§7.3), and neither the
-   refuted entry charge nor its replacement claims to. E-5's own limitation,
-   inherited deliberately. What §7.3 changes is that the budget becomes
-   PROPORTIONAL to work for the loops where it currently is not.
+3. **Neither bound bounds wall time**, and none of the four proposals — the
+   refuted entry charge, its two refuted replacements, or §7.4's ruled
+   redesign — claims to. E-5's own limitation, inherited deliberately. What
+   the ruled design changes is that the METER becomes proportional to work for
+   the loops where it currently is not, in a counter of its own (§7.5,
+   settlement 4).
 4. **§7.4's charge is specified and unmeasured against a real
    implementation.** Its COUNTS are measured; its BEHAVIOUR is not, because no
    build charges this way — the same disclosure `../eng_brep_design.md` §8

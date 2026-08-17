@@ -34,12 +34,30 @@ cannot be re-run is not a measurement.
   **F-1 is RULED** (D47 ADDENDUM): strict §4.5, K stays one per-artifact
   constant, and the CLAMP moved whole to plan row [ENG-CLAMP]. §4.2 is now the
   refutation plus a pointer; acceptance cell 2 is withdrawn; `clamp_arith.py`
-  stays here as that row's inherited evidence. **F-2 is WITHDRAWN and
-  returning measured**: the engine critic's pass (findings 17-25) blocked the
-  first replacement too, because its predicate keyed on PUSHES while its
-  justification keyed on POPS and `RX_CUT` charges nothing — so the revdet
-  scan, `vm_poss_chain` and counter-K's own possessive arm were all excluded
-  from a rule advertising strategy-invariance. §7.4 is the redesign.
+  stays here as that row's inherited evidence.
+
+  **F-2 is RULED too** (D47 SECOND ADDENDUM, 2026-08-17): **settlement 4** —
+  the frameless forward work §7.4 meters gets its OWN bound beside frames and
+  trail, with its own `rx_info` field and its own `RX_ERR_*` code, because the
+  meter must see the FULL work. The step budget does not move (same meaning,
+  same unit, every pin untouched), so §7.4's `PCREC_STEP_SCALE` apparatus is
+  DELETED rather than retuned and R25 finding 27 evaporates; finding 29's
+  measured ~16:1 work ratio survives with a changed job, as the exchange rate
+  that prices a candidate default. Three proposals were refuted before this
+  one — the E-5 entry charge (§7.2), the engine critic's target (§7.3, whose
+  predicate keyed on PUSHES while its justification keyed on POPS, so the
+  revdet scan, `vm_poss_chain` and counter-K's own possessive arm were all
+  excluded from a rule advertising strategy-invariance), and the corrected
+  predicate (finding 26, which double-billed the non-possessified cursor
+  rung). §7.4 is the surviving redesign.
+
+  **What is still owed is §10.5**, and it is the first thing a reader should
+  check for staleness: the new bound's DEFAULT VALUE (held back by the ruling
+  itself, returning to Frank as a one-liner at implementation), the SECOND
+  ADDENDUM's pre-release ABI rider (a recommendation, not a decision — the
+  lane recommends `<prefix>_match` carry the same distinct negative codes as
+  its siblings), and PROPOSED spellings for the new surface. Nothing in §10.5
+  is ruled and no frozen document is edited by it.
 
 ## Probes
 
