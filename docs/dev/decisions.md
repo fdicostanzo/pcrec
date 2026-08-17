@@ -4408,3 +4408,27 @@ statistical tuning linked to [ENG-PGO]) — soundness-free by
 construction, so deliberately NOT a gate on this landing. Revisit when:
 [ENG-THIN] measures, or a real workload surfaces the site-dense class
 at long-subject scale (which would change the microseconds argument).
+
+## D53 — [M4.6e]'s two MEASURED-NO dispositions: no RX_HYBRID_MIN, no trie-factored VM alternation switch (manager, 2026-08-17, twenty-ninth session, on the m46e lane's measurement)
+
+Both of engine_m4.md §12 ASK-6's candidates were measured on real
+emitted artifacts (three independent pinned runs each, per-core
+occupancy checked first; archived docs/design/m46e_impl/) and NEITHER
+was built. (1) RX_HYBRID_MIN is refuted on its own VARIABLE: the
+hybrid-vs-VM-only crossover is a function of MATCH OFFSET
+(single-to-low-double-digit bytes; the VM's start++ retry pays a full
+call per candidate position while the hybrid's two DFA passes are a
+flat ~80ns tax), not subject LENGTH (§6.2(b) predicted low-hundreds of
+bytes) — and a length threshold generous enough to catch the 60-byte
+regime would REGRESS bench case (i) itself, whose real buffer sits past
+the offset crossover (hybrid 65% faster there). No length branch can be
+right; an offset branch cannot exist (the offset is unknown until
+searched). (2) The trie-factored first-byte alternation switch is real
+but narrow — +3-18% on constructed shapes, eligible for 22/347
+capture-bearing corpus patterns, absent from every capture-bearing
+bench floor — declined under D18's earn-its-axis against the full cost
+of a new selection axis (D46 stamp+force + sabotage row per the
+established precedent). Revisit-when, both: [ENG-PGO]/bench-class
+evidence surfaces a real customer (the D50 evidence-gate shape); or the
+start++ retry loop is ever vectorized, which would move the offset
+crossover and deserves a re-measure.
