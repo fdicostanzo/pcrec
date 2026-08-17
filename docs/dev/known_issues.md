@@ -1837,7 +1837,28 @@ prime suspect by file; possessify/revdet/counter-K touch only the VM
 emitter) brackets the bisect. REPRODUCER: `CASES=c` via
 tests/bench/compare/compare.sh on a quiet box (load-check per its
 conventions); the floor row is DELIBERATELY LEFT at 388.615 so gate.sh
-reports (c) RED as the live flag until this closes. Correctness is
+reports (c) RED as the live flag until this closes.
+
+**ROOT CAUSE FOUND 2026-08-17 (k24bisect lane, merged cb6c708 —
+full evidence docs/design/k24bisect_impl/k24_bisect_note.md):** first
+bad = 1dbb6ce, the [M4.4] API break — NOT K18 (exonerated: the emitted
+DFA for this pattern is byte-identical from 1dbb6ce to HEAD). The
+mechanism is COMPILER LAYOUT, not our algorithm: adding
+rx_match/rx_match_caps as same-TU callers of rx_search triggers gcc
+-O2's PARTIAL-INLINING pass to split rx_search into a trampoline +
+rx_search.part.0 carrying the scan loop; the loop's instructions are
+identical before/after, but the split placement is layout-sensitive.
+CAUSALLY PROVEN: same gen.c, same driver, -fno-partial-inlining alone
+recovers 389.6-391.8 from 288.6-293.8 (pinned, 10 trials, <1% spread);
+nm confirms the .part symbol vanishes. Corollary symptom: once split,
+the SAME binary measures 287-397 UNPINNED — bench floors must pin
+(probe + compare conventions carry this). FIX IS A DESIGN CALL, open:
+keep rx_search monolithic (attribute lever on the wrappers or the
+entry, e.g. noipa on the cold wrappers), control hot/cold layout, or
+accept + re-floor; AND the same-TU-wrapper shape exists in EVERY VM
+artifact too (match/match_caps call search), so the fix lane must
+audit whether the VM hot path is also being split. Owner: [M4.6]
+close-out (a RED D12 floor is M4.6's business). Correctness is
 unaffected (the .rxt corpus and the trie's output-preserving
 differential are green) — this is a D12/D18 throughput regression, not
 a miscompile. Owner: manager triage; bisect queued. Found because
