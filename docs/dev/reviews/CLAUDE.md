@@ -336,6 +336,26 @@ Two rules earned the hard way and enforced here:
   repeat of a group — python-possessive and PCRE2-possessive are not
   interchangeable oracles). §9 carries SIX rulings for Frank.
 
+- **2026-08-17-r26-k23.md** — R26, panel + same-day verification pass on
+  the [M4.6c] K23 design note (MRL pruning). The R25 shape again:
+  the soundness ARGUMENT held and was strengthened (the engine critic
+  set out to break preference-blindness and instead PROVED it; the
+  closed-form step law exact out of sample), while the EMITTED FORM was
+  refuted — the §4.1 clamp lands off the iteration lattice on stride>1
+  cursor rungs (5/8 subjects wrong on a live-population shape) and the
+  855-cell differential was structurally blind to it (single-byte
+  corpora; the lane's own §11.1 lesson unapplied to its own generator).
+  Lane revision same session: lattice rule in, corpus regenerated with
+  stride+residue axes, 1,059 cells / 0 disagreements, and the sabotage
+  arm PROVING the blindness (101 red, zero at stride 1). Verification:
+  V1-V7, one PARTIAL (a stale sparse table — the carried-number defect
+  in the exact cell finding 10(a) had flagged). Panel-contributed
+  improvements with provenance: the lattice rule itself, the
+  prefilter-window ceiling (ruling 6 to Frank), the ratio-tracking
+  python argument. Critic self-disclosures recorded, including R24
+  M-F1 reproduced verbatim by the critic's own `sort -u`. Two Frank
+  rulings queue: adopt-MRL; prefilter-ceiling v1-vs-fallback.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
