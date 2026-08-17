@@ -178,7 +178,9 @@ stated terms.
   retention; empty-final-iteration overwrite), arbitrated three-way
   unanimous and recorded as the §2.2 as-built addendum, get folded into
   the graduated spec text properly rather than living as an addendum
-  - [M4.7d] STATE:started — FUZZER CAPTURE-SPAN EXTENSION: fuzz.py's
+  - [M4.7d] STATE:completed (2026-08-17, lane/fuzzcap, merge 58717d3;
+    manager positive control: sabotaged group-1 span detected 252/252,
+    clean control 0/860 pairs) — FUZZER CAPTURE-SPAN EXTENSION: fuzz.py's
     content-divergence comparison extended from whole-match spans to
     ALL capture-group spans vs the PCRE2 ovector (unset groups
     included — the -1/-1 convention vs pcrec's contract per

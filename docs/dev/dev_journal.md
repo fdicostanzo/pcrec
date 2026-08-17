@@ -9599,3 +9599,49 @@ decided at expansion) **+ [OPT-ALTCLS] lane + [BENCH-VM] lane** —
 three lanes; [DD-13b] STAYS PAUSED. Sequencing: OPT-ALTCLS merges
 before the at-scale differential run. Budget: re-check with Frank at
 session start (this was the heaviest session on record's sibling).
+
+## 2026-08-17 (EDT), thirtieth session — [M4.7] OPENED; three lanes; [M4.7d] landed
+
+Session opened on Frank's "proceed to build when ready, budget ok" — the
+wake brief's budget re-check discharged in the argument itself. Baseline
+re-verified green before any lane branched (smoke + full test + strict:
+10,257/0, exit 0, matching the standing facts).
+
+**[M4.7] expanded into substeps a-g** (commit a0d2ed1) with the two
+homing decisions the row deferred to expansion: K7 → [M4.7b] (the
+at-scale differential stresses exactly the compile-side resource
+boundary K7 breaks; last stop before M5/M6 widen the surface;
+opus-tier), K9's API half → [M4.7c] sequenced BEFORE the [M4.7f] spec
+graduation (rx_info.pattern_len must exist before the freeze or the
+first spec document is born stale; the compile-entry length parameter
+stays with DD-3 per K9's own note). [M4.7e] (at-scale differential)
+carries the recorded sequencing constraint: after OPT-ALTCLS merges.
+
+**Three sonnet lanes launched** (worktrees off 860dcb6; 10-min stall
+watchdog cron up): altcls ([OPT-ALTCLS] stages 1-3, stage-wise
+delivery so its merge can unblock [M4.7e] early), benchvm ([BENCH-VM]
+cases k/l/m + K-sweep driver upgrade, floor-setting pinned runs held
+for a coordinated quiet window since the box is not quiet with three
+lanes up), fuzzcap ([M4.7d]).
+
+**[M4.7d] fuzzer capture-span extension LANDED** (lane/fuzzcap,
+eaaf600, merge 58717d3): tests/fuzz's differential fuzzer now compares
+every capture-group span against libpcre2's ovector, not just the
+whole-match span. PCRE2_INFO_CAPTURECOUNT (opcode 4) and PCRE2's
+unset-group convention were measured directly rather than assumed —
+PCRE2_UNSET, cast signed (%td/ptrdiff_t, D44.2's element type), is
+bit-for-bit pcrec's own RX_UNSET, so the oracle needed no remapping
+code, and fuzz.py's existing full-line comparison needed no change once
+both sides print the full vector (pair-count mismatches flag for free).
+Generator gained a dedicated ~20%-density capture-shape lane
+(CAPTURE_TEMPLATES: quantified groups, group-around-alternation,
+nested) making the §2.2 cross-iteration-retention /
+empty-final-iteration-overwrite combinations routine. Lane validation:
+8 seeds, 7,000 patterns, 92,985 subject-pair comparisons, 0 content /
+0 accept-reject divergences vs libpcre2 10.46. MANAGER REVIEW ADDED THE
+MISSING POSITIVE CONTROL before merge (the report claimed a green
+differential without proving the new lane could see red — the standing
+check-design lesson): a worktree-local sabotage (+1 on group 1's start
+when set) was detected on 252/252 affected cells with repro bundles;
+reverted, the control re-run was 0/860 clean. The comparison is live,
+not vacuous. Post-merge battery run after the merge commit.
