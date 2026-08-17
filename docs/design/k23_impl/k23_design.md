@@ -1815,12 +1815,20 @@ bound and emit byte-identical C with the pass on and off.
 - **The pcrec-vs-pcrec differential** (§7.4's second item),
   `tests/mrl/run_mrldiff.sh`: the same pattern compiled with the pruning and
   with `-fno-length-prune`, linked into one TU, compared on span + every
-  capture slot + the failure surface, over 61 designed shapes × 2 engines ×
-  a subject sweep = **174,486 cells**. It carries the STRIDE axis R26 E2 added
+  capture slot + the failure surface, over 73 designed shapes × 2 engines ×
+  a subject sweep = **202,458 cells**. It carries the STRIDE axis R26 E2 added
   (bodies of width 1, 2 and 3 at lengths on and off the lattice) and one axis
   this note did not have: **the ENGINE**, because the two ceilings are
-  different arithmetic and only one of them ships. 122 of 128 pattern-engine
-  pairs carried at least one bound, which is the non-vacuity control.
+  different arithmetic and only one of them ships. 138 of 146 pattern-engine
+  pairs carried at least one bound, and the sweep additionally asserts PER-RUNG
+  coverage (mask 0x1f — every rung MRL emits a form for was reached). That
+  second control exists because the first version of the pattern file had a
+  section labelled "revdet" containing six shapes NONE of which reach that
+  rung: they are deterministic fixed-length bodies, so the cursor rung claims
+  them at stride 2 before revdet is ever consulted. The section was green and
+  measured nothing, which is §11.4's lesson recurring in this note's own build
+  — a corpus organised by what the author BELIEVES a shape does, rather than
+  by what the emitter says it does.
 - **The structural assertion the clamp is PRESENT** (§7.4's fourth item):
   `run_mrl_tests.sh`, plus a corpus-wide D47.3 do-or-die and the byte-identity
   gate above.
@@ -1908,3 +1916,59 @@ measured a second time, on the fix for the defect D27 found first.
 - Still open, and stated so the next lane does not have to re-derive it:
   §10 items 3 (libpcre2 as a third oracle — [M4.7]), 5, 8, 10 and 11; §9.2 and
   §9.5 unchanged; §4.7's `maxrest` still not recommended and still not built.
+
+### 14.8 What it costs, measured against the shipped emitter
+
+§6's question, re-taken with the three arms §6 established — pruned, DENIED
+(`-fno-length-prune`, i.e. pre-MRL pcrec byte for byte) and PLACEBO (the
+pruned artifact with its two macros redefined so the bound is computed with
+the same instruction shape and can never bind). Three independent pinned runs,
+best of 9 trials each, `taskset -c 2`, quiet box; full output at
+`../mrl_impl/out/throughput.txt`.
+
+**The clamp's own instructions, at FULL clamp density** on §6's own three
+dense shapes (a real follow, so every replica carries a bound):
+
+| shape | W | clamp, three runs |
+|---|---|---|
+| `(a{2,4}){10,50}b` | 1 | +3.07% / +3.21% / +2.87% |
+| `((?:aa){2,4}){10,50}b` | 2 | +0.50% / +0.52% / +0.53% |
+| `((?:aaa){2,4}){10,50}b` | 3 | +0.34% / +0.49% / +0.40% |
+
+Reproducible to a few hundredths, and CHEAPER at the strides where the lattice
+rule's integer division actually exists than at stride 1, where it is the
+identity. §6 measured +1.16 / +0.83 / +0.48% for the same three shapes with
+its prototype: the two agree on the magnitude and disagree on the ordering,
+which is what a ~0.5% quantity measured two ways looks like.
+
+**The ADOPTION cost** (pruned vs denied, layout included) on those rows is
+−1.27% to +3.24%, sign varying by shape — §6's "inside a ±3% band whose sign
+varies by shape", reproduced against the emitter. The stride-1 dense row is
+FASTER pruned than denied in all three runs.
+
+**One shape is above the band and is reported rather than averaged away.**
+`([a-z]{2,4}){2,8}b` at n=40 costs +4.2 to +8.3% in the clamp column and ~+8%
+total. It is a short subject with a high ratio of bound SITES (two mandatory
+gates plus six cut-before-push tests) to matching WORK — the shape the cost is
+worst on, and one §6's three dense rows do not contain. D51's adoption bar was
+≤2% at full clamp density and this exceeds it.
+
+**The probe needed §6's placebo and learned so the hard way, which is worth
+recording because it is this note's own §11 discipline.** The first version
+ran two arms and reported +27.8% on `(\d{3})-(\d{4})b` — a 12 ns measurement
+on a digit-free subject, where the DFA prefilter answers and the VM is never
+entered, so not one MRL instruction executes on the timed path. Entirely
+layout. The row is KEPT in the archive as the control it turned out to be.
+
+**`make bench`'s gate**, which §10 item 2 records this lane as not having run:
+10/10 green on a quiet box. Case (c) measures 392.445 MB/s against its 388.615
+floor — above the reference, so K24's `noclone` fix holds and MRL did not
+disturb it. **Case (j) is the only bench case MRL can reach at all** (every
+other throughput case compiles `--no-captures` and routes to the DFA —
+`m46a_impl`'s own finding): 148.830 against a 150.369 reference, 1.0% low
+against a margin that catches 1.11x. That is inside the row's noise and is the
+honest reading rather than a claim that the bound is free.
+
+**Emitted C grows 3.7% to 10.9%** (`../mrl_impl/out/sizes.txt`), against §6.2's
++3.2% for the prototype. The exemplar itself is +4.8%. The bigger figures are
+short artifacts where the fixed prologue is a smaller share of the file.
