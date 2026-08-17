@@ -80,6 +80,13 @@ def main():
                          'replicas, and the per-replica minrest formula is '
                          'then simply the wrong arithmetic. See '
                          'k23_design.md section 11.1.')
+    ap.add_argument('--clamp-scan', action='store_true',
+                    help='Fold the clamp into the greedy scan\'s OWN bound '
+                         'instead of clamping after it. Same cut, but the '
+                         'scan never walks past the feasible end, so it also '
+                         'removes FORWARD work -- the quantity D49 gave its '
+                         'own bound (RX_ERR_WORK), which the step counter '
+                         'does not see.')
     ap.add_argument('--placebo', action='store_true',
                     help='THROUGHPUT CONTROL: emit the clamp at exactly the '
                          'same sites, same instruction shape, but with '
@@ -110,17 +117,41 @@ def main():
             continue
         minrest = max(0, a.outer_min - (k + 1)) * a.inner_min * a.stride \
             + a.follow_min
-        out.append(text[last:h.end()])
-        last = h.end()
         if minrest == 0:
+            out.append(text[last:h.end()])
+            last = h.end()
             continue                      # nothing to clamp against
         if a.placebo:
             minrest = 0
-        out.append(
-            '    /* MRL prune (K23 prototype): replica %d still owes %d bytes */\n'
-            '    if (n < %dUL) goto rx_fail;\n'
-            '    if (rx_cur > n - %dUL) rx_cur = n - %dUL;\n'
-            % (k, minrest, minrest, minrest, minrest))
+        if a.clamp_scan:
+            # rewrite the scan block itself: bound the walk by the feasible
+            # end rather than by the subject end
+            blk = text[h.start():h.end()]
+            new = blk.replace(
+                '        unsigned long it_ = 0;\n',
+                '        unsigned long it_ = 0;\n'
+                '        const size_t cap_ = (n < %dUL) ? (size_t)0 : n - %dUL;\n'
+                % (minrest, minrest))
+            new = new.replace('while (rx_cur + ', 'while (rx_cur <= cap_ && rx_cur + ', 1)
+            if new == blk:
+                print('prune_proto: --clamp-scan did not land at slot %d'
+                      % (k + base), file=sys.stderr)
+                sys.exit(1)
+            out.append(text[last:h.start()])
+            out.append(new)
+            out.append(
+                '    if (n < %dUL) goto rx_fail;\n'
+                '    if (rx_cur > n - %dUL) rx_cur = n - %dUL;\n'
+                % (minrest, minrest, minrest))
+            last = h.end()
+        else:
+            out.append(text[last:h.end()])
+            last = h.end()
+            out.append(
+                '    /* MRL prune (K23 prototype): replica %d still owes %d bytes */\n'
+                '    if (n < %dUL) goto rx_fail;\n'
+                '    if (rx_cur > n - %dUL) rx_cur = n - %dUL;\n'
+                % (k, minrest, minrest, minrest, minrest))
         n_patched += 1
     out.append(text[last:])
     open(a.dst, 'w').write(''.join(out))
