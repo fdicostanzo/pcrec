@@ -425,7 +425,11 @@ including V-G/V-H (added this session).
   insertions compose a path ("c:a"). Still open, ruled at V-E design
   time: path spelling/separator, label mandatory-vs-optional for single
   insertions, and lookup-key semantics (name-alone when unambiguous vs
-  ref+name)
+  ref+name). FORMAT OWNERSHIP MOVED 2026-08-17: the manifest FILE
+  FORMAT itself is designed at [DD-13] (one unified format serving the
+  manifest, the test carrier, and pcrec-bench's sets); this row keeps
+  the compilation-unit + finder BUILD and its semantic rulings, which
+  [DD-13] inherits as constraints
 - [V-F] STATE:not-started — the SOURCE-SCAN TRANSFORMER (Frank, 2026-08-12,
   same discussion, same tier): scan a C program's sources for regex
   markers — `auto regex = rx/abc|def/` shaped — and rewrite them to
@@ -715,6 +719,47 @@ spine, not before):
   residual header, core and emitter untouched — if adding one ever
   requires touching a shared file outside the backend directory, that is
   the derailment signal and a design stop
+- [DD-13] STATE:not-started — THE UNIFIED PATTERN-SOURCE / TEST FILE
+  FORMAT (Frank, 2026-08-17, twenty-ninth session; name TBD): ONE file
+  format, grown from .rxt, serving every consumer that today would need
+  its own file kind: (1) the [V-E] MANIFEST — a compilation SOURCE for
+  pcrec (N named patterns → one emitted unit, perhaps several; [V-E]'s
+  named definitions, cross-references via subroutine referencing, and
+  the D39.2 appended-numbering rules all bind here); (2) the TEST
+  CARRIER — cases exactly as .rxt carries them today, co-located per
+  named pattern ([V-G]'s bottom-up subpart testing rides this); (3) the
+  BENCH SET format for ~/pcrec-bench (its APPROACH.md §8 Q1 resolves
+  HERE) — which forces the format to understand DIFFERENT ENGINES /
+  CONFIGURATIONS, not just pcrec. Features Frank named at creation:
+  OPTIONS/CONFIG blocks including EXEMPLAR FILE REFERENCES (large
+  subjects/corpora live in external files, referenced rather than
+  inlined); FILE INCLUDES (so case sets can be extensive and
+  MACHINE-GENERATED without bloating the hand-written source, and so
+  per-engine/per-configuration fragments compose for the bench use);
+  NAMED patterns referring to one another (subroutine referencing).
+  PROCESS, staged and gated — the format is hard to change once
+  adopted ("we should get it right"), so it is built DESIGN-FIRST like
+  the K23 arc:
+  - [DD-13a] REQUIREMENTS note: enumerate every consumer's needs
+    measured against real corpora — the .rxt harness as-is
+    (docs/testing.md), the machine-generated D27 sets, [V-E]'s
+    manifest + finder, [V-F]'s transformer target, [V-G]'s user
+    testing, M4-SUBST templates if they intersect, and pcrec-bench's
+    set needs (feature tags, hazard classes, per-case
+    expectation-verification method, engine/config sections). The
+    compatibility question is answered here: is .rxt a subset, a
+    dialect, or migrated?
+  - [DD-13b] DESIGN note: grammar + semantics (include model, config
+    scoping/precedence, reference/namespace rules, exemplar-file
+    addressing, the machine-generation contract), the migration story
+    for the existing ~10k-case corpus, and single-vs-multiple emitted
+    outputs.
+  - [DD-13c] D6 ADVERSARIAL PANEL on the design, then Frank's ruling.
+    NO parser is written before (c) closes.
+  Scheduling: after the scale work ([M4.6]/[M4.7]) per Frank's
+  2026-08-17 sequencing; (a) is read-only fact-gathering and safely
+  early-schedulable in a session with spare capacity, but does not
+  start unprompted.
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
