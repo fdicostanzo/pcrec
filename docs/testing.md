@@ -280,6 +280,14 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
    directive vocabulary can select `--engine=vm` or a tiny `--step-budget`/
    `--backtrack-frames`, so no case currently reaches this path.
 
+A usage note that follows from [M4.6a]'s calibration sweep (2026-08-17):
+`--engine=vm` is a DIAGNOSTIC mode — it disables the DFA prefilter so the
+two engines are independently comparable (the R21 E-6 ruling), and without
+the prefilter the VM's work on a large subject runs orders of magnitude
+above the default path the budgets were calibrated against. Anyone forcing
+`--engine=vm` over large subjects should pass an explicit `--work-budget`
+sized for that run rather than relying on the default.
+
 The driver includes `"gen.h"`, so it must be compiled with `-I<dir>`
 pointing at the directory containing the pattern's generated `gen.h`. It has
 no dependencies beyond libc.
