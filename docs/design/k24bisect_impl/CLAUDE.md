@@ -90,3 +90,26 @@ diagnosis delivered, fix landed. Anyone revisiting K24 (or finding the
 `noclone` attribute in an artifact and wondering about it) should read
 `k24_fix_note.md`, then `k24_bisect_note.md`, rather than re-deriving either
 the mechanism or the reason the two obvious alternative fixes were rejected.
+
+## Post-lane addendum (manager landing, 2026-08-17)
+
+- **`h2h_case_c.tsv` is HEADER-ONLY** — the lane died on an API 529 before
+  the data rows were archived (its numbers survive in the fix note's prose
+  and the emit_dfa.c comment). **`h2h_case_c_rerun.tsv`** is the manager's
+  independent re-measurement of the LANDED artifact with the committed
+  `lever_probe.sh` (one variant dir, the worktree compiler's own emission):
+  median 390.740 MB/s, mono (no .part clone in nm), 10 pinned trials,
+  384.9-392.5 — confirming the fix against the 388.615 floor from a fresh
+  instrument run, which is what an empty archive costs to repair.
+- **`lever_probe.sh` takes variant DIRECTORIES as arguments** and produces a
+  header-only TSV plus "DONE" when invoked argless — how the empty archive
+  read as complete. If you touch it, make the argless case a loud error.
+- **THE POISONED-CORE INCIDENT, recorded for every future pinned benchmark:**
+  a `timeout`-killed compare.sh leaves its PINNED engine children running;
+  a later grid then timeshares core BENCH_CPU with the orphans and measures
+  ~exactly HALF throughput on every engine (measured: pcrec 194.8 vs 390.0,
+  jit 285 vs 570, python 42 vs 84 — all ~0.5x, tight spreads, so it reads
+  as a stable real number). compare.sh's load guard reads GLOBAL loadavg
+  and 1.07 passed — a load of ~1.0 IS one competitor sitting on the pinned
+  core. Before any pinned measurement: check per-core occupancy
+  (`ps -eo pid,psr,comm | awk '$2==CORE'`), not just loadavg.
