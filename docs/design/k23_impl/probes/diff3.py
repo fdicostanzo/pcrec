@@ -103,6 +103,11 @@ def build(tmp, name, pattern, prune=None):
         cmd = [sys.executable, os.path.join(HERE, 'prune_proto.py'),
                src, pruned, '--outer-min', str(omin),
                '--inner-min', str(imin), '--stride', str(stride)]
+        # K23_PRUNE_EXTRA appends flags to the prune arm. Its reason for
+        # existing is the FAILING-DIRECTION run: `K23_PRUNE_EXTRA=--no-lattice`
+        # re-emits the pre-R26 unrounded clamp, and a corpus that does not go
+        # red under that is not testing the lattice rule.
+        cmd += os.environ.get('K23_PRUNE_EXTRA', '').split()
         # Pass the ASSUMPTION GUARD whenever the pattern is the two-level
         # shape the prototype claims: the outer maximum is how many scan
         # sites a replicated outer must produce. A shape that produces a

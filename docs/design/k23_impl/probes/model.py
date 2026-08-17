@@ -30,6 +30,8 @@ Usage:
   model.py --ratios           python's TIMES vs the law's NODE COUNTS (R26 E8)
 """
 import argparse
+import os
+import re
 
 # MEASURED, by probes/steps.sh on this repo's build. Each row is
 #   (m, M, p, n, steps)
@@ -81,9 +83,14 @@ def check():
     return bad
 
 
-# MEASURED python `re` wall-clock, from out/python_growth.txt (archived by
-# probes/archive.sh). Keyed (m, M, p) at n = p*m, milliseconds.
-PYTHON_MS = {
+# MEASURED python `re` wall-clock, keyed (m, M, p) at n = p*m, milliseconds.
+# READ FROM out/python_growth.txt when it is present, so this is a live
+# reading of the archive rather than a retyped snapshot -- R24 M-F4, and the
+# specific thing R26 M3 caught this note doing with a different pair of
+# numbers. The literals below are the fallback for a checkout whose archive
+# has not been regenerated; a re-run moves them by well under 1%, and the
+# argument is about the RATIOS, which move by less still.
+PYTHON_MS_FALLBACK = {
     (10, 12, 10): 0.86,
     (10, 15, 10): 34.83,
     (10, 20, 10): 265.17,
@@ -91,6 +98,27 @@ PYTHON_MS = {
     (12, 24, 12): 30789.93,
     (13, 26, 13): 368153.26,
 }
+
+_GROWTH_RE = re.compile(
+    r'^\(a\{(\d+),(\d+)\}\)\{(\d+),\d+\}\s+n=\s*\d+\s+([\d.]+)\s+ms')
+
+
+def python_ms():
+    """Parse out/python_growth.txt; fall back to the embedded snapshot."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        '..', 'out', 'python_growth.txt')
+    try:
+        rows = {}
+        for line in open(path):
+            m = _GROWTH_RE.match(line)
+            if m:
+                rows[(int(m.group(1)), int(m.group(2)), int(m.group(3)))] = \
+                    float(m.group(4))
+        if len(rows) >= 5:
+            return rows, 'out/python_growth.txt'
+    except OSError:
+        pass
+    return PYTHON_MS_FALLBACK, 'the embedded fallback snapshot'
 
 
 def ratios():
@@ -101,12 +129,15 @@ def ratios():
     on a RATE rather than one pair agreeing on a value -- and the law was
     derived from pcrec's emitted search, not from python.
     """
-    ks = [(10, 15, 10), (10, 20, 10), (11, 22, 11), (12, 24, 12), (13, 26, 13)]
+    ms, src = python_ms()
+    ks = [k for k in [(10, 15, 10), (10, 20, 10), (11, 22, 11),
+                      (12, 24, 12), (13, 26, 13)] if k in ms]
+    print('python times read from %s\n' % src)
     print('%-18s %-18s %10s %10s %10s'
           % ('from', 'to', 'python', 'law', 'agree'))
     worst = 0.0
     for a, b in zip(ks, ks[1:]):
-        pr = PYTHON_MS[b] / PYTHON_MS[a]
+        pr = ms[b] / ms[a]
         lr = law(b[0], b[1], b[2]) / law(a[0], a[1], a[2])
         d = abs(pr - lr) / lr * 100
         worst = max(worst, d)
