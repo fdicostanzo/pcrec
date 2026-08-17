@@ -447,6 +447,11 @@ append-only or historical records.
   `eng_brep_measurements/` and `possessify_impl/` for the same
   never-confuse-the-lanes reason those two are separate. See its own
   CLAUDE.md.
+- `dd13_format/` — the [DD-13] unified pattern-source/test file format:
+  Frank's accumulated design inputs (frank_inputs.md, append-only, with
+  the OD-n open-decision ledger) ahead of the staged
+  requirements→design→panel process. No parser before [DD-13c] closes.
+  See its own CLAUDE.md.
 - `counterk_impl/` — the [ENG-BREP] COUNTER-K lane's design note, probes and
   archived outputs (the bounded-repeat COUNTER rung: one body copy per K
   iterations plus an iteration counter, replacing full replication), kept

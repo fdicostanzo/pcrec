@@ -759,7 +759,13 @@ spine, not before):
   Scheduling: after the scale work ([M4.6]/[M4.7]) per Frank's
   2026-08-17 sequencing; (a) is read-only fact-gathering and safely
   early-schedulable in a session with spare capacity, but does not
-  start unprompted.
+  start unprompted. FRANK'S DESIGN INPUTS accumulate ahead of (a) in
+  docs/design/dd13_format/frank_inputs.md (append-only, with the OD-n
+  open-decision ledger): per-engine option placement, the
+  last-reference-wins options CASCADE over ordered includes, declared
+  per-library pattern tweaks, configuration sections unifying bench
+  testees with build variants (avx2-vs-baseline), and the
+  interface-vs-reference-only pattern distinction.
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
