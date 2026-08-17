@@ -222,7 +222,9 @@ stated terms.
     (prefilter-window ceiling — v1 with three build obligations vs
     subject-end fallback; a stale window errs UNSOUND, see the
     verification's direction-of-error note).
-  - [M4.6d] STATE:not-started — K23 FIX per (c)'s accepted note; tests
+  - [M4.6d] STATE:started (2026-08-17, twenty-ninth session; lanes: mrl
+    opus build in worktrees/mrl, d27k23 blinded author in a cell) —
+    K23 FIX per (c)'s accepted note; tests
     from a D27-BLINDED author (K23 was itself a D27 find); closes
     known_issues.md K23 and retires the ratchet resident. SEQUENCED
     AFTER counter-K merges (both rewrite emit_vm.c — no parallel lane);
