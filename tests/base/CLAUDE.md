@@ -18,7 +18,7 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
 - **bounded_repeats.rxt** — {m,n} repeat syntax
 - **d27_forms.rxt / d27_bodies.rxt / d27_nesting.rxt / d27_edge.rxt /
   d27_captures.rxt / d27_large_counts.rxt** — the D27 blinded quantifier /
-  bounded-repeat corpus (2026-08-16, cell `brepspec`): 81 blocks / 676 live
+  bounded-repeat corpus (2026-08-16, cell `brepspec`): 81 blocks / 679 live
   case-lines written from the PCRE promise by an author denied `src/` and
   `tests/`, every expectation computed from python `re` and independently
   re-verified by a from-scratch checker. Covers every repeat spelling
