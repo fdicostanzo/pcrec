@@ -16,6 +16,7 @@
 #
 # columns: arm  n  steps  span  group1  group2
 baseline  50   11906349370   0 50   40 50   48 50
+baseline  51    9609677279   0 51   41 51   49 51
 prune     50             6   0 50   40 50   48 50
 prune     51             6   0 51   41 51   49 51
 prune     55             6   0 55   45 55   53 55

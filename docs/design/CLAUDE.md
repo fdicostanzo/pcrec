@@ -447,6 +447,60 @@ append-only or historical records.
   `eng_brep_measurements/` and `possessify_impl/` for the same
   never-confuse-the-lanes reason those two are separate. See its own
   CLAUDE.md.
+- `k23_impl/` — **PROPOSED** ([M4.6c], 2026-08-17): the K23 design-first
+  lane — `../dev/known_issues.md` K23, the exact-minimum ambiguous-
+  decomposition explosion. Recommends **MINIMUM-REMAINING-LENGTH (MRL)
+  PRUNING**: at every point where the emitted VM commits to a subject
+  position it already knows a compile-time lower bound on the bytes any
+  accepting continuation must still consume, and a position with fewer bytes
+  left is provably doomed, so it is cut before a choice point is pushed. On
+  the exemplar `(a{10,20}){10,50}` at 100 bytes the search goes from
+  **10,621,636 steps (10.6x the default budget — the reported
+  `RX_ERR_STEPS`) to 1**, and the forward scan work — D49's brand-new
+  `RX_ERR_WORK` metric — from 55,684,363 to **109**, one pass over the
+  subject. On the three-level `((a{2,4}){5,10}){5,20}` at 50 bytes it goes
+  from **11,906,349,370 steps to 6** with a byte-identical capture vector.
+  The note's spine is that the step count has an exact CLOSED FORM
+  (`Σ_{s≤n} Comp[m,M](s) − p`, the compositions of every subject prefix into
+  parts from the inner range; 9 of 9 measured instances exact), from which
+  D27's black-box characterization DERIVES rather than being restated —
+  including why the outer maximum cancels — and from which a predictive
+  budget-crossing table follows (inner width ≥ 5 crosses 10⁶ at 81-to-100
+  byte subjects). Soundness is STRUCTURAL — pruning removes only leaves with
+  no accepting descendant, so the first accepting path in preference order is
+  untouched and PCRE2 leftmost-greedy captures are exact — and was attacked
+  with an **855-cell three-way differential (baseline / pruned / python `re`,
+  full capture vector) at 0 disagreements**. The two rivals are priced and
+  lose on their own terms: MEMOIZATION is sound (a pure DFS backtracker
+  cannot revisit a state whose subtree succeeded) and gets 5,100x, but needs
+  Θ(points × subject) memory — measured 25,650 B for a 4 KB subject cap, a
+  ~21 KB subject ceiling under D19's 128 KB stack, and it is match-time where
+  K18's memo precedent was compile-time; ENGINE ROUTING is measured to work
+  perfectly (`--no-captures` answers the exemplar instantly at every length
+  including 100,000) and is unavailable, because the DFA is capture-blind and
+  D44.6 refuses a captures-default pattern. **Five refutations, three of them
+  of the K23 entry's own text**: python `re` does NOT answer instantly — it
+  explores the same tree at a comparable per-node cost (272 ms vs pcrec's
+  222 ms with the budget lifted) and takes **32 s** one size up and **384 s**
+  two sizes up, so pcrec's honest refusal is the better behaviour by D22's
+  own bar and K23's justification is "answer a cheap question", not "catch up
+  to python"; the boundary is narrow in SLACK, not in `n`, and spans ~50
+  bytes rather than being a cliff; and a slice of the entry's stated class is
+  ALREADY FIXED — an exact-count inner is possessified today and the outer
+  takes the fixed-stride cursor rung at 0 steps, so the live population is
+  inner width ≥ 1. The fourth refutation is the lane's OWN: the prototype
+  silently mis-patched 44 cells (returning nomatch where the oracle matched)
+  because it assumed every span-loop scan site was an inner loop, and the
+  RANDOMIZED corpus caught what the hand-chosen one structurally could not —
+  the fix is an assumption GUARD that declines out-of-shape files, not better
+  arithmetic. Cost on the common path is measured with a PLACEBO control
+  (same sites, same instruction shape, bound forced vacuous) separating the
+  clamp's own instructions from code-layout drift: ±3%, sign varying by
+  shape, about a third of the worst case attributable to layout. §10 lists
+  nine things not measured, headed by the frames rung under pruning and an
+  independent oracle for the three-level rows. Probes and archived outputs
+  in `k23_impl/probes/` and `k23_impl/out/`; see those directories' own
+  CLAUDE.md files.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

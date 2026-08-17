@@ -75,8 +75,8 @@ Three things make it the recommendation rather than one option of three:
 1. **"python `re` answers instantly"** (`known_issues.md` K23) is true of the
    exemplar and false of its mechanism. Python explores the SAME tree at a
    comparable per-node cost — 272 ms on the exemplar against pcrec's 222 ms
-   with the budget lifted — and one size up it takes **32 s**, two sizes up
-   **384 s**. §3.
+   with the budget lifted — and it takes **2.9 s** one size up, **32 s** two
+   sizes up and **384 s** three sizes up. §3.
 2. **"The boundary is NARROW"** is right about the number and wrong about the
    variable. It is not narrow in `n`; it is narrow in SLACK (`n − p·m`), and
    the decay from the peak is geometric over ~50 bytes, not a cliff. §2.1.
@@ -400,13 +400,20 @@ The claim: pruning changes no answer, including no capture.
    continuation exists from `(q, pos)`.
 2. Every position the clamp removes is therefore a position whose subtree
    contains no accepting leaf.
-3. Preference order among the SURVIVING positions is untouched — the clamp
-   removes leaves, it never reorders alternatives, never converts greedy to
-   lazy, never changes which branch is the fallthrough.
+3. Preference order among the SURVIVING positions is untouched. The clamp
+   deletes candidates and the subtrees below them; it never reorders
+   alternatives, never converts greedy to lazy, never changes which branch is
+   the fallthrough, and never introduces a candidate that was not there.
 4. PCRE2 leftmost-first is "FIRST COMPLETE MATCH WINS" (`engine_m4.md` §3.1),
    so the answer is determined by the first accepting leaf in preference
-   order. Removing non-accepting leaves cannot move it.
-5. Therefore span and every capture slot are unchanged.
+   order. Deleting subtrees that contain no accepting leaf cannot move it.
+5. Therefore span and every capture slot are unchanged — including the
+   capture spans D44.1 derives FROM THE CURSOR at loop exit rather than
+   writing per iteration, since the cursor's surviving preferred value is by
+   (3) the same value it would have taken unclamped.
+6. The clamp is stated against the absolute subject end `n`, not against the
+   attempt's start position, so it is unchanged by the search entry's
+   start++ retry loop. §7.3 exercises that axis.
 
 The single failure mode is an UNSOUND analysis — a `minrest` that
 OVER-estimates. Under-estimating is always safe (it prunes less), which is
@@ -602,11 +609,14 @@ that matter here:**
    (`COPY_MATCHED_SUBJECT=NEVER`'s precedent, `engine_m4.md` §2.2).
    K18's memo precedent does not transfer — that one was COMPILE-time, where
    allocation is ordinary.
-2. **It does not actually fix the exemplar.** 2,071 steps is under the budget
-   today, but it is 2,071 against pruning's 1, and it is a per-subject-byte
-   quantity: the memo turns exponential into polynomial, while pruning turns
-   it into linear-in-`p`. On a subject at the memo's own ceiling the counts
-   would be three orders of magnitude larger again.
+2. **It does not actually fix the exemplar, it bounds it.** The memo caps
+   total steps at `q·n` — 50 × 100 = 5,000 here, and 2,071 measured, which is
+   the consistency check on the mechanism. But that bound GROWS WITH THE
+   SUBJECT where pruning's does not: at the memo's own ~20,971-byte ceiling
+   from item 1 the cap is `50 × 20,971 ≈ 1.05 M`, which is the default step
+   budget again. The memo trades an exponential for a linear-in-`n`
+   quantity; pruning trades it for a linear-in-`p` one, and `p` is a property
+   of the pattern.
 3. **It costs on the common path in a way pruning does not.** Every loop
    entry does a table read, a table write, and a bounds test against the cap,
    on the FORWARD path, for every pattern that carries a memo — where MRL's
