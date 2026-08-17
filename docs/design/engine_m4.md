@@ -324,7 +324,11 @@ Five properties of that shape, each of which is a decision:
    reverse preference order. (BELIEVED optimization, deferred to M4.6: a
    trie-factored alternation — the D9 machinery already in `nfa.c` — should
    emit as a first-byte switch with no pushes at all where branches are
-   pairwise-disjoint on their first byte.)
+   pairwise-disjoint on their first byte. **MEASURED ([M4.6e], 2026-08-17):
+   real (+18% worst-vs-best branch position on a 5-way disjoint alternation)
+   but narrow — 6.34% of the corpus's own capture-bearing patterns and
+   neither shipped capture-bearing bench shape. DEFERRED, not built; §6.4's
+   status row carries the numbers.**)
 5. **Position is a plain local.** Restored from the resume frame, never
    trailed.
 
@@ -1586,7 +1590,7 @@ APPROACH §2 defines three strengths. What M4 does with each:
 | Short-subject threshold `RX_HYBRID_MIN` | seam designed, value MEASURED at M4.6 |
 | Accept-list islands | deferred, §6.3 |
 | Tagged automata (islands spanning captures) | deferred beyond M4 |
-| Trie-factored alternation emitting a first-byte switch with no pushes | deferred to M4.6, measured |
+| Trie-factored alternation emitting a first-byte switch with no pushes | **MEASURED ([M4.6e], 2026-08-17), DEFERRED — not built.** Candidate fraction: 22/1146 (1.92%) of ALL corpus patterns, 22/347 (6.34%) of CAPTURE-BEARING (VM-forced) corpus patterns, are heuristically first-byte-disjoint alternations that could take the path — and NEITHER shipped capture-bearing bench shape (case j; case c's alternation is pinned `--no-captures` and never reaches `vm_alt`) is a hit. Measured payoff on two real disjoint-alternation shapes (branch-position sweep, isolating `vm_alt`'s N-1-push chain, src/gen/emit_vm.c:1783): a 5-way word alternation's worst branch position costs +18% over its best (~23 ns of ~130 ns/call); a 3-way HTTP-method dispatch costs +3-4%. Real but narrow (D18: "an axis must earn itself") — declined for now rather than building a new emitter analysis (with its own D46 stamp+force pair and sabotage-matrix obligation, `src/opt/CLAUDE.md`'s established cost for a selection axis) against a shape that is 6% of even the adversarial correctness corpus and absent from the bench suite's own capture-bearing floors. Revisit if [BENCH-1]/[ENG-PGO]-class evidence surfaces a real customer, the same evidence-gate D50 used to re-home exact islands (§6.3, above). Data: `m46e_impl/out/trie_switch_sweep.txt`; probe: `m46e_impl/probes/trie_switch.py`. |
 
 ---
 
@@ -2015,6 +2019,41 @@ run, per the docs-only scope.
   passes + one VM pass) loses to VM-only. Bench case (i)'s 60-byte regime is
   the target. **Prediction: the threshold is nonzero and small — low hundreds
   of bytes.**
+  **MEASURED ([M4.6e], 2026-08-17): the prediction is REFUTED on both the
+  VARIABLE and the MAGNITUDE, and the branch is NOT built.** A subject-length
+  sweep at fixed match offset (`<prefix>_search`'s naive `start=startpos;
+  retry start++` outer loop, src/gen/emit_vm.c ~4728-4744, the arm taken with
+  no prefilter attached) shows hybrid's ns/call is FLAT across n (60 to 4096
+  bytes, three capture-bearing shapes) — its cost is the two DFA passes' own
+  fixed call/setup overhead plus a memchr-speed skip, both length-invariant
+  at these scales — while VM-only's ns/call is essentially INVARIANT TO n
+  and instead tracks the OFFSET of the first real match attempt, growing
+  ~linearly with it (one full computed-goto function call per candidate
+  start position, not a vectorized skip). The crossover is therefore a
+  function of OFFSET, not LENGTH, and n alone cannot see it: at n=300 the
+  three representative shapes cross at offset 8-12 bytes for two of them
+  (`a(b|c)+d`, `(\d{3})-(\d{4})`) and NEVER cross for the third
+  (`([01]*)1([01]{8})`, bench case (j)'s own pattern — hybrid wins even at
+  offset 0, because that body's own per-attempt VM cost already exceeds the
+  hybrid's fixed tax). A `n < RX_HYBRID_MIN` branch built on length alone
+  would therefore either (a) leave the true win-region (near-zero offset)
+  uncaught at any length, since a match at offset 0 in an 8192-byte subject
+  loses to VM-only exactly as badly as one in a 60-byte subject (measured:
+  +115.9% at n=60, +115.9% at n=4096, `a(b|c)+d` offset 0, three-run
+  reproducible), or (b) if set generously enough to "catch" bench case (i)'s
+  own 60-byte regime, REGRESS the case it is named to protect: case (i)'s
+  actual buffer (`z`*20 + `abcbcd` + `q`*34, offset 20) is already past the
+  8-12 byte crossover and measures **hybrid 65% FASTER than VM-only** on
+  that exact shape. There is no length threshold that helps the regime it
+  was designed for. Full sweep (three independent pinned runs, taskset,
+  best-of-9, plus a length-invariance confirmation table):
+  `m46e_impl/out/hybrid_min_sweep.txt`; probe: `m46e_impl/probes/hybrid_min.py`.
+  Not escalated to a numbered decision — no prior ruling is being
+  overridden, ASK-6 is a "measurement wanted" row and this is the
+  measurement, with the seam left exactly as designed (a runtime branch
+  CAN still be added by a future lane if it targets the right variable —
+  candidate start offset, not subject length — but that is new design, not
+  what this ASK specified, and out of this lane's mandate).
 - **ASK-7 — VM compile-time scaling.** gcc's time on the emitted VM as a
   function of pattern size, against R1 A-3's measured DFA curve (2048 states →
   63 s, 8192 → DNF). **Prediction: linear, and nowhere near the DFA curve,
