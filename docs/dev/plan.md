@@ -956,7 +956,26 @@ execution speed trades the primary goal (D18) for the secondary one.
   alternation-spelling vs class-spelling on identical subjects
   (match + all capture slots), and the survey question "what do PCRE2/
   RE2 normalize here" answered by MEASUREMENT not docs. Sonnet-sized;
-  Frank schedules.
+  Frank schedules. THE GENERALIZATION LADDER (Frank probing for the
+  larger algo, 2026-08-17, measured same conversation): per-position
+  class merging of MULTI-char branches is UNSOUND — classes are
+  position-independent, branches carry cross-position correlation
+  (`frank|fred` → `fr[ae][nd]k?` accepts the cross-products fran/
+  fredk/frad/fren: 4/6 probe mismatches vs python, verified). The
+  correlation-preserving forms, cheap→general: (1) this row's
+  single-char merge (no correlation exists); (2) PREFIX/SUFFIX
+  FACTORING at the AST level (`frank|fred`→`fr(ank|ed)` — sound,
+  branch-order-preserving; the DFA engine has it via M2.8's trie, VM
+  emission does NOT factor today — a candidate second stage of this
+  row if measured worth it); (3) full fragment DETERMINIZATION with
+  direct automaton emission = [ENG-ISL] exactly (states encode the
+  correlations; the overlap/preference subtlety — leftmost-FIRST vs
+  DFA-longest on `foo|foobar` shapes — is the exactness proof that
+  row already owns). DFA→regex re-spelling is rejected as a route
+  (state-elimination blowup, loses preference); the automaton is the
+  final form, not a rewritten pattern. Frank's shape class is itself
+  candidate D50-gate evidence for [ENG-ISL] if bench/PGO shows it
+  hot.
 - [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it
 - [ENG-ABS] STATE:not-started — ENG_UNANCH absorbs `^` (the DD-7
   absorption half, re-homed here 2026-08-14, D42.7): D8 left `^` on
