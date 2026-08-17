@@ -976,11 +976,31 @@ execution speed trades the primary goal (D18) for the secondary one.
   -15.0..-15.6% reproducible — per-attempt savings amplify under
   repetition, the keyword-tokenizer shape. Stage 2 is therefore
   chartered WITH stage 1; probe was session-scratch, re-run under the
-  row's own D35-archived instrument at build); (3) full fragment DETERMINIZATION with
+  row's own D35-archived instrument at build); (2b, STAGE 3 — Frank,
+  same conversation, from the `(?=[a-f])(?:a|...|f)` idea):
+  FIRST-SET ENTRY GUARDS — for an alternation of multi-char branches,
+  emit ONE derived first-byte-set bitmap test (`frank|...|janet` →
+  `[fbj]`) before the branch cascade. Needs NO lookahead module — the
+  FIRST set is a compile-time fact the emitter plants like MRL plants
+  its bound; note the all-single-char case is stage 1's territory
+  (the class IS the whole match, no guard needed). Economics: saves
+  the REJECT path (1 test vs N first-byte compares, grows with N),
+  costs +1 test on the accept path — earns where reject-traffic × N
+  is large, which the hybrid's prefilter TEMPERS (VM reject traffic
+  is mostly once-per-loop-exit in quantified alternations): strictly
+  measure-at-build. Generalizes past alternations (any choice point
+  can carry its FIRST-set guard); DUALITY worth keeping: MRL is
+  length-viability, FIRST sets are byte-viability — cheap
+  necessary-condition guards whose everywhere-limit IS the DFA.
+  PCRE2/RE2 both compute start-byte sets — survey by measurement.
+  Adjacent: the unfiled required-byte prescan/skip OPT idea is this
+  family's scan-side sibling. (3) full fragment DETERMINIZATION with
   direct automaton emission = [ENG-ISL] exactly (states encode the
   correlations; the overlap/preference subtlety — leftmost-FIRST vs
   DFA-longest on `foo|foobar` shapes — is the exactness proof that
-  row already owns). DFA→regex re-spelling is rejected as a route
+  row already owns; the ladder 1→2→2b→3 is a lattice of PARTIAL
+  DETERMINIZATIONS, each trading compile-time analysis and code size
+  for run-time checks removed). DFA→regex re-spelling is rejected as a route
   (state-elimination blowup, loses preference); the automaton is the
   final form, not a rewritten pattern. Frank's shape class is itself
   candidate D50-gate evidence for [ENG-ISL] if bench/PGO shows it
