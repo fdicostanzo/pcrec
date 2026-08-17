@@ -64,12 +64,22 @@
  * The two array caps are bounded by D19's 128 KB thread stack rather than
  * chosen for generosity: rx_work is a LOCAL of the search entry, a resume
  * frame is 24 B and a trail entry 16 B (D44.1's measured per-entry constants),
- * so 1024 + 1536 is ~49 KB — a large but survivable share of that budget, and
- * the reason the residual unbounded class carries a stamped subject_ceiling
- * instead of pretending the limit is not there. */
+ * so 2048 + 3072 is ~96 KB — a large but survivable share of that budget
+ * (~32 KB remains for the entry's scalars and callees), and the reason the
+ * residual unbounded class carries a stamped subject_ceiling instead of
+ * pretending the limit is not there. RECALIBRATED [M4.6a] 2026-08-17 (was
+ * 1024/1536 ≈ 49 KB, a bring-up value): the corpus-and-scale sweep
+ * (docs/design/m46a_impl/) measured the shipped default's real reach on the
+ * exposed shape class (same-trailing-byte capturing alternations, which miss
+ * the revdet rung and fall to frames-unbounded) at a 256-byte
+ * subject_ceiling — small for legitimate multi-token text; 2x doubles reach
+ * to ~512 bytes and is the maximum headroom-preserving step under D19
+ * (~2.6x is the absolute fit). Multi-KB reach needs an ENGINE change
+ * (cursor/revdet eligibility for same-trailing-byte alternations), not this
+ * knob. */
 enum {
-    VM_DEFAULT_BT_FRAMES    = 1024,
-    VM_DEFAULT_TRAIL_FRAMES = 1536,
+    VM_DEFAULT_BT_FRAMES    = 2048,
+    VM_DEFAULT_TRAIL_FRAMES = 3072,
     /* Exact sizing (§2.5: "where the pattern's dynamic depth is statically
      * bounded the emitter computes the exact requirement") is clamped here.
      * Past the clamp the requirement is bounded but does not fit the stack
