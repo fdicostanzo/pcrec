@@ -56,6 +56,31 @@ typedef void (*fn_match_data_free)(pcre2_match_data_8 *match_data);
 typedef void (*fn_code_free)(pcre2_code_8 *code);
 typedef int (*fn_get_error_message)(int errorcode, unsigned char *buffer,
     PCRE2_SIZE bufflen);
+typedef int (*fn_pattern_info)(const pcre2_code_8 *code, uint32_t what,
+    void *where);
+typedef uint32_t (*fn_get_ovector_count)(pcre2_match_data_8 *match_data);
+
+/* [M4.7d] MEASURED (not read from documentation), against libpcre2 10.46 on
+ * this box, tests/fuzz/CLAUDE.md's "measured, never assumed" discipline
+ * applied to a PCRE2 constant this project had not needed before: querying
+ * `pcre2_pattern_info_8(code, N, &val)` for `(a)(b)(c)` returned val==3 only
+ * at N==4, for `(a)|(b)` val==2 only at N==4, and for `(a)|(b)(c)` val==3
+ * only at N==4 — three independent patterns with distinct group counts, one
+ * candidate consistent with all three. This is PCRE2_INFO_CAPTURECOUNT: the
+ * lexical capturing-group count, the same fact pcrec's `ngroups` names (C9,
+ * match_api_m4.md — group numbering/counting is unaffected by M4). The same
+ * probe measured PCRE2's unset-group convention: with the ovector sized to
+ * exactly `capturecount + 1` pairs, every group that never participated in
+ * the match — including ones numbered ABOVE the highest group that did
+ * participate, not merely ones within `rc`'s range — reads back
+ * `(PCRE2_SIZE)-1` in BOTH offsets (`PCRE2_UNSET`, all bits set). Cast to a
+ * signed type of the same width (`ptrdiff_t` here, matching
+ * `<prefix>_search`'s own D44.2 element type) this prints as literal `-1`,
+ * bit-for-bit identical to pcrec's `RX_UNSET` — so tests/fuzz/pcre2_oracle.c
+ * needs NO numeric remapping between the two engines' unset conventions,
+ * only a same-format print on both sides. See tests/fuzz/README.md's
+ * "Capture-group span comparison" section for the full transcript. */
+#define PCRE2_ABI_INFO_CAPTURECOUNT 4
 
 /* One struct, not eight file-scope pointers: a consumer that uses only some of
  * them still "uses" the variable, so -Wunused-variable stays meaningful for
@@ -69,6 +94,8 @@ typedef struct {
     fn_match_data_free     match_data_free;
     fn_code_free           code_free;
     fn_get_error_message   get_error_message;
+    fn_pattern_info        pattern_info;        /* [M4.7d] */
+    fn_get_ovector_count   get_ovector_count;   /* [M4.7d] */
 } Pcre2Abi;
 
 /* Candidate names to dlopen: the SONAME first (always present with the runtime
@@ -114,6 +141,8 @@ static inline int pcre2_abi_load(Pcre2Abi *abi, char *why, size_t whysz)
         {"pcre2_match_data_free_8",      (void **)&abi->match_data_free},
         {"pcre2_code_free_8",            (void **)&abi->code_free},
         {"pcre2_get_error_message_8",    (void **)&abi->get_error_message},
+        {"pcre2_pattern_info_8",         (void **)&abi->pattern_info},
+        {"pcre2_get_ovector_count_8",    (void **)&abi->get_ovector_count},
     };
     for (size_t i = 0; i < sizeof want / sizeof want[0]; i++) {
         dlerror();

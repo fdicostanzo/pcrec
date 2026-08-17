@@ -24,7 +24,26 @@
  *   startpos     optional byte offset to start the search from (default 0).
  *
  * Prints exactly one line to stdout:
- *   "match <start> <end>"   PCRE2 found a match; byte offsets, end exclusive
+ *   "match <s0> <e0> [<s1> <e1> ...]"
+ *                           PCRE2 found a match; byte offsets, end exclusive.
+ *                           [M4.7d]: the pair at index 0 is the WHOLE MATCH
+ *                           (as before); every subsequent pair is capture
+ *                           GROUP k's span, k = 1..capturecount, in PCRE2's
+ *                           own numbering (left-to-right by opening paren,
+ *                           C9 -- the same numbering pcrec uses, so the two
+ *                           sides' pairs line up positionally with no
+ *                           renumbering). A group that did not participate
+ *                           in the match prints as "-1 -1" (see
+ *                           tests/fuzz/pcre2_abi.h's PCRE2_ABI_INFO_
+ *                           CAPTURECOUNT comment for the measurement behind
+ *                           this: PCRE2_UNSET, cast to a signed type of the
+ *                           same width, IS literal -1 in both slots --
+ *                           bit-for-bit pcrec's own RX_UNSET, no remapping).
+ *                           The pair count is exactly capturecount+1,
+ *                           queried via pcre2_pattern_info_8 right after
+ *                           compile, so the ovector is always sized to hold
+ *                           every group the pattern text declares (never
+ *                           just the ones that happened to participate).
  *   "nomatch"               PCRE2 compiled the pattern and genuinely found
  *                           no match (pcre2_match_8 returned exactly
  *                           PCRE2_ERROR_NOMATCH, i.e. -1)
@@ -49,8 +68,16 @@
  *                           "(((b{0,})){2,}){0,}$" against a 9-byte run of
  *                           'b' plus one non-'b' byte returns rc=-47 (not
  *                           -1) from pcre2_match_8.
+ *   "ovtoosmall <code>"     [M4.7d] defensive-only, not expected to ever
+ *                           print: pcre2_match_8 returned 0, meaning the
+ *                           ovector this file allocated (capturecount+1
+ *                           pairs, queried moments earlier from the SAME
+ *                           compiled code) was too small to hold every
+ *                           captured offset. A harness bug if it ever
+ *                           fires, not a verdict -- treated as inconclusive
+ *                           by fuzz.py, same bucket as "mlimit".
  *
- * Exit codes: 0 normal (any of the three outcomes above was printed),
+ * Exit codes: 0 normal (any of the outcomes above was printed),
  * 2 usage error, 3 failed to load/resolve the PCRE2 library at runtime.
  */
 /* FIRST: pcre2_abi.h defines _GNU_SOURCE, which must precede every libc
@@ -157,11 +184,29 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    pcre2_match_data_8 *md = pcre2.match_data_create(16, NULL);
+    /* [M4.7d]: size the ovector to exactly capturecount+1 pairs -- the whole
+     * match plus every capturing group the PATTERN TEXT declares (C9's
+     * lexical fact, independent of whether a given group participates in
+     * any one match), queried fresh from the just-compiled code rather than
+     * assumed. This is what makes PCRE2 write PCRE2_UNSET into every
+     * non-participating group's pair, including ones numbered above the
+     * highest one that DID participate -- see pcre2_abi.h's measurement
+     * comment. A too-small ovector would leave those undefined instead. */
+    uint32_t ngroups = 0;
+    pcre2.pattern_info(re, PCRE2_ABI_INFO_CAPTURECOUNT, &ngroups);
+
+    pcre2_match_data_8 *md = pcre2.match_data_create(ngroups + 1, NULL);
     int rc = pcre2.match(re, (PCRE2_SPTR)subj, subjlen, startpos, 0, md, NULL);
     if (rc == -1) {
         /* PCRE2_ERROR_NOMATCH: a genuine verdict. */
         printf("nomatch\n");
+    } else if (rc == 0) {
+        /* Defensive only -- see the header comment's "ovtoosmall"
+         * documentation. Should never fire: the ovector above is sized from
+         * the SAME compiled code's own capturecount. */
+        fprintf(stderr, "pcre2_oracle: ovector too small for ngroups=%u "
+                "(harness bug, not a verdict)\n", ngroups);
+        printf("ovtoosmall %u\n", ngroups);
     } else if (rc < 0) {
         /* Some other negative code (match/heap/depth limit, ...): PCRE2's
          * own safeguard tripped, not a match/no-match verdict. See the
@@ -171,8 +216,17 @@ int main(int argc, char **argv)
         fprintf(stderr, "pcre2_oracle: match-time limit hit (rc=%d): %s\n", rc, buf);
         printf("inconclusive %d\n", rc);
     } else {
+        /* [M4.7d]: every pair 0..ngroups, not just the whole match -- see
+         * this file's own header comment. ptrdiff_t/"%td", matching
+         * <prefix>_search's D44.2 element type and fuzz_driver.c's own
+         * print, so a group's UNSET pair ((PCRE2_SIZE)-1 in both offsets)
+         * prints as literal "-1 -1" on both sides of the comparison with no
+         * conversion step. */
         PCRE2_SIZE *ov = pcre2.get_ovector_pointer(md);
-        printf("match %zu %zu\n", (size_t)ov[0], (size_t)ov[1]);
+        printf("match");
+        for (uint32_t k = 0; k <= ngroups; k++)
+            printf(" %td %td", (ptrdiff_t)ov[2 * k], (ptrdiff_t)ov[2 * k + 1]);
+        printf("\n");
     }
 
     pcre2.match_data_free(md);

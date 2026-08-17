@@ -15,9 +15,31 @@ fuzz`), not part of `make test` — see README.md for why.
   `\v` bug this project already paid for. The loader returns a status instead
   of exiting, because the two consumers need opposite policies: the fuzz oracle
   must fail hard, and pcre2_check.c (inside `make test`) must skip loudly.
+  **[M4.7d]** added `pcre2_pattern_info_8` and `pcre2_get_ovector_count_8` to
+  the resolved symbol set, plus `PCRE2_ABI_INFO_CAPTURECOUNT` (opcode `4`,
+  MEASURED — dlopen'd libpcre2 has no header here to read the constant off
+  of, so this project's standing discipline is to probe it: three patterns
+  with distinct group counts, one candidate opcode consistent with all
+  three; see the macro's own comment for the transcript). Both new symbols
+  are REQUIRED by `pcre2_abi_load()` now, same as every existing one — a box
+  whose libpcre2-8 lacks them fails the fuzz oracle hard (unchanged policy)
+  and makes `pcre2_check.c` skip louder (unchanged policy, wider trigger);
+  not expected on any box with a stock `libpcre2-8-0` package, confirmed
+  present on this one.
 - **pcre2_oracle.c** — the PCRE2 8-bit CLI oracle, now built on pcre2_abi.h. `pcre2_oracle 'PATTERN'
-  <subject-file> [startpos]` → `match S E` / `nomatch` / `cerr <code>` /
-  `mlimit <code>` (PCRE2 match-limit safeguard tripped — not a verdict).
+  <subject-file> [startpos]` → `match S0 E0 [S1 E1 ...]` / `nomatch` /
+  `cerr <code>` / `mlimit <code>` (PCRE2 match-limit safeguard tripped — not
+  a verdict) / `ovtoosmall <code>` (defensive-only, not expected to fire —
+  see below). **[M4.7d]**: the `match` line now carries EVERY capture-group
+  span (index 0 the whole match, index `k` group `k`), not just the whole
+  match — the ovector is sized to `capturecount + 1` pairs, queried fresh
+  per pattern via `pcre2_pattern_info_8` right after compile, which is also
+  what makes a never-participated group read back `(-1, -1)` in both
+  offsets rather than undefined memory (PCRE2_UNSET, all bits set — cast to
+  a signed type of the same width this IS the literal `-1`, bit-for-bit
+  pcrec's own `RX_UNSET`, so no numeric remapping exists anywhere in this
+  file — see tests/fuzz/README.md's "Capture-group span comparison" for the
+  measurement transcript this rests on).
 - **fuzz_driver.c** — subject-from-file driver template for pcrec-generated
   matchers, owned by this fuzzer (not a reuse of tests/harness/driver.c).
   Compiled ONCE against a throwaway pattern and reused for every subsequent
@@ -28,11 +50,14 @@ fuzz`), not part of `make test` — see README.md for why.
   pattern's own group count — see this file's own header comment and
   README.md's "RX_NCAPS is NOT part of what's shared" section for the
   274/317-divergence stack-smash this caused before the fix, this session).
-  Prints `match S E` / `nomatch` / `steps` (RX_ERR_STEPS) / `frames`
-  (RX_ERR_FRAMES) — never `TIMEOUT`, that's fuzz.py's own subprocess-level
-  sentinel for a hung child, distinct from a bounded-budget verdict.
-  `tests/registry/pc4_driver.c` shares the identical shared-driver trick and
-  had the identical latent bug, fixed the same session (README.md).
+  Prints `match S0 E0 [S1 E1 ...]` (**[M4.7d]**: every `caps[k]` pair, `k` in
+  `[0, rx_info.ncaps)` — was whole-match-only before) / `nomatch` / `steps`
+  (RX_ERR_STEPS) / `frames` (RX_ERR_FRAMES) — never `TIMEOUT`, that's
+  fuzz.py's own subprocess-level sentinel for a hung child, distinct from a
+  bounded-budget verdict. `tests/registry/pc4_driver.c` shares the identical
+  shared-driver trick and had the identical latent bug, fixed the same
+  session (README.md) — its own output stays whole-match-only, since PC-3's
+  pattern space carries no capturing constructs (see its own file comment).
 - **fuzz.py** — generator + comparator + runner:
   `python3 tests/fuzz/fuzz.py [--seed N] [--patterns 300] [--subjects 15]
   [--keep] [--jobs N]`. Deterministic per `--seed`. See its module
@@ -61,7 +86,18 @@ fuzz`), not part of `make test` — see README.md for why.
   decoration. A template is `.format`ted with `{a}/{b}/{q}`, so a literal
   brace in a row must be DOUBLED (`{{0,2}}`); an unescaped one raises
   `KeyError` inside `gen_trap` on the draw that picks it, which is a broken
-  fuzzer rather than a broken trap. Do not add a row for a bug that is still OPEN: traps run inside
+  fuzzer rather than a broken trap. **[M4.7d]** added the sibling
+  `CAPTURE_TEMPLATES`/`gen_capture()` (same `.format()` mechanism, same
+  brace-doubling rule), drawn at ~20% density in `main()`'s pattern loop
+  (mutually exclusive with the ~8% trap lane) specifically to make the
+  quantified-group / group-around-alternation / nested-group combinations
+  routine rather than incidental — the unbiased grammar produces SOME
+  capturing group often (`gen_atom`'s own ~14%-per-draw rate) but rarely
+  lands a quantifier directly around one or a group directly inside another
+  quantified group in the same draw. This lane's subjects run up to 8 bytes
+  (the trap lane's run up to 4) because capture-span bugs (cross-iteration
+  retention, empty-final-iteration overwrite) need multiple loop iterations
+  to surface at all. Do not add a row for a bug that is still OPEN: traps run inside
   `make fuzz`, which must stay green, so deferred bugs belong in
   `tests/known_fail/` instead. Compiles every pattern with an explicit
   `--step-budget=STEP_BUDGET` (env-overridable, README.md "Step/frame budget

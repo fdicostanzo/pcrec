@@ -23,14 +23,22 @@ regression which is an unconditional pass/fail gate.
   has the PCRE2 8-bit runtime but no `-dev` package, so there's no
   `pcre2.h`, no unversioned `.so` symlink, and no pkg-config file — direct
   `#include <pcre2.h>` / `-lpcre2-8` are both unavailable). Usage:
-  `pcre2_oracle 'PATTERN' <subject-file> [startpos]`, prints `match S E` /
-  `nomatch` / `cerr <code>` / `mlimit <code>` (see below).
+  `pcre2_oracle 'PATTERN' <subject-file> [startpos]`, prints
+  `match S E [g1s g1e ...]` / `nomatch` / `cerr <code>` / `mlimit <code>` /
+  `ovtoosmall <code>` (see below). **[M4.7d]**: the `match` line carries
+  every capture-group span, not just the whole match — see "Capture-group
+  span comparison" below.
+- `pcre2_abi.h` — the hand-declared PCRE2 8-bit ABI slice + dlopen loader,
+  shared with `tests/registry/pcre2_check.c`. **[M4.7d]** added
+  `pcre2_pattern_info_8` (capture-group count) and `pcre2_get_ovector_count_8`.
 - `fuzz_driver.c` — a small driver template for pcrec-generated matchers,
   used only by this fuzzer. Deliberately **not** a reuse of
   `tests/harness/driver.c` (which the base-tier harness owns and may
   change shape independently): this one reads its subject from a file
   (not argv) and accepts an optional `startpos`, mirroring
-  `pcre2_oracle`'s CLI so the two are directly comparable.
+  `pcre2_oracle`'s CLI so the two are directly comparable. **[M4.7d]**:
+  prints every `caps[k]` pair (`k` in `[0, rx_info.ncaps)`), matching
+  `pcre2_oracle`'s own multi-pair format.
 - `fuzz.py` — the generator + comparator + runner. See its module
   docstring and the `EXCLUDED FROM GENERATION` comment block for the full
   rationale of what's deliberately not generated and why.
@@ -71,6 +79,13 @@ negation and ranges, using only forms already verified accepted by pcrec —
 see `tests/base/classes.rxt`), alternation, greedy/lazy `* + ? {m,n}`
 (counts kept `<= 30`), capturing and non-capturing groups, and `^`/`$`
 atoms (including mid-pattern `$`, fully supported since the R1 S-C1 fix).
+**[M4.7d]**: `CAPTURE_TEMPLATES` (fuzz.py) additionally injects, at ~20%
+density, dedicated capture-bearing shapes — quantified capturing groups,
+groups wrapping alternation, nested groups, nullable/optional group bodies —
+the specific combinations that exercise cross-iteration retention and
+empty-final-iteration overwrite (match_api_m4.md's [M4.5d] addendum), which
+the unbiased grammar rolls far less often than "some capturing group exists
+somewhere." See "Capture-group span comparison" below.
 Subjects: random bytes over each pattern's own literal alphabet plus
 newlines and high bytes (0-120 bytes), and "derived" subjects that embed an
 approximate matching fragment of the pattern (see `sample()` in fuzz.py) —
@@ -138,9 +153,16 @@ A run's summary breaks results into:
   `PCRE2_ERROR_NOMATCH` — e.g. `-47` "match limit exceeded"). This is
   **not** a match/no-match verdict, so it's never compared against
   pcrec's output. See "Finding 1" below for why this exists and matters.
+  **[M4.7d]**: also absorbs `ovtoosmall` — `pcre2_oracle.c`'s own
+  defensive-only "the ovector I sized from this pattern's own capturecount
+  turned out too small" case (see "Capture-group span comparison" above),
+  not expected to ever fire.
 - **content divergences** — both engines accepted the pattern, both ran to
   a real verdict, and they disagree on match/nomatch or the exact span.
-  Always actionable; written to `failures/`.
+  **[M4.7d]**: "the exact span" now means EVERY capture-group span, not
+  just the whole match — see "Capture-group span comparison" above for the
+  format and the measured PCRE2 unset-group convention behind it. Always
+  actionable; written to `failures/`.
 
 ## Triaging a divergence
 
@@ -161,6 +183,95 @@ A run's summary breaks results into:
    `pcre2_oracle` already distinguishes genuine no-match (`-1`) from a
    safeguard trip (`mlimit`), but if you're extending this tool, don't
    assume any negative `pcre2_match_8` return means "no match".
+
+## Capture-group span comparison ([M4.7d])
+
+Both sides of the differential now compare **every capture-group span**, not
+just the whole match. `fuzz_driver.c` prints `caps[k][0] caps[k][1]` for
+every `k` in `[0, rx_info.ncaps)`; `pcre2_oracle.c` prints `ov[2k] ov[2k+1]`
+for every `k` in `[0, capturecount]`, where `capturecount` is queried fresh
+from the just-compiled pattern via `pcre2_pattern_info_8`
+(`PCRE2_ABI_INFO_CAPTURECOUNT`, measured value `4` — see
+`pcre2_abi.h`'s comment for the three-pattern probe that pinned it, since
+this project measures PCRE2 constants rather than reading them off
+documentation). Both lines are `"match "` followed by the pairs,
+space-separated, index 0 always the whole match. Since group numbering is
+shared between the two engines (C9, match_api_m4.md — left-to-right by
+opening paren, non-capturing groups don't consume a number), the two lines'
+pairs line up positionally with no renumbering step, and **the existing
+line-level string comparison in `fuzz.py` (`pr != orr`) needed no change at
+all** to start catching capture-span divergences — it was already comparing
+full lines, not just a parsed whole-match pair; extending what both sides
+*print* was the whole change.
+
+**The unset-group convention — MEASURED, not assumed.** A small probe
+(dlopen the same `pcre2_abi.h` machinery, compile `(a)(b)(c)`, `(a)|(b)`,
+`(a)|(b)(c)`, `((a)|(b))*`, `(a)(b)?`, size the ovector to `capturecount+1`,
+print every pair) established two facts before any oracle code was written:
+
+1. `PCRE2_INFO_CAPTURECOUNT` is opcode `4` — confirmed against three
+   patterns with distinct group counts (3, 2, 3), one candidate opcode
+   consistent with all three.
+2. With the ovector sized to `capturecount+1` pairs, **every group that
+   never participated in the match reads back `(PCRE2_SIZE)-1` in BOTH
+   offsets** — including groups numbered ABOVE the highest one that did
+   participate, not merely ones within `pcre2_match`'s own return-value
+   range. Verified: `(a)|(b)(c)` on `"a"` gives `rc=2` but groups 2 and 3
+   (both unreached — the `(b)(c)` branch never ran) both read
+   `(-1, -1)`, not garbage.
+
+`PCRE2_UNSET` is `~(PCRE2_SIZE)0` — every bit set. Cast to a signed type of
+the same width (`ptrdiff_t`, matching `<prefix>_search`'s own D44.2 element
+type), that bit pattern IS the literal value `-1`. pcrec's own `RX_UNSET` is
+`(ptrdiff_t)-1`. **These are the same value, not two conventions requiring a
+mapping** — printing both sides with `%td` on a signed cast makes an unset
+group read as `-1 -1` on both sides with zero conversion code anywhere in
+`pcre2_oracle.c` or `fuzz_driver.c`. This was cross-checked against
+match_api_m4.md's [M4.5d] as-built addendum (cross-iteration retention,
+empty-final-iteration overwrite) by hand before folding the change in:
+  - `((a)|(b))*` on `"ab"` → both engines `match 0 2 1 2 0 1 1 2` (group 2
+    keeps its value from the FIRST iteration — the branch it ran in — while
+    group 1, the whole-alternation group, and group 3 both reflect the
+    SECOND iteration; retention, not "unset because it didn't run last").
+  - `(a*)*` on `"aaa"` → both engines `match 0 3 3 3` (the empty final
+    iteration's write is a write — group 1 is `(3,3)`, not retained from the
+    non-empty iteration that matched `"aaa"`).
+  - `(a)|(b)(c)` on `"a"` → both engines `match 0 1 0 1 -1 -1 -1 -1` (groups
+    2 and 3, in the branch that never ran, both UNSET).
+
+**Defensive-only bucket, not expected to fire**: `pcre2_oracle.c` sizes its
+ovector from the SAME compiled pattern's own `capturecount`, so
+`pcre2_match_8` returning `0` ("ovector too small") should be unreachable —
+if it ever does happen it prints `ovtoosmall <ngroups>` rather than
+crashing, and `fuzz.py` folds it into the existing "oracle inconclusive"
+bucket (same reasoning as `mlimit`: not a verdict to compare).
+
+**Generator extension**: `CAPTURE_TEMPLATES` (`fuzz.py`, same
+`.format()`-template mechanism as `TRAP_TEMPLATES`) adds ~20% of patterns as
+dedicated capture-bearing shapes — quantified capturing groups, groups
+wrapping alternation, nested groups, groups with optional/nullable bodies —
+because the unbiased grammar produces SOME capturing group often enough but
+the SPECIFIC combinations that exercise cross-iteration retention and
+empty-final-iteration overwrite (a quantifier directly around a group, or a
+group nested inside another quantified group) are a much rarer joint draw.
+Subjects for this lane run up to 8 characters (versus the trap lane's 4) so
+multi-iteration semantics actually get exercised — a length-1 subject can't
+distinguish "this group's value is from its last iteration" from "this
+group's value is from its only iteration".
+
+**Validation** (this extension's own build session, both runs against
+libpcre2 10.46 2025-08-27): 5 seeds × 500 patterns × 20 subjects (seeds
+1–5), foreground — 2,500 patterns generated, 1,435 both-accept, 28,660
+subject-pair comparisons; then 3 more seeds × 1,500 patterns × 25 subjects
+(seeds 10–12), run as an async background campaign — 4,500 patterns
+generated, 2,573 both-accept, 64,325 subject-pair comparisons. Combined: **8
+seeds, 7,000 patterns generated, 4,008 both-accept, 92,985 subject-pair
+comparisons (every pair now including every capture-group span, not just
+the whole match) — 0 content divergences, 0 accept/reject divergences**
+across every seed. DFA state-cap hits (the known A-3 limitation, not a
+divergence) appeared at their usual ~2-3% rate; a handful of
+oracle-inconclusive and step-budget-exhausted cells appeared as usual and
+were correctly excluded from comparison, not treated as verdicts.
 
 ## Two findings from this session's runs (seed 1 and seed 2, default size)
 

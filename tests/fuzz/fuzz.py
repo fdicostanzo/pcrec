@@ -348,6 +348,53 @@ def gen_trap():
         a=a, b=b, q=random.choice(TRAP_QUANTS))
 
 
+# [M4.7d] Capture-span shape templates. Same TRAP_TEMPLATES mechanism (a raw
+# pattern-text template, {a}/{b}/{q} .format()-substituted, literal braces
+# DOUBLED), but aimed at a different blind spot: the unbiased generator's
+# gen_atom() DOES produce capturing groups (~14% of atom draws, recursively),
+# but a joint draw that lands a QUANTIFIER directly around a group, or an
+# ALTERNATION directly inside a quantified group, or a group NESTED inside
+# another quantified group, is a much rarer combination than "some capturing
+# group exists somewhere" — and those specific combinations are exactly what
+# exercises the two [M4.5d] as-built rules match_api_m4.md §2.2 states
+# (cross-iteration retention, empty-final-iteration overwrite) and the
+# group-numbering/nesting cases a flat literal group never reaches. These
+# rows make that combination routine rather than incidental, the same
+# argument TRAP_TEMPLATES makes for preference bugs. Manually verified by
+# hand against both engines during this extension (see README.md's
+# "Capture-group span comparison" section) before being folded in here:
+# `((a)|(b))*` on "ab" -> both `match 0 2 1 2 0 1 1 2` (retention); `(a*)*`
+# on "aaa" -> both `match 0 3 3 3` (empty-final-iteration overwrite);
+# `(a)|(b)(c)` on "a" -> both `match 0 1 0 1 -1 -1 -1 -1` (never-reached
+# groups numbered ABOVE the participating one, both UNSET).
+CAPTURE_TEMPLATES = [
+    "({a})+",                       # simple quantified capturing group
+    "({a}|{b})*",                   # cross-iteration retention across alt
+    "(({a})|({b}))*",               # nested: retention on a PER-ARM group
+    "({a}*)*",                      # empty-final-iteration overwrite
+    "({a}?)*",                      # ditto, optional body
+    "({a}{b})*",                    # multi-atom body per iteration
+    "(({a}{b})|({a}))*",            # nested groups, differing arm lengths
+    "({a}({b})?)+",                 # nested group with optional inner
+    "(({a})?)*",                    # nested optional group, cross-iteration
+    "({a}+)?",                      # optional wrapping a quantified group
+    "(({a})*)*",                    # double-nested star
+    "((?:{a})*({b}))*",             # non-capturing wrapper + capturing sibling
+    "({a}{q})",                     # single group under an arbitrary quant
+    "(({a}|{b}){q})",               # group wrapping alternation, arbitrary quant
+    "((?:{a}|{b})*({a}))",          # capturing tail after an alternation loop
+    "(({a}{b}|{a}){q})",            # overlapping-prefix alt (R2 shape) + capture
+    "(({a})({b}))*",                # two sibling groups per iteration
+    "((({a})*)({b})?)*",            # three-deep nesting, mixed quantifiers
+]
+
+
+def gen_capture():
+    a, b = random.sample("abc01xy", 2)
+    return random.choice(CAPTURE_TEMPLATES).format(
+        a=a, b=b, q=random.choice(TRAP_QUANTS))
+
+
 def gen_pattern():
     return gen_alt(3)
 
@@ -698,9 +745,20 @@ def main():
     for _ in range(args.patterns):
         node = gen_pattern()
         pat = render(node)
-        is_trap = random.random() < 0.08     # ~8% preference traps (R2)
+        # Mutually exclusive draw across three lanes: preference traps (R2,
+        # ~8%), capture-span shape templates ([M4.7d], ~20% -- "meaningful
+        # density" for the specific quantified-group / group-around-
+        # alternation / nested-group combinations CAPTURE_TEMPLATES targets,
+        # well above what the unbiased grammar rolls on its own), and the
+        # general grammar (the remainder, which already produces capturing
+        # groups incidentally via gen_atom's own ~14%-per-draw rate).
+        lane = random.random()
+        is_trap = lane < 0.08
+        is_capture = (not is_trap) and lane < 0.28
         if is_trap:
             pat = gen_trap()
+        elif is_capture:
+            pat = gen_capture()
         alpha = pattern_alphabet(pat)
         if is_trap:
             # Trap patterns are raw text, not an AST node, so the node-based
@@ -713,6 +771,24 @@ def main():
             subs = [b""]
             for L in (1, 2, 3, 4):
                 for _ in range(max(1, args.subjects // 5)):
+                    subs.append(b"".join(random.choice(letters) for _ in range(L)))
+            subs = subs[:args.subjects] if len(subs) > args.subjects else subs
+            work.append((pat, subs))
+            continue
+        if is_capture:
+            # Same raw-text situation as traps (node samplers don't apply),
+            # but capture-span bugs (cross-iteration retention, empty-final-
+            # iteration overwrite) need MULTIPLE loop iterations to surface
+            # at all -- a length-1 subject can never distinguish "this
+            # group's value is from its last iteration" from "this group's
+            # value is from its only iteration". Subjects run longer here
+            # (up to 8) than the trap lane's (up to 4), and every length from
+            # 0 through 8 is represented so both single- and multi-iteration
+            # cases are exercised.
+            letters = sorted(c for c in alpha if c.isalnum())[:5] or [b"a"]
+            subs = [b""]
+            for L in range(1, 9):
+                for _ in range(max(1, args.subjects // 8)):
                     subs.append(b"".join(random.choice(letters) for _ in range(L)))
             subs = subs[:args.subjects] if len(subs) > args.subjects else subs
             work.append((pat, subs))
@@ -841,7 +917,7 @@ def main():
                 os.remove(subj_path)
                 continue
             orr = oracle_run(oracle_bin, pattern, subj_path)
-            if orr == "TIMEOUT" or orr.startswith("inconclusive"):
+            if orr == "TIMEOUT" or orr.startswith("inconclusive") or orr.startswith("ovtoosmall"):
                 # PCRE2 hit its own backtracking/resource safeguard (or this
                 # fuzzer's RUN_TIMEOUT, now that oracle_run() reports rather
                 # than crashes on that -- see its comment), not a
@@ -849,7 +925,13 @@ def main():
                 # See pcre2_oracle.c's header comment and README.md for the
                 # confirmed case that motivated the original "inconclusive"
                 # half (a catastrophic-backtracking-shaped nested quantifier
-                # pattern where PCRE2 returns -47, not -1).
+                # pattern where PCRE2 returns -47, not -1). [M4.7d]:
+                # "ovtoosmall" folds into the same bucket -- pcre2_oracle.c's
+                # own defensive-only case (the ovector it sized from the
+                # pattern's own capturecount turned out too small), not
+                # expected to ever fire; if it does, this is a harness
+                # anomaly, not a verdict to compare, same reasoning as the
+                # other two members of this bucket.
                 result["oracle_inconclusive"] += 1
             elif pr != orr:
                 result["content"].append((subj, pr, orr))
