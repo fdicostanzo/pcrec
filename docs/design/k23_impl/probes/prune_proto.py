@@ -67,6 +67,19 @@ def main():
     ap.add_argument('--follow-min', type=int, default=0,
                     help='minimum bytes the pattern AFTER the outer loop must '
                          'consume (0 when the loop ends the pattern)')
+    ap.add_argument('--replicas', type=int, default=None,
+                    help='ASSUMPTION GUARD. The number of scan sites this '
+                         'prototype expects to find, i.e. the outer '
+                         'quantifier\'s maximum count when the outer is on '
+                         'the REPLICATED (frames) rung and each replica owns '
+                         'one inner cursor. Refuses if the count differs. '
+                         'Without this guard the prototype silently '
+                         'mis-patches any shape whose OUTER quantifier took '
+                         'the cursor rung itself -- a possessified exact-count '
+                         'inner does exactly that, one scan site and zero '
+                         'replicas, and the per-replica minrest formula is '
+                         'then simply the wrong arithmetic. See '
+                         'k23_design.md section 11.1.')
     ap.add_argument('--placebo', action='store_true',
                     help='THROUGHPUT CONTROL: emit the clamp at exactly the '
                          'same sites, same instruction shape, but with '
@@ -82,6 +95,11 @@ def main():
     if not hits:
         print('prune_proto: no span-loop scan sites found', file=sys.stderr)
         sys.exit(1)
+    if a.replicas is not None and len(hits) != a.replicas:
+        print('prune_proto: DECLINED -- %d scan sites, expected %d replicas; '
+              'this is not the two-level replicated shape the prototype '
+              'patches' % (len(hits), a.replicas), file=sys.stderr)
+        sys.exit(2)
     base = a.slot_base if a.slot_base is not None else min(
         int(h.group('slot')) for h in hits)
 

@@ -44,6 +44,10 @@ CC = os.environ.get('CC', 'gcc')
 BUDGET = os.environ.get('K23_BUDGET', '1000000000000')
 RUN_TIMEOUT = int(os.environ.get('K23_TIMEOUT', '300'))
 
+# `(BODY{m,M}){p,P}` -- P is what a REPLICATED outer must produce in scan
+# sites; anything else means the shape is not what the prototype assumes.
+OUTER_MAX = _re.compile(r'^\([^()]*\{\d+,\d+\}\)\{\d+,(\d+)\}')
+
 HEAD = '''#include <stdio.h>
 #include <stdlib.h>
 static long long rx_probe_steps = 0;
@@ -88,10 +92,21 @@ def build(tmp, name, pattern, prune=None):
     if prune is not None:
         omin, imin, stride = prune
         pruned = os.path.join(tmp, name + '.pruned.c')
-        p = subprocess.run([sys.executable, os.path.join(HERE, 'prune_proto.py'),
-                            src, pruned, '--outer-min', str(omin),
-                            '--inner-min', str(imin), '--stride', str(stride)],
-                           capture_output=True, text=True)
+        cmd = [sys.executable, os.path.join(HERE, 'prune_proto.py'),
+               src, pruned, '--outer-min', str(omin),
+               '--inner-min', str(imin), '--stride', str(stride)]
+        # Pass the ASSUMPTION GUARD whenever the pattern is the two-level
+        # shape the prototype claims: the outer maximum is how many scan
+        # sites a replicated outer must produce. A shape that produces a
+        # different number is one the prototype must DECLINE, not patch --
+        # the randomized sweep found 44 wrong answers from exactly that
+        # mis-fire (k23_design.md section 11.1).
+        omax = OUTER_MAX.match(pattern)
+        if omax:
+            cmd += ['--replicas', omax.group(1)]
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if p.returncode == 2:
+            return None, 'declined: ' + p.stderr.strip().splitlines()[-1]
         if p.returncode != 0:
             return None, 'prune-fail: ' + p.stderr.strip()
         src = pruned
