@@ -57,7 +57,7 @@ NOT a panel item.
 
 **R28-1 — MAJOR (r28instr): MRL had ZERO sabotage coverage** while
 every sibling rung has 3-5 (S45-S57). DISPOSITION: FIX-BEFORE-MERGE —
-lane authored S58-S62 and validated each fires; S60 independently
+lane authored S58-S63 (six) and validated each fires DETECTED; S60 independently
 surfaced the self-rounding property (see R28-3).
 
 **R28-2 — MAJOR (r28instr): the DIFF_A_MAY_ANSWER_MORE exemption was

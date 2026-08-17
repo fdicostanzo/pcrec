@@ -9439,3 +9439,95 @@ M4.6 remaining: [M4.6d] (fully unblocked by D51 — MRL build + blinded
 tests + 500M default + window ceiling with its obligations),
 [M4.6e] (RX_HYBRID_MIN + trie-switch), [M4.6f] (D46 prefilter
 close-out). Then M4.6 closes → [M4.7]. NEXT SESSION picks up there.
+
+## 2026-08-17 (EDT), twenty-ninth session — [M4.6d] COMPLETE: MRL lands, K23 CLOSED, the ratchet empties; DD-13 opens; pcrec-bench seeded; two panels
+
+**[M4.6d] MERGED (the K23 arc ends).** MRL pruning landed per D51's
+three rulings in one change on lane/mrl (opus lane, 19 commits):
+pcrec_minw (exhaustive switch, saturating) threaded as Vm.fmin through
+ONE mutator; the lattice clamp FOLDED into the cursor scan's loop bound;
+cut-before-push across the chain/star/possessive arms (possessive
+deliberately TEST-not-clamp so MRL's soundness never couples to
+possessify's); prefilter-window ceiling v1 with the three obligations as
+CODE (parameter-not-member = forgetting is a compile error; retry
+RECOMPUTES; VM_PRUNE_CEILING stamp); step default 1M→500M. The K23
+resident answers in <=1 step (was 10.6M) and moved to tests/base/;
+known_fail is EMPTY for the first time since K23 was filed. Exemplars:
+three-level nest 11.9 BILLION-step bound → <=1.
+
+**PREDICTION 6 ANSWERED IN THE NEGATIVE, AND THE E1 CLASS RECURRED ONE
+RUNG DOWN — the arc's technical headline.** The revdet rung needs NO
+lattice argument (its forward scan IS the boundary walk; the lane wrote
+the proof at the site; the one trap is stop-to-shortl-not-fulll). But on
+the COUNTER rung the compile-time follow-min saturates at K+residue (9
+where the truth is 65) and K23 survived there — fixed by the runtime
+fdyn term read from the trailed counter slot. Found from OUTSIDE the
+implementation's model: the differential, the structural checks and the
+step-collapse cell all inherited the model the bug was in. The blinded
+d27k23 corpus (89 cases, separate cell, python-hazard region carried by
+a PROVEN LAW + exhaustive small-N induction, independently re-verified
+at review) passed 89/89 against the build, neither author having seen
+the other's work — merged with the fix as charter demanded.
+
+**THE LANDING PANEL (R28) EARNED ITS COST — reviews/2026-08-17-r28.**
+Soundness (opus): SOUND TO MERGE, all six claims survived a ~285k-cell
+independent battery incl. a DFA-engine oracle that terminates where
+python hangs (instrument ADOPTED into mrl_impl/probes/). Instruments:
+two MAJORS — MRL had ZERO sabotage coverage (now S58-S63, all
+DETECTED), and the answer-more exemption count was untracked AND wrong
+(2 was per-PATTERN reports; the real cell count is 22 — now counted,
+printed, asserted, and REFEREED 22/22 against the pure DFA arm).
+S60's three-turn story is the check-design find of the arc: the
+E1-restoring sabotage was UNDETECTABLE because the folded loop bound is
+SELF-ROUNDING (the shipped emitter cannot express the design's own
+feared defect — safe for a STRONGER reason than designed); the actually
+load-bearing underflow guard's removal is an ASAN heap overflow
+invisible to answer sweeps (hence a structural assertion, S2b); and the
+convergent soundness critic proved the same fact from the other
+direction by deleting the rounding (byte-identical, 1,240 subjects).
+
+**Frank's rulings this session:** accept-as-is on the +8% site-dense
+shape (D51 ADDENDUM — the <=2% figure was the dense-shape adoption
+evidence bar, not a per-shape ceiling; three-arm placebo methodology is
+why the number is trusted, the naive two-arm read showed +28% on a row
+where the VM never runs); [ENG-THIN] FILED (analytic step-law clamp
+gating per pattern/site + ENG-PGO-linked exemplar tuning — soundness-
+free by construction, so deliberately not a landing gate). D52:
+~/pcrec-bench SEEDED as a sibling repo (four principles: harder/wider
+set incl. backrefs, per-testee artifacts compared statically, open-
+source roster, versioned sets and testees); the SCOPE MANDATE now
+covers both directories. [DD-13] created — the unified pattern-source/
+test file format (manifest + test carrier + bench sets, grown from
+.rxt) with staged requirements→design→panel and Frank's design inputs
+logged (options cascade last-reference-wins; declared per-library
+tweaks; config sections unifying bench testees and build variants;
+interface-vs-reference-only patterns; OD-1..5).
+
+**[DD-13a] COMPLETE same session** (sonnet lane, parallel with the MRL
+battery): the requirements note — census 54 files / 1,100 blocks /
+9,977 expectation lines, per-consumer R-* requirements, compatibility
+answered DIALECT. Its OWN panel (R27, two critics + forks) found a
+three-way-confirmed BLOCKER: the note's §7 grep claim was false and hid
+subst_template_design.md §8.1's repl/s/sg/serr — the most concrete
+format prior art in the repo, certified absent by an unreproduced
+survey (the exact failure its own §13 warned about). Author ran the
+targeted fix pass (R-SUBST-3, R-VE-12 encoding, R-RXT-10 reject/, T-6
+include-closure, §9 softened with DIALECT intact, n=5 generator
+evidence); merged.
+
+**Session lesson, recurring in THREE independent forms (candidate for
+learnings.md if it recurs again): a NUMBER READ FROM THE WRONG PLACE.**
+2-vs-22 (per-pattern reports counted as cells), the stride-argument
+grep (a control reading a source that did not carry the property), and
+24-vs-22 (a grep -A40 spilling into a concurrent suite's output). Two
+are now assertion-guarded at the site; the third had only the lane's
+word — which is why it self-reported. Related process lesson, THREE
+lanes today: final reports composed as plain assistant text never reach
+the manager — every brief must say "report via SendMessage" explicitly.
+
+**State at close of the arc:** main pushed after the merge train
+(lane/mrl → d27k23 → battery). Corpus 10,257/0 (+89 blinded + 191 mrl
++2 resident); cli 257; known_fail EMPTY; ratchet "nothing to ratchet".
+K-list: K2, K7, K9. M4.6 remaining: [M4.6e] (RX_HYBRID_MIN +
+trie-switch), [M4.6f] (D46 prefilter close-out) — then M4.6 CLOSES →
+[M4.7]. Lanes all released; worktrees clean.
