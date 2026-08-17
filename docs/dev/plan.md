@@ -931,6 +931,32 @@ execution speed trades the primary goal (D18) for the secondary one.
   get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
   everything below; an optimization the suite cannot referee does not land)
 - [BENCH-1] STATE:not-started — FEATURE-SPANNING BENCHMARK EXPANSION + THE PRIORITIZER (Frank, 2026-08-13 sixteenth session): today's bench is 9 cases (a-i) of deliberately basic shapes — good regression gates, not a capability map (Frank: "whenever i see benchmarks, its usually a series of rather basic benchmarks that do not really exercise the capabilities"). Build a benchmark that SPANS the feature set and the complexity range: per-feature-family case GROUPS (literal/memchr shapes, classes, alternation/trie widths, bounded repeats, anchors/EOL, dense/counting — the case-f family, captures (M4), backrefs/lookaround/atomic (M6), UTF-8/\p (M5), plus real-world-shaped patterns), each family at graded complexities; pattern sources = hand-designed families + the PCRE2 testdata import (M7 — this row is deliberately scheduled around that import so the corpus arrives with it) + generated shapes where a family needs a sweep. STRUCTURED FOR SPOT-CHECKS exactly like TT-1's tiers: every case and group individually addressable (make bench CASE=... / GROUP=...), the full sweep at evaluation points only. TWO INSTRUMENTS, deliberately distinct — M2.11's ruling stands: the regression GATE stays absolute per-case floors (cross-engine ratios move for reasons that are not our regression); the new PRIORITIZER is a cross-engine RELATIVE ranking vs libpcre2 — informational, never a gate — whose output is a worst-first worklist. Frank's stated optimization workflow, recorded as the row's purpose: (1) OPT-A's survey incl. the pattern-generation study, then (2) work the prioritizer list from the relative worst downward. Every number under D12/D17/R3.10 discipline; MECH-3's provenance-refusing wrapper is the intended measurement vehicle and lands first. Sequencing: after the main feature set is built and proven (post-M6, with M7's testdata), BEFORE the OPT waves open — this row is the OPT waves' worklist generator. AMENDED 2026-08-13 (same session, positioning discussion): the case groups include a LATENCY / SHORT-SUBJECT group — time-to-first-match from process start (the AOT structural win: tables page in from .rodata vs pcre2_compile + JIT warmup per process) and per-call overhead on short subjects (log lines, field validation — the dimension real workloads are dominated by and typical benchmarks skip); and the prioritizer gets a second reading — the BEST relative cells feed the positioning note (Beyond M7), not just the worst cells feeding the fix list. AMENDED 2026-08-14 (D42.8): the prioritizer worklist has a KNOWN HEAD before it runs — case (f) at 0.151 relative, re-homed here from [DD-9] (archived) with engine_m4.md §8.4's three findings attached (wrong-lever computed goto; ~2x reverse-pass share; bit-parallel shift-and candidate); [OPT-SIMD] is the adjacent lever row.
+- [OPT-ALTCLS] STATE:not-started — ALTERNATION→CLASS NORMALIZATION
+  (Frank, 2026-08-17, twenty-ninth session, from reading --emit-ir on
+  `a(b|c)+d` vs `a([bc])+d`): an IR/AST pass merging maximal runs of
+  ADJACENT single-character branches (1-char literal or class atoms:
+  `b|c`→`[bc]`, `[ab]|[cd]`→`[abcd]`, `b|[cd]`→`[bcd]`) into one class
+  node. SOUNDNESS: each merged branch consumes exactly one byte at the
+  same position, so leftmost-first preference among them is
+  indistinguishable — same match set, same span, same capture spans;
+  preference relative to UNMERGED (multi-char) branches is preserved by
+  merging only ADJACENT runs in place. MEASURED MOTIVATION (2026-08-17,
+  the two exemplars above): the VM tier is the payoff — rung selection
+  sees the class body and downgrades revdet→cursor: 23 labels/66
+  events/3 frames/2 resume points → 4/18/1/0, emitted C 445→380 lines,
+  and the cursor form is possessified span-scan (a fraction of the
+  steps); the DFA tier gains a small byte-equivalence-class merge (b,c
+  currently stay distinct classes when spelled as alternation — wider
+  rx_ftr table). INTERACTIONS: shrinks the [M4.6e]/D53 trie-switch
+  candidate pool by deleting mergeable alternations outright (better
+  than dispatching over them); post-merge shapes re-enter possessify/
+  MRL/counter analyses with class bodies, so the pass runs BEFORE
+  those. Obligations at build: D46 stamp+force for the pass (it is a
+  selection point), a permanent sabotage row, differential validation
+  alternation-spelling vs class-spelling on identical subjects
+  (match + all capture slots), and the survey question "what do PCRE2/
+  RE2 normalize here" answered by MEASUREMENT not docs. Sonnet-sized;
+  Frank schedules.
 - [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it
 - [ENG-ABS] STATE:not-started — ENG_UNANCH absorbs `^` (the DD-7
   absorption half, re-homed here 2026-08-14, D42.7): D8 left `^` on
