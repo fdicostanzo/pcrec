@@ -89,6 +89,14 @@ trap cleanup EXIT
 pass=0; fail=0; skipped=0
 cells_total=0
 clamped_patterns=0
+# RUNG COVERAGE, tracked because MRL emits a DIFFERENT FORM on each rung and a
+# corpus that reaches only some of them is a corpus that tests only some of
+# them. This is the non-vacuity control applied per rung rather than once: the
+# first version of patterns.txt had a section labelled "revdet" containing six
+# shapes, not one of which reached that rung (they are deterministic
+# fixed-length bodies, so the cursor rung claims them at stride 2 before revdet
+# is consulted). The section was green and measured nothing.
+rungs_seen=0
 
 ok()  { pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
@@ -188,6 +196,8 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
         this_clamp=1
         clamped_patterns=$((clamped_patterns + 1))
     fi
+    m="$(sed -n 's/^#define PA_VM_RUNGS 0x\([0-9a-f]*\)u$/\1/p' "$d/pa.c")"
+    [ -n "$m" ] && rungs_seen=$(( rungs_seen | 0x$m ))
 
     # shellcheck disable=SC2086
     if ! gen_cc "mrldiff '$pat' [$eng]" $CC -O1 -Wall -Wextra -std=gnu11 $GENCFLAGS \
@@ -261,6 +271,24 @@ echo "mrldiff: $cells_total pattern-subject-startpos cells compared"
 if [ "$clamped_patterns" -eq 0 ] && [ "$pass" -gt 0 ]; then
     echo "FAIL: not one pattern carried a bound -- this sweep compared identical artifacts and measured nothing" >&2
     fail=$((fail + 1))
+fi
+
+# PER-RUNG NON-VACUITY. MRL emits a different FORM on each rung -- a
+# lattice-rounded clamp on the cursor, a test at each iteration entry on the
+# frames, a scan-head stop on revdet, a counter-derived runtime bound on the
+# counter -- so "the sweep found no divergence" means nothing about a rung the
+# sweep never reached. Bit values from src/gen/emit_vm.c's vm_rung_bit[].
+missing=""
+for pair in "1 cursor" "2 frames-bounded" "4 frames-unbounded" "8 revdet" "16 counter"; do
+    bit=${pair%% *}; name=${pair#* }
+    [ $(( rungs_seen & bit )) -ne 0 ] || missing="$missing $name"
+done
+if [ -n "$missing" ]; then
+    echo "FAIL: the swept population never reached these rungs:$missing" >&2
+    echo "      MRL emits a different form on each; an unreached rung is untested here." >&2
+    fail=$((fail + 1))
+else
+    echo "mrldiff: rung coverage complete (mask 0x$(printf '%x' $rungs_seen)): every rung MRL emits a form for was reached"
 fi
 
 [ "$fail" -eq 0 ] || exit 1

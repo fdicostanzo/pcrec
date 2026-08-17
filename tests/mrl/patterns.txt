@@ -16,7 +16,14 @@
 # in run_mrl_tests.sh where one shape is enough.
 
 # --- STRIDE, the axis R26 E1's unsound clamp lived in and 855 single-byte
-# --- cells could not see. Bodies of width 1, 2 and 3, greedy and lazy.
+# --- cells could not see. Bodies of width 1, 2 and 3, greedy and lazy. These
+# --- are the CURSOR rung, where the bound ASSIGNS and must therefore round.
+(ab){2,6}c
+(ab){2,6}
+((a)b){2,6}c
+(a(b)){2,6}c
+(abc){2,5}z
+(ab){2,6}?c
 (a{2,4}){3,6}
 (a{2,4}){3,6}b
 ((?:ab){2,4}){3,6}
@@ -83,14 +90,23 @@
 ((a)|b){9}c
 ((?:ab){1,2}){8}c
 
-# --- REVDET-RUNG BODIES (one-unambiguous, recoverable from the right), where
-# --- the boundary set is a WALK rather than a lattice — prediction 6's site.
-(ab){2,6}c
-(ab){2,6}
-((a)b){2,6}c
-(a(b)){2,6}c
-(abc){2,5}z
-(ab){2,6}?c
+# --- REVDET-RUNG BODIES, prediction 6's site: the boundary set is recovered
+# --- by a backwards WALK rather than being an arithmetic lattice, and the
+# --- bound is applied by stopping the FORWARD scan one boundary early. The
+# --- rung wants a body the cursor rung declines — choice-bearing, so
+# --- deterministic fixed-length shapes like `(ab){2,6}c` will NOT reach it
+# --- (they take the cursor rung at stride 2, which is why they sit in the
+# --- STRIDE section above instead). Verified rung-by-rung against --emit-ir
+# --- rather than assumed from the shape, which is how the first version of
+# --- this section came to contain six patterns none of which reached it.
+((a)|b){2,6}c
+((a)|b){2,6}
+((a)|bc){3,7}d
+((a)|b){2,6}?c
+((a)|b){3,}c
+(x)((a)|b){2,5}y
+((ab)|c){2,5}d
+((a)b|c){2,5}d
 
 # --- POSSESSIFIABLE BODIES, where the loop has ONE exit and the bound must be
 # --- a test rather than a substitution.

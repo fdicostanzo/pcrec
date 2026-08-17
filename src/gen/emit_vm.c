@@ -2571,7 +2571,8 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * arise here. */
     const long long F  = v->fmin;
     const long long bw = pcrec_minw(a->l);
-    vm_prune_mark(v, entry, v->mrl && vm_fadd(bw, F) > 0, role);
+    vm_prune_mark(v, entry,
+                  v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
     vm_set(v, se, "(ptrdiff_t)pos",
            "revdet: the loop's entry position (the capture walk's floor)");
     if (a->rmin == 0)
@@ -3130,7 +3131,8 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
                                   : (nopt >= K ? "counted" : "replicated"));
     vm_lbl(v, entry, role);
     vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
-    vm_prune_mark(v, entry, v->mrl && vm_fadd(bw, F) > 0, role);
+    vm_prune_mark(v, entry,
+                  v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
     if (a->possessive)
         vm_set(v, mark, "(ptrdiff_t)w->btn",
                "possessive cut mark (resume-stack depth at loop entry)");
@@ -3321,7 +3323,8 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         /* One more iteration plus the follow: the minrest every site on this
          * rung tests, and therefore exactly the predicate for "did this
          * quantifier get a bound at all". */
-        vm_prune_mark(v, entry, v->mrl && vm_fadd(bw, F) > 0, frole);
+        vm_prune_mark(v, entry,
+                  v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), frole);
     }
 
     /* ---- the frames rung ------------------------------------------------
