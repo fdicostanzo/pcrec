@@ -123,17 +123,54 @@ change and both cases' artifacts never touch that code path at all — they
 were never on it before D42.1 either, since D42.1 is precisely what moved
 them off ENGM_DFA).
 
-**Also worth the manager's attention: `floors.tsv`/`gate.sh` are not in any
-battery leg.** `make bench` runs only `run_bench.sh`'s separate suite (see
-this directory's own README/CLAUDE.md); `compare.sh`/`gate.sh` here are
-deliberately manual — "Slow (tens of minutes, full matrix), so it is run
-deliberately... rather than from a make target" per this file's own opening
-line. That is exactly how (c)/(i) went three days (2026-08-14 to
-2026-08-17) with a floor silently measuring the wrong engine and nothing
-red anywhere — the same instrument-outside-the-battery shape as the
-fuzzer-red incident this project already has a name for. Whether `gate.sh`
-should join a battery leg (even a manual/checkpoint one, given its own
-"tens of minutes" cost) or just get an explicit "ages freely, re-run before
-trusting" marker is a call this finding raises but does not answer.
+**`floors.tsv`/`gate.sh` are NOT in any battery leg, and stay that way
+deliberately** (manager ruling, 2026-08-17, against battery-wiring a
+load-sensitive minutes-scale suite): `make bench` runs only
+`run_bench.sh`'s separate suite; `compare.sh`/`gate.sh` here stay manual
+— "Slow (tens of minutes, full matrix), so it is run deliberately...
+rather than from a make target" per this file's own opening line. That
+manual-only posture is exactly how (c)/(i) went three days
+(2026-08-14 to 2026-08-17) with a floor silently measuring the wrong
+engine and nothing red anywhere — the same instrument-outside-the-battery
+shape as the fuzzer-red incident this project already has a name for.
+The cheap tripwire against a repeat is the per-case engine assertion
+below, which runs every time `compare.sh` runs rather than on a schedule
+— **"ages freely, re-run before trusting" is the explicit marker for this
+whole directory**, not a battery-leg membership.
+
+**RULED and APPLIED (manager, 2026-08-17): pin (c)/(i) to `--no-captures`**,
+restoring what their floors have measured since 2026-08-09/2026-08-11 rather
+than re-pointing them at the new default — changing what they measure would
+orphan that reference history, and (j) already exists to cover the
+capture-bearing default path on a similarly-shaped pattern. Landed as
+`CASE_FLAGS` in `compare.sh`. **Durable fix for the whole finding class:**
+`CASE_EXPECT_ENGINE` declares DFA/VM per case, and `process_case` asserts
+the compiled artifact's `rx_info.engine` stamp (grepped from `gen.c`'s
+`/* ENGM_DFA */` / `/* ENGM_VM */` comment) right after the build, hard-erroring
+on mismatch before any number is trusted — the next silent engine-selection
+flip on ANY case now fails loudly as `ENGINE MISMATCH` instead of aging
+unflagged for days.
+
+**Confirmation re-run** (`CASES=c,i`, quiet box, 1-min load 0.22->0.49,
+both pins verified stamping `ENGM_DFA` by the new assertion, zero hard
+errors): **(i) is FULLY resolved, and then some** — 63.39 ns/call, better
+than its own 83.36 ns/call historical floor, not merely restored to it.
+**(c) is only PARTIALLY resolved.** Pinning recovers it from the
+hybrid-engine ~245-251 MB/s up to 294.381 MB/s (re-confirmed at
+304.309 MB/s on a second, independent, equally-quiet re-run) — but that is
+still reproducibly ~1.3x BELOW the 388.615 MB/s historical floor, with a
+trial spread (1.13x-1.16x across the two re-runs) roughly 10x wider than
+this exact case's historical 1.02x-1.06x tightness. Both re-runs confirmed
+DFA via the new assertion, so this residual gap is NOT the engine-selection
+issue — it reads as a SECOND, apparently pattern-specific regression on the
+DFA side itself (case (c)'s alternation/trie shape specifically: every other
+DFA-path case in the full 10-case grid run in the prior commit matched or
+beat its own floor). Undiagnosed and unactioned here — out of this lane's
+mandate, and this project's own posture is "say so and regenerate,
+never silently drift a floor to make a red run green" (gate.sh's own
+header). **`floors.tsv` is therefore deliberately left at 388.615/0.900 for
+(c)** rather than updated to the new pinned number, so `gate.sh` keeps
+reporting case (c) RED — a live, correct flag for whoever bisects the
+residual regression next, not a stale one.
 
 Maintenance: update this file when cases, engines or gating rules change.

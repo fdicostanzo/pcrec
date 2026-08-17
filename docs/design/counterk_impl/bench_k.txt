@@ -1,0 +1,550 @@
+== bench_k ==
+commit  ccd59df
+gcc     cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+opt     -O2   trials 3   mode full
+
+kind       body             N      K     lines    pcrec_s    gcc_s      ns/max       ns/belowmax  ns/fail
+
+== body-kind: single-class ==
+EXCLUDED (structural finding, see header PER-BODY-KIND CURVES / CONSTRAINT):
+probe body '([a-c])' stamps RX_VM_RUNGS 0x1 (the CURSOR rung) at
+N in {1, 16, 4000}, never 0x2 (frames-bounded) --
+verify: /home/duxevents/pcrec/worktrees/m46b/build/pcrec -p rx --engine=vm -o /tmp/g.c -- '([a-c]){0,16}c'
+        grep _VM_RUNGS /tmp/g.c
+A bounded single character class has only one way to match, so rung-select
+takes it before counter-K is ever a candidate: single-class bodies are NOT
+IN COUNTER-K'S POPULATION. No cells run for this kind.
+
+== body-kind: alternation ==
+alt        ((a)|ab)         1      1     310      0.118      0.220      60           60           380
+alt        ((a)|ab)         1      2     299      0.121      0.221      110          80           140
+alt        ((a)|ab)         1      4     299      0.121      0.220      100          40           260
+alt        ((a)|ab)         1      8     299      0.116      0.220      60           80           160
+alt        ((a)|ab)         1      16    299      0.120      0.216      50           90           120
+alt        ((a)|ab)         1      32    299      0.121      0.220      80           80           100
+alt        ((a)|ab)         1      rep   299      0.123      0.220      100          100          190
+alt        ((a)|ab)         2      1     310      0.119      0.220      60           80           200
+alt        ((a)|ab)         2      2     339      0.117      0.221      110          120          560
+alt        ((a)|ab)         2      4     330      0.120      0.218      100          80           220
+alt        ((a)|ab)         2      8     330      0.122      0.221      100          100          200
+alt        ((a)|ab)         2      16    330      0.118      0.220      120          70           180
+alt        ((a)|ab)         2      32    330      0.119      0.220      70           150          190
+alt        ((a)|ab)         2      rep   330      0.117      0.220      110          160          310
+alt        ((a)|ab)         4      1     310      0.120      0.217      90           90           830
+alt        ((a)|ab)         4      2     339      0.120      0.221      160          120          1320
+alt        ((a)|ab)         4      4     397      0.120      0.218      160          90           1130
+alt        ((a)|ab)         4      8     392      0.121      0.220      60           140          850
+alt        ((a)|ab)         4      16    392      0.120      0.221      150          140          630
+alt        ((a)|ab)         4      32    392      0.116      0.218      130          130          840
+alt        ((a)|ab)         4      rep   392      0.120      0.221      160          130          1050
+alt        ((a)|ab)         8      1     310      0.121      0.221      260          140          2040
+alt        ((a)|ab)         8      2     339      0.120      0.221      260          80           2140
+alt        ((a)|ab)         8      4     397      0.122      0.220      200          80           2120
+alt        ((a)|ab)         8      8     513      0.119      0.216      200          140          2220
+alt        ((a)|ab)         8      16    516      0.121      0.221      190          120          2540
+alt        ((a)|ab)         8      32    516      0.120      0.320      220          120          1760
+alt        ((a)|ab)         8      rep   516      0.118      0.323      200          130          3010
+alt        ((a)|ab)         16     1     310      0.120      0.221      380          180          5941
+alt        ((a)|ab)         16     2     339      0.119      0.220      400          150          5950
+alt        ((a)|ab)         16     4     397      0.118      0.222      230          150          6230
+alt        ((a)|ab)         16     8     513      0.121      0.218      350          100          6000
+alt        ((a)|ab)         16     16    745      0.120      0.318      330          160          6661
+alt        ((a)|ab)         16     32    764      0.121      0.422      140          160          7050
+alt        ((a)|ab)         16     rep   764      0.120      0.421      380          140          7100
+alt        ((a)|ab)         32     1     310      0.123      0.222      830          250          9580
+alt        ((a)|ab)         32     2     339      0.119      0.220      790          100          20371
+alt        ((a)|ab)         32     4     397      0.118      0.220      270          150          13710
+alt        ((a)|ab)         32     8     513      0.120      0.221      590          180          23900
+alt        ((a)|ab)         32     16    745      0.112      0.315      680          120          24690
+alt        ((a)|ab)         32     32    1209     0.123      0.522      650          70           26840
+alt        ((a)|ab)         32     rep   1260     0.122      0.722      560          110          29400
+alt        ((a)|ab)         64     1     310      0.120      0.221      1450         400          49501
+alt        ((a)|ab)         64     2     339      0.120      0.220      1170         270          86321
+alt        ((a)|ab)         64     4     397      0.122      0.220      1290         270          84000
+alt        ((a)|ab)         64     8     513      0.120      0.321      1350         260          52880
+alt        ((a)|ab)         64     16    745      0.122      0.322      500          230          47760
+alt        ((a)|ab)         64     32    1209     0.121      0.521      510          110          52910
+alt        ((a)|ab)         64     rep   2252     0.120      1.622      710          260          67470
+alt        ((a)|ab)         128    1     310      0.120      0.219      1620         290          234961
+alt        ((a)|ab)         128    2     339      0.121      0.220      1530         220          152621
+alt        ((a)|ab)         128    4     397      0.110      0.219      2440         460          372702
+alt        ((a)|ab)         128    8     513      0.116      0.219      2420         260          207512
+alt        ((a)|ab)         128    16    745      0.121      0.320      1460         250          183511
+alt        ((a)|ab)         128    32    1209     0.121      0.521      2100         260          226711
+alt        ((a)|ab)         128    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab)         256    1     310      0.120      0.221      2660         850          779094
+alt        ((a)|ab)         256    2     339      0.121      0.217      2950         710          774824
+alt        ((a)|ab)         256    4     397      0.120      0.221      2850         770          758264
+alt        ((a)|ab)         256    8     513      0.120      0.217      4200         460          616823
+alt        ((a)|ab)         256    16    745      0.120      0.320      2760         680          1413168
+alt        ((a)|ab)         256    32    1209     0.120      0.519      1890         310          700183
+alt        ((a)|ab)         256    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab)         1000   1     310      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   1     310      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   1     310      0.120      0.217      INVALID      1660         INVALID
+alt        ((a)|ab)         1000   2     339      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   2     339      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   2     339      0.120      0.219      INVALID      2310         INVALID
+alt        ((a)|ab)         1000   4     397      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   4     397      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   4     397      0.120      0.217      INVALID      2550         INVALID
+alt        ((a)|ab)         1000   8     513      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   8     513      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   8     513      0.119      0.222      INVALID      1010         INVALID
+alt        ((a)|ab)         1000   16    993      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   16    993      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   16    993      0.119      0.422      INVALID      2590         INVALID
+alt        ((a)|ab)         1000   32    1457     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   32    1457     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab)         1000   32    1457     0.113      0.719      INVALID      1450         INVALID
+alt        ((a)|ab)         1000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab)         4000   1     310      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   1     310      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   1     310      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   1     310      0.121      0.220      INVALID      INVALID      INVALID
+alt        ((a)|ab)         4000   2     339      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   2     339      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   2     339      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   2     339      0.119      0.221      INVALID      INVALID      INVALID
+alt        ((a)|ab)         4000   4     397      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   4     397      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   4     397      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   4     397      0.116      0.214      INVALID      INVALID      INVALID
+alt        ((a)|ab)         4000   8     513      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   8     513      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   8     513      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   8     513      0.121      0.220      INVALID      INVALID      INVALID
+alt        ((a)|ab)         4000   16    745      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   16    745      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   16    745      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   16    745      0.120      0.320      INVALID      INVALID      INVALID
+alt        ((a)|ab)         4000   32    1209     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   32    1209     regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   32    1209     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab)         4000   32    1209     0.114      0.523      INVALID      INVALID      INVALID
+alt        ((a)|ab)         4000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((ab)|b)         1      1     311      0.121      0.220      70           90           290
+alt        ((ab)|b)         1      2     306      0.120      0.221      90           90           240
+alt        ((ab)|b)         1      4     306      0.117      0.217      100          90           300
+alt        ((ab)|b)         1      8     306      0.117      0.221      60           60           180
+alt        ((ab)|b)         1      16    306      0.120      0.222      110          90           160
+alt        ((ab)|b)         1      32    306      0.121      0.217      60           40           160
+alt        ((ab)|b)         1      rep   306      0.120      0.222      110          100          300
+alt        ((ab)|b)         2      1     311      0.121      0.212      130          140          600
+alt        ((ab)|b)         2      2     311      0.122      0.222      80           80           380
+alt        ((ab)|b)         2      4     337      0.123      0.222      130          90           590
+alt        ((ab)|b)         2      8     337      0.120      0.220      120          150          240
+alt        ((ab)|b)         2      16    337      0.118      0.220      110          90           260
+alt        ((ab)|b)         2      32    337      0.119      0.220      120          130          530
+alt        ((ab)|b)         2      rep   337      0.120      0.222      60           190          240
+alt        ((ab)|b)         4      1     311      0.112      0.218      80           150          1320
+alt        ((ab)|b)         4      2     311      0.122      0.217      220          200          620
+alt        ((ab)|b)         4      4     311      0.123      0.220      150          90           780
+alt        ((ab)|b)         4      8     399      0.122      0.220      160          190          970
+alt        ((ab)|b)         4      16    399      0.121      0.218      160          160          1050
+alt        ((ab)|b)         4      32    399      0.117      0.219      140          90           1110
+alt        ((ab)|b)         4      rep   399      0.118      0.221      150          170          900
+alt        ((ab)|b)         8      1     311      0.120      0.220      310          150          1910
+alt        ((ab)|b)         8      2     311      0.119      0.220      270          150          2980
+alt        ((ab)|b)         8      4     311      0.120      0.220      310          130          2940
+alt        ((ab)|b)         8      8     311      0.120      0.220      110          170          2930
+alt        ((ab)|b)         8      16    523      0.120      0.320      240          150          2670
+alt        ((ab)|b)         8      32    523      0.120      0.321      210          140          2740
+alt        ((ab)|b)         8      rep   523      0.122      0.320      250          70           1470
+alt        ((ab)|b)         16     1     311      0.120      0.220      270          80           8921
+alt        ((ab)|b)         16     2     311      0.118      0.220      280          200          4990
+alt        ((ab)|b)         16     4     311      0.120      0.220      220          100          6090
+alt        ((ab)|b)         16     8     311      0.120      0.220      280          230          8940
+alt        ((ab)|b)         16     16    311      0.120      0.220      400          110          5980
+alt        ((ab)|b)         16     32    771      0.123      0.418      400          70           5520
+alt        ((ab)|b)         16     rep   771      0.120      0.422      390          70           5560
+alt        ((ab)|b)         32     1     311      0.120      0.220      480          150          20050
+alt        ((ab)|b)         32     2     311      0.119      0.220      390          260          20141
+alt        ((ab)|b)         32     4     311      0.121      0.220      810          130          20110
+alt        ((ab)|b)         32     8     311      0.122      0.220      410          150          20170
+alt        ((ab)|b)         32     16    311      0.120      0.220      480          150          20220
+alt        ((ab)|b)         32     32    311      0.120      0.220      860          210          30281
+alt        ((ab)|b)         32     rep   1267     0.117      0.918      420          80           29010
+alt        ((ab)|b)         64     1     311      0.122      0.214      1500         180          125490
+alt        ((ab)|b)         64     2     311      0.123      0.222      880          310          82460
+alt        ((ab)|b)         64     4     311      0.114      0.220      1340         280          73230
+alt        ((ab)|b)         64     8     311      0.119      0.222      1340         190          109691
+alt        ((ab)|b)         64     16    311      0.119      0.219      880          350          73451
+alt        ((ab)|b)         64     32    311      0.118      0.221      620          340          73290
+alt        ((ab)|b)         64     rep   2259     0.112      2.721      530          240          54550
+alt        ((ab)|b)         128    1     311      0.120      0.222      1430         480          312001
+alt        ((ab)|b)         128    2     311      0.122      0.218      1440         540          192071
+alt        ((ab)|b)         128    4     311      0.122      0.222      1770         490          472722
+alt        ((ab)|b)         128    8     311      0.119      0.221      1770         500          278832
+alt        ((ab)|b)         128    16    311      0.122      0.222      3140         290          232661
+alt        ((ab)|b)         128    32    311      0.119      0.219      2950         260          298142
+alt        ((ab)|b)         128    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((ab)|b)         256    1     311      0.120      0.223      3480         860          809794
+alt        ((ab)|b)         256    2     311      0.120      0.221      3390         860          821624
+alt        ((ab)|b)         256    4     311      0.121      0.220      3390         500          1859610
+alt        ((ab)|b)         256    8     311      0.122      0.219      3380         340          746834
+alt        ((ab)|b)         256    16    311      0.121      0.220      5080         800          943005
+alt        ((ab)|b)         256    32    311      0.114      0.221      5800         340          753414
+alt        ((ab)|b)         256    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((ab)|b)         1000   1     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 2001 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   1     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 2000 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   1     311      0.117      0.217      INVALID      2580         INVALID
+alt        ((ab)|b)         1000   2     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 2001 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   2     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 2000 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   2     311      0.117      0.217      INVALID      2600         INVALID
+alt        ((ab)|b)         1000   4     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 2001 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   4     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 2000 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   4     311      0.119      0.219      INVALID      2570         INVALID
+alt        ((ab)|b)         1000   8     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 2001 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   8     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 2000 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   8     311      0.118      0.216      INVALID      2930         INVALID
+alt        ((ab)|b)         1000   16    311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 2001 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   16    311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 2000 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   16    311      0.122      0.218      INVALID      1730         INVALID
+alt        ((ab)|b)         1000   32    311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 2001 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   32    311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 2000 bytes -- number DISCARDED
+alt        ((ab)|b)         1000   32    311      0.117      0.215      INVALID      2590         INVALID
+alt        ((ab)|b)         1000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((ab)|b)         4000   1     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 8001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   1     311      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   1     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 8000 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   1     311      0.120      0.218      INVALID      INVALID      INVALID
+alt        ((ab)|b)         4000   2     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 8001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   2     311      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   2     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 8000 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   2     311      0.119      0.220      INVALID      INVALID      INVALID
+alt        ((ab)|b)         4000   4     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 8001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   4     311      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   4     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 8000 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   4     311      0.119      0.221      INVALID      INVALID      INVALID
+alt        ((ab)|b)         4000   8     311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 8001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   8     311      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   8     311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 8000 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   8     311      0.119      0.220      INVALID      INVALID      INVALID
+alt        ((ab)|b)         4000   16    311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 8001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   16    311      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   16    311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 8000 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   16    311      0.118      0.221      INVALID      INVALID      INVALID
+alt        ((ab)|b)         4000   32    311      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 8001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   32    311      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   32    311      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 8000 bytes -- number DISCARDED
+alt        ((ab)|b)         4000   32    311      0.123      0.220      INVALID      INVALID      INVALID
+alt        ((ab)|b)         4000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab|abc|abcd|abcde) 1      1     355      0.121      0.221      50           50           490
+alt        ((a)|ab|abc|abcd|abcde) 1      2     344      0.122      0.220      100          110          410
+alt        ((a)|ab|abc|abcd|abcde) 1      4     344      0.121      0.220      50           100          470
+alt        ((a)|ab|abc|abcd|abcde) 1      8     344      0.120      0.220      40           50           200
+alt        ((a)|ab|abc|abcd|abcde) 1      16    344      0.120      0.219      80           80           390
+alt        ((a)|ab|abc|abcd|abcde) 1      32    344      0.119      0.220      40           80           320
+alt        ((a)|ab|abc|abcd|abcde) 1      rep   344      0.121      0.220      50           40           370
+alt        ((a)|ab|abc|abcd|abcde) 2      1     355      0.117      0.220      160          80           770
+alt        ((a)|ab|abc|abcd|abcde) 2      2     429      0.120      0.221      140          210          810
+alt        ((a)|ab|abc|abcd|abcde) 2      4     420      0.122      0.219      110          90           760
+alt        ((a)|ab|abc|abcd|abcde) 2      8     420      0.122      0.221      110          140          880
+alt        ((a)|ab|abc|abcd|abcde) 2      16    420      0.116      0.218      60           110          780
+alt        ((a)|ab|abc|abcd|abcde) 2      32    420      0.123      0.218      50           200          610
+alt        ((a)|ab|abc|abcd|abcde) 2      rep   420      0.121      0.219      70           160          790
+alt        ((a)|ab|abc|abcd|abcde) 4      1     355      0.122      0.221      150          200          870
+alt        ((a)|ab|abc|abcd|abcde) 4      2     429      0.121      0.222      100          210          2110
+alt        ((a)|ab|abc|abcd|abcde) 4      4     577      0.119      0.219      90           230          1240
+alt        ((a)|ab|abc|abcd|abcde) 4      8     572      0.121      0.224      70           180          980
+alt        ((a)|ab|abc|abcd|abcde) 4      16    572      0.120      0.223      170          90           870
+alt        ((a)|ab|abc|abcd|abcde) 4      32    572      0.114      0.222      160          90           740
+alt        ((a)|ab|abc|abcd|abcde) 4      rep   572      0.114      0.223      90           210          830
+alt        ((a)|ab|abc|abcd|abcde) 8      1     355      0.118      0.221      280          140          3160
+alt        ((a)|ab|abc|abcd|abcde) 8      2     429      0.120      0.221      150          170          3490
+alt        ((a)|ab|abc|abcd|abcde) 8      4     577      0.119      0.221      230          200          4200
+alt        ((a)|ab|abc|abcd|abcde) 8      8     873      0.117      0.321      130          100          4740
+alt        ((a)|ab|abc|abcd|abcde) 8      16    876      0.120      0.422      120          240          3160
+alt        ((a)|ab|abc|abcd|abcde) 8      32    876      0.120      0.417      150          210          3150
+alt        ((a)|ab|abc|abcd|abcde) 8      rep   876      0.120      0.420      130          200          2700
+alt        ((a)|ab|abc|abcd|abcde) 16     1     355      0.121      0.217      260          130          6610
+alt        ((a)|ab|abc|abcd|abcde) 16     2     429      0.120      0.213      200          210          11840
+alt        ((a)|ab|abc|abcd|abcde) 16     4     577      0.121      0.221      420          130          9981
+alt        ((a)|ab|abc|abcd|abcde) 16     8     873      0.120      0.321      230          180          11830
+alt        ((a)|ab|abc|abcd|abcde) 16     16    1465     0.116      0.521      400          150          15880
+alt        ((a)|ab|abc|abcd|abcde) 16     32    1484     0.119      0.621      140          100          7900
+alt        ((a)|ab|abc|abcd|abcde) 16     rep   1484     0.119      0.621      390          210          9440
+alt        ((a)|ab|abc|abcd|abcde) 32     1     355      0.121      0.220      830          320          18240
+alt        ((a)|ab|abc|abcd|abcde) 32     2     429      0.123      0.220      710          270          34680
+alt        ((a)|ab|abc|abcd|abcde) 32     4     577      0.119      0.217      620          250          35421
+alt        ((a)|ab|abc|abcd|abcde) 32     8     873      0.119      0.321      730          180          28680
+alt        ((a)|ab|abc|abcd|abcde) 32     16    1465     0.121      0.518      710          150          37121
+alt        ((a)|ab|abc|abcd|abcde) 32     32    2649     0.122      1.017      320          260          60130
+alt        ((a)|ab|abc|abcd|abcde) 32     rep   2700     0.117      1.623      250          150          80611
+alt        ((a)|ab|abc|abcd|abcde) 64     1     355      0.121      0.221      570          350          120910
+alt        ((a)|ab|abc|abcd|abcde) 64     2     429      0.120      0.221      650          410          134371
+alt        ((a)|ab|abc|abcd|abcde) 64     4     577      0.120      0.319      1130         210          87711
+alt        ((a)|ab|abc|abcd|abcde) 64     8     873      0.122      0.322      1120         370          159360
+alt        ((a)|ab|abc|abcd|abcde) 64     16    1465     0.116      0.522      1110         310          199051
+alt        ((a)|ab|abc|abcd|abcde) 64     32    2649     0.120      1.021      1100         360          135441
+alt        ((a)|ab|abc|abcd|abcde) 64     rep   5132     0.120      6.025      1070         310          264541
+alt        ((a)|ab|abc|abcd|abcde) 128    1     355      0.120      0.220      1620         650          291461
+alt        ((a)|ab|abc|abcd|abcde) 128    2     429      0.111      0.219      1800         520          336912
+alt        ((a)|ab|abc|abcd|abcde) 128    4     577      0.122      0.221      1440         270          349532
+alt        ((a)|ab|abc|abcd|abcde) 128    8     873      0.120      0.321      2410         280          349582
+alt        ((a)|ab|abc|abcd|abcde) 128    16    1465     0.123      0.520      1440         200          440812
+alt        ((a)|ab|abc|abcd|abcde) 128    32    2649     0.120      1.021      2120         430          521102
+alt        ((a)|ab|abc|abcd|abcde) 128    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab|abc|abcd|abcde) 256    1     355      0.122      0.219      2670         460          991156
+alt        ((a)|ab|abc|abcd|abcde) 256    2     429      0.122      0.219      2970         910          2172772
+alt        ((a)|ab|abc|abcd|abcde) 256    4     577      0.120      0.221      2860         850          1121295
+alt        ((a)|ab|abc|abcd|abcde) 256    8     873      0.123      0.321      2830         730          1041666
+alt        ((a)|ab|abc|abcd|abcde) 256    16    1465     0.122      0.523      4210         530          1376028
+alt        ((a)|ab|abc|abcd|abcde) 256    32    2649     0.120      1.021      5080         690          1694289
+alt        ((a)|ab|abc|abcd|abcde) 256    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab|abc|abcd|abcde) 1000   1     355      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   1     355      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   1     355      0.119      0.220      INVALID      2820         INVALID
+alt        ((a)|ab|abc|abcd|abcde) 1000   2     429      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   2     429      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   2     429      0.121      0.221      INVALID      2400         INVALID
+alt        ((a)|ab|abc|abcd|abcde) 1000   4     577      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   4     577      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   4     577      0.119      0.220      INVALID      1500         INVALID
+alt        ((a)|ab|abc|abcd|abcde) 1000   8     873      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   8     873      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   8     873      0.119      0.323      INVALID      1440         INVALID
+alt        ((a)|ab|abc|abcd|abcde) 1000   16    2073     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   16    2073     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   16    2073     0.118      1.022      INVALID      1460         INVALID
+alt        ((a)|ab|abc|abcd|abcde) 1000   32    3257     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   32    3257     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 1000   32    3257     0.119      1.824      INVALID      2170         INVALID
+alt        ((a)|ab|abc|abcd|abcde) 1000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+alt        ((a)|ab|abc|abcd|abcde) 4000   1     355      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   1     355      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   1     355      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   1     355      0.122      0.222      INVALID      INVALID      INVALID
+alt        ((a)|ab|abc|abcd|abcde) 4000   2     429      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   2     429      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   2     429      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   2     429      0.121      0.222      INVALID      INVALID      INVALID
+alt        ((a)|ab|abc|abcd|abcde) 4000   4     577      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   4     577      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   4     577      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   4     577      0.121      0.220      INVALID      INVALID      INVALID
+alt        ((a)|ab|abc|abcd|abcde) 4000   8     873      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   8     873      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   8     873      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   8     873      0.121      0.322      INVALID      INVALID      INVALID
+alt        ((a)|ab|abc|abcd|abcde) 4000   16    1465     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   16    1465     regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   16    1465     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   16    1465     0.122      0.621      INVALID      INVALID      INVALID
+alt        ((a)|ab|abc|abcd|abcde) 4000   32    2649     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   32    2649     regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   32    2649     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+alt        ((a)|ab|abc|abcd|abcde) 4000   32    2649     0.122      1.021      INVALID      INVALID      INVALID
+alt        ((a)|ab|abc|abcd|abcde) 4000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+
+== body-kind: group-with-capture ==
+group      (a(b|c)?)        1      1     328      0.120      0.219      70           170          330
+group      (a(b|c)?)        1      2     306      0.119      0.217      190          180          170
+group      (a(b|c)?)        1      4     306      0.119      0.221      160          140          250
+group      (a(b|c)?)        1      8     306      0.120      0.220      160          110          200
+group      (a(b|c)?)        1      16    306      0.119      0.221      140          120          140
+group      (a(b|c)?)        1      32    306      0.122      0.221      170          150          260
+group      (a(b|c)?)        1      rep   306      0.121      0.222      190          160          190
+group      (a(b|c)?)        2      1     328      0.122      0.220      210          130          540
+group      (a(b|c)?)        2      2     353      0.120      0.221      240          200          320
+group      (a(b|c)?)        2      4     344      0.122      0.221      220          200          390
+group      (a(b|c)?)        2      8     344      0.119      0.220      240          270          400
+group      (a(b|c)?)        2      16    344      0.119      0.215      130          260          460
+group      (a(b|c)?)        2      32    344      0.118      0.218      120          240          410
+group      (a(b|c)?)        2      rep   344      0.121      0.216      220          230          210
+group      (a(b|c)?)        4      1     328      0.122      0.216      220          280          900
+group      (a(b|c)?)        4      2     353      0.119      0.222      310          280          1280
+group      (a(b|c)?)        4      4     425      0.115      0.215      320          210          1210
+group      (a(b|c)?)        4      8     420      0.114      0.218      290          200          610
+group      (a(b|c)?)        4      16    420      0.118      0.221      320          200          890
+group      (a(b|c)?)        4      32    420      0.119      0.222      290          200          990
+group      (a(b|c)?)        4      rep   420      0.117      0.220      270          120          460
+group      (a(b|c)?)        8      1     328      0.121      0.220      250          290          1060
+group      (a(b|c)?)        8      2     353      0.120      0.219      180          160          1090
+group      (a(b|c)?)        8      4     425      0.123      0.223      420          320          1290
+group      (a(b|c)?)        8      8     569      0.119      0.320      700          100          1170
+group      (a(b|c)?)        8      16    572      0.121      0.318      290          210          1640
+group      (a(b|c)?)        8      32    572      0.120      0.322      340          230          2420
+group      (a(b|c)?)        8      rep   572      0.120      0.321      210          170          1690
+group      (a(b|c)?)        16     1     328      0.118      0.220      290          210          3540
+group      (a(b|c)?)        16     2     353      0.114      0.218      400          200          3810
+group      (a(b|c)?)        16     4     425      0.115      0.218      770          190          5500
+group      (a(b|c)?)        16     8     569      0.120      0.320      350          320          4120
+group      (a(b|c)?)        16     16    857      0.120      0.320      520          200          7410
+group      (a(b|c)?)        16     32    876      0.120      0.420      800          270          5190
+group      (a(b|c)?)        16     rep   876      0.119      0.421      400          140          4980
+group      (a(b|c)?)        32     1     328      0.122      0.217      1140         330          14580
+group      (a(b|c)?)        32     2     353      0.121      0.221      1190         420          27540
+group      (a(b|c)?)        32     4     425      0.119      0.216      820          200          18840
+group      (a(b|c)?)        32     8     569      0.119      0.321      1180         280          20440
+group      (a(b|c)?)        32     16    857      0.121      0.318      960          250          13090
+group      (a(b|c)?)        32     32    1433     0.119      0.623      1300         210          31480
+group      (a(b|c)?)        32     rep   1484     0.120      0.922      890          370          27021
+group      (a(b|c)?)        64     1     328      0.122      0.214      1320         510          87570
+group      (a(b|c)?)        64     2     353      0.119      0.221      1930         330          78010
+group      (a(b|c)?)        64     4     425      0.122      0.218      920          250          42590
+group      (a(b|c)?)        64     8     569      0.122      0.321      2410         560          76410
+group      (a(b|c)?)        64     16    857      0.118      0.322      2270         330          49621
+group      (a(b|c)?)        64     32    1433     0.118      0.621      1620         520          62991
+group      (a(b|c)?)        64     rep   2700     0.121      2.523      1690         600          56140
+group      (a(b|c)?)        128    1     328      0.119      0.220      2550         930          230692
+group      (a(b|c)?)        128    2     353      0.119      0.217      3610         700          210711
+group      (a(b|c)?)        128    4     425      0.119      0.220      1410         480          195661
+group      (a(b|c)?)        128    8     569      0.117      0.316      3820         660          281991
+group      (a(b|c)?)        128    16    857      0.119      0.321      5080         890          378951
+group      (a(b|c)?)        128    32    1433     0.115      0.623      4990         810          196411
+group      (a(b|c)?)        128    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      (a(b|c)?)        256    1     328      0.120      0.220      4940         810          1447348
+group      (a(b|c)?)        256    2     353      0.120      0.220      7590         1140         1239816
+group      (a(b|c)?)        256    4     425      0.120      0.221      2750         600          539323
+group      (a(b|c)?)        256    8     569      0.115      0.319      8000         1220         618363
+group      (a(b|c)?)        256    16    857      0.115      0.417      7990         920          1491178
+group      (a(b|c)?)        256    32    1433     0.118      0.616      9160         1530         1554048
+group      (a(b|c)?)        256    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      (a(b|c)?)        1000   1     328      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   1     328      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   1     328      0.120      0.221      INVALID      3790         INVALID
+group      (a(b|c)?)        1000   2     353      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   2     353      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   2     353      0.121      0.221      INVALID      2250         INVALID
+group      (a(b|c)?)        1000   4     425      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   4     425      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   4     425      0.119      0.220      INVALID      3210         INVALID
+group      (a(b|c)?)        1000   8     569      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   8     569      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   8     569      0.112      0.324      INVALID      1920         INVALID
+group      (a(b|c)?)        1000   16    1161     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   16    1161     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   16    1161     0.120      0.619      INVALID      4730         INVALID
+group      (a(b|c)?)        1000   32    1737     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   32    1737     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      (a(b|c)?)        1000   32    1737     0.121      0.922      INVALID      5580         INVALID
+group      (a(b|c)?)        1000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      (a(b|c)?)        4000   1     328      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   1     328      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   1     328      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   1     328      0.121      0.217      INVALID      INVALID      INVALID
+group      (a(b|c)?)        4000   2     353      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   2     353      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   2     353      0.119      0.221      INVALID      13550        INVALID
+group      (a(b|c)?)        4000   4     425      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   4     425      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   4     425      0.118      0.214      INVALID      11730        INVALID
+group      (a(b|c)?)        4000   8     569      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   8     569      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   8     569      0.116      0.321      INVALID      12410        INVALID
+group      (a(b|c)?)        4000   16    857      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   16    857      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   16    857      0.115      0.322      INVALID      15000        INVALID
+group      (a(b|c)?)        4000   32    1433     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   32    1433     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      (a(b|c)?)        4000   32    1433     0.120      0.621      INVALID      21620        INVALID
+group      (a(b|c)?)        4000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      ((a)|a(b|c))     1      1     324      0.120      0.220      110          110          250
+group      ((a)|a(b|c))     1      2     313      0.119      0.220      40           90           280
+group      ((a)|a(b|c))     1      4     313      0.119      0.221      110          50           170
+group      ((a)|a(b|c))     1      8     313      0.120      0.220      40           50           180
+group      ((a)|a(b|c))     1      16    313      0.122      0.220      60           80           140
+group      ((a)|a(b|c))     1      32    313      0.118      0.220      40           60           160
+group      ((a)|a(b|c))     1      rep   313      0.119      0.220      50           80           270
+group      ((a)|a(b|c))     2      1     324      0.119      0.220      110          90           380
+group      ((a)|a(b|c))     2      2     367      0.122      0.218      70           60           400
+group      ((a)|a(b|c))     2      4     358      0.114      0.220      120          130          720
+group      ((a)|a(b|c))     2      8     358      0.121      0.221      60           150          310
+group      ((a)|a(b|c))     2      16    358      0.118      0.215      60           90           430
+group      ((a)|a(b|c))     2      32    358      0.119      0.221      60           130          420
+group      ((a)|a(b|c))     2      rep   358      0.119      0.221      50           80           330
+group      ((a)|a(b|c))     4      1     324      0.117      0.214      120          140          1060
+group      ((a)|a(b|c))     4      2     367      0.119      0.222      70           60           700
+group      ((a)|a(b|c))     4      4     453      0.120      0.221      80           110          1350
+group      ((a)|a(b|c))     4      8     448      0.119      0.218      90           90           1300
+group      ((a)|a(b|c))     4      16    448      0.124      0.221      160          160          720
+group      ((a)|a(b|c))     4      32    448      0.121      0.221      150          90           1340
+group      ((a)|a(b|c))     4      rep   448      0.117      0.220      90           80           750
+group      ((a)|a(b|c))     8      1     324      0.120      0.220      230          100          2290
+group      ((a)|a(b|c))     8      2     367      0.111      0.212      220          180          3340
+group      ((a)|a(b|c))     8      4     453      0.121      0.218      250          160          2910
+group      ((a)|a(b|c))     8      8     625      0.119      0.321      120          80           2970
+group      ((a)|a(b|c))     8      16    628      0.120      0.321      240          90           3150
+group      ((a)|a(b|c))     8      32    628      0.118      0.319      130          130          1840
+group      ((a)|a(b|c))     8      rep   628      0.121      0.321      190          140          1520
+group      ((a)|a(b|c))     16     1     324      0.116      0.220      390          180          4720
+group      ((a)|a(b|c))     16     2     367      0.120      0.221      250          100          5690
+group      ((a)|a(b|c))     16     4     453      0.120      0.221      400          140          4860
+group      ((a)|a(b|c))     16     8     625      0.120      0.320      330          130          5030
+group      ((a)|a(b|c))     16     16    969      0.121      0.421      180          90           9700
+group      ((a)|a(b|c))     16     32    988      0.117      0.519      370          170          9700
+group      ((a)|a(b|c))     16     rep   988      0.119      0.521      320          90           9670
+group      ((a)|a(b|c))     32     1     324      0.122      0.222      670          210          28510
+group      ((a)|a(b|c))     32     2     367      0.122      0.219      720          260          16261
+group      ((a)|a(b|c))     32     4     453      0.118      0.223      270          100          23660
+group      ((a)|a(b|c))     32     8     625      0.120      0.321      660          190          29050
+group      ((a)|a(b|c))     32     16    969      0.122      0.421      710          170          30740
+group      ((a)|a(b|c))     32     32    1657     0.122      0.723      700          90           42450
+group      ((a)|a(b|c))     32     rep   1708     0.123      0.919      570          110          22240
+group      ((a)|a(b|c))     64     1     324      0.123      0.220      1530         300          94621
+group      ((a)|a(b|c))     64     2     367      0.119      0.221      1170         260          91440
+group      ((a)|a(b|c))     64     4     453      0.122      0.221      1370         300          105600
+group      ((a)|a(b|c))     64     8     625      0.120      0.317      1280         120          107080
+group      ((a)|a(b|c))     64     16    969      0.120      0.415      1250         260          84870
+group      ((a)|a(b|c))     64     32    1657     0.115      0.722      610          270          118361
+group      ((a)|a(b|c))     64     rep   3148     0.118      2.620      1310         270          142441
+group      ((a)|a(b|c))     128    1     324      0.120      0.219      2960         450          366791
+group      ((a)|a(b|c))     128    2     367      0.120      0.221      2790         490          354231
+group      ((a)|a(b|c))     128    4     453      0.119      0.220      2440         450          357512
+group      ((a)|a(b|c))     128    8     625      0.122      0.320      1430         420          238381
+group      ((a)|a(b|c))     128    16    969      0.120      0.417      2400         480          294511
+group      ((a)|a(b|c))     128    32    1657     0.122      0.721      1210         170          240061
+group      ((a)|a(b|c))     128    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      ((a)|a(b|c))     256    1     324      0.120      0.218      2670         530          710583
+group      ((a)|a(b|c))     256    2     367      0.121      0.221      2480         480          1708218
+group      ((a)|a(b|c))     256    4     453      0.119      0.221      2380         520          1471508
+group      ((a)|a(b|c))     256    8     625      0.119      0.321      2810         660          662723
+group      ((a)|a(b|c))     256    16    969      0.121      0.421      2760         380          789904
+group      ((a)|a(b|c))     256    32    1657     0.121      0.721      5080         310          1842810
+group      ((a)|a(b|c))     256    rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      ((a)|a(b|c))     1000   1     324      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   1     324      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   1     324      0.121      0.220      INVALID      1690         INVALID
+group      ((a)|a(b|c))     1000   2     367      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   2     367      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   2     367      0.121      0.222      INVALID      2780         INVALID
+group      ((a)|a(b|c))     1000   4     453      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   4     453      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   4     453      0.120      0.217      INVALID      1450         INVALID
+group      ((a)|a(b|c))     1000   8     625      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   8     625      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   8     625      0.120      0.321      INVALID      1470         INVALID
+group      ((a)|a(b|c))     1000   16    1329     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   16    1329     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   16    1329     0.121      0.618      INVALID      2490         INVALID
+group      ((a)|a(b|c))     1000   32    2017     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 1001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   32    2017     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 1000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     1000   32    2017     0.117      1.022      INVALID      1410         INVALID
+group      ((a)|a(b|c))     1000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
+group      ((a)|a(b|c))     4000   1     324      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   1     324      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   1     324      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   1     324      0.121      0.218      INVALID      INVALID      INVALID
+group      ((a)|a(b|c))     4000   2     367      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   2     367      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   2     367      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   2     367      0.123      0.221      INVALID      INVALID      INVALID
+group      ((a)|a(b|c))     4000   4     453      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   4     453      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   4     453      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   4     453      0.118      0.221      INVALID      INVALID      INVALID
+group      ((a)|a(b|c))     4000   8     625      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   8     625      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   8     625      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   8     625      0.119      0.322      INVALID      INVALID      INVALID
+group      ((a)|a(b|c))     4000   16    969      regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   16    969      regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   16    969      regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   16    969      0.118      0.422      INVALID      INVALID      INVALID
+group      ((a)|a(b|c))     4000   32    1657     regime=max       VALIDATION-FAILED: wanted match, got FRAMES on 4001 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   32    1657     regime=belowmax  VALIDATION-FAILED: wanted match, got FRAMES on 501 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   32    1657     regime=fail      VALIDATION-FAILED: wanted nomatch, got FRAMES on 4000 bytes -- number DISCARDED
+group      ((a)|a(b|c))     4000   32    1657     0.122      0.720      INVALID      INVALID      INVALID
+group      ((a)|a(b|c))     4000   rep   REFUSED-OR-TIMEOUT (a finding: record it, do not re-run longer)
