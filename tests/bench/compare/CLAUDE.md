@@ -76,4 +76,41 @@ in this file is deliberately span-only (see the Scope disclosure section of
 README.md); (j) is the sole exception and README.md's disclosure is worded
 to say so.
 
+**FINDING, not fixed here (M4.6b, 2026-08-17): cases (c) and (i) were already
+silently measuring a different engine than their floors were set against, the
+same D46 story `run_bench.sh`'s case (d) already lived through.** A full
+10-case `gate.sh` run after adding (j) — box quiet throughout, 1-min load
+0.56 start / 1.16 end against a 6.00 limit, `results-ubuntubudu-20260817.md`
+— failed case (c): measured 251.429 MB/s (spread 1.02x, re-confirmed at
+242.510 MB/s on a fresh isolated `CASES=c` run moments later) against a
+349.754 floor, a real and reproducible ~1.5x drop from every prior recorded
+run of this case (384.880-390.344 MB/s across 2026-08-09/2026-08-11). This is
+NOT caused by the (j) edit — (c)'s subject bytes are drawn from the shared
+`rng` at the identical point in the sequence as before (the new (j) subject
+block is appended strictly after (i)'s), and (c)'s pattern, build flags and
+driver are untouched.
+
+The cause: `(alpha|beta|gamma|delta|epsilon)` (case (c)'s pattern, and the
+IDENTICAL pattern text `run_bench.sh` pinned to `--no-captures` for exactly
+this reason) has one incidental capturing group, so under D42.1
+(captures-on-by-default, landed 2026-08-14) it now compiles to
+`rx_info.engine == ENGM_VM` (confirmed directly: `engine_why` = "capture
+group at pattern offset 0") — the VM+prefilter hybrid — where it compiled to
+`ENGM_DFA` when the 388.615 floor was captured (2026-08-09/11, before
+D42.1). Case (i)'s pattern `a(b|c)+d` has the same problem (`engine_why` =
+"capture group at pattern offset 1") and shows the identical symptom at a
+smaller apparent size only because its own margin is loose enough to absorb
+it: latency drifted 83.36 -> 105.48 ns/call (a ~26% regression, same
+direction) but still clears its 119.086 ns/call limit, since case (i)'s
+margin was set at the D17/R3.6 floor (0.700, the widest in this file) for
+unrelated noise reasons before D42.1 existed. **No case in this file besides
+the deliberately-added (j) was ever pinned against engine drift the way
+`run_bench.sh` pinned its own case (d) and (c) here** (see that file's own
+"D46/D42.1" comments for the precedent and the fix shape: `--no-captures` on
+the affected pattern, if the intent is still to measure the pure DFA). Left
+for the manager to rule on — out of M4.6b's mandate (add case (j) with its
+own floor), and the fix is a design decision (pin (c)/(i) to `--no-captures`
+to restore their original DFA-only intent, vs. accept new floors that measure
+what ships by default) rather than a mechanical one.
+
 Maintenance: update this file when cases, engines or gating rules change.

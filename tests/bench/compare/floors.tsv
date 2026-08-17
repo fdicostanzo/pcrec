@@ -67,10 +67,14 @@
 # forces the VM+prefilter hybrid rather than (f)'s pure DFA (confirmed from
 # the generated artifact's rx_info.engine == ENGM_VM=2 and a non-NULL
 # engine_why, "capture group at pattern offset 0"). Three independent
-# quiet-box CASES=j runs (1-min load 0.21-0.64 throughout, LOAD_LIMIT 6.00,
-# `taskset -c 2`, BENCH_TRIALS=5 median each): 150.350 (spread 1.00x),
-# 150.369 (spread 1.00x), 150.397 (spread 1.01x) MB/s — essentially
-# noise-free, cross-run spread 1.0003x. Reference is the median of the
+# quiet-box CASES=j runs, `taskset -c 2`, BENCH_TRIALS=5 median each, LOAD_LIMIT
+# 6.00 -- 1-min load (start->end) 0.21->0.38, 0.32->0.47, 0.43->0.64, nothing
+# else running concurrently: an earlier same-session launch of the OPTIONAL
+# counterk_impl/probes/bench_k.sh K-sweep was killed before any of these three
+# ran, specifically so it would not contend with this timing run (the sweep
+# was re-run afterward, once this floor was set and the box was quiet again).
+# 150.350 (spread 1.00x), 150.369 (spread 1.00x), 150.397 (spread 1.01x)
+# MB/s — essentially noise-free, cross-run spread 1.0003x. Reference is the median of the
 # three, 150.369; margin is clamp(1/(spread*1.05), 0.70, 0.90) at the
 # worst of the three within-run spreads (1.01x), which clamps to the same
 # 0.90 ceiling every other spread here would too. Fail threshold
