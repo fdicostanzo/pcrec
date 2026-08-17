@@ -70,6 +70,14 @@ Append-only where noted; the restart/status-recovery record for the project.
   implicates another engine.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
+- `learnings.md` — the consolidated learnings digest, distilled from a
+  complete read of the journal (written 2026-08-17 at Frank's request,
+  126 entries in). Eight sections: measurement discipline, oracle
+  strategy, check design (summary — the fuller catalogue is in the
+  manager's memory), testing strategy, design process, orchestration,
+  durable technical facts, and the meta-lesson. Future sessions read
+  THIS instead of the whole journal for inherited lessons; update it at
+  session close only when a NEW lesson class appears.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.
