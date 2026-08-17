@@ -4430,7 +4430,8 @@ bench floor — declined under D18's earn-its-axis against the full cost
 of a new selection axis (D46 stamp+force + sabotage row per the
 established precedent). Revisit-when, both: [ENG-PGO]/bench-class
 evidence surfaces a real customer (the D50 evidence-gate shape); or the
-start++ retry loop is ever vectorized, which would move the offset
+start++ retry loop is ever vectorized, or [ENG-ISL] builds (DFA
+islands lower the VM's per-attempt cost) — either moves the offset
 crossover and deserves a re-measure.
 
 **D53 ADDENDUM (Frank, 2026-08-17, same session): the refutation's
