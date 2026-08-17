@@ -316,15 +316,15 @@ Three things follow.
   entry's "100-byte ordinary input" framing understates the reach. Nesting
   multiplies: each level's decomposition space is explored inside every leaf
   of the level above it.
-- **Python cannot serve as the oracle here.** `re.search` on this shape at
-  n = 50 did not return inside **six minutes** (two separate attempts, one
-  bounded at 100 s and one still running when this note was closed); the
-  correctness check above is
-  therefore pcrec-vs-pcrec — baseline replication as the ground truth,
-  which is exactly the primary instrument `eng_brep_design.md` §5.1
-  established for this territory, with python demoted to the shapes it can
-  still answer. Stated rather than hidden: for the three-level rows the
-  independent oracle is missing, and §10 keeps it on the not-measured list.
+- **Python barely serves as the oracle here, and the number is the point.**
+  `re.search` on this shape at n = 50 returns `(0,50) (40,50) (48,50)` — the
+  same vector both pcrec arms give — after **451.6 s**. Seven and a half
+  minutes on a fifty-byte subject. So the n = 50 row DOES have an independent
+  oracle and all three arms agree on every slot; the n = 51/55/60 rows do
+  not, and their check is pcrec-vs-pcrec — baseline replication as the ground
+  truth, which is exactly the primary instrument `eng_brep_design.md` §5.1
+  established for this territory. §10 keeps the remaining rows on the
+  not-measured list.
 - **The prototype needed a per-site `minrest` that is not one formula.** At
   three levels the constant at scan site `k` is
   `max(0, 5−(j+1))·2 + max(0, 5−(i+1))·10` with `i = k / 10`, `j = k % 10` —
@@ -888,9 +888,9 @@ bitmap and is not designed here.
    emitter threading the accumulator would reach. Both of those are more
    pruning, not less, so the measured 21 is an upper bound on what the
    mechanism achieves there; that direction is argued, not measured.
-5. **An independent oracle for the three-level rows.** §2.6's correctness
-   check is pcrec-vs-pcrec; python did not return inside 100 s and libpcre2
-   was not used. The small three-level shape `((a{1,2}){1,2}){1,2}` is in the
+5. **An independent oracle for the three-level rows above n = 50.** Python
+   answered n = 50 (in 451.6 s, agreeing on every slot) and was not run to
+   completion on 51/55/60; libpcre2 was not used at all. The small three-level shape `((a{1,2}){1,2}){1,2}` is in the
    corpus, was DECLINED by the prototype's guard, and costs ≤ 1 step anyway.
 6. **Lazy and possessive outer quantifiers.** Every measured shape is greedy
    throughout. `eng_brep_design.md`'s R24 outcome is the standing warning here

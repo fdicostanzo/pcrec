@@ -27,3 +27,9 @@ prune    100             5   0 100  90 100  98 100
 # the correctness check here is pcrec-vs-pcrec (replication as ground truth,
 # eng_brep_design.md section 5.1's primary instrument). Recorded as a gap in
 # k23_design.md section 10 item 5 rather than papered over.
+#
+# UPDATE (same session): python re DID complete at n = 50, in 451.6 s, and
+# agrees with both pcrec arms on every slot -- (0,50) (40,50) (48,50). So the
+# n=50 row has a genuine three-way oracle; 51/55/60 do not (python was not run
+# to completion on them). 451.6 s on a fifty-byte subject is itself the
+# argument that python cannot be the routine oracle for this family.
