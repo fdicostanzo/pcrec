@@ -1151,12 +1151,28 @@ arithmetically equal code there.
   with the broken clamp by parity accident — which is precisely how the one
   row that DID agree in E1's eight (`z`+`ab`×100) agreed.
 
-**Validated in the failing direction, which is the part that makes it a
-check.** `prune_proto.py --no-lattice` re-emits the pre-R26 clamp. Under it
-the new rows go RED (measured: `((?:ab){10,20}){10,50}` answers `nomatch` at
-lengths 201, 203 and 205 where the lattice build matches, matching E1's
-original 5-of-8). A corpus that does not go red under that flag is not
-testing the lattice rule, and this one does.
+**Validated in the failing direction over the WHOLE corpus, which is the
+part that makes it a check.** `K23_PRUNE_EXTRA=--no-lattice` re-emits the
+pre-R26 clamp for every shape and re-runs the differential. MEASURED:
+
+| stride | cells DIFFER | shapes with ≥1 DIFFER |
+|---|---|---|
+| 1 | **0 of 506** | **0 of 57** |
+| 2 | 51 of 290 | **29 of 29** |
+| 3 | 30 of 108 | **9 of 9** |
+| all | 81 of 904 | 38 of 95 |
+
+Two readings, and the first is the more important:
+
+- **Zero of 506 stride-1 cells go red.** That is not a weak result, it is the
+  PROOF of this section's premise: at stride 1 the broken clamp and the
+  correct one are arithmetically the same code, so no subject of any length
+  can separate them. The old corpus was not unlucky, it was structurally
+  incapable, and this row measures that rather than asserting it.
+- **Every single stride > 1 shape goes red** — 29 of 29 and 9 of 9,
+  independently reproducing E9's "12 stride>1 shapes, EVERY one wrong
+  somewhere". The axis is not merely present, it is decisive on every member
+  of the population it was added for.
 
 ### 7.3 The axes deliberately included
 
