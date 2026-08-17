@@ -1061,9 +1061,16 @@ rule's integer division:
 | `((?:aaa){2,4}){10,50}b` | 3 | 4227.3 ns | 4249.2 ns | 4269.7 ns | +0.48% | **+1.0%** |
 
 At 5.6× the clamp density and with the integer division the lattice rule
-adds, the cost is **≤ 2%** at every stride, and roughly half of it is code
-layout rather than the clamp. "clamp only" is prune-vs-placebo, i.e. the
-clamp's own instructions with layout drift subtracted.
+adds, the cost is **≤ 2% at every stride**. "clamp only" is
+prune-vs-placebo, i.e. the clamp's own instructions with layout drift
+subtracted.
+
+**How much of that is layout varies sharply with the stride, and the earlier
+"roughly half" held only at W = 2 and 3** (R26 V4). Layout's share of the
+total is **12% at W = 1, 59% at W = 2, 52% at W = 3** — so at stride 1 the
+clamp really is most of the (small) cost, and above it the clamp is the
+minority of it. The defensible summary is the ≤ 2% ceiling; the layout
+fraction is not a constant and should not be quoted as one.
 
 **The sparse-density rows, kept** (empty follow, 9 of 50 sites), because they
 are what the note originally reported and dropping them would hide the
@@ -1076,7 +1083,7 @@ inside a correction):
 
 | shape | n | base | placebo | prune | total |
 |---|---|---|---|---|---|
-| `(a{10,20}){10,50}` | 300 | 1984.0 ns | 2010.0 ns | 2042.5 ns | +3.0% |
+| `(a{10,20}){10,50}` | 300 | 1984.0 ns | 2010.0 ns | 2042.5 ns | +2.9% |
 | `(a{2,4}){10,50}` | 200 | 1595.9 ns | 1582.5 ns | 1580.3 ns | −1.0% |
 | `(a{1,2}){10,50}` | 60 | 598.7 ns | 599.7 ns | 598.2 ns | −0.1% |
 
@@ -1090,7 +1097,7 @@ arm at all.
 
 Run-to-run variation is of the same order as the effect: three separate
 nine-repetition runs of the identical sparse harness gave +3.7%, +3.0% and
-+3.0% on the first shape. All three support the same reading and none
++2.9% on the first shape. All three support the same reading and none
 supports a tighter one. **Every number in both tables is from the archive at
 `out/throughput.txt`**, which is the discipline V4 found this section
 breaking.
