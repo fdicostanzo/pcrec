@@ -83,7 +83,7 @@
 # same weakest-case number every other 0.90-margin row here carries (a, b,
 # c, h). Tighter is not warranted from three same-session runs without
 # EARN=1-style independent-date history (R3.7).
-# k/l/m ADDED ([BENCH-VM], 2026-08-17, twenty-ninth session): the thin
+# k/l/m ADDED ([BENCH-VM], 2026-08-17, thirtieth session): the thin
 # VM-tier bench slice closing the gap that (j) was the matrix's only
 # capture-bearing/VM case. Discipline follows (j)'s precedent exactly:
 # three independent quiet-box CASES=k,l,m runs, taskset -c 2,
