@@ -227,19 +227,22 @@ static void emit_search_decl(StrBuf *sb, const char *fn)
  * user's CFLAGS cannot be dictated, which is why the lever lives here in the
  * emitted text.
  *
- * PORTABILITY: gcc 4.5+ (`noclone` has been documented since then), inside
- * the gcc-dialect mandate this emitter already lives under (computed goto,
- * `__builtin_expect`). It also rides the STATIC prefilter, deliberately —
- * measured neutral on the VM+prefilter case (j), and the prefilter is the
- * same split-eligible shape. */
+ * PORTABILITY: `noclone` is documented in GCC's manual since 4.5, and is
+ * inside the gcc-dialect mandate this emitter already lives under (computed
+ * goto, `__builtin_expect`). MEASURED, because a silently-IGNORED attribute
+ * would make this fix a no-op that still looks landed: gcc 15.2.0 accepts it
+ * under `-Wattributes -Werror` without an ignored-attribute diagnostic. It
+ * also rides the STATIC prefilter, deliberately — measured neutral on the
+ * VM+prefilter case (j), and the prefilter is the same split-eligible
+ * shape. */
 static void emit_search_head(StrBuf *c, const char *fn, const char *storage)
 {
-    sb_printf(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
-                 "   .part clone of this function -- the split costs a\n"
-                 "   measured 1.33x on a scan-bound pattern, with identical\n"
-                 "   instructions, purely from code placement. Do not remove;\n"
-                 "   see pcrec docs/dev/known_issues.md K24. */\n");
-    sb_printf(c, "__attribute__((noclone))\n");
+    sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
+               "   .part clone of this function -- the split costs a\n"
+               "   measured 1.33x on a scan-bound pattern, with identical\n"
+               "   instructions, purely from code placement. Do not remove;\n"
+               "   see pcrec docs/dev/known_issues.md K24. */\n"
+               "__attribute__((noclone))\n");
     sb_printf(c, "%sint %s(const unsigned char *s, size_t n, "
                  "size_t startpos, ptrdiff_t (*caps)[2])\n{\n", storage, fn);
 }

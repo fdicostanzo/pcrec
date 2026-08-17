@@ -1927,10 +1927,14 @@ Three findings in that table are worth more than the choice it settles:
    no `<prefix>_prefilter` symbol in a VM artifact, before or after this fix,
    because it is fully inlined; `noclone` does not disturb that).
 
-Portability: `noclone` is gcc 4.5+, inside the gcc-dialect mandate the emitter
-already lives under (computed goto, `__builtin_expect`). No clang on the
-measurement box, so clang's treatment of the attribute is UNMEASURED and
-stated as such rather than assumed.
+Portability, with measured and read kept apart: gcc 15.2.0 (the box's
+compiler) ACCEPTS `noclone` under `-Wattributes -Werror` with no
+ignored-attribute diagnostic — checked rather than assumed, because an
+attribute gcc merely ignored would make this fix a no-op that still looked
+landed. GCC's manual has documented it since 4.5 (read, not measured), and it
+sits inside the gcc-dialect mandate the emitter already lives under (computed
+goto, `__builtin_expect`). There is no clang on the box, so clang's treatment
+is UNMEASURED and recorded as such rather than assumed either way.
 
 **THE VM-ARTIFACT AUDIT (the charter's second half): the VM hot path is NOT
 being split, and the brief's premise for why it might be is wrong.** VM
@@ -1938,12 +1942,12 @@ artifacts do NOT have the match/match_caps → search wrapper shape: emit_vm.c's
 `<prefix>_match` and `<prefix>_match_caps` call the `static`
 `<prefix>_match_impl` DIRECTLY, and `<prefix>_search` calls it too — so the VM's
 `search` has zero in-TU callers and is not a wrapper target at all. Measured
-across a 25-pattern sweep (13 DFA, 12 VM), compiled with the bench build line
+across a 25-pattern sweep (14 DFA, 11 VM), compiled with the bench build line
 and audited with `nm` for every `.part`/`.constprop`/`.isra` clone:
 
-- BEFORE the fix: **12 of 13 DFA artifacts carried `rx_search.part.0`** — the
+- BEFORE the fix: **13 of 14 DFA artifacts carried `rx_search.part.0`** — the
   split was never specific to case (c)'s pattern; only its measured COST was.
-  **0 of 12 VM artifacts carried any clone.**
+  **0 of 11 VM artifacts carried any clone.**
 - AFTER the fix: **zero clones anywhere**, both engines.
 - The one DFA artifact that was never split is `^abc`, and the reason is the
   same structural one that protects the VM: it is the ENG_ATTEMPT

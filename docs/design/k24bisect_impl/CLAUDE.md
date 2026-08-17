@@ -30,8 +30,8 @@ floor. `k24_fix_note.md` is that lane's evidence.
   assembly comparison against `-fno-partial-inlining`, the VM-artifact audit
   (the VM is NOT split, and the brief's premise for why it might be —
   match/match_caps → search — is wrong: the VM's wrappers call
-  `<prefix>_match_impl` directly), the 25-pattern clone sweep that shows 12
-  of 13 DFA artifacts were split before the fix and none after, the case (j)
+  `<prefix>_match_impl` directly), the 25-pattern clone sweep that shows 13
+  of 14 DFA artifacts were split before the fix and none after, the case (j)
   neutrality check, and the acceptance run. Read this before changing or
   removing the attribute; two of its rows exist specifically to refute the
   two obvious alternative fixes.

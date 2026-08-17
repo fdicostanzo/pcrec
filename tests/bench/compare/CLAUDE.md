@@ -181,7 +181,7 @@ the way this note guessed: gcc -O2's partial-inlining pass had been splitting
 EVERY unanchored DFA artifact pcrec emitted since the `[M4.4]` API break, with
 identical loop instructions — a pure code-PLACEMENT cost. Case (c) is simply
 where the placement penalty landed hard enough to break a floor; a 25-pattern
-sweep found 12 of 13 DFA artifacts split, and the others matched or beat their
+sweep found 13 of 14 DFA artifacts split, and the others matched or beat their
 floors anyway. Fixed in the EMITTER (`__attribute__((noclone))` on
 `<prefix>_search`, src/gen/emit_dfa.c's `emit_search_head`) because pcrec
 cannot dictate its users' CFLAGS. Evidence:

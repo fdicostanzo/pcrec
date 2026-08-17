@@ -105,10 +105,19 @@ mechanism rather than about this box.
   or after this fix). `noclone` forbids duplication only, and leaves that
   inline standing.
 
-Portability: `noclone` is gcc 4.5+, inside the gcc-dialect mandate the
-emitter already lives under (computed goto, `__builtin_expect`). There is no
-clang on the measurement box, so clang's treatment of the attribute is
-**unmeasured**, and is recorded as unmeasured rather than assumed either way.
+Portability, separating what was measured from what was read:
+
+- MEASURED — gcc 15.2.0 (the box's compiler) accepts `noclone` under
+  `-Wattributes -Werror` with no ignored-attribute diagnostic. This is worth
+  checking rather than assuming: an attribute gcc merely IGNORED would make
+  this fix a no-op that still looked landed, and the `nm` result would be the
+  only thing that noticed.
+- READ, not measured — GCC's manual has documented `noclone` since 4.5. Inside
+  the gcc-dialect mandate the emitter already lives under (computed goto,
+  `__builtin_expect`).
+- UNMEASURED — there is no clang on this box, so clang's treatment of the
+  attribute is unknown, and is recorded as unknown rather than assumed in
+  either direction.
 
 ## The VM-artifact audit
 
@@ -123,14 +132,14 @@ and `<prefix>_search` calls it too. So in a VM artifact `<prefix>_search` has
 zero in-TU callers and is not a wrapper target at all; the three entries are
 siblings over one implementation, not a chain.
 
-Clone sweep over 25 patterns (13 DFA, 12 VM), compiled with the bench build
+Clone sweep over 25 patterns (14 DFA, 11 VM), compiled with the bench build
 line, `nm`-audited for every `.part`/`.constprop`/`.isra` clone
 (`clones_before.tsv` vs `clones_after.tsv`):
 
 | | DFA artifacts with a clone | VM artifacts with a clone |
 |---|---|---|
-| before the fix | **12 of 13** | **0 of 12** |
-| after the fix | 0 of 13 | 0 of 12 |
+| before the fix | **13 of 14** | **0 of 11** |
+| after the fix | 0 of 14 | 0 of 11 |
 
 Two findings fall out:
 
