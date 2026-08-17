@@ -81,6 +81,32 @@ enum {
 /* §4.6's provisional placeholder, named rather than spelled inline. */
 #define VM_DEFAULT_STEP_BUDGET 1000000LL
 
+/* [ENG-BREP counter-K] The THIRD bound's default (D47 SECOND ADDENDUM
+ * settlement 4; the VALUE ruled at D49). Its unit is a WORK UNIT — one frame
+ * discarded at a cut, one iteration of a frameless scan — and it is a
+ * SEPARATE counter from the step budget, which keeps its exact meaning of one
+ * backtrack resumption. Nothing is scaled into anything.
+ *
+ * WHY 10^9 AND WHAT IT COSTS, because the number is a judgement and not a
+ * measurement. A frameless scan charges one unit per subject byte, so an
+ * ordinary single-pass linear match reaches this bound at roughly 1 GB of
+ * subject, and the possessify quadratic (n^2/2 units) trips at n ~= 45,000,
+ * about a second of work. The measured alternative was ~1.6x10^7 — the value
+ * commensurate with a backtrack resumption at the MEASURED 16:1 work ratio
+ * (a resumption costs about 16 scan iterations; counterk_design.md 7.4) —
+ * which would trip the quadratic at n ~= 5,700 but refuse ordinary linear
+ * matching above ~16 MB. D49 took 10^9 on the failure-direction asymmetry:
+ * too high costs diagnostic-path time, too low is a WRONG ANSWER on the
+ * shipped path.
+ *
+ * A BRING-UP VALUE in exactly the sense VM_DEFAULT_STEP_BUDGET is one — D12
+ * rules budgets come from measured medians, and [M4.6] takes the measurement
+ * for both. This is NOT in src/core/limits.h, and deliberately: that file's
+ * own inclusion rule is "a number belongs here if changing it changes what
+ * pcrec ACCEPTS, REJECTS or PROMISES", and a runtime give-up budget changes
+ * none of the three at compile time. It lives beside its two siblings. */
+#define VM_DEFAULT_WORK_BUDGET 1000000000LL
+
 /* The §2.5 cursor rung only fires for bodies whose emitted inline test stays
  * small; past this the body goes to the frames rung, which is correct and
  * merely costs frames. Keeps `(?:abcdef){3}*`-shaped bodies from emitting a
@@ -248,6 +274,18 @@ typedef struct {
                             * a quantifier was possessified, because there is
                             * one place that says so. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
+    bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
+                           * artifact (ONE gate for both, D49). Read by the
+                           * WORK charge sites, which are emitted DURING the
+                           * walk — unlike the fail label's step charge, which
+                           * is emitted afterwards and can read the local.
+                           * Set before vm_emit for exactly that reason. */
+    long long nwork;      /* [ENG-BREP counter-K] emitted WORK charge sites,
+                           * counted as they are written. Reported in the
+                           * listing so a check can assert the sites exist
+                           * rather than trusting that the flag was passed —
+                           * D47.3's do-or-die discipline, applied to a
+                           * charge instead of to a rung. */
     /* class bitmap pool, deduplicated */
     uint8_t (*cls)[32];
     int       ncls, clscap;
@@ -1108,8 +1146,53 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  * below the cut carries a trail mark from before the loop ran, so unwinding to
  * it still rewinds everything the loop wrote — which is why discarding frames
  * without rewinding the trail is safe rather than merely convenient. */
+/* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM, settlement 4;
+ * counterk_design.md §7.4). A SEVENTH primitive, and a primitive for a reason
+ * this section learned the hard way: the charge has THREE emission sites in
+ * two different spellings, and the probe that priced this design reported a
+ * confident zero for the revdet rung because the first version instrumented
+ * only the `RX_CUT` macro and missed the rung that cuts by assigning `w->btn`
+ * directly. One call here is what keeps a fourth site from repeating that.
+ *
+ * WHAT IS CHARGED, and equally WHAT IS NOT. The rule is "per-iteration work
+ * the fail label NEVER SEES", and the second half is the part two earlier
+ * drafts got wrong:
+ *
+ *   pushed, then CUT            -> CHARGED, at every cut: the frames being
+ *                                  discarded were never popped through
+ *                                  rx_fail, so nothing counted them.
+ *   never pushed, no retreat    -> CHARGED, at scan completion: the
+ *     frame (possessified scan)    frameless scan's iteration count.
+ *   scanned, then RETREATED     -> NOT CHARGED. Its iterations pop through
+ *     one stride per pop          the fail label 1:1 and are ALREADY charged
+ *                                 in full. Charging here double-bills the
+ *                                 triangular quantity, which is exactly what
+ *                                 R25 finding 26 refuted — and the refuting
+ *                                 number (the same 50,005,000 under `steps`
+ *                                 and under `scan`) was sitting in the note's
+ *                                 own published control row.
+ *
+ * The emitted subtraction is SIGNED and the cast order is load-bearing:
+ * `w->btn` is `unsigned` and `stv[]` is `ptrdiff_t`, so the count must be
+ * taken as `(ptrdiff_t)w->btn - stv[slot]` and never the other way, or a
+ * momentarily-negative intermediate wraps to an enormous positive charge. */
+static void vm_work(Vm *v, const char *countexpr, const char *role)
+{
+    if (!v->has_budget) return;
+    sb_printf(v->b, "    %s_WORK(%s);\n", v->up, countexpr);
+    v->nwork++;
+    vm_ev(v, VE_NOTE, 0, 0, role);
+}
+
 static void vm_cut(Vm *v, int slot, const char *role)
 {
+    /* BEFORE the cut, necessarily: RX_CUT overwrites `w->btn` with the mark,
+     * so after it runs the count this charge needs no longer exists. */
+    {
+        char cnt[192];
+        snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - stv[%d]", slot);
+        vm_work(v, cnt, "work charge: frames discarded by this cut");
+    }
     sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
     vm_ev(v, VE_CUT, slot, 0, role);
 }
@@ -1293,6 +1376,28 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "%s) { %s_cur += %d;", test, v->p, stride);
         if (a->rmax >= 0) sb_puts(b, " it_++;");
         sb_puts(b, " }\n    }\n");
+        /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
+         * counterk_design.md §7.4 specifies: AFTER the scan loop and BEFORE the
+         * rmin test. The scan has completed, `pos` is still the loop's entry
+         * (the possessive path writes no low-water slot and never moves `pos`),
+         * so the cursor delta IS the work done; after the rmin test the value
+         * is consumed. Charging here rather than one line later is what makes a
+         * scan that then FAILS the rmin test still pay for the bytes it read.
+         *
+         * Divided by the stride because the unit is an ITERATION, not a byte —
+         * a compile-time constant division that folds away entirely at the
+         * stride of 1 every measured shape has. Whether a wide-stride iteration
+         * should cost proportionally more is a real question the measurement
+         * does not answer (it swept stride-1 shapes only); iterations is what
+         * §7.4 specifies and what its calibration identity is stated over, so
+         * iterations is what ships. Recorded as a residual rather than decided
+         * here. */
+        {
+            char cnt[192];
+            snprintf(cnt, sizeof cnt,
+                     "((ptrdiff_t)(%s_cur - %s)) / %d", v->p, entrypos, stride);
+            vm_work(v, cnt, "work charge: frameless scan iterations");
+        }
         sb_printf(b, "    if ((ptrdiff_t)%s_cur < %s + %lld) goto %s_fail;\n",
                   v->p, entrypos, lo_off, v->p);
         vm_ev(v, VE_NOTE, 0, 0,
@@ -1806,6 +1911,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     v->nocap--;
 
     vm_lbl(v, bodyok, "revdet scan: one iteration committed");
+    /* [counter-K] THE SECOND SPELLING OF A CUT, and the one the step-charge
+     * probe first reported a confident zero for. This is a cut — it discards
+     * every frame the body pushed — and it is charged like one, even though it
+     * never goes near the RX_CUT macro. */
+    {
+        char cnt[192];
+        snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - (ptrdiff_t)%s_mk", rv);
+        vm_work(v, cnt, "work charge: frames discarded by the revdet scan cut");
+    }
     sb_printf(b, "    w->btn = %s_mk;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
                             " body has no second parse of what just matched");
@@ -1925,6 +2039,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
         vm_emit(v, extbl, a->l, extok);
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
+        {
+            char cnt[192];
+            snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - (ptrdiff_t)%s_mk", rv);
+            vm_work(v, cnt, "work charge: frames discarded by the revdet "
+                            "extra-iteration cut");
+        }
         sb_printf(b, "    w->btn = %s_mk;\n", rv);
         vm_goto(v, commitl);
         /* The body FAILING here needs no frame of its own: the push above only
@@ -2666,6 +2786,23 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     if (budget == PCREC_STEP_BUDGET_DEFAULT) budget = VM_DEFAULT_STEP_BUDGET;
     const bool has_budget = budget != PCREC_STEP_BUDGET_NONE;
 
+    /* [ENG-BREP counter-K] The THIRD bound. ONE existence gate in v1 (D49):
+     * `--fno-step-budget` suppresses BOTH counters, which is what keeps
+     * tests/vm/run_vm_tests.sh:147-157's no-counter pin true exactly as
+     * written. `--work-budget=N` is the independent VALUE knob, so the two are
+     * separately tunable while they exist; splitting the gate later is purely
+     * additive. */
+    long long work_budget = cx->opt->work_budget;
+    if (work_budget == PCREC_WORK_BUDGET_DEFAULT)
+        work_budget = VM_DEFAULT_WORK_BUDGET;
+    if (!has_budget) work_budget = PCREC_WORK_BUDGET_NONE;
+
+    /* Set BEFORE the walk, and that is not incidental: the WORK charge sites
+     * are emitted DURING vm_emit (at each cut, at each frameless scan
+     * completion), unlike the fail label's step charge, which is written after
+     * the walk and can simply read the local. */
+    v.has_budget = has_budget;
+
     /* Emit the program into the scratch buffer FIRST: the class pool, the
      * cursor-local's presence and the emitted-node count are all discovered
      * by emitting, and all three have to appear in text that precedes the
@@ -2777,6 +2914,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_TRAIL_FRAMES %lld\n", v.up, trail_frames);
     if (has_budget)
         sb_printf(c, "#define %s_STEP_BUDGET %lldLL\n", v.up, budget);
+    if (work_budget != PCREC_WORK_BUDGET_NONE)
+        sb_printf(c, "#define %s_WORK_BUDGET %lldLL\n", v.up, work_budget);
     sb_puts(c, "\n");
 
     /* ---- rx_work: the whole mutable working set, §2.2 ------------------
@@ -2791,6 +2930,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    unsigned btn, trn;\n",
         v.up, v.tracing ? " int id;" : "", v.up, v.up);
     if (has_budget) sb_puts(c, "    long long budget;\n");
+    if (work_budget != PCREC_WORK_BUDGET_NONE)
+        sb_puts(c, "    long long work;\n");
     sb_printf(c, "} %s_work;\n\n", v.p);
 
     /* The internal give-up sentinels. They share the search entry's public
@@ -2800,7 +2941,35 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * and only <prefix>_search — which D38 says nothing about — has room for
      * the honest code), so they get their own names. */
     sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)%s_ERR_STEPS)\n", v.up, v.up);
-    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)%s_ERR_FRAMES)\n\n", v.up, v.up);
+    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)%s_ERR_FRAMES)\n", v.up, v.up);
+    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)%s_ERR_WORK)\n\n", v.up, v.up);
+
+    /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
+     *
+     * It TESTS as well as decrements, which is a decision with a cost and is
+     * made deliberately: an untested decrement means a loop that SUCCEEDS can
+     * overrun the bound by orders of magnitude and still return a match, which
+     * is the exact DD-2 failure mode a bound exists to prevent. A budget
+     * consulted only where it was already consulted is not a budget. The price
+     * is that the emitter's former one-charge-site invariant is gone and a
+     * give-up can now return from inside a loop body.
+     *
+     * The `> 0` guard is not defensive noise. It skips the whole operation for
+     * the zero-work cut that is the common case, and it makes a hypothetically
+     * inverted count (which would be a real bug elsewhere) unable to REFUND
+     * budget, which is the one failure mode that would silently disarm the
+     * bound rather than merely mis-size it. */
+    if (work_budget != PCREC_WORK_BUDGET_NONE) {
+        sb_printf(c,
+            "#define %s_WORK(n_) do {                                    \\\n"
+            "        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \\\n"
+            "        if (nw_ > 0) {                                       \\\n"
+            "            w->work -= (long long)nw_;                       \\\n"
+            "            if (w->work < 0) return %s_R_WORK;               \\\n"
+            "        }                                                    \\\n"
+            "    } while (0)\n\n",
+            v.up, v.up);
+    }
 
     if (!v.tracing) {
         sb_printf(c,
@@ -2878,6 +3047,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    w->btn = 0; w->trn = 0;\n",
         v.p, v.p, v.up, v.up);
     if (has_budget) sb_printf(c, "    w->budget = %s_STEP_BUDGET;\n", v.up);
+    if (work_budget != PCREC_WORK_BUDGET_NONE)
+        sb_printf(c, "    w->work = %s_WORK_BUDGET;\n", v.up);
     sb_puts(c, "}\n\n");
 
     sb_printf(c,
@@ -3122,6 +3293,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "        r = %s_match_impl(&ctx, &w);\n"
         "        if (r == %s_R_STEPS)  return %s_ERR_STEPS;\n"
         "        if (r == %s_R_FRAMES) return %s_ERR_FRAMES;\n"
+        "        if (r == %s_R_WORK)   return %s_ERR_WORK;\n"
         "        if (r >= 0) break;\n"
         "        %s_unwind(&w);\n"
         "        if (start >= n) return 0;\n"
@@ -3130,21 +3302,28 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    if (caps) %s_caps_out(&w, caps, start, r);\n"
         "    return 1;\n"
         "}\n\n",
-        v.p, v.p, v.up, v.up, v.up, v.up, v.p, v.p);
+        v.p, v.p, v.up, v.up, v.up, v.up, v.up, v.up, v.p, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     sb_printf(c,
-        "/* F1's unconditional export, typed rx_matchfn. Budget exhaustion and\n"
-        " * frame overflow both report -1 here — INDISTINGUISHABLE from no-match,\n"
-        " * because D38.4 froze this return space (>= 0 length, -1 fail, < -1\n"
-        " * RESERVED and __builtin_trap()-enforced at call sites) and D42.3 kept\n"
-        " * that reservation intact rather than spending it on DD-2. The residual\n"
-        " * is real and narrow and is recorded rather than hidden: a compiled\n"
-        " * matcher used AS a callout cannot tell its caller it gave up. That is\n"
-        " * confined to the composition path, which has no users in v1; re-open\n"
-        " * when a composition customer appears (cheap pre-v1 per D40). The\n"
-        " * honest codes live on %s, whose negative space D38 never\n"
-        " * touched (4.4's three layers). */\n"
+        "/* F1's unconditional export, typed rx_matchfn.\n"
+        " *\n"
+        " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
+        " * return space is >= 0 matched length, -1 no match, and a distinct\n"
+        " * code in [%s_ERR_FLOOR, -2] for each way the engine can give up\n"
+        " * (%s_ERR_STEPS, %s_ERR_FRAMES, %s_ERR_WORK). Anything BELOW the floor\n"
+        " * stays reserved for the future abort semantic and is what a callout\n"
+        " * call site traps on.\n"
+        " *\n"
+        " * This SUPERSEDES D42.3, which collapsed every give-up to -1 because\n"
+        " * D38.4 had reserved the whole < -1 space. Three things moved: pcrec is\n"
+        " * pre-release, so a 'final' label reads as 'stable absent a reason';\n"
+        " * the typedef is BIDIRECTIONAL, so under the collapse an\n"
+        " * embedder-WRITTEN callout had no legal spelling for 'I gave up' at\n"
+        " * all (anything below -1 traps the process); and the collapse let an\n"
+        " * inner give-up read as a plain path failure, so an outer match could\n"
+        " * report an ANSWER where a bound had actually blown. A caller that\n"
+        " * only asks 'did it match' still writes `r < 0` and is unaffected. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    %s_work w;\n"
@@ -3152,11 +3331,21 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
         "    r = %s_match_impl(ctx, &w);\n"
-        "    return r < 0 ? -1 : r;\n"
+        "    /* No translation and no clamp: the impl's return space IS this\n"
+        "     * contract's -- >= 0, -1, or one of the three R_ sentinels, which\n"
+        "     * are the ERR_ codes. A defensive floor test here would be dead\n"
+        "     * code pretending to be a safeguard. */\n"
+        "    return r;\n"
         "}\n\n",
-        g.searchfn, g.matchfn, v.p, v.p, v.p);
+        v.up, v.up, v.up, v.up, g.matchfn, v.p, v.p, v.p);
 
     sb_printf(c,
+        "/* The capture-delivering sibling. Same D49 return space as\n"
+        " * <prefix>_match above -- it always had room for the codes (it is not\n"
+        " * an rx_matchfn), and now the two agree instead of differing over a\n"
+        " * reservation only one of them was bound by. caps_out is UNTOUCHED on\n"
+        " * every negative return, give-up included: a caller that gave up has\n"
+        " * no captures, and A-8's untouched-wins rule does not bend for it. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
         "{\n"
         "    %s_work w;\n"
@@ -3164,14 +3353,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
         "    r = %s_match_impl(ctx, &w);\n"
-        "    if (r < 0) return -1;\n"
+        "    if (r < 0) return r;\n"
         "    if (caps_out) %s_caps_out(&w, caps_out, ctx->pos, r);\n"
         "    return r;\n"
         "}\n\n",
         g.matchcapsfn, v.p, v.p, v.p, v.p);
 
     pcrec_emit_info(cx, &g, 2, job->fit.why,
-                    has_budget ? budget : -1, bt_frames, ceiling);
+                    has_budget ? budget : -1, work_budget, bt_frames, ceiling);
 
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         pcrec_emit_main(cx, &g);

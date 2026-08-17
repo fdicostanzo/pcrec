@@ -49,7 +49,13 @@ static void usage(FILE *f)
           "  --step-budget=N  backtrack resumptions the emitted VM may spend\n"
           "                 before returning <PREFIX>_ERR_STEPS (default is a\n"
           "                 bring-up placeholder; M4.6 calibrates it)\n"
-          "  --fno-step-budget  emit no step counter at all. Zero cost, and\n"
+          "  --work-budget=N  work units the emitted VM may spend on forward\n"
+          "                 work the fail label does not see (frames discarded\n"
+          "                 at a cut, frameless scan iterations) before\n"
+          "                 returning <PREFIX>_ERR_WORK. A SEPARATE counter\n"
+          "                 from the step budget; also a bring-up default\n"
+          "  --fno-step-budget  emit no step counter at all -- and no work\n"
+          "                 counter either, one gate for both. Zero cost, and\n"
           "                 honest because the artifact says so\n"
           "  --backtrack-frames=N  the resume-stack capacity. Default: sized\n"
           "                 exactly where the pattern's depth is statically\n"
@@ -169,6 +175,19 @@ int main(int argc, char **argv)
                 return 1;
             }
             opt.step_budget = v;
+        }
+        /* [ENG-BREP counter-K] The value knob for the THIRD bound. There is
+         * deliberately no `--fno-work-budget`: v1 rides ONE existence gate, so
+         * `--fno-step-budget` above suppresses both counters (D49). */
+        else if (!no_more_opts && !strncmp(a, "--work-budget=", 14)) {
+            char *end = NULL;
+            long long v = strtoll(a + 14, &end, 10);
+            if (!end || *end || v < 1) {
+                fprintf(stderr, "pcrec: --work-budget wants a positive integer "
+                                "(use --fno-step-budget for no counters)\n");
+                return 1;
+            }
+            opt.work_budget = v;
         }
         else if (!no_more_opts && !strncmp(a, "--backtrack-frames=", 19)) {
             char *end = NULL;

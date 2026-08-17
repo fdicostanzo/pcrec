@@ -95,6 +95,22 @@ enum {
     PCREC_STEP_BUDGET_NONE    = -1   /* --fno-step-budget: emit no counter */
 };
 
+/* [ENG-BREP counter-K] `work_budget`'s sentinels, the same shape as the pair
+ * above (D47 SECOND ADDENDUM settlement 4; default ruled at D49). The THIRD
+ * bound: per-iteration forward work the fail label never sees — frames
+ * discarded at a cut, and iterations of a frameless scan. A step is still one
+ * backtrack resumption and this counter never touches it.
+ *
+ * There is deliberately NO `--fno-work-budget`: v1 rides ONE existence gate,
+ * so `--fno-step-budget` suppresses both counters (D49's manager-accepted
+ * conventions). That keeps tests/vm/run_vm_tests.sh's no-counter pin true as
+ * written, and splitting the gate later is purely additive. `_NONE` exists
+ * anyway because it is what that single gate SETS this field to. */
+enum {
+    PCREC_WORK_BUDGET_DEFAULT = 0,   /* emit the placeholder default */
+    PCREC_WORK_BUDGET_NONE    = -1   /* no work counter (rides --fno-step-budget) */
+};
+
 typedef struct {
     const char *prefix;      /* C identifier prefix for generated symbols; default "rx" */
     int         encoding;    /* PCREC_ENC_* */
@@ -124,6 +140,15 @@ typedef struct {
                                  only shape the frozen rx_matchfn signature
                                  leaves open (engine_m4.md §4.6). Ignored on a
                                  DFA artifact, which cannot backtrack. */
+    int64_t     work_budget; /* [ENG-BREP counter-K] work units the emitted VM
+                                 will spend on forward work the fail label does
+                                 not see before returning <PREFIX>_ERR_WORK;
+                                 PCREC_WORK_BUDGET_DEFAULT / _NONE. A GENERATION
+                                 AXIS like step_budget, and a SEPARATE counter
+                                 from it (D47 SECOND ADDENDUM settlement 4):
+                                 one unit per frame discarded at a cut, one per
+                                 frameless scan iteration. Ignored on a DFA
+                                 artifact, which does neither. */
     int         frame_capacity; /* [M4.5b] <PREFIX>_BT_FRAMES, the resume-stack
                                  capacity (engine_m4.md §4.5's SECOND bound);
                                  0 = let the compiler size it (exactly, where

@@ -325,6 +325,12 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    int           nnames;          /* entries in groups[], named only */\n"
         "    unsigned      engine;          /* ENGM_DFA=1 / ENGM_VM=2 */\n"
         "    int64_t       step_budget;     /* -1 = none */\n"
+        "    int64_t       work_budget;     /* -1 = none. The THIRD bound (D47\n"
+        "                                       SECOND ADDENDUM): per-iteration\n"
+        "                                       forward work the fail label\n"
+        "                                       never sees, in work units. A\n"
+        "                                       step is a backtrack resumption\n"
+        "                                       and is counted separately. */\n"
         "    int64_t       frame_capacity;  /* -1 = unbounded */\n"
         "    int64_t       subject_ceiling; /* 0 = unset/not applicable */\n"
         "    const char           *pattern;     /* source pattern text */\n"
@@ -343,13 +349,41 @@ static void emit_rx_abi_types(StrBuf *sb)
  * artifact this DFA-only emitter produces (D42.2): a DFA-compiled pattern
  * never promises more than the whole-match slot, capture-bearing or not.
  * RX_ERR_STEPS/RX_ERR_FRAMES are RESERVED here (D42.3) — no engine produces
- * either value until [M4.5] wires the step/frame-capacity counters. */
+ * either value until [M4.5] wires the step/frame-capacity counters.
+ *
+ * [ENG-BREP counter-K] RX_ERR_WORK joins them (D47 SECOND ADDENDUM,
+ * settlement 4): the third bound, for per-iteration forward work the fail
+ * label never sees. RESERVED here for the same reason its two siblings are —
+ * a DFA artifact cannot backtrack, cut or scan frameless, so it produces
+ * none of the three.
+ *
+ * RX_ERR_FLOOR is D49's NAMED FLOOR, and it is the reason these four are one
+ * block rather than three codes and a convention. D49 partitions the negative
+ * return space of `rx_matchfn` in two: [FLOOR, -2] are TYPED GIVE-UPS that a
+ * caller may read and propagate, and anything BELOW the floor stays reserved
+ * for the future abort semantic design_callout_abi.md F2 traps on. Emitting
+ * the boundary as a name is what keeps F2's call-site check from transcribing
+ * a literal that the next give-up code silently invalidates — this project has
+ * recorded the transcribed-constant failure twice, and a trap whose bound is
+ * spelled `-1` becomes wrong the moment a fourth code lands.
+ *
+ * PER-PREFIX, exactly like its three siblings, and that is a JUDGMENT CALL
+ * worth naming: the floor governs the FIXED-LITERAL type `rx_matchfn`, so an
+ * argument exists for hoisting it into the shared PCREC_RX_ABI_H block beside
+ * the types. It stays per-prefix because (a) the four constants are one
+ * contract and splitting them across two scopes is worse than either choice,
+ * (b) every artifact emits identical values so a cross-prefix call site cannot
+ * observe a mismatch, and (c) module `callouts` has no producer, so no call
+ * site consumes it yet. Revisit when the first callout call site is emitted. */
 static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
 {
     sb_printf(sb, "#define %s_NCAPS %d\n", upper, ncaps);
     sb_printf(sb, "#define %s_UNSET ((ptrdiff_t)-1)\n", upper);
     sb_printf(sb, "#define %s_ERR_STEPS  (-2)\n", upper);
     sb_printf(sb, "#define %s_ERR_FRAMES (-3)\n", upper);
+    sb_printf(sb, "#define %s_ERR_WORK   (-4)\n", upper);
+    sb_printf(sb, "#define %s_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
+                  "below: reserved (D49) */\n", upper);
 }
 
 /* [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
@@ -366,10 +400,17 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
                             const char *upper)
 {
     sb_printf(c,
+        "/* D49: the give-up codes PROPAGATE rather than collapsing to -1.\n"
+        " * Unreachable on this engine — a DFA artifact has no counter to\n"
+        " * exhaust — but written uniformly on purpose: the contract of\n"
+        " * rx_matchfn is one contract, and a wrapper that discards codes it\n"
+        " * merely happens never to see is the shape that goes wrong when a\n"
+        " * later engine shares this emitter. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    ptrdiff_t caps[%s_NCAPS][2];\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
+        "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
         "    return caps[0][1] - caps[0][0];\n"
         "}\n",
@@ -391,6 +432,7 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
         "{\n"
         "    ptrdiff_t caps[%s_NCAPS][2];\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
+        "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
         "    if (caps_out) {\n"
         "        for (int k = 0; k < %s_NCAPS; k++) {\n"
@@ -423,6 +465,7 @@ typedef struct {
     int         engine;          /* ENGM_DFA=1 / ENGM_VM=2 */
     const char *engine_why;      /* free text, or NULL */
     long long   step_budget;     /* -1 = none */
+    long long   work_budget;     /* -1 = none (the D47 SECOND ADDENDUM bound) */
     long long   frame_capacity;  /* -1 = unbounded */
     long long   subject_ceiling; /* 0 = unset/not applicable */
 } InfoStamp;
@@ -431,7 +474,12 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                           const char *upper, const InfoStamp *st)
 {
     sb_printf(c, "const struct rx_info %s = {\n", infoname);
-    sb_puts(c,   "    .abi = 1,\n");
+    /* abi 2: `work_budget` joined the layout (D47 SECOND ADDENDUM's third
+     * bound). The member is INSERTED beside `step_budget` rather than appended,
+     * so every following offset moves — which is precisely what the version
+     * member exists to announce, and what the pre-release ABI posture (D47
+     * SECOND ADDENDUM's rider, D49) licenses on a struct D44.5 called final. */
+    sb_puts(c,   "    .abi = 2,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -464,6 +512,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     sb_printf(c, "    .engine = %d, /* %s */\n", st->engine,
               st->engine == 2 ? "ENGM_VM" : "ENGM_DFA");
     sb_printf(c, "    .step_budget = %lld,\n", st->step_budget);
+    sb_printf(c, "    .work_budget = %lld,\n", st->work_budget);
     sb_printf(c, "    .frame_capacity = %lld,\n", st->frame_capacity);
     sb_printf(c, "    .subject_ceiling = %lld,\n", st->subject_ceiling);
     sb_puts(c,   "    .pattern = ");
@@ -1000,9 +1049,10 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
 /* The `.rodata` reflection instance. The VM passes what it ACTUALLY enforces;
  * see emit_info_def's own comment. */
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
-                     long long budget, long long frames, long long ceiling)
+                     long long budget, long long work, long long frames,
+                     long long ceiling)
 {
-    InfoStamp st = { engine, why, budget, frames, ceiling };
+    InfoStamp st = { engine, why, budget, work, frames, ceiling };
     emit_info_def(cx, &cx->job->csb, g->infoname, g->upper, &st);
 }
 
@@ -1043,13 +1093,29 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
         "        printf(\"nomatch\\n\");\n"
         "        return 1;\n"
         "    }\n"
+        /* [counter-K] One arm PER CODE, and a fallthrough that does not claim
+         * to know. This block used to end `printf("frames")` for everything
+         * that was not a match, a no-match or ERR_STEPS — so when the third
+         * bound landed, a work give-up was reported as a FRAME overflow. That
+         * is precisely the failure DD-2's "different failures, different
+         * diagnoses" exists to prevent, reached from inside our own harness,
+         * and it is why the last arm now reports the code instead of guessing
+         * at its meaning. */
         "    if (rc == %s_ERR_STEPS) {\n"
         "        printf(\"steps\\n\");\n"
         "        return 3;\n"
         "    }\n"
-        "    printf(\"frames\\n\");\n"
+        "    if (rc == %s_ERR_FRAMES) {\n"
+        "        printf(\"frames\\n\");\n"
+        "        return 3;\n"
+        "    }\n"
+        "    if (rc == %s_ERR_WORK) {\n"
+        "        printf(\"work\\n\");\n"
+        "        return 3;\n"
+        "    }\n"
+        "    printf(\"giveup %%d\\n\", rc);\n"
         "    return 3;\n"
-        "}\n", g->upper, g->searchfn, g->upper);
+        "}\n", g->upper, g->searchfn, g->upper, g->upper, g->upper);
 }
 
 void pcrec_emit_dfa(Ctx *cx)
@@ -1071,10 +1137,12 @@ void pcrec_emit_dfa(Ctx *cx)
     emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
     sb_puts(c, "\n");
     {
-        /* The DFA artifact's stamp, unchanged from [M4.4]: it cannot
-         * backtrack, so neither bound applies to it and both read as absent
-         * rather than as some notional large number. */
-        InfoStamp st = { 1, NULL, -1, -1, 0 };
+        /* The DFA artifact's stamp: it cannot backtrack, cut, or scan
+         * frameless, so NONE of the three bounds applies to it and all read
+         * as absent rather than as some notional large number. `work_budget`
+         * joins `step_budget` in that reading for exactly the same reason —
+         * a bound an engine structurally cannot reach is not a bound of 0. */
+        InfoStamp st = { 1, NULL, -1, -1, -1, 0 };
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
 
