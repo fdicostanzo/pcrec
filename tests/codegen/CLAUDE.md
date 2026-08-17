@@ -54,7 +54,31 @@ or it has no regression net at all.
   captures-default group-bearing pattern refuses AND names `--no-captures`,
   that named escape actually works, `--engine=vm` emits NO prefilter (D44/R21
   E-6 — without which tests/vm's differential is near-tautological), and the
-  default hybrid DOES emit one (§4.7's cliff guard). 8 checks; sabotage S40.
+  default hybrid DOES emit one (§4.7's cliff guard). 9 checks; sabotage S40.
+
+  **The refusal-agreement arm carries ONE scoped, PINNED exception**
+  (2026-08-17): a refusal from the VM's replication cap
+  (`PCREC_MAX_VM_REPEAT_COPIES`) is a VM-only resource limit the
+  `--no-captures` DFA path structurally lacks, so at exactly the cap the two
+  sides legitimately diverge on acceptance — exposed when the D27 blinded
+  corpus (df63549) landed `(a{1,3}){65}` precisely on the 64-copy boundary,
+  which is D27 doing its job. The exception is keyed on the cap's own
+  diagnostic text ("would replicate its body"), nothing wider, and the
+  divergent population is PINNED at exactly 1 as its own check line:
+  movement in either direction fails loudly (a new boundary pattern →
+  re-pin upward deliberately; counter-K un-refusing the shape → re-pin to
+  0 and consider retiring the arm — the counter rung makes emitted size
+  count-independent, so this population is EXPECTED to go to 0 when it
+  lands). Validated sabotages: pin expectation changed 1→2 fails the pin
+  line alone; exclusion key changed to never-match fails TWICE (the
+  original REFUSAL MISMATCH resurfaces AND the pin reads 0) — so the
+  exclusion cannot silently swallow non-cap mismatches and its own removal
+  is loud. Validation note recorded because the first attempt measured
+  nothing: the sabotaged copies were first run from the scratchpad, where
+  the script's own-path corpus discovery finds no population and the
+  no-population guard's failure READ AS the sabotage firing — a control
+  failing for an unrelated reason is this project's oldest check-design
+  trap, and the fix was re-running from the script's real location.
 
 - **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
   to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
