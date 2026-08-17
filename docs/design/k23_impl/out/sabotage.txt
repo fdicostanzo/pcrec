@@ -23,5 +23,13 @@
 # Every stride>1 shape goes red, independently reproducing R26 E9's
 # "12 stride>1 shapes, EVERY one wrong somewhere".
 #
+# cases_prune.tsv, 155 cells: 20 DIFFER, all four stride>1 shapes --
+#   ((?:ab){10,20}){10,50}          10 cells
+#   ((?:abc){7,14}){7,30}            6 cells
+#   ((?:[ab][cd]){10,20}){10,50}     2 cells
+#   ((?:ab){10,20}){10,50}?          2 cells   (the lazy-outer stride-2 row)
+#
+# Corpus total under sabotage: 101 of 1,059 cells RED, 0 of them stride 1.
+#
 # Full per-cell output is not archived (it is 900 rows of a deliberately
 # broken build); re-run with the command in the header to reproduce.

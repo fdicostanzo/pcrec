@@ -1162,6 +1162,10 @@ pre-R26 clamp for every shape and re-runs the differential. MEASURED:
 | 3 | 30 of 108 | **9 of 9** |
 | all | 81 of 904 | 38 of 95 |
 
+The hand-chosen corpus goes red the same way: 20 of its 155 cells, spread
+over all four of its stride > 1 shapes (including the lazy-outer one).
+**101 of 1,059 cells across both corpora, and not one of them stride 1.**
+
 Two readings, and the first is the more important:
 
 - **Zero of 506 stride-1 cells go red.** That is not a weak result, it is the
