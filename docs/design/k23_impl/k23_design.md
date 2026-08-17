@@ -74,9 +74,9 @@ Three things make it the recommendation rather than one option of three:
 
 1. **"python `re` answers instantly"** (`known_issues.md` K23) is true of the
    exemplar and false of its mechanism. Python explores the SAME tree at a
-   comparable per-node cost — 272 ms on the exemplar against pcrec's 222 ms
-   with the budget lifted — and it takes **2.9 s** one size up, **32 s** two
-   sizes up and **384 s** three sizes up. §3.
+   comparable per-node cost — 265 ms on the exemplar against pcrec's 222 ms
+   with the budget lifted — and it takes **2.8 s** one size up, **31 s** two
+   sizes up and **368 s** three sizes up. §3.
 2. **"The boundary is NARROW"** is right about the number and wrong about the
    variable. It is not narrow in `n`; it is narrow in SLACK (`n − p·m`), and
    the decay from the peak is geometric over ~50 bytes, not a cliff. §2.1.
@@ -343,12 +343,16 @@ MEASURED (`python3 -c` timing, reproduced in `out/python_growth.txt`):
 
 | shape | n | python `re` |
 |---|---|---|
-| `(a{10,12}){10,50}` | 100 | 1.11 ms |
-| `(a{10,15}){10,40}` | 100 | 48.5 ms |
-| `(a{10,20}){10,50}` | 100 | **272 ms** |
-| `(a{11,22}){11,50}` | 121 | **2.90 s** |
-| `(a{12,24}){12,50}` | 144 | **32.4 s** |
-| `(a{13,26}){13,50}` | 169 | **384 s** |
+| `(a{10,12}){10,50}` | 100 | 0.86 ms |
+| `(a{10,15}){10,40}` | 100 | 34.8 ms |
+| `(a{10,20}){10,50}` | 100 | **265 ms** |
+| `(a{11,22}){11,50}` | 121 | **2.75 s** |
+| `(a{12,24}){12,50}` | 144 | **30.8 s** |
+| `(a{13,26}){13,50}` | 169 | **368 s** |
+
+(The archived figures. An earlier run of the same code gave 1.11 ms /
+48.5 ms / 272 ms / 2.90 s / 32.4 s / 384 s — same shape, ±10%, and the ratio
+between consecutive rows is ~11× in both.)
 
 Python has **no pruning rule**. It explores the same tree, and the growth is
 the law of §2.2. Its per-node cost is comparable to pcrec's: pcrec with the
