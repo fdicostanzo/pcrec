@@ -17,11 +17,17 @@
 # columns: arm  n  steps  span  group1  group2
 baseline  50   11906349370   0 50   40 50   48 50
 baseline  51    9609677279   0 51   41 51   49 51
+baseline  55    2379665827   0 55   45 55   53 55
+baseline  60     363901065   0 60   50 60   58 60
 prune     50             6   0 50   40 50   48 50
 prune     51             6   0 51   41 51   49 51
 prune     55             6   0 55   45 55   53 55
 prune     60             6   0 60   50 60   58 60
 prune    100             5   0 100  90 100  98 100
+#
+# R26 M17: the 55 and 60 baseline rows were added on re-measurement; the
+# note's "byte-identical at n=50,51,55,60" claim is now archived at all four
+# rather than at two.
 #
 # The python oracle does not return on this shape inside 100 s at n = 50, so
 # the correctness check here is pcrec-vs-pcrec (replication as ground truth,

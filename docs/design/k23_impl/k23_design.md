@@ -11,6 +11,59 @@ lowering without becoming the build lane.
 
 ---
 
+## PANEL OUTCOME — R26 (2026-08-17), read this before any section
+
+`../../dev/reviews/2026-08-17-r26-k23.md`. Three read-only critics. **The
+design core HELD and was STRENGTHENED; the EMITTED FORM was REFUTED and the
+EVIDENCE was re-anchored.** Every disposition is applied in place — marked at
+the point of the change, not edited away.
+
+What held, and is now stronger than this note originally argued:
+
+- **Soundness is PREFERENCE-BLIND**, and the panel's derivation is better
+  than the one this note shipped: `minrest` bounds whether an accepting
+  continuation EXISTS, which is a language property and therefore
+  order-invariant. Adopted as §2.8, provenance recorded. The critic set out
+  to break it and instead measured it — the lazy-outer exemplar explodes
+  identically (10,621,635 steps) and prunes to **0**, captures identical to
+  python (§2.7).
+- **The closed form is exact OUT OF SAMPLE** — three new instances, diff 0.
+
+What fell:
+
+- **§4.1's clamp was UNSOUND on any cursor rung with stride > 1** (E1). It
+  landed the cursor off the iteration lattice, which deletes the correct
+  position from the choice set. 5 of 8 subjects wrong on
+  `((?:ab){10,20}){10,50}` — a shape with the identical baseline step count
+  to the exemplar, so squarely in K23's live population. **Fixed** by
+  lattice-rounding the cap (§4.1), soundness re-derived over it (§4.2 step 3),
+  rung-by-rung consequences stated (§4.5).
+- **The 855-cell differential was structurally blind to that** (E2/E9): every
+  body came from a single-byte alphabet, so every rung had stride 1, where
+  the bug is invisible. **Fixed** by giving the generator STRIDE and RESIDUE
+  axes (§7.2.1) — this note's own §11.1 lesson, which it had not applied to
+  its own generator. Re-run: **1,059 cells, 0 disagreements**, with a
+  committed failing-direction control (`--no-lattice`).
+- **The forward-work numbers had no probe** (M2/E6) and were labelled as
+  D49's meter when they are a lane proxy. **Fixed both ways**: a real
+  counting probe now exists and is archived (`probes/work.sh`,
+  `out/work.txt`), and the quantity is relabelled as a proxy with ruling
+  request 5 WITHDRAWN (§4.6, §12).
+- **§9.1's trailing-suffix residual was a curve reported as a point** (E4),
+  and K23 RETURNS at a 16-byte suffix. The panel also found the tight bound
+  already exists at run time and is discarded. **Both applied**: the curve is
+  §9.1's table, and the prefilter-window ceiling is prototyped and MEASURED
+  to close the residual entirely (1 step at every suffix length). New ruling
+  request 6.
+- Smaller corrections applied throughout: §6 re-measured at 5.6× the clamp
+  density (E5), §7.2's two exclusion paths separated (M1), §3's untraceable
+  timing pair dropped for the panel's stronger ratio-tracking argument
+  (M3/E8), prediction 2 REFUTED and §4.3's contradictory bullets reconciled
+  (E7), ruling 2 withdrawn (D1), the gcc finding reattributed to counter-K
+  (D2), and four column-reading defects (E10/M4/M5/D4).
+
+---
+
 ## 0. How to read this
 
 ### 0.1 Claim marking (house style, inherited from `eng_brep_design.md` §0.1)
@@ -40,11 +93,20 @@ On K23's exemplar this is not an improvement, it is a collapse:
 |---|---|---|---|
 | shipped emission | 10,621,636 | 55,684,363 | `RX_ERR_STEPS` against the 10⁶ budget |
 | + MRL pruning | **1** | 190 | `(0,100)`, group 1 `(90,100)` |
-| + MRL folded into the scan bound | **1** | **109** | same |
+| + MRL folded into the scan bound | **1** | **100** | same |
 
-MEASURED (`probes/steps.sh`, and the inline work instrumentation reproduced
-in §6.3). The oracle (python `re`) says `(0,100)` / group 1 `(90,100)`; all
-three arms that answer, answer that.
+MEASURED (`probes/steps.sh` and `probes/work.sh`, archived at
+`out/steps_curve.txt` and `out/work.txt`). The oracle (python `re`) says
+`(0,100)` / group 1 `(90,100)`; all three arms that answer, answer that. The
+folded arm's 100 is exactly one forward pass over a 100-byte subject — the
+floor. (The work column is a LANE PROXY, not D49's `RX_ERR_WORK`; §4.6 says
+precisely what it counts and why the distinction is not pedantry.)
+
+Two things the clamp must get right, both of which this note's first version
+did not and R26 caught: it must land **on the cursor's iteration lattice**
+(§4.1 — off-lattice is unsound, not merely loose), and its ceiling should be
+the **prefilter's match-end window** rather than the subject end (§9.1 —
+without that, K23 returns at a 16-byte trailing suffix).
 
 And the exemplar is not the worst case in the corpus's own shape family.
 `((a{2,4}){5,10}){5,20}` — three levels, 50-byte subject, again exactly the
@@ -217,9 +279,12 @@ says why.
 `(a{m,m+w}){m,P}` at its own exact-minimum length `n = m·m`, and reports the
 first `m` at which the 10⁶ default budget is exceeded:
 
+Selected rows (the probe prints every width 0–12; these are the ones the
+prose uses, and the omitted rows interpolate smoothly between them):
+
 | inner width w | first m | n = m·m | steps |
 |---|---|---|---|
-| 0 | never (m ≤ 39) | — | — |
+| 0 | **none at m ≤ 39** — see below | — | — |
 | 1 | 20 | 400 | 1,048,556 |
 | 2 | 14 | 196 | 1,902,423 |
 | 3 | 12 | 144 | 1,990,783 |
@@ -231,7 +296,14 @@ first `m` at which the 10⁶ default budget is exceeded:
 This is D27's "inner-range WIDTH and total interact" as a function. The
 practical reading: at inner width ≥ 5 the budget is crossed by
 **81-to-100-byte subjects** — non-adversarial sizes — while at width 1 it
-takes 400 bytes and at width 0 it never happens at all.
+takes 400 bytes.
+
+The width-0 row is a search bound, not a proof: the probe sweeps `m` to 39
+and reports "no crossing", which is why it reads `>39` in the raw output
+(R26 E10 — the earlier label "never" overstated what the sweep establishes).
+Width 0 never explodes for a stronger and independent reason anyway — an
+exact-count inner is possessified and never reaches this search at all
+(§2.4) — so nothing rests on the sweep's bound.
 
 ### 2.4 Width 0 is already fixed, and the entry does not say so
 
@@ -292,9 +364,11 @@ finding.** `((a|b){10,20}){10,50}` emits in 0.105 s but produces a
 `-O1` 6.6 s, `-O2` still running past 120 s and past this lane's 300 s bound.
 That is a downstream-compiler cost of replication × choice-bearing bodies,
 adjacent to `eng_brep_design.md` §1.4's finding about pcrec's OWN cost but
-about gcc rather than pcrec, and it belongs to [ENG-CLAMP]/counter-K
-territory rather than to K23. Recorded so the next lane does not rediscover
-it as a hang.
+about gcc rather than pcrec. **It belongs to COUNTER-K**, which D45 and the
+plan already own for this class — not to [ENG-CLAMP], whose ruled charter is
+the nested-tower K-downshift only (R26 D2 corrected the first version's
+attribution; the manager forwarded the finding to the counter-K lane the same
+session). Recorded so the next lane does not rediscover it as a hang.
 
 ### 2.6 THREE levels: the same defect, four orders of magnitude worse
 
@@ -427,12 +501,36 @@ budget lifted answers the exemplar in **0.222 s** against python's 0.272 s,
 on 10.6 M resumptions — pcrec is marginally the faster of the two, on the
 same work.
 
-Three consequences, and they matter to how K23 is framed:
+**The evidence that python walks the SAME TREE is the ratio column, not a
+wall-clock pair** (R26 M3/E8; the first version of this section compared
+"pcrec 222 ms vs python 272 ms", which was untraceable — no pcrec wall-clock
+probe exists — and silently mixed an unarchived run's figure with the
+archived one. The pair is DROPPED; the argument it was supporting is
+stronger without it, and the panel supplied the better form):
 
-- **pcrec is not slower than python here.** The entire observed difference is
-  that pcrec has a budget and stops at 10⁶, and python does not and grinds.
-  The K23 entry's "python answers instantly, pcrec returns RX_ERR_STEPS"
-  reads as an algorithmic gap; it is a policy difference at one instance size.
+MEASURED, `probes/model.py --ratios` (which reads the archived python times
+and the law side by side, so the comparison is re-runnable rather than
+retyped):
+
+| step from → to | python time ratio | closed-form step ratio (§2.2) | agreement |
+|---|---|---|---|
+| (10,15,10) → (10,20,10) | 7.61× | 7.99× | 4.7% |
+| (10,20,10) → (11,22,11) | 10.38× | 10.48× | 1.0% |
+| (11,22,11) → (12,24,12) | 11.19× | 11.27× | 0.7% |
+| (12,24,12) → (13,26,13) | 11.96× | 12.04× | 0.7% |
+
+Python's measured times track the composition law's predicted NODE COUNTS
+within 5% across four size steps. A shared per-node constant is the only
+simple explanation for that, and it is far better evidence than any single
+timing pair could be: the law was derived from pcrec's emitted search, and it
+predicts python's wall clock.
+
+Two consequences, and they matter to how K23 is framed:
+
+- **The difference is a policy difference, not an algorithmic one.** pcrec
+  has a budget and stops at 10⁶; python does not and grinds. The K23 entry's
+  "python answers instantly, pcrec returns RX_ERR_STEPS" reads as an
+  algorithmic gap. It is not one.
 - **By D22's own standard pcrec's current behaviour is the BETTER of the
   two.** A 384-second answer on a 169-byte subject is the hang D22/DD-2 exist
   to prevent. Python is the one failing that bar.
@@ -557,12 +655,20 @@ kinds — `A_CLASS`, `A_CAT`, `A_ALT`, `A_REP`, `A_EMPTY`, `A_BOL`, `A_EOL`,
 
 | node | `minw` |
 |---|---|
-| `A_CLASS` | 1 (the encoding's minimum unit; 1 byte for both ascii and utf8, since a class may hold ASCII) |
+| `A_CLASS` | 1 byte (see the note below the table — R26 E10) |
 | `A_EMPTY`, `A_BOL`, `A_EOL` | 0 |
 | `A_CAT(l,r)` | `minw(l) + minw(r)` |
 | `A_ALT(l,r)` | `min(minw(l), minw(r))` |
 | `A_REP(l,rmin,·)` | `rmin · minw(l)` |
 | `A_CAP(l)` | `minw(l)` |
+
+`A_CLASS` is **1 byte, unconditionally**, in both encodings. That is exact
+for ascii and deliberately LOOSE for utf8, where a class holding only
+non-ASCII code points has a true minimum of 2 or more; loose is the safe
+direction (§4.2) and §9.5 keeps the tightening as an unbuilt option. The
+table row and this prose said slightly different things in the first version
+— the row read as though the value varied with the encoding, and it does not
+(R26 E10).
 
 `minrest` at a point is then the `minw` of everything after it, which the
 emitter can thread DOWN its existing walk as an accumulator rather than
@@ -787,7 +893,10 @@ that matter here:**
 
 1. **Memory it cannot have.** The table is Θ(memo points × subject length)
    bits. Measured: 50 replicas × a 4,096-byte subject cap = 25,650 bytes.
-   The law is `q·n/8` bytes. Against D19's recorded 128 KB thread stack, an
+   The law is `q · ceil((n+8)/8)` bytes — the `+8` is the row padding the
+   prototype allocates, which the first version's `q·n/8` dropped; it
+   accounts for 50 bytes of the 25,650 and changes no argument (R26 M5).
+   Against D19's recorded 128 KB thread stack, an
    allocation-free stack-resident memo caps the subject at
    `128 KB × 8 / 50 ≈ 20,971 bytes` for THIS pattern — three orders of
    magnitude below where the step budget would notice, and the same shape of
@@ -866,28 +975,49 @@ instruction shape and `minrest` forced to 0, so it can never fire.
 `probes/throughput.sh`, best of 9 runs per arm, benign matching subject (so
 the clamp is pure added work with nothing to save):
 
-| shape | n | base | placebo | prune | prune vs base |
+**At the RECOMMENDED clamp density** (R26 E5: the first version measured
+three shapes with an EMPTY follow, where `minrest` is 0 at the last
+`outer_min − 1` replicas and only **9 of 50** sites carry a clamp — 18% of
+what the note proposes shipping). These rows use a real non-empty follow so
+that every replica is clamped, **50 of 50**, and they carry the lattice
+rule's integer division:
+
+| shape | W | base | placebo | prune | clamp only | total |
+|---|---|---|---|---|---|---|
+| `(a{2,4}){10,50}b` | 1 | 1726.5 ns | 1749.7 ns | 1757.7 ns | +0.46% | **+1.8%** |
+| `((?:aa){2,4}){10,50}b` | 2 | 3003.0 ns | 3019.5 ns | 3061.0 ns | +1.37% | **+1.9%** |
+| `((?:aaa){2,4}){10,50}b` | 3 | 4276.2 ns | 4246.5 ns | 4270.5 ns | +0.57% | **−0.1%** |
+
+At 5.6× the clamp density and with the division the lattice rule adds, the
+cost is **≤ 2%**, and on the stride-3 shape the pruned build is marginally
+faster than the unpruned one. "clamp only" is prune-vs-placebo, i.e. the
+clamp's own instructions with code-layout drift subtracted.
+
+**The sparse-density rows, kept** (empty follow, 9 of 50 sites), because they
+are what the note originally reported and dropping them would hide the
+correction:
+
+| shape | n | base | placebo | prune | total |
 |---|---|---|---|---|---|
-| `(a{10,20}){10,50}` | 300 | 1969.4 ns | 1989.5 ns | 2027.8 ns | **+3.0%** |
+| `(a{10,20}){10,50}` | 300 | 1969.4 ns | 1989.5 ns | 2027.8 ns | +3.0% |
 | `(a{2,4}){10,50}` | 200 | 1588.1 ns | 1586.1 ns | 1572.6 ns | −1.0% |
 | `(a{1,2}){10,50}` | 60 | 597.1 ns | 600.0 ns | 600.3 ns | +0.5% |
 
-Read honestly: the effect is inside a ±3% band whose sign varies by shape. On
-the one shape where a penalty appeared, **+1.0 point of the +3.0 is code
-LAYOUT** (base → placebo), not the clamp's own instructions; the clamp itself
-accounts for +1.9 points there and for a small negative or nothing on the
-other two.
+Read honestly across both tables: the effect is inside a ±3% band whose sign
+varies by shape, and DENSITY DOES NOT DRIVE IT — the densest rows are not the
+most expensive ones, which is the useful thing this correction produced. Half
+or more of the largest observed penalty is code LAYOUT rather than the
+clamp's instructions, which is what the placebo arm exists to separate.
 
 Run-to-run variation is of the same order as the effect: an earlier
-nine-repetition run of the identical harness gave +3.7% / +1.7 layout on the
-first shape and −1.6% / −0.8% on the others. The archived numbers are the
-ones in `out/throughput.txt`; both runs support the same reading and neither
-supports a tighter one.
+nine-repetition run of the identical sparse harness gave +3.7% / +1.7 layout
+on the first shape. Both runs support the same reading and neither supports a
+tighter one.
 
-MEASURED, not extrapolated: this is three shapes on one box, on a harness
-built for this question rather than `make bench`. What it supports is "the
-clamp is not a throughput event"; it does not support a claim that the clamp
-is free, and §10 lists the benchmark this lane did not run.
+MEASURED, not extrapolated: six shapes on one box, on a harness built for
+this question rather than `make bench`. What it supports is "the clamp is not
+a throughput event"; it does not support a claim that the clamp is free, and
+§10 lists the benchmark this lane did not run.
 
 ### 6.2 Compile-time and code size
 
@@ -1239,22 +1369,31 @@ None are blocking; the recommendation stands without them.
 
 1. **Adopt MRL pruning as [M4.6c]'s answer to K23?** The measured case is
    §0.2/§5; the residuals are §9; the cost is §6.
-2. **Does the clamp need a D46 forcing switch in v1** (`--fno-length-prune`),
-   or is the observability bit enough? D46 says both halves; §8 assumes both;
-   the build lane needs to know before it emits.
+2. ~~**Does the clamp need a D46 forcing switch in v1?**~~ **WITHDRAWN**
+   (R26 D1). D46 is unconditional and this note's own §8 already says so, so
+   the question was re-asking Frank something ruled. The prune gets a stamp
+   bit AND a `--fno-length-prune` forcing switch, on D46's terms.
 3. **`--follow-min`, i.e. computing `minw` of the follow, in v1 or deferred?**
    It is the difference between 46 steps and 1 on `(…){10,50}b` (§7.3), it is
    the same AST walk, and it is strictly more analysis. Recommend v1: the
    walk that computes one computes the other.
 4. **Is the width-0 correction owed to `known_issues.md` K23?** §2.4 narrows
    the entry's stated class. This lane did not edit the entry.
-5. **Manager-level, not Frank-level:** §4.6's scan-bound form (109 units of
-   forward work rather than 190) is the one that touches D49's fresh
-   `RX_ERR_WORK` calibration. Recommend it as the default emission on the
-   cursor rung, and recommend that [M4.6]'s calibration of D49's number take
-   the shipped arm's measured 5.24 work-per-step ratio on this shape as one
-   of its inputs, since it is a ratio measured on a real explosion rather
-   than on a benign match.
+5. ~~**The scan-bound form, and the 5.24 ratio as a D49 calibration
+   input.**~~ **WITHDRAWN** (R26 M2/E6). The ratio is a LANE PROXY on a
+   lane-defined quantity, not D49's `RX_ERR_WORK`, and it is not a defensible
+   calibration input; the manager's provisional adoption is correctly
+   retracted. §4.6's design argument for the folded emission survives on its
+   own terms — it lands on exactly one forward pass, measured and archived —
+   and is a build-lane emission choice rather than a ruling.
+6. **NEW, and it matters more than the two withdrawn items did: adopt the
+   PREFILTER-WINDOW CEILING (§9.1) in v1?** Without it K23 RETURNS at a
+   16-byte trailing suffix (measured curve); with it the residual is gone at
+   every suffix length measured, one step throughout. The window is already
+   computed and discarded on the default path, so the cost is carrying one
+   `size_t` in `rx_work`. Recommend v1, with the three build-lane obligations
+   §9.1 names and the subject-end ceiling as a strictly-weaker fallback.
+   Panel-contributed (R26 E4), provenance recorded.
 
 ---
 
@@ -1263,16 +1402,26 @@ None are blocking; the recommendation stands without them.
 1. Emitting the clamp at every program point with `minrest > 0` changes ZERO
    cells of the `.rxt` corpus. (§8; the pcrec-vs-pcrec differential is the
    test.)
-2. The `minw` walk written recursively overflows at the parser's 250-paren
-   cap, exactly as `clo_visit` did. (§4.3; R23's own re-measurement is the
-   precedent and the reason this is stated as a prediction rather than a
-   caution.)
+2. **REFUTED by the shipped compiler** (R26 E7; kept and marked rather than
+   deleted, per house style). The prediction was: *the `minw` walk written
+   recursively overflows at the parser's 250-paren cap, exactly as
+   `clo_visit` did.* It does not. `src/opt/possessify.c`'s `pss_walk`
+   recurses on pattern structure today and `build/pcrec` compiles patterns at
+   depths 100, 200 and 249 without trouble (MEASURED). The prediction
+   generalised K18's finding one step too far: `clo_visit` overflowed because
+   it recursed **Θ(d²)**, not because it recursed. §4.3's first bullet, which
+   this prediction was the caution for, is corrected there.
 3. **CONFIRMED, 21 steps** (written as a prediction, then measured — §2.5).
    On the frames rung, the test form of §4.1 reduces `((a|b){7,12}){7,20}` at
    n = 49 from 51,993 steps to fewer than 50.
-4. There is no greedy two-level bounded shape, of any inner width, for which
-   pruning leaves more than `p` steps at `n = p·m` with an empty follow.
-   (§4.4; 855 cells consistent, no proof.)
+4. There is no two-level bounded shape, of any inner width, stride or
+   preference, for which pruning leaves more than `p` steps at the
+   exact-minimum length with an empty follow. (§4.4; 1,059 cells consistent
+   across strides 1–3 and all four preference combinations, no proof.)
+6. **NEW.** The reverse-deterministic cursor rung (§4.5) will need its own
+   lattice argument and will not get it from §4.1's division — its iteration
+   boundaries are recovered by a backwards walk, not by arithmetic — and that
+   is where the E1 class of bug recurs if anywhere.
 5. Raising the step budget to any value that answers `(a{11,22}){11,50}`
    answers no more of the family than that: the next size up needs ~11× more.
    (§2.2, §5.5.)

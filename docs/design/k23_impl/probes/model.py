@@ -27,6 +27,7 @@ it") derived rather than observed.
 Usage:
   model.py --check            validate the law against the measured table
   model.py --grid             where the law crosses the 10^6 default budget
+  model.py --ratios           python's TIMES vs the law's NODE COUNTS (R26 E8)
 """
 import argparse
 
@@ -80,6 +81,39 @@ def check():
     return bad
 
 
+# MEASURED python `re` wall-clock, from out/python_growth.txt (archived by
+# probes/archive.sh). Keyed (m, M, p) at n = p*m, milliseconds.
+PYTHON_MS = {
+    (10, 12, 10): 0.86,
+    (10, 15, 10): 34.83,
+    (10, 20, 10): 265.17,
+    (11, 22, 11): 2752.03,
+    (12, 24, 12): 30789.93,
+    (13, 26, 13): 368153.26,
+}
+
+
+def ratios():
+    """R26 E8's argument: python's TIMES track the law's NODE COUNTS.
+
+    This is stronger evidence that python walks the same tree than any single
+    wall-clock comparison, because it is four independent size steps agreeing
+    on a RATE rather than one pair agreeing on a value -- and the law was
+    derived from pcrec's emitted search, not from python.
+    """
+    ks = [(10, 15, 10), (10, 20, 10), (11, 22, 11), (12, 24, 12), (13, 26, 13)]
+    print('%-18s %-18s %10s %10s %10s'
+          % ('from', 'to', 'python', 'law', 'agree'))
+    worst = 0.0
+    for a, b in zip(ks, ks[1:]):
+        pr = PYTHON_MS[b] / PYTHON_MS[a]
+        lr = law(b[0], b[1], b[2]) / law(a[0], a[1], a[2])
+        d = abs(pr - lr) / lr * 100
+        worst = max(worst, d)
+        print('%-18s %-18s %9.2fx %9.2fx %9.1f%%' % (a, b, pr, lr, d))
+    print('\nworst disagreement %.1f%% over %d size steps.' % (worst, len(ks) - 1))
+
+
 def grid(budget=1000000):
     print('Smallest inner MINIMUM m at which the family (a{m,m+w}){m,P} '
           'exceeds a %d-step budget\nat its own exact-minimum subject length '
@@ -99,9 +133,15 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--grid', action='store_true')
+    ap.add_argument('--ratios', action='store_true')
     ap.add_argument('--budget', type=int, default=1000000)
     a = ap.parse_args()
+    if a.ratios:
+        ratios()
+        raise SystemExit(0)
     if a.check or not (a.check or a.grid):
-        raise SystemExit(1 if check() else 0)
+        rc = 1 if check() else 0
+        if not a.grid:
+            raise SystemExit(rc)
     if a.grid:
         grid(a.budget)
