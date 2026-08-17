@@ -32,10 +32,20 @@
 #     past what a shell argv can carry even though today's replication limit
 #     caps N well below that -- see the body-alternation note below);
 #   - takes SIZE, FILL, TAIL, REGIME and TRIALS as argv;
-#   - runs `rx_search` TRIALS times and reports the MINIMUM elapsed
-#     nanoseconds (CLOCK_MONOTONIC) per search -- min-of-N is the house
-#     convention, eng_brep_design.md S4.3's throughput table;
-#   - prints one line: "<verdict> <bytes> <ns_per_search>".
+#   - runs `rx_search` TRIALS times, timing each with its own
+#     clock_gettime(CLOCK_MONOTONIC) pair, and prints EVERY trial's own
+#     nanosecond sample rather than collapsing them to the minimum
+#     (MEDIAN+SPREAD UPGRADE, 2026-08-17 -- see driver.c's own header
+#     comment for why min-of-N stopped being trusted: eng_brep_design.md
+#     S4.3's throughput table used it, and this directory's own CLAUDE.md
+#     recorded that this exact bench_k harness could not tell a real K=8
+#     knee from noise without a spread column, which needs more than one
+#     sample per cell to compute);
+#   - prints one line: "<verdict> <bytes> <ns_1> <ns_2> ... <ns_TRIALS>".
+#     run_cell (below) turns that sample list into a judged MEDIAN plus a
+#     printed max/min SPREAD per regime, the same discipline
+#     run_bench.sh/compare.sh apply to every other throughput number this
+#     project quotes about itself.
 #
 # THE THREE SUBJECT REGIMES are built explicitly per body from a parallel
 # data table (BODY_FILL / BODY_TAIL below) rather than derived from the
@@ -100,16 +110,44 @@
 #
 # Usage: bench_k.sh [--full]
 # Env:   PCREC (default build/pcrec), CC (default cc), CFLAGS_OPT (default -O2),
-#        TRIALS (default 3), TIMEOUT (default 300)
+#        TRIALS (default 5, was 3 -- see the ns/*-column MEDIAN+SPREAD note
+#        below), TIMEOUT (default 300)
 set -u
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../../../.." && pwd)
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-cc}"
 OPT="${CFLAGS_OPT:--O2}"
-TRIALS="${TRIALS:-3}"
+# TRIALS default raised 3 -> 5 to match run_bench.sh/compare.sh's own
+# BENCH_TRIALS=5 (see their headers) now that this driver actually judges a
+# median over the samples rather than their minimum -- see the MEDIAN+SPREAD
+# UPGRADE note below.
+TRIALS="${TRIALS:-5}"
 TMO="${TIMEOUT:-300}"
 FULL=0
 [ "${1:-}" = "--full" ] && FULL=1
+
+# median <values...> -> prints the median (lower of the two for even counts).
+# spread <values...> -> prints max/min as a ratio, "n/a" if min is 0.
+# Copied verbatim (not sourced -- this script has no sibling-file dependency
+# today) from tests/bench/run_bench.sh / tests/bench/compare/compare.sh,
+# which this MEDIAN+SPREAD UPGRADE brings this driver's own ns/* columns up
+# to the same discipline as: this directory's own CLAUDE.md recorded the
+# gap explicitly ("there is no spread column here to tell a real knee from
+# within-run noise") as the stated prerequisite for trusting a K choice at
+# the margin bench_k.txt's 2026-08-17 run needed and did not have -- e.g.
+# the alternation body's N=256 ns/fail column ranked K=8 best (616,823) with
+# K=16 nearly 2.3x WORSE (1,413,168), a ranking inversion between adjacent K
+# values with nothing in the old min-of-TRIALS output to say whether that
+# was a real curve or noise. driver.c now prints every trial's own sample
+# instead of collapsing them to a minimum (see its header comment); run_cell
+# below is what turns that sample list into a judged median plus a printed
+# spread, one pair per regime.
+median() {
+    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
+}
+spread() {
+    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.2f", v[NR]/v[1] }'
+}
 
 OUT=$(mktemp -d "${TMPDIR:-/tmp}/ckbench.XXXXXX")
 trap 'rm -rf "$OUT"' EXIT
@@ -244,8 +282,23 @@ cat > "$OUT/driver.c" <<'EOF'
  *                        then failure -- backtracks the whole loop at every
  *                        start position)
  * The subject is built IN MEMORY, never via argv. Prints one line:
- *   "<verdict> <bytes> <ns_per_search>", ns_per_search the MINIMUM of TRIALS
- * clock_gettime(CLOCK_MONOTONIC) samples around a single rx_search call.
+ *   "<verdict> <bytes> <ns_1> <ns_2> ... <ns_TRIALS>"
+ * -- every trial's own clock_gettime(CLOCK_MONOTONIC) nanosecond sample
+ * around its own rx_search call, MIN-OF-N COLLAPSED NO LONGER: the bench_k
+ * CLAUDE.md's own recorded verdict on the min-of-N predecessor is that a
+ * K=8-favoring trend could not be told from up-to-~2.4x noise between
+ * adjacent K values with no spread column to check it against. run_cell (the
+ * shell side, see below) is what turns this raw sample list into a
+ * run_bench.sh/compare.sh-style MEDIAN plus a printed max/min SPREAD per
+ * regime -- this driver's job is only to stop throwing the other TRIALS-1
+ * samples away.
+ *
+ * VERDICT MISMATCH is now something this driver can DETECT and say so about,
+ * where the min-of-N predecessor silently trusted the last rc: rx_search is
+ * a pure function of (buf, n, startpos) for a fixed compiled artifact, so
+ * every trial on the identical in-memory subject MUST return the identical
+ * rc -- a trial that disagrees with trial 0 is a harness/determinism finding,
+ * not noise, and is reported as "MISMATCH" rather than silently overwritten.
  */
 int main(int argc, char **argv)
 {
@@ -282,20 +335,27 @@ int main(int argc, char **argv)
     if (with_tail) memcpy(s + body_bytes, tail, tl);
 
     ptrdiff_t caps[RX_NCAPS][2];
-    long long best = -1;
-    int rc = 0;
+    long long *samples = malloc((size_t)trials * sizeof(long long));
+    if (!samples) { fprintf(stderr, "oom (samples)\n"); return 2; }
+    int rc0 = 0, mismatch = 0;
     for (int t = 0; t < trials; t++) {
         struct timespec t0, t1;
         clock_gettime(CLOCK_MONOTONIC, &t0);
-        rc = rx_search(s, total, 0, caps);
+        int rc = rx_search(s, total, 0, caps);
         clock_gettime(CLOCK_MONOTONIC, &t1);
-        long long ns = (long long)(t1.tv_sec - t0.tv_sec) * 1000000000LL
-                      + (long long)(t1.tv_nsec - t0.tv_nsec);
-        if (best < 0 || ns < best) best = ns;
+        samples[t] = (long long)(t1.tv_sec - t0.tv_sec) * 1000000000LL
+                   + (long long)(t1.tv_nsec - t0.tv_nsec);
+        if (t == 0) rc0 = rc;
+        else if (rc != rc0) mismatch = 1;
     }
-    const char *verdict = rc == 1 ? "match" : rc == 0 ? "nomatch"
-                        : rc == RX_ERR_STEPS ? "STEPS" : "FRAMES";
-    printf("%s %zu %lld\n", verdict, total, best);
+    const char *verdict = mismatch ? "MISMATCH"
+                        : rc0 == 1 ? "match" : rc0 == 0 ? "nomatch"
+                        : rc0 == RX_ERR_STEPS ? "STEPS" : "FRAMES";
+    printf("%s %zu", verdict, total);
+    for (int t = 0; t < trials; t++)
+        printf(" %lld", samples[t]);
+    printf("\n");
+    free(samples);
     free(s);
     return 0;
 }
@@ -360,13 +420,28 @@ run_cell () {
                    "$kind" "$body" "$n" "$kshow" "$lines" "$regime" "$TMO"
             continue
         fi
+        # res is now "<verdict> <bytes> <ns_1> ... <ns_TRIALS>" (driver.c's
+        # MEDIAN+SPREAD UPGRADE: every trial's own sample, not just the best
+        # one) -- shift off verdict/bytes, median()/spread() the rest.
         # shellcheck disable=SC2086
         set -- $res
-        got_verdict=$1; got_bytes=$2; got_ns=$3
+        got_verdict=$1; got_bytes=$2; shift 2
+        if [ "$got_verdict" = "MISMATCH" ]; then
+            printf '%-10s %-16s %-6s %-5s %-8s regime=%-9s MISMATCH: rx_search returned different rc across %s trials on the IDENTICAL in-memory subject -- a determinism finding, not noise, number DISCARDED\n' \
+                   "$kind" "$body" "$n" "$kshow" "$lines" "$regime" "$TRIALS"
+            continue
+        fi
         if [ "$got_verdict" != "$want" ]; then
             printf '%-10s %-16s %-6s %-5s %-8s regime=%-9s VALIDATION-FAILED: wanted %s, got %s on %s bytes -- number DISCARDED\n' \
                    "$kind" "$body" "$n" "$kshow" "$lines" "$regime" "$want" "$got_verdict" "$got_bytes"
             continue
+        fi
+        got_med="$(median "$@")"
+        got_spr="$(spread "$@")"
+        if [ "$got_spr" = "n/a" ]; then
+            got_ns="${got_med} (n/a)"
+        else
+            got_ns="${got_med} (${got_spr}x)"
         fi
         case $regime in
             max)      ns_max=$got_ns ;;
@@ -375,7 +450,7 @@ run_cell () {
         esac
     done
 
-    printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s %-12s %-12s %s\n' \
+    printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s %-18s %-18s %s\n' \
            "$kind" "$body" "$n" "$kshow" "$lines" "$pcrec_s" "$gcc_s" \
            "$ns_max" "$ns_below" "$ns_fail"
 }
@@ -389,7 +464,7 @@ run_cell () {
 # flat $BODIES list, so the three curves print as separable sections; every
 # row also carries the "kind" column so a reader can still re-group by
 # grep/awk on the raw output alone.
-printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s %-12s %-12s %s\n' \
+printf '%-10s %-16s %-6s %-5s %-8s %-10s %-10s %-18s %-18s %s\n' \
        kind body N K lines pcrec_s gcc_s 'ns/max' 'ns/belowmax' 'ns/fail'
 for kind in $KIND_ORDER; do
     echo
