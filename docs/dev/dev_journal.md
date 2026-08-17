@@ -9570,3 +9570,32 @@ D46 prefilter pair (f). Next: **[M4.7]** (capture differential vs
 libpcre2 at scale; SR-8 flip; §2.2 wording pass; spec graduation; full
 close battery; M5-vs-M6 order decided at its close) — a NEW milestone,
 which STARTS WITH FRANK per standing rule.
+
+## 2026-08-17 (EDT), twenty-ninth session close — the post-close design evening; next session SET
+
+After M4.6 closed, an evening of Frank-driven design conversation
+produced, in order: the D53 ADDENDUM (the ASK-6 refutation's boundary —
+offset DISTRIBUTION is a static exemplar fact, engine selection becomes
+[ENG-PGO]'s second customer, ENG-ISL added to the revisit triggers);
+the mini-bench survey answering "do we include these NFA patterns"
+(no — (j) is the only VM case) → [BENCH-VM] filed (three VM-tier
+floors incl. one WATCHING the accepted +8% cost, + the K-sweep driver
+upgrade); and the [OPT-ALTCLS] arc from Frank reading --emit-ir:
+stage 1 (b|c→[bc], the measured revdet→cursor plan collapse
+23/66/3/2→4/18/1/0), the UNSOUNDNESS of per-position multi-char
+merging proven by counterexample (frank|fred → fr[ae][nd]k? accepts
+4/6 cross-products), stage 2 prefix factoring MEASURED WORTH IT
+(quantified keyword shape -15% ×3 pinned runs; single-shot ±2-8%;
+non-capturing-group obligation), stage 3 FIRST-set entry guards
+(Frank's lookahead-guard idea restated as an emitter-derived fact —
+no lookaround module needed; MRL/FIRST duality: length- vs
+byte-viability; the whole ladder read as a lattice of partial
+determinizations with [ENG-ISL] at the top). --emit-ir earned its
+keep as the tool Frank spotted all of this WITH.
+
+**NEXT SESSION SET (Frank's selection, recorded in the M4.7 row +
+wake.md): OPEN [M4.7]** (expand to substeps at start; K7/K9 homes
+decided at expansion) **+ [OPT-ALTCLS] lane + [BENCH-VM] lane** —
+three lanes; [DD-13b] STAYS PAUSED. Sequencing: OPT-ALTCLS merges
+before the at-scale differential run. Budget: re-check with Frank at
+session start (this was the heaviest session on record's sibling).

@@ -153,7 +153,14 @@ stated terms.
   note paneled (R23) and BUILT by the k18-rewrite lane ([K18-FIX] in
   plan_completed.md; corpus 1704 → 3198); [ENG-BREP] alongside it;
   struct rx_info spelling + K19 residual rulings open with Frank.
-- [M4.7] STATE:not-started — DIFFERENTIAL + CLOSE: capture differential
+- [M4.7] STATE:not-started — **AUTHORIZED (Frank, 2026-08-17,
+  twenty-ninth session close): open at next session start, alongside
+  the [OPT-ALTCLS] and [BENCH-VM] lanes (3 lanes; [DD-13b] stays
+  paused). Sequencing constraint recorded: [OPT-ALTCLS] merges BEFORE
+  the at-scale differential run so any divergence attributes cleanly.
+  Expand into substeps when work begins. K9's API half (pattern_len)
+  and K7 are natural residents — decide their substep homes at
+  expansion.** DIFFERENTIAL + CLOSE: capture differential
   vs libpcre2 ovectors (gate-ON per docs/testing.md's differential-gate
   principle), fuzzer extended to compare capture spans, SR-8's
   diagnostic flip lands (the VM now exists), full close battery +
