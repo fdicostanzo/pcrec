@@ -455,8 +455,14 @@ static int vm_slot_ctr(Vm *v, int i)
 static bool vm_counter_fits(const Vm *v, const Ast *a)
 {
     if (v->cx->opt->flags & PCREC_NO_COUNTER) return false;
-    if (a->rmax < 0) return false;            /* unbounded tail: frames star */
     if (a->rmin == 0 && a->rmax == 0) return false;
+    /* UNBOUNDED: only the MANDATORY prefix is the counter's (§11 residual 1).
+     * The tail stays on the frames star, which already emits one body copy and
+     * has nothing to gain. `X*` and `X+` therefore never reach this rung —
+     * their rmin is 0 or 1 — while `X{4000,}` does, and before this clause it
+     * did not: it replicated 4,001 mandatory copies and was REFUSED while
+     * `X{4000}` compiled. §8.5 cell 3 names both spellings. */
+    if (a->rmax < 0) return a->rmin >= v->unroll_k;
     return a->rmin >= v->unroll_k
         || (a->rmax - a->rmin) >= v->unroll_k;
 }
@@ -472,6 +478,7 @@ static int vm_counter_copies(const Vm *v, const Ast *a)
     const int K = v->unroll_k;
     const int m = a->rmin, nopt = a->rmax - a->rmin;
     const int mand = (m >= K ? K + m % K : m);
+    if (a->rmax < 0) return mand + 1;   /* + the star's own single body copy */
     /* The POSSESSIVE optional phase has NO trip, NO tail and NO K [R25 E6]:
      * it is ONE emitted body re-entered per iteration, because the cut at each
      * iteration boundary is what the shape buys and unrolling buys nothing on
@@ -838,7 +845,22 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l);
         const long long K = v->unroll_k;
-        const long long mm = a->rmin, nn = a->rmax - a->rmin;
+        const long long mm = a->rmin;
+        if (a->rmax < 0) {
+            /* UNBOUNDED: only the mandatory prefix is the counter's, so this
+             * is the frames rung's own unbounded arm plus the counter's trail
+             * writes. Computing `rmax - rmin` here would be -1 - m, a negative
+             * count that made the frame requirement garbage and returned
+             * RX_ERR_FRAMES on every subject — found by writing §8.5 cell 3's
+             * `{4000,}` member as a check the moment the emitter accepted it. */
+            c.unbounded = c.growable = true;
+            c.pf = 1 + body.frames + body.pf;
+            c.pt = (vm_nullable(a->l) ? 1 : 0) + body.trail + body.pt;
+            c.frames = mm * body.frames;
+            c.trail  = mm * body.trail + (mm >= K ? 1 + mm / K : 0);
+            return c;
+        }
+        const long long nn = a->rmax - a->rmin;
         /* Frames and trail are the frames rung's OWN numbers, and they must
          * be: the rung changes how much C is WRITTEN, not how many iterations
          * RUN or what they push. This is the frames arm's bounded expression
@@ -2302,6 +2324,7 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
                          int next, bool greedy);
 static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
                           int next, int mslot);
+static void vm_star(Vm *v, int cur, const Ast *a, int next);
 
 /* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
  * `count mod K` residue emitted by the caller's own tail.
@@ -2505,7 +2528,8 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
 {
     const int K = v->unroll_k;
     const int m = a->rmin;
-    const int nopt = a->rmax - a->rmin;
+    const bool unbounded = a->rmax < 0;
+    const int nopt = unbounded ? 0 : a->rmax - a->rmin;
     const int ctr = vm_slot_ctr(v, v->nctr++);
     /* The possessive arm needs a cut mark as well, recorded BEFORE the
      * mandatory copies rather than after them: the cut at the first optional
@@ -2514,13 +2538,19 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
     const int mark = a->possessive ? vm_slot_mark(v, v->nmark++) : -1;
     int cur;
 
-    const char *role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
-                                   "(mandatory %s, optional %s)",
-                                a->rmin, a->rmax, K,
-                                a->greedy ? "greedy" : "lazy",
-                                m >= K ? "counted" : "replicated",
-                                nopt == 0 ? "none"
-                                          : (nopt >= K ? "counted" : "replicated"));
+    const char *role;
+    if (unbounded)
+        role = vm_rolef(v, "counter rung, {%d,}, K=%d, %s "
+                           "(mandatory counted, tail on the frames star)",
+                        a->rmin, K, a->greedy ? "greedy" : "lazy");
+    else
+        role = vm_rolef(v, "counter rung, {%d,%d}, K=%d, %s "
+                           "(mandatory %s, optional %s)",
+                        a->rmin, a->rmax, K,
+                        a->greedy ? "greedy" : "lazy",
+                        m >= K ? "counted" : "replicated",
+                        nopt == 0 ? "none"
+                                  : (nopt >= K ? "counted" : "replicated"));
     vm_lbl(v, entry, role);
     vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
     if (a->possessive)
@@ -2541,6 +2571,12 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
         }
     }
 
+    if (unbounded) {
+        /* §11 residual 1: the TAIL is the frames star's, unchanged. The
+         * counter shrank the mandatory prefix and claims nothing else. */
+        vm_star(v, cur, a, next);
+        return;
+    }
     if (nopt == 0) {
         vm_lbl(v, cur, "counter: exact count complete");
         vm_goto(v, next);
@@ -2554,6 +2590,83 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
     if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true);
     else           vm_opt_chain(v, cur, a->l, nopt, next, a->greedy);
 }
+
+/* [ENG-BREP counter-K] THE UNBOUNDED STAR, extracted from vm_rep so the
+ * COUNTER rung can hand its tail to it.
+ *
+ * `X{m,}` is a mandatory phase of m iterations followed by an unbounded tail,
+ * and §11 residual 1 is explicit that only the tail stays on the frames star —
+ * the mandatory prefix is the counter's, exactly as it is for `X{m,n}`. Before
+ * this extraction the counter rung declined `rmax < 0` outright, so
+ * `((a)|ab){4000,}` still replicated its 4,001 mandatory copies and was
+ * REFUSED while `((a)|ab){4000}` compiled. §8.5 cell 3 names all three
+ * spellings, and the gap was found by writing that cell as a check rather than
+ * by reading the code.
+ *
+ * The body is moved VERBATIM: same locals, same order, same emitted text. Its
+ * one parameter change is the entry label's name. */
+static void vm_star(Vm *v, int cur, const Ast *a, int next)
+{
+    /* the unbounded star */
+    bool guard = vm_nullable(a->l);
+    int gslot = guard ? vm_slot_guard(v, v->nguard++) : -1;
+    int bentry = vm_label(v), bend = vm_label(v), exit = vm_label(v);
+
+    vm_lbl(v, cur, vm_rolef(v, "unbounded repeat, %s, frames rung%s",
+                            a->greedy ? "greedy" : "lazy",
+                            guard ? ", nullable body (empty-iteration guard)"
+                                  : ""));
+    if (guard)
+        vm_set(v, gslot, "(ptrdiff_t)pos",
+               "empty-iteration guard: where this iteration began");
+    if (a->greedy) {
+        vm_push(v, exit, "another iteration preferred; resume is the EXIT");
+        vm_goto(v, bentry);
+    } else {
+        vm_push(v, bentry, "the exit is preferred; resume is another ITERATION");
+        vm_goto(v, exit);
+    }
+
+    vm_emit(v, bentry, a->l, bend);
+
+    vm_lbl(v, bend, "unbounded repeat: one iteration done");
+    if (guard) {
+        /* THE EMPTY-ITERATION RULE (§3.3), and its exact shape matters.
+         *
+         * An iteration that consumed nothing must not iterate again — but it
+         * is NOT rolled back. Control takes the EXIT CONTINUATION, so the
+         * empty iteration's own capture writes STAND. §3.3 says exactly this
+         * ("control takes the exit continuation") and it is worth stating why,
+         * because the mechanism invites the other reading: failing the path
+         * instead would let the trail undo the write for free, and it is
+         * WRONG. Both oracles give `(a*)*` on "a" a group 1 of [1,1) — the
+         * second, empty iteration at position 1 ran, wrote its group, and then
+         * stopped the loop. The roll-back reading reports [0,1), the FIRST
+         * iteration's value, across the whole nullable-body family; `(|a)+`
+         * additionally loses the WHOLE MATCH, reporting [0,1) where both
+         * oracles give [0,0), because rolling back the empty iteration lets
+         * the loop go round again.
+         *
+         * The exit frame this iteration pushed stays on the stack, so a later
+         * failure of the continuation resumes it and enters the exit once more
+         * with the empty iteration's writes rewound. That duplicate is
+         * harmless — same position, same continuation, and base-tier matching
+         * never reads captures, so the second attempt fails exactly as the
+         * first did — but it is real work and one charged step. Dropping the
+         * frame instead is not available: it need not be on top, because the
+         * body may have left its own choice points above it and those must
+         * still get their turn. Recorded for [M4.6] rather than solved with a
+         * mechanism that mutates a frame in place, which does not survive the
+         * loop being re-entered. */
+        sb_printf(v->b, "    if ((ptrdiff_t)pos != stv[%d]) goto %s_L%d;\n",
+                  gslot, v->p, cur);
+        vm_goto(v, exit);
+    } else {
+        vm_goto(v, cur);
+    }
+
+    vm_lbl(v, exit, "unbounded repeat: the exit");
+    vm_goto(v, next);}
 
 static void vm_rep(Vm *v, int entry, const Ast *a, int next)
 {
@@ -2661,66 +2774,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         return;
     }
 
-    /* the unbounded star */
-    bool guard = vm_nullable(a->l);
-    int gslot = guard ? vm_slot_guard(v, v->nguard++) : -1;
-    int bentry = vm_label(v), bend = vm_label(v), exit = vm_label(v);
-
-    vm_lbl(v, cur, vm_rolef(v, "unbounded repeat, %s, frames rung%s",
-                            a->greedy ? "greedy" : "lazy",
-                            guard ? ", nullable body (empty-iteration guard)"
-                                  : ""));
-    if (guard)
-        vm_set(v, gslot, "(ptrdiff_t)pos",
-               "empty-iteration guard: where this iteration began");
-    if (a->greedy) {
-        vm_push(v, exit, "another iteration preferred; resume is the EXIT");
-        vm_goto(v, bentry);
-    } else {
-        vm_push(v, bentry, "the exit is preferred; resume is another ITERATION");
-        vm_goto(v, exit);
-    }
-
-    vm_emit(v, bentry, a->l, bend);
-
-    vm_lbl(v, bend, "unbounded repeat: one iteration done");
-    if (guard) {
-        /* THE EMPTY-ITERATION RULE (§3.3), and its exact shape matters.
-         *
-         * An iteration that consumed nothing must not iterate again — but it
-         * is NOT rolled back. Control takes the EXIT CONTINUATION, so the
-         * empty iteration's own capture writes STAND. §3.3 says exactly this
-         * ("control takes the exit continuation") and it is worth stating why,
-         * because the mechanism invites the other reading: failing the path
-         * instead would let the trail undo the write for free, and it is
-         * WRONG. Both oracles give `(a*)*` on "a" a group 1 of [1,1) — the
-         * second, empty iteration at position 1 ran, wrote its group, and then
-         * stopped the loop. The roll-back reading reports [0,1), the FIRST
-         * iteration's value, across the whole nullable-body family; `(|a)+`
-         * additionally loses the WHOLE MATCH, reporting [0,1) where both
-         * oracles give [0,0), because rolling back the empty iteration lets
-         * the loop go round again.
-         *
-         * The exit frame this iteration pushed stays on the stack, so a later
-         * failure of the continuation resumes it and enters the exit once more
-         * with the empty iteration's writes rewound. That duplicate is
-         * harmless — same position, same continuation, and base-tier matching
-         * never reads captures, so the second attempt fails exactly as the
-         * first did — but it is real work and one charged step. Dropping the
-         * frame instead is not available: it need not be on top, because the
-         * body may have left its own choice points above it and those must
-         * still get their turn. Recorded for [M4.6] rather than solved with a
-         * mechanism that mutates a frame in place, which does not survive the
-         * loop being re-entered. */
-        sb_printf(v->b, "    if ((ptrdiff_t)pos != stv[%d]) goto %s_L%d;\n",
-                  gslot, v->p, cur);
-        vm_goto(v, exit);
-    } else {
-        vm_goto(v, cur);
-    }
-
-    vm_lbl(v, exit, "unbounded repeat: the exit");
-    vm_goto(v, next);
+    vm_star(v, cur, a, next);
 }
 
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
