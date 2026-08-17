@@ -87,8 +87,10 @@ Append-only where noted; the restart/status-recovery record for the project.
   strategy, check design (summary — the fuller catalogue is in the
   manager's memory), testing strategy, design process, orchestration,
   durable technical facts, and the meta-lesson. Future sessions read
-  THIS instead of the whole journal for inherited lessons; update it at
-  session close only when a NEW lesson class appears.
+  THIS instead of the whole journal's HISTORY for inherited lessons —
+  the journal TAIL remains the mandatory session-start read for current
+  work; update this file at session close only when a NEW lesson class
+  appears.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.

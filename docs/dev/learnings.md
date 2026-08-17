@@ -4,7 +4,9 @@ Written 2026-08-17 (twenty-eighth session) from a complete read of all
 126 journal entries (sessions 1–28, 2026-08-09 onward), at Frank's
 request: the durable lessons, consolidated so a future session does not
 need the whole 9,000-line journal to inherit them. The journal remains
-the record; this is the digest. The check-design lessons have their own
+the record; this is the digest — and it replaces only the DEEP-HISTORY
+read: the journal TAIL is still the mandatory session-start read for
+current work and status (Frank's standing rule; the wake sequence). The check-design lessons have their own
 richer home in the manager's memory file (pcrec-check-design-lessons.md)
 — §3 here is the summary, not the replacement. Update this file at
 session close when a NEW lesson class appears; do not re-state instances
