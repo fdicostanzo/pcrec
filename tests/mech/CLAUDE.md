@@ -377,3 +377,62 @@ Each removes ONE thing, because the point is to say which thing is load-bearing:
   signal is visible in the `.rxt` corpus as well as in the differential — so it
   carries both arms, which is also a check that the corpus is not merely
   decorative.
+
+## [ENG-BREP counter-K] S53-S57
+
+The counter rung's five rows, running the `counterkdiff` arm. They are not
+written up here; read the definitions in `sabotages/`, which carry their own
+reasoning. Noted rather than silently absent, because a reader counting
+sections would otherwise conclude the rung has no controls.
+
+## [M4.6d] S58-S63, MRL pruning's controls — and the arms are ASYMMETRIC
+
+Six rows for a mechanism that is not a rung: MRL emits a length bound ON
+whichever rung a quantifier already took. They run two new arms, `mrldiff`
+(tests/mrl/run_mrldiff.sh) and `mrl` (tests/mrl/run_mrl_tests.sh), and the
+reason there are two is the thing to understand before reading any verdict.
+
+**A differential is STRUCTURALLY BLIND to half of this mechanism's failure
+modes, and that is a property of the bound rather than of the population.**
+`minrest` is a LOWER bound on what an accepting continuation still consumes.
+Under-estimating it — or losing it entirely — prunes LESS, changes NO answer,
+and leaves the pruned and denied builds agreeing on every cell. What it
+changes is the STEP COUNT. So no pcrec-vs-pcrec comparison can see a bound
+that quietly stops existing, however many cells it compares; only an
+acceptance cell that reads the step count can. That is why `tests/mrl/` has
+both instruments and why these rows split cleanly between them:
+
+- **S58** makes `pcrec_minw` report 0 for a byte class — every follow-min
+  collapses, no bound is emitted anywhere, and the artifact is pre-MRL pcrec
+  byte for byte. **MEASURED: `mrl` 14 fail / 4 pass, `mrldiff` 0 fail / 146
+  pass.** That green differential column is not a gap; it is the asymmetry
+  above, measured instead of argued, and it is the strongest single answer to
+  "why does this directory need acceptance cells when it already has a
+  202,458-cell differential".
+- **S59** makes `minw` report a bounded repeat's MAXIMUM — the UNSOUND
+  direction, the one that deletes real matches. Carries `mrldiff harness`,
+  because an over-estimate is exactly what a differential and a corpus CAN
+  see and an acceptance cell cannot.
+- **S60** restores R26 E1: the clamp emitted without its lattice rounding, so
+  the cursor lands between two iteration boundaries and the whole retreat
+  chain below it is poisoned. Invisible at stride 1 by construction — the
+  broken and correct forms emit arithmetically equal code there — which is
+  why `tests/mrl/patterns.txt` carries bodies of width 1, 2 and 3, and why
+  this row exists separately from S59.
+- **S61** deletes ONE rung's clamp (the greedy cursor's fold into its scan
+  bound) and leaves every other rung's bound intact, including the stamp. S58
+  removes the analysis and every rung loses together; this says which rung's
+  emission carries K23.
+- **S62** is the defect this lane actually shipped first, restored so it
+  cannot return unannounced: the counter rung's per-copy follow-min drops its
+  runtime term and keeps the within-trip constant. Nine bytes of visible
+  follow on `(a{1,3}){65}` where the truth is 65. It carries the `mrl` arm
+  ALONE, and that is the honest statement of what found it: the differential
+  agreed with the bug, the corpus had no such shape, and the §1 acceptance
+  cell uses an exemplar that reaches its collapse through a different rung.
+- **S63** carries the stale prefilter window across the `start++` retry —
+  D51 ruling 2 (b), whose error direction is too SMALL, i.e. unsound. No
+  subject sweep reliably reaches the state (the retry is argued unreachable on
+  the prefilter path, and a critic could not make it fire in 99 trials), so
+  the check it must defeat is a STRUCTURAL assertion that the recompute exists
+  in the emitted C. This row is what proves that assertion can go red.
