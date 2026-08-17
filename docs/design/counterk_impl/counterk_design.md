@@ -910,9 +910,9 @@ since a near-`INT64_MAX` budget overflows at ×1024, and **never scale
   `rx_cur − pos` is the iteration count; after the test the value is consumed.
   This is where the probe instruments it, so the measured column and the
   proposed site are the same place.
-- **The BACKWARD WALK is in the second class, not the first** [R25 19,
-  19, CLOSED, with the critic's own reason refuted]. It needs its own COUNTER
-  and that is all: the "three exits" are three entry edges into ONE convergent
+- **The BACKWARD WALK shares the second class's SITE SHAPE, not its exposure
+  profile** [R25 19, CLOSED, with the critic's own reason refuted]. It needs
+  its own COUNTER and that is all: the "three exits" are three entry edges into ONE convergent
   label (`wendl`, reached once per invocation), so the SITE is free. What the
   walk genuinely lacks is a step count — it counts GROUPS WITNESSED, not steps.
   It pushes NOTHING (`rungselect_design.md` §2.4 — reverse
@@ -929,7 +929,16 @@ since a near-`INT64_MAX` budget overflows at ×1024, and **never scale
   against the walk's existing per-step work (a byte dispatch and a bounds
   test) and UNMEASURED**; the first draft of this bullet asserted the size in
   both directions with no number behind either, which is worse than admitting
-  it. Bounding it belongs with the implementation, not here.
+  it. Bounding it belongs with the implementation.
+
+  **And the walk does not belong in the same sentence as the frameless scans,
+  which this bullet's own heading obscures.** The cursor scan's exposure is an
+  uncharged LINEAR term. The walk's is a PRODUCT — (charged retreats) × (walk
+  steps) — and its OUTER factor is ALREADY CHARGED, so the budget is not blind
+  to the walk at all; it under-counts it by the inner factor. That is a
+  materially smaller exposure than the scan's, and it should be argued on its
+  own terms rather than inherited from a class it merely shares a site shape
+  with.
 - **`w->budget` exists only under `has_budget`** (`emit_vm.c:2793`), so the
   new sites must be `has_budget`-gated exactly like the fail label's, and
   `tests/vm/run_vm_tests.sh:147-157` pins `--fno-step-budget` emitting NO
