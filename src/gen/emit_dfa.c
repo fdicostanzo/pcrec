@@ -184,9 +184,62 @@ static void emit_search_decl(StrBuf *sb, const char *fn)
  * fork is exactly how the prefilter and skip loops silently went missing from
  * one path for a whole milestone. `emit_search_head`'s two callers below both
  * pass it straight through from their own caller, so the DFA-only path's
- * output is unchanged byte for byte (storage == ""). */
+ * output is unchanged byte for byte (storage == "").
+ *
+ * [K24] `noclone` IS THE FIX FOR K24 AND MUST NOT BE DELETED — it is not
+ * decoration and it is not a micro-optimization. Full evidence chain:
+ * docs/dev/known_issues.md K24 (closure entry) and
+ * docs/design/k24bisect_impl/ (the bisect note plus this lane's head-to-head).
+ *
+ * WHAT IT PREVENTS: gcc -O2's partial-inlining pass (`-fpartial-inlining`,
+ * on by default) sees this function's cheap entry guard in front of a large
+ * scan body and SPLITS it into a trampoline plus a separately-placed
+ * `<prefix>_search.part.0` clone carrying the loop. The split loop's
+ * instructions are IDENTICAL — the cost is pure code placement, and it is
+ * real and reproducible: MEASURED at 1.33x on the compare.sh case-(c) shape
+ * (`(alpha|beta|gamma|delta|epsilon)`, 8 MB nomatch subject: 293.5 MB/s split
+ * vs 391.6 unsplit, pinned, 10 trials, <1% spread), which is what took that
+ * case's D12 floor red for three days. `noclone` forbids exactly the one
+ * thing the pass needs — duplicating this body — and the emitted assembly is
+ * then BYTE-IDENTICAL to the same source compiled `-O2
+ * -fno-partial-inlining`, which is the causal control the bisect used.
+ *
+ * WHY THIS ATTRIBUTE AND NOT ANOTHER, all measured head-to-head on that same
+ * case (the table is in the K24 closure entry):
+ *   - `noipa`/`noinline` on the two COLD WRAPPERS (`<prefix>_match`,
+ *     `<prefix>_match_caps`) do NOT work — 292.7 and 295.3 MB/s, the split
+ *     still present in `nm`. This refutes the obvious theory: gcc's
+ *     `pass_split_functions` runs on the CALLEE and does not consult its
+ *     callers' attributes, so severing IPA at the call site leaves the clone
+ *     standing. It has to be denied at THIS function.
+ *   - `hot` here, or `cold` on the wrappers, recovers the number (397) while
+ *     LEAVING the split in place — luck about placement in one particular
+ *     link, not a fix. The two combined measured 288.7, WORSE than doing
+ *     nothing: layout steering is exactly as unpredictable as the mechanism
+ *     it would be steering around, and a stranger's link is not this one.
+ *   - `optimize("no-partial-inlining")` works (390.9) but replaces this
+ *     function's whole optimization environment to fix one pass.
+ *   - `noipa` works (390.8) but is far wider than needed, and would forbid
+ *     the VM hybrid's inlining of this same emitter's static prefilter into
+ *     `<prefix>_search`, which is a real inline gcc performs today.
+ * `noclone` is the smallest denial that is about the mechanism rather than
+ * about this box's layout. It cannot be moved to the caller side, and a
+ * user's CFLAGS cannot be dictated, which is why the lever lives here in the
+ * emitted text.
+ *
+ * PORTABILITY: gcc 4.5+ (`noclone` has been documented since then), inside
+ * the gcc-dialect mandate this emitter already lives under (computed goto,
+ * `__builtin_expect`). It also rides the STATIC prefilter, deliberately —
+ * measured neutral on the VM+prefilter case (j), and the prefilter is the
+ * same split-eligible shape. */
 static void emit_search_head(StrBuf *c, const char *fn, const char *storage)
 {
+    sb_printf(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
+                 "   .part clone of this function -- the split costs a\n"
+                 "   measured 1.33x on a scan-bound pattern, with identical\n"
+                 "   instructions, purely from code placement. Do not remove;\n"
+                 "   see pcrec docs/dev/known_issues.md K24. */\n");
+    sb_printf(c, "__attribute__((noclone))\n");
     sb_printf(c, "%sint %s(const unsigned char *s, size_t n, "
                  "size_t startpos, ptrdiff_t (*caps)[2])\n{\n", storage, fn);
 }
