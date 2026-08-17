@@ -1,0 +1,83 @@
+# K23 MRL-pruning differential cases, for probes/diff3.py.
+# columns: pattern | outer_min | inner_min | stride | lengths | char | prefix | suffix
+#
+# The lengths are chosen around each shape's EXACT-MINIMUM boundary
+# (n = outer_min * inner_min), which is where K23 lives, plus points above
+# and below it. Every case must be python-`re`-feasible as well as
+# pcrec-feasible, because python is the arm that says what the answer IS --
+# so the family stops at (a{11,22}){11,50}, whose python arm already costs
+# ~2.9 s; see k23_design.md section 3.3 for the growth curve that forces that
+# ceiling.
+#
+# --- the K23 exemplar and its width siblings (the D27 characterization) ---
+(a{10,20}){10,50}	10	10	1	95,99,100,101,105,110,120,130,150,200,300	a
+(a{10,15}){10,40}	10	10	1	99,100,101,105,110,150	a
+(a{10,12}){10,50}	10	10	1	99,100,101,105,110,150	a
+(a{10,20}){10,30}	10	10	1	99,100,101,110,150	a
+(a{11,22}){11,50}	11	11	1	120,121,122,130,200	a
+#
+# --- the same shape reached by an UNANCHORED search that must skip bytes ---
+# The clamp is stated against the SUBJECT END, not against the match start,
+# so a match that begins late is the case that catches an off-by-a-prefix.
+(a{10,20}){10,50}	10	10	1	99,100,101,110	a	bbbbb
+(a{10,20}){10,50}	10	10	1	99,100,101,110	a	bbbbb	bbbbb
+#
+# --- a NON-EMPTY FOLLOW: the prototype passes follow-min 0, i.e. it
+# UNDER-estimates minrest here. Under-estimating is the safe direction (it
+# prunes less); these rows exist to show that the safe direction is the one
+# the prototype actually takes, rather than to show a win.
+(a{10,20}){10,50}b	10	10	1	99,100,101,110,150	a		b
+(a{10,20}){10,50}bb	10	10	1	100,110	a		bb
+#
+# --- small nested shapes lifted from tests/base/d27_nesting.rxt ---
+(a{2,3}){2,3}	2	2	1	0,1,2,3,4,5,6,7,8,9,10,15	a
+(a{3,6}){3,20}	3	3	1	0,8,9,10,11,20,60,119,120,121	a
+(a{5,10}){5,50}	5	5	1	0,24,25,26,30,50,100	a
+((a{1,2}){1,2}){1,2}	1	1	1	0,1,2,3,4,5,8,9	a
+#
+# --- nullable and unit-min inners: minrest collapses to 0 and the clamp
+# must simply not be emitted (a clamp against n-0 is a no-op, but an
+# off-by-one there would silently truncate every match)
+(a{0,3}){2,4}	2	0	1	0,1,2,3,4,6,12	a
+(a{1,3}){2,4}	2	1	1	0,1,2,3,4,6,12	a
+(a{1,20}){1,50}	1	1	1	0,1,5,50,100	a
+#
+# --- a NON-'a' body and a class body: the stride/derivation must not be
+# reading the literal, and a nomatch subject must stay a nomatch
+(b{10,20}){10,50}	10	10	1	99,100,110	b
+([ab]{10,20}){10,50}	10	10	1	99,100,101,110	a
+(a{10,20}){10,50}	10	10	1	100,110	b
+#
+# --- R26 E1: STRIDE > 1 cursor rungs, the lattice axis ---
+# ((?:ab){10,20}){10,50} has the IDENTICAL baseline step count to the
+# exemplar (10,621,636) and the same rung structure, but its cursor retreats
+# by 2. The unrounded clamp of the note's first version landed the cursor off
+# that lattice and answered nomatch on 5 of these 8 rows. These rows are the
+# committed FAILING-DIRECTION control for the lattice rule: they fail against
+# a prune_proto.py with the rounding removed and pass with it.
+# Residues arrive for free -- the subject is the unit repeated and truncated,
+# so an odd length is a half-unit tail.
+((?:ab){10,20}){10,50}	10	10	2	198,199,200,201,202,203,205,210,211,220	ab
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab		z
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab		zzz
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab	z
+((?:ab){10,20}){10,50}	10	10	2	200,201,210	ab	zz
+((?:abc){7,14}){7,30}	7	7	3	146,147,148,149,150,151,152,200	abc
+((?:abc){7,14}){7,30}	7	7	3	147,148,149	abc	z
+((?:[ab][cd]){10,20}){10,50}	10	10	2	198,199,200,201,202,210	ac
+((?:[ab][cd]){10,20}){10,50}	10	10	2	200,201,202	ac	z
+#
+# --- R26 E3: the LAZY family, on both quantifiers independently ---
+# Measured first (probes/steps.sh, baseline): the explosion needs a GREEDY
+# INNER, not a greedy outer. (a{10,20}){10,50}? -- lazy OUTER -- costs
+# 10,621,635 steps, one less than the all-greedy exemplar; (a{10,20}?){10,50}
+# -- lazy INNER -- costs 1, and both-lazy costs 0. So the inner's preference
+# is what orders the decomposition search and puts the exact-minimum solution
+# last. These rows keep all four preference combinations in the differential,
+# which is what R24's lazy refutation says a corpus owes.
+(a{10,20}){10,50}?	10	10	1	99,100,101,105,110,150,200	a
+(a{10,20}?){10,50}	10	10	1	99,100,101,105,110,150,200	a
+(a{10,20}?){10,50}?	10	10	1	99,100,101,105,110,150,200	a
+((?:ab){10,20}){10,50}?	10	10	2	198,199,200,201,202,210,211	ab
+(a{5,10}){5,50}?	5	5	1	24,25,26,30,50,100	a
+(a{5,10}?){5,50}	5	5	1	24,25,26,30,50,100	a
