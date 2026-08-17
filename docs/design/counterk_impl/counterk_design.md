@@ -913,7 +913,18 @@ give-up point moves with the default:
 | chosen to | put the linear-match boundary at ~1 GB | be commensurate with a resumption at the measured 16:1 |
 | the possessify quadratic fires at | **n ≈ 45,000** (~1 s of work) | **n ≈ 5,700** (~0.02 s) |
 | a legitimate 1 GB single-pass match | ~10⁹ units — **at the boundary** | ~10⁹ units — **62× OVER** |
-| `-fno-possessify` control, n = 10,000 | 5.1×10¹⁰ — fires, as today | 8.0×10⁸ — fires, as today |
+| `-fno-possessify` control, n = 10,000 | ~0 units — **the new bound never sees it**; it fires on the STEP budget exactly as today (50,015,001 resumptions against a 10⁶ default) | identical: ~0 units, fires on the step budget |
+
+**The control row is the one that changed shape under the ruling**, and the
+pre-ruling table got it wrong in a way worth recording. Under the shared
+counter it read 5.1×10¹⁰ / 8.0×10⁸ — the resumption count multiplied by the
+scale — which made the control look like it was being caught by the new rule.
+It is not: the non-possessified cursor rung retreats one stride per pop, so
+§7.4's third row excludes it entirely and it contributes essentially nothing
+to the work bound. It fires today, it fires after, and it fires on the OTHER
+counter. That is finding 26's exclusion showing up in the arithmetic, and it
+is the cleanest illustration of what settlement 4 buys: two populations, two
+counters, neither borrowing the other's number.
 
 Both defaults catch the pathology, and under settlement 4 both preserve
 today's behaviour for patterns that only backtrack — that is now true by
