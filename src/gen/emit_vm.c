@@ -83,9 +83,16 @@ enum {
     /* Exact sizing (§2.5: "where the pattern's dynamic depth is statically
      * bounded the emitter computes the exact requirement") is clamped here.
      * Past the clamp the requirement is bounded but does not fit the stack
-     * budget, so the artifact enforces the clamp and says so. */
-    VM_MAX_AUTO_BT_FRAMES    = 1024,
-    VM_MAX_AUTO_TRAIL_FRAMES = 1536
+     * budget, so the artifact enforces the clamp and says so. RECALIBRATED
+     * [M4.6a] 2026-08-17 with the DEFAULT pair above (was 1024/1536): the
+     * two pairs are distinct knobs — this one caps the large-BOUNDED class's
+     * exact sizing, the pair above serves the UNBOUNDED class — but both
+     * emit the same two arrays under the same D19 arithmetic, so they move
+     * together or the calibration is half-landed (measured: changing only
+     * the pair above left `((a)|ab){0,4000}c` at 1024 frames / ceiling 307,
+     * which is how the two-knobs fact was discovered). */
+    VM_MAX_AUTO_BT_FRAMES    = 2048,
+    VM_MAX_AUTO_TRAIL_FRAMES = 3072
 };
 
 /* §4.6's provisional placeholder, named rather than spelled inline. */
@@ -3355,7 +3362,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * pattern whose requirement DOES fit has no limit to declare, and stamps
      * 0 truthfully. Getting this wrong in the other direction is what a
      * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
-     * frames, gets 1024, and would otherwise have stamped "not applicable". */
+     * frames, gets the VM_MAX_AUTO_BT_FRAMES clamp, and would otherwise have stamped "not applicable". */
     fits = !cost.unbounded && cost.frames + 1 <= bt_frames
                            && cost.trail + 1 <= trail_frames;
     if (cost.growable && !fits) {
