@@ -9013,3 +9013,92 @@ reports raced their idle signals; the resend-request habit caught both.
 **State at entry:** HEAD e6d37f0 pushed; corpus grew by 677 live cases +
 1 known_fail resident; K-list K2, K7, K9, K22(half), K23; lanes: counterk
 (revising, no engine code); watchdog cron live; F-1 with Frank.
+
+## 2026-08-17 (EDT, just past midnight), twenty-seventh session (cont.) — F-1 RULED AND EXECUTED; §7 rebuilt through two verification rounds; F-2 PACKAGE DELIVERED, awaiting Frank; UTF architecture ruled into DD-12; [ENG-PGO] created
+
+**F-1 RULED (Frank): strict §4.5** — K stays one per-artifact constant in
+v1; the per-quantifier clamp DEFERRED whole to new boonies row
+[ENG-CLAMP] (algorithm + clamp_arith.py as seed; product-not-shape and
+the {1,2} residual as charter constraints); **K22 CLOSED** (hang half:
+interim guard; compile half: [ENG-CLAMP]'s charter, not a bug). D47
+ADDENDUM records the ruling + the three measured facts that made the
+deferral clean (main 97b523f). Consequence: R25 C1's test rewrite
+evaporated — the K22 refusal block stays as-is until [ENG-CLAMP].
+
+**SIMD: scalar-first directive (Frank)** — best non-SIMD approach ships,
+backend variants later on top; in-flight lanes take no SIMD-derived
+inputs. Two of three counter-K bench items retracted (parked on
+[SIMD-META] as planning inputs); per-body-kind K curves survive
+SIMD-free. Lane's retraction sweep (grep, not memory) caught a stale
+banner still advertising the deferred clamp.
+
+**[ENG-PGO] created** (Frank's exemplar/profile idea): --profile emission
+mode at the D46/DD-8 observation points + recompile-with-stats channel;
+scalar customers enumerated (arm ordering, prefilter byte choice,
+capture-walk sink, M4.6, budget sizing); named as the EARNING MECHANISM
+for every deferred per-pattern adaptivity; sequenced with BENCH-1.
+**M6 row corrected against a manager probe**: \d \w \s, POSIX classes,
+(?i), (?s), mid-pattern $ are ALREADY implemented; M6 is assertions/
+lookaround/backrefs/atomic+possessive spellings/named groups. Feature
+inventory delivered to Frank with the M5-vs-M6 order flag (decide at
+M4.7's close).
+
+**UTF (Frank's clean-architecture concern) ruled into DD-12 item 7**:
+sealed encoding backends behind the one CharSet->fragment lowering; the
+include-package question answered with the two-seam characterization
+(inline decode headers WRONG for the hot path — gcc cannot invert
+decode+compare into byte automata; RIGHT for the enumerable
+runtime-identity residue, one embedded header per artifact); no-leak
+enforced by structural check when M5 lands; bytes-forever invariant;
+third-encoding recipe with the derailment signal named (touching a
+shared file outside the backend = design stop).
+
+**The §7 arc (the session's engineering core).** The lane's own
+measurement refuted the E-5 entry charge (steps ≡ entries; the charge is
+linear while the work is quadratic; the debt is diagnostic-path-only).
+Its first replacement (§7.3, iterations>>SHIFT at frameless-loop exit)
+was BLOCKED by the engine critic (17: predicate keyed on pushes where
+the justification needs pops-through-the-fail-label — cut frames charge
+nothing, so the rule excluded two of the four shapes it named; 18-25).
+The redesign (charge what the fail label does not see: cut-discarded
+frames + never-pushed iterations) VERIFIED across the class boundary,
+with the critic CONCEDING two of its own findings (19's three-exits
+reason refuted by the lane — one convergent label; the residue
+accumulator inferior to the lane's work-units). Two more rounds closed
+26 (the non-possessified cursor scan double-count — the refuting number
+sat in the lane's own published control row), 27 (downgraded: internal
+scaling, user units stay resumptions), 28 (fourth settlement from the
+critic), 29 (SCALE=1024 is a budget-preserving WEIGHT, not a work
+ratio — measured ~16; §7.5 shows the boundary under both readings), and
+the manager-caught consequence that settlement 4 RELOCATES the tolerance
+judgement rather than escaping it. R25 review file carries the full
+record (main b700243). Lane head c5dd4ae, 11 commits, NO engine code.
+
+**F-2 PACKAGE DELIVERED TO FRANK, awaiting his ruling**: mechanism
+choice among four settlements (lane and manager recommend 4 — the
+uncharged work gets its own bound/field/error code; 3 is the
+defer-cleanly option; every settlement leaves the same tolerance number,
+which returns to Frank as an explicit one-liner at implementation).
+AFTER THE RULING, owed: fix the three-doc fix-of-record staleness on
+main (plan row, known_issues K22-sibling note, rungselect_design §5
+item 8); declare the design note ACCEPTED; lane starts engine code.
+
+**Process lessons:** (1) FOUR-PLUS message races lane<->manager in one
+session — the working protocol became: lanes verify against main's
+COMMITTED docs (the F-1 self-application was correct because rulings
+land on main first), manager re-sends with a pointer to the committed
+file, both sides verify-after-apply (the lane now greps for text it
+believes it wrote — its scripted replace once failed SILENTLY). (2) The
+column-adjacency lesson, four instances: 26's refuting number and 29's
+deriving numbers were already IN published rows — read every column of
+a control row against the rule. (3) A critic that concedes findings
+(19, the residue) and contributes better options (settlement 4, with
+provenance recorded by the lane) is the panel working as designed.
+(4) M4.7's wording pass is NOT early-schedulable — its target is the
+graduated spec text that only exists at M4.7's close; wake.md shorthand
+had misfiled it as free-floating manager work.
+
+**State at entry:** main b700243 pushed; lane/counterk at c5dd4ae
+(clean, holding for F-2, no engine code); corpus ~8,332 live + 1
+known_fail resident; K-list K2, K7, K9, K23; watchdog cron live;
+ON FRANK'S DESK: F-2 mechanism ruling.
