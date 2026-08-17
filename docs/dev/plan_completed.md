@@ -2072,3 +2072,191 @@ Known M1 limitations (tracked for later milestones):
   bounded-repeat-times-nullable-loop family (S14's witnesses, ~0.1%
   of random patterns) joins the cost-gate families any strategy
   bench must sweep.
+
+## 2026-08-17 (twenty-ninth session — M4.6 CLOSES: MRL lands, K23 closed, D46 prefilter pair, both ASK-6 items measured-no)
+
+- [M4.6] STATE:completed 2026-08-17 (started twenty-eighth session, closed twenty-ninth) — CLOSE-OUT
+  of the engine-selection milestone. **AUTHORIZED (Frank, 2026-08-17):
+  "continue through M4.6".** ROW PROSE CORRECTED against the scoping
+  sweep (2026-08-17, read-only lane): "per-pattern engine selection +
+  DFA-prefilter hybrid" ALREADY SHIPPED in [M4.5b] (select_engine.c's
+  full §5 pass, fit.prefilter at :259, --engine=dfa|vm|auto, RX_ENGINE/
+  RX_ENGINE_WHY, D44.6 refusal); DFA ISLANDS DEFERRED OUT of this
+  milestone (Frank, 2026-08-17, D50 — evidence-gated, new row
+  [ENG-ISL]). What M4.6 actually delivers, as substeps:
+  - [M4.6a] STATE:completed 2026-08-17 — BUDGET CALIBRATION done
+    (lane m46a merged 0078ce1; docs/design/m46a_impl/ carries the
+    instrument + archived sweep; §4.6 EXTENDED to all four bounds via
+    one real-meter run, DEFAULT-engine numbers only — the forced
+    --engine=vm split was the sweep's key methodological catch).
+    LANDED: frame/trail 2x — BOTH knob pairs, VM_DEFAULT_* and
+    VM_MAX_AUTO_* (902cb91+5c838fc; the second pair discovered
+    half-landed when the endgame ceiling did not move; endgame 307→614
+    verified; zero re-pins — the counterk/possessify cells read stamps
+    dynamically). KEPT: work 10⁹ (empirically corroborated, 83x
+    headroom on the worst ordinary shape). DEFERRED TO FRANK: step
+    budget (1M → 20M rec / 500M parity option) — raising it flips the
+    K23 known_fail resident (10.6M steps) to passing, so it lands WITH
+    adopt-MRL/[M4.6d] where the interaction dissolves. Ratio re-anchor:
+    the retracted 5.24 proxy has NO real-meter analog (work=0 on the
+    exemplar); steps and work measured as genuinely disjoint cost
+    classes. Doc note owed sometime: --engine=vm users should pass
+    explicit --work-budget (diagnostic mode has no prefilter
+    protection).
+  - [M4.6b] STATE:completed 2026-08-17 — DD-9 capture-bearing bench
+    sibling DONE (lane m46b merged; case (j) in tests/bench/compare's
+    matrix, VM-hybrid confirmed, floor 150.369/0.900 from three
+    quiet-box runs). PLUS two findings out of the substep: (1) cases
+    (c)/(i) had silently measured the WRONG ENGINE since D42.1's
+    captures-default (floors captured on the DFA, patterns routing to
+    the hybrid) — RULED: pinned --no-captures per the run_bench case
+    (d) precedent, and the durable fix landed: PER-CASE
+    rx_info.engine ASSERTIONS in compare.sh (ENGINE MISMATCH
+    hard-errors before any number is trusted); compare/ marked
+    ages-freely rather than battery-wired. (2) K24 filed
+    (known_issues.md): the residual case (c) DFA regression (~300 vs
+    388 floor, engine-verified, gate deliberately RED) — bisect
+    queued. **K24 IS NOW CLOSED (2026-08-17, k24bisect + k24fix
+    lanes): not a DFA regression at all — gcc -O2's partial-inlining
+    pass was splitting `<prefix>_search` into a trampoline plus a
+    `.part.0` clone in every unanchored DFA artifact since [M4.4],
+    identical instructions, a pure code-PLACEMENT cost. Fixed in the
+    EMITTER (`noclone` on `<prefix>_search`; pcrec cannot dictate its
+    users' CFLAGS). Floor NEVER touched — case (c) recovered to
+    391.063 MB/s at its historical 1.02x spread and the full gate is
+    10/10 green (results-ubuntubudu-20260817-2.md). The
+    deliberately-RED floor is what carried the finding across three
+    lanes; it is the posture that worked.** K-sweep archived INCONCLUSIVE
+    (docs/design/counterk_impl/bench_k.txt): the pre-recalibration
+    frame placeholder invalidated the high-N regime and the driver
+    lacks median/spread; re-run only after a driver upgrade or when a
+    K answer is actually needed.
+  - [M4.6c] STATE:completed (2026-08-17, same session start-to-accept) —
+    K23 DESIGN-FIRST note, **ACCEPTED**: docs/design/k23_impl/
+    k23_design.md on lane/k23 (31 commits, docs-only). MRL PRUNING
+    recommended and twice-panel-verified (R26 + same-day verification:
+    the lattice-rounded clamp, stride/residue corpus, 1,059 cells /
+    0 disagreements, sabotage arm 101-red-zero-at-stride-1 proving the
+    old corpus incapable; preference-blindness PROVEN — the explosion
+    needs a greedy INNER; closed-form step law exact out of sample;
+    memoization and routing priced and refuted). Review:
+    reviews/2026-08-17-r26-k23.md. TO FRANK: adopt-MRL, and ruling 6
+    (prefilter-window ceiling — v1 with three build obligations vs
+    subject-end fallback; a stale window errs UNSOUND, see the
+    verification's direction-of-error note).
+  - [M4.6d] STATE:completed (2026-08-17, twenty-ninth session; lanes: mrl
+    opus build in worktrees/mrl, plus a cell-isolated test author this lane
+    spawned in its own cell — see the finding below) — **K23 FIXED** by
+    MINIMUM-REMAINING-LENGTH pruning per D51's three rulings, all in one
+    change on lane/mrl. Exemplar `(a{10,20}){10,50}` at 100 bytes: 10.6 M steps
+    (RX_ERR_STEPS) -> **<=1**, captures identical to python and to the
+    unpruned build; the three-level shape 11,906,349,370 -> <=1. Validated
+    as a pcrec-vs-pcrec differential against `-fno-length-prune`
+    (tests/mrl/run_mrldiff.sh): **202,458 cells / 0 divergences**, strides
+    1-3, lengths on and off the lattice, all four greedy/lazy combinations,
+    BOTH ceiling forms. Ruling 2 taken with all three obligations as code:
+    the ceiling is a match-function PARAMETER (so an entry that forgets it is
+    a compile error, discharging (a)), the start++ retry RECOMPUTES the window
+    ((b) — the structural no-fire argument is written down and deliberately
+    NOT relied on, since it rests on the span-equality R21 split to
+    BELIEVED-WITH-GATE), and `<PREFIX>_VM_PRUNE_CEILING` names the active form
+    ((c)). Ruling 3's 500M step default lands WITH it, so the ratchet resident
+    flips because the defect is fixed rather than outspent; the resident moved
+    to tests/base/ and K23 is CLOSED. **PREDICTION 6 ANSWERED, in the negative
+    direction**: the revdet rung needs NO lattice argument, because its
+    forward scan IS the walk onto the boundary set — the bound stops the scan
+    one boundary early and the E1 substitution has no spelling there. **AND
+    THE E1 CLASS RECURRED ONE RUNG DOWN, found from OUTSIDE the
+    implementation's own model** (a cell-isolated author this lane spawned
+    before it knew the manager had one): on the counter rung one body copy serves every trip, so the
+    compile-time follow-min tops out at `K + residue` (9 on `(a{1,3}){65}`
+    where the truth is 65) and K23 stayed alive on it — the differential, the
+    structural checks and the acceptance cell all agreed with the bug because
+    all three were derived from the model the bug was in. Fixed by building
+    §4.5's runtime term (`Vm.fdyn`, read from the trailed counter slot). PER
+    THE MANAGER'S MID-FLIGHT CORRECTION the owed-region file is NOT delivered
+    here — the D27 corpus of record is d27k23's
+    tests/base/d27_k23_ambiguous_decomposition.rxt, and two corpora over one
+    region collide at merge; this lane keeps the MECHANISM guard instead
+    (tests/mrl/run_mrl_tests.sh §1b: (a{1,3}){65} answers inside eight steps
+    and the emitted bound reads the counter). The remaining tests/mrl/ .rxt
+    files are 191 ORDINARY implementation cases, labelled as such.
+    CROSS-CHECK, run before the removal: d27k23's corpus (89 cases, a
+    different author in a different cell, expectations from a separately
+    proven law) passes 89/89 against this build, neither author having seen
+    the other'"'"'s work, and it covers the same rung and the same runtime term. Battery: test
+    10,168/0 (ratchet "nothing to ratchet"), strict, mrl 19/19 + 202,458
+    differential cells (per-rung coverage complete), gate.sh 10/10 with case
+    (c) at 392.445 above its 388.615 floor, ubsan/asan. THREE HARNESS FIXES the budget move forced, reported
+    as such: counterkdiff and the vm §4.7 contrast now PIN the step budget
+    (they were measuring a calibration default), and the possessify stamped-
+    ceiling check becomes a floor-with-window because MRL legitimately makes
+    that artifact 2 bytes more capable than it declares. Design note gains
+    §14, its BUILD OUTCOME section.
+  - [M4.6e] STATE:completed (2026-08-17, lane m46e) — RX_HYBRID_MIN
+    (engine_m4.md §12 ASK-6) + the trie-factored VM alternation switch
+    (§2.2 item 4/§6.4), both MEASURE-THEN-IMPLEMENT, both **MEASURED-NO,
+    neither built** — a fully successful outcome under the brief's own
+    bar. RX_HYBRID_MIN: a subject-length sweep at fixed match offset (three
+    capture-bearing shapes, `-fno-prefilter`'s existing [M4.6f] force pair
+    reused as the VM-only build, no new plumbing needed to measure) shows
+    the crossover variable is OFFSET, not LENGTH — hybrid's ns/call is flat
+    in `n`, VM-only's grows with the naive retry loop's candidate-position
+    count. A `n < RX_HYBRID_MIN` branch as designed would misfire on the
+    ASK's own named target: bench case (i)'s actual buffer sits at offset
+    20, past the measured 8-12-byte crossover, where hybrid is already 65%
+    FASTER than VM-only (three-run reproducible) — a length threshold
+    generous enough to "catch" case (i)'s 60-byte length would regress the
+    exact case it exists to protect, and case (j)'s own pattern never
+    crosses at all (hybrid wins from offset 0). Trie switch: a corpus
+    survey (the same eligibility rule `nfa.c`'s trie_key() checks,
+    approximated on pattern text) finds 22/1146 (1.92%) of all corpus
+    patterns and 22/347 (6.34%) of capture-bearing ones are candidates, and
+    NEITHER shipped capture-bearing bench shape (case j; case c's own
+    alternation is pinned `--no-captures` and never reaches `vm_alt`) hits
+    it; a direct branch-position measurement on two real disjoint
+    alternations finds the chain's own cost real (+18% worst-vs-best branch
+    on a 5-way word alternation) but narrow, declined on D18 ("an axis must
+    earn itself") against the new emitter analysis's own build cost (a D46
+    stamp+force pair, a permanent sabotage row — `src/opt/CLAUDE.md`'s
+    established price for a selection axis). Both items' seams are left
+    exactly as engine_m4.md designed them, unimplemented; three independent
+    pinned runs (taskset, best-of-9) archived per D35 in
+    `docs/design/m46e_impl/out/`, probes in `docs/design/m46e_impl/probes/`,
+    engine_m4.md's ASK-6/§2.2 item 4/§6.4 carry the findings in place. No
+    runtime match code touched — see the lane's own CLAUDE.md for the full
+    validation-scope reasoning.
+  - [M4.6f] STATE:completed (2026-08-17, lane m46f) — D46 CLOSE-OUT for
+    the PREFILTER axis DONE: `<PREFIX>_VM_PREFILTER` stamp (`"hybrid"`/
+    `"none"`, a SCALAR string like `RX_ENGINE`/`RX_VM_PRUNE_CEILING` —
+    `fit.prefilter` is one verdict per artifact, not per-quantifier, so
+    there is no mixed case for a bitmask to disambiguate) plus the
+    `-fprefilter`/`-fno-prefilter` FORCE pair (`PCREC_FORCE_PREFILTER`/
+    `PCREC_NO_PREFILTER`, `1u<<9`/`1u<<8`) in src/opt/select_engine.c,
+    applied AFTER the derived default and do-or-die on the impossible
+    direction only: `-fprefilter` REFUSES when `fit.chosen != ENGM_VM`
+    (verified against explicit `--engine=dfa` and auto-routed-to-DFA via
+    `--no-captures`), `-fno-prefilter` never refuses (`--engine=vm`
+    already ships that configuration). A FORCE pair rather than D47.3's
+    DENY-only shape — reported deviation, reasoned in src/opt/CLAUDE.md
+    and lib/CLAUDE.md: the axis is artifact-level, so there is no
+    per-quantifier addressing problem FORCE would create. Both new bits
+    masked out of `rx_info.flags` (emit_dfa.c) alongside the four D47.3
+    siblings. tests/prefilter/run_prefilter_tests.sh: 18 structural
+    checks, no differential sibling (the prefilter's correctness already
+    rides tests/vm's S3.7 differential and tests/mrl's ceiling coverage —
+    this substep is observability+controllability only). Islands' own
+    pair stays deferred to [ENG-ISL],
+    which already records the obligation ("carries its own D46
+    stamp+force obligation when built"). Battery: `make strict` clean;
+    full `make -j12 -Otarget test` CONFIRMED GREEN — 10,257/0 corpus
+    cases (exactly the expected count, unchanged), ratchet "nothing to
+    ratchet", zero FAIL lines across every section including the new
+    `test-prefilter` (18/18). Also added S64/S65 to tests/mech/sabotages/
+    (the R28-1 convention: dev-time failing-direction checks must be
+    PERMANENT sabotage rows, not ad-hoc and reverted) — both validated
+    DETECTED via `bash tests/mech/run_sabotage_matrix.sh`. No sanitizer
+    run: no runtime match code path changed, only selection (compile-time)
+    and emitted stamp text — judged unnecessary per
+    docs/testing.md's SAN-1 scope (a stamp is emitted text; the force
+    flag touches selection, not the matcher body).

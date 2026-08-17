@@ -9531,3 +9531,42 @@ the manager — every brief must say "report via SendMessage" explicitly.
 K-list: K2, K7, K9. M4.6 remaining: [M4.6e] (RX_HYBRID_MIN +
 trie-switch), [M4.6f] (D46 prefilter close-out) — then M4.6 CLOSES →
 [M4.7]. Lanes all released; worktrees clean.
+
+## 2026-08-17 (EDT), twenty-ninth session (cont.) — [M4.6e]+[M4.6f] complete; **M4.6 CLOSES**
+
+**[M4.6f] (lane m46f):** the D46 close-out — RX_VM_PREFILTER stamp +
+PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER force pair (-fprefilter/
+-fno-prefilter, D47.3 posture), do-or-die refusal ONLY on the
+impossible direction; 18 structural checks; permanent sabotage rows
+S64/S65 both DETECTED (converted from ad-hoc dev-time validation after
+the R28-1 precedent was pointed at — the lane converted rather than
+argued). S64's header records the mechanism worth keeping: with the
+refusal removed the tree silently GRANTS the impossible request
+(fit.prefilter has no DFA-path consumer), so the refusal is the only
+guard. Merged 99ab1de.
+
+**[M4.6e] (lane m46e): both ASK-6 items MEASURED-NO — nothing built,
+and that is the correct outcome (D53).** RX_HYBRID_MIN refuted on its
+own VARIABLE: the hybrid/VM-only crossover is in MATCH OFFSET (~8-12
+bytes; the VM start++ retry pays a full call per candidate position
+against the hybrid's flat ~80ns two-pass tax), not subject length —
+and a length threshold big enough for the 60-byte regime would regress
+bench case (i) itself (hybrid 65% faster on its actual offset-20
+buffer). The trie-factored alternation switch: real (+3-18% on
+constructed shapes) but eligible for 22/347 capture-bearing corpus
+patterns and absent from every capture-bearing floor — declined per
+D18, revisit under ENG-PGO/bench evidence (the D50 gate shape). Sweeps
+archived docs/design/m46e_impl/ (three pinned runs each, mpstat
+occupancy check first — the methodology that survived R28).
+engine_m4.md annotated in place; gate re-confirmed 10/10; battery
+10,257/0. Merged; the lane's uncommitted gate archive recovered from
+the worktree at cleanup (results-...-6.md).
+
+**M4.6 CLOSED and migrated to plan_completed.md.** The milestone
+delivered: budget calibration (a), the capture bench sibling + K24
+found/closed (b), the K23 design note through R26 (c), MRL + the
+window ceiling + 500M + K23 closed (d), both ASK-6 answers (e), the
+D46 prefilter pair (f). Next: **[M4.7]** (capture differential vs
+libpcre2 at scale; SR-8 flip; §2.2 wording pass; spec graduation; full
+close battery; M5-vs-M6 order decided at its close) — a NEW milestone,
+which STARTS WITH FRANK per standing rule.
