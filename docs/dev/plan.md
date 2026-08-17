@@ -937,7 +937,7 @@ execution speed trades the primary goal (D18) for the secondary one.
   will be its testing suite. builds confidence and lets us go crazy when we
   get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
   everything below; an optimization the suite cannot referee does not land)
-- [BENCH-VM] STATE:not-started — VM-TIER MINI-BENCH CASES (manager
+- [BENCH-VM] STATE:started — VM-TIER MINI-BENCH CASES (manager
   proposal accepted into the queue 2026-08-17, twenty-ninth session;
   a deliberately thin EARLY SLICE of [BENCH-1], not a replacement):
   three new compare.sh cases with floors, closing the gap that the
