@@ -4349,3 +4349,38 @@ measured ~50M steps/s (DD-2 is robustness, not a latency guarantee).
 The 20M measured-conservative option is recorded as the road not
 taken (m46a's proposal table). [M4.6a]'s calibration posture applies:
 a bring-up-calibrated value the project can move again with evidence.
+
+## D52 — pcrec-bench: the comparative benchmark is a SIBLING repo; mandate expanded to cover both (Frank, 2026-08-17, twenty-ninth session)
+
+Frank ruled the competitive-bench direction into a separate repository,
+~/pcrec-bench (seeded same day: APPROACH.md charter + CLAUDE.md, no build
+work until pcrec's scale work completes). Four founding principles, his
+words distilled: (1) a LARGER test set than usual microbenchmarks —
+backrefs, the full feature spread, and the difficult classes (the K23
+ambiguous-decomposition family among them); (2) standardized per-testee
+OUTPUT ARTIFACTS compared STATICALLY offline — pcrec's own artifact is
+just one testee file among the others; (3) favor OPEN SOURCE testees so a
+win on a case can be answered by reading the winner's source; (4) AGREED,
+VERSIONED test sets, and testees as (engine, version, build-config)
+triples — pcrec itself appears as several (scalar vs simd, engine modes,
+options).
+
+Boundary decisions that travel with it: pcrec-bench is NOT pcrec's
+regression gate (compare/ floors stay here, guarding our changes);
+dependencies live in pcrec-bench, never here (D2/R5-Q1 posture
+preserved); pcrec-bench pins pcrec by tag/commit like every other
+testee. The repository-scope MANDATE in CLAUDE.md now names BOTH
+directories.
+
+Grounding measurement from the same conversation: libpcre2 is NOT a
+terminating oracle in the K23 hazard band (grep -P on (a{1,3}){65} at
+L=80: "exceeded PCRE's backtracking limit") — same exponential class as
+python re, honest refusal instead of a hang. A linear-time engine
+(RE2 / rust regex) is the terminating-oracle candidate, adopted as an
+OPTIONAL PC-3-shaped third tier AT NEED (next hazard-band corpus), never
+a make-test hard dependency. The derived-law-plus-induction method (the
+d27k23 corpus) remains the strongest position when paired with one.
+
+Revisit when: bench build work actually starts (rule APPROACH.md §8's
+open questions first); or if the bench's differential sweeps start
+producing upstream findings faster than the manual flow absorbs them.
