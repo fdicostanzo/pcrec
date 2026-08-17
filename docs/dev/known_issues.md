@@ -1816,3 +1816,31 @@ from existing for these shapes" was REFUTED by the counter-K lane's own
 analysis regardless of the ruling (R25 E1: at K=8 every tower count
 sits below K and replicates; only a per-quantifier downshift reaches
 them) — the record is corrected here rather than rewritten above.
+
+## K24 — pattern-specific DFA throughput regression on the alternation-trie shape, ~1.3x below its D12 floor (found 2026-08-17, [M4.6b] bench lane, during the case (c)/(i) engine-drift investigation)
+
+`(alpha|beta|gamma|delta|epsilon)` compiled `--no-captures` (ENGM_DFA,
+verified by the new per-case engine assertion) measures 294.381/304.309
+MB/s on two independent quiet-box confirms against its 388.615 MB/s
+floors.tsv reference (captured 2026-08-09, reconfirmed ~385-390 on
+2026-08-11 runs) — reproducibly ~1.3x slow, with a 1.13-1.16x spread
+where this case's history is 1.02-1.06x. NOT the engine-selection drift
+(that was cases (c)/(i) silently routing to the VM hybrid under D42.1's
+captures-default, fixed 2026-08-17 by pinning + per-case engine
+assertions — see tests/bench/compare/CLAUDE.md's finding writeup): this
+residual reproduces WITH the pin confirmed stamping ENGM_DFA. Every
+other DFA case in the same full-grid run matched or beat its floor, so
+it is pattern-specific — the multi-branch keyword-alternation shape is
+the M2.8 trie's home turf, and the landing window (2026-08-11 →
+2026-08-17: K18's path-sensitive closure rewrite of src/ir/dfa.c is the
+prime suspect by file; possessify/revdet/counter-K touch only the VM
+emitter) brackets the bisect. REPRODUCER: `CASES=c` via
+tests/bench/compare/compare.sh on a quiet box (load-check per its
+conventions); the floor row is DELIBERATELY LEFT at 388.615 so gate.sh
+reports (c) RED as the live flag until this closes. Correctness is
+unaffected (the .rxt corpus and the trie's output-preserving
+differential are green) — this is a D12/D18 throughput regression, not
+a miscompile. Owner: manager triage; bisect queued. Found because
+[M4.6b] added a NEW floor-gated case and re-ran the whole matrix —
+compare/'s floors are in no battery leg (now marked ages-freely, with
+the engine assertions as the cheap in-run tripwire).
