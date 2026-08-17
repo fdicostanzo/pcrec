@@ -1423,6 +1423,27 @@ int  pcrec_revdet(Ctx *cx, Ast *root);               /* src/opt/revdet.c */
  * well-defined read ONE computation. `out` is a 32-byte class bitmap. */
 void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
 
+/* ---- [M4.6d] MINIMUM-REMAINING-LENGTH pruning (k23_design.md §4.3) ---- */
+
+/* The least number of subject bytes any match of `a` can consume. The VM
+ * emitter threads it down its own walk as a FOLLOW-MIN accumulator and turns
+ * the sum into a compile-time constant per program point: a position with
+ * fewer bytes left than that constant has no accepting continuation and is
+ * cut before a choice point is pushed for it.
+ *
+ * UNDER-ESTIMATING IS ALWAYS SAFE (it prunes less); over-estimating deletes
+ * real matches, silently. src/opt/mrl.c says which cases take which direction
+ * and why its switch has no live default arm. */
+long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
+
+/* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
+ * because the emitter's own accumulator has to hold the same ceiling the
+ * analysis does — two different ceilings would let a long concatenation of
+ * saturated subtrees overflow past the one that was supposed to prevent it.
+ * Far above any addressable subject on purpose: a saturated bound reads as
+ * "doomed", which at 2^40 remaining bytes it is. */
+#define PCREC_MINW_MAX (1LL << 40)
+
 /* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
  * says so, the VM itself, and the four entry points). */

@@ -176,7 +176,9 @@ typedef enum {
                   *       b: VmRungKind ordinal                     */
     VE_STRAT,    /* [ENG-BREP] a: the A_REP's own entry label id,
                   *       b: VmStratKind ordinal                    */
-    VE_CUT       /* [ENG-BREP] a: the cut-mark stv slot            */
+    VE_CUT,      /* [ENG-BREP] a: the cut-mark stv slot            */
+    VE_PRUNE     /* [M4.6d] a: the A_REP's own entry label id,
+                  *       b: VmPruneKind ordinal                    */
 } VEKind;
 
 /* [D46] the S2.5 rung ladder's own small named value set, ONE PER
@@ -225,6 +227,34 @@ typedef enum {
 static const unsigned vm_strat_bit[2] = { 0x1u, 0x2u };
 static const char    *const vm_strat_kindname[2] =
     { "possessive", "backtracking" };
+
+/* [M4.6d] MINIMUM-REMAINING-LENGTH PRUNING, the ladder's THIRD observable
+ * axis, in the same shape and the same place as the two above and for the
+ * same reason: whether a quantifier carries an MRL bound is decided PER
+ * A_REP — it depends on that quantifier's own FOLLOW-MIN, so `(a{2,4}){3,9}b`
+ * clamps at every replica and `(a{2,4}){3,9}` clamps at none — and a scalar
+ * "is this artifact pruned" would lie on the mixed case.
+ *
+ * The distinction the two values draw is between "a bound exists here and is
+ * emitted" and "the analysis ran and produced ZERO", which are very different
+ * facts about an artifact and would otherwise be indistinguishable from the
+ * outside. A quantifier whose follow needs no bytes (the trailing `{10,50}`
+ * of `(a{10,20}){10,50}` past its tenth replica) has `minrest == 0` and gets
+ * no clamp: correct, and nothing to see. An artifact where EVERY quantifier
+ * reads UNCLAMPED is either a pattern with no length constraint at all or a
+ * threading bug, and only the stamp can tell a test which.
+ *
+ * D47.3's do-or-die half rides on this exactly as it does on the strategy
+ * mask: under `-fno-length-prune` the CLAMPED bit must not appear in any
+ * artifact, and tests/mrl/run_mrl_tests.sh asserts that rather than trusting
+ * the flag. */
+typedef enum {
+    VM_PRUNE_CLAMPED   = 0,   /* index into vm_prune_bit[], not a bit */
+    VM_PRUNE_UNCLAMPED = 1
+} VmPruneKind;
+static const unsigned vm_prune_bit[2] = { 0x1u, 0x2u };
+static const char    *const vm_prune_kindname[2] =
+    { "clamped", "unclamped" };
 
 typedef struct {
     VEKind      k;
@@ -313,6 +343,45 @@ typedef struct {
                             * emitted machinery cannot disagree about whether
                             * a quantifier was possessified, because there is
                             * one place that says so. */
+    unsigned  prunes;      /* [M4.6d] the same shape one axis over: BITMASK of
+                            * VmPruneKind values present, set by the same
+                            * vm_prune_mark() the emission site calls at the
+                            * point it has the quantifier's own minrest in
+                            * hand. One call, one truth — the macro, the
+                            * listing section and the emitted bound cannot
+                            * disagree about whether a quantifier was
+                            * clamped. */
+    /* [M4.6d] MRL's FOLLOW-MIN ACCUMULATOR (k23_design.md §4.3): the minimum
+     * number of subject bytes any accepting continuation must consume AFTER
+     * the node currently being emitted. Threaded DOWN the walk rather than
+     * computed per program point, which is the design's own rule and is what
+     * makes the per-replica constant fall out of the walk instead of needing
+     * an index into the replicas.
+     *
+     * It is a member rather than a vm_emit parameter for one reason: vm_emit
+     * has a dozen call sites and a parameter would have made every one of
+     * them a place to get it wrong silently. As a member with ONE mutator
+     * (vm_emit_f, which saves and restores), a site that says nothing
+     * inherits its caller's value — which is the correct answer at every site
+     * that does not change the follow (A_CAP, A_ALT's branches, an optional
+     * copy). */
+    long long fmin;
+    bool      mrl;        /* [M4.6d] MRL pruning is ON for this artifact
+                           * (i.e. `-fno-length-prune` was not passed). Read
+                           * at every emission site through vm_mrl_test /
+                           * vm_mrl_gate, never re-derived from the flags. */
+    bool      mrl_win;    /* [M4.6d] the CEILING is the prefilter's match-end
+                           * window (D51 ruling 2) rather than the subject
+                           * end. Set from job->fit.prefilter BEFORE the walk;
+                           * the walk itself never reads it, because the
+                           * ceiling is hidden behind the emitted macro — it
+                           * exists so the stamp can DISCLOSE which form is
+                           * active rather than leaving it to be discovered. */
+    long long nclamp;     /* [M4.6d] emitted MRL bound sites, counted as they
+                           * are written. Reported in the listing so a check
+                           * can assert the bounds EXIST rather than trusting
+                           * that the analysis ran — vm_work's own discipline,
+                           * applied to a bound instead of to a charge. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
                            * artifact (ONE gate for both, D49). Read by the
@@ -1470,6 +1539,123 @@ static void vm_rung_mark(Vm *v, int lblid, VmRungKind k, bool possessive,
     vm_ev(v, VE_STRAT, lblid, (int)s, role);
 }
 
+/* ---- [M4.6d] MINIMUM-REMAINING-LENGTH PRUNING ---------------------------
+ *
+ * docs/design/k23_impl/k23_design.md, adopted by D51 ruling 1. At a program
+ * point `q` the emitter knows `minrest(q)` — a compile-time lower bound on
+ * the bytes any accepting continuation from `q` must still consume — as
+ * `pcrec_minw(node) + v->fmin`. A position with fewer bytes left than that is
+ * DOOMED: no continuation from it can accept, so it is cut before a choice
+ * point is pushed for it.
+ *
+ * TWO FORMS, and which one applies is fixed by the rung (§4.5). The
+ * difference is not cosmetic and §4.1 states the rule once:
+ *
+ *   TEST  — where the bound examines a position the engine has ALREADY
+ *           reached. One comparison; nothing is assigned, so nothing has to
+ *           be a position the loop could occupy.
+ *   CLAMP — where the bound SELECTS a position out of a range (the greedy
+ *           cursor rung). An assigned value must land ON THE CURSOR'S
+ *           ITERATION LATTICE, so the cap is rounded DOWN to `pos + W*k`.
+ *           R26 E1 measured the unrounded form UNSOUND at stride > 1: it
+ *           substitutes a position the loop can never occupy for one it can,
+ *           which satisfies "removes only doomed candidates" and still
+ *           deletes the correct answer.
+ *
+ * THE CEILING is `<prefix>_ceil`, a parameter of the match function rather
+ * than a member of `<prefix>_work` (the note's §9.1 sketch): a parameter
+ * cannot be left stale by an entry point that forgets to set it, because
+ * forgetting is a compile error. Its VALUE is `min(n, win[0][1])` — the
+ * prefilter's match-end window, D51 ruling 2 — on the entries that run a
+ * prefilter, and the subject end everywhere else (obligation (a)).
+ *
+ * SOUNDNESS IS PREFERENCE-BLIND (§2.8). `minrest` bounds whether an accepting
+ * continuation EXISTS, which is a property of the language and therefore
+ * order-invariant: a subtree with no accepting leaf has none under greedy,
+ * under lazy and under any future preference spelling, so deleting it cannot
+ * move the first accepting leaf in ANY order. That is why nothing below
+ * branches on `a->greedy` for CORRECTNESS — only for which of the two forms
+ * the emitted shape wants. */
+
+/* The saturating add the follow-min accumulator needs. pcrec_minw saturates
+ * its own arithmetic at PCREC_MINW_MAX; the accumulator has to hold the same
+ * ceiling or a long enough concatenation of saturated subtrees could still
+ * overflow. Under-estimating is the safe direction and saturation is an
+ * under-estimate, so pinning here costs nothing but the line. */
+static long long vm_fadd(long long a, long long b)
+{
+    long long r = a + b;
+    return r > PCREC_MINW_MAX ? PCREC_MINW_MAX : r;
+}
+
+/* Its multiplying sibling, for the per-replica constant `k * minw(body)`. */
+static long long vm_fmul(long long a, long long b)
+{
+    if (a <= 0 || b <= 0) return 0;
+    if (a > PCREC_MINW_MAX / b) return PCREC_MINW_MAX;
+    return a * b;
+}
+
+/* Emit `a` with an explicit follow-min, restoring the caller's on the way
+ * out. THE ONLY MUTATOR of `v->fmin`: a site that changes what follows says
+ * so here and nowhere else, and a site that says nothing correctly inherits. */
+static void vm_emit_f(Vm *v, int entry, const Ast *a, int next, long long fmin)
+{
+    long long save = v->fmin;
+    v->fmin = fmin;
+    vm_emit(v, entry, a, next);
+    v->fmin = save;
+}
+
+/* [M4.6d] the EIGHTH primitive, and vm_rung_mark's sibling: writes no C (the
+ * bound was already written by the site that called this), records the
+ * artifact-wide summary bit AND the per-quantifier VE_PRUNE event in one
+ * place. Called once per A_REP by every rung, with the quantifier's OWN
+ * minrest — so "did this quantifier get a bound" is answered by the site that
+ * decided it rather than by a second reading of the AST. */
+static void vm_prune_mark(Vm *v, int lblid, bool clamped, const char *role)
+{
+    VmPruneKind k = clamped ? VM_PRUNE_CLAMPED : VM_PRUNE_UNCLAMPED;
+    v->prunes |= vm_prune_bit[k];
+    vm_ev(v, VE_PRUNE, lblid, (int)k, role);
+}
+
+/* The TEST form. `posexpr` is the position under test — `pos` at an ordinary
+ * program point, the cursor local where a loop is about to commit to one.
+ * `dst` is where a doomed position goes: a label id, or -1 for the fail label.
+ *
+ * Returns whether anything was emitted, so a caller can mark the quantifier
+ * clamped-or-not from the same call that decided it. A `minrest` of 0 emits
+ * NOTHING — the test would be vacuous, and an artifact whose pattern has no
+ * length constraint stays byte-for-byte what it was before MRL existed. */
+static bool vm_mrl_test(Vm *v, const char *posexpr, long long minrest,
+                        int dst, const char *role)
+{
+    if (!v->mrl || minrest <= 0) return false;
+    sb_printf(v->b, "    if (%s_MRL_SHORT(%s, %lld)) ", v->up, posexpr, minrest);
+    if (dst < 0) sb_printf(v->b, "goto %s_fail;\n", v->p);
+    else         sb_printf(v->b, "goto %s_L%d;\n", v->p, dst);
+    v->nclamp++;
+    vm_ev(v, VE_NOTE, 0, 0, role);
+    return true;
+}
+
+/* The TEST form used as a GATE on a whole subtree: emits the test at `entry`
+ * and returns the label the subtree should be emitted at instead. When no
+ * bound applies it returns `entry` unchanged and costs not one byte, which is
+ * what keeps an unconstrained pattern's emitted C identical. */
+static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
+                       const char *role)
+{
+    int pass;
+    if (!v->mrl || minrest <= 0) return entry;
+    pass = vm_label(v);
+    vm_lbl(v, entry, role);
+    vm_mrl_test(v, "pos", minrest, dst, role);
+    vm_goto(v, pass);
+    return pass;
+}
+
 /* Flat alternation as a CHAIN (§2.2 property 4, refined). The design's text
  * says "N-way alternation pushes a chain, one frame per untried branch, in
  * reverse preference order"; pushing all N-1 frames eagerly and pushing them
@@ -1608,6 +1794,14 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * and the RUNGS section's per-quantifier entry), not two computations
      * of "what is this quantifier doing" that could disagree. */
     vm_rung_mark(v, entry, VM_RUNG_CURSOR, poss, rung);
+    /* [M4.6d] THE BOUND THIS LOOP CARRIES. `v->fmin` is what must still be
+     * consumed after the loop, so a cursor value `c` is viable only while
+     * `CEIL - c >= fmin`. That is the whole of K23's fix at this rung: the
+     * exemplar's inner span loop is asked for 90 bytes of follow at the first
+     * replica, 80 at the second, and the clamp deletes ten of its eleven
+     * choices at each one. */
+    const long long mrl = v->mrl ? v->fmin : 0;
+    vm_prune_mark(v, entry, mrl > 0, rung);
     /* The loop's ENTRY position, trailed. Both rungs derive their bounds from
      * it: low-water is entry + stride*rmin, ceiling is entry + stride*rmax.
      * The possessive path reads `pos` for the same quantity and writes no
@@ -1656,6 +1850,27 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                   v->p, entrypos, lo_off, v->p);
         vm_ev(v, VE_NOTE, 0, 0,
               "fewer than rmin iterations: the loop cannot be satisfied");
+        /* [M4.6d] MRL on the POSSESSIFIED arm is the TEST form, deliberately,
+         * and this is the one place the choice is not simply "which shape the
+         * rung wants".
+         *
+         * A possessified loop has exactly ONE exit position — that is what
+         * the §2.2 verdict says — so if that position is doomed the whole
+         * quantifier is, and one comparison says so. CLAMPING here would be a
+         * different thing: it would move the loop to a SMALLER position and
+         * then run the continuation from there, i.e. re-introduce the very
+         * retreat possessification proved dead. Under a correct verdict that
+         * position cannot match either and the clamp would be harmless; under
+         * a subtly wrong one it would manufacture a match neither the
+         * possessive nor the plain greedy semantics produces. MRL's soundness
+         * must not come to depend on possessify's, so it does not. */
+        {
+            char cx[64];
+            snprintf(cx, sizeof cx, "%s_cur", v->p);
+            vm_mrl_test(v, cx, mrl, -1,
+                        "MRL: too few bytes remain after the loop's one exit "
+                        "position for any accepting continuation");
+        }
         if (ncaps) {
             sb_printf(b, "    if ((ptrdiff_t)%s_cur >= %s + %d) {\n",
                       v->p, entrypos, stride);
@@ -1681,15 +1896,52 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     }
 
     if (a->greedy) {
-        /* consume greedily to the furthest position */
+        /* [M4.6d] THE CLAMP, FOLDED INTO THE SCAN'S OWN BOUND (§4.6). Two
+         * separate wins from one expression, and they are different
+         * quantities:
+         *
+         *  - STEPS. The cursor starts at the largest position an accepting
+         *    continuation could use instead of at the largest position the
+         *    body matches, so the doomed suffix of the retreat chain is never
+         *    walked. That is the collapse: 10,621,636 -> 1 on the exemplar.
+         *  - FORWARD WORK, which the step counter is structurally blind to.
+         *    Applying the clamp AFTER the scan would still read every byte
+         *    the scan can reach; folding it into the loop guard means the
+         *    scan stops at the cap, and the measured proxy drops from 190 to
+         *    100 — exactly one forward pass per accepting iteration, the
+         *    floor.
+         *
+         * THE LATTICE (§4.1, R26 E1). `<PREFIX>_MRL_CAP` rounds DOWN to
+         * `pos + W*k`, so the value the cursor stops at is a real iteration
+         * boundary. `pos` is the loop's entry — the scan does not move it —
+         * so the origin the rounding is taken from is the one the retreat
+         * chain descends from, and every position below the cap is a position
+         * the unclamped loop would also have visited. The guard above the
+         * block is what makes the subtraction inside `MRL_CAP` well-defined;
+         * a ceiling below `pos + minrest` means no continuation is feasible
+         * from here at all, which is a failure and not a clamp.
+         *
+         * At W = 1 the rounding is the identity, which is why every stride-1
+         * measurement in the design note survives the repair unchanged. */
+        const bool fold = vm_mrl_test(v, "pos", mrl, -1,
+                                      "MRL: the continuation cannot fit from "
+                                      "this loop's entry at all");
         sb_puts(b, "    {\n");
         if (a->rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
+        if (fold)
+            sb_printf(b, "        const size_t lim_ = %s_MRL_CAP(pos, %lld, %d);\n",
+                      v->up, mrl, stride);
         sb_printf(b, "        %s_cur = pos;\n", v->p);
-        sb_printf(b, "        while (%s_cur + %d <= n", v->p, stride);
+        sb_printf(b, "        while (%s_cur + %d <= %s", v->p, stride,
+                  fold ? "lim_" : "n");
         if (a->rmax >= 0) sb_printf(b, " && it_ < %dUL", a->rmax);
         sb_printf(b, "%s) { %s_cur += %d;", test, v->p, stride);
         if (a->rmax >= 0) sb_puts(b, " it_++;");
         sb_puts(b, " }\n    }\n");
+        if (fold)
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "MRL: the scan's own bound is the lattice-rounded clamp, so "
+                  "the doomed suffix is never scanned and never retreated over");
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
@@ -1716,6 +1968,25 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
+        /* [M4.6d] THE LAZY MIRROR, and it needs NO LATTICE ROUNDING (§2.7,
+         * R26 V7). A lazy cursor walks UP from the minimum, so the bound caps
+         * how far the ascent may go rather than choosing a starting maximum —
+         * it TESTS a cursor that is already on the lattice by construction
+         * (it started at `pos + rmin*W` and has only ever been incremented by
+         * `W`). Copying the greedy expression here would give the same answer
+         * and pay for a division it does not need.
+         *
+         * Placed at the shared continuation label rather than at the
+         * extension: every ascent passes through here, and the cursor only
+         * ever GROWS, so one doomed arrival means every later one is doomed
+         * too and the whole remaining ascent is cut by this one comparison. */
+        {
+            char cx[64];
+            snprintf(cx, sizeof cx, "%s_cur", v->p);
+            vm_mrl_test(v, cx, mrl, -1,
+                        "MRL: the ascent has passed the last position an "
+                        "accepting continuation could start from");
+        }
     }
 
     {
@@ -1781,7 +2052,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
  * (`(?:ab|a){0,2}?b` on "abab" gave [0,2) where PCRE2 and python give [0,4)),
  * and the VM must make the same choice for the same reason. */
 static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
-                         int next, bool greedy)
+                         int next, bool greedy, long long bw)
 {
     if (count <= 0) {
         vm_lbl(v, entry, "bounded repeat: all optional copies exhausted");
@@ -1791,6 +2062,22 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
     int bentry = vm_label(v), other = vm_label(v), inner = vm_label(v);
     vm_lbl(v, entry, vm_rolef(v, "optional copy (%d remaining), %s",
                               count, greedy ? "greedy" : "lazy"));
+    /* [M4.6d] CUT BEFORE PUSH, in the literal sense the design names it. If
+     * one more iteration plus everything after the loop cannot fit in what
+     * remains, the BODY branch has no accepting leaf — so the skip is the
+     * only survivor and the frame that would have offered the other branch is
+     * never pushed.
+     *
+     * ONE test covers the whole rest of the chain: every later copy is
+     * entered at this same position with this same minrest, so a doomed copy
+     * here means a doomed copy at every level below, and jumping straight to
+     * `next` skips them all. That is also why the emitted answer is the same
+     * for both preferences — `next` is the greedy fallback and the lazy
+     * fallthrough alike, which is §2.8's preference-blindness showing up as
+     * one line of code instead of two. */
+    vm_mrl_test(v, "pos", vm_fadd(bw, v->fmin), next,
+                "MRL: no room for another iteration and the follow -- take "
+                "the skip, push nothing");
     if (greedy) {
         vm_push(v, other, "body preferred; resume SKIPS this copy");
         vm_goto(v, bentry);
@@ -1801,8 +2088,11 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
     vm_lbl(v, other, greedy ? "optional copy: the skip"
                             : "optional copy: the body");
     vm_goto(v, greedy ? next : bentry);
+    /* The copy's own follow is the loop's follow: what comes after THIS copy
+     * is a chain of OPTIONAL copies (minimum width 0) and then the
+     * continuation. Nothing to add, which is why this reads as an inherit. */
     vm_emit(v, bentry, body, inner);
-    vm_opt_chain(v, inner, body, count - 1, next, greedy);
+    vm_opt_chain(v, inner, body, count - 1, next, greedy, bw);
 }
 
 /* [ENG-BREP] The possessified frames rung, bounded: `X{m,n}` after its `m`
@@ -1841,7 +2131,7 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
  * the §7 prediction about `rx_info`'s stamped ceiling, and vm_cost_rep carries
  * the matching arithmetic. */
 static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
-                          int next, int mslot)
+                          int next, int mslot, long long bw)
 {
     int exitl = vm_label(v);
     int cur = entry;
@@ -1852,6 +2142,11 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
                                 count - j));
         vm_cut(v, mslot,
                "cut: the previous copy is committed, its choice points are dead");
+        /* [M4.6d] cut before push, on the possessive arm too. The one frame
+         * this copy would push exists to notice that the body cannot run;
+         * where MRL already knows it cannot, the frame is pure cost. */
+        vm_mrl_test(v, "pos", vm_fadd(bw, v->fmin), next,
+                    "MRL: no room for another copy and the follow");
         vm_push_at(v, exitl, "pos",
                    "the loop's ONLY frame: this copy failing leaves the loop");
         vm_goto(v, bentry);
@@ -1892,7 +2187,8 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
  * arm for arm. So `a->possessive` on an unbounded repeat implies
  * `!vm_nullable(a->l)`, every iteration consumes at least one byte, and the
  * loop terminates on the subject rather than on a guard. */
-static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot)
+static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
+                         long long bw)
 {
     int bentry = vm_label(v), bend = vm_label(v), exitl = vm_label(v);
 
@@ -1900,6 +2196,11 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot)
                      "loop, however many iterations run");
     vm_cut(v, mslot,
            "cut: the previous iteration is committed, its choice points are dead");
+    /* [M4.6d] cut before push. Reached once per iteration, so this also
+     * bounds the loop: the first position at which another iteration plus the
+     * follow cannot fit ends the loop without a frame. */
+    vm_mrl_test(v, "pos", vm_fadd(bw, v->fmin), exitl,
+                "MRL: no room for another iteration and the follow");
     vm_push_at(v, exitl, "pos",
                "the loop's ONLY frame: the iteration failing leaves the loop");
     vm_goto(v, bentry);
@@ -2132,6 +2433,39 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     /* ---- entry ---------------------------------------------------------- */
     vm_lbl(v, entry, role);
     vm_rung_mark(v, entry, VM_RUNG_REVDET, a->possessive, role);
+    /* [M4.6d] PREDICTION 6, answered. k23_design.md §4.5 and §13's prediction 6
+     * expected this rung to need its own lattice argument and NOT to get it
+     * from §4.1's division, because its iteration boundaries are recovered by
+     * a BACKWARDS WALK rather than by arithmetic. Both halves are right, and
+     * the consequence is the opposite of the one predicted: the argument is
+     * re-made here, and it is SIMPLER than the cursor rung's, not harder.
+     *
+     * The cursor rung has to ROUND because it assigns — it picks a cursor
+     * value out of a range and must land on `pos + W*k`. This rung never
+     * assigns a boundary at all. Its FORWARD SCAN is itself the walk onto the
+     * boundary set: every value `pos` takes during the scan is a boundary the
+     * body actually matched, by construction. So the bound is applied by
+     * STOPPING the walk one boundary early — the TEST form, at the scan's own
+     * loop head, cutting before the frame is pushed — and the position it
+     * stops at is a member of the choice set for exactly the reason `pos +
+     * W*k` is one on the cursor rung. There is nothing to round, and the E1
+     * class of bug (substituting a position the loop cannot occupy) is not
+     * expressible here: no code path writes a boundary this rung did not
+     * reach by matching the body.
+     *
+     * The retreat chain needs no bound of its own, and that is the second
+     * half. It walks BACKWARDS from the committed boundary, so every position
+     * it visits has MORE bytes remaining than the one the bound already
+     * admitted — the whole chain below a viable commit is viable. Pruning it
+     * would be dead code, which is why none is emitted.
+     *
+     * NOT the possessive arm's problem either: a possessified revdet loop
+     * takes the same scan and the same stop, and the stop is a test rather
+     * than a substitution, so vm_cursor_rep's possessive caution does not
+     * arise here. */
+    const long long F  = v->fmin;
+    const long long bw = pcrec_minw(a->l);
+    vm_prune_mark(v, entry, v->mrl && vm_fadd(bw, F) > 0, role);
     vm_set(v, se, "(ptrdiff_t)pos",
            "revdet: the loop's entry position (the capture walk's floor)");
     if (a->rmin == 0)
@@ -2152,6 +2486,17 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     if (a->rmax >= 0)
         sb_printf(b, "    if (%s_it >= %dUL) goto %s_L%d;\n",
                   rv, a->rmax, v->p, fulll);
+    /* [M4.6d] the stop, and it goes to `shortl` rather than to `fulll` — which
+     * is not cosmetic. `fulll` is reached from the rmax test above, where the
+     * iteration count is known to have met rmin; an MRL stop can fire at ANY
+     * count, so it must pass through the label that checks it. `shortl` is
+     * also the resume label of the frame this test skips pushing, and
+     * arriving there directly leaves exactly the state that frame's pop would
+     * have restored: `pos` is this boundary either way, `it` is untouched, and
+     * `w->btn` is already at the depth the pop would have left it. */
+    vm_mrl_test(v, "pos", vm_fadd(bw, F), shortl,
+                "MRL: no room for another iteration and the follow -- stop the "
+                "scan on the boundary it is standing on");
     sb_printf(b, "    %s_mk = w->btn;\n", rv);
     vm_push_at(v, shortl, "pos",
                "this iteration cannot run -- leave the loop with the ones that did");
@@ -2159,9 +2504,15 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
 
     /* Capture writes SUPPRESSED for the whole forward body: they are what would
      * make the trail grow per iteration, and the backward walk recovers every
-     * one of them from the committed span. */
+     * one of them from the committed span.
+     *
+     * [M4.6d] the body's follow-min is the LOOP's, not the loop's minus this
+     * iteration: ONE body copy serves every iteration, so the only sound
+     * constant is the weakest one — what must be consumed after the LAST
+     * iteration. The rung's own scan-head test above is what recovers the
+     * per-iteration strength a replicated rung gets from its copies. */
     v->nocap++;
-    vm_emit(v, bodyl, a->l, bodyok);
+    vm_emit_f(v, bodyl, a->l, bodyok, F);
     v->nocap--;
 
     vm_lbl(v, bodyok, "revdet scan: one iteration committed");
@@ -2287,10 +2638,18 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     /* ---- the lazy extension --------------------------------------------- */
     if (move && !greedy) {
         vm_lbl(v, extl, "revdet: extend by one iteration (lazy resume)");
+        /* [M4.6d] the lazy mirror of the scan-head stop. The extension only
+         * ever moves FORWARD, so the first boundary at which another
+         * iteration plus the follow cannot fit exhausts the whole ascent —
+         * and unlike the scan's stop this one FAILS, because there is no
+         * shorter alternative left to fall back to: the shorter ones were
+         * already tried, which is what "lazy" means. */
+        vm_mrl_test(v, "pos", vm_fadd(bw, F), -1,
+                    "MRL: the lazy ascent has nowhere left to go");
         sb_printf(b, "    %s_mk = w->btn;\n", rv);
         vm_goto(v, extbl);
         v->nocap++;
-        vm_emit(v, extbl, a->l, extok);
+        vm_emit_f(v, extbl, a->l, extok, F);
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
         {
@@ -2338,9 +2697,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
  * distinct code and the program counter distinguishes them, which is
  * replication's own encoding used at scale K. */
 static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
-                         int next, bool greedy);
+                         int next, bool greedy, long long bw);
 static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
-                          int next, int mslot);
+                          int next, int mslot, long long bw);
 static void vm_star(Vm *v, int cur, const Ast *a, int next);
 
 /* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
@@ -2368,11 +2727,26 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next);
  * express that. Unrolling does not disturb it: at K > 1 the pushes occur in
  * the same order and mean the same thing. */
 static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
-                             int next, int ctr, bool optional)
+                             int next, int ctr, bool optional, long long bw)
 {
     StrBuf *b = v->b;
     const int K = v->unroll_k;
     const int residue = count % K;
+    /* [M4.6d] the loop's follow-min, taken before anything below changes it —
+     * and, for a MANDATORY phase, what the phase's own RESIDUE adds to it.
+     *
+     * The residue is not optional and it is not somewhere else: every exit
+     * from the trip loop lands on `tail`, which emits `count mod K`
+     * replicated copies before handing over. So a copy inside a trip is
+     * followed by the rest of its trip AND those copies AND the loop's own
+     * follow. Leaving the residue out is sound (an under-estimate always is)
+     * and it is exactly what stops K23's exemplar collapsing: at K = 8 and
+     * rmin = 10 it under-counts by two whole iterations, which is enough
+     * slack at the first copy for the ambiguity to survive. Found by
+     * measuring the exemplar rather than by reading the code. */
+    const long long F   = v->fmin;
+    const long long res = optional ? 0 : vm_fmul(count % K, bw);
+    const long long TF  = vm_fadd(F, res);
     const int trip = vm_label(v);
     const int tail = vm_label(v);
     const int skip = optional ? vm_label(v) : -1;
@@ -2394,29 +2768,57 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                   ctr, K, count, v->p, tail);
         vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");
+        /* [M4.6d] ONCE PER TRIP, which is §4.5's own recommendation for this
+         * rung and is where the design says the check's natural home is. Past
+         * the guard, K MANDATORY iterations are certain to run, so `K*bw + F`
+         * is a sound compile-time minrest and a position short of it fails
+         * the quantifier outright.
+         *
+         * Once-per-trip prunes by a factor of K less often than
+         * once-per-iteration would, and stays sound for the reason a check
+         * omitted is always sound: pruning forgone, never an answer changed.
+         * The runtime-expression form §4.5 sketches
+         * (`max(0, rmin - stv[ctr]) * bw + F`, reading the counter) is
+         * strictly stronger and is NOT taken in v1 — it puts a load, a
+         * multiply and a subtract on the trip path to tighten a bound whose
+         * population nobody has measured. Recorded as a residual rather than
+         * guessed at. */
+        if (!optional)
+            vm_mrl_test(v, "pos", vm_fadd(vm_fmul(K, bw), TF), -1,
+                        "MRL: this trip's K mandatory iterations, the residue "
+                        "and the follow do not fit");
         vm_goto(v, body0);
         cur = body0;
         for (int i = 0; i < K; i++) {
             int nx = vm_label(v);
+            /* Within a MANDATORY trip, `K - 1 - i` further copies are certain
+             * to run after this one; within an OPTIONAL trip none is, so the
+             * body inherits the loop's own follow. */
+            const long long cf = optional ? F
+                                          : vm_fadd(vm_fmul(K - 1 - i, bw), TF);
             if (!optional) {
-                vm_emit(v, cur, a->l, nx);
+                vm_emit_f(v, cur, a->l, nx, cf);
             } else if (a->greedy) {
                 /* GREEDY: the body is the preferred path and LEAVING is the
                  * resume, so the frame carries the skip label. */
                 int bodyl = vm_label(v);
                 vm_lbl(v, cur, "counter iteration (greedy): body preferred");
+                vm_mrl_test(v, "pos", vm_fadd(bw, F), skip,
+                            "MRL: no room for another iteration and the follow");
                 vm_push(v, skip, "greedy: leaving the loop here is the resume");
                 vm_goto(v, bodyl);
-                vm_emit(v, bodyl, a->l, nx);
+                vm_emit_f(v, bodyl, a->l, nx, cf);
             } else {
                 /* LAZY: leaving is the preferred path and TAKING another
                  * iteration is the resume, mirroring vm_opt_chain's own lazy
                  * arm. Greedy vs lazy is which side is the fallthrough. */
                 int bodyl = vm_label(v);
                 vm_lbl(v, cur, "counter iteration (lazy): leaving preferred");
+                vm_mrl_test(v, "pos", vm_fadd(bw, F), skip,
+                            "MRL: no room for another iteration and the follow");
                 vm_push(v, bodyl, "lazy: taking another iteration is the resume");
                 vm_goto(v, skip);
-                vm_emit(v, bodyl, a->l, nx);
+                vm_emit_f(v, bodyl, a->l, nx, cf);
             }
             cur = nx;
         }
@@ -2434,7 +2836,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
      * K > count case byte-identical to the frames rung by construction rather
      * than by careful arithmetic. */
     if (optional) {
-        vm_opt_chain(v, tail, a->l, residue, next, a->greedy);
+        vm_opt_chain(v, tail, a->l, residue, next, a->greedy, bw);
         vm_lbl(v, skip, "counter: the loop is done, take the continuation");
         vm_goto(v, next);
         return;
@@ -2455,7 +2857,13 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         cur = res0;
         for (int i = 0; i < residue; i++) {
             int nx = vm_label(v);
-            vm_emit(v, cur, a->l, nx);
+            /* Mandatory replicated copies: the frames rung's own arithmetic,
+             * at a smaller count. */
+            int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(residue - i, bw), F),
+                                 -1, "MRL: mandatory residue copies plus the "
+                                     "follow do not fit");
+            vm_emit_f(v, at, a->l, nx,
+                      vm_fadd(vm_fmul(residue - i - 1, bw), F));
             cur = nx;
         }
         vm_lbl(v, cur, "counter residue complete");
@@ -2495,9 +2903,10 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
  * reading a stale local, and `(?:a|bc){3}+` runs one iteration where it must
  * run three. */
 static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
-                                int next, int ctr, int mark)
+                                int next, int ctr, int mark, long long bw)
 {
     StrBuf *b = v->b;
+    const long long F = v->fmin;
     const int trip = vm_label(v);
     const int body0 = vm_label(v);
     const int step = vm_label(v);
@@ -2510,9 +2919,13 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_lbl(v, trip, "counter trip (possessive): one iteration, or leave");
     sb_printf(b, "    if (stv[%d] >= %d) goto %s_L%d;\n", ctr, nopt, v->p, next);
     vm_ev(v, VE_NOTE, 0, 0, "the bound is a compile-time constant");
+    /* [M4.6d] cut before push, once per iteration. `stop` cuts and takes the
+     * continuation, which is exactly what the popped frame would have done. */
+    vm_mrl_test(v, "pos", vm_fadd(bw, F), stop,
+                "MRL: no room for another iteration and the follow");
     vm_push(v, stop, "possessive: this iteration cannot run, so leave the loop");
     vm_goto(v, body0);
-    vm_emit(v, body0, a->l, step);
+    vm_emit_f(v, body0, a->l, step, F);
 
     vm_lbl(v, step, "counter iteration committed: cut, count, go round");
     vm_cut(v, mark, "cut: the iteration is committed and owns no live choice point");
@@ -2553,6 +2966,10 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
      * iteration then also discards the mandatory bodies' own dead frames, so
      * the loop is atomic as a whole, which is what "possessive" means. */
     const int mark = a->possessive ? vm_slot_mark(v, v->nmark++) : -1;
+    /* [M4.6d] the rung's two MRL quantities, taken once (the frames rung's
+     * own reason: per-copy recomputation would be quadratic in the count). */
+    const long long F  = v->fmin;
+    const long long bw = pcrec_minw(a->l);
     int cur;
 
     const char *role;
@@ -2570,6 +2987,7 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
                                   : (nopt >= K ? "counted" : "replicated"));
     vm_lbl(v, entry, role);
     vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    vm_prune_mark(v, entry, v->mrl && vm_fadd(bw, F) > 0, role);
     if (a->possessive)
         vm_set(v, mark, "(ptrdiff_t)w->btn",
                "possessive cut mark (resume-stack depth at loop entry)");
@@ -2578,12 +2996,15 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
 
     if (m >= K) {
         int done = vm_label(v);
-        vm_counter_phase(v, cur, a, m, done, ctr, false);
+        vm_counter_phase(v, cur, a, m, done, ctr, false, bw);
         cur = done;
     } else {
         for (int i = 0; i < m; i++) {
             int nx = vm_label(v);
-            vm_emit(v, cur, a->l, nx);
+            int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(m - i, bw), F), -1,
+                                 "MRL: mandatory copies left plus the follow "
+                                 "do not fit");
+            vm_emit_f(v, at, a->l, nx, vm_fadd(vm_fmul(m - i - 1, bw), F));
             cur = nx;
         }
     }
@@ -2600,12 +3021,12 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
         return;
     }
     if (a->possessive) {
-        if (nopt >= K) vm_counter_poss_opt(v, cur, a, nopt, next, ctr, mark);
-        else           vm_poss_chain(v, cur, a->l, nopt, next, mark);
+        if (nopt >= K) vm_counter_poss_opt(v, cur, a, nopt, next, ctr, mark, bw);
+        else           vm_poss_chain(v, cur, a->l, nopt, next, mark, bw);
         return;
     }
-    if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true);
-    else           vm_opt_chain(v, cur, a->l, nopt, next, a->greedy);
+    if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true, bw);
+    else           vm_opt_chain(v, cur, a->l, nopt, next, a->greedy, bw);
 }
 
 /* [ENG-BREP counter-K] THE UNBOUNDED STAR, extracted from vm_rep so the
@@ -2633,6 +3054,12 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
                             a->greedy ? "greedy" : "lazy",
                             guard ? ", nullable body (empty-iteration guard)"
                                   : ""));
+    /* [M4.6d] cut before push, at the top of every iteration. A nullable body
+     * has `bw == 0` and the test collapses to the loop's own follow-min,
+     * which is still worth having: `(a*)*b` on a subject with no `b` left is
+     * cut here rather than at the guard. */
+    vm_mrl_test(v, "pos", vm_fadd(pcrec_minw(a->l), v->fmin), exit,
+                "MRL: no room for another iteration and the follow");
     if (guard)
         vm_set(v, gslot, "(ptrdiff_t)pos",
                "empty-iteration guard: where this iteration began");
@@ -2726,6 +3153,14 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * `a->rmax` already distinguishes bounded from unbounded at this point
      * (nothing downstream can change it), so the split is made HERE rather
      * than duplicated at each return site below. */
+    /* [M4.6d] the two quantities every MRL site on this rung is derived from,
+     * taken ONCE here: the loop's own follow-min (what must be consumed after
+     * the whole quantifier) and the body's minimum width. Computing them per
+     * copy instead would make the emitter quadratic in a replication count
+     * that reaches 4,000. */
+    const long long F  = v->fmin;
+    const long long bw = pcrec_minw(a->l);
+
     {
         char fbounds[32];
         bool bounded = a->rmax >= 0;
@@ -2740,6 +3175,10 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         vm_rung_mark(v, entry, bounded ? VM_RUNG_FRAMES_BOUNDED
                                         : VM_RUNG_FRAMES_UNBOUNDED,
                      a->possessive, frole);
+        /* One more iteration plus the follow: the minrest every site on this
+         * rung tests, and therefore exactly the predicate for "did this
+         * quantifier get a bound at all". */
+        vm_prune_mark(v, entry, v->mrl && vm_fadd(bw, F) > 0, frole);
     }
 
     /* ---- the frames rung ------------------------------------------------
@@ -2772,22 +3211,41 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         cur = body0;
         for (int i = 0; i < a->rmin; i++) {
             int nx = vm_label(v);
-            vm_emit(v, cur, a->l, nx);
+            int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(a->rmin - i, bw), F),
+                                 -1, "MRL: mandatory copies left plus the "
+                                     "follow do not fit");
+            vm_emit_f(v, at, a->l,  nx,
+                      vm_fadd(vm_fmul(a->rmin - i - 1, bw), F));
             cur = nx;
         }
-        if (a->rmax >= 0) vm_poss_chain(v, cur, a->l, a->rmax - a->rmin, next, mslot);
-        else              vm_poss_star(v, cur, a->l, next, mslot);
+        if (a->rmax >= 0) vm_poss_chain(v, cur, a->l, a->rmax - a->rmin, next,
+                                        mslot, bw);
+        else              vm_poss_star(v, cur, a->l, next, mslot, bw);
         return;
     }
 
+    /* [M4.6d] THE MANDATORY COPIES, and this is where K23's fix lands on the
+     * frames rung. Copy `i` is followed by `rmin - i - 1` further mandatory
+     * copies and then the loop's own follow, so the emitter threads exactly
+     * that down and gates the copy on one more than it — §4.3's second
+     * threading line, which the design note calls "the whole of K23's fix".
+     *
+     * Failing OUTRIGHT is the right answer here and only here: a mandatory
+     * copy is not optional, so a position from which the remaining mandatory
+     * copies cannot fit fails the whole quantifier. Every other site on this
+     * rung takes an EXIT instead, because every other copy is optional. */
     for (int i = 0; i < a->rmin; i++) {
         int nx = vm_label(v);
-        vm_emit(v, cur, a->l, nx);
+        int at = vm_mrl_gate(v, cur, vm_fadd(vm_fmul(a->rmin - i, bw), F),
+                             -1, "MRL: mandatory copies left plus the follow "
+                                 "do not fit");
+        vm_emit_f(v, at, a->l, nx,
+                  vm_fadd(vm_fmul(a->rmin - i - 1, bw), F));
         cur = nx;
     }
 
     if (a->rmax >= 0) {
-        vm_opt_chain(v, cur, a->l, a->rmax - a->rmin, next, a->greedy);
+        vm_opt_chain(v, cur, a->l, a->rmax - a->rmin, next, a->greedy, bw);
         return;
     }
 
@@ -2866,13 +3324,28 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         int i = nsp;
         t = a;
         while (t->k == A_CAT) { rs[--i] = t->r; t = t->l; }
+        /* [M4.6d] §4.3's FIRST threading line, over the flattened spine: the
+         * element at index j is followed by everything after it plus this
+         * concatenation's own follow. Computed as a SUFFIX SUM in one backward
+         * pass — `minw` per element rather than per element-pair — so the
+         * threading costs one walk over the spine and not one per position.
+         *
+         * `sfx[j]` is the follow-min of element j; `sfx[nsp]` is the whole
+         * concatenation's own, i.e. what the caller set. The leftmost element
+         * (`t`, which the flattening loop peeled off the bottom of the spine)
+         * takes `sfx[0]`. */
+        long long *sfx = arena_alloc(&v->cx->arena,
+                                     (size_t)(nsp + 1) * sizeof(long long));
+        sfx[nsp] = v->fmin;
+        for (int j = nsp - 1; j >= 0; j--)
+            sfx[j] = vm_fadd(pcrec_minw(rs[j]), sfx[j + 1]);
         int cur = entry;
         int nx = vm_label(v);
-        vm_emit(v, cur, t, nx);
+        vm_emit_f(v, cur, t, nx, sfx[0]);
         cur = nx;
         for (int j = 0; j < nsp; j++) {
             int after = (j + 1 == nsp) ? next : vm_label(v);
-            vm_emit(v, cur, rs[j], after);
+            vm_emit_f(v, cur, rs[j], after, sfx[j + 1]);
             cur = after;
         }
         return;
@@ -3153,6 +3626,31 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             sb_puts(o, "  (none: this program has no quantifier to possessify)\n");
     }
 
+    /* ---- PRUNING ---------------------------------------------------------
+     * [M4.6d] the per-quantifier MRL verdict, as ACTED ON. Same construction
+     * and same guarantee as the two sections above: every row is a VE_PRUNE
+     * event appended by the site that had the quantifier's own minrest in
+     * hand, so "clamped" here and a bound in the emitted C are one fact
+     * recorded once, not two that could disagree. */
+    sb_printf(o, "\nPRUNING (k23_design.md; D51's per-quantifier stamp)"
+                 "\n  ceiling: %s\n  bound sites emitted: %lld\n",
+              !v->mrl ? "none (-fno-length-prune)"
+                      : v->mrl_win ? "min(n, prefilter window end) -- D51 ruling 2"
+                                   : "the subject end (no prefilter on this artifact)",
+              v->nclamp);
+    {
+        int n = 0;
+        for (int i = 0; i < v->nev; i++) {
+            if (v->ev[i].k != VE_PRUNE) continue;
+            n++;
+            sb_printf(o, "  at L%-6d %-12s %s\n", v->ev[i].a,
+                      vm_prune_kindname[v->ev[i].b],
+                      v->ev[i].role ? v->ev[i].role : "");
+        }
+        if (n == 0)
+            sb_puts(o, "  (none: this program has no quantifier to bound)\n");
+    }
+
     /* ---- PROGRAM -------------------------------------------------------*/
     sb_puts(o, "\nPROGRAM\n");
     for (int i = 0; i < v->nev; i++) {
@@ -3205,7 +3703,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             break;
         case VE_RUNG:
         case VE_STRAT:
-            /* the RUNGS and STRATEGIES sections above are these events' own
+        case VE_PRUNE:
+            /* the RUNGS, STRATEGIES and PRUNING sections above are these
+             * events' own
              * views; PROGRAM stays a straight-line trace of what actually
              * executes, and neither a rung nor a strategy selection writes C
              * of its own to trace. */
@@ -3294,6 +3794,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * disable the rung in the pre-pass while the emitter used the real value. */
     v.unroll_k = cx->opt->unroll_k > 0 ? cx->opt->unroll_k
                                        : PCREC_DEFAULT_UNROLL_K;
+    /* [M4.6d] MRL's two artifact-wide facts, both set BEFORE the walk. The
+     * enable flag is read at every emission site; the ceiling FORM is read
+     * only by the stamp and by the entry points, because the walk itself sees
+     * the ceiling through a macro and never needs to know which of the two it
+     * is. `fit.prefilter` is select_engine's verdict and is final by now. */
+    v.mrl     = (cx->opt->flags & PCREC_NO_LENGTH_PRUNE) == 0;
+    v.mrl_win = job->fit.prefilter;
+    v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);
     memcpy(v.up, g.upper, sizeof v.up);
@@ -3489,6 +3997,23 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "#define %s_VM_STRAT_POSSESSIVE   0x%xu\n", v.up, vm_strat_bit[VM_STRAT_POSSESSIVE]);
     sb_printf(c, "#define %s_VM_STRAT_BACKTRACKING 0x%xu\n", v.up, vm_strat_bit[VM_STRAT_BACKTRACKING]);
     sb_printf(c, "#define %s_VM_STRATS 0x%xu\n", v.up, v.strats);
+    /* [M4.6d] the PRUNE stamp: the same shape and the same place as the two
+     * above, plus one thing neither of them needs — the CEILING FORM, which
+     * is a property of the ARTIFACT rather than of a quantifier and is
+     * therefore a string beside the mask rather than a bit inside it.
+     *
+     * D51 ruling 2 (c) makes disclosing it an obligation rather than a
+     * courtesy. `--engine=vm` disables the DFA prefilter, so its artifacts
+     * fall back to the subject-end ceiling and KEEP the trailing-suffix curve
+     * §9.1 measures — the pruning is sound either way and merely less tight,
+     * and the difference has to be visible in the stamp rather than
+     * discovered by measuring two artifacts against each other. */
+    sb_printf(c, "#define %s_VM_PRUNE_CLAMPED      0x%xu\n", v.up, vm_prune_bit[VM_PRUNE_CLAMPED]);
+    sb_printf(c, "#define %s_VM_PRUNE_UNCLAMPED    0x%xu\n", v.up, vm_prune_bit[VM_PRUNE_UNCLAMPED]);
+    sb_printf(c, "#define %s_VM_PRUNES 0x%xu\n", v.up, v.prunes);
+    sb_printf(c, "#define %s_VM_PRUNE_CEILING \"%s\"\n", v.up,
+              !v.mrl ? "none (-fno-length-prune)"
+                     : v.mrl_win ? "prefilter-window" : "subject-end");
     if (v.tracing) {
         sb_puts(c,
             "/* TRACED ARTIFACT (--trace, DD-8/engine_m4.md S10): this matcher\n"
@@ -3559,6 +4084,40 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "        }                                                    \\\n"
             "    } while (0)\n\n",
             v.up, v.up);
+    }
+
+    /* [M4.6d] THE TWO MRL FORMS, as macros rather than inline expressions.
+     * Two reasons, and the second is the one that matters: the emitted C is
+     * smaller (the design measured +3.2% with the expressions written out at
+     * every site), and a structural check has ONE token to look for when it
+     * asks whether the optimization is present in an artifact.
+     *
+     * `<prefix>_ceil` is the match function's ceiling parameter (see its
+     * definition below) and `p_` the position under test. `MRL_CAP` is
+     * defined only where `MRL_SHORT` is false: it subtracts, so its result is
+     * meaningful exactly where the guard has already established that the
+     * subtraction does not underflow. Every call site pairs them.
+     *
+     * THE ROUNDING IS THE WHOLE OF `MRL_CAP`. `w_` is the cursor's stride, so
+     * the integer division floors the cap onto `p_ + w_*k` — a position the
+     * span loop can actually occupy. Without it the cap lands between two
+     * iteration boundaries and poisons the entire retreat chain below it,
+     * which R26 E1 measured as 5 of 8 subjects answered `nomatch` where both
+     * pcrec-unpruned and python match. At `w_ == 1` the division is the
+     * identity and gcc removes it. */
+    /* The ceiling parameter's spelling, written once: the declaration, the
+     * definition and the three call sites all read these two strings rather
+     * than re-deriving the name, so a rename cannot leave one of them behind. */
+    char mrl_param[96];
+    snprintf(mrl_param, sizeof mrl_param, ", const size_t %s_ceil", v.p);
+
+    if (v.nclamp > 0) {
+        sb_printf(c,
+            "#define %s_MRL_SHORT(p_, mr_) \\\n"
+            "    ((%s_ceil) < (size_t)(mr_) || (%s_ceil) - (size_t)(mr_) < (p_))\n"
+            "#define %s_MRL_CAP(p_, mr_, w_) \\\n"
+            "    ((p_) + (size_t)(w_) * (((%s_ceil) - (size_t)(mr_) - (p_)) / (size_t)(w_)))\n\n",
+            v.up, v.p, v.p, v.up, v.p);
     }
 
     if (!v.tracing) {
@@ -3702,14 +4261,26 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     }
 
     /* ---- rx_match_impl: the program ------------------------------------ */
+    /* [M4.6d] THE MRL CEILING IS A PARAMETER, not a member of `<prefix>_work`
+     * as k23_design.md §9.1's sketch had it. The design's obligation (a) is
+     * that an entry which runs NO prefilter must default the ceiling to the
+     * subject end "or the clamp reads a stale window" — and the way to
+     * discharge an obligation of the form "every caller must remember to set
+     * X" is to make forgetting a compile error. A parameter does that; a
+     * struct member initialised at three call sites does not.
+     *
+     * It is emitted ONLY where the program contains an MRL bound, so an
+     * artifact with no clamp keeps the signature it had before MRL existed
+     * and stays byte-identical. */
     sb_printf(c,
-        "static ptrdiff_t %s_match_impl(const rx_ctx *ctx, %s_work *w)\n"
+        "static ptrdiff_t %s_match_impl(const rx_ctx *ctx, %s_work *w%s)\n"
         "{\n"
         "    const unsigned char *const s = ctx->subject;\n"
         "    const size_t n = ctx->len;\n"
         "    size_t pos = ctx->pos;\n"
         "    ptrdiff_t *const stv = w->stv;\n",
-        v.p, v.p);
+        v.p, v.p,
+        v.nclamp > 0 ? mrl_param : "");
     if (v.rungs & vm_rung_bit[VM_RUNG_CURSOR])
         sb_printf(c, "    size_t %s_cur = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
@@ -3859,19 +4430,81 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    rx_ctx ctx;\n"
         "    ptrdiff_t r;\n"
         "    size_t start;\n"
+        "%s"
         "    if (startpos > n) return 0;\n",
-        g.searchfn, v.p);
+        g.searchfn, v.p,
+        v.nclamp > 0 ? "    size_t ceil_;\n" : "");
 
+    /* The recompute, spelled once and used only where a bound reads it. */
+    char retry_win[512];
+    retry_win[0] = 0;
+    if (v.nclamp > 0 && prefn)
+        snprintf(retry_win, sizeof retry_win,
+                 "        {\n"
+                 "            ptrdiff_t win[1][2];\n"
+                 "            if (%s(s, n, start, win) != 1) return 0;\n"
+                 "            start = (size_t)win[0][0];\n"
+                 "            ceil_ = (size_t)win[0][1] < n ? (size_t)win[0][1] : n;\n"
+                 "        }\n",
+                 prefn);
+
+    /* [M4.6d] THE MRL CEILING, and D51 ruling 2's three obligations, all
+     * discharged in this one function.
+     *
+     * (a) NO-PREFILTER ENTRIES DEFAULT TO THE SUBJECT END. The `else` arm
+     *     below, and `<prefix>_match`/`<prefix>_match_caps`, pass `n` /
+     *     `ctx->len`. There is no path on which the ceiling is not passed,
+     *     because it is a parameter.
+     *
+     * (b) THE START++ RETRY IS NOT ALLOWED TO GO STALE, and this is the
+     *     obligation the ruling makes hard. The window is per-ATTEMPT: the
+     *     prefilter's forward scan stops at a dead transition, so
+     *     `win[0][1]` is the last accepting END BEFORE that break, and on a
+     *     subject holding a second, later match it is therefore too SMALL —
+     *     the UNSOUND direction, which deletes real matches rather than
+     *     merely pruning less.
+     *
+     *     A STRUCTURAL argument that the retry cannot fire is available and
+     *     is written down here because it is worth knowing, but it is NOT
+     *     what makes this safe. The argument: the prefilter is the
+     *     capture-ERASED machine (D31's erasure — A_CAP is invisible to the
+     *     NFA builder, engine_m4.md §6.1), so it accepts exactly the
+     *     pattern's language; it reported that `s[win[0][0], win[0][1])` is
+     *     in that language; therefore a match anchored at `win[0][0]` exists
+     *     and the VM, which searches that same language, finds one — so `r`
+     *     is non-negative on the first pass and `start++` is never reached.
+     *     That argument rests on span-equality between the two machines,
+     *     which R21 SPLIT into "erasure STRUCTURAL, span-equality
+     *     BELIEVED-WITH-GATE" after finding two live priority miscompiles
+     *     (K17, K18) in exactly this territory. Resting an unsound-direction
+     *     correctness property on a believed claim is what the ruling
+     *     forbids, and 0-firings-in-99-trials is explicitly not a discharge.
+     *
+     *     So the window is RECOMPUTED, which is the ruling's other branch and
+     *     costs nothing on a path the argument above says is dead. It is the
+     *     SAME three lines as the entry call — deliberately, so there is one
+     *     spelling of "ask the prefilter where the next match is" rather than
+     *     two that could drift — and re-seeding `start` from the fresh window
+     *     is both sound (the prefilter answers for `[start, n)`) and strictly
+     *     faster than stepping one byte at a time.
+     *
+     * (c) WHICH FORM IS ACTIVE is stamped: `<PREFIX>_VM_PRUNE_CEILING`, above.
+     */
     if (prefn) {
         sb_printf(c,
             "    {\n"
             "        ptrdiff_t win[1][2];\n"
             "        if (%s(s, n, startpos, win) != 1) return 0;\n"
             "        start = (size_t)win[0][0];\n"
+            "%s"
             "    }\n",
-            prefn);
+            prefn,
+            v.nclamp > 0
+              ? "        ceil_ = (size_t)win[0][1] < n ? (size_t)win[0][1] : n;\n"
+              : "");
     } else {
         sb_puts(c, "    start = startpos;\n");
+        if (v.nclamp > 0) sb_puts(c, "    ceil_ = n;\n");
     }
 
     sb_printf(c,
@@ -3880,7 +4513,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    ctx.caps = NULL; ctx.user = NULL;\n"
         "    for (;;) {\n"
         "        ctx.pos = start;\n"
-        "        r = %s_match_impl(&ctx, &w);\n"
+        "        r = %s_match_impl(&ctx, &w%s);\n"
         "        if (r == %s_R_STEPS)  return %s_ERR_STEPS;\n"
         "        if (r == %s_R_FRAMES) return %s_ERR_FRAMES;\n"
         "        if (r == %s_R_WORK)   return %s_ERR_WORK;\n"
@@ -3888,11 +4521,13 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "        %s_unwind(&w);\n"
         "        if (start >= n) return 0;\n"
         "        start++;\n"
+        "%s"
         "    }\n"
         "    if (caps) %s_caps_out(&w, caps, start, r);\n"
         "    return 1;\n"
         "}\n\n",
-        v.p, v.p, v.up, v.up, v.up, v.up, v.up, v.up, v.p, v.p);
+        v.p, v.p, v.nclamp > 0 ? ", ceil_" : "",
+        v.up, v.up, v.up, v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     sb_printf(c,
@@ -3920,14 +4555,15 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    ptrdiff_t r;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
-        "    r = %s_match_impl(ctx, &w);\n"
+        "    r = %s_match_impl(ctx, &w%s);\n"
         "    /* No translation and no clamp: the impl's return space IS this\n"
         "     * contract's -- >= 0, -1, or one of the three R_ sentinels, which\n"
         "     * are the ERR_ codes. A defensive floor test here would be dead\n"
         "     * code pretending to be a safeguard. */\n"
         "    return r;\n"
         "}\n\n",
-        v.up, v.up, v.up, v.up, g.matchfn, v.p, v.p, v.p);
+        v.up, v.up, v.up, v.up, g.matchfn, v.p, v.p, v.p,
+        v.nclamp > 0 ? ", ctx->len" : "");
 
     sb_printf(c,
         "/* The capture-delivering sibling. Same D49 return space as\n"
@@ -3942,12 +4578,13 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    ptrdiff_t r;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
-        "    r = %s_match_impl(ctx, &w);\n"
+        "    r = %s_match_impl(ctx, &w%s);\n"
         "    if (r < 0) return r;\n"
         "    if (caps_out) %s_caps_out(&w, caps_out, ctx->pos, r);\n"
         "    return r;\n"
         "}\n\n",
-        g.matchcapsfn, v.p, v.p, v.p, v.p);
+        g.matchcapsfn, v.p, v.p, v.p,
+        v.nclamp > 0 ? ", ctx->len" : "", v.p);
 
     pcrec_emit_info(cx, &g, 2, job->fit.why,
                     has_budget ? budget : -1, work_budget, bt_frames, ceiling);

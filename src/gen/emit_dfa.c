@@ -558,7 +558,8 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * lands. */
     {
         const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
-                                          PCREC_NO_COUNTER;
+                                          PCREC_NO_COUNTER |
+                                          PCREC_NO_LENGTH_PRUNE;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
