@@ -350,7 +350,13 @@ stated terms.
 - [M4.6] STATE:not-started — IMPL: per-pattern engine selection +
   DFA-prefilter hybrid + DFA islands as designed; measured against
   bench floors under D12/R3.10 discipline; DD-9's decided outcome
-  applied and measured
+  applied and measured. **AUTHORIZED (Frank, 2026-08-17, twenty-eighth
+  session): "continue through M4.6"** — starts when counter-K lands,
+  no further prompt needed. Known attached obligations beyond the row
+  text (scoping sweep to collect the full set): K23 ownership
+  (known_issues.md), step-budget AND work-budget calibration (D49's
+  bring-up ~10⁹), the capture-bearing bench sibling (engine_m4.md
+  §8.5), D46 observability/forceability for the selection point.
 - [M4.7] STATE:not-started — DIFFERENTIAL + CLOSE: capture differential
   vs libpcre2 ovectors (gate-ON per docs/testing.md's differential-gate
   principle), fuzzer extended to compare capture spans, SR-8's
