@@ -1,0 +1,90 @@
+# Trie-factored VM alternation switch: candidate-benefit measurement
+# (engine_m4.md S2.2 item 4 / S6.4)
+# date: 2026-08-17T21:09:26Z
+# repo: 99ab1de
+# pcrec: /home/duxevents/pcrec/worktrees/m46e/build/pcrec
+# gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# pinning: taskset -c 3
+# reps: 9 per point, best-of-N
+#
+# ==== PART 1: corpus candidate-fraction survey (static, one pass) ====
+# total 'pattern' lines in tests/*/*.rxt: 1146
+# capture-bearing (VM-forced under default caps-on, D42.1): 347
+# of those, containing a plain top-level alternation group: 49
+# of those, heuristically first-byte-disjoint literal branches (trie-eligible shape): 22
+# fraction of ALL corpus patterns that are candidates: 1.92%
+# fraction of CAPTURE-BEARING corpus patterns that are candidates: 6.34%
+# examples:
+#   ((a|b)|c)
+#   (a|b)+
+#   (a|bb)+
+#   a(b|c)+d
+#   (a(b|c)(d|e))
+#   (a|B)+
+#   (dog|cat|bird|fish)
+#   (ab|c){2,4}
+#   (ab|c){2,4}?
+#   (cat|DOG)s?
+#   (?:(a|b*?)?)*
+#   (?:(b*?|a)?)*
+#   (a|b)(c|d)
+#   (ab{2,3}|cd{1,2})+
+#   (a|b)c
+#
+# note: the two bench capture-bearing shapes (case j: '([01]*)1([01]{8})',
+# DD-9's own capture-bearing floor) and case (c)'s own alternation (pinned
+# --no-captures, so it never reaches vm_alt) are NEITHER a hit for this
+# survey -- no shipped bench case currently exercises this path.
+
+# ==== PART 2: branch-position cost on real shapes, 3 independent runs ====
+# ---- run 1, load(pre)=0.50 0.71 1.32 1/577 517843 ----
+# --- words5 = '(alpha|beta|gamma|delta|epsilon)' ---
+# branch_idx  word          ns/call
+           0  alpha           126.85
+           1  beta            122.25
+           2  gamma           132.04
+           3  delta           134.50
+           4  epsilon         149.78
+# chain overhead (last - first) = +22.93 ns (+18.08% of first-branch cost) -- upper bound on a first-byte switch's payoff for this shape
+
+# --- http3 = '(GET|POST|PUT) /' ---
+# branch_idx  word          ns/call
+           0  GET /           127.61
+           1  POST /          136.70
+           2  PUT /           133.28
+# chain overhead (last - first) = +5.67 ns (+4.44% of first-branch cost) -- upper bound on a first-byte switch's payoff for this shape
+
+# ---- run 2, load(pre)=0.54 0.72 1.32 1/577 517967 ----
+# --- words5 = '(alpha|beta|gamma|delta|epsilon)' ---
+# branch_idx  word          ns/call
+           0  alpha           127.40
+           1  beta            122.50
+           2  gamma           132.35
+           3  delta           135.33
+           4  epsilon         149.32
+# chain overhead (last - first) = +21.92 ns (+17.20% of first-branch cost) -- upper bound on a first-byte switch's payoff for this shape
+
+# --- http3 = '(GET|POST|PUT) /' ---
+# branch_idx  word          ns/call
+           0  GET /           128.12
+           1  POST /          137.43
+           2  PUT /           133.49
+# chain overhead (last - first) = +5.37 ns (+4.19% of first-branch cost) -- upper bound on a first-byte switch's payoff for this shape
+
+# ---- run 3, load(pre)=0.58 0.72 1.32 1/577 518097 ----
+# --- words5 = '(alpha|beta|gamma|delta|epsilon)' ---
+# branch_idx  word          ns/call
+           0  alpha           127.85
+           1  beta            122.83
+           2  gamma           132.82
+           3  delta           135.23
+           4  epsilon         150.38
+# chain overhead (last - first) = +22.53 ns (+17.62% of first-branch cost) -- upper bound on a first-byte switch's payoff for this shape
+
+# --- http3 = '(GET|POST|PUT) /' ---
+# branch_idx  word          ns/call
+           0  GET /           129.90
+           1  POST /          138.06
+           2  PUT /           133.59
+# chain overhead (last - first) = +3.69 ns (+2.84% of first-branch cost) -- upper bound on a first-byte switch's payoff for this shape
+

@@ -271,9 +271,39 @@ stated terms.
     ceiling check becomes a floor-with-window because MRL legitimately makes
     that artifact 2 bytes more capable than it declares. Design note gains
     §14, its BUILD OUTCOME section.
-  - [M4.6e] STATE:not-started — RX_HYBRID_MIN measurement (resolves
-    engine_m4.md §12 ASK-6; wire the `n < RX_HYBRID_MIN` VM-only
-    branch) + trie-factored first-byte switch, measure-then-implement.
+  - [M4.6e] STATE:completed (2026-08-17, lane m46e) — RX_HYBRID_MIN
+    (engine_m4.md §12 ASK-6) + the trie-factored VM alternation switch
+    (§2.2 item 4/§6.4), both MEASURE-THEN-IMPLEMENT, both **MEASURED-NO,
+    neither built** — a fully successful outcome under the brief's own
+    bar. RX_HYBRID_MIN: a subject-length sweep at fixed match offset (three
+    capture-bearing shapes, `-fno-prefilter`'s existing [M4.6f] force pair
+    reused as the VM-only build, no new plumbing needed to measure) shows
+    the crossover variable is OFFSET, not LENGTH — hybrid's ns/call is flat
+    in `n`, VM-only's grows with the naive retry loop's candidate-position
+    count. A `n < RX_HYBRID_MIN` branch as designed would misfire on the
+    ASK's own named target: bench case (i)'s actual buffer sits at offset
+    20, past the measured 8-12-byte crossover, where hybrid is already 65%
+    FASTER than VM-only (three-run reproducible) — a length threshold
+    generous enough to "catch" case (i)'s 60-byte length would regress the
+    exact case it exists to protect, and case (j)'s own pattern never
+    crosses at all (hybrid wins from offset 0). Trie switch: a corpus
+    survey (the same eligibility rule `nfa.c`'s trie_key() checks,
+    approximated on pattern text) finds 22/1146 (1.92%) of all corpus
+    patterns and 22/347 (6.34%) of capture-bearing ones are candidates, and
+    NEITHER shipped capture-bearing bench shape (case j; case c's own
+    alternation is pinned `--no-captures` and never reaches `vm_alt`) hits
+    it; a direct branch-position measurement on two real disjoint
+    alternations finds the chain's own cost real (+18% worst-vs-best branch
+    on a 5-way word alternation) but narrow, declined on D18 ("an axis must
+    earn itself") against the new emitter analysis's own build cost (a D46
+    stamp+force pair, a permanent sabotage row — `src/opt/CLAUDE.md`'s
+    established price for a selection axis). Both items' seams are left
+    exactly as engine_m4.md designed them, unimplemented; three independent
+    pinned runs (taskset, best-of-9) archived per D35 in
+    `docs/design/m46e_impl/out/`, probes in `docs/design/m46e_impl/probes/`,
+    engine_m4.md's ASK-6/§2.2 item 4/§6.4 carry the findings in place. No
+    runtime match code touched — see the lane's own CLAUDE.md for the full
+    validation-scope reasoning.
   - [M4.6f] STATE:completed (2026-08-17, lane m46f) — D46 CLOSE-OUT for
     the PREFILTER axis DONE: `<PREFIX>_VM_PREFILTER` stamp (`"hybrid"`/
     `"none"`, a SCALAR string like `RX_ENGINE`/`RX_VM_PRUNE_CEILING` —

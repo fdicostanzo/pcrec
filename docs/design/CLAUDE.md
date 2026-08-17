@@ -670,6 +670,23 @@ append-only or historical records.
   split in place, with the two combined measuring WORSE than doing nothing.
   The VM audit answered NO (its wrappers call `match_impl` directly, and a
   computed-goto body cannot be outlined at all). See its own CLAUDE.md.
+- `m46e_impl/` — **[M4.6e]** (2026-08-17, closes M4.6): the last M4.6
+  measure-then-implement pair, `RX_HYBRID_MIN` (engine_m4.md §12 ASK-6) and
+  the trie-factored VM alternation switch (§2.2 item 4/§6.4). **BOTH
+  MEASURED-NO, neither built.** RX_HYBRID_MIN: the crossover variable is
+  match OFFSET, not subject length — hybrid's cost is flat in `n`, VM-only's
+  grows with offset (one function call per candidate start position in the
+  naive retry loop) — so a length-only `n < RX_HYBRID_MIN` branch cannot
+  target the real variable and would regress bench case (i)'s own buffer
+  (offset 20, past the 8-12 byte crossover, where hybrid already measures
+  65% faster). Trie switch: real chain overhead on disjoint alternations
+  (+18% worst-vs-best branch position on a 5-way word alternation) but
+  narrow — 6.34% of the corpus's capture-bearing patterns, and neither
+  shipped capture-bearing bench shape hits it — declined on D18 against the
+  new emitter analysis's own build cost (a D46 stamp+force pair, a
+  permanent sabotage row, per `src/opt/CLAUDE.md`'s established price for a
+  selection axis). engine_m4.md's own ASK-6, §2.2 item 4 and §6.4 carry the
+  annotations in place. See its own CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
