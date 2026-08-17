@@ -35,7 +35,17 @@
  *
  * Prints exactly one line to stdout, in the same format pcre2_oracle uses
  * for its match/nomatch cases (a compiled matcher never emits "cerr"):
- *   "match <start> <end>"
+ *   "match <s0> <e0> [<s1> <e1> ...]"   [M4.7d]: every caps[k] pair, k in
+ *                                       [0, rx_info.ncaps) -- caps[0] is the
+ *                                       whole match, caps[1..] are capture
+ *                                       groups 1..RX_NCAPS-1 in pcrec's own
+ *                                       numbering (C9: same left-to-right
+ *                                       order PCRE2 uses, so this line's
+ *                                       pairs line up positionally with
+ *                                       pcre2_oracle's own multi-pair output
+ *                                       -- see pcre2_oracle.c's header
+ *                                       comment). An unset group prints as
+ *                                       "-1 -1" (RX_UNSET, both slots).
  *   "nomatch"
  * or, on a VM artifact whose step or frame budget ran out before a verdict
  * (RX_ERR_STEPS / RX_ERR_FRAMES — never produced by a DFA-only artifact):
@@ -124,7 +134,12 @@ int main(int argc, char **argv)
 
     int found = rx_search(buf, len, startpos, caps);
     if (found == 1) {
-        printf("match %td %td\n", caps[0][0], caps[0][1]);
+        /* [M4.7d]: every caps[k] pair, not just the whole match -- see this
+         * file's own header comment. */
+        printf("match");
+        for (int k = 0; k < rx_info.ncaps; k++)
+            printf(" %td %td", caps[k][0], caps[k][1]);
+        printf("\n");
     } else if (found == 0) {
         printf("nomatch\n");
     } else if (found == RX_ERR_STEPS) {
