@@ -1744,6 +1744,7 @@ after.
 | frameless scan | `([a-z]+)9` | 1,000 | 500,500 | **500,500** |
 | frameless scan | `([a-z]+)9` | 10,000 | 50,005,000 | **50,005,000** |
 | **cut** | `((a)\|b){0,4}d` `-fno-revdet` | 10,000 | — (bisected) | **79,988** |
+| **possessive cut** | `((a)\|bc){0,q}d` `-fno-revdet` | various | `q(2n−q+1)` | **exact, 4 cells** |
 
 The scan rows are PINS, not searches: the possessified cursor scans once per
 start position and never retreats, so an unanchored search over n bytes performs
@@ -1755,6 +1756,29 @@ boundary is exactly there, at both sizes.
 bisected with no closed form, and it landed on **79,988** — which is, to the
 unit, the CUT-discarded figure §7.4's instrumented table already reported for
 that shape. Two instruments that share no code agree on both charged classes.
+
+**THE THIRD CLASS IS THE RUNG'S OWN, and it is the strongest of the three
+because a closed form predicted it.** §3.4's possessive arm cuts once per
+committed iteration, which is the first work-charge site the counter rung
+itself contributes to the meter. Its law was derived from three sizes and then
+verified OUT OF SAMPLE at three further (q, n) pairs used in no derivation:
+
+> **work = q · (2n − q + 1)** for `((a)|bc){0,q}d` over n bytes of `a`
+
+and the form is structural rather than fitted. Each cut discards exactly two
+frames — the loop's own stop frame plus the alternation body's single choice
+point — and an unanchored search runs q iterations from each of the first
+n−q+1 positions and fewer from the tail, giving 2qn less a shortfall of
+2·Σ(q−k) = q(q−1). **Both halves were checked rather than asserted**: the
+shortfall term reproduces the measured constants 132, 56 and 240 at q = 12, 8
+and 16 exactly. Out-of-sample cells (q,n) = (10,250), (9,175) and (20,500) hit
+4,910, 3,078 and 19,620 on the nose.
+
+That is a different and stronger claim than the first two classes make. Those
+say the meter counts what §7.4 said it counts. This one says the meter's output
+on a shape is PREDICTABLE FROM THE EMITTED STRUCTURE — which is the property
+that makes a bound explainable to a user who hits it, and the property [M4.6a]
+will need when it calibrates the default against real corpora.
 
 Two controls, because a probe that exhibits only the cases its rule fires on is
 not evidence that the rule has a boundary: the MIXED shape (whose frames all

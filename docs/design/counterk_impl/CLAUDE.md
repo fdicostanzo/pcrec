@@ -122,6 +122,17 @@ cannot be re-run is not a measurement.
   renderings of one belief. That is this directory's recorded controls-share-a-
   source failure, avoided ahead of time rather than after.
 
+  **A THIRD calibrated class joined at the possessive arm's landing** (the
+  manager's standing term: each new charge site returns here predicted-then-
+  measured). §3.4's possessive cut is the first site the RUNG ITSELF
+  contributes to the meter, and its law — `work = q(2n−q+1)` for
+  `((a)|bc){0,q}d` — was derived from three sizes and verified OUT OF SAMPLE at
+  three further (q,n) pairs. Structural, not fitted: two frames per cut (the
+  loop's stop frame plus the body's one choice point) times the iterations an
+  unanchored search runs from each start, less a tail shortfall of q(q−1) whose
+  values 132/56/240 at q=12/8/16 were checked against the measurement rather
+  than assumed.
+
   The scan cells are PINS against a closed form derived before the run
   (n(n+1)/2 for an unanchored search over n bytes) — the artifact completes at
   the predicted budget and gives up at one unit less, at both sizes. The CUT

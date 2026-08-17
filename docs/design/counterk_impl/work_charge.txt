@@ -1,5 +1,5 @@
 == work_charge: counterk_design.md §10.5.4 (settlement 4 calibration) ==
-commit         0520408
+commit         906759e
 gcc            cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
 default budget 1000000000 (VM_DEFAULT_WORK_BUDGET, src/gen/emit_vm.c; D49)
 
@@ -14,8 +14,16 @@ possessified cursor ([a-z]+)9         10000       50005000        nomatch work  
 -- CUT class: measured, not predicted (see the comment in this script) --
     bisect: TRUE boundary is 79988 (predicted 200000, off by -120012)
 
+-- third class: the counter rung POSSESSIVE cut (§3.4) --
+shape                                     n      predicted   at_predicted at_pred-1 verdict  
+possessive cut ((a)|bc){0,12}d          100           2268        nomatch work      PIN      
+possessive cut ((a)|bc){0,10}d          250           4910        nomatch work      PIN      
+possessive cut ((a)|bc){0,9}d           175           3078        nomatch work      PIN      
+possessive cut ((a)|bc){0,20}d          500          19620        nomatch work      PIN      
+
 -- non-vacuity control --
 mixed (a(b|c)?){0,4}d at budget 1 charges nothing          OK (nomatch)
 DEFAULT path (prefilter on) at budget 1                    OK (nomatch)
 
 ALL CELLS OK
+RC=0

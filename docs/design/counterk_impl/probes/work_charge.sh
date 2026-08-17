@@ -175,7 +175,33 @@ else
     printf '    BUILDFAIL\n'; fails=$((fails + 1))
 fi
 
-# 4. NON-VACUITY CONTROL: a shape charged NOTHING must survive a budget of 1.
+# 4. THE THIRD CLASS: the COUNTER rung's POSSESSIVE cut (§3.4).
+#
+# This is the first site the RUNG ITSELF contributes to the settlement-4 meter,
+# and it is pinned against a CLOSED FORM derived from three sizes and then
+# verified OUT OF SAMPLE at three more (q,n) pairs used in no derivation —
+# which is what makes it a prediction rather than a curve fit.
+#
+#   work = q * (2n - q + 1)      for `((a)|bc){0,q}d` over n bytes of 'a'
+#
+# The form is structural, not fitted. The possessified counter loop cuts once
+# per committed iteration, and each cut discards exactly 2 frames (the loop's
+# own stop frame plus the alternation body's single choice point). An
+# unanchored search restarts at every position, so a subject of n bytes runs q
+# iterations from each of the first n-q+1 positions and fewer from the tail —
+# 2qn total minus a tail shortfall of 2 * sum_{k=1..q-1}(q-k) = q(q-1). Both
+# halves of that expression were CHECKED against the measurement rather than
+# asserted: q(q-1) reproduces 132, 56 and 240 at q = 12, 8 and 16 exactly.
+printf '\n-- third class: the counter rung POSSESSIVE cut (§3.4) --\n'
+printf '%-34s %8s %14s %14s %-9s %-9s\n' shape n predicted at_predicted at_pred-1 verdict
+for spec in "12 100" "10 250" "9 175" "20 500"; do
+    set -- $spec
+    q=$1; n=$2
+    pin_cell "possessive cut ((a)|bc){0,${q}}d" "((a)|bc){0,${q}}d" "$n" a \
+             $(( q * (2*n - q + 1) )) -fno-revdet
+done
+
+# 5. NON-VACUITY CONTROL: a shape charged NOTHING must survive a budget of 1.
 printf '\n-- non-vacuity control --\n'
 v=$(verdict 1 '(a(b|c)?){0,4}d' 10000 a -fno-revdet)
 if [ "$v" = "work" ] || [ "$v" = "BUILDFAIL" ]; then
@@ -185,7 +211,7 @@ else
     printf '%-58s %-9s\n' 'mixed (a(b|c)?){0,4}d at budget 1 charges nothing' "OK ($v)"
 fi
 
-# 5. The gate is REACHABLE only where the prefilter is off (§7.5). On the
+# 6. The gate is REACHABLE only where the prefilter is off (§7.5). On the
 #    DEFAULT path the DFA answers and the VM is never entered, so the same
 #    pattern and subject must complete at a budget of 1.
 v=$(compile_at 1 '([a-z]+)9' >/dev/null 2>&1; \
