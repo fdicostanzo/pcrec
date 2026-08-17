@@ -457,9 +457,17 @@ append-only or historical records.
   a second adversarial pass (findings 17-25) — all applied in place. F-1 is
   RULED (D47 ADDENDUM: strict §4.5, K stays ONE per-artifact constant and the
   CLAMP moves whole to plan row [ENG-CLAMP], withdrawing one acceptance cell
-  and leaving the rest of the rung untouched). F-2 is WITHDRAWN and returning
-  measured — the second pass blocked the note's replacement step charge too.** Read
-  the note's PANEL OUTCOME block before any section. Claims that carry it, and
+  and leaving the rest of the rung untouched). F-2 is RULED too (D47
+  SECOND ADDENDUM, 2026-08-17): SETTLEMENT 4 — the frameless forward work
+  §7.4 meters gets its OWN bound beside frames and trail, own `rx_info` field
+  and own `RX_ERR_*` code, because the meter must see the FULL work; the step
+  budget keeps its exact meaning and unit, so every existing pin is untouched
+  and the note's `PCREC_STEP_SCALE` apparatus is deleted rather than retuned.
+  Its DEFAULT VALUE is deliberately unruled and returns to Frank as a
+  one-liner at implementation (the note's §10.5, which also carries the
+  addendum's pre-release ABI rider and the PROPOSED names for the new
+  surface).** Read the note's PANEL OUTCOME block and then §10.5 before any
+  other section. Claims that carry it, and
   where the panel moved them: the counter must be a TRAILED `stv` slot, but for
   a sharper reason than the first draft gave — a plain local is a correctness
   failure (`(a|b){0,4}c`) while a per-frame field is CORRECT at one nesting
