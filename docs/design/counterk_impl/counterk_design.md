@@ -1359,7 +1359,38 @@ move from refused to compiled, so nothing shipped changes under anyone.
    compiles today in 299 lines, because an exact count over a
    reverse-deterministic body belongs to the rung-select landing. `(a|ab)` is
    the body that declines both earlier rungs.
-4. **Byte-identity at K > n−m** (§3.2 — strictly greater, R25 E3), over the
+4. **NEW — the gcc DNF, fixed and MEASURED** (cross-lane, from [M4.6c]'s K23
+   design note §11.3, 2026-08-17). `((a|b){10,20}){10,50}` is the shape that
+   note reports as a downstream-compiler failure: pcrec emits it in 0.1 s, and
+   the result is a function **gcc `-O2` cannot compile within 300 s** (`-O0`
+   4.0 s, `-O1` 6.6 s). It is not a pcrec timeout — it is the cost of handing a
+   compiler a 670 KB function, which is exactly the population this rung
+   shrinks.
+
+   MEASURED with the rung, and this cell asserts all four numbers because the
+   headline is a ratio and ratios hide their denominators:
+
+   | | before (frames) | after (counter) |
+   |---|---|---|
+   | emitted | 20,950 lines / 671,587 B | **8,244 lines / 278,318 B** |
+   | rung stamp | `0x2` | **`0x10`** |
+   | gcc `-O2` | **DNF at 300 s** | **16.7 s** |
+
+   Worth stating plainly because it is a different claim from the rest of §8.5:
+   the other cells assert that a pattern pcrec REFUSED now compiles. This one
+   asserts that a pattern pcrec always accepted now produces C that a real
+   toolchain can actually build. Both halves of "compiles" matter, and only
+   this cell tests the second.
+
+   **AND IT IS A CAUTION FOR EVERY DIFFERENTIAL IN THIS SECTION**, which is how
+   the finding reached this lane. §8.1's ground-truth arm builds the
+   REPLICATED side — the 670 KB side — so any arm that compiles it at `-O2`
+   can eat a 300 s+ compile and read as a hang. Ground-truth arms are SEMANTIC
+   checks, not throughput ones, so they build at `-O0`/`-O1`; `-O2` belongs
+   only where the measurement is speed. The lane's own sweeps already use
+   `-O1`, and D45's compile budget is the reason to keep it that way.
+
+5. **Byte-identity at K > n−m** (§3.2 — strictly greater, R25 E3), over the
    whole corpus, in both directions: `--unroll=4096` against `-fno-counter`.
    **SCOPED to the non-possessive arms** [R25 E6]: §3.4's possessive loop has
    no trip, no tail and no K at all, so a possessified bounded repeat cannot
