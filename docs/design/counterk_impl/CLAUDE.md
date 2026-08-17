@@ -227,13 +227,66 @@ cannot be re-run is not a measurement.
   added at one point and then RETRACTED under the scalar-first directive; the
   file carries no external-study input.
 
+  **RUN 2026-08-17 (M4.6b, `--full`), archived as `bench_k.txt`: the K axis
+  is REAL on this tree** (`--unroll` has a producer, confirmed with the
+  script's own capability probe before the run — no "shipped"-collapsed
+  banner anywhere in the output) **but the sweep does not confirm or refute
+  eng_brep_design.md §4.4's K=8 recommendation.** Two reasons, both
+  structural rather than a bad run:
+  1. **The regime the header calls out as mattering most is the regime
+     least measurable today.** At N=1000 and N=4000 — where backtracking
+     cost should dominate and K should matter most — every `max` and `fail`
+     cell for both body kinds is INVALID (`VALIDATION-FAILED: ... got
+     FRAMES`), because [M4.6a]'s frame-capacity bound is still a bring-up
+     PLACEHOLDER, not yet calibrated, and it exhausts before the loop even
+     reaches its subject-mandated verdict. `belowmax` (the least
+     backtracking-relevant of the three regimes) is the only one with
+     surviving cells at those N, and even it goes INVALID at K=1 for some
+     rows (e.g. group body, N=4000): the ceiling this sweep is hitting is
+     the UNCALIBRATED BUDGET, not an algorithmic limit either K or the body
+     shape control.
+  2. **Where cells DO complete (N in 8..256), no consistent K=8-favoring
+     trend emerges.** `ns/fail` at N=256: alternation body's apparent
+     minimum is K=8 (616,823) but K=16 spikes to 1,413,168 — worse than
+     K=1's 779,094 — which is not a monotonic curve with a knee, it is
+     noise wide enough to invert the ranking between adjacent K values.
+     Group body's N=256 minimum is K=4 (539,323), with K=16/K=32 both
+     WORSE than K=1. This driver runs `TRIALS` (default 3) and reports the
+     MINIMUM, unlike `run_bench.sh`/`compare.sh`'s BENCH_TRIALS=5 +
+     median + printed spread discipline — there is no spread column here to
+     tell a real knee from within-run noise, and the swings above (up to
+     ~2.4x between adjacent K at fixed N) are at least as large as the
+     regressions D12-style budgets in this project are tuned to catch.
+
+  Compile-time/code-size scaling (a non-timing metric, immune to both
+  problems above) IS clean and monotonic in K as expected — not the
+  question this sweep exists to answer, but confirms the harness itself is
+  measuring real artifacts, not an infrastructure bug.
+
+  **Verdict for the manager: inconclusive, not negative.** The sweep
+  infrastructure works end to end on a real `--unroll`. Getting an actual
+  answer needs either (a) [M4.6a]'s budget calibration landing first, so
+  the N=1000/4000 `max`/`fail` cells stop dying on the placeholder ceiling,
+  or (b) this driver gaining `run_bench.sh`-style TRIALS-with-median-and-
+  spread before its numbers are trusted at the margin a K choice needs —
+  and D18 says default K stays wherever it is until a real answer exists,
+  not until this best-effort one does.
+
 ## Archived outputs
 
 - **`measure_baseline.txt`** / **`step_charge.txt`** / **`clamp_arith.txt`** /
-  **`census_default.txt`** / **`work_charge.txt`** / **`counter_diff.txt`** — one run of each probe above, with its own source
+  **`census_default.txt`** / **`work_charge.txt`** / **`counter_diff.txt`** /
+  **`bench_k.txt`** — one run of each probe above, with its own source
   header (repo, commit, gcc, date). Stable-named so a re-run diffs against
   them, D35's shape. Evidence for the panel, never an oracle: no check reads
   them.
+
+  `bench_k.txt` (M4.6b, 2026-08-17) is the first run with a REAL K axis
+  (`--unroll` has a producer on this tree) rather than the "shipped"-collapsed
+  placeholder every earlier archived mention of this script describes — see
+  the verdict recorded at `probes/bench_k.sh`'s own entry above for why it is
+  still inconclusive on K=8 specifically (frame-budget-placeholder cells and
+  measurement noise, not a bad run).
 
   `step_charge.txt`'s 1 MB `--engine=vm` quadratic row is absent on purpose and
   its absence is the finding — the row exceeded a 120 s wrapper during
