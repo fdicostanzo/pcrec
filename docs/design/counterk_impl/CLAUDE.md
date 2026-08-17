@@ -272,6 +272,23 @@ cannot be re-run is not a measurement.
   and D18 says default K stays wherever it is until a real answer exists,
   not until this best-effort one does.
 
+  **PREREQUISITE (b) LANDED, [BENCH-VM] (2026-08-17):** `driver.c` now
+  prints every trial's own nanosecond sample instead of collapsing them to
+  the minimum, and `run_cell` judges a MEDIAN plus a printed max/min
+  SPREAD per regime cell — `run_bench.sh`/`compare.sh`'s own `median()`/
+  `spread()` functions, copied verbatim — with `TRIALS` raised 3 -> 5 to
+  match their `BENCH_TRIALS` default. A same-input rc MISMATCH across
+  trials (which should be structurally impossible — `rx_search` is a pure
+  function of its arguments — so a disagreement is a determinism finding,
+  not noise) is now its own loud, distinct verdict rather than silently
+  trusting the last trial's rc. `bench_k.txt` above is NOT re-run by this
+  upgrade — it still reflects the old min-of-3 driver's column shape and
+  is stale relative to this format; a fresh `--full` run is prerequisite
+  (a) plus a re-run away from actually answering the K=8 question, and
+  that re-run and the K ruling itself are still owed, not this row's
+  charter (BENCH-VM's own charter is the three compare.sh cases plus this
+  driver upgrade — see docs/dev/plan.md).
+
 ## Archived outputs
 
 - **`measure_baseline.txt`** / **`step_charge.txt`** / **`clamp_arith.txt`** /

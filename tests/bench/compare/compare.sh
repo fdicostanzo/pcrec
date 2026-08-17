@@ -523,6 +523,71 @@ buf = bytes(rng.choices(b"01", k=n))
 with open(os.path.join(outdir, "j_bits_captures.bin"), "wb") as f:
     f.write(buf)
 
+# (k) '(a{10,20}){10,50}' -- BENCH-VM, the K23/MRL EXEMPLAR CLASS
+# (docs/design/k23_impl/, D51 ruling 1's fix of record): a throughput floor
+# watching that the MRL pruning fix STAYS cheap. One planted 110-byte run of
+# 'a' near 90% of 8 MB -- 110 sits in the pre-fix k23_impl/out/diff3_prune.tsv
+# table's hazard band (1,957,091 steps to resolve the decomposition without
+# MRL; MRL prunes it to ~1) but NOT at the table's worst point (100): this
+# suite's own oracle, libpcre2 (via eng_pcre2.c, no --no-captures on this
+# case), is NOT a terminating oracle inside the hazard band's worst cells
+# (D52's own grounding measurement -- confirmed here directly: n=100 and
+# n=105 both return PCRE2_ERROR_MATCHLIMIT/status=mlimit from pcre2-interp
+# AND pcre2-jit on this exact pattern+subject shape, which compare.sh's
+# agreement check correctly treats as a disagreement and marks the whole
+# case INVALID rather than a measurable result). n=110 is the first length
+# where every engine (pcrec, pcre2-interp, pcre2-jit, python-re) returns a
+# clean verdict -- checked directly against this exact 8 MB subject before
+# being wired in, not assumed from the table alone. Filler alphabet
+# deliberately EXCLUDES 'a' (case (g)'s technique) so no accidental 'a'-run
+# can occur anywhere except the plant -- the only possible match in the whole
+# buffer. Measured on this tree (2026-08-17, mechanics probe, not a floor
+# run): default (MRL) build 0.000502s/15947 MB/s vs an -fno-length-prune
+# control build 0.027267s/293.395 MB/s on the identical subject -- a ~54x
+# gap, so a regression in the MRL fix reads as a catastrophic throughput
+# crash on this case, not a percentage nudge.
+LOWER_NO_A = bytes(c for c in LOWER if c != ord('a'))
+buf = bytearray(bytes(rng.choices(LOWER_NO_A, k=n)))
+k_plant_pos = n - 2000
+buf[k_plant_pos:k_plant_pos + 110] = b"a" * 110
+with open(os.path.join(outdir, "k_mrl_dense.bin"), "wb") as f:
+    f.write(buf)
+
+# (l) '([a-z]{2,4}){2,8}b' -- BENCH-VM, the site-dense shape D51 ADDENDUM
+# measured at "n=40 -- short subject, high bound-site density per unit of
+# matching work", the accepted-cost tail (clamp arm +4.2-8.3% across three
+# independent pinned runs in that measurement) of the [ENG-CLAMP] MRL clamp.
+# Fixed 40-byte subject of all 'b' (every byte is itself a member of the
+# [a-z] class AND the pattern's own trailing literal, which is exactly what
+# maximizes decomposition ambiguity per byte -- a subject with no 'b' at all
+# was tried first and showed no signal, since the class then has nothing to
+# be ambiguous ABOUT). python3 re confirms match [0,33) (span shorter than
+# the 40-byte subject: the pattern's own max consumption is 8*4+1=33 bytes,
+# so bytes 33-39 are never reached -- deliberate, not a bug, and this case's
+# `l_sitedense.bin` is exactly 40 bytes by design, not padded further).
+l_buf = b"b" * 40
+with open(os.path.join(outdir, "l_sitedense.bin"), "wb") as f:
+    f.write(l_buf)
+
+# (m) 'a(b|c)+d' (captures ON, unlike case (i)'s --no-captures pin) --
+# BENCH-VM, flooring the D53 crossover evidence: "the hybrid wins at match
+# offsets past ~8-12 bytes" (VM-only's start++ retry pays a full call per
+# candidate start position; the hybrid's DFA prefilter pass is a flat ~80ns
+# tax). Same pattern shape and short-subject-latency convention as case (i)
+# (60-byte subject, offset 20) but at OFFSET 40 -- comfortably past the
+# crossover rather than straddling it -- and with captures left ON, so this
+# case takes the VM+prefilter hybrid D53 is actually about, which case (i)'s
+# --no-captures pin routes away from (see this directory's CLAUDE.md and
+# README.md's Scope disclosure: (i) is deliberately span-only). Measured on
+# this tree (2026-08-17, mechanics probe): default hybrid build 1146.924
+# MB/s vs an --engine=vm (no prefilter) control build 491.647 MB/s on the
+# identical 100-byte subject at this offset -- confirms the hybrid's win
+# regime is real and reachable at this shape before any floor is set.
+m_buf = b"z" * 40 + b"abcbcd" + b"q" * 54
+assert len(m_buf) == 100
+with open(os.path.join(outdir, "m_offsetdeep.bin"), "wb") as f:
+    f.write(m_buf)
+
 print("subjects generated in", outdir)
 PYEOF
 )"
@@ -539,10 +604,10 @@ echo
 # Case matrix
 # =========================================================================
 
-CASE_IDS=(a b c d e f g h i j)
+CASE_IDS=(a b c d e f g h i j k l m)
 # CASES=<comma-separated case ids> restricts which cases process_case runs,
 # e.g. CASES=e,d for a fast mechanics smoke-test instead of the full
-# 10-case/~4-engine run. Subjects for ALL cases are still generated (cheap
+# 13-case/~4-engine run. Subjects for ALL cases are still generated (cheap
 # relative to the per-case build+measure work), so this only trims the
 # expensive part.
 if [ -n "${CASES:-}" ]; then
@@ -560,6 +625,9 @@ declare -A CASE_DESC=(
     [h]="'.*=.*' greedy backtracking stressor over a 1 MB key=value line (match)"
     [i]="'a(b|c)+d' over a 60-byte subject -- short-subject per-call overhead regime"
     [j]="'([01]*)1([01]{8})' over 8 MB random 0/1 bytes (match likely) -- DD-9 capture-bearing sibling of (f), engine_m4.md 8.5 non-regression floor for the VM+prefilter hybrid"
+    [k]="'(a{10,20}){10,50}' -- BENCH-VM, K23/MRL exemplar class, one planted 110-byte hazard-band run near 90% of 8 MB (match), watching the MRL fix stays cheap"
+    [l]="'([a-z]{2,4}){2,8}b' over a fixed 40-byte all-'b' subject (match) -- BENCH-VM, D51 ADDENDUM's site-dense +8%-cost shape, short-subject per-call overhead regime"
+    [m]="'a(b|c)+d' (captures ON) over a 100-byte subject, match at offset 40 -- BENCH-VM, D53's hybrid-wins-past-~8-12-bytes crossover regime, unrepresented by case (i)'s --no-captures pin"
 )
 declare -A CASE_PATTERN=(
     [a]='needleXYZW'
@@ -572,6 +640,9 @@ declare -A CASE_PATTERN=(
     [h]='.*=.*'
     [i]='a(b|c)+d'
     [j]='([01]*)1([01]{8})'
+    [k]='(a{10,20}){10,50}'
+    [l]='([a-z]{2,4}){2,8}b'
+    [m]='a(b|c)+d'
 )
 declare -A CASE_SUBJECT=(
     [a]="$subj_dir/a_needle.bin"
@@ -584,9 +655,14 @@ declare -A CASE_SUBJECT=(
     [h]="$subj_dir/h_kv.bin"
     [i]="$subj_dir/i_short.bin"
     [j]="$subj_dir/j_bits_captures.bin"
+    [k]="$subj_dir/k_mrl_dense.bin"
+    [l]="$subj_dir/l_sitedense.bin"
+    [m]="$subj_dir/m_offsetdeep.bin"
 )
-# metric: "throughput" (MB/s, default) or "latency" (ns/call, case i)
-declare -A CASE_METRIC=( [i]="latency" )
+# metric: "throughput" (MB/s, default) or "latency" (ns/call, cases i/l/m --
+# l and m are both short, per-call-overhead-regime subjects like i, see their
+# CASE_DESC entries)
+declare -A CASE_METRIC=( [i]="latency" [l]="latency" [m]="latency" )
 # CASE_FLAGS: extra pcrec flags for this case's build, same purpose D46 gave
 # run_bench.sh's build_bench_bin -- a benched case must PIN the configuration
 # it measures, or a later default change silently re-points the measurement
@@ -629,6 +705,9 @@ declare -A CASE_EXPECT_ENGINE=(
     [h]="DFA"
     [i]="DFA"
     [j]="VM"
+    [k]="VM"
+    [l]="VM"
+    [m]="VM"
 )
 
 # =========================================================================
