@@ -113,4 +113,27 @@ own floor), and the fix is a design decision (pin (c)/(i) to `--no-captures`
 to restore their original DFA-only intent, vs. accept new floors that measure
 what ships by default) rather than a mechanical one.
 
+**Suspect-window fact for the bisect: case (c)'s artifact stamps the
+VM/hybrid path, not the DFA path.** `rx_info.engine` is `ENGM_VM` (2), not
+`ENGM_DFA` (1); `RX_ENGINE_WHY` / `engine_why` reads "capture group at
+pattern offset 0". So whatever moved (c) from ~388 MB/s to ~245-251 MB/s
+lives on the VM/prefilter side of the split (D42.1 onward: possessify,
+revdet, counter-K), not on the pure-DFA side (K18's closure rewrite is a DFA
+change and both cases' artifacts never touch that code path at all — they
+were never on it before D42.1 either, since D42.1 is precisely what moved
+them off ENGM_DFA).
+
+**Also worth the manager's attention: `floors.tsv`/`gate.sh` are not in any
+battery leg.** `make bench` runs only `run_bench.sh`'s separate suite (see
+this directory's own README/CLAUDE.md); `compare.sh`/`gate.sh` here are
+deliberately manual — "Slow (tens of minutes, full matrix), so it is run
+deliberately... rather than from a make target" per this file's own opening
+line. That is exactly how (c)/(i) went three days (2026-08-14 to
+2026-08-17) with a floor silently measuring the wrong engine and nothing
+red anywhere — the same instrument-outside-the-battery shape as the
+fuzzer-red incident this project already has a name for. Whether `gate.sh`
+should join a battery leg (even a manual/checkpoint one, given its own
+"tens of minutes" cost) or just get an explicit "ages freely, re-run before
+trusting" marker is a call this finding raises but does not answer.
+
 Maintenance: update this file when cases, engines or gating rules change.
