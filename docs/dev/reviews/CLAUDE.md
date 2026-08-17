@@ -356,6 +356,30 @@ Two rules earned the hard way and enforced here:
   M-F1 reproduced verbatim by the critic's own `sort -u`. Two Frank
   rulings queue: adopt-MRL; prefilter-ceiling v1-vs-fallback.
 
+- **2026-08-17-r27-dd13a.md** — R27, two critics (+ forks) on the
+  [DD-13a] format requirements note. The census survived a ~50-point
+  re-derivation EXACTLY; the blocker was three-way independently
+  confirmed and was the note's own §13-warned failure — an unreproduced
+  "grep returns 3 hits" claim (real: 6) hiding subst_template_design.md
+  §8.1's repl/s/sg/serr, the most concrete format prior art in the
+  repo. One finding ran in the note's FAVOR (R-GEN-1 is n=5, not the
+  self-criticized n=1). The DIALECT conclusion survived its own
+  steelman. Author fix pass merged same session (4b2e0b7).
+- **2026-08-17-r28-mrl-landing.md** — R28, the [M4.6d] LANDING panel
+  (three lenses on the delivered branch; the design had R26). Soundness:
+  SOUND TO MERGE, six of six claims survived a ~285k-cell independent
+  battery including a DFA-engine oracle that terminates where python
+  hangs (instrument adopted). Two instrument MAJORS closed before merge:
+  MRL had zero sabotage coverage (now S58-S63, all DETECTED), and the
+  answer-more exemption's "2 cells" was per-PATTERN reports miscounted
+  as cells (real: 22 — now counted, printed, asserted, and refereed
+  22/22 by a --no-captures DFA third arm). The panel's best find, from
+  two directions independently: the lattice rounding is behaviorally
+  DEAD (the folded loop bound is SELF-ROUNDING; the shipped emitter
+  cannot express R26 E1), its named guard grepped an argument rather
+  than the property, and the actually load-bearing underflow guard's
+  removal is an ASan overflow invisible to answer sweeps.
+
 The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
