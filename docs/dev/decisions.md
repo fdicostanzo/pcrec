@@ -4447,3 +4447,70 @@ lose at every offset). Mixed/unknown workloads route to OS-0's named
 entry points (both emitted, caller chooses statically). Engine
 selection thereby becomes [ENG-PGO]'s SECOND named customer, alongside
 [ENG-THIN]'s clamp-cost tuning.
+
+## D54 — [OPT-ALTCLS]'s pinned close: stage 3 MEASURED-NO (guard does not merge, not even denied-by-default), Cell A's -15% superseded by -7.61% (manager, 2026-08-17/18, thirtieth session, on the altcls lane's pinned run)
+
+The row's own decision-grade instrument (docs/design/altcls_pinned_impl/,
+best-of-9 x 3 interleaved rounds, mpstat-verified quiet box) settles two
+open items.
+
+**Stage 3 (FIRST-set entry guards) is MEASURED-NO and does NOT merge —
+not the implementation, not denied-by-default.** The prototype
+(`src/opt/firstset.c`, `src/gen/emit_vm.c`'s `vm_alt_guard`) was built,
+correctness-validated (0 divergences over ~48k pcrec-vs-pcrec
+differential cells), and measured under three cells: default engine on
+the row's own quantified-keyword shape (no benefit distinguishable from
+round-to-round noise), `--engine=vm` on the identical shape (a real
+~11x, confirming the dev-grade signal), and a purpose-built shape with
+the alternation NOT at the pattern's start — the one structural
+candidate for "default routing, weak prefilter coverage," since
+`select_engine.c`'s `fit.prefilter` derivation has no
+pattern-shape-dependent path to false under auto selection today, only
+explicit flags (also no benefit; guard-on/off medians overlapped within
+noise across all three rounds). No cell under DEFAULT (real-caller)
+routing showed a benefit. The ~11x win is real but confined to
+`--engine=vm`, a comparability/debug facility (DD-8/R21 E-6), which
+does not on its own justify a new selection axis plus the full D46
+stamp+force+sabotage apparatus on the default path — D53's own
+precedent (the m46e lane's trie-switch decline) is exact here down to
+the shape of the argument. RULING: the guard/firstset implementation
+does not merge, not even denied-by-default — a denied-by-default
+facility with no default-path customer still buys a permanent
+maintenance surface (D46 stamp, force flag, sabotage row, CLAUDE.md
+prose) for a facility nothing calls. It survives in git history (branch
+lane/altcls, commit `a07a87c`, reverted at `8b5acb4`) and is
+re-derivable from the archived measurement record rather than kept live
+in the tree. Revisit-when: (1) M6's VM-mandatory constructs (backrefs,
+lookaround) land, where the capture-erased prefilter becomes an
+OVER-approximation and VM cascade reject-traffic rises for a reason
+this measurement could not exercise; (2) `--engine=vm` becomes a
+supported deployment path rather than a comparability facility; (3)
+[ENG-PGO]/bench evidence surfaces real guard-eligible cascade traffic
+under the default engine.
+
+**Cell A: stage 2's -15.0..-15.6% figure is SUPERSEDED by -7.61%
+(confirmed direction, corrected magnitude).** The design-evening probe
+behind the original figure was session-scratch with its exact pattern
+and subject construction never archived. The row's own re-measurement
+obligation ("re-run under the row's own D35-archived instrument at
+build") surfaced a real instrument bug on its first attempt — the
+reproduction pattern was non-capturing and silently routed to the pure
+DFA engine, where minimization makes the factored/unfactored artifacts
+BYTE-IDENTICAL (verified by diff), so that run's ~0% delta was two
+copies of one program, not a finding about stage 2. Corrected to force
+VM routing, the pinned re-run measures -7.61% (n=27, stdev 0.226us on a
+~47.2us mean, clean non-overlapping distributions against the
+unfactored arm) — real, reproducible, and in the claimed direction, at
+roughly half the original figure's magnitude. A supplementary
+capture-placement variant (whole-match capture outside the loop vs.
+inside it) moved the number to -9.6% without closing the gap fully.
+RULING: -7.61% is the number of record for the [OPT-ALTCLS] row; the
+-15% figure is not further chased — the two untried variables that
+could close the remaining gap (a `--engine=vm` reproduction removing
+the hybrid prefilter's own dilution of the effect; matching the
+original probe's exact, never-archived subject shape) are recorded in
+the archive as the next step if this cell reopens, not as open work.
+
+Revisit-when (Cell A): the two untried variables above, if a future
+session has reason to chase the remaining gap; otherwise none — the
+row's throughput claim is settled at -7.61%.

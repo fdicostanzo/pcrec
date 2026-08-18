@@ -2282,3 +2282,136 @@ Known M1 limitations (tracked for later milestones):
   driver's median/spread upgrade (the INCONCLUSIVE verdict's stated
   prerequisite, docs/design/counterk_impl/bench_k.txt). Sonnet-sized,
   one lane.
+
+- [OPT-ALTCLS] STATE:completed (2026-08-18, thirtieth session, altcls lane; stages 1+2 merged 621ffce, stage 3 measured-no per D54, row close merged de7cfa1) — ALTERNATION→CLASS NORMALIZATION
+  (Frank, 2026-08-17, twenty-ninth session, from reading --emit-ir on
+  `a(b|c)+d` vs `a([bc])+d`): an IR/AST pass merging maximal runs of
+  ADJACENT single-character branches (1-char literal or class atoms:
+  `b|c`→`[bc]`, `[ab]|[cd]`→`[abcd]`, `b|[cd]`→`[bcd]`) into one class
+  node. SOUNDNESS: each merged branch consumes exactly one byte at the
+  same position, so leftmost-first preference among them is
+  indistinguishable — same match set, same span, same capture spans;
+  preference relative to UNMERGED (multi-char) branches is preserved by
+  merging only ADJACENT runs in place. MEASURED MOTIVATION (2026-08-17,
+  the two exemplars above): the VM tier is the payoff — rung selection
+  sees the class body and downgrades revdet→cursor: 23 labels/66
+  events/3 frames/2 resume points → 4/18/1/0, emitted C 445→380 lines,
+  and the cursor form is possessified span-scan (a fraction of the
+  steps); the DFA tier gains a small byte-equivalence-class merge (b,c
+  currently stay distinct classes when spelled as alternation — wider
+  rx_ftr table). INTERACTIONS: shrinks the [M4.6e]/D53 trie-switch
+  candidate pool by deleting mergeable alternations outright (better
+  than dispatching over them); post-merge shapes re-enter possessify/
+  MRL/counter analyses with class bodies, so the pass runs BEFORE
+  those. Obligations at build: D46 stamp+force for the pass (it is a
+  selection point), a permanent sabotage row, differential validation
+  alternation-spelling vs class-spelling on identical subjects
+  (match + all capture slots), and the survey question "what do PCRE2/
+  RE2 normalize here" answered by MEASUREMENT not docs. Sonnet-sized;
+  Frank schedules. THE GENERALIZATION LADDER (Frank probing for the
+  larger algo, 2026-08-17, measured same conversation): per-position
+  class merging of MULTI-char branches is UNSOUND — classes are
+  position-independent, branches carry cross-position correlation
+  (`frank|fred` → `fr[ae][nd]k?` accepts the cross-products fran/
+  fredk/frad/fren: 4/6 probe mismatches vs python, verified). The
+  correlation-preserving forms, cheap→general: (1) this row's
+  single-char merge (no correlation exists); (2) PREFIX/SUFFIX
+  FACTORING at the AST level (`frank|fred`→`fr(?:ank|ed)` — sound,
+  branch-order-preserving, and the automatic pass must emit
+  NON-CAPTURING groups or it changes the group count; the DFA engine
+  has it via M2.8's trie, VM emission does NOT factor today —
+  MEASURED WORTH IT 2026-08-17 (manager probe, Frank's exemplar
+  `frank|fred|brad|bobby|janet` vs `fr(?:ank|ed)|b(?:rad|obby)|janet`,
+  pinned best-of-9 ×3 runs): single-shot marginal (first branch +1-2%,
+  late branches -5..-8%, no-match ±0.5% — the prefilter owns those),
+  but the QUANTIFIED form `(...)+` over 30 concatenated names is
+  -15.0..-15.6% reproducible — per-attempt savings amplify under
+  repetition, the keyword-tokenizer shape. Stage 2 is therefore
+  chartered WITH stage 1; probe was session-scratch, re-run under the
+  row's own D35-archived instrument at build); (2b, STAGE 3 — Frank,
+  same conversation, from the `(?=[a-f])(?:a|...|f)` idea):
+  FIRST-SET ENTRY GUARDS — for an alternation of multi-char branches,
+  emit ONE derived first-byte-set bitmap test (`frank|...|janet` →
+  `[fbj]`) before the branch cascade. Needs NO lookahead module — the
+  FIRST set is a compile-time fact the emitter plants like MRL plants
+  its bound; note the all-single-char case is stage 1's territory
+  (the class IS the whole match, no guard needed). Economics: saves
+  the REJECT path (1 test vs N first-byte compares, grows with N),
+  costs +1 test on the accept path — earns where reject-traffic × N
+  is large, which the hybrid's prefilter TEMPERS (VM reject traffic
+  is mostly once-per-loop-exit in quantified alternations): strictly
+  measure-at-build. Generalizes past alternations (any choice point
+  can carry its FIRST-set guard); DUALITY worth keeping: MRL is
+  length-viability, FIRST sets are byte-viability — cheap
+  necessary-condition guards whose everywhere-limit IS the DFA.
+  PCRE2/RE2 both compute start-byte sets — survey by measurement.
+  Adjacent: the unfiled required-byte prescan/skip OPT idea is this
+  family's scan-side sibling. (3) full fragment DETERMINIZATION with
+  direct automaton emission = [ENG-ISL] exactly (states encode the
+  correlations; the overlap/preference subtlety — leftmost-FIRST vs
+  DFA-longest on `foo|foobar` shapes — is the exactness proof that
+  row already owns; the ladder 1→2→2b→3 is a lattice of PARTIAL
+  DETERMINIZATIONS, each trading compile-time analysis and code size
+  for run-time checks removed). DFA→regex re-spelling is rejected as a route
+  (state-elimination blowup, loses preference); the automaton is the
+  final form, not a rewritten pattern. Frank's shape class is itself
+  candidate D50-gate evidence for [ENG-ISL] if bench/PGO shows it
+  hot.
+
+  **ROW CLOSE (2026-08-17/18, altcls lane).** Stage 1 (single-char merge)
+  and stage 2 (prefix factoring) LANDED and MERGED to main: D46 stamp+force
+  (`RX_ALTCLS_MERGES`/`RX_ALTCLS_FACTORED`, `-fno-altcls-merge`/
+  `-fno-altcls-factor`), differential validation (38 designed + 78
+  corpus-derived patterns, ~82k cells, 0 divergences), oracle-verified
+  `.rxt` corpus, two permanent mech sabotages (S66/S67, both DETECTED).
+  Landing also found and fixed a real regression the pass caused in
+  `tests/codegen/run_trie_identity.sh`'s M2.8 trie positive controls
+  (altcls pre-empted the exact bare-literal-prefix shape those controls
+  were built from, vacuously; fixed by widening the controls' bytes to
+  two-member classes — see `tests/codegen/CLAUDE.md`).
+
+  **Stage 2's -15.0..-15.6% figure is SUPERSEDED.** The row's own D35
+  pinned re-measurement (`docs/design/altcls_pinned_impl/`,
+  best-of-9 x 3 interleaved rounds, mpstat-verified quiet box) measures
+  **-7.61%** (n=27, stdev 0.226us on a ~47.2us mean, clean non-overlapping
+  distributions against the unfactored arm) on the identical
+  quantified-30-name-keyword shape. Direction CONFIRMED; magnitude
+  superseded — the design-evening figure was session-scratch with its
+  exact pattern/subject never archived, and is not further chased per
+  ruling (a capture-placement variant moved the number to -9.6% without
+  fully closing the gap; two untried variables — a `--engine=vm`
+  reproduction, matching the original subject shape exactly — are
+  recorded in the archive as the next step if this cell reopens).
+
+  **Stage 3 (FIRST-set entry guards): MEASURED-NO, per D53's own posture
+  — a full success outcome for the row, not a failure.** Implemented as a
+  working prototype (`src/opt/firstset.c`, `src/gen/emit_vm.c`'s
+  `vm_alt_guard`), correctness-validated (0 divergences over ~48k
+  differential cells), then measured under the manager's decision frame:
+  no cell under DEFAULT (real-caller) routing showed a benefit
+  distinguishable from noise, including a purpose-built arm testing an
+  alternation NOT at the pattern's start (weak prefilter selectivity) —
+  the one shape structurally capable of showing default-path benefit
+  given `select_engine.c`'s `fit.prefilter` derivation is unconditionally
+  true whenever the VM is auto-selected (no pattern-shape-dependent path
+  to false exists today outside explicit flags). The real ~11x win Cell B
+  measures is confined to `--engine=vm`, a comparability/debug facility
+  (DD-8/R21 E-6), which does not on its own justify a new selection axis
+  plus the full D46 stamp+force+sabotage apparatus on the default path —
+  `[m46e_impl]`'s trie-switch decline is the exact precedent this ruling
+  follows. **Disposition: does NOT merge, not even denied-by-default** —
+  a denied-by-default facility with no default-path customer still buys a
+  permanent maintenance surface for nothing. The implementation survives
+  in git history (worktree `lane/altcls` commit `a07a87c`, reverted at
+  `8b5acb4`) and is re-derivable from `docs/design/altcls_pinned_impl/`'s
+  archived record rather than kept live in the tree.
+
+  REVISIT-WHEN (stage 3, also recorded in
+  `docs/design/altcls_pinned_impl/CLAUDE.md` beside the evidence): (1)
+  M6's VM-mandatory constructs (backrefs, lookaround) land — the
+  capture-erased prefilter becomes an over-approximation for those
+  patterns, raising VM cascade reject-traffic for a reason this session's
+  shapes could not exercise; (2) `--engine=vm` ever becomes a supported
+  deployment path rather than a comparability facility; (3)
+  `[ENG-PGO]`/bench evidence surfaces real guard-eligible cascade traffic
+  under the default engine.

@@ -9737,3 +9737,55 @@ closes: the stage-2 quantified-keyword pinned re-measurement (D35
 instrument being built now; runs in a bundled quiet window with stage
 3's measurement), and stage 3 itself (FIRST-set guards,
 measure-at-build, D53 posture).
+
+## 2026-08-18 (EDT), thirtieth session (cont.) — [OPT-ALTCLS] CLOSED (stage 3 measured-no, D54)
+
+**[OPT-ALTCLS] CLOSED** (altcls lane, branch lane/altcls, commits
+3834dbc..0d97d31; stages 1+2 merged 621ffce, row close merged de7cfa1;
+rulings placed as D54). Stage 3 (FIRST-set entry guards) was built as a
+working prototype (pcrec_firstset, vm_alt_guard),
+correctness-validated at 0 divergences over ~48k differential cells,
+then measured strictly at build per D53's posture. Decision-grade
+pinned run (docs/design/altcls_pinned_impl/, best-of-9 x3 interleaved
+rounds, mpstat-verified quiet box, window coordinated while the other
+lane held heavy runs): no cell under DEFAULT engine routing showed a
+guard benefit distinguishable from noise, including a purpose-built
+weak-prefilter-coverage probe (alternation not at pattern start — the
+one structural candidate, since select_engine's fit.prefilter has no
+pattern-shape-dependent path to false under auto selection today). The
+guard's real ~11x is confined to --engine=vm, a comparability facility
+(DD-8/R21 E-6). RULING: MEASURED-NO; the implementation does NOT merge,
+not even denied-by-default (a denied facility with no default-path
+customer still buys a permanent D46+sabotage maintenance surface for
+nothing — D53's trie-switch decline is the exact precedent). Prototype
+survives in git history (a07a87c, reverted 8b5acb4) + the archived
+record; three revisit-when triggers recorded (M6 VM-mandatory
+constructs, --engine=vm as a real deployment path, ENG-PGO/bench
+evidence).
+
+Same pinned run RE-MEASURED stage 2's throughput claim and found its
+own first attempt was an instrument bug — a non-capturing reproduction
+pattern silently routed to the DFA engine, where minimization makes
+factored/unfactored artifacts byte-identical (verified by diff): the
+first Cell A run measured two copies of one program. Corrected to
+force VM routing: **-7.61%** (n=27, stdev 0.226us, non-overlapping) —
+stage 2's direction confirmed at roughly half the design evening's
+unarchived -15%. RULING: -7.61% is the number of record; the -15% is
+demoted to unreproduced-methodology and not chased further (two
+untried variables recorded in the archive as reopen-steps, not open
+work). All in-tree -15% citations annotated.
+
+Net for the row: two real optimizations landed and merged (stage 1+2 —
+bench case (m), the stage-1 exemplar, halved 125.42→59.94 ns/call),
+one honest measured-no with a full D53-style record, and the lane
+caught its own vacuous-instrument failure mode twice (trie-identity
+positive controls at the stage 1+2 landing; Cell A's DFA-routing bug
+at the pinned close) — both self-caught, reported as findings.
+
+Same conversation, filed from Frank's `(aabbc+)` observation: the
+[OPT-A] LITERAL-RUN COALESCING lead (verify-side memcmp for maximal
+literal runs; measured — gcc -O2 leaves four separate cmpb on the VM
+path, per-byte bounds checks defeat load-merging; the DFA path pays
+rx_fcls/rx_ftr table machinery per byte on a chain with no choice
+structure; accept-path asymmetry noted vs stage 3's reject-path no).
+Commit e208b0b.
