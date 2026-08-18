@@ -409,6 +409,34 @@ real axis, but they are tested DELIBERATELY as their own labelled sweeps,
 not smuggled in as noise inside every differential. (This mirrors the
 per-module-not-blanket rule the `--features` CLI surface already pins.)
 
+**[M4.7e] (2026-08-17) applied this principle to the capture-span
+differential, and it turned out to already be satisfied: no new code
+needed.** `tests/fuzz/fuzz.py` passes no `--features` flag at all, so every
+compile it runs (the fixed-seed gate below, and the at-scale campaign) goes
+through the bare-invocation default — `PCREC_DEFAULT_FEATURES` (D37/STD1b,
+`src/parse/enabled.c`), currently `"std1"` = `{classes, modifiers}`. That IS
+open-gate, not closed-gate: both modules with real producers and PC-3
+differential coverage are already ON for the whole fuzzer, not merely
+recognized. FOCUSED still holds too — the generator produces no construct
+gated by any module outside std1 (`EXCLUDED FROM GENERATION`,
+tests/fuzz/README.md), so no cross-module interaction noise is smuggled in
+either.
+
+**GATE-ON, the wiring:** `make test-capturediff`
+(`tests/fuzz/run_capturediff_gate.sh`) runs the SAME fuzz.py at one pinned
+seed (its own argparse defaults — 300 patterns, 15 subjects), asserting
+fuzz.py's own zero-divergence exit code. The distinction that makes this
+different from `make fuzz` staying manual-only (README.md's own reasoning:
+"a clean run today says nothing about tomorrow's random seed") is that a
+FIXED seed has none of that problem — it is exactly as reproducible as any
+other differential in this tree. The many-seed, many-thousand-pattern
+CAMPAIGN (tests/fuzz/campaigns/) stays the manual/checkpoint instrument for
+finding NEW divergences; the fixed-seed gate exists to catch a REGRESSION
+against ones already known to be absent. It probes libpcre2 presence itself
+before ever calling into fuzz.py (fuzz.py's own oracle plumbing is
+deliberately fail-hard, right for a manual tool, wrong for a `make test`
+section on a libpcre2-less box) and SKIPS loudly, PC-3's own pattern.
+
 ## Tiered testing ([TT-1], 2026-08-13)
 
 The full suite has crept from ~15 minutes to ~5 minutes parallelized and
@@ -459,6 +487,7 @@ project journal entry.
 | `make test-prefilter` | `tests/prefilter/run_prefilter_tests.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
+| `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
 
 **[ENG-BREP] (2026-08-16) — the D45 positive control needed `-fno-revdet`, and

@@ -69,7 +69,10 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   TSan silence. SKIPS loudly (exit 0) if `$CC` lacks `-fsanitize=thread`.
   Both halves are sabotage-validated with planted races — see its CLAUDE.md
   for the measured TSan race reports
-- **fuzz/** — PCRE2-oracle differential fuzzer (`make fuzz`), run manually and at checkpoints
+- **fuzz/** — PCRE2-oracle differential fuzzer. The many-seed campaign
+  (`make fuzz`) stays manual/checkpoint-only; **[M4.7e]** added a
+  fixed-seed slice wired into `make test` as `make test-capturediff`
+  (SKIPS loudly without libpcre2, PC-3's pattern)
 - **classes/** — module `classes` corpus (MOD-0.3c): the first per-module
   test directory. Blocks carry the `features classes` directive; see its
   CLAUDE.md for the §9.3 watched-failing record and the oracle split
