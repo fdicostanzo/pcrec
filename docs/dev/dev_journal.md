@@ -9856,3 +9856,122 @@ held; battery 10,350/0). Contract text needed no change —
 match_api_m4.md §5's rx_info table already carries pattern_len, so
 [M4.7f] inherits it as-is. K9 stays OPEN on the DD-3 half. Merge
 e59f460.
+
+## 2026-08-18 (EDT), thirtieth session (cont.) — [M4.7e] closed: 90,000 patterns, 0 divergences; GATE-ON wired into make test
+
+lane/m47e delivered the M4.7 differential row (merge d0d2bd1): a
+25-seed/75,000-pattern capture-span campaign (842,740 both-accept
+subject-pair comparisons) found zero accept/reject and zero content
+divergences against libpcre2 10.46, post-[OPT-ALTCLS] so any
+divergence would have attributed cleanly. Measured, rather than
+assumed, that the differential-gate principle's OPEN half (fuzz.py's
+bare invocation already resolves through PCREC_DEFAULT_FEATURES=std1)
+was buying nothing — the generator never emitted classes-module or
+modifiers-module syntax, so an open gate had nothing walking through
+it. A manager-ruled bounded addendum (MODULE_CLASS_ATOMS at named
+weight 0.15) closed the classes half, proven by a hardened
+stats["module_construct"] counter — 26.2% of a follow-on
+15,000-pattern batch, still 0 divergences (171,060 more pairs).
+modifiers-module generation recorded as owed to [M7.0], not silently
+dropped. GATE-ON residue: tests/fuzz/run_capturediff_gate.sh wires a
+fixed-seed slice into make test (test-capturediff; PC-3-style loud
+SKIP without libpcre2) pinning EXACT expected counts for all 18
+summary buckets INCLUDING the module-construct row pinned NONZERO
+(75/300) — the vacuity it found can never silently return. The lane
+also caught its own extraction bug (the literal "{0}" in a label
+misread as a count by a first-number grab — anchored on the label's
+colon instead, verified against an injected value). The at-scale
+many-seed campaign stays the manual/checkpoint instrument
+(tests/fuzz/campaigns/, D35 provenance). Post-merge battery
+10,350/0 with the new gate PASS on its pinned counts.
+## 2026-08-18 (EDT), thirtieth session (cont.) — [M4.7b] closed: K7 fixed (D56, K25 filed)
+
+[M4.7b] — K7 fixed, and K7's own diagnosis was the thing that was wrong
+
+The lane's headline is not the fix but the misdiagnosis it corrected. K7 has
+said since 2026-08-10 that `{0,n}` "builds an optional chain that blows past the
+memory the cap was meant to bound" — locating the cost in the DFA subset
+construction, where the caps live. It was not there. Per-stage RSS
+instrumentation put 332 MB of `a{0,8000}`'s 664 MB in `pcrec_build_nfa`, before
+any subset construction ran, and the cause was one line: the `X{m,n}` tail loop
+in src/ir/nfa.c rebuilt its out-patch set from scratch every iteration, copying
+a list that grows by one element per copy into a freshly allocated array. That
+is Theta((n-m)^2) of arena traffic sitting behind a perfectly LINEAR state
+count — which is the exact and complete explanation of K7's sharpest sentence,
+"the cap that exists to prevent this cannot be reached by the shape that needs
+it". There was nothing for the cap to object to. `frag_cat2`, two functions
+above, already inherited its right operand's array instead of copying; the fix
+applies that idiom to the one site that had not. `a{0,20000}`: 4.68 GB -> 13.2
+MB. `a{0,65535}`: SIGKILL -> refused in 0.1 s on the NFA state cap. The NFA is
+bit-identical, verified byte-for-byte across all 572 compiling corpus patterns.
+
+The lane then found a SECOND quadratic that K7 never saw, because it degraded
+"cleanly" at 2.1 GB: unanchored `a{n}` has n+1 DFA states whose state-SETS
+average n/2, so the subset construction spends Theta(n^2) memory while its state
+count stays linear. `a{20000}` interned 200 million state-set elements, spent
+845 MB and 63 seconds, and COMPILED. `PCREC_MAX_SUBSET_ELEMS` bounds it — the
+first cap in limits.h on what a compile SPENDS rather than on what it emits, and
+the entry records the corpus maximum it is derived from, the measured cost at
+the ceiling, the exact repeats above `a{9795}` that it narrows (bisected), and
+the raise-to-restore lever priced at three points — including the finding that
+past roughly 500,000,000 the budget stops binding altogether and the
+pre-existing state cap takes over at 2.1 GB, so there is a point beyond which
+raising it buys nothing.
+
+The caller-abort — the worst item on K7's list, because pcrec is a library and
+`abort()` in an allocator kills the caller's process — is closed by routing all
+seven malloc-failure sites through `ctx_nomem()`. The blast radius turned out to
+be small for a reason worth recording: `compile_driver`'s error path already
+freed wholesale, so a longjmp from any allocation site leaks nothing; only
+minimize.c's five local tables are not Job-owned and they now free by hand.
+
+Two things did NOT ship, and both were decided by measurement rather than by
+taste. A closure-WORK budget was built and wired because three shapes still
+exceeded 20 s of CPU — then measured at 300,024 closure steps against a corpus
+maximum of 240 million, i.e. no achievable budget catches them, and reverted as
+unpopulated machinery (the same call [M4.7a] made on SR-8's socket one substep
+earlier). Per-stage TIMING then found the missing 15 s: `pcrec_minimize_dfa`,
+15.3 s of `a{0,25000}`'s 15.4 s, against 0.03 s for parse, NFA build and both
+subset constructions combined — Moore refinement needing O(n) rounds on a chain.
+Filed as K25, out of scope here, and it is currently the only thing setting
+tests/resource/'s CPU budget.
+
+Three process notes, and the third is the one that generalizes. First, the byte-identity check initially reported 572/572
+DIFFERING, including `zzz` — the artifact embeds its own output filename in an
+`#include`, and I had compared old.c against new.c. A control that varies
+something other than the thing under test reports a difference every time; this
+one at least reported it loudly. Second, a `pgrep -f "make -j12 -Otarget test"`
+waiter matched its own command line and waited on itself for over an hour after
+the suite had finished, which is the same self-reference failure in a different
+costume. Third: a K7-closed note I added to docs/dev/CLAUDE.md by scripted
+string replacement landed INSIDE K23's parenthetical, cutting that entry's
+sentence in half; an audit of all six prose edits I had made the same way found
+two more of the same class. Every defect came from an edit that inserted into
+the MIDDLE of existing prose — the appends were all fine. A scripted edit into
+prose has no test that fails; the only check is reading the paragraph
+afterwards, and I skipped it three times out of six.
+
+Incidental finding for the manager, outside this lane: **LeakSanitizer is a
+no-op on this box.** Under `make asan`'s exact options
+(`ASAN_OPTIONS=detect_leaks=1 LSAN_OPTIONS=""`), a control program that leaks
+12,345 bytes exits 0 and reports nothing; `/proc/sys/kernel/yama/ptrace_scope`
+is 1, which is the likely cause. ASan proper works and is unaffected. So the
+leak half of the documented asan coverage has not been running, and my own
+"no leaks on the ctx_nomem paths" claim is reasoned rather than sanitizer-
+verified — ASan itself is clean across five forced-allocation-failure shapes,
+which covers the double-free and use-after-free hazards the fix specifically
+guards against.
+
+MANAGER ADDENDUM to the lane's process notes — the FOURTH instance,
+and it reached my desk: the lane's D56/journal drafts went stale under
+its own later commits (the bisected a{9795}/a{9796} boundary, the
+lever's measured saturation point), and I had already spliced the
+stale versions into these files before its correction arrived. The
+generalized rule, in the lane's words, is the session's best statement
+of the standing meta-lesson: "prose that describes code has no test,
+so it has to be re-read every time the code moves" — and its earlier
+sibling, "appending to prose is safe to script; inserting into it is
+not." Both indict manager practice as much as lane practice (this
+session's scripted doc edits included one caveat placed in the wrong
+section and one stale draft spliced verbatim). Candidate for
+learnings.md if the class recurs across sessions.

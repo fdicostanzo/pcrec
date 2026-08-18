@@ -4574,3 +4574,74 @@ Reverted; zero diff confirmed before commit.
 then fails by design, and its failure message is the trigger to build
 SR-8's consultation — designed against that producer's real
 requirements rather than a synthetic one.
+## D56 — a compile-side resource cap may count what a stage SPENDS, not only what it emits ([M4.7b], 2026-08-18)
+
+**Decision.** `PCREC_MAX_SUBSET_ELEMS` joins limits.h as a bound on the
+COMPILER's own working set — total NFA-state-list elements interned by the
+subset construction — alongside caps that until now all bounded the ARTIFACT
+(state counts, table entries, emitted nodes, replication factors). And a
+library-side corollary: every allocation on the compile path reports through
+`ctx_nomem()` and none of them calls `abort()`.
+
+**Why the new axis.** Every existing cap in that file is grounded in emitter
+cost (R1 A-3) — how big the generated C is, how long gcc takes on it. K7 is the
+case where those are silent by construction: unanchored `a{20000}` builds
+20,001 DFA states (a twentieth of the 32000 cap) whose state-SETS average
+10,000, so it spends 845 MB and 63 s and COMPILES, and the artifact it produces
+is unremarkable. A cap on what is emitted cannot see a cost paid before
+emission. The number is derived from the test corpus's measured maximum
+(24,050,003, `((a)|bc){0,4000}d`) doubled, not from a target — the entry
+records the measurement, the cost at the ceiling, and what it narrows.
+
+**Why the narrowing is accepted.** Exact repeats above `a{9795}` now
+refuse where they used to compile (bisected: `a{9795}` compiles,
+`a{9796}` refuses). This is a real behaviour change and it is
+deliberate: those compiles cost 63 s (n=20000) and 154 s (n=30000),
+and D45's own standard says a compile needing that much is a failure
+rather than a slow box. The boundary for this family already existed
+at 65535 (the state cap); the budget moves it and does not invent it,
+and the refusal reuses the existing "too complex for the DFA engine"
+wording per D26 rather than opening a tier.
+
+**The lever, and the point past which it stops being one.** A
+vendored user who needs the old boundary raises the number, and
+limits.h prices three points, each measured with the budget removed
+(which for this family IS the pre-lane compiler, since the nfa.c fix
+does not touch exact repeats): 205,000,000 restores `a{20000}` at
+845 MB and 63-99 s; 460,000,000 restores `a{30000}` at 1.87 GB and
+109 s; and above roughly 500,000,000 the budget STOPS BINDING
+entirely — the pre-existing 32000-state cap takes over, which is
+where `a{65535}` refuses, at 2.1 GB. There is nothing to buy beyond
+that point, and that saturation is the part a reader could not have
+guessed: raising the number buys repeat count only as its SQUARE ROOT
+(2.2x the budget for 1.5x the reach), until it buys nothing at all.
+
+**Why abort() had to go, and why the blast radius was small.** pcrec is a
+LIBRARY. A caller who sets a memory limit does so precisely to survive a bad
+pattern, and `abort()` in an allocator wrapper kills that caller's process with
+no diagnostic — K7's own entry calls this the worst failure on its list, worse
+than the SIGKILL it was filed for. The conversion was cheap because
+`compile_driver`'s error path already frees wholesale: `job_cleanup` releases
+the arena and every Job-owned array, so a longjmp from any allocation site
+leaks nothing. Only `pcrec_minimize_dfa`'s five local tables are not Job-owned,
+and they free by hand before failing. Two aborts stay, deliberately:
+`DFA_INVARIANT` (a "cannot happen" check, not an allocation failure) and
+`syntax_dump.c`'s detached `StrBuf`s (no compile, no `pcrec_error`, nowhere to
+report).
+
+**What was REJECTED, and it is the part worth remembering.** A third bound — a
+closure-WORK countdown charged per NFA-state visit — was built, wired and
+measured during this lane, because three shapes in K7's own repro list still
+exceeded 20 s of CPU. It was reverted unbuilt-upon: `a{0,25000}` spends 300,024
+closure steps against a corpus maximum of 240,508,032, so no achievable budget
+catches it, and per-stage timing then showed the 15 s was in
+`pcrec_minimize_dfa` (now K25), a pass this accounting does not and should not
+reach. Shipping it would have added a limit, a Ctx field and a decrement in the
+compiler's hottest loop for a bound nothing trips — unpopulated machinery, the
+same call D53 and [M4.7a]'s reverted socket made.
+
+**Revisit when:** a legitimate pattern is MEASURED needing more than the
+element budget (raise it with the measurement, and note the budget buys memory
+quadratically in the repeat count, not linearly); or K25's minimization cost is
+fixed, at which point `tests/resource/`'s 45 s CPU budget should come back to
+~10 s, which is what the construction side alone needs.

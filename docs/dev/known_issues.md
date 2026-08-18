@@ -2192,3 +2192,33 @@ same bug; if it is not, it is a third growth law and deserves its own entry.
 replacement for the same interface); or a cheap pre-pass that collapses chains
 before refinement, which is narrower but targets exactly the shape that hurts.
 Neither is urgent.
+
+## K26 — OPEN, found 2026-08-18 ([M4.7b] lane, via a positive control on its own leak check)
+
+**LeakSanitizer is silently a NO-OP on this box, so `make asan`'s
+documented leak coverage has never actually run.** Under the battery's
+exact options (`ASAN_OPTIONS=detect_leaks=1 LSAN_OPTIONS=""`), a
+control program that deliberately leaks 12,345 bytes exits 0 and
+reports nothing. `/proc/sys/kernel/yama/ptrace_scope` is 1, the likely
+cause (LSan's stop-the-world tracer). ASan proper is unaffected and
+works (measured: forced-allocation-failure runs report real errors).
+
+This is a TEST-INFRASTRUCTURE gap, not a pcrec bug — filed here so the
+"asan+lsan both axes" claim in docs/testing.md cannot be read as
+evidence about leaks. Every "no leaks" claim to date that rested on a
+green `make asan` was resting on nothing; reasoned claims (e.g.
+[M4.7b]'s job_cleanup-frees-wholesale argument) stand on their own
+reasoning only.
+
+**Fix direction, and the obligation either way:** the battery gains a
+POSITIVE LEAK CANARY — a deliberately-leaking control that must be
+REPORTED for the leak tier to count as running, so a no-op LSan turns
+into a loud failure instead of silent green (the exact check-design
+lesson: the lane found this only because it ran a positive control on
+its own check). Enabling LSan itself may need ptrace_scope=0 or an
+attach-permitting environment — SYSTEM CONFIG, outside the repo
+mandate: Frank rules on any host change. Until then the canary keeps
+the gap visible and the testing.md text carries the caveat.
+
+Repro: compile any program that mallocs and exits without freeing;
+run under the battery's ASAN_OPTIONS; observe exit 0, no report.

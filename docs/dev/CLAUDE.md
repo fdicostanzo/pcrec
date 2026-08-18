@@ -22,7 +22,9 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-18: K2 (cosmetic), K25 (compile TIME in DFA
+  Open as of 2026-08-18: K2 (cosmetic), K26 (INFRASTRUCTURE: LeakSanitizer
+  is a measured no-op on this box, so make asan's leak tier has never run —
+  canary obligation + host-config ruling recorded in the entry), K25 (compile TIME in DFA
   minimization — Moore refinement needs O(n) rounds on a chain, so
   `a{0,25000}` spends a measured 15.3 s of its 15.4 s there against
   0.03 s for everything K7's accounting bounds; filed out of K7's fix,

@@ -978,6 +978,14 @@ looking for parallel mech and conclude it is missing.
 
 ## Sanitizer + lint battery (SAN-1, 2026-08-13)
 
+**K26 caveat (2026-08-18): the LEAK tier of this battery is currently a
+no-op on this box** — LSan silently detects nothing under the battery's
+own options (positive control: a deliberate 12,345-byte leak exits 0;
+yama ptrace_scope=1 suspected). ASan proper is unaffected. See
+docs/dev/known_issues.md K26 for the canary obligation and the ruling
+needed before any host-config fix.
+
+
 Three opt-in targets, the same shape as `make strict`: never part of `make
 test`, never default, write nothing to `build/`, safe to run alongside
 `make test` in another shell. `make ubsan` and `make asan` each build a
