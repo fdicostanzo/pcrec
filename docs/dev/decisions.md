@@ -4818,3 +4818,51 @@ AST shape is NOT already covered by an existing forcing rule
 (`forces_captures` or a future sibling) — that is the real trigger for
 building SR-8, now with two data points (the deferral that held, and
 the one construct that didn't need it) instead of zero.
+
+## D60 — emitted UNIVERSAL constants unify under PCREC_*, per-prefix spellings DELETED, no aliases (Frank, 2026-08-18, thirty-third session)
+
+**Decision.** Every emitted macro whose VALUE is artifact-independent
+moves to ONE canonical, prefix-free spelling in the prefix-independent
+ABI block (`PCREC_RX_ABI_H`): `PCREC_ERR_STEPS` (-2), `PCREC_ERR_FRAMES`
+(-3), `PCREC_ERR_WORK` (-4), `PCREC_ERR_FLOOR` (-4), `PCREC_UNSET`
+(`((ptrdiff_t)-1)`), and the D46 stamp BIT constants (the rung/strategy/
+prune bit VALUES — the per-artifact OR'd masks stay prefixed). The
+`<PREFIX>_*` spellings of these constants are DELETED, not aliased —
+Frank: "I don't see the advantage on keeping them separate," consistent
+with the two standing no-alias precedents (PCREC_ENC_BYTE, D58 era;
+`<prefix>_span` retirement, D44.2). What STAYS per-prefix is exactly the
+set whose values genuinely vary per artifact: `<PREFIX>_NCAPS`, the
+budget macros, the stamp MASKS (`_VM_RUNGS`/`_VM_STRATS`/`_VM_PRUNES`),
+`_VM_PREFILTER`/`_VM_PRUNE_CEILING`, and the feature stamps' per-artifact
+values. The membership rule is intensional — "is the value a property of
+pcrec's contract or of THIS artifact?" — and the implementing lane
+enumerates the extensional list by grepping the emitter, not this entry.
+
+**Why.** The give-up VALUES were already unified (D49); only the names
+were prefixed, which made generic callers (the future single-entry
+finder/dispatcher Frank sketched this session — `rx_find_search_fn`
+returning an unknown artifact's entry — and [V-E] multi-pattern units)
+spell a universal fact through an arbitrary artifact's prefix. PCREC_*
+spelling per D38's naming addendum ("the native surface is uniformly
+PCREC_*"; feature stamps set the emitted-artifact precedent). NOT RX_*:
+that is the DEFAULT PREFIX's own uppercase, so RX_-spelled canonicals
+would collide with default-prefix artifacts' macros and turn any
+replacement-text drift into a -Werror redefinition error. Placement in
+the guarded ABI block is forced by self-containment: no shared header
+file may be required, so a unified definition must be EMITTED, and the
+block is the once-per-TU emission mechanism whose byte-identity the
+[M5-SEAM] cross-prefix check already enforces.
+
+**Costs accepted**: spec §4/§5 re-quotes under the verification ledger;
+codegen/stamp pin updates; the ABI-block identity check re-baselines;
+the macro family's emission site splits (universal → block, varying →
+per-prefix). Timing: a SMALL STANDALONE lane ([ABI-NS] plan row), before
+[M6.2]'s first implementation wave lands so wave authors write PCREC_*
+from birth; explicitly NOT part of [M6-READ], whose charter is "no ABI
+change of any kind". The future finder work ([OS-0]) adds its
+`rx_searchfn` typedef to the same block in its own later, deliberate
+change — bundling was considered and rejected because [OS-0] has no
+schedule.
+
+**Revisit when:** the first external consumer appears (v1 boundary) — at
+that point deletions of public spellings stop being free.
