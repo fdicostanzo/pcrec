@@ -49,8 +49,54 @@ enum {
     PCREC_MAX_DFA_STATES_TABLE = 32000,   /* table engine; must fit in short */
     PCREC_MAX_TABLE_ENTRIES    = 2000000, /* states*ncls bound (~12 MB source) */
 
-    /* PLACEHOLDER — replaced with the measured number below. */
-    PCREC_MAX_SUBSET_ELEMS     = 2000000000,
+    /* [M4.7b] K7's SECOND half: how many NFA-state-list ELEMENTS the priority
+     * subset construction may intern, summed over every machine one compile
+     * builds (forward and reverse are charged together because both are live
+     * at once).
+     *
+     * WHY THE STATE-COUNT CAPS ABOVE CANNOT DO THIS. They bound how many DFA
+     * states exist; the construction's memory is the sum of those states' SET
+     * SIZES, and the two come apart by a whole factor. Unanchored `a{n}` is the
+     * clean example: the start self-loop means that after k bytes every chain
+     * position 0..k is live, so the machine has n+1 states whose sets average
+     * n/2 — n+1 against the cap, n^2/2 in memory. MEASURED: `a{10000}` interns
+     * 50,025,000 elements for 216 MB, `a{20000}` 200,050,000 for 845 MB and
+     * 63 s, `a{30000}` 1.87 GB and 154 s — all of them COMPILING, none of them
+     * within sight of the 32000-state cap. `a{65535}` did reach that cap, but
+     * only after 2.1 GB, because the cap is consulted per state and the memory
+     * is spent per element.
+     *
+     * THE NUMBER IS THE TEST CORPUS'S MEASURED MAXIMUM, DOUBLED. The most
+     * expensive pattern in tests/ is `((a)|bc){0,4000}d` at 24,050,003
+     * elements (285 MB before this lane's nfa.c fix, 111 MB after; the element
+     * count is the same either way, which is the point of counting elements
+     * rather than bytes) — counterk.rxt's "endgame count", deliberately built
+     * one body over D45's own case to prove [ENG-BREP]'s counter rung lifted
+     * the replication bound, so it is an extreme by construction rather than
+     * by accident. Doubling it is the headroom; nothing a person writes is
+     * near it.
+     *
+     * WHAT IT COSTS AT THE CEILING, MEASURED at the boundary rather than
+     * extrapolated from a rate: ~216 MB and 0.9 s for the worst refusal
+     * (`a{65535}`), ~175 MB and 3.9 s for the most expensive compile that
+     * still fits (`a{9000}`, and `[a-zA-Z0-9_.-]{9000}` and `[^\n]{9000}`
+     * land within 100 KB of it, so the cost is set by the element count and
+     * not by the alphabet). Bytes-per-element sits at 4.3-4.6 across every
+     * shape probed, which is why one element count bounds every one of them.
+     *
+     * WHAT IT REFUSES THAT USED TO COMPILE, stated plainly because it is a
+     * narrowing and not only a rescue: exact repeats above roughly `a{9800}`.
+     * Those cost 63 s and 154 s at n=20000 and n=30000 today — D45's own
+     * standard says a compile needing that much is a failure rather than a slow
+     * box — and the refusal is the EXISTING "too complex for the DFA engine"
+     * family pointing at the VM, not a new tier (D26). The boundary for this
+     * family already existed at 65535, set by the state cap; this moves it, it
+     * does not invent it.
+     *
+     * Same revisit-when as every other budget here: if a LEGITIMATE pattern is
+     * measured needing more, raise it WITH the measurement recorded. Note that
+     * raising it buys memory quadratically in the repeat count, not linearly. */
+    PCREC_MAX_SUBSET_ELEMS     = 48000000,
 
     /* [M4.5b] The VM emitter's own size backstop, and the reason it needs one
      * separate from the NFA cap above: a bounded repeat REPLICATES its body

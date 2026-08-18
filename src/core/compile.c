@@ -236,11 +236,8 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
     if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
     else                               pcrec_emit_dfa(&cx);
+   
 
-    { const char *k7 = getenv("PCREC_K7_REPORT");
-      if (k7) { FILE *f = fopen(k7, "a");
-                if (f) { fprintf(f, "%lld\t%s\n", cx.subset_elems, pattern);
-                         fclose(f); } } }
     /* [M4.7b/K7] Take into JOB-OWNED slots first, publish only once all three
      * have succeeded. sb_take allocates only for a never-written buffer, so
      * this is a path no emitter reaches — but "the compile path never aborts
