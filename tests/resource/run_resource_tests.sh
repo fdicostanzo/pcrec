@@ -63,8 +63,22 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 # Same revisit-when as D45's budgets: if a legitimate case is MEASURED needing
 # more, raise the default with the measurement recorded, never silently.
 K7_MEM="${K7_MEM:-512m}"
-K7_SECS="${K7_SECS:-60}"
-K7_CPU="${K7_CPU:-20}"
+K7_SECS="${K7_SECS:-120}"
+# THE CPU BUDGET IS SET BY A COST THIS LANE DID NOT FIX, and saying which one
+# is the difference between a budget and a fudge factor. `a{0,25000}` spends a
+# MEASURED 15.3 s of its 15.4 s inside pcrec_minimize_dfa — 7.50 s on the
+# forward machine and 7.76 s on the reverse — against 0.03 s for parse, NFA
+# construction and BOTH subset constructions combined. That is Moore partition
+# refinement needing O(n) rounds on an n-state chain, an optimization pass
+# untouched by [M4.7b], not the resource accounting K7 is about; it has bounded
+# memory and always terminates, and it is filed separately.
+#
+# 45 s is ~3x the measured 15.4 s, which is the headroom D45's own calibration
+# note says a CPU budget needs: CPU is load-RESILIENT but not load-independent,
+# and that file records a measured >2x inflation under a real `make -j12` mix.
+# WHEN THE MINIMIZATION COST IS FIXED THIS SHOULD COME BACK DOWN to ~10 s,
+# which is what the construction side alone would need.
+K7_CPU="${K7_CPU:-45}"
 
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
@@ -167,7 +181,7 @@ enomem_case() {
                 "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"
     rc=$?
     case $rc in
-        0)   ok "under ${vlim}KB of address space, '$pat' still compiled (limit not binding — fine)" ;;
+        0)   bad "under ${vlim}KB, '$pat' compiled — the limit did not bind, so this cell proved nothing. Lower it or pick a hungrier pattern" ;;
         1)   if printf '%s' "$log" | grep -q 'out of memory\|too complex\|too large'; then
                  ok "under ${vlim}KB, '$pat' DIAGNOSED: $(printf '%s' "$log" | head -1)"
              else
@@ -179,15 +193,24 @@ enomem_case() {
     esac
 }
 
-# 40 MB of address space. Enough for the binary, libc and a small compile;
-# far too little for any of these, so malloc genuinely fails partway through.
-# Three different pattern shapes so the failure lands in different allocators
-# (parser arena, NFA growth, DFA interning, emitter buffer) rather than
-# proving one call site works.
-enomem_case 40000 'a{0,20000}'
-enomem_case 40000 "$(python3 -c 'print("(" + "|".join("w%04d" % i for i in range(4000)) + ")")')"
-enomem_case 40000 'a{20000}'
-enomem_case 25000 '(a|b){0,4000}c'
+# EACH LIMIT IS WELL ABOVE THE LOADER'S FLOOR AND WELL BELOW WHAT ITS PATTERN
+# NEEDS, and both halves matter. Below about 15000 KB this box cannot even map
+# libc, so the cell would test the dynamic loader and report a pcrec pass;
+# above what the pattern needs the cell compiles and proves nothing (which the
+# `0)` arm above now scores as a FAILURE rather than a shrug — an unbinding
+# limit is a silently vacuous control, the exact shape of check this project
+# has been bitten by most).
+#
+# The patterns are chosen to need 110-215 MB, measured, so the limits sit at
+# roughly half their need and nothing here is sensitive to the precise value of
+# PCREC_MAX_SUBSET_ELEMS. Four shapes so the failure lands in different
+# allocators — the DFA state array and its hash table, the arena behind the
+# interned state-sets, the emitter's string buffer — rather than proving one
+# call site works four times.
+enomem_case 100000 'a{9000}'                 # needs 175 MB
+enomem_case  60000 '((a)|bc){0,4000}d'       # needs 111 MB (VM route + prefilter)
+enomem_case  80000 '[a-zA-Z0-9_.-]{9000}'    # needs 175 MB, wide alphabet
+enomem_case  60000 'a{8000}'                 # needs 140 MB
 
 echo
 
@@ -208,19 +231,43 @@ echo
 # bounds they hit and therefore which direction to shrink in.
 # ---------------------------------------------------------------------------
 echo "== [K7] the refusal's identity =="
-log="$("$ROOT_DIR/scripts/watchdog" -l "wording a{0,65535}" \
-         -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- \
-         "$PCREC" -p rx -o "$WORKDIR/w.c" 'a{0,65535}' 2>&1)"
-rc=$?
-if [ "$rc" -ne 1 ]; then
-    bad "'a{0,65535}' should be a diagnosed refusal (rc 1), got rc $rc: $log"
-elif ! printf '%s' "$log" | grep -q 'too complex for the DFA engine'; then
-    bad "'a{0,65535}' refused outside the 'too complex for the DFA engine' family: $log"
-elif ! printf '%s' "$log" | grep -q 'subset construction'; then
-    bad "'a{0,65535}' hit a DFA bound but not the subset-construction one: $log"
-else
-    ok "'a{0,65535}' names the subset-construction bound in the existing family"
-fi
+
+# name_check <pattern> <expected-substring> <what it proves>
+name_check() {
+    local pat="$1" want="$2" why="$3" log rc
+    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" \
+             -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- \
+             "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"
+    rc=$?
+    if [ "$rc" -ne 1 ]; then
+        bad "'$pat' should be a diagnosed refusal (rc 1), got rc $rc: $log"
+    elif ! printf '%s' "$log" | grep -q "$want"; then
+        bad "'$pat' should name '$want' ($why), said: $log"
+    else
+        ok "$why"
+    fi
+}
+
+# THREE BOUNDS, THREE SHAPES, THREE DIFFERENT DIAGNOSTICS. K7's complaint was
+# that the shape which needed a cap could not reach one; the answer is not "now
+# it reaches THE cap" but "each shape reaches the cap that describes it", and
+# a reader has to be able to tell which one they hit from the message alone.
+#
+#   `a{0,65535}` builds 2n NFA states with tiny state-sets — the NFA SIZE cap
+#     is the right one, and it fires during construction, in 0.1 s.
+#   `a{65535}` builds few states with enormous state-sets — the SUBSET-ELEMENT
+#     bound is the only one that can see it (measured 216 MB / 0.9 s, against
+#     2.1 GB / 12.3 s before this lane, when the state cap eventually caught it).
+#   an exponential subset blowup builds a huge NUMBER of small states — the
+#     state-COUNT cap, which is the pre-existing one, and it must still work.
+#     This is the check that notices if the new bounds took the old one's
+#     customers away.
+name_check 'a{0,65535}' 'NFA exceeds' \
+    "the bounded-OPTIONAL family reaches the NFA size cap"
+name_check 'a{65535}' 'subset construction' \
+    "the EXACT-count family reaches the subset-element bound"
+name_check 'a{65535}' 'too complex for the DFA engine' \
+    "that bound refuses inside the EXISTING diagnostic family (D26), not a new tier"
 
 # The state-COUNT cap must still be reachable by the shapes it was built for —
 # the fix moves refusals EARLIER for one growth law and must not have taken the
