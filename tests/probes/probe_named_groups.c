@@ -11,7 +11,18 @@
  * fact this probe exists to nail down for pcrec's own sort-key decision
  * (docs/spec/match_api.md sect 6).
  *
- * Build: TMPDIR=/var/tmp gcc -I /home/duxevents/pcrec/tests/fuzz -o /var/tmp/probe_ng probe_named_groups.c -ldl
+ * REFUTED, twice, on the first run (recorded per this directory's own
+ * "a predictor that survives its first run has probably not been
+ * tested" rule, not edited away): a leading DIGIT IS specially
+ * forbidden (PCRE2 error 144 — every one of '0'..'9' disagrees with the
+ * "not specially forbidden" predictor, all 10 first-byte cells), and the
+ * length ceiling is 128 bytes, not 32 (swept 1..2000; PCRE1's older
+ * MAX_NAME_SIZE folklore does not describe this libpcre2 build). The
+ * SORT-key and DUPNAMES predictions both held exactly as stated.
+ *
+ * Build: TMPDIR=/var/tmp gcc -I tests/fuzz -o /var/tmp/probe_ng tests/probes/probe_named_groups.c -ldl
+ * (run from the repo root; TMPDIR matters on the project box — /tmp is a
+ * quota'd tmpfs)
  */
 #include "pcre2_abi.h"
 #include <stdio.h>
