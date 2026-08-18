@@ -652,7 +652,22 @@ spine, not before):
   unoutlineability) applies to any emission-model change and travels
   with this row. Sequencing: with the OPT waves, after [BENCH-CEIL]
   produces the gap table; unmeasured engine work is not scheduled
-  (D12/D18).
+  (D12/D18). RULED A THIRD ENGINE TYPE (Frank, 2026-08-18, same
+  conversation): the roster becomes table-DFA (current) / DIRECT-DFA
+  / VM — with the VM potentially carrying direct-DFA ISLANDS — so
+  when built this joins the ENGINE SELECTION axis proper
+  (select_engine picks per pattern; ENGM_* gains a member; RX_ENGINE
+  stamps a third value; OS-0's named-entry-point discipline applies),
+  not just the emitter. On re2c, read by Frank at filing: it
+  VALIDATES THE MODEL and is deliberately not the tool — its regex
+  language is far from PCRE2 (lexer dialect, longest-match
+  semantics). pcrec's shape is what makes the model usable inside a
+  PCRE2 compiler: full-dialect parse + per-pattern selection routes
+  only the shapes that fit. SURVEY LEAD for the capture question:
+  re2c's TDFA (tagged-DFA submatch extraction, Trofimovich) is the
+  literature for captures in direct-coded DFAs — the road by which
+  direct-DFA could someday serve capture-bearing patterns without
+  the VM; survey by measurement per OPT-A's rule when this opens.
 - [ENG-ISL] STATE:not-started (EMISSION NOTE added 2026-08-18: an island, once determinized, is EMITTED via [ENG-DIRECT]'s direct-coded mechanism — that is the "no overhead" half of the island idea; determinization proves the language/preference exactness, direct coding is what makes the island cheaper than the machinery it replaces) — EXACT DFA ISLANDS, deferred OUT of
   [M4.6] (Frank, 2026-08-17, twenty-eighth session, D50 — the
   [ENG-ABS] pattern: build only behind a MEASURED loss). engine_m4.md
