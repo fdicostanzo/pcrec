@@ -610,8 +610,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
                                           PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
-                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
-                                          PCREC_NO_ALTCLS_GUARD;
+                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }

@@ -98,11 +98,6 @@ mergeable/factorable alternation run is its own selection point, addressed
 independently, the same reason the five flags above it are deny-only rather
 than a force pair.
 
-**[OPT-ALTCLS] STAGE 3 (2026-08-17, prototype):** `-fno-altcls-guard`
-(`PCREC_NO_ALTCLS_GUARD`) joins the same family — its own selection point
-(the FIRST-set entry guard `vm_alt` may emit), separate from the two
-AST-rewrite stages above.
-
 **[M4.6f] (2026-08-17):** `-fno-prefilter` (`PCREC_NO_PREFILTER`) and
 `-fprefilter` (`PCREC_FORCE_PREFILTER`) are the D46 close-out for the
 PREFILTER axis, and also do not appear in `--help` for the same reason. A

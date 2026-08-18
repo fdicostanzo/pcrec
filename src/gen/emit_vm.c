@@ -1780,31 +1780,6 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
  * which is what keeps `(a|b|c|...)` off the frame-capacity bound. The
  * preference order is identical either way: the frame pushed at branch k
  * resumes branch k+1. */
-/* [OPT-ALTCLS] STAGE 3 (measure-at-build prototype, docs/dev/plan.md's
- * row): tries to compute ONE combined FIRST-set bitmap covering every
- * branch of this alternation. Returns true and fills `out` only when EVERY
- * branch's own FIRST is computable AND non-nullable (`pcrec_minw > 0`) --
- * a nullable branch can match without consuming a byte at all, which would
- * make any guard unsound (it could reject a byte the nullable branch would
- * have accepted anyway), so ONE nullable branch declines the guard for the
- * WHOLE alternation, always safely. Also declines when the union already
- * covers all 256 bytes: a guard that can never reject is pure overhead. */
-static bool vm_alt_guard(const Ast **br, int nbr, uint8_t out[32])
-{
-    uint8_t acc[32] = {0};
-    for (int j = 0; j < nbr; j++) {
-        if (pcrec_minw(br[j]) == 0) return false;
-        uint8_t fb[32];
-        if (!pcrec_firstset(br[j], fb)) return false;
-        for (int k = 0; k < 32; k++) acc[k] |= fb[k];
-    }
-    int count = 0;
-    for (int c = 0; c < 256; c++) if (cls_has(acc, (unsigned)c)) count++;
-    if (count == 256) return false;
-    memcpy(out, acc, 32);
-    return true;
-}
-
 static void vm_alt(Vm *v, int entry, const Ast *a, int next)
 {
     Ctx *cx = v->cx;
@@ -1822,30 +1797,11 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
     resume[0] = entry;
     for (int j = 1; j < nbr; j++) resume[j] = vm_label(v);
 
-    /* The guard is a property of THIS dispatch site, computed once and
-     * tested BEFORE the first branch's push -- a byte that fails it cannot
-     * satisfy any branch, so the whole cascade (every push, every branch's
-     * own first-byte test) is skipped on that path in favor of one test. It
-     * changes no answer: a byte that passes it falls straight through into
-     * the UNCHANGED cascade below, branch preference and all. */
-    uint8_t guard[32];
-    bool guarded = !(cx->opt->flags & PCREC_NO_ALTCLS_GUARD) &&
-                   vm_alt_guard(br, nbr, guard);
-
     for (int j = 0; j < nbr; j++) {
         vm_lbl(v, resume[j], j == 0
-               ? vm_rolef(v, "alternation entry (%d branches)%s", nbr,
-                          guarded ? ", FIRST-set guarded" : "")
+               ? vm_rolef(v, "alternation entry (%d branches)", nbr)
                : vm_rolef(v, "alternation resume: try branch %d of %d",
                           j + 1, nbr));
-        if (j == 0 && guarded) {
-            int ci = vm_cls(v, guard);
-            sb_puts(v->b, "    if (!(pos < n && (");
-            vm_cls_test(v, v->b, ci, "s[pos]");
-            sb_puts(v->b, ")))\n");
-            vm_fail(v);
-            cx->job->altcls_guards++;
-        }
         if (j + 1 < nbr)
             vm_push(v, resume[j + 1],
                     vm_rolef(v, "branch %d of %d preferred; resume tries "
@@ -4224,20 +4180,6 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * derived default when neither was passed). */
     sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
               job->fit.prefilter ? "hybrid" : "none");
-    /* [OPT-ALTCLS] STAGE 3 (measure-at-build prototype, 2026-08-17): D46's
-     * observability half for the FIRST-set entry guard (`vm_alt_guard`,
-     * above). A COUNT rather than a scalar or a per-site bitmask -- one
-     * artifact can carry any number of guarded alternation dispatch sites,
-     * and unlike the per-quantifier rung/strategy/prune masks there is no
-     * fixed small vocabulary of "which guard" to name bits for, so a count
-     * is the honest shape (stage 1/2's own ALTCLS_MERGES/FACTORED
-     * precedent). VM-artifacts-only, UNLIKE those two: this guard is
-     * decided and consumed only in emit_vm.c, never in the shared
-     * prologue. `-fno-altcls-guard` (PCREC_NO_ALTCLS_GUARD) denies it;
-     * the counter reads 0 under denial by construction (the check in
-     * vm_alt is what increments it, and that check is what the flag
-     * gates). */
-    sb_printf(c, "#define %s_ALTCLS_GUARDS %d\n", v.up, job->altcls_guards);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * for the same §5.4 byte-identity reason the comment above states), but

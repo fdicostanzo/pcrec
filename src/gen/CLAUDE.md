@@ -470,36 +470,6 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     side effect), since D46's observability extends to the debug listing
     too. Tests: tests/prefilter/.
 
-  - **[OPT-ALTCLS] STAGE 3, the FIRST-set entry guard (2026-08-17,
-    PROTOTYPE, measure-at-build per D53).** `vm_alt_guard`, right above
-    `vm_alt` itself: tries to compute ONE combined FIRST-byte-set bitmap
-    over every branch of an alternation (`src/opt/firstset.c`'s
-    `pcrec_firstset`, per branch), and if every branch succeeds AND is
-    non-nullable (`pcrec_minw > 0` — a nullable branch can match with no
-    byte at all, which would make ANY guard unsound) AND the union does
-    not already cover all 256 bytes (a guard that can never reject is
-    pure overhead), `vm_alt` emits ONE class test — `vm_cls`/`vm_cls_test`,
-    the SAME primitives `A_CLASS` consumption uses — immediately after the
-    alternation's entry label and before the first branch's push, jumping
-    straight to `vm_fail` on a byte no branch could start with. It changes
-    NO answer: a byte that passes falls through into the cascade
-    UNCHANGED, same pushes, same branch order, same preference. Gated
-    `-fno-altcls-guard` (`PCREC_NO_ALTCLS_GUARD`), stamped
-    `RX_ALTCLS_GUARDS` (a COUNT, next to `RX_VM_PREFILTER`'s own
-    placement — VM-artifacts-only, since this axis is decided and
-    consumed only here, unlike stage 1/2's shared-prologue stamp).
-    Correctness: validated ad hoc (pcrec-vs-pcrec differential sharing
-    tests/possessify/possdiff_driver.c, 0 divergences over ~48k cells).
-    DEV-GRADE (non-pinned) timing on a ten-word quantified keyword
-    alternation: no measurable difference under the default hybrid engine
-    on a reject-heavy subject (the DFA prefilter already absorbs that
-    traffic before the VM cascade runs — the plan row's own predicted
-    caveat), roughly an 11x speedup under `--engine=vm` on the identical
-    subject (isolating the VM's own cascade cost), ~5% larger emitted
-    code. Decision-grade PINNED confirmation is a separate later step. Not
-    yet given stage 1/2's full D46 test apparatus (no committed
-    differential script, no sabotage row) pending that verdict.
-
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 
   **[ENG-BREP] the STRATEGY-DENIAL mask.** `emit_info_def` masks
@@ -517,9 +487,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   for the identical reason, even though the axis is a FORCE pair rather than
   deny-only: the rule is about OBSERVABLE EFFECT, not about spelling, and
   forcing the hybrid prefilter changes no answer. Its own D46 record is
-  `<PREFIX>_VM_PREFILTER`, above. **[OPT-ALTCLS] STAGE 3** `PCREC_NO_ALTCLS_GUARD`
-  joins the same mask for the same reason; its own D46 record is
-  `<PREFIX>_ALTCLS_GUARDS`, in emit_vm.c.
+  `<PREFIX>_VM_PREFILTER`, above.
 
   Additional [M4.4] entry points in emit_dfa.c: `emit_c_string_literal` (the
   A-11 string-literal escaper — `"`, `\`, control bytes; non-printables use a

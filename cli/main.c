@@ -193,11 +193,6 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_ALTCLS_MERGE;
         else if (!no_more_opts && !strcmp(a, "-fno-altcls-factor"))
             opt.flags |= PCREC_NO_ALTCLS_FACTOR;
-        /* [OPT-ALTCLS] STAGE 3 (measure-at-build prototype): the FIRST-set
-         * entry guard, its own deny flag since it is a separate emitter-side
-         * selection point from the two AST-rewrite stages above. */
-        else if (!no_more_opts && !strcmp(a, "-fno-altcls-guard"))
-            opt.flags |= PCREC_NO_ALTCLS_GUARD;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

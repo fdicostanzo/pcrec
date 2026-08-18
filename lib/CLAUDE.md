@@ -122,16 +122,3 @@ the identical reason. What the pass DID is recorded in
 are NOT VM-artifacts-only: the pass runs before either engine is built, so
 a capture-free pattern's DFA artifact carries the stamp too. Tests:
 tests/altcls/.
-
-**[OPT-ALTCLS] STAGE 3 (2026-08-17, PROTOTYPE, measure-at-build per D53):**
-`PCREC_NO_ALTCLS_GUARD` (`1u << 12`, `-fno-altcls-guard`) denies the
-FIRST-set entry guard `src/gen/emit_vm.c`'s `vm_alt` may emit ahead of a
-multi-branch alternation's cascade — its OWN selection point, separate
-from stage 1/2's two AST-rewrite flags, hence its own bit. Stamped
-`RX_ALTCLS_GUARDS`, VM-artifacts-only (this axis, unlike stage 1/2's, is
-decided and consumed only in emit_vm.c). Masked out of `rx_info.flags`
-with the rest of the D47.3 family. Correctness validated ad hoc this
-session (0 divergences, ~48k differential cells); NOT yet given stage
-1/2's full test apparatus (no committed differential script, no
-dedicated test directory, no sabotage row) pending the pinned
-measure-at-build verdict.
