@@ -98,7 +98,17 @@ NAMES="frank fred brad bobby janet carla derek elisa felix gina harry ivy jack k
 # 30 space-separated names -> a quantified alternation over all of them,
 # repeated to build a longer, more representative accept-path subject.
 ALT=$(printf '%s' "$NAMES" | tr ' ' '|')
-PAT_A="(?:${ALT})+"
+# CORRECTED 2026-08-18, after the first pinned run: a bare `(?:...)+` has NO
+# capturing group, so it routes to the pure DFA engine under default
+# selection -- and DFA minimization ERASES the factored/unfactored AST
+# distinction entirely for this shape (verified: the two emitted .c files
+# are byte-identical past the stamp line). The first pinned run's Cell A
+# therefore measured two copies of the SAME PROGRAM, not stage 2's real
+# effect. A capturing wrapper forces VM routing, where the AST shape DOES
+# reach the emitted code -- matching the manager probe's own original
+# configuration (docs/dev/plan.md's row cites Frank's exemplar, which the
+# row's own text frames as a VM/emitted-code comparison, not a DFA one).
+PAT_A="(${ALT})+"
 mkdir -p "$W/a_on" "$W/a_off"
 "$PCREC" -p rx -o "$W/a_on/gen.c" -- "$PAT_A" >/dev/null 2>&1 || { echo "  CELL A: pcrec refused (factored)"; }
 "$PCREC" -p rx -fno-altcls-factor -o "$W/a_off/gen.c" -- "$PAT_A" >/dev/null 2>&1 || { echo "  CELL A: pcrec refused (unfactored)"; }
@@ -204,3 +214,55 @@ for engine in default vm; do
         printf '  %-24s %s\n' "$mode" "$(grep -o 'RX_ALTCLS_GUARDS [0-9]*' "$W/$mode/gen.c" 2>/dev/null || echo 'n/a (DFA-routed)')"
     done
 done
+echo
+
+# ---------------------------------------------------------------------------
+# CELL C (2026-08-17, added answering the manager's own question: "any cell
+# showing benefit in a configuration real callers get"): the alternation is
+# NOT at the pattern's own start, preceded by a lazy wildcard scan. The
+# prefilter still exists (fit.prefilter is unconditionally true whenever the
+# VM is auto-selected under DEFAULT routing -- select_engine.c has no
+# pattern-shape-dependent path to false there, confirmed by reading it this
+# session), but its OWN selectivity here is governed mostly by the leading
+# literal + wildcard, not by the alternation -- so the VM's own cascade may
+# still be exercised on positions the prefilter's coarser filter let
+# through. DEV-GRADE reading this session (non-pinned, single box, some
+# background load): guard-on measured a TIGHT, repeatable ~0.71ms/call;
+# guard-off measured NOISIER, mostly 0.85-1.17ms/call (one round matched
+# guard-on's number). That is a real but smaller and noisier signal than
+# CELL B's --engine=vm arm, under the DEFAULT engine a real caller actually
+# gets -- exactly the arm the decision needs pinned rather than eyeballed.
+# ---------------------------------------------------------------------------
+echo "-- CELL C: default engine, alternation NOT at pattern start (wildcard prefix) --"
+PAT_C="(x.*?(?:frank|fred|brad|bobby|janet|carla|derek|elisa|felix|gina))"
+python3 -c "print('x' + 'z' * 2000000, end='')" > "$W/c_reject.txt"
+for guard in on off; do
+    mode="c_$guard"
+    mkdir -p "$W/$mode"
+    gflag=""; [ "$guard" = off ] && gflag="-fno-altcls-guard"
+    # shellcheck disable=SC2086
+    "$PCREC" -p rx $gflag -o "$W/$mode/gen.c" -- "$PAT_C" >/dev/null 2>&1
+    $CC -O2 -w -std=gnu11 -I "$W/$mode" -o "$W/$mode/t" "$W/b_drv.c" "$W/$mode/gen.c" 2>/dev/null \
+        || echo "  CELL C ($mode): driver did not compile"
+done
+echo "  interleaved rounds ('x' + 2 MB reject tail, ${N:-50} reps each cell):"
+for ((r = 0; r < ROUNDS; r++)); do
+    best_of "round $r: guard=on"  "$W/c_on/t"  "$W/c_reject.txt" "${N:-50}"
+    best_of "round $r: guard=off" "$W/c_off/t" "$W/c_reject.txt" "${N:-50}"
+done
+echo
+echo "-- CELL C stamps and engine (confirms this pattern really stays on the DEFAULT hybrid path) --"
+for guard in on off; do
+    mode="c_$guard"
+    printf '  %-10s engine=%s prefilter=%s guards=%s\n' "$mode" \
+        "$(grep -o 'RX_ENGINE "[a-z]*"' "$W/$mode/gen.c" 2>/dev/null)" \
+        "$(grep -o 'RX_VM_PREFILTER "[a-z]*"' "$W/$mode/gen.c" 2>/dev/null)" \
+        "$(grep -o 'RX_ALTCLS_GUARDS [0-9]*' "$W/$mode/gen.c" 2>/dev/null)"
+done
+echo
+echo "  If no cell above ever shows a DEFAULT-engine benefit (this one included),"
+echo "  that is itself part of the manager's decision frame: the guard's value"
+echo "  would then be confined to --engine=vm, a comparability/debug facility"
+echo "  per DD-8's R21 E-6 note, which does not on its own justify a new"
+echo "  selection axis + D46 apparatus + permanent sabotage row on the path"
+echo "  real callers get."
