@@ -23,6 +23,22 @@
  * smaller than its row implies: ZERO currently-refused constructs become
  * compilable when the VM exists.
  *
+ * [M4.7a] SR-8 ITSELF: two analyses are registered below, not one.
+ * `forces_registry_engines` is the GENERIC socket a future VM_ONLY module
+ * plugs into instead of writing its own forces_* function — it reads
+ * Ctx.vmonly_seen/vmonly_pos/vmonly_why, which a producer stamps from its
+ * own registry row's `engines` mask at the moment it builds the node. That
+ * is the literal content of SR-8's charter ("a lowering-time check against
+ * the registry's engines column"): the column is consulted where a node is
+ * BUILT (the producer, which already has the row in hand) and the verdict
+ * is READ where engines are CHOSEN (here) — never in the parser's per-escape
+ * refusal path, which only ever judges module ENABLEMENT (RS_MODULE +
+ * enabled.c) and has no engine opinion to relocate. `\1` today is still
+ * refused there as "requires module 'backrefs'", and that stays correct
+ * after this flip: no producer exists, so there is no engine question yet
+ * to ask. Confirmed empty by population (§9.1) at M4.7a by reading every
+ * module file in src/parse/.
+ *
  * THE TRIGGER IS THE REQUESTED OUTPUT, NOT THE PRESENCE OF A `(` (§5.3, the
  * correction to the freeze document's candidate (b)). `a(b|c)+d` compiled
  * with --no-captures is capture-free WORK and stays on the DFA forever; the
@@ -73,8 +89,38 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
     return ENGM_VM;
 }
 
+/* [M4.7a] SR-8's flip: the GENERIC counterpart to forces_captures, for
+ * every OTHER VM_ONLY registry row instead of a bespoke forces_* per
+ * module. It does not walk the AST or read the registry itself — a
+ * producer that builds a node for a row whose `engines` mask excludes
+ * ENGM_DFA stamps `cx->vmonly_seen`/`vmonly_pos`/`vmonly_why` at build
+ * time (Ctx.vmonly_* in internal.h carries the full rationale), and this
+ * function reads that fact exactly as forces_captures reads
+ * cx->want_caps/ncap/first_cap_pos. That indirection is deliberate: it is
+ * the producer, not this pass, that knows which registry row and which
+ * pattern offset are responsible, so the fact is recorded once, at the
+ * one place that has it, rather than re-derived by a tree walk here.
+ *
+ * EMPTY BY POPULATION TODAY, the same posture the §5.6 override's second
+ * branch below already carries: no registry row with ENGM_VM only has a
+ * producer (registry.c's own header states this; re-confirmed reading
+ * every module file in src/parse/ at M4.7a), so `vmonly_seen` is never
+ * set and this analysis always returns ANY_ENGINE. tests/select_engine/
+ * exercises it directly with a hand-built Ctx, since no real pattern can
+ * reach it yet. */
+static unsigned forces_registry_engines(Ctx *cx, const Ast *a, size_t *why_pos,
+                                         const char **why)
+{
+    (void)a;
+    if (!cx->vmonly_seen) return ENGM_DFA | ENGM_VM;
+    *why_pos = cx->vmonly_pos;
+    *why = cx->vmonly_why ? cx->vmonly_why : "a VM-only construct";
+    return ENGM_VM;
+}
+
 static const EngineAnalysis analyses[] = {
     { "captures", forces_captures, NULL },
+    { "registry-engines", forces_registry_engines, NULL },
 };
 
 /* ---- the pass ---- */

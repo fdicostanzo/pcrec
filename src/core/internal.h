@@ -334,6 +334,25 @@ typedef struct {
     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
      * engine_why stamp's `why_pos` (§5.5). */
     size_t               first_cap_pos;
+    /* [M4.7a] SR-8's flip: the GENERIC engine-capability forcing fact,
+     * symmetric to want_caps/ncap/first_cap_pos above but for constructs
+     * OTHER than captures. A producer that builds an AST node for a
+     * registry row whose `engines` mask excludes ENGM_DFA sets these three
+     * (first occurrence wins, the same "first" rule captures already
+     * uses) instead of writing its own select_engine.c analysis —
+     * src/opt/select_engine.c's forces_registry_engines reads them
+     * generically, which is what makes the registry's `engines` column
+     * (registry.c's RegRow.engines) a fact lowering CAN consult rather
+     * than one the parser would have had to interpret on the construct's
+     * behalf. NO WRITER TODAY (mirrors ModState.multiline's precedent,
+     * D47.5): every VM_ONLY registry row is gated by a module with no
+     * producer (registry.c's own header), so no code builds a node this
+     * could ever fire for. The module that lands the first VM_ONLY
+     * producer inherits writing these three fields, not inventing a new
+     * forces_* analysis. */
+    bool                 vmonly_seen;
+    size_t               vmonly_pos;
+    const char          *vmonly_why;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
