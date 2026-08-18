@@ -22,10 +22,7 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-18: K2 (cosmetic), K27 (technical UB in emitted code:
-  the search body's memchr prefilter receives NULL on the documented-legal
-  s==NULL/n==0 edge; behavior correct, UBSan-visible to users, found by the
-  R29 fix lane's own probe; scheduled with the next emitter-touching wave),
+  Open as of 2026-08-18: K2 (cosmetic),
   K26 (INFRASTRUCTURE: LeakSanitizer
   is a measured no-op on this box, so make asan's leak tier has never run —
   canary obligation + host-config ruling recorded in the entry), K25 (compile TIME in DFA
@@ -38,7 +35,13 @@ Append-only where noted; the restart/status-recovery record for the project.
   fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
   exhausts the step budget on a 100-byte ordinary input; found by the D27
   blinded quantifier corpus 2026-08-16; regression in
-  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K7
+  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K27
+  (CLOSED 2026-08-18, [M5-SEAM] — the emitter-touching wave it was
+  scheduled for: `if (pos >= n) return 0;` above the non-EOL memchr
+  arm only, the EOL arm's own bound already implying s != NULL;
+  UBSan-verified in both directions — guarded artifact clean,
+  guard-stripped artifact reproduces the report; regression rides the
+  ubsan battery via the [K27] codegen check). K7
   (CLOSED 2026-08-18, [M4.7b] — the entry whose own DIAGNOSIS was the
   thing that was wrong: it placed the memory in the subset construction,
   and it was in the NFA builder. The `X{m,n}` tail loop in src/ir/nfa.c

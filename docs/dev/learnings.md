@@ -106,6 +106,14 @@ distilled forms:
   assert exact occurrence counts in patch harnesses; a green sabotage is
   a finding about the population OR about redundancy — run it to find
   out which.
+- A REFERENCE BUILD assembled by glob or hand-enumerated list drifts
+  silently from the subject's source set ([M5-SEAM], 2026-08-18: two
+  suites' one-level `src/*/*.c` globs missed the new `src/gen/enc/`
+  nesting — loud that day only because the symbols were missing; a
+  differential whose reference quietly compiles from DIFFERENT sources
+  measures nothing). Enumerate by `find`, and hard-fail on an empty or
+  suspiciously short list — the source LIST is itself an input someone
+  must have chosen.
 
 ## 4. Testing strategy
 

@@ -2578,3 +2578,57 @@ Known M1 limitations (tracked for later milestones):
     obligation). rx_info struct-tag spelling BLESSED (D57) — spec note
     update rides the panel fix pass. Push to origin done at session
     start (Frank's call, 860dcb6..1a933a2).
+
+## 2026-08-18 (thirty-second session — [M5-SEAM]: the encoding seam prelude lands)
+
+- [M5-SEAM] STATE:completed — THE ENCODING SEAM PRELUDE (D58, Frank,
+  2026-08-18, thirty-second session: built BEFORE M6 so M6's
+  encoding-sensitive residue is born on the seam, not retrofitted).
+  Scope: (a) encoding as a PER-PATTERN generation scalar —
+  pcrec_options field + CLI `--encoding=byte|utf8`, byte the default,
+  utf8 CLEANLY REFUSED until M5 proper (never process- or file-global;
+  mixed encodings in one compilation unit are supported by
+  construction); (b) the DD-12 residual-header embed mechanism, byte
+  backend only — each artifact embeds exactly one encoding's residual
+  block; (c) `<prefix>_next_pos` as the first pulled residual entry:
+  spec §3.1's find-all loop moves onto it (resolving that section's
+  recorded byte-vs-character caveat), §8.0's worked example updated
+  compile-and-run, emitted ABI comment + lib/pcrec.h updated under the
+  R29 verbatim-quote discipline; (d) codegen structural check that
+  residual entries are never called from hot-loop labels (allowlist
+  shape per DD-12 (7)), sabotage-validated; (e) riders: the K27 fix
+  (this IS the emitter-touching wave known_issues.md scheduled it for)
+  and the stale D56 "VM engine arrives in M4" diagnostic text. NOT in
+  scope: UTF-8 lowering, \p{...}, DD-1 folding — those stay [M5.0].
+  [M6.0] expands only after this row lands.
+  COMPLETION NOTE (2026-08-18): landed as merge e70f71c (lane/m5seam,
+  opus, 10 WIP commits, single session same day as ruled). As-built
+  deltas from the row text: the options field and `-e` ALREADY EXISTED
+  spelled PCREC_ENC_ASCII / `-e ascii` — RENAMED to PCREC_ENC_BYTE
+  with NO alias (pre-v1 announced boundary, spec §9 posture; "ASCII"
+  was false about 8-bit-clean byte semantics, and D58 names the
+  encoding `byte`; manager-accepted, Frank-notified). Layout:
+  src/gen/enc/ {enc.h seam interface, enc.c registry, enc_byte.c};
+  backends are TEXT with `$`-prefix substitution; utf8 exists as a
+  NULL-backend registry row so the refusal reads the row's own name
+  (closes [SR-10]'s motivating instance — compile.c and cli both
+  resolve names through the registry now). next_pos is EXTERN like the
+  other four entry points; contract: smallest boundary strictly greater
+  than pos, every position >= n counts as a boundary, reads s only in
+  [pos, n). Spec gains §3.1.1; find-all re-verified 26 pairs x 2
+  engines = 52 runs vs re.finditer, lossy class subset-checked BOTH
+  directions, graduated from transcript to suite (tests/encseam/, in
+  make test). New checks: S68 sabotage (hot-loop residual call — a
+  sabotage that changes NO answer, only the structural check sees it;
+  codegen 3fail/44pass red arm, corpus 0fail control) and ABI-block
+  cross-prefix byte-identity (4 prefixes, whole-file control). K27
+  CLOSED (guard `if (pos >= n) return 0;` on the non-EOL memchr arm
+  only; UBSan-verified in both directions; regression rides the ubsan
+  battery). Suite 10,369/0 (verified independently by the manager
+  pre-merge), cli 260→269, codegen 41→44; post-merge battery all five
+  stages green; bench gate 13/13, case (c) at historical spread
+  (391.366 MB/s — the K27 guard cost nothing measurable). Check-design
+  find for the ledger: TWO suites (trie-identity, thread) assembled
+  reference builds from one-level source globs and broke loudly on
+  src/gen/enc/ nesting — the failure shape is the silent one; both now
+  `find` sources and hard-fail on an empty list.

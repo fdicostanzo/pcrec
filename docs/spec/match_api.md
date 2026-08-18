@@ -59,7 +59,10 @@ out-of-range value. Two SURFACE changes ride this revision and are recorded
 where they happen rather than folded in silently: `PCREC_ENC_ASCII` is
 renamed `PCREC_ENC_BYTE` (§8.2), and §3.1's byte-vs-character caveat is
 RESOLVED rather than deleted — §3.1.1 keeps the old caveat's text and says
-what discharged it.
+what discharged it. A same-day manager follow-up (from a live
+consumer-question thread) adds two ADVISORY clarifications: the §3
+entry-picker's discriminator sentence and §3.2's failing-match cost note —
+prose only, no emitted text quoted, nothing re-measured.
 
 ---
 
@@ -455,7 +458,16 @@ The two engines implement it differently — the VM emitter genuinely has
 no search loop here, while the DFA emitter reaches the same answer by
 running its ordinary search and rejecting any match whose start is not
 `ctx->pos`. Both were measured to give the same answers; only the
-promise above is contractual.
+promise above is contractual. One COST consequence of the DFA shape is
+worth a caller's attention: on a FAILING match-here, the underlying
+unanchored search does not know the question is anchored — it may skim
+the remainder of the subject hunting a later match the filter will then
+discard (the state-0 `memchr` skip keeps this a skim rather than a
+per-byte walk), where the VM's anchored body fails at the first
+divergent byte. A caller issuing many expected-to-fail `<prefix>_match`
+probes against long subjects on a DFA artifact is in this entry's worst
+case; the filed improvement (an emitted anchored automaton,
+docs/dev/plan.md [ENG-ABS]) is evidence-gated and not scheduled.
 
 Returns the matched
 length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no
@@ -494,7 +506,13 @@ exactly like `<prefix>_match`.
 Which entry a caller reaches for: no start position known and/or no
 captures wanted → `<prefix>_search`; start position known, captures
 wanted, no search loop wanted → `<prefix>_match_caps`; neither offsets
-nor a loop wanted → `<prefix>_match`.
+nor a loop wanted → `<prefix>_match`. The discriminator is whether the
+start position is KNOWN, never whether captures are wanted:
+`<prefix>_search` delivers full captures too when handed a `caps`
+buffer (§3.1's table), so "first match plus its groups" is one
+`<prefix>_search` call — `<prefix>_match_caps` is only for the anchored
+case, and reaching for it because "captures" appears in its name is the
+misreading this sentence exists to prevent.
 
 **One caveat on that ergonomic framing**, because it invites reading the
 three entries as interchangeable views of one answer: they are not, on

@@ -10315,3 +10315,91 @@ lane independently held its own suite launch on discovering the asan
 battery (right call, wrong release trigger — the pid it watched was
 not the last battery stage); background-work handoffs should name the
 COMPLETION ARTIFACT (the log trailer), never a process.
+
+## 2026-08-18 (EDT), thirty-second session — [M5-SEAM]: the encoding seam lands as a prelude; M6-READ chartered; the ordering thread with Frank
+
+THE SESSION'S SHAPE. Woke to execute the ruled M6 expansion; Frank
+opened a live design thread instead — "advancing via emitting s+1
+works for byte encoding but not utf, perhaps we need a layer utf can
+apply" — and the session became that layer. Three rulings out of the
+thread (D58): [M5-SEAM] → M6 → the rest of M5; encoding is a
+PER-PATTERN scalar (DD-12 gains requirement (8)); the seam scope
+delegated. The premise check that preceded it mattered: a freshly
+emitted artifact showed the hot path has NO external s+1 restart loop
+(unanchoredness is the automaton's state-0 self-loop + memchr skip;
+the reverse pass is a byte walk), which reframed the fear — the
+emitter is not rewritten for UTF under ANY ordering; the genuine
+coupling is the enumerable RESIDUE. Frank's engine question got the
+axes answer now recorded in D58: lowering is keyed off encoding,
+emission off engine, N+N never NxN.
+
+THE LANE (lane/m5seam, opus, 10 WIP commits, merged e70f71c). All of
+D58's scope landed in one session: src/gen/enc/ sealed-backend
+registry (backends are TEXT, `$`-prefix substitution; utf8 is a
+NULL-backend row so the refusal reads the registry's own name, closing
+[SR-10]'s motivating instance), <prefix>_next_pos in every artifact
+(extern, fifth entry point; contract in §3.1.1), spec §3.1 find-all
+loop moved onto it with the byte-vs-character caveat RESOLVED
+(26 pairs x 2 engines vs re.finditer, lossy class subset-checked both
+directions, transcript graduated to tests/encseam/ in make test), S68
+sabotage (changes NO answer — only the structural check sees it),
+ABI-block cross-prefix identity check (a property previously held by
+discipline alone), K27 closed bidirectionally under UBSan, D56 stale
+text fixed. SURPRISE the brief missed: the options field and `-e
+ascii` already existed — lane renamed PCREC_ENC_ASCII → PCREC_ENC_BYTE
+with NO alias (pre-v1 announced boundary; "ASCII" was false about
+8-bit-clean semantics; D58 itself says `byte`). Manager accepted,
+Frank notified with the revert cost (~2 lines) stated.
+
+VALIDATION. Suite 10,369/0 verified INDEPENDENTLY by the manager
+before merge (numbers re-run, never copied); cli 260→269, codegen
+41→44. Post-merge battery: test, strict, ubsan, asan, lint — all five
+green. Bench gate 13/13 on a quiet box; case (c) at 391.366 MB/s,
+its historical spread — the K27 guard (one emitted branch beside the
+memchr skip) cost nothing measurable.
+
+[M6-READ] CHARTERED mid-session (Frank, three messages, two
+clarifications): emitted-code readability as M6's immediate follow —
+data-structure block comments, section comments, per-line INTENT
+comments on CODE only, full names for LOCALLY-SCOPED identifiers only
+with the ABI frozen ("no ABI change of any kind"), state-name legends
+in tables (states only, never indexes) now a REQUIREMENT. Engineering
+notes on the row: object-code-neutral by construction (the free
+check), emitter tags state-valued cells at emission (no inference),
+one sample artifact approves the style before full conversion.
+
+FRANK'S CONSUMER-QUESTION THREAD improved the spec twice more
+(advisory prose, ledger-noted): the §3 entry-picker's "and/or no
+captures wanted" implicature (search DELIVERS captures; the
+discriminator is whether the start is known) and §3.2's failing-match
+cost note (a failing DFA match-here may skim the subject; the VM
+fails at first divergent byte). The mechanism discussion — "perhaps
+match can tell search to be anchored" — produced the [ENG-ABS] second
+mechanism: a runtime flag CANNOT work (the wrap's state merging erases
+start provenance, structural per DD-7), but the generation-time form
+is cheaper than assumed — anchored match-here needs only the UNWRAPPED
+forward DFA and NO reverse pass. Recorded evidence-gated, behind M6.
+
+SESSION INTERRUPTION mid-battery (--resume): the battery's OS process
+tree SURVIVED the Claude process death and the completion-artifact
+rule (trailer in the log, never a process) is what made recovery
+trivial — re-create the crons, keep polling the artifact. The
+lane-side lesson: the lane went idle twice without SendMessage'ing its
+final report; the second explicit "your text is not visible to me,
+reply via SendMessage" ping produced a complete report. Brief-form fix
+for next time: state IN THE BRIEF that the final report must be
+delivered via SendMessage to team-lead.
+
+CHECK-DESIGN FIND (for the ledger, new class): two suites assembled
+their REFERENCE builds from one-level source globs (`src/*/*.c`; a
+hand-enumerated dir list) and broke loudly when src/gen/enc/ nested
+sources two levels down — but the failure shape is the silent one: a
+differential's reference build quietly assembled from a DIFFERENT
+source set than the subject measures nothing. Both now `find` sources
+and hard-fail on an empty list.
+
+NEXT: [M6.0] expansion (premises re-verified at expansion), carrying
+its D47.5 obligation and the D58 sequencing note (M6 residue routes
+through the seam from birth). [M6-READ] follows M6. Then the rest of
+M5, whose UTF-8 backend is the seam's validation event (D58
+revisit-when).

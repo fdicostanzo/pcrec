@@ -204,27 +204,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M5 — UTF-8
 
-- [M5-SEAM] STATE:started — THE ENCODING SEAM PRELUDE (D58, Frank,
-  2026-08-18, thirty-second session: built BEFORE M6 so M6's
-  encoding-sensitive residue is born on the seam, not retrofitted).
-  Scope: (a) encoding as a PER-PATTERN generation scalar —
-  pcrec_options field + CLI `--encoding=byte|utf8`, byte the default,
-  utf8 CLEANLY REFUSED until M5 proper (never process- or file-global;
-  mixed encodings in one compilation unit are supported by
-  construction); (b) the DD-12 residual-header embed mechanism, byte
-  backend only — each artifact embeds exactly one encoding's residual
-  block; (c) `<prefix>_next_pos` as the first pulled residual entry:
-  spec §3.1's find-all loop moves onto it (resolving that section's
-  recorded byte-vs-character caveat), §8.0's worked example updated
-  compile-and-run, emitted ABI comment + lib/pcrec.h updated under the
-  R29 verbatim-quote discipline; (d) codegen structural check that
-  residual entries are never called from hot-loop labels (allowlist
-  shape per DD-12 (7)), sabotage-validated; (e) riders: the K27 fix
-  (this IS the emitter-touching wave known_issues.md scheduled it for)
-  and the stale D56 "VM engine arrives in M4" diagnostic text. NOT in
-  scope: UTF-8 lowering, \p{...}, DD-1 folding — those stay [M5.0].
-  [M6.0] expands only after this row lands.
-- [M5.0] STATE:not-started — milestone (expand on arrival): byte-wise UTF-8 automata, \p{...} module
+- [M5.0] STATE:not-started — milestone (expand on arrival): byte-wise UTF-8 automata, \p{...} module. NOTE ([M5-SEAM], completed 2026-08-18, see plan_completed.md): the residual seam, per-pattern `--encoding` scalar, and `<prefix>_next_pos` already SHIPPED as the D58 prelude — what remains here is the UTF-8 lowering instance (CharSet → byte-sequence fragments), \p{...}, DD-1 folding, the UTF PC-4 oracle twin, and DD-12 (7)(a)'s two M5-time structural checks (hot-loop shape identity ASCII-vs-UTF-8; the second-backend validation of the seam D58's revisit-when names)
 
 ## M6 — PCRE feature modules
 
