@@ -252,8 +252,9 @@ Two things are already true here and both are load-bearing for this module:
    pay-only-when-it-differs property for free.
 2. **`bot_ok` is a start-state property, not a transition property.** It is
    passed `true`/`false` at the two start states (`src/ir/dfa.c:678-679`) and
-   **hardcoded `false` in the worklist** (`src/ir/dfa.c:684-690` calls
-   `make_state(..., pre, npre, false, ...)`). That is precisely why plain `^`
+   **hardcoded `false` in the worklist** — the loop spans
+   `src/ir/dfa.c:681-695` and the call itself is at **`:692`**,
+   `make_state(cx, nfa, d, prune, pre, npre, false, &sc, scratch)`. That is precisely why plain `^`
    works and why `(?m)^` cannot work without touching that line: multiline `^`
    is satisfiable *after consuming a byte*, which is a transition property.
 
@@ -503,7 +504,7 @@ The prototype builds exactly the automaton this design proposes — DFA state =
 (NFA pre-set, previous byte was a word character), closure parameterised by
 `(prev_is_word, next_is_word)` in the same way `src/ir/dfa.c:640-641`
 parameterises by `eol_ok`, with the unanchored self-loop
-(`nfa_wrap_unanchored`, `src/ir/nfa.c:590`) and **Moore minimisation**, because
+(`nfa_wrap_unanchored`, `src/ir/nfa.c:652`) and **Moore minimisation**, because
 pcrec minimises and an unminimised count would overstate the cost: the entire
 question is how many context-split states *survive being distinguished*.
 
@@ -818,7 +819,7 @@ zero.
 
 **`(?m)^`** is true at `pos == 0` or when `s[pos-1] == '\n'`. Forward that is a
 previous-byte context bit — cheap, and it requires changing the one hardcoded
-`false` in the worklist (`src/ir/dfa.c:689`) into "this byte class is the
+`false` in the worklist (`src/ir/dfa.c:692`) into "this byte class is the
 newline class". But the **reverse** machine is the problem, and it is the same
 problem D8 recorded for plain `^`:
 
@@ -1057,6 +1058,16 @@ value — not a compile-time constant like `\A`'s `pos == 0`, but equally free.
 `nfa_wrap_unanchored` bakes the self-loop into the NFA in place with no way to
 recover the anchored machine, and concludes that "`\G` wants the unanchored
 engine's SHAPE without the self-loop, which is a toggle on the wrap".
+
+> **Cite note.** §7.3 locates `nfa_wrap_unanchored` at `src/ir/nfa.c:590`, and
+> this document repeated that line verbatim in §3.5 and in
+> `probe_wordctx_states.py` without re-deriving it. **It is stale**: the
+> function is at **`:652`** today, and `:590` is now inside the K7
+> bounded-repeat fix, unrelated code. Corrected here; `engine_m4.md` is not
+> this lane's to edit, so the stale cite there joins the M3 list of
+> manager-at-merge items. This is the carried-forward-comment failure the R20
+> checkpoint already named, and it reached this document because a cite copied
+> from a trusted sibling doc was not re-run against the file.
 
 **This design does not need the toggle**, and that is the substantive DD-4
 answer. pcrec already emits an un-self-looped machine: ENG_ATTEMPT is a
@@ -1531,7 +1542,7 @@ transparent behaviour, and `src/opt/possessify.c:167`'s arm is exactly such a
 site. A new kind cannot be silently ignored.
 
 **The deciding measurement.** *Does the compiler actually catch a new kind?*
-`Ast.k` is enum-typed (`AKind k;`, `src/core/internal.h:87`) and the build is
+`Ast.k` is enum-typed (`AKind k;`, `src/core/internal.h:89`) and the build is
 `-Wall -Wextra`, so `-Wswitch` should fire at any switch lacking the case and
 lacking a `default:`. Measured rather than assumed, and — **corrected after R30
 M8** — measured by a COMMITTED INSTRUMENT rather than by a hand edit anyone

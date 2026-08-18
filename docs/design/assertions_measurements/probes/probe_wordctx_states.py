@@ -203,7 +203,7 @@ def compile_nfa(pat, unanchored=True):
     m = nfa.add(('match',))
     start = build(nfa, ast, m)
     if unanchored:
-        # nfa_wrap_unanchored's self-loop (src/ir/nfa.c:590): a state-0 loop on
+        # nfa_wrap_unanchored's self-loop (src/ir/nfa.c:652): a state-0 loop on
         # every byte, which is how pcrec makes ENG_UNANCH unanchored.
         sp = nfa.add(('split', start, -1))
         loop = nfa.add(('cls', ALL, sp))
