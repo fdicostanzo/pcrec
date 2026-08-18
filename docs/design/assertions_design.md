@@ -51,7 +51,21 @@ their repo commit:
 | `probes/probe_wordctx_states.py` | PROTOTYPE, calibrated | what `\b`'s context bit costs in states (§3.5) |
 | `probes/probe_acc_by_class.sh` | MEASURED, artifact benchmark | what a next-byte-sensitive accept costs the hot loop (§3.6) |
 | `probes/probe_z_oracle.py` | MEASURED, both oracles | that python `re` is the WRONG oracle for `\Z` (§3.2.1) |
-| `eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py` | re-run, not rebuilt | the D47.5 gate's justification, today (§8) |
+| `probes/probe_d475_scope.py` | MEASURED, both oracles | the scope-blind D47.5 gate, as concrete miscompile cells (§8.1.1) |
+| `eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py` | re-run, not rebuilt | the D47.5 gate's justification, today (§8.8) |
+
+Every file in `assertions_measurements/out/` is written by
+`probes/archive.sh`, which stamps one provenance header on all of them — probe
+path, the commit the probe was last changed at, the commit and branch the run
+was made from, whether the working tree was clean, date, and the python3,
+libpcre2 and gcc versions. A number in this document can therefore be traced to
+a run, not merely to a claim.
+
+One measurement in §8.3 is not a probe: it required a temporary edit to
+`src/core/internal.h` (a probe enumerator added to `AKind`, the tree rebuilt,
+the warnings counted, the edit reverted — tree verified clean before and after).
+It is reported with its command and its output so it can be repeated, but it
+leaves no committed instrument, and that is stated rather than hidden.
 
 ---
 
@@ -393,13 +407,18 @@ identical matches and the only difference is the lookup.
 repetitions, 8 MB subject, identical `matches=54424` both arms):
 
 ```
-A facc[st]              0.0405 s  197.4 MB/s
-B facc2[st*ncls+cls]    0.0394 s  202.9 MB/s
-A facc[st]              0.0405 s  197.6 MB/s
-B facc2[st*ncls+cls]    0.0394 s  203.0 MB/s
-A facc[st]              0.0405 s  197.5 MB/s
-B facc2[st*ncls+cls]    0.0395 s  202.7 MB/s
+A facc[st]              0.0405 s  197.5 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.5 MB/s  matches=54424
+A facc[st]              0.0405 s  197.3 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.4 MB/s  matches=54424
+A facc[st]              0.0405 s  197.3 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.4 MB/s  matches=54424
 ```
+
+(An earlier run of the same probe, before the archive header existed, read
+197.4/197.6/197.5 against 202.9/203.0/202.7 — the same result at the same
+spread. The archived numbers are the ones quoted, so the document and
+`out/acc_by_class.txt` agree line for line.)
 
 **The wide table is not slower.** The spreads do not overlap and B is
 consistently ~2.6% *faster*, which this note does not claim as a speedup — it
@@ -817,45 +836,227 @@ recorded obligation ("a `(?m)` pattern whose `$`-follow quantifier must NOT
 possessify") would be discharged by a test on row 1 and would **miss both
 unsound rows**, because row 1 is the case the shipped code gets right.
 
-### 8.2 The proposed gate: resolve multiline at PARSE time into the node kind
+§8.1.1 turns that table into measured cells with subjects and spans, which is
+the form the panel should attack.
 
-**Proposed.** The parser, which is the only place that knows a construct's
-scope, resolves `^`/`$` against the multiline state *in force at that byte*:
+### 8.1.1 The miscompile as CELLS — the thing to attack
 
-| source | node |
-|---|---|
-| `\A` | `A_BOL` (always) |
-| `\Z` | `A_EOL` (always) |
-| `\z` | `A_EOS` (new, §3.3) |
-| `^` with multiline off | `A_BOL` |
-| `^` with multiline on | `A_BOL_M` (new) |
-| `$` with multiline off | `A_EOL` |
-| `$` with multiline on | `A_EOL_M` (new) |
+MEASURED, `probes/probe_d475_scope.py`, output `out/d475_scope.txt`
+(libpcre2 10.46, python 3.14.4). Read the columns as: **as-written** is the
+correct answer; **possessive** is what a wrongly-exempting gate compiles the
+pattern to.
 
-Then possessify's gate becomes a **node-kind test**: `A_EOL` is transparent,
-everything else in the assertion family widens and declines. `P.multiline`
-disappears from `Pss` entirely, and so does the only consumer
-`cx->mods.multiline` has.
+```
+shape               pattern (as written)   subject as-written possessive pcre2 poss verdict
+leading (?m)        (?m)[^c]{1,3}$         'a\nc'  (0, 1)    None      None      ok
+SCOPED (?m:...)     (?m:[^c]{1,3}$)        'a\nc'  (0, 1)    None      None      *** MISCOMPILE ***
+(?m) then (?-m)     (?m)[^c]{1,3}$(?-m)    'a\nc'  (0, 1)    None      None      *** MISCOMPILE ***
+(?m) AFTER the $    [^c]{1,3}$(?m)         'ab'    (0, 2)    (0, 2)    (0, 2)    ok
+no (?m) at all      [^c]{1,3}$             'ab'    (0, 2)    (0, 2)    (0, 2)    ok
+```
 
-Four properties, and they are why this is worth more than a scope-aware flag:
+**2 of 5 cells miscompile**, and the failure is the strongest kind available:
+the correct answer is a match at `(0,1)` and the possessified compile returns
+**no match at all**. That is a lost match, not a shifted span, so a guard cell
+on it cannot pass by an off-by-one.
 
-1. **Scope-correctness is by construction.** The parser applies the option to
-   the node in front of it; there is no later re-derivation to get wrong.
-2. **It fails SAFE for constructs that do not exist yet.** `first_of`'s existing
-   invariant is "a construct this analysis cannot model widens to all bytes"
-   (`src/opt/possessify.c`'s header). A whitelist of exactly `A_EOL` means every
-   assertion node added later — `A_BOL_M`, `A_EOS`, a `\b` node, a lookaround
-   node — declines until someone deliberately admits it. The current flag has
-   the opposite default.
-3. **It removes a control that shares a source with what it controls.** Today
-   the analysis re-reads parser state to reconstruct a property of a node it is
-   already holding. That is this project's recorded check-design failure mode.
-4. **It is a pure refactor that can land BEFORE `(?m)` is accepted** — while
-   `mods.multiline` is still unreachable, so the change is provably
-   behaviour-preserving on the whole corpus. §10 schedules it in Wave A for
-   exactly that reason.
+Why `[^c]{1,3}$` on `"a\nc"` diverges, spelled out: greedy takes `a\n` to
+position 2, `$` fails there (`s[2]` is `c`), retreats to position 1 where under
+`(?m)` `$` succeeds before the newline, and reports `(0,1)`. Possessified there
+is no retreat, so the match is lost. This is exactly §2.5's upward-closure
+argument collapsing per-line.
 
-### 8.3 The test shape — measured cells, both oracles
+**The two miscompiling shapes are the two where the end-of-parse state and the
+`$`'s own state DISAGREE in the unsafe direction:**
+
+```
+  leading (?m)        end-of-parse=True   the $ is multiline=True   AGREE
+  SCOPED (?m:...)     end-of-parse=False  the $ is multiline=True   DISAGREE -> unsound
+  (?m) then (?-m)     end-of-parse=False  the $ is multiline=True   DISAGREE -> unsound
+  (?m) AFTER the $    end-of-parse=True   the $ is multiline=False  DISAGREE -> merely conservative
+  no (?m) at all      end-of-parse=False  the $ is multiline=False  AGREE
+```
+
+**Note which row is `ok`:** `leading (?m)`, the only shape D47.5's recorded
+obligation names. The obligation as written would be discharged by a green test
+while both defects stayed live.
+
+**An oracle finding that rides along.** Two of the five cells are
+**libpcre2-only**: python3 `re` rejects a bare `(?-m)` (`missing :`) and rejects
+`[^c]{1,3}$(?m)` (`global flags not at the start of the expression`). Combined
+with §3.2.1's `\Z` result, this module's corpus is substantially
+libpcre2-dependent, and the wave briefs must say so rather than let an author
+discover it.
+
+### 8.2 The REQUIREMENT this establishes, stated before the spelling
+
+Both candidate fixes below satisfy one invariant, and the invariant is what the
+panel should hold the implementation to — not the spelling:
+
+> **Scoped modifier state is resolved AT PARSE TIME, onto the node. No
+> post-parse pass reads `cx->mods`.**
+
+That is a statement about *where a fact lives*, and it is already how every
+other modifier works (§8.4). `multiline` is the sole exception, and the
+exception is the defect.
+
+### 8.3 The spelling: a flag on the node, or a distinct node kind?
+
+Frank asked whether a **flag** on the AST node would suffice rather than a
+distinct **node kind**. Both satisfy §8.2. The argument each way, with the
+deciding evidence measured rather than asserted.
+
+**Spelling A — a flag on the node.** `$` stays `A_EOL` and gains a bool, set at
+parse from the state in force:
+
+```c
+    case '$': { Ast *a = node(cx, A_EOL); a->multiline = cx->mods.multiline; return a; }
+```
+
+*For:* it is **the house pattern**, and exactly the shape of the modifier
+resolution one line away — `r->greedy = !cx->mods.ungreedy` at
+`src/parse/parse.c:908`, with `ungreedy` scoped precisely as `multiline` is. No
+new enumerator; `Ast` already carries per-node fields (`greedy`, `possessive`,
+`not_repeatable`, `capno`). Every consumer that does not care about multiline —
+which is most of them — needs no edit at all.
+
+**Spelling B — a distinct node kind** (`A_EOL_M`, `A_BOL_M`).
+
+*For:* a consumer **cannot forget it**. That is not a stylistic preference here,
+because the defect being repaired is precisely *a consumer treating a multiline
+`$` as a plain `$`*. A flag reproduces the SHAPE of the bug it fixes: any
+`case A_EOL:` that does not read the new field silently keeps today's
+transparent behaviour, and `src/opt/possessify.c:167`'s arm is exactly such a
+site. A new kind cannot be silently ignored.
+
+**The deciding measurement.** *Does the compiler actually catch a new kind?*
+`Ast.k` is enum-typed (`AKind k;`, `src/core/internal.h:87`) and the build is
+`-Wall -Wextra`, so `-Wswitch` should fire at any switch lacking the case and
+lacking a `default:`. Measured rather than assumed — a probe enumerator was
+added to `AKind`, the tree rebuilt, the warnings counted, and the edit reverted
+(the tree was clean before and after):
+
+| | sites that fail to compile-warn | |
+|---|---|---|
+| **new node kind** | **15 warnings across 6 files** — `src/gen/emit_vm.c` 5, `src/opt/revdet.c` 4, `src/opt/possessify.c` 3, `src/opt/mrl.c` 1, `src/opt/altcls.c` 1, `src/ir/nfa.c` 1 | every one is a site that would have to *decide* about multiline |
+| **new flag** | **0** | a new struct field warns nowhere, by construction |
+
+Sample, verbatim:
+
+```
+src/ir/nfa.c:492:5: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
+src/opt/altcls.c:378:5: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
+src/opt/mrl.c:90:9: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
+```
+
+Nineteen switches over the kind exist; **15 have no `default:` arm**, so 15 of
+19 become build diagnostics — and under `make strict` (`-Werror`) a hard build
+failure. The four sites with a `default:` fall through silently and are the
+residual this spelling does not cover; they are `src/gen/emit_vm.c` (3) and
+`src/opt/revdet.c` (1), and a wave-C landing condition should be to inspect
+those four by hand.
+
+**RECOMMENDATION: spelling B, the distinct node kind — and this note
+disagrees with the manager's lean, so the panel should treat it as contested.**
+The manager's argument for A is real and is the house pattern. What tips it is
+that the two spellings are not symmetric in their failure mode: A's failure mode
+*is the bug being fixed*, and it is silent; B's failure mode is a build
+diagnostic at 15 of 19 sites. §8.2's invariant is satisfied by both, so if the
+panel prefers A, the design is not wrong — it is one that relies on review where
+the alternative relies on the compiler. A middle position exists and is worth
+the panel's attention: **spelling A plus a `default:`-less exhaustive switch
+convention plus a permanent sabotage row** buys much of B's safety at A's cost.
+
+Under either spelling `P.multiline` disappears from `Pss` and
+`cx->mods.multiline`'s only post-parse read goes with it.
+
+### 8.4 Blast radius, and how it was verified
+
+The claim "`cx->mods` has exactly one consumer outside the parser" is this
+lane's own grep, re-run in this worktree rather than inherited:
+
+```
+$ grep -rn "mods\." src/ --include=*.c --include=*.h --include=*.inc
+src/opt/possessify.c:57      (a comment)
+src/opt/possessify.c:579     P.multiline = cx->mods.multiline;
+src/parse/parse.c:80,105,117 xlevel
+src/parse/parse.c:164,179,494 caseless
+src/parse/parse.c:631        nocap
+src/parse/parse.c:693        dotall
+src/parse/parse.c:908,910    ungreedy
+```
+
+`mods.` appears in exactly **two files** in all of `src/`. Nothing in
+`src/ir/`, `src/gen/`, `src/core/` or `cli/` reads it.
+
+**And the structural point that follows, which answers Frank's (b) — "are there
+other flags that need the same notice?" — with NO, for a reason:** every one of
+the ten parser reads above is at **parse position**, i.e. every other modifier
+already resolves onto the AST as it is built and is therefore scope-correct by
+construction. `caseless` folds into the class as the class is built
+(`cls_casefold`); `dotall` shapes the dot's class; `ungreedy` resolves into
+`r->greedy`; `nocap` and `xlevel` likewise. **`multiline` is the only modifier
+consumed after the parse, and that is the whole defect.**
+
+The write side, for completeness, since a fix touches it:
+
+- **initialised** at `src/core/compile.c:117` and `:324` from the compile
+  options (`.caseless = (defo.flags & PCREC_CASELESS) != 0`) — two sites, both
+  outside `src/parse/`, which matters for §8.6.
+- **scoped** at `src/parse/parse.c:645-649` (`p_group_body`'s
+  save/parse/restore) and `src/parse/mod_modifiers.c:308-364` (the option run's
+  own set-parse-restore and the `)`-applies-to-enclosing-scope rule).
+
+### 8.5 The alternative that loses: plumb scoped state to the gate
+
+The other way to fix §8.1 is to keep the analysis reading multiline state and
+make that state *scope-aware* — thread a multiline stack through `pss_walk`,
+pushing and popping at the nodes that carry option scopes.
+
+It loses on three counts:
+
+1. **The AST does not record option scopes.** `(?m:...)`'s group is
+   set-parse-restore at parse time (`src/parse/mod_modifiers.c:352-364`) and
+   leaves **no node** behind saying "multiline was on in here" — a
+   non-capturing group with an option run produces the same tree as one
+   without. So this alternative must FIRST add scope markers to the AST, which
+   is strictly more surgery than resolving the fact onto the node and is the
+   same information stored in a worse place.
+2. **It preserves the failure mode.** The analysis would still be
+   re-deriving a property of a node from a separate source it must keep in
+   sync — this project's recorded check-design failure — instead of reading the
+   node it is already holding.
+3. **It does not generalise.** Every future consumer of "is this `$`
+   multiline?" (the DFA lowering in wave C, the VM emitter, a future
+   lookbehind analysis) would need its own copy of the same threading. Resolving
+   at parse means each of them just reads the node.
+
+### 8.6 Making the invariant STRUCTURAL rather than a discipline rule
+
+§8.2's invariant is currently a sentence someone must remember. It can be a
+construction, and this is the durable answer to Frank's (b): not "no other
+modifier is affected today" but **"no future modifier CAN be affected"**.
+
+**Proposed:** once possessify's read is gone, `cx->mods` has **zero legitimate
+consumers outside `src/parse/`**, so make an out-of-parse read a *compile
+error* rather than a review finding. The cleanest form, given the write sites in
+§8.4, is that **`ModState` stops being a `Ctx` member and becomes state owned by
+the parse driver** — it is only live during the parse anyway. `src/core/compile.c`
+already treats the option as a *seed* rather than the state (its own comment at
+`:112-116`: "the CLI option is the SEED for the parse state, not the state
+itself"), so those two sites pass the seed into the parse entry point instead of
+writing a member. After that, `cx->mods` does not exist to be read, and a future
+`(?X)` modifier physically cannot be consulted after the parse.
+
+Blast radius of that move: the two `compile.c` initialisations, the `Ctx`
+member, and the save/restore sites in `src/parse/` which already pass `cx`
+around. **Nothing in `src/ir/`, `src/gen/`, `src/opt/` (after the fix) or
+`cli/` touches it.** This is proposed as a wave-A item riding the gate refactor;
+if the panel judges it out of scope for [M6.2] it should become its own row
+rather than be dropped, because the invariant is the finding and the enforcement
+is what stops it decaying.
+
+### 8.7 The test shape — measured cells, both oracles
 
 D47.5's obligation is a `(?m)` pattern whose `$`-follow bounded quantifier must
 NOT possessify. This lane re-ran **eng_brep's own instrument**
@@ -899,12 +1100,13 @@ test:
   exemption *does* fire and must keep firing (a regression that disables the
   exemption wholesale would otherwise pass).
 - **the SCOPED cell §8.1 found**: `(?m:[^c]{1,3}$)` on `"a\nc"` → `(0,1)`. This
-  is the one that fails today's shipped gate design and passes §8.2's. It is the
+  is the one that fails today's shipped gate design and passes §8.2's invariant.
+  It is the
   cell D47.5's own wording does not ask for.
 - **a sabotage row** (`tests/mech/sabotages/`) that forces `A_EOL_M` to be
   treated as `A_EOL` in `first_of`, which must turn the cells red.
 
-### 8.4 A discrepancy this lane will not smooth over
+### 8.8 A discrepancy this lane will not smooth over
 
 `eng_brep_design.md` §2.5 cites **0 of 720** (multiline off) and **180 of 720**
 (multiline on). Re-running that section's own probe today gives **21 of 384**
@@ -1002,7 +1204,7 @@ provably behaviour-preserving when it lands.
 
 **Scope.** Parser rows for `\A`/`\Z` (aliases, §3.2) and `\z`; `closure`'s
 `end_ok` bit and `make_state`'s third closure + `endvar` (§3.3); the
-parse-time node-kind resolution of §8.2 as a pure refactor (`A_BOL_M`/`A_EOL_M`
+parse-time resolution of §8.2-§8.3 as a pure refactor (`A_BOL_M`/`A_EOL_M`
 introduced but **unreachable**, since `(?m)` is still refused); possessify's gate
 becomes a node-kind whitelist; `--features assertions` and §9.2's
 enabled-but-unbuilt refusal.
@@ -1017,7 +1219,7 @@ against libpcre2, NOT python, per §3.2.1, and the wave brief must carry that
 constraint explicitly**); a structural check that a
 `\z`-free pattern's artifact is **byte-identical** to the pre-wave artifact (the
 zero-regression claim of §3.3, checked rather than asserted); the non-multiline
-possessify controls of §8.3 must stay green; a corpus-wide byte-identity sweep
+possessify controls of §8.7 must stay green; a corpus-wide byte-identity sweep
 across the refactor.
 
 ### Wave B — `\b` `\B`
@@ -1051,7 +1253,7 @@ ENG_ATTEMPT via an extended `nfa_has_bot` and the three-way start dispatch
 B's mechanism reused. Landing it earlier would mean landing `(?m)` on top of a
 gate whose unsound rows §8.1 identifies.
 
-**Tests.** D47.5's obligation in full — §8.3's four cells, the non-multiline
+**Tests.** D47.5's obligation in full — §8.7's four cells, the non-multiline
 control, **the scoped `(?m:...)` cell**, and the sabotage row. Plus a `(?m)^`
 throughput note against D8's known-slow shape, so the ENG_ATTEMPT routing is
 recorded with a number rather than a shrug.
@@ -1113,10 +1315,31 @@ VM alone on a `\K` pattern, and `--engine=dfa` refuses `\K` (the D44.6 shape).
 recording that the find-all loop's `startpos` is what gives `\G` its
 global-iteration meaning?
 
-**Q6 — `eng_brep_design.md` §2.5's stale figures (§8.4).** This lane re-ran that
+**Q6 — `eng_brep_design.md` §2.5's stale figures (§8.8).** This lane re-ran that
 section's own probe and got different numbers with the same qualitative result.
 Correct §2.5 in place (house style is annotate, not rewrite), or leave it and let
-this document carry the current reading?
+this document carry the current reading? **This lane deliberately did not edit
+`eng_brep_design.md`**; the archived re-run (`out/dollar_multiline_rerun.txt`)
+carries full provenance so the annotation can be written from it directly.
+
+**Q7 — does D47.5 need an ADDENDUM? (§8.1–§8.6).** D47 ruling 5 says the
+exemption's condition must be "a real branch, not a comment". That was built,
+and §8.1 shows the branch reads a value that is *wrong for two scoped shapes* —
+so the ruling is satisfied in letter and defeated in fact. The substance of the
+proposed repair goes beyond what D47.5 says: it makes the multiline fact a
+property of the NODE, and (§8.6) proposes removing `cx->mods` from post-parse
+reach entirely so the class of defect cannot recur. **Recommendation: D47.5
+gains an addendum at merge, recording (a) that the live-branch requirement is
+necessary but not sufficient, (b) the invariant of §8.2 as the actual
+requirement, and (c) the spelling the panel picks in §8.3.** This lane
+deliberately does not edit `../dev/decisions.md`; the addendum is the manager's
+to write once the panel rules.
+
+**Q8 — the spelling, if the panel does not settle it (§8.3).** This note
+recommends the distinct node kind and records that the manager leans to the
+flag. Both satisfy §8.2's invariant; they differ in whether the failure mode is
+a build diagnostic (15 of 19 switch sites, measured) or a silent omission. If
+the panel splits, Frank picks.
 
 ---
 

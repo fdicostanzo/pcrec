@@ -1,0 +1,42 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_d475_scope.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 41540bb 2026-08-18
+# RUN FROM REPO COMMIT        : 41540bb (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/dollar_multiline_rerun.txt
+#     ?? docs/design/assertions_measurements/out/d475_scope.txt
+# RUN DATE   : 2026-08-18T16:59:57-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 ; python 3.14.4
+
+shape               pattern (as written)   subject as-written possessive pcre2 poss verdict
+leading (?m)        (?m)[^c]{1,3}$         'a\nc'  (0, 1)    None      None      ok
+SCOPED (?m:...)     (?m:[^c]{1,3}$)        'a\nc'  (0, 1)    None      None      *** MISCOMPILE ***
+(?m) then (?-m)     (?m)[^c]{1,3}$(?-m)    'a\nc'  (0, 1)    None      None      *** MISCOMPILE ***
+(?m) AFTER the $    [^c]{1,3}$(?m)         'ab'    (0, 2)    (0, 2)    (0, 2)    ok
+no (?m) at all      [^c]{1,3}$             'ab'    (0, 2)    (0, 2)    (0, 2)    ok
+
+end-of-parse multiline vs the `$`'s OWN multiline state:
+  leading (?m)        end-of-parse=True   the $ is multiline=True   AGREE
+  SCOPED (?m:...)     end-of-parse=False  the $ is multiline=True   DISAGREE -> unsound
+  (?m) then (?-m)     end-of-parse=False  the $ is multiline=True   DISAGREE -> unsound
+  (?m) AFTER the $    end-of-parse=True   the $ is multiline=False  DISAGREE -> merely conservative
+  no (?m) at all      end-of-parse=False  the $ is multiline=False  AGREE
+
+2 of 5 cells MISCOMPILE under the shipped gate design: SCOPED (?m:...), (?m) then (?-m)
+
+ORACLE COVERAGE: 2 cell(s) libpcre2-only, python3 `re` cannot express the pattern:
+  (?m) then (?-m)     python: missing : at position 18
+  (?m) AFTER the $    python: global flags not at the start of the expression at position 10
+  (every OTHER cell was checked against BOTH oracles and they agree — asserted, not merely reported.)

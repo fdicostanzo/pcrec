@@ -1,5 +1,27 @@
-# probe_dollar_multiline_pcre2.py (eng_brep_measurements/probes/), re-run for [M6.1]
-# repo commit: 99e27ef; 2026-08-18
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] assertions design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py
+#              (NOT this lane's file — eng_brep's own instrument,
+#               re-run rather than rebuilt, so a lane cannot fail to
+#               notice that the probe it is checking has moved)
+# PROBE LAST CHANGED AT COMMIT: 0b9da1f 2026-08-16
+# RUN FROM REPO COMMIT        : bcc2069 (lane/asrtdesign)
+# RUN DATE   : 2026-08-18T16:59:29-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# WHY THIS IS ARCHIVED: eng_brep_design.md §2.5 cites 0 of 720 and
+# 180 of 720 for this question. Re-running that section's own probe
+# today gives the numbers below. The QUALITATIVE result survives
+# exactly — 0 diverging with multiline off, non-zero with it on, on
+# the greedy population the exemption is about, both oracles agreeing
+# — while the ABSOLUTE numbers are stale. See assertions_design.md
+# §8.4. eng_brep_design.md is deliberately NOT edited by this lane.
+# ============================================================
+
 #   '[^c]{0,4}$' vs '[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration py=('\n\naaa', ((0, 1), ()), ((1, 5), ())) pcre2=('\n\naaa', ((0, 1), ()), ((1, 5), ()))
 #   '[^c]{1,3}$' vs '[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration py=('\n\naa', ((0, 1), ()), ((1, 4), ())) pcre2=('\n\naa', ((0, 1), ()), ((1, 4), ()))
 #   '[^c]{0,2}$' vs '[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration py=('\n\na', ((0, 1), ()), ((1, 3), ())) pcre2=('\n\na', ((0, 1), ()), ((1, 3), ()))

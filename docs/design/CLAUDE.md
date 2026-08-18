@@ -716,9 +716,22 @@ append-only or historical records.
   `(?m)a{0,4}$(?-m)` would EXEMPT a multiline `$` and miscompile the day the
   `m` letter is accepted, and D47.5's own recorded test obligation tests the
   one row the shipped code gets right. The proposed cure resolves multiline at
-  PARSE time into the node kind, making the gate a node-kind whitelist that is
-  scope-correct by construction and fails safe for every assertion node added
-  later. **Two premises were re-measured rather than inherited and one was
+  PARSE time onto the node, and the note states the INVARIANT ("scoped modifier
+  state is resolved at parse time onto the node; no post-parse pass reads
+  `cx->mods`") as the requirement, separately from the SPELLING. On the
+  spelling it recommends a distinct node kind over a flag and records that the
+  manager leans the other way, deciding it on a measurement rather than taste:
+  a new `AKind` enumerator produces **15 `-Wswitch` warnings across 6 files**
+  (probe enumerator added, tree rebuilt, warnings counted, edit reverted) where
+  a new struct field produces none — so a flag's failure mode IS the silent
+  bug being fixed, while a node kind's is a build diagnostic at 15 of 19 switch
+  sites. It also proposes making the invariant STRUCTURAL: after the fix
+  `cx->mods` has zero legitimate consumers outside `src/parse/`, so moving
+  `ModState` out of `Ctx` turns "no post-parse pass reads it" from a discipline
+  rule into a compile error, which is the durable answer to "which other
+  modifiers need this notice" — measured NO today (every other modifier already
+  resolves at parse position, `parse.c:80/105/117/164/179/494/631/693/908/910`)
+  and un-reachable in future by construction. **Two premises were re-measured rather than inherited and one was
   refuted**: `(?m)` already refuses with module `assertions`
   (`src/parse/mod_modifiers.c:280`), not `modifiers`, so question (vii) needs
   no re-attribution work at all. `\A` and `\Z` turn out to be EXACT ALIASES of
@@ -747,15 +760,22 @@ append-only or historical records.
   `start_max = startpos`, a third value for a string the emitter already picks
   between. Delivers a five-wave [M6.2] structure (A `\A`/`\z`/`\Z` + the gate
   refactor while it is provably a no-op; B `\b`/`\B`; C `(?m)`; D `\G`;
-  E `\K`), six open questions for Frank headed by whether the NEWLINE
+  E `\K`), EIGHT open questions for Frank — headed by whether the NEWLINE
   CONVENTION axis (DD-11) is declared now on `--encoding`'s per-pattern
-  refuse-by-name precedent, five BELIEVED claims each with its refutation
+  refuse-by-name precedent, and including a recommendation that D47.5 gain an
+  ADDENDUM at merge (its live-branch requirement is necessary but not
+  sufficient; this lane deliberately edits neither `../dev/decisions.md` nor
+  `eng_brep_design.md`) — five BELIEVED claims each with its refutation
   experiment, and seven things it does not measure headed by the REVERSE
   machine's state cost. Measurements: `assertions_measurements/`. Unpaneled —
   a D6 adversarial panel reviews it before [M6.2] starts.
-- `assertions_measurements/` — the [M6.1] lane's four probes and their archived
-  outputs; see its own CLAUDE.md. Two of the four read pcrec itself and two do
-  not, and the design doc marks every claim accordingly.
+- `assertions_measurements/` — the [M6.1] lane's five probes, its archiver and
+  the archived outputs; see its own CLAUDE.md. Some instruments read pcrec
+  itself and some are prototypes or oracle comparisons, and the design doc
+  marks every claim accordingly. Every file in `out/` is written by
+  `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
+  commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
+  of them.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

@@ -1,5 +1,28 @@
-# probe_ncls_refine.py -- the .rxt corpus (609 harvested 'pattern' lines, sort -u)
-# repo commit: 99e27ef; gcc 15; 2026-08-18
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_ncls_refine.py
+# ARGS       : /home/duxevents/pcrec/worktrees/asrtdesign/build/pcrec /home/duxevents/pcrec/worktrees/asrtdesign/build/rxt_patterns.txt
+# PROBE LAST CHANGED AT COMMIT: 99e27ef 2026-08-18
+# RUN FROM REPO COMMIT        : 41540bb (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/acc_by_class.txt
+#      M docs/design/assertions_measurements/out/dollar_multiline_rerun.txt
+#      M docs/design/assertions_measurements/out/ncls_refine_realistic.txt
+#      M docs/design/assertions_measurements/out/ncls_refine_rxt.txt
+#      M docs/design/assertions_measurements/out/wordctx_states_realistic.txt
+#      M docs/design/assertions_measurements/out/z_oracle.txt
+#     ?? docs/design/assertions_measurements/out/d475_scope.txt
+# RUN DATE   : 2026-08-18T17:00:07-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
 pattern                                    states  ncls +word   +nl +both
 [[:]]                                           3     3     4     4     5
 ^                                               -     1     2     2     3
@@ -616,4 +639,3 @@ SKIPPED (?n)(a)\1                                refused
 SKIPPED \N{abc}                                  refused
 SKIPPED \x                                       refused
 SKIPPED (?x)[a- ]                                refused
-EXIT=0

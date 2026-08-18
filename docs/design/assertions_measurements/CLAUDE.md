@@ -6,7 +6,7 @@ The measurements behind `../assertions_design.md` (module `assertions`: `\b`
 Kept separate from `../eng_brep_measurements/`, `../possessify_impl/` and their
 siblings for the reason those are separate from each other: never confuse one
 lane's numbers with another's. This lane's distinguishing property is that
-**two of its four instruments read pcrec itself and two do not**, and the
+**some of its instruments read pcrec itself and some do not**, and the
 design doc marks every claim accordingly.
 
 ## The instruments, and what kind of evidence each produces
@@ -37,6 +37,17 @@ design doc marks every claim accordingly.
   expectations for `\Z`, in the silent direction. Borrows
   `../eng_brep_measurements/probes/pcre2_ctypes.py` rather than carrying a
   second copy.
+- **`probes/probe_d475_scope.py` — MEASURED, both oracles.** The D47.5
+  scope-blindness finding as CELLS rather than as an argument: for each of five
+  `(?m)` placements it reports what the pattern MEANS and what a wrongly-
+  exempting gate would compile it to, so "the shipped gate miscompiles this"
+  is a table with subjects and spans. It does NOT test pcrec — pcrec refuses
+  `(?m)` today, which is exactly what makes the defect latent. Two of its five
+  cells are libpcre2-only and the probe says which and why, rather than
+  skipping them silently.
+- **`probes/archive.sh` — not a probe, the ARCHIVER.** Every file in `out/` is
+  written by it, so one provenance header covers them all and a number can be
+  traced to a run rather than to a claim.
 
 The D47.5 multiline-gate question is answered by **re-running
 `../eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py`**, not by a

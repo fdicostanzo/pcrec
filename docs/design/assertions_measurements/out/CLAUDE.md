@@ -1,7 +1,11 @@
 # docs/design/assertions_measurements/out — archived probe output
 
-Verbatim output of `../probes/`, each file carrying a source header (repo
-commit, tool versions, date) on the `docs/measurements/` precedent (D35).
+Verbatim output of `../probes/`. **Every file here is written by
+`../probes/archive.sh`**, so the provenance header cannot drift between them:
+probe path and args, the commit the probe was last changed at, the commit and
+branch the run was made from, whether the working tree was clean at run time,
+the date, and the python3, libpcre2 and gcc versions. Same intent as
+`scripts/measure.sh` / `docs/measurements/` (D35), scoped to this lane.
 
 **Evidence for the [M6.1] panel, never an oracle.** No check in `make test`
 reads anything here; re-run the probe to re-measure.
@@ -23,8 +27,14 @@ reads anything here; re-run the probe to re-measure.
   disagreements are listed, in both directions.
 - `acc_by_class.txt` — `probe_acc_by_class.sh`. Headline: the `states × ncls`
   accept table a next-byte-sensitive assertion forces is **not slower** —
-  197.4/197.6/197.5 MB/s against 202.9/203.0/202.7, identical `matches=54424`
-  both arms.
+  197.5/197.3/197.3 MB/s against 202.5/202.4/202.4, identical `matches=54424`
+  both arms (the variant is answer-preserving by construction, which is what
+  makes the timing attributable to the lookup).
+- `d475_scope.txt` — `probe_d475_scope.py`. Headline: **2 of 5 cells
+  MISCOMPILE** under the shipped D47.5 gate design — `(?m:[^c]{1,3}$)` and
+  `(?m)[^c]{1,3}$(?-m)` on `"a\nc"` are `(0,1)` correct and **no match**
+  possessified. Two of the five cells are libpcre2-only: python3 `re` rejects
+  a bare `(?-m)` and rejects a trailing `(?m)`.
 - `z_oracle.txt` — `probe_z_oracle.py`. Headline: **1 of 7 cells disagree**
   between libpcre2 and python3 `re`, and it is a `\Z` cell — python's `\Z` is
   PCRE2's `\z`, so python is the wrong oracle for `\Z`.
