@@ -49,6 +49,9 @@ enum {
     PCREC_MAX_DFA_STATES_TABLE = 32000,   /* table engine; must fit in short */
     PCREC_MAX_TABLE_ENTRIES    = 2000000, /* states*ncls bound (~12 MB source) */
 
+    /* PLACEHOLDER — replaced with the measured number below. */
+    PCREC_MAX_SUBSET_ELEMS     = 2000000000,
+
     /* [M4.5b] The VM emitter's own size backstop, and the reason it needs one
      * separate from the NFA cap above: a bounded repeat REPLICATES its body
      * (docs/design/engine_m4.md §3.3's RULED reading — `X{m,n}` is m mandatory

@@ -10,8 +10,16 @@ static void sb_grow(StrBuf *sb, size_t need)
     if (sb->len + need + 1 <= sb->cap) return;
     size_t cap = sb->cap ? sb->cap : 256;
     while (cap < sb->len + need + 1) cap *= 2;
-    sb->p = realloc(sb->p, cap);
-    if (!sb->p) abort();
+    /* [M4.7b/K7] realloc into a TEMPORARY: on failure the old buffer is still
+     * live and still owned by `sb`, so the error path's sb_free reclaims it.
+     * Assigning the NULL straight into sb->p would leak it and lose the only
+     * pointer to it. */
+    char *np = realloc(sb->p, cap);
+    if (!np) {
+        if (sb->cx) ctx_nomem(sb->cx);
+        abort();   /* a detached buffer (syntax_dump.c) has no error channel */
+    }
+    sb->p = np;
     sb->cap = cap;
 }
 
@@ -49,7 +57,10 @@ void sb_printf(StrBuf *sb, const char *fmt, ...)
 char *sb_take(StrBuf *sb)
 {
     char *p = sb->p ? sb->p : strdup("");
-    if (!p) abort();
+    if (!p) {
+        if (sb->cx) ctx_nomem(sb->cx);
+        abort();
+    }
     sb->p = NULL;
     sb->len = sb->cap = 0;
     return p;

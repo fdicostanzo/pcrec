@@ -12,7 +12,15 @@ void *arena_alloc(Arena *a, size_t sz)
     if (!b || b->cap - b->used < sz) {
         size_t cap = sz > ABLOCK_MIN ? sz : ABLOCK_MIN;
         b = malloc(sizeof(ABlock) + cap);
-        if (!b) abort();
+        /* [M4.7b/K7] A library must not kill its caller. The arena belongs to
+         * a Ctx, so a failure here is an ordinary diagnosed refusal: the
+         * longjmp lands in compile_driver, which frees this arena wholesale
+         * along with the Job's heap arrays. Nothing allocated so far leaks and
+         * nothing half-built is ever read again. */
+        if (!b) {
+            if (a->cx) ctx_nomem(a->cx);
+            abort();
+        }
         b->next = a->head;
         b->used = 0;
         b->cap = cap;

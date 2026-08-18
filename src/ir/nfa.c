@@ -78,9 +78,13 @@ static int nst(NB *b, NKind k)
     if (nfa->n >= PCREC_MAX_NFA_STATES)
         ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %d states)", PCREC_MAX_NFA_STATES);
     if (nfa->n == nfa->cap) {
-        nfa->cap = nfa->cap ? nfa->cap * 2 : 64;
-        nfa->st = realloc(nfa->st, (size_t)nfa->cap * sizeof(NState));
-        if (!nfa->st) abort();
+        int ncap = nfa->cap ? nfa->cap * 2 : 64;
+        /* [M4.7b/K7] realloc into a TEMPORARY, so a failure leaves the live
+         * array owned by the Job for job_cleanup rather than losing it. */
+        NState *nst = realloc(nfa->st, (size_t)ncap * sizeof(NState));
+        if (!nst) ctx_nomem(b->cx);
+        nfa->st = nst;
+        nfa->cap = ncap;
     }
     NState *s = &nfa->st[nfa->n];
     memset(s, 0, sizeof(*s));

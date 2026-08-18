@@ -10,7 +10,10 @@
  * reverse); shrinks emitted tables / label counts, which is both a code-size
  * and a cache win (compare case f motivated this).
  *
- * Pure computation: no ctx_fail paths, so plain malloc/free is safe here. */
+ * Pure computation: plain malloc/free, and the ONLY two ctx_fail paths are the
+ * allocation-failure ones added by [M4.7b/K7], which free every live local
+ * before they longjmp. Nothing else here leaves the function early, so no other
+ * site has to think about ownership. */
 
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +48,15 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
     while (hcap < (size_t)n * 2) hcap *= 2;
     int *htab = malloc(hcap * sizeof(int));       /* -> state index (class rep) */
     int *keys = malloc((size_t)n * (size_t)siglen * sizeof(int));
-    if (!part || !newpart || !sig || !htab || !keys) abort();
+    /* [M4.7b/K7] These five are the only allocations on the compile path the
+     * Job does NOT own, so this is the only site where failing cleanly means
+     * freeing by hand before the longjmp — everywhere else job_cleanup does it.
+     * (Which is also why the file header's "no ctx_fail paths" note no longer
+     * holds: there are exactly two, both here, both after their own cleanup.) */
+    if (!part || !newpart || !sig || !htab || !keys) {
+        free(part); free(newpart); free(sig); free(htab); free(keys);
+        ctx_nomem(cx);
+    }
 
     int nparts = 0;
     {
@@ -97,7 +108,11 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
         int m = nparts;
         int *seq = malloc((size_t)m * sizeof(int));
         DState *ns = calloc((size_t)m, sizeof(DState));
-        if (!seq || !ns) abort();
+        if (!seq || !ns) {
+            free(seq); free(ns);
+            free(part); free(newpart); free(sig); free(htab); free(keys);
+            ctx_nomem(cx);
+        }
         memset(seq, -1, (size_t)m * sizeof(int));
         int next = 0;
         for (int i = 0; i < n; i++)

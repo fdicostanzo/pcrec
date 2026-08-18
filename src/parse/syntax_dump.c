@@ -462,6 +462,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
     cx.err = err;
     cx.pat = construct;
     cx.patlen = strlen(construct);
+    cx.arena.cx = &cx;   /* [M4.7b/K7] arena OOM -> this setjmp, not abort() */
     if (setjmp(cx.jb)) {
         arena_free(&cx.arena);      /* a raising port allocated, then left */
         return NULL;
@@ -890,6 +891,7 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
     Ctx cx;
     memset(&cx, 0, sizeof cx);
     cx.err = err;
+    cx.arena.cx = &cx;   /* [M4.7b/K7] arena OOM -> this setjmp, not abort() */
     if (err) { err->msg[0] = '\0'; err->pos = 0; }
 
     /* ABANDON THE WHOLE ANSWER, rather than render the raise per line and
