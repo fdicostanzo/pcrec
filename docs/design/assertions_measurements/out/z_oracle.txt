@@ -1,0 +1,32 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_z_oracle.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 8881d43 2026-08-18
+# RUN FROM REPO COMMIT        : 41540bb (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/dollar_multiline_rerun.txt
+#      M docs/design/assertions_measurements/out/z_oracle.txt
+#     ?? docs/design/assertions_measurements/out/d475_scope.txt
+# RUN DATE   : 2026-08-18T16:59:57-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 ; python 3.14.4
+pattern        subject  pcre2      python     verdict
+b\Z            'ab\n'   (1, 2)     None       *** DISAGREE ***
+b\Z            'ab'     (1, 2)     (1, 2)     agree
+b\z            'ab\n'   None       None       agree
+b\z            'ab'     (1, 2)     (1, 2)     agree
+b$             'ab\n'   (1, 2)     (1, 2)     agree
+b$             'ab'     (1, 2)     (1, 2)     agree
+b(?=\n?\Z)     'ab\n'   (1, 2)     (1, 2)     agree
+
+1 of 7 cells disagree -- every one of them a `\Z` cell, and every one in the direction where python reports NO MATCH and PCRE2 matches.

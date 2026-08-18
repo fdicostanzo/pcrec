@@ -699,6 +699,169 @@ append-only or historical records.
   NOT merge, not even denied-by-default; it survives only in git history
   (`a07a87c`, reverted at `8b5acb4`). See its own CLAUDE.md for the
   revisit-when triggers.
+- `assertions_design.md` — **PROPOSED, REVISED AFTER R30** ([M6.1],
+  2026-08-18; panel `../dev/reviews/2026-08-18-r30-assertions-design.md`).
+  **Read the doc's PANEL OUTCOME block before any section.** The FOUNDATIONS
+  survived adversarial re-derivation unusually well — the D47.5 miscompile
+  ("the single best-supported claim in the document"), the `\A`/`\Z` alias at
+  1,008 cells / 0 disagreements, `\G`'s mechanism, the `\Z` oracle divergence,
+  the `mods` blast radius, and all six probes reproducing — but the
+  ENGINE-SPLIT half took **two HIGH refutations**: the spine had **no mechanism
+  at all** for assertion context at `startpos > 0` (E1 — a fourth mechanism,
+  runtime start-state seeding from `s[startpos-1]` forward and `s[end]`
+  reverse, now §3.8; 5 of 10 measured cells differ, and through the find-all
+  loop a match is LOST), and `(?m)^`'s routing is not the free inheritance the
+  first draft claimed but a permanent move into a **measured O(n²)** class
+  (E2 — 3.99x per doubling, 1996x slower than the anchored twin at n=64,000;
+  the `memchr('\n')` candidate-start prefilter is now a design element and Q3
+  is reframed on that footing, with the DD-7 unpark a Frank ruling). Six
+  mediums landed in the same sections: `\z`'s byte-identity argument
+  canonicalized against the wrong reference (E3); §3.4 and §3.5 were never
+  composed, and composed they **EXCEED** the state cap — 38,009 against 32,000
+  (E4); the skip hazard was attributed to `\b`, which by the document's own
+  state-identity argument cannot suffer it, making Wave B's proposed sabotage a
+  no-op on every pattern that wave lands (E5 — cure and sabotage move to Wave
+  C, and all FIVE scan-avoidance mechanisms are now enumerated with individual
+  fates, memchr being un-intersectable); the zero-cost accept measurement is
+  scoped to ENG_UNANCH and had no `pos == n` column (E6 — the view-axis ×
+  class-axis composition rule is now written); `\K` "structurally cannot" was
+  overstated, since leftmost-first is a total order and tagged DFAs recover
+  exactly such positions (E7 — the conclusion stands, the door is now recorded
+  as closed by choice); and §9.3's match-here paragraph was **factually wrong**
+  — the DFA's `rx_match` IS `rx_search` plus a start filter — which withdrew
+  Wave D's owed differential and exposed a live `\K` hazard in the filter and
+  the returned length (E8). Three provenance findings are this lane's own
+  failures and are recorded as such: a header hand-written to IMITATE the
+  archiver (M7 — "worse than absent provenance"), the locale-collation
+  `sort -u` undercount reproduced verbatim after reading the entry that named
+  it (M6 — 1030 true, 609 reported, **421 silently merged**; every headline
+  number identical on the corrected corpus), and an unverifiable `-Wswitch`
+  hand experiment (M8). All now committed tooling. Four instruments added
+  (startpos-context cells, the `(?m)^` cost curve, the `-Wswitch` alarm, the
+  `LC_ALL=C` harvest); the state prototype gained a SECOND disclosed fidelity
+  gap running opposite to the first (M2 — it minimises a LANGUAGE where pcrec
+  tracks thread PRIORITY, so `\w{3,16}`'s 4.50x was an artifact and the >2.00x
+  count drops to one, while the 4.75x headline SURVIVES on a pattern whose
+  baseline is verified against pcrec exactly).
+  **FOCUSED RE-CHECK (both critics resumed against the revision): 7 of 8 engine
+  discharges and 5 of 6 measurement ones held; N1 is a SECOND defect and the
+  sharpest thing in the whole round** — §3.8 filled mechanism 4 at three of the
+  FOUR places it is needed, and the missing one is the reverse machine's
+  TERMINATION boundary: at `pp == startpos` the loop breaks
+  (`emit_dfa.c:1056`) before `s[startpos-1]` is read, so a LEADING `\B`
+  evaluates blind and, on the document's own cell, the forward pass finds the
+  match and the reverse pass THROWS IT AWAY. `\b` is safe by accident (its
+  blind assumption coincides with its truth condition), so a trailing-only or
+  `\b`-only sweep reports clean against a design that loses matches — and the
+  lane's OWN forward fix is what made the reverse defect reachable. Now
+  §3.8.3.1, with an invariant covering every `sfound` writer (the reverse skip
+  included) rather than a one-line patch. Also: the Q1 withdrawal had been
+  applied at §11 while §5.2 still carried the withdrawn recommendation verbatim
+  (M5 PARTIAL — a live internal contradiction), §3.7.1's table came from a
+  different run than the archive it cited (N2), and the `memchr('\n')`
+  mitigation was justified on the quadratic arm when its real benefit is the
+  LINEAR non-crossing case (N3 — a non-crossing arm added to the probe measures
+  85-185x, and Q3(b) is re-grounded on it).
+  **N1 VERIFIED AND CLOSED by a focused re-check**, which then found **N9** in
+  the fix itself: the reverse loop has TWO exits, and §3.8.3.1's first wording
+  ("peeled epilogue … below that break") would have run on the DEAD-STATE exit
+  at `emit_dfa.c:1059` — writing `sfound` at a position the walk never reached
+  AND indexing an accept table with a negative state, K27's out-of-bounds class
+  in emitted code. The accept is now attached to the boundary break itself, so
+  both are unreachable by construction. The same pass sharpened the `:1044`
+  rendering: the emitter's `if` there is COMPILE-time, so the artifact carries a
+  bare unconditional `sfound = pp;` inside the skip block — worse than the
+  design's first rendering showed. Two instrument near-misses are now recorded
+  in the prose rather than in driver comments, because each would have produced
+  a quotable number: an all-'a' subject that measures the `(?m)^` curve as FLAT
+  (and would have confirmed the struck sentence), and gcc -O2 deleting a repeat
+  loop so a memchr arm read 0.000000 over 200 searches — the second the more
+  dangerous, since an infinite ratio reads as a STRONGER result for the
+  mitigation it supports. Original content below.
+- `assertions_design.md` (**pre-R30 summary, retained for history — read the
+  R30 entry above first; the "exactly three" spine below is REFUTED by E1 and
+  the `(?m)^` cost claim by E2**) — the module
+  `assertions` design gate — `\b` `\B`, `\A` `\z` `\Z`, `(?m)` multiline
+  `^`/`$`, `\G`, `\K` — answering the row's seven questions before any [M6.2]
+  code. Its spine was that every construct is exactly one of three things, and
+  the engine split follows from which: an ABSOLUTE POSITION TEST (`\A`, `\z`,
+  `\G` — free), a NEXT-BYTE VIEW (`$`/`(?m)$` forward, `\b`'s right side —
+  folds into the transition and accept tables BY BYTE CLASS), or a
+  PREVIOUS-BYTE CONTEXT BIT (`\b`'s left side, `(?m)^` — folds into the DFA
+  state identity); the forward and reverse machines swap which is which, and
+  `\K` is the one construct that is none of them (path-dependent reported
+  start, so VM-only — which `src/parse/registry.c:365` already ships as
+  `VM_ONLY`). **Its most important finding is a live landmine: D47.5's gate is
+  built and shipping and is SCOPE-BLIND** — `src/opt/possessify.c:579` captures
+  `cx->mods.multiline` once, after the parse, so `(?m:a{0,4}$)` and
+  `(?m)a{0,4}$(?-m)` would EXEMPT a multiline `$` and miscompile the day the
+  `m` letter is accepted, and D47.5's own recorded test obligation tests the
+  one row the shipped code gets right. The proposed cure resolves multiline at
+  PARSE time onto the node, and the note states the INVARIANT ("scoped modifier
+  state is resolved at parse time onto the node; no post-parse pass reads
+  `cx->mods`") as the requirement, separately from the SPELLING. On the
+  spelling it recommends a distinct node kind over a flag and records that the
+  manager leans the other way, deciding it on a measurement rather than taste:
+  a new `AKind` enumerator produces **15 `-Wswitch` warnings across 6 files**
+  (probe enumerator added, tree rebuilt, warnings counted, edit reverted) where
+  a new struct field produces none — so a flag's failure mode IS the silent
+  bug being fixed, while a node kind's is a build diagnostic at 15 of 19 switch
+  sites. **The lane then found that this is not a new convention but pcrec's
+  OWN named rule**: `src/opt/mrl.c:18-24` (R26 V7) already mandates
+  `default:`-less exhaustive switches so that "a node kind added after this
+  file is written must be a COMPILE ERROR here… exactly the alarm the analysis
+  cannot otherwise raise", and `src/opt/altcls.c:405` cites it as "mrl.c's
+  rule" — a description that fits `possessify.c`'s situation word for word. It also proposes making the invariant STRUCTURAL: after the fix
+  `cx->mods` has zero legitimate consumers outside `src/parse/`, so moving
+  `ModState` out of `Ctx` turns "no post-parse pass reads it" from a discipline
+  rule into a compile error, which is the durable answer to "which other
+  modifiers need this notice" — measured NO today (every other modifier already
+  resolves at parse position, `parse.c:80/105/117/164/179/494/631/693/908/910`)
+  and un-reachable in future by construction. **Two premises were re-measured rather than inherited and one was
+  refuted**: `(?m)` already refuses with module `assertions`
+  (`src/parse/mod_modifiers.c:280`), not `modifiers`, so question (vii) needs
+  no re-attribution work at all. `\A` and `\Z` turn out to be EXACT ALIASES of
+  the shipped `A_BOL`/`A_EOL` nodes, so they are parser rows with no engine
+  work; `\z` needs one more closure view, interned only when it differs, so a
+  `\z`-free pattern's artifact is byte-identical by construction rather than by
+  a flag. State-budget claims are MEASURED two ways per the row's requirement:
+  EXACTLY in pcrec (the word-set alphabet refinement costs at most +1
+  equivalence class on 38 realistic patterns and +2 on 574 `.rxt` ones;
+  largest `states × ncls` after word+newline refinement is 48,012 against a
+  2,000,000 cap) and by a calibrated PROTOTYPE for the state count `\b`'s
+  context bit costs (minimised ratio 1.00x/1.11x/4.75x, reproducing pcrec's own
+  count on 29 of 33 assertion-free arms, with its one fidelity gap — no
+  priority pruning — stated in the file). The hot-path cost of the
+  `states × ncls` accept table those views force is MEASURED AT ZERO on D11's
+  own shape. Also reports two things it does not own: **ENG_ATTEMPT's
+  `for (start = startpos; start <= start_max; start++)` is an external
+  byte-arithmetic advance loop in shared emitter code** that D58's "the hot
+  path has NO external advance loop" rationale does not cover (true of
+  ENG_UNANCH only), which this module makes more prominent because `(?m)^` and
+  `\G` both route patterns onto that engine; and **python3 `re` is the WRONG
+  oracle for `\Z`** — python's `\Z` is PCRE2's `\z`, measured 1 of 7 cells
+  disagreeing in the silent direction, so Wave A's expectations must come from
+  the libpcre2 differential. DD-4 is answered without `engine_m4.md` §7.3's
+  wrap toggle: ENG_ATTEMPT already emits the un-self-looped shape and `\G` is
+  `start_max = startpos`, a third value for a string the emitter already picks
+  between. Delivers a five-wave [M6.2] structure (A `\A`/`\z`/`\Z` + the gate
+  refactor while it is provably a no-op; B `\b`/`\B`; C `(?m)`; D `\G`;
+  E `\K`), EIGHT open questions for Frank — headed by whether the NEWLINE
+  CONVENTION axis (DD-11) is declared now on `--encoding`'s per-pattern
+  refuse-by-name precedent, and including a recommendation that D47.5 gain an
+  ADDENDUM at merge (its live-branch requirement is necessary but not
+  sufficient; this lane deliberately edits neither `../dev/decisions.md` nor
+  `eng_brep_design.md`) — five BELIEVED claims each with its refutation
+  experiment, and seven things it does not measure headed by the REVERSE
+  machine's state cost. Measurements: `assertions_measurements/`. Unpaneled —
+  a D6 adversarial panel reviews it before [M6.2] starts.
+- `assertions_measurements/` — the [M6.1] lane's five probes, its archiver and
+  the archived outputs; see its own CLAUDE.md. Some instruments read pcrec
+  itself and some are prototypes or oracle comparisons, and the design doc
+  marks every claim accordingly. Every file in `out/` is written by
+  `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
+  commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
+  of them.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

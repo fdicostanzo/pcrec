@@ -1,0 +1,30 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_acc_by_class.sh
+# ARGS       : /home/duxevents/pcrec/worktrees/asrtdesign/build/pcrec /home/duxevents/pcrec/worktrees/asrtdesign/build/accbc2 5
+# PROBE LAST CHANGED AT COMMIT: 8881d43 2026-08-18
+# RUN FROM REPO COMMIT        : 41540bb (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/acc_by_class.txt
+#      M docs/design/assertions_measurements/out/dollar_multiline_rerun.txt
+#      M docs/design/assertions_measurements/out/z_oracle.txt
+#     ?? docs/design/assertions_measurements/out/d475_scope.txt
+# RUN DATE   : 2026-08-18T16:59:58-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+ncls=3 states=768
+pattern: [01]*1[01]{8}   (best of 5, three repetitions of the pair)
+A facc[st]              0.0405 s  197.5 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.5 MB/s  matches=54424
+A facc[st]              0.0405 s  197.3 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.4 MB/s  matches=54424
+A facc[st]              0.0405 s  197.3 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.4 MB/s  matches=54424

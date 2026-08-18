@@ -1,0 +1,64 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_startpos_context.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: f600843 2026-08-18
+# RUN FROM REPO COMMIT        : f600843 (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/ncls_refine_rxt.txt
+#     ?? docs/design/assertions_measurements/out/startpos_context.txt
+# RUN DATE   : 2026-08-18T17:23:09-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 ; python 3.14.4
+
+pattern   subject     spos whole@spos  slice@0     verdict
+\bfoo     'xfoo'      1    None        (1, 4)      *** DIFFER ***
+            prev byte is a word char, so \b FAILS at 1 -- a slice-blind engine MATCHES here
+\bfoo     ' foo'      1    (1, 4)      (1, 4)      same
+            the satisfiable twin: prev byte is a space, \b HOLDS -- both agree, so the pair discriminates rather than just refusing
+\Bfoo     'xfoo'      1    (1, 4)      None        *** DIFFER ***
+            the \B mirror: HOLDS where \b fails, so a slice-blind engine gives NO MATCH where PCRE2 matches (the opposite direction)
+\Bfoo     ' foo'      1    None        None        same
+            the \B twin: fails where \b holds
+foo\b     'foox'      0    None        None        same
+            TRAILING \b depends on s[end] -- the byte the REVERSE walk never consumes. Whole/slice agree (startpos 0); the hazard is the reverse machine, not the slice
+foo\b     'foo '      0    (0, 3)      (0, 3)      same
+            trailing \b, satisfiable twin
+(?m)^b    'ab\nb'     1    (3, 4)      (1, 2)      *** DIFFER ***
+            (?m)^ MID-LINE: at startpos 1 the prev byte is 'a', so ^ fails at 1 and the match is the next line -- a slice-blind engine treats position 1 as a line start and matches there
+(?m)^b    'ab\nb'     3    (3, 4)      (3, 4)      same
+            (?m)^ at a real line start: prev byte is '\n', so both agree
+\bfoo     'xfoo foo'  1    (5, 8)      (1, 4)      *** DIFFER ***
+            the sharpest cell: a slice-blind engine does not merely over-match, it reports the WRONG OCCURRENCE -- (1,4) instead of (5,8)
+\Afoo     'xfoo'      1    None        (1, 4)      *** DIFFER ***
+            NOT a pcrec defect, and included to bound the claim: \A differs under SLICING too, but pcrec never slices -- it passes startpos, and \A/`^` route to ENG_ATTEMPT whose start state is already chosen at runtime by `start == 0`. The mechanism E1 asks for is needed for the CONTEXT assertions above, not for this one
+
+5 of 10 cells DIFFER between searching the whole subject from startpos and searching the slice from 0.
+Each differing cell is one an implementation that seeds assertion
+context as `start of subject` -- which is what a compile-time
+constant start state does -- gets WRONG.
+
+=== the same question through the S3.1 FIND-ALL loop ===
+The loop passes its resume position as `startpos`, so every
+iteration after the first asks exactly the question above. Each
+row shows the true sequence, then what a slice-blind engine
+(context re-seeded as start-of-subject each iteration) reports.
+
+  \Bfoo    'xfoofoo'       resume lands mid-word: \B holds there in the whole subject and FAILS at the slice's start
+      true        [(1, 4), (4, 7)]
+      slice-blind [(1, 4)]   *** DIFFER ***
+  \Boo     'foofoofoo'     the same shape, three occurrences deep
+      true        [(1, 3), (4, 6), (7, 9)]
+      slice-blind [(1, 3), (4, 6), (7, 9)]
+  \bfoo    'foo xfoo foo'  CONTROL: every resume lands at a boundary, so both agree -- a suite of only these would prove nothing
+      true        [(0, 3), (9, 12)]
+      slice-blind [(0, 3), (9, 12)]

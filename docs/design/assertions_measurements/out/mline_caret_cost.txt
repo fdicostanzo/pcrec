@@ -1,0 +1,53 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_mline_caret_cost.sh
+# ARGS       : /home/duxevents/pcrec/worktrees/asrtdesign/build/pcrec /home/duxevents/pcrec/worktrees/asrtdesign/build/mlc8
+# PROBE LAST CHANGED AT COMMIT: f600843 2026-08-18
+# RUN FROM REPO COMMIT        : 44ecab8 (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_design.md
+#      M docs/design/assertions_measurements/out/mline_caret_cost.txt
+#      M docs/design/assertions_measurements/probes/probe_mline_caret_cost.sh
+# RUN DATE   : 2026-08-18T17:50:14-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+=== the three shapes, and what the emitter did with each ===
+  A    ^[^b]*b|\n[^b]*b       ENG_ATTEMPT (no prefilter, no skips) start_max=n
+  B    ^[^b]*b                ENG_ATTEMPT (no prefilter, no skips) start_max=0 /* fully ^-anchored */
+  C    [^b]*b                 ENG_UNANCH (memchr + skips)        
+
+=== best-of-5 time (s) for ONE search; subject = lines of 'a' (len 16), no 'b' ===
+n        A (?m)^shape   B anchored     C unanch       A/B        A growth per doubling
+4000     0.00077760     0.00000595     0.00000008     131x       
+8000     0.00121612     0.00000474     0.00000032     257x       1.56x
+16000    0.00479799     0.00000943     0.00000062     509x       3.95x
+32000    0.01903308     0.00004654     0.00000192     409x       3.97x
+64000    0.07586102     0.00003767     0.00000267     2014x      3.99x
+
+A growing ~4x per doubling is the O(n^2) signature: ~n/16 enterable
+attempts, each scanning O(n). B is flat (start_max = 0, ONE attempt).
+C is flat and fastest: memchr + skip loops, neither of which ENG_ATTEMPT
+emits at all.
+
+=== NON-CROSSING arm: the case the memchr(newline) mitigation is FOR ===
+  D    ^ERROR|\nERROR         ENG_ATTEMPT (no prefilter, no skips) start_max=n
+  E    ERROR                  ENG_UNANCH (memchr + skips)        
+
+n        D (?m)^ERROR   E unanch       D/E ratio
+8000     0.00002458     0.00000028     88x
+32000    0.00009803     0.00000115     85x
+128000   0.00039255     0.00000212     185x
+
+D and E are BOTH linear -- the ratio is a constant factor, not a curve.
+That constant is the mitigation's target: a newline candidate-start
+prefilter would let D skip line-start to line-start instead of visiting
+every offset. Both arms are timed over 200 inner repeats, because a
+single memchr over 8 KB is below this clock's resolution.
