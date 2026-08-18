@@ -1112,7 +1112,30 @@ execution speed trades the primary goal (D18) for the secondary one.
   `^`-on-some-branches case and measure an actual loss — no bench case
   exercises `^` today, and unmeasured engine work is not scheduled.
   After M4, the change lands in the selection pass
-  (src/opt/select_engine.c), not the pipeline driver
+  (src/opt/select_engine.c), not the pipeline driver. SECOND MECHANISM
+  RECORDED (Frank + manager design thread, 2026-08-18, thirty-second
+  session): ANCHORED MATCH-HERE VIA THE UNWRAPPED FORWARD DFA. Today a
+  DFA artifact's `<prefix>_match` runs the ordinary unanchored search
+  and filters on `caps[0][0] != ctx->pos` (spec §3.2 documents the
+  mechanism as non-contractual) — correct, but a FAILING match-here can
+  skim the remainder of the subject hunting a later match it will then
+  discard, where the VM's match_impl fails at the first divergent byte.
+  A runtime "anchored" flag on the existing tables CANNOT fix this —
+  the start-anywhere self-loop is baked into the subset construction
+  and the merged states erase which start a thread came from
+  (DD-7/engine_m4.md §7.3: the wrap is structural). The generation-time
+  form works and is CHEAPER than assumed: emit the pattern's UNWRAPPED
+  forward DFA and run it from ctx->pos — anchored match needs NO
+  REVERSE PASS (the start is known), so the cost is ONE extra table,
+  typically smaller than either search table, derived from the same IR
+  (same trust model as the existing forward/reverse pair). Failing
+  match-here becomes first-divergent-byte on both engines. Partial
+  zero-table fallback, recorded with its hazard: for MRL-bounded
+  patterns match could clamp the search to pos+MRL, but clamping n
+  changes end-of-subject semantics ($-bearing patterns), so it is a
+  fallback only. GATE UNCHANGED: measure the failing-match skim on
+  realistic subjects first; unmeasured engine work is not scheduled,
+  and this does not queue ahead of M6
 - [OPT-SIMD] STATE:not-started — SIMD EMISSION for candidate scanning
   (Frank, 2026-08-14 nineteenth session, D41.6): AOT-composed SIMD
   prefilters emitted directly into generated matchers — multi-literal
