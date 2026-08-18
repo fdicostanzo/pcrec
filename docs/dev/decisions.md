@@ -4879,3 +4879,34 @@ the existing contract, it does not renumber it), rewrites the emitted
 paragraph. The internal `ENGM_*` enum (src/opt/select_engine.c) stays
 internal; the lane must NOT export that spelling — D38's PCREC_* rule
 governs the emitted surface.
+
+## D61 — the caps array's PRIMARY PREFIX is permanent: caps[1..ngroups] are this pattern's own groups, insertions APPEND (Frank, 2026-08-18, thirty-third session)
+
+**Decision.** On any captures-on build: `caps[0]` is the whole match;
+`caps[k]` is the PRIMARY pattern's own group `k` (its own left-to-right
+numbering) for `1 <= k <= ngroups`; `ngroups <= ncaps - 1` (equality on
+every build pcrec emits today). Slots above `ngroups` are RESERVED for
+future insertion/composition mechanisms: a producer of ref-bearing
+groups (match_api.md §2's "labeled insertion path") APPENDS its
+delivered slots after the primary prefix and NEVER interleaves with or
+renumbers slots `1..ngroups`. `ngroups` thereby gains a precise forward
+meaning — the stable prefix length of this pattern's own groups — and a
+caller indexing `caps` by the pattern's own group numbers is safe
+against every future insertion feature.
+
+**Why.** Frank: "we don't plan on inserting referenced regex capture
+groups into the middle of the caps array." The promise is cheap because
+it pins the caps LAYOUT, not the group NUMBERING: `rx_group_entry.slot`
+is already the number->slot indirection, so even a future feature
+wanting textual-splice NUMBERING for inserted groups can have it while
+the layout promise holds — the numbers land in `.number`, the appended
+positions in `.slot`. What the decision narrows: §3.3's recorded slot
+latitude ("a future in which a build delivers a DIFFERENT slot for a
+group") now applies to REF-BEARING rows only; for the primary's own
+groups on a captures-on build, slot == number is PERMANENT. Companions:
+D59 (per-pattern dedup, ref-scoped sort key), the same session's
+insertion-namespace discussion (cross-pattern name collisions legal,
+keyed (ref, name)).
+
+**Revisit when:** the first ref-bearing producer is designed — it
+inherits the append-only constraint as a requirement, not a choice.

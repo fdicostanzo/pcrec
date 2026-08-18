@@ -76,6 +76,15 @@ rx --features named-groups` build of `'a(?<b>b|c)+d'` (both the
 captures-default and `--no-captures` forms, to check the `slot: -1`
 claim in both directions).
 
+**D61 revision (2026-08-18, same session — Frank design thread).** Two
+ADVISORY forward-promise clarifications, prose only, no emitted text
+quoted, nothing re-measured: §3.3's slot-latitude note is narrowed
+(primary groups' `slot == number` is permanent on captures-on builds;
+the different-slot latitude applies to future ref-bearing rows only)
+and §6 gains the `ngroups` PERMANENT-PREFIX promise (slots
+`1..ngroups` are this pattern's own groups forever; insertion
+mechanisms append, never interleave). docs/dev/decisions.md D61.
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -503,7 +512,11 @@ capturing group `k`** for `k >= 1`, in the pattern's own left-to-right
 numbering, on any captures-on build. (`rx_group_entry.slot` exists for a
 future in which a build delivers a *different* slot for a group; on
 today's builds no such indirection is in play and the identity above is
-what the examples in §5.1 rely on.)
+what the examples in §5.1 rely on. **D61, 2026-08-18, narrows that
+latitude: for the PRIMARY pattern's own groups on a captures-on build,
+`slot == number` is PERMANENT — the different-slot latitude applies only
+to future ref-bearing rows (§6), whose delivered slots APPEND after the
+primary prefix and never displace slots `1..ngroups`.**)
 
 **On failure, `caps_out` is untouched — and a give-up is a failure for
 this rule.** Every negative return leaves the caller's array exactly as
@@ -887,6 +900,21 @@ groups the text has); `nnames` is the length of the (currently always
 empty) named-group index. Verified: the `--no-captures 'a(b|c)+d'` build
 above has `ngroups=1, ncaps=1`; the captures-default build of the same
 pattern has `ngroups=1, ncaps=2`.
+
+**`ngroups` is additionally a PERMANENT PREFIX-LENGTH promise (D61,
+2026-08-18; advisory forward promise — no emitted text changes with
+it).** On any captures-on build, slots `1..ngroups` of the caps array
+are THIS pattern's own groups in its own left-to-right numbering, so
+`ngroups <= ncaps - 1` with equality on every build pcrec emits today.
+Slots above `ngroups` are reserved for future insertion/composition
+mechanisms: a ref-bearing producer (§2's "labeled insertion path")
+APPENDS its delivered slots and never interleaves with or renumbers the
+primary prefix. A caller indexing `caps` by the pattern's own group
+numbers is therefore safe against every future insertion feature. The
+promise pins the caps LAYOUT, not group NUMBERING —
+`rx_group_entry.slot` remains the number-to-slot indirection for
+whatever numbering a future insertion design chooses (§3.3's narrowed
+latitude note).
 
 `pattern` is embedded unconditionally as an escaped C string literal
 (`"`, `\`, and control bytes are escaped — an unescaped pattern
