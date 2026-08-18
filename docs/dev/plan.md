@@ -187,14 +187,23 @@ stated terms.
     match_api_m4.md), generator extended to emit capture-bearing
     shapes at meaningful density. Prerequisite of [M4.7e]; independent
     of [OPT-ALTCLS], so it runs first-wave. Sonnet lane
-  - [M4.7a] STATE:not-started — SR-8 FLIP (the deferred row's charter,
-    now unblocked — the VM exists): the engine-capability check moves
-    out of the parser to a lowering-time check against the registry's
-    `engines` column; the honest diagnostic becomes "requires the VM
-    engine" territory rather than "requires module 'backrefs'" for
-    constructs that parse fine and cannot lower. NOTE the flip is
-    smaller than SR-8's row text (zero constructs become pending
-    today); D26 tiering governs wording effort
+  - [M4.7a] STATE:started — SR-8 FLIP. Lane lane/m47a delivered for
+    review 2026-08-17: `\1` etc. are still refused by the PARSER, and
+    correctly so — re-reading every src/parse/ module file at this lane
+    confirmed the row's own premise does not hold in code (no VM_ONLY
+    registry row has a producer, so the parser's "requires module 'X'"
+    was always a module-ENABLEMENT refusal, never an engine-capability
+    one; there was no parser-side engine check to relocate). What
+    landed instead is the CONSUMING SOCKET SR-8's charter calls for:
+    src/opt/select_engine.c gains a second EngineAnalysis
+    (`forces_registry_engines`), reading new `Ctx.vmonly_seen/
+    vmonly_pos/vmonly_why` fields (internal.h) that a future VM_ONLY
+    module's producer stamps from its own registry row's `engines`
+    mask — the same NO-WRITER-TODAY shape `ModState.multiline` (D47.5)
+    already established. tests/select_engine/ proves the socket fires
+    with a hand-built Ctx. Zero accept/reject verdicts changed; zero
+    diagnostic wording changed (confirmed, not merely expected — see
+    the lane's report). Awaiting manager review/merge
   - [M4.7b] STATE:not-started — K7 FIX (homed here: the at-scale
     differential/fuzzer run stresses exactly the compile-side
     resource boundary K7 breaks, and M4.7 is the last stop before
@@ -900,7 +909,14 @@ named, cleanly rejected and queried.
   backrefs parse fine and simply cannot LOWER to a DFA. When M4's VM exists the
   honest diagnostic becomes "requires the VM engine", which is a lowering-time
   check against the registry's `engines` column. Blocked on M4 having a second
-  engine to choose between
+  engine to choose between. **SEE [M4.7a]** (2026-08-17): the VM exists now,
+  and lane/m47a found this row's premise does not hold in code — `\1` is
+  refused for lack of an implementation (no producer), not for engine
+  incapability, so there was never a parser-side engine check to relocate.
+  The CONSUMING SOCKET the charter calls for is built regardless
+  (select_engine.c's `forces_registry_engines`), ready for the first VM_ONLY
+  module's producer to feed. This row's own STATE stays `deferred` until a
+  manager reviews [M4.7a] and rules on closing it
 - [SR-10] STATE:not-started — SINGLE NAMESPACE DEFINITIONS (Frank,
   2026-08-12: "do we have a single set of 'modules' or 'encodings'? we
   should, and then those should be directly referenced — this enforces
