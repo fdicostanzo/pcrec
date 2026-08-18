@@ -725,7 +725,12 @@ append-only or historical records.
   (probe enumerator added, tree rebuilt, warnings counted, edit reverted) where
   a new struct field produces none — so a flag's failure mode IS the silent
   bug being fixed, while a node kind's is a build diagnostic at 15 of 19 switch
-  sites. It also proposes making the invariant STRUCTURAL: after the fix
+  sites. **The lane then found that this is not a new convention but pcrec's
+  OWN named rule**: `src/opt/mrl.c:18-24` (R26 V7) already mandates
+  `default:`-less exhaustive switches so that "a node kind added after this
+  file is written must be a COMPILE ERROR here… exactly the alarm the analysis
+  cannot otherwise raise", and `src/opt/altcls.c:405` cites it as "mrl.c's
+  rule" — a description that fits `possessify.c`'s situation word for word. It also proposes making the invariant STRUCTURAL: after the fix
   `cx->mods` has zero legitimate consumers outside `src/parse/`, so moving
   `ModState` out of `Ctx` turns "no post-parse pass reads it" from a discipline
   rule into a compile error, which is the durable answer to "which other

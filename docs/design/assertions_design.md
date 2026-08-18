@@ -949,23 +949,65 @@ src/opt/altcls.c:378:5: warning: enumeration value 'A_EOL_M' not handled in swit
 src/opt/mrl.c:90:9: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
 ```
 
-Nineteen switches over the kind exist; **15 have no `default:` arm**, so 15 of
-19 become build diagnostics — and under `make strict` (`-Werror`) a hard build
-failure. The four sites with a `default:` fall through silently and are the
-residual this spelling does not cover; they are `src/gen/emit_vm.c` (3) and
-`src/opt/revdet.c` (1), and a wave-C landing condition should be to inspect
-those four by hand.
+**Nineteen switches over `Ast.k` exist** — `src/opt/possessify.c` 3,
+`src/ir/nfa.c` 1, `src/gen/emit_vm.c` 8, `src/opt/mrl.c` 1, `src/opt/revdet.c`
+5, `src/opt/altcls.c` 1 (a twentieth switch at `src/gen/emit_vm.c:3855` is over
+`e->k`, a different enum, and correctly did not warn). **15 have no `default:`
+arm**, so 15 of 19 become build diagnostics — and under `make strict`
+(`-Werror`) a hard build failure. The four that fall through silently are the
+residual this spelling does not cover: `src/gen/emit_vm.c` (3) and
+`src/opt/revdet.c` (1). The correspondence is exact — each file's silent count
+equals its `default:` count — and a wave-C landing condition should be to
+inspect those four by hand.
 
-**RECOMMENDATION: spelling B, the distinct node kind — and this note
-disagrees with the manager's lean, so the panel should treat it as contested.**
-The manager's argument for A is real and is the house pattern. What tips it is
-that the two spellings are not symmetric in their failure mode: A's failure mode
-*is the bug being fixed*, and it is silent; B's failure mode is a build
-diagnostic at 15 of 19 sites. §8.2's invariant is satisfied by both, so if the
-panel prefers A, the design is not wrong — it is one that relies on review where
-the alternative relies on the compiler. A middle position exists and is worth
-the panel's attention: **spelling A plus a `default:`-less exhaustive switch
-convention plus a permanent sabotage row** buys much of B's safety at A's cost.
+#### The house rule that already exists, and settles this
+
+The `-Wswitch` behaviour above is not an incidental property this note
+discovered — **pcrec already has a named, deliberately-designed rule that
+depends on it**, introduced by the R26 V7 review and cited by name from a
+second file. `src/opt/mrl.c:18-24`, verbatim:
+
+```
+ * THE SWITCH IS EXHAUSTIVE WITH NO DEFAULT ARM, and that is a design
+ * obligation rather than a style preference (§4.2's failure mode 1, sharpened
+ * by R26 V7). A node kind added after this file is written must be a COMPILE
+ * ERROR here, not a silent inheritance of whatever a default arm returned.
+ * Under -Wswitch (which `make strict` promotes to an error) a new AKind
+ * member makes this function fail to build, which is exactly the alarm the
+ * analysis cannot otherwise raise.
+```
+
+and `src/opt/altcls.c:405` refers to it as settled practice:
+
+```c
+    return a;   /* unreachable under -Wswitch (make strict); mrl.c's rule */
+```
+
+That last clause of mrl.c's comment — *"exactly the alarm the analysis cannot
+otherwise raise"* — describes `src/opt/possessify.c`'s situation word for word.
+A possessification analysis cannot detect from the outside that a `$` it is
+treating as transparent has become a different kind of `$`; that is what §8.1
+is. mrl.c's rule exists to make precisely that undetectable-by-analysis change
+into a build failure.
+
+**RECOMMENDATION: spelling B, the distinct node kind.** Not on taste, and not
+as a new convention: it is **the project's own existing rule applied to the
+case the rule was written for**. The manager's argument for A is real — it *is*
+the house pattern for resolving a modifier onto a node, and `r->greedy` is
+exactly that shape. But `greedy` is a property no analysis is silently
+transparent about, whereas multiline-ness of a `$` is one that four analyses are
+transparent about today. The two spellings are not symmetric in failure: **A's
+failure mode is the silent bug being fixed; B's is a compile error under
+`make strict` at 15 of 19 sites.**
+
+**The disagreement is recorded rather than resolved here** — the manager leans
+A, this note recommends B, and the panel should treat it as contested. §8.2's
+invariant is satisfied by either, so choosing A is not wrong; it is choosing
+review where B chooses the compiler. If the panel does prefer A, this note asks
+that it come with the two compensating controls B gets for free: the
+`default:`-less exhaustive-switch discipline extended to the four sites that
+currently have a `default:` arm, and a permanent sabotage row that flips the
+flag's reader off and must turn §8.7's cells red.
 
 Under either spelling `P.multiline` disappears from `Pss` and
 `cx->mods.multiline`'s only post-parse read goes with it.
