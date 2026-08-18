@@ -1,0 +1,52 @@
+# tests/encseam/findall_cases.txt — the find-all protocol case set.
+#
+# TAB-separated: CLASS <TAB> PATTERN <TAB> SUBJECT.
+#
+# CLASS is the case's relationship to `python3 re.finditer`, and it is an
+# EXPECTATION, not a licence: `exact` cases must agree with finditer span for
+# span, and `lossy` cases must be a STRICT SUBSET of finditer's spans (a
+# lossy case that suddenly agrees, or an exact case that stops agreeing, both
+# fail — the class is checked in both directions).
+#
+# The lossy class is docs/spec/match_api.md §3.1's honestly-stated limit: a
+# pattern that PREFERS the empty match where a non-empty match also starts.
+# PCRE2 and python `re` retry at that position with "empty match not
+# permitted here" (PCRE2_NOTEMPTY_ATSTART); pcrec's entry points cannot
+# express that retry, so the protocol reports the empty match and moves on.
+#
+# The twelve agreeing pairs and the three lossy ones below are the R29 set,
+# re-measured here rather than cited. The rest were added at [M5-SEAM].
+#
+# Subjects are printable ASCII with no tabs (they travel through argv).
+
+# ---- the R29 twelve: protocol == finditer ----
+exact	a*	bbb
+exact	x?y	yy
+exact	a|	bab
+exact	a|b*	cbbac
+exact	a*	aaa
+exact	a?	aba
+exact	b*	abbbab
+exact	(a|)	xax
+exact	a(b|)c	acabc
+exact	(ab)*	ababx
+exact	a{0,2}	aaaa
+exact	[a-c]*	xabcx
+
+# ---- the R29 three: empty-preferring, LOSSY against finditer ----
+lossy	|a	aaa
+lossy	a*?	aaa
+lossy	a??	aba
+
+# ---- added at [M5-SEAM] ----
+exact	[0-9]+	a12b345
+exact	a{2,}	aaaa
+exact	(?:ab|a)	aab
+exact	(a*)*	aab
+exact	.	abc
+exact	ab$	xabab
+exact	^a	aa
+exact	c*
+exact	x
+exact	a	a
+lossy	b*?	abba

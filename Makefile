@@ -67,8 +67,8 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-prefilter test-altcls test-resource \
-      test-capturediff test-known-fail test-thread
+      test-counterk test-mrl test-prefilter test-altcls test-encseam \
+      test-resource test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -254,6 +254,14 @@ test-altcls: all
 # legitimately multiplies footprint, so a ceiling tuned to the plain axis
 # either flakes or is so loose it stops asserting anything. Resource behaviour
 # is measured on the axis it is promised on.
+# [M5-SEAM] the ENCODING SEAM's behavioural section: docs/spec/match_api.md
+# S3.1's find-all protocol, compiled against real artifacts and run, with
+# python3 `re` as the oracle. It is the only suite that runs a find-all LOOP
+# at all -- the .rxt corpus checks one search at a time -- and it is where
+# the `<prefix>_next_pos` residual is exercised as a caller would use it.
+test-encseam: all
+	bash tests/encseam/run_encseam_tests.sh
+
 test-resource: all
 	bash tests/resource/run_resource_tests.sh
 
@@ -394,6 +402,7 @@ ubsan:
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/encseam/run_encseam_tests.sh \
 	         tests/possessify/run_possdiff.sh \
 	         tests/possessify/run_possessify_tests.sh \
 	         tests/rungselect/run_rungdiff.sh \
@@ -438,6 +447,7 @@ asan:
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
+	         tests/encseam/run_encseam_tests.sh \
 	         tests/possessify/run_possdiff.sh \
 	         tests/possessify/run_possessify_tests.sh \
 	         tests/rungselect/run_rungdiff.sh \
