@@ -973,6 +973,22 @@ the shipped `A_BOL`/`A_EOL` arms (`src/gen/emit_vm.c:3458-3474`):
 `\b`'s `wordtbl` is the front-end-emitted table of §7.2, and it is the only row
 with an encoding future.
 
+**`\G` needs a value the anchored entry does not have, and the resolution is
+not a workaround.** `<prefix>_search` takes `startpos` as a parameter, but the
+anchored match-here entry `<prefix>_match(const rx_ctx *)` (`match_api.md` §3.2)
+takes an `rx_ctx` whose fields are subject / len / pos / ncap / caps / user —
+**there is no `startpos`**. So `\G` under the anchored entry can only mean
+`pos == ctx->pos`, which is *trivially true at entry*.
+
+That is the correct semantics rather than a degradation: PCRE2's `\G` is
+relative to the start offset of the match call, and for an anchored match-here
+the match call starts exactly at `ctx->pos`. The consequence to state in the
+spec is that **`\Gfoo` compiled as a match-here entry is `foo`**, and that a
+caller who wants pcrec's search-loop `\G` semantics must use
+`<prefix>_search`. Wave D (§10) owes a test on both entries showing they differ
+in exactly this way and no other, because a reader who assumes `\G` is
+"anchored" will otherwise expect the match-here entry to refuse.
+
 ---
 
 ## 10. Proposed wave structure for [M6.2]
@@ -1048,7 +1064,9 @@ sentence of §4.3.
 
 **Tests.** Contiguity semantics through the find-all loop (`\G` under the §3.1
 loop must report only contiguous matches); `\Gfoo|bar` on both engines;
-`a\Gb` never matching, agreeing with PCRE2.
+`a\Gb` never matching, agreeing with PCRE2; and the §9.3 pair — the same `\G`
+pattern through `<prefix>_search` and through `<prefix>_match`, showing they
+differ in exactly the documented way and no other.
 
 ### Wave E — `\K`
 
@@ -1121,8 +1139,8 @@ Per §0.1, every BELIEVED claim in a load-bearing position, collected:
    search a subject where a match begins at a continuation-byte offset; if any
    match is reported at a non-character boundary, it is a correctness bug and
    belongs to [DD-12].
-4. **§3.7: `(?m)$` can stay on ENG_UNANCH with the class-indexed view.** *
-   Refutation:* the reverse machine's `(?m)$` context bit is the mirrored
+4. **§3.7: `(?m)$` can stay on ENG_UNANCH with the class-indexed view.**
+   *Refutation:* the reverse machine's `(?m)$` context bit is the mirrored
    mechanism and has not been prototyped; build the reverse arm first in Wave C
    and sweep, rather than assuming symmetry holds.
 5. **§4.2: three start states suffice for partial `\G`.** *Refutation:* sweep
