@@ -67,7 +67,8 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-prefilter test-altcls test-known-fail test-thread
+      test-counterk test-mrl test-prefilter test-altcls test-known-fail test-thread \
+      test-capturediff
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -245,6 +246,16 @@ test-known-fail: all
 
 test-thread: all
 	bash tests/thread/run_thread_tests.sh
+
+# [M4.7e] GATE-ON: the capture-span differential vs libpcre2 at a FIXED seed
+# (fuzz.py's own default seed/patterns/subjects), wired into `make test`
+# rather than staying manual-only like `make fuzz` -- a fixed seed is exactly
+# as reproducible as any other differential in this tree, unlike the
+# many-seed at-scale campaign (tests/fuzz/campaigns/), which stays a
+# checkpoint-run instrument. SKIPS loudly (PC-3's own pattern) if
+# libpcre2-8-0 is absent; see tests/fuzz/run_capturediff_gate.sh's header.
+test-capturediff: all
+	bash tests/fuzz/run_capturediff_gate.sh
 
 # Not one of the nine `test:` lines — tests/spec_mod0/run_spec_mod0.sh is a
 # standalone D27 suite, deliberately kept out of `make test` (its own

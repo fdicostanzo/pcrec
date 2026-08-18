@@ -214,6 +214,51 @@ CLASS_ATOMS = [
     ("[\\x6]", {"\x06"}, False),  # 1-digit \x form
 ]
 
+# [M4.7e]: classes-MODULE atoms (std1's OTHER member is `modifiers`, which
+# stays out of scope here — see README.md's "Two-tier posture" /
+# docs/dev/plan.md [M7.0]). tests/fuzz/README.md's 2026-08-17 finding was
+# that the differential gate was open (PCREC_DEFAULT_FEATURES="std1") but
+# VACUOUS: CLASS_ATOMS above draws only base-tier bracket forms already
+# accepted with no module enabled at all, so a std1-gated construct never
+# actually walked through the open gate. This list is the fix -- the
+# classes-module escapes plus two POSIX `[:name:]` forms, same
+# (text, membership-set-for-the-sampler, negated?) shape as CLASS_ATOMS so
+# sample()/sample_straddle() need no changes to consume them. Drawn at
+# MODEST weight (see gen_atom below), not merged into CLASS_ATOMS outright,
+# so it doesn't dilute the existing base-tier diversity and its own share
+# of the corpus stays a named, adjustable number rather than "however many
+# items happen to be in the list."
+MODULE_CLASS_ATOMS = [
+    ("\\d", {"0", "5", "9"}, False),
+    ("\\D", {"0", "5", "9"}, True),
+    ("\\w", {"a", "5", "_"}, False),
+    ("\\W", {"a", "5", "_"}, True),
+    ("\\s", {" ", "\t", "\n"}, False),
+    ("\\S", {" ", "\t", "\n"}, True),
+    ("[[:alpha:]]", {"a", "b", "z", "X", "Y"}, False),
+    ("[[:digit:]]", {"0", "5", "9"}, False),
+]
+
+# Fraction of class-atom draws (the `r < 0.48` branch in gen_atom, itself
+# ~18% of all atom draws) that pick from MODULE_CLASS_ATOMS instead of
+# CLASS_ATOMS -- "modest" per the manager's ruling: enough that a
+# 1500-pattern batch reliably contains many module-construct patterns
+# (expected ~0.15 * 0.18 =~ 2.7% of individual atom draws, and most
+# patterns carry several atoms), not so much that it dominates or crowds
+# out the base-tier coverage this generator already had.
+MODULE_CLASS_WEIGHT = 0.15
+
+# The HARDENED STAT this addendum owes (manager ruling): derived from
+# MODULE_CLASS_ATOMS itself (never hand-duplicated) so it can't drift out
+# of sync with what the generator actually draws from. Used by main()'s
+# stats["module_construct"] counter below -- a substring check on the
+# rendered pattern TEXT is sufficient and exact here because every one of
+# these strings is a self-delimiting escape or POSIX form that cannot
+# appear as an accidental substring of anything else this generator emits
+# (no other atom or template renders a literal backslash-letter or
+# `[:name:]` sequence).
+MODULE_CONSTRUCT_MARKERS = tuple(text for text, _members, _neg in MODULE_CLASS_ATOMS)
+
 QUANTS = [
     # (text, lo, hi)  hi=None means unbounded; counts kept <= 30 per spec.
     ("*", 0, None), ("+", 1, None), ("?", 0, 1),
@@ -236,7 +281,8 @@ def gen_atom(depth):
         text, sample = random.choice(LITERAL_ATOMS)
         return Node("lit", (text, sample))
     if r < 0.48:
-        text, members, negated = random.choice(CLASS_ATOMS)
+        pool = MODULE_CLASS_ATOMS if random.random() < MODULE_CLASS_WEIGHT else CLASS_ATOMS
+        text, members, negated = random.choice(pool)
         return Node("cls", (text, members, negated))
     if r < 0.53:
         return Node("dot", None)
@@ -734,7 +780,8 @@ def main():
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
              "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
              "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
-             "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0}
+             "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0,
+             "module_construct": 0}
 
     # Patterns AND subjects are generated up-front in the MAIN thread: the
     # worker pool shares the global `random`, so generating inside workers made
@@ -759,6 +806,8 @@ def main():
             pat = gen_trap()
         elif is_capture:
             pat = gen_capture()
+        if any(marker in pat for marker in MODULE_CONSTRUCT_MARKERS):
+            stats["module_construct"] += 1
         alpha = pattern_alphabet(pat)
         if is_trap:
             # Trap patterns are raw text, not an AST node, so the node-based
@@ -1017,6 +1066,7 @@ def main():
           f" to a specific library version)")
     print(f"seed={args.seed} patterns={args.patterns} subjects/pattern={args.subjects} elapsed={elapsed:.1f}s")
     print(f"patterns generated:   {stats['patterns']}")
+    print(f"  module construct patterns: {stats['module_construct']}  (contains classes-module syntax -- \\d \\D \\w \\W \\s \\S or a POSIX [:name:] form -- MODULE_CLASS_ATOMS, [M4.7e] second addendum; the hardened proof the differential gate is EXERCISED, not merely open, per docs/testing.md's differential-gate principle)")
     print(f"  both accept:        {stats['both_accept']}")
     print(f"  both reject:        {stats['both_reject']}")
     print(f"  pcrec-only reject:  {stats['pcrec_reject_only']}  (accept/reject divergence)")

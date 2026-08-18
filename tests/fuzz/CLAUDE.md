@@ -3,8 +3,12 @@
 Random pattern/subject generator that differentially fuzzes `pcrec` against
 a real PCRE2 8-bit oracle (dlopen'd at runtime — no `-dev` package on this
 box). Plan step M2.5; promotes the R1 semantics critic's ad-hoc session
-tooling into a committed, repeatable tool. Manual/checkpoint tool (`make
-fuzz`), not part of `make test` — see README.md for why.
+tooling into a committed, repeatable tool. The many-seed, many-pattern
+CAMPAIGN stays manual/checkpoint-only (`make fuzz`, `campaigns/`) — see
+README.md for why. **[M4.7e]** added a FIXED-seed slice that IS wired into
+`make test` (`make test-capturediff`, `run_capturediff_gate.sh`) — a
+pinned seed is exactly as reproducible as any other differential in this
+tree, which is what the manual-only reasoning below does not cover.
 
 ## Files
 
@@ -123,10 +127,42 @@ fuzz`), not part of `make test` — see README.md for why.
   the `_cpu_limited` ulimit shim reading `gen_timeout.sh cpusecs`; the
   oracle-shim and driver-template compiles are hand-written C, outside
   D45's scope, and deliberately stay on the wall bound alone.
+  **[M4.7e] second addendum** added `MODULE_CLASS_ATOMS` next to
+  `CLASS_ATOMS` — the classes-module escapes (`\d \D \w \W \s \S`) and two
+  POSIX `[:name:]` forms (`[[:alpha:]] [[:digit:]]`), drawn at a modest,
+  NAMED weight (`MODULE_CLASS_WEIGHT = 0.15` of the existing class-atom
+  branch in `gen_atom`, not merged into `CLASS_ATOMS` itself) — closing the
+  README.md-documented finding that the differential gate was open
+  (`PCREC_DEFAULT_FEATURES="std1"`) but the generator never actually
+  emitted anything std1's two modules own. `modifiers` generation stays
+  out of scope, owed to [M7.0] (docs/dev/plan.md) rather than added here.
 - **README.md** — full usage, exception-list rationale, output-bucket
   reference, triage process, and documented findings from this tool's
   build session (a real PCRE2 match-limit oracle bug now fixed, and a
   tracked PCRE2 optimizer quirk on `{0}`-quantified anchor alternations).
+- **run_capturediff_gate.sh** — **[M4.7e]** the GATE-ON wiring: runs
+  `fuzz.py` at ONE FIXED seed/patterns/subjects (its own argparse
+  defaults, spelled out in the script so a future default change there
+  doesn't silently resize this gate), asserts fuzz.py's own zero-divergence
+  exit code, and additionally asserts every exclusion-bucket LABEL fuzz.py's
+  summary prints is still present in the output (no-silent-caps: a bucket
+  vanishing from the summary text, not just its count going to zero, is
+  itself a regression this gate catches). Probes libpcre2 presence itself
+  BEFORE calling fuzz.py (build `pcre2_oracle.c`, call its own `--version`,
+  which does the real dlopen attempt) and SKIPS loudly (PC-3's own pattern,
+  tests/registry/run_registry_tests.sh) rather than calling into fuzz.py's
+  oracle plumbing, which is deliberately fail-hard (see pcre2_abi.h's entry
+  above) — right for a manual dev tool, wrong for a `make test` section on a
+  libpcre2-less box. `make test-capturediff` is its Makefile target, part of
+  `make test` proper (unlike `test-spec`).
+- **campaigns/** — **[M4.7e]** committed logs from the AT-SCALE, many-seed
+  capture differential campaign (D35-style provenance: date, HEAD commit,
+  libpcre2 version, seed list). Evidence, like docs/measurements/ reports —
+  no check reads these; `make test-capturediff` above is the live,
+  re-measured regression gate. Re-run manually (`python3 tests/fuzz/fuzz.py
+  --seed N ...` per seed, or the driver loop recorded in the campaign log
+  itself) rather than from a make target, same manual-only posture as
+  `make fuzz`.
 - **failures/\<timestamp\>/NNNN_\<kind\>/** — repro bundles (pattern.txt,
   subject.hex/.bin, outputs.txt) written by runs that found divergences.
   Regenerated output, not committed fixtures — safe to delete.

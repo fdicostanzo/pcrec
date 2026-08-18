@@ -72,6 +72,29 @@ A default run (300 patterns) takes a few seconds on this box (the dominant
 cost used to be recompiling the driver from source for every pattern; see
 "Performance" below for the fix that removed that).
 
+## Two-tier posture: the `make test` gate vs. the at-scale campaign ([M4.7e])
+
+Everything above (`make fuzz`, an arbitrary `--seed`) stays a
+manual/checkpoint tool for the reason already given: a clean run at a seed
+nobody pinned says nothing about the next one, and a failure needs human
+triage before it means anything. **That reasoning does not apply to a
+PINNED seed** — the same seed always reproduces the same corpus (see
+"Deterministic" above), so a fixed-seed run is exactly as reproducible as
+any other differential in this tree.
+
+`tests/fuzz/run_capturediff_gate.sh` (`make test-capturediff`, part of
+`make test` proper) is that fixed-seed slice: fuzz.py's own defaults
+(seed=1, 300 patterns, 15 subjects), asserting fuzz.py's own
+zero-divergence exit code. It exists to catch a REGRESSION against
+divergences already known to be absent, not to find new ones — finding new
+ones is still the at-scale campaign's job (`tests/fuzz/campaigns/`, run
+manually across many seeds at checkpoints, same posture as `make fuzz`
+itself, just bigger and logged). The gate probes libpcre2 presence itself
+(builds `pcre2_oracle.c`, calls its own `--version`) and SKIPS loudly
+(PC-3's pattern, `tests/registry/run_registry_tests.sh`) instead of letting
+fuzz.py's own oracle plumbing fail hard, which is the right policy for a
+manual dev tool but wrong for a `make test` section on a libpcre2-less box.
+
 ## What gets generated
 
 Random base-tier patterns: literals, `.`, character classes (including
@@ -92,6 +115,46 @@ approximate matching fragment of the pattern (see `sample()` in fuzz.py) —
 a best-effort bias toward interesting subjects, not a correctness
 mechanism (both engines always run on the exact same bytes regardless of
 how the subject was constructed).
+
+**FINDING ([M4.7e], 2026-08-17), CLOSED for `classes` the same day it was
+found: the differential-gate principle's OPEN half was satisfied (see
+docs/testing.md), but its FOCUSED half was VACUOUS for this generator —
+measured, not assumed.** fuzz.py passes no `--features` flag, so every
+compile in this file (gate slice and at-scale campaign alike) resolves
+through `PCREC_DEFAULT_FEATURES` = `"std1"` = `{classes, modifiers}`
+(D37/STD1b) — the gate is genuinely open. But at the time of the original
+75,000-pattern campaign, `CLASS_ATOMS` was drawn only from base-tier
+bracket-class forms already accepted with NO module enabled
+(`tests/base/classes.rxt`'s own territory) — none of the classes-module
+escapes (`\d \D \s \S \w \W`) or the classes-module POSIX `[:name:]`
+delimiter form ever appeared, so the gate being open bought that campaign
+nothing: zero of its 75,000 patterns exercised either module's OWN syntax.
+Recorded because the distinction between "the gate is open" and "something
+walked through it" matters and is otherwise invisible in a summary line
+that only reports divergence counts (`tests/fuzz/campaigns/
+2026-08-17_m47e_capture_diff.md` carries the original measurement in
+full).
+
+**The `classes` half is now fixed**: `MODULE_CLASS_ATOMS` (fuzz.py, next to
+`CLASS_ATOMS`) adds `\d \D \w \W \s \S` and two POSIX forms
+(`[[:alpha:]] [[:digit:]]`), drawn at a MODEST, named weight
+(`MODULE_CLASS_WEIGHT = 0.15` of the existing class-atom branch in
+`gen_atom`) rather than merged into `CLASS_ATOMS` outright, so its share of
+the corpus is a controllable number, not "however many items are in the
+list." Measured in-process (pure generation, no compiles): 37.1% of 3,000
+sampled patterns at this weight contain at least one module construct —
+comfortably nonzero, the proof the gate is now actually exercised rather
+than merely open. A second, smaller addendum batch re-running the campaign
+with this generator carries its own row in the campaign log with this
+count measured for real (not the in-process sample above).
+
+**`modifiers` stays OUT of scope, deliberately, and is recorded as an owed
+cell rather than silently dropped**: no modifiers-module generation exists
+anywhere in this file (no `(?i) (?m) (?s) (?x) (?U) (?J) (?a) (?n) (?r)
+(?-i) (?^) (?)`). Extending the generator for `modifiers` is homed at
+[M7.0] in docs/dev/plan.md ("differential fuzzing vs libpcre2" — M7's own
+milestone, not a same-session addendum to [M4.7e]'s capture charter) rather
+than done here.
 
 ## Excluded from generation (known tooling divergences)
 
