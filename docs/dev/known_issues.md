@@ -475,6 +475,33 @@ in the library's front door.
 **Scheduled:** with DD-3 (generated-API versioning/compat policy), because both
 are changes to the public contract and should be decided together.
 
+**API HALF LANDED 2026-08-17 ([M4.7c], lane/m47c):** `rx_info` already carried
+`pattern_len` (D44.5, landed 2026-08-14 at the [M4.4] match-API freeze,
+`src/gen/emit_dfa.c`'s `emit_info_def` — `.pattern_len = %zu` off `cx->patlen`,
+the same `strlen()` at the `pcrec_compile()` entry that decides what gets
+compiled) — the field this entry asked for existed in the shipped emitter
+before this row was ever opened as a plan step; what M4.7c added is the
+TESTING this entry's own repro needed and never got: `tests/cli/run_cli_tests.sh`
+case16 is the direct library-API probe (an embedded-NUL buffer built byte by
+byte, since argv cannot carry one through to `pcrec_compile()`) that PINS the
+truncation this entry describes AND asserts it is now detectable — the exact
+"a\0b" (3 bytes) compiles as "a" (1 byte) repro above, with the artifact's own
+`rx_info.pattern_len` reading `1`, honestly reporting what was actually
+compiled rather than what the caller intended. `tests/codegen/run_codegen_tests.sh`
+adds the general structural coverage: `pattern_len` is the pattern's ordinary
+byte count, and — the cell that would have caught a field that quietly
+reported the MATCHED-byte count instead of the SOURCE-byte count — `'a\nb'`
+(4 source bytes: `a`, `\`, `n`, `b`) stamps `pattern_len = 4`, not 3 (the
+bytes the matcher itself walks). Contract text: docs/design/match_api_m4.md
+§5's `rx_info` layout table already carries `pattern_len` at D44.5's own
+ruling; no further contract-text change was needed here, and [M4.7f]'s spec
+graduation inherits it as-is. **STILL OPEN**: the compile-ENTRY half (a length
+parameter on `pcrec_compile()` itself, so the compiler can refuse a pattern
+whose declared extent it cannot verify, rather than silently truncating and
+succeeding) stays with DD-3, unchanged by this landing — a caller must still
+know to check `pattern_len` against its own intended length; nothing in
+`pcrec_compile()`'s signature enforces that yet.
+
 ## K10 — FIXED 2026-08-12 (MOD-0.6 phase 2, the K10 slice)
 
 **Resolution.** `RF_CLASS_INVALID` removed from the `{U+` row
