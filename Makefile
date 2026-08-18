@@ -67,8 +67,8 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-prefilter test-altcls test-known-fail test-thread \
-      test-capturediff
+      test-counterk test-mrl test-prefilter test-altcls test-resource \
+      test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -240,6 +240,22 @@ test-altcls: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/altcls/run_altdiff.sh' \
 	    'bash tests/altcls/run_altcls_tests.sh'
+
+# [M4.7b] K7's pin: what a large bounded repeat COSTS to compile, and that a
+# failed allocation is diagnosed rather than aborting the caller.
+#
+# DELIBERATELY ABSENT from the `ubsan`/`asan`/`lint` lists below, and it is a
+# design fact rather than an oversight. Section 2 of the script needs `ulimit
+# -v` to make malloc genuinely return NULL, and an ASan build reserves tens of
+# terabytes of address space at startup — the same reason scripts/watchdog's
+# own header gives for polling RSS instead of setting RLIMIT_AS. Under ASan
+# every case in that section would die on startup and prove nothing. The
+# memory CEILING in section 1 has the matching problem: instrumentation
+# legitimately multiplies footprint, so a ceiling tuned to the plain axis
+# either flakes or is so loose it stops asserting anything. Resource behaviour
+# is measured on the axis it is promised on.
+test-resource: all
+	bash tests/resource/run_resource_tests.sh
 
 test-known-fail: all
 	bash tests/known_fail/run_known_fail.sh

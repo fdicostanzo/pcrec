@@ -27,6 +27,16 @@ void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
     longjmp(cx->jb, 1);
 }
 
+/* [M4.7b/K7] See internal.h for why there is exactly one of these. The
+ * `errno == ENOMEM` distinction is deliberately NOT drawn: malloc failing for
+ * any reason is the same event to a caller, and reading errno after a
+ * longjmp-shaped path is a portability question with no payoff. */
+void ctx_nomem(Ctx *cx)
+{
+    ctx_fail(cx, 0, "out of memory compiling this pattern (the compiler could "
+                    "not allocate; shrink the pattern or raise the limit)");
+}
+
 void pcrec_default_options(pcrec_options *opt)
 {
     memset(opt, 0, sizeof(*opt));
@@ -57,6 +67,14 @@ static void job_cleanup(Ctx *cx)
         sb_free(&cx->job->hsb);
         sb_free(&cx->job->vmsb);
         sb_free(&cx->job->irsb);
+        /* [M4.7b/K7] Strings already TAKEN from the buffers above but not yet
+         * published to the caller. They exist for a window of three statements
+         * at the end of compile_driver, and now that an allocation failure in
+         * that window is a diagnosed refusal rather than an abort, the window
+         * is reachable and the second take would otherwise strand the first. */
+        free(cx->job->out_c);
+        free(cx->job->out_h);
+        free(cx->job->out_ir);
         free(cx->job);
         cx->job = NULL;
     }
@@ -105,7 +123,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
     cx.first_cap_pos = (size_t)-1;
     cx.want_ir = ir_out != NULL;
+    /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
+     * failed malloc anywhere below is a diagnosed refusal instead of an
+     * abort() that would take the CALLER's process down with it. The arena is
+     * attached before anything allocates from it; the four Job buffers are
+     * attached as soon as the Job exists. */
+    cx.arena.cx = &cx;
     cx.job = calloc(1, sizeof(Job));
+    if (cx.job) {
+        cx.job->csb.cx = cx.job->hsb.cx = &cx;
+        cx.job->vmsb.cx = cx.job->irsb.cx = &cx;
+    }
     if (!cx.job || !out || !pattern) {
         job_cleanup(&cx);
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
@@ -208,10 +236,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
 
     if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
     else                               pcrec_emit_dfa(&cx);
+   
 
-    out->c_src = sb_take(&cx.job->csb);
-    out->h_src = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
-    if (ir_out) *ir_out = sb_take(&cx.job->irsb);
+    /* [M4.7b/K7] Take into JOB-OWNED slots first, publish only once all three
+     * have succeeded. sb_take allocates only for a never-written buffer, so
+     * this is a path no emitter reaches — but "the compile path never aborts
+     * and never leaks" is a claim with no room for a path that almost never
+     * runs, and the ownership is one field each. */
+    cx.job->out_c  = sb_take(&cx.job->csb);
+    cx.job->out_h  = defo.header_name ? sb_take(&cx.job->hsb) : NULL;
+    cx.job->out_ir = ir_out ? sb_take(&cx.job->irsb) : NULL;
+    out->c_src = cx.job->out_c;   cx.job->out_c  = NULL;
+    out->h_src = cx.job->out_h;   cx.job->out_h  = NULL;
+    if (ir_out) { *ir_out = cx.job->out_ir; cx.job->out_ir = NULL; }
     job_cleanup(&cx);
     return 0;
 }
@@ -276,6 +313,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
      * between the two would be one more way for them to drift apart. */
     cx.want_caps = false;
     cx.first_cap_pos = (size_t)-1;
+    cx.arena.cx = &cx;   /* [M4.7b/K7] parse OOM diagnoses; see compile_driver */
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
         return -1;

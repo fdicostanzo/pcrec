@@ -566,12 +566,14 @@ static void tab_insert(Dfa *d, int idx)
     d->tab[i] = idx;
 }
 
-static void tab_grow(Dfa *d)
+static void tab_grow(Ctx *cx, Dfa *d)
 {
     size_t newcap = d->tabcap ? d->tabcap * 2 : 256;
     free(d->tab);
     d->tab = malloc(newcap * sizeof(int));
-    if (!d->tab) abort();
+    /* [M4.7b/K7] d->tab is already NULL here, so the Job's own cleanup frees
+     * nothing twice; d->tabcap is stale but nothing reads it after a longjmp. */
+    if (!d->tab) { d->tabcap = 0; ctx_nomem(cx); }
     for (size_t i = 0; i < newcap; i++) d->tab[i] = -1;
     d->tabcap = newcap;
     for (int s = 0; s < d->n; s++) tab_insert(d, s);
@@ -580,7 +582,7 @@ static void tab_grow(Dfa *d)
 /* Intern a closed state (list must already be a closure result). */
 static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolvar)
 {
-    if (d->tabcap == 0 || (size_t)d->n * 2 >= d->tabcap) tab_grow(d);
+    if (d->tabcap == 0 || (size_t)d->n * 2 >= d->tabcap) tab_grow(cx, d);
     uint32_t h = dhash(list, n, accept, eolvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) {
@@ -594,10 +596,25 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolv
     if (d->n >= d->maxstates)
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
                  "VM engine arrives in M4)", d->maxstates);
+    /* [M4.7b/K7] The PREDICTIVE half of the cap, charged per interned state
+     * BEFORE its list is copied. The state-count cap above bounds `d->n`; the
+     * memory this construction actually spends is sum(nlist), and the two come
+     * apart by a whole factor on exactly the shape K7 reports. See
+     * PCREC_MAX_SUBSET_ELEMS. */
+    cx->subset_elems += n;
+    if (cx->subset_elems > PCREC_MAX_SUBSET_ELEMS)
+        ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
+                 "construction exceeds %lld state-set elements; "
+                 "VM engine arrives in M4)",
+                 (long long)PCREC_MAX_SUBSET_ELEMS);
     if (d->n == d->cap) {
-        d->cap = d->cap ? d->cap * 2 : 64;
-        d->st = realloc(d->st, (size_t)d->cap * sizeof(DState));
-        if (!d->st) abort();
+        int ncap = d->cap ? d->cap * 2 : 64;
+        /* [M4.7b/K7] realloc into a TEMPORARY: on failure d->st still points at
+         * the live array the Job owns and job_cleanup will free it. */
+        DState *nst = realloc(d->st, (size_t)ncap * sizeof(DState));
+        if (!nst) ctx_nomem(cx);
+        d->st = nst;
+        d->cap = ncap;
     }
     DState *s = &d->st[d->n];
     s->nlist = n;

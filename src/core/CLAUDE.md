@@ -48,9 +48,29 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   a compile that never happened. `--emit-ir` therefore runs a REAL compile and
   throws the C away — the cost of the guarantee, on a debug tool.
 
-- **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block
-- **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf
-- **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
+- **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
+  **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
+  calls `ctx_nomem()` instead of `abort()`. That one pointer is K7's worst
+  half: pcrec is a LIBRARY, and aborting kills the CALLER's process — the
+  outcome a caller who set a memory limit was specifically trying to avoid.
+  The longjmp lands in compile_driver, whose `job_cleanup` already freed
+  everything wholesale, so nothing leaks and nothing half-built is read again
+- **sb.c** — growable string buffer for C code emission; sb_putc, sb_puts, sb_printf.
+  **[M4.7b/K7]** same back-pointer, with one real difference from Arena's:
+  NULL is a legitimate state here. `src/parse/syntax_dump.c` builds
+  `--features`/syntax-query text in bare `StrBuf sb = {0}` locals belonging to
+  no compile, with no `pcrec_error` to report through, so those keep the
+  abort. `sb_grow` also reallocs into a temporary now — assigning a failed
+  realloc straight into `sb->p` would lose the only pointer to the live buffer
+  the error path is about to free
+- **limits.h** — **[M4.7b] gains `PCREC_MAX_SUBSET_ELEMS`**, K7's second half
+  and the first bound in this file on what the COMPILER spends rather than on
+  what it emits: how many NFA-state-list elements the subset construction may
+  intern across a compile. The state-COUNT caps above it cannot substitute,
+  because the two diverge by a whole factor on the exact-repeat family (n+1
+  states whose sets average n/2). Read its entry before touching the number —
+  it records the corpus maximum it is derived from, the measured cost at the
+  ceiling, and the exact repeats it NARROWS. Otherwise: every number that decides what pcrec ACCEPTS, REJECTS or
   PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2
   syntax (exact, and measured — the 65535 repeat ceiling, the 250 nesting cap),
   and PCRE2 internals (minimums we honour, not contracts we owe). The

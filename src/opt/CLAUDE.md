@@ -257,7 +257,7 @@ construction (src/ir) and emission (src/gen).
   Tests: tests/mrl/ (its own CLAUDE.md; the `.rxt` corpus there is
   D27-BLINDED and found a real gap in the first implementation).
 
-- **minimize.c** — DFA minimization by Moore-style partition refinement with
+- **minimize.c** ([M4.7b/K7]: its five local tables are the ONLY allocations on the compile path the Job does not own, so this is the one file where failing cleanly means freeing by hand before `ctx_nomem`; its header note that there are "no ctx_fail paths" is updated accordingly. K25 — Moore refinement needs O(n) rounds on a chain, so `a{0,25000}` spends a measured 15.3 s here against 0.03 s for the whole construction side — is filed against this pass, not against K7's accounting.) — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
   alphabet symbol so `$`-machines minimize correctly. Behavior-preserving:
   priority/leftmost-first semantics are already baked into the transition

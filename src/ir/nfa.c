@@ -78,9 +78,13 @@ static int nst(NB *b, NKind k)
     if (nfa->n >= PCREC_MAX_NFA_STATES)
         ctx_fail(b->cx, 0, "pattern too large (NFA exceeds %d states)", PCREC_MAX_NFA_STATES);
     if (nfa->n == nfa->cap) {
-        nfa->cap = nfa->cap ? nfa->cap * 2 : 64;
-        nfa->st = realloc(nfa->st, (size_t)nfa->cap * sizeof(NState));
-        if (!nfa->st) abort();
+        int ncap = nfa->cap ? nfa->cap * 2 : 64;
+        /* [M4.7b/K7] realloc into a TEMPORARY, so a failure leaves the live
+         * array owned by the Job for job_cleanup rather than losing it. */
+        NState *nst = realloc(nfa->st, (size_t)ncap * sizeof(NState));
+        if (!nst) ctx_nomem(b->cx);
+        nfa->st = nst;
+        nfa->cap = ncap;
     }
     NState *s = &nfa->st[nfa->n];
     memset(s, 0, sizeof(*s));
@@ -584,7 +588,32 @@ static Frag compile_ast(NB *b, const Ast *a)
                 Frag cat = frag_cat2(b, body, tail);
                 int s = nst(b, N_SPLIT);
                 Nfa *nfa = b->nfa;
-                Frag w = { s, {0} };
+                /* [M4.7b/K7] INHERIT `cat.out`'s array rather than copying into
+                 * a fresh one. This loop runs n-m times and every iteration's
+                 * out-set is the previous one PLUS this split's own exit, so
+                 * copying it made NFA construction Theta((n-m)^2) in arena
+                 * traffic while the state count — the only thing
+                 * PCREC_MAX_NFA_STATES watches — stayed linear. That gap IS
+                 * K7: `a{0,8000}` spent 332 MB per machine (664 MB for the
+                 * forward/reverse pair) building 16,002 states worth 768 KB,
+                 * and `a{0,65535}` needed ~34 GB it was SIGKILLed for, all
+                 * without the cap ever having anything to object to. Growing
+                 * one array geometrically instead makes the whole loop
+                 * amortized O(1) per copy; measured below in this lane at
+                 * 664 MB -> 5 MB for `a{0,8000}`.
+                 *
+                 * IT CANNOT CHANGE THE MACHINE, which is what makes this a
+                 * fix and not a redesign. A Patch is an unordered SET of
+                 * dangling edges — `patch_to` writes the same target into
+                 * every entry and reads nothing about their order — and this
+                 * rewrite calls `nst` exactly where the old one did, so state
+                 * numbering is untouched. Only the order of entries within the
+                 * patch array differs, and nothing observes that.
+                 * `frag_cat2` above already inherits its right operand's array
+                 * for the same reason; this is that idiom applied to the one
+                 * site that had not adopted it. */
+                Frag w = { s, cat.out };
+                cat.out = (Patch){0};
                 if (a->greedy) {
                     nfa->st[s].t1 = cat.start;
                     patch_push(b, &w.out, s * 2 + 1);
@@ -592,7 +621,6 @@ static Frag compile_ast(NB *b, const Ast *a)
                     nfa->st[s].t2 = cat.start;
                     patch_push(b, &w.out, s * 2);
                 }
-                patch_join(b, &w.out, &cat.out);
                 tail = w;
             }
             f = (f.start < 0) ? tail : frag_cat2(b, f, tail);

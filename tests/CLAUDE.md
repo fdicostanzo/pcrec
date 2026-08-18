@@ -41,6 +41,20 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   regression net, not evidence the feature is there
 - **registry/** — the SR-1 syntax construct table checked TWICE: against the parser in both directions (including a 255-byte sweep of each of the four doorways, which catches a construct added to parse.c with no registry row, D24), and — since PC-3 — against **libpcre2**, which is the first check in this repo that is not pcrec reading pcrec. Since Q2/SR-9 the `(?` doorway has three generated differentials of its own — a byte sweep, an option-run sweep and per-prefix tail sweeps — so it is no longer the case that only `(*` is name-checked. Plus compliance_section.py, which holds docs/pcre2_compliance.md to the dump (SR-4)
 - **bench/** — throughput + compile-time budget regression suite (`make bench`), guards R1 A-2/A-3
+- **resource/** — [M4.7b] what compiling a pattern COSTS, which no other suite
+  asserts and no `.rxt` block can express: K7's failure modes (SIGKILL, abort,
+  multi-gigabyte RSS) are indistinguishable to the harness from the crash it
+  scores as a hard failure, so `perr` cannot pin them. Three sections under
+  `scripts/watchdog` — bounded outcome for eleven large-bounded-repeat shapes
+  under a peak-tree-RSS ceiling and CPU/wall budgets; a positive control for
+  the allocation-failure paths under a BINDING `ulimit -v` (an unbinding limit
+  is scored a FAILURE, not a shrug); and one check per BOUND, so each shape is
+  shown reaching the cap that describes it rather than merely reaching one.
+  Sabotage-validated three ways, each catching only its own section. NOT on the
+  `ubsan`/`asan` axes by design — ASan reserves terabytes of address space, so
+  section 2 would die in the loader and section 1's ceiling would have to be
+  loosened until it asserted nothing. Its CPU budget is currently set by K25
+  (minimization), not by anything K7's accounting bounds; see its CLAUDE.md
 - **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/dev/known_issues.md); excluded from `make test` so the suite stays honest. EMPTY as of 2026-08-15 (K18 fixed and moved to tests/base/, joined there by the three axes its own repro could not reach), which the ratchet treats as a legitimate good state rather than an error
 - **vm/** — the [M4.5b] backtracking VM engine's own tests: the two bounds
   (step budget, frame capacity) each driven to ITS OWN limit and required to

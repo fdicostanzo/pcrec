@@ -12,6 +12,16 @@
  * provenance — ours, PCRE2 syntax, or a PCRE2 internal (D26). */
 #include "core/limits.h"
 
+/* [M4.7b/K7] The compile context, named early so the two allocators below can
+ * carry a back-pointer to it. THAT back-pointer is the whole mechanism behind
+ * K7's second half: pcrec is a LIBRARY, and an allocator that calls abort() on
+ * a failed malloc kills the caller's process — the worst failure on K7's list,
+ * and the one a caller who set a memory limit was specifically trying to avoid.
+ * With a Ctx in reach, every allocation failure on the compile path becomes an
+ * ordinary ctx_fail (longjmp to compile_driver's setjmp, job_cleanup, return
+ * -1 with a diagnostic) instead. See ctx_nomem() below. */
+typedef struct Ctx Ctx;
+
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
 typedef struct ABlock {
@@ -20,14 +30,21 @@ typedef struct ABlock {
     char mem[];
 } ABlock;
 
-typedef struct { ABlock *head; } Arena;
+/* `cx` is the owning compile, or NULL for an arena with no error channel to
+ * report through (there are none today; every Arena is a Ctx's own). */
+typedef struct { ABlock *head; Ctx *cx; } Arena;
 
 void *arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  arena_free(Arena *a);
 
 /* ---- growable string buffer (codegen output) ---- */
 
-typedef struct { char *p; size_t len, cap; } StrBuf;
+/* `cx` is the owning compile, or NULL — and unlike Arena, NULL is a REAL case
+ * here: src/parse/syntax_dump.c builds `--features`/syntax-query text in bare
+ * `StrBuf sb = {0}` locals that belong to no compile and have no pcrec_error to
+ * fill, so an allocation failure there has nowhere to be reported and keeps the
+ * abort. Attaching a Ctx is what upgrades a buffer from "abort" to "diagnose". */
+typedef struct { char *p; size_t len, cap; Ctx *cx; } StrBuf;
 
 void  sb_putc(StrBuf *sb, char c);
 void  sb_puts(StrBuf *sb, const char *s);
@@ -234,9 +251,14 @@ typedef struct {
     /* [M4.5c] the emitted-program LISTING (DD-8, engine_m4.md S10), filled
      * only when Ctx.want_ir is set. Job-owned for vmsb's reason. */
     StrBuf irsb;
+    /* [M4.7b/K7] Strings taken out of the three buffers above and not yet
+     * handed to the caller — Job-owned for exactly that window, so an
+     * allocation failure between two takes frees rather than strands them.
+     * NULL at every other moment; see compile_driver's tail. */
+    char *out_c, *out_h, *out_ir;
 } Job;
 
-typedef struct {
+struct Ctx {
     Arena                arena;
     const char          *pat;
     size_t               patlen;
@@ -334,11 +356,18 @@ typedef struct {
     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
      * engine_why stamp's `why_pos` (§5.5). */
     size_t               first_cap_pos;
+    /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
+     * subset construction, across every machine this compile builds (forward
+     * and reverse are charged to one budget because they are both live at
+     * once). This is the compile's dominant memory term and the one nothing
+     * bounded — see PCREC_MAX_SUBSET_ELEMS in limits.h for the growth law and
+     * the number. Charged in src/ir/dfa.c's intern(). */
+    long long            subset_elems;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
     Job                 *job;
-} Ctx;
+};
 
 /* The scoped-state block above, nameable for save/restore locals. */
 typedef struct ModState ModState;
@@ -367,6 +396,16 @@ typedef struct {
 
 void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
      __attribute__((noreturn, format(printf, 3, 4)));
+
+/* [M4.7b/K7] The ONE diagnostic for a failed allocation on the compile path,
+ * so every such site reads the same and none of them has to invent wording.
+ * It is ONE message on purpose: naming which internal table could not grow
+ * would tell a caller nothing they can act on, and the two things they CAN do
+ * — shrink the pattern, or raise the limit — are the same whichever it was.
+ *
+ * `pos` is 0 (whole-pattern) at every site: an allocation failure is a property
+ * of the pattern's total cost, not of a byte in it. */
+void ctx_nomem(Ctx *cx) __attribute__((noreturn));
 
 /* ---- syntax construct registry (D24 / SR-1) ----
  *
