@@ -1058,6 +1058,64 @@ execution speed trades the primary goal (D18) for the secondary one.
   final form, not a rewritten pattern. Frank's shape class is itself
   candidate D50-gate evidence for [ENG-ISL] if bench/PGO shows it
   hot.
+
+  **ROW CLOSE (2026-08-17/18, altcls lane).** Stage 1 (single-char merge)
+  and stage 2 (prefix factoring) LANDED and MERGED to main: D46 stamp+force
+  (`RX_ALTCLS_MERGES`/`RX_ALTCLS_FACTORED`, `-fno-altcls-merge`/
+  `-fno-altcls-factor`), differential validation (38 designed + 78
+  corpus-derived patterns, ~82k cells, 0 divergences), oracle-verified
+  `.rxt` corpus, two permanent mech sabotages (S66/S67, both DETECTED).
+  Landing also found and fixed a real regression the pass caused in
+  `tests/codegen/run_trie_identity.sh`'s M2.8 trie positive controls
+  (altcls pre-empted the exact bare-literal-prefix shape those controls
+  were built from, vacuously; fixed by widening the controls' bytes to
+  two-member classes — see `tests/codegen/CLAUDE.md`).
+
+  **Stage 2's -15.0..-15.6% figure is SUPERSEDED.** The row's own D35
+  pinned re-measurement (`docs/design/altcls_pinned_impl/`,
+  best-of-9 x 3 interleaved rounds, mpstat-verified quiet box) measures
+  **-7.61%** (n=27, stdev 0.226us on a ~47.2us mean, clean non-overlapping
+  distributions against the unfactored arm) on the identical
+  quantified-30-name-keyword shape. Direction CONFIRMED; magnitude
+  superseded — the design-evening figure was session-scratch with its
+  exact pattern/subject never archived, and is not further chased per
+  ruling (a capture-placement variant moved the number to -9.6% without
+  fully closing the gap; two untried variables — a `--engine=vm`
+  reproduction, matching the original subject shape exactly — are
+  recorded in the archive as the next step if this cell reopens).
+
+  **Stage 3 (FIRST-set entry guards): MEASURED-NO, per D53's own posture
+  — a full success outcome for the row, not a failure.** Implemented as a
+  working prototype (`src/opt/firstset.c`, `src/gen/emit_vm.c`'s
+  `vm_alt_guard`), correctness-validated (0 divergences over ~48k
+  differential cells), then measured under the manager's decision frame:
+  no cell under DEFAULT (real-caller) routing showed a benefit
+  distinguishable from noise, including a purpose-built arm testing an
+  alternation NOT at the pattern's start (weak prefilter selectivity) —
+  the one shape structurally capable of showing default-path benefit
+  given `select_engine.c`'s `fit.prefilter` derivation is unconditionally
+  true whenever the VM is auto-selected (no pattern-shape-dependent path
+  to false exists today outside explicit flags). The real ~11x win Cell B
+  measures is confined to `--engine=vm`, a comparability/debug facility
+  (DD-8/R21 E-6), which does not on its own justify a new selection axis
+  plus the full D46 stamp+force+sabotage apparatus on the default path —
+  `[m46e_impl]`'s trie-switch decline is the exact precedent this ruling
+  follows. **Disposition: does NOT merge, not even denied-by-default** —
+  a denied-by-default facility with no default-path customer still buys a
+  permanent maintenance surface for nothing. The implementation survives
+  in git history (worktree `lane/altcls` commit `a07a87c`, reverted at
+  `8b5acb4`) and is re-derivable from `docs/design/altcls_pinned_impl/`'s
+  archived record rather than kept live in the tree.
+
+  REVISIT-WHEN (stage 3, also recorded in
+  `docs/design/altcls_pinned_impl/CLAUDE.md` beside the evidence): (1)
+  M6's VM-mandatory constructs (backrefs, lookaround) land — the
+  capture-erased prefilter becomes an over-approximation for those
+  patterns, raising VM cascade reject-traffic for a reason this session's
+  shapes could not exercise; (2) `--engine=vm` ever becomes a supported
+  deployment path rather than a comparability facility; (3)
+  `[ENG-PGO]`/bench evidence surfaces real guard-eligible cascade traffic
+  under the default engine.
 - [OPT-A] STATE:not-started — ALGORITHMIC search optimization, and research is part of the work: pcrec is open source and pulling from other open-source engines is the point. Survey before hand-tuning. Leads recorded in D21: rare-byte prefilter selection (ripgrep/Hyperscan choose the RAREST byte by frequency; we choose memchr only at exactly one escape byte and otherwise fall to a bitmap — this attacks our case (d) path directly), memchr2/memchr3 for the 2-3 escape-byte gap, multi-byte literal search (Two-Way/Boyer-Moore/memmem) instead of scan-to-a-byte-then-step, Teddy/SIMD multi-pattern prefilter for the keyword-alternation shape M2.8 targets, reverse-inner and suffix literal selection when the prefix is weak, shift-or/bitap for short patterns, and transition-table compression (we do alphabet compression via byte equivalence classes but no table packing). Record rejections with the reason — "Teddy does not fit because X" is worth as much as adopting it. LEAD ADDED 2026-08-18 (Frank's observation, manager probe same conversation, thirtieth session): LITERAL-RUN COALESCING on the VERIFY path — the memmem lead above is scan-side; its verify-side half is that a maximal literal run (`aabb` in `(aabbc+)`) is matched byte-at-a-time by BOTH engines, measured on the shipped emitter at HEAD 0d97d31-era main: the VM path emits per-byte `pos < n && s[pos]==c` + goto, and gcc -O2 does NOT merge them (objdump: four separate cmpb at consecutive offsets — the per-byte bounds checks and distinct branch targets defeat load-merging; a broken first grep regex initially read this as zero compares, re-measured looser), while the DFA path pays the general table machinery (rx_fcls class lookup + rx_ftr step per byte) on a degenerate linear chain with no choice structure. FIX SHAPE: coalesce maximal literal runs at emission into ONE bounds check (n-pos >= k, the same many-bytes-one-check move MRL makes for length-viability) + constant-size memcmp (gcc inlines to wide compares). SOUND by the run's own structure: no choice points inside a run (a failed run fails its alternative whole), no capture edges inside a run (an edge ends the run), intra-run failure position unobservable (start++ retry advances by one regardless). NOT [ENG-ISL] territory (no choice structure to determinize — pure spelling of an already-linear chain; a literal ISL island would degenerate to exactly this, so ISL subsumes it, but no island machinery is needed). FAVORABLE ASYMMETRY vs the [OPT-ALTCLS] stage-3 measured-no: the FIRST-set guard optimized the REJECT path, which the hybrid prefilter absorbs; literal runs sit on the ACCEPT path every successful match pays, prefilter or not. D18 unchanged: lands only with a bench-measured win under the compare.sh instruments
 - [ENG-ABS] STATE:not-started — ENG_UNANCH absorbs `^` (the DD-7
   absorption half, re-homed here 2026-08-14, D42.7): D8 left `^` on

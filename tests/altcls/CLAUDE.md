@@ -58,8 +58,10 @@ here because it is worth reading before adding to any of the three:
   pattern.
 - **`patterns.txt`** — `run_altdiff.sh`'s designed population, the same
   families as `altcls.rxt` restated as bare patterns (the differential needs
-  patterns, not oracle expectations) plus the row's own `-15%` quantified
-  keyword-list shape at a size the differential can afford per-cell.
+  patterns, not oracle expectations) plus the row's own quantified
+  keyword-list shape (the pinned re-measurement's number of record is
+  -7.61%, docs/design/altcls_pinned_impl/ — superseding the earlier
+  unarchived -15% figure) at a size the differential can afford per-cell.
 - **`run_altdiff.sh`** — links `tests/possessify/possdiff_driver.c` against
   the pass-on and `-fno-altcls-merge -fno-altcls-factor` artifacts.
   `--corpus` derives every `.rxt` corpus pattern that stamps a positive

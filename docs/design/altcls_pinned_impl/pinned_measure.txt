@@ -1,0 +1,124 @@
+# [OPT-ALTCLS] pinned measurement — archived report (D35: evidence, never an
+# oracle). Source: docs/design/altcls_pinned_impl/pinned_measure.sh.
+# date:    2026-08-18 (session start 2026-08-17 EDT)
+# commit:  a07a87c6ba9b8ba6b4165e214eaeecc24b979874 (stage 3 prototype landing)
+# gcc:     gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+# box:     mpstat-verified quiet immediately before each pinned arm below
+#          (94.9% avg idle before the first run, 95.9-100% idle before the
+#          Cell A correction re-runs)
+# window:  manager-arranged, m47a/benchvm holding heavy runs concurrently
+
+## FIRST RUN (Cell A here is INVALID — see CORRECTION below; Cells B/C stand)
+
+== [OPT-ALTCLS] pinned measurement ==
+date:    2026-08-18T01:36:34Z
+trials:  best-of-9 x 3 interleaved rounds
+
+-- CELL B: stage 3 FIRST-set entry guard, default (hybrid) and --engine=vm --
+  round 0: engine=default guard=on  min=0.000699937 median=0.000737630 max=0.001068538 (n=9)
+  round 0: engine=default guard=off min=0.000699501 median=0.000817967 max=0.000855661 (n=9)
+  round 0: engine=vm      guard=on  min=0.007991643 median=0.008134413 max=0.008378931 (n=9)
+  round 0: engine=vm      guard=off min=0.089651320 median=0.089745899 max=0.089964150 (n=9)
+  round 1: engine=default guard=on  min=0.000699456 median=0.000857721 max=0.001055026 (n=9)
+  round 1: engine=default guard=off min=0.000768032 median=0.000851985 max=0.000860550 (n=9)
+  round 1: engine=vm      guard=on  min=0.007977405 median=0.008067159 max=0.008145710 (n=9)
+  round 1: engine=vm      guard=off min=0.089505833 median=0.089693899 max=0.089815496 (n=9)
+  round 2: engine=default guard=on  min=0.000702665 median=0.000845864 max=0.001103189 (n=9)
+  round 2: engine=default guard=off min=0.000699654 median=0.000855181 max=0.001055613 (n=9)
+  round 2: engine=vm      guard=on  min=0.008125132 median=0.008156507 max=0.008539821 (n=9)
+  round 2: engine=vm      guard=off min=0.089542068 median=0.089694840 max=0.089892692 (n=9)
+  stamps: b_default_on/off n/a (DFA-routed, no captures at pattern top level
+          reachable by this test pattern's own non-capturing spelling);
+          b_vm_on RX_ALTCLS_GUARDS 6; b_vm_off RX_ALTCLS_GUARDS 0
+
+-- CELL C: default engine, alternation NOT at pattern start (wildcard prefix) --
+  round 0: guard=on  min=0.000710219 median=0.000865296 max=0.000871629 (n=9)
+  round 0: guard=off min=0.000717428 median=0.000860720 max=0.000870764 (n=9)
+  round 1: guard=on  min=0.000709314 median=0.000867253 max=0.001120740 (n=9)
+  round 1: guard=off min=0.000709387 median=0.000862812 max=0.000879428 (n=9)
+  round 2: guard=on  min=0.000708982 median=0.000817048 max=0.000928036 (n=9)
+  round 2: guard=off min=0.000788917 median=0.000863703 max=0.000903876 (n=9)
+  stamps: c_on/c_off both RX_ENGINE "vm", RX_VM_PREFILTER "hybrid" (default
+          hybrid routing confirmed); c_on RX_ALTCLS_GUARDS 3, c_off 0
+
+## CELL A CORRECTION (found after reading the first run's own output)
+
+The first run's Cell A used PAT_A="(?:${ALT})+" -- NO capturing group, so it
+routes to the pure DFA engine under default selection. Verified by hand:
+`diff` between the -fno-altcls-factor and default .c files for that exact
+pattern is EMPTY past the stamp/include lines (537 lines each, byte-for-byte
+identical bodies) -- DFA minimization erases the factored/unfactored AST
+distinction entirely for this shape. The first run's Cell A numbers
+(17.96 vs 17.96 us/call, ~0% delta) therefore measured two copies of the
+SAME PROGRAM and are DISCARDED, not reported as a finding about stage 2.
+
+pinned_measure.sh's PAT_A is corrected in place (git-tracked) to
+`(${ALT})+` -- a capturing group around the alternation, forcing VM
+routing (RX_ENGINE "vm" confirmed both sides; RX_ALTCLS_FACTORED 2 vs 0
+confirmed; the two .c files are 1706 vs 1695 lines, 1392 diff lines --
+genuinely different programs this time). Re-run standalone (same
+methodology: N=200000 reps, best-of-9 x 3 interleaved rounds, mpstat-
+verified quiet immediately before, same 30-name-list subject construction)
+because the corrected script itself was not re-run end-to-end a second
+time in this window (Cells B/C already stood from the first run and did
+not need re-measuring):
+
+  factored:   n=27  min=46.920us  median=47.155us  max=47.971us  stdev=0.226us
+  unfactored: n=27  min=50.786us  median=51.041us  max=51.587us  stdev=0.183us
+  delta (median):        -7.61%
+  delta (best-of-27 min): -7.61%
+
+Tight, clean, non-overlapping distributions (both stdevs <0.5% of their own
+mean) -- this IS a real, reproducible effect in the predicted direction, not
+noise. It confirms stage 2 factoring's throughput win exists on the VM path
+for the quantified-keyword shape the row's original probe describes.
+
+## THE MAGNITUDE GAP: -7.6% (this run) vs -15.0..-15.6% (the design-evening
+## probe, docs/dev/plan.md's row) -- NOT FULLY RECONCILED, and here is what
+## was and was not tried in the time available
+
+Both numbers are real measurements of the SAME DIRECTION on the SAME shape
+family; the gap is in magnitude, and the honest state is that it is
+PARTIALLY explained, not fully closed, because the original probe's exact
+pattern text, subject construction and driver were session-scratch and
+never archived (the row's own text: "the prior probe was session-scratch
+and numbers are RE-RUN, never copied" -- there is no exact spec to match
+against, only the row's prose description).
+
+One variable WAS tested and DOES move the number: capture placement.
+`((?:${ALT})+)` -- ONE capture around the WHOLE quantified match, written
+twice total (open/close), rather than `(${ALT})+`'s capture INSIDE the
+loop (re-written every iteration, extra trail/slot traffic on BOTH arms)
+-- measured (single round, n=9/n=5, box still quiet, supplementary not
+full-pinned):
+
+  factored:   n=9  median=48.592us
+  unfactored: n=5  median=53.752us
+  delta (median): -9.60%
+
+Moves from -7.6% to -9.6%, roughly a third of the way from this run's first
+number toward -15%, still short of it. Two things NOT tried in this
+window, either of which could close the rest of the gap and are the
+natural next step if this cell is re-opened:
+
+  - a NON-CAPTURING reproduction under `--engine=vm` explicitly (this run's
+    Cell B/C already show `--engine=vm` widens a guard's OWN delta far
+    more than the default engine does; the same could hold for stage 2's
+    factoring, since --engine=vm removes the hybrid prefilter's own
+    contribution to the measured call cost entirely, which dilutes ANY
+    VM-path effect proportionally);
+  - the exact SUBJECT shape. This run's subject is the 29-name list
+    concatenated once, repeated 20x (one long uninterrupted match). The
+    design-evening probe's subject is not specified beyond "30 concatenated
+    names" in the row's own text -- a shorter subject (fewer reps, so
+    per-call overhead is a larger fraction of the timed work) or a subject
+    with more REJECT-heavy structure interleaved could plausibly show a
+    larger relative win, the same "reject path economics" argument Cell B/C
+    make explicit for stage 3's guard.
+
+Read together with Cell B/C: this session's own instrument is honest about
+DIRECTION (both confirm stage 2 has real value in the shape it claims) and
+under-confident about MAGNITUDE relative to the informal prior. That is a
+finding in itself -- the -15% figure should be treated as an upper bound
+from an unarchived methodology, not a number this instrument reproduces
+exactly, until the two remaining variables above are run down.

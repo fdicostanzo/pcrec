@@ -67,7 +67,8 @@ fra?nk|fred
 fra(n|m)k|frost
 
 # ---- both stages, quantified, over a longer keyword list (the row's own
-# -15% shape, smaller instance for the differential) ----
+# quantified-keyword-throughput shape, measured -7.61% pinned -- see
+# docs/design/altcls_pinned_impl/; smaller instance here for the differential) ----
 (?:frank|fred|brad|bobby|janet|carla|derek|elisa)+
 
 # ---- capture-bearing throughout, so both engines see this file (VM for the

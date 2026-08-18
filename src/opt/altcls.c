@@ -27,10 +27,13 @@
  *
  * STAGE 2 (prefix factoring): `frank|fred` -> `fr(?:ank|ed)`,
  * `frank|fred|brad|bobby|janet` -> `fr(?:ank|ed)|b(?:rad|obby)|janet`.
- * Measured worth it 2026-08-17 (docs/dev/plan.md's row: the quantified-form
- * exemplar over 30 concatenated names, -15.0..-15.6% reproducible; see
- * docs/measurements/ for this build's own re-run of that probe under the
- * D35-archived instrument). Runs on STAGE 1's output (the interaction the
+ * Measured worth it 2026-08-17 (docs/dev/plan.md's row). PINNED
+ * RE-MEASUREMENT (2026-08-18, docs/design/altcls_pinned_impl/): -7.61%
+ * (n=27, best-of-9 x 3 interleaved rounds) on the quantified-form exemplar
+ * over 30 concatenated names -- the number of record, superseding the
+ * design-evening probe's unarchived -15.0..-15.6% figure (direction
+ * confirmed, magnitude not reproduced; see the archive for what was and
+ * was not tried closing the gap). Runs on STAGE 1's output (the interaction the
  * plan row calls out: "post-merge shapes re-enter possessify/MRL/counter
  * analyses ... so the pass runs before those" applies one level up too --
  * factoring a run that stage 1 already collapsed into one class has nothing
