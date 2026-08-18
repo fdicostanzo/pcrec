@@ -29,7 +29,7 @@ AddressSanitizer on exact-size heap buffers with a firing positive
 control; §5.3's concurrency promise measured under ThreadSanitizer;
 §3.4/§6.1's section placement measured with `readelf`; §6.3's macro
 inventory measured by listing every `#define` in a build of each engine;
-§8.1's D56 guarantees measured at the refusal boundary. Two errors that
+§8.1's D56 guarantees measured at the refusal boundary. Two errors the
 panel found in the previous revision are recorded where they happened
 rather than quietly repaired: §3.5 (a contradiction described as an
 omission, and §2 quoting a corrected comment as if it were shipped) and
@@ -42,8 +42,9 @@ pass, so §2's quotation is now the real text.
 
 ## 1. Two namespaces plus one closed, fixed-literal family
 
-Every symbol a pattern compile can produce falls into exactly one of three
-groups:
+Every symbol a pattern compile can produce falls into one of three
+groups, with one stated boundary case (the two artifact-stamp macros
+noted under group 2, which are `PCREC_*`-named yet per-artifact):
 
 1. **Per-artifact symbols**, scoped by the caller's `pcrec_options.prefix`
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
@@ -263,12 +264,12 @@ while (p <= n) {
 }
 ```
 
-**The empty-match advance rule**: a zero-length match reported at
-position `p` is reported, and the next search starts at `p + 1`. Note
+**The empty-match advance rule**: a zero-length match is reported like
+any other, and then the next search starts one byte past its start. Note
 that the advance is off the match's own START (`caps[0][0]`), not off
 the loop variable — an empty match can be found at a position later than
-the one searched from. The loop terminates because every iteration
-either consumes at least one byte or advances `p`, and `p > n` ends it.
+the one searched from. The loop terminates because `p` moves strictly
+forward every iteration and `p > n` ends it.
 
 That loop, coded exactly as written above, was run against
 `python3 re.finditer` on twelve (pattern, subject) pairs and produced
@@ -292,9 +293,9 @@ above is the whole of what a pcrec consumer can do. Measured
 divergences, all of this one class: `|a` over `"aaa"` — this loop
 reports 4 spans `(0,0) (1,1) (2,2) (3,3)` where `re.finditer` reports 7,
 adding `(0,1) (1,2) (2,3)`; likewise `a*?` over `"aaa"` (4 vs 7) and
-`a??` over `"aba"` (4 vs 6). For a pattern that prefers a non-empty
-match wherever one exists — which is every greedy pattern, and every
-one of the twelve agreeing cases above — there is no divergence.
+`a??` over `"aba"` (4 vs 6). Where the pattern's own preference picks a
+non-empty match wherever one starts — all twelve agreeing cases above,
+including every greedy quantifier among them — there is no divergence.
 
 **Byte-vs-character caveat.** `+ 1` advances one BYTE. Under the ASCII
 encoding (`PCREC_ENC_ASCII`, the only one implemented today) a byte is a
@@ -326,7 +327,8 @@ running its ordinary search and rejecting any match whose start is not
 promise above is contractual.
 
 Returns the matched
-length (`>= 0`), `-1` on no match, or a typed give-up code (§4). Delivers
+length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no
+match, or a typed give-up code (§4). Delivers
 **no captures** — `ctx->caps` is an *input* (§5), not an output channel,
 and there is no parameter for `<prefix>_match` to write group offsets
 into. Self-contained per its type's contract: a top-level caller passes
@@ -369,7 +371,8 @@ the give-up axis. §4's uniformity is about the CODE SPACE — which values
 mean what — not about which entry gives up on a given input. Whether a
 budget is exhausted is a property of the entry point, because the
 entries do different amounts of work — and it goes BOTH ways. Measured,
-`(a|aa)+b` built `--step-budget=3`: on one subject `<prefix>_search`
+`(a|aa)+b` built `--step-budget=3`: over `"aaaaaaaaaaaaaaaaaaaaX"`,
+`<prefix>_search`
 returns `0` (its DFA prefilter resolves the question definitively
 without ever entering the VM) while `<prefix>_match` and
 `<prefix>_match_caps` both return `-2`. And on the same artifact family
@@ -451,10 +454,10 @@ propagation ever happens. The live evidence is the VM: measured,
 `(a|aa)+b` built `--step-budget=3` returns `-2` from `<prefix>_match`
 and `<prefix>_match_caps`, and the same pattern built
 `--backtrack-frames=1` returns `-3` from all three entries — including
-`<prefix>_search` — on the subject `"ab"`. (The DFA body's second line, `if (found != 1 ||
-caps[0][0] != ctx->pos) return -1;`, is also the only thing making that
-engine honor §3.2's anchoring promise — worth seeing rather than
-eliding.)
+`<prefix>_search` — on the subject `"ab"`. (The DFA body's second line,
+`if (found != 1 || caps[0][0] != ctx->pos) return -1;`, is also the only
+thing making that engine honor §3.2's anchoring promise — worth seeing
+rather than eliding.)
 
 This is the shipped, correct state: `docs/dev/decisions.md` D49
 supersedes D42.3 and rules the uniform-codes contract these artifacts
@@ -463,22 +466,23 @@ place. A caller that only tests `r < 0` for "did it match" is unaffected
 either way; a caller doing an exact `== -1` comparison sees give-up
 codes as distinct values, not folded into `-1`.
 
-**A correction to this section's own history, recorded because it is the
-kind of error this document exists to prevent.** As first written
-(2026-08-18, `[M4.7f]`), this section described the emitted `rx_matchfn`
-doc comment as merely *omitting* the give-up-code space — "still reads
-'matched length >= 0 ... or -1 (fail)' without spelling out the give-up
-codes". That was too generous by a wide margin. The shipped comment
-CONTRADICTED §4 outright: it read "Return values < -1 are RESERVED for a
-future abort semantic; no pcrec-emitted matcher produces one today",
-which is an affirmative false statement about the artifact it sits in,
-and the measurements above refute it. Worse, §2 of this document quoted
-a *corrected* version of that comment as though it were the shipped
-text. Both were found by the R29 panel and fixed in the same pass
-([M4.7g], 2026-08-18): the emitted comment now states the give-up space
-(§2 quotes it verbatim), and `lib/pcrec.h`'s generated-searcher comment,
-which had the same defect in its own words, now names the negative
-return space too.
+**An artifact generated before 2026-08-18 carries a comment that
+contradicts all of the above, and a reader holding one needs to know
+that.** Until that date, the emitted `rx_matchfn` ABI comment read
+"Return values < -1 are RESERVED for a future abort semantic; no
+pcrec-emitted matcher produces one today" — an affirmative false
+statement about the artifact it sits in, which the measurements above
+refute. **Where an old artifact's comment and this document disagree,
+this document is the contract; the artifact's behavior always matched
+this document, not its own comment.** This section as first written
+(`[M4.7f]`) described that comment as merely *omitting* the give-up
+codes, which was too generous by a wide margin, and §2 of this document
+quoted a *corrected* version of that comment as though it were the
+shipped text. Both were found by the R29 panel and fixed in the same
+pass (`[M4.7g]`, 2026-08-18): the emitted comment now states the give-up
+space (§2 quotes it verbatim), and `lib/pcrec.h`'s generated-searcher
+comment, which had the same defect in its own words, now names the
+negative return space too.
 
 ---
 
@@ -632,8 +636,8 @@ point's working state lives in its own stack frame and in the caller's
   buffer** (which the caller owns and declares, per the rule above).
   Sharing one buffer between concurrent calls is a data race in the
   CALLER's code, not something the matcher serializes for it.
-- The same holds for one thread re-entering a matcher — from a callout,
-  or from a signal handler — subject to the same distinct-buffer rule.
+- The same holds for one thread re-entering a matcher (from a callout,
+  say), subject to the same distinct-buffer rule.
 - `<prefix>_info` is read-only and may be read from anywhere at any time.
 
 **This is a CONTRACT, binding on future emitters, not merely an
@@ -722,18 +726,20 @@ KEY**, and there is no producer to measure: a consumer must not assume
 an ordering today. Module `named-groups` fixes the key when it ships,
 and this section states it then.
 
-**Two fields carry a design promise with no producer**, and the
-distinction from a shipped fact matters to anyone writing code against
-them:
+**Two more reflection facts are weaker than they look**, and the
+difference from a shipped guarantee matters to anyone writing code
+against them:
 
-- `rx_ctx.ncap`'s documented "watermark mid-match" reading has no
-  producer. Every call site in every emitted artifact sets `ctx.ncap =
-  0`; nothing ever advances it, so no caller can observe a watermark. It
-  is reserved for a future mid-match view, exactly as `nnames`/`groups`
-  are reserved for `named-groups`.
-- `rx_info.abi` is `2` on every artifact today. Being pre-v1 (§9), it is
-  a layout version and not yet a compatibility promise: do not build
-  version negotiation on it until v1 declares what a bump means.
+- **`rx_ctx.ncap`'s "watermark mid-match" reading has no producer.**
+  (It is an `rx_ctx` field rather than an `rx_info` one, but it belongs
+  with these.) Every call site in every emitted artifact sets
+  `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
+  watermark. It is reserved for a future mid-match view, exactly as
+  `nnames`/`groups` are reserved for `named-groups`.
+- **`rx_info.abi` is `2` on every artifact today, and is not yet a
+  compatibility promise.** Being pre-v1 (§9), it is a layout version and
+  nothing more: do not build version negotiation on it until v1 declares
+  what a bump means.
 
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
@@ -799,14 +805,15 @@ produces by default, a consumer `#include`s the `.h` — which carries
 only `<PREFIX>_NCAPS`, `<PREFIX>_UNSET` and the four `<PREFIX>_ERR_*`
 codes (plus its two include guards). Every macro named below is emitted
 into the `.c` only (measured on one build: eight `#define`s in the `.h`,
-thirty-five in the `.c`), so **the `#if` use case above is unreachable from a consumer
-translation unit unless the artifact was built self-contained**
-(`header_name == NULL`) or the consumer is the generated `.c` itself.
-Whether these should also be emitted into the header is an open design
-question, not settled here.
+thirty-five in the `.c`), so **the `#if` use case above is unreachable
+from a consumer translation unit unless the artifact was built
+self-contained** (`header_name == NULL`) or the consumer is the
+generated `.c` itself. Whether these should also be emitted into the
+header is an open design question, not settled here.
 
 With that scoping, the observability macros on a captures-default build
-of `'a(b|c)+d'`:
+of `'a(b|c)+d'` (the `#define` lines are the artifact's; the `/* ... */`
+annotations below are this document's, not emitted text):
 
 ```c
 #define RX_ENGINE          "vm"                    /* mirrors rx_info.engine */

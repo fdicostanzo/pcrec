@@ -10121,3 +10121,99 @@ clean, all worktrees removed, all lanes released. [M4.7] remaining:
 [M4.7g] only — D6 panel over the spec, full close battery + ratchets,
 M5-vs-M6 order ruling WITH FRANK. The question is put to Frank
 (close tonight vs next session); wake.md carries both paths.
+
+---
+
+## 2026-08-18 — [M4.7g] R29 fix lane (lane/m47g-fix): both shipped doc-comments corrected, the spec re-verified against measurement
+
+The R29 panel over `docs/spec/match_api.md` (three lenses: artifact /
+ruled-corpus / adversarial consumer) delivered a verdict worth
+restating, because it is the reason this lane exists: the MATCHING
+SEMANTICS were contract-grade and survived active attack on both
+engines, span-for-span against python `re` — and every blocker was in
+the surrounding surface. This lane implemented every FIX-CODE and
+FIX-SPEC item plus the D57 note update.
+
+**The two code fixes.** Both shipped doc-comments an embedder actually
+reads denied the give-up-code space §4 promises and the artifacts
+produce. `src/gen/emit_dfa.c`'s emitted `rx_matchfn` ABI comment said
+"Return values < -1 are RESERVED for a future abort semantic; no
+pcrec-emitted matcher produces one today" — an affirmative false
+statement, refuted at −2 (`--step-budget=3`) and −3
+(`--backtrack-frames=1`) on all three entry points. It now states the
+real contract, prefix-independently, and the same block's hardcoded
+"== RX_NCAPS" (wrong under any custom prefix — `r22a.h` said `RX_NCAPS`
+where the macro is `R22A_NCAPS`) is reworded prefix-neutrally.
+`lib/pcrec.h`'s generated-searcher comment presented the `int` return as
+two-valued, under which `if (rx_search(...))` reads a give-up as a
+match; it now names the negative space and the untouched-caps rule, and
+two adjacent stale sentences went with it (the RX_NCAPS-is-1 claim
+predates M4.5's captures default; `extern const rx_info` predates D57).
+Comment-only was VERIFIED rather than asserted: before/after emitted
+artifacts on three builds (default VM, `--no-captures` DFA, `-p r22a`)
+differ in comment lines only, and the ABI block stays byte-identical
+across prefixes. No pinned expectation moved — nothing in `tests/` or
+`scripts/` greps that text — and `make test-codegen` (41+7) and
+`make test-cli` (260) were green before and after.
+
+**What the measurements changed in the spec, beyond what R29 asked
+for.** Three findings came back different from the review's own
+statement, and the spec records what was measured:
+
+1. **The find-all rule needs no duplicate suppression, and IS lossy.**
+   The empty-advance loop, coded literally, reproduces
+   `re.finditer` exactly on 12 of 12 pairs — no duplicate ever arises.
+   But it diverges on patterns that PREFER the empty match where a
+   non-empty one also starts (`|a` over "aaa": 4 spans vs finditer's 7;
+   `a*?`, `a??` likewise), because PCRE2 and python RETRY at the same
+   position under NOTEMPTY_ATSTART and pcrec has no entry point that can
+   express "must not match empty here". §3.1 states the divergence with
+   its measurements instead of papering over it.
+2. **§6.3's mirror is thinner than A3 found.** A3 measured six of
+   fifteen `rx_info` fields mirroring as macros — true of a VM artifact.
+   On a DFA artifact only `ncaps` does: no `<PREFIX>_ENGINE`, no
+   budgets, no `_VM_*` axis at all. A consumer `#if`-ing on
+   `<PREFIX>_ENGINE` writes code that does not compile against half the
+   artifacts pcrec produces.
+3. **C8's entry-point asymmetry runs BOTH ways.** The review had
+   `_search` 0 / `_match` −2. Also measured here: `--backtrack-frames=1`
+   over `"xxaaaaab"` gives `_search` −3 while both anchored entries
+   return a clean −1. The review's "sharper two-phase case", recorded as
+   not demonstrated, has a demonstrated mirror image.
+
+**Everything asserted in the new text was run.** The §8 worked example
+was compiled `-Wall -Wextra -Werror` against `libpcrec.a`, run, and its
+emitted `matcher.c`/`matcher.h` compiled and run in turn (correct span).
+C2/C3 measured verbatim (zero-init → "invalid symbol prefix";
+`h_src` non-NULL exactly when `header_name` set; double
+`pcrec_output_free` clean under ASan). B1/D56 measured at the refusal
+boundary (`a{9795}` compiles, `a{9796}` refuses with the resource
+message). C7 measured under ASan on exact-size heap buffers on both
+engines, **with a positive control that fires** — the same probe with
+`n` overstated by one reports a heap-buffer-overflow at the matcher's
+own `memchr`, so the clean result is not vacuous. C6 measured under
+TSan (two threads, one VM artifact, distinct buffers) and, better,
+tied to the SHIPPED TS-1/D19 static scan rather than to a one-off.
+A5 measured with `readelf`: `rx_info` is 104 bytes in
+`.data.rel.ro.local` with exactly two relocations — not `.rodata`.
+
+**One finding discovered in passing, filed rather than fixed.** The
+C7 probe's UBSan arm reports `memchr(NULL, c, 0)` — "null pointer
+passed as argument 1, which is declared to never be null" — in the
+emitted search body when a caller uses the contract's own legal
+`s == NULL, n == 0` edge. The behaviour is correct (both engines return
+0) and no ASan finding accompanies it; it is a technical-UB nit in
+EMITTED code, an emitter change, and out of R29's scope. Recorded for
+the manager to file.
+
+**Method note for the next spec pass.** §2's code block is now a
+verbatim re-quote of a freshly emitted artifact with its two elisions
+MARKED as elisions, and §6.3's illustrative blocks say outright that
+their `/* ... */` annotations are the document's and not emitted text.
+That is the direct answer to R29's sharpest finding: in a document whose
+authority rests on "checked against the shipped surface", an idealized
+quotation is not a small inaccuracy. The header now carries a
+VERIFICATION LEDGER naming what each pass re-measured, and §3.5 keeps
+the record of both errors — not as process history, but because
+artifacts generated before today still carry the false comment and a
+reader holding one needs to know which document wins.

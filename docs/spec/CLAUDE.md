@@ -35,10 +35,31 @@ spec and a design doc disagree, the spec is what the tool promises.
   artifact already implements the superseding rule) and carries one
   as-built deviation of its own (§2: `rx_info` ships as a struct TAG, not
   the bare typedef the design sketch showed — forced by a name collision
-  with the default-prefix `<prefix>_info` instance, still open as a Frank
-  ruling per `docs/dev/plan.md`'s history). References
-  `docs/design/match_api_m4.md`/`engine_m4.md` informationally for the
-  ruling history; this document alone states what pcrec promises.
+  with the default-prefix `<prefix>_info` instance; **RULED D57,
+  2026-08-18: the struct-tag spelling is blessed as the contract and the
+  typedef form is dead**, so §2 states it as settled rather than open).
+  References `docs/design/match_api_m4.md`/`engine_m4.md` informationally
+  for the ruling history; this document alone states what pcrec promises.
+
+  **[M4.7g], 2026-08-18 — the R29 fix pass** (`docs/dev/reviews/
+  2026-08-18-r29-match-api-spec.md`) is the document's first revision,
+  and its shape is worth knowing before editing this file again: the
+  MATCHING SEMANTICS survived the panel untouched, and every landed fix
+  was in the surrounding surface — the library calling sequence (§8 now
+  carries one worked example that was compiled and run before it went in,
+  plus §8.1's D56 guarantees), the find-all protocol (§3.1, verified
+  against `re.finditer` and honest about where it is lossy against
+  PCRE2's NOTEMPTY retry, which pcrec cannot express), the reflection
+  surface's over-claims (§6.3's macro mirror is partial, and thinner
+  still on DFA artifacts), and the two shipped doc-comments an embedder
+  actually reads, which BOTH denied the give-up-code space §4 promises
+  (fixed in `src/gen/emit_dfa.c` and `lib/pcrec.h` in the same pass).
+  The document's header now carries a VERIFICATION LEDGER recording what
+  each pass re-measured; keep it current, and keep §3.5's record of the
+  two errors the panel found — an idealized quotation in a document whose
+  authority is "checked against the shipped surface" is the failure mode
+  the document exists to prevent, and old artifacts still carry the
+  comment it describes.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
