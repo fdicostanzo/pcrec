@@ -10069,3 +10069,55 @@ NEXT: manager review + merge; `[M4.7f]` STATE:completed in plan.md
 (this session already updated it in place, matching the sibling
 substeps' style — not archived to plan_completed.md since [M4.7]
 itself is still STATE:started with [M4.7g] CLOSE outstanding).
+
+## 2026-08-18 (EDT), thirtieth session close — [M4.7f] merged; M4.7 one step from close; session summary
+
+[M4.7f] merged (ccfa3a3) after a manager end-to-end read of the spec
+and the lane's green full suite; post-merge battery green by log
+content (corpus 10,350/0, 66/66 workers, zero nonzero failure counts —
+the exit-echo line was dropped by a sloppy manager shell chain, one of
+two manager shell slips this hour: a `&` that backgrounded a wider
+command group than intended, and the missing exit echo; both the
+learnings §6 shell-discipline class, recorded against the manager, not
+a lane). docs/spec/match_api.md is the project's first contract
+document; the D6 panel over it deliberately rides [M4.7g]'s close.
+
+SESSION SCOREBOARD (thirtieth, ~19:00 EDT 08-17 to ~02:00 08-18; the
+heaviest session on record by landings): SEVEN work items closed and
+merged — [M4.7d] (fuzzer capture spans + manager sabotage control),
+[BENCH-VM] (cases k/l/m + K-sweep upgrade, gate 13/13), [OPT-ALTCLS]
+(stages 1+2 landed, case (m) halved 125.42→59.94 ns; stage 3
+measured-no per D54; Cell A settled -7.61%), [M4.7a] (SR-8
+discharged-by-architecture, tripwire, D55), [M4.7c] (pattern_len
+already shipped; K9 pins landed), [M4.7e] (90,000 patterns / 0
+divergences; capturediff gate in make test), [M4.7b] (K7 fixed at the
+real mechanism; D56 first spend-side cap; abort-free compile path;
+K25+K26 filed), [M4.7f] (the spec). Decisions D54/D55/D56 placed;
+K7 closed, K25/K26 opened; corpus 10,257→10,350; gate 10→13 cases.
+Rows filed from Frank's design conversation: [BENCH-CEIL] (expert-C
+ceiling arm), [ENG-DIRECT] (direct-coded DFA, RULED a third engine
+type; re2c validates the model, dialect too limited; TDFA survey lead;
+counted loops re-widen D56's narrowing), two [OPT-A] leads
+(literal-run coalescing; byte-test spelling menu), the D54
+revisit-when sharpening (interior choice-point reject traffic), and
+the [M4.7f] NUL-contract note (PCRE2 ZERO_TERMINATED measured to
+truncate identically).
+
+MANAGER LESSONS OF THE SESSION, all recorded in place: (1) two
+substep charters written on stale premises (M4.7a, M4.7c) — premise
+verification moves to expansion time; (2) the prose-lesson cluster,
+five instances across two actors (three scripted-insertion manglings,
+one stale draft spliced by the manager, one wrong-section caveat) —
+"prose that describes code has no test, so it has to be re-read every
+time the code moves" and "appending to prose is safe to script,
+inserting into it is not"; (3) the serialization rule for batteries
+vs the fuzz campaign (one manufactured flake); (4) liveness by
+/proc/cwd, never command names (one false lane-death call, one
+self-matching pgrep in a lane).
+
+STATE AT CLOSE: main 851c993 (63+ commits ahead of origin — PUSH
+PENDING, deliberately left for after Frank's M4.7g decision), tree
+clean, all worktrees removed, all lanes released. [M4.7] remaining:
+[M4.7g] only — D6 panel over the spec, full close battery + ratchets,
+M5-vs-M6 order ruling WITH FRANK. The question is put to Frank
+(close tonight vs next session); wake.md carries both paths.
