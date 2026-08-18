@@ -1,0 +1,40 @@
+# d27_named_groups / duplicates.rxt
+#
+# PROMISE under test: PCRE2's default (no PCRE2_DUPNAMES -- pcrec has
+# no option to request it, so that is the only behavior in scope for
+# this module's promise) rejects a duplicate group name at compile
+# time, regardless of declaring spelling and regardless of whether the
+# two same-named groups sit in one sequence or in different alternation
+# branches.
+#
+# Oracle: python3 `re` enforces the identical pattern-wide-uniqueness
+# rule -- verified directly (re.error "redefinition of group name ..."
+# raised on every case below, on its (?P<name>...) translation); see
+# oracle.py.
+
+# same spelling, back to back
+pattern (?<n>a)(?<n>b)
+features named-groups
+perr
+
+# mixed spelling, same name -- still a duplicate
+pattern (?<n>a)(?P<n>b)
+features named-groups
+perr
+
+pattern (?<n>a)(?'n'b)
+features named-groups
+perr
+
+# a distinctly-named group sits between the two duplicates; still
+# rejected -- uniqueness is pattern-wide, not adjacency-scoped
+pattern (?<n>a)(?<m>b)(?<n>c)
+features named-groups
+perr
+
+# duplicate name across two ALTERNATION branches -- each branch still
+# consumes its own group number (1 and 2), so this is a name collision,
+# not a numbering collision, and PCRE2's default still rejects it
+pattern (?<n>a)|(?<n>b)
+features named-groups
+perr

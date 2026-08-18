@@ -1,0 +1,74 @@
+# d27_named_groups / spellings.rxt
+#
+# PROMISE under test: the three named-capturing-group declaring
+# spellings -- (?<name>...), (?'name'...), (?P<name>...) -- create an
+# ORDINARY capturing group at its left-to-right number. Match behavior
+# and capture spans are identical to the unnamed (...) form; only the
+# reflection surface (rx_info.groups/nnames -- not exercised by this
+# file's m/g mechanic, see README) differs.
+#
+# Oracle: python3 `re` only accepts the (?P<name>...) spelling; every
+# (?<name>...) / (?'name'...) case below is oracle-verified on its
+# (?P<name>...) translation by oracle.py. All spans/group indices below
+# were computed from that translation (see oracle.py's own output).
+
+# --- baseline: unnamed group, for direct comparison with the named
+# forms below. Already supported today (no module needed). ---
+pattern (a)
+m "xax" 1 2
+g 1 1 2
+
+# --- same shape, three declaring spellings, must match the baseline
+# above span for span ---
+pattern (?<n>a)
+features named-groups
+m "xax" 1 2
+g 1 1 2
+
+pattern (?'n'a)
+features named-groups
+m "xax" 1 2
+g 1 1 2
+
+pattern (?P<n>a)
+features named-groups
+m "xax" 1 2
+g 1 1 2
+
+# --- quantified named group: same span the unnamed form gives, and the
+# cross-iteration retention rule (docs/spec/match_api.md S5.1) applies
+# to a named group exactly as it does to a numbered one: the group
+# keeps its span from the last iteration in which it ran ---
+pattern (a)+
+m "xaaax" 1 4
+g 1 3 4
+
+pattern (?<n>a)+
+features named-groups
+m "xaaax" 1 4
+g 1 3 4
+
+pattern (?'n'a)+
+features named-groups
+m "xaaax" 1 4
+g 1 3 4
+
+pattern (?P<n>a)+d
+features named-groups
+m "xaaadx" 1 5
+g 1 3 4
+
+# --- alternation branches, mixed declaring spellings in ONE pattern:
+# each branch's named group gets its own left-to-right number; the
+# spelling chosen per branch does not matter to numbering or capture ---
+pattern (?<a1>x)|(?P<b1>y)
+features named-groups
+m "x" 0 1
+g 1 0 1
+g 2 -1 -1
+
+pattern (?<a1>x)|(?P<b1>y)
+features named-groups
+m "y" 0 1
+g 1 -1 -1
+g 2 0 1
