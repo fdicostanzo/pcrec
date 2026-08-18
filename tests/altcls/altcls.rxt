@@ -132,3 +132,46 @@ g 1 -1 -1
 n "fra"
 n ""
 
+
+# ---- stage 1 boundary, the EMPTY-ALTERNATIVE barrier ([M4.7g], Frank's
+# design question). `b|ab|c` above pins that a MULTI-CHAR branch blocks a
+# merge across it; these pin the same rule for an EMPTY branch, which is the
+# case where getting it wrong is OBSERVABLE IN THE SPANS rather than only in
+# the emitted shape: alternation preference is leftmost-first, so an epsilon
+# branch placed before `b` OUTRANKS it, and any rewrite that merged `a` and
+# `b` into one class across the epsilon would report (0,1) on "b" where the
+# oracle says (0,0). src/opt/altcls.c excludes A_EMPTY-leading branches
+# structurally; RX_ALTCLS_MERGES stamps 0 here, pinned in
+# run_altcls_tests.sh.
+
+pattern (?:a||b)
+m "a" 0 1
+m "b" 0 0
+m "" 0 0
+m "c" 0 0
+m "ba" 0 0
+m "ab" 0 1
+
+# The same barrier under a following atom, where the epsilon branch does NOT
+# simply win: "bc" needs the `b` branch, reached by BACKTRACKING past the
+# preferred epsilon, so this row dies if a rewrite drops either branch.
+pattern (?:a||b)c
+m "bc" 0 2
+m "ac" 0 2
+m "c" 0 1
+m "xbc" 1 3
+m "bbc" 1 3
+n ""
+
+# The barrier's other half: merging RESUMES after the epsilon, so this shape
+# has TWO independent single-char runs ([ab] and [cd]) and stamps
+# RX_ALTCLS_MERGES 2 -- pinned in run_altcls_tests.sh, which is where the
+# count lives; these rows pin that both runs still match what they matched.
+pattern (?:a|b||c|d)x
+m "ax" 0 2
+m "bx" 0 2
+m "cx" 0 2
+m "dx" 0 2
+m "x" 0 1
+m "ex" 1 2
+n ""
