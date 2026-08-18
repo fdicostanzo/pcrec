@@ -41,6 +41,23 @@ draft should not trust their memory of these sections:
 | M7 | one provenance header was **hand-written to imitate** the archiver | §0.3 |
 | M8 | the `-Wswitch` experiment was unverifiable | `probes/probe_wswitch_alarm.sh` |
 
+**THE FOCUSED RE-CHECK (both critics resumed against the revision).** Seven of
+eight engine discharges held on substance and five of six measurement ones;
+what did not is recorded here rather than only in the review, because one of
+them is a second defect in this design:
+
+| finding | what the re-check found | where it is now |
+|---|---|---|
+| **N1 (MEDIUM-HIGH)** | §3.8 filled mechanism 4 at three of the **four** places it is needed. The missing one is the REVERSE machine's TERMINATION boundary: at `pp == startpos` the loop breaks (`emit_dfa.c:1056`) before `s[startpos-1]` is read, so a **leading `\B`** evaluates blind — and on this document's own §3.8.1 cell the forward pass finds the match and the reverse pass **throws it away**. `\b` is safe by accident, which is why a trailing-only sweep cannot see it. | **§3.8.3.1** (new), §12 item 6, Wave B |
+| M5 (PARTIAL) | the Q1 withdrawal was applied at §11 but **§5.2 still carried the withdrawn recommendation verbatim** — a live contradiction at the section a skimmer stops at | §5.2, rewritten |
+| N2 | §3.7.1's inline table came from a different run than the archive it cited (M7's class again, in miniature) | §3.7.1, re-pasted from the archive |
+| N3 | the `memchr('\n')` mitigation was justified on the quadratic arm; its real benefit is the **linear non-crossing** case | §3.7.2, new probe arm, Q3(b) |
+| N4–N8 | "three mechanisms" over a four-row table; Wave D's agreement test unscoped; §6.1's heading contradicting its own body; two orphaned paragraphs; mechanism-table cite drift | applied in place |
+
+N1 is the one that matters: **this design's own forward fix is what made the
+reverse defect reachable.** Before §3.8.2 the forward pass never found the
+match, so the blind reverse evaluation never got the chance to discard it.
+
 Two of those deserve naming rather than tabulating, because they are this
 lane's own failures of the kind the project keeps cataloguing:
 

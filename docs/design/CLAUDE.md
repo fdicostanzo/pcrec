@@ -742,7 +742,26 @@ append-only or historical records.
   gap running opposite to the first (M2 — it minimises a LANGUAGE where pcrec
   tracks thread PRIORITY, so `\w{3,16}`'s 4.50x was an artifact and the >2.00x
   count drops to one, while the 4.75x headline SURVIVES on a pattern whose
-  baseline is verified against pcrec exactly). Original content below.
+  baseline is verified against pcrec exactly).
+  **FOCUSED RE-CHECK (both critics resumed against the revision): 7 of 8 engine
+  discharges and 5 of 6 measurement ones held; N1 is a SECOND defect and the
+  sharpest thing in the whole round** — §3.8 filled mechanism 4 at three of the
+  FOUR places it is needed, and the missing one is the reverse machine's
+  TERMINATION boundary: at `pp == startpos` the loop breaks
+  (`emit_dfa.c:1056`) before `s[startpos-1]` is read, so a LEADING `\B`
+  evaluates blind and, on the document's own cell, the forward pass finds the
+  match and the reverse pass THROWS IT AWAY. `\b` is safe by accident (its
+  blind assumption coincides with its truth condition), so a trailing-only or
+  `\b`-only sweep reports clean against a design that loses matches — and the
+  lane's OWN forward fix is what made the reverse defect reachable. Now
+  §3.8.3.1, with an invariant covering every `sfound` writer (the reverse skip
+  included) rather than a one-line patch. Also: the Q1 withdrawal had been
+  applied at §11 while §5.2 still carried the withdrawn recommendation verbatim
+  (M5 PARTIAL — a live internal contradiction), §3.7.1's table came from a
+  different run than the archive it cited (N2), and the `memchr('\n')`
+  mitigation was justified on the quadratic arm when its real benefit is the
+  LINEAR non-crossing case (N3 — a non-crossing arm added to the probe measures
+  85-185x, and Q3(b) is re-grounded on it). Original content below.
 - `assertions_design.md` (**pre-R30 summary, retained for history — read the
   R30 entry above first; the "exactly three" spine below is REFUTED by E1 and
   the `(?m)^` cost claim by E2**) — the module
