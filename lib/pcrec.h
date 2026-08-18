@@ -359,10 +359,21 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * search loop, no capture output — a length, -1, or a give-up code from
  * the same space as above), `<prefix>_match_caps`
  * (the anchored capture-DELIVERING sibling: same anchoring and same return
- * space, plus a `caps_out` parameter), and
+ * space, plus a `caps_out` parameter),
  * `extern const struct rx_info <prefix>_info` (a static
  * reflection structure: option flags, encoding, pattern text, group counts,
- * selected engine, budgets). The fixed-literal ABI types these entries
+ * selected engine, budgets), and — since [M5-SEAM] (D58) —
+ * `size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos)`,
+ * the ENCODING RESIDUAL: the next CHARACTER boundary strictly after `pos`,
+ * every position >= n counting as a boundary. It is the ONE place an
+ * artifact's byte-vs-character distinction lives, and it is what a find-all
+ * loop advances through after a ZERO-LENGTH match (docs/spec/match_api.md
+ * §3.1 writes that loop out and §3.1.1 states this entry's contract). Under
+ * the byte encoding its body is `pos + 1`; a UTF-8-compiled artifact
+ * supplies a boundary-aware body under this same signature, so a caller's
+ * loop is written once. Do NOT inline the `+ 1` back: that is the one edit
+ * that makes a byte-compiled caller wrong against another encoding's
+ * artifact. The fixed-literal ABI types these entries
  * share (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_renderfn`,
  * `rx_group_entry`, `struct rx_info`) are declared in the generated .c/.h,
  * not here — they are PER-ARTIFACT-EMITTED, not part of pcrec's own library

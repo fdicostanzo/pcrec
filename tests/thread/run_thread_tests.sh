@@ -155,12 +155,23 @@ fi
 TSANFLAGS="-fsanitize=thread -g -O1"
 CFLAGS_COMMON="-std=gnu11 -Wall -Wextra"
 
+# [M5-SEAM] FOUND, not enumerated by directory. This was a hand-listed set of
+# five top-level directories, one glob deep, which is an assumption about the
+# tree's SHAPE rather than about its contents: `src/gen/enc/` (the encoding
+# backends) is two levels down and fell straight out of the TSan library the
+# day it landed. Here the failure was loud (an undefined reference), but the
+# same shape is how a concurrency check quietly ends up testing a library
+# assembled from a different source set than the one that ships.
 LIBSRCS=()
-for d in core parse ir opt gen; do
-    for f in "$ROOT_DIR"/src/$d/*.c; do
-        LIBSRCS+=("$f")
-    done
-done
+while IFS= read -r f; do
+    LIBSRCS+=("$f")
+done < <(find "$ROOT_DIR/src" -name '*.c' | sort)
+if [ "${#LIBSRCS[@]}" -eq 0 ]; then
+    bad "no compiler sources found under $ROOT_DIR/src -- the TSan library cannot be assembled"
+    echo
+    echo "thread: 0 pass, 1 fail (setup failure, nothing else ran)" >&2
+    exit 1
+fi
 
 # ============================================================
 # [TS-2] N threads, ONE compiled matcher, DIFFERENT subjects.
