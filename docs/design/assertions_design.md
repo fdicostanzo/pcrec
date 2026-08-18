@@ -522,7 +522,9 @@ The prototype builds exactly the automaton this design proposes — DFA state =
 (NFA pre-set, previous byte was a word character), closure parameterised by
 `(prev_is_word, next_is_word)` in the same way `src/ir/dfa.c:640-641`
 parameterises by `eol_ok`, with the unanchored self-loop
-(`nfa_wrap_unanchored`, `src/ir/nfa.c:652`) and **Moore minimisation**, because
+(`nfa_wrap_unanchored`, `src/ir/nfa.c:652` — corrected here; `engine_m4.md`
+§7.3 still cites the pre-move `:590`, see §4.1's cite note) and **Moore
+minimisation**, because
 pcrec minimises and an unminimised count would overstate the cost: the entire
 question is how many context-split states *survive being distinguished*.
 
@@ -628,6 +630,15 @@ Composed at this document's own worst measured values:
 > **38,009 > 32,000: the composed worst case EXCEEDS the state cap.** The table
 > budget goes from 2.4% to **11.4%**. The binding constraint is *not* comfortably
 > `states × ncls` after all.
+
+**And one table this section has to count now that it exists (R30 item 2):**
+§3.8.3.1's reverse boundary accept is `states x (ncls + 1)` — the `+1` is the
+`RX_CLS_BOT` sentinel for `startpos == 0`, where there is no byte to classify.
+It is consulted **once per search**, so it is not a hot-path cost, but it is a
+per-artifact table and this section just made a point of counting those. At the
+corpus's worst state count it is ~8,002 x 7 bytes — negligible against the
+2,000,000-entry transition budget, and stated rather than omitted because a
+section that counts tables should count all of them.
 
 Three honest qualifications, none of which rescue the original claim:
 
@@ -909,12 +920,16 @@ keeps memchr and the skip loops, is flat and fastest throughout.
 
 **Two honesty notes on this table**, both of which the first draft lacked:
 
-- **The A/B column is NOISY and is not the claim.** B and C sit at microseconds
-  and tens of nanoseconds, where the clock's resolution and cache effects
-  dominate; that is why A/B reads 131x → 257x → 509x → 409x → 2014x rather than
-  climbing monotonically. The honest headline is "A is quadratic and B is flat",
-  with **2014x at n = 64,000** as the largest measured separation, not a claim
-  that the ratio itself is a clean curve.
+- **The A/B column is NOISE-DOMINATED and is not the claim; GROWTH is the
+  load-bearing column.** B and C sit at microseconds and tens of nanoseconds,
+  where clock resolution and cache effects dominate, so A/B reads
+  131x → 257x → 509x → 409x → 2014x rather than climbing monotonically.
+  **Measured across runs, the n = 32,000 ratio moved from 1001x to 409x on B's
+  jitter alone** — B's own time went 0.000019 to 0.00004654 while A barely
+  moved — which is a factor-of-2.4 swing in a number nothing about the design
+  changed. Quote the growth column (3.95x / 3.97x / 3.99x, stable across every
+  run) and treat **2014x at n = 64,000** as "the largest separation observed",
+  never as a measurement of the ratio.
 - **The 8000-row growth of 1.56x is an outlier against the 3.9x trend**, and it
   is a small-n artifact rather than a result: at 4,000 and 8,000 bytes A's
   absolute time (0.8 ms, 1.2 ms) is still close enough to fixed overheads that
@@ -960,6 +975,19 @@ ENG_UNANCH. **Both are linear — the D/E gap is a constant factor of roughly
 85-185x, not a curve** — and that factor is the mitigation's target: it is the
 difference between visiting every offset and visiting every line start, which is
 the same jump E already gets from its own first-byte memchr.
+
+**This arm's own instrument defect, promoted here because it would have
+fabricated the number Q3(b) rests on.** E is a single `memchr` and is below this
+clock's resolution at one search, so the driver times 200 inner repeats — and
+gcc -O2 **deleted all but the last iteration**, the return value being otherwise
+dead. E measured `0.000000` over 200 searches and the D/E column printed `n/a`
+and then a meaningless `580x`. A `volatile` sink fixes it, and the driver says
+so at the site. The near-miss is the same shape as §3.7.1's all-`'a'` subject:
+in both cases a plausible-looking instrument returned a number that would have
+been quoted, and in both cases the tell was a value too good to be true rather
+than an error. This one is the more dangerous of the two, because an
+*infinite* ratio reads as a stronger result for the mitigation, not a weaker
+one — the direction a reviewer is least likely to challenge.
 
 **Proposed as a design element with a stated fallback**: if Wave C measures the
 prefilter as not worth its complexity, `(?m)^` still ships — routed to
@@ -1070,6 +1098,15 @@ Three properties make this cheap and safe:
 `FS_bot` is the existing `fs`: at `startpos == 0` the context is genuinely
 start-of-subject, which is what the constant already encodes.
 
+**On ENG_ATTEMPT this is not once per search.** That engine re-initializes at
+every attempt — `n+1` of them (§3.7.1) — and only the FIRST is at `startpos`;
+the rest begin at `start > startpos`, where the seed byte is `s[start-1]`, a
+byte squarely inside the window. So the dispatch is per-attempt there rather
+than per-search, which is the same `once per attempt, off the inner loop` cost
+§3.7 already describes for its three-way start selection, and it composes with
+that dispatch rather than adding a second one. The `n+1`-attempts problem is
+§3.7's territory, not this section's.
+
 #### 3.8.3 The mechanism, reverse — and it is the harder half
 
 **Mechanism 4 is needed at FOUR boundaries, not two.** Each machine has an
@@ -1118,10 +1155,11 @@ The reverse loop evaluates its accept and *then* tests for termination
 (`src/gen/emit_dfa.c`):
 
 ```c
-1032:   if (rx_racc[rst]) sfound = pp;          /* non-EOL accept   */
-1054:   if (rx_racc[erst]) sfound = pp;         /* EOL accept       */
-1056:   if (pp <= startpos) break;              /* terminate        */
-1057:   rst = rx_rtr[... rx_rcls[s[--pp]]];     /* consume leftward */
+1032:   if (rx_racc[rst]) sfound = pp;          /* non-EOL accept        */
+1054:   if (rx_racc[erst]) sfound = pp;         /* EOL accept            */
+1056:   if (pp <= startpos) break;              /* EXIT 1: the boundary  */
+1057:   rst = rx_rtr[... rx_rcls[s[--pp]]];     /* consume leftward      */
+1059:   if (rst < 0) break;                     /* EXIT 2: dead state    */
 ```
 
 So at `pp == startpos` the accept **is** evaluated, and the loop breaks before
@@ -1154,11 +1192,31 @@ The mirror of §3.8.2, applied at the other end of the same walk:
     if (rx_racc_ctx[rst * RX_NRCLS + seed]) sfound = startpos;
 ```
 
-**Emit it as a PEELED epilogue, not an in-loop branch.** `pp == startpos`
-happens exactly once — on the final iteration — and the loop already tests for
-it at `:1056`. Moving the terminal accept *below* that break costs one extra
-emitted site and **zero per-byte work**; putting it inside the loop would add a
-compare to every byte of the reverse walk.
+**Emit it ATTACHED TO THE BOUNDARY BREAK, not after the loop** — and the
+distinction is load-bearing, because the obvious placement is wrong:
+
+```c
+    if (pp <= startpos) { <context-indexed accept>; break; }   /* correct */
+```
+
+`pp == startpos` happens exactly once, and the loop already tests for it at
+`:1056`, so this costs one emitted site and **zero per-byte work** — putting the
+test inside the loop body would add a compare to every byte of the reverse walk.
+
+**Why not "after the loop" (R30 N9).** An earlier draft of this section said
+"peeled epilogue … below that break", which reads as *after the loop*. The loop
+has **two** exits, and the excerpt above now quotes both. On `:1059`'s dead-state
+exit, `pp > startpos` and `rst < 0`, so an epilogue placed after the loop would:
+
+- write `sfound = startpos` at a position **the walk never reached** — a wrong
+  answer rather than a lost match, which is the worse failure of the two; and
+- index `rx_racc_ctx[rst * RX_NRCLS + seed]` with a **negative `rst`** — an
+  out-of-bounds read in emitted code, which is **K27's exact class**: a
+  generated matcher whose UB carries pcrec's name into a user's sanitizer run.
+
+Attaching the accept to the boundary break makes both unreachable by
+construction, because that arm is only entered when `pp <= startpos` and `rst`
+is a live state.
 
 **The subtlety that makes this more than a one-line fix**, and it is the reason
 this note states an invariant rather than a patch: the reverse **skip** can also
@@ -1166,11 +1224,17 @@ land on the boundary. `:1042-1044` reads
 
 ```c
     while (pp > startpos && rx_rs<K>[s[pp - 1]]) pp--;
-    if (/* K accepts */) sfound = pp;
+    sfound = pp;                    /* NO runtime guard -- see below */
 ```
 
 and that `sfound = pp` is equally blind when the skip stops exactly at
-`startpos`. So the rule has to cover every writer, not just the one at `:1032`:
+`startpos`. **It is worse than a first reading suggests**, and worth spelling
+out: the emitter's `if (!eol && rd->st[K].accept)` at `:1043` is a
+**compile-time** condition on whether to *emit* the line. What lands in the
+artifact is a **bare, unconditional** `sfound = pp;` inside the skip block — so
+on any pattern where that block is emitted, every skip that stops at `startpos`
+writes a blind `sfound`, with no runtime test to fail. So the rule has to cover
+every writer, not just the one at `:1032`:
 
 > **INVARIANT: no `sfound` may be recorded at `pp == startpos` except through
 > the context-indexed accept.** Wave B owes a structural check for this — it is

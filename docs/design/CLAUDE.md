@@ -761,7 +761,23 @@ append-only or historical records.
   different run than the archive it cited (N2), and the `memchr('\n')`
   mitigation was justified on the quadratic arm when its real benefit is the
   LINEAR non-crossing case (N3 — a non-crossing arm added to the probe measures
-  85-185x, and Q3(b) is re-grounded on it). Original content below.
+  85-185x, and Q3(b) is re-grounded on it).
+  **N1 VERIFIED AND CLOSED by a focused re-check**, which then found **N9** in
+  the fix itself: the reverse loop has TWO exits, and §3.8.3.1's first wording
+  ("peeled epilogue … below that break") would have run on the DEAD-STATE exit
+  at `emit_dfa.c:1059` — writing `sfound` at a position the walk never reached
+  AND indexing an accept table with a negative state, K27's out-of-bounds class
+  in emitted code. The accept is now attached to the boundary break itself, so
+  both are unreachable by construction. The same pass sharpened the `:1044`
+  rendering: the emitter's `if` there is COMPILE-time, so the artifact carries a
+  bare unconditional `sfound = pp;` inside the skip block — worse than the
+  design's first rendering showed. Two instrument near-misses are now recorded
+  in the prose rather than in driver comments, because each would have produced
+  a quotable number: an all-'a' subject that measures the `(?m)^` curve as FLAT
+  (and would have confirmed the struck sentence), and gcc -O2 deleting a repeat
+  loop so a memchr arm read 0.000000 over 200 searches — the second the more
+  dangerous, since an infinite ratio reads as a STRONGER result for the
+  mitigation it supports. Original content below.
 - `assertions_design.md` (**pre-R30 summary, retained for history — read the
   R30 entry above first; the "exactly three" spine below is REFUTED by E1 and
   the `(?m)^` cost claim by E2**) — the module
