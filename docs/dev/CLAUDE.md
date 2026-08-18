@@ -22,11 +22,22 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-16: K2 (cosmetic), K7 (a resource bug that
-  also ABORTS the caller's process under a memory limit), K9 (the public
+  Open as of 2026-08-18: K2 (cosmetic), K25 (compile TIME in DFA
+  minimization — Moore refinement needs O(n) rounds on a chain, so
+  `a{0,25000}` spends a measured 15.3 s of its 15.4 s there against
+  0.03 s for everything K7's accounting bounds; filed out of K7's fix,
+  bounded memory, terminates), K9 (the public
   API takes no pattern length, so a pattern containing NUL compiles as its
   prefix and reports success — rx_info.pattern_len at the M4 freeze is the
   fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
+  — and note K7 is CLOSED as of 2026-08-18 ([M4.7b]): its own diagnosis
+  was wrong about where the memory went. The bounded-optional blowup was
+  one line in src/ir/nfa.c rebuilding an out-patch set per iteration,
+  Theta(n^2) arena traffic behind a LINEAR state count, which is why no
+  cap could see it; a second, unrelated quadratic in the exact-count
+  form is bounded by the new PCREC_MAX_SUBSET_ELEMS; and the
+  caller-abort is closed by routing every malloc-failure site through
+  ctx_nomem()
   exhausts the step budget on a 100-byte ordinary input; found by the D27
   blinded quantifier corpus 2026-08-16; regression in
   tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K24

@@ -212,14 +212,34 @@ stated terms.
     ports independently). Zero accept/reject verdicts changed; zero
     diagnostic wording changed. Awaiting manager review/merge. See
     [SR-8]'s own row for the charter-level disposition this discharges
-  - [M4.7b] STATE:not-started — K7 FIX (homed here: the at-scale
+  - [M4.7b] STATE:delivered (2026-08-18, lane/m47b; awaiting manager
+    review/merge) — K7 FIX (homed here: the at-scale
     differential/fuzzer run stresses exactly the compile-side
     resource boundary K7 breaks, and M4.7 is the last stop before
     M5/M6 widen the surface): a large bounded repeat must reach the
     "too complex" diagnostic under bounded memory instead of 2-5 GB
     RSS / SIGKILL / aborting a limited caller's process; reconcile
     the two wrong docs/pcre2_compliance.md claims K7's entry records.
-    Engine-core resource accounting — opus-tier lane
+    Engine-core resource accounting — opus-tier lane.
+    DELIVERED: K7's own diagnosis was WRONG about where the memory
+    went, and that is the finding. The bounded-optional blowup was
+    one line in src/ir/nfa.c — the `X{m,n}` tail loop rebuilt its
+    out-patch set every iteration, Theta(n^2) arena traffic behind a
+    linear STATE count, so no cap had anything to object to;
+    inheriting the array instead (frag_cat2's existing idiom) takes
+    `a{0,20000}` from 4.68 GB to 13.2 MB and makes BOTH caps K7 called
+    unreachable fire in 0.1 s. A SECOND, separate quadratic in the
+    exact-count form (`a{20000}`: 200M interned state-set elements,
+    845 MB, 63 s, COMPILING) is bounded by the new
+    PCREC_MAX_SUBSET_ELEMS. The caller-abort is closed by routing all
+    seven malloc-failure sites through ctx_nomem(). NARROWING to note
+    at review: exact repeats above ~`a{9800}` now refuse. New suite
+    tests/resource/ (19 checks, `make test-resource`), sabotage-
+    validated three ways; 572/572 corpus artifacts byte-identical.
+    SPUN OUT as K25: `a{0,25000}`'s remaining ~15 s is a MEASURED
+    15.3 s inside pcrec_minimize_dfa (Moore refinement, O(n) rounds
+    on a chain) against 0.03 s for everything K7 bounds — bounded
+    memory, terminates, out of this lane's scope
   - [M4.7c] STATE:not-started — K9 API HALF (homed here: the spec
     graduation at [M4.7f] freezes the as-built contract, so the
     rx_info.pattern_len field must exist BEFORE the freeze or the

@@ -376,7 +376,84 @@ costs 25 + 57; moving the skip before `end_m` costs 1.
 
 ---
 
-## K7 — OPEN, found 2026-08-10 (FIX-1, while probing the 65535 boundary)
+## K7 — FIXED 2026-08-18 ([M4.7b])
+
+**Resolution — and the headline is that this entry's own diagnosis was wrong
+about where the memory went.** Every measurement below is reproduced, but the
+sentence "`{0,n}` builds an optional chain that blows past the memory the cap
+was meant to bound" located the cost in the wrong stage. The chain is fine; the
+NFA BUILDER's bookkeeping about it was not.
+
+**1. The bounded-OPTIONAL blowup was one line in `src/ir/nfa.c`.** The `X{m,n}`
+tail loop (the nested `(X(X(X)?)?)?` lowering) rebuilt its out-patch set from
+scratch on every iteration: `patch_join(b, &w.out, &cat.out)` copied a list that
+grows by one element per copy into a freshly allocated array, so building the
+tail cost Theta((n-m)^2) in arena traffic while the STATE count — the only thing
+`PCREC_MAX_NFA_STATES` watches — stayed linear. That gap is the whole of K7's
+"the cap cannot be reached by the shape that needs it": there was nothing for
+any cap to object to. `frag_cat2` two functions up already inherited its right
+operand's array instead of copying it; the fix applies that same idiom here
+(`Frag w = { s, cat.out };`). A Patch is an unordered SET of dangling edges —
+`patch_to` writes one target into every entry and reads nothing about order —
+and `nst` is called in exactly the same places, so the NFA is bit-identical.
+MEASURED, before -> after:
+
+    a{0,8000}     664 MB          ->  7.6 MB
+    a{0,16000}    2.71 GB         ->  10.4 MB
+    a{0,20000}    4.68 GB, 14.2 s ->  13.2 MB, 10.8 s
+    a{0,40000}    SIGKILL/SIGABRT ->  refused 0.1 s / 16.8 MB (32000-state cap)
+    a{0,65535}    SIGKILL         ->  refused 0.1 s / 10.6 MB (NFA 131072 cap)
+
+Both caps this entry said were unreachable are now reached, in a tenth of a
+second, by the shapes that need them.
+
+**2. The EXACT-count form had a SECOND, unrelated quadratic**, which this entry
+never saw because it degraded "cleanly" — at 2.1 GB. Unanchored `a{n}` has n+1
+DFA states whose state-SETS average n/2 (the start self-loop keeps every chain
+position live), so the subset construction's memory is Theta(n^2) while its
+state count is linear: `a{20000}` interned 200,050,000 list elements for 845 MB
+and 63 s and COMPILED. `PCREC_MAX_SUBSET_ELEMS` (src/core/limits.h, 48,000,000
+= the test corpus's measured maximum doubled) charges elements in `intern()` as
+they are interned, so the refusal happens DURING construction. `a{65535}`:
+2.1 GB / 12.3 s -> 216 MB / 0.9 s. This one NARROWS what compiles — exact
+repeats above roughly `a{9800}` are now refused — and limits.h says so in full.
+
+**3. The caller-abort, which was the worst item on this list.** Seven
+malloc-failure sites called `abort()`, so a caller who set a memory limit had
+their process killed with no diagnostic. All seven now report through
+`ctx_nomem()` (src/core/compile.c) — "out of memory compiling this pattern" —
+by giving `Arena` and `StrBuf` a back-pointer to the owning `Ctx`. The error
+path already freed everything wholesale (`job_cleanup`), so the blast radius was
+small: the only allocations the Job does not own are `pcrec_minimize_dfa`'s five
+local tables, which now free by hand before failing. `src/parse/syntax_dump.c`'s
+detached `StrBuf`s keep the abort deliberately — they belong to no compile and
+have no `pcrec_error` to report through. `DFA_INVARIANT` keeps its abort too: it
+is a "cannot happen" check, not an allocation failure.
+
+**Tests.** `tests/resource/run_resource_tests.sh` (new suite, `make
+test-resource`), 19 checks in three sections — bounded outcome under a
+peak-tree-RSS ceiling and CPU/wall budgets via `scripts/watchdog`; a positive
+control for the allocator paths under a binding `ulimit -v`; and one check per
+BOUND that each shape reaches the cap describing it. Sabotage-validated three
+ways, each catching only its own section: reverting `ctx_nomem` to `abort()`
+fails 4 checks, reverting the nfa.c line fails 10, neutralizing
+`PCREC_MAX_SUBSET_ELEMS` fails 4. Byte-identity verified across all 572
+compiling corpus patterns plus 20 bounded-repeat shapes: 572/572 identical
+artifacts, 35/35 refusals with identical diagnostics, zero verdict changes.
+
+**Not fixed, and separately filed as K25:** `a{0,25000}` still takes ~15 s, and
+a MEASURED 15.3 s of that is `pcrec_minimize_dfa`, against 0.03 s for parse, NFA
+build and both subset constructions combined. That is Moore partition refinement
+needing O(n) rounds on an n-state chain — an optimization pass this lane did not
+touch, with bounded memory and guaranteed termination. It is a compile-TIME
+cost, not the resource exhaustion K7 is about.
+
+**docs/pcre2_compliance.md reconciled** — the two wrong claims this entry
+recorded are identified and corrected in the `a{0,65535}` row itself.
+
+---
+
+_Original entry, kept for the history:_
 
 A large BOUNDED repeat exhausts memory and the process is SIGKILLed, instead of
 reaching the DFA state cap that exists to prevent exactly this.
@@ -440,9 +517,9 @@ purpose-built check. **Fix with:** M4, or a bounded-repeat pre-estimate.
 ---
 
 _Four open issues: K2 (cosmetic), K3 and K4 (over-rejection / over-acceptance in
-the class-bracket doorway, one fix — FIX-2), K7 (a large bounded repeat is
-SIGKILLed rather than diagnosed; not a miscompile). **No open MISCOMPILE
-remains** — K5 and K6 were fixed on 2026-08-10 by FIX-1, and K8 by R7's critic
+the class-bracket doorway, one fix — FIX-2), and K25 (compile TIME in DFA
+minimization, filed 2026-08-18 out of K7's fix). K7 itself is FIXED as of
+2026-08-18 ([M4.7b]). **No open MISCOMPILE remains** — K5 and K6 were fixed on 2026-08-10 by FIX-1, and K8 by R7's critic
 panel the same day. Note that K8 was found in the checkpoint review OF the K5/K6
 fix, in the same function, by an instrument the fix itself had not used: worth
 remembering before treating a construct as finished. Performance and
@@ -2025,3 +2102,56 @@ and audited with `nm` for every `.part`/`.constprop`/`.isra` clone:
 Measurement archive: docs/design/k24bisect_impl/k24_fix_note.md (this lane's
 head-to-head, the sweep tables and the reproduction recipe), alongside the
 bisect lane's k24_bisect_note.md that the fix answers.
+
+
+## K25 — OPEN, found 2026-08-18 ([M4.7b], while pinning K7's resource bounds)
+
+DFA MINIMIZATION, not construction, is what a long-chain pattern spends its
+compile time on, and its cost is quadratic in the state count with nothing
+watching it.
+
+Measured on `a{0,25000}`, per pipeline stage, after K7's fix:
+
+    parse           +0.00 s
+    NFA build       +0.01 s
+    subset fwd      +0.01 s
+    subset rev      +0.01 s
+    minimize fwd    +7.50 s        <-
+    minimize rev    +7.76 s        <-
+    emit            +0.02 s
+
+15.3 s of 15.4 s, against 0.03 s for everything K7's accounting bounds. The
+cause is `src/opt/minimize.c`'s Moore partition refinement: each round is
+O(n * ncls) and the number of ROUNDS is O(n) on a chain, because a chain
+distinguishes exactly one more level per round. `a{0,n}` after the unanchored
+wrap is precisely that shape, so the pass is Theta(n^2 * ncls).
+
+**Why K7's fix does not cover it, and why no budget added there would have.**
+K7's two bounds count what the SUBSET CONSTRUCTION stores and the NFA builder
+allocates. This pass runs after both, on a machine they have already sized and
+approved: `a{0,25000}` interns 50,000 state-set elements (linear — there is
+nothing for `PCREC_MAX_SUBSET_ELEMS` to object to) and its NFA is 50,002 states
+against a 131,072 cap. A closure-WORK budget was built and measured during
+[M4.7b] specifically to see whether it would catch this, and it does not:
+`a{0,25000}` spends 300,024 closure steps against a corpus maximum of
+240,508,032. The budget was reverted rather than shipped, because a bound with
+no shape that trips it is unpopulated machinery (D18/OS-0/D53).
+
+**Severity: low, and it is a COST not a failure.** Memory is bounded (13 MB),
+termination is guaranteed, the answer is correct, and the pass is
+behaviour-preserving by construction — worst case it is slow. It is filed
+because it is now the binding constraint on `tests/resource/`'s CPU budget,
+which sits at 45 s purely to accommodate it and carries a note to come back
+down to ~10 s when this is fixed.
+
+**Second case, consistent but NOT attributed:** `(?:abcdefghij){3000}` compiles
+in 216 s at 203 MB (measured both before and after [M4.7b] — 153 s on the
+pre-lane binary on a quieter box, so this is pre-existing and unchanged). Its
+state count and chain shape fit this cause, but no per-stage timing was taken
+for it. Run the same stage-timing instrument on it before assuming it is the
+same bug; if it is not, it is a third growth law and deserves its own entry.
+
+**Fix candidates, unranked:** Hopcroft's algorithm (O(n log n), a drop-in
+replacement for the same interface); or a cheap pre-pass that collapses chains
+before refinement, which is narrower but targets exactly the shape that hurts.
+Neither is urgent.
