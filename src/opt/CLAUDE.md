@@ -56,7 +56,7 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
-  The first analysis registered, `forces_captures`, triggers on the requested
+  The one analysis registered, `forces_captures`, triggers on the requested
   OUTPUT rather than the presence of a `(`: `a(b|c)+d` under `--no-captures`
   is capture-free WORK and stays on the DFA forever. Every `VM_ONLY` registry
   row is gated by a module with no producer, so the parser refuses those
@@ -64,21 +64,17 @@ construction (src/ir) and emission (src/gen).
   smaller than its row implies (§9.1: zero currently-refused constructs become
   compilable when the VM exists).
 
-  **[M4.7a] SR-8 ITSELF: a second analysis, `forces_registry_engines`, is the
-  GENERIC socket a future VM_ONLY module's producer plugs into** instead of
-  writing its own `forces_*` function. It reads three Ctx fields
-  (`vmonly_seen`/`vmonly_pos`/`vmonly_why`, internal.h) that a producer
-  stamps from its own registry row's `engines` mask at the moment it builds
-  the node — the column is consulted where a node is BUILT (the producer,
-  which already has the row in hand) and the verdict is READ where engines
-  are CHOSEN (here), never in the parser's per-escape refusal path, which
-  only ever judges module ENABLEMENT and has no engine opinion to relocate.
-  Confirmed empty by population at M4.7a (same posture the §5.6 override's
-  second branch below already carries) by re-reading every module file in
-  src/parse/: no VM_ONLY row has a producer, so `vmonly_seen` is stamped by
-  nothing and this analysis always returns ANY_ENGINE today.
-  tests/select_engine/ proves the socket itself fires, with a hand-built Ctx
-  standing in for the producer no module has written yet.
+  **[M4.7a] SR-8 ITSELF: the consuming socket is deliberately NOT built
+  here.** Zero producers means zero customers (D18/OS-0/D53's standing
+  discipline against unpopulated machinery), and a hand-built `Ctx` proving
+  a socket works is a control sharing a source with what it controls — it
+  proves plumbing, not that a real producer's contract would look like the
+  one guessed at sample size zero. Instead,
+  `tests/registry/registry_check.c`'s `check_engine_capability_tripwire`
+  asserts every `VM_ONLY`-masked `RS_MODULE` row has NO wired producer —
+  the fact that makes engine-capability refusal unreachable today — so the
+  day a module wires the first one, that check fails and names this file as
+  the thing to build BEFORE the producer lands, not after.
 
   It also DRIVES possessify.c, and the placement is a reported deviation from
   §2.8's literal reading rather than a silent choice. §2.8 proposes

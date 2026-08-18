@@ -156,15 +156,6 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   factoring). Part of `make test` as `make test-altcls`. See its own
   CLAUDE.md for why the differential's engine choice differs from every
   other deny-family suite's.
-- **`select_engine/`** — [M4.7a]'s SR-8 flip: the lowering-time
-  engines-column socket in `src/opt/select_engine.c`
-  (`forces_registry_engines`, `Ctx.vmonly_*`). Not a `.rxt`/CLI-probe
-  directory — `tests/registry/registry_check.c`'s internal-linking shape
-  instead, because no registry row with a `VM_ONLY` engine mask has a
-  producer yet, so nothing the shipped parser builds can reach the
-  mechanism; the suite drives it with a hand-built `Ctx` standing in for the
-  producer no module has written. Part of `make test` as
-  `make test-select-engine`. See its own CLAUDE.md.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

@@ -67,8 +67,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-prefilter test-altcls test-select-engine \
-      test-known-fail test-thread
+      test-counterk test-mrl test-prefilter test-altcls test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -101,14 +100,6 @@ test-reject: all
 
 test-registry: all
 	bash tests/registry/run_registry_tests.sh
-
-# [M4.7a] SR-8's flip: the lowering-time engines-column socket in
-# src/opt/select_engine.c (forces_registry_engines, Ctx.vmonly_*). Same
-# internal-linking shape as test-registry above — see
-# tests/select_engine/select_engine_check.c's header for why this fact
-# cannot be a .rxt corpus or a CLI probe (no producer sets vmonly_* yet).
-test-select-engine: all
-	bash tests/select_engine/run_select_engine_tests.sh
 
 test-parse: all
 	bash tests/parse/run_parse_tests.sh
@@ -382,7 +373,6 @@ ubsan:
 	         tests/rungselect/run_rungselect_tests.sh \
 	         tests/altcls/run_altdiff.sh \
 	         tests/altcls/run_altcls_tests.sh \
-	         tests/select_engine/run_select_engine_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -427,7 +417,6 @@ asan:
 	         tests/rungselect/run_rungselect_tests.sh \
 	         tests/altcls/run_altdiff.sh \
 	         tests/altcls/run_altcls_tests.sh \
-	         tests/select_engine/run_select_engine_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
@@ -497,7 +486,6 @@ clean:
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-        test-counterk test-mrl test-prefilter test-altcls test-select-engine \
-        test-known-fail test-thread \
+        test-counterk test-mrl test-prefilter test-altcls test-known-fail test-thread \
         test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
         fuzz clean

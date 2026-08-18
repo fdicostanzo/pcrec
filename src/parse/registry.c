@@ -79,15 +79,17 @@
  *
  * THE `engines` COLUMN IS DESIGN INTENT, NOT MEASUREMENT, and it is NOT a
  * statement about what a DFA can do in general. It records which PCREC engine
- * could lower each construct. **[M4.7a] SR-8's flip built the CONSUMING
- * SOCKET** (src/opt/select_engine.c's forces_registry_engines, reading
- * Ctx.vmonly_seen/vmonly_pos/vmonly_why — see that file and internal.h's
- * Ctx comment for the full mechanism), but this column itself is still read
- * by NOTHING: every VM_ONLY row below is gated by a module with no producer
- * (this file's own doorway comments), so no code exists yet that reads a
- * row's `engines` value and stamps a node from it. A future module's
- * producer is that code, and the socket it feeds already exists. The
- * conformance test still asserts only that this column is well-formed.
+ * could lower each construct. Nothing consumes it, still, as of [M4.7a]
+ * (SR-8): every VM_ONLY row below is gated by a module with no producer, so
+ * building the lowering-time consultation ahead of that first producer would
+ * be unpopulated machinery (D18/OS-0/D53's standing discipline). What DOES
+ * exist since [M4.7a] is a TRIPWIRE, not a consumer:
+ * tests/registry/registry_check.c's check_engine_capability_tripwire asserts
+ * the fact that makes this column's silence safe — every RS_MODULE row whose
+ * `engines` mask excludes ENGM_DFA has NO wired producer — so the day a
+ * module wires the first one, that check fails loudly and names
+ * src/opt/select_engine.c as the thing to build first. The conformance test
+ * otherwise still asserts only that this column is well-formed.
  *
  * That distinction is load-bearing, because PCRE2's own DFA matcher disagrees
  * with several rows here. Measured against pcre2_dfa_match_8 in libpcre2 10.46:
