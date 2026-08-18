@@ -899,14 +899,29 @@ for every pattern until module `named-groups` is enabled (`--features
 named-groups` or a named set that includes it) — verified live:
 `'(?<g>a)'` still refuses with `requires module 'named-groups'` against
 the bare default. **[M6.3], 2026-08-18 — the sort key, previously left
-open, is now fixed: `strcmp` on the NAME.** This matches libpcre2's own
-`PCRE2_INFO_NAMETABLE`, which is sorted the identical way — measured
-directly (tests/probes/probe_named_groups.c: a pattern declaring
+open, is fixed FOR EVERY ROW THIS MODULE CAN PRODUCE TODAY: `strcmp` on
+the NAME, byte-exact and CASE-SENSITIVE** (measured, both oracles:
+`(?<name>a)(?<NAME>b)` is two distinct groups under libpcre2 10.46 and
+python3 `re` alike, unchanged under `(?i)`/`PCRE2_CASELESS` — caseless
+folds MATCHING, never name identity, and this key applies no fold
+either). This matches libpcre2's own `PCRE2_INFO_NAMETABLE`, which is
+sorted the identical way — measured directly
+(tests/probes/probe_named_groups.c: a pattern declaring
 `zeta`/`alpha`/`mu` by opening-paren order reports its table back in
 `alpha`/`mu`/`zeta` order), the evidence behind this choice
 (docs/dev/decisions.md D59) rather than an invented pcrec-only
-convention. Quoted verbatim from a freshly emitted `-p rx --features
-named-groups` build of `'a(?<b>b|c)+d'`:
+convention.
+
+**This does not fix the key for `ref`-bearing rows, and that is
+deliberate.** Every row this module produces has `ref` NULL/empty (§2's
+"the primary's own groups"); a future producer of NON-empty `ref` (§2's
+still-unproduced "labeled insertion path") makes the table's effective
+key the COMPOUND `(ref, name)`, and where such a row sorts relative to
+the primary's own is left OPEN by this revision, exactly as `ref`
+itself was left open until a producer needed it — a name-only
+invariant stated unconditionally here would silently foreclose that
+future producer's own design question. Quoted verbatim from a freshly
+emitted `-p rx --features named-groups` build of `'a(?<b>b|c)+d'`:
 
 ```c
 static const rx_group_entry rx_group_names[] = {

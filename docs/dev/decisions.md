@@ -4732,19 +4732,39 @@ recorded against this entry.
 
 ## D59 — module `named-groups`: sort `rx_info.groups` by NAME; its three rows reclassify VM_ONLY -> ANY_ENGINE instead of building SR-8 (namedgroups lane, 2026-08-18, [M6.3])
 
-**Decision, part 1 (the sort key).** `rx_info.groups` — the
-`rx_group_entry` array docs/spec/match_api.md §6 promised would be
-"sorted and bsearch-able" without naming the key — sorts by NAME,
-`strcmp` order. Measured against libpcre2 10.46
-(tests/probes/probe_named_groups.c): `PCRE2_INFO_NAMETABLE`, the
+**Decision, part 1 (the sort key), SCOPED to today's table.** For every
+row this module can produce today — `rx_group_entry.ref` is
+NULL/empty, "the primary's own groups" (match_api.md §2's own wording)
+— `rx_info.groups` sorts by NAME, byte-exact `strcmp` order, CASE-
+SENSITIVE (measured, both oracles: `(?<name>a)(?<NAME>b)` is two
+distinct groups under libpcre2 10.46 and python3 `re` alike, and stays
+two distinct groups under `(?i)`/`PCRE2_CASELESS` — caseless affects
+MATCHING, never name IDENTITY, so this module's duplicate-name check
+and this sort both apply zero case folding). Measured against libpcre2
+10.46 (tests/probes/probe_named_groups.c): `PCRE2_INFO_NAMETABLE`, the
 construct this module's whole reflection surface mirrors, is ITSELF
-sorted by name (a 3-name pattern declared `zeta`/`alpha`/`mu` by
-opening-paren order comes back `alpha`/`mu`/`zeta`), which both
-confirms name-sort is the natural, bsearch-friendly choice or PCRE2
-would not use it for the identical purpose, and removes any
-temptation to invent a pcrec-only convention where an external
-precedent already exists and is trivial to reproduce (`qsort` in
-src/gen/emit_dfa.c's `emit_info_def`, one comparator).
+sorted by name this same way (a 3-name pattern declared
+`zeta`/`alpha`/`mu` by opening-paren order comes back
+`alpha`/`mu`/`zeta`), which both confirms name-sort is the natural,
+bsearch-friendly choice or PCRE2 would not use it for the identical
+purpose, and removes any temptation to invent a pcrec-only convention
+where an external precedent already exists and is trivial to reproduce
+(`qsort` in src/gen/emit_dfa.c's `emit_info_def`, one comparator).
+
+**The scoping matters and is deliberate, not an oversight**: `ref` is
+the ABI's own reserved cross-pattern-reference dimension (match_api.md
+§2 — "NULL/empty for the primary's own groups... its non-empty form is
+a labeled insertion path that nothing in pcrec can produce today").
+Once a producer for non-empty `ref` exists, the table's effective key
+becomes the COMPOUND `(ref, name)`, not `name` alone — a future
+producer choosing where a `ref`-bearing row sorts relative to the
+primary's own rows is EXPLICITLY UNFIXED by this decision, exactly the
+way `ref` itself was left unfixed until a producer needed it. Duplicate-
+name detection stays PER-PATTERN regardless: two patterns can legally
+declare the same name (disambiguated by `ref`, never refused), and a
+single compile call structurally cannot see another compile call's
+names to collide with in the first place. This decision fixes ONLY the
+column this module actually populates.
 
 **Decision, part 2 (the engine reclassification).** The three
 declaring rows (`(?<name>a)`, `(?'name'...)`, `(?P<name>a)` — GROUP/

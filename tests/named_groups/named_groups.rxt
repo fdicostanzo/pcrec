@@ -68,6 +68,36 @@ g 2 1 2
 g 3 2 3
 g 4 3 4
 
+# ---- CASE SENSITIVITY: names are compared byte-exact, never folded.
+# "name" and "NAME" are TWO DISTINCT groups, not a duplicate — measured
+# against both oracles (libpcre2 10.46 and python3 `re` independently
+# agree; python: match.span('name') != match.span('NAME'), no redefinition
+# error). The sort in rx_info.groups is the same case-SENSITIVE strcmp
+# (docs/dev/decisions.md D59): "NAME" < "name" in byte order (uppercase
+# sorts first in ASCII), verified directly against a fresh build's emitted
+# rx_group_names[] array (manual check, not expressible as a .rxt line —
+# this file has no way to assert ARRAY ORDER, only per-slot spans, which
+# is why the ordering claim rests on D59's own quoted artifact instead).
+pattern (?P<name>a)(?P<NAME>b)
+features named-groups
+m "ab" 0 2
+g 0 0 2
+g 1 0 1
+g 2 1 2
+
+# ---- and CASELESS MATCHING never folds NAME IDENTITY: (?i) changes what
+# bytes each group MATCHES, never whether "name"/"NAME" collide. Measured:
+# libpcre2 and python3 `re` (re.IGNORECASE) both still deliver two live,
+# independently-addressable groups here, on a subject neither /a/i nor
+# /b/i alone would match without the fold.
+pattern (?P<name>a)(?P<NAME>b)
+features named-groups
+flags i
+m "AB" 0 2
+g 0 0 2
+g 1 0 1
+g 2 1 2
+
 # ---- nested named groups: outer wraps inner, both numbered by opening
 # paren order (outer's '(' opens first) ----
 pattern (?P<outer>(?P<inner>a)b)
