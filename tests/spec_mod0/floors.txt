@@ -134,7 +134,14 @@ modsyn.alphabet_complement          40
 modsyn.structural_grammar           42
 modsyn.doorway_disambiguation        4
 modsyn.pcrec_compared              105
-modsyn.pcrec_refused_unimpl          8
+# [M6.3]: 8 -> 4. The 4 `(?J...)` probes that used to answer "requires
+# module 'named-groups'" (VC_UNIMPL) now answer the permanent
+# out-of-scope refusal (VC_SCOPE) instead -- see modsyn.pcrec_refused_scope,
+# which gains exactly those 4. Population conserved (unimpl + scope was 8,
+# still 8 split 4/4), never silently narrowed -- see this file's own
+# maintenance rule.
+modsyn.pcrec_refused_unimpl          4
+modsyn.pcrec_refused_scope           4
 
 # --- modifiers module (D27, SR-mod05): check12 behavioural semantics ----
 modsem.letter_effect                11

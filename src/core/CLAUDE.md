@@ -92,7 +92,12 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   before touching the number: it records the corpus maximum it is derived from,
   the measured cost at the ceiling, the exact repeats it NARROWS
   (`a{9795}` compiles, `a{9796}` refuses), and the raise-to-restore lever with
-  a measured price at three points
+  a measured price at three points.
+  **[M6.3] adds `PCREC_MAX_GROUP_NAME`** (128), the PCRE2-syntax-tier cap
+  on a named group's name length — measured against libpcre2 10.46
+  (tests/probes/probe_named_groups.c, swept 1..2000 bytes, exact wall at
+  129, PCRE2 error 148), not carried over from PCRE1's older 32-byte
+  convention
 - **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa,
   **[M4.5b]'s `A_CAP` AST node and `EngineFit`**, the
   syntax construct registry types (RegRow and its FEAT_/FLAV_/ENGM_/RS_/RD_
@@ -140,7 +145,26 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   registry row lacks a producer, so there is no near-term writer to shape
   the field's contract around. `tests/registry/registry_check.c`'s
   `check_engine_capability_tripwire` guards the gap instead — see
-  src/opt/CLAUDE.md's select_engine.c entry.
+  src/opt/CLAUDE.md's select_engine.c entry. **[M6.3] is the tripwire's
+  first trip**, and the fix is recorded on `Ctx.named_groups` below rather
+  than here: no `Ctx.vmonly_*`-shaped field was needed after all.
+
+  **[M6.3] `NamedGroup` and `Ctx.named_groups`/`n_named_groups`.** Module
+  `named-groups`' declared-groups list: an arena-allocated singly linked
+  list, in declaration order, of every `(name, group-number)` pair the
+  parser's `pcrec_ngport_declare` (src/parse/mod_named_groups.c) records.
+  Populated UNCONDITIONALLY — regardless of `want_caps` — because a
+  group's NAME is the same lexical-fact tier `ngroups` already is, not a
+  build-output fact; `src/gen/emit_dfa.c`'s `emit_info_def` reads it once,
+  at emission, to build the sorted `rx_group_entry` array
+  `rx_info.groups`/`nnames` promise (sort key: `strcmp` on the name,
+  matching PCRE2's own measured `PCRE2_INFO_NAMETABLE` order —
+  docs/dev/decisions.md D59). No new engine-selection field was added: a
+  named group's AST is an ordinary `A_CAP` node, so the pre-existing
+  `forces_captures` rule in src/opt/select_engine.c already covers it,
+  which is also why the three declaring registry rows moved `engines`
+  VM_ONLY -> ANY_ENGINE rather than SR-8 (above) finally being built — D59
+  has the full argument.
 
 ## Conventions
 

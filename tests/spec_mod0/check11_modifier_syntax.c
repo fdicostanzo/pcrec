@@ -200,7 +200,21 @@ static PcrecRun run_pcrec(const char *path, char *const argv[])
     return r;
 }
 
-typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_INVALID, VC_ERROR } VClass;
+/* [M6.3] VC_SCOPE joins the model: a refusal saying the construct is out
+ * of pcrec's scope FOREVER (K14's ROADMAP_NEVER shape). Until [M6.3] this
+ * family's letters were either implemented or answered "requires module
+ * '...'" (VC_UNIMPL) — `J` is the first letter whose per-letter refusal,
+ * once its OWN module (`modifiers`) is enabled and the option-run
+ * producer actually reads it, is a PERMANENT exclusion naming no module
+ * at all (mod_modifiers.c's 'J' case: DUPNAMES is a ruled scope
+ * exclusion, docs/dev/plan.md's [M6.3] row). Folding that into VC_INVALID
+ * would have been wrong for the same reason VC_UNIMPL is not VC_INVALID:
+ * `(?J)` is real PCRE2 syntax libpcre2 accepts, and pcrec is not saying
+ * otherwise — it is saying it will never implement THIS letter, which
+ * this check must treat the same way it treats "not yet implemented":
+ * a construct this check cannot compare pcrec's ACCEPT/REJECT verdict
+ * against, not a REJECT verdict itself. */
+typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_SCOPE, VC_INVALID, VC_ERROR } VClass;
 
 /* Compiles PAT as a whole pattern under `--features modifiers`. Only the
  * verdict class matters here (matching is check12's job). */
@@ -212,7 +226,11 @@ static VClass compile_verdict(const char *pcrec_path, const char *pat)
     if (!r.ran) { spec_fail("compile_verdict: fork/exec failed for '%s'", pat); return VC_ERROR; }
     if (r.timed_out) { spec_fail("compile_verdict: pcrec timed out on '%s'", pat); return VC_ERROR; }
     if (r.exit_code == 0) return VC_ACCEPTED;
-    if (r.exit_code == 1) return strstr(r.err, "requires module '") ? VC_UNIMPL : VC_INVALID;
+    if (r.exit_code == 1) {
+        if (strstr(r.err, "requires module '")) return VC_UNIMPL;
+        if (strstr(r.err, "outside pcrec's scope")) return VC_SCOPE;
+        return VC_INVALID;
+    }
     spec_fail("compile_verdict: pcrec exited %d (expected 0 or 1) for '%s' (stderr: %s)",
                r.exit_code, pat, r.err);
     return VC_ERROR;
@@ -221,7 +239,7 @@ static VClass compile_verdict(const char *pcrec_path, const char *pat)
 /* -------------------------------------------------------------- bookkeeping */
 
 static const char *pcrec_path;
-static long pcrec_compared, pcrec_refused_unimpl;
+static long pcrec_compared, pcrec_refused_unimpl, pcrec_refused_scope;
 
 /* One probe: PAT predicted ACCEPT (predict_ok=1) or REJECT (predict_ok=0) by
  * libpcre2, measured HERE (never recalled). Compares the prediction against
@@ -240,6 +258,7 @@ static void probe(const char *pat, int predict_ok, const char *family)
     VClass vc = compile_verdict(pcrec_path, pat);
     if (vc == VC_ERROR) return;
     if (vc == VC_UNIMPL) { pcrec_refused_unimpl++; return; }
+    if (vc == VC_SCOPE)  { pcrec_refused_scope++; return; }
     pcrec_compared++;
     int pcrec_ok = (vc == VC_ACCEPTED);
     if (pcrec_ok != predict_ok)
@@ -411,18 +430,21 @@ int main(int argc, char **argv)
      * Not gated behind a whole-check surface flag (see header): every probe
      * above already went through compile_verdict(). A probe that came back
      * anything other than "requires module" counted toward pcrec_compared. */
-    printf("  pcrec: %ld probe(s) compared, %ld refused-as-unimplemented\n",
-           pcrec_compared, pcrec_refused_unimpl);
+    printf("  pcrec: %ld probe(s) compared, %ld refused-as-unimplemented, "
+           "%ld refused-as-out-of-scope\n",
+           pcrec_compared, pcrec_refused_unimpl, pcrec_refused_scope);
     spec_pop("modsyn.pcrec_compared", pcrec_compared);
     spec_pop("modsyn.pcrec_refused_unimpl", pcrec_refused_unimpl);
+    spec_pop("modsyn.pcrec_refused_scope", pcrec_refused_scope);
 
     static const char *const owned[] = {
         "modsyn.registry_rows_modifiers", "modsyn.registry_syntax_ok",
         "modsyn.alphabet_forms", "modsyn.alphabet_complement",
         "modsyn.structural_grammar", "modsyn.doorway_disambiguation",
-        "modsyn.pcrec_compared", "modsyn.pcrec_refused_unimpl"
+        "modsyn.pcrec_compared", "modsyn.pcrec_refused_unimpl",
+        "modsyn.pcrec_refused_scope"
     };
-    spec_floors_require(owned, 8);
+    spec_floors_require(owned, 9);
     if (spec_fails) return spec_finish();
 
     if (pcrec_compared == 0)

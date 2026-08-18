@@ -96,7 +96,20 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (was `ext_gate`) and the `REFUSE`/`BAD_ROW` refusal-epilogue macros out to
   internal.h — mod_verbs.c needs both and gets one shared definition of
   each rather than a second copy; `pcrec_ext_gate` is still DEFINED here,
-  `DECLINE` stays file-local (only the class-bracket doorway produces it)
+  `DECLINE` stays file-local (only the class-bracket doorway produces it).
+  **[M6.3] `group_answer` gains the GENERAL producer-invocation path**: a
+  second, unconditional `if (want == WANT_RESULT && r->aport.kind ==
+  PORT_FN) return r->aport.fn(...)` sits below the option-run family's own
+  special-cased block, for every RD_MODULE row whose port is not shaped
+  like an option run — module `named-groups` is its first (and, until the
+  next such module lands, only) caller. Its `from` convention DIFFERS from
+  the option-run branch's on purpose: this one passes the position right
+  after the row's own full selector prefix (`sel` plus `tail`, since a
+  tailed row's construct-specific text starts past its tail), while the
+  option-run branch passes the SELECTOR byte itself (the run includes it)
+  — the two shapes disagree about where their own text begins, which is
+  why they are dispatched by different tests (`r->recognise`'s pointer
+  identity vs. this branch's `aport.kind`) rather than merged into one.
 - **mod_verbs.c** — module `verbs` (MOD-0.4), the MIGRATION TEST: moves
   `pcrec_ext_verb` here from ext.c WITH the `(*` doorway's two VerbName
   tables and their four accessors (was registry.c) and their whole
@@ -161,8 +174,16 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   them to `cx->mods` for a bare run (whose caller splice deliberately
   escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
   or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals
-  `m` -> 'assertions', `J` -> 'named-groups' (gated reject pins);
-  recognised-malformed runs diagnosed here (the err-194/114 shapes).
+  `m` -> 'assertions' (gated reject pin) and, since [M6.3], `J` -> K14's
+  permanent ROADMAP_NEVER wording rather than a module name — it used to
+  say "requires module 'named-groups'", true only while that module did
+  not exist; named-groups shipped WITHOUT (?J)/DUPNAMES (a ruled scope
+  exclusion, docs/dev/plan.md's [M6.3] row), so the old wording would have
+  turned into a live lie the moment the module landed, and this letter's
+  refusal is unconditional regardless of whether named-groups is enabled
+  (see mod_named_groups.c's own duplicate-name check, which never
+  consults this letter); recognised-malformed runs diagnosed here (the
+  err-194/114 shapes).
   **A BARE RUN'S NODE IS MARKED `not_repeatable` since R20/SPEC-1**, a tier-1
   MISCOMPILE the D27 blinded writer found: the bare run produces `A_EMPTY`,
   `A_EMPTY` is ORDINARILY quantifiable (`()*` and `(a|)*` both compile in
@@ -231,6 +252,37 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   records the malformed-body-byte divergence — 164/256 body bytes are
   err-146 to libpcre2 at the byte; this scanner reads past them; the fix
   lands with the first producer
+- **mod_named_groups.c** — module `named-groups` ([M6.3]): one shared
+  producer, `pcrec_ngport_declare`, for all three declaring spellings
+  `(?<name>...)` `(?'name'...)` `(?P<name>...)` — which spelling dispatched
+  is read off the elected row's own `sel`/`tail`, and everything else
+  (name grammar, numbering, duplicate check, body parse) is identical. The
+  first construct wired through ext.c's GENERAL producer-invocation path
+  (`group_answer`'s new `if (want == WANT_RESULT && r->aport.kind ==
+  PORT_FN)` branch, below the option-run family's own special-cased one) —
+  every future `(?` producer that is not shaped like an option run reaches
+  its construct through that branch rather than adding a second
+  special-cased block. Name grammar MEASURED against libpcre2 10.46
+  (tests/probes/probe_named_groups.c): first byte letter/`_`, later bytes
+  alnum/`_`, max 128 bytes (`PCREC_MAX_GROUP_NAME`, limits.h; PCRE2 error
+  148 above — a measured wall, not PCRE1's older 32-byte folklore),
+  duplicate name a compile error (no DUPNAMES; `(?J)`/DUPNAMES itself is
+  RULED OUT OF SCOPE, mod_modifiers.c's own 'J' case refuses it
+  unconditionally). NUMBERING is the base grammar's opening-paren-order
+  rule with ONE measured divergence: `cx->ncap` increments UNCONDITIONALLY
+  here, ignoring `cx->mods.nocap` — `(?n)` suppresses a PLAIN group's
+  number but not a named one's (probe step 9). ENGINE: no new forcing rule
+  — a named group's `A_CAP` node is indistinguishable from a plain
+  group's, so `src/opt/select_engine.c`'s pre-existing generic
+  capture-forcing rule already selects the VM whenever it delivers a real
+  slot; see docs/dev/decisions.md D59 for why the three declaring rows'
+  `engines` mask moved to `ANY_ENGINE` instead of SR-8 being built (D55's
+  own tripwire fired exactly as its "Revisit when" predicted, and this is
+  the answer). `Ctx.named_groups`/`n_named_groups` (internal.h) carry the
+  declared (name, number) pairs — a lexical fact recorded regardless of
+  `want_caps` — for `src/gen/emit_dfa.c`'s `emit_info_def` to sort
+  (`strcmp` on name, matching PCRE2's own measured `PCRE2_INFO_NAMETABLE`
+  order) and stamp into `rx_info.groups`/`nnames` at emission.
 - **syntax_dump.c** — rendering the registry as text (SR-3) AND, since
   MOD-0.7, querying the live parse front: `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,

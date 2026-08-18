@@ -285,13 +285,34 @@ static PcrecRun run_pcrec(const char *path, char *const argv[], int capture_stdo
 
 /* -------------------------------------------------------- verdict class */
 
-typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_INVALID, VC_ERROR } VClass;
+/* [M6.3] VC_SCOPE joins the three-way model: a refusal saying the
+ * construct is out of pcrec's scope FOREVER (K14's ROADMAP_NEVER shape;
+ * spec_pcrec.h's shared SPEC_VC_SCOPE names the identical category for
+ * every other spec_mod0 check). Until [M6.3] this file's own local
+ * classifier never needed it — every REAL row this sweep could reach
+ * that ever changed gate-state answered either ACCEPTED or "requires
+ * module '...'", because no GROUP_NEVER-shaped row (registry.c's macro
+ * for a real, permanently-excluded construct) had ever had a module
+ * whose gate could actually be flipped. Module `named-groups`'s (?J)
+ * per-letter refusal is the first: (?J)'s ROW still declares module
+ * 'modifiers' (unchanged — the row IS an ordinary option-run construct),
+ * but the LETTER's own answer, once 'modifiers' is enabled and the
+ * option-run producer actually reads it, is K14's permanent wording
+ * ("...is outside pcrec's scope and no module will implement it..."),
+ * never a module name — see mod_modifiers.c's 'J' case. Folding that
+ * into VC_INVALID (this file's original fallback bucket, "pcrec is
+ * saying the pattern is not valid PCRE2") would have been WRONG: (?J) is
+ * valid PCRE2 syntax pcrec recognises and deliberately never implements,
+ * which is exactly the VC_UNIMPL/VC_SCOPE distinction D26 draws, not the
+ * VC_INVALID one. */
+typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_SCOPE, VC_INVALID, VC_ERROR } VClass;
 
 static const char *vclass_name(VClass c)
 {
     switch (c) {
     case VC_ACCEPTED: return "accepted";
     case VC_UNIMPL:   return "refused-as-unimplemented";
+    case VC_SCOPE:    return "refused-as-out-of-scope";
     case VC_INVALID:  return "refused-as-invalid";
     default:          return "ERROR";
     }
@@ -325,6 +346,14 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
     }
     if (r.exit_code == 0) return VC_ACCEPTED;
     if (r.exit_code == 1) {
+        /* [M6.3]: check BEFORE "requires module '", not after — a SCOPE
+         * refusal names no module at all, so testing for the module
+         * phrase first and falling through on failure would have been
+         * fine here too (the two phrases cannot both appear), but scope
+         * is the more specific claim (K14's PERMANENT exclusion) and
+         * checking it first keeps this function reading the same order
+         * spec_pcrec.h's shared classifier already uses. */
+        if (strstr(r.err, "outside pcrec's scope")) return VC_SCOPE;
         const char *p = strstr(r.err, "requires module '");
         if (!p) return VC_INVALID;
         /* which module the refusal NAMES — the 2026-08-12 transition rule
@@ -360,8 +389,26 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
  *     Staying accepted is a DEAD GATE (the direction strict equality was
  *     blind to); flipping to invalid is the second-quieter-grammar defect;
  *     naming someone else's module is a misattribution.
- *   - R's module DISABLED in C, baseline not accepted: class equality (a
- *     port-less row refuses identically either way).
+ *   - [M6.3] R's module DISABLED in C, baseline OUT-OF-SCOPE: the SAME
+ *     rule, one terminal state over. A row whose construct is REAL but
+ *     PERMANENTLY excluded (K14's ROADMAP_NEVER shape — module
+ *     `named-groups`'s `(?J)` per-letter refusal is the first row this
+ *     suite can actually reach in this state) never becomes ACCEPTED, but
+ *     its refusal's SHAPE still depends on its own module's gate exactly
+ *     the way an accepted row's does: gate OPEN, the construct-specific
+ *     producer runs and answers the PERMANENT scope exclusion (never a
+ *     module name — that is what makes it permanent); gate CLOSED, the
+ *     producer never runs and the generic ROW-level catch-all answers
+ *     instead, which DOES name the row's own module (the same "known,
+ *     unimplemented" sentence any other closed-gate module row gets). So
+ *     the required flip under a disabled-module config is OUT-OF-SCOPE ->
+ *     refused-as-unimplemented, naming the row's own module — structurally
+ *     identical to the accepted case, and checked by the same two clauses
+ *     below with `dead_state`/`dead_name` standing in for "still
+ *     ACCEPTED"/"named".
+ *   - R's module DISABLED in C, baseline not accepted and not
+ *     out-of-scope: class equality (a port-less row refuses identically
+ *     either way).
  *   - R's module NOT disabled in C (including no-module rows): class
  *     equality — any change is a cross-module leak.
  * Returns 1 if ok, else 0 after reporting. */
@@ -369,14 +416,15 @@ static int transition_ok(const char *syntax, const char *rowmod,
                          int mod_disabled_in_cfg, const char *cfgname,
                          VClass base, VClass vc, const char *named)
 {
-    if (mod_disabled_in_cfg && base == VC_ACCEPTED) {
+    if (mod_disabled_in_cfg && (base == VC_ACCEPTED || base == VC_SCOPE)) {
+        const char *dead_state = base == VC_ACCEPTED ? "ACCEPTED" : "OUT-OF-SCOPE";
         if (vc != VC_UNIMPL) {
-            spec_fail("row '%s' (module '%s'): %s under %s — an accepted row "
-                      "whose module is OFF must refuse as unimplemented "
-                      "(accepted = dead gate; invalid = a second, quieter "
-                      "grammar)", syntax, rowmod,
-                      vc == VC_ACCEPTED ? "still ACCEPTED" : "refused-as-INVALID",
-                      cfgname);
+            spec_fail("row '%s' (module '%s'): still %s under %s (got %s) — "
+                      "a row whose baseline is %s and whose OWN module is "
+                      "OFF must refuse as unimplemented (staying %s or an "
+                      "unrelated flip to invalid are both dead-gate shapes)",
+                      syntax, rowmod, dead_state, cfgname, vclass_name(vc),
+                      dead_state, dead_state);
             return 0;
         }
         if (strcmp(named, rowmod) != 0) {
