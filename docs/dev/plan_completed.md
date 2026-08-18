@@ -2260,3 +2260,25 @@ Known M1 limitations (tracked for later milestones):
     and emitted stamp text — judged unnecessary per
     docs/testing.md's SAN-1 scope (a stamp is emitted text; the force
     flag touches selection, not the matcher body).
+
+## 2026-08-17 (thirtieth session — [M4.7] opens; BENCH-VM lands)
+
+- [BENCH-VM] STATE:completed (2026-08-17, thirtieth session, lane/benchvm; floors from 3x quiet-window pinned runs, manager gate verification 13/13 on merged main) — VM-TIER MINI-BENCH CASES (manager
+  proposal accepted into the queue 2026-08-17, twenty-ninth session;
+  a deliberately thin EARLY SLICE of [BENCH-1], not a replacement):
+  three new compare.sh cases with floors, closing the gap that the
+  bench's only VM case is (j): (k) an MRL dense shape (the
+  `(a{10,20}){10,50}` class — a throughput floor watching that the
+  K23 fix STAYS cheap; today only correctness-tier step cells watch
+  it); (l) the +8% site-dense shape `([a-z]{2,4}){2,8}b` — a floor
+  watching the D51-addendum's ACCEPTED cost (the
+  deliberately-floored-sentinel posture that caught K24; today a
+  drift to +20% would be invisible); (m) an offset-deep capture case
+  flooring the hybrid's measured win regime (D53's crossover
+  evidence, unrepresented today because case (i) is pinned
+  --no-captures). Discipline per (j)'s precedent: three quiet-box
+  pinned runs each, floors.tsv rows with D17 margins, per-case engine
+  assertions, journal entry. ALSO RIDES: the counter-K K-sweep
+  driver's median/spread upgrade (the INCONCLUSIVE verdict's stated
+  prerequisite, docs/design/counterk_impl/bench_k.txt). Sonnet-sized,
+  one lane.

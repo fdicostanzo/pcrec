@@ -983,25 +983,6 @@ execution speed trades the primary goal (D18) for the secondary one.
   will be its testing suite. builds confidence and lets us go crazy when we
   get to optimizations" — suite strength is the PREREQUISITE INVESTMENT for
   everything below; an optimization the suite cannot referee does not land)
-- [BENCH-VM] STATE:started — VM-TIER MINI-BENCH CASES (manager
-  proposal accepted into the queue 2026-08-17, twenty-ninth session;
-  a deliberately thin EARLY SLICE of [BENCH-1], not a replacement):
-  three new compare.sh cases with floors, closing the gap that the
-  bench's only VM case is (j): (k) an MRL dense shape (the
-  `(a{10,20}){10,50}` class — a throughput floor watching that the
-  K23 fix STAYS cheap; today only correctness-tier step cells watch
-  it); (l) the +8% site-dense shape `([a-z]{2,4}){2,8}b` — a floor
-  watching the D51-addendum's ACCEPTED cost (the
-  deliberately-floored-sentinel posture that caught K24; today a
-  drift to +20% would be invisible); (m) an offset-deep capture case
-  flooring the hybrid's measured win regime (D53's crossover
-  evidence, unrepresented today because case (i) is pinned
-  --no-captures). Discipline per (j)'s precedent: three quiet-box
-  pinned runs each, floors.tsv rows with D17 margins, per-case engine
-  assertions, journal entry. ALSO RIDES: the counter-K K-sweep
-  driver's median/spread upgrade (the INCONCLUSIVE verdict's stated
-  prerequisite, docs/design/counterk_impl/bench_k.txt). Sonnet-sized,
-  one lane.
 - [BENCH-1] STATE:not-started — FEATURE-SPANNING BENCHMARK EXPANSION + THE PRIORITIZER (Frank, 2026-08-13 sixteenth session): today's bench is 9 cases (a-i) of deliberately basic shapes — good regression gates, not a capability map (Frank: "whenever i see benchmarks, its usually a series of rather basic benchmarks that do not really exercise the capabilities"). Build a benchmark that SPANS the feature set and the complexity range: per-feature-family case GROUPS (literal/memchr shapes, classes, alternation/trie widths, bounded repeats, anchors/EOL, dense/counting — the case-f family, captures (M4), backrefs/lookaround/atomic (M6), UTF-8/\p (M5), plus real-world-shaped patterns), each family at graded complexities; pattern sources = hand-designed families + the PCRE2 testdata import (M7 — this row is deliberately scheduled around that import so the corpus arrives with it) + generated shapes where a family needs a sweep. STRUCTURED FOR SPOT-CHECKS exactly like TT-1's tiers: every case and group individually addressable (make bench CASE=... / GROUP=...), the full sweep at evaluation points only. TWO INSTRUMENTS, deliberately distinct — M2.11's ruling stands: the regression GATE stays absolute per-case floors (cross-engine ratios move for reasons that are not our regression); the new PRIORITIZER is a cross-engine RELATIVE ranking vs libpcre2 — informational, never a gate — whose output is a worst-first worklist. Frank's stated optimization workflow, recorded as the row's purpose: (1) OPT-A's survey incl. the pattern-generation study, then (2) work the prioritizer list from the relative worst downward. Every number under D12/D17/R3.10 discipline; MECH-3's provenance-refusing wrapper is the intended measurement vehicle and lands first. Sequencing: after the main feature set is built and proven (post-M6, with M7's testdata), BEFORE the OPT waves open — this row is the OPT waves' worklist generator. AMENDED 2026-08-13 (same session, positioning discussion): the case groups include a LATENCY / SHORT-SUBJECT group — time-to-first-match from process start (the AOT structural win: tables page in from .rodata vs pcre2_compile + JIT warmup per process) and per-call overhead on short subjects (log lines, field validation — the dimension real workloads are dominated by and typical benchmarks skip); and the prioritizer gets a second reading — the BEST relative cells feed the positioning note (Beyond M7), not just the worst cells feeding the fix list. AMENDED 2026-08-14 (D42.8): the prioritizer worklist has a KNOWN HEAD before it runs — case (f) at 0.151 relative, re-homed here from [DD-9] (archived) with engine_m4.md §8.4's three findings attached (wrong-lever computed goto; ~2x reverse-pass share; bit-parallel shift-and candidate); [OPT-SIMD] is the adjacent lever row.
 - [OPT-ALTCLS] STATE:started — ALTERNATION→CLASS NORMALIZATION
   (Frank, 2026-08-17, twenty-ninth session, from reading --emit-ir on

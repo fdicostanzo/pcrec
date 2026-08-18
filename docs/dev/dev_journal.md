@@ -9645,3 +9645,42 @@ check-design lesson): a worktree-local sabotage (+1 on group 1's start
 when set) was detected on 252/252 affected cells with repro bundles;
 reverted, the control re-run was 0/860 clean. The comparison is live,
 not vacuous. Post-merge battery run after the merge commit.
+
+## 2026-08-17 (EDT), thirtieth session (cont.) — [BENCH-VM] closed
+
+[BENCH-VM] closed (lane/benchvm, merge + gate-verified same evening):
+the thin VM-tier bench slice — three new tests/bench/compare cases
+(k/l/m) plus the K-sweep driver's median/spread upgrade. (k)
+`(a{10,20}){10,50}` floors the K23/MRL fix staying cheap (D51 ruling
+1); its plant length moved from the design note's worst point (100) to
+110 after finding libpcre2 itself is not a terminating oracle at
+100/105 on this exact shape — a direct, unplanned reproduction of
+D52's own grounding measurement, confirmed with eng_pcre2 before
+wiring in. (l) `([a-z]{2,4}){2,8}b` floors D51 ADDENDUM's accepted
++8% clamp-arm cost (the deliberately-floored-sentinel posture that
+caught K24). (m) `a(b|c)+d` with captures on floors D53's
+hybrid-wins-past-~8-12-bytes crossover regime, set deliberately
+PRE-OPT-ALTCLS since that row's stage-1 exemplar is this exact
+pattern — this floor is the before half of that landing's own
+evidence. All three follow (j)'s discipline: engine-stamp assertion
+(CASE_EXPECT_ENGINE=VM, 0 mismatches), three independent quiet-box
+pinned runs (coordinated window: altcls paused, battery drained, load
+1.08-2.63/6.00 throughout), median-of-three reference, worst-of-three
+-spread R3.5 margins (k 0.800, l 0.800, m 0.700 — m clamps at the D17
+floor like case (i), same sub-150ns-noise reason). Separately,
+counterk_impl/probes/bench_k.sh's driver now reports every trial's
+own sample plus a same-input rc-mismatch check instead of collapsing
+to a minimum, and run_cell judges median+spread per regime — the
+INCONCLUSIVE bench_k.txt run's stated prerequisite (b); prerequisite
+(a) (M4.6a-style budget calibration for the K=8 question) stays open
+and out of the row's charter, flagged in counterk_impl/CLAUDE.md.
+MANAGER VERIFICATION at merge: fresh build on merged main, core-2
+occupancy 98.5% idle checked first, gate.sh 13/13 ok — the three new
+floors confirmed independently of the lane's own runs (k 25387 vs
+19914 floor, l 291 vs 389, m 107 vs 179). Lane disclosed twice
+hitting the REPORT_FORCE=1 footgun (tracked results snapshot
+overwritten, both times caught via git status and restored before any
+commit) — noted as a candidate guard: rebaseline/report-force writes
+onto tracked snapshots deserve a refusal or an explicit archive step.
+Post-merge full battery kicked off async; altcls resumed after the
+window.
