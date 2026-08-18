@@ -75,10 +75,24 @@ gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 # pre-M2.8 unfactored construction. -O0 on purpose: this build is never
 # measured, only diffed, and -O0 keeps it under half a second. Warnings stay on
 # so #ifdef rot is loud rather than silent.
+#
+# [M5-SEAM] The source list is FOUND, not globbed. It was `src/*/*.c`, which
+# is a hand-maintained assumption about the tree's DEPTH: `src/gen/enc/`
+# (the encoding backends) is two levels down and silently fell out of the
+# reference build the day it landed. The failure was loud here (an undefined
+# reference), but the same shape one directory over would be a reference
+# compiler quietly built from a different source set than the subject — which
+# is the differential going vacuous, this repo's recorded check-design defect.
 REF="$WORKDIR/pcrec_notrie"
+REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | sort)"
+if [ -z "$REF_SRCS" ]; then
+    echo "FAIL: found no compiler sources under $ROOT_DIR/src for the reference build" >&2
+    exit 1
+fi
+# shellcheck disable=SC2086
 if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         -DPCREC_NO_TRIE $SANFLAGS \
-        -o "$REF" "$ROOT_DIR"/cli/main.c "$ROOT_DIR"/src/*/*.c \
+        -o "$REF" "$ROOT_DIR"/cli/main.c $REF_SRCS \
         2>"$WORKDIR/refbuild.log"; then
     echo "FAIL: could not build the -DPCREC_NO_TRIE reference compiler:" >&2
     cat "$WORKDIR/refbuild.log" >&2

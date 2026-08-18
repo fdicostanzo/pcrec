@@ -2223,7 +2223,7 @@ the gap visible and the testing.md text carries the caveat.
 Repro: compile any program that mallocs and exits without freeing;
 run under the battery's ASAN_OPTIONS; observe exit 0, no report.
 
-## K27 — emitted search body passes NULL to memchr on the contract's own legal (s=NULL, n=0) edge — status: deferred
+## K27 — FIXED 2026-08-18 ([M5-SEAM], the emitter-touching wave this was scheduled for; found 2026-08-18 by the [M4.7g]/R29 fix lane's UBSan probe)
 
 Found 2026-08-18 by the [M4.7g]/R29 fix lane's UBSan probe (the C7
 subject-contract verification). docs/spec/match_api.md §3.1 states —
@@ -2252,3 +2252,38 @@ spelling menu touches the same emission site, or M4-CALLOUTS/M6,
 whichever lands first). Repro: compile any pattern, gcc
 -fsanitize=undefined the artifact with a driver calling
 <prefix>_search(NULL, 0, 0, NULL).
+
+**Fix landed 2026-08-18 ([M5-SEAM]).** `emit_unanchored`
+(src/gen/emit_dfa.c) emits `if (pos >= n) return 0;` immediately above the
+single-escape-byte `memchr` line, on the NON-EOL arm only. Two things about
+that shape are worth stating rather than inferring:
+
+- **It changes no answer.** `memchr` over a zero-length range returns NULL,
+  and the very next emitted line is `if (!q) return 0;` — so the guard is
+  exactly the branch the unguarded form reached one line later. This is a
+  UB removal, not a behaviour change, and the whole-corpus output diff is
+  one added line per affected artifact.
+- **The EOL arm needed no guard and did not get one.** Its own
+  `if (pos + 1 < n)` bound already implies `n > 0`, hence (by the §3.1
+  subject contract) `s != NULL`. Adding a redundant guard there would have
+  made the two arms look like they rest on the same argument when only one
+  of them does.
+
+**Pinned by** `tests/codegen/run_codegen_tests.sh`'s `[K27]` check, which
+compiles a memchr-prefilter artifact, links a driver calling
+`<prefix>_search(NULL, 0, 0, NULL)` and `<prefix>_next_pos(NULL, 0, 0)`,
+RUNS it, and requires `0 1`. Placement is the point: that script is already
+in both the `make ubsan` and `make asan` suite lists, so under the
+sanitizer battery the run is instrumented and the UB is a hard failure,
+while under plain `make test` the same check pins the answers. That is
+precisely the gap this entry recorded — the battery was green because the
+corpus never passes `s == NULL`, so the instrumented axis had nothing to
+see. The check also fails loudly if its fixture stops carrying a memchr
+prefilter at all, rather than passing vacuously.
+
+**Both directions measured at landing.** Guarded artifact under
+`gcc -fsanitize=undefined -fno-sanitize-recover=all`: clean, `search` 0 and
+`next_pos` 1. The SAME artifact with the guard line stripped back out:
+`runtime error: null pointer passed as argument 1, which is declared to
+never be null` at the memchr line — so the probe is watching, not merely
+silent.

@@ -70,7 +70,8 @@
  * (PCRE2_UCP) — `(?a)` restricts `\w`/`\d` from Unicode categories back to
  * ASCII, and `(?r)` restricts caseless folding across the ASCII/non-ASCII
  * boundary (its very name in the registry's own note). pcrec's CLI exposes
- * `-e ascii|utf8` and no UCP-equivalent flag; UTF8 encoding alone (multibyte
+ * `-e byte|utf8` (spelled `-e ascii|utf8` until [M5-SEAM]/D58) and no
+ * UCP-equivalent flag; UTF8 encoding alone (multibyte
  * DECODING) does not imply Unicode CATEGORY tables. So there is currently no
  * pcrec surface a comparison for these two letters could even be pointed
  * at — family G measures the libpcre2 fact and floors the population, so a

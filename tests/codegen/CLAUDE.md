@@ -493,3 +493,84 @@ from bare literals the same way. This project's `-DPCREC_NO_TRIE` /
 single flag disables "everything upstream of the trie" — so a future
 pass with equivalent reach needs the same widened-class treatment applied
 here, not a new reference-build flag.
+
+## [M5-SEAM] two additions: the residual/hot-path barrier, and K27's probe
+
+**`[M5-SEAM/DD-12(7)]` — no engine body calls an encoding residual entry.**
+D58 built the DD-12 residual seam: an artifact embeds exactly one
+encoding's residual block, and `<prefix>_next_pos` is its first entry.
+DD-12 (7) rules that the per-encoding header is the RIGHT seam for the
+runtime-identity residue and the WRONG seam for the hot path, "ENFORCED BY
+CHECK, NOT CONVENTION" — and this file is where such a check belongs for
+the reason its own header states: **no correctness test can see it.** Under
+the byte backend `<prefix>_next_pos` IS `pos + 1`, so an engine that
+advanced through it would match identically, the whole corpus and both
+oracles would stay green, and the artifact would have acquired exactly the
+cross-seam call that makes the hot path's shape and speed depend on the
+encoding the moment a second backend lands.
+
+Two design points worth keeping:
+
+- **The population is DERIVED, not typed.** The residual entry NAMES are
+  read out of the artifact (each residual declaration is preceded by the
+  backend's own `ENCODING RESIDUAL entry` comment), so a backend adding a
+  second entry is covered the day it lands rather than the day someone
+  remembers to extend a list here. Finding NO residual entry at all is a
+  FAILURE — the empty-population shape this file's charter is about.
+- **The check reads FUNCTION BODIES, not the whole file.** A residual name
+  legitimately appears in comments, in its own declaration, and inside its
+  own definition; anywhere else inside a file-scope function body is the
+  violation. Six emission shapes (DFA memchr-prefilter, DFA bitmap-
+  prefilter, anchored, VM, `--engine=vm`, `--emit-main`) in both artifact
+  forms.
+
+Sabotage: `tests/mech/sabotages/S68_residual_in_hot_loop.sh` routes the
+emitted bitmap prefilter's skip loop through `<prefix>_next_pos` — the edit
+a developer holding a fresh "advance one character" helper would actually
+make. DETECTED at `codegen 3fail/41pass` with `corpus 0fail/56pass`; the
+corpus staying green is the finding, not a footnote to it.
+
+**`[K27]` — the contract's legal `(s == NULL, n == 0)` subject, RUN.**
+docs/spec/match_api.md §3.1 admits a NULL subject when `n == 0`, and the
+emitted `memchr` prefilter used to receive it: technical UB in EMITTED code
+(docs/dev/known_issues.md K27, closed by this lane). This check compiles a
+memchr-prefilter artifact, links a driver calling
+`<prefix>_search(NULL, 0, 0, NULL)` and `<prefix>_next_pos(NULL, 0, 0)`,
+and RUNS it, requiring `0 1`.
+
+Placement is the whole point and is worth understanding before moving it:
+this script is already on the `make ubsan` and `make asan` suite lists, so
+the run is instrumented there (with `-fno-sanitize-recover`, a first-hit
+abort) and pins the answers on the plain axis. K27 was invisible to the
+battery for a structural reason — the sanitizers' generated-code axis runs
+the CORPUS, and no corpus case passes `s == NULL`, so the instrumented axis
+had nothing to see. A check that only compiled the artifact would reproduce
+that hole exactly. It also fails loudly if its fixture stops carrying a
+memchr prefilter, rather than passing vacuously.
+
+**Two measured facts about the `[M5-SEAM/DD-12(7)]` extractor**, both worth
+keeping because a body extractor that silently matched nothing would make
+this check vacuous exactly like the OS-0b scoping hazard this file already
+documents:
+
+- It reaches the VM's own body, not only the DFA's. Verified by planting
+  `(void)<prefix>_next_pos(ctx->subject, ctx->len, ctx->pos);` immediately
+  inside `<prefix>_match_impl` in an emitted VM artifact: reported.
+- `main` is ALLOWLISTED. The `--emit-main` `main()` is a CALLER, not an
+  engine — a demo `main()` doing find-all through `<prefix>_next_pos` is
+  the documented caller protocol (docs/spec/match_api.md §3.1), not a
+  derailment. It does not call it today; the entry exists so a later
+  `--emit-main` that does is not misreported.
+
+**The `[M4.4/D44/A-2]` sibling** added in the same lane asserts the ABI
+block's PROPERTY (byte-identical across four prefixes of different lengths
+and shapes) rather than only its consequence (the cross-prefix one-TU
+compile above, which a block merely free of prefix-dependent content would
+also satisfy). Its control is the whole file, which must DIFFER across
+prefixes — otherwise the extractor is comparing two empty strings, or
+`--prefix` is not reaching the emitted text at all. Since [M5-SEAM] the
+block also carries a pointer to the residual entries, and that paragraph
+has to stay independent of the ENCODING axis as well as the prefix one: the
+block is emitted once per file under a prefix-independent guard, so two
+artifacts compiled for different encodings into one TU share it and only
+the first copy survives.

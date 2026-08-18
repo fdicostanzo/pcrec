@@ -4821,6 +4821,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         g.matchcapsfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "", v.p);
 
+    pcrec_emit_residual(cx);
+
     pcrec_emit_info(cx, &g, 2, job->fit.why,
                     has_budget ? budget : -1, work_budget, bt_frames, ceiling);
 

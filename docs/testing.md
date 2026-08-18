@@ -748,6 +748,7 @@ at evaluation points (checkpoint review, merge, the opt-in pre-push gate).
 | `src/core/*` (`compile.c`, `arena.c`, `sb.c`) | all of the above, plus `test-thread` | `compile.c` is `pcrec_compile()`'s entry point and nearly every suite goes through it; `test-thread`'s TS-3 half specifically exercises concurrent `pcrec_compile()` calls, which only a change here would plausibly break |
 | `cli/main.c` | `test-cli`; also `test-reject`/`test-registry` if the change touches how errors or `--list-syntax` are surfaced | cli/'s own suite is the CLI-surface test; the other two invoke `build/pcrec` as a subprocess and would show a broken diagnostic path |
 | `lib/pcrec.h` | `test-cli` (the library-API smoke test), `test-thread` (both TS-2 and TS-3 call the public API directly) | |
+| `src/gen/enc/*` (the encoding backends), `pcrec_options.encoding`, the emitted residual entries | `test-encseam`, `test-codegen`, `test-cli` | encseam RUNS docs/spec/match_api.md §3.1's find-all loop through `<prefix>_next_pos` against a python3 `re` oracle, on both engines — it is the only suite that runs a find-all loop at all; codegen carries the DD-12 (7) structural check that no engine body calls a residual entry, which no behaviour test can see (under the byte backend the residual is the identity, so a hot path routed through it matches identically); cli pins the `-e`/`--encoding=` surface and the utf8 refusal |
 | `tests/mech/*` (sabotage definitions) | `make mech` (not a `make test` section — its own top-level target, ~6 minutes, run manually per its own CLAUDE.md when a sabotage table's figures are in doubt) | |
 
 ### `make smoke`
@@ -1540,6 +1541,87 @@ Measured (table above), the ruling:
 - `make asan` red BLOCKS a merge the way a red `make test` does; findings
   land in the inventory above with a triage before any fix (the
   findings-discipline that produced F1's clean arc).
+
+## The encoding seam's checks ([M5-SEAM], 2026-08-18)
+
+D58 built the DD-12 residual seam ahead of M6: an artifact embeds exactly
+one encoding's residual block, chosen per compile call, and the first
+residual entry is `<prefix>_next_pos`. Two new check classes came with it,
+plus one rider, and each covers something no existing suite could.
+
+**`tests/encseam/` (`make test-encseam`) — the find-all PROTOCOL, run.**
+The `.rxt` corpus checks what a pattern MATCHES, one search at a time; it
+never runs a find-all LOOP, so `docs/spec/match_api.md` §3.1's protocol —
+the one piece of the contract a caller writes themselves — was documented
+and measured but never pinned. This suite compiles that loop
+(`findall_driver.c`, a transcription of the spec's own code) against real
+artifacts and runs it over `findall_cases.txt`, on BOTH engines (each
+pattern compiled captures-on and `--no-captures`).
+
+Its oracle is `python3 re`, and it is TWO-ANSWERED, which is the part worth
+understanding before adding a case. `findall_oracle.py` reports both what
+`re.finditer` says and what §3.1's protocol says when driven by
+`re.search`, because those differ for an empty-PREFERRING pattern: PCRE2 and
+python retry an empty match position under "empty match not permitted here"
+(`PCRE2_NOTEMPTY_ATSTART`) and pcrec's entry points cannot express that
+retry. So pcrec must equal the PROTOCOL answer exactly, and each case's
+declared class — `exact` or `lossy` against `finditer` — is checked in BOTH
+directions: an `exact` case that starts diverging fails, a `lossy` case that
+stops diverging fails, and a `lossy` case whose spans are not a strict
+SUBSET of `finditer`'s fails. That last clause is the one that matters:
+"differs somehow" would pass a real miscompile. What the oracle shares with
+the artifact is the LOOP RULE, which is the spec text under verification;
+every span in it comes from python's own independent engine.
+
+Non-vacuity was measured by sabotaging the driver's advance
+(`fa_next_pos(...)` -> `caps[0][0] + 2`): 26 failures, 0 passes.
+
+**`tests/codegen/run_codegen_tests.sh`'s `[M5-SEAM/DD-12(7)]` check — no
+engine body calls a residual entry.** DD-12 (7) rules that the per-encoding
+header is the right seam for the runtime-identity RESIDUE and the wrong one
+for the HOT PATH, "ENFORCED BY CHECK, NOT CONVENTION". A behaviour test
+structurally cannot do it: under the byte backend `<prefix>_next_pos` IS
+`pos + 1`, so an engine that advanced through it would match identically and
+every oracle in the tree would stay green while the artifact acquired
+exactly the cross-seam call the architecture forbids. The check reads the
+emitted engine bodies across six emission shapes in both artifact forms
+(split and self-contained). Its POPULATION IS DERIVED, not typed: the
+residual entry names are extracted from the artifact itself (each residual
+declaration is preceded by the backend's own `ENCODING RESIDUAL entry`
+comment), so a backend that adds a second entry is covered the day it lands
+— and finding NO residual entry is a hard failure, not a pass.
+
+Sabotage: `tests/mech/sabotages/S68_residual_in_hot_loop.sh` makes the
+emitted bitmap prefilter's skip loop advance through `<prefix>_next_pos` —
+the shape a developer holding a fresh "advance one character" helper would
+actually write. Measured DETECTED: `codegen 3fail/41pass`, `corpus
+0fail/56pass`. The corpus staying green IS the finding.
+
+**The `[K27]` rider — the legal `(s == NULL, n == 0)` subject, run under
+the sanitizers.** `docs/spec/match_api.md` §3.1 admits a NULL subject when
+`n == 0`, and the emitted `memchr` prefilter used to receive it (technical
+UB in EMITTED code, which a user compiling a generated matcher under their
+own `-fsanitize=undefined` sees pcrec's name on). The battery was green for
+a structural reason worth remembering: its generated-code axis runs the
+CORPUS, and no corpus case passes `s == NULL`, so the instrumented axis had
+nothing to see. The check therefore compiles a memchr-prefilter artifact,
+links a driver that calls `<prefix>_search(NULL, 0, 0, NULL)` and
+`<prefix>_next_pos(NULL, 0, 0)`, and RUNS it — in
+`run_codegen_tests.sh`, which is already in both the `make ubsan` and
+`make asan` suite lists, so the run is instrumented on those axes and pins
+the answers on the plain one. Both directions measured at landing: clean
+under UBSan with the guard, and `null pointer passed as argument 1` with the
+guard stripped back out.
+
+**One infrastructure note that cost two suite failures.** Adding
+`src/gen/enc/` put compiler sources TWO directory levels down for the first
+time, and two suites assembled their own build of the compiler from a
+one-level glob (`src/*/*.c` in `tests/codegen/run_trie_identity.sh`, a
+hand-listed `for d in core parse ir opt gen` in
+`tests/thread/run_thread_tests.sh`). Both now `find` the sources instead.
+The failures were loud here (undefined references), but the shape is the
+silent one: a differential's reference build, or a TSan library, quietly
+assembled from a different source set than the subject.
 
 ## Capture-group expectations ([M4.5a], 2026-08-14)
 

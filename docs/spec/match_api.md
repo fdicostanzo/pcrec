@@ -39,6 +39,28 @@ shipped comments — the emitted `rx_matchfn` ABI block and
 `lib/pcrec.h`'s generated-searcher comment — were fixed in the same
 pass, so §2's quotation is now the real text.
 
+**[M5-SEAM] revision (2026-08-18, D58 — the encoding seam prelude).** The
+document gains §3.1.1, the `<prefix>_next_pos` encoding residual, and §3.1's
+find-all loop now advances through it. What this pass re-measured, all
+against artifacts emitted by the build at this commit: §3.1's loop compiled
+against real artifacts and run on 26 (pattern, subject) pairs x 2 engine
+arms = 52 runs against `python3 re.finditer`, with the lossy class checked
+as a strict SUBSET in both directions (the measurement is now
+`tests/encseam/`, a suite in `make test`, rather than a one-off transcript);
+§3.1.1's two code blocks quoted verbatim from a fresh `-p rx` build of
+`'a(b|c)+d'`, no elisions; §8.0's example recompiled `-Wall -Wextra -Werror`
+against `lib/pcrec.h` and `libpcrec.a`, run, and its `matcher.c` compiled in
+turn, plus every field of a `pcrec_default_options()` struct printed to
+re-check item 1's claim; §8.1's D56 refusal re-measured at the `a{9795}` /
+`a{9796}` boundary (its wording changed — the old text promised a milestone
+that had already shipped) together with the escape it now names; §8.2's
+encoding paragraphs measured at the refusal boundary for `utf8` and for an
+out-of-range value. Two SURFACE changes ride this revision and are recorded
+where they happen rather than folded in silently: `PCREC_ENC_ASCII` is
+renamed `PCREC_ENC_BYTE` (§8.2), and §3.1's byte-vs-character caveat is
+RESOLVED rather than deleted — §3.1.1 keeps the old caveat's text and says
+what discharged it.
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -49,7 +71,8 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
 
 1. **Per-artifact symbols**, scoped by the caller's `pcrec_options.prefix`
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
-   `<prefix>_match_caps`, `<prefix>_info`, and the `<PREFIX>_*` macro
+   `<prefix>_match_caps`, `<prefix>_info`, `<prefix>_next_pos` (§3.1.1),
+   and the `<PREFIX>_*` macro
    family (`RX_NCAPS`, `RX_UNSET`, `RX_ERR_*`, the D46 observability
    macros in §6.3). A pattern compiled with `-p foo` gets
    `foo_search`, `FOO_NCAPS`, etc. — verified by compiling the same
@@ -197,8 +220,10 @@ touches nothing pcrec emits.
 
 ## 3. Entry points
 
-Every generated artifact exports, unconditionally, four `<prefix>`-scoped
-symbols.
+Every generated artifact exports, unconditionally, five `<prefix>`-scoped
+symbols: the four below, plus the encoding residual `<prefix>_next_pos`
+that §3.1.1 specifies (a fifth entry since [M5-SEAM], and the one place an
+artifact's byte-vs-character distinction lives).
 
 ### 3.1 `<prefix>_search` — the search-loop entry
 
@@ -261,26 +286,35 @@ while (p <= n) {
     report(caps[0][0], caps[0][1]);
     p = (caps[0][1] > caps[0][0])            /* non-empty: resume at its end */
           ? (size_t)caps[0][1]
-          : (size_t)caps[0][0] + 1;          /* EMPTY: advance one byte */
+          : <prefix>_next_pos(s, n, (size_t)caps[0][0]);   /* EMPTY: next char */
 }
 ```
 
 **The empty-match advance rule**: a zero-length match is reported like
-any other, and then the next search starts one byte past its start. Note
-that the advance is off the match's own START (`caps[0][0]`), not off
-the loop variable — an empty match can be found at a position later than
-the one searched from. The loop terminates because `p` moves strictly
-forward every iteration and `p > n` ends it.
+any other, and then the next search starts at the next CHARACTER boundary
+past its start. Note that the advance is off the match's own START
+(`caps[0][0]`), not off the loop variable — an empty match can be found at
+a position later than the one searched from. The loop terminates because
+`p` moves strictly forward every iteration (§3.1.1's contract makes
+`<prefix>_next_pos` return a position strictly greater than the one it was
+given) and `p > n` ends it.
 
-That loop, coded exactly as written above, was run against
-`python3 re.finditer` on twelve (pattern, subject) pairs and produced
-identical spans on all twelve, including the three that motivate the
-rule: `a*` over `"bbb"` → `(0,0) (1,1) (2,2) (3,3)`; `x?y` over `"yy"` →
+That loop, coded exactly as written above, was compiled against real
+artifacts and run against `python3 re.finditer` on twenty-six
+(pattern, subject) pairs, on BOTH engines — each pattern compiled twice,
+captures-on and `--no-captures`, for 52 runs. Twenty-two agree with
+`re.finditer` span for span, including the three that motivate the rule:
+`a*` over `"bbb"` → `(0,0) (1,1) (2,2) (3,3)`; `x?y` over `"yy"` →
 `(0,1) (1,2)`; and alternations mixing empty and non-empty branches —
 `a|` over `"bab"` → `(0,0) (1,2) (2,2) (3,3)` and `a|b*` over `"cbbac"` →
 `(0,0) (1,3) (3,4) (4,4) (5,5)`. It also agrees on `a*`/`"aaa"`,
 `a?`/`"aba"`, `b*`/`"abbbab"`, `(a|)`/`"xax"`, `a(b|)c`/`"acabc"`,
-`(ab)*`/`"ababx"`, `a{0,2}`/`"aaaa"` and `[a-c]*`/`"xabcx"`.
+`(ab)*`/`"ababx"`, `a{0,2}`/`"aaaa"`, `[a-c]*`/`"xabcx"`, and on the ten
+pairs added with this revision: `[0-9]+`/`"a12b345"`, `a{2,}`/`"aaaa"`,
+`(?:ab|a)`/`"aab"`, `(a*)*`/`"aab"`, `.`/`"abc"`, `ab$`/`"xabab"`,
+`^a`/`"aa"`, `c*` and `x` over the EMPTY subject, and `a`/`"a"`. The whole
+set is `tests/encseam/findall_cases.txt` and it runs in `make test`, so
+this measurement is a check now rather than a transcript.
 
 **Where this loop is LOSSY, stated honestly.** It reports fewer matches
 than PCRE2 and python `re` do for a pattern that *prefers* the empty
@@ -291,25 +325,121 @@ on finding an empty match at `p`, RETRY at `p` with an
 moving on. **pcrec's entry points cannot express that retry** — there is
 no "must not match empty here" mode on any of them — so the advance rule
 above is the whole of what a pcrec consumer can do. Measured
-divergences, all of this one class: `|a` over `"aaa"` — this loop
-reports 4 spans `(0,0) (1,1) (2,2) (3,3)` where `re.finditer` reports 7,
-adding `(0,1) (1,2) (2,3)`; likewise `a*?` over `"aaa"` (4 vs 7) and
-`a??` over `"aba"` (4 vs 6). Where the pattern's own preference picks a
-non-empty match wherever one starts — all twelve agreeing cases above,
-including every greedy quantifier among them — there is no divergence.
-
-**Byte-vs-character caveat.** `+ 1` advances one BYTE. Under the ASCII
-encoding (`PCREC_ENC_ASCII`, the only one implemented today) a byte is a
-character and the rule is exact. When module `utf8` lands at M5 this
-becomes the wrong advance for a multi-byte character, and M5 owns
-sharpening it; a consumer writing UTF-8-aware find-all today must
-advance to the next character boundary itself.
+divergences, all of this one class, and all of them OMISSIONS — the
+protocol's spans are always a strict SUBSET of `re.finditer`'s, which the
+suite checks rather than accepting any difference at all: `|a` over
+`"aaa"` — this loop reports 4 spans `(0,0) (1,1) (2,2) (3,3)` where
+`re.finditer` reports 7, adding `(0,1) (1,2) (2,3)`; likewise `a*?` over
+`"aaa"` (4 vs 7), `a??` over `"aba"` (4 vs 6) and `b*?` over `"abba"`
+(5 vs 7). Where the pattern's own preference picks a non-empty match
+wherever one starts — all twenty-two agreeing cases above, including
+every greedy quantifier among them — there is no divergence.
 
 Verified against the shipped emitter (`src/gen/emit_dfa.c`) and a fresh
 artifact: the DFA matcher writes `caps[0][0]`/`caps[0][1]` only under
 `if (caps)`, guarded exactly as documented, in the unanchored search
 body. The `--emit-main` `main()` carries no such guard and needs none —
 it passes a real array, never `NULL`.
+
+#### 3.1.1 `<prefix>_next_pos` — the encoding residual
+
+The loop's advance is not `+ 1`. It goes through a fifth exported entry,
+which every artifact carries:
+
+```c
+size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos);
+```
+
+**This entry is the one place an artifact's byte-vs-character distinction
+lives** ([M5-SEAM], `docs/dev/decisions.md` D58; the architecture is
+`docs/dev/plan.md`'s `[DD-12]` row). An artifact embeds exactly one
+encoding's residual block, chosen per compile call by
+`pcrec_options.encoding` (§8.2) — never process- or file-globally, so two
+differently-prefixed artifacts compiled for different encodings compose in
+one translation unit exactly as §1 says they do.
+
+The contract, quoted verbatim from a freshly emitted artifact (the
+declaration and its own comment in a `-p rx` build of `'a(b|c)+d'`, no
+elisions):
+
+```c
+/* rx_next_pos -- the ENCODING RESIDUAL entry (pcrec DD-12/D58).
+ *
+ * Returns the smallest position STRICTLY GREATER than pos that is a
+ * CHARACTER BOUNDARY of this artifact's encoding, counting every position
+ * >= n as a boundary. So the result is in (pos, n] whenever pos < n, and is
+ * pos + 1 whenever pos >= n -- which is what lets a find-all loop advance
+ * past a zero-length match and still terminate (see pcrec's
+ * docs/spec/match_api.md S3.1, which writes that loop out).
+ *
+ * This entry is the ONE place an artifact's byte-vs-character distinction
+ * lives. It reads s only at offsets in [pos, n), so the (s == NULL, n == 0)
+ * subject rx_search accepts is legal here too, and it is never called from
+ * this artifact's own engine: it is caller-facing residue, not hot-path
+ * code.
+ *
+ * THIS artifact was compiled for the `byte` encoding, where one byte is one
+ * character. An artifact compiled for another encoding exports this same
+ * entry with that encoding's body and no caller loop changes. */
+size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos);
+```
+
+Four consequences a caller can rely on:
+
+- **It is an ordinary extern function**, declared in the emitted header
+  (or, in a self-contained artifact, in the `.c` beside the other four
+  entries' declarations) and defined in the `.c`. Not a macro, not
+  `static inline`: it is a caller-facing entry point, and it is declared
+  where the other entry points are declared.
+- **It never reads outside `[pos, n)`**, so the `(s == NULL, n == 0)`
+  subject §3.1 already admits is legal here too. Under the byte encoding
+  it does not read `s` at all.
+- **`pos > n` is not an error** — the result is simply `pos + 1`. That is
+  what lets the loop above terminate with no special case.
+- **The result is always strictly greater than `pos`.**
+
+**Under the byte encoding — the only one implemented today — the body IS
+`pos + 1`**, and this is measurement, not intention. The whole definition,
+verbatim from the same artifact:
+
+```c
+/* byte encoding: one byte is one character, so the next boundary after pos
+ * is pos + 1 and the subject is never read. */
+size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos)
+{
+    (void)s; (void)n;
+    return pos + 1;
+}
+```
+
+**This resolves a caveat this section carried until [M5-SEAM], and the
+history is worth keeping rather than deleting.** The loop's advance used
+to be a literal `+ 1`, and this section warned that "`+ 1` advances one
+BYTE … when module `utf8` lands at M5 this becomes the wrong advance for a
+multi-byte character, and M5 owns sharpening it; a consumer writing
+UTF-8-aware find-all today must advance to the next character boundary
+itself." That obligation is discharged, and discharged in the direction
+that costs the caller nothing: **the loop above is already final.** M5's
+UTF-8 backend supplies a boundary-aware body for this same entry under
+this same signature, and no caller's find-all loop changes a character —
+which is the entire point of the residual seam. What a consumer must NOT
+do is inline the `+ 1` back: that is the one edit that would make a
+byte-compiled caller wrong against a UTF-8-compiled artifact. (The
+caveat's other half — "the ASCII encoding, `PCREC_ENC_ASCII`" — is also
+gone by rename: the constant is `PCREC_ENC_BYTE` and the CLI value is
+`byte`, since the semantics were always "every byte is a character",
+which is not what ASCII says. §8.2 records the rename.)
+
+The complementary half of the seam is a NEGATIVE promise, and it is
+enforced rather than asserted: **a residual entry is never called from the
+artifact's own engine.** DD-12 (7) forbids the hot path depending on the
+encoding; `tests/codegen/run_codegen_tests.sh` reads every emitted engine
+body for a residual reference across six emission shapes in both artifact
+forms; and the check is sabotage-validated
+(`tests/mech/sabotages/S68_residual_in_hot_loop.sh` makes the emitted
+bitmap prefilter's skip loop advance through `<prefix>_next_pos` — the
+whole `.rxt` corpus stays green, because under this backend the two are
+the same value, and only the structural check sees it).
 
 ### 3.2 `<prefix>_match` — the unconditional, anchored match-here entry
 
@@ -1016,8 +1146,11 @@ Four things in it are contract, not style:
    `err.msg == "invalid symbol prefix (must be a C identifier, <= 60
    chars)"` for a pattern that compiles fine after
    `pcrec_default_options()`. It sets `prefix = "rx"`,
-   `encoding = PCREC_ENC_ASCII` and `header_name = NULL`, and zeroes
+   `encoding = PCREC_ENC_BYTE` and `header_name = NULL`, and zeroes
    everything else; override fields after calling it, never instead.
+   (Re-measured for this revision by printing every field of a
+   default-initialized struct: `prefix=rx`, `encoding=0` — which is
+   `PCREC_ENC_BYTE` — `header_name=NULL`, `flags=0`, `engine=0`.)
 2. **`pcrec_output` owns two heap buffers and the caller frees them.**
 
    ```c
@@ -1056,20 +1189,25 @@ cannot behave like a program:
   that is a distinct failure class from a syntax error.** It arrives
   through the same `-1` and the same `pcrec_error`, so a caller
   distinguishes them by reading `err.msg`, not by the return value.
-  Measured at the D56 boundary: `a{9795}` compiles, `a{9796}` returns
-  `-1` with `err.msg == "pattern too complex for the DFA engine (subset
-  construction exceeds 48000000 state-set elements; VM engine arrives in
-  M4)"`. The pattern is perfectly legal PCRE; what failed is that
-  compiling it would cost more than pcrec is willing to spend. A caller
-  that reports every `-1` as "bad regex syntax" to its user will be
-  wrong here.
+  Measured at the D56 boundary (re-measured for this revision): `a{9795}`
+  compiles, `a{9796}` returns `-1` with `err.msg == "pattern too complex
+  for the DFA engine (subset construction exceeds 48000000 state-set
+  elements; try --engine=vm)"`. The pattern is perfectly legal PCRE; what
+  failed is that compiling it would cost more than pcrec is willing to
+  spend. A caller that reports every `-1` as "bad regex syntax" to its
+  user will be wrong here. **The escape the diagnostic names is real and
+  was measured, not assumed**: the same `a{9796}` compiles cleanly under
+  `--engine=vm`, because that mode never builds the DFA whose cap this
+  is. (Until [M5-SEAM] this message ended "VM engine arrives in M4" — a
+  promise about a milestone that had already shipped, which sent a reader
+  looking for a future release instead of at a flag they already have.)
 
 ### 8.2 The option and error structures
 
 ```c
 typedef struct {
     const char *prefix;      /* C identifier prefix; default "rx" */
-    int         encoding;    /* PCREC_ENC_* */
+    int         encoding;    /* PCREC_ENC_* ; PER-COMPILE-CALL, see below */
     uint64_t    flags;       /* PCREC_CASELESS | PCREC_EMIT_MAIN |
                                  PCREC_NO_CAPTURES | ... (see lib/pcrec.h
                                  for the full, growing bit catalogue) */
@@ -1083,6 +1221,30 @@ typedef struct {
                                     same name, which uses -1 for unbounded */
 } pcrec_options;
 ```
+
+**`encoding` is a PER-COMPILE-CALL scalar** ([M5-SEAM], D58): one encoding
+per `pcrec_compile()` call, carried in this field and nowhere else. There is
+no process-global, no file-global and no environment variable, so mixing
+encodings inside one compilation unit or one binary is supported by
+construction — each artifact is self-contained, carries its own prefix, and
+embeds exactly one encoding's residual block (§3.1.1). The CLI spells it
+`-e NAME` or `--encoding=NAME`.
+
+`PCREC_ENC_BYTE` (0, the default) is the only encoding implemented; the
+value is what `rx_info.encoding` reports (§6). `PCREC_ENC_UTF8` (1) is a
+recognised NAME with no backend: `pcrec_compile()` refuses it with
+`err.msg == "encoding 'utf8' arrives with milestone M5 (an engine axis, not
+a module: no --features name enables it)"`, and any other value is refused
+with `"unknown encoding (want byte, utf8)"`. Both refusals are ordinary
+`-1`-with-diagnostic returns and write no C.
+
+**`PCREC_ENC_BYTE` was spelled `PCREC_ENC_ASCII` before [M5-SEAM]**, and
+`-e ascii` was the CLI value. It is a RENAME, not an alias — `-e ascii` is
+now an unknown encoding — taken under §9's pre-v1 posture as one announced
+boundary. The reason is that the old name asserted something false about
+the semantics: this encoding treats every byte as a character, `0x80`-and-up
+included, with no case and no meaning attached, which is precisely what
+"ASCII" does not say. D58's own ruling text names the encoding `byte`.
 
 Every boolean option (`PCREC_CASELESS`, `PCREC_EMIT_MAIN`,
 `PCREC_NO_CAPTURES`, and the strategy-denial/force flags in `lib/

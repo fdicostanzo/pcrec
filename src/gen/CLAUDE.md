@@ -502,7 +502,32 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
 ## Conventions
 
-The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this). Future encoding backends (UTF-8) coexist here as separate files, the way emit_vm.c does.
+The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this).
+
+**[M5-SEAM] (D58, 2026-08-18) THE ENCODING SEAM lives in `enc/`, and this
+file knows almost nothing about it.** The line that used to stand here
+("future encoding backends (UTF-8) coexist here as separate files, the way
+emit_vm.c does") had the shape right and the location wrong: a backend is
+not a second emitter. DD-12 (7) forbids encoding conditionals in the
+compiler, the emitter and the artifact alike, so what a backend supplies is
+the per-encoding RESIDUAL TEXT an artifact embeds, and what this file
+supplies is two functions that look the backend up and copy its text:
+`emit_residual_decls` (called from `pcrec_emit_prologue`, so the
+declarations land in the `.h` of a split artifact and the `.c` of a
+self-contained one, in the same place the four entry-point declarations go)
+and `emit_residual_defs` (exported as `pcrec_emit_residual`, called by BOTH
+emitters, so the definitions land in the `.c` once). There is no encoding
+test in either, and adding one is a design stop rather than a patch. The
+first residual entry is `<prefix>_next_pos` (docs/spec/match_api.md §3.1.1).
+
+`emit_rx_abi_types` gained a paragraph POINTING at the residual entries,
+and that paragraph must stay independent of BOTH axes the block sits
+across: the block is emitted once per file under a prefix-independent
+guard, so `<prefix>` is a placeholder exactly as `<PREFIX>` already is, and
+the text must name no particular ENCODING either — two artifacts compiled
+for different encodings into one TU share this block and only the first
+copy survives the guard. What is per-encoding is the residual's BODY, which
+is not in that block.
 
 Emitted text is ASCII-only, including inside generated comments: the artifact
 is source someone else's toolchain compiles, and this project already

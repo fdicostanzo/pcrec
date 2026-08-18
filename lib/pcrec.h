@@ -7,9 +7,23 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* [M5-SEAM] (D58, 2026-08-18) THE ENCODING NAMESPACE. Exactly one encoding
+ * per COMPILE CALL — a `pcrec_options` field, never process- or file-global,
+ * so mixed encodings in one compilation unit or binary are supported by
+ * construction (self-contained artifacts, distinct prefixes, each embedding
+ * exactly one encoding's residual block; DD-12 (8)).
+ *
+ * `PCREC_ENC_BYTE` was spelled `PCREC_ENC_ASCII` before [M5-SEAM], and the
+ * CLI spelled it `-e ascii`. RENAMED, not aliased (pre-v1, docs/spec/
+ * match_api.md §9's announced-boundary form): the semantics were always
+ * "every byte is a character, 8-bit clean" — bytes >= 0x80 are ordinary
+ * bytes with no case and no meaning, which is precisely NOT what "ASCII"
+ * says — and D58 names the encoding `byte` in the ruling text itself. Two
+ * names for one namespace member is [SR-10]'s motivating defect, so there
+ * is no compatibility alias: `-e ascii` is now an unknown encoding. */
 enum {
-    PCREC_ENC_ASCII = 0,   /* byte semantics, 8-bit clean */
-    PCREC_ENC_UTF8  = 1    /* not yet implemented (module 'utf8', M5) */
+    PCREC_ENC_BYTE = 0,   /* byte semantics, 8-bit clean; the default */
+    PCREC_ENC_UTF8 = 1    /* not yet implemented (arrives with milestone M5) */
 };
 
 /* [M4.4] (D43.2/D44.8): pcrec's own boolean options, one bit each in
@@ -345,10 +359,21 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * search loop, no capture output — a length, -1, or a give-up code from
  * the same space as above), `<prefix>_match_caps`
  * (the anchored capture-DELIVERING sibling: same anchoring and same return
- * space, plus a `caps_out` parameter), and
+ * space, plus a `caps_out` parameter),
  * `extern const struct rx_info <prefix>_info` (a static
  * reflection structure: option flags, encoding, pattern text, group counts,
- * selected engine, budgets). The fixed-literal ABI types these entries
+ * selected engine, budgets), and — since [M5-SEAM] (D58) —
+ * `size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos)`,
+ * the ENCODING RESIDUAL: the next CHARACTER boundary strictly after `pos`,
+ * every position >= n counting as a boundary. It is the ONE place an
+ * artifact's byte-vs-character distinction lives, and it is what a find-all
+ * loop advances through after a ZERO-LENGTH match (docs/spec/match_api.md
+ * §3.1 writes that loop out and §3.1.1 states this entry's contract). Under
+ * the byte encoding its body is `pos + 1`; a UTF-8-compiled artifact
+ * supplies a boundary-aware body under this same signature, so a caller's
+ * loop is written once. Do NOT inline the `+ 1` back: that is the one edit
+ * that makes a byte-compiled caller wrong against another encoding's
+ * artifact. The fixed-literal ABI types these entries
  * share (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_renderfn`,
  * `rx_group_entry`, `struct rx_info`) are declared in the generated .c/.h,
  * not here — they are PER-ARTIFACT-EMITTED, not part of pcrec's own library

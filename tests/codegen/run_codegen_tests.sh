@@ -732,6 +732,220 @@ else
     bad "[K24]: pcrec failed to compile '(alpha|beta|gamma|delta|epsilon)' --no-captures for the partial-inlining split check"
 fi
 
+# ---- the ABI-types block is BYTE-IDENTICAL across prefixes ---------------
+# §1 of docs/spec/match_api.md states this as measured, and the D44/A-2 check
+# above tests the CONSEQUENCE (two differently-prefixed headers compile in one
+# TU) rather than the property itself — which a block that merely happened to
+# be free of prefix-dependent CONTENT would also satisfy. This asserts the
+# property directly, so an edit that leaks the prefix (or, since [M5-SEAM],
+# the ENCODING) into the shared block fails here rather than at whatever
+# distance the consequence first shows up.
+#
+# Four prefixes of different lengths and shapes, because a prefix leak that
+# happened to produce equal-length text would survive a two-prefix
+# comparison. The CONTROL is the whole file: it MUST differ across prefixes,
+# or the extractor is returning nothing and this check is comparing two empty
+# strings to each other.
+abi_block() { awk '/^#ifndef PCREC_RX_ABI_H$/,/^#endif \/\* PCREC_RX_ABI_H \*\//' "$1"; }
+abi_md5=""
+abi_ok=1
+abi_files=""
+for pfx in rx foo z_9 verylongprefixname; do
+    if ! "$PCREC" -p "$pfx" -o - -- 'a(b|c)+d' > "$WORKDIR/abi_$pfx.c" 2>/dev/null; then
+        bad "ABI block identity: pcrec failed to compile the fixture under -p $pfx"
+        abi_ok=0
+        continue
+    fi
+    abi_files="$abi_files $WORKDIR/abi_$pfx.c"
+    m="$(abi_block "$WORKDIR/abi_$pfx.c" | md5sum | cut -d' ' -f1)"
+    b="$(abi_block "$WORKDIR/abi_$pfx.c" | wc -l)"
+    if [ "$b" -lt 20 ]; then
+        bad "ABI block identity: the extracted block under -p $pfx is $b lines — the extractor is not finding the guarded block, so any comparison below is vacuous"
+        abi_ok=0
+    elif [ -z "$abi_md5" ]; then
+        abi_md5="$m"
+    elif [ "$m" != "$abi_md5" ]; then
+        bad "ABI block identity: the PCREC_RX_ABI_H block under -p $pfx differs from the -p rx one — something prefix-dependent (or encoding-dependent) leaked into the block every artifact in a TU shares, where only the FIRST copy survives the include guard"
+        abi_ok=0
+    fi
+done
+if [ "$abi_ok" -eq 1 ]; then
+    # the control: whole files across prefixes must NOT be identical
+    if [ "$(cat $abi_files | md5sum | cut -d' ' -f1)" \
+         = "$(cat "$WORKDIR/abi_rx.c" "$WORKDIR/abi_rx.c" "$WORKDIR/abi_rx.c" "$WORKDIR/abi_rx.c" | md5sum | cut -d' ' -f1)" ]; then
+        bad "ABI block identity: the four differently-prefixed WHOLE artifacts are identical too — --prefix is not reaching the emitted text at all, so the block's identity proves nothing"
+    else
+        ok "[M4.4/D44/A-2]: the PCREC_RX_ABI_H block is byte-identical across four prefixes (md5 $abi_md5) while the surrounding artifacts differ"
+    fi
+fi
+
+# ---- [M5-SEAM] RESIDUAL ENTRIES ARE NEVER CALLED FROM THE ENGINE ----------
+# docs/dev/plan.md [DD-12] (7), ruled in as a requirement by Frank: "NO
+# encoding conditionals anywhere ... per-encoding inline-function headers are
+# the WRONG seam for the HOT PATH and the RIGHT seam for the enumerable
+# runtime-identity RESIDUE", ENFORCED BY CHECK, NOT CONVENTION — "a
+# codegen-structural check that no hot-loop label calls into the encoding
+# header (allowlist of named residual sites)". This is that check.
+#
+# WHY IT CANNOT BE A BEHAVIOUR TEST. Under the byte backend a residual entry
+# is the identity (`<prefix>_next_pos` returns `pos + 1`), so an engine that
+# advanced through it would MATCH IDENTICALLY and every oracle in this tree
+# would stay green — while the artifact had acquired exactly the cross-seam
+# call DD-12 forbids, and the UTF-8 backend would then silently change the
+# hot path's shape and speed. Same charter as this file's header: a property
+# no correctness test can see.
+#
+# THE POPULATION IS DERIVED, NOT TYPED. The residual entry NAMES are read out
+# of the artifact itself (every residual declaration is preceded by the
+# backend's own "ENCODING RESIDUAL entry" comment line), so a backend that
+# adds a second entry is covered the day it lands rather than the day someone
+# remembers to extend a list here. Finding NO residual entry is a FAILURE,
+# not a pass: that is the empty-population shape this directory's CLAUDE.md
+# exists about.
+#
+# ALLOWLIST. A residual name may appear (a) in a comment, (b) as its own
+# declaration, and (c) inside its OWN definition. Anywhere else inside a
+# file-scope function body is a violation — which for a generated artifact
+# means an engine body, since those are the only other functions in it.
+#
+# SABOTAGE: tests/mech/sabotages/S68_residual_in_hot_loop.sh, which makes
+# emit_dfa.c's bitmap prefilter skip loop advance via `<prefix>_next_pos`.
+# That sabotage changes NO answer, which is the point.
+
+# residual_names <file> — the residual entry names this artifact declares.
+residual_names() {
+    awk '
+        /ENCODING RESIDUAL entry/ { want = 1; next }
+        want && /^[a-z_].*\(.*\);[[:space:]]*$/ {
+            line = $0
+            sub(/\(.*/, "", line)
+            sub(/^.*[^A-Za-z0-9_]/, "", line)
+            print line
+            want = 0
+        }
+    ' "$1" | sort -u
+}
+
+# calls_in_bodies <file> <name> — lines referencing <name> inside a
+# file-scope function body OTHER than <name>'s own definition and the
+# artifact's `--emit-main` `main()`.
+#
+# `main` is ALLOWLISTED because it is a CALLER, not an engine: DD-12 (7)'s
+# rule is about the artifact's matching machinery depending on the encoding,
+# and a demo `main()` doing find-all through `<prefix>_next_pos` would be the
+# documented caller protocol rather than a violation of it. It does not call
+# it today; the allowlist entry is here so that a later `--emit-main` that
+# does is not reported as a derailment it is not.
+calls_in_bodies() {
+    awk -v want="$2" '
+        # a file-scope definition head: `<type> <name>(...)` at column 0,
+        # followed by `{` at column 0. Track the name; the emitted artifact
+        # puts every definition in exactly this shape.
+        /^[A-Za-z_].*\(/ && !/;[[:space:]]*$/ { head = $0; next }
+        /^\{/ && head != "" {
+            fname = head
+            sub(/\(.*/, "", fname)
+            sub(/^.*[^A-Za-z0-9_]/, "", fname)
+            inbody = 1
+            head = ""
+            next
+        }
+        /^\}/ { inbody = 0; fname = ""; next }
+        inbody && fname != want && fname != "main" && index($0, want) {
+            print FILENAME ":" FNR ": " $0
+        }
+    ' "$1"
+}
+
+resid_total=0
+resid_bad=0
+resid_files=0
+while IFS=$'\t' read -r nm pat extra; do
+    [ -n "$nm" ] || continue
+    [ "$extra" = "-" ] && extra=""
+    # BOTH artifact forms: split (.h carries the declaration) and
+    # self-contained (the .c carries declaration AND definition).
+    # shellcheck disable=SC2086
+    if ! "$PCREC" -p rx $extra -o "$WORKDIR/$nm.c" -- "$pat" >/dev/null 2>&1 \
+       || ! "$PCREC" -p rx $extra -o - -- "$pat" > "$WORKDIR/${nm}_sc.c" 2>/dev/null; then
+        bad "[M5-SEAM] residual: pcrec failed to compile the fixture '$pat' ($extra)"
+        continue
+    fi
+    for f in "$WORKDIR/$nm.h" "$WORKDIR/${nm}_sc.c"; do
+        names="$(residual_names "$f")"
+        [ -n "$names" ] || continue
+        resid_files=$((resid_files + 1))
+        for rn in $names; do
+            resid_total=$((resid_total + 1))
+            hits="$(calls_in_bodies "$WORKDIR/$nm.c" "$rn"; calls_in_bodies "$WORKDIR/${nm}_sc.c" "$rn")"
+            if [ -n "$hits" ]; then
+                resid_bad=$((resid_bad + 1))
+                bad "[M5-SEAM/DD-12(7)] '$rn' is referenced from an engine body in the '$pat' artifact — a hot path calling into the encoding residual is the derailment DD-12 (7) forbids, and it changes no answer under the byte backend, so nothing else in this tree will tell you: $(printf '%s' "$hits" | head -2 | tr '\n' ' ')"
+            fi
+        done
+    done
+    # TAB-separated: name, pattern, extra pcrec args ('-' for none). The
+    # separator is a TAB precisely because every other candidate ('|', ',')
+    # is regex syntax the fixture patterns need.
+done <<EOF
+residmemchr	a(b|c)+d	--no-captures
+residbitmap	[ab]c[de]	--no-captures
+residanchor	^ab(c|d)	--no-captures
+residvm	a(b|c)+d	-
+residvmonly	(x)(a|bc)+d	--engine=vm
+residmain	a(b|c)+d	--emit-main
+EOF
+if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
+    bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/gen/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
+elif [ "$resid_bad" -eq 0 ]; then
+    ok "[M5-SEAM/DD-12(7)]: $resid_total residual entr(y|ies) across $resid_files emitted surfaces, none referenced from any engine body"
+fi
+
+# ---- [K27] the emitted prefilter on the contract's legal NULL subject -----
+# docs/spec/match_api.md §3.1: `s` may be NULL when `n == 0`. The emitted
+# unanchored search body used to reach `memchr(s + pos, c, n - pos)` with
+# s == NULL, pos == 0, n == 0 on exactly that input — technical UB in EMITTED
+# code, which a user compiling a generated matcher under their own
+# -fsanitize=undefined sees pcrec's name on (docs/dev/known_issues.md K27).
+#
+# This check COMPILES AND RUNS the artifact on that input. Under `make test`
+# it pins the answers; under `make ubsan`/`make asan` (which run this script
+# with an instrumented $GENCFLAGS and -fno-sanitize-recover) the RUN is the
+# regression — that is why K27 was invisible to the battery before: the
+# corpus never passes s == NULL, so the instrumented axis had nothing to see.
+# The fixture pattern is chosen to take the single-escape-byte memchr arm,
+# which is the arm that held the defect.
+if "$PCREC" -p k27 --no-captures -o - -- 'abc' > "$WORKDIR/k27null.c" 2>/dev/null; then
+    if ! grep -q 'memchr' "$WORKDIR/k27null.c"; then
+        bad "[K27]: the fixture artifact carries no memchr prefilter at all — this check has lost the arm it exists to cover"
+    else
+        cat > "$WORKDIR/k27null_drv.c" <<'K27EOF'
+#include <stdio.h>
+#include "k27null.c"
+int main(void)
+{
+    printf("%d %zu\n", k27_search(NULL, 0, 0, NULL), k27_next_pos(NULL, 0, 0));
+    return 0;
+}
+K27EOF
+        if ! gen_cc "K27 NULL-subject driver" "$CC" $GENCFLAGS -I"$WORKDIR" \
+                    -o "$WORKDIR/k27null_drv" "$WORKDIR/k27null_drv.c"; then
+            bad "[K27]: the NULL-subject driver failed to compile: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+        else
+            k27out="$(gen_run "K27 NULL subject" "$WORKDIR/k27null_drv" 2>&1)"; k27rc=$?
+            if [ "$k27rc" -ne 0 ]; then
+                bad "[K27]: <prefix>_search(NULL, 0, 0, NULL) did not run cleanly (status $k27rc): $(printf '%s' "$k27out" | head -3 | tr '\n' ' ')"
+            elif [ "$k27out" = "0 1" ]; then
+                ok "[K27]: the legal (s == NULL, n == 0) subject runs clean through the memchr prefilter and the residual entry (search 0, next_pos 1)"
+            else
+                bad "[K27]: NULL-subject probe answered '$k27out', want '0 1' (search must report no-match; next_pos must not read s)"
+            fi
+        fi
+    fi
+else
+    bad "[K27]: pcrec failed to compile the NULL-subject fixture 'abc'"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

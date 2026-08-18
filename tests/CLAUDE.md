@@ -173,6 +173,22 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   factoring). Part of `make test` as `make test-altcls`. See its own
   CLAUDE.md for why the differential's engine choice differs from every
   other deny-family suite's.
+- **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
+  and the only one in the tree that runs a find-all LOOP:
+  docs/spec/match_api.md §3.1's protocol, compiled against real artifacts
+  and run, advancing through the `<prefix>_next_pos` encoding residual, on
+  BOTH engines (every case compiled captures-on and `--no-captures`).
+  Oracle is python3 `re`, TWO-ANSWERED — `re.finditer` AND the protocol
+  driven by `re.search` — because the two legitimately differ for an
+  empty-PREFERRING pattern and a single-answer oracle would either fail the
+  honest cases or accept any difference at all. Each case's class (`exact`
+  or `lossy` against finditer) is checked in BOTH directions, with `lossy`
+  additionally required to be a strict SUBSET. Non-vacuity measured by
+  sabotaging the driver's advance (26 fail / 0 pass). Part of `make test`
+  as `make test-encseam`, and on both sanitizer axes since it runs
+  generated code. Its NEGATIVE counterpart — no engine body may CALL a
+  residual entry — lives in tests/codegen/ instead; see its own CLAUDE.md
+  for why the two cannot substitute for each other
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

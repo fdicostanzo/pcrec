@@ -1374,9 +1374,42 @@ case13() {
     mkdir -p "$d"
     local rc out err
 
-    # -e ascii is the default and must still compile.
-    "$PCREC" -e ascii -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
-    assert_eq "case13: -e ascii compiles" "0" "$rc" "stderr: $(cat "$d/e0.txt")"
+    # [M5-SEAM] (D58) `byte` is the encoding's name, in BOTH spellings.
+    "$PCREC" -e byte -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
+    assert_eq "case13: -e byte compiles" "0" "$rc" "stderr: $(cat "$d/e0.txt")"
+    "$PCREC" --encoding=byte -o "$d/ok2.c" 'ab' 2>"$d/e0b.txt"; rc=$?
+    assert_eq "case13: --encoding=byte compiles" "0" "$rc" "stderr: $(cat "$d/e0b.txt")"
+
+    # ABSENT means byte: the default artifact must be byte-identical to the
+    # explicitly-byte one, which is a stronger statement than "it compiles" —
+    # it says the default and the explicit request are the SAME request, not
+    # merely two that happen to work. Compared through `-o -` (self-contained),
+    # the idiom case9/case10 established for exactly this: two artifacts
+    # written to different BASENAMES differ in their emitted #include line.
+    "$PCREC" -o - 'ab' > "$d/def.c" 2>"$d/e0c.txt"; rc=$?
+    assert_eq "case13: no -e at all compiles" "0" "$rc" "stderr: $(cat "$d/e0c.txt")"
+    "$PCREC" -e byte -o - 'ab' > "$d/expl.c" 2>/dev/null
+    if cmp -s "$d/def.c" "$d/expl.c"; then
+        pass "case13: the DEFAULT encoding is byte (default and -e byte artifacts are byte-identical)"
+    else
+        fail "case13: the default encoding is not byte" \
+             "$(diff "$d/def.c" "$d/expl.c" | head -4)"
+    fi
+    # ...and the artifact says so about itself (rx_info.encoding, PCREC_ENC_BYTE == 0).
+    if grep -q '^    \.encoding = 0,$' "$d/def.c"; then
+        pass "case13: the artifact stamps .encoding = 0 (PCREC_ENC_BYTE)"
+    else
+        fail "case13: the artifact does not stamp PCREC_ENC_BYTE" \
+             "$(grep -n 'encoding' "$d/def.c" | head -3)"
+    fi
+
+    # [M5-SEAM] `ascii` was this encoding's name before D58 and is NOT an
+    # alias: one namespace member, one spelling ([SR-10]). The diagnostic
+    # offers the menu the registry actually holds.
+    "$PCREC" -e ascii -o "$d/no0.c" 'ab' >"$d/o0.txt" 2>"$d/eold.txt"; rc=$?
+    assert_eq "case13: -e ascii is no longer a known encoding (D58 renamed it 'byte')" "1" "$rc"
+    assert_contains "case13: ...and the refusal offers the real menu" \
+        "$(cat "$d/eold.txt")" "want byte, utf8"
 
     # -e utf8 is refused, cleanly, with no C written.
     "$PCREC" -e utf8 -o "$d/no.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
@@ -1406,6 +1439,41 @@ case13() {
     out="$("$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
     assert_eq "case13: --features utf8 is still refused by name" "1" "$rc"
     assert_contains "case13: ...as an unknown module" "$out" "unknown module 'utf8'"
+
+    # [M5-SEAM] the LONG spelling refuses identically. Both spellings reach
+    # one lookup and one refusal, so they cannot drift into two answers.
+    out="$("$PCREC" --encoding=utf8 -o "$d/no2.c" 'ab' 2>&1)"; rc=$?
+    assert_eq "case13: --encoding=utf8 is refused too" "1" "$rc"
+    assert_contains "case13: ...with the same milestone diagnostic" "$out" "milestone M5"
+
+    # [M5-SEAM] (D58/DD-12 (8)) encoding is PER-PATTERN, so two artifacts with
+    # different prefixes compiled by SEPARATE invocations must compose in one
+    # TU. That is the property "mixed encodings in one compilation unit are
+    # supported by construction" rests on, and it is checkable today with one
+    # encoding: nothing about the residual embed may be file- or
+    # process-scoped.
+    "$PCREC" -p e1 --encoding=byte -o "$d/e1.c" -- 'a(b|c)+d' >/dev/null 2>&1
+    "$PCREC" -p e2 -e byte -o "$d/e2.c" -- 'x+y' >/dev/null 2>&1
+    cat > "$d/mix.c" <<'MIXEOF'
+#include "e1.h"
+#include "e2.h"
+int main(void)
+{
+    return (int)(e1_next_pos((const unsigned char *)"", 0, 0)
+               + e2_next_pos((const unsigned char *)"", 0, 0)) - 2;
+}
+MIXEOF
+    if gen_cc "case13 mixed-artifact TU" "$CC" $CFLAGS -I"$d" -o "$d/mix" \
+              "$d/mix.c" "$d/e1.c" "$d/e2.c"; then
+        if "$d/mix"; then
+            pass "case13: two separately-compiled artifacts, each carrying its own residual block, link and run in one TU"
+        else
+            fail "case13: the two-artifact TU built but its residual entries answered wrongly"
+        fi
+    else
+        fail "case13: two artifacts with their own residual blocks failed to compile into one TU" \
+             "$(printf '%s' "$GEN_CC_LOG" | head -3)"
+    fi
 }
 
 # ---------------------------------------------------------------------------

@@ -61,5 +61,23 @@ spec and a design doc disagree, the spec is what the tool promises.
   the document exists to prevent, and old artifacts still carry the
   comment it describes.
 
+  **[M5-SEAM], 2026-08-18 — the second revision** (D58, the encoding seam
+  prelude). Smaller in shape than R29's and worth knowing for one reason:
+  it is the first revision where a recorded CAVEAT was DISCHARGED rather
+  than a claim corrected. §3.1's find-all loop advanced by a literal `+ 1`
+  and carried a byte-vs-character caveat saying M5 would have to sharpen
+  it; the loop now advances through `<prefix>_next_pos`, the first encoding
+  residual, and the new §3.1.1 states that entry's contract. The caveat's
+  own text is QUOTED in §3.1.1 rather than deleted, with what discharged it
+  said next to it — the same discipline §3.5 follows for the two errors R29
+  found. Also in this pass: §1 and §3 count five per-artifact entry points
+  instead of four; §8.2 gains the per-compile-call encoding rule and
+  records the `PCREC_ENC_ASCII` -> `PCREC_ENC_BYTE` rename as an announced
+  pre-v1 boundary; §8.1's D56 quotation was re-measured (its wording had
+  gone stale — it promised a milestone that had already shipped). The
+  find-all measurement behind §3.1 is now a SUITE (`tests/encseam/`, in
+  `make test`) rather than a transcript, which is the direction to keep
+  taking this document's numbers.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

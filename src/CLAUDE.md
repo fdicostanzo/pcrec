@@ -9,6 +9,11 @@ The compilation pipeline: pattern → parser (parse/) → AST → NFA → priori
 - **ir/** — NFA construction and priority subset construction (DFA)
 - **opt/** — IR/DFA optimization passes (APPROACH §5): minimization
 - **gen/** — DFA to gcc-dialect C code emission
+- **gen/enc/** — [M5-SEAM] the ENCODING BACKENDS (D58, DD-12): the
+  per-encoding residual block each artifact embeds, one file per encoding
+  behind one registry. The compiler and the emitter carry NO encoding
+  conditionals; the only switch is which backend's text was embedded. See
+  gen/enc/CLAUDE.md for the third-encoding recipe
 
 ## Conventions
 

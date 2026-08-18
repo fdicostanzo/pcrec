@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "gen/enc/enc.h"
 
 static void emit_pattern_comment(StrBuf *sb, const char *pat)
 {
@@ -433,6 +434,30 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    const char           *engine_why;   /* forcing construct/reason, or NULL */\n"
         "};\n"
         "\n"
+        /* [M5-SEAM] The RESIDUAL entries get a pointer from here and their
+         * full contract at their own declaration (src/gen/enc/). This block
+         * is emitted ONCE PER FILE under a prefix-independent guard, so it
+         * must stay independent of BOTH axes it sits across: `<prefix>` is a
+         * placeholder here exactly as `<PREFIX>` is above, and the text must
+         * name no particular ENCODING either — two artifacts compiled for
+         * different encodings into one TU share this block, and only the
+         * first copy survives the guard. What is per-encoding is the
+         * residual's BODY, which is not here. */
+        "/* Every generated artifact also exports one RESIDUAL entry per\n"
+        " * encoding (pcrec DD-12/D58), <prefix>-scoped and therefore declared\n"
+        " * outside this shared block:\n"
+        " *\n"
+        " *   size_t <prefix>_next_pos(const unsigned char *s, size_t n,\n"
+        " *                            size_t pos);\n"
+        " *\n"
+        " * It returns the next CHARACTER boundary strictly after pos (every\n"
+        " * position >= n counts as a boundary), and it is the one place an\n"
+        " * artifact's byte-vs-character distinction lives: a find-all loop\n"
+        " * advances past a zero-length match with it and needs no change when\n"
+        " * the same pattern is compiled for another encoding. Full contract:\n"
+        " * that declaration's own comment, and pcrec's\n"
+        " * docs/spec/match_api.md S3.1. */\n"
+        "\n"
         "#endif /* PCREC_RX_ABI_H */\n");
 }
 
@@ -646,6 +671,34 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     sb_puts(c,   "};\n");
 }
 
+/* [M5-SEAM] (D58, DD-12 (7)) THE RESIDUAL EMBED. The artifact's ONE encoding
+ * is a per-compile scalar (`cx->opt->encoding`), and these two calls are the
+ * whole of what the emitter knows about encodings: it asks the registry for
+ * the backend and copies that backend's own text, prefix-substituted. There
+ * is no encoding test here and there must never be one — the "switch" DD-12
+ * allows is WHICH backend text got embedded, never a branch in shared code.
+ *
+ * Placement mirrors the four entry points exactly: declarations wherever a
+ * consumer's declarations live (the .h when split, the .c when
+ * self-contained), definitions in the .c. `pcrec_enc_ready` cannot be false
+ * here — src/core/compile.c refuses an unimplemented encoding before any
+ * emission — but the lookup is still checked rather than assumed, because a
+ * NULL text pointer reaching this far would otherwise emit a truncated
+ * artifact instead of failing. */
+static void emit_residual_decls(Ctx *cx, StrBuf *sb)
+{
+    const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
+    if (!pcrec_enc_ready(enc)) return;
+    pcrec_enc_emit_text(sb, enc->decls, cx->opt->prefix);
+}
+
+static void emit_residual_defs(Ctx *cx, StrBuf *sb)
+{
+    const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
+    if (!pcrec_enc_ready(enc)) return;
+    pcrec_enc_emit_text(sb, enc->defs, cx->opt->prefix);
+}
+
 static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
                          const char *matchcapsfn, const char *infoname,
                          const char *upper, int ncaps)
@@ -670,6 +723,8 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_match_decl(h, matchfn);
     emit_match_caps_decl(h, matchcapsfn);
     emit_info_decl(h, infoname);
+    sb_putc(h, '\n');
+    emit_residual_decls(cx, h);
     sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
 }
 
@@ -917,6 +972,19 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                     sb_puts(c,   "                pos = q ? (size_t)((const unsigned char *)q - s) : n - 1;\n"
                                  "            }\n");
                 } else {
+                    /* [K27] The `pos >= n` guard is the FIX, and it is not
+                     * defensive padding: docs/spec/match_api.md §3.1 makes
+                     * (s == NULL, n == 0) a LEGAL subject, and on it this
+                     * line used to call memchr(NULL, c, 0) — technical UB in
+                     * EMITTED code, which a user compiling a generated
+                     * matcher under their own -fsanitize=undefined sees
+                     * pcrec's name on. It changes no answer: memchr over a
+                     * zero-length range returns NULL, so the guarded early
+                     * `return 0` is exactly the branch the unguarded form
+                     * reached one line later. The EOL arm above needs no
+                     * such guard — its own `pos + 1 < n` bound already
+                     * implies n > 0, hence s != NULL. */
+                    sb_puts(c,   "            if (pos >= n) return 0;\n");
                     sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
                     sb_puts(c,   "            if (!q) return 0;\n"
                                  "            pos = (size_t)((const unsigned char *)q - s);\n");
@@ -1155,6 +1223,8 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
         emit_match_decl(c, g->matchfn);
         emit_match_caps_decl(c, g->matchcapsfn);
         emit_info_decl(c, g->infoname);
+        sb_putc(c, '\n');
+        emit_residual_decls(cx, c);
     }
     if (need_string_h)
         sb_puts(c, "#include <string.h>\n");
@@ -1171,6 +1241,14 @@ void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
 {
     InfoStamp st = { engine, why, budget, work, frames, ceiling };
     emit_info_def(cx, &cx->job->csb, g->infoname, g->upper, &st);
+}
+
+/* The residual DEFINITIONS, shared by both emitters exactly as the prologue,
+ * the ABI types, `rx_info` and `main()` already are. */
+void pcrec_emit_residual(Ctx *cx)
+{
+    emit_residual_defs(cx, &cx->job->csb);
+    sb_puts(&cx->job->csb, "\n");
 }
 
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
@@ -1253,6 +1331,7 @@ void pcrec_emit_dfa(Ctx *cx)
     sb_puts(c, "\n");
     emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
     sb_puts(c, "\n");
+    pcrec_emit_residual(cx);
     {
         /* The DFA artifact's stamp: it cannot backtrack, cut, or scan
          * frameless, so NONE of the three bounds applies to it and all read

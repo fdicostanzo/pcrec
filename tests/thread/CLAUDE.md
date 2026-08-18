@@ -149,3 +149,19 @@ and into `tests/CLAUDE.md`'s file list. [TT-1] added `make test-thread` as a
 section target running just this script.
 
 Maintenance: update this file when fixtures, patterns, or sabotages change.
+
+## [M5-SEAM] the TSan library's source list is FOUND, not enumerated
+
+This suite builds its own instrumented copy of the library, and the list of
+sources used to be `for d in core parse ir opt gen; do src/$d/*.c; done` —
+an assumption about the tree's SHAPE rather than about its contents. When
+[M5-SEAM] added `src/gen/enc/` (the encoding backends), those sources fell
+straight out of the TSan build and TS-3 failed to link.
+
+The failure was loud here, which is luck rather than design: the same shape
+one directory over is a concurrency check quietly certifying a library
+assembled from a different source set than the one that ships. It now
+`find`s every `.c` under `src/` and hard-fails if that comes back empty.
+The same one-level-glob defect existed in
+`tests/codegen/run_trie_identity.sh`'s reference compiler and was fixed the
+same way in the same lane.

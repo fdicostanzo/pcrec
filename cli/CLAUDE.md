@@ -122,7 +122,7 @@ own answer as its starting window.
 
 ## Files
 
-- **main.c** — CLI: option parsing ([-p PREFIX] [-e ascii|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'; -i is ASCII case-insensitive, folded into the automaton at parse time — see OS-1/D23); output file writing; the SR-3 syntax queries (--list-syntax, --explain, --flavour, --list-verbs; **--explain was REWRITTEN at MOD-0.7** from a prefix match on the `syntax` column into a live doorway call — it prints the ROW's declared attribution beside the LIVE recogniser's answer and compares them per row, and it has a THIRD exit code: 0 answered-and-agreed, 1 the query could not be answered (unchanged), **3 at least one row DISSENTS** — a defect surfaced, not a bad question, which is why it is not folded into 1); --count-groups (MOD-0.1 §18.1); and --probe-ask WANT [--] CONSTRUCT (MOD-0.1 §18.2 — one doorway call at ask level claim|verdict|result, real cursor reported before/after; check06's cursor-rule channel; a doorway REFUSING is a normal exit-0 outcome, only a channel that could not run exits 1); --features LIST (MOD-0.1 slice 9 — the enabled set: module names from --list-syntax's module column, a frozen named set (`std1`, D37), or all/none, unknown names refused by name; composes with every mode; installs the set via pcrec_enabled_set_spec before anything consults the gate. **[STD1] phase A (D37, 2026-08-13):** a bare invocation (no `--features` at all) now ALSO resolves through `pcrec_enabled_set_spec`, using `PCREC_DEFAULT_FEATURES` (src/parse/enabled.c, currently `"none"`) instead of skipping the call — behaviourally identical to before (mask stays 0) but gives the enabled-set machinery a named answer for a bare invocation too, which is what lets src/gen's artifact stamp report something honest ("Feature set: none") rather than nothing. An explicit `--features` always overrides the default; the default constant is the SOLE point that later flips to `"std1"`)
+- **main.c** — CLI: option parsing ([-p PREFIX] [-e byte|utf8 | --encoding=byte|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'; -i is ASCII case-insensitive, folded into the automaton at parse time — see OS-1/D23); output file writing; the SR-3 syntax queries (--list-syntax, --explain, --flavour, --list-verbs; **--explain was REWRITTEN at MOD-0.7** from a prefix match on the `syntax` column into a live doorway call — it prints the ROW's declared attribution beside the LIVE recogniser's answer and compares them per row, and it has a THIRD exit code: 0 answered-and-agreed, 1 the query could not be answered (unchanged), **3 at least one row DISSENTS** — a defect surfaced, not a bad question, which is why it is not folded into 1); --count-groups (MOD-0.1 §18.1); and --probe-ask WANT [--] CONSTRUCT (MOD-0.1 §18.2 — one doorway call at ask level claim|verdict|result, real cursor reported before/after; check06's cursor-rule channel; a doorway REFUSING is a normal exit-0 outcome, only a channel that could not run exits 1); --features LIST (MOD-0.1 slice 9 — the enabled set: module names from --list-syntax's module column, a frozen named set (`std1`, D37), or all/none, unknown names refused by name; composes with every mode; installs the set via pcrec_enabled_set_spec before anything consults the gate. **[STD1] phase A (D37, 2026-08-13):** a bare invocation (no `--features` at all) now ALSO resolves through `pcrec_enabled_set_spec`, using `PCREC_DEFAULT_FEATURES` (src/parse/enabled.c, currently `"none"`) instead of skipping the call — behaviourally identical to before (mask stays 0) but gives the enabled-set machinery a named answer for a bare invocation too, which is what lets src/gen's artifact stamp report something honest ("Feature set: none") rather than nothing. An explicit `--features` always overrides the default; the default constant is the SOLE point that later flips to `"std1"`)
 
 **A DOORWAY THAT RAISES (R20/MOD07-1)** is a third reason `--explain` and
 `--probe-ask` return NULL, and each now prints a different sentence for it.
@@ -149,3 +149,31 @@ The tool normalizes output paths (e.g., -o out.c generates out.h automatically; 
 Compilation goes through lib/pcrec.h, the public header. The SR-3 syntax queries are the one exception: they include src/core/internal.h, because the construct registry is deliberately NOT public surface — the CLI and the test suite are its only consumers today. main.c touches no registry type even so; it calls two functions that return finished text. Promoting one of them into lib/pcrec.h if a library caller ever wants it is easy in a way that un-promoting it would not be.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+**[M5-SEAM] (2026-08-18, D58):** `--encoding=byte|utf8`, the long spelling
+of the pre-existing `-e`, in the `=value` MODE form `--engine=` already
+uses (the separate-argument forms are for files and names). Both spellings
+reach ONE helper, `set_encoding`, so they cannot drift into two answers.
+
+Three things about that helper are the point of the change rather than
+incidental to it:
+
+- **It resolves the name through the encoding REGISTRY**
+  (`src/gen/enc/enc.h`), never by mapping strings here. This file
+  hand-mapping `"utf8"` while `src/core/compile.c` separately hand-wrote
+  the diagnostic for it is [SR-10]'s recorded motivating instance; both
+  sites now read the one table, and the unknown-encoding diagnostic renders
+  its menu from that table too, so a new backend cannot leave a stale list
+  behind.
+- **It does NOT ask whether the encoding is implemented.**
+  `pcrec_compile()` owns that refusal, so a CLI user and a library caller
+  get the same answer for the same request.
+- **It sets a field of THIS invocation's options** and nothing else. The
+  encoding is a per-compile-call scalar (D58 ruling 2); there is no global
+  for a CLI flag to set.
+
+`-e ascii` is no longer accepted: D58 renamed the encoding `byte`
+(lib/CLAUDE.md carries the reasoning). Pinned in tests/cli case13, which
+also pins that the DEFAULT artifact is byte-identical to the explicitly
+`-e byte` one — a stronger statement than "it compiles", since it says the
+default and the explicit request are the same request.

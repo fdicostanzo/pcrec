@@ -41,7 +41,7 @@ enum {
      * machines, so ~12.6 MB), not the real ceiling: the DFA caps below are
      * grounded in emitter cost (R1 A-3) and now bind first across the
      * realistic keyword range — 6000-word lists compile, 10000-word lists
-     * fail on the DFA cap with its actionable "VM engine arrives in M4".
+     * fail on the DFA cap with its actionable "try --engine=vm".
      * Stack depth is no longer a constraint here: clo_visit's tail edges are
      * iterative (verified at -O0 on a 1,000,000-branch alternation). */
     PCREC_MAX_NFA_STATES       = 131072,
