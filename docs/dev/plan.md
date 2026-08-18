@@ -266,8 +266,8 @@ stated terms.
     principle. SEQUENCED: starts only after [OPT-ALTCLS] merges (so
     divergences attribute cleanly) and [M4.7d] lands. D44 three-way
     posture where python re can arbitrate
-  - [M4.7f] STATE:completed (2026-08-18, lane/m47f; awaiting manager
-    review/merge) — SPEC GRADUATION. `docs/spec/match_api.md`
+  - [M4.7f] STATE:completed (2026-08-18, lane/m47f, merged ccfa3a3
+    after manager read + green suite) — SPEC GRADUATION. `docs/spec/match_api.md`
     authored: the entry-point set, the six fixed-literal ABI types,
     capture-slot semantics (C1-C11 restated as contract prose with the
     R22 §2.2 rules — cross-iteration retention, empty-final-iteration
