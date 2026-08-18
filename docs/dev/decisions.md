@@ -4483,7 +4483,16 @@ re-derivable from the archived measurement record rather than kept live
 in the tree. Revisit-when: (1) M6's VM-mandatory constructs (backrefs,
 lookaround) land, where the capture-erased prefilter becomes an
 OVER-approximation and VM cascade reject-traffic rises for a reason
-this measurement could not exercise; (2) `--engine=vm` becomes a
+this measurement could not exercise — SHARPENED (Frank, 2026-08-18,
+same session): the observable quantity is INTERIOR choice-point
+reject traffic. Today the prefilter is EXACT for the shipped tier
+(the erased forward+reverse pair proves a full match exists before
+the VM runs), so even interior alternations see mostly-accepting
+arrivals — which is WHY all three cells measured no benefit, Cell C
+included; and backtrack re-arrivals skip an entry guard regardless
+(resumption enters at the next branch, not the top). The guard's
+real customer appears exactly when the prefilter turns approximate
+and starts admitting candidates that fail INSIDE the VM; (2) `--engine=vm` becomes a
 supported deployment path rather than a comparability facility; (3)
 [ENG-PGO]/bench evidence surfaces real guard-eligible cascade traffic
 under the default engine.
