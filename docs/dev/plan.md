@@ -302,8 +302,17 @@ stated terms.
     spec/ line updated; match_api_m4.md gets a graduation pointer at
     the top naming both discrepancies. Commits: c24d699 (spec content),
     4adb10f (plan/journal), lane/m47f.
-  - [M4.7g] STATE:not-started — CLOSE: full close battery + ratchets;
-    M5-vs-M6 order decided WITH FRANK at this close (standing rule)
+  - [M4.7g] STATE:started (2026-08-18, thirty-first session) — CLOSE:
+    D6 critic panel over docs/spec/match_api.md (rides this close per
+    the 2026-08-18 journal entry; 3 read-only critics, findings to
+    docs/dev/reviews/), full close battery + ratchets, bench gate on a
+    quiet box after the battery; M5-vs-M6 order RULED BY FRANK at this
+    close: **M6 FIRST** (assertions/lookaround/backrefs/named-groups
+    surface before the UTF-8 encoding axis; [M6.0] expands on arrival
+    next session, carrying its D47.5 possessification-gate
+    obligation). rx_info struct-tag spelling BLESSED (D57) — spec note
+    update rides the panel fix pass. Push to origin done at session
+    start (Frank's call, 860dcb6..1a933a2).
 
 Design notes moved here from [MOD-0.1]'s archived entry (docs/dev/plan_completed.md),
 2026-08-13 — M4's design customers, per the Development order above:

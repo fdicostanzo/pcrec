@@ -384,3 +384,21 @@ The NOTED list of the most recent review is the honest inventory of what is
 still unguarded; read it before starting new work.
 
 Maintenance: add a file per checkpoint and list it here.
+- **2026-08-18-r29-match-api-spec.md** — R29, the D6 panel over
+  docs/spec/match_api.md (the first spec document, [M4.7f]), riding the
+  [M4.7g] close. Three lenses (artifact / ruled-corpus / adversarial
+  consumer). Matching semantics held everywhere (§5, §5.1, anchoring,
+  composition, §7 truncation — span-for-span vs python re, both
+  engines); the blockers were all in the surrounding surface: BOTH
+  shipped doc-comments (emitted rx_matchfn block + lib/pcrec.h searcher
+  comment) affirmatively deny the give-up-code space §4 promises and
+  the artifacts produce (−2/−3 measured); §2 quoted a corrected comment
+  as if shipped; §8's calling sequence cannot compile a pattern
+  (pcrec_default_options and pcrec_output/_free absent); §3.1's
+  find-all instruction is an infinite loop on empty-matching patterns.
+  Panel-vs-manager-read lesson: the manager's end-to-end read checked
+  the spec against its own citations; the critics checked it against
+  alphabets the document didn't choose. A7 adds a DOCUMENTATION
+  instance to the controls-share-a-source catalogue (evidence quoted
+  from the engine where the claimed branch is unreachable). Fix pass:
+  lane/m47g-fix.

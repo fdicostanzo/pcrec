@@ -4645,3 +4645,32 @@ element budget (raise it with the measurement, and note the budget buys memory
 quadratically in the repeat count, not linearly); or K25's minimization cost is
 fixed, at which point `tests/resource/`'s 45 s CPU budget should come back to
 ~10 s, which is what the construction side alone needs.
+
+## D57 — rx_info's struct-TAG spelling is BLESSED as the contract; the design's bare typedef is dead (Frank, 2026-08-18, thirty-first session, at the [M4.7g] close)
+
+**Decision.** The emitted reflection structure keeps its shipped
+spelling: `struct rx_info { ... };` with
+`extern const struct rx_info <prefix>_info;` — a struct tag, no bare
+typedef. The design sketch's typedef form (match_api_m4.md §5) is not
+restored. This closes the open ruling carried since the [M4.4] freeze
+(2026-08-14) and re-confirmed by the [M4.7f] spec lane.
+
+**Why.** The collision is structural, not stylistic: under the default
+prefix, the instance is the literal identifier `rx_info`, so a bare
+typedef of the same name cannot coexist with it. The alternative —
+renaming the instance (e.g. `rx_info_data`) to buy the typedef back —
+would break every existing consumer and the test corpus for a purely
+cosmetic gain, three days after docs/spec/match_api.md began stating
+the struct-tag spelling as the as-built contract. Blessing the shipped
+form costs zero code and makes the spec's §2/§6 text simply TRUE
+rather than provisionally true.
+
+**Consequence.** docs/spec/match_api.md's note that this spelling was
+"still an open Frank ruling" is updated to cite this decision (folded
+into the [M4.7g] panel fix pass); match_api_m4.md's §5 sketch keeps
+its graduation-pointer flag as historical record.
+
+**Revisit when:** a compat surface ([V-A]) or a binding generator
+([V-B]) measurably needs a typedef'd name — that consumer can ship a
+`typedef struct rx_info rx_info_t;` in ITS OWN header without touching
+the emitted contract.
