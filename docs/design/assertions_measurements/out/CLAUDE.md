@@ -15,8 +15,10 @@ reads anything here; re-run the probe to re-measure.
 - `ncls_refine_realistic.txt` — `probe_ncls_refine.py` over the 40-pattern
   realistic set. Headline: the word-set alphabet refinement costs at most **+1**
   equivalence class (n = 38 measured, 2 skipped).
-- `ncls_refine_rxt.txt` — the same probe over 574 of the 609 patterns harvested
-  from the `.rxt` corpus (the adversarial denominator). Headline: word at most
+- `ncls_refine_rxt.txt` — the same probe over **962 of the 1030** patterns
+  harvested from the `.rxt` corpus (the adversarial denominator; the population
+  is `harvest_rxt_patterns.sh`'s, corrected per R30 M6 — every headline number
+  below is IDENTICAL to the one the defective 609-pattern harvest gave). Headline: word at most
   **+2**, newline at most **+1**, both at most **+3**; largest
   `states × ncls` after both refinements **48,012** against
   `PCREC_MAX_TABLE_ENTRIES` = 2,000,000.
@@ -38,6 +40,19 @@ reads anything here; re-run the probe to re-measure.
 - `z_oracle.txt` — `probe_z_oracle.py`. Headline: **1 of 7 cells disagree**
   between libpcre2 and python3 `re`, and it is a `\Z` cell — python's `\Z` is
   PCRE2's `\z`, so python is the wrong oracle for `\Z`.
+- `startpos_context.txt` — `probe_startpos_context.py`. Headline: **5 of 10
+  cells DIFFER** between searching the whole subject from `startpos` and
+  searching the slice from 0, and through the find-all loop `\Bfoo` on
+  `"xfoofoo"` LOSES a match. R30 E1's evidence.
+- `mline_caret_cost.txt` — `probe_mline_caret_cost.sh`. Headline: the `(?m)^`
+  engine shape grows **3.99x per doubling** and is **1996x** slower than its
+  anchored twin at n=64,000; the ENG_UNANCH control is flat. R30 E2's evidence.
+- `wswitch_alarm.txt` — `probe_wswitch_alarm.sh`. Headline: a new `AKind`
+  enumerator produces **15 `-Wswitch` diagnostics across 6 files**; the header is
+  restored and the restore verified.
+- `rxt_harvest.txt` — `harvest_rxt_patterns.sh`. Headline: the corpus is **1030**
+  patterns; the locale-collation defect reports **609**; **421 silently merged
+  away**.
 - `dollar_multiline_rerun.txt` — the re-run of
   `../../eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py`.
   Headline: on the greedy population the exemption covers, **0 of 168**

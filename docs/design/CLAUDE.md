@@ -699,10 +699,56 @@ append-only or historical records.
   NOT merge, not even denied-by-default; it survives only in git history
   (`a07a87c`, reverted at `8b5acb4`). See its own CLAUDE.md for the
   revisit-when triggers.
-- `assertions_design.md` — **PROPOSED** ([M6.1], 2026-08-18): the module
+- `assertions_design.md` — **PROPOSED, REVISED AFTER R30** ([M6.1],
+  2026-08-18; panel `../dev/reviews/2026-08-18-r30-assertions-design.md`).
+  **Read the doc's PANEL OUTCOME block before any section.** The FOUNDATIONS
+  survived adversarial re-derivation unusually well — the D47.5 miscompile
+  ("the single best-supported claim in the document"), the `\A`/`\Z` alias at
+  1,008 cells / 0 disagreements, `\G`'s mechanism, the `\Z` oracle divergence,
+  the `mods` blast radius, and all six probes reproducing — but the
+  ENGINE-SPLIT half took **two HIGH refutations**: the spine had **no mechanism
+  at all** for assertion context at `startpos > 0` (E1 — a fourth mechanism,
+  runtime start-state seeding from `s[startpos-1]` forward and `s[end]`
+  reverse, now §3.8; 5 of 10 measured cells differ, and through the find-all
+  loop a match is LOST), and `(?m)^`'s routing is not the free inheritance the
+  first draft claimed but a permanent move into a **measured O(n²)** class
+  (E2 — 3.99x per doubling, 1996x slower than the anchored twin at n=64,000;
+  the `memchr('\n')` candidate-start prefilter is now a design element and Q3
+  is reframed on that footing, with the DD-7 unpark a Frank ruling). Six
+  mediums landed in the same sections: `\z`'s byte-identity argument
+  canonicalized against the wrong reference (E3); §3.4 and §3.5 were never
+  composed, and composed they **EXCEED** the state cap — 38,009 against 32,000
+  (E4); the skip hazard was attributed to `\b`, which by the document's own
+  state-identity argument cannot suffer it, making Wave B's proposed sabotage a
+  no-op on every pattern that wave lands (E5 — cure and sabotage move to Wave
+  C, and all FIVE scan-avoidance mechanisms are now enumerated with individual
+  fates, memchr being un-intersectable); the zero-cost accept measurement is
+  scoped to ENG_UNANCH and had no `pos == n` column (E6 — the view-axis ×
+  class-axis composition rule is now written); `\K` "structurally cannot" was
+  overstated, since leftmost-first is a total order and tagged DFAs recover
+  exactly such positions (E7 — the conclusion stands, the door is now recorded
+  as closed by choice); and §9.3's match-here paragraph was **factually wrong**
+  — the DFA's `rx_match` IS `rx_search` plus a start filter — which withdrew
+  Wave D's owed differential and exposed a live `\K` hazard in the filter and
+  the returned length (E8). Three provenance findings are this lane's own
+  failures and are recorded as such: a header hand-written to IMITATE the
+  archiver (M7 — "worse than absent provenance"), the locale-collation
+  `sort -u` undercount reproduced verbatim after reading the entry that named
+  it (M6 — 1030 true, 609 reported, **421 silently merged**; every headline
+  number identical on the corrected corpus), and an unverifiable `-Wswitch`
+  hand experiment (M8). All now committed tooling. Four instruments added
+  (startpos-context cells, the `(?m)^` cost curve, the `-Wswitch` alarm, the
+  `LC_ALL=C` harvest); the state prototype gained a SECOND disclosed fidelity
+  gap running opposite to the first (M2 — it minimises a LANGUAGE where pcrec
+  tracks thread PRIORITY, so `\w{3,16}`'s 4.50x was an artifact and the >2.00x
+  count drops to one, while the 4.75x headline SURVIVES on a pattern whose
+  baseline is verified against pcrec exactly). Original content below.
+- `assertions_design.md` (**pre-R30 summary, retained for history — read the
+  R30 entry above first; the "exactly three" spine below is REFUTED by E1 and
+  the `(?m)^` cost claim by E2**) — the module
   `assertions` design gate — `\b` `\B`, `\A` `\z` `\Z`, `(?m)` multiline
   `^`/`$`, `\G`, `\K` — answering the row's seven questions before any [M6.2]
-  code. Its spine is that every construct is exactly one of three things, and
+  code. Its spine was that every construct is exactly one of three things, and
   the engine split follows from which: an ABSOLUTE POSITION TEST (`\A`, `\z`,
   `\G` — free), a NEXT-BYTE VIEW (`$`/`(?m)$` forward, `\b`'s right side —
   folds into the transition and accept tables BY BYTE CLASS), or a
