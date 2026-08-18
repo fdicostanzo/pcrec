@@ -56,13 +56,29 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
-  Exactly ONE analysis is registered today, and its trigger is the requested
+  The first analysis registered, `forces_captures`, triggers on the requested
   OUTPUT rather than the presence of a `(`: `a(b|c)+d` under `--no-captures`
-  is capture-free WORK and stays on the DFA forever. Every other `VM_ONLY`
-  registry row is gated by a module with no producer, so the parser refuses
-  those patterns long before selection runs — which is also why SR-8's flip is
+  is capture-free WORK and stays on the DFA forever. Every `VM_ONLY` registry
+  row is gated by a module with no producer, so the parser refuses those
+  patterns long before selection runs — which is also why SR-8's flip is
   smaller than its row implies (§9.1: zero currently-refused constructs become
   compilable when the VM exists).
+
+  **[M4.7a] SR-8 ITSELF: a second analysis, `forces_registry_engines`, is the
+  GENERIC socket a future VM_ONLY module's producer plugs into** instead of
+  writing its own `forces_*` function. It reads three Ctx fields
+  (`vmonly_seen`/`vmonly_pos`/`vmonly_why`, internal.h) that a producer
+  stamps from its own registry row's `engines` mask at the moment it builds
+  the node — the column is consulted where a node is BUILT (the producer,
+  which already has the row in hand) and the verdict is READ where engines
+  are CHOSEN (here), never in the parser's per-escape refusal path, which
+  only ever judges module ENABLEMENT and has no engine opinion to relocate.
+  Confirmed empty by population at M4.7a (same posture the §5.6 override's
+  second branch below already carries) by re-reading every module file in
+  src/parse/: no VM_ONLY row has a producer, so `vmonly_seen` is stamped by
+  nothing and this analysis always returns ANY_ENGINE today.
+  tests/select_engine/ proves the socket itself fires, with a hand-built Ctx
+  standing in for the producer no module has written yet.
 
   It also DRIVES possessify.c, and the placement is a reported deviation from
   §2.8's literal reading rather than a silent choice. §2.8 proposes

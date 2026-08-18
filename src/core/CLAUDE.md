@@ -98,6 +98,17 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   being true without anyone revisiting the analysis. Module `assertions` is its
   writer and inherits the test obligation.
 
+  **[M4.7a] SR-8's flip: `Ctx` gains `vmonly_seen`/`vmonly_pos`/`vmonly_why`**,
+  the same NO-WRITER-TODAY shape as `ModState.multiline` above. A future
+  module's producer, building a node for a registry row whose `engines` mask
+  excludes ENGM_DFA, stamps these three (first occurrence wins, same rule as
+  `first_cap_pos`) instead of writing its own src/opt/select_engine.c
+  analysis; `forces_registry_engines` there reads them generically, symmetric
+  to `forces_captures`/`want_caps`/`ncap`/`first_cap_pos` just above. No
+  registry row has a producer yet (registry.c's own header), so nothing
+  writes these fields today; tests/select_engine/ proves the reading half
+  with a hand-built Ctx standing in for the producer.
+
 ## Conventions
 
 All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.

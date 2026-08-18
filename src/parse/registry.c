@@ -79,8 +79,15 @@
  *
  * THE `engines` COLUMN IS DESIGN INTENT, NOT MEASUREMENT, and it is NOT a
  * statement about what a DFA can do in general. It records which PCREC engine
- * could lower each construct. Nothing consumes it until SR-8/M4, and the
- * conformance test asserts only that it is well-formed.
+ * could lower each construct. **[M4.7a] SR-8's flip built the CONSUMING
+ * SOCKET** (src/opt/select_engine.c's forces_registry_engines, reading
+ * Ctx.vmonly_seen/vmonly_pos/vmonly_why — see that file and internal.h's
+ * Ctx comment for the full mechanism), but this column itself is still read
+ * by NOTHING: every VM_ONLY row below is gated by a module with no producer
+ * (this file's own doorway comments), so no code exists yet that reads a
+ * row's `engines` value and stamps a node from it. A future module's
+ * producer is that code, and the socket it feeds already exists. The
+ * conformance test still asserts only that this column is well-formed.
  *
  * That distinction is load-bearing, because PCRE2's own DFA matcher disagrees
  * with several rows here. Measured against pcre2_dfa_match_8 in libpcre2 10.46:
