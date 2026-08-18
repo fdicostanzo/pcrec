@@ -827,7 +827,15 @@ residual_names() {
 }
 
 # calls_in_bodies <file> <name> — lines referencing <name> inside a
-# file-scope function body OTHER than <name>'s own definition.
+# file-scope function body OTHER than <name>'s own definition and the
+# artifact's `--emit-main` `main()`.
+#
+# `main` is ALLOWLISTED because it is a CALLER, not an engine: DD-12 (7)'s
+# rule is about the artifact's matching machinery depending on the encoding,
+# and a demo `main()` doing find-all through `<prefix>_next_pos` would be the
+# documented caller protocol rather than a violation of it. It does not call
+# it today; the allowlist entry is here so that a later `--emit-main` that
+# does is not reported as a derailment it is not.
 calls_in_bodies() {
     awk -v want="$2" '
         # a file-scope definition head: `<type> <name>(...)` at column 0,
@@ -843,7 +851,9 @@ calls_in_bodies() {
             next
         }
         /^\}/ { inbody = 0; fname = ""; next }
-        inbody && fname != want && index($0, want) { print FILENAME ":" FNR ": " $0 }
+        inbody && fname != want && fname != "main" && index($0, want) {
+            print FILENAME ":" FNR ": " $0
+        }
     ' "$1"
 }
 

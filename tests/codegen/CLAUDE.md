@@ -547,3 +547,30 @@ the CORPUS, and no corpus case passes `s == NULL`, so the instrumented axis
 had nothing to see. A check that only compiled the artifact would reproduce
 that hole exactly. It also fails loudly if its fixture stops carrying a
 memchr prefilter, rather than passing vacuously.
+
+**Two measured facts about the `[M5-SEAM/DD-12(7)]` extractor**, both worth
+keeping because a body extractor that silently matched nothing would make
+this check vacuous exactly like the OS-0b scoping hazard this file already
+documents:
+
+- It reaches the VM's own body, not only the DFA's. Verified by planting
+  `(void)<prefix>_next_pos(ctx->subject, ctx->len, ctx->pos);` immediately
+  inside `<prefix>_match_impl` in an emitted VM artifact: reported.
+- `main` is ALLOWLISTED. The `--emit-main` `main()` is a CALLER, not an
+  engine — a demo `main()` doing find-all through `<prefix>_next_pos` is
+  the documented caller protocol (docs/spec/match_api.md §3.1), not a
+  derailment. It does not call it today; the entry exists so a later
+  `--emit-main` that does is not misreported.
+
+**The `[M4.4/D44/A-2]` sibling** added in the same lane asserts the ABI
+block's PROPERTY (byte-identical across four prefixes of different lengths
+and shapes) rather than only its consequence (the cross-prefix one-TU
+compile above, which a block merely free of prefix-dependent content would
+also satisfy). Its control is the whole file, which must DIFFER across
+prefixes — otherwise the extractor is comparing two empty strings, or
+`--prefix` is not reaching the emitted text at all. Since [M5-SEAM] the
+block also carries a pointer to the residual entries, and that paragraph
+has to stay independent of the ENCODING axis as well as the prefix one: the
+block is emitted once per file under a prefix-independent guard, so two
+artifacts compiled for different encodings into one TU share it and only
+the first copy survives.
