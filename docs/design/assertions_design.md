@@ -258,7 +258,7 @@ Two things are already true here and both are load-bearing for this module:
    works and why `(?m)^` cannot work without touching that line: multiline `^`
    is satisfiable *after consuming a byte*, which is a transition property.
 
-So the three mechanisms of §0.2 map onto the existing code as:
+So the four mechanisms of §0.2 map onto the existing code as:
 
 | mechanism | where it lives | what it costs |
 |---|---|---|
@@ -434,6 +434,18 @@ Largest `states × ncls` over the `.rxt` corpus **after both refinements**:
 **48,012**, on `((a)|ab){4000}c` — **2.4% of the 2,000,000 budget**. Archived:
 `out/ncls_refine_realistic.txt`, `out/ncls_refine_rxt.txt`.
 
+The reason the delta is so small is worth stating, because it is the sort of
+result that looks too good: refining a partition by one set can in principle
+split *every* class, but a pattern's class map already separates the bytes it
+mentions, and the only class that straddles the word boundary is the catch-all
+of bytes the pattern never names. Adding a second set (newline) adds at most one
+more for the same reason.
+
+Two patterns were skipped and both are pre-existing facts, not assertion facts:
+`\[[^\]]{1,80}\]` refuses today with `pattern too complex for the DFA engine
+(>32000 states; try --engine=vm)`, and `\b\w{5,}\b` refuses because `\b`
+refuses.
+
 **THE CORPUS POPULATION WAS WRONG, AND THE DEFECT HAS A NAME (R30 M6).** The
 first draft said "574 of 609", harvested by an uncommitted one-liner whose
 `sort -u` ran under `en_US.UTF-8`. That collation treats strings differing only
@@ -482,17 +494,6 @@ check must run against `PCREC_MAX_DFA_STATES_GOTO` (10,000,
 **3.2x tighter**, so an ENG_ATTEMPT pattern has proportionally less headroom
 than every number above suggests.
 
-The reason the delta is so small is worth stating, because it is the sort of
-result that looks too good: refining a partition by one set can in principle
-split *every* class, but a pattern's class map already separates the bytes it
-mentions, and the only class that straddles the word boundary is the catch-all
-of bytes the pattern never names. Adding a second set (newline) adds at most one
-more for the same reason.
-
-Two patterns were skipped and both are pre-existing facts, not assertion facts:
-`\[[^\]]{1,80}\]` refuses today with `pattern too complex for the DFA engine
-(>32000 states; try --engine=vm)`, and `\b\w{5,}\b` refuses because `\b`
-refuses.
 
 ### 3.5 `\b`'s state cost — PROTOTYPE, calibrated, and the ratio is the number
 
@@ -722,13 +723,27 @@ actually go red.
 
 The first draft named one. There are five, and they do not share a fate:
 
-| # | mechanism | site | fate under a class-indexed accept |
+| # | mechanism | site(s) | fate under a class-indexed accept |
 |---|---|---|---|
-| 1 | **memchr prefilter** | `emit_dfa.c:988-991` | **CANNOT be intersected** — it seeks one byte VALUE, not a bitmap walk (see below) |
+| 1 | **memchr prefilter** | `emit_dfa.c:988` (non-EOL) and **`:971`** (the EOL arm — a SECOND emission site the first draft's cite missed) | **CANNOT be intersected** — it seeks one byte VALUE, not a bitmap walk (see below) |
 | 2 | **bitmap prefilter** | `:993` | intersectable: `first[]` becomes `first[] AND NOT accepts-here` |
-| 3 | **forward self-loop skip** | `:1000` | intersectable: `fs<K>[] AND NOT K-accepts-on-this-class` |
-| 4 | **post-skip compensating accept** | `:1003-1004` | reads a **SCALAR** `fd->st[K].accept` — must become the class-indexed read, or the recorded `last` is wrong for the run's final byte |
-| 5 | **reverse self-loop skip** | `:1046-1048` | intersectable, mirrored (the reverse accept is `racc`) |
+| 3 | **forward self-loop skip** | `:1002` | intersectable: `fs<K>[] AND NOT K-accepts-on-this-class` |
+| 4 | **post-skip compensating accept** | `:1006-1007` | reads a **SCALAR** `fd->st[K].accept` — must become the class-indexed read, or the recorded `last` is wrong for the run's final byte |
+| 5 | **reverse self-loop skip** | `:1042`, with its own accept write at `:1044` | intersectable, mirrored (the reverse accept is `racc`) — and `:1044` is a second blind `sfound` writer, see §3.8.3.1 |
+
+**Cites re-derived after R30 N8**; the first draft's `:1000`/`:1003-1004`/
+`:1046-1048` were each a line or two off and missed the memchr EOL arm entirely.
+
+**Why `fbound` is not a sixth row.** `fbound`
+(`:942`, `eol ? "pos + 1 < n" : "pos < n"`) appears in the emitted text of
+mechanisms 2 and 3 and looks like a sixth entry in a grep. It is not a
+scan-avoidance mechanism — it is **D11 rule 1's bound**, the `n-1` clamp that
+keeps those two mechanisms from skipping past a position where the EOL view
+could accept. It is a *parameter of* rows 2 and 3, and it is load-bearing for
+exactly the reason this section exists: under a class-indexed accept the bound
+is no longer sufficient on its own, which is what rows 2-5's intersections
+repair. Stated here rather than left out, because "the union of the two
+enumerations is six" is a fair thing for a reader to notice.
 
 **Mechanism 1 has no cheap cure, and it is gated by a flag that must change.**
 Today the prefilter is disabled outright whenever the start state accepts:
@@ -856,22 +871,38 @@ and no skip loops at all**, so those `n+1` attempts run with zero scan
 avoidance.
 
 **MEASURED** (`probes/probe_mline_caret_cost.sh`, `out/mline_caret_cost.txt`;
-best of 5 per cell; subject = lines of `'a'` separated by `'\n'`, no `'b'`, so
-every enterable attempt runs to the end):
+best of 5 per cell, 200 inner repeats; subject = lines of `'a'` separated by
+`'\n'`, no `'b'`, so every enterable attempt runs to the end). **Pasted from
+the archive rather than from a separate run — R30 N2 caught the first draft
+quoting a different run than the file it cited:**
 
 ```
-n        A (?m)^shape  B anchored    C unanch      A/B        A growth per doubling
-4000     0.000682      0.000006      0.000000      114x
-8000     0.002527      0.000005      0.000000      505x       3.71x
-16000    0.004797      0.000009      0.000001      533x       1.90x
-32000    0.019023      0.000019      0.000001      1001x      3.96x
-64000    0.075857      0.000038      0.000003      1996x      3.99x
+n        A (?m)^shape   B anchored     C unanch       A/B        A growth per doubling
+4000     0.00077760     0.00000595     0.00000008     131x
+8000     0.00121612     0.00000474     0.00000032     257x       1.56x
+16000    0.00479799     0.00000943     0.00000062     509x       3.95x
+32000    0.01903308     0.00004654     0.00000192     409x       3.97x
+64000    0.07586102     0.00003767     0.00000267     2014x      3.99x
 ```
 
 A is `^[^b]*b|\n[^b]*b` (the `(?m)^` engine shape), B is `^[^b]*b` (the anchored
-twin), C is `[^b]*b` (ENG_UNANCH). **A grows 3.96x / 3.99x per doubling — the
-O(n²) signature — and is 1996x slower than its anchored twin at n = 64,000.**
-C, which keeps memchr and the skip loops, is flat and fastest throughout.
+twin), C is `[^b]*b` (ENG_UNANCH). **The load-bearing column is GROWTH, not the
+ratio: 3.95x / 3.97x / 3.99x per doubling is the O(n²) signature.** C, which
+keeps memchr and the skip loops, is flat and fastest throughout.
+
+**Two honesty notes on this table**, both of which the first draft lacked:
+
+- **The A/B column is NOISY and is not the claim.** B and C sit at microseconds
+  and tens of nanoseconds, where the clock's resolution and cache effects
+  dominate; that is why A/B reads 131x → 257x → 509x → 409x → 2014x rather than
+  climbing monotonically. The honest headline is "A is quadratic and B is flat",
+  with **2014x at n = 64,000** as the largest measured separation, not a claim
+  that the ratio itself is a clean curve.
+- **The 8000-row growth of 1.56x is an outlier against the 3.9x trend**, and it
+  is a small-n artifact rather than a result: at 4,000 and 8,000 bytes A's
+  absolute time (0.8 ms, 1.2 ms) is still close enough to fixed overheads that
+  the quadratic term has not dominated. The curve only settles from 16,000
+  onward, which is why the three settled rows are the ones quoted as evidence.
 
 **The probe's own first finding, disclosed because it nearly produced the
 opposite conclusion:** an all-`'a'` subject with no newline measures *nothing*.
@@ -880,23 +911,42 @@ A draft of this probe used exactly that subject and **would have reported the
 struck sentence as correct.** The quadratic requires the interior branch to be
 *enterable*, which is precisely the subject a real `(?m)^` pattern runs on.
 
-#### 3.7.2 The mitigation the first draft did not mention
+#### 3.7.2 The mitigation, and the case it is actually for
 
-R30 supplied it and this design adopts it as a proposal: **a `memchr('\n')`
-candidate-start prefilter in `emit_attempt`.** A `(?m)^`-anchored attempt can
-only begin at offset 0 or immediately after a `'\n'`, so the attempt loop does
-not need to visit every start — it can jump between newlines exactly as
-ENG_UNANCH's prefilter jumps between first-set bytes.
+R30 supplied the mitigation and this design adopts it as a proposal: **a
+`memchr('\n')` candidate-start prefilter in `emit_attempt`.** A `(?m)^`-anchored
+attempt can only begin at offset 0 or immediately after a `'\n'`, so the attempt
+loop does not need to visit every start — it can jump between newlines exactly
+as ENG_UNANCH's prefilter jumps between first-set bytes.
 
-That does **not** make the shape linear in general (a pattern with `(?m)^` on
-only *some* branches still needs every start for the other branches), but it
-recovers the common case, which is the one the measurement above is worst on:
-every attempt that the prefilter skips is an attempt that could not have
-matched.
+**The first draft justified this on the WRONG arm — R30 N3.** It cited §3.7.1's
+quadratic numbers, but a prefilter helps *least* there: the quadratic case's
+cost is the scanning each attempt does, and skipping to line starts still leaves
+each surviving attempt scanning to the end of the subject.
+
+**The arm it actually helps is the LINEAR, non-crossing one — which is what most
+real `(?m)^` patterns are.** `(?m)^ERROR` matches within a line; every attempt
+dies in a byte or two; the shape is linear with a large constant, and that
+constant is exactly what a candidate-start prefilter removes.
+
+**MEASURED** (same probe, non-crossing arm; `out/mline_caret_cost.txt`):
+
+```
+n        D (?m)^ERROR   E unanch       D/E ratio
+8000     0.00002458     0.00000028     88x
+32000    0.00009803     0.00000115     85x
+128000   0.00039255     0.00000212     185x
+```
+
+D is `^ERROR|\nERROR` (the `(?m)^ERROR` engine shape), E is `ERROR` on
+ENG_UNANCH. **Both are linear — the D/E gap is a constant factor of roughly
+85-185x, not a curve** — and that factor is the mitigation's target: it is the
+difference between visiting every offset and visiting every line start, which is
+the same jump E already gets from its own first-byte memchr.
 
 **Proposed as a design element with a stated fallback**: if Wave C measures the
 prefilter as not worth its complexity, `(?m)^` still ships — routed to
-ENG_ATTEMPT, with the O(n²) above recorded in the plan row rather than
+ENG_ATTEMPT, with both curves above recorded in the plan row rather than
 discovered by a user. What is NOT acceptable is the first draft's position:
 shipping the routing while describing its cost as "nothing else changes".
 
@@ -1005,6 +1055,20 @@ start-of-subject, which is what the constant already encodes.
 
 #### 3.8.3 The mechanism, reverse — and it is the harder half
 
+**Mechanism 4 is needed at FOUR boundaries, not two.** Each machine has an
+initialization boundary and a termination boundary, and the first draft of this
+section covered only the two initialization ones. R30's focused re-check (N1)
+found the gap:
+
+| machine | boundary | context byte needed | in the window? | covered by |
+|---|---|---|---|---|
+| forward | init, `pos = startpos` | `s[startpos-1]` | **no** | §3.8.2 — mechanism 4 |
+| forward | term, `pos = n` | *none exists* | n/a | §3.6.2's SCALAR rule |
+| reverse | init, `pp = end` | `s[end]` | in the subject, **never consumed** | below — mechanism 4 |
+| reverse | term, `pp = startpos` | `s[startpos-1]` | **no** | **§3.8.3.1 — the gap** |
+
+##### The initialization half
+
 The reverse walk starts at `pp = end` and consumes leftward, so the byte that
 seeds a **trailing** `\b`'s context is `s[end]` — one to the *right* of where
 the walk begins, and never consumed by it. The mirror of §3.8.2:
@@ -1028,6 +1092,79 @@ Two reasons to attack it first in Wave B:
    seed is data-dependent in a way the forward seed is not, and the emitted
    code must read `s[end]` *after* the forward loop — a site that does not exist
    today.
+
+##### 3.8.3.1 The TERMINATION half — a LOST MATCH the first draft would have shipped
+
+**R30 N1, and it is a real defect in this design rather than in the prose.**
+
+The reverse loop evaluates its accept and *then* tests for termination
+(`src/gen/emit_dfa.c`):
+
+```c
+1032:   if (rx_racc[rst]) sfound = pp;          /* non-EOL accept   */
+1054:   if (rx_racc[erst]) sfound = pp;         /* EOL accept       */
+1056:   if (pp <= startpos) break;              /* terminate        */
+1057:   rst = rx_rtr[... rx_rcls[s[--pp]]];     /* consume leftward */
+```
+
+So at `pp == startpos` the accept **is** evaluated, and the loop breaks before
+`s[startpos-1]` is ever read. A **leading** `\b`/`\B` at the match start is
+therefore evaluated with no left context at all — the walk assumes
+start-of-subject.
+
+**`\b` is safe by accident, and that is why a trailing-only sweep cannot see
+this.** `\b`'s blind assumption (prev is non-word) happens to coincide with the
+cases the forward pass lets through, so nothing diverges. **`\B` inverts it**,
+and this document's own §3.8.1 cell is the counterexample:
+
+> `\Bfoo` on `"xfoo"` at `startpos 1` → PCRE2 gives **(1,4)**.
+>
+> The forward pass, correctly seeded per §3.8.2, finds `last = 4`. The reverse
+> walk runs back to `pp == 1 == startpos`, where accepting requires `\B`:
+> `s[0] = 'x'` (word) and `s[1] = 'f'` (word), so `\B` holds and `sfound` should
+> become 1. Blind, the walk assumes `s[0]` is start-of-subject (non-word), `\B`
+> fails, `sfound` stays `-1`, and `<prefix>_search` returns **0**.
+>
+> **A LOST MATCH** — and one this design's own forward fix makes *reachable*,
+> because before §3.8.2 the forward pass never found the match to begin with.
+
+**Proposed: a boundary view at `pp == startpos`, seeded from `s[startpos-1]`.**
+The mirror of §3.8.2, applied at the other end of the same walk:
+
+```c
+    /* the terminal position's accept is CONTEXT-INDEXED, not the plain row */
+    rcls_t seed = startpos ? rx_rcls[s[startpos - 1]] : RX_CLS_BOT;
+    if (rx_racc_ctx[rst * RX_NRCLS + seed]) sfound = startpos;
+```
+
+**Emit it as a PEELED epilogue, not an in-loop branch.** `pp == startpos`
+happens exactly once — on the final iteration — and the loop already tests for
+it at `:1056`. Moving the terminal accept *below* that break costs one extra
+emitted site and **zero per-byte work**; putting it inside the loop would add a
+compare to every byte of the reverse walk.
+
+**The subtlety that makes this more than a one-line fix**, and it is the reason
+this note states an invariant rather than a patch: the reverse **skip** can also
+land on the boundary. `:1042-1044` reads
+
+```c
+    while (pp > startpos && rx_rs<K>[s[pp - 1]]) pp--;
+    if (/* K accepts */) sfound = pp;
+```
+
+and that `sfound = pp` is equally blind when the skip stops exactly at
+`startpos`. So the rule has to cover every writer, not just the one at `:1032`:
+
+> **INVARIANT: no `sfound` may be recorded at `pp == startpos` except through
+> the context-indexed accept.** Wave B owes a structural check for this — it is
+> checkable by reading the emitted text, which is the same instrument class as
+> §3.6.2's "never index an accept at `pos == n`".
+
+Note the pleasing symmetry with §3.6.2, and the difference: the forward
+machine's termination boundary needs a **scalar** accept because no byte exists
+past `n`; the reverse machine's termination boundary needs a **context-indexed**
+one because the byte exists and is merely outside the window. Two boundaries
+that look alike and take opposite fixes.
 
 #### 3.8.4 Why this does not reopen the D58 residue question
 
@@ -1146,41 +1283,57 @@ UTF-8, U+000A is still one self-synchronising byte, so `\Z`'s test
 not — it becomes a two-byte sequence — and DD-11's row already predicts exactly
 that as the engine work.
 
-### 5.2 Where the axis should be declared — a recommendation, and an OPEN QUESTION
+### 5.2 Where the axis should be declared — an OPEN QUESTION, not a recommendation
+
+**REWRITTEN AFTER R30 M5. The first draft's recommendation here is WITHDRAWN**,
+and the re-check (M5 PARTIAL) caught that the withdrawal had been applied at
+§11 Q1 while this section still carried the superseded argument verbatim — a
+live internal contradiction at the section a skimming reader stops at. That is
+the same stale-as-current-fact failure this document catalogues elsewhere,
+committed inside the fix for it.
 
 DD-11 says decide "with the assertions module or a real consumer, whichever asks
 first". `(?m)` is the first real consumer of the newline *concept* beyond `$`,
-so this module is where the ask lands.
+so this module is where the ask lands. **What this note now says about it is:
+the ask lands here, and the answer needs a measurement this lane did not take.**
 
-**Recommended: declare the namespace now, ship one member, refuse the rest by
-their own names — the `--encoding` shape, exactly.** D58 ruling 2 made encoding
-a **per-pattern scalar** (`pcrec_options` field + `--encoding`, never global);
-`src/gen/enc/enc.c`'s table carries a row for `utf8` with **no backend on
-purpose**, so that "a name pcrec knows but cannot compile must be refused BY ITS
-OWN NAME, never fall out of a lookup as unknown" ([SR-10]'s single-namespace
-rule). That precedent transfers without modification:
+**What was withdrawn, and why** (full argument at §11 Q1):
 
-- `pcrec_options.newline` + `--newline=NAME`, per-pattern, never global.
-- One table listing `lf`, `cr`, `crlf`, `anycrlf`, `any`, `nul`; only `lf` has
-  an implementation; the rest are refused by name with the rendered menu.
-- The `(*CR)`-family start-of-pattern verbs — refused cleanly today, per DD-11 —
-  map onto **that same table**, so there is one namespace rather than two.
+- ~~"Recommended: declare the namespace now, ship one member, refuse the rest
+  by their own names — the `--encoding` shape, exactly."~~
+- ~~"This is not an *optimisation* axis (D18's subject) but a *semantic
+  namespace*, which is the `--encoding` case rather than the OS-1..OS-4
+  case."~~
 
-The cost is a table and a refusal. The benefit is that the axis stops being
-implicit at exactly the moment a construct starts depending on it, and that
-`(?m)`'s semantics have a name to bind to in the spec.
+The exemption is unsound on D18's own worked example: **D23 ran the
+earn-its-axis test on case-folding — a semantic dimension — and it FAILED into
+the parser.** "Semantic" is not a category D18 exempts. And the `--encoding`
+comparison cuts the other way too: encoding was justified by a **committed
+second customer** (M5 is the next milestone), which newline does not have.
 
-**The counter-argument is real and is why this is an OPEN QUESTION (§11 Q1):**
-D18's earn-its-axis rule says a dimension is an axis only when a caller names
-2+ values, and today nobody does. The honest framing is that this is not an
-*optimisation* axis (D18's subject) but a *semantic namespace*, which is the
-`--encoding` case rather than the OS-1..OS-4 case. Frank rules.
+**What survives, because it is description rather than recommendation.** If the
+axis is ever declared, the `--encoding` machinery is the right *shape* for it —
+a per-pattern scalar (`pcrec_options` field + `--newline=NAME`, never global),
+one table listing `lf`/`cr`/`crlf`/`anycrlf`/`any`/`nul` with only `lf`
+implemented, the rest refused BY THEIR OWN NAMES with the rendered menu
+([SR-10]'s single-namespace rule), and the `(*CR)`-family verbs mapped onto that
+same table so there is one namespace rather than two. **That is what the axis
+would look like, not an argument that it should exist.**
+
+**The open question, and the measurement it needs: §11 Q1.** The honest test is
+D23's — hardwire LF, try to express the other five conventions in the front end,
+and see which way it fails. DD-11's own row predicts the split (`.`/`\N` fold
+like OS-1's caseless; `$`, `\Z` and `(?m)`'s anchors do not fold for
+CR/ANYCRLF, which are set-valued, or CRLF, which is a two-byte sequence in both
+DFAs). If that prediction holds, the axis earns itself on the engine half and
+folds on the class half — a better answer than either "declare it" or "defer
+it", and one nobody has yet measured.
 
 ---
 
 ## 6. (iv) `\K` against the match-start contract and the reverse pass
 
-### 6.1 Why the DFA structurally cannot do it
+### 6.1 Why pcrec's DFA cannot do it — and why that is a choice, not a theorem
 
 `\K` resets the *reported* start of the match to the position where `\K` was
 passed **on the winning path**. The DFA derives match start by a reverse walk
@@ -1941,9 +2094,18 @@ smaller. It must precede `(?m)` because `(?m)$` reuses the same mechanisms.
   arm must include a case whose resume lands **mid-word** (`\Bfoo` on
   `"xfoofoo"` → two matches, context-blind → one); a find-all suite whose
   resumes all land at boundaries proves nothing.
-- **The REVERSE seed specifically** (§3.8.3, this design's least certain claim):
-  trailing-`\b` patterns swept against libpcre2, since the forward seed can be
-  right while the reverse one is wrong and only trailing assertions can tell.
+- **The REVERSE machine's BOTH mechanism-4 sites** (§3.8.3, this design's least
+  certain area), swept against libpcre2 as two separate arms because they fail
+  on disjoint populations:
+  - **initialization** (`s[end]`): **trailing** `\b`/`\B` patterns.
+  - **termination** (`s[startpos-1]`, §3.8.3.1): **LEADING `\B`** patterns at
+    `startpos > 0`. **A leading-`\b`-only sweep CANNOT see this** — `\b`'s
+    blind assumption coincides with its truth condition, so it reports clean
+    against a design that throws matches away. The named cell is `\Bfoo` on
+    `"xfoo"` at `startpos 1`, which must report `(1,4)` and not "no match".
+- A structural check for §3.8.3.1's invariant: **no `sfound` is recorded at
+  `pp == startpos` except through the context-indexed accept** — every writer,
+  including the reverse skip's own `sfound = pp`, not just the loop-top one.
 - **The COMPOSED budget measurement of §3.5.1**, taken on the built compiler
   against **both** caps — `PCREC_MAX_DFA_STATES_TABLE` (32,000) for ENG_UNANCH
   and `PCREC_MAX_DFA_STATES_GOTO` (10,000) for ENG_ATTEMPT — with the refusal
@@ -1999,9 +2161,15 @@ sentence of §4.3.
 - `\Gfoo|bar` on both engines; `a\Gb` never matching, agreeing with PCRE2.
 - **The first draft's owed `search`-vs-`match` differential is WITHDRAWN**
   (R30 E8): for a fully-`\G` pattern the two entries agree exactly, so it had
-  nothing to find. What replaces it is a test that they DO agree — the property
-  actually worth pinning — plus a `\G`-in-some-branches pattern at
-  `startpos > 0`, where the three start states of §4.2 are distinguishable.
+  nothing to find. What replaces it is a test that they DO agree **for a
+  FULLY-`\G` pattern** — the property actually worth pinning, and the scope
+  matters: a **partial** `\G` pattern (`\Gfoo|bar`) legitimately DISAGREES
+  between the two entries, because `<prefix>_search` may match `bar` at a later
+  offset while the match-here entry's start filter rejects it. An unscoped
+  "the entries agree" test would therefore be red on correct behaviour. So:
+  agreement asserted for fully-`\G` patterns, and a `\G`-in-some-branches
+  pattern at `startpos > 0` tested for its own expected DISagreement, which is
+  also where the three start states of §4.2 are distinguishable.
 
 ### Wave E — `\K`
 
@@ -2085,8 +2253,12 @@ between the last two:
   is quadratic on large subjects. Cheapest; the number goes in the plan row so a
   user meets it in documentation rather than in production.
 - **(b) Ship the routing plus the `memchr('\n')` candidate-start prefilter**
-  (§3.7.2) — attempts can only begin at 0 or after a newline, so the common case
-  recovers most of the loss. Contained in `emit_attempt`, no new engine.
+  (§3.7.2). Its evidence is the **non-crossing linear arm** — the shape most
+  real `(?m)^` patterns have — where ENG_ATTEMPT measures **85-185x** slower
+  than the ENG_UNANCH equivalent purely from visiting every offset instead of
+  every line start. Contained in `emit_attempt`, no new engine. Note this does
+  NOT rescue the quadratic arm, where each surviving attempt still scans to the
+  end; option (b) buys the common case, not the worst one.
 - **(c) Unpark [DD-7]** and build the reverse BOT variant, after which both
   plain `^` and `(?m)^` join ENG_UNANCH and this section disappears. Largest,
   and the argument for it is stronger than when DD-7 was parked: the slow shape
@@ -2160,12 +2332,19 @@ Per §0.1, every BELIEVED claim in a load-bearing position, collected:
    `startpos == 0` the `\A` and `\G` conditions coincide and the four
    combinations collapse to two. A sweep pinned at 0 is a sweep that cannot
    fire.
-6. **§3.8.3: the REVERSE start-state seed works.** *Refutation:* this is the
-   design's least certain claim and the one to attack first — sweep
-   trailing-`\b` patterns against libpcre2, since a forward seed can be right
-   while the reverse one is wrong and only a trailing assertion can tell. The
-   reverse DFA is additionally built `prune=false`, which no measurement here
-   covers.
+6. **§3.8.3: the REVERSE machine's mechanism-4 sites work — BOTH of them.**
+   *Refutation:* sweep against libpcre2 at **both ends**, because the two ends
+   fail on disjoint pattern classes and a sweep of either alone is blind to the
+   other:
+   - the **initialization** seed (`s[end]`) — sweep **trailing** `\b`/`\B`
+     patterns, since a forward seed can be right while this one is wrong and
+     only a trailing assertion can tell;
+   - the **termination** boundary (`s[startpos-1]`, §3.8.3.1) — sweep
+     **LEADING `\B`** patterns at `startpos > 0`. Leading `\b` is
+     *accidentally safe* here, so a `\b`-only sweep reports clean on a design
+     that loses matches; `\Bfoo` on `"xfoo"` at `startpos 1` is the cell.
+   The reverse DFA is additionally built `prune=false`, which no measurement
+   here covers.
 7. **§3.7.2: the `memchr('\n')` candidate-start prefilter recovers the common
    case.** *Refutation:* build it and re-run `probe_mline_caret_cost.sh`; if the
    curve stays quadratic on the linear-case shape, option (b) of Q3 collapses
