@@ -9,35 +9,72 @@ informational — the reasoning and panel record behind a rule, never a
 second source of authority. On any disagreement between this document and
 those, THIS document is what pcrec promises.
 
-Every rule below was checked against the shipped surface at commit
-`c113890` (the point this document was authored from): `lib/pcrec.h`
+Every rule below was checked against the shipped surface: `lib/pcrec.h`
 itself, artifacts actually emitted by `build/pcrec` for representative
 patterns (a `--no-captures` DFA build, a captures-default VM build, a
-custom `--prefix`), and the test cases cited inline. Two places where the
-shipped surface does not match `match_api_m4.md`'s design text are called
-out explicitly (§3.5, §7) rather than silently reconciled.
+custom `-p` prefix, budget-limited builds), and the test cases cited
+inline. Two places where the shipped surface does not match
+`match_api_m4.md`'s design text are called out explicitly (§3.5, §7)
+rather than silently reconciled.
+
+**Verification ledger.** The document was authored at commit `c113890`
+and re-verified end to end after the R29 adversarial panel
+(2026-08-18, `[M4.7g]`). Every claim was re-checked against artifacts
+emitted freshly for that pass, and this revision adds these measurements:
+the find-all protocol of §3.1 run against `python3 re.finditer` on twelve
+(pattern, subject) pairs plus three that expose its documented lossiness;
+the §8.0 example compiled `-Wall -Wextra -Werror`, run, and its output
+compiled in turn; the subject-side contract of §3.1 measured under
+AddressSanitizer on exact-size heap buffers with a firing positive
+control; §5.3's concurrency promise checked against the shipped,
+sabotage-validated TS-1/TS-2/TS-3 guards rather than a one-off probe;
+§3.4/§6.1's section placement measured with `readelf`; §6.3's macro
+inventory measured by listing every `#define` in a build of each engine;
+§8.1's D56 guarantees measured at the refusal boundary. Two errors the
+panel found in the previous revision are recorded where they happened
+rather than quietly repaired: §3.5 (a contradiction described as an
+omission, and §2 quoting a corrected comment as if it were shipped) and
+§6.3 (a mirror claimed to be total that is partial). The corresponding
+shipped comments — the emitted `rx_matchfn` ABI block and
+`lib/pcrec.h`'s generated-searcher comment — were fixed in the same
+pass, so §2's quotation is now the real text.
 
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
 
-Every symbol a pattern compile can produce falls into exactly one of three
-groups:
+Every symbol a pattern compile can produce falls into one of three
+groups, with one stated boundary case (the two artifact-stamp macros
+noted under group 2, which are `PCREC_*`-named yet per-artifact):
 
 1. **Per-artifact symbols**, scoped by the caller's `pcrec_options.prefix`
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
    `<prefix>_match_caps`, `<prefix>_info`, and the `<PREFIX>_*` macro
    family (`RX_NCAPS`, `RX_UNSET`, `RX_ERR_*`, the D46 observability
-   macros in §6.3). A pattern compiled with `--prefix foo` gets
+   macros in §6.3). A pattern compiled with `-p foo` gets
    `foo_search`, `FOO_NCAPS`, etc. — verified by compiling the same
-   pattern under `-p foo` and reading the emitted header.
+   pattern under `-p foo` and reading the emitted header. (The CLI spells
+   this option `-p` and only `-p`; there is no `--prefix` long form —
+   `pcrec --prefix foo ...` is an unknown-option error.)
 2. **pcrec's own fixed library surface**: the `PCREC_*` enum/bit
    constants and the `pcrec_options`/`pcrec_output`/`pcrec_error`/
    `pcrec_err_input` types declared in `lib/pcrec.h`. Never scoped by a
    generated pattern's prefix.
-3. **Fixed-literal ABI types**, scoped by *neither* of the above:
-   `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
-   `struct rx_info`, `rx_renderfn`. These are always spelled `rx_*`
+
+   **The `PCREC_*` spelling is not by itself a promise that a name lives
+   in `lib/pcrec.h`**: two macros break that reading, and a consumer
+   grepping for the namespace will find them. Every emitted artifact
+   carries `PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES` (the D37
+   artifact stamp — e.g. `#define PCREC_FEATURE_SET "std1"`,
+   `#define PCREC_FEATURE_MODULES "classes,modifiers"`), which are
+   `PCREC_*`-named, PER-ARTIFACT, and declared nowhere in `lib/pcrec.h`.
+   They are the one exception to §8's own naming rule, and they are
+   deliberate: an artifact must not be ambiguous about what it was built
+   with. Everything else `PCREC_*` follows the rule as stated.
+3. **Fixed-literal ABI types**, scoped by *neither* of the above, in the
+   order the artifact declares them: `rx_ctx`, `rx_matchfn`,
+   `rx_callout_ref`, `rx_renderfn`, `rx_group_entry`,
+   `struct rx_info`. These are always spelled `rx_*`
    regardless of `--prefix`, on purpose: they are what let two
    differently-prefixed generated matchers compose in one translation
    unit (a compiled matcher links directly as another's callout, with no
@@ -52,7 +89,13 @@ groups:
 A generated artifact is either self-contained (`options.header_name ==
 NULL`, everything below in the `.c`) or split into a paired `.h`/`.c`
 (`options.header_name` set) — both forms carry the identical declarations
-below; only the file split differs.
+below. Two things beyond the file split differ, and a consumer writing
+against the header namespace should know both: the self-contained form
+omits the `PCREC_GEN_<PREFIX>_H` include guard entirely (measured with
+`header_name == NULL`: zero occurrences, against three in the split
+form's `.h`), since there is no header to guard; and the D46
+observability macros of §6.3 are emitted into the `.c` only, never into
+the `.h` (§6.3 states this where it matters).
 
 ---
 
@@ -69,37 +112,64 @@ typedef struct rx_ctx {
     void                 *user;     /* per-binding user data */
 } rx_ctx;
 
-typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 /* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a
- * typed give-up code in [<PREFIX>_ERR_FLOOR, -2] (§4). Self-contained:
- * must accept ctx->ncap == 0, ctx->caps == NULL. */
+ * typed give-up code in [<PREFIX>_ERR_FLOOR, -2] -- one per way the
+ * engine can give up (<PREFIX>_ERR_STEPS/_FRAMES/_WORK), where
+ * <PREFIX> is this artifact's own uppercased --prefix. D49: those
+ * codes PROPAGATE, they are not collapsed to -1, and a caller doing
+ * an exact `== -1` test sees them as distinct values. Values
+ * strictly BELOW <PREFIX>_ERR_FLOOR stay RESERVED for a future abort
+ * semantic; no pcrec-emitted matcher produces one today, and a
+ * generated call site that invokes an rx_matchfn traps on one.
+ * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
+typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 
 typedef struct rx_callout_ref {
     rx_matchfn *fn;
     void       *user;
 } rx_callout_ref;
 
+/* Emitted ONLY when a substitution template names it. Renders one
+ * template segment from the same rx_ctx a callout receives. Writes at
+ * most outcap bytes to out; returns the number of bytes produced, or
+ * -1 to fail. Called with out == NULL and outcap == 0, it returns the
+ * length it WOULD produce, writing nothing. */
 typedef ptrdiff_t rx_renderfn(const rx_ctx *ctx,
-                               unsigned char *out, size_t outcap);
-/* Declared unconditionally alongside the other five ABI types; a
- * function of this type is only ever DEFINED when a substitution
- * template names one (module M4-SUBST, not yet built as of this
- * writing) — the typedef existing costs nothing on a build that never
- * uses it. */
+                              unsigned char *out, size_t outcap);
 
 typedef struct {
     const char *name;
     int         number;
     int         slot;   /* caps[] index this entry delivers, or -1 if
-                            this build delivers no slot for it */
-    const char *ref;    /* NULL/empty for the primary pattern's own
-                            groups; a labeled insertion path, not yet
-                            producible by anything in pcrec today */
+                           this build delivers no slot for it */
+    const char *ref;    /* NULL/empty for the primary's own groups */
 } rx_group_entry;
 
-struct rx_info { /* see §6 for the full field list */ };
-extern const struct rx_info <prefix>_info;
+struct rx_info {
+    /* ... elided here; §6 quotes the full field list ... */
+};
+
+extern const struct rx_info <prefix>_info;   /* not inside the ABI block */
 ```
+
+The block above is the emitted text verbatim (re-quoted from a freshly
+emitted artifact for this revision), with two marked exceptions: the
+`struct rx_info` body is elided to §6, and `extern const struct rx_info
+<prefix>_info;` is per-prefix and so lives *outside* the
+`PCREC_RX_ABI_H` guard, not in this block. Three things the comments
+state that a reader should not have to infer:
+
+- **`rx_renderfn` carries a sizing protocol**, and it is shipped ABI
+  text, not a design intention: called with `out == NULL` and
+  `outcap == 0` it writes nothing and returns the length it *would*
+  produce. That is how a caller sizes a buffer before rendering.
+- **`rx_group_entry.ref`** is documented in the artifact only as
+  "NULL/empty for the primary's own groups". Its non-empty form is a
+  labeled insertion path that nothing in pcrec can produce today.
+- **`<PREFIX>` in these comments is a placeholder, not a literal.** The
+  block is byte-identical across every `--prefix` on purpose (§1), so it
+  cannot name any one artifact's macros; substitute your own uppercased
+  prefix when reading it.
 
 **`rx_info` is a struct TAG, not a typedef, and every reference to it
 spells `struct rx_info`** — verified directly (`grep`-visible in every
@@ -114,12 +184,14 @@ cannot coexist in one C scope. Struct tags live in a separate C namespace
 from ordinary identifiers, so `struct rx_info` (the type) and `rx_info`
 (the default-prefix instance) coexist without conflict. **This is the
 contract as shipped: an embedder writing code against a generated header
-declares `const struct rx_info *`, never a bare `rx_info`.** Whether a
-future pcrec release renames the per-artifact instance to restore a bare
-typedef is an open question tracked in `docs/dev/plan.md` (not yet ruled
-as of this writing); this spec will update if that ruling lands and
-changes the shipped spelling — see §7 for the pre-v1 posture that makes
-such a change unconstrained in substance today (D40).
+declares `const struct rx_info *`, never a bare `rx_info`.**
+
+**This spelling is RULED, not provisional (D57, 2026-08-18).** The
+question of renaming the per-artifact instance to buy a bare typedef
+back is closed: the struct-tag form is blessed as the contract, and the
+design sketch's typedef form is dead. A consumer that wants a typedef'd
+name ships `typedef struct rx_info rx_info_t;` in its own header, which
+touches nothing pcrec emits.
 
 ---
 
@@ -141,20 +213,103 @@ Searches `s[startpos..n)` for the leftmost match and returns:
 |---|---|
 | `1` | match found; if `caps != NULL`, `<PREFIX>_NCAPS` pairs are written, `caps[0]` the whole-match span (no second name for it) |
 | `0` | no match; `caps` (if non-NULL) is left **untouched** — the `int` return alone communicates match/no-match |
-| `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` | engine gave up (§4) |
+| `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` | engine gave up (§4); `caps` also left **untouched** |
+
+Note that `0` here means **no match**, not a zero-length match. A
+zero-length match is a success: it returns `1` with
+`caps[0][0] == caps[0][1]`. (The anchored entries of §3.2/§3.3 use the
+other convention, because their return value carries a length: there `0`
+IS a zero-length match, and no-match is `-1`.)
 
 `caps` may be `NULL` (existence-only search — every caller before M4.5
 did exactly this, and the signature costs them nothing new).
 `startpos > n` returns `0`. `^` anchors to absolute offset `0` regardless
-of `startpos`. `s` may be `NULL` only when `n == 0`. One-shot: this finds
-the *first* match from `startpos`; a caller wanting every match restarts
-at the previous match's end (D41.5) — there is no batch find-all
-primitive and none is planned for v1.
+of `startpos`. `s` may be `NULL` only when `n == 0`.
 
-Verified against the shipped emitter (`src/gen/emit_dfa.c`): the DFA
-matcher writes `caps[0][0]`/`caps[0][1]` only under `if (caps)`, guarded
-exactly as documented, both in the unanchored search body and the
-`--emit-main` `main()`.
+**Every offset written to `caps` is an ABSOLUTE offset into `s`, never
+relative to `startpos`** — measured, and the property a find-all loop
+depends on: searching `"xabcabcx"` for `abc` from `startpos = 0` reports
+`[1,4)`, and the next search from `4` reports `[4,7)`, not `[0,3)`.
+
+**The subject side of the contract.** `s` is `n` bytes and nothing more:
+a `0x00` byte inside `s` is an ORDINARY byte with no special meaning (it
+is only the *pattern* side, §7, that is NUL-terminated), and **the
+matcher never reads `s[n]`** — there is no sentinel, so `s` need not be
+NUL-terminated and need not have a readable byte after its end.
+Measured on both engines with the subject in an exact-size heap
+allocation under AddressSanitizer: `a.b` and `a(.)b` both match the
+3 bytes `{'a', 0x00, 'b'}` (span `[0,3)`, group 1 `[1,2)`), and matching,
+non-matching and `n == 0` searches over exact-size buffers are all clean.
+The check is non-vacuous: the same probe compiled to read one byte past
+the end (`n` overstated by one) fires a heap-buffer-overflow at the
+matcher's own `memchr` prefilter.
+
+#### Finding every match
+
+This entry is ONE-SHOT: it finds the *first* match at or after
+`startpos`. There is no batch find-all primitive and none is planned for
+v1, so a caller wanting every match writes the loop — and the loop is
+not simply "restart at the previous match's end", which spins forever
+the first time a pattern matches empty (`a*` on `"bbb"` returns `[0,0)`
+from `startpos = 0` for ever). The rule that terminates and is correct:
+
+```c
+size_t p = 0;
+while (p <= n) {
+    int r = <prefix>_search(s, n, p, caps);
+    if (r != 1) break;                       /* 0 = done; < 0 = gave up (§4) */
+    report(caps[0][0], caps[0][1]);
+    p = (caps[0][1] > caps[0][0])            /* non-empty: resume at its end */
+          ? (size_t)caps[0][1]
+          : (size_t)caps[0][0] + 1;          /* EMPTY: advance one byte */
+}
+```
+
+**The empty-match advance rule**: a zero-length match is reported like
+any other, and then the next search starts one byte past its start. Note
+that the advance is off the match's own START (`caps[0][0]`), not off
+the loop variable — an empty match can be found at a position later than
+the one searched from. The loop terminates because `p` moves strictly
+forward every iteration and `p > n` ends it.
+
+That loop, coded exactly as written above, was run against
+`python3 re.finditer` on twelve (pattern, subject) pairs and produced
+identical spans on all twelve, including the three that motivate the
+rule: `a*` over `"bbb"` → `(0,0) (1,1) (2,2) (3,3)`; `x?y` over `"yy"` →
+`(0,1) (1,2)`; and alternations mixing empty and non-empty branches —
+`a|` over `"bab"` → `(0,0) (1,2) (2,2) (3,3)` and `a|b*` over `"cbbac"` →
+`(0,0) (1,3) (3,4) (4,4) (5,5)`. It also agrees on `a*`/`"aaa"`,
+`a?`/`"aba"`, `b*`/`"abbbab"`, `(a|)`/`"xax"`, `a(b|)c`/`"acabc"`,
+`(ab)*`/`"ababx"`, `a{0,2}`/`"aaaa"` and `[a-c]*`/`"xabcx"`.
+
+**Where this loop is LOSSY, stated honestly.** It reports fewer matches
+than PCRE2 and python `re` do for a pattern that *prefers* the empty
+match at a position where a non-empty match also starts. Those engines,
+on finding an empty match at `p`, RETRY at `p` with an
+"empty match not permitted here" constraint (PCRE2 spells it
+`PCRE2_NOTEMPTY_ATSTART`) and report the non-empty match too, before
+moving on. **pcrec's entry points cannot express that retry** — there is
+no "must not match empty here" mode on any of them — so the advance rule
+above is the whole of what a pcrec consumer can do. Measured
+divergences, all of this one class: `|a` over `"aaa"` — this loop
+reports 4 spans `(0,0) (1,1) (2,2) (3,3)` where `re.finditer` reports 7,
+adding `(0,1) (1,2) (2,3)`; likewise `a*?` over `"aaa"` (4 vs 7) and
+`a??` over `"aba"` (4 vs 6). Where the pattern's own preference picks a
+non-empty match wherever one starts — all twelve agreeing cases above,
+including every greedy quantifier among them — there is no divergence.
+
+**Byte-vs-character caveat.** `+ 1` advances one BYTE. Under the ASCII
+encoding (`PCREC_ENC_ASCII`, the only one implemented today) a byte is a
+character and the rule is exact. When module `utf8` lands at M5 this
+becomes the wrong advance for a multi-byte character, and M5 owns
+sharpening it; a consumer writing UTF-8-aware find-all today must
+advance to the next character boundary itself.
+
+Verified against the shipped emitter (`src/gen/emit_dfa.c`) and a fresh
+artifact: the DFA matcher writes `caps[0][0]`/`caps[0][1]` only under
+`if (caps)`, guarded exactly as documented, in the unanchored search
+body. The `--emit-main` `main()` carries no such guard and needs none —
+it passes a real array, never `NULL`.
 
 ### 3.2 `<prefix>_match` — the unconditional, anchored match-here entry
 
@@ -163,8 +318,18 @@ ptrdiff_t rx_matchfn(const rx_ctx *ctx);   /* the shared type, §2 */
 ptrdiff_t <prefix>_match(const rx_ctx *ctx);
 ```
 
-Matches at exactly `ctx->pos`, no search loop. Returns the matched
-length (`>= 0`), `-1` on no match, or a typed give-up code (§4). Delivers
+**Matches at exactly `ctx->pos`: a match starting anywhere else is not
+reported.** That is the semantic promise, and it is what a caller can
+rely on; it is deliberately not a claim about how the artifact is built.
+The two engines implement it differently — the VM emitter genuinely has
+no search loop here, while the DFA emitter reaches the same answer by
+running its ordinary search and rejecting any match whose start is not
+`ctx->pos`. Both were measured to give the same answers; only the
+promise above is contractual.
+
+Returns the matched
+length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no
+match, or a typed give-up code (§4). Delivers
 **no captures** — `ctx->caps` is an *input* (§5), not an output channel,
 and there is no parameter for `<prefix>_match` to write group offsets
 into. Self-contained per its type's contract: a top-level caller passes
@@ -176,11 +341,23 @@ into. Self-contained per its type's contract: a top-level caller passes
 ptrdiff_t <prefix>_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);
 ```
 
-Same anchoring as `<prefix>_match` (no search loop), plus a
+Same anchoring promise as `<prefix>_match`, plus a
 capture-delivering output. On success, `caps_out[0..<PREFIX>_NCAPS-1]` are
 all written (the same completed-match discipline as `<prefix>_search`),
-`caps_out[0]` is `[ctx->pos, ctx->pos + length)`. On failure, `caps_out`
-is untouched. `ctx->caps`/`ctx->ncap` are read as ordinary `rx_ctx` input
+`caps_out[0]` is `[ctx->pos, ctx->pos + length)`, and **`caps_out[k]` is
+capturing group `k`** for `k >= 1`, in the pattern's own left-to-right
+numbering, on any captures-on build. (`rx_group_entry.slot` exists for a
+future in which a build delivers a *different* slot for a group; on
+today's builds no such indirection is in play and the identity above is
+what the examples in §5.1 rely on.)
+
+**On failure, `caps_out` is untouched — and a give-up is a failure for
+this rule.** Every negative return leaves the caller's array exactly as
+it was; the generated source says so outright ("caps_out is UNTOUCHED on
+every negative return, give-up included"). The same holds for
+`<prefix>_search`'s `caps`.
+
+`ctx->caps`/`ctx->ncap` are read as ordinary `rx_ctx` input
 (unrelated to `caps_out`) — a top-level call passes `ncap=0, caps=NULL`
 exactly like `<prefix>_match`.
 
@@ -189,53 +366,136 @@ captures wanted → `<prefix>_search`; start position known, captures
 wanted, no search loop wanted → `<prefix>_match_caps`; neither offsets
 nor a loop wanted → `<prefix>_match`.
 
+**One caveat on that ergonomic framing**, because it invites reading the
+three entries as interchangeable views of one answer: they are not, on
+the give-up axis. §4's uniformity is about the CODE SPACE — which values
+mean what — not about which entry gives up on a given input. Whether a
+budget is exhausted is a property of the entry point, because the
+entries do different amounts of work — and it goes BOTH ways. Measured,
+`(a|aa)+b` built `--step-budget=3`: over `"aaaaaaaaaaaaaaaaaaaaX"`,
+`<prefix>_search`
+returns `0` (its DFA prefilter resolves the question definitively
+without ever entering the VM) while `<prefix>_match` and
+`<prefix>_match_caps` both return `-2`. And on the same artifact family
+built `--backtrack-frames=1`, the reverse: over `"xxaaaaab"`,
+`<prefix>_search` returns `-3` while both anchored entries return a
+clean `-1`, because anchoring at position 0 fails immediately and never
+spends a frame. A caller must therefore handle give-ups on whichever
+entry it actually calls, and must not infer from one entry's clean
+answer that another would give one.
+
 ### 3.4 `<prefix>_info` — the reflection structure
 
 ```c
 extern const struct rx_info <prefix>_info;
 ```
 
-One instance per artifact, `.rodata`, zero runtime cost. Full field list:
-§6.
+One instance per artifact, link-time constant, no runtime cost to build
+it. Full field list: §6.
+
+**It is not, strictly, `.rodata`, and the difference is the one an
+embedder targeting ROM or flash cares about.** `struct rx_info` holds
+two pointers — `pattern` and `engine_why` — so the object needs
+load-time relocation and the toolchain places it accordingly. Measured
+with `readelf` on a default build of `'a(b|c)+d'`: `rx_info` is a
+104-byte object in section `.data.rel.ro.local` (writable-then-read-only,
+not `.rodata`), and that section carries exactly two `R_X86_64_64`
+relocations, one per embedded string pointer. The strings themselves are
+in `.rodata`. There is no run-time initializer and no constructor; the
+cost is two relocations at load, not zero.
 
 ### 3.5 A design-vs-shipped note: give-up codes are uniform, not collapsed
 
 `match_api_m4.md` §3 as originally written required `<prefix>_match` to
 **collapse** every give-up code to a bare `-1` (D42.3's reservation on
 the `rx_matchfn` type). **That collapse does not exist in the shipped
-artifact.** Verified directly: the emitted `<prefix>_match` body is
+artifact**, on either engine. Both bodies, quoted from freshly emitted
+artifacts:
 
 ```c
+/* DFA artifact (--no-captures 'a(b|c)+d'), with its full comment: */
+/* D49: the give-up codes PROPAGATE rather than collapsing to -1.
+ * Unreachable on this engine — a DFA artifact has no counter to
+ * exhaust — but written uniformly on purpose: the contract of
+ * rx_matchfn is one contract, and a wrapper that discards codes it
+ * merely happens never to see is the shape that goes wrong when a
+ * later engine shares this emitter. */
 ptrdiff_t rx_match(const rx_ctx *ctx)
 {
     ptrdiff_t caps[RX_NCAPS][2];
     int found = rx_search(ctx->subject, ctx->len, ctx->pos, caps);
-    if (found < 0) return (ptrdiff_t)found;   /* propagates, does not collapse */
-    ...
+    if (found < 0) return (ptrdiff_t)found;
+    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;
+    return caps[0][1] - caps[0][0];
 }
 ```
 
-with a comment stating the reasoning explicitly ("the give-up codes
-PROPAGATE rather than collapsing to -1 ... the contract of `rx_matchfn`
-is one contract"). This is the shipped, correct state: `docs/dev/
-decisions.md` D49 supersedes D42.3 and rules the uniform-codes contract
-this artifact implements — `match_api_m4.md`'s own §3 carries the D49
-amendment in place. Stated here because a spec reader who only checked
-the type comment (`rx_matchfn`'s doc comment inside the ABI-type block
-still reads "matched length >= 0 ... or -1 (fail)" without spelling out
-the give-up-code space in the same sentence) could reasonably expect the
-collapse; the actual, checkable behavior is uniform propagation. A caller
-that only tests `r < 0` for "did it match" is unaffected either way; a
-caller doing an exact `== -1` comparison sees give-up codes as distinct
-values, not folded into `-1`.
+```c
+/* VM artifact ('a(b|c)+d' under -p r22a), where the codes are LIVE: */
+ptrdiff_t r22a_match(const rx_ctx *ctx)
+{
+    r22a_work w;
+    ptrdiff_t r;
+    if (ctx->pos > ctx->len) return -1;
+    r22a_work_init(&w);
+    r = r22a_match_impl(ctx, &w, ctx->len);
+    /* No translation and no clamp: the impl's return space IS this
+     * contract's -- >= 0, -1, or one of the three R_ sentinels, which
+     * are the ERR_ codes. A defensive floor test here would be dead
+     * code pretending to be a safeguard. */
+    return r;
+}
+```
+
+**Both quotations matter, and quoting only the first would be a broken
+check.** The DFA body's own comment says the propagation branch is
+*unreachable on that engine* — a DFA artifact has no counter to exhaust
+— so it is evidence that the emitter WRITES the propagation, not that
+propagation ever happens. The live evidence is the VM: measured,
+`(a|aa)+b` built `--step-budget=3` returns `-2` from `<prefix>_match`
+and `<prefix>_match_caps`, and the same pattern built
+`--backtrack-frames=1` returns `-3` from all three entries — including
+`<prefix>_search` — on the subject `"ab"`. (The DFA body's second line,
+`if (found != 1 || caps[0][0] != ctx->pos) return -1;`, is also the only
+thing making that engine honor §3.2's anchoring promise — worth seeing
+rather than eliding.)
+
+This is the shipped, correct state: `docs/dev/decisions.md` D49
+supersedes D42.3 and rules the uniform-codes contract these artifacts
+implement — `match_api_m4.md`'s own §3 carries the D49 amendment in
+place. A caller that only tests `r < 0` for "did it match" is unaffected
+either way; a caller doing an exact `== -1` comparison sees give-up
+codes as distinct values, not folded into `-1`.
+
+**An artifact generated before 2026-08-18 carries a comment that
+contradicts all of the above, and a reader holding one needs to know
+that.** Until that date, the emitted `rx_matchfn` ABI comment read
+"Return values < -1 are RESERVED for a future abort semantic; no
+pcrec-emitted matcher produces one today" — an affirmative false
+statement about the artifact it sits in, which the measurements above
+refute. **Where an old artifact's comment and this document disagree,
+this document is the contract; the artifact's behavior always matched
+this document, not its own comment.** This section as first written
+(`[M4.7f]`) described that comment as merely *omitting* the give-up
+codes, which was too generous by a wide margin, and §2 of this document
+quoted a *corrected* version of that comment as though it were the
+shipped text. Both were found by the R29 panel and fixed in the same
+pass (`[M4.7g]`, 2026-08-18): the emitted comment now states the give-up
+space (§2 quotes it verbatim), and `lib/pcrec.h`'s generated-searcher
+comment, which had the same defect in its own words, now names the
+negative return space too.
 
 ---
 
 ## 4. The give-up code space (D49)
 
 `<prefix>_search`, `rx_matchfn` (hence `<prefix>_match` and any callout),
-and `<prefix>_match_caps` all report engine give-up the same way: a
-negative return strictly below `-1`.
+and `<prefix>_match_caps` all report engine give-up in the same CODE
+SPACE: a negative return strictly below `-1`, with the same value
+meaning the same thing at every entry. That uniformity is about the
+codes, not about when a give-up happens — which entry gives up on a
+given input is a property of that entry (§3.3's caveat, measured in both
+directions).
 
 ```c
 #define <PREFIX>_ERR_STEPS  (-2)   /* step budget exhausted (backtrack resumptions) */
@@ -255,10 +515,13 @@ Verified against both a DFA-only artifact (`--no-captures`, no counter
 exists, these codes are reserved-but-unreachable) and a captures-default
 VM artifact (`RX_STEP_BUDGET`/`RX_WORK_BUDGET`/`RX_BT_FRAMES`/
 `RX_TRAIL_FRAMES` macros present, the counters live). A DFA-compiled
-artifact never emits or reaches these codes — it has no counter to
-exhaust — but the constants are still reserved and named from the first
-build of any artifact, so a caller's `switch` written today does not need
-revisiting when a later compile of the same pattern selects the VM.
+artifact never RETURNS one of these codes — it has no counter to
+exhaust — but it does EMIT them: the constants are defined in every
+artifact, and a DFA artifact built `--emit-main` even emits the full
+three-way handler text for them (measured: `if (rc == RX_ERR_STEPS)`,
+`_FRAMES`, `_WORK` all present in a `--no-captures --emit-main` build).
+That is deliberate, and it is what lets a caller's `switch` written
+today survive a later compile of the same pattern selecting the VM.
 
 **Composed call sites must trap below the floor.** Every generated call
 site that invokes an `rx_matchfn` (a callout, a composed submatcher) must
@@ -270,6 +533,8 @@ here for whichever future work (callouts, composition) first emits one.
 
 **Today's `1`/`0` contract for `<prefix>_search` is unchanged** — this
 reservation adds give-up outcomes, it does not renumber match/no-match.
+It does mean the return is not two-valued, so `if (<prefix>_search(...))`
+reads a give-up as a match: test `== 1` for "matched" (§3.1).
 
 ---
 
@@ -295,9 +560,14 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
   build).
 - **Every pair `0..<PREFIX>_NCAPS-1` is written on a completed match** —
   no watermark needed at read time once a match succeeds.
-- **On a failed match, the caller's array is left untouched.** No
+- **On a failed match, the caller's array is left untouched — and an
+  engine GIVE-UP is a failure for this rule.** Every negative return
+  from an anchored entry, and a `0` or a give-up code from
+  `<prefix>_search`, leaves the array exactly as the caller left it. No
   attempt is made to write `{-1,-1}` into it; the `int`/`ptrdiff_t`
-  return value alone communicates failure.
+  return value alone communicates failure. The generated source states
+  the give-up half outright ("caps_out is UNTOUCHED on every negative
+  return, give-up included").
 - **Caller-owned, fixed-size, compile-time-sized**: a caller declares
   `ptrdiff_t caps[<PREFIX>_NCAPS][2];` on the stack. Nothing in the
   generated contract allocates.
@@ -337,7 +607,11 @@ never ran at all, in any iteration, anywhere in the match).
 
 ### 5.2 Explicit non-requirements
 
-The following are deliberately **not** part of this contract:
+The following are deliberately **not** part of this contract. Every item
+here is scoped to the MATCH path — the generated matcher and its
+caps buffers. The pcrec LIBRARY's own compile path does allocate and
+does have a lifecycle to manage; that is §8's `pcrec_output` /
+`pcrec_output_free`, and nothing here excuses skipping it.
 
 - No ovector sizing negotiation — the group count is a compile-time fact.
 - No match-data object, no allocation, no lifecycle to manage.
@@ -350,6 +624,48 @@ The following are deliberately **not** part of this contract:
   callout binding's `user` data lives entirely in the `rx_callout_ref`
   the binding declares; nothing about *which* callout is firing is
   visible to `rx_matchfn`'s own signature.
+
+### 5.3 Concurrency: a generated matcher is reentrant and thread-safe
+
+**A generated matcher holds no mutable state of its own.** Every entry
+point's working state lives in its own stack frame and in the caller's
+`caps` buffer; the tables, bitmaps and the `rx_info` instance are
+`const`. Therefore:
+
+- Any number of threads may call the same artifact's entry points
+  concurrently, **provided each call has its own `caps`/`caps_out`
+  buffer** (which the caller owns and declares, per the rule above).
+  Sharing one buffer between concurrent calls is a data race in the
+  CALLER's code, not something the matcher serializes for it.
+- The same holds for one thread re-entering a matcher (from a callout,
+  say), subject to the same distinct-buffer rule.
+- `<prefix>_info` is read-only and may be read from anywhere at any time.
+
+**This is a CONTRACT, binding on future emitters, not merely an
+observation about today's output.** It is what makes a generated matcher
+usable from a thread pool at all, and an engine that wanted a mutable
+scratch buffer would have to change this document first.
+
+It is also GUARDED rather than asserted, by two shipped checks that run
+in `make test`:
+
+- **TS-1** (D19) is static: it scans every emitted file across nine
+  emission shapes and fails on any non-const static object, or any
+  reference to a non-reentrant or allocating libc symbol.
+- **TS-2** is dynamic and runs under ThreadSanitizer: eight threads
+  share ONE compiled matcher and search DIFFERENT subjects
+  concurrently, across five patterns chosen to hit five differently
+  *shaped* emitted engines, and every threaded result must equal a
+  single-threaded baseline recorded before any thread was spawned.
+  **Its sabotage arm proves the detector is watching** — a planted race
+  in a scratch copy of the driver must be caught, or the check fails
+  itself.
+
+The library side has the same treatment: **TS-3** runs eight threads
+each compiling its own pattern through `pcrec_compile()` concurrently,
+byte-matching a single-threaded baseline, also TSan-instrumented and
+also sabotage-validated. So `pcrec_compile()` is safe to call
+concurrently too, which §8 assumes and this is the evidence for.
 
 ---
 
@@ -372,21 +688,29 @@ struct rx_info {
                                        writing — verified: '(?<g>a)' still
                                        refuses "requires module
                                        'named-groups'") */
-    unsigned      engine;          /* ENGM_DFA (1) / ENGM_VM (2) */
+    unsigned      engine;          /* 1 = DFA, 2 = VM. The artifact
+                                       spells these ENGM_DFA/ENGM_VM in
+                                       a COMMENT only — no such constant
+                                       is #defined anywhere, so compare
+                                       against the numbers */
     int64_t       step_budget;     /* -1 = none */
     int64_t       work_budget;     /* -1 = none; the THIRD bound (D47
                                        SECOND ADDENDUM): forward work the
                                        fail label never sees, counted
                                        separately from step_budget */
-    int64_t       frame_capacity;  /* -1 = unbounded */
+    int64_t       frame_capacity;  /* -1 = unbounded. NOTE the sentinel
+                                       is NOT the one the same-named
+                                       pcrec_options field uses — see
+                                       the asymmetry note below */
     int64_t       subject_ceiling; /* 0 = unset/not applicable; else the
                                        stamped honest ceiling for a
                                        residually-unbounded capture body */
     const char           *pattern;      /* source pattern text, as given
                                             to pcrec_compile() */
     size_t                pattern_len;  /* companion length — see §7 */
-    const rx_group_entry *groups;       /* sorted, bsearch-able; NULL
-                                            until named-groups */
+    const rx_group_entry *groups;       /* NULL until named-groups; the
+                                            sort key is not yet fixed —
+                                            see below */
     const char           *engine_why;   /* forcing construct/reason, or
                                             NULL; also carries a prefilter
                                             note on hybrid-eligible
@@ -411,14 +735,47 @@ from the `/* ... */`-comment escaper used elsewhere in the file).
 
 `groups`/`nnames` stay `NULL`/`0` for every pattern until module
 `named-groups` lands — verified live on this build (`'(?<g>a)'` still
-refuses with `requires module 'named-groups'`).
+refuses with `requires module 'named-groups'`). **The `groups` array is
+described as sorted and `bsearch`-able, but no document states the sort
+KEY**, and there is no producer to measure: a consumer must not assume
+an ordering today. Module `named-groups` fixes the key when it ships,
+and this section states it then.
 
-### 6.1 `rx_info` is `.rodata`-only, link-time, not runtime, data
+**Two more reflection facts are weaker than they look**, and the
+difference from a shipped guarantee matters to anyone writing code
+against them:
+
+- **`rx_ctx.ncap`'s "watermark mid-match" reading has no producer.**
+  (It is an `rx_ctx` field rather than an `rx_info` one, but it belongs
+  with these.) Every call site in every emitted artifact sets
+  `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
+  watermark. It is reserved for a future mid-match view, exactly as
+  `nnames`/`groups` are reserved for `named-groups`.
+- **`rx_info.abi` is `2` on every artifact today, and is not yet a
+  compatibility promise.** Being pre-v1 (§9), it is a layout version and
+  nothing more: do not build version negotiation on it until v1 declares
+  what a bump means.
+
+**`frame_capacity`'s sentinel asymmetry.** The field name appears on
+both sides of the API with different sentinels, and neither side is
+wrong — they answer different questions. On the INPUT side,
+`pcrec_options.frame_capacity == 0` means "let the compiler size it"
+(and a positive value is a request). On the OUTPUT side,
+`rx_info.frame_capacity == -1` means "no bound at all" — which is what a
+DFA artifact stamps, having no resume stack to bound (measured:
+`.frame_capacity = -1` alongside `.step_budget = -1` and
+`.work_budget = -1` on a `--no-captures` build). `0` is not a legal
+output value and `-1` is not a legal input value. §8 restates this at
+the options side.
+
+### 6.1 `rx_info` is link-time, not runtime, data
 
 It is **not** part of `rx_ctx` or any callback parameter — a caller
 reads `<prefix>_info` by symbol, once, at whatever point it wants the
 artifact's own facts about itself (option flags, which engine, the
-budgets it was built with, its own source pattern text).
+budgets it was built with, its own source pattern text). Its section
+placement is `.data.rel.ro.local` rather than `.rodata`, for the reason
+§3.4 measures.
 
 ### 6.2 Second-count example, worked
 
@@ -431,12 +788,47 @@ rule `rx_info` restates for every build.
 
 ### 6.3 The compile-time mirror: observability macros
 
-Everything `rx_info` states as runtime/link-time data is *also* available
-as a compile-time macro on a VM-compiled artifact, for a caller that wants
-to `#if` on it rather than read a struct field — D46's "every strategy
-selection point must be observable" requirement, discharged as a
-same-shaped pair for each axis. Verified present on a captures-default
-build of `'a(b|c)+d'`:
+An artifact also carries compile-time macros, for a caller that wants to
+`#if` on a fact rather than read a struct field at run time — D46's
+"every strategy selection point must be observable" requirement. Two
+scoping facts first, because both are easy to get wrong and neither is
+guessable:
+
+**The mirror is PARTIAL — on a VM artifact six of `rx_info`'s fifteen
+fields have a macro, and nine do not.** The six that mirror are `ncaps`
+(`<PREFIX>_NCAPS`), `engine` (`<PREFIX>_ENGINE`, as the string `"vm"`),
+`engine_why` (`<PREFIX>_ENGINE_WHY`), `step_budget`
+(`<PREFIX>_STEP_BUDGET`), `work_budget` (`<PREFIX>_WORK_BUDGET`) and
+`frame_capacity` (`<PREFIX>_BT_FRAMES`). The nine with no macro at all
+are `abi`, `flags`, `encoding`, `ngroups`, `nnames`, `subject_ceiling`,
+`pattern`, `pattern_len` and `groups` — including `ngroups`, which is
+exactly the count §6.2 works hardest to distinguish from `ncaps`, and
+which is therefore reachable only by reading `<prefix>_info` at run
+time.
+
+**On a DFA artifact the mirror is thinner still: `ncaps` alone.** A
+`--no-captures` build defines exactly `<PREFIX>_NCAPS`,
+`<PREFIX>_UNSET`, the four `<PREFIX>_ERR_*` codes, and the two
+`<PREFIX>_ALTCLS_*` stamps below — no `<PREFIX>_ENGINE`, no budgets, no
+`_VM_*` axis at all. A consumer that `#if`s on `<PREFIX>_ENGINE` is
+writing code that does not compile against half the artifacts pcrec
+produces. (Both counts measured by listing every `#define` in a fresh
+build of each kind.)
+
+**The macros live in the `.c`, not the `.h`.** In the split form the CLI
+produces by default, a consumer `#include`s the `.h` — which carries
+only `<PREFIX>_NCAPS`, `<PREFIX>_UNSET` and the four `<PREFIX>_ERR_*`
+codes (plus its two include guards). Every macro named below is emitted
+into the `.c` only (measured on one build: eight `#define`s in the `.h`,
+thirty-five in the `.c`), so **the `#if` use case above is unreachable
+from a consumer translation unit unless the artifact was built
+self-contained** (`header_name == NULL`) or the consumer is the
+generated `.c` itself. Whether these should also be emitted into the
+header is an open design question, not settled here.
+
+With that scoping, the observability macros on a captures-default build
+of `'a(b|c)+d'` (the `#define` lines are the artifact's; the `/* ... */`
+annotations below are this document's, not emitted text):
 
 ```c
 #define RX_ENGINE          "vm"                    /* mirrors rx_info.engine */
@@ -451,19 +843,42 @@ build of `'a(b|c)+d'`:
 #define RX_VM_PRUNE_CEILING      "prefilter-window"
 ```
 
-These are scalar/bitmask macros for a per-artifact-wide verdict
-(`RX_ENGINE`, `RX_VM_PREFILTER`) or a bitmask when the axis is decided
-per-quantifier and a single scalar would misreport a mixed pattern
-(`RX_VM_RUNGS`, `RX_VM_STRATS`, `RX_VM_PRUNES`). Testing/tuning axes that
-change no answer (possessification, reverse-determinism, the counter
-rung, length pruning, the prefilter, alternation-class normalization) are
-deliberately masked *out* of `rx_info.flags` and out of these macros'
-underlying selection where the axis itself is a denial knob rather than a
-selected strategy — two artifacts that behave identically must not differ
-in their reflection surface over a knob with no observable effect. The
-full `PCREC_NO_*`/`PCREC_FORCE_*` flag catalogue and its per-flag
-reasoning live in `lib/pcrec.h`'s own comments (`lib/CLAUDE.md` indexes
-them); this document does not duplicate that catalogue.
+These are scalar macros for a per-artifact-wide verdict
+(`RX_ENGINE`, `RX_VM_PREFILTER`, `RX_VM_PRUNE_CEILING`) or a bitmask
+when the axis is decided per-quantifier and a single scalar would
+misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
+`RX_VM_PRUNES`). Everything above is VM-artifacts-only. Two more D46
+stamps are NOT, and a DFA-only artifact carries them too:
+
+```c
+#define RX_ALTCLS_MERGES   1   /* alternation runs merged into one class */
+#define RX_ALTCLS_FACTORED 0   /* alternation runs prefix-factored */
+```
+
+They are emitted before either engine is built, so they appear on a
+capture-free pattern's DFA artifact as well (measured on a
+`--no-captures` build).
+
+**`rx_info.flags` and these macros answer different questions, and the
+masking rule applies to only one of them.** `flags` records the REQUEST
+— the `PCREC_*` option bits exactly as compiled — with the
+testing/tuning denials masked OUT, because an axis that changes no
+answer must not make two identically-behaving artifacts differ in their
+reflection surface. The macros record what the emitter DID, and they
+visibly move when a denial is exercised: measured on
+`'(x)(?:a|bc)+d'`, building `-fno-possessify` moves `RX_VM_STRATS` from
+`0x1u` (POSSESSIVE) to `0x2u` (BACKTRACKING) while the emitted
+`rx_info.flags` value is unchanged — the whole `rx_info` initializer is
+identical between the two builds except `frame_capacity`, which moves
+because denying possessification really does cost a frame. So: to see
+what was ASKED FOR, you cannot use `flags` for a masked axis at all; to
+see what HAPPENED, read the macro.
+
+The set of bits that get masked, and the per-flag reasoning, live in
+`lib/pcrec.h`'s own comments (`lib/CLAUDE.md` indexes them) — that is
+where to look, from here and from §8, to see which bits legitimately
+vanish from `rx_info.flags` on a round trip. This document does not
+duplicate that catalogue.
 
 ---
 
@@ -501,12 +916,29 @@ mode**, not a semantics divergence between the two engines' NUL handling
 — PCRE2's sentinel mode has the identical failure mode pcrec's only mode
 has.
 
-**`rx_info.pattern_len` is the detectability instrument for this gap.**
-It reports the *actual* byte count `pcrec_compile()` saw and compiled —
-the truncated count, not the caller's intended count. A caller who
-independently knows the pattern's true length can compare it against the
-compiled artifact's `pattern_len` and catch exactly this silent
-truncation after the fact. Verified: compiling the byte-built 3-byte
+**`rx_info.pattern_len` is the detectability instrument for this gap,
+and reaching it costs more than reading a field.** It reports the
+*actual* byte count `pcrec_compile()` saw and compiled — the truncated
+count, not the caller's intended count. But `rx_info` lives in the
+GENERATED ARTIFACT, and `pcrec_compile()` hands its caller C source
+text, not a struct: at compile time the only way to read `pattern_len`
+is to string-search `out.c_src` for the emitted `.pattern_len = N,`
+line, and the only way to read it as a value is to compile and link the
+artifact first. Neither is a check a caller will write by accident.
+
+**The one-line pre-flight is cheaper and is what a caller should
+actually do.** If you know the pattern's true length independently —
+and a caller handling untrusted or NUL-bearing pattern text does — test
+it before compiling:
+
+```c
+if (strlen(pattern) != known_length) { /* the pattern contains a NUL:
+                                          refuse it yourself */ }
+```
+
+That catches the truncation before it happens, using only the standard
+library. `pattern_len` remains the after-the-fact instrument for an
+artifact you already have. Verified: compiling the byte-built 3-byte
 `"a\0b"` buffer through the real `pcrec_compile()` (not the CLI, which
 cannot carry a NUL through `argv` at all) produces `out.c_src` containing
 `.pattern_len = 1,` — the artifact honestly reports what it actually
@@ -524,12 +956,115 @@ is not part of this contract.** It is scheduled with `DD-3` (generated-API
 versioning/compatibility policy), tracked as `docs/dev/known_issues.md`
 K9, and is the natural trigger for customer `V-A`'s `(pattern, length)`
 compatibility shim. Until then, a caller with an untrusted or
-NUL-containing pattern source must check `pattern_len` itself; nothing in
-`pcrec_compile()`'s signature enforces that.
+NUL-containing pattern source must run the `strlen` pre-flight above
+itself; nothing in `pcrec_compile()`'s signature enforces that.
 
 ---
 
-## 8. `pcrec_options`, `pcrec_error`, and the `PCREC_*` namespace
+## 8. The library entry: `pcrec_options`, `pcrec_output`, `pcrec_error`
+
+### 8.0 A complete compile, start to finish
+
+This is the whole calling sequence, and it compiles and runs exactly as
+written (verified: built with `gcc -Wall -Wextra -Werror` against
+`lib/pcrec.h` and `libpcrec.a`, run, and its `matcher.c`/`matcher.h`
+output compiled in turn):
+
+```c
+#include <stdio.h>
+#include "pcrec.h"
+
+int main(void)
+{
+    pcrec_options opt;
+    pcrec_output  out;
+    pcrec_error   err;
+
+    /* MANDATORY first step: a zero-initialized pcrec_options has
+       prefix == NULL and every compile fails with "invalid symbol prefix". */
+    pcrec_default_options(&opt);
+    opt.header_name = "matcher.h";   /* NULL (the default) = self-contained .c */
+
+    if (pcrec_compile("a(b|c)+d", &opt, &out, &err) != 0) {
+        fprintf(stderr, "pcrec: %s (at byte %zu of the %s)\n", err.msg, err.pos,
+                err.input == PCREC_ERR_INPUT_PATTERN ? "pattern" : "template");
+        return 1;
+    }
+
+    /* out.c_src and out.h_src are malloc'd, NUL-terminated C source and are
+       the CALLER's to free from here on. h_src is non-NULL exactly when
+       opt.header_name was set. */
+    FILE *c = fopen("matcher.c", "w");
+    if (c) { fputs(out.c_src, c); fclose(c); }
+    if (out.h_src) {
+        FILE *h = fopen("matcher.h", "w");
+        if (h) { fputs(out.h_src, h); fclose(h); }
+    }
+
+    pcrec_output_free(&out);   /* frees both buffers, NULLs both fields */
+    return 0;
+}
+```
+
+Four things in it are contract, not style:
+
+1. **`pcrec_default_options()` is mandatory, and skipping it fails every
+   compile.** It is not a convenience that fills in tasteful defaults
+   over a working zero state: a zeroed `pcrec_options` has
+   `prefix == NULL`, and pcrec refuses a NULL prefix. Measured — a
+   `memset`-zeroed options struct returns `-1` with
+   `err.msg == "invalid symbol prefix (must be a C identifier, <= 60
+   chars)"` for a pattern that compiles fine after
+   `pcrec_default_options()`. It sets `prefix = "rx"`,
+   `encoding = PCREC_ENC_ASCII` and `header_name = NULL`, and zeroes
+   everything else; override fields after calling it, never instead.
+2. **`pcrec_output` owns two heap buffers and the caller frees them.**
+
+   ```c
+   typedef struct {
+       char *c_src;   /* malloc'd; free with pcrec_output_free */
+       char *h_src;   /* malloc'd, or NULL when options.header_name == NULL */
+   } pcrec_output;
+   ```
+
+   `pcrec_output_free()` frees both and NULLs both fields (measured
+   before and after), so it is safe to call twice and safe on a struct
+   whose `h_src` was never produced. There is no other way to release
+   them. §5.2's "no allocation, no lifecycle to manage" is a statement
+   about the MATCH path only; the compile path allocates and this is its
+   lifecycle.
+3. **`h_src` is non-NULL exactly when `header_name` was set** (measured
+   both ways). Do not test `header_name` and assume; test `h_src`.
+4. **Check the return value, not the error struct.** `pcrec_compile()`
+   returns `0` on success and `-1` on failure, and fills `err` only on
+   failure.
+
+### 8.1 What `pcrec_compile()` guarantees its caller (D56)
+
+pcrec is a library, and two of its promises exist because a library
+cannot behave like a program:
+
+- **It never `abort()`s the caller on the compile path.** Every
+  allocation site routes failure through the internal `ctx_nomem()` and
+  comes back as a normal `-1`-with-diagnostic return, so a caller that
+  sets a memory limit precisely in order to survive a hostile pattern
+  does survive it. Two `abort()`s remain in the code deliberately and
+  neither is an allocation failure: a "cannot happen" DFA structural
+  invariant, and the syntax-dump path's detached string buffers, which
+  run outside a compile and have no `pcrec_error` to report through.
+- **A pattern can be REFUSED for compile-side RESOURCE reasons, and
+  that is a distinct failure class from a syntax error.** It arrives
+  through the same `-1` and the same `pcrec_error`, so a caller
+  distinguishes them by reading `err.msg`, not by the return value.
+  Measured at the D56 boundary: `a{9795}` compiles, `a{9796}` returns
+  `-1` with `err.msg == "pattern too complex for the DFA engine (subset
+  construction exceeds 48000000 state-set elements; VM engine arrives in
+  M4)"`. The pattern is perfectly legal PCRE; what failed is that
+  compiling it would cost more than pcrec is willing to spend. A caller
+  that reports every `-1` as "bad regex syntax" to its user will be
+  wrong here.
+
+### 8.2 The option and error structures
 
 ```c
 typedef struct {
@@ -543,7 +1078,9 @@ typedef struct {
     int64_t     step_budget; /* PCREC_STEP_BUDGET_DEFAULT / _NONE, or a count */
     int64_t     work_budget; /* PCREC_WORK_BUDGET_DEFAULT / _NONE, or a count */
     int         unroll_k;    /* PCREC_UNROLL_K_DEFAULT (0) = built-in default */
-    int         frame_capacity; /* 0 = let the compiler size it */
+    int         frame_capacity; /* 0 = let the compiler size it. NOT the
+                                    same sentinel as rx_info's field of the
+                                    same name, which uses -1 for unbounded */
 } pcrec_options;
 ```
 
@@ -554,6 +1091,13 @@ flag, carried in `pcrec_options.flags`, and reflected verbatim (where not
 deliberately masked, §6.3) in the compiled artifact's `rx_info.flags`.
 `PCREC_NO_CAPTURES` recovers the pre-captures-default pure-DFA artifact
 (`<PREFIX>_NCAPS 1`); captures are on by default since M4.5.
+
+**A caller that round-trips its own flags through `rx_info.flags` will
+find some bits missing, legitimately.** The masked ones are the
+testing/tuning axes that change no answer (§6.3); which bits those are,
+and why each is masked, is documented per-flag in `lib/pcrec.h`'s own
+comments, which is the place to look — this document does not duplicate
+that catalogue.
 
 `pcrec_error` carries which input a diagnostic's `pos` indexes into:
 
@@ -578,7 +1122,10 @@ non-NULL) — verified directly: an unterminated group `"a(b"` returns
 `-1` with `err.pos == 1, err.input == PCREC_ERR_INPUT_PATTERN`.
 
 `PCREC_*` names only pcrec's own enum/bit-valued constants — never a
-struct field name, never a bare CLI flag spelling. `PCRE2_*` spellings
+struct field name, never a bare CLI flag spelling — with the one stated
+exception §1 records: the per-artifact `PCREC_FEATURE_SET` /
+`PCREC_FEATURE_MODULES` stamps, which carry the `PCREC_*` spelling
+without living in `lib/pcrec.h`. `PCRE2_*` spellings
 are reserved for a future PCRE2-compatibility layer and are never native.
 
 ---

@@ -88,6 +88,45 @@ m="$(stamp "$WORKDIR/count3.c" ALTCLS_MERGES)"
                     || bad "'b|ab|c' ALTCLS_MERGES: expected 0 (not adjacent), got '${m:-<none>}'"
 
 # ---------------------------------------------------------------------------
+# 2b. THE EMPTY-ALTERNATIVE BARRIER ([M4.7g], Frank's design question).
+# count3 above pins that a MULTI-CHAR branch blocks a merge across it. An
+# EMPTY branch must block it too, and this is the case where a wrong answer
+# is observable in the SPANS rather than only in the emitted shape:
+# alternation preference is leftmost-first, so an epsilon branch before `b`
+# OUTRANKS it, and a class merging `a` with `b` across the epsilon would
+# report (0,1) on "b" where the oracle says (0,0). src/opt/altcls.c excludes
+# A_EMPTY-leading branches structurally; this asserts the artifact, not the
+# source. Matching behaviour for all three patterns is pinned in altcls.rxt.
+#
+# The POSITIVE CONTROL is the point: without it, "stamps 0" is satisfied by a
+# pass that merged nothing at all, anywhere, for any reason.
+# ---------------------------------------------------------------------------
+gen barrier_ctl '(?:a|b)c'
+m="$(stamp "$WORKDIR/barrier_ctl.c" ALTCLS_MERGES)"
+[ "${m:-}" = "1" ] && ok "control: '(?:a|b)c' (no epsilon) DOES merge, stamping 1" \
+                    || bad "control '(?:a|b)c' ALTCLS_MERGES: expected 1, got '${m:-<none>}' — the barrier checks below cannot discriminate"
+
+gen barrier1 '(?:a||b)'
+m="$(stamp "$WORKDIR/barrier1.c" ALTCLS_MERGES)"
+[ "${m:-}" = "0" ] && ok "'(?:a||b)' stamps 0 merges (empty branch is a run barrier)" \
+                    || bad "'(?:a||b)' ALTCLS_MERGES: expected 0 (must not merge across an empty branch), got '${m:-<none>}'"
+
+gen barrier2 '(?:a||b)c'
+m="$(stamp "$WORKDIR/barrier2.c" ALTCLS_MERGES)"
+[ "${m:-}" = "0" ] && ok "'(?:a||b)c' stamps 0 merges (barrier holds under a following atom)" \
+                    || bad "'(?:a||b)c' ALTCLS_MERGES: expected 0, got '${m:-<none>}'"
+
+# The barrier's OTHER half, and the reason a bare "stamps 0" rule would be
+# too strong: merging RESUMES after the barrier. Two independent runs,
+# [ab] and [cd], one on each side of the epsilon — exactly 2, not 1 (which
+# would mean it merged across) and not 0 (which would mean an empty branch
+# anywhere disabled the pass for the whole alternation).
+gen barrier3 '(?:a|b||c|d)x'
+m="$(stamp "$WORKDIR/barrier3.c" ALTCLS_MERGES)"
+[ "${m:-}" = "2" ] && ok "'(?:a|b||c|d)x' stamps exactly 2 merges (a run each side of the barrier)" \
+                    || bad "'(?:a|b||c|d)x' ALTCLS_MERGES: expected 2 (merging resumes after the barrier), got '${m:-<none>}'"
+
+# ---------------------------------------------------------------------------
 # 3. DO-OR-DIE / NO TRACE (D46): a denied build's stamp is 0, asserted
 # against the ARTIFACT, never against the flag having been passed.
 # ---------------------------------------------------------------------------

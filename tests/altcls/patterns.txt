@@ -29,6 +29,16 @@ a(b|c)+d(b|c)+e
 b|ab|c
 a|bc|d
 
+# ---- stage 1 boundary: the EMPTY-ALTERNATIVE barrier ([M4.7g]). Same rule
+# as the two above, for a branch that is epsilon rather than multi-char —
+# and the only barrier case whose violation moves a SPAN (preference vs
+# epsilon is observable), which is why it is in the differential and not
+# only in the stamp checks. The last one is the barrier-RESUME shape: a
+# single-char run on each side, merged independently. ----
+(?:a||b)
+(?:a||b)c
+(?:a|b||c|d)x
+
 # ---- stage 1 decline: a captured single-char branch must NOT merge ----
 (b)|c
 b|(c)
