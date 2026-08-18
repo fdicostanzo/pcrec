@@ -292,6 +292,61 @@ dfa.c:689 — it is **dfa.c:692** (§2's own ":684-690" range cite is fine);
 the claim is right, the single-line cite slipped, and §3.7 is the section
 Q3 leans on. **Disposition: FIX-IN-LANE (cite fix).**
 
+## Focused re-check (revision pinned at 65fe683; both critics resumed)
+
+The lane's revision (77ee676, then 65fe683 after a cite-sweep delta verified
+by r30-measure as touching nothing measured) was re-checked by the two
+critics whose findings it answered.
+
+**r30-measure: 5 of 6 DISCHARGED, 1 PARTIAL.** M6 (harvest re-run by the
+critic: 1165/1030/609/421 exact; corrected-corpus row matches), M7 (all 11
+out/ files audited — genuine stamped headers, zero hand prose; red-line rule
+present in the doc and both CLAUDE.mds), M8 (instrument validated by running
+it against a scratch COPY of the tree: 15 warnings / 6 files, line-for-line),
+M2 (both prototype denominators re-derived from emitted artifacts:
+`\w{3,16}` = 17 states so the 4.50x outlier is an artifact and ">2x" drops
+to 1; the 4.75x headline's denominator verified 4 = 4; the language-vs-
+priority mechanism judged grounded, not hand-waved), original finding 8
+(§12 item 5 now sweeps startpos > 0). **PARTIAL — M5**: §11 Q1's withdrawal
+is real, but **§5.2 itself still carries the withdrawn "Recommended: declare
+the namespace now" paragraph verbatim** — a live internal contradiction at
+the section a skimming reader stops at. → final batch.
+
+**r30-engine: 7 of 8 DISCHARGED on substance** (E5/E7/E8 beyond what was
+asked; every added sabotage row now has a named population that can make it
+fire). E1's forward half fully discharged — all 13 evidence cells reproduced
+independently. **E1 reverse half PARTIAL → N1 (MEDIUM-HIGH)**: §3.8 fills
+the mechanism-4 slot at three of the four places it is needed; the fourth is
+the REVERSE machine's TERMINATION boundary — at `pp == startpos` the loop
+breaks (emit_dfa.c:1056) before `s[startpos-1]` is ever read, so a LEADING
+`\B` at the match start evaluates blind. `\b` is accidentally safe (its
+blind assumption coincides with its truth condition); `\B` inverts:
+on the doc's own §3.8.1 cell (`\Bfoo` / 'xfoo' / startpos 1 → (1,4)) the
+forward pass finds the match and the reverse pass throws it away — a LOST
+MATCH a trailing-only sweep structurally cannot see. Owed: §3.8.3's second
+half (boundary view at `pp == startpos`), §12 item 6 names both ends, Wave
+B sweeps `\B`-LEADING patterns at startpos > 0.
+
+**New findings from the revision text** (r30-engine): **N2 (LOW-MED, M7
+class)** — §3.7.1's inline table disagrees with its cited archive on 3 of 5
+rows (different run; the two load-bearing rows are identical; the 8000-row
+delta is 505x/3.71x vs 232x/3.88x) — re-run and re-paste, or drop the inline
+table; the archived 16000-row growth outlier (1.59x) deserves one sentence.
+**N3 (LOW)** — §3.7.2's memchr('\n') mitigation is justified on the
+quadratic (crossing-body) case but its actual benefit is the LINEAR
+non-crossing case (measured 33x in the first pass, not adopted); one
+non-crossing row in the probe fixes Q3(b)'s evidence. **N4–N8 (LOW/NIT)**:
+§2's "three mechanisms" sentence above a four-row table; Wave D's agreement
+test unscoped (needs "fully-`\G`" — partial `\G` legitimately disagrees);
+§6.1's heading still says "structurally cannot" over a body that retracts
+it; two orphaned paragraphs under the §3.4.1 heading; §3.6.1's mechanism
+table cite drift (:1002/:1006/:1042/:971) and the fbound row's absence
+unexplained (union of the two enumerations is six, not five).
+
+**Dispositions**: N1, M5-§5.2, N2 → FIX-IN-LANE (final batch, N1 is the
+substantive one); N3–N8 → FIX-IN-LANE (small); N1's fix gets a focused
+verification by r30-engine before the doc gates [M6.2].
+
 ## Process lessons (for the journal and learnings at close)
 
 1. **Panel targets are frozen commits.** The manager relayed a design input
