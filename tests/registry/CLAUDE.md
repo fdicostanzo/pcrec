@@ -229,6 +229,24 @@ directory asserts that the description and the shipped parser actually agree.
    do that, and always could. Positive-controlled by re-sabotaging K10
    (restoring `RF_CLASS_INVALID` on the `{U+` row): the check fails
    immediately, naming the row and the unpromised module.
+9. **[M4.7a] the engine-capability TRIPWIRE** (docs/dev/plan.md's
+   [SR-8]/[M4.7a] rows) — `check_engine_capability_tripwire` guards a
+   deliberate NON-decision: SR-8's lowering-time engines-column
+   consultation is NOT built in src/opt/select_engine.c today, because
+   every VM_ONLY-masked `RS_MODULE` row lacks a producer (zero producers,
+   zero customers — a manager redirect superseding an earlier reading that
+   built the consultation ahead of need). The check asserts the fact that
+   makes that omission safe: every such row's `aport.kind` is `PORT_NONE`.
+   EXACT count, 51 rows (12 ESC + 38 GROUP/GROUP_T + 1 VERB, measured
+   directly from registry.c). Sabotage-validated (2026-08-17, scratch
+   build, reverted before commit): wiring a dummy atom-position producer
+   onto the `(?>...)` (atomic-groups) row fires this check by name AND
+   `check_class_ports`' atom-port population guard (23→24) — two
+   independent nets catching the same event, which is the point of a
+   tripwire that also happens to sit next to a port-population check. The
+   failure message is written to be read FIRST by whoever trips it: it
+   names the exact next step (build SR-8 in select_engine.c) rather than
+   only reporting a mismatch.
 
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
@@ -274,6 +292,7 @@ module:
 | `RF_CLASS_DELIM \| RF_CLASS_NAMED` → `RF_CLASS_NAMED` (R9/C3-1) | 3 (+23 in PC-3) |
 | add a `]`-selector `RK_CLASSBRACKET` row (R9/C2-1) | 2 (+1 in PC-3) |
 | R20/OPTRUN-1: delete `group_answer`'s truncation branch (`(?P` at end of pattern) | 1 — the `(?%c` sweep's truncation exception, which is the ONLY generated instrument that reaches this cell: PC-3's tail-sweep template always inserts a byte after the prefix (+1 in tests/reject) |
+| [M4.7a]: wire a dummy PORT_SCALAR atom-position producer onto the `(?>...)` (atomic-groups) row, a `VM_ONLY`/`RS_MODULE` row | 2 — `check_engine_capability_tripwire` (by name) AND `check_class_ports`' atom-port population guard (23→24), independently |
 
 ## pcre2_check.c — the external check (PC-3)
 

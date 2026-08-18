@@ -1316,6 +1316,79 @@ static void check_class_ports(void)
            "popcounts), as predicted for slice 3");
 }
 
+/* [M4.7a] SR-8's TRIPWIRE (docs/dev/plan.md's [SR-8]/[M4.7a] rows). The
+ * lowering-time engines-column CONSULTATION the row describes is
+ * deliberately NOT built ahead of a producer — zero producers means zero
+ * customers (D18/OS-0/D53's standing discipline against unpopulated
+ * machinery; a manager redirect on this row, 2026-08-17, superseding an
+ * earlier reading that built the consultation early). What this check
+ * guards instead is the FACT that makes that omission SAFE today: every
+ * RS_MODULE row whose `engines` mask excludes ENGM_DFA (VM_ONLY, in
+ * registry.c's own macro vocabulary) has NO wired ATOM-position producer.
+ *
+ * Atom position is the one that matters — a CLASS-position producer (the
+ * `\1`..`\7` octal BASE ports, MOD-0.3d/FIX-3's cport.base machinery) can
+ * never carry a VM_ONLY construct into the AST: a backreference is
+ * impossible inside a class in the first place (FIX-3/K13), so those
+ * rows' cport is a base-grammar fact, not a module producer, and is
+ * correctly excluded here — only `aport` feeds a node select_engine.c
+ * would ever see.
+ *
+ * So this check turns the SILENCE that lets src/opt/select_engine.c
+ * refuse nothing on this axis today (its own header: "empty by
+ * population") from a fact stated in three files' prose into something
+ * that FAILS the moment it stops being true. The day a module wires the
+ * first VM_ONLY producer, that row's `aport.kind` moves off PORT_NONE and
+ * this check fails — and its failure message is written to be the thing a
+ * future author reads FIRST, naming the exact next step rather than
+ * merely reporting a mismatch. */
+static void check_engine_capability_tripwire(void)
+{
+    int qualifying = 0, wired = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        for (size_t i = 0; rows && i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (r->status != RS_MODULE) continue;
+            if (r->engines & ENGM_DFA) continue;   /* DFA-capable: not this row */
+            qualifying++;
+            if (r->aport.kind != PORT_NONE) {
+                wired++;
+                bad("engine-capability tripwire: '%s' (module '%s') is "
+                    "RS_MODULE, its engines mask excludes ENGM_DFA, AND it "
+                    "now carries a wired ATOM-position producer -- YOU "
+                    "WIRED THE FIRST PRODUCER FOR AN ENGINE-RESTRICTED "
+                    "MODULE. Build SR-8's lowering-time engines-column "
+                    "consultation in src/opt/select_engine.c BEFORE this "
+                    "lands; see the [SR-8] row in docs/dev/plan.md",
+                    r->syntax, r->module);
+            }
+        }
+    }
+
+    /* EXACT, not a floor, matching this file's own convention (check_class_
+     * ports, check_class_syntax_reach above): 51 rows, measured directly
+     * from registry.c at M4.7a — 12 ESC rows (\K \k \g, \1..\7, \8 \9), 38
+     * GROUP/GROUP_T rows (lookaround, named-groups, atomic-groups,
+     * callouts, branch-reset, conditionals, recursion), 1 VERB row (the
+     * `(*...)` catch-all). A deliberate move (a VM_ONLY row added,
+     * removed, or gaining ENGM_DFA) edits this number in the same change;
+     * a silent one is the defect this file exists to catch, same as every
+     * other population count here. */
+    if (qualifying != 51)
+        bad("engine-capability tripwire: %d RS_MODULE rows with an "
+            "engines mask excluding ENGM_DFA, expected 51 -- the VM_ONLY "
+            "population moved. If deliberate, update this number in the "
+            "same change", qualifying);
+    else if (wired == 0)
+        ok("engine-capability tripwire: all 51 engine-restricted RS_MODULE "
+           "rows have no wired atom-position producer -- SR-8's lowering-"
+           "time consultation is still unpopulated machinery by design, "
+           "and this is the fact that makes that safe");
+}
+
 /* ---- MOD-0.6/D33 §9.2: the in-class sweep gains tail context -----------
  *
  * `check_table_to_parser` above already probes every ESC row's own
@@ -1431,6 +1504,8 @@ int main(void)
     check_feature_module_bijection();
     check_class_ports();
 
+    printf("\n== [M4.7a] SR-8 tripwire (engine-capability consultation stays unbuilt) ==\n");
+    check_engine_capability_tripwire();
 
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");
     check_row_ranks();

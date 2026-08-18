@@ -57,16 +57,16 @@ rc=${PIPESTATUS[0]}
 # wording split), manifest only on a green run (needles come from ok()
 # lines, and a failing check never prints one).
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 168 ]; then
+if [ "$regn" -ne 169 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 168." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 169." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (168 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (169 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 168 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 169 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -85,6 +85,7 @@ arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is uno
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
 class ports: 5 scalar + 10 SET + 9 FN|MOD-0.3b/c/d: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 class-position reach: 5 tailed/body-carrying rows|MOD-0.6/D33 §9.2, K10's fourth net: the one-byte in-class sweep above cannot express [\N{U+41}]-shaped bodies at all; this is the only check that arbitrates a tailed/body-carrying row's FULL syntax at class position and confirms it reaches itself and promises its own module
+engine-capability tripwire: all 51|[M4.7a]/[SR-8]: the only guard that SR-8's engines-column consultation was deliberately deferred rather than silently forgotten — deleting it removes the one thing that would fail loudly the day a VM_ONLY module wires its first atom-position producer without also building select_engine.c's consultation
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is
