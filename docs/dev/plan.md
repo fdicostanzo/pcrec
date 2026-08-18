@@ -246,24 +246,32 @@ named-groups, conditionals, recursion producers.)
   clarification, same day): 1 line, the INTENT of the next line, never
   an echo of the code ("advance to next character", NOT "increment
   source pointer"); structures/tables get item (1)'s block comment,
-  never per-line/per-row commentary. (4) FULL NAMES — VARIABLES ONLY,
-  not structures (same clarification): no "pos" — the
-  source_position/source_index class of names, ONE consistent scheme;
-  structure/table identifiers are covered by their item-(1) comments,
-  not the renaming requirement; the naming scheme itself is delegated
-  to the implementer. (5) CONSIDER
-  (design point, not yet a requirement): tables carry short text names
-  rather than raw numbers where appropriate, with a legend at top.
+  never per-line/per-row commentary. (4) FULL NAMES — LOCALLY SCOPED
+  IDENTIFIERS ONLY (Frank's second clarification, same day): variables,
+  types, and structure names that are LOCAL to the artifact get full
+  names — no "pos", the source_position/source_index class of names,
+  ONE consistent scheme, the scheme delegated to the implementer. ABI
+  NAMES ARE KEPT AS-IS: the public emitted surface (entry points,
+  rx_matchfn, the emitted header's names) does not change — THIS ROW
+  MAKES NO ABI CHANGE OF ANY KIND; it is purely an internal
+  comment/clarity step. (5) STATE-NAME LEGENDS (upgraded from
+  "consider" to a REQUIREMENT by the same clarification): numbers in
+  data tables in structures/arrays get short text names WHERE THEY ARE
+  STATES — not indexes or other numeric kinds — with a legend in the
+  comment above the table.
   ENGINEERING NOTES recorded at ruling time: (i) the pass must be
-  OBJECT-CODE-NEUTRAL — comments and renames cannot change the
-  compiled artifact; the natural check is compile-before/after and
-  compare object code, which the row gets for free; (ii) spec §2's
-  verbatim quotes and the R29-fixed ABI comment block re-quote under
-  the verification-ledger discipline in the same change; (iii) codegen
-  structural checks and stamp pins that grep emitted identifiers need
-  a coordinated pin update — budget for it; (iv) item (5), if adopted,
-  must also be object-neutral (text names resolving to identical
-  values) or it graduates to its own ruling; (v) the code-vs-structure
+  OBJECT-CODE-NEUTRAL — comments, renames, and state names cannot
+  change the compiled artifact; the natural check is
+  compile-before/after and compare object code, which the row gets for
+  free (state names via macros/enums resolving to the same values);
+  (ii) spec §2's verbatim quotes re-quote under the verification-ledger
+  discipline in the same change — the ABI comment block and all ABI
+  names are UNTOUCHED by ruling, so the re-quote is body-text only;
+  (iii) codegen structural checks and stamp pins that grep emitted
+  LOCAL identifiers need a coordinated pin update — budget for it;
+  (iv) distinguishing state-valued table cells from index/other
+  numerics is emitter knowledge — the emitter tags what it emits, no
+  after-the-fact inference; (v) the code-vs-structure
   clarification resolved the worst of the comment-density question
   (tables never get per-line commentary); the design pass still brings
   Frank ONE sample commented artifact to approve the style against
