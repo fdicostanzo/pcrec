@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "gen/enc/enc.h"
 
 void ctx_fail(Ctx *cx, size_t pos, const char *fmt, ...)
 {
@@ -41,7 +42,7 @@ void pcrec_default_options(pcrec_options *opt)
 {
     memset(opt, 0, sizeof(*opt));
     opt->prefix = "rx";
-    opt->encoding = PCREC_ENC_ASCII;
+    opt->encoding = PCREC_ENC_BYTE;
     opt->header_name = NULL; /* self-contained .c by default */
 }
 
@@ -165,11 +166,25 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * called `unicode-props`.) So the promise names the MILESTONE, and says
      * plainly that no --features name will turn it on — pre-empting the
      * question the old wording invited. */
-    if (defo.encoding == PCREC_ENC_UTF8)
-        ctx_fail(&cx, 0, "encoding 'utf8' arrives with milestone M5 "
-                         "(an engine axis, not a module: no --features name enables it)");
-    if (defo.encoding != PCREC_ENC_ASCII)
-        ctx_fail(&cx, 0, "unknown encoding");
+    /* [M5-SEAM] BOTH refusals now read the ENCODING REGISTRY (src/gen/enc/)
+     * rather than testing PCREC_ENC_* values and naming them in literals:
+     * a member with no backend is refused BY ITS OWN NAME, and a value that
+     * is not a member at all is refused with the table's rendered menu. That
+     * is [SR-10]'s single-namespace rule applied to the half this gate owns
+     * — its motivating instance was this diagnostic and cli/main.c's name
+     * mapping drifting apart. */
+    {
+        const PcrecEnc *enc = pcrec_enc_by_id(defo.encoding);
+        if (!enc) {
+            char names[128];
+            pcrec_enc_names(names, sizeof names);
+            ctx_fail(&cx, 0, "unknown encoding (want %s)", names);
+        }
+        if (!pcrec_enc_ready(enc))
+            ctx_fail(&cx, 0, "encoding '%s' arrives with milestone M5 "
+                             "(an engine axis, not a module: no --features "
+                             "name enables it)", enc->name);
+    }
 
     Ast *root = pcrec_parse(&cx);
 

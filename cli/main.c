@@ -1,6 +1,6 @@
 /* pcrec command-line interface.
  *
- *   pcrec [-p PREFIX] [-e ascii|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'
+ *   pcrec [-p PREFIX] [-e byte|utf8] [-i] [--emit-main] -o OUT.c 'PATTERN'
  *   pcrec -o - 'PATTERN'      self-contained C on stdout (no header file)
  */
 
@@ -14,6 +14,9 @@
  * public surface (see src/parse/syntax_dump.c). main.c touches no registry
  * type — it calls two functions that hand back finished text. */
 #include "core/internal.h"
+/* [M5-SEAM] the ENCODING REGISTRY: the one table the `byte`/`utf8` names are
+ * defined by, so this file maps no encoding name of its own (see D58/SR-10). */
+#include "gen/enc/enc.h"
 
 static void usage(FILE *f)
 {
@@ -22,7 +25,11 @@ static void usage(FILE *f)
           "                 also written. '-o -' prints self-contained C to\n"
           "                 stdout with no header file\n"
           "  -p PREFIX      symbol prefix for generated identifiers (default rx)\n"
-          "  -e ENCODING    subject encoding: ascii (default) or utf8\n"
+          "  -e ENCODING, --encoding=ENCODING\n"
+          "                 subject encoding for THIS pattern: byte (default)\n"
+          "                 or utf8. Per-compile, never global: two patterns\n"
+          "                 in one binary may use different encodings. utf8\n"
+          "                 is refused until milestone M5\n"
           "  -i             match case-insensitively (ASCII letters); folded\n"
           "                 into the automaton, no run-time cost\n"
           "  --emit-main    append a standalone main() (subject from argv[1])\n"
@@ -90,6 +97,27 @@ static void usage(FILE *f)
           "                    at, ep_set_certain, end, msg. The cursor rule\n"
           "                    (pos moves only under result) is what\n"
           "                    tests/spec_mod0's check06 compares here\n", f);
+}
+
+/* [M5-SEAM] (D58) The encoding is a PER-COMPILE scalar, so this sets a field
+ * of THIS invocation's options and nothing else — there is no global to set.
+ * The name is looked up in the ENCODING REGISTRY (src/gen/enc/) rather than
+ * mapped by hand here: [SR-10]'s motivating instance was precisely this site
+ * hand-mapping "utf8" while src/core/compile.c separately hand-wrote the
+ * diagnostic for it. Whether the named encoding is IMPLEMENTED is not asked
+ * here — pcrec_compile() owns that refusal, so the CLI and a library caller
+ * get the same answer for the same request. */
+static int set_encoding(pcrec_options *opt, const char *v)
+{
+    const PcrecEnc *e = pcrec_enc_by_name(v);
+    if (!e) {
+        char names[128];
+        pcrec_enc_names(names, sizeof names);
+        fprintf(stderr, "pcrec: unknown encoding '%s' (want %s)\n", v, names);
+        return -1;
+    }
+    opt->encoding = e->id;
+    return 0;
 }
 
 static const char *base_name(const char *path)
@@ -205,6 +233,13 @@ int main(int argc, char **argv)
             }
             opt.unroll_k = (int)v;
         }
+        /* [M5-SEAM] (D58) `--encoding=` is the long spelling of `-e`, in the
+         * `=value` MODE form `--engine=` already uses (the separate-argument
+         * forms are for files and names). Both spellings reach the same
+         * lookup, so they cannot drift. */
+        else if (!no_more_opts && !strncmp(a, "--encoding=", 11)) {
+            if (set_encoding(&opt, a + 11) != 0) return 1;
+        }
         else if (!no_more_opts && !strncmp(a, "--engine=", 9)) {
             const char *v = a + 9;
             if (!strcmp(v, "auto"))      opt.engine = PCREC_ENGINE_AUTO;
@@ -285,11 +320,7 @@ int main(int argc, char **argv)
             const char *v = argv[++i];
             if (a[1] == 'o') outpath = v;
             else if (a[1] == 'p') opt.prefix = v;
-            else {
-                if (!strcmp(v, "ascii"))     opt.encoding = PCREC_ENC_ASCII;
-                else if (!strcmp(v, "utf8")) opt.encoding = PCREC_ENC_UTF8;
-                else { fprintf(stderr, "pcrec: unknown encoding '%s'\n", v); return 1; }
-            }
+            else if (set_encoding(&opt, v) != 0) return 1;
         }
         else if (!no_more_opts && a[0] == '-' && a[1]) {
             fprintf(stderr, "pcrec: unknown option '%s' (use -- before a "

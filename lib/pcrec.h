@@ -7,9 +7,23 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* [M5-SEAM] (D58, 2026-08-18) THE ENCODING NAMESPACE. Exactly one encoding
+ * per COMPILE CALL — a `pcrec_options` field, never process- or file-global,
+ * so mixed encodings in one compilation unit or binary are supported by
+ * construction (self-contained artifacts, distinct prefixes, each embedding
+ * exactly one encoding's residual block; DD-12 (8)).
+ *
+ * `PCREC_ENC_BYTE` was spelled `PCREC_ENC_ASCII` before [M5-SEAM], and the
+ * CLI spelled it `-e ascii`. RENAMED, not aliased (pre-v1, docs/spec/
+ * match_api.md §9's announced-boundary form): the semantics were always
+ * "every byte is a character, 8-bit clean" — bytes >= 0x80 are ordinary
+ * bytes with no case and no meaning, which is precisely NOT what "ASCII"
+ * says — and D58 names the encoding `byte` in the ruling text itself. Two
+ * names for one namespace member is [SR-10]'s motivating defect, so there
+ * is no compatibility alias: `-e ascii` is now an unknown encoding. */
 enum {
-    PCREC_ENC_ASCII = 0,   /* byte semantics, 8-bit clean */
-    PCREC_ENC_UTF8  = 1    /* not yet implemented (module 'utf8', M5) */
+    PCREC_ENC_BYTE = 0,   /* byte semantics, 8-bit clean; the default */
+    PCREC_ENC_UTF8 = 1    /* not yet implemented (arrives with milestone M5) */
 };
 
 /* [M4.4] (D43.2/D44.8): pcrec's own boolean options, one bit each in
