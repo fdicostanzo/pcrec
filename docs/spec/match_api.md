@@ -190,20 +190,103 @@ Searches `s[startpos..n)` for the leftmost match and returns:
 |---|---|
 | `1` | match found; if `caps != NULL`, `<PREFIX>_NCAPS` pairs are written, `caps[0]` the whole-match span (no second name for it) |
 | `0` | no match; `caps` (if non-NULL) is left **untouched** — the `int` return alone communicates match/no-match |
-| `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` | engine gave up (§4) |
+| `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` | engine gave up (§4); `caps` also left **untouched** |
+
+Note that `0` here means **no match**, not a zero-length match. A
+zero-length match is a success: it returns `1` with
+`caps[0][0] == caps[0][1]`. (The anchored entries of §3.2/§3.3 use the
+other convention, because their return value carries a length: there `0`
+IS a zero-length match, and no-match is `-1`.)
 
 `caps` may be `NULL` (existence-only search — every caller before M4.5
 did exactly this, and the signature costs them nothing new).
 `startpos > n` returns `0`. `^` anchors to absolute offset `0` regardless
-of `startpos`. `s` may be `NULL` only when `n == 0`. One-shot: this finds
-the *first* match from `startpos`; a caller wanting every match restarts
-at the previous match's end (D41.5) — there is no batch find-all
-primitive and none is planned for v1.
+of `startpos`. `s` may be `NULL` only when `n == 0`.
 
-Verified against the shipped emitter (`src/gen/emit_dfa.c`): the DFA
-matcher writes `caps[0][0]`/`caps[0][1]` only under `if (caps)`, guarded
-exactly as documented, both in the unanchored search body and the
-`--emit-main` `main()`.
+**Every offset written to `caps` is an ABSOLUTE offset into `s`, never
+relative to `startpos`** — measured, and the property a find-all loop
+depends on: searching `"xabcabcx"` for `abc` from `startpos = 0` reports
+`[1,4)`, and the next search from `4` reports `[4,7)`, not `[0,3)`.
+
+**The subject side of the contract.** `s` is `n` bytes and nothing more:
+a `0x00` byte inside `s` is an ORDINARY byte with no special meaning (it
+is only the *pattern* side, §7, that is NUL-terminated), and **the
+matcher never reads `s[n]`** — there is no sentinel, so `s` need not be
+NUL-terminated and need not have a readable byte after its end.
+Measured on both engines with the subject in an exact-size heap
+allocation under AddressSanitizer: `a.b` and `a(.)b` both match the
+3 bytes `{'a', 0x00, 'b'}` (span `[0,3)`, group 1 `[1,2)`), and matching,
+non-matching and `n == 0` searches over exact-size buffers are all clean.
+The check is non-vacuous: the same probe compiled to read one byte past
+the end (`n` overstated by one) fires a heap-buffer-overflow at the
+matcher's own `memchr` prefilter.
+
+#### Finding every match
+
+This entry is ONE-SHOT: it finds the *first* match at or after
+`startpos`. There is no batch find-all primitive and none is planned for
+v1, so a caller wanting every match writes the loop — and the loop is
+not simply "restart at the previous match's end", which spins forever
+the first time a pattern matches empty (`a*` on `"bbb"` returns `[0,0)`
+from `startpos = 0` for ever). The rule that terminates and is correct:
+
+```c
+size_t p = 0;
+while (p <= n) {
+    int r = <prefix>_search(s, n, p, caps);
+    if (r != 1) break;                       /* 0 = done; < 0 = gave up (§4) */
+    report(caps[0][0], caps[0][1]);
+    p = (caps[0][1] > caps[0][0])            /* non-empty: resume at its end */
+          ? (size_t)caps[0][1]
+          : (size_t)caps[0][0] + 1;          /* EMPTY: advance one byte */
+}
+```
+
+**The empty-match advance rule**: a zero-length match reported at
+position `p` is reported, and the next search starts at `p + 1`. Note
+that the advance is off the match's own START (`caps[0][0]`), not off
+the loop variable — an empty match can be found at a position later than
+the one searched from. The loop terminates because every iteration
+either consumes at least one byte or advances `p`, and `p > n` ends it.
+
+That loop, coded exactly as written above, was run against
+`python3 re.finditer` on twelve (pattern, subject) pairs and produced
+identical spans on all twelve, including the three that motivate the
+rule: `a*` over `"bbb"` → `(0,0) (1,1) (2,2) (3,3)`; `x?y` over `"yy"` →
+`(0,1) (1,2)`; and alternations mixing empty and non-empty branches —
+`a|` over `"bab"` → `(0,0) (1,2) (2,2) (3,3)` and `a|b*` over `"cbbac"` →
+`(0,0) (1,3) (3,4) (4,4) (5,5)`. It also agrees on `a*`/`"aaa"`,
+`a?`/`"aba"`, `b*`/`"abbbab"`, `(a|)`/`"xax"`, `a(b|)c`/`"acabc"`,
+`(ab)*`/`"ababx"`, `a{0,2}`/`"aaaa"` and `[a-c]*`/`"xabcx"`.
+
+**Where this loop is LOSSY, stated honestly.** It reports fewer matches
+than PCRE2 and python `re` do for a pattern that *prefers* the empty
+match at a position where a non-empty match also starts. Those engines,
+on finding an empty match at `p`, RETRY at `p` with an
+"empty match not permitted here" constraint (PCRE2 spells it
+`PCRE2_NOTEMPTY_ATSTART`) and report the non-empty match too, before
+moving on. **pcrec's entry points cannot express that retry** — there is
+no "must not match empty here" mode on any of them — so the advance rule
+above is the whole of what a pcrec consumer can do. Measured
+divergences, all of this one class: `|a` over `"aaa"` — this loop
+reports 4 spans `(0,0) (1,1) (2,2) (3,3)` where `re.finditer` reports 7,
+adding `(0,1) (1,2) (2,3)`; likewise `a*?` over `"aaa"` (4 vs 7) and
+`a??` over `"aba"` (4 vs 6). For a pattern that prefers a non-empty
+match wherever one exists — which is every greedy pattern, and every
+one of the twelve agreeing cases above — there is no divergence.
+
+**Byte-vs-character caveat.** `+ 1` advances one BYTE. Under the ASCII
+encoding (`PCREC_ENC_ASCII`, the only one implemented today) a byte is a
+character and the rule is exact. When module `utf8` lands at M5 this
+becomes the wrong advance for a multi-byte character, and M5 owns
+sharpening it; a consumer writing UTF-8-aware find-all today must
+advance to the next character boundary itself.
+
+Verified against the shipped emitter (`src/gen/emit_dfa.c`) and a fresh
+artifact: the DFA matcher writes `caps[0][0]`/`caps[0][1]` only under
+`if (caps)`, guarded exactly as documented, in the unanchored search
+body. The `--emit-main` `main()` carries no such guard and needs none —
+it passes a real array, never `NULL`.
 
 ### 3.2 `<prefix>_match` — the unconditional, anchored match-here entry
 
@@ -212,7 +295,16 @@ ptrdiff_t rx_matchfn(const rx_ctx *ctx);   /* the shared type, §2 */
 ptrdiff_t <prefix>_match(const rx_ctx *ctx);
 ```
 
-Matches at exactly `ctx->pos`, no search loop. Returns the matched
+**Matches at exactly `ctx->pos`: a match starting anywhere else is not
+reported.** That is the semantic promise, and it is what a caller can
+rely on; it is deliberately not a claim about how the artifact is built.
+The two engines implement it differently — the VM emitter genuinely has
+no search loop here, while the DFA emitter reaches the same answer by
+running its ordinary search and rejecting any match whose start is not
+`ctx->pos`. Both were measured to give the same answers; only the
+promise above is contractual.
+
+Returns the matched
 length (`>= 0`), `-1` on no match, or a typed give-up code (§4). Delivers
 **no captures** — `ctx->caps` is an *input* (§5), not an output channel,
 and there is no parameter for `<prefix>_match` to write group offsets
@@ -225,11 +317,23 @@ into. Self-contained per its type's contract: a top-level caller passes
 ptrdiff_t <prefix>_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);
 ```
 
-Same anchoring as `<prefix>_match` (no search loop), plus a
+Same anchoring promise as `<prefix>_match`, plus a
 capture-delivering output. On success, `caps_out[0..<PREFIX>_NCAPS-1]` are
 all written (the same completed-match discipline as `<prefix>_search`),
-`caps_out[0]` is `[ctx->pos, ctx->pos + length)`. On failure, `caps_out`
-is untouched. `ctx->caps`/`ctx->ncap` are read as ordinary `rx_ctx` input
+`caps_out[0]` is `[ctx->pos, ctx->pos + length)`, and **`caps_out[k]` is
+capturing group `k`** for `k >= 1`, in the pattern's own left-to-right
+numbering, on any captures-on build. (`rx_group_entry.slot` exists for a
+future in which a build delivers a *different* slot for a group; on
+today's builds no such indirection is in play and the identity above is
+what the examples in §5.1 rely on.)
+
+**On failure, `caps_out` is untouched — and a give-up is a failure for
+this rule.** Every negative return leaves the caller's array exactly as
+it was; the generated source says so outright ("caps_out is UNTOUCHED on
+every negative return, give-up included"). The same holds for
+`<prefix>_search`'s `caps`.
+
+`ctx->caps`/`ctx->ncap` are read as ordinary `rx_ctx` input
 (unrelated to `caps_out`) — a top-level call passes `ncap=0, caps=NULL`
 exactly like `<prefix>_match`.
 
@@ -238,45 +342,122 @@ captures wanted → `<prefix>_search`; start position known, captures
 wanted, no search loop wanted → `<prefix>_match_caps`; neither offsets
 nor a loop wanted → `<prefix>_match`.
 
+**One caveat on that ergonomic framing**, because it invites reading the
+three entries as interchangeable views of one answer: they are not, on
+the give-up axis. §4's uniformity is about the CODE SPACE — which values
+mean what — not about which entry gives up on a given input. Whether a
+budget is exhausted is a property of the entry point, because the
+entries do different amounts of work — and it goes BOTH ways. Measured,
+`(a|aa)+b` built `--step-budget=3`: on one subject `<prefix>_search`
+returns `0` (its DFA prefilter resolves the question definitively
+without ever entering the VM) while `<prefix>_match` and
+`<prefix>_match_caps` both return `-2`. And on the same artifact family
+built `--backtrack-frames=1`, the reverse: over `"xxaaaaab"`,
+`<prefix>_search` returns `-3` while both anchored entries return a
+clean `-1`, because anchoring at position 0 fails immediately and never
+spends a frame. A caller must therefore handle give-ups on whichever
+entry it actually calls, and must not infer from one entry's clean
+answer that another would give one.
+
 ### 3.4 `<prefix>_info` — the reflection structure
 
 ```c
 extern const struct rx_info <prefix>_info;
 ```
 
-One instance per artifact, `.rodata`, zero runtime cost. Full field list:
-§6.
+One instance per artifact, link-time constant, no runtime cost to build
+it. Full field list: §6.
+
+**It is not, strictly, `.rodata`, and the difference is the one an
+embedder targeting ROM or flash cares about.** `struct rx_info` holds
+two pointers — `pattern` and `engine_why` — so the object needs
+load-time relocation and the toolchain places it accordingly. Measured
+with `readelf` on a default build of `'a(b|c)+d'`: `rx_info` is a
+104-byte object in section `.data.rel.ro.local` (writable-then-read-only,
+not `.rodata`), and that section carries exactly two `R_X86_64_64`
+relocations, one per embedded string pointer. The strings themselves are
+in `.rodata`. There is no run-time initializer and no constructor; the
+cost is two relocations at load, not zero.
 
 ### 3.5 A design-vs-shipped note: give-up codes are uniform, not collapsed
 
 `match_api_m4.md` §3 as originally written required `<prefix>_match` to
 **collapse** every give-up code to a bare `-1` (D42.3's reservation on
 the `rx_matchfn` type). **That collapse does not exist in the shipped
-artifact.** Verified directly: the emitted `<prefix>_match` body is
+artifact**, on either engine. Both bodies, quoted from freshly emitted
+artifacts:
 
 ```c
+/* DFA artifact (--no-captures 'a(b|c)+d'), with its full comment: */
+/* D49: the give-up codes PROPAGATE rather than collapsing to -1.
+ * Unreachable on this engine — a DFA artifact has no counter to
+ * exhaust — but written uniformly on purpose: the contract of
+ * rx_matchfn is one contract, and a wrapper that discards codes it
+ * merely happens never to see is the shape that goes wrong when a
+ * later engine shares this emitter. */
 ptrdiff_t rx_match(const rx_ctx *ctx)
 {
     ptrdiff_t caps[RX_NCAPS][2];
     int found = rx_search(ctx->subject, ctx->len, ctx->pos, caps);
-    if (found < 0) return (ptrdiff_t)found;   /* propagates, does not collapse */
-    ...
+    if (found < 0) return (ptrdiff_t)found;
+    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;
+    return caps[0][1] - caps[0][0];
 }
 ```
 
-with a comment stating the reasoning explicitly ("the give-up codes
-PROPAGATE rather than collapsing to -1 ... the contract of `rx_matchfn`
-is one contract"). This is the shipped, correct state: `docs/dev/
-decisions.md` D49 supersedes D42.3 and rules the uniform-codes contract
-this artifact implements — `match_api_m4.md`'s own §3 carries the D49
-amendment in place. Stated here because a spec reader who only checked
-the type comment (`rx_matchfn`'s doc comment inside the ABI-type block
-still reads "matched length >= 0 ... or -1 (fail)" without spelling out
-the give-up-code space in the same sentence) could reasonably expect the
-collapse; the actual, checkable behavior is uniform propagation. A caller
-that only tests `r < 0` for "did it match" is unaffected either way; a
-caller doing an exact `== -1` comparison sees give-up codes as distinct
-values, not folded into `-1`.
+```c
+/* VM artifact ('a(b|c)+d' under -p r22a), where the codes are LIVE: */
+ptrdiff_t r22a_match(const rx_ctx *ctx)
+{
+    r22a_work w;
+    ptrdiff_t r;
+    if (ctx->pos > ctx->len) return -1;
+    r22a_work_init(&w);
+    r = r22a_match_impl(ctx, &w, ctx->len);
+    /* No translation and no clamp: the impl's return space IS this
+     * contract's -- >= 0, -1, or one of the three R_ sentinels, which
+     * are the ERR_ codes. A defensive floor test here would be dead
+     * code pretending to be a safeguard. */
+    return r;
+}
+```
+
+**Both quotations matter, and quoting only the first would be a broken
+check.** The DFA body's own comment says the propagation branch is
+*unreachable on that engine* — a DFA artifact has no counter to exhaust
+— so it is evidence that the emitter WRITES the propagation, not that
+propagation ever happens. The live evidence is the VM: measured,
+`(a|aa)+b` built `--step-budget=3` returns `-2` from `<prefix>_match`
+and `<prefix>_match_caps`, and the same pattern built
+`--backtrack-frames=1` returns `-3` from all three entries — including
+`<prefix>_search` — on the subject `"ab"`. (The DFA body's second line, `if (found != 1 ||
+caps[0][0] != ctx->pos) return -1;`, is also the only thing making that
+engine honor §3.2's anchoring promise — worth seeing rather than
+eliding.)
+
+This is the shipped, correct state: `docs/dev/decisions.md` D49
+supersedes D42.3 and rules the uniform-codes contract these artifacts
+implement — `match_api_m4.md`'s own §3 carries the D49 amendment in
+place. A caller that only tests `r < 0` for "did it match" is unaffected
+either way; a caller doing an exact `== -1` comparison sees give-up
+codes as distinct values, not folded into `-1`.
+
+**A correction to this section's own history, recorded because it is the
+kind of error this document exists to prevent.** As first written
+(2026-08-18, `[M4.7f]`), this section described the emitted `rx_matchfn`
+doc comment as merely *omitting* the give-up-code space — "still reads
+'matched length >= 0 ... or -1 (fail)' without spelling out the give-up
+codes". That was too generous by a wide margin. The shipped comment
+CONTRADICTED §4 outright: it read "Return values < -1 are RESERVED for a
+future abort semantic; no pcrec-emitted matcher produces one today",
+which is an affirmative false statement about the artifact it sits in,
+and the measurements above refute it. Worse, §2 of this document quoted
+a *corrected* version of that comment as though it were the shipped
+text. Both were found by the R29 panel and fixed in the same pass
+([M4.7g], 2026-08-18): the emitted comment now states the give-up space
+(§2 quotes it verbatim), and `lib/pcrec.h`'s generated-searcher comment,
+which had the same defect in its own words, now names the negative
+return space too.
 
 ---
 
