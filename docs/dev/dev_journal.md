@@ -9789,3 +9789,35 @@ path, per-byte bounds checks defeat load-merging; the DFA path pays
 rx_fcls/rx_ftr table machinery per byte on a chain with no choice
 structure; accept-path asymmetry noted vs stage 3's reject-path no).
 Commit e208b0b.
+
+## 2026-08-18 (EDT), thirtieth session (cont.) — [M4.7a] closed: SR-8 discharged by architecture, tripwire guards the gap (D55)
+
+[M4.7a] SR-8 flip closed out, redirect included: lane/m47a's first
+pass built the lowering-time engines-column consultation
+(select_engine.c's forces_registry_engines + Ctx.vmonly_*) ahead of
+any producer, unit-tested with a hand-built Ctx. Manager caught it on
+review before merge — zero producers means zero customers, and the
+hand-built-Ctx test was a control sharing a source with what it
+controls. Reverted in full (2c94217); replaced with a tripwire
+(6a21913): tests/registry/registry_check.c's
+check_engine_capability_tripwire asserts, over the real 51-row VM_ONLY
+population, that none carries a wired atom-position producer — the
+fact that makes select_engine.c's silence on this axis safe today
+(class-position ports correctly excluded: a backref in a class is
+impossible, FIX-3/K13). Sabotage-validated: a dummy producer wired
+onto the atomic-groups row fires the tripwire by name AND
+check_class_ports' independent atom-port count (23→24) — an unplanned
+second confirmation the sabotage reached the binary; reverted, zero
+diff confirmed. registry_check.c 168→169; full suite green on the
+lane tip (corpus 10,350/0, PC-3/PC-4 unchanged, strict clean). Zero
+accept/reject verdicts changed, zero diagnostic wording changed —
+[SR-8]'s own disposition: discharged-by-architecture (the parser's
+"requires module" wording was already correct; there was never an
+engine check to relocate), consultation lands WITH the first VM_ONLY
+producer; SR-8's row STATE stays deferred on that basis. D55 records
+the rulings. The substep's real lesson was architectural: read the
+charter's premise against the actual shipped code before building to
+it — and the same evening's design conversation (Frank) extended the
+point: the future consultation must aggregate over the POST-pass tree,
+because determinizing rewrites (finite backrefs, atomic-group cuts)
+legitimately delete VM-only nodes before selection reads anything.

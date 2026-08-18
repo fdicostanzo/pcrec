@@ -187,8 +187,9 @@ stated terms.
     match_api_m4.md), generator extended to emit capture-bearing
     shapes at meaningful density. Prerequisite of [M4.7e]; independent
     of [OPT-ALTCLS], so it runs first-wave. Sonnet lane
-  - [M4.7a] STATE:started — SR-8 FLIP. Lane lane/m47a delivered for
-    review 2026-08-17: `\1` etc. are still refused by the PARSER, and
+  - [M4.7a] STATE:completed (2026-08-18, thirtieth session, lane/m47a,
+    merged post-battery; rulings placed as D55) — SR-8 FLIP. Lane
+    lane/m47a delivered for review 2026-08-17: `\1` etc. are still refused by the PARSER, and
     correctly so — re-reading every src/parse/ module file at this lane
     confirmed the row's own premise does not hold in code (no VM_ONLY
     registry row has a producer, so the parser's "requires module 'X'"

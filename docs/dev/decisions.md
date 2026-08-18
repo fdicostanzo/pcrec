@@ -4514,3 +4514,54 @@ the archive as the next step if this cell reopens, not as open work.
 Revisit-when (Cell A): the two untried variables above, if a future
 session has reason to chase the remaining gap; otherwise none — the
 row's throughput claim is settled at -7.61%.
+
+## D55 — SR-8's consultation deliberately deferred to the first VM_ONLY producer; a tripwire guards the gap (manager + m47a lane, 2026-08-17/18, thirtieth session, [M4.7a])
+
+**Decision.** The lowering-time engine-capability CONSULTATION [SR-8]'s
+row describes (a check in src/opt/select_engine.c that reads the
+registry's `engines` column and forces/refuses accordingly) is NOT
+built ahead of a producer. Every VM_ONLY-masked RS_MODULE row in
+registry.c lacks a producer today (confirmed by reading every module
+file in src/parse/ at [M4.7a]), so the parser's existing "requires
+module 'X'" refusals for `\1`, `(?>...)`, etc. are genuinely
+module-ENABLEMENT refusals, not engine-capability ones — there was
+never a parser-side engine check to relocate, and SR-8's row's
+original premise (written before the VM existed) does not hold in the
+shipped code. In place of the consultation,
+tests/registry/registry_check.c's `check_engine_capability_tripwire`
+asserts the fact that makes deferring it safe: every RS_MODULE row
+whose `engines` mask excludes ENGM_DFA has no wired ATOM-position
+producer (51 rows, exact count; class-position ports are excluded
+because a backref inside a class is impossible — FIX-3/K13 — so cport
+there is base-grammar machinery, never a module producer). Its failure
+message names building SR-8's consultation in select_engine.c as the
+required next step.
+
+**Why.** [M4.7a]'s first pass built the consultation early — a second
+EngineAnalysis in select_engine.c reading Ctx.vmonly_seen/pos/why,
+unit-tested with a hand-built Ctx standing in for a producer that does
+not exist. Reverted on manager review before merge: zero producers
+means zero customers (D18's earn-its-axis, OS-0's deferred-by-design
+precedent, D53's measured-no dispositions — the standing discipline
+against unpopulated machinery), and the hand-built-Ctx test is a
+control sharing a source with what it controls: it proves the plumbing
+runs, not that a real producer's contract (what position does it
+report? what "why" text? does it need a Ctx-level flag rather than an
+AST-level one?) matches what was guessed at sample size zero. The
+first VM_ONLY module (an M6 candidate — backrefs, lookaround,
+atomic-groups, ...) shapes that contract from its actual need — which
+per the [M4.7] design notes includes the per-PATTERN split (finite-
+language backrefs determinize away; the consultation must read the
+POST-pass tree, not parse-time verdicts).
+
+**Sabotage validation:** a dummy atom-position producer wired onto the
+atomic-groups row in a scratch build fired the tripwire BY NAME and
+independently moved check_class_ports' pinned atom-port count 23→24 —
+an unplanned second confirmation the sabotage reached the binary.
+Reverted; zero diff confirmed before commit.
+
+**Revisit when:** a module wires the first VM_ONLY producer
+(aport.kind moves off PORT_NONE on any of the 51 rows). The tripwire
+then fails by design, and its failure message is the trigger to build
+SR-8's consultation — designed against that producer's real
+requirements rather than a synthetic one.
