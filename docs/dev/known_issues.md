@@ -415,8 +415,18 @@ state count is linear: `a{20000}` interned 200,050,000 list elements for 845 MB
 and 63 s and COMPILED. `PCREC_MAX_SUBSET_ELEMS` (src/core/limits.h, 48,000,000
 = the test corpus's measured maximum doubled) charges elements in `intern()` as
 they are interned, so the refusal happens DURING construction. `a{65535}`:
-2.1 GB / 12.3 s -> 216 MB / 0.9 s. This one NARROWS what compiles — exact
-repeats above roughly `a{9800}` are now refused — and limits.h says so in full.
+2.1 GB / 12.3 s -> 216 MB / 0.9 s. This one NARROWS what compiles — bisected,
+`a{9795}` compiles and `a{9796}` refuses — and limits.h says so in full.
+
+The two families' boundaries are now both measured and both land on the cap
+that describes them: `a{0,31999}` compiles and `a{0,32000}` refuses on the
+DFA STATE cap; `a{9795}` compiles and `a{9796}` refuses on the SUBSET-ELEMENT
+bound; and at 65535 the bounded-optional form is caught earlier still, by the
+NFA state cap during construction. Note `a{0,65535}` misses the NFA cap by only
+a couple of states (2n+1 for the tail, plus the unanchored wrap and accept), so
+raising PCREC_MAX_NFA_STATES slightly would let PCRE2's largest legal bounded
+repeat through — deliberately NOT done here, because that cap governs every
+pattern and its blast radius is a separate decision.
 
 **3. The caller-abort, which was the worst item on this list.** Seven
 malloc-failure sites called `abort()`, so a caller who set a memory limit had

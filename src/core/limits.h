@@ -85,8 +85,9 @@ enum {
      * shape probed, which is why one element count bounds every one of them.
      *
      * WHAT IT REFUSES THAT USED TO COMPILE, stated plainly because it is a
-     * narrowing and not only a rescue: exact repeats above roughly `a{9800}`.
-     * Those cost 63 s and 154 s at n=20000 and n=30000 today — D45's own
+     * narrowing and not only a rescue: exact repeats above `a{9795}` (bisected;
+     * `a{9795}` compiles, `a{9796}` refuses). Those cost 63 s and 154 s at
+     * n=20000 and n=30000 today — D45's own
      * standard says a compile needing that much is a failure rather than a slow
      * box — and the refusal is the EXISTING "too complex for the DFA engine"
      * family pointing at the VM, not a new tier (D26). The boundary for this
