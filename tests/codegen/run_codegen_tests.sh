@@ -732,6 +732,53 @@ else
     bad "[K24]: pcrec failed to compile '(alpha|beta|gamma|delta|epsilon)' --no-captures for the partial-inlining split check"
 fi
 
+# ---- the ABI-types block is BYTE-IDENTICAL across prefixes ---------------
+# §1 of docs/spec/match_api.md states this as measured, and the D44/A-2 check
+# above tests the CONSEQUENCE (two differently-prefixed headers compile in one
+# TU) rather than the property itself — which a block that merely happened to
+# be free of prefix-dependent CONTENT would also satisfy. This asserts the
+# property directly, so an edit that leaks the prefix (or, since [M5-SEAM],
+# the ENCODING) into the shared block fails here rather than at whatever
+# distance the consequence first shows up.
+#
+# Four prefixes of different lengths and shapes, because a prefix leak that
+# happened to produce equal-length text would survive a two-prefix
+# comparison. The CONTROL is the whole file: it MUST differ across prefixes,
+# or the extractor is returning nothing and this check is comparing two empty
+# strings to each other.
+abi_block() { awk '/^#ifndef PCREC_RX_ABI_H$/,/^#endif \/\* PCREC_RX_ABI_H \*\//' "$1"; }
+abi_md5=""
+abi_ok=1
+abi_files=""
+for pfx in rx foo z_9 verylongprefixname; do
+    if ! "$PCREC" -p "$pfx" -o - -- 'a(b|c)+d' > "$WORKDIR/abi_$pfx.c" 2>/dev/null; then
+        bad "ABI block identity: pcrec failed to compile the fixture under -p $pfx"
+        abi_ok=0
+        continue
+    fi
+    abi_files="$abi_files $WORKDIR/abi_$pfx.c"
+    m="$(abi_block "$WORKDIR/abi_$pfx.c" | md5sum | cut -d' ' -f1)"
+    b="$(abi_block "$WORKDIR/abi_$pfx.c" | wc -l)"
+    if [ "$b" -lt 20 ]; then
+        bad "ABI block identity: the extracted block under -p $pfx is $b lines — the extractor is not finding the guarded block, so any comparison below is vacuous"
+        abi_ok=0
+    elif [ -z "$abi_md5" ]; then
+        abi_md5="$m"
+    elif [ "$m" != "$abi_md5" ]; then
+        bad "ABI block identity: the PCREC_RX_ABI_H block under -p $pfx differs from the -p rx one — something prefix-dependent (or encoding-dependent) leaked into the block every artifact in a TU shares, where only the FIRST copy survives the include guard"
+        abi_ok=0
+    fi
+done
+if [ "$abi_ok" -eq 1 ]; then
+    # the control: whole files across prefixes must NOT be identical
+    if [ "$(cat $abi_files | md5sum | cut -d' ' -f1)" \
+         = "$(cat "$WORKDIR/abi_rx.c" "$WORKDIR/abi_rx.c" "$WORKDIR/abi_rx.c" "$WORKDIR/abi_rx.c" | md5sum | cut -d' ' -f1)" ]; then
+        bad "ABI block identity: the four differently-prefixed WHOLE artifacts are identical too — --prefix is not reaching the emitted text at all, so the block's identity proves nothing"
+    else
+        ok "[M4.4/D44/A-2]: the PCREC_RX_ABI_H block is byte-identical across four prefixes (md5 $abi_md5) while the surrounding artifacts differ"
+    fi
+fi
+
 # ---- [M5-SEAM] RESIDUAL ENTRIES ARE NEVER CALLED FROM THE ENGINE ----------
 # docs/dev/plan.md [DD-12] (7), ruled in as a requirement by Frank: "NO
 # encoding conditionals anywhere ... per-encoding inline-function headers are
