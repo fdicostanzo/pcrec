@@ -256,8 +256,7 @@ eng_brep annotation + any D47.5 addendum (lane's Q7) decided then.
   sole post-parse reader; compile.c's two sites are seeds into the parse.
 - **All six committed probes** (M-1a..1f) reproduce exactly; the
   throughput probe reproduced on a checked-quiet box.
-- **mrl.c:18-24 house rule** (the lane's own late find, verified by
-  r30-checks static grep 15/6-files и by direct read): the exhaustive-
+- **mrl.c:18-24 house rule** (the lane's own late find): the exhaustive-
   switch-no-default convention exists, is named, and altcls.c cites it
   (verified by r30-checks' static 15-warnings/6-files grep and by direct
   read of both files).
