@@ -972,6 +972,19 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                     sb_puts(c,   "                pos = q ? (size_t)((const unsigned char *)q - s) : n - 1;\n"
                                  "            }\n");
                 } else {
+                    /* [K27] The `pos >= n` guard is the FIX, and it is not
+                     * defensive padding: docs/spec/match_api.md §3.1 makes
+                     * (s == NULL, n == 0) a LEGAL subject, and on it this
+                     * line used to call memchr(NULL, c, 0) — technical UB in
+                     * EMITTED code, which a user compiling a generated
+                     * matcher under their own -fsanitize=undefined sees
+                     * pcrec's name on. It changes no answer: memchr over a
+                     * zero-length range returns NULL, so the guarded early
+                     * `return 0` is exactly the branch the unguarded form
+                     * reached one line later. The EOL arm above needs no
+                     * such guard — its own `pos + 1 < n` bound already
+                     * implies n > 0, hence s != NULL. */
+                    sb_puts(c,   "            if (pos >= n) return 0;\n");
                     sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
                     sb_puts(c,   "            if (!q) return 0;\n"
                                  "            pos = (size_t)((const unsigned char *)q - s);\n");

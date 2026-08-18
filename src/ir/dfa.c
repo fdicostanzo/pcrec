@@ -595,7 +595,7 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolv
 
     if (d->n >= d->maxstates)
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
-                 "VM engine arrives in M4)", d->maxstates);
+                 "try --engine=vm)", d->maxstates);
     /* [M4.7b/K7] The PREDICTIVE half of the cap, charged per interned state
      * BEFORE its list is copied. The state-count cap above bounds `d->n`; the
      * memory this construction actually spends is sum(nlist), and the two come
@@ -605,7 +605,7 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolv
     if (cx->subset_elems > PCREC_MAX_SUBSET_ELEMS)
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
-                 "VM engine arrives in M4)",
+                 "try --engine=vm)",
                  (long long)PCREC_MAX_SUBSET_ELEMS);
     if (d->n == d->cap) {
         int ncap = d->cap ? d->cap * 2 : 64;
