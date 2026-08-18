@@ -1533,9 +1533,12 @@ site. A new kind cannot be silently ignored.
 **The deciding measurement.** *Does the compiler actually catch a new kind?*
 `Ast.k` is enum-typed (`AKind k;`, `src/core/internal.h:87`) and the build is
 `-Wall -Wextra`, so `-Wswitch` should fire at any switch lacking the case and
-lacking a `default:`. Measured rather than assumed — a probe enumerator was
-added to `AKind`, the tree rebuilt, the warnings counted, and the edit reverted
-(the tree was clean before and after):
+lacking a `default:`. Measured rather than assumed, and — **corrected after R30
+M8** — measured by a COMMITTED INSTRUMENT rather than by a hand edit anyone
+would have to take on trust: `probes/probe_wswitch_alarm.sh` appends the
+enumerator, runs `gcc -fsyntax-only`, counts the diagnostics, and restores the
+header under an EXIT trap that verifies the restore. Archived at
+`out/wswitch_alarm.txt`; a read-only critic can re-run it.
 
 | | sites that fail to compile-warn | |
 |---|---|---|
@@ -1545,10 +1548,15 @@ added to `AKind`, the tree rebuilt, the warnings counted, and the edit reverted
 Sample, verbatim:
 
 ```
-src/ir/nfa.c:492:5: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
-src/opt/altcls.c:378:5: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
-src/opt/mrl.c:90:9: warning: enumeration value 'A_EOL_M' not handled in switch [-Wswitch]
+src/gen/emit_vm.c:655:9: warning: enumeration value 'A_PROBE_ONLY_M6_1' not handled in switch [-Wswitch]
+src/opt/mrl.c:90:9:      warning: enumeration value 'A_PROBE_ONLY_M6_1' not handled in switch [-Wswitch]
+src/opt/altcls.c:378:5:  warning: enumeration value 'A_PROBE_ONLY_M6_1' not handled in switch [-Wswitch]
 ```
+
+The instrument also refuses to report zero when it compiled nothing — its own
+first run produced `0 diagnostics` because the include paths were wrong, which
+is this probe's version of the failure mode this document keeps finding in
+other people's checks.
 
 **Nineteen switches over `Ast.k` exist** — `src/opt/possessify.c` 3,
 `src/ir/nfa.c` 1, `src/gen/emit_vm.c` 8, `src/opt/mrl.c` 1, `src/opt/revdet.c`
@@ -1915,8 +1923,8 @@ composition rule of §3.6.2; the VM's guarded `\b` spelling (§9.3) on the share
 smaller. It must precede `(?m)` because `(?m)$` reuses the same mechanisms.
 
 **Tests / landing conditions.**
-- **The eight `startpos > 0` cells of §3.8**, and the same patterns driven
-  through the §3.1 find-all loop. Strongest: `\bfoo` on `"xfoo"` at `startpos 1`
+- **The `startpos > 0` cells of §3.8** — ten cells, five of them differing —
+  and the same patterns driven through the §3.1 find-all loop. Strongest: `\bfoo` on `"xfoo"` at `startpos 1`
   must NOT match (a context-blind implementation matches), and `\bfoo` on
   `"xfoo foo"` at `startpos 1` must report `(5,8)` and not `(1,4)`. The find-all
   arm must include a case whose resume lands **mid-word** (`\Bfoo` on
