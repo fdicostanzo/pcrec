@@ -28,16 +28,30 @@ groups:
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
    `<prefix>_match_caps`, `<prefix>_info`, and the `<PREFIX>_*` macro
    family (`RX_NCAPS`, `RX_UNSET`, `RX_ERR_*`, the D46 observability
-   macros in §6.3). A pattern compiled with `--prefix foo` gets
+   macros in §6.3). A pattern compiled with `-p foo` gets
    `foo_search`, `FOO_NCAPS`, etc. — verified by compiling the same
-   pattern under `-p foo` and reading the emitted header.
+   pattern under `-p foo` and reading the emitted header. (The CLI spells
+   this option `-p` and only `-p`; there is no `--prefix` long form —
+   `pcrec --prefix foo ...` is an unknown-option error.)
 2. **pcrec's own fixed library surface**: the `PCREC_*` enum/bit
    constants and the `pcrec_options`/`pcrec_output`/`pcrec_error`/
    `pcrec_err_input` types declared in `lib/pcrec.h`. Never scoped by a
    generated pattern's prefix.
-3. **Fixed-literal ABI types**, scoped by *neither* of the above:
-   `rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
-   `struct rx_info`, `rx_renderfn`. These are always spelled `rx_*`
+
+   **The `PCREC_*` spelling is not by itself a promise that a name lives
+   in `lib/pcrec.h`**: two macros break that reading, and a consumer
+   grepping for the namespace will find them. Every emitted artifact
+   carries `PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES` (the D37
+   artifact stamp — e.g. `#define PCREC_FEATURE_SET "std1"`,
+   `#define PCREC_FEATURE_MODULES "classes,modifiers"`), which are
+   `PCREC_*`-named, PER-ARTIFACT, and declared nowhere in `lib/pcrec.h`.
+   They are the one exception to §8's own naming rule, and they are
+   deliberate: an artifact must not be ambiguous about what it was built
+   with. Everything else `PCREC_*` follows the rule as stated.
+3. **Fixed-literal ABI types**, scoped by *neither* of the above, in the
+   order the artifact declares them: `rx_ctx`, `rx_matchfn`,
+   `rx_callout_ref`, `rx_renderfn`, `rx_group_entry`,
+   `struct rx_info`. These are always spelled `rx_*`
    regardless of `--prefix`, on purpose: they are what let two
    differently-prefixed generated matchers compose in one translation
    unit (a compiled matcher links directly as another's callout, with no
@@ -52,7 +66,13 @@ groups:
 A generated artifact is either self-contained (`options.header_name ==
 NULL`, everything below in the `.c`) or split into a paired `.h`/`.c`
 (`options.header_name` set) — both forms carry the identical declarations
-below; only the file split differs.
+below. Two things beyond the file split differ, and a consumer writing
+against the header namespace should know both: the self-contained form
+omits the `PCREC_GEN_<PREFIX>_H` include guard entirely (measured with
+`header_name == NULL`: zero occurrences, against three in the split
+form's `.h`), since there is no header to guard; and the D46
+observability macros of §6.3 are emitted into the `.c` only, never into
+the `.h` (§6.3 states this where it matters).
 
 ---
 
@@ -69,37 +89,64 @@ typedef struct rx_ctx {
     void                 *user;     /* per-binding user data */
 } rx_ctx;
 
-typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 /* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a
- * typed give-up code in [<PREFIX>_ERR_FLOOR, -2] (§4). Self-contained:
- * must accept ctx->ncap == 0, ctx->caps == NULL. */
+ * typed give-up code in [<PREFIX>_ERR_FLOOR, -2] -- one per way the
+ * engine can give up (<PREFIX>_ERR_STEPS/_FRAMES/_WORK), where
+ * <PREFIX> is this artifact's own uppercased --prefix. D49: those
+ * codes PROPAGATE, they are not collapsed to -1, and a caller doing
+ * an exact `== -1` test sees them as distinct values. Values
+ * strictly BELOW <PREFIX>_ERR_FLOOR stay RESERVED for a future abort
+ * semantic; no pcrec-emitted matcher produces one today, and a
+ * generated call site that invokes an rx_matchfn traps on one.
+ * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
+typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 
 typedef struct rx_callout_ref {
     rx_matchfn *fn;
     void       *user;
 } rx_callout_ref;
 
+/* Emitted ONLY when a substitution template names it. Renders one
+ * template segment from the same rx_ctx a callout receives. Writes at
+ * most outcap bytes to out; returns the number of bytes produced, or
+ * -1 to fail. Called with out == NULL and outcap == 0, it returns the
+ * length it WOULD produce, writing nothing. */
 typedef ptrdiff_t rx_renderfn(const rx_ctx *ctx,
-                               unsigned char *out, size_t outcap);
-/* Declared unconditionally alongside the other five ABI types; a
- * function of this type is only ever DEFINED when a substitution
- * template names one (module M4-SUBST, not yet built as of this
- * writing) — the typedef existing costs nothing on a build that never
- * uses it. */
+                              unsigned char *out, size_t outcap);
 
 typedef struct {
     const char *name;
     int         number;
     int         slot;   /* caps[] index this entry delivers, or -1 if
-                            this build delivers no slot for it */
-    const char *ref;    /* NULL/empty for the primary pattern's own
-                            groups; a labeled insertion path, not yet
-                            producible by anything in pcrec today */
+                           this build delivers no slot for it */
+    const char *ref;    /* NULL/empty for the primary's own groups */
 } rx_group_entry;
 
-struct rx_info { /* see §6 for the full field list */ };
-extern const struct rx_info <prefix>_info;
+struct rx_info {
+    /* ... elided here; §6 quotes the full field list ... */
+};
+
+extern const struct rx_info <prefix>_info;   /* not inside the ABI block */
 ```
+
+The block above is the emitted text verbatim (re-quoted from a freshly
+emitted artifact for this revision), with two marked exceptions: the
+`struct rx_info` body is elided to §6, and `extern const struct rx_info
+<prefix>_info;` is per-prefix and so lives *outside* the
+`PCREC_RX_ABI_H` guard, not in this block. Three things the comments
+state that a reader should not have to infer:
+
+- **`rx_renderfn` carries a sizing protocol**, and it is shipped ABI
+  text, not a design intention: called with `out == NULL` and
+  `outcap == 0` it writes nothing and returns the length it *would*
+  produce. That is how a caller sizes a buffer before rendering.
+- **`rx_group_entry.ref`** is documented in the artifact only as
+  "NULL/empty for the primary's own groups". Its non-empty form is a
+  labeled insertion path that nothing in pcrec can produce today.
+- **`<PREFIX>` in these comments is a placeholder, not a literal.** The
+  block is byte-identical across every `--prefix` on purpose (§1), so it
+  cannot name any one artifact's macros; substitute your own uppercased
+  prefix when reading it.
 
 **`rx_info` is a struct TAG, not a typedef, and every reference to it
 spells `struct rx_info`** — verified directly (`grep`-visible in every
@@ -114,12 +161,14 @@ cannot coexist in one C scope. Struct tags live in a separate C namespace
 from ordinary identifiers, so `struct rx_info` (the type) and `rx_info`
 (the default-prefix instance) coexist without conflict. **This is the
 contract as shipped: an embedder writing code against a generated header
-declares `const struct rx_info *`, never a bare `rx_info`.** Whether a
-future pcrec release renames the per-artifact instance to restore a bare
-typedef is an open question tracked in `docs/dev/plan.md` (not yet ruled
-as of this writing); this spec will update if that ruling lands and
-changes the shipped spelling — see §7 for the pre-v1 posture that makes
-such a change unconstrained in substance today (D40).
+declares `const struct rx_info *`, never a bare `rx_info`.**
+
+**This spelling is RULED, not provisional (D57, 2026-08-18).** The
+question of renaming the per-artifact instance to buy a bare typedef
+back is closed: the struct-tag form is blessed as the contract, and the
+design sketch's typedef form is dead. A consumer that wants a typedef'd
+name ships `typedef struct rx_info rx_info_t;` in its own header, which
+touches nothing pcrec emits.
 
 ---
 
