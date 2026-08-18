@@ -300,8 +300,8 @@ stated terms.
     is the named detectability instrument (K9 pins: tests/cli case16).
     docs/spec/CLAUDE.md gets its first real entry; docs/CLAUDE.md's
     spec/ line updated; match_api_m4.md gets a graduation pointer at
-    the top naming both discrepancies. Commits: c24d699 (spec content)
-    + a closing docs/plan/journal commit on lane/m47f.
+    the top naming both discrepancies. Commits: c24d699 (spec content),
+    4adb10f (plan/journal), lane/m47f.
   - [M4.7g] STATE:not-started — CLOSE: full close battery + ratchets;
     M5-vs-M6 order decided WITH FRANK at this close (standing rule)
 
