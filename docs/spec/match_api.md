@@ -648,21 +648,29 @@ struct rx_info {
                                        writing — verified: '(?<g>a)' still
                                        refuses "requires module
                                        'named-groups'") */
-    unsigned      engine;          /* ENGM_DFA (1) / ENGM_VM (2) */
+    unsigned      engine;          /* 1 = DFA, 2 = VM. The artifact
+                                       spells these ENGM_DFA/ENGM_VM in
+                                       a COMMENT only — no such constant
+                                       is #defined anywhere, so compare
+                                       against the numbers */
     int64_t       step_budget;     /* -1 = none */
     int64_t       work_budget;     /* -1 = none; the THIRD bound (D47
                                        SECOND ADDENDUM): forward work the
                                        fail label never sees, counted
                                        separately from step_budget */
-    int64_t       frame_capacity;  /* -1 = unbounded */
+    int64_t       frame_capacity;  /* -1 = unbounded. NOTE the sentinel
+                                       is NOT the one the same-named
+                                       pcrec_options field uses — see
+                                       the asymmetry note below */
     int64_t       subject_ceiling; /* 0 = unset/not applicable; else the
                                        stamped honest ceiling for a
                                        residually-unbounded capture body */
     const char           *pattern;      /* source pattern text, as given
                                             to pcrec_compile() */
     size_t                pattern_len;  /* companion length — see §7 */
-    const rx_group_entry *groups;       /* sorted, bsearch-able; NULL
-                                            until named-groups */
+    const rx_group_entry *groups;       /* NULL until named-groups; the
+                                            sort key is not yet fixed —
+                                            see below */
     const char           *engine_why;   /* forcing construct/reason, or
                                             NULL; also carries a prefilter
                                             note on hybrid-eligible
@@ -687,14 +695,45 @@ from the `/* ... */`-comment escaper used elsewhere in the file).
 
 `groups`/`nnames` stay `NULL`/`0` for every pattern until module
 `named-groups` lands — verified live on this build (`'(?<g>a)'` still
-refuses with `requires module 'named-groups'`).
+refuses with `requires module 'named-groups'`). **The `groups` array is
+described as sorted and `bsearch`-able, but no document states the sort
+KEY**, and there is no producer to measure: a consumer must not assume
+an ordering today. Module `named-groups` fixes the key when it ships,
+and this section states it then.
 
-### 6.1 `rx_info` is `.rodata`-only, link-time, not runtime, data
+**Two fields carry a design promise with no producer**, and the
+distinction from a shipped fact matters to anyone writing code against
+them:
+
+- `rx_ctx.ncap`'s documented "watermark mid-match" reading has no
+  producer. Every call site in every emitted artifact sets `ctx.ncap =
+  0`; nothing ever advances it, so no caller can observe a watermark. It
+  is reserved for a future mid-match view, exactly as `nnames`/`groups`
+  are reserved for `named-groups`.
+- `rx_info.abi` is `2` on every artifact today. Being pre-v1 (§9), it is
+  a layout version and not yet a compatibility promise: do not build
+  version negotiation on it until v1 declares what a bump means.
+
+**`frame_capacity`'s sentinel asymmetry.** The field name appears on
+both sides of the API with different sentinels, and neither side is
+wrong — they answer different questions. On the INPUT side,
+`pcrec_options.frame_capacity == 0` means "let the compiler size it"
+(and a positive value is a request). On the OUTPUT side,
+`rx_info.frame_capacity == -1` means "no bound at all" — which is what a
+DFA artifact stamps, having no resume stack to bound (measured:
+`.frame_capacity = -1` alongside `.step_budget = -1` and
+`.work_budget = -1` on a `--no-captures` build). `0` is not a legal
+output value and `-1` is not a legal input value. §8 restates this at
+the options side.
+
+### 6.1 `rx_info` is link-time, not runtime, data
 
 It is **not** part of `rx_ctx` or any callback parameter — a caller
 reads `<prefix>_info` by symbol, once, at whatever point it wants the
 artifact's own facts about itself (option flags, which engine, the
-budgets it was built with, its own source pattern text).
+budgets it was built with, its own source pattern text). Its section
+placement is `.data.rel.ro.local` rather than `.rodata`, for the reason
+§3.4 measures.
 
 ### 6.2 Second-count example, worked
 
@@ -707,12 +746,46 @@ rule `rx_info` restates for every build.
 
 ### 6.3 The compile-time mirror: observability macros
 
-Everything `rx_info` states as runtime/link-time data is *also* available
-as a compile-time macro on a VM-compiled artifact, for a caller that wants
-to `#if` on it rather than read a struct field — D46's "every strategy
-selection point must be observable" requirement, discharged as a
-same-shaped pair for each axis. Verified present on a captures-default
-build of `'a(b|c)+d'`:
+An artifact also carries compile-time macros, for a caller that wants to
+`#if` on a fact rather than read a struct field at run time — D46's
+"every strategy selection point must be observable" requirement. Two
+scoping facts first, because both are easy to get wrong and neither is
+guessable:
+
+**The mirror is PARTIAL — on a VM artifact six of `rx_info`'s fifteen
+fields have a macro, and nine do not.** The six that mirror are `ncaps`
+(`<PREFIX>_NCAPS`), `engine` (`<PREFIX>_ENGINE`, as the string `"vm"`),
+`engine_why` (`<PREFIX>_ENGINE_WHY`), `step_budget`
+(`<PREFIX>_STEP_BUDGET`), `work_budget` (`<PREFIX>_WORK_BUDGET`) and
+`frame_capacity` (`<PREFIX>_BT_FRAMES`). The nine with no macro at all
+are `abi`, `flags`, `encoding`, `ngroups`, `nnames`, `subject_ceiling`,
+`pattern`, `pattern_len` and `groups` — including `ngroups`, which is
+exactly the count §6.2 works hardest to distinguish from `ncaps`, and
+which is therefore reachable only by reading `<prefix>_info` at run
+time.
+
+**On a DFA artifact the mirror is thinner still: `ncaps` alone.** A
+`--no-captures` build defines exactly `<PREFIX>_NCAPS`,
+`<PREFIX>_UNSET`, the four `<PREFIX>_ERR_*` codes, and the two
+`<PREFIX>_ALTCLS_*` stamps below — no `<PREFIX>_ENGINE`, no budgets, no
+`_VM_*` axis at all. A consumer that `#if`s on `<PREFIX>_ENGINE` is
+writing code that does not compile against half the artifacts pcrec
+produces. (Both counts measured by listing every `#define` in a fresh
+build of each kind.)
+
+**The macros live in the `.c`, not the `.h`.** In the split form the CLI
+produces by default, a consumer `#include`s the `.h` — which carries
+only `<PREFIX>_NCAPS`, `<PREFIX>_UNSET` and the four `<PREFIX>_ERR_*`
+codes (plus its two include guards). Every macro named below is emitted
+into the `.c` only (measured on one build: eight `#define`s in the `.h`,
+thirty-five in the `.c`), so **the `#if` use case above is unreachable from a consumer
+translation unit unless the artifact was built self-contained**
+(`header_name == NULL`) or the consumer is the generated `.c` itself.
+Whether these should also be emitted into the header is an open design
+question, not settled here.
+
+With that scoping, the observability macros on a captures-default build
+of `'a(b|c)+d'`:
 
 ```c
 #define RX_ENGINE          "vm"                    /* mirrors rx_info.engine */
@@ -727,19 +800,42 @@ build of `'a(b|c)+d'`:
 #define RX_VM_PRUNE_CEILING      "prefilter-window"
 ```
 
-These are scalar/bitmask macros for a per-artifact-wide verdict
-(`RX_ENGINE`, `RX_VM_PREFILTER`) or a bitmask when the axis is decided
-per-quantifier and a single scalar would misreport a mixed pattern
-(`RX_VM_RUNGS`, `RX_VM_STRATS`, `RX_VM_PRUNES`). Testing/tuning axes that
-change no answer (possessification, reverse-determinism, the counter
-rung, length pruning, the prefilter, alternation-class normalization) are
-deliberately masked *out* of `rx_info.flags` and out of these macros'
-underlying selection where the axis itself is a denial knob rather than a
-selected strategy — two artifacts that behave identically must not differ
-in their reflection surface over a knob with no observable effect. The
-full `PCREC_NO_*`/`PCREC_FORCE_*` flag catalogue and its per-flag
-reasoning live in `lib/pcrec.h`'s own comments (`lib/CLAUDE.md` indexes
-them); this document does not duplicate that catalogue.
+These are scalar macros for a per-artifact-wide verdict
+(`RX_ENGINE`, `RX_VM_PREFILTER`, `RX_VM_PRUNE_CEILING`) or a bitmask
+when the axis is decided per-quantifier and a single scalar would
+misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
+`RX_VM_PRUNES`). Everything above is VM-artifacts-only. Two more D46
+stamps are NOT, and a DFA-only artifact carries them too:
+
+```c
+#define RX_ALTCLS_MERGES   1   /* alternation runs merged into one class */
+#define RX_ALTCLS_FACTORED 0   /* alternation runs prefix-factored */
+```
+
+They are emitted before either engine is built, so they appear on a
+capture-free pattern's DFA artifact as well (measured on a
+`--no-captures` build).
+
+**`rx_info.flags` and these macros answer different questions, and the
+masking rule applies to only one of them.** `flags` records the REQUEST
+— the `PCREC_*` option bits exactly as compiled — with the
+testing/tuning denials masked OUT, because an axis that changes no
+answer must not make two identically-behaving artifacts differ in their
+reflection surface. The macros record what the emitter DID, and they
+visibly move when a denial is exercised: measured on
+`'(x)(?:a|bc)+d'`, building `-fno-possessify` moves `RX_VM_STRATS` from
+`0x1u` (POSSESSIVE) to `0x2u` (BACKTRACKING) while the emitted
+`rx_info.flags` value is unchanged — the whole `rx_info` initializer is
+identical between the two builds except `frame_capacity`, which moves
+because denying possessification really does cost a frame. So: to see
+what was ASKED FOR, you cannot use `flags` for a masked axis at all; to
+see what HAPPENED, read the macro.
+
+The set of bits that get masked, and the per-flag reasoning, live in
+`lib/pcrec.h`'s own comments (`lib/CLAUDE.md` indexes them) — that is
+where to look, from here and from §8, to see which bits legitimately
+vanish from `rx_info.flags` on a round trip. This document does not
+duplicate that catalogue.
 
 ---
 
