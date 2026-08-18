@@ -94,9 +94,27 @@ enum {
      * family already existed at 65535, set by the state cap; this moves it, it
      * does not invent it.
      *
+     * THE LEVER THAT BUYS THAT BEHAVIOUR BACK, WITH ITS PRICE, so a vendored
+     * user who needs the old boundary does not have to rediscover the cost.
+     * Raise this number; each step below is MEASURED on the project box with
+     * the budget removed, which for this family IS the pre-[M4.7b] compiler
+     * (the nfa.c fix does not touch exact repeats):
+     *
+     *   205,000,000   restores `a{20000}`   —  845 MB, 63-99 s
+     *   460,000,000   restores `a{30000}`   — 1.87 GB, 109 s
+     *   ~500,000,000  restores everything this family ever had: above roughly
+     *                 this the budget stops binding and the 32000-state cap
+     *                 takes over, which is where `a{65535}` refuses — at
+     *                 2.1 GB. There is nothing to buy beyond that point.
+     *
+     * Those seconds are the reason for the default, not a footnote to it: a
+     * 63-109 s compile is what D45 calls a failure rather than a slow box.
+     *
      * Same revisit-when as every other budget here: if a LEGITIMATE pattern is
      * measured needing more, raise it WITH the measurement recorded. Note that
-     * raising it buys memory quadratically in the repeat count, not linearly. */
+     * raising it buys repeat count only as its SQUARE ROOT — the table above
+     * is 2.2x the number for 1.5x the reach — because the cost is quadratic in
+     * the repeat count, not linear. */
     PCREC_MAX_SUBSET_ELEMS     = 48000000,
 
     /* [M4.5b] The VM emitter's own size backstop, and the reason it needs one
