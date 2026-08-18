@@ -122,3 +122,22 @@ the identical reason. What the pass DID is recorded in
 are NOT VM-artifacts-only: the pass runs before either engine is built, so
 a capture-free pattern's DFA artifact carries the stamp too. Tests:
 tests/altcls/.
+
+**[M4.7g] (2026-08-18, R29 fix lane):** the `<prefix>_search` doc comment is
+corrected, and the defect is worth knowing because it survived the [M4.4]
+rewrite, a manager read and the spec graduation. It presented the `int`
+return as TWO-VALUED (1 on a match, 0 on no match), under which the natural
+`if (rx_search(...))` reads an engine GIVE-UP as a match — measured: −3 from
+`<prefix>_search` on `(a|aa)+b` built `--backtrack-frames=1`. The comment now
+names the negative give-up space (`<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`
+inside [`<PREFIX>_ERR_FLOOR`, −2], D49), says the return is not two-valued,
+and states that a give-up leaves `caps` UNTOUCHED like any other failure.
+Three adjacent staleness fixes rode along: "RX_NCAPS is 1 on every artifact
+this milestone emits" predated M4.5's captures default; `extern const
+rx_info <prefix>_info` predated D57's blessed struct-TAG spelling; and the
+ABI type list now matches the emitted declaration order. The comment also
+now points at `docs/spec/match_api.md` as the authoritative contract rather
+than only at the design record — that spec, not this header, is where the
+full surface is stated. The emitted `rx_matchfn` ABI comment
+(src/gen/emit_dfa.c) had the SAME defect in its own words and was fixed in
+the same commit; see the R29 review and the journal entry for both.

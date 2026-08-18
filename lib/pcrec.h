@@ -333,9 +333,9 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * half-open [start, end) byte offsets; caps[0] IS the whole-match span (no
  * second name for it). On no match — and on a give-up, which is a failure
  * for this rule too — caps (if non-NULL) is left UNTOUCHED; the int return
- * value alone communicates the outcome. startpos > n
- * returns 0. `^` anchors to absolute offset 0 regardless of startpos. s may
- * be NULL only when n == 0. RX_NCAPS is 1 on any DFA-compiled artifact
+ * value alone communicates the outcome. startpos > n returns 0. `^` anchors
+ * to absolute offset 0 regardless of startpos. s may be NULL only when
+ * n == 0, and the matcher never reads s[n]. RX_NCAPS is 1 on any DFA-compiled artifact
  * (which is every artifact built `--no-captures`); RX_NCAPS > 1 implies the
  * VM engine ([M4.5], where captures became the default).
  *
@@ -348,10 +348,13 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * `extern const struct rx_info <prefix>_info` (a static
  * reflection structure: option flags, encoding, pattern text, group counts,
  * selected engine, budgets). The fixed-literal ABI types these entries
- * share (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
- * `rx_info`, `rx_renderfn`) are declared in the generated .c/.h, not here —
- * they are PER-ARTIFACT-EMITTED, not part of pcrec's own library surface,
- * exactly like `<prefix>_search` itself. See docs/design/match_api_m4.md.
+ * share (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_renderfn`,
+ * `rx_group_entry`, `struct rx_info`) are declared in the generated .c/.h,
+ * not here — they are PER-ARTIFACT-EMITTED, not part of pcrec's own library
+ * surface, exactly like `<prefix>_search` itself. The CONTRACT for all of
+ * this — every entry point, the give-up codes, capture semantics, the
+ * reflection surface — is docs/spec/match_api.md, which is authoritative;
+ * docs/design/match_api_m4.md is the design record behind it.
  *
  * The one-shot search form above is the WHOLE generated search contract
  * today. The streaming interface APPROACH.md §6 specifies (<prefix>_stream_init/
