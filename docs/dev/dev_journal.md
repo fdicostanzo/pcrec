@@ -9975,3 +9975,97 @@ not." Both indict manager practice as much as lane practice (this
 session's scripted doc edits included one caveat placed in the wrong
 section and one stale draft spliced verbatim). Candidate for
 learnings.md if the class recurs across sessions.
+
+## 2026-08-18 (EDT), lane/m47f — [M4.7f] delivered: docs/spec/match_api.md, the first spec document
+
+[M4.7f], the SPEC GRADUATION substep, authored `docs/spec/match_api.md`
+end to end: the entry-point set (`<prefix>_search`/`_match`/
+`_match_caps`/`_info`), the six fixed-literal ABI types, capture-slot
+semantics (C1-C11 restated as contract prose, with R22's §2.2 rules —
+cross-iteration retention, empty-final-iteration overwrite — folded in
+as first-class text rather than carried as an addendum), the D49
+give-up code space (`RX_ERR_STEPS`/`_FRAMES`/`_WORK`, the `RX_ERR_FLOOR`
+partition, the composed-call-site trap rule), the `rx_info` reflection
+structure plus its D46 compile-time observability-macro mirror
+(`RX_ENGINE`/`RX_ENGINE_WHY`/`RX_VM_PREFILTER`/`RX_VM_RUNGS`/
+`RX_VM_STRATS`/`RX_VM_PRUNES`), the COMPILE-ENTRY NUL-termination
+contract, and `pcrec_options`/`pcrec_error`.
+
+**Cardinal rule applied**: every claim was checked against the shipped
+surface rather than copied from `docs/design/match_api_m4.md` — the
+lane built the worktree, emitted artifacts for three shapes
+(`--no-captures 'a(b|c)+d'`, the same pattern captures-default, and a
+`-p foo` custom-prefix build) and read the actual generated `.c`/`.h`
+text, rather than trusting the design doc's sketches. This caught two
+real design-vs-shipped discrepancies, both corrected in the spec and
+called out by name (not silently reconciled):
+
+1. **The give-up-code collapse never shipped.** `match_api_m4.md` §3
+   still describes D42.3's rule that `<prefix>_match` collapses every
+   give-up code to a bare `-1`. The actual emitted `rx_match` body
+   propagates `RX_ERR_STEPS`/`_FRAMES`/`_WORK` uniformly — verified
+   directly in the generated C, which carries its own comment
+   explaining why ("the contract of rx_matchfn is one contract").
+   D49 (2026-08-17, already in decisions.md) supersedes D42.3; the
+   design doc's §3 was never updated to match. Spec §3.5 states the
+   shipped behavior and flags the drift for match_api_m4.md's own
+   next touch.
+2. **`rx_info` ships as a struct TAG, not the bare typedef the design
+   sketch (§5) shows.** `struct rx_info { ... };` /
+   `extern const struct rx_info <prefix>_info;` — verified in every
+   emitted header, under both the default and a custom prefix. Forced
+   by the default-prefix `<prefix>_info` instance being the literal
+   identifier `rx_info`, colliding with a bare typedef of the same
+   name. This was already recorded as an as-built deviation at [M4.4]
+   (2026-08-14) and is STILL an open Frank ruling per plan.md's own
+   history (bless struct-tag-only, or rename the instance and restore
+   the typedef) — this lane did not resolve it, only confirmed it is
+   still open and stated the shipped spelling as the current contract.
+
+**Independently measured, not merely cited.** The COMPILE-ENTRY
+NUL-termination contract's PCRE2 comparison (owed by the substep's own
+text: "PCRE2's own ZERO_TERMINATED mode truncates IDENTICALLY") was
+re-measured by this lane rather than taken on faith — a small probe
+built on `tests/fuzz/pcre2_abi.h`'s existing dlopen shim (no -dev
+package on this box) confirmed against libpcre2 10.46 that
+`PCRE2_ZERO_TERMINATED` on the 3-byte buffer `{'a',0,'b'}` compiles a
+pattern matching only `"a"`, while explicit `length=3` compiles and
+matches the real 3-byte pattern with span `[0,3)`. Same failure mode,
+same root cause (a sentinel-scan compile mode), on both engines.
+
+Also updated: `docs/spec/CLAUDE.md` (first real file entry),
+`docs/CLAUDE.md` (spec/ line no longer says "empty"), and
+`docs/design/match_api_m4.md` (a graduation pointer block at the top,
+naming both discrepancies above so a future reader of the design doc
+is routed to the spec rather than trusting the drifted text).
+
+Verification ledger, per section of the spec: §1 (namespaces) — read
+`PCREC_RX_ABI_H`/`PCREC_GEN_<PREFIX>_H` guard structure in two
+differently-prefixed emitted headers. §2 (ABI types) — full header
+read, both prefixes; the struct-tag finding above. §3 (entry points)
+— emitted `.c` bodies read for `_search`/`_match`/`_match_caps`; §3.5's
+finding via direct body read. §4 (give-up codes) — `RX_ERR_*` macros
+read from both a DFA-only and a VM header; `RX_ERR_FLOOR` cross-checked
+against D49's decisions.md text. §5 (capture semantics) — C1-C11
+restated against §2 of match_api_m4.md's own conformance table (a
+ruled input, not re-derived) plus the R22 addendum's own text; the
+worked `ncaps`/`ngroups` example is the lane's own emitted-artifact
+numbers, not copied. §6 (rx_info) — full field-by-field read of two
+emitted structs (DFA and VM) plus the D46 macro block, which the lane
+had not seen listed anywhere as completely as the emitted header shows
+it. §7 (compile-entry/NUL) — case16's source read verbatim, plus the
+independent libpcre2 probe above. §8 (options/error) — `lib/pcrec.h`
+read in full; the compile-error probe (`"a(b"` → `rc=-1, pos=1,
+input=PCREC_ERR_INPUT_PATTERN`) run directly against `pcrec_compile()`.
+
+Build: `make` plain, clean. Full `make -j12 -Otarget test` launched
+async post-delivery; result to follow in a close-out note if this lane
+resumes, otherwise the merging manager session owns running it.
+
+Branch: `lane/m47f`. Commits: `c24d699` (spec + doc updates), plus this
+journal/plan-status commit.
+
+NEXT: manager review + merge; `[M4.7f]` STATE:completed in plan.md
+(this session already updated it in place, matching the sibling
+substeps' style — not archived to plan_completed.md since [M4.7]
+itself is still STATE:started with [M4.7g] CLOSE outstanding).

@@ -266,23 +266,42 @@ stated terms.
     principle. SEQUENCED: starts only after [OPT-ALTCLS] merges (so
     divergences attribute cleanly) and [M4.7d] lands. D44 three-way
     posture where python re can arbitrate
-  - [M4.7f] STATE:not-started — SPEC GRADUATION: the AS-BUILT
-    match-API contract authored into docs/spec/ (first spec document,
-    D40), from the shipped surface, referencing match_api_m4.md;
-    includes the R22 §2.2 CONTRACT-TEXT WORDING PASS (cross-iteration
-    retention; empty-final-iteration overwrite — folded into the
-    graduated text, not carried as an addendum). After [M4.7c] so
-    pattern_len is in the frozen surface. ALSO OWED HERE (Frank Q&A
-    2026-08-18, measured vs libpcre2 10.46 same evening): the
-    COMPILE-ENTRY contract stated explicitly — patterns are
-    NUL-terminated and a raw 0x00 byte truncates the compile; measured
-    fact to cite: PCRE2's own ZERO_TERMINATED mode truncates
-    IDENTICALLY (probe: 3-byte {'a',0,'b'} compiles as "a" under the
-    sentinel, compiles/matches fully under length=3), so this is an
-    API-SURFACE gap, not a semantics divergence; full length-taking
-    support stays with DD-3, trigger customer [V-A]'s
-    (pattern,length) compat shim; rx_info.pattern_len is the named
-    detectability instrument (K9 pins: tests/cli case16)
+  - [M4.7f] STATE:completed (2026-08-18, lane/m47f; awaiting manager
+    review/merge) — SPEC GRADUATION. `docs/spec/match_api.md`
+    authored: the entry-point set, the six fixed-literal ABI types,
+    capture-slot semantics (C1-C11 restated as contract prose with the
+    R22 §2.2 rules — cross-iteration retention, empty-final-iteration
+    overwrite — folded in as first-class text, not an addendum), the
+    D49 give-up code space, the rx_info reflection structure plus its
+    D46 compile-time observability-macro mirror, the COMPILE-ENTRY
+    NUL-termination contract, and pcrec_options/pcrec_error. Every
+    claim checked against the shipped surface (lib/pcrec.h, artifacts
+    actually emitted for --no-captures/captures-default/custom-prefix
+    builds, cited tests) rather than copied from match_api_m4.md,
+    which had DRIFTED in two places — both corrected in the spec, not
+    silently reconciled: §3 there still shows D42.3's give-up-code
+    `-1` collapse, superseded by D49 before this graduation (the
+    shipped rx_match propagates give-up codes uniformly — verified in
+    the emitted C, which even carries a comment explaining why); and
+    §5's rx_info layout sketch shows a bare typedef where the shipped
+    artifact emits a struct TAG ONLY (`struct rx_info` — forced by the
+    default-prefix `<prefix>_info` name collision, recorded as an
+    as-built deviation at [M4.4] and still an open Frank ruling,
+    unchanged by this lane). The COMPILE-ENTRY contract (patterns are
+    NUL-terminated; a raw 0x00 truncates the compile) is stated with
+    an INDEPENDENTLY MEASURED comparison, not merely cited from this
+    row's own text: dlopen'd libpcre2 10.46 via tests/fuzz/pcre2_abi.h,
+    confirming PCRE2_ZERO_TERMINATED truncates the 3-byte {'a',0,'b'}
+    buffer identically (matches only "a"), while explicit length=3
+    compiles and matches the real 3-byte pattern — an API-surface gap
+    relative to PCRE2's length-taking mode, not a semantics
+    divergence; full length-taking support stays DD-3's (K9), trigger
+    customer [V-A]'s (pattern,length) compat shim; rx_info.pattern_len
+    is the named detectability instrument (K9 pins: tests/cli case16).
+    docs/spec/CLAUDE.md gets its first real entry; docs/CLAUDE.md's
+    spec/ line updated; match_api_m4.md gets a graduation pointer at
+    the top naming both discrepancies. Commits: c24d699 (spec content),
+    4adb10f (plan/journal), lane/m47f.
   - [M4.7g] STATE:not-started — CLOSE: full close battery + ratchets;
     M5-vs-M6 order decided WITH FRANK at this close (standing rule)
 

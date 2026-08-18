@@ -13,7 +13,10 @@ Process and status documents for pcrec. The architecture itself lives in
   inline). See `design/CLAUDE.md`.
 - `spec/` — spec documents detailing how the tool and its surfaces actually
   work and how to use them; deliverables like code, actively maintained, no
-  build history. Empty today — see `spec/CLAUDE.md` for the charter.
+  build history. **[M4.7f], 2026-08-18: first document landed** —
+  `match_api.md`, the as-built match-API contract, graduated from
+  `docs/design/match_api_m4.md`/`engine_m4.md` per D40. See `spec/CLAUDE.md`
+  for the charter and file list.
 
 ## Files
 
