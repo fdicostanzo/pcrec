@@ -26,6 +26,17 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   emitters (src/gen/emit_dfa.c's shared `pcrec_emit_prologue`) since this
   pass runs before either engine exists.
 
+  **[M5-SEAM] (2026-08-18, D58)** the ENCODING GATE is now a REGISTRY
+  lookup rather than a pair of `PCREC_ENC_*` comparisons with the names
+  written out in literals: `pcrec_enc_by_id` (src/gen/enc/) resolves the
+  requested value, a value that is not a namespace member at all is refused
+  with the table's rendered menu, and a member with no backend yet is
+  refused BY ITS OWN `name`. That is [SR-10]'s single-namespace rule on the
+  half this gate owns, and its motivating instance was exactly this
+  diagnostic and cli/main.c's name mapping drifting apart. The K14-shaped
+  wording below is unchanged and still applies — the promise names the
+  MILESTONE, not a module the namespace lacks.
+
   **[M4.5b]** the pipeline gained two things. Engine selection moved OUT of
   this file's inline `if` into a pass (src/opt/select_engine.c) that runs
   after parse and BEFORE machine construction, so a `--engine` request pcrec

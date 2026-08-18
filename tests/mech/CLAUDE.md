@@ -551,3 +551,20 @@ pass's checks.
   check and the direct do-or-die/no-trace stamp check both move).
 
 Validate with `bash tests/mech/run_sabotage_matrix.sh S66` and `S67`.
+
+## S68 ([M5-SEAM], 2026-08-18) — a sabotage that changes NO answer
+
+Worth calling out because it is the first row here whose whole point is
+that the behavioural suites CANNOT see it. `S68_residual_in_hot_loop.sh`
+makes the emitted bitmap prefilter's skip loop advance through
+`<prefix>_next_pos` (the encoding residual) instead of `pos++`, which is
+the hot-path/encoding coupling DD-12 (7) forbids. Under the byte backend
+the two are the same value, so the artifact matches identically: the `.rxt`
+corpus, both oracles, the reject table and every byte-identity gate stay
+green, and only `tests/codegen/run_codegen_tests.sh`'s structural check
+fires. Measured row: `codegen 3fail/41pass, corpus 0fail/56pass`,
+DETECTED.
+
+When reading the matrix, treat a 0-fail behavioural arm on THIS row as the
+expected result rather than as a gap in coverage — it is what the row was
+built to demonstrate.

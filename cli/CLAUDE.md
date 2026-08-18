@@ -149,3 +149,31 @@ The tool normalizes output paths (e.g., -o out.c generates out.h automatically; 
 Compilation goes through lib/pcrec.h, the public header. The SR-3 syntax queries are the one exception: they include src/core/internal.h, because the construct registry is deliberately NOT public surface — the CLI and the test suite are its only consumers today. main.c touches no registry type even so; it calls two functions that return finished text. Promoting one of them into lib/pcrec.h if a library caller ever wants it is easy in a way that un-promoting it would not be.
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+**[M5-SEAM] (2026-08-18, D58):** `--encoding=byte|utf8`, the long spelling
+of the pre-existing `-e`, in the `=value` MODE form `--engine=` already
+uses (the separate-argument forms are for files and names). Both spellings
+reach ONE helper, `set_encoding`, so they cannot drift into two answers.
+
+Three things about that helper are the point of the change rather than
+incidental to it:
+
+- **It resolves the name through the encoding REGISTRY**
+  (`src/gen/enc/enc.h`), never by mapping strings here. This file
+  hand-mapping `"utf8"` while `src/core/compile.c` separately hand-wrote
+  the diagnostic for it is [SR-10]'s recorded motivating instance; both
+  sites now read the one table, and the unknown-encoding diagnostic renders
+  its menu from that table too, so a new backend cannot leave a stale list
+  behind.
+- **It does NOT ask whether the encoding is implemented.**
+  `pcrec_compile()` owns that refusal, so a CLI user and a library caller
+  get the same answer for the same request.
+- **It sets a field of THIS invocation's options** and nothing else. The
+  encoding is a per-compile-call scalar (D58 ruling 2); there is no global
+  for a CLI flag to set.
+
+`-e ascii` is no longer accepted: D58 renamed the encoding `byte`
+(lib/CLAUDE.md carries the reasoning). Pinned in tests/cli case13, which
+also pins that the DEFAULT artifact is byte-identical to the explicitly
+`-e byte` one — a stronger statement than "it compiles", since it says the
+default and the explicit request are the same request.

@@ -141,3 +141,33 @@ than only at the design record — that spec, not this header, is where the
 full surface is stated. The emitted `rx_matchfn` ABI comment
 (src/gen/emit_dfa.c) had the SAME defect in its own words and was fixed in
 the same commit; see the R29 review and the journal entry for both.
+
+**[M5-SEAM] (2026-08-18, D58):** the ENCODING enum is RENAMED and the
+`<prefix>_search` doc comment gains the seam's fifth entry.
+
+`PCREC_ENC_ASCII` is now `PCREC_ENC_BYTE`, with NO compatibility alias, and
+`-e ascii` is consequently an unknown encoding. Two names for one namespace
+member is [SR-10]'s motivating defect, so an alias was the wrong shape; the
+old name also asserted something false, since this encoding treats every
+byte as a character (`0x80` and up included, with no case and no meaning
+attached), which is precisely what "ASCII" does not say. D58's own ruling
+text names the encoding `byte`. Taken as one announced boundary under
+docs/spec/match_api.md §9's pre-v1 posture.
+
+The enum's comment now also states the PER-COMPILE-CALL rule (D58 ruling 2,
+DD-12 (8)): the encoding is this field and nothing else — no process
+global, no file global — so mixing encodings in one compilation unit or
+binary is supported by construction. The NAMES themselves are defined by
+one table, `src/gen/enc/enc.c`; neither `src/core/compile.c` nor
+`cli/main.c` maps an encoding name of its own any more, which was
+[SR-10]'s recorded instance.
+
+The generated-searcher comment gains `<prefix>_next_pos` alongside the
+three entries it already enumerated — the ENCODING RESIDUAL, the next
+CHARACTER boundary strictly after `pos`, and the one place an artifact's
+byte-vs-character distinction lives. Its contract is
+docs/spec/match_api.md §3.1.1; the comment here carries the one warning a
+caller needs (do NOT inline the `+ 1` back — that is the single edit that
+makes a byte-compiled caller wrong against another encoding's artifact),
+because a find-all loop is code the caller writes and this header is what
+they read while writing it.

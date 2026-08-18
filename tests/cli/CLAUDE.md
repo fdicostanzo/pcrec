@@ -156,6 +156,27 @@ Part of `make test` since M2.
   than quietly deleted. Written failing-first against the pre-fix binary; the
   verbatim FAIL block is in the slice's commit message.
 
+  **[M5-SEAM] (D58, 2026-08-18) extends case13 rather than adding a case:
+  this IS the encoding case.** New assertions, in the order they matter:
+  `byte` is the encoding's name in BOTH spellings (`-e byte`,
+  `--encoding=byte`); the DEFAULT artifact is BYTE-IDENTICAL to the
+  explicitly `-e byte` one (compared through `-o -`, the self-contained
+  idiom case9/case10 established for exactly this — two artifacts written
+  to different basenames differ in their emitted `#include` line), which
+  says the default and the explicit request are the SAME request rather
+  than two that happen to work; the artifact stamps `.encoding = 0`
+  (`PCREC_ENC_BYTE`) about itself; `-e ascii` is now an UNKNOWN encoding
+  (D58 renamed it; one namespace member, one spelling, [SR-10]) and its
+  refusal offers the menu the registry actually holds; `--encoding=utf8`
+  refuses identically to `-e utf8`, so the two spellings cannot drift into
+  two answers. Plus one property that is not about the CLI at all and has
+  nowhere better to live: two SEPARATELY-COMPILED artifacts, each carrying
+  its own residual block, are compiled and LINKED into one TU and run —
+  the concrete form of D58's "mixed encodings in one compilation unit are
+  supported by construction", checkable today with one encoding because
+  what it really asserts is that nothing about the residual embed is file-
+  or process-scoped.
+
 - **case 14 ([STD1] phase A, D37, 2026-08-13)** — the frozen named set
   `std1` = {classes, modifiers}, artifact stamping, and the bare-default
   mapping point, WITHOUT the bare default itself flipping (that is a
