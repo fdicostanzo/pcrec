@@ -63,21 +63,25 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   abort. `sb_grow` also reallocs into a temporary now — assigning a failed
   realloc straight into `sb->p` would lose the only pointer to the live buffer
   the error path is about to free
-- **limits.h** — **[M4.7b] gains `PCREC_MAX_SUBSET_ELEMS`**, K7's second half
-  and the first bound in this file on what the COMPILER spends rather than on
-  what it emits: how many NFA-state-list elements the subset construction may
-  intern across a compile. The state-COUNT caps above it cannot substitute,
-  because the two diverge by a whole factor on the exact-repeat family (n+1
-  states whose sets average n/2). Read its entry before touching the number —
-  it records the corpus maximum it is derived from, the measured cost at the
-  ceiling, and the exact repeats it NARROWS. Otherwise: every number that decides what pcrec ACCEPTS, REJECTS or
+- **limits.h** — every number that decides what pcrec ACCEPTS, REJECTS or
   PROMISES, in three sections that ARE D26's tiers: ours (free to tune), PCRE2
   syntax (exact, and measured — the 65535 repeat ceiling, the 250 nesting cap),
   and PCRE2 internals (minimums we honour, not contracts we owe). The
   provenance is the point: a bare `250` and a bare `60` look alike and are not.
   Structural constants (256 byte values, block sizes, growth factors) and local
   algorithmic bounds with proofs beside them stay where they are, deliberately —
-  see the file's own inclusion rule before adding to it
+  see the file's own inclusion rule before adding to it.
+  **[M4.7b] adds `PCREC_MAX_SUBSET_ELEMS`**, K7's second half and the first
+  bound in this file on what the COMPILER spends rather than on what it emits
+  (every other one is grounded in emitter cost, R1 A-3, and those are
+  structurally blind to a cost paid before emission): how many NFA-state-list
+  elements the subset construction may intern across a compile. The state-COUNT
+  caps cannot substitute, because the two diverge by a whole factor on the
+  exact-repeat family — n+1 states whose state-SETS average n/2. Read its entry
+  before touching the number: it records the corpus maximum it is derived from,
+  the measured cost at the ceiling, the exact repeats it NARROWS
+  (`a{9795}` compiles, `a{9796}` refuses), and the raise-to-restore lever with
+  a measured price at three points
 - **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa,
   **[M4.5b]'s `A_CAP` AST node and `EngineFit`**, the
   syntax construct registry types (RegRow and its FEAT_/FLAV_/ENGM_/RS_/RD_
