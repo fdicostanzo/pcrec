@@ -1084,13 +1084,16 @@ case11() {
     assert_field "case11: ...(?J)'s row agrees" "$out" "(?J)" "agree" "ok"
     assert_field "case11: ...and the header counts no dissent for (?J)" \
         "$out" "@header" "dissents" "0"
-    # [M6.3]: (?J) now names NO module at all — its own answer is the
-    # permanent ROADMAP_NEVER wording, and `own names` reports the empty
-    # field (`—`) rather than a module, which is the CORRECT reading once
-    # (?J)/DUPNAMES is ruled permanently out of scope rather than merely
-    # unimplemented (see docs/pcre2_compliance.md's `(?J)` row).
-    assert_field "case11: ...while (?J)'s own answer names no module (permanent scope exclusion)" \
-        "$out" "(?J)" "own names" "—"
+    # [M6.3], THIRD AND FINAL WORDING (manager ruling, citing the ratified
+    # D38 PCRE2_DUPNAMES row and docs/pcre2_compliance.md's own REJECTED/
+    # planned status for (?J) — not OUT-OF-SCOPE): the letter's own answer
+    # names its TRUE owning module, `named-groups` (duplicate NAMES are
+    # named-group semantics, same dispatch logic 'm' already uses for
+    # 'assertions'), without the false "requires" framing — "requires
+    # module 'named-groups'" would read as "enabling it fixes this", which
+    # is false since named-groups ships without dupnames support.
+    assert_field "case11: ...while (?J)'s own answer names its true owning module" \
+        "$out" "(?J)" "own names" "named-groups"
     assert_field "case11: ...and the row still declares its own" \
         "$out" "(?J)" "module" "modifiers"
 

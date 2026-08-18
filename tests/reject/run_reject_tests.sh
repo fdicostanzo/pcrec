@@ -840,28 +840,36 @@ accept '(?-i)'
 # `reject_gated` itself now lives earlier in the file (right after
 # `accept()`), because [STD1b] needs it — as `reject_gated none ...` — for
 # rows far above this point in the file. See its definition there.
-# The two per-letter attributions (MOD-0.5a rulings, flagged to Frank):
-# multiline is assertion-engine work. J was ORIGINALLY attributed to
-# named-groups too ("observable only through named groups"), and [M6.3]
-# (2026-08-18) is the ruling that SUPERSEDED it: named-groups shipped
-# WITHOUT (?J)/DUPNAMES (docs/dev/plan.md's own row — "clean refusal",
-# out of scope), so naming that module here would have started being a
-# LIE the moment the module landed rather than staying true. J's wording
-# moved to K14's ROADMAP_NEVER shape (design §17.2) instead — no module
-# promised, because none will ever discharge it. Reversible one-row edit
-# in mod_modifiers.c if overruled.
+# The two per-letter attributions (MOD-0.5a rulings, flagged to Frank).
+# J's wording has moved THREE TIMES the same day ([M6.3], 2026-08-18) and
+# this is the FINAL one, per manager ruling citing the ratified D38
+# PCRE2_DUPNAMES row (RIDES(M4/captures), a PLANNED-LATER disposition, not
+# NEVER) and docs/pcre2_compliance.md's own REJECTED/planned status for
+# `(?J)`:
+#   1. "requires module 'named-groups'" — the ORIGINAL MOD-0.5a wording,
+#      true while that module did not exist, a LIE the moment it shipped
+#      WITHOUT dupnames support (the "requires X" framing reads as
+#      "enabling X fixes this", which named-groups landing disproved).
+#   2. K14's ROADMAP_NEVER shape ("...is outside pcrec's scope and no
+#      module will implement it...") — a same-day intermediate fix that
+#      was ALSO wrong: (?J) does not meet K14's bar (real PCRE2 the
+#      SURVEY calls architecturally excluded), it is PLANNED-LATER.
+#   3. THE RULING: names the true owning module (named-groups — duplicate
+#      NAMES are named-group semantics, same dispatch logic 'm' already
+#      uses for 'assertions') without the false "requires" framing.
 reject_gated modifiers '(?m)a'     "requires module 'assertions'"
-reject_gated modifiers '(?J)a'     "is outside pcrec's scope and no module will implement it"
+reject_gated modifiers '(?J)a'     "module 'named-groups' does not implement duplicate group names"
 # [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so `(?m)a`/
 # `(?J)a` reach this SAME diagnosis bare, with no `--features` at all — the
 # std1-BOUNDARY proof: std1 = {classes, modifiers} and nothing wider, so
-# `m`'s real module ('assertions') and J's permanent out-of-scope refusal
-# must still be refused by a bare invocation. If std1's mask ever silently
-# grew to include 'assertions', the `(?m)a` row is what would flip from
-# reject to accept ('J' cannot flip — no module will ever implement it).
+# `m`'s real module ('assertions') and J's owning module ('named-groups',
+# which does not implement dupnames) must both still be refused by a bare
+# invocation. If std1's mask ever silently grew to include 'assertions'
+# or 'named-groups' gained dupnames support, the corresponding row is what
+# would flip from reject to accept.
 # (`(?m)a`'s bare pin already lives further down, alongside its five
 # sibling letters' gate conversion — not duplicated here.)
-reject '(?J)a'     "is outside pcrec's scope and no module will implement it"
+reject '(?J)a'     "module 'named-groups' does not implement duplicate group names"
 
 # ---- [M6.3] module `named-groups` — GATED pins. The producer's own
 # corpus (tests/named_groups/) carries the MATCH-semantics half; these are
@@ -881,7 +889,7 @@ reject '(?J)a'     "is outside pcrec's scope and no module will implement it"
 reject_gated named-groups '(?<x>a)\k<x>'   "requires module 'backrefs'"
 reject_gated named-groups '(?<x>a)(?P=x)'  "requires module 'backrefs'"
 reject_gated named-groups,modifiers '(?J)(?<dup>a)(?<dup>b)' \
-    "is outside pcrec's scope and no module will implement it"
+    "module 'named-groups' does not implement duplicate group names"
 # The measured wall (tests/probes/probe_named_groups.c, U10): 128 bytes is
 # the longest name PCRE2 accepts; python `re` has no such ceiling, so this
 # is the one boundary in this block that cannot be a co-verified `.rxt`

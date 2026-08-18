@@ -288,23 +288,20 @@ static PcrecRun run_pcrec(const char *path, char *const argv[], int capture_stdo
 /* [M6.3] VC_SCOPE joins the three-way model: a refusal saying the
  * construct is out of pcrec's scope FOREVER (K14's ROADMAP_NEVER shape;
  * spec_pcrec.h's shared SPEC_VC_SCOPE names the identical category for
- * every other spec_mod0 check). Until [M6.3] this file's own local
- * classifier never needed it — every REAL row this sweep could reach
- * that ever changed gate-state answered either ACCEPTED or "requires
- * module '...'", because no GROUP_NEVER-shaped row (registry.c's macro
- * for a real, permanently-excluded construct) had ever had a module
- * whose gate could actually be flipped. Module `named-groups`'s (?J)
- * per-letter refusal is the first: (?J)'s ROW still declares module
- * 'modifiers' (unchanged — the row IS an ordinary option-run construct),
- * but the LETTER's own answer, once 'modifiers' is enabled and the
- * option-run producer actually reads it, is K14's permanent wording
- * ("...is outside pcrec's scope and no module will implement it..."),
- * never a module name — see mod_modifiers.c's 'J' case. Folding that
- * into VC_INVALID (this file's original fallback bucket, "pcrec is
- * saying the pattern is not valid PCRE2") would have been WRONG: (?J) is
- * valid PCRE2 syntax pcrec recognises and deliberately never implements,
- * which is exactly the VC_UNIMPL/VC_SCOPE distinction D26 draws, not the
- * VC_INVALID one. */
+ * every other spec_mod0 check). Kept as READY INFRASTRUCTURE — mirroring
+ * the registry's own "no RS_MODULE ROADMAP_NEVER rows today; the check
+ * stays column-derived and re-arms the day one exists" posture
+ * (registry_check.c) — even though no row this sweep can reach uses it
+ * today: `(?J)` was briefly the first (a same-day intermediate wording
+ * used K14's shape), but the manager's RULING (citing the ratified D38
+ * PCRE2_DUPNAMES row — a PLANNED-LATER disposition, not NEVER — and
+ * docs/pcre2_compliance.md's own REJECTED/planned status) replaced it
+ * with a truthful-but-not-"requires" phrasing that this file's VC_UNIMPL
+ * detection now recognises directly (see compile_verdict below) rather
+ * than needing this fourth state. Left in place because the CATEGORY —
+ * a real, permanently-excluded construct — is still a real shape D26
+ * distinguishes from VC_INVALID's "not valid PCRE2 at all", and the next
+ * row that genuinely needs it should not have to reinvent the plumbing. */
 typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_SCOPE, VC_INVALID, VC_ERROR } VClass;
 
 static const char *vclass_name(VClass c)
@@ -346,21 +343,28 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
     }
     if (r.exit_code == 0) return VC_ACCEPTED;
     if (r.exit_code == 1) {
-        /* [M6.3]: check BEFORE "requires module '", not after — a SCOPE
-         * refusal names no module at all, so testing for the module
-         * phrase first and falling through on failure would have been
-         * fine here too (the two phrases cannot both appear), but scope
-         * is the more specific claim (K14's PERMANENT exclusion) and
-         * checking it first keeps this function reading the same order
-         * spec_pcrec.h's shared classifier already uses. */
+        /* [M6.3] THIRD PASS: the module-naming phrase is no longer always
+         * "requires module 'X'" — the manager's ruling on (?J) (citing
+         * the ratified D38 PCRE2_DUPNAMES row) replaced that framing with
+         * "module 'X' does not implement ..." specifically to avoid the
+         * false "enabling X fixes this" implication, since named-groups
+         * IS enabled when this refusal fires. Both shapes are the SAME
+         * verdict class — a REAL construct pcrec knows about and has not
+         * (yet, or ever, for DUPNAMES specifically) built — so the
+         * extraction now matches the bare `module '` marker rather than
+         * requiring the "requires " prefix; the two known phrasings both
+         * contain it and nothing else in this doorway's vocabulary does.
+         * "outside pcrec's scope" (K14's ROADMAP_NEVER shape) is checked
+         * first anyway, unreachable today (no RS_MODULE row uses it) but
+         * kept as ready infrastructure — see VC_SCOPE's own comment. */
         if (strstr(r.err, "outside pcrec's scope")) return VC_SCOPE;
-        const char *p = strstr(r.err, "requires module '");
+        const char *p = strstr(r.err, "module '");
         if (!p) return VC_INVALID;
         /* which module the refusal NAMES — the 2026-08-12 transition rule
          * (below) requires a gate-flip to name the row's OWN module, so a
          * misattributed refusal cannot pass as a healthy toggle */
         if (named_module && named_sz) {
-            p += strlen("requires module '");
+            p += strlen("module '");
             size_t i = 0;
             while (p[i] && p[i] != '\'' && i + 1 < named_sz) {
                 named_module[i] = p[i];
@@ -390,22 +394,21 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
  *     blind to); flipping to invalid is the second-quieter-grammar defect;
  *     naming someone else's module is a misattribution.
  *   - [M6.3] R's module DISABLED in C, baseline OUT-OF-SCOPE: the SAME
- *     rule, one terminal state over. A row whose construct is REAL but
- *     PERMANENTLY excluded (K14's ROADMAP_NEVER shape — module
- *     `named-groups`'s `(?J)` per-letter refusal is the first row this
- *     suite can actually reach in this state) never becomes ACCEPTED, but
- *     its refusal's SHAPE still depends on its own module's gate exactly
- *     the way an accepted row's does: gate OPEN, the construct-specific
- *     producer runs and answers the PERMANENT scope exclusion (never a
- *     module name — that is what makes it permanent); gate CLOSED, the
- *     producer never runs and the generic ROW-level catch-all answers
- *     instead, which DOES name the row's own module (the same "known,
- *     unimplemented" sentence any other closed-gate module row gets). So
- *     the required flip under a disabled-module config is OUT-OF-SCOPE ->
- *     refused-as-unimplemented, naming the row's own module — structurally
- *     identical to the accepted case, and checked by the same two clauses
- *     below with `dead_state`/`dead_name` standing in for "still
- *     ACCEPTED"/"named".
+ *     rule, one terminal state over, kept as READY INFRASTRUCTURE
+ *     alongside VC_SCOPE itself (see that enum's own comment) — NOT
+ *     exercised by any row today. Were a row's construct REAL but
+ *     PERMANENTLY excluded (K14's ROADMAP_NEVER shape) and its owning
+ *     module's gate actually flippable, its refusal's SHAPE would depend
+ *     on that gate exactly the way an accepted row's does: gate OPEN, the
+ *     construct-specific producer answers the PERMANENT scope exclusion
+ *     (never a module name — that is what makes it permanent); gate
+ *     CLOSED, the producer never runs and the generic ROW-level catch-all
+ *     answers instead, which DOES name the row's own module. So the
+ *     required flip under a disabled-module config would be OUT-OF-SCOPE
+ *     -> refused-as-unimplemented, naming the row's own module —
+ *     structurally identical to the accepted case, and checked by the
+ *     same two clauses below with `dead_state` standing in for "still
+ *     ACCEPTED"/"still OUT-OF-SCOPE".
  *   - R's module DISABLED in C, baseline not accepted and not
  *     out-of-scope: class equality (a port-less row refuses identically
  *     either way).

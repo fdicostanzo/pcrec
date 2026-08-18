@@ -201,19 +201,21 @@ static PcrecRun run_pcrec(const char *path, char *const argv[])
 }
 
 /* [M6.3] VC_SCOPE joins the model: a refusal saying the construct is out
- * of pcrec's scope FOREVER (K14's ROADMAP_NEVER shape). Until [M6.3] this
- * family's letters were either implemented or answered "requires module
- * '...'" (VC_UNIMPL) — `J` is the first letter whose per-letter refusal,
- * once its OWN module (`modifiers`) is enabled and the option-run
- * producer actually reads it, is a PERMANENT exclusion naming no module
- * at all (mod_modifiers.c's 'J' case: DUPNAMES is a ruled scope
- * exclusion, docs/dev/plan.md's [M6.3] row). Folding that into VC_INVALID
- * would have been wrong for the same reason VC_UNIMPL is not VC_INVALID:
- * `(?J)` is real PCRE2 syntax libpcre2 accepts, and pcrec is not saying
- * otherwise — it is saying it will never implement THIS letter, which
- * this check must treat the same way it treats "not yet implemented":
- * a construct this check cannot compare pcrec's ACCEPT/REJECT verdict
- * against, not a REJECT verdict itself. */
+ * of pcrec's scope FOREVER (K14's ROADMAP_NEVER shape). Kept as READY
+ * INFRASTRUCTURE (mirroring the registry's own "no RS_MODULE
+ * ROADMAP_NEVER rows today; re-arms the day one exists" posture) rather
+ * than removed: `J` briefly WAS this state under a same-day intermediate
+ * wording, but the manager's RULING (citing the ratified D38
+ * PCRE2_DUPNAMES row — PLANNED-LATER, not NEVER — and
+ * docs/pcre2_compliance.md's own REJECTED/planned status for `(?J)`)
+ * replaced it with a truthful, module-naming, non-"requires" phrasing
+ * that `compile_verdict` below recognises as VC_UNIMPL instead — the
+ * SAME bucket 'm' (-> assertions) already used, on the theory that both
+ * are "a real, known, not-yet-built construct", which is exactly what
+ * VC_UNIMPL means. `(?J)` is real PCRE2 syntax libpcre2 accepts and
+ * pcrec is not saying otherwise, which is why VC_INVALID (this file's
+ * "not valid PCRE2 at all" bucket) would be wrong for it in EITHER
+ * wording. */
 typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_SCOPE, VC_INVALID, VC_ERROR } VClass;
 
 /* Compiles PAT as a whole pattern under `--features modifiers`. Only the
@@ -227,7 +229,14 @@ static VClass compile_verdict(const char *pcrec_path, const char *pat)
     if (r.timed_out) { spec_fail("compile_verdict: pcrec timed out on '%s'", pat); return VC_ERROR; }
     if (r.exit_code == 0) return VC_ACCEPTED;
     if (r.exit_code == 1) {
-        if (strstr(r.err, "requires module '")) return VC_UNIMPL;
+        /* [M6.3] THIRD PASS: "module 'X'" (no longer requiring the
+         * "requires " prefix) catches both the ordinary "requires module
+         * 'X'" shape and (?J)'s "module 'X' does not implement ..."
+         * truthful-indefinite shape — see the enum's own comment. Checked
+         * before "outside pcrec's scope" for the same reason
+         * check07_gate_equivalence.c orders them: unreachable today, kept
+         * as ready infrastructure. */
+        if (strstr(r.err, "module '")) return VC_UNIMPL;
         if (strstr(r.err, "outside pcrec's scope")) return VC_SCOPE;
         return VC_INVALID;
     }

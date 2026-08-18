@@ -134,14 +134,16 @@ modsyn.alphabet_complement          40
 modsyn.structural_grammar           42
 modsyn.doorway_disambiguation        4
 modsyn.pcrec_compared              105
-# [M6.3]: 8 -> 4. The 4 `(?J...)` probes that used to answer "requires
-# module 'named-groups'" (VC_UNIMPL) now answer the permanent
-# out-of-scope refusal (VC_SCOPE) instead -- see modsyn.pcrec_refused_scope,
-# which gains exactly those 4. Population conserved (unimpl + scope was 8,
-# still 8 split 4/4), never silently narrowed -- see this file's own
-# maintenance rule.
-modsyn.pcrec_refused_unimpl          4
-modsyn.pcrec_refused_scope           4
+# [M6.3], THIRD AND FINAL PASS: the 4 `(?J...)` probes went
+# unimpl(8)->scope(4)->unimpl(8) across three wordings this same day (see
+# check11_modifier_syntax.c's own header) -- the manager's final ruling
+# names 'named-groups' as (?J)'s truthful owning module without the false
+# "requires" framing, which this check's VC_UNIMPL detection now matches
+# directly, so the population lands back where it started. VC_SCOPE stays
+# in the model as ready infrastructure (floor 0 -- unreachable by any row
+# today, exactly like the registry's own ROADMAP_NEVER population).
+modsyn.pcrec_refused_unimpl          8
+modsyn.pcrec_refused_scope           0
 
 # --- modifiers module (D27, SR-mod05): check12 behavioural semantics ----
 modsem.letter_effect                11
