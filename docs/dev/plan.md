@@ -418,6 +418,24 @@ including V-G/V-H (added this session).
   a failing user test plus a traced matcher is a debugging story no
   regex library offers
 
+- [V-I] STATE:not-started — NAMED-RESULTS COPY HELPER (Frank, 2026-08-18,
+  thirty-third session; LOW PRIORITY, boonies tier; details and design
+  TBD): an emitted per-pattern helper that takes a search's results —
+  in particular a captures-delivering search, most particularly one with
+  NAMED groups — and copies them into a STATIC STRUCTURE keyed by the
+  group names (the natural shape: an emitted `struct <prefix>_groups`
+  with one span member per named group, plus a copier from the caps
+  array). Generation-time is what makes it cheap: pcrec knows every name
+  at emit time, and [M6.3]'s name grammar ([A-Za-z_][A-Za-z0-9_]{0,127})
+  makes every group name a lexically valid C identifier ALMOST for free
+  — the TBD wrinkles already visible: C KEYWORDS are valid group names
+  but invalid member names (`(?<int>...)`, `(?<return>...)` need a
+  mangling rule), and D61's caps-layout promise plus rx_group_entry.slot
+  are the substrate the copier reads through (slot-aware from birth, so
+  a future ref-bearing row costs nothing). Interacts with [V-B]
+  (bindings would love the same struct) and the D38 naming rules. NOT
+  QUEUED — parks behind the general work per the boonies discipline
+
 - [SIMD-META] STATE:not-started — META-PLAN ROW for the studies/simd1
   research (Frank, 2026-08-16, at adoption): a thinking/triage row whose
   DELIVERABLE IS PLAN ROWS — "wrap most of it into a meta-plan item that
