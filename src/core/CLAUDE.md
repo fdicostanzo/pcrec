@@ -133,10 +133,14 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   gains `multiline`. The second has NO
   WRITER today and exists as a field rather than as a comment because D47.5
   rules the `$`-follow exemption's gate a LIVE CHECK: `$` in a quantifier's
-  follow is measured safe at 0/720 diverging cells and UNSAFE at 180/720 under
-  `(?m)`, so the exemption is conditional on a fact that would otherwise stop
-  being true without anyone revisiting the analysis. Module `assertions` is its
-  writer and inherits the test obligation.
+  follow is measured safe at 0 diverging cells without `(?m)` and UNSAFE under
+  it (re-measured 2026-08-18: 0/168 vs 12/168 greedy population; the 0/720 vs
+  180/720 previously cited here is from a since-changed probe population), so
+  the exemption is conditional on a fact that would otherwise stop being true
+  without anyone revisiting the analysis. Module `assertions` is its writer and
+  inherits the test obligation — noting the R30 finding that a verdict-time
+  read of this field is scope-blind; the cure resolves multiline at PARSE time
+  onto the node (assertions_design.md §8, D47.5 addendum).
 
   **[M4.7a] SR-8 evaluated and declined to add a `Ctx.vmonly_*` field here**,
   unlike the `ModState.multiline` precedent above — the difference being

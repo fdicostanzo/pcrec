@@ -4106,6 +4106,28 @@ module `assertions` lands multiline (ruling 5's gate becomes live-fire);
 a real population appears that the lazy conjunct declines wrongly
 (none measured today).
 
+**RULING-5 ADDENDUM (2026-08-18, thirty-third session, from the R30
+panel on the assertions design — manager-applied at merge per the
+design's Q7).** Ruling 5's LIVE-check requirement is NECESSARY BUT NOT
+SUFFICIENT as shipped: the gate reads `cx->mods.multiline` at VERDICT
+time (src/opt/possessify.c, called post-parse), which is the parser's
+END-OF-PATTERN state — while `(?m)` is SCOPED. Measured on both oracles
+(5-cell table, assertions_design.md §8.1.1, archived
+out/d475_scope.txt): `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)` restore
+multiline to off by pattern end, so the verdict-time read EXEMPTS a `$`
+that IS multiline — a lost-match miscompile that arms the day the `m`
+letter is accepted. Dead code today (the field has no writer — `(?m)`
+refuses), so nothing shipped is wrong; the CURE is ruled by the design:
+multiline resolves AT PARSE TIME onto the `$` node (flag vs node-kind
+spelling is open question Q8, Frank's lean the flag with the mrl.c
+exhaustive-switch controls either way), making the gate scope-correct
+by construction, landed in the design's wave A while `(?m)` is still
+refused (provably behavior-preserving, byte-identity-checked). The
+ruling-5 TEST OBLIGATION WIDENS accordingly: the multiline wave's gate
+test must include the SCOPED cells above, not only the leading-`(?m)`
+shape ruling 5's wording names — that shape is the one the shipped code
+happens to get right.
+
 ## D48 — scripts are tested ON CHANGE, not per suite run (Frank, 2026-08-16, twenty-sixth session)
 
 Settles the queued ruling from the twenty-fifth session: does

@@ -1640,7 +1640,10 @@ reason to build a socket instead of a second `if`.
 Confirmed, STRUCTURAL: `src/core/compile.c:124` calls
 `nfa_wrap_unanchored(&cx, &cx.job->nfa)` which mutates the NFA in place; there
 is no way to recover the anchored machine from the wrapped one
-(`src/ir/nfa.c:590`).
+(`src/ir/nfa.c:652` — cite corrected 2026-08-18 at the R30 merge: the function
+moved when the [M4.7b/K7] fix landed above it, and the stale `:590` was
+inherited verbatim by assertions_design.md before being caught there; see that
+document's §4.1 cite note).
 
 For M4 this costs nothing, because the answer is already in the pipeline's
 shape: `pcrec_build_nfa` is called TWICE today (forward and reversed) from the

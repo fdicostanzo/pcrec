@@ -595,6 +595,22 @@ The 0 is not inert: on the same instrument `\b`/`\B` follows give 332 of 720
 diverging and `^` gives 80 of 240, so the sweep can and does find divergence
 where divergence exists.
 
+> **[STALENESS ANNOTATION, 2026-08-18, R30 merge — covers every `/720`
+> figure in this document (§0's summary, this section, §12).]** Re-running
+> this section's own probe today gives a POPULATION OF 384, not 720 (the
+> probe changed after these numbers were recorded — D47.6's territory), and
+> the cells read: full sweep 21/384 diverging multiline-off, 33/384
+> multiline-on; on the greedy/disjoint population the exemption is actually
+> about, **0 of 168 multiline-off and 12 of 168 under `(?m)`, both oracles
+> agreeing**. The QUALITATIVE claim this section makes — zero divergence
+> without multiline, non-zero with it, so the gate must be LIVE — survives
+> exactly; the absolute numbers above are historical. Provenance:
+> `docs/design/assertions_measurements/out/dollar_multiline_rerun.txt`
+> (archive.sh-stamped) and assertions_design.md §8.8. The R30 panel
+> additionally found the LIVE-check requirement is necessary but NOT
+> sufficient — a verdict-time read of end-of-pattern state is scope-blind
+> under `(?m:...)`; see decisions.md D47.5's addendum.
+
 ### 2.6 What it covers — two censuses, and they disagree by more than four times
 
 `probes/probe_possess_corpus.py` runs the same analysis (imported, not copied,

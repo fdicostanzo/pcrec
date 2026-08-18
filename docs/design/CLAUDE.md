@@ -411,8 +411,11 @@ append-only or historical records.
   differential silently) and now sweeps both preference families, with a
   committed failing-direction control reproducing the 316. No live
   miscompile — nothing is implemented. Five narrowings applied: `$` in the
-  follow promoted to MEASURED-WITH-GATE (0/720 safe, 180/720 under `(?m)`, so
-  the gate must be a LIVE check); §3.4's capture derivation regains the
+  follow promoted to MEASURED-WITH-GATE (0 safe / non-zero under `(?m)`;
+  originally cited as 0/720 vs 180/720 — STALE per the R30 re-run, whose
+  numbers are 0/168 and 12/168 on the greedy population, same qualitative
+  result, see assertions_design.md §8.8 — either way the gate must be a
+  LIVE check); §3.4's capture derivation regains the
   ZERO-ITERATION clause the prose dropped (42% of its own validated
   population); §2.7's "wrong in the right direction" qualified to CATEGORIES,
   with the structural reason pcrec is exact for caseless (`cls_casefold` folds

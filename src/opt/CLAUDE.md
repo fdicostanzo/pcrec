@@ -151,9 +151,15 @@ construction (src/ir) and emission (src/gen).
   The `$`-follow exemption's gate is LIVE (D47.5): the analysis reads
   `cx->mods.multiline` at verdict time rather than carrying a comment about
   what pcrec does not support yet. `$` in a quantifier's follow is measured
-  safe at 0/720 diverging cells and unsafe at 180/720 under `(?m)`, so the
-  exemption is conditional on a fact that stops being true without anyone
-  revisiting the analysis. Module `assertions` inherits the test obligation.
+  safe at 0 diverging cells without `(?m)` and unsafe under it (re-measured
+  2026-08-18: 0/168 vs 12/168 on the greedy population — the 0/720 vs
+  180/720 previously cited here came from a since-changed probe population;
+  qualitative claim unchanged), so the exemption is conditional on a fact
+  that stops being true without anyone revisiting the analysis. Module
+  `assertions` inherits the test obligation — AND the R30 panel found this
+  gate's verdict-time read is SCOPE-BLIND (end-of-pattern state, while (?m)
+  is scoped): the miscompile cells and the parse-time-resolution cure are
+  assertions_design.md §8 / decisions.md D47.5's addendum.
 
   Tests: tests/possessify/ (its own CLAUDE.md explains why three separate
   checks are needed and what each is blind to); failing-direction controls
