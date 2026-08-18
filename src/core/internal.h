@@ -223,6 +223,12 @@ typedef struct {
      * follows. */
     int    altcls_merges;    /* stage 1: alternation runs folded into one class */
     int    altcls_factored;  /* stage 2: alternation runs prefix-factored */
+    /* [OPT-ALTCLS] STAGE 3 (measure-at-build prototype, 2026-08-17): count of
+     * A_ALT dispatch sites emit_vm.c's vm_alt gave a FIRST-set entry guard.
+     * VM-artifacts-only (this one IS emitter-side, unlike stage 1/2's shared
+     * stamp) -- src/gen/emit_vm.c increments it at the exact point it emits
+     * the guard test. */
+    int    altcls_guards;
     StrBuf csb, hsb;
     /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
@@ -1465,6 +1471,16 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out);  /* src/opt/revdet.c */
  * real matches, silently. src/opt/mrl.c says which cases take which direction
  * and why its switch has no live default arm. */
 long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
+
+/* ---- [OPT-ALTCLS] STAGE 3: FIRST-set entry guards (measure-at-build) ---- */
+
+/* Every byte that could be the FIRST byte an accepting match of `a` consumes.
+ * Returns true and fills `out` (a 256-bit bitmap, `Ast.cls`'s own shape) when
+ * the set is computable soundly; returns false (leaving `out` untouched)
+ * otherwise -- always safe, the same declining convention as pcrec_minw.
+ * src/opt/firstset.c's header carries the full derivation, including the
+ * A_CAT rule and why A_BOL/A_EOL decline. */
+bool pcrec_firstset(const Ast *a, uint8_t out[32]);  /* src/opt/firstset.c */
 
 /* The SATURATION ceiling every minimum-width arithmetic pins itself to. Shared
  * because the emitter's own accumulator has to hold the same ceiling the

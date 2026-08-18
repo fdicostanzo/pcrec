@@ -177,7 +177,19 @@ enum {
      * unlike the VM-only possessify/revdet stamps) — the D46 half a
      * denied request can be checked against. */
     PCREC_NO_ALTCLS_MERGE  = 1u << 10,
-    PCREC_NO_ALTCLS_FACTOR = 1u << 11
+    PCREC_NO_ALTCLS_FACTOR = 1u << 11,
+    /* [OPT-ALTCLS] STAGE 3 (2026-08-17, measure-at-build prototype, D53
+     * posture): `-fno-altcls-guard`, denying the FIRST-set entry guard
+     * `src/gen/emit_vm.c`'s `vm_alt` may emit ahead of a multi-branch
+     * alternation's cascade (docs/dev/plan.md's row, "(2b, STAGE 3 ...)").
+     * DENY-only for the same reason stage 1/2's two flags are: each guarded
+     * dispatch site is its own selection point. Stamped by
+     * `<PREFIX>_ALTCLS_GUARDS` (src/gen/emit_vm.c, VM-artifacts-only --
+     * unlike stage 1/2's shared-prologue stamp, this one is decided AND
+     * consumed only on the VM path, the same reason RX_VM_RUNGS/STRATS/
+     * PRUNES are VM-only). Masked out of rx_info.flags with the rest of the
+     * D47.3 family: the axis changes no answer, only the emitted shape. */
+    PCREC_NO_ALTCLS_GUARD = 1u << 12
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

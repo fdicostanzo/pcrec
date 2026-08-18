@@ -44,6 +44,33 @@ construction (src/ir) and emission (src/gen).
   not), and the recursion-discipline reasoning are all in the file's own
   header. Tests: tests/altcls/. Sabotage: tests/mech/sabotages/ (S66/S67).
 
+  **STAGE 3 (2026-08-17, PROTOTYPE, measure-at-build per D53):** the
+  FIRST-set entry guard lives in `src/gen/emit_vm.c`'s `vm_alt`
+  (`vm_alt_guard`) rather than in this file — it is an EMITTER-side
+  decision over the AST `vm_alt` already has, not an AST rewrite, and reads
+  `pcrec_firstset` (`src/opt/firstset.c`, new file this session) for the
+  per-branch byte set. Gated `-fno-altcls-guard`
+  (`PCREC_NO_ALTCLS_GUARD`), stamped `RX_ALTCLS_GUARDS` (VM-artifacts-only,
+  unlike stage 1/2's shared stamp — this axis is decided and consumed only
+  in emit_vm.c). Correctness validated ad hoc this session (pcrec-vs-pcrec
+  differential, default vs `-fno-altcls-guard`, sharing
+  tests/possessify/possdiff_driver.c: 0 divergences over ~48k cells across
+  a hand-picked family plus 82 corpus-derived guard-active patterns) but
+  NOT YET productionized to stage 1/2's standard — no dedicated
+  tests/altcls-guard/ directory, no committed differential script, no
+  sabotage row. DEV-GRADE (non-pinned) timing on
+  `(?:frank|...|gina){10 words}+`: under the DEFAULT (hybrid) engine the
+  guard measures NO difference on a 2 MB reject-heavy subject (the DFA
+  prefilter already absorbs that traffic before the VM cascade runs, per
+  the plan row's own predicted caveat); under `--engine=vm` (prefilter
+  off, isolating the VM's own cascade cost) it measures roughly an 11x
+  speedup on the identical reject-heavy subject (~8.0ms/call vs
+  ~89.6ms/call), for a ~5% emitted-code-size increase (6 guards, +31
+  lines on this exemplar). Decision-grade PINNED confirmation is a
+  separate, later step (bundled with stage 2's own owed re-measurement,
+  per the manager's window-scheduling ruling) — see
+  docs/design/altcls_guard_impl/ once the instrument lands.
+
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass
@@ -244,6 +271,25 @@ construction (src/ir) and emission (src/gen).
 
   Tests: tests/mrl/ (its own CLAUDE.md; the `.rxt` corpus there is
   D27-BLINDED and found a real gap in the first implementation).
+
+- **firstset.c** — [OPT-ALTCLS] STAGE 3's analysis half (`pcrec_firstset`;
+  docs/dev/plan.md's row). Every byte that could be the FIRST byte an
+  accepting match of a node consumes, over the eight AST kinds, in the
+  same NOT-a-transformation shape mrl.c's `pcrec_minw` is: an error here
+  is SILENT (a wrong bitmap either misses a real optimization or, if it
+  ever under-approximated, would delete matches — it does not, by
+  construction, but the file earns its own tests for the same reason
+  mrl.c does). Calls `pcrec_minw` for nullability rather than
+  reimplementing a second predicate that could drift from the first.
+  A_BOL/A_EOL decline (return false), matching possessify.c's own
+  precedent for zero-width assertions in a first-byte-set model. Uses
+  `pcrec_revdet_first`'s (revdet.c) iterative-walk technique exactly —
+  needs no `Ctx`/arena, since nothing is collected into an array; the
+  A_CAT rule's derivation (why a per-level nullability check needs no
+  separate global stopping flag) is worked out in the file's own header.
+  Consumed by `src/gen/emit_vm.c`'s `vm_alt`, not by anything in this
+  directory. Tests: none committed yet (2026-08-17 prototype; see
+  altcls.c's STAGE 3 entry above for the ad hoc validation done so far).
 
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
