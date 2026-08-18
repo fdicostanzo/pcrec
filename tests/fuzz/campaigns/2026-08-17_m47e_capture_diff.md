@@ -130,7 +130,50 @@ lane.
 
 ## Addendum batch: classes-module construct density (seeds 201–210, 1,500 patterns/seed)
 
-<!-- filled in after the addendum batch runs -->
+Ran 2026-08-17/18 after `MODULE_CLASS_ATOMS` landed in `fuzz.py` (the
+same session, same worktree — HEAD moved forward by the generator-extension
+and gate-hardening commits above; libpcre2/gcc/host unchanged from the
+provenance table). Same `run_addendum.sh` shape as the main campaign, sized
+smaller per the manager's "bounded addendum" ruling: 10 fresh seeds, 1,500
+patterns/seed = 15,000 patterns total.
+
+**0 accept/reject divergences, 0 content divergences, across all 10 seeds
+and 171,060 both-accept subject-pair comparisons** — the extension changes
+what gets GENERATED, not the comparison logic, so this is exactly the
+result the main campaign's own zero would predict.
+
+**The hardened stat, measured for real (not sampled): 3,940 of 15,000
+generated patterns (26.2%) contain at least one classes-module construct**
+— `stats["module_construct"]`, fuzz.py's own summary line as of the second
+addendum, counted from the SAME corpus this table's other columns describe
+(not a separate in-process estimate). This is the proof the differential
+gate is now EXERCISED: `PCREC_DEFAULT_FEATURES="std1"` was always open,
+and now something routinely walks through it.
+
+| seed | patterns | module construct | both accept | pairs compared | state-cap | oracle inconclusive | gcc fail | pcrec timeout | content div | accept/reject div |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 201 | 1500 | 357 | 889 | 17780 | 42 | 8 | 0 | 1 | 0 | 0 |
+| 202 | 1500 | 424 | 837 | 16740 | 36 | 14 | 0 | 0 | 0 | 0 |
+| 203 | 1500 | 398 | 854 | 17080 | 45 | 0 | 0 | 0 | 0 | 0 |
+| 204 | 1500 | 412 | 839 | 16780 | 40 | 15 | 0 | 0 | 0 | 0 |
+| 205 | 1500 | 398 | 863 | 17260 | 32 | 0 | 0 | 0 | 0 | 0 |
+| 206 | 1500 | 387 | 831 | 16620 | 38 | 12 | 0 | 0 | 0 | 0 |
+| 207 | 1500 | 402 | 864 | 17280 | 40 | 0 | 0 | 0 | 0 | 0 |
+| 208 | 1500 | 407 | 842 | 16840 | 34 | 21 | 0 | 0 | 0 | 0 |
+| 209 | 1500 | 354 | 899 | 17980 | 34 | 1 | 0 | 0 | 0 | 0 |
+| 210 | 1500 | 401 | 835 | 16700 | 32 | 11 | 0 | 0 | 0 | 0 |
+| **total** | **15,000** | **3,940 (26.2%)** | **8,553** | **171,060** | **373** | **82** | **0** | **1** | **0** | **0** |
+
+The single `pcrec compile timeout` (seed 201) is the same documented
+harness-level bucket as the main campaign's 18 — not a verdict, doesn't
+gate `fuzz.py`'s exit code, and at 1-of-15,000 is unremarkable noise
+rather than a pattern worth chasing.
+
+**modifiers-module generation remains an OWED CELL**, homed at [M7.0]
+(docs/dev/plan.md, M7's own "differential fuzzing vs libpcre2" milestone)
+rather than added in this same-session addendum — recorded here so the
+gap stays visible rather than silently dropped, per the [M4.7e] charter's
+no-silent-caps discipline.
 
 
 ## Raw logs
