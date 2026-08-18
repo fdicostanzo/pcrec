@@ -914,7 +914,15 @@ struct RegRow {
     const char *module;    /* module name AS IT APPEARS IN DIAGNOSTICS, or NULL */
 
     unsigned    flavours;  /* FLAV_* mask */
-    unsigned    engines;   /* ENGM_* mask — design intent, unconsumed until SR-8 */
+    unsigned    engines;   /* ENGM_* mask — design intent, unconsumed today.
+                              [M4.7a] SR-8: consultation deliberately NOT
+                              built ahead of a producer (D18/OS-0/D53); the
+                              tripwire in tests/registry/registry_check.c
+                              (check_engine_capability_tripwire) asserts
+                              every VM_ONLY-masked RS_MODULE row has no
+                              wired producer, so wiring the first one fails
+                              loudly and names SR-8 as the thing to build
+                              first. */
 
     RegStatus   status;
     RegDiag     diag;

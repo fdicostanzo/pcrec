@@ -23,6 +23,14 @@
  * smaller than its row implies: ZERO currently-refused constructs become
  * compilable when the VM exists.
  *
+ * [M4.7a]: SR-8's consuming socket is deliberately NOT built here yet — zero
+ * producers means zero customers (D18/OS-0/D53's standing "earn its axis"
+ * discipline). tests/registry/registry_check.c's check_engine_capability_
+ * tripwire is what stands in for it: it asserts every VM_ONLY-masked
+ * RS_MODULE row has no wired producer, so the day a module wires the first
+ * one, THAT check fails and names this file as the thing to build before the
+ * producer lands, not after.
+ *
  * THE TRIGGER IS THE REQUESTED OUTPUT, NOT THE PRESENCE OF A `(` (§5.3, the
  * correction to the freeze document's candidate (b)). `a(b|c)+d` compiled
  * with --no-captures is capture-free WORK and stays on the DFA forever; the

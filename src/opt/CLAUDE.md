@@ -56,13 +56,25 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
-  Exactly ONE analysis is registered today, and its trigger is the requested
+  The one analysis registered, `forces_captures`, triggers on the requested
   OUTPUT rather than the presence of a `(`: `a(b|c)+d` under `--no-captures`
-  is capture-free WORK and stays on the DFA forever. Every other `VM_ONLY`
-  registry row is gated by a module with no producer, so the parser refuses
-  those patterns long before selection runs — which is also why SR-8's flip is
+  is capture-free WORK and stays on the DFA forever. Every `VM_ONLY` registry
+  row is gated by a module with no producer, so the parser refuses those
+  patterns long before selection runs — which is also why SR-8's flip is
   smaller than its row implies (§9.1: zero currently-refused constructs become
   compilable when the VM exists).
+
+  **[M4.7a] SR-8 ITSELF: the consuming socket is deliberately NOT built
+  here.** Zero producers means zero customers (D18/OS-0/D53's standing
+  discipline against unpopulated machinery), and a hand-built `Ctx` proving
+  a socket works is a control sharing a source with what it controls — it
+  proves plumbing, not that a real producer's contract would look like the
+  one guessed at sample size zero. Instead,
+  `tests/registry/registry_check.c`'s `check_engine_capability_tripwire`
+  asserts every `VM_ONLY`-masked `RS_MODULE` row has NO wired producer —
+  the fact that makes engine-capability refusal unreachable today — so the
+  day a module wires the first one, that check fails and names this file as
+  the thing to build BEFORE the producer lands, not after.
 
   It also DRIVES possessify.c, and the placement is a reported deviation from
   §2.8's literal reading rather than a silent choice. §2.8 proposes

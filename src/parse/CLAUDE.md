@@ -412,7 +412,12 @@ Rules when touching it:
 - **`RS_MODULE` with no handler is a complete outcome**, not a stub: the
   construct is named, cleanly rejected and queryable.
 - **The `engines` column is design intent, not measurement.** Nothing consumes
-  it until SR-8/M4; do not build on its values without checking them.
+  it — [M4.7a] deliberately did not build SR-8's lowering-time consultation
+  ahead of a producer (zero producers, zero customers); a TRIPWIRE
+  (tests/registry/registry_check.c's check_engine_capability_tripwire)
+  guards the gap instead, asserting every VM_ONLY-masked RS_MODULE row has
+  no wired producer. Wiring the first one is what earns the consultation;
+  do not build on this column's values without checking them.
 - **Two "requires module" diagnostics deliberately stay in parse.c**: `\x{...}`
   (a sub-case of the base `\x` handler) and the possessive `+` suffix (a
   quantifier suffix, not an atom). Neither is a doorway, and giving them one

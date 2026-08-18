@@ -98,6 +98,15 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   being true without anyone revisiting the analysis. Module `assertions` is its
   writer and inherits the test obligation.
 
+  **[M4.7a] SR-8 evaluated and declined to add a `Ctx.vmonly_*` field here**,
+  unlike the `ModState.multiline` precedent above — the difference being
+  that `multiline`'s writer (module `assertions`) is a scheduled, named
+  future customer, while SR-8's would-be socket has none: every `VM_ONLY`
+  registry row lacks a producer, so there is no near-term writer to shape
+  the field's contract around. `tests/registry/registry_check.c`'s
+  `check_engine_capability_tripwire` guards the gap instead — see
+  src/opt/CLAUDE.md's select_engine.c entry.
+
 ## Conventions
 
 All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.
