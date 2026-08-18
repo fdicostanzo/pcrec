@@ -242,11 +242,16 @@ named-groups, conditionals, recursion producers.)
   (1) DATA STRUCTURES: a 1–3-line comment each — what it is, where it
   is used, what it means. (2) CODE SECTIONS: 1–2 lines saying what the
   section is about to do ("prefilter section to find candidates...").
-  (3) LINE COMMENTS: 1 line, the INTENT of the next line, never an
-  echo of the code ("advance to next character", NOT "increment source
-  pointer"). (4) FULL VARIABLE NAMES: no "pos" — the
+  (3) LINE COMMENTS — CODE ONLY, not data structures (Frank
+  clarification, same day): 1 line, the INTENT of the next line, never
+  an echo of the code ("advance to next character", NOT "increment
+  source pointer"); structures/tables get item (1)'s block comment,
+  never per-line/per-row commentary. (4) FULL NAMES — VARIABLES ONLY,
+  not structures (same clarification): no "pos" — the
   source_position/source_index class of names, ONE consistent scheme;
-  the scheme itself is delegated to the implementer. (5) CONSIDER
+  structure/table identifiers are covered by their item-(1) comments,
+  not the renaming requirement; the naming scheme itself is delegated
+  to the implementer. (5) CONSIDER
   (design point, not yet a requirement): tables carry short text names
   rather than raw numbers where appropriate, with a legend at top.
   ENGINEERING NOTES recorded at ruling time: (i) the pass must be
@@ -258,10 +263,12 @@ named-groups, conditionals, recursion producers.)
   structural checks and stamp pins that grep emitted identifiers need
   a coordinated pin update — budget for it; (iv) item (5), if adopted,
   must also be object-neutral (text names resolving to identical
-  values) or it graduates to its own ruling; (v) comment DENSITY on
-  machine-generated automata is the open style question — the design
-  pass brings Frank a sample commented artifact to approve the style
-  against before the full emitter conversion.
+  values) or it graduates to its own ruling; (v) the code-vs-structure
+  clarification resolved the worst of the comment-density question
+  (tables never get per-line commentary); the design pass still brings
+  Frank ONE sample commented artifact to approve the style against
+  before the full emitter conversion — cheap, and it fixes the
+  line-comment granularity on real code by example.
 
 ## M3 — Streaming input
 
