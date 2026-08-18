@@ -1,5 +1,22 @@
 # M4 match-API freeze — the collected contract
 
+> ## GRADUATED ([M4.7f], 2026-08-18) — THE CONTRACT NOW LIVES IN docs/spec/
+>
+> This document's design reasoning and ruling history stay here and remain
+> the reference for *why* the contract is what it is. The CONTRACT ITSELF —
+> what pcrec promises an embedder, actively maintained — is now
+> `docs/spec/match_api.md`. On any disagreement between the two, the spec
+> wins; two were found and corrected at graduation rather than silently
+> reconciled: the give-up-code collapse this document's §3 still describes
+> was superseded by D49 before graduation (the shipped `<prefix>_match`
+> propagates give-up codes uniformly, not `-1`-collapsed — see the spec's
+> §3.5), and `rx_info` ships as a struct TAG (`struct rx_info`), not the
+> bare typedef §5's layout sketch shows (see the spec's §2; still an open
+> Frank ruling, `docs/dev/plan.md`'s history). The R22 §2.2 addendum below
+> (cross-iteration retention, empty-final-iteration overwrite) is folded
+> into the spec's §5.1 as first-class contract prose, not carried as an
+> addendum there.
+
 > ## PANEL OUTCOME (R21) — READ BEFORE ANY SECTION BELOW
 >
 > A three-critic panel (R21, `docs/dev/reviews/2026-08-14-r21-m4-design.md`)
