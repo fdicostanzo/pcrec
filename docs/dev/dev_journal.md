@@ -10237,3 +10237,81 @@ re-learning from the other direction: before writing a probe to
 establish a property, check whether the suite already establishes it
 better — a shipped check with a sabotage arm outranks a lane's one-off
 every time.
+
+## 2026-08-18 (EDT), thirty-first session — [M4.7g] and M4.7 CLOSE: the spec survives its panel; M6 ruled next
+
+M4.7 IS CLOSED (merge d523a88). The session ran the milestone's last
+substep end to end: the R29 D6 panel over docs/spec/match_api.md, the
+fix pass it demanded, and the full close battery.
+
+THE PANEL (R29, docs/dev/reviews/2026-08-18-r29-match-api-spec.md +
+amendments): three read-only critics — artifact (opus), ruled-corpus
+(sonnet), adversarial consumer (opus). Verdict: the matching semantics
+are contract-grade (every §5/§5.1/anchoring/composition/§7 claim
+survived attack, span-for-span vs python re on both engines), but the
+surrounding surface failed a real consumer four ways: §8 could not
+compile a pattern (pcrec_default_options and pcrec_output/_free
+absent), §3.1's find-all instruction was an infinite loop on
+empty-matching patterns, and — the defect of the session — BOTH shipped
+doc-comments (the emitted rx_matchfn ABI block and lib/pcrec.h's
+searcher comment) affirmatively denied the give-up-code space §4
+promises and the artifacts produce (−2/−3 measured from three entry
+points), with §2 quoting a silently corrected comment as if shipped.
+Panel-vs-manager-read lesson, recorded in R29: the manager's
+end-to-end read (thirtieth session) checked the spec against its own
+citations; the critics checked it against alphabets the document did
+not choose.
+
+THE FIX PASS (lane/m47g-fix, opus, 11 commits): both comment fixes
+(emitted-artifact diff comment-lines-only across three builds; ABI
+block md5-identical across four prefixes), all ~30 FIX-SPEC items with
+verbatim-quote discipline, §8.0's worked example compiled and run
+before landing, §3.1's find-all loop verified 12/12 vs re.finditer with
+the lossy class (empty-preferring patterns; finditer's NOTEMPTY-style
+retry is inexpressible) stated honestly. The lane re-measured every
+disposition and returned three findings SHARPER than the review
+(A3's DFA-side ncaps-only mirror; C8's asymmetry running both ways;
+C1 needing no duplicate suppression) — all recorded as R29 amendments.
+The lane died to a transient API 529 after delivering; the manager
+finished the landing from the brief.
+
+FRANK'S LIVE DESIGN THREAD became a shipped guard mid-session: his
+(?:a||b) question → the empty-alternative merge-barrier rule (never
+merge single-byte-class branches ACROSS a branch that cannot commit to
+one first byte; resume after it) → measured against the shipped pass
+(structurally refused at altcls.c's A_EMPTY exclusion; (?:a|b||c|d)x
+stamps MERGES 2) → 19 oracle-verified corpus cases + stamp pins 0/0/2,
+SABOTAGE-VALIDATED by the lane (a compiler with the forbidden bug turns
+7 rows and 3 stamps red while the positive control stays green).
+Corpus 10,350 → 10,369.
+
+RULINGS: M6 BEFORE M5 (Frank; [M6.0] expands next session with its
+D47.5 obligation). D57: rx_info struct-tag spelling blessed. §3.5's
+which-document-wins framing kept in the spec (pre-2026-08-18 artifacts
+carry the false comment).
+
+FILED: K27 (emitted memchr(NULL,c,0) on the legal s==NULL/n==0 edge —
+found by the fix lane's own UBSan probe, scheduled with the next
+emitter-touching wave). Noted for a future touch: the D56 refusal
+diagnostic still says "VM engine arrives in M4" (stale — it arrived);
+message text may be pinned, so it waits for a deliberate change.
+
+VALIDATION AT CLOSE: full battery on pre-fix main all green (test
+10,350/0, strict, ubsan, asan [K26 caveat stands], lint — every stage
+exit 0); lane suite green pre-merge (10,369/0); post-merge main suite
++ strict green (10,369/0); bench gate 13/13 on a quiet box (weakest
+uniform-regression margin 1.43x). Pushed at session start
+(860dcb6..1a933a2) per Frank; final close push follows this entry.
+
+MANAGER LESSONS: (1) pgrep SELF-MATCHED TWICE in one session — both
+"is the suite still running" calls matched my own command line; the
+journal's existing lesson says /proc/PID/cwd, and the durable form is
+"pattern-match against /proc, never against your own invocation";
+scanning /proc/*/cwd directly settled it. (2) The lane's status
+messages CROSSED my scope-add three times — a lane mid-long-task does
+not see messages until its next tool round; the fix was an explicit
+confirm-receipt question, which caught the dropped pin rows. (3) The
+lane independently held its own suite launch on discovering the asan
+battery (right call, wrong release trigger — the pid it watched was
+not the last battery stage); background-work handoffs should name the
+COMPLETION ARTIFACT (the log trailer), never a process.

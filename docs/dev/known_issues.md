@@ -2222,3 +2222,33 @@ the gap visible and the testing.md text carries the caveat.
 
 Repro: compile any program that mallocs and exits without freeing;
 run under the battery's ASAN_OPTIONS; observe exit 0, no report.
+
+## K27 — emitted search body passes NULL to memchr on the contract's own legal (s=NULL, n=0) edge — status: deferred
+
+Found 2026-08-18 by the [M4.7g]/R29 fix lane's UBSan probe (the C7
+subject-contract verification). docs/spec/match_api.md §3.1 states —
+correctly, and now with measurement — that `s` may be NULL when
+`n == 0`. On that input the emitted unanchored search body executes
+`memchr(s + pos, c, n - pos)` with `s == NULL, pos == 0, n == 0`
+(src/gen/emit_dfa.c's memchr prefilter line), and UBSan reports "null
+pointer passed as argument 1, which is declared to never be null".
+Behavior is CORRECT on every tested toolchain (both engines return 0;
+ASan clean; the artifact never dereferences), but it is technical UB in
+EMITTED code on a documented-legal input — a user compiling a generated
+matcher under their own -fsanitize=undefined sees pcrec's name on the
+report.
+
+Invisible to the suite because the harness never passes s == NULL; the
+`make ubsan` battery is green for exactly that reason (its
+generated-code axis runs the corpus, and the corpus has no NULL-subject
+case). Sibling in shape to the R29 C17 filing (extern "C" guards):
+first-hour integration friction in emitted text, emitter-owned.
+
+Fix shape: one guard in the emitted prefilter (`n - pos` zero-check
+before the memchr call, or `s ? memchr(...) : NULL`), plus a
+NULL-subject case in the ubsan battery's generated-code axis so the fix
+is pinned. Scheduled: next emitter-touching wave (the [OPT-A] byte-test
+spelling menu touches the same emission site, or M4-CALLOUTS/M6,
+whichever lands first). Repro: compile any pattern, gcc
+-fsanitize=undefined the artifact with a driver calling
+<prefix>_search(NULL, 0, 0, NULL).

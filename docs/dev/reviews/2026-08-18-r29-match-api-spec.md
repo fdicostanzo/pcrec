@@ -281,3 +281,55 @@ against freshly emitted artifacts; the §8 example compiled and run
 verbatim; C1's protocol vs python re finditer; full `make test` async in
 the worktree after the emitter comment edits (codegen structural checks pin
 emitted text and may need floor updates travelling in the same change).
+
+## Amendments from the fix pass (lane/m47g-fix, merged d523a88 — measured corrections to this review's own statements)
+
+The lane re-measured every disposition rather than transcribing this
+file, and three findings came back different from the review's text; the
+spec records the measurements, and so does this amendment block:
+
+1. **A3 undercounted.** Six of fifteen rx_info fields mirror as macros
+   on a VM artifact (as A3 found) — but on a DFA artifact the mirror is
+   **ncaps ALONE**: no <PREFIX>_ENGINE, no budgets, no _VM_* macros at
+   all. A consumer `#if`-ing on <PREFIX>_ENGINE writes code that does
+   not compile against half of what pcrec emits. Spec §6.3 states the
+   per-engine inventory.
+2. **C8's asymmetry runs BOTH ways.** Besides search=0/match=−2, the
+   lane measured `--backtrack-frames=1` over "xxaaaaab": _search
+   returns −3 while both anchored entries return a clean −1 — a
+   demonstrated mirror of the "sharper two-phase case" this review
+   recorded as not demonstrated. (A1's −3-from-_search claim was also
+   subject-sensitive: true on "ab", not on "aaX"; the spec names the
+   subject.)
+3. **C1 needs NO duplicate suppression.** The advance rule alone
+   reproduces `re.finditer` 12/12; the "suppress the duplicate" clause
+   in the fix charter had no population. The REAL residual is sharper
+   than this review stated: python 3.7+ finditer DOES the
+   NOTEMPTY-style retry (|a over "aaa": 7 spans), so the documented
+   loop is lossy against our own base oracle — not just PCRE2 — on
+   empty-preferring patterns (|a, a*?, a??). Exact everywhere the
+   pattern prefers a non-empty match; the spec states the class.
+
+Also landed under this review's umbrella (manager scope-add from
+Frank's live design question, same lane): the ALTCLS empty-alternative
+merge barrier is now PINNED — tests/altcls/altcls.rxt (17 rows over
+(?:a||b) / (?:a||b)c / (?:a|b||c|d)x, corpus 10,350→10,369),
+stamp assertions MERGES 0/0/2 beside a live positive control, all three
+patterns added to the differential population. SABOTAGE-VALIDATED: a
+compiler built with the exact forbidden bug (altcls.c's run scan
+continuing across A_EMPTY) turns 7 corpus rows and all 3 stamp pins red
+while the positive control stays green. Row-design note for future
+citation: '(?:a||b)c' on "bc" is correct but does NOT discriminate under
+the sabotage; the discriminating subject is "c" → (0,1).
+
+Verification-thoroughness note recorded in the lane's own journal entry
+and worth keeping: §5.3's concurrency promise is warranted by the
+shipped, sabotage-validated TS-1/TS-2/TS-3 thread suite, found only
+because the full suite ran — check whether the suite already
+establishes a property better before writing an ad-hoc probe for it.
+
+One new defect found BY the fix pass's own UBSan probe, out of its
+scope, filed as **K27**: the emitted search body calls
+memchr(NULL, c, 0) on the contract's own legal s==NULL/n==0 edge —
+correct behavior, technical UB, invisible to the suite because the
+harness never passes NULL.
