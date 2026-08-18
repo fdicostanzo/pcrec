@@ -4932,3 +4932,34 @@ keyed (ref, name)).
 
 **Revisit when:** the first ref-bearing producer is designed — it
 inherits the append-only constraint as a requirement, not a choice.
+
+## D62 — Q8 ruled: multiline-$ is a parse-resolved FLAG on the node; the principle is "node KINDS encode structure, node FIELDS encode parse-resolved modifier state" (Frank, 2026-08-18, thirty-third session)
+
+**Decision.** The D47.5 cure (assertions_design.md §8; D47.5 ruling-5
+addendum) spells multiline-$ as a parse-resolved FIELD on the `A_EOL`
+node — no `A_EOL_M` node kind. The governing principle, stated by this
+ruling: node KINDS encode STRUCTURE (`A_CAT`/`A_ALT`/`A_REP`...), and
+mrl.c:18-24's exhaustive-switch-no-default rule earns its keep exactly
+there; node FIELDS encode PARSE-RESOLVED MODIFIER STATE, where
+`r->greedy` already lives. The flag is therefore the CONSISTENT choice
+in both lanes at once — and the kind-doubling pressure the alternative
+creates (`A_REP_LAZY`, one kind per modifier) is dissolved rather than
+resolved. Three controls travel with the flag, replacing the node
+kind's compile alarm for the KNOWN consumer:
+1. the WIDENED D47.5 test cells (the scoped `(?m:...)`/`(?m)...(?-m)`
+   miscompile rows, not only the leading-(?m) shape);
+2. a PERMANENT sabotage row flipping the flag's reader off — must go
+   red;
+3. a comment obligation on the Ast field itself: any analysis that
+   exempts or special-cases `$` must consult `.multiline`.
+The residual is ACCEPTED and stated: a FUTURE analysis's author must
+read the field comment — tests cover imagined consumers, and the
+compile alarm that would cover unimagined ones is forgone. Bounded:
+AST-walking analyses are rare (four today). NOT adopted: extending
+default-less switch discipline to the four remaining `default:` sites
+(it protects against new KINDS, which this ruling makes rarer; stays
+available as general code health, not load-bearing for Q8).
+
+**Revisit when:** a fifth AST analysis lands (the reviewer checks flag
+awareness against control 3), or a genuinely STRUCTURAL `$` variant
+appears that no field can express.
