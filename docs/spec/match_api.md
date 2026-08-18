@@ -26,7 +26,8 @@ the find-all protocol of §3.1 run against `python3 re.finditer` on twelve
 the §8.0 example compiled `-Wall -Wextra -Werror`, run, and its output
 compiled in turn; the subject-side contract of §3.1 measured under
 AddressSanitizer on exact-size heap buffers with a firing positive
-control; §5.3's concurrency promise measured under ThreadSanitizer;
+control; §5.3's concurrency promise checked against the shipped,
+sabotage-validated TS-1/TS-2/TS-3 guards rather than a one-off probe;
 §3.4/§6.1's section placement measured with `readelf`; §6.3's macro
 inventory measured by listing every `#define` in a build of each engine;
 §8.1's D56 guarantees measured at the refusal boundary. Two errors the
@@ -643,14 +644,28 @@ point's working state lives in its own stack frame and in the caller's
 **This is a CONTRACT, binding on future emitters, not merely an
 observation about today's output.** It is what makes a generated matcher
 usable from a thread pool at all, and an engine that wanted a mutable
-scratch buffer would have to change this document first. It is also
-GUARDED rather than asserted: the shipped suite's TS-1 check (D19) scans
-every emitted file across nine emission shapes and fails the build on any
-non-const static object or any reference to a non-reentrant or allocating
-libc symbol. Independently re-measured for this revision: two threads
-hammering one VM artifact with distinct buffers and distinct subjects,
-20,000 iterations each, are ThreadSanitizer-clean with both threads'
-answers correct.
+scratch buffer would have to change this document first.
+
+It is also GUARDED rather than asserted, by two shipped checks that run
+in `make test`:
+
+- **TS-1** (D19) is static: it scans every emitted file across nine
+  emission shapes and fails on any non-const static object, or any
+  reference to a non-reentrant or allocating libc symbol.
+- **TS-2** is dynamic and runs under ThreadSanitizer: eight threads
+  share ONE compiled matcher and search DIFFERENT subjects
+  concurrently, across five patterns chosen to hit five differently
+  *shaped* emitted engines, and every threaded result must equal a
+  single-threaded baseline recorded before any thread was spawned.
+  **Its sabotage arm proves the detector is watching** — a planted race
+  in a scratch copy of the driver must be caught, or the check fails
+  itself.
+
+The library side has the same treatment: **TS-3** runs eight threads
+each compiling its own pattern through `pcrec_compile()` concurrently,
+byte-matching a single-threaded baseline, also TSan-instrumented and
+also sabotage-validated. So `pcrec_compile()` is safe to call
+concurrently too, which §8 assumes and this is the evidence for.
 
 ---
 

@@ -10217,3 +10217,23 @@ VERIFICATION LEDGER naming what each pass re-measured, and §3.5 keeps
 the record of both errors — not as process history, but because
 artifacts generated before today still carry the false comment and a
 reader holding one needs to know which document wins.
+
+**Full-suite result and one late improvement.** `make test` in the lane
+worktree: **1,467 PASS, zero failures** — sixteen "checks failed: 0"
+summaries, two "cases failed: 0", the thread suite 8/0, the known-fail
+ratchet clean. `make strict` also green. Launched only after waiting out
+the `make asan` battery that held the box (18-script loop, watched to
+completion by pid rather than by name — the session's own liveness
+lesson applied).
+
+The suite then improved the spec: `tests/thread/run_thread_tests.sh`
+([TS-2]/[TS-3]) is a far better warrant for §5.3's concurrency promise
+than the ad-hoc TSan probe this lane wrote — eight threads over five
+differently-SHAPED emitted engines against a pre-spawn baseline, plus
+[TS-3] doing the same for `pcrec_compile()`, both **sabotage-validated**
+so a detector that has never caught a race cannot pass. §5.3 now cites
+those and the ledger says so. The lesson is the one this project keeps
+re-learning from the other direction: before writing a probe to
+establish a property, check whether the suite already establishes it
+better — a shipped check with a sabotage arm outranks a lane's one-off
+every time.
