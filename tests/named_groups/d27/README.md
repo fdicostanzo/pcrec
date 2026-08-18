@@ -22,14 +22,25 @@ otherwise healthy.
 | `name_syntax.rxt` | 16 | 10 | Name-syntax edges: valid underscore/digit-after-first-char/32/33/128-char names; invalid leading-digit/empty/hyphen/space/dot names (all three spellings for leading-digit); non-ASCII name; 129-char name |
 | `duplicates.rxt` | 5 | 5 | Duplicate names rejected: same spelling, mixed spelling, non-adjacent, across alternation branches |
 | `numbering_capture.rxt` | 8 | 0 | Named/unnamed interleaving, nesting, optional participation, alternation, and the two cross-iteration capture rules (docs/spec/match_api.md S5.1) applied to named groups |
-| `oracle.py` | -- | -- | Standalone python3 verifier for the four files above (see below) |
+| `case_sensitivity.rxt` | 2 | 0 | Group NAME is case-sensitive identity, distinct from CASELESS matching of the group's content: `name` and `NAME` are two distinct groups, with and without the block's `flags i` |
+| `oracle.py` | -- | -- | Standalone python3 verifier for the five files above (see below) |
 
-**Totals** (grep-counted, matches `oracle.py`'s 37+2=39 blocks
-processed): 39 pattern blocks. 15 are `perr` compile-failure
-expectations; the remaining 24 carry `m`/`g` match-and-capture
-expectations, totaling 38 individual `g` capture-slot assertions
+**Totals** (grep-counted, matches `oracle.py`'s 39+2=41 blocks
+processed): 41 pattern blocks. 15 are `perr` compile-failure
+expectations; the remaining 26 carry `m`/`g` match-and-capture
+expectations, totaling 42 individual `g` capture-slot assertions
 across them (including a 3-way check for the nested-named-groups case
 and a 3-way check each for the two cross-iteration-retention cases).
+
+**Revision note (2026-08-18, case-sensitivity addition):** added
+`case_sensitivity.rxt` (2 blocks, both `m`/`g`, both python-verifiable,
+no `pcre2-only`) per a manager-relayed question: whether `(?<name>...)`
+and `(?<NAME>...)` in one pattern are the same group (duplicate-name
+rejection) or two distinct groups. Measured (libpcre2 10.46 and
+python3 `re` agree): two distinct groups, both capturing independently,
+unaffected by whether the block also matches caselessly (`flags i`
+changes which bytes the group's own text matches, not name identity).
+See "Coverage axes" below.
 
 **Revision note (2026-08-18, post-manager-review):** the length-cap
 figure below was corrected from 32 to 128 code units after the manager
@@ -64,10 +75,10 @@ parser), translates every pattern to python `re`'s only accepted
 spelling, `(?P<name>...)`, and re-derives every expectation
 independently.
 
-Run it from this directory: `python3 oracle.py` (defaults to the four
-`.rxt` files here). Current output: **PASS=37, FAIL=0,
+Run it from this directory: `python3 oracle.py` (defaults to the five
+`.rxt` files here). Current output: **PASS=39, FAIL=0,
 DIVERGENCE-DOCUMENTED=2, SKIP-UNVERIFIABLE=0**, `python3 --version` =
-`Python 3.14.4` (this box). The 37 PASS rows are every block not
+`Python 3.14.4` (this box). The 39 PASS rows are every block not
 marked `# pcre2-only`; the 2 DIVERGENCE-DOCUMENTED rows are the two
 `# pcre2-only` blocks (below -- both now at the corrected 128-code-unit
 boundary, not the stale 32). A `FAIL` row would mean this corpus's own
@@ -203,6 +214,13 @@ diagnostic's wording.
   S5.1 -- this corpus checks that a named group is not a special case
   of that rule), and named/unnamed groups in different alternation
   branches.
+- **Case sensitivity of the name itself**: `name` and `NAME` are two
+  distinct names (two distinct groups, capturing independently), not a
+  duplicate-name collision (contrast `duplicates.rxt`) -- checked both
+  under default matching and under the block's `flags i`, since
+  caseless matching of a group's CONTENT is a different axis from
+  case-sensitive identity of its NAME, and the two must not be
+  conflated.
 
 ## What "PASS" means here, and what it does not
 
