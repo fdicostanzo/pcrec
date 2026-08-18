@@ -70,5 +70,24 @@ see its own header note on this module's four rows there.
   OTHER module's name is in the diagnostic, so this is tier-2 attribution
   and belongs in tests/reject/'s gated pins.
 
+## d27/ — the blinded acceptance corpus
+
+Written by a D27-blinded author (cell; allowlist docs/testing.md +
+docs/spec/match_api.md + a prebuilt binary — no src/, no tests/) from
+PCRE2's measured semantics BEFORE the module landed, and run against the
+implementation for the first time at merge review: **83/0**. Five `.rxt`
+files (spellings, name_syntax, duplicates, numbering_capture,
+case_sensitivity — 41 blocks, 15 `perr`, 42 `g` assertions) that ride
+`make test` through the harness's recursive `tests/` sweep like any other
+corpus. `oracle.py` is the author's standalone python3 re-derivation of
+every expectation (run it from d27/ to re-verify; it translates the
+non-python spellings to `(?P<name>...)` and documents the two
+`# pcre2-only` rows it cannot check — the 129-char refusal and the
+non-ASCII-name refusal, both manager-verified against libpcre2 10.46,
+2026-08-18). `README.md` is the author's methodology record, including
+provenance for the corrected 128-unit length cap. These files are the
+module's acceptance record — extend the main corpus above for new cells
+rather than editing d27/'s, which stay as authored.
+
 Maintenance: update this file when the corpus's file list or oracle split
 changes.
