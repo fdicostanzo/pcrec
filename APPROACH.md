@@ -157,15 +157,30 @@ Each tier is a milestone with its own tests; the compiler is useful after **base
 Codegen targets an abstract *cursor* interface: `PEEK`, `NEXT`, `AT_START`, `AT_END`,
 class-membership tests. Encoding backends inline these:
 
-- **ascii / byte** (`-e ascii`): 1 byte = 1 code unit. Class tests compile to 256-bit
+- **byte** (`-e byte` / `--encoding=byte`, the default): 1 byte = 1 code unit. Class
+  tests compile to 256-bit
   bitmaps (`uint64_t cls[4]`) or range compares — gcc turns small ones into arithmetic.
-- **utf8** (`-e utf8`): the DFA operates **byte-wise** — Unicode classes/properties are
+  (Spelled `ascii` until [M5-SEAM]/D58, 2026-08-18; renamed because the semantics were
+  always "every byte is a character, 8-bit clean", which is not what ASCII says.)
+- **utf8** (`-e utf8` / `--encoding=utf8`): the DFA operates **byte-wise** — Unicode classes/properties are
   compiled into the automaton as byte-sequence sub-automata (the RE2/Hyperscan
   approach: UTF-8 ranges → byte-range trees). No runtime decode step in the hot path,
   malformed input handled by automaton structure. The VM engine decodes code points at
   match time with an inlined decoder.
 
 Adding UTF-16/32 later = new encoding backend, no core changes.
+
+**[M5-SEAM] (D58, 2026-08-18) made the second half of that sentence
+structural rather than aspirational.** The encoding is a PER-COMPILE-CALL
+scalar (a `pcrec_options` field, never a global), and a backend is a file
+in `src/gen/enc/` supplying the RESIDUAL text an artifact embeds — with no
+encoding conditional anywhere in the compiler, the emitter or the artifact
+(DD-12 (7)). The first residual entry is `<prefix>_next_pos`
+(docs/spec/match_api.md §3.1.1). "No core changes" is now the check
+`tests/codegen/run_codegen_tests.sh` makes and `src/gen/enc/CLAUDE.md`
+states as a recipe: a new backend is one file here plus its row in the
+registry, and needing to touch a shared file outside that directory is a
+design stop.
 
 ---
 
