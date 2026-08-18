@@ -136,10 +136,36 @@ check_control() { # check_control <label> <pattern>
 
 # nbr inside the corpus's own 3..8 range. `^(<nbr> branches sharing a 200- or
 # 100-byte prefix){r}`: unfactored ~812/copy vs ~213/copy factored.
+#
+# [OPT-ALTCLS] (2026-08-17): EVERY shared-prefix byte is a two-member CLASS
+# (`[aA]`, not bare `a`), not a cosmetic choice. src/opt/altcls.c's stage 2
+# runs BEFORE this control's `-DPCREC_NO_TRIE` knob has any effect at all
+# (it is a separate, gate-INDEPENDENT AST pass, upstream of nfa.c's trie
+# entirely), and it ALSO prefix-factors a run of branches sharing a literal
+# first byte -- which a bare-letter prefix like the pre-[OPT-ALTCLS] version
+# of this control used IS. With a bare prefix, ALTCLS pre-factors the shared
+# run itself, so BOTH the shipped and the `-DPCREC_NO_TRIE` reference build
+# see an already-shrunk AST by the time nfa.c's own trie would have fired --
+# reference stops being "trie disabled", it becomes "trie disabled AND
+# nothing left for it to do", and the control reports factored/factored
+# (measured: exactly this, the day [OPT-ALTCLS] landed). `src/opt/altcls.c`'s
+# own eligibility test requires a branch's FIRST atom to be a class holding
+# EXACTLY ONE byte (`altcls_single_bit`); nfa.c's `trie_key` (this file's own
+# sibling comment, "every leaf is A_CLASS") has no such restriction -- ANY
+# class-only leaf sequence is trie-eligible. A two-member class is therefore
+# the minimal edit that keeps the pattern trie-eligible while making altcls
+# DECLINE at the very first branch-peel call, restoring this control's
+# original property: shipped=factored, reference=unfactored, driven by
+# `-DPCREC_NO_TRIE` alone. (No subjects are ever run against these patterns —
+# "no subjects, no gcc" per this file's own header — so widening what each
+# position matches has no bearing on what this check verifies.)
 ctl_small() { # ctl_small <nbr> <prefix len> <repeat>
     awk -v NB="$1" -v PL="$2" -v R="$3" 'BEGIN {
         p = ""
-        for (k = 0; k < PL; k++) p = p sprintf("%c", 97 + k % 26)
+        for (k = 0; k < PL; k++) {
+            c = 97 + k % 26
+            p = p "[" sprintf("%c", c) sprintf("%c", c - 32) "]"
+        }
         s = ""
         for (i = 0; i < NB; i++)
             s = s (i ? "|" : "") p sprintf("%c%c", 97 + int(i / 26), 97 + i % 26)
@@ -151,11 +177,22 @@ check_control "8 branches"   "$(ctl_small 8 100 300)"
 
 # The original large-branch control: all 256 8-bit binary strings, x100.
 # ~230k NFA states unfactored against the 131072 cap, ~51k factored.
+#
+# [OPT-ALTCLS] (2026-08-17): each binary digit is a two-member class
+# (`[02]`/`[13]`), for the identical reason `ctl_small` above widens its
+# prefix -- consecutive integers in this generator share long common BIT
+# PREFIXES (0=00000000, 1=00000001, ...), which is exactly altcls stage 2's
+# own adjacent-literal-prefix shape, and a bare-digit version of this
+# control measured factored/factored the same way `ctl_small` did.
 check_control "256 branches" "$(awk 'BEGIN {
     p = ""
     for (i = 0; i < 256; i++) {
         w = ""; v = i
-        for (k = 0; k < 8; k++) { w = sprintf("%d", v % 2) w; v = int(v / 2) }
+        for (k = 0; k < 8; k++) {
+            d = v % 2
+            w = (d == 0 ? "[02]" : "[13]") w
+            v = int(v / 2)
+        }
         p = p (i ? "|" : "") w
     }
     printf "(%s){100}", p

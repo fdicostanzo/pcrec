@@ -441,4 +441,45 @@ sabotage-then-restore rebuilds `build/pcrec`, so do it when nothing else is
 running against that binary — doing it during a `make test` contaminates that
 run and it has to be discarded and redone.
 
-Maintenance: update this file when checks are added/removed.
+## [OPT-ALTCLS] broke the trie's positive controls, and the fix generalizes
+
+2026-08-17: landing `src/opt/altcls.c`'s stage 2 (prefix factoring) turned
+`run_trie_identity.sh`'s three positive controls (4/8/256 branches) from
+factored/unfactored to factored/FACTORED — the reference build, compiled
+with `-DPCREC_NO_TRIE`, was passing anyway. Root cause: `src/opt/altcls.c`
+is a NEW pass that runs BEFORE `nfa.c`'s trie entirely, is NOT gated by
+`-DPCREC_NO_TRIE` (that macro reaches only `nfa.c`'s own trie code), and
+targets the SAME shape the controls were built from — a run of branches
+sharing a literal first byte, exactly `ctl_small`'s bare-letter prefix and
+the 256-branch control's bare binary digits. With a bare-letter prefix,
+`altcls` pre-factors the shared run on BOTH sides before `-DPCREC_NO_TRIE`
+ever gets a chance to matter, so the reference build stops being "trie
+disabled" and becomes "trie disabled AND nothing left for it to disable" —
+the exact vacuous-control failure mode this file's own header already
+warns about, from a cause its author had no way to anticipate.
+
+**The fix is narrower than the failure looks: widen every prefix BYTE from
+a bare literal to a two-member CLASS** (`a` → `[aA]`, binary digit `0` →
+`[02]`). `nfa.c`'s `trie_key` accepts ANY class-only leaf sequence (no
+single-bit restriction — see its own comment, "whose every leaf is
+A_CLASS"), while `src/opt/altcls.c`'s eligibility test requires a branch's
+FIRST atom to hold EXACTLY one byte (`altcls_single_bit`). A two-member
+class is therefore trie-eligible and altcls-ineligible in one move: altcls
+declines at the very first `altcls_branch_peel` call for every branch in
+the pattern (verified: `RX_ALTCLS_MERGES`/`RX_ALTCLS_FACTORED` both stamp
+0 on the widened controls), restoring the control's original property —
+shipped=factored, reference=unfactored, driven by `-DPCREC_NO_TRIE` alone.
+No subjects are ever run against these patterns (this file's own header:
+"no subjects, no gcc"), so widening what each position matches costs
+nothing the check verifies. Re-measured clean: all three controls green,
+the 500-pattern equivalence sweep still 500/500 identical both axes
+(case-sensitive and `-i`), zero regressions.
+
+**The generalizable lesson, for whoever adds the next AST-level pass that
+runs before `nfa.c`:** ANY pass that runs upstream of the trie and is not
+itself gated by `-DPCREC_NO_TRIE` can pre-empt a positive control built
+from bare literals the same way. This project's `-DPCREC_NO_TRIE` /
+`-fno-X` deny-flag family (D46/D47.3) is scoped PER PASS by design — no
+single flag disables "everything upstream of the trie" — so a future
+pass with equivalent reach needs the same widened-class treatment applied
+here, not a new reference-build flag.
