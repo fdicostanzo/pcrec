@@ -4866,3 +4866,16 @@ schedule.
 
 **Revisit when:** the first external consumer appears (v1 boundary) — at
 that point deletions of public spellings stop being free.
+
+**ADDENDUM (Frank, same day): ENGINE constants join the set.** Spec §6
+documents `rx_info.engine` as "1 = DFA, 2 = VM" with the values spelled
+`ENGM_DFA`/`ENGM_VM` in an emitted COMMENT only — "no such constant is
+#defined anywhere, so compare against the numbers." That is a universal
+pcrec-contract namespace with no emitted names, exactly D60's membership
+rule, so [ABI-NS] adds `PCREC_ENGINE_DFA` (1) and `PCREC_ENGINE_VM` (2)
+to the ABI block (values pinned to today's stamped numbers — this names
+the existing contract, it does not renumber it), rewrites the emitted
+`.engine` comment to reference them, and re-quotes spec §6's engine
+paragraph. The internal `ENGM_*` enum (src/opt/select_engine.c) stays
+internal; the lane must NOT export that spelling — D38's PCREC_* rule
+governs the emitted surface.
