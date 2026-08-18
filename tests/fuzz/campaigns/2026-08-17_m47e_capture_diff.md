@@ -112,9 +112,26 @@ none`. This is a GENERATOR COVERAGE GAP, not a failure of gate-ON itself,
 and is recorded here (and in `tests/fuzz/README.md`) so the distinction
 between "the gate is open" and "something walked through it" is visible
 rather than implied by a summary line that only reports divergence counts.
-Extending the generator to actually exercise std1's two modules is
-follow-on work, out of this campaign's own charter (the CAPTURE
-differential).
+**CLOSED for `classes` the same session (manager ruling, bounded addendum):**
+`MODULE_CLASS_ATOMS` (fuzz.py) adds `\d \D \w \W \s \S` and two POSIX forms
+(`[[:alpha:]] [[:digit:]]`) at a modest, named weight
+(`MODULE_CLASS_WEIGHT = 0.15`) — a pure in-process sample (3,000 patterns
+generated, no compiles) measured 37.1% now contain at least one module
+construct. An addendum batch re-running this campaign's own shape (~10
+seeds x 1,500 patterns) with the extended generator is recorded as its own
+row below, with the module-construct count measured for real (not
+sampled) via the hardened stat.
+
+**`modifiers` stays open, deliberately, and is an OWED CELL rather than a
+silent gap:** no modifiers-module generation exists anywhere in fuzz.py.
+Homed at [M7.0] (docs/dev/plan.md — M7's own differential-fuzzing
+milestone), not added as a same-session addendum to this capture-focused
+lane.
+
+## Addendum batch: classes-module construct density (seeds 201–210, 1,500 patterns/seed)
+
+<!-- filled in after the addendum batch runs -->
+
 
 ## Raw logs
 

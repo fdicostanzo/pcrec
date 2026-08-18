@@ -127,6 +127,15 @@ tree, which is what the manual-only reasoning below does not cover.
   the `_cpu_limited` ulimit shim reading `gen_timeout.sh cpusecs`; the
   oracle-shim and driver-template compiles are hand-written C, outside
   D45's scope, and deliberately stay on the wall bound alone.
+  **[M4.7e] second addendum** added `MODULE_CLASS_ATOMS` next to
+  `CLASS_ATOMS` — the classes-module escapes (`\d \D \w \W \s \S`) and two
+  POSIX `[:name:]` forms (`[[:alpha:]] [[:digit:]]`), drawn at a modest,
+  NAMED weight (`MODULE_CLASS_WEIGHT = 0.15` of the existing class-atom
+  branch in `gen_atom`, not merged into `CLASS_ATOMS` itself) — closing the
+  README.md-documented finding that the differential gate was open
+  (`PCREC_DEFAULT_FEATURES="std1"`) but the generator never actually
+  emitted anything std1's two modules own. `modifiers` generation stays
+  out of scope, owed to [M7.0] (docs/dev/plan.md) rather than added here.
 - **README.md** — full usage, exception-list rationale, output-bucket
   reference, triage process, and documented findings from this tool's
   build session (a real PCRE2 match-limit oracle bug now fixed, and a

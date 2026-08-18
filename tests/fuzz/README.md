@@ -116,29 +116,45 @@ a best-effort bias toward interesting subjects, not a correctness
 mechanism (both engines always run on the exact same bytes regardless of
 how the subject was constructed).
 
-**FINDING ([M4.7e], 2026-08-17): the differential-gate principle's OPEN half
-is satisfied (see docs/testing.md), but its FOCUSED half is currently
-VACUOUS for this generator — measured, not assumed.** fuzz.py passes no
-`--features` flag, so every compile in this file (gate slice and at-scale
-campaign alike) resolves through `PCREC_DEFAULT_FEATURES` = `"std1"` =
-`{classes, modifiers}` (D37/STD1b) — the gate is genuinely open. But
-`CLASS_ATOMS` above is drawn only from base-tier bracket-class forms
-already accepted with NO module enabled (`tests/base/classes.rxt`'s own
-territory) — none of the classes-module escapes (`\d \D \s \S \w \W \h \H
-\v \V \N`) or the classes-module POSIX `[:name:]` delimiter form ever
-appear, and there is no modifiers-module generation AT ALL anywhere in this
-file (no `(?i) (?m) (?s) (?x) (?U) (?J) (?a) (?n) (?r) (?-i) (?^) (?)`,
-confirmed by grep, not by reading the two generator functions alone). So
-the gate being open buys this campaign nothing today: zero generated
-patterns exercise either module's OWN syntax, only the base-tier forms that
-were already gate-agnostic before std1 existed. This is a GENERATOR
-COVERAGE GAP, not a failure of the gate-ON requirement itself — recorded
-here because the distinction between "the gate is open" and "something
-walked through it" matters and the difference is otherwise invisible in a
-summary line that only reports divergence counts. Extending `CLASS_ATOMS`/
-adding a `MODIFIER_ATOMS` lane to actually exercise std1's two modules is
-follow-on work, not done here (out of [M4.7e]'s own charter, which is the
-CAPTURE differential).
+**FINDING ([M4.7e], 2026-08-17), CLOSED for `classes` the same day it was
+found: the differential-gate principle's OPEN half was satisfied (see
+docs/testing.md), but its FOCUSED half was VACUOUS for this generator —
+measured, not assumed.** fuzz.py passes no `--features` flag, so every
+compile in this file (gate slice and at-scale campaign alike) resolves
+through `PCREC_DEFAULT_FEATURES` = `"std1"` = `{classes, modifiers}`
+(D37/STD1b) — the gate is genuinely open. But at the time of the original
+75,000-pattern campaign, `CLASS_ATOMS` was drawn only from base-tier
+bracket-class forms already accepted with NO module enabled
+(`tests/base/classes.rxt`'s own territory) — none of the classes-module
+escapes (`\d \D \s \S \w \W`) or the classes-module POSIX `[:name:]`
+delimiter form ever appeared, so the gate being open bought that campaign
+nothing: zero of its 75,000 patterns exercised either module's OWN syntax.
+Recorded because the distinction between "the gate is open" and "something
+walked through it" matters and is otherwise invisible in a summary line
+that only reports divergence counts (`tests/fuzz/campaigns/
+2026-08-17_m47e_capture_diff.md` carries the original measurement in
+full).
+
+**The `classes` half is now fixed**: `MODULE_CLASS_ATOMS` (fuzz.py, next to
+`CLASS_ATOMS`) adds `\d \D \w \W \s \S` and two POSIX forms
+(`[[:alpha:]] [[:digit:]]`), drawn at a MODEST, named weight
+(`MODULE_CLASS_WEIGHT = 0.15` of the existing class-atom branch in
+`gen_atom`) rather than merged into `CLASS_ATOMS` outright, so its share of
+the corpus is a controllable number, not "however many items are in the
+list." Measured in-process (pure generation, no compiles): 37.1% of 3,000
+sampled patterns at this weight contain at least one module construct —
+comfortably nonzero, the proof the gate is now actually exercised rather
+than merely open. A second, smaller addendum batch re-running the campaign
+with this generator carries its own row in the campaign log with this
+count measured for real (not the in-process sample above).
+
+**`modifiers` stays OUT of scope, deliberately, and is recorded as an owed
+cell rather than silently dropped**: no modifiers-module generation exists
+anywhere in this file (no `(?i) (?m) (?s) (?x) (?U) (?J) (?a) (?n) (?r)
+(?-i) (?^) (?)`). Extending the generator for `modifiers` is homed at
+[M7.0] in docs/dev/plan.md ("differential fuzzing vs libpcre2" — M7's own
+milestone, not a same-session addendum to [M4.7e]'s capture charter) rather
+than done here.
 
 ## Excluded from generation (known tooling divergences)
 
