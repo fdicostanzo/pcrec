@@ -50,6 +50,40 @@ GATE_SEED=1
 GATE_PATTERNS=300
 GATE_SUBJECTS=15
 
+# EXACT EXPECTED POPULATIONS (manager ruling, 2026-08-17): a fixed seed's
+# generation is deterministic (fuzz.py seeds `random` once, up front, main
+# thread only), so every one of these is a REPRODUCIBLE fact of this seed
+# on this pcrec, not a guess -- measured twice on a quiet box (uptime 1-min
+# load 0.78), byte-identical both times. Report SELECTED counts, not merely
+# "gate passed": drift in ANY of these means either the generator, pcrec,
+# or fuzz.py's own bucketing changed, and that must be loud, the same
+# discipline registry_check's 169 and PC-3's 163 pins already carry
+# (tests/registry/run_registry_tests.sh). The two TIMING-SENSITIVE buckets
+# (pcrec compile timeout, oracle probe timeout) are pinned to 0 like every
+# other bucket -- FAIL is still correct on drift, but a nonzero reading
+# there under a heavily loaded box is a load artifact to check first, not
+# necessarily a new pcrec defect (see docs/testing.md's D14 busy-box
+# precedent, tests/bench/run_bench.sh's LOAD_LIMIT).
+declare -A EXPECT=(
+    ["patterns generated"]=300
+    ["both accept"]=174
+    ["both reject"]=120
+    ["pcrec-only reject"]=0
+    ["pcre2-only reject"]=0
+    ["PCRE2 size-limit"]=0
+    ["DFA state-cap"]=6
+    ["gcc compile fails"]=0
+    ["pcrec compile timeout"]=0
+    ["oracle probe timeout"]=0
+    ["subject pairs compared"]=2610
+    ["oracle inconclusive"]=0
+    ["pcrec step-budget exhausted"]=0
+    ["pcrec frame-budget exhausted"]=0
+    ["known PCRE2 optimizer quirk"]=0
+    ["content divergences"]=0
+    ["accept/reject divergences"]=0
+)
+
 WORKDIR="$(mktemp -d)"
 cleanup() { rm -rf "$WORKDIR"; }
 trap cleanup EXIT
@@ -84,23 +118,51 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}" CC="$CC" \
         --subjects "$GATE_SUBJECTS" "${KEEPARG[@]}" 2>&1 | tee "$GATEOUT"
 rc="${PIPESTATUS[0]}"
 
-# NO-SILENT-CAPS: every exclusion bucket fuzz.py's own summary reports is
-# echoed here too, so a `make test` run surfaces them without anyone having
-# to go find fuzz.py's stdout by hand. fuzz.py's summary already prints
-# these lines; this just re-asserts none of them are being silently dropped
-# by grepping the same output back out and confirming the lines exist.
-for label in "content divergences" "accept/reject divergences" \
-             "DFA state-cap" "oracle inconclusive" "optimizer quirk" \
-             "pcrec compile timeout" "oracle probe timeout"; do
-    if ! grep -qi "$label" "$GATEOUT"; then
-        echo "capturediff-gate: fuzz.py's summary no longer reports '$label' -- exclusion bucket vanished from output, not just from the count. Fix fuzz.py's summary before trusting this gate." >&2
-        rc=1
+# NO-SILENT-CAPS, EXACT COUNTS: every bucket in EXPECT is both PRESENT (a
+# label vanishing from fuzz.py's summary is itself a regression -- this
+# gate would otherwise read a bucket as "0" forever once nothing prints it)
+# and equal to its pinned value. Report every SELECTED count, not merely
+# pass/fail, so drift is visible in the same line that names it.
+echo
+echo "capturediff-gate: selected counts (expected -> actual)"
+drift=0
+for label in "patterns generated" "both accept" "both reject" \
+             "pcrec-only reject" "pcre2-only reject" "PCRE2 size-limit" \
+             "DFA state-cap" "gcc compile fails" "pcrec compile timeout" \
+             "oracle probe timeout" "subject pairs compared" \
+             "oracle inconclusive" "pcrec step-budget exhausted" \
+             "pcrec frame-budget exhausted" "known PCRE2 optimizer quirk" \
+             "content divergences" "accept/reject divergences"; do
+    # Extract the number immediately after THIS label's own colon, not the
+    # first digit anywhere on the line -- several lines carry an earlier,
+    # unrelated digit in their parenthetical explanation (e.g. "known PCRE2
+    # optimizer quirk (anchor in {0} group): 0" -- a naive "first number on
+    # the line" grab would read the quirk-name's literal "0" forever and
+    # never notice a real nonzero count).
+    actual="$(grep -ioP "${label}[^:]*:\s*\K[0-9]+" "$GATEOUT" | head -1)"
+    if [ -z "$actual" ]; then
+        echo "  $label: expected=${EXPECT[$label]} actual=MISSING (label vanished from fuzz.py's summary)" >&2
+        drift=1
+        continue
+    fi
+    expected="${EXPECT[$label]}"
+    if [ "$actual" != "$expected" ]; then
+        note=""
+        case "$label" in
+            "pcrec compile timeout"|"oracle probe timeout")
+                note=" (TIMING-SENSITIVE bucket -- check box load before treating this as a pcrec defect, docs/testing.md's D14 busy-box precedent)" ;;
+        esac
+        echo "  $label: expected=$expected actual=$actual  DRIFT$note" >&2
+        drift=1
+    else
+        echo "  $label: $actual"
     fi
 done
+[ "$drift" -ne 0 ] && rc=1
 
 if [ "$rc" -eq 0 ]; then
-    echo "capturediff-gate: PASS (seed=$GATE_SEED patterns=$GATE_PATTERNS subjects=$GATE_SUBJECTS, 0 accept/reject + 0 content divergences)"
+    echo "capturediff-gate: PASS (seed=$GATE_SEED patterns=$GATE_PATTERNS subjects=$GATE_SUBJECTS, every selected count matched its pinned value)"
 else
-    echo "capturediff-gate: FAIL — see divergences above; repro bundle path is in fuzz.py's own output" >&2
+    echo "capturediff-gate: FAIL — see drift/divergences above; repro bundle path is in fuzz.py's own output" >&2
 fi
 exit "$rc"

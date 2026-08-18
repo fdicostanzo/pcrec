@@ -72,6 +72,29 @@ A default run (300 patterns) takes a few seconds on this box (the dominant
 cost used to be recompiling the driver from source for every pattern; see
 "Performance" below for the fix that removed that).
 
+## Two-tier posture: the `make test` gate vs. the at-scale campaign ([M4.7e])
+
+Everything above (`make fuzz`, an arbitrary `--seed`) stays a
+manual/checkpoint tool for the reason already given: a clean run at a seed
+nobody pinned says nothing about the next one, and a failure needs human
+triage before it means anything. **That reasoning does not apply to a
+PINNED seed** — the same seed always reproduces the same corpus (see
+"Deterministic" above), so a fixed-seed run is exactly as reproducible as
+any other differential in this tree.
+
+`tests/fuzz/run_capturediff_gate.sh` (`make test-capturediff`, part of
+`make test` proper) is that fixed-seed slice: fuzz.py's own defaults
+(seed=1, 300 patterns, 15 subjects), asserting fuzz.py's own
+zero-divergence exit code. It exists to catch a REGRESSION against
+divergences already known to be absent, not to find new ones — finding new
+ones is still the at-scale campaign's job (`tests/fuzz/campaigns/`, run
+manually across many seeds at checkpoints, same posture as `make fuzz`
+itself, just bigger and logged). The gate probes libpcre2 presence itself
+(builds `pcre2_oracle.c`, calls its own `--version`) and SKIPS loudly
+(PC-3's pattern, `tests/registry/run_registry_tests.sh`) instead of letting
+fuzz.py's own oracle plumbing fail hard, which is the right policy for a
+manual dev tool but wrong for a `make test` section on a libpcre2-less box.
+
 ## What gets generated
 
 Random base-tier patterns: literals, `.`, character classes (including
@@ -92,6 +115,30 @@ approximate matching fragment of the pattern (see `sample()` in fuzz.py) —
 a best-effort bias toward interesting subjects, not a correctness
 mechanism (both engines always run on the exact same bytes regardless of
 how the subject was constructed).
+
+**FINDING ([M4.7e], 2026-08-17): the differential-gate principle's OPEN half
+is satisfied (see docs/testing.md), but its FOCUSED half is currently
+VACUOUS for this generator — measured, not assumed.** fuzz.py passes no
+`--features` flag, so every compile in this file (gate slice and at-scale
+campaign alike) resolves through `PCREC_DEFAULT_FEATURES` = `"std1"` =
+`{classes, modifiers}` (D37/STD1b) — the gate is genuinely open. But
+`CLASS_ATOMS` above is drawn only from base-tier bracket-class forms
+already accepted with NO module enabled (`tests/base/classes.rxt`'s own
+territory) — none of the classes-module escapes (`\d \D \s \S \w \W \h \H
+\v \V \N`) or the classes-module POSIX `[:name:]` delimiter form ever
+appear, and there is no modifiers-module generation AT ALL anywhere in this
+file (no `(?i) (?m) (?s) (?x) (?U) (?J) (?a) (?n) (?r) (?-i) (?^) (?)`,
+confirmed by grep, not by reading the two generator functions alone). So
+the gate being open buys this campaign nothing today: zero generated
+patterns exercise either module's OWN syntax, only the base-tier forms that
+were already gate-agnostic before std1 existed. This is a GENERATOR
+COVERAGE GAP, not a failure of the gate-ON requirement itself — recorded
+here because the distinction between "the gate is open" and "something
+walked through it" matters and the difference is otherwise invisible in a
+summary line that only reports divergence counts. Extending `CLASS_ATOMS`/
+adding a `MODIFIER_ATOMS` lane to actually exercise std1's two modules is
+follow-on work, not done here (out of [M4.7e]'s own charter, which is the
+CAPTURE differential).
 
 ## Excluded from generation (known tooling divergences)
 
