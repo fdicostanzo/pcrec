@@ -5011,3 +5011,38 @@ s[pos-1]=='\n', +1) is the derivation helper's one new case.
 **Revisit when:** the D8-shape instance's measurement lands (its
 result feeds [OS-4]); DD-7's variant lands (re-measure which instances
 retain customers).
+
+## D64 — Q1 ruled: NO newline axis; LF stays hardwired ("\n = \n for now"); the future shape is a TYPED COMPILE-TIME DEFINITION, parked on DD-11 until lookaround + insertion machinery exist (Frank, 2026-08-18, thirty-third session)
+
+**Decision.** No `pcrec_options.newline` axis is declared. The
+assertions module's wave C builds `(?m)`/`\Z` against the hardwired LF
+definition — the fold D23's precedent points at, chosen directly rather
+than tested-first (the panel had already refuted the design's
+semantic-namespace exemption from D18; Frank's ruling supersedes the
+fold-test ceremony by simply taking the fold). ONE constraint travels
+into the wave briefs: newline-REFERENCE SITES are written
+DEFINITION-SHAPED — each consumer (the (?m)^ boundary test, (?m)$'s,
+\Z's, dot's complement) consumes "the newline definition" as a handed-in
+class/tiny-pattern with LF the only definition supplied — never a
+scattered literal '\n' comparison. Costs nothing now; keeps the future
+open at exactly the width of the recorded architecture below.
+
+**The parked architecture (Frank's brainstorm, recorded on DD-11 for
+"the appropriate time").** Newline as a NAMED COMPILE-TIME DEFINITION
+consumed by the future pattern-insertion machinery (D61's thread), with
+Frank's TYPING RULE resolving the negation wrinkle: a CLASS-valued
+definition ([\n], [\n\r\0]) is negatable, so `[^\n]`/dot compose
+conceptually; a SEQUENCE-valued definition (CRLF as \r\n, or
+(?:\n|\n\r)) makes a class-context use a COMPILE ERROR — typing, not
+complement machinery. Boundary consumers ((?m)^ as positive lookbehind
+of the definition, (?m)$ as positive lookahead) route through GENERAL
+lookaround — correct for any definition shape, possibly at a
+performance cost vs the specialized single-byte context mechanisms the
+assertions design builds for LF. BOTH threads therefore require module
+`lookaround` (M6.6, deliberately last) plus the insertion machinery —
+which is what "the appropriate time" means: revisit after those exist.
+\R would be the pure insertion instance when it comes.
+
+**Revisit when:** M6.6 lands lookaround AND the first insertion
+producer exists; or a real customer demands a non-LF convention sooner
+(then DD-11 re-opens with this architecture as the leading candidate).

@@ -845,7 +845,15 @@ spine, not before):
 - [DD-4] STATE:not-started — \G / global-iteration semantics vs startpos (with M6) (R1 A-11)
 - [DD-6] STATE:not-started — multiline ^/$ as DFA state context — interacts with state budget (with assertions module) (R1 A-6)
 - [DD-11] STATE:not-started — the NEWLINE CONVENTION axis (Frank,
-  2026-08-12 tenth-session close). pcrec is NEWLINE_LF today and that is
+  2026-08-12 tenth-session close). Q1 RULED 2026-08-18 (D64): NO axis
+  declared; LF stays hardwired through the assertions module, whose
+  newline-reference sites are written DEFINITION-SHAPED (a handed-in
+  class, LF the sole definition — never scattered '\n' literals); the
+  future shape parked here is newline as a TYPED compile-time
+  definition consumed by insertion machinery (class-valued: negatable;
+  sequence-valued: class-context use is a compile error) with boundary
+  consumers as lookaround uses — revisit after M6.6 + the first
+  insertion producer. pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
   options=0 (build default LF on this box), so \N's generated bitmap is
   the measured complement of {0x0A}, `.` is every-byte-but-0x0A, and `$`
