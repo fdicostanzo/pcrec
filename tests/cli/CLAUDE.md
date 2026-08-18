@@ -236,6 +236,26 @@ Part of `make test` since M2.
   failing against the pre-fix emitter first (4 of 10 assertions fail,
   exactly the give-up-path ones).
 
+- **case 16 ([M4.7c], K9's API half)** — the K9 embedded-NUL repro itself
+  (docs/dev/known_issues.md K9), the one surface in this file that has to be a
+  direct library-API C probe rather than a CLI or `.rxt` case: `pcrec_compile()`
+  takes a NUL-terminated pattern with no length, so a pattern containing a NUL
+  is silently truncated and the compile reports SUCCESS for a shorter pattern
+  than the caller passed — and a NUL cannot survive argv or a line-based
+  corpus to reach pcrec at all. Built on case7's shape (own small C file,
+  compiled against `pcrec.h` + `libpcrec.a`, run and checked, no `gen_run`
+  wrapper — same compiler-axis reasoning). The probe builds `"a\0b"` (3
+  bytes) byte by byte, compiles it, and asserts two things: the compile still
+  reports success for the 1-byte pattern `pcrec_compile()` can actually see
+  (K9's own claim, PINNED — this case does not fix it, that is DD-3's job),
+  and the emitted `rx_info.pattern_len` now reads `1`, honestly — the new
+  detectability a caller gets from this field, which is the whole point of
+  [M4.7c]. The general "pattern_len is the source byte count" structural
+  coverage (an ordinary pattern, and a pattern whose source spelling is
+  longer than what the matcher actually walks, e.g. `a\nb`) lives in
+  tests/codegen/run_codegen_tests.sh instead, since those cells only need the
+  emitted C text, not a library-API probe.
+
 ## Conventions
 
 Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation

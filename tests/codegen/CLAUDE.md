@@ -157,6 +157,16 @@ or it has no regression net at all.
   of `make test`;
   env: PCREC, CC, GENCFLAGS, KEEP=1, LINTGEN=1
   (SAN-1: rides this GENCFLAGS compile with `gcc -fanalyzer`, opt-in).
+  **[M4.7c] (2026-08-17)** added two more `rx_info` cells beside the
+  ncaps/engine pair above: `pattern_len` is the pattern's ordinary byte
+  count for `'abc'` (3), and — the cell that would catch a field silently
+  reporting the MATCHED-byte count instead of the SOURCE-byte count —
+  `'a\nb'` (4 source bytes: `a`, `\`, `n`, `b`) stamps `pattern_len = 4`,
+  not 3 (the bytes the matcher itself walks). The K9 repro proper (an
+  embedded NUL, the field's whole reason for existing — docs/dev/known_issues.md
+  K9) cannot be expressed here at all, since argv has no way to carry a NUL
+  through to `pcrec`; it lives as a direct library-API C probe in
+  tests/cli/run_cli_tests.sh case16.
 
 ## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
 
