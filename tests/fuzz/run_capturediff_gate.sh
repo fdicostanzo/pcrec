@@ -53,29 +53,35 @@ GATE_SUBJECTS=15
 # EXACT EXPECTED POPULATIONS (manager ruling, 2026-08-17): a fixed seed's
 # generation is deterministic (fuzz.py seeds `random` once, up front, main
 # thread only), so every one of these is a REPRODUCIBLE fact of this seed
-# on this pcrec, not a guess -- measured twice on a quiet box (uptime 1-min
-# load 0.78), byte-identical both times. Report SELECTED counts, not merely
-# "gate passed": drift in ANY of these means either the generator, pcrec,
-# or fuzz.py's own bucketing changed, and that must be loud, the same
-# discipline registry_check's 169 and PC-3's 163 pins already carry
-# (tests/registry/run_registry_tests.sh). The two TIMING-SENSITIVE buckets
-# (pcrec compile timeout, oracle probe timeout) are pinned to 0 like every
-# other bucket -- FAIL is still correct on drift, but a nonzero reading
-# there under a heavily loaded box is a load artifact to check first, not
-# necessarily a new pcrec defect (see docs/testing.md's D14 busy-box
-# precedent, tests/bench/run_bench.sh's LOAD_LIMIT).
+# on this pcrec, not a guess -- measured twice on a quiet box, byte-identical
+# both times. Report SELECTED counts, not merely "gate passed": drift in ANY
+# of these means either the generator, pcrec, or fuzz.py's own bucketing
+# changed, and that must be loud, the same discipline registry_check's 169
+# and PC-3's 163 pins already carry (tests/registry/run_registry_tests.sh).
+# The two TIMING-SENSITIVE buckets (pcrec compile timeout, oracle probe
+# timeout) are pinned to 0 like every other bucket -- FAIL is still correct
+# on drift, but a nonzero reading there under a heavily loaded box is a load
+# artifact to check first, not necessarily a new pcrec defect (see
+# docs/testing.md's D14 busy-box precedent, tests/bench/run_bench.sh's
+# LOAD_LIMIT).
+#
+# RE-MEASURED 2026-08-17 (second addendum) after MODULE_CLASS_ATOMS landed:
+# a generator change alters what a FIXED seed draws (still deterministic,
+# just deterministically different), so these are not the same numbers the
+# gate shipped with originally -- re-measured twice on a quiet box
+# (byte-identical both times) rather than hand-adjusted from the old set.
 declare -A EXPECT=(
     ["patterns generated"]=300
-    ["both accept"]=174
-    ["both reject"]=120
+    ["both accept"]=175
+    ["both reject"]=117
     ["pcrec-only reject"]=0
     ["pcre2-only reject"]=0
     ["PCRE2 size-limit"]=0
-    ["DFA state-cap"]=6
+    ["DFA state-cap"]=8
     ["gcc compile fails"]=0
     ["pcrec compile timeout"]=0
     ["oracle probe timeout"]=0
-    ["subject pairs compared"]=2610
+    ["subject pairs compared"]=2625
     ["oracle inconclusive"]=0
     ["pcrec step-budget exhausted"]=0
     ["pcrec frame-budget exhausted"]=0
