@@ -278,6 +278,8 @@ def subset(nfa, start, ctx, live_asserts):
                 continue
             tgt = (npre, (b in WORD) if ctx else False)
             if tgt not in ids:
+                if len(order) >= DFA_CAP:
+                    raise MemoryError("DFA > %d states" % DFA_CAP)
                 ids[tgt] = len(order)
                 order.append(tgt)
                 work.append(tgt)
@@ -317,6 +319,16 @@ def subset(nfa, start, ctx, live_asserts):
     return n, ncls, len(set(cls_of.values()))
 
 
+# THE PROTOTYPE'S ONE KNOWN FIDELITY GAP, stated rather than discovered by a
+# reviewer: `src/core/compile.c:216` builds the FORWARD DFA with `prune=true`
+# (priority pruning drops threads a higher-priority accept has already
+# settled), and this constructor does not prune. On an unanchored bounded
+# repeat over an overlapping alphabet -- `[a-z][a-z0-9_]{2,31}` is the corpus's
+# example -- pruning is the difference between pcrec's 33 states and a subset
+# blow-up here. Such patterns are REPORTED as over-cap, never silently
+# half-measured, and the --calibrate column is what makes the gap visible on
+# the patterns that do complete.
+DFA_CAP = 3000
 NFA_CAP = 400        # this prototype is O(states * ncls) closures per pass and
                      # is not the shipped constructor; a bounded repeat that
                      # replicates into thousands of NFA nodes is reported as
@@ -356,7 +368,7 @@ def main():
         try:
             (b_n, b_cls, b_min), (w_n, w_cls, w_min) = measure(pat)
         except Exception as e:                       # unsupported syntax
-            print("%-38s  SKIP (%s)" % (pat[:38], type(e).__name__))
+            print("%-38s  SKIP (%s)" % (pat[:38], e))
             continue
         rows += 1
         ratios.append(w_min / b_min)

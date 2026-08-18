@@ -1,0 +1,81 @@
+# probe_dollar_multiline_pcre2.py (eng_brep_measurements/probes/), re-run for [M6.1]
+# repo commit: 99e27ef; 2026-08-18
+#   '[^c]{0,4}$' vs '[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration py=('\n\naaa', ((0, 1), ()), ((1, 5), ())) pcre2=('\n\naaa', ((0, 1), ()), ((1, 5), ()))
+#   '[^c]{1,3}$' vs '[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration py=('\n\naa', ((0, 1), ()), ((1, 4), ())) pcre2=('\n\naa', ((0, 1), ()), ((1, 4), ()))
+#   '[^c]{0,2}$' vs '[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration py=('\n\na', ((0, 1), ()), ((1, 3), ())) pcre2=('\n\na', ((0, 1), ()), ((1, 3), ()))
+#   '[^c]?$' vs '[^c]?+$' multiline=True why=disjoint+unique-iteration py=('\na', ((0, 0), ()), ((1, 2), ())) pcre2=('\na', ((0, 0), ()), ((1, 2), ()))
+#   'z[^c]{0,4}$' vs 'z[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration py=('z\n\naaa', ((0, 2), ()), None) pcre2=('z\n\naaa', ((0, 2), ()), None)
+#   'z[^c]{1,3}$' vs 'z[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration py=('z\n\naa', ((0, 2), ()), None) pcre2=('z\n\naa', ((0, 2), ()), None)
+#   'z[^c]{0,2}$' vs 'z[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration py=('z\n\na', ((0, 2), ()), None) pcre2=('z\n\na', ((0, 2), ()), None)
+#   'z[^c]?$' vs 'z[^c]?+$' multiline=True why=disjoint+unique-iteration py=('z\na', ((0, 1), ()), None) pcre2=('z\na', ((0, 1), ()), None)
+#   '(?:z|)[^c]{0,4}$' vs '(?:z|)[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration py=('\n\naaa', ((0, 1), ()), ((1, 5), ())) pcre2=('\n\naaa', ((0, 1), ()), ((1, 5), ()))
+#   '(?:z|)[^c]{1,3}$' vs '(?:z|)[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration py=('\n\naa', ((0, 1), ()), ((1, 4), ())) pcre2=('\n\naa', ((0, 1), ()), ((1, 4), ()))
+#   '(?:z|)[^c]{0,2}$' vs '(?:z|)[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration py=('\n\na', ((0, 1), ()), ((1, 3), ())) pcre2=('\n\na', ((0, 1), ()), ((1, 3), ()))
+#   '(?:z|)[^c]?$' vs '(?:z|)[^c]?+$' multiline=True why=disjoint+unique-iteration py=('\na', ((0, 0), ()), ((1, 2), ())) pcre2=('\na', ((0, 0), ()), ((1, 2), ()))
+#   '[^c]{0,4}?$' vs '[^c]{0,4}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]{0,4}?$' vs '[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]{1,3}?$' vs '[^c]{1,3}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '[^c]{1,3}?$' vs '[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '[^c]{0,2}?$' vs '[^c]{0,2}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]{0,2}?$' vs '[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]{3,}?$' vs '[^c]{3,}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\naa\n', ((0, 3), ()), ((0, 4), ())) pcre2=('\naa\n', ((0, 3), ()), ((0, 4), ()))
+#   '[^c]{3,}?$' vs '[^c]{3,}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\naa\n', ((0, 3), ()), ((0, 4), ())) pcre2=('\naa\n', ((0, 3), ()), ((0, 4), ()))
+#   '[^c]*?$' vs '[^c]*+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]*?$' vs '[^c]*+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]+?$' vs '[^c]++$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '[^c]+?$' vs '[^c]++$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '[^c]??$' vs '[^c]?+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '[^c]??$' vs '[^c]?+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   'z[^c]{0,4}?$' vs 'z[^c]{0,4}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]{0,4}?$' vs 'z[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]{1,3}?$' vs 'z[^c]{1,3}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nza\n', ((1, 3), ()), ((1, 4), ())) pcre2=('\nza\n', ((1, 3), ()), ((1, 4), ()))
+#   'z[^c]{1,3}?$' vs 'z[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nza\n', ((1, 3), ()), ((1, 4), ())) pcre2=('\nza\n', ((1, 3), ()), ((1, 4), ()))
+#   'z[^c]{0,2}?$' vs 'z[^c]{0,2}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]{0,2}?$' vs 'z[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]{3,}?$' vs 'z[^c]{3,}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nzabab\n', ((1, 6), ()), ((1, 7), ())) pcre2=('\nzabab\n', ((1, 6), ()), ((1, 7), ()))
+#   'z[^c]{3,}?$' vs 'z[^c]{3,}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nzabab\n', ((1, 6), ()), ((1, 7), ())) pcre2=('\nzabab\n', ((1, 6), ()), ((1, 7), ()))
+#   'z[^c]*?$' vs 'z[^c]*+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]*?$' vs 'z[^c]*+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]+?$' vs 'z[^c]++$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nza\n', ((1, 3), ()), ((1, 4), ())) pcre2=('\nza\n', ((1, 3), ()), ((1, 4), ()))
+#   'z[^c]+?$' vs 'z[^c]++$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nza\n', ((1, 3), ()), ((1, 4), ())) pcre2=('\nza\n', ((1, 3), ()), ((1, 4), ()))
+#   'z[^c]??$' vs 'z[^c]?+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   'z[^c]??$' vs 'z[^c]?+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\nz\n', ((1, 2), ()), ((1, 3), ())) pcre2=('\nz\n', ((1, 2), ()), ((1, 3), ()))
+#   '(?:z|)[^c]{0,4}?$' vs '(?:z|)[^c]{0,4}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]{0,4}?$' vs '(?:z|)[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]{1,3}?$' vs '(?:z|)[^c]{1,3}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '(?:z|)[^c]{1,3}?$' vs '(?:z|)[^c]{1,3}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '(?:z|)[^c]{0,2}?$' vs '(?:z|)[^c]{0,2}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]{0,2}?$' vs '(?:z|)[^c]{0,2}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]{3,}?$' vs '(?:z|)[^c]{3,}+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\naa\n', ((0, 3), ()), ((0, 4), ())) pcre2=('\naa\n', ((0, 3), ()), ((0, 4), ()))
+#   '(?:z|)[^c]{3,}?$' vs '(?:z|)[^c]{3,}+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\naa\n', ((0, 3), ()), ((0, 4), ())) pcre2=('\naa\n', ((0, 3), ()), ((0, 4), ()))
+#   '(?:z|)[^c]*?$' vs '(?:z|)[^c]*+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]*?$' vs '(?:z|)[^c]*+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]+?$' vs '(?:z|)[^c]++$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '(?:z|)[^c]+?$' vs '(?:z|)[^c]++$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n\n', ((0, 1), ()), ((0, 2), ())) pcre2=('\n\n', ((0, 1), ()), ((0, 2), ()))
+#   '(?:z|)[^c]??$' vs '(?:z|)[^c]?+$' multiline=False why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+#   '(?:z|)[^c]??$' vs '(?:z|)[^c]?+$' multiline=True why=disjoint+unique-iteration+non-nullable-rest py=('\n', ((0, 0), ()), ((0, 1), ())) pcre2=('\n', ((0, 0), ()), ((0, 1), ()))
+# --- pairs per multiline setting: 384 qualified (would be possessifiable for a benign follow), 144 skipped (declined regardless of $ -- ambiguous/nullable body etc.), libpcre2: True (10.46 2025-08-27) ---
+# --- confusion matrix (pref, multiline, py_status, pcre2_status) ---
+#   ('greedy', False, 'same', 'same')                            192
+#   ('greedy', True, 'DIVERGES', 'DIVERGES')                     12
+#   ('greedy', True, 'same', 'same')                             180
+#   ('lazy', False, 'DIVERGES', 'DIVERGES')                      21
+#   ('lazy', False, 'same', 'same')                              171
+#   ('lazy', True, 'DIVERGES', 'DIVERGES')                       21
+#   ('lazy', True, 'same', 'same')                               171
+# multiline=False: python 21/384 diverging, libpcre2 21/384 diverging
+# multiline=True: python 33/384 diverging, libpcre2 33/384 diverging
+# --- split by which arm qualified the row for follow="c" (pref, arm, multiline, python status) ---
+#   ('greedy', 'disjoint', False, 'same')                   168
+#   ('greedy', 'disjoint', True, 'DIVERGES')                12
+#   ('greedy', 'disjoint', True, 'same')                    156
+#   ('greedy', 'exact-count', False, 'same')                24
+#   ('greedy', 'exact-count', True, 'same')                 24
+#   ('lazy', 'disjoint', False, 'DIVERGES')                 21
+#   ('lazy', 'disjoint', False, 'same')                     147
+#   ('lazy', 'disjoint', True, 'DIVERGES')                  21
+#   ('lazy', 'disjoint', True, 'same')                      147
+#   ('lazy', 'exact-count', False, 'same')                  24
+#   ('lazy', 'exact-count', True, 'same')                   24
+# EXACT-COUNT ARM is follow-independent by construction (the rule never inspects FOLLOW): every exact-count row above should read 'same' regardless of pref/multiline, or the arm itself is unsound -- not just the $ exemption.
+# DISJOINT ARM, LAZY: a `$` follow makes the remainder match-may-end-here (nullable-rest in S2.2's sense) whether or not (?m) is set, which is exactly the condition the LAZY CONJUNCT already declines for an ordinary follow -- so a lazy divergence here even at multiline=False is not a NEW `$` defect, it is the existing lazy+nullable-rest rule, and a real `$` exemption must feed `$`'s presence into that SAME conjunct (end_here=True) rather than bypass it.

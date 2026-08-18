@@ -1,0 +1,10 @@
+# probe_acc_by_class.sh
+# repo commit: 99e27ef; gcc 15; 2026-08-18
+ncls=3 states=768
+pattern: [01]*1[01]{8}   (best of 5, three repetitions of the pair)
+A facc[st]              0.0405 s  197.4 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0394 s  202.9 MB/s  matches=54424
+A facc[st]              0.0405 s  197.6 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0394 s  203.0 MB/s  matches=54424
+A facc[st]              0.0405 s  197.5 MB/s  matches=54424
+B facc2[st*ncls+cls]    0.0395 s  202.7 MB/s  matches=54424

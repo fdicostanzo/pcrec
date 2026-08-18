@@ -699,6 +699,63 @@ append-only or historical records.
   NOT merge, not even denied-by-default; it survives only in git history
   (`a07a87c`, reverted at `8b5acb4`). See its own CLAUDE.md for the
   revisit-when triggers.
+- `assertions_design.md` — **PROPOSED** ([M6.1], 2026-08-18): the module
+  `assertions` design gate — `\b` `\B`, `\A` `\z` `\Z`, `(?m)` multiline
+  `^`/`$`, `\G`, `\K` — answering the row's seven questions before any [M6.2]
+  code. Its spine is that every construct is exactly one of three things, and
+  the engine split follows from which: an ABSOLUTE POSITION TEST (`\A`, `\z`,
+  `\G` — free), a NEXT-BYTE VIEW (`$`/`(?m)$` forward, `\b`'s right side —
+  folds into the transition and accept tables BY BYTE CLASS), or a
+  PREVIOUS-BYTE CONTEXT BIT (`\b`'s left side, `(?m)^` — folds into the DFA
+  state identity); the forward and reverse machines swap which is which, and
+  `\K` is the one construct that is none of them (path-dependent reported
+  start, so VM-only — which `src/parse/registry.c:365` already ships as
+  `VM_ONLY`). **Its most important finding is a live landmine: D47.5's gate is
+  built and shipping and is SCOPE-BLIND** — `src/opt/possessify.c:579` captures
+  `cx->mods.multiline` once, after the parse, so `(?m:a{0,4}$)` and
+  `(?m)a{0,4}$(?-m)` would EXEMPT a multiline `$` and miscompile the day the
+  `m` letter is accepted, and D47.5's own recorded test obligation tests the
+  one row the shipped code gets right. The proposed cure resolves multiline at
+  PARSE time into the node kind, making the gate a node-kind whitelist that is
+  scope-correct by construction and fails safe for every assertion node added
+  later. **Two premises were re-measured rather than inherited and one was
+  refuted**: `(?m)` already refuses with module `assertions`
+  (`src/parse/mod_modifiers.c:280`), not `modifiers`, so question (vii) needs
+  no re-attribution work at all. `\A` and `\Z` turn out to be EXACT ALIASES of
+  the shipped `A_BOL`/`A_EOL` nodes, so they are parser rows with no engine
+  work; `\z` needs one more closure view, interned only when it differs, so a
+  `\z`-free pattern's artifact is byte-identical by construction rather than by
+  a flag. State-budget claims are MEASURED two ways per the row's requirement:
+  EXACTLY in pcrec (the word-set alphabet refinement costs at most +1
+  equivalence class on 38 realistic patterns and +2 on 574 `.rxt` ones;
+  largest `states × ncls` after word+newline refinement is 48,012 against a
+  2,000,000 cap) and by a calibrated PROTOTYPE for the state count `\b`'s
+  context bit costs (minimised ratio 1.00x/1.11x/4.75x, reproducing pcrec's own
+  count on 29 of 33 assertion-free arms, with its one fidelity gap — no
+  priority pruning — stated in the file). The hot-path cost of the
+  `states × ncls` accept table those views force is MEASURED AT ZERO on D11's
+  own shape. Also reports two things it does not own: **ENG_ATTEMPT's
+  `for (start = startpos; start <= start_max; start++)` is an external
+  byte-arithmetic advance loop in shared emitter code** that D58's "the hot
+  path has NO external advance loop" rationale does not cover (true of
+  ENG_UNANCH only), which this module makes more prominent because `(?m)^` and
+  `\G` both route patterns onto that engine; and **python3 `re` is the WRONG
+  oracle for `\Z`** — python's `\Z` is PCRE2's `\z`, measured 1 of 7 cells
+  disagreeing in the silent direction, so Wave A's expectations must come from
+  the libpcre2 differential. DD-4 is answered without `engine_m4.md` §7.3's
+  wrap toggle: ENG_ATTEMPT already emits the un-self-looped shape and `\G` is
+  `start_max = startpos`, a third value for a string the emitter already picks
+  between. Delivers a five-wave [M6.2] structure (A `\A`/`\z`/`\Z` + the gate
+  refactor while it is provably a no-op; B `\b`/`\B`; C `(?m)`; D `\G`;
+  E `\K`), six open questions for Frank headed by whether the NEWLINE
+  CONVENTION axis (DD-11) is declared now on `--encoding`'s per-pattern
+  refuse-by-name precedent, five BELIEVED claims each with its refutation
+  experiment, and seven things it does not measure headed by the REVERSE
+  machine's state cost. Measurements: `assertions_measurements/`. Unpaneled —
+  a D6 adversarial panel reviews it before [M6.2] starts.
+- `assertions_measurements/` — the [M6.1] lane's four probes and their archived
+  outputs; see its own CLAUDE.md. Two of the four read pcrec itself and two do
+  not, and the design doc marks every claim accordingly.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a

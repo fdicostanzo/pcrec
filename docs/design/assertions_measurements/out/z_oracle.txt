@@ -1,0 +1,13 @@
+# probe_z_oracle.py
+# repo commit: 99e27ef; 2026-08-18
+libpcre2 10.46 2025-08-27 ; python 3.14.4
+pattern        subject  pcre2      python     verdict
+b\Z            'ab\n'   (1, 2)     None       *** DISAGREE ***
+b\Z            'ab'     (1, 2)     (1, 2)     agree
+b\z            'ab\n'   None       None       agree
+b\z            'ab'     (1, 2)     (1, 2)     agree
+b$             'ab\n'   (1, 2)     (1, 2)     agree
+b$             'ab'     (1, 2)     (1, 2)     agree
+b(?=\n?\Z)     'ab\n'   (1, 2)     (1, 2)     agree
+
+1 of 7 cells disagree -- every one of them a `\Z` cell, and every one in the direction where python reports NO MATCH and PCRE2 matches.
