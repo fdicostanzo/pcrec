@@ -207,6 +207,22 @@ typedef struct {
     Dfa    rdfa;     /* reverse DFA, non-pruning (ENG_UNANCH only) */
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
+    /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
+     * select_engine/emission ever run (docs/dev/plan.md's interaction note:
+     * the pass runs before possessify/MRL/counter). Counts, not booleans,
+     * for the same reason RX_VM_RUNGS is a mask rather than a scalar: a
+     * pattern can carry more than one mergeable/factorable alternation and a
+     * boolean would collapse that. Read by BOTH emitters (this pass touches
+     * the AST before either engine is built, unlike possessify/revdet's
+     * VM-only marks), so the stamp macro lives in the SHARED prologue
+     * (pcrec_emit_prologue), not in emit_vm.c alone. Zero under
+     * `-fno-altcls-merge`/`-fno-altcls-factor` by construction: the deny
+     * checks sit at the top of the functions that would otherwise increment
+     * these, so a denied build's stamp is indistinguishable from "nothing to
+     * merge/factor here" — the same "no trace" rule possessify's denial
+     * follows. */
+    int    altcls_merges;    /* stage 1: alternation runs folded into one class */
+    int    altcls_factored;  /* stage 2: alternation runs prefix-factored */
     StrBuf csb, hsb;
     /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
@@ -1364,6 +1380,20 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
                      bool prune, int maxstates);
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
+
+/* ---- [OPT-ALTCLS] alternation->class normalization (docs/dev/plan.md) ---- */
+
+/* Runs immediately after parse and before EVERYTHING downstream (engine
+ * selection, possessify/revdet/mrl, both machine builds, both emitters) --
+ * the plan row's interaction note: post-merge/post-factor shapes must be
+ * what those analyses see, not the alternation spelling. Returns the
+ * (possibly rewritten) root; the original tree is never mutated in place,
+ * matching select_engine.c's `discharge` hook shape, because stage 1/2 both
+ * change tree SHAPE rather than annotate existing nodes. Self-gated on
+ * PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR (cx->opt->flags), so a denied
+ * build's cx->job->altcls_merges/altcls_factored stay at 0 -- the same
+ * "no trace" rule possessify.c's -fno-possessify follows. */
+Ast *pcrec_altcls(Ctx *cx, Ast *root);               /* src/opt/altcls.c */
 
 /* ---- [M4.5b] the VM engine (docs/design/engine_m4.md) ---- */
 

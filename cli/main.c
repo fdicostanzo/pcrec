@@ -179,6 +179,20 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_PREFILTER;
         else if (!no_more_opts && !strcmp(a, "-fprefilter"))
             opt.flags |= PCREC_FORCE_PREFILTER;
+        /* [OPT-ALTCLS] D46's controllability half for src/opt/altcls.c.
+         * BACK to the DENY-only family's shape (unlike the FORCE pair just
+         * above): each mergeable/factorable alternation run is its own
+         * selection point, addressed independently, the same reason
+         * -fno-possessify/-fno-revdet/-fno-counter/-fno-length-prune are
+         * deny-only — see lib/pcrec.h's PCREC_NO_ALTCLS_MERGE/
+         * PCREC_NO_ALTCLS_FACTOR comment. Two separate flags because the
+         * stages are separately useful to pin: stage 2 runs on stage 1's
+         * output, so denying stage 1 alone still lets stage 2 factor an
+         * unmerged run's literal spelling. */
+        else if (!no_more_opts && !strcmp(a, "-fno-altcls-merge"))
+            opt.flags |= PCREC_NO_ALTCLS_MERGE;
+        else if (!no_more_opts && !strcmp(a, "-fno-altcls-factor"))
+            opt.flags |= PCREC_NO_ALTCLS_FACTOR;
         /* [ENG-BREP] K, the counter rung's value parameter. One per artifact,
          * never per quantifier (D47 ADDENDUM). */
         else if (!no_more_opts && !strncmp(a, "--unroll=", 9)) {

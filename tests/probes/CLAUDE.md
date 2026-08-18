@@ -144,6 +144,20 @@ oracle version bump, review needing evidence), never read by any check.
   in every class position). The evidence behind
   docs/design/design_notes_mod06.md.
 
+- `probe_altcls_pcre2norm.c` — [OPT-ALTCLS] "what does PCRE2 normalize here"
+  survey (2026-08-17, docs/dev/plan.md's [OPT-ALTCLS] row's own obligation):
+  `pcre2_pattern_info_8`'s PCRE2_INFO_SIZE/MINLENGTH/FIRSTCODETYPE/
+  FIRSTCODEUNIT/FIRSTBITMAP compared between the alternation spelling and the
+  class/factored spelling for both stages. Resolves `pcre2_pattern_info_8`
+  PROBE-SIDE (probe_subst.c's own precedent, not added to ../fuzz/pcre2_abi.h's
+  loader table, whose dlsym failures are fatal for every consumer). MEASURED:
+  PCRE2 does NOT merge single-char alternations into a class internally and
+  does NOT prefix-factor — the alternation spelling is consistently SMALLER in
+  PCRE2's own compiled bytecode (`a(b|c)+d` 178 bytes vs. `a([bc])+d` 204;
+  `frank|fred|brad|bobby|janet` 217 vs. its hand-factored `fr(?:ank|ed)|
+  b(?:rad|obby)|janet` 223), the opposite direction from pcrec's own win. See
+  the probe's own header for the full reading (a bytecode interpreter and an
+  AOT C emitter pay for the "same" construct along different axes).
 - `probe_subst.c` — [M4-SUBST] design probe (2026-08-14): `pcre2_substitute`
   semantics for the substitution-template design note. Twelve predictions
   stated in the header before the first run; three refuted. Confirms the

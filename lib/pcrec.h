@@ -141,7 +141,43 @@ enum {
      * what it was asked — the D46 half a denied-or-forced request can be
      * checked against. */
     PCREC_NO_PREFILTER    = 1u << 8,
-    PCREC_FORCE_PREFILTER = 1u << 9
+    PCREC_FORCE_PREFILTER = 1u << 9,
+    /* [OPT-ALTCLS] `-fno-altcls-merge`/`-fno-altcls-factor`: D46's
+     * controllability half for the ALTERNATION->CLASS NORMALIZATION pass
+     * (docs/dev/plan.md's [OPT-ALTCLS] row, src/opt/altcls.c).
+     *
+     * BACK TO D47.3's DENY-ONLY SHAPE, not `_PREFILTER`'s force pair — and
+     * for the family's original reason, not the prefilter's exception to
+     * it. Each mergeable/factorable alternation RUN in the pattern is its
+     * own selection point, addressed independently the way each A_REP
+     * walks its own possessify/revdet ladder; there is no single
+     * artifact-wide verdict the way `fit.prefilter` is one, so FORCE has
+     * no addressing problem to solve because (as with possessify/revdet)
+     * there is nothing to force — a run that cannot merge/factor always
+     * DECLINES, safely, the same as an A_REP that cannot possessify.
+     *
+     * TWO BITS, not one, because the two stages are independently useful
+     * to pin: stage 1 (single-char runs -> one class) and stage 2 (prefix
+     * factoring, emitting no new capturing groups) are different rewrites
+     * with different soundness arguments, and stage 2 runs on stage 1's
+     * OUTPUT (docs/dev/plan.md's interaction note), so denying stage 1
+     * alone still lets stage 2 factor an all-single-char run's literal
+     * spelling, while denying stage 2 alone leaves single-char merging
+     * live. A differential that wants ONLY one stage held constant needs
+     * both knobs separately reachable.
+     *
+     * Same masked-out-of-`rx_info.flags` treatment as the deny family
+     * above and for the identical reason (src/gen/emit_dfa.c's
+     * emit_info_def): the pass changes no answer, only the emitted shape,
+     * so two identically-behaving artifacts must not differ in their
+     * reflection surface over a knob with no observable effect. What the
+     * pass DID is recorded in `<PREFIX>_ALTCLS_MERGES`/
+     * `<PREFIX>_ALTCLS_FACTORED` (pcrec_emit_prologue, shared by both
+     * emitters since this pass runs before either engine is built,
+     * unlike the VM-only possessify/revdet stamps) — the D46 half a
+     * denied request can be checked against. */
+    PCREC_NO_ALTCLS_MERGE  = 1u << 10,
+    PCREC_NO_ALTCLS_FACTOR = 1u << 11
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

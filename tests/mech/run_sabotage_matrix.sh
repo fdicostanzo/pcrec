@@ -62,6 +62,7 @@
 #   counterkdiff                       — added 2026-08-17 ([ENG-BREP] counter-K)
 #   mrldiff  mrl                       — added 2026-08-17 ([M4.6d] MRL pruning)
 #   prefilter                          — added 2026-08-17 ([M4.6f] D46 prefilter close-out)
+#   altdiff  altcls                    — added 2026-08-17 ([OPT-ALTCLS] alternation->class normalization)
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -379,6 +380,39 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/prefilter.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/prefilter.log" | grep -oE '[0-9]+')"
                 suite_bits+=("prefilter:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            altdiff)
+                # [OPT-ALTCLS] the pass's PRIMARY validation instrument: the
+                # merged/factored build against `-fno-altcls-merge
+                # -fno-altcls-factor` (the unmerged/unfactored ground truth),
+                # linked via the SHARED tests/possessify/possdiff_driver.c and
+                # swept for span/capture/failure-surface agreement. Its own
+                # arm rather than riding `possdiff`, for the reason every
+                # other differential arm here is separate: a sabotage of one
+                # pass's rewrite must not be reported as coverage by another.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/altcls/run_altdiff.sh" \
+                    > "$work/altdiff.log" 2>&1
+                p="$(grep -m1 '^altdiff: [0-9]* patterns agreed' "$work/altdiff.log" | grep -oE '[0-9]+' | head -1)"
+                f="$(grep -m1 '^altdiff: [0-9]* patterns agreed' "$work/altdiff.log" | grep -oE '[0-9]+' | sed -n 2p)"
+                suite_bits+=("altdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            altcls)
+                # [OPT-ALTCLS] the pass's STRUCTURAL checks: the D46 stamp
+                # matches what actually merged/factored, denial leaves no
+                # trace (0/0, and unchanged rx_info.flags), the two stages
+                # are independently controllable, and a verdict-free pattern
+                # is byte-identical with the pass on and off.
+                PCREC="$pcrec" CC="$CC" \
+                    bash "$tree/tests/altcls/run_altcls_tests.sh" \
+                    > "$work/altcls.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/altcls.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/altcls.log" | grep -oE '[0-9]+')"
+                suite_bits+=("altcls:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

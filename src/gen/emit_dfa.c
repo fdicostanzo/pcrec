@@ -134,6 +134,37 @@ static void emit_feature_macros(StrBuf *sb)
               pcrec_enabled_set_modules());
 }
 
+/* [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
+ * PLACEMENT as the feature stamp immediately above and for the SAME reason
+ * (STD1's own precedent): the pass runs before either engine is built, so
+ * unlike possessify/revdet/prefilter's VM-only stamps this one belongs in
+ * the SHARED prologue, once per file, read on both the DFA-only path and
+ * the VM path (pcrec_emit_prologue is one of the five entry points
+ * emit_vm.c shares rather than forks — src/gen/CLAUDE.md).
+ *
+ * COUNTS, not booleans or a single scalar: a pattern can carry more than one
+ * mergeable/factorable alternation run (RX_VM_RUNGS's reasoning one level
+ * up — a scalar would lie on a multi-run pattern by picking one run's
+ * answer to speak for all of them, while a count cannot). Read straight off
+ * `job->altcls_merges`/`job->altcls_factored`, which src/opt/altcls.c
+ * increments at the exact points it acts and never otherwise — so the
+ * stamp cannot disagree with what the rewrite actually did. Both stages'
+ * denial flags (`PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR`) leave
+ * their counter at 0 by construction (the pass checks the flag before
+ * touching the counter, never after), which is the "denial leaves no
+ * trace" rule possessify's `-fno-possessify` already follows — a denied
+ * build's stamp is indistinguishable from "this pattern had nothing to
+ * merge/factor," so it does not disturb the byte-identity gate a denied
+ * build is meant to serve as ground truth for. Emitted unconditionally
+ * (STD1's own rule: no artifact should be ambiguous about what it was
+ * built with), including the `0`/`0` case a pattern with no alternation
+ * at all stamps honestly. */
+static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int factored)
+{
+    sb_printf(sb, "#define %s_ALTCLS_MERGES %d\n", upper, merges);
+    sb_printf(sb, "#define %s_ALTCLS_FACTORED %d\n", upper, factored);
+}
+
 /* ---- the multi-engine naming surface (OS-0b; D18 measured, D20 owns it) ----
  *
  * One output file may eventually carry SEVERAL engines — one per point of the
@@ -565,12 +596,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * off changes no answer, only how one is found (engine_m4.md §6.1). The
      * axis's own D46 record is `<PREFIX>_VM_PREFILTER` (src/gen/emit_vm.c),
      * VM-artifacts-only for the same reason RX_ENGINE/RX_VM_STRATS/etc. are:
-     * a DFA artifact has no separate prefilter decision to report. */
+     * a DFA artifact has no separate prefilter decision to report.
+     *
+     * [OPT-ALTCLS] `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` join the
+     * mask too, and for the ORIGINAL deny-family reason rather than the
+     * prefilter's force-pair exception: each is a per-alternation-run
+     * selection point that changes no answer, only the emitted shape. Their
+     * own D46 record is `<PREFIX>_ALTCLS_MERGES`/`<PREFIX>_ALTCLS_FACTORED`
+     * (src/gen/emit_dfa.c's `pcrec_emit_prologue`, above — shared by both
+     * engines since this pass runs before either is built). */
     {
         const uint64_t strategy_denials = PCREC_NO_POSSESSIFY | PCREC_NO_REVDET |
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
-                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER;
+                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
+                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -1094,6 +1134,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
     emit_pattern_comment(c, cx->pat);
     emit_feature_comment(c);
     emit_feature_macros(c);
+    emit_altcls_macros(c, g->upper, cx->job->altcls_merges, cx->job->altcls_factored);
     if (cx->opt->header_name) {
         sb_printf(c, "#include \"%s\"\n", cx->opt->header_name);
     } else {

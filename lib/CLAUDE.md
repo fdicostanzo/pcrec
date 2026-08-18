@@ -100,3 +100,25 @@ string like `RX_ENGINE`/`RX_VM_PRUNE_CEILING`, not a bitmask like
 `RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES`, because the verdict is
 artifact-level rather than per-quantifier and there is nothing to mix.
 Tests: tests/prefilter/.
+
+**[OPT-ALTCLS] (2026-08-17):** `PCREC_NO_ALTCLS_MERGE` (`1u << 10`,
+`-fno-altcls-merge`) and `PCREC_NO_ALTCLS_FACTOR` (`1u << 11`,
+`-fno-altcls-factor`) are D46's controllability half for
+`src/opt/altcls.c` (docs/dev/plan.md's `[OPT-ALTCLS]` row: stage 1 merges a
+maximal run of single-char alternation branches into one class, stage 2
+prefix-factors a maximal run sharing a literal first byte, running on stage
+1's output). BACK to the DENY-only shape the five-member family above uses,
+not `PREFILTER`'s force pair — the original reason applies here rather than
+the prefilter's exception to it: each mergeable/factorable run is its own
+selection point, addressed independently the way each `A_REP` walks its own
+possessify/revdet ladder, so there is no artifact-wide verdict for FORCE to
+solve an addressing problem for. Two bits rather than one because the two
+stages are separately useful to pin, exactly as `-fno-revdet` denying the
+rung still leaves possessification live one rung down. Same
+masked-out-of-`rx_info.flags` treatment as the rest of the family and for
+the identical reason. What the pass DID is recorded in
+`<PREFIX>_ALTCLS_MERGES`/`<PREFIX>_ALTCLS_FACTORED` (src/gen/emit_dfa.c's
+`pcrec_emit_prologue`) — UNLIKE every other D46 stamp in this file, these
+are NOT VM-artifacts-only: the pass runs before either engine is built, so
+a capture-free pattern's DFA artifact carries the stamp too. Tests:
+tests/altcls/.
