@@ -64,6 +64,18 @@ consumer-question thread) adds two ADVISORY clarifications: the §3
 entry-picker's discriminator sentence and §3.2's failing-match cost note —
 prose only, no emitted text quoted, nothing re-measured.
 
+**[M6.3] revision (2026-08-18, module `named-groups`).** §6's own
+recorded open question — "the `groups` array is described as sorted and
+`bsearch`-able, but no document states the sort KEY" — is DISCHARGED
+rather than reworded around: the key is `strcmp` on the name, matching
+libpcre2's own `PCRE2_INFO_NAMETABLE` order (measured directly,
+tests/probes/probe_named_groups.c), and docs/dev/decisions.md's D59
+records the evidence. Re-measured for this pass: §6's `groups`/`nnames`
+field comments and its worked example, quoted verbatim from a fresh `-p
+rx --features named-groups` build of `'a(?<b>b|c)+d'` (both the
+captures-default and `--no-captures` forms, to check the `slot: -1`
+claim in both directions).
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -856,9 +868,10 @@ struct rx_info {
     const char           *pattern;      /* source pattern text, as given
                                             to pcrec_compile() */
     size_t                pattern_len;  /* companion length — see §7 */
-    const rx_group_entry *groups;       /* NULL until named-groups; the
-                                            sort key is not yet fixed —
-                                            see below */
+    const rx_group_entry *groups;       /* NULL until the pattern text
+                                            declares at least one named
+                                            group; sorted by NAME (strcmp)
+                                            when non-NULL — see below */
     const char           *engine_why;   /* forcing construct/reason, or
                                             NULL; also carries a prefilter
                                             note on hybrid-eligible
@@ -881,13 +894,45 @@ containing `"` would otherwise emit a syntactically broken `.c` file;
 verified the emitter carries a dedicated string-literal escaper distinct
 from the `/* ... */`-comment escaper used elsewhere in the file).
 
-`groups`/`nnames` stay `NULL`/`0` for every pattern until module
-`named-groups` lands — verified live on this build (`'(?<g>a)'` still
-refuses with `requires module 'named-groups'`). **The `groups` array is
-described as sorted and `bsearch`-able, but no document states the sort
-KEY**, and there is no producer to measure: a consumer must not assume
-an ordering today. Module `named-groups` fixes the key when it ships,
-and this section states it then.
+`groups`/`nnames` stay `NULL`/`0` for a pattern with no named group, and
+for every pattern until module `named-groups` is enabled (`--features
+named-groups` or a named set that includes it) — verified live:
+`'(?<g>a)'` still refuses with `requires module 'named-groups'` against
+the bare default. **[M6.3], 2026-08-18 — the sort key, previously left
+open, is now fixed: `strcmp` on the NAME.** This matches libpcre2's own
+`PCRE2_INFO_NAMETABLE`, which is sorted the identical way — measured
+directly (tests/probes/probe_named_groups.c: a pattern declaring
+`zeta`/`alpha`/`mu` by opening-paren order reports its table back in
+`alpha`/`mu`/`zeta` order), the evidence behind this choice
+(docs/dev/decisions.md D59) rather than an invented pcrec-only
+convention. Quoted verbatim from a freshly emitted `-p rx --features
+named-groups` build of `'a(?<b>b|c)+d'`:
+
+```c
+static const rx_group_entry rx_group_names[] = {
+    { "b", 1, 1, NULL },
+};
+```
+
+and the `rx_info` instance's own two fields, from the same artifact:
+
+```c
+    .ngroups = 1,
+    .nnames = 1,
+    ...
+    .groups = rx_group_names,
+```
+
+The array's own C identifier (`rx_group_names` above, under the default
+`--prefix rx`) is `<prefix>`-scoped like every other per-artifact symbol
+(§1) — it is not one of the six fixed-literal ABI types, only the ENTRY
+type (`rx_group_entry`) is. Each entry's `slot` field is the group's
+capture-slot index when this build actually delivers one (a
+captures-wanted build; a named group's presence already forces the VM
+through the pre-existing generic capture-forcing engine-selection rule,
+so this is never observably a DFA artifact with a live slot) and `-1`
+otherwise — verified: the same pattern compiled `--no-captures` stamps
+`{ "b", 1, -1, NULL }` and selects the DFA engine (`.engine = 1`).
 
 **Two more reflection facts are weaker than they look**, and the
 difference from a shipped guarantee matters to anyone writing code

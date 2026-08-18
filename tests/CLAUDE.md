@@ -96,6 +96,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   oracle where it agrees, `# pcre2-only` elsewhere (xxmode entirely —
   docs/dev/upstream_issues.md U8 is the measured python divergence); see its
   CLAUDE.md for the §9.3 record and the escape-vs-raw-tab landing correction
+- **named_groups/** — module `named-groups` corpus ([M6.3]): the three
+  declaring spellings `(?<name>...)` `(?'name'...)` `(?P<name>...)`,
+  identical-to-a-plain-group numbering (including the `(?n)` divergence —
+  a named group captures even when `(?n)` disables plain-group numbering),
+  and the two `.rxt`-expressible name-syntax refusals (duplicate name,
+  leading digit). Blocks carry `features named-groups`; python oracle
+  live for `(?P<name>...)`, `# pcre2-only` (translated-spelling oracle)
+  for the other two spellings and for `(?n)`'s interaction — see its
+  CLAUDE.md and docs/dev/upstream_issues.md U10. Always LIVE `g` never
+  `gp`: this module unconditionally forces the VM. The name-length
+  boundary and the cross-module refusal proofs (backrefs-by-name, `(?J)`)
+  live in tests/reject/ instead — no `.rxt` block can assert WHICH other
+  module's name is in a diagnostic.
 - **captures/** — [M4.5a] capture-group expectation corpus: the `g`/`gp`
   `.rxt` line kinds (per-GROUP capture-slot spans, attached to the preceding
   `m`/`ms` case — see docs/testing.md's "Capture-group expectations" section

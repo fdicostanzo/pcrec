@@ -1,0 +1,131 @@
+# tests/named_groups/named_groups.rxt — module `named-groups` corpus
+# ([M6.3]).
+#
+# Every block carries `features named-groups`: the construct REFUSES
+# without it (bare default is `std1` = {classes, modifiers}, which does not
+# include this module), and that refusal is pinned in tests/reject/. This
+# corpus verifies the constructs the module actually PRODUCES.
+#
+# ORACLE NOTE (docs/dev/plan.md's [M6.3] row): python3 `re` speaks only the
+# `(?P<name>...)` spelling. Every block below that uses `(?<name>...)` or
+# `(?'name'...)` carries `# pcre2-only` and its expectations were verified
+# by TRANSLATING the pattern to the identical `(?P<name>...)` spelling and
+# running it through python `re` (the translation is mechanical and
+# semantics-preserving — all three spellings are the SAME construct with a
+# different delimiter, never a different one; pcrec's own parser routes all
+# three through the identical port, mod_named_groups.c, which is exactly
+# the fact this file's OTHER blocks — the `(?P<name>...)` ones, which are
+# NOT `# pcre2-only` and ARE checked live against python on every run —
+# establish). See docs/dev/upstream_issues.md's U10 for the general rule
+# and a from-scratch worked translation.
+#
+# `g <slot> <start> <end>` claims are LIVE, not `gp`: this module always
+# forces the VM (a named group's AST is an ordinary A_CAP node, so
+# src/opt/select_engine.c's pre-existing generic capture-forcing rule
+# selects the VM whenever `--no-captures` is not given — see
+# mod_named_groups.c's own header), so RX_NCAPS already covers every
+# slot these patterns declare.
+
+# ---- the three declaring spellings, oracle-verified live via (?P<...> ---
+
+pattern (?P<word>[a-z]+)-(?P<num>[0-9]+)
+features named-groups
+m "abc-123" 0 7
+g 0 0 7
+g 1 0 3
+g 2 4 7
+n "123-abc"
+
+# ---- (?<name>...): translated-oracle, spelling-only difference from the
+# block immediately above (same pattern, same subject, same spans) ----
+# pcre2-only
+pattern (?<word>[a-z]+)-(?<num>[0-9]+)
+features named-groups
+m "abc-123" 0 7
+g 0 0 7
+g 1 0 3
+g 2 4 7
+n "123-abc"
+
+# ---- (?'name'...): same translated-oracle proof ----
+# pcre2-only
+pattern (?'word'[a-z]+)-(?'num'[0-9]+)
+features named-groups
+m "abc-123" 0 7
+g 0 0 7
+g 1 0 3
+g 2 4 7
+n "123-abc"
+
+# ---- numbering: interleaved with PLAIN groups, opening-paren order,
+# exactly as an unnamed group (parse.c's own rule) — python-verified live
+pattern (a)(?P<n1>b)(c)(?P<n2>d)
+features named-groups
+m "abcd" 0 4
+g 0 0 4
+g 1 0 1
+g 2 1 2
+g 3 2 3
+g 4 3 4
+
+# ---- nested named groups: outer wraps inner, both numbered by opening
+# paren order (outer's '(' opens first) ----
+pattern (?P<outer>(?P<inner>a)b)
+features named-groups
+m "ab" 0 2
+g 0 0 2
+g 1 0 2
+g 2 0 1
+
+# ---- alternation: a branch that did not participate reports RX_UNSET,
+# exactly as an unnamed group's slot would ----
+pattern (?P<x>a)|(?P<y>b)
+features named-groups
+m "b" 0 1
+g 0 0 1
+g 1 -1 -1
+g 2 0 1
+
+# ---- quantified named group: only the LAST iteration's span survives,
+# the same rule an unnamed quantified group follows ----
+pattern (?P<rep>a)+
+features named-groups
+m "aaa" 0 3
+g 0 0 3
+g 1 2 3
+
+# ---- (?n) (no-auto-capture): a named group captures ANYWAY, unlike a
+# plain '(' group under the same option — measured against libpcre2
+# (tests/probes/probe_named_groups.c step 9: capturecount=1, namecount=1
+# for `(?n)(a)(?P<x>b)`, i.e. the plain group "(a)" gets NO number at all
+# and "x" becomes group 1, not group 2). python's `re` has no `(?n)`
+# construct at all (`unknown extension ?n`), so this block cannot be
+# python-verified even in translation — the oracle is the probe.
+# pcre2-only
+pattern (?n)(a)(?P<x>b)
+features named-groups,modifiers
+m "ab" 0 2
+g 0 0 2
+g 1 1 2
+
+# ---- duplicate name: a compile error (PCRE2 error 143, no DUPNAMES) —
+# python `re` agrees this is a compile error too (measured: "redefinition
+# of group name"), so this is a live-verified `perr`, not `# pcre2-only`
+pattern (?P<dup>a)(?P<dup>b)
+features named-groups
+perr
+
+# ---- a name may not start with a digit (PCRE2 error 144) — python `re`
+# agrees this is a compile error too ("bad character in group name")
+pattern (?P<1x>a)
+features named-groups
+perr
+
+# ---- underscore-led and digit-bearing (but not digit-led) names compile,
+# proving the boundary is exactly "first byte", not "any digit anywhere"
+pattern (?P<_ok>a)(?P<n2b>b)
+features named-groups
+m "ab" 0 2
+g 0 0 2
+g 1 0 1
+g 2 1 2
