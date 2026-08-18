@@ -9,13 +9,34 @@ informational — the reasoning and panel record behind a rule, never a
 second source of authority. On any disagreement between this document and
 those, THIS document is what pcrec promises.
 
-Every rule below was checked against the shipped surface at commit
-`c113890` (the point this document was authored from): `lib/pcrec.h`
+Every rule below was checked against the shipped surface: `lib/pcrec.h`
 itself, artifacts actually emitted by `build/pcrec` for representative
 patterns (a `--no-captures` DFA build, a captures-default VM build, a
-custom `--prefix`), and the test cases cited inline. Two places where the
-shipped surface does not match `match_api_m4.md`'s design text are called
-out explicitly (§3.5, §7) rather than silently reconciled.
+custom `-p` prefix, budget-limited builds), and the test cases cited
+inline. Two places where the shipped surface does not match
+`match_api_m4.md`'s design text are called out explicitly (§3.5, §7)
+rather than silently reconciled.
+
+**Verification ledger.** The document was authored at commit `c113890`
+and re-verified end to end after the R29 adversarial panel
+(2026-08-18, `[M4.7g]`). Every claim was re-checked against artifacts
+emitted freshly for that pass, and this revision adds these measurements:
+the find-all protocol of §3.1 run against `python3 re.finditer` on twelve
+(pattern, subject) pairs plus three that expose its documented lossiness;
+the §8.0 example compiled `-Wall -Wextra -Werror`, run, and its output
+compiled in turn; the subject-side contract of §3.1 measured under
+AddressSanitizer on exact-size heap buffers with a firing positive
+control; §5.3's concurrency promise measured under ThreadSanitizer;
+§3.4/§6.1's section placement measured with `readelf`; §6.3's macro
+inventory measured by listing every `#define` in a build of each engine;
+§8.1's D56 guarantees measured at the refusal boundary. Two errors that
+panel found in the previous revision are recorded where they happened
+rather than quietly repaired: §3.5 (a contradiction described as an
+omission, and §2 quoting a corrected comment as if it were shipped) and
+§6.3 (a mirror claimed to be total that is partial). The corresponding
+shipped comments — the emitted `rx_matchfn` ABI block and
+`lib/pcrec.h`'s generated-searcher comment — were fixed in the same
+pass, so §2's quotation is now the real text.
 
 ---
 
@@ -873,12 +894,29 @@ mode**, not a semantics divergence between the two engines' NUL handling
 — PCRE2's sentinel mode has the identical failure mode pcrec's only mode
 has.
 
-**`rx_info.pattern_len` is the detectability instrument for this gap.**
-It reports the *actual* byte count `pcrec_compile()` saw and compiled —
-the truncated count, not the caller's intended count. A caller who
-independently knows the pattern's true length can compare it against the
-compiled artifact's `pattern_len` and catch exactly this silent
-truncation after the fact. Verified: compiling the byte-built 3-byte
+**`rx_info.pattern_len` is the detectability instrument for this gap,
+and reaching it costs more than reading a field.** It reports the
+*actual* byte count `pcrec_compile()` saw and compiled — the truncated
+count, not the caller's intended count. But `rx_info` lives in the
+GENERATED ARTIFACT, and `pcrec_compile()` hands its caller C source
+text, not a struct: at compile time the only way to read `pattern_len`
+is to string-search `out.c_src` for the emitted `.pattern_len = N,`
+line, and the only way to read it as a value is to compile and link the
+artifact first. Neither is a check a caller will write by accident.
+
+**The one-line pre-flight is cheaper and is what a caller should
+actually do.** If you know the pattern's true length independently —
+and a caller handling untrusted or NUL-bearing pattern text does — test
+it before compiling:
+
+```c
+if (strlen(pattern) != known_length) { /* the pattern contains a NUL:
+                                          refuse it yourself */ }
+```
+
+That catches the truncation before it happens, using only the standard
+library. `pattern_len` remains the after-the-fact instrument for an
+artifact you already have. Verified: compiling the byte-built 3-byte
 `"a\0b"` buffer through the real `pcrec_compile()` (not the CLI, which
 cannot carry a NUL through `argv` at all) produces `out.c_src` containing
 `.pattern_len = 1,` — the artifact honestly reports what it actually
@@ -896,12 +934,115 @@ is not part of this contract.** It is scheduled with `DD-3` (generated-API
 versioning/compatibility policy), tracked as `docs/dev/known_issues.md`
 K9, and is the natural trigger for customer `V-A`'s `(pattern, length)`
 compatibility shim. Until then, a caller with an untrusted or
-NUL-containing pattern source must check `pattern_len` itself; nothing in
-`pcrec_compile()`'s signature enforces that.
+NUL-containing pattern source must run the `strlen` pre-flight above
+itself; nothing in `pcrec_compile()`'s signature enforces that.
 
 ---
 
-## 8. `pcrec_options`, `pcrec_error`, and the `PCREC_*` namespace
+## 8. The library entry: `pcrec_options`, `pcrec_output`, `pcrec_error`
+
+### 8.0 A complete compile, start to finish
+
+This is the whole calling sequence, and it compiles and runs exactly as
+written (verified: built with `gcc -Wall -Wextra -Werror` against
+`lib/pcrec.h` and `libpcrec.a`, run, and its `matcher.c`/`matcher.h`
+output compiled in turn):
+
+```c
+#include <stdio.h>
+#include "pcrec.h"
+
+int main(void)
+{
+    pcrec_options opt;
+    pcrec_output  out;
+    pcrec_error   err;
+
+    /* MANDATORY first step: a zero-initialized pcrec_options has
+       prefix == NULL and every compile fails with "invalid symbol prefix". */
+    pcrec_default_options(&opt);
+    opt.header_name = "matcher.h";   /* NULL (the default) = self-contained .c */
+
+    if (pcrec_compile("a(b|c)+d", &opt, &out, &err) != 0) {
+        fprintf(stderr, "pcrec: %s (at byte %zu of the %s)\n", err.msg, err.pos,
+                err.input == PCREC_ERR_INPUT_PATTERN ? "pattern" : "template");
+        return 1;
+    }
+
+    /* out.c_src and out.h_src are malloc'd, NUL-terminated C source and are
+       the CALLER's to free from here on. h_src is non-NULL exactly when
+       opt.header_name was set. */
+    FILE *c = fopen("matcher.c", "w");
+    if (c) { fputs(out.c_src, c); fclose(c); }
+    if (out.h_src) {
+        FILE *h = fopen("matcher.h", "w");
+        if (h) { fputs(out.h_src, h); fclose(h); }
+    }
+
+    pcrec_output_free(&out);   /* frees both buffers, NULLs both fields */
+    return 0;
+}
+```
+
+Four things in it are contract, not style:
+
+1. **`pcrec_default_options()` is mandatory, and skipping it fails every
+   compile.** It is not a convenience that fills in tasteful defaults
+   over a working zero state: a zeroed `pcrec_options` has
+   `prefix == NULL`, and pcrec refuses a NULL prefix. Measured — a
+   `memset`-zeroed options struct returns `-1` with
+   `err.msg == "invalid symbol prefix (must be a C identifier, <= 60
+   chars)"` for a pattern that compiles fine after
+   `pcrec_default_options()`. It sets `prefix = "rx"`,
+   `encoding = PCREC_ENC_ASCII` and `header_name = NULL`, and zeroes
+   everything else; override fields after calling it, never instead.
+2. **`pcrec_output` owns two heap buffers and the caller frees them.**
+
+   ```c
+   typedef struct {
+       char *c_src;   /* malloc'd; free with pcrec_output_free */
+       char *h_src;   /* malloc'd, or NULL when options.header_name == NULL */
+   } pcrec_output;
+   ```
+
+   `pcrec_output_free()` frees both and NULLs both fields (measured
+   before and after), so it is safe to call twice and safe on a struct
+   whose `h_src` was never produced. There is no other way to release
+   them. §5.2's "no allocation, no lifecycle to manage" is a statement
+   about the MATCH path only; the compile path allocates and this is its
+   lifecycle.
+3. **`h_src` is non-NULL exactly when `header_name` was set** (measured
+   both ways). Do not test `header_name` and assume; test `h_src`.
+4. **Check the return value, not the error struct.** `pcrec_compile()`
+   returns `0` on success and `-1` on failure, and fills `err` only on
+   failure.
+
+### 8.1 What `pcrec_compile()` guarantees its caller (D56)
+
+pcrec is a library, and two of its promises exist because a library
+cannot behave like a program:
+
+- **It never `abort()`s the caller on the compile path.** Every
+  allocation site routes failure through the internal `ctx_nomem()` and
+  comes back as a normal `-1`-with-diagnostic return, so a caller that
+  sets a memory limit precisely in order to survive a hostile pattern
+  does survive it. Two `abort()`s remain in the code deliberately and
+  neither is an allocation failure: a "cannot happen" DFA structural
+  invariant, and the syntax-dump path's detached string buffers, which
+  run outside a compile and have no `pcrec_error` to report through.
+- **A pattern can be REFUSED for compile-side RESOURCE reasons, and
+  that is a distinct failure class from a syntax error.** It arrives
+  through the same `-1` and the same `pcrec_error`, so a caller
+  distinguishes them by reading `err.msg`, not by the return value.
+  Measured at the D56 boundary: `a{9795}` compiles, `a{9796}` returns
+  `-1` with `err.msg == "pattern too complex for the DFA engine (subset
+  construction exceeds 48000000 state-set elements; VM engine arrives in
+  M4)"`. The pattern is perfectly legal PCRE; what failed is that
+  compiling it would cost more than pcrec is willing to spend. A caller
+  that reports every `-1` as "bad regex syntax" to its user will be
+  wrong here.
+
+### 8.2 The option and error structures
 
 ```c
 typedef struct {
@@ -915,7 +1056,9 @@ typedef struct {
     int64_t     step_budget; /* PCREC_STEP_BUDGET_DEFAULT / _NONE, or a count */
     int64_t     work_budget; /* PCREC_WORK_BUDGET_DEFAULT / _NONE, or a count */
     int         unroll_k;    /* PCREC_UNROLL_K_DEFAULT (0) = built-in default */
-    int         frame_capacity; /* 0 = let the compiler size it */
+    int         frame_capacity; /* 0 = let the compiler size it. NOT the
+                                    same sentinel as rx_info's field of the
+                                    same name, which uses -1 for unbounded */
 } pcrec_options;
 ```
 
@@ -926,6 +1069,13 @@ flag, carried in `pcrec_options.flags`, and reflected verbatim (where not
 deliberately masked, §6.3) in the compiled artifact's `rx_info.flags`.
 `PCREC_NO_CAPTURES` recovers the pre-captures-default pure-DFA artifact
 (`<PREFIX>_NCAPS 1`); captures are on by default since M4.5.
+
+**A caller that round-trips its own flags through `rx_info.flags` will
+find some bits missing, legitimately.** The masked ones are the
+testing/tuning axes that change no answer (§6.3); which bits those are,
+and why each is masked, is documented per-flag in `lib/pcrec.h`'s own
+comments, which is the place to look — this document does not duplicate
+that catalogue.
 
 `pcrec_error` carries which input a diagnostic's `pos` indexes into:
 
@@ -950,7 +1100,10 @@ non-NULL) — verified directly: an unterminated group `"a(b"` returns
 `-1` with `err.pos == 1, err.input == PCREC_ERR_INPUT_PATTERN`.
 
 `PCREC_*` names only pcrec's own enum/bit-valued constants — never a
-struct field name, never a bare CLI flag spelling. `PCRE2_*` spellings
+struct field name, never a bare CLI flag spelling — with the one stated
+exception §1 records: the per-artifact `PCREC_FEATURE_SET` /
+`PCREC_FEATURE_MODULES` stamps, which carry the `PCREC_*` spelling
+without living in `lib/pcrec.h`. `PCRE2_*` spellings
 are reserved for a future PCRE2-compatibility layer and are never native.
 
 ---
