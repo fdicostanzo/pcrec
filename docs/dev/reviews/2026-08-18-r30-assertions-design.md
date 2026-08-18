@@ -274,6 +274,24 @@ eng_brep annotation + any D47.5 addendum (lane's Q7) decided then.
   including the memchr('\n') prefilter option and the DD-7 unpark question.
 - Lane's Q6/Q7 (eng_brep annotation; D47.5 addendum) — manager-at-merge.
 
+## Post-compile addendum (r30-engine pin verification)
+
+After compilation, r30-engine verified all eight findings against the pin:
+the doc state it reviewed is byte-identical to 4f0dafe (md5
+573c772ed29b6b436c6f013ac811e9c8), every doc line number is exact, and
+Finding 4's arithmetic was recomputed from the PINNED archive
+(`git show 4f0dafe:...ncls_refine_rxt.txt`) with identical results (38,009
+vs the 32,000 cap). It also corrected five of its own source citations
+(the claims are unaffected): `fbound` is emit_dfa.c:942 (not :602); the
+post-skip accept compensation is :1006; memchr emission :971/:988; the
+stay-bitmap skip loop :1002; emit_attempt spans :1076-1163 with the
+`start_max` ternary at :1106-1108; ENG_ATTEMPT's baked accept at
+:1143/:1148 with the unguarded EOL-variant branch from :1130. One NEW
+minor for the lane's batch: §3.7 cites "the one hardcoded `false`" as
+dfa.c:689 — it is **dfa.c:692** (§2's own ":684-690" range cite is fine);
+the claim is right, the single-line cite slipped, and §3.7 is the section
+Q3 leans on. **Disposition: FIX-IN-LANE (cite fix).**
+
 ## Process lessons (for the journal and learnings at close)
 
 1. **Panel targets are frozen commits.** The manager relayed a design input
