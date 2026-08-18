@@ -220,14 +220,27 @@ stated terms.
     RSS / SIGKILL / aborting a limited caller's process; reconcile
     the two wrong docs/pcre2_compliance.md claims K7's entry records.
     Engine-core resource accounting — opus-tier lane
-  - [M4.7c] STATE:not-started — K9 API HALF (homed here: the spec
-    graduation at [M4.7f] freezes the as-built contract, so the
-    rx_info.pattern_len field must exist BEFORE the freeze or the
-    first spec document is born stale): rx_info gains pattern_len
-    (byte length of the compiled pattern) so a caller can detect the
-    NUL-truncation silent-wrong-compile. The compile-entry length
-    parameter half stays with DD-3 (public-API compat policy), per
-    K9's own scheduling note
+  - [M4.7c] STATE:completed (2026-08-17, lane/m47c, commits 3900eac/bb21274/
+    069f943; awaiting manager review/merge) — K9 API HALF. FOUND ALREADY
+    LANDED: `rx_info.pattern_len` (D44.5) shipped at [M4.4]'s match-API
+    freeze on 2026-08-14 (`src/gen/emit_dfa.c`'s `emit_info_def`, off
+    `cx->patlen` — the same `strlen()` at `pcrec_compile()`'s entry that
+    decides what actually gets compiled), well before this substep was
+    scoped 2026-08-17. What this lane supplied was the TESTING the row's
+    own K9 repro needed and never had: `tests/cli/run_cli_tests.sh` case16
+    (a direct library-API C probe — argv cannot carry an embedded NUL to
+    `pcrec_compile()` — pinning K9's "a\0b" compiles as "a", reports
+    success" and asserting the new detectability: `rx_info.pattern_len`
+    honestly reads 1) and two `tests/codegen/run_codegen_tests.sh`
+    structural cells (ordinary byte count for `'abc'`; `'a\nb'` stamps 4,
+    the SOURCE spelling, not 3, the matched-byte count — the cell that
+    would catch a field reporting the wrong one). test-codegen 41/41,
+    test-cli 260/260, test-registry (incl. PC-4 62,872 cells) clean.
+    Contract text: docs/design/match_api_m4.md §5's `rx_info` layout table
+    already carries `pattern_len` at D44.5's own ruling — no further
+    contract-text change needed; [M4.7f]'s spec graduation inherits it
+    as-is. docs/dev/known_issues.md K9 gets a dated landed-note; K9 STAYS
+    OPEN (the compile-entry length-parameter half is still DD-3's).
   - [M4.7e] STATE:not-started — AT-SCALE CAPTURE DIFFERENTIAL vs
     libpcre2 ovectors, gate-ON per docs/testing.md's differential-gate
     principle. SEQUENCED: starts only after [OPT-ALTCLS] merges (so

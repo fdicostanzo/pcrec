@@ -639,6 +639,45 @@ else
     bad "[M4.4]: pcrec failed to compile 'a(b|c)+d' for the structural NCAPS/engine checks"
 fi
 
+# ---- [M4.7c] rx_info.pattern_len — K9's API half (match_api_m4.md §5, D44.5) -
+# K9 (docs/dev/known_issues.md): pcrec_compile() takes a NUL-terminated
+# pattern and no length, so a pattern containing a NUL is silently truncated
+# and the compile reports SUCCESS for a different, shorter pattern than the
+# caller passed. `pattern_len` is the field that makes this detectable — a
+# caller who independently knows the intended byte length can compare it
+# against the artifact's own report. Two structural cells: an ordinary
+# pattern (pattern_len is exactly the pattern's byte count) and a pattern
+# whose SOURCE SPELLING is longer than what the matcher actually walks
+# (`\n` is two source bytes — backslash, n — standing for one matched byte),
+# so a pattern_len that quietly reported the matched-byte count instead of
+# the source-byte count would pass the first cell and fail this one. The
+# embedded-NUL cell itself (the K9 repro proper) cannot be expressed here —
+# argv has no way to carry a NUL through to pcrec — so it lives as a direct
+# library-API C probe in tests/cli/run_cli_tests.sh case16.
+if "$PCREC" -p rx -o - -- 'abc' > "$WORKDIR/patlen1.c" 2>/dev/null; then
+    if grep -qF '.pattern_len = 3,' "$WORKDIR/patlen1.c"; then
+        ok "[M4.7c]: rx_info.pattern_len is 3 for the 3-byte pattern 'abc'"
+    else
+        bad "[M4.7c]: rx_info.pattern_len is not 3 for 'abc' (got: $(grep -oE '\.pattern_len = [0-9]+' "$WORKDIR/patlen1.c"))"
+    fi
+else
+    bad "[M4.7c]: pcrec failed to compile 'abc' for the pattern_len structural check"
+fi
+
+if "$PCREC" -p rx -o - -- 'a\nb' > "$WORKDIR/patlen2.c" 2>/dev/null; then
+    # source spelling is 4 bytes (a, \, n, b); the matcher itself walks 3
+    # matched bytes (a, newline, b) — pattern_len must report the SOURCE
+    # count, never the matched-byte count, which is the exact distinction
+    # this pattern is chosen to force.
+    if grep -qF '.pattern_len = 4,' "$WORKDIR/patlen2.c"; then
+        ok "[M4.7c]: rx_info.pattern_len is 4 (source spelling) for 'a\\nb', not 3 (matched bytes)"
+    else
+        bad "[M4.7c]: rx_info.pattern_len is not 4 for 'a\\nb' (got: $(grep -oE '\.pattern_len = [0-9]+' "$WORKDIR/patlen2.c"))"
+    fi
+else
+    bad "[M4.7c]: pcrec failed to compile 'a\\nb' for the pattern_len structural check"
+fi
+
 # ---- [K24] <prefix>_search must not be SPLIT by gcc's partial inliner -----
 # This is the file's founding charter, exactly (see the header): a
 # behaviour-preserving property whose absence produces ZERO signal from the

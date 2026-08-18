@@ -1654,6 +1654,105 @@ case15() {
         || fail "case15 CONTRAST: could not build/run the ample-frame-capacity control" "$GEN_CC_LOG"
 }
 
+# ---------------------------------------------------------------------------
+# 16. [M4.7c] K9's API half: rx_info.pattern_len makes the NUL-truncation
+# silent-wrong-compile DETECTABLE (docs/dev/known_issues.md K9).
+#
+# pcrec_compile() takes a NUL-terminated pattern and no length, so a pattern
+# containing an embedded NUL is silently truncated at it: "a\0b" (3 bytes)
+# compiles as "a" (1 byte) and reports SUCCESS for a different pattern than
+# the caller passed. K9 itself is not reachable through argv (a shell/exec
+# NUL always ends the string before pcrec sees it) or through a line-based
+# .rxt corpus, which is why case7's shape — a direct library-API C probe
+# linking libpcrec.a — is the only surface that can express it.
+#
+# This case PINS the current truncation behavior (it is DD-3's job, not
+# this one, to change it) and asserts the new detectability it landed with:
+# a caller who independently knows the intended pattern length can compare
+# it against rx_info.pattern_len and catch exactly this silent-wrong-compile.
+# ---------------------------------------------------------------------------
+case16() {
+    local d="$WORKDIR/case16"
+    mkdir -p "$d"
+
+    if [ ! -f "$LIBA" ]; then
+        fail "case16: libpcrec.a exists at $LIBA" "build it first (e.g. 'make')"
+        return
+    fi
+    if [ ! -f "$LIBDIR/pcrec.h" ]; then
+        fail "case16: pcrec.h exists at $LIBDIR/pcrec.h"
+        return
+    fi
+
+    cat > "$d/k9.c" <<'EOF'
+#include <stdio.h>
+#include <string.h>
+#include "pcrec.h"
+
+int main(void) {
+    pcrec_options opt;
+    pcrec_default_options(&opt);
+    pcrec_output out;
+    pcrec_error err;
+    memset(&out, 0, sizeof(out));
+
+    /* "a\0b": 3 bytes, an embedded NUL after the first. Cannot be spelled
+     * as a C string literal (it would itself end at the NUL) — built byte
+     * by byte so the buffer's true 3-byte extent is unambiguous here even
+     * though pcrec_compile() cannot see past byte 1. */
+    char pat[3];
+    pat[0] = 'a';
+    pat[1] = '\0';
+    pat[2] = 'b';
+
+    int rc = pcrec_compile(pat, &opt, &out, &err);
+    if (rc != 0) {
+        fprintf(stderr, "FAIL: embedded-NUL pattern did not compile (rc=%d, %s)\n",
+                rc, err.msg);
+        return 1;
+    }
+    if (!out.c_src) {
+        fprintf(stderr, "FAIL: embedded-NUL pattern compiled but produced NULL c_src\n");
+        return 1;
+    }
+    /* K9's claim, pinned: the compile SUCCEEDS for a pattern different from
+     * the one the caller passed (the artifact is for "a", not "a\0b"). What
+     * this field adds is that the artifact now says so honestly. */
+    if (!strstr(out.c_src, ".pattern_len = 1,")) {
+        fprintf(stderr,
+                "FAIL: rx_info.pattern_len does not report 1 for the truncated compile\n");
+        pcrec_output_free(&out);
+        return 1;
+    }
+
+    pcrec_output_free(&out);
+    printf("k9 OK\n");
+    return 0;
+}
+EOF
+    local build_log
+    build_log="$("$CC" $CFLAGS -I"$LIBDIR" -o "$d/k9" "$d/k9.c" "$LIBA" 2>&1)"
+    if [ $? -eq 0 ]; then
+        pass "case16: K9 embedded-NUL probe compiles against pcrec.h + libpcrec.a"
+    else
+        fail "case16: K9 embedded-NUL probe compiles against pcrec.h + libpcrec.a" "$build_log"
+        return
+    fi
+
+    local runout runrc
+    runout="$(timeout 10 "$d/k9" 2>"$d/k9_stderr.txt")"
+    runrc=$?
+    if [ $runrc -ge 124 ]; then
+        fail "case16: K9 embedded-NUL probe does not crash or hang" \
+            "exit code: $runrc (>=124 = timeout/crash)" "stderr: $(cat "$d/k9_stderr.txt")"
+    else
+        assert_eq "case16: K9 embedded-NUL probe exits 0" "0" "$runrc" \
+            "stderr: $(cat "$d/k9_stderr.txt")"
+        assert_eq "case16: rx_info.pattern_len (1) makes the truncated compile detectable" \
+            "k9 OK" "$runout"
+    fi
+}
+
 case1
 case2
 case3
@@ -1669,6 +1768,7 @@ case12
 case13
 case14
 case15
+case16
 
 echo
 echo "== Summary =="
