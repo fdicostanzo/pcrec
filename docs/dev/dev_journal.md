@@ -9821,3 +9821,38 @@ it — and the same evening's design conversation (Frank) extended the
 point: the future consultation must aggregate over the POST-pass tree,
 because determinizing rewrites (finite backrefs, atomic-group cuts)
 legitimately delete VM-only nodes before selection reads anything.
+
+## 2026-08-18 (EDT), thirtieth session (cont.) — [M4.7c] closed: pattern_len was already shipped; the K9 pins land
+
+[M4.7c] K9's API half turned out to already be shipped: rx_info.pattern_len
+(D44.5) landed at [M4.4]'s match-API freeze on 2026-08-14 (1dbb6ce9,
+src/gen/emit_dfa.c's emit_info_def off cx->patlen — the strlen() at
+pcrec_compile()'s entry, so the value is exactly what the compiler
+consumed) — a full milestone before this plan row was scoped. THE SECOND
+STALE-PREMISE CHARTER OF THE SESSION (after [M4.7a]'s), both mine at
+expansion: the substep was written from K9's entry text without checking
+the shipped surface. Lane m47c caught it by reading code first, same as
+m47a did. Manager lesson, now twice-instanced: at milestone expansion,
+each substep's premise is a CLAIM about the tree and gets verified
+against the shipped code BEFORE chartering, not discovered at build time.
+
+What lane/m47c actually delivered was the testing K9's repro never had:
+tests/cli case16, a direct library-API C probe building an embedded-NUL
+pattern byte by byte (argv cannot carry a NUL through to
+pcrec_compile(), which is why nothing in the tree could express K9
+before), pinning the truncation ("a\0b" compiles as "a", reports
+success) and asserting the detectability (the artifact's
+rx_info.pattern_len honestly reads 1); plus two codegen structural
+cells — ordinary byte count, and 'a\nb' stamping pattern_len=4 (SOURCE
+spelling, not matched bytes — the cell that would catch a field
+reporting the wrong count). test-codegen 41/41, test-cli 260/260,
+PC-4 62,872 cells/0. One full-suite counterk timeout flake confirmed
+ENVIRONMENTAL twice over (isolated: 4.32s CPU vs D45's 10s ceiling;
+PROCS=4 re-run 1634/1634) — cause: -j12 suite concurrent with m47e's
+fuzz campaign at 106% CPU. SCHEDULING RULE ADOPTED mid-session from
+this flake: merge batteries and lane full-suite runs are serialized
+against the at-scale campaign (the m47c battery ran with m47e's runs
+held; battery 10,350/0). Contract text needed no change —
+match_api_m4.md §5's rx_info table already carries pattern_len, so
+[M4.7f] inherits it as-is. K9 stays OPEN on the DD-3 half. Merge
+e59f460.
