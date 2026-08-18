@@ -248,6 +248,17 @@ MODULE_CLASS_ATOMS = [
 # out the base-tier coverage this generator already had.
 MODULE_CLASS_WEIGHT = 0.15
 
+# The HARDENED STAT this addendum owes (manager ruling): derived from
+# MODULE_CLASS_ATOMS itself (never hand-duplicated) so it can't drift out
+# of sync with what the generator actually draws from. Used by main()'s
+# stats["module_construct"] counter below -- a substring check on the
+# rendered pattern TEXT is sufficient and exact here because every one of
+# these strings is a self-delimiting escape or POSIX form that cannot
+# appear as an accidental substring of anything else this generator emits
+# (no other atom or template renders a literal backslash-letter or
+# `[:name:]` sequence).
+MODULE_CONSTRUCT_MARKERS = tuple(text for text, _members, _neg in MODULE_CLASS_ATOMS)
+
 QUANTS = [
     # (text, lo, hi)  hi=None means unbounded; counts kept <= 30 per spec.
     ("*", 0, None), ("+", 1, None), ("?", 0, 1),
@@ -769,7 +780,8 @@ def main():
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
              "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
              "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
-             "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0}
+             "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0,
+             "module_construct": 0}
 
     # Patterns AND subjects are generated up-front in the MAIN thread: the
     # worker pool shares the global `random`, so generating inside workers made
@@ -794,6 +806,8 @@ def main():
             pat = gen_trap()
         elif is_capture:
             pat = gen_capture()
+        if any(marker in pat for marker in MODULE_CONSTRUCT_MARKERS):
+            stats["module_construct"] += 1
         alpha = pattern_alphabet(pat)
         if is_trap:
             # Trap patterns are raw text, not an AST node, so the node-based
@@ -1052,6 +1066,7 @@ def main():
           f" to a specific library version)")
     print(f"seed={args.seed} patterns={args.patterns} subjects/pattern={args.subjects} elapsed={elapsed:.1f}s")
     print(f"patterns generated:   {stats['patterns']}")
+    print(f"  module construct patterns: {stats['module_construct']}  (contains classes-module syntax -- \\d \\D \\w \\W \\s \\S or a POSIX [:name:] form -- MODULE_CLASS_ATOMS, [M4.7e] second addendum; the hardened proof the differential gate is EXERCISED, not merely open, per docs/testing.md's differential-gate principle)")
     print(f"  both accept:        {stats['both_accept']}")
     print(f"  both reject:        {stats['both_reject']}")
     print(f"  pcrec-only reject:  {stats['pcrec_reject_only']}  (accept/reject divergence)")

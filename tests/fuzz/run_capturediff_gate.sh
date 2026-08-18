@@ -70,8 +70,17 @@ GATE_SUBJECTS=15
 # just deterministically different), so these are not the same numbers the
 # gate shipped with originally -- re-measured twice on a quiet box
 # (byte-identical both times) rather than hand-adjusted from the old set.
+#
+# "module construct patterns" is the row that makes gate-ON PROVEN rather
+# than merely claimed, every single `make test` run from here on: it is
+# PINNED NONZERO (75 of 300, ~25% at this seed) -- a regression that ever
+# drops it to 0 (MODULE_CLASS_WEIGHT zeroed out, the marker list emptied,
+# the counter silently disconnected) fails this gate exactly as loudly as
+# a real divergence would, closing the README.md/campaign-log-documented
+# vacuity finding for good rather than just for this one measurement.
 declare -A EXPECT=(
     ["patterns generated"]=300
+    ["module construct patterns"]=75
     ["both accept"]=175
     ["both reject"]=117
     ["pcrec-only reject"]=0
@@ -132,7 +141,7 @@ rc="${PIPESTATUS[0]}"
 echo
 echo "capturediff-gate: selected counts (expected -> actual)"
 drift=0
-for label in "patterns generated" "both accept" "both reject" \
+for label in "patterns generated" "module construct patterns" "both accept" "both reject" \
              "pcrec-only reject" "pcre2-only reject" "PCRE2 size-limit" \
              "DFA state-cap" "gcc compile fails" "pcrec compile timeout" \
              "oracle probe timeout" "subject pairs compared" \
