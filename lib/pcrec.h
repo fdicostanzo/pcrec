@@ -335,9 +335,10 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * for this rule too — caps (if non-NULL) is left UNTOUCHED; the int return
  * value alone communicates the outcome. startpos > n returns 0. `^` anchors
  * to absolute offset 0 regardless of startpos. s may be NULL only when
- * n == 0, and the matcher never reads s[n]. RX_NCAPS is 1 on any DFA-compiled artifact
- * (which is every artifact built `--no-captures`); RX_NCAPS > 1 implies the
- * VM engine ([M4.5], where captures became the default).
+ * n == 0, and the matcher never reads s[n]. RX_NCAPS is 1 on any
+ * DFA-compiled artifact (which is every artifact built `--no-captures`);
+ * RX_NCAPS > 1 implies the VM engine ([M4.5], where captures became the
+ * default).
  *
  * Every generated matcher also exports, unconditionally: `<prefix>_match`
  * (the `rx_matchfn`-typed match-here entry, anchored at `ctx->pos`, no
