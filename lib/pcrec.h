@@ -318,21 +318,34 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  *   int <prefix>_search(const unsigned char *s, size_t n, size_t startpos,
  *                        ptrdiff_t (*caps)[2]);
  *
- * Searches s[startpos..n) and returns 1 on a match, 0 on no match.
+ * Searches s[startpos..n) and returns 1 on a match, 0 on no match, or a
+ * NEGATIVE typed give-up code when the engine ran out of budget: the
+ * artifact's `<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`, all inside
+ * [`<PREFIX>_ERR_FLOOR`, -2] (D49; the same code space `<prefix>_match`
+ * and `<prefix>_match_caps` return, docs/spec/match_api.md §4). The return
+ * is therefore NOT two-valued: `if (<prefix>_search(...))` treats a give-up
+ * as a match, and a caller that must not do that tests `== 1` (or `> 0`)
+ * for "matched" and `< 0` for "gave up". Values strictly below the floor
+ * are reserved for a future abort semantic and no emitted matcher produces
+ * one.
  * `caps` may be NULL (existence-only search, today's entire caller
  * population). On a match, if caps != NULL, RX_NCAPS pairs are written as
  * half-open [start, end) byte offsets; caps[0] IS the whole-match span (no
- * second name for it). On no match, caps (if non-NULL) is left UNTOUCHED —
- * the int return value alone communicates match/no-match. startpos > n
+ * second name for it). On no match — and on a give-up, which is a failure
+ * for this rule too — caps (if non-NULL) is left UNTOUCHED; the int return
+ * value alone communicates the outcome. startpos > n
  * returns 0. `^` anchors to absolute offset 0 regardless of startpos. s may
- * be NULL only when n == 0. RX_NCAPS is 1 on every artifact this milestone
- * emits (a DFA-compiled matcher); RX_NCAPS > 1 implies the VM engine ([M4.5]).
+ * be NULL only when n == 0. RX_NCAPS is 1 on any DFA-compiled artifact
+ * (which is every artifact built `--no-captures`); RX_NCAPS > 1 implies the
+ * VM engine ([M4.5], where captures became the default).
  *
  * Every generated matcher also exports, unconditionally: `<prefix>_match`
  * (the `rx_matchfn`-typed match-here entry, anchored at `ctx->pos`, no
- * search loop, no capture output — a length or -1), `<prefix>_match_caps`
- * (the anchored capture-DELIVERING sibling: same anchoring, plus a
- * `caps_out` parameter), and `extern const rx_info <prefix>_info` (a static
+ * search loop, no capture output — a length, -1, or a give-up code from
+ * the same space as above), `<prefix>_match_caps`
+ * (the anchored capture-DELIVERING sibling: same anchoring and same return
+ * space, plus a `caps_out` parameter), and
+ * `extern const struct rx_info <prefix>_info` (a static
  * reflection structure: option flags, encoding, pattern text, group counts,
  * selected engine, budgets). The fixed-literal ABI types these entries
  * share (`rx_ctx`, `rx_matchfn`, `rx_callout_ref`, `rx_group_entry`,
