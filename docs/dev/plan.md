@@ -252,7 +252,17 @@ stated terms.
     includes the R22 §2.2 CONTRACT-TEXT WORDING PASS (cross-iteration
     retention; empty-final-iteration overwrite — folded into the
     graduated text, not carried as an addendum). After [M4.7c] so
-    pattern_len is in the frozen surface
+    pattern_len is in the frozen surface. ALSO OWED HERE (Frank Q&A
+    2026-08-18, measured vs libpcre2 10.46 same evening): the
+    COMPILE-ENTRY contract stated explicitly — patterns are
+    NUL-terminated and a raw 0x00 byte truncates the compile; measured
+    fact to cite: PCRE2's own ZERO_TERMINATED mode truncates
+    IDENTICALLY (probe: 3-byte {'a',0,'b'} compiles as "a" under the
+    sentinel, compiles/matches fully under length=3), so this is an
+    API-SURFACE gap, not a semantics divergence; full length-taking
+    support stays with DD-3, trigger customer [V-A]'s
+    (pattern,length) compat shim; rx_info.pattern_len is the named
+    detectability instrument (K9 pins: tests/cli case16)
   - [M4.7g] STATE:not-started — CLOSE: full close battery + ratchets;
     M5-vs-M6 order decided WITH FRANK at this close (standing rule)
 
