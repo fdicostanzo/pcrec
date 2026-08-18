@@ -101,13 +101,11 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
     const size_t n = cx->patlen;
     size_t i = from;
 
-    /* NAME GRAMMAR (see header). PCRE2 error 162 is "subpattern name
-     * expected" for an empty name; error 144 is "name is used more than
-     * once" — no, 144 is the leading-digit shape specifically
-     * ("subpattern name must start with a non-digit"); D26 owns none of
-     * that WORDING, only that a real syntax boundary refuses cleanly, so
-     * this port's own message is written for a pcrec reader, not
-     * transcribed from PCRE2's. */
+    /* NAME GRAMMAR (see header): an empty or digit-led name is PCRE2's
+     * error 144 ("subpattern name must start with a non-digit"). D26
+     * owns none of that WORDING — only that a real syntax boundary
+     * refuses cleanly — so this port's own message is written for a
+     * pcrec reader, not transcribed from PCRE2's. */
     if (i >= n || !(isalpha((unsigned char)p[i]) || p[i] == '_'))
         REFUSE(i < n ? i : at,
                "subpattern name expected (a name starts with a letter or "
