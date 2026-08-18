@@ -1050,23 +1050,52 @@ case11() {
     # failing first — both exited 3 with
     #   agree  DISSENT: attribution: declared 'modifiers', live names 'named-groups'
     # — and the verbatim blocks are in the slice's commit message.
-    local letter_mod
-    for q in '(?J)' '(?m)'; do
-        [ "$q" = '(?J)' ] && letter_mod="named-groups" || letter_mod="assertions"
-        out="$("$PCREC" --features modifiers --explain "$q" 2>"$d/e3.txt")"; rc=$?
-        assert_eq "case11: an open gate does not make $q dissent" "0" "$rc" \
-            "stderr: $(cat "$d/e3.txt")"
-        assert_field "case11: ...$q's row agrees" "$out" "$q" "agree" "ok"
-        assert_field "case11: ...and the header counts no dissent for $q" \
-            "$out" "@header" "dissents" "0"
-        # the per-LETTER module is still SHOWN. This is the pin that stops the
-        # fix being "make the two sides agree by dropping the interesting
-        # one": the displayed answer must keep naming the letter's module.
-        assert_field "case11: ...while $q's own answer still names the letter's module" \
-            "$out" "$q" "own names" "$letter_mod"
-        assert_field "case11: ...and the row still declares its own" \
-            "$out" "$q" "module" "modifiers"
-    done
+    #
+    # [M6.3] (2026-08-18) split what was ONE shared cell into two, and this
+    # is the deliberate half, not a weakening of it: `(?J)`'s per-letter
+    # answer used to name module 'named-groups' honestly (the module did
+    # not exist yet, so "requires module 'named-groups'" was true). Once
+    # named-groups actually SHIPPED without (?J)/DUPNAMES — a ruled scope
+    # exclusion, docs/dev/plan.md's [M6.3] row — that same sentence would
+    # have started being a LIE the moment the module landed, so
+    # mod_modifiers.c's 'J' case moved to K14's ROADMAP_NEVER wording (no
+    # module promised) instead. `(?m)` is untouched: `assertions` has not
+    # shipped, so its per-letter promise is still true and still pinned the
+    # original way. The comment this replaces said the point was "the fix
+    # must not become dropping the interesting field" — that principle
+    # still holds; what changed is which answer IS the honest one for `J`.
+    out="$("$PCREC" --features modifiers --explain '(?m)' 2>"$d/e3.txt")"; rc=$?
+    assert_eq "case11: an open gate does not make (?m) dissent" "0" "$rc" \
+        "stderr: $(cat "$d/e3.txt")"
+    assert_field "case11: ...(?m)'s row agrees" "$out" "(?m)" "agree" "ok"
+    assert_field "case11: ...and the header counts no dissent for (?m)" \
+        "$out" "@header" "dissents" "0"
+    # the per-LETTER module is still SHOWN. This is the pin that stops the
+    # fix being "make the two sides agree by dropping the interesting
+    # one": the displayed answer must keep naming the letter's module.
+    assert_field "case11: ...while (?m)'s own answer still names the letter's module" \
+        "$out" "(?m)" "own names" "assertions"
+    assert_field "case11: ...and the row still declares its own" \
+        "$out" "(?m)" "module" "modifiers"
+
+    out="$("$PCREC" --features modifiers --explain '(?J)' 2>"$d/e3.txt")"; rc=$?
+    assert_eq "case11: an open gate does not make (?J) dissent" "0" "$rc" \
+        "stderr: $(cat "$d/e3.txt")"
+    assert_field "case11: ...(?J)'s row agrees" "$out" "(?J)" "agree" "ok"
+    assert_field "case11: ...and the header counts no dissent for (?J)" \
+        "$out" "@header" "dissents" "0"
+    # [M6.3], THIRD AND FINAL WORDING (manager ruling, citing the ratified
+    # D38 PCRE2_DUPNAMES row and docs/pcre2_compliance.md's own REJECTED/
+    # planned status for (?J) — not OUT-OF-SCOPE): the letter's own answer
+    # names its TRUE owning module, `named-groups` (duplicate NAMES are
+    # named-group semantics, same dispatch logic 'm' already uses for
+    # 'assertions'), without the false "requires" framing — "requires
+    # module 'named-groups'" would read as "enabling it fixes this", which
+    # is false since named-groups ships without dupnames support.
+    assert_field "case11: ...while (?J)'s own answer names its true owning module" \
+        "$out" "(?J)" "own names" "named-groups"
+    assert_field "case11: ...and the row still declares its own" \
+        "$out" "(?J)" "module" "modifiers"
 
     # --- THE NULL CONTRACT (R20/MOD07-4+5): NULL <=> answered without a row -
     # `ExtResult.row` named three no-row cases and was WRONG about two of

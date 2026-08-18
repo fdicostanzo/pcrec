@@ -200,7 +200,23 @@ static PcrecRun run_pcrec(const char *path, char *const argv[])
     return r;
 }
 
-typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_INVALID, VC_ERROR } VClass;
+/* [M6.3] VC_SCOPE joins the model: a refusal saying the construct is out
+ * of pcrec's scope FOREVER (K14's ROADMAP_NEVER shape). Kept as READY
+ * INFRASTRUCTURE (mirroring the registry's own "no RS_MODULE
+ * ROADMAP_NEVER rows today; re-arms the day one exists" posture) rather
+ * than removed: `J` briefly WAS this state under a same-day intermediate
+ * wording, but the manager's RULING (citing the ratified D38
+ * PCRE2_DUPNAMES row — PLANNED-LATER, not NEVER — and
+ * docs/pcre2_compliance.md's own REJECTED/planned status for `(?J)`)
+ * replaced it with a truthful, module-naming, non-"requires" phrasing
+ * that `compile_verdict` below recognises as VC_UNIMPL instead — the
+ * SAME bucket 'm' (-> assertions) already used, on the theory that both
+ * are "a real, known, not-yet-built construct", which is exactly what
+ * VC_UNIMPL means. `(?J)` is real PCRE2 syntax libpcre2 accepts and
+ * pcrec is not saying otherwise, which is why VC_INVALID (this file's
+ * "not valid PCRE2 at all" bucket) would be wrong for it in EITHER
+ * wording. */
+typedef enum { VC_ACCEPTED, VC_UNIMPL, VC_SCOPE, VC_INVALID, VC_ERROR } VClass;
 
 /* Compiles PAT as a whole pattern under `--features modifiers`. Only the
  * verdict class matters here (matching is check12's job). */
@@ -212,7 +228,18 @@ static VClass compile_verdict(const char *pcrec_path, const char *pat)
     if (!r.ran) { spec_fail("compile_verdict: fork/exec failed for '%s'", pat); return VC_ERROR; }
     if (r.timed_out) { spec_fail("compile_verdict: pcrec timed out on '%s'", pat); return VC_ERROR; }
     if (r.exit_code == 0) return VC_ACCEPTED;
-    if (r.exit_code == 1) return strstr(r.err, "requires module '") ? VC_UNIMPL : VC_INVALID;
+    if (r.exit_code == 1) {
+        /* [M6.3] THIRD PASS: "module 'X'" (no longer requiring the
+         * "requires " prefix) catches both the ordinary "requires module
+         * 'X'" shape and (?J)'s "module 'X' does not implement ..."
+         * truthful-indefinite shape — see the enum's own comment. Checked
+         * before "outside pcrec's scope" for the same reason
+         * check07_gate_equivalence.c orders them: unreachable today, kept
+         * as ready infrastructure. */
+        if (strstr(r.err, "module '")) return VC_UNIMPL;
+        if (strstr(r.err, "outside pcrec's scope")) return VC_SCOPE;
+        return VC_INVALID;
+    }
     spec_fail("compile_verdict: pcrec exited %d (expected 0 or 1) for '%s' (stderr: %s)",
                r.exit_code, pat, r.err);
     return VC_ERROR;
@@ -221,7 +248,7 @@ static VClass compile_verdict(const char *pcrec_path, const char *pat)
 /* -------------------------------------------------------------- bookkeeping */
 
 static const char *pcrec_path;
-static long pcrec_compared, pcrec_refused_unimpl;
+static long pcrec_compared, pcrec_refused_unimpl, pcrec_refused_scope;
 
 /* One probe: PAT predicted ACCEPT (predict_ok=1) or REJECT (predict_ok=0) by
  * libpcre2, measured HERE (never recalled). Compares the prediction against
@@ -240,6 +267,7 @@ static void probe(const char *pat, int predict_ok, const char *family)
     VClass vc = compile_verdict(pcrec_path, pat);
     if (vc == VC_ERROR) return;
     if (vc == VC_UNIMPL) { pcrec_refused_unimpl++; return; }
+    if (vc == VC_SCOPE)  { pcrec_refused_scope++; return; }
     pcrec_compared++;
     int pcrec_ok = (vc == VC_ACCEPTED);
     if (pcrec_ok != predict_ok)
@@ -411,18 +439,21 @@ int main(int argc, char **argv)
      * Not gated behind a whole-check surface flag (see header): every probe
      * above already went through compile_verdict(). A probe that came back
      * anything other than "requires module" counted toward pcrec_compared. */
-    printf("  pcrec: %ld probe(s) compared, %ld refused-as-unimplemented\n",
-           pcrec_compared, pcrec_refused_unimpl);
+    printf("  pcrec: %ld probe(s) compared, %ld refused-as-unimplemented, "
+           "%ld refused-as-out-of-scope\n",
+           pcrec_compared, pcrec_refused_unimpl, pcrec_refused_scope);
     spec_pop("modsyn.pcrec_compared", pcrec_compared);
     spec_pop("modsyn.pcrec_refused_unimpl", pcrec_refused_unimpl);
+    spec_pop("modsyn.pcrec_refused_scope", pcrec_refused_scope);
 
     static const char *const owned[] = {
         "modsyn.registry_rows_modifiers", "modsyn.registry_syntax_ok",
         "modsyn.alphabet_forms", "modsyn.alphabet_complement",
         "modsyn.structural_grammar", "modsyn.doorway_disambiguation",
-        "modsyn.pcrec_compared", "modsyn.pcrec_refused_unimpl"
+        "modsyn.pcrec_compared", "modsyn.pcrec_refused_unimpl",
+        "modsyn.pcrec_refused_scope"
     };
-    spec_floors_require(owned, 8);
+    spec_floors_require(owned, 9);
     if (spec_fails) return spec_finish();
 
     if (pcrec_compared == 0)

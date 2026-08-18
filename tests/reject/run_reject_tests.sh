@@ -840,20 +840,66 @@ accept '(?-i)'
 # `reject_gated` itself now lives earlier in the file (right after
 # `accept()`), because [STD1b] needs it — as `reject_gated none ...` — for
 # rows far above this point in the file. See its definition there.
-# The two per-letter attributions (MOD-0.5a rulings, flagged to Frank):
-# multiline is assertion-engine work; J is observable only through named
-# groups. Reversible one-row edits in mod_modifiers.c if overruled.
+# The two per-letter attributions (MOD-0.5a rulings, flagged to Frank).
+# J's wording has moved THREE TIMES the same day ([M6.3], 2026-08-18) and
+# this is the FINAL one, per manager ruling citing the ratified D38
+# PCRE2_DUPNAMES row (RIDES(M4/captures), a PLANNED-LATER disposition, not
+# NEVER) and docs/pcre2_compliance.md's own REJECTED/planned status for
+# `(?J)`:
+#   1. "requires module 'named-groups'" — the ORIGINAL MOD-0.5a wording,
+#      true while that module did not exist, a LIE the moment it shipped
+#      WITHOUT dupnames support (the "requires X" framing reads as
+#      "enabling X fixes this", which named-groups landing disproved).
+#   2. K14's ROADMAP_NEVER shape ("...is outside pcrec's scope and no
+#      module will implement it...") — a same-day intermediate fix that
+#      was ALSO wrong: (?J) does not meet K14's bar (real PCRE2 the
+#      SURVEY calls architecturally excluded), it is PLANNED-LATER.
+#   3. THE RULING: names the true owning module (named-groups — duplicate
+#      NAMES are named-group semantics, same dispatch logic 'm' already
+#      uses for 'assertions') without the false "requires" framing.
 reject_gated modifiers '(?m)a'     "requires module 'assertions'"
-reject_gated modifiers '(?J)a'     "requires module 'named-groups'"
+reject_gated modifiers '(?J)a'     "module 'named-groups' does not implement duplicate group names"
 # [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so `(?m)a`/
 # `(?J)a` reach this SAME diagnosis bare, with no `--features` at all — the
 # std1-BOUNDARY proof: std1 = {classes, modifiers} and nothing wider, so
-# `m`'s and `J`'s real modules ('assertions', 'named-groups') must still be
-# refused by a bare invocation. If std1's mask ever silently grew to include
-# either, these two rows are what would flip from reject to accept.
+# `m`'s real module ('assertions') and J's owning module ('named-groups',
+# which does not implement dupnames) must both still be refused by a bare
+# invocation. If std1's mask ever silently grew to include 'assertions'
+# or 'named-groups' gained dupnames support, the corresponding row is what
+# would flip from reject to accept.
 # (`(?m)a`'s bare pin already lives further down, alongside its five
 # sibling letters' gate conversion — not duplicated here.)
-reject '(?J)a'     "requires module 'named-groups'"
+reject '(?J)a'     "module 'named-groups' does not implement duplicate group names"
+
+# ---- [M6.3] module `named-groups` — GATED pins. The producer's own
+# corpus (tests/named_groups/) carries the MATCH-semantics half; these are
+# the tier-2 attribution/boundary facts a `perr`/`m`/`n` block cannot
+# assert (WHY a pattern refuses, or that a construct in a DIFFERENT
+# module still refuses once this one is enabled) plus two syntax-boundary
+# refusals python `re` cannot co-verify (name length; see
+# docs/dev/upstream_issues.md U10). Name-syntax refusals PYTHON DOES agree
+# on (leading digit, duplicate name) live in tests/named_groups/'s own
+# `.rxt` corpus as ordinary oracle-verified `perr` blocks instead — this
+# file is for what a `.rxt` block structurally cannot express.
+#
+# THE BOUNDARY, proven both ways: a backreference-BY-NAME spelling and the
+# DUPNAMES option letter must both keep refusing once named-groups is
+# enabled — the module's whole point is the three DECLARING spellings,
+# nothing else at the `(?` doorway moves.
+reject_gated named-groups '(?<x>a)\k<x>'   "requires module 'backrefs'"
+reject_gated named-groups '(?<x>a)(?P=x)'  "requires module 'backrefs'"
+reject_gated named-groups,modifiers '(?J)(?<dup>a)(?<dup>b)' \
+    "module 'named-groups' does not implement duplicate group names"
+# The measured wall (tests/probes/probe_named_groups.c, U10): 128 bytes is
+# the longest name PCRE2 accepts; python `re` has no such ceiling, so this
+# is the one boundary in this block that cannot be a co-verified `.rxt`
+# `perr` — the 128-accepts half lives in tests/named_groups/ instead,
+# where it IS python-verifiable (no length limit on the python side to
+# diverge on an ACCEPTING case).
+reject_gated named-groups \
+  '(?<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>x)' \
+  "subpattern name is too long (maximum 128 bytes)"
+
 # The recognised-malformed shape (PCRE2 error 194's analogue) and the
 # truncated run (error 114's): the module diagnoses its own body.
 reject_gated modifiers '(?i-m-s)a' "invalid hyphen in option setting"
@@ -1747,8 +1793,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 55 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 55." >&2
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 59 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 59 ([M6.3] added 4: the two backref-by-name boundary proofs, the (?J)+named-groups combined-gate proof, and the 129-byte name-length wall)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

@@ -307,7 +307,14 @@ enum {
      * "PCRE2-like" cap, which undersold it — it is PCRE2's number, measured.
      * It also bounds parser and AST recursion depth (R1 review R-1), so it is
      * load-bearing for more than compatibility. */
-    PCREC_MAX_GROUP_DEPTH = 250
+    PCREC_MAX_GROUP_DEPTH = 250,
+
+    /* [M6.3] a named group's name: 128 bytes compile, 129 is PCRE2 error
+     * 148, "subpattern name is too long (maximum 128 code units)" — swept
+     * 1..2000 bytes of an otherwise-valid name against libpcre2 10.46
+     * (tests/probes/probe_named_groups.c), so this is a measured wall, not
+     * an assumed carry-over of PCRE1's older 32-byte MAX_NAME_SIZE. */
+    PCREC_MAX_GROUP_NAME = 128
 };
 
 /* ---- PCRE2 INTERNALS — minimums we honour, not contracts we owe -------- *

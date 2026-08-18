@@ -227,3 +227,60 @@ exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
   is the primary instrument for a measured reason, not just a ruled one.
   These 3 cells were the only "counterexamples" in the critic's 1,889×300
   capture-focused sweep — all PCRE2-side, none analysis-side.
+
+## U10 — python `re`: named-group SPELLING and length-ceiling divergences (module `named-groups`, [M6.3])
+
+- **Status**: two unrelated divergences, filed together because both were
+  found authoring the same corpus (tests/named_groups/) and both are
+  divergence-by-design rather than bugs on either side.
+- **Divergence 1 — SYNTAX, not semantics.** python `re` implements exactly
+  ONE of PCRE2's three named-group declaring spellings: `(?P<name>...)`.
+  `(?<name>...)` and `(?'name'...)` are simply not python `re` grammar at
+  all (`re.error: unknown extension ?` / a literal parse of `(?'` as
+  something else entirely — neither is a "python disagrees about what this
+  means" case, both are "python cannot parse this text"). This is NOT a
+  semantic divergence: all three PCRE2 spellings are the identical
+  construct, differing only in which characters delimit the name — same
+  numbering, same capture behaviour, same everything but the two
+  delimiter bytes — which pcrec's own parser encodes directly
+  (`src/parse/mod_named_groups.c` is ONE producer function serving all
+  three registry rows, dispatched only on which closing delimiter to scan
+  for). So the oracle-verification strategy is a MECHANICAL TRANSLATION
+  rather than an exclusion-with-no-evidence: rewrite `(?<name>` to
+  `(?P<name>` and `(?'name'` to `(?P<name>` (closing the substitution at
+  the matching `'`/`>`), run the TRANSLATED pattern through python `re`,
+  and use its verdict as the oracle for the ORIGINAL spelling. Worked
+  example: `(?<word>[a-z]+)-(?<num>[0-9]+)` on `"abc-123"` translates to
+  `(?P<word>[a-z]+)-(?P<num>[0-9]+)`, which python reports as `(0, 7)`
+  with `word` spanning `(0, 3)` and `num` spanning `(4, 7)` — identical to
+  the `(?P<...>` spelling's own DIRECTLY-verified block in the same
+  corpus file, which is the closest thing to a proof-by-construction that
+  the translation changes nothing but delimiters.
+- **Divergence 2 — a real ceiling mismatch.** PCRE2 10.46 refuses a named
+  group name above 128 bytes (error 148, "subpattern name is too long
+  (maximum 128 code units)" — measured, tests/probes/probe_named_groups.c,
+  swept 1..2000 bytes of an otherwise-valid name, exact wall at 129).
+  python `re` has no such ceiling at all — a 2000-byte group name compiles
+  without complaint. So the REFUSING half of this boundary (129 bytes)
+  cannot be python-co-verified in either direction; it is pinned in
+  tests/reject/'s gated pins instead (which needs no oracle agreement,
+  only pcrec's own diagnosis), and the corresponding ACCEPTING half (128
+  bytes, which python happily agrees compiles, just without enforcing why
+  129 would not) is not separately pinned — the module's own corpus
+  exercises ordinary short names throughout, and the 128/129 boundary
+  itself is the number worth pinning, not a redundant long-name accept.
+- **Also found, not a divergence**: `(?n)` (PCRE2's no-auto-capture
+  option) is not a python `re` construct at all (`re.error: unknown
+  extension ?n`), so `(?n)`'s interaction with named-group numbering
+  — a named group captures even when `(?n)` suppresses a PLAIN group's
+  number, measured: `(?n)(a)(?P<x>b)` has `capturecount=1, namecount=1`,
+  i.e. the plain group gets no number at all and the named group becomes
+  group 1, not group 2 — has no translation available either. Its oracle
+  is the probe measurement directly, not python in any form.
+- **Impact**: tests/named_groups/named_groups.rxt marks the `(?<name>...)`
+  and `(?'name'...)` blocks (and the `(?n)` cell) `# pcre2-only`, each with
+  a comment pointing back to this entry; the `(?P<name>...)` blocks are
+  NOT excluded and ARE checked live by `verify_rxt.py` on every run — the
+  living proof that the translation this entry describes is sound, since
+  those blocks assert the SAME spans the translated-and-excluded blocks
+  claim. See its CLAUDE.md for the full oracle-split accounting.

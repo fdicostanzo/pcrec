@@ -10403,3 +10403,64 @@ its D47.5 obligation and the D58 sequencing note (M6 residue routes
 through the seam from birth). [M6-READ] follows M6. Then the rest of
 M5, whose UTF-8 backend is the seam's validation event (D58
 revisit-when).
+
+## 2026-08-18 (EDT), lane/namedgroups — [M6.3] delivered: module `named-groups`
+
+All three declaring spellings — `(?<name>...)`, `(?'name'...)`,
+`(?P<name>...)` — parse, capture and number exactly as a plain `(` group
+(opening-paren order, including under `(?n)`: measured, a named group
+captures even when `(?n)` turns numbering off for plain groups). One
+shared producer, `src/parse/mod_named_groups.c`'s `pcrec_ngport_declare`,
+serves all three registry rows via `ext.c`'s GENERAL producer-invocation
+path — the first time any GROUP-kind row outside the option-run family
+got one, so that mechanism is now proven for whichever construct needs
+it next (atomic-groups, lookaround, ...).
+
+Name grammar measured against libpcre2 10.46 rather than assumed
+(tests/probes/probe_named_groups.c, predictor-first per that directory's
+own method): first byte letter/`_`, later bytes alnum/`_`, max 128 bytes
+(PCRE2 error 148 above — a wall, not PCRE1's older 32-byte folklore),
+duplicate name a compile error (no DUPNAMES). `PCRE2_INFO_NAMETABLE`
+itself sorts by name — the finding behind D59's sort-key ruling for
+pcrec's own `rx_info.groups`, which discharges docs/spec/match_api.md
+§6's long-open "sort key not yet fixed" paragraph in the same change,
+re-quoted verbatim from a fresh build in both directions (captures-on
+and `--no-captures`, proving the `slot: -1` claim both ways).
+
+ENGINE: hit D55's own tripwire exactly as its "Revisit when" predicted —
+the first VM_ONLY-masked row to gain a producer. Did NOT build SR-8: a
+named group's AST is an ordinary `A_CAP` node, so the pre-existing
+generic capture-forcing rule (`forces_captures`) already sends it to the
+VM whenever it delivers a slot. The three rows reclassify `engines`
+VM_ONLY -> ANY_ENGINE instead (D59), which is a truer statement about
+the construct, not a loosened guard — `check_engine_capability_tripwire`
+still fires for any FUTURE module whose AST isn't already covered by an
+existing forcing rule.
+
+BOUNDARY: backreference-by-name (`\k<n>`, `(?P=n)`) and `(?J)`/DUPNAMES
+both still refuse with named-groups enabled — proven in tests/reject/'s
+gated pins, not merely by inspection. `(?J)`'s own refusal wording
+changed as a NECESSARY correction: it used to say "requires module
+'named-groups'", true only while that module did not exist; since
+DUPNAMES is a ruled scope exclusion (docs/dev/plan.md's [M6.3] row),
+leaving that wording in place after the module shipped would have turned
+a true sentence into a false promise, so it moved to K14's permanent
+ROADMAP_NEVER shape. Every place in the tree that pinned the old wording
+— tests/reject/, tests/cli/'s `--explain` pins, docs/pcre2_compliance.md
+— was updated in the same change, not left to drift.
+
+TESTS: tests/named_groups/ (oracle split documented in its own CLAUDE.md
+and docs/dev/upstream_issues.md U10 — python `re` speaks only
+`(?P<name>...)`, so the other two spellings are `# pcre2-only` with a
+TRANSLATED-spelling oracle rather than an unverified exclusion; `(?n)`'s
+interaction has no python equivalent at all and rests on the probe
+alone). Registry suite (163 registry_check.c + 169 after re-run + PC-3's
+163) and tests/reject (532, `ngated` 55->59) both green; tests/cli green
+(269/0, two pins rewritten for the `(?J)` wording change). Full `make
+test` run in progress at session end; see the lane's own report to
+team-lead for the final tally.
+
+NEXT: hand off to team-lead for review/merge. SR-8 remains owed to
+whichever future VM_ONLY module's AST is NOT already covered by an
+existing forcing rule — D59's "Revisit when" names the real trigger now,
+with one data point that needed it and one (this row) that didn't.

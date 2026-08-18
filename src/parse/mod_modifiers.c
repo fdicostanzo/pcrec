@@ -280,9 +280,39 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
                     "inline option 'm' (multiline) requires module 'assertions'");
             break;                        /* -m: true today, accepted */
         case 'J':
+            /* [M6.3] WORDING, THIRD AND FINAL PASS (manager ruling,
+             * 2026-08-18, citing docs/pcre2_options.md's RATIFIED D38 row
+             * — PCRE2_DUPNAMES is `RIDES(M4/captures)`, a PLANNED-LATER
+             * disposition — and docs/pcre2_compliance.md's own `(?J)` row,
+             * REJECTED/planned, not OUT-OF-SCOPE). Two earlier wordings
+             * were both wrong, for opposite reasons, and both are worth
+             * knowing before touching this line again:
+             *   1. "requires module 'named-groups'" — true while that
+             *      module did not exist, but a LIE the moment it shipped
+             *      WITHOUT dupnames support, since "requires X" reads as
+             *      "enabling X fixes this" and enabling it does not.
+             *   2. K14's ROADMAP_NEVER shape ("is outside pcrec's scope
+             *      and no module will implement it") — WRONG in the other
+             *      direction: (?J) is real PCRE2, D38 already rules it
+             *      PLANNED-LATER capture-group machinery, and K14's bar is
+             *      "architecturally out of scope per the survey", which a
+             *      planned construct does not meet.
+             * The correct shape names the OWNING module (named-groups —
+             * duplicate NAMES are named-group semantics, the identical
+             * dispatch logic 'm' already uses for 'assertions') without
+             * the false "requires" framing: pcrec KNOWS what would
+             * implement this and says so truthfully, indefinitely,
+             * whether or not named-groups itself is enabled (this
+             * refusal is unconditional either way — see
+             * mod_named_groups.c's duplicate-name check, which never
+             * consults this letter). Mirrors the `-e utf8` refusal's
+             * precedent (a name pcrec knows, refused truthfully, no
+             * "requires" claim). */
             if (!hyphen)
                 return modport_refuse(want, i,
-                    "inline option 'J' (dupnames) requires module 'named-groups'");
+                    "inline option 'J' (dupnames): module 'named-groups' "
+                    "does not implement duplicate group names (see "
+                    "docs/pcre2_compliance.md)");
             break;                        /* -J: true today, accepted */
         case 'r':
             break;                        /* measured no-op at options=0 */

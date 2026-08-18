@@ -105,7 +105,12 @@ static inline SpecPcrecRun spec_pcrec_run(const char *path, char *const argv[])
  * tell them apart. The three refusal classes are NOT interchangeable:
  *
  *   SPEC_VC_ACCEPTED  exit 0 — pcrec translated the pattern.
- *   SPEC_VC_MODULE    a refusal naming a module ("requires module 'X'").
+ *   SPEC_VC_MODULE    a refusal naming a module owner ("requires module
+ *                     'X'", or — [M6.3], `(?J)`'s ruled wording — "module
+ *                     'X' does not implement ..." for a construct that IS
+ *                     enabled but whose owning module still does not cover
+ *                     it, which reads as a false "enabling X fixes this"
+ *                     if forced into the "requires" phrasing). Either way
  *                     pcrec is saying the construct is REAL and unimplemented.
  *   SPEC_VC_SCOPE     a refusal saying the construct is out of pcrec's scope
  *                     forever. Also an assertion that the construct is REAL.
@@ -124,7 +129,10 @@ static inline SpecVClass spec_pcrec_classify(const SpecPcrecRun *r)
     if (!r->ran || r->timed_out) return SPEC_VC_ERROR;
     if (r->exit_code == 0) return SPEC_VC_ACCEPTED;
     if (r->exit_code != 1) return SPEC_VC_ERROR;
-    if (strstr(r->err, "requires module '")) return SPEC_VC_MODULE;
+    /* [M6.3]: "module '" (no longer requiring the "requires " prefix)
+     * catches both known module-naming shapes — see the enum's own
+     * comment above. */
+    if (strstr(r->err, "module '")) return SPEC_VC_MODULE;
     if (strstr(r->err, "outside pcrec's scope")) return SPEC_VC_SCOPE;
     return SPEC_VC_INVALID;
 }
@@ -140,14 +148,16 @@ static inline const char *spec_vclass_name(SpecVClass c)
     }
 }
 
-/* The module name out of "requires module 'X'", or "" if there is none. */
+/* The module name out of either module-naming shape (see SpecVClass's own
+ * comment: "requires module 'X'" or [M6.3]'s "module 'X' does not
+ * implement ..."), or "" if there is none. */
 static inline const char *spec_pcrec_module(const SpecPcrecRun *r)
 {
     static char buf[64];
     buf[0] = 0;
-    const char *p = strstr(r->err, "requires module '");
+    const char *p = strstr(r->err, "module '");
     if (!p) return buf;
-    p += strlen("requires module '");
+    p += strlen("module '");
     size_t n = 0;
     while (p[n] && p[n] != '\'' && n < sizeof buf - 1) { buf[n] = p[n]; n++; }
     buf[n] = 0;

@@ -4729,3 +4729,92 @@ bytes-forever offsets).
 **Revisit when:** M5's UTF-8 backend lands — the second consumer is
 the seam's validation event; any interface change it forces gets
 recorded against this entry.
+
+## D59 — module `named-groups`: sort `rx_info.groups` by NAME; its three rows reclassify VM_ONLY -> ANY_ENGINE instead of building SR-8 (namedgroups lane, 2026-08-18, [M6.3])
+
+**Decision, part 1 (the sort key), SCOPED to today's table.** For every
+row this module can produce today — `rx_group_entry.ref` is
+NULL/empty, "the primary's own groups" (match_api.md §2's own wording)
+— `rx_info.groups` sorts by NAME, byte-exact `strcmp` order, CASE-
+SENSITIVE (measured, both oracles: `(?<name>a)(?<NAME>b)` is two
+distinct groups under libpcre2 10.46 and python3 `re` alike, and stays
+two distinct groups under `(?i)`/`PCRE2_CASELESS` — caseless affects
+MATCHING, never name IDENTITY, so this module's duplicate-name check
+and this sort both apply zero case folding). Measured against libpcre2
+10.46 (tests/probes/probe_named_groups.c): `PCRE2_INFO_NAMETABLE`, the
+construct this module's whole reflection surface mirrors, is ITSELF
+sorted by name this same way (a 3-name pattern declared
+`zeta`/`alpha`/`mu` by opening-paren order comes back
+`alpha`/`mu`/`zeta`), which both confirms name-sort is the natural,
+bsearch-friendly choice or PCRE2 would not use it for the identical
+purpose, and removes any temptation to invent a pcrec-only convention
+where an external precedent already exists and is trivial to reproduce
+(`qsort` in src/gen/emit_dfa.c's `emit_info_def`, one comparator).
+
+**The scoping matters and is deliberate, not an oversight**: `ref` is
+the ABI's own reserved cross-pattern-reference dimension (match_api.md
+§2 — "NULL/empty for the primary's own groups... its non-empty form is
+a labeled insertion path that nothing in pcrec can produce today").
+Once a producer for non-empty `ref` exists, the table's effective key
+becomes the COMPOUND `(ref, name)`, not `name` alone — a future
+producer choosing where a `ref`-bearing row sorts relative to the
+primary's own rows is EXPLICITLY UNFIXED by this decision, exactly the
+way `ref` itself was left unfixed until a producer needed it. Duplicate-
+name detection stays PER-PATTERN regardless: two patterns can legally
+declare the same name (disambiguated by `ref`, never refused), and a
+single compile call structurally cannot see another compile call's
+names to collide with in the first place. This decision fixes ONLY the
+column this module actually populates.
+
+**Decision, part 2 (the engine reclassification).** The three
+declaring rows (`(?<name>a)`, `(?'name'...)`, `(?P<name>a)` — GROUP/
+GROUP_T rows in registry.c) move their `engines` mask from `VM_ONLY`
+to `ANY_ENGINE`, wired with `pcrec_ngport_declare`
+(src/parse/mod_named_groups.c) as their producer.
+`tests/registry/registry_check.c`'s `check_engine_capability_tripwire`
+— D55's own tripwire, whose comment and failure message both say the
+next step is "build SR-8's lowering-time engines-column consultation
+in select_engine.c" — fired exactly as D55 predicted the day the first
+VM_ONLY producer landed. SR-8 was NOT built. Instead: a named group's
+AST is, after parsing, an ordinary `A_CAP` node — bit-for-bit what a
+plain `(...)` group's AST already is, with the SAME numbering rule
+(opening-paren order; a named group counts even under `(?n)`, which
+suppresses a plain group's number, measured — probe step 9). No new
+information reaches the AST that would let a hypothetical SR-8
+consultation decide anything a plain-group-shaped analysis could not.
+The PRE-EXISTING generic capture-forcing rule
+(src/opt/select_engine.c's `forces_captures`: `ENGM_VM` whenever
+`cx->want_caps && cx->ncap > 0`) therefore already sends every
+captures-wanted, named-group-bearing pattern to the VM, and a
+`--no-captures` build compiles it on the DFA exactly as it would a
+plain group — verified directly (`--no-captures '(?<x>a)(?<y>b)'`
+selects `ENGM_DFA`, both entries stamp `slot: -1`; the captures-on
+build of the same pattern selects `ENGM_VM`). So `VM_ONLY` on these
+three rows was never a fact about the CONSTRUCT — it was the M6.0
+premise note's blanket default for every not-yet-analyzed M6 module,
+carried forward unexamined until a producer forced the question.
+`ANY_ENGINE` is the row's actual classification, and `qualifying`
+(the tripwire's own population, previously 51) drops to 48 because
+these three rows genuinely stop needing the guard, not because the
+guard was loosened.
+
+**Why not build SR-8 anyway, since a producer is now here?** D55's
+own reasoning for deferring SR-8 was that a synthetic producer "proves
+the plumbing runs, not that a real producer's contract... matches what
+was guessed at sample size zero." Named-groups IS the real producer
+D55 waited for, and its real contract turns out to need NO new
+consultation at all — the existing capture-forcing rule already
+answers the only question SR-8 would have asked for this construct.
+Building unpopulated machinery to answer a question this producer does
+not pose would repeat exactly the mistake D55's "Why" section
+describes reverting. SR-8 remains owed to whichever FUTURE module
+actually needs a general engines-column consultation (lookaround,
+lookbehind's back-step, atomic-groups' cut semantics, and backrefs are
+all live candidates — none is an ordinary A_CAP node, so none gets this
+module's free ride).
+
+**Revisit when:** a future VM_ONLY-masked module wires a producer whose
+AST shape is NOT already covered by an existing forcing rule
+(`forces_captures` or a future sibling) — that is the real trigger for
+building SR-8, now with two data points (the deferral that held, and
+the one construct that didn't need it) instead of zero.

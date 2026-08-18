@@ -179,6 +179,28 @@ oracle version bump, review needing evidence), never read by any check.
   showing pairs above `pcre2_match`'s return value ARE set to PCRE2_UNSET,
   and the SR-10 namespace survey (every candidate pcrec-only spelling is
   rejected by PCRE2, so the namespace is available).
+- `probe_named_groups.c` — [M6.3] design probe (2026-08-18, module
+  `named-groups`): locates `PCRE2_INFO_NAMECOUNT`/`NAMEENTRYSIZE`/
+  `NAMETABLE` behaviourally (the same sweep-then-confirm method already
+  used for `PCRE2_ABI_INFO_CAPTURECOUNT`; the NAMETABLE step trusts the
+  documented opcode 19 rather than a blind pointer sweep, after the
+  latter's first cut dereferenced a garbage "pointer" from a wrong
+  candidate and segfaulted — recorded in the probe's own comment as the
+  reason NOT to sweep pointer-returning opcodes blindly). The name
+  grammar (first byte letter/`_`, later bytes alnum/`_`, digit-led names
+  are error 144 — a 256-byte first/later sweep through the `(?<` doorway,
+  reading the three lookbehind-tail carve-outs `=`/`!`/`*` as EXPECTED
+  disagreements rather than new findings), the max name length (128
+  bytes; swept 1..2000, exact wall at 129, PCRE2 error 148 — not PCRE1's
+  older 32-byte convention), duplicate-name refusal (error 143, no
+  DUPNAMES) and `(?J)`/DUPNAMES's effect (both entries kept, distinct
+  numbers), the three declaring spellings' interleaved numbering against
+  plain groups, and `(?n)`'s interaction with named-group numbering
+  (`(?n)(a)(?P<x>b)`: `capturecount=1, namecount=1` — the plain group
+  gets no number at all). The evidence behind
+  docs/dev/decisions.md D59's sort-key ruling: `PCRE2_INFO_NAMETABLE`
+  itself is sorted by name (a `zeta`/`alpha`/`mu` declaration order comes
+  back `alpha`/`mu`/`zeta`).
 
 ## The method these encode (R14's closing lesson)
 

@@ -234,7 +234,7 @@ commits to. The blocker is table generation and size, not matching.
 | `a\|b` | `OK` | — | incl. empty branches; leftmost-first preference via priority pruning (D3) |
 | `(...)` | `OK-LIMITED` | — | limit kind: CAPABILITY not yet built. Parses and groups correctly, but capture SPANS are not reported — only the overall match. Captures arrive with the M4 VM engine |
 | `(?:...)` | `OK` | |
-| `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `REJECTED` | — | module `named-groups`. Gated behind captures (M4). Since Q2/SR-9 `(?<` names ONLY this module: the three lookbehind tails `=` `!` `*` have rows of their own |
+| `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `OK-GATED` | — | module `named-groups`, SHIPPED 2026-08-18 ([M6.3]): all three declaring spellings parse and capture as their group number (opening-paren order, exactly as an unnamed group — including under `(?n)`, which suppresses a PLAIN group's number but NOT a named one's, measured). `rx_info.groups` is populated, sorted by NAME (strcmp, byte-exact and case-sensitive — "name"/"NAME" are two distinct groups, even under `(?i)`, measured both oracles) — PCRE2's own `PCRE2_INFO_NAMETABLE` is sorted the identical way, measured directly (tests/probes/probe_named_groups.c), which is this module's own evidence for the sort key docs/spec/match_api.md §6 had left open (fixed only for today's ref-empty rows — see D59). A duplicate name is a compile error (PCRE2 error 143, no DUPNAMES); `(?J)`/DUPNAMES itself stays OUT OF SCOPE — see its own row below. Backreference-BY-NAME spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) stay module `backrefs`, unaffected — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING position: the three lookbehind tails `=` `!` `*` have rows of their own. `--features none` (the bare default) still refuses with the module name; `--features named-groups` compiles. Oracles: tests/named_groups/ |
 | `(?>...)`, `(*atomic:...)` | `REJECTED` | `PLANNED-HARD` | module `atomic-groups` / `verbs`. Same reasoning as possessive quantifiers: a cut, not a no-op |
 
 ## Comment
@@ -253,7 +253,7 @@ commits to. The blocker is table generation and size, not matching.
 | `(?x)` `(?xx)` extended | `OK` | — | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5d): skip set {09,0A,0B,0C,0D,20,85} (NOT `\s`'s set — NEL is skipped), `#`-comments to 0x0A only (the NEWLINE_LF convention), xx's class-interior {09,20} deletion ahead of the endpoint rule (the D30 §7 `(?xx)[a- ]` hazard, now compiled correctly), doubled-x ADJACENCY rule incl. the later-bare-x downgrade — every clause probe-measured (probe_mod05*.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(?U)` ungreedy | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): default greed inverted at quantifier construction, `?` re-inverts; NOT reset by `(?^)` (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(?n)` no-auto-capture | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting (`--count-groups` oracle-tied via check02's channel); does NOT imply J (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(?J)` dup names | `REJECTED` | — | with the gate OPEN the letter refuses per-letter to module `named-groups` (MOD-0.5a ruling: J is observable only through named groups); `(?-J)` accepted no-op. Gated pin: tests/reject/ reject_gated |
+| `(?J)` dup names | `REJECTED` | `planned` | Per-letter attributed to module `named-groups` (duplicate NAMES are named-group semantics — the same dispatch logic `(?m)` already uses for `assertions`), MOD-0.5a's original ruling ("J is observable only through named groups") — [M6.3] (2026-08-18) briefly moved this to a K14 OUT-OF-SCOPE reading and then RULED it back: `docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row is `RIDES(M4/captures)`, RATIFIED D38, a PLANNED-LATER disposition, not NEVER — (?J) does not meet K14's "architecturally out of scope per the survey" bar. The letter refuses UNCONDITIONALLY, gate open or closed, naming its true owning module WITHOUT the false "requires" framing ("module 'named-groups' does not implement duplicate group names" — "requires module 'named-groups'" would read as "enabling it fixes this", which named-groups shipping (without dupnames) disproved); `(?-J)` accepted no-op. Pin: tests/reject/ reject_gated |
 | `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK` | — | MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0 diff cells over 256x256; all four a-sub pairs census-identical) — accepted and applied as nothing, which is exactly PCRE2's observable behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own that day (DD-12). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(?^)` reset options | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): resets i,m,n,s,x,xx to the HARDWIRED defaults; U and J SURVIVE — "unset imnsx" is the measured rule, and the reset is to-constant, not to-compile-option (both from probe_mod05b.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
 | `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — | these bound a BACKTRACKING search. pcrec is O(n) by construction, so there is nothing to limit. D22 also removes the adversarial-input motivation. `LIMIT_RECURSION` is PCRE2's older synonym for `LIMIT_DEPTH` — it was in pcrec's verb tables but missing from this row until the K14 check compared them (2026-08-11) |
@@ -273,9 +273,14 @@ invalidity:
     libpcre2 10.46: error 194, "invalid hyphen in option setting"
 
 `(?i--)`, whose letters are all implemented, IS diagnosed as the malformed run
-it is — so the ordering is only observable through a deferred letter. Today
-that is exactly two letters, `m` (→ `assertions`) and `J` (→ `named-groups`),
-which are the two rows above marked `REJECTED` with a per-letter refusal.
+it is — so the ordering is only observable through a deferred letter. At
+measurement time (2026-08-12) that was exactly two letters, `m` (→
+`assertions`) and `J` (→ `named-groups`) — both still true after [M6.3]
+(2026-08-18): `J`'s wording moved (twice, same day — see the `(?J)` row
+above) but it still names `named-groups` as its owning module, so both
+letters remain MODULE-shaped deferrals, just with `J`'s phrasing avoiding
+the false "requires" framing (`named-groups` IS enabled once this
+diagnostic is reachable; enabling it again would not fix anything).
 
 **Why this is tier 2 and not tier 1.** Both engines REFUSE, and neither emits
 anything: what differs is which REFUSAL CATEGORY the user is told about, which
@@ -307,20 +312,27 @@ report that found it):
   both give `requires module 'assertions'`) — only `--features none`
   reproduces the original 142-cell closed-gate figure now.**
 
-**The population can only shrink, and the shrink is measured rather than
-promised.** 142 → 8 is what opening the gate already does: every letter whose
-module lands stops deferring and starts being validated with the rest of the
-run. When `assertions` and `named-groups` both ship, the last 8 cells go and
-this entry closes itself.
+**The population still shrinks toward zero, and [M6.3] changed WHICH event
+closes the `J`-half, not whether it closes.** 142 → 8 is what opening the
+gate already does: every letter whose module lands and VALIDATES the
+letter stops deferring. `m`'s 4 cells close when `assertions` lands. `J`'s
+4 cells DO NOT close when `named-groups` (the module already shipped,
+2026-08-18) lands a producer — they close only when a FUTURE dupnames
+producer lands inside it (`docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row,
+RIDES(M4/captures), RATIFIED D38 — so this is a real, scheduled-later
+event, not the settled-forever state a same-day intermediate draft of
+this entry briefly recorded). Until then `J`'s cells keep deferring, with
+the true-owning-module wording the `(?J)` row above states.
 
-**REVISIT TRIGGER**, therefore: each module landing converts its letters, so
-re-measure at every module landing that owns a deferred option letter —
-`assertions` (for `m`) and `named-groups` (for `J`) — and delete this entry
-when the open-gate count reaches zero. Re-ordering the check so run validity is
-decided before the module gate was considered and NOT taken: it would move a
-grammar decision ahead of the gate for a benefit that expires on its own, and
-the option-run grammar is one home (`mod_modifiers.c`) precisely so the doorway
-does not acquire a second copy of it.
+**REVISIT TRIGGER**, therefore, is TWO events, not one: re-measure when
+`assertions` lands and delete the `m`-half of this entry when its
+open-gate count reaches zero; re-measure when a dupnames producer lands
+inside `named-groups` and delete the `J`-half the same way. Re-ordering
+the check so run validity is decided before the module gate was
+considered and NOT taken: it would move a grammar decision ahead of the
+gate for a benefit that expires on its own, and the option-run grammar is
+one home (`mod_modifiers.c`) precisely so the doorway does not acquire a
+second copy of it.
 
 Found by the MOD-0.8b D27 blinded writer (recorded in
 `docs/dev/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
@@ -636,9 +648,9 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `(?` | `(?<=...)` | `REJECTED` | planned | `lookaround` | vm | positive lookbehind |
 | after `(?` | `(?<!...)` | `REJECTED` | planned | `lookaround` | vm | negative lookbehind |
 | after `(?` | `(?<*a)` | `REJECTED` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
-| after `(?` | `(?<name>a)` | `REJECTED` | planned | `named-groups` | vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
-| after `(?` | `(?'name'...)` | `REJECTED` | planned | `named-groups` | vm | named capture group, Perl-style quoting |
-| after `(?` | `(?P<name>a)` | `REJECTED` | planned | `named-groups` | vm | python-style named capture group |
+| after `(?` | `(?<name>a)` | `REJECTED` | planned | `named-groups` | dfa|vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
+| after `(?` | `(?'name'...)` | `REJECTED` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
+| after `(?` | `(?P<name>a)` | `REJECTED` | planned | `named-groups` | dfa|vm | python-style named capture group |
 | after `(?` | `(?P=n)` | `REJECTED` | planned | `backrefs` | vm | python-style backreference to a named group |
 | after `(?` | `(?P>n)` | `REJECTED` | planned | `recursion` | vm | python-style subroutine call into a named group |
 | after `(?` | `(?PX)` | `AGREES-REJECT` | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |

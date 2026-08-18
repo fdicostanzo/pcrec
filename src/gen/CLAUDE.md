@@ -500,6 +500,24 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `emit_match_def`/`emit_match_caps_def`/`emit_info_def` (the three new
   entries' definitions).
 
+  **[M6.3] `emit_info_def` gains the named-groups reflection table.**
+  When `cx->n_named_groups > 0` it first emits a file-scope `static const
+  rx_group_entry <prefix>_group_names[]` (named via `derived_name`, so two
+  differently-prefixed artifacts sharing a TU cannot collide on it),
+  SORTED by name (`strcmp`, `ng_cmp_name` — matches PCRE2's own measured
+  `PCRE2_INFO_NAMETABLE` order, docs/dev/decisions.md D59) via one `qsort`
+  over an arena-allocated array of `NamedGroup*` pointers built from
+  `cx->named_groups`'s declaration-order linked list (internal.h). Each
+  entry's `slot` is the group's capture-slot number when `cx->want_caps`
+  (a named group's presence already forces this artifact onto the VM
+  through the pre-existing `forces_captures` rule, so `want_caps` alone is
+  sufficient — no `st->engine` check needed) and `-1` otherwise — verified
+  both directions against a real `--no-captures` build (DFA-selected,
+  every entry stamps `-1`). `rx_info.nnames`/`.groups` then read straight
+  off `cx->n_named_groups` and the array's own derived name (or stay
+  `0`/`NULL`, unchanged, for the overwhelming majority of patterns that
+  declare no name).
+
 ## Conventions
 
 The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this).

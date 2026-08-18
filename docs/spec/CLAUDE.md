@@ -79,5 +79,14 @@ spec and a design doc disagree, the spec is what the tool promises.
   `make test`) rather than a transcript, which is the direction to keep
   taking this document's numbers.
 
+  **[M6.3], 2026-08-18 — the third revision** (module `named-groups`).
+  The second DISCHARGE this document has recorded (the [M5-SEAM] shape,
+  not a correction): §6's own open question — the `groups` array's sort
+  key — is fixed (`strcmp` on the name, matching libpcre2's own
+  `PCRE2_INFO_NAMETABLE` order, measured; docs/dev/decisions.md D59
+  carries the evidence and the reasoning) and §6's worked example is
+  re-quoted verbatim from a fresh build carrying the module, in both the
+  captures-default and `--no-captures` forms.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
