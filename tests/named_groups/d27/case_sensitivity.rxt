@@ -1,0 +1,43 @@
+# d27_named_groups / case_sensitivity.rxt
+#
+# PROMISE under test: a group NAME is case-sensitive identity, distinct
+# from CASELESS matching of the group's CONTENT. "name" and "NAME" are
+# two different names (two distinct groups, both capturing
+# independently), and that holds whether or not the block matches
+# caselessly -- caseless affects which bytes the group's own pattern
+# text matches, never whether two names are "the same name".
+#
+# Oracle: python3 `re`, on the (?P<name>...) translation, verified via
+# m.span(k) and c.groupindex (both names present as distinct keys) --
+# see oracle.py. Both blocks below are ordinary python-verifiable
+# match/capture cases, no pcre2-only marker needed: python and PCRE2
+# agree here (measured, docs/testing.md's caseless mapping -- `flags i`
+# -> `re.IGNORECASE | re.ASCII` -- carries the same distinction).
+#
+# Scope note: the second block below uses this format's block-scoped
+# `flags i` directive (pcrec -i, PCRE2_CASELESS at the whole-pattern
+# level), not the inline `(?i)` modifier construct -- inline modifiers
+# are module `modifiers`, a different promise, and mixing it in here
+# would smuggle a second module's axis into a named-groups block
+# (docs/testing.md's differential-gate principle: enable exactly the
+# module the block is testing).
+
+# two case-differing names, no caseless matching: two distinct groups,
+# each capturing its own span
+pattern (?<name>a)(?<NAME>b)
+features named-groups
+m "xabx" 1 3
+g 1 1 2
+g 2 2 3
+
+# same shape under `flags i`: the pair still compiles (case-differing
+# names are still two names, not a duplicate), captures stay distinct
+# by POSITION exactly as above, and caseless matching is visible only
+# in which bytes matched (upper-case "AB" here, where the pattern text
+# itself says lower-case a/b)
+pattern (?<name>a)(?<NAME>b)
+features named-groups
+flags i
+m "xABx" 1 3
+g 1 1 2
+g 2 2 3

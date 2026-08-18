@@ -1,0 +1,135 @@
+# d27_named_groups / name_syntax.rxt
+#
+# PROMISE under test: PCRE2's group-name syntax -- first character must
+# be non-digit, remaining characters alphanumeric-or-underscore (ASCII),
+# name length capped at 128 code units for the 8-bit library -- is
+# enforced identically for all three declaring spellings.
+#
+# PROVENANCE NOTE: this file originally assumed a 32-code-unit length
+# cap, sourced from this D27 cell's recollection of PCRE2's own
+# documentation. The manager independently probed the real libpcre2
+# 10.46 on the project box (2026-08-18, ctypes dlopen, outside this
+# cell) and measured the true cap at 128, with 32/33/127/128 all
+# COMPILING and 129 REFUSED (err 148, "subpattern name is too long
+# (maximum 128 code units)") -- the documented "32" this cell had was
+# stale. This file is corrected to the measured figure; see README.md's
+# "Unverifiable" section for the full provenance trail.
+#
+# Oracle: python3 `re` enforces "non-digit start, alphanumeric/
+# underscore rest" close enough to PCRE2 that it agrees on every
+# rejected case below EXCEPT two, which are marked `# pcre2-only`
+# immediately above their `pattern` line and are NOT oracle-verified by
+# python: python's `re` imposes no length cap on a group name at all
+# (so the 129-char-name case stays pcre2-only, now manager-verified
+# against real libpcre2 rather than merely documented), and it accepts
+# unicode identifier characters in a name where PCRE2 does not (the
+# non-ASCII case, also now manager-verified against real libpcre2 --
+# err 162 "subpattern name expected"). See README.md's "Unverifiable"
+# section.
+
+# --- valid names ---
+pattern (?<_n>a)
+features named-groups
+m "za" 1 2
+g 1 1 2
+
+pattern (?<_>a)
+features named-groups
+m "za" 1 2
+g 1 1 2
+
+pattern (?<n1>a)
+features named-groups
+m "za" 1 2
+g 1 1 2
+
+# exactly 32 characters -- comfortably below PCRE2's real limit (128,
+# see the 128/129-char pair below); kept as a small round-number sanity
+# check, still valid
+pattern (?<nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn>a)
+features named-groups
+m "za" 1 2
+g 1 1 2
+
+# --- invalid names: rejected regardless of declaring spelling ---
+
+# leading digit
+pattern (?<1n>a)
+features named-groups
+perr
+
+pattern (?'1n'a)
+features named-groups
+perr
+
+pattern (?P<1n>a)
+features named-groups
+perr
+
+# empty name
+pattern (?<>a)
+features named-groups
+perr
+
+pattern (?P<>a)
+features named-groups
+perr
+
+# hyphen
+pattern (?<na-me>a)
+features named-groups
+perr
+
+# space
+pattern (?<na me>a)
+features named-groups
+perr
+
+# dot
+pattern (?<na.me>a)
+features named-groups
+perr
+
+# non-ASCII letter in the name (one literal accented character, raw
+# UTF-8 bytes in the pattern text -- the .rxt pattern line takes no
+# escaping, per docs/testing.md, so it is written here exactly as PCRE
+# would see it). PCRE2-only: python re's group-name check accepts
+# unicode identifier characters (it follows Python identifier rules), so
+# it happily compiles this one where PCRE2 restricts a group name to
+# ASCII alphanumeric + underscore. Manager-verified directly against
+# real libpcre2 10.46 (2026-08-18): REFUSE, err 162 "subpattern name
+# expected" -- see README.
+# pcre2-only
+pattern (?<namé>a)
+features named-groups
+perr
+
+# 33 characters -- CORRECTED (see README "provenance" note): PCRE2's
+# real cap is 128 code units, not the 32 this file originally assumed
+# from stale documentation. Manager-measured directly against libpcre2
+# 10.46 on this box: 33 chars COMPILES. Ordinary valid-name case, same
+# as the 32-char row above, and now python-oracle-verified like any
+# other match/capture block (no cap in python either, so no divergence
+# here -- the divergence is only at the real 128/129 boundary below).
+pattern (?<nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn>a)
+features named-groups
+m "za" 1 2
+g 1 1 2
+
+# exactly 128 characters -- the real PCRE2 limit (manager-measured
+# against libpcre2 10.46, 2026-08-18: 127 and 128 both COMPILE). Valid,
+# ordinary named group, python-oracle-verified.
+pattern (?<nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn>a)
+features named-groups
+m "za" 1 2
+g 1 1 2
+
+# 129 characters -- one past the real 128-code-unit cap. PCRE2-only:
+# manager-measured directly against libpcre2 10.46 on this box,
+# 2026-08-18: REFUSE, err 148 "subpattern name is too long (maximum 128
+# code units)". python re still imposes no length cap at all, so this
+# stays outside oracle.py's python-agreement check -- see README.
+# pcre2-only
+pattern (?<nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn>a)
+features named-groups
+perr
