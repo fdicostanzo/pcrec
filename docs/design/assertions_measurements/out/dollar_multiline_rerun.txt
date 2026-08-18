@@ -1,25 +1,25 @@
 # ============================================================
-# ARCHIVED PROBE OUTPUT — [M6.1] assertions design lane
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
 # ------------------------------------------------------------
 # PROBE      : docs/design/eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py
-#              (NOT this lane's file — eng_brep's own instrument,
-#               re-run rather than rebuilt, so a lane cannot fail to
-#               notice that the probe it is checking has moved)
+# ARGS       : --verbose
 # PROBE LAST CHANGED AT COMMIT: 0b9da1f 2026-08-16
-# RUN FROM REPO COMMIT        : bcc2069 (lane/asrtdesign)
-# RUN DATE   : 2026-08-18T16:59:29-04:00
+# RUN FROM REPO COMMIT        : f600843 (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/dollar_multiline_rerun.txt
+#      M docs/design/assertions_measurements/out/ncls_refine_rxt.txt
+#     ?? docs/design/assertions_measurements/out/mline_caret_cost.txt
+#     ?? docs/design/assertions_measurements/out/rxt_harvest.txt
+#     ?? docs/design/assertions_measurements/out/startpos_context.txt
+#     ?? docs/design/assertions_measurements/out/wswitch_alarm.txt
+# RUN DATE   : 2026-08-18T17:23:19-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
 # host       : Linux 7.0.0-29-generic
 # ------------------------------------------------------------
-# WHY THIS IS ARCHIVED: eng_brep_design.md §2.5 cites 0 of 720 and
-# 180 of 720 for this question. Re-running that section's own probe
-# today gives the numbers below. The QUALITATIVE result survives
-# exactly — 0 diverging with multiline off, non-zero with it on, on
-# the greedy population the exemption is about, both oracles agreeing
-# — while the ABSOLUTE numbers are stale. See assertions_design.md
-# §8.4. eng_brep_design.md is deliberately NOT edited by this lane.
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
 # ============================================================
 
 #   '[^c]{0,4}$' vs '[^c]{0,4}+$' multiline=True why=disjoint+unique-iteration py=('\n\naaa', ((0, 1), ()), ((1, 5), ())) pcre2=('\n\naaa', ((0, 1), ()), ((1, 5), ()))
@@ -101,3 +101,772 @@
 #   ('lazy', 'exact-count', True, 'same')                   24
 # EXACT-COUNT ARM is follow-independent by construction (the rule never inspects FOLLOW): every exact-count row above should read 'same' regardless of pref/multiline, or the arm itself is unsound -- not just the $ exemption.
 # DISJOINT ARM, LAZY: a `$` follow makes the remainder match-may-end-here (nullable-rest in S2.2's sense) whether or not (?m) is set, which is exactly the condition the LAZY CONJUNCT already declines for an ordinary follow -- so a lazy divergence here even at multiline=False is not a NEW `$` defect, it is the existing lazy+nullable-rest rule, and a real `$` exemption must feed `$`'s presence into that SAME conjunct (end_here=True) rather than bypass it.
+pref	pfx	body	count	why_for_c_follow	multiline	py_status	pcre2_status
+greedy		a	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		a	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		a	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		a	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		a	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		a	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		a	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		a	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		a	{3,}	disjoint+unique-iteration	False	same	same
+greedy		a	{3,}	disjoint+unique-iteration	True	same	same
+greedy		a	*	disjoint+unique-iteration	False	same	same
+greedy		a	*	disjoint+unique-iteration	True	same	same
+greedy		a	+	disjoint+unique-iteration	False	same	same
+greedy		a	+	disjoint+unique-iteration	True	same	same
+greedy		a	?	disjoint+unique-iteration	False	same	same
+greedy		a	?	disjoint+unique-iteration	True	same	same
+greedy		[ab]	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		[ab]	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		[ab]	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		[ab]	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		[ab]	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		[ab]	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		[ab]	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		[ab]	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		[ab]	{3,}	disjoint+unique-iteration	False	same	same
+greedy		[ab]	{3,}	disjoint+unique-iteration	True	same	same
+greedy		[ab]	*	disjoint+unique-iteration	False	same	same
+greedy		[ab]	*	disjoint+unique-iteration	True	same	same
+greedy		[ab]	+	disjoint+unique-iteration	False	same	same
+greedy		[ab]	+	disjoint+unique-iteration	True	same	same
+greedy		[ab]	?	disjoint+unique-iteration	False	same	same
+greedy		[ab]	?	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		(a|b)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		(a|b)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	{3,}	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	{3,}	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	*	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	*	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	+	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	+	disjoint+unique-iteration	True	same	same
+greedy		(a|b)	?	disjoint+unique-iteration	False	same	same
+greedy		(a|b)	?	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		((a)|b)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		((a)|b)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	{3,}	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	{3,}	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	*	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	*	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	+	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	+	disjoint+unique-iteration	True	same	same
+greedy		((a)|b)	?	disjoint+unique-iteration	False	same	same
+greedy		((a)|b)	?	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		(?:ab)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		(?:ab)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	{3,}	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	{3,}	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	*	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	*	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	+	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	+	disjoint+unique-iteration	True	same	same
+greedy		(?:ab)	?	disjoint+unique-iteration	False	same	same
+greedy		(?:ab)	?	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		(?:a|bc)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		(?:a|bc)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	{3,}	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	{3,}	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	*	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	*	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	+	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	+	disjoint+unique-iteration	True	same	same
+greedy		(?:a|bc)	?	disjoint+unique-iteration	False	same	same
+greedy		(?:a|bc)	?	disjoint+unique-iteration	True	same	same
+greedy		(a)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		(a)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy		(a)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		(a)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy		(a)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		(a)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		(a)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		(a)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy		(a)	{3,}	disjoint+unique-iteration	False	same	same
+greedy		(a)	{3,}	disjoint+unique-iteration	True	same	same
+greedy		(a)	*	disjoint+unique-iteration	False	same	same
+greedy		(a)	*	disjoint+unique-iteration	True	same	same
+greedy		(a)	+	disjoint+unique-iteration	False	same	same
+greedy		(a)	+	disjoint+unique-iteration	True	same	same
+greedy		(a)	?	disjoint+unique-iteration	False	same	same
+greedy		(a)	?	disjoint+unique-iteration	True	same	same
+greedy		[^c]	{0,4}	disjoint+unique-iteration	False	same	same
+greedy		[^c]	{0,4}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy		[^c]	{1,3}	disjoint+unique-iteration	False	same	same
+greedy		[^c]	{1,3}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy		[^c]	{2,2}	exact-count+unique-iteration	False	same	same
+greedy		[^c]	{2,2}	exact-count+unique-iteration	True	same	same
+greedy		[^c]	{0,2}	disjoint+unique-iteration	False	same	same
+greedy		[^c]	{0,2}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy		[^c]	{3,}	disjoint+unique-iteration	False	same	same
+greedy		[^c]	{3,}	disjoint+unique-iteration	True	same	same
+greedy		[^c]	*	disjoint+unique-iteration	False	same	same
+greedy		[^c]	*	disjoint+unique-iteration	True	same	same
+greedy		[^c]	+	disjoint+unique-iteration	False	same	same
+greedy		[^c]	+	disjoint+unique-iteration	True	same	same
+greedy		[^c]	?	disjoint+unique-iteration	False	same	same
+greedy		[^c]	?	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	z	a	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	a	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	a	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	a	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	a	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	a	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	a	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	a	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	a	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	a	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	a	*	disjoint+unique-iteration	False	same	same
+greedy	z	a	*	disjoint+unique-iteration	True	same	same
+greedy	z	a	+	disjoint+unique-iteration	False	same	same
+greedy	z	a	+	disjoint+unique-iteration	True	same	same
+greedy	z	a	?	disjoint+unique-iteration	False	same	same
+greedy	z	a	?	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	[ab]	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	[ab]	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	*	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	*	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	+	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	+	disjoint+unique-iteration	True	same	same
+greedy	z	[ab]	?	disjoint+unique-iteration	False	same	same
+greedy	z	[ab]	?	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	(a|b)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	(a|b)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	*	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	*	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	+	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	+	disjoint+unique-iteration	True	same	same
+greedy	z	(a|b)	?	disjoint+unique-iteration	False	same	same
+greedy	z	(a|b)	?	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	((a)|b)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	((a)|b)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	*	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	*	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	+	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	+	disjoint+unique-iteration	True	same	same
+greedy	z	((a)|b)	?	disjoint+unique-iteration	False	same	same
+greedy	z	((a)|b)	?	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	(?:ab)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	(?:ab)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	*	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	*	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	+	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	+	disjoint+unique-iteration	True	same	same
+greedy	z	(?:ab)	?	disjoint+unique-iteration	False	same	same
+greedy	z	(?:ab)	?	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	*	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	*	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	+	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	+	disjoint+unique-iteration	True	same	same
+greedy	z	(?:a|bc)	?	disjoint+unique-iteration	False	same	same
+greedy	z	(?:a|bc)	?	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	(a)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	(a)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	*	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	*	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	+	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	+	disjoint+unique-iteration	True	same	same
+greedy	z	(a)	?	disjoint+unique-iteration	False	same	same
+greedy	z	(a)	?	disjoint+unique-iteration	True	same	same
+greedy	z	[^c]	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	{0,4}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	z	[^c]	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	{1,3}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	z	[^c]	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	z	[^c]	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	z	[^c]	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	{0,2}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	z	[^c]	{3,}	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	{3,}	disjoint+unique-iteration	True	same	same
+greedy	z	[^c]	*	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	*	disjoint+unique-iteration	True	same	same
+greedy	z	[^c]	+	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	+	disjoint+unique-iteration	True	same	same
+greedy	z	[^c]	?	disjoint+unique-iteration	False	same	same
+greedy	z	[^c]	?	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	(?:z|)	a	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	a	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	a	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	a	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	a	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	a	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	a	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	a	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	a	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	a	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[ab]	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[ab]	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a|b)	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a|b)	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	((a)|b)	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	((a)|b)	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:ab)	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:ab)	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(?:a|bc)	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(?:a|bc)	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	{0,4}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	{1,3}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	{0,2}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	(a)	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	(a)	?	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[^c]	{0,4}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	{0,4}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	(?:z|)	[^c]	{1,3}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	{1,3}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	(?:z|)	[^c]	{2,2}	exact-count+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	{2,2}	exact-count+unique-iteration	True	same	same
+greedy	(?:z|)	[^c]	{0,2}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	{0,2}	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+greedy	(?:z|)	[^c]	{3,}	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	{3,}	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[^c]	*	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	*	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[^c]	+	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	+	disjoint+unique-iteration	True	same	same
+greedy	(?:z|)	[^c]	?	disjoint+unique-iteration	False	same	same
+greedy	(?:z|)	[^c]	?	disjoint+unique-iteration	True	DIVERGES	DIVERGES
+lazy		a	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		a	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		a	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		a	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		a	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		a	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		a	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		a	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		a	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		a	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		[ab]	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		[ab]	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[ab]	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		[ab]	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		(a|b)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		(a|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a|b)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a|b)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		((a)|b)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		((a)|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		((a)|b)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		((a)|b)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		(?:ab)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		(?:ab)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:ab)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:ab)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		(?:a|bc)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		(?:a|bc)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(?:a|bc)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(?:a|bc)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		(a)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		(a)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		(a)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy		(a)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy		[^c]	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy		[^c]	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy		[^c]	{2,2}	exact-count+unique-iteration	False	same	same
+lazy		[^c]	{2,2}	exact-count+unique-iteration	True	same	same
+lazy		[^c]	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy		[^c]	{3,}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	{3,}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy		[^c]	*	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	*	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy		[^c]	+	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	+	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy		[^c]	?	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy		[^c]	?	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	a	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	a	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	a	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	a	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	a	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	a	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	a	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	a	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	a	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	a	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	[ab]	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	[ab]	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[ab]	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	[ab]	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	(a|b)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	(a|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a|b)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a|b)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	((a)|b)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	((a)|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	((a)|b)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	((a)|b)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	(?:ab)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	(?:ab)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:ab)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:ab)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	(?:a|bc)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	(?:a|bc)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(?:a|bc)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(?:a|bc)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	(a)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	(a)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	(a)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	z	(a)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	z	[^c]	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	[^c]	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	[^c]	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	z	[^c]	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	z	[^c]	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	[^c]	{3,}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	{3,}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	[^c]	*	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	*	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	[^c]	+	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	+	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	z	[^c]	?	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	z	[^c]	?	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	a	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	a	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	a	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	a	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	a	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	a	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	a	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	a	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	a	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	a	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	[ab]	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	[ab]	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[ab]	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	[ab]	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	(a|b)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	(a|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a|b)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a|b)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	((a)|b)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	((a)|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	((a)|b)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	((a)|b)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	(?:ab)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	(?:ab)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:ab)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:ab)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	(?:a|bc)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	(?:a|bc)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(?:a|bc)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(?:a|bc)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	(a)	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	(a)	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	{3,}	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	{3,}	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	*	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	*	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	+	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	+	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	(a)	?	disjoint+unique-iteration+non-nullable-rest	False	same	same
+lazy	(?:z|)	(a)	?	disjoint+unique-iteration+non-nullable-rest	True	same	same
+lazy	(?:z|)	[^c]	{0,4}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{0,4}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{1,3}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{1,3}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{2,2}	exact-count+unique-iteration	False	same	same
+lazy	(?:z|)	[^c]	{2,2}	exact-count+unique-iteration	True	same	same
+lazy	(?:z|)	[^c]	{0,2}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{0,2}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{3,}	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	{3,}	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	*	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	*	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	+	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	+	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	?	disjoint+unique-iteration+non-nullable-rest	False	DIVERGES	DIVERGES
+lazy	(?:z|)	[^c]	?	disjoint+unique-iteration+non-nullable-rest	True	DIVERGES	DIVERGES

@@ -1,0 +1,26 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/harvest_rxt_patterns.sh
+# ARGS       : /home/duxevents/pcrec/worktrees/asrtdesign /home/duxevents/pcrec/worktrees/asrtdesign/build/rxt_patterns_c.txt
+# PROBE LAST CHANGED AT COMMIT: f600843 2026-08-18
+# RUN FROM REPO COMMIT        : f600843 (lane/asrtdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/ncls_refine_rxt.txt
+#     ?? docs/design/assertions_measurements/out/rxt_harvest.txt
+#     ?? docs/design/assertions_measurements/out/startpos_context.txt
+#     ?? docs/design/assertions_measurements/out/wswitch_alarm.txt
+# RUN DATE   : 2026-08-18T17:23:10-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+raw 'pattern' lines            : 1165
+distinct under LC_ALL=C        : 1030   <- the population
+distinct under en_US.UTF-8     : 609   <- what the defect reports
+patterns the UTF-8 collation would have SILENTLY MERGED AWAY: 421
