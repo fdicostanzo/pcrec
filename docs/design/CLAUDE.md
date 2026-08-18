@@ -687,6 +687,18 @@ append-only or historical records.
   permanent sabotage row, per `src/opt/CLAUDE.md`'s established price for a
   selection axis). engine_m4.md's own ASK-6, §2.2 item 4 and §6.4 carry the
   annotations in place. See its own CLAUDE.md.
+- `altcls_pinned_impl/` — the [OPT-ALTCLS] lane's pinned throughput
+  instrument (2026-08-17/18): stage 2's owed quantified-keyword
+  re-measurement (CONFIRMED at -7.61%, superseding the design-evening
+  probe's unarchived -15.0..-15.6% figure) and stage 3's FIRST-set entry
+  guard verdict (MEASURED-NO under every default-routing shape tried,
+  including a purpose-built weak-prefilter-coverage arm; a real ~11x win
+  confined to `--engine=vm`, a comparability facility, does not justify a
+  new selection axis on the default path — `m46e_impl`'s trie-switch
+  decline is the exact precedent). The guard/firstset implementation does
+  NOT merge, not even denied-by-default; it survives only in git history
+  (`a07a87c`, reverted at `8b5acb4`). See its own CLAUDE.md for the
+  revisit-when triggers.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
