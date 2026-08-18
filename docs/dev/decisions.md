@@ -4963,3 +4963,51 @@ available as general code health, not load-bearing for Q8).
 **Revisit when:** a fifth AST analysis lands (the reviewer checks flag
 awareness against control 3), or a genuinely STRUCTURAL `$` variant
 appears that no field can express.
+
+## D63 — Q3 ruled: the ENG_ATTEMPT CANDIDATE-START PREFILTER, chartered as a general tool (option 1); DD-7's reverse BOT variant UNPARKED as the sequenced follow-on (option 3 after 1) (Frank, 2026-08-18, thirty-third session)
+
+**Decision, three parts.**
+
+1. **Option (1) proceeds**: ENG_ATTEMPT gains a candidate-start
+   prefilter (assertions_design.md §3.7.2's memchr('\n') form for
+   `(?m)^`), landing in the design's wave C with its stated fallback.
+2. **Chartered as a TOOL, not a one-off** (Frank: "a tool in the
+   toolchest"): the mechanism is "derive the compile-time
+   candidate-start set, emit the skip" — ENG_ATTEMPT's first instance
+   of the scan-avoidance family ENG_UNANCH has always had (it currently
+   has NONE of the five mechanisms, which is the structural gap behind
+   the measured O(n²)). Instances: `(?m)^` (first, MEASURED, 85–185x on
+   the linear arm); D8's `^`-on-some-branches slow shape (second,
+   PREDICTED — its interior attempts serve the non-^ branches, whose
+   FIRST set is the interior start state s1's own out-byte row; gated
+   on its own measurement, which also answers half of [OS-4]'s parked
+   question); partial `\G` (third, same structure, wave D's
+   population). Fully-anchored and whole-pattern-\G shapes get nothing
+   — one attempt already.
+3. **Option (3) follows (1)**: DD-7's reverse BOT variant is UNPARKED
+   as sequenced follow-on work, queued behind the assertions module
+   (M6.2 waves complete first). The gate it sat behind — "a measured
+   loss existing first" — is now SATISFIED: the quadratic
+   crossing-body curve (3.99x/doubling, 1996x at n=64k) is measured,
+   and the prefilter deliberately does not rescue it. When it lands,
+   `(?m)^`-anchored patterns route to ENG_UNANCH and the prefilter's
+   (?m)^ instance is superseded there — accepted at ruling time; the
+   prefilter's other instances (D8 shape, partial \G) remain its
+   customers, and the interim is not shipped as an embarrassment.
+
+**Implementation constraint (the overlap question, answered at ruling
+time)**: the prefilter's two halves split on the existing house line —
+the CANDIDATE-SET DERIVATION (state row → byte set → memchr-vs-bitmap
+choice → table emission) is the SAME question ENG_UNANCH already
+answers about its wrapped start state, and MUST be factored into one
+shared helper serving both emitters (the pcrec_emit_dfa_engine
+one-site-two-callers shape; M2.12's forked-scan-avoidance lesson is
+the reason this is a constraint, not a preference). The LOOP
+INTEGRATION differs structurally (in-scan skip vs between-attempts
+advance composing with the three-way start dispatch) and stays
+per-engine. The (?m)^ predecessor-byte twist (candidate defined by
+s[pos-1]=='\n', +1) is the derivation helper's one new case.
+
+**Revisit when:** the D8-shape instance's measurement lands (its
+result feeds [OS-4]); DD-7's variant lands (re-measure which instances
+retain customers).
