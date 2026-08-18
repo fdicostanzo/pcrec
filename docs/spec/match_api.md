@@ -464,8 +464,12 @@ return space too.
 ## 4. The give-up code space (D49)
 
 `<prefix>_search`, `rx_matchfn` (hence `<prefix>_match` and any callout),
-and `<prefix>_match_caps` all report engine give-up the same way: a
-negative return strictly below `-1`.
+and `<prefix>_match_caps` all report engine give-up in the same CODE
+SPACE: a negative return strictly below `-1`, with the same value
+meaning the same thing at every entry. That uniformity is about the
+codes, not about when a give-up happens — which entry gives up on a
+given input is a property of that entry (§3.3's caveat, measured in both
+directions).
 
 ```c
 #define <PREFIX>_ERR_STEPS  (-2)   /* step budget exhausted (backtrack resumptions) */
@@ -485,10 +489,13 @@ Verified against both a DFA-only artifact (`--no-captures`, no counter
 exists, these codes are reserved-but-unreachable) and a captures-default
 VM artifact (`RX_STEP_BUDGET`/`RX_WORK_BUDGET`/`RX_BT_FRAMES`/
 `RX_TRAIL_FRAMES` macros present, the counters live). A DFA-compiled
-artifact never emits or reaches these codes — it has no counter to
-exhaust — but the constants are still reserved and named from the first
-build of any artifact, so a caller's `switch` written today does not need
-revisiting when a later compile of the same pattern selects the VM.
+artifact never RETURNS one of these codes — it has no counter to
+exhaust — but it does EMIT them: the constants are defined in every
+artifact, and a DFA artifact built `--emit-main` even emits the full
+three-way handler text for them (measured: `if (rc == RX_ERR_STEPS)`,
+`_FRAMES`, `_WORK` all present in a `--no-captures --emit-main` build).
+That is deliberate, and it is what lets a caller's `switch` written
+today survive a later compile of the same pattern selecting the VM.
 
 **Composed call sites must trap below the floor.** Every generated call
 site that invokes an `rx_matchfn` (a callout, a composed submatcher) must
@@ -500,6 +507,8 @@ here for whichever future work (callouts, composition) first emits one.
 
 **Today's `1`/`0` contract for `<prefix>_search` is unchanged** — this
 reservation adds give-up outcomes, it does not renumber match/no-match.
+It does mean the return is not two-valued, so `if (<prefix>_search(...))`
+reads a give-up as a match: test `== 1` for "matched" (§3.1).
 
 ---
 
@@ -525,9 +534,14 @@ const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pair
   build).
 - **Every pair `0..<PREFIX>_NCAPS-1` is written on a completed match** —
   no watermark needed at read time once a match succeeds.
-- **On a failed match, the caller's array is left untouched.** No
+- **On a failed match, the caller's array is left untouched — and an
+  engine GIVE-UP is a failure for this rule.** Every negative return
+  from an anchored entry, and a `0` or a give-up code from
+  `<prefix>_search`, leaves the array exactly as the caller left it. No
   attempt is made to write `{-1,-1}` into it; the `int`/`ptrdiff_t`
-  return value alone communicates failure.
+  return value alone communicates failure. The generated source states
+  the give-up half outright ("caps_out is UNTOUCHED on every negative
+  return, give-up included").
 - **Caller-owned, fixed-size, compile-time-sized**: a caller declares
   `ptrdiff_t caps[<PREFIX>_NCAPS][2];` on the stack. Nothing in the
   generated contract allocates.
@@ -567,7 +581,11 @@ never ran at all, in any iteration, anywhere in the match).
 
 ### 5.2 Explicit non-requirements
 
-The following are deliberately **not** part of this contract:
+The following are deliberately **not** part of this contract. Every item
+here is scoped to the MATCH path — the generated matcher and its
+caps buffers. The pcrec LIBRARY's own compile path does allocate and
+does have a lifecycle to manage; that is §8's `pcrec_output` /
+`pcrec_output_free`, and nothing here excuses skipping it.
 
 - No ovector sizing negotiation — the group count is a compile-time fact.
 - No match-data object, no allocation, no lifecycle to manage.
@@ -580,6 +598,34 @@ The following are deliberately **not** part of this contract:
   callout binding's `user` data lives entirely in the `rx_callout_ref`
   the binding declares; nothing about *which* callout is firing is
   visible to `rx_matchfn`'s own signature.
+
+### 5.3 Concurrency: a generated matcher is reentrant and thread-safe
+
+**A generated matcher holds no mutable state of its own.** Every entry
+point's working state lives in its own stack frame and in the caller's
+`caps` buffer; the tables, bitmaps and the `rx_info` instance are
+`const`. Therefore:
+
+- Any number of threads may call the same artifact's entry points
+  concurrently, **provided each call has its own `caps`/`caps_out`
+  buffer** (which the caller owns and declares, per the rule above).
+  Sharing one buffer between concurrent calls is a data race in the
+  CALLER's code, not something the matcher serializes for it.
+- The same holds for one thread re-entering a matcher — from a callout,
+  or from a signal handler — subject to the same distinct-buffer rule.
+- `<prefix>_info` is read-only and may be read from anywhere at any time.
+
+**This is a CONTRACT, binding on future emitters, not merely an
+observation about today's output.** It is what makes a generated matcher
+usable from a thread pool at all, and an engine that wanted a mutable
+scratch buffer would have to change this document first. It is also
+GUARDED rather than asserted: the shipped suite's TS-1 check (D19) scans
+every emitted file across nine emission shapes and fails the build on any
+non-const static object or any reference to a non-reentrant or allocating
+libc symbol. Independently re-measured for this revision: two threads
+hammering one VM artifact with distinct buffers and distinct subjects,
+20,000 iterations each, are ThreadSanitizer-clean with both threads'
+answers correct.
 
 ---
 
