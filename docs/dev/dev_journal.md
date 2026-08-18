@@ -9684,3 +9684,56 @@ commit) — noted as a candidate guard: rebaseline/report-force writes
 onto tracked snapshots deserve a refusal or an explicit archive step.
 Post-merge full battery kicked off async; altcls resumed after the
 window.
+
+## 2026-08-18 (EDT, just past midnight), thirtieth session (cont.) — [OPT-ALTCLS] stages 1+2 land; case (m) halves
+
+Stages 1+2 merged (lane/altcls, 3834dbc/ec624e4/399d234, merge
+621ffce). src/opt/altcls.c: stage 1 merges maximal adjacent
+single-char alternation runs into one class node; stage 2
+prefix-factors maximal adjacent literal-first-byte runs, iterative on
+prefix LENGTH (pattern-shaped, no stack frame per byte) and bounded
+only on SPLIT depth (PCREC_MAX_ALTCLS_FACTOR_DEPTH=64, safe-decline
+not refuse); no A_CAP node is ever allocated, discharging the
+non-capturing-group obligation by construction. Runs FIRST after
+parse, so select_engine/possessify/revdet/MRL and both machine builds
+all see the normalized shape (the row's interaction note). D46: deny
+flags -fno-altcls-merge/-fno-altcls-factor (deny-only family, not the
+prefilter's force-pair — each run is its own selection point);
+stamped RX_ALTCLS_MERGES/RX_ALTCLS_FACTORED as COUNTS in the SHARED
+prologue (the pass predates both engines, so unlike every prior
+VM-only stamp it rides pcrec_emit_prologue), counters incremented at
+the act sites so the stamp cannot disagree with the rewrite; denial
+leaves no trace (flags masked from rx_info.flags per the D47.3
+family). Validation: run_altdiff.sh differential (merged/factored vs
+double-denied ground truth, shared possdiff driver) 38 designed
+patterns/33,984 cells + 78 corpus patterns/47,950 cells, 0 diverged;
+11/11 structural checks; 93-case oracle-verified rxt corpus; full
+suite green (corpus now 10,350); permanent sabotage-matrix arms S66
+(union loop dropped: altdiff 14fail/24pass, corpus 44fail) and S67
+(deny-bit flag leak: 1fail) both DETECTED. PCRE2 normalization survey
+answered by measurement (probe_altcls_pcre2norm, D35-archived): PCRE2
+does NEITHER rewrite — its bytecode is smaller for the alternation
+spelling, the opposite axis from an AOT emitter. RE2 cell OWED (no C
+ABI/headers on box; shim = dependency = pcrec-bench territory).
+
+REAL FINDING during validation: the pass broke
+tests/codegen/run_trie_identity.sh's positive controls VACUOUSLY —
+altcls pre-factored the controls' shared-first-byte shape on both the
+shipped AND the -DPCREC_NO_TRIE reference build, so the reference
+agreed without proving anything. Fixed (399d234) by widening control
+prefixes to two-member classes: still trie-eligible (trie_key takes
+class-only leaves), altcls-ineligible (stage 1 wants exactly one bit
+at the first atom) — verified by stamp 0/0, all three controls green,
+500/500 equivalence sweep, S13 still DETECTED. Lesson recorded in
+tests/codegen/CLAUDE.md for the next AST-level pass upstream of the
+trie: an upstream rewrite can make a downstream identity control
+vacuous without any check going red.
+
+MERGE VERIFICATION: gate.sh 13/13 on merged main, and the case (m)
+after-arm landed: a(b|c)+d with captures went 125.42 ns/call
+(pre-merge floored reference, set deliberately as the before-arm) →
+59.94 ns/call — stages 1+2 HALVED the exemplar. OWED before the row
+closes: the stage-2 quantified-keyword pinned re-measurement (D35
+instrument being built now; runs in a bundled quiet window with stage
+3's measurement), and stage 3 itself (FIRST-set guards,
+measure-at-build, D53 posture).
