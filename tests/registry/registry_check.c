@@ -1301,19 +1301,24 @@ static void check_class_ports(void)
         }
     }
 
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 23)
+    /* [M6.3]: atom ports 23 -> 26, the three named-groups declaring rows'
+     * new pcrec_ngport_declare producer. Nothing else in this population
+     * moved — no cport, no scalar/SET/FN class port touched. */
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 26)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (23: the char-types + \\N, plus the twelve GROUP_OPT "
-            "rows' option-run producer since MOD-0.5c). A deliberate move "
-            "edits this check IN THE SAME CHANGE; a silent one is the defect",
-            scalar, set, fn, aports);
+            "ports (26: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "option-run producer since MOD-0.5c, plus the three "
+            "named-groups declaring rows' producer since [M6.3]). A "
+            "deliberate move edits this check IN THE SAME CHANGE; a silent "
+            "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 23 atom "
-           "ports (11 + the 12 option-run rows, MOD-0.5c); scalar and SET "
-           "values oracle-tied (class_expect column / fallback law / census "
-           "popcounts), as predicted for slice 3");
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 26 atom "
+           "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
+           "named-groups rows, [M6.3]); scalar and SET values oracle-tied "
+           "(class_expect column / fallback law / census popcounts), as "
+           "predicted for slice 3");
 }
 
 /* [M4.7a] SR-8's TRIPWIRE (docs/dev/plan.md's [SR-8]/[M4.7a] rows). The
@@ -1356,37 +1361,62 @@ static void check_engine_capability_tripwire(void)
             qualifying++;
             if (r->aport.kind != PORT_NONE) {
                 wired++;
+                /* [M6.3] the FIRST three wired rows this tripwire ever
+                 * expects to see: module `named-groups`'s three declaring
+                 * rows. They are wired AND their `engines` mask no longer
+                 * excludes ENGM_DFA (moved to ANY_ENGINE in the same
+                 * change, registry.c's own comment on those three rows
+                 * has the argument), so by the time this loop reaches
+                 * them `r->engines & ENGM_DFA` is already true and the
+                 * `continue` above skips them — they never reach this
+                 * branch at all. If this branch DOES fire for
+                 * `named-groups`, the reclassification regressed; every
+                 * other module hitting this branch is the ORIGINAL
+                 * finding, unchanged: build SR-8 first. */
                 bad("engine-capability tripwire: '%s' (module '%s') is "
                     "RS_MODULE, its engines mask excludes ENGM_DFA, AND it "
                     "now carries a wired ATOM-position producer -- YOU "
                     "WIRED THE FIRST PRODUCER FOR AN ENGINE-RESTRICTED "
                     "MODULE. Build SR-8's lowering-time engines-column "
                     "consultation in src/opt/select_engine.c BEFORE this "
-                    "lands; see the [SR-8] row in docs/dev/plan.md",
+                    "lands (see the [SR-8] row in docs/dev/plan.md) -- "
+                    "UNLESS, as [M6.3]'s named-groups rows did, the "
+                    "construct's own AST is provably no different from an "
+                    "already-DFA-capable one and the right fix is "
+                    "reclassifying `engines` to ANY_ENGINE instead (see "
+                    "docs/dev/decisions.md's [M6.3] entry for that "
+                    "argument's shape before reaching for SR-8 by reflex)",
                     r->syntax, r->module);
             }
         }
     }
 
     /* EXACT, not a floor, matching this file's own convention (check_class_
-     * ports, check_class_syntax_reach above): 51 rows, measured directly
-     * from registry.c at M4.7a — 12 ESC rows (\K \k \g, \1..\7, \8 \9), 38
-     * GROUP/GROUP_T rows (lookaround, named-groups, atomic-groups,
-     * callouts, branch-reset, conditionals, recursion), 1 VERB row (the
-     * `(*...)` catch-all). A deliberate move (a VM_ONLY row added,
-     * removed, or gaining ENGM_DFA) edits this number in the same change;
-     * a silent one is the defect this file exists to catch, same as every
-     * other population count here. */
-    if (qualifying != 51)
+     * ports, check_class_syntax_reach above): 48 rows, measured directly
+     * from registry.c at [M6.3] (was 51 at M4.7a) — 12 ESC rows (\K \k \g,
+     * \1..\7, \8 \9), 35 GROUP/GROUP_T rows (lookaround, atomic-groups,
+     * callouts, branch-reset, conditionals, recursion — named-groups'
+     * THREE declaring rows moved OUT of this population at [M6.3]: their
+     * `engines` mask is now ANY_ENGINE, a deliberate reclassification, not
+     * a producer wired onto an unexamined VM_ONLY row — see
+     * docs/dev/decisions.md), 1 VERB row (the `(*...)` catch-all). A
+     * deliberate move (a VM_ONLY row added, removed, or gaining ENGM_DFA)
+     * edits this number in the same change; a silent one is the defect
+     * this file exists to catch, same as every other population count
+     * here. */
+    if (qualifying != 48)
         bad("engine-capability tripwire: %d RS_MODULE rows with an "
-            "engines mask excluding ENGM_DFA, expected 51 -- the VM_ONLY "
+            "engines mask excluding ENGM_DFA, expected 48 -- the VM_ONLY "
             "population moved. If deliberate, update this number in the "
             "same change", qualifying);
     else if (wired == 0)
-        ok("engine-capability tripwire: all 51 engine-restricted RS_MODULE "
+        ok("engine-capability tripwire: all 48 engine-restricted RS_MODULE "
            "rows have no wired atom-position producer -- SR-8's lowering-"
            "time consultation is still unpopulated machinery by design, "
-           "and this is the fact that makes that safe");
+           "and this is the fact that makes that safe (module "
+           "`named-groups`'s three rows are wired but are no longer in "
+           "this population at all, having moved to ANY_ENGINE -- see the "
+           "comment above the population count)");
 }
 
 /* ---- MOD-0.6/D33 §9.2: the in-class sweep gains tail context -----------

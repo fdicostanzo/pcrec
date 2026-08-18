@@ -258,6 +258,15 @@ typedef struct {
     char *out_c, *out_h, *out_ir;
 } Job;
 
+/* [M6.3] module `named-groups` — see Ctx.named_groups below for the full
+ * rationale. Arena-owned: `name` is a NUL-terminated copy made at
+ * declaration time, and the node itself is never freed individually. */
+typedef struct NamedGroup {
+    const char         *name;
+    int                 number;   /* the group's capture number, 1-based */
+    struct NamedGroup  *next;
+} NamedGroup;
+
 struct Ctx {
     Arena                arena;
     const char          *pat;
@@ -363,6 +372,23 @@ struct Ctx {
      * bounded — see PCREC_MAX_SUBSET_ELEMS in limits.h for the growth law and
      * the number. Charged in src/ir/dfa.c's intern(). */
     long long            subset_elems;
+    /* [M6.3] module `named-groups`: every DECLARED (name, group-number)
+     * pair, threaded as an arena-allocated singly linked list in
+     * declaration (opening-paren) order — `named_groups` is the head,
+     * `n_named_groups` its length. This is a LEXICAL fact about the
+     * pattern text, the same tier `ncap`/`ngroups` already are (recorded
+     * whether or not `want_caps` is set — a --no-captures build still
+     * knows a group's NAME, it simply delivers no caps[] slot for it), so
+     * it is populated unconditionally by the module's parser port
+     * (src/parse/mod_named_groups.c) and left NULL/0 by every pattern with
+     * no named group. src/gen/emit_dfa.c's emit_info_def reads it once, at
+     * the end of parse, to build the SORTED `rx_group_entry` array
+     * docs/spec/match_api.md §6 promises (sort key: strcmp on the name —
+     * PCRE2's own PCRE2_INFO_NAMETABLE is sorted exactly this way,
+     * measured directly in tests/probes/probe_named_groups.c, which is
+     * this decision's evidence). */
+    NamedGroup          *named_groups;
+    unsigned             n_named_groups;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
@@ -1113,6 +1139,21 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
  * includes the RECOGNISED-MALFORMED runs (the err-194 shapes) this port
  * exists to diagnose. */
 ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
+                               size_t at, size_t from);
+
+/* src/parse/mod_named_groups.c — module `named-groups` ([M6.3]). The FIRST
+ * producer wired onto a registry row whose `engines` mask had excluded
+ * ENGM_DFA (tests/registry/registry_check.c's check_engine_capability
+ * tripwire is tuned to that event) — resolved by RECLASSIFYING the three
+ * declaring rows' `engines` to ANY_ENGINE rather than by building SR-8's
+ * general lowering-time consultation: a named group's AST is an ordinary
+ * A_CAP node, indistinguishable from a plain numbered group's, so the
+ * EXISTING generic capture-forcing rule (src/opt/select_engine.c's
+ * `forces_captures`: ENGM_VM whenever `cx->want_caps && cx->ncap > 0`)
+ * already forces the VM whenever this construct actually delivers a
+ * capture slot, and a `--no-captures` build compiles it on the DFA exactly
+ * as it would a plain group. See docs/dev/decisions.md's [M6.3] entry. */
+ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No

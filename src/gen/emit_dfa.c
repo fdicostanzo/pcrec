@@ -34,6 +34,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -589,9 +590,62 @@ typedef struct {
     long long   subject_ceiling; /* 0 = unset/not applicable */
 } InfoStamp;
 
+/* [M6.3] the sort key for rx_info.groups: strcmp on the NAME. Chosen to
+ * match PCRE2's own PCRE2_INFO_NAMETABLE ordering — measured directly
+ * (tests/probes/probe_named_groups.c: a 3-name pattern declared
+ * zeta/alpha/mu by paren order comes back alpha/mu/zeta) rather than
+ * invented, which is what makes the array bsearch-able by name exactly as
+ * docs/spec/match_api.md §6 always said it would be, and settles the
+ * paragraph that section left open (docs/dev/decisions.md's [M6.3] entry). */
+static int ng_cmp_name(const void *a, const void *b)
+{
+    const NamedGroup *const *pa = a;
+    const NamedGroup *const *pb = b;
+    return strcmp((*pa)->name, (*pb)->name);
+}
+
 static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                           const char *upper, const InfoStamp *st)
 {
+    /* [M6.3] the named-groups reflection table, emitted (as a file-scope
+     * `static` array, so two differently-prefixed artifacts sharing a TU
+     * cannot collide on its name) ONLY when the pattern text declared at
+     * least one name — every pattern with none stays byte-identical to
+     * before this module existed, the same "trivially empty" convention
+     * every other late-populated rx_info field already follows. */
+    const char *groups_name = NULL;
+    if (cx->n_named_groups > 0) {
+        NamedGroup **sorted =
+            arena_alloc(&cx->arena, cx->n_named_groups * sizeof *sorted);
+        unsigned idx = 0;
+        for (NamedGroup *g = cx->named_groups; g; g = g->next)
+            sorted[idx++] = g;
+        qsort(sorted, cx->n_named_groups, sizeof *sorted, ng_cmp_name);
+
+        groups_name = derived_name(cx, "_group_names");
+        sb_printf(c, "static const rx_group_entry %s[] = {\n", groups_name);
+        for (unsigned i = 0; i < cx->n_named_groups; i++) {
+            /* `slot`: the caps[] index this entry delivers, or -1 if this
+             * build delivers none. `sorted[i]->number` (the group's
+             * capture NUMBER) is always set, regardless of want_caps —
+             * mod_named_groups.c numbers a named group unconditionally,
+             * the same lexical-fact tier `ngroups` is. Whether that
+             * number ALSO addresses a live caps[] slot is the separate,
+             * build-output question `cx->want_caps` answers: a
+             * captures-wanted build with any named group is
+             * UNCONDITIONALLY VM-selected by the pre-existing generic
+             * capture-forcing rule (src/opt/select_engine.c's
+             * forces_captures), so want_caps == true here already implies
+             * this artifact is exactly the "VM-compiled, captures-on"
+             * case §6.2 names as the one where ncaps - 1 == ngroups. See
+             * mod_named_groups.c's header for the full argument. */
+            int slot = cx->want_caps ? sorted[i]->number : -1;
+            sb_printf(c, "    { \"%s\", %d, %d, NULL },\n",
+                      sorted[i]->name, sorted[i]->number, slot);
+        }
+        sb_puts(c, "};\n");
+    }
+
     sb_printf(c, "const struct rx_info %s = {\n", infoname);
     /* abi 2: `work_budget` joined the layout (D47 SECOND ADDENDUM's third
      * bound). The member is INSERTED beside `step_budget` rather than appended,
@@ -649,7 +703,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     sb_printf(c, "    .encoding = %d,\n", cx->opt->encoding);
     sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
     sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap);
-    sb_puts(c,   "    .nnames = 0,\n");
+    sb_printf(c, "    .nnames = %u,\n", cx->n_named_groups);
     sb_printf(c, "    .engine = %d, /* %s */\n", st->engine,
               st->engine == 2 ? "ENGM_VM" : "ENGM_DFA");
     sb_printf(c, "    .step_budget = %lld,\n", st->step_budget);
@@ -660,7 +714,10 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     emit_c_string_literal(c, cx->pat, cx->patlen);
     sb_puts(c,   ",\n");
     sb_printf(c, "    .pattern_len = %zu,\n", cx->patlen);
-    sb_puts(c,   "    .groups = NULL,\n");
+    if (groups_name)
+        sb_printf(c, "    .groups = %s,\n", groups_name);
+    else
+        sb_puts(c, "    .groups = NULL,\n");
     if (st->engine_why) {
         sb_puts(c, "    .engine_why = ");
         emit_c_string_literal(c, st->engine_why, strlen(st->engine_why));

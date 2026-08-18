@@ -409,6 +409,24 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
         if (want == WANT_RESULT && r->aport.kind == PORT_FN)
             return r->aport.fn(cx, r, want, at, cx->pos + 1);
     }
+    /* [M6.3] THE GENERAL PRODUCER PATH — first exercised by module
+     * `named-groups`, and every FUTURE `(?` producer that is not shaped
+     * like an option run (D29's "several ports" target this doorway has
+     * been heading toward since MOD-0.5's own header records) reaches the
+     * construct through this branch rather than adding a second
+     * special-cased block above. `from` is the position right after the
+     * row's own full selector prefix — `sel` occupies cx->pos + 1, so a
+     * tailed row's construct-specific text starts one past its `tail`
+     * (`(?P<` -> the byte after the `<`); a tail-less row's starts right
+     * after `sel` itself. That is a DIFFERENT convention from the
+     * option-run branch above, whose `from` is the run's own start (the
+     * SELECTOR byte, which is part of the run) — the two shapes are
+     * dispatched by different tests (a `recognise` pointer identity vs.
+     * this branch's `aport.kind`) precisely because they disagree about
+     * where their own text begins. */
+    if (want == WANT_RESULT && r->aport.kind == PORT_FN)
+        return r->aport.fn(cx, r, want, at,
+                           cx->pos + 2 + (r->tail ? strlen(r->tail) : 0));
     /* K14 (design §17.2): a ROADMAP_NEVER row is real PCRE2 syntax pcrec
      * deliberately excludes, and promising its module is the defect D26's
      * tier-2 row names. The module stays on the row as classification; it is

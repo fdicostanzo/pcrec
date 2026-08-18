@@ -85,7 +85,7 @@ arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is uno
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
 class ports: 5 scalar + 10 SET + 9 FN|MOD-0.3b/c/d: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 class-position reach: 5 tailed/body-carrying rows|MOD-0.6/D33 §9.2, K10's fourth net: the one-byte in-class sweep above cannot express [\N{U+41}]-shaped bodies at all; this is the only check that arbitrates a tailed/body-carrying row's FULL syntax at class position and confirms it reaches itself and promises its own module
-engine-capability tripwire: all 51|[M4.7a]/[SR-8]: the only guard that SR-8's engines-column consultation was deliberately deferred rather than silently forgotten — deleting it removes the one thing that would fail loudly the day a VM_ONLY module wires its first atom-position producer without also building select_engine.c's consultation
+engine-capability tripwire: all 48|[M4.7a]/[SR-8], count updated at [M6.3] (51->48: named-groups' three declaring rows reclassified to ANY_ENGINE, not a VM_ONLY row gaining a producer): the only guard that SR-8's engines-column consultation was deliberately deferred rather than silently forgotten — deleting it removes the one thing that would fail loudly the day a VM_ONLY module wires its first atom-position producer without also building select_engine.c's consultation
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is

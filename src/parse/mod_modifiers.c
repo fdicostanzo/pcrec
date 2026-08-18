@@ -280,9 +280,22 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
                     "inline option 'm' (multiline) requires module 'assertions'");
             break;                        /* -m: true today, accepted */
         case 'J':
+            /* [M6.3] WORDING FIX: this used to say "requires module
+             * 'named-groups'" unconditionally, which was a tier-2-honest
+             * promise while that module did not exist — but is a LIE once
+             * it does, because named-groups was ruled to explicitly
+             * EXCLUDE (?J)/DUPNAMES (docs/dev/plan.md's [M6.3] row: "clean
+             * refusal", D26's K14 shape one module over). This refusal is
+             * unconditional regardless of whether named-groups is
+             * enabled — see mod_named_groups.c's duplicate-name check,
+             * which never consults this letter — so the message now
+             * matches K14's ROADMAP_NEVER wording (design §17.2) rather
+             * than naming a module that will never implement it. */
             if (!hyphen)
                 return modport_refuse(want, i,
-                    "inline option 'J' (dupnames) requires module 'named-groups'");
+                    "inline option 'J' (dupnames) is outside pcrec's scope "
+                    "and no module will implement it (see "
+                    "docs/pcre2_compliance.md)");
             break;                        /* -J: true today, accepted */
         case 'r':
             break;                        /* measured no-op at options=0 */

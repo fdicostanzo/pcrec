@@ -237,11 +237,23 @@ directory asserts that the description and the shipped parser actually agree.
    zero customers — a manager redirect superseding an earlier reading that
    built the consultation ahead of need). The check asserts the fact that
    makes that omission safe: every such row's `aport.kind` is `PORT_NONE`.
-   EXACT count, 51 rows (12 ESC + 38 GROUP/GROUP_T + 1 VERB, measured
-   directly from registry.c). Sabotage-validated (2026-08-17, scratch
-   build, reverted before commit): wiring a dummy atom-position producer
-   onto the `(?>...)` (atomic-groups) row fires this check by name AND
-   `check_class_ports`' atom-port population guard (23→24) — two
+   EXACT count, **48 rows since [M6.3]** (was 51 at M4.7a: 12 ESC + 38
+   GROUP/GROUP_T + 1 VERB). [M6.3] is the FIRST time this population
+   actually shrank rather than merely being asserted stable — module
+   `named-groups` wired the first producer ever attached to a row this
+   check had been watching, and the fix was NOT to build SR-8: a named
+   group's AST is an ordinary A_CAP node, so the pre-existing generic
+   capture-forcing rule in select_engine.c already sends it to the VM
+   whenever it delivers a real capture slot, exactly as an unnamed group
+   would be. The three declaring rows' `engines` mask moved from VM_ONLY to
+   ANY_ENGINE instead (registry.c's own comment on those rows, and
+   docs/dev/decisions.md's [M6.3] entry, carry the argument), which is what
+   removes them from THIS check's population rather than tripping its
+   `bad()` — 38 GROUP/GROUP_T rows became 35. Sabotage-validated (2026-08-17,
+   scratch build, reverted before commit): wiring a dummy atom-position
+   producer onto the `(?>...)` (atomic-groups) row fires this check by name
+   AND `check_class_ports`' atom-port population guard (23→24, now
+   26→27 post-[M6.3]) — two
    independent nets catching the same event, which is the point of a
    tripwire that also happens to sit next to a port-population check. The
    failure message is written to be read FIRST by whoever trips it: it

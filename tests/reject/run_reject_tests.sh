@@ -841,19 +841,57 @@ accept '(?-i)'
 # `accept()`), because [STD1b] needs it — as `reject_gated none ...` — for
 # rows far above this point in the file. See its definition there.
 # The two per-letter attributions (MOD-0.5a rulings, flagged to Frank):
-# multiline is assertion-engine work; J is observable only through named
-# groups. Reversible one-row edits in mod_modifiers.c if overruled.
+# multiline is assertion-engine work. J was ORIGINALLY attributed to
+# named-groups too ("observable only through named groups"), and [M6.3]
+# (2026-08-18) is the ruling that SUPERSEDED it: named-groups shipped
+# WITHOUT (?J)/DUPNAMES (docs/dev/plan.md's own row — "clean refusal",
+# out of scope), so naming that module here would have started being a
+# LIE the moment the module landed rather than staying true. J's wording
+# moved to K14's ROADMAP_NEVER shape (design §17.2) instead — no module
+# promised, because none will ever discharge it. Reversible one-row edit
+# in mod_modifiers.c if overruled.
 reject_gated modifiers '(?m)a'     "requires module 'assertions'"
-reject_gated modifiers '(?J)a'     "requires module 'named-groups'"
+reject_gated modifiers '(?J)a'     "is outside pcrec's scope and no module will implement it"
 # [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so `(?m)a`/
 # `(?J)a` reach this SAME diagnosis bare, with no `--features` at all — the
 # std1-BOUNDARY proof: std1 = {classes, modifiers} and nothing wider, so
-# `m`'s and `J`'s real modules ('assertions', 'named-groups') must still be
-# refused by a bare invocation. If std1's mask ever silently grew to include
-# either, these two rows are what would flip from reject to accept.
+# `m`'s real module ('assertions') and J's permanent out-of-scope refusal
+# must still be refused by a bare invocation. If std1's mask ever silently
+# grew to include 'assertions', the `(?m)a` row is what would flip from
+# reject to accept ('J' cannot flip — no module will ever implement it).
 # (`(?m)a`'s bare pin already lives further down, alongside its five
 # sibling letters' gate conversion — not duplicated here.)
-reject '(?J)a'     "requires module 'named-groups'"
+reject '(?J)a'     "is outside pcrec's scope and no module will implement it"
+
+# ---- [M6.3] module `named-groups` — GATED pins. The producer's own
+# corpus (tests/named_groups/) carries the MATCH-semantics half; these are
+# the tier-2 attribution/boundary facts a `perr`/`m`/`n` block cannot
+# assert (WHY a pattern refuses, or that a construct in a DIFFERENT
+# module still refuses once this one is enabled) plus two syntax-boundary
+# refusals python `re` cannot co-verify (name length; see
+# docs/dev/upstream_issues.md U10). Name-syntax refusals PYTHON DOES agree
+# on (leading digit, duplicate name) live in tests/named_groups/'s own
+# `.rxt` corpus as ordinary oracle-verified `perr` blocks instead — this
+# file is for what a `.rxt` block structurally cannot express.
+#
+# THE BOUNDARY, proven both ways: a backreference-BY-NAME spelling and the
+# DUPNAMES option letter must both keep refusing once named-groups is
+# enabled — the module's whole point is the three DECLARING spellings,
+# nothing else at the `(?` doorway moves.
+reject_gated named-groups '(?<x>a)\k<x>'   "requires module 'backrefs'"
+reject_gated named-groups '(?<x>a)(?P=x)'  "requires module 'backrefs'"
+reject_gated named-groups,modifiers '(?J)(?<dup>a)(?<dup>b)' \
+    "is outside pcrec's scope and no module will implement it"
+# The measured wall (tests/probes/probe_named_groups.c, U10): 128 bytes is
+# the longest name PCRE2 accepts; python `re` has no such ceiling, so this
+# is the one boundary in this block that cannot be a co-verified `.rxt`
+# `perr` — the 128-accepts half lives in tests/named_groups/ instead,
+# where it IS python-verifiable (no length limit on the python side to
+# diverge on an ACCEPTING case).
+reject_gated named-groups \
+  '(?<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>x)' \
+  "subpattern name is too long (maximum 128 bytes)"
+
 # The recognised-malformed shape (PCRE2 error 194's analogue) and the
 # truncated run (error 114's): the module diagnoses its own body.
 reject_gated modifiers '(?i-m-s)a' "invalid hyphen in option setting"
@@ -1747,8 +1785,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 55 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 55." >&2
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 59 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 59 ([M6.3] added 4: the two backref-by-name boundary proofs, the (?J)+named-groups combined-gate proof, and the 129-byte name-length wall)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

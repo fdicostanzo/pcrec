@@ -485,10 +485,28 @@ GROUP_T('<', "=", "(?<=...)", lookaround,   VM_ONLY, "positive lookbehind", QF_Y
 GROUP_T('<', "!", "(?<!...)", lookaround,   VM_ONLY, "negative lookbehind", QF_YES),
 GROUP_T('<', "*", "(?<*a)",   lookaround,   VM_ONLY,
       "non-atomic positive lookbehind — the (? spelling of (*naplb:...)", QF_YES),
-GROUP('<',  "(?<name>a)",    named_groups,     VM_ONLY,
-      "named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows", QF_YES),
+/* [M6.3] Longhand rather than the GROUP macro, for the one field the macro
+ * cannot express: a wired PORT_FN. `engines` is ANY_ENGINE, not VM_ONLY —
+ * a deliberate RECLASSIFICATION (docs/dev/decisions.md's [M6.3] entry, and
+ * see internal.h's comment on pcrec_ngport_declare): a named group's AST
+ * is an ordinary A_CAP node, and the pre-existing generic capture-forcing
+ * rule (src/opt/select_engine.c) already sends it to the VM whenever it
+ * delivers a real capture slot, exactly as a plain numbered group would.
+ * The three rows below are the ONLY named-groups rows this applies to —
+ * the boundary constructs (\k \g (?P= backref-by-name; (?J)/DUPNAMES)
+ * stay in their own modules ('backrefs', and mod_modifiers.c's
+ * unconditional 'J' refusal), untouched. */
+{RK_GROUP, '<', NULL, "(?<name>a)", M_named_groups, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows",
+ ROADMAP_PLANNED, QF_YES, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ngport_declare}, NO_PORT},
 
-GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Perl-style quoting", QF_YES),
+{RK_GROUP, '\'', NULL, "(?'name'...)", M_named_groups, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "named capture group, Perl-style quoting",
+ ROADMAP_PLANNED, QF_YES, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ngport_declare}, NO_PORT},
 
 /* `(?P` IS THE OTHER THREE-WAY BYTE, and the three are three DIFFERENT MODULES:
  * a named group, a backreference and a subroutine call. One row answering
@@ -511,7 +529,13 @@ GROUP('\'', "(?'name'...)",  named_groups,     VM_ONLY, "named capture group, Pe
  * the `(?<` and the row's own diagnostic never appears. The group declaration
  * these two need to satisfy LIBPCRE2 goes in PC-3's WRAPPERS instead, which is
  * exactly what that mechanism is for. */
-GROUP_T('P', "<", "(?P<name>a)", named_groups, VM_ONLY, "python-style named capture group", QF_YES),
+/* [M6.3] longhand for the same reason as the two rows above: a wired
+ * PORT_FN and ANY_ENGINE, not GROUP_T's VM_ONLY default. */
+{RK_GROUP, 'P', "<", "(?P<name>a)", M_named_groups, FLAV_PCRE2, ANY_ENGINE,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "python-style named capture group",
+ ROADMAP_PLANNED, QF_YES, NULL, 25, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_ngport_declare}, NO_PORT},
 GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backreference to a named group", QF_NO),
 GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group", QF_NO),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
