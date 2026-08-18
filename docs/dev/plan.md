@@ -612,7 +612,48 @@ spine, not before):
   statistics dependence) consume the SAME channel — which is exactly the
   "best non-SIMD approach, then backend variants on top" architecture
   Frank ruled.
-- [ENG-ISL] STATE:not-started — EXACT DFA ISLANDS, deferred OUT of
+- [ENG-DIRECT] STATE:not-started — DIRECT-CODED DFA EMISSION (Frank,
+  2026-08-18, thirtieth session: "could we implement without state
+  transition tables? ... aabbc sets up the table mechanism and the
+  loop but really its just a memcmp ... (?:\d{2,3}\.){3}\d{2,3}
+  could be a fixed loop of checking digits followed by period ...
+  this is what i think of for dfa and for islands of dfa — no
+  overhead"). Emit a DFA-tier pattern's verify automaton as DIRECT
+  CODE — the program counter IS the state (re2c's model; lex -f,
+  Ragel's goto mode) — instead of the rx_fcls/rx_ftr table loop:
+  reducible automaton structure becomes structured code (sequences,
+  branches, counted loops), byte tests become gcc-optimizable range
+  checks/compares (the OPT-A spelling menu falls out of gcc switch
+  lowering for FREE in this model, and the address-taken-label
+  pinning largely disappears — plain structured flow), literal
+  chains become the OPT-A memcmp lead as a special case. THE DEEP
+  PAYOFF beyond constant factors: a bounded repeat in direct code is
+  a COUNTED LOOP (register + constant code) where the table DFA pays
+  STATES linear in n — the exact K7/a{n} family D56 just bounded;
+  direct-coded counting re-widens the a{9795} narrowing by making
+  the state-set population it guards simply not exist for these
+  shapes (the VM's counter/cursor rungs already prove the loop form
+  on the capture side). THE HONEST TRADE, which is why tables stay
+  the general engine: dense/irregular automata mispredict as branchy
+  code where a table lookup is branchless; large/irreducible
+  automata blow icache and D45 compile budgets as code (the cap
+  moves from state count to code size); so this is a PER-PATTERN
+  (or per-island) selection by measured shape — D46 stamp+force
+  obligations apply as a new selection axis when built. EVIDENCE
+  MACHINE: [BENCH-CEIL] is this row's instrument — the hand-written
+  ceiling arm's code IS what direct emission should approach, and
+  the per-case gap table is this row's worklist and its acceptance
+  measure. CROSS-LINKS: [ENG-ISL]'s islands, once determinized,
+  should be EMITTED via this row's mechanism (the "no overhead"
+  half of the island idea — record there); DD-5's switch-based
+  emitter is the PORTABILITY cousin but still state-variable-driven
+  — true direct coding eliminates the state variable where control
+  flow carries it; the K24 counterweight (computed-goto
+  unoutlineability) applies to any emission-model change and travels
+  with this row. Sequencing: with the OPT waves, after [BENCH-CEIL]
+  produces the gap table; unmeasured engine work is not scheduled
+  (D12/D18).
+- [ENG-ISL] STATE:not-started (EMISSION NOTE added 2026-08-18: an island, once determinized, is EMITTED via [ENG-DIRECT]'s direct-coded mechanism — that is the "no overhead" half of the island idea; determinization proves the language/preference exactness, direct coding is what makes the island cheaper than the machinery it replaces) — EXACT DFA ISLANDS, deferred OUT of
   [M4.6] (Frank, 2026-08-17, twenty-eighth session, D50 — the
   [ENG-ABS] pattern: build only behind a MEASURED loss). engine_m4.md
   §6.3's strength-1 mechanism was designed and scheduled before the
