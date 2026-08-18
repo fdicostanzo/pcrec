@@ -30,17 +30,21 @@ Append-only where noted; the restart/status-recovery record for the project.
   API takes no pattern length, so a pattern containing NUL compiles as its
   prefix and reports success — rx_info.pattern_len at the M4 freeze is the
   fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
-  — and note K7 is CLOSED as of 2026-08-18 ([M4.7b]): its own diagnosis
-  was wrong about where the memory went. The bounded-optional blowup was
-  one line in src/ir/nfa.c rebuilding an out-patch set per iteration,
-  Theta(n^2) arena traffic behind a LINEAR state count, which is why no
-  cap could see it; a second, unrelated quadratic in the exact-count
-  form is bounded by the new PCREC_MAX_SUBSET_ELEMS; and the
-  caller-abort is closed by routing every malloc-failure site through
-  ctx_nomem()
   exhausts the step budget on a 100-byte ordinary input; found by the D27
   blinded quantifier corpus 2026-08-16; regression in
-  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K24
+  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K7
+  (CLOSED 2026-08-18, [M4.7b] — the entry whose own DIAGNOSIS was the
+  thing that was wrong: it placed the memory in the subset construction,
+  and it was in the NFA builder. The `X{m,n}` tail loop in src/ir/nfa.c
+  rebuilt its out-patch set every iteration, Theta(n^2) arena traffic
+  behind a LINEAR state count, which is exactly why no cap could see it
+  — `a{0,20000}` 4.68 GB -> 13.2 MB, and both caps K7 called unreachable
+  now fire in 0.1 s. A SECOND, unrelated quadratic in the exact-count
+  form — n+1 states whose state-SETS average n/2 — is bounded by the new
+  PCREC_MAX_SUBSET_ELEMS, which NARROWS exact repeats above `a{9795}`.
+  The caller-abort, the worst item on its list because pcrec is a
+  library, is closed by routing every malloc-failure site through
+  ctx_nomem(). Pinned by tests/resource/). K24
   (CLOSED 2026-08-17, k24fix lane — the only throughput-only entry this
   file has carried: gcc -O2's partial-inlining pass was splitting
   `<prefix>_search` into a trampoline plus a `.part.0` clone in every
