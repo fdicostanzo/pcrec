@@ -235,6 +235,34 @@ modules — MOD-0.3 and MOD-0.5, see docs/dev/plan_completed.md. Remaining:
 assertions (VM-independent), lookaround, backrefs, atomic groups,
 named-groups, conditionals, recursion producers.)
 
+- [M6-READ] STATE:not-started — EMITTED-CODE READABILITY PASS (Frank,
+  2026-08-18, thirty-second session: ruled as the IMMEDIATE follow to
+  M6, ahead of the rest of M5). The generated C becomes readable as
+  first-class output. Frank's five requirements, near-verbatim:
+  (1) DATA STRUCTURES: a 1–3-line comment each — what it is, where it
+  is used, what it means. (2) CODE SECTIONS: 1–2 lines saying what the
+  section is about to do ("prefilter section to find candidates...").
+  (3) LINE COMMENTS: 1 line, the INTENT of the next line, never an
+  echo of the code ("advance to next character", NOT "increment source
+  pointer"). (4) FULL VARIABLE NAMES: no "pos" — the
+  source_position/source_index class of names, ONE consistent scheme;
+  the scheme itself is delegated to the implementer. (5) CONSIDER
+  (design point, not yet a requirement): tables carry short text names
+  rather than raw numbers where appropriate, with a legend at top.
+  ENGINEERING NOTES recorded at ruling time: (i) the pass must be
+  OBJECT-CODE-NEUTRAL — comments and renames cannot change the
+  compiled artifact; the natural check is compile-before/after and
+  compare object code, which the row gets for free; (ii) spec §2's
+  verbatim quotes and the R29-fixed ABI comment block re-quote under
+  the verification-ledger discipline in the same change; (iii) codegen
+  structural checks and stamp pins that grep emitted identifiers need
+  a coordinated pin update — budget for it; (iv) item (5), if adopted,
+  must also be object-neutral (text names resolving to identical
+  values) or it graduates to its own ruling; (v) comment DENSITY on
+  machine-generated automata is the open style question — the design
+  pass brings Frank a sample commented artifact to approve the style
+  against before the full emitter conversion.
+
 ## M3 — Streaming input
 
 - [M3.0] STATE:not-started — DESIGN GATE FIRST (R2-A3): D7's "same shape streaming needs" holds only for match-END finding. The reverse pass rescans backward through raw bytes a stream may no longer hold (unbounded for `.*` shapes). Design match-START finding under bounded memory BEFORE writing streaming code; reconcile with APPROACH §6's PARTIAL/WINDOW_EXCEEDED contract
