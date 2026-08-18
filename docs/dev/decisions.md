@@ -4674,3 +4674,58 @@ its graduation-pointer flag as historical record.
 ([V-B]) measurably needs a typedef'd name — that consumer can ship a
 `typedef struct rx_info rx_info_t;` in ITS OWN header without touching
 the emitted contract.
+
+## D58 — encoding seam prelude before M6; encoding is PER-PATTERN (Frank, 2026-08-18, thirty-second session)
+
+**Decision.** Three rulings from one design thread, made before any M6
+work started (M6 remains the next milestone per the thirty-first
+session's ruling; this inserts a prelude in front of it):
+
+1. **Ordering: [M5-SEAM] → M6 → the rest of M5.** DD-12's residual
+   seam (the per-encoding runtime header) is built NOW as a prelude,
+   with the byte-identity backend only; M6 proceeds on top of it; the
+   rest of M5 (UTF-8 lowering, \p{...}, DD-1 folding, the UTF oracle
+   twin) follows M6. Chosen over full-M5-first (a large milestone that
+   delays all M6 surface) and over M6-as-ruled-with-brief-discipline
+   (which accepts a bounded retrofit of M6's encoding-sensitive sites
+   and relies on discipline plus review alone).
+2. **Encoding is a PER-PATTERN scalar.** One encoding per compile call
+   (pcrec_options field + `--encoding`), never process- or
+   file-global; mixed encodings in one compilation unit or binary are
+   SUPPORTED BY CONSTRUCTION (self-contained artifacts, distinct
+   prefixes, each embedding exactly one encoding's residual block).
+   Recorded as requirement (8) on the DD-12 row.
+3. **Seam scope** (path delegated to the manager per the D47.5 item-5
+   precedent): `--encoding=byte` default with utf8 CLEANLY REFUSED
+   until M5; the residual-header embed mechanism with the byte
+   backend; `<prefix>_next_pos` as the first pulled entry (spec §3.1's
+   find-all advance moves onto it, resolving that section's recorded
+   byte-vs-character caveat); a codegen structural check that residual
+   entries are never called from hot-loop labels; K27's fix rides
+   (this is the emitter-touching wave known_issues.md scheduled it
+   for), as does the stale D56 "VM engine arrives in M4" diagnostic
+   text.
+
+**Why.** Frank raised the concern that emitted `s+1` advances are
+byte-encoding assumptions a UTF milestone would have to rewrite.
+Checked against a freshly emitted artifact (this session): the hot
+path has NO external advance loop to rewrite — unanchoredness is the
+automaton's state-0 self-loop plus the memchr skip, and the reverse
+pass is a plain byte walk — so under DD-12's architecture the emitter
+is not rewritten for UTF under ANY ordering; UTF-8 is lowered INTO the
+byte automaton upstream of the engine split, and engines stay
+encoding-blind (also answered in-session: the seam is keyed off
+encoding, emission off engine, and the axes never multiply —
+N_encodings + N_engines, not N×N). The genuine coupling is the
+enumerable RESIDUE: the §3.1 find-all empty-match advance today, plus
+lookbehind's back-step, \G, and caseless backref comparison when M6
+lands. Building the seam first means M6 lanes are born onto it and M5
+later drops in the UTF-8 backend without touching M6 code. Honest risk
+stated at ruling time: a seam with one backend is unvalidated until
+the second arrives; mitigant: DD-12 enumerates the UTF-8 backend's
+needs concretely (≤3-continuation-byte skips, self-synchronization,
+bytes-forever offsets).
+
+**Revisit when:** M5's UTF-8 backend lands — the second consumer is
+the seam's validation event; any interface change it forces gets
+recorded against this entry.

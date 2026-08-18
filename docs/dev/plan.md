@@ -204,11 +204,31 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M5 — UTF-8
 
+- [M5-SEAM] STATE:started — THE ENCODING SEAM PRELUDE (D58, Frank,
+  2026-08-18, thirty-second session: built BEFORE M6 so M6's
+  encoding-sensitive residue is born on the seam, not retrofitted).
+  Scope: (a) encoding as a PER-PATTERN generation scalar —
+  pcrec_options field + CLI `--encoding=byte|utf8`, byte the default,
+  utf8 CLEANLY REFUSED until M5 proper (never process- or file-global;
+  mixed encodings in one compilation unit are supported by
+  construction); (b) the DD-12 residual-header embed mechanism, byte
+  backend only — each artifact embeds exactly one encoding's residual
+  block; (c) `<prefix>_next_pos` as the first pulled residual entry:
+  spec §3.1's find-all loop moves onto it (resolving that section's
+  recorded byte-vs-character caveat), §8.0's worked example updated
+  compile-and-run, emitted ABI comment + lib/pcrec.h updated under the
+  R29 verbatim-quote discipline; (d) codegen structural check that
+  residual entries are never called from hot-loop labels (allowlist
+  shape per DD-12 (7)), sabotage-validated; (e) riders: the K27 fix
+  (this IS the emitter-touching wave known_issues.md scheduled it for)
+  and the stale D56 "VM engine arrives in M4" diagnostic text. NOT in
+  scope: UTF-8 lowering, \p{...}, DD-1 folding — those stay [M5.0].
+  [M6.0] expands only after this row lands.
 - [M5.0] STATE:not-started — milestone (expand on arrival): byte-wise UTF-8 automata, \p{...} module
 
 ## M6 — PCRE feature modules
 
-- [M6.0] STATE:not-started — milestone (expand on arrival): assertions (\b \B, \A \z, (?m) multiline, \G, \K — module `assertions` per the shipped diagnostics), lookaround, backrefs, atomic groups + possessive-quantifier SPELLINGS (module `atomic-groups`; note the possessify OPTIMIZATION already exists internally — this is the surface syntax), named groups (module `named-groups`). ROW TEXT CORRECTED 2026-08-16 (manager probe, twenty-seventh session): classes+ (\d \w \s, POSIX [[:...:]]), (?i), (?s), and mid-pattern $ are ALREADY IMPLEMENTED and compiling on HEAD — they are not M6 content; what remains is the list above. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m))
+- [M6.0] STATE:not-started — milestone (expand on arrival): assertions (\b \B, \A \z, (?m) multiline, \G, \K — module `assertions` per the shipped diagnostics), lookaround, backrefs, atomic groups + possessive-quantifier SPELLINGS (module `atomic-groups`; note the possessify OPTIMIZATION already exists internally — this is the surface syntax), named groups (module `named-groups`). ROW TEXT CORRECTED 2026-08-16 (manager probe, twenty-seventh session): classes+ (\d \w \s, POSIX [[:...:]]), (?i), (?s), and mid-pattern $ are ALREADY IMPLEMENTED and compiling on HEAD — they are not M6 content; what remains is the list above. INHERITED OBLIGATION (D47.5, 2026-08-16): whichever substep lands MULTILINE must land WITH a possessification-gate test — a `(?m)` pattern whose `$`-follow bounded quantifier must NOT possessify (eng_brep_design.md §2.5's exemption is safe only under a LIVE !multiline check; 180/720 cells diverge under (?m)). SEQUENCING (D58, 2026-08-18): expansion waits for [M5-SEAM]; every M6 substep routes its encoding-sensitive residue (lookbehind back-step, \G, caseless backref compare) through the seam from birth
 
 (2026-08-13: the classes+ and modifiers halves already landed as gated
 modules — MOD-0.3 and MOD-0.5, see docs/dev/plan_completed.md. Remaining:
@@ -709,7 +729,16 @@ spine, not before):
   planned-for threat): a new backend = one lowering module + one
   residual header, core and emitter untouched — if adding one ever
   requires touching a shared file outside the backend directory, that is
-  the derailment signal and a design stop
+  the derailment signal and a design stop. (8) PER-PATTERN RULING
+  (Frank, 2026-08-18, thirty-second session, D58): the generation-time
+  scalar is per COMPILE CALL — a pcrec_options field + `--encoding` —
+  never process- or file-global; mixed encodings in one compilation
+  unit or binary are SUPPORTED BY CONSTRUCTION (self-contained
+  artifacts, distinct prefixes, each embedding exactly one encoding's
+  residual block). The residual-seam half of this row is built EARLY as
+  [M5-SEAM] (D58 ordering: seam → M6 → the rest of M5); the lowering
+  instances, oracle twin, and both M5-time structural checks named in
+  (7)(a) remain M5's
 - [DD-13] STATE:not-started — THE UNIFIED PATTERN-SOURCE / TEST FILE
   FORMAT (Frank, 2026-08-17, twenty-ninth session; name TBD): ONE file
   format, grown from .rxt, serving every consumer that today would need
