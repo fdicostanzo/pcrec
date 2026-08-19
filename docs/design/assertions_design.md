@@ -2989,8 +2989,11 @@ machinery with A–D and can move if scheduling requires.
 >   `tests/registry/registry_check.c`'s capability tripwire (which FIRED on
 >   `\K` — the day it was written for — and now carries a NAMED exception
 >   that PAYS by asserting the refusal live), and the plan row.
-> - **Oracle.** `# pcre2-only` wholesale, U11d. The fourth exclusion in the
->   module, and the one that COMPLETES the list.
+> - **Oracle.** `# pcre2-only` wholesale, U11d — the module's fourth oracle
+>   entry and the one that COMPLETES the list. By CONSTRUCT rather than by
+>   entry: three of the eight are excluded wholly (`\Z`, `\G`, `\K`) and a
+>   fourth partly (`(?m)`, its `^` half), while `\A`, `\z`, `\b`, `\B` and
+>   `(?m)$` stay python-verified at 0 divergences.
 > - **TWO THINGS THE WAVE ADDED THAT §10 DOES NOT ASK FOR**, both because the
 >   construct made a previously-uninteresting question interesting.
 >   `run_kreset_diff.sh` §5 drives `match_api.md` §3.1's FIND-ALL LOOP against

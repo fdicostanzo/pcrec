@@ -455,13 +455,15 @@ a cell that way would encode a translation and check the translation.
 
 **Impact**: `tests/assertions/kreset.rxt` is `# pcre2-only` in its ENTIRETY,
 block by block, and is verified by `tests/assertions/verify_pcre2.py` against
-libpcre2. That is the FOURTH place in module `assertions` where the base-tier
+libpcre2. That is the FOURTH entry in module `assertions` where the base-tier
 oracle cannot answer — `\Z` (U11, WRONG answer), `(?m)^` (U11b, DIFFERENT
 answer), `\G` (U11c, no answer) and `\K` (this entry, no answer) — and it
-COMPLETES the list: the module has eight constructs and the other four
-(`\A`, `\z`, `\b`, `\B`) are python-verified cell for cell at 0
-divergences, which is what makes the four exclusions statements about those
-four constructs rather than about the module.
+COMPLETES the list. Counted by CONSTRUCT rather than by entry: three of the
+module's eight are excluded WHOLLY (`\Z`, `\G`, `\K`) and a fourth PARTLY
+(`(?m)`, its `^` half only), while `\A`, `\z`, `\b`, `\B` and `(?m)$` are
+python-verified cell for cell at 0 divergences. That asymmetry is the point:
+the exclusions are statements about particular constructs — and, for `(?m)`,
+about one HALF of one — never about the module.
 
 **The consequence for the wave's INSTRUMENT is U11c's, plus one thing U11c
 did not need.** `run_kreset_diff.sh` keeps the python arm on `\K`-FREE
