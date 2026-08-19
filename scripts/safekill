@@ -147,5 +147,386 @@
 # from --cwd matching rather than aborting the run.
 
 set -u
-echo "safekill: not yet implemented (requirements-only commit)" >&2
-exit 125
+
+prog="safekill"
+
+usage() {
+    # Same trick as scripts/watchdog: the header comment IS the usage text.
+    awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"
+}
+
+die_usage() {
+    printf '%s: %s\n' "$prog" "$1" >&2
+    printf "Try '%s -h' for usage.\n" "$prog" >&2
+    exit 125
+}
+
+is_uint() {
+    case "$1" in
+        ''|*[!0-9]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+is_number() {
+    case "$1" in
+        ''|*[!0-9.]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+# sq STRING: single-quote-escape STRING for a one-line, greppable field
+# (newlines flattened first) — same shape as scripts/watchdog's sq_quote.
+sq() {
+    local s="${1//$'\n'/ }"
+    printf "'%s'" "${s//\'/\'\\\'\'}"
+}
+
+# ---- option parsing (long options -> no getopts; hand-rolled) -------------
+
+mode=""              # "" | pid | pgid | pattern
+target_pid=""
+target_pgid=""
+pattern=""
+opt_all=0
+opt_list=0
+opt_under=""
+opt_cwd=""
+opt_signal="TERM"
+opt_grace="3"
+opt_termonly=0
+opt_killnow=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --pgid)
+            [ $# -ge 2 ] || die_usage "--pgid requires an argument"
+            [ -z "$mode" ] || die_usage "only one target form allowed (PID / --pgid / --pattern)"
+            target_pgid="$2"; mode="pgid"; shift 2 ;;
+        -f|--pattern)
+            [ $# -ge 2 ] || die_usage "$1 requires an argument"
+            [ -z "$mode" ] || die_usage "only one target form allowed (PID / --pgid / --pattern)"
+            pattern="$2"; mode="pattern"; shift 2 ;;
+        -a|--all) opt_all=1; shift ;;
+        -n|--list) opt_list=1; shift ;;
+        --under)
+            [ $# -ge 2 ] || die_usage "--under requires an argument"
+            opt_under="$2"; shift 2 ;;
+        --cwd)
+            [ $# -ge 2 ] || die_usage "--cwd requires an argument"
+            opt_cwd="$2"; shift 2 ;;
+        -s|--signal)
+            [ $# -ge 2 ] || die_usage "$1 requires an argument"
+            opt_signal="$2"; shift 2 ;;
+        --grace)
+            [ $# -ge 2 ] || die_usage "--grace requires an argument"
+            opt_grace="$2"; shift 2 ;;
+        --term-only) opt_termonly=1; shift ;;
+        -K|--kill-now) opt_killnow=1; shift ;;
+        -h|--help) usage; exit 0 ;;
+        --) shift; break ;;
+        -*) die_usage "unknown option: $1" ;;
+        *)
+            [ -z "$mode" ] || die_usage "only one target form allowed (PID / --pgid / --pattern)"
+            target_pid="$1"; mode="pid"; shift ;;
+    esac
+done
+[ $# -eq 0 ] || die_usage "unexpected extra argument: $1"
+[ -n "$mode" ] || die_usage "no target given (PID, --pgid PGID, or -f/--pattern PAT required)"
+
+case "$mode" in
+    pid)  is_uint "$target_pid"  || die_usage "PID must be a positive integer: $target_pid" ;;
+    pgid) is_uint "$target_pgid" || die_usage "PGID must be a positive integer: $target_pgid" ;;
+esac
+if [ -n "$opt_under" ] && [ "$mode" != "pattern" ]; then
+    die_usage "--under is only valid with -f/--pattern"
+fi
+if [ -n "$opt_cwd" ] && [ "$mode" != "pattern" ]; then
+    die_usage "--cwd is only valid with -f/--pattern"
+fi
+if [ "$opt_all" -eq 1 ] && [ "$mode" != "pattern" ]; then
+    die_usage "--all is only valid with -f/--pattern"
+fi
+if [ -n "$opt_under" ]; then
+    is_uint "$opt_under" || die_usage "--under expects a PID: $opt_under"
+fi
+is_number "$opt_grace" || die_usage "--grace expects a non-negative number: $opt_grace"
+if [ "$opt_termonly" -eq 1 ] && [ "$opt_killnow" -eq 1 ]; then
+    die_usage "--term-only and --kill-now are mutually exclusive"
+fi
+
+# ---- /proc snapshot: pure reads, zero subprocesses (see header) -----------
+
+declare -A PGRP=() PPIDOF=() START=() CMD=()
+declare -A CHILDREN=()     # ppid -> space-separated child pids
+declare -A SELF_CHAIN=()   # safekill's own pid + every ancestor up to pid 1
+BOOT_EPOCH=""
+CLK_TCK=""
+
+# read_cmdline PID: NUL-delimited args joined with spaces, via bash's own
+# `read -d ''` (a builtin) — no tr/xargs/subprocess, so nothing here can add
+# transient noise to a live /proc scan.
+read_cmdline() {
+    local out="" part first=1
+    while IFS= read -r -d '' part; do
+        if [ "$first" -eq 1 ]; then out="$part"; first=0; else out="$out $part"; fi
+    done < "/proc/$1/cmdline" 2>/dev/null
+    printf '%s' "$out"
+}
+
+scan_procs() {
+    local statfile pid line rest comm state ppid pgrp session tty tpgid flags \
+          minflt cminflt majflt cmajflt utime stime cutime cstime priority nice \
+          numthreads itrealvalue starttime _rest
+    for statfile in /proc/[0-9]*/stat; do
+        line=""
+        { read -r line < "$statfile"; } 2>/dev/null
+        [ -n "$line" ] || continue
+        pid="${statfile#/proc/}"; pid="${pid%/stat}"
+        comm="${line#*(}"; comm="${comm%)*}"
+        rest="${line##*) }"
+        read -r state ppid pgrp session tty tpgid flags minflt cminflt majflt \
+                cmajflt utime stime cutime cstime priority nice numthreads \
+                itrealvalue starttime _rest <<<"$rest"
+        [ -n "${ppid:-}" ] || continue
+        PGRP[$pid]="$pgrp"
+        PPIDOF[$pid]="$ppid"
+        START[$pid]="$starttime"
+        CMD[$pid]="$(read_cmdline "$pid")"
+        [ -n "${CMD[$pid]}" ] || CMD[$pid]="[$comm]"
+        CHILDREN[$ppid]="${CHILDREN[$ppid]:-}${CHILDREN[$ppid]:+ }$pid"
+    done
+}
+
+build_self_chain() {
+    local cur="$$" guard=0
+    while [ -n "$cur" ] && [ "$guard" -lt 10000 ]; do
+        SELF_CHAIN[$cur]=1
+        [ "$cur" = "1" ] && break
+        cur="${PPIDOF[$cur]:-}"
+        guard=$((guard + 1))
+    done
+}
+
+# descendants_of PID: every pid reachable by walking CHILDREN from PID
+# (PID itself excluded), one per line.
+descendants_of() {
+    local root="$1" cur kids k
+    local -A seen=()
+    local queue=("$root")
+    seen[$root]=1
+    while [ "${#queue[@]}" -gt 0 ]; do
+        cur="${queue[0]}"; queue=("${queue[@]:1}")
+        kids="${CHILDREN[$cur]:-}"
+        for k in $kids; do
+            if [ -z "${seen[$k]:-}" ]; then
+                seen[$k]=1
+                printf '%s\n' "$k"
+                queue+=("$k")
+            fi
+        done
+    done
+}
+
+pgid_exists() {
+    local pg="$1" p
+    for p in "${!PGRP[@]}"; do
+        [ "${PGRP[$p]}" = "$pg" ] && return 0
+    done
+    return 1
+}
+
+# members_of_pgids PGID...: every currently-known pid whose pgrp is one of
+# the given pgids (the live-ish snapshot membership), one per line.
+members_of_pgids() {
+    local pid pg
+    for pid in "${!PGRP[@]}"; do
+        for pg in "$@"; do
+            if [ "${PGRP[$pid]}" = "$pg" ]; then
+                printf '%s\n' "$pid"
+                break
+            fi
+        done
+    done
+}
+
+iso_of() {
+    if [ -z "$BOOT_EPOCH" ]; then
+        local up
+        read -r up _ < /proc/uptime
+        BOOT_EPOCH="$(awk -v n="$(date +%s.%N)" -v u="$up" 'BEGIN{printf "%.0f", n-u}')"
+        CLK_TCK="$(getconf CLK_TCK 2>/dev/null || echo 100)"
+    fi
+    local ticks="${START[$1]:-0}" epoch
+    epoch=$(( BOOT_EPOCH + ticks / CLK_TCK ))
+    date -d "@$epoch" -Is 2>/dev/null || printf 'unknown'
+}
+
+audit_line() {
+    printf 'pid=%s pgid=%s start=%s cmd=%s' \
+        "$1" "${PGRP[$1]:-?}" "$(iso_of "$1")" "$(sq "${CMD[$1]:-?}")"
+}
+
+proc_alive() {
+    local line="" state=""
+    { read -r line < "/proc/$1/stat"; } 2>/dev/null
+    [ -n "$line" ] || return 1
+    line="${line##*) }"
+    state="${line%% *}"
+    [ "$state" != "Z" ]
+}
+
+scan_procs
+build_self_chain
+
+# ---- resolve the target set -------------------------------------------------
+
+doomed_pgids=()
+
+case "$mode" in
+    pid)
+        if [ -z "${PGRP[$target_pid]:-}" ]; then
+            printf '%s: no such PID: %s\n' "$prog" "$target_pid" >&2
+            exit 1
+        fi
+        declare -A pgset=()
+        pgset["${PGRP[$target_pid]}"]=1
+        while IFS= read -r d; do
+            [ -n "$d" ] && pgset["${PGRP[$d]:-0}"]=1
+        done < <(descendants_of "$target_pid")
+        doomed_pgids=("${!pgset[@]}")
+        ;;
+    pgid)
+        if ! pgid_exists "$target_pgid"; then
+            printf '%s: no such process group: %s\n' "$prog" "$target_pgid" >&2
+            exit 1
+        fi
+        doomed_pgids=("$target_pgid")
+        ;;
+    pattern)
+        matched=()
+        for p in "${!CMD[@]}"; do
+            if [[ "${CMD[$p]}" =~ $pattern ]]; then
+                matched+=("$p")
+            fi
+        done
+        if [ -n "$opt_under" ]; then
+            declare -A under_set=()
+            while IFS= read -r d; do [ -n "$d" ] && under_set[$d]=1; done \
+                < <(descendants_of "$opt_under")
+            filtered=()
+            for p in "${matched[@]}"; do
+                [ -n "${under_set[$p]:-}" ] && filtered+=("$p")
+            done
+            matched=("${filtered[@]}")
+        fi
+        if [ -n "$opt_cwd" ]; then
+            want_dir="$(cd "$opt_cwd" 2>/dev/null && pwd -P)" \
+                || die_usage "--cwd: no such directory: $opt_cwd"
+            filtered=()
+            for p in "${matched[@]}"; do
+                pcwd="$(readlink -f "/proc/$p/cwd" 2>/dev/null)" || continue
+                case "$pcwd" in
+                    "$want_dir"|"$want_dir"/*) filtered+=("$p") ;;
+                esac
+            done
+            matched=("${filtered[@]}")
+        fi
+        # Self/ancestor exclusion — unconditional, no override flag (see
+        # header: this is the one guard the incidents show a human cannot
+        # reliably apply by hand, so it does not get a bypass).
+        filtered=()
+        for p in "${matched[@]}"; do
+            [ -n "${SELF_CHAIN[$p]:-}" ] && continue
+            filtered+=("$p")
+        done
+        matched=("${filtered[@]}")
+        ;;
+esac
+
+# ---- --list: preview only, never signals anything --------------------------
+
+if [ "$opt_list" -eq 1 ]; then
+    if [ "$mode" = "pattern" ]; then
+        list_pids=("${matched[@]}")
+    else
+        mapfile -t list_pids < <(members_of_pgids "${doomed_pgids[@]}")
+    fi
+    for p in "${list_pids[@]}"; do
+        audit_line "$p"
+        printf '\n'
+    done
+    [ "${#list_pids[@]}" -gt 0 ] && exit 0
+    exit 1
+fi
+
+# ---- pattern mode: refuse-by-default on ambiguity ---------------------------
+
+if [ "$mode" = "pattern" ]; then
+    count="${#matched[@]}"
+    if [ "$count" -eq 0 ]; then
+        printf '%s: no candidates matched (after exclusions): %s\n' "$prog" "$pattern" >&2
+        exit 1
+    fi
+    if [ "$count" -gt 1 ] && [ "$opt_all" -ne 1 ]; then
+        printf '%s: refused — %d candidates matched '"'"'%s'"'"' after exclusions; re-run with --all to widen, or --list to preview without killing:\n' \
+            "$prog" "$count" "$pattern" >&2
+        for p in "${matched[@]}"; do
+            printf '  %s\n' "$(audit_line "$p")" >&2
+        done
+        exit 2
+    fi
+    declare -A pgset=()
+    for p in "${matched[@]}"; do pgset["${PGRP[$p]}"]=1; done
+    doomed_pgids=("${!pgset[@]}")
+fi
+
+mapfile -t kill_pids < <(members_of_pgids "${doomed_pgids[@]}")
+if [ "${#kill_pids[@]}" -eq 0 ]; then
+    printf '%s: nothing left to kill (already gone)\n' "$prog" >&2
+    exit 1
+fi
+
+neg_pgids=()
+for pg in "${doomed_pgids[@]}"; do neg_pgids+=("-$pg"); done
+
+if [ "$opt_killnow" -eq 1 ]; then
+    final_signal="KILL"
+else
+    final_signal="$opt_signal"
+fi
+
+kill -s "$final_signal" -- "${neg_pgids[@]}" 2>/dev/null
+for p in "${kill_pids[@]}"; do
+    printf '%s: kill %s signal=%s\n' "$prog" "$(audit_line "$p")" "$final_signal" >&2
+done
+
+escalated=0
+if [ "$opt_killnow" -ne 1 ] && [ "$opt_termonly" -ne 1 ]; then
+    waited="0"
+    while awk -v w="$waited" -v g="$opt_grace" 'BEGIN{exit !(w<g)}'; do
+        any_alive=0
+        for p in "${kill_pids[@]}"; do
+            proc_alive "$p" && { any_alive=1; break; }
+        done
+        [ "$any_alive" -eq 1 ] || break
+        sleep 0.2
+        waited="$(awk -v w="$waited" 'BEGIN{printf "%.3f", w+0.2}')"
+    done
+    survivors=()
+    for p in "${kill_pids[@]}"; do
+        proc_alive "$p" && survivors+=("$p")
+    done
+    if [ "${#survivors[@]}" -gt 0 ]; then
+        escalated=1
+        kill -s KILL -- "${neg_pgids[@]}" 2>/dev/null
+        for p in "${survivors[@]}"; do
+            printf '%s: escalate pid=%s signal=KILL (grace %ss exceeded)\n' \
+                "$prog" "$p" "$opt_grace" >&2
+        done
+    fi
+fi
+
+printf '%s: done — signalled %d process(es) across %d group(s), mode=%s signal=%s escalated=%s\n' \
+    "$prog" "${#kill_pids[@]}" "${#doomed_pgids[@]}" "$mode" "$final_signal" "$escalated" >&2
+exit 0
