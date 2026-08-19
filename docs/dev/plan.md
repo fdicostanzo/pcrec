@@ -705,7 +705,7 @@ including V-G/V-H (added this session).
 - [V-A] STATE:not-started — PCRE2 compatibility layer: a drop-in surface for callers who already speak PCRE2, so adopting pcrec does not mean rewriting call sites. Interacts with DD-3 (generated-API versioning) — a compat layer is a second consumer of the generated contract. TWO surfaces (Frank, 2026-08-12): the PCRE2-native API, and a POSIX `regex.h` shim (regcomp/regexec/regfree, à la pcre2posix) — a smaller surface with wider adoption reach, since decades of C code speaks regex.h and never touched PCRE2
 - [V-B] STATE:not-started — usage libraries for other languages: bindings over the generated C. Note the generated code already has no runtime dependency on pcrec, which is what makes this cheap; keep it that way
 - [V-C] STATE:not-started — a grep CLI built on pcrec, the natural end-user demonstration that the speed mandate (D18) actually shows up in a real tool
-- [V-D] STATE:not-started — translators from other regex syntaxes into the base tier: grep/egrep (BRE/ERE), python `re`, and PCRE2-flavour differences. Pairs with V-C (a grep CLI needs BRE/ERE) and with V-A. Design note: these are FRONT-END modules that lower into the existing AST, exactly the shape APPROACH §3's parser extension points already anticipate — no engine work, which is what makes the direction affordable
+- [V-D] STATE:not-started (CROSS-NOTE 2026-08-19: [DD-11]'s definitions architecture makes this row cheaper than its design note assumed — a flavour = front end + BINDING LIBRARY over the reduced core; but read DD-11 note (h)'s honest limit: POSIX leftmost-LONGEST is core preference semantics, not a binding) — translators from other regex syntaxes into the base tier: grep/egrep (BRE/ERE), python `re`, and PCRE2-flavour differences. Pairs with V-C (a grep CLI needs BRE/ERE) and with V-A. Design note: these are FRONT-END modules that lower into the existing AST, exactly the shape APPROACH §3's parser extension points already anticipate — no engine work, which is what makes the direction affordable
 - [V-E] STATE:not-started — MULTI-PATTERN COMPILATION UNITS and the
   CROSS-PATTERN FINDER (Frank, 2026-08-12; boonies tier by his word —
   recorded now, built with a customer). N named regexes into ONE emitted
@@ -1321,7 +1321,20 @@ spine, not before):
   lookaround, and the path-fact family (\K, backrefs, DD-14 call) —
   \G stays primitive (position vs a RUNTIME value). THE DESIGN LANE'S
   FIRST WORK PRODUCT is the construct-by-construct table: primitive vs
-  binding, each binding's value MEASURED against libpcre2.**
+  binding, each binding's value MEASURED against libpcre2;
+  (g) OPTIMIZATION CONCENTRATION (Frank, same session): a tight core
+  focuses every fold/prefilter/rung on few primitives and bindings
+  inherit them free — [M6.2] lived the counter-case, five constructs
+  each needing a hand-built folding mechanism;
+  (h) THE CORE AS A TARGET IR FOR OTHER FLAVOURS (Frank, same session):
+  grep/BRE-ERE, POSIX, oniguruma map as front end + BINDING LIBRARY over
+  the same core — [V-D]'s translators and [V-A]'s regex.h shim become
+  cheaper than their rows assumed (cross-noted there). HONEST LIMIT: a
+  flavour's MATCHING DISCIPLINE does not reduce to bindings — POSIX
+  leftmost-LONGEST vs PCRE2/oniguruma leftmost-FIRST is preference
+  semantics of the core primitives themselves; a POSIX front end needs
+  either a core longest-match mode or documented leftmost-first
+  semantics. Measured, not assumed, per the U11b lesson.**
   pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
   options=0 (build default LF on this box), so \N's generated bitmap is
