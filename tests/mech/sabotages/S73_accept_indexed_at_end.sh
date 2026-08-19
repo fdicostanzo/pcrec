@@ -34,16 +34,16 @@ SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
 SAB_DESC="the forward loop's class-indexed accept is emitted ABOVE its 'pos >= n' guard, so the emitted matcher computes fcls[s[pos]] at pos == n -- an out-of-bounds read in generated code (S3.6.2, K27's class) that usually changes no answer"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 1] reports the guard after the first class-indexed accept"
 SAB_COUNT=1
-SAB_BEFORE='        sb_printf(c, "        if (pos >= n) {\\n"
-                     "            if (%s_facc[%s]) last = pos;\\n"
-                     "            break;\\n"
-                     "        }\\n", p, fsrc);
-        sb_printf(c, "        {\\n"
-                     "            unsigned cl = %s_fcls[s[pos]];\\n"'
-SAB_AFTER='        sb_printf(c, "        if (%s_facc2[%s * %d + %s_fcls[s[pos]]]) last = pos;\\n"   /* SABOTAGE S73 */
-                     "        if (pos >= n) {\\n"
-                     "            if (%s_facc[%s]) last = pos;\\n"
-                     "            break;\\n"
-                     "        }\\n", p, fsrc, fd->ncls, p, p, fsrc);
-        sb_printf(c, "        {\\n"
-                     "            unsigned cl = %s_fcls[s[pos]];\\n"'
+SAB_BEFORE='        sb_printf(c, "        if (pos >= n) {\n"
+                     "            if (%s_facc[%s]) last = pos;\n"
+                     "            break;\n"
+                     "        }\n", p, fsrc);
+        sb_printf(c, "        {\n"
+                     "            unsigned cl = %s_fcls[s[pos]];\n"'
+SAB_AFTER='        sb_printf(c, "        if (%s_facc2[%s * %d + %s_fcls[s[pos]]]) last = pos;\n"   /* SABOTAGE S73 */
+                     "        if (pos >= n) {\n"
+                     "            if (%s_facc[%s]) last = pos;\n"
+                     "            break;\n"
+                     "        }\n", p, fsrc, fd->ncls, p, p, fsrc);
+        sb_printf(c, "        {\n"
+                     "            unsigned cl = %s_fcls[s[pos]];\n"'
