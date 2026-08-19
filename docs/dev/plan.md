@@ -715,9 +715,15 @@ c"` from `(0,3)` into `(0,1)`, and
   it cannot FAIL, and possessifying a loop CONTAINING one is safe because the
   cut discards retreat frames only after the loop exits at its chosen count,
   while a trial iteration that failed has already had its write rewound by the
-  fail label. `(?:a\K)*ab` on `"aaab"` is the cell that would expose an error
-  there, and possessification declines it anyway (body and follow both start
-  with `a`), so the corpus carries both it and a shape that does possessify.
+  fail label. MEASURED off the artifacts' own `RX_VM_STRATS` stamps rather than
+  argued: `(?:a\K)*b` stamps `0x1` (POSSESSIVE) and answers `(3,4)` on
+  `"aaab"`, `(?:a\Kb)*c` stamps `0x1` and answers `(3,5)` on `"ababc"`, and
+  `(?:a\K)*ab` stamps `0x2` (BACKTRACKING — body and follow both start with
+  `a`, so the analysis declines) and answers `(2,4)`, which is the retreat
+  case. All three are corpus cells, all three libpcre2-verified, so the
+  possessification argument has both a shape that takes the rung WITH a `\K`
+  in the loop and the shape that would expose an error if the argument were
+  wrong.
   (4) `run_kreset_diff.sh`'s §2 was BATCHED after measuring it: one driver
   process and one awk per artifact instead of ~six subprocesses per cell,
   9m18s -> 5m10s wall, with §2's own figures BYTE-IDENTICAL across the change
