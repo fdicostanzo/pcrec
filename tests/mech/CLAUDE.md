@@ -852,8 +852,9 @@ comparison — which is why both of them are visible in the corpus as well.
   failing direction." The panel asked for the row before the check existed.
   Under the hybrid, `caps_out`'s `start` argument IS `win[0][0]`, the reverse
   pass's answer, so forcing the pre-wave arm makes every `\K` artifact report
-  where matching BEGAN. **MEASURED: `codegen` 1 fail / 55 pass, `kreset.rxt`
-  198 fail / 383 pass (before section 11 grew it).**
+  where matching BEGAN. **CANONICAL MATRIX RUN:
+  `codegen:1fail/55pass, corpus:210fail/386pass, kresetdiff:6fail/3pass` —
+  DETECTED.**
 - **S86 writes `stv[0]` DIRECTLY instead of through `<PREFIX>_SET`**, so the
   write is never trailed and cannot be undone. **CANONICAL MATRIX RUN: `codegen:1fail/55pass,
   corpus:6fail/590pass, kresetdiff:3fail/6pass` — DETECTED** — and the SIX is the number worth
