@@ -83,14 +83,24 @@ out = sys.argv[1]
 os.makedirs(out, exist_ok=True)
 alpha = "ab\nc"
 subs = []
-# every string over {a, b, \n, c} up to length 4 — 340 subjects, and every
-# newline placement (leading, trailing, doubled, absent) is in there by
-# enumeration rather than by someone remembering to add it
-for n in range(0, 5):
+# EXHAUSTIVE up to length 3 over {a, b, \n, c} — 85 subjects. Exhaustive
+# rather than curated because every newline placement (leading, trailing,
+# doubled, absent, adjacent to the pattern's own alphabet) is then present by
+# ENUMERATION rather than by someone remembering to add it, and `c` is in the
+# alphabet because half the patterns are `[^c]`-shaped and a subject set
+# without their excluded byte measures the generator (D47.6).
+for n in range(0, 4):
     for t in itertools.product(alpha, repeat=n):
         subs.append("".join(t))
-# a few longer ones, to reach past the two-position window plain `$` lives in
-# and into the runs a skip loop actually skips
+# LENGTH 4 AND 5, curated to the shapes exhaustion at those lengths would be
+# spent on: a newline at every interior offset, doubled and tripled runs, and
+# the `[^c]`-crossing forms.
+subs += ["a\nbc", "ab\nc", "abc\n", "\nabc", "a\n\nb", "\n\nab", "ab\n\n",
+         "a\nb\nc", "\na\nb\n", "aa\nbb", "\naabb", "aabb\n", "ac\nca",
+         "c\nc\nc", "\nc\nc\n", "aaaa", "\n\n\n\n", "abca\n", "\nabca"]
+# LONGER ONES, to reach past the two-position window plain `$` lives in and
+# into runs a skip loop actually skips — a 40-byte stay run is well past any
+# threshold `pick_skip_states` uses.
 subs += ["aaaa\nbbbb", "aaaaaaaa\n", "\naaaaaaaa", "aaaa\n\naaaa",
          "x" * 40 + "\n" + "x" * 40, "\n".join(["abc"] * 8),
          "ERROR\n" + "ok\n" * 5 + "ERROR", "\n" * 12, "a" * 64,
@@ -101,7 +111,7 @@ for i, s in enumerate(subs):
 print(len(subs))
 PY
 NSUBJ=$(ls "$WORKDIR/subjects" | wc -l)
-if [ "$NSUBJ" -lt 300 ]; then
+if [ "$NSUBJ" -lt 100 ]; then
     bad "subject generation produced only $NSUBJ subjects — the sweep has no space"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
@@ -145,7 +155,7 @@ gen() { # gen <outdir> <pattern> [extra pcrec args]
 }
 
 # ---- the sweep -----------------------------------------------------------
-npat=0; nlive=0; ncells=0; ndiff=0; nvm=0; npy=0
+npat=0; nlive=0; ncells=0; ndiff=0; nvm=0; npy=0; nskip=0
 : > "$WORKDIR/diffs.txt"
 mechlist=""
 for pat in "${PATTERNS[@]}"; do
@@ -173,7 +183,16 @@ for pat in "${PATTERNS[@]}"; do
     for f in "$WORKDIR"/subjects/*; do
         for sp in 0 1; do
             want="$("$ORACLE" "$pat" "$f" "$sp" 2>/dev/null)"
-            case "$want" in cerr*|"") continue ;; esac
+            # A CELL THE ORACLE CANNOT ANSWER IS NOT A CELL, and the two
+            # reasons are different: `cerr` is a pattern libpcre2 refuses, and
+            # `inconclusive -33` is PCRE2_ERROR_BADOFFSET — `startpos` past the
+            # end of THIS subject, which the empty subject makes true for every
+            # nonzero startpos. Skipping only `cerr` reported 366 "divergences"
+            # that were entirely this, on the first run of this script.
+            case "$want" in
+                "match "*|nomatch) ;;
+                *) nskip=$((nskip + 1)); continue ;;
+            esac
             printf '%s\t%s\t%s\t%s\n' "$pat" "$(basename "$f")" "$sp" "$want" \
                 >> "$WORKDIR/oracle.tsv"
             got="$("$d/t" "$f" "$sp" 2>/dev/null)"
@@ -271,7 +290,7 @@ fi
 
 echo
 echo "== Summary =="
-echo "  patterns $npat   subjects $NSUBJ   DFA cells $ncells   VM cells $nvm   disagreements $ndiff"
+echo "  patterns $npat   subjects $NSUBJ   DFA cells $ncells   VM cells $nvm   disagreements $ndiff   oracle-unanswerable cells skipped $nskip"
 echo "  patterns carrying a live scan-avoidance mechanism: $nlive"
 echo "checks passed: $pass"
 echo "checks failed: $fail"

@@ -139,6 +139,32 @@ or it has no regression net at all.
   `(void)s; ... return 0;` body) rather than off a maintained list of pattern
   texts — the same rule the VM arm follows.
 
+- **run_mlinectx_identity.sh** — [M6.2] wave C's BYTE-IDENTITY GATE, the third
+  in the family. `(?m)` adds a NEWLINE half to the class axis wave B built —
+  the alphabet is refined by `pcrec_cls_newline` (D64's one definition), every
+  state gains a third closure, the `pos == n` view goes live, and ENG_ATTEMPT
+  gains D63's candidate-start prefilter — and the claim is that a pattern
+  WITHOUT a multiline `^`/`$` pays for none of it. Reference build is this
+  tree's sources with `-DPCREC_NO_MLINECTX` (`has_nl` pinned false); sabotage
+  S76 is the measured failing direction.
+
+  **THIS ONE HAS A REASON THE OTHER TWO DID NOT.** Waves A and B each ADDED a
+  view beside existing ones. Wave C turned a BOOL into a three-valued enum,
+  rewriting every site that read `waccept`, `wlist` or `s1w`. A mechanical
+  refactor of that size is exactly where a `UPC_PLAIN` becomes a `UPC_WORD` in
+  one arm and nothing notices, and the corpus cannot see it unless the arm is
+  reachable. This gate can, on every pattern in the tree.
+
+  **Its SPLIT is subtler again, and for a third reason.** `\z` means one thing
+  everywhere (a substring split); `\b` means two things (a bracket-depth
+  split); `(?m)` means one thing but is SCOPED and spelled several ways —
+  `(?m)`, `(?im)`, `(?m:...)` and `(?^m)` all set it while `(?-m)`, `(?im-m)`
+  and a bare `(?i)` do not. So the scanner walks the option-run grammar
+  `src/parse/mod_modifiers.c` walks (optional leading `^`, then letters, with
+  everything after a `-` on the unset side) rather than looking for a
+  substring. Deliberately not decided by anything pcrec computes: a split from
+  `Dfa.clsctx` would be the check reading its own subject's verdict.
+
 - **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
   to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
   derive from the same structure the emitter walks; the emitter satisfies that

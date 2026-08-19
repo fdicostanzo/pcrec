@@ -3481,13 +3481,19 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
              * `pcrec_cls_newline` src/ir/dfa.c refines its alphabet by and
              * `\N` compiles from — one definition, three readers, no `'\n'`
              * respelled here. */
+            /* `pos < n` IS NOT A BOUNDS GUARD — it is the semantics.
+             * PCRE2's multiline `^` "does not match after a newline that ends
+             * the string", so `(?m)^` on "a\n" holds at 0 and NOT at 2 while
+             * `(?m)$` holds at 1 AND 2. assertions_design.md §9.3's table row
+             * omits it and python3 `re` disagrees with PCRE2 about it (U11);
+             * this arm follows PCRE2, which D26 makes the source of truth. */
             int ni = vm_cls(v, pcrec_cls_newline);
             vm_lbl(v, entry, NULL);
             vm_ev(v, VE_ASSERT, next, 0,
-                  "(?m)^ start of subject or after a newline");
-            sb_puts(b, "    if (pos == 0 || (");
+                  "(?m)^ start of subject or after a non-final newline");
+            sb_puts(b, "    if (pos == 0 || (pos < n && (");
             vm_cls_test(v, b, ni, "s[pos-1]");
-            sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
+            sb_printf(b, "))) goto %s_L%d;\n", v->p, next);
             vm_fail(v);
             return;
         }

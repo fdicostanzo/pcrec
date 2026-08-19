@@ -632,15 +632,30 @@ static void clo_walk(Clo *cl, int s)
                 if (!cl->end_ok) break;
                 s = st->t1;
                 continue;
-            /* [M6.2 wave C] `(?m)^` / `(?m)$`, each written as its own
-             * definition: start (resp. end) of subject, OR the byte on that
-             * side is a newline. `bot_ok`/`end_ok` carry the position half —
-             * there is no byte out there to ask about — and the byte half is
-             * the class axis. Neither arm reads `eol_ok`: `(?m)$` has nothing
-             * to do with "before a FINAL newline", which is plain `$`'s rule
-             * and is what `\Z` keeps under `(?m)`. */
+            /* [M6.2 wave C] `(?m)^` / `(?m)$`. `bot_ok`/`end_ok` carry the
+             * position half — there is no byte out there to ask about — and
+             * the byte half is the class axis. Neither arm reads `eol_ok`:
+             * `(?m)$` has nothing to do with "before a FINAL newline", which
+             * is plain `$`'s rule and is what `\Z` keeps under `(?m)`.
+             *
+             * `(?m)^` IS NOT THE MIRROR OF `(?m)$`, AND THAT IS MEASURED, not
+             * inferred. assertions_design.md §3.7 and §9.3 both state the
+             * rule as "`pos == 0` or `s[pos-1] == '\n'`" and BOTH ARE WRONG:
+             * PCRE2's multiline `^` "does not match after a newline that ends
+             * the string". So the newline half is guarded by `!end_ok` —
+             * `pos < n` — and the asymmetry is real rather than an accident
+             * of one implementation:
+             *
+             *     (?m)^   on "a\n"   matches at 0 only, NOT at 2
+             *     (?m)$   on "a\n"   matches at 1 AND at 2
+             *
+             * python3 `re` DISAGREES with PCRE2 here and reports (2,2) for
+             * the first, which is docs/dev/upstream_issues.md U11's second
+             * entry and the reason the `(?m)^` corpus blocks are pcre2-only.
+             * Found by tests/assertions/run_mline_diff.sh at `startpos > 0`,
+             * where an earlier match no longer masks it. */
             case N_BOT_M:
-                if (!cl->bot_ok && !cl->left_nl) break;
+                if (!cl->bot_ok && !(cl->left_nl && !cl->end_ok)) break;
                 s = st->t1;
                 continue;
             case N_EOL_M:
