@@ -248,7 +248,9 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   arms kept apart because they fail on disjoint populations (general,
   reverse-INIT via trailing assertions, reverse-TERM via LEADING `\B` at
   `startpos > 0`, and the §3.1 find-all loop with mid-word resumes);
-  tests/assertions/wordb.rxt 3,528 cases, every expectation libpcre2-produced;
+  tests/assertions/wordb.rxt 4,392 cases, every expectation libpcre2-produced
+  (including a capture-bearing VM section whose ABSENCE was measured — see
+  the deviations below);
   tests/codegen/run_wordctx_identity.sh 1039/1039 `\b`-free corpus patterns
   byte-identical against a `-DPCREC_NO_WORDCTX` reference with 47 controls
   differing; three [M6.2-WORDB] structural rules in
@@ -286,6 +288,19 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   NOT fixed here — the fix touches every artifact in the tree. (3) The
   enabled-but-unbuilt reject rows for `\b`/`\B` RETIRE (gated 66 -> 64) and
   their compile controls move to run_assertions_tests.sh in the same change.
+  (4) TWO OF THE WAVE'S OWN CHECKS WERE MEASURED VACUOUS BY RUNNING THEIR
+  SABOTAGES, and both are recorded rather than quietly repaired. S72 came back
+  UNDETECTED because the blind `sfound` writer it restores is gated by a
+  compile-time condition with TWO conjuncts and the fixture's reverse skip
+  state did not accept — the fixture moved to `.*\b.*` and the rule now
+  ASSERTS `rx_racc[K] == 1` off the artifact. S75 came back UNDETECTED for two
+  independent reasons: the substituted set is a contiguous RANGE so it emits
+  no table (the rule counted tables; it now counts distinct normalised
+  MEMBERSHIP TESTS), and every block in wordb.rxt was capture-free so nothing
+  in the corpus reached `emit_vm.c`'s arm at all (the file gained its VM
+  section in the same change). Both now fire; S71/S73/S74 were DETECTED on
+  their first run, S74 on BOTH its instruments — 188 corpus cases, every one a
+  leading-`\B` at `startpos > 0` losing its match, and codegen rule 2b.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here
