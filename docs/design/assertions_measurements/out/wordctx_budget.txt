@@ -1,0 +1,70 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_wordctx_budget.py
+# ARGS       : /home/duxevents/pcrec/worktrees/asrtwaveb/build/pcrec
+# PROBE LAST CHANGED AT COMMIT: 3a4709b 2026-08-19
+# RUN FROM REPO COMMIT        : 1500b60 (lane/asrtwaveb)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/assertions_measurements/out/wordctx_budget.txt
+# RUN DATE   : 2026-08-19T02:39:52-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+== 1+2. THE RATIO AND THE ALPHABET DELTA, both arms on pcrec ==
+
+pattern (wrapped as \bPAT\b)                  base  ncls   engine wordctx  ncls   engine   ratio
+[0-9a-f]{64}                                    65     2   unanch      66     3   unanch   1.02x
+\d{4}-\d{2}-\d{2}                               11     3   unanch      12     4   unanch   1.09x
+\w{3,16}                                        17     2   unanch      18     2   unanch   1.06x
+(?:ab){1,8}c                                     4     4   unanch      19     5   unanch   4.75x
+[a-z][a-z0-9_]{2,31}                            33     3   unanch      34     4   unanch   1.03x
+"[^"]*"                                          3     2   unanch       6     3   unanch   2.00x
+[aeiou]{2,3}[^aeiou]{1,2}                        5     2   unanch      11     3   unanch   2.20x
+[A-Z]{4,8} [0-9]{3}                              9     4   unanch      14     5   unanch   1.56x
+\d{1,3}(?:,\d{3})+                               9     3   unanch      13     4   unanch   1.44x
+(?:[A-Za-z]+ ){2,4}[A-Za-z]+                    10     3   unanch      11     4   unanch   1.10x
+https?://[a-zA-Z0-9.-]+/[a-zA-Z0-9/_-]*         16    10   unanch      20    11   unanch   1.25x
+((a)|ab){40}c                                   82     4   unanch      83     5   unanch   1.01x
+((a)|ab){400}c                                 802     4   unanch     803     5   unanch   1.00x
+(a|ab){100}c                                   202     4   unanch     203     5   unanch   1.00x
+[01]*1[01]{8}                                  768     3   unanch     513     4   unanch   0.67x
+a(b|c)+d                                         4     4   unanch       5     5   unanch   1.25x
+foo|bar|baz                                      6     7   unanch       8     8   unanch   1.33x
+
+STATE RATIO   n=17  min/median/max = 0.67x / 1.10x / 4.75x
+ALPHABET      n=17  min/median/max = +0 / +1 / +1   (§3.4 predicted 0 / +1 / +2 over the .rxt corpus)
+skipped (either arm refused or went to the VM): 0
+
+== 3+4. THE REFUSAL BOUNDARY, LOCATED ==
+
+The family is §3.5.1's own worst-state-count shape. Each row is the
+largest repeat count that COMPILES; the row below it is the first
+that refuses, with the diagnostic it refused with.
+
+((a)|ab){N}c        ENG_UNANCH, cap 32000             largest compiling N = 5654   (11310 states, ncls 4, unanch)
+                                                      N = 5655   refuses: pcrec: pattern too complex for the DFA engine (subset construction exceeds 48000000 state-  [states-cap refusal]
+\b((a)|ab){N}c\b    ENG_UNANCH, cap 32000             largest compiling N = 15998  (31999 states, ncls 5, unanch)
+                                                      N = 15999  refuses: pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm) (pattern of  [states-cap refusal]
+^((a)|ab){N}c       ENG_ATTEMPT, cap 10000            largest compiling N = 4999   (10000 states, ncls 4, attempt)
+                                                      N = 5000   refuses: pcrec: pattern too complex for the DFA engine (>10000 states; try --engine=vm) (pattern of  [states-cap refusal]
+^\b((a)|ab){N}c     ENG_ATTEMPT, cap 10000            largest compiling N = 4999   (10000 states, ncls 5, attempt)
+                                                      N = 5000   refuses: pcrec: pattern too complex for the DFA engine (>10000 states; try --engine=vm) (pattern of  [states-cap refusal]
+(?:ab){1,N}c        ENG_UNANCH, §3.5's 4.75x shape    largest compiling N = 6924   (4 states, ncls 4, unanch)
+                                                      N = 6925   refuses: pcrec: pattern too complex for the DFA engine (subset construction exceeds 48000000 state-  [states-cap refusal]
+\b(?:ab){1,N}c\b    ENG_UNANCH, §3.5's 4.75x shape    largest compiling N = 15998  (31999 states, ncls 5, unanch)
+                                                      N = 15999  refuses: pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm) (pattern of  [states-cap refusal]
+[a-z]{1,N}          ENG_UNANCH, a LINEAR CHAIN (states-bound)  largest compiling N = 31999  (32000 states, ncls 2, unanch)
+                                                      N = 32000  refuses: pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm) (pattern of  [states-cap refusal]
+\b[a-z]{1,N}\b      ENG_UNANCH, a LINEAR CHAIN (states-bound)  largest compiling N = 31998  (32000 states, ncls 3, unanch)
+                                                      N = 31999  refuses: pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm) (pattern of  [states-cap refusal]
+
+A refusal is a CAPABILITY regression and was forecast (§3.5.1
+qualification 2). What must NOT happen is a wrong answer at the
+boundary, which is why every row above names the diagnostic.
