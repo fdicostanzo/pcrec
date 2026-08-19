@@ -193,6 +193,49 @@ or it has no regression net at all.
   substring. Deliberately not decided by anything pcrec computes: a split from
   `Dfa.clsctx` would be the check reading its own subject's verdict.
 
+- **run_gstart_identity.sh** — [M6.2] wave D's BYTE-IDENTITY GATE, the fourth
+  in the family and **the one whose REFERENCE KNOB IS PLACED DIFFERENTLY, for
+  a measured reason the other three should be re-read against.** `\G` adds a
+  third position bit to the closure and a SECOND FAMILY of interior start
+  states (`Dfa.s1g[]`), which the ENG_ATTEMPT emitter turns into a three-way
+  start dispatch, a `gseed[]` label table and a third `start_max` string; the
+  claim is that a pattern without a `\G` pays for none of it. Its SPLIT is the
+  simplest in the family — `\G` has one spelling and no in-class meaning
+  (`[\G]` is PCRE2 error 107 permanently), so "contains the two bytes `\G`" is
+  the whole classification, `run_endvar_identity.sh`'s shape.
+
+  **THE KNOB IS AT THE EMITTER (`src/gen/emit_dfa.c`'s three decision points),
+  NOT IN THE ANALYSIS.** The other three pin a `has_*` flag in
+  `src/ir/dfa.c` — inside the code their own sabotages edit — and the
+  reference compiler is built from THE SAME (sabotaged) SOURCES, so such a
+  sabotage runs in BOTH builds and CANCELS. Measured by the wave-D lane:
+  `run_wordctx_identity.sh`'s identity sweep stays **1135/1135 identical**
+  under its own S71, and that script fails only because the deleted gate
+  orphans a parameter and the reference build then warns. Forcing
+  `gseed`/`gtbl` false and `a_gst = a_bot` at the emitter makes the reference
+  build structurally the PRE-WAVE EMITTER, which no edit to the analysis can
+  undo — after which sabotage S83 goes red in the sweep (93 of 1,175 patterns)
+  as a byte-identity sabotage should.
+
+  **It also earned its keep on the first run**: moving the knob immediately
+  exposed a live defect in the wave's own emitter that the mis-placed knob had
+  hidden — a `gseed[]` table emitted on every `\b` and `(?m)` artifact that no
+  dispatch ever read. Nothing else in the tree could have seen it.
+
+  **Its positive control is stated differently from wave C's, and the
+  difference is deliberate rather than a weakening.** Wave C can demand that
+  EVERY DFA-compiled `(?m)` pattern differ between the builds, because a
+  multiline anchor always changes the alphabet. The reference build reads `\G`
+  as `\A`, so a pattern for which those two really ARE the same machine —
+  `\A\Gx`, or a `\G` on a branch that is dead either way — cannot be moved by
+  the knob, and demanding it differ would be a check that is RED ON CORRECT
+  BEHAVIOUR. Those land in an INERT bucket, read off the artifact (no
+  `(start == startpos)` arm emitted) and printed one per line. That bucket is
+  the weakest of the four and says so: it accepts the compiler's own verdict
+  that a pattern needs no `\G` machinery, and what CHECKS that verdict is
+  `tests/assertions/gpos.rxt`, where every pattern landing there has
+  libpcre2-produced cells across the whole startpos sweep.
+
 - **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
   to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
   derive from the same structure the emitter walks; the emitter satisfies that

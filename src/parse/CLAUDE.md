@@ -359,6 +359,34 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   position would move the second number. NOT REPEATABLE inherited the same
   way, re-measured against libpcre2 10.46: `\b*` `\b+` `\b?` `\b{2}` `\B*`
   are all error 109 and `(\b)*` `(\B)*` both compile to (0,0).
+
+  **[M6.2] WAVE D added `\G` to the SAME producer**, dispatching on `sel` like
+  the five above, keeping `RF_CLASS_INVALID` and `NO_PORT` at class position
+  (`[\G]` is PCRE2 error 107, measured). It is a THIRD kind of question again:
+  `\A`/`\Z`/`\z` compare the position against a COMPILE-TIME constant,
+  `\b`/`\B` read the two bytes around it, and `\G` compares it against a
+  RUNTIME value the match call supplies — `<prefix>_search`'s own `startpos`
+  (docs/spec/match_api.md §3.1). That is what buys a closure bit and a second
+  family of start states in src/ir/dfa.c and an extra parameter on the VM's
+  `match_impl`, and nothing at all in the alphabet: it reads no byte. Not
+  repeatable, measured the same way: `\G*` `\G+` `\G?` `\G{2}` `a\G*` are all
+  error 109 and `(\G)*` compiles to (0,0).
+
+  **THE BARE-ANCHOR RULE IS NOW ONE FUNCTION, AND WAVE D FOUND OUT WHY IT HAD
+  TO BE.** `pcrec_is_bare_anchor` / `pcrec_wrap_bare_anchor` (parse.c, declared
+  in core/internal.h) are the single home for the node-kind set that drives two
+  rules — `try_quant` REFUSES a bare quantified one, every group form WRAPS it
+  so the quantifier lands on an `A_CAT`. It used to be FOUR hand copies
+  (`try_quant`, `p_group_body`, mod_modifiers.c's `(?i:...)` port,
+  mod_named_groups.c's declaring port) and they had ALREADY DRIFTED: wave B
+  added `\b`/`\B` to two of them and not to the other two, so pcrec REFUSED
+  `(?i:\b)*` and `(?<n>\b)*`, which libpcre2 accepts at (0,0). A tier-2
+  over-rejection rather than a miscompile — invisible to a corpus of ACCEPTED
+  patterns — and exactly the several-homes drift D24's registry exists to
+  prevent one level up. Found and fixed by this wave while adding the sixth
+  kind. `not_repeatable` is deliberately NOT part of the predicate: it is a
+  per-NODE flag a bare option run sets (R20/SPEC-1), and it must not be
+  wrapped — `(?:(?i))*` is error 109 where `(^)*` is not.
 - **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the
   header NOTHING outside this directory includes ([M6.2] wave A; D62;
   assertions_design.md §8.6). `Ctx.mods` is a pointer to an INCOMPLETE

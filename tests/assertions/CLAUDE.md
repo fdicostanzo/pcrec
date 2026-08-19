@@ -1,9 +1,11 @@
 # tests/assertions — module `assertions` ([M6.2])
 
-The module's own corpus and its three non-`.rxt` checks. **WAVES A, B AND C
-so far**: `\A`, `\Z`, `\z`, `\b`, `\B` and `(?m)` are built; `\G` and `\K`
-are recognised, attributed and refused, and land in later waves
-(`docs/design/assertions_design.md` §10).
+The module's own corpus and its four non-`.rxt` checks. **WAVES A, B, C AND D
+so far**: `\A`, `\Z`, `\z`, `\b`, `\B`, `(?m)` and `\G` are built; `\K` is
+recognised, attributed and refused, and lands in wave E
+(`docs/design/assertions_design.md` §10). `\K` is now the LAST
+enabled-but-unbuilt row in the tree — when wave E lands, tests/reject's whole
+`reject_gated assertions` paragraph retires with it.
 
 ## THE ORACLE RULE IS DIFFERENT HERE, and it is the first thing to know
 
@@ -22,6 +24,13 @@ divergences run in the dangerous direction — python reports no match, or a
 shorter one, exactly where PCRE2 matches — so a cell written from python would
 encode `\z` and this suite would go green on a `\Z`-compiled-as-`\z`
 miscompile.
+
+**AND FOR `\G` THE ORACLE DOES NOT EXIST AT ALL** ([M6.2] wave D, U11c).
+`re.compile(r"\G")` raises `error: bad escape \G`; there is no flag, no
+dialect and no rewriting that expresses it, because python's `re` has no way
+to assert against a search's start offset from inside a pattern. That is a
+TOTAL exclusion rather than U11's wrong-answer one or U11b's different-answer
+one, so `gpos.rxt` is `# pcre2-only` in its entirety.
 
 **Every block whose pattern contains `\Z` therefore carries `# pcre2-only`**
 (which makes `tests/harness/verify_rxt.py` skip it) and is verified against
@@ -119,6 +128,54 @@ every oracle exclusion has an entry there.
   `<prefix>_match` wrapper — known issue K28, base-tier reproducer `^a^b`,
   the same exclusion `wordb.rxt` records for three `\b`/`\B` shapes. The live
   equivalents `a(?m)$` and `a(?m)^b|c` stand in its place.
+- **gpos.rxt** — [M6.2] WAVE D: `\G`, the first matching position. **The
+  `ms`/`ns` cells are the point of this file more sharply than they are even
+  in wordb.rxt**: `\G` is true iff `pos == startpos`, so at the default
+  `startpos == 0` it is INDISTINGUISHABLE from `\A` on every subject, and a
+  corpus written entirely at offset 0 would go green on a compiler that
+  lowered `\G` to `A_BOL`. Every block sweeps startpos across the whole
+  subject, and the `\Ax` / `\Gx` pair in section 5 is the explicit control.
+  Also here: the fully-anchored family (`start_max = startpos`), the partial
+  family (`\Gfoo|bar`, where the three start states are visible from outside),
+  the impossible mid-pattern shape carried on live sibling branches, `\G`
+  composed with `\A`/`\z`/`$`/`\b`/`(?m)^` — the last of those being D63's
+  prefilter cell, whose failing direction (sabotage S82) exists only in the
+  INTERSECTION of waves C and D — the grammar refusals with the module
+  enabled, and section 7's possessification witnesses as ANSWERS rather than
+  as a stamp (sabotage S84). Every expectation libpcre2-produced; the whole
+  file is `# pcre2-only`, see above.
+  **`a\Gb` AND `x\G` ARE DELIBERATELY ABSENT and the file's own header says
+  which and why** — both compile to a single dead state, K28's shape, so their
+  artifacts are not warnings-clean under the harness's `-O1` GENCFLAGS. This
+  is the THIRD wave to add spellings to K28's exclusion list, which that
+  entry's own text predicts. `run_gstart_diff.sh` §4 asserts them instead, at
+  `-O2`.
+- **gstart_findall.c** / **gstart_entries.c** — [M6.2] WAVE D's two drivers,
+  each for a property no `.rxt` block can express. The first is
+  docs/spec/match_api.md §3.1's find-all loop, TRANSCRIBED from
+  tests/encseam/findall_driver.c rather than re-interpreted (the claim is
+  about what §3.1's loop does, so a second reading of §3.1 would prove
+  nothing); the second drives `<prefix>_search` and `<prefix>_match_caps` side
+  by side on one artifact, which is R30 E8's replacement obligation.
+- **run_gstart_diff.sh** — [M6.2] WAVE D's behavioural instrument, run by
+  `make test-assertions`. Four sections: find-all CONTIGUITY against libpcre2
+  driven through the SAME §3.1 loop (never a hand-written span list); a
+  subject sweep on both engines with startpos taking EVERY value in `[0, n]`;
+  the SCOPED entry test (fully-`\G` patterns must agree, partial ones must
+  DISAGREE — an unscoped version would be red on correct behaviour); and the
+  K28-excluded impossible shapes.
+  **THE STARTPOS AXIS IS SWEPT EXHAUSTIVELY where wave C's sweep uses two
+  values, and that is not thoroughness for its own sake**: `(?m)`'s truth is a
+  fact about the SUBJECT, `\G`'s is a fact about the ARGUMENT, so a sweep that
+  fixes the argument measures nothing about the construct.
+  **THERE IS NO SECOND ORACLE HERE and §0 is what remains of one.** Wave C
+  runs python beside libpcre2 to catch the SCRIPT driving the oracle wrongly;
+  python cannot express `\G` at all, so that arm points at the sweep's own
+  `\G`-free CONTROL patterns instead — same subjects, same startpos values,
+  same oracle invocation. Weaker than wave C's, and the strongest available.
+  Its population claim is checked the way run_mline_diff.sh's is: every
+  pattern's artifact is inspected for the `\G`-aware start dispatch and the
+  script FAILS if too few carry one.
 - **run_mline_diff.sh** — [M6.2] WAVE C's DIFFERENTIAL SWEEP, run by
   `make test-assertions`. A `.rxt` file pins chosen cells; this sweeps a
   generated subject space over the `(?m)$` family against libpcre2 and
@@ -201,6 +258,7 @@ Four instruments touch this module and they see different things:
 | `verify_rxt.py` | whether the non-`\Z` expectations describe python `re` |
 | `verify_pcre2.py` | whether ALL of them describe libpcre2 — the only check that can validate a `\Z` cell |
 | `run_assertions_tests.sh` | the gate's two answers, and whether the possessification exemption fired |
+| `run_gstart_diff.sh` | what `\G` means under §3.1's find-all LOOP, and what the two ENTRIES of one artifact answer — neither expressible as a `.rxt` cell |
 
 and three more live outside this directory entirely.
 `tests/codegen/run_endvar_identity.sh` is the byte-identity gate for the claim
@@ -208,7 +266,17 @@ that `\z`'s third closure view costs a `\z`-free pattern nothing; its failing
 direction is sabotage S69 — the design's own refuted first draft, restored.
 `tests/codegen/run_wordctx_identity.sh` is wave B's, for the much larger claim
 that the alphabet refinement, the second closure, the class-indexed accept and
-the third start state cost a `\b`-free pattern nothing (sabotage S71). And
+the third start state cost a `\b`-free pattern nothing (sabotage S71 — but
+read that row's annotation first: wave D MEASURED its identity sweep staying
+1135/1135 identical under it, so the row is scored detected only through an
+orphaned-parameter warning).
+`tests/codegen/run_gstart_identity.sh` is wave D's, for the claim that the
+`\G` closure bit, the second start family, the `gseed[]` table, the three-way
+dispatch and the third `start_max` string cost a `\G`-free pattern nothing
+(sabotage S83). **Its reference knob is at the EMITTER rather than in the
+analysis**, which is what makes S83 visible where the same shape is invisible
+to its two predecessors, and moving it is what found a dead `gseed[]` table
+this wave had emitted on every `\b`/`(?m)` artifact. And
 `tests/codegen/run_codegen_tests.sh`'s `[M6.2-WORDB]` block carries three
 rules no correctness test can see — no accept table indexed at `pos == n`
 (§3.6.2, sabotage S73), no `sfound` recorded blind at the reverse boundary by
