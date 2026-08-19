@@ -30,6 +30,11 @@ SAB_FILE="src/ir/dfa.c"
 SAB_SUITES="mlinectxidentity harness"
 SAB_DESC="eqclasses refines the byte alphabet by the newline set on EVERY pattern instead of only on those carrying a (?m)^/(?m)\$: every artifact whose alphabet did not already separate LF gains a class and moves bytes, with every answer unchanged"
 SAB_DOC_FIGURE="tests/codegen/run_mlinectx_identity.sh: the (?m)-free identity population goes from all-identical to largely differing; the corpus stays green"
+# MEASURED before this row shipped, the same way every wave C row was: 1032 of
+# 1161 corpus artifacts change under this edit, and not one answer does. The
+# margin is enormous because almost no pattern's alphabet already separates
+# LF — which is exactly why the gate on it has to be a byte comparison and not
+# a behaviour test.
 SAB_COUNT=1
 SAB_BEFORE='    if (has_nl)   ncls = refine_by(d, ncls, pcrec_cls_newline);'
 SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_newline);   /* SABOTAGE S76 */'
