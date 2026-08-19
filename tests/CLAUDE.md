@@ -26,7 +26,7 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
-- **reject/** — the "unsupported constructs fail cleanly, never miscompile" mandate, asserted per construct (274 hand-written rejections + 99 reached by iterating `pcrec --list-syntax`, + 99 accept-controls + 59 gated + zero known-wrong pins since FIX-2 graduated the last five, plus a manifest of the rows an exact count would not protect; these four figures are hand-copied and went stale TWICE during R9 alone (C4-3, then C4V-3 when the counts changed again in the same review), moved again at Q2/SR-9, at A1/§18.2 (→246/62), at FIX-3 (→248/63), at [STD1b] (D37, 2026-08-13: 306/65/0/15→274/99/0/55, the bare-default flip's re-baseline) and at [M6.3] (2026-08-18: 55→59 gated, the four named-groups boundary pins — the backref-by-name and (?J) module-boundary proofs plus the 129-byte name-length wall) — the harness prints them in its own summary block, so read them from a run rather than from here; the two layers catch different things and neither replaces the other — see its CLAUDE.md). Cannot live in .rxt: a `perr` block asserts only THAT a pattern is rejected, never WHY, and the module name is the point. 20 of the rejections are the base-grammar brace errors from FIX-1 and R7 (K5/K6/K8), which have no registry row and name a PCRE2 error instead of a module; another 36 are Q1's verb-doorway outcomes, which pin one name per FORM GROUP rather than one per name — the other 26 verb names are covered by tests/registry/pcre2_check.c alone, which SKIPS without libpcre2 installed
+- **reject/** — the "unsupported constructs fail cleanly, never miscompile" mandate, asserted per construct (274 hand-written rejections + 99 reached by iterating `pcrec --list-syntax`, + 99 accept-controls + 66 gated + zero known-wrong pins since FIX-2 graduated the last five, plus a manifest of the rows an exact count would not protect; these four figures are hand-copied and went stale TWICE during R9 alone (C4-3, then C4V-3 when the counts changed again in the same review), moved again at Q2/SR-9, at A1/§18.2 (→246/62), at FIX-3 (→248/63), at [STD1b] (D37, 2026-08-13: 306/65/0/15→274/99/0/55, the bare-default flip's re-baseline) at [M6.3] (2026-08-18: 55→59 gated, the four named-groups boundary pins — the backref-by-name and (?J) module-boundary proofs plus the 129-byte name-length wall) and at [M6.2] wave A (2026-08-19: 59→66 gated, the enabled-but-unbuilt refusals) — the harness prints them in its own summary block, so read them from a run rather than from here; the two layers catch different things and neither replaces the other — see its CLAUDE.md). Cannot live in .rxt: a `perr` block asserts only THAT a pattern is rejected, never WHY, and the module name is the point. 20 of the rejections are the base-grammar brace errors from FIX-1 and R7 (K5/K6/K8), which have no registry row and name a PCRE2 error instead of a module; another 36 are Q1's verb-doorway outcomes, which pin one name per FORM GROUP rather than one per name — the other 26 verb names are covered by tests/registry/pcre2_check.c alone, which SKIPS without libpcre2 installed
 - **parse/** — checks on facts the PARSER computes but never emits, which no
   generated-C test can reach. PARSE-1's top-level branch count is the first:
   the design deliberately leaves the AST unchanged, so the count is compared
@@ -186,6 +186,22 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   factoring). Part of `make test` as `make test-altcls`. See its own
   CLAUDE.md for why the differential's engine choice differs from every
   other deny-family suite's.
+- **`assertions/`** — module `assertions` ([M6.2]), WAVE A so far: `\A`,
+  `\Z` and `\z`. **The one directory in the tree whose ORACLE RULE differs
+  from the project default, and the reason is measured**: python `re`'s `\Z`
+  IS PCRE2's `\z` (python has no single escape for PCRE2's `\Z` at all), and
+  it disagrees in the silent direction — no match, or a shorter span, exactly
+  where PCRE2 matches. So every `\Z` block carries `# pcre2-only` and
+  `verify_pcre2.py` re-verifies the whole directory against libpcre2 on every
+  run, through `tests/fuzz/pcre2_oracle` and `tests/harness/verify_rxt.py`'s
+  own parser (one libpcre2 access path, one `.rxt` parser). `\A`/`\z` blocks
+  stay python-verified, which is the standing proof the split is about `\Z`
+  and not about the module. `run_assertions_tests.sh` (`make test-assertions`)
+  carries what a `.rxt` file cannot: that oracle, the CONTROL under
+  tests/reject's enabled-but-unbuilt rows (the three constructs this wave
+  builds must COMPILE with the gate open, or those rows measure an empty
+  module), and the D47.5 exemption firing read off `<PREFIX>_VM_STRATS` in
+  both directions. See its own CLAUDE.md, and docs/dev/upstream_issues.md U11
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the only one in the tree that runs a find-all LOOP:
   docs/spec/match_api.md §3.1's protocol, compiled against real artifacts

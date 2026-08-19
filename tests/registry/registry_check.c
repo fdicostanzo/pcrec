@@ -1302,21 +1302,28 @@ static void check_class_ports(void)
     }
 
     /* [M6.3]: atom ports 23 -> 26, the three named-groups declaring rows'
-     * new pcrec_ngport_declare producer. Nothing else in this population
-     * moved — no cport, no scalar/SET/FN class port touched. */
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 26)
+     * new pcrec_ngport_declare producer.
+     * [M6.2 wave A]: 26 -> 29, the `\\A`/`\\Z`/`\\z` rows' new
+     * pcrec_asrtport_atom producer. Nothing else in this population moved —
+     * no cport, no scalar/SET/FN class port touched, and in particular those
+     * three rows KEEP RF_CLASS_INVALID and NO_PORT at class position, because
+     * `[\\A]` is PCRE2 error 107 permanently and an atom producer must not
+     * quietly become a class one. */
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 29)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (26: the char-types + \\N, the twelve GROUP_OPT rows' "
-            "option-run producer since MOD-0.5c, plus the three "
-            "named-groups declaring rows' producer since [M6.3]). A "
+            "ports (29: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "option-run producer since MOD-0.5c, the three "
+            "named-groups declaring rows' producer since [M6.3], plus the "
+            "three assertions rows \\A/\\Z/\\z since [M6.2] wave A). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 26 atom "
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 29 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
-           "named-groups rows, [M6.3]); scalar and SET values oracle-tied "
+           "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
+           "wave A); scalar and SET values oracle-tied "
            "(class_expect column / fallback law / census popcounts), as "
            "predicted for slice 3");
 }

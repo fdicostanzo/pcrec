@@ -53,7 +53,9 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   (BEFORE is a prefix of AFTER), or a deletion (AFTER is empty).
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
-  `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`), `SAB_DESC`,
+  `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`
+  `endvaridentity` `assertions`, plus the per-lane arms listed below),
+  `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
   scope the `harness` suite to, instead of the whole corpus). Each file also
@@ -99,6 +101,17 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   sweep). The sweep dominates its runtime, which is why this arm is assigned
   only where a sabotage's signal is a WRONG SPAN or a broken bound — never
   "just in case".
+- `endvaridentity` → `tests/codegen/run_endvar_identity.sh`, [M6.2] wave A's
+  byte-identity gate. Its own arm rather than `codegen` or `trie`, for the
+  reason `vmidentity` is its own: "adding a THIRD closure view moved no byte
+  of any pattern that does not use it" is orthogonal to every
+  optimization-present check and to the trie's own equivalence. It builds a
+  reference compiler and sweeps the whole corpus, so it is the most expensive
+  arm here — assign it only where the signal really is emitted bytes.
+- `assertions` → `tests/assertions/run_assertions_tests.sh`, module
+  `assertions`' structural checks (the libpcre2 re-verification of its
+  corpus, the built-constructs control, and the D47.5 exemption read off the
+  artifact's STRATS stamp in both directions).
 
 The last three landed 2026-08-12 (MOD-0.8c slice 1), and **neither arm runs
 `run_registry_tests.sh` itself** even though that is what `make test` runs.
@@ -568,3 +581,38 @@ DETECTED.
 When reading the matrix, treat a 0-fail behavioural arm on THIS row as the
 expected result rather than as a gap in coverage — it is what the row was
 built to demonstrate.
+
+## [M6.2 wave A] S69-S70, and two new arms
+
+Two rows for module `assertions`' first wave, running the new
+`endvaridentity` arm (tests/codegen/run_endvar_identity.sh) and `assertions`
+arm (tests/assertions/run_assertions_tests.sh). Their own arms for the reason
+every pair in this matrix is split: what each guards is orthogonal to the
+others, and a sabotage of one must not be reported as coverage by another.
+
+- **S69** is this directory's fourth row whose edit is a REAL PAST CLAIM
+  rather than an invented failure — and the first whose original is a
+  DESIGN's, not an implementation's. `assertions_design.md`'s first draft
+  canonicalized `\z`'s third closure view against the BASE view and argued
+  zero regression from it; R30 finding E3 showed the comparison is against the
+  EOL view, and that getting it wrong makes every eol-differing state of every
+  `$`-bearing pattern intern a redundant live `endvar`. The sabotage restores
+  the refuted form.
+
+  **It is SEMANTICS-PRESERVING, which is the whole point.** The extra state
+  duplicates the eolvar state, so every emitted matcher answers identically:
+  the `.rxt` corpus, both oracles and every differential in the tree stay
+  green, and only the byte-identity gate can see it. That is the S68 shape
+  (a sabotage that changes no answer) with a different mechanism, and it is
+  the standing argument for landing a construction check even where the prose
+  says it cannot fail.
+- **S70** deletes the ESCAPE doorway's enabled-but-unbuilt epilogue, so a
+  half-landed module answers "requires module 'assertions'" with the module
+  already enabled. Nothing behavioural notices — the pattern is refused
+  either way — and tests/reject's GATE-CLOSED rows do not notice either,
+  because with the gate closed the old sentence is the correct one. Only the
+  four `reject_gated assertions` rows can see it. Note the row's own scope:
+  the `m` LETTER's refusal is produced per letter in
+  src/parse/mod_modifiers.c and keeps its own copy of the rule, so the two
+  `(?m)` rows stay green — which is the honest reading of "a letter's module
+  is not the dispatching row's".

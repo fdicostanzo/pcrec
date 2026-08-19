@@ -674,7 +674,43 @@ done
 
 echo
 echo "== assertions =="
+# GATE CLOSED — the bare invocation, and the surface [M6.2] wave A must not
+# move. All six still name the module, including the three the wave BUILDS:
+# a construct whose module is off is refused exactly as it always was.
 for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
+
+# GATE OPEN, and this is a DIFFERENT SENTENCE for a reason ([M6.2] wave A;
+# assertions_design.md §9.2). The module lands its eight constructs across
+# five waves, so there is an interval where `--features assertions` is on and
+# `\b` has no producer — and "requires module 'assertions'" is then a lie of
+# the most annoying kind: it tells the user to enable what they have already
+# enabled. The refusal names the CONSTRUCT instead, on `--encoding=utf8`'s
+# principle (a name pcrec knows but cannot compile is refused BY ITS OWN NAME,
+# never as unknown), and the wording is D26 tier 3.
+#
+# The pair matters more than either row: these four sit directly under the six
+# above so that a reader sees ONE construct answering two ways depending on a
+# fact about the user's invocation rather than about the pattern. `\A`, `\Z`
+# and `\z` are deliberately absent from this list — they COMPILE with the gate
+# open, which tests/assertions/run_assertions_tests.sh asserts as the control
+# that stops these four rows passing on a build that produces nothing at all.
+for e in b B G K; do
+    reject_gated assertions "\\$e" \
+        "module 'assertions' is enabled but \\$e is not implemented yet"
+done
+# The `m` LETTER's own arm (src/parse/mod_modifiers.c), which produces its
+# refusal per letter rather than through the `(?` doorway's row — so it needs
+# its own copy of the rule and its own pin. Both spellings, because the bare
+# run and the scoping form take different paths through the port.
+reject_gated assertions,modifiers '(?m)a' \
+    "module 'assertions' is enabled but inline option 'm' (multiline) is not implemented yet"
+reject_gated assertions,modifiers '(?m:a$)' \
+    "module 'assertions' is enabled but inline option 'm' (multiline) is not implemented yet"
+# ...and with `assertions` OFF it must still say the other thing, which is the
+# failing direction for the branch above (line 860's row is the same claim
+# from module `modifiers`' side).
+reject_gated modifiers '(?m:a$)' \
+    "inline option 'm' (multiline) requires module 'assertions'"
 
 echo
 echo "== backreferences =="
@@ -1793,8 +1829,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 59 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 59 ([M6.3] added 4: the two backref-by-name boundary proofs, the (?J)+named-groups combined-gate proof, and the 129-byte name-length wall)." >&2
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 66 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 66 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

@@ -67,6 +67,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "parse/parse_mods.h"
 
 /* An arena-owned, NUL-terminated copy of pat[start, start+len) — the one
  * place this module needs a string outliving the pattern buffer's own
@@ -161,21 +162,21 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
      * mod_modifiers.c's `:` branch, but the save/restore/anchor-wrap
      * choreography is the same, because the terminator is the same `)`). */
     {
-        ModState saved_mods = cx->mods;
+        ParseMods saved_mods = *cx->mods;
         size_t   saved_pos  = cx->pos;
         cx->pos = i + 1;
         AltInfo info;
         Ast *body = pcrec_parse_body(cx, &info);
         if (cx->pos >= n || p[cx->pos] != ')') {
-            cx->mods = saved_mods;
+            *cx->mods = saved_mods;
             cx->pos = saved_pos;
             REFUSE(at, "missing closing ) for group");
         }
         size_t end = cx->pos + 1;
-        cx->mods = saved_mods;
+        *cx->mods = saved_mods;
         cx->pos = saved_pos;
 
-        if (body->k == A_BOL || body->k == A_EOL) {
+        if (body->k == A_BOL || body->k == A_EOL || body->k == A_END) {
             /* the S-M1 anchor wrap, mirrored from p_group_body: `(?<n>^)*`
              * stays quantifiable exactly as `(^)*` is */
             Ast *cat = pcrec_ast_node(cx, A_CAT);

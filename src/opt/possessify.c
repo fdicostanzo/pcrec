@@ -53,12 +53,26 @@
  * strictly LEFT, so no retreat position below a failing maximal exit can
  * satisfy it. Under `(?m)` that argument collapses per-line and the same sweep
  * gives 180 of 720 diverging. The exemption is therefore CONDITIONAL, and
- * D47.5 rules the condition a live check rather than a comment: this file
- * reads `cx->mods.multiline` at verdict time. pcrec refuses `(?m)` today,
- * which is what makes the exemption safe NOW and is exactly the kind of fact
- * that stops being true without anyone revisiting this analysis. The failing
+ * D47.5 rules the condition a live check rather than a comment. The failing
  * direction is not inert on the same instrument: `\b`/`\B` follows give
  * 332/720 and `^` gives 80/240.
+ *
+ * THE GATE IS NOW SCOPE-CORRECT TOO ([M6.2] wave A; D62;
+ * assertions_design.md §8; D47.5's 2026-08-18 addendum). "Live" is
+ * NECESSARY AND NOT SUFFICIENT, and this file is where that was found out.
+ * The live read used to be `P.multiline = cx->mods.multiline`, taken once
+ * after the parse had finished — i.e. the parser's END-OF-PATTERN option
+ * state — while `(?m)` in PCRE2 is SCOPED. Two of the four reachable shapes
+ * disagree in the unsound direction: `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)`
+ * both end the parse with multiline=false and both contain a genuinely
+ * multiline `$`, so both would have taken the transparent arm and lost a
+ * match the day the `m` letter is accepted (§8.1.1 measures them as cells:
+ * correct answer (0,1), possessified answer NO MATCH). The cure is
+ * structural rather than a bigger read: multiline is resolved AT PARSE TIME
+ * onto the node (`Ast.multiline`), this analysis reads the node it is
+ * already holding, and `ParseMods` is now an incomplete type outside
+ * src/parse/ so no later pass can repeat the mistake (§8.6). `\z` needs no
+ * gate at all — see the A_END arm.
  *
  * EVERY SET IS COMPUTED IN THE SOUND DIRECTION. A construct this analysis
  * cannot model widens to "all bytes", which makes the disjointness test fail
@@ -114,10 +128,13 @@ static bool bs_intersects(const uint8_t *a, const uint8_t *b)
  * can match empty. Both are needed together because a nullable item does not
  * end the outward propagation — `b?c` contributes BOTH `b` and `c`.
  *
- * The two assertion arms are the sound-direction rule made concrete, and they
+ * The assertion arms are the sound-direction rule made concrete, and they
  * differ for a MEASURED reason rather than a stylistic one: `^` widens to all
  * bytes (80 of 240 diverging cells if it does not), while `$` is transparent
- * when multiline is off (0 of 720) and widens when it is on (180 of 720). */
+ * when multiline is off (0 of 720) and widens when it is on (180 of 720).
+ * `\z` (A_END) is transparent unconditionally — the same argument with a
+ * singleton position set and nothing to gate on. Multiline-ness is read off
+ * THE NODE, never from the parse state; see the A_EOL arm. */
 typedef struct {
     uint8_t f[32];
     bool    nullable;
@@ -143,7 +160,7 @@ static First fst_seq(First x, First rest)
     return r;
 }
 
-static First first_of(bool multiline, const Ast *a)
+static First first_of(const Ast *a)
 {
     switch (a->k) {
     case A_CLASS: {
@@ -165,10 +182,25 @@ static First first_of(bool multiline, const Ast *a)
         return r;
     }
     case A_EOL:
-        /* D47.5's LIVE GATE. Transparent while `$` means "the subject end (or
-         * before a final newline)" — a set no retreat can reach from further
-         * left; all bytes once `(?m)` makes it true before every newline. */
-        if (multiline) {
+        /* D47.5's LIVE GATE, AND IT READS THE NODE ([M6.2] wave A, D62,
+         * assertions_design.md §8). Transparent while `$` means "the subject
+         * end (or before a final newline)" — a set no retreat can reach from
+         * further left; all bytes once `(?m)` makes it true before every
+         * newline.
+         *
+         * `a->multiline` and NOT `cx->mods`. This arm used to consult a bool
+         * captured once for the whole pass, from the parser's END-OF-PATTERN
+         * option state, and `(?m)` is SCOPED: `(?m:a{0,4}$)` and
+         * `(?m)a{0,4}$(?-m)` each read false there while their `$` is
+         * genuinely multiline, so each would have taken the transparent arm
+         * and possessified a quantifier whose retreat is the only route to
+         * the match. Two measured lost-match cells (§8.1.1); D47.5's own
+         * recorded obligation names only the leading-`(?m)` shape, the one
+         * the old code got right. The fact now lives on the node, resolved
+         * at the `$` itself, and this analysis reads the node it is already
+         * holding — which is also why no threading of scoped state through
+         * `pss_walk` was needed (§8.5). */
+        if (a->multiline) {
             First r;
             bs_all(r.f);
             r.nullable = false;
@@ -176,8 +208,20 @@ static First first_of(bool multiline, const Ast *a)
         }
         return fst_empty(true);
 
+    case A_END:
+        /* [M6.2 wave A] `\z` is the exemption's own argument, sharpened.
+         * `$`'s satisfying set is {n} plus {n-1} before a final newline, and
+         * the upward-closure argument has to reason about that second
+         * position; `\z`'s is the SINGLETON {n}. If `\z` fails at a
+         * quantifier's maximal exit it fails at every retreat position, since
+         * every retreat position is strictly smaller. Transparent, and
+         * UNCONDITIONALLY so — no option makes `\z` true anywhere else, which
+         * is exactly why it is a separate node kind and not a flag on
+         * A_EOL. */
+        return fst_empty(true);
+
     case A_CAP:
-        return first_of(multiline, a->l);
+        return first_of(a->l);
 
     case A_CAT: {
         /* The spine is left-nested, so walking it from the top visits the
@@ -187,28 +231,28 @@ static First first_of(bool multiline, const Ast *a)
         First acc = fst_empty(true);          /* the empty suffix */
         const Ast *t = a;
         while (t->k == A_CAT) {
-            acc = fst_seq(first_of(multiline, t->r), acc);
+            acc = fst_seq(first_of(t->r), acc);
             t = t->l;
         }
-        return fst_seq(first_of(multiline, t), acc);
+        return fst_seq(first_of(t), acc);
     }
     case A_ALT: {
         /* Union of the branches; order-independent, so a plain spine walk. */
         First acc = fst_empty(false);
         const Ast *t = a;
         while (t->k == A_ALT) {
-            First r = first_of(multiline, t->r);
+            First r = first_of(t->r);
             bs_or(acc.f, r.f);
             acc.nullable = acc.nullable || r.nullable;
             t = t->l;
         }
-        First h = first_of(multiline, t);
+        First h = first_of(t);
         bs_or(acc.f, h.f);
         acc.nullable = acc.nullable || h.nullable;
         return acc;
     }
     case A_REP: {
-        First r = first_of(multiline, a->l);
+        First r = first_of(a->l);
         r.nullable = r.nullable || a->rmin == 0;
         return r;
     }
@@ -325,6 +369,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_EMPTY:
     case A_BOL:
     case A_EOL:
+    case A_END:
         /* Zero-width: contributes no position and does not change
          * nullability, so the sequence rules below leave the surrounding
          * fold untouched — the reference probe's "modelled as absent". */
@@ -465,7 +510,6 @@ bool pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why)
 typedef struct {
     Ctx  *cx;
     Gk   *g;
-    bool  multiline;
     int   marked;      /* newly marked on THIS call — the fixpoint's signal */
     int   seen;        /* A_REP nodes walked */
     int   possessive;  /* A_REP nodes possessive AFTER this call */
@@ -479,7 +523,7 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 {
     P->seen++;
 
-    First body = first_of(P->multiline, a->l);
+    First body = first_of(a->l);
 
     /* The effective follow: what comes after Q here, plus what every
      * enclosing loop could restart with. */
@@ -526,7 +570,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl)
 {
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         return;
 
     case A_CAP:
@@ -547,7 +591,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         Ast *t = a;
         while (t->k == A_CAT) {
             pss_walk(P, t->r, cur, cur_end, encl);
-            First x = first_of(P->multiline, t->r);
+            First x = first_of(t->r);
             uint8_t nf[32];
             memcpy(nf, x.f, 32);
             if (x.nullable) bs_or(nf, cur);
@@ -576,7 +620,6 @@ int pcrec_possessify(Ctx *cx, Ast *root)
     Pss P;
     memset(&P, 0, sizeof P);
     P.cx = cx;
-    P.multiline = cx->mods.multiline;
     P.marked = 0;
 
     /* One Gk for the whole pass, reset per quantifier: it is 16 KB of position

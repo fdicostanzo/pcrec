@@ -654,7 +654,7 @@ static bool vm_nullable(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS: return false;
-        case A_EMPTY: case A_BOL: case A_EOL: return true;
+        case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;
         case A_CAP:   a = a->l; continue;
         case A_REP:   if (a->rmin == 0) return true; a = a->l; continue;
         case A_CAT:
@@ -885,7 +885,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
             return;
         case A_CAP:
             if (*n < cap) out[(*n)++] = a->capno;
@@ -1203,7 +1203,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
 {
     Cost c = { 0, 0, 0, 0, false, false };
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         return c;
     case A_CAP:
         c = vm_cost(v, a->l);
@@ -1306,7 +1306,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, nc = 0;
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl); return;
     case A_ALT:
@@ -3470,6 +3470,18 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
               "$ end of subject, or before a final newline");
         sb_printf(b, "    if (pos == n || (pos + 1 == n && s[pos] == '\\n')) "
                      "goto %s_L%d;\n", v->p, next);
+        vm_fail(v);
+        return;
+    case A_END:
+        /* [M6.2 wave A] `\z` — end of subject, and NOT before a final
+         * newline. assertions_design.md §9.3: both engines carry every
+         * construct, because `--engine=vm` is what makes the DFA's answers
+         * trustworthy rather than an echo of themselves. Note this arm reads
+         * no byte at all, so it needs none of the guards `\b`'s spelling will
+         * (K27's class): `pos == n` is a position test. */
+        vm_lbl(v, entry, NULL);
+        vm_ev(v, VE_ASSERT, next, 0, "\\z end of subject (absolute)");
+        sb_printf(b, "    if (pos == n) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
     case A_CAP: {

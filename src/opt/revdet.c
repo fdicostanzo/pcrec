@@ -93,7 +93,7 @@ static void rd_shape(Shape *S, const Ast *a)
         switch (a->k) {
         case A_CLASS:
             return;
-        case A_EMPTY: case A_BOL: case A_EOL:
+        case A_EMPTY: case A_BOL: case A_EOL: case A_END:
             S->ok = false;
             return;
         case A_CAP:
@@ -161,7 +161,7 @@ static Ast *rd_node(Ctx *cx, const Ast *src)
 static Ast *rd_reverse(Ctx *cx, const Ast *a)
 {
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         return rd_node(cx, a);
 
     case A_CAP: case A_REP: {
@@ -266,7 +266,7 @@ static bool rd_alt_disjoint(const Ast *a)
 {
     for (;;) {
         switch (a->k) {
-        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
             return true;
         case A_CAP: case A_REP:
             a = a->l;
@@ -338,7 +338,7 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
 static void rd_walk(Rd *R, Ast *a, bool in_rep)
 {
     switch (a->k) {
-    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL:
+    case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         return;
     case A_CAP:
         rd_walk(R, a->l, in_rep);

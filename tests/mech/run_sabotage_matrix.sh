@@ -55,6 +55,7 @@
 #   codegen  trie  reject  harness   — the original four
 #   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
+#   endvaridentity  assertions         — added 2026-08-19 ([M6.2] wave A)
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
@@ -228,6 +229,35 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/vmidentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("vmid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            endvaridentity)
+                # [M6.2 wave A] the `\z`-free byte-identity gate. Its own arm
+                # rather than `codegen` or `trie`, for the reason vmidentity is
+                # its own: what it guards — that adding a THIRD closure view
+                # moved no byte of any pattern that does not use it — is
+                # orthogonal to every optimization-present check in
+                # run_codegen_tests.sh and to the trie's own equivalence, and a
+                # sabotage of one must not be reported as coverage by another.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_endvar_identity.sh" \
+                    > "$work/endvaridentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/endvaridentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/endvaridentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("endvarid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            assertions)
+                # [M6.2 wave A] module `assertions`' own structural checks:
+                # the libpcre2 re-verification of its corpus, the module
+                # gate's two refusals, and the D47.5 exemption read off the
+                # artifact's STRATS stamp in both directions.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/assertions/run_assertions_tests.sh" \
+                    > "$work/assertions.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/assertions.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/assertions.log" | grep -oE '[0-9]+')"
+                suite_bits+=("asrt:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

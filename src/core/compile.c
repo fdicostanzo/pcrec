@@ -111,10 +111,13 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     /* PARSE-1: the CLI option is the SEED for the parse state, not the state
      * itself. `opt` stays const and caller-owned; `cx.mods` is what the
      * parser reads and what a scoped `(?i:...)` saves/sets/restores
-     * (MOD-0.5c). Seeding here rather than at each read site is what stops
-     * there being two homes for the same fact. The other fields seed to the
-     * hardwired defaults — the same constants `(?^)` resets to. */
-    cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
+     * (MOD-0.5c). Seeding through ONE entry point rather than at each read
+     * site is what stops there being two homes for the same fact.
+     *
+     * [M6.2 wave A] The seeding MOVED into src/parse/ (assertions_design.md
+     * §8.6): `ParseMods` is an incomplete type here, so this file can no
+     * longer build one — which is the point. `pcrec_parse_mods_init` is
+     * called below, once the arena has a Ctx to diagnose through. */
     /* [M4.5b] (D42.1): captures are ON BY DEFAULT — PCRE2's own default and
      * the principle of least surprise — and --no-captures (PCREC_NO_CAPTURES)
      * is the generation axis that recovers the pre-M4.5 pure-DFA artifact.
@@ -145,6 +148,10 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         job_cleanup(&cx);
         return -1;
     }
+
+    /* [M6.2 wave A] After the setjmp, because it allocates: an arena failure
+     * here must be a diagnosed refusal, not an abort. */
+    pcrec_parse_mods_init(&cx);
 
     if (!valid_prefix(defo.prefix))
         ctx_fail(&cx, 0, "invalid symbol prefix (must be a C identifier, <= %d chars)",
@@ -321,7 +328,6 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     cx.patlen = pattern ? strlen(pattern) : 0;
     cx.err = err;
     cx.opt = &defo;
-    cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
     /* Parse-only: nothing is emitted, so no capture node is wanted and the
      * tree stays exactly D31's. This matters beyond tidiness — --count-groups
      * pins its refusal behaviour to pcrec_compile's, and an AST that differed
@@ -339,6 +345,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
         return -1;
     }
 
+    pcrec_parse_mods_init(&cx);
     pcrec_parse(&cx);
     int n = (int)cx.ncap;
     job_cleanup(&cx);

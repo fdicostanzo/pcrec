@@ -115,14 +115,19 @@ static int pcrec_branch_count(const char *pat)
     cx.pat = pat;
     cx.patlen = strlen(pat);
     cx.opt = &defo;
-    cx.mods = (ModState){ .caseless = (defo.flags & PCREC_CASELESS) != 0 };
     cx.job = calloc(1, sizeof(Job));
     if (!cx.job) return -1;
+    cx.arena.cx = &cx;
 
     int result;
     if (setjmp(cx.jb)) {
         result = -1;
     } else {
+        /* [M6.2 wave A] the scoped parse state is seeded through src/parse/
+         * now (assertions_design.md §8.6) — `ParseMods` is an incomplete type
+         * outside that directory, so this file cannot build one, which is the
+         * enforcement working exactly as intended on a test TU too. */
+        pcrec_parse_mods_init(&cx);
         AltInfo info = { -1, 0 };
         pcrec_parse_info(&cx, &info);
         result = info.nbr;

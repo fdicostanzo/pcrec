@@ -284,3 +284,53 @@ exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
   living proof that the translation this entry describes is sound, since
   those blocks assert the SAME spans the translated-and-excluded blocks
   claim. See its CLAUDE.md for the full oracle-split accounting.
+
+## U11 — python `re`: `\Z` IS PCRE2's `\z` (module `assertions`, [M6.2] wave A)
+
+**Found**: 2026-08-18 by the [M6.1] design lane
+(`docs/design/assertions_measurements/probes/probe_z_oracle.py`), reproduced
+2026-08-19 by the [M6.2] wave A implementation lane over its own 29-pattern
+corpus before a single expectation was written.
+
+**The divergence.** PCRE2's `\Z` is "end of subject, OR immediately before a
+final newline". python's `\Z` is "end of subject", full stop — which is
+PCRE2's `\z`, a construct python 3.14 ALSO spells `\z` (identically to
+PCRE2's, checked). So python has TWO spellings of `\z` and NO single escape
+for `\Z` at all; the only python expression with PCRE2's `\Z` semantics is
+`(?=\n?\Z)`, which needs lookahead — module `lookaround`, which does not
+exist.
+
+**MEASURED, libpcre2 10.46 vs python 3.14.4:**
+
+```
+pattern   subject     pcre2      python     verdict
+b\Z       'ab\n'      (1, 2)     None       *** DISAGREE ***
+a*\Z      'aaa\n'     (0, 3)     (4, 4)     *** DISAGREE ***
+\Z        '\n'        (0, 0)     (1, 1)     *** DISAGREE ***
+b\z       'ab\n'      None       None       agree
+b\z       'ab'        (1, 2)     (1, 2)     agree
+b$        'ab\n'      (1, 2)     (1, 2)     agree
+\A a-cells                                  agree (all, incl. `pos`)
+```
+
+Over the implementation lane's own 29 probe patterns × 22 cells, exactly 7
+patterns diverge and **all 7 contain `\Z`**; nothing else in the module's
+alphabet does.
+
+**Why it matters more than an ordinary exclusion.** Both divergences run in
+the SILENT direction: python reports no match where PCRE2 matches, or a
+shorter span. An expectation derived from python therefore encodes `\z`, and
+a compiler that lowered `\Z` as `\z` would pass it. The oracle would be
+agreeing with the bug — this project's recorded check-design failure, arriving
+through the oracle rather than through a control.
+
+**Impact**: every block in `tests/assertions/` whose pattern contains `\Z` is
+marked `# pcre2-only`, and `tests/assertions/verify_pcre2.py` re-verifies the
+whole directory (both marked and unmarked blocks) against libpcre2 on every
+`make test`, through `tests/fuzz/pcre2_oracle`. `\A` and `\z` blocks are NOT
+excluded and ARE checked live by `verify_rxt.py`, which is the standing proof
+that the split is about `\Z` specifically rather than about the module.
+
+The exclusion rule is applied to `\Z` blocks WHOLESALE, not per diverging
+cell: a subject added to an unmarked `\Z` block later would silently start
+lying, and there is no mechanical way for the corpus to notice.

@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "parse/parse_mods.h"
 
 typedef struct { unsigned bit; const char *name; } MaskName;
 
@@ -467,6 +468,10 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
         arena_free(&cx.arena);      /* a raising port allocated, then left */
         return NULL;
     }
+    /* [M6.2 wave A] A doorway call can reach module `modifiers`' producing
+     * port, which reads and writes the scoped parse state; this surface never
+     * runs a parse, so nothing else would have seeded it. */
+    pcrec_parse_mods_init(&cx);
 
     int w = -1;
     for (int i = 0; i < 3; i++)
@@ -915,6 +920,9 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
         if (ndissent) *ndissent = 0;
         return NULL;
     }
+
+    /* [M6.2 wave A] see the sibling seed in pcrec_probe_ask. */
+    pcrec_parse_mods_init(&cx);
 
     /* WANT_RESULT is what parse.c asks — the real ask — so `--explain` shows
      * what pcrec would actually DO with the text. With the default empty

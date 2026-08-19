@@ -1,0 +1,1173 @@
+# tests/assertions/absolute.rxt — module `assertions`, [M6.2] WAVE A:
+# the three ABSOLUTE-POSITION escapes `\A`, `\Z` and `\z`.
+#
+# THE ORACLE RULE FOR THIS FILE, and it is not the project default.
+# CLAUDE.md's base-tier oracle is python3 `re`. For `\Z` that oracle is WRONG,
+# and wrong in the direction that hides a miscompile:
+#
+#     pattern   subject     libpcre2   python 3.14
+#     b\Z       "ab\n"      (1, 2)     None          <- python: NO MATCH
+#     a*\Z      "aaa\n"     (0, 3)     (4, 4)        <- and here, a wrong SPAN
+#
+# python's `\Z` IS PCRE2's `\z`; python has no single escape for PCRE2's `\Z`
+# at all (`(?=\n?\Z)` is the only spelling, and it needs module `lookaround`).
+# So EVERY BLOCK WHOSE PATTERN CONTAINS `\Z` CARRIES `# pcre2-only`, which
+# makes tests/harness/verify_rxt.py skip it, and is verified instead by
+# tests/assertions/verify_pcre2.py against libpcre2. The rule is applied to
+# every `\Z` block whether or not this file's own subject set happens to
+# expose the divergence on it — a subject added later must not silently start
+# lying. (assertions_design.md §3.2.1; re-measured by this lane, 7 of the
+# lane's 29 probe patterns diverge and all 7 are `\Z` patterns.)
+#
+# `\A` and `\z` blocks are python-verifiable and are NOT marked: python 3.14
+# supports `\z` with PCRE2's meaning, and its `\A` has PCRE2's absolute
+# semantics under `pos` too (checked cell for cell, 0 divergences).
+#
+# EVERY EXPECTATION BELOW WAS PRODUCED BY libpcre2 10.46 (through
+# tests/fuzz/pcre2_oracle, options = 0) rather than written by hand, and every
+# non-`\Z` block additionally agrees with python3 `re`.
+#
+# WHAT THIS FILE CANNOT SEE, stated so nobody mistakes it for coverage: it
+# pins ANSWERS. It cannot see that `\A` lowers to the shipped A_BOL node or
+# that a `\z`-free pattern's emitted bytes did not move — the first is
+# unobservable from outside and the second is
+# tests/codegen/run_endvar_identity.sh's job.
+
+
+# ======================================================================
+# THE THREE-WAY POSITION DISTINCTION — the reason `\z` is a separate node
+# kind and not a flag on `$`. Read the `"ab\n"` rows of the next three
+# blocks together:
+#
+#     b\Z  "ab\n"  ->  (1,2)     `$`/`\Z` pass before a FINAL newline
+#     b\z  "ab\n"  ->  no match  `\z` does not
+#     b$   "ab\n"  ->  (1,2)     `$` agrees with `\Z` here, non-multiline
+#
+# The design note's own headline cell is the first two lines. It is a
+# LOST MATCH if `\z` were compiled as `\Z`, and a SPURIOUS one the other
+# way, so neither direction can pass by an off-by-one.
+# ======================================================================
+
+# pcre2-only
+pattern b\Z
+features assertions
+n ""
+n "a"
+m "ab" 1 2
+n "abc"
+m "b" 0 1
+n "ba"
+m "ab\n" 1 2
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+m "xab" 2 3
+m "aab" 2 3
+m "cab\n" 2 3
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ms 1 "aab" 2 3
+ns 2 "ab"
+ms 1 "ab\n" 1 2
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern b\z
+features assertions
+n ""
+n "a"
+m "ab" 1 2
+n "abc"
+m "b" 0 1
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+m "xab" 2 3
+m "aab" 2 3
+n "cab\n"
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ms 1 "aab" 2 3
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern b$
+features assertions
+n ""
+n "a"
+m "ab" 1 2
+n "abc"
+m "b" 0 1
+n "ba"
+m "ab\n" 1 2
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+m "xab" 2 3
+m "aab" 2 3
+m "cab\n" 2 3
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ms 1 "aab" 2 3
+ns 2 "ab"
+ms 1 "ab\n" 1 2
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+
+# ======================================================================
+# THE BARE ASSERTIONS, at every position of every subject shape.
+#
+# THE `ns <P>` ROWS BELOW ARE LOAD-BEARING, not incidental coverage. PCRE2
+# (pcre2pattern, "Simple assertions") states that with a non-zero
+# `startoffset` `\A` can NEVER match, and that is already pcrec's A_BOL
+# semantics (`^` is start of SUBJECT, absolute — src/gen/emit_vm.c:3458 and
+# the emitted contract in lib/pcrec.h). R30's 1,008-cell alias differential
+# swept every startpos, but that is the DESIGN lane's archived probe; these
+# six cells are the property pinned by the module's own corpus.
+#
+# The `ms <P>` rows opposite them do the same for `\z` and `\Z` — and the
+# `"ab\n"` rows are the sharp ones: at an identical nonzero startpos `\Z`
+# reports (2,2) and `\z` reports (3,3), so the three-way distinction is
+# pinned UNDER `startpos` and not only at offset 0.
+# ======================================================================
+
+pattern \A
+features assertions
+m "" 0 0
+m "a" 0 0
+m "ab" 0 0
+m "abc" 0 0
+m "b" 0 0
+m "ba" 0 0
+m "ab\n" 0 0
+m "a\n" 0 0
+m "\n" 0 0
+m "\n\n" 0 0
+m "abc\n" 0 0
+m "abc\n\n" 0 0
+m "xab" 0 0
+m "aab" 0 0
+m "cab\n" 0 0
+ms 0 "ab" 0 0
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern \z
+features assertions
+m "" 0 0
+m "a" 1 1
+m "ab" 2 2
+m "abc" 3 3
+m "b" 1 1
+m "ba" 2 2
+m "ab\n" 3 3
+m "a\n" 2 2
+m "\n" 1 1
+m "\n\n" 2 2
+m "abc\n" 4 4
+m "abc\n\n" 5 5
+m "xab" 3 3
+m "aab" 3 3
+m "cab\n" 4 4
+ms 0 "ab" 2 2
+ms 1 "ab" 2 2
+ms 1 "aab" 3 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 3 3
+ms 2 "ab\n" 3 3
+ms 3 "ab\n" 3 3
+
+# pcre2-only
+pattern \Z
+features assertions
+m "" 0 0
+m "a" 1 1
+m "ab" 2 2
+m "abc" 3 3
+m "b" 1 1
+m "ba" 2 2
+m "ab\n" 2 2
+m "a\n" 1 1
+m "\n" 0 0
+m "\n\n" 1 1
+m "abc\n" 3 3
+m "abc\n\n" 4 4
+m "xab" 3 3
+m "aab" 3 3
+m "cab\n" 3 3
+ms 0 "ab" 2 2
+ms 1 "ab" 2 2
+ms 1 "aab" 3 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 2 2
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+
+# start AND end of subject: matches the empty subject and nothing else
+pattern \A\z
+features assertions
+m "" 0 0
+n "a"
+n "ab"
+n "abc"
+n "b"
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+
+# ======================================================================
+# ANCHORED LITERALS. `\Aab\z` is PCRE2's "the subject is exactly ab";
+# `\Aab\Z` additionally accepts one trailing newline, which is the whole
+# difference between the two and the row a python-derived expectation
+# would get wrong.
+# ======================================================================
+
+pattern \Aa
+features assertions
+n ""
+m "a" 0 1
+m "ab" 0 1
+m "abc" 0 1
+n "b"
+n "ba"
+m "ab\n" 0 1
+m "a\n" 0 1
+n "\n"
+n "\n\n"
+m "abc\n" 0 1
+m "abc\n\n" 0 1
+n "xab"
+m "aab" 0 1
+n "cab\n"
+ms 0 "ab" 0 1
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern \Ab
+features assertions
+n ""
+n "a"
+n "ab"
+n "abc"
+m "b" 0 1
+m "ba" 0 1
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern a\z
+features assertions
+n ""
+m "a" 0 1
+n "ab"
+n "abc"
+n "b"
+m "ba" 1 2
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+# pcre2-only
+pattern a\Z
+features assertions
+n ""
+m "a" 0 1
+n "ab"
+n "abc"
+n "b"
+m "ba" 1 2
+n "ab\n"
+m "a\n" 0 1
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern \Aab\z
+features assertions
+n ""
+n "a"
+m "ab" 0 2
+n "abc"
+n "b"
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+# pcre2-only
+pattern \Aab\Z
+features assertions
+n ""
+n "a"
+m "ab" 0 2
+n "abc"
+n "b"
+n "ba"
+m "ab\n" 0 2
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern \A(?:ab|a)\z
+features assertions
+n ""
+m "a" 0 1
+m "ab" 0 2
+n "abc"
+n "b"
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ms 0 "ab" 0 2
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+# both, in sequence: `\Z\z` is `\z` (the stronger one wins)
+# pcre2-only
+pattern a\Z\z
+features assertions
+n ""
+m "a" 0 1
+n "ab"
+n "abc"
+n "b"
+m "ba" 1 2
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+
+# ======================================================================
+# QUANTIFIER INTERACTIONS — the `endvar` view has to survive greedy
+# retreat, and `a*\Z` on "aaa\n" is where python and PCRE2 report
+# DIFFERENT SPANS rather than different verdicts.
+# ======================================================================
+
+pattern a*\z
+features assertions
+m "" 0 0
+m "a" 0 1
+m "ab" 2 2
+m "abc" 3 3
+m "b" 1 1
+m "ba" 1 2
+m "ab\n" 3 3
+m "a\n" 2 2
+m "\n" 1 1
+m "\n\n" 2 2
+m "abc\n" 4 4
+m "abc\n\n" 5 5
+m "xab" 3 3
+m "aab" 3 3
+m "cab\n" 4 4
+m "aaa\n" 4 4
+m "aaa" 0 3
+ms 0 "ab" 2 2
+ms 1 "ab" 2 2
+ms 1 "aab" 3 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 3 3
+ms 2 "ab\n" 3 3
+ms 3 "ab\n" 3 3
+
+# pcre2-only
+pattern a*\Z
+features assertions
+m "" 0 0
+m "a" 0 1
+m "ab" 2 2
+m "abc" 3 3
+m "b" 1 1
+m "ba" 1 2
+m "ab\n" 2 2
+m "a\n" 0 1
+m "\n" 0 0
+m "\n\n" 1 1
+m "abc\n" 3 3
+m "abc\n\n" 4 4
+m "xab" 3 3
+m "aab" 3 3
+m "cab\n" 3 3
+m "aaa\n" 0 3
+m "aaa" 0 3
+ms 0 "ab" 2 2
+ms 1 "ab" 2 2
+ms 1 "aab" 3 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 2 2
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+
+pattern a*$
+features assertions
+m "" 0 0
+m "a" 0 1
+m "ab" 2 2
+m "abc" 3 3
+m "b" 1 1
+m "ba" 1 2
+m "ab\n" 2 2
+m "a\n" 0 1
+m "\n" 0 0
+m "\n\n" 1 1
+m "abc\n" 3 3
+m "abc\n\n" 4 4
+m "xab" 3 3
+m "aab" 3 3
+m "cab\n" 3 3
+m "aaa\n" 0 3
+m "aaa" 0 3
+ms 0 "ab" 2 2
+ms 1 "ab" 2 2
+ms 1 "aab" 3 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 2 2
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+
+pattern \Aa*\z
+features assertions
+m "" 0 0
+m "a" 0 1
+n "ab"
+n "abc"
+n "b"
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+n "aaa\n"
+m "aaa" 0 3
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+pattern .*\z
+features assertions
+m "" 0 0
+m "a" 0 1
+m "ab" 0 2
+m "abc" 0 3
+m "b" 0 1
+m "ba" 0 2
+m "ab\n" 3 3
+m "a\n" 2 2
+m "\n" 1 1
+m "\n\n" 2 2
+m "abc\n" 4 4
+m "abc\n\n" 5 5
+m "xab" 0 3
+m "aab" 0 3
+m "cab\n" 4 4
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 1 "aab" 1 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 3 3
+ms 2 "ab\n" 3 3
+ms 3 "ab\n" 3 3
+
+# pcre2-only
+pattern .*\Z
+features assertions
+m "" 0 0
+m "a" 0 1
+m "ab" 0 2
+m "abc" 0 3
+m "b" 0 1
+m "ba" 0 2
+m "ab\n" 0 2
+m "a\n" 0 1
+m "\n" 0 0
+m "\n\n" 1 1
+m "abc\n" 0 3
+m "abc\n\n" 4 4
+m "xab" 0 3
+m "aab" 0 3
+m "cab\n" 0 3
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 1 "aab" 1 3
+ms 2 "ab" 2 2
+ms 1 "ab\n" 1 2
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+
+pattern [^c]{1,3}\z
+features assertions
+n ""
+m "a" 0 1
+m "ab" 0 2
+n "abc"
+m "b" 0 1
+m "ba" 0 2
+m "ab\n" 0 3
+m "a\n" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+m "abc\n" 3 4
+m "abc\n\n" 3 5
+m "xab" 0 3
+m "aab" 0 3
+m "cab\n" 1 4
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 1 "aab" 1 3
+ns 2 "ab"
+ms 1 "ab\n" 1 3
+ms 2 "ab\n" 2 3
+ns 3 "ab\n"
+
+# pcre2-only
+pattern [^c]{1,3}\Z
+features assertions
+n ""
+m "a" 0 1
+m "ab" 0 2
+n "abc"
+m "b" 0 1
+m "ba" 0 2
+m "ab\n" 0 3
+m "a\n" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+m "abc\n" 3 4
+m "abc\n\n" 3 5
+m "xab" 0 3
+m "aab" 0 3
+m "cab\n" 1 4
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 1 "aab" 1 3
+ns 2 "ab"
+ms 1 "ab\n" 1 3
+ms 2 "ab\n" 2 3
+ns 3 "ab\n"
+
+
+# ======================================================================
+# ALTERNATION AND GROUPING. `(\z)*` and `(\A)*` compile in PCRE2 while a
+# BARE `\z*` is error 109 — measured, and the perr blocks at the end of
+# this file are the other half of that pair.
+# ======================================================================
+
+pattern (\z)*
+features assertions
+m "" 0 0
+m "a" 0 0
+m "ab" 0 0
+m "abc" 0 0
+m "b" 0 0
+m "ba" 0 0
+m "ab\n" 0 0
+m "a\n" 0 0
+m "\n" 0 0
+m "\n\n" 0 0
+m "abc\n" 0 0
+m "abc\n\n" 0 0
+m "xab" 0 0
+m "aab" 0 0
+m "cab\n" 0 0
+ms 0 "ab" 0 0
+ms 1 "ab" 1 1
+ms 1 "aab" 1 1
+ms 2 "ab" 2 2
+ms 1 "ab\n" 1 1
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+
+pattern (\A)*
+features assertions
+m "" 0 0
+m "a" 0 0
+m "ab" 0 0
+m "abc" 0 0
+m "b" 0 0
+m "ba" 0 0
+m "ab\n" 0 0
+m "a\n" 0 0
+m "\n" 0 0
+m "\n\n" 0 0
+m "abc\n" 0 0
+m "abc\n\n" 0 0
+m "xab" 0 0
+m "aab" 0 0
+m "cab\n" 0 0
+ms 0 "ab" 0 0
+ms 1 "ab" 1 1
+ms 1 "aab" 1 1
+ms 2 "ab" 2 2
+ms 1 "ab\n" 1 1
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+
+# pcre2-only
+pattern ab\z|b\Z
+features assertions
+n ""
+n "a"
+m "ab" 0 2
+n "abc"
+m "b" 0 1
+n "ba"
+m "ab\n" 1 2
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+m "xab" 1 3
+m "aab" 1 3
+m "cab\n" 2 3
+ms 0 "ab" 0 2
+ms 1 "ab" 1 2
+ms 1 "aab" 1 3
+ns 2 "ab"
+ms 1 "ab\n" 1 2
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+# an assertion followed by a byte: unsatisfiable except before a final \n
+# pcre2-only
+pattern \Zx
+features assertions
+n ""
+n "a"
+n "ab"
+n "abc"
+n "b"
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+# `\z` followed by a byte: unsatisfiable, full stop
+pattern \zx
+features assertions
+n ""
+n "a"
+n "ab"
+n "abc"
+n "b"
+n "ba"
+n "ab\n"
+n "a\n"
+n "\n"
+n "\n\n"
+n "abc\n"
+n "abc\n\n"
+n "xab"
+n "aab"
+n "cab\n"
+ns 0 "ab"
+ns 1 "ab"
+ns 1 "aab"
+ns 2 "ab"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+
+
+# ======================================================================
+# SYNTAX REFUSALS, with the module ENABLED — so each of these is the real
+# construct-level refusal, not the module gate answering. (The gate-CLOSED
+# refusals for all eight constructs are pinned in tests/reject/.)
+#
+# A bare quantified anchor is PCRE2 error 109 and a GROUPED one compiles;
+# both halves are measured against libpcre2 10.46 and both are here,
+# because a rule tested in only one direction is not tested.
+# ======================================================================
+
+pattern \A*
+features assertions
+perr
+
+pattern \A+
+features assertions
+perr
+
+pattern \A?
+features assertions
+perr
+
+pattern \A{2}
+features assertions
+perr
+
+pattern \z*
+features assertions
+perr
+
+pattern \z+
+features assertions
+perr
+
+pattern \z?
+features assertions
+perr
+
+pattern \z{2}
+features assertions
+perr
+
+pattern \Z*
+features assertions
+perr
+
+pattern \Z+
+features assertions
+perr
+
+pattern \Z?
+features assertions
+perr
+
+pattern \Z{2}
+features assertions
+perr
+
+pattern a\z*
+features assertions
+perr
+
+pattern a\Z*
+features assertions
+perr
+
+pattern a\A*
+features assertions
+perr
+
+# In a class these are not constructs at all — PCRE2 error 107, and no
+# module will ever implement them there (RF_CLASS_INVALID).
+pattern [\A]
+features assertions
+perr
+
+pattern [\z]
+features assertions
+perr
+
+pattern [\Z]
+features assertions
+perr
+
+pattern [a\A]
+features assertions
+perr
+
+pattern [\A-z]
+features assertions
+perr
+
+
+# ======================================================================
+# ENG_ATTEMPT — the OTHER emitter. A `\z` reaches src/gen/emit_dfa.c's
+# computed-goto engine only when the pattern also carries a `^`/`\A`, and
+# that engine spells the three views INLINE per state rather than through
+# view tables, so it is a second implementation of the same rule and needs
+# its own cells. The first two blocks are the case where ONE STATE has
+# BOTH a distinct EOL view and a distinct END view — the nested arm — which
+# no simpler shape reaches.
+# ======================================================================
+
+# pcre2-only
+pattern \Aa*(?:\Zb|\zc)
+features assertions
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "b"
+n "ab"
+n "ac"
+n "abc"
+n "a\n"
+n "aa\n"
+n "\n"
+n "aaa\n"
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ns 0 "aa"
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+# pcre2-only
+pattern \A(?:x*\Zy|x*\zz)
+features assertions
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "b"
+n "ab"
+n "ac"
+n "abc"
+n "a\n"
+n "aa\n"
+n "\n"
+n "aaa\n"
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ns 0 "aa"
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+pattern \Aa\z
+features assertions
+n ""
+m "a" 0 1
+n "aa"
+n "aaa"
+n "b"
+n "ab"
+n "ac"
+n "abc"
+n "a\n"
+n "aa\n"
+n "\n"
+n "aaa\n"
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ns 0 "aa"
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+# pcre2-only
+pattern \Aa\Z
+features assertions
+n ""
+m "a" 0 1
+n "aa"
+n "aaa"
+n "b"
+n "ab"
+n "ac"
+n "abc"
+m "a\n" 0 1
+n "aa\n"
+n "\n"
+n "aaa\n"
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ns 0 "aa"
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+pattern ^a\z
+features assertions
+n ""
+m "a" 0 1
+n "aa"
+n "aaa"
+n "b"
+n "ab"
+n "ac"
+n "abc"
+n "a\n"
+n "aa\n"
+n "\n"
+n "aaa\n"
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ns 0 "aa"
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+# pcre2-only
+pattern ^a*\Z
+features assertions
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+n "b"
+n "ab"
+n "ac"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 0 2
+m "\n" 0 0
+m "aaa\n" 0 3
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ms 0 "aa" 0 2
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+pattern ^[^c]{1,3}\z
+features assertions
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "b" 0 1
+m "ab" 0 2
+n "ac"
+n "abc"
+m "a\n" 0 2
+m "aa\n" 0 3
+m "\n" 0 1
+n "aaa\n"
+m "ab\n" 0 3
+m "x" 0 1
+m "xy" 0 2
+m "xxy" 0 3
+m "xz" 0 2
+m "xx\n" 0 3
+n "xxy\n"
+n "c"
+m "ba" 0 2
+ms 0 "aa" 0 2
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+pattern ^a*\z
+features assertions
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+n "b"
+n "ab"
+n "ac"
+n "abc"
+n "a\n"
+n "aa\n"
+n "\n"
+n "aaa\n"
+n "ab\n"
+n "x"
+n "xy"
+n "xxy"
+n "xz"
+n "xx\n"
+n "xxy\n"
+n "c"
+n "ba"
+ms 0 "aa" 0 2
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+
+# pcre2-only
+pattern \A[^c]{1,3}\Z
+features assertions
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "b" 0 1
+m "ab" 0 2
+n "ac"
+n "abc"
+m "a\n" 0 2
+m "aa\n" 0 3
+m "\n" 0 1
+m "aaa\n" 0 3
+m "ab\n" 0 3
+m "x" 0 1
+m "xy" 0 2
+m "xxy" 0 3
+m "xz" 0 2
+m "xx\n" 0 3
+m "xxy\n" 0 3
+n "c"
+m "ba" 0 2
+ms 0 "aa" 0 2
+ns 1 "aa"
+ns 1 "a\n"
+ns 2 "a\n"
+

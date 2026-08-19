@@ -380,6 +380,7 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     case A_EMPTY:
     case A_BOL:
     case A_EOL:
+    case A_END:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);
