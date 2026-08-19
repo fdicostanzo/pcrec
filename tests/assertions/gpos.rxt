@@ -1,0 +1,519 @@
+# tests/assertions/gpos.rxt — module `assertions`, [M6.2] WAVE D: `\G`,
+# the FIRST MATCHING POSITION.
+#
+# THE ORACLE RULE FOR THIS FILE IS THE STRONGEST IN THE DIRECTORY, and it is
+# not a preference: **python3 `re` HAS NO `\G` AT ALL.** There is no escape,
+# no flag and no rewriting that expresses it — `re.compile(r"\G")` raises
+# `error: bad escape \G`. So this whole file is `# pcre2-only`, wholesale
+# and per block, and rides tests/assertions/verify_pcre2.py against libpcre2.
+# This is the third place in the module where the base-tier oracle cannot
+# answer, after `\Z` (wave A, where python answers WRONGLY) and `(?m)^`
+# (wave C, where it answers differently). `\K` will be the fourth.
+# (docs/dev/upstream_issues.md U11c.)
+#
+# THE `ms`/`ns` CELLS ARE THE POINT OF THE FILE, more sharply than they are
+# even in wordb.rxt. `\G` is TRUE IFF `pos == startpos`, so at the default
+# `startpos == 0` it is indistinguishable from `\A` on every subject — a
+# corpus written entirely at offset 0 would go green on a compiler that
+# lowered `\G` to `A_BOL` and never noticed. Every block below therefore
+# sweeps startpos across the whole subject, and the `\A` vs `\G` pair near
+# the end is the explicit control.
+#
+# WHAT `\G` MEANS UNDER THE FIND-ALL LOOP is not expressible here and is not
+# missing: `docs/spec/match_api.md` §3.1's loop passes its resume position as
+# `startpos`, which makes `\G` "contiguous with the previous match" — PCRE2's
+# global-iteration semantics. That is tests/assertions/run_gstart_diff.sh's
+# section 1, because a `.rxt` block drives ONE search.
+#
+# EVERY EXPECTATION BELOW WAS PRODUCED BY libpcre2 10.46 (through
+# tests/fuzz/pcre2_oracle, options = 0) rather than written by hand.
+
+
+# ======================================================================
+# 1. `\G` BARE. Zero-width, and true at exactly one position per search —
+# whichever one the caller named. The diagonal `(sp, sp)` running down each
+# block is `\G`'s whole definition rendered as cells.
+# ======================================================================
+
+# pcre2-only
+pattern \G
+features assertions
+m "" 0 0
+m "a" 0 0
+ms 1 "a" 1 1
+m "ab" 0 0
+ms 1 "ab" 1 1
+ms 2 "ab" 2 2
+m "abc" 0 0
+ms 1 "abc" 1 1
+ms 2 "abc" 2 2
+ms 3 "abc" 3 3
+m "a\nb" 0 0
+ms 1 "a\nb" 1 1
+ms 2 "a\nb" 2 2
+ms 3 "a\nb" 3 3
+
+
+# ======================================================================
+# 2. LEADING `\G` — the fully-anchored family, `start_max = startpos`
+# (assertions_design.md §4.1). One attempt, at exactly the named position.
+# `\Gfoo` on "xfoo bar" is the section's spine: it matches at startpos 1
+# and NOWHERE else, where the same pattern without `\G` matches at 1 from
+# every startpos <= 1.
+# ======================================================================
+
+# pcre2-only
+pattern \Gfoo
+features assertions
+n "xfoo bar"
+ms 1 "xfoo bar" 1 4
+ns 2 "xfoo bar"
+ns 3 "xfoo bar"
+ns 4 "xfoo bar"
+ns 5 "xfoo bar"
+ns 6 "xfoo bar"
+ns 7 "xfoo bar"
+ns 8 "xfoo bar"
+m "foo" 0 3
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+n "ffoo"
+ms 1 "ffoo" 1 4
+ns 2 "ffoo"
+ns 3 "ffoo"
+ns 4 "ffoo"
+
+# THE CONTROL for the block above: the same pattern with no `\G`.
+# Every difference between the two blocks IS `\G`.
+# pcre2-only
+pattern foo
+features assertions
+m "xfoo bar" 1 4
+ms 1 "xfoo bar" 1 4
+ns 2 "xfoo bar"
+ns 3 "xfoo bar"
+ns 4 "xfoo bar"
+ns 5 "xfoo bar"
+ns 6 "xfoo bar"
+ns 7 "xfoo bar"
+ns 8 "xfoo bar"
+
+# pcre2-only
+pattern \Gx
+features assertions
+m "xfoo bar" 0 1
+ns 1 "xfoo bar"
+ns 2 "xfoo bar"
+ns 3 "xfoo bar"
+ns 4 "xfoo bar"
+ns 5 "xfoo bar"
+ns 6 "xfoo bar"
+ns 7 "xfoo bar"
+ns 8 "xfoo bar"
+m "xx" 0 1
+ms 1 "xx" 1 2
+ns 2 "xx"
+
+# The tokenizing shape. Under §3.1's find-all loop this reports only
+# CONTIGUOUS runs and stops at the first gap — run_gstart_diff.sh §1.
+# pcre2-only
+pattern \G\w+
+features assertions,classes
+m "xfoo bar" 0 4
+ms 1 "xfoo bar" 1 4
+ms 2 "xfoo bar" 2 4
+ms 3 "xfoo bar" 3 4
+ns 4 "xfoo bar"
+ms 5 "xfoo bar" 5 8
+ms 6 "xfoo bar" 6 8
+ms 7 "xfoo bar" 7 8
+ns 8 "xfoo bar"
+m "ab cd" 0 2
+ms 1 "ab cd" 1 2
+ns 2 "ab cd"
+ms 3 "ab cd" 3 5
+ms 4 "ab cd" 4 5
+ns 5 "ab cd"
+
+# pcre2-only
+pattern \G[0-9]{2}
+features assertions
+m "12 34" 0 2
+ns 1 "12 34"
+ns 2 "12 34"
+ms 3 "12 34" 3 5
+ns 4 "12 34"
+ns 5 "12 34"
+m "1234" 0 2
+ms 1 "1234" 1 3
+ms 2 "1234" 2 4
+ns 3 "1234"
+ns 4 "1234"
+
+# FULLY-`\G` THROUGH AN ALTERNATION: both branches carry it, so the
+# pattern is still start_max = startpos. This is the shape
+# run_gstart_diff.sh §3 asserts the two ENTRIES agree on.
+# pcre2-only
+pattern \Gabc|\Gxy
+features assertions
+m "abcxy" 0 3
+ns 1 "abcxy"
+ns 2 "abcxy"
+ms 3 "abcxy" 3 5
+ns 4 "abcxy"
+ns 5 "abcxy"
+m "xyabc" 0 2
+ns 1 "xyabc"
+ms 2 "xyabc" 2 5
+ns 3 "xyabc"
+ns 4 "xyabc"
+ns 5 "xyabc"
+
+
+# ======================================================================
+# 3. PARTIAL `\G` — `\G` in only SOME branches (assertions_design.md
+# §4.2). The pattern is NOT anchored: the `\G`-free branch must still be
+# searched for, so `start_max` stays `n` and the start dispatch is three-way.
+#
+# `\Gfoo|bar` on "xfoo bar" is the cell that separates the three start
+# states: at startpos 1 it reports (1,4) — the `\G` branch at the named
+# position — and at every other startpos it reports (5,8), the `bar` branch
+# found by a later attempt where `\G` is false.
+# ======================================================================
+
+# pcre2-only
+pattern \Gfoo|bar
+features assertions
+m "xfoo bar" 5 8
+ms 1 "xfoo bar" 1 4
+ms 2 "xfoo bar" 5 8
+ms 3 "xfoo bar" 5 8
+ms 4 "xfoo bar" 5 8
+ms 5 "xfoo bar" 5 8
+ns 6 "xfoo bar"
+ns 7 "xfoo bar"
+ns 8 "xfoo bar"
+m "barfoo" 0 3
+ns 1 "barfoo"
+ns 2 "barfoo"
+ms 3 "barfoo" 3 6
+ns 4 "barfoo"
+ns 5 "barfoo"
+ns 6 "barfoo"
+
+# pcre2-only
+pattern \Ga|b
+features assertions
+m "ba" 0 1
+ms 1 "ba" 1 2
+ns 2 "ba"
+m "ab" 0 1
+ms 1 "ab" 1 2
+ns 2 "ab"
+m "xb" 1 2
+ms 1 "xb" 1 2
+ns 2 "xb"
+
+# pcre2-only
+pattern x|\Gy
+features assertions
+m "yx" 0 1
+ms 1 "yx" 1 2
+ns 2 "yx"
+m "xy" 0 1
+ms 1 "xy" 1 2
+ns 2 "xy"
+
+
+# ======================================================================
+# 4. MID-PATTERN `\G` — the IMPOSSIBLE SHAPE, pinned. `a\Gb` can never
+# match: after consuming `a` the position is strictly greater than
+# `startpos`, so `\G` is false at every position the branch can reach.
+# It falls out of the subset construction with no special case
+# (§4.2's last paragraph — the worklist closes every successor with the
+# `\G` bit clear), and the shape is pinned for wave A's `\zx` reason: an
+# impossible shape that quietly starts matching is a miscompile no
+# positive cell can see.
+#
+# **`a\Gb` AND `x\G` THEMSELVES ARE ABSENT FROM THIS FILE, BY NAME, AND
+# THEY ARE THIS WAVE'S TWO K28 SPELLINGS.** Each compiles to a single dead
+# state, and an anchored pattern whose DFA is one dead state emits C that
+# fails the harness's own default GENCFLAGS: gcc at `-O1` reports the
+# `<prefix>_match` wrapper's local `caps` as maybe-uninitialized on a read
+# the wrapper's own `found != 1` test makes unreachable
+# (docs/dev/known_issues.md K28, base-tier reproducer `^a^b`, measured
+# `-O1`-ONLY — `-O0`/`-O2`/`-O3`/`-Os` are all clean). Their ANSWERS are
+# correct; the artifact is not warnings-clean. wordb.rxt excludes three
+# `\b`/`\B` shapes for this and multiline.rxt excludes `a(?m)^b`; K28's own
+# entry predicts the exclusion list growing once per wave that lands a
+# start-state assertion, and this is that prediction coming true a third
+# time. The live equivalents below carry the same impossibility on a
+# sibling branch that keeps the automaton alive, and the bare `a\Gb` cells
+# are asserted instead by tests/assertions/run_gstart_diff.sh §4, which
+# compiles its own subjects and is not bound to `-O1`.
+# ======================================================================
+
+# The impossible branch beside a live one: the live branch must still
+# match, i.e. the dead branch must die without taking anything with it.
+# pcre2-only
+pattern ab|a\Gb
+features assertions
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "aab" 1 3
+ms 1 "aab" 1 3
+ns 2 "aab"
+ns 3 "aab"
+n "ba"
+ns 1 "ba"
+ns 2 "ba"
+
+# The same with the live branch SECOND, so branch ORDER cannot be what
+# is carrying the result.
+# pcre2-only
+pattern a\Gb|c
+features assertions
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+m "ac" 1 2
+ms 1 "ac" 1 2
+ns 2 "ac"
+m "ca" 0 1
+ns 1 "ca"
+ns 2 "ca"
+n "aab"
+ns 1 "aab"
+ns 2 "aab"
+ns 3 "aab"
+
+# The impossible branch beside a LIVE `\G` branch — the pair that
+# shares the `\G` bit. A bit that survived a consumed byte would show
+# up here as `a\Gb` matching, not as the `\Gz` branch failing.
+# pcre2-only
+pattern a\Gb|\Gz
+features assertions
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+m "za" 0 1
+ns 1 "za"
+ns 2 "za"
+n "az"
+ms 1 "az" 1 2
+ns 2 "az"
+
+# TRAILING `\G` after a consuming atom — the same impossibility with
+# nothing after it to hide behind, carried on a live sibling.
+# pcre2-only
+pattern x\G|y
+features assertions
+n "x"
+ns 1 "x"
+m "xy" 1 2
+ms 1 "xy" 1 2
+ns 2 "xy"
+m "yx" 0 1
+ns 1 "yx"
+ns 2 "yx"
+
+
+# ======================================================================
+# 5. `\G` COMPOSED WITH THE MODULE'S OTHER CONSTRUCTS. `\A` vs `\G` is
+# the control the whole file exists for: they agree on every cell at
+# startpos 0 and disagree at every startpos > 0, which is exactly the
+# distinction a `\G`-lowered-to-A_BOL compiler erases.
+# ======================================================================
+
+# `\A` — absolute offset 0. Compare cell for cell with `\Gx` above.
+# pcre2-only
+pattern \Ax
+features assertions
+m "xy" 0 1
+ns 1 "xy"
+ns 2 "xy"
+n "yx"
+ns 1 "yx"
+ns 2 "yx"
+
+# BOTH: satisfiable only where offset 0 and startpos coincide.
+# pcre2-only
+pattern \A\Gx
+features assertions
+m "xy" 0 1
+ns 1 "xy"
+ns 2 "xy"
+n "yx"
+ns 1 "yx"
+ns 2 "yx"
+
+# `\G` and `\z` together — the empty match at the end, reachable only
+# when the search starts there.
+# pcre2-only
+pattern \G\z
+features assertions
+m "" 0 0
+n "a"
+ms 1 "a" 1 1
+
+# pcre2-only
+pattern \G$
+features assertions
+m "" 0 0
+n "a"
+ms 1 "a" 1 1
+n "a\n"
+ms 1 "a\n" 1 1
+ms 2 "a\n" 2 2
+
+# `\G` WITH `\b`, and this is the shape that needs a `gseed[]` TABLE
+# rather than a constant: the `\G`-free interior has one live state
+# (the `bar` branch reads no left byte) while the `\G` interior has
+# three (the `\b` is live there). A single seed flag would emit a
+# constant where the table belongs.
+# pcre2-only
+pattern \G\bfoo|bar
+features assertions
+m "xfoo bar" 5 8
+ms 1 "xfoo bar" 5 8
+ms 2 "xfoo bar" 5 8
+ms 3 "xfoo bar" 5 8
+ms 4 "xfoo bar" 5 8
+ms 5 "xfoo bar" 5 8
+ns 6 "xfoo bar"
+ns 7 "xfoo bar"
+ns 8 "xfoo bar"
+m " foo bar" 5 8
+ms 1 " foo bar" 1 4
+ms 2 " foo bar" 5 8
+ms 3 " foo bar" 5 8
+ms 4 " foo bar" 5 8
+ms 5 " foo bar" 5 8
+ns 6 " foo bar"
+ns 7 " foo bar"
+ns 8 " foo bar"
+
+# `\G` WITH `(?m)^`, and this is the D63 PREFILTER cell. The
+# candidate-start derivation reads the `\G`-FREE interior seeds, so
+# its memchr('\n') skip is valid for `start > startpos` and NOT for
+# `start == startpos`, where the `\G` family is entered instead. The
+# shipped bound is `start > startpos`; wave C's `start > 0` loses the
+# (1,2) cell below outright. Sabotage S82.
+# pcre2-only
+pattern (?m)^a|\Gb
+features assertions,modifiers
+n "xb"
+ms 1 "xb" 1 2
+ns 2 "xb"
+m "a\nab" 0 1
+ms 1 "a\nab" 2 3
+ms 2 "a\nab" 2 3
+ms 3 "a\nab" 3 4
+ns 4 "a\nab"
+m "\nab" 1 2
+ms 1 "\nab" 1 2
+ms 2 "\nab" 2 3
+ns 3 "\nab"
+
+# The same pair the other way round.
+# pcre2-only
+pattern \Ga|(?m)^b
+features assertions,modifiers
+n "xb"
+ns 1 "xb"
+ns 2 "xb"
+m "a\nb" 0 1
+ms 1 "a\nb" 2 3
+ms 2 "a\nb" 2 3
+ns 3 "a\nb"
+
+
+# ======================================================================
+# 6. GROUPED AND QUANTIFIED. `\G*` is PCRE2 error 109 and `(\G)*`
+# compiles — `\A`/`\z`/`\b`'s measured shape exactly, which is why
+# A_GSTART joins parse.c's existing rejection and group-wrap sites rather
+# than earning a rule of its own. Both directions are here, because a rule
+# tested in one direction is not tested.
+# ======================================================================
+
+# pcre2-only
+pattern (\G)*
+features assertions
+m "ab" 0 0
+ms 1 "ab" 1 1
+ms 2 "ab" 2 2
+
+# pcre2-only
+pattern (?:\G)a
+features assertions
+m "ab" 0 1
+ns 1 "ab"
+ns 2 "ab"
+n "ba"
+ms 1 "ba" 1 2
+ns 2 "ba"
+
+# pcre2-only
+pattern (?:\Gab)+
+features assertions
+m "abab" 0 2
+ns 1 "abab"
+ms 2 "abab" 2 4
+ns 3 "abab"
+ns 4 "abab"
+n "xabab"
+ms 1 "xabab" 1 3
+ns 2 "xabab"
+ms 3 "xabab" 3 5
+ns 4 "xabab"
+ns 5 "xabab"
+
+# pcre2-only
+pattern \G(a|b)c
+features assertions
+m "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+m "bc" 0 2
+ns 1 "bc"
+ns 2 "bc"
+n "xac"
+ms 1 "xac" 1 3
+ns 2 "xac"
+ns 3 "xac"
+
+# The syntax refusals, with the module ENABLED — so these pin the GRAMMAR
+# and not the gate. (Their gate-closed twin lives in tests/reject/.)
+
+# pcre2-only
+pattern \G*
+features assertions
+perr
+
+# pcre2-only
+pattern \G+
+features assertions
+perr
+
+# pcre2-only
+pattern \G?
+features assertions
+perr
+
+# pcre2-only
+pattern \G{2}
+features assertions
+perr
+
+# pcre2-only
+pattern a\G*
+features assertions
+perr
+
+# pcre2-only
+pattern [\G]
+features assertions
+perr
+
