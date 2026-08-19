@@ -99,6 +99,23 @@ static void rd_shape(Shape *S, const Ast *a)
          * interesting decline in the file: a `\G` inside a quantifier body
          * can be true at most once per search by definition. */
         case A_WORDB: case A_NWORDB: case A_GSTART:
+        /* [M6.2 wave E] `\K` declines too, and it is the ONLY member of this
+         * list whose decline is a CORRECTNESS requirement rather than a
+         * missed optimisation.
+         *
+         * This rung suppresses the per-iteration capture writes (emit_vm.c's
+         * `v->nocap`) and RECOVERS the values afterwards by walking backwards
+         * over the iteration BOUNDARIES — §3.4's derivation, which knows
+         * where a group opened relative to the start of an iteration. `\K`
+         * has no such derivation: its position is wherever the winning path
+         * crossed it, which is not a function of the boundary lattice. A
+         * suppressed `\K` write is therefore a write that is never recovered,
+         * and the artifact would report the wrong start silently.
+         *
+         * Declining here is what makes that unreachable rather than
+         * unlikely: rd_reverse and rd_alt_disjoint below both run only on a
+         * body this scan approved. */
+        case A_KRESET:
             S->ok = false;
             return;
         case A_CAP:
@@ -172,6 +189,27 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * because it is an absolute-position assertion, N_BOT's own reason. */
     case A_WORDB: case A_NWORDB: case A_GSTART:
         return rd_node(cx, a);
+
+    /* [M6.2 wave E] `\K` IS NOT REVERSAL-INVARIANT and must not be given the
+     * arm above, which is why it gets an error instead of a copy.
+     *
+     * The seven kinds above survive reversal because each is a PREDICATE:
+     * an absolute-position test means the same thing whichever way the
+     * machine walks, and a word boundary's predicate is symmetric in the two
+     * bytes it reads. `\K` is not a predicate — it records a position — so
+     * mirroring the body would have to mirror where it records, and this
+     * function has no notion of that.
+     *
+     * It is unreachable: rd_shape declines every body carrying one, and this
+     * runs only on a body rd_shape approved. Reaching it means that decline
+     * was removed, which is a change that MUST be noticed. The fallthrough at
+     * the bottom of this function would have copied the node and produced a
+     * plausible reversed body that reports the wrong start — the silent
+     * outcome this arm exists to replace with a loud one (src/ir/nfa.c's
+     * A_CAP arm is the same call). */
+    case A_KRESET:
+        ctx_fail(cx, 0, "internal error: \\K reached the reverse-deterministic "
+                        "body reversal, which its shape scan must decline");
 
     case A_CAP: case A_REP: {
         Ast *n = rd_node(cx, a);
@@ -284,6 +322,14 @@ static bool rd_alt_disjoint(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART:
             return true;
+        /* [M6.2 wave E] `\K` DECLINES rather than joining the row above.
+         * Unreachable (rd_shape rejects the body long before this runs), and
+         * `false` is the sound direction here in the way `true` is not: a
+         * decline keeps the quantifier's machinery, which is always correct,
+         * where an approval would hand the emitter a rung whose backward walk
+         * has no way to reproduce a `\K` write. */
+        case A_KRESET:
+            return false;
         case A_CAP: case A_REP:
             a = a->l;
             continue;
@@ -355,7 +401,10 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
 {
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB: case A_GSTART:
+    /* [M6.2 wave E] `\K` joins them here with no caveat: this walk only
+     * HUNTS for A_REP nodes to offer the rung to, and a leaf of any kind
+     * hosts none. The verdict about `\K` is rd_shape's, one level down. */
+    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP:
         rd_walk(R, a->l, in_rep);

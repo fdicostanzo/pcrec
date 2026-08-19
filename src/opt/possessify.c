@@ -170,6 +170,27 @@ static First first_of(const Ast *a)
         return r;
     }
     case A_EMPTY:
+    /* [M6.2 wave E] `\K` takes A_EMPTY's arm, and it is the ONE arm in this
+     * switch that needs no closure argument at all.
+     *
+     * Every other zero-width kind here had to be classified by WHICH WAY its
+     * satisfying set is closed, because each of them can FAIL and the whole
+     * question is whether a retreat can turn a failure into a success. `\K`
+     * cannot fail. It is an epsilon in the NFA (src/ir/nfa.c), so it is
+     * absent from the language this analysis reasons about, and "modelled as
+     * absent" is not an approximation here — it is the fact.
+     *
+     * WHAT THIS DOES NOT SAY, spelled out because it is the tempting wrong
+     * worry: possessifying a loop that CONTAINS a `\K` is also safe, and not
+     * because `\K` is invisible. The cut discards retreat frames only after
+     * the loop has exited at its chosen count, and a trial iteration that
+     * failed has already had its `\K` write rewound by the fail label's trail
+     * rewind. So the writes that survive a cut are exactly the winning path's,
+     * which is what PCRE2 reports. `(?:a\K)*ab` on "aaab" is the cell that
+     * would expose an error here, and possessification DECLINES it anyway
+     * (body and follow both start with `a`), which is why the corpus carries
+     * both it and a shape that does possessify. */
+    case A_KRESET:
         return fst_empty(true);
 
     case A_BOL: {
@@ -420,6 +441,11 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_WORDB:
     case A_NWORDB:
     case A_GSTART:
+    /* [M6.2 wave E] `\K` too, and here it is the LITERAL truth rather than
+     * a modelling choice: this walk asks whether the body admits a unique
+     * iteration, which is a question about the language, and `\K` lowers to
+     * an epsilon. */
+    case A_KRESET:
         /* Zero-width: contributes no position and does not change
          * nullability, so the sequence rules below leave the surrounding
          * fold untouched — the reference probe's "modelled as absent". */
@@ -621,7 +647,10 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 {
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB: case A_GSTART:
+    /* [M6.2 wave E] `\K` joins them with no caveat: this walk only HUNTS
+     * for A_REP nodes to offer the verdict to, and a leaf hosts none. What
+     * `\K` MEANS to the analysis is `first_of`'s answer, above. */
+    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
 
     case A_CAP:

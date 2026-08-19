@@ -532,6 +532,29 @@ static Frag compile_ast(NB *b, const Ast *a)
      * FORWARD-attempt property) and would need its own answer if the routing
      * ever changed. */
     case A_GSTART: return frag_single(b, N_GSTART);
+    /* [M6.2 wave E] `\K` LOWERS TO NOTHING, and that is the design rather
+     * than a shortcut (assertions_design.md §6.1-§6.3).
+     *
+     * Every other node in this switch contributes something to the LANGUAGE.
+     * `\K` contributes nothing: `a\Kb` and `ab` match exactly the same
+     * strings — what differs is only which offset is REPORTED as the start,
+     * and reporting is not something an NFA does. So the honest lowering is
+     * an epsilon, the same fragment A_EMPTY builds.
+     *
+     * THE CONSEQUENCE IS LOAD-BEARING AND IS WHY THIS ARM IS NOT A CORNER
+     * CASE. A `\K` pattern is VM-forced (src/opt/select_engine.c), so the
+     * only DFA ever built from this node is the hybrid's PREFILTER — and
+     * because this arm erases the node, that prefilter is literally the
+     * machine the `\K`-free pattern builds. Its span start is therefore the
+     * PRE-`\K` start, which is exactly the quantity §6.3 rule 1 says the
+     * prefilter may be used for (bounding the search) and exactly the
+     * quantity it must not be used for (writing `caps[0][0]`). One arm buys
+     * both halves; see `<prefix>_caps_out` in src/gen/emit_vm.c for the
+     * second.
+     *
+     * Reversal is identity for the most trivial reason in the file: there is
+     * nothing to reverse. */
+    case A_KRESET: return frag_single(b, N_EPS);
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */

@@ -387,6 +387,21 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     case A_NWORDB:
     /* [M6.2 wave D] `\G` likewise: zero-width, nothing to merge or factor. */
     case A_GSTART:
+    /* [M6.2 wave E] `\K` likewise AS A LEAF — but it is the first kind here
+     * that could be damaged by the two stages rather than merely unserved by
+     * them, so the reason it is safe is written down instead of assumed.
+     *
+     * Stage 1 merges single-byte BRANCHES into one class; a branch that is or
+     * begins with `\K` is not a single-byte class, so it never enters the
+     * merge. Stage 2 peels a shared leading literal, and `altcls_branch_peel`
+     * requires the flattened branch's FIRST element to be an A_CLASS — an
+     * A_KRESET there stops the peel dead. So `\Kab|\Kac` is left alone
+     * entirely, and `a\Kb|a\Kc` factors only the `a` that precedes both
+     * copies, leaving each `\K` in the branch it was written in and at the
+     * same distance from the branch's start. Neither stage can move a `\K`
+     * across a byte, which is the only rewrite that would change the reported
+     * start. */
+    case A_KRESET:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);

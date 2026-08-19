@@ -126,6 +126,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * therefore today's bytes" true by construction rather than by audit. */
     cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
     cx.first_cap_pos = (size_t)-1;
+    cx.first_kreset_pos = (size_t)-1;
     cx.want_ir = ir_out != NULL;
     /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
      * failed malloc anywhere below is a diagnosed refusal instead of an
@@ -334,6 +335,7 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
      * between the two would be one more way for them to drift apart. */
     cx.want_caps = false;
     cx.first_cap_pos = (size_t)-1;
+    cx.first_kreset_pos = (size_t)-1;
     cx.arena.cx = &cx;   /* [M4.7b/K7] parse OOM diagnoses; see compile_driver */
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");
