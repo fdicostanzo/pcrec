@@ -1297,10 +1297,18 @@ spine, not before):
   (class-valued where class context demands, negatable; sequence-valued
   a compile error in class contexts); (c) scoping matches PCRE2's own
   inline-flag semantics (references AFTER the mutation see the new
-  binding, within the enclosing group); (d) HYGIENE is the design
-  question textual insertion raises — a definition containing a group
-  must not renumber captures, which is an argument for expansion via
-  DD-14's CALL primitive (reference, not copy) over textual splice;
+  binding, within the enclosing group); (d) HYGIENE — RULED BY SCOPING
+  LAW, NOT MECHANISM (Frank, same session): call vs ref is TBD as an
+  implementation choice, because inserted groups arise in REFERENCED rx
+  either way and the law answers both: **groups inside an insert are
+  locally referenceable BY NUMBER only (an insert's \1 is the insert's
+  own first group; outer numbering does not see them), and globally
+  referenceable BY NAME** (a named group in an insert is addressable
+  from anywhere by name). Numbering is scope-local, names are global —
+  which composes with D59/D61's caps-slot architecture (insertions
+  append; primary prefix permanent) and [M6.5]'s dupnames machinery
+  (name-run resolution already answers what a globally-visible inserted
+  name means);
   (e) the U11b measurement obligation binds each binding's VALUE.**
   pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
