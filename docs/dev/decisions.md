@@ -4128,6 +4128,22 @@ test must include the SCOPED cells above, not only the leading-`(?m)`
 shape ruling 5's wording names — that shape is the one the shipped code
 happens to get right.
 
+**RULING-5 ADDENDUM, LANDED NOTE (2026-08-19, thirty-fourth session,
+merge e609a8c).** The cure above is BUILT, per D62's flag ruling (which
+closed the Q8 the paragraph above still calls open): `Ast.multiline` is
+resolved at parse time onto the node, possessify's `first_of` reads the
+node and lost its pass-wide multiline parameter entirely, and §8.6 is
+made STRUCTURAL — `ParseMods` is an incomplete type outside
+`src/parse/`, so a post-parse read of scoped modifier state is a
+compile error, not a discipline rule. Landed in [M6.2] wave A while
+`(?m)` is still refused, provably behavior-preserving (byte-identity
+gate `tests/codegen/run_endvar_identity.sh` + the manager's independent
+pre-wave-compiler diff, 992/992 compiled patterns identical, 0
+status changes). The widened test obligation (scoped cells + the
+permanent flag-reader sabotage, D62 controls 1–2) still lands with the
+multiline wave (wave C), where the flag can be true and those rows can
+go red.
+
 ## D48 — scripts are tested ON CHANGE, not per suite run (Frank, 2026-08-16, twenty-sixth session)
 
 Settles the queued ruling from the twenty-fifth session: does
