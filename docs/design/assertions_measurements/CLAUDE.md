@@ -3,6 +3,12 @@
 The measurements behind `../assertions_design.md` (module `assertions`: `\b`
 `\B`, `\A` `\z` `\Z`, `(?m)` multiline `^`/`$`, `\G`, `\K`).
 
+**[M6.1] BUILT IT AND [M6.2] KEPT ADDING TO IT**, which is why some instruments
+here read a compiler that could not compile the construct they measure and
+others read one that can: waves B, C, D and E each added or extended a probe as
+the construct became real. A reader should check each entry's own tier
+(EXACT/PROTOTYPE/MEASURED) rather than assuming the directory has one.
+
 Kept separate from `../eng_brep_measurements/`, `../possessify_impl/` and their
 siblings for the reason those are separate from each other: never confuse one
 lane's numbers with another's. This lane's distinguishing property is that
@@ -95,6 +101,33 @@ design doc marks every claim accordingly.
   `PCREC_MAX_SUBSET_ELEMS` to the state cap. The genuine regression had to be
   looked for and is one repeat count wide on a linear chain, which is why that
   family is in the probe rather than only in the prose.
+- **`probes/probe_kreset_identity.sh` — MEASURED, and the ONLY instrument in
+  this directory whose reference is a COMMIT rather than a build of this tree.**
+  [M6.2 wave E]'s byte-identity claim: a `\K`-free pattern's emitted C is
+  unchanged by the wave. The four shipped `tests/codegen/run_*_identity.sh`
+  gates build their reference from THIS TREE'S sources with a `-D` knob; wave D
+  MEASURED what that costs (under a sabotage BOTH builds are sabotaged, so an
+  edit outside the knob's gated region CANCELS — S83's first form left the
+  sweep at 1175/1175 identical, and wave B's S71 leaves `run_wordctx_identity`
+  at 1135/1135 to this day). This probe builds the reference from a PINNED
+  PRE-WAVE COMMIT via `git archive`, so it shares no sources with the subject
+  and no edit to the subject can reach it. Strictly stronger, and available
+  here only because wave E's claim is ONE-SHOT — there is no ongoing gate to
+  keep cheap, which is itself the wave's justified deviation from the
+  four-gate precedent (the permanent check is `[M6.2-KRESET rule 1b]`, which
+  pins the pre-wave `caps_out` body as a literal).
+  Two engine modes, and the second is the one that matters: under the default
+  engine most corpus patterns route to the DFA and emit no `caps_out` at all,
+  while `--engine=vm` puts every artifact through the function the wave edits.
+  **Its REFUSAL-MISMATCH column is the positive control** — the reference
+  cannot compile a `\K` pattern at all, so a run reporting zero differing AND
+  zero refusal mismatches has either lost its `\K` population or is comparing
+  two builds of the same tree.
+  Its own first run recorded a defect worth keeping: `set -e` plus
+  `a=$(...); ra=$?` ABORTS on the first refused pattern, because an assignment
+  from a failing command substitution is itself a failing command — and 395 of
+  1369 corpus patterns are refused, so the naive form measured nothing while
+  looking like a probe that had finished.
 - **`probes/archive.sh` — not a probe, the ARCHIVER.** Every file in `out/` is
   written by it, so one provenance header covers them all and a number can be
   traced to a run rather than to a claim. **R30 M7: the archiver is the ONLY

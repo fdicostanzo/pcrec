@@ -1,6 +1,6 @@
 # tests/assertions — module `assertions` ([M6.2])
 
-The module's own corpus and its six non-`.rxt` checks. **ALL FIVE WAVES ARE
+The module's own corpus and its FIVE non-`.rxt` scripts (plus three drivers they compile). **ALL FIVE WAVES ARE
 IN**: `\A`, `\Z`, `\z`, `\b`, `\B`, `(?m)`, `\G` and `\K` are built, which
 is every construct module `assertions` owns
 (`docs/design/assertions_design.md` §10). tests/reject's whole

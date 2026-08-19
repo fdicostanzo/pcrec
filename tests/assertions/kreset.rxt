@@ -934,6 +934,58 @@ ns 5 "xababc"
 ns 6 "xababc"
 
 # ======================================================================
+# 11. THE TRAIL CAPACITY — DEEP quantifiers, and the ONE thing `\K` is not
+# free for.
+#
+# Every other assertion in this module emits a test and costs the capacity
+# analysis nothing. `\K` emits a TRAILED SLOT WRITE, so `vm_cost` must charge
+# one trail entry per emitted `\K`, multiplied by the enclosing quantifier
+# exactly as A_CAP's two writes are. Getting that wrong is not a missed
+# optimisation: `trail_frames` comes out one entry short per `\K` on the
+# deepest path and the artifact returns PCREC_ERR_FRAMES on a pattern it can
+# match.
+#
+# THE SHALLOW CELLS ABOVE CANNOT SEE IT. Measured on a scratch build with the
+# charge removed: `a\Kb` still compiles and still answers, because a
+# one-write pattern fits the capacity anyway; `(?:a\K){0,10}ab` declares 3
+# trail entries instead of 13 and returns `frames` from eleven `a`s onward.
+# So the subjects below are chosen to exceed the count, not to be long — a
+# subject that stops short of the repeat's maximum never fills the trail and
+# these cells would pass against the defect.
+#
+# (Measured under the removed charge: 25 of this file's cases fail, all of
+# them here and in section 4. The corpus catches it; nothing else does.)
+# ======================================================================
+
+# pcre2-only
+pattern (?:a\K){0,10}ab
+features assertions
+m "ab" 0 2
+m "aab" 1 3
+m "aaab" 2 4
+m "aaaaaaaaaaab" 10 12
+m "aaaaaaaaaaaaaaaab" 15 17
+m "aaaaaaaaaaaab" 11 13
+m "aaaaaaaaaaaaaaaaaaaaab" 20 22
+
+# pcre2-only
+pattern (?:a\K){0,10}b
+features assertions
+m "ab" 1 2
+m "aaaaaaaaaaab" 11 12
+m "aaaaaaaaaaaaaaaab" 16 17
+m "b" 0 1
+
+# pcre2-only
+pattern (?:a\Kb){0,8}c
+features assertions
+m "abc" 1 3
+m "ababababababababc" 15 17
+m "c" 0 1
+m "ababababababababababc" 19 21
+
+
+# ======================================================================
 # 10. THE GRAMMAR, WITH THE MODULE ENABLED. `\K` is zero-width and NOT a
 # repeatable item — PCRE2 error 109 — while a GROUPED `\K` compiles, matching
 # `\A`/`\z`/`\b`/`\G` exactly. Both halves are here, because a rule tested in
