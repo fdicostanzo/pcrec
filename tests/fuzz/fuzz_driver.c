@@ -45,10 +45,11 @@
  *                                       pcre2_oracle's own multi-pair output
  *                                       -- see pcre2_oracle.c's header
  *                                       comment). An unset group prints as
- *                                       "-1 -1" (RX_UNSET, both slots).
+ *                                       "-1 -1" (PCREC_UNSET, both slots).
  *   "nomatch"
  * or, on a VM artifact whose step or frame budget ran out before a verdict
- * (RX_ERR_STEPS / RX_ERR_FRAMES — never produced by a DFA-only artifact):
+ * (PCREC_ERR_STEPS / PCREC_ERR_FRAMES, unprefixed since [ABI-NS]/D60 —
+ * never produced by a DFA-only artifact):
  *   "steps"
  *   "frames"
  * and exits 0. Exits 2 on a usage or file I/O error, or if rx_info.ncaps is
@@ -142,9 +143,9 @@ int main(int argc, char **argv)
         printf("\n");
     } else if (found == 0) {
         printf("nomatch\n");
-    } else if (found == RX_ERR_STEPS) {
+    } else if (found == PCREC_ERR_STEPS) {
         printf("steps\n");
-    } else if (found == RX_ERR_FRAMES) {
+    } else if (found == PCREC_ERR_FRAMES) {
         printf("frames\n");
     } else {
         fprintf(stderr, "fuzz_driver: rx_search returned unrecognized %d\n", found);

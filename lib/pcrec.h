@@ -214,10 +214,28 @@ enum {
  * the DFA prefilter (D44/R21 E-6), which is what makes it an independent
  * second derivation of the match span rather than an echo of the DFA's. */
 enum {
-    PCREC_ENGINE_AUTO = 0,
-    PCREC_ENGINE_DFA  = 1,
-    PCREC_ENGINE_VM   = 2
+    PCREC_ENGINE_AUTO = 0
 };
+
+/* [ABI-NS] (D60 addendum, 2026-08-18): PCREC_ENGINE_DFA/PCREC_ENGINE_VM are
+ * `#define`d here, NOT `enum` members like PCREC_ENGINE_AUTO above, and that
+ * is a forced choice, not a style pick. Every generated artifact ALSO emits
+ * `#define PCREC_ENGINE_DFA 1` / `#define PCREC_ENGINE_VM 2` (its
+ * PCREC_RX_ABI_H block, src/gen/emit_dfa.c) naming `rx_info.engine`'s
+ * contract, byte-identical to the two lines below on purpose — an artifact
+ * must stay self-contained (no dependency on pcrec.h, top-level CLAUDE.md),
+ * so it cannot simply reference this header's spelling. A consumer TU that
+ * includes BOTH this header and a generated artifact's header therefore sees
+ * the SAME name declared twice; two identical `#define`s of one name are a
+ * silent no-op redefinition (measured: no diagnostic under
+ * `-Wall -Wextra -Werror`), regardless of which file is included first. An
+ * `enum` member here would NOT be safe the same way: `#define PCREC_ENGINE_DFA
+ * 1` from an artifact's header, included BEFORE this one, textually rewrites
+ * this file's own `PCREC_ENGINE_DFA = 1,` enumerator to `1 = 1,` -- a hard
+ * compile error, verified directly. Keep these two byte-identical to
+ * emit_dfa.c's emission if either side's spelling ever needs to change. */
+#define PCREC_ENGINE_DFA 1
+#define PCREC_ENGINE_VM  2
 
 /* [M4.5b] `step_budget`'s sentinels (engine_m4.md §4.6). The default is a
  * BRING-UP PLACEHOLDER: D12 rules that budgets come from measured medians and

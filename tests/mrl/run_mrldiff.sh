@@ -125,10 +125,13 @@ ok()  { pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 # The artifact's PRUNE stamp, as a yes/no on the CLAMPED bit.
+# [ABI-NS] (D60): PCREC_VM_PRUNE_CLAMPED is a universal, unprefixed
+# constant now (the shared PCREC_RX_ABI_H block) — the OR'd mask
+# ($2_VM_PRUNES) is still per-artifact and stays keyed on <PREFIX>.
 has_clamp() {   # has_clamp <file> <PREFIX>
     local m b
     m="$(sed -n "s/^#define $2_VM_PRUNES 0x\([0-9a-f]*\)u\$/\1/p" "$1")"
-    b="$(sed -n "s/^#define $2_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u\$/\1/p" "$1")"
+    b="$(sed -n 's/^#define PCREC_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u$/\1/p' "$1")"
     [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 

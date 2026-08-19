@@ -631,7 +631,7 @@ if "$PCREC" -p rx -o - -- 'a(b|c)+d' > "$WORKDIR/m44info.c" 2>/dev/null; then
     if [ -z "${ncaps_val:-}" ] || [ -z "${engine_val:-}" ]; then
         bad "[M4.4]: could not extract RX_NCAPS/rx_info.engine from generated output"
     elif [ "$ncaps_val" -gt 1 ] && [ "$engine_val" -ne 2 ]; then
-        bad "[M4.4]: RX_NCAPS ($ncaps_val) > 1 but rx_info.engine ($engine_val) is not ENGM_VM (2) — RX_NCAPS>1 must imply the VM engine (D42.2)"
+        bad "[M4.4]: RX_NCAPS ($ncaps_val) > 1 but rx_info.engine ($engine_val) is not PCREC_ENGINE_VM (2) — RX_NCAPS>1 must imply the VM engine (D42.2)"
     else
         ok "[M4.4/M4.5b]: RX_NCAPS ($ncaps_val) > 1 => VM structural check holds — NON-VACUOUSLY since [M4.5b] (this cell had no population at all while the DFA was the only emitter; tests/codegen/run_vm_identity.sh runs it over the whole corpus)"
     fi
@@ -777,6 +777,73 @@ if [ "$abi_ok" -eq 1 ]; then
     else
         ok "[M4.4/D44/A-2]: the PCREC_RX_ABI_H block is byte-identical across four prefixes (md5 $abi_md5) while the surrounding artifacts differ"
     fi
+fi
+
+# ---- [ABI-NS] universal constants unified under PCREC_*, no per-prefix alias
+# D60 + addendum (docs/dev/decisions.md): the give-up code space
+# (PCREC_ERR_STEPS/_FRAMES/_WORK/_FLOOR), PCREC_UNSET, the two new engine
+# constants (PCREC_ENGINE_DFA/_VM, naming rx_info.engine's formerly
+# number-only contract) and the nine D46 stamp bit VALUES
+# (PCREC_VM_RUNG_*/PCREC_VM_STRAT_*/PCREC_VM_PRUNE_*) moved from PER-PREFIX
+# spellings (<PREFIX>_ERR_STEPS etc.) into the shared PCREC_RX_ABI_H block,
+# emitted ONCE and unprefixed. The deletion of the old spellings is the
+# point of the change, not a side effect, so it is pinned directly: a future
+# edit that re-introduces an aliased <PREFIX>_ERR_STEPS (say, for
+# "backward compatibility") must fail here even though every other check in
+# this file would stay green, since the old spelling would once again
+# resolve to a valid macro.
+if [ -f "$WORKDIR/abi_rx.c" ]; then
+    # abi_rx.c is a captures-on 'a(b|c)+d' build (the fixture the ABI-block
+    # loop above already produced), which selects the VM — the engine that
+    # used to emit the per-prefix D46 bit constants this check also covers.
+    new_names="PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_RUNG_FRAMES_BOUNDED PCREC_VM_RUNG_FRAMES_UNBOUNDED PCREC_VM_RUNG_REVDET PCREC_VM_RUNG_COUNTER PCREC_VM_STRAT_POSSESSIVE PCREC_VM_STRAT_BACKTRACKING PCREC_VM_PRUNE_CLAMPED PCREC_VM_PRUNE_UNCLAMPED"
+    new_missing=""
+    for n in $new_names; do
+        c="$(grep -cE "^#define $n\\b" "$WORKDIR/abi_rx.c")"
+        [ "$c" -eq 1 ] || new_missing="$new_missing $n(x$c)"
+    done
+    if [ -n "$new_missing" ]; then
+        bad "[ABI-NS]: universal constant(s) not emitted exactly once in a VM artifact:$new_missing"
+    else
+        ok "[ABI-NS]: all 16 universal constants (give-up codes, UNSET, ENGINE_DFA/VM, nine D46 stamp bits) are emitted exactly once in a VM artifact"
+    fi
+
+    old_names="RX_ERR_STEPS RX_ERR_FRAMES RX_ERR_WORK RX_ERR_FLOOR RX_UNSET RX_VM_RUNG_CURSOR RX_VM_RUNG_FRAMES_BOUNDED RX_VM_RUNG_FRAMES_UNBOUNDED RX_VM_RUNG_REVDET RX_VM_RUNG_COUNTER RX_VM_STRAT_POSSESSIVE RX_VM_STRAT_BACKTRACKING RX_VM_PRUNE_CLAMPED RX_VM_PRUNE_UNCLAMPED"
+    old_found=""
+    for n in $old_names; do
+        grep -qE "^#define $n\\b" "$WORKDIR/abi_rx.c" && old_found="$old_found $n"
+    done
+    if [ -n "$old_found" ]; then
+        bad "[ABI-NS]: DELETED per-prefix spelling(s) still emitted (no alias, D60):$old_found"
+    else
+        ok "[ABI-NS]: the fourteen deleted per-prefix spellings (RX_ERR_*/RX_UNSET/RX_VM_RUNG_*/RX_VM_STRAT_*/RX_VM_PRUNE_*) do not appear anywhere in a VM artifact"
+    fi
+else
+    bad "[ABI-NS]: no VM fixture (\$WORKDIR/abi_rx.c) available from the ABI-block loop above — cannot check the universal-constant migration"
+fi
+
+# A DFA-only ('--no-captures') artifact never had the D46 stamp bits at all
+# (VM-artifacts-only, src/gen/emit_vm.c) but DOES now carry the give-up
+# codes, PCREC_UNSET and the two engine constants unconditionally — the same
+# "reserved but unreachable" precedent PCREC_ERR_STEPS already had before
+# this lane, extended to the two new constants and the D46 bits (D60's own
+# membership rule: names are part of the CONTRACT even where this artifact's
+# engine cannot produce the value).
+if "$PCREC" -p rx --no-captures -o - -- 'a(b|c)+d' > "$WORKDIR/abins_dfa.c" 2>/dev/null; then
+    dfa_missing=""
+    for n in PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_STRAT_POSSESSIVE PCREC_VM_PRUNE_CLAMPED; do
+        c="$(grep -cE "^#define $n\\b" "$WORKDIR/abins_dfa.c")"
+        [ "$c" -eq 1 ] || dfa_missing="$dfa_missing $n(x$c)"
+    done
+    if grep -qE '^#define RX_ERR_STEPS\b|^#define RX_UNSET\b' "$WORKDIR/abins_dfa.c"; then
+        bad "[ABI-NS]: a --no-captures (DFA) artifact still carries a deleted per-prefix spelling"
+    elif [ -n "$dfa_missing" ]; then
+        bad "[ABI-NS]: a --no-captures (DFA) artifact is missing universal constant(s) it should carry unconditionally:$dfa_missing"
+    else
+        ok "[ABI-NS]: a DFA-only artifact carries every universal constant (give-up codes, UNSET, ENGINE_DFA/VM, sampled D46 bits) unconditionally, and none of the deleted per-prefix spellings"
+    fi
+else
+    bad "[ABI-NS]: pcrec failed to compile 'a(b|c)+d' --no-captures for the DFA-side universal-constant check"
 fi
 
 # ---- [M5-SEAM] RESIDUAL ENTRIES ARE NEVER CALLED FROM THE ENGINE ----------

@@ -85,6 +85,29 @@ and §6 gains the `ngroups` PERMANENT-PREFIX promise (slots
 `1..ngroups` are this pattern's own groups forever; insertion
 mechanisms append, never interleave). docs/dev/decisions.md D61.
 
+**[ABI-NS] revision (2026-08-18, same session — D60 + addendum).** Every
+emitted macro whose VALUE is a property of pcrec's CONTRACT rather than of
+one artifact moves from a per-`<PREFIX>` spelling to one canonical,
+unprefixed `PCREC_*` spelling in the shared `PCREC_RX_ABI_H` block (§2):
+the give-up code space (`<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR` →
+`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`), the caps-array unset
+sentinel (`<PREFIX>_UNSET` → `PCREC_UNSET`), and the nine D46 stamp BIT
+constants (`<PREFIX>_VM_RUNG_CURSOR`/etc., `<PREFIX>_VM_STRAT_POSSESSIVE`/
+`_BACKTRACKING`, `<PREFIX>_VM_PRUNE_CLAMPED`/`_UNCLAMPED` →
+`PCREC_VM_RUNG_*`/`PCREC_VM_STRAT_*`/`PCREC_VM_PRUNE_*`). The per-prefix
+spellings are DELETED, not aliased (house precedent: `PCREC_ENC_BYTE`,
+D44.2's `<prefix>_span` retirement). NEW in the same block:
+`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, naming `rx_info.engine`'s
+formerly number-only contract (§6 used to say "no such constant is
+#defined anywhere" — this revision discharges that). What STAYS
+per-prefix is exactly the set whose VALUE genuinely varies per artifact:
+`<PREFIX>_NCAPS`, the budget/capacity macros, the D46 stamp MASKS
+(`<PREFIX>_VM_RUNGS`/`_STRATS`/`_PRUNES`), `<PREFIX>_VM_PREFILTER`/
+`_VM_PRUNE_CEILING`. §1, §2, §4, §5, and §6's engine paragraph are
+re-quoted this pass, verbatim from a fresh `-p rx` build of `'a(b|c)+d'`
+(both a `--no-captures` DFA artifact and a captures-default VM one) —
+docs/dev/decisions.md D60 and its addendum.
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -97,12 +120,18 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    (default `"rx"`): `<prefix>_search`, `<prefix>_match`,
    `<prefix>_match_caps`, `<prefix>_info`, `<prefix>_next_pos` (§3.1.1),
    and the `<PREFIX>_*` macro
-   family (`RX_NCAPS`, `RX_UNSET`, `RX_ERR_*`, the D46 observability
+   family (`RX_NCAPS`, the D46 observability
    macros in §6.3). A pattern compiled with `-p foo` gets
    `foo_search`, `FOO_NCAPS`, etc. — verified by compiling the same
    pattern under `-p foo` and reading the emitted header. (The CLI spells
    this option `-p` and only `-p`; there is no `--prefix` long form —
    `pcrec --prefix foo ...` is an unknown-option error.)
+   **[ABI-NS], 2026-08-18 (D60):** `RX_UNSET` and `RX_ERR_*` used to be
+   in this family and are NOT any more — they moved to the fixed,
+   unprefixed `PCREC_*` spelling in group 3's ABI block below, and the
+   `<PREFIX>_*` spelling was DELETED, no alias. A caller reading old
+   documentation (or an artifact emitted before this date) that names
+   `RX_UNSET`/`RX_ERR_STEPS`/etc. is reading the pre-[ABI-NS] contract.
 2. **pcrec's own fixed library surface**: the `PCREC_*` enum/bit
    constants and the `pcrec_options`/`pcrec_output`/`pcrec_error`/
    `pcrec_err_input` types declared in `lib/pcrec.h`. Never scoped by a
@@ -133,6 +162,23 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    `-p rx` and `-p foo` builds of the same pattern emit byte-identical
    `#ifndef PCREC_RX_ABI_H` blocks).
 
+   **[ABI-NS], 2026-08-18 (D60 + addendum).** The same guarded block also
+   carries every emitted MACRO whose value is a pcrec-contract fact
+   rather than an artifact-specific one, unprefixed and emitted
+   unconditionally on every artifact (DFA-only included, the same
+   "reserved but unreachable" shape §4 already had): the give-up code
+   space `PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES`/`PCREC_ERR_WORK`/
+   `PCREC_ERR_FLOOR` (§4), the caps-array unset sentinel `PCREC_UNSET`
+   (§5), the two engine constants `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`
+   (§6), and the nine D46 stamp bit constants `PCREC_VM_RUNG_CURSOR`/
+   `_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`/`_REVDET`/`_COUNTER`,
+   `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
+   `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED` (§6.3). These moved out of the
+   per-`<PREFIX>` macro family of group 1 above; the old `<PREFIX>_*`
+   spellings were DELETED, not aliased. What stays per-prefix, because
+   its VALUE genuinely varies per artifact, is exactly `<PREFIX>_NCAPS`
+   plus the D46 stamp MASKS and budget/capacity macros of §6.3.
+
 A generated artifact is either self-contained (`options.header_name ==
 NULL`, everything below in the `.c`) or split into a paired `.h`/`.c`
 (`options.header_name` set) — both forms carry the identical declarations
@@ -160,16 +206,22 @@ typedef struct rx_ctx {
 } rx_ctx;
 
 /* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a
- * typed give-up code in [<PREFIX>_ERR_FLOOR, -2] -- one per way the
- * engine can give up (<PREFIX>_ERR_STEPS/_FRAMES/_WORK), where
- * <PREFIX> is this artifact's own uppercased --prefix. D49: those
+ * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
+ * engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK). D49: those
  * codes PROPAGATE, they are not collapsed to -1, and a caller doing
  * an exact `== -1` test sees them as distinct values. Values
- * strictly BELOW <PREFIX>_ERR_FLOOR stay RESERVED for a future abort
+ * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
  * semantic; no pcrec-emitted matcher produces one today, and a
  * generated call site that invokes an rx_matchfn traps on one.
  * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
 typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
+
+#define PCREC_ERR_STEPS  (-2)
+#define PCREC_ERR_FRAMES (-3)
+#define PCREC_ERR_WORK   (-4)
+#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+
+#define PCREC_UNSET ((ptrdiff_t)-1)
 
 typedef struct rx_callout_ref {
     rx_matchfn *fn;
@@ -196,6 +248,19 @@ struct rx_info {
     /* ... elided here; §6 quotes the full field list ... */
 };
 
+#define PCREC_ENGINE_DFA 1
+#define PCREC_ENGINE_VM  2
+
+#define PCREC_VM_RUNG_CURSOR           0x1u
+#define PCREC_VM_RUNG_FRAMES_BOUNDED   0x2u
+#define PCREC_VM_RUNG_FRAMES_UNBOUNDED 0x4u
+#define PCREC_VM_RUNG_REVDET           0x8u
+#define PCREC_VM_RUNG_COUNTER          0x10u
+#define PCREC_VM_STRAT_POSSESSIVE      0x1u
+#define PCREC_VM_STRAT_BACKTRACKING    0x2u
+#define PCREC_VM_PRUNE_CLAMPED         0x1u
+#define PCREC_VM_PRUNE_UNCLAMPED       0x2u
+
 extern const struct rx_info <prefix>_info;   /* not inside the ABI block */
 ```
 
@@ -203,7 +268,7 @@ The block above is the emitted text verbatim (re-quoted from a freshly
 emitted artifact for this revision), with two marked exceptions: the
 `struct rx_info` body is elided to §6, and `extern const struct rx_info
 <prefix>_info;` is per-prefix and so lives *outside* the
-`PCREC_RX_ABI_H` guard, not in this block. Three things the comments
+`PCREC_RX_ABI_H` guard, not in this block. Four things the comments
 state that a reader should not have to infer:
 
 - **`rx_renderfn` carries a sizing protocol**, and it is shipped ABI
@@ -213,10 +278,23 @@ state that a reader should not have to infer:
 - **`rx_group_entry.ref`** is documented in the artifact only as
   "NULL/empty for the primary's own groups". Its non-empty form is a
   labeled insertion path that nothing in pcrec can produce today.
-- **`<PREFIX>` in these comments is a placeholder, not a literal.** The
-  block is byte-identical across every `--prefix` on purpose (§1), so it
-  cannot name any one artifact's macros; substitute your own uppercased
-  prefix when reading it.
+- **[ABI-NS], 2026-08-18 (D60 + addendum): every macro in this block is
+  UNPREFIXED and byte-identical across every `--prefix`.** Before this
+  date the give-up codes and the unset sentinel were spelled
+  `<PREFIX>_ERR_*`/`<PREFIX>_UNSET`, with a `<PREFIX>` placeholder in the
+  `rx_matchfn` comment naming "this artifact's own uppercased --prefix";
+  that placeholder is gone because the macros it pointed at no longer
+  vary per artifact. The nine D46 stamp bit constants
+  (`PCREC_VM_RUNG_*`/`PCREC_VM_STRAT_*`/`PCREC_VM_PRUNE_*`) and the two
+  engine constants (`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, new — see §6)
+  join them for the identical reason and are emitted unconditionally,
+  even on a DFA-only artifact that never produces a VM stamp value or a
+  give-up code — the "reserved but unreachable" shape §4 already had.
+- **`<PREFIX>` still appears elsewhere in this artifact, just not in this
+  block.** `struct rx_info`'s own `ncaps` field comment (§6) still reads
+  "this artifact's own `<PREFIX>_NCAPS`" — `<PREFIX>_NCAPS` is a
+  per-artifact VALUE (§1) and stays per-prefix on purpose, unlike the
+  macros above.
 
 **`rx_info` is a struct TAG, not a typedef, and every reference to it
 spells `struct rx_info`** — verified directly (`grep`-visible in every
@@ -671,18 +749,21 @@ given input is a property of that entry (§3.3's caveat, measured in both
 directions).
 
 ```c
-#define <PREFIX>_ERR_STEPS  (-2)   /* step budget exhausted (backtrack resumptions) */
-#define <PREFIX>_ERR_FRAMES (-3)   /* backtrack-frame/trail capacity exhausted */
-#define <PREFIX>_ERR_WORK   (-4)   /* forward-work budget exhausted (frames
-                                       discarded at a cut; frameless-scan
-                                       iterations — work the fail label
-                                       never sees, counted separately from
-                                       steps) */
-#define <PREFIX>_ERR_FLOOR  (-4)   /* codes in [FLOOR, -2] are typed give-ups
-                                       a caller may read and propagate;
-                                       anything strictly below the floor is
-                                       RESERVED for a future abort semantic */
+#define PCREC_ERR_STEPS  (-2)
+#define PCREC_ERR_FRAMES (-3)
+#define PCREC_ERR_WORK   (-4)
+#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
 ```
+
+**[ABI-NS], 2026-08-18 (D60).** These four were spelled `<PREFIX>_ERR_STEPS`/
+`_FRAMES`/`_WORK`/`_FLOOR` before this date, one set per artifact even
+though every artifact emitted identical values. D60 ruled the values a
+pcrec-CONTRACT fact, not a per-artifact one, and moved them unprefixed
+into the shared `PCREC_RX_ABI_H` block (§2) — the per-`<PREFIX>` spelling
+is DELETED, not aliased. The block above is quoted verbatim from a fresh
+`-p rx --no-captures` build of `'a(b|c)+d'`; a `-p foo` build of the same
+pattern emits the byte-identical four lines (§1/§2's cross-prefix
+identity property, now covering these constants too).
 
 Verified against both a DFA-only artifact (`--no-captures`, no counter
 exists, these codes are reserved-but-unreachable) and a captures-default
@@ -691,14 +772,15 @@ VM artifact (`RX_STEP_BUDGET`/`RX_WORK_BUDGET`/`RX_BT_FRAMES`/
 artifact never RETURNS one of these codes — it has no counter to
 exhaust — but it does EMIT them: the constants are defined in every
 artifact, and a DFA artifact built `--emit-main` even emits the full
-three-way handler text for them (measured: `if (rc == RX_ERR_STEPS)`,
-`_FRAMES`, `_WORK` all present in a `--no-captures --emit-main` build).
-That is deliberate, and it is what lets a caller's `switch` written
-today survive a later compile of the same pattern selecting the VM.
+three-way handler text for them (measured: `if (rc == PCREC_ERR_STEPS)`,
+`PCREC_ERR_FRAMES`, `PCREC_ERR_WORK` all present in a `--no-captures
+--emit-main` build). That is deliberate, and it is what lets a caller's
+`switch` written today survive a later compile of the same pattern
+selecting the VM.
 
 **Composed call sites must trap below the floor.** Every generated call
 site that invokes an `rx_matchfn` (a callout, a composed submatcher) must
-enforce `if (ret < <PREFIX>_ERR_FLOOR) __builtin_trap();` — this binds
+enforce `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` — this binds
 call sites that call *into* another `rx_matchfn`, not an exported entry's
 own internal `return`. No such call sites are emitted by pcrec today
 (callout code generation has no producer yet); the obligation is recorded
@@ -716,8 +798,15 @@ reads a give-up as a match: test `== 1` for "matched" (§3.1).
 ```c
 const ptrdiff_t (*caps)[2];         /* rx_ctx field; half-open [start, end) pairs */
 #define <PREFIX>_NCAPS <n>          /* per-artifact, compile-time constant */
-#define <PREFIX>_UNSET ((ptrdiff_t)-1)
+#define PCREC_UNSET ((ptrdiff_t)-1) /* pcrec-contract, unprefixed (§2); D60 */
 ```
+
+**[ABI-NS], 2026-08-18 (D60).** `PCREC_UNSET` was spelled `<PREFIX>_UNSET`
+before this date — one identical value emitted once per artifact, moved
+unprefixed into the shared `PCREC_RX_ABI_H` block (§2) since it is a
+pcrec-contract fact, not a per-artifact one. The per-`<PREFIX>` spelling
+is DELETED, not aliased. `<PREFIX>_NCAPS` is unaffected: its VALUE
+genuinely varies per artifact (below), so it stays per-prefix.
 
 - **Unset representation:** `{-1, -1}` in **both** slots of a pair.
   `caps[k][0] < 0` is a sufficient unset test.
@@ -861,11 +950,8 @@ struct rx_info {
                                        writing — verified: '(?<g>a)' still
                                        refuses "requires module
                                        'named-groups'") */
-    unsigned      engine;          /* 1 = DFA, 2 = VM. The artifact
-                                       spells these ENGM_DFA/ENGM_VM in
-                                       a COMMENT only — no such constant
-                                       is #defined anywhere, so compare
-                                       against the numbers */
+    unsigned      engine;          /* PCREC_ENGINE_DFA=1 /
+                                       PCREC_ENGINE_VM=2 */
     int64_t       step_budget;     /* -1 = none */
     int64_t       work_budget;     /* -1 = none; the THIRD bound (D47
                                        SECOND ADDENDUM): forward work the
@@ -891,6 +977,22 @@ struct rx_info {
                                             artifacts */
 };
 ```
+
+**[ABI-NS], 2026-08-18 (D60 addendum): `engine`'s number-only contract now
+has names.** Until this date, this field's comment read "1 = DFA, 2 = VM.
+The artifact spells these ENGM_DFA/ENGM_VM in a COMMENT only — no such
+constant is #defined anywhere, so compare against the numbers" — a
+COMMENT-only convention naming the internal `select_engine.c` enum
+spelling (`ENGM_DFA`/`ENGM_VM`), never an emitted symbol. D60's addendum
+ruled this the same class of pcrec-contract fact as the give-up code
+space (§4) and `PCREC_UNSET` (§5): a universal, artifact-independent
+value with no emitted name, which its membership rule closes. `PCREC_ENGINE_DFA`
+(1) and `PCREC_ENGINE_VM` (2) are now real `#define`s in the shared
+`PCREC_RX_ABI_H` block (§2), pinned to the numbers the field already
+stamped — this NAMES the existing contract, it does not renumber it. The
+internal `ENGM_*` enum stays internal and is never exported; the emitted
+`.engine` comment now reads `PCREC_ENGINE_DFA=1 / PCREC_ENGINE_VM=2` as
+quoted above, verbatim from a fresh build.
 
 `ngroups`, `ncaps`, and `nnames` are three genuinely different counts and
 do not, in general, coincide: `ngroups` is a fact about the pattern's own
@@ -1042,25 +1144,45 @@ exactly the count §6.2 works hardest to distinguish from `ncaps`, and
 which is therefore reachable only by reading `<prefix>_info` at run
 time.
 
-**On a DFA artifact the mirror is thinner still: `ncaps` alone.** A
-`--no-captures` build defines exactly `<PREFIX>_NCAPS`,
-`<PREFIX>_UNSET`, the four `<PREFIX>_ERR_*` codes, and the two
-`<PREFIX>_ALTCLS_*` stamps below — no `<PREFIX>_ENGINE`, no budgets, no
-`_VM_*` axis at all. A consumer that `#if`s on `<PREFIX>_ENGINE` is
-writing code that does not compile against half the artifacts pcrec
-produces. (Both counts measured by listing every `#define` in a fresh
-build of each kind.)
+**On a DFA artifact the mirror is thinner still, on the SCALAR macros: no
+`<PREFIX>_ENGINE`, no budgets, no `_VM_RUNGS`/`_STRATS`/`_PRUNES` MASK.**
+A `--no-captures` build defines `RX_NCAPS` and the two `RX_ALTCLS_*`
+stamps below, plus — **[ABI-NS], 2026-08-18 (D60): unconditionally, on
+every artifact regardless of engine** — the give-up code space, the
+unset sentinel, `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, and the nine D46
+stamp bit constants (`PCREC_VM_RUNG_*`/`PCREC_VM_STRAT_*`/
+`PCREC_VM_PRUNE_*`), the same "reserved but unreachable" shape the
+give-up codes already had before this date. What a DFA artifact does NOT
+carry is the per-artifact SUMMARY macros this section is really about:
+`RX_ENGINE` (as a string), `RX_ENGINE_WHY`, the budget macros, and the
+three OR'd MASKS `RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES` — those stay
+VM-artifacts-only, because a DFA artifact has no per-quantifier rung/
+strategy/clamp decision to summarize. A consumer that `#if`s on
+`RX_ENGINE` is writing code that does not compile against half the
+artifacts pcrec produces. (Measured by listing every `#define` in a
+fresh build of each kind.)
 
-**The macros live in the `.c`, not the `.h`.** In the split form the CLI
-produces by default, a consumer `#include`s the `.h` — which carries
-only `<PREFIX>_NCAPS`, `<PREFIX>_UNSET` and the four `<PREFIX>_ERR_*`
-codes (plus its two include guards). Every macro named below is emitted
-into the `.c` only (measured on one build: eight `#define`s in the `.h`,
-thirty-five in the `.c`), so **the `#if` use case above is unreachable
-from a consumer translation unit unless the artifact was built
-self-contained** (`header_name == NULL`) or the consumer is the
-generated `.c` itself. Whether these should also be emitted into the
-header is an open design question, not settled here.
+**The per-artifact SUMMARY macros live in the `.c`, not the `.h`; the
+universal `PCREC_*` constants live in the `.h`.** In the split form the
+CLI produces by default, a consumer `#include`s the `.h` — which
+carries the whole unprefixed universal set from the shared
+`PCREC_RX_ABI_H` block (§2: the four give-up codes, `PCREC_UNSET`, the
+two engine constants, the nine D46 stamp bit constants) plus
+`<PREFIX>_NCAPS`, on EVERY artifact including a DFA-only one (measured
+on one VM build and one DFA build: nineteen `#define`s in each `.h`,
+identical except `RX_NCAPS`'s value; twenty-six in the VM `.c`). Before
+[ABI-NS] this was eight `#define`s in the `.h` and thirty-five in the
+`.c` — the difference is exactly the eleven macros that moved
+(`PCREC_ENGINE_DFA`/`_VM`, new, plus the nine D46 bit constants that
+used to be per-prefix and `.c`-only). So **the `#if` use case above,
+for the universal constants, no longer needs a self-contained build —
+they reach a consumer's TU through the ordinary `#include "<name>.h"`
+now.** It remains true for the per-artifact SUMMARY macros below
+(`RX_ENGINE`, the masks, the budgets): those are still emitted into the
+`.c` only, so reading THEM still requires either a self-contained
+artifact (`header_name == NULL`) or being the generated `.c` itself.
+Whether the summary macros should also be emitted into the header is an
+open design question, not settled here.
 
 With that scoping, the observability macros on a captures-default build
 of `'a(b|c)+d'` (the `#define` lines are the artifact's; the `/* ... */`
@@ -1083,8 +1205,15 @@ These are scalar macros for a per-artifact-wide verdict
 (`RX_ENGINE`, `RX_VM_PREFILTER`, `RX_VM_PRUNE_CEILING`) or a bitmask
 when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
-`RX_VM_PRUNES`). Everything above is VM-artifacts-only. Two more D46
-stamps are NOT, and a DFA-only artifact carries them too:
+`RX_VM_PRUNES`). Everything above is VM-artifacts-only. **[ABI-NS],
+2026-08-18 (D60): the NAMED bit constants each mask is built from
+(`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
+`PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —
+they moved to the shared, unprefixed `PCREC_RX_ABI_H` block (§2),
+emitted once and unconditionally on every artifact including a DFA-only
+one. Only the three OR'd MASKS above stay per-prefix and VM-only, since
+their VALUE is the one genuinely per-artifact fact.** Two more D46
+stamps are NOT VM-only, and a DFA-only artifact carries them too:
 
 ```c
 #define RX_ALTCLS_MERGES   1   /* alternation runs merged into one class */

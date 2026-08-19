@@ -76,7 +76,7 @@ typedef uint32_t (*fn_get_ovector_count)(pcre2_match_data_8 *match_data);
  * `(PCRE2_SIZE)-1` in BOTH offsets (`PCRE2_UNSET`, all bits set). Cast to a
  * signed type of the same width (`ptrdiff_t` here, matching
  * `<prefix>_search`'s own D44.2 element type) this prints as literal `-1`,
- * bit-for-bit identical to pcrec's `RX_UNSET` — so tests/fuzz/pcre2_oracle.c
+ * bit-for-bit identical to pcrec's `PCREC_UNSET` — so tests/fuzz/pcre2_oracle.c
  * needs NO numeric remapping between the two engines' unset conventions,
  * only a same-format print on both sides. See tests/fuzz/README.md's
  * "Capture-group span comparison" section for the full transcript. */

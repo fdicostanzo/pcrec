@@ -147,8 +147,10 @@ int main(int argc, char **argv) {
     if (!buf) return 2;
 
     /* [K21-class fix, 2026-08-15] `rx_search`'s return is THREE-valued (1
-     * match, 0 no-match, a negative give-up sentinel — RX_ERR_STEPS/
-     * RX_ERR_FRAMES — when a VM artifact exhausts its step budget or
+     * match, 0 no-match, a negative give-up sentinel — PCREC_ERR_STEPS/
+     * PCREC_ERR_FRAMES ([ABI-NS]/D60: unprefixed since [ABI-NS]; the
+     * per-prefix RX_ERR_* spellings this comment used to name were deleted,
+     * no alias) — when a VM artifact exhausts its step budget or
      * backtrack-frame capacity; a DFA artifact never returns the
      * sentinels). Testing the result with `if (found)` is C-truthy on a
      * negative return too, so the ORIGINAL version of this driver took the
@@ -158,7 +160,7 @@ int main(int argc, char **argv) {
      * truthy-check-on-three-valued-return bug has now been found and fixed
      * at three other sites reading this same API —
      * tests/fuzz/fuzz_driver.c (the fuzzfix arc, discriminates found==1/
-     * found==0/RX_ERR_STEPS/RX_ERR_FRAMES explicitly), and
+     * found==0/PCREC_ERR_STEPS/PCREC_ERR_FRAMES explicitly), and
      * src/gen/emit_dfa.c's `pcrec_emit_main` (docs/dev/known_issues.md K21,
      * the CLI's `--emit-main` generated main()). A FOURTH site,
      * tests/registry/pc4_driver.c, has the identical `if (rx_search(...))`
@@ -184,7 +186,7 @@ int main(int argc, char **argv) {
     } else if (found == 0) {
         printf("nomatch\n");
     } else {
-        printf("%s\n", found == RX_ERR_STEPS ? "steps" : "frames");
+        printf("%s\n", found == PCREC_ERR_STEPS ? "steps" : "frames");
         free(buf);
         return 3;
     }

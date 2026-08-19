@@ -63,10 +63,12 @@ gen_vm() {   # gen_vm <out> <pattern> [args...]  -- --engine=vm (no prefilter)
 
 # The artifact's own PRUNE stamp, as a yes/no on the CLAMPED bit. Read from
 # the ARTIFACT, never from the flags it was built with — D47.3's do-or-die.
+# [ABI-NS] (D60): PCREC_VM_PRUNE_CLAMPED is universal/unprefixed now (the
+# shared PCREC_RX_ABI_H block); RX_VM_PRUNES (the OR'd mask) stays per-prefix.
 has_clamp() {   # has_clamp <file>
     local m b
     m="$(sed -n 's/^#define RX_VM_PRUNES 0x\([0-9a-f]*\)u$/\1/p' "$1")"
-    b="$(sed -n 's/^#define RX_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    b="$(sed -n 's/^#define PCREC_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u$/\1/p' "$1")"
     [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 ceiling_of() {  # ceiling_of <file>

@@ -33,9 +33,23 @@ engines in two functions cannot collide on them. The file-scope names are:
   it exists for (two differently-prefixed headers in one TU each derive a
   DIFFERENT guard name, so both bodies redefine the same types — a hard
   redefinition error). `<prefix>_span`, the one prior file-scope type,
-  RETIRED at [M4.4] (D44.2) — no compatibility alias.
-- `emit_ncaps_macros` — ONCE PER FILE, PER-PREFIX (`<PREFIX>_NCAPS`,
-  `<PREFIX>_UNSET`, `<PREFIX>_ERR_STEPS`, `<PREFIX>_ERR_FRAMES`).
+  RETIRED at [M4.4] (D44.2) — no compatibility alias. **[ABI-NS] (D60 +
+  addendum, 2026-08-18)**: the same guard now also carries every emitted
+  UNIVERSAL MACRO, unprefixed and unconditional on every artifact — the
+  give-up code space (`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`), the
+  caps-array unset sentinel (`PCREC_UNSET`), the two engine constants
+  (`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, new — naming `rx_info.engine`'s
+  formerly number-only contract), and the nine D46 stamp bit constants
+  (`PCREC_VM_RUNG_CURSOR`/`_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`/`_REVDET`/
+  `_COUNTER`, `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
+  `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`). Same no-alias rule as
+  `<prefix>_span`'s retirement: the old per-`<PREFIX>` spellings of all of
+  these are DELETED, not aliased.
+- `emit_ncaps_macros` — ONCE PER FILE, PER-PREFIX. **[ABI-NS] (D60)
+  narrowed this to `<PREFIX>_NCAPS` alone** — the one member of its old
+  family (`<PREFIX>_NCAPS`/`_UNSET`/`_ERR_STEPS`/`_ERR_FRAMES`/`_ERR_WORK`/
+  `_ERR_FLOOR`) whose VALUE genuinely varies per artifact; the other five
+  moved to `emit_rx_abi_types` above.
 - `emit_search_decl` / `emit_search_head`, `emit_match_decl`,
   `emit_match_caps_decl`, `emit_info_decl` — ONCE PER ENGINE, under that
   engine's own entry name(s), kept adjacent to their definitions so
@@ -239,10 +253,15 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     once per `A_REP` at the same point `vm_cursor_rep` / `vm_rep`'s frames
     fallthrough already knows the rung, appending a `VE_RUNG` event AND
     setting the mask bit in one call so the two views can never drift
-    apart. Emitted as three named bit constants plus the artifact's own
+    apart. Emitted as the artifact's own
     OR'd `#define <PREFIX>_VM_RUNGS 0x...u` next to `RX_ENGINE`/
     `RX_ENGINE_WHY` (same VM-artifacts-only placement and §5.4
-    byte-identity rationale), and as a NEW `RUNGS` listing section in
+    byte-identity rationale) — **the three (now five, D46's later rungs)
+    named bit constants it is built from moved to the shared, unprefixed
+    `PCREC_RX_ABI_H` block at [ABI-NS] (D60, 2026-08-18): `PCREC_VM_RUNG_
+    CURSOR`/`_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`/`_REVDET`/`_COUNTER`,
+    emitted once, unconditionally, on every artifact — see
+    `emit_rx_abi_types` above** — and as a NEW `RUNGS` listing section in
     `--emit-ir` (one row per quantifier, `at L<label> <kind> <role>`) plus
     a header `; rungs ...` summary line — all three read off the same
     `v->rungs`/`VE_RUNG` data the real walk built, never re-derived.
@@ -303,7 +322,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
     Observed through `<PREFIX>_VM_STRATS`, a bitmask beside `<PREFIX>_VM_RUNGS`
     and for the same reason (the strategy is per-A_REP; a scalar lies on a
-    mixed artifact), plus a STRATEGIES section in `--emit-ir`. Both are set by
+    mixed artifact), plus a STRATEGIES section in `--emit-ir`. (Its own two
+    named bits, `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`, moved to the
+    shared `PCREC_RX_ABI_H` block at [ABI-NS], D60 — same move as the rung
+    bits above.) Both are set by
     the SAME `vm_rung_mark()` call the emitter already makes at the point it
     knows what it is about to emit, so the stamp and the machinery cannot
     disagree. `-fno-possessify` denies the rewrite, and D47.3's do-or-die half
@@ -437,7 +459,10 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
     Observed through `<PREFIX>_VM_PRUNES` (a bitmask beside `_VM_RUNGS` and
     `_VM_STRATS`, per-quantifier for the same reason: `(a{2,4}){3,9}b` clamps
-    at every replica and `(a{2,4}){3,9}` at none) plus
+    at every replica and `(a{2,4}){3,9}` at none — its two named bits,
+    `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`, moved to the shared
+    `PCREC_RX_ABI_H` block at [ABI-NS], D60, same move as the rung/strategy
+    bits above) plus
     `<PREFIX>_VM_PRUNE_CEILING`, which names the ACTIVE ceiling form —
     ruling 2 (c), so `--engine=vm`'s weaker subject-end form is disclosed
     rather than discovered. The ceiling stamps `"none"` when the artifact

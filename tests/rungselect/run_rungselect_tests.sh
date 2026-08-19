@@ -57,10 +57,12 @@ gen() {   # gen <out> <pattern> [args...]
 # The artifact's own rung stamp, as a yes/no on the REVDET bit. Read from the
 # ARTIFACT, never from the flags it was built with — that distinction is the
 # whole reason D47.3 moved do-or-die onto observability.
+# [ABI-NS] (D60): PCREC_VM_RUNG_REVDET is universal/unprefixed now (the
+# shared PCREC_RX_ABI_H block); RX_VM_RUNGS (the OR'd mask) stays per-prefix.
 has_revdet() {   # has_revdet <file>
     local m b
     m="$(sed -n 's/^#define RX_VM_RUNGS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
-    b="$(sed -n 's/^#define RX_VM_RUNG_REVDET *0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    b="$(sed -n 's/^#define PCREC_VM_RUNG_REVDET *0x\([0-9a-f]*\)u$/\1/p' "$1")"
     [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 

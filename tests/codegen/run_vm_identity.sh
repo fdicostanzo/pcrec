@@ -217,7 +217,7 @@ else
 fi
 
 if [ -z "$nocapbad" ]; then
-    ok "[M4.5b] --no-captures is a DFA artifact for every corpus pattern (RX_NCAPS 1, engine ENGM_DFA, no VM symbol)"
+    ok "[M4.5b] --no-captures is a DFA artifact for every corpus pattern (RX_NCAPS 1, engine PCREC_ENGINE_DFA, no VM symbol)"
 else
     bad "[M4.5b] --no-captures produced a non-DFA artifact:$nocapbad"
 fi
