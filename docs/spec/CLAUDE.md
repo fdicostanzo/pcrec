@@ -41,6 +41,21 @@ spec and a design doc disagree, the spec is what the tool promises.
   References `docs/design/match_api_m4.md`/`engine_m4.md` informationally
   for the ruling history; this document alone states what pcrec promises.
 
+  **[M6.2] waves D and E each added a sentence to §3.1, and wave E's is the
+  larger one.** Wave D's says what `\G` means under the find-all loop
+  ("contiguous with the previous match", PCRE2's global-iteration semantics,
+  for free because the entry already takes the parameter PCRE2 threads). Wave
+  E's says that **`caps[0][0]` is where REPORTING begins, which is not always
+  where matching began** — `\K` moves it — with three consequences a caller
+  can see: `caps[0][0]` can exceed the offset the match began at and is
+  therefore not a bound on where the engine looked; `caps[0][0] ==
+  caps[0][1]` no longer implies nothing was consumed (`ab\K` reports `[2,2)`
+  after two bytes); and the anchored entries of §3.2/§3.3 return the CONSUMED
+  length, which is what makes the §5 callout advance terminate. The find-all
+  loop is unaffected because it advances off `caps[0][1]`, and that is
+  MEASURED against libpcre2 driven through the same loop
+  (`tests/assertions/run_kreset_diff.sh` §5) rather than argued.
+
   **[M4.7g], 2026-08-18 — the R29 fix pass** (`docs/dev/reviews/
   2026-08-18-r29-match-api-spec.md`) is the document's first revision,
   and its shape is worth knowing before editing this file again: the
