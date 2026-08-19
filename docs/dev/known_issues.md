@@ -2336,6 +2336,22 @@ every subject at every startpos, compiling at `-O2` where K28 does not fire —
 so the shape is pinned even though the corpus cannot hold it. That is the
 pattern later waves should follow rather than dropping the cells.
 
+**[M6.2 wave E] ADDS NOTHING, AND THE PREDICTION ABOVE IS THEREFORE
+BOUNDED RATHER THAN MONOTONIC.** Wave C's note says "each wave that lands a
+new BOT-family or context assertion adds spellings that reach this shape, so
+the exclusion list grows monotonically until the wrapper is fixed", and waves
+C and D both confirmed it. `\K` does not, and the reason sharpens the rule
+rather than refuting it: this shape needs a pattern that CANNOT MATCH, and
+every previous spelling got there by asserting something impossible after a
+byte was consumed (`^`/`(?m)^`/`\G` after a transition). `\K` asserts
+nothing — it cannot fail — so no placement of it makes a pattern
+unsatisfiable, and no `\K` shape reaches a single dead state. The list
+stands at SIX spellings and the repair slice's scope is unchanged.
+The corrected rule for whoever schedules the fix: it is not "one per wave",
+it is **one per construct that can make a pattern impossible**, which is
+exactly the BOT-family and context assertions, and module `assertions` has
+now landed all of them.
+
 **Fix sketch and why it is deferred:** initialize the wrapper's `caps`
 (or restructure the wrapper so gcc sees the dominance) — a one-line
 emitter change whose blast radius is EVERY artifact in the tree, so it
