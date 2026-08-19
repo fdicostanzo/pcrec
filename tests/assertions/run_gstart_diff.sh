@@ -464,22 +464,24 @@ fi
 # already swept them against libpcre2 over every subject and startpos; this
 # block states the PROPERTY, so a future change that made one of them match
 # something fails with a sentence rather than with a cell reference.
+# THE ORACLE ANSWERS ARE READ OFF §2's OWN TSV, not re-queried. §2 already
+# asked libpcre2 about every one of these cells and recorded the answer; a
+# second sweep would be ~1,300 more oracle subprocesses producing data this
+# script already holds — and, worse, a second independent query that could
+# quietly disagree with the one the differential was judged against. What is
+# asserted here is that the `dead:` CLASSIFICATION is right, which is a
+# property of those recorded answers.
 dead_hits=0
-for spec in "${PATSPEC[@]}"; do
-    cls="${spec%%:*}"; pat="${spec#*:}"
+dead_cells=$(awk -F'\t' '$1 == "dead"' "$WORKDIR/oracle.tsv" | wc -l)
+while IFS=$'\t' read -r cls pat name sp want; do
     [ "$cls" = "dead" ] || continue
-    for f in "$WORKDIR"/subjects/*; do
-        len=$(wc -c < "$f")
-        for sp in $(seq 0 "$len"); do
-            r="$("$ORACLE" "$pat" "$f" "$sp" 2>/dev/null)"
-            case "$r" in "match "*) dead_hits=$((dead_hits + 1));
-                echo "  libpcre2 MATCHED the supposedly-impossible '$pat' on $(basename "$f") at $sp: $r" >&2 ;;
-            esac
-        done
-    done
-done
-if [ "$dead_hits" -eq 0 ]; then
-    ok "§4 impossible shapes: libpcre2 reports NO MATCH for \`a\\Gb\`, \`x\\G\` and \`ab\\Gc\` on every subject at every startpos, and §2's sweep above found pcrec agreeing on every one of those cells — a \\G after a consumed byte is unsatisfiable, and it falls out of the subset construction with no special case (§4.2)"
+    case "$want" in "match "*)
+        dead_hits=$((dead_hits + 1))
+        echo "  libpcre2 MATCHED the supposedly-impossible '$pat' on $name at $sp: $want" >&2 ;;
+    esac
+done < "$WORKDIR/oracle.tsv"
+if [ "$dead_hits" -eq 0 ] && [ "${dead_cells:-0}" -gt 300 ]; then
+    ok "§4 impossible shapes: libpcre2 reports NO MATCH on all $dead_cells recorded cells of \`a\\Gb\`, \`x\\G\` and \`ab\\Gc\` — every subject at every startpos — and §2's sweep above found pcrec agreeing on every one of them — a \\G after a consumed byte is unsatisfiable, and it falls out of the subset construction with no special case (§4.2)"
 else
     bad "§4 impossible shapes: libpcre2 matched $dead_hits cells of a pattern this wave classifies as impossible. The CLASSIFICATION is wrong, not pcrec — fix the PATSPEC class and re-derive §4.2's argument before touching any code."
 fi
