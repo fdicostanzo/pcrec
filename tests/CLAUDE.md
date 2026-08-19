@@ -196,10 +196,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   does not, and python has no `\G` OR `\K` AT ALL (waves D and E, U11c and U11d — total
   exclusions rather than wrong or different answers; `\K` has no rewriting
   either, since python's `re` gives a pattern no way to move its own match's
-  reported start). Four of the module's eight constructs are excluded and the
-  other four are python-verified cell for cell at 0 divergences, which is what
-  makes the rule a statement about those four CONSTRUCTS rather than about the
-  module. The first two disagree
+  reported start). THREE of the module's eight constructs are excluded
+  WHOLLY (`\Z`, `\G`, `\K`) and a fourth PARTLY (`(?m)`, its `^` half only);
+  `\A`, `\z`, `\b`, `\B` and `(?m)$` are python-verified cell for cell at 0
+  divergences, which is what makes the rule a statement about particular
+  CONSTRUCTS rather than about the module. The first two disagree
   in the silent direction — no match, a shorter span, or a match PCRE2 does
   not report — so every `\Z` block and every `(?m)`-with-`^` block carries
   `# pcre2-only`, WHOLESALE rather than per diverging cell; every `\G` and

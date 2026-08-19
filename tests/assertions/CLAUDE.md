@@ -37,12 +37,14 @@ exclusions rather than U11's wrong-answer one or U11b's different-answer one,
 so `gpos.rxt` and `kreset.rxt` are `# pcre2-only` in their entirety.
 
 **THE LIST IS NOW COMPLETE, AND THAT IS WHAT MAKES IT A STATEMENT ABOUT FOUR
-CONSTRUCTS RATHER THAN ABOUT THE MODULE.** Four of the module's eight
-constructs are excluded (`\Z` wrong, `(?m)^` different, `\G` absent, `\K`
-absent) and the other four — `\A`, `\z`, `\b`, `\B` — are python-verified
-cell for cell at 0 divergences. A reader deciding whether a new cell can be
-python-verified should check WHICH construct it uses, never assume the
-directory's rule.
+CONSTRUCTS RATHER THAN ABOUT THE MODULE.** THREE of the module's eight
+constructs are excluded WHOLLY — `\Z` (python answers WRONGLY), `\G` and
+`\K` (python has no such escape) — and a fourth PARTLY: `(?m)`, whose `^`
+half python answers DIFFERENTLY while its `$` half agrees. `\A`, `\z`, `\b`,
+`\B` and `(?m)$` are python-verified cell for cell at 0 divergences. A reader
+deciding whether a new cell can be python-verified should check WHICH
+construct it uses — and, for `(?m)`, which half — never assume the directory's
+rule.
 
 **DO NOT REACH FOR A LOOKBEHIND TO GET `\K` A PYTHON ORACLE.** `(?<=a)b` is
 close to `a\Kb` and is not the same construct — different backtracking, and

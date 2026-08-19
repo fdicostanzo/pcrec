@@ -649,10 +649,11 @@ c"` from `(0,3)` into `(0,1)`, and
   asks the oracle the same question.
   **ORACLE: the module's FOURTH exclusion, and it COMPLETES the list** —
   `re.compile(r"a\Kb")` raises `bad escape \K`, so kreset.rxt is
-  `# pcre2-only` in its entirety (U11d). Four of the module's eight constructs
-  are excluded (`\Z` wrong, `(?m)^` different, `\G` absent, `\K` absent) and
-  the other four are python-verified cell for cell at 0 divergences, which is
-  what makes the rule a statement about those four CONSTRUCTS rather than
+  `# pcre2-only` in its entirety (U11d). THREE of the module's eight constructs
+  are excluded WHOLLY (`\Z` answered wrongly, `\G` and `\K` not expressible)
+  and a fourth PARTLY (`(?m)`, its `^` half only); `\A`, `\z`, `\b`, `\B`
+  and `(?m)$` are python-verified cell for cell at 0 divergences, which is
+  what makes the rule a statement about particular CONSTRUCTS rather than
   about the module. A lookbehind is NOT an escape hatch here: `(?<=a)b` is a
   different assertion with different backtracking, cannot express the
   variable-width shapes `\K` is for, and needs a module that does not exist.
