@@ -2287,3 +2287,38 @@ prefilter at all, rather than passing vacuously.
 `runtime error: null pointer passed as argument 1, which is declared to
 never be null` at the memchr line — so the probe is watching, not merely
 silent.
+
+## K28 — OPEN, found 2026-08-19 ([M6.2] wave B lane, first REACHED by its corpus; defect pre-existing, confirmed on merge base c23662e)
+
+**An anchored pattern whose DFA is one dead state emits C that fails the
+harness's own default GENCFLAGS** (`-O1 -std=gnu11 -Wall -Wextra -Werror`):
+gcc inlines the always-returns-0 `<prefix>_search` into the
+`<prefix>_match` wrapper and then reports the wrapper's local `caps` array
+as maybe-uninitialized — even though the wrapper's `found != 1` test makes
+the read unreachable. The artifact's ANSWERS are correct (always nomatch);
+this is a warnings-cleanliness defect in emitted code, which D26/`make
+strict`'s own bar treats as real because a downstream consumer compiling
+with `-Werror` sees a build failure.
+
+**Minimal repro** (manager re-verified 2026-08-19 on main):
+
+    build/pcrec -p rxd -o dead.c -- '^a^b'
+    gcc -c -O1 -Wall -Wextra -Werror dead.c    # maybe-uninitialized, FAILS
+
+**Opt-level-dependent, and -O1 is the one that matters:** fires at `-O1`
+ONLY (`-O0`/`-O2`/`-O3`/`-Os` all clean — measured all five), and `-O1` is
+exactly `tests/harness/run.sh`'s default GENCFLAGS, so any corpus pattern
+of this shape is a suite build failure. That is also why it survived
+undetected: no pre-wave-B corpus pattern compiles to a single dead state.
+`^a^b` is a base-tier reproducer; wave B's corpus is the first to REACH
+the shape naturally (`^\Bfoo`, `^\Bo`, `^a\bb`), and those three cells
+are named and excluded in tests/assertions/wordb.rxt's own header (~line
+2793) with live equivalents in their place.
+
+**Fix sketch and why it is deferred:** initialize the wrapper's `caps`
+(or restructure the wrapper so gcc sees the dominance) — a one-line
+emitter change whose blast radius is EVERY artifact in the tree, so it
+wants its own slice with the byte-identity churn accounted, not a rider
+on a feature wave. **Scheduled:** its own small row before the [M6.2]
+module close, so the excluded wordb.rxt cells can be reinstated with the
+module's D27 corpus.

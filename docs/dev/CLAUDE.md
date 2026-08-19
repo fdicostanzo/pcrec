@@ -22,7 +22,11 @@ Append-only where noted; the restart/status-recovery record for the project.
   revisit-when. Add an entry whenever a choice would surprise a future reader.
 - `known_issues.md` — confirmed bugs in pcrec ITSELF that are deferred rather
   than fixed immediately; each has a minimal repro and a scheduled milestone.
-  Open as of 2026-08-18: K2 (cosmetic),
+  Open as of 2026-08-19: K2 (cosmetic), K28 (emitted dead-state-DFA
+  artifact fails the harness's own -O1 -Werror GENCFLAGS —
+  maybe-uninitialized caps in the `<prefix>_match` wrapper; found by the
+  [M6.2] wave B corpus, pre-existing, own-slice fix scheduled before the
+  module close),
   K26 (INFRASTRUCTURE: LeakSanitizer
   is a measured no-op on this box, so make asan's leak tier has never run —
   canary obligation + host-config ruling recorded in the entry), K25 (compile TIME in DFA
