@@ -39,7 +39,18 @@ Append-only where noted; the restart/status-recovery record for the project.
   fix's API half) and K23 (exact-minimum ambiguous-decomposition boundary
   exhausts the step budget on a 100-byte ordinary input; found by the D27
   blinded quantifier corpus 2026-08-16; regression in
-  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K27
+  tests/known_fail/d27_nested_min_boundary.rxt; owned [M4.6]). K28
+  (FIXED 2026-08-19, [M6.2] repair slice — the own-slice fix it was
+  scheduled for: an anchored pattern whose DFA is one dead state emitted
+  C that failed the harness's own `-O1 -Werror` GENCFLAGS, gcc reporting
+  a `caps` array maybe-uninitialized on a read the wrapper's own
+  `found != 1` test makes unreachable. Fixed by INITIALIZING it;
+  restructuring the test into two `if`s was measured NOT to silence it.
+  THE ENTRY NAMED ONE SITE AND THERE WERE THREE — `<prefix>_match`,
+  `<prefix>_match_caps` and the standalone `main()`, the latter two
+  hidden because `-Werror` stops at the first report. Clean at all five
+  opt levels and on both sanitizer axes; the six excluded corpus
+  spellings reinstated oracle-verified in the same change). K27
   (CLOSED 2026-08-18, [M5-SEAM] — the emitter-touching wave it was
   scheduled for: `if (pos >= n) return 0;` above the non-EOL memchr
   arm only, the EOL arm's own bound already implying s != NULL;

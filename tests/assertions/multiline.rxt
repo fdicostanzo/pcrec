@@ -1745,20 +1745,22 @@ m "\nb\nc" 4 4
 # measured miscompile shapes) and the ones D47.5's own wording does not
 # ask for. `(?m:...)` is python-verifiable; the rest are not.
 #
-# ONE MID-PATTERN SHAPE IS ABSENT, and the omission is recorded rather
-# than silent: `a(?m)^b` can NEVER match — a `^` after a consumed byte
-# makes the whole DFA one dead state — and pcrec answers it correctly,
-# but the C it emits for that shape does not survive `-Wall -Wextra
-# -Werror`: gcc inlines the always-returns-0 `<prefix>_search` into
-# `<prefix>_match` and then reports the wrapper's `caps` array as
-# maybe-uninitialized, though the `found != 1` short-circuit means it is
-# never read. That is KNOWN ISSUE K28, filed this session, and it is NOT
-# this wave's defect — the base-tier `^a^b` reproduces it with no module
-# enabled at all, and tests/assertions/wordb.rxt records the same
-# exclusion for `^\Bfoo`/`^\Bo`/`^ab`. The LIVE equivalents `a(?m)$`
-# and `a(?m)^b|c` are here in its place, so the mid-pattern-scope
-# coverage this block exists for is not lost; the absent one goes back
-# the day the wrapper's warning is fixed.
+# ONE MID-PATTERN SHAPE WAS ABSENT AND IS NOW BACK: `a(?m)^b`,
+# reinstated 2026-08-19 by the [M6.2] repair slice, which fixed the
+# defect that kept it out. It can NEVER match -- a `^` after a consumed
+# byte makes the whole DFA one dead state -- and pcrec always answered
+# it correctly; what failed was the C it emitted, which did not survive
+# `-Wall -Wextra -Werror`: gcc inlined the always-returns-0
+# `<prefix>_search` into `<prefix>_match` and then reported the
+# wrapper's `caps` array as maybe-uninitialized, though the `found != 1`
+# short-circuit means it is never read. That was KNOWN ISSUE K28, CLOSED
+# by initializing the wrapper's `caps`; the base-tier `^a^b` reproduced
+# it with no module enabled at all, which is why it was never this
+# wave's defect, and wordb.rxt and gpos.rxt reinstated their own
+# spellings in the same change. The LIVE equivalents `a(?m)$` and
+# `a(?m)^b|c` STAY -- they carry the same impossibility on a sibling
+# branch that keeps the automaton alive, which is a different emitted
+# shape and its own coverage.
 # ======================================================================
 
 pattern (?m:[^c]{1,3}$)
@@ -2245,6 +2247,57 @@ n "\nc"
 m "aaa\nbbb" 2 3
 n "x\ny\nz"
 m "b\na" 2 3
+n "\nab\n"
+
+# K28 (reinstated). Impossible: a `^` -- multiline or not -- after a
+# consumed byte, so the whole DFA is one dead state.
+# pcre2-only
+pattern a(?m)^b
+features assertions,modifiers
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "ab"
+n "abc"
+n "a\n"
+n "aa\n"
+n "aaa\n"
+n "\nc"
+n "a\nc"
+n "b"
+n "ba"
+n "c"
+n "ac"
+n "aac"
+n "zaa"
+n "zaaa\n"
+n "\na"
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+n "\n\nc"
+n "a\nb\nc"
+n "a\nb\nc\nd"
+n "\nb\nc"
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
 n "\nab\n"
 
 # pcre2-only

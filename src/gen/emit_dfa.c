@@ -543,7 +543,29 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
  * "skip a byte and try later", by construction of the unanchored wrap) finds
  * one, so checking the reported start against ctx->pos is not an
  * approximation of anchored matching, it IS anchored matching, reusing the
- * existing forward+reverse walk rather than a new one. */
+ * existing forward+reverse walk rather than a new one.
+ *
+ * [K28 fix, 2026-08-19, repair slice] `caps` IS INITIALIZED, and the
+ * initializer is not defensive padding — it is the only shape that compiles.
+ * When the pattern's DFA is a single dead state, `<prefix>_search` always
+ * returns 0, gcc -O1 inlines it here, and then reports this array as
+ * maybe-uninitialized even though `found != 1` short-circuits the read. The
+ * warning is bogus (the read is unreachable) but the artifact is source
+ * SOMEONE ELSE compiles, and the harness's own GENCFLAGS are
+ * `-O1 -Wall -Wextra -Werror`, so it is a build failure rather than a
+ * blemish. Two things measured before choosing this:
+ *   - it fires at -O1 ONLY: -O0, -O2, -O3 and -Os are all clean, measured,
+ *     all five. Why only -O1 was not established and is not asserted here;
+ *     what matters is that -O1 is exactly tests/harness/run.sh's default
+ *     GENCFLAGS, so "compile it at a different level" is not a fix.
+ *   - SPLITTING the `||` into two `if`s does NOT silence it. The dominance
+ *     gcc cannot see is not the short-circuit; restructuring the test is not
+ *     available and the initializer is the smallest thing that works.
+ * The same three lines are owed by `emit_match_caps_def` and
+ * `pcrec_emit_main` below, which have the identical shape and warn for the
+ * identical reason -- the `-Werror` build merely stopped at the first one.
+ * Full history, the six corpus spellings it cost, and the repro:
+ * docs/dev/known_issues.md K28. */
 static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
                             const char *upper)
 {
@@ -556,7 +578,8 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
         " * later engine shares this emitter. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
-        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
@@ -578,7 +601,8 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
     sb_printf(c,
         "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
         "{\n"
-        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
@@ -2251,7 +2275,8 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
     sb_puts(&cx->job->csb, "\n");
     sb_printf(&cx->job->csb,
         "int main(int argc, char **argv)\n{\n"
-        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
         "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
         "    int rc = %s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps);\n"
         "    if (rc == 1) {\n"

@@ -2787,24 +2787,260 @@ ns 8 "ab_cd ef"
 # a corpus with no `^` cells would exercise neither.
 # ====================================================================
 
-# THREE ANCHORED CELLS ARE ABSENT FROM THIS BLOCK, and the
-# omission is recorded rather than silent. `^\Bfoo`, `^\Bo`
-# and `^a\bb` are patterns that can NEVER match -- their whole
-# DFA is one dead state -- and pcrec answers them correctly, but
-# the C it emits for that shape does not survive `-Wall -Wextra
-# -Werror`: gcc inlines the always-returns-0 `<prefix>_search`
-# into `<prefix>_match` and then reports the wrapper's `caps`
-# array as maybe-uninitialized, even though the `found != 1`
-# short-circuit means it is never read.
+# THREE ANCHORED CELLS WERE ABSENT FROM THIS BLOCK AND ARE NOW
+# BACK -- `^\Bfoo`, `^\Bo` and `^a\bb`, reinstated 2026-08-19
+# by the [M6.2] repair slice, which fixed the defect that kept
+# them out. They are patterns that can NEVER match (their whole
+# DFA is one dead state) and pcrec always answered them
+# correctly; what failed was the C it emitted, which did not
+# survive `-Wall -Wextra -Werror`: gcc inlined the
+# always-returns-0 `<prefix>_search` into `<prefix>_match` and
+# then reported the wrapper's `caps` array as
+# maybe-uninitialized, even though the `found != 1`
+# short-circuit means it is never read. That was KNOWN ISSUE
+# K28 (base-tier reproducer `^a^b`, `-O1`-ONLY), CLOSED by
+# initializing the wrapper's `caps` -- the emitter change is in
+# src/gen/emit_dfa.c and its comment records why restructuring
+# the test was measured NOT to work.
 #
-# IT IS NOT THIS WAVE'S DEFECT. The base-tier pattern `^a^b`
-# reproduces it exactly on the pre-wave compiler (measured at
-# c23662e), with no module enabled -- the class is 'an anchored
-# pattern whose machine is entirely dead', and `\b`/`\B` merely
-# add three new spellings that reach it. The cells below are the
-# LIVE anchored equivalents, chosen so the ENG_ATTEMPT half of
-# this corpus loses no coverage; the three absent ones go back
-# the day the wrapper's warning is fixed.
+# IT WAS NEVER THIS WAVE'S DEFECT, which is why the three cells
+# are ordinary members of this block now rather than a special
+# section: `\b`/`\B` merely spelled a shape the base tier
+# already reached. The LIVE anchored equivalents that stood in
+# for them (`^\bfoo`, `^f\Bo`, `^a\b.`, `^\Bfoo|^x`,
+# `^a\bb|^z`) STAY -- they carry the same impossibility on a
+# sibling branch that keeps the automaton alive, which is a
+# different emitted shape and its own coverage.
+# K28 (reinstated). Impossible under `^`: position 0 is a boundary when `s[0]` is a word byte, so a
+# leading `\B` before `f` can never hold.
+pattern ^\Bfoo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+# K28 (reinstated). Impossible under `^`: the same shape one byte wide -- the shortest spelling of it.
+pattern ^\Bo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+# K28 (reinstated). Impossible under `^`: `a` and `b` are both word bytes, so the position between them
+# is never a boundary.
+pattern ^a\bb
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
 pattern ^\bfoo
 features assertions
 n ""
