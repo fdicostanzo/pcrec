@@ -284,6 +284,54 @@ fi
 kill -KILL -- "-$anchor8" 2>/dev/null
 kill -KILL -- "-$outside8" 2>/dev/null
 
+# ---- case 9: PID mode against an already-dead PID -> exit 1, not a failure -
+#
+# The caller's own TOCTOU: they recorded a PID (e.g. from an earlier
+# candidate listing), and it died before they got around to calling
+# safekill on it. kill(2)'s ESRCH for an already-gone target must read as
+# "already dead" (exit 1, "nothing to do"), never surface as an error —
+# this is the manager's exit-code-1 race case, deterministic here because
+# the death happens fully BEFORE safekill is even invoked (no internal
+# timing window to race against).
+
+leader9="$(spawn_leader "sleep 300")"
+ok=1
+is_alive "$leader9" || { ok=0; fail "case9: setup failed to spawn"; }
+if [ "$ok" -eq 1 ]; then
+    kill -KILL -- "-$leader9" 2>/dev/null
+    wait_dead "$leader9" 10 || { ok=0; fail "case9: setup's own kill did not take effect"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 10 "$SK" "$leader9" 2>&1)"
+    rc=$?
+    [ "$rc" -eq 1 ] || { ok=0; fail "case9: exit=$rc, want 1 (already-dead PID is not an error) — output: $out"; }
+fi
+[ "$ok" -eq 1 ] && pass "case9: PID mode against a PID that died before invocation exits 1, not an error"
+
+# ---- case 10: --cwd non-match stays a plain no-match — no spurious --------
+# ---- "unreadable" note when nothing was actually unreadable ---------------
+
+TOKEN10="SAFEKILL_TEST_CWD_$$_$RANDOM"
+target10="$(spawn_leader "exec -a $TOKEN10 sleep 300")"
+ok=1
+is_alive "$target10" || { ok=0; fail "case10: setup failed"; }
+if [ "$ok" -eq 1 ]; then
+    # $SCRATCH is a real, readable directory the target's cwd is not under
+    # (the target inherited THIS test's cwd, not $SCRATCH) — a genuine,
+    # ordinary cwd mismatch, not an unreadable one.
+    out="$(timeout 10 "$SK" --cwd "$SCRATCH" -f "$TOKEN10" 2>&1)"
+    rc=$?
+    [ "$rc" -eq 1 ] || { ok=0; fail "case10: exit=$rc, want 1 (cwd genuinely does not match) — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    case "$out" in
+        *"unreadable"*) ok=0; fail "case10: spurious 'unreadable' note on an ordinary cwd non-match — output: $out" ;;
+        *) ;;
+    esac
+fi
+[ "$ok" -eq 1 ] && pass "case10: --cwd non-match reports plain no-match, no spurious unreadable note"
+kill -KILL -- "-$target10" 2>/dev/null
+
 # ---- summary ----------------------------------------------------------------
 
 total=$((pass_count + fail_count))

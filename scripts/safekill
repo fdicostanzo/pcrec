@@ -55,13 +55,26 @@
 #     happens: pid, pgid, start time, command — exactly the fields a
 #     postmortem needs to answer "what did this kill and was it right",
 #     which is precisely what incident B's victim log could NOT answer
-#     (SIGTERM landed with zero accounting on the receiving end).
+#     (SIGTERM landed with zero accounting on the receiving end). The
+#     audit line is WRITTEN BEFORE the signal is sent, not after — a TERM
+#     racing this script's own accounting would reproduce incident B's
+#     zero-accounting failure in miniature. A process that already exited
+#     between the /proc snapshot and the kill() call (TOCTOU — inherent to
+#     any snapshot-then-act design) is not treated as a failure: the
+#     signal targets the process GROUP, not the individually snapshotted
+#     pids, so a vanished member simply is not there to receive it, and
+#     `kill`'s own ESRCH for a fully-vanished group is deliberately
+#     unchecked — "already dead" is success for this tool, not an error.
 #   - Candidate scope narrower than the whole box, for the pattern path:
 #     --under PID restricts candidates to PID's descendant tree (reliable
 #     via /proc's ppid chain) and --cwd DIR restricts to processes whose
 #     /proc/PID/cwd resolves under DIR (reliable via readlink, best-effort
 #     for another user's processes whose cwd this UID cannot read — such
-#     candidates are excluded, not treated as a hard error). Same-session
+#     candidates are excluded, not treated as a hard error, but COUNTED:
+#     any message reporting a candidate count under --cwd notes how many
+#     were excluded as unreadable, so "no match" is never confused with
+#     "matches existed but were unreadable" without needing a new exit
+#     code for it. Same-session
 #     scoping was considered and NOT built as a default filter: incident
 #     A/B's two collisions were both async/background invocations that may
 #     not share a session with the caller, so defaulting to session-scope
@@ -196,6 +209,7 @@ opt_signal="TERM"
 opt_grace="3"
 opt_termonly=0
 opt_killnow=0
+cwd_unreadable_count=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -425,7 +439,14 @@ case "$mode" in
                 || die_usage "--cwd: no such directory: $opt_cwd"
             filtered=()
             for p in "${matched[@]}"; do
-                pcwd="$(readlink -f "/proc/$p/cwd" 2>/dev/null)" || continue
+                pcwd="$(readlink -f "/proc/$p/cwd" 2>/dev/null)" || {
+                    # cwd unreadable (permission, or the process already
+                    # exited) — excluded, not a hard error, but COUNTED so
+                    # a caller can tell "no match" from "matches existed
+                    # but were unreadable" without a new exit code.
+                    cwd_unreadable_count=$((cwd_unreadable_count + 1))
+                    continue
+                }
                 case "$pcwd" in
                     "$want_dir"|"$want_dir"/*) filtered+=("$p") ;;
                 esac
@@ -444,6 +465,16 @@ case "$mode" in
         ;;
 esac
 
+# cwd_note: appended to any message reporting a candidate COUNT for -f
+# mode, so "no match" is never confused with "matches existed but their
+# cwd could not be read" (permission, or the process already exited) —
+# same count, different meaning, and this is the only place that
+# distinction is visible without inventing a new exit code.
+cwd_note=""
+if [ -n "$opt_cwd" ] && [ "$cwd_unreadable_count" -gt 0 ]; then
+    cwd_note=" (note: $cwd_unreadable_count candidate(s) excluded from --cwd matching because their cwd could not be read — re-run with --list and without --cwd to see them)"
+fi
+
 # ---- --list: preview only, never signals anything --------------------------
 
 if [ "$opt_list" -eq 1 ]; then
@@ -456,7 +487,10 @@ if [ "$opt_list" -eq 1 ]; then
         audit_line "$p"
         printf '\n'
     done
-    [ "${#list_pids[@]}" -gt 0 ] && exit 0
+    if [ "${#list_pids[@]}" -gt 0 ]; then
+        exit 0
+    fi
+    [ -n "$cwd_note" ] && printf '%s: no candidates matched%s\n' "$prog" "$cwd_note" >&2
     exit 1
 fi
 
@@ -465,12 +499,12 @@ fi
 if [ "$mode" = "pattern" ]; then
     count="${#matched[@]}"
     if [ "$count" -eq 0 ]; then
-        printf '%s: no candidates matched (after exclusions): %s\n' "$prog" "$pattern" >&2
+        printf '%s: no candidates matched (after exclusions): %s%s\n' "$prog" "$pattern" "$cwd_note" >&2
         exit 1
     fi
     if [ "$count" -gt 1 ] && [ "$opt_all" -ne 1 ]; then
-        printf '%s: refused — %d candidates matched '"'"'%s'"'"' after exclusions; re-run with --all to widen, or --list to preview without killing:\n' \
-            "$prog" "$count" "$pattern" >&2
+        printf '%s: refused — %d candidates matched '"'"'%s'"'"' after exclusions%s; re-run with --all to widen, or --list to preview without killing:\n' \
+            "$prog" "$count" "$pattern" "$cwd_note" >&2
         for p in "${matched[@]}"; do
             printf '  %s\n' "$(audit_line "$p")" >&2
         done
@@ -496,10 +530,24 @@ else
     final_signal="$opt_signal"
 fi
 
-kill -s "$final_signal" -- "${neg_pgids[@]}" 2>/dev/null
+# Audit line printed BEFORE the signal is sent, not after: a TERM landing
+# on this script's own accounting is exactly incident B's failure mode in
+# miniature (SIGTERM reached the victim with zero record of what died).
+# bash's `printf` builtin issues one write(2) per call — there is no
+# userspace stdio buffer to flush here, so write-then-kill is sufficient
+# ordering by itself, no explicit flush needed.
 for p in "${kill_pids[@]}"; do
     printf '%s: kill %s signal=%s\n' "$prog" "$(audit_line "$p")" "$final_signal" >&2
 done
+# kill(2) targets the GROUP (negative pgid), not the individually
+# snapshotted pids above, so a member that already exited between the
+# /proc scan and here (TOCTOU) is simply not there to receive the signal
+# — no per-pid ESRCH to handle. If the ENTIRE recorded group has already
+# vanished, `kill` itself returns nonzero (ESRCH) for that pgid; its exit
+# status is deliberately not checked here — that failure means "already
+# dead", which is success for this tool's purpose, not an error to
+# surface or retry.
+kill -s "$final_signal" -- "${neg_pgids[@]}" 2>/dev/null
 
 escalated=0
 if [ "$opt_killnow" -ne 1 ] && [ "$opt_termonly" -ne 1 ]; then
@@ -519,11 +567,12 @@ if [ "$opt_killnow" -ne 1 ] && [ "$opt_termonly" -ne 1 ]; then
     done
     if [ "${#survivors[@]}" -gt 0 ]; then
         escalated=1
-        kill -s KILL -- "${neg_pgids[@]}" 2>/dev/null
+        # Same write-then-kill discipline as the initial signal above.
         for p in "${survivors[@]}"; do
             printf '%s: escalate pid=%s signal=KILL (grace %ss exceeded)\n' \
                 "$prog" "$p" "$opt_grace" >&2
         done
+        kill -s KILL -- "${neg_pgids[@]}" 2>/dev/null
     fi
 fi
 
