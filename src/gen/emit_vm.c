@@ -916,7 +916,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
  * NOT provably single-path, whose depth grows with the subject. For those the
  * artifact carries an HONEST STAMPED CEILING rather than silently capping at
  * whatever the default array size happens to be — a caller can then know the
- * limit without discovering it by triggering <PREFIX>_ERR_FRAMES.
+ * limit without discovering it by triggering PCREC_ERR_FRAMES.
  *
  * Conservative in the safe direction throughout: over-estimating cost lowers
  * the stamped ceiling, which under-promises rather than over-promises. */
@@ -4187,26 +4187,30 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * QUANTIFIER BODY (vm_cursor_fits is consulted once per A_REP, at this
      * file's three real call sites), so a pattern with two quantified
      * bodies can and does mix rungs, and a scalar "the rung" would LIE on
-     * that case. Named bit constants first (fixed values, independent of
-     * this artifact), then the artifact's own OR'd value -- v.rungs is
-     * already final here: vm_emit's real walk (above, in the scratch
-     * buffer) is the ONLY place vm_rung_mark() runs, so this is the same
-     * per-quantifier selection the emitted C actually made, not a second
-     * computation of it. The PER-QUANTIFIER detail (which A_REP took which
-     * rung) is --emit-ir's RUNGS section, off the same v->rungs-building
-     * VE_RUNG events; this macro is deliberately only the summary a
-     * build-time #ifdef/grep can act on.
+     * that case. v.rungs is already final here: vm_emit's real walk (above,
+     * in the scratch buffer) is the ONLY place vm_rung_mark() runs, so this
+     * is the same per-quantifier selection the emitted C actually made, not
+     * a second computation of it. The PER-QUANTIFIER detail (which A_REP
+     * took which rung) is --emit-ir's RUNGS section, off the same
+     * v->rungs-building VE_RUNG events; this macro is deliberately only the
+     * summary a build-time #ifdef/grep can act on.
+     *
+     * [ABI-NS] (D60, 2026-08-18): the NAMED bit constants this OR'd value is
+     * built from (PCREC_VM_RUNG_CURSOR/_FRAMES_BOUNDED/_FRAMES_UNBOUNDED/
+     * _REVDET/_COUNTER) are pcrec-contract facts — which bit means which
+     * rung is fixed and artifact-independent — and moved to the shared
+     * PCREC_RX_ABI_H block (emit_dfa.c's emit_rx_abi_types), unprefixed and
+     * emitted unconditionally on every artifact. Only the OR'd MASK below,
+     * whose value genuinely varies per artifact, stays here per-prefix.
+     * vm_rung_bit[] (this file) and the block's literal 0x1u/0x2u/... values
+     * must agree — they are the same contract stated twice, and this file's
+     * own array is what the mask below is built from.
      *
      * rx_info deliberately does NOT gain a member for this at [M4.5e]: the
      * struct's layout is the frozen M4 ABI (match_api_m4.md S5, D44.5's
      * "the layout below is FINAL" ruling), and adding a field is an abi-
      * version-bump event this close does not take on its own -- flagged for
      * the manager rather than done here. */
-    sb_printf(c, "#define %s_VM_RUNG_CURSOR           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_CURSOR]);
-    sb_printf(c, "#define %s_VM_RUNG_FRAMES_BOUNDED   0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_BOUNDED]);
-    sb_printf(c, "#define %s_VM_RUNG_FRAMES_UNBOUNDED 0x%xu\n", v.up, vm_rung_bit[VM_RUNG_FRAMES_UNBOUNDED]);
-    sb_printf(c, "#define %s_VM_RUNG_REVDET           0x%xu\n", v.up, vm_rung_bit[VM_RUNG_REVDET]);
-    sb_printf(c, "#define %s_VM_RUNG_COUNTER          0x%xu\n", v.up, vm_rung_bit[VM_RUNG_COUNTER]);
     sb_printf(c, "#define %s_VM_RUNGS 0x%xu\n", v.up, v.rungs);
     /* [ENG-BREP] the STRATEGY stamp, D46's observability half for the ladder's
      * first rung, in the same shape and the same place and for the same
@@ -4215,12 +4219,15 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      *
      * It also carries D47.3's do-or-die half. `-fno-possessify` denies the
      * rewrite, and the way a check knows the denial was honoured is that
-     * <PREFIX>_VM_STRAT_POSSESSIVE is absent from this value — not that the
+     * PCREC_VM_STRAT_POSSESSIVE is absent from this value — not that the
      * flag was passed. A denied strategy appearing in a stamp is a hard test
      * failure, which is testable precisely because the stamp is built from
-     * `a->possessive` at the point the emitter acts on it. */
-    sb_printf(c, "#define %s_VM_STRAT_POSSESSIVE   0x%xu\n", v.up, vm_strat_bit[VM_STRAT_POSSESSIVE]);
-    sb_printf(c, "#define %s_VM_STRAT_BACKTRACKING 0x%xu\n", v.up, vm_strat_bit[VM_STRAT_BACKTRACKING]);
+     * `a->possessive` at the point the emitter acts on it.
+     *
+     * [ABI-NS] (D60): PCREC_VM_STRAT_POSSESSIVE/_BACKTRACKING are the same
+     * class of pcrec-contract fact as the rung bits above, and moved to the
+     * shared block the same way — see that comment. Only the OR'd MASK
+     * below stays here. */
     sb_printf(c, "#define %s_VM_STRATS 0x%xu\n", v.up, v.strats);
     /* [M4.6d] the PRUNE stamp: the same shape and the same place as the two
      * above, plus one thing neither of them needs — the CEILING FORM, which
@@ -4232,9 +4239,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * fall back to the subject-end ceiling and KEEP the trailing-suffix curve
      * §9.1 measures — the pruning is sound either way and merely less tight,
      * and the difference has to be visible in the stamp rather than
-     * discovered by measuring two artifacts against each other. */
-    sb_printf(c, "#define %s_VM_PRUNE_CLAMPED      0x%xu\n", v.up, vm_prune_bit[VM_PRUNE_CLAMPED]);
-    sb_printf(c, "#define %s_VM_PRUNE_UNCLAMPED    0x%xu\n", v.up, vm_prune_bit[VM_PRUNE_UNCLAMPED]);
+     * discovered by measuring two artifacts against each other.
+     *
+     * [ABI-NS] (D60): PCREC_VM_PRUNE_CLAMPED/_UNCLAMPED moved to the shared
+     * block for the same reason as the rung/strategy bits above; only the
+     * OR'd MASK below stays here. */
     sb_printf(c, "#define %s_VM_PRUNES 0x%xu\n", v.up, v.prunes);
     /* The CEILING the artifact actually uses, and "none" when it uses none —
      * which is the same word whether the analysis produced nothing or was
@@ -4285,14 +4294,16 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "} %s_work;\n\n", v.p);
 
     /* The internal give-up sentinels. They share the search entry's public
-     * <PREFIX>_ERR_* values, but they are a different contract at a different
-     * layer (§4.4's three layers: impl returns a private sentinel, the
-     * rx_matchfn export collapses it to -1 per D38.4's frozen return space,
-     * and only <prefix>_search — which D38 says nothing about — has room for
-     * the honest code), so they get their own names. */
-    sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)%s_ERR_STEPS)\n", v.up, v.up);
-    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)%s_ERR_FRAMES)\n", v.up, v.up);
-    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)%s_ERR_WORK)\n\n", v.up, v.up);
+     * PCREC_ERR_* values ([ABI-NS]/D60: unprefixed since those are
+     * pcrec-contract facts, not per-artifact ones), but the sentinels
+     * themselves are a different contract at a different layer (§4.4's
+     * three layers: impl returns a private sentinel, the rx_matchfn export
+     * collapses it to -1 per D38.4's frozen return space, and only
+     * <prefix>_search — which D38 says nothing about — has room for the
+     * honest code), so they get their own PER-PREFIX names. */
+    sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
+    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
+    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)\n\n", v.up);
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
      *
@@ -4427,9 +4438,9 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "static void %s_work_init(%s_work *w)\n"
         "{\n"
         "    int i;\n"
-        "    for (i = 0; i < %s_NSTATE; i++) w->stv[i] = %s_UNSET;\n"
+        "    for (i = 0; i < %s_NSTATE; i++) w->stv[i] = PCREC_UNSET;\n"
         "    w->btn = 0; w->trn = 0;\n",
-        v.p, v.p, v.up, v.up);
+        v.p, v.p, v.up);
     if (has_budget) sb_printf(c, "    w->budget = %s_STEP_BUDGET;\n", v.up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_printf(c, "    w->work = %s_WORK_BUDGET;\n", v.up);
@@ -4749,9 +4760,9 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    for (;;) {\n"
         "        ctx.pos = start;\n"
         "        r = %s_match_impl(&ctx, &w%s);\n"
-        "        if (r == %s_R_STEPS)  return %s_ERR_STEPS;\n"
-        "        if (r == %s_R_FRAMES) return %s_ERR_FRAMES;\n"
-        "        if (r == %s_R_WORK)   return %s_ERR_WORK;\n"
+        "        if (r == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
+        "        if (r == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
+        "        if (r == %s_R_WORK)   return PCREC_ERR_WORK;\n"
         "        if (r >= 0) break;\n"
         "        %s_unwind(&w);\n"
         "        if (start >= n) return 0;\n"
@@ -4762,7 +4773,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    return 1;\n"
         "}\n\n",
         v.p, v.p, v.nclamp > 0 ? ", ceil_" : "",
-        v.up, v.up, v.up, v.up, v.up, v.up, v.p, retry_win, v.p);
+        v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     sb_printf(c,
@@ -4770,8 +4781,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         " *\n"
         " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
         " * return space is >= 0 matched length, -1 no match, and a distinct\n"
-        " * code in [%s_ERR_FLOOR, -2] for each way the engine can give up\n"
-        " * (%s_ERR_STEPS, %s_ERR_FRAMES, %s_ERR_WORK). Anything BELOW the floor\n"
+        " * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up\n"
+        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK). Anything BELOW the floor\n"
         " * stays reserved for the future abort semantic and is what a callout\n"
         " * call site traps on.\n"
         " *\n"
@@ -4797,7 +4808,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "     * code pretending to be a safeguard. */\n"
         "    return r;\n"
         "}\n\n",
-        v.up, v.up, v.up, v.up, g.matchfn, v.p, v.p, v.p,
+        g.matchfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "");
 
     sb_printf(c,
