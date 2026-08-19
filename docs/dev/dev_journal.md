@@ -10679,3 +10679,85 @@ constraint, D64's definition-shaped sites, §8.7's cells, the (?m)^ cost
 number obligation, and the CORRECTED §3.6.1 premise for the skip cure.
 Then waves D (\G) and E (\K), the D27 blinded corpus at module close, and
 the K28 slice before close.
+
+## 2026-08-19 (EDT), thirty-fourth session (part 2) — WAVE C landed and close-validated; [SAFEKILL] chartered, built and merged; two process incidents with their return
+
+WAVE C ((?m)) — merge 2737c61; close archives 8834112. The m letter accepted;
+class axis generalized to the three-valued UPC_{PLAIN,WORD,NL}; direction
+named at ONE site (sides_of — pcrec_build_dfa takes `reverse` explicitly
+rather than deriving it from `prune`, retiring a load-bearing coincidence);
+(?m)$ on wave B's machinery and SHARING \z's emitted selector, not $'s;
+(?m)^ to ENG_ATTEMPT with D63's candidate-start prefilter (ONE derivation,
+two callers — cand_derive; the memchr loop only, bitmap arm deliberately
+unemitted since today's construct set always yields a single-byte set;
+85-185x closes to 27-33x on the linear arm, quadratic crossing arm accepted
+per D63 pending DD-7). THE FIND OF THE WAVE: the lane's own differential
+caught a LIVE MISCOMPILE IN THE DESIGN'S DEFINITION — PCRE2's (?m)^ does
+NOT match after a newline that ends the subject; python and assertions_design
+§3.7/§9.3 both said otherwise. Fixed in both engines (N_BOT_M's newline half
+guarded by !end_ok — wave A's pos==n view consumed by the two (?m) anchors
+for OPPOSITE purposes; VM arm pos<n as SEMANTICS); U11b filed; design
+REFUTED-annotated; and the counter-evidence had been IN THIS REPOSITORY
+since D38 — pcre2_options.md's ALT_CIRCUMFLEX row only means anything if
+the default excludes the trailing-newline match. Process lesson recorded at
+§3.7: a construct's DEFINITION is a claim about PCRE2 like any other; a
+design lane should consult the project's own option survey for its
+construct. THE CURE OUTCOME: of §3.6.1's five proposed intersections, ZERO
+ship — measured, only rows 3/5 are a live hazard (S78 pins the decline);
+rows whose un-decline does not go red were DROPPED per the no-non-detecting-
+checks rule, with the measurements in their place (rows 1/2 redundant by
+D3's accept-pruning argument; row 4 provably never-greater). D62 controls
+1-3 all live (S77 = the permanent flag-reader sabotage; it needed a
+CAPTURE-BEARING cell — wave B's S75 lesson landing again on a new arm,
+possessification being a VM optimization a DFA route cannot observe). Wave
+A's endvar identity gate went RED on 51 patterns and was RIGHT (both (?m)
+anchors read its pos==n view; population predicate moved to the shared
+mlscan.py scanner) — third time an identity gate caught what no behavior
+test could. Suite at merge: corpus 19,346/0. Close: battery all five green;
+gate 13/13 ON THE RE-RUN — the first run FAILED case g at 13,882 MB/s and
+was DISCARDED as contaminated (wave D's suite overlapped the gate; only the
+memchr-sensitive e/g/k dipped; case g's artifact BYTE-IDENTICAL across the
+merge, verified against a pre-wave-C compiler — codegen exonerated by
+construction). Both runs archived with the triage in the commit (8834112).
+
+[SAFEKILL] — Frank's charter, same day, on the twice-recurred pkill class;
+built by ONE sonnet lane in ~40 minutes; merged db8ddde (scripts-only, no
+battery per D48's own logic, fresh 13/13 re-verified at merge). scripts/
+safekill: PID mode = pgid ∪ ppid-descendant tree; pattern mode narrow
+(pure-/proc discovery with ZERO subprocess spawns — the pgrep-f self-match
+hole closed structurally; unconditional self/ancestor exclusion, no bypass;
+refuse-by-default on ambiguity; --list; --under/--cwd; audit-line BEFORE
+signal; TERM->KILL grace; branchable exit codes). Both safety guards
+verified to go red against sabotaged scratch copies. Standing rule from
+here: briefs point at scripts/safekill; never pkill/pgrep -f.
+
+THE INCIDENTS THAT CHARTERED IT, owned in full. (1) The manager launched a
+duplicate of the mech matrix run he had JUST delegated (the delegation rule
+broken first), stopped it correctly via the task API, then cleaned up with
+pkill -f run_sabotage_matrix — killing the lane's canonical S76 child
+mid-row, HOURS after journaling wave B's identical lesson. The kill's
+signature: the victim's log just STOPS (no trailer, no FATAL — MECH-2's
+row-count guard counts INSIDE the script and structurally cannot see a
+SIGTERM). S76 re-ran solo: DETECTED, mlinectxid 2fail/3pass, corpus
+0fail/19,346pass. The runner's completion comment now carries the third
+outcome (committed by the lane): no trailer AND no FATAL = KILLED, not
+failed. (2) The wave C lane then edited the live runner script WHILE an
+instance ran — self-reported, mitigated by insertion offset, verified by
+the intact S77 trailer. One lesson class, twice in an hour, two actors:
+NAMES AND FILES ARE NOT IDENTITIES — a command line is not a process, a
+script file is not a running program. Adjacent variant the same hour: the
+manager removed the safekill worktree while the lane was still VERIFYING in
+it (done working ≠ done verifying). All three to learnings.md at close.
+
+ALSO: gate-under-load finding worth keeping — a FLOOR gate that PASSES on a
+loaded box is a-fortiori valid (contention only depresses throughput);
+only its FAILURES need a quiet re-run. The manager's settle-loop script ran
+the gate after its wait cap regardless — flaw noted, outcome benign for
+exactly that reason.
+
+STATE AT THIS ENTRY: main = 8834112, pushed, tree clean. Waves A+B+C
+merged and close-validated. [SAFEKILL] merged. Wave D (\G) lane asrtwaved
+in flight (differential 26,124 cells/0 divergences at last WIP; final suite
+running). Remaining to Frank's stop line: wave D merge+close, wave E (\K),
+the K28 slice, the D27 blinded corpus, [M6.2] close. K-list: K2, K9, K23,
+K25, K26, K28.
