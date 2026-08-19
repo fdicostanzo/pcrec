@@ -379,12 +379,19 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   so the quantifier lands on an `A_CAT`. It used to be FOUR hand copies
   (`try_quant`, `p_group_body`, mod_modifiers.c's `(?i:...)` port,
   mod_named_groups.c's declaring port) and they had ALREADY DRIFTED: wave B
-  added `\b`/`\B` to two of them and not to the other two, so pcrec REFUSED
-  `(?i:\b)*` and `(?<n>\b)*`, which libpcre2 accepts at (0,0). A tier-2
+  added `\b`/`\B` to two of them and not to the other two. A tier-2
   over-rejection rather than a miscompile — invisible to a corpus of ACCEPTED
   patterns — and exactly the several-homes drift D24's registry exists to
   prevent one level up. Found and fixed by this wave while adding the sixth
-  kind. `not_repeatable` is deliberately NOT part of the predicate: it is a
+  kind. **THE TWO STALE COPIES WERE NOT EQUALLY REACHABLE, measured on a
+  pre-fix build**: mod_modifiers.c's is live on the DEFAULT path (`(?i:\b)*`,
+  `(?i:\B)*`, `(?i:\G)*` all refused where libpcre2 gives (0,0)), while
+  mod_named_groups.c's is reachable only under `--no-captures`, because a
+  named group wraps its body in `A_CAP` and an `A_CAP` is not a bare anchor.
+  The two halves are therefore pinned in different places — gpos.rxt section 8
+  and run_assertions_tests.sh §2b — since no `.rxt` block can pass a flag.
+
+  `not_repeatable` is deliberately NOT part of the predicate: it is a
   per-NODE flag a bare option run sets (R20/SPEC-1), and it must not be
   wrapped — `(?:(?i))*` is error 109 where `(^)*` is not.
 - **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the

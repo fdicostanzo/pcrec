@@ -571,10 +571,18 @@ c"` from `(0,3)` into `(0,1)`, and
   kind.** The bare-anchor rule (quantifier-refuse bare, group-wrap inside
   parens) lived as FOUR hand copies — `try_quant`, `p_group_body`,
   mod_modifiers.c's `(?i:...)` port, mod_named_groups.c's declaring port — and
-  wave B added `\b`/`\B` to two of them. So pcrec REFUSED `(?i:\b)*` and
-  `(?<n>\b)*`, which libpcre2 accepts at `(0,0)`: a tier-2 over-rejection,
-  invisible to a corpus of ACCEPTED patterns. Now ONE predicate
-  (`pcrec_is_bare_anchor`) with four readers.
+  wave B added `\b`/`\B` to two of them. Now ONE predicate
+  (`pcrec_is_bare_anchor`) with four readers. **The two stale copies were NOT
+  equally reachable and this lane's first write-up got that wrong before
+  measuring it on a pre-fix build**: mod_modifiers.c's is LIVE on the default
+  path (`(?i:\b)*`, `(?i:\B)*`, `(?i:\G)*` all REFUSED where libpcre2 gives
+  `(0,0)` — a tier-2 over-rejection invisible to a corpus of ACCEPTED
+  patterns), while mod_named_groups.c's is reachable ONLY under
+  `--no-captures`, because a named group wraps its body in `A_CAP` and an
+  `A_CAP` is not a bare anchor, so at default captures the quantifier lands on
+  the wrapper. The two halves are pinned in different places for that reason —
+  gpos.rxt section 8 and run_assertions_tests.sh §2b, since no `.rxt` block
+  can pass a flag.
   (4) `\G` in a quantifier's FOLLOW must make possessification DECLINE and
   takes `\A`'s arm, NOT `\z`'s — a third reason for the same verdict, so it
   gets its own STRATS row. The attractive wrong generalisation is "singleton

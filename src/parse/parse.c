@@ -54,15 +54,30 @@ Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
  * kinds drives two rules: `try_quant` REFUSES on it, and every group form
  * WRAPS it so the quantifier lands on an `A_CAT` instead.
  *
- * IT USED TO BE FIVE HAND COPIES OF THAT SET and they had already drifted.
- * `p_group_body`, `mod_modifiers.c`'s `(?i:...)` port and
+ * IT USED TO BE FOUR HAND COPIES OF THAT SET and they had already drifted.
+ * `try_quant`, `p_group_body`, `mod_modifiers.c`'s `(?i:...)` port and
  * `mod_named_groups.c`'s declaring port each carried their own `body->k ==`
- * chain, and wave B added `\b`/`\B` to only two of the three: pcrec REFUSED
- * `(?i:\b)*` and `(?<n>\b)*`, which libpcre2 accepts at (0,0). A tier-2
- * over-rejection rather than a miscompile, invisible to a corpus of accepted
- * patterns, and exactly the shape D24's registry exists to prevent one level
- * up — a rule with several homes drifts. One predicate, four readers, so a
- * wave that adds a kind cannot add it to some of them.
+ * chain, and wave B added `\b`/`\B` to only two of them. A tier-2
+ * over-rejection rather than a miscompile — invisible to a corpus of ACCEPTED
+ * patterns — and exactly the shape D24's registry exists to prevent one level
+ * up: a rule with several homes drifts.
+ *
+ * THE TWO STALE COPIES WERE NOT EQUALLY REACHABLE, and the difference was
+ * MEASURED on a pre-fix build rather than assumed:
+ *
+ *   - `mod_modifiers.c`'s copy is LIVE ON THE DEFAULT PATH. `(?i:\b)*`,
+ *     `(?i:\B)*` and `(?i:\G)*` were all REFUSED where libpcre2 gives (0,0).
+ *   - `mod_named_groups.c`'s is reachable ONLY under `--no-captures`, because
+ *     a named group wraps its body in `A_CAP` and an `A_CAP` is not a bare
+ *     anchor — so at default captures the quantifier lands on the wrapper and
+ *     that copy never decides anything. `(?<n>\b)*` COMPILED at default
+ *     captures and REFUSED under `--no-captures`.
+ *
+ * One predicate, four readers, so a wave that adds a kind cannot add it to
+ * some of them. The two halves are pinned in different places for the reason
+ * above: tests/assertions/gpos.rxt section 8 for the `(?i:...)` spellings,
+ * and run_assertions_tests.sh §2b for the `--no-captures` ones, which no
+ * `.rxt` block can express.
  *
  * `not_repeatable` is deliberately NOT part of this predicate: it is a
  * per-NODE flag a bare option run sets (R20/SPEC-1) rather than a property of
