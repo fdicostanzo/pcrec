@@ -1256,7 +1256,30 @@ spine, not before):
   definition consumed by insertion machinery (class-valued: negatable;
   sequence-valued: class-context use is a compile error) with boundary
   consumers as lookaround uses — revisit after M6.6 + the first
-  insertion producer. pcrec is NEWLINE_LF today and that is
+  insertion producer. **GENERALIZED (Frank, 2026-08-19, thirty-fourth
+  session, mid-[M6.2]): the definition idea extends beyond `\n` to the
+  ASSERTION FAMILY.** `$`, `^`, `\b` (and their multiline/caseless/
+  encoding variants) become scope-resolved DEFINITIONS: a construct
+  searches up the tree for a rebinding (a flag like `(?m)` = a local
+  rebinding of `$`/`^`'s definition in its subtree), falling back to the
+  default — the replacement value is an inserted rx (`\Z`≡`(?=\n?\z)`,
+  `(?m)$`≡`(?=\n)|\z`, `(?m)^`≡`\A|(?<=\n)(?!\z)` — note the `(?!\z)`
+  term IS the U11b carve-out, `\b`≡`(?<=\w)(?!\w)|(?<!\w)(?=\w)` with
+  `\w` itself a definition). Value per Frank: shrinks the core rx set
+  and simplifies the additions path — "we optimize insertions and we
+  optimize them all." Manager assessment recorded with it: D62's
+  parse-time resolution is already a degenerate form of this (cx->mods =
+  the tree search, the node field = the resolved binding); the win is
+  the ADDITIONS path (correct-by-composition on day one, folded fast
+  path earned later) plus a SELF-ORACLE property (expansion vs folded
+  implementation as an in-tree differential once lookaround exists); the
+  cost truth is that folding work relocates to a composition RECOGNIZER
+  rather than disappearing — today's zero-cost DFA mechanisms (context
+  bits, class-indexed views) must still be reached; and the U11b lesson
+  binds: a definition is a CLAIM ABOUT PCRE2 like any other — the tidy
+  composition for `(?m)^` was exactly wrong until measured. Same
+  parking condition as before (M6.6 lookaround + DD-14's call/insertion
+  primitive); cross-noted at [DD-14]. pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
   options=0 (build default LF on this box), so \N's generated bitmap is
   the measured complement of {0x0A}, `.` is every-byte-but-0x0A, and `$`
@@ -1276,7 +1299,11 @@ spine, not before):
   module or a real consumer, whichever asks first; measure the
   convention's effect on the censuses through the existing probe
   pipeline before writing any table
-- [DD-14] STATE:not-started — RECURSIVE PATTERN CALLS, the design sketch
+- [DD-14] STATE:not-started (CROSS-NOTE 2026-08-19: [DD-11] now carries
+  Frank's GENERALIZED definition/insertion direction — the assertion
+  family as scope-resolved definitions whose replacement values are
+  inserted rx; this row's call primitive is that idea's substrate, so a
+  DD-14 design must read DD-11's generalization block first) — RECURSIVE PATTERN CALLS, the design sketch
   (Frank question + manager sketch, 2026-08-18, thirty-third session;
   UNRULED territory parked at Frank's "save your notes" — module
   `recursion` keeps refusing by name until ruled in). The language is
