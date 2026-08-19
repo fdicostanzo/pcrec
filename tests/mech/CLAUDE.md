@@ -765,8 +765,16 @@ compares the two ENTRIES of one artifact.
   never looked at. A FULLY-`\G` pattern emits no prefilter at all and a
   `(?m)`-only pattern has no `s1g[]`, so the defect is reachable only by a
   pattern with BOTH — `(?m)^a|\Gb` on `"xb"` at startpos 1, which loses its
-  match under the wave-C bound. **MEASURED: `harness` 3 fail** on gpos.rxt
-  section 5, whose block exists for this row.
+  match under the wave-C bound. **MEASURED: `corpus` 3 fail / 297 pass,
+  `gstartdiff` 1 fail / 7 pass — DETECTED.**
+  **Its first canonical run scored `gstartdiff: 0 fail`, and the finding was
+  about the POPULATION**: the sweep's pattern list had no spelling carrying
+  BOTH a `(?m)^` branch and a `\G` branch, so nothing in it emitted a memchr
+  and a `\G` start family together, and only gpos.rxt caught a sabotage that
+  loses matches. Three such patterns were added and the row re-measured. That
+  is S48's and S78's lesson arriving on a third instrument — and it is the
+  argument for running a row through the canonical driver before believing a
+  hand-validated failing direction.
 - **S84** is D47.5's failure mode one construct over, and it is here because
   the WRONG generalisation is the attractive one: `\z` takes the `$`-follow
   exemption with no gate because its satisfying set is the singleton `{n}`,

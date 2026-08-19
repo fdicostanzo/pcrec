@@ -34,12 +34,24 @@
 # INTERSECTION, which is a population neither wave's corpus had until this one
 # added it. tests/assertions/gpos.rxt section 5 carries the cell, and
 # run_gstart_diff.sh's `partial` class sweeps it.
+#
+# **THE SWEEP DID NOT COVER IT AT FIRST, and that is worth keeping.** This
+# row's first canonical run scored `gstartdiff: 0 fail / 8 pass` — green
+# against a sabotage that loses matches — because the sweep's pattern list had
+# no spelling carrying BOTH a `(?m)^` branch and a `\G` branch, so nothing in
+# it emitted a memchr AND a `\G` start family together. Only gpos.rxt caught
+# it. Three such patterns were added to the sweep and the row was re-measured;
+# a sweep that does not contain the shape its own soundness bound protects is
+# the population failure S48 and S78 both record, one instrument over.
+#
+# MEASURED after the population fix, canonical driver:
+#   corpus: 3 fail / 297 pass   gstartdiff: 1 fail / 7 pass   DETECTED
 SAB_ID="S82-prefilter-bound-at-zero"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness gstartdiff"
 SAB_HARNESS_TARGET="tests/assertions/gpos.rxt"
 SAB_DESC="D63's ENG_ATTEMPT prefilter is bounded at 'start > 0' (wave C's value) instead of 'start > startpos', so a pattern with BOTH a (?m)^ branch and a \\G branch skips the one attempt the \\G branch needs ('(?m)^a|\\Gb' on \"xb\" at startpos 1 loses its match)"
-SAB_DOC_FIGURE="tests/assertions/gpos.rxt section 5's (?m)^a|\\Gb block goes red, and run_gstart_diff.sh's §2 sweep diverges from libpcre2"
+SAB_DOC_FIGURE="tests/assertions/gpos.rxt section 5 goes red (3 cells) and run_gstart_diff.sh's §2 sweep diverges from libpcre2 (1 of its 8 checks) — measured 2026-08-19"
 SAB_COUNT=1
 SAB_BEFORE='                  gseed ? "startpos" : "0",'
 SAB_AFTER='                  "0",   /* SABOTAGE S82 */'
