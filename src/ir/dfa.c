@@ -13,6 +13,23 @@
  * views differ, the EOL view is interned as its own state (`eolvar`) and the
  * generated code switches to it exactly at EOL positions.
  *
+ * [M6.2 wave A] `\z` adds a THIRD view on the same machinery — `end_ok`,
+ * true only at `pos == n`, where `$`/`\Z` are true at `n` AND before a final
+ * newline. See make_state for the three-way canonicalization rule; it is the
+ * one place in this file where getting the REFERENCE wrong (base instead of
+ * the EOL view) costs byte-identity on every `$`-bearing pattern in the
+ * corpus rather than costing correctness, which is exactly the kind of defect
+ * a test suite full of correctness checks does not see.
+ *
+ * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
+ * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
+ * reproduces the pre-wave text). It exists for exactly one consumer,
+ * tests/codegen/run_endvar_identity.sh, which builds a reference compiler
+ * with it and diffs emitted C over the whole corpus — the same shape
+ * `-DPCREC_NO_TRIE` has served since M2.8, and for the same reason: a
+ * byte-identity claim wants a reference build, not a pinned historical
+ * commit. It is never defined in a shipped build.
+ *
  * Byte equivalence classes are computed per machine so transition tables are
  * ncls-wide instead of 256-wide. All scratch memory is arena-owned so
  * ctx_fail/longjmp cannot leak (R1 R-3a). */
@@ -324,6 +341,13 @@ typedef struct {
     int       nout;
     bool      accept;
     bool      eol_ok;
+    /* [M6.2 wave A] may a `\z` (N_END) assertion pass here — the THIRD
+     * position view, on top of `bot_ok`/`eol_ok`. The invariant the caller
+     * owes is `end_ok => eol_ok`: every position at which `\z` holds is one
+     * at which `$`/`\Z` holds too, so a closure with end_ok set and eol_ok
+     * clear describes no position the machine can be in. make_state is the
+     * only caller and it never spells that combination. */
+    bool      end_ok;
     bool      bot_ok;
     bool      prune;
 } Clo;
@@ -501,6 +525,10 @@ static void clo_walk(Clo *cl, int s)
                 if (!cl->eol_ok) break;
                 s = st->t1;
                 continue;
+            case N_END:
+                if (!cl->end_ok) break;
+                s = st->t1;
+                continue;
             }
             break;   /* the path ends here */
         }
@@ -515,7 +543,8 @@ static void clo_walk(Clo *cl, int s)
 }
 
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
-                    bool prune, CloScratch *sc, int *out, int *nout, bool *accept)
+                    bool end_ok, bool prune, CloScratch *sc, int *out,
+                    int *nout, bool *accept)
 {
     marks_next(&sc->seen);
     /* The two stamp arrays advance in LOCKSTEP, which is what lets one `gen`
@@ -532,7 +561,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
     Clo cl = { nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
-               out, 0, false, eol_ok, bot_ok, prune };
+               out, 0, false, eol_ok, end_ok, bot_ok, prune };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_walk(&cl, pre[i]);
@@ -543,7 +572,8 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
 /* ---- state interning ---- */
 
-static uint32_t dhash(const int *list, int n, int accept, int eolvar)
+static uint32_t dhash(const int *list, int n, int accept, int eolvar,
+                      int endvar)
 {
     uint32_t h = 2166136261u;
     for (int i = 0; i < n; i++) {
@@ -554,13 +584,16 @@ static uint32_t dhash(const int *list, int n, int accept, int eolvar)
     h *= 16777619u;
     h ^= (uint32_t)(eolvar + 2);
     h *= 16777619u;
+    h ^= (uint32_t)(endvar + 2);
+    h *= 16777619u;
     return h;
 }
 
 static void tab_insert(Dfa *d, int idx)
 {
     uint32_t h = dhash(d->st[idx].list, d->st[idx].nlist,
-                       d->st[idx].accept, d->st[idx].eolvar);
+                       d->st[idx].accept, d->st[idx].eolvar,
+                       d->st[idx].endvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) i = (i + 1) & (d->tabcap - 1);
     d->tab[i] = idx;
@@ -580,14 +613,16 @@ static void tab_grow(Ctx *cx, Dfa *d)
 }
 
 /* Intern a closed state (list must already be a closure result). */
-static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolvar)
+static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept,
+                  int eolvar, int endvar)
 {
     if (d->tabcap == 0 || (size_t)d->n * 2 >= d->tabcap) tab_grow(cx, d);
-    uint32_t h = dhash(list, n, accept, eolvar);
+    uint32_t h = dhash(list, n, accept, eolvar, endvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) {
         DState *s = &d->st[d->tab[i]];
         if (s->nlist == n && (bool)s->accept == accept && s->eolvar == eolvar &&
+            s->endvar == endvar &&
             memcmp(s->list, list, (size_t)n * sizeof(int)) == 0)
             return d->tab[i];
         i = (i + 1) & (d->tabcap - 1);
@@ -622,32 +657,95 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept, int eolv
     memcpy(s->list, list, (size_t)n * sizeof(int));
     s->accept = accept;
     s->eolvar = eolvar;
+    s->endvar = endvar;
     s->tr = arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
     for (int c = 0; c < d->ncls; c++) s->tr[c] = -2; /* unfilled */
     d->tab[i] = d->n;
     return d->n++;
 }
 
-/* Build (and intern) the DFA state for pre-closure set `pre`; -1 = dead. */
+/* Build (and intern) the DFA state for pre-closure set `pre`; -1 = dead.
+ *
+ * THREE POSITION VIEWS SINCE [M6.2] WAVE A, and the canonicalization rule
+ * below is the whole of it (assertions_design.md §3.3, as CORRECTED by R30
+ * E3 — the first draft got this wrong by one sentence and the correction is
+ * the reason tests/codegen/run_endvar_identity.sh exists):
+ *
+ *     base = closure(eol_ok=F, end_ok=F)   the interior view
+ *     eolv = closure(eol_ok=T, end_ok=F)   where `$`/`\Z` pass
+ *     endv = closure(eol_ok=T, end_ok=T)   where `\z` passes too (pos == n)
+ *
+ *     eolvar = interned iff eolv != base   ; -1 means "same as base"
+ *     endvar = interned iff endv != eolv   ; -1 means "SAME AS THE EOL VIEW"
+ *
+ * `endvar` is canonicalized against the EOL VIEW, not against the base, and
+ * that is the load-bearing line. Compare it against the base instead and
+ * every eol-differing state of every `$`-bearing pattern interns a live
+ * endvar identical in content to its eolvar — so a `\z`-free pattern's tables
+ * change, its artifact stops being byte-identical to the pre-wave one, and
+ * the zero-regression property this convention buys is gone.
+ *
+ * WITH THE RULE AS WRITTEN THE PROPERTY HOLDS BY CONSTRUCTION, not by a flag:
+ * a pattern with no `\z` has no N_END state, so `end_ok` gates nothing, so
+ * `endv == eolv` at every state, so `endvar` is -1 everywhere, so
+ * `dfa_has_endvar` is false and the emitter emits today's text. No `has_z`
+ * conditional is needed anywhere. */
 static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, bool prune,
-                      const int *pre, int npre, bool bot_ok,
+                      const int *pre, int npre, bool bot_ok, bool has_end,
                       CloScratch *sc, int *scratch)
 {
     int *scratch2 = scratch + nfa->n;
-    int nout, nout2;
-    bool accept, accept2;
+    int *scratch3 = scratch + 2 * nfa->n;
+    int nout, nout2, nout3;
+    bool accept, accept2, accept3;
 
-    closure(nfa, pre, npre, bot_ok, false, prune, sc, scratch, &nout, &accept);
-    closure(nfa, pre, npre, bot_ok, true, prune, sc, scratch2, &nout2, &accept2);
+    closure(nfa, pre, npre, bot_ok, false, false, prune, sc,
+            scratch, &nout, &accept);
+    closure(nfa, pre, npre, bot_ok, true, false, prune, sc,
+            scratch2, &nout2, &accept2);
 
-    if (!accept && !accept2 && nout == 0 && nout2 == 0) return -1;
+    /* THE THIRD CLOSURE IS SKIPPED WHEN THE MACHINE HAS NO N_END, and that
+     * is a COST fix rather than a correctness one — but it is not optional,
+     * and the reason is measured. With no N_END state `end_ok` gates nothing,
+     * so `endv == eolv` at every pre-set, PROVABLY: the two closures differ
+     * only where an N_END arm is reached, and there is none. Running it
+     * anyway costs a third of the subset construction's closure work on every
+     * pattern in the corpus, which is what tests/resource/'s CPU budget
+     * caught on `[a-z]{0,30000}` (57.6 s against a 45 s cap) the first time
+     * this landed without the guard.
+     *
+     * `has_end` is computed ONCE per machine by pcrec_build_dfa, the shape
+     * `nfa_has_bot` already has, so this is a hoisted loop-invariant rather
+     * than a per-state test of anything. It is NOT the `has_z` flag §3.3
+     * says is unnecessary: that one was about whether byte-identity needs a
+     * conditional (it does not — the canonicalization rule delivers it), and
+     * this is about not computing an answer we can prove without computing. */
+    if (has_end) {
+        /* end_ok implies eol_ok — the Clo.end_ok invariant. */
+        closure(nfa, pre, npre, bot_ok, true, true, prune, sc,
+                scratch3, &nout3, &accept3);
+    } else {
+        nout3 = nout2;
+        accept3 = accept2;
+        scratch3 = scratch2;
+    }
+
+    if (!accept && !accept2 && !accept3 &&
+        nout == 0 && nout2 == 0 && nout3 == 0) return -1;
 
     int eolvar = -1;
     if (accept2 != accept || nout2 != nout ||
         memcmp(scratch, scratch2, (size_t)nout * sizeof(int)) != 0)
-        eolvar = intern(cx, d, scratch2, nout2, accept2, -1);
+        eolvar = intern(cx, d, scratch2, nout2, accept2, -1, -1);
 
-    return intern(cx, d, scratch, nout, accept, eolvar);
+    int endvar = -1;
+#ifndef PCREC_NO_ENDVAR
+    if (accept3 != accept2 || nout3 != nout2 ||
+        memcmp(scratch2, scratch3, (size_t)nout2 * sizeof(int)) != 0)
+        endvar = intern(cx, d, scratch3, nout3, accept3, -1, -1);
+#endif
+
+    return intern(cx, d, scratch, nout, accept, eolvar, endvar);
 }
 
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
@@ -671,12 +769,20 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
     sc.emit.n = nfa->n;
     sc.memo.ar = sc.ctxs.ar = sc.ks.ar = &cx->arena;
 
-    int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 2 * sizeof(int));
+    /* [M6.2 wave A] THREE closure buffers, not two — make_state computes
+     * base / eol / end views into scratch, scratch + n and scratch + 2n. */
+    int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 3 * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
+    /* Hoisted once per machine — see make_state's own note on why the third
+     * closure is conditional. */
+    bool has_end = false;
+    for (int i = 0; i < nfa->n; i++)
+        if (nfa->st[i].k == N_END) { has_end = true; break; }
+
     int root = nfa->start;
-    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, &sc, scratch);
-    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, &sc, scratch);
+    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, has_end, &sc, scratch);
+    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, has_end, &sc, scratch);
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
@@ -689,7 +795,8 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
                 int ns = d->st[si].list[j];
                 if (cls_has(nfa->st[ns].cls, b)) pre[npre++] = nfa->st[ns].t1;
             }
-            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, &sc, scratch);
+            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, has_end,
+                                 &sc, scratch);
             d->st[si].tr[c] = tgt;
         }
     }

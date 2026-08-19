@@ -848,6 +848,19 @@ static bool dfa_has_eolvar(const Dfa *d)
     return false;
 }
 
+/* [M6.2 wave A] Does any state have an END view (`\z`) distinct from its EOL
+ * view? FALSE for every `\z`-free pattern BY CONSTRUCTION (src/ir/dfa.c's
+ * make_state canonicalizes `endvar` against the EOL view, so a pattern with
+ * no N_END state interns none), which is what makes every `if (endv)` below
+ * a no-op on the existing corpus and the emitted text byte-identical to the
+ * pre-wave one. tests/codegen/run_endvar_identity.sh is the check. */
+static bool dfa_has_endvar(const Dfa *d)
+{
+    for (int i = 0; i < d->n; i++)
+        if (d->st[i].endvar >= 0) return true;
+    return false;
+}
+
 static void emit_eol_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
 {
     sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n);
@@ -856,6 +869,70 @@ static void emit_eol_table(StrBuf *c, const char *p, const char *tag, const Dfa 
         sb_printf(c, " %d,", d->st[i].eolvar);
     }
     sb_puts(c, "\n    };\n");
+}
+
+/* The END-view table. Same shape as the EOL one, DIFFERENT MEANING for -1:
+ * here it is "same as the EOL view", so the emitted selector below walks
+ * endv -> ev -> self rather than testing one entry. */
+static void emit_end_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+{
+    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n);
+    for (int i = 0; i < d->n; i++) {
+        if (i % 16 == 0) sb_puts(c, "\n       ");
+        sb_printf(c, " %d,", d->st[i].endvar);
+    }
+    sb_puts(c, "\n    };\n");
+}
+
+/* The VIEW SELECTOR, emitted once per machine (forward and reverse) and the
+ * one place the three-way position rule turns into C.
+ *
+ * `posv` is the position variable (`pos` / `pp`), `stv` the state variable
+ * (`st` / `rst`), `outv` the view variable the scan then indexes through
+ * (`est` / `erst`), and `ev`/`endv` the two table tags.
+ *
+ *   pos == n                      -> the END view   (`\z`, `$`, `\Z` all pass)
+ *   pos + 1 == n && s[pos] == \n  -> the EOL view   (`$`/`\Z` only)
+ *   otherwise                     -> the state itself
+ *
+ * WITH NO END VIEW IN THE MACHINE (`has_end` false) this emits the exact text
+ * it emitted before [M6.2] wave A, character for character — the byte-identity
+ * property is a property of this function, so it is written as one branch that
+ * reproduces the old string rather than as a general form that happens to
+ * agree. */
+static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
+                             bool has_end, const char *posv, const char *stv,
+                             const char *outv, const char *ev,
+                             const char *endv, const char *ind)
+{
+    sb_printf(c, "%sint %s = %s;\n", ind, outv, stv);
+    if (!has_end) {
+        sb_printf(c, "%sif (__builtin_expect(%s + 1 >= n, 0) && %s_%s[%s] >= 0 &&\n"
+                     "%s    (%s == n || (%s + 1 == n && s[%s] == '\\n')))\n"
+                     "%s    %s = %s_%s[%s];\n",
+                  ind, posv, p, ev, stv,
+                  ind, posv, posv, posv,
+                  ind, outv, p, ev, stv);
+        return;
+    }
+    if (!has_eol) {
+        /* `\z` with no `$`/`\Z` anywhere: only `pos == n` selects anything. */
+        sb_printf(c, "%sif (__builtin_expect(%s == n, 0) && %s_%s[%s] >= 0)\n"
+                     "%s    %s = %s_%s[%s];\n",
+                  ind, posv, p, endv, stv,
+                  ind, outv, p, endv, stv);
+        return;
+    }
+    sb_printf(c, "%sif (__builtin_expect(%s + 1 >= n, 0)) {\n", ind, posv);
+    sb_printf(c, "%s    if (%s == n) {\n", ind, posv);
+    sb_printf(c, "%s        if (%s_%s[%s] >= 0)      %s = %s_%s[%s];\n",
+              ind, p, endv, stv, outv, p, endv, stv);
+    sb_printf(c, "%s        else if (%s_%s[%s] >= 0) %s = %s_%s[%s];\n",
+              ind, p, ev, stv, outv, p, ev, stv);
+    sb_printf(c, "%s    } else if (s[%s] == '\\n' && %s_%s[%s] >= 0) {\n",
+              ind, posv, p, ev, stv);
+    sb_printf(c, "%s        %s = %s_%s[%s];\n", ind, outv, p, ev, stv);
+    sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
 static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
@@ -947,7 +1024,15 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
-    bool eol = dfa_has_eolvar(fd) || dfa_has_eolvar(rd);
+    bool eol  = dfa_has_eolvar(fd) || dfa_has_eolvar(rd);
+    /* [M6.2 wave A] `\z`'s third view. `views` is the flag every site below
+     * that used to read `eol` now reads: what the D11 bound and the
+     * evaluation ORDER protect is "a state can accept at a position a skip
+     * would pass", and an END view creates exactly that situation at
+     * `pos == n`. Both are false for every pattern the pre-wave corpus
+     * contains, so `views == eol` there and nothing moves. */
+    bool endv = dfa_has_endvar(fd) || dfa_has_endvar(rd);
+    bool views = eol || endv;
 
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
@@ -973,7 +1058,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * that nothing matches when the start state has no EOL view. `$` alone is
      * exactly the counter-example: it never leaves fs and facc[fs] is 0, but
      * its EOL variant accepts. */
-    if (esc_count == 0 && !start_acc && fd->st[fs].eolvar < 0) {
+    if (esc_count == 0 && !start_acc && fd->st[fs].eolvar < 0 &&
+        fd->st[fs].endvar < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
         return;
@@ -1006,7 +1092,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_u8_table(c, p, "fcls", fd->clsmap, 256);
     emit_tr_table(c, p, "ftr", fd);
     emit_acc_table(c, p, "facc", fd);
-    if (eol) emit_eol_table(c, p, "fev", fd);
+    if (eol)  emit_eol_table(c, p, "fev", fd);
+    if (endv) emit_end_table(c, p, "fendv", fd);
     if (prefilter && !use_memchr)
         emit_u8_table(c, p, "first", first, 256);
     for (int k = 0; k < nfskip; k++)
@@ -1014,19 +1101,20 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_u8_table(c, p, "rcls", rd->clsmap, 256);
     emit_tr_table(c, p, "rtr", rd);
     emit_acc_table(c, p, "racc", rd);
-    if (eol) emit_eol_table(c, p, "rev", rd);
+    if (eol)  emit_eol_table(c, p, "rev", rd);
+    if (endv) emit_end_table(c, p, "rendv", rd);
     for (int k = 0; k < nrskip; k++)
         emit_stay_table(c, p, "rs", rskip[k], rd);
 
     /* Under EOL the scan reads the accept flag and the transition row through
      * `est`/`erst` (the EOL view at the last two positions); otherwise those
      * collapse to `st`/`rst` and gcc sees exactly the pre-M2.7 loop. */
-    const char *fsrc = eol ? "est" : "st";
-    const char *rsrc = eol ? "erst" : "rst";
+    const char *fsrc = views ? "est" : "st";
+    const char *rsrc = views ? "erst" : "rst";
     /* Every skip must stop at n-1 so a state that accepts only at EOL is
      * never skipped past; below n-1 the EOL view is unreachable, which is
      * also why `est` cannot be stale after a skip. */
-    const char *fbound = eol ? "pos + 1 < n" : "pos < n";
+    const char *fbound = views ? "pos + 1 < n" : "pos < n";
 
     sb_puts(c,   "    size_t pos = startpos;\n"
                  "    size_t last = (size_t)-1;\n");
@@ -1044,14 +1132,14 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * costs 43% on `[01]*1[01]{8}` (158.4 -> 90.8 MB/s, 0 skip states, tight
      * spreads), so the non-EOL path keeps the original order. This asymmetry
      * is the whole reason the flag exists; do not "simplify" it away. */
-    if (!eol)
+    if (!views)
         sb_printf(c, "        if (%s_facc[st]) last = pos;\n", p);
     {
         const char *kw = "if";
         if (prefilter) {
             sb_printf(c, "        if (st == %d && last == (size_t)-1) {\n", fs);
             if (use_memchr) {
-                if (eol) {
+                if (views) {
                     /* no early `return 0`: the EOL view may still accept at
                      * n-1 or n, so fall through to the stepped loop instead */
                     sb_puts(c,   "            if (pos + 1 < n) {\n");
@@ -1078,7 +1166,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                 }
             } else {
                 sb_printf(c, "            while (%s && !%s_first[s[pos]]) pos++;\n", fbound, p);
-                if (!eol) sb_puts(c, "            if (pos >= n) return 0;\n");
+                if (!views) sb_puts(c, "            if (pos >= n) return 0;\n");
             }
             sb_puts(c, "        }\n");
             kw = "else if";
@@ -1090,17 +1178,15 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             /* With the accept check ahead of us (non-EOL order) the skipped
              * run's final position would otherwise go unrecorded; under EOL
              * the check runs after the skip and already covers it. */
-            if (!eol && fd->st[K].accept)
+            if (!views && fd->st[K].accept)
                 sb_puts(c, "            last = pos;\n");
             sb_puts(c, "        }\n");
             kw = "else if";
         }
     }
-    if (eol) {
-        sb_puts(c,   "        int est = st;\n");
-        sb_printf(c, "        if (__builtin_expect(pos + 1 >= n, 0) && %s_fev[st] >= 0 &&\n"
-                     "            (pos == n || (pos + 1 == n && s[pos] == '\\n')))\n"
-                     "            est = %s_fev[st];\n", p, p);
+    if (views) {
+        emit_view_select(c, p, eol, endv, "pos", "st", "est", "fev", "fendv",
+                         "        ");
         sb_printf(c, "        if (%s_facc[%s]) last = pos;\n", p, fsrc);
     }
     sb_puts(c,   "        if (pos >= n) break;\n");
@@ -1115,7 +1201,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                  "        size_t pp = end;\n");
     sb_printf(c, "        int rst = %d;\n", rs);
     sb_puts(c,   "        for (;;) {\n");
-    if (!eol)
+    if (!views)
         sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
     {   /* same ordering rule as the forward loop, and `sfound` wants the
          * SMALLEST accepting position, which is where a reverse skip stops */
@@ -1125,19 +1211,17 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             /* pp only ever DECREASES, so one entry guard is enough to keep the
              * whole skip below the EOL region */
             sb_printf(c, "            %s (rst == %d%s) {\n", kw, K,
-                      eol ? " && pp + 1 < n" : "");
+                      views ? " && pp + 1 < n" : "");
             sb_printf(c, "                while (pp > startpos && %s_rs%d[s[pp - 1]]) pp--;\n", p, K);
-            if (!eol && rd->st[K].accept)
+            if (!views && rd->st[K].accept)
                 sb_puts(c, "                sfound = pp;\n");
             sb_puts(c, "            }\n");
             kw = "else if";
         }
     }
-    if (eol) {
-        sb_puts(c,   "            int erst = rst;\n");
-        sb_printf(c, "            if (__builtin_expect(pp + 1 >= n, 0) && %s_rev[rst] >= 0 &&\n"
-                     "                (pp == n || (pp + 1 == n && s[pp] == '\\n')))\n"
-                     "                erst = %s_rev[rst];\n", p, p);
+    if (views) {
+        emit_view_select(c, p, eol, endv, "pp", "rst", "erst", "rev", "rendv",
+                         "            ");
         sb_printf(c, "            if (%s_racc[%s]) sfound = pp;\n", p, rsrc);
     }
     sb_puts(c,   "            if (pp <= startpos) break;\n");
@@ -1214,7 +1298,39 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         /* labels marked unused: EOL-variant states are entered via their
          * transition tables only, never their own label */
         sb_printf(c, "%s_s%d: __attribute__((unused));\n", p, i);
-        if (st->eolvar >= 0) {
+        if (st->endvar >= 0) {
+            /* [M6.2 wave A] THE END VIEW (`\z`), reached on ENG_ATTEMPT only
+             * when the pattern also carries a `^`/`\A` — `\Aa\z` is the
+             * shape. Three arms in position order, most specific first:
+             * `pos == n` takes the END view (and then there is no byte to
+             * consume, so it always leaves), `pos + 1 == n && s[pos] == '\n'`
+             * takes the EOL view, and everything else is the state itself.
+             *
+             * A state only reaches this branch when its END view DIFFERS from
+             * its EOL view (`endvar >= 0` means exactly that, src/ir/dfa.c) —
+             * which is why the `endvar < 0` else-branch below is still the
+             * pre-wave text, unchanged, for every state of every pattern that
+             * has no `\z`. */
+            const DState *endv = &d->st[st->endvar];
+            sb_puts(c, "        if (pos == n) {\n");
+            if (endv->accept)
+                sb_puts(c, "            last = pos;\n");
+            sb_printf(c, "            goto %s_done;\n", p);
+            sb_puts(c, "        }\n");
+            if (st->eolvar >= 0) {
+                const DState *v = &d->st[st->eolvar];
+                sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
+                if (v->accept)
+                    sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                          p, st->eolvar, p);
+                sb_puts(c, "        }\n");
+            }
+            if (st->accept)
+                sb_puts(c, "        last = pos;\n");
+            /* both arms above returned or consumed, so pos < n here */
+            sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
+        } else if (st->eolvar >= 0) {
             const DState *v = &d->st[st->eolvar];
             /* at an EOL position ($ passable), use the EOL-view state:
              * its accept is correctly priority-pruned and its table

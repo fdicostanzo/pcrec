@@ -148,7 +148,29 @@ construction (src/ir) and emission (src/gen).
   20,000-character pattern segfaulted pcrec once already for want of that, and
   three of this file's walks descend those spines.
 
-  The `$`-follow exemption's gate is LIVE (D47.5): the analysis reads
+  **[M6.2 wave A] the `$`-follow exemption's gate is live AND SCOPE-CORRECT
+  (D47.5 + its 2026-08-18 addendum; D62; assertions_design.md §8).** "Live"
+  turned out to be necessary and NOT sufficient, and this file is where that
+  was found out. The live read was `P.multiline = cx->mods.multiline`, taken
+  once AFTER the parse — i.e. the parser's end-of-pattern option state — while
+  `(?m)` in PCRE2 is SCOPED. Two of the four reachable shapes disagree in the
+  unsound direction: `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)` both end the parse
+  with multiline=false and both contain a genuinely multiline `$`, so both
+  would have possessified a quantifier whose retreat is the only route to the
+  match — measured as lost-match cells, correct answer `(0,1)`, possessified
+  answer NO MATCH. D47.5's own recorded obligation names the leading-`(?m)`
+  shape, the one the old code got right, so discharging it would have left
+  both defects live. The cure: `first_of` reads `a->multiline` off the NODE,
+  the parser resolves it at the `$` itself, `ParseMods` is now incomplete
+  outside `src/parse/` so no later pass can repeat the mistake, and `\z`
+  (A_END) takes the same exemption with no gate at all — its satisfying set is
+  the singleton {n}, so the upward-closure argument is strictly sharper than
+  `$`'s and nothing can make it false. The exemption FIRING is checked through
+  the artifact's `<PREFIX>_VM_STRATS` stamp in both directions
+  (tests/assertions/run_assertions_tests.sh); the historical account of the
+  verdict-time read follows.
+
+  Before wave A: the analysis read
   `cx->mods.multiline` at verdict time rather than carrying a comment about
   what pcrec does not support yet. `$` in a quantifier's follow is measured
   safe at 0 diverging cells without `(?m)` and unsafe under it (re-measured
@@ -265,7 +287,15 @@ construction (src/ir) and emission (src/gen).
 
 - **minimize.c** — DFA minimization by Moore-style partition refinement with
   signature hashing. The EOL-view edge (`eolvar`) participates as an extra
-  alphabet symbol so `$`-machines minimize correctly. Behavior-preserving:
+  alphabet symbol so `$`-machines minimize correctly, and since [M6.2] wave A
+  the END-view edge (`endvar`, `\z`'s) as a second one. **The two are not
+  symmetric**: `eolvar == -1` means "self" while `endvar == -1` means "same as
+  the EOL view", so both edges are RESOLVED through that chain before entering
+  a signature and re-canonicalized against the resolved target on rebuild.
+  Byte-identity on `\z`-free patterns holds by construction rather than by a
+  conditional — with every `endvar` at -1 the appended signature column is a
+  duplicate of the one before it, and a duplicated column cannot change a
+  partition. Behavior-preserving:
   priority/leftmost-first semantics are already baked into the transition
   structure before this runs. Shrinks emitted tables (code size + cache).
   **[M4.7b/K7]:** its five local tables are the ONLY allocations on the compile

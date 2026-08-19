@@ -49,6 +49,28 @@ nothing checked that, and the gap was not hypothetical — see below.
   naming the handful of rows whose deletion an exact count would not catch,
   plus the exact counts themselves. Part of `make test`; env: PCREC, KEEP=1.
 
+  **[M6.2] wave A added a SECOND KIND of gated pin, and the pairing is the
+  point.** Until now a `reject_gated` row existed because the diagnostic does
+  not exist in the default config at all. These exist because ONE CONSTRUCT
+  ANSWERS TWO WAYS: `\b` with module `assertions` off says "requires module
+  'assertions'", and with it ON says "module 'assertions' is enabled but \b is
+  not implemented yet" — the first sentence becomes a lie the moment the
+  module is enabled, since it asks the user to do what they have already done.
+  A module landing its constructs across several waves (this is the first)
+  has that interval by construction. The seven rows sit DIRECTLY UNDER the six
+  gate-closed ones in the `== assertions ==` section so a reader sees one
+  construct answering two ways depending on a fact about the invocation rather
+  than about the pattern, and `tests/assertions/run_assertions_tests.sh`
+  carries the control they cannot: the three constructs the wave DOES build
+  must COMPILE with the gate open, or every "is not implemented yet" row is
+  measuring an empty module. Sabotage S70.
+
+  **The pair to move together when a later wave lands a construct**: delete
+  its `reject_gated assertions` row (it is built now) and add its cells to
+  tests/assertions/. Leaving the row behind turns a true statement into a
+  false one the day the producer lands — the `(?J)` wording history recorded
+  in src/parse/mod_modifiers.c, exactly.
+
   **[STD1b] (D37, 2026-08-13) re-baseline: 306→274 hand-written, 65→99
   accept-controls, 15→55 gated, 0 known-wrong throughout.** The bare
   default flipped from empty to the frozen named set `std1` = {classes,

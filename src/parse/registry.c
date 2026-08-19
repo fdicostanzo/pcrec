@@ -358,9 +358,28 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
 ESC_CLASS_SCALAR('b', "\\b", assertions, ANY_ENGINE,
                "word boundary — but inside a class it is BASE syntax: backspace (0x08)", QF_NO, "char 0x08", 0x08),
 ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary", QF_NO, "err 107"),
-ESC_CLASS_INVALID('A', "\\A", assertions, ANY_ENGINE, "start of subject", QF_NO, "err 107"),
-ESC_CLASS_INVALID('Z', "\\Z", assertions, ANY_ENGINE, "end of subject, or before a final newline", QF_NO, "err 107"),
-ESC_CLASS_INVALID('z', "\\z", assertions, ANY_ENGINE, "end of subject", QF_NO, "err 107"),
+/* [M6.2] WAVE A: the three rows module `assertions` PRODUCES. Longhand
+ * rather than ESC_CLASS_INVALID for exactly one field — `aport` — and
+ * every other field is byte-for-byte what the macro built, RF_CLASS_INVALID
+ * included: `[\A]` is PCRE2 error 107 in every class position and stays so,
+ * because a class member is not an assertion and no module will ever make it
+ * one (the R9/SPEC-classes-F1 rule; the port is an ATOM port only, so the
+ * class position keeps its permanent refusal by construction rather than by
+ * a second check). See src/parse/mod_assertions.c for why two of the three
+ * are exact aliases of shipped nodes and the third is not. */
+{RK_ESC, 'A', NULL, "\\A", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "start of subject",
+ ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT},
+{RK_ESC, 'Z', NULL, "\\Z", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
+ "end of subject, or before a final newline",
+ ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT},
+{RK_ESC, 'z', NULL, "\\z", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "end of subject",
+ ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT},
 ESC_CLASS_INVALID('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject", QF_NO, "err 107"),
 ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match", QF_NO, "err 107"),
 

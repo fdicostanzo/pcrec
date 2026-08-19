@@ -2,7 +2,21 @@
  * signature hashing. Two states merge iff they have the same accept bit and
  * equivalent transitions — including the EOL-view edge, which is treated as
  * one extra alphabet symbol (eolvar == -1 means "self", so states whose EOL
- * view is themselves refine correctly against states with a distinct view).
+ * view is themselves refine correctly against states with a distinct view) —
+ * and, since [M6.2] wave A, the END-view edge (`endvar`, `\z`'s view) as a
+ * SECOND extra symbol. The two are not symmetric and the asymmetry is the
+ * thing to hold on to: `eolvar == -1` means "self", `endvar == -1` means
+ * "SAME AS THE EOL VIEW" (src/ir/dfa.c's make_state), so both edges are
+ * RESOLVED through that chain before they enter a signature, and both are
+ * re-canonicalized against the resolved target when the states are rebuilt.
+ * Resolve them wrongly and minimization would either merge states that differ
+ * only at `pos == n` or refuse to merge states that do not differ at all.
+ *
+ * BYTE-IDENTITY on `\z`-free patterns is preserved by construction, not by a
+ * conditional: with no `\z` in the pattern every `endvar` is -1, so the
+ * resolved end target EQUALS the resolved eol target at every state, and the
+ * appended signature column is a duplicate of the one before it. A duplicated
+ * column cannot change a partition, so the same states merge as before.
  *
  * Priority (leftmost-first) semantics are fully baked into the transition
  * structure by the time this runs, so behavior-preserving merging cannot
@@ -22,7 +36,8 @@
 
 /* signature of state i under partition `part`:
  * [ part(i), part(δ(i,0)), ..., part(δ(i,ncls-1)), part(δ(i,EOL)) ] */
-static void state_sig(const Dfa *d, const int *part, int i, int *sig)
+static void state_sig(const Dfa *d, const int *part, int i, int *sig,
+                      bool has_end)
 {
     const DState *s = &d->st[i];
     int k = 0;
@@ -31,15 +46,31 @@ static void state_sig(const Dfa *d, const int *part, int i, int *sig)
         int t = s->tr[cl];
         sig[k++] = (t < 0) ? -1 : part[t];
     }
-    int v = s->eolvar;
-    sig[k++] = (v < 0) ? part[i] : part[v];
+    int v = (s->eolvar < 0) ? i : s->eolvar;
+    sig[k++] = part[v];
+    /* THE END COLUMN IS OMITTED ENTIRELY when no state has an END view, and
+     * that is a COST decision with a proof rather than a shortcut: with every
+     * `endvar` at -1 the column resolves to `part[v]`, a byte-for-byte
+     * duplicate of the EOL column beside it, so the partition it produces is
+     * identical either way. Keeping it would widen every signature by one int
+     * on every state in every refinement ROUND, which on the chain shapes K25
+     * already names (`[a-z]{0,30000}` — 30,001 states, O(n) rounds) is a
+     * measurable share of the compile. Measured: the unconditional form put
+     * that pattern 28% over tests/resource/'s CPU budget. */
+    if (has_end) {
+        int e = (s->endvar < 0) ? v : s->endvar;
+        sig[k++] = part[e];
+    }
 }
 
 void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
 {
     int n = d->n;
     if (n <= 1) return;
-    int siglen = d->ncls + 2;
+    bool has_end = false;
+    for (int i = 0; i < n; i++)
+        if (d->st[i].endvar >= 0) { has_end = true; break; }
+    int siglen = d->ncls + 2 + (has_end ? 1 : 0);
 
     int *part = malloc((size_t)n * sizeof(int));
     int *newpart = malloc((size_t)n * sizeof(int));
@@ -72,7 +103,7 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
         memset(htab, -1, hcap * sizeof(int));
         int next = 0;
         for (int i = 0; i < n; i++) {
-            state_sig(d, part, i, sig);
+            state_sig(d, part, i, sig, has_end);
             uint32_t h = 2166136261u;
             for (int k = 0; k < siglen; k++) {
                 h ^= (uint32_t)sig[k];
@@ -130,8 +161,11 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
                 int t = o->tr[cl];
                 ns[c].tr[cl] = (t < 0) ? -1 : seq[part[t]];
             }
-            int v = o->eolvar;
-            ns[c].eolvar = (v < 0 || part[v] == part[i]) ? -1 : seq[part[v]];
+            int v = (o->eolvar < 0) ? i : o->eolvar;
+            int e = (o->endvar < 0) ? v : o->endvar;
+            ns[c].eolvar = (part[v] == part[i]) ? -1 : seq[part[v]];
+            /* against the EOL view, matching make_state's convention */
+            ns[c].endvar = (part[e] == part[v]) ? -1 : seq[part[e]];
         }
 
         memcpy(d->st, ns, (size_t)m * sizeof(DState));

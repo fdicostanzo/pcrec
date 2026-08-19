@@ -110,6 +110,26 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   — the two shapes disagree about where their own text begins, which is
   why they are dispatched by different tests (`r->recognise`'s pointer
   identity vs. this branch's `aport.kind`) rather than merged into one.
+  **[M6.2 wave A] the ENABLED-BUT-UNBUILT epilogue (`UNBUILT`)**: a module
+  that lands its constructs across several waves — `assertions` is the
+  first — has an interval where its gate is OPEN and a given construct
+  still has no producer, and "requires module 'X'" is then a lie of the
+  most annoying kind, since it asks the user to do what they have already
+  done. The refusal names the CONSTRUCT instead, on `--encoding=utf8`'s
+  PRINCIPLE (a name pcrec knows but cannot compile is refused by its own
+  name, never as unknown) though not its mechanism — that gate is one
+  whole-pattern decision against a one-row table, this one is per-construct
+  at the registry dispatch, because a half-landed module has some
+  constructs built and others not WITHIN ONE PATTERN (R30 C7). The
+  condition is read off ONE source and deliberately not off a second
+  `built` column: reaching the epilogue at post-gate `WANT_RESULT` means
+  the gate was open and the port block declined, which is exactly D33's
+  "gate open, port missing" that `ExtResult.answered_at` has reported to
+  `--probe-ask` since MOD-0.1 slice 9. It sits AFTER the `ROADMAP_NEVER`
+  arm in the group doorway, because "no module will ever implement this"
+  and "this module has not implemented it yet" are different facts and the
+  permanent one wins. Pinned in tests/reject/'s `== assertions ==` section
+  with the gate-closed rows adjacent; sabotage S70.
 - **mod_verbs.c** — module `verbs` (MOD-0.4), the MIGRATION TEST: moves
   `pcrec_ext_verb` here from ext.c WITH the `(*` doorway's two VerbName
   tables and their four accessors (was registry.c) and their whole
@@ -174,7 +194,11 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   them to `cx->mods` for a bare run (whose caller splice deliberately
   escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
   or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals
-  `m` -> 'assertions' (gated reject pin) and, since [M6.3], `J` -> K14's
+  `m` -> 'assertions' (gated reject pin — and since [M6.2] wave A that letter
+  has TWO refusals, the second naming the CONSTRUCT when module `assertions`
+  is ENABLED but has not built `(?m)` yet; it needs its own copy of ext.c's
+  rule because a letter's refusal is produced HERE, per letter, and a letter's
+  module is not the dispatching row's) and, since [M6.3], `J` -> K14's
   permanent ROADMAP_NEVER wording rather than a module name — it used to
   say "requires module 'named-groups'", true only while that module did
   not exist; named-groups shipped WITHOUT (?J)/DUPNAMES (a ruled scope
@@ -283,6 +307,48 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `want_caps` — for `src/gen/emit_dfa.c`'s `emit_info_def` to sort
   (`strcmp` on name, matching PCRE2's own measured `PCRE2_INFO_NAMETABLE`
   order) and stamp into `rx_info.groups`/`nnames` at emission.
+- **mod_assertions.c** — module `assertions` ([M6.2] WAVE A): one shared atom
+  producer, `pcrec_asrtport_atom`, for `\A`, `\Z` and `\z`, dispatching on
+  the elected row's own `sel` — mod_named_groups.c's shape and the same
+  reason. **Two of the three are EXACT ALIASES of nodes pcrec has shipped
+  since M1** and this is the cheapest finding in the module
+  (docs/design/assertions_design.md §3.2, measured at 1,008 differential cells
+  / 0 disagreements rather than read off the comments): `A_BOL`'s own comment
+  is PCRE2's `\A` word for word and `A_EOL`'s is PCRE2's `\Z`, so both are
+  parser rows with NO engine work. `\z` is not — "end of subject, full stop"
+  is strictly stronger than `\Z`, and it gets its own `A_END` kind, its own
+  `N_END` NFA kind, a third closure view (src/ir/dfa.c) and a third position
+  view in both emitters, per D62's kinds-encode-structure principle.
+
+  **`Ast.multiline` is deliberately left at the arena's zero here**, and that
+  is the alias claim's fine print rather than an omission: PCRE2's `\A`/`\Z`
+  are UNAFFECTED by multiline, so `(?m)\Z` still means the subject end while
+  `(?m)$` means before every newline. parse.c's `^`/`$` cases copy the scoped
+  state; this port must not, and the zero is the correct value.
+
+  The three registry rows are LONGHAND rather than `ESC_CLASS_INVALID` for
+  exactly one field (`aport`) and keep `RF_CLASS_INVALID` and `NO_PORT` at
+  class position: `[\A]` is PCRE2 error 107 permanently, so an ATOM producer
+  must not quietly become a class one. NOT REPEATABLE is inherited rather than
+  restated — `\A*` `\z*` `\Z*` are all error 109 while `(\z)*` compiles
+  (measured), and A_BOL/A_EOL were already in parse.c's bare-quantified
+  rejection, so A_END simply joined it and the two group-wrap sites.
+- **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the
+  header NOTHING outside this directory includes ([M6.2] wave A; D62;
+  assertions_design.md §8.6). `Ctx.mods` is a pointer to an INCOMPLETE
+  `ParseMods` in core/internal.h, so §8.2's invariant — *scoped modifier state
+  is resolved at parse time, onto the node; no post-parse pass reads it* — is
+  a COMPILE ERROR outside `src/parse/` rather than a discipline rule. It was a
+  discipline rule until wave A and exactly one pass broke it
+  (src/opt/possessify.c, reading the parser's END-OF-PATTERN multiline state
+  at verdict time: a scope-blind miscompile waiting for `(?m)` to be
+  accepted). If a pass elsewhere needs to know what a modifier decided, the
+  answer is a FIELD ON THE NODE set by the parser — `Ast.greedy` from `(?U)`,
+  `Ast.multiline` from `(?m)` — not a wider read. `pcrec_parse_mods_init`
+  (parse.c) is the ONE seeding entry point; `src/core/compile.c`'s two
+  `cx.mods = (ModState){...}` assignments are gone, and every Ctx that can
+  reach a parser or a doorway port (including syntax_dump.c's two query
+  surfaces, which can reach module `modifiers`' producing port) calls it.
 - **syntax_dump.c** — rendering the registry as text (SR-3) AND, since
   MOD-0.7, querying the live parse front: `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,

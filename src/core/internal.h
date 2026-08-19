@@ -22,6 +22,10 @@
  * -1 with a diagnostic) instead. See ctx_nomem() below. */
 typedef struct Ctx Ctx;
 
+/* [M6.2 wave A] The scoped inline-option state, INCOMPLETE ON PURPOSE — see
+ * `Ctx.mods` and src/parse/parse_mods.h. */
+typedef struct ParseMods ParseMods;
+
 /* ---- arena allocator (all AST/IR memory; freed wholesale) ---- */
 
 typedef struct ABlock {
@@ -61,8 +65,20 @@ typedef enum {
     A_ALT,     /* l | r  (l is preferred branch) */
     A_REP,     /* l{rmin,rmax}, rmax == -1 for unbounded; greedy flag */
     A_EMPTY,   /* matches empty string */
-    A_BOL,     /* ^ : start of subject */
-    A_EOL,     /* $ : end of subject or before a final \n */
+    A_BOL,     /* ^ and \A : start of subject */
+    A_EOL,     /* $ and \Z : end of subject or before a final \n */
+    /* [M6.2 wave A] `\z` — end of subject, FULL STOP. A distinct KIND rather
+     * than a flag on A_EOL, and the two spellings are not interchangeable
+     * here: D62's principle is that node KINDS encode STRUCTURE and node
+     * FIELDS encode PARSE-RESOLVED MODIFIER STATE. `\z` is not a modifier
+     * variant of `$` — no option turns one into the other, `\Z` really IS
+     * A_EOL (an exact alias, assertions_design.md §3.2), and the position
+     * sets differ permanently: `$`/`\Z` hold at `n` AND at `n-1` before a
+     * final newline, `\z` only at `n`. So it is structure, it gets a kind,
+     * and mrl.c:18-24's exhaustive-switch-no-default rule earns its keep:
+     * adding this member is a compile error at every analysis that must
+     * decide about it. */
+    A_END,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
      * D31 ruled the group erasure STAYS, on a MEASURED compile-time cost, and
@@ -92,6 +108,27 @@ struct Ast {
     int      rmin, rmax;
     int      capno;         /* A_CAP: 1-based capturing group number */
     bool     greedy;
+    /* [M6.2 wave A] MULTILINE, resolved AT PARSE TIME (A_BOL / A_EOL only).
+     * D62: node fields encode parse-resolved modifier state, exactly as
+     * `greedy` above encodes `(?U)`'s — set from the scoped `(?m)` state in
+     * force AT THE `^`/`$` ITSELF, never re-derived downstream.
+     *
+     * ANY ANALYSIS THAT EXEMPTS OR SPECIAL-CASES `$` (or `^`) MUST CONSULT
+     * THIS FIELD. That sentence is D62's control 3 and it is load-bearing,
+     * not decoration: src/opt/possessify.c exempts `$` from the follow-set
+     * widening on an upward-closure argument that COLLAPSES PER LINE under
+     * `(?m)`, and before this field existed that analysis read the parser's
+     * END-OF-PATTERN option state — so `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)`
+     * would each have exempted a multiline `$` and lost a match
+     * (assertions_design.md §8.1.1, two measured miscompile cells). A new
+     * analysis that pattern-matches `case A_EOL:` and does not read
+     * `.multiline` reproduces exactly that bug, and no compiler diagnostic
+     * will tell you: that residual is D62's accepted cost, and this comment
+     * is the thing that covers it.
+     *
+     * The arena zeroes, so a node nothing set is non-multiline — which is
+     * every node today, since `(?m)` is still refused. */
+    bool     multiline;
     /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
      * quantifier after this node is an error rather than a repetition of it.
      * It cannot be derived from `k`, which is the whole reason it is a field
@@ -155,6 +192,9 @@ typedef enum {
     N_EPS,     /* epsilon: goto t1 */
     N_BOT,     /* assert start of subject, goto t1 */
     N_EOL,     /* assert end-of-subject or before-final-\n, goto t1 */
+    N_END,     /* [M6.2 wave A] assert end-of-subject (`\z`), goto t1 —
+                * strictly stronger than N_EOL, which is why it is its own
+                * state kind and its own closure bit rather than a variant */
     N_ACCEPT
 } NKind;
 
@@ -181,6 +221,18 @@ typedef struct {
     int      eolvar;   /* EOL-variant state (the eol_ok=true closure of the same
                           pre-set: correctly priority-pruned accept + threads),
                           used at EOL positions; -1 = identical to this state */
+    /* [M6.2 wave A] END-variant state: the (eol_ok, end_ok) = (T,T) closure,
+     * used at `pos == n` only. -1 means "IDENTICAL TO THE EOL VIEW" — NOT
+     * "identical to this state", and the difference is the whole of R30 E3.
+     * The chain a consumer must walk is therefore two links:
+     *     view(st, pos == n) = endvar >= 0 ? endvar
+     *                        : eolvar >= 0 ? eolvar : st
+     * Canonicalizing against the base instead would make every eol-differing
+     * state of every `$`-bearing pattern intern a live endvar, and a
+     * `\z`-free pattern's artifact would stop being byte-identical — the
+     * exact opposite of the zero-regression property this convention buys.
+     * tests/codegen/run_endvar_identity.sh is the check that says so. */
+    int      endvar;
     int     *tr;       /* [ncls] target dfa state or -1 = dead (arena) */
 } DState;
 
@@ -274,9 +326,9 @@ struct Ctx {
     size_t               pos;      /* parser cursor */
     int                  depth;    /* parser group-nesting depth (bounded) */
     /* SCOPED PARSE STATE (PARSE-1; widened to a struct at MOD-0.5c, the
-     * D31-note's "expect a struct, not more bools"). Seeded from opt at parse
-     * entry and saved/restored around every BODY-CARRYING group, because that
-     * is where PCRE2 restores it: measured 17/17 against libpcre2 10.46,
+     * D31-note's "expect a struct, not more bools"). Seeded at parse entry
+     * and saved/restored around every BODY-CARRYING group, because that is
+     * where PCRE2 restores it: measured 17/17 against libpcre2 10.46,
      * `(?i)` set anywhere inside a group stays in force to the end of THAT
      * group — it leaks across sibling alternation branches, `(a(?i)b|c)d`
      * matching `Cd` — and is restored at the immediately-enclosing `)`, not
@@ -290,40 +342,23 @@ struct Ctx {
      * D29's "set parse state, parse body, restore" has nothing to set.
      * Module `modifiers`' port (mod_modifiers.c) is the only writer.
      *
-     * `(?^)` resets caseless/dotall/nocap/xlevel to the HARDWIRED defaults
-     * below — measured, probe_mod05b.c: the reset is to-constant, not
-     * to-`opt` (a `(?^)` under `-i` turns caseless OFF), and it does NOT
-     * touch ungreedy (U and J both survive `(?^)`; "unset imnsx" is the
-     * measured rule, not "unset everything"). */
-    struct ModState {
-        bool    caseless;   /* i — the OS-1/D23 fold, applied at class
-                             * construction time (char_node/from_bits) */
-        bool    dotall;     /* s — `.` keeps 0x0A instead of clearing it */
-        /* m — `^`/`$` match at every newline rather than only at the subject
-         * ends. NO WRITER TODAY: pcrec refuses `(?m)` and has no `-m`, so
-         * this is false for every compile that reaches the analysis, and
-         * module `assertions` is the writer that makes it live.
-         *
-         * It exists as a FIELD rather than as a comment because D47.5 rules
-         * the `$`-follow exemption's gate a LIVE CHECK. eng_brep_design.md
-         * §2.5 measures `$` in a quantifier's follow safe at 0/720 diverging
-         * cells and UNSAFE at 180/720 under `(?m)` — the upward-closure
-         * argument that makes `$` exempt ("no retreat can reach a position
-         * satisfying `$` from further left") collapses per-line when `$` is
-         * true before every newline. A comment saying "pcrec does not support
-         * (?m) yet" is exactly the kind of fact that stops being true without
-         * anyone revisiting the analysis; src/opt/possessify.c reads THIS,
-         * and the module that lands `m` inherits the test obligation D47.5
-         * attaches (a `(?m)` pattern whose `$`-follow quantifier must NOT
-         * possessify). */
-        bool    multiline;
-        bool    ungreedy;   /* U — quantifier greed default inverted; a
-                             * trailing `?` then RE-inverts. NOT reset by ^ */
-        bool    nocap;      /* n — plain `(` stops counting as a capture */
-        uint8_t xlevel;     /* 0 off / 1 `x` / 2 `xx` — consumed by the
-                             * MOD-0.5d lexer; the state exists so one run
-                             * parser owns every letter */
-    }                    mods;
+     * [M6.2 wave A] IT IS AN OPAQUE POINTER, AND THAT IS THE POINT
+     * (assertions_design.md §8.2/§8.6, D62). The invariant is: *scoped
+     * modifier state is resolved AT PARSE TIME, onto the node; no post-parse
+     * pass reads it.* That was a sentence someone had to remember, and the
+     * one pass that forgot — src/opt/possessify.c, reading
+     * `cx->mods.multiline` at verdict time, i.e. the parser's END-OF-PATTERN
+     * state — was a shipped miscompile waiting for `(?m)` to be accepted.
+     * `ParseMods` is now defined ONLY in `src/parse/parse_mods.h`, so this
+     * member is an INCOMPLETE TYPE everywhere else: a future analysis in
+     * src/opt/, src/ir/, src/gen/ or cli/ that tries to consult it does not
+     * produce a subtly wrong verdict, it fails to compile. The enforcement is
+     * what stops the invariant decaying; a future `(?X)` modifier physically
+     * cannot be consulted after the parse.
+     *
+     * NULL until `pcrec_parse_mods_init` runs. Every Ctx that can reach a
+     * parser or a doorway port calls it — see that function. */
+    ParseMods           *mods;
     /* THE RUNNING CAPTURE COUNT (MOD-0.1, design §18.1 as Frank resolved
      * it: there is NO scanner). Incremented at p_group_body's capturing-`(`
      * hook — group numbers are assigned by opening-paren order, so the
@@ -395,8 +430,11 @@ struct Ctx {
     Job                 *job;
 };
 
-/* The scoped-state block above, nameable for save/restore locals. */
-typedef struct ModState ModState;
+/* [M6.2 wave A] `Ctx.mods`' type is DELIBERATELY INCOMPLETE HERE (§8.6): the
+ * definition lives in src/parse/parse_mods.h and nothing outside src/parse/
+ * includes it, so "no post-parse pass reads cx->mods" is a compile error
+ * rather than a review finding. Seed it before any parse or doorway call. */
+void pcrec_parse_mods_init(Ctx *cx);         /* src/parse/parse.c */
 
 /* PARSE-1: what `p_alt` reports about the alternation it just parsed.
  *
@@ -924,6 +962,14 @@ extern const size_t        pcrec_cls_posix_map_n;
 
 /* The POSIX named-class producer (the `:` row's PORT_FN). */
 ExtResult pcrec_clsport_posix(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from);
+/* module `assertions` ([M6.2] wave A) — src/parse/mod_assertions.c. ONE atom
+ * port for `\A`/`\Z`/`\z`, dispatching on the elected row's own `sel`.
+ * `\b` `\B` `\G` `\K` and `(?m)` are recognised by the same module and have
+ * NO producer yet: with the module enabled they refuse by their own name
+ * through ext.c's UNBUILT epilogue, never as "requires module 'assertions'"
+ * (which would be a lie once it is enabled) and never as unknown. */
+ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
                               size_t at, size_t from);
 /* The octal class producer (MOD-0.3d) — the `\0`..`\7` rows' BASE PORT_FN,
  * in parse.c: base grammar's own rule migrated to the seam (FIX-3's measured

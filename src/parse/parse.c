@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "core/internal.h"
+#include "parse/parse_mods.h"
 
 /* ---- cursor helpers ---- */
 
@@ -77,7 +78,7 @@ static bool xskip_byte(int c)
 
 static void xskip(Ctx *cx)
 {
-    if (!cx->mods.xlevel) return;
+    if (!cx->mods->xlevel) return;
     for (;;) {
         int c = peekc(cx);
         if (c == '#') {
@@ -102,7 +103,7 @@ static void xskip(Ctx *cx)
  * touches a class interior. */
 static void cls_skip(Ctx *cx)
 {
-    if (cx->mods.xlevel < 2) return;
+    if (cx->mods->xlevel < 2) return;
     int c;
     while ((c = peekc(cx)) == ' ' || c == '\t') cx->pos++;
 }
@@ -114,7 +115,7 @@ static void cls_skip(Ctx *cx)
 static int cls_peek_past_dash(Ctx *cx)
 {
     size_t i = cx->pos + 1;
-    if (cx->mods.xlevel >= 2)
+    if (cx->mods->xlevel >= 2)
         while (i < cx->patlen &&
                (cx->pat[i] == ' ' || cx->pat[i] == '\t')) i++;
     return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;
@@ -161,7 +162,7 @@ static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
     cls_set(a->cls, c & 0xff);
-    if (cx->mods.caseless) cls_casefold(a->cls);
+    if (cx->mods->caseless) cls_casefold(a->cls);
     return a;
 }
 
@@ -176,7 +177,7 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
 {
     Ast *a = node(cx, A_CLASS);
     memcpy(a->cls, bits, 32);
-    if (cx->mods.caseless) cls_casefold(a->cls);
+    if (cx->mods->caseless) cls_casefold(a->cls);
     if (negate)
         for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
     return a;
@@ -491,7 +492,7 @@ static Ast *p_class(Ctx *cx)
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
      * silently wrong and downstream cannot detect it */
-    if (cx->mods.caseless) cls_casefold(a->cls);
+    if (cx->mods->caseless) cls_casefold(a->cls);
     if (neg)
         for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
     return a;
@@ -628,7 +629,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * which is what makes engine_m4.md §5.4's byte-identity gate structural.
      * See A_CAP's own comment in core/internal.h. */
     int capno = 0;
-    if (cx->pat[cx->pos - 1] == '(' && !cx->mods.nocap) {
+    if (cx->pat[cx->pos - 1] == '(' && !cx->mods->nocap) {
         cx->ncap++;
         if (cx->want_caps) {
             capno = (int)cx->ncap;
@@ -642,14 +643,16 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * to the enclosing scope. `(?i:...)` does the same save/apply/restore
      * inside its port. Restore on the failure path is longjmp's problem:
      * ctx_fail abandons the whole parse, no one reads cx->mods after it. */
-    ModState saved_mods = cx->mods;
+    ParseMods saved_mods = *cx->mods;
     Ast *body = p_alt(cx);
     if (nextc(cx) != ')')
         ctx_fail(cx, apos, "missing closing ) for group");
-    cx->mods = saved_mods;
-    if (body->k == A_BOL || body->k == A_EOL) {
+    *cx->mods = saved_mods;
+    if (body->k == A_BOL || body->k == A_EOL || body->k == A_END) {
         /* wrap a bare-anchor group: `(^)*` is quantifiable in PCRE even
-         * though a bare quantified anchor is not (R1 review S-M1) */
+         * though a bare quantified anchor is not (R1 review S-M1).
+         * [M6.2 wave A] A_END joins for the same measured reason: `\z*` is
+         * PCRE2 error 109 and `(\z)*` compiles. */
         Ast *cat = node(cx, A_CAT);
         cat->l = body;
         cat->r = node(cx, A_EMPTY);
@@ -690,12 +693,23 @@ static Ast *p_atom(Ctx *cx)
         /* NEWLINE_LF, oracle-anchored (DD-11). Under `(?s)` the clear is
          * skipped and `.` is the full 256-set — measured census 255 vs 256,
          * probe_mod05.c (MOD-0.5c). */
-        if (!cx->mods.dotall)
+        if (!cx->mods->dotall)
             a->cls['\n' >> 3] &= (uint8_t)~(1u << ('\n' & 7));
         return a;
     }
-    case '^': return node(cx, A_BOL);
-    case '$': return node(cx, A_EOL);
+    /* [M6.2 wave A] MULTILINE IS RESOLVED HERE, at the assertion itself, and
+     * nowhere else (D62; assertions_design.md §8.2). `r->greedy =
+     * !cx->mods->ungreedy` one function down is the same shape from the same
+     * scoped-option machinery; this is that pattern applied to the modifier
+     * that had been leaking a POST-PARSE read into src/opt/possessify.c.
+     * `cx->mods->multiline` is false for every compile today — `(?m)` is
+     * still refused — which is exactly what makes the refactor provably
+     * behaviour-preserving at the moment it lands, and impossible to prove
+     * later. */
+    case '^': { Ast *a = node(cx, A_BOL); a->multiline = cx->mods->multiline;
+                return a; }
+    case '$': { Ast *a = node(cx, A_EOL); a->multiline = cx->mods->multiline;
+                return a; }
     case '\\': return esc_atom(cx);
     case '*': case '+': case '?':
         ctx_fail(cx, apos, "quantifier does not follow a repeatable item");
@@ -894,7 +908,8 @@ have:
          * quantifier byte for `*`/`+`/`?` (the `cx->pos++` above ran), the
          * closing `}` for a brace form (the `goto have` skipped it and
          * try_quant left the cursor past the brace). */
-        if (a->k == A_BOL || a->k == A_EOL || a->not_repeatable)
+        if (a->k == A_BOL || a->k == A_EOL || a->k == A_END ||
+            a->not_repeatable)
             ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
         quantified = true;
 
@@ -905,9 +920,9 @@ have:
         /* `(?U)` inverts the DEFAULT greed and a trailing `?` then inverts
          * whichever default is in force — measured both directions
          * (probe_mod05.c: `(?U)a+` lazy [0,1), `(?U)a+?` greedy [0,3)). */
-        r->greedy = !cx->mods.ungreedy;
+        r->greedy = !cx->mods->ungreedy;
         xskip(cx);   /* the lazy marker binds across skips too: (?x)a + ? */
-        if (peekc(cx) == '?')      { r->greedy = cx->mods.ungreedy; cx->pos++; }
+        if (peekc(cx) == '?')      { r->greedy = cx->mods->ungreedy; cx->pos++; }
         else if (peekc(cx) == '+')
             ctx_fail(cx, cx->pos, "possessive quantifier requires module 'atomic-groups'");
         a = r;
@@ -1017,6 +1032,30 @@ Ast *pcrec_parse(Ctx *cx)
  * the base grammar owns that message for its own two forms (`(` and `(?:`), and
  * a module owns a DIFFERENT message for its own construct. Different
  * constructs, different grammars, so this is not the D24 two-homes shape. */
+/* [M6.2 wave A] SEED THE SCOPED PARSE STATE (§8.6). This replaces the two
+ * `cx.mods = (ModState){...}` assignments src/core/compile.c used to make: the
+ * state is now behind an incomplete type, so the only code that CAN build one
+ * is code that includes src/parse/parse_mods.h, which is exactly the code that
+ * is allowed to read it.
+ *
+ * `opt` is the SEED, not the state — compile.c's own long-standing comment,
+ * and the whole reason this is not just a `const pcrec_options *` read at each
+ * use site. The other fields seed to the hardwired defaults, which are the
+ * same constants `(?^)` resets to (mod_modifiers.c).
+ *
+ * IDEMPOTENT, and deliberately so: `--explain`/`--probe-ask` build a bare Ctx
+ * and call a doorway directly (syntax_dump.c), and a doorway can reach module
+ * `modifiers`' producing port, which writes this state. Every entry that can
+ * reach a parser or a port calls this; calling it twice on one Ctx re-seeds a
+ * state nothing has read yet, which is what those query surfaces want. */
+void pcrec_parse_mods_init(Ctx *cx)
+{
+    ParseMods *m = arena_alloc(&cx->arena, sizeof *m);
+    *m = (ParseMods){ .caseless = cx->opt &&
+                                  (cx->opt->flags & PCREC_CASELESS) != 0 };
+    cx->mods = m;
+}
+
 Ast *pcrec_parse_body(Ctx *cx, AltInfo *info)
 {
     return p_alt_info(cx, info);

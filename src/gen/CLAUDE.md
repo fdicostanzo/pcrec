@@ -15,6 +15,24 @@ milestone. Under EOL every skip is bounded at n-1 and scan avoidance runs
 BEFORE the accept/EOL evaluation — see D11, and note the ordering rule is the
 subtle half.
 
+**[M6.2 wave A] A THIRD POSITION VIEW**, `\z`'s (`DState.endvar`), on the same
+machinery. Three things to know before touching it:
+
+- **`views = eol || endv` is what every site that used to read `eol` now
+  reads.** What the D11 `n-1` bound and the evaluation ORDER protect is "a
+  state can accept at a position a skip would pass", and an END view creates
+  exactly that situation at `pos == n`. Both flags are false for every pattern
+  in the pre-wave corpus, so `views == eol` there and no byte moves.
+- **`emit_view_select` is written as ONE BRANCH THAT REPRODUCES THE OLD
+  STRING**, not as a general form that happens to agree with it. Byte-identity
+  is a property of that function, so `has_end == false` emits the pre-wave text
+  character for character rather than a re-derivation of it. Same rule in
+  `emit_attempt`: a state whose `endvar < 0` takes the untouched arm.
+- **`endvar == -1` means "same as the EOL VIEW"**, unlike `eolvar == -1`
+  ("same as this state"), so the emitted selector walks `fendv -> fev ->
+  self`. `tests/codegen/run_endvar_identity.sh` is the gate on all of it, with
+  sabotage S69 as its measured failing direction.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

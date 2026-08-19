@@ -93,6 +93,7 @@ long long pcrec_minw(const Ast *a)
         case A_EMPTY:
         case A_BOL:
         case A_EOL:
+        case A_END:
             return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));

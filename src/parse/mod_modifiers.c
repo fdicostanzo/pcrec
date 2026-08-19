@@ -37,6 +37,7 @@
 #include <stdio.h>
 
 #include "core/internal.h"
+#include "parse/parse_mods.h"
 
 /* Splitting the catch-all into eleven option-letter rows fixed the BYTE and
  * left the same over-promise one level down: `(?iZ)`, `(?-Z)` and `(?i-Z)` are
@@ -275,9 +276,31 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
             else xlvl = (i > from && p[i - 1] == 'x') ? 2 : 1;
             break;
         case 'm':
-            if (!hyphen)
+            /* [M6.2 wave A] TWO REFUSALS, and which one is honest depends on
+             * whether module `assertions` is ENABLED (assertions_design.md
+             * §9.2). "requires module 'assertions'" is right while the module
+             * is off and becomes a lie the moment it is on — it tells the
+             * user to enable something they already enabled. `(?m)` lands in
+             * that module's wave C; until then it is recognised, attributed
+             * and refused BY ITS OWN NAME.
+             *
+             * This letter needs its own copy of the rule rather than riding
+             * ext.c's UNBUILT epilogue, and the reason is the one §1 of the
+             * design note re-measured rather than inherited: the REFUSAL for
+             * `(?m)` is produced HERE, per letter, not by the `(?` doorway's
+             * row — the GROUP_OPT row is only the recogniser, and a letter's
+             * module is not the dispatching row's (which is also why
+             * `--explain`'s attribution clause is scoped the way it is).
+             * The WORDING is deliberately the same shape ext.c emits, so a
+             * user meets one sentence for the whole class. */
+            if (!hyphen) {
+                if (pcrec_feature_enabled(FEAT_ASSERTIONS))
+                    return modport_refuse(want, i,
+                        "module 'assertions' is enabled but inline option 'm' "
+                        "(multiline) is not implemented yet");
                 return modport_refuse(want, i,
                     "inline option 'm' (multiline) requires module 'assertions'");
+            }
             break;                        /* -m: true today, accepted */
         case 'J':
             /* [M6.3] WORDING, THIRD AND FINAL PASS (manager ruling,
@@ -335,10 +358,10 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
 
     /* The applied state: reset first (caret), then set, then unset — unset
      * WINS on a letter named on both sides (measured, (?i-i)/(?-ii)). */
-    ModState ns = cx->mods;
+    ParseMods ns = *cx->mods;
     if (caret) {
         bool keep_ungreedy = ns.ungreedy;
-        ns = (ModState){0};
+        ns = (ParseMods){0};
         ns.ungreedy = keep_ungreedy;
     }
     if (set_i) ns.caseless = true;
@@ -367,7 +390,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
          * exceptions: `a(?i:b)*` is correct and stays quantifiable (the `:`
          * branch below never sets this), while every accepted bare spelling
          * — `(?i)`, `(?i-m)`, `(?^)`, `(?xx)`, `(?U)` — is err 109. */
-        cx->mods = ns;
+        *cx->mods = ns;
         ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                           .answered_at = want };
         res.node = pcrec_ast_node(cx, A_EMPTY);
@@ -379,21 +402,21 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     /* `:` — a group body under the new state: set, parse, restore (the
      * semantic D29 said cannot be written without the callback). */
     {
-        ModState saved_mods = cx->mods;
+        ParseMods saved_mods = *cx->mods;
         size_t   saved_pos  = cx->pos;
         AltInfo  info;
-        cx->mods = ns;
+        *cx->mods = ns;
         cx->pos = i + 1;
         Ast *body = pcrec_parse_body(cx, &info);
         if (cx->pos >= n || p[cx->pos] != ')') {
-            cx->mods = saved_mods;
+            *cx->mods = saved_mods;
             cx->pos = saved_pos;
             return modport_refuse(want, at, "missing closing ) for group");
         }
         size_t end = cx->pos + 1;
-        cx->mods = saved_mods;
+        *cx->mods = saved_mods;
         cx->pos = saved_pos;
-        if (body->k == A_BOL || body->k == A_EOL) {
+        if (body->k == A_BOL || body->k == A_EOL || body->k == A_END) {
             /* the S-M1 anchor wrap, mirrored from p_group_body: `(?i:^)*`
              * stays quantifiable exactly as `(^)*` is */
             Ast *cat = pcrec_ast_node(cx, A_CAT);

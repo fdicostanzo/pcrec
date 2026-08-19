@@ -142,6 +142,44 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   read of this field is scope-blind; the cure resolves multiline at PARSE time
   onto the node (assertions_design.md §8, D47.5 addendum).
 
+  **[M6.2 wave A] `A_END`, `Ast.multiline`, `NKind.N_END`, `DState.endvar`,
+  and `Ctx.mods` becoming an OPAQUE POINTER.** Four type changes and one
+  structural enforcement, all from `docs/design/assertions_design.md` §3.3 and
+  §8, ruled by D62:
+
+  - **`A_END` is a KIND and `Ast.multiline` is a FIELD**, which is D62's
+    principle applied twice in opposite directions in one change: node KINDS
+    encode STRUCTURE, node FIELDS encode PARSE-RESOLVED MODIFIER STATE. `\z`
+    is structure — no option turns `\Z` into it, and their position sets
+    differ permanently ({n} versus {n} plus {n-1} before a final newline) — so
+    it is a kind, and `src/opt/mrl.c:18-24`'s exhaustive-switch-no-default
+    rule then makes every analysis that must decide about it a COMPILE ERROR
+    (measured: exactly two sites had not already been handled deliberately).
+    Multiline-ness of a `$` is modifier state, so it is a field, where
+    `r->greedy` (from `(?U)`) already lives.
+  - **`Ast.multiline` carries D62's control 3 as a comment obligation**, and
+    it is load-bearing rather than decorative: the residual D62 accepts is
+    that a FUTURE analysis pattern-matching `case A_EOL:` without reading the
+    field silently reproduces the bug the field exists to fix, and no
+    diagnostic will say so. Read that comment before writing an analysis that
+    special-cases `$`.
+  - **`DState.endvar`'s -1 does NOT mean what `eolvar`'s -1 means.** `eolvar
+    == -1` is "same as this state"; `endvar == -1` is "same as the EOL VIEW",
+    so a consumer walks a two-link chain. That asymmetry is the whole of R30
+    E3 and the reason a `\z`-free pattern's artifact is byte-identical by
+    construction; getting it wrong costs byte-identity on every `$`-bearing
+    pattern while changing no answer.
+  - **`Ctx.mods` is a pointer to an INCOMPLETE `ParseMods`** defined only in
+    `src/parse/parse_mods.h`, so §8.2's invariant ("scoped modifier state is
+    resolved at parse time, onto the node; no post-parse pass reads it") is a
+    COMPILE ERROR outside `src/parse/` rather than a sentence someone has to
+    remember. It was a sentence until wave A, and exactly one pass broke it —
+    `src/opt/possessify.c`, reading the parser's END-OF-PATTERN multiline
+    state at verdict time, a shipped scope-blind miscompile waiting for `(?m)`
+    to be accepted. `compile.c` no longer builds one; `pcrec_parse_mods_init`
+    (src/parse/parse.c) seeds it, and every Ctx that can reach a parser or a
+    doorway port calls it.
+
   **[M4.7a] SR-8 evaluated and declined to add a `Ctx.vmonly_*` field here**,
   unlike the `ModState.multiline` precedent above — the difference being
   that `multiline`'s writer (module `assertions`) is a scheduled, named

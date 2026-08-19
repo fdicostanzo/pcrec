@@ -141,6 +141,37 @@ static bool bucket_has_tail(RegKind kind, int sel)
     return false;
 }
 
+/* THE ENABLED-BUT-UNBUILT REFUSAL ([M6.2] wave A; assertions_design.md §9.2).
+ *
+ * A module lands its constructs INCREMENTALLY — module `assertions` is the
+ * first to do so across more than one wave — so there is an interval where
+ * `--features assertions` is on and `\b` still has no producer. "requires
+ * module 'assertions'" is then a LIE, and an actionable-sounding one: it tells
+ * the user to enable something they have already enabled.
+ *
+ * The condition is read off ONE source, and deliberately not off a second
+ * `built` column somebody would have to keep in sync with the ports (the D24
+ * two-homes shape this whole registry exists to prevent): the post-gate ask
+ * level IS the enabled bit — `pcrec_ext_gate` demotes RESULT to VERDICT for a
+ * row whose module is not enabled — and reaching this point at WANT_RESULT
+ * means the gate was OPEN and the port block above declined, i.e. the row has
+ * no producer for this position. That is exactly D33's "gate open, port
+ * missing", which `ExtResult.answered_at` has reported to `--probe-ask` since
+ * MOD-0.1 slice 9; this makes the DIAGNOSTIC say it too.
+ *
+ * The refusal names the CONSTRUCT, on the `--encoding=utf8` PRINCIPLE (a name
+ * pcrec knows but cannot compile is refused BY ITS OWN NAME, never as
+ * unknown) rather than its mechanism — that gate is one whole-pattern
+ * decision against a one-row-per-encoding table, while this one is
+ * per-construct at the registry dispatch, because a half-landed module has
+ * some constructs built and others not WITHIN ONE PATTERN (R30 C7).
+ *
+ * D26 puts the WORDING in tier 3. The STRUCTURE is not tier 3: it decides
+ * whether a half-landed module can mislead. */
+#define UNBUILT(pos, fmt, ...) \
+    REFUSE((pos), "module '%s' is enabled but " fmt " is not implemented yet", \
+           r->module, ##__VA_ARGS__)
+
 /* ---- doorway 1: after '\' ----------------------------------------------
  * `c` is the byte after the backslash and the cursor sits just past it. Called
  * only once parse.c's decoder has declined: the plain character escapes
@@ -252,9 +283,25 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
                              strncmp(r->class_expect, "set ", 4) == 0 &&
                              r->syntax[0] == '\\' && r->syntax[1] != '\0' &&
                              r->syntax[2] == '\0';
-        snprintf(res.msg, sizeof res.msg,
-                 "\\%c in a class requires module '%s'", c, r->module);
+        /* The enabled-but-unbuilt wording (see UNBUILT above) is spliced in
+         * HERE rather than through the macro, because this refusal carries a
+         * PAYLOAD the macro would drop: `ep_set_certain` is K12's endpoint
+         * fact, and a range site reads it to override the refusal with
+         * PCRE2's "invalid range in character class". The message changes;
+         * what the caller knows about the construct must not. */
+        if (want == WANT_RESULT)
+            snprintf(res.msg, sizeof res.msg,
+                     "module '%s' is enabled but \\%c in a class is not "
+                     "implemented yet", r->module, c);
+        else
+            snprintf(res.msg, sizeof res.msg,
+                     "\\%c in a class requires module '%s'", c, r->module);
         return res;
+    }
+    if (want == WANT_RESULT) {
+        if (r->diag == RD_MODULE_OCTAL)
+            UNBUILT(at, "\\%c (backreference/octal)", c);
+        UNBUILT(at, "\\%c", c);
     }
     if (r->diag == RD_MODULE_OCTAL)
         REFUSE(at, "\\%c (backreference/octal) requires module '%s'",
@@ -433,6 +480,11 @@ static ExtResult group_answer(Ctx *cx, ExtWant want, int c2, size_t at,
      * just never rendered as a promise. */
     if (r->roadmap == ROADMAP_NEVER)
         REFUSE(at, "(?%c...) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)", shown);
+    /* AFTER the ROADMAP_NEVER arm on purpose: "no module will ever implement
+     * this" and "this module has not implemented it yet" are different facts
+     * and the permanent one wins. */
+    if (want == WANT_RESULT)
+        UNBUILT(at, "(?%c...)", shown);
     REFUSE(at, "(?%c...) requires module '%s'", shown, r->module);
 }
 

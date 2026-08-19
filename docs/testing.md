@@ -338,7 +338,18 @@ easy to scan.
 - The python-re verification oracle is committed at `tests/harness/verify_rxt.py`
   (run: `python3 tests/harness/verify_rxt.py [files-or-dirs]`; default tests/base).
   Run it whenever corpus files change.
-- **Oracle exclusions**: python `re` diverges from real PCRE2 on bare `{,}`
+- **Oracle exclusions**: python `re` diverges from real PCRE2 on `\Z`
+  (**python's `\Z` IS PCRE2's `\z`**, and python has no single escape for
+  PCRE2's `\Z` at all — U11, [M6.2] wave A; the divergence is silent, python
+  reporting no match or a shorter span exactly where PCRE2 matches, so a
+  python-derived `\Z` cell would encode `\z` and go green on a miscompile.
+  `tests/assertions/` is the affected directory and carries its own libpcre2
+  verifier, `verify_pcre2.py`, which re-checks EVERY cell there — marked and
+  unmarked — on every `make test` through `tests/fuzz/pcre2_oracle`; it is the
+  only per-directory oracle in the tree and the only case where a
+  `# pcre2-only` mark is applied WHOLESALE to a construct rather than
+  per diverging cell, because a subject added to an unmarked `\Z` block later
+  would silently start lying), bare `{,}`
   (python: {0,}; PCRE2 and pcrec: literal — note `{,n}` WITH a digit is a
   quantifier {0,n} in both since PCRE2 10.43, implemented in pcrec 2026-08-09),
   possessive quantifiers (python 3.11+ accepts), quantified bare anchors
@@ -485,6 +496,7 @@ project journal entry.
 | `make test-counterk` | `tests/counterk/run_counterkdiff.sh` + `run_counterk_tests.sh` | yes |
 | `make test-mrl` | `tests/mrl/run_mrldiff.sh` + `run_mrl_tests.sh` | yes |
 | `make test-prefilter` | `tests/prefilter/run_prefilter_tests.sh` | yes |
+| `make test-assertions` | `tests/assertions/run_assertions_tests.sh` + `tests/codegen/run_endvar_identity.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |

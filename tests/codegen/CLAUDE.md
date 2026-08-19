@@ -80,6 +80,36 @@ or it has no regression net at all.
   failing for an unrelated reason is this project's oldest check-design
   trap, and the fix was re-running from the script's real location.
 
+- **run_endvar_identity.sh** — [M6.2] wave A's BYTE-IDENTITY GATE, the
+  `run_trie_identity.sh` shape one closure view over. `\z` adds a THIRD view
+  to the subset construction, and assertions_design.md §3.3 claims that costs a
+  `\z`-free pattern NOTHING — same states, same tables, same bytes, BY
+  CONSTRUCTION rather than by a `has_z` flag. The reference build is this
+  tree's own sources with `-DPCREC_NO_ENDVAR` (the third view's INTERNING
+  compiled out), not a pinned historical commit, for the reason
+  `run_vm_identity.sh` states about its own formulation.
+
+  **It exists BECAUSE the prose said the opposite thing first.** The design's
+  first draft canonicalized `endvar` against the BASE view and argued zero
+  regression from it; R30 finding E3 showed that makes every eol-differing
+  state of every `$`-bearing pattern intern a live redundant `endvar`, so the
+  artifact is NOT byte-identical — the exact opposite of the claim. "X is
+  impossible by construction" is precisely the claim a construction check is
+  for, and sabotage S69 restores the refuted form as the measured failing
+  direction.
+
+  **The positive control is SCOPED TO THE DFA, and the scoping is a finding.**
+  The first draft required every compilable `\z` pattern to differ between the
+  two builds and failed on `(\z)*` — a capture-bearing pattern, so a VM
+  artifact, and the VM spells `\z` as a literal `if (pos == n)` and consults no
+  view table at all. A `\z` pattern that AGREES must therefore be one the DFA
+  never compiled, which the artifact's own `RX_ENGINE` stamp says (VM artifacts
+  only). That is a different fact from the one being measured, which is why
+  reading it to explain a non-difference is legitimate and reading
+  `dfa_has_endvar` would not be. Landing figures: 1011 of 1011 `\z`-free corpus
+  patterns byte-identical, 18 DFA-compiled `\z` patterns differing, 0
+  DFA-compiled ones agreeing — read the current numbers from a run.
+
 - **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
   to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
   derive from the same structure the emitter walks; the emitter satisfies that
@@ -207,6 +237,17 @@ that shape by accident.
    S02 and S06 were RE-RUN through `tests/mech` after these edits, because a
    narrowed check whose sabotage was validated against the wide version has
    not been validated at all.
+
+## THREE scripts here run under a DIFFERENT section, and the reason is measured
+
+`run_endvar_identity.sh` ([M6.2] wave A) runs under `make test-assertions`,
+on exactly the argument the two below run under `make test-vm`: it builds a
+reference compiler and sweeps the whole corpus through BOTH builds, which is
+minutes rather than seconds, and `make smoke` includes `test-codegen` and is
+already at its 60s target. It lives HERE because it is an identity
+differential, kin to `run_trie_identity.sh` by technique; it runs THERE
+because that is the module whose claim it gates. `make test` runs it either
+way.
 
 ## Two scripts here RUN under `make test-vm`, and the reason is measured
 

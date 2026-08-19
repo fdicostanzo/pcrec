@@ -498,6 +498,12 @@ static Frag compile_ast(NB *b, const Ast *a)
     case A_EMPTY: return frag_single(b, N_EPS);
     case A_BOL:   return frag_single(b, N_BOT);
     case A_EOL:   return frag_single(b, N_EOL);
+    /* [M6.2 wave A] `\z`. Reversal is identity, exactly as N_BOT/N_EOL's is:
+     * an assertion about an absolute subject position is the same assertion
+     * whichever direction the machine walks — the reverse machine simply
+     * evaluates it at the position its own walk STARTS from, which is the
+     * pattern's right end. */
+    case A_END:   return frag_single(b, N_END);
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */

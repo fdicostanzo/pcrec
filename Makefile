@@ -67,8 +67,8 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # See docs/testing.md "Section composition" for the measured wall-time.
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-      test-counterk test-mrl test-prefilter test-altcls test-encseam \
-      test-resource test-capturediff test-known-fail test-thread
+      test-counterk test-mrl test-prefilter test-altcls test-assertions \
+      test-encseam test-resource test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -241,6 +241,29 @@ test-altcls: all
 	    'bash tests/altcls/run_altdiff.sh' \
 	    'bash tests/altcls/run_altcls_tests.sh'
 
+# [M6.2] module `assertions`. Its .rxt corpus rides test-corpus like every
+# other module's; this section is the three things a .rxt file structurally
+# cannot check, PLUS the wave's byte-identity gate.
+#
+# `run_endvar_identity.sh` LIVES in tests/codegen/ (it is an identity
+# differential, kin to run_trie_identity.sh by technique) and RUNS here, which
+# is exactly the split tests/codegen/CLAUDE.md already documents for
+# run_vm_identity.sh and run_ir_listing.sh and for the same measured reason:
+# `make smoke` includes test-codegen and is already at its 60s target, and
+# this script builds a reference compiler and sweeps the whole corpus through
+# BOTH of them (minutes, not seconds). `make test` runs it either way; only
+# the section wrapper differs -- the LIBPCRE2 re-verification the `\Z` cells need (python's
+# `\Z` is PCRE2's `\z`, so the project's default oracle is measurably wrong
+# here and would go green on a miscompile), the module gate's TWO refusals
+# (module off vs enabled-but-unbuilt, which a `perr` block cannot tell apart),
+# and the D47.5 exemption firing, read off the artifact's own
+# `<PREFIX>_VM_STRATS` stamp in both directions. See
+# tests/assertions/CLAUDE.md.
+test-assertions: all
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/assertions/run_assertions_tests.sh' \
+	    'bash tests/codegen/run_endvar_identity.sh'
+
 # [M4.7b] K7's pin: what a large bounded repeat COSTS to compile, and that a
 # failed allocation is diagnosed rather than aborting the caller.
 #
@@ -399,6 +422,7 @@ ubsan:
 	         tests/parse/run_parse_tests.sh \
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_endvar_identity.sh \
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
@@ -409,6 +433,7 @@ ubsan:
 	         tests/rungselect/run_rungselect_tests.sh \
 	         tests/altcls/run_altdiff.sh \
 	         tests/altcls/run_altcls_tests.sh \
+	         tests/assertions/run_assertions_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -444,6 +469,7 @@ asan:
 	         tests/parse/run_parse_tests.sh \
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_endvar_identity.sh \
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
@@ -454,6 +480,7 @@ asan:
 	         tests/rungselect/run_rungselect_tests.sh \
 	         tests/altcls/run_altdiff.sh \
 	         tests/altcls/run_altcls_tests.sh \
+	         tests/assertions/run_assertions_tests.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
@@ -523,6 +550,7 @@ clean:
 
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
-        test-counterk test-mrl test-prefilter test-altcls test-known-fail test-thread \
+        test-counterk test-mrl test-prefilter test-altcls test-assertions \
+        test-known-fail test-thread \
         test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
         fuzz clean
