@@ -180,6 +180,21 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
     (src/parse/parse.c) seeds it, and every Ctx that can reach a parser or a
     doorway port calls it.
 
+  **[M6.2 wave D] `A_GSTART`, `NKind.N_GSTART`, `Dfa.s1g[]`, and the BARE
+  ANCHOR predicate.** `\G` is a third kind on D62's principle and the cleanest
+  instance of it in the module: it is not `\A` under an option, it is a test
+  against a RUNTIME value (`<prefix>_search`'s `startpos`) where `\A`'s is the
+  compile-time constant 0. The two coincide only when `startpos == 0`, which is
+  why a pattern that confuses them passes every test written at the default
+  startpos — the whole reason the module's corpus is written in `ms`/`ns`
+  cells. `Dfa.s1g[]` is the SAME class-axis family as `s1u[]` closed with the
+  `\G` bit set, equal to it entry for entry on every machine with no N_GSTART,
+  which is what keeps every pre-wave artifact's start dispatch unmoved by
+  construction rather than by a flag test. `pcrec_is_bare_anchor` /
+  `pcrec_wrap_bare_anchor` are declared here because FOUR sites need the rule
+  and had already drifted — see src/parse/CLAUDE.md for the over-rejection
+  that found it.
+
   **[M4.7a] SR-8 evaluated and declined to add a `Ctx.vmonly_*` field here**,
   unlike the `ModState.multiline` precedent above — the difference being
   that `multiline`'s writer (module `assertions`) is a scheduled, named

@@ -2324,6 +2324,18 @@ for the fix's scheduling: each wave that lands a new BOT-family or
 context assertion adds spellings that reach this shape, so the exclusion
 list grows monotonically until the wrapper is fixed.
 
+**[M6.2 wave D] adds a FIFTH and SIXTH, and they are the prediction above
+coming true a third time**: `a\Gb` and `x\G` — a `\G` after a consumed byte,
+which cannot match because one transition means `pos > startpos`. Named and
+excluded in tests/assertions/gpos.rxt's own header, with `ab|a\Gb`,
+`a\Gb|c`, `a\Gb|\Gz` and `x\G|y` in their place (the same impossibility
+carried on a live sibling branch, so the automaton survives and the artifact
+is warnings-clean). **They are ASSERTED, not merely excluded**:
+tests/assertions/run_gstart_diff.sh §4 sweeps them against libpcre2 over
+every subject at every startpos, compiling at `-O2` where K28 does not fire —
+so the shape is pinned even though the corpus cannot hold it. That is the
+pattern later waves should follow rather than dropping the cells.
+
 **Fix sketch and why it is deferred:** initialize the wrapper's `caps`
 (or restructure the wrapper so gcc sees the dominance) — a one-line
 emitter change whose blast radius is EVERY artifact in the tree, so it

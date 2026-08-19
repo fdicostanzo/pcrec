@@ -406,7 +406,17 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "end of subject",
  ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
  {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT},
-ESC_CLASS_INVALID('G', "\\G", assertions, ANY_ENGINE, "first matching position in the subject", QF_NO, "err 107"),
+/* [M6.2] WAVE D: `\G` joins the three rows above, longhand for the same one
+ * field and with the same RF_CLASS_INVALID (`[\G]` is PCRE2 error 107,
+ * measured against libpcre2 10.46 by this wave). Its `syntax` and `desc`
+ * strings are UNCHANGED from the ESC_CLASS_INVALID row it replaces — the
+ * registry already stated PCRE2's semantics correctly, which is what
+ * assertions_design.md §4 quotes. */
+{RK_ESC, 'G', NULL, "\\G", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_CLASS_INVALID,
+ "first matching position in the subject",
+ ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT},
 ESC_CLASS_INVALID('K', "\\K", assertions, VM_ONLY,    "reset the reported start of the match", QF_NO, "err 107"),
 
 /* FIX-3 (K13): CLASS_BASE, because inside a class there is no such construct

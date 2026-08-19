@@ -204,8 +204,15 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
          * Forgetting one would leave it pointing into the PRE-merge numbering
          * — a wrong start state rather than a missing one, and only on
          * patterns that minimize, which is most of them. */
+        /* [M6.2 wave D] `\G`'s own start family remaps for the identical
+         * reason. It is a SEPARATE array and each slot holds its own
+         * pre-merge id, so each is translated exactly once even on a
+         * `\G`-free machine, where every `s1g[u]` happens to equal the
+         * `s1u[u]` translated just above. */
         for (int u = 0; u < UPC_N; u++)
             if (d->s1u[u] >= 0) d->s1u[u] = seq[part[d->s1u[u]]];
+        for (int u = 0; u < UPC_N; u++)
+            if (d->s1g[u] >= 0) d->s1g[u] = seq[part[d->s1g[u]]];
         free(seq);
         free(ns);
     }

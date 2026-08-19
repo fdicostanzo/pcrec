@@ -522,6 +522,16 @@ static Frag compile_ast(NB *b, const Ast *a)
      * which. See src/ir/dfa.c's Clo comment. */
     case A_WORDB:  return frag_single(b, N_WORDB);
     case A_NWORDB: return frag_single(b, N_NWORDB);
+    /* [M6.2 wave D] `\G`. Reversal is identity for N_BOT/N_EOL/N_END's
+     * reason — it is an absolute-position assertion — and no reverse machine
+     * is ever built for a pattern carrying it anyway: `nfa_has_bot` answers
+     * true below, so src/core/compile.c routes it to ENG_ATTEMPT, which has
+     * no reverse pass. That is a consequence of the routing rather than a
+     * requirement of this node, and it is stated here because the reverse
+     * closure has no `\G` context to seed from (§4.2's start states are a
+     * FORWARD-attempt property) and would need its own answer if the routing
+     * ever changed. */
+    case A_GSTART: return frag_single(b, N_GSTART);
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */
@@ -699,11 +709,25 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
  *
  * `(?m)$` does NOT join: its truth at `pp` is a fact about `s[pp]`, the byte
  * the reverse walk has already consumed, which the state identity carries
- * (§3.5's mechanism mirrored). It stays on ENG_UNANCH. */
+ * (§3.5's mechanism mirrored). It stays on ENG_UNANCH.
+ *
+ * [M6.2 wave D] `\G` JOINS TOO, and the argument is `^`'s word for word with
+ * `startpos` in place of 0 (assertions_design.md §4.2): `\G` is a START-STATE
+ * property — true only at the first position of the one attempt whose
+ * `start == startpos` — and ENG_ATTEMPT is the engine that HAS attempts. On
+ * ENG_UNANCH there is a single wrapped scan with a self-loop and no notion of
+ * where an individual candidate match began, so there is nothing for the bit
+ * to be a property OF. That the reverse machine then never evaluates N_GSTART
+ * is the same free consequence `(?m)^` gets here.
+ *
+ * This is NOT a `^` alias and the routing is the only thing they share:
+ * `\Gfoo` at `startpos == 3` matches at 3 where `^foo` cannot, which is why
+ * §4.1's `start_max` is a THIRD value rather than the existing `0`. */
 bool nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
-        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M) return true;
+        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M ||
+            nfa->st[i].k == N_GSTART) return true;
     return false;
 }
 

@@ -160,6 +160,69 @@ that none of this costs a `(?m)`-free pattern a byte, and
 scan-avoidance cure and D63's candidate derivation on the only populations
 that can break them.
 
+## **[M6.2 wave D] `\G`: a FOURTH branch in front of the start dispatch, a THIRD `start_max` string, and one soundness bound on wave C's prefilter**
+
+`\G` costs the ALPHABET nothing — it reads no byte — so unlike waves B and C
+this one adds no axis. What it adds is a SECOND FAMILY of interior start
+states (`Dfa.s1g[]`, closed with the `\G` bit set) and the emitter changes
+that follow from it. Four sites, and what gates each:
+
+- **The START DISPATCH becomes three-way**, gated on `dfa_needs_gseed` (do the
+  two interior families differ at all). §4.2's three reachable rows, in this
+  order and the order is load-bearing: `start == 0` first (BOTH `\A` and `\G`
+  pass there, and testing `start == startpos` first would route offset 0 into
+  the `\G`-only state and lose every `^`/`\A` branch), then
+  `start == startpos`, then everything above it. The `\G`-free path is the
+  pre-wave three-branch chain untouched — `emit_view_select`'s
+  one-branch-that-reproduces-the-old-string discipline, applied to a chain
+  this wave inserts a FOURTH branch ahead of.
+- **`gtbl` is a REFINEMENT of `gseed`, never independent of it.** The two ask
+  different questions — "do the families differ" vs "does the `\G` family vary
+  by class" — and both are needed (`\G\bfoo|bar` has one live state for
+  `start > startpos` and three for `start == startpos`, so a single flag emits
+  a constant where a table belongs). But on a `\G`-FREE machine `s1g[] ==
+  s1u[]`, so the second question answers exactly what `dfa_needs_seed` answers,
+  and without the `&& gseed` conjunct every `\b` and `(?m)` artifact emits a
+  `gseed[]` table no dispatch reads. That defect shipped in this wave's first
+  draft and was found by MOVING THE REFERENCE KNOB (below), not by any test.
+- **`start_max` IS A THIRD VALUE** (§4.1, DD-4's substantive answer): `0` when
+  both interior families are dead, `startpos` when only the `\G` family is
+  live, `n` otherwise. No wrap toggle and no new engine — ENG_ATTEMPT already
+  emitted the un-self-looped shape, and a `\G`-anchored pattern is one attempt
+  at exactly the position `\G` names. On a `\G`-free machine the middle row is
+  unreachable and the two survivors are the pre-wave `anchored ? "0" : "n"`.
+- **[D63] THE PREFILTER'S LOWER BOUND MOVES TO `startpos`**, and this is a
+  SOUNDNESS fix rather than a new instance. `cand_from_live_seeds` derives from
+  `s1u[]` — the states an attempt at `start > startpos` enters — and never
+  looked at `s1g[]`, so wave C's `start > 0` guard is one attempt too wide the
+  moment a pattern has both a `(?m)^` branch and a `\G` branch:
+  `(?m)^a|\Gb` on `"xb"` at startpos 1 loses its match. `start > startpos`
+  implies `start > 0`, so it is a strengthening of the existing guard rather
+  than a second condition. Sabotage S82.
+
+**THE REFERENCE KNOB IS AT THE EMITTER, NOT IN THE ANALYSIS, and that is this
+wave's own check-design finding.** `-DPCREC_NO_GSTART` forces `gseed`/`gtbl`
+false and `a_gst = a_bot` HERE, so the reference build IS the pre-wave emitter.
+Waves A/B/C put their knobs in `src/ir/dfa.c`, inside the code their sabotages
+edit — and the reference compiler is built from THE SAME (sabotaged) SOURCES,
+so such a sabotage applies to both builds and CANCELS. Measured: wave B's S71
+leaves `run_wordctx_identity.sh` at 1135/1135 IDENTICAL, and that script fails
+only through a side effect (an orphaned parameter warning). Moving this wave's
+knob is what exposed the dead `gseed[]` table above.
+
+The VM's share is one arm and one PARAMETER. `\G` is the only assertion in the
+module whose truth is not a function of `(s, n, pos)`: `<prefix>_match_impl`
+has `ctx->pos`, the offset THIS ATTEMPT began at, and the search entry's retry
+loop moves it — so `<prefix>_startpos` is threaded in, emitted only where a
+`\G` exists (`v->ngst`), on the MRL ceiling's precedent. The three entries pass
+`startpos` / `ctx->pos` / `ctx->pos`, the last two being R30 E8's answer.
+
+Gates: `tests/codegen/run_gstart_identity.sh` (sabotage S83) for the claim
+that none of this costs a `\G`-free pattern a byte, and
+`tests/assertions/run_gstart_diff.sh` (sabotage S82) for the find-all
+contiguity, the two-entry agreement and the subject sweep — the three things
+no `.rxt` corpus can express.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

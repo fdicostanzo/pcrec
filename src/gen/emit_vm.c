@@ -437,6 +437,15 @@ typedef struct {
                            * can assert the bounds EXIST rather than trusting
                            * that the analysis ran — vm_work's own discipline,
                            * applied to a bound instead of to a charge. */
+    long long ngst;       /* [M6.2 wave D] emitted `\G` test sites, counted as
+                           * they are written. It is the gate on the
+                           * `<prefix>_startpos` PARAMETER, and it is counted
+                           * during the walk for `nclamp`'s exact reason: the
+                           * function header is printed after the body, so the
+                           * emitter can read what the body actually needed
+                           * instead of a second analysis predicting it. A
+                           * `\G`-free program keeps the signature it had
+                           * before this wave and stays byte-identical. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
                            * artifact (ONE gate for both, D49). Read by the
@@ -655,8 +664,10 @@ static bool vm_nullable(const Ast *a)
         switch (a->k) {
         case A_CLASS: return false;
         case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;
-        /* [M6.2 wave B] zero-width, hence nullable. */
-        case A_WORDB: case A_NWORDB: return true;
+        /* [M6.2 wave B] zero-width, hence nullable. [M6.2 wave D] `\G` too.
+         * NULLABLE is about the BYTES a node can consume, not about whether
+         * it can succeed — an assertion that fails still consumes nothing. */
+        case A_WORDB: case A_NWORDB: case A_GSTART: return true;
         case A_CAP:   a = a->l; continue;
         case A_REP:   if (a->rmin == 0) return true; a = a->l; continue;
         case A_CAT:
@@ -893,7 +904,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB:
+        case A_WORDB: case A_NWORDB: case A_GSTART:
             return;
         case A_CAP:
             if (*n < cap) out[(*n)++] = a->capno;
@@ -1213,8 +1224,9 @@ static Cost vm_cost(Vm *v, const Ast *a)
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave B] one emitted test, no frame, no slot, no trail entry --
-     * the same cost every other assertion arm has. */
-    case A_WORDB: case A_NWORDB:
+     * the same cost every other assertion arm has. [M6.2 wave D] `\G` is
+     * one more comparison against a parameter, so the same nothing. */
+    case A_WORDB: case A_NWORDB: case A_GSTART:
         return c;
     case A_CAP:
         c = vm_cost(v, a->l);
@@ -1318,7 +1330,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
     int stride = 0, nc = 0;
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB:
+    case A_WORDB: case A_NWORDB: case A_GSTART:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl); return;
     case A_ALT:
@@ -3539,6 +3551,41 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         sb_printf(b, "    if (pos == n) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
+    case A_GSTART:
+        /* [M6.2 wave D] `\G` — the first matching position
+         * (assertions_design.md §9.3's table row, §4).
+         *
+         * IT IS THE ONLY ASSERTION IN THIS SWITCH THAT READS A VALUE FROM
+         * OUTSIDE THE PROGRAM, and that is what costs the extra parameter on
+         * `<prefix>_match_impl`. `pos`, `n` and `s` are all in scope already;
+         * "the offset this search was started from" is not, because
+         * `ctx->pos` is the offset THIS ATTEMPT was started from and the
+         * search entry's retry loop moves it. The parameter is emitted only
+         * where a `\G` exists (`v->ngst`), on the MRL ceiling's precedent and
+         * for the same discharge: an obligation of the form "every caller
+         * must remember to pass X" becomes a compile error rather than a
+         * convention.
+         *
+         * WHAT THE THREE ENTRIES PASS, and R30 E8 is the reason the two
+         * match-here ones are not an oversight:
+         *   `<prefix>_search`      -> its own `startpos` argument;
+         *   `<prefix>_match`       -> `ctx->pos`;
+         *   `<prefix>_match_caps`  -> `ctx->pos`.
+         * Under a match-here entry `\G` means `pos == ctx->pos`, trivially
+         * true at entry — the same answer the design's first draft reached
+         * through a premise ("the rx_ctx has no startpos") that is factually
+         * wrong. It is threaded; it IS `ctx->pos`.
+         *
+         * No guard is needed and none is written: this arm reads no byte, so
+         * K27's class does not arise here any more than it does for `\z`. */
+        vm_lbl(v, entry, NULL);
+        vm_ev(v, VE_ASSERT, next, 0,
+              "\\G the first matching position (startpos)");
+        v->ngst++;
+        sb_printf(b, "    if (pos == %s_startpos) goto %s_L%d;\n",
+                  v->p, v->p, next);
+        vm_fail(v);
+        return;
     case A_WORDB:
     case A_NWORDB: {
         /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
@@ -4460,6 +4507,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * than re-deriving the name, so a rename cannot leave one of them behind. */
     char mrl_param[96];
     snprintf(mrl_param, sizeof mrl_param, ", const size_t %s_ceil", v.p);
+    /* [M6.2 wave D] `\G`'s parameter, written once for the same reason and
+     * appended AFTER the ceiling's so the two are order-independent at every
+     * site: each is emitted or omitted on its own flag, and a program with
+     * both gets `(ctx, w, ceil, startpos)`. */
+    char gst_param[96];
+    snprintf(gst_param, sizeof gst_param, ", const size_t %s_startpos", v.p);
 
     if (v.nclamp > 0) {
         sb_printf(c,
@@ -4623,14 +4676,15 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * artifact with no clamp keeps the signature it had before MRL existed
      * and stays byte-identical. */
     sb_printf(c,
-        "static ptrdiff_t %s_match_impl(const rx_ctx *ctx, %s_work *w%s)\n"
+        "static ptrdiff_t %s_match_impl(const rx_ctx *ctx, %s_work *w%s%s)\n"
         "{\n"
         "    const unsigned char *const s = ctx->subject;\n"
         "    const size_t n = ctx->len;\n"
         "    size_t pos = ctx->pos;\n"
         "    ptrdiff_t *const stv = w->stv;\n",
         v.p, v.p,
-        v.nclamp > 0 ? mrl_param : "");
+        v.nclamp > 0 ? mrl_param : "",
+        v.ngst > 0 ? gst_param : "");
     if (v.rungs & vm_rung_bit[VM_RUNG_CURSOR])
         sb_printf(c, "    size_t %s_cur = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
@@ -4863,7 +4917,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    ctx.caps = NULL; ctx.user = NULL;\n"
         "    for (;;) {\n"
         "        ctx.pos = start;\n"
-        "        r = %s_match_impl(&ctx, &w%s);\n"
+        "        r = %s_match_impl(&ctx, &w%s%s);\n"
         "        if (r == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
         "        if (r == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
         "        if (r == %s_R_WORK)   return PCREC_ERR_WORK;\n"
@@ -4877,6 +4931,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    return 1;\n"
         "}\n\n",
         v.p, v.p, v.nclamp > 0 ? ", ceil_" : "",
+        /* [M6.2 wave D] `startpos`, NOT `start`. `start` is the position this
+         * ATTEMPT begins at and the loop below moves it; `\G` asks about the
+         * position the SEARCH was asked to begin at, which is the parameter.
+         * On a fully-`\G` pattern the two coincide only on the first pass,
+         * which is exactly why every later pass must fail — and why passing
+         * `start` here would make `\G` an unconditional truth and turn
+         * `\Gfoo` into `foo`. */
+        v.ngst > 0 ? ", startpos" : "",
         v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
@@ -4905,7 +4967,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    ptrdiff_t r;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
-        "    r = %s_match_impl(ctx, &w%s);\n"
+        "    r = %s_match_impl(ctx, &w%s%s);\n"
         "    /* No translation and no clamp: the impl's return space IS this\n"
         "     * contract's -- >= 0, -1, or one of the three R_ sentinels, which\n"
         "     * are the ERR_ codes. A defensive floor test here would be dead\n"
@@ -4913,7 +4975,17 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    return r;\n"
         "}\n\n",
         g.matchfn, v.p, v.p, v.p,
-        v.nclamp > 0 ? ", ctx->len" : "");
+        v.nclamp > 0 ? ", ctx->len" : "",
+        /* [M6.2 wave D, R30 E8] The match-here entry's `startpos` IS
+         * `ctx->pos` — it is threaded, not absent — so `\G` here is
+         * `pos == ctx->pos`, trivially true at entry. That makes the two
+         * entries AGREE EXACTLY for a fully-`\G` pattern, and legitimately
+         * DISAGREE for a partial one (`\Gfoo|bar`): `<prefix>_search` may
+         * find `bar` at a later offset where this entry's caller asked about
+         * one position only. tests/assertions/run_gstart_diff.sh pins both
+         * halves, scoped, because an unscoped "the entries agree" test would
+         * be red on correct behaviour. */
+        v.ngst > 0 ? ", ctx->pos" : "");
 
     sb_printf(c,
         "/* The capture-delivering sibling. Same D49 return space as\n"
@@ -4928,13 +5000,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    ptrdiff_t r;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
         "    %s_work_init(&w);\n"
-        "    r = %s_match_impl(ctx, &w%s);\n"
+        "    r = %s_match_impl(ctx, &w%s%s);\n"
         "    if (r < 0) return r;\n"
         "    if (caps_out) %s_caps_out(&w, caps_out, ctx->pos, r);\n"
         "    return r;\n"
         "}\n\n",
         g.matchcapsfn, v.p, v.p, v.p,
-        v.nclamp > 0 ? ", ctx->len" : "", v.p);
+        v.nclamp > 0 ? ", ctx->len" : "",
+        v.ngst > 0 ? ", ctx->pos" : "", v.p);
 
     pcrec_emit_residual(cx);
 

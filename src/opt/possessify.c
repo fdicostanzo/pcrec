@@ -220,6 +220,30 @@ static First first_of(const Ast *a)
          * A_EOL. */
         return fst_empty(true);
 
+    case A_GSTART:
+        /* [M6.2 wave D] WIDEN AND DECLINE, and `\G` takes `^`'s arm for
+         * `^`'s exact reason rather than `\z`'s.
+         *
+         * The exemption below rests on UPWARD CLOSURE: if the assertion fails
+         * at a quantifier's maximal exit it fails at every smaller retreat
+         * position too, so the retreat cannot rescue a match. `\G` is
+         * DOWNWARD-closed, like `^` two arms up — it holds at exactly one
+         * position, `startpos`, and every retreat moves TOWARD it. So a
+         * retreat can reach a position satisfying `\G` from one that does
+         * not, which is precisely the case possessification would delete.
+         *
+         * The witness is `a{0,4}\G` at `startpos == 0` on `"aaaa"`: the
+         * maximal exit is 4, `\G` fails there, and the retreat to 0 is the
+         * only route to the correct `(0,0)`. Possessified, that pattern
+         * answers no match at every start. Widen to all bytes and decline —
+         * always available, always safe, this file's standing invariant. */
+        {
+            First r;
+            bs_all(r.f);
+            r.nullable = false;
+            return r;
+        }
+
     case A_WORDB:
     case A_NWORDB:
         /* [M6.2 wave B] WIDEN AND DECLINE, and this is NOT the treatment
@@ -395,6 +419,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_END:
     case A_WORDB:
     case A_NWORDB:
+    case A_GSTART:
         /* Zero-width: contributes no position and does not change
          * nullability, so the sequence rules below leave the surrounding
          * fold untouched — the reference probe's "modelled as absent". */
@@ -596,7 +621,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 {
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB:
+    case A_WORDB: case A_NWORDB: case A_GSTART:
         return;
 
     case A_CAP:

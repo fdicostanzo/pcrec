@@ -385,6 +385,8 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * merge or factor -- the same answer A_BOL/A_EOL/A_END already give. */
     case A_WORDB:
     case A_NWORDB:
+    /* [M6.2 wave D] `\G` likewise: zero-width, nothing to merge or factor. */
+    case A_GSTART:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);

@@ -424,6 +424,21 @@ typedef struct {
      * only caller and it never spells that combination. */
     bool      end_ok;
     bool      bot_ok;
+    /* [M6.2 wave D] may a `\G` (N_GSTART) assertion pass here — "this
+     * position is the `startpos` the match call was given"
+     * (assertions_design.md §4.2). A THIRD position bit, and the one that is
+     * not a fact about the SUBJECT at all: `bot_ok`/`eol_ok`/`end_ok` are
+     * decided by where the position sits in `s[0, n)`, while this one is
+     * decided by an argument. That difference is invisible here — the closure
+     * asks the same yes/no question — and appears in `pcrec_build_dfa`, which
+     * closes the start pre-set once with it set and once clear so the
+     * EMITTER can choose between the two at runtime.
+     *
+     * NO INVARIANT TIES IT TO ANY OTHER BIT, unlike `end_ok => eol_ok`. All
+     * four combinations describe reachable positions: `startpos == 0` on an
+     * empty subject is (bot, eol, end, gst) = (T,T,T,T), and a `startpos` in
+     * the interior is (F,F,F,T). */
+    bool      gst_ok;
     /* [M6.2 wave B, renamed by SIDE in wave C] THE TWO BYTES AROUND THIS
      * POSITION, described in SUBJECT ORDER rather than in walk order.
      *
@@ -633,6 +648,16 @@ static void clo_walk(Clo *cl, int s)
                 if (!cl->end_ok) break;
                 s = st->t1;
                 continue;
+            /* [M6.2 wave D] `\G`. One bit, no byte, no interaction with any
+             * other assertion — the cheapest arm in this switch, which is
+             * §4's whole point: pcrec's `<prefix>_search(s, n, startpos, ...)`
+             * already takes the parameter PCRE2 threads through
+             * `pcre2_match`'s `start_offset`, so "first matching position" is
+             * a value the machine is handed rather than one it must derive. */
+            case N_GSTART:
+                if (!cl->gst_ok) break;
+                s = st->t1;
+                continue;
             /* [M6.2 wave C] `(?m)^` / `(?m)$`. `bot_ok`/`end_ok` carry the
              * position half — there is no byte out there to ask about — and
              * the byte half is the class axis. Neither arm reads `eol_ok`:
@@ -700,7 +725,7 @@ typedef struct {
 } Sides;
 
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
-                    bool end_ok, Sides sd, bool prune,
+                    bool end_ok, bool gst_ok, Sides sd, bool prune,
                     CloScratch *sc, int *out, int *nout, bool *accept)
 {
     marks_next(&sc->seen);
@@ -718,7 +743,7 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
     Clo cl = { nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
-               out, 0, false, eol_ok, end_ok, bot_ok,
+               out, 0, false, eol_ok, end_ok, bot_ok, gst_ok,
                sd.left_word, sd.right_word, sd.left_nl, sd.right_nl,
                prune };
     for (int i = 0; i < npre; i++) {
@@ -886,6 +911,7 @@ typedef struct {
     bool prune;
     bool reverse;
     bool has_end;             /* a `pos == n`-only view must be computed */
+    bool has_gst;             /* [wave D] a `\G` start family must be closed */
     bool upc_live[UPC_N];     /* class-axis contexts needing their own closure */
 } Mach;
 
@@ -956,8 +982,8 @@ static Sides sides_of(const Mach *m, int cons_upc, int up_upc)
  *    the whole content of the byte-identity claim
  *    tests/codegen/run_wordctx_identity.sh gates. */
 static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
-                      const int *pre, int npre, bool bot_ok, int cons_upc,
-                      CloScratch *sc, int *scratch)
+                      const int *pre, int npre, bool bot_ok, bool gst_ok,
+                      int cons_upc, CloScratch *sc, int *scratch)
 {
     enum { V_BASE = 0, V_EOL = 1, V_END = 2, V_N = 3 };
     DView vw[V_N][UPC_N];
@@ -975,8 +1001,11 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, const Mach *m,
             bool acc;
             int nout;
             int *buf = scratch + (size_t)(v * UPC_N + u) * nfa->n;
-            /* end_ok implies eol_ok — the Clo.end_ok invariant. */
-            closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END,
+            /* end_ok implies eol_ok — the Clo.end_ok invariant. `gst_ok` is
+             * orthogonal to the position views and rides through unchanged:
+             * `\G` and `\z` can both hold at once (an empty subject searched
+             * from 0), so it is a caller's parameter and not a fourth view. */
+            closure(nfa, pre, npre, bot_ok, v >= V_EOL, v >= V_END, gst_ok,
                     sides_of(m, cons_upc, u), m->prune, sc, buf, &nout, &acc);
             vw[v][u].list   = buf;
             vw[v][u].nlist  = nout;
@@ -1018,7 +1047,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     /* Hoisted once per machine, like `has_end` below and for the same reason.
      * The ALPHABET refinement has to happen before eqclasses returns, so
      * these cannot wait until the worklist. */
-    bool has_word = false, has_nl = false, has_end = false;
+    bool has_word = false, has_nl = false, has_end = false, has_gst = false;
     for (int i = 0; i < nfa->n; i++) {
         switch (nfa->st[i].k) {
 #ifndef PCREC_NO_WORDCTX
@@ -1039,6 +1068,11 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
             has_end = true;
             break;
         case N_END:   has_end = true; break;
+        /* [M6.2 wave D] `\G` refines NO alphabet and asks for NO position
+         * view — it reads no byte and its truth at `pos` has nothing to do
+         * with where `pos` sits in the subject. All it wants is the second
+         * family of START states below. */
+        case N_GSTART: has_gst = true; break;
         default: break;
         }
     }
@@ -1073,7 +1107,8 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                                (size_t)nfa->n * 3 * UPC_N * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
-    Mach m = { prune, reverse, has_end, { true, has_word, has_nl } };
+    Mach m = { prune, reverse, has_end, has_gst,
+               { true, has_word, has_nl } };
 
     int root = nfa->start;
     /* THE START STATES, and mechanism 4 is why there is more than one
@@ -1086,13 +1121,48 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * subject, which §3.8.1 measures diverging from libpcre2 on 5 of 10
      * cells; [M6.2 wave C] adds `(?m)^`'s own use of the same dispatch, where
      * the seed byte is INSIDE the window at every attempt but the first. */
-    d->s0 = make_state(cx, nfa, d, &m, &root, 1, true, UPC_PLAIN, &sc, scratch);
+    /* [M6.2 wave D] `s0` is closed with `\G` TRUE, and that is a derivation
+     * rather than a convention: an attempt loop runs `start` from `startpos`
+     * upward, so `start == 0` implies `startpos == 0` implies
+     * `start == startpos`. §4.2's table has no `(start == 0, \G false)` row
+     * for exactly that reason — it is the one combination that is
+     * unreachable, and closing `s0` with the bit clear would silently delete
+     * `\G\A`-shaped matches at offset 0. */
+    d->s0 = make_state(cx, nfa, d, &m, &root, 1, true, true, UPC_PLAIN,
+                       &sc, scratch);
     d->s1u[UPC_PLAIN] =
-        make_state(cx, nfa, d, &m, &root, 1, false, UPC_PLAIN, &sc, scratch);
+        make_state(cx, nfa, d, &m, &root, 1, false, false, UPC_PLAIN,
+                   &sc, scratch);
     for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
         d->s1u[u] = m.upc_live[u]
-            ? make_state(cx, nfa, d, &m, &root, 1, false, u, &sc, scratch)
+            ? make_state(cx, nfa, d, &m, &root, 1, false, false, u,
+                         &sc, scratch)
             : d->s1u[UPC_PLAIN];
+    /* [M6.2 wave D] `\G`'s interior family, closed only when the machine has
+     * a `\G` to gate — the same pay-only-when-it-differs guard `has_end` and
+     * `upc_live[]` above are written with, and for the sharper of the two
+     * reasons. Without the guard these calls would compute closures identical
+     * to `s1u[]`'s and intern to the same ids (so no state numbering and no
+     * emitted byte would move), but they would still cost up to three extra
+     * closures and their `subset_elems` charge on EVERY pattern in the
+     * corpus. `has_end`'s own guard is here because exactly that cost put a
+     * `[a-z]{0,30000}` compile over tests/resource/'s CPU budget once.
+     *
+     * THIS WAVE'S REFERENCE KNOB IS NOT HERE, and its absence is deliberate:
+     * `-DPCREC_NO_GSTART` lives at the three EMITTER decision points in
+     * `src/gen/emit_dfa.c` instead. The three knobs above sit in this file
+     * because the thing they turn off is a construction in this file — but a
+     * knob that shares a source with the code a sabotage edits CANCELS that
+     * sabotage in both builds, which this wave measured on wave B's own row
+     * (see `emit_attempt`'s comment and tests/mech/sabotages/S71's
+     * annotation). Putting the knob where the emitted TEXT is chosen makes
+     * the reference build structurally the pre-wave emitter, which no edit to
+     * the analysis can undo. */
+    for (int u = 0; u < UPC_N; u++)
+        d->s1g[u] = m.has_gst
+            ? make_state(cx, nfa, d, &m, &root, 1, false, true,
+                         m.upc_live[u] ? u : UPC_PLAIN, &sc, scratch)
+            : d->s1u[u];
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
@@ -1123,7 +1193,14 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
                 int ns = src[j];
                 if (cls_has(nfa->st[ns].cls, b)) pre[npre++] = nfa->st[ns].t1;
             }
-            int tgt = make_state(cx, nfa, d, &m, pre, npre, false, cu,
+            /* [M6.2 wave D] `gst_ok` is FALSE at every successor and there is
+             * no case to consider: one transition means one byte consumed,
+             * so `pos > startpos` unconditionally. That single `false` is
+             * what makes mid-pattern `\G` (`a\Gb`) fall out correctly with no
+             * special case anywhere — the branch simply dies in the closure
+             * (§4.2's last paragraph, and `a\Gb` is measured never-matching
+             * against libpcre2 at every startpos this wave swept). */
+            int tgt = make_state(cx, nfa, d, &m, pre, npre, false, false, cu,
                                  &sc, scratch);
             d->st[si].tr[c] = tgt;
         }

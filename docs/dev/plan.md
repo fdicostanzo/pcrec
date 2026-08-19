@@ -478,6 +478,127 @@ c"` from `(0,3)` into `(0,1)`, and
   capture-free so nothing in the corpus reached emit_vm.c's arm at all")
   arriving one wave later on a different arm — worth a process note, because
   the wave that recorded it is the wave before this one.
+  **WAVE D LANDED 2026-08-19 (lane/asrtwaved)**: `\G` as `A_GSTART`/`N_GSTART`
+  — the module's THIRD kind of question, after the absolute-position tests
+  (`\A`/`\Z`/`\z`) and the two-byte context tests (`\b`/`\B`): it compares
+  the position against a RUNTIME value the match call supplies rather than a
+  compile-time constant, which is why it costs a closure bit
+  (`Clo.gst_ok`) and a SECOND FAMILY of interior start states (`Dfa.s1g[]`,
+  the same class-axis family as `s1u[]` closed with that bit set) and NOTHING
+  in the alphabet. §4.1's answer to DD-4 lands as designed and needs no wrap
+  toggle: `start_max` is a THIRD compile-time string (`0` fully-`^`-anchored /
+  `startpos` fully-`\G`-anchored / `n`), because ENG_ATTEMPT already emitted
+  the un-self-looped shape. §4.2's three reachable start states become a
+  three-way dispatch with `start == 0` tested FIRST (it is the row where BOTH
+  `\A` and `\G` hold). Mid-pattern `\G` (`a\Gb`) is unsatisfiable with no
+  special case anywhere — the worklist closes every successor with the bit
+  clear, because one transition means one byte consumed. §4.3's spec sentence
+  landed in `docs/spec/match_api.md` §3.1.
+  EVIDENCE: tests/assertions/run_gstart_diff.sh — **13,062 DFA + 13,062 VM
+  cells** over 21 patterns x 111 subjects x EVERY startpos in `[0, n]` at 0
+  divergences from libpcre2 (the startpos axis is swept exhaustively where
+  wave C used two values, because `(?m)`'s truth is a fact about the SUBJECT
+  and `\G`'s is a fact about the ARGUMENT); **888 find-all runs** agreeing
+  span for span with libpcre2 driven through the SAME §3.1 loop, plus the
+  named cell (`\G[ab]+` on `"ab ab ab"` reports only `0,2` where `[ab]+`
+  reports all three — tokenizer vs scanner, which is the whole content of
+  §4.3); R30 E8's replacement obligation SCOPED as §10 requires — **18,214
+  agreeing cells for fully-`\G` patterns, 446 legitimate DISagreements for
+  partial ones, 0 bad**, on both engines, since §9.3's own correction is that
+  the two match-here entries do not share a shape; tests/assertions/gpos.rxt
+  286 cases (280 libpcre2-verified); tests/codegen/run_gstart_identity.sh at
+  **1175/1175** `\G`-free corpus patterns byte-identical with 21 controls
+  differing; sabotages S82/S83/S84 and two new mech arms.
+  **THE VM NEEDS A PARAMETER, which §4 and §9.3 are both silent on.** `\G` is
+  the only assertion in the module whose truth is not a function of
+  `(s, n, pos)`: `<prefix>_match_impl` has `ctx->pos` — the offset THIS
+  ATTEMPT began at — and the search entry's retry loop moves it. So
+  `<prefix>_startpos` is threaded in, emitted only where a `\G` exists, on the
+  MRL ceiling's precedent; the three entries pass `startpos` / `ctx->pos` /
+  `ctx->pos`, the last two being E8's answer reached from the artifact rather
+  than from the withdrawn premise.
+  **ORACLE: the module's THIRD exclusion and the first TOTAL one** —
+  `re.compile(r'\G')` raises `bad escape \G`, so gpos.rxt is `# pcre2-only`
+  in its entirety (U11c). The consequence is for the INSTRUMENTS rather than
+  the corpus: wave C's python arm exists to catch the script driving the
+  oracle wrongly, and it cannot run on `\G` at all, so run_gstart_diff.sh §0
+  points it at the sweep's own `\G`-FREE control patterns — weaker than wave
+  C's, and the strongest available.
+  **D63's THIRD INSTANCE: MEASURED, AND THE ANSWER IS "THERE IS NO THIRD
+  INSTANCE"** (`assertions_measurements/out/gstart_prefilter.txt`). The
+  derivation is over PREDECESSOR-BYTE liveness of `s1u[]`, and a partial-`\G`
+  pattern's `s1u[]` is exactly the closure of its `\G`-FREE branches — so
+  instance one already serves the population with no new code (3 of 8 measured
+  partial-`\G` shapes get a `memchr` today). The other 5 are unserved for a
+  reason that is NOT `\G`'s: the `\G`-free control `(?m)^a|b` is unserved
+  identically, and so is D8's `^a|b`. The gap is real — `\Gfoo|xbar` runs
+  ~83x slower than plain `xbar` on a 1 MB no-match subject — and it belongs to
+  D63's SECOND instance (the first-byte set at offset 0), which would serve
+  all three shapes from one place. **RECOMMENDED to the manager: schedule
+  instance 2 as one piece of work; this is a second population arguing for
+  it.** What wave D DID add to the prefilter is a SOUNDNESS bound, not an
+  instance: the guard's lower limit is `start > startpos` rather than wave C's
+  `start > 0` whenever the machine has a `\G` family, because the derivation's
+  domain is `start > startpos` and the attempt AT `startpos` enters a state it
+  never looked at. `(?m)^a|\Gb` on `"xb"` at startpos 1 loses its match under
+  the wave-C bound (S82) — a population existing only in the INTERSECTION of
+  two waves.
+  **DEVIATIONS AND FINDINGS RETURNED**:
+  (1) **THE BYTE-IDENTITY GATES' REFERENCE KNOBS ARE MIS-PLACED, MEASURED.**
+  This wave's first draft put `-DPCREC_NO_GSTART` in `src/ir/dfa.c` beside
+  waves A/B/C's — and its own byte-identity sabotage then left the sweep at
+  **1175/1175 IDENTICAL**, because the reference compiler is built from THE
+  SAME (sabotaged) SOURCES and any edit outside the knob's own gated region
+  applies to both builds and CANCELS. Re-measured on wave B's row:
+  `run_wordctx_identity.sh` stays **1135/1135 identical under S71**, and that
+  script fails only because the deleted gate orphans a parameter and the
+  reference build warns — i.e. the row is scored DETECTED for a reason
+  unrelated to its own `SAB_DOC_FIGURE`, and a same-shaped sabotage that did
+  not orphan a parameter would read UNDETECTED against a clean gate. Wave D's
+  knob moved to the EMITTER's three decision points, which makes the reference
+  structurally the pre-wave EMITTER; S83 then goes red in the sweep (93 of
+  1175) as it should. S71 and S76 are ANNOTATED with the measurement;
+  **re-placing THEIR knobs is a manager decision and was not done here.**
+  This is the project's control-shares-a-source-with-its-subject shape,
+  found inside the directory built to prevent it.
+  (2) **Moving the knob immediately exposed a real defect in this wave's own
+  emitter** that the mis-placed knob had hidden: `gtbl` (does the `\G` start
+  family vary by class) answers exactly what `dfa_needs_seed` answers on a
+  `\G`-free machine, so without an `&& gseed` conjunct every `\b` and `(?m)`
+  artifact emitted a `gseed[]` table no dispatch ever read. Nothing else in
+  the tree could have seen it.
+  (3) **A LIVE WAVE-B OVER-REJECTION, found while adding the sixth node
+  kind.** The bare-anchor rule (quantifier-refuse bare, group-wrap inside
+  parens) lived as FOUR hand copies — `try_quant`, `p_group_body`,
+  mod_modifiers.c's `(?i:...)` port, mod_named_groups.c's declaring port — and
+  wave B added `\b`/`\B` to two of them. Now ONE predicate
+  (`pcrec_is_bare_anchor`) with four readers. **The two stale copies were NOT
+  equally reachable and this lane's first write-up got that wrong before
+  measuring it on a pre-fix build**: mod_modifiers.c's is LIVE on the default
+  path (`(?i:\b)*`, `(?i:\B)*`, `(?i:\G)*` all REFUSED where libpcre2 gives
+  `(0,0)` — a tier-2 over-rejection invisible to a corpus of ACCEPTED
+  patterns), while mod_named_groups.c's is reachable ONLY under
+  `--no-captures`, because a named group wraps its body in `A_CAP` and an
+  `A_CAP` is not a bare anchor, so at default captures the quantifier lands on
+  the wrapper. The two halves are pinned in different places for that reason —
+  gpos.rxt section 8 and run_assertions_tests.sh §2b, since no `.rxt` block
+  can pass a flag.
+  (4) `\G` in a quantifier's FOLLOW must make possessification DECLINE and
+  takes `\A`'s arm, NOT `\z`'s — a third reason for the same verdict, so it
+  gets its own STRATS row. The attractive wrong generalisation is "singleton
+  satisfying set, therefore exempt": `\z`'s singleton is `{n}`, ABOVE every
+  retreat position, and `\G`'s is `{startpos}`, BELOW every one. Measured:
+  `(x)?a{0,4}\G` on `"aaaa"` answers `(0,0)` shipped and NO MATCH under `\z`'s
+  arm (S84) — D47.5's failure mode one construct over.
+  (5) K28 gains a FIFTH and SIXTH spelling, `a\Gb` and `x\G`, excluded from
+  gpos.rxt by name with live equivalents; run_gstart_diff.sh §4 asserts them
+  at `-O2` instead. K28's own entry predicts this list growing once per wave
+  that lands a start-state assertion, and this is the third wave to confirm it.
+  (6) `run_mlinectx_identity.sh` and `run_mline_diff.sh` were absent from the
+  `ubsan`/`asan` lists while their wave-A/B siblings were present; the two
+  IDENTITY gates (wave C's and wave D's) are added, the two heavy
+  DIFFERENTIALS deliberately not — putting a multi-minute sweep on the
+  sanitizer battery is a scheduling decision for the manager.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here

@@ -101,6 +101,9 @@ long long pcrec_minw(const Ast *a)
          * direction. */
         case A_WORDB:
         case A_NWORDB:
+        /* [M6.2 wave D] `\G` consumes nothing either — it compares the
+         * position against `startpos` and reads no byte at all. */
+        case A_GSTART:
             return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));

@@ -436,14 +436,13 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
         size_t end = cx->pos + 1;
         *cx->mods = saved_mods;
         cx->pos = saved_pos;
-        if (body->k == A_BOL || body->k == A_EOL || body->k == A_END) {
-            /* the S-M1 anchor wrap, mirrored from p_group_body: `(?i:^)*`
-             * stays quantifiable exactly as `(^)*` is */
-            Ast *cat = pcrec_ast_node(cx, A_CAT);
-            cat->l = body;
-            cat->r = pcrec_ast_node(cx, A_EMPTY);
-            body = cat;
-        }
+        /* The S-M1 anchor wrap: `(?i:^)*` stays quantifiable exactly as
+         * `(^)*` is. [M6.2 wave D] SHARED with p_group_body and
+         * mod_named_groups.c rather than mirrored — this site's own copy had
+         * gone stale (it refused `(?i:\b)*`, which libpcre2 accepts at (0,0),
+         * because wave B added `\b`/`\B` to the copy in parse.c and not to
+         * this one). See pcrec_is_bare_anchor's comment. */
+        body = pcrec_wrap_bare_anchor(cx, body);
         ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                           .answered_at = want };
         res.node = body;

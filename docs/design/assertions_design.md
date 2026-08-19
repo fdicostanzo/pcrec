@@ -1654,6 +1654,51 @@ entry already threads the parameter PCRE2 threads.
 Without it a reader has to derive the correspondence, and it is the sort of
 thing that is obvious to whoever writes `\G` and to nobody afterwards.
 
+> **BUILT, [M6.2] WAVE D (2026-08-19). §4 landed as designed and nothing in it
+> was refuted** — DD-4's substantive answer (no wrap toggle; `start_max` is a
+> third value for a string the emitter already picks between) held, §4.2's
+> three-start-state table held, and mid-pattern `\G` fell out of the worklist
+> with no special case exactly as the last paragraph says. What follows is what
+> the build ADDED, in the four places the section is silent.
+>
+> **§4.2's table needed a FOURTH thing the section does not name: `s0` is
+> closed with `\G` TRUE.** The table lists the row `(start == 0, \G true)` and
+> marks `(start == 0, \G false)` impossible, which is correct and is easy to
+> read as "the `\G` bit does not apply at `s0`". It applies and it must be SET
+> — an attempt loop runs `start` from `startpos` upward, so `start == 0`
+> implies `startpos == 0` implies `start == startpos`. Closing `s0` with the
+> bit clear compiles and deletes every `\A\G`-shaped match at offset 0.
+>
+> **The `\G` family needs its OWN class-axis table, not `s1u[]`'s.** §4.2 says
+> the three start states are "each interned only if it differs", which is
+> right, but the two families' class-axis liveness is INDEPENDENT: `\G\bfoo|bar`
+> has one live interior state for `start > startpos` (only `bar` survives, and
+> it reads no left byte) and three for `start == startpos` (where the `\b` is
+> live). A single `seed`-shaped flag emits a constant where a table belongs.
+> The emitter therefore carries `gseed` (do the two families differ at all) and
+> `gtbl` (does the `\G` family itself vary by class) as separate questions,
+> with `gtbl` a REFINEMENT of `gseed` — see the wave's own note in
+> `src/gen/emit_dfa.c`, where dropping that conjunct emitted a dead table on
+> every `\b`/`(?m)` artifact.
+>
+> **The VM needs a PARAMETER, and the section's silence on it is the one place
+> §4 under-specifies the work.** `\G` is the only assertion in the module whose
+> truth is not a function of `(s, n, pos)`: `<prefix>_match_impl` has `ctx->pos`
+> — the offset THIS ATTEMPT began at — and the search entry's retry loop moves
+> it, so `startpos` has to be threaded in. It is emitted only where a `\G`
+> exists, on the MRL ceiling's precedent (`v->nclamp`), and the three entries
+> pass `startpos` / `ctx->pos` / `ctx->pos` respectively — the last two being
+> R30 E8's answer, reached here from the code rather than from the withdrawn
+> premise.
+>
+> **`\G` in a quantifier's FOLLOW must make possessification DECLINE, and it
+> takes `\A`'s arm rather than `\z`'s.** §4 does not discuss D47.5 and had no
+> reason to, but the composition is a live lost-match hazard: `\z`'s satisfying
+> set is the singleton `{n}`, ABOVE every retreat position, and `\G`'s is the
+> singleton `{startpos}`, BELOW every one. "Singleton, therefore exempt" is
+> exactly the wrong generalisation. Measured: `(x)?a{0,4}\G` on `"aaaa"`
+> answers `(0,0)` shipped and NO MATCH under the exemption. Sabotage S84.
+
 ---
 
 ## 5. (iii) DD-11 — which newline convention `(?m)` and `\Z` bind to
@@ -2480,6 +2525,25 @@ Two further corrections that follow from the same artifact:
   "the match-here entry" has to say which.
 - The interesting `\K` interaction lives here, not in `\G` (§6.3 rule 3).
 
+> **BUILT, [M6.2] WAVE D (2026-08-19) — the `\G` row, with the correction
+> applied rather than rediscovered.** E8's conclusion is right and the table
+> row `pos == startpos` ships verbatim on the VM. What the table cannot show is
+> that **`startpos` is not in scope where that row is evaluated**: the emitted
+> `<prefix>_match_impl` has `s`, `n` and `pos` and nothing else, and `ctx->pos`
+> is the offset THIS ATTEMPT began at, which the search entry's retry loop
+> moves. So `\G` is the one row in this table that costs a PARAMETER —
+> `<prefix>_startpos`, emitted only where a `\G` exists, on the MRL ceiling's
+> own precedent so a `\G`-free artifact keeps the signature it had.
+>
+> The three entries then pass `startpos` (search), `ctx->pos`
+> (`<prefix>_match`) and `ctx->pos` (`<prefix>_match_caps`). The last two ARE
+> E8's answer, reached from the artifact rather than from the withdrawn
+> premise, and the wave's §10 test pins both halves of what follows: the two
+> entries agree exactly for a fully-`\G` pattern (18,214 cells) and disagree
+> for a partial one (446 cells), on BOTH engines — which is also the first time
+> E8's "the two match-here entries do not share a shape" is exercised as a
+> test rather than stated.
+
 ---
 
 ## 10. Proposed wave structure for [M6.2]
@@ -2642,6 +2706,70 @@ sentence of §4.3.
   agreement asserted for fully-`\G` patterns, and a `\G`-in-some-branches
   pattern at `startpos > 0` tested for its own expected DISagreement, which is
   also where the three start states of §4.2 are distinguishable.
+
+> **[M6.2] WAVE D LANDED, 2026-08-19 (lane/asrtwaved).** All of the above
+> discharged, plus §4's own four build findings (annotated at §4.3). The
+> figures, from the wave's own logs:
+>
+> - **`tests/assertions/run_gstart_diff.sh`** — 13,062 DFA cells and 13,062 VM
+>   cells over 21 patterns × 111 subjects × EVERY startpos in `[0, n]`, 0
+>   divergences from libpcre2; 888 find-all runs agreeing span for span with
+>   libpcre2 driven through the SAME §3.1 loop; the E8 entry test at 18,214
+>   agreeing cells, **446 legitimate partial-`\G` disagreements** and 0 bad.
+>   The startpos axis is swept exhaustively rather than at two values as wave
+>   C's sweep does, and that is not thoroughness for its own sake: `(?m)`'s
+>   truth is a fact about the SUBJECT, `\G`'s is a fact about the ARGUMENT, so
+>   a sweep that fixes the argument measures nothing about the construct.
+> - **`tests/assertions/gpos.rxt`** — 286 cases, 280 libpcre2-verified, 0
+>   python-verifiable. **The whole file is `# pcre2-only` and this is the
+>   module's THIRD oracle exclusion, of a new kind**: `\Z` is python answering
+>   WRONGLY and `(?m)^` is python answering DIFFERENTLY, but `\G` is not a
+>   python construct at all (`re.error: bad escape \G`). U11c. The consequence
+>   the section could not have predicted is for the INSTRUMENTS: wave C's
+>   python arm exists to catch the script driving the oracle wrongly, and it
+>   cannot run on `\G` at all, so `run_gstart_diff.sh` §0 points it at the
+>   sweep's own `\G`-free control patterns instead — a strictly weaker
+>   instrument and the strongest one available.
+> - **`tests/codegen/run_gstart_identity.sh`** — 1,175 of 1,175 `\G`-free
+>   corpus patterns byte-identical, positive control differing on 21.
+>
+> **THE ONE STRUCTURAL SURPRISE, recorded because it is about the CHECKS
+> rather than about `\G`.** This wave's first draft put its reference knob
+> where waves A, B and C put theirs — in `src/ir/dfa.c`, inside the analysis.
+> Under the wave's own byte-identity sabotage the gate then stayed
+> 1175/1175 IDENTICAL, because the reference compiler is built from THE SAME
+> (sabotaged) SOURCES and an edit outside the knob's own gate applies to both
+> builds and cancels. Measured on wave B's row too: `run_wordctx_identity.sh`
+> stays 1135/1135 identical under S71, and fails only through a side effect
+> (`has_word` becomes an unused parameter, so the reference build warns). Wave
+> D's knob moved to the EMITTER's three decision points — which makes the
+> reference structurally the pre-wave emitter — and doing so immediately
+> exposed a real defect in this wave's own emitter that the mis-placed knob
+> had hidden: a dead `gseed[]` table on every `\b` and `(?m)` artifact.
+> S71 and S76 are annotated with the measurement; re-placing their knobs is
+> a manager decision.
+>
+> **THE D63 THIRD INSTANCE IS MEASURED AND THE ANSWER IS "THERE IS NO THIRD
+> INSTANCE"** (`assertions_measurements/out/gstart_prefilter.txt`). D63 names
+> partial `\G` as its third customer; the derivation is over PREDECESSOR-BYTE
+> liveness of `s1u[]`, and a partial-`\G` pattern's `s1u[]` is exactly the
+> closure of its `\G`-FREE branches — so instance one already serves this
+> population with no new code (3 of 8 measured partial-`\G` shapes get a
+> `memchr` today). The other 5 are unserved for a reason that is not `\G`'s:
+> the `\G`-free control `(?m)^a|b` is unserved identically, and so is D8's
+> `^a|b`. The gap is real (`\Gfoo|xbar` runs ~83x slower than plain `xbar`
+> on a 1 MB no-match subject) and it belongs to D63's SECOND instance, the
+> first-byte set at offset 0, which would serve all three shapes from one
+> place. Wave D builds nothing for it and recommends scheduling it as one
+> piece of work.
+>
+> **What wave D DID add to the prefilter is a SOUNDNESS bound, not an
+> instance**: the guard's lower limit is `start > startpos` rather than wave
+> C's `start > 0` whenever the machine has a `\G` family, because the
+> derivation's domain is `start > startpos` and the attempt AT `startpos`
+> enters a state the derivation never looked at. `(?m)^a|\Gb` on `"xb"` at
+> startpos 1 loses its match under the wave-C bound — sabotage S82, and a
+> population that exists only in the INTERSECTION of two waves.
 
 ### Wave E — `\K`
 

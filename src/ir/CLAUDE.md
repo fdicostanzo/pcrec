@@ -112,6 +112,32 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   `tests/codegen/run_mlinectx_identity.sh`, the same shape as the three knobs
   above; under it a `(?m)$` pattern compiles to `\z`'s semantics, which is
   what makes that script's positive control non-vacuous.
+  **[M6.2 wave C ends here; WAVE D adds a THIRD POSITION BIT and a SECOND
+  START FAMILY, and NOTHING to the alphabet.** `\G` (N_GSTART) is an absolute
+  position test like N_BOT — it reads no byte, refines no class, asks for no
+  view — but against a value that is not known until the match call:
+  `pos == startpos` where N_BOT is `pos == 0`. So `Clo` gains `gst_ok` beside
+  `bot_ok`/`eol_ok`/`end_ok`, and `Dfa` gains `s1g[UPC_N]`, the SAME class-axis
+  family as `s1u[]` closed with that bit SET. Three things to know:
+  (a) **`s0` is closed with the bit TRUE and that is a derivation, not a
+  convention**: an attempt loop runs `start` from `startpos` upward, so
+  `start == 0` implies `startpos == 0` implies `start == startpos`. Clearing it
+  there compiles and silently deletes every `\A\G`-shaped match at offset 0.
+  (b) **Every WORKLIST successor is closed with the bit FALSE, unconditionally**
+  — one transition means one byte consumed, so `pos > startpos` — and that
+  single `false` is why mid-pattern `\G` (`a\Gb`) is unsatisfiable with no
+  special case anywhere.
+  (c) **NO INVARIANT ties `gst_ok` to any other bit**, unlike `end_ok => eol_ok`:
+  all four combinations describe reachable positions, so it rides through
+  `make_state` as a caller's parameter rather than becoming a fourth view.
+  `has_gst` gates the extra closures for the same pay-only-when-it-differs
+  reason `has_end` and `upc_live[]` do.
+  **THIS WAVE'S REFERENCE KNOB IS NOT IN THIS FILE, and the absence is the
+  finding**: `-DPCREC_NO_GSTART` lives at `src/gen/emit_dfa.c`'s three EMITTER
+  decision points instead. A knob that shares a source with the code a sabotage
+  edits CANCELS that sabotage in both builds — measured on wave B's own row,
+  where `run_wordctx_identity.sh` stays 1135/1135 identical under S71. See
+  `pcrec_build_dfa`'s comment and tests/mech/sabotages/S83.
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

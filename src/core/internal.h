@@ -91,6 +91,26 @@ typedef enum {
      * class-indexed accept (§3.6) — see src/ir/dfa.c. */
     A_WORDB,
     A_NWORDB,
+    /* [M6.2 wave D] `\G` — the FIRST MATCHING POSITION, i.e. the `startpos`
+     * the match call was given (`docs/spec/match_api.md` §3.1;
+     * assertions_design.md §4). A third kind on D62's principle, and the
+     * cleanest instance of it in the module: `\G` is not `\A` under an
+     * option, it is a test against a RUNTIME value where `\A`'s is the
+     * compile-time constant 0. The two coincide only when `startpos == 0`,
+     * which is why a pattern that confuses them passes every test written at
+     * the default startpos — the whole reason this module's corpus carries
+     * `ms`/`ns` cells.
+     *
+     * Zero-width and NOT REPEATABLE, measured against libpcre2 10.46 by this
+     * wave: `\G*` `\G+` `\G?` `\G{2}` `a\G*` are all error 109 and `(\G)*`
+     * compiles to (0,0) — `\A`/`\z`/`\b`'s shape exactly, so this kind joins
+     * parse.c's existing rejection and group-wrap sites rather than earning a
+     * rule of its own. `[\G]` is error 107, so the row keeps
+     * RF_CLASS_INVALID.
+     *
+     * `Ast.multiline` is meaningless here and is never read: `\G` is an
+     * absolute position test like `\A`/`\z`, unaffected by every option. */
+    A_GSTART,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
      * D31 ruled the group erasure STAYS, on a MEASURED compile-time cost, and
@@ -260,6 +280,19 @@ typedef enum {
      * the reverse machine with no notion of direction anywhere in it. */
     N_WORDB,
     N_NWORDB,
+    /* [M6.2 wave D] `\G`, goto t1. An ABSOLUTE POSITION TEST like N_BOT — it
+     * reads no byte and needs no class axis — but against a value that is not
+     * known until the match call: `pos == startpos` where N_BOT is `pos == 0`.
+     *
+     * In src/ir/dfa.c that makes it a THIRD closure bit beside `bot_ok` and
+     * `eol_ok`/`end_ok`, and a SECOND family of interior start states
+     * (`Dfa.s1g[]`), because "this attempt begins at `startpos`" is a
+     * start-state property exactly as "this attempt begins at offset 0" is.
+     * It never survives a consumed byte — after one transition `pos >
+     * startpos` unconditionally — so the worklist closes every successor with
+     * the bit clear and mid-pattern `\G` (`a\Gb`) dies in the closure with no
+     * special case (assertions_design.md §4.2). */
+    N_GSTART,
     N_ACCEPT
 } NKind;
 
@@ -383,6 +416,19 @@ typedef struct {
      * intern together — which is what keeps every existing artifact's start
      * dispatch a compile-time constant. */
     int      s1u[UPC_N];
+    /* [M6.2 wave D] `\G`'s own interior start states: the SAME class-axis
+     * family as `s1u[]`, closed with the `\G` bit SET (assertions_design.md
+     * §4.2). The three reachable start states of that section's table are
+     * therefore `s0` (`start == 0`, which implies `start == startpos` since
+     * an attempt loop never runs below `startpos`), `s1g[]`
+     * (`start == startpos > 0`) and `s1u[]` (`start > startpos`).
+     *
+     * Equal to `s1u[]` entry for entry on every machine with no N_GSTART —
+     * the bit gates nothing there, so `pcrec_build_dfa` does not even close
+     * the extra views and assigns the same interned ids. That is what keeps
+     * every pre-wave artifact's start dispatch and `start_max` string
+     * unmoved, by construction rather than by a flag test in the emitter. */
+    int      s1g[UPC_N];
     /* True when this machine was built with a CLASS AXIS at all — i.e. its
      * NFA carries an N_WORDB/N_NWORDB (`\b`'s word-ness) or an N_BOT_M/
      * N_EOL_M (`(?m)`'s newline-ness). It is the flag every emitter site that
@@ -1153,6 +1199,12 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * tell them apart — see cls_casefold's comment). The ONE constructor every
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
+/* [M6.2 wave D] The BARE ANCHOR rule, one home, four readers (parse.c's
+ * quantifier rejection and group wrap, mod_modifiers.c's `(?i:...)` port,
+ * mod_named_groups.c's declaring port). See src/parse/parse.c for the
+ * measured rule and for the drift that made it one function. */
+bool pcrec_is_bare_anchor(const Ast *a);
+Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body);
 Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
                                bool negate);
 

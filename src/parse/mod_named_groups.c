@@ -176,14 +176,12 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
         *cx->mods = saved_mods;
         cx->pos = saved_pos;
 
-        if (body->k == A_BOL || body->k == A_EOL || body->k == A_END) {
-            /* the S-M1 anchor wrap, mirrored from p_group_body: `(?<n>^)*`
-             * stays quantifiable exactly as `(^)*` is */
-            Ast *cat = pcrec_ast_node(cx, A_CAT);
-            cat->l = body;
-            cat->r = pcrec_ast_node(cx, A_EMPTY);
-            body = cat;
-        }
+        /* The S-M1 anchor wrap: `(?<n>^)*` stays quantifiable exactly as
+         * `(^)*` is. [M6.2 wave D] SHARED with p_group_body and
+         * mod_modifiers.c rather than mirrored — this site's own copy had
+         * gone stale the same way that one had (`(?<n>\b)*` refused where
+         * libpcre2 gives (0,0)). See pcrec_is_bare_anchor's comment. */
+        body = pcrec_wrap_bare_anchor(cx, body);
 
         if (capno) {
             Ast *cap = pcrec_ast_node(cx, A_CAP);

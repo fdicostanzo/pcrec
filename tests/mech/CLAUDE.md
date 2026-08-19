@@ -746,3 +746,82 @@ Of the four that shipped:
   `a|^b`, `(?:^|\b)foo` — so the derivation guards shapes that predate this
   wave. A row whose edit is a quotation from the design is the sharpest kind
   this matrix carries.
+
+## [M6.2 wave D] S82-S84, two more arms, and a finding ABOUT THIS DIRECTORY
+
+Three rows for `\G`, running two new arms — `gstartidentity`
+(tests/codegen/run_gstart_identity.sh) and `gstartdiff`
+(tests/assertions/run_gstart_diff.sh) — alongside `harness` and `assertions`.
+Own arms for this matrix's standing reason; `gstartdiff` is additionally the
+only instrument in the tree that drives docs/spec/match_api.md §3.1's FIND-ALL
+LOOP against libpcre2 driven through the same loop, and the only one that
+compares the two ENTRIES of one artifact.
+
+- **S82** is a LOST MATCH living in the INTERSECTION of two waves, which is
+  why neither wave's own population could have found it. Wave C's D63
+  prefilter derives its candidate set from `s1u[]` (the states an attempt at
+  `start > startpos` enters) and bounds its skip at `start > 0`; wave D adds
+  `s1g[]` for the one attempt at `start == startpos`, which that derivation
+  never looked at. A FULLY-`\G` pattern emits no prefilter at all and a
+  `(?m)`-only pattern has no `s1g[]`, so the defect is reachable only by a
+  pattern with BOTH — `(?m)^a|\Gb` on `"xb"` at startpos 1, which loses its
+  match under the wave-C bound. **MEASURED: `corpus` 3 fail / 297 pass,
+  `gstartdiff` 1 fail / 7 pass — DETECTED.**
+  **Its first canonical run scored `gstartdiff: 0 fail`, and the finding was
+  about the POPULATION**: the sweep's pattern list had no spelling carrying
+  BOTH a `(?m)^` branch and a `\G` branch, so nothing in it emitted a memchr
+  and a `\G` start family together, and only gpos.rxt caught a sabotage that
+  loses matches. Three such patterns were added and the row re-measured. That
+  is S48's and S78's lesson arriving on a third instrument — and it is the
+  argument for running a row through the canonical driver before believing a
+  hand-validated failing direction.
+- **S84** is D47.5's failure mode one construct over, and it is here because
+  the WRONG generalisation is the attractive one: `\z` takes the `$`-follow
+  exemption with no gate because its satisfying set is the singleton `{n}`,
+  and `\G`'s is the singleton `{startpos}` — so "singleton, therefore exempt"
+  reads as an argument and is not one. Upward closure is the argument: `\z`'s
+  singleton is ABOVE every retreat position and `\G`'s is BELOW every one.
+  **MEASURED: `assertions` 1 fail** (the STRATS row reads 0x1 instead of 0x2)
+  and **`harness` 15 fail** on gpos.rxt section 7, whose cells were added
+  BECAUSE this row needs an answer-level failing direction and not only a
+  stamp-level one.
+- **S83** is the byte-identity row, SEMANTICS-PRESERVING in S69/S71/S76's way:
+  every ENG_ATTEMPT artifact takes the three-way `\G` dispatch, all three arms
+  lead to the same label on a `\G`-free machine, and no answer moves anywhere.
+  **MEASURED: 93 of 1,175 `\G`-free corpus patterns change bytes; the whole
+  `.rxt` corpus stays green.**
+
+**AND THE FINDING THIS DIRECTORY SHOULD READ FIRST.** S83's first form came
+back with the identity sweep at **1175/1175 IDENTICAL** — i.e. UNDETECTED by
+the gate it exists for — and the cause is structural rather than particular to
+the row. `run_*_identity.sh` builds its reference compiler from THE TREE'S OWN
+SOURCES with a `-D` knob, so under a sabotage BOTH builds are sabotaged, and
+any edit outside the code the knob actually suppresses applies to both sides
+and CANCELS. Only sabotages living inside the knob's own gated region are
+visible.
+
+It is not specific to wave D. **MEASURED on wave B's S71 by this lane:
+`run_wordctx_identity.sh`'s identity sweep stays 1135/1135 IDENTICAL under
+it**, and that script fails only because deleting the `if (has_word)` gate
+orphans a parameter, so the reference build emits `-Wunused-parameter` and the
+script's own "the reference build produced warnings" check fires. The row is
+therefore scored DETECTED for a reason unrelated to what its `SAB_DOC_FIGURE`
+claims — and a future sabotage of the same shape that did not happen to orphan
+a parameter would be scored UNDETECTED while the gate reported clean. S71 and
+S76 now carry annotations saying so.
+
+Wave D's own knob was moved to `src/gen/emit_dfa.c`'s three EMITTER decision
+points, which makes the reference build structurally the pre-wave EMITTER
+rather than an analysis with one fact suppressed — after which S83 goes red in
+the sweep as it should. **Doing so immediately exposed a real defect in wave
+D's own emitter that the mis-placed knob had hidden** (a dead `gseed[]` table
+on every `\b`/`(?m)` artifact). Re-placing waves A/B/C's knobs is a manager
+decision and is not done here.
+
+Put beside S48 (green because the population could not reach the defect), S50
+(green because the thing removed was not carrying the weight) and S60 (green
+because the described defect does not exist in the shipped form), this is a
+FOURTH kind of green: green because the CONTROL and the SUBJECT share a
+source. That is the project's oldest recurring shape, and finding it inside the
+directory that exists to prevent it is the second time that has happened
+(compare the S19 expected-UNDETECTED account above).

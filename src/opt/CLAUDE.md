@@ -183,6 +183,17 @@ construction (src/ir) and emission (src/gen).
   is scoped): the miscompile cells and the parse-time-resolution cure are
   assertions_design.md §8 / decisions.md D47.5's addendum.
 
+  **[M6.2 wave D] `\G` DECLINES, and it takes `\A`'s arm rather than `\z`'s —
+  a THIRD reason for the same verdict, which is why it has its own row in the
+  STRATS check rather than riding either neighbour's.** The exemption rests on
+  UPWARD CLOSURE, not on the satisfying set being a singleton: `\z`'s singleton
+  is `{n}`, ABOVE every retreat position, and `\G`'s is `{startpos}`, BELOW
+  every one. So `\G` is DOWNWARD-closed exactly like `\A` — every retreat moves
+  TOWARD the one position that satisfies it — and possessifying deletes the
+  retreat that is the only route to the match. Witness, measured:
+  `(x)?a{0,4}\G` on `"aaaa"` answers `(0,0)` shipped and NO MATCH under `\z`'s
+  arm (sabotage S84), which is D47.5's own failure mode one construct over.
+
   Tests: tests/possessify/ (its own CLAUDE.md explains why three separate
   checks are needed and what each is blind to); failing-direction controls
   tests/mech/sabotages/S45-S49.
@@ -302,6 +313,11 @@ construction (src/ir) and emission (src/gen).
   `Dfa.s1w` remaps alongside `s0`/`s1`; forgetting it would leave mechanism
   4's seed pointing into the PRE-merge numbering — a wrong start state rather
   than a missing one, on every pattern that minimizes, which is most of them.
+  **[M6.2 wave D]** `Dfa.s1g[]` — `\G`'s own start family — remaps in a SECOND
+  loop for the identical reason. The two loops are written out rather than
+  merged over a pointer array because they are independent arrays each holding
+  its own pre-merge id, so each is translated exactly once even on a `\G`-free
+  machine where every `s1g[u]` happens to equal the `s1u[u]` beside it.
   Byte-identity survives because the key is handed out in first-occurrence
   order and only two of its four values occur without a word context.
   Byte-identity on `\z`-free patterns holds by construction rather than by a

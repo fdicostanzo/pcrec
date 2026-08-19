@@ -94,8 +94,11 @@ static void rd_shape(Shape *S, const Ast *a)
         case A_CLASS:
             return;
         case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        /* [M6.2 wave B] DECLINE, which is always available and always safe. */
-        case A_WORDB: case A_NWORDB:
+        /* [M6.2 wave B] DECLINE, which is always available and always safe.
+         * [M6.2 wave D] `\G` declines with them, and it is the least
+         * interesting decline in the file: a `\G` inside a quantifier body
+         * can be true at most once per search by definition. */
+        case A_WORDB: case A_NWORDB: case A_GSTART:
             S->ok = false;
             return;
         case A_CAP:
@@ -165,8 +168,9 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave B] reversal is identity -- the predicate is symmetric in
-     * the two bytes it reads (src/ir/nfa.c). */
-    case A_WORDB: case A_NWORDB:
+     * the two bytes it reads (src/ir/nfa.c). [M6.2 wave D] and for `\G`
+     * because it is an absolute-position assertion, N_BOT's own reason. */
+    case A_WORDB: case A_NWORDB: case A_GSTART:
         return rd_node(cx, a);
 
     case A_CAP: case A_REP: {
@@ -278,7 +282,7 @@ static bool rd_alt_disjoint(const Ast *a)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB:
+        case A_WORDB: case A_NWORDB: case A_GSTART:
             return true;
         case A_CAP: case A_REP:
             a = a->l;
@@ -351,7 +355,7 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
 {
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB:
+    case A_WORDB: case A_NWORDB: case A_GSTART:
         return;
     case A_CAP:
         rd_walk(R, a->l, in_rep);

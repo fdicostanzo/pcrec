@@ -388,3 +388,44 @@ blocks follow above and for the same reason — a subject or a startpos added
 later must not silently start lying. `(?m)$`-only blocks are NOT excluded and
 ARE checked live by `verify_rxt.py`, which is the standing proof that this
 split is about multiline `^` specifically rather than about `(?m)`.
+
+
+### U11c — python `re`: `\G` DOES NOT EXIST (module `assertions`, [M6.2] wave D)
+
+**Found**: 2026-08-19 by the [M6.2] wave D implementation lane, in the first
+minute of writing the corpus — unlike U11 and U11b this one needs no
+measurement to discover, only to record precisely.
+
+**The divergence is TOTAL, which makes it the easiest of the three to handle
+and the most important to write down.** U11 is python answering a `\Z` cell
+WRONGLY; U11b is python answering a `(?m)^` cell DIFFERENTLY. Neither is
+visible without comparing. `\G` is not a python construct at all:
+
+```
+>>> import re; re.compile(r'\G')
+re.error: bad escape \G at position 0
+```
+
+There is no flag, no `re` dialect and no rewriting that expresses it. python's
+`re` has no notion of a match's *start offset* being assertable: `pos` exists
+as a `search()` argument but nothing in the pattern language can test against
+it. (`\A` is offset 0 absolutely, which is a DIFFERENT assertion and the one
+`\G` is most likely to be confused with — they coincide only at
+`startpos == 0`.)
+
+**Impact**: `tests/assertions/gpos.rxt` is `# pcre2-only` in its ENTIRETY,
+block by block, and is verified by `tests/assertions/verify_pcre2.py` against
+libpcre2. That is the third place in module `assertions` where the base-tier
+oracle cannot answer, after `\Z` and `(?m)^`; `\K` will be the fourth, and
+for this same total reason rather than U11/U11b's partial ones.
+
+**The consequence for the wave's INSTRUMENTS is the part worth reading.**
+`tests/assertions/run_mline_diff.sh` runs python beside libpcre2 not to judge
+pcrec — D26 makes libpcre2 the truth — but to catch the SCRIPT driving the
+oracle wrongly, since python shares no code with libpcre2. That arm cannot
+run on `\G` patterns at all. `run_gstart_diff.sh` therefore keeps the arm and
+points it at the sweep's own `\G`-FREE CONTROL patterns (§0), over the same
+subjects, the same startpos values and the same oracle invocation. It is a
+strictly weaker instrument than wave C's and it is the strongest one
+available: a startpos convention error or a subject that lost a byte still
+shows up there, and nothing else in the tree would see it.

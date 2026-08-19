@@ -1,0 +1,94 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_gstart_prefilter.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: e631533 2026-08-19
+# RUN FROM REPO COMMIT        : e631533 (lane/asrtwaved)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/assertions_measurements/out/gstart_prefilter.txt
+# RUN DATE   : 2026-08-19T11:03:22-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+== 1. THE CENSUS: which \G shapes get a prefilter today ==
+
+pattern                  class      prefilter start dispatch
+------------------------ ---------- --------- --------------------
+\Gfoo                    full       no        start_max=startpos
+\G[a-z]+                 full       no        start_max=startpos
+\Gabc|\Gxy               full       no        start_max=startpos
+\Gfoo|bar                partial    no        three-way
+\Gfoo|xbar               partial    no        three-way
+\Ga|b                    partial    no        three-way
+\G[a-z]+|ERROR           partial    no        three-way
+\Gfoo|[0-9]+             partial    no        three-way
+\Gfoo|(?m)^ERROR         partial    MEMCHR    three-way
+(?m)^a|\Gb               partial    MEMCHR    three-way
+\Gxy|(?m)^ab             partial    MEMCHR    three-way
+(?m)^ERROR               control    MEMCHR    two-way
+(?m)^a|b                 control    no        two-way
+
+partial-\G patterns: 8 total, 3 with a prefilter, 5 without
+
+== 2. THE COST THERE IS TO RECOVER, on P2's population ==
+
+If a third instance were worth building, the shape it would target is a
+partial \G whose \G-free branch is a narrow literal. Measured on a
+1 MB subject with no match, so every attempt runs and dies:
+
+  \Gfoo|xbar     ATTEMPT   partial \G, unanchored literal branch                0.009842 s / 5 reps  (r=0)
+  xbar           UNANCH    the \G-free branch ALONE (ENG_UNANCH, has every mechanism) 0.000221 s / 5 reps  (r=0)
+  (?m)^xbar      ATTEMPT   instance one for scale (ENG_ATTEMPT + memchr)        0.000092 s / 5 reps  (r=0)
+
+== 3. THE VERDICT ==
+
+Read column 3 of the census against P1/P2/P3.
+
+Partial `\G` needs NO NEW CALLER of `cand_derive` and NO new loop
+integration. The shipped derivation is over the PREDECESSOR-BYTE liveness of
+`s1u[]`, and a partial-`\G` pattern's `s1u[]` is exactly the closure of its
+`\G`-FREE branches — so instance one already answers this population, giving
+a prefilter to the shapes that admit one and correctly declining the rest.
+What a "third instance" would have to add is a derivation over a DIFFERENT
+quantity (the non-`\G` branches' FIRST-BYTE set, at offset 0), and that is
+D63's SECOND named instance — the D8 `^`-on-some-branches shape — which D63
+gates on its own separate measurement and which would serve `^`-partial and
+`\G`-partial patterns alike from one place.
+
+So the honest ruling for D63's item 2 is not "the third instance is not worth
+building" but "there is no third instance to build": its population is served
+by the first and its unserved remainder belongs to the second.
+
+AND THE UNSERVED REMAINDER IS NOT CHEAP, which is the part that would be
+missed by stopping at "no new caller needed". Section 2 measures the gap on
+P2's own shape: `\Gfoo|xbar` runs its 1 MB no-match search ~83x slower than
+the plain `xbar` the same subject gives ENG_UNANCH, and ~190x slower than
+instance one's `(?m)^xbar`. That is a real loss and it wants fixing — but it
+is not `\G`'s loss. The `\G`-free control `(?m)^a|b` in section 1 gets no
+prefilter either, for the identical reason (`b` can begin anywhere, so every
+predecessor byte seeds a live state), and D8's `^a|b` is the same shape again.
+Attributing the cost to `\G` and building a `\G`-shaped fix would put a third
+copy of the same idea in the tree and leave the other two shapes paying it —
+M2.12's forked-scan-avoidance lesson, which is why D63 made the derivation a
+tool in the first place.
+
+RECOMMENDATION TO THE MANAGER, recorded rather than acted on: D63 instance 2
+(the first-byte set at offset 0) should be scheduled as ONE piece of work
+serving `^`-partial, `(?m)^`-partial and `\G`-partial alike, and this
+measurement is a second population arguing for it. Wave D builds nothing for
+it, per D63's own gate.
+
+WHAT WAVE D DID ADD to the prefilter is a SOUNDNESS bound rather than a new
+instance — the guard's lower limit moves from `start > 0` to
+`start > startpos` whenever the machine has a `\G` family, because the
+derivation's domain is `start > startpos` and the attempt AT `startpos`
+enters a state the derivation never looked at. Sabotage S82 is that line's
+measured failing direction: `(?m)^a|\Gb` on "xb" at startpos 1 loses its
+match under the wave-C bound.

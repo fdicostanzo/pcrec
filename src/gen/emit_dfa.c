@@ -981,6 +981,31 @@ static bool dfa_needs_seed(const Dfa *d)
     return false;
 }
 
+/* [M6.2 wave D] Does this machine distinguish "the attempt begins AT
+ * `startpos`" from "it begins after it" (assertions_design.md §4.2)? False
+ * for every machine with no N_GSTART by construction — `pcrec_build_dfa`
+ * assigns `s1g[u] = s1u[u]` there without closing anything — so a `\G`-free
+ * artifact keeps its two-way start dispatch and its `start_max` string
+ * character for character. This is the ONE predicate the emitter's `\G` code
+ * is gated on; there is no `has_gstart` flag on the Dfa for a second site to
+ * disagree with. */
+static bool dfa_needs_gseed(const Dfa *d)
+{
+    for (int u = 0; u < UPC_N; u++)
+        if (d->s1g[u] != d->s1u[u]) return true;
+    return false;
+}
+
+/* Are ALL of a family's interior start states dead? `s1u` answers "can an
+ * attempt at `start > startpos` match at all"; `s1g` answers it for
+ * `start == startpos`. §4.1's three-valued `start_max` is exactly the two
+ * answers read together. */
+static bool dfa_interior_dead(const int fam[UPC_N])
+{
+    for (int u = 0; u < UPC_N; u++) if (fam[u] >= 0) return false;
+    return true;
+}
+
 /* Does ANY state's accept bit depend on the next byte?
  *
  * This is the exact condition for emitting §3.6's class-indexed accept table,
@@ -1043,12 +1068,12 @@ static int upc_of_newline(const Dfa *d)
  * handles with its own branch because the condition differs per machine
  * (`startpos == 0` forward, `end == n` reverse). */
 static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
-                            const Dfa *d)
+                            const Dfa *d, const int fam[UPC_N])
 {
     sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
         if (cl % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", d->s1u[upc_of_class(d, cl)]);
+        sb_printf(c, " %d,", fam[upc_of_class(d, cl)]);
     }
     sb_puts(c, "\n    };\n");
 }
@@ -1411,7 +1436,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_tr_table(c, p, "ftr", fd);
     emit_acc_table(c, p, "facc", fd);
     if (facc2) emit_acc_cls_table(c, p, "facc2", fd);
-    if (fseed) emit_seed_table(c, p, "fseed", fd);
+    if (fseed) emit_seed_table(c, p, "fseed", fd, fd->s1u);
     if (eol)  emit_eol_table(c, p, "fev", fd);
     if (endv) emit_end_table(c, p, "fendv", fd);
     if (prefilter && !use_memchr)
@@ -1422,7 +1447,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_tr_table(c, p, "rtr", rd);
     emit_acc_table(c, p, "racc", rd);
     if (racc2) emit_acc_cls_table(c, p, "racc2", rd);
-    if (rseed) emit_seed_table(c, p, "rseed", rd);
+    if (rseed) emit_seed_table(c, p, "rseed", rd, rd->s1u);
     if (eol)  emit_eol_table(c, p, "rev", rd);
     if (endv) emit_end_table(c, p, "rendv", rd);
     for (int k = 0; k < nrskip; k++)
@@ -1719,6 +1744,56 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * second. */
     bool acc2 = dfa_has_clsacc(d);
     bool seed = dfa_needs_seed(d);
+    /* [M6.2 wave D] TWO questions, not one. `gseed` is "does
+     * `start == startpos` differ from `start > startpos` at all"; `gtbl` is
+     * "does the `\G` family itself vary with the context byte". Both are
+     * needed — `\G\bfoo|bar` has one live interior state for
+     * `start > startpos` and three for `start == startpos`, so a single flag
+     * emits a constant where a table belongs. */
+    bool gseed = dfa_needs_gseed(d);
+    /* But `gtbl` is a REFINEMENT of `gseed`, never independent of it, and the
+     * `&& gseed` is load-bearing rather than defensive. On a `\G`-free
+     * machine `s1g[] == s1u[]` entry for entry, so the loop below answers
+     * exactly what `dfa_needs_seed` answers — true on every `\b` and `(?m)`
+     * pattern — and without the conjunct those artifacts emit a `gseed[]`
+     * table no dispatch ever reads. Found by moving this wave's reference
+     * knob to the emitter (see below): with the knob in the analysis both
+     * builds emitted the dead table and the byte-identity gate could not see
+     * it. */
+    bool gtbl = false;
+    if (gseed)
+        for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
+            if (d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
+#ifdef PCREC_NO_GSTART
+    /* [M6.2 wave D] THE REFERENCE-BUILD KNOB, and its PLACEMENT is the whole
+     * point of it. `tests/codegen/run_gstart_identity.sh` builds a compiler
+     * with this defined and requires byte-identical output over every
+     * `\G`-free corpus pattern; forcing the two flags false HERE makes that
+     * build take the pre-wave emitter branches unconditionally, so the
+     * reference IS the pre-wave emitter rather than merely an analysis with
+     * one fact suppressed.
+     *
+     * WAVE B's ANALOGOUS KNOB IS PLACED THE OTHER WAY AND THIS WAVE MEASURED
+     * WHAT THAT COSTS. `-DPCREC_NO_WORDCTX` pins `has_word` false in
+     * `src/ir/dfa.c`, i.e. inside the code a sabotage of that construction
+     * edits — and the reference compiler is built from THE SAME (sabotaged)
+     * SOURCES. So sabotage S71, which deletes the `if (has_word)` gate on the
+     * alphabet refinement, refines in BOTH builds and cancels: measured
+     * 2026-08-19, `run_wordctx_identity.sh`'s identity sweep stays
+     * 1135/1135 BYTE-IDENTICAL under it, and the script fails only because
+     * `has_word` becomes an unused parameter and the reference build emits a
+     * warning. That is the project's own recorded check-design failure — a
+     * control sharing a source with what it controls — in a new place, and
+     * the reason this knob is at the emitter instead. See S71's and S76's
+     * annotations; re-placing THOSE two is not this wave's to do.
+     *
+     * Never defined in a shipped build: under it a `\G` pattern takes the
+     * two-way start dispatch, so `\G` can pass only at `start == 0` and
+     * compiles to `\A`'s semantics — a WRONG matcher, which is what makes
+     * that script's positive control non-vacuous. */
+    gseed = false;
+    gtbl = false;
+#endif
     /* [M6.2 wave C] the class-axis context of a position whose next byte is a
      * newline: the EOL arms below know that byte from their own entry test,
      * so their accept bit is a COMPILE-TIME constant rather than a table read
@@ -1744,6 +1819,21 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         }
         sb_puts(c, " };\n");
     }
+    /* [M6.2 wave D] `\G`'s own seed table, and it is gated on the `\G` FAMILY
+     * varying rather than on `seed`. The two questions are genuinely
+     * independent: `\G\bfoo|bar` has one interior state for `start >
+     * startpos` (only the `bar` branch survives, and it reads no byte to its
+     * left) and three for `start == startpos` (where the `\b` is live). A
+     * single `seed` flag would emit a constant where a table is needed. */
+    if (gtbl) {
+        sb_printf(c, "    static const void *const %s_gseed[%d] = { ",
+                  p, d->ncls);
+        for (int cl = 0; cl < d->ncls; cl++) {
+            if (cl) sb_puts(c, ", ");
+            emit_target(c, p, d->s1g[upc_of_class(d, cl)]);
+        }
+        sb_puts(c, " };\n");
+    }
 
     /* [D63] THE CANDIDATE-START PREFILTER, this engine's first instance.
      * Derived by the shared helper; only the LOOP INTEGRATION is here. */
@@ -1758,11 +1848,34 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * context), which is what D63's candidate prefilter above is for: the
      * fast path does not apply, and every attempt but the line starts is
      * still provably dead. */
-    bool anchored = true;
-    for (int u = 0; u < UPC_N; u++) if (d->s1u[u] >= 0) anchored = false;
+    /* [M6.2 wave D] `start_max` IS A THIRD VALUE NOW, not a wrap toggle
+     * (assertions_design.md §4.1, which is DD-4's substantive answer). Read
+     * the two interior families together:
+     *
+     *   s1u dead, s1g dead   every branch needs `^`     -> start_max = 0
+     *   s1u dead, s1g LIVE   every branch needs `\G`    -> start_max = startpos
+     *   s1u live             something can start later  -> start_max = n
+     *
+     * The middle row is `\G`'s whole engine cost: ONE attempt, at exactly the
+     * position `\G` names, so a `\G`-anchored pattern is O(n) trivially and
+     * needs neither a new engine nor `engine_m4.md` §7.3's toggle on
+     * `nfa_wrap_unanchored`. ENG_ATTEMPT was already emitting the
+     * un-self-looped shape.
+     *
+     * On a `\G`-free machine `s1g[] == s1u[]` entry for entry, so the middle
+     * row is unreachable and the two surviving rows are the pre-wave
+     * `anchored ? "0" : "n"` character for character. */
+    bool a_bot = dfa_interior_dead(d->s1u);
+    bool a_gst = dfa_interior_dead(d->s1g);
+#ifdef PCREC_NO_GSTART
+    a_gst = a_bot;   /* the reference build's third `start_max` string is
+                      * unreachable — see the knob's comment above */
+#endif
+    bool anchored = a_bot && a_gst;
     sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
-              anchored ? "0 /* fully ^-anchored */" : "n");
+              anchored ? "0 /* fully ^-anchored */"
+                       : a_bot ? "startpos /* fully \\G-anchored */" : "n");
     sb_puts(c, "    for (start = startpos; start <= start_max; start++) {\n");
     if (cpre) {
         /* [D63] LOOP INTEGRATION, ENG_ATTEMPT's shape: an advance BETWEEN
@@ -1796,20 +1909,59 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * N3): `(?m)^ERROR` dies in a byte or two per attempt, so the cost is
          * visiting every offset, and this is what removes it. The quadratic
          * crossing arm (§3.7.1) is NOT rescued and D63 accepts that —
-         * DD-7's reverse BOT variant is the sequenced fix. */
-        sb_printf(c, "        if (start > 0 && s[start - %d] != %d) {\n"
+         * DD-7's reverse BOT variant is the sequenced fix.
+         *
+         * [M6.2 wave D] THE LOWER BOUND IS `startpos`, NOT 0, WHENEVER THE
+         * MACHINE HAS A `\G` FAMILY — and getting this wrong is a lost match,
+         * not a slow one. The derivation reads `s1u[]`, the states an attempt
+         * at `start > startpos` enters; the attempt at `start == startpos`
+         * enters `s1g[]` instead, which the derivation never looked at. So a
+         * pattern with a `(?m)^` branch AND a `\G` branch — `(?m)^a|\Gb`,
+         * whose candidate set is the newline definition — would have had its
+         * `\G` attempt skipped at any `startpos` not preceded by a newline.
+         * `start > startpos` implies `start > 0`, so the bound is a
+         * STRENGTHENING of the existing guard rather than a second condition,
+         * and every position the skip then passes over is one this
+         * derivation's domain covers. Sabotage S82 restores `start > 0`. */
+        sb_printf(c, "        if (start > %s && s[start - %d] != %d) {\n"
                          "            const void *q = memchr(s + start, %d, "
                          "n - start);\n"
                          "            if (!q) break;\n"
                          "            start = (size_t)"
                          "((const unsigned char *)q - s) + %d;\n"
                          "        }\n",
+                  gseed ? "startpos" : "0",
                   cand.offset, cand.byte, cand.byte, cand.offset);
     }
     sb_puts(c, "        size_t pos = start;\n"
                "        size_t last = (size_t)-1;\n");
 
-    if (seed) {
+    /* [M6.2 wave D] THE START DISPATCH IS THREE-WAY WHEN `\G` IS PRESENT
+     * (assertions_design.md §4.2's table), and the three cases are exactly
+     * its three reachable rows:
+     *
+     *     start == 0          -> s0     (`\A` and `\G` both pass)
+     *     start == startpos   -> s1g[]  (`\G` only)
+     *     start >  startpos   -> s1u[]  (neither)
+     *
+     * `start == 0` is tested FIRST and that ordering is load-bearing: it is
+     * the row where BOTH hold, and testing `start == startpos` first would
+     * route offset 0 into the `\G`-only state and lose every `\A`/`^` branch.
+     *
+     * The `\G`-free path below is the pre-wave code untouched, three branches
+     * and all — the same one-branch-that-reproduces-the-old-string discipline
+     * `emit_view_select` is written with, for the same reason. */
+    if (gseed) {
+        sb_puts(c, "        goto *((start == 0) ? ");
+        emit_target(c, p, d->s0);
+        sb_puts(c, "\n               : (start == startpos) ? ");
+        if (gtbl) sb_printf(c, "%s_gseed[%s_cls[s[start - 1]]]", p, p);
+        else      emit_target(c, p, d->s1g[UPC_PLAIN]);
+        sb_puts(c, "\n               : ");
+        if (seed) sb_printf(c, "%s_seed[%s_cls[s[start - 1]]]", p, p);
+        else      emit_target(c, p, d->s1u[UPC_PLAIN]);
+        sb_puts(c, ");\n");
+    } else if (seed) {
         sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
         sb_printf(c, " : %s_seed[%s_cls[s[start - 1]]]);\n", p, p);
