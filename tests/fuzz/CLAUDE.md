@@ -41,7 +41,7 @@ tree, which is what the manual-only reasoning below does not cover.
   what makes a never-participated group read back `(-1, -1)` in both
   offsets rather than undefined memory (PCRE2_UNSET, all bits set — cast to
   a signed type of the same width this IS the literal `-1`, bit-for-bit
-  pcrec's own `RX_UNSET`, so no numeric remapping exists anywhere in this
+  pcrec's own `PCREC_UNSET`, so no numeric remapping exists anywhere in this
   file — see tests/fuzz/README.md's "Capture-group span comparison" for the
   measurement transcript this rests on).
 - **fuzz_driver.c** — subject-from-file driver template for pcrec-generated
@@ -56,7 +56,7 @@ tree, which is what the manual-only reasoning below does not cover.
   274/317-divergence stack-smash this caused before the fix, this session).
   Prints `match S0 E0 [S1 E1 ...]` (**[M4.7d]**: every `caps[k]` pair, `k` in
   `[0, rx_info.ncaps)` — was whole-match-only before) / `nomatch` / `steps`
-  (RX_ERR_STEPS) / `frames` (RX_ERR_FRAMES) — never `TIMEOUT`, that's
+  (PCREC_ERR_STEPS) / `frames` (PCREC_ERR_FRAMES) — never `TIMEOUT`, that's
   fuzz.py's own subprocess-level sentinel for a hung child, distinct from a
   bounded-budget verdict. `tests/registry/pc4_driver.c` shares the identical
   shared-driver trick and had the identical latent bug, fixed the same
@@ -107,7 +107,7 @@ tree, which is what the manual-only reasoning below does not cover.
   `--step-budget=STEP_BUDGET` (env-overridable, README.md "Step/frame budget
   policy") rather than the VM's bring-up 1,000,000 default, so a
   pathological pattern resolves to a fast, correctly bucketed
-  `RX_ERR_STEPS`/`RX_ERR_FRAMES` verdict instead of a harness-clock
+  `PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES` verdict instead of a harness-clock
   collision. Every subprocess call this file makes (pcrec compile, gcc
   compile/link, the generated matcher, the PCRE2 oracle) now catches its own
   `TimeoutExpired` and reports a classified cell rather than raising — the

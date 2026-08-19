@@ -210,7 +210,7 @@ int main(int argc, char **argv)
         fail("%ld mlimit cells on a backtrack-free space — not a verdict, "
              "and not expected here", mlimits);
     if (pcrec_giveups != 0)
-        fail("%ld pcrec driver give-up cells (RX_ERR_STEPS/RX_ERR_FRAMES) "
+        fail("%ld pcrec driver give-up cells (PCREC_ERR_STEPS/PCREC_ERR_FRAMES) "
              "— not a verdict, and not expected on PC-4's DFA-only pattern "
              "space [K21-class]", pcrec_giveups);
 

@@ -113,8 +113,8 @@ int main(int argc, char **argv)
     for (int k = 0; k < RX_NCAPS; k++) caps[k][0] = caps[k][1] = -2;
 
     int r = rx_search(subj, len, startpos, caps);
-    if (r == RX_ERR_STEPS)  { printf("err_steps\n");  free(subj); return 0; }
-    if (r == RX_ERR_FRAMES) { printf("err_frames\n"); free(subj); return 0; }
+    if (r == PCREC_ERR_STEPS)  { printf("err_steps\n");  free(subj); return 0; }
+    if (r == PCREC_ERR_FRAMES) { printf("err_frames\n"); free(subj); return 0; }
     if (r != 1)             { printf("nomatch\n");    free(subj); return 0; }
 
     printf("match");

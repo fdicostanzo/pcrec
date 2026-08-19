@@ -136,8 +136,8 @@ static unsigned char *decode(const char *src, size_t srclen, size_t *out_len)
  * comparison as "the spans agree" rather than a second, weaker one. */
 static void describe(int r, const ptrdiff_t caps[][2], char *out, size_t osz)
 {
-    if (r == PA_ERR_STEPS)  { snprintf(out, osz, "err_steps");  return; }
-    if (r == PA_ERR_FRAMES) { snprintf(out, osz, "err_frames"); return; }
+    if (r == PCREC_ERR_STEPS)  { snprintf(out, osz, "err_steps");  return; }
+    if (r == PCREC_ERR_FRAMES) { snprintf(out, osz, "err_frames"); return; }
     if (r != 1)             { snprintf(out, osz, "nomatch");    return; }
     size_t n = (size_t)snprintf(out, osz, "match");
     for (int k = 0; k < PA_NCAPS && n < osz; k++)
@@ -223,8 +223,8 @@ int main(void)
              * step budget: the exemption should be reached by a handful of
              * genuinely pathological cells, not by a budget so low that half
              * the corpus stops being compared. */
-            if (!same && ra != PA_ERR_STEPS && ra != PA_ERR_FRAMES &&
-                (rb == PA_ERR_STEPS || rb == PA_ERR_FRAMES)) {
+            if (!same && ra != PCREC_ERR_STEPS && ra != PCREC_ERR_FRAMES &&
+                (rb == PCREC_ERR_STEPS || rb == PCREC_ERR_FRAMES)) {
                 same = true;
                 excused++;
 #ifdef DIFF_REFEREE

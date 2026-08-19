@@ -118,7 +118,7 @@ RUN_TIMEOUT = _run_timeout()
 # Compiling every fuzzed pattern with an explicit, much smaller
 # --step-budget=N keeps pcrec's own worst case bounded well inside the
 # fuzzer's clock, so budget exhaustion shows up as a fast, correctly
-# reported RX_ERR_STEPS verdict ("steps" from fuzz_driver.c) instead of a
+# reported PCREC_ERR_STEPS verdict ("steps" from fuzz_driver.c) instead of a
 # subprocess TIMEOUT. Order of magnitude chosen empirically (see this
 # session's report): large enough that no pattern in the default corpus
 # trips it, small enough that a genuinely pathological one resolves in
@@ -1078,8 +1078,8 @@ def main():
     print(f"  oracle probe timeout: {stats['oracle_probe_timeout']}  (empty-subject accept/reject probe itself timed out -- see oracle_run())")
     print(f"subject pairs compared (both-accept patterns): {stats['pairs_compared']}")
     print(f"  oracle inconclusive (PCRE2 match-limit hit or oracle TIMEOUT): {stats['oracle_inconclusive']}  (see README.md)")
-    print(f"  pcrec step-budget exhausted (RX_ERR_STEPS, --step-budget={STEP_BUDGET}): {stats['engine_steps']}  (DD-2/D22: robustness bound, not a divergence)")
-    print(f"  pcrec frame-budget exhausted (RX_ERR_FRAMES): {stats['engine_frames']}  (DD-2/D22: robustness bound, not a divergence)")
+    print(f"  pcrec step-budget exhausted (PCREC_ERR_STEPS, --step-budget={STEP_BUDGET}): {stats['engine_steps']}  (DD-2/D22: robustness bound, not a divergence)")
+    print(f"  pcrec frame-budget exhausted (PCREC_ERR_FRAMES): {stats['engine_frames']}  (DD-2/D22: robustness bound, not a divergence)")
     print(f"  known PCRE2 optimizer quirk (anchor in {{0}} group): {stats['pcre2_quirk']}  (intentional divergence, see README.md)")
     print(f"content divergences: {len(content_divergences)}")
     print(f"accept/reject divergences: {len(accept_mismatches)}")

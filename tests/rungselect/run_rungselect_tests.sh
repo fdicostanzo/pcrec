@@ -57,11 +57,30 @@ gen() {   # gen <out> <pattern> [args...]
 # The artifact's own rung stamp, as a yes/no on the REVDET bit. Read from the
 # ARTIFACT, never from the flags it was built with — that distinction is the
 # whole reason D47.3 moved do-or-die onto observability.
-has_revdet() {   # has_revdet <file>
-    local m b
+# [ABI-NS] (D60): PCREC_VM_RUNG_REVDET is universal/unprefixed now, emitted
+# in the shared PCREC_RX_ABI_H block; RX_VM_RUNGS (the OR'd mask) stays
+# per-prefix. Every caller here compiles with `-o <name>.c` (SPLIT output),
+# so the shared block lands in the paired `.h`, not the `.c` — reading only
+# <file> silently found nothing and made every artifact read as "no rung"
+# (found live, 2026-08-18, alongside the identical possessify-suite defect).
+has_revdet() {   # has_revdet <file.c>
+    local m b hdr
+    hdr="${1%.c}.h"
+    # RX_VM_RUNGS (per-artifact mask) legitimately absent on a DFA
+    # artifact -- that IS "no REVDET rung", not an extraction failure.
     m="$(sed -n 's/^#define RX_VM_RUNGS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
-    b="$(sed -n 's/^#define RX_VM_RUNG_REVDET *0x\([0-9a-f]*\)u$/\1/p' "$1")"
-    [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
+    [ -n "$m" ] || return 1
+    # PCREC_VM_RUNG_REVDET is [ABI-NS]/D60 universal: emitted
+    # UNCONDITIONALLY, so an empty read means the extraction is broken,
+    # never a legitimate "no". HARD-FAIL rather than silently
+    # arithmetic-ing `0x$m & 0x` to 0 (found live, 2026-08-18, the
+    # possessify suite's identical defect).
+    b="$(sed -n 's/^#define PCREC_VM_RUNG_REVDET *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
+    if [ -z "$b" ]; then
+        echo "has_revdet: PCREC_VM_RUNG_REVDET not found in $hdr" >&2
+        exit 1
+    fi
+    [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 
 echo "== [ENG-BREP] reverse-deterministic rung structural checks =="

@@ -17,7 +17,7 @@
 #      unbounded class must carry a subject_ceiling rather than capping
 #      silently at whatever the default array size happens to be. The point of
 #      the stamp is that a caller can learn the limit WITHOUT triggering
-#      <PREFIX>_ERR_FRAMES, so the check reads the stamp and then triggers the
+#      PCREC_ERR_FRAMES, so the check reads the stamp and then triggers the
 #      error to confirm they agree.
 #
 #   3. THE CAPTURE ORACLE + §3.7's DIFFERENTIAL (tests/vm/vm_oracle.py). Every
@@ -579,8 +579,9 @@ fi
 # sites, so a pattern with two quantified bodies can and does mix rungs. D46
 # requires the selection to be OBSERVABLE, and a SCALAR summary would LIE on
 # exactly that mixed case -- so the compile-time macro is a bitmask,
-# <PREFIX>_VM_RUNGS (named bits: <PREFIX>_VM_RUNG_CURSOR = 0x1,
-# _FRAMES_BOUNDED = 0x2, _FRAMES_UNBOUNDED = 0x4), and --emit-ir gains a
+# <PREFIX>_VM_RUNGS (named bits, unprefixed since [ABI-NS]/D60:
+# PCREC_VM_RUNG_CURSOR = 0x1, _FRAMES_BOUNDED = 0x2, _FRAMES_UNBOUNDED =
+# 0x4), and --emit-ir gains a
 # per-quantifier RUNGS section (one row per A_REP) alongside a header
 # summary line -- all three read from the same v->rungs bitmask / VE_RUNG
 # events the real emission walk (vm_rep / vm_cursor_rep) builds, never

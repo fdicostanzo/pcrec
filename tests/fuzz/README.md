@@ -285,7 +285,7 @@ print every pair) established two facts before any oracle code was written:
 
 `PCRE2_UNSET` is `~(PCRE2_SIZE)0` — every bit set. Cast to a signed type of
 the same width (`ptrdiff_t`, matching `<prefix>_search`'s own D44.2 element
-type), that bit pattern IS the literal value `-1`. pcrec's own `RX_UNSET` is
+type), that bit pattern IS the literal value `-1`. pcrec's own `PCREC_UNSET` is
 `(ptrdiff_t)-1`. **These are the same value, not two conventions requiring a
 mapping** — printing both sides with `%td` on a signed cast makes an unset
 group read as `-1 -1` on both sides with zero conversion code anywhere in
@@ -450,7 +450,7 @@ own `RUN_TIMEOUT`/`CC_TIMEOUT` clocks — not an engine bug (DD-2/D22: the
 step budget is a robustness bound on pathological backtracking, never a
 security boundary, never traded against speed), but a harness-clock
 collision the M4.6 calibration question arrived at early. A pcrec
-`RX_ERR_STEPS`/`RX_ERR_FRAMES` verdict (`fuzz_driver.c` prints `steps` /
+`PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES` verdict (`fuzz_driver.c` prints `steps` /
 `frames` for these — never `TIMEOUT`, since the budget is what keeps the
 matcher itself fast) is reported as its own counted **non-divergence**
 class in the summary (`pcrec step-budget exhausted` / `frame-budget

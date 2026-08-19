@@ -185,9 +185,12 @@ static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int fa
  *                      by a PREFIX-INDEPENDENT `PCREC_RX_ABI_H` (D44/A-2) so
  *                      two differently-prefixed generated headers compile
  *                      together in one TU without a redefinition error.
- *   emit_ncaps_macros  ONCE PER FILE, per-prefix (RX_NCAPS/RX_UNSET/
- *                      RX_ERR_STEPS/RX_ERR_FRAMES under the file's own
- *                      --prefix).
+ *   emit_ncaps_macros  ONCE PER FILE, per-prefix (RX_NCAPS under the file's
+ *                      own --prefix). RX_UNSET/RX_ERR_STEPS/RX_ERR_FRAMES/
+ *                      RX_ERR_WORK/RX_ERR_FLOOR moved OUT of this function
+ *                      at [ABI-NS] (D60) to emit_rx_abi_types' shared block
+ *                      as PCREC_UNSET/PCREC_ERR_* — they are pcrec-contract
+ *                      facts, not per-prefix ones.
  *   emit_search_decl,
  *   emit_match_decl,
  *   emit_match_caps_decl,
@@ -366,16 +369,31 @@ static void emit_rx_abi_types(StrBuf *sb)
         "} rx_ctx;\n"
         "\n"
         "/* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a\n"
-        " * typed give-up code in [<PREFIX>_ERR_FLOOR, -2] -- one per way the\n"
-        " * engine can give up (<PREFIX>_ERR_STEPS/_FRAMES/_WORK), where\n"
-        " * <PREFIX> is this artifact's own uppercased --prefix. D49: those\n"
+        " * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the\n"
+        " * engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK). D49: those\n"
         " * codes PROPAGATE, they are not collapsed to -1, and a caller doing\n"
         " * an exact `== -1` test sees them as distinct values. Values\n"
-        " * strictly BELOW <PREFIX>_ERR_FLOOR stay RESERVED for a future abort\n"
+        " * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort\n"
         " * semantic; no pcrec-emitted matcher produces one today, and a\n"
         " * generated call site that invokes an rx_matchfn traps on one.\n"
         " * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */\n"
         "typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);\n"
+        "\n"
+        /* [ABI-NS] (D60 + addendum, 2026-08-18): the give-up code space is a
+         * pcrec-contract fact, not a per-artifact one -- every artifact means
+         * the same thing by -2/-3/-4, so it is spelled ONCE here rather than
+         * once per --prefix. Formerly <PREFIX>_ERR_STEPS/_FRAMES/_WORK/_FLOOR
+         * (emit_ncaps_macros); DELETED there, no alias -- the house rule
+         * D44.2/PCREC_ENC_BYTE already set. */
+        "#define PCREC_ERR_STEPS  (-2)\n"
+        "#define PCREC_ERR_FRAMES (-3)\n"
+        "#define PCREC_ERR_WORK   (-4)\n"
+        "#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
+        "below: reserved (D49) */\n"
+        "\n"
+        /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
+         * fact, formerly <PREFIX>_UNSET. */
+        "#define PCREC_UNSET ((ptrdiff_t)-1)\n"
         "\n"
         "typedef struct rx_callout_ref {\n"
         "    rx_matchfn *fn;\n"
@@ -419,7 +437,8 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    int           ngroups;         /* capturing groups in the pattern's\n"
         "                                       own TEXT (a lexical fact) */\n"
         "    int           nnames;          /* entries in groups[], named only */\n"
-        "    unsigned      engine;          /* ENGM_DFA=1 / ENGM_VM=2 */\n"
+        "    unsigned      engine;          /* PCREC_ENGINE_DFA=1 /\n"
+        "                                       PCREC_ENGINE_VM=2 */\n"
         "    int64_t       step_budget;     /* -1 = none */\n"
         "    int64_t       work_budget;     /* -1 = none. The THIRD bound (D47\n"
         "                                       SECOND ADDENDUM): per-iteration\n"
@@ -434,6 +453,37 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    const rx_group_entry *groups;       /* sorted, bsearch-able */\n"
         "    const char           *engine_why;   /* forcing construct/reason, or NULL */\n"
         "};\n"
+        "\n"
+        /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
+         * (docs/spec/match_api.md S6: "no such constant is #defined
+         * anywhere") gains names. The internal ENGM_* enum
+         * (src/opt/select_engine.c) stays internal -- these two are the
+         * emitted spelling, pinned to today's stamped numbers (this NAMES
+         * the existing contract, it does not renumber it). */
+        "#define PCREC_ENGINE_DFA 1\n"
+        "#define PCREC_ENGINE_VM  2\n"
+        "\n"
+        /* [ABI-NS] (D60): the D46 stamp BIT constants -- which bit means
+         * which rung/strategy/prune choice is a pcrec-contract fact, so the
+         * NAMED bits move here, unprefixed. The per-artifact OR'd MASKS
+         * (<PREFIX>_VM_RUNGS/_STRATS/_PRUNES) are a property of THIS
+         * artifact (which bits it actually uses) and stay per-prefix,
+         * emitted at their existing site in emit_vm.c. Emitted
+         * unconditionally, including on a DFA-only artifact that never
+         * uses them, for the same reason PCREC_ERR_STEPS is: the names are
+         * part of pcrec's contract whether or not this artifact's engine
+         * can produce the value. Values verbatim from emit_vm.c's
+         * vm_rung_bit[]/vm_strat_bit[]/vm_prune_bit[] arrays, which build
+         * the per-artifact masks from these same constants. */
+        "#define PCREC_VM_RUNG_CURSOR           0x1u\n"
+        "#define PCREC_VM_RUNG_FRAMES_BOUNDED   0x2u\n"
+        "#define PCREC_VM_RUNG_FRAMES_UNBOUNDED 0x4u\n"
+        "#define PCREC_VM_RUNG_REVDET           0x8u\n"
+        "#define PCREC_VM_RUNG_COUNTER          0x10u\n"
+        "#define PCREC_VM_STRAT_POSSESSIVE      0x1u\n"
+        "#define PCREC_VM_STRAT_BACKTRACKING    0x2u\n"
+        "#define PCREC_VM_PRUNE_CLAMPED         0x1u\n"
+        "#define PCREC_VM_PRUNE_UNCLAMPED       0x2u\n"
         "\n"
         /* [M5-SEAM] The RESIDUAL entries get a pointer from here and their
          * full contract at their own declaration (src/gen/enc/). This block
@@ -463,47 +513,25 @@ static void emit_rx_abi_types(StrBuf *sb)
 }
 
 /* [M4.4] (match_api_m4.md §2.1/§9 item 9): the caps-array surface's named
- * constants, and the search entry's reserved give-up codes — PER-PREFIX,
- * since two artifacts compiled with different --prefix legitimately have
- * different RX_NCAPS values once [M4.5] lands. `RX_NCAPS` is 1 on every
- * artifact this DFA-only emitter produces (D42.2): a DFA-compiled pattern
- * never promises more than the whole-match slot, capture-bearing or not.
- * RX_ERR_STEPS/RX_ERR_FRAMES are RESERVED here (D42.3) — no engine produces
- * either value until [M4.5] wires the step/frame-capacity counters.
+ * constant — PER-PREFIX, since two artifacts compiled with different
+ * --prefix legitimately have different RX_NCAPS values once [M4.5] lands.
+ * `RX_NCAPS` is 1 on every artifact this DFA-only emitter produces (D42.2):
+ * a DFA-compiled pattern never promises more than the whole-match slot,
+ * capture-bearing or not.
  *
- * [ENG-BREP counter-K] RX_ERR_WORK joins them (D47 SECOND ADDENDUM,
- * settlement 4): the third bound, for per-iteration forward work the fail
- * label never sees. RESERVED here for the same reason its two siblings are —
- * a DFA artifact cannot backtrack, cut or scan frameless, so it produces
- * none of the three.
- *
- * RX_ERR_FLOOR is D49's NAMED FLOOR, and it is the reason these four are one
- * block rather than three codes and a convention. D49 partitions the negative
- * return space of `rx_matchfn` in two: [FLOOR, -2] are TYPED GIVE-UPS that a
- * caller may read and propagate, and anything BELOW the floor stays reserved
- * for the future abort semantic design_callout_abi.md F2 traps on. Emitting
- * the boundary as a name is what keeps F2's call-site check from transcribing
- * a literal that the next give-up code silently invalidates — this project has
- * recorded the transcribed-constant failure twice, and a trap whose bound is
- * spelled `-1` becomes wrong the moment a fourth code lands.
- *
- * PER-PREFIX, exactly like its three siblings, and that is a JUDGMENT CALL
- * worth naming: the floor governs the FIXED-LITERAL type `rx_matchfn`, so an
- * argument exists for hoisting it into the shared PCREC_RX_ABI_H block beside
- * the types. It stays per-prefix because (a) the four constants are one
- * contract and splitting them across two scopes is worse than either choice,
- * (b) every artifact emits identical values so a cross-prefix call site cannot
- * observe a mismatch, and (c) module `callouts` has no producer, so no call
- * site consumes it yet. Revisit when the first callout call site is emitted. */
+ * [ABI-NS] (D60, 2026-08-18): this function used to also emit RX_UNSET and
+ * the search entry's reserved give-up codes (RX_ERR_STEPS/_FRAMES/_WORK/
+ * _FLOOR) here, per-prefix. D60 ruled those four PLUS the unset sentinel
+ * are pcrec-CONTRACT facts, not per-artifact ones — every artifact means
+ * the same thing by -2/-3/-4 and by ((ptrdiff_t)-1) — so they moved to the
+ * shared PCREC_RX_ABI_H block (`emit_rx_abi_types`, above) as
+ * PCREC_ERR_STEPS/_FRAMES/_WORK/_FLOOR and PCREC_UNSET, and were DELETED
+ * here: no alias, the house rule D44.2/PCREC_ENC_BYTE already set. What
+ * stays per-prefix is exactly RX_NCAPS — the one member of this family
+ * whose VALUE genuinely varies per artifact. */
 static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
 {
     sb_printf(sb, "#define %s_NCAPS %d\n", upper, ncaps);
-    sb_printf(sb, "#define %s_UNSET ((ptrdiff_t)-1)\n", upper);
-    sb_printf(sb, "#define %s_ERR_STEPS  (-2)\n", upper);
-    sb_printf(sb, "#define %s_ERR_FRAMES (-3)\n", upper);
-    sb_printf(sb, "#define %s_ERR_WORK   (-4)\n", upper);
-    sb_printf(sb, "#define %s_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
-                  "below: reserved (D49) */\n", upper);
 }
 
 /* [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
@@ -580,7 +608,7 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
  * is unchanged byte for byte. The VM's values are what the artifact ACTUALLY
  * ENFORCES, not what was requested (engine_m4.md §4.6's stamping rule and
  * D44.1's honest stamped ceiling): a caller must be able to learn the limit
- * from the artifact rather than by triggering <PREFIX>_ERR_FRAMES. */
+ * from the artifact rather than by triggering PCREC_ERR_FRAMES. */
 typedef struct {
     int         engine;          /* ENGM_DFA=1 / ENGM_VM=2 */
     const char *engine_why;      /* free text, or NULL */
@@ -704,8 +732,10 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     sb_printf(c, "    .ncaps = %s_NCAPS,\n", upper);
     sb_printf(c, "    .ngroups = %d,\n", (int)cx->ncap);
     sb_printf(c, "    .nnames = %u,\n", cx->n_named_groups);
+    /* [ABI-NS] (D60 addendum): the comment names the emitted PCREC_ENGINE_*
+     * constants (emit_rx_abi_types), not the internal ENGM_* enum. */
     sb_printf(c, "    .engine = %d, /* %s */\n", st->engine,
-              st->engine == 2 ? "ENGM_VM" : "ENGM_DFA");
+              st->engine == 2 ? "PCREC_ENGINE_VM" : "PCREC_ENGINE_DFA");
     sb_printf(c, "    .step_budget = %lld,\n", st->step_budget);
     sb_printf(c, "    .work_budget = %lld,\n", st->work_budget);
     sb_printf(c, "    .frame_capacity = %lld,\n", st->frame_capacity);
@@ -1319,7 +1349,7 @@ void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage)
  *
  * [K21 fix] `<prefix>_search`'s return is THREE-VALUED (match_api_m4.md
  * §4.5): 1 match, 0 no-match, or a negative give-up sentinel
- * (%s_ERR_STEPS/%s_ERR_FRAMES) when a VM artifact exhausts its step budget
+ * (PCREC_ERR_STEPS/PCREC_ERR_FRAMES) when a VM artifact exhausts its step budget
  * or backtrack-frame capacity — DFA artifacts never return the sentinels.
  * The prior version tested the result as a boolean, so C truthiness took
  * the match branch on a negative return and printed `caps`, which the
@@ -1353,21 +1383,21 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
          * diagnoses" exists to prevent, reached from inside our own harness,
          * and it is why the last arm now reports the code instead of guessing
          * at its meaning. */
-        "    if (rc == %s_ERR_STEPS) {\n"
+        "    if (rc == PCREC_ERR_STEPS) {\n"
         "        printf(\"steps\\n\");\n"
         "        return 3;\n"
         "    }\n"
-        "    if (rc == %s_ERR_FRAMES) {\n"
+        "    if (rc == PCREC_ERR_FRAMES) {\n"
         "        printf(\"frames\\n\");\n"
         "        return 3;\n"
         "    }\n"
-        "    if (rc == %s_ERR_WORK) {\n"
+        "    if (rc == PCREC_ERR_WORK) {\n"
         "        printf(\"work\\n\");\n"
         "        return 3;\n"
         "    }\n"
         "    printf(\"giveup %%d\\n\", rc);\n"
         "    return 3;\n"
-        "}\n", g->upper, g->searchfn, g->upper, g->upper, g->upper);
+        "}\n", g->upper, g->searchfn);
 }
 
 void pcrec_emit_dfa(Ctx *cx)

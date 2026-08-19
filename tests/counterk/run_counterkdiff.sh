@@ -176,8 +176,26 @@ subjects_for() {
 rungs_of() { # rungs_of <cfile> <PREFIX>  -> the hex mask, or empty
     sed -n "s/^#define $2_VM_RUNGS 0x\([0-9a-f]*\)u\$/\1/p" "$1"
 }
-counter_bit_of() {
-    sed -n "s/^#define $2_VM_RUNG_COUNTER *0x\([0-9a-f]*\)u\$/\1/p" "$1"
+# [ABI-NS] (D60): PCREC_VM_RUNG_COUNTER is universal/unprefixed now (the
+# shared PCREC_RX_ABI_H block) — one constant, same in both pa.c and pb.c,
+# so this no longer takes a <PREFIX> argument. Every caller compiles with
+# `-o <name>.c` (SPLIT output), so the shared block lands in the PAIRED
+# `.h`, not the `.c` passed in here — reading only the .c silently found
+# nothing and made every artifact read as "no COUNTER rung" (found live,
+# 2026-08-18, same defect as the possessify/rungselect suites'). It is
+# universal and emitted UNCONDITIONALLY, so an empty read is always an
+# extraction bug, never a legitimate "no" -- HARD-FAIL here so every
+# caller is protected in one place, rather than trusting `0x$mask & 0x`
+# to silently evaluate to 0.
+counter_bit_of() {   # counter_bit_of <file.c>
+    local hdr b
+    hdr="${1%.c}.h"
+    b="$(sed -n 's/^#define PCREC_VM_RUNG_COUNTER *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
+    if [ -z "$b" ]; then
+        echo "counter_bit_of: PCREC_VM_RUNG_COUNTER not found in $hdr" >&2
+        exit 1
+    fi
+    printf '%s\n' "$b"
 }
 
 one_pattern() {
@@ -218,9 +236,9 @@ one_pattern() {
     # DO-OR-DIE (D47.3), asserted against the ARTIFACT and never against the
     # flag having been passed -- which is the whole reason the stamp exists.
     pb_mask=$(rungs_of "$d/pb.c" PB)
-    pb_bit=$(counter_bit_of "$d/pb.c" PB)
+    pb_bit=$(counter_bit_of "$d/pb.c")
     if [ -z "$pb_mask" ] || [ -z "$pb_bit" ]; then
-        bad "'$pat': the denied artifact carries no PB_VM_RUNGS/PB_VM_RUNG_COUNTER stamp at all"
+        bad "'$pat': the denied artifact carries no PB_VM_RUNGS/PCREC_VM_RUNG_COUNTER stamp at all"
         return 0
     fi
     if [ $(( 0x$pb_mask & 0x$pb_bit )) -ne 0 ]; then
@@ -229,7 +247,7 @@ one_pattern() {
     fi
 
     pa_mask=$(rungs_of "$d/pa.c" PA)
-    pa_bit=$(counter_bit_of "$d/pa.c" PA)
+    pa_bit=$(counter_bit_of "$d/pa.c")
     this_rung=0
     if [ -n "$pa_mask" ] && [ $(( 0x$pa_mask & 0x$pa_bit )) -ne 0 ]; then
         this_rung=1

@@ -691,9 +691,11 @@ declare -A CASE_FLAGS=(
 # trusted. A number pins a value; this pins what the number MEASURES -- the
 # next default flip that silently changes engine selection now fails loudly
 # as an ENGINE MISMATCH hard error instead of aging as an unflagged multi-day
-# throughput mystery the way (c)/(i) just did. "DFA" = ENGM_DFA (1), "VM" =
-# ENGM_VM (2) -- see lib/pcrec.h's rx_info.engine / RX_ENGINE_WHY comments
-# for what the artifact itself stamps.
+# throughput mystery the way (c)/(i) just did. "DFA" = PCREC_ENGINE_DFA (1),
+# "VM" = PCREC_ENGINE_VM (2) -- [ABI-NS]/D60 named these (formerly the
+# internal-only ENGM_DFA/ENGM_VM spelling, quoted in a comment); see
+# lib/pcrec.h's rx_info.engine / RX_ENGINE_WHY comments for what the
+# artifact itself stamps.
 declare -A CASE_EXPECT_ENGINE=(
     [a]="DFA"
     [b]="DFA"
@@ -757,11 +759,11 @@ process_case() {
     if [ -n "$expect_engine" ]; then
         local want_stamp got_stamp
         case "$expect_engine" in
-            DFA) want_stamp="ENGM_DFA" ;;
-            VM)  want_stamp="ENGM_VM" ;;
+            DFA) want_stamp="PCREC_ENGINE_DFA" ;;
+            VM)  want_stamp="PCREC_ENGINE_VM" ;;
             *)   record_hard_error "case $id: CASE_EXPECT_ENGINE has an unknown value '$expect_engine'"; return ;;
         esac
-        got_stamp="$(grep -oE '/\* ENGM_(DFA|VM) \*/' "$cdir/gen.c" | grep -oE 'ENGM_(DFA|VM)' | head -1)"
+        got_stamp="$(grep -oE '/\* PCREC_ENGINE_(DFA|VM) \*/' "$cdir/gen.c" | grep -oE 'PCREC_ENGINE_(DFA|VM)' | head -1)"
         if [ "$got_stamp" != "$want_stamp" ]; then
             record_hard_error "case $id: ENGINE MISMATCH -- expected $want_stamp, artifact stamps rx_info.engine = ${got_stamp:-<not found>} (see CASE_EXPECT_ENGINE and this directory's CLAUDE.md for the finding this assertion guards against)"
             CASE_VALID[$id]="error"; CASE_REASON[$id]="engine mismatch: expected $want_stamp, got ${got_stamp:-<not found>}"

@@ -38,7 +38,7 @@
  *                           CAPTURECOUNT comment for the measurement behind
  *                           this: PCRE2_UNSET, cast to a signed type of the
  *                           same width, IS literal -1 in both slots --
- *                           bit-for-bit pcrec's own RX_UNSET, no remapping).
+ *                           bit-for-bit pcrec's own PCREC_UNSET, no remapping).
  *                           The pair count is exactly capturecount+1,
  *                           queried via pcre2_pattern_info_8 right after
  *                           compile, so the ovector is always sized to hold

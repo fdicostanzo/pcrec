@@ -8,7 +8,8 @@
  *
  * The third line is [K21-class fix, 2026-08-15]: `rx_search`'s return is
  * THREE-valued, not boolean (1 match, 0 no-match, a negative
- * RX_ERR_STEPS/RX_ERR_FRAMES give-up sentinel on a VM artifact's budget
+ * PCREC_ERR_STEPS/PCREC_ERR_FRAMES give-up sentinel ([ABI-NS]/D60:
+ * unprefixed since [ABI-NS]) on a VM artifact's budget
  * exhaustion — a DFA artifact never returns one). The ORIGINAL version of
  * this loop tested the result with `if (rx_search(...))`, which is
  * C-truthy on a negative return too, so a give-up took the match branch
@@ -77,7 +78,7 @@ int main(void)
         else if (found == 0)
             printf("nomatch\n");
         else
-            printf("giveup %s\n", found == RX_ERR_STEPS ? "steps" : "frames");
+            printf("giveup %s\n", found == PCREC_ERR_STEPS ? "steps" : "frames");
     }
     free(caps);
     return 0;
