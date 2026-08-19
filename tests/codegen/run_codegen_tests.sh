@@ -1299,10 +1299,13 @@ if "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/nul
         bad "[M6.2-KRESET rule 1]: 'a\\Kb's caps_out does not read the trailed \\K slot at all. §6.3 rule 1: caps[0][0] on a \\K pattern comes from the VM, never from the prefilter's span start (which is the REVERSE PASS's answer)"
     elif grep -qE '^ *caps\[0\]\[0\] = \(ptrdiff_t\)start;' "$WORKDIR/kres.capsout"; then
         bad "[M6.2-KRESET rule 1]: 'a\\Kb's caps_out still contains the unconditional 'caps[0][0] = (ptrdiff_t)start;'. That is the prefilter's span start — the pre-\\K start — and writing it out reports where matching BEGAN where PCRE2 reports where the last \\K was crossed"
+    elif grep -qE '^ *stv\[0\] = ' "$WORKDIR/kres.c"; then
+        # ORDERED BEFORE the missing-RX_SET branch below, because a DIRECT
+        # write satisfies "no RX_SET" too and the specific diagnosis is the
+        # useful one. Measured: sabotage S86 lands here.
+        bad "[M6.2-KRESET rule 1]: 'a\\Kb' writes stv[0] DIRECTLY rather than through RX_SET. The macro is what records the old value on the trail, so a direct write cannot be undone when a backtrack passes back over it — '(?:a\\K|ax)c' on \"axc\" is the cell that then reports (1,3) instead of (0,3)"
     elif ! grep -q 'RX_SET(0, (ptrdiff_t)pos)' "$WORKDIR/kres.c"; then
         bad "[M6.2-KRESET rule 1]: 'a\\Kb' emits no trailed write to slot 0 — caps_out reads a slot nothing ever fills, so every match reports the fallback and the construct is inert"
-    elif grep -qE '^ *stv\[0\] = ' "$WORKDIR/kres.c"; then
-        bad "[M6.2-KRESET rule 1]: 'a\\Kb' writes stv[0] DIRECTLY rather than through RX_SET. The macro is what records the old value on the trail, so a direct write cannot be undone when a backtrack passes back over it — '(?:a\\K|ax)c' on \"axc\" is the cell that then reports (1,3) instead of (0,3)"
     else
         ok "[M6.2-KRESET rule 1] (§6.3): 'a\\Kb's caps[0][0] comes from the TRAILED slot 0 and the unconditional 'caps[0][0] = start' (the prefilter's, i.e. the reverse pass's, span start) is GONE from its caps_out — both directions, in one artifact"
     fi

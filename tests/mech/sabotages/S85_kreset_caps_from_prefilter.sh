@@ -25,15 +25,19 @@
 # WHAT IT IS MEASURED TO MOVE, and the spread is the point:
 #
 #     tests/codegen/run_codegen_tests.sh   [M6.2-KRESET rule 1] goes RED, by
-#                                          name — "'a\Kb's caps_out still
-#                                          contains the unconditional
-#                                          caps[0][0] = (ptrdiff_t)start".
-#                                          Rule 1b, 3 and 3b stay green, which
-#                                          is right: the \K-free artifact, the
-#                                          VM's entry shape and the DFA's entry
-#                                          are all genuinely untouched.
-#     tests/assertions/kreset.rxt          RED across the corpus.
+#                                          name: "caps_out does not read the
+#                                          trailed \K slot at all". Rules 1b, 3
+#                                          and 3b stay GREEN, which is right —
+#                                          the \K-free artifact, the VM's entry
+#                                          shape and the DFA's entry are all
+#                                          genuinely untouched, and that
+#                                          disjointness is what makes this row
+#                                          and S86 two rows instead of one.
+#     tests/assertions/kreset.rxt          RED, 198 of 581 cases.
 #     run_kreset_diff.sh                   RED in §1 and §2.
+#
+# MEASURED 2026-08-19 (scratch tree, applied through tests/mech/lib/replace.py,
+# never committed): codegen 1 fail / 55 pass; kreset.rxt 198 fail / 383 pass.
 #
 # BOTH the structural check and the corpus fire, and that is worth stating
 # rather than treating as redundancy: a `\K` whose reported start is the
@@ -48,7 +52,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness kresetdiff"
 SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="the emitted <prefix>_caps_out always takes caps[0][0] from its \`start\` argument -- which under the hybrid IS the prefilter's (i.e. the reverse pass's) span start -- instead of from the trailed \\K slot. Every \\K artifact then reports where matching BEGAN: 'a\\Kb' on \"ab\" answers (0,2) where PCRE2 answers (1,2)"
-SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh's [M6.2-KRESET rule 1] goes red by name, and tests/assertions/kreset.rxt fails across the corpus"
+SAB_DOC_FIGURE="codegen 1 fail / 55 pass ([M6.2-KRESET rule 1], by name); tests/assertions/kreset.rxt 198 fail / 383 pass"
 SAB_COUNT=1
 SAB_BEFORE='        v.nkreset > 0
           ? "    /* \\K: the reported start is where the winning path last\n"'
