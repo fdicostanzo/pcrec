@@ -795,8 +795,12 @@ c"` from `(0,3)` into `(0,1)`, and
   Each knob now has TWO halves: a `#ifndef` around the ANALYSIS'S ACTION
   (`eqclasses`' refinement, `make_state`'s interning — uncancellable by an
   edit to the action's own gate, which is exactly what S71/S76 are) AND an
-  emitter half at the decision points. After both: **S71 moves 1178 of
-  1186**. `-DPCREC_NO_ENDVAR` was ALREADY at its action and did not move; S69
+  emitter half at the decision points. After both, all three rows are red on
+  their OWN gates through BYTES — not through the incidental
+  `-Wunused-parameter`, which the knob's `(void)` cast removes — with every
+  corpus arm green: **S71 `wordctxid:1fail/2pass, corpus:0fail/20533pass`,
+  1178 of 1186 differing; S76 `mlinectxid:1fail/3pass, corpus:0fail/20533pass`,
+  1117 of 1201; S69 `endvarid:1fail/2pass, corpus:0fail/32pass`.** `-DPCREC_NO_ENDVAR` was ALREADY at its action and did not move; S69
   is red on its gate for its documented reason. The emitter half is
   byte-neutral in a shipped build, measured at 1,261/1,261 corpus artifacts
   identical against the pre-slice compiler. The durable rule, recorded in

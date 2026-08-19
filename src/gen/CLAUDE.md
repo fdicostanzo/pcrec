@@ -223,8 +223,10 @@ leaves 1186/1186 `\b`-free artifacts BYTE-IDENTICAL, i.e. exactly as blind as
 before. Each of the three therefore got TWO halves — this file's decision
 points (`upc_emit_live`, `upc_emit_of_class`, `st_emit_endvar`, at the top of
 the file with their own block comment) AND a `#ifndef` around the ANALYSIS'S
-ACTION in `src/ir/dfa.c`. After both: S71 1178 of 1186 differing, S69 red on
-its gate. The emitter half is byte-neutral in a shipped build and was measured
+ACTION in `src/ir/dfa.c`. After both, all three rows are red on their own
+gates through BYTES: S71 moves 1178 of 1186, S76 moves 1117 of 1201, and S69
+(already at its action, unmoved) fails `endvaridentity` — every one with its
+corpus arm fully green. The emitter half is byte-neutral in a shipped build and was measured
 so — 1,261 of 1,261 corpus artifacts identical against the pre-slice
 compiler — because every predicate folds to a constant.
 

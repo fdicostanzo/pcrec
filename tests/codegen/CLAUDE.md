@@ -158,8 +158,10 @@ the repair slice, and the second is the non-obvious one:
   - what works is a `#ifndef` around the ANALYSIS'S ACTION (the refinement in
     `eqclasses`, the interning in `make_state`), which an edit to that
     action's own gate cannot cancel, PLUS an emitter half for the sites where
-    the emitted text is what the construct decides. After both: **S71 1178 of
-    1186 differing**, and S69 red on its own gate.
+    the emitted text is what the construct decides. After both, all three red
+    on their own gates through BYTES: **S71 1178 of 1186 differing, S76 1117
+    of 1201**, and S69 failing `endvaridentity` — each with its corpus arm
+    green, which is the semantics-preserving signature.
 
 `-DPCREC_NO_ENDVAR` was ALREADY at its action (its `#ifndef` wraps the
 interning block S69 edits) and did not move. The rule for a fifth gate: put

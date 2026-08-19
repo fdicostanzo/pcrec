@@ -152,9 +152,10 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   gets instead is a `#ifndef` around the ANALYSIS'S ACTION (the refinement in
   `eqclasses`, the interning in `make_state`) plus a pin in front of the
   flag's consumers, AND an emitter half for the sites where the emitted text
-  is what the construct decides. Measured after: S71 1178 of 1186 differing,
-  S69 detected on its gate. `-DPCREC_NO_ENDVAR` was already at its action and
-  did not move.
+  is what the construct decides. Measured after, all three red on their own
+  gates through BYTES: S71 1178 of 1186 differing, S76 1117 of 1201, S69
+  failing `endvaridentity` — each with its corpus arm green.
+  `-DPCREC_NO_ENDVAR` was already at its action and did not move.
 
   **[M6.2] WAVE E ADDS NOTHING TO THIS DIRECTORY, and that is a fact worth
   recording rather than an absence.** `\K` is the module's last construct and
