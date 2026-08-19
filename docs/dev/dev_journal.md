@@ -10579,3 +10579,103 @@ landed, ABI-NS merged). Waves A→E per the design's structure, each with
 its sabotaged landing conditions; wave briefs must state the corpus is
 substantially libpcre2-dependent. [M6-READ] still follows M6. The rest of
 M5 after that.
+
+## 2026-08-19 (EDT), thirty-fourth session (part 1) — [M6.2] WAVES A AND B both landed, merged and close-validated in one overnight run
+
+THE SESSION'S SHAPE. Woke to wave A cleared; by 05:45 BOTH of the module's
+first two waves were merged, battery-green (all five stages, both waves) and
+gate-13/13-archived (weakest margin 1.43x both times). One lane per wave,
+serialized, each opus in its own worktree; the manager merged, re-verified
+the load-bearing number independently each time, and ran the batteries.
+
+WAVE A (merge e609a8c; archive 4a14495's sibling c7662c8). \A->A_BOL and
+\Z->A_EOL as exact aliases; \z as a new A_END/N_END kind with the third
+closure view and §3.3's CORRECTED canonicalization (endvar against the EOL
+view — R30 E3's rule), delivered with the byte-identity gate
+(tests/codegen/run_endvar_identity.sh, 1014/1014, 24-pattern positive
+control) and sabotage S69 (the design's own refuted first draft,
+semantics-preserving so only the identity gate sees it — DETECTED). The
+D47.5 cure landed per D62 while (?m) is still refused: Ast.multiline
+parse-resolved, possessify's first_of lost its multiline parameter, and
+§8.6 made STRUCTURAL (ParseMods incomplete outside src/parse/ — a
+post-parse read is a compile error). §9.2's enabled-but-unbuilt refusal
+names the CONSTRUCT (sabotage S70); tests/assertions/ opened with 1,173
+libpcre2-verified cells and the tree's first per-directory oracle
+(verify_pcre2.py); U11 filed (python's \Z IS PCRE2's \z — both divergence
+directions silent). Two reasoned deviations, both measured: has_end guards
+after the unconditional third closure put [a-z]{0,30000} 28% over the
+resource CPU budget (caught by the suite's own guard; re-measured 22.1s vs
+22.0s pre-wave). MANAGER VERIFICATION: the one-time byte-identity diff
+against the TRUE pre-wave compiler re-run independently (992/992 compiled
+patterns identical, 0 status changes) — the permanent gate's reference
+build shares sources with what it controls, so the historical diff is the
+manager's number to own. FRANK'S MID-SESSION FINDING: quoting pcre2pattern
+exposed that the alias ERASES the ^-vs-\A distinction the RULED
+NOTBOL/NOTEOL API-PARAM (D38) will need — recorded at the producer, the
+registry rows and a §3.2 annotation (with the lane's own six-row libpcre2
+measurement), pinned-false multiline made explicit; no provenance field
+built (no consumer, no red-able test — earn-its-axis).
+
+WAVE B (merge b8b14dd; archive 4a14495). \b/\B on both engines:
+word-context as a SECOND CLOSURE per state (DState.wlist — the class the
+transition already holds picks the closure, hot path stays one table
+read); §3.4's alphabet refinement on the one shared pcrec_cls_word_esc;
+class-indexed accept only where a state's accept varies; mechanism 4 at
+ALL FOUR boundaries with the reverse termination accept ATTACHED TO THE
+BREAK per R30 N9; guarded VM arms. 4,392 libpcre2-produced cells
+(wordb.rxt, whose header explains why startpos>0 \B cells are the only
+population that can see §3.8.3.1). Five sabotages S71–S75 all DETECTED —
+and TWO WERE MEASURED VACUOUS FIRST (S72's fixture gated out by a
+two-conjunct compile-time condition; S75 blind twice over — a range emits
+no table, and a capture-free corpus never reached emit_vm's \b arm), both
+found BY RUNNING them, both repaired with the property now read off the
+artifact. THE COMPOSED-BUDGET BOUNDARY LOCATED, NOT PREDICTED: §3.5.1's
+38,009 forecast REFUTED AS AN OBSERVATION (stands as a bound) — ratio
+0.67x/1.10x/4.75x with the min BELOW 1, the word context RAISING the
+ENG_UNANCH ceiling on the design's own worst family (the bare arm binds on
+PCREC_MAX_SUBSET_ELEMS, not the state cap), ENG_ATTEMPT unchanged, and the
+genuine regression ONE REPEAT COUNT WIDE on a linear chain, pinned as a
+clean refusal on both engines. §3.6.1's skip-union sentence REFUTED (a
+union of classes may mix word and non-word) — wave B ships DECLINE for
+varying-accept states; the cure question moves to wave C on the corrected
+premise. K28 FILED (manager-verified: dead-state-DFA artifact fails
+-Werror at -O1 EXACTLY — the harness's own GENCFLAGS — clean at all four
+other levels; pre-existing, first REACHED by this corpus; own-slice fix
+before module close). Design annotations landed inline (§3.2, §3.5.1,
+§3.6.1, §7.2) plus a panel-block pointer (baa4f58) so a
+read-the-block-first reader cannot miss them.
+
+MANAGER LESSONS, all mine this time. (1) MY BRIEF CONTRADICTED THE DESIGN
+OF RECORD — item 7 restated [M6.0]'s general D58 seam obligation where
+design §7 rules the opposite for \b (enc/ entry = encoding-dependent code
+in the hot path, DD-12(7) forbids; the shipping seam check would have
+TRIPPED on compliance). The lane followed the design and STOPPED to flag
+per the brief's own stop rule — the stop rule earned its keep against its
+author. Briefs must cite the design's per-construct answers, not restate
+milestone-level obligations over them. (2) NEAR-MISS TAKEOVER of a live
+lane: 50 minutes of "silence" was a boundary-location probe legitimately
+computing; the worktree-evidence-before-takeover step (archive mtime +
+process table) is what stopped the recorded twenty-first-session mistake
+from recurring in mirror image. Long probes should be DECLARED (a
+one-line WIP commit "starting N-minute probe") so the watchdog can tell
+work from death. (3) Two grep-misses against the same lane (annotations
+present but my pattern missed their blockquote style; a stale-tip takeover
+warning naming a commit six behind) — verify by diff content, not by grep
+convenience, before sending a lane a correction. (4) Lane A's own
+process note adopted: never pkill -f a pattern while another run of the
+same tool is live; kill by exact PID.
+
+VALIDATION AT CLOSE OF PART 1. Both waves: battery all five stages green
+(build/battery_wavea.log, build/battery_waveb.log — first sanitizer
+exposure of both waves' emitted machinery, clean both times), gate 13/13
+at the historical spread (archives committed per convention). Suite at
+b8b14dd: corpus 16,066/0; cli 269; reject 537 (gated 64); registry 169 +
+PC-3 163; codegen 52; assertions 26; endvar-id 3; wordctx-id 3; encseam 2;
+thread 8/0. known_fail EMPTY. K-list: K2, K9, K23, K25, K26, K28 (new).
+
+NEXT: wave C ((?m)) — its brief inherits D62 controls 1+2 (finally
+red-able), D63's prefilter-as-tool with the M2.12 shared-derivation-helper
+constraint, D64's definition-shaped sites, §8.7's cells, the (?m)^ cost
+number obligation, and the CORRECTED §3.6.1 premise for the skip cure.
+Then waves D (\G) and E (\K), the D27 blinded corpus at module close, and
+the K28 slice before close.
