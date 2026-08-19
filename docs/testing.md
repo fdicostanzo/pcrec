@@ -496,7 +496,7 @@ project journal entry.
 | `make test-counterk` | `tests/counterk/run_counterkdiff.sh` + `run_counterk_tests.sh` | yes |
 | `make test-mrl` | `tests/mrl/run_mrldiff.sh` + `run_mrl_tests.sh` | yes |
 | `make test-prefilter` | `tests/prefilter/run_prefilter_tests.sh` | yes |
-| `make test-assertions` | `tests/assertions/run_assertions_tests.sh` + `tests/codegen/run_endvar_identity.sh` + `run_wordctx_identity.sh` + `run_mlinectx_identity.sh` + `tests/assertions/run_mline_diff.sh` | yes |
+| `make test-assertions` | `tests/assertions/run_assertions_tests.sh` + `tests/codegen/run_endvar_identity.sh` + `run_wordctx_identity.sh` + `run_mlinectx_identity.sh` + `run_gstart_identity.sh` + `tests/assertions/run_mline_diff.sh` + `run_gstart_diff.sh` | yes |
 | `make test-known-fail` | `tests/known_fail/run_known_fail.sh` | yes |
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
