@@ -2,15 +2,15 @@
 # ARCHIVED PROBE OUTPUT — [M6.1] module `assertions` design lane
 # ------------------------------------------------------------
 # PROBE      : docs/design/assertions_measurements/probes/probe_ncls_refine.py
-# ARGS       : /home/duxevents/pcrec/worktrees/asrtdesign/build/pcrec /home/duxevents/pcrec/worktrees/asrtdesign/build/rxt_patterns_c.txt
+# ARGS       : /home/duxevents/pcrec/worktrees/asrtwaveb/build/pcrec /home/duxevents/pcrec/worktrees/asrtwaveb/build/rxt_patterns_c.txt
 # PROBE LAST CHANGED AT COMMIT: 99e27ef 2026-08-18
-# RUN FROM REPO COMMIT        : 9241a80 (lane/asrtdesign)
+# RUN FROM REPO COMMIT        : daaef2d (lane/asrtwaveb)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/assertions_measurements/out/ncls_refine_rxt.txt
-#     ?? docs/design/assertions_measurements/probes/harvest_rxt_patterns.sh
-#     ?? docs/design/assertions_measurements/probes/probe_mline_caret_cost.sh
-#     ?? docs/design/assertions_measurements/probes/probe_startpos_context.py
-# RUN DATE   : 2026-08-18T17:21:28-04:00
+#      M src/ir/CLAUDE.md
+#      M src/opt/CLAUDE.md
+#      M tests/codegen/run_wordctx_identity.sh
+# RUN DATE   : 2026-08-19T01:43:42-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -642,6 +642,7 @@ X(?:$|[^abc])+                                  4     3     4     4     5
 [^abc]{2,4}?                                    3     2     3     3     4
 [^c]{0,4}$                                     14     2     3     3     4
 [^c]{0,4}?$                                     2     2     3     3     4
+[^c]{1,3}$                                      9     2     3     3     4
 [a-]                                            2     2     4     3     5
 [a-c-e]                                         2     2     4     3     5
 [a-c]x|[b-d]y|[a-c]yz                           6     7     8     8     9
@@ -913,6 +914,7 @@ a|bc                                            3     4     5     5     6
 a|b|c                                           2     2     3     3     4
 a|b|c|d|e                                       2     2     3     3     4
 b                                               2     2     3     3     4
+b$                                              3     2     3     3     4
 b(a*)b                                          3     3     4     4     5
 b*$                                             3     2     3     3     4
 ba|a                                            2     3     4     4     5
@@ -970,6 +972,7 @@ z(ab)*y                                         4     5     6     6     7
 za+?                                            3     3     4     4     5
 za+?c?                                          4     4     5     5     6
 za{0,2}?                                        2     3     4     4     5
+za{0,4}$                                       15     3     4     4     5
 za{1,3}                                         5     3     4     4     5
 za{1,3}?                                        3     3     4     4     5
 za{1,3}?c?                                      4     4     5     5     6
@@ -984,32 +987,49 @@ zzz                                             4     2     3     3     4
 |a                                              1     2     3     3     4
 }                                               2     2     3     3     4
 
-n = 962 patterns measured, 68 skipped
-word:      delta min/median/max = 0/1/2 ; ratio max = 2.00x ; already-a-refinement (delta 0) = 5/962
-newline:   delta min/median/max = 0/1/1 ; ratio max = 2.00x ; already-a-refinement (delta 0) = 72/962
-both:      delta min/median/max = 1/2/3 ; ratio max = 3.00x ; already-a-refinement (delta 0) = 0/962
+n = 965 patterns measured, 193 skipped
+word:      delta min/median/max = 0/1/2 ; ratio max = 2.00x ; already-a-refinement (delta 0) = 5/965
+newline:   delta min/median/max = 0/1/1 ; ratio max = 2.00x ; already-a-refinement (delta 0) = 72/965
+both:      delta min/median/max = 1/2/3 ; ratio max = 3.00x ; already-a-refinement (delta 0) = 0/965
 largest states*ncls(+both) = 48012  (((a)|ab){4000}c)  -- PCREC_MAX_TABLE_ENTRIES = 2000000
 SKIPPED (                                        refused
 SKIPPED ((a)                                     refused
 SKIPPED (*)                                      refused
 SKIPPED (1{0,30}?[^]abc][^abc]){28,30}0+|a       refused
 SKIPPED (?                                       refused
+SKIPPED (?'word'[a-z]+)-(?'num'[0-9]+)           refused
 SKIPPED (?:)?*                                   refused
+SKIPPED (?:^|\b)foo                              refused
 SKIPPED (?:a                                     refused
 SKIPPED (?:{1})                                  refused
+SKIPPED (?<word>[a-z]+)-(?<num>[0-9]+)           refused
 SKIPPED (?J)(?^)(?<g>a)(?<g>b)                   refused
+SKIPPED (?P<1x>a)                                refused
+SKIPPED (?P<_ok>a)(?P<n2b>b)                     refused
+SKIPPED (?P<dup>a)(?P<dup>b)                     refused
+SKIPPED (?P<name>a)(?P<NAME>b)                   refused
+SKIPPED (?P<outer>(?P<inner>a)b)                 refused
+SKIPPED (?P<rep>a)+                              refused
+SKIPPED (?P<word>[a-z]+)-(?P<num>[0-9]+)         refused
+SKIPPED (?P<x>a)|(?P<y>b)                        refused
 SKIPPED (?[[a]])                                 refused
 SKIPPED (?i-m-s)a                                refused
 SKIPPED (?iZ)a                                   refused
+SKIPPED (?n)(a)(?P<x>b)                          refused
 SKIPPED (?n)(a)\1                                refused
 SKIPPED (?x)[a- ]                                refused
 SKIPPED (?xx)[a-\ ]                              refused
+SKIPPED (\A)*                                    refused
+SKIPPED (\z)*                                    refused
 SKIPPED (a                                       refused
+SKIPPED (a)(?P<n1>b)(c)(?P<n2>d)                 refused
 SKIPPED (a))                                     refused
 SKIPPED ({1})                                    refused
 SKIPPED )                                        refused
 SKIPPED *a                                       refused
 SKIPPED +a                                       refused
+SKIPPED .*\Z                                     refused
+SKIPPED .*\z                                     refused
 SKIPPED ?a                                       refused
 SKIPPED [0-\12]                                  refused
 SKIPPED [0-\d]                                   refused
@@ -1018,26 +1038,128 @@ SKIPPED [[:alpha:]-z]                            refused
 SKIPPED [[:foo:]]                                refused
 SKIPPED [\400]                                   refused
 SKIPPED [\777]                                   refused
+SKIPPED [\A-z]                                   refused
+SKIPPED [\A]                                     refused
 SKIPPED [\N]                                     refused
+SKIPPED [\Z]                                     refused
 SKIPPED [\k-\g]                                  refused
+SKIPPED [\z]                                     refused
 SKIPPED []                                       refused
 SKIPPED [^abc                                    refused
+SKIPPED [^c]{1,3}\Z                              refused
+SKIPPED [^c]{1,3}\z                              refused
 SKIPPED [a-\1]                                   refused
+SKIPPED [a\A]                                    refused
 SKIPPED [abc                                     refused
+SKIPPED \A                                       refused
+SKIPPED \A(?:ab|a)\z                             refused
+SKIPPED \A(?:x*\Zy|x*\zz)                        refused
+SKIPPED \A*                                      refused
+SKIPPED \A+                                      refused
+SKIPPED \A?                                      refused
+SKIPPED \A[^c]{1,3}\Z                            refused
+SKIPPED \A\z                                     refused
+SKIPPED \Aa                                      refused
+SKIPPED \Aa*(?:\Zb|\zc)                          refused
+SKIPPED \Aa*\z                                   refused
+SKIPPED \Aa\Z                                    refused
+SKIPPED \Aa\b                                    refused
+SKIPPED \Aa\z                                    refused
+SKIPPED \Aab\Z                                   refused
+SKIPPED \Aab\z                                   refused
+SKIPPED \Aa{0,4}$                                refused
+SKIPPED \Aa{0,4}\z                               refused
+SKIPPED \Ab                                      refused
+SKIPPED \A{2}                                    refused
+SKIPPED \B                                       refused
+SKIPPED \B.\B                                    refused
+SKIPPED \B\B                                     refused
+SKIPPED \B\b                                     refused
+SKIPPED \B\w+\B                                  refused
+SKIPPED \Bfoo                                    refused
+SKIPPED \Bfoo\B                                  refused
+SKIPPED \Bfoo\b                                  refused
+SKIPPED \Bo\Z                                    refused
+SKIPPED \Bx*                                     refused
 SKIPPED \N{3,2}                                  refused
 SKIPPED \N{abc}                                  refused
+SKIPPED \Z                                       refused
+SKIPPED \Z*                                      refused
+SKIPPED \Z+                                      refused
+SKIPPED \Z?                                      refused
+SKIPPED \Zx                                      refused
+SKIPPED \Z{2}                                    refused
+SKIPPED \b                                       refused
+SKIPPED \b.\b                                    refused
+SKIPPED \b\B                                     refused
+SKIPPED \b\b                                     refused
+SKIPPED \b\w*                                    refused
+SKIPPED \b\w+\b                                  refused
+SKIPPED \b\w+\b$                                 refused
+SKIPPED \b\w+\b\z                                refused
+SKIPPED \b\w+\z                                  refused
+SKIPPED \b\w\b                                   refused
+SKIPPED \bfoo                                    refused
+SKIPPED \bfoo$                                   refused
+SKIPPED \bfoo\B                                  refused
+SKIPPED \bfoo\Z                                  refused
+SKIPPED \bfoo\b                                  refused
+SKIPPED \bx*                                     refused
+SKIPPED \bx?                                     refused
+SKIPPED \d\b\w                                   refused
+SKIPPED \w+\b$                                   refused
+SKIPPED \w\B\w                                   refused
 SKIPPED \x                                       refused
+SKIPPED \z                                       refused
+SKIPPED \z*                                      refused
+SKIPPED \z+                                      refused
+SKIPPED \z?                                      refused
+SKIPPED \zx                                      refused
+SKIPPED \z{2}                                    refused
 SKIPPED ^*a                                      refused
+SKIPPED ^.\b.                                    refused
+SKIPPED ^[^c]{1,3}\z                             refused
+SKIPPED ^\B                                      refused
+SKIPPED ^\Bfoo|^x                                refused
+SKIPPED ^\b                                      refused
+SKIPPED ^\b\w+\b                                 refused
+SKIPPED ^\bfoo                                   refused
+SKIPPED ^\w+\B                                   refused
+SKIPPED ^\w+\b                                   refused
+SKIPPED ^a*\Z                                    refused
+SKIPPED ^a*\z                                    refused
+SKIPPED ^a\b.                                    refused
+SKIPPED ^a\bb|^z                                 refused
+SKIPPED ^a\z                                     refused
+SKIPPED ^f\Bo                                    refused
+SKIPPED ^x\Bfoo                                  refused
 SKIPPED a$*                                      refused
 SKIPPED a(?J)(?<g>x)(?<g>y)                      refused
 SKIPPED a(?m)^b                                  refused
 SKIPPED a)                                       refused
 SKIPPED a**                                      refused
+SKIPPED a*\Z                                     refused
+SKIPPED a*\z                                     refused
 SKIPPED a??+                                     refused
 SKIPPED a\                                       refused
+SKIPPED a\A*                                     refused
+SKIPPED a\Bb                                     refused
+SKIPPED a\Z                                      refused
+SKIPPED a\Z*                                     refused
+SKIPPED a\Z\z                                    refused
+SKIPPED a\bb                                     refused
 SKIPPED a\xgz                                    refused
+SKIPPED a\z                                      refused
+SKIPPED a\z*                                     refused
+SKIPPED ab\z|b\Z                                 refused
 SKIPPED a{,65536}                                refused
+SKIPPED a{0,4}\A                                 refused
+SKIPPED a{0,4}\Z                                 refused
+SKIPPED a{0,4}\z                                 refused
+SKIPPED a{0,4}c\Z                                refused
+SKIPPED a{0,4}c\z                                refused
 SKIPPED a{0,65536}                               refused
+SKIPPED a{1,3}?\z                                refused
 SKIPPED a{100000}                                refused
 SKIPPED a{2,1}                                   refused
 SKIPPED a{2}{3}                                  refused
@@ -1048,6 +1170,12 @@ SKIPPED a{65536}                                 refused
 SKIPPED a{99999999999999999999}                  refused
 SKIPPED a|*b                                     refused
 SKIPPED a|{1}                                    refused
+SKIPPED b\Z                                      refused
+SKIPPED b\z                                      refused
+SKIPPED foo\B                                    refused
+SKIPPED foo\b                                    refused
+SKIPPED foo\b\z                                  refused
+SKIPPED za{0,4}\z                                refused
 SKIPPED {,5}                                     refused
 SKIPPED {0}                                      refused
 SKIPPED {1,}                                     refused

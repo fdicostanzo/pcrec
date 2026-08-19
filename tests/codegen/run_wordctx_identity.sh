@@ -196,7 +196,22 @@ fi
 # from both builds. The artifact says which engine it is in its own
 # `RX_ENGINE` stamp (VM artifacts only), and reading THAT to explain a
 # non-difference is a different fact from the one being measured.
-ctl_diff=0; ctl_same_vm=0; ctl_same_dfa=0; ctl_rej=0
+#
+# THERE IS A SECOND LEGITIMATE NON-DIFFERENCE, and it was found by running
+# this check rather than by anticipating it: a pattern that can NEVER MATCH.
+# `\b\B` and `\B\b` are in the corpus and are contradictions — a position is
+# a word boundary or it is not, so no position satisfies both — and the
+# emitter's own "matches nothing" early-out produces an artifact with no
+# automaton in it at all. There is nothing left for a word context to change,
+# so the two builds agree for a reason that has nothing to do with whether the
+# knob works.
+#
+# It is classified rather than excluded, and read off the ARTIFACT (a body
+# whose whole content is the `(void)s; ... return 0;` early-out) rather than
+# off a list of pattern texts someone would have to maintain. Same rule the VM
+# arm follows: reading a different fact to explain a non-difference is
+# legitimate; reading `Dfa.wordctx` would not be.
+ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     a="$(gen_a "$pat")"; b="$(gen_b "$pat")"
@@ -205,6 +220,9 @@ while IFS= read -r pat; do
         ctl_diff=$((ctl_diff + 1))
     elif printf '%s' "$a" | grep -q '^#define RX_ENGINE "vm"$'; then
         ctl_same_vm=$((ctl_same_vm + 1))
+    elif printf '%s' "$a" | grep -q '^    (void)s; (void)n; (void)startpos; (void)caps;$'; then
+        ctl_same_empty=$((ctl_same_empty + 1))
+        echo "  never-matching control (no automaton to change): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
         echo "  DFA-compiled control did NOT differ: $pat" >&2
@@ -212,9 +230,9 @@ while IFS= read -r pat; do
 done < "$WORKDIR/bpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled word-assertion patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the word context plays no part; $ctl_same_empty are never-matching patterns whose artifact carries no automaton) — -DPCREC_NO_WORDCTX really disables it, so the identity comparisons below are not vacuous"
 else
-    bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE, $ctl_same_vm VM ones agree (expected), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern must differ; if none does, the reference knob is dead and this whole check is vacuous."
+    bad "positive control: $ctl_diff word-assertion patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_rej rejected by both. Every DFA-compiled \\b/\\B pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
 fi
 
 # ---- the identity sweep --------------------------------------------------
@@ -248,7 +266,7 @@ fi
 echo
 echo "== Summary =="
 echo "  identity population   compared $((same + diff))  identical $same  differing $diff  rejected-by-both $rej"
-echo "  positive control      differ $ctl_diff  agree-on-DFA $ctl_same_dfa  agree-on-VM $ctl_same_vm  rejected-by-both $ctl_rej"
+echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  rejected-by-both $ctl_rej"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
