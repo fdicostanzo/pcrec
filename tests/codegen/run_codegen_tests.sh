@@ -1087,17 +1087,23 @@ if gen wordb "$WB_PAT" --features all; then
     # guard were present but the read moved above it in a later edit that also
     # moved the guard; (a) alone would pass if `cl` were computed at `pos ==
     # n`.
-    f2lines=$(grep -c 'rx_facc2\[' "$wbb" || true)
-    f2bad=$(grep 'rx_facc2\[' "$wbb" | grep -cv 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' || true)
+    # The table's own DECLARATION line matches the same grep and is not a
+    # read, so it is dropped first -- an exclusion worth spelling out, since
+    # forgetting it is a check that fails on its own subject rather than on a
+    # defect.
+    grep 'rx_facc2\[' "$wbb" | grep -v '^ *static const' > "$WORKDIR/f2reads"
+    f2lines=$(grep -c . "$WORKDIR/f2reads" || true)
+    f2bad=$(grep -cv 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' "$WORKDIR/f2reads" || true)
     guard_ln=$(grep -n '^        if (pos >= n) {$' "$wbb" | head -1 | cut -d: -f1)
-    first_f2=$(grep -n 'rx_facc2\[' "$wbb" | head -1 | cut -d: -f1)
+    first_f2=$(grep -n 'rx_facc2\[' "$wbb" | grep -v ':[[:space:]]*static const' \
+               | head -1 | cut -d: -f1)
     scalar_in_guard=$(sed -n "${guard_ln:-0},$((${guard_ln:-0} + 2))p" "$wbb" \
                       | grep -c 'rx_facc\[' || true)
     if [ "$f2lines" -lt 1 ]; then
         bad "[M6.2-WORDB rule 1]: '$WB_PAT' emitted no class-indexed accept at all — the fixture no longer exercises §3.6, so this rule has no population"
     elif [ "$f2bad" -ne 0 ]; then
         bad "[M6.2-WORDB rule 1]: $f2bad of $f2lines class-indexed accept reads are not indexed by the 'cl' local; a read that computes its own class is a read this check cannot prove is guarded:"
-        grep 'rx_facc2\[' "$wbb" | grep -v 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' >&2
+        grep -v 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' "$WORKDIR/f2reads" >&2
     elif [ -z "$guard_ln" ] || [ -z "$first_f2" ] || [ "$guard_ln" -ge "$first_f2" ]; then
         bad "[M6.2-WORDB rule 1]: the 'if (pos >= n)' guard is at line ${guard_ln:-MISSING} and the first class-indexed accept at line ${first_f2:-MISSING} — the guard must come FIRST, or the emitted loop reads s[pos] at pos == n"
     elif [ "$scalar_in_guard" -lt 1 ]; then
@@ -1128,9 +1134,12 @@ if gen wordb "$WB_PAT" --features all; then
     # one this rule would pass on an artifact that has no second writer to get
     # wrong.
     rskips=$(grep -c 'rx_rs[0-9]*\[s\[pp - 1\]\]' "$wbb" || true)
-    sf_total=$(grep -c 'sfound = ' "$wbb" || true)
+    # `size_t sfound = (size_t)-1;` is the DECLARATION, not a record of a
+    # match start, and is excluded by name rather than by pattern-matching
+    # around it.
+    sf_total=$(grep 'sfound = ' "$wbb" | grep -cv 'size_t sfound = ' || true)
     sf_bad=$(awk '
-        /sfound = / {
+        /sfound = / && !/size_t sfound = / {
             if ($0 !~ /racc/ && prev !~ /racc/) { print NR": "$0; n++ }
         }
         { if ($0 !~ /^[[:space:]]*$/) prev = $0 }
