@@ -299,8 +299,19 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   MEMBERSHIP TESTS), and every block in wordb.rxt was capture-free so nothing
   in the corpus reached `emit_vm.c`'s arm at all (the file gained its VM
   section in the same change). Both now fire; S71/S73/S74 were DETECTED on
-  their first run, S74 on BOTH its instruments — 188 corpus cases, every one a
-  leading-`\B` at `startpos > 0` losing its match, and codegen rule 2b.
+  their first run, S74 on BOTH its instruments — 215 corpus cases, every one
+  a leading-`\B` at `startpos > 0` losing its match, and codegen rule 2b.
+  Final matrix: S71 wordctxid 1fail/3pass + corpus 0fail/15202pass; S72
+  codegen 1fail/51pass + corpus 0fail/4392pass; S73 codegen 1fail/51pass +
+  corpus 0fail/3528pass; S74 corpus 215fail/4177pass + asrt 0fail/26pass;
+  S75 codegen 1fail/51pass + corpus 131fail/4261pass. Three of the five are
+  SEMANTICS-PRESERVING (0 corpus failures), which is the standing argument
+  for landing construction checks the prose says cannot fail.
+  SUITE (final, this lane): corpus 16,066/0, cli 269/0, reject 537/0,
+  registry 169/0 + PC-3 163/0, codegen 52/0, trie 7/0, vm-identity 9/0,
+  ir-listing 79/0, vm 35/0, possessify 18/0, rungselect 24/0, counterk
+  23/0, mrl 22/0 + 18/0, altcls 15/0, assertions 26/0, endvar-identity
+  3/0, wordctx-identity 3/0; `make strict` clean.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here
