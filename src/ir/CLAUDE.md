@@ -69,10 +69,12 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   context of the byte the walk has already passed (`Dfa.s1u[]`, `Dfa.s1w` in
   wave B's spelling) — while `s0` covers "no context byte exists", which is
   neither a word character nor a newline and needs no twins.
-  `-DPCREC_NO_WORDCTX` pins `has_word` false for
+  `-DPCREC_NO_WORDCTX` compiles the axis out for
   `tests/codegen/run_wordctx_identity.sh`, the same shape as the two knobs
   above; under it a `\b` pattern compiles to something WRONG, which is what
-  makes that script's positive control non-vacuous.
+  makes that script's positive control non-vacuous. **[M6.2 repair slice,
+  2026-08-19] IT NO LONGER PINS THE FLAG** — see `eqclasses` and the file
+  header for why the placement is the whole point.
   **[M6.2 wave C] `(?m)` ADDS NO NEW MACHINERY — it adds a second PROPERTY to
   the two axes wave B built**, which is why this file's diff for it is small
   and its *structure* changed anyway. `(?m)$` reads whether the byte to the
@@ -108,10 +110,12 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   and python3 `re` implements it without it (U11b); pcrec shipped the design's
   rule in this lane and `tests/assertions/run_mline_diff.sh` caught it at
   `startpos > 0`.
-  `-DPCREC_NO_MLINECTX` pins `has_nl` false for
+  `-DPCREC_NO_MLINECTX` compiles the newline half out for
   `tests/codegen/run_mlinectx_identity.sh`, the same shape as the three knobs
   above; under it a `(?m)$` pattern compiles to `\z`'s semantics, which is
-  what makes that script's positive control non-vacuous.
+  what makes that script's positive control non-vacuous. **[M6.2 repair
+  slice, 2026-08-19] IT NO LONGER PINS THE FLAG**, for S71's reason one wave
+  over.
   **[M6.2 wave C ends here; WAVE D adds a THIRD POSITION BIT and a SECOND
   START FAMILY, and NOTHING to the alphabet.** `\G` (N_GSTART) is an absolute
   position test like N_BOT — it reads no byte, refines no class, asks for no
@@ -136,8 +140,21 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   finding**: `-DPCREC_NO_GSTART` lives at `src/gen/emit_dfa.c`'s three EMITTER
   decision points instead. A knob that shares a source with the code a sabotage
   edits CANCELS that sabotage in both builds — measured on wave B's own row,
-  where `run_wordctx_identity.sh` stays 1135/1135 identical under S71. See
+  where `run_wordctx_identity.sh` stayed 1135/1135 identical under S71. See
   `pcrec_build_dfa`'s comment and tests/mech/sabotages/S83.
+  **[M6.2 REPAIR SLICE, 2026-08-19] THE OTHER THREE KNOBS WERE RE-PLACED ON
+  THAT FINDING, and the re-placement is NOT simply "move them to the
+  emitter".** `\G` could live wholly at the emitter because it refines no
+  alphabet and interns no state the emitter cannot neutralize. `\b` and
+  `(?m)` refine the ALPHABET and `\z` interns a STATE, so an emitter branch
+  cannot undo either and an emitter-only knob was MEASURED to leave S71 at
+  1186/1186 identical — the same blindness in a new place. What each knob
+  gets instead is a `#ifndef` around the ANALYSIS'S ACTION (the refinement in
+  `eqclasses`, the interning in `make_state`) plus a pin in front of the
+  flag's consumers, AND an emitter half for the sites where the emitted text
+  is what the construct decides. Measured after: S71 1178 of 1186 differing,
+  S69 detected on its gate. `-DPCREC_NO_ENDVAR` was already at its action and
+  did not move.
 
   **[M6.2] WAVE E ADDS NOTHING TO THIS DIRECTORY, and that is a fact worth
   recording rather than an absence.** `\K` is the module's last construct and

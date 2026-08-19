@@ -34,7 +34,7 @@ SAB_SUITES="endvaridentity harness"
 # about patterns the edit cannot reach.
 SAB_HARNESS_TARGET="tests/base/eol_engine.rxt"
 SAB_DESC="make_state interns the \\z END view against the BASE view instead of against the EOL view (the design's own refuted first draft, R30 E3): every \$-bearing pattern gains a redundant endvar state and its emitted bytes move, with every answer unchanged"
-SAB_DOC_FIGURE="tests/codegen/run_endvar_identity.sh: 1011/1011 identical becomes a large differing count; the corpus stays green"
+SAB_DOC_FIGURE="tests/codegen/run_endvar_identity.sh: 1011/1011 identical becomes a large differing count; the corpus stays green. CANONICAL MATRIX RUN 2026-08-19 (after the [M6.2] repair slice): endvarid:1fail/2pass, corpus:0fail/32pass -- DETECTED, and the 0-fail corpus column is the semantics-preserving claim measured rather than asserted"
 SAB_COUNT=1
 # [M6.2 wave C] RE-EXPRESSED, same edit. make_state's three hand-written view
 # comparisons became a loop over the class axis when `(?m)` made that axis

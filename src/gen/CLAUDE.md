@@ -206,9 +206,27 @@ false and `a_gst = a_bot` HERE, so the reference build IS the pre-wave emitter.
 Waves A/B/C put their knobs in `src/ir/dfa.c`, inside the code their sabotages
 edit — and the reference compiler is built from THE SAME (sabotaged) SOURCES,
 so such a sabotage applies to both builds and CANCELS. Measured: wave B's S71
-leaves `run_wordctx_identity.sh` at 1135/1135 IDENTICAL, and that script fails
+left `run_wordctx_identity.sh` at 1135/1135 IDENTICAL, and that script failed
 only through a side effect (an orphaned parameter warning). Moving this wave's
 knob is what exposed the dead `gseed[]` table above.
+
+**[M6.2 REPAIR SLICE, 2026-08-19] THE OTHER THREE KNOBS WERE RE-PLACED ON THAT
+FINDING, AND WHAT IT TOOK IS NOT WHAT THE FINDING PREDICTED.** "Put the knob
+at the emitter" is sufficient for `\G` and NOT for `\z`, `\b` or `(?m)`,
+and the difference is which stage decides the emitted text. `\G` refines no
+alphabet and interns no state this emitter cannot neutralize, so forcing three
+predicates false here reproduces the pre-wave artifact exactly. `\b` and
+`(?m)` refine the ALPHABET and `\z` interns a STATE — no branch in this file
+can un-refine a partition or un-intern a state, so the reference build still
+emits the sabotaged class table. MEASURED: with an emitter-only knob, S71
+leaves 1186/1186 `\b`-free artifacts BYTE-IDENTICAL, i.e. exactly as blind as
+before. Each of the three therefore got TWO halves — this file's decision
+points (`upc_emit_live`, `upc_emit_of_class`, `st_emit_endvar`, at the top of
+the file with their own block comment) AND a `#ifndef` around the ANALYSIS'S
+ACTION in `src/ir/dfa.c`. After both: S71 1178 of 1186 differing, S69 red on
+its gate. The emitter half is byte-neutral in a shipped build and was measured
+so — 1,261 of 1,261 corpus artifacts identical against the pre-slice
+compiler — because every predicate folds to a constant.
 
 The VM's share is one arm and one PARAMETER. `\G` is the only assertion in the
 module whose truth is not a function of `(s, n, pos)`: `<prefix>_match_impl`

@@ -320,6 +320,49 @@ mismatch reported by `lib/replace.py`) rather than silently applying to the
 wrong place or skipping. Re-derive the anchor from `git show HEAD:<path>` when
 that happens; do not weaken the count check.
 
+## SEVEN ROWS' ANCHORS HAVE DRIFTED FROM HEAD (measured 2026-08-19, PRE-EXISTING)
+
+Found by the [M6.2] repair slice while checking that its OWN edits had not
+moved any anchor. The method is the driver's own: `printf '%s' "$SAB_BEFORE"`
+and count that literal in `$SAB_FILE`, which is exactly what `lib/replace.py`
+is handed. Seven rows' anchor text is ABSENT from the file it names, so a full
+`make mech` scores each of them `APPLY-FAILED` / `ANOMALY (anchor drifted from
+HEAD)` — not `DETECTED`, and not `UNDETECTED` either:
+
+| row | file |
+|---|---|
+| S08 casefold-order | `src/parse/parse.c` |
+| S09 casefold-delete | `src/parse/parse.c` |
+| S21 cls-peek-raw | `src/parse/parse.c` |
+| S22 caret-reset-clears-u | `src/parse/mod_modifiers.c` |
+| S26 unset-applied-first | `src/parse/mod_modifiers.c` |
+| S39 vm-cursor-always-greedy | `src/gen/emit_vm.c` |
+| S65 prefilter-flags-mask | `src/gen/emit_dfa.c` |
+
+**MEASURED PRE-EXISTING**: the identical seven fail the same check on a
+pristine checkout of the [M6.2] repair slice's merge base (`6045d3f`), so
+none of them is this slice's doing. S65's is the legible one and shows the
+shape: its anchor ends `PCREC_FORCE_PREFILTER;` and `emit_info_def`'s
+`strategy_denials` now ends `PCREC_FORCE_PREFILTER |` followed by
+`PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR;` — [OPT-ALTCLS] appended to
+the mask and S65's anchor was not re-derived in the same change, which is
+exactly what this file's Conventions section asks for.
+
+**Why nothing noticed.** The driver is loud per row, and it says so — but
+recent lanes have run it BY PREFIX (`run_sabotage_matrix.sh S85`) to validate
+their own rows, and a per-prefix run never touches a row it does not name. A
+full-matrix run is what surfaces this class, and one has not been taken since
+the drift landed. The fix per row is this file's standing recipe: re-derive
+the anchor from `git show HEAD:<path>`, never weaken the count check, and
+re-run that row through the driver. **NOT DONE BY THE REPAIR SLICE** — seven
+unrelated rows each want their own re-derivation and re-validation, which is a
+different piece of work from the one it was chartered with. Flagged for the
+manager.
+
+The repair slice's own anchor movement, by contrast, was one row and was
+re-derived in the same change: S81's line gained `upc_emit_of_class` when the
+emitter's knob half landed. See that row's own note.
+
 Maintenance: when a codegen/reject/trie sabotage table gains a new row with an
 exact literal edit, add a matching `sabotages/S<NN>_*.sh` here in the same
 change, per the project's own sabotage-validation convention.
@@ -816,8 +859,31 @@ points, which makes the reference build structurally the pre-wave EMITTER
 rather than an analysis with one fact suppressed — after which S83 goes red in
 the sweep as it should. **Doing so immediately exposed a real defect in wave
 D's own emitter that the mis-placed knob had hidden** (a dead `gseed[]` table
-on every `\b`/`(?m)` artifact). Re-placing waves A/B/C's knobs is a manager
-decision and is not done here.
+on every `\b`/`(?m)` artifact).
+
+**RE-PLACED 2026-08-19 BY THE [M6.2] REPAIR SLICE, AND THE FIX IS NOT THE ONE
+THIS SECTION PREDICTED.** "Move the knob to the emitter" is sufficient for
+`\G` and NOT for `\z`/`\b`/`(?m)`, because it is the STAGE THAT DECIDES THE
+EMITTED TEXT that has to carry the knob. `\G` refines no alphabet and interns
+no state the emitter cannot neutralize. `\b` and `(?m)` refine the ALPHABET
+and `\z` interns a STATE, and no emitter branch can un-refine a partition or
+un-intern a state — so the reference build goes on emitting the sabotaged
+class table. MEASURED by the slice, before it wrote anything: with an
+emitter-only knob **S71 leaves 1186/1186 `\b`-free artifacts byte-identical**,
+i.e. exactly as blind as the flag pin was. What works is a `#ifndef` around
+the ANALYSIS'S ACTION — `eqclasses`' refinement, `make_state`'s interning —
+which an edit to that action's own gate cannot cancel, plus the emitter half
+for the sites the emitter really does decide. After both: **S71 moves 1178 of
+1186**, and S69 is red on its own gate (it was already at its action and did
+not move).
+
+**THE RULE FOR THE NEXT KNOB-BASED GATE, which is what this whole section is
+for:** put the knob around the ACTION the construct performs, never around
+the FLAG that decides whether to perform it — a sabotage that deletes the
+flag's consumer is the realistic edit, and it cancels a flag pin exactly. And
+run the row through this driver rather than trusting the shape: both the
+1186/1186 and the 1178/1186 numbers above are measurements, and the first one
+refuted the plan the slice was chartered with.
 
 Put beside S48 (green because the population could not reach the defect), S50
 (green because the thing removed was not carrying the weight) and S60 (green

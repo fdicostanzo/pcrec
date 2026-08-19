@@ -138,14 +138,42 @@ or it has no regression net at all.
   In the reference build the same read WOULD be `dfa_has_endvar`, which this
   script's own rule forbids.
 
+**[M6.2 REPAIR SLICE, 2026-08-19] ALL FOUR GATES' REFERENCE KNOBS ARE NOW AT
+THE ACTION, AND THIS PARAGRAPH IS THE ONE TO READ BEFORE ADDING A FIFTH.**
+Wave D found that a knob-based reference is blind to any sabotage OUTSIDE the
+region the knob suppresses, because both builds are compiled from the same
+sabotaged sources — so the knob's PLACEMENT decides what the gate can see.
+Waves A/B/C pinned a FLAG (`has_word`/`has_nl` in `src/ir/dfa.c`'s NFA scan);
+S71 and S76 delete that flag's CONSUMER, so the refinement ran in both builds
+and cancelled, and S71 was scored DETECTED only through an incidental
+`-Wunused-parameter` in the reference build. Two things were then MEASURED by
+the repair slice, and the second is the non-obvious one:
+
+  - moving each knob to the EMITTER, wave D's own model, is NOT sufficient
+    for waves A/B/C. `\G` refines no alphabet and interns no state the
+    emitter cannot neutralize; `\b`/`(?m)` refine the ALPHABET and `\z`
+    interns a STATE, and no emitter branch can undo either. With an
+    emitter-only knob S71 leaves **1186/1186 `\b`-free artifacts
+    byte-identical** — as blind as before.
+  - what works is a `#ifndef` around the ANALYSIS'S ACTION (the refinement in
+    `eqclasses`, the interning in `make_state`), which an edit to that
+    action's own gate cannot cancel, PLUS an emitter half for the sites where
+    the emitted text is what the construct decides. After both: **S71 1178 of
+    1186 differing**, and S69 red on its own gate.
+
+`-DPCREC_NO_ENDVAR` was ALREADY at its action (its `#ifndef` wraps the
+interning block S69 edits) and did not move. The rule for a fifth gate: put
+the knob around the ACTION the construct performs, never around the flag that
+decides whether to perform it — and then run the row through
+`tests/mech/run_sabotage_matrix.sh` rather than trusting the shape.
+
 - **run_wordctx_identity.sh** — [M6.2] wave B's BYTE-IDENTITY GATE, the same
   shape one axis over. `\b`/`\B` are the largest change any wave of [M6.2]
   makes to the engine — the class map is refined by the word set, every state
   gains a second closure, the accept becomes class-indexed where it varies,
   and the machine gains a third start state — and the claim is that a pattern
   WITHOUT them pays for none of it. Reference build is this tree's sources
-  with `-DPCREC_NO_WORDCTX` (`has_word` pinned false); sabotage S71 is the
-  measured failing direction. Landing figures: 1039 of 1039 `\b`-free corpus
+  with `-DPCREC_NO_WORDCTX`; sabotage S71 is the measured failing direction. Landing figures: 1039 of 1039 `\b`-free corpus
   patterns byte-identical, 47 controls differing, 0 unexplained agreements.
 
   **Its SPLIT is subtler than wave A's, and the difference is the file's own
@@ -173,8 +201,8 @@ or it has no regression net at all.
   state gains a third closure, the `pos == n` view goes live, and ENG_ATTEMPT
   gains D63's candidate-start prefilter — and the claim is that a pattern
   WITHOUT a multiline `^`/`$` pays for none of it. Reference build is this
-  tree's sources with `-DPCREC_NO_MLINECTX` (`has_nl` pinned false); sabotage
-  S76 is the measured failing direction.
+  tree's sources with `-DPCREC_NO_MLINECTX`; sabotage S76 is the measured
+  failing direction.
 
   **THIS ONE HAS A REASON THE OTHER TWO DID NOT.** Waves A and B each ADDED a
   view beside existing ones. Wave C turned a BOOL into a three-valued enum,
