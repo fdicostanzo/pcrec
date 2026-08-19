@@ -1,0 +1,291 @@
+#!/usr/bin/env bash
+#
+# safekill.test — standalone self-test for scripts/safekill.
+#
+# NAMING: <script-full-filename>.test, the convention scripts/Makefile's
+# derived pattern rule depends on (decisions.md D48; see watchdog.test for
+# the precedent). Run directly:
+#
+#   timeout 300 bash scripts/tests/safekill.test   # or: make testscripts
+#
+# SCOPE DISCIPLINE (repo-wide mandate, doubled here): every process this
+# file kills is one IT SPAWNED ITSELF — sacrificial `sleep`/dummy trees
+# under a `setsid` leader whose pid this file records before touching
+# anything. Nothing here ever scans the box for a target; `ps`/`pgrep`
+# appear only to INSPECT a pid this file already recorded, never to choose
+# one. A trap cleans up every sacrificial tree on exit, pass or fail.
+#
+# Every case is bounded by coreutils `timeout` around the invocation of
+# safekill under test, and internal polling loops are bounded by an
+# iteration cap rather than a fixed sleep — a control must not share a
+# mechanism with the thing it controls, and a loaded box should slow a
+# case down, not flake it.
+
+set -u
+
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
+SK="$SELF_DIR/../safekill"
+
+SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/sk_test.XXXXXX")"
+SPAWNED_PGIDS=()
+
+cleanup() {
+    local pg
+    for pg in "${SPAWNED_PGIDS[@]:-}"; do
+        [ -n "$pg" ] && kill -KILL -- "-$pg" 2>/dev/null
+    done
+    rm -rf "$SCRATCH"
+}
+trap cleanup EXIT
+
+pass_count=0
+fail_count=0
+
+pass() { printf 'PASS: %s\n' "$1"; pass_count=$((pass_count + 1)); }
+fail() { printf 'FAIL: %s\n' "$1"; fail_count=$((fail_count + 1)); }
+
+# spawn_leader SNIPPET: launches `setsid bash -c "echo \$\$ >MARKER;
+# SNIPPET"` in the background, waits (bounded poll, never a flat sleep for
+# the full bound) for the marker to appear, records the leader pid for
+# cleanup, and prints it.
+spawn_leader() {
+    local snippet="$1" marker waited=0 pid=""
+    marker="$SCRATCH/marker.$$.$RANDOM"
+    setsid bash -c "echo \$\$ > '$marker'; $snippet" </dev/null >/dev/null 2>&1 &
+    disown
+    while [ ! -s "$marker" ] && [ "$waited" -lt 100 ]; do
+        sleep 0.1
+        waited=$((waited + 1))
+    done
+    pid="$(cat "$marker" 2>/dev/null)"
+    rm -f "$marker"
+    [ -n "$pid" ] && SPAWNED_PGIDS+=("$pid")
+    printf '%s' "$pid"
+}
+
+is_alive() { kill -0 "$1" 2>/dev/null; }
+
+# wait_dead PID MAXSECS: polls in 0.2s steps, true if PID is gone within
+# MAXSECS (never a flat sleep for the whole bound — a fast kill finishes fast).
+wait_dead() {
+    local pid="$1" max="$2" waited="0"
+    while is_alive "$pid"; do
+        awk -v w="$waited" -v m="$max" 'BEGIN{exit !(w<m)}' || return 1
+        sleep 0.2
+        waited="$(awk -v w="$waited" 'BEGIN{printf "%.1f", w+0.2}')"
+    done
+    return 0
+}
+
+# child_pid_of LEADER_PID: pid of LEADER's single tracked child, read back
+# through a marker file the spawned snippet itself writes (never `ps`/
+# `pgrep` used to CHOOSE a target — only to help a test assertion read one
+# back, and only via a marker the sacrificial process wrote about itself).
+
+# ---- case 1: PID paved road kills the whole tree, and nothing else ---------
+
+marker1="$SCRATCH/case1_child"
+leader1="$(spawn_leader "echo \$\$ > '$marker1.self'; sleep 300 & echo \$! > '$marker1'; wait")"
+bystander="$(spawn_leader "sleep 300")"
+
+waited=0
+while [ ! -s "$marker1" ] && [ "$waited" -lt 50 ]; do sleep 0.1; waited=$((waited+1)); done
+child1="$(cat "$marker1" 2>/dev/null)"
+
+ok=1
+[ -n "$leader1" ] && [ -n "$child1" ] || { ok=0; fail "case1: setup failed to record leader/child pids"; }
+if [ "$ok" -eq 1 ]; then
+    is_alive "$leader1" || { ok=0; fail "case1: leader died before the test ran"; }
+    is_alive "$child1" || { ok=0; fail "case1: child died before the test ran"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 20 "$SK" --grace 2 "$leader1" 2>&1)"
+    rc=$?
+    [ "$rc" -eq 0 ] || { ok=0; fail "case1: safekill exit=$rc, want 0 — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    wait_dead "$leader1" 10 || { ok=0; fail "case1: leader still alive after kill"; }
+    wait_dead "$child1" 10 || { ok=0; fail "case1: child still alive after kill (tree kill incomplete)"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    is_alive "$bystander" || { ok=0; fail "case1: unrelated bystander process died as collateral"; }
+fi
+[ "$ok" -eq 1 ] && pass "case1: PID paved road kills leader+child tree, leaves an unrelated bystander alone"
+kill -KILL -- "-$bystander" 2>/dev/null
+
+# ---- case 2: --pgid kills exactly that group ------------------------------
+
+leader2="$(spawn_leader "sleep 300")"
+ok=1
+is_alive "$leader2" || { ok=0; fail "case2: setup failed"; }
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 20 "$SK" --pgid "$leader2" --grace 2 2>&1)"
+    rc=$?
+    [ "$rc" -eq 0 ] || { ok=0; fail "case2: safekill --pgid exit=$rc, want 0 — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    wait_dead "$leader2" 10 || { ok=0; fail "case2: group leader still alive after --pgid kill"; }
+fi
+[ "$ok" -eq 1 ] && pass "case2: --pgid kills the exact group"
+
+# ---- case 3: pattern path refuses two identical sibling invocations, -----
+# ---- then --all widens and kills both (incident A/B's shape) --------------
+
+TOKEN="SAFEKILL_TEST_TOKEN_$$_$RANDOM"
+sib1="$(spawn_leader "exec -a $TOKEN sleep 300")"
+sib2="$(spawn_leader "exec -a $TOKEN sleep 300")"
+
+ok=1
+is_alive "$sib1" && is_alive "$sib2" || { ok=0; fail "case3: setup failed to spawn both siblings"; }
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 10 "$SK" -f "$TOKEN" 2>&1)"
+    rc=$?
+    [ "$rc" -eq 2 ] || { ok=0; fail "case3: refusal exit=$rc, want 2 — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    is_alive "$sib1" && is_alive "$sib2" || { ok=0; fail "case3: a sibling died despite the refusal (should have refused BEFORE signalling)"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    case "$out" in
+        *"pid=$sib1"*"pid=$sib2"*|*"pid=$sib2"*"pid=$sib1"*) ;;
+        *) ok=0; fail "case3: refusal message did not list both candidate pids — output: $out" ;;
+    esac
+fi
+[ "$ok" -eq 1 ] && pass "case3a: -f/--pattern refuses (exit 2) on two live identical-cmdline siblings, kills neither"
+
+ok=1
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 20 "$SK" -f "$TOKEN" --all --grace 2 2>&1)"
+    rc=$?
+    [ "$rc" -eq 0 ] || { ok=0; fail "case3b: --all exit=$rc, want 0 — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    wait_dead "$sib1" 10 || { ok=0; fail "case3b: sib1 still alive after --all"; }
+    wait_dead "$sib2" 10 || { ok=0; fail "case3b: sib2 still alive after --all"; }
+fi
+[ "$ok" -eq 1 ] && pass "case3b: --all widens the same pattern and kills both siblings"
+
+# ---- case 4: self/ancestor exclusion — a wrapper matching the pattern -----
+# ---- must not be counted as a candidate, must not be killed --------------
+
+TOKEN4="SAFEKILL_TEST_SELF_$$_$RANDOM"
+target4="$(spawn_leader "exec -a $TOKEN4 sleep 300")"
+
+ok=1
+is_alive "$target4" || { ok=0; fail "case4: setup failed"; }
+if [ "$ok" -eq 1 ]; then
+    # The wrapper's OWN argv carries the pattern text — reproducing the
+    # `bash -c '...pattern...'` self-match hazard from learnings.md. If
+    # self/ancestor exclusion is broken, this becomes a 2-candidate match
+    # (wrapper + target4) and refuses (exit 2) instead of proceeding, OR
+    # the wrapper itself gets killed out from under the test.
+    out="$(exec -a "wrapper_${TOKEN4}_caller" bash -c "timeout 20 '$SK' -f '$TOKEN4' --grace 2" 2>&1)"
+    rc=$?
+    [ "$rc" -eq 0 ] || { ok=0; fail "case4: exit=$rc, want 0 (should resolve to exactly ONE real candidate) — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    wait_dead "$target4" 10 || { ok=0; fail "case4: target still alive"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    is_alive "$$" || { ok=0; fail "case4: the test's own shell died — self-exclusion failed catastrophically"; }
+fi
+[ "$ok" -eq 1 ] && pass "case4: self/ancestor exclusion drops a wrapper whose own argv carries the pattern"
+
+# ---- case 5: --list previews without ever signalling ----------------------
+
+TOKEN5="SAFEKILL_TEST_LIST_$$_$RANDOM"
+target5="$(spawn_leader "exec -a $TOKEN5 sleep 300")"
+ok=1
+is_alive "$target5" || { ok=0; fail "case5: setup failed"; }
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 10 "$SK" --list -f "$TOKEN5" 2>&1)"
+    rc=$?
+    [ "$rc" -eq 0 ] || { ok=0; fail "case5: --list exit=$rc, want 0 — output: $out"; }
+fi
+if [ "$ok" -eq 1 ]; then
+    case "$out" in
+        *"pid=$target5"*"pgid=$target5"*) ;;
+        *) ok=0; fail "case5: --list output missing pid/pgid fields — output: $out" ;;
+    esac
+fi
+if [ "$ok" -eq 1 ]; then
+    is_alive "$target5" || { ok=0; fail "case5: --list actually killed its candidate"; }
+fi
+[ "$ok" -eq 1 ] && pass "case5: --list lists candidates and signals nothing"
+kill -KILL -- "-$target5" 2>/dev/null
+
+# ---- case 6: audit line carries pid/pgid/start/cmd on a real kill ---------
+
+leader6="$(spawn_leader "sleep 300")"
+ok=1
+is_alive "$leader6" || { ok=0; fail "case6: setup failed"; }
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 20 "$SK" --grace 2 "$leader6" 2>&1)"
+    for key in pid= pgid= start= cmd=; do
+        case "$out" in
+            *"$key"*) ;;
+            *) ok=0; fail "case6: audit line missing '$key' — output: $out" ;;
+        esac
+    done
+fi
+[ "$ok" -eq 1 ] && pass "case6: audit line carries pid, pgid, start, and cmd"
+
+# ---- case 7: exit codes — no-match (1) and usage error (125) --------------
+
+out="$(timeout 10 "$SK" -f "SAFEKILL_TOKEN_THAT_MATCHES_NOTHING_$$_$RANDOM" 2>&1)"
+rc=$?
+if [ "$rc" -eq 1 ]; then
+    pass "case7a: no candidates matched -> exit 1"
+else
+    fail "case7a: no-match exit=$rc, want 1 — output: $out"
+fi
+
+out="$(timeout 10 "$SK" --under 1 12345 2>&1)"
+rc=$?
+if [ "$rc" -eq 125 ]; then
+    pass "case7b: --under with a PID target (usage error) -> exit 125"
+else
+    fail "case7b: usage-error exit=$rc, want 125 — output: $out"
+fi
+
+out="$(timeout 10 "$SK" 2>&1)"
+rc=$?
+if [ "$rc" -eq 125 ]; then
+    pass "case7c: no target given -> exit 125"
+else
+    fail "case7c: no-target exit=$rc, want 125 — output: $out"
+fi
+
+# ---- case 8: --under restricts pattern candidates to a descendant tree ----
+
+TOKEN8="SAFEKILL_TEST_UNDER_$$_$RANDOM"
+inmark="$SCRATCH/case8_in"
+anchor8="$(spawn_leader "echo \$\$ > '$inmark.anchor'; ( exec -a $TOKEN8 sleep 300 ) & echo \$! > '$inmark'; wait")"
+outside8="$(spawn_leader "exec -a $TOKEN8 sleep 300")"
+
+waited=0
+while [ ! -s "$inmark" ] && [ "$waited" -lt 50 ]; do sleep 0.1; waited=$((waited+1)); done
+inside8="$(cat "$inmark" 2>/dev/null)"
+
+ok=1
+[ -n "$anchor8" ] && [ -n "$inside8" ] && [ -n "$outside8" ] || { ok=0; fail "case8: setup failed to record pids"; }
+if [ "$ok" -eq 1 ]; then
+    out="$(timeout 10 "$SK" --list --under "$anchor8" -f "$TOKEN8" 2>&1)"
+    case "$out" in
+        *"pid=$inside8"*) ;;
+        *) ok=0; fail "case8: --under listing missing the in-tree candidate — output: $out" ;;
+    esac
+    case "$out" in
+        *"pid=$outside8"*) ok=0; fail "case8: --under listing included the OUT-of-tree candidate — output: $out" ;;
+        *) ;;
+    esac
+fi
+[ "$ok" -eq 1 ] && pass "case8: --under narrows pattern candidates to the given PID's descendant tree"
+kill -KILL -- "-$anchor8" 2>/dev/null
+kill -KILL -- "-$outside8" 2>/dev/null
+
+# ---- summary ----------------------------------------------------------------
+
+total=$((pass_count + fail_count))
+printf '\n%d/%d passed\n' "$pass_count" "$total"
+[ "$fail_count" -eq 0 ]
