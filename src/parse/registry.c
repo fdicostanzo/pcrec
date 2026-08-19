@@ -366,7 +366,13 @@ ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary", QF_
  * one (the R9/SPEC-classes-F1 rule; the port is an ATOM port only, so the
  * class position keeps its permanent refusal by construction rather than by
  * a second check). See src/parse/mod_assertions.c for why two of the three
- * are exact aliases of shipped nodes and the third is not. */
+ * are exact aliases of shipped nodes and the third is not — AND for the two
+ * things the alias must not be allowed to erase: multiline independence
+ * (pinned false on the node, never copied from the scoped state) and the
+ * `PCRE2_NOTBOL`/`PCRE2_NOTEOL` distinction between `\A`/`\Z` and `^`/`$`,
+ * which is RULED API-PARAM (docs/pcre2_options.md rows 200-201, D38) and is
+ * the known future consumer of a provenance field this wave deliberately
+ * does not build. */
 {RK_ESC, 'A', NULL, "\\A", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
  RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "start of subject",
  ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,

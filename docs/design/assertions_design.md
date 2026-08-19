@@ -342,6 +342,65 @@ character-for-character the two comments above. So:
 > `\A` lowers to `A_BOL`, `\Z` lowers to `A_EOL`, and **no engine work exists**
 > for either. They are parser rows.
 
+**ANNOTATED [M6.2] WAVE A, 2026-08-19 (implementation lane; Frank surfaced the
+paragraph, manager brief addendum).** Two things this section does not say, and
+the second is a real gap rather than a detail. The section's own source
+paragraph (pcre2pattern, "Simple assertions") reads in full: `\A`, `\Z` and
+`\z` *"only ever match at the very start and end of the subject string,
+whatever options are set. Thus, they are independent of multiline mode."*
+
+1. **The alias must PIN multiline false, not inherit it.** §3.2's argument is
+   about the node's SEMANTICS and §8's cure adds a parse-resolved
+   `Ast.multiline` FIELD to that same node; put together, the `\A`/`\Z`
+   producer has to write `false` where `^`/`$` write the scoped state, or
+   wave C's acceptance of the `m` letter leaks multiline-`$` machinery into
+   `\Z`. Landed as an explicit assignment plus a comment
+   (src/parse/mod_assertions.c) rather than as a reliance on the arena's
+   zero, because with `(?m)` refused the two versions are indistinguishable
+   by every test in the tree until the day the bug arrives.
+
+2. **The alias ERASES a distinction a RULED future surface needs, and this
+   section is silent on it.** `PCRE2_NOTBOL`/`PCRE2_NOTEOL` affect `^` and `$`
+   ONLY; `\A`/`\Z`/`\z` are unaffected. Both are RULED **API-PARAM**
+   (`../pcre2_options.md` rows 200-201, RATIFIED D38) — a match-CALL
+   parameter, so a committed future surface rather than a NEVER. An artifact
+   compiles once and that parameter arrives at match time, so the emitter will
+   have to know which `A_BOL` nodes came from `\A` and which from `^` —
+   information a pure alias throws away.
+
+   **MEASURED** (libpcre2 10.46, this lane; a documentation paragraph is not a
+   measurement, and the distinction is the whole point):
+
+   ```
+   pattern  subject   options=0   NOTBOL     NOTEOL
+   ^a       "ab"      (0,1)       NO MATCH   (0,1)      <- affected
+   \Aa      "ab"      (0,1)       (0,1)      (0,1)      <- not
+   b$       "ab"      (1,2)       (1,2)      NO MATCH   <- affected
+   b\Z      "ab"      (1,2)       (1,2)      (1,2)      <- not
+   b$       "ab\n"    (1,2)       (1,2)      NO MATCH   <- affected
+   b\Z      "ab\n"    (1,2)       (1,2)      (1,2)      <- not
+   ```
+
+   So **"no engine work exists" holds at options = 0 and is where the claim
+   ends.** The fix, when it has a customer, is a PARSE-RESOLVED PROVENANCE
+   FIELD in D62's shape, beside `multiline`. Wave A deliberately does NOT
+   build it: a field with no consumer has no test that can go red, which is
+   the discipline D18/OS-0/D53 state and [M4.7a] applied when it declined
+   SR-8's socket. What wave A owed was that the requirement be recorded where
+   the erasure happens, which is this annotation and the comment at the
+   producer.
+
+3. **A test-axis confirmation, not a correction.** The same paragraph notes
+   that with a non-zero `startoffset` `\A` can never match. That is already
+   pcrec's `A_BOL` semantics (`emit_vm.c:3458`) and R30's 1,008-cell
+   differential swept every startpos, but the property is now also pinned by
+   the module's OWN corpus rather than only by the design lane's archived
+   probe: `tests/assertions/absolute.rxt` carries six `ns <P>` cells at
+   `P > 0` for `\A` and `ms <P>` cells for `\z` and `\Z` at the same
+   offsets — including the `"ab\n"` rows, where `\Z` reports (2,2) and `\z`
+   reports (3,3) at an identical nonzero startpos, so the three-way
+   distinction is pinned under `startpos` and not only at 0.
+
 #### 3.2.1 `\Z` cannot be oracle-verified against python `re` — MEASURED
 
 CLAUDE.md's standing rule is that expectations are oracle-verified with python3

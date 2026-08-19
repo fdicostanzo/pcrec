@@ -35,6 +35,16 @@
  * a flag: node KINDS encode STRUCTURE and node FIELDS encode parse-resolved
  * MODIFIER STATE, and no option turns `\Z` into `\z`.
  *
+ * INDEPENDENT OF MULTILINE, AND OF NOTBOL/NOTEOL. PCRE2's `\A`, `\Z` and
+ * `\z` "only ever match at the very start and end of the subject string,
+ * whatever options are set" (pcre2pattern), which has two consequences this
+ * port is responsible for and which are written out at the code below rather
+ * than only here: `Ast.multiline` is PINNED FALSE (never copied from the
+ * scoped state, which is what `^`/`$` do), and the alias is exact AT
+ * options = 0 while `PCRE2_NOTBOL`/`PCRE2_NOTEOL` — API-PARAM, RATIFIED D38 —
+ * are a committed future surface that will need to tell a `\A` node from a
+ * `^` one, which the alias erases.
+ *
  * THE ORACLE TRAP, stated here because a test author will hit it before they
  * read the design note (§3.2.1, MEASURED both oracles): **python `re`'s `\Z`
  * IS PCRE2's `\z`.** python has no single escape for PCRE2's `\Z` at all —
@@ -75,15 +85,59 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                       .answered_at = want };
     res.node = pcrec_ast_node(cx, k);
-    /* `Ast.multiline` IS DELIBERATELY LEFT AT THE ARENA'S ZERO, and that is
-     * the alias claim's fine print rather than an omission. PCRE2's `\A` and
-     * `\Z` are "unaffected by multiline" — `(?m)\Z` still means the subject
-     * end (or before a final newline), where `(?m)$` means before EVERY
-     * newline. So the node these two produce is an A_BOL/A_EOL that is
-     * PERMANENTLY non-multiline, while parse.c's `^`/`$` cases copy the
-     * scoped state in force. Both write the same field and they must write
-     * different values; the zero is the right one here and setting it from
-     * `cx->mods` would be the bug. */
+
+    /* MULTILINE IS PINNED FALSE HERE, DELIBERATELY AND EXPLICITLY — never
+     * copied from `cx->mods` the way parse.c's `^`/`$` cases copy it.
+     *
+     * PCRE2's own words (pcre2pattern, "Simple assertions"): `\A`, `\Z` and
+     * `\z` "only ever match at the very start and end of the subject string,
+     * whatever options are set. Thus, they are independent of multiline
+     * mode." `(?m)\Z` is still the subject end (or before a final newline);
+     * `(?m)$` is before EVERY newline. The two spellings produce the SAME
+     * node kind and must carry DIFFERENT values in this field.
+     *
+     * The arena already zeroes it, so this assignment changes no bit today —
+     * it is written out because the failure it forecloses is a wave-C one and
+     * is invisible until then. `(?m)` is refused now, so a version of this
+     * port that copied `cx->mods` would be indistinguishable from this one by
+     * every test in the tree; the day wave C accepts the `m` letter, that
+     * version would leak multiline-`$` machinery into `\Z` silently. This
+     * line and this comment exist so the next author cannot "harmonize" the
+     * two sites, which is exactly the harmonization that would break it. */
+    res.node->multiline = false;
+
+    /* THE ALIAS IS EXACT AT options = 0, AND THE FUTURE HAS ONE KNOWN
+     * CONSUMER OF WHAT IT ERASES. `PCRE2_NOTBOL`/`PCRE2_NOTEOL` affect `^`
+     * and `$` ONLY — `\A`/`\Z`/`\z` are unaffected — and both are RULED
+     * `API-PARAM` (docs/pcre2_options.md rows 200-201, RATIFIED D38): a
+     * match-CALL parameter, i.e. a committed future surface, not a NEVER.
+     *
+     * MEASURED against libpcre2 10.46 by this lane, since the distinction is
+     * the whole point and a documentation paragraph is not a measurement:
+     *
+     *     pattern  subject   options=0   NOTBOL     NOTEOL
+     *     ^a       "ab"      (0,1)       NO MATCH   (0,1)     <- affected
+     *     \Aa      "ab"      (0,1)       (0,1)      (0,1)     <- not
+     *     b$       "ab"      (1,2)       (1,2)      NO MATCH  <- affected
+     *     b\Z      "ab"      (1,2)       (1,2)      (1,2)     <- not
+     *     b$       "ab\n"    (1,2)       (1,2)      NO MATCH  <- affected
+     *     b\Z      "ab\n"    (1,2)       (1,2)      (1,2)     <- not
+     *
+     * An artifact is compiled ONCE and that parameter arrives at MATCH time,
+     * so the emitter will have to know which A_BOL nodes came from `\A` and
+     * which from `^` — information a pure alias throws away. The fix, when it
+     * has a customer, is a PARSE-RESOLVED PROVENANCE FIELD in D62's shape
+     * (kinds encode structure, fields encode parse-resolved state), written
+     * exactly here beside `multiline`.
+     *
+     * IT IS NOT BUILT NOW, and that is the house rule rather than laziness: a
+     * field with no consumer has no test that can go red, and unpopulated
+     * machinery guessed at sample size zero is what D18/OS-0/D53 forbid (and
+     * what [M4.7a] declined SR-8's socket over). What is owed today is that
+     * the requirement be RECORDED where the erasure happens — here, and as an
+     * annotation on assertions_design.md §3.2, whose alias claim is silent on
+     * it. */
+
     /* `\A`/`\Z`/`\z` are two-byte escapes and the doorway's cursor already
      * sits past both bytes, exactly as it does for the PORT_SCALAR rows.
      * The CALLER advances (check06's rule); the doorway never does. */

@@ -126,10 +126,20 @@ ns 3 "ab\n"
 
 
 # ======================================================================
-# THE BARE ASSERTIONS, at every position of every subject shape. `\A` is
-# absolute offset 0 (it is A_BOL, the same node `^` builds) and so is NOT
-# satisfied at a nonzero `startpos` — the `ns`/`ms` rows are what pin that
-# against the emitted contract in lib/pcrec.h.
+# THE BARE ASSERTIONS, at every position of every subject shape.
+#
+# THE `ns <P>` ROWS BELOW ARE LOAD-BEARING, not incidental coverage. PCRE2
+# (pcre2pattern, "Simple assertions") states that with a non-zero
+# `startoffset` `\A` can NEVER match, and that is already pcrec's A_BOL
+# semantics (`^` is start of SUBJECT, absolute — src/gen/emit_vm.c:3458 and
+# the emitted contract in lib/pcrec.h). R30's 1,008-cell alias differential
+# swept every startpos, but that is the DESIGN lane's archived probe; these
+# six cells are the property pinned by the module's own corpus.
+#
+# The `ms <P>` rows opposite them do the same for `\z` and `\Z` — and the
+# `"ab\n"` rows are the sharp ones: at an identical nonzero startpos `\Z`
+# reports (2,2) and `\z` reports (3,3), so the three-way distinction is
+# pinned UNDER `startpos` and not only at offset 0.
 # ======================================================================
 
 pattern \A
