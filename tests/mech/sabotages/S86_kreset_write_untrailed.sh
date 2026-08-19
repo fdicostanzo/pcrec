@@ -39,8 +39,8 @@
 # WHAT IT IS MEASURED TO MOVE:
 #     tests/codegen/run_codegen_tests.sh   [M6.2-KRESET rule 1] RED, naming
 #                                          the direct write.
-#     tests/assertions/kreset.rxt          RED on SIX cases and green on the
-#                                          other 575 — the two UNDO families
+#     tests/assertions/kreset.rxt          RED on SIX cases and green on all
+#                                          the rest — the two UNDO families
 #                                          and nothing else, which is itself
 #                                          the evidence those sections are not
 #                                          decoration and the reason the
@@ -48,7 +48,8 @@
 #     run_kreset_diff.sh                   RED in §1 and §2.
 #
 # MEASURED 2026-08-19 (scratch tree, applied through tests/mech/lib/replace.py,
-# never committed): codegen 1 fail / 55 pass; kreset.rxt 6 fail / 575 pass.
+# never committed, before section 11 grew the corpus): codegen 1 fail / 55
+# pass; kreset.rxt 6 fail / 575 pass of the 581 cases it then held.
 # Compare S85's 198 failing cases: a wrong-PROVENANCE bug is wrong nearly
 # everywhere and a missing-UNDO bug is wrong in six places, which is exactly
 # why the second one needs a corpus written to contain those six.
@@ -57,7 +58,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness kresetdiff"
 SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="the emitted \\K write goes straight to stv[0] instead of through <PREFIX>_SET, so it is never recorded on the trail and a backtrack cannot undo it. A \\K crossed on a LOSING path stays crossed: '(?:a\\K|ax)c' on \"axc\" answers (1,3) where PCRE2 answers (0,3), and '(?:a\\K)*ab' on \"aaab\" answers (3,4) where PCRE2 answers (2,4)"
-SAB_DOC_FIGURE="codegen 1 fail / 55 pass ([M6.2-KRESET rule 1], naming the direct stv[0] write); tests/assertions/kreset.rxt 6 fail / 575 pass -- the two UNDO families only"
+SAB_DOC_FIGURE="codegen 1 fail / 55 pass ([M6.2-KRESET rule 1], naming the direct stv[0] write); tests/assertions/kreset.rxt 6 fail -- the two UNDO families only"
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)pos",
                "\\K resets the reported start of the match to here");'

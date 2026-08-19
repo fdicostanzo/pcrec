@@ -191,6 +191,14 @@ every oracle exclusion has an entry there.
   all seven of the module's other constructs — `\Ga\Kb` being the sharpest,
   the only pattern carrying both constructs that need something from outside
   `(s, n, pos)` — and the grammar refusals with the module enabled.
+  Section 11 is the file's own capacity witness and exists for a sabotage:
+  `\K` is the only member of this module that is NOT free to `vm_cost` (its
+  write is a trail entry), and the shallow cells cannot see a missing charge
+  because a one-write pattern fits the capacity anyway. `(?:a\K){0,10}ab`
+  declares 13 trail entries and, with the charge removed, declares 3 and
+  returns `PCREC_ERR_FRAMES` from eleven `a`s onward. The subjects there are
+  chosen to EXCEED the repeat's count rather than to be long — sabotage S87,
+  which `codegen` cannot see at all.
   `ms`/`ns` cells throughout, for a THIRD reason after wave B's and wave D's:
   the reported start is the one quantity `\K` can move and a nonzero startpos
   also moves, so a cell at startpos > 0 is what distinguishes "the VM reported

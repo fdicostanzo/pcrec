@@ -624,7 +624,7 @@ c"` from `(0,3)` into `(0,1)`, and
   **2,462 have the consumed length differing from the reported span's width**
   and 0 returned the width; the find-all loop agreeing span for span with
   libpcre2 driven through the SAME §3.1 loop, including the empty-reported-span
-  arm `\K` is what makes reachable; tests/assertions/kreset.rxt **581 cases,
+  arm `\K` is what makes reachable; tests/assertions/kreset.rxt **596 cases,
   0 pending**, every expectation libpcre2-produced; four `[M6.2-KRESET]`
   structural checks; sabotages S85/S86 and one new mech arm.
   **§6.3 RULE 3's PROPOSED CURE WAS NOT NEEDED, and this is the wave's

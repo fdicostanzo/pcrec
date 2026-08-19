@@ -827,9 +827,9 @@ source. That is the project's oldest recurring shape, and finding it inside the
 directory that exists to prevent it is the second time that has happened
 (compare the S19 expected-UNDETECTED account above).
 
-## [M6.2 wave E] S85-S86, one new arm, and a row that FIRES IN BOTH LAYERS
+## [M6.2 wave E] S85-S87, one new arm, and THREE ROWS WITH DISJOINT SYMPTOMS
 
-Two rows for `\K`, running the new `kresetdiff` arm
+Three rows for `\K`, running the new `kresetdiff` arm
 (tests/assertions/run_kreset_diff.sh) alongside `codegen` and `harness`. Its
 own arm for this matrix's standing reason, plus one specific to it: it is the
 only instrument in the tree that asks libpcre2 the MATCH-HERE question — via
@@ -853,13 +853,13 @@ comparison — which is why both of them are visible in the corpus as well.
   Under the hybrid, `caps_out`'s `start` argument IS `win[0][0]`, the reverse
   pass's answer, so forcing the pre-wave arm makes every `\K` artifact report
   where matching BEGAN. **MEASURED: `codegen` 1 fail / 55 pass, `kreset.rxt`
-  198 fail / 383 pass.**
+  198 fail / 383 pass (before section 11 grew it).**
 - **S86 writes `stv[0]` DIRECTLY instead of through `<PREFIX>_SET`**, so the
   write is never trailed and cannot be undone. **MEASURED: `codegen` 1 fail /
-  55 pass, `kreset.rxt` 6 fail / 575 pass** — and the SIX is the number worth
+  55 pass, `kreset.rxt` 6 fail / 575 pass (before section 11 grew it)** — and the SIX is the number worth
   reading. A wrong-PROVENANCE bug is wrong nearly everywhere; a missing-UNDO
   bug is wrong only where a `\K` is crossed on a path that then LOSES, which
-  is six cases in a 581-case corpus. That is the argument for writing those
+  is six cases in the corpus. That is the argument for writing those
   two families deliberately rather than trusting a subject sweep to wander
   into them, and it is why the two rows are separate: their symptoms inside
   `[M6.2-KRESET rule 1]` are DISJOINT (S85 fires the "does not read the slot"
@@ -867,4 +867,28 @@ comparison — which is why both of them are visible in the corpus as well.
   branch and leaves `caps_out` correct), so one row exercising both would let
   either branch rot behind the other.
 
-Validate with `bash tests/mech/run_sabotage_matrix.sh S85` and `S86`.
+- **S87 returns the zero Cost from `vm_cost`'s A_KRESET arm**, so the
+  artifact's `trail_frames` is short by one entry per `\K` on the deepest
+  path. Nothing is emitted differently and no answer changes: the artifact
+  simply declares an array too small for the program beside it and returns
+  `PCREC_ERR_FRAMES` on a pattern it can match. **MEASURED: `codegen` 0 fail /
+  56 pass — ALL FOUR `[M6.2-KRESET]` checks stay green — and `kreset.rxt` 33
+  fail / 563 pass.** It is the only one of the three the structural checks
+  cannot see, and the reason is that they read emitted TEXT while this defect
+  is in a NUMBER the emitter computed correctly and then under-declared.
+  **Its population had to be BUILT.** `a\Kb` still compiles and still answers
+  under it — one write fits the capacity anyway — and a subject chosen for
+  LENGTH rather than for exceeding the repeat's COUNT never fills the trail
+  either. `tests/assertions/kreset.rxt` section 11 exists for this row and
+  says so in its own header; without it the count is 25 rather than 33, and
+  the cells that fail would be section 4's loops reaching the bound
+  incidentally rather than cells written to reach it.
+
+**THE THREE SYMPTOMS ARE DISJOINT, which is why this is three rows and not
+one edit with three halves.** S85 fires `[M6.2-KRESET rule 1]`'s "does not
+read the trailed slot" branch and leaves the write correct; S86 fires the
+same check's "writes stv[0] directly" branch and leaves `caps_out` correct;
+S87 fires neither and is seen only by the corpus. Merging any two would let
+the third's branch rot behind it.
+
+Validate with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.
