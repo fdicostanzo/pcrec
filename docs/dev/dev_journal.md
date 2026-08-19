@@ -10882,3 +10882,41 @@ this session). If the session survives: merge repair, battery+gate,
 then the D27 blinded corpus and the close per wake.md's checklist; if
 not, wake.md IS the handoff and the D27 corpus is next session's FIRST
 work, owed for the close.
+
+## 2026-08-19 (EDT), thirty-fourth session (part 6) — REPAIR SLICE merged; [M6.2] one item from close; session ends on Frank's token ceiling
+
+Merge 6da4ba5. K28 CLOSED — and the entry named ONE warning site where
+there were THREE (<prefix>_match, _match_caps, the emitted main(); the
+latter two hidden because -Werror stops at the first report); fix is
+caps initialization (the restructure option MEASURED unavailable);
+clean at all five opt levels + both sanitizer axes; six corpus
+spellings reinstated (corpus 20,242 -> 20,533, the only count that
+moved). KNOBS RE-PLACED — and the manager's brief prescription was
+MEASURED INSUFFICIENT for 3 of 4 knobs before anything was written
+(\b/(?m) refine the ALPHABET, \z interns a STATE; an emitter-only knob
+leaves S71 as blind as the flag pin, 1186/1186). Landed as TWO halves
+per knob (analysis-action + emitter decision points); S69/S71/S76 all
+canon-DETECTED via BYTES with the corpus fully green, the incidental
+orphaned-parameter detection path removed. ITEM 3 REFUTED: the
+generated compliance index's status is a RegStatus fact about
+PCRE2/base grammar — 34 rows of SHIPPED modules read REJECTED|planned
+identically (\d and (?i) exactly as \b) — so flipping eight rows would
+make the index inconsistent, not current; a how-to-read section landed
+instead and the REAL fix (a registry BUILT-STATUS field) is a recorded
+whole-registry design question. The stop rule's THIRD catch against a
+manager brief this session. Returned findings: SEVEN pre-existing
+drifted sabotage anchors (S08/S09/S21/S22/S26/S39/S65 — full mech
+scores them ANOMALY; invisible to by-prefix runs; audit method in
+tests/mech/CLAUDE.md); the stale-scratch measurement lesson (verify
+the tree a hand measurement was built from). Manager accepted the
+lane's pre-slice byte-neutrality number WITHOUT an independent re-run
+— recorded in the merge commit with the token ceiling as the honest
+reason.
+
+CLOSE STATE: [M6.2] is five-waves + repair merged, each close-validated
+(battery all-green + gate 13/13, archives per wave); repair's own
+battery+gate were IN FLIGHT at this entry (build/battery_repair.log,
+build/gate_repair.log — chained, auto-gate on quiet). THE SOLE
+REMAINING CLOSE ITEM: the D27 blinded corpus, deferred to next session
+FIRST per Frank's stop order. DD-4 closed in place (wave D answered
+it). plan.md carries the post-module queue. wake.md is the handoff.
