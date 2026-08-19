@@ -763,6 +763,67 @@ c"` from `(0,3)` into `(0,1)`, and
   engine looked. The find-all loop is unaffected (it advances off
   `caps[0][1]`) and the anchored entries return the CONSUMED length, which is
   what makes the D38 callout advance terminate.
+  **REPAIR SLICE LANDED 2026-08-19 (lane/repair) — the module's last code
+  lane, serialized after all five waves so the every-artifact byte churn
+  lands once.** Three chartered items; two done as chartered, ONE REFUTED.
+  (1) **K28 CLOSED.** The `<prefix>_match` wrapper's `caps` array is
+  INITIALIZED in `src/gen/emit_dfa.c`. The entry's other suggestion —
+  restructure so gcc sees the dominance — was tried FIRST and MEASURED not to
+  work: splitting the `||` into two `if`s leaves the `-O1` report exactly
+  where it was. **THE ENTRY NAMED ONE SITE AND THERE WERE THREE**:
+  `<prefix>_match`, `<prefix>_match_caps` and the standalone `main()` all
+  emit the same declaration and all three warn; the second and third were
+  invisible because `-Werror` stops at the first report, and no corpus header
+  or known-issue text had ever mentioned them. Clean at `-O0`/`-O1`/`-O2`/
+  `-O3`/`-Os` (all five, so the report was not traded to another level) and
+  under both sanitizer GENCFLAGS paths; `RX_NCAPS > 1` artifacts raise no
+  `-Wmissing-braces`. THE SIX EXCLUDED CORPUS SPELLINGS ARE BACK, oracle-
+  verified against libpcre2 (`^\Bfoo` `^\Bo` `^a\bb` +216 cells,
+  `a(?m)^b` +45, `a\Gb` `x\G` +30); each was re-verified FAILING on the
+  pre-slice compiler at the harness's exact GENCFLAGS and CLEAN on the fixed
+  one, so the reinstatement is evidence rather than assertion. The live
+  sibling-branch equivalents STAY.
+  (2) **THE A/B/C REFERENCE KNOBS RE-PLACED — AND "MOVE THEM TO THE EMITTER"
+  IS NOT WHAT WORKED.** Wave D's finding says a knob sharing a source with
+  the sabotaged code cancels, and prescribes wave D's own emitter placement
+  as the cure. MEASURED BY THIS SLICE BEFORE IT WROTE ANYTHING: an
+  emitter-only knob leaves S71 at **1186/1186 `\b`-free artifacts
+  byte-identical**, i.e. exactly as blind as the flag pin. The reason is
+  which STAGE decides the emitted text — `\G` refines no alphabet and interns
+  no state the emitter cannot neutralize, but `\b`/`(?m)` refine the ALPHABET
+  and `\z` interns a STATE, and no emitter branch can un-refine a partition.
+  Each knob now has TWO halves: a `#ifndef` around the ANALYSIS'S ACTION
+  (`eqclasses`' refinement, `make_state`'s interning — uncancellable by an
+  edit to the action's own gate, which is exactly what S71/S76 are) AND an
+  emitter half at the decision points. After both: **S71 moves 1178 of
+  1186**. `-DPCREC_NO_ENDVAR` was ALREADY at its action and did not move; S69
+  is red on its gate for its documented reason. The emitter half is
+  byte-neutral in a shipped build, measured at 1,261/1,261 corpus artifacts
+  identical against the pre-slice compiler. The durable rule, recorded in
+  tests/mech/CLAUDE.md: **wrap the ACTION, never the FLAG.**
+  (3) **THE COMPLIANCE FLIP WAS NOT DONE, AND THE FINDING'S PREMISE IS THE
+  REASON.** Wave E's finding (7) above reads the generated index's
+  `REJECTED | planned` on the eight `assertions` rows as staleness specific
+  to this module. MEASURED (`pcrec --list-syntax`, counted by module): **34
+  rows of that index name a module that is SHIPPED — `classes` 12,
+  `modifiers` 12, `assertions` 7, `named-groups` 3 — and every one reads
+  `REJECTED | planned`.** `\d` and `(?i)` are marked exactly as `\b` is.
+  The index's `status` is `RegStatus`, a fact about PCRE2 and pcrec's BASE
+  grammar ("the base grammar does not implement this; `module` names what
+  does"); there is no "the owning module is built" value to flip TO, and
+  `RS_BASE` would be false (these need `--features assertions`), would break
+  the `RS_BASE => ROADMAP_NONE` pairing `registry_check` enforces, and would
+  delete the module name from the gate-CLOSED diagnostic `tests/reject`'s
+  rows assert. Flipping only these eight would make the index INCONSISTENT
+  rather than current. So none of the four named consumers moved and no count
+  was re-baselined. What landed instead is a "How to read the generated index
+  below" section in `docs/pcre2_compliance.md`, carrying the measurement and
+  the note that the shipped status lives in the PROSE rows by design
+  (`compliance_section.py`: "the inventory is generated and the analysis is
+  not"). **RE-HOMED AS A DESIGN QUESTION FOR THE MANAGER**: giving the
+  registry a built-status field so the index can answer "does this compile
+  today" is a real, small, WHOLE-REGISTRY change — not a per-module repair —
+  and it is now the only thing left of this item.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here
