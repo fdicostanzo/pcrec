@@ -585,3 +585,85 @@ ms 2 "aab" 2 3
 ns 3 "aab"
 m "b" 0 1
 ns 1 "b"
+
+
+# ======================================================================
+# 8. THE BARE-ANCHOR RULE ACROSS ALL FOUR GROUP SPELLINGS — cells for a
+# LIVE WAVE-B OVER-REJECTION this wave found while adding its own node
+# kind, not for `\G`.
+#
+# PCRE2 refuses a quantified BARE zero-width assertion (`\b*` is error
+# 109) and accepts a quantified GROUP around one (`(\b)*` compiles to
+# (0,0)). pcrec drove that from FOUR hand copies of one node-kind set —
+# `try_quant`, `p_group_body`, mod_modifiers.c's `(?i:...)` port and
+# mod_named_groups.c's declaring port — and wave B added `\b`/`\B` to two
+# of them. It is now ONE predicate (`pcrec_is_bare_anchor`) with four
+# readers, which is a tier-2 over-rejection fixed and the several-homes
+# drift D24's registry exists to prevent one level up.
+#
+# **THE TWO STALE COPIES WERE NOT EQUALLY REACHABLE, AND THAT WAS MEASURED
+# RATHER THAN ASSUMED** — this section's own first draft claimed both were
+# live on the default path and was wrong about one of them:
+#
+#   mod_modifiers.c's copy IS live on the default path. Pre-fix,
+#   `(?i:\b)*`, `(?i:\B)*` and `(?i:\G)*` are all REFUSED where libpcre2
+#   gives (0,0). Those three rows are the fix's failing direction, and they
+#   are the reason this section exists.
+#
+#   mod_named_groups.c's copy is reachable ONLY under `--no-captures`,
+#   because a named group wraps its body in `A_CAP` and an `A_CAP` is not a
+#   bare anchor — so at default captures the quantifier lands on the
+#   wrapper and the stale copy never decides anything. Pre-fix,
+#   `(?<n>\b)*` COMPILES at default captures and REFUSES under
+#   `--no-captures`. No `.rxt` block can pass that flag, so that half's
+#   failing direction lives in run_assertions_tests.sh and the rows here
+#   are coverage.
+#
+# The `(?i:\z)*` row is the CONTROL — accepted before this wave and
+# required to stay accepted, so a "fix" that widened the wrong way moves
+# it too.
+# ======================================================================
+
+# pcre2-only
+pattern (?i:\b)*
+features assertions,modifiers
+m "ab" 0 0
+m "" 0 0
+
+# pcre2-only
+pattern (?i:\B)*
+features assertions,modifiers
+m "ab" 0 0
+m "" 0 0
+
+# pcre2-only
+pattern (?i:\G)*
+features assertions,modifiers
+m "ab" 0 0
+m "" 0 0
+
+# CONTROL: accepted before this wave, and must stay accepted.
+# pcre2-only
+pattern (?i:\z)*
+features assertions,modifiers
+m "ab" 0 0
+m "" 0 0
+
+# pcre2-only
+pattern (?<n>\b)*
+features assertions,named-groups
+m "ab" 0 0
+m "" 0 0
+
+# pcre2-only
+pattern (?<n>\G)*
+features assertions,named-groups
+m "ab" 0 0
+m "" 0 0
+
+# CONTROL, the named-groups side.
+# pcre2-only
+pattern (?<n>\A)*
+features assertions,named-groups
+m "ab" 0 0
+m "" 0 0

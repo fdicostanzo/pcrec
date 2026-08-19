@@ -145,6 +145,19 @@ PATSPEC=(
     "partial:x|\\Gy"
     "partial:\\Gab|b"
     "partial:\\G[ab]+|xx"
+    # THE D63-PREFILTER POPULATION, and its absence was a real gap. Sabotage
+    # S82 (the prefilter bounded at `start > 0` instead of `start > startpos`)
+    # is reachable ONLY by a pattern carrying BOTH a `(?m)^` branch — which is
+    # what makes the candidate set narrow enough to emit a memchr — and a `\G`
+    # branch, which is what puts a live state at `start == startpos` that the
+    # derivation never looked at. The first draft of this sweep had neither
+    # spelling, so S82 scored `gstartdiff: 0 fail` against a sabotage that
+    # loses matches, and only tests/assertions/gpos.rxt section 5 caught it.
+    # A sweep that does not contain the shape its own soundness bound protects
+    # is the population failure S48 and S78 both record, one instrument over.
+    "partial:(?m)^a|\\Gb"
+    "partial:\\Ga|(?m)^b"
+    "partial:\\Gxy|(?m)^ab"
     "dead:a\\Gb"
     "dead:x\\G"
     "dead:ab\\Gc"

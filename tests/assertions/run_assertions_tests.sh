@@ -174,6 +174,39 @@ for p in '(?m)a$' '(?m:a$)' '(?m)^a'; do
 done
 
 # ---------------------------------------------------------------------------
+# 2b. [M6.2 wave D] THE BARE-ANCHOR RULE'S `--no-captures` HALF
+# ---------------------------------------------------------------------------
+# PCRE2 refuses a quantified BARE zero-width assertion (`\b*` is error 109)
+# and accepts a quantified GROUP around one (`(\b)*` compiles to (0,0)).
+# pcrec drove that from FOUR hand copies of one node-kind set and wave B added
+# `\b`/`\B` to two of them; wave D made it ONE predicate
+# (`pcrec_is_bare_anchor`, src/parse/parse.c) with four readers.
+#
+# **THIS BLOCK EXISTS FOR THE HALF NO `.rxt` FILE CAN REACH.**
+# tests/assertions/gpos.rxt section 8 carries the `(?i:...)` spellings, which
+# are over-rejected on the DEFAULT path and are that fix's failing direction.
+# mod_named_groups.c's stale copy is reachable only under `--no-captures`, and
+# the reason is worth knowing rather than working around: a named group wraps
+# its body in `A_CAP`, an `A_CAP` is not a bare anchor, so at default captures
+# the quantifier lands on the wrapper and the stale copy never decides
+# anything. MEASURED on a pre-fix build: `(?<n>\b)*` COMPILES at default
+# captures and REFUSES under `--no-captures`. The `.rxt` format has no way to
+# pass that flag (`flags` maps `i` and nothing else), so the assertion lives
+# here.
+#
+# The `\A` row is the CONTROL: it was accepted before this wave under BOTH
+# capture modes, so a "fix" that widened the wrong way moves it.
+for p in '(?<n>\b)*' '(?<n>\B)*' '(?<n>\G)*' '(?<n>\A)*'; do
+    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
+    if "$PCREC" --features assertions,named-groups --no-captures -p rx \
+                -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+        ok "[assertions] '$p' COMPILES under --no-captures — the bare-anchor rule has ONE home, and this is the only path that reaches mod_named_groups.c's former copy of it"
+    else
+        bad "[assertions] '$p' should compile under --no-captures (libpcre2 gives (0,0)): $(cat "$WORKDIR/e.txt")"
+    fi
+done
+
+# ---------------------------------------------------------------------------
 # 3. THE D47.5 EXEMPTION, THROUGH THE ARTIFACT'S OWN STAMP
 # ---------------------------------------------------------------------------
 echo
