@@ -1744,12 +1744,14 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * second. */
     bool acc2 = dfa_has_clsacc(d);
     bool seed = dfa_needs_seed(d);
-    /* [M6.2 wave D] TWO independent questions, and conflating them emits a
-     * constant where a table belongs — see the `gseed` table below. `gseed`
-     * is "does `start == startpos` differ from `start > startpos` at all";
-     * `gtbl` is "does the `\G` family itself vary with the context byte". */
+    /* [M6.2 wave D] TWO questions, not one. `gseed` is "does
+     * `start == startpos` differ from `start > startpos` at all"; `gtbl` is
+     * "does the `\G` family itself vary with the context byte". Both are
+     * needed — `\G\bfoo|bar` has one live interior state for
+     * `start > startpos` and three for `start == startpos`, so a single flag
+     * emits a constant where a table belongs. */
     bool gseed = dfa_needs_gseed(d);
-    /* `gtbl` is a REFINEMENT of `gseed`, never independent of it, and the
+    /* But `gtbl` is a REFINEMENT of `gseed`, never independent of it, and the
      * `&& gseed` is load-bearing rather than defensive. On a `\G`-free
      * machine `s1g[] == s1u[]` entry for entry, so the loop below answers
      * exactly what `dfa_needs_seed` answers — true on every `\b` and `(?m)`

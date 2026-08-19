@@ -299,8 +299,15 @@ FA_PATS=('\G\w+' '\G[ab]+' '\Gfoo' '\G' '\Gfoo|bar' '\Ga|b' '[ab]+' '\w+')
 fa_diff=0; fa_cells=0
 : > "$WORKDIR/fadiffs.txt"
 fi_n=0
+# The named cell below addresses two of these artifacts by DIRECTORY, and the
+# directories are recorded here as the loop builds them rather than derived
+# from a hardcoded index. An index would still fail loudly if FA_PATS were
+# reordered (the expected span lists would not match), but it would fail
+# saying the wrong thing.
+declare -A FA_DIR
 for pat in "${FA_PATS[@]}"; do
     d="$WORKDIR/fa$fi_n"; fi_n=$((fi_n + 1))
+    FA_DIR["$pat"]="$d"
     if ! gen "$d" fa "$pat"; then
         bad "find-all: could not build an artifact for '$pat': $(head -2 "$d/err")"
         continue
@@ -344,8 +351,8 @@ fi
 # not. If the two ever produce the same list, `\G` has stopped meaning
 # anything under the loop and every cell above is still green.
 printf 'ab ab ab' > "$WORKDIR/tok"
-tokg="$("$WORKDIR/fa1/t" "$WORKDIR/tok" 2>/dev/null)"
-tokp="$("$WORKDIR/fa6/t" "$WORKDIR/tok" 2>/dev/null)"
+tokg="$("${FA_DIR['\G[ab]+']}/t" "$WORKDIR/tok" 2>/dev/null)"
+tokp="$("${FA_DIR['[ab]+']}/t" "$WORKDIR/tok" 2>/dev/null)"
 if [ "$tokg" = "0,2" ] && [ "$tokp" = "0,2 3,5 6,8" ]; then
     ok "§1 named cell: \`\\G[ab]+\` on \"ab ab ab\" reports ONLY \"$tokg\" (it stops at the first gap) where the \\G-free \`[ab]+\` reports \"$tokp\" — the tokenizer/scanner distinction, which is the whole content of §4.3"
 else
