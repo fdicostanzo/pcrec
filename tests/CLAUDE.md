@@ -186,15 +186,18 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   factoring). Part of `make test` as `make test-altcls`. See its own
   CLAUDE.md for why the differential's engine choice differs from every
   other deny-family suite's.
-- **`assertions/`** — module `assertions` ([M6.2]), WAVES A, B AND C so far:
-  `\A`, `\Z`, `\z`, `\b`, `\B` and `(?m)`. **The one directory in the tree
+- **`assertions/`** — module `assertions` ([M6.2]), WAVES A, B, C AND D so
+  far: `\A`, `\Z`, `\z`, `\b`, `\B`, `(?m)` and `\G`. **The one directory in the tree
   whose ORACLE RULE differs from the project default, and the reason is
-  measured — TWICE**: python `re`'s `\Z` IS PCRE2's `\z` (python has no
-  single escape for PCRE2's `\Z` at all), and python's multiline `^` matches
-  after a newline that ENDS the string while PCRE2's does not. Both disagree
+  measured — THREE TIMES, in three DIFFERENT ways**: python `re`'s `\Z` IS
+  PCRE2's `\z` (python has no single escape for PCRE2's `\Z` at all), python's
+  multiline `^` matches after a newline that ENDS the string while PCRE2's
+  does not, and python has no `\G` AT ALL (wave D, U11c — a total exclusion
+  rather than a wrong or different answer). The first two disagree
   in the silent direction — no match, a shorter span, or a match PCRE2 does
   not report — so every `\Z` block and every `(?m)`-with-`^` block carries
-  `# pcre2-only`, WHOLESALE rather than per diverging cell, and
+  `# pcre2-only`, WHOLESALE rather than per diverging cell; every `\G` block
+  carries it because there is nothing for python to answer at all, and
   `verify_pcre2.py` re-verifies the whole directory against libpcre2 on every
   run, through `tests/fuzz/pcre2_oracle` and `tests/harness/verify_rxt.py`'s
   own parser (one libpcre2 access path, one `.rxt` parser). `\A`, `\z`,
@@ -208,9 +211,21 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   state budget refusing rather than miscompiling. `run_mline_diff.sh` is the
   wave C differential — a generated subject sweep over the `(?m)$` family
   against libpcre2 on both engines, with its own population claim checked.
-  See its own CLAUDE.md, and docs/dev/upstream_issues.md U11 and U11b
+  `run_gstart_diff.sh` is wave D's, and it is the SECOND place in the tree
+  that drives docs/spec/match_api.md §3.1's find-all loop (see `encseam/`
+  below) — here against libpcre2 driven through the SAME loop, which is where
+  `\G` gets its "contiguous with the previous match" meaning — plus the only
+  comparison anywhere of the two ENTRIES of a single artifact. **Wave D's
+  oracle exclusion is a THIRD kind**: python answers a `\Z` cell WRONGLY and a
+  `(?m)^` cell DIFFERENTLY, but it has no `\G` at all (`re.error: bad escape
+  \G`), so `gpos.rxt` is `# pcre2-only` in its entirety and wave C's
+  python-validates-the-plumbing arm had to be re-pointed at the sweep's own
+  `\G`-free control patterns.
+  See its own CLAUDE.md, and docs/dev/upstream_issues.md U11, U11b and U11c
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
-  and the only one in the tree that runs a find-all LOOP:
+  and the first in the tree to run a find-all LOOP (wave D's
+  `assertions/run_gstart_diff.sh` is the second, and its driver is
+  TRANSCRIBED from this one rather than re-interpreted):
   docs/spec/match_api.md §3.1's protocol, compiled against real artifacts
   and run, advancing through the `<prefix>_next_pos` encoding residual, on
   BOTH engines (every case compiled captures-on and `--no-captures`).
