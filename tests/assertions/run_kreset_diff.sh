@@ -591,6 +591,40 @@ else
     head -20 "$WORKDIR/fadiffs.txt" >&2
 fi
 
+# =========================================================================
+# §6  `--no-captures` STILL REPORTS THE `\K` START
+# =========================================================================
+# NAMED, because the two options sound like they conflict and they do not.
+# `--no-captures` is the generation axis that drops GROUP slots (RX_NCAPS 1,
+# D42.1's inverse); the WHOLE-MATCH span is not a group and is delivered on
+# every artifact. So a `\K` pattern compiled `--no-captures` is still
+# VM-forced — `\K` is not a capture, it changes what is REPORTED — and still
+# reports the post-`\K` start.
+#
+# It is asserted here rather than in the corpus because no `.rxt` block can
+# pass the flag (`flags` maps `i` and nothing else), which is the same reason
+# run_assertions_tests.sh §2b exists one construct family over. And it is
+# asserted in BOTH halves: that the engine is still the VM (a build that let
+# `--no-captures` route a `\K` pattern to the DFA would have to drop the
+# construct silently) and that the ANSWER is still libpcre2's.
+d="$WORKDIR/nocap"
+if gen "$d" rx 'a\Kb' --no-captures \
+   && $CC -O2 -I"$d" -o "$d/t" "$ROOT_DIR/tests/fuzz/fuzz_driver.c" "$d/gen.o" 2>>"$d/err"; then
+    eng=$(grep -m1 '#define RX_ENGINE ' "$d/gen.c" | sed 's/.*"\(.*\)".*/\1/')
+    printf 'ab' > "$WORKDIR/ncsubj"
+    got="$("$d/t" "$WORKDIR/ncsubj" 0 2>/dev/null)"
+    want="$("$ORACLE" 'a\Kb' "$WORKDIR/ncsubj" 0 2>/dev/null | awk '{print $1, $2, $3}')"
+    if [ "$eng" != "vm" ]; then
+        bad "§6 --no-captures: 'a\\Kb' compiled to engine '$eng', not the VM. \\K is not a capture — dropping group slots cannot make its reported start derivable on the DFA, so this artifact has lost the construct"
+    elif [ "$got" != "$want" ]; then
+        bad "§6 --no-captures: 'a\\Kb' on \"ab\" gave [$got], libpcre2 gives [$want]. The whole-match span is not a group; --no-captures must not touch it"
+    else
+        ok "§6 --no-captures: 'a\\Kb' still routes to the VM and still reports the post-\\K start ($got) — the flag drops GROUP slots, and the whole-match span is not a group"
+    fi
+else
+    bad "§6 --no-captures: could not build the 'a\\Kb' --no-captures fixture: $(head -3 "$d/err")"
+fi
+
 echo
 echo "== Summary =="
 echo "  §1 sweep     patterns $npat  subjects $NSUBJ  default cells $ncells  vm cells $nvm  divergences $ndiff  oracle-skipped $nskip"

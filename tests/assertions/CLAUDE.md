@@ -216,10 +216,17 @@ every oracle exclusion has an entry there.
   plausible pair and miss the one an entry deriving its return from `caps`
   gets wrong.
 - **run_kreset_diff.sh** — [M6.2] WAVE E's behavioural instrument, run by
-  `make test-assertions`. Four sections: the subject sweep on both engines
-  with startpos taking EVERY value in `[0, n]`; THE THREE ENTRIES against
-  libpcre2; the ADVANCE property by name; and the `--engine=dfa` refusal in
-  both directions.
+  `make test-assertions`. Six sections: the subject sweep on both engines with
+  startpos taking EVERY value in `[0, n]`; THE THREE ENTRIES against libpcre2;
+  the ADVANCE property by name; the `--engine=dfa` refusal in both directions;
+  docs/spec/match_api.md §3.1's FIND-ALL LOOP against libpcre2 driven through
+  the same loop — the empty-reported-span arm `\K` is what makes reachable,
+  with the population counted from the ORACLE so pcrec cannot vouch for its
+  own coverage; and `--no-captures`, which sounds like it conflicts with `\K`
+  and does not (the flag drops GROUP slots, the whole-match span is not a
+  group, so the artifact is still VM-routed and still reports the post-`\K`
+  start). No `.rxt` block can pass that flag, which is the same reason
+  `run_assertions_tests.sh` §2b exists one construct family over.
   **ITS ORACLE FOR THE MATCH-HERE ENTRIES IS `\G`, and that is the idea the
   script turns on.** `tests/fuzz/pcre2_oracle` has no anchored mode, so there
   is no flag with which to ask libpcre2 "does this match AT offset sp" — but
