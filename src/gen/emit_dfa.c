@@ -1153,7 +1153,24 @@ static bool attempt_cand(const Dfa *d, CandSet *cs)
     for (int u = 0; u < UPC_N; u++) if (d->s1u[u] >= 0) anchored = false;
     if (d->n == 0 || anchored) return false;
     cand_from_live_seeds(cs, d);
-    return cs->usable;
+    /* THE MEMCHR FORM ONLY, and that is a deliberate scope line rather than an
+     * oversight. D63 charters the derivation as a tool and says to build ONLY
+     * the `(?m)^` instance now; MEASURED against today's construct set, that
+     * instance's candidate set is always a SINGLE byte — a seeded start state
+     * is dead only when all three of its class views are empty, which `(?m)^`
+     * achieves (nothing passes without a newline to the left) and `\b`/`\B`
+     * structurally cannot (their truth needs BOTH sides, so some view always
+     * survives). So the bitmap loop integration would be EMITTED CODE NO
+     * PATTERN REACHES, and shipping an untested emitted loop is worse than
+     * shipping none.
+     *
+     * The DERIVATION still handles the bitmap case (`cand_derive` computes it
+     * and `cand_emit_table` emits it — ENG_UNANCH's caller uses exactly that
+     * path today), so D63's next instance adds a LOOP, not a second
+     * derivation. D8's `^`-on-some-branches shape is that instance: its
+     * candidate set is a first-byte set at offset 0, which is both multi-byte
+     * and a different bound, and D63 gates it on its own measurement. */
+    return cs->usable && cs->use_memchr;
 }
 
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
@@ -1732,7 +1749,6 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * Derived by the shared helper; only the LOOP INTEGRATION is here. */
     CandSet cand;
     bool cpre = attempt_cand(d, &cand);
-    if (cpre && !cand.use_memchr) cand_emit_table(c, p, "cand", &cand);
 
     /* anchored fast path (M2.1): if every interior start state is dead, every
      * branch requires ^, so only start == 0 can ever match.
@@ -1768,7 +1784,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * positions within a scan, and an attempt records nothing until it
          * runs.
          *
-         * BOTH ARMS READ `s[start - offset]`, IN RANGE BECAUSE `offset >= 1`
+         * THE GUARD READS `s[start - offset]`, IN RANGE BECAUSE `offset >= 1`
          * here: a predecessor-byte candidate set (D63's one new case) and
          * `start > 0` together put that read at `start - 1 <= n - 1`. A
          * future ENG_ATTEMPT caller with `offset == 0` would be reading
@@ -1781,21 +1797,14 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * visiting every offset, and this is what removes it. The quadratic
          * crossing arm (§3.7.1) is NOT rescued and D63 accepts that —
          * DD-7's reverse BOT variant is the sequenced fix. */
-        if (cand.use_memchr) {
-            sb_printf(c, "        if (start > 0 && s[start - %d] != %d) {\n"
+        sb_printf(c, "        if (start > 0 && s[start - %d] != %d) {\n"
                          "            const void *q = memchr(s + start, %d, "
                          "n - start);\n"
                          "            if (!q) break;\n"
                          "            start = (size_t)"
                          "((const unsigned char *)q - s) + %d;\n"
                          "        }\n",
-                      cand.offset, cand.byte, cand.byte, cand.offset);
-        } else {
-            sb_printf(c, "        while (start > 0 && start <= start_max &&\n"
-                         "               !%s_cand[s[start - %d]]) start++;\n"
-                         "        if (start > start_max) break;\n",
-                      p, cand.offset);
-        }
+                  cand.offset, cand.byte, cand.byte, cand.offset);
     }
     sb_puts(c, "        size_t pos = start;\n"
                "        size_t last = (size_t)-1;\n");
