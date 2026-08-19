@@ -397,6 +397,22 @@ c"` from `(0,3)` into `(0,1)`, and
   The cost of DECLINING is measured too: exactly ZERO on the pre-wave corpus
   (the eligibility test is false at every state) and non-zero on the `(?m)$`
   family, accepted and recorded rather than priced away.
+  **THE `(?m)^` COST, MEASURED ON THE BUILT COMPILER AND ARCHIVED**
+  (`assertions_measurements/out/mline_caret_cost.txt`; the [M6.1] probe gained
+  a wave-C arm that runs the REAL construct instead of the stand-ins it had to
+  use when the letter was refused):
+  - NON-CROSSING arm, the one D63's prefilter is for: `(?m)^ERROR` against
+    its unprefiltered stand-in `^ERROR|\nERROR` reads **3x / 7x / 7x** at
+    n = 8k/32k/128k. What is LEFT against a plain unanchored `ERROR` is
+    **82x / 33x / 27x** — so the design's 85-185x target is closed to roughly
+    27-33x at settled n, not to nothing, and that residual is the honest
+    number rather than the headline.
+  - CROSSING arm, D63's accepted residue: `(?m)^[^b]*b` still grows
+    **3.98x / 3.99x / 3.98x / 4.01x per doubling** — the O(n^2) signature,
+    unrescued exactly as D63 says. Its ratio against the stand-in is
+    **1.00-1.01x** at settled n, which incidentally confirms the [M6.1]
+    stand-in was faithful: the prefilter skips nothing there because every
+    line start is already a candidate.
   EVIDENCE: tests/assertions/multiline.rxt, every expectation libpcre2-
   produced, re-verified by BOTH oracles on every run;
   tests/assertions/run_mline_diff.sh, a generated subject sweep over the

@@ -2595,7 +2595,19 @@ wave that lands it. If Wave B wants the machinery early it must carry a
   O(n²) in the plan row as shipped behaviour.
 
 > **[M6.2] WAVE C LANDED, 2026-08-19 (lane/asrtwavec).** All of the above
-> discharged; the four inline annotations that correct or extend this section
+> discharged. **THE `(?m)^` COST, AS A NUMBER** — this probe re-run against
+> the built compiler, with a wave-C arm that runs the REAL construct rather
+> than the stand-ins §3.7.1 had to use (`out/mline_caret_cost.txt`):
+> `(?m)^ERROR` beats its unprefiltered stand-in by **3x / 7x / 7x** at
+> n = 8k/32k/128k, leaving **82x / 33x / 27x** against a plain unanchored
+> `ERROR` — so §3.7.2's 85-185x target closes to roughly 27-33x at settled n
+> rather than to nothing. The crossing arm `(?m)^[^b]*b` still grows
+> **3.98-4.01x per doubling** and sits at **1.00-1.01x** of its stand-in,
+> which is D63's accepted residue AND an incidental confirmation that
+> §3.7.1's stand-in was faithful: the prefilter skips nothing there, because
+> every line start is already a candidate.
+>
+> The rest: the four inline annotations that correct or extend this section
 > are at §3.6.1 (the five mechanisms' SHIPPED postures — not one of them is an
 > intersection), §3.7 (the class axis is three-valued, `(?m)$` needs the
 > `pos == n` view, and the closure names its operands by SIDE), §3.7.2 (D63's
