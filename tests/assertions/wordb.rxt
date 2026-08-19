@@ -2787,6 +2787,24 @@ ns 8 "ab_cd ef"
 # a corpus with no `^` cells would exercise neither.
 # ====================================================================
 
+# THREE ANCHORED CELLS ARE ABSENT FROM THIS BLOCK, and the
+# omission is recorded rather than silent. `^\Bfoo`, `^\Bo`
+# and `^a\bb` are patterns that can NEVER match -- their whole
+# DFA is one dead state -- and pcrec answers them correctly, but
+# the C it emits for that shape does not survive `-Wall -Wextra
+# -Werror`: gcc inlines the always-returns-0 `<prefix>_search`
+# into `<prefix>_match` and then reports the wrapper's `caps`
+# array as maybe-uninitialized, even though the `found != 1`
+# short-circuit means it is never read.
+#
+# IT IS NOT THIS WAVE'S DEFECT. The base-tier pattern `^a^b`
+# reproduces it exactly on the pre-wave compiler (measured at
+# c23662e), with no module enabled -- the class is 'an anchored
+# pattern whose machine is entirely dead', and `\b`/`\B` merely
+# add three new spellings that reach it. The cells below are the
+# LIVE anchored equivalents, chosen so the ENG_ATTEMPT half of
+# this corpus loses no coverage; the three absent ones go back
+# the day the wrapper's warning is fixed.
 pattern ^\bfoo
 features assertions
 n ""
@@ -2862,7 +2880,7 @@ ns 6 "ab_cd ef"
 ns 7 "ab_cd ef"
 ns 8 "ab_cd ef"
 
-pattern ^\Bfoo
+pattern ^x\Bfoo
 features assertions
 n ""
 n "a"
@@ -2871,12 +2889,12 @@ n " "
 n "_"
 n "1"
 n "foo"
-n "xfoo"
+m "xfoo" 0 4
 n " foo"
 n "foo "
 n "foox"
-n "xfoofoo"
-n "xfoo foo"
+m "xfoofoo" 0 4
+m "xfoo foo" 0 4
 n "a x"
 n "ab"
 n "a b"
@@ -2892,7 +2910,7 @@ n "foobar"
 n "a-b"
 n "a\nb"
 n "foo\n"
-ns 0 "xfoo"
+ms 0 "xfoo" 0 4
 ns 1 "xfoo"
 ns 2 "xfoo"
 ns 3 "xfoo"
@@ -2902,7 +2920,7 @@ ns 1 " foo"
 ns 2 " foo"
 ns 3 " foo"
 ns 4 " foo"
-ns 0 "xfoo foo"
+ms 0 "xfoo foo" 0 4
 ns 1 "xfoo foo"
 ns 2 "xfoo foo"
 ns 3 "xfoo foo"
@@ -2911,7 +2929,7 @@ ns 5 "xfoo foo"
 ns 6 "xfoo foo"
 ns 7 "xfoo foo"
 ns 8 "xfoo foo"
-ns 0 "xfoofoo"
+ms 0 "xfoofoo" 0 4
 ns 1 "xfoofoo"
 ns 2 "xfoofoo"
 ns 3 "xfoofoo"
@@ -3087,7 +3105,7 @@ ns 6 "ab_cd ef"
 ns 7 "ab_cd ef"
 ns 8 "ab_cd ef"
 
-pattern ^\Bo
+pattern ^f\Bo
 features assertions
 n ""
 n "a"
@@ -3095,11 +3113,11 @@ n "x"
 n " "
 n "_"
 n "1"
-n "foo"
+m "foo" 0 2
 n "xfoo"
 n " foo"
-n "foo "
-n "foox"
+m "foo " 0 2
+m "foox" 0 2
 n "xfoofoo"
 n "xfoo foo"
 n "a x"
@@ -3113,10 +3131,10 @@ n "aa bb cc"
 n "ab_cd ef"
 n ".a."
 n "a.b"
-n "foobar"
+m "foobar" 0 2
 n "a-b"
 n "a\nb"
-n "foo\n"
+m "foo\n" 0 2
 ns 0 "xfoo"
 ns 1 "xfoo"
 ns 2 "xfoo"
@@ -3144,7 +3162,7 @@ ns 4 "xfoofoo"
 ns 5 "xfoofoo"
 ns 6 "xfoofoo"
 ns 7 "xfoofoo"
-ns 0 "foo"
+ms 0 "foo" 0 2
 ns 1 "foo"
 ns 2 "foo"
 ns 3 "foo"
@@ -3162,7 +3180,7 @@ ns 6 "ab_cd ef"
 ns 7 "ab_cd ef"
 ns 8 "ab_cd ef"
 
-pattern ^a\bb
+pattern ^a\b.
 features assertions
 n ""
 n "a"
@@ -3177,9 +3195,9 @@ n "foo "
 n "foox"
 n "xfoofoo"
 n "xfoo foo"
-n "a x"
+m "a x" 0 2
 n "ab"
-n "a b"
+m "a b" 0 2
 n "_a"
 n "a_"
 n "1a"
@@ -3187,9 +3205,9 @@ n "a1"
 n "aa bb cc"
 n "ab_cd ef"
 n ".a."
-n "a.b"
+m "a.b" 0 2
 n "foobar"
-n "a-b"
+m "a-b" 0 2
 n "a\nb"
 n "foo\n"
 ns 0 "xfoo"
@@ -3223,7 +3241,7 @@ ns 0 "foo"
 ns 1 "foo"
 ns 2 "foo"
 ns 3 "foo"
-ns 0 "a x"
+ms 0 "a x" 0 2
 ns 1 "a x"
 ns 2 "a x"
 ns 3 "a x"
@@ -3595,6 +3613,156 @@ ns 5 "xfoofoo"
 ns 6 "xfoofoo"
 ns 7 "xfoofoo"
 ms 0 "foo" 0 3
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\Bfoo|^x
+features assertions
+n ""
+n "a"
+m "x" 0 1
+n " "
+n "_"
+n "1"
+n "foo"
+m "xfoo" 0 1
+n " foo"
+n "foo "
+n "foox"
+m "xfoofoo" 0 1
+m "xfoo foo" 0 1
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ms 0 "xfoo" 0 1
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 1
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 1
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^a\bb|^z
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
 ns 1 "foo"
 ns 2 "foo"
 ns 3 "foo"

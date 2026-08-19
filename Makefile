@@ -262,7 +262,8 @@ test-altcls: all
 test-assertions: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/assertions/run_assertions_tests.sh' \
-	    'bash tests/codegen/run_endvar_identity.sh'
+	    'bash tests/codegen/run_endvar_identity.sh' \
+	    'bash tests/codegen/run_wordctx_identity.sh'
 
 # [M4.7b] K7's pin: what a large bounded repeat COSTS to compile, and that a
 # failed allocation is diagnosed rather than aborting the caller.
@@ -423,6 +424,7 @@ ubsan:
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
 	         tests/codegen/run_endvar_identity.sh \
+	         tests/codegen/run_wordctx_identity.sh \
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \
@@ -470,6 +472,7 @@ asan:
 	         tests/codegen/run_codegen_tests.sh \
 	         tests/codegen/run_trie_identity.sh \
 	         tests/codegen/run_endvar_identity.sh \
+	         tests/codegen/run_wordctx_identity.sh \
 	         tests/codegen/run_vm_identity.sh \
 	         tests/codegen/run_ir_listing.sh \
 	         tests/vm/run_vm_tests.sh \

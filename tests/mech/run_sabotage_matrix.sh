@@ -56,6 +56,7 @@
 #   registry  pc3  cli                — added 2026-08-12 (MOD-0.8c slice 1)
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
 #   endvaridentity  assertions         — added 2026-08-19 ([M6.2] wave A)
+#   wordctxidentity                    — added 2026-08-19 ([M6.2] wave B)
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
@@ -245,6 +246,22 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/endvaridentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/endvaridentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("endvarid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            wordctxidentity)
+                # [M6.2 wave B] the `\b`-free byte-identity gate. Its own arm
+                # rather than `endvaridentity`, for exactly the reason that one
+                # is not `codegen`: the two guard DIFFERENT constructions (a
+                # third POSITION view against `\z`, a CLASS view plus an
+                # alphabet refinement plus three start states against `\b`),
+                # they use different reference knobs, and a sabotage of one
+                # must not be reported as coverage by the other.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_wordctx_identity.sh" \
+                    > "$work/wordctxidentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("wordctxid:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

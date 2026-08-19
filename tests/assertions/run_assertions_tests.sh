@@ -73,7 +73,7 @@ fi
 # 2. THE CONTROL UNDER tests/reject's TWO-ANSWER PINS
 # ---------------------------------------------------------------------------
 echo
-echo "== [M6.2] §9.2 the wave's own three constructs are BUILT =="
+echo "== [M6.2] §9.2 the module's built constructs COMPILE, unbuilt ones refuse =="
 
 # refuses <features-or-'bare'> <pattern> <expected substring>
 refuses() {
@@ -111,17 +111,27 @@ refuses() {
 # every "not implemented yet" row over there would still pass on a build where
 # the module produces nothing at all — the row would be measuring the module's
 # absence and reporting it as the module's partial presence.
-for p in '\Aa' 'a\z' 'a\Z'; do
+#
+# [M6.2 wave B] `\b` and `\B` JOIN THIS LIST as they LEAVE tests/reject's
+# enabled-but-unbuilt list, and the two edits are one move: the day a
+# construct is built, the row asserting it is NOT built has to become the row
+# asserting it IS. A wave that only deleted the first half would shrink the
+# reject table with nothing taking over what that row was saying. Both a
+# LEADING and a TRAILING spelling of each, because the two reach different
+# machinery (the forward seed and the reverse one, assertions_design.md §3.8)
+# and a control that only ever compiled the leading form would not notice the
+# reverse half failing to build at all.
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
-        ok "[assertions] '$p' COMPILES — the wave's own three constructs are BUILT, so tests/reject's 'is not implemented yet' rows are about the unbuilt ones rather than about an empty module"
+        ok "[assertions] '$p' COMPILES — the module's built constructs are BUILT, so tests/reject's 'is not implemented yet' rows are about the unbuilt ones rather than about an empty module"
     else
         bad "[assertions] '$p' should compile with the module enabled: $(cat "$WORKDIR/e.txt")"
     fi
 done
-# ...and the same three must still REFUSE with the gate closed, which is what
+# ...and the same ones must still REFUSE with the gate closed, which is what
 # makes the line above a statement about the gate rather than about the build.
-for p in '\Aa' 'a\z' 'a\Z'; do
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
     refuses bare "$p" "requires module 'assertions'"
 done
 
@@ -152,6 +162,83 @@ want_strat '(x)a{0,4}\Z' 0x1 "\\Z is A_EOL, the same node \$ builds, so it takes
 want_strat '(x)a{0,4}$'  0x1 "the shipped non-multiline \$ exemption, unmoved by the parse-time refactor"
 want_strat '(x)a{0,4}\A' 0x2 "the FAILING DIRECTION: \\A is DOWNWARD-closed (a retreat CAN reach offset 0), so the analysis must decline"
 want_strat '(x)a{0,4}^'  0x2 "the same, spelled ^ — \\A and ^ are one node and must answer alike"
+# [M6.2 wave B] `\b`/`\B` MUST DECLINE, and this is the wave's own row in this
+# check rather than an inherited one. The exemption above rests on UPWARD
+# CLOSURE: if `$` fails at a quantifier's maximal exit it fails at every
+# smaller retreat position too, so the retreat cannot rescue a match. A word
+# boundary is closed in NEITHER direction — its truth is a property of the two
+# bytes around the position, not of the position's rank — so it belongs with
+# `^`, which widens and declines.
+#
+# The witness, in one direction: `\w{0,4}\b` on "abcd" is a boundary at the
+# maximal exit 4 (end of subject) and NOT one at the retreat position 3, so
+# `\b` holding at the top says nothing about the retreat. `\B` inverts it.
+# A wave that let `\b` inherit `$`'s arm would possessify a quantifier whose
+# retreat is the only route to the match, which is D47.5's own failure mode
+# one construct over.
+want_strat '(x)a{0,4}\b' 0x2 "\\b is closed in NEITHER direction (\\w{0,4}\\b on \"abcd\" is a boundary at the maximal exit and not at the retreat), so the analysis must decline"
+want_strat '(x)a{0,4}\B' 0x2 "\\B is \\b's complement and equally unclosed — a construct must not inherit \$'s exemption merely by being an assertion"
+
+# ---------------------------------------------------------------------------
+# 4. [M6.2 wave B] THE COMPOSED STATE BUDGET REFUSES CLEANLY
+# ---------------------------------------------------------------------------
+#
+# assertions_design.md §3.5.1 forecasts that `\b` MOVES the state budget and
+# that some patterns compiling today will refuse with it — a CAPABILITY
+# regression, accepted, and §3.5.1's own qualification 2 says so. What is not
+# accepted is a MISCOMPILE at the boundary, and the difference between the two
+# is entirely in what the compiler does when it runs out of states.
+#
+# The standing check is therefore not "the boundary is at N" (a number that
+# moves with every legitimate change to the construction, and a pin someone
+# would edit rather than think about). It is the property that survives:
+# **on both engines, a word-context pattern past the cap refuses with the
+# states-cap diagnostic and writes no output file.** The located boundary
+# itself is a MEASUREMENT and lives in
+# docs/design/assertions_measurements/out/wordctx_budget.txt, taken by
+# probes/probe_wordctx_budget.py against both caps.
+echo
+echo "== [M6.2 wave B] the composed state budget refuses, never miscompiles =="
+
+refuses_at_cap() { # refuses_at_cap <pattern> <why>
+    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
+    local err
+    if err="$("$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$1" 2>&1)"; then
+        bad "[budget] '$1' COMPILED — expected the states-cap refusal ($2)"
+        return
+    fi
+    if [ -f "$WORKDIR/out.c" ] || [ -f "$WORKDIR/out.h" ]; then
+        bad "[budget] '$1' refused but still wrote an output file"
+        return
+    fi
+    case "$err" in
+        *"too complex for the DFA engine"*)
+            ok "[budget] '$1' refuses with the states-cap diagnostic and writes nothing — $2" ;;
+        *)  bad "[budget] '$1' refused with something OTHER than the states cap, which is the failure this check exists to tell apart: $err" ;;
+    esac
+}
+
+# ENG_UNANCH, cap PCREC_MAX_DFA_STATES_TABLE (32,000). The bare form of this
+# family is §3.5.1's own worst-state-count shape.
+refuses_at_cap '\b((a)|ab){20000}c\b' \
+    "ENG_UNANCH past PCREC_MAX_DFA_STATES_TABLE"
+# ENG_ATTEMPT, cap PCREC_MAX_DFA_STATES_GOTO (10,000) — 3.2x TIGHTER, and
+# §3.4.1's disclosure is that the design's whole corpus measurement was taken
+# on the engine `^` patterns do NOT use. A wave that checked only the roomier
+# cap would be repeating that gap.
+refuses_at_cap '^\b((a)|ab){20000}c\b' \
+    "ENG_ATTEMPT past PCREC_MAX_DFA_STATES_GOTO, the 3.2x tighter cap §3.4.1 says the corpus never measured"
+# THE CONTROL, and without it the two rows above would pass on a compiler that
+# refused everything: the same family one order of magnitude smaller must
+# COMPILE, with the word context live.
+for p in '\b((a)|ab){40}c\b' '^\b((a)|ab){40}c\b'; do
+    rm -f "$WORKDIR/out.c"
+    if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+        ok "[budget] CONTROL '$p' compiles — the two refusals above are about the CAP and not about the shape"
+    else
+        bad "[budget] CONTROL '$p' should compile: $(cat "$WORKDIR/e.txt")"
+    fi
+done
 
 echo
 echo "== Summary =="
