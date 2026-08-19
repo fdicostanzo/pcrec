@@ -333,6 +333,16 @@ every oracle exclusion has an entry there.
      CLOSURE and a word boundary is closed in NEITHER direction (`\w{0,4}\b`
      on "abcd" is a boundary at the maximal exit 4 and not at the retreat 3),
      so `\b` must take `^`'s arm and not `$`'s;
+  4b. [M6.2 wave E] THE ENGINE STAMP ON A `\K` ARTIFACT, on all THREE
+     surfaces that carry it — `RX_ENGINE`, `RX_ENGINE_WHY` and
+     `rx_info.engine` — because they are produced at different places and a
+     build could get one right while another says nothing (D43 makes the
+     STRUCT canonical and keeps the macros for compile-time consumers). The
+     WHY is the interesting half: a capture-free `\K` pattern must be
+     explained as `\K`, since "capture group" would send a user to
+     `--no-captures`, which cannot help. Its control is a `\K`-free capture
+     pattern, VM-forced for the OTHER reason — without it, a build that
+     stamped `\K` on everything, or that had hardcoded the VM, would pass.
   4. [M6.2 wave B] that the COMPOSED STATE BUDGET (§3.5.1) REFUSES rather
      than miscompiling, on BOTH caps — `PCREC_MAX_DFA_STATES_TABLE` for
      ENG_UNANCH and the 3.2x tighter `PCREC_MAX_DFA_STATES_GOTO` for
