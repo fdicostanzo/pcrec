@@ -84,6 +84,55 @@ pcrec (the Makefile owns that).
   calibration, log-line shape, env-vs-CLI precedence, missing command, and
   metrics-only mode. Run with `make testscripts` (no-op when nothing
   changed) or directly: `timeout 300 bash scripts/tests/watchdog.test`.
+  `tests/safekill.test` covers safekill: sacrificial process trees it
+  spawns itself (never anything found by scanning the box) verify the
+  PID/PGID paved road kills the whole tree and nothing else, the pattern
+  path refuses on two live sibling invocations of an identical command
+  line and proceeds under `--all`, self/ancestor exclusion (a wrapper
+  whose own argv carries the pattern is never included), `--list`/
+  `--under`/`--cwd` narrowing, the audit-line fields, and every exit code.
+  A `trap` cleans up its sacrificial trees even on failure. Run with
+  `make testscripts` or directly:
+  `timeout 300 bash scripts/tests/safekill.test`.
+
+- **safekill** — kills a process by PID/PGID or by cmdline pattern without
+  the collateral-kill failure mode `pkill -f` produced twice on
+  2026-08-19: a name pattern cannot distinguish two legitimate concurrent
+  invocations of the same tool, and it can match the caller's OWN wrapper
+  shell (the root of the project's standing no-`pgrep -f`-polling rule).
+  Paved road: `safekill PID` kills that PID's process group AND its
+  ppid-descendant tree (union of both mechanisms — catches a descendant
+  reparented to init via the group, and one that self-`setsid`'d into a
+  new group via the tree), no flags needed. `--pgid PGID` kills exactly
+  that group. The dangerous road, `-f`/`--pattern PAT` (POSIX-ERE search
+  against full `/proc/PID/cmdline`), is deliberately narrow: candidates
+  that are safekill's own pid or an ANCESTOR of the caller are dropped
+  unconditionally (no bypass flag — this is the one guard the incidents
+  show a human cannot reliably apply by hand), and more than one
+  remaining candidate REFUSES (exit 2) unless `--all` is given. `--list`
+  previews any target form's candidates without signalling anything.
+  `--under PID`/`--cwd DIR` narrow the pattern path further (descendant
+  tree / cwd prefix, both read straight off `/proc`; a `--cwd` candidate
+  whose cwd this UID cannot read is excluded but COUNTED, and that count
+  is surfaced in the no-match/refused messages so "nothing running" reads
+  differently from "matches existed but were unreadable"). Never
+  interactive — no confirmation prompts, since an agent has nothing that
+  will ever see one; safety is refuse-by-default plus explicit flags
+  only. Every process actually signalled gets an audit line (pid, pgid,
+  start time, command), printed BEFORE the signal is sent (not after —
+  incident B's failure was a SIGTERM landing with zero accounting).
+  kill(2) targets each process's GROUP, not the individually snapshotted
+  pid, so a target that already exited between the `/proc` scan and the
+  signal (TOCTOU) is simply not there to receive it, and an ESRCH'd kill
+  call's exit status is deliberately unchecked — already-dead is success,
+  not an error. TERM by default, escalates to KILL after
+  `--grace` (default 3s) unless `--term-only`/`--kill-now` (`-K`). Exit
+  codes are distinguishable on purpose: 0 killed something, 1 nothing
+  matched (not an error), 2 refused-ambiguous, 125 usage error. Candidate
+  discovery is pure `/proc` reads — no `ps`/`pgrep`/subprocess of any
+  kind — so nothing spawned here can transiently self-match a pattern the
+  way a `pgrep -f` polling wrapper does. Self-test:
+  `tests/safekill.test` (see below).
 
 - **hooks/pre-push** — [TT-1] opt-in local push gate: runs `make test` (the
   full suite, not a tier) and blocks the push on failure. Installed ONLY by
