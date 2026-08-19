@@ -202,7 +202,26 @@ fi
 # DIFFERENT fact from the one being measured here, which is why reading it to
 # explain a non-difference is legitimate and reading `dfa_has_endvar` would
 # not be.
-ctl_diff=0; ctl_same_vm=0; ctl_same_dfa=0; ctl_rej=0
+#
+# **[M6.2 wave C] A SECOND LEGITIMATE NON-DIFFERENCE, and it needs its own
+# anti-vacuity argument.** The `(?m)` anchors joined this control population,
+# and two of them — `a(?m)^b` and `a(?m)^b|c` — carry a `(?m)^` that can never
+# hold (a `^` after a MANDATORY consumed byte, whose predecessor is that byte
+# and not a newline). The construct is present, no state's END view ever
+# differs from its EOL view, so nothing is interned and there is nothing for
+# the knob to disable. `a(?m)^b` is additionally the never-matching shape whose
+# artifact carries no automaton at all (K28's class, and wave B's gate's own
+# third category).
+#
+# READ OFF THE **UNSABOTAGED** ARTIFACT, and that is what makes it admissible
+# rather than the forbidden reading. "Does this artifact carry an end-view
+# table" is, in the REFERENCE build, exactly `dfa_has_endvar` — the switch this
+# check measures. In the SUBJECT build it is not: `-DPCREC_NO_ENDVAR` is a
+# reference-build-only flag, so a DEAD knob cannot make the subject build stop
+# emitting end-view tables. A pattern classified here is therefore one the knob
+# provably could not have affected, and a broken knob cannot grow this class.
+# The row count is printed either way so the class cannot swell unnoticed.
+ctl_diff=0; ctl_same_vm=0; ctl_same_noview=0; ctl_same_dfa=0; ctl_rej=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     a="$(gen_a "$pat")"; b="$(gen_b "$pat")"
@@ -211,6 +230,9 @@ while IFS= read -r pat; do
         ctl_diff=$((ctl_diff + 1))
     elif printf '%s' "$a" | grep -q '^#define RX_ENGINE "vm"$'; then
         ctl_same_vm=$((ctl_same_vm + 1))
+    elif ! printf '%s' "$a" | grep -qE '^    static const short rx_(f|r)endv\['; then
+        ctl_same_noview=$((ctl_same_noview + 1))
+        echo "  control carries the construct but interns NO end view (nothing for the knob to disable): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
         echo "  DFA-compiled control did NOT differ: $pat" >&2
@@ -218,9 +240,9 @@ while IFS= read -r pat; do
 done < "$WORKDIR/zpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled \\z patterns differ between the two builds and 0 agree ($ctl_same_vm agreed and are VM artifacts, where the third view plays no part) — -DPCREC_NO_ENDVAR really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled end-view patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the third view plays no part; $ctl_same_noview carry the construct at a position it can never hold, so the subject build interns no end view either) — -DPCREC_NO_ENDVAR really disables it, so the identity comparisons below are not vacuous"
 else
-    bad "positive control: $ctl_diff \\z patterns differ, $ctl_same_dfa DFA-compiled ones AGREE, $ctl_same_vm VM ones agree (expected), $ctl_rej rejected by both. Every DFA-compiled \\z pattern must differ; if none does, the reference knob is dead and this whole check is vacuous."
+    bad "positive control: $ctl_diff end-view patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_noview intern no end view (expected), $ctl_rej rejected by both. Every DFA-compiled end-view pattern that actually interns one must differ; if none does, the reference knob is dead and this whole check is vacuous."
 fi
 
 # ---- the identity sweep --------------------------------------------------

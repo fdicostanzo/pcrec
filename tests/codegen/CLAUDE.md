@@ -126,6 +126,18 @@ or it has no regression net at all.
   `tests/lib/mlscan.py`'s `multiline_anchor`, and those patterns join the
   POSITIVE CONTROL, where they belong and where they strengthen it.
 
+  Their arrival also gave that control a SECOND legitimate non-difference
+  class, with its own anti-vacuity argument. `a(?m)^b` and `a(?m)^b|c` carry a
+  `(?m)^` that can never hold (a `^` after a MANDATORY consumed byte), so no
+  state's END view differs, nothing is interned, and the knob has nothing to
+  disable. That is detected by reading the **UNSABOTAGED** artifact for an
+  end-view table — and reading it there rather than in the reference build is
+  the whole of what makes it admissible: `-DPCREC_NO_ENDVAR` is a
+  reference-build-only flag, so a DEAD knob cannot make the subject build stop
+  emitting those tables, and a broken knob therefore cannot grow this class.
+  In the reference build the same read WOULD be `dfa_has_endvar`, which this
+  script's own rule forbids.
+
 - **run_wordctx_identity.sh** — [M6.2] wave B's BYTE-IDENTITY GATE, the same
   shape one axis over. `\b`/`\B` are the largest change any wave of [M6.2]
   makes to the engine — the class map is refined by the word set, every state
