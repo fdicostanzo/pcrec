@@ -512,10 +512,90 @@ else
     ok "§4 refusal: 'a\\Kb' compiles on the default engine and REFUSES under --engine=dfa naming the construct ($ref_out) — the first population src/opt/select_engine.c's second override branch has ever had, and it ran unchanged from [M4.5b]"
 fi
 
+# =========================================================================
+# §5  THE FIND-ALL LOOP (docs/spec/match_api.md §3.1)
+# =========================================================================
+# `\K` is the first construct that can make a match report an EMPTY span after
+# consuming bytes, and §3.1's loop has a separate arm for an empty span. So the
+# question "does the documented caller protocol still terminate, still make
+# progress, and still report what PCRE2 reports" is a NEW question at wave E,
+# and it is not expressible as a `.rxt` cell — a block drives ONE search.
+#
+# THE ORACLE IS libpcre2 DRIVEN THROUGH THE SAME LOOP, wave D's rule and for
+# wave D's reason: writing the expected token lists by hand would make this a
+# check on somebody's arithmetic. The driver is `gstart_findall.c`, REUSED
+# rather than copied — it is a transcription of §3.1 and the claim here is
+# about §3.1, so a second transcription would prove nothing about the first.
+#
+# WHAT THE EMPTY ARM COSTS IS PART OF THE EXPECTATION, not a defect: on
+# `ab\K` over "ababab" both sides report `2,2 6,6`, because after the empty
+# reported span at 2 the loop advances ONE CHARACTER FROM THE REPORTED START
+# (to 3) rather than from the match end (4), so the match beginning at 2 is
+# not offered again. That is the loop the spec documents, running on both
+# sides; a check that expected `2,2 4,4 6,6` would be asserting a different
+# protocol.
+FA_PATS=('ab\K' 'ab\Kc?' 'a\Kb' '\Ka' '(?:a\K)*b' 'a\Kb|c' '[ab]*\K[bc]+' 'a*\K')
+FA_SUBJ=("abab" "ababab" "ab" "xabab" "aaab" "abcabc" "" "b" "aabbcc" "xaxbxc")
+fa_cells=0; fa_diff=0; fa_empty=0
+: > "$WORKDIR/fadiffs.txt"
+fi_n=0
+for pat in "${FA_PATS[@]}"; do
+    d="$WORKDIR/fa$fi_n"; fi_n=$((fi_n + 1))
+    if ! gen "$d" fa "$pat"; then
+        bad "find-all: could not build an artifact for '$pat': $(head -2 "$d/err")"
+        continue
+    fi
+    $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/gstart_findall.c" "$d/gen.o" \
+        2>>"$d/err" || { bad "find-all: could not link the driver for '$pat': $(head -5 "$d/err")"; continue; }
+    for sj in "${FA_SUBJ[@]}"; do
+        printf '%s' "$sj" > "$WORKDIR/fasubj"
+        got="$("$d/t" "$WORKDIR/fasubj" 2>/dev/null)"
+        # THE ORACLE'S OWN RUN OF THE SAME LOOP. Bounded at 64 reports so a
+        # protocol bug that stops making progress fails as a DIVERGENCE here
+        # rather than as a hang in a test suite.
+        want="$(python3 - "$ORACLE" "$pat" "$WORKDIR/fasubj" <<'PY'
+import subprocess, sys
+oracle, pat, path = sys.argv[1], sys.argv[2], sys.argv[3]
+n = len(open(path, "rb").read())
+p = 0; out = []
+while p <= n and len(out) < 64:
+    r = subprocess.run([oracle, pat, path, str(p)],
+                       capture_output=True, text=True).stdout.strip()
+    if not r.startswith("match"): break
+    a, b = int(r.split()[1]), int(r.split()[2])
+    out.append((a, b))
+    p = b if b > a else a + 1
+print(" ".join("%d,%d" % t for t in out))
+PY
+)"
+        fa_cells=$((fa_cells + 1))
+        # THE EMPTY-ARM POPULATION, counted from the ORACLE's answers rather
+        # than from pcrec's: a build that never reported an empty span must
+        # not be able to make its own coverage claim. A reported `s,e` with
+        # s == e is the loop's empty arm being taken.
+        fa_empty=$((fa_empty + $(printf '%s' "$want" | tr ' ' '\n' \
+            | awk -F, 'NF == 2 && $1 == $2 { c++ } END { print c + 0 }')))
+        if [ "$got" != "$want" ]; then
+            fa_diff=$((fa_diff + 1))
+            printf 'FINDALL %s [%s]: pcrec [%s] / libpcre2-through-the-same-loop [%s]\n' \
+                "$pat" "$sj" "$got" "$want" >> "$WORKDIR/fadiffs.txt"
+        fi
+    done
+done
+if [ "$fa_diff" -eq 0 ] && [ "$fa_cells" -gt 50 ] && [ "$fa_empty" -gt 5 ]; then
+    ok "§5 find-all: $fa_cells runs of docs/spec/match_api.md §3.1's loop agree span for span with libpcre2 driven through the SAME loop, and $fa_empty of the reported matches are EMPTY spans the loop's empty arm had to handle ('ab\\K' over \"ababab\" is 2,2 6,6 on both sides) — the population no .rxt cell can reach, counted from the ORACLE so pcrec cannot vouch for its own coverage"
+elif [ "$fa_diff" -eq 0 ] && [ "${fa_empty:-0}" -le 5 ]; then
+    bad "§5 find-all: $fa_cells runs agree, but only $fa_empty EMPTY reported spans occurred across all of them. This section exists for the arm \\K makes reachable; with that population near zero it is a second copy of §1 wearing a different name."
+else
+    bad "§5 find-all: $fa_diff of $fa_cells runs disagree with libpcre2 driven through the same loop:"
+    head -20 "$WORKDIR/fadiffs.txt" >&2
+fi
+
 echo
 echo "== Summary =="
 echo "  §1 sweep     patterns $npat  subjects $NSUBJ  default cells $ncells  vm cells $nvm  divergences $ndiff  oracle-skipped $nskip"
 echo "  §2 entries   cells $ent_cells  wrong $ent_bad  length-differs-from-span $ent_nz"
+echo "  §5 find-all  runs $fa_cells  divergences $fa_diff"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
