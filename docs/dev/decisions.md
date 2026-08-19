@@ -4902,6 +4902,19 @@ paragraph. The internal `ENGM_*` enum (src/opt/select_engine.c) stays
 internal; the lane must NOT export that spelling — D38's PCREC_* rule
 governs the emitted surface.
 
+**MERGE NOTE (2026-08-18, at landing): the names PRE-EXISTED.**
+lib/pcrec.h already spelled PCREC_ENGINE_DFA/PCREC_ENGINE_VM as enum
+members of the pcrec_options.engine REQUEST axis (same values 1/2) —
+this addendum was written without grepping the public header, and the
+lane found the collision as a real include-order hard error. Resolution
+(approved): the ruling's effect is ONE vocabulary for engine identity
+across request (opt.engine) and outcome (info.engine); lib/pcrec.h's
+two members became #defines byte-identical to the artifact's emission
+(AUTO stays an enum member — no artifact twin), and the byte-identity
+obligation between header and artifact gained its own permanent
+both-include-orders codegen check. The other 13 names have no pcrec.h
+twins (grepped individually at landing).
+
 ## D61 — the caps array's PRIMARY PREFIX is permanent: caps[1..ngroups] are this pattern's own groups, insertions APPEND (Frank, 2026-08-18, thirty-third session)
 
 **Decision.** On any captures-on build: `caps[0]` is the whole match;
