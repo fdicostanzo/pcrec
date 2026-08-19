@@ -730,7 +730,31 @@ c"` from `(0,3)` into `(0,1)`, and
   (23,548 cells, 2,462 non-vacuous, 0 wrong). A speedup that moved a count
   would have meant the batching changed what was compared.
   (5) K28 gains NO new spelling — the first wave since B not to. No shape in
-  this corpus compiles to a single dead state.
+  this corpus compiles to a single dead state, and the reason CORRECTS wave
+  C's stated prediction rather than merely not confirming it: the shape needs
+  a pattern that CANNOT MATCH, every previous spelling got there by asserting
+  something impossible after a byte was consumed, and `\K` asserts nothing —
+  it cannot fail, so no placement of it makes a pattern unsatisfiable. The
+  rule is "one per construct that can make a pattern IMPOSSIBLE", not "one per
+  wave", and module `assertions` has now landed all of those. K28's entry
+  carries the correction; the repair slice's scope is unchanged at six
+  spellings.
+  (7) **THE GENERATED COMPLIANCE INDEX IS STALE FOR THE WHOLE MODULE AND THIS
+  WAVE DID NOT FIX IT — manager decision.** `docs/pcre2_compliance.md`'s
+  hand-written prose rows are corrected here (including the `\b \B \G` row,
+  which had read `REJECTED` for two waves after those waves landed), but the
+  GENERATED index below them still reads `REJECTED | planned` for all eight
+  constructs, because it is derived from each registry row's `status`/
+  `roadmap` columns and every one of them is still `RS_MODULE`/
+  `ROADMAP_PLANNED`. That is not `\K`'s situation, it is the module's: waves
+  A-D left it too. Changing those columns is a cross-cutting edit — the same
+  fields feed `registry_check`'s exact counts, `tests/reject`'s iterated rows,
+  PC-3's row-claim polarity and `compliance_section.py --check` — so it wants
+  its own slice rather than a rider on the closing wave, and it should be one
+  edit for all eight rather than one per construct.
+  (8) `run_kreset_diff.sh` is NOT on the `ubsan`/`asan` lists, inheriting wave
+  D's finding (6) posture for heavy differentials verbatim (it is a ~5 minute
+  sweep). Also a manager scheduling decision, unchanged by this wave.
   (6) `docs/spec/match_api.md` §3.1 gains the wave's spec sentence, and it is
   a bigger one than `\G`'s: `caps[0][0]` is where REPORTING begins, which is
   not always where matching began, so `caps[0][0] == caps[0][1]` no longer
