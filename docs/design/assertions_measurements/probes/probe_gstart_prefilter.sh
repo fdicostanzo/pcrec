@@ -159,6 +159,25 @@ So the honest ruling for D63's item 2 is not "the third instance is not worth
 building" but "there is no third instance to build": its population is served
 by the first and its unserved remainder belongs to the second.
 
+AND THE UNSERVED REMAINDER IS NOT CHEAP, which is the part that would be
+missed by stopping at "no new caller needed". Section 2 measures the gap on
+P2's own shape: `\Gfoo|xbar` runs its 1 MB no-match search ~83x slower than
+the plain `xbar` the same subject gives ENG_UNANCH, and ~190x slower than
+instance one's `(?m)^xbar`. That is a real loss and it wants fixing — but it
+is not `\G`'s loss. The `\G`-free control `(?m)^a|b` in section 1 gets no
+prefilter either, for the identical reason (`b` can begin anywhere, so every
+predecessor byte seeds a live state), and D8's `^a|b` is the same shape again.
+Attributing the cost to `\G` and building a `\G`-shaped fix would put a third
+copy of the same idea in the tree and leave the other two shapes paying it —
+M2.12's forked-scan-avoidance lesson, which is why D63 made the derivation a
+tool in the first place.
+
+RECOMMENDATION TO THE MANAGER, recorded rather than acted on: D63 instance 2
+(the first-byte set at offset 0) should be scheduled as ONE piece of work
+serving `^`-partial, `(?m)^`-partial and `\G`-partial alike, and this
+measurement is a second population arguing for it. Wave D builds nothing for
+it, per D63's own gate.
+
 WHAT WAVE D DID ADD to the prefilter is a SOUNDNESS bound rather than a new
 instance — the guard's lower limit moves from `start > 0` to
 `start > startpos` whenever the machine has a `\G` family, because the
