@@ -21,6 +21,23 @@
  * corpus rather than costing correctness, which is exactly the kind of defect
  * a test suite full of correctness checks does not see.
  *
+ * [M6.2 wave B] `\b`/`\B` add a fourth axis, and it is NOT a position view:
+ * their truth depends on the two BYTES around the position, so the state
+ * identity gains "the byte already consumed was a word character" and each
+ * state gains a second closure for "the byte about to be consumed is one"
+ * (`DState.wlist`). The class map is refined by the word set so that bit is
+ * constant inside a class, and the transition row for a class is then built
+ * from the closure that class's word-ness selects — which is what keeps the
+ * emitted hot path a single table read. See eqclasses, the Clo comment and
+ * make_state.
+ *
+ * `-DPCREC_NO_WORDCTX` compiles that axis out (`has_word` is pinned false, so
+ * no refinement, no second closure, one interior start state, and the emitter
+ * reproduces the pre-wave text). Same shape and same single consumer as the
+ * two knobs below: tests/codegen/run_wordctx_identity.sh. Never defined in a
+ * shipped build; under it a `\b` pattern compiles to something WRONG, which
+ * is exactly why that script's control population must differ.
+ *
  * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
  * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
  * reproduces the pre-wave text). It exists for exactly one consumer,
@@ -903,11 +920,13 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
      * The ALPHABET refinement has to happen before eqclasses returns, so this
      * one cannot wait until the worklist. */
     bool has_word = false;
+#ifndef PCREC_NO_WORDCTX
     for (int i = 0; i < nfa->n; i++)
         if (nfa->st[i].k == N_WORDB || nfa->st[i].k == N_NWORDB) {
             has_word = true;
             break;
         }
+#endif
     d->wordctx = has_word;
 
     eqclasses(nfa, d, has_word);
