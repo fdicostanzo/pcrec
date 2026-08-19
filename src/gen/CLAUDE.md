@@ -33,6 +33,58 @@ machinery. Three things to know before touching it:
   self`. `tests/codegen/run_endvar_identity.sh` is the gate on all of it, with
   sabotage S69 as its measured failing direction.
 
+## **[M6.2 wave B] `\b`/`\B`: a CLASS axis, not a fourth position view**
+
+`\z` added a third POSITION view. `\b` adds a different kind of thing, and
+conflating the two is the mistake to avoid here. Its accept depends on the
+byte at `pos`, so the axis is the byte CLASS — which the transition lookup
+already has in a register — and `src/ir/dfa.c` bakes the choice into `tr[]`
+itself. Four sites in this file, and what gates each:
+
+- **`facc2`/`racc2`/`acc2`, the class-indexed accept (§3.6)**, emitted on
+  `dfa_has_wacc(d)`: does ANY state's accept actually differ between "the next
+  byte is a word character" and "it is not". Deliberately NOT "the pattern
+  contains `\b`" — a `\b` that is not reachable at an accepting position
+  leaves every state's two bits equal and keeps the pre-wave scalar loop.
+- **§3.6.2's COMPOSITION RULE**, which is the half that is easy to get wrong:
+  class-indexed at every position that HAS a next byte, SCALAR at `pos == n`,
+  where out-of-subject counts as non-word — a property of the POSITION, not of
+  any byte. The emitted guard is also what keeps `s[pos]` unread at `pos == n`
+  (K27's class), and the class is computed ONCE into a `cl` local shared with
+  the transition so the structural check has one named thing to look at.
+- **`fseed`/`rseed`, MECHANISM 4 (§3.8)**, emitted only when `s1w != s1`.
+  FOUR boundaries, not two, and the reverse pair is the sharp one. Forward
+  init reads `s[startpos-1]`; reverse init reads `s[end]`, which cannot be a
+  compile-time constant because the forward loop produces `end`; reverse
+  TERMINATION reads `s[startpos-1]` and is **ATTACHED TO THE `pp <= startpos`
+  BREAK, not peeled below the loop** — the reverse loop has a SECOND exit
+  (dead state), and an epilogue would run on it, recording `sfound` at a
+  position the walk never reached and indexing the accept table with a
+  NEGATIVE state (R30 N9). The forward range guard MOVES ABOVE `int st = ...`
+  under `fseed`, because that initializer now dereferences the subject.
+- **`pick_skip_states` DECLINES a state whose accept varies by class**, and
+  this is a DEVIATION from `assertions_design.md` §3.6.1 that the wave
+  returns. §3.6.1 argues `\b` cannot suffer the D11 skip hazard because "a
+  skip set is a union of classes, so every byte in the run has the same
+  next-is-word value" — the second half does not follow, since a union of
+  classes may contain both word and non-word classes (a state staying put on
+  both `a` and ` ` has such a stay set). Declining is always available, always
+  safe, and costs nothing on any pattern without a next-byte-sensitive accept.
+  `start_acc` widens to the OR over both bits for §3.6.1's own reason
+  (`\bx*` on `'a x'`), and `!fseed` joins the never-matches early-out, whose
+  proof is about the ONE start state `fs`.
+
+`emit_attempt` carries the same two mechanisms in its own shapes: a per-STATE
+accept split (only where that state's two bits differ, so every other state
+keeps the pre-wave text) and a `seed[]` table of label addresses for the
+per-ATTEMPT start dispatch — which on that engine is not once per search,
+since it re-initializes at every one of its `n+1` attempts.
+
+Gates: `tests/codegen/run_wordctx_identity.sh` (sabotage S71) for the claim
+that none of this costs a `\b`-free pattern a byte, and
+`run_codegen_tests.sh`'s `[M6.2-WORDB]` block (sabotages S72/S73) for the two
+memory-safety rules no oracle can see.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

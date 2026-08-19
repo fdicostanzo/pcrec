@@ -355,9 +355,29 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
   * prefix, and this row) and rank is what elects this one (MOD-0.2). */
  70, NULL, NO_PORT, NO_PORT},
 
-ESC_CLASS_SCALAR('b', "\\b", assertions, ANY_ENGINE,
-               "word boundary — but inside a class it is BASE syntax: backspace (0x08)", QF_NO, "char 0x08", 0x08),
-ESC_CLASS_INVALID('B', "\\B", assertions, ANY_ENGINE, "not a word boundary", QF_NO, "err 107"),
+/* [M6.2] WAVE B: the word-boundary pair gains its ATOM PORT, and the two rows
+ * are spelled longhand for the same one field wave A's three needed — `aport`
+ * — with every other field byte-for-byte what ESC_CLASS_SCALAR and
+ * ESC_CLASS_INVALID respectively built.
+ *
+ * THE ASYMMETRY BETWEEN THEM IS PCRE2'S AND IS NOT THIS MODULE'S TO TIDY.
+ * `\b` keeps its CLASS port: inside a character class `\b` is not an
+ * assertion at all, it is BASE syntax for backspace (0x08), which is why the
+ * atom port lands beside a live `cport` rather than beside NO_PORT. `\B` has
+ * no in-class meaning and keeps RF_CLASS_INVALID — `[\B]` is PCRE2 error 107
+ * and always will be, because a class member is not an assertion (the
+ * R9/SPEC-classes-F1 rule). The port being an ATOM port only is what keeps
+ * both of those true by construction instead of by a second check. */
+{RK_ESC, 'b', NULL, "\\b", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
+ RD_MODULE, NULL, NULL, 0,
+ "word boundary — but inside a class it is BASE syntax: backspace (0x08)",
+ ROADMAP_PLANNED, QF_NO, "char 0x08", 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom},
+ {PORT_SCALAR, true, 0x08, NULL, NULL}},
+{RK_ESC, 'B', NULL, "\\B", M_assertions, FLAV_PCRE2, ANY_ENGINE, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_CLASS_INVALID, "not a word boundary",
+ ROADMAP_PLANNED, QF_NO, "err 107", 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_asrtport_atom}, NO_PORT},
 /* [M6.2] WAVE A: the three rows module `assertions` PRODUCES. Longhand
  * rather than ESC_CLASS_INVALID for exactly one field — `aport` — and
  * every other field is byte-for-byte what the macro built, RF_CLASS_INVALID

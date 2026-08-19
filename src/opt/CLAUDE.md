@@ -292,6 +292,18 @@ construction (src/ir) and emission (src/gen).
   symmetric**: `eolvar == -1` means "self" while `endvar == -1` means "same as
   the EOL view", so both edges are RESOLVED through that chain before entering
   a signature and re-canonicalized against the resolved target on rebuild.
+  **[M6.2 wave B]**: the INITIAL PARTITION splits on BOTH accept bits
+  (`accept*2 + waccept`), because a state has two independent accept outputs
+  once `\b` exists — the bit for "the next byte is a word character" and the
+  bit for "it is not" — and merging states that agree on one and differ on the
+  other would answer a `\b` with the wrong bit at every position of the right
+  kind. The TRANSITION axis needed nothing added, which is the payoff of
+  baking the word view into `tr[]` rather than interning it (src/ir/CLAUDE.md).
+  `Dfa.s1w` remaps alongside `s0`/`s1`; forgetting it would leave mechanism
+  4's seed pointing into the PRE-merge numbering — a wrong start state rather
+  than a missing one, on every pattern that minimizes, which is most of them.
+  Byte-identity survives because the key is handed out in first-occurrence
+  order and only two of its four values occur without a word context.
   Byte-identity on `\z`-free patterns holds by construction rather than by a
   conditional — with every `endvar` at -1 the appended signature column is a
   duplicate of the one before it, and a duplicated column cannot change a

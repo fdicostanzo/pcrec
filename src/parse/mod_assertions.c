@@ -75,6 +75,16 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
     case 'A': k = A_BOL; break;   /* \A — the alias, §3.2 */
     case 'Z': k = A_EOL; break;   /* \Z — the alias, §3.2 */
     case 'z': k = A_END; break;   /* \z — the one that needs a machine */
+    /* [M6.2 wave B] the word-boundary pair, and they need the OTHER kind of
+     * machine: `\A`/`\Z`/`\z` are questions about the POSITION, answerable by
+     * an integer compare, while these are questions about the two BYTES
+     * around it. That is what buys the alphabet refinement, the context bit
+     * in the DFA state identity and the class-indexed accept — see
+     * src/ir/dfa.c. Two kinds rather than one plus a negation flag, on D62's
+     * principle: no option turns `\b` into `\B`, so the distinction is
+     * structure. */
+    case 'b': k = A_WORDB; break;
+    case 'B': k = A_NWORDB; break;
     default:
         /* Unreachable on the shipped table; a registry defect if it ever
          * fires, reported rather than silently compiled as something else. */

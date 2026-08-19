@@ -718,6 +718,43 @@ something this design can settle from a prototype — the composed measurement
 has to be taken on the built compiler, against both caps, with the refusal
 boundary located rather than predicted (§10).
 
+> **MEASURED BY [M6.2] WAVE B (2026-08-19, lane/asrtwaveb). THE 38,009
+> FORECAST IS REFUTED AS AN OBSERVATION AND STANDS AS A BOUND.** Numbers and
+> provenance: `assertions_measurements/out/wordctx_budget.txt`
+> (`probes/probe_wordctx_budget.py`, both arms on pcrec rather than a model on
+> both); the alphabet half re-confirmed in `out/ncls_refine_rxt.txt`.
+>
+> - **The ratio held at the top and broke at the bottom.** Measured
+>   min/median/max **0.67x / 1.10x / 4.75x**. The max reproduces §3.5's
+>   headline exactly, on the pattern whose baseline §3.5 verified against
+>   pcrec — the number this section leans on is the one that survived. The
+>   MIN is **below 1**: the word context can SHRINK a machine
+>   (`[01]*1[01]{8}` is 768 states bare and 513 with it), an outcome the
+>   prototype could not express and this section's arithmetic could not
+>   contain. The alphabet delta measured +0/+1/+1, inside §3.4's 0/+1/+2.
+> - **On THIS SECTION'S OWN worst family the word context RAISES the
+>   ceiling.** `((a)|ab){N}c` refuses at N=5655 and `\b((a)|ab){N}c\b`
+>   compiles to N=15998 (31,999 states). The reason is the one qualification
+>   this section did not have: the bare arm is bound by
+>   `PCREC_MAX_SUBSET_ELEMS`, not by the state cap, because the unanchored
+>   self-loop keeps every offset's threads alive — and a leading `\b` PRUNES
+>   most start positions, so the wrapped arm's state SETS are smaller and the
+>   binding constraint moves to the state COUNT. Composing a state-count
+>   ratio against a state-count cap silently assumed the state count was what
+>   binds.
+> - **ENG_ATTEMPT's boundary is IDENTICAL with and without the context**
+>   (N=4999, 10,000 states), so qualification 3 above — that §3.4.1's
+>   exclusion makes this worse for the goto half — did not materialise
+>   either.
+> - **The genuine regression had to be looked for, and is ONE REPEAT COUNT
+>   WIDE.** It needs a family the state COUNT binds, i.e. a linear chain:
+>   `[a-z]{1,31999}` compiles at exactly 32,000 states and
+>   `\b[a-z]{1,31999}\b` refuses. Qualification 2 holds exactly as written —
+>   a clean states-cap refusal, no output file — and
+>   `tests/assertions/run_assertions_tests.sh` pins that PROPERTY on both
+>   engines rather than pinning the boundary's location, which moves with any
+>   legitimate change to the construction.
+
 ### 3.6 The hot-path cost of a next-byte view — MEASURED at zero
 
 A next-byte-sensitive assertion changes the forward loop's accept test. Today
@@ -797,6 +834,41 @@ all**, and the reason is this document's own §3.5:
 The hazard is real, but it belongs to the **`(?m)$` / `\Z` family**, whose
 accept depends on "is the next byte a newline" — a predicate that genuinely
 varies inside a run a skip set admits.
+
+> **REFUTED IN PART BY [M6.2] WAVE B (2026-08-19, lane/asrtwaveb) — READ THIS
+> BEFORE INHERITING THE ARGUMENT ABOVE, WAVE C ESPECIALLY.**
+>
+> The block quote's **second sentence is FALSE**. "A skip set is a union of
+> classes too, so every byte in the run has the same next-is-word value" does
+> not follow: a union of byte equivalence classes may perfectly well contain
+> both word and non-word classes. A state that stays put on `a` and on a space
+> has exactly such a stay set, and `next-is-word` then varies inside the run
+> the skip passes.
+>
+> The FIRST sentence survives untouched — `prev-is-word` really is constant
+> across a skipped run, because it is part of the state identity. So the
+> attribution correction R30 E5 makes (the hazard is not `\b`'s *headline*
+> hazard, and a Wave B sabotage of the intersection would have no failing
+> direction on any pattern Wave B lands) STANDS. What does not stand is the
+> stronger claim that `\b`'s accept bit is pinned across a skipped run and the
+> skip is therefore sound by construction.
+>
+> **WHAT WAVE B SHIPPED IS A DECLINE, NOT AN INTERSECTION.**
+> `pick_skip_states` (`src/gen/emit_dfa.c`) drops any state whose two accept
+> bits differ, so a state whose accept depends on the next byte is simply not
+> skip-eligible. Declining is always available and always safe, and it costs
+> nothing on any pattern without a next-byte-sensitive accept — i.e. nothing
+> in the pre-wave corpus, where the test is false at every state, which the
+> byte-identity gate measures at 1039/1039.
+>
+> **WHY THIS MATTERS TO WAVE C RATHER THAN TO WAVE B.** Wave C inherits the
+> five-mechanism table below and its cure (intersect rows 2-5) from a section
+> whose stated soundness argument for the `\b` half does not hold. A Wave C
+> author re-deriving "the run pins both inputs" from the un-annotated text
+> would build an intersection on a premise this lane measured false. The two
+> available postures are DECLINE (wave B's, cheap, provably safe) and a real
+> INTERSECTION (wave C's, which must not lean on the quoted sentence for its
+> `\b` arm).
 
 **The consequence is worse than the misattribution.** A Wave B sabotage row
 disabling the intersection would be a **no-op on every pattern Wave B lands** —
@@ -1637,6 +1709,23 @@ Three independent arguments, and the panel should attack all three:
    `\b` must agree with**, and the only way to guarantee that is one definition
    with two readers. A second word-set spelling anywhere is this project's
    recorded check-design failure in its purest form.
+
+> **BUILT AS STATED BY [M6.2] WAVE B (2026-08-19, lane/asrtwaveb) — AND THE
+> POINT WAS CONTESTED BEFORE IT WAS SETTLED, WHICH IS WHY THIS NOTE EXISTS.**
+> The wave brief instructed the lane to route word-character classification
+> through a `src/gen/enc/` residual entry, restating [M6.0]'s general D58
+> obligation without consulting this section's per-construct answer. The lane
+> stopped on the item rather than improvising, and the manager ruled in the
+> DESIGN's favour: item 2 above is not merely an argument but a shipping
+> check, so the brief's instruction would have tripped `[M5-SEAM/DD-12(7)]`
+> rather than satisfied D58. Shipped: one `pcrec_cls_word_esc`, refining the
+> DFA's byte equivalence classes (`src/ir/dfa.c`'s `eqclasses`) and interned
+> by the VM's own class pool (`src/gen/emit_vm.c`), so `\b` and `\w` are one
+> definition with two readers. No residual entry; the enumeration in §7.1 is
+> unchanged. Item 3 is now checked rather than argued —
+> `run_codegen_tests.sh`'s `[M6.2-WORDB rule 3]`, whose failing direction is
+> sabotage S75, and whose own first two formulations were measured BLIND
+> before the third worked (see that check's comment).
 
 ### 7.3 What the UTF-8 backend will need — stated concretely, as the charter asks
 

@@ -1053,6 +1053,213 @@ else
     bad "[K27]: pcrec failed to compile the NULL-subject fixture 'abc'"
 fi
 
+# ---- [M6.2-WORDB] the three structural rules `\b` lands with ---------------
+#
+# assertions_design.md §3.6.2, §3.8.3.1 and §7.2 each state a rule that NO
+# CORRECTNESS TEST IN THIS TREE CAN SEE, which is this file's whole charter.
+# Two of the three are memory-safety rules whose violation is UB rather than a
+# wrong answer, and one is a two-sources-of-truth rule whose violation changes
+# nothing until the day the two sources disagree.
+#
+# THE FIXTURE is `.*\b.*`, and the choice was CORRECTED by running the
+# sabotage rather than by reasoning about it. It has to carry every emitted
+# site at once — a class-indexed accept in BOTH machines (`facc2`/`racc2`),
+# mechanism 4's seed in BOTH (`fseed`/`rseed`), and live forward AND reverse
+# SKIP states, since the skip is what rule 2 is about.
+#
+# THAT IS NOT ENOUGH, and the first fixture (`\bx.*y\b`) had all of it and
+# still made rule 2 VACUOUS. The blind writer rule 2 forbids is emitted under
+# `if (!views && rd->st[K].accept)` — a COMPILE-TIME condition with TWO
+# conjuncts. Removing the `!views` guard (sabotage S72) emits nothing at all
+# unless the reverse skip state ALSO ACCEPTS, and `\bx.*y\b`'s does not. S72
+# came back UNDETECTED on the whole suite: 0 codegen failures, 0 corpus
+# failures, a check with no measured failing direction — the exact shape this
+# directory's charter is about, found the only way it can be found.
+#
+# `.*\b.*`'s reverse skip state DOES accept, and the check now ASSERTS that
+# rather than assuming it: `rx_racc[K]` is read out of the artifact and
+# required to be 1, so a future fixture that quietly loses the property fails
+# loudly instead of passing vacuously.
+WB_PAT='.*\b.*'
+if gen wordb "$WB_PAT" --features all; then
+    wbb="$WORKDIR/wordb.body"
+
+    # --- rule 1 (§3.6.2): NEVER index an accept table at `pos == n` ---------
+    #
+    # Two axes select an accept bit: the VIEW axis by position, the CLASS axis
+    # by the next byte. At `pos == n` there IS no next byte, so the accept is
+    # the view's SCALAR one. Indexing the wide table there would ask what the
+    # accept is when the next byte is "whatever byte sits in that equivalence
+    # class", which is meaningless — and reading `s[pos]` to get the class is
+    # an out-of-bounds read in EMITTED code, K27's class.
+    #
+    # CHECKED TWO WAYS, because either alone is weak. (a) every `facc2` read
+    # is indexed by the `cl` LOCAL and never by a subject read spelled inline,
+    # so there is one named thing to guard rather than an expression to parse;
+    # (b) the `pos >= n` guard, with the scalar accept inside it, appears
+    # BEFORE the first `facc2` read in the body. (b) alone would pass if the
+    # guard were present but the read moved above it in a later edit that also
+    # moved the guard; (a) alone would pass if `cl` were computed at `pos ==
+    # n`.
+    # The table's own DECLARATION line matches the same grep and is not a
+    # read, so it is dropped first -- an exclusion worth spelling out, since
+    # forgetting it is a check that fails on its own subject rather than on a
+    # defect.
+    grep 'rx_facc2\[' "$wbb" | grep -v '^ *static const' > "$WORKDIR/f2reads"
+    f2lines=$(grep -c . "$WORKDIR/f2reads" || true)
+    f2bad=$(grep -cv 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' "$WORKDIR/f2reads" || true)
+    guard_ln=$(grep -n '^        if (pos >= n) {$' "$wbb" | head -1 | cut -d: -f1)
+    first_f2=$(grep -n 'rx_facc2\[' "$wbb" | grep -v ':[[:space:]]*static const' \
+               | head -1 | cut -d: -f1)
+    scalar_in_guard=$(sed -n "${guard_ln:-0},$((${guard_ln:-0} + 2))p" "$wbb" \
+                      | grep -c 'rx_facc\[' || true)
+    if [ "$f2lines" -lt 1 ]; then
+        bad "[M6.2-WORDB rule 1]: '$WB_PAT' emitted no class-indexed accept at all — the fixture no longer exercises §3.6, so this rule has no population"
+    elif [ "$f2bad" -ne 0 ]; then
+        bad "[M6.2-WORDB rule 1]: $f2bad of $f2lines class-indexed accept reads are not indexed by the 'cl' local; a read that computes its own class is a read this check cannot prove is guarded:"
+        grep -v 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' "$WORKDIR/f2reads" >&2
+    elif [ -z "$guard_ln" ] || [ -z "$first_f2" ] || [ "$guard_ln" -ge "$first_f2" ]; then
+        bad "[M6.2-WORDB rule 1]: the 'if (pos >= n)' guard is at line ${guard_ln:-MISSING} and the first class-indexed accept at line ${first_f2:-MISSING} — the guard must come FIRST, or the emitted loop reads s[pos] at pos == n"
+    elif [ "$scalar_in_guard" -lt 1 ]; then
+        bad "[M6.2-WORDB rule 1]: the 'pos >= n' arm does not read the SCALAR accept table, so the end-of-subject accept is being dropped rather than taken from the view (§3.6.2)"
+    else
+        ok "[M6.2-WORDB rule 1] (§3.6.2): all $f2lines class-indexed accept reads go through the guarded 'cl' local, and the 'pos >= n' arm takes the SCALAR accept before any of them — no accept table is indexed at pos == n"
+    fi
+
+    # --- rule 2 (§3.8.3.1): every `sfound` writer at the reverse boundary ---
+    #
+    # THE INVARIANT: no `sfound` is recorded at `pp == startpos` except through
+    # the context-indexed accept. The design states it as an invariant rather
+    # than a patch for a specific reason — there is MORE THAN ONE WRITER. The
+    # loop-top one is obvious; the reverse SKIP's is not, and it is worse than
+    # it looks: `emit_dfa.c`'s `if (!eol && rd->st[K].accept)` is a
+    # COMPILE-TIME condition on whether to EMIT the line, so what would land
+    # in the artifact is a BARE, UNCONDITIONAL `sfound = pp;` inside the skip
+    # block with no runtime test to fail.
+    #
+    # So the check enumerates EVERY `sfound` assignment in the body and
+    # requires each to be conditioned on an accept read — on its own line or
+    # on the one above it, which is where the boundary arm's two-line ternary
+    # puts it. A bare assignment fails no matter which writer emitted it,
+    # which is what makes this an invariant check rather than a check of the
+    # one site somebody remembered.
+    #
+    # THE FIXTURE HAS A LIVE REVERSE SKIP (`rx_rs<K>`), asserted below: without
+    # one this rule would pass on an artifact that has no second writer to get
+    # wrong.
+    rskips=$(grep -c 'rx_rs[0-9]*\[s\[pp - 1\]\]' "$wbb" || true)
+    # THE NON-VACUITY ASSERTION. Read the reverse skip state's index out of
+    # its own emitted loop, then that state's SCALAR accept out of the
+    # artifact's `rx_racc[]`. Both come from the artifact; neither is typed
+    # here, so a fixture change cannot silently drop the property.
+    rskip_k=$(grep -oE 'rx_rs[0-9]+\[s\[pp - 1\]\]' "$wbb" | head -1 \
+              | grep -oE '[0-9]+' | head -1)
+    rskip_acc=$(sed -n '/static const unsigned char rx_racc\[/,/};/p' "$wbb" \
+                | tr -d ' \n' | sed 's/.*={//; s/};.*//' \
+                | cut -d, -f$((${rskip_k:-0} + 1)))
+    # `size_t sfound = (size_t)-1;` is the DECLARATION, not a record of a
+    # match start, and is excluded by name rather than by pattern-matching
+    # around it.
+    sf_total=$(grep 'sfound = ' "$wbb" | grep -cv 'size_t sfound = ' || true)
+    sf_bad=$(awk '
+        /sfound = / && !/size_t sfound = / {
+            if ($0 !~ /racc/ && prev !~ /racc/) { print NR": "$0; n++ }
+        }
+        { if ($0 !~ /^[[:space:]]*$/) prev = $0 }
+        END { exit 0 }
+    ' "$wbb")
+    nsf_bad=$(printf '%s' "$sf_bad" | grep -c . || true)
+    if [ "$rskips" -lt 1 ]; then
+        bad "[M6.2-WORDB rule 2]: '$WB_PAT' emitted no reverse skip loop, so the second, blind sfound writer §3.8.3.1 is about cannot be present — this rule would pass vacuously"
+    elif [ "${rskip_acc:-0}" != "1" ]; then
+        bad "[M6.2-WORDB rule 2]: '$WB_PAT's reverse skip state $rskip_k does NOT accept (rx_racc[$rskip_k] = ${rskip_acc:-unread}), so the blind writer is gated off by its OTHER compile-time conjunct and no sabotage of the guard can emit it. This rule would pass vacuously — which is exactly how sabotage S72 first came back UNDETECTED. Pick a fixture whose reverse skip state accepts."
+    elif [ "$sf_total" -lt 2 ]; then
+        bad "[M6.2-WORDB rule 2]: only $sf_total sfound writers in the body; the boundary arm and the interior read are both expected"
+    elif [ "$nsf_bad" -ne 0 ]; then
+        bad "[M6.2-WORDB rule 2]: $nsf_bad sfound writer(s) are not conditioned on an accept read. A bare 'sfound = pp;' at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1]:"
+        printf '%s\n' "$sf_bad" >&2
+    else
+        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total sfound writers are conditioned on an accept read, with $rskips reverse skip loop(s) present AND skip state $rskip_k ACCEPTING (rx_racc[$rskip_k] = 1) — so the second, blind writer really would be emitted here if its guard were removed"
+    fi
+
+    # --- rule 2b: the boundary accept is ATTACHED TO THE BREAK (R30 N9) -----
+    #
+    # The reverse loop has TWO exits — the boundary and the dead state — and
+    # an accept placed after the loop would run on BOTH: on the dead-state
+    # exit it would record `sfound` at a position the walk never reached (a
+    # WRONG ANSWER, worse than a lost match) and index the accept table with a
+    # NEGATIVE state (out-of-bounds, K27's class). So the context-indexed
+    # boundary read must sit INSIDE the `pp <= startpos` arm, and there must
+    # be no accept read after the loop closes.
+    b_arm=$(grep -n 'if (pp <= startpos) {' "$wbb" | head -1 | cut -d: -f1)
+    b_read=$(grep -n 'rx_rcls\[s\[startpos - 1\]\]' "$wbb" | head -1 | cut -d: -f1)
+    b_dead=$(grep -n 'if (rst < 0) break;' "$wbb" | head -1 | cut -d: -f1)
+    if [ -z "$b_arm" ] || [ -z "$b_read" ] || [ -z "$b_dead" ]; then
+        bad "[M6.2-WORDB rule 2b]: could not locate the boundary arm (${b_arm:-MISSING}), its context read (${b_read:-MISSING}) or the dead-state exit (${b_dead:-MISSING}) in the emitted reverse loop"
+    elif [ "$b_read" -le "$b_arm" ] || [ "$b_read" -ge "$b_dead" ]; then
+        bad "[M6.2-WORDB rule 2b]: the s[startpos-1] context read is at line $b_read, outside the 'pp <= startpos' arm (line $b_arm) and its window before the dead-state exit (line $b_dead). R30 N9: an epilogue below the loop runs on the dead-state exit too"
+    else
+        ok "[M6.2-WORDB rule 2b] (R30 N9): the reverse boundary's context-indexed accept is ATTACHED to the 'pp <= startpos' break (line $b_read, inside the arm at $b_arm), not peeled below a loop whose other exit is a dead state at $b_dead"
+    fi
+fi
+
+# --- rule 3 (§7.2 item 3): ONE word-set spelling per artifact --------------
+#
+# "Whatever `\w` means, `\b` must agree with", and the only way to guarantee
+# that is ONE definition with two readers. A second copy of the word bitmap in
+# an artifact would change no answer on the day it landed and would drift on
+# some later day when one copy is regenerated — this project's recorded
+# check-design failure in its purest form.
+#
+# The DFA path has no word table at all (the set is folded into the byte
+# equivalence class map), so the population is the VM artifact, where `\w` and
+# `\b` both go through the class pool. `(\b\w+\b)` uses both in one pattern,
+# and the pool interns by CONTENT, so agreement means literally one table.
+if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
+        -- '(\b\w+\b)' >/dev/null 2>&1; then
+    # The word set is 63 members: [0-9A-Za-z_]. Its first eight bitmap bytes
+    # are unmistakable and are what a duplicate would repeat.
+    nwordtab=$(grep -c '  0,   0,   0,   0,   0,   0, 255,   3,' "$WORKDIR/wordset.c" || true)
+    # THE DISCRIMINATOR, and its first two drafts were both blind — see the
+    # note above the third assertion below. Extract every byte-set MEMBERSHIP
+    # TEST in the artifact (`vm_cls_test`'s three shapes: bitmap read, unsigned
+    # range subtract, singleton compare), normalise away the subject-byte
+    # expression each is applied to, and count the DISTINCT ones. `(\b\w+\b)`
+    # asks the same question — is this byte a word character — in three places,
+    # so a correct artifact has exactly ONE distinct test.
+    ndistinct=$(grep -oE '\(rx_k[0-9]+\[\(s\[[^]]*\]\) >> 3\] >> \(\(s\[[^]]*\]\) & 7\)\) & 1|\(unsigned\)\(s\[[^]]*\] - [0-9]+\) <= [0-9]+u|s\[[^]]*\] == [0-9]+' \
+                "$WORKDIR/wordset.c" | sed 's/s\[[^]]*\]/B/g' | sort -u | grep -c . || true)
+    #
+    # TWO ASSERTIONS, and the SECOND one took three tries — each earlier draft
+    # was measured blind by running sabotage S75 rather than by reasoning:
+    #
+    #   draft 1: "exactly one copy of the word bitmap". Catches a literal
+    #            duplicate. Does NOT catch `\b` reading a DIFFERENT set, which
+    #            leaves exactly one word bitmap (from `\w`) and passes.
+    #   draft 2: "exactly one class TABLE in the artifact". Does not catch it
+    #            either, because a set that happens to be a contiguous RANGE
+    #            (the digit set is [0-9]) compiles to a subtract-and-compare
+    #            and emits no table at all — so the count stays 1.
+    #   draft 3: exactly one distinct MEMBERSHIP TEST, normalised over the
+    #            byte expression it is applied to. That is the property the
+    #            rule is actually about — `\b` and `\w` asking ONE question —
+    #            and it is blind to which of `vm_cls_test`'s three shapes the
+    #            set compiles into.
+    if [ "$nwordtab" -lt 1 ]; then
+        bad "[M6.2-WORDB rule 3]: '(\\b\\w+\\b)' emitted no word bitmap at all — the fixture no longer exercises §7.2, so this rule has no population"
+    elif [ "$nwordtab" -ne 1 ]; then
+        bad "[M6.2-WORDB rule 3]: $nwordtab copies of the word bitmap in one artifact ($nk class tables total). \\b and \\w must READ ONE TABLE (§7.2 item 3); two copies agree today and drift the day one is regenerated"
+    elif [ "$ndistinct" -lt 1 ]; then
+        bad "[M6.2-WORDB rule 3]: no byte-set membership test found in '(\\b\\w+\\b)'s artifact at all — the extractor has stopped matching the emitted shapes, so this assertion is measuring nothing"
+    elif [ "$ndistinct" -ne 1 ]; then
+        bad "[M6.2-WORDB rule 3]: $ndistinct DISTINCT byte-set membership tests in '(\\b\\w+\\b)'s artifact, want 1. The pattern asks 'is this byte a word character' in three places; more than one distinct test means \\b resolved to a DIFFERENT set than \\w — §7.2 item 3's failure in its other direction: whatever \\w means, \\b must agree with"
+    else
+        ok "[M6.2-WORDB rule 3] (§7.2 item 3): '(\\b\\w+\\b)' emits exactly ONE word bitmap and exactly ONE distinct membership test — \\b and \\w read the same pcrec_cls_word_esc through the same pool, in both directions (no duplicate, and no divergence)"
+    fi
+else
+    bad "[M6.2-WORDB rule 3]: pcrec failed to compile the one-word-set fixture '(\\b\\w+\\b)'"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

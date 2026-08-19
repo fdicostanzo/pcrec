@@ -1,8 +1,8 @@
 # tests/assertions — module `assertions` ([M6.2])
 
-The module's own corpus and its two non-`.rxt` checks. **WAVE A only so far**:
-`\A`, `\Z` and `\z` are built; `\b` `\B` `(?m)` `\G` `\K` are recognised,
-attributed and refused, and land in later waves
+The module's own corpus and its two non-`.rxt` checks. **WAVES A AND B so
+far**: `\A`, `\Z`, `\z`, `\b` and `\B` are built; `(?m)` `\G` `\K` are
+recognised, attributed and refused, and land in later waves
 (`docs/design/assertions_design.md` §10).
 
 ## THE ORACLE RULE IS DIFFERENT HERE, and it is the first thing to know
@@ -58,6 +58,33 @@ every oracle exclusion has an entry there.
   flag-reader sabotage) belong to WAVE C**, where the flag can actually be
   true and those rows can actually go red; writing them now would be a check
   with no failing direction.
+- **wordb.rxt** — [M6.2] WAVE B: `\b` and `\B`. **The `ms`/`ns` cells are what
+  makes this file different from `absolute.rxt`, and they are not decoration.**
+  `\b`/`\B` are the module's first CONTEXT assertions — their truth at a
+  position depends on the bytes on EITHER SIDE of it — while
+  `<prefix>_search(s, n, startpos, caps)` searches `s[startpos, n)` and
+  `s[startpos-1]` sits OUTSIDE that window and INSIDE the subject. A
+  `startpos > 0` cell is therefore the only thing in this corpus that can see
+  mechanism 4 (`assertions_design.md` §3.8) at all, and 5 of that section's 10
+  measured cells differ between searching from `startpos` and searching the
+  SLICE — in BOTH directions, so no conservative reading exists.
+  **The LEADING `\B` cells at `startpos > 0` carry §3.8.3.1's reverse
+  TERMINATION defect, which a leading-`\b` population structurally cannot
+  see**: `\b`'s blind assumption (no left context means non-word) coincides
+  with its own truth condition, so a `\b`-only suite reports clean against an
+  implementation that throws matches away. The named cell is `\Bfoo` on
+  `"xfoo"` at startpos 1 → `(1,4)`, and sabotage S74 is its failing direction.
+  Also here: both-ended and interior forms, the empty-match family (`\b`,
+  `\bx*` — whose start state ACCEPTS, which is what §3.6.1's widened
+  `start_acc` is about), composition with `$`/`\z`/`\Z` (§3.6.2's two axes),
+  and an ENG_ATTEMPT block, since a `^` routes the pattern to the
+  computed-goto engine where §3.6's table and §3.8's seed take a different
+  emitted shape. Every expectation libpcre2-produced. **THREE ANCHORED CELLS
+  ARE DELIBERATELY ABSENT and the file's own header says which and why** —
+  `^\Bfoo`, `^\Bo`, `^a\bb` are never-matching patterns whose emitted C trips
+  a PRE-EXISTING `-Werror=maybe-uninitialized` in the `<prefix>_match`
+  wrapper (base-tier reproducer `^a^b`, measured on the pre-wave compiler);
+  live equivalents stand in their place.
 - **verify_pcre2.py** — the libpcre2 oracle for this directory's corpus.
   IMPORTS `tests/harness/verify_rxt.py`'s `.rxt` parser rather than copying it
   (one implementation of the file format) and builds
@@ -68,8 +95,13 @@ every oracle exclusion has an entry there.
 - **run_assertions_tests.sh** — the three things a `.rxt` file structurally
   cannot check, run by `make test-assertions`:
   1. the libpcre2 re-verification above;
-  2. the CONTROL under `tests/reject/`'s two-answer pins — the three
-     constructs this wave builds must COMPILE with the gate open. The refusal
+  2. the CONTROL under `tests/reject/`'s two-answer pins — the constructs the
+     module has BUILT must COMPILE with the gate open (wave B added `\b`/`\B`
+     here as it deleted their rows over there, in the same change; both a
+     LEADING and a TRAILING spelling of each, because the two reach different
+     machinery — the forward seed and the reverse one — and a control that
+     only ever compiled the leading form would not notice the reverse half
+     failing to build). The refusal
      TEXTS live in tests/reject/ (the house home for "which module does a
      diagnostic name", both gate states adjacent in its `== assertions ==`
      section); what cannot live there is the fact that stops the
@@ -77,9 +109,23 @@ every oracle exclusion has an entry there.
      partly-landed one;
   3. the D47.5 exemption ACTUALLY FIRING, read off the artifact's own
      `<PREFIX>_VM_STRATS` stamp in both directions — `\z`/`\Z`/`$` in the
-     follow must possessify, `\A`/`^` must not. A possessified quantifier and
-     a backtracking one match identically by construction, so `gate.rxt` stays
-     green either way; the stamp is the only thing that can see it.
+     follow must possessify, `\A`/`^`/`\b`/`\B` must not. A possessified
+     quantifier and a backtracking one match identically by construction, so
+     `gate.rxt` stays green either way; the stamp is the only thing that can
+     see it. Wave B's own rows are the last two: the exemption rests on UPWARD
+     CLOSURE and a word boundary is closed in NEITHER direction (`\w{0,4}\b`
+     on "abcd" is a boundary at the maximal exit 4 and not at the retreat 3),
+     so `\b` must take `^`'s arm and not `$`'s;
+  4. [M6.2 wave B] that the COMPOSED STATE BUDGET (§3.5.1) REFUSES rather
+     than miscompiling, on BOTH caps — `PCREC_MAX_DFA_STATES_TABLE` for
+     ENG_UNANCH and the 3.2x tighter `PCREC_MAX_DFA_STATES_GOTO` for
+     ENG_ATTEMPT, which §3.4.1 discloses the design's whole corpus
+     measurement was blind to. The check pins the PROPERTY (states-cap
+     diagnostic, no output file written) and not the boundary's location: the
+     located boundary is a MEASUREMENT and lives in
+     `docs/design/assertions_measurements/out/wordctx_budget.txt`. Its
+     control is the same family an order of magnitude smaller, which must
+     compile.
 
 ## What guards what, and why none of it substitutes for another
 
@@ -92,10 +138,18 @@ Four instruments touch this module and they see different things:
 | `verify_pcre2.py` | whether ALL of them describe libpcre2 — the only check that can validate a `\Z` cell |
 | `run_assertions_tests.sh` | the gate's two answers, and whether the possessification exemption fired |
 
-and one more lives outside this directory entirely:
-`tests/codegen/run_endvar_identity.sh`, the byte-identity gate for the claim
-that `\z`'s third closure view costs a `\z`-free pattern nothing. Its failing
+and three more live outside this directory entirely.
+`tests/codegen/run_endvar_identity.sh` is the byte-identity gate for the claim
+that `\z`'s third closure view costs a `\z`-free pattern nothing; its failing
 direction is sabotage S69 — the design's own refuted first draft, restored.
+`tests/codegen/run_wordctx_identity.sh` is wave B's, for the much larger claim
+that the alphabet refinement, the second closure, the class-indexed accept and
+the third start state cost a `\b`-free pattern nothing (sabotage S71). And
+`tests/codegen/run_codegen_tests.sh`'s `[M6.2-WORDB]` block carries three
+rules no correctness test can see — no accept table indexed at `pos == n`
+(§3.6.2, sabotage S73), no `sfound` recorded blind at the reverse boundary by
+ANY writer including the skip's (§3.8.3.1, sabotage S72), and exactly one
+word-set spelling per artifact (§7.2 item 3).
 
 ## Maintenance
 

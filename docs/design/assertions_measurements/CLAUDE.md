@@ -67,6 +67,24 @@ design doc marks every claim accordingly.
   difference every run (1030 / 609 / **421 silently merged**), so the defect is
   visible rather than latent. Exists because the fix must travel as TOOLING: this
   lane reproduced R24 M-F1 verbatim after reading the entry that named it.
+- **`probes/probe_wordctx_budget.py` — MEASURED, in-pcrec, BOTH ARMS.**
+  [M6.2 wave B] closing §3.5.1's landing condition: the composed state budget,
+  taken on the BUILT compiler rather than composed from a prototype's ratio
+  and a corpus's worst count. Reads states and ncls off each artifact's own
+  emitted tables for PAT and `\bPAT\b` — the same arm-vs-arm shape
+  `probe_wordctx_states.py` used, with pcrec on BOTH arms instead of a model
+  on both — and then LOCATES the refusal boundary by bisection against both
+  caps, ENG_UNANCH's 32,000 and ENG_ATTEMPT's 3.2x tighter 10,000 (§3.4.1
+  discloses that the design's whole corpus measurement was blind to the
+  second). It reads the ATTEMPT engine's state count too, from its computed-
+  goto table count, because that engine emits no accept array at all.
+  **It refuted §3.5.1's forecast as an OBSERVATION** (the bound stands): the
+  measured ratio's MIN is BELOW 1 — the word context can SHRINK a machine —
+  and on §3.5.1's own worst family a leading `\b` RAISES the ceiling by
+  pruning start positions and moving the binding constraint from
+  `PCREC_MAX_SUBSET_ELEMS` to the state cap. The genuine regression had to be
+  looked for and is one repeat count wide on a linear chain, which is why that
+  family is in the probe rather than only in the prose.
 - **`probes/archive.sh` — not a probe, the ARCHIVER.** Every file in `out/` is
   written by it, so one provenance header covers them all and a number can be
   traced to a run rather than to a claim. **R30 M7: the archiver is the ONLY

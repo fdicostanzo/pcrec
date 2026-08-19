@@ -94,6 +94,13 @@ long long pcrec_minw(const Ast *a)
         case A_BOL:
         case A_EOL:
         case A_END:
+        /* [M6.2 wave B] `\b`/`\B` consume no byte, exactly as every other
+         * assertion here does. The word-boundary pair reads the bytes AROUND
+         * the position, which is not the same thing as consuming one, and a
+         * minw of 1 would be an OVER-estimate -- this file's unsound
+         * direction. */
+        case A_WORDB:
+        case A_NWORDB:
             return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));

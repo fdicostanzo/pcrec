@@ -21,6 +21,23 @@
  * corpus rather than costing correctness, which is exactly the kind of defect
  * a test suite full of correctness checks does not see.
  *
+ * [M6.2 wave B] `\b`/`\B` add a fourth axis, and it is NOT a position view:
+ * their truth depends on the two BYTES around the position, so the state
+ * identity gains "the byte already consumed was a word character" and each
+ * state gains a second closure for "the byte about to be consumed is one"
+ * (`DState.wlist`). The class map is refined by the word set so that bit is
+ * constant inside a class, and the transition row for a class is then built
+ * from the closure that class's word-ness selects — which is what keeps the
+ * emitted hot path a single table read. See eqclasses, the Clo comment and
+ * make_state.
+ *
+ * `-DPCREC_NO_WORDCTX` compiles that axis out (`has_word` is pinned false, so
+ * no refinement, no second closure, one interior start state, and the emitter
+ * reproduces the pre-wave text). Same shape and same single consumer as the
+ * two knobs below: tests/codegen/run_wordctx_identity.sh. Never defined in a
+ * shipped build; under it a `\b` pattern compiles to something WRONG, which
+ * is exactly why that script's control population must differ.
+ *
  * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
  * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
  * reproduces the pre-wave text). It exists for exactly one consumer,
@@ -41,27 +58,59 @@
 
 /* ---- byte equivalence classes ---- */
 
-static void eqclasses(Nfa *nfa, Dfa *d)
+/* Refine the running partition by one byte set. Split out of eqclasses at
+ * [M6.2 wave B] because the word set refines it too, and two hand copies of a
+ * partition refinement is exactly the drift this project keeps recording. */
+static int refine_by(Dfa *d, int ncls, const uint8_t *bits)
+{
+    int remap[256][2];
+    for (int j = 0; j < ncls; j++) remap[j][0] = remap[j][1] = -1;
+    int next = 0;
+    for (int c = 0; c < 256; c++) {
+        int in = cls_has(bits, (unsigned)c) ? 1 : 0;
+        int *slot = &remap[d->clsmap[c]][in];
+        if (*slot < 0) *slot = next++;
+        d->clsmap[c] = (uint8_t)*slot;
+    }
+    return next;
+}
+
+/* [M6.2 wave B] `has_word` refines the partition by the WORD SET, and it must:
+ * the context bit `\b` carries is "the byte was a word character", so a class
+ * straddling the word boundary would make that bit non-constant inside a
+ * class and the whole class-indexed scheme meaningless.
+ *
+ * IT IS AT MOST ONE EXTRA CLASS and that is measured, not argued
+ * (assertions_design.md §3.4, min/median/max 0/+1/+2 over the 1030-pattern
+ * `.rxt` corpus): a pattern's class map already separates the bytes the
+ * pattern NAMES, so the only class that can straddle the word boundary is the
+ * catch-all of bytes it never mentions.
+ *
+ * THE SET IS `pcrec_cls_word_esc` AND THERE IS NO SECOND SPELLING OF IT
+ * ANYWHERE (§7.2 item 3). That table is what `\w` compiles from, it is
+ * oracle-generated against libpcre2 and PC-4 re-measures it every run — and
+ * whatever `\w` means, `\b` must agree with, which one definition with two
+ * readers guarantees and two definitions cannot. */
+static void eqclasses(Nfa *nfa, Dfa *d, bool has_word)
 {
     memset(d->clsmap, 0, 256);
     int ncls = 1;
 
     for (int i = 0; i < nfa->n; i++) {
         if (nfa->st[i].k != N_CLASS) continue;
-        const uint8_t *bits = nfa->st[i].cls;
-        int remap[256][2];
-        for (int j = 0; j < ncls; j++) remap[j][0] = remap[j][1] = -1;
-        int next = 0;
-        for (int c = 0; c < 256; c++) {
-            int in = cls_has(bits, (unsigned)c) ? 1 : 0;
-            int *slot = &remap[d->clsmap[c]][in];
-            if (*slot < 0) *slot = next++;
-            d->clsmap[c] = (uint8_t)*slot;
-        }
-        ncls = next;
+        ncls = refine_by(d, ncls, nfa->st[i].cls);
     }
+    if (has_word) ncls = refine_by(d, ncls, pcrec_cls_word_esc);
     d->ncls = ncls;
     for (int c = 255; c >= 0; c--) d->rep[d->clsmap[c]] = (uint8_t)c;
+}
+
+/* Is byte class `c` a word class? Well-defined ONLY because eqclasses refined
+ * by the word set: every byte of a class then has the same answer, so reading
+ * it off the class's representative byte is exact rather than a sample. */
+static bool cls_is_word(const Dfa *d, int c)
+{
+    return cls_has(pcrec_cls_word_esc, d->rep[c]);
 }
 
 /* ---- epsilon closure ---- */
@@ -349,6 +398,22 @@ typedef struct {
      * only caller and it never spells that combination. */
     bool      end_ok;
     bool      bot_ok;
+    /* [M6.2 wave B] `\b`/`\B`'s two operands, and the reason this file needs
+     * no notion of scan DIRECTION to serve both machines.
+     *
+     *   `cons_word` — the byte the walk has ALREADY CONSUMED to arrive here
+     *                 is a word character. Fixed for the whole state: it is
+     *                 read off the class of the transition that built it.
+     *   `up_word`   — the byte the walk is ABOUT TO CONSUME is a word
+     *                 character. A parameter, because every class answers it
+     *                 differently; make_state closes each pre-set twice.
+     *
+     * `\b` holds iff the two DIFFER and `\B` iff they AGREE. Both tests are
+     * SYMMETRIC, so the forward machine (consumed = left, upcoming = right)
+     * and the reverse machine (consumed = right, upcoming = left) evaluate
+     * the same expression and neither has to say which it is. */
+    bool      cons_word;
+    bool      up_word;
     bool      prune;
 } Clo;
 
@@ -529,6 +594,14 @@ static void clo_walk(Clo *cl, int s)
                 if (!cl->end_ok) break;
                 s = st->t1;
                 continue;
+            case N_WORDB:
+                if (cl->cons_word == cl->up_word) break;
+                s = st->t1;
+                continue;
+            case N_NWORDB:
+                if (cl->cons_word != cl->up_word) break;
+                s = st->t1;
+                continue;
             }
             break;   /* the path ends here */
         }
@@ -543,8 +616,8 @@ static void clo_walk(Clo *cl, int s)
 }
 
 static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok,
-                    bool end_ok, bool prune, CloScratch *sc, int *out,
-                    int *nout, bool *accept)
+                    bool end_ok, bool cons_word, bool up_word, bool prune,
+                    CloScratch *sc, int *out, int *nout, bool *accept)
 {
     marks_next(&sc->seen);
     /* The two stamp arrays advance in LOCKSTEP, which is what lets one `gen`
@@ -561,7 +634,8 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
     Clo cl = { nfa, &sc->ctxs, &sc->memo, &sc->ks,
                sc->seen.mark, sc->emit.mark, sc->seen.gen,
-               out, 0, false, eol_ok, end_ok, bot_ok, prune };
+               out, 0, false, eol_ok, end_ok, bot_ok, cons_word, up_word,
+               prune };
     for (int i = 0; i < npre; i++) {
         if (prune && cl.accept) break;
         clo_walk(&cl, pre[i]);
@@ -572,8 +646,13 @@ static void closure(Nfa *nfa, const int *pre, int npre, bool bot_ok, bool eol_ok
 
 /* ---- state interning ---- */
 
-static uint32_t dhash(const int *list, int n, int accept, int eolvar,
-                      int endvar)
+/* [M6.2 wave B] The word view joins the key. Note this changes no state
+ * NUMBERING and therefore no emitted byte on a `\b`-free pattern: a new
+ * state's index is `d->n++`, i.e. insertion order, and the hash only picks
+ * which probe sequence finds it. */
+static uint32_t dhash(const int *list, int n, int accept,
+                      const int *wlist, int nw, int waccept,
+                      int eolvar, int endvar)
 {
     uint32_t h = 2166136261u;
     for (int i = 0; i < n; i++) {
@@ -581,6 +660,12 @@ static uint32_t dhash(const int *list, int n, int accept, int eolvar,
         h *= 16777619u;
     }
     h ^= (uint32_t)accept + 0x9e37u;
+    h *= 16777619u;
+    for (int i = 0; i < nw; i++) {
+        h ^= (uint32_t)wlist[i];
+        h *= 16777619u;
+    }
+    h ^= (uint32_t)waccept + 0x51edu;
     h *= 16777619u;
     h ^= (uint32_t)(eolvar + 2);
     h *= 16777619u;
@@ -592,7 +677,10 @@ static uint32_t dhash(const int *list, int n, int accept, int eolvar,
 static void tab_insert(Dfa *d, int idx)
 {
     uint32_t h = dhash(d->st[idx].list, d->st[idx].nlist,
-                       d->st[idx].accept, d->st[idx].eolvar,
+                       d->st[idx].accept,
+                       d->st[idx].wlist, d->st[idx].nwlist,
+                       d->st[idx].waccept,
+                       d->st[idx].eolvar,
                        d->st[idx].endvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) i = (i + 1) & (d->tabcap - 1);
@@ -612,18 +700,30 @@ static void tab_grow(Ctx *cx, Dfa *d)
     for (int s = 0; s < d->n; s++) tab_insert(d, s);
 }
 
-/* Intern a closed state (list must already be a closure result). */
+/* Intern a closed state (list must already be a closure result).
+ *
+ * [M6.2 wave B] `wlist`/`waccept` are the WORD VIEW of the same pre-set, and
+ * they are part of the IDENTITY, not decoration hung off it. That is what
+ * makes "the previous byte's word-ness is part of the state" true without a
+ * field to carry it: two pre-sets reached under different contexts produce
+ * different closures wherever the context is live, so they land here as
+ * different keys; where it is not live they produce the same closures and
+ * MERGE, which is the whole reason §3.5's measured ratio is 1.11x median
+ * rather than the theoretical 2x. */
 static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept,
+                  const int *wlist, int nw, bool waccept,
                   int eolvar, int endvar)
 {
     if (d->tabcap == 0 || (size_t)d->n * 2 >= d->tabcap) tab_grow(cx, d);
-    uint32_t h = dhash(list, n, accept, eolvar, endvar);
+    uint32_t h = dhash(list, n, accept, wlist, nw, waccept, eolvar, endvar);
     size_t i = h & (d->tabcap - 1);
     while (d->tab[i] >= 0) {
         DState *s = &d->st[d->tab[i]];
         if (s->nlist == n && (bool)s->accept == accept && s->eolvar == eolvar &&
             s->endvar == endvar &&
-            memcmp(s->list, list, (size_t)n * sizeof(int)) == 0)
+            s->nwlist == nw && (bool)s->waccept == waccept &&
+            memcmp(s->list, list, (size_t)n * sizeof(int)) == 0 &&
+            memcmp(s->wlist, wlist, (size_t)nw * sizeof(int)) == 0)
             return d->tab[i];
         i = (i + 1) & (d->tabcap - 1);
     }
@@ -636,7 +736,13 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept,
      * memory this construction actually spends is sum(nlist), and the two come
      * apart by a whole factor on exactly the shape K7 reports. See
      * PCREC_MAX_SUBSET_ELEMS. */
-    cx->subset_elems += n;
+    bool wshared = nw == n && memcmp(list, wlist, (size_t)n * sizeof(int)) == 0;
+    /* The word view's elements are charged too when they are a SECOND list —
+     * K7's bound is on what the construction spends, and a wave that doubled
+     * the lists without doubling the charge would have widened the cap it
+     * never touched. Zero extra on every `\b`-free pattern, where the two
+     * views are one list. */
+    cx->subset_elems += n + (wshared ? 0 : nw);
     if (cx->subset_elems > PCREC_MAX_SUBSET_ELEMS)
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
@@ -656,6 +762,17 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept,
     s->list = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof(int));
     memcpy(s->list, list, (size_t)n * sizeof(int));
     s->accept = accept;
+    /* The word view SHARES the base list's storage when the two coincide,
+     * which is every state of every `\b`-free pattern — so the arena traffic
+     * this wave adds to the existing corpus is zero, not merely small. */
+    if (wshared) {
+        s->wlist = s->list;
+    } else {
+        s->wlist = arena_alloc(&cx->arena, (size_t)(nw ? nw : 1) * sizeof(int));
+        memcpy(s->wlist, wlist, (size_t)nw * sizeof(int));
+    }
+    s->nwlist = nw;
+    s->waccept = waccept;
     s->eolvar = eolvar;
     s->endvar = endvar;
     s->tr = arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
@@ -691,17 +808,25 @@ static int intern(Ctx *cx, Dfa *d, const int *list, int n, bool accept,
  * `dfa_has_endvar` is false and the emitter emits today's text. No `has_z`
  * conditional is needed anywhere. */
 static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, bool prune,
-                      const int *pre, int npre, bool bot_ok, bool has_end,
-                      CloScratch *sc, int *scratch)
+                      const int *pre, int npre, bool bot_ok, bool cons_word,
+                      bool has_end, bool has_word, CloScratch *sc,
+                      int *scratch)
 {
     int *scratch2 = scratch + nfa->n;
     int *scratch3 = scratch + 2 * nfa->n;
-    int nout, nout2, nout3;
-    bool accept, accept2, accept3;
+    /* [M6.2 wave B] the WORD VIEW of each of the three position views —
+     * `up_word = true` instead of false. Six closures at the worst, and the
+     * two guards below (`has_end`, `has_word`) are what keep the existing
+     * corpus at two. */
+    int *wscratch  = scratch + 3 * nfa->n;
+    int *wscratch2 = scratch + 4 * nfa->n;
+    int *wscratch3 = scratch + 5 * nfa->n;
+    int nout, nout2, nout3, wnout, wnout2, wnout3;
+    bool accept, accept2, accept3, waccept, waccept2, waccept3;
 
-    closure(nfa, pre, npre, bot_ok, false, false, prune, sc,
+    closure(nfa, pre, npre, bot_ok, false, false, cons_word, false, prune, sc,
             scratch, &nout, &accept);
-    closure(nfa, pre, npre, bot_ok, true, false, prune, sc,
+    closure(nfa, pre, npre, bot_ok, true, false, cons_word, false, prune, sc,
             scratch2, &nout2, &accept2);
 
     /* THE THIRD CLOSURE IS SKIPPED WHEN THE MACHINE HAS NO N_END, and that
@@ -722,35 +847,89 @@ static int make_state(Ctx *cx, Nfa *nfa, Dfa *d, bool prune,
      * this is about not computing an answer we can prove without computing. */
     if (has_end) {
         /* end_ok implies eol_ok — the Clo.end_ok invariant. */
-        closure(nfa, pre, npre, bot_ok, true, true, prune, sc,
-                scratch3, &nout3, &accept3);
+        closure(nfa, pre, npre, bot_ok, true, true, cons_word, false, prune,
+                sc, scratch3, &nout3, &accept3);
     } else {
         nout3 = nout2;
         accept3 = accept2;
         scratch3 = scratch2;
     }
 
-    if (!accept && !accept2 && !accept3 &&
-        nout == 0 && nout2 == 0 && nout3 == 0) return -1;
+    /* THE WORD VIEWS ARE SKIPPED WHEN THE MACHINE HAS NO N_WORDB/N_NWORDB,
+     * on exactly the argument `has_end` uses one paragraph up and with the
+     * same status: it is PROVABLE, not prudent. With no word-boundary state
+     * `up_word` gates nothing, so the `up_word = true` closure of any pre-set
+     * is the `up_word = false` one, element for element. Sharing the buffers
+     * makes `wshared` true at every intern, so a `\b`-free pattern pays no
+     * closure, no arena and no `subset_elems` for this wave — which is the
+     * whole content of the byte-identity claim
+     * tests/codegen/run_wordctx_identity.sh gates. */
+    if (has_word) {
+        closure(nfa, pre, npre, bot_ok, false, false, cons_word, true, prune,
+                sc, wscratch, &wnout, &waccept);
+        closure(nfa, pre, npre, bot_ok, true, false, cons_word, true, prune,
+                sc, wscratch2, &wnout2, &waccept2);
+        if (has_end) {
+            closure(nfa, pre, npre, bot_ok, true, true, cons_word, true, prune,
+                    sc, wscratch3, &wnout3, &waccept3);
+        } else {
+            wnout3 = wnout2;
+            waccept3 = waccept2;
+            wscratch3 = wscratch2;
+        }
+    } else {
+        wscratch = scratch;   wnout = nout;   waccept = accept;
+        wscratch2 = scratch2; wnout2 = nout2; waccept2 = accept2;
+        wscratch3 = scratch3; wnout3 = nout3; waccept3 = accept3;
+    }
 
+    if (!accept && !accept2 && !accept3 && !waccept && !waccept2 && !waccept3 &&
+        nout == 0 && nout2 == 0 && nout3 == 0 &&
+        wnout == 0 && wnout2 == 0 && wnout3 == 0) return -1;
+
+    /* A view differs when EITHER of its two class-axis closures differs — the
+     * §3.6.2 composition read as an interning rule. Comparing only the
+     * non-word half would merge a state whose `$` view differs from its base
+     * view solely in what a word byte may then do, and the merge would be
+     * silent. */
     int eolvar = -1;
     if (accept2 != accept || nout2 != nout ||
-        memcmp(scratch, scratch2, (size_t)nout * sizeof(int)) != 0)
-        eolvar = intern(cx, d, scratch2, nout2, accept2, -1, -1);
+        memcmp(scratch, scratch2, (size_t)nout * sizeof(int)) != 0 ||
+        waccept2 != waccept || wnout2 != wnout ||
+        memcmp(wscratch, wscratch2, (size_t)wnout * sizeof(int)) != 0)
+        eolvar = intern(cx, d, scratch2, nout2, accept2,
+                        wscratch2, wnout2, waccept2, -1, -1);
 
     int endvar = -1;
 #ifndef PCREC_NO_ENDVAR
     if (accept3 != accept2 || nout3 != nout2 ||
-        memcmp(scratch2, scratch3, (size_t)nout2 * sizeof(int)) != 0)
-        endvar = intern(cx, d, scratch3, nout3, accept3, -1, -1);
+        memcmp(scratch2, scratch3, (size_t)nout2 * sizeof(int)) != 0 ||
+        waccept3 != waccept2 || wnout3 != wnout2 ||
+        memcmp(wscratch2, wscratch3, (size_t)wnout2 * sizeof(int)) != 0)
+        endvar = intern(cx, d, scratch3, nout3, accept3,
+                        wscratch3, wnout3, waccept3, -1, -1);
 #endif
 
-    return intern(cx, d, scratch, nout, accept, eolvar, endvar);
+    return intern(cx, d, scratch, nout, accept, wscratch, wnout, waccept,
+                  eolvar, endvar);
 }
 
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
 {
-    eqclasses(nfa, d);
+    /* Hoisted once per machine, like `has_end` below and for the same reason.
+     * The ALPHABET refinement has to happen before eqclasses returns, so this
+     * one cannot wait until the worklist. */
+    bool has_word = false;
+#ifndef PCREC_NO_WORDCTX
+    for (int i = 0; i < nfa->n; i++)
+        if (nfa->st[i].k == N_WORDB || nfa->st[i].k == N_NWORDB) {
+            has_word = true;
+            break;
+        }
+#endif
+    d->wordctx = has_word;
+
+    eqclasses(nfa, d, has_word);
     /* R1 A-3: the binding constraint for table machines is total emitted
      * table entries (gcc time is flat in data size), not state count alone */
     d->maxstates = maxstates;
@@ -770,8 +949,9 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
     sc.memo.ar = sc.ctxs.ar = sc.ks.ar = &cx->arena;
 
     /* [M6.2 wave A] THREE closure buffers, not two — make_state computes
-     * base / eol / end views into scratch, scratch + n and scratch + 2n. */
-    int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 3 * sizeof(int));
+     * base / eol / end views into scratch, scratch + n and scratch + 2n.
+     * [M6.2 wave B] SIX: each of those three has a word-view twin at +3n. */
+    int *scratch = arena_alloc(&cx->arena, (size_t)nfa->n * 6 * sizeof(int));
     int *pre = arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
 
     /* Hoisted once per machine — see make_state's own note on why the third
@@ -781,22 +961,54 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, int maxstates)
         if (nfa->st[i].k == N_END) { has_end = true; break; }
 
     int root = nfa->start;
-    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, has_end, &sc, scratch);
-    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, has_end, &sc, scratch);
+    /* THE THREE START STATES, and mechanism 4 is why there are three
+     * (assertions_design.md §3.8). `s0` is the boundary context: there is no
+     * byte on the far side at all, which for `\b`'s purposes is NON-word, so
+     * it needs no word twin. `s1`/`s1w` are the two interior contexts, chosen
+     * at runtime from the seed byte's class — `s[startpos-1]` for the forward
+     * machine, `s[end]` for the reverse one. Without them a search at
+     * `startpos > 0` evaluates a leading `\b` as if the window were the whole
+     * subject, which §3.8.1 measures diverging from libpcre2 on 5 of 10
+     * cells. */
+    d->s0 = make_state(cx, nfa, d, prune, &root, 1, true, false, has_end,
+                       has_word, &sc, scratch);
+    d->s1 = make_state(cx, nfa, d, prune, &root, 1, false, false, has_end,
+                       has_word, &sc, scratch);
+    d->s1w = has_word
+        ? make_state(cx, nfa, d, prune, &root, 1, false, true, has_end,
+                     has_word, &sc, scratch)
+        : d->s1;
 
     /* worklist: any state (including EOL variants) with an unfilled row */
     for (int si = 0; si < d->n; si++) {
         for (int c = 0; c < d->ncls; c++) {
             if (d->st[si].tr[c] != -2) continue;
             uint8_t b = d->rep[c];
+            /* [M6.2 wave B] The class decides BOTH halves of the context, and
+             * this is the line that makes the word view free on the hot path:
+             *
+             *  - which of the source state's two closures may consume `b` —
+             *    the one closed with `up_word = cls_is_word(c)`, because that
+             *    IS the byte those threads are about to consume; and
+             *  - the context the TARGET is closed under, which is the same
+             *    bit one position later.
+             *
+             * Both are compile-time facts of the class, so the emitted
+             * transition is the pre-wave single table read. */
+            bool cw = cls_is_word(d, c);
+            /* Read the source list ONCE, here, and never across the
+             * make_state below — that call can realloc `d->st` out from under
+             * a held pointer, which is what the pre-wave code's re-read at
+             * every access was guarding against. */
+            const int *src = cw ? d->st[si].wlist : d->st[si].list;
+            int nsrc = cw ? d->st[si].nwlist : d->st[si].nlist;
             int npre = 0;
-            /* d->st may move if make_state grows it: re-read each access */
-            for (int j = 0; j < d->st[si].nlist; j++) {
-                int ns = d->st[si].list[j];
+            for (int j = 0; j < nsrc; j++) {
+                int ns = src[j];
                 if (cls_has(nfa->st[ns].cls, b)) pre[npre++] = nfa->st[ns].t1;
             }
-            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, has_end,
-                                 &sc, scratch);
+            int tgt = make_state(cx, nfa, d, prune, pre, npre, false, cw,
+                                 has_end, has_word, &sc, scratch);
             d->st[si].tr[c] = tgt;
         }
     }

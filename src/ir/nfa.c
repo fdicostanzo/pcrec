@@ -504,6 +504,17 @@ static Frag compile_ast(NB *b, const Ast *a)
      * evaluates it at the position its own walk STARTS from, which is the
      * pattern's right end. */
     case A_END:   return frag_single(b, N_END);
+    /* [M6.2 wave B] `\b` / `\B`. Reversal is identity here too, but for a
+     * DIFFERENT reason than N_BOT/N_EOL/N_END's, and the difference is worth
+     * a sentence because it is what the whole reverse half of this wave rests
+     * on. Those three are absolute-position assertions, so reversing the
+     * machine cannot change what they mean. A word boundary is not absolute —
+     * it is a predicate on the two bytes AROUND the position — and it
+     * survives reversal because that predicate is SYMMETRIC in them: `\b` is
+     * "they differ" and `\B` is "they agree", and neither says which side is
+     * which. See src/ir/dfa.c's Clo comment. */
+    case A_WORDB:  return frag_single(b, N_WORDB);
+    case A_NWORDB: return frag_single(b, N_NWORDB);
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */

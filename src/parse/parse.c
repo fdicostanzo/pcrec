@@ -648,11 +648,15 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
     if (nextc(cx) != ')')
         ctx_fail(cx, apos, "missing closing ) for group");
     *cx->mods = saved_mods;
-    if (body->k == A_BOL || body->k == A_EOL || body->k == A_END) {
+    if (body->k == A_BOL || body->k == A_EOL || body->k == A_END ||
+        body->k == A_WORDB || body->k == A_NWORDB) {
         /* wrap a bare-anchor group: `(^)*` is quantifiable in PCRE even
          * though a bare quantified anchor is not (R1 review S-M1).
          * [M6.2 wave A] A_END joins for the same measured reason: `\z*` is
-         * PCRE2 error 109 and `(\z)*` compiles. */
+         * PCRE2 error 109 and `(\z)*` compiles.
+         * [M6.2 wave B] and the word-boundary pair, MEASURED the same way
+         * against libpcre2 10.46: `\b*` `\b+` `\b?` `\b{2}` `\B*` are all
+         * error 109, while `(\b)*` and `(\B)*` both compile to (0,0). */
         Ast *cat = node(cx, A_CAT);
         cat->l = body;
         cat->r = node(cx, A_EMPTY);
@@ -909,6 +913,7 @@ have:
          * closing `}` for a brace form (the `goto have` skipped it and
          * try_quant left the cursor past the brace). */
         if (a->k == A_BOL || a->k == A_EOL || a->k == A_END ||
+            a->k == A_WORDB || a->k == A_NWORDB ||
             a->not_repeatable)
             ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
         quantified = true;

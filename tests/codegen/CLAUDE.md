@@ -110,6 +110,35 @@ or it has no regression net at all.
   patterns byte-identical, 18 DFA-compiled `\z` patterns differing, 0
   DFA-compiled ones agreeing — read the current numbers from a run.
 
+- **run_wordctx_identity.sh** — [M6.2] wave B's BYTE-IDENTITY GATE, the same
+  shape one axis over. `\b`/`\B` are the largest change any wave of [M6.2]
+  makes to the engine — the class map is refined by the word set, every state
+  gains a second closure, the accept becomes class-indexed where it varies,
+  and the machine gains a third start state — and the claim is that a pattern
+  WITHOUT them pays for none of it. Reference build is this tree's sources
+  with `-DPCREC_NO_WORDCTX` (`has_word` pinned false); sabotage S71 is the
+  measured failing direction. Landing figures: 1039 of 1039 `\b`-free corpus
+  patterns byte-identical, 47 controls differing, 0 unexplained agreements.
+
+  **Its SPLIT is subtler than wave A's, and the difference is the file's own
+  lesson.** `run_endvar_identity.sh` can split the corpus on `grep -F '\z'`
+  because `\z` means one thing everywhere. `\b` does not: inside a character
+  class it is BASE syntax for backspace (0x08), and `[\b]` is in this corpus
+  today. A text split ignoring that would put `[\b]` in the CONTROL
+  population, where it would correctly fail to differ and report a false
+  alarm about a working knob. So the split scans for `\b`/`\B` OUTSIDE a
+  bracket expression — on the pattern TEXT, deliberately not on anything pcrec
+  computes — and prints both counts every run so the exclusion is visible
+  rather than latent.
+
+  **It also has a SECOND legitimate non-difference, found by running it.**
+  `\b\B` and `\B\b` are contradictions (a position is a word boundary or it
+  is not), so the emitter's "matches nothing" early-out produces an artifact
+  with no automaton in it and the two builds agree for a reason unrelated to
+  the knob. Classified rather than excluded, and read off the ARTIFACT (the
+  `(void)s; ... return 0;` body) rather than off a maintained list of pattern
+  texts — the same rule the VM arm follows.
+
 - **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
   to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump
   derive from the same structure the emitter walks; the emitter satisfies that
@@ -429,6 +458,44 @@ with the trie deleted for every hand-written pattern. A control that only proves
 the optimization fires OUTSIDE the corpus's own range proves nothing about the
 corpus. When adding an equivalence check, put a control inside the range of the
 inputs it actually compares.
+
+## [M6.2 wave B] the three `\b` rules, and why none is a correctness test
+
+`run_codegen_tests.sh` gained an `[M6.2-WORDB]` block of three rules from
+`assertions_design.md`, each of which is invisible to every oracle in the
+tree — this file's whole charter, three more times:
+
+1. **§3.6.2 — never index an accept table at `pos == n`.** Two axes select an
+   accept bit (the VIEW axis by position, the CLASS axis by the next byte),
+   and at end of subject there IS no next byte, so the accept is the view's
+   SCALAR one. Getting it wrong reads `s[pos]` at `pos == n` — an
+   out-of-bounds read in EMITTED code, K27's class — and usually changes NO
+   answer, because the byte one past the subject is often readable and often
+   lands in a class with the same bit. Checked two ways, because either alone
+   is weak: every class-indexed read must go through the guarded `cl` local,
+   AND the `pos >= n` guard (with the scalar accept inside it) must precede
+   the first such read. Sabotage S73.
+2. **§3.8.3.1 — no `sfound` at the reverse boundary except through the
+   context-indexed accept, from ANY writer.** The design states an invariant
+   rather than a patch because there is more than one writer: the reverse
+   SKIP's `sfound = pp;` is emitted under a COMPILE-TIME condition, so what
+   lands in the artifact is a bare unconditional assignment with no runtime
+   test to fail. The check enumerates every `sfound` assignment in the body
+   and requires each to be conditioned on an accept read. A companion rule
+   (2b) pins R30 N9: the boundary accept must be ATTACHED to the `pp <=
+   startpos` break, because the loop has a SECOND exit (dead state) and an
+   epilogue below it would record a position the walk never reached and index
+   the accept table with a negative state. Sabotage S72.
+3. **§7.2 item 3 — one word-set spelling per artifact.** Whatever `\w` means,
+   `\b` must agree with, and the only way to guarantee that is one definition
+   with two readers. A second copy changes nothing the day it lands and drifts
+   the day one is regenerated.
+
+**The FIXTURE is `\bx.*y\b`**, and the choice is load-bearing: it is the only
+shape carrying every emitted site at once — class-indexed accepts in BOTH
+machines, mechanism 4's seed in both, AND live forward and reverse SKIP
+states. Rule 2 is about the skip, so a fixture without one would satisfy it
+vacuously, and the check asserts the skip's presence rather than assuming it.
 
 ## Conventions
 
