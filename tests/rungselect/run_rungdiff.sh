@@ -137,9 +137,13 @@ rungs_of() { # rungs_of <cfile> <PREFIX>  -> the hex mask, or empty
 }
 # [ABI-NS] (D60): PCREC_VM_RUNG_REVDET is universal/unprefixed now (the
 # shared PCREC_RX_ABI_H block) — one constant, same in both pa.c and pb.c,
-# so this no longer takes a <PREFIX> argument.
-revdet_bit_of() {
-    sed -n 's/^#define PCREC_VM_RUNG_REVDET *0x\([0-9a-f]*\)u$/\1/p' "$1"
+# so this no longer takes a <PREFIX> argument. Every caller compiles with
+# `-o <name>.c` (SPLIT output), so the shared block lands in the PAIRED
+# `.h`, not the `.c` passed in here — reading only the .c silently found
+# nothing and made every artifact read as "no REVDET rung" (found live,
+# 2026-08-18, same defect as the possessify suite's).
+revdet_bit_of() {   # revdet_bit_of <file.c>
+    sed -n 's/^#define PCREC_VM_RUNG_REVDET *0x\([0-9a-f]*\)u$/\1/p' "${1%.c}.h"
 }
 
 one_pattern() {

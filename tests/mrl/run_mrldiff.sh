@@ -127,11 +127,17 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # The artifact's PRUNE stamp, as a yes/no on the CLAMPED bit.
 # [ABI-NS] (D60): PCREC_VM_PRUNE_CLAMPED is a universal, unprefixed
 # constant now (the shared PCREC_RX_ABI_H block) — the OR'd mask
-# ($2_VM_PRUNES) is still per-artifact and stays keyed on <PREFIX>.
-has_clamp() {   # has_clamp <file> <PREFIX>
-    local m b
+# ($2_VM_PRUNES) is still per-artifact and stays keyed on <PREFIX>. Every
+# caller compiles with `-o <name>.c` (SPLIT output), so the shared block
+# lands in the PAIRED `.h`, not the `.c` passed in here — reading only the
+# .c silently found nothing and made every artifact read as "no clamp"
+# (found live, 2026-08-18, same defect as the possessify/rungselect/counterk
+# suites').
+has_clamp() {   # has_clamp <file.c> <PREFIX>
+    local m b hdr
+    hdr="${1%.c}.h"
     m="$(sed -n "s/^#define $2_VM_PRUNES 0x\([0-9a-f]*\)u\$/\1/p" "$1")"
-    b="$(sed -n 's/^#define PCREC_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    b="$(sed -n 's/^#define PCREC_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
     [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 

@@ -62,13 +62,22 @@ gen() {
 }
 
 # The artifact's own strategy stamp, as a yes/no on the POSSESSIVE bit.
-# [ABI-NS] (D60): PCREC_VM_STRAT_POSSESSIVE is universal/unprefixed now
-# (the shared PCREC_RX_ABI_H block); RX_VM_STRATS (the OR'd mask) stays
-# per-prefix.
-has_possessive() {   # has_possessive <file>
-    local m b
+# [ABI-NS] (D60): PCREC_VM_STRAT_POSSESSIVE is universal/unprefixed now,
+# emitted in the shared PCREC_RX_ABI_H block; RX_VM_STRATS (the OR'd mask)
+# stays per-prefix, in its existing per-artifact emission site. EVERY caller
+# here compiles with `-o <name>.c` (a real filename, never `-o -`), which is
+# SPLIT output — the shared block lands in the paired `.h`, not the `.c`
+# passed in, so PCREC_VM_STRAT_POSSESSIVE is read from THAT file. Found live
+# (2026-08-18): reading only <file> made $b consistently empty, so
+# `0x$m & 0x$b` evaluated as `0x1 & 0x` = 0 on every artifact regardless of
+# what actually possessified — a false negative, not a real behavioral
+# change (verified by hand: a real pa/pb pair for '$[^\n]*' differs exactly
+# as D47.3 predicts, PA_VM_STRATS 0x1u vs PB_VM_STRATS 0x2u).
+has_possessive() {   # has_possessive <file.c>
+    local m b hdr
+    hdr="${1%.c}.h"
     m="$(sed -n 's/^#define RX_VM_STRATS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
-    b="$(sed -n 's/^#define PCREC_VM_STRAT_POSSESSIVE *0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    b="$(sed -n 's/^#define PCREC_VM_STRAT_POSSESSIVE *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
     [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 
