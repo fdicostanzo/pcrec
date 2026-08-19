@@ -26,12 +26,22 @@
 # It is also a POSITIVE control on the derivation being shared rather than
 # reimplemented: the sabotage cannot be written against the ENG_UNANCH caller,
 # because that caller derives its set from a state row too.
+#
+# **THE SUBJECTS ARE WHAT MAKE THIS ROW FIRE, and the corpus did not have them
+# until this row was validated.** A skipped attempt is one whose start has a
+# NON-newline predecessor, so a cell whose match begins at offset 0 or right
+# after a line break sees nothing. multiline.rxt's first `(?m)^a|b$` block was
+# exactly that — every match at 0 or after a `\n` — and it stayed GREEN under
+# this sabotage. Section 6b exists for this row: `(?m)^a|b` on "zb" is (1,2),
+# and the sabotaged build reports no match. Measured directly first
+# (`a|^b` on "cac": [(1,2)] becomes []) over the 13 corpus patterns whose
+# artifact this edit changes.
 SAB_ID="S81-cand-set-hardcoded-newline"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness mlinediff"
 SAB_HARNESS_TARGET="tests/assertions/multiline.rxt"
 SAB_DESC="D63's candidate-start set is taken as 'the newline definition' rather than derived from which seeded start states are LIVE, so a (?m)^ pattern with a non-anchored branch skips every attempt that branch needs ('(?m)^a|b' on \"zzzb\" loses its match)"
-SAB_DOC_FIGURE="tests/assertions/multiline.rxt section 5's (?m)^a|b\$ block and run_mline_diff.sh's (?m)^a|b arm go red"
+SAB_DOC_FIGURE="tests/assertions/multiline.rxt SECTION 6b goes red (the block exists for this row) and run_mline_diff.sh's (?m)^a|b arm diverges"
 SAB_COUNT=1
 SAB_BEFORE='        set[b] = (uint8_t)(d->s1u[upc_of_class(d, d->clsmap[b])] >= 0);'
 SAB_AFTER='        set[b] = (uint8_t)cls_has(pcrec_cls_newline, (unsigned)b);   /* SABOTAGE S81 */'

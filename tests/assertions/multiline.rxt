@@ -2594,6 +2594,297 @@ m "b\na" 2 3
 m "\nab\n" 2 3
 
 # ======================================================================
+# 6b. D63's CANDIDATE-START DERIVATION, and the subjects that can see it.
+#
+# ENG_ATTEMPT skips an attempt whose seeded start state is DEAD. For a
+# `(?m)^`-anchored pattern only the newline-predecessor seed is live, so
+# the candidate set is the newline definition and the emitted prefilter
+# is one `memchr`. For a pattern with a NON-ANCHORED BRANCH every seed is
+# live, the set is all 256, and NO prefilter is emitted — which is
+# correct rather than merely safe.
+#
+# assertions_design.md §3.7.2 says a `(?m)^`-anchored attempt "can only
+# begin at offset 0 or immediately after a newline". That is true of a
+# FULLY-anchored pattern and FALSE of the ones below, and sabotage S81 is
+# that sentence written as code. THE SUBJECTS ARE THE POINT: a match must
+# start at a position whose predecessor is NOT a newline, or the
+# sabotaged build skips nothing it should have kept and the block goes
+# green against a broken derivation. The first draft of this file had
+# `(?m)^a|b$` with subjects that all matched at offset 0 or after a line
+# break, and could not see S81 at all.
+# ======================================================================
+
+# pcre2-only
+pattern (?m)^a|b
+features assertions,modifiers
+m "b" 0 1
+m "zb" 1 2
+m "zzb" 2 3
+n "cac"
+m "cba" 1 2
+m "zzzb" 3 4
+m "xxb\nyy" 2 3
+m "a\nzb" 0 1
+m "zzb\nzzb" 2 3
+m "\nzb" 2 3
+m "bz" 0 1
+m "zbz" 1 2
+n "WARN"
+n "zzWARN"
+n "ok\nzzWARN"
+n "ERRORz"
+n "zERROR"
+n "zz\nzERROR"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+# pcre2-only
+pattern (?m)^a|b$
+features assertions,modifiers
+m "b" 0 1
+m "zb" 1 2
+m "zzb" 2 3
+n "cac"
+n "cba"
+m "zzzb" 3 4
+m "xxb\nyy" 2 3
+m "a\nzb" 0 1
+m "zzb\nzzb" 2 3
+m "\nzb" 2 3
+n "bz"
+n "zbz"
+n "WARN"
+n "zzWARN"
+n "ok\nzzWARN"
+n "ERRORz"
+n "zERROR"
+n "zz\nzERROR"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+pattern a|^b
+features assertions
+m "b" 0 1
+n "zb"
+n "zzb"
+m "cac" 1 2
+m "cba" 2 3
+n "zzzb"
+n "xxb\nyy"
+m "a\nzb" 0 1
+n "zzb\nzzb"
+n "\nzb"
+m "bz" 0 1
+n "zbz"
+n "WARN"
+n "zzWARN"
+n "ok\nzzWARN"
+n "ERRORz"
+n "zERROR"
+n "zz\nzERROR"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+pattern ^a|b
+features assertions
+m "b" 0 1
+m "zb" 1 2
+m "zzb" 2 3
+n "cac"
+m "cba" 1 2
+m "zzzb" 3 4
+m "xxb\nyy" 2 3
+m "a\nzb" 0 1
+m "zzb\nzzb" 2 3
+m "\nzb" 2 3
+m "bz" 0 1
+m "zbz" 1 2
+n "WARN"
+n "zzWARN"
+n "ok\nzzWARN"
+n "ERRORz"
+n "zERROR"
+n "zz\nzERROR"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+n "\na"
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 2 3
+
+# pcre2-only
+pattern (?m)^ERROR|WARN
+features assertions,modifiers
+n "b"
+n "zb"
+n "zzb"
+n "cac"
+n "cba"
+n "zzzb"
+n "xxb\nyy"
+n "a\nzb"
+n "zzb\nzzb"
+n "\nzb"
+n "bz"
+n "zbz"
+m "WARN" 0 4
+m "zzWARN" 2 6
+m "ok\nzzWARN" 5 9
+m "ERRORz" 0 5
+n "zERROR"
+n "zz\nzERROR"
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+# pcre2-only
+pattern (?m)^a|(?m)b
+features assertions,modifiers
+m "b" 0 1
+m "zb" 1 2
+m "zzb" 2 3
+n "cac"
+m "cba" 1 2
+m "zzzb" 3 4
+m "xxb\nyy" 2 3
+m "a\nzb" 0 1
+m "zzb\nzzb" 2 3
+m "\nzb" 2 3
+m "bz" 0 1
+m "zbz" 1 2
+n "WARN"
+n "zzWARN"
+n "ok\nzzWARN"
+n "ERRORz"
+n "zERROR"
+n "zz\nzERROR"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+pattern (?:^|\b)foo
+features assertions
+n "b"
+n "zb"
+n "zzb"
+n "cac"
+n "cba"
+n "zzzb"
+n "xxb\nyy"
+n "a\nzb"
+n "zzb\nzzb"
+n "\nzb"
+n "bz"
+n "zbz"
+n "WARN"
+n "zzWARN"
+n "ok\nzzWARN"
+n "ERRORz"
+n "zERROR"
+n "zz\nzERROR"
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+# ======================================================================
 # 7. `\A`, `\Z`, `\z` ARE NOT AFFECTED BY `(?m)` — PCRE2's rule, and the
 # failing direction for mod_assertions.c's pinned-false flag. If any of
 # those three ever started copying the scoped state, every cell here that

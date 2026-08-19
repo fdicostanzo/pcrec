@@ -438,6 +438,17 @@ c"` from `(0,3)` into `(0,1)`, and
   false of `(?m)^a|b`, and sabotage S81 is the sentence written as code.
   (5) K28 gains a FOURTH spelling, `a(?m)^b`, excluded by name with live
   equivalents; the list grows monotonically until the wrapper is fixed.
+  SUITE (this lane, build/test_wavec_4.log, EXIT=0, zero FAIL lines): corpus
+  **19,101/0** (16,066 at the merge base + 3,035 new `(?m)` cells), cli 269/0,
+  reject 535/0 (gated 64 -> 62), registry 169/0 + PC-3 163/0, codegen 52/0,
+  trie 7/0, vm-identity 9/0, ir-listing 79/0, vm 35/0, possessify 18/0,
+  rungselect 24/0, counterk 23/0, mrl 22/0 + 18/0, altcls 15/0, assertions
+  33/0, endvar-identity 3/0 (**1087** `pos == n`-view-free patterns identical,
+  80 controls differing), wordctx-identity 3/0 (**1105** identical),
+  mlinectx-identity 4/0 (**1117** identical, 46 controls differing, plus the
+  shared scanner's own 36-case self-check), mline-diff 3/0 (**5,038 DFA +
+  5,038 VM cells** at 0 divergences), encseam 2/0, resource 19/0, thread 8/0;
+  `make strict` clean (build/wavec_strict.log).
   (6) The identity gate's first split was too coarse — ten patterns that SET
   `m` with no anchor to receive it read as a dead reference knob — and the
   `(?m)$` differential's first python arm excluded the D47.5 GUARD CELL over a
