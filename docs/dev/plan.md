@@ -873,6 +873,33 @@ spine, not before):
   module or a real consumer, whichever asks first; measure the
   convention's effect on the censuses through the existing probe
   pipeline before writing any table
+- [DD-14] STATE:not-started — RECURSIVE PATTERN CALLS, the design sketch
+  (Frank question + manager sketch, 2026-08-18, thirty-third session;
+  UNRULED territory parked at Frank's "save your notes" — module
+  `recursion` keeps refusing by name until ruled in). The language is
+  non-regular so this is VM-ONLY structurally (joins the forces_* rows;
+  --engine=dfa refuses). THE MECHANISM: an explicit call stack of
+  computed-goto LABEL ADDRESSES inside the single emitted VM function —
+  push the return label, goto the subpattern's entry, pop-and-goto* on
+  subpattern success. No C recursion, no interpreter, allocation-free
+  with a bounded DEPTH capacity and a NEW typed give-up code (D49
+  reserved below ERR_FLOOR for exactly this; the floor moves -4→-5 as a
+  deliberate pre-v1 change). NOT inline expansion to depth K — that is
+  bounded-repeat replication again, and K19/K22 already paid for that
+  lesson; the call stack makes emitted size depth-independent (the
+  revdet-rung reason). Four design questions at charter time: (i)
+  per-level capture save/restore (PCRE2 semantics MEASURED, not
+  recalled); (ii) call atomicity — changed across PCRE versions; if
+  atomic, RX_CUT is the tool; measure 10.46, the answer picks the
+  machinery; (iii) left-recursion refused at compile time (PCRE2's
+  could-loop-indefinitely check equivalent); (iv) the capacity/budget
+  accounting joins the D42.6 family. THE CONVERGENCE (ties D61/D64
+  threads): a call to a NAMED pattern and a recursive self-call are the
+  SAME primitive — once the label-call mechanism exists, match-time
+  insertion is a non-recursive call to the inserted body's entry label,
+  so the insertion machinery and recursion should be DESIGNED TOGETHER,
+  with compile-time splicing remaining an optimization for the
+  non-recursive case
 - [DD-3] STATE:not-started — generated-API versioning/compat policy for vendored consumers (before M3) (R1 A-10)
 - [DD-5] STATE:not-started — --std-c portable emitter fallback (switch-based) (R1 R-5)
 - [DD-10] STATE:not-started — remaining unbounded C-stack recursion in the compiler (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone

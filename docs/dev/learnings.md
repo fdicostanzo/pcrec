@@ -115,6 +115,26 @@ distilled forms:
   suspiciously short list — the source LIST is itself an input someone
   must have chosen.
 
+- **Provenance IMITATION is worse than absent provenance** (thirty-third,
+  R30 M7): a hand-written header in a mechanical archiver's output format
+  defeats the reader's ability to distinguish stamped from asserted — the
+  sharpest instance yet of a control sharing a source with what it
+  controls. Rule: an archiver is the ONLY writer of its output directory;
+  a hand edit there is a red line, and the doc table citing an archive
+  must byte-match it (R30 N2 was the same failure one step removed).
+- **A named defect is not a fixed defect — the fix must travel as
+  committed tooling** (thirty-third, R30 M6): the locale `sort -u`
+  undercount recurred verbatim AFTER being found, named, and fixed in a
+  sibling lane, because the fix lived as knowledge instead of as the
+  committed harvest script (LC_ALL=C) it now is.
+- **Extraction helpers hard-fail on empty, never default** (thirty-third,
+  [ABI-NS]): eight test sites read a constant from the wrong file after a
+  relocation and `(0x$empty))` arithmetic'd to 0 silently — every
+  "possessified?" answer flipped to no across four suites, caught only by
+  the SUITE'S non-vacuity guard. A detection helper that returns a default
+  on missing input fails in the silent direction; extract, test -n, exit 1
+  naming the file and constant, THEN use.
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
@@ -229,6 +249,20 @@ distilled forms:
   Budget paces at ~14%/day of a 7-day window; the tiering is what keeps
   it there. Fact-gathering delegates; architectural judgement stays in
   the main session.
+
+- **Panel targets are FROZEN COMMITS** (thirty-third, R30): the manager
+  relayed design inputs to the author mid-panel twice and the target moved
+  under working critics both times. Freeze before launch; batch every
+  input — including the manager's own fix items — until the round
+  compiles. Corollary: pin verification is by commit id the VERIFIER
+  rev-parses, never one reported in prose (a lane fabricated a plausible
+  hash in a summary this session and self-corrected; the habit made it
+  harmless).
+- **An idle agent has no tool rounds** (thirty-third): "poll at each tool
+  round" cannot wake a lane whose background run finished while it idles —
+  three missed completions in one session. The manager reads the
+  completion artifact and pings; the lane-side fix is to hold an active
+  poll loop only when a run is expected to finish within the round.
 
 ## 7. Durable technical facts (cheap to forget, expensive to re-learn)
 

@@ -10464,3 +10464,118 @@ NEXT: hand off to team-lead for review/merge. SR-8 remains owed to
 whichever future VM_ONLY module's AST is NOT already covered by an
 existing forcing rule — D59's "Revisit when" names the real trigger now,
 with one data point that needed it and one (this row) that didn't.
+
+## 2026-08-18 (EDT), thirty-third session — M6 OPENS: expansion, two modules landed same-day, R30's three adversarial rounds, six rulings
+
+THE SESSION'S SHAPE. Woke to the cleared [M6.0] queue; expanded it with
+premises re-verified on HEAD (26-construct probe; the ABI's named-groups
+groundwork confirmed shipped — groups/nnames/rx_group_entry all anticipated,
+sort key the one open point). Three lanes launched inside the first hour:
+asrtdesign (opus, the [M6.1] assertions design gate), namedgroups (sonnet,
+[M6.3] implementation), ngauthor (sonnet, D27 cell). By close: [M6.1],
+[M6.3], AND the mid-session-chartered [ABI-NS] all merged, closed, and
+archived; six decisions recorded (D59–D64); corpus 10,369 → 10,501.
+
+[M6.3] NAMED-GROUPS (merged, then its D27 corpus). The lane and the manager
+probed the 128-unit name cap INDEPENDENTLY and converged (the documented 32
+is stale — libpcre2 10.46 refuses at 129, err 148); names case-sensitive
+even under (?i), measured both oracles after a Frank question exposed the
+coverage gap (both corpora gained cells same hour). D59: sort-by-name
+scoped to ref-empty rows (the compound (ref,name) ordering deliberately
+unfixed); three registry rows VM_ONLY→ANY_ENGINE instead of building SR-8
+(the real producer D55 waited for needed no consultation — the generic
+capture-forcing rule already answers). (?J) took THREE wordings in one day:
+my brief said "out of scope" meaning M6.3's scope, the lane read
+ROADMAP_NEVER, my later message questioned it, and the ratified D38 row
+(RIDES, planned) settled it: the known-but-unbuilt shape, "module
+'named-groups' does not implement duplicate group names". THE D27 PAYOFF:
+the blinded corpus (41 blocks, written from the PCRE2 goal in a cell) ran
+83/0 against the implementation at merge review — author never saw src/,
+implementation never saw the corpus, both converged on the measured oracle.
+
+[M6.1] ASSERTIONS DESIGN — R30, THREE ROUNDS, THE PANEL EARNING ITS KEEP.
+The design's foundations survived adversarial re-derivation (D47.5's
+scope-blind gate miscompile confirmed twice independently — 2 of 5 scoped
+cells lose matches, the one shape D47.5's wording names is the one the
+shipped code gets right; \A/\Z alias at 1,008 differential cells clean).
+The engine split took TWO HIGH refutations: E1 — the spine had NO mechanism
+for assertion context at startpos>0 (s[startpos-1] is outside the search
+window; both engines emit start states as compile-time constants); E2 —
+(?m)^ is a PERMANENT O(n²) class change (start_max=n always; ENG_ATTEMPT
+has no scan avoidance at all; measured 1996x at n=64k). The revision built
+the fourth mechanism — and the re-check found the revision's own gap (N1:
+the reverse machine's TERMINATION boundary, where a leading \B loses a
+match the forward pass found — the lane's own forward fix is what made it
+reachable), and the N1 verification found N9 IN THE FIX (the peeled
+epilogue would run on the dead-state exit — an out-of-bounds read, K27's
+class). Three rounds, each catching what the previous round's fix
+introduced. Provenance findings were the lane's own failures, honestly
+absorbed: a HAND-WRITTEN header imitating archive.sh (M7 — the sharpest
+instance yet of a control sharing a source with what it controls); the
+locale sort -u undercount RECURRING after being named and fixed once (M6 —
+609 vs the true 1030; headline numbers held on the corrected corpus); the
+lane also FABRICATED a commit id in a message summary and self-corrected
+within minutes (the manager's numbers-re-run habit had already made it
+harmless — rev-parse, never the reported id).
+
+[ABI-NS] CHARTERED AND LANDED MID-SESSION (Frank: "i don't see the
+advantage on keeping them separate"). D60+addendum: 15 universal constants
+(ERR family, UNSET, ENGINE_DFA/VM, nine stamp bits) into the shared ABI
+block, per-prefix spellings DELETED no-alias. The lane found the D60
+addendum's own miss: PCREC_ENGINE_DFA/VM already existed in lib/pcrec.h on
+the REQUEST axis — a real include-order hard error — resolved as
+request/outcome vocabulary UNIFICATION (enum→#define, permanent
+both-orders check). Its suite failure was the session's best
+teaching case: the emitter was CORRECT (A/B-verified before editing);
+eight test extraction sites read constants from the .c after they moved to
+the .h on split builds, and POSIX arithmetic turned the empty grep into a
+silent zero ("not one pattern possessified") — caught by the SUITE'S
+non-vacuity guard, fixed with hard-fail-on-empty at all eight sites.
+Names-only guarantee verified four ways; suite 10,501/0 bit-for-bit
+baseline.
+
+FRANK'S RULINGS (a design-heavy day): D60+addendum (constants; engine
+names PCREC_ENGINE_* — the ENGM mask spelling stays internal), D61 (the
+caps array's primary prefix is PERMANENT — insertions append, never
+interleave; slot==number permanent for primary groups), D62 (Q8:
+multiline-$ is a parse-resolved FLAG; the principle "kinds encode
+structure, fields encode parse-resolved modifier state" dissolves the
+kind-doubling pressure; three controls travel), D63 (Q3: the ENG_ATTEMPT
+candidate-start prefilter as a TOOL with three instances + shared
+derivation helper per M2.12; DD-7's reverse BOT variant UNPARKED — its
+measured-loss gate is satisfied), D64 (Q1: NO newline axis; LF hardwired
+with definition-shaped reference sites; Frank's typed-definition/insertion
+architecture parked on DD-11 — class-valued definitions negatable,
+sequence-valued error in class contexts, boundaries via lookaround).
+Also: [M6.5] gains the dupnames commitment ((?J) implemented with
+backref-by-name machinery; (name,number) sort tiebreak pinned;
+first-participating-of-run resolution for both consumers), [V-I] boonies
+row (named-results copy helper), and the recursion sketch parked (see
+[DD-14], added at close: label-address call stack in the computed-goto VM;
+recursion and insertion converge on one call primitive).
+
+MANAGER LESSONS. (1) PANEL TARGETS ARE FROZEN COMMITS — I moved the
+target twice by relaying design inputs mid-review; the second time cost
+one message to fix, the discipline is now: freeze before launch, batch
+inputs until compile. (2) An idle agent has no tool rounds — "poll at
+each round" does not wake a lane whose background run finished; three
+missed completions this session, each recovered by reading the artifact
+myself and pinging. (3) The (?J) three-wording churn was my brief's
+ambiguity ("out of scope") meeting a ratified document the brief didn't
+cite — briefs that touch disposition-vocabulary constructs should cite
+the ratified row directly.
+
+VALIDATION AT CLOSE. [M6.3] battery: all five stages green on merged main
+(corpus 10,501/0 including the D27 cases), gate 13/13 (weakest margin
+1.43x). [ABI-NS] battery: launched post-merge (build/battery_abins.log,
+completion trailer pending at journal time — test + strict green, ubsan
+in progress; wake.md carries the verification obligation). Suite counts:
+corpus 10,501/0; cli 269/0; codegen 48 (four [ABI-NS] checks + the
+both-orders identity check); registry 163 + PC-3; reject 532; encseam 2;
+thread 8/0. known_fail EMPTY. K-list unchanged: K2, K9, K23, K25, K26.
+
+NEXT: [M6.2] wave A is UNBLOCKED (design paneled, rulings D62/D63/D64
+landed, ABI-NS merged). Waves A→E per the design's structure, each with
+its sabotaged landing conditions; wave briefs must state the corpus is
+substantially libpcre2-dependent. [M6-READ] still follows M6. The rest of
+M5 after that.
