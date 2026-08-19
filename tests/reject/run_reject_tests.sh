@@ -701,9 +701,20 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # The wave's own control for the move is in
 # tests/assertions/run_assertions_tests.sh, which asserts they COMPILE — the
 # same control `\A`/`\Z`/`\z` have had since wave A, and the reason this list
-# shrinking is evidence rather than erosion. `\G` and `\K` stay: waves D and
-# E have not landed.
-for e in G K; do
+# shrinking is evidence rather than erosion.
+#
+# [M6.2 wave D] `\G` LEFT IT TOO, on the same move and for the same reason:
+# it compiles with the gate open now, so the enabled-but-unbuilt sentence
+# would be the lie in the other direction. Its control — that BOTH a leading
+# and a mid-pattern spelling actually build — is in
+# tests/assertions/run_assertions_tests.sh beside `\b`/`\B`'s. **`\K` is now
+# the LAST row here**, which is worth noticing rather than passing over: when
+# wave E lands, this loop and its whole enabled-but-unbuilt paragraph retire
+# with it, and the row that has to go WITH them is the epilogue's own pin in
+# `src/parse/ext.c` (the `UNBUILT` arm). A refusal mechanism with no
+# population is machinery nothing can test, which is what wave A built it
+# knowing.
+for e in K; do
     reject_gated assertions "\\$e" \
         "module 'assertions' is enabled but \\$e is not implemented yet"
 done
@@ -1844,8 +1855,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 62 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 62 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 61 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 61 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

@@ -517,3 +517,71 @@ pattern [\G]
 features assertions
 perr
 
+
+
+# ======================================================================
+# 7. THE D47.5 POSSESSIFICATION WITNESS, AS ANSWERS. `\G` in a
+# quantifier's FOLLOW must make src/opt/possessify.c DECLINE — `\A`'s arm,
+# not `\z`'s — because `\G` is DOWNWARD-closed: its one satisfying
+# position is `startpos`, BELOW every retreat position, where `\z`'s is
+# `n`, ABOVE every one. A singleton satisfying set is not the argument;
+# upward closure is.
+#
+# These cells are the failing direction as ANSWERS rather than as a stamp.
+# tests/assertions/run_assertions_tests.sh reads `<PREFIX>_VM_STRATS` and
+# is the only instrument that can see the VERDICT (a correctly-possessified
+# quantifier and a backtracking one match identically); what it cannot show
+# is what a WRONG verdict costs. Under sabotage S84 — `\G` taking `\z`'s
+# exemption — the loop consumes every `a`, `\G` fails at the maximal exit,
+# the retreat that is the only route to the match has been proved dead, and
+# every cell below turns into no match at all.
+#
+# They are capture-bearing on purpose: possessification is a VM-path
+# rewrite, so a capture-free spelling of the same shape would never reach
+# the analysis and this section would pin nothing.
+# ======================================================================
+
+# pcre2-only
+pattern (x)?a{0,4}\G
+features assertions
+m "aaaa" 0 0
+ms 1 "aaaa" 1 1
+ms 2 "aaaa" 2 2
+ms 3 "aaaa" 3 3
+ms 4 "aaaa" 4 4
+m "aa" 0 0
+ms 1 "aa" 1 1
+ms 2 "aa" 2 2
+m "xaa" 0 0
+ms 1 "xaa" 1 1
+ms 2 "xaa" 2 2
+ms 3 "xaa" 3 3
+m "" 0 0
+
+# pcre2-only
+pattern (x)?[ab]{0,4}\G
+features assertions
+m "abab" 0 0
+ms 1 "abab" 1 1
+ms 2 "abab" 2 2
+ms 3 "abab" 3 3
+ms 4 "abab" 4 4
+m "ba" 0 0
+ms 1 "ba" 1 1
+ms 2 "ba" 2 2
+
+# The follow carries `\G` AND a byte, so the quantifier's own exit
+# is not the position `\G` is asked about — the shape that would
+# survive a fix keyed on "`\G` is the last thing in the pattern".
+# pcre2-only
+pattern (x)?a{0,4}\Gb
+features assertions
+n "ab"
+ms 1 "ab" 1 2
+ns 2 "ab"
+n "aab"
+ns 1 "aab"
+ms 2 "aab" 2 3
+ns 3 "aab"
+m "b" 0 1
+ns 1 "b"

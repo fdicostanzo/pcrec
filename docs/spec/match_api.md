@@ -437,6 +437,19 @@ suite checks rather than accepting any difference at all: `|a` over
 wherever one starts — all twenty-two agreeing cases above, including
 every greedy quantifier among them — there is no divergence.
 
+**This loop is what gives `\G` its meaning** ([M6.2] wave D;
+`docs/design/assertions_design.md` §4.3). `\G` asserts that the current
+position equals the `startpos` the call was given, so under the loop above
+— which passes its resume position as `startpos` — it means **"contiguous
+with the previous match"**, and that is exactly PCRE2's global-iteration
+semantics, where each `pcre2_match` call advances `start_offset`. The two
+agree with no work on either side, because this entry already takes the
+parameter PCRE2 threads. `\G\w+` under this loop is therefore a
+TOKENIZER — it reports `(0,2)` on `"ab ab ab"` and stops at the first gap
+— where the `\G`-free `\w+` is a scanner and reports all three. Measured
+by `tests/assertions/run_gstart_diff.sh` §1, against libpcre2 driven
+through this same loop rather than against a hand-written span list.
+
 Verified against the shipped emitter (`src/gen/emit_dfa.c`) and a fresh
 artifact: the DFA matcher writes `caps[0][0]`/`caps[0][1]` only under
 `if (caps)`, guarded exactly as documented, in the unanchored search

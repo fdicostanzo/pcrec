@@ -38,3 +38,39 @@ SAB_DOC_FIGURE="tests/codegen/run_mlinectx_identity.sh: the (?m)-free identity p
 SAB_COUNT=1
 SAB_BEFORE='    if (has_nl)   ncls = refine_by(d, ncls, pcrec_cls_newline);'
 SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_newline);   /* SABOTAGE S76 */'
+
+# ---------------------------------------------------------------------------
+# ANNOTATED 2026-08-19 BY THE [M6.2] WAVE D LANE — SAB_DOC_FIGURE ABOVE IS
+# MEASURED WRONG, AND THE REASON GENERALISES TO EVERY KNOB-BASED IDENTITY GATE.
+#
+# The figure claims the (?m)-free identity population "goes from
+# all-identical to largely differing" under this row. It does not.
+# MEASURED 2026-08-19 by applying this exact edit and running
+# `tests/codegen/run_mlinectx_identity.sh`: the identity sweep stays
+# all BYTE-IDENTICAL.
+#
+# THE MECHANISM. That script builds its reference compiler from THE TREE'S
+# OWN SOURCES with `-DPCREC_NO_MLINECTX`, i.e. from the SABOTAGED sources.
+# This edit deletes the `if (has_nl)` gate, so the refinement runs in the
+# subject build AND in the reference build, and the difference the gate
+# measures cancels. Only sabotages that live inside code the knob actually
+# suppresses are visible to a knob-based reference.
+#
+# WHAT DOES CATCH IT TODAY, and it is incidental rather than designed: with
+# the gate deleted, `has_nl` becomes an unused parameter, the reference
+# build emits `-Wunused-parameter`, and the script's own "the reference build
+# produced warnings" check fires. So the row is scored DETECTED for a reason
+# unrelated to what it claims to detect — and a future sabotage of the same
+# shape that did not happen to orphan a parameter would be scored UNDETECTED
+# while the gate reported a clean bill of health.
+#
+# This is the project's recorded check-design failure class (a control sharing
+# a source with what it controls) in a new place. Wave D's own knob is
+# therefore placed at the EMITTER's decision points rather than in the
+# analysis — see `src/gen/emit_dfa.c`'s `PCREC_NO_GSTART` block, and
+# tests/mech/sabotages/S83's own note, where the re-placement immediately
+# exposed a real emitter defect the mis-placed knob had hidden. RE-PLACING
+# THIS ROW'S KNOB IS NOT WAVE D'S TO DO: it changes wave C's machinery
+# and wants its own slice. Recorded here rather than silently left, because a
+# committed SAB_DOC_FIGURE that is false is worse than an absent one.
+# ---------------------------------------------------------------------------

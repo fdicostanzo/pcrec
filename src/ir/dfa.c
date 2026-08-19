@@ -1072,11 +1072,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
          * view — it reads no byte and its truth at `pos` has nothing to do
          * with where `pos` sits in the subject. All it wants is the second
          * family of START states below. */
-        case N_GSTART:
-#ifndef PCREC_NO_GSTART
-            has_gst = true;
-#endif
-            break;
+        case N_GSTART: has_gst = true; break;
         default: break;
         }
     }
@@ -1152,13 +1148,16 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
      * corpus. `has_end`'s own guard is here because exactly that cost put a
      * `[a-z]{0,30000}` compile over tests/resource/'s CPU budget once.
      *
-     * `-DPCREC_NO_GSTART` pins `has_gst` false and exists for ONE consumer,
-     * `tests/codegen/run_gstart_identity.sh`, exactly as `-DPCREC_NO_ENDVAR`
-     * / `_WORDCTX` / `_MLINECTX` exist for their three. Never defined in a
-     * shipped build: under it `s1g[] == s1u[]`, so `\G` can pass only where
-     * `start == 0` and a `\G` pattern compiles to `\A`'s semantics — a WRONG
-     * matcher, which is what makes that script's positive control
-     * non-vacuous. */
+     * THIS WAVE'S REFERENCE KNOB IS NOT HERE, and its absence is deliberate:
+     * `-DPCREC_NO_GSTART` lives at the three EMITTER decision points in
+     * `src/gen/emit_dfa.c` instead. The three knobs above sit in this file
+     * because the thing they turn off is a construction in this file — but a
+     * knob that shares a source with the code a sabotage edits CANCELS that
+     * sabotage in both builds, which this wave measured on wave B's own row
+     * (see `emit_attempt`'s comment and tests/mech/sabotages/S71's
+     * annotation). Putting the knob where the emitted TEXT is chosen makes
+     * the reference build structurally the pre-wave emitter, which no edit to
+     * the analysis can undo. */
     for (int u = 0; u < UPC_N; u++)
         d->s1g[u] = m.has_gst
             ? make_state(cx, nfa, d, &m, &root, 1, false, true,

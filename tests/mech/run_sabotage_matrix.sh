@@ -58,6 +58,7 @@
 #   endvaridentity  assertions         — added 2026-08-19 ([M6.2] wave A)
 #   wordctxidentity                    — added 2026-08-19 ([M6.2] wave B)
 #   mlinectxidentity  mlinediff       — added 2026-08-19 ([M6.2] wave C)
+#   gstartidentity  gstartdiff        — added 2026-08-19 ([M6.2] wave D)
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
@@ -296,6 +297,38 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/mlinediff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/mlinediff.log" | grep -oE '[0-9]+')"
                 suite_bits+=("mlinediff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            gstartidentity)
+                # [M6.2 wave D] the `\G`-free byte-identity gate. Its own arm
+                # rather than any of the three above, on the rule those three
+                # already apply to each other: they guard DIFFERENT
+                # constructions against DIFFERENT reference knobs. Wave D's is
+                # the one that has to survive a FOURTH branch being inserted
+                # ahead of the ENG_ATTEMPT start dispatch's existing three, and
+                # a sabotage of one must not be reported as coverage by
+                # another.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_gstart_identity.sh" \
+                    > "$work/gstartidentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/gstartidentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/gstartidentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("gstartid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            gstartdiff)
+                # [M6.2 wave D] `\G`'s behavioural instrument. Its own arm
+                # because it is the only one in the tree that drives
+                # docs/spec/match_api.md §3.1's FIND-ALL LOOP against libpcre2
+                # driven through the same loop, and the only one that compares
+                # the two ENTRIES of one artifact — neither of which any `.rxt`
+                # corpus or byte-identity gate can express.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/assertions/run_gstart_diff.sh" \
+                    > "$work/gstartdiff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("gstartdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

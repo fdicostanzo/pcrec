@@ -131,7 +131,19 @@ refuses() {
 # wave and must stay accepted), and a `(?m)^` — the one that ROUTES to
 # ENG_ATTEMPT, where a build failure would otherwise show up only as a slow
 # pattern.
-for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
+#
+# [M6.2 wave D] `\G` JOINS on the same move, and its two spellings are chosen
+# for a reason its siblings' were not. `\Gx` is the FULLY-ANCHORED shape,
+# where `start_max` becomes the third string `startpos`; `\Gx|y` is the
+# PARTIAL one, where `start_max` stays `n` and the start dispatch goes
+# three-way. Those are DIFFERENT emitted shapes out of the same wave, and a
+# control that only ever compiled the anchored form would not notice the
+# three-way dispatch failing to build. (A mid-pattern `a\Gb` is deliberately
+# NOT here: it is a K28 spelling — see tests/assertions/gpos.rxt's own header
+# — and this loop's `-o` write is not the thing K28 breaks, but a control that
+# quietly depended on an open known issue would go red the day K28 is fixed
+# for reasons unrelated to `\G`.)
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES — the module's built constructs are BUILT, so tests/reject's 'is not implemented yet' rows are about the unbuilt ones rather than about an empty module"
@@ -149,7 +161,7 @@ for p in '(?m)a$' '(?m:a$)' '(?-m)a$' '(?m)^a'; do
 done
 # ...and the same ones must still REFUSE with the gate closed, which is what
 # makes the line above a statement about the gate rather than about the build.
-for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y'; do
     refuses bare "$p" "requires module 'assertions'"
 done
 # `(?m)`'s gate-closed twin is `modifiers` WITHOUT `assertions`: bare would
@@ -204,6 +216,16 @@ want_strat '(x)a{0,4}^'  0x2 "the same, spelled ^ — \\A and ^ are one node and
 # one construct over.
 want_strat '(x)a{0,4}\b' 0x2 "\\b is closed in NEITHER direction (\\w{0,4}\\b on \"abcd\" is a boundary at the maximal exit and not at the retreat), so the analysis must decline"
 want_strat '(x)a{0,4}\B' 0x2 "\\B is \\b's complement and equally unclosed — a construct must not inherit \$'s exemption merely by being an assertion"
+# [M6.2 wave D] `\G` MUST DECLINE TOO, and it takes `\A`'s arm rather than
+# `\b`'s — a third reason for the same verdict, which is why it gets its own
+# row instead of riding one of the two above. `\b` is closed in NEITHER
+# direction; `\G` is closed DOWNWARD, exactly like `\A`: it holds at the one
+# position `startpos`, and every retreat moves TOWARD that position rather
+# than away from it. The witness is `a{0,4}\G` at startpos 0 on "aaaa" —
+# the maximal exit is 4 where `\G` is false, and the retreat to 0 is the only
+# route to the correct (0,0). Possessified, that pattern answers NO MATCH at
+# every start.
+want_strat '(x)a{0,4}\G' 0x2 "\\G is DOWNWARD-closed like \\A — every retreat moves TOWARD startpos, so a retreat CAN reach a position satisfying it and the analysis must decline"
 
 # ---------------------------------------------------------------------------
 # 4. [M6.2 wave B] THE COMPOSED STATE BUDGET REFUSES CLEANLY

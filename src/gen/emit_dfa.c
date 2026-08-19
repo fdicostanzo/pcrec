@@ -1749,9 +1749,49 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * is "does `start == startpos` differ from `start > startpos` at all";
      * `gtbl` is "does the `\G` family itself vary with the context byte". */
     bool gseed = dfa_needs_gseed(d);
+    /* `gtbl` is a REFINEMENT of `gseed`, never independent of it, and the
+     * `&& gseed` is load-bearing rather than defensive. On a `\G`-free
+     * machine `s1g[] == s1u[]` entry for entry, so the loop below answers
+     * exactly what `dfa_needs_seed` answers — true on every `\b` and `(?m)`
+     * pattern — and without the conjunct those artifacts emit a `gseed[]`
+     * table no dispatch ever reads. Found by moving this wave's reference
+     * knob to the emitter (see below): with the knob in the analysis both
+     * builds emitted the dead table and the byte-identity gate could not see
+     * it. */
     bool gtbl = false;
-    for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
-        if (d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
+    if (gseed)
+        for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
+            if (d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
+#ifdef PCREC_NO_GSTART
+    /* [M6.2 wave D] THE REFERENCE-BUILD KNOB, and its PLACEMENT is the whole
+     * point of it. `tests/codegen/run_gstart_identity.sh` builds a compiler
+     * with this defined and requires byte-identical output over every
+     * `\G`-free corpus pattern; forcing the two flags false HERE makes that
+     * build take the pre-wave emitter branches unconditionally, so the
+     * reference IS the pre-wave emitter rather than merely an analysis with
+     * one fact suppressed.
+     *
+     * WAVE B's ANALOGOUS KNOB IS PLACED THE OTHER WAY AND THIS WAVE MEASURED
+     * WHAT THAT COSTS. `-DPCREC_NO_WORDCTX` pins `has_word` false in
+     * `src/ir/dfa.c`, i.e. inside the code a sabotage of that construction
+     * edits — and the reference compiler is built from THE SAME (sabotaged)
+     * SOURCES. So sabotage S71, which deletes the `if (has_word)` gate on the
+     * alphabet refinement, refines in BOTH builds and cancels: measured
+     * 2026-08-19, `run_wordctx_identity.sh`'s identity sweep stays
+     * 1135/1135 BYTE-IDENTICAL under it, and the script fails only because
+     * `has_word` becomes an unused parameter and the reference build emits a
+     * warning. That is the project's own recorded check-design failure — a
+     * control sharing a source with what it controls — in a new place, and
+     * the reason this knob is at the emitter instead. See S71's and S76's
+     * annotations; re-placing THOSE two is not this wave's to do.
+     *
+     * Never defined in a shipped build: under it a `\G` pattern takes the
+     * two-way start dispatch, so `\G` can pass only at `start == 0` and
+     * compiles to `\A`'s semantics — a WRONG matcher, which is what makes
+     * that script's positive control non-vacuous. */
+    gseed = false;
+    gtbl = false;
+#endif
     /* [M6.2 wave C] the class-axis context of a position whose next byte is a
      * newline: the EOL arms below know that byte from their own entry test,
      * so their accept bit is a COMPILE-TIME constant rather than a table read
@@ -1825,6 +1865,10 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * `anchored ? "0" : "n"` character for character. */
     bool a_bot = dfa_interior_dead(d->s1u);
     bool a_gst = dfa_interior_dead(d->s1g);
+#ifdef PCREC_NO_GSTART
+    a_gst = a_bot;   /* the reference build's third `start_max` string is
+                      * unreachable — see the knob's comment above */
+#endif
     bool anchored = a_bot && a_gst;
     sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
