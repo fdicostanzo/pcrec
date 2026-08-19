@@ -473,6 +473,46 @@ else
     bad "D44/A-2: could not generate the two differently-prefixed fixtures"
 fi
 
+# ---- [ABI-NS]: an artifact's header and lib/pcrec.h compile together, -----
+# ---- in BOTH include orders ------------------------------------------------
+# D60's addendum named PCREC_ENGINE_DFA/PCREC_ENGINE_VM for rx_info.engine's
+# outcome (this check's own file, emit_rx_abi_types) using the SAME spelling
+# lib/pcrec.h already used for pcrec_options.engine's REQUEST — found during
+# the [ABI-NS] lane, not anticipated by the ruling. The two are declared by
+# DIFFERENT mechanisms (an emitted `#define`, a header `enum`), and an enum
+# enumerator textually rewritten by an EARLIER `#define` of its own name is a
+# hard syntax error, not a warning — measured directly against gcc. The fix
+# (lib/pcrec.h §lib/CLAUDE.md's [ABI-NS] entry) converts lib/pcrec.h's two
+# enumerators to plain `#define`s BYTE-IDENTICAL to what every artifact
+# emits, so two identical `#define`s of one name are a silent no-op
+# regardless of which file is included first. This is the model
+# D44/A-2's own check above uses (build the real TU, both real headers,
+# under -Wall -Wextra -Werror) applied to a NEW cross-file identity
+# obligation this lane created: lib/pcrec.h's PCREC_ENGINE_DFA/PCREC_ENGINE_VM
+# `#define` text must stay byte-identical to emit_rx_abi_types' emission
+# FOREVER, or whichever file is included second breaks the other. An
+# unchecked identity constraint between two independently-edited files is
+# this project's own named failure class (see the pcrec-check-design-lessons
+# memory this lane inherited); this is the check that makes a drift loud.
+if "$PCREC" -p rx -o "$WORKDIR/eng.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+    printf '#include "eng.h"\n#include "pcrec.h"\nint main(void){ return (int)PCREC_ENGINE_DFA + (int)PCREC_ENGINE_VM; }\n' \
+        > "$WORKDIR/eng_order1.c"
+    printf '#include "pcrec.h"\n#include "eng.h"\nint main(void){ return (int)PCREC_ENGINE_DFA + (int)PCREC_ENGINE_VM; }\n' \
+        > "$WORKDIR/eng_order2.c"
+    ok1=1; ok2=1
+    gen_cc "[ABI-NS] artifact.h before pcrec.h" "$CC" -c $GENCFLAGS -I"$WORKDIR" -I"$ROOT_DIR/lib" \
+        -o "$WORKDIR/eng_order1.o" "$WORKDIR/eng_order1.c" || ok1=0
+    gen_cc "[ABI-NS] pcrec.h before artifact.h" "$CC" -c $GENCFLAGS -I"$WORKDIR" -I"$ROOT_DIR/lib" \
+        -o "$WORKDIR/eng_order2.o" "$WORKDIR/eng_order2.c" || ok2=0
+    if [ "$ok1" -eq 1 ] && [ "$ok2" -eq 1 ]; then
+        ok "[ABI-NS]: an artifact's header and lib/pcrec.h compile together in one TU in BOTH include orders (PCREC_ENGINE_DFA/PCREC_ENGINE_VM stay byte-identical across the two declaration mechanisms)"
+    else
+        bad "[ABI-NS]: artifact-header/pcrec.h one-TU compile FAILED (order1 ok=$ok1, order2 ok=$ok2) — PCREC_ENGINE_DFA/PCREC_ENGINE_VM have drifted apart between emit_rx_abi_types (src/gen/emit_dfa.c) and lib/pcrec.h; they must stay byte-identical #define text"
+    fi
+else
+    bad "[ABI-NS]: could not generate the split-header fixture for the pcrec.h include-order check"
+fi
+
 # ---- D37: emitted C is self-describing about its feature set -------------
 # docs/dev/decisions.md D37 / [STD1] phase A: every emitted file carries a
 # comment AND (in the .c) two macros stamping the enabled set's own NAME and
