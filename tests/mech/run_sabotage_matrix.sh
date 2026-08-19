@@ -733,6 +733,18 @@ fi
 # alive 51 minutes after completion, twice. Completion is a fact about the
 # LOG, not about a process listing: grep the log for this trailer (or for
 # FATAL, the only early exit that skips it).
+#
+# AND READ THE THIRD OUTCOME: a run with NO TRAILER AND NO `FATAL` WAS
+# KILLED, NOT FAILED — treat its output as damage rather than data. The
+# MECH-2 row-count guard below cannot see that case and is not meant to: it
+# counts arrived rows INSIDE this script, so a SIGTERM'd run never reaches
+# it, and the log simply stops. Measured 2026-08-19 ([M6.2] wave C), when a
+# `pkill -f run_sabotage_matrix` aimed at a duplicate run took out a live
+# sibling's child — the pattern is over the whole command line, so two
+# legitimate concurrent runs are indistinguishable under it. Kill a run by
+# its PROCESS GROUP or its recorded PID, never by a name pattern; it is the
+# same root as the no-`pgrep -f` rule above, which is that a command line is
+# not an identity.
 echo
 echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, pc3-skipped: ${oracle_skipped:-0}) at $SHA =="
 
