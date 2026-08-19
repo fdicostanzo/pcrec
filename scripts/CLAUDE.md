@@ -112,11 +112,20 @@ pcrec (the Makefile owns that).
   remaining candidate REFUSES (exit 2) unless `--all` is given. `--list`
   previews any target form's candidates without signalling anything.
   `--under PID`/`--cwd DIR` narrow the pattern path further (descendant
-  tree / cwd prefix, both read straight off `/proc`). Never interactive —
-  no confirmation prompts, since an agent has nothing that will ever see
-  one; safety is refuse-by-default plus explicit flags only. Every
-  process actually signalled gets an audit line (pid, pgid, start time,
-  command) as it happens. TERM by default, escalates to KILL after
+  tree / cwd prefix, both read straight off `/proc`; a `--cwd` candidate
+  whose cwd this UID cannot read is excluded but COUNTED, and that count
+  is surfaced in the no-match/refused messages so "nothing running" reads
+  differently from "matches existed but were unreadable"). Never
+  interactive — no confirmation prompts, since an agent has nothing that
+  will ever see one; safety is refuse-by-default plus explicit flags
+  only. Every process actually signalled gets an audit line (pid, pgid,
+  start time, command), printed BEFORE the signal is sent (not after —
+  incident B's failure was a SIGTERM landing with zero accounting).
+  kill(2) targets each process's GROUP, not the individually snapshotted
+  pid, so a target that already exited between the `/proc` scan and the
+  signal (TOCTOU) is simply not there to receive it, and an ESRCH'd kill
+  call's exit status is deliberately unchecked — already-dead is success,
+  not an error. TERM by default, escalates to KILL after
   `--grace` (default 3s) unless `--term-only`/`--kill-now` (`-K`). Exit
   codes are distinguishable on purpose: 0 killed something, 1 nothing
   matched (not an error), 2 refused-ambiguous, 125 usage error. Candidate
