@@ -1671,7 +1671,7 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
 # ---------------------------------------------------------------------------
 # 15. K21 (docs/dev/known_issues.md) — --emit-main's three-way contract on a
 #     VM artifact that GIVES UP. `<prefix>_search` is three-valued (1 match,
-#     0 no-match, negative RX_ERR_STEPS/RX_ERR_FRAMES give-up on a VM
+#     0 no-match, negative PCREC_ERR_STEPS/PCREC_ERR_FRAMES give-up on a VM
 #     artifact's budget exhaustion; DFA artifacts never return the
 #     sentinels). The pre-fix `pcrec_emit_main` tested the result as a bool,
 #     so C truthiness took the MATCH branch on a negative return and printed

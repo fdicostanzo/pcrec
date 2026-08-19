@@ -88,5 +88,26 @@ spec and a design doc disagree, the spec is what the tool promises.
   re-quoted verbatim from a fresh build carrying the module, in both the
   captures-default and `--no-captures` forms.
 
+  **[ABI-NS], 2026-08-18 — the fourth revision** (D60 + addendum, the
+  emitted universal-constant namespace unification). The give-up code
+  space (§4), the caps-array unset sentinel (§5), and the nine D46 stamp
+  bit constants (§6.3) move from per-`<PREFIX>` spellings to one
+  canonical, unprefixed `PCREC_*` spelling in the shared `PCREC_RX_ABI_H`
+  block (§2); the old `<PREFIX>_*` spellings are DELETED, no alias.
+  `rx_info.engine`'s formerly number-only contract (§6 used to say "no
+  such constant is #defined anywhere") gains names, `PCREC_ENGINE_DFA`/
+  `PCREC_ENGINE_VM`, in the same block. §1, §2, §4, §5, §6 and §6.3 are
+  re-quoted this pass, verbatim from fresh builds (both a `--no-captures`
+  DFA artifact and a captures-default VM one). A THIRD-PARTY collision
+  was found and fixed in the same lane, outside this document's own
+  scope but load-bearing for it: `lib/pcrec.h` already declared
+  `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM` as `enum` members for
+  `pcrec_options.engine` (the compile-time engine REQUEST), and an
+  artifact's own `#define` of the identical name, included before that
+  header, rewrote the enum declaration into invalid syntax — fixed by
+  converting `lib/pcrec.h`'s two members to plain `#define`s
+  byte-identical to the artifact's emission (`lib/CLAUDE.md` carries the
+  detail).
+
 Maintenance: update this file when files are added/removed or their roles
 change.

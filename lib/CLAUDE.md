@@ -18,6 +18,25 @@ the ruled ABI leaves open: `rx_matchfn`'s signature is frozen with no slot for
 one, and adding one to `rx_ctx` is a DD-3 struct revision D38 reserved for
 capture export (engine_m4.md §4.6).
 
+**[ABI-NS] (D60 addendum, 2026-08-18): `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`
+became `#define`s here, not `enum` members, and the reason is a real hazard
+found and fixed in this lane, not a style pick.** Every generated artifact
+now ALSO emits `#define PCREC_ENGINE_DFA 1` / `#define PCREC_ENGINE_VM 2`
+in its own `PCREC_RX_ABI_H` block (src/gen/emit_dfa.c), naming
+`rx_info.engine`'s formerly number-only contract — the SAME names, on
+purpose (D60's addendum: the request value and the outcome value are the
+same fact, "which engine"). A consumer TU that includes a generated
+artifact's header BEFORE this one used to fail to compile: the artifact's
+`#define` textually rewrote this file's `PCREC_ENGINE_DFA = 1,`
+enumerator into `1 = 1,` (verified directly against gcc — a hard syntax
+error, not a warning). Two IDENTICAL `#define`s of one name are a silent
+no-op redefinition regardless of order (verified clean under
+`-Wall -Wextra -Werror` both directions); an `enum` and a later `#define`
+of its own enumerator are not. `PCREC_ENGINE_AUTO` (0) has no artifact-side
+counterpart and stays an `enum` member — keep it that way, and keep the two
+`#define` lines below byte-identical to `emit_rx_abi_types`' emission if
+either spelling ever changes.
+
 **[M4.5c] (2026-08-15)** adds one flag bit, `PCREC_TRACE` (DD-8): emit an
 instrumented matcher that prints every resume-frame push/pop and capture write
 to stderr. A generation axis like the rest (D18), never the default, and the
@@ -54,7 +73,8 @@ to plan row [ENG-CLAMP]).
 `work_budget` (`PCREC_WORK_BUDGET_DEFAULT`/`_NONE`, `--work-budget=N`) is the
 THIRD DD-2 bound, ruled at the D47 SECOND ADDENDUM's settlement 4: work units
 spent on forward work the fail label never sees — frames discarded at a cut,
-frameless scan iterations — reported as `<PREFIX>_ERR_WORK`. It is a SEPARATE
+frameless scan iterations — reported as `PCREC_ERR_WORK` (unprefixed since
+[ABI-NS], D60). It is a SEPARATE
 counter from `step_budget`, which keeps its exact meaning of one backtrack
 resumption; nothing is scaled into anything. ONE existence gate in v1 (D49):
 `--fno-step-budget` suppresses both counters, which keeps the tests/vm
@@ -129,8 +149,9 @@ rewrite, a manager read and the spec graduation. It presented the `int`
 return as TWO-VALUED (1 on a match, 0 on no match), under which the natural
 `if (rx_search(...))` reads an engine GIVE-UP as a match — measured: −3 from
 `<prefix>_search` on `(a|aa)+b` built `--backtrack-frames=1`. The comment now
-names the negative give-up space (`<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`
-inside [`<PREFIX>_ERR_FLOOR`, −2], D49), says the return is not two-valued,
+names the negative give-up space (`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`
+inside [`PCREC_ERR_FLOOR`, −2], D49 — unprefixed since [ABI-NS], D60),
+says the return is not two-valued,
 and states that a give-up leaves `caps` UNTOUCHED like any other failure.
 Three adjacent staleness fixes rode along: "RX_NCAPS is 1 on every artifact
 this milestone emits" predated M4.5's captures default; `extern const
