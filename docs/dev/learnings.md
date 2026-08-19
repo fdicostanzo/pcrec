@@ -313,3 +313,35 @@ to apply to the sentence currently being written; the working
 countermeasures are mechanical, not attitudinal: predict-then-measure,
 positive controls, re-run-after-change, manifests, provenance headers,
 and panels over everything load-bearing — including this document.
+
+## Addendum, 2026-08-19 (thirty-fourth session) — the identity lesson class, three instances in one day
+
+1. **Kill by identity, never by name pattern.** A command line is not an
+   identity: two legitimate concurrent invocations of the same tool are
+   indistinguishable under any `pkill -f`/`pgrep -f` pattern, and the
+   pattern can match the caller's own wrapper shell. Kill the PROCESS
+   GROUP of the shell you launched, or the recorded PID. Two incidents
+   hours apart (wave B lane; then the MANAGER, after journaling the
+   first). Product: `scripts/safekill` (merged db8ddde) — briefs point at
+   it; the matrix runner's completion comment carries the third outcome
+   (no trailer AND no FATAL = killed, not failed — the row-count guard
+   counts INSIDE the script and cannot see a SIGTERM).
+2. **A script with a live instance is a running program, not a file.**
+   bash reads lazily by byte offset; editing a live script can execute
+   garbage. Safe orders: edit before the run, after it, or in a copy the
+   run does not read (git-archive scratch trees give this free). Wave C
+   lane's near-miss, self-reported, while writing the comment about
+   incident 1 — same class.
+3. **Done working ≠ done verifying.** Removing a lane's worktree while
+   its verification shell was still using it stranded its cleanup trap.
+   Confirm verification is finished, not just the work.
+Also distilled this session: never launch your own copy of work you just
+delegated (the duplicate created the kill-cleanup); a FLOOR gate PASSING
+under load is a-fortiori valid, only its FAILURES need a quiet re-run
+(wave C's contaminated case-g fail vs its loaded-box 13/13 re-run);
+sub-second compiler spawns are invisible to point-in-time ps — check
+archive/scratch mtimes before reading absence as death; briefs must cite
+the design's PER-CONSTRUCT answers, not restate milestone obligations
+over them (the manager's wave B seam instruction, caught by the lane's
+stop rule — which also caught wave E's finding 6 against the manager's
+repair brief).
