@@ -855,8 +855,8 @@ comparison — which is why both of them are visible in the corpus as well.
   where matching BEGAN. **MEASURED: `codegen` 1 fail / 55 pass, `kreset.rxt`
   198 fail / 383 pass (before section 11 grew it).**
 - **S86 writes `stv[0]` DIRECTLY instead of through `<PREFIX>_SET`**, so the
-  write is never trailed and cannot be undone. **MEASURED: `codegen` 1 fail /
-  55 pass, `kreset.rxt` 6 fail / 575 pass (before section 11 grew it)** — and the SIX is the number worth
+  write is never trailed and cannot be undone. **CANONICAL MATRIX RUN: `codegen:1fail/55pass,
+  corpus:6fail/590pass, kresetdiff:3fail/6pass` — DETECTED** — and the SIX is the number worth
   reading. A wrong-PROVENANCE bug is wrong nearly everywhere; a missing-UNDO
   bug is wrong only where a `\K` is crossed on a path that then LOSES, which
   is six cases in the corpus. That is the argument for writing those
@@ -871,9 +871,11 @@ comparison — which is why both of them are visible in the corpus as well.
   artifact's `trail_frames` is short by one entry per `\K` on the deepest
   path. Nothing is emitted differently and no answer changes: the artifact
   simply declares an array too small for the program beside it and returns
-  `PCREC_ERR_FRAMES` on a pattern it can match. **MEASURED: `codegen` 0 fail /
-  56 pass — ALL FOUR `[M6.2-KRESET]` checks stay green — and `kreset.rxt` 33
-  fail / 563 pass.** It is the only one of the three the structural checks
+  `PCREC_ERR_FRAMES` on a pattern it can match. **CANONICAL MATRIX RUN: `codegen:0fail/56pass,
+  corpus:33fail/563pass, kresetdiff:3fail/6pass` — DETECTED. The 0-fail codegen
+  column is the driver CONFIRMING that all four `[M6.2-KRESET]` checks stay
+  green, so "invisible to the structural checks" is a measurement rather than
+  the author's claim.** It is the only one of the three the structural checks
   cannot see, and the reason is that they read emitted TEXT while this defect
   is in a NUMBER the emitter computed correctly and then under-declared.
   **Its population had to be BUILT.** `a\Kb` still compiles and still answers
@@ -891,4 +893,8 @@ same check's "writes stv[0] directly" branch and leaves `caps_out` correct;
 S87 fires neither and is seen only by the corpus. Merging any two would let
 the third's branch rot behind it.
 
-Validate with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.
+All three were run through the canonical driver before handback — `1 rows
+(undetected: 0, anomalies: 0, pc3-skipped: 0)` on each — rather than only
+hand-applied, which is wave D's S82 lesson: a hand-validated failing direction
+and the driver's can differ, and only the driver's is reproducible. Re-validate
+with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.

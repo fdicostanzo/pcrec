@@ -36,9 +36,12 @@
 #     tests/assertions/kreset.rxt          RED, most of its 596 cases.
 #     run_kreset_diff.sh                   RED in §1 and §2.
 #
-# MEASURED 2026-08-19 (scratch tree, applied through tests/mech/lib/replace.py,
-# never committed, before section 11 grew the corpus): codegen 1 fail / 55
-# pass; kreset.rxt 198 fail / 383 pass of the 581 cases it then held.
+# MEASURED through the CANONICAL DRIVER (`run_sabotage_matrix.sh S85`,
+# 2026-08-19, tree e7cacb2): **codegen:1fail/55pass, corpus:210fail/386pass,
+# kresetdiff:6fail/3pass -- DETECTED.** A hand-applied run before section 11
+# grew the corpus read 198/383; the matrix's number is the one to cite, which
+# is wave D's S82 lesson (a hand-validated failing direction and the canonical
+# driver's can differ, and only the driver's is reproducible).
 #
 # BOTH the structural check and the corpus fire, and that is worth stating
 # rather than treating as redundancy: a `\K` whose reported start is the
@@ -53,7 +56,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness kresetdiff"
 SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="the emitted <prefix>_caps_out always takes caps[0][0] from its \`start\` argument -- which under the hybrid IS the prefilter's (i.e. the reverse pass's) span start -- instead of from the trailed \\K slot. Every \\K artifact then reports where matching BEGAN: 'a\\Kb' on \"ab\" answers (0,2) where PCRE2 answers (1,2)"
-SAB_DOC_FIGURE="codegen 1 fail / 55 pass ([M6.2-KRESET rule 1], by name); tests/assertions/kreset.rxt fails most of its cases (198 of 581 when measured, before section 11)"
+SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:210fail/386pass,kresetdiff:6fail/3pass -- DETECTED (canonical matrix run, 2026-08-19)"
 SAB_COUNT=1
 SAB_BEFORE='        v.nkreset > 0
           ? "    /* \\K: the reported start is where the winning path last\n"'

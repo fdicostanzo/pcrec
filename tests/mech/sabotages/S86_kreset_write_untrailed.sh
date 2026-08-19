@@ -47,18 +47,19 @@
 #                                          corpus carries them at all.
 #     run_kreset_diff.sh                   RED in §1 and §2.
 #
-# MEASURED 2026-08-19 (scratch tree, applied through tests/mech/lib/replace.py,
-# never committed, before section 11 grew the corpus): codegen 1 fail / 55
-# pass; kreset.rxt 6 fail / 575 pass of the 581 cases it then held.
-# Compare S85's 198 failing cases: a wrong-PROVENANCE bug is wrong nearly
-# everywhere and a missing-UNDO bug is wrong in six places, which is exactly
-# why the second one needs a corpus written to contain those six.
+# MEASURED through the CANONICAL DRIVER (`run_sabotage_matrix.sh S86`,
+# 2026-08-19, tree 6ced17f): **codegen:1fail/55pass, corpus:6fail/590pass,
+# kresetdiff:3fail/6pass -- DETECTED.**
+# Compare S85's 210 failing cases on the same corpus: a wrong-PROVENANCE bug
+# is wrong nearly everywhere and a missing-UNDO bug is wrong in SIX places,
+# which is exactly why the second one needs a corpus written to contain those
+# six rather than a sweep hoping to wander into them.
 SAB_ID="S86-kreset-write-untrailed"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness kresetdiff"
 SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="the emitted \\K write goes straight to stv[0] instead of through <PREFIX>_SET, so it is never recorded on the trail and a backtrack cannot undo it. A \\K crossed on a LOSING path stays crossed: '(?:a\\K|ax)c' on \"axc\" answers (1,3) where PCRE2 answers (0,3), and '(?:a\\K)*ab' on \"aaab\" answers (3,4) where PCRE2 answers (2,4)"
-SAB_DOC_FIGURE="codegen 1 fail / 55 pass ([M6.2-KRESET rule 1], naming the direct stv[0] write); tests/assertions/kreset.rxt 6 fail -- the two UNDO families only"
+SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:6fail/590pass,kresetdiff:3fail/6pass -- DETECTED (canonical matrix run, 2026-08-19)"
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)pos",
                "\\K resets the reported start of the match to here");'
