@@ -169,11 +169,39 @@ fi
 #
 # A pattern that can NEVER MATCH is the second legitimate non-difference,
 # inherited from waves B and C: the emitter's own "matches nothing" early-out
-# leaves no automaton for a start family to change. `a\Gb` is exactly that
-# shape and is deliberately in the corpus, so this bucket is expected to be
-# non-empty here in a way it was not for the earlier waves. Both are read off
-# the ARTIFACT rather than off a maintained list of pattern texts.
-ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_dfa=0; ctl_rej=0
+# leaves no automaton for a start family to change.
+#
+# THE THIRD BUCKET IS THIS WAVE'S OWN AND IT IS WIDER THAN EITHER OF THOSE, so
+# the requirement is stated differently here than in run_mlinectx_identity.sh
+# and the difference is deliberate rather than a weakening. Wave C could demand
+# that EVERY DFA-compiled `(?m)` pattern differ, because a multiline anchor
+# always changes the alphabet. `\G` does not always change anything: the
+# reference build reads `\G` as `\A`, so a pattern for which those two really
+# ARE the same machine is one the knob CANNOT move, and there are two such
+# shapes in the corpus —
+#
+#   * `\G` under an `\A` that already pins the attempt to offset 0 (`\A\Gx`);
+#   * `\G` on a branch that is DEAD either way (`ab|a\Gb`, `a\Gb|c`, `x\G|y`),
+#     because a `\G` after a consumed byte is unsatisfiable under both
+#     readings.
+#
+# Demanding those differ would be a check that is RED ON CORRECT BEHAVIOUR —
+# §10's own warning about this wave's agreement test, one instrument over. So
+# they are counted as INERT, read off the ARTIFACT (no `(start == startpos)`
+# arm was emitted, i.e. `dfa_needs_gseed` answered false) rather than off a
+# maintained list of pattern texts, and each one is PRINTED so the
+# classification is visible rather than latent.
+#
+# WHAT THAT BUCKET DOES NOT PROVE, stated because it is the weakest of the
+# three: it accepts the compiler's own verdict that the pattern needs no `\G`
+# machinery. What CHECKS that verdict is not here — it is
+# tests/assertions/gpos.rxt, where every pattern that lands in this bucket has
+# libpcre2-produced `ms`/`ns` cells across the whole startpos sweep. A
+# compiler that wrongly decided a live `\G` was inert would land the pattern
+# here AND go red there, which is why the two instruments are worth having
+# separately.
+ctl_diff=0; ctl_same_vm=0; ctl_same_empty=0; ctl_same_inert=0; ctl_same_dfa=0
+ctl_rej=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     a="$(gen_a "$pat")"; b="$(gen_b "$pat")"
@@ -185,16 +213,19 @@ while IFS= read -r pat; do
     elif printf '%s' "$a" | grep -q '^    (void)s; (void)n; (void)startpos; (void)caps;$'; then
         ctl_same_empty=$((ctl_same_empty + 1))
         echo "  never-matching control (no automaton to change): $pat" >&2
+    elif ! printf '%s' "$a" | grep -q '(start == startpos)'; then
+        ctl_same_inert=$((ctl_same_inert + 1))
+        echo "  inert-\\G control (no three-way dispatch emitted; answers pinned in tests/assertions/gpos.rxt): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
-        echo "  DFA-compiled control did NOT differ: $pat" >&2
+        echo "  DFA-compiled control emitted a three-way dispatch and STILL did not differ: $pat" >&2
     fi
 done < "$WORKDIR/gpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled \\G patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where \\G is a parameter comparison the closure plays no part in; $ctl_same_empty are never-matching patterns whose artifact carries no automaton) — -DPCREC_NO_GSTART really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled \\G patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where \\G is a parameter comparison the closure plays no part in; $ctl_same_empty are never-matching patterns whose artifact carries no automaton; $ctl_same_inert emitted no three-way dispatch at all) — -DPCREC_NO_GSTART really disables it, so the identity comparisons below are not vacuous"
 else
-    bad "positive control: $ctl_diff \\G patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_rej rejected by both. Every DFA-compiled \\G pattern with a live automaton must differ; if none does, the reference knob is dead and this whole check is vacuous."
+    bad "positive control: $ctl_diff \\G patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_empty never-matching ones agree (expected), $ctl_same_inert emitted no three-way dispatch (expected), $ctl_rej rejected by both. A pattern whose artifact CARRIES the three-way start dispatch must differ between the two builds; if one does not, the dispatch is emitted dead and this whole check is vacuous."
 fi
 
 # ---- the identity sweep --------------------------------------------------
@@ -228,7 +259,7 @@ fi
 echo
 echo "== Summary =="
 echo "  identity population   compared $((same + diff))  identical $same  differing $diff  rejected-by-both $rej"
-echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  rejected-by-both $ctl_rej"
+echo "  positive control      differ $ctl_diff  agree-on-DFA(unexplained) $ctl_same_dfa  agree-on-VM $ctl_same_vm  agree-never-matching $ctl_same_empty  agree-inert-\\G $ctl_same_inert  rejected-by-both $ctl_rej"
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 [ "$fail" -eq 0 ]
