@@ -651,10 +651,18 @@ static void clo_walk(Clo *cl, int s)
              *     (?m)$   on "a\n"   matches at 1 AND at 2
              *
              * python3 `re` DISAGREES with PCRE2 here and reports (2,2) for
-             * the first, which is docs/dev/upstream_issues.md U11's second
-             * entry and the reason the `(?m)^` corpus blocks are pcre2-only.
-             * Found by tests/assertions/run_mline_diff.sh at `startpos > 0`,
-             * where an earlier match no longer masks it. */
+             * the first, which is docs/dev/upstream_issues.md U11b and the
+             * reason the `(?m)^` corpus blocks are pcre2-only. Found by
+             * tests/assertions/run_mline_diff.sh at `startpos > 0`, where an
+             * earlier match no longer masks it.
+             *
+             * CORROBORATED BY PCRE2's OWN OPTION SURFACE, which this tree
+             * already surveyed: `docs/pcre2_options.md`'s
+             * `PCRE2_ALT_CIRCUMFLEX` row reads "under `MULTILINE`, `^` ALSO
+             * matches immediately after a final trailing newline". An option
+             * whose whole content is turning this on is only meaningful if
+             * the default is off — which is the rule below, and the rule the
+             * design's two sections do not have. */
             case N_BOT_M:
                 if (!cl->bot_ok && !(cl->left_nl && !cl->end_ok)) break;
                 s = st->t1;

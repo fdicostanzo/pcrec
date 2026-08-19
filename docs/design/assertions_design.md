@@ -1095,6 +1095,17 @@ zero.
 > `(?m)^` therefore consumes as well as `(?m)$` does, for the opposite
 > purpose: `(?m)$` reads it to be TRUE at end of subject, `(?m)^` reads it to
 > be FALSE there.
+>
+> **THE EVIDENCE WAS ALREADY IN THIS REPOSITORY**, which is the part worth
+> keeping. `docs/pcre2_options.md`'s `PCRE2_ALT_CIRCUMFLEX` row — surveyed and
+> RATIFIED under D38 on 2026-08-14, four days before this design was written
+> — reads "under `MULTILINE`, `^` ALSO matches immediately after a final
+> trailing newline", and an option whose whole content is turning that on is
+> only meaningful if the default is off. That row and this section describe
+> the same construct, disagree, and sat one document apart until a subject
+> sweep at `startpos > 0` forced them together. A design lane that consulted
+> the project's own option survey for the construct it was designing would
+> have caught it before any code existed.
 
 **`(?m)^`** is true at `pos == 0` or when `s[pos-1] == '\n'`. Forward that is a
 previous-byte context bit — cheap, and it requires changing the one hardcoded

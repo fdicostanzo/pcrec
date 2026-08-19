@@ -363,6 +363,16 @@ pattern      subject   startpos   pcre2      python     verdict
 (?m)$        'a\n'      any        matches at 1 AND 2 in both   agree
 ```
 
+**CORROBORATED BY PCRE2's OWN OPTION SURFACE, which this tree had already
+surveyed.** `docs/pcre2_options.md`'s `PCRE2_ALT_CIRCUMFLEX` row (RATIFIED
+2026-08-14, D38) reads: "under `MULTILINE`, `^` ALSO matches immediately after
+a final trailing newline". An option whose entire content is turning that on
+is only meaningful if the DEFAULT is off. The fact was in this repository the
+whole time, one document away from the design that got it wrong; nobody
+composed the two. Worth naming as a process finding rather than only a
+semantic one — a survey row is evidence, and this lane found it after the
+sweep rather than before.
+
 **Why the corpus could not have caught it and the sweep could.** From
 `startpos 0` an earlier match masks the trailing position on almost every
 subject — `(?m)^` on `"a\n"` reports `(0,0)` from both — so a corpus that
