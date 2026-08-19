@@ -59,6 +59,7 @@
 #   wordctxidentity                    — added 2026-08-19 ([M6.2] wave B)
 #   mlinectxidentity  mlinediff       — added 2026-08-19 ([M6.2] wave C)
 #   gstartidentity  gstartdiff        — added 2026-08-19 ([M6.2] wave D)
+#   kresetdiff                         — added 2026-08-19 ([M6.2] wave E)
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
@@ -329,6 +330,24 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
                 suite_bits+=("gstartdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            kresetdiff)
+                # [M6.2 wave E] `\K`'s behavioural instrument. Its own arm for
+                # the reason every sibling above has one, plus a wave-E
+                # specific: it is the only instrument in the tree that asks
+                # libpcre2 the MATCH-HERE question (through `\G(?:pat)` at the
+                # same startpos), so it is the only thing that can see the two
+                # halves of assertions_design.md §6.3 rule 3 — the filter and
+                # the consumed-length return. Wave E ships NO byte-identity
+                # gate of its own, deliberately, so this arm and `codegen`
+                # carry that wave's whole failing-direction load between them.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/assertions/run_kreset_diff.sh" \
+                    > "$work/kresetdiff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/kresetdiff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/kresetdiff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("kresetdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

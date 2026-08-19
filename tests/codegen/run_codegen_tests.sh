@@ -1260,6 +1260,135 @@ else
     bad "[M6.2-WORDB rule 3]: pcrec failed to compile the one-word-set fixture '(\\b\\w+\\b)'"
 fi
 
+# =========================================================================
+# [M6.2 WAVE E] `\K` — assertions_design.md §6.3's THREE RULES, structurally
+# =========================================================================
+#
+# WHAT THESE ASSERT THAT NO CORPUS CAN. §6.3 rule 1 is a provenance rule:
+# `caps[0][0]` on a `\K` artifact must come FROM THE VM, and the number it
+# must NOT come from is the prefilter's span start — which under the hybrid is
+# the REVERSE PASS's answer. On most cells the two agree, so a corpus catches
+# a violation only where they differ; the emitted text either reads slot 0 or
+# it does not, and that is what is checked here.
+#
+# `\K` IS VM-FORCED, so a `\K` pattern never HAS a DFA artifact and rule 3's
+# DFA half cannot be checked on one. It is checked the other way round: a
+# `\K`-FREE artifact's entries and caps_out must be the pre-wave text,
+# character for character. That is also the whole byte-identity claim of this
+# wave, stated where it is cheap — the emitter reads `v.nkreset` at exactly
+# ONE site, so "a `\K`-free pattern pays nothing" is a claim about one
+# predicate rather than the multi-site construction waves B, C and D each had
+# to build a full corpus gate for. (The corpus-wide measurement was taken once
+# against the genuine PRE-WAVE COMPILER — a reference sharing no sources with
+# the subject, which is strictly stronger than a knob build and is what wave
+# D's own knob-placement finding argues for. The numbers are in the wave's
+# plan row.)
+#
+# The sabotage is tests/mech/sabotages/S85_kreset_caps_from_prefilter.sh, and
+# it is R30 C3's: make the emitted `\K` artifact take `caps[0][0]` from the
+# prefilter's span. Rule 1 below goes red on it.
+
+# --- rule 1: a \K artifact's caps[0][0] comes from the trailed slot --------
+if "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/null 2>&1; then
+    # The whole of the emitted caps_out, so both the presence of the \K form
+    # and the ABSENCE of the plain one are read from the same text.
+    awk '/^static void rx_caps_out\(/,/^}/' "$WORKDIR/kres.c" > "$WORKDIR/kres.capsout"
+    if [ ! -s "$WORKDIR/kres.capsout" ]; then
+        bad "[M6.2-KRESET rule 1]: could not extract rx_caps_out from the 'a\\Kb' artifact — the extractor has stopped matching the emitted shape, so this rule is measuring nothing"
+    elif ! grep -q 'w->stv\[0\] != PCREC_UNSET' "$WORKDIR/kres.capsout"; then
+        bad "[M6.2-KRESET rule 1]: 'a\\Kb's caps_out does not read the trailed \\K slot at all. §6.3 rule 1: caps[0][0] on a \\K pattern comes from the VM, never from the prefilter's span start (which is the REVERSE PASS's answer)"
+    elif grep -qE '^ *caps\[0\]\[0\] = \(ptrdiff_t\)start;' "$WORKDIR/kres.capsout"; then
+        bad "[M6.2-KRESET rule 1]: 'a\\Kb's caps_out still contains the unconditional 'caps[0][0] = (ptrdiff_t)start;'. That is the prefilter's span start — the pre-\\K start — and writing it out reports where matching BEGAN where PCRE2 reports where the last \\K was crossed"
+    elif ! grep -q 'RX_SET(0, (ptrdiff_t)pos)' "$WORKDIR/kres.c"; then
+        bad "[M6.2-KRESET rule 1]: 'a\\Kb' emits no trailed write to slot 0 — caps_out reads a slot nothing ever fills, so every match reports the fallback and the construct is inert"
+    elif grep -qE '^ *stv\[0\] = ' "$WORKDIR/kres.c"; then
+        bad "[M6.2-KRESET rule 1]: 'a\\Kb' writes stv[0] DIRECTLY rather than through RX_SET. The macro is what records the old value on the trail, so a direct write cannot be undone when a backtrack passes back over it — '(?:a\\K|ax)c' on \"axc\" is the cell that then reports (1,3) instead of (0,3)"
+    else
+        ok "[M6.2-KRESET rule 1] (§6.3): 'a\\Kb's caps[0][0] comes from the TRAILED slot 0 and the unconditional 'caps[0][0] = start' (the prefilter's, i.e. the reverse pass's, span start) is GONE from its caps_out — both directions, in one artifact"
+    fi
+else
+    bad "[M6.2-KRESET rule 1]: pcrec failed to compile the fixture 'a\\Kb'"
+fi
+
+# --- rule 1b: a \K-FREE artifact keeps the pre-wave caps_out ---------------
+#
+# THE SAME TEXT, PINNED AS A LITERAL, and that is deliberate rather than lazy:
+# an assertion written as "does not contain the \K form" would pass on an
+# emitter that had rewritten the line into some third shape. The two lines
+# below are what the emitter produced BEFORE this wave, quoted here so the
+# check has a source independent of the emitter it checks.
+if "$PCREC" -p rx --engine=vm -o "$WORKDIR/nok.c" -- '(a)(b)' >/dev/null 2>&1; then
+    awk '/^static void rx_caps_out\(/,/^}/' "$WORKDIR/nok.c" > "$WORKDIR/nok.capsout"
+    if [ ! -s "$WORKDIR/nok.capsout" ]; then
+        bad "[M6.2-KRESET rule 1b]: could not extract rx_caps_out from the \\K-free VM artifact"
+    elif ! grep -qF '    caps[0][0] = (ptrdiff_t)start;' "$WORKDIR/nok.capsout" \
+      || ! grep -qF '    caps[0][1] = (ptrdiff_t)start + len;' "$WORKDIR/nok.capsout"; then
+        bad "[M6.2-KRESET rule 1b]: the \\K-free VM artifact '(a)(b)' no longer emits the pre-wave caps_out body verbatim. Wave E's claim is that a \\K-free pattern pays NOTHING for \\K, and the emitter reads v.nkreset at exactly one site — this is that site"
+    elif grep -q 'PCREC_UNSET' "$WORKDIR/nok.capsout"; then
+        bad "[M6.2-KRESET rule 1b]: the \\K-free VM artifact's caps_out mentions PCREC_UNSET — the \\K arm is being emitted for a pattern with no \\K in it"
+    else
+        ok "[M6.2-KRESET rule 1b]: a \\K-FREE VM artifact emits the pre-wave caps_out body character for character (the two lines are pinned as literals here, so a rewrite into a third shape fails too) — wave E's byte-identity claim at its one emitter decision point"
+    fi
+else
+    bad "[M6.2-KRESET rule 1b]: pcrec failed to compile the \\K-free VM fixture '(a)(b)'"
+fi
+
+# --- rule 3: the match-here entries -----------------------------------------
+#
+# §6.3 rule 3 says the match-here entry must filter on the PRE-\K start and
+# return the CONSUMED length. On the VM — the only engine a \K pattern can
+# reach — BOTH are structural rather than computed, and this asserts the
+# structure rather than the answers (tests/assertions/run_kreset_diff.sh §2
+# asserts the answers, against libpcre2):
+#
+#   the filter   there is none, and there must be none. The entry calls
+#                <prefix>_match_impl at ctx->pos directly, so "anchored at the
+#                requested position" is a property of the call. A
+#                `caps[0][0] != ctx->pos` test appearing here would be the
+#                DFA's shape imported into the VM's, which is exactly the
+#                confusion R30 E8 corrected.
+#   the return   `return r;` — match_impl's own `pos - ctx->pos`, computed
+#                from positions. A `caps[0][1] - caps[0][0]` here would be the
+#                post-\K length, and a D38 callout advancing by it would never
+#                move on 'ab\K'.
+if "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/null 2>&1; then
+    awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.match"
+    if [ ! -s "$WORKDIR/kent.match" ]; then
+        bad "[M6.2-KRESET rule 3]: could not extract rx_match from the 'a\\Kb' artifact"
+    elif grep -q 'ctx->pos' "$WORKDIR/kent.match" && grep -q 'caps\[0\]\[0\]' "$WORKDIR/kent.match"; then
+        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match compares caps[0][0] against ctx->pos. That is the DFA artifact's start filter, and under \\K it compares against the POST-\\K start and REJECTS a genuine anchored match — 'a\\Kb' at ctx->pos 0 returns -1 where PCRE2 matches (1,2)"
+    elif grep -q 'caps\[0\]\[1\] - caps\[0\]\[0\]' "$WORKDIR/kent.match"; then
+        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match returns caps[0][1] - caps[0][0], the POST-\\K length. A D38 callout uses that return as its ADVANCE, so on 'ab\\K' it would advance by 0 and loop forever"
+    elif ! grep -q 'rx_match_impl(ctx' "$WORKDIR/kent.match"; then
+        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match does not call rx_match_impl directly. The VM's match-here entry is anchored BY CONSTRUCTION (it starts at ctx->pos and never moves it); routing it through rx_search would reintroduce the filter this rule forbids"
+    else
+        ok "[M6.2-KRESET rule 3] (R30 E8): 'a\\Kb's rx_match calls rx_match_impl at ctx->pos directly — no start filter to compare against a post-\\K start, and no caps-derived return. Both halves of §6.3 rule 3 hold structurally on the only engine a \\K pattern can reach"
+    fi
+else
+    bad "[M6.2-KRESET rule 3]: pcrec failed to compile the fixture 'a\\Kb'"
+fi
+
+# --- rule 3b: the DFA artifact's entry is UNTOUCHED --------------------------
+#
+# The other half of rule 3, and it can only be checked on a \K-FREE pattern
+# because a \K pattern is VM-forced and has no DFA entry at all. The DFA's
+# match-here entry is the shape §6.3 quotes — rx_search plus a start filter
+# plus a caps-derived return — and wave E must not have touched it: the filter
+# and the return are CORRECT there, because no DFA artifact can contain a \K.
+if "$PCREC" -p rx --no-captures -o "$WORKDIR/dent.c" -- 'a(b|c)d' >/dev/null 2>&1; then
+    awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/dent.c" > "$WORKDIR/dent.match"
+    if [ ! -s "$WORKDIR/dent.match" ]; then
+        bad "[M6.2-KRESET rule 3b]: could not extract rx_match from the DFA artifact"
+    elif ! grep -qF '(size_t)caps[0][0] != ctx->pos' "$WORKDIR/dent.match" \
+      || ! grep -qF 'return caps[0][1] - caps[0][0];' "$WORKDIR/dent.match"; then
+        bad "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match no longer carries the start filter and the caps-derived return verbatim. Wave E changed nothing there BY DESIGN — a \\K pattern is VM-forced, so the shape §6.3 quotes as broken-under-\\K is unreachable-with-\\K and correct as it stands"
+    else
+        ok "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match still carries its start filter and its caps-derived return, verbatim and untouched by wave E — correct there precisely because a \\K pattern can never reach that engine"
+    fi
+else
+    bad "[M6.2-KRESET rule 3b]: pcrec failed to compile the DFA fixture 'a(b|c)d'"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
