@@ -365,16 +365,38 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   now in the corpus by name. The corpus gained a full startpos sweep for the
   same reason.
   **THE FIVE SCAN-AVOIDANCE MECHANISMS (§3.6.1): NOT ONE SHIPS AN
-  INTERSECTION**, and the design proposes intersections for rows 2-5. Rows 1
-  and 2 (memchr, bitmap prefilters) DECLINE via the widened `start_acc`, which
-  they share as one emit gate (sabotage S79 = the pre-wave line transcribed
-  into the new field); rows 3 and 5 (forward/reverse self-loop skips) DECLINE
-  via `pick_skip_states` (S78); row 4's compensating accept is NOT EMITTED
-  under `views` at all, so its cure is the evaluation ORDER and its sabotage
-  RE-EMITS it (S80) — the only shape a check can take when the cure is an
-  absence. The cost of declining is measured: exactly ZERO on the pre-wave
-  corpus (the eligibility test is false at every state) and non-zero on the
-  `(?m)$` family, accepted and recorded rather than priced away.
+  INTERSECTION, AND ONLY ONE IS A LIVE HAZARD.** The design proposes
+  intersections for rows 2-5. The wave wrote a sabotage per mechanism and
+  MEASURED each before committing it — sweeping every corpus pattern whose
+  ARTIFACT the edit changes through 107 subjects under the §3.1 find-all loop
+  — and SHIPPED FOUR ROWS OF SIX:
+  - rows 3/5 (self-loop skips) DECLINE via `pick_skip_states`, and it is real:
+    S78 turns `(?m)[^c]*$` on `"a
+b
+c"` from `(0,3)` into `(0,1)`, and
+    `(?m)[^c]+$` on the same subject from `[(0,3)]` into `[(0,1),(1,3)]`. Both
+    witness subjects were ADDED TO THE CORPUS when the row was validated; the
+    first draft had neither and the row would have come back UNDETECTED.
+  - rows 1/2 (the prefilters) share the widened `start_acc`, and **that
+    widening is REDUNDANT** — D3's accept-pruning cuts the unanchored start
+    self-loop out of every accepting closure, so a class the start state
+    accepts on ESCAPES it and the prefilter's stay set never contains it.
+    §3.6.1's `x*` prediction is FALSE: narrowing `start_acc` changes 21
+    corpus artifacts and **0 answers over 2,247 cells**. Kept as
+    belt-and-braces (free, and the honest reading of "accepts on any class"),
+    NOT cited as load-bearing, and NO sabotage row — a row with no failing
+    direction is the check-design failure this project records, and writing
+    one here would have been the section's own mistake repeated. This is the
+    same argument `emit_dfa.c` already makes for the neighbouring
+    `last == (size_t)-1` gate, which two critics attacked without building a
+    witness.
+  - row 4's compensating accept can only UNDER-report (the EOL view's closure
+    is a superset of the base's; a skip-eligible state's accept does not vary
+    by class): 13 artifacts, **0 answers over 1,391 cells**, and 0 new answers
+    even when combined with row 3's sabotage. NO row.
+  The cost of DECLINING is measured too: exactly ZERO on the pre-wave corpus
+  (the eligibility test is false at every state) and non-zero on the `(?m)$`
+  family, accepted and recorded rather than priced away.
   EVIDENCE: tests/assertions/multiline.rxt, every expectation libpcre2-
   produced, re-verified by BOTH oracles on every run;
   tests/assertions/run_mline_diff.sh, a generated subject sweep over the
@@ -405,6 +427,17 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   `(?m)$` differential's first python arm excluded the D47.5 GUARD CELL over a
   `^` that is a class negation in `[^c]`. Both are why the scanner is one
   shared file with a self-check.
+  (7) **D62's control 2 NEEDS A CAPTURE-BEARING CELL, and §8.7's own spelling
+  is capture-free.** Possessification is a VM optimization — it removes
+  backtracking states, and A DFA HAS NO BACKTRACKING TO REMOVE — so
+  `(?m)[^c]{1,3}$` routes to the DFA and answers correctly with the flag-read
+  turned off (measured: 749 find-all cells, 0 divergences under S77). One
+  parenthesis routes it to the VM and the same pattern loses its match
+  entirely. multiline.rxt carries both forms in adjacent sections and says
+  which is which. This is wave B's S75 lesson ("every block in wordb.rxt was
+  capture-free so nothing in the corpus reached emit_vm.c's arm at all")
+  arriving one wave later on a different arm — worth a process note, because
+  the wave that recorded it is the wave before this one.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here

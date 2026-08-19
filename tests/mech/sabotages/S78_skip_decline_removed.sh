@@ -25,7 +25,27 @@
 #
 # A Wave B sabotage of this line would have been a check with NO FAILING
 # DIRECTION in the wave the design calls most dangerous — exactly the
-# check-design failure this project keeps recording. Here it has one.
+# check-design failure this project keeps recording. Here it has one, MEASURED
+# before this row was written (wave C swept every corpus pattern whose
+# ARTIFACT this edit changes — 11 of them — through 107 subjects under the
+# §3.1 find-all loop, against the unsabotaged compiler):
+#
+#     (?m)[^c]*$  on "\n\nc"    (0,1) becomes (0,0)      -- a SHORT match
+#     (?m)[^c]*$  on "a\nb\nc"   (0,3) becomes (0,1)      -- a SHORT match
+#     (?m)[^c]+$  on "a\nb\nc"   [(0,3)] becomes [(0,1), (1,3)]
+#
+# Both witness subjects are in tests/assertions/multiline.rxt section 3 BY
+# NAME, added when this row was validated: the first draft of that section
+# had neither, and this sabotage would have come back UNDETECTED against a
+# corpus that only exercised single-newline subjects.
+#
+# THE OTHER TWO MECHANISMS THIS ROW WAS ORIGINALLY SPLIT FROM DO NOT HAVE A
+# FAILING DIRECTION, and that is recorded rather than papered over — see
+# tests/mech/CLAUDE.md's wave C section. §3.6.1 rows 1/2's `start_acc` guard
+# is REDUNDANT under D3's accept-pruning, and row 4's compensating accept can
+# only under-report. Both were measured (21 and 13 corpus artifacts changed,
+# 0 answers over 2,247 and 1,391 find-all cells) and neither shipped as a
+# row.
 SAB_ID="S78-skip-decline-removed"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness mlinediff"

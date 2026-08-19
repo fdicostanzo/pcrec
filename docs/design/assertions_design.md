@@ -882,37 +882,74 @@ varies inside a run a skip set admits.
 > `\b` arm).
 
 >
-> **[M6.2] WAVE C, 2026-08-19 — WHAT EACH MECHANISM ACTUALLY SHIPS.** The
-> section proposes INTERSECTION for rows 2-5 and DECLINE for row 1. Wave C
-> decided per mechanism on measurement, and the answer is that **not one of
-> the five ships an intersection**:
+> **[M6.2] WAVE C, 2026-08-19 — WHAT EACH MECHANISM ACTUALLY SHIPS, AND WHICH
+> OF THE FIVE HAS A FAILING DIRECTION AT ALL.** The section proposes
+> INTERSECTION for rows 2-5 and DECLINE for row 1. Wave C decided per
+> mechanism ON MEASUREMENT, and **not one of the five ships an intersection** —
+> but the more useful finding is that **only one of the five turns out to be a
+> live hazard**:
 >
-> | # | mechanism | posture SHIPPED | why | sabotage |
-> |---|---|---|---|---|
-> | 1 | memchr prefilter | DECLINE, via the widened `start_acc` | not intersectable at all — it seeks a byte VALUE | S79 |
-> | 2 | bitmap prefilter | DECLINE, via the SAME `start_acc` | intersectable in principle, but rows 1 and 2 ride ONE emit gate (`prefilter = !start_acc && ...`), so intersecting row 2 alone buys nothing and forking the gate to do it is M2.12's own lesson in miniature | S79 |
-> | 3 | forward self-loop skip | DECLINE, wave B's `pick_skip_states` test | always available, always safe, and it costs nothing on any pattern whose accept does not vary — i.e. nothing in the pre-wave corpus | S78 |
-> | 4 | post-skip compensating accept | NOT EMITTED — the evaluation ORDER cures it | under `views` the accept check already runs AFTER the skip, so the compensating line is not emitted at all; the cure is the `!views` guard on the emit, not an intersection | S80 |
-> | 5 | reverse self-loop skip | DECLINE, the same `pick_skip_states` | mirrored row 3; its second `sfound` writer is separately guarded (§3.8.3.1, S72) | S78 |
+> | # | mechanism | posture SHIPPED | is it a live hazard? |
+> |---|---|---|---|
+> | 1 | memchr prefilter | DECLINE, via the widened `start_acc` | **NO — the guard is REDUNDANT**, see below |
+> | 2 | bitmap prefilter | DECLINE, same `start_acc` (rows 1 and 2 ride ONE emit gate) | **NO**, same argument |
+> | 3 | forward self-loop skip | DECLINE (`pick_skip_states` drops a state whose accept varies) | **YES — sabotage S78, measured** |
+> | 4 | post-skip compensating accept | not emitted under `views`; the cure is the evaluation ORDER | **NO — it can only UNDER-report**, see below |
+> | 5 | reverse self-loop skip | DECLINE, same `pick_skip_states` | **YES**, covered by S78 |
 >
-> **THE COST OF DECLINING WAS MEASURED, NOT ASSUMED**, because "decline is
-> free" is the claim an intersection would be bought with. On the pre-wave
-> corpus it is exactly zero — the eligibility test is false at every state, so
-> not one artifact moves, which the byte-identity gate measures at
-> 1039/1039. On the `(?m)$` family it is not zero: `(?m)[^c]*$` keeps its
-> skip tables for the states whose accept does not vary and loses them for
-> the one that does. That is a real loss and it is accepted, on the ground
-> that an intersection for rows 3/5 would have to compute "the accept row
-> masked by the stay set" per state and emit a per-class stay table to
-> exploit it — new machinery, on the hot path, for a population no benchmark
-> in this project measures. **Recorded here rather than left implicit so a
-> later lane can price it.**
+> **ROWS 1 AND 2: `start_acc` IS REDUNDANT, BY THIS FILE'S OWN RECORDED
+> ARGUMENT.** §3.6.1 predicts that a narrowed `start_acc` makes `\bx*` on
+> `'a x'` report only `(2,3)`. It does not, and the reason is D3's
+> accept-pruning: the unanchored start self-loop is the LOWEST-priority
+> thread, so any closure that reaches ACCEPT prunes it — therefore a class the
+> start state ACCEPTS on cannot transition back to the start state, therefore
+> that class ESCAPES, therefore the prefilter's stay set excludes it and the
+> skip never passes an accepting position. `src/gen/emit_dfa.c` already states
+> that argument, for the neighbouring `last == (size_t)-1` gate, and records
+> that two independent critics attacked that gate and neither could build a
+> witness.
 >
-> One correction to the section's own framing, which matters for the
-> sabotage design: row 4 has no failing direction of its OWN under the shipped
-> code, because the line it names is not emitted. Its sabotage (S80) therefore
-> re-EMITS it rather than removing a guard — the only shape a check can take
-> when the cure is an absence.
+> MEASURED the same way, this lane: narrowing `start_acc` to one class's bit
+> changes **21 corpus artifacts** and **0 answers** over 2,247 find-all cells
+> (21 patterns x 107 subjects, against the unsabotaged compiler). So the
+> widening is kept — it is free, and it is the honest reading of "accepts on
+> any class" — but it is NOT cited as load-bearing and it ships NO sabotage
+> row, because a row with no failing direction is this project's recorded
+> check-design failure and writing one here would have been the section's own
+> mistake repeated.
+>
+> **ROW 4 CAN ONLY UNDER-REPORT.** Under `views` the compensating `last = pos;`
+> is not emitted at all (the accept check already runs after the skip), and
+> even when the guard is removed the line records the state's UPC_PLAIN accept
+> at the landing position — which is never GREATER than the correct bit, since
+> the EOL view's closure is a superset of the base's and a skip-eligible
+> state's accept does not vary by class. Measured: re-emitting it changes **13
+> corpus artifacts** and **0 answers** over 1,391 cells, and **still 0 new
+> answers when combined with row 3's sabotage**. No row.
+>
+> **THE COST OF DECLINING (rows 3/5) WAS MEASURED, NOT ASSUMED.** On the
+> pre-wave corpus it is exactly zero — the eligibility test is false at every
+> state, so not one artifact moves, which the byte-identity gate measures at
+> 1039/1039. On the `(?m)$` family it is not zero: `(?m)[^c]*$` keeps its skip
+> tables for the states whose accept does not vary and loses them for the one
+> that does. That is a real loss and it is accepted, because an intersection
+> for rows 3/5 would have to compute "the accept row masked by the stay set"
+> per state and emit a per-class stay table to exploit it — new machinery, on
+> the hot path, for a population no benchmark in this project measures.
+> **Recorded here rather than left implicit so a later lane can price it.**
+>
+> **S78's WITNESSES, since the section calls this the module's most dangerous
+> item and a claim of danger deserves a demonstration:**
+>
+> ```
+> (?m)[^c]*$  on "\n\nc"     (0,1) becomes (0,0)          -- a SHORT match
+> (?m)[^c]*$  on "a\nb\nc"    (0,3) becomes (0,1)
+> (?m)[^c]+$  on "a\nb\nc"    [(0,3)] becomes [(0,1), (1,3)]
+> ```
+>
+> None of those subjects was in the corpus's first draft; all three are in it
+> now, by name, because the sabotage would otherwise have come back
+> UNDETECTED against single-newline subjects.
 
 **The consequence is worse than the misattribution.** A Wave B sabotage row
 disabling the intersection would be a **no-op on every pattern Wave B lands** —

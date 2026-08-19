@@ -1323,7 +1323,25 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * `s1u[]` under mechanism 4 — so those are OR'd in too: with
      * `startpos > 0` the machine begins in one of those, and a prefilter
      * decision taken from `s0` alone would be a decision about a state the
-     * search may never occupy. */
+     * search may never occupy.
+     *
+     * [M6.2 wave C] THE WIDENING IS BELT-AND-BRACES, NOT LOAD-BEARING, and
+     * that is a correction to the paragraph above — §3.6.1's `\bx*` cell does
+     * NOT lose three of four matches under a one-bit read. The reason is the
+     * argument this file already makes for the `last == (size_t)-1` gate
+     * thirty lines down: D3's accept-pruning cuts the unanchored start
+     * self-loop out of every accepting closure, so a class the start state
+     * ACCEPTS on cannot transition back to the start state — it ESCAPES —
+     * so the prefilter's stay set never contains it and the skip never passes
+     * an accepting position.
+     *
+     * MEASURED, this lane: narrowing to `fd->st[fs].up[UPC_PLAIN].accept`
+     * changes 21 corpus artifacts and 0 answers, over 2,247 find-all cells
+     * (21 patterns x 107 subjects). Keep the widening — it is free and it is
+     * the honest reading of "accepts on any class" — but do not cite it as a
+     * premise, and note that it therefore ships NO sabotage row: a check with
+     * no failing direction is exactly what this file's own neighbouring
+     * comment warns about. */
     bool start_acc = state_acc_any(&fd->st[fs]);
     if (fseed) {
         for (int u = 0; u < UPC_N; u++)
