@@ -363,57 +363,87 @@ for spec in "${PATSPEC[@]}"; do
         fi
         $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/kreset_entries.c" "$d/gen.o" \
             2>>"$d/err" || { bad "entries: could not link the driver for '$pat' ${eng:-auto}: $(head -5 "$d/err")"; continue; }
-        while IFS=$'\t' read -r name sp want hwant; do
-            f="$WORKDIR/subjects/$name"
-            line="$("$d/t" "$f" "$sp" 2>/dev/null)"
-            ent_cells=$((ent_cells + 1))
-            mret=$(printf '%s' "$line" | sed 's/.*| match \([-0-9]*\).*/\1/')
-            capspart="${line##*| caps }"
-            case "$hwant" in
-                nomatch)
-                    # THE ORACLE SAYS NO ANCHORED MATCH AT `sp`. Both
-                    # match-here entries must say so too, and the failure this
-                    # direction catches is an entry that stopped filtering at
-                    # all rather than one that filters on the wrong number.
-                    if [ "$mret" != "-1" ] || [ "$capspart" != "-1" ]; then
-                        ent_bad=$((ent_bad + 1))
-                        printf 'OVER-ACCEPT %s %s [%s] sp %s: libpcre2 \\G(?:pat) says nomatch; entries say %s\n' \
-                            "$pat" "${eng:-auto}" "$name" "$sp" "$line" >> "$WORKDIR/entdiffs.txt"
-                    fi ;;
-                "match "*)
-                    os=$(printf '%s' "$hwant" | cut -d' ' -f2)
-                    oe=$(printf '%s' "$hwant" | cut -d' ' -f3)
-                    wlen=$((oe - sp))
-                    # THE FILTER HALF: a genuine anchored match exists here,
-                    # so neither entry may reject it. This is exactly the cell
-                    # §6.3 names — `a\Kb` at ctx->pos == 0 — and the DFA-shaped
-                    # entry it quotes returns -1 on it.
-                    if [ "$mret" != "$wlen" ]; then
-                        ent_bad=$((ent_bad + 1))
-                        printf 'FILTER/RETURN %s %s [%s] sp %s: <prefix>_match returned %s, consumed length is %s (libpcre2 \\G(?:pat) = %s)\n' \
-                            "$pat" "${eng:-auto}" "$name" "$sp" "$mret" "$wlen" "$hwant" >> "$WORKDIR/entdiffs.txt"
-                    fi
-                    # THE CAPS ENTRY: same length, plus the `\K`-adjusted span.
-                    chl=$(printf '%s' "$capspart" | cut -d' ' -f1)
-                    chs=$(printf '%s' "$capspart" | cut -d' ' -f2)
-                    che=$(printf '%s' "$capspart" | cut -d' ' -f3)
-                    if [ "$chl" != "$wlen" ] || [ "$chs" != "$os" ] || [ "$che" != "$oe" ]; then
-                        ent_bad=$((ent_bad + 1))
-                        printf 'CAPS %s %s [%s] sp %s: match_caps gave len %s span (%s,%s); libpcre2 \\G(?:pat) gives len %s span (%s,%s)\n' \
-                            "$pat" "${eng:-auto}" "$name" "$sp" "$chl" "$chs" "$che" \
-                            "$wlen" "$os" "$oe" >> "$WORKDIR/entdiffs.txt"
-                    fi
-                    # THE NON-VACUITY COUNTER, and it is what stops this
-                    # section reading as a restatement of §1: count the cells
-                    # where the consumed length and the reported span's width
-                    # genuinely DIFFER. Those are the only cells that can tell
-                    # a `caps`-derived return from a position-derived one.
-                    if [ "$wlen" -ne "$((oe - os))" ]; then
-                        ent_nz=$((ent_nz + 1))
-                        [ "$mret" = "$((oe - os))" ] && ent_lenmismatch=$((ent_lenmismatch + 1))
-                    fi ;;
-            esac
-        done < "$WORKDIR/p$pidx/cells.tsv"
+
+        # ONE DRIVER PROCESS PER ARTIFACT, and one awk process to compare —
+        # not one of each per CELL. The first draft of this section spawned
+        # about six processes per cell (the driver plus a `sed` and four
+        # `cut`s), and the whole section then cost 9m18s wall against 2m22s
+        # user: three quarters of the time was spent NOT running anything
+        # under test. Nothing about WHAT is compared changed; only how many
+        # times the shell forks to compare it.
+        #
+        # THE TWO STREAMS ARE MATCHED POSITIONALLY, which is safe only because
+        # the driver emits exactly one line per input line and hard-fails
+        # otherwise (see kreset_entries.c's batch loop). The awk below asserts
+        # the two line counts agree anyway, because "positionally" is exactly
+        # the assumption that turns a dropped line into 23,000 wrong answers
+        # reported against the wrong cells.
+        awk -F'\t' -v d="$WORKDIR/subjects/" '{print d $1 " " $2}' \
+            "$WORKDIR/p$pidx/cells.tsv" > "$d/in.txt"
+        "$d/t" < "$d/in.txt" > "$d/out.txt" 2>/dev/null \
+            || { bad "entries: the driver for '$pat' ${eng:-auto} failed on its batch input"; continue; }
+        nin=$(wc -l < "$d/in.txt"); nout=$(wc -l < "$d/out.txt")
+        if [ "$nin" -ne "$nout" ]; then
+            bad "entries: the driver for '$pat' ${eng:-auto} returned $nout lines for $nin cells — the positional match below would report every answer against the wrong cell"
+            continue
+        fi
+        eval "$(awk -v pat="$pat" -v eng="${eng:-auto}" -v out="$d/out.txt" \
+                    -v diffs="$WORKDIR/entdiffs.txt" '
+        BEGIN { FS = "\t"; cells = 0; bad = 0; nz = 0; lenmis = 0 }
+        {
+            name = $1; sp = $2 + 0; hwant = $4;
+            if ((getline line < out) <= 0) { bad++; next }
+            cells++;
+            # The driver prints:  search ... | match <r> | caps <r> [<s> <e>]
+            nseg = split(line, seg, / \| /);
+            split(seg[2], m, " "); mret = m[2] + 0;
+            ncap = split(seg[3], c, " ");   # c[1] == "caps"
+            chl = c[2] + 0; chs = c[3] + 0; che = c[4] + 0;
+            if (hwant == "nomatch") {
+                # THE ORACLE SAYS NO ANCHORED MATCH AT sp. Both match-here
+                # entries must say so too, and what this direction catches is
+                # an entry that stopped filtering AT ALL rather than one
+                # filtering on the wrong number.
+                if (mret != -1 || ncap != 2 || chl != -1) {
+                    bad++;
+                    printf "OVER-ACCEPT %s %s [%s] sp %d: libpcre2 \\G(?:pat) says nomatch; entries say %s\n",
+                           pat, eng, name, sp, line >> diffs;
+                }
+                next;
+            }
+            split(hwant, h, " "); os = h[2] + 0; oe = h[3] + 0;
+            wlen = oe - sp;
+            # THE FILTER HALF: a genuine anchored match exists here, so
+            # neither entry may reject it. This is exactly the cell §6.3
+            # names — `a\Kb` at ctx->pos == 0 — and the DFA-shaped entry it
+            # quotes returns -1 on it.
+            if (mret != wlen) {
+                bad++;
+                printf "FILTER/RETURN %s %s [%s] sp %d: <prefix>_match returned %d, consumed length is %d (libpcre2 \\G(?:pat) = %s)\n",
+                       pat, eng, name, sp, mret, wlen, hwant >> diffs;
+            }
+            # THE CAPS ENTRY: the same length, plus the \K-adjusted span.
+            if (chl != wlen || chs != os || che != oe) {
+                bad++;
+                printf "CAPS %s %s [%s] sp %d: match_caps gave len %d span (%d,%d); libpcre2 \\G(?:pat) gives len %d span (%d,%d)\n",
+                       pat, eng, name, sp, chl, chs, che, wlen, os, oe >> diffs;
+            }
+            # THE NON-VACUITY COUNTER, and it is what stops this section
+            # reading as a restatement of §1: count the cells where the
+            # consumed length and the reported span WIDTH genuinely differ.
+            # Those are the only cells that can tell a caps-derived return
+            # from a position-derived one.
+            if (wlen != oe - os) {
+                nz++;
+                if (mret == oe - os) lenmis++;
+            }
+        }
+        END {
+            printf "ent_cells=$((ent_cells + %d)); ent_bad=$((ent_bad + %d));",
+                   cells, bad;
+            printf " ent_nz=$((ent_nz + %d)); ent_lenmismatch=$((ent_lenmismatch + %d))\n",
+                   nz, lenmis;
+        }' "$WORKDIR/p$pidx/cells.tsv")"
     done
 done
 

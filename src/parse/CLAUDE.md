@@ -372,6 +372,31 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   repeatable, measured the same way: `\G*` `\G+` `\G?` `\G{2}` `a\G*` are all
   error 109 and `(\G)*` compiles to (0,0).
 
+  **[M6.2] WAVE E added `\K` to the SAME producer AND CLOSED THE MODULE** —
+  all eight constructs now dispatch through `pcrec_asrtport_atom` on `sel`.
+  Same longhand row, same `RF_CLASS_INVALID`/`NO_PORT` at class position
+  (`[\K]` is PCRE2 error 107, measured), same inherited not-repeatable rule
+  (`\K*` `\K+` `\K?` `\K{2}` `a\K*` are error 109 and `(\K)*` compiles).
+  The port census moved 32 -> 33 with the SCALAR population unmoved at 5 for
+  the fourth wave running.
+
+  **AND IT IS THE ONE ROW IN THIS PORT THAT IS NOT AN ASSERTION.** Every kind
+  above asks a QUESTION about the position and can answer no; `\K` always
+  succeeds, reads nothing, and WRITES — it moves the reported start of the
+  match. Two consequences live here rather than downstream. First, this port
+  records `cx->first_kreset_pos` (on `first_cap_pos`'s precedent, first-wins),
+  because `src/opt/select_engine.c` decides the engine by WALKING the AST for
+  an A_KRESET — the honest question, since the reported start is
+  path-dependent exactly when such a node exists — and no AST node carries a
+  source position for the `engine_why` stamp to name. Second, `\K` is the
+  module's only VM_ONLY row, and wave E is the day
+  `tests/registry/registry_check.c`'s engine-capability tripwire FIRED for the
+  first time since [M4.7a] wrote it. The answer was not to build SR-8's
+  generic registry-column consultation at sample size one, and not to
+  allowlist the row either: the tripwire gains a NAMED exception that PAYS,
+  asserting live that `--engine=dfa` on `a\Kb` refuses by the construct's own
+  name. A second construct arriving there is when SR-8 has earned its axis.
+
   **THE BARE-ANCHOR RULE IS NOW ONE FUNCTION, AND WAVE D FOUND OUT WHY IT HAD
   TO BE.** `pcrec_is_bare_anchor` / `pcrec_wrap_bare_anchor` (parse.c, declared
   in core/internal.h) are the single home for the node-kind set that drives two

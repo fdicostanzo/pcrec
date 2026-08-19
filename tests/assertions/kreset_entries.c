@@ -52,8 +52,28 @@
  * identifier prefix. The HEADER name is not the prefix — `pcrec -o
  * <dir>/gen.c` writes `<dir>/gen.h` whatever `-p` says.
  *
- * Usage: ke_entries <subject-file> <startpos>
- * Prints one line:
+ * Usage: ke_entries <subject-file> <startpos>     one cell, from argv
+ *        ke_entries                                 many cells, from stdin
+ *
+ * THE BATCH FORM IS NOT A CONVENIENCE. This driver is called once per CELL,
+ * and the sweep that uses it is (patterns x engines x subjects x every
+ * startpos) — 23,548 cells on the shipped list. At one process per cell the
+ * whole cost is fork/exec: measured 9m18s wall against 2m22s user, i.e. the
+ * script spent three quarters of its time NOT running any of the code under
+ * test. Reading `<subject-path> <startpos>` lines from stdin and printing one
+ * result line each collapses that to one process per ARTIFACT, at no cost to
+ * what is compared: each line still gets its own `<prefix>_work`, its own
+ * `caps` arrays and its own `rx_ctx`, so no state crosses between cells.
+ * The single-cell argv form is kept because §3's named advance cell drives
+ * exactly one and reads better that way.
+ *
+ * MEASURED before and after, and the second number is the one that matters:
+ * 9m18s -> 5m10s wall, with §2's own figures BYTE-IDENTICAL across the change
+ * (23,548 cells, 2,462 of them with the consumed length differing from the
+ * reported width, 0 wrong). A speedup that moved a count would have meant the
+ * batching changed what was compared.
+ *
+ * Prints one line per cell:
  *   "search <r> [<s> <e>] | match <r> | caps <r> [<s> <e>]"
  * where every <r> is the RAW return, so a give-up code is never read as a
  * no-match (K21's class). */
@@ -63,23 +83,22 @@
 
 #include "gen.h"
 
-int main(int argc, char **argv)
+/* ONE CELL, and every buffer it touches is local to this call. The subject is
+ * re-read per cell rather than cached: a cache keyed on the path would be a
+ * second mechanism to get wrong, and the read is not what this driver's cost
+ * was ever in. */
+static int one_cell(const char *path, size_t sp)
 {
     unsigned char buf[1 << 16];
-    size_t n, sp;
+    size_t n;
     FILE *f;
     ptrdiff_t caps[KE_NCAPS][2];
     int found;
 
-    if (argc < 3) {
-        fprintf(stderr, "usage: %s <subject-file> <startpos>\n", argv[0]);
-        return 2;
-    }
-    f = fopen(argv[1], "rb");
-    if (!f) { perror(argv[1]); return 2; }
+    f = fopen(path, "rb");
+    if (!f) { perror(path); return 2; }
     n = fread(buf, 1, sizeof buf, f);
     fclose(f);
-    sp = (size_t)strtoul(argv[2], NULL, 10);
 
     found = ke_search(buf, n, sp, caps);
     if (found == 1) printf("search 1 %td %td", caps[0][0], caps[0][1]);
@@ -112,6 +131,31 @@ int main(int argc, char **argv)
         here = ke_match_caps(&ctx, hcaps);
         if (here >= 0) printf(" | caps %td %td %td\n", here, hcaps[0][0], hcaps[0][1]);
         else           printf(" | caps %td\n", here);
+    }
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    char line[8192];
+
+    if (argc >= 3)
+        return one_cell(argv[1], (size_t)strtoul(argv[2], NULL, 10));
+    if (argc != 1) {
+        fprintf(stderr, "usage: %s [<subject-file> <startpos>]"
+                        "   (no args: read '<path> <startpos>' lines from stdin)\n",
+                argv[0]);
+        return 2;
+    }
+    while (fgets(line, sizeof line, stdin)) {
+        char *sp = strrchr(line, ' ');
+        if (!sp) { fprintf(stderr, "ke_entries: malformed input line\n"); return 2; }
+        *sp++ = '\0';
+        /* A cell that cannot be read is a HARD failure, never a skipped line:
+         * a batch driver that silently produced fewer lines than it was given
+         * would shift every subsequent answer against the caller's own list,
+         * and the caller compares positionally. */
+        if (one_cell(line, (size_t)strtoul(sp, NULL, 10)) != 0) return 2;
     }
     return 0;
 }

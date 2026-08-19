@@ -186,18 +186,25 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   factoring). Part of `make test` as `make test-altcls`. See its own
   CLAUDE.md for why the differential's engine choice differs from every
   other deny-family suite's.
-- **`assertions/`** — module `assertions` ([M6.2]), WAVES A, B, C AND D so
-  far: `\A`, `\Z`, `\z`, `\b`, `\B`, `(?m)` and `\G`. **The one directory in the tree
+- **`assertions/`** — module `assertions` ([M6.2]), ALL FIVE WAVES: `\A`,
+  `\Z`, `\z`, `\b`, `\B`, `(?m)`, `\G` and `\K` — every construct the
+  module owns. **The one directory in the tree
   whose ORACLE RULE differs from the project default, and the reason is
-  measured — THREE TIMES, in three DIFFERENT ways**: python `re`'s `\Z` IS
+  measured — FOUR TIMES, in three DIFFERENT ways**: python `re`'s `\Z` IS
   PCRE2's `\z` (python has no single escape for PCRE2's `\Z` at all), python's
   multiline `^` matches after a newline that ENDS the string while PCRE2's
-  does not, and python has no `\G` AT ALL (wave D, U11c — a total exclusion
-  rather than a wrong or different answer). The first two disagree
+  does not, and python has no `\G` OR `\K` AT ALL (waves D and E, U11c and U11d — total
+  exclusions rather than wrong or different answers; `\K` has no rewriting
+  either, since python's `re` gives a pattern no way to move its own match's
+  reported start). Four of the module's eight constructs are excluded and the
+  other four are python-verified cell for cell at 0 divergences, which is what
+  makes the rule a statement about those four CONSTRUCTS rather than about the
+  module. The first two disagree
   in the silent direction — no match, a shorter span, or a match PCRE2 does
   not report — so every `\Z` block and every `(?m)`-with-`^` block carries
-  `# pcre2-only`, WHOLESALE rather than per diverging cell; every `\G` block
-  carries it because there is nothing for python to answer at all, and
+  `# pcre2-only`, WHOLESALE rather than per diverging cell; every `\G` and
+  every `\K` block carries it because there is nothing for python to answer
+  at all, and
   `verify_pcre2.py` re-verifies the whole directory against libpcre2 on every
   run, through `tests/fuzz/pcre2_oracle` and `tests/harness/verify_rxt.py`'s
   own parser (one libpcre2 access path, one `.rxt` parser). `\A`, `\z`,
@@ -211,6 +218,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   state budget refusing rather than miscompiling. `run_mline_diff.sh` is the
   wave C differential — a generated subject sweep over the `(?m)$` family
   against libpcre2 on both engines, with its own population claim checked.
+  `run_kreset_diff.sh` is wave E's, and it is the only instrument anywhere
+  that asks libpcre2 the MATCH-HERE question: `tests/fuzz/pcre2_oracle` has no
+  anchored mode, so the script asks about `\G(?:PAT)` at the same startpos —
+  wave D's construct used as wave E's oracle device — which makes the FILTER
+  and the CONSUMED-LENGTH halves of assertions_design.md §6.3 rule 3 checkable
+  against an external engine rather than against pcrec's own arithmetic. It is
+  also the only place all THREE entries of one artifact are driven side by
+  side, which `\K` is what makes necessary: `<prefix>_match` delivers no
+  captures, so its RETURN is all a D38 callout has, and on a `\K` pattern that
+  number and the reported span are different quantities.
   `run_gstart_diff.sh` is wave D's, and it is the SECOND place in the tree
   that drives docs/spec/match_api.md §3.1's find-all loop (see `encseam/`
   below) — here against libpcre2 driven through the SAME loop, which is where

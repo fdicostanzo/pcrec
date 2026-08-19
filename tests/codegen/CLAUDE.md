@@ -779,3 +779,47 @@ has to stay independent of the ENCODING axis as well as the prefix one: the
 block is emitted once per file under a prefix-independent guard, so two
 artifacts compiled for different encodings into one TU share it and only
 the first copy survives.
+
+## **[M6.2 wave E] the `[M6.2-KRESET]` block, and the identity gate that is NOT here**
+
+`\K` is module `assertions`' last construct and the first whose whole
+structural surface is provenance rather than presence. Four checks:
+
+- **rule 1** — a `\K` artifact's `<prefix>_caps_out` derives `caps[0][0]` from
+  the TRAILED slot 0, and the unconditional `caps[0][0] = (ptrdiff_t)start` is
+  GONE from it. That `start` is the prefilter's span start under the hybrid,
+  i.e. the REVERSE PASS's answer and the PRE-`\K` start, which
+  assertions_design.md §6.3 rule 1 says may bound the search and must never be
+  written out. Both directions are asserted in one artifact, plus that the
+  write goes through `RX_SET` rather than straight to `stv[0]` — the macro is
+  what records the old value on the trail, and without it a `\K` crossed on a
+  LOSING path stays crossed.
+- **rule 1b** — a `\K`-FREE VM artifact emits the PRE-WAVE `caps_out` body
+  **character for character**, with the two lines pinned here as LITERALS. The
+  literal is deliberate rather than lazy: "does not contain the `\K` form"
+  would pass on an emitter that had rewritten the line into some third shape.
+  This is also **the whole of wave E's byte-identity claim**, and why this
+  directory gained no fifth `run_*_identity.sh`: the emitter reads `v.nkreset`
+  at exactly ONE site, so the claim is about one predicate rather than about a
+  construction spanning several. Its corpus-wide half was MEASURED ONCE
+  against the genuine PRE-WAVE COMPILER (1,208/1,208 identical at the default
+  engine, 1,209/1,209 under `--engine=vm`, 0 refusal mismatches) — a reference
+  sharing NO SOURCES with the subject, which is strictly stronger than a `-D`
+  knob build and is the direct answer to wave D's own finding that a knob
+  build's sabotage CANCELS.
+- **rule 3** — the VM's match-here entry calls `<prefix>_match_impl` at
+  `ctx->pos` directly: no `caps[0][0] != ctx->pos` filter (which under `\K`
+  compares against the POST-`\K` start and rejects a genuine anchored match)
+  and no `caps[0][1] - caps[0][0]` return (which is the POST-`\K` length, and
+  a D38 callout advancing by it on `ab\K` would advance by 0 forever).
+- **rule 3b** — the DFA artifact's `rx_match` still carries its start filter
+  and its caps-derived return VERBATIM. It has to be checked on a `\K`-FREE
+  pattern, because a `\K` pattern is VM-forced and has no DFA entry at all —
+  which is also why those two lines are correct there and wave E touched
+  neither.
+
+Sabotages **S85** (R30 C3's own request: take `caps[0][0]` from the
+prefilter's span) and **S86** (the write untrailed). Their symptoms in rule 1
+are DISJOINT, which is why they are two rows rather than one edit with two
+halves; measured, S85 fails 198 corpus cases and S86 exactly 6 — the two undo
+families and nothing else.

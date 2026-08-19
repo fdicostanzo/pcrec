@@ -195,6 +195,22 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   and had already drifted — see src/parse/CLAUDE.md for the over-rejection
   that found it.
 
+  **[M6.2 wave E] `A_KRESET` and `Ctx.first_kreset_pos`, and the kind is the
+  one member of the assertion family that is not an assertion.** Every other
+  kind added by this module asks a QUESTION about the position and can fail;
+  `\K` always succeeds, reads nothing, and WRITES — it moves the reported
+  start of the match. It gets a kind rather than a flag for the usual D62
+  reason and for a sharper one: there is no other node it could be a variant
+  of. `src/ir/nfa.c` lowers it to N_EPS, so no IR kind exists for it — the
+  first construct in the module with no `N_` counterpart, and the reason is
+  that it changes no language, only what gets reported.
+  `first_kreset_pos` is `first_cap_pos`'s twin, first-wins, and it exists for
+  the DIAGNOSTIC only: `src/opt/select_engine.c` decides the engine by WALKING
+  the AST for an A_KRESET (the honest question — the reported start is
+  path-dependent exactly when such a node exists, and a rewrite that deleted
+  one must flip the verdict), while the `engine_why` stamp needs a pattern
+  offset that no AST node carries.
+
   **[M4.7a] SR-8 evaluated and declined to add a `Ctx.vmonly_*` field here**,
   unlike the `ModState.multiline` precedent above — the difference being
   that `multiline`'s writer (module `assertions`) is a scheduled, named
@@ -205,6 +221,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   src/opt/CLAUDE.md's select_engine.c entry. **[M6.3] is the tripwire's
   first trip**, and the fix is recorded on `Ctx.named_groups` below rather
   than here: no `Ctx.vmonly_*`-shaped field was needed after all.
+  **[M6.2] WAVE E IS ITS SECOND TRIP AND ITS FIRST REAL ONE.** [M6.3]'s was
+  a reclassification — a named group's AST is an ordinary A_CAP, so the
+  pre-existing capture rule already routed it and the three rows moved to
+  ANY_ENGINE, leaving the population. `\K` genuinely IS VM-only and stays in
+  it, so the tripwire fires for the reason it was written. The answer was
+  still not SR-8: a construct-specific `forces_*` row is the honest shape at
+  sample size one, and the generic registry-column consultation would be
+  machinery designed around one customer. The tripwire keeps its demand and
+  gains a NAMED exception that pays for itself by asserting the
+  `--engine=dfa` refusal live — see tests/registry/registry_check.c. A
+  SECOND construct arriving there is when SR-8 has earned its axis, and a
+  `Ctx.vmonly_*` field is still not what it needs.
 
   **[M6.3] `NamedGroup` and `Ctx.named_groups`/`n_named_groups`.** Module
   `named-groups`' declared-groups list: an arena-allocated singly linked

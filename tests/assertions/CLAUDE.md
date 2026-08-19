@@ -1,11 +1,13 @@
 # tests/assertions — module `assertions` ([M6.2])
 
-The module's own corpus and its four non-`.rxt` checks. **WAVES A, B, C AND D
-so far**: `\A`, `\Z`, `\z`, `\b`, `\B`, `(?m)` and `\G` are built; `\K` is
-recognised, attributed and refused, and lands in wave E
-(`docs/design/assertions_design.md` §10). `\K` is now the LAST
-enabled-but-unbuilt row in the tree — when wave E lands, tests/reject's whole
-`reject_gated assertions` paragraph retires with it.
+The module's own corpus and its six non-`.rxt` checks. **ALL FIVE WAVES ARE
+IN**: `\A`, `\Z`, `\z`, `\b`, `\B`, `(?m)`, `\G` and `\K` are built, which
+is every construct module `assertions` owns
+(`docs/design/assertions_design.md` §10). tests/reject's whole
+`reject_gated assertions` enabled-but-unbuilt paragraph retired with wave E —
+and NOT the mechanism behind it, which turned out to have a large live
+population in other modules; see that file for the measurement and where the
+pin was re-homed to.
 
 ## THE ORACLE RULE IS DIFFERENT HERE, and it is the first thing to know
 
@@ -25,12 +27,28 @@ shorter one, exactly where PCRE2 matches — so a cell written from python would
 encode `\z` and this suite would go green on a `\Z`-compiled-as-`\z`
 miscompile.
 
-**AND FOR `\G` THE ORACLE DOES NOT EXIST AT ALL** ([M6.2] wave D, U11c).
-`re.compile(r"\G")` raises `error: bad escape \G`; there is no flag, no
-dialect and no rewriting that expresses it, because python's `re` has no way
-to assert against a search's start offset from inside a pattern. That is a
-TOTAL exclusion rather than U11's wrong-answer one or U11b's different-answer
-one, so `gpos.rxt` is `# pcre2-only` in its entirety.
+**AND FOR `\G` AND `\K` THE ORACLE DOES NOT EXIST AT ALL** ([M6.2] waves D
+and E, U11c and U11d). `re.compile(r"\G")` raises `error: bad escape \G` and
+`re.compile(r"a\Kb")` raises `error: bad escape \K`; there is no flag, no
+dialect and no rewriting that expresses either, because python's `re` has no
+way to assert against a search's start offset from inside a pattern and no way
+for a pattern to move its own match's REPORTED START. Those are TOTAL
+exclusions rather than U11's wrong-answer one or U11b's different-answer one,
+so `gpos.rxt` and `kreset.rxt` are `# pcre2-only` in their entirety.
+
+**THE LIST IS NOW COMPLETE, AND THAT IS WHAT MAKES IT A STATEMENT ABOUT FOUR
+CONSTRUCTS RATHER THAN ABOUT THE MODULE.** Four of the module's eight
+constructs are excluded (`\Z` wrong, `(?m)^` different, `\G` absent, `\K`
+absent) and the other four — `\A`, `\z`, `\b`, `\B` — are python-verified
+cell for cell at 0 divergences. A reader deciding whether a new cell can be
+python-verified should check WHICH construct it uses, never assume the
+directory's rule.
+
+**DO NOT REACH FOR A LOOKBEHIND TO GET `\K` A PYTHON ORACLE.** `(?<=a)b` is
+close to `a\Kb` and is not the same construct — different backtracking, and
+it cannot express the variable-width shapes `\K` exists for — so a cell
+written that way would encode a translation and then check the translation.
+It also needs module `lookaround`, which does not exist.
 
 **Every block whose pattern contains `\Z` therefore carries `# pcre2-only`**
 (which makes `tests/harness/verify_rxt.py` skip it) and is verified against
@@ -150,6 +168,67 @@ every oracle exclusion has an entry there.
   is the THIRD wave to add spellings to K28's exclusion list, which that
   entry's own text predicts. `run_gstart_diff.sh` §4 asserts them instead, at
   `-O2`.
+- **kreset.rxt** — [M6.2] WAVE E: `\K`, which RESETS THE REPORTED START.
+  **This file is different from every other one here in what its cells are
+  ABOUT.** The other four corpora ask "does this assertion hold at this
+  position"; `\K` is not an assertion — it asks nothing, cannot fail, and has
+  a SIDE EFFECT — so the interesting cells are the ones where several
+  candidate writes compete and only one SURVIVES to the end of the winning
+  path. Three families carry the file and none is decoration:
+  the UNDO cells (§3, §4), where a `\K` is crossed on a path that then
+  LOSES — `(?:a\K|ax)c` on `"axc"` is (0,3), so the write of 1 must be GONE,
+  and `(?:a\K)*ab` on `"aaab"` is (2,4), so the third iteration's write must
+  be gone AND the second's must stand (a trail that CLEARED instead of
+  restoring gets the first right and the second wrong; sabotage S86 fires on
+  exactly 6 cases, all here); the NOT-CROSSED cells (§5), where the artifact's
+  PCREC_UNSET means "no `\K` on this path" and `(?:a\K)?b` answers (1,2) on
+  `"ab"` and (0,1) on `"b"`; and the START == END cells (§6), where `ab\K`
+  reports the empty span (2,2) after consuming two bytes — the only place in
+  the tree the reported width and the consumed length differ, and the reason
+  the match-here entries' RETURN is a separate question from their span.
+  Also here: `\K` with captures (a group that starts BEFORE the reported
+  match start, `g` lines LIVE since `\K` forces the VM), `\K` composed with
+  all seven of the module's other constructs — `\Ga\Kb` being the sharpest,
+  the only pattern carrying both constructs that need something from outside
+  `(s, n, pos)` — and the grammar refusals with the module enabled.
+  `ms`/`ns` cells throughout, for a THIRD reason after wave B's and wave D's:
+  the reported start is the one quantity `\K` can move and a nonzero startpos
+  also moves, so a cell at startpos > 0 is what distinguishes "the VM reported
+  its `\K` write" from "the prefilter's span start was written out".
+  Every expectation libpcre2-produced; the whole file is `# pcre2-only`.
+  **NOTHING IS EXCLUDED FROM THIS FILE.** It is the first wave since B to add
+  no spelling to K28's list — no shape here compiles to a single dead state.
+- **kreset_entries.c** — [M6.2] WAVE E's driver, and the only one in the tree
+  that drives ALL THREE entries of one artifact (`<prefix>_search`,
+  `<prefix>_match`, `<prefix>_match_caps`) side by side. `\K` is what makes
+  the third one necessary: `<prefix>_match` delivers no captures, so its
+  RETURN is the only thing a caller — a D38 callout among them — can act on,
+  and on a `\K` pattern that number and the reported span are different
+  quantities. Driving only the caps-delivering sibling would print a
+  plausible pair and miss the one an entry deriving its return from `caps`
+  gets wrong.
+- **run_kreset_diff.sh** — [M6.2] WAVE E's behavioural instrument, run by
+  `make test-assertions`. Four sections: the subject sweep on both engines
+  with startpos taking EVERY value in `[0, n]`; THE THREE ENTRIES against
+  libpcre2; the ADVANCE property by name; and the `--engine=dfa` refusal in
+  both directions.
+  **ITS ORACLE FOR THE MATCH-HERE ENTRIES IS `\G`, and that is the idea the
+  script turns on.** `tests/fuzz/pcre2_oracle` has no anchored mode, so there
+  is no flag with which to ask libpcre2 "does this match AT offset sp" — but
+  PCRE2 already has a spelling for it, and wave D built it: `\G(?:PAT)` at
+  startpos `sp` IS that question. Two things fall out with no arithmetic of
+  the script's own: a match there means the entry must not reject it (the
+  FILTER half), and the oracle's match END minus `sp` IS the consumed length
+  (the RETURN half), which on a `\K` pattern is generally not `end - start`.
+  A NON-VACUITY counter reports how many cells have those two numbers
+  DIFFERING, because without it the whole section could be passing on cells
+  where they coincide — which is every cell of every `\K`-free pattern.
+  **THE POPULATION CLAIM IS CHECKED**, as in its two siblings: every
+  pattern's artifact is inspected for BOTH halves of the machinery (the
+  trailed write and the `\K`-aware `caps_out`), the table is printed every
+  run, and a pattern carrying only one is reported by name — because either
+  half alone reports the prefilter's start and a sweep would pass over it.
+  **The python arm** is wave D's, on `\K`-free controls, for U11d's reason.
 - **gstart_findall.c** / **gstart_entries.c** — [M6.2] WAVE D's two drivers,
   each for a property no `.rxt` block can express. The first is
   docs/spec/match_api.md §3.1's find-all loop, TRANSCRIBED from
@@ -259,6 +338,7 @@ Four instruments touch this module and they see different things:
 | `verify_pcre2.py` | whether ALL of them describe libpcre2 — the only check that can validate a `\Z` cell |
 | `run_assertions_tests.sh` | the gate's two answers, and whether the possessification exemption fired |
 | `run_gstart_diff.sh` | what `\G` means under §3.1's find-all LOOP, and what the two ENTRIES of one artifact answer — neither expressible as a `.rxt` cell |
+| `run_kreset_diff.sh` | what the THREE entries answer about an ANCHORED match, and whether the consumed length is derived from positions or from `caps` — a number no span comparison contains |
 
 and three more live outside this directory entirely.
 `tests/codegen/run_endvar_identity.sh` is the byte-identity gate for the claim
@@ -276,18 +356,39 @@ dispatch and the third `start_max` string cost a `\G`-free pattern nothing
 (sabotage S83). **Its reference knob is at the EMITTER rather than in the
 analysis**, which is what makes S83 visible where the same shape is invisible
 to its two predecessors, and moving it is what found a dead `gseed[]` table
-this wave had emitted on every `\b`/`(?m)` artifact. And
+this wave had emitted on every `\b`/`(?m)` artifact. **Wave E deliberately built NO identity gate**, which is the one place this
+module's waves differ in shape: `\K` is VM-forced and the emitter reads its
+counter at exactly ONE site, so "a `\K`-free pattern pays nothing" is a claim
+about one predicate rather than about a construction. It is pinned as
+`[M6.2-KRESET rule 1b]`, which quotes the pre-wave `caps_out` body as a
+LITERAL so a rewrite into a third shape fails too; the corpus-wide half was
+measured ONCE against the genuine pre-wave COMPILER (1,208/1,208 default,
+1,209/1,209 under `--engine=vm`), a reference sharing no sources with the
+subject and therefore immune to the cancellation wave D measured in the knob
+builds. And
 `tests/codegen/run_codegen_tests.sh`'s `[M6.2-WORDB]` block carries three
 rules no correctness test can see — no accept table indexed at `pos == n`
 (§3.6.2, sabotage S73), no `sfound` recorded blind at the reverse boundary by
 ANY writer including the skip's (§3.8.3.1, sabotage S72), and exactly one
-word-set spelling per artifact (§7.2 item 3).
+word-set spelling per artifact (§7.2 item 3) — and its `[M6.2-KRESET]` block
+carries wave E's four: `caps[0][0]`'s PROVENANCE on a `\K` artifact and on a
+`\K`-free one (sabotages S85 and S86, with DISJOINT symptoms, which is why
+they are two rows), and the two match-here entry SHAPES, the second checked
+on a `\K`-free artifact because a `\K` pattern never has a DFA entry to
+inspect.
 
 ## Maintenance
 
-Update this file when files are added or removed. When a later wave lands a
-construct, the pair to move together is: `tests/reject/`'s `reject_gated
-assertions` row for it (delete — it is built now) and this directory's own
-cells (add). Leaving the first behind turns a true statement into a false one
+Update this file when files are added or removed. The five waves are in and
+the pair-to-move-together rule below has no remaining customer in this
+module — kept because the next partially-landed module inherits it verbatim.
+When a later wave lands a construct, the pair to move together is:
+`tests/reject/`'s `reject_gated` row for it (delete — it is built now) and the
+module's own cells (add). **Wave E adds a third item that wave D's note got
+wrong**: do NOT also delete the enabled-but-unbuilt MECHANISM when a module's
+last row leaves. Its population is every registry row whose module is enabled
+and whose port is unwired, which is large and live; what has to move is the
+PIN, and wave E re-homed it to `backrefs`/`lookaround`/`atomic-groups`/
+`quoting` in the same change. Leaving the first behind turns a true statement into a false one
 the day the producer lands, which is exactly the `(?J)` wording history
 recorded in `src/parse/mod_modifiers.c`.
