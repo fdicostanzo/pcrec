@@ -800,8 +800,9 @@ structural surface is provenance rather than presence. Four checks:
   would pass on an emitter that had rewritten the line into some third shape.
   This is also **the whole of wave E's byte-identity claim**, and why this
   directory gained no fifth `run_*_identity.sh`: the emitter reads `v.nkreset`
-  at exactly ONE site, so the claim is about one predicate rather than about a
-  construction spanning several. Its corpus-wide half was MEASURED ONCE
+  into an ARTIFACT at exactly ONE site (`--emit-ir`'s listing reads it too,
+  and a query writes no artifact), so the claim is about one predicate rather
+  than about a construction spanning several. Its corpus-wide half was MEASURED ONCE
   against the genuine PRE-WAVE COMPILER (1,208/1,208 identical at the default
   engine, 1,209/1,209 under `--engine=vm`, 0 refusal mismatches) — a reference
   sharing NO SOURCES with the subject, which is strictly stronger than a `-D`

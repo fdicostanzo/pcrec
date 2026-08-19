@@ -448,15 +448,23 @@ typedef struct {
                            * before this wave and stays byte-identical. */
     long long nkreset;    /* [M6.2 wave E] emitted `\K` write sites, counted as
                            * they are written — `ngst`'s shape and `nclamp`'s
-                           * reason. It is the gate on ONE emitted decision:
-                           * whether `<prefix>_caps_out` derives `caps[0][0]`
-                           * from slot 0 or from its `start` argument. A
-                           * `\K`-free program takes the pre-wave arm and is
-                           * byte-identical, and because that is the ONLY site
-                           * that reads this counter, "a `\K`-free pattern pays
-                           * nothing" is a one-predicate claim rather than the
-                           * multi-site construction waves B-D each had to
-                           * argue. */
+                           * reason. It is the gate on ONE decision in the
+                           * EMITTED ARTIFACT: whether `<prefix>_caps_out`
+                           * derives `caps[0][0]` from slot 0 or from its
+                           * `start` argument. A `\K`-free program takes the
+                           * pre-wave arm and is byte-identical, and because
+                           * that is the only ARTIFACT site reading this
+                           * counter, "a `\K`-free pattern pays nothing" is a
+                           * one-predicate claim rather than the multi-site
+                           * construction waves B-D each had to argue.
+                           *
+                           * `vm_render_listing` reads it too, and that is not
+                           * a second emitted decision: `--emit-ir` is a QUERY
+                           * that writes no artifact. The listing has to read
+                           * it because slot 0 stops being entry-only the
+                           * moment a `\K` exists, and a listing that said
+                           * otherwise would describe a different program from
+                           * the one beside it — S10's drift, exactly. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
                            * artifact (ONE gate for both, D49). Read by the
@@ -3999,7 +4007,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         if (k == 0) snprintf(what, sizeof what, "$0 whole match");
         else        snprintf(what, sizeof what, "group %d", k);
         sb_printf(o, "  %2d,%-9d %-22s %s\n", 2 * k, 2 * k + 1, what,
-                  k == 0 ? "written by the ENTRY, not the VM (S3.4)"
+                  /* [M6.2 wave E] slot 0 STOPS being entry-only the moment a
+                   * `\K` exists: that is the whole of the construct's
+                   * mechanism, and a listing still claiming "written by the
+                   * ENTRY, not the VM" would describe a different program
+                   * from the one beside it. The listing's own constraint
+                   * (S10: derived from the structure the emitter walks) is
+                   * about drift like this, and it costs one condition. */
+                  k == 0 ? (v->nkreset > 0
+                              ? "start written by the VM (\\K); end by the ENTRY"
+                              : "written by the ENTRY, not the VM (S3.4)")
                          : (w ? "written on traverse, trailed" : "never written"));
     }
     if (v->nguard_total == 0)
@@ -4936,9 +4953,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * below).
      *
      * A `\K`-FREE ARTIFACT TAKES THE PRE-WAVE ARM, character for character.
-     * This is the only site in the emitter that reads `v.nkreset`, which is
+     * This is the only site that reads `v.nkreset` INTO AN ARTIFACT, which is
      * what makes "wave E costs a `\K`-free pattern nothing" a claim about one
-     * predicate rather than about a construction spanning four files. */
+     * predicate rather than about a construction spanning four files.
+     * `vm_render_listing` reads it as well, but `--emit-ir` is a query that
+     * writes no artifact, so byte identity is untouched by it. */
     sb_printf(c,
         "static void %s_caps_out(const %s_work *w, ptrdiff_t (*caps)[2],\n"
         "                        size_t start, ptrdiff_t len)\n"

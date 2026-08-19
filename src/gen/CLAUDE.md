@@ -257,8 +257,12 @@ directory is in `emit_vm.c`, and it is four things:
   (0,1) through the fallback, and the fallback is `\K`'s semantics rather than
   a defensive default.
 
-**THIS IS THE ONLY SITE THAT READS `v.nkreset`, WHICH IS WHY THE WAVE SHIPS NO
-BYTE-IDENTITY GATE.** Waves A-D each changed a construction spanning several
+**THIS IS THE ONLY SITE THAT READS `v.nkreset` INTO AN ARTIFACT, WHICH IS WHY
+THE WAVE SHIPS NO BYTE-IDENTITY GATE.** (`vm_render_listing` reads it too, so
+`--emit-ir`'s SLOTS section stops claiming slot 0 is entry-only when a `\K`
+exists — a listing that said otherwise would describe a different program from
+the one beside it, which is §10's drift. A query writes no artifact, so byte
+identity is untouched.) Waves A-D each changed a construction spanning several
 emitter decision points and each needed a corpus-wide comparison against a
 reference build to say a construct-free pattern paid nothing. Here the claim
 is about ONE predicate, so it is pinned structurally — `[M6.2-KRESET rule 1b]`
