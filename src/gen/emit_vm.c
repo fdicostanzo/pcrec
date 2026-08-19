@@ -655,6 +655,8 @@ static bool vm_nullable(const Ast *a)
         switch (a->k) {
         case A_CLASS: return false;
         case A_EMPTY: case A_BOL: case A_EOL: case A_END: return true;
+        /* [M6.2 wave B] zero-width, hence nullable. */
+        case A_WORDB: case A_NWORDB: return true;
         case A_CAP:   a = a->l; continue;
         case A_REP:   if (a->rmin == 0) return true; a = a->l; continue;
         case A_CAT:
@@ -886,6 +888,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB:
             return;
         case A_CAP:
             if (*n < cap) out[(*n)++] = a->capno;
@@ -1204,6 +1207,9 @@ static Cost vm_cost(Vm *v, const Ast *a)
     Cost c = { 0, 0, 0, 0, false, false };
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    /* [M6.2 wave B] one emitted test, no frame, no slot, no trail entry --
+     * the same cost every other assertion arm has. */
+    case A_WORDB: case A_NWORDB:
         return c;
     case A_CAP:
         c = vm_cost(v, a->l);
@@ -1307,6 +1313,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
     int stride = 0, nc = 0;
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_WORDB: case A_NWORDB:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl); return;
     case A_ALT:
@@ -3484,6 +3491,43 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         sb_printf(b, "    if (pos == n) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
+    case A_WORDB:
+    case A_NWORDB: {
+        /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
+         *
+         * THE GUARDS ARE IN THE EXPRESSION, and that is R30 m2's correction
+         * rather than defensive padding. The natural spelling —
+         * `word(s[pos-1]) != word(s[pos])` — reads `s[-1]` at `pos == 0` and
+         * `s[n]` at `pos == n`, and docs/spec/match_api.md §3.1 makes
+         * `(s == NULL, n == 0)` a LEGAL subject, so at `n == 0` BOTH operands
+         * must short-circuit before any dereference. That is K27's exact
+         * class: undefined behaviour in EMITTED code, which a user compiling
+         * a generated matcher under their own -fsanitize=undefined sees
+         * pcrec's name on.
+         *
+         * Out-of-subject counts as NON-WORD, which is what makes the guard
+         * and the semantics the same expression: a failed bounds test yields
+         * 0, which is exactly the value the missing byte would contribute.
+         *
+         * THE WORD SET COMES OUT OF THE CLASS POOL (§7.2 item 3), so it is
+         * `pcrec_cls_word_esc` — the SAME table `\w` compiles from, interned
+         * by content, so a pattern using both emits ONE bitmap and the two
+         * constructs cannot disagree about what a word character is. */
+        int wi = vm_cls(v, pcrec_cls_word_esc);
+        bool neg = a->k == A_NWORDB;
+        vm_lbl(v, entry, NULL);
+        vm_ev(v, VE_ASSERT, next, 0,
+              neg ? "\\B not a word boundary" : "\\b word boundary");
+        sb_puts(b, "    if (((pos > 0 && (");
+        vm_cls_test(v, b, wi, "s[pos-1]");
+        sb_puts(b, ")) ");
+        sb_puts(b, neg ? "==" : "!=");
+        sb_puts(b, " (pos < n && (");
+        vm_cls_test(v, b, wi, "s[pos]");
+        sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
+        vm_fail(v);
+        return;
+    }
     case A_CAP: {
         /* §3.2 WRITE ON TRAVERSE: caps[k][0] when control passes the opening
          * position, caps[k][1] when it passes the closing one. Undo is EXACT

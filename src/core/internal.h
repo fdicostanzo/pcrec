@@ -79,6 +79,18 @@ typedef enum {
      * adding this member is a compile error at every analysis that must
      * decide about it. */
     A_END,
+    /* [M6.2 wave B] `\b` and `\B` — the WORD BOUNDARY assertions. Two kinds
+     * rather than one kind plus a negation flag, on the same D62 principle
+     * `\z` was ruled by: `\B` is not `\b` under a modifier, it is the
+     * complementary position set, and no option turns one into the other.
+     *
+     * They are the module's first CONTEXT assertions: unlike `\A`/`\Z`/`\z`,
+     * whose truth is a function of the position alone, these read the byte on
+     * EACH SIDE of the position. That is what costs an alphabet refinement
+     * (assertions_design.md §3.4), a bit of DFA state identity (§3.5) and a
+     * class-indexed accept (§3.6) — see src/ir/dfa.c. */
+    A_WORDB,
+    A_NWORDB,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
      * D31 ruled the group erasure STAYS, on a MEASURED compile-time cost, and
@@ -195,6 +207,16 @@ typedef enum {
     N_END,     /* [M6.2 wave A] assert end-of-subject (`\z`), goto t1 —
                 * strictly stronger than N_EOL, which is why it is its own
                 * state kind and its own closure bit rather than a variant */
+    /* [M6.2 wave B] `\b` / `\B`, goto t1. The FIRST assertions in this
+     * machine whose truth is not a function of the position alone: both read
+     * the byte on either side of it. src/ir/dfa.c's closure evaluates them
+     * from TWO bits — the word-ness of the byte the walk already consumed
+     * (carried in the DFA state's identity) and the word-ness of the byte it
+     * is about to consume (a per-class parameter). The test is SYMMETRIC in
+     * those two bits, which is exactly why one closure serves the forward and
+     * the reverse machine with no notion of direction anywhere in it. */
+    N_WORDB,
+    N_NWORDB,
     N_ACCEPT
 } NKind;
 
@@ -233,6 +255,36 @@ typedef struct {
      * exact opposite of the zero-regression property this convention buys.
      * tests/codegen/run_endvar_identity.sh is the check that says so. */
     int      endvar;
+    /* [M6.2 wave B] THE WORD VIEW — the SAME pre-set closed with "the byte
+     * about to be consumed is a word character" instead of "is not"
+     * (assertions_design.md §3.5/§3.6). It is a SECOND LIST rather than a
+     * second interned state, and that is the one structural choice in this
+     * wave worth understanding before editing anything:
+     *
+     *   - `eolvar`/`endvar` are POSITION views: they apply at two positions
+     *     out of n, so an indirection through a per-state table costs nothing
+     *     and an interned variant state is the natural spelling.
+     *   - the word view is a CLASS view: which of the two closures applies is
+     *     decided by the byte at EVERY position, and the class of that byte
+     *     is already in a register for the transition lookup. Interning it as
+     *     a variant state would put a second table read on the hot path for a
+     *     choice the transition row can simply BAKE IN.
+     *
+     * So `tr[c]` is built from `wlist` when class `c` is a word class and
+     * from `list` when it is not, and the only thing left over is the ACCEPT
+     * bit — which is why §3.6's class-indexed accept table exists and nothing
+     * else does. `waccept == accept` on every state of every `\b`-free
+     * pattern (there is no N_WORDB to gate, so the two closures coincide), so
+     * that table is not emitted and the artifact does not move.
+     *
+     * The OTHER half of the context — the word-ness of the byte already
+     * CONSUMED — is not a field at all. It is carried implicitly: two
+     * pre-sets that differ in it close differently wherever it matters, so
+     * they intern apart, and where it does not matter they intern together,
+     * which is the merge a separate field would have to forbid. */
+    int     *wlist;
+    int      nwlist;
+    uint8_t  waccept;
     int     *tr;       /* [ncls] target dfa state or -1 = dead (arena) */
 } DState;
 
@@ -243,6 +295,22 @@ typedef struct {
     uint8_t  clsmap[256];
     uint8_t  rep[256]; /* representative byte per class id */
     int      s0, s1;   /* start state at pos==0 / pos>0; -1 = dead */
+    /* [M6.2 wave B] MECHANISM 4's seed (assertions_design.md §3.8): the
+     * interior start state for the case where the byte the walk has already
+     * passed IS a word character. `s1` is the same state for the non-word
+     * case, and `s0` covers "there is no such byte" (start of subject for the
+     * forward machine, end of subject for the reverse one) — which is a
+     * NON-WORD context, so `s0` needs no word twin.
+     *
+     * Equal to `s1` whenever the machine carries no word assertion, because
+     * the two closures then coincide and intern to one state. */
+    int      s1w;
+    /* True when this machine was built with a word context — i.e. its NFA
+     * carries an N_WORDB/N_NWORDB. It is the flag every emitter site that
+     * must choose between the pre-wave text and the class-indexed text reads,
+     * and it is derived from the NFA rather than from any state's contents so
+     * the two emitters cannot disagree about which shape they are in. */
+    bool     wordctx;
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
     int     *tab;      /* hash table (heap) */

@@ -220,6 +220,29 @@ static First first_of(const Ast *a)
          * A_EOL. */
         return fst_empty(true);
 
+    case A_WORDB:
+    case A_NWORDB:
+        /* [M6.2 wave B] WIDEN AND DECLINE, and this is NOT the treatment
+         * `\z`/`$` get one arm up -- it is `^`'s.
+         *
+         * The exemption above rests on UPWARD CLOSURE: if `$` fails at a
+         * quantifier's maximal exit it fails at every smaller retreat
+         * position too, so the retreat cannot rescue a match and possessifying
+         * loses nothing. A word boundary is closed in NEITHER direction,
+         * because its truth is a property of the two bytes around the
+         * position rather than of the position's rank. `\w{0,4}\b` on
+         * "abcd" is the witness in one direction: the maximal exit at 4 is a
+         * boundary (end of subject) and the retreat position 3 is not, so
+         * `\b` holding at the top says nothing about the retreat; `\B`
+         * inverts it. Both belong with `^`, which widens to all bytes and
+         * declines. */
+        {
+            First r;
+            bs_all(r.f);
+            r.nullable = false;
+            return r;
+        }
+
     case A_CAP:
         return first_of(a->l);
 
@@ -370,6 +393,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_BOL:
     case A_EOL:
     case A_END:
+    case A_WORDB:
+    case A_NWORDB:
         /* Zero-width: contributes no position and does not change
          * nullability, so the sequence rules below leave the surrounding
          * fold untouched — the reference probe's "modelled as absent". */
@@ -571,6 +596,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
 {
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+    case A_WORDB: case A_NWORDB:
         return;
 
     case A_CAP:

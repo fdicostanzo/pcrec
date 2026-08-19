@@ -945,6 +945,63 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa 
     sb_puts(c, "\n    };\n");
 }
 
+/* [M6.2 wave B] Does any state's accept bit DEPEND ON THE NEXT BYTE?
+ *
+ * This is the exact condition for emitting §3.6's class-indexed accept table,
+ * and it is deliberately NOT "the pattern contains `\b`": a `\b` that is not
+ * reachable at an accepting position leaves every state's two accept bits
+ * equal, and such a pattern keeps the pre-wave scalar accept and the pre-wave
+ * loop text. False for every state of every `\b`-free machine by construction
+ * (with no N_WORDB the two closures coincide, src/ir/dfa.c), which is what
+ * makes the corpus's artifacts unmoved. */
+static bool dfa_has_wacc(const Dfa *d)
+{
+    for (int i = 0; i < d->n; i++)
+        if ((bool)d->st[i].waccept != (bool)d->st[i].accept) return true;
+    return false;
+}
+
+/* §3.6's accept table: `[states x ncls]`, the bit for "this state accepts at a
+ * position whose NEXT byte is in class cl". Two source bits and a class map
+ * decide every entry, so this table is derived, never a second opinion. */
+static void emit_acc_cls_table(StrBuf *c, const char *p, const char *tag,
+                               const Dfa *d)
+{
+    sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag,
+              d->n * d->ncls);
+    int k = 0;
+    for (int i = 0; i < d->n; i++) {
+        for (int cl = 0; cl < d->ncls; cl++, k++) {
+            if (k % 16 == 0) sb_puts(c, "\n       ");
+            bool w = cls_has(pcrec_cls_word_esc, d->rep[cl]);
+            sb_printf(c, " %d,",
+                      (w ? d->st[i].waccept : d->st[i].accept) ? 1 : 0);
+        }
+    }
+    sb_puts(c, "\n    };\n");
+}
+
+/* MECHANISM 4's seed table (§3.8.2): byte class of the context byte -> start
+ * state. `ncls` entries, not 256 — the seed only has to distinguish classes,
+ * and the alphabet refinement already guarantees the word set is a union of
+ * them. It is read ONCE PER SEARCH, off the hot loop entirely.
+ *
+ * `s1w` and `s1` are the interior start states for a word and a non-word
+ * context; `s0` covers "no context byte exists", which every caller handles
+ * with its own branch because the condition differs per machine (`startpos ==
+ * 0` forward, `end == n` reverse). */
+static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
+                            const Dfa *d)
+{
+    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->ncls);
+    for (int cl = 0; cl < d->ncls; cl++) {
+        if (cl % 16 == 0) sb_puts(c, "\n       ");
+        bool w = cls_has(pcrec_cls_word_esc, d->rep[cl]);
+        sb_printf(c, " %d,", w ? d->s1w : d->s1);
+    }
+    sb_puts(c, "\n    };\n");
+}
+
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
 /* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
@@ -972,6 +1029,30 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
         int best = -1, bestcnt = 191;
         for (int i = 0; i < d->n; i++) {
             if (i == exclude) continue;
+            /* [M6.2 wave B] A STATE WHOSE ACCEPT DEPENDS ON THE NEXT BYTE IS
+             * NOT SKIP-ELIGIBLE, and this is the D11-rule-1 hazard §3.6.1
+             * describes, resolved by declining rather than by intersecting.
+             *
+             * A skip advances without consulting accept flags and records
+             * only its LANDING position. That is sound while the accept bit
+             * is constant across the run — which the pre-wave scalar accept
+             * made true unconditionally, and a class-indexed one does not.
+             * The concrete loss: a forward skip whose run's bytes all accept
+             * landing on a byte whose class does not, with `last` wanting the
+             * LARGEST accepting position, throws away every position it just
+             * passed.
+             *
+             * §3.6.1 argues from §3.5 that `\b` cannot reach this, on the
+             * ground that a skip set is a union of classes and therefore
+             * pins next-is-word across the run. THE SECOND HALF DOES NOT
+             * FOLLOW: a union of classes may perfectly well contain both word
+             * and non-word classes (a state that stays put on both `a` and
+             * ` ` has exactly such a stay set). So the argument is not
+             * available and this declines instead. Declining is always safe
+             * and costs nothing on any pattern without a next-byte-sensitive
+             * accept — i.e. nothing in the pre-wave corpus, where this test
+             * is false at every state. */
+            if ((bool)d->st[i].waccept != (bool)d->st[i].accept) continue;
             bool taken = false;
             for (int k = 0; k < nout; k++)
                 if (out[k] == i) taken = true;
@@ -1032,10 +1113,38 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * `pos == n`. Both are false for every pattern the pre-wave corpus
      * contains, so `views == eol` there and nothing moves. */
     bool endv = dfa_has_endvar(fd) || dfa_has_endvar(rd);
-    bool views = eol || endv;
+    /* Does the emitted text carry the `est`/`erst` POSITION-view indirection
+     * at all? Only `$`/`\Z`/`\z` create it. `\b` does not: its axis is the
+     * byte class, which the transition lookup already indexes by. */
+    bool viewsel = eol || endv;
+
+    /* [M6.2 wave B] the two class-axis facts, kept apart on purpose because
+     * they gate different things:
+     *   `wctx`  — this machine carries a word context at all, so mechanism
+     *             4's start seeding applies (§3.8) and the D11 evaluation
+     *             ORDER must be the views one;
+     *   `facc2`/`racc2` — some state's accept actually varies with the next
+     *             byte, so §3.6's class-indexed accept table is needed. A
+     *             pattern can have the first without the second. */
+    bool wctx  = fd->wordctx || rd->wordctx;
+    bool facc2 = dfa_has_wacc(fd);
+    bool racc2 = dfa_has_wacc(rd);
+
+    /* `views` is the D11 flag: "a state can accept at a position a skip would
+     * pass, or the position a skip lands on is not the position whose accept
+     * was evaluated". The EOL and END views create that at the last two
+     * positions; a word context creates it everywhere, so it joins. */
+    bool views = viewsel || wctx;
 
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
+    /* MECHANISM 4 is only EMITTED where it can change an answer. With the two
+     * interior start states interned to the same state the seed table would
+     * be a constant column, so the pre-wave constant start is emitted instead
+     * — which is also what keeps every existing artifact's first lines
+     * unmoved. */
+    bool fseed = fd->s1w != fd->s1;
+    bool rseed = rd->s1w != rd->s1;
 
     emit_search_head(c, fn, storage);
 
@@ -1045,8 +1154,28 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
         return;
     }
 
-    /* start-state prefilter analysis: bytes that advance the pattern */
-    bool start_acc = fd->st[fs].accept;
+    /* start-state prefilter analysis: bytes that advance the pattern.
+     *
+     * [M6.2 wave B] `start_acc` is "accepts on ANY class", the OR of the two
+     * accept bits, and §3.6.1 is emphatic about why. The prefilter skips runs
+     * of bytes at which the machine provably stays parked in `fs`; if `fs`
+     * accepts on SOME classes and this read one bit, a pattern like `\bx*`
+     * would keep its `memchr('x')` and jump straight past the empty matches
+     * it owes at every word boundary. MEASURED cell, through the find-all
+     * loop: `\bx*` on `'a x'` is [(0,0), (1,1), (2,3), (3,3)] and a
+     * one-bit `start_acc` reports only (2,3).
+     *
+     * It is also the analysis for the start state's OTHER seeded forms —
+     * `s1`/`s1w` under mechanism 4 — so those are OR'd in too: with
+     * `startpos > 0` the machine begins in one of those, and a prefilter
+     * decision taken from `s0` alone would be a decision about a state the
+     * search may never occupy. */
+    bool start_acc = fd->st[fs].accept || fd->st[fs].waccept;
+    if (fseed) {
+        start_acc = start_acc ||
+                    fd->st[fd->s1].accept  || fd->st[fd->s1].waccept ||
+                    fd->st[fd->s1w].accept || fd->st[fd->s1w].waccept;
+    }
     uint8_t first[256];
     int esc_count = 0, esc_byte = 0;
     for (int b = 0; b < 256; b++) {
@@ -1058,7 +1187,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * that nothing matches when the start state has no EOL view. `$` alone is
      * exactly the counter-example: it never leaves fs and facc[fs] is 0, but
      * its EOL variant accepts. */
-    if (esc_count == 0 && !start_acc && fd->st[fs].eolvar < 0 &&
+    /* [M6.2 wave B] `!fseed` joins the conjunction: the proof below is about
+     * the ONE start state `fs`, and under mechanism 4 a search at
+     * `startpos > 0` begins in a different state whose escapes and accepts
+     * this analysis never looked at. With `fseed` false there is only one
+     * start state and the pre-wave argument is unchanged. */
+    if (esc_count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
         fd->st[fs].endvar < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
@@ -1092,6 +1226,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_u8_table(c, p, "fcls", fd->clsmap, 256);
     emit_tr_table(c, p, "ftr", fd);
     emit_acc_table(c, p, "facc", fd);
+    if (facc2) emit_acc_cls_table(c, p, "facc2", fd);
+    if (fseed) emit_seed_table(c, p, "fseed", fd);
     if (eol)  emit_eol_table(c, p, "fev", fd);
     if (endv) emit_end_table(c, p, "fendv", fd);
     if (prefilter && !use_memchr)
@@ -1101,6 +1237,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_u8_table(c, p, "rcls", rd->clsmap, 256);
     emit_tr_table(c, p, "rtr", rd);
     emit_acc_table(c, p, "racc", rd);
+    if (racc2) emit_acc_cls_table(c, p, "racc2", rd);
+    if (rseed) emit_seed_table(c, p, "rseed", rd);
     if (eol)  emit_eol_table(c, p, "rev", rd);
     if (endv) emit_end_table(c, p, "rendv", rd);
     for (int k = 0; k < nrskip; k++)
@@ -1109,8 +1247,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     /* Under EOL the scan reads the accept flag and the transition row through
      * `est`/`erst` (the EOL view at the last two positions); otherwise those
      * collapse to `st`/`rst` and gcc sees exactly the pre-M2.7 loop. */
-    const char *fsrc = views ? "est" : "st";
-    const char *rsrc = views ? "erst" : "rst";
+    const char *fsrc = viewsel ? "est" : "st";
+    const char *rsrc = viewsel ? "erst" : "rst";
     /* Every skip must stop at n-1 so a state that accepts only at EOL is
      * never skipped past; below n-1 the EOL view is unreachable, which is
      * also why `est` cannot be stale after a skip. */
@@ -1118,9 +1256,37 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
 
     sb_puts(c,   "    size_t pos = startpos;\n"
                  "    size_t last = (size_t)-1;\n");
-    sb_printf(c, "    int st = %d;\n", fs);
-    sb_puts(c,   "    if (startpos > n) return 0;\n"
-                 "    for (;;) {\n");
+    if (fseed) {
+        /* MECHANISM 4, forward initialization (§3.8.2). ONCE PER SEARCH, off
+         * the loop entirely — the emitted hot path is unchanged.
+         *
+         * `s[startpos-1]` is a byte IN THE SUBJECT and OUTSIDE THE SEARCH
+         * WINDOW, which is the whole point: `<prefix>_search` searches
+         * `s[startpos, n)`, and a leading `\b` at `startpos` is a question
+         * about the byte before it. A constant start state encodes exactly
+         * one answer — "the context here is start-of-subject" — which is the
+         * assumption a SLICE makes, not the assumption this API's contract
+         * makes. MEASURED against libpcre2 10.46: 5 of §3.8.1's 10 cells
+         * differ, in both directions, so no conservative shortcut exists.
+         *
+         * `startpos == 0` genuinely IS start-of-subject, where the constant
+         * is right, which is what the ternary's else arm is.
+         *
+         * THE RANGE GUARD MOVES ABOVE THIS LINE, and it has to: the pre-wave
+         * `int st = <const>;` could not read the subject, so `startpos > n`
+         * was checked after it. Here the initializer dereferences
+         * `s[startpos - 1]`, and on an out-of-range `startpos` that is an
+         * out-of-bounds read in EMITTED code — K27's class. With the guard
+         * first, `startpos <= n`, and `startpos > 0` then implies `n > 0`,
+         * hence `s != NULL` under match_api.md §3.1's legal empty subject. */
+        sb_puts(c,   "    if (startpos > n) return 0;\n");
+        sb_printf(c, "    int st = startpos ? %s_fseed[%s_fcls[s[startpos - 1]]]"
+                     " : %d;\n", p, p, fs);
+    } else {
+        sb_printf(c, "    int st = %d;\n", fs);
+        sb_puts(c,   "    if (startpos > n) return 0;\n");
+    }
+    sb_puts(c,   "    for (;;) {\n");
     /* Under EOL, scan avoidance must run BEFORE the accept/EOL evaluation, so
      * that evaluation sees the position the loop is really at: a skip bounded
      * at n-1 can LAND on n-1, and evaluating first would consume that byte
@@ -1184,14 +1350,42 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             kw = "else if";
         }
     }
-    if (views) {
+    if (viewsel)
         emit_view_select(c, p, eol, endv, "pos", "st", "est", "fev", "fendv",
                          "        ");
+    if (views && !facc2)
         sb_printf(c, "        if (%s_facc[%s]) last = pos;\n", p, fsrc);
+    if (facc2) {
+        /* §3.6.2's COMPOSITION RULE, and the `pos == n` arm is the half that
+         * is easy to get wrong. The accept bit is class-indexed at every
+         * position that HAS a next byte and SCALAR at the one that does not:
+         * out-of-subject counts as non-word, which is a property of the
+         * POSITION, and the base accept already is that bit. Indexing the
+         * wide table with some class at `pos == n` would be asking what the
+         * accept is when the next byte is "whatever byte happens to sit in
+         * that equivalence class", which is meaningless there.
+         *
+         * The guard is also what makes `s[pos]` below unreachable at
+         * `pos == n`. The class is computed ONCE into `cl` and shared with
+         * the transition — the byte is read once, and the structural check
+         * for this rule has a single named thing to look at rather than an
+         * expression to parse. */
+        sb_printf(c, "        if (pos >= n) {\n"
+                     "            if (%s_facc[%s]) last = pos;\n"
+                     "            break;\n"
+                     "        }\n", p, fsrc);
+        sb_printf(c, "        {\n"
+                     "            unsigned cl = %s_fcls[s[pos]];\n"
+                     "            if (%s_facc2[%s * %d + cl]) last = pos;\n"
+                     "            st = %s_ftr[%s * %d + cl];\n"
+                     "            pos++;\n"
+                     "        }\n",
+                  p, p, fsrc, fd->ncls, p, fsrc, fd->ncls);
+    } else {
+        sb_puts(c,   "        if (pos >= n) break;\n");
+        sb_printf(c, "        st = %s_ftr[%s * %d + %s_fcls[s[pos++]]];\n",
+                  p, fsrc, fd->ncls, p);
     }
-    sb_puts(c,   "        if (pos >= n) break;\n");
-    sb_printf(c, "        st = %s_ftr[%s * %d + %s_fcls[s[pos++]]];\n",
-              p, fsrc, fd->ncls, p);
     sb_puts(c,   "        if (st < 0) break;\n"
                  "    }\n"
                  "    if (last == (size_t)-1) return 0;\n"
@@ -1199,7 +1393,23 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                  "        size_t end = last;\n"
                  "        size_t sfound = (size_t)-1;\n"
                  "        size_t pp = end;\n");
-    sb_printf(c, "        int rst = %d;\n", rs);
+    if (rseed) {
+        /* MECHANISM 4, REVERSE INITIALIZATION (§3.8.3). The reverse walk
+         * starts at `pp = end` and consumes LEFTWARD, so the byte that seeds
+         * a TRAILING `\b`'s context is `s[end]` — one to the RIGHT of where
+         * the walk begins, in the subject, and never consumed by the walk at
+         * all. That site did not exist before this wave, and it cannot be a
+         * compile-time constant the way the forward one nearly was: `end` is
+         * produced by the forward loop, so this read is data-dependent and
+         * has to happen HERE, after it.
+         *
+         * `end == n` is the out-of-subject case — no byte to the right —
+         * which is a NON-word context and therefore the pre-wave constant. */
+        sb_printf(c, "        int rst = (end < n) ? %s_rseed[%s_rcls[s[end]]]"
+                     " : %d;\n", p, p, rs);
+    } else {
+        sb_printf(c, "        int rst = %d;\n", rs);
+    }
     sb_puts(c,   "        for (;;) {\n");
     if (!views)
         sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
@@ -1219,14 +1429,63 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             kw = "else if";
         }
     }
-    if (views) {
+    if (viewsel)
         emit_view_select(c, p, eol, endv, "pp", "rst", "erst", "rev", "rendv",
                          "            ");
+    if (views && !racc2)
         sb_printf(c, "            if (%s_racc[%s]) sfound = pp;\n", p, rsrc);
+    if (racc2) {
+        /* MECHANISM 4, REVERSE TERMINATION (§3.8.3.1) — the site whose
+         * absence is a LOST MATCH, and the site whose PLACEMENT is the whole
+         * of R30 N9.
+         *
+         * At `pp == startpos` the walk breaks before ever reading
+         * `s[startpos-1]`, so a LEADING `\b`/`\B` at the match start is
+         * otherwise evaluated with no left context — the walk silently
+         * assuming start-of-subject. `\b` is safe BY ACCIDENT there (its
+         * blind assumption coincides with the cases the forward pass lets
+         * through), which is exactly why a leading-`\b` sweep reports clean
+         * against a design that throws matches away. `\B` inverts it: `\Bfoo`
+         * on "xfoo" at startpos 1 is (1,4) in libpcre2 and no-match blind.
+         *
+         * ATTACHED TO THE BOUNDARY BREAK, NOT A PEELED EPILOGUE BELOW THE
+         * LOOP. This loop has TWO exits — this one and the dead-state `rst <
+         * 0` below — and code placed after the loop would run on both. On the
+         * dead-state exit `pp > startpos` and `rst < 0`, so an epilogue would
+         * record `sfound` at a position the walk never reached (a WRONG
+         * ANSWER, worse than a lost match) and would index the accept table
+         * with a NEGATIVE state (an out-of-bounds read in emitted code,
+         * K27's class). This arm is entered only when `pp <= startpos` and
+         * `rst` is live, so both are unreachable by construction.
+         *
+         * `pp == startpos` happens exactly once and the loop already tests
+         * for it, so this costs one emitted site and ZERO per-byte work.
+         *
+         * `startpos == 0` is out-of-subject to the left — non-word — hence
+         * the SCALAR accept, the mirror of §3.6.2's `pos == n` rule. Note the
+         * pleasing asymmetry: the forward machine's terminal boundary needs a
+         * scalar accept because no byte exists past `n`; this one needs a
+         * CONTEXT-INDEXED accept because the byte exists and is merely
+         * outside the window. */
+        sb_printf(c, "            if (pp <= startpos) {\n"
+                     "                if (startpos ? %s_racc2[%s * %d + "
+                     "%s_rcls[s[startpos - 1]]]\n"
+                     "                             : %s_racc[%s]) sfound = pp;\n"
+                     "                break;\n"
+                     "            }\n",
+                  p, rsrc, rd->ncls, p, p, rsrc);
+        sb_printf(c, "            {\n"
+                     "                unsigned rcl = %s_rcls[s[pp - 1]];\n"
+                     "                if (%s_racc2[%s * %d + rcl]) sfound = pp;\n"
+                     "                rst = %s_rtr[%s * %d + rcl];\n"
+                     "                pp--;\n"
+                     "            }\n",
+                  p, p, rsrc, rd->ncls, p, rsrc, rd->ncls);
+    } else {
+        sb_puts(c,   "            if (pp <= startpos) break;\n");
+        sb_printf(c, "            rst = %s_rtr[%s * %d + %s_rcls[s[--pp]]];\n",
+                  p, rsrc, rd->ncls, p);
     }
-    sb_puts(c,   "            if (pp <= startpos) break;\n");
-    sb_printf(c, "            rst = %s_rtr[%s * %d + %s_rcls[s[--pp]]];\n",
-              p, rsrc, rd->ncls, p);
     sb_puts(c,   "            if (rst < 0) break;\n"
                  "        }\n"
                  "        if (sfound == (size_t)-1) return 0;\n"
@@ -1262,6 +1521,22 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
 
     emit_u8_table(c, p, "cls", d->clsmap, 256);
 
+    /* [M6.2 wave B] this engine's share of §3.6 and §3.8. `acc2` is the
+     * class-indexed accept, needed wherever a state's accept depends on the
+     * next byte; `seed` is mechanism 4's PER-ATTEMPT start dispatch.
+     *
+     * ON THIS ENGINE THE SEED IS NOT ONCE PER SEARCH (§3.8.2's own note).
+     * ENG_ATTEMPT re-initializes at EVERY attempt — n+1 of them — and only
+     * the first begins at `startpos`; the rest begin at `start > startpos`,
+     * where the context byte `s[start-1]` is squarely INSIDE the window. So
+     * the same dispatch serves both the outside-the-window case this wave
+     * exists for and the ordinary interior one, and it composes with the
+     * `start == 0` selection this engine already made rather than adding a
+     * second. */
+    bool acc2 = dfa_has_wacc(d);
+    bool seed = d->s1w != d->s1;
+    if (acc2) emit_acc_cls_table(c, p, "acc2", d);
+
     for (int i = 0; i < d->n; i++) {
         sb_printf(c, "    static const void *const %s_t%d[%d] = { ",
                   p, i, d->ncls);
@@ -1271,17 +1546,34 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         }
         sb_puts(c, " };\n");
     }
+    if (seed) {
+        sb_printf(c, "    static const void *const %s_seed[%d] = { ",
+                  p, d->ncls);
+        for (int cl = 0; cl < d->ncls; cl++) {
+            if (cl) sb_puts(c, ", ");
+            emit_target(c, p,
+                        cls_has(pcrec_cls_word_esc, d->rep[cl]) ? d->s1w
+                                                                : d->s1);
+        }
+        sb_puts(c, " };\n");
+    }
 
     /* anchored fast path (M2.1): if the interior start state is dead, every
-     * branch requires ^, so only start == 0 can ever match */
+     * branch requires ^, so only start == 0 can ever match.
+     * [M6.2 wave B] there are now TWO interior start states, and the fast
+     * path needs BOTH dead — `(?:^|\b)x` has a live one and a dead one. */
     sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
-              d->s1 < 0 ? "0 /* fully ^-anchored */" : "n");
+              (d->s1 < 0 && d->s1w < 0) ? "0 /* fully ^-anchored */" : "n");
     sb_puts(c, "    for (start = startpos; start <= start_max; start++) {\n"
                "        size_t pos = start;\n"
                "        size_t last = (size_t)-1;\n");
 
-    if (d->s0 == d->s1) {
+    if (seed) {
+        sb_puts(c, "        goto *((start == 0) ? ");
+        emit_target(c, p, d->s0);
+        sb_printf(c, " : %s_seed[%s_cls[s[start - 1]]]);\n", p, p);
+    } else if (d->s0 == d->s1) {
         sb_puts(c, "        goto ");
         if (d->s0 < 0) sb_printf(c, "*&&%s_dead;\n", p);
         else           sb_printf(c, "*&&%s_s%d;\n", p, d->s0);
@@ -1298,7 +1590,54 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         /* labels marked unused: EOL-variant states are entered via their
          * transition tables only, never their own label */
         sb_printf(c, "%s_s%d: __attribute__((unused));\n", p, i);
-        if (st->endvar >= 0) {
+        /* [M6.2 wave B] Does THIS state's accept depend on the next byte? A
+         * per-state question, not a per-artifact one: a `\b` pattern's
+         * artifact typically has a handful of such states and keeps the
+         * pre-wave text at every other, which is what makes the byte-identity
+         * property hold at state granularity rather than at file granularity. */
+        bool wsplit = acc2 && (bool)st->waccept != (bool)st->accept;
+        if (wsplit) {
+            /* THE ORDER FLIPS, and it has to. The pre-wave arms record the
+             * accept and THEN test for `pos >= n`, which is sound while the
+             * accept bit is a scalar; here the bit at `pos < n` is a function
+             * of `s[pos]`, so the end-of-subject case has to be split off
+             * first — it is the one position with no next byte, where §3.6.2
+             * makes the accept SCALAR. That test is also what makes the
+             * `s[pos]` below unreachable at `pos == n`. */
+            if (st->endvar >= 0) {
+                const DState *ev = &d->st[st->endvar];
+                sb_puts(c, "        if (pos == n) {\n");
+                if (ev->accept) sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto %s_done;\n        }\n", p);
+            } else if (st->eolvar >= 0) {
+                const DState *v = &d->st[st->eolvar];
+                sb_puts(c, "        if (pos == n) {\n");
+                if (v->accept) sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto %s_done;\n        }\n", p);
+            } else {
+                sb_puts(c, "        if (pos == n) {\n");
+                if (st->accept) sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto %s_done;\n        }\n", p);
+            }
+            if (st->eolvar >= 0) {
+                /* The EOL position's next byte is `\n`, which is NOT a word
+                 * character, so the EOL view's SCALAR accept is already the
+                 * right bit there — the class axis has nothing to add. */
+                const DState *v = &d->st[st->eolvar];
+                sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
+                if (v->accept) sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                          p, st->eolvar, p);
+                sb_puts(c, "        }\n");
+            }
+            sb_printf(c, "        {\n"
+                         "            unsigned cl = %s_cls[s[pos]];\n"
+                         "            if (%s_acc2[%d + cl]) last = pos;\n"
+                         "            pos++;\n"
+                         "            goto *%s_t%d[cl];\n"
+                         "        }\n",
+                      p, p, i * d->ncls, p, i);
+        } else if (st->endvar >= 0) {
             /* [M6.2 wave A] THE END VIEW (`\z`), reached on ENG_ATTEMPT only
              * when the pattern also carries a `^`/`\A` — `\Aa\z` is the
              * shape. Three arms in position order, most specific first:

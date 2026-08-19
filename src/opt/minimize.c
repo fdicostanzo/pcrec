@@ -91,9 +91,25 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
 
     int nparts = 0;
     {
-        int accid[2] = { -1, -1 };
+        /* [M6.2 wave B] THE INITIAL PARTITION SPLITS ON BOTH ACCEPT BITS.
+         * `accept` is the accept when the next byte is a non-word one and
+         * `waccept` when it is a word one (src/ir/dfa.c), and they are two
+         * independent outputs of the same state: merging states that agree on
+         * one and differ on the other would silently answer a `\b` with the
+         * wrong bit at every position of the right kind.
+         *
+         * The transition axis needs nothing added, and that is the payoff of
+         * baking the word view into `tr[]` rather than interning it: whichever
+         * closure a class consumes from is already reflected in that class's
+         * transition column, so the existing per-class signature covers it.
+         *
+         * BYTE-IDENTITY holds because the key is `accept*2 + waccept` and the
+         * ids are handed out in FIRST-OCCURRENCE order: with no word context
+         * `waccept == accept`, only keys 0 and 3 occur, and they occur in the
+         * same order the two pre-wave keys did. */
+        int accid[4] = { -1, -1, -1, -1 };
         for (int i = 0; i < n; i++) {
-            int a = d->st[i].accept ? 1 : 0;
+            int a = (d->st[i].accept ? 2 : 0) | (d->st[i].waccept ? 1 : 0);
             if (accid[a] < 0) accid[a] = nparts++;
             part[i] = accid[a];
         }
@@ -154,8 +170,14 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
             if (ns[c].tr) continue;   /* class already built from its rep */
             const DState *o = &d->st[i];
             ns[c].accept = o->accept;
+            ns[c].waccept = o->waccept;
             ns[c].nlist = 0;
             ns[c].list = NULL;
+            /* The NFA-state lists are dead after minimization (nothing
+             * downstream reads them); the word list goes the same way rather
+             * than being left dangling into a freed partition's storage. */
+            ns[c].nwlist = 0;
+            ns[c].wlist = NULL;
             ns[c].tr = arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
             for (int cl = 0; cl < d->ncls; cl++) {
                 int t = o->tr[cl];
@@ -172,6 +194,11 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
         d->n = m;
         if (d->s0 >= 0) d->s0 = seq[part[d->s0]];
         if (d->s1 >= 0) d->s1 = seq[part[d->s1]];
+        /* [M6.2 wave B] mechanism 4's seed start state remaps with the other
+         * two. Forgetting it would leave `s1w` pointing into the PRE-merge
+         * numbering — a wrong start state rather than a missing one, and only
+         * on patterns that minimize, which is most of them. */
+        if (d->s1w >= 0) d->s1w = seq[part[d->s1w]];
         free(seq);
         free(ns);
     }

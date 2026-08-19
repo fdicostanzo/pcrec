@@ -381,6 +381,10 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     case A_BOL:
     case A_EOL:
     case A_END:
+    /* [M6.2 wave B] zero-width, so there is nothing for either stage to
+     * merge or factor -- the same answer A_BOL/A_EOL/A_END already give. */
+    case A_WORDB:
+    case A_NWORDB:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);
