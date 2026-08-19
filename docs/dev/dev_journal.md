@@ -10761,3 +10761,45 @@ in flight (differential 26,124 cells/0 divergences at last WIP; final suite
 running). Remaining to Frank's stop line: wave D merge+close, wave E (\K),
 the K28 slice, the D27 blinded corpus, [M6.2] close. K-list: K2, K9, K23,
 K25, K26, K28.
+
+## 2026-08-19 (EDT), thirty-fourth session (part 3) — WAVE D (\G) landed and merged
+
+Merge 307fe6c; battery in flight at entry time (gate to follow quiet-box;
+close archives will ride the next part). \G as A_GSTART/N_GSTART — the
+module's THIRD question kind (position vs a RUNTIME value): third closure
+bit, second interior-start family s1g[], start_max a third compile-time
+string (DD-4's \G half CLOSED, §4.1's no-wrap-toggle claim held), three-way
+start dispatch with start==0 first, a VM startpos PARAMETER the design was
+silent on (emitted only where \G exists, MRL-ceiling precedent), §4.3's
+spec sentence in match_api.md. 300 libpcre2-only cells (U11c — python has
+no \G at all); differential 29,856 cells/0 divergences at every startpos;
+E8's replacement scoped exactly (21,936 agree fully-\G, 456 legitimate
+partial-\G disagreements, 0 bad). Suite 19,646/0. Manager's historical
+diff: 1,173/1,173, 0 status changes — cleanest of the module.
+
+SIX FINDINGS, two of them structural: (1) THE IDENTITY GATES' REFERENCE
+KNOBS (waves A/B/C) ARE MIS-PLACED — in dfa.c the reference build shares
+sabotaged sources, so out-of-region edits CANCEL; measured: wave B's gate
+stays 1135/1135 under its own S71, which is scored DETECTED only for an
+incidental orphaned-parameter warning. The control-shares-a-source class
+INSIDE the directory built to prevent it. Wave D's knob sits at the
+emitter's decision points instead (S83 goes red at 93/1175); A/B/C
+re-placement scheduled with the K28 slice. (2) Moving the knob exposed the
+lane's own hidden defect (a gseed[] table emitted on every \b/(?m)
+artifact that no dispatch read) — the mis-placed knob would have hidden it
+forever. (3) A LIVE WAVE-B OVER-REJECTION fixed: (?i:\b)*/(?i:\B)*/(?i:\G)*
+refused where libpcre2 gives (0,0) — the bare-anchor rule lived as FOUR
+hand copies, wave B extended two; now ONE predicate (pcrec_is_bare_anchor),
+the two stale copies UNEQUALLY reachable and pinned where each lives.
+(4) the VM parameter above. (5) \G takes ^'s exemption arm, not \z's —
+downward-closure vs upward-closure, S84's own STRATS row. (6) S82's first
+canonical run was green against a match-loser (no pattern carried both a
+(?m)^ and a \G branch) — the population lesson's third instrument.
+D63's third instance MEASURED AWAY (instance one already serves partial-\G
+through s1u liveness); the real gap is D63's SECOND instance (first-byte
+at offset 0), an 83x measured miss serving ^/(?m)^/\G-partial alike —
+recorded for POST-MODULE scheduling per Frank's stop line.
+
+NEXT: wave E (\K) lane; then the REPAIR SLICE (K28 wrapper fix + A/B/C
+knob re-placement — serialized AFTER wave E so the every-artifact byte
+churn lands once, last); then the D27 blinded corpus; module close.
