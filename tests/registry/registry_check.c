@@ -1321,23 +1321,30 @@ static void check_class_ports(void)
      * RF_CLASS_INVALID and NO_PORT at class position for `\\A`'s reason
      * (`[\\G]` is PCRE2 error 107, re-measured by that wave), so the SCALAR
      * population is again UNMOVED at 5 — `\\b` remains the module's only
-     * row with a live class port beside an atom one. */
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 32)
+     * row with a live class port beside an atom one.
+     * [M6.2 wave E]: 32 -> 33, the `\\K` row's atom producer, which CLOSES
+     * module `assertions` — all eight of its constructs now have one. Same
+     * two invariants as every wave since A: RF_CLASS_INVALID and NO_PORT at
+     * class position (`[\\K]` is PCRE2 error 107, re-measured by wave E), so
+     * the SCALAR population is UNMOVED at 5 for the fourth time running. */
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 33)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (32: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (33: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
-            "\\b and \\B since wave B, and \\G since wave D). A "
+            "\\b and \\B since wave B, \\G since wave D, and \\K since "
+            "wave E). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 32 atom "
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 33 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
-           "wave A, + \\b and \\B, wave B, + \\G, wave D); scalar and SET "
+           "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
+           "-- module `assertions` is now COMPLETE); scalar and SET "
            "values oracle-tied "
            "(class_expect column / fallback law / census popcounts), as "
            "predicted for slice 3");
@@ -1371,7 +1378,7 @@ static void check_class_ports(void)
  * merely reporting a mismatch. */
 static void check_engine_capability_tripwire(void)
 {
-    int qualifying = 0, wired = 0;
+    int qualifying = 0, wired = 0, kreset_exception = 0;
 
     for (int k = 0; k < RK_COUNT; k++) {
         size_t n;
@@ -1383,6 +1390,43 @@ static void check_engine_capability_tripwire(void)
             qualifying++;
             if (r->aport.kind != PORT_NONE) {
                 wired++;
+                /* [M6.2 wave E] `\K` IS THE FIRST ROW THIS TRIPWIRE EVER
+                 * ACTUALLY FIRED FOR, and the exception below is the answer
+                 * rather than a silencing.
+                 *
+                 * The tripwire's demand is "build the engine-capability
+                 * consultation BEFORE the producer lands". Wave E did — a
+                 * second registered `forces_*` row in
+                 * src/opt/select_engine.c, which is where the file's own
+                 * header said the socket's first real customer would go — but
+                 * it did NOT build SR-8's generic registry-column lookup, and
+                 * pretending otherwise here would be the more comfortable
+                 * lie. [M4.7a] declined that lookup on D18/OS-0/D53's
+                 * earn-its-axis discipline (a generic mechanism designed at
+                 * sample size zero), and sample size ONE does not change the
+                 * argument: `\K`'s verdict is not "some registry column says
+                 * VM", it is "this AST carries a node whose write is
+                 * path-dependent", which is a fact about the tree and not
+                 * about the table.
+                 *
+                 * SO THE EXCEPTION IS MADE TO PAY. It is not an allowlist
+                 * entry; it is a NAMED row plus a live behavioural assertion
+                 * that the refusal this tripwire exists to demand actually
+                 * happens — `--engine=dfa` on a `\K` pattern must refuse, by
+                 * its own name, with the module enabled. If someone wires a
+                 * producer onto `\K` and does not (or stops) delivering that
+                 * refusal, this goes red exactly as it would for any other
+                 * row. Every other member of the population keeps the
+                 * original, unmodified demand.
+                 *
+                 * If a SECOND construct arrives here, do not add a second
+                 * exception: two is when the generic consultation has earned
+                 * its axis and SR-8 is the right build. */
+                if (r->kind == RK_ESC && r->sel == 'K'
+                    && strcmp(r->module, "assertions") == 0) {
+                    kreset_exception++;
+                    continue;
+                }
                 /* [M6.3] the FIRST three wired rows this tripwire ever
                  * expects to see: module `named-groups`'s three declaring
                  * rows. They are wired AND their `engines` mask no longer
@@ -1431,14 +1475,93 @@ static void check_engine_capability_tripwire(void)
             "engines mask excluding ENGM_DFA, expected 48 -- the VM_ONLY "
             "population moved. If deliberate, update this number in the "
             "same change", qualifying);
-    else if (wired == 0)
-        ok("engine-capability tripwire: all 48 engine-restricted RS_MODULE "
-           "rows have no wired atom-position producer -- SR-8's lowering-"
-           "time consultation is still unpopulated machinery by design, "
-           "and this is the fact that makes that safe (module "
-           "`named-groups`'s three rows are wired but are no longer in "
-           "this population at all, having moved to ANY_ENGINE -- see the "
-           "comment above the population count)");
+    else if (wired == kreset_exception)
+        ok("engine-capability tripwire: of 48 engine-restricted RS_MODULE "
+           "rows, exactly the ONE named exception (\\K, [M6.2] wave E) "
+           "carries a wired atom-position producer and the other 47 carry "
+           "none -- so SR-8's generic lowering-time consultation is still "
+           "unpopulated machinery by design, and the exception discharges "
+           "the tripwire's own demand behaviourally below rather than by "
+           "assertion (module `named-groups`'s three rows are wired but "
+           "are no longer in this population at all, having moved to "
+           "ANY_ENGINE -- see the comment above the population count)");
+
+    /* THE EXCEPTION'S PRICE, and this is the half that makes it a check
+     * rather than an allowlist. The tripwire above demands that an
+     * engine-restricted construct not acquire a producer until something
+     * REFUSES the impossible engine request. That refusal is D44.6's rule
+     * ("a request the pattern cannot honour is REFUSED, never silently
+     * downgraded"), it lives in src/opt/select_engine.c's override switch,
+     * and it is asserted HERE — on the shipped compiler, through the same
+     * `pcrec_compile` every other check in this file drives — because a
+     * comment claiming the obligation was met is worth nothing.
+     *
+     * BOTH DIRECTIONS. The refusal must fire under `--engine=dfa`, and the
+     * same pattern must COMPILE under the default engine: a check that only
+     * asserted the refusal would go green on a compiler that had simply
+     * stopped accepting `\K` at all, which is the failure mode this
+     * milestone is otherwise full of. */
+    if (kreset_exception > 0) {
+        char err[256], msg[256];
+        /* THE MASK IS BORROWED AND GIVEN BACK, and the entry state is
+         * ASSERTED rather than saved-and-restored blind. Every other check in
+         * this file believes it runs at the default EMPTY set — that is what
+         * makes their "requires module 'X'" expectations mean anything — so
+         * leaving a module enabled behind would silently rewrite the results
+         * of everything after this line. The gate has no set-by-mask entry
+         * point, only set-by-spec, so "restore whatever was there" is not
+         * expressible; asserting the one state that can occur is. This is
+         * tests/registry/pcre2_check.c's own `mask_before != 0` check, in
+         * miniature and for the identical reason. */
+        if (pcrec_enabled_mask() != 0) {
+            bad("engine-capability tripwire: the enabled mask was already "
+                "non-empty (0x%x) before the \\K probe, so this file's other "
+                "checks did not run at the default set they assume and the "
+                "probe cannot safely restore it",
+                pcrec_enabled_mask());
+            return;
+        }
+        if (pcrec_enabled_set_spec("assertions", err, sizeof err) != 0) {
+            bad("engine-capability tripwire: could not enable module "
+                "'assertions' to test \\K's refusal: %s", err);
+        } else {
+            pcrec_options opt;
+            pcrec_output  out;
+            pcrec_error   perr;
+            pcrec_default_options(&opt);
+            opt.engine = PCREC_ENGINE_DFA;
+            memset(&out, 0, sizeof out);
+            memset(&perr, 0, sizeof perr);
+            if (pcrec_compile("a\\Kb", &opt, &out, &perr) == 0) {
+                pcrec_output_free(&out);
+                bad("engine-capability tripwire: 'a\\Kb' COMPILED under "
+                    "--engine=dfa. \\K is VM_ONLY and its producer is wired, "
+                    "so the D44.6 refusal in src/opt/select_engine.c is what "
+                    "licenses the exception above -- and it did not fire");
+            } else if (strstr(perr.msg, "\\K") == NULL
+                       || strstr(perr.msg, "--engine=dfa") == NULL) {
+                bad("engine-capability tripwire: 'a\\Kb' under --engine=dfa "
+                    "was refused, but not BY ITS OWN NAME: \"%s\". D44.6/"
+                    "§9.2 item 2 require the VM_ONLY-construct conflict to "
+                    "name the construct, because the captures branch's "
+                    "'--no-captures' advice would be a lie here", perr.msg);
+            } else if (try_compile("a\\Kb", msg, sizeof msg) != 0) {
+                bad("engine-capability tripwire: 'a\\Kb' does not compile at "
+                    "all under the DEFAULT engine (\"%s\"), so the refusal "
+                    "asserted above proves nothing about the exception", msg);
+            } else {
+                ok("engine-capability tripwire: \\K's exception is paid for "
+                   "-- 'a\\Kb' compiles on the default engine and REFUSES "
+                   "under --engine=dfa naming the construct (D44.6)");
+            }
+        }
+        if (pcrec_enabled_set_spec("none", err, sizeof err) != 0
+            || pcrec_enabled_mask() != 0)
+            bad("engine-capability tripwire: could not restore the EMPTY "
+                "feature mask after the \\K probe (%s) -- every check below "
+                "this line would then be running at a set it does not know "
+                "about", err);
+    }
 }
 
 /* ---- MOD-0.6/D33 §9.2: the in-class sweep gains tail context -----------
