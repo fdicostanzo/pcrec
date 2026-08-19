@@ -1447,9 +1447,9 @@ m "\nb\nc" 0 2
 # even with the gate's flag-read turned off. MEASURED: 749 find-all cells
 # over the seven section-4 patterns, ZERO divergences under sabotage S77.
 # Add one capturing group and the same pattern routes to the VM, where
-# the miscompile is a LOST MATCH: `(?m)([^c]{1,3})$` on "a
-c" is (0,1)
-# and becomes no match at all.
+# the miscompile is a LOST MATCH: `(?m)([^c]{1,3})$` on a subject whose
+# line break separates the match from a `c` is (0,1) and becomes no
+# match at all.
 #
 # So section 4 above pins the SEMANTICS on the engine most patterns take,
 # and this section is D62's CONTROL 2 — the rows the permanent sabotage
@@ -3458,4 +3458,3 @@ n "\n\nc"
 n "a\nb\nc"
 n "a\nb\nc\nd"
 n "\nb\nc"
-

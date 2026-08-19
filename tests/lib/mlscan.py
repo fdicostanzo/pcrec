@@ -12,6 +12,14 @@ milestone") applied to a fork that has not happened yet:
     N_BOT_M/N_EOL_M, i.e. for `-DPCREC_NO_MLINECTX` to change anything.
   - tests/assertions/run_mline_diff.sh excludes `multiline_caret` patterns
     from its python arm (upstream_issues.md U11b).
+  - tests/codegen/run_endvar_identity.sh splits on `\z` OR `multiline_anchor`:
+    BOTH `(?m)` anchors read wave A's `pos == n` view, for OPPOSITE purposes —
+    `(?m)$` reads it to be TRUE at end of subject, `(?m)^` reads it to be
+    FALSE there (PCRE2's multiline `^` does not match after a newline that
+    ends the string). So a `(?m)` anchor belongs to that gate's POSITIVE
+    CONTROL and not to its identity population. Wave A could not know that;
+    the gate went red on 51 patterns the day `(?m)` was accepted, which is the
+    check working.
   - the `.rxt` corpus generator marks the same patterns `# pcre2-only`.
 
 WHY IT IS A TEXT SCAN AND NOT A CALL INTO pcrec. A split derived from
@@ -137,6 +145,13 @@ def multiline_caret(p):
     return _scan(p, '^')
 
 
+def multiline_dollar(p):
+    """Does a `$` at atom position fall in the scope of a set `m`?
+    Equivalently: will this pattern build an N_EOL_M, and therefore need wave
+    A's `pos == n` closure view (`-DPCREC_NO_ENDVAR`'s subject)?"""
+    return _scan(p, '$')
+
+
 # --- self-check ------------------------------------------------------------
 # A scanner nobody exercises is a scanner that drifts. Run this file directly
 # to check it against the cases that cost a real run, plus the three
@@ -172,6 +187,19 @@ _CASES = [
     (r'\[(?m)^a',          True,  True),    # an ESCAPED `[` opens no class
 ]
 
+# multiline_dollar's own rows, kept apart because it asks a third question.
+_DOLLAR_CASES = [
+    (r'(?m)a$',         True),
+    (r'(?m:a$)',        True),
+    (r'(?m)a$(?-m)',    True),
+    (r'(?m)[^c]{1,3}$', True),
+    (r'(?m)^a',         False),   # a caret is not a dollar
+    (r'(?m)[$^]',       False),   # trap 1, both characters
+    (r'(?m)a\Z',        False),
+    (r'a$(?m)',         False),
+    (r'a$',             False),
+]
+
 if __name__ == "__main__":
     import sys
     bad = []
@@ -179,7 +207,12 @@ if __name__ == "__main__":
         got = (multiline_anchor(pat), multiline_caret(pat))
         if got != (want_anchor, want_caret):
             bad.append((pat, got, (want_anchor, want_caret)))
+    for pat, want in _DOLLAR_CASES:
+        got = multiline_dollar(pat)
+        if got != want:
+            bad.append((pat, got, want))
     for pat, got, want in bad:
         print("FAIL: %r -> %r, expected %r" % (pat, got, want))
-    print("mlscan self-check: %d cases, %d failed" % (len(_CASES), len(bad)))
+    print("mlscan self-check: %d cases, %d failed"
+          % (len(_CASES) + len(_DOLLAR_CASES), len(bad)))
     sys.exit(1 if bad else 0)

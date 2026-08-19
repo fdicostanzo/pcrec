@@ -106,9 +106,25 @@ or it has no regression net at all.
   never compiled, which the artifact's own `RX_ENGINE` stamp says (VM artifacts
   only). That is a different fact from the one being measured, which is why
   reading it to explain a non-difference is legitimate and reading
-  `dfa_has_endvar` would not be. Landing figures: 1011 of 1011 `\z`-free corpus
-  patterns byte-identical, 18 DFA-compiled `\z` patterns differing, 0
-  DFA-compiled ones agreeing — read the current numbers from a run.
+  `dfa_has_endvar` would not be. Landing figures at wave A: 1011 of 1011
+  `\z`-free corpus patterns byte-identical, 18 DFA-compiled `\z` patterns
+  differing, 0 DFA-compiled ones agreeing — read the current numbers from a
+  run.
+
+  **[M6.2 wave C] ITS SPLIT IS NO LONGER `grep -F '\z'`, AND THIS GATE IS WHAT
+  SAID SO.** Wave A wrote the third closure view for `\z` and split on `\z`,
+  which was exact at the time. BOTH `(?m)` anchors read that same view, for
+  OPPOSITE purposes: `(?m)$` is "end of subject OR the next byte is a
+  newline", so it reads `end_ok` to be TRUE there; `(?m)^` does NOT match
+  after a newline that ENDS the string, so it reads `end_ok` to be FALSE
+  there. So the day the `m` letter was accepted this gate went RED on 51
+  patterns, every one a `(?m)` anchor sitting in the identity population where
+  it does not belong. That is the check working: it caught a wave-C construct
+  silently joining a wave-A mechanism, which no behaviour test could see
+  (`-DPCREC_NO_ENDVAR` is never defined in a shipped build). The split now
+  asks "does this pattern create a `pos == n` view" through
+  `tests/lib/mlscan.py`'s `multiline_anchor`, and those patterns join the
+  POSITIVE CONTROL, where they belong and where they strengthen it.
 
 - **run_wordctx_identity.sh** — [M6.2] wave B's BYTE-IDENTITY GATE, the same
   shape one axis over. `\b`/`\B` are the largest change any wave of [M6.2]

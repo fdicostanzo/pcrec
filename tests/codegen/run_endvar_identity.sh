@@ -128,13 +128,53 @@ find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
     | sed 's/^pattern //' \
     | LC_ALL=C sort -u > "$PATFILE"
 
-# The split: a pattern MENTIONING `\z` is the control population (the two
-# builds must differ), everything else is the identity population. The test is
-# on the pattern TEXT rather than on anything pcrec computes, deliberately —
-# a split derived from `dfa_has_endvar` would be the check reading its own
-# subject's verdict.
-grep -F '\z' "$PATFILE" > "$WORKDIR/zpat" || true
-grep -vF '\z' "$PATFILE" > "$WORKDIR/nozpat" || true
+# The split: a pattern that CREATES A `pos == n` VIEW is the control
+# population (the two builds must differ), everything else is the identity
+# population. The test is on the pattern TEXT rather than on anything pcrec
+# computes, deliberately — a split derived from `dfa_has_endvar` would be the
+# check reading its own subject's verdict.
+#
+# **[M6.2 wave C] THE SPLIT IS NO LONGER `grep -F '\z'`, AND THIS GATE IS WHAT
+# TOLD US.** Wave A wrote the third closure view for `\z` and split on `\z`
+# accordingly, which was exact at the time. BOTH `(?m)` anchors read that same
+# view, for OPPOSITE purposes: `(?m)$` is "end of subject OR the next byte is a
+# newline", so it reads `end_ok` to be TRUE there; `(?m)^` does NOT match after
+# a newline that ENDS the string, so it reads `end_ok` to be FALSE there. So
+# the day the `m` letter was accepted this gate went red on 51 patterns, every
+# one of them a `(?m)` anchor sitting in the identity population where it does
+# not belong. That is the check WORKING: it caught a wave-C construct silently
+# joining a wave-A mechanism, which no behaviour test could see because
+# `-DPCREC_NO_ENDVAR` is never defined in a shipped build.
+#
+# The classifier is tests/lib/mlscan.py (shared with the wave C gate and the
+# `(?m)$` differential, with its own self-check), and it is a GRAMMAR scan —
+# `(?m)` is scoped and spelled several ways, and a `$` inside `[...]` is not
+# an anchor.
+python3 - "$ROOT_DIR" "$PATFILE" "$WORKDIR/zpat" "$WORKDIR/nozpat" <<'PY'
+import os, sys
+root, src, zout, nout = sys.argv[1:5]
+sys.path.insert(0, os.path.join(root, "tests", "lib"))
+from mlscan import multiline_anchor
+
+raw = [l.rstrip("\n") for l in open(src) if l.strip()]
+def has_end_view(p):
+    # BOTH `(?m)` anchors, not just `(?m)$`, and the reason is the tidiest
+    # fact in wave C: they read the `pos == n` view for OPPOSITE purposes.
+    # `(?m)$` reads it to be TRUE at end of subject ("or end of subject" is
+    # half its definition); `(?m)^` reads it to be FALSE there, because PCRE2's
+    # multiline `^` does not match after a newline that ENDS the string. Same
+    # view, both directions.
+    return "\\z" in p or multiline_anchor(p)
+z    = [p for p in raw if has_end_view(p)]
+noz  = [p for p in raw if not has_end_view(p)]
+open(zout, "w").write("".join(p + "\n" for p in z))
+open(nout, "w").write("".join(p + "\n" for p in noz))
+print("endvar-identity: corpus %d patterns; create a `pos == n` view: %d "
+      "(%d mention \\z, %d are (?m) anchor shapes); identity population: %d"
+      % (len(raw), len(z), sum(1 for p in raw if "\\z" in p),
+         sum(1 for p in raw if multiline_anchor(p) and "\\z" not in p),
+         len(noz)))
+PY
 nz=$(wc -l < "$WORKDIR/zpat")
 nn=$(wc -l < "$WORKDIR/nozpat")
 

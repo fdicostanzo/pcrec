@@ -427,7 +427,18 @@ c"` from `(0,3)` into `(0,1)`, and
   `(?m)$` differential's first python arm excluded the D47.5 GUARD CELL over a
   `^` that is a class negation in `[^c]`. Both are why the scanner is one
   shared file with a self-check.
-  (7) **D62's control 2 NEEDS A CAPTURE-BEARING CELL, and §8.7's own spelling
+  (7) **WAVE A's ENDVAR-IDENTITY GATE WENT RED ON 51 PATTERNS, and it was
+  right to.** `(?m)$`'s "or end of subject" half IS wave A's `pos == n` view
+  (`N_EOL_M` reads `end_ok`), so a `(?m)$` pattern belongs to that gate's
+  POSITIVE CONTROL and not to its identity population — but wave A split on
+  `grep -F '\z'`, which was exact when it was written. The split now asks
+  "does this pattern create a `pos == n` view" through the shared scanner.
+  Worth naming: a wave-C construct silently joined a wave-A mechanism, no
+  behaviour test could have seen it (`-DPCREC_NO_ENDVAR` is never defined in a
+  shipped build), and the construction gate is the only instrument that did.
+  That is the third time in this module a byte-identity gate has earned its
+  keep.
+  (8) **D62's control 2 NEEDS A CAPTURE-BEARING CELL, and §8.7's own spelling
   is capture-free.** Possessification is a VM optimization — it removes
   backtracking states, and A DFA HAS NO BACKTRACKING TO REMOVE — so
   `(?m)[^c]{1,3}$` routes to the DFA and answers correctly with the flag-read
