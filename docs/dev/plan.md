@@ -1309,7 +1309,19 @@ spine, not before):
   append; primary prefix permanent) and [M6.5]'s dupnames machinery
   (name-run resolution already answers what a globally-visible inserted
   name means);
-  (e) the U11b measurement obligation binds each binding's VALUE.**
+  (e) the U11b measurement obligation binds each binding's VALUE;
+  (f) SCOPE OF THE REDUCTION (Frank, same session, confirmed by
+  measurement): quantifier sugar is ALREADY collapsed (`+`/`{1,}` etc.
+  are one A_REP node, engine bodies byte-identical, only the verbatim
+  rx_info.pattern stamp differs); the class escapes are already
+  hardwired class-valued bindings (D23/OS-1), \N already the newline
+  definition (D64); possessive quantifiers reduce to the atomic cut
+  per [M6.4]'s own row. The irreducible core after full reduction:
+  classes, cat, alt, {m,n}+preference, atomic cut, capture, \A, \z,
+  lookaround, and the path-fact family (\K, backrefs, DD-14 call) —
+  \G stays primitive (position vs a RUNTIME value). THE DESIGN LANE'S
+  FIRST WORK PRODUCT is the construct-by-construct table: primitive vs
+  binding, each binding's value MEASURED against libpcre2.**
   pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
   options=0 (build default LF on this box), so \N's generated bitmap is
