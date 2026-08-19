@@ -2973,8 +2973,15 @@ machinery with A–D and can move if scheduling requires.
 >   `run_kreset_diff.sh` §2 asks libpcre2 the anchored question through
 >   `\G(?:PAT)` at the same startpos.
 > - **The structural check and its sabotage.** `[M6.2-KRESET rule 1]` plus
->   S85 (R30 C3's own request, verbatim), MEASURED DETECTED. S86 covers the
->   untrailed write as a second row with disjoint symptoms.
+>   S85 (R30 C3's own request, verbatim), MEASURED DETECTED. THREE rows
+>   shipped, with DISJOINT symptoms, which is why they are three: S85 fires
+>   rule 1's "does not read the trailed slot" branch and leaves the write
+>   correct; S86 fires its "writes stv[0] directly" branch and leaves
+>   `caps_out` correct; **S87 fires NEITHER** — it removes `vm_cost`'s trail
+>   charge, which is invisible to every structural check (they read emitted
+>   TEXT; this defect is a NUMBER the emitter computed correctly and then
+>   under-declared) and is seen only by the corpus, and only by cells written
+>   to EXCEED a repeat's count. §11 of kreset.rxt exists for it.
 > - **`\K` inside a quantifier.** `(?:a\K)*ab` on `"aaab"` -> (2,4) and four
 >   sibling shapes, all libpcre2-produced, in kreset.rxt §4.
 > - **`--engine=dfa` refusal.** Asserted in three places, each for a different
@@ -2984,6 +2991,19 @@ machinery with A–D and can move if scheduling requires.
 >   that PAYS by asserting the refusal live), and the plan row.
 > - **Oracle.** `# pcre2-only` wholesale, U11d. The fourth exclusion in the
 >   module, and the one that COMPLETES the list.
+> - **TWO THINGS THE WAVE ADDED THAT §10 DOES NOT ASK FOR**, both because the
+>   construct made a previously-uninteresting question interesting.
+>   `run_kreset_diff.sh` §5 drives `match_api.md` §3.1's FIND-ALL LOOP against
+>   libpcre2 driven through the same loop: `\K` is the first construct that
+>   can report an EMPTY span after consuming bytes, so §3.1's empty arm — which
+>   advances one character from the REPORTED START — becomes reachable for a
+>   pattern that consumed several. It agrees (`ab\K` over `"ababab"` is
+>   `2,2 6,6` on both sides, i.e. the match beginning at 2 is not offered
+>   again), and the empty-span population is counted from the ORACLE so pcrec
+>   cannot vouch for its own coverage. §6 asserts `--no-captures`, which sounds
+>   like it conflicts with `\K` and does not: the flag drops GROUP slots, the
+>   whole-match span is not a group, so the artifact is still VM-routed and
+>   still reports the post-`\K` start.
 > - **Byte identity.** No fifth gate was built, and that is a deviation with
 >   an argument rather than an omission. `\K` is VM-forced and the emitter
 >   reads its counter into a DEFAULT ARTIFACT at exactly ONE site
