@@ -616,3 +616,39 @@ others, and a sabotage of one must not be reported as coverage by another.
   src/parse/mod_modifiers.c and keeps its own copy of the rule, so the two
   `(?m)` rows stay green — which is the honest reading of "a letter's module
   is not the dispatching row's".
+
+## [M6.2 wave B] S71-S74, and one more arm
+
+Four rows for `\b`/`\B`, running the new `wordctxidentity` arm
+(tests/codegen/run_wordctx_identity.sh) alongside `codegen`, `harness` and
+`assertions`. The arm is its own rather than sharing `endvaridentity`'s for
+this matrix's standing reason: the two gates guard DIFFERENT constructions
+(a third POSITION view against `\z`; a CLASS view plus an alphabet refinement
+plus three start states against `\b`), they use different reference knobs, and
+a sabotage of one must not be reported as coverage by the other.
+
+Two of the four are SEMANTICS-PRESERVING and two are not, which is the useful
+way to read them:
+
+- **S71** (alphabet refinement made unconditional) and **S73** (the
+  class-indexed accept moved above its `pos >= n` guard) change NO answer.
+  S71's refined alphabet is still the same partition more finely cut, so every
+  matcher answers identically and only the byte-identity gate can see it.
+  S73's out-of-bounds read at `pos == n` usually lands on a readable byte
+  whose class carries the same bit, so the corpus goes green while the
+  artifact has acquired UB — K27's class in generated code, and the reason
+  rule 1 is checked structurally rather than by running anything.
+- **S72** (the reverse skip's blind `sfound = pp;` restored) and **S74**
+  (mechanism 4's reverse TERMINATION removed) change answers, but only on
+  narrow populations that had to be built deliberately. S74 is the sharpest
+  row in the wave: `\b` is safe by ACCIDENT at that boundary — its blind
+  assumption coincides with its truth condition — so the sabotage is invisible
+  to every leading-`\b` pattern and to every trailing-assertion pattern, and
+  is seen only by LEADING `\B` at `startpos > 0`. That is why
+  tests/assertions/wordb.rxt carries those cells and why the wave's
+  differential is split into arms at all.
+
+S71 is also the shape of a mistake that would really happen: nobody deletes a
+gate on purpose, but someone moves the word-set refinement next to the other
+refinements in `eqclasses`, where every neighbour is unconditional, and the
+diff looks tidier than what it replaced.

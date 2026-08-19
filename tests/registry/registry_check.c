@@ -1308,22 +1308,31 @@ static void check_class_ports(void)
      * no cport, no scalar/SET/FN class port touched, and in particular those
      * three rows KEEP RF_CLASS_INVALID and NO_PORT at class position, because
      * `[\\A]` is PCRE2 error 107 permanently and an atom producer must not
-     * quietly become a class one. */
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 29)
+     * quietly become a class one.
+     * [M6.2 wave B]: 29 -> 31, the `\\b`/`\\B` rows' atom producer. The
+     * SCALAR population is UNMOVED at 5 and `\\b` is still one of them, which
+     * is the part of this row worth reading: `\\b` gains an ATOM port while
+     * KEEPING its scalar CLASS port, because inside a character class `\\b` is
+     * not an assertion at all — it is base syntax for backspace (0x08). A
+     * wave that had let the atom producer swallow the class position would
+     * move `scalar` to 4 and be caught here. `\\B` keeps RF_CLASS_INVALID and
+     * NO_PORT at class position for `\\A`'s reason above. */
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 31)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (29: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (31: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
-            "named-groups declaring rows' producer since [M6.3], plus the "
-            "three assertions rows \\A/\\Z/\\z since [M6.2] wave A). A "
+            "named-groups declaring rows' producer since [M6.3], the "
+            "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
+            "\\b and \\B since wave B). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 29 atom "
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 31 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
-           "wave A); scalar and SET values oracle-tied "
+           "wave A, + \\b and \\B, wave B); scalar and SET values oracle-tied "
            "(class_expect column / fallback law / census popcounts), as "
            "predicted for slice 3");
 }

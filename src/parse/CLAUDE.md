@@ -333,6 +333,27 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   restated — `\A*` `\z*` `\Z*` are all error 109 while `(\z)*` compiles
   (measured), and A_BOL/A_EOL were already in parse.c's bare-quantified
   rejection, so A_END simply joined it and the two group-wrap sites.
+
+  **[M6.2] WAVE B added `\b` and `\B` to the SAME producer**, dispatching on
+  `sel` exactly as the three above do, and lowering to two kinds rather than
+  one kind plus a negation flag on D62's principle — no option turns `\b` into
+  `\B`, so the distinction is structure. They are the module's first CONTEXT
+  assertions: `\A`/`\Z`/`\z` are questions about the POSITION, answerable by
+  an integer compare, while these read the two BYTES around it, which is what
+  buys the alphabet refinement, the state-identity bit and the class-indexed
+  accept in src/ir/ and src/gen/.
+
+  **THE TWO ROWS ARE ASYMMETRIC AT CLASS POSITION AND THAT IS PCRE2'S, NOT
+  THIS MODULE'S TO TIDY.** `\b` KEEPS its scalar class port — inside a
+  character class `\b` is not an assertion at all, it is base syntax for
+  backspace (0x08) — so its atom port lands beside a LIVE `cport`, the only
+  row in the module where that happens. `\B` keeps `RF_CLASS_INVALID` and
+  `NO_PORT` for `\A`'s reason. `tests/registry/registry_check.c`'s port
+  census pins both halves: the atom population moved 29 -> 31 and the SCALAR
+  population stayed at 5, and an atom producer that had swallowed `\b`'s class
+  position would move the second number. NOT REPEATABLE inherited the same
+  way, re-measured against libpcre2 10.46: `\b*` `\b+` `\b?` `\b{2}` `\B*`
+  are all error 109 and `(\b)*` `(\B)*` both compile to (0,0).
 - **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the
   header NOTHING outside this directory includes ([M6.2] wave A; D62;
   assertions_design.md §8.6). `Ctx.mods` is a pointer to an INCOMPLETE

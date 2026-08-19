@@ -228,6 +228,64 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   flag-reader sabotage) land in WAVE C, where the flag can be true and those
   rows can go red; with `(?m)` still refused they would be checks with no
   failing direction
+  **WAVE B LANDED 2026-08-19 (lane/asrtwaveb)**: `\b`/`\B` as `A_WORDB`/
+  `A_NWORDB` + `N_WORDB`/`N_NWORDB`, the module's first CONTEXT assertions and
+  its only real engine work. §3.4's alphabet refinement by
+  `pcrec_cls_word_esc` (ONE spelling, shared with `\w`); §3.5's context bit in
+  the state identity as a SECOND CLOSURE per state (`DState.wlist`) rather
+  than an interned variant, so the transition row for a class is built from
+  the closure that class's word-ness selects and the emitted hot path stays a
+  single table read; §3.6's class-indexed accept emitted ONLY where a state's
+  accept actually varies with the next byte; §3.6.2's composition rule (scalar
+  accept at `pos == n`, class-indexed below it); **mechanism 4 at all FOUR
+  boundaries** (§3.8) — forward init from `s[startpos-1]`, reverse init from
+  `s[end]`, reverse TERMINATION from `s[startpos-1]` attached to the boundary
+  break per R30 N9, and the forward terminal's scalar rule — via `Dfa.s1w` and
+  emitted `fseed`/`rseed` class->start tables; §9.3's guarded VM arms on the
+  shared class pool. Both engines: ENG_ATTEMPT gets the same accept split and
+  a per-attempt `seed[]` label table.
+  EVIDENCE: 30,386-cell libpcre2 differential at 0 divergences across FOUR
+  arms kept apart because they fail on disjoint populations (general,
+  reverse-INIT via trailing assertions, reverse-TERM via LEADING `\B` at
+  `startpos > 0`, and the §3.1 find-all loop with mid-word resumes);
+  tests/assertions/wordb.rxt 3,528 cases, every expectation libpcre2-produced;
+  tests/codegen/run_wordctx_identity.sh 1039/1039 `\b`-free corpus patterns
+  byte-identical against a `-DPCREC_NO_WORDCTX` reference with 47 controls
+  differing; three [M6.2-WORDB] structural rules in
+  tests/codegen/run_codegen_tests.sh; sabotages S71-S74.
+  **THE COMPOSED BUDGET IS MEASURED AND §3.5.1's FORECAST IS REFUTED AS AN
+  OBSERVATION** (it stands as a bound). Measured on the built compiler
+  (docs/design/assertions_measurements/out/wordctx_budget.txt): state ratio
+  min/median/max **0.67x / 1.10x / 4.75x** — the max reproduces §3.5's
+  headline exactly against a pcrec-verified base, and the MIN goes BELOW 1
+  (`[01]*1[01]{8}` is 768 states bare and 513 with the context, a shape the
+  prototype could not express). Alphabet delta +0/+1/+1, inside §3.4's
+  predicted 0/+1/+2, which `probe_ncls_refine.py` re-confirms on the grown
+  corpus (965 patterns; word 0/1/2, largest `states x ncls` 48,012, unmoved).
+  The refusal boundary is LOCATED, not predicted, and on §3.5.1's OWN worst
+  family the word context RAISES the ceiling — `((a)|ab){N}c` refuses at
+  N=5655 (subset-elems) while `\b((a)|ab){N}c\b` compiles to N=15998 (31,999
+  states), because a leading `\b` prunes start positions and moves the binding
+  constraint. ENG_ATTEMPT's boundary is IDENTICAL with and without the
+  context (N=4999, 10,000 states). The genuine regression is ONE repeat count
+  wide, on a linear chain: `[a-z]{1,31999}` compiles at exactly 32,000 states
+  and `\b[a-z]{1,31999}\b` refuses — cleanly, with the states-cap diagnostic,
+  which tests/assertions/run_assertions_tests.sh pins on both engines.
+  **DEVIATIONS AND FINDINGS RETURNED**: (1) §3.6.1's argument that `\b` cannot
+  suffer the D11 skip hazard does NOT hold — "a skip set is a union of classes
+  so every byte in the run has the same next-is-word value" is false, since a
+  union of classes may contain both word and non-word classes; wave B declines
+  instead (a state whose accept varies by class is not skip-eligible), which
+  costs nothing on any pre-wave pattern. (2) A PRE-EXISTING defect, reproduced
+  on the merge base c23662e with the base-tier pattern `^a^b`: an anchored
+  pattern whose DFA is one dead state emits C that fails `-Wall -Wextra
+  -Werror` (gcc reports the `<prefix>_match` wrapper's `caps` array
+  maybe-uninitialized after inlining the always-returns-0 search). `^\Bfoo`,
+  `^\Bo` and `^a\bb` are three new spellings that reach it; they are named
+  and excluded in wordb.rxt's own header with live equivalents in their place,
+  NOT fixed here — the fix touches every artifact in the tree. (3) The
+  enabled-but-unbuilt reject rows for `\b`/`\B` RETIRE (gated 66 -> 64) and
+  their compile controls move to run_assertions_tests.sh in the same change.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here

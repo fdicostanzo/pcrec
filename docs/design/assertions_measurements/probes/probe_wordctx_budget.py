@@ -52,7 +52,7 @@ CAP_TABLE = 32000    # PCREC_MAX_DFA_STATES_TABLE, src/core/limits.h
 CAP_GOTO = 10000     # PCREC_MAX_DFA_STATES_GOTO
 
 
-def emit(pcrec, pat, timeout=120):
+def emit(pcrec, pat, timeout=600):
     """(source, None) on success, (None, diagnostic) on refusal."""
     try:
         r = subprocess.run([pcrec, "--features", "all", "-p", "rx",
@@ -198,6 +198,20 @@ def main():
          lambda n: "(?:ab){1,%d}c" % n, 1, 20000),
         ("\\b(?:ab){1,N}c\\b    ENG_UNANCH, §3.5's 4.75x shape",
          lambda n: r"\b(?:ab){1,%d}c\b" % n, 1, 20000),
+        # THE FAMILY THAT ACTUALLY REGRESSES, and it took looking for.
+        # The families above are bounded by PCREC_MAX_SUBSET_ELEMS on their
+        # BARE arm — the unanchored self-loop keeps every offset's threads
+        # alive, so the state SETS are what run out, not the state COUNT — and
+        # a leading `\b` PRUNES most start positions, which makes the wrapped
+        # arm cheaper rather than dearer. A capability regression needs a
+        # family whose bare arm is bound by the STATE COUNT, and a linear
+        # chain is one: `[a-z]{1,N}` is exactly N+1 states, wrapped is N+2, so
+        # the ceiling moves by ONE repeat count. That is the whole measured
+        # regression, against a composed bound of 4.75x.
+        ("[a-z]{1,N}          ENG_UNANCH, a LINEAR CHAIN (states-bound)",
+         lambda n: "[a-z]{1,%d}" % n, 1, 40000),
+        ("\\b[a-z]{1,N}\\b      ENG_UNANCH, a LINEAR CHAIN (states-bound)",
+         lambda n: r"\b[a-z]{1,%d}\b" % n, 1, 40000),
     ]
     for label, mk, lo, hi in fams:
         n, diag = bisect_max(pcrec, mk, lo, hi)
