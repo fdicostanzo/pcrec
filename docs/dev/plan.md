@@ -1279,7 +1279,30 @@ spine, not before):
   binds: a definition is a CLAIM ABOUT PCRE2 like any other — the tidy
   composition for `(?m)^` was exactly wrong until measured. Same
   parking condition as before (M6.6 lookaround + DD-14's call/insertion
-  primitive); cross-noted at [DD-14]. pcrec is NEWLINE_LF today and that is
+  primitive); cross-noted at [DD-14]. **REFINED (Frank, same session):
+  bindings are DIRECT REFERENCES TO RX in the appropriate format — NOT
+  flags.** The environment maps construct -> rx VALUE directly; a flag
+  letter like `(?m)` is a BINDING-MUTATION OPERATOR at its point of
+  introduction (it swaps which replacement rx `$`/`^` are bound to, for
+  the remainder of its scope); every later reference just DOES the
+  replacement — no modifier state exists to thread, consult, or forget.
+  Frank's stated value: simpler, and new replacements (encodings,
+  newline conventions, user definitions) are added by adding bindings —
+  one mechanism. Manager notes recorded with it: (a) this SUBSUMES
+  D62's principle at the future architecture — there is no field either;
+  a multiline `$` IS the substituted subtree, so the whole D47.5
+  scope-blindness class becomes INEXPRESSIBLE rather than guarded
+  (stronger than the compile-alarm the node-kind spelling offered);
+  (b) "appropriate format" carries D64's typed-value constraint
+  (class-valued where class context demands, negatable; sequence-valued
+  a compile error in class contexts); (c) scoping matches PCRE2's own
+  inline-flag semantics (references AFTER the mutation see the new
+  binding, within the enclosing group); (d) HYGIENE is the design
+  question textual insertion raises — a definition containing a group
+  must not renumber captures, which is an argument for expansion via
+  DD-14's CALL primitive (reference, not copy) over textual splice;
+  (e) the U11b measurement obligation binds each binding's VALUE.**
+  pcrec is NEWLINE_LF today and that is
   ANCHORED, not assumed: every oracle measurement runs libpcre2 at
   options=0 (build default LF on this box), so \N's generated bitmap is
   the measured complement of {0x0A}, `.` is every-byte-but-0x0A, and `$`
