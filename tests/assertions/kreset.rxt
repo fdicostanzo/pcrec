@@ -1,0 +1,978 @@
+# tests/assertions/kreset.rxt — module `assertions`, [M6.2] WAVE E: `\K`,
+# which RESETS THE REPORTED START of the match.
+#
+# THE ORACLE RULE IS WAVE D'S, FOR WAVE D'S REASON: **python3 `re` HAS NO `\K`
+# AT ALL.** `re.compile(r"a\Kb")` raises `error: bad escape \K`, and there is
+# no flag, dialect or rewriting that expresses it — python has no way to move
+# a match's reported start from inside a pattern. So this whole file is
+# `# pcre2-only`, wholesale and per block, and rides
+# tests/assertions/verify_pcre2.py against libpcre2. That makes it the FOURTH
+# place in this module where the base-tier oracle cannot answer, and the
+# SECOND total exclusion: `\Z` (wave A) is answered WRONGLY, `(?m)^` (wave C)
+# DIFFERENTLY, `\G` (wave D) not at all, and `\K` not at all.
+# (docs/dev/upstream_issues.md U11d.)
+#
+# WHAT THIS FILE IS ABOUT, in one sentence: `\K` is the only construct in the
+# module that is not an assertion. It asks nothing, it cannot fail, and it has
+# a SIDE EFFECT — so unlike every other file here, the interesting cells are
+# not "does it hold at this position" but "which of several candidate writes
+# SURVIVED to the end of the winning path".
+#
+# THE THREE FAMILIES THAT CARRY THE FILE, and none of them is decoration:
+#
+#   - **the UNDO cells (sections 3 and 4)**. `\K`'s write is TRAILED, and the
+#     cells that need it are the ones where a `\K` is crossed on a path that
+#     then LOSES. `(?:a\K|ax)c` on "axc" is (0,3): the `a\K` branch writes 1,
+#     the follow fails, and the write must be GONE when `ax` wins. An
+#     implementation that wrote `caps[0][0]` without trailing it answers
+#     (1,3), and nothing else in this directory would notice.
+#   - **the NOT-CROSSED cells (section 5)**. `(?:a\K)?b` on "b" is (0,1),
+#     because no `\K` was passed. That is not a defensive default in the
+#     emitter, it is `\K`'s semantics, and the cells are what stop the
+#     "no `\K` crossed" sentinel being confused with a position.
+#   - **the START == END cells (section 6)**. `ab\K` on "ab" is (2,2) — a
+#     reported span of length ZERO after two bytes were consumed. This is the
+#     shape that makes the match-here entries' RETURN VALUE a different
+#     question from their reported span (assertions_design.md §6.3 rule 3),
+#     and it is why a caller that advanced by `caps[0][1] - caps[0][0]` would
+#     never move. No `.rxt` block can drive an entry, so the entries
+#     themselves are tests/assertions/kreset_entries.c; these cells pin the
+#     property the entries are about.
+#
+# `ms`/`ns` CELLS ARE PRESENT THROUGHOUT AND SWEEP EVERY startpos, on wave B's
+# and wave D's precedent but for a THIRD reason: the reported start is the one
+# quantity in the whole match API that `\K` can move, so a cell at startpos > 0
+# is what distinguishes "the VM reported where it crossed the `\K`" from "the
+# prefilter's span start was written out" — the two agree at every position
+# only if `\K` is being ignored (assertions_design.md §6.3 rule 1). Under the
+# hybrid the prefilter's start IS the reverse pass's answer, so these cells are
+# that rule's behavioural half; the structural half is
+# tests/codegen/run_codegen_tests.sh's `[M6.2-KRESET]` block.
+#
+# THE GRAMMAR REFUSALS are at the end, with the module ENABLED: `\K*` `\K+`
+# `\K?` `\K{2}` `a\K*` are PCRE2 error 109 and `(\K)*` compiles — `\A`/`\z`/
+# `\b`/`\G`'s table cell for cell, measured against libpcre2 10.46 by this
+# wave, which is why `\K` joins `pcrec_is_bare_anchor` rather than earning a
+# rule of its own.
+#
+# EVERY EXPECTATION BELOW WAS PRODUCED BY libpcre2 10.46 (through
+# tests/fuzz/pcre2_oracle, options = 0) rather than written by hand.
+
+
+# ======================================================================
+# 1. `\K` BARE, AND THE TWO TRIVIAL PLACEMENTS. `\K` alone matches the empty
+# string everywhere, exactly as `(?:)` does — which is the point: `\K` at the
+# START of a pattern and `\K` alone change NOTHING, so these blocks are the
+# control that says the construct is not simply an anchor in disguise. The
+# first cell that moves is `a\K` in section 2's neighbour below.
+# ======================================================================
+
+# pcre2-only
+pattern \K
+features assertions
+m "" 0 0
+m "a" 0 0
+ms 1 "a" 1 1
+m "ab" 0 0
+ms 1 "ab" 1 1
+ms 2 "ab" 2 2
+m "abc" 0 0
+ms 1 "abc" 1 1
+ms 2 "abc" 2 2
+ms 3 "abc" 3 3
+
+# pcre2-only
+pattern \Ka
+features assertions
+m "a" 0 1
+ns 1 "a"
+m "ab" 0 1
+ns 1 "ab"
+ns 2 "ab"
+m "xa" 1 2
+ms 1 "xa" 1 2
+ns 2 "xa"
+m "xxa" 2 3
+ms 1 "xxa" 2 3
+ms 2 "xxa" 2 3
+ns 3 "xxa"
+
+# pcre2-only
+pattern a\K
+features assertions
+m "a" 1 1
+ns 1 "a"
+m "ab" 1 1
+ns 1 "ab"
+ns 2 "ab"
+m "xa" 2 2
+ms 1 "xa" 2 2
+ns 2 "xa"
+m "xxa" 3 3
+ms 1 "xxa" 3 3
+ms 2 "xxa" 3 3
+ns 3 "xxa"
+
+# ======================================================================
+# 2. THE BASIC RESET, and LAST CROSSING WINS. `a\Kb` on "ab" is (1,2): two
+# bytes are consumed from 0 and one byte is reported. `a\Kb\Kc` on "abc" is
+# (2,3) — the SECOND `\K` — which is what makes "the reported start is where
+# the winning path last crossed a \K" a testable sentence rather than a
+# paraphrase of "after the \K". The `\Ka\Kb` and `a\K\Kb` blocks are the same
+# fact at the two degenerate placements.
+# ======================================================================
+
+# pcre2-only
+pattern a\Kb
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+m "xxab" 3 4
+ms 1 "xxab" 3 4
+ms 2 "xxab" 3 4
+ns 3 "xxab"
+ns 4 "xxab"
+n "ba"
+ns 1 "ba"
+ns 2 "ba"
+n "a"
+ns 1 "a"
+n "b"
+ns 1 "b"
+
+# pcre2-only
+pattern \Kab
+features assertions
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 1 3
+ms 1 "xab" 1 3
+ns 2 "xab"
+ns 3 "xab"
+m "abab" 0 2
+ms 1 "abab" 2 4
+ms 2 "abab" 2 4
+ns 3 "abab"
+ns 4 "abab"
+
+# pcre2-only
+pattern ab\K
+features assertions
+m "ab" 2 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 3 3
+ms 1 "xab" 3 3
+ns 2 "xab"
+ns 3 "xab"
+m "abab" 2 2
+ms 1 "abab" 4 4
+ms 2 "abab" 4 4
+ns 3 "abab"
+ns 4 "abab"
+
+# pcre2-only
+pattern a\Kb\Kc
+features assertions
+m "abc" 2 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "xabc" 3 4
+ms 1 "xabc" 3 4
+ns 2 "xabc"
+ns 3 "xabc"
+ns 4 "xabc"
+
+# pcre2-only
+pattern \Ka\Kb
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern a\K\Kb
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# ======================================================================
+# 3. THE UNDO, ACROSS AN ALTERNATION — the first of the two families that
+# need the write to be TRAILED, and the cheaper one to reason about.
+#
+# `(?:a\K|ax)c` on "axc" is the section's spine. Leftmost-first tries `a\K`
+# first: it matches "a", writes the reported start as 1, and then `c` fails at
+# position 1. The `ax` branch wins, and PCRE2 reports (0,3) — so the write of
+# 1 must be UNDONE, not merely overwritten, because the winning path never
+# crosses a `\K` at all. An emitter that assigned `caps[0][0]` directly
+# answers (1,3) here and is right on every cell in sections 1 and 2.
+#
+# `(?:ab\K|a)b` on "ab" is the same requirement with the loser writing a
+# LARGER position than the winner's start (2 against 0), which is the
+# direction a "keep the maximum" shortcut would get wrong.
+# ======================================================================
+
+# pcre2-only
+pattern (?:a\K|ax)c
+features assertions
+m "axc" 0 3
+ns 1 "axc"
+ns 2 "axc"
+ns 3 "axc"
+m "ac" 1 2
+ns 1 "ac"
+ns 2 "ac"
+m "xaxc" 1 4
+ms 1 "xaxc" 1 4
+ns 2 "xaxc"
+ns 3 "xaxc"
+ns 4 "xaxc"
+m "xac" 2 3
+ms 1 "xac" 2 3
+ns 2 "xac"
+ns 3 "xac"
+
+# pcre2-only
+pattern (?:ab\K|a)b
+features assertions
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "abb" 2 3
+ns 1 "abb"
+ns 2 "abb"
+ns 3 "abb"
+m "xab" 1 3
+ms 1 "xab" 1 3
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern (?:a\K|b)c
+features assertions
+m "bc" 0 2
+ns 1 "bc"
+ns 2 "bc"
+m "ac" 1 2
+ns 1 "ac"
+ns 2 "ac"
+m "xbc" 1 3
+ms 1 "xbc" 1 3
+ns 2 "xbc"
+ns 3 "xbc"
+m "xac" 2 3
+ms 1 "xac" 2 3
+ns 2 "xac"
+ns 3 "xac"
+
+# pcre2-only
+pattern (?:a\Kb|ab\Kc)d
+features assertions
+m "abd" 1 3
+ns 1 "abd"
+ns 2 "abd"
+ns 3 "abd"
+m "abcd" 2 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+m "xabd" 2 4
+ms 1 "xabd" 2 4
+ns 2 "xabd"
+ns 3 "xabd"
+ns 4 "xabd"
+
+# pcre2-only
+pattern a\Kb|c
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "c" 0 1
+ns 1 "c"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+m "xc" 1 2
+ms 1 "xc" 1 2
+ns 2 "xc"
+
+# ======================================================================
+# 4. THE UNDO, INSIDE A QUANTIFIER — assertions_design.md §10's NAMED case,
+# and the one where the trail has to restore a PREVIOUS `\K` rather than the
+# absence of one.
+#
+# `(?:a\K)*ab` on "aaab" is (2,4), and the derivation is the test: the greedy
+# loop takes three iterations, writing 1, then 2, then 3; `ab` then needs "ab"
+# at 3 and finds only "b"; the loop retreats to TWO iterations and `ab`
+# matches at 2. So the write of 3 must be gone AND the write of 2 must stand.
+# A trail that CLEARED on undo instead of restoring the previous value would
+# answer (0,4) here — right start for the wrong reason on `(?:a\K)*b`, wrong
+# outright on this one.
+#
+# `(?:a\Kb)*c` on "ababc" is (3,5): two iterations, the second `\K` at 3.
+# `(?:a\K){2,}b` pins the same mechanism under a minimum count, where the
+# retreat has a floor it must not go below.
+# ======================================================================
+
+# pcre2-only
+pattern (?:a\K)*ab
+features assertions
+m "aaab" 2 4
+ms 1 "aaab" 2 4
+ms 2 "aaab" 2 4
+ns 3 "aaab"
+ns 4 "aaab"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "aab" 1 3
+ms 1 "aab" 1 3
+ns 2 "aab"
+ns 3 "aab"
+m "xaaab" 3 5
+ms 1 "xaaab" 3 5
+ms 2 "xaaab" 3 5
+ms 3 "xaaab" 3 5
+ns 4 "xaaab"
+ns 5 "xaaab"
+
+# pcre2-only
+pattern (?:a\K)*b
+features assertions
+m "aaab" 3 4
+ms 1 "aaab" 3 4
+ms 2 "aaab" 3 4
+ms 3 "aaab" 3 4
+ns 4 "aaab"
+m "b" 0 1
+ns 1 "b"
+m "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+m "xaaab" 4 5
+ms 1 "xaaab" 4 5
+ms 2 "xaaab" 4 5
+ms 3 "xaaab" 4 5
+ms 4 "xaaab" 4 5
+ns 5 "xaaab"
+
+# pcre2-only
+pattern (?:a\Kb)*c
+features assertions
+m "ababc" 3 5
+ms 1 "ababc" 3 5
+ms 2 "ababc" 3 5
+ms 3 "ababc" 4 5
+ms 4 "ababc" 4 5
+ns 5 "ababc"
+m "c" 0 1
+ns 1 "c"
+m "abc" 1 3
+ms 1 "abc" 2 3
+ms 2 "abc" 2 3
+ns 3 "abc"
+m "xababc" 4 6
+ms 1 "xababc" 4 6
+ms 2 "xababc" 4 6
+ms 3 "xababc" 4 6
+ms 4 "xababc" 5 6
+ms 5 "xababc" 5 6
+ns 6 "xababc"
+
+# pcre2-only
+pattern (?:a\K){2,}b
+features assertions
+m "aaab" 3 4
+ms 1 "aaab" 3 4
+ns 2 "aaab"
+ns 3 "aaab"
+ns 4 "aaab"
+m "aab" 2 3
+ns 1 "aab"
+ns 2 "aab"
+ns 3 "aab"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+
+# pcre2-only
+pattern (?:a\K){1,3}b
+features assertions
+m "aaaab" 4 5
+ms 1 "aaaab" 4 5
+ms 2 "aaaab" 4 5
+ms 3 "aaaab" 4 5
+ns 4 "aaaab"
+ns 5 "aaaab"
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "aab" 2 3
+ms 1 "aab" 2 3
+ns 2 "aab"
+ns 3 "aab"
+
+# ======================================================================
+# 5. THE `\K` NOT CROSSED — the population for "no `\K` on this path", which
+# in the emitted artifact is the per-search PCREC_UNSET the trail restores.
+#
+# `(?:a\K)?b` is the pair that matters and it must be read as a pair: on "ab"
+# it is (1,2) and on "b" it is (0,1). Same pattern, same artifact, one cell
+# through the `\K` and one around it. A build that treated "no `\K` crossed"
+# as an error, or that left a stale write from a previous ATTEMPT, disagrees
+# on exactly one of the two.
+#
+# `(?:a\K|b)+c` sweeps the same question inside a loop where the branch
+# choice varies per iteration, so the final answer depends on which branch
+# the LAST iteration took rather than on whether any iteration took it.
+# ======================================================================
+
+# pcre2-only
+pattern (?:a\K)?b
+features assertions
+m "b" 0 1
+ns 1 "b"
+m "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+m "xb" 1 2
+ms 1 "xb" 1 2
+ns 2 "xb"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ms 2 "xab" 2 3
+ns 3 "xab"
+
+# pcre2-only
+pattern (?:\Ka)?b
+features assertions
+m "b" 0 1
+ns 1 "b"
+m "ab" 0 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+
+# pcre2-only
+pattern (?:a\K|b)+c
+features assertions
+m "abc" 1 3
+ms 1 "abc" 1 3
+ns 2 "abc"
+ns 3 "abc"
+m "bac" 2 3
+ms 1 "bac" 2 3
+ns 2 "bac"
+ns 3 "bac"
+m "bbc" 0 3
+ms 1 "bbc" 1 3
+ns 2 "bbc"
+ns 3 "bbc"
+m "aac" 2 3
+ms 1 "aac" 2 3
+ns 2 "aac"
+ns 3 "aac"
+
+# ======================================================================
+# 6. REPORTED START == REPORTED END, WITH BYTES CONSUMED. `ab\K` on "ab" is
+# (2,2). Nothing else in this tree produces a zero-length reported span from
+# a match that consumed two bytes, and it is the shape assertions_design.md
+# §6.3 rule 3 is about: the match-here entry's RETURN is the consumed length
+# (2), not `caps[0][1] - caps[0][0]` (0), and a D38 callout advancing by the
+# latter would never move.
+#
+# `\Ka*` and `a*\K` are the two ends of the same idea against a greedy loop:
+# the first reports the whole run, the second reports its end.
+# ======================================================================
+
+# pcre2-only
+pattern ab\Kc?
+features assertions
+m "ab" 2 2
+ns 1 "ab"
+ns 2 "ab"
+m "abc" 2 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "xab" 3 3
+ms 1 "xab" 3 3
+ns 2 "xab"
+ns 3 "xab"
+m "abab" 2 2
+ms 1 "abab" 4 4
+ms 2 "abab" 4 4
+ns 3 "abab"
+ns 4 "abab"
+
+# pcre2-only
+pattern \Ka*
+features assertions
+m "aaa" 0 3
+ms 1 "aaa" 1 3
+ms 2 "aaa" 2 3
+ms 3 "aaa" 3 3
+m "" 0 0
+m "xaaa" 0 0
+ms 1 "xaaa" 1 4
+ms 2 "xaaa" 2 4
+ms 3 "xaaa" 3 4
+ms 4 "xaaa" 4 4
+
+# pcre2-only
+pattern a*\K
+features assertions
+m "aaa" 3 3
+ms 1 "aaa" 3 3
+ms 2 "aaa" 3 3
+ms 3 "aaa" 3 3
+m "" 0 0
+m "xaaa" 0 0
+ms 1 "xaaa" 4 4
+ms 2 "xaaa" 4 4
+ms 3 "xaaa" 4 4
+ms 4 "xaaa" 4 4
+
+# ======================================================================
+# 7. `\K` WITH CAPTURE GROUPS, which is where the two provenances have to
+# stay separate. Group 0's start comes from the `\K` write; groups 1..n come
+# from their own slots and are untouched by it. `(a)\K(b)` on "ab" reports
+# the whole match as (1,2) while group 1 is (0,1) — a group that STARTS
+# BEFORE the reported match start, which is legal and is the cell that would
+# fail if the reported start were derived from the groups or vice versa.
+#
+# The `g` lines here are LIVE, never `gp`: `\K` forces the VM
+# (src/opt/select_engine.c), so every artifact in this section has a real
+# RX_NCAPS covering every slot asserted.
+#
+# `((a)\K|(b))c` is the composition of section 3's undo with capture
+# provenance: on "bc" the `\K`-bearing branch loses, so both the reported
+# start AND group 2 must come back unset.
+# ======================================================================
+
+# pcre2-only
+pattern (a)\K(b)
+features assertions
+m "ab" 1 2
+g 0 1 2
+g 1 0 1
+g 2 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 2 3
+g 0 2 3
+g 1 1 2
+g 2 2 3
+ms 1 "xab" 2 3
+g 0 2 3
+g 1 1 2
+g 2 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern a\K(b)
+features assertions
+m "ab" 1 2
+g 0 1 2
+g 1 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 2 3
+g 0 2 3
+g 1 2 3
+ms 1 "xab" 2 3
+g 0 2 3
+g 1 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern (a\K)(b)
+features assertions
+m "ab" 1 2
+g 0 1 2
+g 1 0 1
+g 2 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "xab" 2 3
+g 0 2 3
+g 1 1 2
+g 2 2 3
+ms 1 "xab" 2 3
+g 0 2 3
+g 1 1 2
+g 2 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern (a\K)*b
+features assertions
+m "aaab" 3 4
+g 0 3 4
+g 1 2 3
+ms 1 "aaab" 3 4
+g 0 3 4
+g 1 2 3
+ms 2 "aaab" 3 4
+g 0 3 4
+g 1 2 3
+ms 3 "aaab" 3 4
+g 0 3 4
+g 1 -1 -1
+ns 4 "aaab"
+m "b" 0 1
+g 0 0 1
+g 1 -1 -1
+ns 1 "b"
+m "ab" 1 2
+g 0 1 2
+g 1 0 1
+ms 1 "ab" 1 2
+g 0 1 2
+g 1 -1 -1
+ns 2 "ab"
+
+# pcre2-only
+pattern ((a)\K|(b))c
+features assertions
+m "ac" 1 2
+g 0 1 2
+g 1 0 1
+g 2 0 1
+g 3 -1 -1
+ns 1 "ac"
+ns 2 "ac"
+m "bc" 0 2
+g 0 0 2
+g 1 0 1
+g 2 -1 -1
+g 3 0 1
+ns 1 "bc"
+ns 2 "bc"
+
+# ======================================================================
+# 8. `\K` COMPOSED WITH THE MODULE'S OTHER SEVEN CONSTRUCTS. Every wave
+# before this one added a question about a position; `\K` adds a write, so
+# the composition question is whether the write moves anything the other
+# constructs read. It does not, and these blocks are what says so — `\A` and
+# `(?m)^` are still about where matching BEGAN, not where reporting begins.
+#
+# `\Ga\Kb` is the sharpest of them, because it is the only pattern in the
+# module carrying BOTH of the two constructs that need something from outside
+# `(s, n, pos)`: `\G` needs the `<prefix>_startpos` parameter wave D added,
+# and `\K` needs the trailed slot this wave adds. Its startpos sweep is where
+# the two would collide if either had been threaded through the other's
+# mechanism.
+#
+# `a\Kb\Z` and `a\Kb$` are here for a second reason: `\Z`/`$` are the two
+# spellings the D47.5 possessification gate reasons about, and a `\K` in front
+# of one is a shape that gate has never seen.
+# ======================================================================
+
+# pcre2-only
+pattern \Aa\Kb
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+n "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern a\Kb\z
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern a\Kb\Z
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "ab\n" 1 2
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# pcre2-only
+pattern a\Kb$
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "ab\n" 1 2
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# pcre2-only
+pattern \ba\Kb\b
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m " ab " 2 3
+ms 1 " ab " 2 3
+ns 2 " ab "
+ns 3 " ab "
+ns 4 " ab "
+n "xab"
+ns 1 "xab"
+ns 2 "xab"
+ns 3 "xab"
+
+# pcre2-only
+pattern a\K\bb
+features assertions
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+n "a b"
+ns 1 "a b"
+ns 2 "a b"
+ns 3 "a b"
+
+# pcre2-only
+pattern \Ga\Kb
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+n "xab"
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+n "xxab"
+ns 1 "xxab"
+ms 2 "xxab" 3 4
+ns 3 "xxab"
+ns 4 "xxab"
+
+# pcre2-only
+pattern a\Kb|\Gc
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "c" 0 1
+ns 1 "c"
+m "xab" 2 3
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+n "xc"
+ms 1 "xc" 1 2
+ns 2 "xc"
+
+# pcre2-only
+pattern (?m)^a\Kb
+features assertions,modifiers
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "x\nab" 3 4
+ms 1 "x\nab" 3 4
+ms 2 "x\nab" 3 4
+ns 3 "x\nab"
+ns 4 "x\nab"
+m "x\nabc" 3 4
+ms 1 "x\nabc" 3 4
+ms 2 "x\nabc" 3 4
+ns 3 "x\nabc"
+ns 4 "x\nabc"
+ns 5 "x\nabc"
+
+# pcre2-only
+pattern a\Kb(?m)$
+features assertions,modifiers
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "ab\nc" 1 2
+ns 1 "ab\nc"
+ns 2 "ab\nc"
+ns 3 "ab\nc"
+ns 4 "ab\nc"
+m "xab\n" 2 3
+ms 1 "xab\n" 2 3
+ns 2 "xab\n"
+ns 3 "xab\n"
+ns 4 "xab\n"
+
+# ======================================================================
+# 9. QUANTIFIERS AROUND THE `\K` RATHER THAN THROUGH IT — the cells where the
+# emitter's RUNG choices are what could go wrong rather than the trail.
+#
+# `a{2,4}\Kb` and `(?:ab)+\Kc` put a `\K` in a quantifier's FOLLOW, where the
+# possessification analysis has to treat it as transparent (it cannot fail, so
+# it can never be the reason a retreat is needed) without treating the loop
+# itself as `\K`-free. `[ab]*\K[bc]+` is the ambiguous-boundary shape R30
+# measured six cells of when it withdrew §6.1's ambiguity argument: the
+# `\K` position is unique because leftmost-first is a total order, not because
+# the boundary is unambiguous.
+# ======================================================================
+
+# pcre2-only
+pattern a{2,4}\Kb
+features assertions
+m "aab" 2 3
+ns 1 "aab"
+ns 2 "aab"
+ns 3 "aab"
+m "aaab" 3 4
+ms 1 "aaab" 3 4
+ns 2 "aaab"
+ns 3 "aaab"
+ns 4 "aaab"
+m "aaaab" 4 5
+ms 1 "aaaab" 4 5
+ms 2 "aaaab" 4 5
+ns 3 "aaaab"
+ns 4 "aaaab"
+ns 5 "aaaab"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+
+# pcre2-only
+pattern a\Kb{1,3}
+features assertions
+m "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+m "abbb" 1 4
+ns 1 "abbb"
+ns 2 "abbb"
+ns 3 "abbb"
+ns 4 "abbb"
+m "xabb" 2 4
+ms 1 "xabb" 2 4
+ns 2 "xabb"
+ns 3 "xabb"
+ns 4 "xabb"
+
+# pcre2-only
+pattern [ab]*\K[bc]+
+features assertions
+m "abc" 2 3
+ms 1 "abc" 2 3
+ms 2 "abc" 2 3
+ns 3 "abc"
+m "aabbcc" 4 6
+ms 1 "aabbcc" 4 6
+ms 2 "aabbcc" 4 6
+ms 3 "aabbcc" 4 6
+ms 4 "aabbcc" 4 6
+ms 5 "aabbcc" 5 6
+ns 6 "aabbcc"
+m "bc" 1 2
+ms 1 "bc" 1 2
+ns 2 "bc"
+m "c" 0 1
+ns 1 "c"
+
+# pcre2-only
+pattern (?:ab)+\Kc
+features assertions
+m "abc" 2 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "ababc" 4 5
+ms 1 "ababc" 4 5
+ms 2 "ababc" 4 5
+ns 3 "ababc"
+ns 4 "ababc"
+ns 5 "ababc"
+m "xababc" 5 6
+ms 1 "xababc" 5 6
+ms 2 "xababc" 5 6
+ms 3 "xababc" 5 6
+ns 4 "xababc"
+ns 5 "xababc"
+ns 6 "xababc"
+
+# ======================================================================
+# 10. THE GRAMMAR, WITH THE MODULE ENABLED. `\K` is zero-width and NOT a
+# repeatable item — PCRE2 error 109 — while a GROUPED `\K` compiles, matching
+# `\A`/`\z`/`\b`/`\G` exactly. Both halves are here, because a rule tested in
+# one direction is not tested.
+#
+# `(\K)*` is the accept half and it is worth reading as more than a syntax
+# cell: the group is entered zero or more times, so it exercises `\K`'s write
+# under the empty-iteration rule as well as under the grammar.
+# ======================================================================
+
+# pcre2-only
+pattern (\K)*
+features assertions
+m "" 0 0
+m "a" 0 0
+m "ab" 0 0
+ms 1 "ab" 1 1
+
+pattern \K*
+features assertions
+perr
+
+pattern \K+
+features assertions
+perr
+
+pattern \K?
+features assertions
+perr
+
+pattern \K{2}
+features assertions
+perr
+
+pattern a\K*
+features assertions
+perr
+
+pattern [\K]
+features assertions
+perr
+
