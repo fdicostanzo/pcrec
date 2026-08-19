@@ -29,7 +29,7 @@ SAB_ID="S76-mlinectx-alphabet-unconditional"
 SAB_FILE="src/ir/dfa.c"
 SAB_SUITES="mlinectxidentity harness"
 SAB_DESC="eqclasses refines the byte alphabet by the newline set on EVERY pattern instead of only on those carrying a (?m)^/(?m)\$: every artifact whose alphabet did not already separate LF gains a class and moves bytes, with every answer unchanged"
-SAB_DOC_FIGURE="tests/codegen/run_mlinectx_identity.sh: the (?m)-free identity population goes from all-identical to largely differing; the corpus stays green"
+SAB_DOC_FIGURE="tests/codegen/run_mlinectx_identity.sh: the (?m)-free identity population goes from all-identical to 1117 of 1201 DIFFERING; the corpus stays green. TRUE ONLY SINCE THE [M6.2] REPAIR SLICE MOVED THIS ROW'S REFERENCE KNOB (2026-08-19) -- before that the sweep stayed all-identical and the row was scored DETECTED through an orphaned-parameter warning; see the annotation below. CANONICAL MATRIX RUN 2026-08-19: mlinectxid:1fail/3pass, corpus:0fail/20533pass -- DETECTED"
 # MEASURED before this row shipped, the same way every wave C row was: 1032 of
 # 1161 corpus artifacts change under this edit, and not one answer does. The
 # margin is enormous because almost no pattern's alphabet already separates
@@ -67,7 +67,10 @@ SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_newline);   /* SABOTAGE S76 *
 # state the emitter cannot neutralize, but this row's construct refines the
 # ALPHABET, and no emitter branch can un-refine a partition — so the reference
 # build goes on emitting the sabotaged class table. With an emitter-only knob
-# the sweep stays byte-identical (1186/1186 measured on S71's population).
+# the sweep stays byte-identical. That emitter-only figure was measured on
+# S71's population (1186/1186 identical) rather than on this one; the two
+# rows share a mechanism exactly, differing only in which byte set the
+# refinement uses.
 #
 # THE KNOB IS NOW AROUND THE ACTION. `src/ir/dfa.c`'s `eqclasses` carries a
 # `#ifndef PCREC_NO_MLINECTX` around the refinement LINE this row edits, so the
@@ -76,8 +79,9 @@ SAB_AFTER='    ncls = refine_by(d, ncls, pcrec_cls_newline);   /* SABOTAGE S76 *
 # `src/gen/emit_dfa.c` carries an emitter half for the sites the emitter
 # really decides. The `(void)` cast under the knob also removes the orphaned
 # parameter, so the incidental detection path is GONE and this row must now be
-# caught by BYTES or not at all. MEASURED AFTER, on S71: 1178 of 1186
-# (?m)-free artifacts DIFFER.
+# caught by BYTES or not at all. MEASURED AFTER, on THIS row's own
+# population: 1117 of 1201 multiline-anchor-free artifacts DIFFER (S71's
+# figure on its own population is 1178 of 1186).
 #
 # THE DURABLE RULE, recorded in tests/mech/CLAUDE.md: wrap the ACTION a
 # construct performs, never the FLAG that decides whether to perform it. A

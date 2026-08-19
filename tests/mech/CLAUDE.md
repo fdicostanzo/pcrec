@@ -873,17 +873,29 @@ emitter-only knob **S71 leaves 1186/1186 `\b`-free artifacts byte-identical**,
 i.e. exactly as blind as the flag pin was. What works is a `#ifndef` around
 the ANALYSIS'S ACTION — `eqclasses`' refinement, `make_state`'s interning —
 which an edit to that action's own gate cannot cancel, plus the emitter half
-for the sites the emitter really does decide. After both: **S71 moves 1178 of
-1186**, and S69 is red on its own gate (it was already at its action and did
-not move).
+for the sites the emitter really does decide. After both, all three rows are
+red on their OWN gates, through BYTES rather than through the incidental
+`-Wunused-parameter` (the `(void)` cast under the knob removes that path
+too), with the corpus fully green — which is the semantics-preserving
+signature these rows claim:
+
+| row | canonical matrix cell | its identity population |
+|---|---|---|
+| S69 | `endvarid:1fail/2pass, corpus:0fail/32pass` | — (already at its action; did not move) |
+| S71 | `wordctxid:1fail/2pass, corpus:0fail/20533pass` | 1178 of 1186 differing |
+| S76 | `mlinectxid:1fail/3pass, corpus:0fail/20533pass` | 1117 of 1201 differing |
 
 **THE RULE FOR THE NEXT KNOB-BASED GATE, which is what this whole section is
 for:** put the knob around the ACTION the construct performs, never around
 the FLAG that decides whether to perform it — a sabotage that deletes the
 flag's consumer is the realistic edit, and it cancels a flag pin exactly. And
-run the row through this driver rather than trusting the shape: both the
-1186/1186 and the 1178/1186 numbers above are measurements, and the first one
-refuted the plan the slice was chartered with.
+run the row through this driver rather than trusting the shape: every number
+above is a measurement, and the 1186/1186 one refuted the plan the slice was
+chartered with. **And verify the TREE a hand measurement was taken on**: the
+slice's first S76 figure came back 1201/1201 identical, which looked like a
+second refutation and was a stale extraction — the scratch tree it built
+carried the PRE-slice `dfa.c`. Re-taken on a tree checked for the knob's own
+`#ifndef` before building, the same edit moves 1117 of 1201.
 
 Put beside S48 (green because the population could not reach the defect), S50
 (green because the thing removed was not carrying the weight) and S60 (green
