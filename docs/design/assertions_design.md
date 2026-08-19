@@ -2822,6 +2822,39 @@ Per §0.1, every BELIEVED claim in a load-bearing position, collected:
    curve stays quadratic on the linear-case shape, option (b) of Q3 collapses
    into option (a).
 
+> **[M6.2] WAVE C — WHAT THESE SEVEN CAME TO.** Items 1, 4 and 7 were this
+> wave's; the others belong to waves B, D and beyond.
+>
+> - **1 is WITHDRAWN rather than confirmed**, and by its own refutation
+>   procedure. The wave never built an intersection: rows 3/5 DECLINE and rows
+>   1/2's guard is redundant under D3's accept-pruning (§3.6.1's annotation has
+>   the measurements). There is no intersection left to be sound. What the
+>   item's experiment DID find, run against the decline instead, is S78's three
+>   witnesses.
+> - **4 HOLDS**, and by exactly the route the refutation prescribes rather than
+>   by assuming symmetry: the reverse `(?m)$` context bit is built, and the
+>   asymmetry the item worries about is real and is handled in ONE place —
+>   `make_state`'s `sides_of`, because `(?m)$` reads one side while `\b` reads
+>   both symmetrically. `tests/assertions/run_mline_diff.sh` sweeps it on both
+>   engines at 0 divergences.
+> - **7 HOLDS ON THE ARM IT NAMES AND NOT BEYOND IT.** The linear non-crossing
+>   shape gains 3x/7x/7x; the quadratic crossing shape is unchanged
+>   (3.98-4.01x per doubling, and 1.00-1.01x of its unprefiltered stand-in), so
+>   Q3's option (b) does NOT collapse into (a) — but it also does not close the
+>   gap: 27-33x remains against a plain unanchored memchr at settled n. D63
+>   already accepts the crossing residue and queues DD-7 for it.
+>
+> **AN EIGHTH CLAIM WAS NEVER LISTED AND WAS FALSE**, which is worth more than
+> the seven that were: §3.7 and §9.3's rule for `(?m)^` ("`pos == 0` or
+> `s[pos-1] == '\n'`") is not PCRE2's, and the design carried it as a
+> definition rather than as a BELIEVED claim, so §12 never asked for an
+> experiment against it. It shipped as a live miscompile and was caught by a
+> `startpos > 0` sweep. The lesson for the next design lane in this family:
+> **a construct's DEFINITION is a claim about PCRE2's behaviour like any
+> other**, and this project already had the counter-evidence on file
+> (`docs/pcre2_options.md`'s `PCRE2_ALT_CIRCUMFLEX` row, ratified four days
+> earlier).
+
 ## 13. What this design does NOT measure
 
 Named rather than discovered by the panel. **Item 3 was on this list in the
