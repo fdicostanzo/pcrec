@@ -260,6 +260,38 @@ directory asserts that the description and the shipped parser actually agree.
    names the exact next step (build SR-8 in select_engine.c) rather than
    only reporting a mismatch.
 
+   **[M6.2] WAVE E IS THE FIRST REAL TRIP, and the exception it earned is
+   the part to read before adding a second one.** `\K` genuinely IS VM-only
+   — unlike [M6.3]'s named groups, whose AST is an ordinary `A_CAP` and
+   which therefore LEFT the population by reclassification — so it stays in
+   the population and the tripwire fires for exactly the reason it was
+   written. The answer was still not to build SR-8: `\K`'s verdict is not
+   "a registry column says VM", it is "this AST carries a node whose write
+   is path-dependent", which is a fact about the TREE and not about the
+   table, so a construct-specific `forces_*` row in select_engine.c is the
+   honest shape and a generic column consultation designed around ONE
+   customer is what [M4.7a] declined at sample size zero and D18/OS-0/D53
+   forbid at sample size one.
+
+   **The exception is not an allowlist entry — it PAYS.** The row is named
+   (`RK_ESC`, `sel == 'K'`, module `assertions`) and, when present, the
+   check goes on to ASSERT LIVE, through the same `pcrec_compile` every
+   other check here drives, that `--engine=dfa` on `a\Kb` REFUSES naming
+   the construct (D44.6/§9.2 item 2: the captures branch's
+   `--no-captures` advice would be a lie here) AND that the same pattern
+   COMPILES on the default engine — the second direction because a refusal
+   test alone goes green on a compiler that stopped accepting `\K` at all.
+   It borrows the feature gate to do so and ASSERTS the entry state was
+   empty rather than saving-and-restoring blind, since every other check in
+   this file believes it runs at the default set (pcre2_check.c's
+   `mask_before != 0` rule, in miniature).
+
+   Population accounting: `qualifying` stays 48 and `wired` becomes 1, so
+   the pass condition is now `wired == kreset_exception` rather than
+   `wired == 0`. **A SECOND construct arriving here is the trigger to build
+   the generic consultation**, and the check's own comment says so — do not
+   add a second exception.
+
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
 between two descriptions, not a control: it asserts the two agree, never that
