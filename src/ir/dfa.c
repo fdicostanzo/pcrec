@@ -48,25 +48,49 @@
  * closure names its two operands by SIDE (`left_*` / `right_*`) and exactly
  * one function maps a machine's consumed/upcoming pair onto them.
  *
- * `-DPCREC_NO_WORDCTX` compiles that axis out (`has_word` is pinned false, so
- * no refinement, no second closure, one interior start state, and the emitter
- * reproduces the pre-wave text). Same shape and same single consumer as the
- * two knobs below: tests/codegen/run_wordctx_identity.sh. Never defined in a
- * shipped build; under it a `\b` pattern compiles to something WRONG, which
- * is exactly why that script's control population must differ.
+ * `-DPCREC_NO_WORDCTX` compiles that axis out (no refinement, no second
+ * closure, one interior start state, and the emitter reproduces the pre-wave
+ * text). Same shape and same single consumer as the two knobs below:
+ * tests/codegen/run_wordctx_identity.sh. Never defined in a shipped build;
+ * under it a `\b` pattern compiles to something WRONG, which is exactly why
+ * that script's control population must differ.
  *
- * `-DPCREC_NO_MLINECTX` compiles the NEWLINE half of the class axis out
- * (`has_nl` is pinned false, so no refinement by the newline set, no third
- * class view, and the emitter reproduces the pre-wave text). Same shape and
- * same single consumer as the knobs around it:
- * tests/codegen/run_mlinectx_identity.sh. Never defined in a shipped build;
- * under it a `(?m)$` pattern compiles to something WRONG — the assertion can
- * then only pass through `end_ok`, i.e. as `\z` — which is exactly why that
- * script's positive control cannot be silent.
+ * `-DPCREC_NO_MLINECTX` compiles the NEWLINE half of the class axis out (no
+ * refinement by the newline set, no third class view, and the emitter
+ * reproduces the pre-wave text). Same shape and same single consumer as the
+ * knobs around it: tests/codegen/run_mlinectx_identity.sh. Never defined in a
+ * shipped build; under it a `(?m)$` pattern compiles to something WRONG — the
+ * assertion can then only pass through `end_ok`, i.e. as `\z` — which is
+ * exactly why that script's positive control cannot be silent.
+ *
+ * **[M6.2 REPAIR SLICE, 2026-08-19] BOTH OF THOSE KNOBS MOVED, and where a
+ * knob SITS is the whole of what it is worth.** They used to PIN THE FLAG —
+ * `#ifndef` around `case N_WORDB: has_word = true;` in `pcrec_build_dfa`'s
+ * NFA scan — which is inside the code sabotages S71 and S76 edit. Those two
+ * rows delete the flag's CONSUMER (`if (has_word) ncls = refine_by(...)`), so
+ * the refinement then ran in the subject build AND in the reference build
+ * (both compiled from the same sabotaged sources) and the difference
+ * CANCELLED. MEASURED by this slice: with the knob anywhere but the action,
+ * S71 leaves 1186/1186 `\b`-free artifacts BYTE-IDENTICAL; with it wrapping
+ * the action, 1178 of 1186 differ. Each knob is now (a) a `#ifndef` around
+ * the refinement ACTION in `eqclasses`, which no edit to that action's own
+ * gate can cancel, and (b) a pin placed AFTER the scan loop and in front of
+ * the flag's three consumers, so an edit to how the flag is COMPUTED cannot
+ * cancel it either. Wave D reached the same conclusion one construct over and
+ * put `-DPCREC_NO_GSTART` at the EMITTER; `src/gen/emit_dfa.c` now also
+ * carries an emitter half of all three knobs, for the sites where the emitted
+ * text — rather than the DFA — is what the construct decides. `\G` needed no
+ * analysis half because it refines no alphabet and interns no state the
+ * emitter cannot neutralize; `\b`, `(?m)` and `\z` all change the DFA
+ * ITSELF, and no emitter branch can un-refine a partition.
  *
  * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
  * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
- * reproduces the pre-wave text). It exists for exactly one consumer,
+ * reproduces the pre-wave text). **It was ALREADY at the action** — the
+ * `#ifndef` wraps make_state's interning block, which is where S69's edit
+ * lives — so the repair slice moved nothing here and only added the emitter
+ * half; S69 is DETECTED on its gate for its documented reason. It exists for
+ * exactly one consumer,
  * tests/codegen/run_endvar_identity.sh, which builds a reference compiler
  * with it and diffs emitted C over the whole corpus — the same shape
  * `-DPCREC_NO_TRIE` has served since M2.8, and for the same reason: a
@@ -133,8 +157,27 @@ static void eqclasses(Nfa *nfa, Dfa *d, bool has_word, bool has_nl)
         if (nfa->st[i].k != N_CLASS) continue;
         ncls = refine_by(d, ncls, nfa->st[i].cls);
     }
+    /* [M6.2 repair slice, 2026-08-19] THE REFERENCE KNOBS WRAP THESE TWO
+     * LINES, and the wrapping is the whole re-placement. They used to pin
+     * `has_word`/`has_nl` false up in `pcrec_build_dfa`'s NFA scan — a FLAG,
+     * inside the code sabotages S71 and S76 edit. Those two rows delete
+     * exactly the `if (...)` gate below, so the refinement then ran in the
+     * subject build AND in the knob-defined reference build (both are
+     * compiled from the same sabotaged sources) and the difference CANCELLED:
+     * MEASURED at 1186/1186 byte-identical `\b`-free artifacts with the knob
+     * anywhere else. A `#ifndef` around the ACTION is not cancellable by an
+     * edit to the action's own gate, which is what these rows are.
+     * See src/gen/emit_dfa.c's knob block for the other half. */
+#ifndef PCREC_NO_WORDCTX
     if (has_word) ncls = refine_by(d, ncls, pcrec_cls_word_esc);
+#else
+    (void)has_word;
+#endif
+#ifndef PCREC_NO_MLINECTX
     if (has_nl)   ncls = refine_by(d, ncls, pcrec_cls_newline);
+#else
+    (void)has_nl;
+#endif
     d->ncls = ncls;
     for (int c = 255; c >= 0; c--) d->rep[d->clsmap[c]] = (uint8_t)c;
 }
@@ -1050,9 +1093,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
     bool has_word = false, has_nl = false, has_end = false, has_gst = false;
     for (int i = 0; i < nfa->n; i++) {
         switch (nfa->st[i].k) {
-#ifndef PCREC_NO_WORDCTX
         case N_WORDB: case N_NWORDB: has_word = true; break;
-#endif
         /* [M6.2 wave C] BOTH `(?m)` kinds refine by the newline set, and both
          * make the `pos == n` view live. `(?m)^` needs the refinement because
          * its operand is the byte to the LEFT — which is a per-CLASS fact of
@@ -1062,9 +1103,7 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
          * `end_ok` IS its "or end of subject" half. */
         case N_BOT_M:
         case N_EOL_M:
-#ifndef PCREC_NO_MLINECTX
             has_nl = true;
-#endif
             has_end = true;
             break;
         case N_END:   has_end = true; break;
@@ -1076,6 +1115,20 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
         default: break;
         }
     }
+    /* [M6.2 repair slice] THE AXIS PIN, moved OUT of the scan loop above and
+     * placed in front of the flag's THREE consumers (`clsctx`, `eqclasses`,
+     * `upc_live[]`). Inside the loop it was one `#ifndef` per `case`, i.e.
+     * inside the region a construction sabotage edits; here it cannot be
+     * reached by an edit to how the flag is COMPUTED, and `eqclasses`'
+     * refinement additionally carries its own exclusion so an edit to how the
+     * flag is USED cannot cancel it either. Never defined in a shipped
+     * build. */
+#ifdef PCREC_NO_WORDCTX
+    has_word = false;
+#endif
+#ifdef PCREC_NO_MLINECTX
+    has_nl = false;
+#endif
     d->clsctx = has_word || has_nl;
 
     eqclasses(nfa, d, has_word, has_nl);

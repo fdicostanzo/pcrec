@@ -543,7 +543,29 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
  * "skip a byte and try later", by construction of the unanchored wrap) finds
  * one, so checking the reported start against ctx->pos is not an
  * approximation of anchored matching, it IS anchored matching, reusing the
- * existing forward+reverse walk rather than a new one. */
+ * existing forward+reverse walk rather than a new one.
+ *
+ * [K28 fix, 2026-08-19, repair slice] `caps` IS INITIALIZED, and the
+ * initializer is not defensive padding — it is the only shape that compiles.
+ * When the pattern's DFA is a single dead state, `<prefix>_search` always
+ * returns 0, gcc -O1 inlines it here, and then reports this array as
+ * maybe-uninitialized even though `found != 1` short-circuits the read. The
+ * warning is bogus (the read is unreachable) but the artifact is source
+ * SOMEONE ELSE compiles, and the harness's own GENCFLAGS are
+ * `-O1 -Wall -Wextra -Werror`, so it is a build failure rather than a
+ * blemish. Two things measured before choosing this:
+ *   - it fires at -O1 ONLY: -O0, -O2, -O3 and -Os are all clean, measured,
+ *     all five. Why only -O1 was not established and is not asserted here;
+ *     what matters is that -O1 is exactly tests/harness/run.sh's default
+ *     GENCFLAGS, so "compile it at a different level" is not a fix.
+ *   - SPLITTING the `||` into two `if`s does NOT silence it. The dominance
+ *     gcc cannot see is not the short-circuit; restructuring the test is not
+ *     available and the initializer is the smallest thing that works.
+ * The same three lines are owed by `emit_match_caps_def` and
+ * `pcrec_emit_main` below, which have the identical shape and warn for the
+ * identical reason -- the `-Werror` build merely stopped at the first one.
+ * Full history, the six corpus spellings it cost, and the repro:
+ * docs/dev/known_issues.md K28. */
 static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
                             const char *upper)
 {
@@ -556,7 +578,8 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
         " * later engine shares this emitter. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
-        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
@@ -578,7 +601,8 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
     sb_printf(c,
         "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
         "{\n"
-        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
         "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
         "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
@@ -848,6 +872,78 @@ static bool dfa_has_eolvar(const Dfa *d)
     return false;
 }
 
+/* ===================================================================
+ * [M6.2 repair slice, 2026-08-19] THE REFERENCE-BUILD KNOBS FOR WAVES
+ * A, B AND C, RE-PLACED AT THIS EMITTER.
+ *
+ * Wave D's own knob (`PCREC_NO_GSTART`, further down) is at the
+ * emitter's decision points, and its comment records why: waves A/B/C
+ * put theirs in `src/ir/dfa.c` PINNING A FLAG, i.e. inside the code
+ * their sabotages edit, and the reference compiler is built from THE
+ * SAME (sabotaged) sources — so a sabotage that deletes the flag's
+ * CONSUMER applies to both builds and CANCELS. This slice moves them.
+ *
+ * TWO PARTS PER KNOB, and the split is not tidiness — it is where each
+ * construct's emitted text is actually decided:
+ *
+ *   - HERE, the emitter's decision points: with the knob defined the
+ *     emitter takes the pre-wave branch at every site that reads the
+ *     construct, so the reference build is structurally the pre-wave
+ *     EMITTER. That is wave D's model applied verbatim.
+ *   - AND, for these three only, at the ANALYSIS'S ACTIONS in
+ *     `src/ir/dfa.c` — the alphabet refinement, `clsctx`, `upc_live[]`
+ *     and the END view's interning. `\G` needed no such half because it
+ *     refines no alphabet and interns no state the emitter cannot
+ *     neutralize; `\b`, `(?m)` and `\z` all change the DFA ITSELF, and
+ *     no emitter branch can un-refine a partition or un-intern a state.
+ *     MEASURED before it was written: with the emitter half alone,
+ *     sabotage S71 leaves a `\b`-free artifact byte-identical between
+ *     the two builds, because both builds refine the alphabet. The
+ *     dfa.c half is a PREPROCESSOR exclusion of the ACTION rather than
+ *     a pinned flag, which is the property that makes it survive a
+ *     sabotage of the action's own gate.
+ *
+ * In a shipped build every predicate below is a compile-time constant
+ * true and gcc folds it away; the emitted bytes are unchanged, which
+ * the identity gates' own subject builds are the standing check on.
+ * =================================================================== */
+
+/* Is the emitter willing to see class-axis context `u` as distinct from
+ * UPC_PLAIN? Wave B's knob answers for UPC_WORD, wave C's for UPC_NL. */
+static bool upc_emit_live(int u)
+{
+#ifdef PCREC_NO_WORDCTX
+    if (u == UPC_WORD) return false;
+#endif
+#ifdef PCREC_NO_MLINECTX
+    if (u == UPC_NL) return false;
+#endif
+    (void)u;
+    return true;
+}
+
+/* `upc_of_class` as the EMITTER reads it: a masked class collapses onto
+ * UPC_PLAIN, so every derived table (§3.6's accept, §3.8's seed) emits
+ * the pre-wave column. */
+static int upc_emit_of_class(const Dfa *d, int cl)
+{
+    int u = upc_of_class(d, cl);
+    return upc_emit_live(u) ? u : UPC_PLAIN;
+}
+
+/* A state's END view as the EMITTER reads it — wave A's knob. -1 is
+ * "same as the EOL view", so pinning it there puts every site on the
+ * pre-wave arm. */
+static int st_emit_endvar(const DState *st)
+{
+#ifdef PCREC_NO_ENDVAR
+    (void)st;
+    return -1;
+#else
+    return st->endvar;
+#endif
+}
+
 /* [M6.2 wave A] Does any state have an END view (`\z`) distinct from its EOL
  * view? FALSE for every `\z`-free pattern BY CONSTRUCTION (src/ir/dfa.c's
  * make_state canonicalizes `endvar` against the EOL view, so a pattern with
@@ -857,7 +953,7 @@ static bool dfa_has_eolvar(const Dfa *d)
 static bool dfa_has_endvar(const Dfa *d)
 {
     for (int i = 0; i < d->n; i++)
-        if (d->st[i].endvar >= 0) return true;
+        if (st_emit_endvar(&d->st[i]) >= 0) return true;
     return false;
 }
 
@@ -879,7 +975,7 @@ static void emit_end_table(StrBuf *c, const char *p, const char *tag, const Dfa 
     sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
         if (i % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", d->st[i].endvar);
+        sb_printf(c, " %d,", st_emit_endvar(&d->st[i]));
     }
     sb_puts(c, "\n    };\n");
 }
@@ -953,9 +1049,11 @@ static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 /* [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
 static bool state_acc_varies(const DState *st)
 {
-    for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
+    for (int u = UPC_PLAIN + 1; u < UPC_N; u++) {
+        if (!upc_emit_live(u)) continue;
         if ((bool)st->up[u].accept != (bool)st->up[UPC_PLAIN].accept)
             return true;
+    }
     return false;
 }
 
@@ -965,7 +1063,7 @@ static bool state_acc_varies(const DState *st)
 static bool state_acc_any(const DState *st)
 {
     for (int u = 0; u < UPC_N; u++)
-        if (st->up[u].accept) return true;
+        if (upc_emit_live(u) && st->up[u].accept) return true;
     return false;
 }
 
@@ -977,7 +1075,7 @@ static bool state_acc_any(const DState *st)
 static bool dfa_needs_seed(const Dfa *d)
 {
     for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
-        if (d->s1u[u] != d->s1u[UPC_PLAIN]) return true;
+        if (upc_emit_live(u) && d->s1u[u] != d->s1u[UPC_PLAIN]) return true;
     return false;
 }
 
@@ -1036,7 +1134,7 @@ static void emit_acc_cls_table(StrBuf *c, const char *p, const char *tag,
         for (int cl = 0; cl < d->ncls; cl++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
             sb_printf(c, " %d,",
-                      d->st[i].up[upc_of_class(d, cl)].accept ? 1 : 0);
+                      d->st[i].up[upc_emit_of_class(d, cl)].accept ? 1 : 0);
         }
     }
     sb_puts(c, "\n    };\n");
@@ -1054,7 +1152,7 @@ static int upc_of_newline(const Dfa *d)
 {
     for (int b = 0; b < 256; b++)
         if (cls_has(pcrec_cls_newline, (unsigned)b))
-            return upc_of_class(d, d->clsmap[b]);
+            return upc_emit_of_class(d, d->clsmap[b]);
     return UPC_PLAIN;
 }
 
@@ -1073,7 +1171,7 @@ static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
     sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
         if (cl % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", fam[upc_of_class(d, cl)]);
+        sb_printf(c, " %d,", fam[upc_emit_of_class(d, cl)]);
     }
     sb_puts(c, "\n    };\n");
 }
@@ -1155,7 +1253,7 @@ static void cand_from_live_seeds(CandSet *cs, const Dfa *d)
 {
     uint8_t set[256];
     for (int b = 0; b < 256; b++)
-        set[b] = (uint8_t)(d->s1u[upc_of_class(d, d->clsmap[b])] >= 0);
+        set[b] = (uint8_t)(d->s1u[upc_emit_of_class(d, d->clsmap[b])] >= 0);
     cand_derive(cs, set, 1);
 }
 
@@ -1402,7 +1500,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * this analysis never looked at. With `fseed` false there is only one
      * start state and the pre-wave argument is unchanged. */
     if (fcand.count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
-        fd->st[fs].endvar < 0) {
+        st_emit_endvar(&fd->st[fs]) < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
         return;
@@ -1763,7 +1861,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     bool gtbl = false;
     if (gseed)
         for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
-            if (d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
+            if (upc_emit_live(u) && d->s1g[u] != d->s1g[UPC_PLAIN]) gtbl = true;
 #ifdef PCREC_NO_GSTART
     /* [M6.2 wave D] THE REFERENCE-BUILD KNOB, and its PLACEMENT is the whole
      * point of it. `tests/codegen/run_gstart_identity.sh` builds a compiler
@@ -1815,7 +1913,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) sb_puts(c, ", ");
-            emit_target(c, p, d->s1u[upc_of_class(d, cl)]);
+            emit_target(c, p, d->s1u[upc_emit_of_class(d, cl)]);
         }
         sb_puts(c, " };\n");
     }
@@ -1830,7 +1928,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) sb_puts(c, ", ");
-            emit_target(c, p, d->s1g[upc_of_class(d, cl)]);
+            emit_target(c, p, d->s1g[upc_emit_of_class(d, cl)]);
         }
         sb_puts(c, " };\n");
     }
@@ -1996,7 +2094,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * first — it is the one position with no next byte, where §3.6.2
              * makes the accept SCALAR. That test is also what makes the
              * `s[pos]` below unreachable at `pos == n`. */
-            int endview = st->endvar >= 0 ? st->endvar
+            int endview = st_emit_endvar(st) >= 0 ? st_emit_endvar(st)
                         : st->eolvar >= 0 ? st->eolvar : i;
             sb_puts(c, "        if (pos == n) {\n");
             if (d->st[endview].up[UPC_PLAIN].accept)
@@ -2034,7 +2132,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                          "            goto *%s_t%d[cl];\n"
                          "        }\n",
                       p, p, i * d->ncls, p, i);
-        } else if (st->endvar >= 0) {
+        } else if (st_emit_endvar(st) >= 0) {
             /* [M6.2 wave A] THE END VIEW (`\z`), reached on ENG_ATTEMPT only
              * when the pattern also carries a `^`/`\A` — `\Aa\z` is the
              * shape. Three arms in position order, most specific first:
@@ -2047,7 +2145,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * which is why the `endvar < 0` else-branch below is still the
              * pre-wave text, unchanged, for every state of every pattern that
              * has no `\z`. */
-            const DState *endv = &d->st[st->endvar];
+            const DState *endv = &d->st[st_emit_endvar(st)];
             sb_puts(c, "        if (pos == n) {\n");
             if (endv->up[UPC_PLAIN].accept)
                 sb_puts(c, "            last = pos;\n");
@@ -2251,7 +2349,8 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
     sb_puts(&cx->job->csb, "\n");
     sb_printf(&cx->job->csb,
         "int main(int argc, char **argv)\n{\n"
-        "    ptrdiff_t caps[%s_NCAPS][2];\n"
+        "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
+        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
         "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
         "    int rc = %s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps);\n"
         "    if (rc == 1) {\n"

@@ -726,7 +726,8 @@ artifacts:
  * later engine shares this emitter. */
 ptrdiff_t rx_match(const rx_ctx *ctx)
 {
-    ptrdiff_t caps[RX_NCAPS][2];
+    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */
+    ptrdiff_t caps[RX_NCAPS][2] = {{0}};
     int found = rx_search(ctx->subject, ctx->len, ctx->pos, caps);
     if (found < 0) return (ptrdiff_t)found;
     if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;
@@ -763,6 +764,19 @@ and `<prefix>_match_caps`, and the same pattern built
 `if (found != 1 || caps[0][0] != ctx->pos) return -1;`, is also the only
 thing making that engine honor §3.2's anchoring promise — worth seeing
 rather than eliding.)
+
+**The initializer on `caps` is not padding, and it is quoted here because
+it is in the artifact.** Added 2026-08-19 ([M6.2] repair slice, closing
+`docs/dev/known_issues.md` K28): when the pattern's DFA is a single dead
+state, `rx_search` always returns 0, gcc `-O1` inlines it, and then
+reports this array as maybe-uninitialized even though the `found != 1`
+short-circuit makes the read unreachable. The read really is unreachable
+and the initializer really is never observed — it changes no answer — but
+the artifact is source someone else compiles, and a consumer building with
+`-Werror` sees a build failure. The same declaration and the same
+initializer appear in `<prefix>_match_caps` and in the standalone
+`main()`. Restructuring the test instead was measured NOT to silence the
+report.
 
 This is the shipped, correct state: `docs/dev/decisions.md` D49
 supersedes D42.3 and rules the uniform-codes contract these artifacts

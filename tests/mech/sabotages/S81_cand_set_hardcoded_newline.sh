@@ -43,5 +43,18 @@ SAB_HARNESS_TARGET="tests/assertions/multiline.rxt"
 SAB_DESC="D63's candidate-start set is taken as 'the newline definition' rather than derived from which seeded start states are LIVE, so a (?m)^ pattern with a non-anchored branch skips every attempt that branch needs ('(?m)^a|b' on \"zzzb\" loses its match)"
 SAB_DOC_FIGURE="tests/assertions/multiline.rxt SECTION 6b goes red (the block exists for this row) and run_mline_diff.sh's (?m)^a|b arm diverges"
 SAB_COUNT=1
-SAB_BEFORE='        set[b] = (uint8_t)(d->s1u[upc_of_class(d, d->clsmap[b])] >= 0);'
+SAB_BEFORE='        set[b] = (uint8_t)(d->s1u[upc_emit_of_class(d, d->clsmap[b])] >= 0);'
 SAB_AFTER='        set[b] = (uint8_t)cls_has(pcrec_cls_newline, (unsigned)b);   /* SABOTAGE S81 */'
+
+# ---------------------------------------------------------------------------
+# ANCHOR RE-DERIVED 2026-08-19 BY THE [M6.2] REPAIR SLICE. The line this row
+# replaces now reads `upc_emit_of_class` rather than `upc_of_class`: the slice
+# re-placed waves A/B/C's reference knobs and gave `src/gen/emit_dfa.c` an
+# emitter-side half, of which `upc_emit_of_class` is the class-mapping
+# accessor (a masked class collapses onto UPC_PLAIN; identity in a shipped
+# build). ONLY THE ANCHOR MOVED — the substitution, the SABOTAGE it installs
+# and everything this row measures are unchanged, because the edit REPLACES
+# the whole line and so the accessor plays no part in what is being defeated.
+# Re-derived per this directory's own convention (`git show HEAD:<path>`,
+# never a weakened count check) rather than by contorting the source back.
+# ---------------------------------------------------------------------------

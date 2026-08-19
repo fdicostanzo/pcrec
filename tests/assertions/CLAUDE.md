@@ -109,11 +109,12 @@ every oracle exclusion has an entry there.
   and an ENG_ATTEMPT block, since a `^` routes the pattern to the
   computed-goto engine where §3.6's table and §3.8's seed take a different
   emitted shape. Every expectation libpcre2-produced. **THREE ANCHORED CELLS
-  ARE DELIBERATELY ABSENT and the file's own header says which and why** —
-  `^\Bfoo`, `^\Bo`, `^a\bb` are never-matching patterns whose emitted C trips
-  a PRE-EXISTING `-Werror=maybe-uninitialized` in the `<prefix>_match`
-  wrapper (base-tier reproducer `^a^b`, measured on the pre-wave compiler);
-  live equivalents stand in their place.
+  WERE DELIBERATELY ABSENT AND ARE NOW BACK** ([M6.2] repair slice,
+  2026-08-19) — `^\Bfoo`, `^\Bo`, `^a\bb`, never-matching patterns whose
+  emitted C tripped a PRE-EXISTING `-Werror=maybe-uninitialized` (K28,
+  base-tier reproducer `^a^b`) until that wrapper was fixed. The live
+  equivalents STAY beside them: same impossibility, live sibling branch,
+  different emitted shape.
 - **multiline.rxt** — [M6.2] WAVE C: `(?m)`. **The SCOPING is what makes this
   file different from the other two.** `(?m)` is a scoped inline option, so
   the answer depends on the state in force AT EACH `^`/`$` rather than on the
@@ -142,12 +143,11 @@ every oracle exclusion has an entry there.
   convention wave A established for `\Z`, applied for a different reason
   (python cannot express the pattern at all, rather than expressing it with
   different semantics). Every expectation libpcre2-produced.
-  **ONE MID-PATTERN SHAPE IS DELIBERATELY ABSENT and the file's own header
-  says which and why**: `a(?m)^b` is a never-matching pattern whose emitted C
-  trips the PRE-EXISTING `-Werror=maybe-uninitialized` in the
-  `<prefix>_match` wrapper — known issue K28, base-tier reproducer `^a^b`,
-  the same exclusion `wordb.rxt` records for three `\b`/`\B` shapes. The live
-  equivalents `a(?m)$` and `a(?m)^b|c` stand in its place.
+  **ONE MID-PATTERN SHAPE WAS DELIBERATELY ABSENT AND IS NOW BACK**
+  ([M6.2] repair slice, 2026-08-19): `a(?m)^b`, a never-matching pattern
+  whose emitted C tripped the PRE-EXISTING `-Werror=maybe-uninitialized`
+  (K28, base-tier reproducer `^a^b`) until that wrapper was fixed. The live
+  equivalents `a(?m)$` and `a(?m)^b|c` STAY beside it.
 - **gpos.rxt** — [M6.2] WAVE D: `\G`, the first matching position. **The
   `ms`/`ns` cells are the point of this file more sharply than they are even
   in wordb.rxt**: `\G` is true iff `pos == startpos`, so at the default
@@ -164,12 +164,13 @@ every oracle exclusion has an entry there.
   enabled, and section 7's possessification witnesses as ANSWERS rather than
   as a stamp (sabotage S84). Every expectation libpcre2-produced; the whole
   file is `# pcre2-only`, see above.
-  **`a\Gb` AND `x\G` ARE DELIBERATELY ABSENT and the file's own header says
-  which and why** — both compile to a single dead state, K28's shape, so their
-  artifacts are not warnings-clean under the harness's `-O1` GENCFLAGS. This
-  is the THIRD wave to add spellings to K28's exclusion list, which that
-  entry's own text predicts. `run_gstart_diff.sh` §4 asserts them instead, at
-  `-O2`.
+  **`a\Gb` AND `x\G` WERE DELIBERATELY ABSENT AND ARE NOW BACK** ([M6.2]
+  repair slice, 2026-08-19) — both compile to a single dead state, K28's
+  shape, so their artifacts were not warnings-clean under the harness's `-O1`
+  GENCFLAGS until that wrapper was fixed. They were the THIRD wave's
+  additions to an exclusion list that CLOSED AT SIX. `run_gstart_diff.sh` §4
+  still asserts the class over its own generated sweep at `-O2`; these cells
+  pin the two named shapes.
 - **kreset.rxt** — [M6.2] WAVE E: `\K`, which RESETS THE REPORTED START.
   **This file is different from every other one here in what its cells are
   ABOUT.** The other four corpora ask "does this assertion hold at this
@@ -373,10 +374,14 @@ that `\z`'s third closure view costs a `\z`-free pattern nothing; its failing
 direction is sabotage S69 — the design's own refuted first draft, restored.
 `tests/codegen/run_wordctx_identity.sh` is wave B's, for the much larger claim
 that the alphabet refinement, the second closure, the class-indexed accept and
-the third start state cost a `\b`-free pattern nothing (sabotage S71 — but
-read that row's annotation first: wave D MEASURED its identity sweep staying
-1135/1135 identical under it, so the row is scored detected only through an
-orphaned-parameter warning).
+the third start state cost a `\b`-free pattern nothing (sabotage S71). **Its
+reference knob was RE-PLACED by the [M6.2] repair slice, 2026-08-19**: wave D
+measured the sweep staying 1135/1135 identical under S71, so the row was
+scored detected only through an orphaned-parameter warning; with the knob
+around the refinement ACTION rather than around the `has_word` FLAG, S71 now
+moves 1178 of 1186 artifacts. Same re-placement on wave C's
+`run_mlinectx_identity.sh` (S76). Wave A's `run_endvar_identity.sh` was
+already at its action and did not move.
 `tests/codegen/run_gstart_identity.sh` is wave D's, for the claim that the
 `\G` closure bit, the second start family, the `gseed[]` table, the three-way
 dispatch and the third `start_max` string cost a `\G`-free pattern nothing

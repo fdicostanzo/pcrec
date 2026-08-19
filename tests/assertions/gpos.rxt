@@ -236,23 +236,71 @@ ns 2 "xy"
 # impossible shape that quietly starts matching is a miscompile no
 # positive cell can see.
 #
-# **`a\Gb` AND `x\G` THEMSELVES ARE ABSENT FROM THIS FILE, BY NAME, AND
-# THEY ARE THIS WAVE'S TWO K28 SPELLINGS.** Each compiles to a single dead
-# state, and an anchored pattern whose DFA is one dead state emits C that
-# fails the harness's own default GENCFLAGS: gcc at `-O1` reports the
+# **`a\Gb` AND `x\G` WERE ABSENT FROM THIS FILE BY NAME AND ARE NOW BACK**
+# (reinstated 2026-08-19 by the [M6.2] repair slice, which closed the
+# defect that kept them out). Each compiles to a single dead state, and an
+# anchored pattern whose DFA is one dead state used to emit C that failed
+# the harness's own default GENCFLAGS: gcc at `-O1` reported the
 # `<prefix>_match` wrapper's local `caps` as maybe-uninitialized on a read
 # the wrapper's own `found != 1` test makes unreachable
 # (docs/dev/known_issues.md K28, base-tier reproducer `^a^b`, measured
-# `-O1`-ONLY — `-O0`/`-O2`/`-O3`/`-Os` are all clean). Their ANSWERS are
-# correct; the artifact is not warnings-clean. wordb.rxt excludes three
-# `\b`/`\B` shapes for this and multiline.rxt excludes `a(?m)^b`; K28's own
-# entry predicts the exclusion list growing once per wave that lands a
-# start-state assertion, and this is that prediction coming true a third
-# time. The live equivalents below carry the same impossibility on a
-# sibling branch that keeps the automaton alive, and the bare `a\Gb` cells
-# are asserted instead by tests/assertions/run_gstart_diff.sh §4, which
-# compiles its own subjects and is not bound to `-O1`.
+# `-O1`-ONLY -- `-O0`/`-O2`/`-O3`/`-Os` were all clean). Their ANSWERS were
+# always correct; only the artifact was not warnings-clean, and
+# initializing the wrapper's `caps` fixed it. wordb.rxt and multiline.rxt
+# reinstated their own spellings in the same change. K28's list closed at
+# SIX, one per construct that can make a pattern impossible -- not one per
+# wave, which is wave E's own correction of the prediction this note used
+# to repeat. The live equivalents below STAY: they carry the same
+# impossibility on a sibling branch that keeps the automaton alive, which
+# is a different emitted shape. tests/assertions/run_gstart_diff.sh §4
+# also still asserts the property over its own generated sweep at `-O2`,
+# where these cells pin the two named shapes.
 # ======================================================================
+
+# K28 (reinstated). THE BARE IMPOSSIBLE SHAPES, back in the corpus
+# 2026-08-19 with the repair slice's wrapper fix. Each compiles to a
+# single dead state, which is what used to make its artifact fail the
+# harness's own `-O1` GENCFLAGS; the answers were always these.
+# run_gstart_diff.sh §4 still asserts the same property at `-O2` over
+# its own generated sweep -- these cells pin the named shapes, that
+# block pins the class.
+# pcre2-only
+pattern a\Gb
+features assertions
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+n "aab"
+ns 1 "aab"
+ns 2 "aab"
+ns 3 "aab"
+n "ba"
+ns 1 "ba"
+ns 2 "ba"
+n "ac"
+ns 1 "ac"
+ns 2 "ac"
+n "ca"
+ns 1 "ca"
+ns 2 "ca"
+n "za"
+ns 1 "za"
+ns 2 "za"
+n "az"
+ns 1 "az"
+ns 2 "az"
+
+# pcre2-only
+pattern x\G
+features assertions
+n "x"
+ns 1 "x"
+n "xy"
+ns 1 "xy"
+ns 2 "xy"
+n "yx"
+ns 1 "yx"
+ns 2 "yx"
 
 # The impossible branch beside a live one: the live branch must still
 # match, i.e. the dead branch must die without taking anything with it.

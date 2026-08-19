@@ -24,6 +24,15 @@ Process and status documents for pcrec. The architecture itself lives in
   syntax reference, with a status vocabulary that separates verified from
   believed and clean-rejection from miscompile. Periodically re-surveyed;
   its `REJECTED` rows are backed by tests/reject/ rather than asserted.
+  **TWO SURFACES, AND CONFUSING THEM HAS COST A LANE ONCE** ([M6.2] wave E,
+  2026-08-19): the hand-written PROSE rows carry the shipped status (`OK`,
+  `OK-GATED`, `OK-LIMITED`) and the GENERATED index at the bottom does not —
+  its `status`/`roadmap` columns are the registry's own two fields, and
+  `REJECTED | planned` there means "not BASE grammar; the `module` column
+  names the owner", which is what 34 rows of SHIPPED modules read
+  (`classes` 12, `modifiers` 12, `assertions` 7, `named-groups` 3, measured
+  2026-08-19). The file's own "How to read the generated index below" section
+  carries the measurement and why flipping per-module is not the repair.
 - `pcre2_options.md` — [PC-5]'s option-by-option sibling survey: every
   PCRE2 compile/match/dfa-match/substitute flag, `EXTRA_*` bit and
   BSR/NEWLINE value, each with a PROPOSED pcrec disposition (Frank rules)

@@ -2288,7 +2288,7 @@ prefilter at all, rather than passing vacuously.
 never be null` at the memchr line — so the probe is watching, not merely
 silent.
 
-## K28 — OPEN, found 2026-08-19 ([M6.2] wave B lane, first REACHED by its corpus; defect pre-existing, confirmed on merge base c23662e)
+## K28 — FIXED 2026-08-19 ([M6.2] REPAIR SLICE, the own-slice fix it was scheduled for; found 2026-08-19 by the [M6.2] wave B lane, first REACHED by its corpus; defect pre-existing, confirmed on merge base c23662e)
 
 **An anchored pattern whose DFA is one dead state emits C that fails the
 harness's own default GENCFLAGS** (`-O1 -std=gnu11 -Wall -Wextra -Werror`):
@@ -2359,3 +2359,53 @@ wants its own slice with the byte-identity churn accounted, not a rider
 on a feature wave. **Scheduled:** its own small row before the [M6.2]
 module close, so the excluded wordb.rxt cells can be reinstated with the
 module's D27 corpus.
+
+---
+
+**FIXED 2026-08-19, [M6.2] repair slice.** The sketch's FIRST option is
+what shipped and the second was MEASURED UNAVAILABLE, which is the part
+worth keeping: `src/gen/emit_dfa.c` now emits
+`ptrdiff_t caps[<PREFIX>_NCAPS][2] = {{0}};` under a one-line artifact
+comment naming this entry. Restructuring was tried first and does not
+work — splitting `if (found != 1 || (size_t)caps[0][0] != ctx->pos)`
+into two `if`s leaves the `-O1` report exactly where it was, so the
+dominance gcc cannot see is not the short-circuit and the initializer is
+the smallest thing that silences it.
+
+**THE ENTRY ABOVE NAMED ONE SITE AND THERE ARE THREE**, which the
+`-Werror` build had hidden by stopping at the first: with `-Wall -Wextra`
+and no `-Werror`, the dead artifact reports the same defect in
+`<prefix>_match` (2 reports), `<prefix>_match_caps` (3) and the
+standalone `main()` (2). `<prefix>_match_caps` and `main()` were never
+mentioned in this entry or in any corpus header. All three are the same
+declaration emitted from `emit_match_def`, `emit_match_caps_def` and
+`pcrec_emit_main`, and all three carry the initializer now. The VM's own
+wrappers need nothing — they call `<prefix>_match_impl` directly and
+declare no local `caps` array.
+
+**Verification.** The entry's own repro (`^a^b`, `-p rxd`) compiles clean
+at `-O0`, `-O1`, `-O2`, `-O3` AND `-Os` under `-Wall -Wextra -Werror` —
+all five, so the fix did not trade the report to another level — and so
+does the `--emit-main` form, which is what reaches the third site. Also
+clean under the sanitizer GENCFLAGS path
+(`-fsanitize=undefined -fno-sanitize-recover=all` and
+`-fsanitize=address`, at `-O1` and `-O2`). Answers are unchanged: the
+initializer is only ever read on a path `found != 1` already excludes.
+A `RX_NCAPS > 1` artifact (a VM build with four capture slots) is clean
+too, so `{{0}}` raises no `-Wmissing-braces` at any width.
+
+**THE SIX EXCLUDED CORPUS SPELLINGS ARE BACK**, in the same change and
+oracle-verified against libpcre2 through `tests/assertions/verify_pcre2.py`:
+`^\Bfoo`, `^\Bo`, `^a\bb` (wordb.rxt, +216 cells), `a(?m)^b`
+(multiline.rxt, +45), `a\Gb` and `x\G` (gpos.rxt, +30). Each file's own
+header is rewritten from "absent, and here is why" to "back, and here is
+what fixed it". The LIVE equivalents stay in place — they carry the same
+impossibility on a sibling branch that keeps the automaton alive, which
+is a different emitted shape and its own coverage — and
+`run_gstart_diff.sh` §4 keeps asserting the class at `-O2` over its own
+generated sweep.
+
+**The list closed at SIX and wave E's correction was right.** Wave C
+predicted one spelling per wave; wave E corrected it to one per construct
+that can make a pattern IMPOSSIBLE, and module `assertions` had landed
+all of them by then. Nothing was added after wave D.
