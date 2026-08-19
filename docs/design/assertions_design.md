@@ -13,6 +13,12 @@ lane. Nothing here is built.
 `../dev/reviews/2026-08-18-r30-assertions-design.md`, three read-only critics
 against commit 4f0dafe. **Read this block before any section.**
 
+**BUILD ANNOTATIONS EXIST BELOW THIS BLOCK** ([M6.2] waves A–B, 2026-08-19):
+§3.2 (the NOTBOL/NOTEOL erasure the alias is silent on), §3.5.1 (the 38,009
+forecast refuted as an observation), §3.6.1 (the skip-union sentence refuted;
+wave B ships DECLINE), §7.2 (the seam question contested and settled the
+design's way). A reader who stops at this block misses all five.
+
 **What survived**, on the panel's own independent instruments rather than
 re-runs of this lane's: the D47.5 scope-blind miscompile (§8, "the single
 best-supported claim in the document", both cell tables reproduced by two
