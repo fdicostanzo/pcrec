@@ -21,12 +21,26 @@
 # because the pattern names two constructs that must resolve to the same
 # pooled set. Under this edit it emits two.
 #
-# The corpus sees it too, loudly, which is what makes this row cheaper than
-# S71/S73 rather than more valuable: a `\b` that fires at digit boundaries is
-# a wrong answer on ordinary subjects. The row is here because the STRUCTURAL
-# rule is the one that would still hold if the two sets happened to agree on
-# the corpus's alphabet, and because §7.2's whole argument is about a drift
-# that has not happened yet.
+# WHAT THE CORPUS SAW, MEASURED RATHER THAN ASSUMED — and the measurement
+# corrected this note's own first draft, which claimed "the corpus sees it
+# too, loudly". On its first matrix run this row came back **UNDETECTED**:
+# codegen 0fail/52pass AND corpus 0fail/3528pass. Two independent reasons,
+# both worth keeping:
+#
+#  - the CHECK was blind. Its assertion at the time was "exactly one class
+#    TABLE in the artifact", and the digit set is a contiguous RANGE, so it
+#    compiles to a subtract-and-compare and emits no table at all. The rule
+#    now counts distinct MEMBERSHIP TESTS, normalised over the byte
+#    expression, which is blind to which of `vm_cls_test`'s three shapes a set
+#    takes.
+#  - the CORPUS was blind, and structurally. This edit is in `emit_vm.c`, and
+#    every block in tests/assertions/wordb.rxt was capture-FREE, so every one
+#    routed to the DFA and none reached the VM's `\b` arm. The file gained a
+#    capture-bearing section in the same change; that section exists because
+#    this row measured its absence.
+#
+# So the structural rule is not merely the cheaper instrument here — for the
+# artifact class this edit lives in, it was for a while the ONLY one.
 SAB_ID="S75-wordb-second-wordset"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"

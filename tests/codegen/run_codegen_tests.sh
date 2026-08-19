@@ -1220,22 +1220,41 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
     # The word set is 63 members: [0-9A-Za-z_]. Its first eight bitmap bytes
     # are unmistakable and are what a duplicate would repeat.
     nwordtab=$(grep -c '  0,   0,   0,   0,   0,   0, 255,   3,' "$WORKDIR/wordset.c" || true)
-    nk=$(grep -c 'static const unsigned char rx_k[0-9]*\[32\]' "$WORKDIR/wordset.c" || true)
+    # THE DISCRIMINATOR, and its first two drafts were both blind — see the
+    # note above the third assertion below. Extract every byte-set MEMBERSHIP
+    # TEST in the artifact (`vm_cls_test`'s three shapes: bitmap read, unsigned
+    # range subtract, singleton compare), normalise away the subject-byte
+    # expression each is applied to, and count the DISTINCT ones. `(\b\w+\b)`
+    # asks the same question — is this byte a word character — in three places,
+    # so a correct artifact has exactly ONE distinct test.
+    ndistinct=$(grep -oE '\(rx_k[0-9]+\[\(s\[[^]]*\]\) >> 3\] >> \(\(s\[[^]]*\]\) & 7\)\) & 1|\(unsigned\)\(s\[[^]]*\] - [0-9]+\) <= [0-9]+u|s\[[^]]*\] == [0-9]+' \
+                "$WORKDIR/wordset.c" | sed 's/s\[[^]]*\]/B/g' | sort -u | grep -c . || true)
     #
-    # TWO ASSERTIONS, because either alone has a hole. "Exactly one copy of the
-    # word bitmap" catches a literal duplicate; it does NOT catch `\b` reading
-    # a DIFFERENT set, which would leave one word bitmap (from `\w`) and pass.
-    # "Exactly one class table in the whole artifact" catches that: the pattern
-    # names two constructs and both must resolve to the same pooled table, so
-    # any divergence between them shows up as a second table.
+    # TWO ASSERTIONS, and the SECOND one took three tries — each earlier draft
+    # was measured blind by running sabotage S75 rather than by reasoning:
+    #
+    #   draft 1: "exactly one copy of the word bitmap". Catches a literal
+    #            duplicate. Does NOT catch `\b` reading a DIFFERENT set, which
+    #            leaves exactly one word bitmap (from `\w`) and passes.
+    #   draft 2: "exactly one class TABLE in the artifact". Does not catch it
+    #            either, because a set that happens to be a contiguous RANGE
+    #            (the digit set is [0-9]) compiles to a subtract-and-compare
+    #            and emits no table at all — so the count stays 1.
+    #   draft 3: exactly one distinct MEMBERSHIP TEST, normalised over the
+    #            byte expression it is applied to. That is the property the
+    #            rule is actually about — `\b` and `\w` asking ONE question —
+    #            and it is blind to which of `vm_cls_test`'s three shapes the
+    #            set compiles into.
     if [ "$nwordtab" -lt 1 ]; then
         bad "[M6.2-WORDB rule 3]: '(\\b\\w+\\b)' emitted no word bitmap at all — the fixture no longer exercises §7.2, so this rule has no population"
     elif [ "$nwordtab" -ne 1 ]; then
         bad "[M6.2-WORDB rule 3]: $nwordtab copies of the word bitmap in one artifact ($nk class tables total). \\b and \\w must READ ONE TABLE (§7.2 item 3); two copies agree today and drift the day one is regenerated"
-    elif [ "$nk" -ne 1 ]; then
-        bad "[M6.2-WORDB rule 3]: $nk class tables in '(\\b\\w+\\b)'s artifact, want 1. One word bitmap is present, so the extra table means \\b resolved to a DIFFERENT byte set than \\w — which is §7.2 item 3's failure in its other direction: whatever \\w means, \\b must agree with"
+    elif [ "$ndistinct" -lt 1 ]; then
+        bad "[M6.2-WORDB rule 3]: no byte-set membership test found in '(\\b\\w+\\b)'s artifact at all — the extractor has stopped matching the emitted shapes, so this assertion is measuring nothing"
+    elif [ "$ndistinct" -ne 1 ]; then
+        bad "[M6.2-WORDB rule 3]: $ndistinct DISTINCT byte-set membership tests in '(\\b\\w+\\b)'s artifact, want 1. The pattern asks 'is this byte a word character' in three places; more than one distinct test means \\b resolved to a DIFFERENT set than \\w — §7.2 item 3's failure in its other direction: whatever \\w means, \\b must agree with"
     else
-        ok "[M6.2-WORDB rule 3] (§7.2 item 3): '(\\b\\w+\\b)' emits exactly ONE class table and it IS the word bitmap — \\b and \\w read the same pcrec_cls_word_esc through the same pool, in both directions (no duplicate, and no divergence)"
+        ok "[M6.2-WORDB rule 3] (§7.2 item 3): '(\\b\\w+\\b)' emits exactly ONE word bitmap and exactly ONE distinct membership test — \\b and \\w read the same pcrec_cls_word_esc through the same pool, in both directions (no duplicate, and no divergence)"
     fi
 else
     bad "[M6.2-WORDB rule 3]: pcrec failed to compile the one-word-set fixture '(\\b\\w+\\b)'"

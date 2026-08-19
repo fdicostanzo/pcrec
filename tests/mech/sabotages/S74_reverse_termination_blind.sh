@@ -26,6 +26,15 @@
 # It is also the failure the wave's own FORWARD fix makes reachable: before
 # mechanism 4's forward half, the forward pass never found the match for the
 # reverse walk to lose.
+#
+# TWO INSTRUMENTS SEE IT, and they see different halves. The harness sees the
+# LOST MATCHES on the narrow population above. `[M6.2-WORDB rule 2b]` sees
+# something the corpus cannot state: with the context read gone there is no
+# `s[startpos - 1]` in the emitted reverse loop at all, so the rule that pins
+# WHERE that read sits (R30 N9 — attached to the boundary break, never peeled
+# below a loop whose other exit is a dead state) has nothing to locate and
+# says so. That is this row's second job: it is the measured failing
+# direction for rule 2b, which otherwise would be a check with none.
 SAB_ID="S74-reverse-termination-blind"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness assertions"
@@ -33,5 +42,8 @@ SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
 SAB_DESC="the reverse walk's termination boundary drops its context-indexed accept and reads the blind scalar one, so a LEADING \\B at startpos > 0 loses its match (assertions_design.md S3.8.3.1); leading-\\b patterns and every trailing-assertion pattern stay green, which is why the sweep is split into arms"
 SAB_DOC_FIGURE="tests/assertions/wordb.rxt: the leading-\\B ms/ns cells at startpos > 0 fail; every \\b cell and every trailing-assertion cell stays green"
 SAB_COUNT=1
-SAB_BEFORE='                     "                if (startpos ? %s_racc2[%s * %d + "'
-SAB_AFTER='                     "                if (0 ? %s_racc2[%s * %d + "   /* SABOTAGE S74 */'
+SAB_BEFORE='                     "                if (startpos ? %s_racc2[%s * %d + "
+                     "%s_rcls[s[startpos - 1]]]\n"
+                     "                             : %s_racc[%s]) sfound = pp;\n"'
+SAB_AFTER='                     "                if (%s_racc[%s]) sfound = pp;   /* SABOTAGE S74 */\n"
+                     "                /* dropped context read: %d %s %s%s */\n"'
