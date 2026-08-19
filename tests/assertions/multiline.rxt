@@ -1,0 +1,2512 @@
+# tests/assertions/multiline.rxt — `(?m)` ([M6.2] wave C;
+# assertions_design.md §3.7, §10 wave C; D62, D63, D64).
+#
+# WHAT `(?m)` CHANGES, and it is exactly two assertions:
+#
+#   `(?m)^`  true at offset 0 OR immediately after a newline
+#   `(?m)$`  true at end of subject OR immediately before a newline
+#
+# and NOTHING ELSE. `\A`, `\Z` and `\z` keep their absolute meanings under
+# `(?m)` — PCRE2's own rule, and the reason src/parse/mod_assertions.c pins
+# those nodes' multiline flag false rather than copying the scoped state the
+# way `^`/`$` do. The blocks near the end are that pin's failing direction:
+# if `\Z` ever started reading the flag, they go red.
+#
+# THE SCOPING IS THE POINT. `(?m)` is a SCOPED inline option, so the answer
+# depends on the state in force AT EACH `^`/`$`, not on the pattern's final
+# option state. `(?m:...)`, `(?m)...(?-m)` and a mid-pattern `(?m)` are all
+# here, and they are the cells D47.5's own wording does not ask for (D62
+# control 1) — the shipped pre-cure code got the leading-`(?m)` shape right
+# and these wrong.
+#
+# ORACLES. Plain leading `(?m)` and `(?m:...)` are verifiable against BOTH
+# python3 `re` and libpcre2, and every such cell here agrees on both. The
+# other scoped spellings are NOT python-expressible at all — python rejects a
+# bare `(?-m)`, a mid-pattern `(?m)` and a trailing `(?m)` outright ("global
+# flags not at the start of the expression") — so those blocks carry
+# `# pcre2-only` and ride tests/assertions/verify_pcre2.py, the convention
+# wave A established for `\Z`. Every expectation in this file was PRODUCED by
+# libpcre2 through tests/fuzz/pcre2_oracle; none was written by hand.
+
+# ======================================================================
+# 1. THE TWO ASSERTIONS, BARE. Zero-width, at every position of a subject
+# set chosen so that newlines appear first, last, doubled and absent.
+# ======================================================================
+
+pattern (?m)^
+features assertions,modifiers
+m "" 0 0
+m "a" 0 0
+m "\n" 0 0
+m "a\n" 0 0
+m "\na" 0 0
+m "ab" 0 0
+m "a\nb" 0 0
+m "ab\ncd" 0 0
+m "a\n\nb" 0 0
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 0
+m "a\nc" 0 0
+m "\nc" 0 0
+m "aaa\nbbb" 0 0
+m "x\ny\nz" 0 0
+m "b\na" 0 0
+m "\nab\n" 0 0
+
+pattern (?m)$
+features assertions,modifiers
+m "" 0 0
+m "a" 1 1
+m "\n" 0 0
+m "a\n" 1 1
+m "\na" 0 0
+m "ab" 2 2
+m "a\nb" 1 1
+m "ab\ncd" 2 2
+m "a\n\nb" 1 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 3 3
+m "a\nc" 1 1
+m "\nc" 0 0
+m "aaa\nbbb" 3 3
+m "x\ny\nz" 1 1
+m "b\na" 1 1
+m "\nab\n" 0 0
+
+pattern ^
+features assertions
+m "" 0 0
+m "a" 0 0
+m "\n" 0 0
+m "a\n" 0 0
+m "\na" 0 0
+m "ab" 0 0
+m "a\nb" 0 0
+m "ab\ncd" 0 0
+m "a\n\nb" 0 0
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 0
+m "a\nc" 0 0
+m "\nc" 0 0
+m "aaa\nbbb" 0 0
+m "x\ny\nz" 0 0
+m "b\na" 0 0
+m "\nab\n" 0 0
+
+pattern $
+features assertions
+m "" 0 0
+m "a" 1 1
+m "\n" 0 0
+m "a\n" 1 1
+m "\na" 2 2
+m "ab" 2 2
+m "a\nb" 3 3
+m "ab\ncd" 5 5
+m "a\n\nb" 4 4
+m "\n\n" 1 1
+m "abc\ndef\nghi" 11 11
+m "a\nc" 3 3
+m "\nc" 2 2
+m "aaa\nbbb" 7 7
+m "x\ny\nz" 5 5
+m "b\na" 3 3
+m "\nab\n" 3 3
+
+# ======================================================================
+# 2. ANCHORED LITERALS — the shapes a user actually writes, and the
+# population D63's candidate-start prefilter is measured on.
+# ======================================================================
+
+pattern (?m)^ERROR
+features assertions,modifiers
+m "ERROR" 0 5
+m "ok\nERROR\nok" 3 8
+m "ERROR\n" 0 5
+m "\nERROR" 1 6
+n "noerror\nhere"
+m "ok\nok\nok\nERROR" 9 14
+m "xERROR\nERROR" 7 12
+n ""
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+pattern (?m)ERROR$
+features assertions,modifiers
+m "ERROR" 0 5
+m "ok\nERROR\nok" 3 8
+m "ERROR\n" 0 5
+m "\nERROR" 1 6
+n "noerror\nhere"
+m "ok\nok\nok\nERROR" 9 14
+m "xERROR\nERROR" 1 6
+n ""
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+pattern (?m)^ERROR$
+features assertions,modifiers
+m "ERROR" 0 5
+m "ok\nERROR\nok" 3 8
+m "ERROR\n" 0 5
+m "\nERROR" 1 6
+n "noerror\nhere"
+m "ok\nok\nok\nERROR" 9 14
+m "xERROR\nERROR" 7 12
+n ""
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+pattern ^ERROR
+features assertions
+m "ERROR" 0 5
+n "ok\nERROR\nok"
+m "ERROR\n" 0 5
+n "\nERROR"
+n "noerror\nhere"
+n "ok\nok\nok\nERROR"
+n "xERROR\nERROR"
+n ""
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+pattern ERROR$
+features assertions
+m "ERROR" 0 5
+n "ok\nERROR\nok"
+m "ERROR\n" 0 5
+m "\nERROR" 1 6
+n "noerror\nhere"
+m "ok\nok\nok\nERROR" 9 14
+m "xERROR\nERROR" 7 12
+n ""
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+pattern (?m)^a
+features assertions,modifiers
+n "ERROR"
+n "ok\nERROR\nok"
+n "ERROR\n"
+n "\nERROR"
+n "noerror\nhere"
+n "ok\nok\nok\nERROR"
+n "xERROR\nERROR"
+n ""
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 2 3
+m "\nab\n" 1 2
+
+pattern (?m)a$
+features assertions,modifiers
+n "ERROR"
+n "ok\nERROR\nok"
+n "ERROR\n"
+n "\nERROR"
+n "noerror\nhere"
+n "ok\nok\nok\nERROR"
+n "xERROR\nERROR"
+n ""
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+
+pattern (?m)^.
+features assertions,modifiers
+m "ERROR" 0 1
+m "ok\nERROR\nok" 0 1
+m "ERROR\n" 0 1
+m "\nERROR" 1 2
+m "noerror\nhere" 0 1
+m "ok\nok\nok\nERROR" 0 1
+m "xERROR\nERROR" 0 1
+n ""
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+m "\nc" 1 2
+m "aaa\nbbb" 0 1
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+pattern (?m).$
+features assertions,modifiers
+m "ERROR" 4 5
+m "ok\nERROR\nok" 1 2
+m "ERROR\n" 4 5
+m "\nERROR" 5 6
+m "noerror\nhere" 6 7
+m "ok\nok\nok\nERROR" 1 2
+m "xERROR\nERROR" 5 6
+n ""
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 1 2
+m "a\nb" 0 1
+m "ab\ncd" 1 2
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 2 3
+m "a\nc" 0 1
+m "\nc" 1 2
+m "aaa\nbbb" 2 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 2 3
+
+# ======================================================================
+# 3. `(?m)$` WITH A LIVE QUANTIFIER — the population §3.6.1 names as the
+# one that can actually break the scan-avoidance cure, because the accept
+# bit genuinely VARIES inside a run a skip set would pass. A `\b` cannot
+# reach that (R30 E5); these can.
+# ======================================================================
+
+pattern (?m)[^c]*$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 3 3
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 4
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 0 3
+m "zaaa\n" 0 5
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+m "" 0 0
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "ab" 0 2
+m "a\nb" 0 3
+m "ab\ncd" 0 2
+m "a\n\nb" 0 4
+m "\n\n" 0 2
+m "abc\ndef\nghi" 3 11
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 7
+m "x\ny\nz" 0 5
+m "b\na" 0 3
+m "\nab\n" 0 4
+
+pattern (?m)[^c]+$
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+n "abc"
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 4
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 0 3
+m "zaaa\n" 0 5
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+n ""
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "ab" 0 2
+m "a\nb" 0 3
+m "ab\ncd" 0 2
+m "a\n\nb" 0 4
+m "\n\n" 0 2
+m "abc\ndef\nghi" 3 11
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 7
+m "x\ny\nz" 0 5
+m "b\na" 0 3
+m "\nab\n" 0 4
+
+pattern (?m)a*$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 1 1
+m "ba" 1 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 1 3
+m "zaaa\n" 1 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 2 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "\na" 0 0
+m "ab" 2 2
+m "a\nb" 0 1
+m "ab\ncd" 2 2
+m "a\n\nb" 0 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 3 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 1 1
+m "b\na" 1 1
+m "\nab\n" 0 0
+
+pattern (?m).*$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 1
+m "ac" 0 2
+m "aac" 0 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "\na" 0 0
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 0 0
+
+pattern (?m)\w*$
+features assertions,classes,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 1
+m "ac" 0 2
+m "aac" 0 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "\na" 0 0
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 0 0
+
+pattern (?m)[a-z]{0,4}$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 1
+m "ac" 0 2
+m "aac" 0 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "\na" 0 0
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 0 0
+
+pattern (?m)^[^c]*
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 2
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 4
+m "\nc" 0 1
+m "a\nc" 0 2
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 0
+m "ac" 0 1
+m "aac" 0 2
+m "zaa" 0 3
+m "zaaa\n" 0 5
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 3
+m "\n" 0 1
+m "\n\n" 0 2
+m "" 0 0
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "ab" 0 2
+m "a\nb" 0 3
+m "ab\ncd" 0 3
+m "a\n\nb" 0 4
+m "\n\n" 0 2
+m "abc\ndef\nghi" 0 2
+m "a\nc" 0 2
+m "\nc" 0 1
+m "aaa\nbbb" 0 7
+m "x\ny\nz" 0 5
+m "b\na" 0 3
+m "\nab\n" 0 4
+
+pattern (?m)^\w+
+features assertions,classes,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 1 2
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 1
+m "ac" 0 2
+m "aac" 0 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 0 2
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 3
+m "a\nc" 0 1
+m "\nc" 1 2
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 1 3
+
+# ======================================================================
+# 4. THE D47.5 GATE CELLS (D62 control 1; assertions_design.md §8.7).
+#
+# `src/opt/possessify.c` exempts `$` from the follow-set widening on an
+# upward-closure argument that COLLAPSES PER LINE under `(?m)`. The
+# recommended guard cell is `(?m)[^c]{1,3}$` on "a\nc" expecting (0,1) —
+# the strongest of §8.7's four because a possessified compile produces NO
+# MATCH AT ALL, so it cannot pass by accident on an off-by-one.
+#
+# The non-multiline twin lives in gate.rxt, where the exemption must keep
+# firing; a regression that disabled the exemption wholesale would leave
+# these green and that one red, which is why both directions exist.
+# ======================================================================
+
+pattern (?m)[^c]{1,3}$
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 1 4
+m "ab" 0 2
+n "abc"
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 3
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 0 3
+m "zaaa\n" 1 4
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+
+pattern (?m)[^c]{0,2}$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 1 3
+m "aaaa" 2 4
+m "ab" 0 2
+m "abc" 3 3
+m "a\n" 0 2
+m "aa\n" 0 2
+m "aaa\n" 1 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 1 3
+m "zaaa\n" 2 4
+m "\na" 0 2
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+
+pattern (?m)[^c]{0,4}$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 3 3
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 4
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+
+pattern (?m)[^c]?$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+m "ab" 1 2
+m "abc" 3 3
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 1 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 1 2
+m "\n" 0 1
+m "\n\n" 0 1
+
+pattern (?m)a{0,4}$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 1 1
+m "ba" 1 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 1 3
+m "zaaa\n" 1 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 2 2
+m "\n" 0 0
+m "\n\n" 0 0
+
+pattern (?m)z[^c]{0,2}$
+features assertions,modifiers
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "ab"
+n "abc"
+n "a\n"
+n "aa\n"
+n "aaa\n"
+n "\nc"
+n "a\nc"
+n "b"
+n "ba"
+n "c"
+n "ac"
+n "aac"
+m "zaa" 0 3
+n "zaaa\n"
+n "\na"
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+
+pattern (?m)(?:z|)[^c]{0,2}$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 1 3
+m "aaaa" 2 4
+m "ab" 0 2
+m "abc" 3 3
+m "a\n" 0 2
+m "aa\n" 0 2
+m "aaa\n" 1 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 0 3
+m "zaaa\n" 2 4
+m "\na" 0 2
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+
+# ======================================================================
+# 5. SCOPED `(?m)` — the cells the pre-cure code got WRONG (§8.1.1's two
+# measured miscompile shapes) and the ones D47.5's own wording does not
+# ask for. `(?m:...)` is python-verifiable; the rest are not.
+#
+# ONE MID-PATTERN SHAPE IS ABSENT, and the omission is recorded rather
+# than silent: `a(?m)^b` can NEVER match — a `^` after a consumed byte
+# makes the whole DFA one dead state — and pcrec answers it correctly,
+# but the C it emits for that shape does not survive `-Wall -Wextra
+# -Werror`: gcc inlines the always-returns-0 `<prefix>_search` into
+# `<prefix>_match` and then reports the wrapper's `caps` array as
+# maybe-uninitialized, though the `found != 1` short-circuit means it is
+# never read. That is KNOWN ISSUE K28, filed this session, and it is NOT
+# this wave's defect — the base-tier `^a^b` reproduces it with no module
+# enabled at all, and tests/assertions/wordb.rxt records the same
+# exclusion for `^\Bfoo`/`^\Bo`/`^ab`. The LIVE equivalents `a(?m)$`
+# and `a(?m)^b|c` are here in its place, so the mid-pattern-scope
+# coverage this block exists for is not lost; the absent one goes back
+# the day the wrapper's warning is fixed.
+# ======================================================================
+
+pattern (?m:[^c]{1,3}$)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 1 4
+m "ab" 0 2
+n "abc"
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 3
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 0 3
+m "zaaa\n" 1 4
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+n ""
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "ab" 0 2
+m "a\nb" 0 3
+m "ab\ncd" 0 2
+m "a\n\nb" 0 2
+m "\n\n" 0 2
+m "abc\ndef\nghi" 4 7
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 3
+m "b\na" 0 3
+m "\nab\n" 0 3
+
+pattern (?m:^a)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+n "b"
+n "ba"
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 2 3
+m "\nab\n" 1 2
+
+pattern (?m:a$)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+m "a\nc" 0 1
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+m "a\nb" 0 1
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+
+pattern (?m:[^c]{0,2}$)
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 1 3
+m "aaaa" 2 4
+m "ab" 0 2
+m "abc" 3 3
+m "a\n" 0 2
+m "aa\n" 0 2
+m "aaa\n" 1 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 1 3
+m "zaaa\n" 2 4
+m "\na" 0 2
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+m "" 0 0
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 2
+m "\n\n" 0 2
+m "abc\ndef\nghi" 3 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 1 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 0 0
+
+pattern (?m:.*$)
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 1
+m "ac" 0 2
+m "aac" 0 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 0 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "\na" 0 0
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 0 0
+
+# pcre2-only
+pattern (?m)[^c]{1,3}$(?-m)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 1 4
+m "ab" 0 2
+n "abc"
+m "a\n" 0 2
+m "aa\n" 0 3
+m "aaa\n" 0 3
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 0 3
+m "zaaa\n" 1 4
+m "\na" 0 2
+m "a\nb" 0 3
+m "ab\nc" 0 2
+m "\n" 0 1
+m "\n\n" 0 2
+n ""
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "ab" 0 2
+m "a\nb" 0 3
+m "ab\ncd" 0 2
+m "a\n\nb" 0 2
+m "\n\n" 0 2
+m "abc\ndef\nghi" 4 7
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 3
+m "b\na" 0 3
+m "\nab\n" 0 3
+
+# pcre2-only
+pattern (?m)a$(?-m)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+m "a\nc" 0 1
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+m "a\nb" 0 1
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+
+# pcre2-only
+pattern (?m)^a(?-m)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+n "b"
+n "ba"
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 2 3
+m "\nab\n" 1 2
+
+# pcre2-only
+pattern (?m)a{0,4}$(?-m)
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 0 0
+m "a\nc" 0 1
+m "b" 1 1
+m "ba" 1 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 1 3
+m "zaaa\n" 1 4
+m "\na" 0 0
+m "a\nb" 0 1
+m "ab\nc" 2 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 0 1
+m "\n" 0 0
+m "a\n" 0 1
+m "\na" 0 0
+m "ab" 2 2
+m "a\nb" 0 1
+m "ab\ncd" 2 2
+m "a\n\nb" 0 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 3 3
+m "a\nc" 0 1
+m "\nc" 0 0
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 1 1
+m "b\na" 1 1
+m "\nab\n" 0 0
+
+# pcre2-only
+pattern a(?m)$
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+m "a\nc" 0 1
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+m "a\nb" 0 1
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+
+# pcre2-only
+pattern a(?m)^b|c
+features assertions,modifiers
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "ab"
+m "abc" 2 3
+n "a\n"
+n "aa\n"
+n "aaa\n"
+m "\nc" 1 2
+m "a\nc" 2 3
+n "b"
+n "ba"
+m "c" 0 1
+m "ac" 1 2
+m "aac" 2 3
+n "zaa"
+n "zaaa\n"
+n "\na"
+n "a\nb"
+m "ab\nc" 3 4
+n "\n"
+n "\n\n"
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+m "ab\ncd" 3 4
+n "a\n\nb"
+n "\n\n"
+m "abc\ndef\nghi" 2 3
+m "a\nc" 2 3
+m "\nc" 1 2
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+
+# pcre2-only
+pattern a$(?m)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+n "a\nc"
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+
+pattern (?m)^a|b$
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+n "ba"
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+# ======================================================================
+# 6. THE SCOPE BOUNDARY IN ONE PATTERN — a multiline `$` and a
+# non-multiline `$` in the SAME compile. Nothing but a per-node
+# resolution can answer these: a pass-wide flag has one value.
+# ======================================================================
+
+pattern (?:(?m:a$)|b$)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+m "ab" 1 2
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+m "a\nb" 0 1
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 1 2
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+m "\nab\n" 2 3
+
+pattern (?:(?m:^a)|^b)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 1
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+m "b\na" 0 1
+m "\nab\n" 1 2
+
+pattern (?m:a$)|c$
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+m "abc" 2 3
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+m "\nc" 1 2
+m "a\nc" 0 1
+n "b"
+m "ba" 1 2
+m "c" 0 1
+m "ac" 1 2
+m "aac" 2 3
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 3 4
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+m "\nc" 1 2
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+
+pattern (?m)a$|(?-m:b$)
+features assertions,modifiers
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+m "ab" 1 2
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+m "a\nb" 0 1
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 1 2
+m "a\nb" 0 1
+n "ab\ncd"
+m "a\n\nb" 0 1
+n "\n\n"
+n "abc\ndef\nghi"
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 2 3
+n "x\ny\nz"
+m "b\na" 2 3
+m "\nab\n" 2 3
+
+# ======================================================================
+# 7. `\A`, `\Z`, `\z` ARE NOT AFFECTED BY `(?m)` — PCRE2's rule, and the
+# failing direction for mod_assertions.c's pinned-false flag. If any of
+# those three ever started copying the scoped state, every cell here that
+# differs from its `^`/`$` twin above goes red.
+# ======================================================================
+
+pattern (?m)\Aa
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+n "\na"
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+n "b"
+n "ba"
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+n "\na"
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+
+# pcre2-only
+pattern (?m)a\Z
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+n "a\nc"
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+
+pattern (?m)a\z
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+n "a\n"
+m "\na" 1 2
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+n "a\n"
+n "aa\n"
+n "aaa\n"
+n "\nc"
+n "a\nc"
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+n "zaaa\n"
+m "\na" 1 2
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+
+pattern (?m)\A
+features assertions,modifiers
+m "" 0 0
+m "a" 0 0
+m "\n" 0 0
+m "a\n" 0 0
+m "\na" 0 0
+m "ab" 0 0
+m "a\nb" 0 0
+m "ab\ncd" 0 0
+m "a\n\nb" 0 0
+m "\n\n" 0 0
+m "abc\ndef\nghi" 0 0
+m "a\nc" 0 0
+m "\nc" 0 0
+m "aaa\nbbb" 0 0
+m "x\ny\nz" 0 0
+m "b\na" 0 0
+m "\nab\n" 0 0
+m "" 0 0
+m "a" 0 0
+m "aa" 0 0
+m "aaa" 0 0
+m "aaaa" 0 0
+m "ab" 0 0
+m "abc" 0 0
+m "a\n" 0 0
+m "aa\n" 0 0
+m "aaa\n" 0 0
+m "\nc" 0 0
+m "a\nc" 0 0
+m "b" 0 0
+m "ba" 0 0
+m "c" 0 0
+m "ac" 0 0
+m "aac" 0 0
+m "zaa" 0 0
+m "zaaa\n" 0 0
+m "\na" 0 0
+m "a\nb" 0 0
+m "ab\nc" 0 0
+m "\n" 0 0
+m "\n\n" 0 0
+
+# pcre2-only
+pattern (?m)\Z
+features assertions,modifiers
+m "" 0 0
+m "a" 1 1
+m "\n" 0 0
+m "a\n" 1 1
+m "\na" 2 2
+m "ab" 2 2
+m "a\nb" 3 3
+m "ab\ncd" 5 5
+m "a\n\nb" 4 4
+m "\n\n" 1 1
+m "abc\ndef\nghi" 11 11
+m "a\nc" 3 3
+m "\nc" 2 2
+m "aaa\nbbb" 7 7
+m "x\ny\nz" 5 5
+m "b\na" 3 3
+m "\nab\n" 3 3
+m "" 0 0
+m "a" 1 1
+m "aa" 2 2
+m "aaa" 3 3
+m "aaaa" 4 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 1 1
+m "aa\n" 2 2
+m "aaa\n" 3 3
+m "\nc" 2 2
+m "a\nc" 3 3
+m "b" 1 1
+m "ba" 2 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 3 3
+m "zaaa\n" 4 4
+m "\na" 2 2
+m "a\nb" 3 3
+m "ab\nc" 4 4
+m "\n" 0 0
+m "\n\n" 1 1
+
+pattern (?m)\z
+features assertions,modifiers
+m "" 0 0
+m "a" 1 1
+m "\n" 1 1
+m "a\n" 2 2
+m "\na" 2 2
+m "ab" 2 2
+m "a\nb" 3 3
+m "ab\ncd" 5 5
+m "a\n\nb" 4 4
+m "\n\n" 2 2
+m "abc\ndef\nghi" 11 11
+m "a\nc" 3 3
+m "\nc" 2 2
+m "aaa\nbbb" 7 7
+m "x\ny\nz" 5 5
+m "b\na" 3 3
+m "\nab\n" 4 4
+m "" 0 0
+m "a" 1 1
+m "aa" 2 2
+m "aaa" 3 3
+m "aaaa" 4 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 2 2
+m "aa\n" 3 3
+m "aaa\n" 4 4
+m "\nc" 2 2
+m "a\nc" 3 3
+m "b" 1 1
+m "ba" 2 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 3 3
+m "zaaa\n" 5 5
+m "\na" 2 2
+m "a\nb" 3 3
+m "ab\nc" 4 4
+m "\n" 1 1
+m "\n\n" 2 2
+
+# pcre2-only
+pattern (?m:a\Z)
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+n "a\nc"
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+
+pattern (?m:\Aa)
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+n "\na"
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+n "b"
+n "ba"
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+n "\na"
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+
+# ======================================================================
+# 8. `(?m)` COMPOSED WITH THE OTHER WAVES' ASSERTIONS — one machine
+# carrying both a word context and a newline context, which is the case
+# that makes the class axis three-valued rather than a bool.
+# ======================================================================
+
+pattern (?m)^\bx*
+features assertions,modifiers
+n ""
+m "a" 0 0
+m "aa" 0 0
+m "aaa" 0 0
+m "aaaa" 0 0
+m "ab" 0 0
+m "abc" 0 0
+m "a\n" 0 0
+m "aa\n" 0 0
+m "aaa\n" 0 0
+m "\nc" 1 1
+m "a\nc" 0 0
+m "b" 0 0
+m "ba" 0 0
+m "c" 0 0
+m "ac" 0 0
+m "aac" 0 0
+m "zaa" 0 0
+m "zaaa\n" 0 0
+m "\na" 1 1
+m "a\nb" 0 0
+m "ab\nc" 0 0
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 0
+n "\n"
+m "a\n" 0 0
+m "\na" 1 1
+m "ab" 0 0
+m "a\nb" 0 0
+m "ab\ncd" 0 0
+m "a\n\nb" 0 0
+n "\n\n"
+m "abc\ndef\nghi" 0 0
+m "a\nc" 0 0
+m "\nc" 1 1
+m "aaa\nbbb" 0 0
+m "x\ny\nz" 0 1
+m "b\na" 0 0
+m "\nab\n" 1 1
+m "a x" 0 0
+m "xfoo" 0 1
+m "x\nfoo" 0 1
+m "foo\nxfoo" 0 0
+
+pattern (?m)\bx*$
+features assertions,modifiers
+n ""
+m "a" 1 1
+m "aa" 2 2
+m "aaa" 3 3
+m "aaaa" 4 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 1 1
+m "aa\n" 2 2
+m "aaa\n" 3 3
+m "\nc" 2 2
+m "a\nc" 1 1
+m "b" 1 1
+m "ba" 2 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 3 3
+m "zaaa\n" 4 4
+m "\na" 2 2
+m "a\nb" 1 1
+m "ab\nc" 2 2
+n "\n"
+n "\n\n"
+n ""
+m "a" 1 1
+n "\n"
+m "a\n" 1 1
+m "\na" 2 2
+m "ab" 2 2
+m "a\nb" 1 1
+m "ab\ncd" 2 2
+m "a\n\nb" 1 1
+n "\n\n"
+m "abc\ndef\nghi" 3 3
+m "a\nc" 1 1
+m "\nc" 2 2
+m "aaa\nbbb" 3 3
+m "x\ny\nz" 0 1
+m "b\na" 1 1
+m "\nab\n" 3 3
+m "a x" 2 3
+m "xfoo" 4 4
+m "x\nfoo" 0 1
+m "foo\nxfoo" 3 3
+
+pattern (?m)^\w+\b$
+features assertions,classes,modifiers
+n ""
+m "a" 0 1
+m "aa" 0 2
+m "aaa" 0 3
+m "aaaa" 0 4
+m "ab" 0 2
+m "abc" 0 3
+m "a\n" 0 1
+m "aa\n" 0 2
+m "aaa\n" 0 3
+m "\nc" 1 2
+m "a\nc" 0 1
+m "b" 0 1
+m "ba" 0 2
+m "c" 0 1
+m "ac" 0 2
+m "aac" 0 3
+m "zaa" 0 3
+m "zaaa\n" 0 4
+m "\na" 1 2
+m "a\nb" 0 1
+m "ab\nc" 0 2
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "ab" 0 2
+m "a\nb" 0 1
+m "ab\ncd" 0 2
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 3
+m "a\nc" 0 1
+m "\nc" 1 2
+m "aaa\nbbb" 0 3
+m "x\ny\nz" 0 1
+m "b\na" 0 1
+m "\nab\n" 1 3
+n "a x"
+m "xfoo" 0 4
+m "x\nfoo" 0 1
+m "foo\nxfoo" 0 3
+
+pattern (?m)\Bfoo
+features assertions,modifiers
+n ""
+n "a"
+n "aa"
+n "aaa"
+n "aaaa"
+n "ab"
+n "abc"
+n "a\n"
+n "aa\n"
+n "aaa\n"
+n "\nc"
+n "a\nc"
+n "b"
+n "ba"
+n "c"
+n "ac"
+n "aac"
+n "zaa"
+n "zaaa\n"
+n "\na"
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+n ""
+n "a"
+n "\n"
+n "a\n"
+n "\na"
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+n "a x"
+m "xfoo" 1 4
+n "x\nfoo"
+m "foo\nxfoo" 5 8
+
+pattern (?m)x*$
+features assertions,modifiers
+m "" 0 0
+m "a" 1 1
+m "aa" 2 2
+m "aaa" 3 3
+m "aaaa" 4 4
+m "ab" 2 2
+m "abc" 3 3
+m "a\n" 1 1
+m "aa\n" 2 2
+m "aaa\n" 3 3
+m "\nc" 0 0
+m "a\nc" 1 1
+m "b" 1 1
+m "ba" 2 2
+m "c" 1 1
+m "ac" 2 2
+m "aac" 3 3
+m "zaa" 3 3
+m "zaaa\n" 4 4
+m "\na" 0 0
+m "a\nb" 1 1
+m "ab\nc" 2 2
+m "\n" 0 0
+m "\n\n" 0 0
+m "" 0 0
+m "a" 1 1
+m "\n" 0 0
+m "a\n" 1 1
+m "\na" 0 0
+m "ab" 2 2
+m "a\nb" 1 1
+m "ab\ncd" 2 2
+m "a\n\nb" 1 1
+m "\n\n" 0 0
+m "abc\ndef\nghi" 3 3
+m "a\nc" 1 1
+m "\nc" 0 0
+m "aaa\nbbb" 3 3
+m "x\ny\nz" 0 1
+m "b\na" 1 1
+m "\nab\n" 0 0
+m "a x" 2 3
+m "xfoo" 4 4
+m "x\nfoo" 0 1
+m "foo\nxfoo" 3 3
+
+pattern \bx*
+features assertions
+n ""
+m "a" 0 0
+m "aa" 0 0
+m "aaa" 0 0
+m "aaaa" 0 0
+m "ab" 0 0
+m "abc" 0 0
+m "a\n" 0 0
+m "aa\n" 0 0
+m "aaa\n" 0 0
+m "\nc" 1 1
+m "a\nc" 0 0
+m "b" 0 0
+m "ba" 0 0
+m "c" 0 0
+m "ac" 0 0
+m "aac" 0 0
+m "zaa" 0 0
+m "zaaa\n" 0 0
+m "\na" 1 1
+m "a\nb" 0 0
+m "ab\nc" 0 0
+n "\n"
+n "\n\n"
+n ""
+m "a" 0 0
+n "\n"
+m "a\n" 0 0
+m "\na" 1 1
+m "ab" 0 0
+m "a\nb" 0 0
+m "ab\ncd" 0 0
+m "a\n\nb" 0 0
+n "\n\n"
+m "abc\ndef\nghi" 0 0
+m "a\nc" 0 0
+m "\nc" 1 1
+m "aaa\nbbb" 0 0
+m "x\ny\nz" 0 1
+m "b\na" 0 0
+m "\nab\n" 1 1
+m "a x" 0 0
+m "xfoo" 0 1
+m "x\nfoo" 0 1
+m "foo\nxfoo" 0 0
+
+# ======================================================================
+# 9. `(?-m)` ALONE — accepted before this wave as a no-op, and it stays
+# one: pcrec's anchors have the not-multiline semantics with or without
+# the module. Kept because "the letter still parses off" is a claim.
+# ======================================================================
+
+# pcre2-only
+pattern (?-m)^a
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+n "\na"
+m "ab" 0 1
+m "a\nb" 0 1
+m "ab\ncd" 0 1
+m "a\n\nb" 0 1
+n "\n\n"
+m "abc\ndef\nghi" 0 1
+m "a\nc" 0 1
+n "\nc"
+m "aaa\nbbb" 0 1
+n "x\ny\nz"
+n "b\na"
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 0 1
+m "aaa" 0 1
+m "aaaa" 0 1
+m "ab" 0 1
+m "abc" 0 1
+m "a\n" 0 1
+m "aa\n" 0 1
+m "aaa\n" 0 1
+n "\nc"
+m "a\nc" 0 1
+n "b"
+n "ba"
+n "c"
+m "ac" 0 1
+m "aac" 0 1
+n "zaa"
+n "zaaa\n"
+n "\na"
+m "a\nb" 0 1
+m "ab\nc" 0 1
+n "\n"
+n "\n\n"
+
+# pcre2-only
+pattern (?-m)a$
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+n "a\nc"
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+
+pattern (?-m:a$)
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+n "ab"
+n "a\nb"
+n "ab\ncd"
+n "a\n\nb"
+n "\n\n"
+n "abc\ndef\nghi"
+n "a\nc"
+n "\nc"
+n "aaa\nbbb"
+n "x\ny\nz"
+m "b\na" 2 3
+n "\nab\n"
+n ""
+m "a" 0 1
+m "aa" 1 2
+m "aaa" 2 3
+m "aaaa" 3 4
+n "ab"
+n "abc"
+m "a\n" 0 1
+m "aa\n" 1 2
+m "aaa\n" 2 3
+n "\nc"
+n "a\nc"
+n "b"
+m "ba" 1 2
+n "c"
+n "ac"
+n "aac"
+m "zaa" 2 3
+m "zaaa\n" 3 4
+m "\na" 1 2
+n "a\nb"
+n "ab\nc"
+n "\n"
+n "\n\n"
+

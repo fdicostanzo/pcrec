@@ -54,6 +54,15 @@
  * shipped build; under it a `\b` pattern compiles to something WRONG, which
  * is exactly why that script's control population must differ.
  *
+ * `-DPCREC_NO_MLINECTX` compiles the NEWLINE half of the class axis out
+ * (`has_nl` is pinned false, so no refinement by the newline set, no third
+ * class view, and the emitter reproduces the pre-wave text). Same shape and
+ * same single consumer as the knobs around it:
+ * tests/codegen/run_mlinectx_identity.sh. Never defined in a shipped build;
+ * under it a `(?m)$` pattern compiles to something WRONG — the assertion can
+ * then only pass through `end_ok`, i.e. as `\z` — which is exactly why that
+ * script's positive control cannot be silent.
+ *
  * `-DPCREC_NO_ENDVAR` compiles the third view's INTERNING out (the closure
  * still runs; `endvar` stays -1, so `dfa_has_endvar` is false and the emitter
  * reproduces the pre-wave text). It exists for exactly one consumer,
@@ -998,8 +1007,13 @@ void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *d, bool prune, bool reverse,
          * for nothing, but asking for it costs one closure on a construct
          * that has already been routed to ENG_ATTEMPT. `(?m)$` needs both:
          * `end_ok` IS its "or end of subject" half. */
-        case N_BOT_M: has_nl = true; has_end = true; break;
-        case N_EOL_M: has_nl = true; has_end = true; break;
+        case N_BOT_M:
+        case N_EOL_M:
+#ifndef PCREC_NO_MLINECTX
+            has_nl = true;
+#endif
+            has_end = true;
+            break;
         case N_END:   has_end = true; break;
         default: break;
         }

@@ -785,7 +785,12 @@ static int vm_det_seq(const Ast *a, const uint8_t **out, int cap)
     }
     default:
         /* A_ALT (choice), A_EMPTY (zero length), A_BOL/A_EOL (zero-width
-         * assertions, which would make "scan ahead by stride" wrong). */
+         * assertions, which would make "scan ahead by stride" wrong).
+         *
+         * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected for
+         * `Ast.multiline` awareness and needing none: this DECLINES on the
+         * kind, and a `$` is zero-width under either spelling. The full
+         * inspection is recorded at the field (src/core/internal.h). */
         return 0;
     }
 }

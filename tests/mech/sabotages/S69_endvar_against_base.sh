@@ -36,7 +36,10 @@ SAB_HARNESS_TARGET="tests/base/eol_engine.rxt"
 SAB_DESC="make_state interns the \\z END view against the BASE view instead of against the EOL view (the design's own refuted first draft, R30 E3): every \$-bearing pattern gains a redundant endvar state and its emitted bytes move, with every answer unchanged"
 SAB_DOC_FIGURE="tests/codegen/run_endvar_identity.sh: 1011/1011 identical becomes a large differing count; the corpus stays green"
 SAB_COUNT=1
-SAB_BEFORE='    if (accept3 != accept2 || nout3 != nout2 ||
-        memcmp(scratch2, scratch3, (size_t)nout2 * sizeof(int)) != 0)'
-SAB_AFTER='    if (accept3 != accept || nout3 != nout ||   /* SABOTAGE S69 */
-        memcmp(scratch, scratch3, (size_t)nout * sizeof(int)) != 0)'
+# [M6.2 wave C] RE-EXPRESSED, same edit. make_state's three hand-written view
+# comparisons became a loop over the class axis when `(?m)` made that axis
+# three-valued; the sabotage is still "canonicalize the END view against the
+# BASE view instead of against the EOL view", now spelled as the one changed
+# subscript.
+SAB_BEFORE='        while (u < UPC_N && view_same(&vw[V_EOL][u], &vw[V_END][u])) u++;'
+SAB_AFTER='        while (u < UPC_N && view_same(&vw[V_BASE][u], &vw[V_END][u])) u++;   /* SABOTAGE S69 */'

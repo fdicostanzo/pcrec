@@ -138,8 +138,33 @@ struct Ast {
      * will tell you: that residual is D62's accepted cost, and this comment
      * is the thing that covers it.
      *
-     * The arena zeroes, so a node nothing set is non-multiline — which is
-     * every node today, since `(?m)` is still refused. */
+     * [M6.2 wave C] THE FIELD IS LIVE, and D62 control 3's obligation was
+     * DISCHARGED BY INSPECTION over every AST-walking analysis, with the
+     * verdict recorded here rather than in five places nobody re-reads. §8.3
+     * names four sites as the residual the flag spelling cannot cover — the
+     * `Ast.k` switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and
+     * `src/opt/revdet.c` x1 — and the inspection is that NONE of them needs
+     * the flag, for one reason with three shapes:
+     *
+     *   - `vm_det_seq` (emit_vm.c) DECLINES on the kind: a `$` of either
+     *     spelling is zero-width, so "scan ahead by stride" is wrong for
+     *     both, and its `default: return 0` is right without reading a field.
+     *   - `vm_cap_offsets` and `vm_rev_emit` (emit_vm.c) are UNREACHABLE for
+     *     either spelling: both run only on bodies `vm_det_seq` and
+     *     `src/opt/revdet.c`'s `rd_shape` already approved, and `rd_shape`
+     *     declines every `A_BOL`/`A_EOL`.
+     *   - `pcrec_revdet_first` (revdet.c) WIDENS to all bytes, the sound
+     *     direction, which makes the disjointness test fail and the
+     *     quantifier keep its machinery.
+     *
+     * THE PATTERN WORTH CARRYING FORWARD: an analysis is at risk exactly when
+     * it treats `$` as TRANSPARENT — reasoning about WHERE it is true and
+     * concluding it may be skipped over. Every one of these four treats it as
+     * OPAQUE (decline, widen, or unreachable), and opacity is multiline-blind
+     * by construction. `src/opt/possessify.c` was the one transparent
+     * consumer in the tree and is the one this field exists for.
+     *
+     * The arena zeroes, so a node nothing set is non-multiline. */
     bool     multiline;
     /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
      * quantifier after this node is an error rather than a repetition of it.
