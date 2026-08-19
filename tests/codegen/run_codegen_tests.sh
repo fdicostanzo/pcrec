@@ -1061,12 +1061,26 @@ fi
 # wrong answer, and one is a two-sources-of-truth rule whose violation changes
 # nothing until the day the two sources disagree.
 #
-# THE FIXTURE is `\bx.*y\b`, chosen because it is the only shape that carries
-# every emitted site at once: a class-indexed accept in BOTH machines
-# (`facc2`/`racc2`), mechanism 4's seed in BOTH (`fseed`/`rseed`), AND live
-# forward and reverse SKIP states — and the skip is what rule 2 is about. A
-# fixture without skip states would satisfy rule 2 vacuously.
-WB_PAT='\bx.*y\b'
+# THE FIXTURE is `.*\b.*`, and the choice was CORRECTED by running the
+# sabotage rather than by reasoning about it. It has to carry every emitted
+# site at once — a class-indexed accept in BOTH machines (`facc2`/`racc2`),
+# mechanism 4's seed in BOTH (`fseed`/`rseed`), and live forward AND reverse
+# SKIP states, since the skip is what rule 2 is about.
+#
+# THAT IS NOT ENOUGH, and the first fixture (`\bx.*y\b`) had all of it and
+# still made rule 2 VACUOUS. The blind writer rule 2 forbids is emitted under
+# `if (!views && rd->st[K].accept)` — a COMPILE-TIME condition with TWO
+# conjuncts. Removing the `!views` guard (sabotage S72) emits nothing at all
+# unless the reverse skip state ALSO ACCEPTS, and `\bx.*y\b`'s does not. S72
+# came back UNDETECTED on the whole suite: 0 codegen failures, 0 corpus
+# failures, a check with no measured failing direction — the exact shape this
+# directory's charter is about, found the only way it can be found.
+#
+# `.*\b.*`'s reverse skip state DOES accept, and the check now ASSERTS that
+# rather than assuming it: `rx_racc[K]` is read out of the artifact and
+# required to be 1, so a future fixture that quietly loses the property fails
+# loudly instead of passing vacuously.
+WB_PAT='.*\b.*'
 if gen wordb "$WB_PAT" --features all; then
     wbb="$WORKDIR/wordb.body"
 
@@ -1134,6 +1148,15 @@ if gen wordb "$WB_PAT" --features all; then
     # one this rule would pass on an artifact that has no second writer to get
     # wrong.
     rskips=$(grep -c 'rx_rs[0-9]*\[s\[pp - 1\]\]' "$wbb" || true)
+    # THE NON-VACUITY ASSERTION. Read the reverse skip state's index out of
+    # its own emitted loop, then that state's SCALAR accept out of the
+    # artifact's `rx_racc[]`. Both come from the artifact; neither is typed
+    # here, so a fixture change cannot silently drop the property.
+    rskip_k=$(grep -oE 'rx_rs[0-9]+\[s\[pp - 1\]\]' "$wbb" | head -1 \
+              | grep -oE '[0-9]+' | head -1)
+    rskip_acc=$(sed -n '/static const unsigned char rx_racc\[/,/};/p' "$wbb" \
+                | tr -d ' \n' | sed 's/.*={//; s/};.*//' \
+                | cut -d, -f$((${rskip_k:-0} + 1)))
     # `size_t sfound = (size_t)-1;` is the DECLARATION, not a record of a
     # match start, and is excluded by name rather than by pattern-matching
     # around it.
@@ -1148,13 +1171,15 @@ if gen wordb "$WB_PAT" --features all; then
     nsf_bad=$(printf '%s' "$sf_bad" | grep -c . || true)
     if [ "$rskips" -lt 1 ]; then
         bad "[M6.2-WORDB rule 2]: '$WB_PAT' emitted no reverse skip loop, so the second, blind sfound writer §3.8.3.1 is about cannot be present — this rule would pass vacuously"
+    elif [ "${rskip_acc:-0}" != "1" ]; then
+        bad "[M6.2-WORDB rule 2]: '$WB_PAT's reverse skip state $rskip_k does NOT accept (rx_racc[$rskip_k] = ${rskip_acc:-unread}), so the blind writer is gated off by its OTHER compile-time conjunct and no sabotage of the guard can emit it. This rule would pass vacuously — which is exactly how sabotage S72 first came back UNDETECTED. Pick a fixture whose reverse skip state accepts."
     elif [ "$sf_total" -lt 2 ]; then
         bad "[M6.2-WORDB rule 2]: only $sf_total sfound writers in the body; the boundary arm and the interior read are both expected"
     elif [ "$nsf_bad" -ne 0 ]; then
         bad "[M6.2-WORDB rule 2]: $nsf_bad sfound writer(s) are not conditioned on an accept read. A bare 'sfound = pp;' at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1]:"
         printf '%s\n' "$sf_bad" >&2
     else
-        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total sfound writers are conditioned on an accept read, with $rskips reverse skip loop(s) present to make the rule non-vacuous"
+        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total sfound writers are conditioned on an accept read, with $rskips reverse skip loop(s) present AND skip state $rskip_k ACCEPTING (rx_racc[$rskip_k] = 1) — so the second, blind writer really would be emitted here if its guard were removed"
     fi
 
     # --- rule 2b: the boundary accept is ATTACHED TO THE BREAK (R30 N9) -----
