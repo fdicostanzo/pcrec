@@ -10862,3 +10862,23 @@ core-level limit). [V-D]/[DD-14] cross-noted.
 NEXT: battery+gate close for wave E; the REPAIR SLICE lane; the D27
 blinded corpus (serialized after repair — its cells must meet the final
 artifact bytes); [M6.2] CLOSE; STOP per Frank's line.
+
+## 2026-08-19 (EDT), thirty-fourth session (part 5, WRITTEN UNDER TOKEN-EXHAUSTION RISK) — state-securing entry
+
+Frank: 99% weekly token usage, this is the LAST section. State secured
+at this entry: all five [M6.2] waves merged + close-validated + archived
+(A e609a8c/c7662c8, B b8b14dd/4a14495, C 2737c61/8834112, D 307fe6c/
+cb41460, E 84f5b1e/0a87303); [SAFEKILL] merged db8ddde; learnings
+addendum 8ffda5e (the identity lesson class + five distillations);
+wake.md rewritten crash-ready with the finish-the-repair-slice recipe
+and the close checklist. THE REPAIR LANE was in final validation, all
+three items complete in its WIP series — including its REFUTATION of
+item 3 (wave E finding 6's whole-module compliance flip): the lane's
+commits carry the argument; a successor must READ IT before any
+re-attempt (likely shape: the generated index measures the DEFAULT
+build, where REJECTED|planned is true — the manager's brief propagated
+an unverified premise, the stop rule's second catch against the manager
+this session). If the session survives: merge repair, battery+gate,
+then the D27 blinded corpus and the close per wake.md's checklist; if
+not, wake.md IS the handoff and the D27 corpus is next session's FIRST
+work, owed for the close.
