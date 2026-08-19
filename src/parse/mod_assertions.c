@@ -85,6 +85,14 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * structure. */
     case 'b': k = A_WORDB; break;
     case 'B': k = A_NWORDB; break;
+    /* [M6.2 wave D] `\G`, and it is a THIRD kind of question again. `\A`/
+     * `\Z`/`\z` compare the position against a COMPILE-TIME constant (0, n,
+     * n-1); `\b`/`\B` read the two bytes around it; `\G` compares it against
+     * a RUNTIME value the match call supplies — `<prefix>_search`'s own
+     * `startpos` parameter (docs/spec/match_api.md §3.1). That is why it
+     * costs a closure bit and a second family of start states in src/ir/dfa.c
+     * and nothing at all in the alphabet: it reads no byte. */
+    case 'G': k = A_GSTART; break;
     default:
         /* Unreachable on the shipped table; a registry defect if it ever
          * fires, reported rather than silently compiled as something else. */

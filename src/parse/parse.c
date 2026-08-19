@@ -45,6 +45,55 @@ static Ast *node(Ctx *cx, AKind k)
  * body). Kind only — payload fields are the caller's. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 
+/* ---- the BARE ANCHOR rule, in ONE place ([M6.2] wave D) ------------------
+ *
+ * PCRE2 refuses a quantified bare zero-width assertion (`\b*` is error 109)
+ * and accepts a quantified GROUP around one (`(\b)*` compiles to (0,0)) —
+ * R1 review S-M1 for `^`/`$`, re-measured against libpcre2 10.46 for `\z`
+ * (wave A), `\b`/`\B` (wave B) and `\G` (wave D). So the same set of node
+ * kinds drives two rules: `try_quant` REFUSES on it, and every group form
+ * WRAPS it so the quantifier lands on an `A_CAT` instead.
+ *
+ * IT USED TO BE FIVE HAND COPIES OF THAT SET and they had already drifted.
+ * `p_group_body`, `mod_modifiers.c`'s `(?i:...)` port and
+ * `mod_named_groups.c`'s declaring port each carried their own `body->k ==`
+ * chain, and wave B added `\b`/`\B` to only two of the three: pcrec REFUSED
+ * `(?i:\b)*` and `(?<n>\b)*`, which libpcre2 accepts at (0,0). A tier-2
+ * over-rejection rather than a miscompile, invisible to a corpus of accepted
+ * patterns, and exactly the shape D24's registry exists to prevent one level
+ * up — a rule with several homes drifts. One predicate, four readers, so a
+ * wave that adds a kind cannot add it to some of them.
+ *
+ * `not_repeatable` is deliberately NOT part of this predicate: it is a
+ * per-NODE flag a bare option run sets (R20/SPEC-1) rather than a property of
+ * a KIND, and it must NOT be wrapped — `(?:(?i))*` is error 109 in libpcre2,
+ * where `(^)*` is not. `try_quant` tests the two separately for that reason. */
+bool pcrec_is_bare_anchor(const Ast *a)
+{
+    switch (a->k) {
+    case A_BOL: case A_EOL: case A_END:
+    case A_WORDB: case A_NWORDB: case A_GSTART:
+        return true;
+    /* No `default:` — mrl.c:18-24's rule. A node kind added after this file
+     * is written must be a COMPILE ERROR here rather than silently inheriting
+     * "not an anchor", because the failure is a silent over- or
+     * under-rejection at a construct's very first cell. */
+    case A_CLASS: case A_CAT: case A_ALT: case A_REP: case A_EMPTY:
+    case A_CAP:
+        return false;
+    }
+    return false;
+}
+
+Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body)
+{
+    if (!pcrec_is_bare_anchor(body)) return body;
+    Ast *cat = node(cx, A_CAT);
+    cat->l = body;
+    cat->r = node(cx, A_EMPTY);
+    return cat;
+}
+
 /* ---- the x-mode lexer (MOD-0.5d) ----------------------------------------
  *
  * Under `(?x)`/`(?xx)` PCRE2 deletes pattern whitespace and `#`-comments
@@ -648,20 +697,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
     if (nextc(cx) != ')')
         ctx_fail(cx, apos, "missing closing ) for group");
     *cx->mods = saved_mods;
-    if (body->k == A_BOL || body->k == A_EOL || body->k == A_END ||
-        body->k == A_WORDB || body->k == A_NWORDB) {
-        /* wrap a bare-anchor group: `(^)*` is quantifiable in PCRE even
-         * though a bare quantified anchor is not (R1 review S-M1).
-         * [M6.2 wave A] A_END joins for the same measured reason: `\z*` is
-         * PCRE2 error 109 and `(\z)*` compiles.
-         * [M6.2 wave B] and the word-boundary pair, MEASURED the same way
-         * against libpcre2 10.46: `\b*` `\b+` `\b?` `\b{2}` `\B*` are all
-         * error 109, while `(\b)*` and `(\B)*` both compile to (0,0). */
-        Ast *cat = node(cx, A_CAT);
-        cat->l = body;
-        cat->r = node(cx, A_EMPTY);
-        body = cat;
-    }
+    body = pcrec_wrap_bare_anchor(cx, body);
     /* The capture wrap goes OUTSIDE the bare-anchor wrap above, so `(^)`'s
      * group spans the whole (empty) match rather than only the anchor. */
     if (capno) {
@@ -912,9 +948,7 @@ have:
          * quantifier byte for `*`/`+`/`?` (the `cx->pos++` above ran), the
          * closing `}` for a brace form (the `goto have` skipped it and
          * try_quant left the cursor past the brace). */
-        if (a->k == A_BOL || a->k == A_EOL || a->k == A_END ||
-            a->k == A_WORDB || a->k == A_NWORDB ||
-            a->not_repeatable)
+        if (pcrec_is_bare_anchor(a) || a->not_repeatable)
             ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item");
         quantified = true;
 
