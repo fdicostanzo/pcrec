@@ -54,7 +54,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
   `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`
-  `endvaridentity` `assertions`, plus the per-lane arms listed below),
+  `endvaridentity` `assertions` `kresetdiff`, plus the per-lane arms listed
+  below),
   `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
@@ -825,3 +826,76 @@ FOURTH kind of green: green because the CONTROL and the SUBJECT share a
 source. That is the project's oldest recurring shape, and finding it inside the
 directory that exists to prevent it is the second time that has happened
 (compare the S19 expected-UNDETECTED account above).
+
+## [M6.2 wave E] S85-S87, one new arm, and THREE ROWS WITH DISJOINT SYMPTOMS
+
+Three rows for `\K`, running the new `kresetdiff` arm
+(tests/assertions/run_kreset_diff.sh) alongside `codegen` and `harness`. Its
+own arm for this matrix's standing reason, plus one specific to it: it is the
+only instrument in the tree that asks libpcre2 the MATCH-HERE question — via
+`\G(?:PAT)` at the same startpos, wave D's construct used as wave E's oracle
+device — so it is the only thing that can see assertions_design.md §6.3
+rule 3's two halves, the filter and the consumed-length return.
+
+**WAVE E SHIPS NO BYTE-IDENTITY GATE, so these two rows and `codegen` carry
+the whole failing-direction load between them.** Waves A-D each added a
+`run_*_identity.sh` because each changed a construction spanning several
+emitter decision points; `\K` is VM-forced and the emitter reads its counter
+at exactly ONE site, so the claim is about one predicate and is pinned as
+`[M6.2-KRESET rule 1b]`. That also means these rows have no S69/S71/S76/S83
+sibling — no semantics-preserving row whose ONLY instrument is a byte
+comparison — which is why both of them are visible in the corpus as well.
+
+- **S85 is R30 C3's own request, word for word**: "make the emitted `\K`
+  artifact write `caps[0][0]` from the prefilter's span; the structural check
+  must go red. Without this it is the only module check with no measured
+  failing direction." The panel asked for the row before the check existed.
+  Under the hybrid, `caps_out`'s `start` argument IS `win[0][0]`, the reverse
+  pass's answer, so forcing the pre-wave arm makes every `\K` artifact report
+  where matching BEGAN. **CANONICAL MATRIX RUN:
+  `codegen:1fail/55pass, corpus:210fail/386pass, kresetdiff:6fail/3pass` —
+  DETECTED.**
+- **S86 writes `stv[0]` DIRECTLY instead of through `<PREFIX>_SET`**, so the
+  write is never trailed and cannot be undone. **CANONICAL MATRIX RUN: `codegen:1fail/55pass,
+  corpus:6fail/590pass, kresetdiff:3fail/6pass` — DETECTED** — and the SIX is the number worth
+  reading. A wrong-PROVENANCE bug is wrong nearly everywhere; a missing-UNDO
+  bug is wrong only where a `\K` is crossed on a path that then LOSES, which
+  is six cases in the corpus. That is the argument for writing those
+  two families deliberately rather than trusting a subject sweep to wander
+  into them, and it is why the two rows are separate: their symptoms inside
+  `[M6.2-KRESET rule 1]` are DISJOINT (S85 fires the "does not read the slot"
+  branch and leaves the write correct; S86 fires the "writes stv[0] directly"
+  branch and leaves `caps_out` correct), so one row exercising both would let
+  either branch rot behind the other.
+
+- **S87 returns the zero Cost from `vm_cost`'s A_KRESET arm**, so the
+  artifact's `trail_frames` is short by one entry per `\K` on the deepest
+  path. Nothing is emitted differently and no answer changes: the artifact
+  simply declares an array too small for the program beside it and returns
+  `PCREC_ERR_FRAMES` on a pattern it can match. **CANONICAL MATRIX RUN: `codegen:0fail/56pass,
+  corpus:33fail/563pass, kresetdiff:3fail/6pass` — DETECTED. The 0-fail codegen
+  column is the driver CONFIRMING that all four `[M6.2-KRESET]` checks stay
+  green, so "invisible to the structural checks" is a measurement rather than
+  the author's claim.** It is the only one of the three the structural checks
+  cannot see, and the reason is that they read emitted TEXT while this defect
+  is in a NUMBER the emitter computed correctly and then under-declared.
+  **Its population had to be BUILT.** `a\Kb` still compiles and still answers
+  under it — one write fits the capacity anyway — and a subject chosen for
+  LENGTH rather than for exceeding the repeat's COUNT never fills the trail
+  either. `tests/assertions/kreset.rxt` section 11 exists for this row and
+  says so in its own header; without it the count is 25 rather than 33, and
+  the cells that fail would be section 4's loops reaching the bound
+  incidentally rather than cells written to reach it.
+
+**THE THREE SYMPTOMS ARE DISJOINT, which is why this is three rows and not
+one edit with three halves.** S85 fires `[M6.2-KRESET rule 1]`'s "does not
+read the trailed slot" branch and leaves the write correct; S86 fires the
+same check's "writes stv[0] directly" branch and leaves `caps_out` correct;
+S87 fires neither and is seen only by the corpus. Merging any two would let
+the third's branch rot behind it.
+
+All three were run through the canonical driver before handback — `1 rows
+(undetected: 0, anomalies: 0, pc3-skipped: 0)` on each — rather than only
+hand-applied, which is wave D's S82 lesson: a hand-validated failing direction
+and the driver's can differ, and only the driver's is reproducible. Re-validate
+with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.

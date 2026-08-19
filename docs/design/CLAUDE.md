@@ -702,9 +702,17 @@ append-only or historical records.
   NOT merge, not even denied-by-default; it survives only in git history
   (`a07a87c`, reverted at `8b5acb4`). See its own CLAUDE.md for the
   revisit-when triggers.
-- `assertions_design.md` — **PROPOSED, REVISED AFTER R30** ([M6.1],
+- `assertions_design.md` — **PROPOSED, REVISED AFTER R30, and BUILT THROUGH
+  ALL FIVE [M6.2] WAVES (A-E, 2026-08-19)** ([M6.1],
   2026-08-18; panel `../dev/reviews/2026-08-18-r30-assertions-design.md`).
-  **Read the doc's PANEL OUTCOME block before any section.** The FOUNDATIONS
+  **Read the doc's PANEL OUTCOME block before any section**, which now points
+  at the BUILD ANNOTATIONS as well as the panel's findings — waves A-E each
+  annotated the sections they built, and **one of those annotations is a
+  CORRECTION rather than a landing record**: wave E found that §6.3 rule 3's
+  proposed cure ("the VM has to report both positions") was NOT NEEDED,
+  because the rule is derived from the DFA artifact's match-here entry and a
+  `\K` pattern is VM-forced, so it never has that entry — the VM's is
+  anchored by construction and already returns the consumed length. The FOUNDATIONS
   survived adversarial re-derivation unusually well — the D47.5 miscompile
   ("the single best-supported claim in the document"), the `\A`/`\Z` alias at
   1,008 cells / 0 disagreements, `\G`'s mechanism, the `\Z` oracle divergence,

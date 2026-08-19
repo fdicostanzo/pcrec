@@ -57,16 +57,16 @@ rc=${PIPESTATUS[0]}
 # wording split), manifest only on a green run (needles come from ok()
 # lines, and a failing check never prints one).
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 169 ]; then
+if [ "$regn" -ne 170 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 169." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 170." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (169 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (170 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 169 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 170 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -85,7 +85,8 @@ arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is uno
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
 class ports: 5 scalar + 10 SET + 9 FN|MOD-0.3b/c/d: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 class-position reach: 5 tailed/body-carrying rows|MOD-0.6/D33 §9.2, K10's fourth net: the one-byte in-class sweep above cannot express [\N{U+41}]-shaped bodies at all; this is the only check that arbitrates a tailed/body-carrying row's FULL syntax at class position and confirms it reaches itself and promises its own module
-engine-capability tripwire: all 48|[M4.7a]/[SR-8], count updated at [M6.3] (51->48: named-groups' three declaring rows reclassified to ANY_ENGINE, not a VM_ONLY row gaining a producer): the only guard that SR-8's engines-column consultation was deliberately deferred rather than silently forgotten — deleting it removes the one thing that would fail loudly the day a VM_ONLY module wires its first atom-position producer without also building select_engine.c's consultation
+engine-capability tripwire: of 48 engine-restricted|[M4.7a]/[SR-8], count updated at [M6.3] (51->48: named-groups' three declaring rows reclassified to ANY_ENGINE, not a VM_ONLY row gaining a producer) and WORDING updated at [M6.2] wave E (the needle said 'all 48' while the population still had zero wired producers; \K is the first that genuinely has one, so the line now reads 'of 48 ... exactly the ONE named exception'): the only guard that SR-8's engines-column consultation was deliberately deferred rather than silently forgotten — deleting it removes the one thing that would fail loudly the day a SECOND VM_ONLY module wires an atom-position producer without also building select_engine.c's consultation
+engine-capability tripwire: \K's exception is paid for|[M6.2] wave E: the tripwire now carries ONE named exception, and this is the assertion that stops it being an allowlist entry — it drives the shipped compiler and requires that --engine=dfa on 'a\Kb' REFUSES naming the construct (D44.6) while the same pattern COMPILES on the default engine. Deleting it leaves a row exempted from the tripwire with nothing checking why the exemption is safe, which is the exact shape a tripwire exists to prevent
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is

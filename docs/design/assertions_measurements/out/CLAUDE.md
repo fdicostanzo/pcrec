@@ -53,6 +53,15 @@ reads anything here; re-run the probe to re-measure.
 - `rxt_harvest.txt` — `harvest_rxt_patterns.sh`. Headline: the corpus is **1030**
   patterns; the locale-collation defect reports **609**; **421 silently merged
   away**.
+- `kreset_identity.txt` — `probe_kreset_identity.sh` ([M6.2] wave E). Headline:
+  over the whole `.rxt` corpus, `\K`-free patterns emit BYTE-IDENTICAL C from
+  the wave's tree and from the PRE-WAVE COMMIT, on both engine modes, with the
+  `\K` patterns showing up as REFUSAL MISMATCHES (the reference has no
+  producer for them) — which is the run's own positive control. **The only
+  file here whose reference is a COMMIT rather than a `-D` build of the same
+  tree**, and the reason is wave D's measured finding that a knob-built
+  reference CANCELS a sabotage of the code it is built from. Read the exact
+  numbers off the file, not from here.
 - `dollar_multiline_rerun.txt` — the re-run of
   `../../eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py`.
   Headline: on the greedy population the exemption covers, **0 of 168**

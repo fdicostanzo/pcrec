@@ -138,6 +138,20 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   edits CANCELS that sabotage in both builds — measured on wave B's own row,
   where `run_wordctx_identity.sh` stays 1135/1135 identical under S71. See
   `pcrec_build_dfa`'s comment and tests/mech/sabotages/S83.
+
+  **[M6.2] WAVE E ADDS NOTHING TO THIS DIRECTORY, and that is a fact worth
+  recording rather than an absence.** `\K` is the module's last construct and
+  the only one with no DFA path: it reports a position that is a property of
+  the winning PATH, and a subset state is a priority-ordered SET, which does
+  not carry one (assertions_design.md §6.1 — closed by CHOICE rather than by
+  mathematics; a tagged DFA would recover it and pcrec's is not one).
+  `src/ir/nfa.c` lowers `A_KRESET` to **N_EPS**, so nothing here sees it at
+  all — no bit, no view, no start family, no alphabet refinement.
+  **The consequence is load-bearing and is why the arm is an epsilon rather
+  than a refusal**: `\K` changes no LANGUAGE, so the capture-erased prefilter
+  built for `a\Kb` is the machine `ab` builds, and its span start is the
+  PRE-`\K` start by construction — exactly the quantity the hybrid may bound
+  the VM's search with, and exactly the one §6.3 rule 1 forbids writing out.
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

@@ -111,6 +111,37 @@ typedef enum {
      * `Ast.multiline` is meaningless here and is never read: `\G` is an
      * absolute position test like `\A`/`\z`, unaffected by every option. */
     A_GSTART,
+    /* [M6.2 wave E] `\K` — RESET THE REPORTED START of the match to here
+     * (assertions_design.md §6). The module's last construct, and the only
+     * one that is not an assertion at all: every other kind in this block
+     * answers a QUESTION about the position and can fail; this one always
+     * succeeds, consumes nothing, and has a SIDE EFFECT.
+     *
+     * THAT IS WHY IT IS VM-ONLY, and the reason is narrower than the phrase
+     * "the DFA cannot do it" suggests (R30 E7). The reported start it writes
+     * is a property of the WINNING PATH, and pcrec's DFA state is a
+     * priority-ordered SET of NFA states which does not carry the path. A
+     * tagged DFA (Laurikari) recovers exactly such positions with registers
+     * on transitions; pcrec's is not one and this wave does not propose
+     * making it one, so the door is closed BY CHOICE and is recorded as such
+     * rather than as a theorem. `src/parse/registry.c`'s row has said
+     * `VM_ONLY` since before there was a producer; `src/opt/select_engine.c`
+     * is where that finally has teeth.
+     *
+     * ITS EFFECT ON THE LANGUAGE IS NOTHING, and that is load-bearing twice
+     * over: `src/ir/nfa.c` lowers it to N_EPS, so the capture-erased
+     * prefilter DFA built for `a\Kb` is the machine `ab` builds, and the
+     * prefilter's span start — the PRE-`\K` start — is exactly what the
+     * hybrid needs to bound the search with (§6.3 rule 1).
+     *
+     * Zero-width and NOT REPEATABLE, measured against libpcre2 10.46 by this
+     * wave: `\K*` `\K+` `\K?` `\K{2}` `a\K*` are all error 109 and `(\K)*`
+     * compiles to (0,0) — `\A`/`\z`/`\b`/`\G`'s shape exactly, so this kind
+     * joins `pcrec_is_bare_anchor` rather than earning a rule of its own.
+     * `[\K]` is error 107, so the registry row keeps RF_CLASS_INVALID.
+     *
+     * `Ast.multiline` is meaningless here and is never read. */
+    A_KRESET,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
      * D31 ruled the group erasure STAYS, on a MEASURED compile-time cost, and
@@ -596,6 +627,18 @@ struct Ctx {
     /* Pattern offset of the FIRST capturing `(`, or SIZE_MAX if none — the
      * engine_why stamp's `why_pos` (§5.5). */
     size_t               first_cap_pos;
+    /* [M6.2 wave E] Pattern offset of the FIRST `\K`, or SIZE_MAX if none.
+     *
+     * IT IS THE DIAGNOSTIC'S SOURCE AND NOT THE VERDICT'S, deliberately.
+     * `forces_kreset` (src/opt/select_engine.c) answers "does this AST carry
+     * an A_KRESET" by WALKING THE TREE, because that is the honest question —
+     * the reported start is path-dependent exactly when such a node exists,
+     * and a parse-time counter would keep saying VM after a future rewrite
+     * deleted the node. This field only supplies the `engine_why` stamp's
+     * offset, which the AST has no room for (no node carries a source
+     * position). It is read ONLY when the walk already found a node, so it
+     * cannot be stale in the direction that matters. */
+    size_t               first_kreset_pos;
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at

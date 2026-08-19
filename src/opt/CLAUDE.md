@@ -56,13 +56,25 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
-  The one analysis registered, `forces_captures`, triggers on the requested
-  OUTPUT rather than the presence of a `(`: `a(b|c)+d` under `--no-captures`
-  is capture-free WORK and stays on the DFA forever. Every `VM_ONLY` registry
-  row is gated by a module with no producer, so the parser refuses those
-  patterns long before selection runs — which is also why SR-8's flip is
-  smaller than its row implies (§9.1: zero currently-refused constructs become
-  compilable when the VM exists).
+  **TWO analyses are registered since [M6.2] wave E**, and the second is the
+  socket's first real customer. `forces_captures` triggers on the requested
+  OUTPUT rather than the presence of a `(`: `a(b|c)+d` under `--no-captures` is
+  capture-free WORK and stays on the DFA forever. `forces_kreset` triggers on an
+  A_KRESET node ANYWHERE IN THE AST, and the difference in shape is deliberate:
+  the reported start is path-dependent exactly when such a node exists, so the
+  TREE is the honest thing to ask, and a future `discharge` hook that rewrote a
+  `\K` away would flip the verdict on the next fixpoint round where a
+  parse-time counter would keep saying VM forever. Its `engine_why` offset
+  comes from `cx->first_kreset_pos`, read only where the walk already found a
+  node.
+
+  **THE PARAGRAPH THAT USED TO STAND HERE EXPIRED RATHER THAN BEING WRONG.** It
+  ran: every `VM_ONLY` registry row is gated by a module with no producer, so
+  the parser refuses those patterns long before selection runs — which is also
+  why SR-8's flip is smaller than its row implies (§9.1: zero currently-refused
+  constructs become compilable when the VM exists). Module `assertions` now HAS
+  a producer and `\K` is its `VM_ONLY` row, so SR-8's flip has its first member
+  and the override's second branch (below) stops being empty by population.
 
   **[M4.7a] SR-8 ITSELF: the consuming socket is deliberately NOT built
   here.** Zero producers means zero customers (D18/OS-0/D53's standing
@@ -74,7 +86,17 @@ construction (src/ir) and emission (src/gen).
   asserts every `VM_ONLY`-masked `RS_MODULE` row has NO wired producer —
   the fact that makes engine-capability refusal unreachable today — so the
   day a module wires the first one, that check fails and names this file as
-  the thing to build BEFORE the producer lands, not after.
+  the thing to build BEFORE the producer lands, not after. **It FIRED on `\K`
+  (2026-08-19), which is the day it was written for, and the answer was still
+  not SR-8**: `\K`'s verdict is not "some registry column says VM", it is "this
+  AST carries a node whose write is path-dependent" — a fact about the tree, not
+  about the table — so a construct-specific row is the honest shape, and a
+  generic column lookup designed around one customer is what D18/OS-0/D53
+  forbid. The tripwire keeps its demand for the other 47 rows and gains a NAMED
+  exception that PAYS: it asserts live that `--engine=dfa` on `a\Kb` refuses by
+  the construct's own name AND that the same pattern compiles on the default
+  engine. A SECOND construct arriving there is when the generic consultation has
+  earned its axis.
 
   It also DRIVES possessify.c, and the placement is a reported deviation from
   §2.8's literal reading rather than a silent choice. §2.8 proposes
@@ -95,9 +117,15 @@ construction (src/ir) and emission (src/gen).
   automaton for the diagnostic. The two refusal triggers are spelled
   differently on purpose (§9.2 item 2): a captures conflict names
   `--no-captures` as the way out, since the caller asked for captures merely by
-  not passing it; a `VM_ONLY`-construct conflict names the construct. Only the
-  first has a population today, and the second is empty BY POPULATION, not by
-  omission.
+  not passing it; a `VM_ONLY`-construct conflict names the construct.
+
+  **[M6.2 wave E] the second branch HAS a population now — `\K` — and it ran
+  for the first time without a line of it changing**, which is the whole value
+  of having written it at [M4.5b] against no customer. `pcrec --features
+  assertions --engine=dfa 'a\Kb'` refuses with "\K at pattern offset 1
+  requires the VM engine, which --engine=dfa excludes", where the captures
+  branch's `--no-captures` advice would have been a lie: no flag makes a `\K`
+  pattern DFA-compilable.
 
   **[M4.6f] (2026-08-17):** the PREFILTER FORCE PAIR (D46's controllability
   half for `fit.prefilter`, §6.1/§4.7) is applied here, immediately after the
@@ -194,6 +222,18 @@ construction (src/ir) and emission (src/gen).
   `(x)?a{0,4}\G` on `"aaaa"` answers `(0,0)` shipped and NO MATCH under `\z`'s
   arm (sabotage S84), which is D47.5's own failure mode one construct over.
 
+  **[M6.2 wave E] `\K` is TRANSPARENT, and it is the one arm in `first_of`
+  that needs no closure argument at all.** Every other zero-width kind here had
+  to be classified by WHICH WAY its satisfying set is closed, because each can
+  FAIL and the whole question is whether a retreat turns a failure into a
+  success. `\K` cannot fail — it is an epsilon in the NFA — so "modelled as
+  absent" is the fact rather than an approximation, and it takes A_EMPTY's arm.
+  The tempting wrong worry runs the other way: possessifying a loop that
+  CONTAINS a `\K` is also safe, because the cut discards retreat frames only
+  after the loop has exited at its chosen count, and a trial iteration that
+  failed has already had its `\K` write rewound by the fail label's trail
+  rewind — so the writes surviving a cut are exactly the winning path's.
+
   Tests: tests/possessify/ (its own CLAUDE.md explains why three separate
   checks are needed and what each is blind to); failing-direction controls
   tests/mech/sabotages/S45-S49.
@@ -241,6 +281,18 @@ construction (src/ir) and emission (src/gen).
   survives a change to what it depends on, so the check is re-derived directly
   on the reversed tree the emitter will walk. `pcrec_revdet_first` is exported
   so the check and the emitted dispatch read one computation.
+
+  **[M6.2 wave E] `\K` DECLINES, and it is the only decline in this file that
+  is a CORRECTNESS requirement rather than a missed rung.** This rung suppresses
+  the per-iteration capture writes and RECOVERS them afterwards by walking
+  backwards over ITERATION BOUNDARIES (§3.4's derivation). A `\K` position is
+  not on that lattice — it is wherever the winning path crossed it — so a
+  suppressed `\K` write is one nothing ever recovers, and the artifact would
+  report the wrong start silently. `rd_shape` declines the body, which makes
+  `rd_reverse` and `rd_alt_disjoint` unreachable for it; `rd_reverse`'s arm
+  ctx_fails LOUDLY rather than copying the node, because reversal is NOT
+  identity for `\K` — the seven kinds it sits beside survive reversal because
+  each is a PREDICATE, and `\K` is not one.
 
   Same two inheritances as possessify.c and for the same reasons. Every decision
   is in the SOUND direction, so anything unmodellable DECLINES and a declined

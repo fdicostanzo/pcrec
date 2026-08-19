@@ -245,6 +245,19 @@ test-altcls: all
 # other module's; this section is the three things a .rxt file structurally
 # cannot check, PLUS the wave's byte-identity gate.
 #
+# [M6.2 wave E] `run_kreset_diff.sh` joins as the wave's ONLY new script, and
+# the wave adds NO identity gate to the four above — deliberately. Waves A-D
+# each changed a construction spanning several emitter sites, so each needed a
+# corpus-wide byte comparison against a reference build to say a construct-free
+# pattern paid nothing. `\K` is VM-FORCED and the emitter reads its counter
+# into a DEFAULT ARTIFACT at exactly ONE site (`<prefix>_caps_out`'s body;
+# `--emit-ir`'s listing and `--trace`'s ACCEPT line read it too, and neither
+# writes a default artifact), so that claim is about one predicate: it is pinned as `[M6.2-KRESET rule 1b]` in
+# tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once
+# against the genuine PRE-WAVE COMPILER — a reference sharing no sources with
+# the subject, which is strictly stronger than a `-D` knob build and is what
+# wave D's own knob-placement finding argues for.
+#
 # `run_endvar_identity.sh` LIVES in tests/codegen/ (it is an identity
 # differential, kin to run_trie_identity.sh by technique) and RUNS here, which
 # is exactly the split tests/codegen/CLAUDE.md already documents for
@@ -267,7 +280,8 @@ test-assertions: all
 	    'bash tests/codegen/run_mlinectx_identity.sh' \
 	    'bash tests/codegen/run_gstart_identity.sh' \
 	    'bash tests/assertions/run_mline_diff.sh' \
-	    'bash tests/assertions/run_gstart_diff.sh'
+	    'bash tests/assertions/run_gstart_diff.sh' \
+	    'bash tests/assertions/run_kreset_diff.sh'
 
 # [M4.7b] K7's pin: what a large bounded repeat COSTS to compile, and that a
 # failed allocation is diagnosed rather than aborting the caller.

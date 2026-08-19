@@ -599,6 +599,170 @@ c"` from `(0,3)` into `(0,1)`, and
   IDENTITY gates (wave C's and wave D's) are added, the two heavy
   DIFFERENTIALS deliberately not — putting a multi-minute sweep on the
   sanitizer battery is a scheduling decision for the manager.
+  **WAVE E LANDED 2026-08-19 (lane/asrtwavee) — `\K`, AND THE MODULE'S
+  CONSTRUCT LIST IS COMPLETE.** `A_KRESET` lowering to **N_EPS** (`\K` changes
+  no language, only what is reported), the SECOND `forces_*` row in
+  src/opt/select_engine.c, and the trailed `caps[0][0] = pos` write. All three
+  of §6.3's rules are discharged; ONE OF THEM AS A CORRECTION, below.
+  **THE SLOT IS THE MECHANISM, and §6.2 does not name it.** `\K` writes
+  `stv[0]` — group 0's START slot, reserved by `nstate`'s `2 * ncaps` term
+  since [M4.5b] and never written by anything, since capture writes use `2*k`
+  with `k >= 1` and every other family bases at `2 * (ngroups + 1)`. So the
+  slot that already MEANS "the reported start" is the one `\K` writes, and it
+  inherits with no new machinery: the trail's exact old-value undo, the
+  per-search `PCREC_UNSET` fill (which becomes the "no `\K` crossed on this
+  path" signal — a value a position can never legitimately hold), the rewind
+  on a failed attempt, and the listing event. No slot is allocated. The ONE
+  cost §6.2's "one line" hides is a TRAIL ENTRY in `vm_cost`, multiplied by
+  the enclosing quantifier exactly as A_CAP's two are — the only member of the
+  assertion family that is not free there, and under-counting it returns
+  `PCREC_ERR_FRAMES` on a pattern the artifact can match.
+  EVIDENCE: tests/assertions/run_kreset_diff.sh — **13,398 default-engine
+  (hybrid, prefilter LIVE) + 13,398 `--engine=vm` (prefilter OFF) cells** over
+  33 patterns x 70 subjects x EVERY startpos in `[0, n]` at 0 divergences from
+  libpcre2; **23,548 ENTRY cells** on both engines at 0 wrong, of which
+  **2,462 have the consumed length differing from the reported span's width**
+  and 0 returned the width; the find-all loop agreeing span for span with
+  libpcre2 driven through the SAME §3.1 loop, including the empty-reported-span
+  arm `\K` is what makes reachable; tests/assertions/kreset.rxt **596 cases,
+  0 pending**, every expectation libpcre2-produced; four `[M6.2-KRESET]`
+  structural checks; sabotages S85/S86 and one new mech arm.
+  **§6.3 RULE 3's PROPOSED CURE WAS NOT NEEDED, and this is the wave's
+  substantive correction to the design.** The rule ("filter on the pre-`\K`
+  start, return the consumed length") is derived from the DFA artifact's
+  `rx_match` — `rx_search` plus `caps[0][0] != ctx->pos`, returning
+  `caps[0][1] - caps[0][0]` — and both lines really do break under `\K`. But
+  R30 E8's OTHER correction is that the two engines' match-here entries do not
+  share a shape, and a `\K` pattern is VM-FORCED, so it never HAS that entry.
+  The VM's calls `<prefix>_match_impl` at `ctx->pos` directly: the anchoring is
+  a property of the CALL rather than a test applied afterwards, and the return
+  is `pos - ctx->pos`, computed from positions and never from `caps`. So the
+  design's proposed slot ("the VM has to report both positions") describes a
+  fix for an entry a `\K` pattern cannot reach — the VM already keeps the
+  pre-`\K` start, in `ctx->pos`, where it always was. What the wave owed
+  instead was EVIDENCE, since "the entries happen to be right" is exactly the
+  claim that rots: kreset_entries.c drives all three entries, and
+  run_kreset_diff.sh §2 checks both match-here ones against libpcre2's answer
+  for **`\G(?:PAT)` at the same startpos** — wave D's construct used as the
+  ANCHORED-MATCH ORACLE this tree has no flag for, which is the generalisable
+  half: when an entry point has no oracle flag, find the PATTERN SPELLING that
+  asks the oracle the same question.
+  **ORACLE: the module's FOURTH exclusion, and it COMPLETES the list** —
+  `re.compile(r"a\Kb")` raises `bad escape \K`, so kreset.rxt is
+  `# pcre2-only` in its entirety (U11d). THREE of the module's eight constructs
+  are excluded WHOLLY (`\Z` answered wrongly, `\G` and `\K` not expressible)
+  and a fourth PARTLY (`(?m)`, its `^` half only); `\A`, `\z`, `\b`, `\B`
+  and `(?m)$` are python-verified cell for cell at 0 divergences, which is
+  what makes the rule a statement about particular CONSTRUCTS rather than
+  about the module. A lookbehind is NOT an escape hatch here: `(?<=a)b` is a
+  different assertion with different backtracking, cannot express the
+  variable-width shapes `\K` is for, and needs a module that does not exist.
+  **NO BYTE-IDENTITY GATE WAS BUILT, and that is a justified deviation from
+  the four-wave precedent rather than an omission.** Waves A-D each changed a
+  construction spanning several emitter decision points, so each needed a
+  corpus-wide comparison against a `-D` knob build. `\K` is VM-forced and the
+  emitter reads `v.nkreset` into a DEFAULT ARTIFACT at exactly ONE site
+  (`<prefix>_caps_out`'s body; `--emit-ir`'s listing and `--trace`'s ACCEPT
+  line read it too, and neither writes a default artifact),
+  so the claim is about one predicate: pinned permanently as
+  `[M6.2-KRESET rule 1b]`, which quotes the pre-wave body as a LITERAL so a
+  rewrite into a third shape fails too. The corpus-wide half was MEASURED ONCE
+  against the genuine PRE-WAVE COMPILER — **1,208/1,208 identical at the
+  default engine, 1,209/1,209 under `--engine=vm`, 0 refusal mismatches** — a
+  reference sharing NO SOURCES with the subject, which is strictly stronger
+  than a knob build and is the direct answer to wave D's own knob-placement
+  finding.
+  **DEVIATIONS AND FINDINGS RETURNED**:
+  (1) **THE SR-8 TRIPWIRE FIRED — the day it was written for — AND THE ANSWER
+  WAS STILL NOT SR-8.** `tests/registry/registry_check.c`'s
+  `check_engine_capability_tripwire` has asserted since [M4.7a] that no
+  `VM_ONLY`-masked `RS_MODULE` row has a wired producer, naming
+  select_engine.c as the thing to build first. [M6.3]'s trip was a
+  reclassification (a named group's AST is an ordinary A_CAP, so the rows
+  moved to ANY_ENGINE and LEFT the population); `\K` genuinely is VM-only and
+  stays in it. Building SR-8's generic registry-column consultation at sample
+  size ONE is what D18/OS-0/D53 forbid, and `\K`'s verdict is not "a column
+  says VM" but "this AST carries a node whose write is path-dependent" — a
+  fact about the tree. The tripwire keeps its demand for the other 47 rows and
+  gains a NAMED exception that PAYS: it asserts LIVE that `--engine=dfa` on
+  `a\Kb` refuses by the construct's own name AND that the same pattern
+  compiles on the default engine. **A SECOND construct arriving there is when
+  the generic consultation has earned its axis** — that is the recorded
+  trigger, and it is a manager decision.
+  (2) **WAVE D'S PREDICTION ABOUT THE ENABLED-BUT-UNBUILT MECHANISM IS
+  MEASURED WRONG.** Its note said that when `\K` left tests/reject's
+  `reject_gated assertions` paragraph, "the row that has to go WITH them is
+  the epilogue's own pin in src/parse/ext.c (the `UNBUILT` arm). A refusal
+  mechanism with no population is machinery nothing can test." The mechanism's
+  population is not this module's rows — it is EVERY registry row whose module
+  is enabled and whose port is unwired, and it is large and live: measured on
+  the shipped compiler, `--features backrefs '\k'`, `--features lookaround
+  '(?=a)'`, `--features atomic-groups '(?>a)'` and `--features quoting '[\Q]'`
+  all produce it. Deleting the arm would have deleted a live diagnostic. What
+  WAS true is narrower: `\K`'s row was the ONLY hand-written pin on that arm
+  anywhere in the tree. Four rows now stand in its place across THREE modules
+  and BOTH positions (the in-class wording is spliced at a different site in
+  ext.c), gated count 61 -> 64. **Generalisation for the next module: when a
+  module's last unbuilt construct lands, move the PIN, not the MECHANISM.**
+  (3) **The three optimisation rungs had to be decided and §6.2 is silent on
+  all of them.** `src/opt/revdet.c` DECLINES any body containing a `\K`, and
+  that decline is a CORRECTNESS requirement rather than a missed rung: the
+  reverse-deterministic rung suppresses per-iteration capture writes and
+  recovers them by walking backwards over ITERATION BOUNDARIES, and a `\K`
+  position is not on that lattice. The cursor rung declines on the kind
+  (`vm_det_seq`'s `default`), also required — its span loop scans by stride and
+  would skip the write. Possessification does NOT need to decline, and the
+  argument is the one worth keeping: `\K` is transparent to `first_of` because
+  it cannot FAIL, and possessifying a loop CONTAINING one is safe because the
+  cut discards retreat frames only after the loop exits at its chosen count,
+  while a trial iteration that failed has already had its write rewound by the
+  fail label. MEASURED off the artifacts' own `RX_VM_STRATS` stamps rather than
+  argued: `(?:a\K)*b` stamps `0x1` (POSSESSIVE) and answers `(3,4)` on
+  `"aaab"`, `(?:a\Kb)*c` stamps `0x1` and answers `(3,5)` on `"ababc"`, and
+  `(?:a\K)*ab` stamps `0x2` (BACKTRACKING — body and follow both start with
+  `a`, so the analysis declines) and answers `(2,4)`, which is the retreat
+  case. All three are corpus cells, all three libpcre2-verified, so the
+  possessification argument has both a shape that takes the rung WITH a `\K`
+  in the loop and the shape that would expose an error if the argument were
+  wrong.
+  (4) `run_kreset_diff.sh`'s §2 was BATCHED after measuring it: one driver
+  process and one awk per artifact instead of ~six subprocesses per cell,
+  9m18s -> 5m10s wall, with §2's own figures BYTE-IDENTICAL across the change
+  (23,548 cells, 2,462 non-vacuous, 0 wrong). A speedup that moved a count
+  would have meant the batching changed what was compared.
+  (5) K28 gains NO new spelling — the first wave since B not to. No shape in
+  this corpus compiles to a single dead state, and the reason CORRECTS wave
+  C's stated prediction rather than merely not confirming it: the shape needs
+  a pattern that CANNOT MATCH, every previous spelling got there by asserting
+  something impossible after a byte was consumed, and `\K` asserts nothing —
+  it cannot fail, so no placement of it makes a pattern unsatisfiable. The
+  rule is "one per construct that can make a pattern IMPOSSIBLE", not "one per
+  wave", and module `assertions` has now landed all of those. K28's entry
+  carries the correction; the repair slice's scope is unchanged at six
+  spellings.
+  (7) **THE GENERATED COMPLIANCE INDEX IS STALE FOR THE WHOLE MODULE AND THIS
+  WAVE DID NOT FIX IT — manager decision.** `docs/pcre2_compliance.md`'s
+  hand-written prose rows are corrected here (including the `\b \B \G` row,
+  which had read `REJECTED` for two waves after those waves landed), but the
+  GENERATED index below them still reads `REJECTED | planned` for all eight
+  constructs, because it is derived from each registry row's `status`/
+  `roadmap` columns and every one of them is still `RS_MODULE`/
+  `ROADMAP_PLANNED`. That is not `\K`'s situation, it is the module's: waves
+  A-D left it too. Changing those columns is a cross-cutting edit — the same
+  fields feed `registry_check`'s exact counts, `tests/reject`'s iterated rows,
+  PC-3's row-claim polarity and `compliance_section.py --check` — so it wants
+  its own slice rather than a rider on the closing wave, and it should be one
+  edit for all eight rather than one per construct.
+  (8) `run_kreset_diff.sh` is NOT on the `ubsan`/`asan` lists, inheriting wave
+  D's finding (6) posture for heavy differentials verbatim (it is a ~5 minute
+  sweep). Also a manager scheduling decision, unchanged by this wave.
+  (6) `docs/spec/match_api.md` §3.1 gains the wave's spec sentence, and it is
+  a bigger one than `\G`'s: `caps[0][0]` is where REPORTING begins, which is
+  not always where matching began, so `caps[0][0] == caps[0][1]` no longer
+  implies nothing was consumed and `caps[0][0]` is not a bound on where the
+  engine looked. The find-all loop is unaffected (it advances off
+  `caps[0][1]`) and the anchored entries return the CONSUMED length, which is
+  what makes the D38 callout advance terminate.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here

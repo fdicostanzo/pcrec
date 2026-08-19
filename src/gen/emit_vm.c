@@ -446,6 +446,31 @@ typedef struct {
                            * instead of a second analysis predicting it. A
                            * `\G`-free program keeps the signature it had
                            * before this wave and stays byte-identical. */
+    long long nkreset;    /* [M6.2 wave E] emitted `\K` write sites, counted as
+                           * they are written — `ngst`'s shape and `nclamp`'s
+                           * reason. It is the gate on ONE decision in a
+                           * DEFAULT artifact: whether `<prefix>_caps_out`
+                           * derives `caps[0][0]` from slot 0 or from its
+                           * `start` argument. A `\K`-free program takes the
+                           * pre-wave arm and is byte-identical, and because
+                           * that is the only default-artifact site reading
+                           * this counter, "a `\K`-free pattern pays nothing"
+                           * is a one-predicate claim rather than the
+                           * multi-site construction waves B-D each had to
+                           * argue.
+                           *
+                           * TWO NON-DEFAULT SURFACES read it as well, and
+                           * neither weakens that: `--emit-ir`'s SLOTS row
+                           * (slot 0 stops being entry-only the moment a `\K`
+                           * exists, and a listing saying otherwise would
+                           * describe a different program from the one beside
+                           * it — S10's drift), and `--trace`'s ACCEPT line
+                           * (which reports the consumed span AND the reported
+                           * one, because on a `\K` artifact they differ and
+                           * either alone misleads). A listing writes no
+                           * artifact at all, and `--trace` is a generation
+                           * axis whose artifact is different by
+                           * construction. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
                            * artifact (ONE gate for both, D49). Read by the
@@ -667,7 +692,10 @@ static bool vm_nullable(const Ast *a)
         /* [M6.2 wave B] zero-width, hence nullable. [M6.2 wave D] `\G` too.
          * NULLABLE is about the BYTES a node can consume, not about whether
          * it can succeed — an assertion that fails still consumes nothing. */
-        case A_WORDB: case A_NWORDB: case A_GSTART: return true;
+        /* [M6.2 wave E] `\K` is nullable in the strongest sense in this
+         * switch: it is not merely a test that consumes nothing, it is an
+         * epsilon (src/ir/nfa.c). */
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: return true;
         case A_CAP:   a = a->l; continue;
         case A_REP:   if (a->rmin == 0) return true; a = a->l; continue;
         case A_CAT:
@@ -904,7 +932,14 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
     for (;;) {
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART:
+        /* [M6.2 wave E] `\K` carries no capture NUMBER, so it contributes
+         * nothing to this dense index. It is also unreachable here — this
+         * runs only on a revdet-approved body and src/opt/revdet.c's shape
+         * scan declines every body carrying a `\K`, for a reason that is this
+         * function's own subject matter: the rung recovers capture values by
+         * a backward walk over iteration boundaries, and a `\K` position is
+         * not on that lattice. */
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
             return;
         case A_CAP:
             if (*n < cap) out[(*n)++] = a->capno;
@@ -1228,6 +1263,28 @@ static Cost vm_cost(Vm *v, const Ast *a)
      * one more comparison against a parameter, so the same nothing. */
     case A_WORDB: case A_NWORDB: case A_GSTART:
         return c;
+    /* [M6.2 wave E] `\K` IS THE ONE ASSERTION-FAMILY NODE THAT IS NOT FREE
+     * HERE, and getting this arm wrong is not a missed optimisation.
+     *
+     * Every kind on the line above emits a test and nothing else. `\K` emits
+     * `<PREFIX>_SET(0, pos)`, which is a TRAIL ENTRY — one slot save, so the
+     * write can be undone exactly when a backtrack passes back over it. If
+     * this arm returned the zero Cost, `trail_frames` would be sized one
+     * entry short per `\K` on the deepest path and the artifact would answer
+     * PCREC_ERR_FRAMES on a pattern it can match. Inside a quantifier the
+     * multiplication is A_REP's, exactly as it is for A_CAP's two entries.
+     *
+     * It allocates no SLOT and vm_count_slots says so: slot 0 is group 0's
+     * start, which `stv` has always reserved and nothing has ever written.
+     *
+     * `v->nocap` is not consulted, unlike A_CAP below, and the reason is
+     * structural rather than an omission: `nocap` is set only inside a
+     * reverse-deterministic body's forward scan, and src/opt/revdet.c
+     * declines every body containing a `\K`. There is no state of the
+     * emitter in which this write is suppressed. */
+    case A_KRESET:
+        c.trail = 1;
+        return c;
     case A_CAP:
         c = vm_cost(v, a->l);
         /* [ENG-BREP] no trail entry while capture writes are suppressed —
@@ -1330,7 +1387,15 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
     int stride = 0, nc = 0;
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-    case A_WORDB: case A_NWORDB: case A_GSTART:
+    /* [M6.2 wave E] `\K` allocates NO slot, and that is the mechanism rather
+     * than an accident. Its write goes to slot 0 — group 0's start — which
+     * `nstate`'s `2 * ncaps` term has reserved since [M4.5b] and which
+     * nothing has ever written (`vm_set` for group k uses `2*k`, and k >= 1;
+     * every other family bases at `2 * (ngroups + 1)`). Choosing the slot
+     * that already MEANS "the reported start" is what makes the trail, the
+     * per-search UNSET initialisation and the exact-restore undo apply to
+     * `\K` with no new machinery at all. See vm_emit's A_KRESET arm. */
+    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl); return;
     case A_ALT:
@@ -3586,6 +3651,56 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
                   v->p, v->p, next);
         vm_fail(v);
         return;
+    case A_KRESET:
+        /* [M6.2 wave E] `\K` — RESET THE REPORTED START (§6.2, §9.3's last
+         * table row). The module's last construct, and the only arm in this
+         * switch that emits no test and cannot fail: there is no `vm_fail`
+         * below it and no `goto` guarded by anything.
+         *
+         * IT IS A CAPTURE WRITE, SPELLED AS ONE. `vm_set` is the same
+         * primitive A_CAP's two writes go through, so `\K` inherits the whole
+         * of §3.2's write-and-undo discipline for free rather than by a
+         * parallel mechanism:
+         *
+         *   - it is TRAILED, so a backtrack past this point restores the
+         *     PREVIOUS value exactly (never a clear). That is not a corner
+         *     case: `(?:a\K)*ab` on "aaab" is PCRE2 (2,4), reached by writing
+         *     3 on the greedy path, failing the follow, and retreating to a
+         *     state where the write of 3 must be GONE and the write of 2 must
+         *     stand. `(?:a\K|ax)c` on "axc" is the same requirement across an
+         *     alternation instead of a loop: (0,3), which needs the `a\K`
+         *     branch's write of 1 undone when that branch loses. Both are
+         *     corpus cells; both are libpcre2-measured.
+         *   - it is rewound by `<prefix>_unwind` on a failed attempt, so a
+         *     `\K` reached during a doomed attempt at `start` cannot leak into
+         *     the answer for `start + 1`.
+         *   - it appears in the listing as a slot write, through the same
+         *     `vm_ev` the primitive already does.
+         *
+         * THE SLOT IS 0, AND CHOOSING IT IS THE WHOLE DESIGN. Slot 0 is group
+         * 0's start — reserved by `nstate`'s `2 * ncaps` term since [M4.5b],
+         * and never written by anything, because `vm_set` for group k uses
+         * `2*k` with k >= 1 and every other slot family bases at
+         * `2 * (ngroups + 1)`. So the slot that already MEANS "the reported
+         * start of the match" is the one `\K` writes, no slot is allocated,
+         * no capacity changes, and `<prefix>_caps_out` reads one existing
+         * array element instead of taking a new parameter.
+         *
+         * PCREC_UNSET IS THE "NO `\K` WAS CROSSED" SIGNAL and it is not an
+         * overload: `work_init` fills every slot with it once per search, and
+         * the trail restores it by construction on every rewind to mark 0. A
+         * position can never legitimately be PCREC_UNSET (-1), so the test in
+         * `caps_out` is total. `(?:a\K)?b` on "b" is the cell — PCRE2 (0,1),
+         * the `\K` not crossed — beside `(?:a\K)?b` on "ab", which is (1,2).
+         *
+         * `vm_charge` at the top of this function has already counted the
+         * node; nothing else here costs anything. */
+        v->nkreset++;
+        vm_lbl(v, entry, NULL);
+        vm_set(v, 0, "(ptrdiff_t)pos",
+               "\\K resets the reported start of the match to here");
+        vm_goto(v, next);
+        return;
     case A_WORDB:
     case A_NWORDB: {
         /* [M6.2 wave B] `\b` / `\B` (assertions_design.md §9.3).
@@ -3898,7 +4013,16 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         if (k == 0) snprintf(what, sizeof what, "$0 whole match");
         else        snprintf(what, sizeof what, "group %d", k);
         sb_printf(o, "  %2d,%-9d %-22s %s\n", 2 * k, 2 * k + 1, what,
-                  k == 0 ? "written by the ENTRY, not the VM (S3.4)"
+                  /* [M6.2 wave E] slot 0 STOPS being entry-only the moment a
+                   * `\K` exists: that is the whole of the construct's
+                   * mechanism, and a listing still claiming "written by the
+                   * ENTRY, not the VM" would describe a different program
+                   * from the one beside it. The listing's own constraint
+                   * (S10: derived from the structure the emitter walks) is
+                   * about drift like this, and it costs one condition. */
+                  k == 0 ? (v->nkreset > 0
+                              ? "start written by the VM (\\K); end by the ENTRY"
+                              : "written by the ENTRY, not the VM (S3.4)")
                          : (w ? "written on traverse, trailed" : "never written"));
     }
     if (v->nguard_total == 0)
@@ -4736,9 +4860,24 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     char accept_tr[160], fail_tr[192], exhaust_tr[128];
     accept_tr[0] = fail_tr[0] = exhaust_tr[0] = 0;
     if (v.tracing) {
-        snprintf(accept_tr, sizeof accept_tr,
-                 "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
-                 " ctx->pos, pos);\n", v.p);
+        /* [M6.2 wave E] ON A `\K` ARTIFACT THIS LINE SAYS BOTH SPANS, because
+         * on such an artifact they are different and one of them alone is
+         * misleading. `[ctx->pos, pos)` is what the PROGRAM consumed, which is
+         * what a trace of the program should say; the REPORTED span starts at
+         * the last crossed `\K`, and a reader watching `(?:a\K)*ab` retreat
+         * would otherwise see "ACCEPT [0,4)" and the caller print "2 4" with
+         * nothing connecting them. Emitted only where a `\K` exists, so a
+         * `\K`-free traced artifact keeps its line byte for byte. */
+        if (v.nkreset > 0)
+            snprintf(accept_tr, sizeof accept_tr,
+                     "    fprintf(stderr, \"[%s] ACCEPT consumed [%%zu,%%zu)"
+                     " reported [%%td,%%zu)\\n\", ctx->pos, pos,"
+                     " stv[0] != PCREC_UNSET ? stv[0] : (ptrdiff_t)ctx->pos,"
+                     " pos);\n", v.p);
+        else
+            snprintf(accept_tr, sizeof accept_tr,
+                     "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
+                     " ctx->pos, pos);\n", v.p);
         snprintf(fail_tr, sizeof fail_tr,
                  "    fprintf(stderr, \"[%s] backtrack: %%u frame(s), trail %%u\\n\","
                  " w->btn, w->trn);\n", v.p);
@@ -4811,19 +4950,57 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * On a completed match EVERY pair is written (subst C6): slots untouched
      * during the match still hold UNSET from the initialisation. On a failed
      * match the caller's array is UNTOUCHED, because nothing was copied. */
+    /* [M6.2 wave E] THE `\K` RULE, and it is ONE LINE in exactly one place
+     * (assertions_design.md §6.3 rule 1).
+     *
+     * `caps[0][0]` on a `\K` artifact must come FROM THE VM ALONE. The
+     * prefilter's span start — the `start` argument below, which under the
+     * hybrid is `win[0][0]`, i.e. the REVERSE PASS's answer — is the PRE-`\K`
+     * start, and it is used for exactly one thing: bounding where the VM
+     * begins. Writing it out would report the position matching began at,
+     * where PCRE2 reports the position where the last crossed `\K` was.
+     *
+     * Both halves of the ternary are live and each has its cell. `a\Kb` on
+     * "ab" crosses the `\K` and reports (1,2); `(?:a\K)?b` on "b" does not
+     * cross it, the slot still holds the per-search PCREC_UNSET, and the
+     * answer is the prefilter's own start — (0,1), which is right. So the
+     * fallback is not a defensive default, it IS `\K`'s semantics for a path
+     * that never passed one.
+     *
+     * `caps[0][1]` IS UNTOUCHED and must be: `\K` moves the reported START
+     * and nothing else. `ab\K` on "ab" is PCRE2 (2,2) — a reported span of
+     * length zero after consuming two bytes — which is the shape that makes
+     * the match-here entries' return value a separate question (see them
+     * below).
+     *
+     * A `\K`-FREE ARTIFACT TAKES THE PRE-WAVE ARM, character for character.
+     * This is the only site that reads `v.nkreset` into a DEFAULT artifact,
+     * which is what makes "wave E costs a `\K`-free pattern nothing" a claim
+     * about one predicate rather than about a construction spanning four
+     * files. `vm_render_listing` and the `--trace` ACCEPT line read it too;
+     * a listing writes no artifact, and a traced artifact is a different
+     * artifact by construction (the axis says so in its own text). */
     sb_printf(c,
         "static void %s_caps_out(const %s_work *w, ptrdiff_t (*caps)[2],\n"
         "                        size_t start, ptrdiff_t len)\n"
         "{\n"
         "    int k;\n"
-        "    caps[0][0] = (ptrdiff_t)start;\n"
+        "%s"
         "    caps[0][1] = (ptrdiff_t)start + len;\n"
         "    for (k = 1; k < %s_NCAPS; k++) {\n"
         "        caps[k][0] = w->stv[2 * k];\n"
         "        caps[k][1] = w->stv[2 * k + 1];\n"
         "    }\n"
         "}\n\n",
-        v.p, v.p, v.up);
+        v.p, v.p,
+        v.nkreset > 0
+          ? "    /* \\K: the reported start is where the winning path last\n"
+            "     * crossed a \\K (slot 0, trailed), NOT where matching began.\n"
+            "     * PCREC_UNSET means no \\K was crossed on this path. */\n"
+            "    caps[0][0] = w->stv[0] != PCREC_UNSET ? w->stv[0]\n"
+            "                                         : (ptrdiff_t)start;\n"
+          : "    caps[0][0] = (ptrdiff_t)start;\n",
+        v.up);
 
     /* ---- <prefix>_search (§2.6) ---------------------------------------- */
     sb_printf(c,
@@ -4942,6 +5119,43 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
+    /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
+     * REQUIREMENTS ARE ALREADY MET HERE, AND NOT BY ACCIDENT.
+     *
+     * §6.3 quotes the DFA artifact's `rx_match` — `rx_search` plus
+     * `caps[0][0] != ctx->pos`, returning `caps[0][1] - caps[0][0]` — and
+     * shows both lines breaking under `\K`: the filter compares against
+     * the POST-`\K` start and rejects a genuine anchored match, and the
+     * return is the POST-`\K` length where a D38 callout's advance needs
+     * the CONSUMED one. The rule it derives is "filter on the pre-`\K`
+     * start, return the consumed length".
+     *
+     * THIS ENTRY IS NOT THAT SHAPE, which is E8's other correction: the
+     * two engines' match-here entries do not share one. This one calls
+     * `<prefix>_match_impl` directly, so:
+     *
+     *   - THE FILTER IS STRUCTURAL. `match_impl` starts at `ctx->pos` and
+     *     never moves it; there is no retry loop and no start-equality
+     *     test to get wrong. "Anchored at the requested position" is a
+     *     property of the call, not a property checked afterwards, so
+     *     there is nothing here for a post-`\K` start to be compared
+     *     against. `a\Kb` at `ctx->pos == 0` returns 2, where the DFA
+     *     entry's filter would return -1.
+     *   - THE RETURN IS ALREADY THE CONSUMED LENGTH. `match_impl` returns
+     *     `pos - ctx->pos`, computed from positions, not from `caps`, so
+     *     `\K` cannot reach it. `ab\K` at 0 returns 2 while its reported
+     *     span is (2,2) — the case where the two numbers genuinely differ
+     *     and a `caps`-derived return would be 0, which as a callout
+     *     advance is an infinite loop.
+     *
+     * So wave E changes NOTHING in this function, and that is a claim
+     * worth a test rather than a comment: `tests/assertions/kreset_
+     * entries.c` drives this entry and `<prefix>_match_caps` beside
+     * `<prefix>_search` on one `\K` artifact, and
+     * `run_codegen_tests.sh`'s `[M6.2-KRESET]` block asserts the DFA
+     * artifact's own entry is unchanged. A `\K` pattern never HAS a DFA
+     * entry (it is VM-forced), which is why the second half has to be
+     * checked on a `\K`-free artifact. */
     sb_printf(c,
         "/* F1's unconditional export, typed rx_matchfn.\n"
         " *\n"

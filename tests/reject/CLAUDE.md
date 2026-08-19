@@ -333,3 +333,38 @@ not call-order), though the checked set and the `== Summary ==` figures are
 exact either way. See docs/testing.md "Internal parallelism and section
 composition ([TT-2])" for the mechanism and the sabotage validation
 (a killed shard hard-fails, never silently passes).
+
+## [M6.2 wave E] the enabled-but-unbuilt pin was RE-HOMED, not retired
+
+`\K` was the last `reject_gated assertions` row and the LAST
+enabled-but-unbuilt row in the tree; wave E built the construct, so the row
+became a lie and the whole `assertions` paragraph went with it.
+
+**Wave D's own note predicted the next step and was WRONG about it, which is
+the part to read.** It said the row that had to go WITH the paragraph was
+"the epilogue's own pin in `src/parse/ext.c` (the `UNBUILT` arm). A refusal
+mechanism with no population is machinery nothing can test." The mechanism's
+population is not module `assertions`' rows — it is EVERY registry row whose
+module is enabled and whose port is unwired, and that set is large and live.
+MEASURED on the shipped compiler by wave E:
+
+    --features backrefs       '\k'     -> "module 'backrefs' is enabled but
+                                           \k is not implemented yet"
+    --features lookaround     '(?=a)'  -> ... '(?=...)' ...
+    --features atomic-groups  '(?>a)'  -> ... '(?>...)' ...
+    --features quoting        '[\Q]'   -> ... '\Q in a class' ...
+
+So deleting the arm would have deleted a live diagnostic. What WAS true is
+narrower and is what the wave actually fixed: `\K`'s row was the ONLY
+hand-written pin on that arm anywhere in the tree, so retiring it would have
+left a large population with no literal expectation — the exact shape this
+directory exists to prevent, arriving through a wave doing the right thing to
+its own rows. Four rows now stand in its place, across THREE modules and BOTH
+positions: the diagnostic is assembled from each row's own `module` and
+`syntax`, so a single-module pin cannot tell "the sentence is right" from
+"the sentence happens to be right for `backrefs`", and the in-class wording is
+spliced at a DIFFERENT site in `ext.c` from the `UNBUILT` macro's.
+
+Gated count 61 -> 64 (one row left, four arrived). The generalisation for the
+next module: when a module's last unbuilt construct lands, move the PIN, not
+the MECHANISM.

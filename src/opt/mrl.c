@@ -104,6 +104,13 @@ long long pcrec_minw(const Ast *a)
         /* [M6.2 wave D] `\G` consumes nothing either — it compares the
          * position against `startpos` and reads no byte at all. */
         case A_GSTART:
+        /* [M6.2 wave E] `\K` consumes nothing either — it writes a position,
+         * it does not read or advance one. Its minimum width is 0 in the
+         * strongest sense available to this file: `\K` is an epsilon in the
+         * NFA (src/ir/nfa.c), so `pcrec_minw` of a pattern with one is the
+         * same number as `pcrec_minw` of the pattern without it, which is
+         * what makes the prune bound this file computes indifferent to it. */
+        case A_KRESET:
             return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));

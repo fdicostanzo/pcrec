@@ -143,7 +143,21 @@ refuses() {
 # — and this loop's `-o` write is not the thing K28 breaks, but a control that
 # quietly depended on an open known issue would go red the day K28 is fixed
 # for reasons unrelated to `\G`.)
-for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y'; do
+#
+# [M6.2 wave E] `\K` JOINS AND CLOSES THE LIST — every one of the module's
+# eight constructs is now on it, and tests/reject's whole `reject_gated
+# assertions` paragraph retired in the same change. Three spellings, chosen
+# for what each reaches rather than for coverage: `a\Kb` is the ordinary
+# shape; `a\Kb|c` is the one where the `\K` sits on ONE BRANCH, so the
+# trailed write has to survive an alternation whose other branch never
+# performs it; and `(?:a\K)*b` puts it inside a quantifier, which is the only
+# spelling where the write is performed MORE THAN ONCE per attempt and the
+# capacity analysis has to have counted a trail entry per iteration
+# (src/gen/emit_vm.c's vm_cost A_KRESET arm). A control that only compiled
+# `a\Kb` would not notice the third failing to BUILD — it would fail at
+# runtime as PCREC_ERR_FRAMES, which no compile-only control can see.
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y' \
+         'a\Kb' 'a\Kb|c' '(?:a\K)*b'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
         ok "[assertions] '$p' COMPILES — the module's built constructs are BUILT, so tests/reject's 'is not implemented yet' rows are about the unbuilt ones rather than about an empty module"
@@ -161,7 +175,8 @@ for p in '(?m)a$' '(?m:a$)' '(?-m)a$' '(?m)^a'; do
 done
 # ...and the same ones must still REFUSE with the gate closed, which is what
 # makes the line above a statement about the gate rather than about the build.
-for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y'; do
+for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx' '\Gx' '\Gx|y' \
+         'a\Kb' 'a\Kb|c' '(?:a\K)*b'; do
     refuses bare "$p" "requires module 'assertions'"
 done
 # `(?m)`'s gate-closed twin is `modifiers` WITHOUT `assertions`: bare would
@@ -196,7 +211,7 @@ done
 #
 # The `\A` row is the CONTROL: it was accepted before this wave under BOTH
 # capture modes, so a "fix" that widened the wrong way moves it.
-for p in '(?<n>\b)*' '(?<n>\B)*' '(?<n>\G)*' '(?<n>\A)*'; do
+for p in '(?<n>\b)*' '(?<n>\B)*' '(?<n>\G)*' '(?<n>\K)*' '(?<n>\A)*'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if "$PCREC" --features assertions,named-groups --no-captures -p rx \
                 -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
@@ -320,6 +335,55 @@ for p in '\b((a)|ab){40}c\b' '^\b((a)|ab){40}c\b'; do
         bad "[budget] CONTROL '$p' should compile: $(cat "$WORKDIR/e.txt")"
     fi
 done
+
+# ---------------------------------------------------------------------------
+# 5. [M6.2 wave E] THE ENGINE STAMP ON A `\K` ARTIFACT
+# ---------------------------------------------------------------------------
+# `\K` is module `assertions`' only VM_ONLY construct, and D46's rule is that
+# a selection point must be OBSERVABLE. Three surfaces carry the same fact and
+# all three are asserted here, because they are produced at different places
+# and a build could get one right while another says nothing:
+#
+#   RX_ENGINE       the compile-time macro (emit_dfa.c's shared prologue)
+#   RX_ENGINE_WHY   the same, with the REASON — and the reason must name the
+#                   CONSTRUCT, not "capture group", because a capture-free
+#                   `\K` pattern has no other explanation available and a
+#                   user reading "capture group" would reach for
+#                   --no-captures, which cannot help
+#   rx_info.engine  the link/runtime reflection struct (D43), which is the
+#                   CANONICAL record; the macros serve compile-time consumers
+#
+# The CONTROL is a `\K`-free capture pattern, which is also VM-forced but for
+# the OTHER reason: without it, a build that stamped "\K" on everything, or
+# that had simply hardcoded the VM, would pass every row above.
+kstamp() { # kstamp <label> <pattern> <want-why-substring>
+    local label="$1" pat="$2" want="$3"
+    rm -f "$WORKDIR/out.c"
+    if ! "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$pat" 2>"$WORKDIR/e.txt"; then
+        bad "[engine stamp] '$pat' should compile: $(cat "$WORKDIR/e.txt")"
+        return
+    fi
+    local eng why info
+    eng=$(grep -m1 '#define RX_ENGINE ' "$WORKDIR/out.c" | sed 's/.*"\(.*\)".*/\1/')
+    why=$(grep -m1 '#define RX_ENGINE_WHY ' "$WORKDIR/out.c" | sed 's/.*"\(.*\)".*/\1/')
+    # The emitted line is `.engine = 2, /* PCREC_ENGINE_VM */`, so the value
+    # is taken by FIELD rather than by squeezing whitespace out of the whole
+    # line — the trailing comment is part of the artifact's readability and a
+    # check that depended on its absence would break the day it is reworded.
+    info=$(grep -m1 '\.engine = ' "$WORKDIR/out.c" | sed 's/.*\.engine = \([0-9-]*\).*/\1/')
+    if [ "$eng" != "vm" ]; then
+        bad "[engine stamp] $label: RX_ENGINE is '$eng', want 'vm'"
+    elif ! printf '%s' "$why" | grep -qF -- "$want"; then
+        bad "[engine stamp] $label: RX_ENGINE_WHY is \"$why\", which does not name $want"
+    elif [ "$info" != "2" ]; then
+        bad "[engine stamp] $label: rx_info.engine is '$info', want 2 (PCREC_ENGINE_VM). The macro and the struct are produced at different places and D43 makes the STRUCT canonical"
+    else
+        ok "[engine stamp] $label: RX_ENGINE \"vm\", RX_ENGINE_WHY \"$why\", rx_info.engine PCREC_ENGINE_VM — all three surfaces agree"
+    fi
+}
+kstamp "a \\K pattern names the CONSTRUCT" 'a\Kb' '\K'
+kstamp "a \\K pattern with captures names the CAPTURE (first forcing row wins, and it is the reason a user can act on)" '(a)\Kb' 'capture group'
+kstamp "CONTROL: a \\K-free capture pattern is VM-forced for the OTHER reason" '(a)b' 'capture group'
 
 echo
 echo "== Summary =="

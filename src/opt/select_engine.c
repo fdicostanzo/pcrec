@@ -16,12 +16,20 @@
  * the bound is cheaper to write now than to retrofit around a rewrite.
  *
  * WHAT FORCES THE VM TODAY (§5.3's table, restricted to constructs that have
- * a producer): exactly one row, "capturing group with captures REQUESTED".
- * Every other VM_ONLY row in the registry is gated by a module with no
- * producer (§9.1), so the parser refuses those patterns long before selection
- * runs and this pass can never see one. That is also why SR-8's flip is
- * smaller than its row implies: ZERO currently-refused constructs become
- * compilable when the VM exists.
+ * a producer): TWO rows — "capturing group with captures REQUESTED", and
+ * `\K` ([M6.2] wave E).
+ *
+ * **THE PARAGRAPH THAT USED TO STAND HERE SAID "EXACTLY ONE ROW", AND ITS
+ * REASON EXPIRED RATHER THAN BEING WRONG.** It ran: every other VM_ONLY row
+ * in the registry is gated by a module with no producer (§9.1), so the parser
+ * refuses those patterns long before selection runs and this pass can never
+ * see one — which is also why SR-8's flip is smaller than its row implies
+ * (ZERO currently-refused constructs become compilable when the VM exists).
+ * Module `assertions` now HAS a producer and `\K` is its VM_ONLY row
+ * (src/parse/registry.c), so the premise no longer holds and two other
+ * statements in this file move with it: SR-8's flip has its first member, and
+ * the `--engine=dfa` override's second branch below stops being empty by
+ * population. Both are annotated where they are stated.
  *
  * [M4.7a]: SR-8's consuming socket is deliberately NOT built here yet — zero
  * producers means zero customers (D18/OS-0/D53's standing "earn its axis"
@@ -29,7 +37,9 @@
  * tripwire is what stands in for it: it asserts every VM_ONLY-masked
  * RS_MODULE row has no wired producer, so the day a module wires the first
  * one, THAT check fails and names this file as the thing to build before the
- * producer lands, not after.
+ * producer lands, not after. **IT FIRED ON `\K`, WHICH IS THE DAY IT WAS
+ * WRITTEN FOR** — see that check for what wave E did to it, and why the
+ * answer was to give it a NAMED, ARGUED exception rather than to delete it.
  *
  * THE TRIGGER IS THE REQUESTED OUTPUT, NOT THE PRESENCE OF A `(` (§5.3, the
  * correction to the freeze document's candidate (b)). `a(b|c)+d` compiled
@@ -81,8 +91,91 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
     return ENGM_VM;
 }
 
+/* ---- the second registered analysis: `\K` ([M6.2] wave E) ----------------
+ *
+ * THE SOCKET'S FIRST REAL CUSTOMER, and the first time the paragraph at the
+ * top of this file stops being true. It says "exactly one row", and that every
+ * other VM_ONLY registry row is gated by a module with no producer so the
+ * parser refuses those patterns long before selection runs. Module
+ * `assertions` now has a producer and `\K` is its VM_ONLY row
+ * (src/parse/registry.c), so a `\K` pattern reaches here compiled and asking
+ * for an engine. This row is what answers.
+ *
+ * WHY IT WALKS THE AST WHERE `forces_captures` DELIBERATELY DOES NOT. That
+ * row asks whether the artifact will PROMISE group offsets, because that is
+ * the honest form of its question — the trigger is the requested OUTPUT. The
+ * honest form of THIS question is structural: `caps[0][0]` is path-dependent
+ * exactly when an A_KRESET node exists in the tree, so the tree is what gets
+ * asked. It also keeps the row correct for the socket's whole reason to
+ * exist: a future `discharge` hook that rewrote a `\K` away would flip this
+ * verdict on the next round, where a parse-time counter would keep saying VM
+ * forever.
+ *
+ * THE OFFSET IS NOT THE WALK'S. No AST node carries a source position, so the
+ * `engine_why` stamp reads `cx->first_kreset_pos` (src/parse/mod_assertions.c
+ * records it, on `first_cap_pos`'s precedent). It is read only on the path
+ * where the walk already found a node, so the two cannot disagree about
+ * WHETHER there is a `\K`; on a tree where a rewrite had deleted some but not
+ * all of them they could disagree about WHICH one is named, which is D26
+ * tier-3 wording and not a verdict. */
+static bool has_kreset(const Ast *a)
+{
+    /* Iterative on both spines, recursive only into a spine element's right
+     * child and into A_CAP/A_REP bodies — D10/DD-10's discipline, held the
+     * way possessify.c/revdet.c/altcls.c hold it. A flat concatenation is
+     * allowed to be 20,000 elements long; the nesting depth is bounded by the
+     * parser's group cap. */
+    for (;;) {
+        switch (a->k) {
+        case A_KRESET:
+            return true;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART:
+            return false;
+        case A_CAP: case A_REP:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (has_kreset(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (has_kreset(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        /* No `default:` — mrl.c:18-24's rule. A node kind added after this
+         * file is written must be a COMPILE ERROR here, because "does this
+         * construct make the reported start path-dependent" is a question
+         * only the author of the new kind can answer, and inheriting "no" is
+         * the silent wrong answer. */
+        return false;
+    }
+}
+
+static unsigned forces_kreset(Ctx *cx, const Ast *a, size_t *why_pos,
+                              const char **why)
+{
+    if (!has_kreset(a)) return ENGM_DFA | ENGM_VM;
+    *why_pos = cx->first_kreset_pos == (size_t)-1 ? 0 : cx->first_kreset_pos;
+    *why = "\\K";
+    return ENGM_VM;
+}
+
+/* ORDER MATTERS ONLY FOR THE DIAGNOSTIC, and it is captures-first on purpose.
+ * The pass ANDs every row's mask, so the verdict is order-independent; `why`
+ * is taken from the FIRST row that excludes the DFA. A `\K` pattern that also
+ * captures is therefore explained as "capture group at pattern offset N",
+ * which is the reason a user can act on (`--no-captures` is a real option;
+ * "do not write `\K`" is not). A capture-free `\K` pattern gets the `\K`
+ * explanation, which is then the only one available and the right one. */
 static const EngineAnalysis analyses[] = {
     { "captures", forces_captures, NULL },
+    { "kreset",   forces_kreset,   NULL },
 };
 
 /* ---- the pass ---- */
@@ -216,10 +309,20 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
      * they are different conflicts and a shared message would lie (§9.2 item
      * 2): the captures conflict (D44.6/E-7) names --no-captures as the way
      * out, since the caller asked for captures merely by not passing it; a
-     * VM_ONLY-construct conflict names the construct. Only the first is
-     * reachable today — every VM_ONLY construct is module-gated by a module
-     * with no producer, so the parser refuses it first (§9.1). The second
-     * branch is written anyway and is EMPTY BY POPULATION, not by omission. */
+     * VM_ONLY-construct conflict names the construct.
+     *
+     * **[M6.2 wave E] THE SECOND BRANCH NOW HAS A POPULATION: `\K`.** It was
+     * written at [M4.5b] and described here as "EMPTY BY POPULATION, not by
+     * omission", on the argument that every VM_ONLY construct is gated by a
+     * module with no producer. That argument was retired the moment module
+     * `assertions` shipped `\K` (see this file's header), and the branch ran
+     * for the first time without a line of it changing — which is the whole
+     * value of having written it then. `pcrec -p rx --features assertions
+     * --engine=dfa 'a\Kb'` refuses with "\K at pattern offset 1 requires the
+     * VM engine, which --engine=dfa excludes", where the captures branch's
+     * `--no-captures` advice would have been a lie: there is no flag that
+     * makes a `\K` pattern DFA-compilable, and D44.6's rule is that a request
+     * the pattern cannot honour is REFUSED, never silently downgraded. */
     switch (cx->opt->engine) {
     case PCREC_ENGINE_DFA:
         if (!(mask & ENGM_DFA)) {

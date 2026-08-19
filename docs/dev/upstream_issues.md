@@ -429,3 +429,50 @@ subjects, the same startpos values and the same oracle invocation. It is a
 strictly weaker instrument than wave C's and it is the strongest one
 available: a startpos convention error or a subject that lost a byte still
 shows up there, and nothing else in the tree would see it.
+
+### U11d — python `re`: `\K` DOES NOT EXIST (module `assertions`, [M6.2] wave E)
+
+**Found**: 2026-08-19 by the [M6.2] wave E implementation lane. U11c's shape
+exactly, one construct over, and recorded separately for the reason U11c is
+separate from U11: the four exclusions in this module are four different
+FACTS, and a reader who sees one entry covering "some assertions" cannot tell
+which constructs are safe to write a python-verified cell for.
+
+```
+>>> import re; re.compile(r'a\Kb')
+re.error: bad escape \K at position 1
+```
+
+**There is no rewriting, and here the reason is deeper than U11c's.** `\G`
+is unexpressible because python cannot assert against a search's start
+offset; `\K` is unexpressible because python's `re` has no way for a pattern
+to move the REPORTED START of its own match at all. A lookbehind gets close
+in the cases where the pre-`\K` part is fixed-width (`(?<=a)b` for `a\Kb`),
+and it is not the same construct: it is a different assertion with different
+backtracking behaviour, it fails on the variable-width shapes that make `\K`
+worth having, and it needs module `lookaround`, which does not exist. Writing
+a cell that way would encode a translation and check the translation.
+
+**Impact**: `tests/assertions/kreset.rxt` is `# pcre2-only` in its ENTIRETY,
+block by block, and is verified by `tests/assertions/verify_pcre2.py` against
+libpcre2. That is the FOURTH entry in module `assertions` where the base-tier
+oracle cannot answer — `\Z` (U11, WRONG answer), `(?m)^` (U11b, DIFFERENT
+answer), `\G` (U11c, no answer) and `\K` (this entry, no answer) — and it
+COMPLETES the list. Counted by CONSTRUCT rather than by entry: three of the
+module's eight are excluded WHOLLY (`\Z`, `\G`, `\K`) and a fourth PARTLY
+(`(?m)`, its `^` half only), while `\A`, `\z`, `\b`, `\B` and `(?m)$` are
+python-verified cell for cell at 0 divergences. That asymmetry is the point:
+the exclusions are statements about particular constructs — and, for `(?m)`,
+about one HALF of one — never about the module.
+
+**The consequence for the wave's INSTRUMENT is U11c's, plus one thing U11c
+did not need.** `run_kreset_diff.sh` keeps the python arm on `\K`-FREE
+control patterns for U11c's reason. But wave E also needs an oracle for a
+question no oracle binary in this tree exposes — "does this pattern match
+ANCHORED at offset `sp`", which is what `<prefix>_match`/`_match_caps`
+answer — and the answer is to ask libpcre2 about `\G(?:PAT)` at startpos
+`sp`. `\G` is exactly "match here and nowhere else", so wave D's construct
+becomes wave E's oracle device, from libpcre2's own engine with no arithmetic
+of the script's own. That is worth recording beside the exclusion because it
+is the shape of the answer whenever an entry point has no oracle flag: find
+the PATTERN SPELLING that asks the oracle the same question.

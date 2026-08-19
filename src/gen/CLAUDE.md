@@ -223,6 +223,79 @@ that none of this costs a `\G`-free pattern a byte, and
 contiguity, the two-entry agreement and the subject sweep — the three things
 no `.rxt` corpus can express.
 
+## **[M6.2 wave E] `\K`: ONE TERNARY, and no identity gate**
+
+`\K` is the module's last construct and the only one with NO DFA path at all,
+so unlike waves A-D this one adds nothing to `emit_dfa.c` — no view, no class
+axis, no start family, no dispatch branch. Its whole footprint in this
+directory is in `emit_vm.c`, and it is four things:
+
+- **The write is a CAPTURE WRITE, spelled as one.** `vm_emit`'s `A_KRESET`
+  arm calls `vm_set(v, 0, "(ptrdiff_t)pos", ...)` — the same primitive A_CAP's
+  two writes go through — so `\K` inherits §3.2's write-and-undo discipline
+  entire: the trail's EXACT OLD-VALUE restore (never a clear), the rewind on a
+  failed attempt, and the listing event. It is the only arm in that switch
+  that emits no test and cannot fail.
+- **The slot is 0, and that choice IS the design.** Slot 0 is group 0's start,
+  reserved by `nstate`'s `2 * ncaps` term since [M4.5b] and never written by
+  anything (capture writes use `2*k` with `k >= 1`; every other family bases
+  at `2 * (ngroups + 1)`). So the slot that already MEANS "the reported start"
+  is the one `\K` writes: no slot is allocated, `PCREC_UNSET` becomes the "no
+  `\K` was crossed on this path" signal for free (a position can never
+  legitimately be -1), and `caps_out` reads one existing array element instead
+  of taking a new parameter.
+- **`vm_cost` charges ONE TRAIL ENTRY per emitted `\K`**, multiplied by the
+  enclosing quantifier exactly as A_CAP's two are. This is the one place the
+  construct is not free, and getting it wrong is not a missed optimisation —
+  it under-sizes `trail_frames` and the artifact returns `PCREC_ERR_FRAMES` on
+  a pattern it can match. `vm_count_slots` correctly allocates nothing.
+- **`<prefix>_caps_out` derives `caps[0][0]` from slot 0 or from `start`**,
+  gated on `v.nkreset`. Under the hybrid `start` is `win[0][0]` — the REVERSE
+  PASS's answer, i.e. the PRE-`\K` start — which assertions_design.md §6.3
+  rule 1 says may bound the search and must never be written out. Both arms
+  are live: `a\Kb` on "ab" is (1,2) through the slot, `(?:a\K)?b` on "b" is
+  (0,1) through the fallback, and the fallback is `\K`'s semantics rather than
+  a defensive default.
+
+**THIS IS THE ONLY SITE THAT READS `v.nkreset` INTO A DEFAULT ARTIFACT, WHICH
+IS WHY THE WAVE SHIPS NO BYTE-IDENTITY GATE.** Two non-default surfaces read it
+as well and neither weakens that: `--emit-ir`'s SLOTS row stops claiming slot 0
+is entry-only when a `\K` exists (a listing saying otherwise would describe a
+different program from the one beside it, §10's drift), and `--trace`'s ACCEPT
+line reports the CONSUMED span and the REPORTED one, because on a `\K` artifact
+they differ and either alone misleads. A listing writes no artifact; a traced
+artifact is a different artifact by construction. Waves A-D each changed a construction spanning several
+emitter decision points and each needed a corpus-wide comparison against a
+reference build to say a construct-free pattern paid nothing. Here the claim
+is about ONE predicate, so it is pinned structurally — `[M6.2-KRESET rule 1b]`
+in `tests/codegen/run_codegen_tests.sh` quotes the pre-wave `caps_out` body as
+a LITERAL, so a rewrite into some third shape fails too — and the corpus-wide
+half was MEASURED ONCE against the genuine pre-wave COMPILER (1,208/1,208
+identical at the default engine, 1,209/1,209 under `--engine=vm`). That
+reference shares NO SOURCES with the subject, which is strictly stronger than
+the `-D` knob builds the four gates use and is the direct answer to wave D's
+own knob-placement finding.
+
+**THE THREE ENTRIES NEEDED NO CHANGE, and that is R30 E8's rule 3 corrected
+rather than discharged.** §6.3 derives "filter on the pre-`\K` start, return
+the consumed length" from the DFA artifact's `rx_match` (`rx_search` plus
+`caps[0][0] != ctx->pos`, returning `caps[0][1] - caps[0][0]`), and both lines
+really do break under `\K`. But a `\K` pattern is VM-FORCED and never has that
+entry: the VM's calls `<prefix>_match_impl` at `ctx->pos` directly, so the
+anchoring is a property of the CALL rather than a test applied afterwards, and
+the return is `pos - ctx->pos`, computed from positions and never from `caps`.
+`ab\K` is the cell where those two numbers differ — reported span (2,2),
+consumed length 2 — and a D38 callout advancing by the former would never
+move. Evidence rather than assertion: `tests/assertions/kreset_entries.c`
+drives all three entries, `run_kreset_diff.sh` §2 checks both match-here ones
+against libpcre2's answer for `\G(?:PAT)` at the same startpos, and
+`[M6.2-KRESET rule 3]`/`rule 3b` pin both shapes structurally.
+
+Gates: `tests/codegen/run_codegen_tests.sh`'s `[M6.2-KRESET]` block
+(sabotages S85 and S86, with disjoint symptoms) and
+`tests/assertions/run_kreset_diff.sh`. No identity gate, by the argument
+above.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

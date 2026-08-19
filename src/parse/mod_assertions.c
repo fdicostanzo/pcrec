@@ -93,6 +93,24 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * costs a closure bit and a second family of start states in src/ir/dfa.c
      * and nothing at all in the alphabet: it reads no byte. */
     case 'G': k = A_GSTART; break;
+    /* [M6.2 wave E] `\K`, and it is not a question at all. Every kind above
+     * this line ASKS something about the position and can answer no; `\K`
+     * always succeeds, reads nothing and WRITES — it moves the reported start
+     * of the match to here. That is the whole of assertions_design.md §6, and
+     * it is why this is the one construct in the module with no DFA path:
+     * the position it reports belongs to the WINNING PATH, and a subset state
+     * is a set, not a path.
+     *
+     * THE OFFSET IS RECORDED HERE AND NOWHERE ELSE. `src/opt/select_engine.c`
+     * decides the engine by WALKING for an A_KRESET node (the honest
+     * question), but the stamp it writes wants a pattern offset and no AST
+     * node carries one. `cx->first_cap_pos` is the precedent, field for field,
+     * including the first-wins guard: the diagnostic names the FIRST `\K`,
+     * not the last one parsed. */
+    case 'K':
+        k = A_KRESET;
+        if (cx->first_kreset_pos == (size_t)-1) cx->first_kreset_pos = at;
+        break;
     default:
         /* Unreachable on the shipped table; a registry defect if it ever
          * fires, reported rather than silently compiled as something else. */

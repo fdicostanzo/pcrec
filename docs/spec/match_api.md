@@ -358,6 +358,30 @@ relative to `startpos`** — measured, and the property a find-all loop
 depends on: searching `"xabcabcx"` for `abc` from `startpos = 0` reports
 `[1,4)`, and the next search from `4` reports `[4,7)`, not `[0,3)`.
 
+**`caps[0][0]` IS WHERE REPORTING BEGINS, WHICH IS NOT ALWAYS WHERE MATCHING
+BEGAN** ([M6.2] wave E; `docs/design/assertions_design.md` §6). Without `\K`
+the two coincide and nothing in this document had to distinguish them. `\K`
+resets the reported start to wherever the winning path last crossed it, so on
+`a\Kb` over `"ab"` the search consumes two bytes from offset 0 and reports
+`[1,2)`. Three consequences a caller can see, all of them PCRE2's too:
+
+- **`caps[0][0]` can be greater than the offset the match began at**, so it is
+  not a bound on where the engine looked. Nothing in the find-all loop above
+  depends on it being one — the loop advances off `caps[0][1]`, the match END,
+  which `\K` does not touch.
+- **`caps[0][0] == caps[0][1]` no longer implies nothing was consumed.**
+  `ab\K` over `"ab"` reports `[2,2)` after consuming two bytes. The loop above
+  is still correct — an empty REPORTED span at `p` advances by
+  `<prefix>_next_pos`, and the next search starts past it — but a caller that
+  measured work done by the reported width would measure zero.
+- **The anchored entries of §3.2/§3.3 return the CONSUMED length**, which is
+  the number that differs. On `ab\K` at `pos = 0` they return `2` while the
+  span they report (§3.3) is `[2,2)`. That is deliberate and is what makes the
+  §5 callout protocol's advance terminate; see those sections.
+
+A pattern with no `\K` is unaffected in every respect: the construct is
+module-gated (`assertions`) and, when present, forces the VM engine.
+
 **The subject side of the contract.** `s` is `n` bytes and nothing more:
 a `0x00` byte inside `s` is an ORDINARY byte with no special meaning (it
 is only the *pattern* side, §7, that is NUL-terminated), and **the
@@ -449,6 +473,22 @@ TOKENIZER — it reports `(0,2)` on `"ab ab ab"` and stops at the first gap
 — where the `\G`-free `\w+` is a scanner and reports all three. Measured
 by `tests/assertions/run_gstart_diff.sh` §1, against libpcre2 driven
 through this same loop rather than against a hand-written span list.
+
+**`\K` under this loop is safe and is worth one sentence, because the reason
+is not the obvious one** ([M6.2] wave E). The loop advances off `caps[0][1]`
+and `\K` moves only `caps[0][0]`, so termination and progress are untouched —
+but a `\K` pattern CAN report an empty span after consuming bytes (`ab\K`
+gives `[2,2)`), which takes the loop's EMPTY arm and advances by one character
+from the REPORTED START rather than from the match end. MEASURED against
+libpcre2 driven through this same loop rather than argued: `ab\K` over
+`"ababab"` reports `2,2 6,6` from both — note what the empty arm costs, which
+is that the match at offset 2..4 is not reported again at 4 — and `a\Kb` over
+`"ababab"` reports `1,2 3,4 5,6` from both.
+`tests/assertions/run_kreset_diff.sh` §5 is that comparison, run every
+suite. It is also why the empty arm is written against `caps[0][0]` rather
+than against the loop variable: the note above says an empty match can be
+found at a different offset from the one asked for, and `\K` is the construct
+that makes that routine rather than exotic.
 
 Verified against the shipped emitter (`src/gen/emit_dfa.c`) and a fresh
 artifact: the DFA matcher writes `caps[0][0]`/`caps[0][1]` only under

@@ -707,17 +707,48 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # it compiles with the gate open now, so the enabled-but-unbuilt sentence
 # would be the lie in the other direction. Its control — that BOTH a leading
 # and a mid-pattern spelling actually build — is in
-# tests/assertions/run_assertions_tests.sh beside `\b`/`\B`'s. **`\K` is now
-# the LAST row here**, which is worth noticing rather than passing over: when
-# wave E lands, this loop and its whole enabled-but-unbuilt paragraph retire
-# with it, and the row that has to go WITH them is the epilogue's own pin in
-# `src/parse/ext.c` (the `UNBUILT` arm). A refusal mechanism with no
-# population is machinery nothing can test, which is what wave A built it
-# knowing.
-for e in K; do
-    reject_gated assertions "\\$e" \
-        "module 'assertions' is enabled but \\$e is not implemented yet"
-done
+# tests/assertions/run_assertions_tests.sh beside `\b`/`\B`'s.
+#
+# [M6.2 WAVE E] `\K` LEFT IT, AND WITH IT THE WHOLE `assertions` PARAGRAPH:
+# the module has no unbuilt construct left, so this list is EMPTY by
+# construction rather than by omission, and every one of the module's eight
+# constructs is now pinned above (gate closed) and asserted to COMPILE in
+# tests/assertions/run_assertions_tests.sh (gate open).
+#
+# **WAVE D'S OWN NOTE PREDICTED THE NEXT STEP AND WAS WRONG ABOUT IT, MEASURED
+# BY WAVE E.** It said that when `\K` left, "the row that has to go WITH them
+# is the epilogue's own pin in `src/parse/ext.c` (the `UNBUILT` arm). A refusal
+# mechanism with no population is machinery nothing can test." The mechanism's
+# population is not the `assertions` module's rows — it is EVERY registry row
+# whose module is enabled and whose port is unwired, and that set is large and
+# live today:
+#
+#     --features backrefs       '\k'     -> "module 'backrefs' is enabled but
+#                                            \k is not implemented yet"
+#     --features lookaround     '(?=a)'  -> ... '(?=...)' ...
+#     --features atomic-groups  '(?>a)'  -> ... '(?>...)' ...
+#     --features quoting        '[\Q]'   -> ... '\Q in a class' ...
+#
+# (measured on the shipped compiler by wave E). So the arm is not unpopulated
+# machinery and deleting it would delete a live diagnostic. What WAS true is
+# narrower and is the thing this paragraph has to fix: `\K`'s row was the ONLY
+# hand-written pin on that arm anywhere in the tree, so retiring it would have
+# left the mechanism with a big population and no literal expectation — the
+# exact shape tests/reject/ exists to prevent, arriving through a wave doing
+# the right thing to its own rows.
+#
+# The four rows below are that pin, RE-HOMED to modules that will not build
+# their constructs for milestones. THREE MODULES, not one, because the
+# diagnostic is assembled from the row's own `module` and `syntax`, so a single
+# module's row cannot tell "the sentence is right" from "the sentence happens
+# to be right for `backrefs`"; and BOTH POSITIONS, because ext.c splices the
+# in-class wording at a different site from the macro's (`res.msg` beside the
+# K12 endpoint payload, not through `UNBUILT`) and a pin on one has never
+# covered the other.
+reject_gated backrefs      '\k'    "module 'backrefs' is enabled but \k is not implemented yet"
+reject_gated lookaround    '(?=a)' "module 'lookaround' is enabled but (?=...) is not implemented yet"
+reject_gated atomic-groups '(?>a)' "module 'atomic-groups' is enabled but (?>...) is not implemented yet"
+reject_gated quoting       '[\Q]'  "module 'quoting' is enabled but \Q in a class is not implemented yet"
 # The `m` LETTER's own arm (src/parse/mod_modifiers.c), which produces its
 # refusal per letter rather than through the `(?` doorway's row — so it needs
 # its own copy of the rule and its own pin.
@@ -1855,8 +1886,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 61 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 61 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 64 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 64 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

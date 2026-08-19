@@ -88,6 +88,13 @@ bool pcrec_is_bare_anchor(const Ast *a)
     switch (a->k) {
     case A_BOL: case A_EOL: case A_END:
     case A_WORDB: case A_NWORDB: case A_GSTART:
+    /* [M6.2 wave E] `\K` joins them, and it is the one member of this list
+     * that is not an assertion — which changes nothing here, because the rule
+     * this predicate encodes is PCRE2's GRAMMAR, not a semantic property.
+     * Measured against libpcre2 10.46: `\K*` `\K+` `\K?` `\K{2}` `a\K*` are
+     * all error 109 and `(\K)*` compiles, which is `\A`/`\z`/`\b`/`\G`'s
+     * table cell for cell. */
+    case A_KRESET:
         return true;
     /* No `default:` — mrl.c:18-24's rule. A node kind added after this file
      * is written must be a COMPILE ERROR here rather than silently inheriting
